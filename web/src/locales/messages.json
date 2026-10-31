@@ -12,9 +12,10 @@
     "web/src/app/assistant/ChangeSetReview.tsx"
   ],
   "(completed)": [
-    "web/src/app/MonthView.tsx",
     "web/src/app/TaskRow.tsx",
     "web/src/app/calendar/DayColumn.tsx",
+    "web/src/app/calendar/MonthRow.tsx",
+    "web/src/app/calendar/SpanBand.tsx",
     "web/src/app/calendar/WeekAgenda.tsx",
     "web/src/app/task-detail/TaskHead.tsx"
   ],
@@ -3544,6 +3545,12 @@
   "Day skipped": [
     "web/src/lib/occurrenceActions.ts"
   ],
+  "Day {n} of {m}": [
+    "web/src/app/TaskRow.tsx",
+    "web/src/app/calendar/PlanRow.tsx",
+    "web/src/app/calendar/SpanBand.tsx",
+    "web/src/app/calendar/WeekAgenda.tsx"
+  ],
   "Day, Week, Month and Plan calendar": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -6222,10 +6229,16 @@
   "In Month: close the \"+N more\" list or the panel, else clear the selection": [
     "web/src/lib/shortcuts.ts"
   ],
+  "In Month: move the first day of the selected span": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "In Month: move the focused day while a task is selected": [
     "web/src/lib/shortcuts.ts"
   ],
   "In Month: move the focused day; with a task selected, move it a day or a week (keeps its time)": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In Month: move the last day of the selected span; on a task without a time, Shift+→ makes it a two-day span": [
     "web/src/lib/shortcuts.ts"
   ],
   "In Month: next month": [
@@ -7732,10 +7745,16 @@
   "Move the current project under another project or to the top level": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Move the first day of the selected span": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Move the focus to the next row, across the day columns": [
     "web/src/lib/shortcuts.ts"
   ],
   "Move the focus to the previous row": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Move the last day of the selected span; on a task without a time, Shift+→ makes it a two-day span": [
     "web/src/lib/shortcuts.ts"
   ],
   "Move the selected task (and its subtasks), or the ticked tasks, to the Trash": [
@@ -7908,6 +7927,12 @@
   ],
   "Moves": [
     "web/src/app/calendar/ReplanPreview.tsx"
+  ],
+  "Multi-day": [
+    "web/src/app/task-detail/WhenControl.tsx"
+  ],
+  "Multi-day: {range}": [
+    "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Must include openid; email is needed to match existing accounts.": [
     "web/src/app/SsoPanel.tsx"
@@ -12363,6 +12388,9 @@
   "Show in Assigned to me": [
     "web/src/app/task-detail/Facets.tsx"
   ],
+  "Show it across the days from its start to its do-on date": [
+    "web/src/app/task-detail/WhenControl.tsx"
+  ],
   "Show it again": [
     "web/src/app/AboutSection.tsx"
   ],
@@ -15727,7 +15755,6 @@
   ],
   "Untitled": [
     "web/src/app/CalendarView.tsx",
-    "web/src/app/MonthView.tsx",
     "web/src/app/PlanView.tsx",
     "web/src/app/PublicListScreen.tsx",
     "web/src/app/ReminderToasts.tsx",
@@ -15739,12 +15766,14 @@
     "web/src/app/calendar/DeadlineMarker.tsx",
     "web/src/app/calendar/FrameBand.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
+    "web/src/app/calendar/MonthRow.tsx",
     "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/calendar/PlanRow.tsx",
     "web/src/app/calendar/ReplanPreview.tsx",
     "web/src/app/calendar/SidebarSchedule.tsx",
     "web/src/app/calendar/SlotBlock.tsx",
     "web/src/app/calendar/SlotDetails.tsx",
+    "web/src/app/calendar/SpanBand.tsx",
     "web/src/app/calendar/WeekAgenda.tsx",
     "web/src/app/calendar/projections.tsx",
     "web/src/app/display/DisplayColumn.tsx",
@@ -17822,7 +17851,7 @@
     "web/src/lib/activityRuns.ts"
   ],
   "priority {n}": [
-    "web/src/app/MonthView.tsx"
+    "web/src/app/calendar/MonthRow.tsx"
   ],
   "priority {p}": [
     "web/src/lib/rules/index.ts",
@@ -17854,8 +17883,9 @@
     "web/src/app/settingsSections.ts"
   ],
   "read-only": [
-    "web/src/app/MonthView.tsx",
     "web/src/app/TaskRow.tsx",
+    "web/src/app/calendar/MonthRow.tsx",
+    "web/src/app/calendar/SpanBand.tsx",
     "web/src/lib/assistants.ts"
   ],
   "read-only token": [
@@ -18227,6 +18257,13 @@
   ],
   "until needs a date YYYY-MM-DD": [
     "web/src/lib/recurrence.ts"
+  ],
+  "until {date}": [
+    "web/src/app/TaskRow.tsx"
+  ],
+  "until {time}": [
+    "web/src/app/calendar/SpanBand.tsx",
+    "web/src/lib/facets.ts"
   ],
   "untitled": [
     "web/src/app/ImportScreen.tsx"

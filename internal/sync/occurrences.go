@@ -246,6 +246,10 @@ func recordFields(row Entity, id, from, date string, now int64) map[string]json.
 	if string(row["evening"]) == "true" {
 		rec["evening"] = json.RawMessage("true")
 	}
+	// A span keeps its flag; its start moved with the due below (multi-day-tasks D6).
+	if string(row["span"]) == "true" {
+		rec["span"] = json.RawMessage("true")
+	}
 	if idValue(row["start"]) == "someday" {
 		rec["start"] = JSONOf("someday")
 	}

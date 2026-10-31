@@ -27,6 +27,7 @@ Choose **Calendar** in the sidebar, then **Day**, **Week**, **Month** or **Plan*
 - **+N** shows more all-day events.
 - Tinted bands are [frames](frames.md); checklist blocks are [slots](slots.md).
 - A diamond marks a [deadline](deadlines-and-start-dates.md#deadlines).
+- Bars across days are [multi-day tasks](tasks-that-span-days.md).
 
 **‹** and **›** (<kbd>[</kbd>, <kbd>]</kbd>) go back and forward; **Today** (<kbd>t</kbd>) comes back.
 
@@ -43,7 +44,7 @@ Double-click adding, colours, filters: [Add and colour](calendar-add-and-colour.
 - With no task selected, the arrows move between days. <kbd>q</kbd> adds a task due on the day you're on.
 - <kbd>[</kbd> and <kbd>]</kbd> go to the previous and next month, and <kbd>t</kbd> comes back to today.
 
-Switching between **Day**, **Week**, **Month** and **Plan** keeps the date you're looking at. On a phone, each day shows how many tasks it has, and the tasks of the day you tap are listed under the month. Tasks in a project where you're a viewer are shown but can't be moved.
+Switching between **Day**, **Week**, **Month** and **Plan** keeps the date you're looking at. On a phone, each day shows how many tasks it has, and the tasks of the day you tap are listed under the month. Tasks in projects you only view can't be moved.
 
 ## Plan the next two weeks
 

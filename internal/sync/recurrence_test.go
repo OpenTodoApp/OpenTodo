@@ -103,3 +103,33 @@ func TestRecurringCompletionPinnedToday(t *testing.T) {
 		}
 	}
 }
+
+// TestRecurringSpanKeepsLength (multi-day-tasks D6): a weekly span from Sunday
+// to Monday completed on the Monday leaves a record of that span, and the
+// series moves start and due by the same days, so the next span keeps length.
+func TestRecurringSpanKeepsLength(t *testing.T) {
+	ctx := context.Background()
+	s := newTestService(t)
+	ops := []Op{
+		op("s1", "task", "ts", "title", `"Weekend away"`, 100, "A"),
+		op("s2", "task", "ts", "recurrence", `"every monday"`, 100, "A"),
+		op("s3", "task", "ts", "due", `{"date":"2026-11-09"}`, 100, "A"),
+		op("s4", "task", "ts", "start", `"2026-11-08"`, 100, "A"),
+		op("s5", "task", "ts", "span", `true`, 100, "A"),
+	}
+	if _, err := s.Apply(ctx, "u1", ops); err != nil {
+		t.Fatal(err)
+	}
+	existing, _ := s.Get(ctx, "u1", "task", "ts")
+	body := map[string]json.RawMessage{"completed_at": json.RawMessage("1000")}
+	_, record, ok, err := s.RecurringCompletion(ctx, "u1", "ts", body, existing, "2026-11-09")
+	if err != nil || !ok {
+		t.Fatalf("ok=%v err=%v", ok, err)
+	}
+	if string(record["span"]) != `true` || string(record["start"]) != `"2026-11-08"` || string(record["due"]) != `{"date":"2026-11-09"}` {
+		t.Fatalf("record span %s start %s due %s", record["span"], record["start"], record["due"])
+	}
+	if string(body["start"]) != `"2026-11-15"` || string(body["due"]) != `{"date":"2026-11-16"}` {
+		t.Fatalf("series start %s due %s", body["start"], body["due"])
+	}
+}

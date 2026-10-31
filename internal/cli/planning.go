@@ -23,15 +23,19 @@ type planningFlags struct {
 	// part is --part: morning, afternoon, evening or none (day-parts).
 	part string
 	// energy is --energy: deep, medium, low or none (task-energy).
-	energy    string
-	evening   bool
-	blockedBy stringList
+	energy  string
+	evening bool
+	// span and noSpan are --span and --no-span (multi-day-tasks).
+	span, noSpan bool
+	blockedBy    stringList
 }
 
 func (f *planningFlags) bind(fs *flag.FlagSet) {
 	fs.StringVar(&f.deadline, "deadline", "", "the day it must be finished by: YYYY-MM-DD, today, tomorrow or a weekday (edit: `none` clears)")
 	fs.StringVar(&f.start, "start", "", "someday parks it; a date defers it: YYYY-MM-DD, today, tomorrow or a weekday (edit: `none` clears)")
 	fs.BoolVar(&f.evening, "evening", false, "put it in This Evening (edit: --evening=false takes it out)")
+	fs.BoolVar(&f.span, "span", false, "draw it across the days from --start to --due, both included (a span needs a start date before the due date)")
+	fs.BoolVar(&f.noSpan, "no-span", false, "draw it on its due date only (edit: takes a span back to one day; the start date stays)")
 	fs.StringVar(&f.part, "part", "", "the part of the day: morning, afternoon, evening or none")
 	fs.StringVar(&f.energy, "energy", "", "the energy the task asks for: deep, medium, low (edit: `none` clears)")
 	fs.Var(&f.blockedBy, "blocked-by", "a task this one waits for, id or unique id prefix (repeatable; edit replaces the list)")
@@ -69,6 +73,9 @@ func (f *planningFlags) validateLocal(set map[string]bool, now time.Time, edit b
 	if _, ok := daypart.Parse(f.part); set["part"] && (!ok || strings.TrimSpace(f.part) == "") {
 		return usageErr("invalid --part %q: use morning, afternoon, evening or none", f.part)
 	}
+	if set["span"] && set["no-span"] {
+		return usageErr("--span and --no-span cannot be used together")
+	}
 	if set["energy"] {
 		e := strings.ToLower(strings.TrimSpace(f.energy))
 		if e != "deep" && e != "medium" && e != "low" && e != "none" {
@@ -85,7 +92,7 @@ func (f *planningFlags) validateLocal(set map[string]bool, now time.Time, edit b
 }
 
 func (f *planningFlags) any(set map[string]bool) bool {
-	return set["deadline"] || set["start"] || set["evening"] || set["part"] || set["energy"] || set["blocked-by"] || set["location"]
+	return set["deadline"] || set["start"] || set["evening"] || set["span"] || set["no-span"] || set["part"] || set["energy"] || set["blocked-by"] || set["location"]
 }
 
 // parseLatLon reads "lat,lon"; ok is false when v does not look like a pair.
@@ -129,6 +136,9 @@ func (f *planningFlags) fill(ctx context.Context, a *App, c *client, set map[str
 	}
 	if set["evening"] {
 		out["evening"] = f.evening
+	}
+	if set["span"] || set["no-span"] {
+		out["span"] = f.span && !f.noSpan
 	}
 	// --energy none clears the energy (task-energy D7).
 	if set["energy"] {
@@ -332,10 +342,34 @@ func deadlineCell(t task, today string) cell {
 	return plain(*t.Deadline)
 }
 
-// planningSuffix is what the DUE cell adds: (someday), starts <date>, evening, waiting.
+// spanRange is a span's days (multi-day-tasks), "3–5 Nov", "30 Oct – 2 Nov"
+// or "30 Dec 2026 – 2 Jan 2027"; "" for a task that is not drawn as a span
+// (the flag without a date start before the due date).
+func spanRange(t task) string {
+	if !t.Span || t.Start == nil || t.Due == nil {
+		return ""
+	}
+	a, err1 := time.Parse(time.DateOnly, *t.Start)
+	b, err2 := time.Parse(time.DateOnly, t.Due.Date)
+	if err1 != nil || err2 != nil || !a.Before(b) {
+		return ""
+	}
+	switch {
+	case a.Year() != b.Year():
+		return a.Format("2 Jan 2006") + " – " + b.Format("2 Jan 2006")
+	case a.Month() != b.Month():
+		return a.Format("2 Jan") + " – " + b.Format("2 Jan")
+	}
+	return a.Format("2") + "–" + b.Format("2 Jan")
+}
+
+// planningSuffix is what the DUE cell adds: a span's days or (someday),
+// starts <date>, evening, waiting.
 func planningSuffix(t task, today string, blocked bool) string {
 	var parts []string
-	if t.Start != nil {
+	if r := spanRange(t); r != "" {
+		parts = append(parts, r)
+	} else if t.Start != nil {
 		switch s := *t.Start; {
 		case s == "someday":
 			parts = append(parts, "(someday)")

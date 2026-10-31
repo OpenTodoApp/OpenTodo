@@ -95,6 +95,12 @@ export interface Task extends TaskFields {
   /** This Evening: grouped below the day's tasks in Today. Read with `?? false`. */
   evening?: boolean
   /**
+   * Draw the task as a span from `start` to `due.date` (OpenSpec change
+   * `multi-day-tasks`). Only drawing changes; read with `spanOf` in `lib/span.ts`,
+   * which ignores the flag without a valid range. Read with `?? false`.
+   */
+  span?: boolean
+  /**
    * The tasks this one waits for, in its own sharing scope (OpenSpec change
    * `task-dependencies`). Blocked while any of them is live and open. Optional on
    * rows stored before the field; read with `?? []`.
@@ -1511,7 +1517,7 @@ export const PROJECT_FIELDS = ['name', 'color', 'position', 'archived', 'parent_
 export const TASK_FIELDS = [
   'title', 'description', 'project_id', 'parent_id', 'priority', 'due', 'labels',
   'position', 'created_at', 'completed_at', 'deleted_at', 'estimate_minutes', 'recurrence', 'series_id',
-  'assignee_id', 'section_id', 'notes_doc', 'deadline', 'start', 'evening', 'blocked_by', 'completed_by', 'note_mentions',
+  'assignee_id', 'section_id', 'notes_doc', 'deadline', 'start', 'evening', 'span', 'blocked_by', 'completed_by', 'note_mentions',
 ] as const
 export const SECTION_FIELDS = ['name', 'project_id', 'position', 'created_at', 'deleted_at'] as const
 export const LABEL_FIELDS = ['name', 'color', 'position', 'created_at', 'deleted_at'] as const

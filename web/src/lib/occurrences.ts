@@ -3,7 +3,8 @@
 // range, derived from the synced series row and its occurrence records and never
 // written. One calculator for Plan, Day, Week, Month and Upcoming; the Go port is
 // `recurrence.Rule.Occurrences`, pinned to this walk by occurrences.vectors.json.
-import { daysBetweenISO, localDueOf } from './dates'
+import { addDaysISO, daysBetweenISO, localDueOf } from './dates'
+import { spanOf } from './span'
 import { followingOccurrence, type Rule } from './recurrence'
 import { pieceRule, seriesBudget, seriesRule } from './recurring'
 import type { Due, Task } from './types'
@@ -31,6 +32,11 @@ export interface Projection {
   afterCompletion?: true
   /** The series is a habit: Skip reads "Skip this day". */
   habit?: true
+  /**
+   * A span series' occurrence (multi-day-tasks D6): its first day, `date` being its
+   * last; the series' current length ending on the projected date.
+   */
+  spanFirst?: string
   /** Set by the views: the viewer may act on it (not a viewer of the project, a calendar rule). */
   actionable?: boolean
 }
@@ -104,10 +110,14 @@ export function occurrencesInRange(series: Task, records: readonly Task[], today
   const base = series.due
   const dueOn = (date: string): Due => (base.time ? { date, time: base.time, ...(base.tz ? { tz: base.tz } : {}) } : { date })
   const b = seriesBudget(series, records, base.date, today)
-  const walk = walkOccurrences(pieceRule(rule, b), base.date, today, b.taken, from, to, (d) => localDueOf(dueOn(d), zone).date, b.except)
+  // A span series (multi-day-tasks D6): an occurrence due after the range still covers it from its first day.
+  const span = spanOf(series)
+  const reach = span ? addDaysISO(to, span.length - 1) : to
+  const walk = walkOccurrences(pieceRule(rule, b), base.date, today, b.taken, from, reach, (d) => localDueOf(dueOn(d), zone).date, b.except)
   const projections = walk.dates.map((date): Projection => {
     const seen = localDueOf(dueOn(date), zone)
     return {
+      ...(span ? { spanFirst: addDaysISO(seen.date, 1 - span.length) } : {}),
       id: `proj:${series.id}:${date}`, seriesId: series.id, date: seen.date, occurrence: date, ...(seen.time ? { time: seen.time } : {}),
       title: series.title, estimate_minutes: series.estimate_minutes, priority: series.priority, position: series.position, project_id: series.project_id,
       ...(walk.capped ? { capped: true as const } : {}),

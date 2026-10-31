@@ -852,6 +852,16 @@ select.ui-input:not([multiple]) {
   border-inline-start: 3px dashed var(--ot-accent);
   color: var(--ot-text-strong);
 }
+/* A task drawn across days (multi-day-tasks D3): the block recipe; where it continues
+   past the shown days its end is squared off and the leading edge is left off. */
+.ui-span--before { border-start-start-radius: 0; border-end-start-radius: 0; border-inline-start-width: 0; }
+.ui-span--after { border-start-end-radius: 0; border-end-end-radius: 0; }
+/* The part of a bar over days before today, dimmed like past blocks. */
+.ui-span-past { background: color-mix(in oklab, var(--ot-surface) 45%, transparent); }
+/* Month's bars lie over the cells: only the bars take the pointer. */
+.ui-span-overlay [data-span-piece] { pointer-events: auto; }
+/* While a bar is dragged the pointer reaches the days under every bar. */
+body[data-span-dragging] [data-span-piece] { pointer-events: none; }
 /* A projected occurrence of a repeating task (series-occurrences D3): a fainter fill than
    the past, a dashed leading edge in the hue (told from a past block without colour) and
    muted text. In high contrast the dashed edge is the marker. */

@@ -69,4 +69,25 @@ describe('day lists', () => {
     expect(todayList(withoutArchived([a, b, c], projects), TODAY).map((t) => t.title)).toEqual(['Live', 'Inbox'])
     expect(projectOpenList(withoutArchived([a, b, c], projects, 'p1'), 'p1').map((t) => t.title)).toEqual(['Archived'])
   })
+
+  // OpenSpec change multi-day-tasks, D5 and the modified start-dates scenarios.
+  it('Upcoming lists a span once under its first day, before it; Today lists it during it', () => {
+    const trip = task({ title: 'Trip', start: '2026-11-03', due: { date: '2026-11-05' }, span: true })
+    const chore = task({ title: 'Chore', start: '2026-11-03', due: { date: '2026-11-05' } })
+    const before = '2026-11-01'
+    expect(upcomingList([trip, chore], before).map((t) => t.title)).toEqual(['Trip'])
+    expect(groupUpcoming(upcomingList([trip, chore], before), before)).toEqual([{ date: '2026-11-03', tasks: [trip] }])
+    expect(todayList([trip], before)).toEqual([])
+    const during = '2026-11-04'
+    expect(todayList([trip], during).map((t) => t.title)).toEqual(['Trip'])
+    expect(upcomingList([trip], during)).toEqual([])
+    // A started task that is not a span keeps its place under its due date.
+    expect(upcomingList([chore], during).map((t) => t.title)).toEqual(['Chore'])
+  })
+
+  it('a flag without a valid range lists as a plain task', () => {
+    const odd = task({ title: 'Odd', start: '2026-11-05', due: { date: '2026-11-05' }, span: true })
+    expect(groupUpcoming(upcomingList([odd], '2026-11-01'), '2026-11-01')).toEqual([])
+    expect(todayList([odd], '2026-11-05').map((t) => t.title)).toEqual(['Odd'])
+  })
 })

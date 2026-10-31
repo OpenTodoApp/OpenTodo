@@ -105,6 +105,17 @@ export const Deadlines: StoryObj = {
   ),
 }
 
+/** Spans (multi-day-tasks D5): the range in the date's place; once begun, "until" in the Started chip's place. A deferred task that is not a span keeps both chips. */
+export const Spans: StoryObj = {
+  render: () => (
+    <List>
+      <TaskRow {...base} task={task({ id: 't1', title: 'Lisbon trip', start: '2026-10-21', due: { date: '2026-10-23' }, span: true })} />
+      <TaskRow {...base} task={task({ id: 't2', title: 'Design conference', start: '2026-10-12', due: { date: '2026-10-16' }, span: true })} />
+      <TaskRow {...base} task={task({ id: 't3', title: 'Quarterly report', start: '2026-10-12', due: { date: '2026-10-16' } })} />
+    </List>
+  ),
+}
+
 /** Label chips and the project as muted text at the row's end (outside the project; the end of the line below 640 px). */
 export const LabelsAndProject: StoryObj = {
   render: () => (

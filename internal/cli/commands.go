@@ -77,6 +77,8 @@ var (
 		{Name: "deadline", Type: "string", Description: "the day it must be finished by: YYYY-MM-DD, today, tomorrow or a weekday (edit: none clears)"},
 		{Name: "start", Type: "string", Description: "someday parks the task; a date (YYYY-MM-DD, today, tomorrow or a weekday) defers it; the due date is kept (edit: none clears)"},
 		{Name: "evening", Type: "bool", Description: "put the task in This Evening (edit: --evening=false takes it out)"},
+		{Name: "span", Type: "bool", Description: "draw the task across the days from its start to its due date, both included; a span needs --start and --due (a start before the due date)"},
+		{Name: "no-span", Type: "bool", Description: "draw the task on its due date only; the start date stays"},
 		{Name: "part", Type: "string", Enum: []string{"morning", "afternoon", "evening", "none"}, Description: "the part of the day; sets This Evening too (evening) or clears it"},
 		{Name: "energy", Type: "string", Enum: []string{"deep", "medium", "low", "none"}, Description: "the energy the task asks for (edit: none clears)"},
 		{Name: "blocked-by", Type: "string_list", Description: "a task this one waits for: id or unique id prefix, repeatable (edit replaces the list; none clears)"},

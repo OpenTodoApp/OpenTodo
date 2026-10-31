@@ -16,6 +16,8 @@ func TestValidateStart(t *testing.T) {
 		{"start", `"later"`, false}, {"start", `"2026-02-30"`, false}, {"start", `"2026-11-03T09:00"`, false},
 		{"start", `"Someday"`, false}, {"start", `true`, false},
 		{"evening", `true`, true}, {"evening", `false`, true}, {"evening", `"yes"`, false}, {"evening", `1`, false},
+		// The span flag (multi-day-tasks) is a boolean like evening.
+		{"span", `true`, true}, {"span", `false`, true}, {"span", `"yes"`, false}, {"span", `null`, false},
 	}
 	for _, c := range cases {
 		err := Validate(op("1", "task", "t1", c.field, c.value, 1, "A"))
@@ -42,6 +44,28 @@ func TestStartConverges(t *testing.T) {
 		}
 		if string(row["start"]) != `"someday"` {
 			t.Fatalf("%s: start %s", user, row["start"])
+		}
+	}
+}
+
+// TestSpanRoundTrips (multi-day-tasks): the flag is stored and read back, and a
+// task created without it reads false.
+func TestSpanRoundTrips(t *testing.T) {
+	ctx := context.Background()
+	s := newTestService(t)
+	ops := []Op{op("a", "task", "t1", "title", `"Lisbon trip"`, 100, "A"), op("b", "task", "t2", "title", `"Plain"`, 100, "A"),
+		op("c", "task", "t1", "span", `true`, 200, "A")}
+	if _, err := s.Apply(ctx, "u1", ops); err != nil {
+		t.Fatal(err)
+	}
+	for id, want := range map[string]string{"t1": `true`, "t2": `false`} {
+		row, err := s.Get(ctx, "u1", "task", id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		// A row without the op holds no value; readers take the false default.
+		if got := string(row["span"]); got != want && !(want == `false` && (got == "" || got == "null")) {
+			t.Fatalf("%s: span %s, want %s", id, row["span"], want)
 		}
 	}
 }

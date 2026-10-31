@@ -161,6 +161,11 @@ export async function rescheduleUndoable(id: string, due: NonNullable<Task['due'
   return apply([{ entity: 'task', entityId: id, patch: { due, estimate_minutes: estimate } }], t('Rescheduled'))
 }
 
+/** A span moved or resized, or a task made a span (multi-day-tasks D4): start, due and the flag in one change. */
+export async function spanUndoable(id: string, patch: Pick<Partial<Task>, 'start' | 'due' | 'span'>): Promise<UndoableResult> {
+  return apply([{ entity: 'task', entityId: id, patch }], t('Rescheduled'))
+}
+
 /** Park one task in Someday: no date, not an evening task. */
 export async function parkUndoable(id: string): Promise<UndoableResult> {
   const { tasks } = await readTicked([id])

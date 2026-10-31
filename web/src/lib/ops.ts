@@ -691,6 +691,8 @@ export type NewTaskInput = {
   /** "someday" or a date (someday-and-evening); only sent when set. */
   start?: string | null
   evening?: boolean
+  /** Draw from `start` to `due` (multi-day-tasks); only sent when set. */
+  span?: boolean
   /** Morning or Afternoon (day-parts); only sent when set. Evening is `evening`. */
   day_part?: 'morning' | 'afternoon' | null
   /** Deep, Medium or Low (task-energy); only sent when set. */
@@ -746,6 +748,8 @@ export async function planTask(input: NewTaskInput, position?: number): Promise<
   if (input.deadline) extra.deadline = input.deadline
   // Only parked, deferred or evening tasks carry these (someday-and-evening).
   if (input.start) extra.start = input.start
+  // Only spans carry the flag (multi-day-tasks).
+  if (input.span) extra.span = true
   if (input.evening) extra.evening = true
   else if (input.day_part) extra.day_part = input.day_part
   // Only tasks created with an energy carry the field (task-energy).
@@ -918,7 +922,7 @@ export async function setTaskParent(id: string, parentId: string | null): Promis
  * different project, and changing a task's project clears its section (board-view).
  */
 // blocked_by stays behind: blockers live in one sharing scope (task-dependencies D5).
-const COPY_FIELDS = ['title', 'description', 'notes_doc', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'start', 'evening', 'day_part', 'energy', 'recurrence', 'series_id', 'assignee_id', 'completed_at', 'completed_by', 'position', 'created_at', 'origin'] as const
+const COPY_FIELDS = ['title', 'description', 'notes_doc', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'start', 'evening', 'span', 'day_part', 'energy', 'recurrence', 'series_id', 'assignee_id', 'completed_at', 'completed_by', 'position', 'created_at', 'origin'] as const
 
 /**
  * Copy tasks into `projectId` under new ids, keeping parent links between copied
