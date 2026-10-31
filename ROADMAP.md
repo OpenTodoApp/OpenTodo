@@ -60,7 +60,7 @@ Recurring depth, calendar range, and notes that stay cheap to store and easy to 
 | [`series-all-scope`](openspec/changes/archive/2026-10-31-series-all-scope/) | **Shipped.** "All occurrences": only future ones or also past ones | — |
 | [`multi-day-tasks`](openspec/changes/archive/2026-10-31-multi-day-tasks/) | **Shipped.** Tasks that span days on the calendar | [#558](https://github.com/OpenTodoApp/OpenTodo/issues/558) |
 | [`year-view`](openspec/changes/archive/2026-10-31-year-view/) | **Shipped.** Several months and a Year view | [#557](https://github.com/OpenTodoApp/OpenTodo/issues/557) |
-| [`board-polish`](openspec/changes/board-polish/) | Fold a board column, preview notes on cards | [#561](https://github.com/OpenTodoApp/OpenTodo/issues/561) |
+| [`board-polish`](openspec/changes/archive/2026-10-31-board-polish/) | **Shipped.** Fold a board column, preview notes on cards | [#561](https://github.com/OpenTodoApp/OpenTodo/issues/561) |
 | [`accent-colour`](openspec/changes/accent-colour/) | Your own accent colour, with contrast guaranteed | [#563](https://github.com/OpenTodoApp/OpenTodo/issues/563) |
 | [`notes-compaction`](openspec/changes/archive/2026-10-31-notes-compaction/) | **Shipped.** The server drops superseded note versions after 30 days and reclaims the space | [#652](https://github.com/OpenTodoApp/OpenTodo/issues/652) |
 | [`notes-save-cadence`](openspec/changes/archive/2026-10-31-notes-save-cadence/) | **Shipped.** Notes save on the device at every pause and sync after 3 s quiet | [#653](https://github.com/OpenTodoApp/OpenTodo/issues/653) |

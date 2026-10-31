@@ -2767,6 +2767,9 @@
     "web/src/app/palette/registry.ts",
     "web/src/lib/assistant.ts"
   ],
+  "Column menu for {title}": [
+    "web/src/app/views/ViewResults.tsx"
+  ],
   "Column {n} of {count}: {name}": [
     "web/src/app/BoardView.tsx"
   ],
@@ -5332,6 +5335,16 @@
   "Focus timer": [
     "web/src/app/settingsIndex.ts",
     "web/src/app/settingsSections.ts"
+  ],
+  "Fold column": [
+    "web/src/app/Sections.tsx",
+    "web/src/app/views/ViewResults.tsx"
+  ],
+  "Fold or unfold the selected card’s column; on a folded column, unfold it": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Fold panel": [
+    "web/src/app/DashboardView.tsx"
   ],
   "Folder": [
     "web/src/app/BackupsPanel.tsx"
@@ -7959,6 +7972,9 @@
   "Moved to {column}: {changes}": [
     "web/src/lib/undoActions.ts"
   ],
+  "Moved to {name}": [
+    "web/src/app/task-list/useListShortcuts.ts"
+  ],
   "Moved to {part}": [
     "web/src/lib/undoActions.ts"
   ],
@@ -8651,6 +8667,7 @@
     "web/src/app/task-detail/HistoryTab.tsx",
     "web/src/app/task-detail/TaskFacts.tsx",
     "web/src/app/task-list/ListGroups.tsx",
+    "web/src/app/task-list/useListShortcuts.ts",
     "web/src/lib/assistant.ts",
     "web/src/lib/facets.ts",
     "web/src/lib/listGroups.ts",
@@ -8960,8 +8977,14 @@
   "Notes edited": [
     "web/src/app/task-detail/HistoryTab.tsx"
   ],
+  "Notes on cards": [
+    "web/src/app/views/DisplayPanel.tsx"
+  ],
   "Notes you write, and the notes of your tasks and projects, are listed here.": [
     "web/src/app/notes/NotesPage.tsx"
+  ],
+  "Notes:": [
+    "web/src/app/CardNotes.tsx"
   ],
   "Nothing changes until you apply": [
     "web/src/app/assistant/ChangeSetReview.tsx"
@@ -12471,6 +12494,9 @@
   "Show more {older}": [
     "web/src/app/task-list/ListGroups.tsx"
   ],
+  "Show notes on cards": [
+    "web/src/app/task-list/listExtras.tsx"
+  ],
   "Show on rows": [
     "web/src/app/views/DisplayPanel.tsx"
   ],
@@ -15889,7 +15915,8 @@
     "web/src/app/RuleEditor.tsx",
     "web/src/app/Sections.tsx",
     "web/src/app/rules/RuleFields.tsx",
-    "web/src/app/task-detail/Facets.tsx"
+    "web/src/app/task-detail/Facets.tsx",
+    "web/src/app/task-list/useListShortcuts.ts"
   ],
   "Up": [
     "web/src/app/palette/BarParts.tsx"
@@ -19287,7 +19314,14 @@
   "{name}, {n, plural, one {# open task} other {# open tasks}}": [
     "web/src/app/BoardView.tsx"
   ],
+  "{name}, {n, plural, one {# open task} other {# open tasks}}, folded": [
+    "web/src/app/BoardView.tsx",
+    "web/src/app/DashboardView.tsx"
+  ],
   "{name}, {n, plural, one {# task} other {# tasks}}": [
+    "web/src/app/views/ViewResults.tsx"
+  ],
+  "{name}, {n, plural, one {# task} other {# tasks}}, folded": [
     "web/src/app/views/ViewResults.tsx"
   ],
   "{name}: uploading": [

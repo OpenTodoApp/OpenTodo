@@ -163,6 +163,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>l</kbd> / <kbd>→</kbd> | Select the first task of the next column |
 | <kbd>Shift+←</kbd> | Move the selected task to the previous column (it stays selected) |
 | <kbd>Shift+→</kbd> | Move the selected task to the next column |
+| <kbd>z</kbd> | Fold or unfold the selected card’s column; on a folded column, unfold it |
 | <kbd>a</kbd> | Add a task to the selected task’s column |
 | <kbd>←</kbd> / <kbd>→</kbd> | Timeline: move the selected task’s dates one day earlier / later |
 | <kbd>Shift+←</kbd> / <kbd>Shift+→</kbd> | Timeline: move the selected task’s deadline one day (from the due date when it has none) |

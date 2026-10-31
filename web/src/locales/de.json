@@ -5867,5 +5867,15 @@
   "Only future ones": "Nur künftige",
   "Also past ones": "Auch vergangene",
   "Past occurrences take the new title, notes, labels, project and priority; their dates and completions stay.": "Vergangene Termine übernehmen Titel, Notizen, Labels, Projekt und Priorität; ihre Daten und Erledigungen bleiben.",
-  "Changed past occurrences too": "Auch vergangene Termine geändert"
+  "Changed past occurrences too": "Auch vergangene Termine geändert",
+  "Column menu for {title}": "Spaltenmenü für {title}",
+  "Fold column": "Spalte einklappen",
+  "Fold or unfold the selected card’s column; on a folded column, unfold it": "Spalte der ausgewählten Karte ein- oder ausklappen; auf einer eingeklappten Spalte sie ausklappen",
+  "Fold panel": "Bereich einklappen",
+  "Moved to {name}": "Nach {name} verschoben",
+  "Notes on cards": "Notizen auf Karten",
+  "Notes:": "Notizen:",
+  "Show notes on cards": "Notizen auf Karten zeigen",
+  "{name}, {n, plural, one {# open task} other {# open tasks}}, folded": "{name}, {n, plural, one {# offene Aufgabe} other {# offene Aufgaben}}, eingeklappt",
+  "{name}, {n, plural, one {# task} other {# tasks}}, folded": "{name}, {n, plural, one {# Aufgabe} other {# Aufgaben}}, eingeklappt"
 }

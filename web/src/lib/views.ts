@@ -122,6 +122,8 @@ export interface DisplayOptions {
   showCompleted: boolean
   /** Row properties the view hides; names this build does not know are left out. */
   hidden: RowProperty[]
+  /** Cards show two lines of their notes (board-polish D4). */
+  cardNotes: boolean
 }
 
 function pick<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
@@ -143,11 +145,13 @@ export function viewOptions(v: Pick<View, 'kind' | 'group_by' | 'sort_by' | 'sor
 }
 
 /** The display options of a view; a row written before views-and-display (no fields) shows everything as before. */
-export function displayOptions(v: Partial<Pick<View, 'layout' | 'show_completed' | 'hidden_props'>>): DisplayOptions {
+export function displayOptions(v: Partial<Pick<View, 'layout' | 'show_completed' | 'hidden_props' | 'card_notes'>>): DisplayOptions {
   const hidden = Array.isArray(v.hidden_props) ? v.hidden_props : []
   return {
     layout: pick(v.layout, VIEW_LAYOUTS, 'list'),
     showCompleted: v.show_completed === true,
+    // The Board layout's notes preview (board-polish D4): only an exact true turns it on.
+    cardNotes: v.card_notes === true,
     hidden: ROW_PROPERTIES.filter((p) => hidden.includes(p)),
   }
 }
@@ -187,6 +191,8 @@ export interface NewView {
   hidden_props?: RowProperty[]
   /** One line or detailed rows (row-layouts); absent follows the account's choice. */
   row_layout?: RowLayout
+  /** The Board layout's notes preview (board-polish D4). */
+  card_notes?: boolean
 }
 
 /** Create a view, last in sidebar order. Pinned unless told otherwise (the Filter view's "Save view"). */
@@ -214,6 +220,7 @@ export async function createView(input: NewView): Promise<string> {
     ...(input.show_completed ? { show_completed: true } : {}),
     ...(input.hidden_props?.length ? { hidden_props: input.hidden_props } : {}),
     ...(input.row_layout ? { row_layout: input.row_layout } : {}),
+    ...(input.card_notes ? { card_notes: true } : {}),
     ...(await workspaceFields()),
     created_at: now,
     deleted_at: null,
@@ -221,7 +228,7 @@ export async function createView(input: NewView): Promise<string> {
   return id
 }
 
-export type ViewPatch = Partial<Pick<View, 'name' | 'query' | 'group_by' | 'sort_by' | 'sort_dir' | 'color' | 'position' | 'layout' | 'show_completed' | 'hidden_props' | 'row_layout' | 'icon'>>
+export type ViewPatch = Partial<Pick<View, 'name' | 'query' | 'group_by' | 'sort_by' | 'sort_dir' | 'color' | 'position' | 'layout' | 'show_completed' | 'hidden_props' | 'row_layout' | 'icon' | 'card_notes'>>
 
 /** Edit a view: one op per changed field. The kind is fixed at creation; panels go through setPanels. */
 export async function updateView(id: string, patch: ViewPatch): Promise<void> {

@@ -345,6 +345,12 @@ export interface ViewFields {
    * the account's choice (user_prefs.row_layout).
    */
   row_layout?: string
+  /**
+   * The Board layout's notes preview (OpenSpec change board-polish, design
+   * D4): each card shows two lines of its notes as plain text. A setting,
+   * not user text, so not content; missing reads as off.
+   */
+  card_notes?: boolean
   created_at?: number
   deleted_at?: number | null
   /** Workspace of the view, null for the default (OpenSpec change workspaces). */
@@ -572,6 +578,12 @@ export interface ProjectPrefsFields {
    * Personal like reviewed_at, also on a shared project; derives no activity.
    */
   review_every?: string
+  /**
+   * The project board's notes preview (OpenSpec change board-polish, design
+   * D4): "Show notes on cards" in the board's page menu. Personal like the
+   * row, also on a shared project (a viewer chooses too); missing reads as off.
+   */
+  card_notes?: boolean
 }
 
 /**
@@ -881,7 +893,7 @@ export const OP_DEFAULTS = {
     name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null, workspace_id: null, group_by: '', sort_by: '', sort_dir: '', row_layout: '', manual_order: [],
   } satisfies Omit<Label, 'id' | '_clock'>,
   view: {
-    name: '', query: '', kind: 'list', group_by: 'project', sort_by: 'due', sort_dir: 'asc', pinned: false, position: 0, color: '#64748b', panels: [], on_drop: null, layout: 'list', show_completed: false, hidden_props: [], row_layout: '', created_at: 0, deleted_at: null, workspace_id: null, icon: null, manual_order: [],
+    name: '', query: '', kind: 'list', group_by: 'project', sort_by: 'due', sort_dir: 'asc', pinned: false, position: 0, color: '#64748b', panels: [], on_drop: null, layout: 'list', show_completed: false, hidden_props: [], row_layout: '', card_notes: false, created_at: 0, deleted_at: null, workspace_id: null, icon: null, manual_order: [],
   } satisfies Omit<View, 'id' | '_clock'>,
   reminder: {
     task_id: '', kind: 'relative', offset_minutes: null, fire_at: null, delivered_at: null, dismissed_at: null, created_at: 0, deleted_at: null,
@@ -908,7 +920,7 @@ export const OP_DEFAULTS = {
     name: '', address: '', geo: null, position: 0, created_at: 0, deleted_at: null,
   } satisfies Omit<Place, 'id' | '_clock'>,
   project_prefs: {
-    feed_seen_at: 0, reviewed_at: 0, group_by: '', sort_by: '', sort_dir: '', row_layout: '', review_every: '',
+    feed_seen_at: 0, reviewed_at: 0, group_by: '', sort_by: '', sort_dir: '', row_layout: '', review_every: '', card_notes: false,
   } satisfies Omit<ProjectPrefs, 'id' | '_clock'>,
   user_prefs: {
     date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '', today_events: '', add_position: '', reminder_default_timed: '', reminder_default_dated: '', sidebar_counts: '', sidebar_order: '', focus_presets: '', focus_noise: '', day_parts: '', today_limit: 0, today_done: '', focus_style: '', energy: '', bento_order: '', formatting_toggle: '',

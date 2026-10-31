@@ -289,12 +289,12 @@ describe('runView', () => {
 
 describe('display options (views-and-display)', () => {
   it('a view without the fields reads as a list of open matches showing every property', () => {
-    expect(displayOptions(view({ id: 'v', query: '@work' }))).toEqual({ layout: 'list', showCompleted: false, hidden: [] })
+    expect(displayOptions(view({ id: 'v', query: '@work' }))).toEqual({ layout: 'list', showCompleted: false, hidden: [], cardNotes: false })
   })
 
   it('unknown values from a newer client fall back without being rewritten', () => {
     const v = view({ id: 'v', query: '@work', layout: 'gallery', hidden_props: ['mood', 'estimate', 'date'], show_completed: 'yes' as never })
-    expect(displayOptions(v)).toEqual({ layout: 'list', showCompleted: false, hidden: ['date', 'estimate'] })
+    expect(displayOptions(v)).toEqual({ layout: 'list', showCompleted: false, hidden: ['date', 'estimate'], cardNotes: false })
     expect(v.layout).toBe('gallery')
   })
 

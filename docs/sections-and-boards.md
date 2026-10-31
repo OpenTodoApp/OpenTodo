@@ -53,7 +53,7 @@ The choice is remembered per project on each device. On a phone the board shows 
 
 Moving with the keyboard or the panel puts the card at the bottom of the new column.
 
-Cards show up to three [custom field](custom-fields.md) values as badges, such as **Cost 1,200**, and **+2** for the rest.
+Cards show up to three [custom field](custom-fields.md) values as badges, such as **Cost 1,200**, and **+2** for the rest. To fold a column or show notes on cards, see [Fold columns](fold-columns.md).
 
 ## See a project on a timeline
 
@@ -78,5 +78,4 @@ Choose **Timeline** at the top of the project (or press <kbd>v</kbd> until it sh
 ## Ideas for sections
 
 - A simple flow: **To do**, **Doing**, **Done**.
-- By place: **Kitchen**, **Bathroom**, **Garden** for a renovation.
 - By week: **This week**, **Next week**, **Later** for a launch plan.

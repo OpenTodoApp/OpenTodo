@@ -505,6 +505,10 @@ var Schema = map[string]map[string]Field{
 		// The view's row layout (row-layouts D1): "line" or "detailed"; "" follows
 		// the account's choice (user_prefs.row_layout).
 		"row_layout": {Kind: kString, Default: `""`},
+		// The Board layout's notes preview (OpenSpec change board-polish, design
+		// D4): each card shows two lines of its notes as plain text. A setting,
+		// not user text, so not content; missing reads as off.
+		"card_notes": {Kind: kBool, Default: `false`},
 		"created_at": {Kind: kNumber, Default: `0`},
 		"deleted_at": {Kind: kNullableNumber, Default: `null`},
 		// Workspace of the view, null for the default (OpenSpec change workspaces).
@@ -683,6 +687,10 @@ var Schema = map[string]map[string]Field{
 		// "month", "quarter" or "paused"; empty, missing or unknown reads as week.
 		// Personal like reviewed_at, also on a shared project; derives no activity.
 		"review_every": {Kind: kString, Default: `""`},
+		// The project board's notes preview (OpenSpec change board-polish, design
+		// D4): "Show notes on cards" in the board's page menu. Personal like the
+		// row, also on a shared project (a viewer chooses too); missing reads as off.
+		"card_notes": {Kind: kBool, Default: `false`},
 	},
 	// user_prefs: one user's date and time preferences (OpenSpec change
 	// `date-time-preferences`, design D1). Clients write a single row with the

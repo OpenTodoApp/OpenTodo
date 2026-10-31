@@ -15,6 +15,8 @@ export interface FilterDraft {
   hidden_props: string[]
   /** The row layout chosen on the page; absent follows the account's. */
   row_layout?: string
+  /** Notes on cards in the Board layout (board-polish D4); absent is off. */
+  card_notes?: boolean
 }
 
 /** The draft's meta key for a workspace ('' before the first sync with a server that knows workspaces). */
