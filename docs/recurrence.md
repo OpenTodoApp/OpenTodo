@@ -281,7 +281,8 @@ occurrences to combine them.
   before the date and the new ones after it.
 - **In the panel**: the new series reads "Continues Study from Oct 14" with a link to
   the series it continues, and that series reads "Continues as Study from Oct 14".
-- All occurrences on a piece edits that piece only; earlier pieces are mostly past.
+- All occurrences on a piece edits that piece from its current occurrence on; choose
+  **Also past ones** to change the earlier pieces too ([below](#all-occurrences-only-future-ones-or-also-past-ones)).
 - A lineage is followed for at most 50 pieces; older ones end at their own `until`.
 
 Scripts split a series with `POST /api/v1/tasks/{id}/split`
@@ -291,6 +292,41 @@ naming each date's series. CalDAV serves each piece as its own repeating task
 ([CalDAV](caldav.md#this-and-following)), and the [vault](vault.md) writes each as its
 own line. A calendar app's own "this and future" edit arrives as a rule change on the
 old task and a new task, which are not linked as one lineage.
+
+## All occurrences: only future ones or also past ones
+
+All occurrences edits the series from its current occurrence on: done and skipped
+occurrences keep their values, and so do the earlier pieces of a series changed from
+a date on. That is right for a new time, not for a typo. So when the panel shows a
+series on All occurrences and it has a past (a done or skipped occurrence, or an
+earlier piece), a second choice appears under the scope control: **Only future ones**
+(selected each time the panel opens the series) · **Also past ones**. A series with
+no past shows no second choice, and a viewer of a shared project never sees it.
+
+With **Also past ones** chosen, a change also reaches the past, in the same batch
+with one **Undo** (the toast reads "Changed past occurrences too"):
+
+- **Done and skipped occurrences** of the series and every occurrence of its earlier
+  pieces take the new title, notes, labels, project and priority, where they still
+  hold their series' value: an occurrence renamed on its own ("Study: mock exam")
+  keeps its name. Their completion, their skip and their date never change, and a
+  new time or rule never reaches them.
+- **Earlier pieces** take the same fields, a new time on their own dates, and a new
+  rule that keeps each piece's end (`until`), so no past date is rewritten.
+  Completion-relative rules, a cleared rule and a cleared date are not carried.
+- **Later pieces** (on an earlier piece) are never changed: they start where someone
+  changed the series on purpose.
+
+Renaming "Spansh class" to "Spanish class" with Also past ones fixes every completed
+session too. A note saved under Also past ones reaches the past occurrences that
+held the series' previous note. The choice goes back to Only future ones when the
+panel leaves the series. Everything is planned from the device's own rows, so it
+works offline; the writes are ordinary field edits and converge like any other. On
+an encrypted account the device encrypts each occurrence's title and notes itself.
+
+`PATCH /api/v1/tasks/{id}` on a series changes that task only, as before: it never
+changed occurrences, so it has no scope to choose. A script changes a past
+occurrence through its own id (`PATCH /api/v1/tasks/{record id}`).
 
 ## Sync and convergence
 
