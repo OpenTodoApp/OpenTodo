@@ -1,0 +1,16 @@
+{
+  "name": "opentodo-obsidian",
+  "private": true,
+  "description": "The OpenTodo plugin for Obsidian (OpenSpec change obsidian-plugin). Build-time only: the plugin has no runtime dependency. Type-checking and tests use web/'s TypeScript, vitest and happy-dom, so run npm ci in web/ first (make obsidian does).",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "scripts": {
+    "build": "node esbuild.config.mjs",
+    "check": "../web/node_modules/.bin/tsc -p tsconfig.json --noEmit",
+    "test": "../web/node_modules/.bin/vitest run --config vitest.config.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "obsidian": "1.14.4"
+  }
+}

@@ -74,12 +74,17 @@ const tiers = [
   [['scripts/ui-check/a11y.mjs'], { ui: 'true', layout: 'false' }],
   [['scripts/e2e-smoke.mjs'], { ui: 'false', layout: 'true' }],
   [['deploy/coolify/opentodo.yaml'], { ui: 'false', layout: 'false', extension: 'false', skill: 'false' }],
-  [['extension/popup.js'], { ui: 'false', layout: 'false', extension: 'true', skill: 'false' }],
+  [['extension/popup.js'], { ui: 'false', layout: 'false', extension: 'true', skill: 'false', obsidian: 'false' }],
+  [['obsidian/src/main.ts'], { code: 'false', ui: 'false', layout: 'false', extension: 'false', obsidian: 'true' }],
+  [['web/src/lib/nlp/parse.ts'], { obsidian: 'true' }],
+  [['web/src/lib/e2eeEnvelope.ts'], { obsidian: 'true' }],
+  [['internal/vault/testdata/lines.vectors.json'], { obsidian: 'true' }],
+  [['web/src/app/App.tsx'], { obsidian: 'false' }],
   [['skills/opentodo-cli/SKILL.md'], { ui: 'false', layout: 'false', extension: 'false', skill: 'true' }],
   [['docs/api.md'], { code: 'false', docs: 'true', ui: 'false', layout: 'false', extension: 'false', skill: 'false' }],
   [['openspec/changes/x/proposal.md'], { code: 'false', docs: 'true', ui: 'false', layout: 'false' }],
   [['web/src/generated/help.json'], { code: 'false', ui: 'false', layout: 'false' }],
-  [['.github/workflows/ci.yml'], { ui: 'true', layout: 'true', extension: 'true', skill: 'true', mobile: 'true', ios: 'true' }],
+  [['.github/workflows/ci.yml'], { ui: 'true', layout: 'true', extension: 'true', obsidian: 'true', skill: 'true', mobile: 'true', ios: 'true' }],
 ]
 
 const pick = (o, keys) => Object.fromEntries(keys.map((k) => [k, o[k]]))
@@ -276,10 +281,12 @@ test('the image, stable tag and release are published only after every gate', ()
   const jobs = jobsOf(read('.github/workflows/ci.yml'))
   // claude-plugin publishes the Claude Code marketplace after the release (claude-plugin D5).
   // play uploads the Android bundle to Google Play's internal track after the release (play-production D2).
-  const publishing = ['docker', 'release', 'claude-plugin', 'play']
+  // obsidian-plugin publishes the Obsidian plugin's release repository after the release (obsidian-plugin D1).
+  const publishing = ['docker', 'release', 'claude-plugin', 'play', 'obsidian-plugin']
   for (const p of publishing) assert.ok(jobs[p], `ci.yml has a ${p} job`)
   assert.deepEqual(needsOf(jobs['claude-plugin']), ['release'], 'the plugin is published only after the release')
   assert.deepEqual(needsOf(jobs.play), ['release'], 'the Play upload runs only after the release')
+  assert.deepEqual(needsOf(jobs['obsidian-plugin']), ['release'], 'the Obsidian plugin is published only after the release')
   const gates = Object.keys(jobs).filter((j) => !publishing.includes(j))
   for (const g of gates) {
     assert.ok(needsOf(jobs.docker).includes(g), `the docker (publish) job must need ${g}`)
@@ -332,7 +339,7 @@ test('published artefacts are signed and attested, with OIDC only where needed',
 // What `make check` runs outside `make ci-checks`, and the CI step that runs it instead.
 const checkElsewhere = {
   lint: ['go vet ./...', 'npm run typecheck'],
-  test: ['go test ./...', 'npm test', 'make extension'],
+  test: ['go test ./...', 'npm test', 'make extension', 'make obsidian'],
   'docs-check': ['npm run docs:check'],
   staticcheck: ['make staticcheck'],
   'web-lint': ['npm run lint'],

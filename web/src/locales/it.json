@@ -5936,5 +5936,6 @@
   "Turned away from the colour for errors": "Allontanato dal colore degli errori",
   "deep {colour}": "{colour} scuro",
   "From Obsidian": "Da Obsidian",
-  "Open in Obsidian: {vault} › {path}": "Apri in Obsidian: {vault} › {path}"
+  "Open in Obsidian: {vault} › {path}": "Apri in Obsidian: {vault} › {path}",
+  "For the Obsidian plugin, create a full token named after the device.": "Per il plugin di Obsidian, crea un token con accesso completo e dagli il nome del dispositivo."
 }
