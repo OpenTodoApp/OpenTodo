@@ -110,7 +110,11 @@ await pageA.waitForFunction(() => {
 })
 assert(await displayPanel.locator(`option[value="${effortSort}"]`).textContent() === 'Effort', 'the UI resolves the local custom-field name')
 assert(await displayPanel.getByLabel('Order by').inputValue() === effortSort, 'the selector keeps the definition ID')
-const fieldSortedView = (await get('views')).views.find((view) => view.name === 'Work tomorrow')
+let fieldSortedViews = (await get('views')).views
+for (let i = 0; i < 20 && fieldSortedViews.find((view) => view.name === 'Work tomorrow')?.sort_by !== effortSort; i++) {
+  await pageA.waitForTimeout(250); fieldSortedViews = (await get('views')).views
+}
+const fieldSortedView = fieldSortedViews.find((view) => view.name === 'Work tomorrow')
 assert(fieldSortedView?.sort_by === effortSort, 'the REST view stores field:<definition-id>')
 const fieldSortSync = await post('sync', { device: 'browser-privacy-check', cursor: 0 })
 const fieldSortOps = fieldSortSync.ops.filter((op) => op.entity === 'view' && op.field === 'sort_by' && op.value === effortSort)
