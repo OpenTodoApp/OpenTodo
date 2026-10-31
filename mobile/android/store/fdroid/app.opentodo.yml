@@ -1,12 +1,17 @@
 # F-Droid build metadata (fdroiddata `metadata/app.opentodo.yml` format), submitted by the owner.
+# This copy is the source of truth (OpenSpec change play-production D3). F-Droid builds each
+# tag from source and publishes the project-signed APK from the GitHub release only when its
+# own build matches it apart from the signature (reproducible builds), so the app from
+# F-Droid, Google Play and GitHub carries one certificate. `fdroid lint` passes; drop these
+# comment lines when copying it to fdroiddata (`fdroid rewritemeta` removes them anyway).
 Categories:
-  - Time
+  - Task
 License: AGPL-3.0-only
 AuthorName: OpenTodo contributors
 WebSite: https://github.com/OpenTodoApp/OpenTodo
 SourceCode: https://github.com/OpenTodoApp/OpenTodo
 IssueTracker: https://github.com/OpenTodoApp/OpenTodo/issues
-Changelog: https://github.com/OpenTodoApp/OpenTodo/blob/main/CHANGELOG.md
+Changelog: https://github.com/OpenTodoApp/OpenTodo/blob/HEAD/CHANGELOG.md
 
 AutoName: OpenTodo
 Summary: The app for your own OpenTodo server
@@ -18,21 +23,25 @@ Description: |-
 
 RepoType: git
 Repo: https://github.com/OpenTodoApp/OpenTodo.git
+Binaries: https://github.com/OpenTodoApp/OpenTodo/releases/download/v%v/opentodo-android-%v.apk
 
 Builds:
-  - versionName: 0.10.0
-    versionCode: 1000
-    commit: v0.10.0
+  - versionName: 0.20.0
+    versionCode: 2000
+    commit: v0.20.0
     subdir: mobile/android/app
     sudo:
+      - echo 'deb https://deb.debian.org/debian bookworm main' > /etc/apt/sources.list.d/bookworm.list
       - apt-get update
-      - apt-get install -y openjdk-17-jdk-headless
+      - apt-get install -y -t bookworm openjdk-17-jdk-headless
       - update-alternatives --auto java
     gradle:
       - yes
-    prebuild: export OPENTODO_VERSION=$$VERSION$$
+    prebuild: sed -i -e 's/System.getenv("OPENTODO_VERSION")/"$$VERSION$$"/' build.gradle.kts
+
+AllowedAPKSigningKeys: ff2eacdf7e79712e44fdd9d2e3110891e712c170ea516bd3fbbecc291072befa
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9.]+$
-CurrentVersion: 0.10.0
-CurrentVersionCode: 1000
+CurrentVersion: 0.20.0
+CurrentVersionCode: 2000

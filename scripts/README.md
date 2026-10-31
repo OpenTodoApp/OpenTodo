@@ -150,6 +150,20 @@ Prints the `CHANGELOG.md` section for a version, plus install pointers; the rele
 ./scripts/release-notes.sh 0.2.0
 ```
 
+## `android-repro.sh`
+
+Checks that the Android release build is reproducible (OpenSpec change `play-production`): builds a tag or commit in a temporary clone and compares it either with a signed release APK (`apksigcopier compare`, F-Droid's check) or with a second build in another path, with another `SOURCE_DATE_EPOCH` and an empty Gradle cache. A mismatch names the files that differ. CI runs it on every release tag and in **Actions → Android reproducible build**; the toolchain it needs is in [`mobile/README.md`](../mobile/README.md#building-the-android-app).
+
+```bash
+python3 -m pip install --require-hashes -r scripts/release/requirements-repro.txt   # only for the APK form
+scripts/android-repro.sh v0.20.0 opentodo-android-0.20.0.apk
+scripts/android-repro.sh HEAD                                                     # two builds of a commit
+```
+
+## `release/play-upload.mjs`
+
+Puts the AAB of a final release on Google Play's internal testing track with the version's CHANGELOG notes (cut to 500 characters), through the Play Developer API with the service account in `PLAY_SERVICE_ACCOUNT_JSON`. The CI job `play` runs it after the release; release candidates upload nothing and missing secrets give a warning. Tests against a fake Play API: `node --test scripts/release/play-upload.test.mjs` (in `make repo-check`).
+
 ## `demo-gif.mjs`
 
 Records the demo GIF at the top of `README.md` (`docs/screenshots/demo.gif`): natural-language quick add with its chips, a card moved across a project board, and a task added offline that syncs on reconnect. Needs `ffmpeg` and a **fresh** data directory:
