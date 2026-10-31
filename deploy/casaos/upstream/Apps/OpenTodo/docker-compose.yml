@@ -95,7 +95,7 @@ x-casaos:
     - amd64
     - arm64
   version: "0.19.0"
-  update_at: "2026-10-18"
+  update_at: "2026-10-31"
   release_notes:
     en_US: "OpenTodo 0.19.0, the first version in this app store. Changes: https://github.com/OpenTodoApp/OpenTodo/blob/main/CHANGELOG.md"
   website: https://open-todo.app

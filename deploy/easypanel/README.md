@@ -49,4 +49,4 @@ Needs a GitHub account and Node.js.
 
 ## After a release
 
-The template names one version, so it needs a change after each release: set `appServiceImage`'s default in `meta.yaml` to the new version, add a `changeLog` entry, copy both to `upstream/` (`make check` fails until the image follows `CHANGELOG.md`), and open a pull request to `easypanel-io/templates` with that change. Existing Easypanel services keep their image until the user changes the image in the service's source settings and redeploys.
+The template names one version, so it needs a change after each release: `make release-prepare` sets `appServiceImage`'s default in `meta.yaml` to the new version, adds a `changeLog` entry (`Update to <version>`, the release date) and updates `upstream/` (`make check` fails until the image follows `CHANGELOG.md`); then open a pull request to `easypanel-io/templates` with that change. Existing Easypanel services keep their image until the user changes the image in the service's source settings and redeploys.
