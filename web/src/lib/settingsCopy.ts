@@ -460,6 +460,7 @@ export const SETTINGS_COPY = {
       website: { label: msg('Website'), description: msg('News, guides, comparisons and what is new in each release.') },
       feedback: { label: msg('Feedback and problems'), description: msg('Open an issue on GitHub. Every report is read.') },
       community: { label: msg('Community'), description: msg('Questions, ideas and other people who use OpenTodo, on Discord.') },
+      news: { label: msg('News and updates'), description: msg('Releases and what is being built, on X.') },
       source: { label: msg('Source code'), description: msg('A star on GitHub helps other people find it.') },
       welcome: { label: msg('Welcome note'), description: msg('The thank-you shown the first time you opened this server.') },
     },

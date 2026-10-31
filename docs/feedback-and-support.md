@@ -21,6 +21,10 @@ If you found a security problem, do not open a public issue: follow `SECURITY.md
 
 [Join the OpenTodo server on Discord](https://discord.gg/Jmj7WuRQ) to ask a question, show how you use the app or see what other people build. It is the place for conversation; a bug report is still best as an issue, so it is not lost in the chat. Nothing in the app talks to Discord: the link opens it in a new tab only when you choose to.
 
+## Follow the news
+
+[OpenTodo on X](https://x.com/opentodoapp) posts each release and the work in progress in a few lines. Follow it if you want to know what changed without reading the changelog; the longer version is always on the [blog](https://open-todo.app/blog/). As with Discord, nothing in the app talks to X: the link opens it in a new tab only when you choose to.
+
 ## Help other people find it
 
 [Star OpenTodo on GitHub](https://github.com/OpenTodoApp/OpenTodo). Stars are how many people discover open-source projects, so a star is a real help. Telling a friend who pays for a task app works too.
@@ -31,7 +35,7 @@ If OpenTodo saves you a subscription, [a coffee](https://buymeacoffee.com/pixari
 
 ## Settings → About
 
-**Settings → About** has all of these in one place: the version your server runs, Help, the documentation and the website, the issue tracker, the Discord server, the source code and the coffee button.
+**Settings → About** has all of these in one place: the version your server runs, Help, the documentation and the website, the issue tracker, the Discord server, the X account under News and updates, the source code and the coffee button.
 
 ## The welcome note
 

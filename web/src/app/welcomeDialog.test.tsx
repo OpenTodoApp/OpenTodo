@@ -19,7 +19,7 @@ import { setWelcomeSeen, USER_PREFS_ID } from '../lib/userPrefs'
 import type { User } from '../lib/types'
 import { click, flush, mockFetch, render, waitFor } from '../ui/test-utils'
 import { AboutSection, DOCS_URL, WEBSITE_URL } from './AboutSection'
-import { COFFEE_URL, DISCORD_URL, ISSUES_URL, REPO_URL, WelcomeDialog } from './WelcomeDialog'
+import { COFFEE_URL, DISCORD_URL, ISSUES_URL, REPO_URL, WelcomeDialog, X_URL } from './WelcomeDialog'
 
 const owner: User = { id: 'u1', email: 'ada@example.com', name: 'Ada', role: 'owner', createdAt: Date.now() - 60_000 }
 const member: User = { ...owner, id: 'u2', role: 'member' }
@@ -123,10 +123,10 @@ describe('Settings → About', () => {
   afterEach(() => vi.unstubAllGlobals())
   const links = () => Object.fromEntries([...document.querySelectorAll<HTMLAnchorElement>('[data-about-link]')].map((a) => [a.dataset.aboutLink, a.getAttribute('href')]))
 
-  it('lists Help, the docs, the website, issues, Discord, the source and the coffee button for everyone; no welcome row for a member', async () => {
+  it('lists Help, the docs, the website, issues, Discord, X, the source and the coffee button for everyone; no welcome row for a member', async () => {
     const r = await render(<AboutSection user={member} />)
     await waitFor(() => document.querySelectorAll('[data-about-link]').length > 0, 'the links')
-    expect(links()).toEqual({ docs: DOCS_URL, website: WEBSITE_URL, issues: ISSUES_URL, discord: DISCORD_URL, source: REPO_URL })
+    expect(links()).toEqual({ docs: DOCS_URL, website: WEBSITE_URL, issues: ISSUES_URL, discord: DISCORD_URL, x: X_URL, source: REPO_URL })
     for (const a of document.querySelectorAll('[data-about-link]')) expect(a.getAttribute('target')).toBe('_blank')
     expect(document.querySelector('[data-welcome-coffee]')!.getAttribute('href')).toBe(COFFEE_URL)
     expect(document.querySelector('[data-about-help]')).not.toBeNull()

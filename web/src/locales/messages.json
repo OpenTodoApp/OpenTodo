@@ -5286,6 +5286,9 @@
   "Follow browser languages ({join})": [
     "web/src/app/QuickAddSettings.tsx"
   ],
+  "Follow on X": [
+    "web/src/app/AboutSection.tsx"
+  ],
   "Follow project ({flow})": [
     "web/src/app/menus/flowMenu.ts"
   ],
@@ -5475,7 +5478,7 @@
     "web/src/app/review/StatsView.tsx"
   ],
   "Future dates of repeating tasks, read-only": [
-    "web/src/app/calendar/projections.tsx"
+    "web/src/app/calendar/projectionSwitches.tsx"
   ],
   "General": [
     "web/src/app/WorkspacesSettings.tsx",
@@ -8085,6 +8088,10 @@
     "web/src/app/WorkspaceControl.tsx",
     "web/src/app/WorkspacesSettings.tsx",
     "web/src/app/palette/registry.ts"
+  ],
+  "News and updates": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "News, guides, comparisons and what is new in each release.": [
     "web/src/lib/settingsCopy.ts"
@@ -10841,6 +10848,10 @@
   "Relative reminders fire once the task has a due date.": [
     "web/src/app/RemindersField.tsx"
   ],
+  "Releases and what is being built, on X.": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Reload": [
     "web/src/app/ErrorBoundary.tsx",
     "web/src/app/NotificationsSettings.tsx",
@@ -11111,10 +11122,10 @@
     "web/src/app/RecurrenceField.tsx"
   ],
   "Repeating occurrences": [
-    "web/src/app/task-list/ListGroups.tsx"
+    "web/src/app/task-list/ProjectedGroupRows.tsx"
   ],
   "Repeating tasks shown up to {date}": [
-    "web/src/lib/listGroups.ts"
+    "web/src/app/task-list/upcomingCompute.ts"
   ],
   "Repeats": [
     "web/src/app/ParseChips.tsx",
@@ -12331,7 +12342,7 @@
     "web/src/app/PlanView.tsx"
   ],
   "Show repeating occurrences": [
-    "web/src/app/calendar/projections.tsx"
+    "web/src/app/calendar/projectionSwitches.tsx"
   ],
   "Show shortcut hints": [
     "web/src/app/settingsIndex.ts",
