@@ -764,6 +764,22 @@ export const SETTINGS_COPY = {
     },
     notices: { offline: msg('Offline: backups run on the server; the status below is the last one fetched.') },
   },
+  // Database storage (op-log-compaction D7): the database file and the notes compaction job.
+  'database-storage': {
+    title: msg('Database storage'),
+    icon: 'layers',
+    description: msg('Old note versions go after 30 days, and the space they took returns to the disk.'),
+    learnMore: 'settings/backups',
+    rows: {
+      size: { label: msg('Database') },
+      compaction: { label: msg('Last compacted') },
+    },
+    notices: {
+      offline: msg('Database storage needs a connection to the server.'),
+      noSpace: msg('Shrinking the file once needs {bytes} of free disk space; old versions still go.'),
+      waiting: msg('The file is shrunk once, at a quiet moment; old versions already go.'),
+    },
+  },
   'attachments-settings': {
     title: msg('Attachments'),
     icon: 'paperclip',

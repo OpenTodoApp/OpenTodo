@@ -21,6 +21,7 @@ const (
 	Webhooks     = "webhooks"     // queued webhook deliveries and notification channel messages
 	Calendars    = "calendars"    // calendar subscriptions to fetch and calendar sync cycles
 	Housekeeping = "housekeeping" // retention, pruning and upkeep
+	Compaction   = "compaction"   // superseded note history and freed pages (op-log-compaction)
 	Digest       = "digest"       // weekly digest emails
 	Issues       = "issues"       // issue connections to poll
 	Rules        = "rules"        // automation rules: queued events and time triggers

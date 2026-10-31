@@ -38,6 +38,8 @@ type Service struct {
 	blobs BlobStore
 	// pullBudget overrides MaxPullBytes in tests; 0 means MaxPullBytes.
 	pullBudget int
+	// compactChunk overrides compaction's chunk size in tests; 0 means 1,000.
+	compactChunk int
 	// guard bounds writes on a demo instance (demo-sandboxes D3); nil elsewhere.
 	guard WriteGuard
 	// quota refuses single ops once a hosted tenant reached a limit

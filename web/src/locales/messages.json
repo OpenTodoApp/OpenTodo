@@ -3424,8 +3424,21 @@
   "Data exported": [
     "web/src/app/auditFormat.ts"
   ],
+  "Database": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Database from": [
     "web/src/app/RestoreSection.tsx"
+  ],
+  "Database size, free space inside it and the last notes compaction": [
+    "web/src/app/settingsIndex.ts"
+  ],
+  "Database storage": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Database storage needs a connection to the server.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Date": [
     "web/src/app/RuleEditor.tsx",
@@ -6809,6 +6822,9 @@
   "Last action": [
     "web/src/app/bulk/UndoToast.tsx"
   ],
+  "Last compacted": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Last delivered {ago}": [
     "web/src/app/NotificationChannels.tsx",
     "web/src/app/NotificationsSettings.tsx"
@@ -8697,6 +8713,9 @@
   "Not waiting on another task": [
     "web/src/app/filter/conditionText.ts"
   ],
+  "Not yet": [
+    "web/src/app/DatabaseStoragePanel.tsx"
+  ],
   "Not yet synced": [
     "web/src/app/FeedView.tsx",
     "web/src/app/ProjectActivity.tsx",
@@ -9054,6 +9073,9 @@
   "Often your full email address. Leave empty for a relay without sign-in.": [
     "web/src/app/OutgoingEmailPanel.tsx"
   ],
+  "Old note versions go after 30 days, and the space they took returns to the disk.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Old someday": [
     "web/src/app/review/MonthlyLook.tsx"
   ],
@@ -9062,6 +9084,10 @@
     "web/src/app/task-detail/ActivityTab.tsx"
   ],
   "Older changes": [
+    "web/src/app/HistoryPanel.tsx",
+    "web/src/app/task-detail/HistoryTab.tsx"
+  ],
+  "Older note versions are kept one per day (UTC).": [
     "web/src/app/HistoryPanel.tsx",
     "web/src/app/task-detail/HistoryTab.tsx"
   ],
@@ -12252,6 +12278,9 @@
   "Shown with your replies, followed by “(guest)”.": [
     "web/src/page/TaskPageScreen.tsx"
   ],
+  "Shrinking the file once needs {bytes} of free disk space; old versions still go.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Sidebar": [
     "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
@@ -13502,6 +13531,9 @@
   ],
   "The file is not encrypted: anyone who has it can read your task titles and notes.": [
     "web/src/app/TemplateDialogs.tsx"
+  ],
+  "The file is shrunk once, at a quiet moment; old versions already go.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "The file matches no supported format.": [
     "web/src/lib/i18n/errors.ts"
@@ -18112,6 +18144,9 @@
   "{date} – {date2}. Computed on this device from your tasks; nothing is sent anywhere.": [
     "web/src/app/review/StatsView.tsx"
   ],
+  "{date}, {n, plural, one {# old note version} other {# old note versions}} removed, {bytes} reclaimed": [
+    "web/src/app/DatabaseStoragePanel.tsx"
+  ],
   "{date}: {n, plural, one {# task} other {# tasks}}": [
     "web/src/app/method/LoopHome.tsx"
   ],
@@ -19063,6 +19098,9 @@
   ],
   "{size} labels share a name. Merge “{name}” into “{name2}”?": [
     "web/src/app/LabelsView.tsx"
+  ],
+  "{size}, {free} free inside the file": [
+    "web/src/app/DatabaseStoragePanel.tsx"
   ],
   "{slot} holds {title}.": [
     "web/src/lib/bentoSlots.ts"

@@ -18,6 +18,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/calfeed"
 	"github.com/OpenTodoApp/opentodo/internal/calsync"
 	"github.com/OpenTodoApp/opentodo/internal/channels"
+	"github.com/OpenTodoApp/opentodo/internal/compaction"
 	"github.com/OpenTodoApp/opentodo/internal/config"
 	"github.com/OpenTodoApp/opentodo/internal/demo"
 	"github.com/OpenTodoApp/opentodo/internal/digest"
@@ -115,6 +116,8 @@ type Set struct {
 	Blobs    *blobs.Store // attachment bytes; nil without a data directory or when unavailable
 	Maps     *maps.Service
 	STT      *stt.Service
+	// Compaction removes superseded note history (op-log-compaction).
+	Compaction *compaction.Service
 
 	// The owner switches (settings.Switch).
 	RuleSwitch    *settings.Switch
@@ -197,5 +200,7 @@ func Build(ctx context.Context, cfg config.Config, db, reader *sql.DB, o Options
 	s.openAttachments(ctx)
 	s.openMaps()
 	s.STT = stt.New(s.Settings, cfg.DataDir, cfg.STT, s.Hooks.AllowPrivate)
+	s.Compaction = compaction.New(compaction.Options{DB: db, Sync: s.Sync, Settings: s.Settings, DataDir: cfg.DataDir,
+		Signal: s.Signal, Now: o.Now, Log: log})
 	return s, nil
 }
