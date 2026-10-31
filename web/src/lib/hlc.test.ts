@@ -92,6 +92,18 @@ describe('server time', () => {
     expect(hlcLast()).toBe(T)
     expect(hlcNow()).toBe(T + 1)
   })
+
+  it('keeps the stamps of an earlier refusal in order when a later batch is refused too (#651)', () => {
+    vi.setSystemTime(T + 2 * 3_600_000) // two hours fast
+    hlcNow() // an edit, refused in the first request
+    hlcNow() // a later edit, refused in the second
+    hlcClockRefused(T)
+    const first = hlcNow()
+    hlcClockRefused(T)
+    const second = hlcNow()
+    expect(first).toBeLessThanOrEqual(T + MAX_FUTURE_SKEW_MS)
+    expect(second).toBeGreaterThan(first)
+  })
 })
 
 describe('wins', () => {

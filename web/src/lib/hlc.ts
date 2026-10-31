@@ -11,6 +11,8 @@ let offset = 0
 export const MAX_FUTURE_SKEW_MS = 5 * 60 * 1000
 /** Skews up to this size are left alone, so network latency causes no jitter. */
 const SKEW_TOLERANCE_MS = 2000
+/** How far ahead of the server a refused clock may stay without restarting (hlcClockRefused). */
+const RESTART_AFTER_REFUSAL_MS = MAX_FUTURE_SKEW_MS / 2
 /**
  * The meta row holding the offset to server time, so the service worker
  * (public/push-sw.js), which writes ops from notification actions, stamps them
@@ -59,12 +61,16 @@ export function hlcObserveServerTime(serverTime: number | undefined): void {
 
 /**
  * Called when the server refused ops as stamped too far ahead (reason
- * `clock_skew`, sync-convergence): the clock follows the server and restarts
- * from its time, so the ops stamped again next are accepted.
+ * `clock_skew`, sync-convergence): the clock follows the server and, when it is
+ * more than half the accepted window ahead, restarts from the server's time, so
+ * the ops stamped again next are accepted. A clock closer than that keeps
+ * going: it holds the stamps an earlier refusal of the same exchange just
+ * handed out, and going back below them would stamp a later edit before an
+ * earlier one (issue #651).
  */
 export function hlcClockRefused(serverTime: number): void {
   hlcObserveServerTime(serverTime)
-  if (Number.isFinite(serverTime) && last > serverTime) last = serverTime
+  if (Number.isFinite(serverTime) && last > serverTime + RESTART_AFTER_REFUSAL_MS) last = serverTime
 }
 
 export function hlcLast(): number {
