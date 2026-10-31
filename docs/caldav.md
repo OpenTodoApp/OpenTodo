@@ -120,6 +120,10 @@ The exceptions of a repeating task ([one occurrence alone](recurrence.md#one-occ
 
 Overrides are never stored: the next fetch serves the series with the `EXDATE` and the occurrence as its own object, so a client may show both for a moment until it refetches.
 
+### This and following
+
+A repeating task changed from one date on ([This and following](recurrence.md#this-and-following)) is served as two repeating VTODOs: the task with the `UNTIL` of the day before that date (`RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;UNTIL=20261013`), and the task that continues it as its own object, with its own UID, its rule as `RRULE`, its current occurrence as `DTSTART` and `DUE`, and `RELATED-TO;RELTYPE=SIBLING` naming the task it continues. Each one ends the day before the next one starts, even before an app has written that `UNTIL` into its rule. A calendar app's own "this and future" edit (it ends the series with an `UNTIL` and creates a new object for the following dates) is read as what it is: the task's rule gains that `until`, and the new object becomes a new repeating task, not linked to the first one.
+
 An `RRULE` the grammar cannot express (hourly rules, `BYHOUR`, several ordinals…) is kept in `ical_extra`: the calendar app keeps repeating the task, OpenTodo shows it as a plain task.
 
 ### Alarms and reminders

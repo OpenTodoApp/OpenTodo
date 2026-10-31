@@ -23,12 +23,25 @@ func (v *davView) seriesRows(id string) []opsync.Entity {
 	if v.bySeries == nil {
 		v.bySeries = map[string][]opsync.Entity{}
 		for _, t := range v.tasks {
+			if _, ok := opsync.DecodeSplitFrom(t["split_from"]); ok {
+				v.hasSplit = true
+			}
 			if sid := idOf(t["series_id"]); sid != "" {
 				v.bySeries[sid] = append(v.bySeries[sid], t)
 			}
 		}
 	}
 	return v.bySeries[id]
+}
+
+// lineageRows are the rows a series' budget reads: its records, or every live
+// task when a split lineage exists (OpenSpec change series-split).
+func (v *davView) lineageRows(id string) []opsync.Entity {
+	rows := v.seriesRows(id)
+	if v.hasSplit {
+		return v.tasks
+	}
+	return rows
 }
 
 // seriesParts fills the exception dates, the UNTIL of a counted rule and the
@@ -40,6 +53,12 @@ func (v *davView) seriesParts(t opsync.Entity, ct *caldav.Task) {
 			ct.SiblingUID = v.uidOf(sid)
 		}
 	}
+	// A piece of a split series names the series it continues (series-split D7).
+	if s, ok := opsync.DecodeSplitFrom(t["split_from"]); ok {
+		if _, live := v.byID[s.Series]; live {
+			ct.SiblingUID = v.uidOf(s.Series)
+		}
+	}
 	if ct.Recurrence == "" || ct.Due == nil || !isNullish(t["completed_at"]) {
 		return
 	}
@@ -47,15 +66,20 @@ func (v *davView) seriesParts(t opsync.Entity, ct *caldav.Task) {
 	if err != nil || rule.AfterCompletion() {
 		return
 	}
-	b := opsync.SeriesBudget(id, v.seriesRows(id), ct.Due.Date)
+	b := opsync.SeriesBudget(id, t, v.lineageRows(id), ct.Due.Date, v.today)
 	for d := range b.Except {
-		if d >= ct.Due.Date {
+		if d >= ct.Due.Date && (b.End == "" || d <= b.End) {
 			ct.ExDates = append(ct.ExDates, d)
 		}
 	}
 	sort.Strings(ct.ExDates)
-	if rule.Count() > 0 {
-		ct.Until = lastOccurrence(rule, ct.Due.Date, v.today, b)
+	// A piece of a split lineage ends the day before the next piece starts
+	// (series-split D7), even before a device wrote that until into its rule.
+	switch {
+	case rule.Count() > 0:
+		ct.Until = lastOccurrence(rule.Bounded(b.End), ct.Due.Date, v.today, b)
+	case b.End != "" && (rule.Until() == "" || rule.Until() > b.End):
+		ct.Until = b.End
 	}
 }
 

@@ -225,6 +225,8 @@ type davView struct {
 	// at each series (occurrences.go, series-exceptions).
 	today    string
 	bySeries map[string][]opsync.Entity
+	// hasSplit is set with bySeries when a task continues a split series.
+	hasSplit bool
 }
 
 func (d *davRequest) load() (*davView, error) {

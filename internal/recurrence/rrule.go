@@ -49,9 +49,10 @@ func (r Rule) RRULE() string {
 // RRULEUntil is RRULE with COUNT replaced by UNTIL=until (YYYY-MM-DD) when
 // until is set: a `for N times` rule served from its current occurrence ends on
 // the date of its last remaining occurrence (OpenSpec change series-exceptions,
-// design D10). An empty until is RRULE.
+// design D10), and an earlier UNTIL tightens a later one (a piece of a split
+// series ends the day before the next piece, series-split D7). An empty until is RRULE.
 func (r Rule) RRULEUntil(until string) string {
-	if until == "" || r.count == 0 {
+	if until == "" {
 		return r.RRULE()
 	}
 	c := r

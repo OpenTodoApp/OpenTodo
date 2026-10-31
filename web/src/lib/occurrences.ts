@@ -5,7 +5,7 @@
 // `recurrence.Rule.Occurrences`, pinned to this walk by occurrences.vectors.json.
 import { daysBetweenISO, localDueOf } from './dates'
 import { followingOccurrence, type Rule } from './recurrence'
-import { seriesBudget, seriesRule } from './recurring'
+import { pieceRule, seriesBudget, seriesRule } from './recurring'
 import type { Due, Task } from './types'
 
 /** Projections drawn per series per range at most (planner-view D5's guard, series-occurrences D2). */
@@ -103,8 +103,8 @@ export function occurrencesInRange(series: Task, records: readonly Task[], today
   if (!rule || !series.due) return { projections: [], capped: false }
   const base = series.due
   const dueOn = (date: string): Due => (base.time ? { date, time: base.time, ...(base.tz ? { tz: base.tz } : {}) } : { date })
-  const { taken, except } = seriesBudget(series.id, records, base.date)
-  const walk = walkOccurrences(rule, base.date, today, taken, from, to, (d) => localDueOf(dueOn(d), zone).date, except)
+  const b = seriesBudget(series, records, base.date, today)
+  const walk = walkOccurrences(pieceRule(rule, b), base.date, today, b.taken, from, to, (d) => localDueOf(dueOn(d), zone).date, b.except)
   const projections = walk.dates.map((date): Projection => {
     const seen = localDueOf(dueOn(date), zone)
     return {

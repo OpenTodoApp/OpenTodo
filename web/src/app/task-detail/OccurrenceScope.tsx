@@ -5,47 +5,116 @@
 // switched to This occurrence) it names the occurrence's date, shows the series'
 // values without editing them, and offers Complete, Skip, Move to… and Edit this
 // occurrence, which writes the occurrence's record and opens it. A record opens on
-// This occurrence; All occurrences opens its series.
-import { lazy, Suspense, useState } from 'react'
+// This occurrence; All occurrences opens its series. On an occurrence after the
+// current one of a calendar rule, This and following (series-split D6) makes the
+// values editable: the first edit splits the series there and the panel shows the
+// new series. The panel of a split series names the series it continues and the
+// one that continues it.
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { formatDate, logicalToday } from '../../lib/dates'
 import { t } from '../../lib/i18n'
+import { useSeriesRecords } from '../../lib/localData'
 import { actOnOccurrence } from '../../lib/occurrenceActions'
+import { redirectNextEdit } from '../../lib/ops'
 import { isOccurrenceRecord, recordDate, seriesRule } from '../../lib/recurring'
+import { splittable } from '../../lib/seriesSplit'
+import { splitFromOccurrence } from '../../lib/seriesSplitActions'
 import type { Task } from '../../lib/types'
 import { Icon, SegmentedControl } from '../../ui'
 import { act } from '../actionError'
-import { setPanelTaskId } from '../panel'
-import { useOccurrenceView } from './occurrenceView'
+import { showUndoToast } from '../bulk/toastStore'
+import { setPanelTaskId, usePanelProjection } from '../panel'
+import { setFollowing, useFollowing, useOccurrenceView } from './occurrenceView'
 import type { TaskDetailModel } from './useTaskDetail'
 
 const MoveOccurrenceDialog = lazy(() => import('../calendar/occurrenceMenu').then((m) => ({ default: m.MoveOccurrenceDialog })))
 
-type Scope = 'this' | 'all'
+type Scope = 'this' | 'following' | 'all'
 
 /** The scope control, the occurrence's header line and its actions. Nothing for a task that neither repeats nor is a record. */
 export default function OccurrenceScope({ m, readOnly }: { m: TaskDetailModel; readOnly: boolean }) {
   const { task, series } = m
   const date = useOccurrenceView(task)
+  const following = useFollowing(task)
+  const projected = usePanelProjection(task?.id)
+  const isSeries = !!task && !!seriesRule(task)
+  const record = !!task && !isSeries && isOccurrenceRecord(task)
+  const seriesId = isSeries ? task!.id : record ? task!.series_id ?? '' : task?.id ?? ''
+  const rows = useSeriesRecords(seriesId)
+  const owner = isSeries ? task : record ? series : null
+  const on = record ? recordDate(task!) : following ?? date
+  // This and following: a later occurrence of a calendar rule, for an editor.
+  const offerFollowing = useMemo(() => {
+    if (readOnly || !owner || owner.deleted_at || !on) return false
+    return splittable(owner, on, rows, logicalToday())
+  }, [readOnly, owner, on, rows])
+  // Leaving the panel leaves This and following.
+  useEffect(() => () => setFollowing(null), [])
+  useEffect(() => {
+    if (!following || !task) return
+    return redirectNextEdit(task.id, async (patch) => {
+      const r = await splitFromOccurrence(task.id, following, patch)
+      if (!r) return null
+      setFollowing(null)
+      setPanelTaskId(r.id)
+      if (r.entry) showUndoToast(r.label, r.entry.id)
+      return r.id
+    })
+  }, [following, task])
   if (!task) return null
-  const isSeries = !!seriesRule(task)
-  const record = !isSeries && isOccurrenceRecord(task)
-  if (!isSeries && !record) return null
-  const scope: Scope = record || date ? 'this' : 'all'
+  const lineage = <Continues task={task} rows={rows} />
+  if (!isSeries && !record) return lineage
+  const scope: Scope = following ? 'following' : record || date ? 'this' : 'all'
   const change = (next: Scope) => {
-    if (isSeries) setPanelTaskId(task.id, next === 'this' ? task.due?.date ?? logicalToday() : undefined)
+    const target = isSeries ? task.id : task.series_id
+    const at = record ? recordDate(task) : projected ?? task.due?.date ?? logicalToday()
+    if (next === 'following' && target && at) {
+      setPanelTaskId(target, at)
+      setFollowing({ id: target, date: at })
+      return
+    }
+    setFollowing(null)
+    if (isSeries) setPanelTaskId(task.id, next === 'this' ? at ?? undefined : undefined)
     else if (next === 'all' && task.series_id && series && !series.deleted_at) setPanelTaskId(task.series_id)
   }
-  const on = record ? recordDate(task) : date
+  const options: { id: Scope; label: string }[] = [
+    { id: 'this', label: t('This occurrence') },
+    ...(offerFollowing || following ? [{ id: 'following' as const, label: t('This and following') }] : []),
+    { id: 'all', label: t('All occurrences') },
+  ]
   return (
     <div className="space-y-2" data-occurrence-scope={scope}>
-      <SegmentedControl label={t('Edit scope')} value={scope} onChange={change} data-scope-control
-        options={[{ id: 'this', label: t('This occurrence') }, { id: 'all', label: t('All occurrences') }]} />
-      {on && (
+      <SegmentedControl label={t('Edit scope')} value={scope} onChange={change} data-scope-control options={options} wrap={options.length > 2} />
+      {on && scope !== 'following' && (
         <p className="flex items-center gap-1 text-meta text-muted" data-occurrence-for={on}>
           <Icon name="repeat" />{t('{date} · one occurrence of a repeating task', { date: formatDate(on, 'full') })}
         </p>
       )}
+      {following && (
+        <p className="flex items-center gap-1 text-meta text-muted" data-following-from={following}>
+          <Icon name="repeat" />{t('From {date} on: a change here starts a new repeating task from this date; earlier occurrences stay as they are.', { date: formatDate(following, 'full') })}
+        </p>
+      )}
       {isSeries && date && <OccurrenceActions series={task} date={date} readOnly={readOnly} />}
+      {lineage}
+    </div>
+  )
+}
+
+/** "Continues Study from 14 Oct" and "Continues as Study from 14 Oct": the neighbouring pieces of a split series (series-split D6). */
+function Continues({ task, rows }: { task: Task; rows: readonly Task[] }) {
+  const before = task.split_from ? rows.find((r) => r.id === task.split_from!.series && !r.deleted_at) : undefined
+  const after = rows.filter((r) => r.split_from?.series === task.id && !r.deleted_at && !r.series_id)
+  if (!before && after.length === 0) return null
+  const link = (to: Task, label: string, key: string) => (
+    <button key={key} type="button" className="touch-target flex items-center gap-1 text-left text-meta text-faint hover:text-default" data-continues={key} onClick={() => setPanelTaskId(to.id)}>
+      <Icon name="repeat" />{label}
+    </button>
+  )
+  return (
+    <div className="space-y-1" data-lineage>
+      {before && task.split_from && link(before, t('Continues {title} from {date}', { title: before.title || t('Untitled'), date: formatDate(task.split_from.date, 'compact') }), 'from')}
+      {after.map((p) => link(p, t('Continues as {title} from {date}', { title: p.title || t('Untitled'), date: formatDate(p.split_from!.date, 'compact') }), `as-${p.id}`))}
     </div>
   )
 }

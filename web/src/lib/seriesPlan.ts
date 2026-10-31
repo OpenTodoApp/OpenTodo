@@ -7,9 +7,9 @@
 import { nameId, occurrenceId } from './ids'
 import { nextFree, walkOccurrences } from './occurrences'
 import type { Change } from './ops'
-import type { Rule } from './recurrence'
+import { canonicalOf, type Rule } from './recurrence'
 import {
-  currentOccurrence, exceptionDates, isRecordOf, moveDates, planCompletion, planSkip, recordFields, recordsOf, seriesBudget, seriesRule, standOn,
+  currentOccurrence, isRecordOf, moveDates, pieceRule, planCompletion, planSkip, recordFields, recordsOf, seriesBudget, seriesRule, standOn,
 } from './recurring'
 import { relativeFireAt } from './reminderTime'
 import type { Due, Reminder, Task } from './types'
@@ -58,10 +58,11 @@ export function isActionable(series: Task, rule: Rule, date: string, tasks: Iter
   const list = [...tasks]
   const current = currentOccurrence(series, rule, list, today)
   if (current === null || date < current) return false
-  const { taken, except } = seriesBudget(series.id, list, current)
-  if (except.has(date) || date === current) return true
-  if (rule.afterCompletion) return false
-  return walkOccurrences(rule, current, today, taken, date, date, (d) => d, except).dates.includes(date)
+  const b = seriesBudget(series, list, current, today)
+  if (b.own.has(date) || date === current) return true
+  // Another piece's record, or a date of a completion-relative rule (series-split D3).
+  if (b.except.has(date) || rule.afterCompletion) return false
+  return walkOccurrences(pieceRule(rule, b), current, today, b.taken, date, date, (d) => d, b.except).dates.includes(date)
 }
 
 /**
@@ -100,8 +101,8 @@ export function planActOn(
   const changes: Change[] = [{ entity: 'task', entityId: recordId, patch: { ...base, ...state } }]
   if (on === current) {
     // The record uses up an occurrence: the series continues only within the budget.
-    const { taken, except } = seriesBudget(series.id, list, on)
-    const next = nextFree(rule, on, today, today, taken, new Set([...except, on]))
+    const b = seriesBudget(series, list, on, today)
+    const next = nextFree(pieceRule(rule, b), on, today, today, b.taken, new Set([...b.except, on]))
     if (next === null) return null
     changes.push({ entity: 'task', entityId: series.id, patch: moveDates(at, next, today) })
   }
@@ -147,11 +148,11 @@ const same = (a: unknown, b: unknown): boolean => JSON.stringify(a ?? null) === 
  * series' previous one. Done and skipped records, notes and record dates never
  * change. The due's time and zone carry; its date does not.
  */
-export function planCarry(series: Task, patch: Record<string, unknown>, tasks: Iterable<Task>): Change[] {
+export function planCarry(series: Task, patch: Record<string, unknown>, tasks: Iterable<Task>, from?: string): Change[] {
   if (!series.recurrence) return []
   const out: Change[] = []
   for (const r of recordsOf(series.id, tasks)) {
-    if (r.state !== 'open') continue
+    if (r.state !== 'open' || (from && r.date < from)) continue
     const carry: Record<string, unknown> = {}
     const rec = r.task as unknown as Record<string, unknown>
     const before = series as unknown as Record<string, unknown>
@@ -175,15 +176,23 @@ export function planCarry(series: Task, patch: Record<string, unknown>, tasks: I
  * A series due on one of its exception dates (it rolled before this device saw
  * another device's record) moves to the next free occurrence; every device computes
  * the same value. When none is left the series completes as at its end condition.
- * Empty when nothing needs repair.
+ * A piece of a split lineage whose stored `until` is later than its derived end, or
+ * missing, gets the derived `until` (series-split D3), and one standing past that end
+ * (it rolled before this device saw the split) completes. Empty when nothing needs
+ * repair.
  */
 export function planRepair(series: Task, tasks: Iterable<Task>, today: string, now: number): Change[] {
   const rule = seriesRule(series)
   if (!actsOnFuture(rule) || !series.due) return []
   const list = [...tasks]
   const date = series.due.date
-  if (!exceptionDates(series.id, list).has(date)) return []
-  const next = currentOccurrence(series, rule, list, today)
-  if (next === null) return [{ entity: 'task', entityId: series.id, patch: { completed_at: now } }]
-  return [{ entity: 'task', entityId: series.id, patch: moveDates(series, next, today) }]
+  const b = seriesBudget(series, list, undefined, today)
+  const patch: Record<string, unknown> = {}
+  if (b.end && (!rule.until || rule.until > b.end)) patch.recurrence = canonicalOf({ ...rule, until: b.end, count: 0 })
+  if (b.end && date > b.end) patch.completed_at = now
+  else if (b.except.has(date)) {
+    const next = currentOccurrence(series, rule, list, today)
+    Object.assign(patch, next === null ? { completed_at: now } : moveDates(series, next, today))
+  }
+  return Object.keys(patch).length ? [{ entity: 'task', entityId: series.id, patch }] : []
 }

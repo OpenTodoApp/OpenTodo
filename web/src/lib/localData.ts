@@ -20,6 +20,7 @@ import { rememberFieldNames } from './fieldNames'
 import { applicableFieldsLookup } from './fieldTree'
 import { t } from './i18n'
 import { activeLabels } from './labels'
+import { lineageRows } from './lineageRows'
 import { derived, liveSnapshot } from './liveSnapshot'
 import { compareByPosition } from './ordering'
 import { REVIEW_ID } from './review'
@@ -276,9 +277,9 @@ export function useTasksByIdRead(ids: readonly string[]): { tasks: Task[]; read:
   return { tasks: res?.rows ?? NO_TASK_ROWS, read: res?.of === ids }
 }
 
-/** The occurrence records of a recurring task (series-id equals the task's id). */
+/** The occurrence records of a recurring task and the other pieces of its lineage with theirs (series-split). */
 export function useSeriesRecords(seriesId: string): Task[] {
-  return useLiveQuery(() => db.tasks.filter((tk) => tk.series_id === seriesId).toArray(), [seriesId], NO_TASK_ROWS)
+  return useLiveQuery(() => lineageRows(seriesId), [seriesId], NO_TASK_ROWS)
 }
 
 /** Deleted tasks (the Trash). */

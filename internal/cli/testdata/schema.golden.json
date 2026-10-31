@@ -1698,6 +1698,46 @@
       }
     },
     {
+      "name": "task split",
+      "summary": "change a recurring task from one of its later occurrences on (This and following): the series ends the day before and a new series continues it; prints the new series",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [
+        {
+          "name": "from",
+          "type": "string",
+          "description": "the first occurrence to change: YYYY-MM-DD, today, tomorrow or a weekday"
+        },
+        {
+          "name": "time",
+          "type": "string",
+          "description": "the new time HH:MM from that day on (none: no time)"
+        },
+        {
+          "name": "rule",
+          "type": "string",
+          "description": "the new recurrence rule from that day on"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "description": "the new title from that day on"
+        }
+      ],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/task"
+      }
+    },
+    {
       "name": "time export",
       "summary": "download the server's time entries CSV in the local time zone",
       "args": [],
@@ -3349,6 +3389,10 @@
               "due": {
                 "type": "string",
                 "description": "YYYY-MM-DD, the record's due date when it was moved to another day"
+              },
+              "series_id": {
+                "type": "string",
+                "description": "the series the date belongs to: the task asked for or, past a split (This and following), the series that continues it"
               }
             }
           }
@@ -3722,6 +3766,22 @@
             "string",
             "null"
           ]
+        },
+        "split_from": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "on a series that continues a split one (This and following): the series it continues and the date it starts",
+          "properties": {
+            "series": {
+              "type": "string"
+            },
+            "date": {
+              "type": "string",
+              "description": "YYYY-MM-DD"
+            }
+          }
         },
         "assignee_id": {
           "type": [

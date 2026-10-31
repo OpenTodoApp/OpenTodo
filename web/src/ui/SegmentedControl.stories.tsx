@@ -25,6 +25,16 @@ export const AllOccurrences: StoryObj = {
   render: () => <div className="w-80 bg-surface p-4"><Scoped initial="all" /></div>,
 }
 
+/** Three scopes on a later occurrence (series-split D6): This and following between the two; long labels wrap on a phone. */
+export const ThisAndFollowing: StoryObj = {
+  render: () => (
+    <div className="w-72 bg-surface p-4">
+      <SegmentedControl label="Edit scope" value="following" onChange={() => {}} wrap
+        options={[{ id: 'this', label: 'This occurrence' }, { id: 'following', label: 'This and following' }, { id: 'all', label: 'All occurrences' }]} />
+    </div>
+  ),
+}
+
 /** Three options, and disabled (a viewer of the shared project). */
 export const ThreeAndDisabled: StoryObj = {
   render: () => (

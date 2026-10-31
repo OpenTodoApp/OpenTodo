@@ -196,11 +196,14 @@ ot task occurrences 8c2a --from 2026-10-12 --to 2026-10-18 --json
 ot task occurrence 8c2a 2026-10-19 skip                 # skip one occurrence
 ot task occurrence 8c2a 2026-10-14 edit --time 19:00   # move one occurrence alone
 ot task occurrence 8c2a 2026-10-15 complete            # complete one early
+ot task split 8c2a --from 2026-10-14 --time 19:00       # 19:00 from Wednesday on
 ```
 
 `ot task occurrences <ref>` lists a repeating task's current occurrence and the [projected](recurrence.md#projected-occurrences) ones after it in a range, as a table of DATE, TIME and STATE (`current`, `projected`, or `open`, `done` and `skipped` for an occurrence that has a record). `--from` and `--to` take `YYYY-MM-DD`, `today`, `yesterday` or a weekday; the range is at most 366 days and lists at most 31 projected dates. The dates are the ones the app draws on the calendar ([`GET /api/v1/tasks/{id}/occurrences`](api.md#a-series-dates-ahead)); it only reads, so a `read` token will do. A task without a rule exits 1 with `not_recurring`.
 
 `ot task occurrence <ref> <date> complete|skip|edit` acts on one occurrence alone ([one occurrence alone](recurrence.md#one-occurrence-alone)): `complete` and `skip` that date, `edit` moves it (`--due <day>`, `--time HH:MM` or `none`) or renames it (`--title`); a new day without `--time` keeps the series' time. `<date>` takes `YYYY-MM-DD`, `today`, `tomorrow` or a weekday. It prints the occurrence's record (`--json`: the task). A date that is not an occurrence exits 1 with `not_an_occurrence`. It writes through [`POST /api/v1/tasks/{id}/occurrences/{date}/complete`](api.md#one-occurrence-alone) and its siblings, so it needs a `full` token.
+
+`ot task split <ref> --from <date>` changes a repeating task from one of its later occurrences on ([This and following](recurrence.md#this-and-following)): `--time HH:MM` (or `none`), `--rule <rule>` and `--title <text>` give the change, at least one of them. The task ends the day before `--from`, and the new task that continues it is printed (`--json`: the task). The current occurrence, or a date that is not an occurrence, exits 1 with `not_an_occurrence`. It writes through [`POST /api/v1/tasks/{id}/split`](api.md#this-and-following), so it needs a `full` token.
 
 ## Projects
 
