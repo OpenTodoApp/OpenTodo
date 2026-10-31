@@ -131,6 +131,29 @@ describe('sync with a fast clock', () => {
     expect(syncCalls.mock.calls[0]).toHaveLength(6)
   })
 
+  it('keeps the order of two edits refused in different batches (#651)', async () => {
+    stored.length = 0
+    vi.setSystemTime(SERVER + HOUR)
+    // Other edits fill the first batch (500 ops) so that 'first' is among its
+    // last ops and is stamped again late in that round; 'last' goes out in the
+    // next batch and is stamped again after the next refusal.
+    for (let i = 0; (await db.outbox.count()) < 495; i++) await mutate('label', `l${i}`, { name: `l${i}` })
+    await mutate('task', 't1', { title: 'first' })
+    expect(await db.outbox.count()).toBeLessThanOrEqual(500)
+    for (let i = 0; (await db.outbox.count()) <= 500; i++) await mutate('label', `m${i}`, { name: `m${i}` })
+    await mutate('task', 't1', { title: 'last' })
+    syncCalls.mockImplementation(server())
+    await syncNow()
+
+    expect(await db.outbox.count()).toBe(0)
+    const titles = stored.filter((o) => o.entity === 'task' && o.entityId === 't1' && o.field === 'title')
+    const winner = titles.reduce((a, b) => (b.ts > a.ts || (b.ts === a.ts && b.device > a.device) ? b : a))
+    expect(winner.value).toBe('last')
+    const row = await db.tasks.get('t1')
+    expect(row?.title).toBe('last')
+    expect(row?._clock.title.ts).toBe(winner.ts)
+  })
+
   it('confirms a backfill page with the next exchange', async () => {
     syncCalls.mockImplementationOnce(async () => ({ applied: 0, ops: [], cursor: 1, hasMore: true, serverTime: Date.now(), backfillSeq: 42 }))
     syncCalls.mockImplementationOnce(async () => ({ applied: 0, ops: [], cursor: 1, hasMore: false, serverTime: Date.now() }))
