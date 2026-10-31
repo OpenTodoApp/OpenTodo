@@ -68,6 +68,7 @@ type Manifest struct {
 	DeviceNote     string            `json:"device_note"`
 	Notice         string            `json:"notice"`
 	UntrustedNote  string            `json:"untrusted_note"`
+	ImagesNote     string            `json:"images_note"`
 	Views          map[string]string `json:"views"`
 	Messages       map[string]string `json:"messages"`
 	Limits         map[string]int    `json:"limits"`
@@ -86,10 +87,11 @@ func DeviceManifest(reg *agenttools.Registry) Manifest {
 		defs[d.Name] = d
 	}
 	m := Manifest{
-		Version: ManifestVersion, Rules: SystemRules, DeviceNote: DeviceNote, Notice: agenttools.Notice, UntrustedNote: UntrustedNote,
-		Views:          views,
-		Messages:       map[string]string{"refusal": RefusalMessage, "cut_off": CutOffMessage, "round_limit": RoundLimitMessage},
-		Limits:         map[string]int{"max_rounds": MaxRounds, "max_output_tokens": MaxOutputTokens, "max_entities": MaxEntities, "max_items": agenttools.MaxItems},
+		Version: ManifestVersion, Rules: SystemRules, DeviceNote: DeviceNote, Notice: agenttools.Notice, UntrustedNote: UntrustedNote, ImagesNote: ImagesNote,
+		Views:    views,
+		Messages: map[string]string{"refusal": RefusalMessage, "cut_off": CutOffMessage, "round_limit": RoundLimitMessage},
+		Limits: map[string]int{"max_rounds": MaxRounds, "max_output_tokens": MaxOutputTokens, "max_entities": MaxEntities, "max_items": agenttools.MaxItems,
+			"max_images": MaxImages, "max_image_bytes": MaxImageBytes},
 		AnthropicModel: DefaultAnthropicModel, AnthropicList: AnthropicModels,
 		Endpoints: map[string]string{Anthropic: "https://api.anthropic.com/v1", OpenAI: OpenAIBaseURL, Gemini: GeminiBaseURL},
 	}

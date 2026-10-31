@@ -49,9 +49,12 @@ export class SSEParser {
   }
 }
 
+/** A photo of the last user message (voice-ramble D4): a prepared JPEG in base64. */
+export interface TurnImage { media_type: string; data: string }
+
 export interface TurnRequest {
-  /** `untrusted` marks text the user pasted (assistant-skills D3). */
-  messages: { role: 'user' | 'assistant'; text: string; untrusted?: boolean }[]
+  /** `untrusted` marks text the user pasted (assistant-skills D3); `images` are the photos of the last message only. */
+  messages: { role: 'user' | 'assistant'; text: string; untrusted?: boolean; images?: TurnImage[] }[]
   timezone: string
   view?: string
   selected?: string[]
@@ -93,7 +96,7 @@ export async function streamTurn(req: TurnRequest, onEvent: (e: TurnEvent) => vo
  * summarised in one line. Pasted material goes just before the question,
  * marked untrusted; the server wraps it and folds it into the question.
  */
-export function turnMessages(history: AssistantMessage[], question: string, pasted?: string): TurnRequest['messages'] {
+export function turnMessages(history: AssistantMessage[], question: string, pasted?: string, images?: TurnImage[]): TurnRequest['messages'] {
   const all = [...history.filter((m) => m.text && !m.error && m.stop !== 'refusal').map((m) => ({ role: m.role, text: m.text })), { role: 'user' as const, text: question }]
   const out: TurnRequest['messages'] = []
   let bytes = 0
@@ -109,6 +112,8 @@ export function turnMessages(history: AssistantMessage[], question: string, past
   // The server wants alternation to start with the user; it joins repeats itself.
   while (out.length && out[0].role !== 'user') out.shift()
   if (pasted) out.splice(out.length - 1, 0, { role: 'user', text: pasted, untrusted: true })
+  // Photos go with this one question; earlier photos are never resent (the history keeps a count only).
+  if (images?.length) out[out.length - 1] = { ...out[out.length - 1], images }
   return out
 }
 

@@ -44,6 +44,7 @@
   "host_managed",
   "idempotency_conflict",
   "identity_taken",
+  "images_unsupported",
   "insufficient_scope",
   "insufficient_storage",
   "integrity",

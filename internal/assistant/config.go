@@ -57,9 +57,13 @@ var AnthropicModels = []string{"claude-opus-5-5", "claude-sonnet-5-5", "claude-h
 // DefaultMonthlyCap is the default per-user monthly token cap (0 = unlimited).
 const DefaultMonthlyCap = 500_000
 
-// DisclosureVersion is bumped whenever the consent text changes materially;
-// earlier consents then no longer count.
-const DisclosureVersion = 1
+// DisclosureVersion is bumped whenever the consent text changes materially.
+// Consents from MinDisclosureVersion on still count: version 2 added "photos
+// you add" (voice-ramble D6) without asking everyone to consent again.
+const DisclosureVersion = 2
+
+// MinDisclosureVersion is the oldest disclosure a consent may name and still count.
+const MinDisclosureVersion = 1
 
 // ProviderSettings is one provider's owner configuration.
 type ProviderSettings struct {
@@ -67,6 +71,10 @@ type ProviderSettings struct {
 	Model   string `json:"model"`
 	// BaseURL is the compatible provider's endpoint (owner only).
 	BaseURL string `json:"base_url,omitempty"`
+	// Images marks the compatible endpoint's model as reading images ("This
+	// model reads images", voice-ramble D5); off by default. The built-in
+	// providers always read images.
+	Images bool `json:"images,omitempty"`
 }
 
 // Settings is the owner configuration (settings key "assistant"). Keys are not
@@ -254,6 +262,9 @@ func validateProvider(name string, p ProviderSettings, noModel string) error {
 	if name != Compatible && p.BaseURL != "" {
 		return invalid("providers."+name+".base_url", "only the compatible provider takes a base URL")
 	}
+	if name != Compatible && p.Images {
+		return invalid("providers."+name+".images", "only the compatible provider takes this mark (the others always read images)")
+	}
 	if !p.Enabled {
 		return nil
 	}
@@ -403,6 +414,7 @@ func diffSettings(a, b Settings) [][3]string {
 		add("assistant."+n+".enabled", fmt.Sprint(pa.Enabled), fmt.Sprint(pb.Enabled))
 		add("assistant."+n+".model", pa.Model, pb.Model)
 		add("assistant."+n+".base_url", hostOf(pa.BaseURL), hostOf(pb.BaseURL))
+		add("assistant."+n+".images", fmt.Sprint(pa.Images), fmt.Sprint(pb.Images))
 	}
 	return out
 }
@@ -490,7 +502,12 @@ func (st *Store) Consent(ctx context.Context, userID string) (*Consent, error) {
 
 // Valid reports whether a consent covers the current disclosure and provider.
 func (c *Consent) Valid(provider string) bool {
-	return c != nil && c.Provider == provider && c.DisclosureVersion == DisclosureVersion
+	return c != nil && c.Provider == provider && c.Current()
+}
+
+// Current reports whether the consent names a disclosure that still counts.
+func (c *Consent) Current() bool {
+	return c != nil && c.DisclosureVersion >= MinDisclosureVersion && c.DisclosureVersion <= DisclosureVersion
 }
 
 // SetConsent records (accept) or withdraws consent.

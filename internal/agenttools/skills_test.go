@@ -10,7 +10,7 @@ import (
 
 // assistant-skills 1.1: the catalogue matches the spec and stays inside the registry.
 func TestSkillCatalogue(t *testing.T) {
-	want := []string{"idea-to-project", "plan-week", "weekly-review", "triage-inbox", "break-down"}
+	want := []string{"idea-to-project", "plan-week", "weekly-review", "triage-inbox", "break-down", "capture"}
 	var ids []string
 	seen := map[string]bool{}
 	c := Caller{Scope: ScopeAgent, OwnerAllowsWrites: true, UserAllowsWrites: true}
@@ -49,6 +49,11 @@ func TestSkillCatalogue(t *testing.T) {
 	wr, _ := SkillByID("weekly-review")
 	if wr.Allows("add_comment") || wr.Allows("create_project") || !wr.Allows("schedule_tasks") {
 		t.Fatalf("weekly-review tools = %v", wr.Tools)
+	}
+	// capture (voice-ramble D7) proposes changes but never trashes.
+	cp, _ := SkillByID("capture")
+	if cp.Allows("trash_tasks") || !cp.Allows("create_tasks") || !cp.Allows("search_tasks") || !cp.Allows("create_project") || cp.Result != ResultChanges {
+		t.Fatalf("capture tools = %v", cp.Tools)
 	}
 	if n := WorkdayNote(9, 17, 420); !strings.Contains(n, "09:00") || !strings.Contains(n, "17:00") || !strings.Contains(n, "420 minutes") {
 		t.Fatalf("workday note = %q", n)

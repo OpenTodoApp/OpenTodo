@@ -70,11 +70,11 @@ export function errorKind(code: string): VoiceErrorKind {
 }
 
 /** Joins recognised segments ("call the dentist" + "tomorrow") with single spaces. */
-function join(parts: string[]): string {
+export function join(parts: string[]): string {
   return parts.map((p) => p.trim()).filter(Boolean).join(' ')
 }
 
-async function localAvailable(ctor: SpeechRecognitionCtor, lang: string | undefined): Promise<boolean> {
+export async function localAvailable(ctor: SpeechRecognitionCtor, lang: string | undefined): Promise<boolean> {
   if (!lang || typeof ctor.available !== 'function') return false
   try {
     return (await ctor.available({ langs: [lang], processLocally: true })) === 'available'

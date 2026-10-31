@@ -8,6 +8,7 @@ import {
   applyChanges, autoApplicable, clearThreads, describeStreamError, describeTurnError, getAutoApply, listThreads, newThread,
   refreshReview, reviewChangeSet, saveThread, streamTurn, turnMessages, undoChanges, type AssistantMessage, type AssistantThread, type Review, type TurnRequest,
 } from '../../lib/assistant'
+import { imagesUnsupportedMessage, isImagesUnsupported, releasePhoto, wireImages, type PreparedPhoto } from '../../lib/assistantImages'
 import { assistantStatus, refreshAssistantStatus, setAssistantStatus, takeAssistantPrefill, useAssistantPrefill, type AssistantPrefill, type AssistantStatus } from '../../lib/assistantStatus'
 import { useAssistantSkills, workday, type AssistantSkill } from '../../lib/assistantSkills'
 import type { ProposedChange, TurnEvent } from '../../lib/assistantTypes'
@@ -31,6 +32,8 @@ interface StreamedAnswer {
   answer: AssistantMessage
   proposal: ProposedChange[] | null
   failure?: { err: unknown }
+  /** The stream's error code, when it ended with one. */
+  errorCode?: string
 }
 
 /**
@@ -45,6 +48,7 @@ async function streamAnswer(req: TurnRequest, signal: AbortSignal, on: { text: (
   const statusLines: string[] = []
   let proposal: ProposedChange[] | null = null
   let failure: StreamedAnswer['failure']
+  let errorCode: string | undefined
   const answer: AssistantMessage = { role: 'assistant', text: '', at: Date.now() }
   try {
     await run(req, (ev: TurnEvent) => {
@@ -65,6 +69,7 @@ async function streamAnswer(req: TurnRequest, signal: AbortSignal, on: { text: (
           break
         case 'error':
           answer.error = describeStreamError(ev.code, ev.message)
+          errorCode = ev.code
           break
         case 'done':
           answer.stop = ev.stop_reason
@@ -77,7 +82,7 @@ async function streamAnswer(req: TurnRequest, signal: AbortSignal, on: { text: (
     failure = { err }
   }
   answer.text = text
-  return { answer, proposal, failure }
+  return { answer, proposal, failure, errorCode }
 }
 
 /** The composer's draft, chosen skill and pasted material, and prefills from elsewhere (assistant-skills D4). */
@@ -87,6 +92,10 @@ function useComposerState() {
   const [skill, setSkill] = useState<AssistantSkill | null>(null)
   const [pickedSkillId, setPickedSkillId] = useState<string | null>(null)
   const [pasted, setPasted] = useState<string | null>(null)
+  // Photos of the next message (voice-ramble D3): in memory only, never in the thread.
+  const [photos, setPhotos] = useState<PreparedPhoto[]>([])
+  // Each request to start the microphone (the palette's "Ramble into tasks").
+  const [listenRequest, setListenRequest] = useState(0)
   const selectedFor = useRef<string[] | null>(null)
   // The same selection as state, for the tray's context chip (assistant-surface D3).
   const [selection, setSelection] = useState<string[] | null>(null)
@@ -101,6 +110,7 @@ function useComposerState() {
     selectedFor.current = p.selected ?? null
     setSelection(p.selected ?? null)
     setAutoSend(!!p.send)
+    if (p.listen) setListenRequest((n) => n + 1)
   }, [])
   useEffect(() => { applyPrefill(takeAssistantPrefill()) }, [applyPrefill, pendingPrefill])
   useEffect(() => {
@@ -110,7 +120,7 @@ function useComposerState() {
   }, [pickedSkillId, skills])
   const chooseSkill = (sk: AssistantSkill | null) => { setPickedSkillId(sk?.id ?? null); setSkill(sk) }
   const clearSelection = () => { selectedFor.current = null; setSelection(null) }
-  return { draft, setDraft, skills, skill, setSkill, pickedSkillId, chooseSkill, pasted, setPasted, selectedFor, selection, clearSelection, autoSend, setAutoSend }
+  return { draft, setDraft, skills, skill, setSkill, pickedSkillId, chooseSkill, pasted, setPasted, photos, setPhotos, listenRequest, selectedFor, selection, clearSelection, autoSend, setAutoSend }
 }
 
 /** Accepting the provider's terms (in-app-assistant consent), with an optional own key. */
@@ -228,10 +238,13 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
   }
   const rv = useReview(thread, note, setStatusAnnounce, onApplied)
 
-  /** Auto-apply a small, fully fresh change set when the person turned that on; otherwise offer it for review. */
-  const offer = async (entry: AssistantThread, items: ProposedChange[]) => {
+  /**
+   * Auto-apply a small, fully fresh change set when the person turned that on; otherwise offer it for review.
+   * A capture (a ramble or photos) is always reviewed: its proposal is never applied automatically (voice-ramble).
+   */
+  const offer = async (entry: AssistantThread, items: ProposedChange[], review = false) => {
     const r = await reviewChangeSet(items)
-    if (r.items.length && (await getAutoApply()) && r.items.every((i) => i.state === 'ok') && autoApplicable(r.items.map((i) => i.change))) {
+    if (r.items.length && !review && (await getAutoApply()) && r.items.every((i) => i.state === 'ok') && autoApplicable(r.items.map((i) => i.change))) {
       const undo = await applyChanges(r.items.map((i) => i.change))
       const res: ReviewResult = { applied: r.items.length, total: r.items.length, undoId: undo?.id ?? null, auto: true }
       rv.setResult(res)
@@ -245,9 +258,9 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
   }
 
   const send = async () => {
-    const { draft, skill: chosen, pasted } = composer
-    // A skill or pasted material can be sent without typed text.
-    const question = draft.trim() || (chosen ? chosen.example : pasted ? t('Use the pasted text.') : '')
+    const { draft, skill: chosen, pasted, photos } = composer
+    // A skill, pasted material or photos can be sent without typed text.
+    const question = draft.trim() || (chosen ? chosen.example : pasted ? t('Use the pasted text.') : photos.length ? t('Turn this into tasks') : '')
     if (!question || streaming) return
     const material = pasted
     const selection = composer.selectedFor.current
@@ -256,13 +269,14 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
     composer.setDraft('')
     composer.setSkill(null)
     composer.setPasted(null)
+    composer.setPhotos([])
     composer.clearSelection()
     setError(null)
     rv.setReview(null)
     rv.setResult(null)
     live.reset()
     const userMsg: AssistantMessage = { role: 'user', text: question, at: Date.now(),
-      ...(chosen ? { skill: chosen.name } : {}), ...(material ? { pastedLines: material.split(/\r?\n/).length } : {}) }
+      ...(chosen ? { skill: chosen.name } : {}), ...(material ? { pastedLines: material.split(/\r?\n/).length } : {}), ...(photos.length ? { photos: photos.length } : {}) }
     const history = current.messages
     let entry: AssistantThread = { ...current, messages: [...history, userMsg], updated_at: Date.now(), provider: status?.provider ?? '',
       title: current.messages.length ? current.title : question.slice(0, 60) }
@@ -276,7 +290,7 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
       // projectId only drives the panel's kept-away line; the server never gets it.
       const ctx = { ...context() }
       delete ctx.projectId
-      const req: TurnRequest = { messages: turnMessages(history, question, material ?? undefined), timezone: zone, ...ctx,
+      const req: TurnRequest = { messages: turnMessages(history, question, material ?? undefined, photos.length ? wireImages(photos) : undefined), timezone: zone, ...ctx,
         ...(selection ? { selected: selection } : {}),
         ...(chosen ? { skill: chosen.id, workday: await workday() } : {}) }
       // Device mode runs the loop here and calls the provider directly; the server sees nothing (assistant-on-device D7).
@@ -292,6 +306,21 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
       streamed = { answer: { role: 'assistant', text: '', at: Date.now() }, proposal: null, failure: { err } }
     }
     let { answer } = streamed
+    // A model that does not read photos: the message and the photos go back to the composer (voice-ramble D5).
+    const failedCode = streamed.failure?.err instanceof ApiError ? streamed.failure.err.code : streamed.errorCode
+    if (photos.length && isImagesUnsupported(failedCode)) {
+      abort.current = null
+      setStreaming(null)
+      composer.setDraft(draft)
+      composer.setPhotos(photos)
+      if (chosen) composer.chooseSkill(chosen)
+      if (material) composer.setPasted(material)
+      setError(imagesUnsupportedMessage(failedCode))
+      live.setAnnounce(imagesUnsupportedMessage(failedCode))
+      await persist({ ...current, updated_at: Date.now() })
+      return
+    }
+    photos.forEach(releasePhoto)
     if (streamed.failure) {
       const { err } = streamed.failure
       if (ctl.signal.aborted) answer.note = t('Stopped.')
@@ -310,7 +339,7 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
       usage: { input: entry.usage.input + (answer.usage?.input ?? 0), output: entry.usage.output + (answer.usage?.output ?? 0) } }
     await persist(entry)
     const items = answer.stop === 'end_turn' ? streamed.proposal : null
-    if (items && items.length) await offer(entry, items)
+    if (items && items.length) await offer(entry, items, chosen?.id === 'capture' || photos.length > 0)
   }
 
   const startNew = () => {

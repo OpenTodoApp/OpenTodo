@@ -19,6 +19,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
   assistant_busy: msg('The assistant is busy on this server. Try again in a few seconds.'),
   assistant_disabled: msg('The assistant is not enabled on this server.'),
   assistant_quota: msg('You have used this month’s assistant allowance.'),
+  images_unsupported: msg('The chosen model does not read photos. Remove them to send the message.'),
   attachment_mismatch: msg('The upload does not match the attachment. Try again.'),
   attachment_too_large: msg('The file is larger than this server allows ({detail}).'),
   attachments_disabled: msg('Attachments are turned off on this server.'),
