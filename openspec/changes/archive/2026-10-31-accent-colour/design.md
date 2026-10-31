@@ -33,6 +33,10 @@ An accent theme declares three values in `web/src/index.css` (`[data-accent="…
 
 **Termination and the guarantee.** For a fixed hue with chroma clamped to the gamut, relative luminance is monotone in L, so each search is a walk along one monotone axis. The targets are reachable for every hue: at L = 0 (light) every text-on-light pair holds and white reaches 21:1; for dark text the near-white end reaches the 4.5:1 targets; for the dark button the band "white on it ≥ 4.5:1" (Y ≤ 0.183) and "≥ 3:1 against the dark canvas" (Y ≥ about 0.11 for `#0d0e10`) is non-empty at every hue. The walk is bounded (at most 200 steps), so it ends in under a millisecond.
 
+**As built.** Two refinements found while implementing, both deterministic and pinned by the vectors:
+- *Each search takes the nearest passing lightness in either direction*, preferring the direction above on a tie (down for the light accent, up for the dark accent text and the dark button). The light-mode pairs bound the lightness from both sides: below about L 0.25 the soft step (10 % of the accent into white) is too dark for the faint text and the other tones that sit on a selected row, so a black pick steps up (to `#353535`); in dark mode a near-white accent text makes the soft step too bright for faint text, so a white pick steps down. A pick that already passes stays as it is.
+- *The red guard has one threshold per mode*, Rose's own smallest distance in that mode, rounded down to two decimals: ΔE 4.13 for the light accent and 2.72 for the dark accent text. A single threshold (the smaller) would let a light accent sit closer to the danger colour than Rose does.
+
 - *Alternative: a fixed table of allowed colours.* Rejected: that is the eight themes again.
 - *Alternative: HSL lightness.* Rejected: HSL lightness is not perceptual; OKLCH keeps the hue the person picked while the lightness moves.
 - *Alternative: allow black on-accent text for light picks.* Rejected: the accent is also text on white surfaces (links, the active item), which forces a dark accent anyway; one rule (white on accent) matches every built-in theme.

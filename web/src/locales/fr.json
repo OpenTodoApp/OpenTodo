@@ -5877,5 +5877,15 @@
   "Notes:": "Notes :",
   "Show notes on cards": "Afficher les notes sur les cartes",
   "{name}, {n, plural, one {# open task} other {# open tasks}}, folded": "{name}, {n, plural, one {# tâche ouverte} other {# tâches ouvertes}}, repliée",
-  "{name}, {n, plural, one {# task} other {# tasks}}, folded": "{name}, {n, plural, one {# tâche} other {# tâches}}, repliée"
+  "{name}, {n, plural, one {# task} other {# tasks}}, folded": "{name}, {n, plural, one {# tâche} other {# tâches}}, repliée",
+  "Adjusted for contrast": "Ajustée pour le contraste",
+  "Choose a colour": "Choisir une couleur",
+  "Colours": "Couleurs",
+  "Custom colour": "Couleur personnalisée",
+  "Enter a colour as #rrggbb or #rgb.": "Saisissez une couleur au format #rrggbb ou #rgb.",
+  "Hex colour": "Couleur hexadécimale",
+  "Picked {picked}, shown as {used}": "Choisie : {picked}, affichée : {used}",
+  "Selected": "Sélectionné",
+  "Turned away from the colour for errors": "Éloignée de la couleur des erreurs",
+  "deep {colour}": "{colour} foncé"
 }

@@ -21,6 +21,15 @@ export const DEFAULT_ACCENT: AccentId = 'emerald'
 /** The bar colour in dark mode: the dark canvas, whatever the accent. */
 export const DARK_BAR = '#0d0e10'
 
+/**
+ * The custom accent (OpenSpec change accent-colour, design D1): the user's own
+ * colour, derived on the device into the values a theme declares and set on the
+ * root as inline properties under data-accent="custom". Not one of ACCENTS.
+ */
+export const CUSTOM_ACCENT = 'custom'
+/** A theme preference: a built-in accent or the custom one. */
+export type ThemeAccent = AccentId | typeof CUSTOM_ACCENT
+
 export function isAccent(v: unknown): v is AccentId {
   return typeof v === 'string' && ACCENTS.some((a) => a.id === v)
 }

@@ -1,11 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { FIXED_DESTINATIONS, PROMOTABLE, type Appearance, type DestinationId, type Promotable, type SidebarCounts } from '../lib/appearance'
+import { deriveAccent } from '../lib/accentDerive'
 import { AppearanceView, SidebarView } from './AppearanceSection'
 
 function Panel({ initial }: { initial: Appearance }) {
   const [v, setV] = useState(initial)
-  return <AppearanceView value={v} onMode={(mode) => setV({ ...v, mode })} onAccent={(accent) => setV({ ...v, accent })} />
+  const values = v.custom ? deriveAccent(v.custom) : null
+  return <AppearanceView value={v} onMode={(mode) => setV({ ...v, mode })} onAccent={(accent) => setV({ ...v, accent })}
+    custom={{ values, onPick: (hex) => setV({ ...v, accent: 'custom', custom: hex }) }} />
 }
 
 // OpenSpec theming D9: checked by the a11y gate in light and dark; no screenshot
@@ -14,6 +17,8 @@ const meta: Meta = { title: 'Settings/App/Appearance', tags: ['no-visual'] }
 export default meta
 export const Default: StoryObj = { render: () => <Panel initial={{ mode: 'system', accent: 'emerald' }} /> }
 export const VioletDark: StoryObj = { render: () => <Panel initial={{ mode: 'dark', accent: 'violet' }} /> }
+/** accent-colour D5: the Custom tile with a stored colour, while Teal is chosen. */
+export const CustomKept: StoryObj = { render: () => <Panel initial={{ mode: 'light', accent: 'teal', custom: '#1f6feb' }} /> }
 
 /** The sidebar card (sidebar-polish D1, D3): the counts choice, then the ordered destinations with handles, menus and switches. */
 function Sidebar({ arranged = false }: { arranged?: boolean }) {
