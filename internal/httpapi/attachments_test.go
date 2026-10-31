@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -44,7 +45,22 @@ func (e *env) raw(method, path string, body []byte, headers ...string) (*http.Re
 // queueRow creates an attachment row through sync like a device does.
 func queueRow(e *env, device, id, task, author, name, mime string, content []byte, encrypted ...bool) {
 	e.t.Helper()
-	queueRowAt(e, time.Now().UnixMilli(), device, id, task, author, name, mime, content, encrypted...)
+	queueRowAt(e, deviceNow(), device, id, task, author, name, mime, content, encrypted...)
+}
+
+var lastDeviceTS atomic.Int64
+
+// deviceNow is a test device's clock: the wall clock, but strictly increasing,
+// so a wall clock stepped back under load (seen on WSL2) cannot make a later
+// write of the test lose last-writer-wins to an earlier one.
+func deviceNow() int64 {
+	for {
+		last, now := lastDeviceTS.Load(), time.Now().UnixMilli()
+		next := max(now, last+1)
+		if lastDeviceTS.CompareAndSwap(last, next) {
+			return next
+		}
+	}
 }
 
 // queueRowAt is queueRow with the device's own clock reading ts.
@@ -231,7 +247,7 @@ func TestAttachmentQuotaHoldsOnRestoreAndUploadsInProgress(t *testing.T) {
 	}
 	// Removing t1 frees its space; t2 fills it; restoring t1 no longer fits.
 	setDeleted := func(id string, v any) []any {
-		now := time.Now().UnixMilli()
+		now := deviceNow()
 		out := syncOnce(e, "laptop", 0, []map[string]any{{"id": ids.New(), "entity": "attachment", "entityId": id, "field": "deleted_at",
 			"value": v, "ts": now, "device": "laptop"}})
 		rej, _ := out["rejected"].([]any)
