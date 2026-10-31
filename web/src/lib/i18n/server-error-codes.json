@@ -75,6 +75,7 @@
   "mfa_enrolment_required",
   "mfa_not_enrolled",
   "mfa_required_by_policy",
+  "microsoft_not_configured",
   "newer_schema",
   "no_calendars",
   "no_key",

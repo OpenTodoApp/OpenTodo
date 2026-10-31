@@ -32,6 +32,12 @@ type Worker struct {
 	Token *TokenEndpoint
 	// GoogleBase is where Google's CalDAV discovery starts (tests change it).
 	GoogleBase string
+	// Microsoft is the owner's Microsoft client; MicrosoftToken its token
+	// endpoint (its Login is where people sign in); GraphBase is Graph (tests
+	// change them).
+	Microsoft      *MicrosoftConfig
+	MicrosoftToken *MicrosoftToken
+	GraphBase      string
 	// Tasks lists the user's task feed selection (installed by the server).
 	Tasks func(ctx context.Context, userID string) ([]calfeed.FeedTask, error)
 	// Enabled reports the owner switch; nothing runs while it is off.
@@ -59,7 +65,9 @@ func NewWorker(db *sql.DB, dataDir string, syncSvc *opsync.Service, allowPrivate
 	secrets := NewSecrets(dataDir)
 	return &Worker{Store: NewStore(db), Secrets: secrets, Sync: syncSvc, Feeds: calfeed.NewStore(db), HTTP: client,
 		Google: &GoogleConfig{Env: google, Store: settings.New(db), Secrets: secrets}, Token: &TokenEndpoint{HTTP: client, URL: GoogleTokenURL},
-		GoogleBase: GoogleCalDAV, Version: version, Log: log, keys: e2ee.NewStore(db)}
+		GoogleBase: GoogleCalDAV, Version: version, Log: log, keys: e2ee.NewStore(db),
+		Microsoft:      &MicrosoftConfig{Store: settings.New(db), Secrets: secrets},
+		MicrosoftToken: &MicrosoftToken{HTTP: client, Login: MicrosoftLogin}, GraphBase: GraphBase}
 }
 
 // SetClock replaces the worker's and its store's clock (tests).
@@ -67,6 +75,7 @@ func (w *Worker) SetClock(now func() time.Time) {
 	w.now = now
 	w.Store.SetClock(now)
 	w.Token.now = now
+	w.MicrosoftToken.now = now
 }
 
 func (w *Worker) clock() time.Time {
@@ -206,6 +215,23 @@ func (w *Worker) Observe(ctx context.Context, changes []opsync.Change) {
 	if err := w.Store.DueSoon(ctx, ids, w.clock().Add(Debounce)); err != nil {
 		w.log().Error("calendar sync: schedule", "err", err)
 	}
+}
+
+// transport builds the transport of a connection with its credentials: Graph
+// for Microsoft, WebDAV for the others.
+func (w *Worker) transport(ctx context.Context, c *Connection) (transport, error) {
+	if c.Provider == ProviderMicrosoft {
+		g, err := w.graphFor(ctx, c)
+		if err != nil {
+			return nil, err
+		}
+		return &graphTransport{g: g, store: w.Store, conn: c.ID, zone: c.mailboxZone(), now: w.clock}, nil
+	}
+	dav, err := w.Client(ctx, c)
+	if err != nil {
+		return nil, err
+	}
+	return davTransport{d: dav}, nil
 }
 
 // Client builds the DAV client of a connection with its credentials.

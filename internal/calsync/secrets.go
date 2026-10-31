@@ -14,8 +14,13 @@ const SecretsName = "calendar-sync"
 // GoogleSecretKey holds the owner's Google client secret in the same file.
 const GoogleSecretKey = "google.client_secret"
 
+// MicrosoftSecretKey holds the owner's Microsoft client secret (outlook-calendar-sync D2).
+const MicrosoftSecretKey = "microsoft.client_secret"
+
 // reserved keys are never swept.
-func reserved(key string) bool { return strings.HasPrefix(key, "google.") }
+func reserved(key string) bool {
+	return strings.HasPrefix(key, "google.") || strings.HasPrefix(key, "microsoft.")
+}
 
 // Secrets keeps connection passwords and refresh tokens, and the Google client
 // secret, in the secrets file.
@@ -64,7 +69,7 @@ func (s *Secrets) Delete(key string) error {
 
 // Sweep removes the secrets of connections that no longer exist (an account
 // deleted, its rows gone by cascade) and reports how many it removed; the
-// Google client secret stays.
+// Google and Microsoft client secrets stay.
 func (s *Secrets) Sweep(ctx context.Context, store *Store) (int, error) {
 	live, err := store.IDs(ctx)
 	if err != nil {

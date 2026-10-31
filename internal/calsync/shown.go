@@ -47,7 +47,7 @@ func (r *cycle) readCalendars(ctx context.Context) error {
 		cal := r.c.Calendar(u)
 		v := r.ver
 		if u != r.c.TargetURL {
-			if v, err = r.dav.calendarVersion(ctx, u); err != nil {
+			if v, err = r.tr.version(ctx, u); err != nil {
 				if reasonOf(err) == ReasonCalendarMissing {
 					continue // a read calendar that is gone shows nothing
 				}
@@ -65,26 +65,22 @@ func (r *cycle) readCalendars(ctx context.Context) error {
 		if key != "" && key == m.Version {
 			continue
 		}
-		objs, err := r.dav.query(ctx, u, calfeed.StoreWindow(r.w.clock()))
+		objs, err := r.tr.window(ctx, u, calfeed.StoreWindow(r.w.clock()))
 		if err != nil {
 			return err
 		}
 		var events []calfeed.Event
 		var warns []string
 		for _, o := range objs {
-			if u == r.c.TargetURL && r.byHref[hrefKey(o.Href)] != nil {
+			if u == r.c.TargetURL && (r.byHref[r.tr.key(o.Href)] != nil || o.TaskID != "") {
 				continue // OpenTodo's own events are tasks already
 			}
-			parsed, perr := calfeed.ParseCalendar(o.Data)
-			if perr != nil {
-				continue
-			}
-			for _, ev := range parsed.Events {
+			for _, ev := range o.Events {
 				if _, ours := r.links[ev.UID]; !ours || u != r.c.TargetURL {
 					events = append(events, ev)
 				}
 			}
-			warns = append(warns, parsed.Warnings...)
+			warns = append(warns, o.Warnings...)
 		}
 		ectx, cancel := context.WithTimeout(ctx, calfeed.MaxExpandTime)
 		occ, more := calfeed.ExpandContext(ectx, events, calfeed.StoreWindow(r.w.clock()), calfeed.MaxOccurrences)
