@@ -1,5 +1,5 @@
 {
-  "about": "Origin recognition vectors (OpenSpec change task-origin, design D3). internal/origin/vectors_test.go runs FromURL(url, title) and web/src/lib/origin.test.ts runs originFromUrl(url, title) on every case; want null means the input gives no origin. The \"labels\" list (extension-v2) holds whole origin values: internal/origin/vectors_test.go checks Validate and Label, web/src/lib/origin.test.ts checks originLabel; a null label is checked for validity only.",
+  "about": "Origin recognition vectors (OpenSpec change task-origin, design D3). internal/origin/vectors_test.go runs FromURL(url, title) and web/src/lib/origin.test.ts runs originFromUrl(url, title) on every case; want null means the input gives no origin. The \"labels\" list (extension-v2) holds whole origin values: internal/origin/vectors_test.go checks Validate and Label, web/src/lib/origin.test.ts checks originLabel; a null label is checked for validity only. The \"obsidian\" list (obsidian-origin) holds whole origin values with an Obsidian note link: internal/origin/obsidian_test.go checks Validate, Label and ObsidianTip on each, and ParseObsidianURL against link (whether the url alone is a valid note link, the shells' check; null without a url); web/src/lib/taskOrigin.test.ts checks obsidianLink against link, obsidianURL against valid (obsidian origins with an id, a url and no provider), originLabel and obsidianPlace (the tooltip), and that only valid ones get a link.",
   "cases": [
     {
       "name": "github issue",
@@ -222,6 +222,359 @@
       },
       "valid": false,
       "label": null
+    }
+  ],
+  "obsidian": [
+    {
+      "name": "plain note",
+      "origin": {
+        "kind": "obsidian",
+        "id": "Inbox.md",
+        "url": "obsidian://open?vault=Notes&file=Inbox"
+      },
+      "valid": true,
+      "link": true,
+      "label": "Inbox",
+      "tooltip": "Open in Obsidian: Notes › Inbox.md"
+    },
+    {
+      "name": "note in a sub-folder with a title",
+      "origin": {
+        "kind": "obsidian",
+        "id": "Daily/2026-10-29.md",
+        "url": "obsidian://open?vault=Notes&file=Daily%2F2026-10-29",
+        "title": "2026-10-29"
+      },
+      "valid": true,
+      "link": true,
+      "label": "2026-10-29",
+      "tooltip": "Open in Obsidian: Notes › Daily/2026-10-29.md"
+    },
+    {
+      "name": "note in a sub-folder",
+      "origin": {
+        "kind": "obsidian",
+        "id": "Meetings/Kick-off.md",
+        "url": "obsidian://open?vault=Work%20notes&file=Meetings%2FKick-off"
+      },
+      "valid": true,
+      "link": true,
+      "label": "Kick-off",
+      "tooltip": "Open in Obsidian: Work notes › Meetings/Kick-off.md"
+    },
+    {
+      "name": "vault name with &, # and non-Latin letters",
+      "origin": {
+        "kind": "obsidian",
+        "id": "Идеи/План.md",
+        "url": "obsidian://open?vault=R%26D%20%232%20%D0%97%D0%B0%D0%BC%D0%B5%D1%82%D0%BA%D0%B8&file=%D0%98%D0%B4%D0%B5%D0%B8%2F%D0%9F%D0%BB%D0%B0%D0%BD"
+      },
+      "valid": true,
+      "link": true,
+      "label": "План",
+      "tooltip": "Open in Obsidian: R&D #2 Заметки › Идеи/План.md"
+    },
+    {
+      "name": "file with an explicit .md",
+      "origin": {
+        "kind": "obsidian",
+        "id": "Projects/Plan.md",
+        "url": "obsidian://open?vault=Notes&file=Projects%2FPlan.md"
+      },
+      "valid": true,
+      "link": true,
+      "label": "Plan",
+      "tooltip": "Open in Obsidian: Notes › Projects/Plan.md"
+    },
+    {
+      "name": "canvas file",
+      "origin": {
+        "kind": "obsidian",
+        "id": "Boards/Roadmap.canvas",
+        "url": "obsidian://open?vault=Notes&file=Boards%2FRoadmap.canvas"
+      },
+      "valid": true,
+      "link": true,
+      "label": "Roadmap.canvas",
+      "tooltip": "Open in Obsidian: Notes › Boards/Roadmap.canvas"
+    },
+    {
+      "name": "new note action",
+      "origin": {
+        "kind": "obsidian",
+        "id": "a.md",
+        "url": "obsidian://new?vault=Notes&name=x"
+      },
+      "valid": false,
+      "link": false
+    },
+    {
+      "name": "search action",
+      "origin": {
+        "kind": "obsidian",
+        "id": "a.md",
+        "url": "obsidian://search?vault=Notes&query=x"
+      },
+      "valid": false,
+      "link": false
+    },
+    {
+      "name": "advanced URI plugin",
+      "origin": {
+        "kind": "obsidian",
+        "id": "a.md",
+        "url": "obsidian://adv-uri?vault=Notes&filepath=a.md"
+      },
+      "valid": false,
+      "link": false
+    },
+    {
+      "name": "absolute path instead of file",
+      "origin": {
+        "kind": "obsidian",
+        "id": "a.md",
+        "url": "obsidian://open?path=%2FUsers%2Fme%2FNotes%2Fa.md"
+      },
+      "valid": false,
+      "link": false
+    },
+    {
+      "name": "path member beside vault",
+      "origin": {
+        "kind": "obsidian",
+        "id": "a.md",
+        "url": "obsidian://open?vault=Notes&path=%2FUsers%2Fme%2Fa.md"
+      },
+      "valid": false,
+      "link": false
+    },
+    {
+      "name": "extra content member",
+      "origin": {
+        "kind": "obsidian",
+        "id": "a.md",
+        "url": "obsidian://open?vault=Notes&file=a&content=x"
+      },
+      "valid": false,
+      "link": false
+    },
+    {
+      "name": "repeated vault",
+      "origin": {
+        "kind": "obsidian",
+        "id": "a.md",
+        "url": "obsidian://open?vault=Notes&vault=Other"
+      },
+      "valid": false,
+      "link": false
+    },
+    {
+      "name": "fragment",
+      "origin": {
+        "kind": "obsidian",
+        "id": "a.md",
+        "url": "obsidian://open?vault=Notes&file=a#h"
+      },
+      "valid": false,
+      "link": false
+    },
+    {
+      "name": "user information",
+      "origin": {
+        "kind": "obsidian",
+        "id": "a.md",
+        "url": "obsidian://me@open?vault=Notes&file=a"
+      },
+      "valid": false,
+      "link": false
+    },
+    {
+      "name": "upper-case scheme",
+      "origin": {
+        "kind": "obsidian",
+        "id": "a.md",
+        "url": "OBSIDIAN://open?vault=Notes&file=a"
+      },
+      "valid": false,
+      "link": false
+    },
+    {
+      "name": "path after the action",
+      "origin": {
+        "kind": "obsidian",
+        "id": "a.md",
+        "url": "obsidian://open/x?vault=Notes&file=a"
+      },
+      "valid": false,
+      "link": false
+    },
+    {
+      "name": "empty vault",
+      "origin": {
+        "kind": "obsidian",
+        "id": "a.md",
+        "url": "obsidian://open?vault=&file=a"
+      },
+      "valid": false,
+      "link": false
+    },
+    {
+      "name": "empty file",
+      "origin": {
+        "kind": "obsidian",
+        "id": "a.md",
+        "url": "obsidian://open?vault=Notes&file="
+      },
+      "valid": false,
+      "link": false
+    },
+    {
+      "name": "file starting with a slash",
+      "origin": {
+        "kind": "obsidian",
+        "id": "/a.md",
+        "url": "obsidian://open?vault=Notes&file=%2Fa"
+      },
+      "valid": false,
+      "link": false
+    },
+    {
+      "name": "unencoded space",
+      "origin": {
+        "kind": "obsidian",
+        "id": "a.md",
+        "url": "obsidian://open?vault=My Notes&file=a"
+      },
+      "valid": false,
+      "link": false
+    },
+    {
+      "name": "plus sign",
+      "origin": {
+        "kind": "obsidian",
+        "id": "a.md",
+        "url": "obsidian://open?vault=My+Notes&file=a"
+      },
+      "valid": false,
+      "link": false
+    },
+    {
+      "name": "broken escape",
+      "origin": {
+        "kind": "obsidian",
+        "id": "a.md",
+        "url": "obsidian://open?vault=Notes%2&file=a"
+      },
+      "valid": false,
+      "link": false
+    },
+    {
+      "name": "encoded control character",
+      "origin": {
+        "kind": "obsidian",
+        "id": "a\nb.md",
+        "url": "obsidian://open?vault=Notes&file=a%0Ab"
+      },
+      "valid": false,
+      "link": false
+    },
+    {
+      "name": "vault over 255 characters",
+      "origin": {
+        "kind": "obsidian",
+        "id": "a.md",
+        "url": "obsidian://open?vault=vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv&file=a"
+      },
+      "valid": false,
+      "link": false
+    },
+    {
+      "name": "file over 1024 characters",
+      "origin": {
+        "kind": "obsidian",
+        "id": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "url": "obsidian://open?vault=Notes&file=fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      },
+      "valid": false,
+      "link": false
+    },
+    {
+      "name": "url over 2048 bytes",
+      "origin": {
+        "kind": "obsidian",
+        "id": "ЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯЯ.md",
+        "url": "obsidian://open?vault=Notes&file=%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF"
+      },
+      "valid": false,
+      "link": false
+    },
+    {
+      "name": "id not matching file",
+      "origin": {
+        "kind": "obsidian",
+        "id": "Daily/2026-10-29.md",
+        "url": "obsidian://open?vault=Notes&file=Private%2Fdiary"
+      },
+      "valid": false,
+      "link": true
+    },
+    {
+      "name": "id without .md for a note",
+      "origin": {
+        "kind": "obsidian",
+        "id": "a",
+        "url": "obsidian://open?vault=Notes&file=a"
+      },
+      "valid": false,
+      "link": true
+    },
+    {
+      "name": "provider present",
+      "origin": {
+        "kind": "obsidian",
+        "id": "a.md",
+        "url": "obsidian://open?vault=Notes&file=a",
+        "provider": "obsidian"
+      },
+      "valid": false,
+      "link": true
+    },
+    {
+      "name": "no url",
+      "origin": {
+        "kind": "obsidian",
+        "id": "a.md"
+      },
+      "valid": false,
+      "link": null
+    },
+    {
+      "name": "no id",
+      "origin": {
+        "kind": "obsidian",
+        "url": "obsidian://open?vault=Notes&file=a"
+      },
+      "valid": false,
+      "link": true
+    },
+    {
+      "name": "http url on an obsidian origin",
+      "origin": {
+        "kind": "obsidian",
+        "id": "a.md",
+        "url": "https://example.com/a"
+      },
+      "valid": false,
+      "link": false
+    },
+    {
+      "name": "obsidian link on a url origin",
+      "origin": {
+        "kind": "url",
+        "url": "obsidian://open?vault=Notes&file=a"
+      },
+      "valid": false,
+      "link": true
     }
   ]
 }

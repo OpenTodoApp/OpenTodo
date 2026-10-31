@@ -32,7 +32,7 @@ class Bridge(private val context: Context, private val origin: String, private v
     fun capabilities(): List<String> {
         val caps = mutableListOf("reminders", "widgets")
         if (host != null) {
-            caps += listOf("share", "links")
+            caps += listOf("share", "links", "obsidian-links")
             if (BiometricKeyStore.available(context)) caps += "biometric"
         }
         return caps
@@ -68,7 +68,7 @@ class Bridge(private val context: Context, private val origin: String, private v
                 answer(key?.let { android.util.Base64.encodeToString(it, android.util.Base64.NO_WRAP).also { _ -> it.fill(0) } })
             }
             "biometricForget" -> BiometricKeyStore.forget(context)
-            "openExternal" -> args.optString(0).takeIf { safeExternal(it) }?.let { host?.openExternal(it) }
+            "openExternal" -> args.optString(0).takeIf { externalLink(it) }?.let { host?.openExternal(it) }
         }
     }
 
@@ -103,6 +103,13 @@ class Bridge(private val context: Context, private val origin: String, private v
             val scheme = Uri.parse(url).scheme?.lowercase()
             return scheme == "https" || scheme == "http" || scheme == "mailto" || scheme == "tel"
         }
+
+        /**
+         * What the bridge's openExternal hands to the system: [safeExternal], or an Obsidian
+         * note link of the one accepted shape (obsidian-origin, capability `obsidian-links`).
+         * Navigation of the web view never opens an Obsidian link: only this method does.
+         */
+        fun externalLink(url: String): Boolean = safeExternal(url) || ObsidianLink.valid(url)
 
         /** The page side: `window.opentodoShell`, promise-returning methods over the message channel. */
         fun script(app: String, caps: List<String>): String = """

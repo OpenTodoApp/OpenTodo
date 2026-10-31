@@ -3174,8 +3174,10 @@
   "Copy link": [
     "web/src/app/InviteLinksSection.tsx",
     "web/src/app/MembersPanel.tsx",
+    "web/src/app/OriginChip.tsx",
     "web/src/app/PublicLinksSection.tsx",
     "web/src/app/UsersPanel.tsx",
+    "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/TaskActionsMenu.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
@@ -5513,6 +5515,9 @@
   ],
   "From": [
     "web/src/app/AuditPanel.tsx"
+  ],
+  "From Obsidian": [
+    "web/src/lib/taskSource.ts"
   ],
   "From a Markdown vault": [
     "web/src/lib/taskSource.ts"
@@ -9709,6 +9714,9 @@
   ],
   "Open in Help": [
     "web/src/app/help/HelpPanel.tsx"
+  ],
+  "Open in Obsidian: {vault} › {path}": [
+    "web/src/app/OriginChip.tsx"
   ],
   "Open in maps": [
     "web/src/app/locations/LocationEditor.tsx",

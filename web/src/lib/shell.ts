@@ -11,7 +11,7 @@ export const BRIDGE_VERSION = 1
 /** The oldest shell app version this web app expects (bumped when a shell bug needs a forced update). */
 export const MIN_SHELL_APP = '0.10.0'
 
-export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links'
+export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links'
 
 /** One reminder handed to the shell: the next 7 days, title only when allowed. */
 export interface ShellReminder {
@@ -138,6 +138,18 @@ export function forgetShellData(): void {
 export function openExternal(url: string): boolean {
   const s = shell()
   if (!s || !has('links') || !s.openExternal) return false
+  s.openExternal(url)
+  return true
+}
+
+/**
+ * Hands an Obsidian note link to the shell (obsidian-origin D4) when it lists
+ * `obsidian-links`; the shell checks the link's shape again and opens nothing
+ * else. False when the shell cannot: the caller then offers Copy link.
+ */
+export function openObsidian(url: string): boolean {
+  const s = shell()
+  if (!s || !has('obsidian-links') || !s.openExternal) return false
   s.openExternal(url)
   return true
 }
