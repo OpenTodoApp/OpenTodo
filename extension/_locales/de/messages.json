@@ -3,7 +3,7 @@
     "message": "OpenTodo Capture"
   },
   "extDescription": {
-    "message": "Die aktuelle Seite, einen Link, ein Bild, eine Mail oder den markierten Text aus einem kleinen Popup zu deinem eigenen OpenTodo-Server hinzufügen. Spricht nur mit der Serveradresse, die du einträgst.",
+    "message": "Seite, Link, Bild, Mail oder markierten Text zu deinem eigenen OpenTodo-Server hinzufügen. Spricht nur mit deinem Server.",
     "description": "The description in the browser’s extension list."
   },
   "actionTitle": {
