@@ -6,14 +6,16 @@
 // 640 px the tiles are one scrollable row of named swatches. On a device that can
 // vibrate, a switch turns the haptic tick off (motion-v2 D6). Task details holds how a
 // task opens from a list, as a page or in a side panel (task-side-panel D1).
+// The Custom tile (accent-colour D5) ends the theme row and opens the lazily loaded
+// colour picker in a popover (a bottom sheet below 640 px).
 import { readMethodMode } from '../lib/method/mode'
-import { type DragEvent, type KeyboardEvent, useRef, useState } from 'react'
-import { DENSITIES, type Density, destinationOrder, type DestinationId, FIXED_DESTINATIONS, moveDestination, PROMOTABLE, type Promotable, readAppearance, readSidebarCounts, setAppearance, setPromoted, setSidebarCounts, SIDEBAR_COUNTS, type SidebarCounts, THEME_MODES, type Appearance } from '../lib/appearance'
+import { type DragEvent, type KeyboardEvent, Suspense, useEffect, useRef, useState } from 'react'
+import { cachedCustom, customAccentStyle, type CustomAccentValues, deriveCustom, DENSITIES, type Density, destinationOrder, type DestinationId, FIXED_DESTINATIONS, moveDestination, PROMOTABLE, type Promotable, readAppearance, readSidebarCounts, setAppearance, setCustomAccent, setPromoted, setSidebarCounts, SIDEBAR_COUNTS, type SidebarCounts, THEME_MODES, type Appearance } from '../lib/appearance'
 import { ActionMenu } from './menus/ActionMenu'
 import { useUserPrefsRow } from '../lib/localData'
 import type { ThemeModePref, UserPrefs } from '../lib/types'
-import { Icon, SettingRow, SettingsSection, Switch } from '../ui'
-import { ACCENTS, type AccentId } from '../ui'
+import { Icon, LazyAccentPicker, Popover, SettingRow, SettingsSection, Skeleton, Switch } from '../ui'
+import { ACCENTS, CUSTOM_ACCENT, type ThemeAccent } from '../ui'
 import { t, msg, translatedMap } from '../lib/i18n'
 import { accentName } from '../lib/colourNames'
 import { act } from './actionError'
@@ -38,7 +40,10 @@ export const PROMOTABLE_LABEL = translatedMap<Promotable>({
 export interface AppearanceViewProps {
   value: Appearance
   onMode: (m: ThemeModePref) => void
-  onAccent: (a: AccentId) => void
+  /** A built-in theme, or `custom` to use the stored custom colour again. */
+  onAccent: (a: ThemeAccent) => void
+  /** The custom accent (accent-colour D5): its derived values for the tile, and writing a picked colour. */
+  custom?: { values: CustomAccentValues | null; onPick: (hex: string) => void }
   onDensity?: (d: Density) => void
   /** The account's task row layout (row-layouts D4): every list without its own choice. */
   rows?: { value: RowLayout; onChange: (r: RowLayout) => void }
@@ -78,9 +83,33 @@ function Segmented<T extends string>({ label, items, labels, value, onChange, te
   )
 }
 
-export function AppearanceView({ value, onMode, onAccent, onDensity, rows, haptics }: AppearanceViewProps) {
+/** The tile drawing: the theme's accent on the current mode (a sidebar with a soft item, a surface with a button). */
+function TilePreview() {
+  return (
+    <span className="flex h-12 w-full overflow-hidden rounded-control border border-default" aria-hidden="true">
+      <span className="flex w-1/3 flex-col gap-1 bg-canvas p-1">
+        <span className="h-1.5 w-full rounded-full bg-accent-soft" />
+        <span className="h-1.5 w-3/4 rounded-full bg-sunken" />
+      </span>
+      <span className="flex flex-1 flex-col justify-between bg-surface p-1">
+        <span className="h-1.5 w-2/3 rounded-full bg-sunken" />
+        <span className="h-3 w-1/2 rounded-full bg-accent" />
+      </span>
+    </span>
+  )
+}
+
+const TILE = 'flex w-28 shrink-0 snap-start flex-col gap-2 rounded-card border bg-surface p-2 text-left outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus sm:w-auto'
+
+export function AppearanceView({ value, onMode, onAccent, custom, onDensity, rows, haptics }: AppearanceViewProps) {
   const tileRefs = useRef<(HTMLButtonElement | null)[]>([])
-  const ids = ACCENTS.map((a) => a.id)
+  const [picking, setPicking] = useState(false)
+  const customRef = useRef<HTMLButtonElement | null>(null)
+  const ids: ThemeAccent[] = [...ACCENTS.map((a): ThemeAccent => a.id), ...(custom ? [CUSTOM_ACCENT] as const : [])]
+  // Arrows select a built-in theme; on the Custom tile they select the stored colour, or only move there.
+  const choose = (a: ThemeAccent) => { if (a !== CUSTOM_ACCENT || value.custom) onAccent(a) }
+  const customOn = value.accent === CUSTOM_ACCENT
+  const swatch = custom?.values && value.custom ? custom.values : null
   return (
     <SettingsSection {...cardCopy('appearance')}>
       <SettingRow id="appearance-mode" {...rowCopy('appearance', 'mode')}
@@ -94,24 +123,39 @@ export function AppearanceView({ value, onMode, onAccent, onDensity, rows, hapti
             return (
               <button key={a.id} ref={(el) => { tileRefs.current[i] = el }} type="button" role="radio" aria-checked={on} tabIndex={on ? 0 : -1}
                 data-accent={a.id} data-theme-tile={a.id}
-                className={`flex w-28 shrink-0 snap-start flex-col gap-2 rounded-card border bg-surface p-2 text-left outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus sm:w-auto ${on ? 'border-accent ring-2 ring-accent' : 'border-default'}`}
+                className={`${TILE} ${on ? 'border-accent ring-2 ring-accent' : 'border-default'}`}
                 onClick={() => onAccent(a.id)}
-                onKeyDown={(e) => roving(e, ids, value.accent, onAccent, (n) => tileRefs.current[n]?.focus())}>
-                <span className="flex h-12 w-full overflow-hidden rounded-control border border-default" aria-hidden="true">
-                  <span className="flex w-1/3 flex-col gap-1 bg-canvas p-1">
-                    <span className="h-1.5 w-full rounded-full bg-accent-soft" />
-                    <span className="h-1.5 w-3/4 rounded-full bg-sunken" />
-                  </span>
-                  <span className="flex flex-1 flex-col justify-between bg-surface p-1">
-                    <span className="h-1.5 w-2/3 rounded-full bg-sunken" />
-                    <span className="h-3 w-1/2 rounded-full bg-accent" />
-                  </span>
-                </span>
+                onKeyDown={(e) => roving(e, ids, a.id, choose, (n) => tileRefs.current[n]?.focus())}>
+                <TilePreview />
                 <span className="text-meta font-medium text-default">{accentName(a.label)}</span>
               </button>
             )
           })}
+          {custom && (
+            <button ref={(el) => { tileRefs.current[ACCENTS.length] = el; customRef.current = el }} type="button" role="radio" aria-checked={customOn} tabIndex={customOn ? 0 : -1}
+              data-accent={swatch ? CUSTOM_ACCENT : undefined} style={swatch ? customAccentStyle(swatch) : undefined} data-theme-tile={CUSTOM_ACCENT}
+              className={`${TILE} ${customOn ? 'border-accent ring-2 ring-accent' : 'border-default'}`}
+              onClick={() => { if (value.custom && !customOn) onAccent(CUSTOM_ACCENT); setPicking(true) }}
+              onKeyDown={(e) => roving(e, ids, CUSTOM_ACCENT, choose, (n) => tileRefs.current[n]?.focus())}>
+              {swatch ? <TilePreview /> : (
+                <span className="flex h-12 w-full items-center justify-center rounded-control border border-dashed border-input text-muted" aria-hidden="true">
+                  <Icon name="plus" />
+                </span>
+              )}
+              <span className="text-meta font-medium text-default">
+                {t('Custom')}
+                <span className="block font-normal text-muted">{value.custom ? <span className="font-mono">{value.custom}</span> : t('Choose a colour')}</span>
+              </span>
+            </button>
+          )}
         </div>
+        {custom && (
+          <Popover open={picking} onClose={() => setPicking(false)} anchor={customRef} label={t('Custom colour')} align="start" width="sm:w-80" className="p-3">
+            <Suspense fallback={<Skeleton count={3} />}>
+              <LazyAccentPicker value={value.custom} onPick={custom.onPick} onDone={() => setPicking(false)} />
+            </Suspense>
+          </Popover>
+        )}
       </div>
       {onDensity && (
         <SettingRow id="appearance-density" {...rowCopy('appearance', 'density')}
@@ -234,11 +278,31 @@ function usePrefsRow(): Partial<UserPrefs> | null {
   return useUserPrefsRow() ?? null
 }
 
+/**
+ * The derived values of the stored custom colour for the Custom tile: the ones cached
+ * on this device at once, else from the derivation, which loads on first use.
+ */
+function useCustomValues(hex: string | undefined): CustomAccentValues | null {
+  const [got, setGot] = useState<{ hex: string; values: CustomAccentValues } | null>(null)
+  const cached = cachedCustom(hex)
+  const hasCached = !!cached
+  useEffect(() => {
+    if (!hex || hasCached) return
+    let live = true
+    deriveCustom(hex).then((values) => { if (live) setGot({ hex, values }) }, () => {})
+    return () => { live = false }
+  }, [hex, hasCached])
+  if (!hex) return null
+  return cached ?? (got?.hex === hex ? got.values : null)
+}
+
 /** The panel with its data: the synced row, written through ops. */
 export function AppearanceSection() {
   const row = usePrefsRow()
   const value = readAppearance(row)
+  const values = useCustomValues(value.custom)
   return <AppearanceView value={value} onMode={(m) => act(setAppearance('theme_mode', m))} onAccent={(a) => act(setAppearance('theme_accent', a))}
+    custom={{ values, onPick: (hex) => act(setCustomAccent(hex)) }}
     onDensity={(d) => act(setAppearance('density', d))}
     rows={{ value: accountRowLayout(row), onChange: (r) => act(setAccountRowLayout(r)) }}
     haptics={canVibrate() ? { on: hapticsPrefOn(row), onChange: (on) => act(setHapticsPref(on)) } : undefined} />

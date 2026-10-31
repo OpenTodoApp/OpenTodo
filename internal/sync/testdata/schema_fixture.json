@@ -244,6 +244,7 @@
       "start_checklist",
       "task_open",
       "theme_accent",
+      "theme_accent_custom",
       "theme_mode",
       "time_format",
       "today_done",

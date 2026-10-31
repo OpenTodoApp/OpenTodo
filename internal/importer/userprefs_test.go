@@ -7,11 +7,11 @@ import (
 
 const prefsOwnExport = `{"format":"opentodo-export","version":1,
   "projects":[],"tasks":[],"labels":[],"sections":[],"reminders":[],"views":[],"comments":[],
-  "user_prefs":[{"id":"me","date_format":"iso","time_format":"24h","week_start":"sun","day_start":"04:00","theme_mode":"dark","theme_accent":"indigo","language":"de"}],
+  "user_prefs":[{"id":"me","date_format":"iso","time_format":"24h","week_start":"sun","day_start":"04:00","theme_mode":"dark","theme_accent":"custom","theme_accent_custom":"#1f6feb","language":"de"}],
   "encryption":null}`
 
 // TestOwnExportRestoresUserPrefs (date-time-preferences D1): an own export brings
-// the date and time preferences to a new account, and an account that already
+// the date and time preferences (and the custom accent, accent-colour D1) to a new account, and an account that already
 // has preferences keeps them unless the import overwrites existing records.
 func TestOwnExportRestoresUserPrefs(t *testing.T) {
 	h := newHarness(t)
@@ -24,7 +24,7 @@ func TestOwnExportRestoresUserPrefs(t *testing.T) {
 		t.Fatalf("user_prefs: %v %v", row, err)
 	}
 	if str(row, "date_format") != "iso" || str(row, "time_format") != "24h" || str(row, "week_start") != "sun" || str(row, "day_start") != "04:00" ||
-		str(row, "theme_mode") != "dark" || str(row, "theme_accent") != "indigo" || str(row, "language") != "de" {
+		str(row, "theme_mode") != "dark" || str(row, "theme_accent") != "custom" || str(row, "theme_accent_custom") != "#1f6feb" || str(row, "language") != "de" {
 		t.Fatalf("restored prefs = %v", row)
 	}
 

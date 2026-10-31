@@ -94,6 +94,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | &nbsp;&nbsp;↳ [Archived projects](archived-projects.md) | Archiving hides a finished project without deleting it. When OpenTodo offers to archive, automatic archiving after 30 days, and how to bring a project back. |
 | [Settings](settings.md) | A tour of Settings, what each section does, which choices belong to one device and which follow your account. |
 | &nbsp;&nbsp;↳ [Settings: You](settings-you.md) | The Account and Appearance sections of Settings, your profile, session, password, two-factor authentication, passkeys, encryption, and the mode, theme, density and sidebar. |
+| &nbsp;&nbsp;↳ [Your own accent colour](custom-accent.md) | A custom accent from a swatch or a hex code, kept readable in light and dark and away from the red of errors. |
 | &nbsp;&nbsp;↳ [Settings: App](settings-app.md) | The General, Notifications and Capture sections of Settings, the start view, date and time formats, the calendar grid, keyboard options, quick add, voice and email to task. |
 | &nbsp;&nbsp;↳ [Settings: Data](settings-data.md) | The Integrations and Data sections of Settings, CalDAV, calendar feeds, webhooks, API tokens, the assistant and MCP, export, import, attachments and archived projects. |
 | &nbsp;&nbsp;↳ [Settings: Server](settings-server.md) | The People and Server sections of Settings, for the owner and admins. Users, invitations, the two-factor policy, single sign-on, backups, attachment limits and the audit log. |
