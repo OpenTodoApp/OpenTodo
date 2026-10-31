@@ -57,8 +57,8 @@ EOF
 
 The store only offers an update when `x-casaos.version` changes (it pins image digests itself at build time), so every release needs a small pull request to the store. `make check` fails after a release until this file is bumped, since the image must name the latest release in `CHANGELOG.md`:
 
-1. In [`docker-compose.yml`](docker-compose.yml) change the image tag and `x-casaos.version` to the new version, set `update_at` to the release date and rewrite `release_notes` (one line and the changelog link).
-2. Copy it to `upstream/Apps/OpenTodo/docker-compose.yml` and run `node scripts/deploy-check.mjs`.
+1. `make release-prepare` changes the image tag and `x-casaos.version` in [`docker-compose.yml`](docker-compose.yml) to the new version, sets `update_at` to the release date and updates the copy in `upstream/`. Check `release_notes` still reads right (one line and the changelog link).
+2. Run `node scripts/deploy-check.mjs`.
 3. Copy `upstream/Apps/OpenTodo/docker-compose.yml` into your fork of the store, commit (`Update OpenTodo to <version>`) and open a pull request.
 
 Release candidates are never put in the store.
