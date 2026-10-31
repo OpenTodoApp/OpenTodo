@@ -14,7 +14,7 @@ import { descendants, isDescendant } from './tree'
 import { GAP } from './ordering'
 import { ENTITIES, type Clock, type Attachment, type Comment, type Entity, type FieldDef, type Label, type Op, type Origin, type Place, type Project, type Rule, type Frame, type Slot, type TaskLocation, type ProjectPrefs, type Reminder, type Review, type Section, type Task, type TimeEntry, type UserPrefs, type View } from './types'
 import { recordActivity, type RecordInput } from './activity'
-import { DocTooLargeError, isDocField, loadRichText, MAX_DOC_CHARS, MAX_DOC_CHARS_ENCRYPTED, MAX_TEXT_VALUE, NOTE_ENTITIES, type RichText } from './docfields'
+import { DOC_FIELDS, DocTooLargeError, isDocField, loadRichText, MAX_DOC_CHARS, MAX_DOC_CHARS_ENCRYPTED, MAX_TEXT_VALUE, NOTE_ENTITIES, type RichText } from './docfields'
 import { byteLength, MAX_PLAINTEXT_BYTES } from './crypto'
 import { encryptionSnapshot, isContentField } from './e2ee'
 import type { RowEncryption } from './types'
@@ -239,7 +239,13 @@ export function reconcileNote(rt: RichText, row: Pick<Task, 'notes_doc' | 'descr
   return { notes_doc: doc, description: rt.projectDoc(doc) }
 }
 
-type Listener = () => void
+/**
+ * When the batch should reach the server (notes-save-cadence D2): 'now' asks for
+ * an exchange shortly after the write (every edit but a note typed into), 'deferred'
+ * waits for the note push cadence (3 s quiet, at most 60 s).
+ */
+export type PushTiming = 'now' | 'deferred'
+type Listener = (info: { push: PushTiming }) => void
 const mutationListeners = new Set<Listener>()
 
 /** Sync engine subscribes here to learn that the outbox has new work. */
@@ -264,6 +270,8 @@ export interface MutateOptions {
    * Trash): it adds no default reminder (default-reminders D6).
    */
   restore?: boolean
+  /** When to push the batch: 'deferred' only for the note editor's timed save (default 'now'). */
+  push?: PushTiming
 }
 
 /** The op device of a batch with this origin. */
@@ -381,18 +389,23 @@ export async function mutateMany(changes: Change[], opts: MutateOptions = {}): P
       }
     }
     await applyOps(ops, { actor, local: true })
-    // One pending document per field (design D3): a newer state supersedes the queued one.
+    // One pending document per field (design D3): a newer state supersedes the queued one,
+    // and its projection in the same batch the queued projection (notes-save-cadence:
+    // a push after a pause would otherwise carry every intermediate projection).
     const docOps = ops.filter((o) => isDocField(o.entity, o.field))
     if (docOps.length) {
+      const pairs = ops.filter((o) => docOps.some((d) => d.entity === o.entity && d.entityId === o.entityId && DOC_FIELDS[`${d.entity}.${d.field}`] === o.field))
+      const superseded = [...docOps, ...pairs]
       const stale = await db.outbox
-        .filter((o) => docOps.some((d) => d.entity === o.entity && d.entityId === o.entityId && d.field === o.field))
+        .filter((o) => superseded.some((d) => d.entity === o.entity && d.entityId === o.entityId && d.field === o.field))
         .primaryKeys()
       if (stale.length) await db.outbox.bulkDelete(stale)
     }
     await db.outbox.bulkAdd(ops)
     await db.meta.put({ key: HLC_META, value: ts })
   })
-  for (const fn of mutationListeners) fn()
+  const info = { push: opts.push ?? 'now' }
+  for (const fn of mutationListeners) fn(info)
 }
 
 /**

@@ -62,7 +62,7 @@ Recurring depth, calendar range, and notes that stay cheap to store and easy to 
 | [`board-polish`](openspec/changes/board-polish/) | Fold a board column, preview notes on cards | [#561](https://github.com/OpenTodoApp/OpenTodo/issues/561) |
 | [`accent-colour`](openspec/changes/accent-colour/) | Your own accent colour, with contrast guaranteed | [#563](https://github.com/OpenTodoApp/OpenTodo/issues/563) |
 | [`notes-compaction`](openspec/changes/archive/2026-10-31-notes-compaction/) | **Shipped.** The server drops superseded note versions after 30 days and reclaims the space | [#652](https://github.com/OpenTodoApp/OpenTodo/issues/652) |
-| [`notes-save-cadence`](openspec/changes/notes-save-cadence/) | Notes save on the device at every pause and sync after 3 s quiet | [#653](https://github.com/OpenTodoApp/OpenTodo/issues/653) |
+| [`notes-save-cadence`](openspec/changes/archive/2026-10-31-notes-save-cadence/) | **Shipped.** Notes save on the device at every pause and sync after 3 s quiet | [#653](https://github.com/OpenTodoApp/OpenTodo/issues/653) |
 | [`notes-toolbar-desktop`](openspec/changes/notes-toolbar-desktop/) | A Formatting toggle beside notes on a computer | [#654](https://github.com/OpenTodoApp/OpenTodo/issues/654) |
 | [`notes-overview`](openspec/changes/notes-overview/) | A Notes page with standalone notes and search on the device | [#655](https://github.com/OpenTodoApp/OpenTodo/issues/655) |
 
