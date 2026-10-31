@@ -371,7 +371,7 @@ Resources are read-only and use the same `untrusted_text` shapes and `_notice` a
 
 ## Prompts
 
-The server offers the assistant's [skills](assistant.md#skills) as MCP prompts, so a client such as Claude Desktop can run "Weekly review" against your OpenTodo: `idea-to-project`, `plan-week`, `weekly-review`, `triage-inbox` and `break-down`. Each takes an optional `text` argument for your request (`plan-week` also takes `startHour`, `endHour` and `dayLength`). A prompt is only instructions for your client's model: everything it reads or changes still goes through the tools, under your token's scope and the write switches, so with a read-only token the model can read and suggest but every write is refused.
+The server offers the assistant's [skills](assistant.md#skills) as MCP prompts, so a client such as Claude Desktop can run "Weekly review" against your OpenTodo: `idea-to-project`, `plan-week`, `weekly-review`, `triage-inbox`, `break-down` and `capture` (text only: your client brings its own images). Each takes an optional `text` argument for your request (`plan-week` also takes `startHour`, `endHour` and `dayLength`). A prompt is only instructions for your client's model: everything it reads or changes still goes through the tools, under your token's scope and the write switches, so with a read-only token the model can read and suggest but every write is refused.
 
 ## End-to-end encryption
 

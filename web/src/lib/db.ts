@@ -39,6 +39,8 @@ export interface AssistantMessage {
   skill?: string
   /** Lines of pasted material sent with this question. */
   pastedLines?: number
+  /** Photos sent with this question (voice-ramble D3): a count, never the images. */
+  photos?: number
   at: number
 }
 

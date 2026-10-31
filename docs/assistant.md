@@ -3,7 +3,7 @@ title: AI assistant
 summary: Plan and change your tasks by talking, with a model provider your server owner chooses. Every change is proposed for review and can be undone.
 audience: user
 section: Guides
-specs: [in-app-assistant, assistant-skills]
+specs: [in-app-assistant, assistant-skills, voice-capture]
 screens: []
 order: 76
 card: assistant-chat
@@ -22,7 +22,7 @@ Press <kbd>Shift</kbd>+<kbd>I</kbd> or select **Ask** on **Today** for the panel
 
 ## Skills
 
-Ready-made jobs: **Turn an idea into a project**, **Plan my week**, **Weekly review**, **Triage my inbox** and **Break this down**. Pick one from **Skills** under the message box, or start from a card on the Assistant page. What each does and may touch: [Skills, pasted notes and safety](assistant-skills.md#skills).
+Ready-made jobs: **Turn an idea into a project**, **Plan my week**, **Weekly review**, **Triage my inbox**, **Break this down** and **Turn this into tasks** (for a [spoken or photographed list](assistant-capture.md)). Pick one under **Skills** or from a card on the Assistant page. See [Skills, pasted notes and safety](assistant-skills.md#skills).
 
 ## Paste notes
 

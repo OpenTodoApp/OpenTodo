@@ -150,8 +150,9 @@ function MessageItem({ m }: { m: AssistantMessage }) {
   if (m.role === 'user') {
     return (
       <li className="ml-auto w-fit max-w-[85%] rounded-card bg-sunken px-3 py-2 text-body">
-        {(m.skill || m.pastedLines) && (
-          <p className="mb-1 text-meta text-muted">{[m.skill && t('Skill: {name}', { name: m.skill }), m.pastedLines && t('{n, plural, one {pasted text, # line} other {pasted text, # lines}}', { n: m.pastedLines })].filter(Boolean).join(' · ')}</p>
+        {(m.skill || m.pastedLines || m.photos) && (
+          <p className="mb-1 text-meta text-muted">{[m.skill && t('Skill: {name}', { name: m.skill }), m.pastedLines && t('{n, plural, one {pasted text, # line} other {pasted text, # lines}}', { n: m.pastedLines }),
+            m.photos && t('{n, plural, one {# photo (not kept)} other {# photos (not kept)}}', { n: m.photos })].filter(Boolean).join(' · ')}</p>
         )}
         <span className="sr-only">{t('You:')}</span><span className="whitespace-pre-wrap user-text">{m.text}</span>
       </li>

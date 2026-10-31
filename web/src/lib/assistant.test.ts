@@ -6,6 +6,7 @@ import {
   applyChanges, describe as describeChange, dueWords, refreshReview, reviewChangeSet, sameValue, SSEParser, takeSentences,
   turnMessages, undoChanges, UNDO_KEEP, usageLine,
 } from './assistant'
+import { imagesUnsupportedMessage, isImagesUnsupported } from './assistantImages'
 import type { ProposedChange } from './assistantTypes'
 
 let n = 0
@@ -54,6 +55,21 @@ describe('turnMessages', () => {
     expect(msgs[0].role).toBe('user')
     expect(msgs[0].text).toMatch(/earlier messages were left out/)
     expect(msgs.at(-1)).toEqual({ role: 'user', text: 'now?' })
+  })
+  // voice-ramble 4.4: photos go on the last message only, after pasted material.
+  it('sends photos with the question only', () => {
+    const img = { media_type: 'image/jpeg', data: '/9j/AA' }
+    const msgs = turnMessages([{ role: 'user', text: 'earlier', photos: 2, at: 1 }, { role: 'assistant', text: 'ok', at: 2 }], 'turn this into tasks', 'notes', [img])
+    expect(msgs).toEqual([
+      { role: 'user', text: 'earlier' }, { role: 'assistant', text: 'ok' },
+      { role: 'user', text: 'notes', untrusted: true }, { role: 'user', text: 'turn this into tasks', images: [img] },
+    ])
+    expect(turnMessages([], 'q', undefined, []).at(-1)).toEqual({ role: 'user', text: 'q' })
+  })
+  it('words a model that does not read photos, on the server and on a device', () => {
+    expect(isImagesUnsupported('images_unsupported') && isImagesUnsupported('device_images_unsupported') && !isImagesUnsupported('provider_error')).toBe(true)
+    expect(imagesUnsupportedMessage('images_unsupported')).toContain('chosen model does not read photos')
+    expect(imagesUnsupportedMessage('device_images_unsupported')).toContain('model on this device does not read photos')
   })
   it('leaves out refused and failed answers', () => {
     const msgs = turnMessages([{ role: 'user', text: 'a', at: 1 }, { role: 'assistant', text: 'x', stop: 'refusal', at: 2 }], 'b')

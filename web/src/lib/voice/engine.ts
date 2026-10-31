@@ -5,3 +5,4 @@
 export { createDictation } from './dictation'
 export { startServerRecognition } from './serverRecognition'
 export { normalizeSpoken } from './spoken'
+export { createRamble, startLongRecognition, startServerPieces } from './ramble'

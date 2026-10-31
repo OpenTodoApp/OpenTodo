@@ -9,6 +9,7 @@ import { t } from '../../lib/i18n'
 import { Composer } from './AssistantComposer'
 import { AssistantPanelBody, OFFLINE_MESSAGE } from './AssistantPanelBody'
 import { AssistantSheet } from './AssistantSheet'
+import { stopActiveRamble } from './useRamble'
 import { useAssistantConversation, type ConversationOptions } from './useAssistantConversation'
 
 export { AssistantSheet } from './AssistantSheet'
@@ -57,6 +58,16 @@ export function contextName(view: string | undefined, selected: number): string 
   }
 }
 
+/**
+ * The composer's capture props (voice-ramble): the microphone and photos only once the
+ * assistant can take input, and "Add photo" only when the model reads photos.
+ */
+export function captureProps(c: Conversation, ready: boolean) {
+  const s = c.status
+  const provider = s?.provider === 'compatible' ? t('the model server your server owner set up') : s?.provider_label ?? ''
+  return { voice: ready, listenRequest: c.composer.listenRequest, photos: c.composer.photos, onPhotos: c.composer.setPhotos, photoProvider: ready && s?.images ? provider : null }
+}
+
 /** Picking a starter puts its skill in the composer and the cursor in the field. */
 export function focusComposer() {
   requestAnimationFrame(() => document.querySelector<HTMLTextAreaElement>('[data-assistant-composer]')?.focus())
@@ -80,6 +91,8 @@ export function AssistantPanel({ onClose, context, onApplied, name = '' }: Assis
   const keptAway = !!ctx.projectId && excluded.has(ctx.projectId)
 
   const onEscape = () => {
+    // Escape stops a ramble first (voice-capture "Keyboard").
+    if (stopActiveRamble()) return
     if (rv.review && rv.reviewRef.current?.contains(document.activeElement)) void rv.discard()
     else onClose()
   }
@@ -98,7 +111,7 @@ export function AssistantPanel({ onClose, context, onApplied, name = '' }: Assis
         <div className="space-y-1">
           <Composer draft={composer.draft} onDraft={composer.setDraft} onSend={() => void c.send()} onStop={c.stop} streaming={!!streaming} connected={connected} disabled={!ready}
             skills={composer.skills} skill={skill} onSkill={composer.chooseSkill} pasted={composer.pasted} onPasted={composer.setPasted}
-            context={contextName(ctx.view, composer.selection?.length ?? ctx.selected?.length ?? 0)} />
+            context={contextName(ctx.view, composer.selection?.length ?? ctx.selected?.length ?? 0)} {...captureProps(c, ready)} />
           <div className="flex flex-wrap items-center justify-between gap-x-2 text-meta text-faint">
             <span data-testid="assistant-hint">{keptAway ? t('This project is kept away from assistants') : !connected ? t(OFFLINE_MESSAGE) : status ? `${status.provider === 'compatible' ? t('Model server') : status.provider_label}${status.model ? ` · ${status.model}` : ''}` : ''}</span>
             {c.threads && <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 text-meta" onClick={() => void c.clearAll()}>{t('Clear conversations')}</button>}
