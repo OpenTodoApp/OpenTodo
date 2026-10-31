@@ -15,6 +15,8 @@ export type Route =
   | { view: 'month'; date?: string }
   // The Calendar's Plan mode (planner-view D1): the span starts on `date`, today when absent.
   | { view: 'plan'; date?: string }
+  // The Calendar's Year mode (year-view D2): the year of `date`, this year when absent.
+  | { view: 'year'; date?: string }
   | { view: 'completed' }
   | { view: 'assigned' }
   | { view: 'project'; id: string }
@@ -118,10 +120,11 @@ export function parseRoute(pathname: string): Route {
     case 'week':
     case 'month':
     case 'plan':
+    case 'year':
       // An optional anchor date; anything that is not YYYY-MM-DD means "today".
       return parts[1] && /^\d{4}-\d{2}-\d{2}$/.test(parts[1]) ? { view: parts[0], date: parts[1] } : { view: parts[0] }
     case 'calendar':
-      // One Calendar destination (ux-overhaul): Day, Week, Month or Plan as last used on this device.
+      // One Calendar destination (ux-overhaul): Day, Week, Month, Plan or Year as last used on this device.
       return { view: readCalendarMode() }
     case 'settings':
       // /settings/import is the import screen; an unknown section shows the overview.
@@ -281,6 +284,7 @@ export function routePath(r: Route): string {
     case 'week':
     case 'month':
     case 'plan':
+    case 'year':
       return r.date ? `/${r.view}/${r.date}` : `/${r.view}`
     case 'inbox':
       return '/'

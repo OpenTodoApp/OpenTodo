@@ -57,16 +57,17 @@ const NO_EXCEPTIONS: ReadonlySet<string> = new Set()
  * (done and open records, series-exceptions D9) so `for N times` stops it, and `until`.
  * A date in `except` is an exception of the series (series-exceptions M4): never
  * listed, and it uses up no occurrence. `local` maps a floating date to the viewer's
- * day it is compared with the range on (identity on the server).
+ * day it is compared with the range on (identity on the server). `max` is the cap; the
+ * Year counts a whole year in one walk with a cap of its days (year-view D7).
  */
 export function walkOccurrences(
   rule: Rule, due: string, today: string, taken: number, from: string, to: string,
-  local: (date: string) => string = (d) => d, except: ReadonlySet<string> = NO_EXCEPTIONS,
+  local: (date: string) => string = (d) => d, except: ReadonlySet<string> = NO_EXCEPTIONS, max = MAX_PROJECTIONS,
 ): OccurrenceWalk {
   const dates: string[] = []
   let cur = due
   // The walk reaches `from` first; the guard stops a runaway rule after that.
-  const limit = MAX_PROJECTIONS + 1 + Math.max(0, Math.min(3700, daysBetweenISO(cur, from))) + except.size
+  const limit = max + 1 + Math.max(0, Math.min(3700, daysBetweenISO(cur, from))) + except.size
   let k = 0
   for (let i = 0; i < limit; i++) {
     const completedOn = rule.afterCompletion ? (i === 0 && cur < today ? today : cur) : today
@@ -78,7 +79,7 @@ export function walkOccurrences(
     if (except.has(next)) continue
     k++
     if (seen >= from) {
-      if (dates.length === MAX_PROJECTIONS) return { dates, capped: true }
+      if (dates.length === max) return { dates, capped: true }
       dates.push(next)
     }
   }
