@@ -202,7 +202,7 @@ export function SectionQuickAdd({ project, sectionId, sectionName, projects, lab
     // Out of sight in a long section or column: say where it went (add-position D5).
     const list = root.current?.closest<HTMLElement>('[data-list-page]')
     // Loaded with the first add: not needed on first load (web/bundle-budget.json).
-    if (target === project.id && list) void import('./task-list/announceAdded').then((m) => m.announceIfOutOfSight(id, { list: sectionName, placement, root: list, select: (x) => selectTask.request(x) }))
+    if (target === project.id && list) void import('./task-list/announceAdded').then((m) => m.announceIfOutOfSight(id, { list: sectionName, placement, root: list, select: (x) => selectTask.request(x) })).catch(() => {}) // offline before it was cached: no announcement
   }
   // A pasted list (paste-to-tasks D3): every line in this section unless it names a #project; one batch, one Undo.
   const onAddMany = async (inputs: QuickAddInput[]) => {
