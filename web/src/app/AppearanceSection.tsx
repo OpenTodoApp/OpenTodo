@@ -133,7 +133,6 @@ export function AppearanceView({ value, onMode, onAccent, custom, onDensity, row
           })}
           {custom && (
             <button ref={(el) => { tileRefs.current[ACCENTS.length] = el; customRef.current = el }} type="button" role="radio" aria-checked={customOn} tabIndex={customOn ? 0 : -1}
-              aria-haspopup="dialog" aria-expanded={picking}
               data-accent={swatch ? CUSTOM_ACCENT : undefined} style={swatch ? customAccentStyle(swatch) : undefined} data-theme-tile={CUSTOM_ACCENT}
               className={`${TILE} ${customOn ? 'border-accent ring-2 ring-accent' : 'border-default'}`}
               onClick={() => { if (value.custom && !customOn) onAccent(CUSTOM_ACCENT); setPicking(true) }}
