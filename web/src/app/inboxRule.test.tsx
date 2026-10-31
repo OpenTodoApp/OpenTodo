@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 // OpenSpec change inbox-means-unplaced: the Inbox lists only unscheduled tasks
 // without a project (tasks 2.1, 3.2-3.4): the sidebar count follows scheduling,
-// the others wait in a folded "Planned, no project" group at the end (inbox-planned-group), quick add in the Inbox
+// the others are not listed there at all (inbox-only-inbox), quick add in the Inbox
 // announces where a dated task went, and pickers name the choice "No project".
 import 'fake-indexeddb/auto'
 import { act } from 'react'
@@ -45,60 +45,41 @@ afterEach(() => {
 const rowTitles = (root: ParentNode) => [...root.querySelectorAll('[data-task-id]')].map((r) => r.querySelector('[data-row-title]')?.textContent?.trim() ?? r.textContent?.trim())
 
 describe('the Inbox view', () => {
-  it('Where planned tasks went: three planned tasks are a folded group at the end, listed in place when opened, with Open as filter', async () => {
+  it('Where planned tasks went: the Inbox lists only its own task, with nothing after it for the planned ones', async () => {
     await createTask({ title: 'Undated' })
     for (const [title, date] of [['Sat task', '2026-10-17'], ['Thu task', '2026-10-15'], ['Fri task', '2026-10-16']]) await createTask({ title, due: { date } })
     const r = await render(<TaskListView route={{ view: 'inbox' }} />)
-    const group = () => r.container.querySelector('[data-group="planned"]')
-    await waitFor(() => !!group())
-    // Folded by default: the Inbox lists only its own task, the group header carries the count.
+    await waitFor(() => r.container.querySelectorAll('[data-task-id]').length === 1)
+    await flush()
     expect(rowTitles(r.container)).toEqual(['Undated'])
-    expect(group()!.querySelector('[data-group-label]')!.textContent).toBe('Planned, no project')
-    expect(group()!.querySelector('[data-group-count]')!.textContent).toContain('3')
-    expect(group()!.querySelector('[data-group-toggle]')!.getAttribute('aria-expanded')).toBe('false')
-    // Opened: the three tasks in place, in date order, after the Inbox's own task.
-    await click(group()!.querySelector('[data-group-toggle]')!)
-    await waitFor(() => r.container.querySelectorAll('[data-task-id]').length === 4)
-    expect([...r.container.querySelectorAll('[data-task-id] [data-row-title]')].map((x) => x.textContent?.trim())).toEqual(['Undated', 'Thu task', 'Fri task', 'Sat task'])
+    expect(r.container.querySelector('[data-group="planned"]')).toBeNull()
+    expect(r.container.querySelector('[data-planned-filter]')).toBeNull()
     expect(r.container.querySelector('[data-planned-line]')).toBeNull()
-    await click(group()!.querySelector('[data-planned-filter]')!)
-    expect(location.pathname + location.search).toBe('/views/new?q=no%20project')
     await r.unmount()
   })
 
-  it('The group remembers being opened on this device', async () => {
-    await createTask({ title: 'Fri task', due: { date: '2026-10-16' } })
-    const first = await render(<TaskListView route={{ view: 'inbox' }} />)
-    await waitFor(() => !!first.container.querySelector('[data-group="planned"] [data-group-toggle]'))
-    await click(first.container.querySelector('[data-group="planned"] [data-group-toggle]')!)
-    await waitFor(() => first.container.querySelectorAll('[data-task-id]').length === 1)
-    await first.unmount()
-    const again = await render(<TaskListView route={{ view: 'inbox' }} />)
-    await waitFor(() => again.container.querySelectorAll('[data-task-id]').length === 1)
-    expect(again.container.querySelector('[data-group="planned"] [data-group-toggle]')!.getAttribute('aria-expanded')).toBe('true')
-    await again.unmount()
-  })
-
-  it('Inbox zero with planned tasks: the empty state shows, Process is not offered, and the folded group sits below', async () => {
-    await createTask({ title: 'Fri task', due: { date: '2026-10-16' } })
-    const r = await render(<TaskListView route={{ view: 'inbox' }} />)
-    await waitFor(() => !!r.container.querySelector('[data-empty-state="inbox"]') && !!r.container.querySelector('[data-group="planned"]'))
-    expect(r.container.querySelector('[data-triage-start]')).toBeNull()
-    const empty = r.container.querySelector('[data-empty-state="inbox"]')!
-    const group = r.container.querySelector('[data-group="planned"]')!
-    expect(empty.compareDocumentPosition(group) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    // One quiet line above the group, not the Inbox zero illustration (inbox-zero-quiet).
-    expect(empty.querySelector('[data-illustration]')).toBeNull()
-    expect(empty.textContent).toBe('Inbox zero: every task has a place.')
-    await r.unmount()
-  })
-
-  it('there is no planned group at zero', async () => {
+  it('The group remembers being opened: a device that had opened it shows only the Inbox', async () => {
+    localStorage.setItem('opentodo.collapsed', JSON.stringify(['inbox:planned:open']))
     await createTask({ title: 'Undated' })
+    await createTask({ title: 'Fri task', due: { date: '2026-10-16' } })
     const r = await render(<TaskListView route={{ view: 'inbox' }} />)
     await waitFor(() => r.container.querySelectorAll('[data-task-id]').length === 1)
     await flush()
+    expect(rowTitles(r.container)).toEqual(['Undated'])
     expect(r.container.querySelector('[data-group="planned"]')).toBeNull()
+    await r.unmount()
+  })
+
+  it('Inbox zero with planned tasks: the full empty state with the illustration, and Process is not offered', async () => {
+    await createTask({ title: 'Fri task', due: { date: '2026-10-16' } })
+    const r = await render(<TaskListView route={{ view: 'inbox' }} />)
+    await waitFor(() => !!r.container.querySelector('[data-empty-state="inbox"]'))
+    expect(r.container.querySelector('[data-triage-start]')).toBeNull()
+    const empty = r.container.querySelector('[data-empty-state="inbox"]')!
+    expect(empty.querySelector('[data-illustration="inbox-zero"]')).not.toBeNull()
+    expect(empty.textContent).toContain('Inbox zero: every task has a place.')
+    expect(r.container.querySelector('[data-group="planned"]')).toBeNull()
+    expect(r.container.querySelectorAll('[data-task-id]').length).toBe(0)
     await r.unmount()
   })
 

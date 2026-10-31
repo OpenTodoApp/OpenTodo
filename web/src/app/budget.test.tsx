@@ -314,12 +314,12 @@ describe('on a phone (390 px)', () => {
     await today.unmount()
   })
 
-  it('the Inbox\'s planned tasks without a project are a folded group at the end of the list, not the bar\'s subtitle (inbox-planned-group)', async () => {
+  it('the Inbox lists only its own tasks: no group or subtitle for planned tasks without a project (inbox-only-inbox)', async () => {
     await seed()
     navigate({ view: 'inbox' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!document.querySelector('[data-group="planned"] [data-group-count]'))
-    expect(document.querySelector('[data-group="planned"] [data-group-count]')!.textContent).toContain('8')
+    await waitFor(() => document.querySelectorAll('[data-task-id]').length === 4)
+    expect(document.querySelector('[data-group="planned"]')).toBeNull()
     expect(document.querySelector('[data-phone-subtitle] [data-planned-line]')).toBeNull()
     expect(document.querySelector('[data-planned-line]')).toBeNull()
     await r.unmount()

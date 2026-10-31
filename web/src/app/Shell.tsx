@@ -389,7 +389,7 @@ function PhoneBar({ onMenu }: { onMenu: () => void }) {
         : <IconButton icon="menu" label={t('Open menu')} onClick={onMenu} className="touch-target" />}
       <div className="min-w-0 flex-1">
         {!day && <PageBarTitle>{bar?.title}</PageBarTitle>}
-        {/* One line, so the bar keeps its height (audit M12): a plain subtitle keeps its full text reachable when cut; controls (the Inbox's planned line, a project's members) cut themselves and are named by their content (ux-fixes-phone D2). */}
+        {/* One line, so the bar keeps its height (audit M12): a plain subtitle keeps its full text reachable when cut; controls (a project's members) cut themselves and are named by their content (ux-fixes-phone D2). */}
         {!day && bar?.subtitle && (typeof bar.subtitle === 'string'
           ? <TruncatedText as="p" text={bar.subtitle} className="block text-meta text-muted" data-phone-subtitle="" />
           : <div className="flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-meta text-muted" data-phone-subtitle>{bar.subtitle}</div>)}

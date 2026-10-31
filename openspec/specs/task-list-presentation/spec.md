@@ -290,7 +290,8 @@ While a list, the panel or a settings page waits for local data, it SHALL show s
 
 #### Scenario: Subtitle arrives on a phone
 - **WHEN** the Inbox opens at 360 px with planned tasks without a project
-- **THEN** their folded group appears at the end of the list in the same step as the Inbox's tasks, and nothing appears under the title later
+- **THEN** the Inbox's own tasks appear in one step, and nothing appears under the title or after the list later
+
 #### Scenario: Settings cards answer at different times
 - **WHEN** Settings → Integrations opens and the app passwords answer 200 ms after the calendar feeds
 - **THEN** the section's cards appear together when the last first answer arrives, and after 600 ms they appear in any case
