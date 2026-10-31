@@ -189,7 +189,7 @@ Rules, all on the client (`web/src/lib/ops.ts`, `web/src/lib/richtext.ts`):
 
 Document layout: root XML fragments `b:<ts 15 digits>:<device>`, the greatest name is the visible body (`b:000000000000000:` for a note first written in the editor). Text blocks hold one text node whose formatting attributes are marks (`strong`, `em`, `strike`, `code`: `{}`; `link`: `{href}`); elements are `paragraph`, `heading{level}`, `bullet_list`, `ordered_list{order}`, `list_item{checked}`. Unknown elements, attributes and marks from newer clients survive every merge and are shown as plain text. A value a device cannot read (corrupt, another format) is never overwritten automatically; the note then shows `description`.
 
-The editor saves a debounced full state (400 ms after the last keystroke, and on blur, close, hide and unload). The outbox keeps one pending `notes_doc` op per task: a newer state replaces the queued one. A batch whose document would exceed 256 KB, or whose projection would exceed the 64 KB value cap, is refused on the device before any op exists. History, activity and webhook deliveries leave `notes_doc` out; the `description` change in the same change set is the readable revision.
+The editor saves a debounced full state on the device (400 ms after the last keystroke, and on blur, close, hide and unload), so typing survives a crash or a closed tab. Saving is not pushing: a save made while typing is sent to the server 3 s after the last save (each save restarts the 3 s), at once when the editor loses focus, closes (the panel closes or changes task, the app navigates away) or the page is hidden or unloaded, and at least every 60 s while the person keeps typing without a 3-second pause. Any exchange that runs for another reason carries the pending document too; nothing is held back. The outbox keeps one pending `notes_doc` op per note, with its `description` projection: a newer save replaces the queued pair, so a push carries only the latest state. Collaborators with the live channel connected see the text about 3 s after the writer pauses. Offline, saves wait in the outbox for the next successful exchange. A batch whose document would exceed 256 KB, or whose projection would exceed the 64 KB value cap, is refused on the device before any op exists. History, activity and webhook deliveries leave `notes_doc` out; the `description` change in the same change set is the readable revision.
 
 ### Comments
 
@@ -372,7 +372,7 @@ Client loop (`web/src/lib/sync.ts`):
 
 Before storing the cursor the client compares `generation` with the one it stored; see [Log generation](#log-generation).
 
-Triggers: 250 ms after a local edit, on `online`, when the tab becomes visible, on a live wake-up (below), on every (re)connection of the live channel, periodically (every 30 s, relaxed to 5 min while live updates are connected), and manually from the status pill.
+Triggers: 250 ms after a local edit (a note document saved while typing follows the note push cadence instead: 3 s after its last save, at once when the editor is left, at least every 60 s; see [Mergeable documents](#mergeable-documents)), on `online`, when the tab becomes visible, on a live wake-up (below), on every (re)connection of the live channel, periodically (every 30 s, relaxed to 5 min while live updates are connected), and manually from the status pill.
 
 Robustness (OpenSpec change `client-sync-robustness`):
 
