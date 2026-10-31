@@ -4,7 +4,7 @@
 
 | File | What it is |
 | --- | --- |
-| `app.yaml` | Catalogue metadata: version `1.0.0` of the app, `app_version` `0.19.0` (the image tag), category productivity, `run_as_context` 568:568, library `2.3.17` and its hash |
+| `app.yaml` | Catalogue metadata: the app's own `version` (a patch bump per release), `app_version` `0.19.0` (the image tag), category productivity, `run_as_context` 568:568, library `2.3.17` and its hash |
 | `ix_values.yaml` | The images: `ghcr.io/opentodoapp/opentodo` tag `"0.19.0"`, and TrueNAS's `container-utils` for the permissions container |
 | `questions.yaml` | The install form: Base URL, Setup Token (private), Allow Sign-up, Trusted Proxies, additional variables, user and group (568), Web UI port (30536), storage, labels, resources |
 | `templates/docker-compose.yaml` | The Jinja template TrueNAS's library renders: user 568:568, health check `/opentodo healthcheck` (the image has no shell or wget), `OPENTODO_ADDR=:<chosen port>`, `OPENTODO_DATA_DIR=/data`, the data mount, and a permissions container that chowns it to the chosen user |
@@ -62,4 +62,4 @@ Needs a GitHub account, Docker and Python 3 with `pyyaml psutil pytest pytest-co
 
 Nothing, once the app is accepted: Renovate in `truenas/apps` pins the image digest and bumps the tag, `app_version` and `version` daily, and TrueNAS users see the update in **Apps**. Check that it did; if it misses a release, open a pull request there that changes `tag`, `app_version` and `version` (patch bump).
 
-Here, `make check` fails after every release until the tag follows: set `tag` in `ix_values.yaml` and `app_version` in `app.yaml` to the new version and bump `version` like Renovate does, in both `opentodo/` and `upstream/`.
+Here, `make check` fails after every release until the tag follows: `make release-prepare` sets `tag` in `ix_values.yaml` and `app_version` in `app.yaml` to the new version and bumps `version` (patch) like Renovate does, in both `opentodo/` and `upstream/`. If their Renovate merged a different `version` or images first, copy theirs back here.

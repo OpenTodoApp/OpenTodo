@@ -7,7 +7,8 @@
 import { focusLogger } from './index'
 import type { FocusPrefs } from './prefs'
 import { readFocus, transitionFocus, writeFocus } from './state'
-import { complete, continuousWork, finish, idleState, inRun, isDue, isRunning, pause, resume, start, stopWork, takeBreak, type FocusState } from './timer'
+import { complete, continuousWork, finish, idleState, inRun, isDue, isRunning, pause, plannedEnd, resume, start, stopWork, takeBreak, type FocusState } from './timer'
+import type { EntryFocus } from '../timeEntries'
 
 async function stopEntry(entryId: string | null, at: number): Promise<void> {
   if (!entryId) return
@@ -18,12 +19,26 @@ async function stopEntry(entryId: string | null, at: number): Promise<void> {
   }
 }
 
+/**
+ * What the entry of a running work stretch tells readers outside the device
+ * (OpenSpec change focus-session-readable): the mode, the Pomodoro session
+ * number (0 for the other modes) and the planned end, which is the stretch's
+ * start plus the time left (null for Flowtime). Pauses, breaks and the time
+ * accumulated before a resume stay on the device.
+ */
+export function entryFocus(s: FocusState): EntryFocus {
+  return { mode: s.mode, session: s.mode === 'pomodoro' ? s.cycle : 0, plannedEndAt: plannedEnd(s) }
+}
+
 /** Starts the entry of a running work stretch and records its id on the row; an entry the row no longer wants is stopped again. */
 async function attachEntry(s: FocusState, at: number): Promise<void> {
   if (s.phase !== 'work' || s.resumedAt === null) return
   let id: string | null = null
   try {
-    id = await focusLogger().start(s.taskId, at)
+    const focus = entryFocus(s)
+    // Never before the entry's start: the server refuses such a planned end.
+    if (focus.plannedEndAt !== null) focus.plannedEndAt = Math.max(focus.plannedEndAt, at)
+    id = await focusLogger().start(s.taskId, at, focus)
   } catch (err) {
     console.warn('focus: starting the time entry failed', err)
   }

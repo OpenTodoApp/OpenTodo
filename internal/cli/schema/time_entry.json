@@ -15,6 +15,16 @@
     "deviceId": {"type": "string"},
     "taskTitle": {"type": "string"},
     "projectId": {"type": ["string", "null"]},
-    "projectName": {"type": "string"}
+    "projectName": {"type": "string"},
+    "focus": {
+      "type": ["object", "null"],
+      "description": "what a Focus work session wrote on the entry, null for any other entry (OpenSpec focus-session-readable)",
+      "required": ["mode", "session", "plannedEndAt"],
+      "properties": {
+        "mode": {"type": "string", "description": "pomodoro, flowtime or countdown; a newer client may write another value"},
+        "session": {"type": "integer", "description": "the work session's number in the Pomodoro cycle, 0 for the other modes"},
+        "plannedEndAt": {"type": ["integer", "null"], "description": "Unix milliseconds when the stretch ends if nothing changes; null for Flowtime"}
+      }
+    }
   }
 }

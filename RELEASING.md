@@ -15,6 +15,7 @@ It makes every edit a release needs, in one go:
 - `CHANGELOG.md`: a `## [0.15.0] - <today>` heading right under `## [Unreleased]`, so the entries collected there become the release's, and the compare links (`[Unreleased]` from `v0.15.0`, a new `[0.15.0]` link).
 - The release in every pinned template in `deploy/` (CapRover, CasaOS, Dokploy, Easypanel, Helm, Runtipi, TrueNAS, Umbrel, the Home Assistant add-on, the Claude plugin) and in their READMEs, in `docs/self-hosting/`, in the bug report form (`.github/ISSUE_TEMPLATE/bug_report.yml`), in `web/package.json`, the two root entries of `web/package-lock.json` and `web/src/generated/help.json`.
 - Runtipi's `tipi_version` + 1 (Runtipi offers an update only when it changes).
+- The store fields the version alone does not move: CasaOS's `update_at` (the release date), a `changeLog` entry in Easypanel's `meta.yaml` (`Update to 0.15.0`) and a patch bump of TrueNAS's own app `version` in `app.yaml` (as truenas/apps' Renovate does).
 - On a new minor, the release line in the docs (`ghcr.io/opentodoapp/opentodo:0.15`, `:0.15`).
 - A `## 0.15.0` entry in the Home Assistant add-on's `CHANGELOG.md`.
 - The `upstream/` copies, regenerated from their templates (`node scripts/deploy/mirror.mjs`; `--check` only lists stale copies, and `make deploy-check` runs it).

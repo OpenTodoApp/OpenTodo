@@ -12,7 +12,7 @@ export { noopLogger, type FocusLogger } from './logger'
 
 /** Time tracking's binding: start through `startTracking` (it ends any other running entry of the user), stop by ending this one entry only. */
 export const timeTrackingLogger: FocusLogger = {
-  start: (taskId, at) => startTracking(taskId, { now: at }),
+  start: (taskId, at, focus) => startTracking(taskId, { now: at, focus }),
   async stop(entryId, at) {
     const row = await db.timeEntries.get(entryId)
     if (!row || !isRunning(row)) return

@@ -79,7 +79,7 @@ test('truenas: metadata and strict YAML', () => {
 test('truenas: the truenas/apps copy', () => {
   const list = [...FILES].sort()
   assert.deepEqual(checkUpstream(files, files, list), [])
-  has(checkUpstream(files, { ...files, 'app.yaml': files['app.yaml'].replace('1.0.0', '1.0.1') }, list), /upstream\/ix-dev\/community\/opentodo\/app\.yaml must be identical/)
+  has(checkUpstream(files, { ...files, 'app.yaml': files['app.yaml'].replace('title: OpenTodo', 'title: OpenTodo Copy') }, list), /upstream\/ix-dev\/community\/opentodo\/app\.yaml must be identical/)
   has(checkUpstream(files, files, [...list, 'templates/rendered/docker-compose.yaml']), /not part of the app here/)
   has(checkUpstream(files, files, [...list, 'templates/library/base_v2_3_17/render.py']), /not part of the app here/)
 })
