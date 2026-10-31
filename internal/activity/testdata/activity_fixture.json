@@ -2,6 +2,18 @@
   "about": "Shared fixture for the activity rule (OpenSpec comments-and-activity, design D4). internal/activity (Go) and web/src/lib/activity.ts (TypeScript) must both derive exactly these events from these ops. Ops are listed in seq order; events oldest first.",
   "cases": [
     {
+      "name": "a piece of a split series (series-split)",
+      "ops": [
+        {"id":"p1","seq":1,"actor":"alice","entity":"task","entityId":"piece","field":"title","value":"Study","ts":1000,"device":"da"},
+        {"id":"p2","seq":2,"actor":"alice","entity":"task","entityId":"piece","field":"recurrence","value":"every weekday","ts":1000,"device":"da"},
+        {"id":"p3","seq":3,"actor":"alice","entity":"task","entityId":"piece","field":"split_from","value":{"series":"s1","date":"2026-10-14"},"ts":1000,"device":"da"},
+        {"id":"p4","seq":4,"actor":"alice","entity":"task","entityId":"piece","field":"created_at","value":1000,"ts":1000,"device":"da"}
+      ],
+      "events": [
+        {"id":"p1","kind":"created","actor":"alice","entity":"task","entityId":"piece","taskId":"piece","ts":1000,"opIds":["p1","p2","p3","p4"],"changes":[{"field":"created_at","from":null,"to":1000},{"field":"recurrence","from":null,"to":"every weekday"},{"field":"split_from","from":null,"to":{"series":"s1","date":"2026-10-14"}},{"field":"title","from":null,"to":"Study"}]}
+      ]
+    },
+    {
       "name": "an occurrence record moved alone (series-exceptions)",
       "ops": [
         {"id":"r1","seq":1,"actor":"alice","entity":"task","entityId":"rec","field":"title","value":"Study","ts":1000,"device":"da"},

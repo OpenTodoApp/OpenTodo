@@ -19,7 +19,8 @@
           "tz": {"type": "string", "description": "the series' IANA zone, when its due names one"},
           "state": {"type": "string", "enum": ["current", "projected", "open", "done", "skipped"], "description": "current and projected occurrences, or one with a record (series-exceptions): open (moved or edited), done or skipped, by the date it stands for"},
           "record_id": {"type": "string", "description": "the occurrence record's task id"},
-          "due": {"type": "string", "description": "YYYY-MM-DD, the record's due date when it was moved to another day"}
+          "due": {"type": "string", "description": "YYYY-MM-DD, the record's due date when it was moved to another day"},
+          "series_id": {"type": "string", "description": "the series the date belongs to: the task asked for or, past a split (This and following), the series that continues it"}
         }
       }
     }

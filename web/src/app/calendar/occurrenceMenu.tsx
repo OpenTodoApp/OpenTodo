@@ -31,6 +31,13 @@ export async function moveProjection(p: Pick<Projection, 'seriesId' | 'occurrenc
   if (r?.entry) showUndoToast(r.label, r.entry.id)
 }
 
+/** "Delete this and following" (series-split D6): the series ends the day before, with the Undo toast. */
+async function endFromProjection(p: Pick<Projection, 'seriesId' | 'occurrence'>): Promise<void> {
+  const { endFromOccurrence } = await import('../../lib/seriesSplitActions')
+  const r = await endFromOccurrence(p.seriesId, p.occurrence)
+  if (r?.entry) showUndoToast(r.label, r.entry.id)
+}
+
 /** Whether the signed-in person may act on the series' occurrences (not a viewer, a calendar rule). */
 function useCanAct(p: Projection): boolean {
   const series = useTask(p.seriesId)
@@ -55,6 +62,7 @@ export default function OccurrenceMenu({ p, x, y, onClose }: { p: Projection; x:
               <MenuItem label={p.habit ? t('Skip this day') : t('Skip this occurrence')} icon="arrow-right" data-occurrence-action="skip"
                 onSelect={() => act(actOnProjection(p.seriesId, p.occurrence, { kind: 'skip' }))} />
               <MenuItem label={t('Move to…')} icon="calendar-days" data-occurrence-action="move" onSelect={() => setMoving(true)} />
+              <MenuItem label={t('Delete this and following')} icon="trash-2" danger data-occurrence-action="end-from" onSelect={() => act(endFromProjection(p))} />
             </>
           )}
         </Menu>

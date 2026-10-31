@@ -189,6 +189,10 @@ const (
 	// OpenSpec change view-manual-order, design D2). Unknown ids are accepted:
 	// the order is a personal preference and a task may arrive later.
 	kOrderList
+	// kSplit is null or the series a piece was split from and the date it starts
+	// (task.split_from, OpenSpec change series-split, design D2): one whole value
+	// {series: id, date: "YYYY-MM-DD"} with no other members.
+	kSplit
 )
 
 // docEnvelope matches the prefix of a kDoc value: a lower-case format name and a
@@ -341,6 +345,12 @@ var Schema = map[string]map[string]Field{
 		// a task without series_id and refuses a change once set. A date, not
 		// content; additive (a record without it stands for its due date).
 		"occurrence_date": {Kind: kDate, Default: `null`},
+		// The series a piece of a split lineage continues and the date it starts
+		// (OpenSpec change series-split, design D2): {series, date}, one whole value.
+		// Set when the piece is created; the resolver refuses it on a task without a
+		// rule, with a series in another sharing scope, and as a change once set.
+		// Not content; additive (an older client sees an ordinary series).
+		"split_from": {Kind: kSplit, Default: `null`},
 		// Account id of the assignee or null (OpenSpec change task-assignment);
 		// additive. Apply checks it against the task scope's membership at receipt.
 		"assignee_id": {Kind: kNullableString, Default: `null`},

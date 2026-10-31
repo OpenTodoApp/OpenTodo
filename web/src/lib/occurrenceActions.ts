@@ -7,6 +7,7 @@
 import type { ProposedChange } from './assistantTypes'
 import { completeUndoable, type UndoableResult } from './undoActions'
 import { db } from './db'
+import { lineageRows } from './lineageRows'
 import { dueFromView, logicalToday } from './dates'
 import { getDeviceId, mutateMany, type Change } from './ops'
 import { planActOn, type OccurrenceAction } from './seriesPlan'
@@ -31,7 +32,7 @@ function labelOf(action: OccurrenceAction, habit: boolean): string {
 async function plan(seriesId: string, date: string | null, action: OccurrenceAction, now: number, today: string) {
   const series = await db.tasks.get(seriesId)
   if (!series) return null
-  const records = await db.tasks.filter((tk) => tk.series_id === seriesId).toArray()
+  const records = await lineageRows(seriesId)
   const reminders = await db.reminders.where('task_id').equals(seriesId).toArray()
   const p = planActOn(series, date, action, records, now, today, reminders)
   return p ? { series, p } : null

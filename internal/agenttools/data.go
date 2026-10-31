@@ -57,6 +57,8 @@ type snapshot struct {
 	// bySeries groups the tasks pointing at each series (built on first use,
 	// reset by apply; series-exceptions).
 	bySeries map[string][]opsync.Entity
+	// hasSplit is set with bySeries when a task continues a split series.
+	hasSplit bool
 	// workspaces are the user's workspaces (OpenSpec change workspaces);
 	// part places projects and tasks in them (built on first use, reset by apply).
 	workspaces []opsync.Workspace

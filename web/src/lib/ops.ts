@@ -20,6 +20,7 @@ import { encryptionSnapshot, isContentField } from './e2ee'
 import type { RowEncryption } from './types'
 import { t } from './i18n'
 import { uuid } from './ids'
+import { lineageRows } from './lineageRows'
 import { keepProjectWorkspace, keepWorkspaceFor, workspaceFields, type KeepWorkspace } from './workspaces'
 import { resettable } from './moduleState'
 import type { AppendRow } from './noteAppends'
@@ -1022,6 +1023,8 @@ export function planProjectChange(task: Task, all: Task[], patch: Partial<Omit<T
  * sharing scope becomes copy + tombstone and returns the copy's id.
  */
 export async function updateTask(id: string, patch: Partial<Omit<Task, 'id' | '_clock'>>, opts?: MutateOptions): Promise<string> {
+  const redirect = takeRedirect(id)
+  if (redirect) return (await redirect(patch)) ?? id
   // Scheduling a parked task un-parks it in the same batch (someday-and-evening D3).
   if (!('start' in patch) && patch.due) {
     const task = await db.tasks.get(id)
@@ -1046,6 +1049,28 @@ export async function updateTask(id: string, patch: Partial<Omit<Task, 'id' | '_
   const task = await db.tasks.get(id)
   await mutateMany([{ entity: 'task', entityId: id, patch }, ...(task ? await carried(task, patch) : [])], opts)
   return id
+}
+
+type EditRedirect = (patch: Record<string, unknown>) => Promise<string | null>
+let redirect: { id: string; run: EditRedirect } | null = null
+resettable('editRedirect', () => { redirect = null })
+
+/**
+ * Send the next edit of task `id` (updateTask, setRecurrence) to `run` instead,
+ * once: the first edit under the panel's This and following splits the series
+ * (series-split D6). Returns the clean-up that drops it unused.
+ */
+export function redirectNextEdit(id: string, run: EditRedirect): () => void {
+  const mine = { id, run }
+  redirect = mine
+  return () => { if (redirect === mine) redirect = null }
+}
+
+function takeRedirect(id: string): EditRedirect | null {
+  if (redirect?.id !== id) return null
+  const { run } = redirect
+  redirect = null
+  return run
 }
 
 /**
@@ -1163,7 +1188,7 @@ export async function skipOccurrence(id: string, opts: { now?: number; today?: s
   await db.transaction('rw', mutationTables(), async () => {
     const series = await db.tasks.get(id)
     const rule = seriesRule(series)
-    const changes = series && rule ? planSkip(series, rule, now, today, await db.tasks.filter((tk) => tk.series_id === id).toArray()) : null
+    const changes = series && rule ? planSkip(series, rule, now, today, await lineageRows(id)) : null
     if (!changes) return
     await mutateMany(changes)
     ok = true
@@ -1187,7 +1212,7 @@ export async function detachOccurrence(id: string, opts: { now?: number; today?:
   await db.transaction('rw', mutationTables(), async () => {
     const series = await db.tasks.get(id)
     const rule = seriesRule(series)
-    const records = await db.tasks.filter((tk) => tk.series_id === id).toArray()
+    const records = await lineageRows(id)
     const plan = series && rule ? planDetach(series, now, today, records, await db.reminders.where('task_id').equals(id).toArray()) : null
     if (!plan) return
     await mutateMany(plan.changes)
@@ -1205,6 +1230,13 @@ export async function setRecurrence(
 ): Promise<{ ok: true; rule: string | null } | { ok: false; error: string }> {
   const task = await db.tasks.get(id)
   if (!task) return { ok: false, error: 'task not found' }
+  const parsedInput = input?.trim() ? parseRule(input) : null
+  if (parsedInput?.ok === false) return { ok: false, error: parsedInput.error }
+  const redirect = takeRedirect(id)
+  if (redirect) {
+    await redirect({ recurrence: parsedInput?.canonical ?? null })
+    return { ok: true, rule: parsedInput?.canonical ?? null }
+  }
   if (input === null || input.trim() === '') {
     if (task.recurrence !== null) await mutate('task', id, { recurrence: null })
     return { ok: true, rule: null }

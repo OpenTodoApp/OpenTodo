@@ -20,7 +20,7 @@ import { TaskActionsMenu } from './TaskActionsMenu'
 import { startFocusOn } from '../focus/startFocus'
 import { act } from '../actionError'
 import { ReadOnlyNote, TaskHead, TaskRelations } from './TaskHead'
-import { useOccurrenceView } from './occurrenceView'
+import { useFollowing, useOccurrenceView } from './occurrenceView'
 import { TaskNotes } from './TaskNotes'
 import { TaskPageDialog } from './TaskPageDialog'
 import { useTaskDetail } from './useTaskDetail'
@@ -56,6 +56,9 @@ export function TaskDetail({ taskId, initial, userId, projects, labelMap, onClos
   // goes to the occurrence's record (series-exceptions D5).
   const occurrence = useOccurrenceView(m.task)
   const readOnly = viewer || !!occurrence
+  // Under This and following only the series' own fields are edited: the first edit splits it (series-split D6).
+  const following = useFollowing(m.task)
+  const locked = readOnly || !!following
   // Closing the panel (not switching its task) slides it out on a copy (motion-v2 D5).
   useLayoutEffect(() => {
     const el = panel.current
@@ -73,12 +76,12 @@ export function TaskDetail({ taskId, initial, userId, projects, labelMap, onClos
       <PanelResizeHandle />
       {/* Sticky header (ux-overhaul, web-app "Task panel layout"): the checkbox, the title, the menu, Close. */}
       <div data-panel-header className="flex items-center gap-2 border-b border-default px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
-        <TaskHead m={m} readOnly={readOnly} projects={projects} size="panel" />
+        <TaskHead m={m} readOnly={readOnly} completeLocked={locked} projects={projects} size="panel" />
         {/* Start focus in one tap (focus-everywhere D2): beside the menu, for an open task the user can edit. */}
-        {!readOnly && !task.completed_at && !task.deleted_at && (
+        {!locked && !task.completed_at && !task.deleted_at && (
           <IconButton icon="clock" label={t('Start focus')} onClick={() => act(startFocusOn(task.id))} data-panel-focus className="touch-target" />
         )}
-        <TaskActionsMenu m={m} page={false} readOnly={readOnly} onOpen={onOpen} />
+        <TaskActionsMenu m={m} page={false} readOnly={locked} onOpen={onOpen} />
         <IconButton icon="x" label={t('Close')} onClick={onDismiss ?? onClose} data-overlay-close className="touch-target" />
       </div>
       {viewer && <ReadOnlyNote />}
@@ -94,10 +97,10 @@ export function TaskDetail({ taskId, initial, userId, projects, labelMap, onClos
           <Facets task={task} userId={userId} readOnly={readOnly} projects={projects} labelMap={labelMap}
             parent={m.parent ?? undefined} childCount={m.children.length} onOpen={onOpen} />
           {/* Custom field values of the task's project (custom-fields). */}
-          <FieldsGroup task={task} readOnly={readOnly} />
-          <Subtasks task={task} items={m.children} progress={m.progress} readOnly={readOnly} onToggle={m.toggle} onOpen={onOpen} />
+          <FieldsGroup task={task} readOnly={locked} />
+          <Subtasks task={task} items={m.children} progress={m.progress} readOnly={locked} onToggle={m.toggle} onOpen={onOpen} />
           <AttachmentsRow taskId={task.id} userId={userId} role={roleOf(task.project_id, m.memberships ?? new Map())} dropTarget={panel} />
-          <TaskNotes task={task} readOnly={readOnly} />
+          <TaskNotes task={task} readOnly={locked} />
         </div>
         <ConversationTabs task={task} userId={userId} readOnly={readOnly} onOpen={onOpen} composerHost={footer} />
       </div>

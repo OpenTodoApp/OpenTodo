@@ -155,7 +155,8 @@ function parseOrThrow(input: string): Rule {
   return rule
 }
 
-function canonicalOf(r: Rule): string {
+/** The canonical text of a parsed rule (Go: Rule.Canonical). */
+export function canonicalOf(r: Rule): string {
   let s = 'every '
   switch (r.kind) {
     case 'interval':

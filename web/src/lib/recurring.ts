@@ -10,7 +10,8 @@ import { addDaysISO, daysBetweenISO } from './dates'
 import { occurrenceId } from './ids'
 import { nextFree } from './occurrences'
 import type { Change } from './ops'
-import { parseRule, type Rule } from './recurrence'
+import { bounded, lineageOf, pieceEnd } from './lineage'
+import { followingOccurrence, parseRule, type Rule } from './recurrence'
 import type { Due, Task } from './types'
 
 /** The parsed rule of an open, live series, or null when `task` is not one. */
@@ -82,22 +83,81 @@ export function exceptionDates(seriesId: string, tasks: Iterable<Task>): Set<str
   return new Set(recordsOf(seriesId, tasks).map((r) => r.date))
 }
 
+export interface Budget {
+  /** Occurrences used before the series' current one: done and open records of the lineage, and earlier pieces' remaining occurrences. */
+  taken: number
+  done: number
+  /** Exception dates: the dates of every record of the lineage (M4, M7). */
+  except: Set<string>
+  /** The dates of the series' own records. */
+  own: Set<string>
+  /** The last date the series produces occurrences on as a piece of its lineage (series-split D3), null when unbounded. */
+  end: string | null
+}
+
 /**
  * What `for N times` has used (M6, D9): done and open records, never skipped ones,
  * leaving out the record of `exceptDate` (the occurrence being acted on), and the
- * series' exception dates.
+ * exception dates. Given the series row (not only its id) it reads the lineage
+ * (series-split D3, D4): every piece's records count and are exceptions, an earlier
+ * piece that ended counts its last occurrence (completing it wrote no record), a
+ * counted series also uses up what earlier pieces still have to come, and `end`
+ * bounds the series to its piece.
  */
-export function seriesBudget(seriesId: string, tasks: Iterable<Task>, exceptDate?: string): { taken: number; done: number; except: Set<string> } {
+export function seriesBudget(series: Task | string, tasks: Iterable<Task>, exceptDate?: string, today?: string): Budget {
+  const list = Array.isArray(tasks) ? (tasks as Task[]) : [...tasks]
+  const id = typeof series === 'string' ? series : series.id
+  const pieces = typeof series === 'string' ? null : lineageOf(series, list)
   let done = 0
   let open = 0
   const except = new Set<string>()
-  for (const r of recordsOf(seriesId, tasks)) {
-    except.add(r.date)
-    if (r.date === exceptDate) continue
-    if (r.state === 'done') done++
-    else if (r.state === 'open') open++
+  const own = new Set<string>()
+  for (const pid of pieces ? pieces.map((p) => p.task.id) : [id]) {
+    for (const r of recordsOf(pid, list)) {
+      except.add(r.date)
+      if (pid === id) own.add(r.date)
+      if (r.date === exceptDate) continue
+      if (r.state === 'done') done++
+      else if (r.state === 'open') open++
+    }
   }
-  return { taken: done + open, done, except }
+  const at = pieces ? pieces.findIndex((p) => p.task.id === id) : 0
+  const before = pieces ? pieces.slice(0, at) : []
+  before.forEach(({ task }, i) => {
+    const last = task.due?.date
+    const end = pieceEnd(pieces!, i)
+    if (task.completed_at && last && !except.has(last) && (!end || last <= end)) { done++; except.add(last) }
+  })
+  let taken = done + open
+  if (before.length && seriesRule(series as Task)?.count) {
+    const on = today ?? (series as Task).due?.date ?? ''
+    for (let i = 0; i < at; i++) taken += remainingOf(pieces![i].task, pieceEnd(pieces!, i), taken, except, on)
+  }
+  return { taken, done, except, own, end: pieces ? pieceEnd(pieces, at) : null }
+}
+
+/** What an earlier piece still has to come within its range: its current occurrence and the walk to its end. */
+function remainingOf(piece: Task, end: string | null, used: number, except: ReadonlySet<string>, today: string): number {
+  const rule = seriesRule(piece)
+  if (!rule || rule.afterCompletion || !piece.due || !today) return 0
+  const r = bounded(rule, end)
+  let cur = piece.due.date
+  if (r.until && cur > r.until) return 0
+  let n = except.has(cur) ? 0 : 1
+  for (let i = 0, k = 0; i < 3700; i++) {
+    const next = followingOccurrence(r, cur, today, today, used + k)
+    if (next === null || next <= cur) break
+    cur = next
+    if (except.has(next)) continue
+    k++
+    n++
+  }
+  return n
+}
+
+/** The series' rule within its piece of the lineage: `until` no later than the day before the next piece starts. */
+export function pieceRule(rule: Rule, budget: Pick<Budget, 'end'>): Rule {
+  return bounded(rule, budget.end)
 }
 
 /**
@@ -167,10 +227,11 @@ export function recordFields(series: Task, date: string, now: number, today: str
  */
 export function currentOccurrence(series: Task, rule: Rule, tasks: Iterable<Task>, today: string): string | null {
   const date = occurrenceDate(series, today)
-  const { taken, except } = seriesBudget(series.id, tasks)
-  if (!except.has(date) || rule.afterCompletion) return date
+  const b = seriesBudget(series, tasks, undefined, today)
+  if (b.end && date > b.end) return null
+  if (!b.except.has(date) || rule.afterCompletion) return date
   // The series needs one occurrence the records have not used up.
-  return nextFree(rule, date, today, today, taken - 1, except)
+  return nextFree(pieceRule(rule, b), date, today, today, b.taken - 1, b.except)
 }
 
 /** The series as it stands on `date` (its dates moved there when a late record moved it, M5). */
@@ -193,8 +254,8 @@ export function planCompletion(series: Task, rule: Rule, tasks: Iterable<Task>, 
   const date = currentOccurrence(series, rule, list, today)
   if (date === null) return { kind: 'end' }
   const at = standOn(series, date, today)
-  const { taken, except } = seriesBudget(series.id, list, date)
-  const next = nextFree(rule, at.due?.date ?? null, today, today, taken, except)
+  const b = seriesBudget(at, list, date, today)
+  const next = nextFree(pieceRule(rule, b), at.due?.date ?? null, today, today, b.taken, b.except)
   if (next === null) return { kind: 'end' }
   const recordId = occurrenceId(series.id, date)
   return {
@@ -216,8 +277,8 @@ const UNCOUNTED = -1
  * would pass `until`.
  */
 export function nextOnSkip(series: Task, rule: Rule, today: string, tasks: Iterable<Task> = []): string | null {
-  const { except } = seriesBudget(series.id, tasks)
-  return nextFree(rule, series.due?.date ?? null, today, today, UNCOUNTED, except)
+  const b = seriesBudget(series, tasks, undefined, today)
+  return nextFree(pieceRule(rule, b), series.due?.date ?? null, today, today, UNCOUNTED, b.except)
 }
 
 /**

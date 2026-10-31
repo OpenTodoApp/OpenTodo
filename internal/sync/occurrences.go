@@ -84,19 +84,29 @@ func RecordsOf(id string, tasks []Entity) []OccurrenceRecord {
 	return out
 }
 
-// Budget is what `for N times` has used and the series' exception dates.
+// Budget is what `for N times` has used, the exception dates and, for a piece
+// of a split lineage, the last date it produces (OpenSpec change series-split).
 type Budget struct {
 	Taken, Done int
-	Except      map[string]bool
+	// Except holds the dates of every record of the lineage; Own the series' own.
+	Except, Own map[string]bool
+	// End is the day before the next piece starts, "" when unbounded.
+	End string
 }
 
-// SeriesBudget counts the done and open records of series id other than the one
-// of exceptDate, and collects every record's date (web seriesBudget).
-func SeriesBudget(id string, tasks []Entity, exceptDate string) Budget {
-	b := Budget{Except: map[string]bool{}}
+// SeriesBudget is the budget of the series id whose stored row is row, read
+// over its lineage among tasks (web seriesBudget): the done and open records
+// other than the one of exceptDate, every record's date, and the bound of a
+// piece. tasks holds the lineage's pieces and records (every task will do);
+// today is the caller's calendar date. A nil row reads the series' own records only.
+func SeriesBudget(id string, row Entity, tasks []Entity, exceptDate, today string) Budget {
+	if row != nil {
+		return lineageBudget(id, row, tasks, exceptDate, today)
+	}
+	b := Budget{Except: map[string]bool{}, Own: map[string]bool{}}
 	open := 0
 	for _, r := range RecordsOf(id, tasks) {
-		b.Except[r.Date] = true
+		b.Except[r.Date], b.Own[r.Date] = true, true
 		if r.Date == exceptDate {
 			continue
 		}
@@ -133,6 +143,11 @@ func openSeries(id string, row Entity) (seriesRow, bool) {
 	return seriesRow{id: id, row: row, rule: rule}, true
 }
 
+// budget is SeriesBudget over the series' lineage.
+func (s seriesRow) budget(tasks []Entity, exceptDate, today string) Budget {
+	return SeriesBudget(s.id, s.row, tasks, exceptDate, today)
+}
+
 // dueDate is the series' current occurrence date, today when it has no due.
 func (s seriesRow) dueDate(today string) string {
 	if d := decodeRecurringDue(s.row["due"]); d != nil {
@@ -146,11 +161,14 @@ func (s seriesRow) dueDate(today string) string {
 // ok=false when no free date remains.
 func (s seriesRow) current(tasks []Entity, today string) (string, bool, error) {
 	date := s.dueDate(today)
-	b := SeriesBudget(s.id, tasks, "")
+	b := s.budget(tasks, "", today)
+	if b.End != "" && date > b.End {
+		return "", false, nil
+	}
 	if !b.Except[date] || s.rule.AfterCompletion() {
 		return date, true, nil
 	}
-	return s.rule.NextFree(date, today, today, b.Taken-1, b.Except)
+	return s.rule.Bounded(b.End).NextFree(date, today, today, b.Taken-1, b.Except)
 }
 
 // movedDates are the series' due, deadline and start moved from its current
@@ -266,14 +284,15 @@ func (s seriesRow) actionable(date, current string, tasks []Entity, today string
 	if date < current {
 		return false, nil
 	}
-	b := SeriesBudget(s.id, tasks, current)
-	if b.Except[date] || date == current {
+	b := s.budget(tasks, current, today)
+	if b.Own[date] || date == current {
 		return true, nil
 	}
-	if s.rule.AfterCompletion() {
+	// Another piece's record, or a date of a completion-relative rule (series-split D3).
+	if b.Except[date] || s.rule.AfterCompletion() {
 		return false, nil
 	}
-	dates, _, err := s.rule.OccurrencesExcept(current, today, b.Taken, date, date, b.Except)
+	dates, _, err := s.rule.Bounded(b.End).OccurrencesExcept(current, today, b.Taken, date, date, b.Except)
 	return len(dates) == 1, err
 }
 
@@ -321,13 +340,13 @@ func PlanActOn(id string, row Entity, date string, action OccurrenceAction, task
 	if date != current {
 		return plan, nil
 	}
-	b := SeriesBudget(id, tasks, date)
+	b := s.budget(tasks, date, today)
 	b.Except[date] = true
 	taken := b.Taken
 	if action.Kind == "skip" {
 		taken = -1 // skips never count towards `for N times`
 	}
-	next, more, err := s.rule.NextFree(date, today, today, taken, b.Except)
+	next, more, err := s.rule.Bounded(b.End).NextFree(date, today, today, taken, b.Except)
 	if err != nil {
 		return ActPlan{}, err
 	}
@@ -365,22 +384,38 @@ func actionFields(a OccurrenceAction, now int64) map[string]json.RawMessage {
 
 // PlanRepair moves a series due on one of its exception dates to the next free
 // occurrence (M5, D8; web planRepair); nil when nothing needs repair. When no
-// free date remains the series completes at now.
+// free date remains the series completes at now. A piece of a split lineage
+// whose stored until is later than its derived end, or missing, gets that end
+// as its until, and one standing past it completes (series-split D3).
 func PlanRepair(id string, row Entity, tasks []Entity, today string, now int64) (map[string]json.RawMessage, error) {
 	s, ok := openSeries(id, row)
-	if !ok || s.rule.AfterCompletion() {
-		return nil, nil
-	}
 	due := decodeRecurringDue(row["due"])
-	if due == nil || !SeriesBudget(id, tasks, "").Except[due.Date] {
+	if !ok || s.rule.AfterCompletion() || due == nil {
 		return nil, nil
 	}
-	next, ok, err := s.current(tasks, today)
-	if err != nil {
-		return nil, err
+	b := s.budget(tasks, "", today)
+	out := map[string]json.RawMessage{}
+	if b.End != "" && (s.rule.Until() == "" || s.rule.Until() > b.End) {
+		out["recurrence"] = JSONOf(s.rule.WithUntil(b.End).Canonical())
 	}
-	if !ok {
-		return map[string]json.RawMessage{"completed_at": JSONOf(now)}, nil
+	switch {
+	case b.End != "" && due.Date > b.End:
+		out["completed_at"] = JSONOf(now)
+	case b.Except[due.Date]:
+		next, ok, err := s.current(tasks, today)
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			out["completed_at"] = JSONOf(now)
+			break
+		}
+		for k, v := range movedDates(row, due.Date, next) {
+			out[k] = v
+		}
 	}
-	return movedDates(row, due.Date, next), nil
+	if len(out) == 0 {
+		return nil, nil
+	}
+	return out, nil
 }

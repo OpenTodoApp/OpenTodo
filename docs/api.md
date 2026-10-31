@@ -193,6 +193,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/api/v1/tasks/{id}/occurrences/{date}/complete` | yes (not `read`, not `agent`) | complete one occurrence alone, `{completed_at?}` → its record; see [One occurrence alone](#one-occurrence-alone) |
 | POST | `/api/v1/tasks/{id}/occurrences/{date}/skip` | yes (not `read`, not `agent`) | skip one occurrence → its record (the series for a plain series' current occurrence) |
 | PATCH | `/api/v1/tasks/{id}/occurrences/{date}` | yes (not `read`, not `agent`) | move or edit one occurrence alone, with task fields (`due`, `title`, `priority`, `labels`, `estimate_minutes`, `description`, …) → its record |
+| POST | `/api/v1/tasks/{id}/split` | yes (not `read`, not `agent`) | change a recurring task from a later occurrence on, `{from, changes}` → the new series; see [This and following](#this-and-following) |
 | POST | `/api/v1/time-entries` | yes (not `read`, not `agent`) | `{taskId}` starts an entry (the running one ends at its start), or `{taskId, startedAt, endedAt, note?}` logs a closed one → 201 |
 | POST | `/api/v1/time-entries/stop` | yes (not `read`, not `agent`) | stop your running entry → the entry; 404 when none runs |
 | PATCH | `/api/v1/time-entries/{id}` | yes (not `read`, not `agent`), author only | `{startedAt?, endedAt?, note?}` → the entry |
@@ -552,6 +553,7 @@ The owner of a project, or an admin of a shared one, can keep it and its sub-pro
 | `recurrence` | string or null | recurrence rule, e.g. `every 3 days after completion` (see [recurrence.md](recurrence.md)); stored in canonical form, `400 invalid_input` when it does not parse or is over 200 characters |
 | `series_id` | string or null | on an occurrence record (or a detached copy made before `occurrence_date` existed): the id of its recurring series |
 | `occurrence_date` | `YYYY-MM-DD` or null | on an occurrence record: the date of the occurrence it stands for, kept when the record is moved (iCalendar `RECURRENCE-ID`; OpenSpec `series-exceptions`). Written once with `series_id`; refused (`400 invalid_input`) on a task without `series_id` and when it would change. A record without it stands for its due date |
+| `split_from` | object or null | on a series that continues a split one ([This and following](recurrence.md#this-and-following)): `{"series": <id>, "date": "YYYY-MM-DD"}`, the series it continues and the first date it produces occurrences on (OpenSpec `series-split`). One whole value, set when the new series is created; refused (`400 invalid_input`) on a task without a rule, with a series in another project sharing, and when it would change. Not content |
 | `habit` | boolean | the recurring task is tracked as a habit: the app shows its streak and month history, computed on each device. Settable like any field; `400 invalid_input` for anything but `true` or `false`. Completing a habit through the API records a done day like any recurring task. See [recurrence.md](recurrence.md#habits) |
 | `skipped` | boolean | set by the app on the occurrence record a skipped habit day writes (that record also has `series_id` and `completed_at`). Such records are returned in lists and the export like any task but are not completions: the app hides them from Completed and `completed` filters, and they never count towards `for N times` |
 | `assignee_id` | string or null | account id of the assignee; see [Assignment and notifications](#assignment-and-notifications). `400 not_a_member` when it is not a member of the task's shared project (or not you, for a personal task) |
@@ -615,7 +617,7 @@ curl -sS -X PATCH "$OT/api/v1/tasks/<id>" -H "Authorization: Bearer $TOKEN" -H '
 
 `GET /api/v1/tasks/{id}/occurrences?from=YYYY-MM-DD&to=YYYY-MM-DD` lists a recurring task's occurrences in the inclusive range, the dates the app draws as [projected occurrences](recurrence.md#projected-occurrences), computed with the server's port of the same calculation (pinned by `web/src/lib/occurrences.vectors.json`). `from` defaults to today (the server's local date, as for completions) and `to` to 30 days after `from`; a range is at most 366 days. Every token scope that can read may call it; it writes nothing.
 
-The answer is `{"series_id", "rule", "capped", "occurrences": [{"date", "time"?, "tz"?, "state", "record_id"?, "due"?}]}`: floating dates with the series' time and zone, `state` `current` for the task's own due date and `projected` for the ones after it, in date order. A date with an [occurrence record](#one-occurrence-alone) is listed by the date it stands for with `state` `open` (moved or edited, still to do), `done` or `skipped`, its `record_id`, the record's time, and `due` when it was moved to another day; no projection is listed on such a date. At most 31 projected dates are listed per range; `capped` is `true` when the range holds more. Only dates, never content, so an encrypted account needs nothing.
+The answer is `{"series_id", "rule", "capped", "occurrences": [{"date", "time"?, "tz"?, "state", "record_id"?, "due"?, "series_id"}]}`: floating dates with the series' time and zone, `state` `current` for the task's own due date and `projected` for the ones after it, in date order. Each occurrence names its `series_id`: past a [split](#this-and-following) the list continues into the series that continue the task, each in its own range, at its own time. A date with an [occurrence record](#one-occurrence-alone) is listed by the date it stands for with `state` `open` (moved or edited, still to do), `done` or `skipped`, its `record_id`, the record's time, and `due` when it was moved to another day; no projection is listed on such a date. At most 31 projected dates are listed per range; `capped` is `true` when the range holds more. Only dates, never content, so an encrypted account needs nothing.
 
 Errors: `400 invalid_input` for a malformed date, `from` after `to` or a range over 366 days; `400 not_recurring` for a task without a rule, or a completed or deleted one; `404 not_found` for a task you can't see; `401` without credentials.
 
@@ -641,6 +643,18 @@ The routes are ordinary task writes: a signed-in session or a `full` or `admin` 
 curl -sS -X POST "$OT/api/v1/tasks/<report>/occurrences/2026-10-19/skip" -H "Authorization: Bearer $TOKEN"
 curl -sS -X PATCH "$OT/api/v1/tasks/<study>/occurrences/2026-10-14" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{"due":{"date":"2026-10-14","time":"19:00"}}'
+```
+
+### This and following
+
+`POST /api/v1/tasks/{id}/split` with `{"from": "YYYY-MM-DD", "changes": {task fields}}` changes a recurring task from one of its later occurrences on, as the app's [This and following](recurrence.md#this-and-following) does, through the op log in one batch: the task's rule ends the day before `from` (`until`), and a new series starts there with the task's fields, the changes, `split_from` naming the task and the date, the habit flag and the end condition (or the `recurrence` in `changes`). Its id is derived from the task and the date. Its `due` is the first date its rule produces from `from` on that has no occurrence record, at the task's time unless `changes.due` sets another (only the time and zone of `changes.due` are used). Your relative reminders of the task are copied to it, and the changes carry to the task's open occurrences from `from` on that still hold the previous value; done, skipped and moved ones stay as they are. The answer is the new series as a task.
+
+`changes` may not set `id`, `series_id`, `occurrence_date`, `split_from`, `completed_at`, `completed_by`, `skipped`, `deleted_at`, `created_at` or `parent_id`. The route is an ordinary task write: a signed-in session or a `full` or `admin` token; `read` and `agent` tokens are refused with `403 insufficient_scope`. Errors: `400 not_an_occurrence` when `from` is not an occurrence date after the current one, or the rule repeats after completion; `400 not_recurring` for a task without a rule (or a completed or deleted one); `400 invalid_input` for a malformed `from`, a refused field, an invalid value or a `recurrence` that repeats after completion; `403 forbidden` for a viewer of the shared project; `404 not_found` for a task you can't see; `401` without credentials. On an encrypted account the server cannot read the task's title, so the new series carries none; the next unlocked device fills it in.
+
+```bash
+# Study moves from 18:00 to 19:00 from Wednesday the 14th on
+curl -sS -X POST "$OT/api/v1/tasks/<study>/split" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"from":"2026-10-14","changes":{"due":{"date":"2026-10-14","time":"19:00"}}}'
 ```
 
 ### Quick-add parse

@@ -584,6 +584,8 @@ var collectionRefusals = refusals{
 	},
 	opsync.ReasonInvalidOccurrence: refuse(http.StatusBadRequest, "invalid_input",
 		"task.occurrence_date: only an occurrence record (a task with series_id) has one, and it never changes once set"),
+	opsync.ReasonInvalidSplit: refuse(http.StatusBadRequest, "invalid_input",
+		"task.split_from: only a recurring task names the series it continues, in the same project sharing, and it never changes once set"),
 	opsync.ReasonNotAMember: refuse(http.StatusBadRequest, "not_a_member",
 		"task.assignee_id: the assignee must be a member of the task's project (or yourself for a personal task)"),
 	otherRefusal: func(w http.ResponseWriter, rej *opsync.RejectedError) {

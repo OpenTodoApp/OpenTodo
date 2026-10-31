@@ -7,7 +7,7 @@ import { formatShort, logicalToday, weekday } from '../lib/dates'
 import { habitRule, habitStats } from '../lib/habits'
 import { detachOccurrence, mutate, setRecurrence, skipOccurrence } from '../lib/ops'
 import { firstOccurrence, parseRule, previewOccurrences, RULE_SUGGESTIONS } from '../lib/recurrence'
-import { seriesBudget } from '../lib/recurring'
+import { pieceRule, seriesBudget } from '../lib/recurring'
 import { walkOccurrences } from '../lib/occurrences'
 import type { Task } from '../lib/types'
 import { HabitHistory } from './HabitHistory'
@@ -35,16 +35,16 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
   // Occurrence records of this series: the `for N times` count and the exception
   // dates the preview leaves out (series-exceptions).
   const related = useSeriesRecords(task.id)
-  const budget = useMemo(() => seriesBudget(task.id, related, task.due?.date), [task.id, related, task.due?.date])
-
   const today = logicalToday()
+  const budget = useMemo(() => seriesBudget(task, related, task.due?.date, today), [task, related, today])
+
   const parsed = useMemo(() => (draft.trim() ? parseRule(draft) : null), [draft])
   const preview = useMemo(() => {
     if (!parsed?.ok) return []
     const due = task.due?.date ?? firstOccurrence(parsed.rule, today)
     // A completion-relative rule counts from today's completion; a calendar rule leaves the exceptions out.
     if (parsed.rule.afterCompletion) return previewOccurrences(parsed.rule, due, today, budget.taken, 3)
-    return walkOccurrences(parsed.rule, due, today, budget.taken, due, '9999-12-31', (d) => d, budget.except).dates.slice(0, 3)
+    return walkOccurrences(pieceRule(parsed.rule, budget), due, today, budget.taken, due, '9999-12-31', (d) => d, budget.except).dates.slice(0, 3)
   }, [parsed, task.due?.date, today, budget])
 
   const commit = async () => {

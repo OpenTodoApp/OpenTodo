@@ -40,6 +40,8 @@
   {"input": "every year after completion", "canonical": "every year after completion"},
   {"input": "every day until 2026-12-31", "canonical": "every day until 2026-12-31"},
   {"input": "every weekday for 10 times", "canonical": "every weekday for 10 times"},
+  {"input": "every weekday for 20 times", "canonical": "every weekday for 20 times"},
+  {"input": "every weekday until 2026-10-13", "canonical": "every weekday until 2026-10-13"},
   {"input": "every day for 1 time", "canonical": "every day for 1 time"},
   {"input": "every day for 1 times", "canonical": "every day for 1 time"},
   {"input": "every 3 days after completion for 5 times", "canonical": "every 3 days after completion for 5 times"},
