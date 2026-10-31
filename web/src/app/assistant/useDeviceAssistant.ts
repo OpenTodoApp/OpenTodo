@@ -25,6 +25,8 @@ export function withDevice(status: AssistantStatus | null, setup: DeviceSetup | 
     ...status, available: true, enabled: true,
     provider: setup?.provider ?? '', provider_label: setup ? deviceProviderLabel(setup) : '', model: setup?.model ?? '',
     consented: !!setup && status.device?.consented_provider === setup.provider,
+    // The device sends photos to its own provider (voice-ramble D9); a model that refuses them says so.
+    images: true,
   }
 }
 

@@ -18,7 +18,8 @@ export interface Round {
   output: number
 }
 
-export interface Message { role: 'user' | 'assistant'; text: string }
+/** A message to the provider; `images` are prepared JPEG photos in base64 (voice-ramble D9). */
+export interface Message { role: 'user' | 'assistant'; text: string; images?: { media_type: string; data: string }[] }
 
 export interface Request {
   system: string
@@ -36,7 +37,7 @@ export interface Provider { start(req: Request): Conversation }
 
 /** A failed provider request: a code the panel describes, never the key or request content. */
 export class ProviderError extends Error {
-  constructor(public code: 'provider_auth' | 'provider_rate_limited' | 'provider_not_found' | 'provider_error' | 'blocked', message: string, public status = 0, public type = '') {
+  constructor(public code: 'provider_auth' | 'provider_rate_limited' | 'provider_not_found' | 'provider_error' | 'blocked' | 'images_unsupported', message: string, public status = 0, public type = '') {
     super(message)
   }
 }
@@ -50,6 +51,7 @@ export function deviceCode(code: string): string {
     case 'provider_not_found': return 'device_not_found'
     case 'no_tool_support': return 'device_no_tool_support'
     case 'blocked': return 'device_blocked'
+    case 'images_unsupported': return 'device_images_unsupported'
   }
   return code
 }
@@ -133,8 +135,15 @@ async function errorBody(res: Response): Promise<string> {
   return new TextDecoder().decode(all)
 }
 
-/** POST and return the response, mapping failures that happen before the stream. */
-async function post(f: Fetch, provider: string, url: string, headers: Record<string, string>, body: unknown, signal?: AbortSignal): Promise<Response> {
+/** Whether a refused request with photos refused the photos: the error names an image (imageRefusal in Go). */
+export function imageRefusal(status: number, body: string): boolean {
+  if (status !== 400 && status !== 415 && status !== 422) return false
+  const b = body.toLowerCase()
+  return b.includes('image') || b.includes('vision') || b.includes('multimodal')
+}
+
+/** POST and return the response, mapping failures that happen before the stream. `images` marks a request with photos. */
+async function post(f: Fetch, provider: string, url: string, headers: Record<string, string>, body: unknown, signal?: AbortSignal, images = false): Promise<Response> {
   let res: Response
   try {
     res = await f(url, { method: 'POST', headers: { 'content-type': 'application/json', accept: 'text/event-stream', ...headers }, body: JSON.stringify(body), signal, credentials: 'omit', redirect: 'error', referrerPolicy: 'no-referrer' })
@@ -143,7 +152,11 @@ async function post(f: Fetch, provider: string, url: string, headers: Record<str
     // fetch gives no detail on purpose: the page's policy, the provider's cross-origin rules or the network.
     throw new ProviderError('blocked', 'the provider could not be reached from this page: the network, the server owner\'s allowed providers or the provider\'s cross-origin rules blocked it')
   }
-  if (!res.ok || !res.body) throw statusError(res.status, await errorBody(res), provider)
+  if (!res.ok || !res.body) {
+    const text = await errorBody(res)
+    if (images && imageRefusal(res.status, text)) throw new ProviderError('images_unsupported', 'the model on this device does not read photos; send the message without them', res.status)
+    throw statusError(res.status, text, provider)
+  }
   return res
 }
 
@@ -182,23 +195,30 @@ export async function* sseEvents(body: ReadableStream<Uint8Array>): AsyncGenerat
 
 type Block = Record<string, unknown> & { type: string }
 
-/** Alternating turns starting with the user (anthropicMessages in Go). */
+/** Alternating turns starting with the user (anthropicMessages in Go); photos stay with their message. */
 function alternate(msgs: Message[]): Message[] {
   const out: Message[] = []
   for (const m of msgs) {
     if (!m.text) continue
     if (!out.length && m.role === 'assistant') continue
     const last = out[out.length - 1]
-    if (last && last.role === m.role) last.text += '\n\n' + m.text
-    else out.push({ ...m })
+    if (last && last.role === m.role) {
+      last.text += '\n\n' + m.text
+      if (m.images?.length) last.images = [...(last.images ?? []), ...m.images]
+    } else out.push({ ...m })
   }
   return out
 }
 
+const hasImages = (msgs: Message[]) => msgs.some((m) => m.images?.length)
+
 export function anthropicProvider(setup: DeviceSetup, f: Fetch = fetch): Provider {
   return {
     start(req) {
-      const messages: { role: string; content: unknown }[] = alternate(req.messages).map((m) => ({ role: m.role, content: [{ type: 'text', text: m.text }] }))
+      // A message's photos follow its text as base64 image blocks.
+      const messages: { role: string; content: unknown }[] = alternate(req.messages).map((m) => ({ role: m.role, content: [{ type: 'text', text: m.text },
+        ...(m.role === 'user' ? (m.images ?? []).map((i) => ({ type: 'image', source: { type: 'base64', media_type: i.media_type, data: i.data } })) : [])] }))
+      const images = hasImages(req.messages)
       const tools = req.tools.map((t) => ({ name: t.name, description: t.description, input_schema: t.strict_schema, strict: true }))
       return {
         async next(onText, signal) {
@@ -208,7 +228,7 @@ export function anthropicProvider(setup: DeviceSetup, f: Fetch = fetch): Provide
           }
           const res = await post(f, 'anthropic', baseUrlOf(setup) + '/messages', {
             'x-api-key': setup.key ?? '', 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true',
-          }, body, signal)
+          }, body, signal, images)
           const blocks: Block[] = []
           const json: string[] = []
           const r: Round = { stop: '', rawStop: '', toolCalls: [], input: 0, output: 0 }
@@ -282,7 +302,11 @@ export function anthropicProvider(setup: DeviceSetup, f: Fetch = fetch): Provide
 export function chatProvider(setup: DeviceSetup, f: Fetch = fetch): Provider {
   return {
     start(req) {
-      const messages: Record<string, unknown>[] = [{ role: 'system', content: req.system }, ...req.messages.filter((m) => m.text).map((m) => ({ role: m.role, content: m.text }))]
+      // A user message with photos becomes text and image parts with data: URLs.
+      const messages: Record<string, unknown>[] = [{ role: 'system', content: req.system }, ...req.messages.filter((m) => m.text).map((m) => (m.role === 'user' && m.images?.length
+        ? { role: m.role, content: [{ type: 'text', text: m.text }, ...m.images.map((i) => ({ type: 'image_url', image_url: { url: `data:${i.media_type};base64,${i.data}` } }))] }
+        : { role: m.role, content: m.text }))]
+      const images = hasImages(req.messages)
       const tools = req.tools.map((t) => ({ type: 'function', function: { name: t.name, description: t.description, parameters: setup.provider === 'gemini' ? t.strict_nullable_schema : t.input_schema } }))
       return {
         async next(onText, signal) {
@@ -291,7 +315,7 @@ export function chatProvider(setup: DeviceSetup, f: Fetch = fetch): Provider {
           body[setup.provider === 'openai' ? 'max_completion_tokens' : 'max_tokens'] = req.maxTokens
           const headers: Record<string, string> = {}
           if (setup.key) headers.authorization = `Bearer ${setup.key}`
-          const res = await post(f, setup.provider, baseUrlOf(setup) + '/chat/completions', headers, body, signal)
+          const res = await post(f, setup.provider, baseUrlOf(setup) + '/chat/completions', headers, body, signal, images)
           const calls: { id: string; name: string; args: string }[] = []
           let text = ''
           let finish = ''

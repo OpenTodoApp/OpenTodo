@@ -48,7 +48,10 @@ export function foldUntrusted(msgs: TurnRequest['messages']): Message[] {
       text = `${manifest.untrusted_note}\n${pending.join('\n')}\n\n${text}`
       pending = []
     }
-    out.push({ role: m.role, text })
+    // The photos follow the note, as untrusted material (voice-ramble D8), within the server's limits.
+    const images = m.role === 'user' ? (m.images ?? []).filter((i) => i.data.length * 0.75 <= manifest.limits.max_image_bytes).slice(0, manifest.limits.max_images) : []
+    if (images.length) text += `\n\n${manifest.images_note}`
+    out.push({ role: m.role, text, ...(images.length ? { images } : {}) })
   }
   if (pending.length && out.length && out[out.length - 1].role === 'user') out[out.length - 1].text += `\n\n${manifest.untrusted_note}\n${pending.join('\n')}`
   return out

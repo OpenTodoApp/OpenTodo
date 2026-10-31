@@ -101,14 +101,16 @@ func (p *AnthropicProvider) Start(req Request) Conversation {
 		// Tools and system repeat on every round of the tool loop.
 		CacheControl: anthropic.NewCacheControlEphemeralParam(),
 	}
-	return &anthropicConv{client: p.client(), params: params}
+	return &anthropicConv{client: p.client(), params: params, images: hasImages(req.Messages)}
 }
 
 // anthropicMessages turns the device conversation into alternating turns that
 // start with the user (consecutive messages of one role are joined).
+// A user message's photos follow its text as base64 image blocks (voice-ramble D5).
 func anthropicMessages(in []Message) []anthropic.MessageParam {
 	var out []anthropic.MessageParam
 	var role, text string
+	var images []Image
 	flush := func() {
 		if text == "" {
 			return
@@ -116,8 +118,13 @@ func anthropicMessages(in []Message) []anthropic.MessageParam {
 		if role == "assistant" {
 			out = append(out, anthropic.NewAssistantMessage(anthropic.NewTextBlock(text)))
 		} else {
-			out = append(out, anthropic.NewUserMessage(anthropic.NewTextBlock(text)))
+			blocks := []anthropic.ContentBlockParamUnion{anthropic.NewTextBlock(text)}
+			for _, img := range images {
+				blocks = append(blocks, anthropic.NewImageBlockBase64(img.MediaType, img.Data))
+			}
+			out = append(out, anthropic.NewUserMessage(blocks...))
 		}
+		images = nil
 	}
 	for _, m := range in {
 		r := "user"
@@ -132,10 +139,12 @@ func anthropicMessages(in []Message) []anthropic.MessageParam {
 		}
 		if r == role {
 			text += "\n\n" + m.Text
+			images = append(images, m.Images...)
 			continue
 		}
 		flush()
 		role, text = r, m.Text
+		images = append(images, m.Images...)
 	}
 	flush()
 	return out
@@ -144,6 +153,8 @@ func anthropicMessages(in []Message) []anthropic.MessageParam {
 type anthropicConv struct {
 	client anthropic.Client
 	params anthropic.MessageNewParams
+	// images marks a turn that carries photos (a 400 about them is images_unsupported).
+	images bool
 }
 
 func (c *anthropicConv) Next(ctx context.Context, onText func(string)) (Round, error) {
@@ -162,7 +173,7 @@ func (c *anthropicConv) Next(ctx context.Context, onText func(string)) (Round, e
 		}
 	}
 	if err := stream.Err(); err != nil {
-		return Round{}, anthropicError(ctx, err)
+		return Round{}, anthropicError(ctx, err, c.images)
 	}
 	r := Round{
 		RawStop: string(msg.StopReason),
@@ -211,12 +222,15 @@ func (c *anthropicConv) AddToolResults(results []ToolResult) {
 
 // anthropicError maps the SDK's typed errors onto ProviderError (status and
 // error type only: the SDK's own message includes the request URL and body).
-func anthropicError(ctx context.Context, err error) error {
+func anthropicError(ctx context.Context, err error, images bool) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
 	var apiErr *anthropic.Error
 	if errors.As(err, &apiErr) {
+		if images && imageRefusal(apiErr.StatusCode, apiErr.RawJSON()) {
+			return imagesUnsupported(apiErr.StatusCode, string(apiErr.Type()))
+		}
 		return providerErr(apiErr.StatusCode, string(apiErr.Type()))
 	}
 	return &ProviderError{Code: CodeProviderError, Msg: "the provider could not be reached"}

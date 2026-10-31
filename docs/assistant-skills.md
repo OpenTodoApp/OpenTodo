@@ -3,7 +3,7 @@ title: Skills, pasted notes and safety
 summary: The assistant's ready-made jobs, how pasted text is kept apart from instructions, and what the assistant can never do on its own.
 audience: user
 section: Guides
-specs: []
+specs: [assistant-skills, voice-capture]
 screens: []
 order: 78
 ---
@@ -24,6 +24,7 @@ Skills are ready-made jobs the assistant knows how to do. Pick one from **Skills
 | **Weekly review** | Looks at the Inbox, overdue tasks and the coming week, and proposes what to reschedule, move or complete (waiting tasks get what they wait for, later ones a start date or Someday), with a short summary. It never proposes trashing your tasks. |
 | **Triage my inbox** | Proposes a project, and a priority, labels and a date where the task gives a reason, for each Inbox task; may defer a task or park it in Someday. |
 | **Break this down** | Turns the selected task into subtasks with estimates. Also in a task's **⋯** menu. |
+| **Turn this into tasks** | Turns what you typed, [spoke or photographed](assistant-capture.md) into tasks, one per action, and changes an existing task instead of adding a duplicate. It never trashes a task. |
 
 A skill can only use the tools it needs (Break this down cannot move or complete anything), and what it proposes is [reviewed, applied and undone](assistant-ask.md#ask-and-review) exactly like any other answer.
 

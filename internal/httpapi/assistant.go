@@ -23,9 +23,11 @@ import (
 
 // Turn limits (design D5).
 const (
-	turnMaxBody     = 256 << 10
-	turnMaxMessages = 40
-	turnTimeout     = 5 * time.Minute
+	turnMaxBody = 256 << 10
+	// turnMaxImageBody bounds a turn with photos (voice-ramble D4).
+	turnMaxImageBody = 16 << 20
+	turnMaxMessages  = 40
+	turnTimeout      = 5 * time.Minute
 	// A member's "Test connection" of their own provider
 	// (assistant-member-provider): at most 5 per account in 10 minutes.
 	memberTestLimit  = 5
@@ -102,6 +104,7 @@ func (s *Server) ownerView(ctx context.Context) (map[string]any, error) {
 		v := map[string]any{"enabled": p.Enabled, "model": p.Model, "key_set": sec.Has(assistant.OperatorKey(n)), "label": assistant.ProviderLabel(n)}
 		if n == assistant.Compatible {
 			v["base_url"] = p.BaseURL
+			v["images"] = p.Images
 		}
 		providers[n] = v
 	}
@@ -193,13 +196,14 @@ func (s *Server) handleTestAssistant(w http.ResponseWriter, r *http.Request) {
 		BaseURL              *string `json:"base_url"`
 		Key                  *string `json:"key"`
 		AllowPrivateEndpoint *bool   `json:"allow_private_endpoint"`
+		Images               *bool   `json:"images"`
 	}
 	if err := readJSON(r, &in); err != nil {
 		badBodyWith(w, err, "invalid_input", err.Error())
 		return
 	}
 	res := s.assistant.TestConnection(r.Context(), in.Provider, s.assistantSettings(r.Context()),
-		assistant.Draft{Model: in.Model, BaseURL: in.BaseURL, Key: in.Key, AllowPrivateEndpoint: in.AllowPrivateEndpoint})
+		assistant.Draft{Model: in.Model, BaseURL: in.BaseURL, Key: in.Key, AllowPrivateEndpoint: in.AllowPrivateEndpoint, Images: in.Images})
 	if res.Code == "invalid_input" {
 		writeError(w, http.StatusBadRequest, "invalid_input", res.Message)
 		return
@@ -211,7 +215,7 @@ func (s *Server) handleTestAssistant(w http.ResponseWriter, r *http.Request) {
 
 // consentFields lists what the disclosure says may be sent.
 var consentFields = []string{"task titles and descriptions", "project, section and label names", "due dates, priorities and completion",
-	"comments", "names of members of shared projects", "your display name, today's date and your time zone", "the messages you type"}
+	"comments", "names of members of shared projects", "your display name, today's date and your time zone", "the messages you type", "photos you add"}
 
 func (s *Server) myAssistant(ctx context.Context, u *auth.User) (map[string]any, error) {
 	set := s.assistantSettings(ctx)
@@ -269,6 +273,9 @@ func (s *Server) myAssistant(ctx context.Context, u *auth.User) (map[string]any,
 		"operator_key_set":   sec.Has(assistant.OperatorKey(set.DefaultProvider)) || set.DefaultProvider == assistant.Compatible,
 		"cap_member_keys":    set.CapMemberKeys, "own_provider": nil,
 		"member_providers": assistant.MemberProviders, "anthropic_models": assistant.AnthropicModels,
+		// images: whether the provider of the next turn reads photos
+		// (voice-ramble D5); on a device the device's own provider decides.
+		"images": mode == "device" || (reason == "" && assistant.ReadsImages(route, set)),
 	}
 	if choice != nil {
 		out["own_provider"] = map[string]any{"provider": choice.Provider, "provider_label": assistant.ProviderLabel(choice.Provider),
@@ -568,6 +575,10 @@ func (s *Server) handleAssistantTurn(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	if turnHasImages(in) && !assistant.ReadsImages(route, set) {
+		writeError(w, http.StatusUnprocessableEntity, "images_unsupported", "the model in use here does not read photos; send the message without them")
+		return
+	}
 	usage, err := s.assistant.Store.Usage(ctx, u.ID, set.MonthlyTokenCap)
 	if err != nil {
 		s.internal(w, err)
@@ -655,17 +666,7 @@ func (s *Server) handleAssistantTurn(w http.ResponseWriter, r *http.Request) {
 	}
 	send("usage", map[string]any{"input": res.Input, "output": res.Output, "month_total": total, "cap": turnCap, "own_key": route.Own})
 	if res.Err != nil {
-		code, msg := "provider_error", "the provider could not answer"
-		if pe, ok := assistant.AsProviderError(res.Err); ok {
-			code, msg = pe.Code, pe.Msg
-			if route.Own && pe.Code == assistant.CodeProviderAuth {
-				msg = assistant.OwnKeyRejected()
-			}
-		} else if errors.Is(res.Err, context.DeadlineExceeded) {
-			code, msg = "timeout", "the answer took too long and was stopped"
-		} else {
-			s.log.Error("assistant turn failed", "err", res.Err)
-		}
+		code, msg := s.turnError(res.Err, route.Own)
 		send("error", map[string]string{"code": code, "message": msg})
 		return
 	}
@@ -682,11 +683,13 @@ func (s *Server) handleAssistantTurn(w http.ResponseWriter, r *http.Request) {
 // readTurn reads and checks a turn request: its size, its messages, the
 // skill and the time zone. It answers the error itself and reports false then.
 func readTurn(w http.ResponseWriter, r *http.Request) (turnRequest, *agenttools.Skill, *time.Location, bool) {
-	raw, err := io.ReadAll(http.MaxBytesReader(w, r.Body, turnMaxBody))
+	// Photos travel beside the text (voice-ramble D4): the body may reach
+	// 16 MB, while the conversation's text keeps its 256 KB limit.
+	raw, err := io.ReadAll(http.MaxBytesReader(w, r.Body, turnMaxImageBody))
 	if err != nil {
 		var tooBig *http.MaxBytesError
 		if errors.As(err, &tooBig) {
-			writeError(w, http.StatusRequestEntityTooLarge, "too_large", "a turn is at most 256 KB; start a new conversation or clear older messages")
+			writeError(w, http.StatusRequestEntityTooLarge, "too_large", "a turn with photos is at most 16 MB; send fewer or smaller photos")
 			return turnRequest{}, nil, nil, false
 		}
 		writeError(w, http.StatusBadRequest, "bad_request", "could not read the request body")
@@ -697,12 +700,25 @@ func readTurn(w http.ResponseWriter, r *http.Request) (turnRequest, *agenttools.
 		writeError(w, http.StatusBadRequest, "invalid_input", "invalid JSON body")
 		return turnRequest{}, nil, nil, false
 	}
+	if len(raw)-imageBytes(in) > turnMaxBody {
+		writeError(w, http.StatusRequestEntityTooLarge, "too_large", "a turn is at most 256 KB; start a new conversation or clear older messages")
+		return turnRequest{}, nil, nil, false
+	}
 	if len(in.Messages) > turnMaxMessages {
 		writeError(w, http.StatusRequestEntityTooLarge, "too_large", fmt.Sprintf("a turn carries at most %d messages", turnMaxMessages))
 		return turnRequest{}, nil, nil, false
 	}
 	if msg := validateTurn(in); msg != "" {
 		writeError(w, http.StatusBadRequest, "invalid_input", msg)
+		return turnRequest{}, nil, nil, false
+	}
+	if err := assistant.CheckImages(in.Messages[len(in.Messages)-1].Images); err != nil {
+		var ie *assistant.ImageError
+		if errors.As(err, &ie) && ie.TooLarge {
+			writeError(w, http.StatusRequestEntityTooLarge, "too_large", ie.Msg)
+		} else {
+			writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
+		}
 		return turnRequest{}, nil, nil, false
 	}
 	var skill *agenttools.Skill
@@ -735,6 +751,10 @@ func validateTurn(in turnRequest) string {
 		if m.Untrusted && m.Role != "user" {
 			return fmt.Sprintf("messages[%d]: only user messages can carry pasted text", i)
 		}
+		// Photos go with one message only and are never resent (voice-ramble D4).
+		if len(m.Images) > 0 && i != len(in.Messages)-1 {
+			return fmt.Sprintf("messages[%d]: only the last message can carry photos", i)
+		}
 	}
 	last := in.Messages[len(in.Messages)-1]
 	if last.Role != "user" || last.Untrusted || strings.TrimSpace(last.Text) == "" {
@@ -750,4 +770,38 @@ func validateTurn(in turnRequest) string {
 		return "view: unknown view"
 	}
 	return ""
+}
+
+// turnHasImages reports whether the turn's last message carries photos.
+func turnHasImages(in turnRequest) bool {
+	return len(in.Messages) > 0 && len(in.Messages[len(in.Messages)-1].Images) > 0
+}
+
+// imageBytes is the size of the photos' data in a turn, which does not count
+// toward the text limit.
+func imageBytes(in turnRequest) int {
+	n := 0
+	for _, m := range in.Messages {
+		for _, img := range m.Images {
+			n += len(img.Data) + len(img.MediaType)
+		}
+	}
+	return n
+}
+
+// turnError is the code and message of a turn that failed after the stream
+// started; own marks a turn on the user's own key.
+func (s *Server) turnError(err error, own bool) (code, msg string) {
+	code, msg = "provider_error", "the provider could not answer"
+	if pe, ok := assistant.AsProviderError(err); ok {
+		code, msg = pe.Code, pe.Msg
+		if own && pe.Code == assistant.CodeProviderAuth {
+			msg = assistant.OwnKeyRejected()
+		}
+	} else if errors.Is(err, context.DeadlineExceeded) {
+		code, msg = "timeout", "the answer took too long and was stopped"
+	} else {
+		s.log.Error("assistant turn failed", "err", err)
+	}
+	return code, msg
 }
