@@ -39,6 +39,35 @@ export function cellTasks<T extends Pick<Task, 'due' | 'priority' | 'position'>>
   return out.map((x) => x.task)
 }
 
+/** The same day of the month `months` away, clamped to the month's last day. */
+export function addMonthsISO(iso: string, months: number): string {
+  const [y, m, d] = iso.split('-').map(Number)
+  const first = new Date(y, m - 1 + months, 1)
+  const last = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate()
+  const day = Math.min(d, last)
+  return `${first.getFullYear()}-${String(first.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+}
+
+/** The last day of the month of `iso` (`YYYY-MM` or a date in it). */
+export function monthEnd(iso: string): string {
+  return addMonthsISO(`${iso.slice(0, 7)}-31`, 0)
+}
+
+/** One month of the Month view: its key, first and last day and its week rows. */
+export interface ShownMonth { month: string; from: string; to: string; weeks: string[][] }
+
+/**
+ * The months Month shows from the anchor's month (year-view D1): one grid of six weeks,
+ * or `count` stacked grids, each cut to the weeks that hold its days.
+ */
+export function stackedMonths(anchor: string, count: number, weekStart = 1): ShownMonth[] {
+  return Array.from({ length: Math.max(1, count) }, (_, i) => {
+    const month = addMonthsISO(`${anchor.slice(0, 7)}-01`, i).slice(0, 7)
+    const weeks = monthGrid(`${month}-01`, weekStart)
+    return { month, from: `${month}-01`, to: monthEnd(month), weeks: count > 1 ? weeks.filter((w) => w.some((d) => d.slice(0, 7) === month)) : weeks }
+  })
+}
+
 /** The rows a cell can show in `max` lines: all of them, or `max − 1` and a "+N more" count. */
 export function visibleRows<T>(cell: readonly T[], max: number): { shown: T[]; hidden: number } {
   if (cell.length <= max) return { shown: [...cell], hidden: 0 }

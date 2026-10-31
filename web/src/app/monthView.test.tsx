@@ -7,11 +7,12 @@ import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createTask, resetDeviceId } from '../lib/ops'
-import { click, flush, key, render, type, waitFor } from '../ui/test-utils'
+import { click, flush, key, minWidthPx, render, type, waitFor } from '../ui/test-utils'
 import { addMonthsISO, MonthView } from './MonthView'
 import { resetPanel } from './panel'
 import { openedTask, resetTaskPage } from './taskPage.testkit'
-import { parseRoute, routePath } from './router'
+import { navigate, parseRoute, routePath, useRoute } from './router'
+import { monthsShown } from '../lib/calendarMode'
 
 beforeEach(async () => {
   resetTaskPage()
@@ -154,5 +155,90 @@ describe('month grid', () => {
     await key(document.body, 'Enter')
     expect(openedTask()).toBe(second)
     await r.unmount()
+  })
+})
+
+/** The Month at the current address, following navigation (the Shell's part). */
+function Routed() {
+  const r = useRoute()
+  return r.view === 'month' ? <MonthView date={r.date} /> : <p data-left={routePath(r)} />
+}
+
+describe('several months (year-view)', () => {
+  it('Months shown is 1 by default, keeps 2, 3 and 6, and reads 1 from blocked storage', () => {
+    expect(monthsShown.get()).toBe(1)
+    for (const n of [2, 3, 6] as const) { monthsShown.set(n); expect(monthsShown.get()).toBe(n) }
+    monthsShown.set(1)
+    expect(localStorage.getItem('ot.calendar.months')).toBeNull()
+    const real = localStorage
+    vi.stubGlobal('localStorage', { getItem: () => { throw new Error('blocked') }, setItem: () => { throw new Error('quota') }, removeItem: () => { throw new Error('blocked') } })
+    try {
+      expect(() => monthsShown.set(3)).not.toThrow()
+      expect(monthsShown.get()).toBe(1)
+    } finally {
+      vi.stubGlobal('localStorage', real)
+    }
+  })
+
+  it('Three months on this device: stacked with their names, a range title, each day once', async () => {
+    navigate({ view: 'month' }, { replace: true })
+    await createTask({ title: 'Last of November', due: { date: '2026-11-30' } })
+    const r = await render(<Routed />)
+    await waitFor(() => r.container.querySelector('[data-month-task]') !== null)
+    // The page's menu offers 1, 2, 3 and 6; choosing 3 is stored on this device only.
+    await click(r.container.querySelector('[data-page-actions] [aria-label="More actions"]')!)
+    await waitFor(() => document.querySelector('[data-months-shown="3"]') !== null, 'the Months shown items')
+    expect([...document.querySelectorAll('[data-months-shown]')].map((e) => e.getAttribute('data-months-shown'))).toEqual(['1', '2', '3', '6'])
+    await click(document.querySelector('[data-months-shown="3"]')!)
+    await waitFor(() => r.container.querySelectorAll('[data-month-grid]').length === 3, 'three grids')
+    expect(localStorage.getItem('ot.calendar.months')).toBe('3')
+    expect([...r.container.querySelectorAll('[data-month-heading]')].map((h) => h.textContent)).toEqual(['November 2026', 'December 2026', 'January 2027'])
+    expect(r.container.querySelector('h1')!.textContent!.replace(/\s+/g, ' ')).toContain('Nov 2026 – Jan 2027')
+    expect(r.container.querySelectorAll('[data-month-day="2026-11-30"]')).toHaveLength(1)
+    expect(r.container.querySelectorAll('[data-month-day="2026-12-01"]')).toHaveLength(1)
+    expect(r.container.querySelectorAll('[data-month-task]')).toHaveLength(1)
+    const axe = (await import('axe-core')).default
+    const res = await axe.run(r.container, { rules: { 'color-contrast': { enabled: false } } })
+    expect(res.violations.map((v) => v.id)).toEqual([])
+    await r.unmount()
+  })
+
+  it('Across stacked months and Step one month: Right from 30 November focuses 1 December; ] moves by one month', async () => {
+    monthsShown.set(2)
+    navigate({ view: 'month', date: '2026-11-30' }, { replace: true })
+    const r = await render(<Routed />)
+    await waitFor(() => cell(r.container, '2026-11-30')?.getAttribute('aria-selected') === 'true')
+    await key(document.body, 'ArrowRight')
+    expect(cell(r.container, '2026-12-01').getAttribute('aria-selected')).toBe('true')
+    expect(r.container.querySelectorAll('[data-month-grid]')).toHaveLength(2)
+    // Past the last shown month, the months move on until the day is in the last one.
+    for (let i = 0; i < 31; i++) await key(document.body, 'ArrowRight')
+    await waitFor(() => location.pathname === '/month/2026-12-01' && cell(r.container, '2027-01-01')?.getAttribute('aria-selected') === 'true', 'the months moved on')
+    await key(document.body, ']')
+    await waitFor(() => location.pathname === '/month/2027-01-01')
+    expect([...r.container.querySelectorAll('[data-month-grid]')].map((g) => g.getAttribute('data-month-grid'))).toEqual(['2027-01', '2027-02'])
+    await key(document.body, 't')
+    await waitFor(() => location.pathname === '/month')
+    await r.unmount()
+    monthsShown.set(1)
+  })
+
+  it('Several months on a phone: one month whatever the device shows, the choice kept', async () => {
+    monthsShown.set(3)
+    const original = window.matchMedia
+    window.matchMedia = ((q: string) => ({
+      matches: q.includes('max-width: 39.99rem') ? true : minWidthPx(q) <= 390, media: q, onchange: null,
+      addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
+    })) as typeof window.matchMedia
+    try {
+      const r = await render(<MonthView />)
+      await waitFor(() => r.container.querySelector('[data-month-day-list]') !== null)
+      expect(r.container.querySelectorAll('[data-month-grid]')).toHaveLength(1)
+      expect(localStorage.getItem('ot.calendar.months')).toBe('3')
+      await r.unmount()
+    } finally {
+      window.matchMedia = original
+      monthsShown.set(1)
+    }
   })
 })

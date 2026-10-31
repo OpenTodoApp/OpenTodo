@@ -11,13 +11,13 @@ order: 61
 
 <picture><source srcset="images/week-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/week-light.webp" alt="The Week calendar with timed tasks as blocks, an Unscheduled lane under each day, and planned hours against an 8-hour day in each day's header."></picture>
 
-The calendar shows dated tasks by day, week, month or as a two-week plan. Dragging and keyboard moves are in [Place tasks on the calendar](place-tasks-on-the-calendar.md); estimates and the grid settings are in [Time blocking](time-blocking.md).
+The calendar shows dated tasks by day, week, month, two-week plan or [year](months-and-year.md). Dragging and keyboard moves are in [Place tasks on the calendar](place-tasks-on-the-calendar.md); estimates and the grid settings are in [Time blocking](time-blocking.md).
 
 [Completed](completed-on-the-calendar.md "Show completed tasks on the calendar").
 
 ## Open the calendar
 
-Choose **Calendar** in the sidebar, then **Day**, **Week**, **Month** or **Plan** in its header, or press <kbd>g</kbd> <kbd>d</kbd>, <kbd>g</kbd> <kbd>w</kbd>, <kbd>g</kbd> <kbd>m</kbd> or <kbd>g</kbd> <kbd>Shift+C</kbd>. The sidebar remembers Day or Week on each device.
+Choose **Calendar** in the sidebar, then **Day**, **Week**, **Month**, **Plan** or **Year** in its header, or press <kbd>g</kbd> <kbd>d</kbd>, <kbd>g</kbd> <kbd>w</kbd>, <kbd>g</kbd> <kbd>m</kbd>, <kbd>g</kbd> <kbd>Shift+C</kbd> or <kbd>g</kbd> <kbd>y</kbd>. The sidebar remembers the last one on each device.
 
 - Tasks with a date **and** a time appear as blocks at that time, filled in their project's colour. The block is as tall as the estimate.
 - A timed task without an estimate gets a 30-minute block with a dashed edge.
@@ -44,7 +44,7 @@ Double-click adding, colours, filters: [Add and colour](calendar-add-and-colour.
 - With no task selected, the arrows move between days. <kbd>q</kbd> adds a task due on the day you're on.
 - <kbd>[</kbd> and <kbd>]</kbd> go to the previous and next month, and <kbd>t</kbd> comes back to today.
 
-Switching between **Day**, **Week**, **Month** and **Plan** keeps the date you're looking at. On a phone, each day shows how many tasks it has, and the tasks of the day you tap are listed under the month. Tasks in projects you only view can't be moved.
+Switching views keeps the date you're looking at. On a phone, each day shows how many tasks it has, and the tasks of the day you tap are listed under the month. Tasks in projects you only view can't be moved.
 
 ## Plan the next two weeks
 

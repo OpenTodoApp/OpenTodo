@@ -83,6 +83,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>g</kbd> then <kbd>w</kbd> | Go to the Calendar as Week |
 | <kbd>g</kbd> then <kbd>m</kbd> | Go to the Calendar as Month |
 | <kbd>g</kbd> then <kbd>Shift+C</kbd> | Go to the Calendar as Plan: the next days as columns with their capacity |
+| <kbd>g</kbd> then <kbd>y</kbd> | Go to the Calendar as Year: twelve months with how busy each day is |
 | <kbd>g</kbd> then <kbd>x</kbd> | Go to the Trash |
 | <kbd>g</kbd> then <kbd>p</kbd> | Process the Inbox one task at a time |
 | <kbd>g</kbd> then <kbd>h</kbd> | Go to Updates: what changed in your shared projects |
@@ -169,7 +170,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>]</kbd> | Timeline: show the next week (or four) |
 | <kbd>t</kbd> | Timeline: back to today |
 
-### Day, Week, Month and Plan calendar
+### Day, Week, Month, Plan and Year calendar
 
 | Keys | What it does |
 | --- | --- |
@@ -201,6 +202,13 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>[</kbd> | In Month: previous month |
 | <kbd>]</kbd> | In Month: next month |
 | <kbd>t</kbd> | In Month: back to today |
+| <kbd>←</kbd> / <kbd>→</kbd> / <kbd>↑</kbd> / <kbd>↓</kbd> | In Year: move the focused day a day or a week, across month edges |
+| <kbd>PageUp</kbd> / <kbd>PageDown</kbd> | In Year: the same day of the previous or next month |
+| <kbd>Home</kbd> / <kbd>End</kbd> | In Year: the first or last day of the focused month |
+| <kbd>Enter</kbd> | In Year: open the focused day in Day view |
+| <kbd>[</kbd> | In Year: previous year, keeping the day |
+| <kbd>]</kbd> | In Year: next year, keeping the day |
+| <kbd>t</kbd> | In Year: back to today |
 | <kbd>←</kbd> / <kbd>→</kbd> / <kbd>↑</kbd> / <kbd>↓</kbd> | In Plan: move the focused day; with a task selected, move it a day or a week (keeps its time) |
 | <kbd>j</kbd> | In Plan: select the next task, column by column (projected and event rows are skipped) |
 | <kbd>k</kbd> | In Plan: select the previous task |

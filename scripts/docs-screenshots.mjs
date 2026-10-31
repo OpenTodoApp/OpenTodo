@@ -459,6 +459,12 @@ const shots = [
   } },
   // Projected occurrences of repeating tasks in the Week (series-occurrences): a weekday
   // study session at 18:00 and a Monday, Wednesday and Friday habit, both due next Monday.
+  // The Year (year-view 3.1): the demo's twelve months with their density marks.
+  { name: 'year-calendar', server: D, async run(p) {
+    await p.setViewportSize({ width: 1280, height: 1240 })
+    await go(p, demoBase, '/year', () => p.locator('[data-year-grid] [data-density]').first().waitFor()); await settle(p, 300)
+    await p.mouse.move(0, 0)
+  } },
   { name: 'repeating-calendar', server: P, async run(p, { ctx }) {
     const api = async (method, path, body) => {
       const r = await ctx.request.fetch(plainBase + path, { method, headers: { Origin: plainBase, 'Content-Type': 'application/json' }, data: body === undefined ? undefined : JSON.stringify(body) })

@@ -36,7 +36,7 @@ const QUERY = 'task'
  */
 export function panelPage(pathname: string): string {
   const first = pathname.split('/')[1]
-  return first === 'day' || first === 'week' || first === 'month' || first === 'plan' ? '/calendar' : pathname
+  return first === 'day' || first === 'week' || first === 'month' || first === 'plan' || first === 'year' ? '/calendar' : pathname
 }
 
 function currentPath(): string {

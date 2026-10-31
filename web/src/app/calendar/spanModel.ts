@@ -23,9 +23,13 @@ export function uniqueSpans(lists: readonly (readonly DaySpan[])[]): DaySpan[] {
   return [...seen.values()]
 }
 
-/** The lanes a band would draw and the spans it leaves out per day (for the "+N" controls). */
-export function bandLayout(days: readonly string[], spans: readonly DaySpan[], maxLanes = Infinity): { pieces: SpanPiece<DaySpan>[]; lanes: number; hiddenOn: Map<string, number> } {
-  const all = packSpans(spans, days)
+/**
+ * The lanes a band would draw and the spans it leaves out per day (for the "+N" controls).
+ * `within` cuts the pieces to one month of a week row (stacked months, year-view D1): the
+ * lanes stay those of the whole week, and a cut piece reads as going on past the month.
+ */
+export function bandLayout(days: readonly string[], spans: readonly DaySpan[], maxLanes = Infinity, within?: { from: string; to: string }): { pieces: SpanPiece<DaySpan>[]; lanes: number; hiddenOn: Map<string, number> } {
+  const all = within ? cutPieces(packSpans(spans, days), days, within) : packSpans(spans, days)
   const pieces = all.filter((p) => p.lane < maxLanes)
   const hiddenOn = new Map<string, number>()
   for (const p of all) {
@@ -33,6 +37,15 @@ export function bandLayout(days: readonly string[], spans: readonly DaySpan[], m
     for (let i = 0; i < p.cols; i++) hiddenOn.set(days[p.col + i], (hiddenOn.get(days[p.col + i]) ?? 0) + 1)
   }
   return { pieces, lanes: laneCount(pieces), hiddenOn }
+}
+
+function cutPieces(pieces: SpanPiece<DaySpan>[], days: readonly string[], { from, to }: { from: string; to: string }): SpanPiece<DaySpan>[] {
+  return pieces.flatMap((p) => {
+    const first = p.first < from ? from : p.first, last = p.last > to ? to : p.last
+    if (first > last) return []
+    const col = days.indexOf(first)
+    return [{ ...p, col, cols: days.indexOf(last) - col + 1, first, last, startsBefore: p.startsBefore || first !== p.first, endsAfter: p.endsAfter || last !== p.last }]
+  })
 }
 
 type DragModule = typeof import('./spanDrag')

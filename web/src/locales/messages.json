@@ -63,7 +63,8 @@
     "web/src/app/Sections.tsx"
   ],
   "+{hidden} more": [
-    "web/src/app/MonthView.tsx"
+    "web/src/app/YearView.tsx",
+    "web/src/app/calendar/MonthWeek.tsx"
   ],
   "+{n} min": [
     "web/src/app/focus/FocusParts.tsx"
@@ -1546,6 +1547,9 @@
   "Arrows move the focused day, or the selected task. {j} / {k} select, {q} adds on the focused day.": [
     "web/src/app/MonthView.tsx",
     "web/src/app/PlanView.tsx"
+  ],
+  "Arrows move the focused day, {pgup} / {pgdn} a month, {open} opens it in Day. Marks count open tasks, repeating occurrences while shown and every day of a multi-day task.": [
+    "web/src/app/YearView.tsx"
   ],
   "As a page": [
     "web/src/app/AppearanceSection.tsx"
@@ -3560,7 +3564,7 @@
     "web/src/app/calendar/SpanBand.tsx",
     "web/src/app/calendar/WeekAgenda.tsx"
   ],
-  "Day, Week, Month and Plan calendar": [
+  "Day, Week, Month, Plan and Year calendar": [
     "web/src/lib/shortcuts.ts"
   ],
   "Day-month": [
@@ -5595,6 +5599,9 @@
   "Go to Calendar (Week)": [
     "web/src/app/palette/registry.ts"
   ],
+  "Go to Calendar (Year)": [
+    "web/src/app/palette/registry.ts"
+  ],
   "Go to Completed": [
     "web/src/app/palette/registry.ts",
     "web/src/app/vim/commands.ts",
@@ -5713,6 +5720,9 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Go to the Calendar as Week": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Go to the Calendar as Year: twelve months with how busy each day is": [
     "web/src/lib/shortcuts.ts"
   ],
   "Go to the Daily check: the Inbox, what is open from earlier, today's focus": [
@@ -6311,6 +6321,30 @@
     "web/src/lib/shortcuts.ts"
   ],
   "In Updates: select the previous change": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In Year: back to today": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In Year: move the focused day a day or a week, across month edges": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In Year: next year, keeping the day": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In Year: open the focused day in Day view": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In Year: previous year, keeping the day": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In Year: return the focus to the page header": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In Year: the first or last day of the focused month": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In Year: the same day of the previous or next month": [
     "web/src/lib/shortcuts.ts"
   ],
   "In a field: leave it and return to Normal mode; the text is kept, the panel stays open. In Normal mode Esc closes the panel and clears the selection as usual": [
@@ -7677,6 +7711,9 @@
     "web/src/app/assistant/AssistantSettings.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
+  "Months shown: {n}": [
+    "web/src/app/MonthView.tsx"
+  ],
   "More": [
     "web/src/app/Sidebar.tsx",
     "web/src/app/review/charts.tsx"
@@ -8233,6 +8270,9 @@
     "web/src/app/task-list/EarlierActions.tsx",
     "web/src/app/task-list/RowSwipe.tsx",
     "web/src/lib/dates.ts"
+  ],
+  "Next year": [
+    "web/src/app/YearView.tsx"
   ],
   "Next {n} days": [
     "web/src/app/PlanView.tsx"
@@ -10344,6 +10384,9 @@
     "web/src/app/CalendarView.tsx",
     "web/src/app/PlanView.tsx"
   ],
+  "Previous year": [
+    "web/src/app/YearView.tsx"
+  ],
   "Primary": [
     "web/src/app/Sidebar.tsx"
   ],
@@ -10783,7 +10826,8 @@
   "Range": [
     "web/src/app/CalendarView.tsx",
     "web/src/app/MonthView.tsx",
-    "web/src/app/PlanView.tsx"
+    "web/src/app/PlanView.tsx",
+    "web/src/app/YearView.tsx"
   ],
   "Re-enable": [
     "web/src/app/NotificationsSettings.tsx"
@@ -12411,9 +12455,9 @@
   ],
   "Show less": [
     "web/src/app/ActivityPanel.tsx",
-    "web/src/app/MonthView.tsx",
     "web/src/app/ProjectNote.tsx",
     "web/src/app/calendar/DayColumn.tsx",
+    "web/src/app/calendar/MonthWeek.tsx",
     "web/src/app/task-list/RowDetails.tsx"
   ],
   "Show maps and address search": [
@@ -15174,6 +15218,7 @@
     "web/src/app/TaskListView.tsx",
     "web/src/app/TimelineView.tsx",
     "web/src/app/TriageView.tsx",
+    "web/src/app/YearView.tsx",
     "web/src/app/assistant/AssistantPanel.tsx",
     "web/src/app/auditFormat.ts",
     "web/src/app/bulk/BulkActions.tsx",
@@ -15777,6 +15822,7 @@
     "web/src/app/TimelineView.tsx",
     "web/src/app/TrackingIndicator.tsx",
     "web/src/app/TriageView.tsx",
+    "web/src/app/YearView.tsx",
     "web/src/app/calendar/DayColumn.tsx",
     "web/src/app/calendar/DeadlineMarker.tsx",
     "web/src/app/calendar/FrameBand.tsx",
@@ -16509,6 +16555,10 @@
   ],
   "XXXXX-XXXXX": [
     "web/src/app/AuthScreen.tsx"
+  ],
+  "Year": [
+    "web/src/app/CalendarRange.tsx",
+    "web/src/lib/shortcuts.ts"
   ],
   "Yes": [
     "web/src/lib/fields.ts"
@@ -17804,6 +17854,7 @@
   ],
   "over capacity": [
     "web/src/app/PlanView.tsx",
+    "web/src/app/YearView.tsx",
     "web/src/app/calendar/CapacityLine.tsx",
     "web/src/app/calendar/PlanRow.tsx"
   ],
@@ -18971,10 +19022,11 @@
   ],
   "{n, plural, one {# task} other {# tasks}}": [
     "web/src/app/ClosedListSettings.tsx",
-    "web/src/app/MonthView.tsx",
     "web/src/app/PlanView.tsx",
     "web/src/app/TemplateDialogs.tsx",
+    "web/src/app/YearView.tsx",
     "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/calendar/MonthWeek.tsx",
     "web/src/app/palette/filterEntries.ts",
     "web/src/app/palette/registry.ts",
     "web/src/app/rules/RuleHistory.tsx",
@@ -19493,7 +19545,8 @@
     "web/src/app/calendar/DayColumn.tsx"
   ],
   "{title} calendar": [
-    "web/src/app/MonthView.tsx"
+    "web/src/app/MonthView.tsx",
+    "web/src/app/YearView.tsx"
   ],
   "{title} is in the {slot} slot.": [
     "web/src/lib/focusEdit.ts"

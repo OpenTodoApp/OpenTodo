@@ -102,6 +102,7 @@ const ROUTES: RouteCommand[] = translatedList<RouteCommand, 'label'>([
   { label: msg('Go to Calendar (Day)'), route: { view: 'day' }, icon: 'clock', shortcut: keysOf('go.day'), keywords: 'day calendar' },
   { label: msg('Go to Calendar (Week)'), route: { view: 'week' }, icon: 'calendar-range', shortcut: keysOf('go.week'), keywords: 'week calendar' },
   { label: msg('Go to Calendar (Plan)'), route: { view: 'plan' }, icon: 'calendar-range', shortcut: keysOf('go.plan'), keywords: 'plan next two weeks capacity calendar' },
+  { label: msg('Go to Calendar (Year)'), route: { view: 'year' }, icon: 'calendar-days', shortcut: keysOf('go.year'), keywords: 'year twelve months overview calendar' },
   { label: msg('Go to Completed'), route: { view: 'completed' }, icon: 'circle-check-big', shortcut: keysOf('go.completed') },
   { label: msg('Go to Projects'), route: { view: 'projects' }, icon: 'folder', shortcut: keysOf('go.projects'), keywords: 'all projects archived tree' },
   { label: msg('Go to Labels'), route: { view: 'labels' }, icon: 'tag', shortcut: keysOf('go.labels') },
