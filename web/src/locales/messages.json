@@ -22853,5 +22853,8 @@
   ],
   "⤼ Skip": [
     "web/src/app/RecurrenceField.tsx"
-  ]
+  ],
+  "Suggest after adding": ["web/src/lib/settingsCopy.ts"],
+  "Suggest after adding (this device)": ["web/src/app/assistant/AssistantSettings.tsx"],
+  "This device: after an add, the assistant proposes a title, project, subtasks. You review.": ["web/src/lib/settingsCopy.ts"]
 }

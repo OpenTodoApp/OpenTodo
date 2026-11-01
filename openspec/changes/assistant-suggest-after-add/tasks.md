@@ -6,13 +6,13 @@
 
 ## 2. Trigger
 
-- [ ] 2.1 `lib/assistantSuggest.ts`: the device switch (`getSuggestAfterAdd`, `setSuggestAfterAdd`), the bounded prompt, `suggestAfterAdd` (does nothing unless the switch is on and the assistant is enabled, available and consented; never throws) and `createTaskThenSuggest`; `assistantSuggest.test.ts`
-- [ ] 2.2 `TaskListView.onAdd`, `addFromBar` and `QuickAddSheet` create the task through `createTaskThenSuggest`
+- [x] 2.1 `lib/assistantSuggest.ts`: the device switch (`getSuggestAfterAdd`, `setSuggestAfterAdd`), the bounded prompt, `suggestAfterAdd` (does nothing unless the switch is on and the assistant is enabled, available and consented; never throws) and `createTaskThenSuggest`; `assistantSuggest.test.ts`
+- [x] 2.2 `TaskListView.onAdd`, `addFromBar` and `QuickAddSheet` create the task through `createTaskThenSuggest`
 
 ## 3. Setting
 
-- [ ] 3.1 Settings → Integrations → Assistant: the "Suggest after adding" row and switch (this device); `settingsCopy` within the style limits; message catalogue and the five shipped translations (`make i18n-check`)
+- [x] 3.1 Settings → Integrations → Assistant: the "Suggest after adding" row and switch (this device); `settingsCopy` within the style limits; message catalogue and the five shipped translations (`make i18n-check`)
 
 ## 4. Docs
 
-- [ ] 4.1 Assistant settings guide and CHANGELOG `### Added`; regenerate `web/src/generated/help.json` (`cd web && npm run docs:build`, `node scripts/docs/check.mjs`)
+- [x] 4.1 Assistant settings guide and CHANGELOG `### Added`; regenerate `web/src/generated/help.json` (`cd web && npm run docs:build`, `node scripts/docs/check.mjs`)

@@ -7,6 +7,7 @@ import { currentDateTime, logicalToday } from '../../lib/dates'
 import { loadQuickAddSettings, parse, resolveDayMonthOrder, resolveLanguages, toTaskInput, type LabelRef, type ProjectRef } from '../../lib/nlp'
 import { getProject, getTask } from '../../lib/localData'
 import { preferredLanguages, t } from '../../lib/i18n'
+import { createTaskThenSuggest } from '../../lib/assistantSuggest'
 import { createTask } from '../../lib/ops'
 import { addTasksUndoable } from '../../lib/pasteTasks'
 import { preferredPlacement } from '../../lib/userPrefs'
@@ -41,7 +42,7 @@ function barInput({ labels: typed, ...rest }: QuickAddInput, route: Route, today
 export async function addFromBar(input: QuickAddInput, route: Route, userId?: string, open = false): Promise<string> {
   const today = logicalToday()
   // Top or bottom of the list it lands in (add-position D3).
-  const id = await createTask({ ...barInput(input, route, today, userId), placement: await preferredPlacement() })
+  const id = await createTaskThenSuggest({ ...barInput(input, route, today, userId), placement: await preferredPlacement() })
   const task = await getTask(id)
   const project = task?.project_id ? await getProject(task.project_id) : undefined
   const where = task ? addedWhere(task, today, currentDateTime()) : null

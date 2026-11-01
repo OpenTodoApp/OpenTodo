@@ -35,3 +35,7 @@ Answers on your own key are paid by you; how they count is explained under [Cost
 ## Apply small changes without review
 
 The switch **Settings → Integrations → Assistant → Small changes without review** (this device) is off by default. When it is on, a proposal that touches at most 3 existing tasks and only changes completion, due dates, priority or labels is applied at once, with an Undo notice. Anything else, including every new task, every move to another project or section, every deletion and every text edit, is always shown for [review](assistant-ask.md#ask-and-review).
+
+## Suggest after adding
+
+**Settings → Integrations → Assistant → Suggest after adding** (this device) is off by default. With it on and the assistant available, adding a task from a quick-add line (a list's line, the add bar or palette, the phone's sheet) opens the assistant with one bounded question: a clearer title if it helps, a better project, at most four subtasks. Review, then **Apply**; **Undo** puts it back. Each suggestion is one assistant turn; imports, the API, CalDAV, email, pasted lists and sync never ask.

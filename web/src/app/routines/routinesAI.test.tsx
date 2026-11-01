@@ -167,7 +167,7 @@ describe('the Inbox card', () => {
 describe('consent for routines', () => {
   it('"Existing consent": Accept for routines shows the paragraph and accepts', async () => {
     const accepted = vi.fn()
-    const r = await render(<UserAssistantSettings status={status({ routines_consented: false })} usage={null} autoApply={false} connected busy={false} error={null} cleared={false}
+    const r = await render(<UserAssistantSettings status={status({ routines_consented: false })} usage={null} autoApply={false} suggestAfterAdd={false} onSuggestAfterAdd={() => undefined} connected busy={false} error={null} cleared={false}
       onWithdraw={() => undefined} onOwnKey={() => undefined} onAutoApply={() => undefined} onClear={() => undefined} onAcceptRoutines={accepted} />)
     expect(document.querySelector('[data-consent-routines]')!.textContent).toContain('on a schedule or after an event')
     await click(document.querySelector<HTMLButtonElement>('[data-assistant-accept-routines]')!)
