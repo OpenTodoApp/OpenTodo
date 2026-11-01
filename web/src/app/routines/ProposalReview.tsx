@@ -4,14 +4,18 @@
 // ticked items on the server (which re-checks each against the current data)
 // with one Undo, Dismiss discards the proposal. Enter applies, Esc closes.
 // Apply and Dismiss need a connection. Loaded with the routines chunk.
-import { useEffect, useMemo, useState, type KeyboardEvent } from 'react'
+// An encrypted account's proposal is one envelope: this device opens it with
+// the account key, re-checks the ticked items on its own copy and sends them
+// sealed (lib/rules/deviceProposal).
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { api } from '../../lib/api'
 import { formatInstant } from '../../lib/dates'
 import { messageOf } from '../../lib/errorText'
 import { t } from '../../lib/i18n'
 import { useOnline } from '../../lib/online'
 import { appliedText, describeItem, type ProposalNames } from '../../lib/rules/proposal'
-import type { RoutineProposal } from '../../lib/types'
+import type { RoutineProposal, RoutineProposalApplied } from '../../lib/types'
+import type { ProposalBody } from '../../lib/rules/deviceProposal'
 import { Badge, Button, Dialog, Notice, Skeleton } from '../../ui'
 import { showBulkToast, updateBulkToast } from '../bulk/toastStore'
 import { useRoutineNames } from './data'
@@ -83,15 +87,35 @@ export function ProposalReview({ proposalId, ruleName, onClose, onDone }: { prop
   const [proposal, setProposal] = useState<RoutineProposal | null>(null)
   const [failed, setFailed] = useState('')
   const [busy, setBusy] = useState(false)
+  const opened = useRef<{ key: CryptoKey; body: ProposalBody } | null>(null)
   useEffect(() => {
     if (!online) return
     let live = true
-    api.routineProposal(proposalId).then((p) => { if (live) setProposal(p) }, (e: unknown) => { if (live) setFailed(messageOf(e)) })
+    api.routineProposal(proposalId).then(async (p) => {
+      if (p.encrypted && p.state === 'waiting' && p.envelope) {
+        // Open it on this device; locked or without the key it stays closed.
+        const [{ currentKey }, { openProposal }] = await Promise.all([import('../../lib/e2ee'), import('../../lib/rules/deviceProposal')])
+        const key = await currentKey()
+        if (key) {
+          const body = await openProposal(key, p).catch(() => null)
+          if (body) {
+            opened.current = { key, body }
+            p = { ...p, list: body.items }
+          }
+        }
+      }
+      if (live) setProposal(p)
+    }, (e: unknown) => { if (live) setFailed(messageOf(e)) })
     return () => { live = false }
   }, [proposalId, online])
+  const send = async (keys: string[]): Promise<RoutineProposalApplied> => {
+    if (!opened.current || !proposal) return api.applyRoutineProposal(proposalId, keys)
+    const { applyOpened } = await import('../../lib/rules/deviceProposal')
+    return applyOpened(opened.current.key, proposal, opened.current.body, keys)
+  }
   const apply = (keys: string[]) => {
     setBusy(true)
-    api.applyRoutineProposal(proposalId, keys).then((r) => {
+    send(keys).then((r) => {
       onDone?.()
       onClose()
       showBulkToast(`${ruleName}: ${appliedText(r)}`, null, { second: { label: t('Undo'), run: () => {

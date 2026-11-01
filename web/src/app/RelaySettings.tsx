@@ -85,22 +85,26 @@ export function RelayView(p: RelayViewProps) {
   )
 }
 
-/** The footer mark while this device answers an AI connector (design D10: no new row). */
-export function RelayIndicatorView({ busy }: { busy: boolean }) {
-  if (!busy) return null
+/**
+ * The footer mark while this device answers an AI connector (design D10: no
+ * new row), or runs one of the account's routines (routines-ai-step D7).
+ */
+export function RelayIndicatorView({ busy, running = null }: { busy: boolean; running?: string | null }) {
+  if (!busy && running === null) return null
+  const label = running !== null ? t('Running {name}…', { name: running || t('Untitled routine') }) : t('Answering an AI connector')
   return (
-    <Tooltip label={t('Answering an AI connector')} side="top">
+    <Tooltip label={label} side="top">
       <span role="status" tabIndex={0} className="inline-flex size-8 items-center justify-center rounded-control text-accent" data-relay-indicator>
-        <Icon name="key-round" size="sm" />
-        <span className="sr-only">{t('Answering an AI connector')}</span>
+        <Icon name={running !== null ? 'zap' : 'key-round'} size="sm" />
+        <span className="sr-only">{label}</span>
       </span>
     </Tooltip>
   )
 }
 
 export function RelayIndicator() {
-  const { busy } = useSyncExternalStore(onRelayChange, relaySnapshot, relaySnapshot)
-  return <RelayIndicatorView busy={busy} />
+  const { busy, running } = useSyncExternalStore(onRelayChange, relaySnapshot, relaySnapshot)
+  return <RelayIndicatorView busy={busy} running={running?.name ?? null} />
 }
 
 /** The relay settings of this device, for an encrypted account. */
@@ -111,7 +115,8 @@ export function RelaySettings() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const refresh = useCallback(() => {
-    void api.relayDevices().then((r) => setDevices(r.devices), () => undefined)
+    // Devices that only run routines (routines-ai-step) are listed under Encryption.
+    void api.relayDevices().then((r) => setDevices(r.devices.filter((d) => d.mcp !== false)), () => undefined)
   }, [])
   useEffect(refresh, [refresh, relay.optedIn])
   const onToggle = (on: boolean) => {

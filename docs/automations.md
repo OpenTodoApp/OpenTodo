@@ -49,7 +49,7 @@ A saved view's menu and a board column's **Rule** dialog offer **Make an automat
 
 ## Encrypted accounts
 
-Conditions and actions use ids and dates, which the server reads for every account, so rules work with [end-to-end encryption](e2ee.md). The comment action is not available: the server cannot encrypt a comment.
+Conditions and actions use ids and dates, which the server reads for every account, so rules work with [end-to-end encryption](e2ee.md). A rule with the comment action [runs on your device](routines.md#encrypted-accounts).
 
 ## For the server owner
 

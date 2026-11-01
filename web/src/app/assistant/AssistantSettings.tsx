@@ -1,3 +1,4 @@
+import { refreshCapabilities } from '../../lib/relay'
 import { RoutinesDisclosure } from './RoutinesDisclosure'
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { keysOf } from '../../lib/shortcuts'
@@ -660,7 +661,7 @@ export default function AssistantSettingsSection({ isOwner }: { isOwner: boolean
       <CardGroup title={t('For you')} id="assistant-you">
         <UserAssistantSettings status={status} usage={usage} autoApply={autoApply} connected={connected} busy={ownBusy} error={userError} cleared={cleared}
           onWithdraw={() => void updateMine({ consent: false })} onOwnKey={(k) => void updateMine({ own_key: k })}
-          onAcceptRoutines={() => void updateMine({ consent: true, routines: true })}
+          onAcceptRoutines={() => void updateMine({ consent: true, routines: true }).then(refreshCapabilities)}
           onSaveOwn={saveOwn} onTestOwn={(v) => void testOwn(v)} ownTest={ownTest} ownMessage={ownMessage}
           onAutoApply={(on) => { setAuto(on); void setAutoApply(on) }} onClear={() => setClearing(true)} />
       </CardGroup>
