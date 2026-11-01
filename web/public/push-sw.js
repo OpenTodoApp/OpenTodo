@@ -13,11 +13,15 @@
 //   then ask an open window to sync, or post them to /api/v1/sync directly.
 //   Offline they simply wait in the outbox. A click on the body opens the task;
 //   a notification with `data.url` (the end of a focus session) opens that address.
+// - badge (OpenSpec change app-icon-badge): a push that arrives with the app closed
+//   sets the app icon badge to the count of the logical today from the counts the
+//   app stored in meta "badge:today" (src/lib/appBadge.ts). The push carries no count.
 /* eslint-disable no-restricted-globals */
 ;(() => {
   const DB_NAME = 'opentodo'
   const SHOWN_KEY = 'reminders:shown'
   const SNOOZE_MS = 10 * 60 * 1000
+  const BADGE_KEY = 'badge:today'
 
   // Notification texts in the interface language stored on this device (OpenSpec
   // change app-localization, design D7). The worker runs outside the bundle and
@@ -271,6 +275,40 @@
     }
   }
 
+  /** The logical day (src/lib/dates.ts logicalDay): before the day start it is still yesterday. */
+  function badgeDay(now, dayStart) {
+    const d = new Date(now)
+    const start = Number.isFinite(dayStart) && dayStart > 0 ? dayStart : 0
+    if (d.getHours() * 60 + d.getMinutes() < start) d.setDate(d.getDate() - 1)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  }
+  self.__opentodoBadgeDay = badgeDay
+
+  /**
+   * Sets the app icon badge to today's count as the app last stored it. No stored
+   * counts (badge off, signed out) or no count for today: the badge is left alone.
+   */
+  async function updateBadge() {
+    const nav = self.navigator
+    if (!nav || typeof nav.setAppBadge !== 'function' || typeof nav.clearAppBadge !== 'function') return
+    try {
+      const db = await openDB()
+      let row
+      try {
+        row = await req(db.transaction(['meta'], 'readonly').objectStore('meta').get(BADGE_KEY))
+      } finally {
+        db.close()
+      }
+      const v = row && row.value
+      const n = v && v.counts ? v.counts[badgeDay(Date.now(), v.dayStart)] : undefined
+      if (typeof n !== 'number') return
+      if (n > 0) await nav.setAppBadge(n)
+      else await nav.clearAppBadge()
+    } catch {
+      // No database or no permission: the badge stays as it was.
+    }
+  }
+
   self.addEventListener('push', (event) => {
     event.waitUntil((async () => {
       let data = {}
@@ -295,6 +333,7 @@
         return
       }
       if (data.type !== 'reminder' || !data.reminderId) {
+        await updateBadge()
         await self.registration.showNotification('OpenTodo', { body: (await storedText()).generic, icon: '/pwa-192.png' })
         return
       }
@@ -305,6 +344,7 @@
         focused.postMessage({ type: 'reminders:push', reminderId: data.reminderId, taskId: data.taskId, fireAt: data.fireAt })
         return
       }
+      await updateBadge()
       const { task, reminder, prefs } = await readLocal(data.reminderId, data.taskId)
       // Local state may be fresher than the server's (completed or dismissed offline).
       if (task && (task.completed_at || task.deleted_at)) return

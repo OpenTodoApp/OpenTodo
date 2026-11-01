@@ -21,7 +21,7 @@ Once installed, the round **+** at the bottom right adds a task, and the menu bu
 2. Tap the **Share** button (the square with an arrow pointing up).
 3. Scroll down and tap **Add to Home Screen**, then **Add**.
 
-OpenTodo now has an icon on your home screen. Open it from there from now on. On iOS 16.4 and later, push notifications for reminders work only in the installed app, not in a Safari tab; turn them on in **Settings → Notifications** inside the app. See [Notifications](notifications.md).
+OpenTodo now has an icon on your home screen. Open it from there from now on. On iOS 16.4 and later, push notifications for reminders work only in the installed app, not in a Safari tab; turn them on in **Settings → Notifications** inside the app. See [Notifications](notifications.md). With notifications allowed, the icon also shows how many of today's tasks are open ([App icon badge](app-icon-badge.md)).
 
 Recent iOS versions also offer **Add to Home Screen** from the share menu of other browsers. If you don't see it, use Safari.
 

@@ -348,6 +348,15 @@ export const SETTINGS_COPY = {
       renew: msg('The push service stopped accepting notifications for this device.'),
     },
   },
+  // Settings → Notifications → App icon badge (app-icon-badge): a device-local flag.
+  'app-badge': {
+    title: msg('App icon badge'),
+    icon: 'bell',
+    description: msg('The installed app\'s icon shows how many of today\'s tasks are open.'),
+    learnMore: 'app-icon-badge',
+    rows: { show: { label: msg('Show today\'s count'), description: msg('This device only. The count matches Today in the sidebar.') } },
+    notices: { permission: msg('On iPhone and iPad the badge appears only once notifications are allowed.') },
+  },
   // Settings → Notifications → Delivery channels (notification-channels).
   'notification-channels': {
     title: msg('Delivery channels'),
