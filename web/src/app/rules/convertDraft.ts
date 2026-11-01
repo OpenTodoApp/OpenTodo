@@ -5,7 +5,7 @@
 import { knownRule } from '../../lib/rules'
 import { queryToCondition } from '../../lib/rules/convert'
 import type { Label, Project, View } from '../../lib/types'
-import type { RuleDraft } from './RuleDialog'
+import type { RuleDraft } from '../routines/ruleDraft'
 
 export function ruleDraftFromView(view: Pick<View, 'name' | 'query' | 'on_drop'>, names: { labels: readonly Label[]; projects: readonly Project[] }): RuleDraft {
   const { condition, dropped } = queryToCondition(view.query ?? '', names)

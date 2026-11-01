@@ -476,7 +476,7 @@ export interface OnDropRule {
 }
 
 /** Trigger kinds of an automation rule (automation-rules "Rule validation"). */
-export const RULE_TRIGGERS = ['task.created', 'task.completed', 'task.reopened', 'label.added', 'label.removed', 'assigned.to_me', 'task.moved', 'due.reached', 'overdue', 'schedule'] as const
+export const RULE_TRIGGERS = ['task.created', 'task.completed', 'task.reopened', 'label.added', 'label.removed', 'assigned.to_me', 'task.moved', 'due.reached', 'overdue', 'schedule', 'manual'] as const
 export type RuleTriggerKind = (typeof RULE_TRIGGERS)[number]
 
 /** An automation rule's trigger: one kind with the members it takes. */
@@ -534,6 +534,64 @@ export interface RuleRun {
   reason?: string
   changes: { task_id: string; fields: Record<string, unknown> }[]
   depth: number
+}
+
+/** One step of a routine run (routines-engine D10): ids, counts and codes, never text. */
+export interface RoutineStepRecord {
+  index: number
+  step_id: string
+  kind: string
+  status: 'ok' | 'skipped' | 'ended' | 'failed' | 'unavailable' | 'truncated'
+  duration_ms: number
+  items: number
+  output: string
+  ids: string[]
+  error?: string
+  /** A test's preview of the step's output (titles included, never stored). */
+  preview?: unknown
+  warning?: { step: string; kind: string; reason: string; setting?: string; message: string }
+}
+
+/** A routine run (GET /api/v1/rules/{id}/runs/{run}, GET /api/v1/me/rules/runs). */
+export interface RoutineRun {
+  id: number
+  run_id: string
+  rule_id: string
+  task_id?: string
+  at: number
+  outcome: RuleRun['outcome'] | 'ended'
+  reason?: string
+  source: 'event' | 'schedule' | 'due' | 'manual' | 'mcp' | 'test'
+  run_as: string
+  test: boolean
+  steps_count: number
+  writes: number
+  duration_ms: number
+  undone_at: number | null
+  failed_step: number
+  steps?: RoutineStepRecord[]
+}
+
+/** A run the Inbox card lists (routines-editor D10). */
+export interface RoutineInboxRun extends RoutineRun {
+  kind: 'failure' | 'success'
+}
+
+/** A test of a routine or a draft (POST …/run with test, POST /api/v1/rules/test). */
+export interface RoutineTestResult {
+  run: RoutineRun
+  steps: RoutineStepRecord[]
+  writes: number
+  test: boolean
+}
+
+/** One step kind of GET /api/v1/me/rules/catalogue: whether it is available now. */
+export interface RoutineCatalogueEntry {
+  kind: string
+  group: string
+  available: boolean
+  reason?: string
+  setting?: string
 }
 
 /** The Rules page's server state (GET /api/v1/me/rules). */
