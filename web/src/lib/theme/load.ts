@@ -10,7 +10,7 @@
 import { deriveTheme, DERIVE_VERSION, type ResolvedTheme } from './derive'
 import { validateTheme, type ThemeDocument } from './format'
 import { themeHash, type AppliedTheme } from './apply'
-import { instanceTheme } from './instance'
+import { instanceTheme } from './choice'
 import { db } from '../db'
 
 const DOCS = import.meta.glob<ThemeDocument>('./builtin/*.json', { import: 'default' })

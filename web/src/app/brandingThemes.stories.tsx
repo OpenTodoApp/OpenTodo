@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { CATALOGUE } from '../lib/theme/builtin/index'
-import type { InstanceThemes } from '../lib/theme/instance'
+import type { InstanceThemes } from '../lib/theme/choice'
 import type { ThemeDocument } from '../lib/theme/format'
 import { SettingsSection } from '../ui'
 import { cardCopy } from '../lib/settingsCopy'

@@ -6,7 +6,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const instanceThemes = vi.fn()
 vi.mock('../api', () => ({ api: { instanceThemes: () => instanceThemes() } }))
 
-import { getInstanceThemes, INSTANCE_THEMES_KEY, instanceTheme, parseInstanceThemes, refreshInstanceThemes, setInstanceThemes } from './instance'
+import { getInstanceThemes, INSTANCE_THEMES_KEY, instanceTheme, parseInstanceThemes, setInstanceThemes } from './choice'
+import { refreshInstanceThemes } from './instanceSync'
 
 const doc = (kind: 'light' | 'dark') => ({ opentodoTheme: 1, id: 'whatever', name: 'House', author: 'Owner', licence: 'MIT', kind, seeds: { canvas: '#202020', surface: '#2a2a2a', text: '#eeeeee', accent: '#4c8bf5' } })
 const answer = (version: number) => ({ version, default: { light: '', dark: 'instance:house1' }, themes: [{ id: 'house1', kind: 'dark', doc: doc('dark') }] })

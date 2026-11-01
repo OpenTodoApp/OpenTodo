@@ -1,22 +1,88 @@
 // The theme of each side (OpenSpec change theme-engine, design D6; themes "Theme
 // choice per light and dark side, synced"): `user_prefs.theme_light` and
-// `theme_dark`. Empty is the side's default (OpenTodo Light or Dark);
-// `builtin:<id>` names a theme shipped with the app; `user:<id>` and
-// `instance:<id>` are reserved for the user's own and the instance's themes. A value
-// this app cannot apply reads as the side's default, writes nothing and stays
-// stored, so it applies once the theme is available. First-load code: small and
-// without the derivation, which loads lazily (load.ts). The built-in catalogue
-// (theme-catalogue D6) is not part of the first load either: without it a
-// `builtin:` theme this code does not list reads as a theme provisionally, and the
-// lazy loader answers whether this app has it (an unknown or other-kind theme then
-// reads as the side's default); Settings loads the catalogue and passes it in.
+// `theme_dark`. Empty is the side's default: the server's default for the side
+// when it has one (theme-instance-default), else OpenTodo Light or Dark;
+// `builtin:<id>` names a theme shipped with the app, `user:<id>` one of the user's
+// own (theme-editor D1) and `instance:<id>` one of the server's. A value this app
+// cannot apply reads as the side's default, writes nothing and stays stored, so it
+// applies once the theme is available. First-load code: small and without the
+// derivation, which loads lazily (load.ts). The built-in catalogue (theme-catalogue
+// D6) is not part of the first load either: without it a `builtin:` theme this code
+// does not list reads as a theme provisionally, and the lazy loader answers whether
+// this app has it (an unknown or other-kind theme then reads as the side's default);
+// Settings loads the catalogue and passes it in.
+//
+// The server's themes on this device (theme-instance-default D3) are kept here too,
+// in the one first-load module that reads them: the owner's default of each side
+// and the server themes as last read from `GET /api/v1/themes/instance`, remembered
+// on the device (`ot.instanceThemes`) so offline use and the first frame have them.
+// A device that never read them has none: OpenTodo's themes. Reading them again
+// when their version moves is lazy (instanceSync.ts).
 import { mutate } from '../ops'
 import type { UserPrefs } from '../types'
 import { USER_PREFS_ID } from '../userPrefs'
-import type { ThemeKind } from './format'
-import { getInstanceThemes, instanceTheme, type InstanceThemes } from './instance'
+import type { ThemeDocument, ThemeKind } from './format'
+import { createStore } from '../store'
+import { readJSON, removeItem, writeJSON } from '../deviceStorage'
 
 export type Side = ThemeKind
+
+export interface InstanceThemeEntry {
+  /** The server id: `instance:<id>` in a choice; the document's id too. */
+  id: string
+  kind: ThemeKind
+  doc: ThemeDocument
+}
+
+export interface InstanceThemes {
+  version: number
+  /** Each side's default: "" (OpenTodo's), `builtin:<id>` or `instance:<id>`. */
+  default: { light: string; dark: string }
+  themes: InstanceThemeEntry[]
+}
+
+export const INSTANCE_THEMES_KEY = 'ot.instanceThemes'
+export const NO_INSTANCE_THEMES: InstanceThemes = { version: 0, default: { light: '', dark: '' }, themes: [] }
+
+const ID = /^[a-z0-9]{1,40}$/
+
+/** The answer of the server, or a remembered copy, with anything malformed dropped. */
+export function parseInstanceThemes(raw: unknown): InstanceThemes | null {
+  if (!raw || typeof raw !== 'object') return null
+  const o = raw as Partial<InstanceThemes>
+  if (typeof o.version !== 'number' || !Number.isFinite(o.version)) return null
+  const d = (o.default ?? {}) as Partial<InstanceThemes['default']>
+  const themes = Array.isArray(o.themes) ? o.themes.filter((x): x is InstanceThemeEntry =>
+    !!x && typeof x === 'object' && typeof x.id === 'string' && ID.test(x.id) && (x.kind === 'light' || x.kind === 'dark') && !!x.doc && typeof x.doc === 'object' && x.doc.kind === x.kind) : []
+  return {
+    version: o.version,
+    default: { light: typeof d.light === 'string' ? d.light : '', dark: typeof d.dark === 'string' ? d.dark : '' },
+    themes: themes.map((x) => ({ id: x.id, kind: x.kind, doc: { ...x.doc, id: x.id } })),
+  }
+}
+
+const read = () => readJSON<InstanceThemes>(INSTANCE_THEMES_KEY, NO_INSTANCE_THEMES, parseInstanceThemes)
+const store = createStore<InstanceThemes>('instanceThemes', read(), read)
+
+export const getInstanceThemes = store.get
+
+/** The instance themes, re-rendering when they change. */
+export const useInstanceThemes = store.use
+
+/** Remembers what the server answered (never an op). */
+export function setInstanceThemes(raw: unknown): void {
+  const next = parseInstanceThemes(raw)
+  if (!next) return
+  if (next.version === 0 && !next.themes.length && !next.default.light && !next.default.dark) removeItem(INSTANCE_THEMES_KEY)
+  else writeJSON(INSTANCE_THEMES_KEY, next)
+  store.set(next)
+}
+
+/** The instance theme with this id, of the given kind when one is asked for. */
+export function instanceTheme(id: string, kind?: ThemeKind, from: InstanceThemes = store.get()): InstanceThemeEntry | null {
+  const e = from.themes.find((x) => x.id === id)
+  return e && (!kind || e.kind === kind) ? e : null
+}
 
 /** A theme shipped with the app: its id and kind. The OpenTodo themes are the defaults and apply no sheet. */
 export interface BuiltinTheme {
