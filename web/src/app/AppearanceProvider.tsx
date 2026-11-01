@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from 'react'
 import { applyAppearance, cachedCustom, deriveCustom, readAppearance, reapplyAppearance, setAppearanceThemes } from '../lib/appearance'
 import { useUserPrefsRow } from '../lib/localData'
 import { readThemeChoices } from '../lib/theme/choice'
+import { useCustomThemeStamp } from '../lib/theme/customStamp'
 import { readThemeCache, type AppliedTheme, type ThemeCache } from '../lib/theme/apply'
 
 export function AppearanceProvider({ children }: { children: ReactNode }) {
@@ -25,6 +26,11 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
   const choices = row === undefined ? null : readThemeChoices(row)
   const lightId = choices?.light.status === 'theme' ? choices.light.id : null
   const darkId = choices?.dark.status === 'theme' ? choices.dark.id : null
+  const lightCustom = !!choices?.light.custom
+  const darkCustom = !!choices?.dark.custom
+  // A custom theme (theme-editor D1) re-resolves when its synced row changes: the stamp is its clock.
+  const customIds = [lightCustom ? lightId : null, darkCustom ? darkId : null].filter((x): x is string => !!x)
+  const stamp = useCustomThemeStamp(customIds)
   useEffect(() => {
     if (!mode || !accent) return
     const value = { mode, accent, custom, density }
@@ -52,15 +58,16 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
     setAppearanceThemes(now)
     if (!lightId && !darkId) return
     let live = true
-    import('../lib/theme/load').then(async ({ loadAppliedTheme }) => {
-      const [light, dark] = await Promise.all([lightId ? loadAppliedTheme(lightId, cache.light, 'light') : null, darkId ? loadAppliedTheme(darkId, cache.dark, 'dark') : null])
+    import('../lib/theme/load').then(async ({ loadAppliedTheme, loadCustomAppliedTheme }) => {
+      const load = (id: string | null, custom: boolean, side: 'light' | 'dark') => !id ? null : custom ? loadCustomAppliedTheme(id, cache[side], side) : loadAppliedTheme(id, cache[side], side)
+      const [light, dark] = await Promise.all([load(lightId, lightCustom, 'light'), load(darkId, darkCustom, 'dark')])
       // An invalid or newer document reads as the side's default, without an op (themes "Format versions and migration").
       if (live) setAppearanceThemes({ ...(light ? { light } : {}), ...(dark ? { dark } : {}) })
     }, () => {
       // The chunk could not load (offline on a fresh version): the cached themes stay.
     })
     return () => { live = false }
-  }, [loaded, lightId, darkId])
+  }, [loaded, lightId, darkId, lightCustom, darkCustom, stamp])
   // Under "system" with a theme on either side, follow the operating system's switch.
   useEffect(() => {
     if (mode !== 'system' || (!lightId && !darkId)) return

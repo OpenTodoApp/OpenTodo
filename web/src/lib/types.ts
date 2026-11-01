@@ -1,10 +1,11 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-import type { AttachmentFields, CommentFields, FieldDefFields, FrameFields, LabelFields, NoteFields, PlaceFields, ProjectFields, ProjectPrefsFields, ReminderFields, ReviewFields, RuleFields, SectionFields, SlotFields, TaskFields, TimeEntryFields, UserPrefsFields, ViewFields } from '../generated/opSchema'
+import type { AttachmentFields, CommentFields, FieldDefFields, FrameFields, CustomThemeFields, LabelFields, NoteFields, PlaceFields, ProjectFields, ProjectPrefsFields, ReminderFields, ReviewFields, RuleFields, SectionFields, SlotFields, TaskFields, TimeEntryFields, UserPrefsFields, ViewFields } from '../generated/opSchema'
+import type { ThemeDocument } from './theme/format'
 
-export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place' | 'rule' | 'frame' | 'slot' | 'note'
-export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry', 'place', 'rule', 'frame', 'slot', 'note']
+export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place' | 'rule' | 'frame' | 'slot' | 'note' | 'theme'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry', 'place', 'rule', 'frame', 'slot', 'note', 'theme']
 
 export interface Op {
   id: string
@@ -322,6 +323,23 @@ export interface Note extends NoteFields {
   workspace_id?: string | null
   /** Pending appends (rule 5), as on tasks. */
   appends?: Record<string, string>
+  _clock: Clock
+  _e2ee?: RowEncryption
+}
+
+export type { ThemeDocument }
+
+/**
+ * A custom theme (OpenSpec change `theme-editor`, design D1): one whole theme
+ * document (`lib/theme/format.ts`), personal, chosen for a side as
+ * `user:<id>`. Never a content field: an encrypted account stores it in plain text.
+ */
+export interface CustomTheme extends CustomThemeFields {
+  id: string
+  doc: ThemeDocument | null
+  position: number
+  created_at: number
+  deleted_at: number | null
   _clock: Clock
   _e2ee?: RowEncryption
 }

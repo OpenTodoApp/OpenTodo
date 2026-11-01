@@ -1223,6 +1223,9 @@
   "Adjusted for contrast": [
     "web/src/ui/AccentPicker.tsx"
   ],
+  "Adjusted to a displayable colour": [
+    "web/src/ui/ColourField.tsx"
+  ],
   "Admin": [
     "web/src/app/TokensSection.tsx",
     "web/src/lib/roleNames.ts"
@@ -2117,6 +2120,9 @@
   "Based on this device's history": [
     "web/src/app/review/StatsView.tsx"
   ],
+  "Based on {name} by {author} ({licence})": [
+    "web/src/lib/theme/custom.ts"
+  ],
   "Before or after": [
     "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/app/RemindersField.tsx"
@@ -2543,6 +2549,9 @@
   "Change your password in Settings → Account → Password. To reset the password of another account, sign out first.": [
     "web/src/app/EmailScreens.tsx"
   ],
+  "Change {name}, {value}, {state}": [
+    "web/src/ui/ColourField.tsx"
+  ],
   "Change {tasks}: {set}": [
     "web/src/lib/rules/sentence.ts"
   ],
@@ -2816,6 +2825,12 @@
   ],
   "Chosen:": [
     "web/src/app/filter/ConditionEditor.tsx"
+  ],
+  "Chroma": [
+    "web/src/ui/ColourField.tsx"
+  ],
+  "Chroma {n}": [
+    "web/src/ui/ColourField.tsx"
   ],
   "Clarify|method": [
     "web/src/lib/method/vocabulary.json"
@@ -4245,6 +4260,10 @@
   "Depending on the browser, your audio may be sent to the browser vendor’s speech service (for example Google for Chrome, Apple for Safari) and handled under their privacy policy.": [
     "web/src/app/VoiceSettings.tsx"
   ],
+  "Derived": [
+    "web/src/ui/ColourField.tsx",
+    "web/src/ui/TokenRow.tsx"
+  ],
   "Derived from the address you are using now. Providers reject mismatches: set OPENTODO_BASE_URL so it never changes.": [
     "web/src/app/SsoPanel.tsx"
   ],
@@ -5024,7 +5043,8 @@
     "web/src/app/QuickAddSettings.tsx"
   ],
   "Enter a colour as #rrggbb or #rgb.": [
-    "web/src/ui/AccentPicker.tsx"
+    "web/src/ui/AccentPicker.tsx",
+    "web/src/ui/ColourField.tsx"
   ],
   "Enter a date.": [
     "web/src/lib/fields.ts"
@@ -6473,7 +6493,8 @@
     "web/src/app/help/HelpLink.tsx"
   ],
   "Hex colour": [
-    "web/src/ui/AccentPicker.tsx"
+    "web/src/ui/AccentPicker.tsx",
+    "web/src/ui/ColourField.tsx"
   ],
   "Hide": [
     "web/src/app/FirstDay.tsx",
@@ -6638,6 +6659,12 @@
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
   ],
+  "Hue": [
+    "web/src/ui/ColourField.tsx"
+  ],
+  "Hue {n} degrees": [
+    "web/src/ui/ColourField.tsx"
+  ],
   "I have an account: sign in to join": [
     "web/src/app/ProjectInviteScreen.tsx",
     "web/src/app/WorkspaceInviteScreen.tsx"
@@ -6748,8 +6775,14 @@
   "Imported": [
     "web/src/lib/taskSource.ts"
   ],
+  "Imported from a VS Code colour theme. Check the theme's licence before you share this file.": [
+    "web/src/lib/theme/vscode.ts"
+  ],
   "Imported from {app}": [
     "web/src/lib/taskSource.ts"
+  ],
+  "Imported theme": [
+    "web/src/lib/theme/vscode.ts"
   ],
   "Importing…": [
     "web/src/app/ImportScreen.tsx"
@@ -7755,6 +7788,12 @@
   "Light or dark, colour theme, density, the sidebar and how tasks open": [
     "web/src/app/settingsSections.ts"
   ],
+  "Lightness": [
+    "web/src/ui/ColourField.tsx"
+  ],
+  "Lightness {n} percent": [
+    "web/src/ui/ColourField.tsx"
+  ],
   "Limit Today…": [
     "web/src/app/palette/registry.ts",
     "web/src/app/task-list/ClosedListActions.tsx"
@@ -7764,6 +7803,9 @@
   ],
   "Line break": [
     "web/src/lib/richtextEditor.ts"
+  ],
+  "Line {line}: {message}": [
+    "web/src/lib/theme/files.ts"
   ],
   "Linear export (CSV)": [
     "web/src/app/ImportScreen.tsx"
@@ -12274,6 +12316,9 @@
   "Reset the password of {name}?": [
     "web/src/app/UsersPanel.tsx"
   ],
+  "Reset to derived": [
+    "web/src/ui/ColourField.tsx"
+  ],
   "Reset two-factor": [
     "web/src/app/UsersPanel.tsx"
   ],
@@ -12285,6 +12330,9 @@
   ],
   "Reset your password": [
     "web/src/app/EmailScreens.tsx"
+  ],
+  "Reset {name} to derived": [
+    "web/src/ui/TokenRow.tsx"
   ],
   "Resize sidebar": [
     "web/src/app/Shell.tsx"
@@ -13353,6 +13401,10 @@
   "Setup token": [
     "web/src/app/AuthScreen.tsx"
   ],
+  "Set|token": [
+    "web/src/ui/ColourField.tsx",
+    "web/src/ui/TokenRow.tsx"
+  ],
   "Shade the hours you keep for one kind of work": [
     "web/src/app/CalendarView.tsx"
   ],
@@ -14353,6 +14405,9 @@
   "Swap which label is kept": [
     "web/src/app/LabelsView.tsx"
   ],
+  "Swatches": [
+    "web/src/ui/ColourField.tsx"
+  ],
   "Swipe right to complete, left to schedule. Also in a task's menu.": [
     "web/src/app/task-list/RowSwipe.tsx"
   ],
@@ -14963,11 +15018,24 @@
   "The file could not be read: {detail}": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "The file is larger than 1 MB.": [
+    "web/src/lib/theme/vscode.ts"
+  ],
+  "The file is larger than 64 KB.": [
+    "web/src/lib/theme/files.ts"
+  ],
   "The file is larger than this server allows ({detail}).": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "The file is not an OpenTodo theme.": [
+    "web/src/lib/theme/files.ts"
+  ],
   "The file is not encrypted: anyone who has it can read your task titles and notes.": [
     "web/src/app/TemplateDialogs.tsx"
+  ],
+  "The file is not valid JSON.": [
+    "web/src/lib/theme/files.ts",
+    "web/src/lib/theme/vscode.ts"
   ],
   "The file is shrunk once, at a quiet moment; old versions already go.": [
     "web/src/lib/settingsCopy.ts"
@@ -15508,6 +15576,18 @@
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
   ],
+  "The theme has no seeds.": [
+    "web/src/lib/theme/files.ts"
+  ],
+  "The theme is larger than 16 KB.": [
+    "web/src/lib/theme/files.ts"
+  ],
+  "The theme needs a name of at most 60 characters.": [
+    "web/src/lib/theme/files.ts"
+  ],
+  "The theme was made with a newer version of OpenTodo.": [
+    "web/src/lib/theme/files.ts"
+  ],
   "The token is removed from the server and nothing is polled any more. The {n, plural, one {# task} other {# tasks}} it created stay as ordinary tasks.": [
     "web/src/app/IssuesPanel.tsx"
   ],
@@ -15565,6 +15645,9 @@
   ],
   "Theme and density": [
     "web/src/app/settingsSections.ts"
+  ],
+  "Theme deleted": [
+    "web/src/lib/theme/custom.ts"
   ],
   "Theme is invalid": [
     "web/src/app/ThemeRow.tsx"
@@ -15825,6 +15908,9 @@
   ],
   "This file is missing on the server.": [
     "web/src/lib/attachments.ts"
+  ],
+  "This file is not a VS Code colour theme: it has no colors.": [
+    "web/src/lib/theme/vscode.ts"
   ],
   "This file is still uploading from another device.": [
     "web/src/app/task-detail/AttachmentsRow.tsx"
@@ -16197,6 +16283,12 @@
   ],
   "This test sends the inputs to {provider} and uses about {n} tokens. Nothing is written.": [
     "web/src/app/routines/RoutineEditor.tsx"
+  ],
+  "This theme is larger than 16 KB.": [
+    "web/src/lib/theme/custom.ts"
+  ],
+  "This theme is not valid ({path}).": [
+    "web/src/lib/theme/custom.ts"
   ],
   "This title could not be decrypted with this device's key": [
     "web/src/app/TaskRow.tsx"
@@ -16949,6 +17041,9 @@
   "Undo this import?": [
     "web/src/app/ImportScreen.tsx"
   ],
+  "Undo {name}": [
+    "web/src/ui/TokenRow.tsx"
+  ],
   "Undoing…": [
     "web/src/app/assistant/AssistantRoot.tsx"
   ],
@@ -17162,6 +17257,9 @@
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-list/useListShortcuts.ts"
+  ],
+  "Untitled theme": [
+    "web/src/lib/theme/custom.ts"
   ],
   "Up": [
     "web/src/app/palette/BarParts.tsx"
@@ -18049,6 +18147,9 @@
   ],
   "You have used this month’s assistant allowance.": [
     "web/src/lib/i18n/errors.ts"
+  ],
+  "You have {n} themes; delete one to add another.": [
+    "web/src/lib/theme/custom.ts"
   ],
   "You lose access to the projects shared with you here.": [
     "web/src/lib/settingsCopy.ts"
@@ -19091,6 +19192,9 @@
   "keep, where, only, select": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "kind must be light or dark.": [
+    "web/src/lib/theme/files.ts"
+  ],
   "label {labels}": [
     "web/src/lib/rules/summary.ts"
   ],
@@ -19414,6 +19518,9 @@
   ],
   "on the task tabs": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "on {name}": [
+    "web/src/ui/TokenRow.tsx"
   ],
   "once something is ticked": [
     "web/src/lib/shortcuts.ts"
@@ -20059,7 +20166,8 @@
   ],
   "unknown": [
     "web/src/app/RestoreSection.tsx",
-    "web/src/lib/history.ts"
+    "web/src/lib/history.ts",
+    "web/src/lib/theme/custom.ts"
   ],
   "unknown account": [
     "web/src/app/auditFormat.ts"
@@ -20434,6 +20542,21 @@
   ],
   "{kbd} command · {kbd2} help": [
     "web/src/app/vim/VimLayer.tsx"
+  ],
+  "{key} cannot be transparent.": [
+    "web/src/lib/theme/files.ts"
+  ],
+  "{key} is missing or not a seed.": [
+    "web/src/lib/theme/files.ts"
+  ],
+  "{key} is not a colour.": [
+    "web/src/lib/theme/files.ts"
+  ],
+  "{key} is not valid.": [
+    "web/src/lib/theme/files.ts"
+  ],
+  "{key} is outside the colours a screen can show.": [
+    "web/src/lib/theme/files.ts"
   ],
   "{kind} from “{source}”": [
     "web/src/app/ParseChips.tsx"
@@ -21064,6 +21187,9 @@
   "{name} (copy)": [
     "web/src/lib/rules/store.ts"
   ],
+  "{name} (custom)": [
+    "web/src/lib/theme/custom.ts"
+  ],
   "{name} (guest)": [
     "web/src/app/task-detail/CommentsTab.tsx",
     "web/src/page/TaskPageScreen.tsx"
@@ -21375,6 +21501,12 @@
   ],
   "{provider}, set up by the server owner.": [
     "web/src/app/assistant/AssistantSettings.tsx"
+  ],
+  "{ratio} to 1, needs {min} to 1": [
+    "web/src/ui/ContrastBadge.tsx"
+  ],
+  "{ratio} to 1, passes {min} to 1": [
+    "web/src/ui/ContrastBadge.tsx"
   ],
   "{reaction}: {count} ({names})": [
     "web/src/app/task-detail/ReactionBar.tsx"

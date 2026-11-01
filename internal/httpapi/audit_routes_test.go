@@ -349,6 +349,8 @@ func TestUserExportExcludesAudit(t *testing.T) {
 			"notes",
 			// calendar slots (calendar-slots).
 			"slots",
+			// custom themes (theme-editor).
+			"themes",
 			// the caller's workspaces (workspaces).
 			"workspaces":
 		default:
