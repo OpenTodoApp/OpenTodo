@@ -77,6 +77,9 @@ type Engine struct {
 	// AI runs Ask AI and Summarise steps through the assistant
 	// (routines-ai-step D1); nil means no AI step can run.
 	AI AI
+	// Devices runs an encrypted account's content and AI routines on its
+	// devices (routines-ai-step D7); nil keeps them skipped.
+	Devices Devices
 
 	db     *sql.DB
 	keys   *e2ee.Store

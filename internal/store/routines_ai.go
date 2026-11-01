@@ -26,6 +26,14 @@ var routinesAIColumns = []struct{ table, name, def string }{
 	// "Run my routines on this device" and what the device announced (D7).
 	{"relay_devices", "routines", "INTEGER NOT NULL DEFAULT 0"},
 	{"relay_devices", "capabilities", "TEXT NOT NULL DEFAULT ''"},
+	// A row is an MCP relay opt-in, a routines opt-in or both: the MCP one
+	// ends when the device locks, the routines one survives it (D7). Rows
+	// made before this column were MCP opt-ins.
+	{"relay_devices", "mcp", "INTEGER NOT NULL DEFAULT 1"},
+	// The session a device run is bound to and the routine's revision when it
+	// was sent (D8: only that device commits; a changed routine is refused).
+	{"rule_runs", "device_session", "TEXT NOT NULL DEFAULT ''"},
+	{"rule_runs", "device_rev", "TEXT NOT NULL DEFAULT ''"},
 	// The disclosure version the person accepted for routines (D10); 0 = none.
 	{"assistant_consent", "routines_version", "INTEGER NOT NULL DEFAULT 0"},
 }

@@ -97,6 +97,26 @@ type Stream struct {
 	done        chan struct{}
 	once        sync.Once
 	lastSeen    time.Time
+	// Roles: what the stream may be sent (an AI connector's calls, routine runs).
+	Roles Roles
+}
+
+// Roles are what an open stream answers: MCP for AI connectors' calls (the
+// device's MCP opt-in while the owner allows MCP), Routines for routine runs
+// with the capabilities the device announced (routines-ai-step D7).
+type Roles struct {
+	MCP      bool
+	Routines bool
+	Caps     []string
+}
+
+func (r Roles) has(c string) bool {
+	for _, x := range r.Caps {
+		if x == c {
+			return true
+		}
+	}
+	return false
 }
 
 // Events delivers the stream's events; Done is closed when the stream ends.
@@ -139,13 +159,18 @@ func NewHub() *Hub {
 // Open registers a device's stream; a stream already open for the same device
 // is replaced and the account's oldest is closed beyond MaxStreamsPerAccount.
 func (h *Hub) Open(userID, deviceID, sessionHash string, devicePub []byte) (*Stream, error) {
+	return h.OpenWith(userID, deviceID, sessionHash, devicePub, Roles{MCP: true})
+}
+
+// OpenWith is Open for a stream with the given roles.
+func (h *Hub) OpenWith(userID, deviceID, sessionHash string, devicePub []byte, roles Roles) (*Stream, error) {
 	id := ids.Hex(16)
 	key, err := newStreamKey(devicePub, id)
 	if err != nil {
 		return nil, err
 	}
-	s := &Stream{ID: id, UserID: userID, DeviceID: deviceID, SessionHash: sessionHash, key: key,
-		events: make(chan Event, MaxQueued+2), done: make(chan struct{}), lastSeen: h.now()}
+	s := &Stream{ID: id, UserID: userID, DeviceID: deviceID, SessionHash: sessionHash, key: key, Roles: roles,
+		events: make(chan Event, MaxQueued+2+MaxRoutineEvents), done: make(chan struct{}), lastSeen: h.now()}
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	kept := h.streams[userID][:0]
@@ -219,13 +244,34 @@ func (h *Hub) Seen(s *Stream) {
 func (h *Hub) Online(userID string) bool {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	return len(h.streams[userID]) > 0
+	for _, s := range h.streams[userID] {
+		if s.Roles.MCP {
+			return true
+		}
+	}
+	return false
 }
 
-// pick returns the account's most recently active stream (design D4).
+// DeviceOnline reports whether a device of the account has an open stream.
+func (h *Hub) DeviceOnline(userID, deviceID string) bool {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	for _, s := range h.streams[userID] {
+		if s.DeviceID == deviceID {
+			return true
+		}
+	}
+	return false
+}
+
+// pick returns the account's most recently active stream that answers AI
+// connectors (design D4).
 func (h *Hub) pick(userID string) *Stream {
 	var best *Stream
 	for _, s := range h.streams[userID] {
+		if !s.Roles.MCP {
+			continue
+		}
 		if best == nil || s.lastSeen.After(best.lastSeen) {
 			best = s
 		}

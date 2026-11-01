@@ -21,6 +21,8 @@ const (
 	InboxSuccess = "success"
 	// InboxProposal is a run whose proposal waits (routines-ai-step D2).
 	InboxProposal = "proposal"
+	// InboxWaiting is a run waiting for one of the user's devices (D9).
+	InboxWaiting = "waiting"
 )
 
 // MaxInboxRuns bounds one answer of the card's route; the card groups per routine.
@@ -33,7 +35,7 @@ const KeepSeenFailedFor = 30 * 24 * time.Hour
 // Outcomes the card shows as a failure or a success; other outcomes (already
 // matched, skipped) changed nothing and are left out.
 const (
-	inboxFailed  = `'failed', 'stopped'`
+	inboxFailed  = `'failed', 'stopped', 'missed'`
 	inboxDone    = `'applied', 'partial', 'ended'`
 	inboxHandles = `'applied', 'already_matched', 'ended', 'partial', 'proposal'`
 )
@@ -84,7 +86,7 @@ func (s *Store) InboxRuns(ctx context.Context, userID string, since int64, hideS
 	}
 	cols := "r." + strings.ReplaceAll(runColumns, ", ", ", r.")
 	rows, err := s.db.QueryContext(ctx, `SELECT `+cols+` FROM rule_runs r
-		WHERE r.user_id = ? AND r.test = 0 AND ((r.outcome = 'proposal' AND EXISTS (SELECT 1 FROM routine_proposals p
+		WHERE r.user_id = ? AND r.test = 0 AND (r.outcome = 'waiting_device' OR (r.outcome = 'proposal' AND EXISTS (SELECT 1 FROM routine_proposals p
 			WHERE p.run_id = r.run_id AND p.state = 'waiting' AND p.expires_at > ?)) OR (NOT (r.source = 'manual' AND r.run_as = ?) AND (
 			(r.outcome IN (`+inboxFailed+`) AND r.undone_at IS NULL AND NOT EXISTS (
 				SELECT 1 FROM rule_runs l WHERE l.rule_id = r.rule_id AND l.test = 0 AND l.outcome IN (`+inboxHandles+`) AND (l.at > r.at OR (l.at = r.at AND l.id > r.id))))
@@ -111,8 +113,10 @@ func (s *Store) InboxRuns(ctx context.Context, userID string, since int64, hideS
 	for _, r := range list {
 		kind := InboxSuccess
 		switch r.Outcome {
-		case OutcomeFailed, OutcomeStopped:
+		case OutcomeFailed, OutcomeStopped, OutcomeMissed:
 			kind = InboxFailure
+		case OutcomeWaiting:
+			kind = InboxWaiting
 		case OutcomeProposal:
 			kind = InboxProposal
 			if p, ok := proposals[r.RunID]; ok {
@@ -161,7 +165,7 @@ func (e *Engine) alertFailure(ctx context.Context, uid string, r *rule, run Run)
 	if run.Test || (run.Source == SourceManual && run.RunAs == uid) {
 		return
 	}
-	if run.Outcome != OutcomeFailed && run.Outcome != OutcomeStopped {
+	if run.Outcome != OutcomeFailed && run.Outcome != OutcomeStopped && run.Outcome != OutcomeMissed {
 		return
 	}
 	sink, ok := e.Routine.(notify.RoutineAlertSink)

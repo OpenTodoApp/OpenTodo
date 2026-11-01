@@ -99,6 +99,8 @@ type Run struct {
 	Tokens   int64     `json:"tokens"`
 	AIAuto   bool      `json:"ai_auto"`
 	Proposal *Proposal `json:"proposal,omitempty"`
+	// DeviceID is the device a run of an encrypted account was sent to (D7).
+	DeviceID string `json:"device_id,omitempty"`
 	// Steps are the run's step records (one run's answer only).
 	Steps []StepRecord `json:"steps,omitempty"`
 }
@@ -240,7 +242,7 @@ func (s *Store) Record(ctx context.Context, userID string, r Run) error {
 }
 
 // runColumns are the columns scanRuns reads.
-const runColumns = `id, rule_id, occurrence_key, task_id, at, outcome, reason, changes_json, depth, run_id, source, run_as, test, steps_count, writes, duration_ms, undone_at, failed_step, tokens, ai_auto`
+const runColumns = `id, rule_id, occurrence_key, task_id, at, outcome, reason, changes_json, depth, run_id, source, run_as, test, steps_count, writes, duration_ms, undone_at, failed_step, tokens, ai_auto, device_id`
 
 func scanRuns(rows *sql.Rows) ([]Run, error) {
 	defer rows.Close()
@@ -250,7 +252,7 @@ func scanRuns(rows *sql.Rows) ([]Run, error) {
 		var changes string
 		var undone sql.NullInt64
 		if err := rows.Scan(&r.ID, &r.RuleID, &r.OccurrenceKey, &r.TaskID, &r.At, &r.Outcome, &r.Reason, &changes, &r.Depth,
-			&r.RunID, &r.Source, &r.RunAs, &r.Test, &r.StepsCount, &r.Writes, &r.DurationMs, &undone, &r.FailedStep, &r.Tokens, &r.AIAuto); err != nil {
+			&r.RunID, &r.Source, &r.RunAs, &r.Test, &r.StepsCount, &r.Writes, &r.DurationMs, &undone, &r.FailedStep, &r.Tokens, &r.AIAuto, &r.DeviceID); err != nil {
 			return nil, err
 		}
 		r.Changes = json.RawMessage(changes)
