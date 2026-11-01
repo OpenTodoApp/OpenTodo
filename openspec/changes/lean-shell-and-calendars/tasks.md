@@ -9,14 +9,14 @@
 
 ## 2. Ask for no calendar events while calendars are off
 
-- [ ] 2.1 Read the `calendar-feeds` and `calendar-sync` switches before `api.calendarEvents` in `web/src/lib/calendarFeeds.ts`; while both are off, clear the events, subscriptions and window and resolve `false`.
-- [ ] 2.2 Keep the unknown case working: an unreadable switch or a failed switch pair still asks the events route, and a failed events request keeps the existing cache (`web/src/lib/calendarFeeds.test.ts`).
-- [ ] 2.3 Update Today's agenda test to answer the switch reads and assert no `/calendar-feeds/events` request while feeds are off, at most one switch check in ten minutes (`web/src/app/todayAgenda.test.tsx`).
-- [ ] 2.4 Stub the switch reads in the sync loop test so a calendar signal still refreshes once without a real network call (`web/src/lib/sync.test.ts`).
+- [x] 2.1 Read the `calendar-feeds` and `calendar-sync` switches before `api.calendarEvents` in `web/src/lib/calendarFeeds.ts`; while both are off, clear the events, subscriptions and window and resolve `false`.
+- [x] 2.2 Keep the unknown case working: an unreadable switch or a failed switch pair still asks the events route, and a failed events request keeps the existing cache (`web/src/lib/calendarFeeds.test.ts`).
+- [x] 2.3 Update Today's agenda test to answer the switch reads and assert no `/calendar-feeds/events` request while feeds are off, at most one switch check in ten minutes (`web/src/app/todayAgenda.test.tsx`).
+- [x] 2.4 Stub the switch reads in the sync loop test so a calendar signal still refreshes once without a real network call (`web/src/lib/sync.test.ts`).
 
 ## 3. Verification
 
-- [ ] 3.1 `npx --yes @fission-ai/openspec@1.13.2 validate --all --strict`.
-- [ ] 3.2 `cd web && npm run typecheck`, `npm run lint`, and `make i18n-check` from the repository root (no new string).
-- [ ] 3.3 `cd web && npx vitest run src/app/shell.test.tsx src/app/projectCalendar.test.tsx src/app/todayAgenda.test.tsx src/lib/calendarFeeds.test.ts src/lib/sync.test.ts --maxWorkers=4`.
-- [ ] 3.4 `cd web && npx vitest run --maxWorkers=4` and `make check`.
+- [x] 3.1 `npx --yes @fission-ai/openspec@1.13.2 validate --all --strict`.
+- [x] 3.2 `cd web && npm run typecheck`, `npm run lint`, and `make i18n-check` from the repository root (no new string).
+- [x] 3.3 `cd web && npx vitest run src/app/shell.test.tsx src/app/projectCalendar.test.tsx src/app/todayAgenda.test.tsx src/lib/calendarFeeds.test.ts src/lib/sync.test.ts --maxWorkers=4`.
+- [x] 3.4 `cd web && npx vitest run --maxWorkers=4` (607 files, 6,950 passed), the repository's front-end checks (`make web-lint i18n-check docs-check templates-check ui-lint repo-check deploy-check bundle-budget`), and `go test ./...` in `golang:1.27.3-alpine`. `go vet`, staticcheck and gofmt were not run separately: the host has no Go toolchain and this change touches no Go file.
