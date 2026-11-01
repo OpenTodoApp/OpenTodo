@@ -91,7 +91,7 @@ export function screens(ids, base) {
       ['general', 'General'], ['language', 'Language and region'], ['notifications', 'Notifications'], ['capture', 'Capture'],
       ['integrations', 'Integrations'], ['data', 'Data'],
       ['people', 'People'], ['server', 'Server'],
-      ['account/security', 'Security'], ['appearance/theme', 'Theme and density'], ['general/focus', 'Focus timer'],
+      ['account/profile', 'Profile', START_GUIDE_OVERLAYS], ['account/security', 'Security'], ['appearance/theme', 'Theme and density'], ['general/focus', 'Focus timer'],
       ['language/date-time', 'Date and time'], ['capture/voice', 'Voice capture', ['voice-consent']],
       ['integrations/webhooks', 'Webhooks'], ['integrations/mcp', 'AI assistants (MCP)'],
       ['people/users', 'Users and invitations', ['delete-user']], ['server/backups', 'Backups'], ['server/audit', 'Audit log'],
@@ -200,7 +200,42 @@ async function openProperty(p, field, label) {
   return { editor, trigger: shown ? part : undefined, reopen: shown ? () => press(part) : undefined }
 }
 
+// The start guide (first-run, issue #731), reopened from Settings → Account → Profile →
+// How you work: its first step, its second with each way of working chosen (the cards
+// and the offers that follow a choice) and its third. Its cards and offers must fit the
+// centred 28rem card and the phone sheet (`fit`), in every language: the openers use
+// data attributes only, so the German and French legs check them too (ANY_LANG_OVERLAYS).
+export const START_GUIDE_OVERLAYS = ['start-guide', 'start-guide-lists', 'start-guide-companion', 'start-guide-first', 'start-guide-install']
+export const ANY_LANG_OVERLAYS = new Set(START_GUIDE_OVERLAYS)
+async function openStartGuide(p, { mode, step = mode ? 1 : 0 } = {}) {
+  // From the keyboard: on a phone the seeded reminder toast can cover the button.
+  const trigger = p.locator('[data-start-guide-again]')
+  await trigger.focus()
+  await p.keyboard.press('Enter')
+  const overlay = p.locator('[data-testid="start-guide"]')
+  await overlay.waitFor({ state: 'visible', timeout: 5000 })
+  await settled(overlay)
+  // Nothing is written: Skip this step moves on, and a choice is only written by Continue.
+  if (step >= 1) await overlay.locator('[data-first-run-next]').click()
+  if (mode) {
+    await overlay.locator(`[data-method-mode="${mode}"]`).click()
+    if (mode !== 'lists') await overlay.locator('[data-offer]').first().waitFor({ timeout: 5000 })
+  }
+  if (step >= 2) await overlay.locator('[data-first-run-next]').click()
+  await overlay.locator(`[data-first-run-step="${['task', 'work', 'install'][step]}"]`).waitFor({ timeout: 5000 })
+  // The check closes the guide with Escape: focus stays in its panel, never on the seeded
+  // reminder toast, whose Escape would dismiss the reminder for every other combination.
+  await overlay.focus()
+  // Reopened from Settings, the guide shows over the Inbox: no trigger to return focus to.
+  return { overlay, kind: 'dialog', fit: true }
+}
+
 export const OVERLAYS = {
+  async 'start-guide'(p) { return openStartGuide(p) },
+  async 'start-guide-lists'(p) { return openStartGuide(p, { mode: 'lists' }) },
+  async 'start-guide-companion'(p) { return openStartGuide(p, { mode: 'companion' }) },
+  async 'start-guide-first'(p) { return openStartGuide(p, { mode: 'first' }) },
+  async 'start-guide-install'(p) { return openStartGuide(p, { step: 2 }) },
   async notifications(p, ctx) {
     // The bell lives in the sidebar footer (app-shell "No desktop top bar"): the drawer below 768 px.
     if (ctx.width < 768) await openSidebar(p)
