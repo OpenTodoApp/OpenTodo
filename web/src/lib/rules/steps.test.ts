@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { RoutineStepType } from '../types'
-import { cutText, filterLines, formatTemplate, holds, joinLines, periodRange, renderNumber, replaceText, resolveDate, sortLines, sortTasks, splitLines, take, type SortTask, type StepValue } from './stepData'
+import { cutText, filterLines, formatTemplate, holds, inFindScope, joinLines, periodRange, projectScope, renderNumber, replaceText, resolveDate, sortLines, sortTasks, splitLines, take, type SortTask, type StepValue } from './stepData'
 import { autoBlocker, checkTypes, contentStep, dateLiteral, parseSteps, readRoutine, STEPS, stepError } from './steps'
 import vectors from './steps.vectors.json'
 
@@ -81,6 +81,12 @@ describe('data steps (shared vectors with internal/ruleval)', () => {
         }
         case 'date': got = resolveDate(dateLiteral(a.literal)!, a.today as string); break
         case 'period': got = periodRange(a.period as string, a.today as string, a.week_start as number); break
+        case 'find_scope': {
+          const scope = projectScope((a.projects as { id: string; archived?: boolean; deleted?: boolean }[]).map((p) => ({ ...p, deleted_at: p.deleted ? 1 : null })))
+          got = (a.tasks as { id: string; project_id?: string; deleted?: boolean }[])
+            .filter((x) => inFindScope({ project_id: x.project_id, deleted_at: x.deleted ? 1 : null }, scope, a.archived as boolean)).map((x) => x.id)
+          break
+        }
         default: throw new Error(`unknown fn ${v.fn}`)
       }
       expect(got).toEqual(v.out)

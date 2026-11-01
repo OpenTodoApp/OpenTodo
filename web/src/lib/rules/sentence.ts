@@ -93,7 +93,7 @@ export const kindText = (kind: string): KindText | undefined => TEXT[kind]
 export const stepName = (kind: string): string => (TEXT[kind] ? t(TEXT[kind].name) : kind)
 export const stepDescription = (kind: string): string => (TEXT[kind] ? t(TEXT[kind].description) : '')
 /** Labels of inputs whose meaning depends on the kind ("kind.input"). */
-const KIND_INPUT_LABEL: Record<string, string> = { 'create_tasks.parent': msg('Parent task') }
+const KIND_INPUT_LABEL: Record<string, string> = { 'create_tasks.parent': msg('Parent task'), 'find_tasks.archived': msg('Archived projects') }
 export const inputLabel = (name: string, kind = ''): string => {
   const own = KIND_INPUT_LABEL[`${kind}.${name}`] ?? INPUT_LABEL[name]
   return own ? t(own) : name

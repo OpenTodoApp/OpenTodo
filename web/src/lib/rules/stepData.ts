@@ -197,3 +197,23 @@ export function periodRange(p: string | { from: string; to: string }, today: str
   }
   return [start, today]
 }
+
+/** Each live project's archived flag, by id: what inFindScope reads. */
+export type ProjectScope = ReadonlyMap<string, boolean>
+
+/** The scope map of a project list: live projects only (those in the Trash are left out). */
+export function projectScope(projects: readonly { id: string; archived?: boolean; deleted_at?: number | null }[]): ProjectScope {
+  return new Map(projects.filter((p) => !p.deleted_at).map((p) => [p.id, !!p.archived]))
+}
+
+/**
+ * Whether a routine may gather a task (OpenSpec change routines-find-scope, D1), as
+ * ruleval.InFindScope: not in the Trash, and no project or a live project that is
+ * not archived unless `archived` is asked for. Only the task's own project counts.
+ */
+export function inFindScope(task: { deleted_at?: number | null; project_id?: string | null }, projects: ProjectScope, archived = false): boolean {
+  if (task.deleted_at) return false
+  if (!task.project_id) return true
+  const isArchived = projects.get(task.project_id)
+  return isArchived !== undefined && (archived || !isArchived)
+}

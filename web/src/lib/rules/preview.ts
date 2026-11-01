@@ -9,7 +9,7 @@ import type { Project, RoutineArg, RoutineStep, RoutineStepRecord, RuleCondition
 import { matchesCondition, type MatchContext } from './match'
 import { aiMaxTokens, estimateTokens } from './ai'
 import { dateLiteral, isAIKind, MAX_LIST_ITEMS, stepKind, textLiteral } from './steps'
-import { filterLines, formatTemplate, holds, joinLines, renderNumber, replaceText, resolveDate, sortLines, sortTasks, splitLines, take, type StepValue } from './stepData'
+import { filterLines, formatTemplate, holds, inFindScope, joinLines, projectScope, renderNumber, replaceText, resolveDate, sortLines, sortTasks, splitLines, take, type StepValue } from './stepData'
 import type { RoutineDraft } from './draft'
 
 export type Preview =
@@ -112,8 +112,10 @@ function noteOf(v: StepValue, data: PreviewData): string | null {
   return null
 }
 
-function findTasks(cond: RuleCondition | null, data: PreviewData, limit?: number): StepValue {
-  const ids = data.tasks.filter((x) => !x.completed_at && !x.deleted_at && matchesCondition(cond, data.matchTask(x), data.match)).map((x) => x.id)
+/** Open tasks matching a condition, in the scope a run finds them (routines-find-scope D1): never the Trash, archived projects only when asked. */
+function findTasks(cond: RuleCondition | null, data: PreviewData, limit?: number, archived = false): StepValue {
+  const scope = projectScope(data.projects)
+  const ids = data.tasks.filter((x) => !x.completed_at && inFindScope(x, scope, archived) && matchesCondition(cond, data.matchTask(x), data.match)).map((x) => x.id)
   return { type: 'tasks', ids: ids.slice(0, Math.min(limit || MAX_LIST_ITEMS, MAX_LIST_ITEMS)) }
 }
 
@@ -190,7 +192,7 @@ function planStep(s: RoutineStep, env: Env, data: PreviewData): Preview {
       const x = v('date'); return x ? value(x) : { state: 'unknown' }
     }
     case 'find_tasks': {
-      if (argOf(s, 'condition')) return value(findTasks((litOf(s, 'condition') ?? null) as RuleCondition | null, data, litOf(s, 'limit') as number | undefined))
+      if (argOf(s, 'condition')) return value(findTasks((litOf(s, 'condition') ?? null) as RuleCondition | null, data, litOf(s, 'limit') as number | undefined, litOf(s, 'archived') === true))
       return { state: 'server' }
     }
     case 'find_project': {

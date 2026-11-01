@@ -45,6 +45,18 @@
       "content": "a"
     },
     {
+      "name": "find tasks of archived projects too (routines-find-scope)",
+      "trigger": "date",
+      "steps": [{"id": "a", "kind": "find_tasks", "in": {"view": {"literal": "v1"}, "archived": {"literal": true}}}],
+      "types": {"a": "tasks"}
+    },
+    {
+      "name": "bad literal: archived is yes or no",
+      "trigger": "date",
+      "steps": [{"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {}}, "archived": {"literal": "yes"}}}],
+      "error": {"step": "a", "input": "archived", "code": "invalid_literal"}
+    },
+    {
       "name": "coercion: a task where tasks is accepted",
       "trigger": "task",
       "steps": [{"id": "a", "kind": "change_tasks", "in": {"tasks": {"ref": "trigger"}, "set": {"literal": {"priority": 1}}}}],
@@ -752,6 +764,18 @@
     {"fn": "period", "in": {"period": "last_week", "today": "2026-11-04", "week_start": 1}, "out": ["2026-10-26", "2026-11-01"]},
     {"fn": "period", "in": {"period": "last_week", "today": "2026-11-04", "week_start": 0}, "out": ["2026-10-25", "2026-10-31"]},
     {"fn": "period", "in": {"period": "this_month", "today": "2026-11-04", "week_start": 1}, "out": ["2026-11-01", "2026-11-04"]},
-    {"fn": "period", "in": {"period": {"from": "2026-10-01", "to": "2026-10-31"}, "today": "2026-11-04", "week_start": 1}, "out": ["2026-10-01", "2026-10-31"]}
+    {"fn": "period", "in": {"period": {"from": "2026-10-01", "to": "2026-10-31"}, "today": "2026-11-04", "week_start": 1}, "out": ["2026-10-01", "2026-10-31"]},
+    {"fn": "find_scope", "in": {"archived": false,
+      "projects": [{"id": "live"}, {"id": "old", "archived": true}, {"id": "gone", "deleted": true}, {"id": "oldgone", "archived": true, "deleted": true}, {"id": "child", "parent": "old"}],
+      "tasks": [{"id": "inbox"}, {"id": "inbox-trash", "deleted": true}, {"id": "a", "project_id": "live"}, {"id": "a-trash", "project_id": "live", "deleted": true},
+        {"id": "b", "project_id": "old"}, {"id": "c", "project_id": "gone"}, {"id": "d", "project_id": "oldgone"}, {"id": "e", "project_id": "unknown"}, {"id": "f", "project_id": "child"}]},
+      "out": ["inbox", "a", "f"]},
+    {"fn": "find_scope", "in": {"archived": true,
+      "projects": [{"id": "live"}, {"id": "old", "archived": true}, {"id": "gone", "deleted": true}, {"id": "oldgone", "archived": true, "deleted": true}, {"id": "child", "parent": "old"}],
+      "tasks": [{"id": "inbox"}, {"id": "inbox-trash", "deleted": true}, {"id": "a", "project_id": "live"}, {"id": "a-trash", "project_id": "live", "deleted": true},
+        {"id": "b", "project_id": "old"}, {"id": "c", "project_id": "gone"}, {"id": "d", "project_id": "oldgone"}, {"id": "e", "project_id": "unknown"}, {"id": "f", "project_id": "child"}]},
+      "out": ["inbox", "a", "b", "f"]},
+    {"fn": "find_scope", "in": {"archived": true, "projects": [{"id": "old", "archived": true}], "tasks": [{"id": "x", "project_id": "old", "deleted": true}]}, "out": []},
+    {"fn": "find_scope", "in": {"archived": false, "projects": [], "tasks": [{"id": "x"}, {"id": "y", "project_id": "p"}]}, "out": ["x"]}
   ]
 }

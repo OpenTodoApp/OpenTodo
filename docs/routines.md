@@ -33,7 +33,7 @@ Each step produces one kind of value: **Text**, **Lines** (a list of texts), **T
 
 A task chosen by hand is for the rare fixed target (a log or list kept in one task): it is folded under **A specific task…** at the end of a task picker, and **Get a specific task** is found by search; a card holding one reads *Always this task*. Projects, sections, labels, views, templates and webhooks are chosen as usual.
 
-- **Tasks:** Find tasks (by a condition, a [filter query](filters.md) or a saved view; a query that names `completed` finds completed tasks too, such as `completed = this week`), Create tasks (one per line, each read like [quick add](quick-add.md), or from fields; in a project, or as subtasks of a task), Change tasks (priority, dates, energy, assignee, labels, project and section, complete or reopen, move to the Trash), Add a comment, Get a specific task.
+- **Tasks:** Find tasks (by a condition, a [filter query](filters.md) or a saved view; a query that names `completed` finds completed tasks too, such as `completed = this week`; tasks of archived projects only with **Archived projects** on, see [below](#which-tasks-a-routine-finds)), Create tasks (one per line, each read like [quick add](quick-add.md), or from fields; in a project, or as subtasks of a task), Change tasks (priority, dates, energy, assignee, labels, project and section, complete or reopen, move to the Trash), Add a comment, Get a specific task.
 - **Projects:** Find project, Get the project of a task, Create project, Update project, Create sections, Create labels, Favourite, Create a project from a template.
 - **Notes and text:** Get note text, Add to a note, Clear a note (of a task, or of a project you choose), Split into lines (optionally only the open checkboxes, `- [ ] …`), Join, Format text (`{a}` places the output of step `a`), Find and replace.
 - **Lists and logic:** Pick, Sort, Count, If/Otherwise, Repeat for each, Stop.
@@ -42,6 +42,10 @@ A task chosen by hand is for the rare fixed target (a log or list kept in one ta
 - **AI:** Ask AI, Summarise (see [AI steps](#ai-steps)).
 
 A step is offered only when what it needs is set up: Email me needs the server's outgoing email and a verified address, Send a webhook one of your webhooks, energy changes the Energy levels switch. When a saved routine's step stops being available, the run fails at that step with the reason and writes nothing.
+
+### Which tasks a routine finds
+
+Find tasks, and the matching tasks of a routine that runs on a schedule with a condition, look at the same tasks your lists show. Tasks in the Trash are never found, and neither are the tasks of a project in the Trash; nothing changes that. Tasks of an **archived** project are left out too, as the Filter view, saved views, Today and Upcoming leave them out, so a saved view finds in a routine what it lists on its own page. To include them on purpose, open the Find tasks card's menu and choose **Add archived projects**: the card then reads *· Archived projects yes*. Only the task's own project counts. Completed tasks keep their rule: a condition finds open tasks, a query or view finds completed ones when it names `completed` or `open`. The card's preview and the **When** card's count follow the same rule.
 
 ## How a run works
 
