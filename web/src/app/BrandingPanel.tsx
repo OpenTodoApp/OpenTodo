@@ -2,18 +2,21 @@
 // names the instance and uploads a logo. Both are server state read live;
 // offline the card shows the last values read-only. The logo is sent as the
 // file the owner picked (PNG or JPEG, at most 2 MB); the server renders the
-// favicon, touch icon, app icons and sidebar sizes from it.
-import { useEffect, useState, type ChangeEvent } from 'react'
+// favicon, touch icon, app icons and sidebar sizes from it. Below them, the
+// server's default theme and themes (theme-instance-default D4), loaded lazily.
+import { lazy, Suspense, useEffect, useState, type ChangeEvent, type ReactNode } from 'react'
 import { api, isNetworkError } from '../lib/api'
 import { type Branding, logoUrl, setBranding, useBranding } from '../lib/branding'
 import { t } from '../lib/i18n'
 import { useOnline } from '../lib/online'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
-import { Button, Input, Notice, SettingRow, SettingsSection } from '../ui'
+import { Button, Input, Notice, SettingRow, SettingsSection, Skeleton } from '../ui'
 import { BrandMark } from '../ui'
 import { messageOf } from '../lib/errorText'
 import { useAction } from '../lib/useAction'
 import { useResetOnChange } from '../lib/useResetOnChange'
+
+const BrandingThemes = lazy(() => import('./BrandingThemes'))
 
 export const LOGO_TYPES = ['image/png', 'image/jpeg']
 export const LOGO_MAX_BYTES = 2 << 20
@@ -35,9 +38,11 @@ export interface BrandingViewProps {
   onSaveName: (name: string) => void
   onLogo: (file: File) => void
   onRemoveLogo: () => void
+  /** The server's default theme and themes (theme-instance-default D4), after the logo. */
+  themes?: ReactNode
 }
 
-export function BrandingView({ value, online, busy, error, saved, onSaveName, onLogo, onRemoveLogo }: BrandingViewProps) {
+export function BrandingView({ value, online, busy, error, saved, onSaveName, onLogo, onRemoveLogo, themes }: BrandingViewProps) {
   const [name, setName] = useState(value?.name ?? '')
   const [fileError, setFileError] = useState<string | null>(null)
   useResetOnChange([value], () => setName(value?.name ?? ''))
@@ -78,6 +83,7 @@ export function BrandingView({ value, online, busy, error, saved, onSaveName, on
         {(fileError || error) && <span className="text-danger" role="alert">{fileError ?? error}</span>}
         {saved && !dirty && !fileError && !error && <span className="text-muted" role="status">{t('Saved.')}</span>}
       </div>
+      {themes}
     </SettingsSection>
   )
 }
@@ -103,6 +109,7 @@ export function BrandingPanel() {
     <BrandingView value={value ?? (online ? null : live)} online={online} busy={busy} error={error} saved={saved}
       onSaveName={(name) => void run(() => api.putBrandingName(name))}
       onLogo={(file) => void run(() => api.putBrandingLogo(file))}
-      onRemoveLogo={() => void run(() => api.deleteBrandingLogo())} />
+      onRemoveLogo={() => void run(() => api.deleteBrandingLogo())}
+      themes={<Suspense fallback={<Skeleton count={2} />}><BrandingThemes online={online} /></Suspense>} />
   )
 }
