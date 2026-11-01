@@ -35,7 +35,7 @@ func migrateRoutineRuns(ctx context.Context, db *sql.DB) error {
 		return err
 	}
 	if has > 0 {
-		return nil
+		return migrateRoutineSeen(ctx, db)
 	}
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -68,5 +68,34 @@ func migrateRoutineRuns(ctx context.Context, db *sql.DB) error {
 			return fmt.Errorf("routine runs: %w", err)
 		}
 	}
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	return migrateRoutineSeen(ctx, db)
+}
+
+// routineSeenColumns are what the Inbox card adds to rule_runs (OpenSpec
+// change routines-editor, design D10 and D12): dismissed_at, a success line
+// dismissed on any device; seen_at, when the server first found the user's
+// seen marker past a failed run (retention keeps it 30 days after that).
+var routineSeenColumns = []struct{ name, def string }{
+	{"dismissed_at", "INTEGER"},
+	{"seen_at", "INTEGER"},
+}
+
+// migrateRoutineSeen adds the routines-editor columns to rule_runs when missing.
+func migrateRoutineSeen(ctx context.Context, db *sql.DB) error {
+	for _, c := range routineSeenColumns {
+		var exists int
+		if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM pragma_table_info('rule_runs') WHERE name = ?`, c.name).Scan(&exists); err != nil {
+			return err
+		}
+		if exists > 0 {
+			continue
+		}
+		if _, err := db.ExecContext(ctx, `ALTER TABLE rule_runs ADD COLUMN `+c.name+` `+c.def); err != nil {
+			return fmt.Errorf("add rule_runs.%s: %w", c.name, err)
+		}
+	}
+	return nil
 }

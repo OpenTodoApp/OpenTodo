@@ -570,11 +570,34 @@ func TestRoutineNotice(t *testing.T) {
 	if list, _ := h.svc.Deliveries(ctx, "u1", off.ID); len(list) != 0 {
 		t.Fatalf("event off: %+v", list)
 	}
-	e := event{kind: EventRoutine, key: txtRoutine, taskTitle: "Waiting check", excerpt: "Too much waiting", runID: "run1"}
-	if m := e.render("en", "https://todo.example.com", true); m.Title != "Waiting check" || m.Body != "Too much waiting" || m.URL != "https://todo.example.com/rules?run=run1" {
+	e := event{kind: EventRoutine, key: txtRoutine, taskTitle: "Waiting check", excerpt: "Too much waiting", ruleID: "r1", runID: "run1"}
+	if m := e.render("en", "https://todo.example.com", true); m.Title != "Waiting check" || m.Body != "Too much waiting" || m.URL != "https://todo.example.com/routines/r1?run=run1" {
 		t.Fatalf("with titles: %+v", m)
 	}
 	if m := e.render("en", "", false); m.Title != "OpenTodo" || m.Body != "A routine sent you a notice" {
+		t.Fatalf("titles off: %+v", m)
+	}
+}
+
+// routine-inbox "Routine notifications in the bell": a failed run reaches the
+// channels with the routine event, once per routine and day.
+func TestRoutineFailedToChannels(t *testing.T) {
+	h := newHarness(t)
+	ctx := context.Background()
+	on := h.create("u1", ntfyInput(h.recv.srv.URL, EventRoutine))
+	a := notify.RoutineAlert{UserID: "u1", RuleID: "r1", RuleName: "Weekly digest", RunID: "run1", Step: 3, Day: "2026-11-01", At: 10}
+	h.svc.RoutineFailed(ctx, a)
+	a.RunID = "run2"
+	h.svc.RoutineFailed(ctx, a)
+	h.drain()
+	if list, _ := h.svc.Deliveries(ctx, "u1", on.ID); len(list) != 1 {
+		t.Fatalf("deliveries: %+v", list)
+	}
+	e := event{kind: EventRoutine, key: txtRoutineFailed, withKey: txtRoutineFailedWith, taskTitle: "Weekly digest", ruleID: "r1", runID: "run1"}
+	if m := e.render("de", "https://todo.example.com", true); m.Title != "Weekly digest" || m.Body != text("de", txtRoutineFailedWith, "") || m.URL != "https://todo.example.com/routines/r1?run=run1" {
+		t.Fatalf("with titles: %+v", m)
+	}
+	if m := e.render("en", "", false); m.Body != "A routine failed" {
 		t.Fatalf("titles off: %+v", m)
 	}
 }

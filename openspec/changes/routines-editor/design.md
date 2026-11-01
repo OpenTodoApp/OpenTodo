@@ -95,7 +95,7 @@ Search matches names, short descriptions and synonyms ("mail" finds Email me; "l
 ## Data model impact
 
 - `user_prefs.routines_seen_at` (kNumber, default `0`, a server run time) and `user_prefs.routines_hide_successes` (kString, default `""`, `on` hides): additive, personal, LWW; clients never write a smaller `routines_seen_at`.
-- Server: `rule_runs.dismissed_at` (additive column) for dismissals of single success lines; retention reads the marker. No op field renamed; no data migration.
+- Server: `rule_runs.dismissed_at` (additive column) for dismissals of single success lines and `rule_runs.seen_at` (additive column: when the server first found the marker past a failed run, so retention counts its 30 days from there); retention reads the marker. No op field renamed; no data migration.
 
 ## Size and memory
 

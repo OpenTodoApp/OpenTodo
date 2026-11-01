@@ -4,10 +4,10 @@ Prerequisite: `routines-engine` is merged.
 
 ## 1. Data and server
 
-- [ ] 1.1 `internal/sync/ops.go`: `user_prefs.routines_seen_at` (number) and `user_prefs.routines_hide_successes` (string), documented; regenerate with `UPDATE_OP_SCHEMA=1 go test ./internal/sync -run TestGeneratedOpSchema`; verify `go test ./internal/sync/...` (LWW keeps the later mark)
-- [ ] 1.2 `GET /api/v1/me/rules/runs?since=&for=inbox`: the card's rules (own manual and test runs left out, failures and proposals kept until handled, successes after the marker, hidden with the setting), dismissals (`rule_runs.dismissed_at`); verify `go test ./internal/httpapi/... ./internal/rules/...` (each scenario of `routine-inbox` "What the card shows"; 401 without credentials; 404 for another user's run on dismiss)
-- [ ] 1.3 `internal/notify`: kinds `routine_failed` (one per routine per day, count updated) and `routine_proposal`; never for tests or own manual runs; channels' `routine` event carries them; verify `go test ./internal/notify/... ./internal/channels/...`
-- [ ] 1.4 Retention keeps failed runs until seen (30 days after the marker passed, at most 90) and proposal runs until handled; verify `go test ./internal/rules/...` with a stepped clock
+- [x] 1.1 `internal/sync/ops.go`: `user_prefs.routines_seen_at` (number) and `user_prefs.routines_hide_successes` (string), documented; regenerate with `UPDATE_OP_SCHEMA=1 go test ./internal/sync -run TestGeneratedOpSchema`; verify `go test ./internal/sync/...` (LWW keeps the later mark)
+- [x] 1.2 `GET /api/v1/me/rules/runs?since=&for=inbox`: the card's rules (own manual and test runs left out, failures and proposals kept until handled, successes after the marker, hidden with the setting), dismissals (`rule_runs.dismissed_at`); verify `go test ./internal/httpapi/... ./internal/rules/...` (each scenario of `routine-inbox` "What the card shows"; 401 without credentials; 404 for another user's run on dismiss)
+- [x] 1.3 `internal/notify`: kinds `routine_failed` (one per routine per day, count updated) and `routine_proposal`; never for tests or own manual runs; channels' `routine` event carries them; verify `go test ./internal/notify/... ./internal/channels/...`
+- [x] 1.4 Retention keeps failed runs until seen (30 days after the marker passed, at most 90) and proposal runs until handled; verify `go test ./internal/rules/...` with a stepped clock
 
 ## 2. Editor
 

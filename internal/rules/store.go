@@ -355,15 +355,23 @@ func (s *Store) SetUserPaused(ctx context.Context, userID string, paused bool) e
 	return err
 }
 
-// Prune keeps each rule's newest KeepRuns runs younger than KeepRunsFor, and
-// failed runs for KeepFailedRunsFor; step records go with their run.
+// Prune keeps each rule's newest KeepRuns runs younger than KeepRunsFor. A
+// failed run stays until the user's seen marker passed it and then
+// KeepSeenFailedFor more, and at most KeepFailedRunsFor (routines-editor D12);
+// step records go with their run.
 func (s *Store) Prune(ctx context.Context) (int64, error) {
+	if err := s.markSeenFailures(ctx); err != nil {
+		return 0, err
+	}
 	cutoff := s.now().Add(-KeepRunsFor).UnixMilli()
 	failedCutoff := s.now().Add(-KeepFailedRunsFor).UnixMilli()
+	seenCutoff := s.now().Add(-KeepSeenFailedFor).UnixMilli()
 	res, err := s.db.ExecContext(ctx, `DELETE FROM rule_runs WHERE outcome != 'pending' AND (
-		(outcome != 'failed' AND at < ?) OR at < ? OR id IN (
-		SELECT id FROM (SELECT id, outcome, ROW_NUMBER() OVER (PARTITION BY rule_id ORDER BY at DESC, id DESC) AS n FROM rule_runs) WHERE n > ? AND outcome != 'failed'))`,
-		cutoff, failedCutoff, KeepRuns)
+		(outcome NOT IN (`+inboxFailed+`) AND at < ?) OR at < ?
+		OR (outcome IN (`+inboxFailed+`) AND seen_at IS NOT NULL AND seen_at < ? AND at < ?)
+		OR id IN (
+		SELECT id FROM (SELECT id, outcome, ROW_NUMBER() OVER (PARTITION BY rule_id ORDER BY at DESC, id DESC) AS n FROM rule_runs) WHERE n > ? AND outcome NOT IN (`+inboxFailed+`)))`,
+		cutoff, failedCutoff, seenCutoff, cutoff, KeepRuns)
 	if err != nil {
 		return 0, err
 	}
