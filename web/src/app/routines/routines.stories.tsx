@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useRef, useState } from 'react'
 import { publishEncryption } from '../../lib/e2ee'
 import { createLabel } from '../../lib/labels'
 import { createProject, createTask, updateProject } from '../../lib/ops'
@@ -10,6 +11,8 @@ import { RoutinePage } from './RoutinePage'
 import { RoutinesView } from './RoutinesView'
 import { RunDetail } from './RunHistory'
 import { InboxCardView } from './RoutinesInboxCard'
+import { ChoicePopover, InlineText } from './pickers'
+import { WordButton } from '../../ui'
 import type { InboxLine } from '../../lib/rules/inbox'
 
 // Routines (OpenSpec change routines-editor): the page, the sentence-card
@@ -107,6 +110,38 @@ export const EditorRepeat: StoryObj = {
     { id: 'a', kind: 'find_tasks', in: { condition: { literal: { due: 'overdue' } } } },
     { id: 'b', kind: 'repeat', in: { list: { ref: 'a' } }, do: [{ id: 'c', kind: 'add_comment', in: { task: { ref: 'item' }, text: { literal: 'Still on it?' } } }] },
   ] }} onBack={() => undefined} /></div>,
+}
+
+/** A word's list next to it (routines-dynamic-data D13): flowing values first, then More; no centred modal. */
+function WordList() {
+  const anchor = useRef<HTMLButtonElement>(null)
+  const [open, setOpen] = useState(true)
+  const noop = () => undefined
+  return (
+    <div className="-m-4 min-h-[28rem] bg-canvas p-4">
+      <p className="surface-card max-w-xl p-3 text-body">Comment on <WordButton ref={anchor} label="Task" value="the picked task" chip placeholder="choose which tasks" action="change" haspopup="listbox" expanded={open} onClick={() => setOpen(true)} />: Still on it?</p>
+      <ChoicePopover open={open} onClose={() => setOpen(false)} anchor={anchor} label="Task" choices={[
+        { key: 'b', label: 'the picked task', group: 'From earlier steps', selected: true, run: noop },
+        { key: 'a', label: 'the tasks', group: 'From earlier steps', run: noop },
+        { key: 'find', label: 'Find tasks…', group: 'More', run: noop },
+        { key: 'specific', label: 'A specific task…', group: 'More', run: noop },
+      ]} />
+    </div>
+  )
+}
+
+export const WordListOpen: StoryObj = { name: 'Word list, open', render: () => <WordList /> }
+
+/** A text edited in place, with "+ value" to insert what an earlier step produced. */
+export const TextInPlace: StoryObj = {
+  name: 'Text in place',
+  render: () => (
+    <div className="-m-4 bg-canvas p-4">
+      <div className="surface-card max-w-xl p-3 text-body">
+        Notify me: <InlineText label="Text" value="«the count» tasks waiting" max={300} insertable={[{ ref: 'b', name: 'the count' }, { ref: 'a', name: 'the tasks' }]} onCommit={() => undefined} onCancel={() => undefined} />
+      </div>
+    </div>
+  ),
 }
 
 /** Add step: suggestions after a list of lines, the groups below. */

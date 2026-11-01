@@ -116,11 +116,11 @@ export async function seed({ base, pw, lang = '', now = Date.now() }) {
   await A('PUT', '/api/v1/settings/assistant', { enabled: true, default_provider: 'compatible', allow_private_endpoint: true, allow_member_keys: true,
     providers: { compatible: { enabled: true, model: 'fake-model', base_url: `http://127.0.0.1:${llm.address().port}/v1` } } })
   await A('PUT', '/api/v1/me/assistant', { consent: true, provider: 'compatible' })
-  // A routine of four steps (routines-editor-page): the Routines page's row and the editor page.
-  const groceries = await A('POST', '/api/v1/tasks', { title: 'Groceries', description: '- oat milk\n- bread\n- eggs\n- apples\n- rice\n- tea\n- soap' })
+  // A routine of three steps (routines-editor-page): the Routines page's row and the editor page.
+  // It reads a project's note, chosen in the picker: no task chosen by hand (routines-dynamic-data).
+  const groceries = await A('POST', '/api/v1/projects', { name: 'Groceries', description: '- oat milk\n- bread\n- eggs\n- apples\n- rice\n- tea\n- soap' })
   const routine = await A('POST', '/api/v1/rules', { name: 'Groceries every Friday', trigger: { kind: 'schedule', at: '17:00', weekdays: [5] }, steps: [
-    { id: 'g', kind: 'get_task', in: { task: { literal: { task: groceries.id } } } },
-    { id: 'a', kind: 'note_text', in: { of: { ref: 'g' } } },
+    { id: 'a', kind: 'note_text', in: { of: { literal: { project: groceries.id } } } },
     { id: 'b', kind: 'split_lines', in: { text: { ref: 'a' } } },
     { id: 'c', kind: 'create_tasks', in: { text: { ref: 'b' }, project: { literal: { project: home.id } } } },
   ] })

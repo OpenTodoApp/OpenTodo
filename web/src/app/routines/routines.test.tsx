@@ -238,7 +238,7 @@ describe('Routine editor', () => {
     await r.unmount()
   })
 
-  it('"A chip from an earlier step": the Insert menu of Notify me offers the count', async () => {
+  it('"A chip from an earlier step": the text of Notify me is edited in the card, and + value inserts the count', async () => {
     const steps: RoutineStep[] = [
       { id: 'a', kind: 'split_lines', in: { text: { literal: 'a\nb' } } },
       { id: 'b', kind: 'count', in: { list: { ref: 'a' } } },
@@ -247,25 +247,34 @@ describe('Routine editor', () => {
     const r = await render(<RoutineEditor draft={{ name: 'x', trigger: { kind: 'manual' }, condition: null, steps }} onBack={() => {}} />)
     await waitFor(() => cards().length === 3, 'the cards')
     await click(cards()[2].querySelector('[data-word="Text"]')!)
-    await waitFor(() => !!document.querySelector('[aria-label="Insert the count"]'), 'the insert chip')
-    await click(document.querySelector('[aria-label="Insert the count"]')!)
+    // "Text in place": no dialog; the field sits in the card.
+    await waitFor(() => !!cards()[2].querySelector('[data-inline-text] textarea'), 'the field in the card')
+    expect(document.querySelector('[role="dialog"]')).toBeNull()
+    await click(button('value', cards()[2]))
+    await waitFor(() => [...document.querySelectorAll('[data-word-choices] [role="option"]')].some((o) => o.textContent === 'the count'), 'the values')
+    await click([...document.querySelectorAll<HTMLElement>('[data-word-choices] [role="option"]')].find((o) => o.textContent === 'the count')!)
+    await waitFor(() => /«the count»/.test(cards()[2].querySelector<HTMLTextAreaElement>('[data-inline-text] textarea')?.value ?? ''), 'the chip in the field')
+    await key(cards()[2].querySelector('[data-inline-text] textarea')!, 'Enter')
     await waitFor(() => /«the count»/.test(cards()[2].querySelector('[data-word="Text"]')?.textContent ?? ''), 'the chip in the text')
     await r.unmount()
   })
 
-  it('"Only fitting outputs": lines first, tasks under Needs conversion', async () => {
+  it('"Only fitting outputs": the count first, the tasks under Needs conversion, in a list next to the word', async () => {
     const steps: RoutineStep[] = [
       { id: 'a', kind: 'find_tasks', in: { condition: { literal: {} } } },
-      { id: 'b', kind: 'split_lines', in: { text: { literal: 'a\nb' } } },
-      { id: 'c', kind: 'create_tasks', in: { text: { literal: 'x' } } },
+      { id: 'b', kind: 'count', in: { list: { ref: 'a' } } },
+      { id: 'c', kind: 'create_tasks', in: { title: { literal: 'x' }, priority: { literal: 4 } } },
     ]
     const r = await render(<RoutineEditor draft={{ name: 'x', trigger: { kind: 'manual' }, condition: null, steps }} onBack={() => {}} />)
     await waitFor(() => cards().length === 3, 'the cards')
-    await click(cards()[2].querySelector('[data-word="Text"]')!)
-    await waitFor(() => !!document.querySelector('[data-chip-options]'), 'the chips')
-    expect(document.querySelector('[data-chip-options] ul')!.textContent).toContain('the lines')
-    expect(document.querySelector('[data-needs-conversion]')!.textContent).toContain('the tasks')
-    expect(document.querySelector('[data-needs-conversion]')!.textContent).toContain('Insert Format text')
+    await click(cards()[2].querySelector('[data-word="Priority"]')!)
+    const opts = () => [...document.querySelectorAll<HTMLElement>('[data-word-choices] [role="option"]')]
+    await waitFor(() => opts().length > 0, 'the list')
+    expect(document.querySelector('[data-overlay="popover"], [data-overlay="sheet"]')).not.toBeNull()
+    expect(opts()[0].textContent).toBe('the count')
+    expect(opts()[1].textContent).toContain('the tasks')
+    expect(opts()[1].textContent).toContain('Insert Count')
+    expect(document.querySelector('[data-word-footer] input[type="number"]')).not.toBeNull()
     await r.unmount()
   })
 

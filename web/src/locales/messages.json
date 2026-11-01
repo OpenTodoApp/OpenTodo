@@ -522,7 +522,7 @@
     "web/src/app/filter/ConditionEditor.tsx"
   ],
   "A specific task…": [
-    "web/src/app/routines/words.tsx"
+    "web/src/app/routines/wordPicker.tsx"
   ],
   "A square PNG or JPEG of at least 192 pixels; the server renders every size.": [
     "web/src/lib/settingsCopy.ts"
@@ -1466,7 +1466,7 @@
     "web/src/lib/rules/sentence.ts"
   ],
   "Always this task, whatever the routine finds": [
-    "web/src/app/routines/words.tsx"
+    "web/src/app/routines/wordPicker.tsx"
   ],
   "Am I keeping up?": [
     "web/src/app/review/StatsView.tsx"
@@ -2113,6 +2113,9 @@
   ],
   "Back to the previous view (the session keeps running)": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Back to the values": [
+    "web/src/app/routines/wordPicker.tsx"
   ],
   "Back to today": [
     "web/src/lib/shortcuts.ts"
@@ -2808,7 +2811,6 @@
   ],
   "Choose a project": [
     "web/src/app/filter/ConditionEditor.tsx",
-    "web/src/app/routines/words.tsx",
     "web/src/app/rules/RuleFields.tsx"
   ],
   "Choose a slot": [
@@ -4629,7 +4631,7 @@
     "web/src/app/routines/RoutineEditor.tsx",
     "web/src/app/routines/RunHistory.tsx",
     "web/src/app/routines/StepCard.tsx",
-    "web/src/app/routines/words.tsx",
+    "web/src/app/routines/pickers.tsx",
     "web/src/app/task-detail/FacetEditor.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
@@ -5869,7 +5871,7 @@
   "Find a task…": [
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/focus/FocusPicker.tsx",
-    "web/src/app/routines/words.tsx",
+    "web/src/app/routines/wordPicker.tsx",
     "web/src/app/task-detail/Facets.tsx"
   ],
   "Find a view…": [
@@ -5913,7 +5915,7 @@
     "web/src/lib/rules/sentence.ts"
   ],
   "Find tasks…": [
-    "web/src/app/routines/words.tsx",
+    "web/src/app/routines/wordPicker.tsx",
     "web/src/lib/rules/fixes.ts"
   ],
   "Find the project named {name}": [
@@ -6206,6 +6208,9 @@
   ],
   "From address": [
     "web/src/app/OutgoingEmailPanel.tsx"
+  ],
+  "From earlier steps": [
+    "web/src/app/routines/wordPicker.tsx"
   ],
   "From email": [
     "web/src/lib/taskSource.ts"
@@ -7359,14 +7364,8 @@
   "Input border": [
     "web/src/app/themes/tokenNames.ts"
   ],
-  "Insert": [
-    "web/src/app/routines/words.tsx"
-  ],
   "Insert a value": [
-    "web/src/app/routines/words.tsx"
-  ],
-  "Insert {name}": [
-    "web/src/app/routines/words.tsx"
+    "web/src/app/routines/pickers.tsx"
   ],
   "Insert {step}": [
     "web/src/lib/rules/fixes.ts"
@@ -7787,6 +7786,7 @@
     "web/src/app/review/DailyCheck.tsx",
     "web/src/app/review/MonthlyLook.tsx",
     "web/src/app/review/ReviewView.tsx",
+    "web/src/app/routines/wordPicker.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/TaskFacts.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
@@ -8738,7 +8738,8 @@
   "More": [
     "web/src/app/Sidebar.tsx",
     "web/src/app/review/charts.tsx",
-    "web/src/app/routines/RoutinesView.tsx"
+    "web/src/app/routines/RoutinesView.tsx",
+    "web/src/app/routines/wordPicker.tsx"
   ],
   "More actions": [
     "web/src/app/review/StatsView.tsx",
@@ -9100,7 +9101,7 @@
     "web/src/app/review/StatsView.tsx"
   ],
   "Needs conversion": [
-    "web/src/app/routines/words.tsx"
+    "web/src/app/routines/wordPicker.tsx"
   ],
   "Needs outgoing email, set up by the server owner under Settings → Server.": [
     "web/src/lib/settingsCopy.ts"
@@ -9438,7 +9439,7 @@
     "web/src/app/filter/FilterBuilder.tsx"
   ],
   "No conversion": [
-    "web/src/app/routines/words.tsx"
+    "web/src/app/routines/wordPicker.tsx"
   ],
   "No date": [
     "web/src/app/RuleEditor.tsx",
@@ -9562,6 +9563,7 @@
   ],
   "No matches": [
     "web/src/app/menus/stylePickers.tsx",
+    "web/src/app/routines/pickers.tsx",
     "web/src/ui/Combobox/Combobox.tsx",
     "web/src/ui/Combobox/useCombobox.ts",
     "web/src/ui/IconPicker.tsx"
@@ -9784,9 +9786,6 @@
   ],
   "No tasks match this panel.": [
     "web/src/app/DashboardView.tsx"
-  ],
-  "No tasks match.": [
-    "web/src/app/routines/words.tsx"
   ],
   "No tasks yet.": [
     "web/src/app/calendar/WeekAgenda.tsx"
@@ -10632,7 +10631,7 @@
     "web/src/app/CaldavPanel.tsx"
   ],
   "One per line": [
-    "web/src/app/routines/words.tsx"
+    "web/src/app/routines/wordPicker.tsx"
   ],
   "One project at a time: is it still alive, and is its next step clear? r marks it reviewed, q adds a next action, e sets how often it comes up.": [
     "web/src/app/review/ReviewView.tsx"
@@ -11951,6 +11950,7 @@
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/palette/entries.ts",
+    "web/src/app/routines/wordPicker.tsx",
     "web/src/lib/review.ts",
     "web/src/lib/rules/sentence.ts",
     "web/src/lib/settingsCopy.ts"
@@ -12409,7 +12409,7 @@
     "web/src/app/WorkspaceGroups.tsx",
     "web/src/app/WorkspaceMembers.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
-    "web/src/app/routines/words.tsx",
+    "web/src/app/routines/wordPicker.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx"
   ],
   "Remove attachment?": [
@@ -13284,7 +13284,8 @@
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/ViewsView.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
-    "web/src/app/calendar/PlanPanel.tsx"
+    "web/src/app/calendar/PlanPanel.tsx",
+    "web/src/app/routines/wordPicker.tsx"
   ],
   "Saved with its conditions and display options, in the sidebar under Views.": [
     "web/src/app/views/SaveViewCard.tsx"
@@ -13370,7 +13371,8 @@
   ],
   "Search": [
     "web/src/app/TabBar.tsx",
-    "web/src/app/palette/modes.ts"
+    "web/src/app/palette/modes.ts",
+    "web/src/app/routines/pickers.tsx"
   ],
   "Search Help for “{query}”": [
     "web/src/app/palette/registry.ts"
@@ -13488,7 +13490,8 @@
     "web/src/lib/assistant.ts"
   ],
   "Sections": [
-    "web/src/app/ImportScreen.tsx"
+    "web/src/app/ImportScreen.tsx",
+    "web/src/app/routines/wordPicker.tsx"
   ],
   "Sections in a project, one per line": [
     "web/src/lib/rules/sentence.ts"
@@ -18082,9 +18085,6 @@
   "Use {name}": [
     "web/src/lib/rules/fixes.ts"
   ],
-  "Use {name} ({type})": [
-    "web/src/app/routines/words.tsx"
-  ],
   "Used only on devices that have this font installed; others show the system font. It is never downloaded.": [
     "web/src/app/themes/EditorSections.tsx"
   ],
@@ -18129,9 +18129,6 @@
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/routines/words.tsx",
     "web/src/lib/rules/sentence.ts"
-  ],
-  "Values from earlier steps": [
-    "web/src/app/routines/words.tsx"
   ],
   "Verify": [
     "web/src/app/AuthScreen.tsx",
@@ -18300,6 +18297,7 @@
     "web/src/app/WebhooksPanel.tsx"
   ],
   "Webhooks": [
+    "web/src/app/routines/wordPicker.tsx",
     "web/src/app/settingsIndex.ts",
     "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
@@ -19350,7 +19348,7 @@
   ],
   "change": [
     "web/src/app/routines/StepCard.tsx",
-    "web/src/app/routines/words.tsx"
+    "web/src/app/routines/wordPicker.tsx"
   ],
   "changed since proposed": [
     "web/src/app/assistant/ChangeSetReview.tsx"
@@ -20028,6 +20026,7 @@
   ],
   "no": [
     "web/src/app/filter/conditionText.ts",
+    "web/src/app/routines/wordPicker.tsx",
     "web/src/app/routines/words.tsx",
     "web/src/lib/history.ts"
   ],
@@ -20956,6 +20955,9 @@
   "users and invitations": [
     "web/src/app/settingsSections.ts"
   ],
+  "value": [
+    "web/src/app/routines/pickers.tsx"
+  ],
   "via {method}": [
     "web/src/app/auditFormat.ts"
   ],
@@ -21066,6 +21068,7 @@
   ],
   "yes": [
     "web/src/app/filter/conditionText.ts",
+    "web/src/app/routines/wordPicker.tsx",
     "web/src/app/routines/words.tsx",
     "web/src/lib/history.ts"
   ],
@@ -22188,9 +22191,6 @@
     "web/src/app/IssuesPanel.tsx",
     "web/src/app/NotificationChannels.tsx",
     "web/src/app/themes/YourThemes.tsx"
-  ],
-  "{n} of {max} characters": [
-    "web/src/app/routines/words.tsx"
   ],
   "{n} of {total}": [
     "web/src/app/TriageView.tsx",

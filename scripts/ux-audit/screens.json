@@ -859,6 +859,17 @@
   "ready": "main h1"
  },
  {
+  "id": "routine-word-list",
+  "route": "rules",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "routine-word-list",
+  "story": "Screens/Routines",
+  "on": "routine-page"
+ },
+ {
   "id": "projects-archived",
   "route": "projects",
   "kind": "screen",
