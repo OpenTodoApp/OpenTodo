@@ -69,12 +69,26 @@ export function requestRanges(win: DayRange): DayRange[] {
   return out
 }
 
+/**
+ * The events route answers 404 feeds_disabled while both calendar feeds and calendar sync are
+ * off (the default), so it is not asked then; the switches are plain 200 reads. When they
+ * cannot be read the state is unknown and the events request is made anyway.
+ */
+async function calendarsOn(): Promise<boolean> {
+  try {
+    return (await api.calendarFeedsSwitch.get()).enabled || (await api.calendarSyncSwitch.get()).enabled
+  } catch {
+    return true // unknown: ask the events route, which fails by itself when offline
+  }
+}
+
 let inflight: Promise<boolean> | null = null
 
 /**
  * Fetch events for a range (padded) and replace the cache. Without a range, the
- * cached window is refreshed. Failures (offline, an older server, the feature
- * off) keep the cache and resolve false.
+ * cached window is refreshed. Failures (offline, an older server) keep the cache and
+ * resolve false. While calendars are off nothing is asked, the cache is emptied (no window
+ * is kept, so turning them on is picked up by the next call) and it resolves false.
  */
 export async function refreshEvents(range?: DayRange): Promise<boolean> {
   if (inflight) return inflight
@@ -83,6 +97,16 @@ export async function refreshEvents(range?: DayRange): Promise<boolean> {
       const win = await cachedWindow()
       const target = range ? fetchRange(range) : win ? { from: win.from, to: win.to } : null
       if (!target) return false
+      // Nothing is asked while calendars are off: the cache is emptied and no window kept, so
+      // turning them on is picked up by the next call.
+      if (!(await calendarsOn())) {
+        await db.transaction('rw', [db.calendarEvents, db.calendarSubscriptions, db.meta], async () => {
+          await db.calendarEvents.clear()
+          await db.calendarSubscriptions.clear()
+          await db.meta.delete(WINDOW_KEY)
+        })
+        return false
+      }
       // One request per piece, in order; an event in two pieces is kept once (by id).
       const events = new Map<string, CalendarEvent>()
       const subs = new Map<string, CalendarSubscription>()
