@@ -122,3 +122,12 @@ describe('normalizeHex', () => {
     for (const bad of ['', '#', '#12', '#1234', '#12345', '#1234567', 'red', '#ggg', 'rgb(0,0,0)']) expect(normalizeHex(bad), bad).toBeNull()
   })
 })
+
+// theme-engine task 2.1: the search's base tokens are a parameter; the default is OpenTodo's.
+describe('base tokens as a parameter', () => {
+  it('gives the vectors with the default base and another answer on other surfaces', () => {
+    expect(deriveAccent('#1f6feb', BASE_TOKENS)).toEqual(deriveAccent('#1f6feb'))
+    const grey = { light: { ...BASE_TOKENS.light, canvas: [0.9, 0, 0] as [number, number, number], muted: [0.38, 0, 0] as [number, number, number], faint: [0.4, 0, 0] as [number, number, number] }, dark: BASE_TOKENS.dark }
+    expect(deriveAccent('#1f6feb', grey).light).not.toBe(deriveAccent('#1f6feb').light)
+  })
+})

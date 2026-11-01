@@ -751,6 +751,8 @@ var Schema = map[string]map[string]Field{
 		// "custom". Clients derive the accent from it on the device and read the
 		// theme "custom" with an empty or malformed colour as the default theme.
 		"theme_accent_custom": {Kind: kString, Default: `""`},
+		// Theme while light, while dark (theme-engine D6): "" (OpenTodo's), "builtin:<id>", "user:<id>" or "instance:<id>"; clients read what they cannot apply as "" and keep it.
+		"theme_light": {Kind: kString, Default: `""`}, "theme_dark": {Kind: kString, Default: `""`},
 		// Promoted sidebar destinations (OpenSpec change ux-overhaul, design D8): a
 		// comma-separated list of view ids shown among the primary items; unknown
 		// entries are ignored by clients.

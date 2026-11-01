@@ -77,6 +77,23 @@ class BridgeFixtureTest {
         for (i in 0 until refused.length()) assertFalse(refused.getString(i), ObsidianLink.valid(refused.getString(i)))
     }
 
+    /** theme-engine D8: the bars the web app hands over are read as written; a malformed payload is ignored. */
+    @Test fun systemBars() {
+        val f = fixture("system-bars.json")
+        assertEquals("setSystemBars", f.getString("method"))
+        val handed = f.getJSONArray("handed")
+        assertTrue(handed.length() >= 2)
+        for (i in 0 until handed.length()) {
+            val h = handed.getJSONObject(i)
+            val bars = SystemBars.parse(h.getString("payload"))
+            assertNotNull(h.getString("payload"), bars)
+            assertEquals(h.getString("payload"), 0xFF000000.toInt() or h.getString("color").substring(1).toInt(16), bars!!.color)
+            assertEquals(h.getString("payload"), h.getBoolean("lightIcons"), bars.lightIcons)
+        }
+        val refused = f.getJSONArray("refused")
+        for (i in 0 until refused.length()) assertEquals(refused.getString(i), null, SystemBars.parse(refused.getString(i)))
+    }
+
     @Test fun addressesTheWebAppReads() {
         val f = fixture("actions.json")
         val actions = f.getJSONArray("reminderActions")

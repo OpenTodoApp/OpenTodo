@@ -588,6 +588,10 @@
   "Absolute path on the server. Empty: the backups folder inside the data directory.": [
     "web/src/app/BackupsPanel.tsx"
   ],
+  "Accent": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Accept": [
     "web/src/app/MemberInvitations.tsx"
   ],
@@ -5570,6 +5574,9 @@
   "From the backup destination": [
     "web/src/app/RestoreSection.tsx"
   ],
+  "From the theme": [
+    "web/src/app/AppearanceSection.tsx"
+  ],
   "From {date} on: a change here starts a new repeating task from this date; earlier occurrences stay as they are.": [
     "web/src/app/task-detail/OccurrenceScope.tsx"
   ],
@@ -7507,6 +7514,9 @@
   ],
   "Made with a newer version": [
     "web/src/app/rules/RulesView.tsx"
+  ],
+  "Made with a newer version of OpenTodo": [
+    "web/src/app/AppearanceSection.tsx"
   ],
   "Mail sent to your current address will no longer create tasks. Update anything that forwards to it.": [
     "web/src/app/EmailInboxPanel.tsx"
@@ -9860,11 +9870,20 @@
   "Open {title}": [
     "web/src/app/palette/registry.ts"
   ],
+  "OpenTodo Dark": [
+    "web/src/app/AppearanceSection.tsx"
+  ],
+  "OpenTodo Light": [
+    "web/src/app/AppearanceSection.tsx"
+  ],
   "OpenTodo asks the browser to recognise speech on this device when it offers that choice.": [
     "web/src/app/VoiceSettings.tsx"
   ],
   "OpenTodo can't reach the server.": [
     "web/src/app/App.tsx"
+  ],
+  "OpenTodo contributors": [
+    "web/src/app/AppearanceSection.tsx"
   ],
   "OpenTodo export (JSON)": [
     "web/src/app/ImportScreen.tsx"
@@ -13985,6 +14004,9 @@
   "The colour of buttons, links and selection": [
     "web/src/app/settingsIndex.ts"
   ],
+  "The colours of the whole app, for light and for dark": [
+    "web/src/app/settingsIndex.ts"
+  ],
   "The current address stops working at once. Calendar apps subscribed to it need the new one.": [
     "web/src/app/CalendarFeedsPanel.tsx"
   ],
@@ -14625,6 +14647,9 @@
   ],
   "Theme and density": [
     "web/src/app/settingsSections.ts"
+  ],
+  "Theme is invalid": [
+    "web/src/app/AppearanceSection.tsx"
   ],
   "Then": [
     "web/src/app/rules/RuleFields.tsx"
@@ -17405,7 +17430,8 @@
     "web/src/lib/colourNames.ts"
   ],
   "by {name}": [
-    "web/src/app/MembersPanel.tsx"
+    "web/src/app/MembersPanel.tsx",
+    "web/src/ui/ThemeList.tsx"
   ],
   "calendar apps (CalDAV)": [
     "web/src/app/settingsSections.ts"
