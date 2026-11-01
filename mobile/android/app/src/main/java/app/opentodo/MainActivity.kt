@@ -33,6 +33,7 @@ import androidx.biometric.BiometricPrompt
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import org.json.JSONArray
 import org.json.JSONObject
@@ -79,6 +80,8 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         siteBar = findViewById(R.id.site_bar)
         siteHost = findViewById(R.id.site_host)
         findViewById<View>(R.id.site_close).setOnClickListener { backToServer() }
+        // The last bars the app asked for, before the page draws (theme-engine D8).
+        SystemBars.parse(Prefs(this).systemBars)?.let { setSystemBars(it) }
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.root)) { v, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout() or WindowInsetsCompat.Type.ime())
             v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
@@ -378,6 +381,24 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
     override fun biometricRead(done: (ByteArray?) -> Unit) {
         val cipher = try { BiometricKeyStore.decryptCipher(this) } catch (e: Exception) { null } ?: return done(null)
         prompt(cipher, R.string.biometric_unlock_title) { c -> done(c?.let { BiometricKeyStore.open(this, it) }) }
+    }
+
+    /**
+     * The status and navigation bars take the theme's bar colour: the window draws edge to
+     * edge, so the root's background shows behind them (and the bar colours of older
+     * Android versions are set too); the icons are light or dark to stay legible.
+     */
+    override fun setSystemBars(bars: SystemBars) {
+        findViewById<View>(R.id.root).setBackgroundColor(bars.color)
+        if (Build.VERSION.SDK_INT < 35) {
+            @Suppress("DEPRECATION")
+            window.statusBarColor = bars.color
+            @Suppress("DEPRECATION")
+            window.navigationBarColor = bars.color
+        }
+        val controller = WindowCompat.getInsetsController(window, window.decorView)
+        controller.isAppearanceLightStatusBars = !bars.lightIcons
+        controller.isAppearanceLightNavigationBars = !bars.lightIcons
     }
 
     override fun openExternal(url: String) {

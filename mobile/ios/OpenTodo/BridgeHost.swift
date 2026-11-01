@@ -29,6 +29,13 @@ final class BridgeHost: BridgeActions {
 
     func bridgedBiometricForget() { if interactive { BiometricKeyStore.forget() } }
 
+    /// theme-engine D8: a malformed payload keeps the bars and is not logged.
+    func bridgedSetSystemBars(_ json: String) {
+        guard interactive, SystemBars.parse(json) != nil else { return }
+        Prefs.shared.systemBars = json
+        NotificationCenter.default.post(name: SystemBars.changed, object: nil, userInfo: ["json": json])
+    }
+
     func bridgedOpenExternal(_ url: String) {
         guard interactive, let target = URL(string: url) else { return }
         UIApplication.shared.open(target)

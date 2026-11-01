@@ -651,6 +651,9 @@ export interface UserPrefsFields {
    * theme "custom" with an empty or malformed colour as the default theme.
    */
   theme_accent_custom?: string
+  /** Theme while light, while dark (theme-engine D6): "" (OpenTodo's), "builtin:<id>", "user:<id>" or "instance:<id>"; clients read what they cannot apply as "" and keep it. */
+  theme_light?: string
+  theme_dark?: string
   /**
    * Promoted sidebar destinations (OpenSpec change ux-overhaul, design D8): a
    * comma-separated list of view ids shown among the primary items; unknown
@@ -959,7 +962,7 @@ export const OP_DEFAULTS = {
     feed_seen_at: 0, reviewed_at: 0, group_by: '', sort_by: '', sort_dir: '', row_layout: '', review_every: '', card_notes: false,
   } satisfies Omit<ProjectPrefs, 'id' | '_clock'>,
   user_prefs: {
-    date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', theme_accent_custom: '', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '', today_events: '', add_position: '', reminder_default_timed: '', reminder_default_dated: '', sidebar_counts: '', sidebar_order: '', focus_presets: '', focus_noise: '', day_parts: '', today_limit: 0, today_done: '', focus_style: '', energy: '', bento_order: '', formatting_toggle: '',
+    date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', theme_accent_custom: '', theme_light: '', theme_dark: '', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '', today_events: '', add_position: '', reminder_default_timed: '', reminder_default_dated: '', sidebar_counts: '', sidebar_order: '', focus_presets: '', focus_noise: '', day_parts: '', today_limit: 0, today_done: '', focus_style: '', energy: '', bento_order: '', formatting_toggle: '',
   } satisfies Omit<UserPrefs, 'id' | '_clock'>,
   review: {
     completed_at: 0, daily_at: 0, monthly_at: 0, focus_date: '', focus: '', closed_at: 0, tomorrow_note: '', closed_day: '', carry_over: '', slots_date: '', slots: '', focus_slots: '',

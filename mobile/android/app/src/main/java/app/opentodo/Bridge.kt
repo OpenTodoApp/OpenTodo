@@ -25,6 +25,8 @@ class Bridge(private val context: Context, private val origin: String, private v
         fun biometricStore(key: ByteArray, done: (Boolean) -> Unit)
         fun biometricRead(done: (ByteArray?) -> Unit)
         fun openExternal(url: String)
+        /** theme-engine D8: colour the status and navigation bars (main thread). */
+        fun setSystemBars(bars: SystemBars) {}
     }
 
     private val main = Handler(Looper.getMainLooper())
@@ -32,7 +34,7 @@ class Bridge(private val context: Context, private val origin: String, private v
     fun capabilities(): List<String> {
         val caps = mutableListOf("reminders", "widgets")
         if (host != null) {
-            caps += listOf("share", "links", "obsidian-links")
+            caps += listOf("share", "links", "obsidian-links", "system-bars")
             if (BiometricKeyStore.available(context)) caps += "biometric"
         }
         return caps
@@ -69,6 +71,11 @@ class Bridge(private val context: Context, private val origin: String, private v
             }
             "biometricForget" -> BiometricKeyStore.forget(context)
             "openExternal" -> args.optString(0).takeIf { externalLink(it) }?.let { host?.openExternal(it) }
+            "setSystemBars" -> if (host != null) {
+                // A malformed payload keeps the bars, and nothing of it is logged.
+                val json = args.optString(0)
+                SystemBars.parse(json)?.let { bars -> Prefs(context).systemBars = json; main.post { host.setSystemBars(bars) } }
+            }
         }
     }
 
@@ -133,7 +140,8 @@ class Bridge(private val context: Context, private val origin: String, private v
                 biometricStore: function (key) { return call('biometricStore', [String(key)]) },
                 biometricRead: function () { return call('biometricRead', []) },
                 biometricForget: function () { send('biometricForget', []) },
-                openExternal: function (url) { send('openExternal', [String(url)]) }
+                openExternal: function (url) { send('openExternal', [String(url)]) },
+                setSystemBars: function (json) { send('setSystemBars', [String(json)]) }
               });
             })();
         """.trimIndent()

@@ -16,6 +16,14 @@ final class Prefs {
         }
     }
 
+    /// The last system bars the web app asked for (theme-engine D8), applied at the next launch before the page draws.
+    var systemBars: String? {
+        get { defaults.string(forKey: "shell.systemBars") }
+        set {
+            if let newValue { defaults.set(newValue, forKey: "shell.systemBars") } else { defaults.removeObject(forKey: "shell.systemBars") }
+        }
+    }
+
     /// True when the server is plain http on this device or the local network (accepted with a warning).
     var insecureLocalServer: Bool {
         get { defaults.bool(forKey: "server.insecure") }

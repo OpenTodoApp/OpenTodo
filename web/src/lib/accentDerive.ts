@@ -73,10 +73,14 @@ const WHITE: Lab = { L: 1, A: 0, B: 0, alpha: 1 }
 const BLACK: Lab = { L: 0, A: 0, B: 0, alpha: 1 }
 
 type Mode = 'light' | 'dark'
-const base: Record<Mode, Record<string, Lab>> = {
-  light: Object.fromEntries(Object.entries(BASE_TOKENS.light).map(([k, [L, C, H]]) => [k, lchToLab(L, C, H)])),
-  dark: Object.fromEntries(Object.entries(BASE_TOKENS.dark).map(([k, [L, C, H]]) => [k, lchToLab(L, C, H)])),
-}
+/** The tokens an accent is measured on, per mode, as OKLCH triples (BASE_TOKENS by default). */
+export type BaseTokens = Record<Mode, Record<string, [number, number, number]>>
+type Base = Record<Mode, Record<string, Lab>>
+const toBase = (t: BaseTokens): Base => ({
+  light: Object.fromEntries(Object.entries(t.light).map(([k, [L, C, H]]) => [k, lchToLab(L, C, H)])),
+  dark: Object.fromEntries(Object.entries(t.dark).map(([k, [L, C, H]]) => [k, lchToLab(L, C, H)])),
+})
+const DEFAULT_BASE = toBase(BASE_TOKENS)
 
 /** `color-mix(in oklch, x p, y)` with an achromatic y (black or white): the hue of x, L and C mixed. */
 function mixToward(x: Lab, p: number, y: Lab): Lab {
@@ -89,7 +93,7 @@ function mixLab(x: Lab, p: number, y: Lab): Lab {
 }
 
 /** The accent tokens of a mode from its inputs, as the stylesheet derives them, in OKLab. */
-function accentTokens(mode: Mode, accent: Lab, text: Lab): Record<string, Lab> {
+function accentTokens(base: Base, mode: Mode, accent: Lab, text: Lab): Record<string, Lab> {
   const b = base[mode]
   if (mode === 'light') {
     return {
@@ -113,8 +117,8 @@ const BUTTON: readonly string[] = ['accent', 'accent-hover', 'on-accent']
 const BUTTON_PAIRS = ACCENT_PAIRS.filter((p) => BUTTON.includes(p.fg) && BUTTON.includes(p.bg))
 const TEXT_PAIRS = ACCENT_PAIRS.filter((p) => !BUTTON_PAIRS.includes(p))
 
-function passes(mode: Mode, pairs: readonly Pair[], accent: Lab, text: Lab): boolean {
-  const tokens = accentTokens(mode, accent, text)
+function passes(base: Base, mode: Mode, pairs: readonly Pair[], accent: Lab, text: Lab): boolean {
+  const tokens = accentTokens(base, mode, accent, text)
   const rgb = (name: string): Rgba => {
     const lab = tokens[name] ?? base[mode][name]
     if (!lab) throw new Error(`accentDerive: no value for token ${name}; add it to BASE_TOKENS`)
@@ -167,17 +171,17 @@ function oklch(hex: string) {
 }
 
 /** The light accent and the dark accent text at one hue, or null when no lightness passes. */
-function atHue(L0: number, C0: number, H: number) {
-  const light = nearest(L0, -1, (L) => passes('light', ACCENT_PAIRS, displayable(L, C0, H).lab, WHITE))
+function atHue(base: Base, L0: number, C0: number, H: number) {
+  const light = nearest(L0, -1, (L) => passes(base, 'light', ACCENT_PAIRS, displayable(L, C0, H).lab, WHITE))
   if (!light) return null
   const lightAccent = displayable(light.L, C0, H)
-  const dark = nearest(L0, 1, (L) => passes('dark', TEXT_PAIRS, lightAccent.lab, displayable(L, C0, H).lab))
+  const dark = nearest(L0, 1, (L) => passes(base, 'dark', TEXT_PAIRS, lightAccent.lab, displayable(L, C0, H).lab))
   if (!dark) return null
   return { light: lightAccent, lightMoved: light.moved, dark: displayable(dark.L, C0, H), lightL: light.L }
 }
 
 /** Whether a light accent and a dark accent text keep the red guard's distance. */
-export function farFromRed(light: string, dark: string): boolean {
+export function farFromRed(light: string, dark: string, base: Base = DEFAULT_BASE): boolean {
   const far = (mode: Mode, hex: string) => {
     const c = hexToRgb(hex)
     return Math.min(deltaE(c, labToRgb(base[mode].danger)), deltaE(c, labToRgb(base[mode].p1))) >= RED_GUARD[mode]
@@ -186,7 +190,7 @@ export function farFromRed(light: string, dark: string): boolean {
 }
 
 /** The smallest distance of a light accent and a dark accent text from the red of their mode (for tests and the guard's constant). */
-export function redDistance(mode: Mode, hex: string): number {
+export function redDistance(mode: Mode, hex: string, base: Base = DEFAULT_BASE): number {
   const c = hexToRgb(hex)
   return Math.min(deltaE(c, labToRgb(base[mode].danger)), deltaE(c, labToRgb(base[mode].p1)))
 }
@@ -202,21 +206,26 @@ export function normalizeHex(raw: string): string | null {
   return `#${h.toLowerCase()}`
 }
 
-/** Derives the custom accent of a `#rrggbb` colour (design D2). Throws on anything else. */
-export function deriveAccent(hex: string): DerivedAccent {
+/**
+ * Derives the custom accent of a `#rrggbb` colour (design D2) on the given base
+ * tokens, OpenTodo's own by default (theme-engine D3 generalises the search so the
+ * base is a parameter). Throws on anything else.
+ */
+export function deriveAccent(hex: string, tokens: BaseTokens = BASE_TOKENS): DerivedAccent {
+  const base = tokens === BASE_TOKENS ? DEFAULT_BASE : toBase(tokens)
   const input = normalizeHex(hex)
   if (!input || !input.startsWith('#') || input.length !== 7) throw new Error(`deriveAccent: not a colour: ${hex}`)
   const { L: L0, C: C0, H: H0 } = oklch(input)
   // Turn away from the danger hue, the side the pick is on (towards orange on a tie).
-  const diff = ((H0 - DANGER_HUE + 540) % 360) - 180
+  const diff = ((H0 - (tokens.light.danger?.[2] ?? DANGER_HUE) + 540) % 360) - 180
   const dir = diff >= 0 ? 1 : -1
   for (let turn = 0; turn <= 180; turn++) {
     const H = (H0 + dir * turn + 360) % 360
-    const got = atHue(L0, C0, H)
-    if (!got || !farFromRed(got.light.hex, got.dark.hex)) continue
+    const got = atHue(base, L0, C0, H)
+    if (!got || !farFromRed(got.light.hex, got.dark.hex, base)) continue
     // The dark-mode button: the light accent unless white on it or its edge on the dark canvas fails there.
     const canvas = labToRgb(base.dark.canvas)
-    const buttonOk = (lab: Lab) => passes('dark', BUTTON_PAIRS, lab, got.dark.lab) && ratioOf(labToRgb(lab), canvas) >= BUTTON_ON_CANVAS
+    const buttonOk = (lab: Lab) => passes(base, 'dark', BUTTON_PAIRS, lab, got.dark.lab) && ratioOf(labToRgb(lab), canvas) >= BUTTON_ON_CANVAS
     let button: string | undefined
     if (!buttonOk(got.light.lab)) {
       const found = nearest(got.lightL, 1, (L) => buttonOk(displayable(L, C0, H).lab))

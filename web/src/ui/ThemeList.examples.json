@@ -1,0 +1,4 @@
+[
+  { "id": "example-night", "name": "Example Night", "author": "Example Author", "swatches": { "canvas": "#2e3440", "surface": "#3b4252", "text": "#eceff4", "accent": "#88c0d0", "hues": ["#a3be8c", "#81a1c1", "#b48ead", "#d08770"] } },
+  { "id": "example-paper", "name": "Example Paper with a long name that truncates", "author": "Someone with a long name", "swatches": { "canvas": "#fdf6e3", "surface": "#fffdf5", "text": "#30363d", "accent": "#268bd2", "hues": ["#859900", "#268bd2", "#6c71c4", "#cb4b16"] } }
+]

@@ -2,7 +2,9 @@
 // Appearance preference (OpenSpec change theming, tasks 3.1 and 3.3).
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { applyAppearance, CACHE_KEY, cachedCustom, deriveCustom, setCustomAccent, destinationOrder, moveDestination, orderDestinations, readAppearance, readSidebarCounts, setAppearance, setSidebarCounts } from './appearance'
+import { readThemeChoices, setThemeChoice } from './theme/choice'
+import type { AppliedTheme } from './theme/apply'
+import { applyAppearance, setAppearanceThemes, CACHE_KEY, cachedCustom, deriveCustom, setCustomAccent, destinationOrder, moveDestination, orderDestinations, readAppearance, readSidebarCounts, setAppearance, setSidebarCounts } from './appearance'
 import { db } from './db'
 import { applyOps, resetDeviceId } from './ops'
 
@@ -189,5 +191,75 @@ describe('custom accent', () => {
   it('a malformed cache is not used', () => {
     localStorage.setItem(CACHE_KEY, JSON.stringify({ mode: 'light', accent: 'custom', bar: '#000000', custom: { input: '#1f6feb', light: 'red', dark: '#ffffff', on: '#ffffff' } }))
     expect(cachedCustom('#1f6feb')).toBeNull()
+  })
+})
+
+// theme-engine D6, task 4.2: the theme of each side.
+describe('theme choice per side', () => {
+  it('reads empty, the OpenTodo themes, and anything else as the side default without writing', async () => {
+    const read = (light: unknown, dark: unknown = '') => readThemeChoices({ theme_light: light, theme_dark: dark } as never)
+    expect(readThemeChoices(null)).toEqual({ light: { stored: '', status: 'default', id: 'opentodo-light' }, dark: { stored: '', status: 'default', id: 'opentodo-dark' } })
+    expect(read('builtin:opentodo-light').light).toMatchObject({ status: 'default', id: 'opentodo-light' })
+    expect(read('', 'builtin:opentodo-dark').dark).toMatchObject({ status: 'default', id: 'opentodo-dark' })
+    // A theme of the other kind, a malformed value: invalid. Unknown and reserved themes: from a newer version.
+    expect(read('builtin:opentodo-dark').light).toMatchObject({ stored: 'builtin:opentodo-dark', status: 'invalid', id: 'opentodo-light' })
+    expect(read('url(x)').light).toMatchObject({ status: 'invalid', id: 'opentodo-light' })
+    expect(read(42).light).toMatchObject({ stored: '', status: 'default' })
+    expect(read('builtin:nord').light).toMatchObject({ stored: 'builtin:nord', status: 'newer', id: 'opentodo-light' })
+    expect(read('', 'user:0b5e0d8c-4f7c-4d3e-9c1e-2f3a4b5c6d7e').dark).toMatchObject({ status: 'newer', id: 'opentodo-dark' })
+    expect(read('', 'instance:corporate').dark).toMatchObject({ status: 'newer', id: 'opentodo-dark' })
+    expect(await db.outbox.count()).toBe(0)
+  })
+
+  it('an incoming choice is stored, kept as it is and changes nothing on this version', async () => {
+    await applyOps([{ id: 't1', entity: 'user_prefs', entityId: 'me', field: 'theme_dark', value: 'builtin:nord', ts: '0000001:0000:dev', device: 'phone' }] as never)
+    const row = await db.userPrefs.get('me')
+    expect(row?.theme_dark).toBe('builtin:nord')
+    expect(readThemeChoices(row).dark.status).toBe('newer')
+    expect(await db.outbox.count()).toBe(0)
+  })
+
+  it('choosing writes one op for one side; the default is stored as empty', async () => {
+    await setThemeChoice('dark', 'opentodo-dark')
+    const ops = await db.outbox.toArray()
+    expect(ops.map((o) => [o.entity, o.field, o.value])).toEqual([['user_prefs', 'theme_dark', '']])
+    await expect(setThemeChoice('light', 'opentodo-dark')).rejects.toThrow()
+  })
+})
+
+describe('applyAppearance with a theme (theme-engine D4, D8)', () => {
+  const theme = (kind: 'light' | 'dark', bar: string): AppliedTheme => ({ id: `t-${kind}`, hash: 'h', kind, bar, tokens: { canvas: kind === 'dark' ? 'oklch(0.2 0.02 260)' : 'oklch(0.97 0.01 90)' } })
+  const metas = () => [...document.head.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')].map((m) => [m.content, m.getAttribute('media') ?? ''])
+  beforeEach(() => {
+    document.documentElement.removeAttribute('data-ot-theme')
+    document.getElementById('ot-theme')?.remove()
+    setAppearanceThemes({})
+  })
+
+  it('applies the theme of the side shown, with its kind and its bar, and caches it', () => {
+    setAppearanceThemes({ dark: theme('dark', '#2e3440') })
+    applyAppearance({ mode: 'dark', accent: 'teal' })
+    expect(document.documentElement.getAttribute('data-ot-theme')).toBe('t-dark')
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
+    expect(metas()).toEqual([['#2e3440', '']])
+    expect(JSON.parse(localStorage.getItem('ot.theme')!).dark.id).toBe('t-dark')
+    // The accent preference is kept for the OpenTodo themes (D7).
+    expect(document.documentElement.getAttribute('data-accent')).toBe('teal')
+  })
+
+  it('under system: the bar of each side, and the theme only while its side shows', () => {
+    setAppearanceThemes({ dark: theme('dark', '#2e3440') })
+    applyAppearance({ mode: 'system', accent: 'emerald' })
+    // happy-dom reports a light scheme: the light side is OpenTodo Light, exactly as without a theme.
+    expect(document.documentElement.hasAttribute('data-ot-theme')).toBe(false)
+    expect(document.documentElement.hasAttribute('data-theme')).toBe(false)
+    expect(metas()).toEqual([['#047857', '(prefers-color-scheme: light)'], ['#2e3440', '(prefers-color-scheme: dark)']])
+  })
+
+  it('the OpenTodo themes write no sheet and keep the bars as before', () => {
+    applyAppearance({ mode: 'light', accent: 'orange' })
+    expect(document.getElementById('ot-theme')).toBeNull()
+    expect(metas()).toEqual([['#c2410c', '']])
+    expect(localStorage.getItem('ot.theme')).toBeNull()
   })
 })

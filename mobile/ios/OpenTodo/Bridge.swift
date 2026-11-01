@@ -1,5 +1,34 @@
 import Foundation
+import UIKit
 import WebKit
+
+/// The system bars the web app asks for (theme-engine D8, native-shells "System bars
+/// follow the app's theme"): `{"color":"#rrggbb","dark":true|false}`, pinned by the shared
+/// bridge fixture system-bars.json. On iPhone the status bar is drawn over the page, so the
+/// colour goes to the web view's background and under-page area (what shows before the
+/// page draws, behind the bars and when the page is pulled past its end).
+struct SystemBars: Equatable {
+    static let changed = Notification.Name("app.opentodo.systemBars")
+    let hex: String
+    /// The icons on the colour must be light.
+    let lightIcons: Bool
+
+    /// The bars of a payload, or nil for a malformed one: the shell then keeps its bars.
+    static func parse(_ json: String) -> SystemBars? {
+        guard json.utf8.count <= 200, let data = json.data(using: .utf8),
+              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let hex = object["color"] as? String,
+              hex.range(of: "^#[0-9a-f]{6}$", options: .regularExpression) != nil,
+              let dark = object["dark"] as? NSNumber, CFGetTypeID(dark) == CFBooleanGetTypeID()
+        else { return nil }
+        return SystemBars(hex: hex, lightIcons: dark.boolValue)
+    }
+
+    var color: UIColor {
+        let v = Int(hex.dropFirst(), radix: 16) ?? 0
+        return UIColor(red: CGFloat((v >> 16) & 0xff) / 255, green: CGFloat((v >> 8) & 0xff) / 255, blue: CGFloat(v & 0xff) / 255, alpha: 1)
+    }
+}
 
 /// What the bridge needs from the app: prompts, the biometric store, the system browser.
 @MainActor
@@ -11,6 +40,7 @@ protocol BridgeActions: AnyObject {
     func bridgedBiometricRead() async -> String?
     func bridgedBiometricForget()
     func bridgedOpenExternal(_ url: String)
+    func bridgedSetSystemBars(_ json: String)
 }
 
 /// The bridge, version 1 (native-shells D5): a document-start script that defines
@@ -35,7 +65,7 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
     /// The capabilities this shell offers, in the contract's names.
     static func capabilities(biometric: Bool, share: Bool) -> [String] {
         var caps = ["reminders", "widgets"]
-        if share { caps += ["share", "links", "obsidian-links"] }
+        if share { caps += ["share", "links", "obsidian-links", "system-bars"] }
         if biometric { caps.append("biometric") }
         return caps
     }
@@ -89,6 +119,9 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
         case "openExternal":
             let url = string(0)
             if Self.externalLink(url) { actions.bridgedOpenExternal(url) }
+            reply(nil, nil)
+        case "setSystemBars":
+            actions.bridgedSetSystemBars(string(0))
             reply(nil, nil)
         default:
             reply(nil, "unknown_method")
@@ -186,7 +219,8 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
             biometricStore: function (key) { return call('biometricStore', [String(key)]) },
             biometricRead: function () { return call('biometricRead') },
             biometricForget: function () { call('biometricForget') },
-            openExternal: function (url) { call('openExternal', [String(url)]) }
+            openExternal: function (url) { call('openExternal', [String(url)]) },
+            setSystemBars: function (json) { call('setSystemBars', [String(json)]) }
           });
         })();
         """

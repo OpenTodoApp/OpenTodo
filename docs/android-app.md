@@ -108,6 +108,10 @@ The app appears in Android's share menu for links, text, photos and files, also 
 
 Two home-screen widgets: **Today** shows your tasks for today with the time of the last update, and **Quick add** opens the app's quick add. The widgets show what the app last saw; open the app to refresh them. While an encrypted account is locked, the Today widget shows only counts.
 
+## Status and navigation bars
+
+The phone's status and navigation bars take the colour of your [theme](themes.md) (the accent in light, the canvas in dark, or the theme's own bar colour), with light or dark icons so they stay readable, and they switch with it. The app remembers the colour, so the bars are right from the first frame of the next launch.
+
 ## Fingerprint unlock
 
 With [end-to-end encryption](e2ee.md#unlock-with-a-fingerprint), the unlock screen offers **Unlock with fingerprint or face next time**.
