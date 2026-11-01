@@ -19,10 +19,12 @@ import type { Label, Membership, Priority, Project, Section, Task } from '../../
 import { Icon, Dialog, useFinePointer } from '../../ui'
 import { Tooltip } from '../../ui'
 import { DateField } from '../datetime/DateField'
-import { ActionMenu, type ActionGroup, type ActionItem } from '../menus/ActionMenu'
+import { ActionMenu, type ActionGroup, type ActionItem, type ConfirmSpec } from '../menus/ActionMenu'
 import { openRowSchedule } from '../task-list/RowSwipe'
 import { BulkReview } from './BulkReview'
 import { showBulkToast, showUndoToast } from './toastStore'
+import { navigate } from '../router'
+import { createStore } from '../../lib/store'
 import { startFocusOn } from '../focus/startFocus'
 import { t } from '../../lib/i18n'
 import { withListTransition } from '../motion'
@@ -30,12 +32,58 @@ import { slotAction, slotLabel, useSlotState, type SlotState } from '../task-lis
 import { focusMenuLabel, focusMenuState, runFocusPress, type FocusMenuState } from '../focus/focusRequest'
 import { useToday } from '../useViews'
 
+/** Confirm the trash from this count up (the keyboard's big selection; a menu click stays immediate). */
+export const BULK_TRASH_CONFIRM_FROM = 20
+
+/**
+ * The keyboard's Delete on the ticked set: a big one asks first (the same way a
+ * project delete does), a small one runs at once.
+ */
+export async function trashTicked(ids: readonly string[]): Promise<void> {
+  if (ids.length > BULK_TRASH_CONFIRM_FROM) {
+    askBulkConfirm({
+      title: t('Move {tasks} to the Trash?', { tasks: tasksWord(ids.length) }),
+      body: t('They go to the Trash with their subtasks. You can restore them from the Trash.'),
+      confirmLabel: t('Move to Trash'),
+      onConfirm: () => runBulk(ids, { kind: 'trash' }),
+    })
+    return
+  }
+  await runBulk(ids, { kind: 'trash' })
+}
+
+// The confirmation asked from code with no menu of its own (below).
+const bulkConfirm = createStore<ConfirmSpec | null>('bulkConfirm', null)
+
 /** Apply a bulk action and offer its undo. */
 export async function runBulk(ids: readonly string[], action: BulkAction): Promise<void> {
   if (ids.length === 0) return
   // The rows that stay slide into place; more than the cap update at once (motion-v2 D4).
   const r = await withListTransition(ids.length, () => applyBulk(ids, action))
-  showBulkToast(r.label, r.undoId)
+  // Trash keeps its offer longer and offers the way back: a new offer replaces the
+  // previous one, so the shorter window must be enough to undo a big delete.
+  if (action.kind === 'trash') showBulkToast(r.label, r.undoId, { ttl: TRASH_TOAST_MS, action: { label: t('Show Trash'), run: () => navigate({ view: 'trash' }) } })
+  else showBulkToast(r.label, r.undoId)
+}
+
+/** How long the bulk Trash offer stays: three times one task's own action window, long enough to undo a big delete. */
+export const TRASH_TOAST_MS = 15_000
+
+/**
+ * Confirm a large trash from code with no menu of its own (the keyboard's Delete on
+ * a big selection): the host in the Shell renders the spec when set, like a menu's
+ * confirm step does. The count is checked by the caller, so small deletes stay
+ * immediate.
+ */
+export function askBulkConfirm(spec: ConfirmSpec): void {
+  bulkConfirm.set(spec)
+}
+
+/** The confirmation now asked, if any. */
+export const bulkConfirmSpec = bulkConfirm.get
+export const useBulkConfirm = bulkConfirm.use
+export function clearBulkConfirm(): void {
+  bulkConfirm.set(null)
 }
 
 const tasksWord = (n: number) => t('{n, plural, one {# task} other {# tasks}}', { n })
