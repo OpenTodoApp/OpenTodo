@@ -78,6 +78,26 @@ describe('the action toast host', () => {
     await r.unmount()
   })
 
+  it('the hold resets when the message changes, so the next one expires on its own', async () => {
+    const r = await render(<ToastActionHost />)
+    act(() => showActionToast('first failure'))
+    const el = toastEl()!
+    el.querySelector('[data-action-toast-dismiss]')!.dispatchEvent(new window.FocusEvent('focusin', { bubbles: true }))
+    await act(async () => { (el.querySelector('[data-action-toast-dismiss]') as HTMLButtonElement).click() })
+    expect(toastEl()).toBeNull()
+    act(() => showActionToast('second failure'))
+    advance(5_100)
+    expect(toastEl()).toBeNull()
+    await r.unmount()
+  })
+
+  it('the region moves aside when it would cover the focused element', async () => {
+    const r = await render(<ToastActionHost />)
+    act(() => showActionToast('first failure'))
+    expect(document.querySelector('[data-toast-region]')!.getAttribute('data-toast-side')).toBe('end')
+    await r.unmount()
+  })
+
   it('Dismiss closes it', async () => {
     const r = await render(<ToastActionHost />)
     act(() => showActionToast('first'))
