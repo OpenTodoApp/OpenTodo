@@ -126,6 +126,8 @@ In the [Android app](android-app.md), on a phone with a fingerprint or face unlo
 
 Workspace names, members and groups are server data in plaintext, like project members; with encryption on you can create [workspaces](workspaces.md) and move things between them, but not add members, groups or invite links yet.
 
+**Routines.** A [routine](routines.md#encrypted-accounts) with a step that reads or writes text, or an AI step, runs on one of your devices with **Run my routines on this device** turned on (Settings → Encryption): the server sends the run's ids over the device relay, the device plans it on its decrypted copy and commits ciphertext, and an AI result waits as a proposal encrypted on the device. Routines that only use ids, dates, numbers and conditions keep running on the server.
+
 The server cannot decrypt. Each feature that needs content degrades explicitly:
 
 | Feature | Behaviour for an encrypted account |

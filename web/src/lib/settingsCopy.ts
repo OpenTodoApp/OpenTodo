@@ -167,6 +167,10 @@ export const SETTINGS_COPY = {
       device: { label: msg('This device'), description: msg('Asks for your passphrase again before showing your tasks.') },
       off: { label: msg('Turn off encryption'), description: msg('Your content is synced in plaintext again.') },
       lost: { label: msg('Lost both keys?'), description: msg('Without your passphrase or recovery key, encrypted content cannot be recovered.') },
+      // routines-ai-step D7: routines that read text or ask AI run on a device.
+      routines: { label: msg('Run my routines'), description: msg('Routines that read text or ask AI run here, while this device is online and unlocked.') },
+      routinesDevices: { label: msg('Devices running routines') },
+      routinesRecent: { label: msg('Recent routine runs'), description: msg('What this device ran, without the text.') },
     },
   },
   activity: {

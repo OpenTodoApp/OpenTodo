@@ -2,13 +2,36 @@ import { Icon, Popover } from '../ui'
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { getProject, useNotifications, useTask } from '../lib/localData'
 import { markNotificationRead, markTaskNotificationsRead } from '../lib/notifications'
-import type { AppNotification, MemberInvitationPayload, MentionedPayload, PagePayload } from '../lib/types'
+import type { AppNotification, MemberInvitationPayload, MentionedPayload, PagePayload, RoutinePayload } from '../lib/types'
 import { navigate, routePath, type Route } from './router'
 import { notificationsOpen } from './signals'
 import { openTaskPage } from './taskTrail'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
+import { currentKey, UNDECRYPTABLE } from '../lib/e2ee'
+import { decryptValue } from '../lib/crypto'
 import { InvitationAnswer, InvitationText } from './MemberInvitations'
+
+/**
+ * A routine's Notify me. A routine that ran on a device of an encrypted account
+ * sent its text sealed to the run and step (routines-ai-step D7); this device
+ * opens it, or says the text is encrypted.
+ */
+function RoutineNotice({ payload }: { payload: RoutinePayload }) {
+  const sealed = payload.text.startsWith('enc:')
+  const [text, setText] = useState(sealed ? '' : payload.text)
+  useEffect(() => {
+    if (!sealed) return
+    let live = true
+    void (async () => {
+      const key = await currentKey()
+      const out = key ? await decryptValue(key, 'routine_notice', payload.runId, payload.stepId, payload.text).catch(() => null) : null
+      if (live) setText(out ?? t(UNDECRYPTABLE))
+    })().catch(() => undefined)
+    return () => { live = false }
+  }, [sealed, payload.runId, payload.stepId, payload.text])
+  return <span className="block" data-kind="routine">{t.rich('<b>{routine}</b>: {text}', { routine: payload.ruleName || t('A routine'), text, b: (chunks) => <strong>{chunks}</strong> })}</span>
+}
 
 /** The phone drawer's slide-in, after which the list anchors to the bell. */
 const DRAWER_MS = 220
@@ -105,7 +128,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
                     ) : n.kind === 'routine_proposal' && 'count' in n.payload ? (
                       <span className="block" data-kind="routine_proposal">{t.rich('<b>{routine}</b> has a proposal waiting ({n, plural, one {# change} other {# changes}})', { routine: n.payload.ruleName || t('A routine'), n: n.payload.count, b: (chunks) => <strong>{chunks}</strong> })}</span>
                     ) : n.kind === 'routine' && 'text' in n.payload ? (
-                      <span className="block" data-kind="routine">{t.rich('<b>{routine}</b>: {text}', { routine: n.payload.ruleName || t('A routine'), text: n.payload.text, b: (chunks) => <strong>{chunks}</strong> })}</span>
+                      <RoutineNotice payload={n.payload as RoutinePayload} />
                     ) : n.kind === 'mentioned' ? (
                       <span className="block" data-mention-source={'source' in n.payload ? n.payload.source : undefined}>
                         <MentionText payload={n.payload as MentionedPayload} />

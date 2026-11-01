@@ -633,6 +633,9 @@
   "AI results": [
     "web/src/app/routines/AISettings.tsx"
   ],
+  "AI steps": [
+    "web/src/app/routines/RoutinesDevice.tsx"
+  ],
   "AI tokens today: {today} of {budget} · last 7 days: {week}": [
     "web/src/app/routines/AISettings.tsx"
   ],
@@ -3449,7 +3452,8 @@
     "web/src/app/task-detail/AttachmentsRow.tsx"
   ],
   "Connecting…": [
-    "web/src/app/RelaySettings.tsx"
+    "web/src/app/RelaySettings.tsx",
+    "web/src/app/routines/RoutinesDevice.tsx"
   ],
   "Connection name": [
     "web/src/app/CalendarSyncDialogs.tsx",
@@ -4476,7 +4480,8 @@
     "web/src/lib/push.ts"
   ],
   "Device": [
-    "web/src/app/RelaySettings.tsx"
+    "web/src/app/RelaySettings.tsx",
+    "web/src/app/routines/RoutinesDevice.tsx"
   ],
   "Device answers AI connectors": [
     "web/src/app/auditFormat.ts"
@@ -4489,6 +4494,9 @@
   ],
   "Device stopped answering AI connectors": [
     "web/src/app/auditFormat.ts"
+  ],
+  "Devices running routines": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Devices sync again. A device that changed something after the backup sends those newer changes back, so they are not lost.": [
     "web/src/app/RestoreSection.tsx"
@@ -5159,6 +5167,9 @@
   "Ended": [
     "web/src/app/calendar/TodayAgenda.tsx"
   ],
+  "Ended by a Stop step": [
+    "web/src/app/routines/RoutinesDevice.tsx"
+  ],
   "Ended early": [
     "web/src/app/routines/RunHistory.tsx"
   ],
@@ -5661,6 +5672,7 @@
     "web/src/app/BackupsPanel.tsx",
     "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
+    "web/src/app/routines/RoutinesDevice.tsx",
     "web/src/app/routines/RunHistory.tsx"
   ],
   "Failed at step {n}": [
@@ -8679,6 +8691,9 @@
   "Minutes tracked in a period": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "Missed: no device was available": [
+    "web/src/app/routines/RunHistory.tsx"
+  ],
   "Missing \")\" at end of query": [
     "web/src/lib/filter/parse.ts"
   ],
@@ -10003,6 +10018,9 @@
   "Not run yet.": [
     "web/src/lib/push.ts"
   ],
+  "Not run: the routine changed": [
+    "web/src/app/routines/RoutinesDevice.tsx"
+  ],
   "Not saved yet: this theme is a draft on this device until you save it.": [
     "web/src/app/themes/ThemeEditor.tsx"
   ],
@@ -10230,6 +10248,7 @@
     "web/src/app/Briefing.tsx"
   ],
   "Nothing to change": [
+    "web/src/app/routines/RoutinesDevice.tsx",
     "web/src/app/routines/RunHistory.tsx"
   ],
   "Nothing to re-plan": [
@@ -12029,6 +12048,7 @@
     "web/src/app/routines/RunHistory.tsx"
   ],
   "Proposal waiting": [
+    "web/src/app/routines/RoutinesDevice.tsx",
     "web/src/app/routines/RunHistory.tsx"
   ],
   "Proposed changes": [
@@ -12264,7 +12284,8 @@
     "web/src/app/TokensSection.tsx"
   ],
   "Ready": [
-    "web/src/app/RelaySettings.tsx"
+    "web/src/app/RelaySettings.tsx",
+    "web/src/app/routines/RoutinesDevice.tsx"
   ],
   "Ready to start": [
     "web/src/app/NotificationChannelEditor.tsx"
@@ -12297,6 +12318,9 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Recent requests": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Recent routine runs": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Recent runs": [
@@ -13065,6 +13089,9 @@
   "Routines since your last visit": [
     "web/src/app/routines/RoutinesInboxCard.tsx"
   ],
+  "Routines that read text or ask AI run here, while this device is online and unlocked.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Routines with AI steps": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
@@ -13110,6 +13137,12 @@
   "Run by hand": [
     "web/src/app/routines/RunHistory.tsx"
   ],
+  "Run my routines": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Run my routines on this device": [
+    "web/src/app/routines/RoutinesDevice.tsx"
+  ],
   "Run now": [
     "web/src/app/routines/RoutineEditor.tsx",
     "web/src/app/routines/RoutinesView.tsx"
@@ -13149,9 +13182,19 @@
   "Running the server, integrations and screenshots of every guide are on the <a>documentation website</a>.": [
     "web/src/app/help/HelpView.tsx"
   ],
+  "Running {name}…": [
+    "web/src/app/RelaySettings.tsx",
+    "web/src/app/routines/RoutinesDevice.tsx"
+  ],
   "Runs": [
     "web/src/app/routines/RoutinesView.tsx",
     "web/src/app/routines/RunHistory.tsx"
+  ],
+  "Runs on: {devices}": [
+    "web/src/app/routines/RoutinesDevice.tsx"
+  ],
+  "Runs when unlocked": [
+    "web/src/app/routines/RoutinesDevice.tsx"
   ],
   "Runs you did not start show in the Inbox card \"Routines since your last visit\".": [
     "web/src/lib/settingsCopy.ts"
@@ -16516,6 +16559,7 @@
   ],
   "This device": [
     "web/src/app/RelaySettings.tsx",
+    "web/src/app/routines/RoutinesDevice.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
   "This device does not answer AI connectors from this session.": [
@@ -16854,6 +16898,9 @@
   ],
   "This routine no longer exists.": [
     "web/src/app/routines/RoutinePage.tsx"
+  ],
+  "This routine reads text, so it runs on one of your devices. When it is due, a device with Run my routines turned on must be online and unlocked.": [
+    "web/src/app/routines/RoutinesDevice.tsx"
   ],
   "This routine works on a task: open one, then run it.": [
     "web/src/lib/i18n/errors.ts"
@@ -17507,6 +17554,7 @@
   ],
   "Turn off": [
     "web/src/app/TwoFactorPanel.tsx",
+    "web/src/app/routines/RoutinesDevice.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
   "Turn off Vim keybindings": [
@@ -17532,6 +17580,9 @@
   "Turn off encryption?": [
     "web/src/app/EncryptionPanel.tsx"
   ],
+  "Turn off for {device}": [
+    "web/src/app/routines/RoutinesDevice.tsx"
+  ],
   "Turn off two-factor authentication?": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
@@ -17541,6 +17592,9 @@
   ],
   "Turn on Energy levels to use this": [
     "web/src/lib/rules/catalogue.ts"
+  ],
+  "Turn on Run my routines on a device.": [
+    "web/src/app/routines/RoutinesDevice.tsx"
   ],
   "Turn on Vim keybindings": [
     "web/src/app/palette/registry.ts"
@@ -17838,7 +17892,8 @@
     "web/src/lib/e2ee.ts"
   ],
   "Unlock this device to turn it on.": [
-    "web/src/app/RelaySettings.tsx"
+    "web/src/app/RelaySettings.tsx",
+    "web/src/app/routines/RoutinesDevice.tsx"
   ],
   "Unlock this device to use the assistant.": [
     "web/src/app/assistant/AssistantDevice.tsx"
@@ -17959,8 +18014,10 @@
     "web/src/lib/trash.ts"
   ],
   "Untitled routine": [
+    "web/src/app/RelaySettings.tsx",
     "web/src/app/palette/routineCommand.ts",
     "web/src/app/routines/RoutineEditor.tsx",
+    "web/src/app/routines/RoutinesDevice.tsx",
     "web/src/app/routines/RoutinesView.tsx",
     "web/src/app/routines/RunHistory.tsx"
   ],
@@ -18308,6 +18365,9 @@
   "Waiting for confirmation: {email}": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Waiting for one of your devices": [
+    "web/src/app/routines/RunHistory.tsx"
+  ],
   "Waiting for the first poll": [
     "web/src/app/IssuesPanel.tsx"
   ],
@@ -18466,6 +18526,9 @@
     "web/src/app/AssistantsPanel.tsx"
   ],
   "What this device answered, without the text.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "What this device ran, without the text.": [
     "web/src/lib/settingsCopy.ts"
   ],
   "What will happen": [
@@ -18936,9 +18999,6 @@
   ],
   "Your OpenTodo server never receives audio or transcripts. Only the task you save with Enter is stored and synced, like a typed one.": [
     "web/src/app/VoiceSettings.tsx"
-  ],
-  "Your account is encrypted: the server cannot read text, so a scheduled run skips this routine. Run now works on this device.": [
-    "web/src/app/routines/RoutineEditor.tsx"
   ],
   "Your account is end-to-end encrypted, so the server cannot read your tasks. This device can: it sends what a question needs directly to the provider you choose, with your own key. The OpenTodo server sees none of it.": [
     "web/src/app/assistant/AssistantDevice.tsx"
@@ -20118,6 +20178,9 @@
   ],
   "no device online to answer": [
     "web/src/app/auditFormat.ts"
+  ],
+  "no device was available": [
+    "web/src/lib/rules/inbox.ts"
   ],
   "no due date": [
     "web/src/app/RemindersField.tsx"
@@ -21586,6 +21649,7 @@
     "web/src/lib/rules/inbox.ts"
   ],
   "{n, plural, one {# item written} other {# items written}}": [
+    "web/src/app/routines/RoutinesDevice.tsx",
     "web/src/lib/rules/inbox.ts"
   ],
   "{n, plural, one {# item} other {# items}}": [
@@ -22166,6 +22230,9 @@
   "{name} · proposal waiting · Review": [
     "web/src/lib/rules/inbox.ts"
   ],
+  "{name} · waiting for one of your devices": [
+    "web/src/lib/rules/inbox.ts"
+  ],
   "{name} · {n} proposals waiting · Review": [
     "web/src/lib/rules/inbox.ts"
   ],
@@ -22188,6 +22255,9 @@
   "{name}, {n, plural, one {# task} other {# tasks}}, folded": [
     "web/src/app/views/ViewResults.tsx"
   ],
+  "{name}: a proposal is waiting for your review": [
+    "web/src/app/palette/routineCommand.ts"
+  ],
   "{name}: needs a connection": [
     "web/src/app/palette/routineCommand.ts"
   ],
@@ -22197,10 +22267,16 @@
   "{name}: test would write {n}": [
     "web/src/app/routines/RoutinesView.tsx"
   ],
+  "{name}: the routine changed while it ran, nothing was written": [
+    "web/src/app/palette/routineCommand.ts"
+  ],
   "{name}: the run did not start": [
     "web/src/app/palette/routineCommand.ts"
   ],
   "{name}: the run failed": [
+    "web/src/app/palette/routineCommand.ts"
+  ],
+  "{name}: unlock this device to run it": [
     "web/src/app/palette/routineCommand.ts"
   ],
   "{name}: uploading": [

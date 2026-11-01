@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useEncryption } from '../../lib/e2ee'
 import type { AssistantStatus } from '../../lib/assistantStatus'
 import { clearDeviceSetup, getDeviceSetup, originOf, saveDeviceSetup, type DeviceSetup } from '../../lib/assistantDevice/settings'
+import { refreshCapabilities } from '../../lib/relay'
 import { t } from '../../lib/i18n'
 
 /** The provider's name in the disclosure and the composer's hint. */
@@ -58,11 +59,14 @@ export function useDeviceAssistant(status: AssistantStatus | null): DeviceMode {
     await saveDeviceSetup(s)
     setSetup(s)
     edit(false)
+    // A device running routines announces whether it can run AI steps (routines-ai-step D7).
+    refreshCapabilities()
   }, [])
   const clear = useCallback(async () => {
     await clearDeviceSetup()
     setSetup(null)
     edit(false)
+    refreshCapabilities()
   }, [])
   return { active, loaded, setup, locked: active && !enc.unlocked, editing, save, clear, edit }
 }

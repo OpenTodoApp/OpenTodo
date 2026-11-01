@@ -40,6 +40,8 @@ export function unavailableReason(s: RoutineStep, env: RunEnv, encrypted: boolea
   switch (s.kind) {
     case 'webhook':
       if (env.webhooks && !env.webhooks.includes(lit('webhook_id') as string)) return 'no_webhook'
+      // Its text would pass through the server in plaintext (routines-ai-step D7).
+      if (encrypted && s.in?.text) return 'encrypted'
       break
     case 'change_tasks': {
       const set = lit('set') as Record<string, unknown> | undefined

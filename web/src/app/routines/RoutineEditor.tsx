@@ -23,12 +23,13 @@ import { planDraft, serverPreview, type Preview } from '../../lib/rules/preview'
 import { outputNames, stepName } from '../../lib/rules/sentence'
 import { createRule, updateRule } from '../../lib/rules/store'
 import { contentStep, hasAI, isAIKind, MAX_STEPS, triggerOutput } from '../../lib/rules/steps'
+import { EncryptedRoutineNote } from './RoutinesDevice'
 import { roundEstimate } from '../../lib/rules/ai'
 import { useAssistantStatus } from '../../lib/assistantStatus'
 import { useEncryption } from '../../lib/e2ee'
 import { useMe } from '../../lib/timeEntries'
 import type { RoutineStepType, Rule, RoutineTestResult } from '../../lib/types'
-import { Badge, Button, ConfirmDialog, DESKTOP_HEADER_QUERY, Field, Icon, Input, Notice, PAGE_FRAME, PageHeader, Tabs, useMediaQuery } from '../../ui'
+import { Badge, Button, ConfirmDialog, DESKTOP_HEADER_QUERY, Field, Icon, Input, PAGE_FRAME, PageHeader, Tabs, useMediaQuery } from '../../ui'
 import { runRoutineNow } from '../palette/routineCommand'
 import { setLeaveGuard } from '../router'
 import { useShortcutScope } from '../shortcuts'
@@ -445,7 +446,7 @@ function EditorNotices({ online, dropped, saveError, draft }: { online: boolean;
         </ul>
       )}
       {saveError && <p role="alert" className="text-meta text-danger" data-save-error>{saveError}</p>}
-      {draft.trigger.kind === 'schedule' && <EncryptedScheduleNote draft={draft} />}
+      {draft.trigger.kind !== 'manual' && <EncryptedScheduleNote draft={draft} />}
     </>
   )
 }
@@ -506,7 +507,11 @@ function NameField({ draft, edit }: { draft: RoutineDraft; edit: (fn: (d: Routin
   )
 }
 
-/** The server skips a scheduled routine with a text step on an encrypted account (routines-engine D9); the editor says so. */
+/**
+ * On an encrypted account a routine with a text or AI step and a schedule or
+ * event trigger runs on one of the user's devices (routines-ai-step D7, D12):
+ * the editor says so, with the opt-in.
+ */
 function EncryptedScheduleNote({ draft }: { draft: RoutineDraft }) {
   const encrypted = useEncryption().enabled
   if (!encrypted) return null
@@ -516,6 +521,6 @@ function EncryptedScheduleNote({ draft }: { draft: RoutineDraft }) {
   } catch {
     step = ''
   }
-  if (!step) return null
-  return <div className="mx-auto max-w-[44rem]"><Notice tone="warning">{t('Your account is encrypted: the server cannot read text, so a scheduled run skips this routine. Run now works on this device.')}</Notice></div>
+  if (!step && !hasAI(draft.steps)) return null
+  return <EncryptedRoutineNote />
 }
