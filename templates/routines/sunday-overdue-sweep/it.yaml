@@ -1,0 +1,6 @@
+# Pulizia domenicale degli arretrati: Italian text for templates/routines/sunday-overdue-sweep/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-070a8f99e646
+title: "Pulizia domenicale degli arretrati"
+summary: "Ogni domenica alle 18:00, sposta a lunedì le attività scadute e ti dice quante sono."
+description: "Le attività scadute si accumulano e fanno sembrare ogni lista peggiore di quanto sia. Ogni domenica sera questa routine dà a ogni attività scaduta una data nuova, lunedì, e ti manda una sola notifica con il conteggio.\n\nLunedì passale in rassegna: falle, riprogrammale o eliminale. Se la stessa attività si sposta ogni settimana, forse non appartiene alla tua lista."
+steps.2.in.text: "{b} attività scadute spostate a lunedì"

@@ -1,0 +1,6 @@
+# Report du soir: French text for templates/routines/evening-roll-over/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-4b18f9ec8a3b
+title: "Report du soir"
+summary: "Chaque soir à 21:00, reporte à demain ce qui est encore prévu aujourd'hui, et te dit combien."
+description: "Une journée se passe rarement comme prévu. Chaque soir à 21:00, cette routine reporte à demain les tâches encore prévues aujourd'hui, pour que le matin commence par une liste honnête plutôt que par un mur de tâches en retard.\n\nLa notification te dit combien ont été reportées. Change l'heure sur la carte Quand pour l'accorder à la fin de ta journée."
+steps.2.in.text: "{b} tâches reportées à demain"

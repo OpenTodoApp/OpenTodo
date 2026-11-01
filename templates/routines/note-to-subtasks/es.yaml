@@ -1,0 +1,5 @@
+# De la nota a subtareas: Spanish text for templates/routines/note-to-subtasks/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-3d6498714c4e
+title: "De la nota a subtareas"
+summary: "Ejecútala sobre una tarea para convertir cada línea de su nota en una subtarea."
+description: "Escribe las partes de una tarea grande en su nota, una por línea, y ejecuta esta rutina sobre la tarea desde la paleta de comandos o el menú de la tarea. Cada línea se convierte en una subtarea, en el proyecto de la tarea.\n\nLas viñetas y las casillas se quitan de cada línea. La nota queda como está."

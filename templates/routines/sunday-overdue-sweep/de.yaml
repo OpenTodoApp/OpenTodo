@@ -1,0 +1,6 @@
+# Sonntäglicher Überfällig-Kehraus: German text for templates/routines/sunday-overdue-sweep/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-070a8f99e646
+title: "Sonntäglicher Überfällig-Kehraus"
+summary: "Jeden Sonntag um 18:00 werden überfällige Aufgaben auf Montag verschoben, und du erfährst, wie viele."
+description: "Überfällige Aufgaben stapeln sich und lassen jede Liste schlimmer aussehen, als sie ist. Jeden Sonntagabend gibt diese Routine jeder überfälligen Aufgabe ein neues Datum, Montag, und schickt dir eine einzige Benachrichtigung mit der Anzahl.\n\nGeh sie am Montag durch: erledigen, neu planen oder löschen. Wandert dieselbe Aufgabe jede Woche weiter, gehört sie vielleicht nicht auf deine Liste."
+steps.2.in.text: "{b} überfällige Aufgaben auf Montag verschoben"

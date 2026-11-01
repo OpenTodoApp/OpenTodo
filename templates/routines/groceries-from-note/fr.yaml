@@ -1,0 +1,7 @@
+# Courses depuis une note: French text for templates/routines/groceries-from-note/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-877ea84023de
+title: "Courses depuis une note"
+summary: "Chaque vendredi à 17:00, transforme les lignes de ta note de courses en tâches."
+description: "Garde un projet dont la note liste ce qu'il te faut, un article par ligne. Chaque vendredi à 17:00, cette routine lit la note et crée une tâche par ligne dans ton projet de commissions, prête pour les courses du week-end.\n\nLes puces et les cases à cocher sont retirées de chaque ligne. Vide la note à ton retour, ou garde-la comme liste permanente."
+ask.list.suggest: "Courses"
+ask.into.suggest: "Commissions"

@@ -1,0 +1,5 @@
+# De las notas de reunión a tareas: Spanish text for templates/routines/meeting-notes-to-tasks/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-01d2cced429b
+title: "De las notas de reunión a tareas"
+summary: "Ejecútala sobre una tarea de reunión para convertir las casillas abiertas de su nota en tareas de su proyecto."
+description: "Toma notas en una tarea de reunión y escribe cada acción como casilla: `- [ ] enviar el orden del día`. Después de la reunión, ejecuta esta rutina sobre la tarea desde la paleta de comandos o el menú de la tarea. Cada casilla abierta se convierte en una tarea en el proyecto de la tarea de reunión; las líneas simples y las casillas marcadas se quedan fuera.\n\nUna tarea de reunión sin proyecto envía las tareas nuevas a la bandeja de entrada."

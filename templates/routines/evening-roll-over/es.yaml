@@ -1,0 +1,6 @@
+# Arrastre nocturno: Spanish text for templates/routines/evening-roll-over/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-4b18f9ec8a3b
+title: "Arrastre nocturno"
+summary: "Cada noche a las 21:00, mueve a mañana lo que aún vence hoy, y te dice cuántas tareas."
+description: "Un día rara vez sale según el plan. Cada noche a las 21:00 esta rutina mueve a mañana las tareas que aún vencen hoy, para que la mañana siguiente empiece con una lista honesta en lugar de un muro de tareas atrasadas.\n\nLa notificación te dice cuántas se movieron. Cambia la hora en la tarjeta Cuándo para que coincida con el final de tu día."
+steps.2.in.text: "{b} tareas movidas a mañana"

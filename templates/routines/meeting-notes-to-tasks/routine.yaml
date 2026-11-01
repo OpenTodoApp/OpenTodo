@@ -1,0 +1,53 @@
+title: Meeting notes to tasks
+summary: Run it on a meeting task to turn the open checkboxes of its note into tasks in its project.
+description: |
+  Take notes in a meeting task and write each action as a checkbox: `- [ ] send the agenda`. After the meeting, run this routine on the task from the command palette or the task's menu. Each open checkbox becomes a task in the meeting task's project; plain lines and ticked boxes are left out.
+
+  A meeting task without a project sends the new tasks to the Inbox.
+category: work
+icon: clipboard-list
+author: OpenTodo
+reviewed: 2026-11-01
+trigger:
+  kind: manual
+steps:
+  - id: a
+    kind: note_text
+    in:
+      of:
+        ref: trigger
+  - id: b
+    kind: split_lines
+    in:
+      text:
+        ref: a
+      only:
+        literal: open_checkboxes
+  - id: c
+    kind: project_of
+    in:
+      task:
+        ref: trigger
+  - id: d
+    kind: create_tasks
+    in:
+      text:
+        ref: b
+      project:
+        ref: c
+test:
+  run_on: m1
+  projects:
+    - id: work
+      name: Work
+  tasks:
+    - id: m1
+      title: Planning meeting
+      project_id: work
+      description: "- [ ] book room\n- notes\n- [x] done already\n- [ ] send agenda"
+  expect:
+    created:
+      - title: book room
+        project_id: work
+      - title: send agenda
+        project_id: work

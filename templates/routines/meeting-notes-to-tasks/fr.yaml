@@ -1,0 +1,5 @@
+# Des notes de réunion aux tâches: French text for templates/routines/meeting-notes-to-tasks/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-01d2cced429b
+title: "Des notes de réunion aux tâches"
+summary: "Lance-la sur une tâche de réunion pour transformer les cases ouvertes de sa note en tâches de son projet."
+description: "Prends des notes dans une tâche de réunion et écris chaque action comme une case : `- [ ] envoyer l'ordre du jour`. Après la réunion, lance cette routine sur la tâche depuis la palette de commandes ou le menu de la tâche. Chaque case ouverte devient une tâche dans le projet de la tâche de réunion ; les lignes simples et les cases cochées sont ignorées.\n\nUne tâche de réunion sans projet envoie les nouvelles tâches dans la boîte de réception."

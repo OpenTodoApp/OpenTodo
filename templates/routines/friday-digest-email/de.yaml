@@ -1,0 +1,7 @@
+# Freitagsrückblick per E-Mail: German text for templates/routines/friday-digest-email/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-926c1534c942
+title: "Freitagsrückblick per E-Mail"
+summary: "Jeden Freitag um 16:00 bekommst du per E-Mail die Liste der Aufgaben, die du diese Woche erledigt hast."
+description: "Jeden Freitagnachmittag findet diese Routine die Aufgaben, die du diese Woche erledigt hast, zählt sie und schickt dir die Liste per E-Mail. Ein stilles Protokoll der Woche, praktisch für einen Wochenrückblick oder einen Bericht.\n\nBraucht ausgehende E-Mail auf deinem Server und eine bestätigte E-Mail-Adresse. Ohne sie nimm Benachrichtige mich statt Mir mailen."
+steps.2.in.template: "{b} Aufgaben diese Woche erledigt:\n{a}"
+steps.3.in.subject: "Deine Woche"

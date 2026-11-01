@@ -1,0 +1,7 @@
+# Einkauf aus einer Notiz: German text for templates/routines/groceries-from-note/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-877ea84023de
+title: "Einkauf aus einer Notiz"
+summary: "Jeden Freitag um 17:00 werden die Zeilen deiner Einkaufsnotiz zu Aufgaben."
+description: "Führe ein Projekt, dessen Notiz auflistet, was du brauchst, ein Eintrag pro Zeile. Jeden Freitag um 17:00 liest diese Routine die Notiz und legt pro Zeile eine Aufgabe in deinem Besorgungen-Projekt an, bereit für den Wocheneinkauf.\n\nListenzeichen und Kontrollkästchen werden aus jeder Zeile entfernt. Leere die Notiz, wenn du zurück bist, oder behalte sie als feste Liste."
+ask.list.suggest: "Einkauf"
+ask.into.suggest: "Besorgungen"

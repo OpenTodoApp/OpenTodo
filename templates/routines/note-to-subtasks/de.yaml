@@ -1,0 +1,5 @@
+# Notiz zu Unteraufgaben: German text for templates/routines/note-to-subtasks/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-3d6498714c4e
+title: "Notiz zu Unteraufgaben"
+summary: "Starte sie auf einer Aufgabe, und jede Zeile ihrer Notiz wird zu einer Unteraufgabe."
+description: "Schreib die Teile einer größeren Aufgabe in ihre Notiz, einen pro Zeile, und starte diese Routine dann über die Befehlspalette oder das Menü der Aufgabe auf ihr. Jede Zeile wird zu einer Unteraufgabe im Projekt der Aufgabe.\n\nListenzeichen und Kontrollkästchen werden aus jeder Zeile entfernt. Die Notiz bleibt, wie sie ist."

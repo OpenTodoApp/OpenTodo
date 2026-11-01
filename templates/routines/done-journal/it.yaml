@@ -1,0 +1,7 @@
+# Diario del fatto: Italian text for templates/routines/done-journal/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-0c19b22827ea
+title: "Diario del fatto"
+summary: "Quando completi un'attività, aggiunge una riga con il suo titolo alla nota del tuo progetto diario."
+description: "Una lista di quello che hai finito è utile per le revisioni settimanali, le riunioni del mattino e le giornate storte. Ogni volta che completi un'attività, questa routine aggiunge \"Fatto:\" e il titolo dell'attività alla nota di un progetto che scegli, così la nota diventa un registro del tuo lavoro.\n\nAggiungi una condizione nella scheda Quando per registrare solo le attività di un progetto."
+ask.journal.suggest: "Diario"
+steps.0.in.text: "Fatto: {trigger}"

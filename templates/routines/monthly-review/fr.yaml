@@ -1,0 +1,5 @@
+# Revue mensuelle: French text for templates/routines/monthly-review/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-b86adf551d28
+title: "Revue mensuelle"
+summary: "Le premier de chaque mois, crée un projet de revue à partir du modèle Revue hebdomadaire."
+description: "Une revue garde une liste de tâches digne de confiance. Le premier jour de chaque mois à 9:00, cette routine crée un projet à partir du modèle Revue hebdomadaire de la bibliothèque, avec ses sections et ses petites tâches, à partir de ce jour.\n\nTu préfères un rythme hebdomadaire ? Règle la carte Quand sur un jour de la semaine."

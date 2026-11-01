@@ -1,0 +1,5 @@
+# Dagli appunti della riunione alle attività: Italian text for templates/routines/meeting-notes-to-tasks/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-01d2cced429b
+title: "Dagli appunti della riunione alle attività"
+summary: "Avviala su un'attività di riunione per trasformare le caselle aperte della nota in attività del suo progetto."
+description: "Prendi appunti in un'attività di riunione e scrivi ogni azione come casella: `- [ ] mandare l'ordine del giorno`. Dopo la riunione, avvia questa routine sull'attività dalla palette dei comandi o dal menu dell'attività. Ogni casella aperta diventa un'attività nel progetto dell'attività di riunione; le righe semplici e le caselle spuntate restano fuori.\n\nUn'attività di riunione senza progetto manda le nuove attività in In arrivo."

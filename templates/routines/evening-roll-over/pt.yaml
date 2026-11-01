@@ -1,0 +1,6 @@
+# Transição da noite: Portuguese text for templates/routines/evening-roll-over/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-4b18f9ec8a3b
+title: "Transição da noite"
+summary: "Todas as noites às 21:00, move para amanhã o que ainda vence hoje e diz-te quantas tarefas."
+description: "Um dia raramente corre como planeado. Todas as noites às 21:00 esta rotina move para amanhã as tarefas que ainda vencem hoje, para que a manhã seguinte comece com uma lista honesta em vez de um muro de tarefas atrasadas.\n\nA notificação diz-te quantas foram movidas. Muda a hora no cartão Quando para coincidir com o fim do teu dia."
+steps.2.in.text: "{b} tarefas movidas para amanhã"

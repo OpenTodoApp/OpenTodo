@@ -1,0 +1,58 @@
+title: Morning focus
+summary: On weekday mornings, put the three most important tasks due today into today's focus.
+description: |
+  Every weekday at 07:30 this routine finds the tasks due today, sorts them by priority and sets the first three as today's focus, so you start the day knowing what comes first.
+
+  Change the number on the Pick card for a shorter or longer focus. Needs today's focus to be turned on.
+category: personal
+icon: sunrise
+author: OpenTodo
+reviewed: 2026-11-01
+trigger:
+  kind: schedule
+  at: "07:30"
+  weekdays: [1, 2, 3, 4, 5]
+steps:
+  - id: a
+    kind: find_tasks
+    in:
+      condition:
+        literal:
+          due: today
+  - id: b
+    kind: sort
+    in:
+      list:
+        ref: a
+      by:
+        literal: priority
+  - id: c
+    kind: take
+    in:
+      list:
+        ref: b
+      n:
+        literal: 3
+      from:
+        literal: start
+  - id: d
+    kind: set_focus
+    in:
+      tasks:
+        ref: c
+test:
+  tasks:
+    - id: f0
+      due: 2026-10-21
+      priority: 3
+    - id: f1
+      due: 2026-10-21
+      priority: 1
+    - id: f2
+      due: 2026-10-21
+      priority: 4
+    - id: f3
+      due: 2026-10-21
+      priority: 2
+  expect:
+    focus: f1,f3,f0
