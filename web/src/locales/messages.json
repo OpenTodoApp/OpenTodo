@@ -1823,7 +1823,8 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Automations are off on this server.": [
-    "web/src/app/rules/RulesView.tsx"
+    "web/src/app/rules/RulesView.tsx",
+    "web/src/lib/i18n/errors.ts"
   ],
   "Available now": [
     "web/src/app/filter/conditionText.ts"
@@ -14433,6 +14434,9 @@
   "The server passes it to the speech service the owner connected, {host}, and returns the text.": [
     "web/src/app/VoiceSettings.tsx"
   ],
+  "The server paused this routine because it ran too often. Turn it on again first.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "The server redirected to another site, which is never followed.": [
     "web/src/app/CalendarSyncPanel.tsx"
   ],
@@ -15088,8 +15092,14 @@
   "This restore is no longer prepared. Choose the archive again.": [
     "web/src/lib/restore.ts"
   ],
+  "This routine works on a task: open one, then run it.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "This rule has not run yet.": [
     "web/src/app/rules/RuleHistory.tsx"
+  ],
+  "This run was undone already.": [
+    "web/src/lib/i18n/errors.ts"
   ],
   "This saved location no longer exists.": [
     "web/src/app/task-list/ListChrome.tsx"

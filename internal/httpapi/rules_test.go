@@ -143,14 +143,14 @@ func TestHistoryLabelsRuleBatches(t *testing.T) {
 		sets := out["changeSets"].([]any)
 		return sets[len(sets)-1].(map[string]any)["device_label"]
 	}
-	if l := label(); l != "Rule (Sunday sweep)" {
+	if l := label(); l != "Routine (Sunday sweep)" {
 		t.Fatalf("label %v", l)
 	}
 	resp, out := e.do("DELETE", "/api/v1/rules/"+rule, nil)
 	if resp.StatusCode >= 300 {
 		t.Fatalf("delete %d %v", resp.StatusCode, out)
 	}
-	if l := label(); l != "Rule" {
+	if l := label(); l != "Routine" {
 		t.Fatalf("label after delete %v", l)
 	}
 }

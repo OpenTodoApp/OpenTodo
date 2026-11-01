@@ -87,6 +87,12 @@ func (n *InApp) RuleFired(ctx context.Context, e RuleEvent) {
 	n.insert(ctx, e.UserID, KindRuleFired, e)
 }
 
+// RoutineNotice stores a routine notification (a Notify me step) for the
+// routine's user.
+func (n *InApp) RoutineNotice(ctx context.Context, e RoutineNotice) {
+	n.insert(ctx, e.UserID, KindRoutine, e)
+}
+
 // RulePaused stores a rule_paused notification for the rule's author.
 func (n *InApp) RulePaused(ctx context.Context, e RuleEvent) {
 	n.insert(ctx, e.UserID, KindRulePaused, e)

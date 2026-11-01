@@ -81,16 +81,20 @@ func (s *Server) labelAgentChanges(ctx context.Context, viewerID string, sets []
 			sets[i].DeviceLabel = "Assistant"
 			continue
 		}
-		// An automation rule's batch (automation-rules): "Rule (<name>)" for its
-		// author while the rule exists, "Rule" otherwise. Rules are personal.
+		// A routine's batch (automation-rules, routines-engine D1): "Routine
+		// (<name>)" for its author while the routine exists, "Routine"
+		// otherwise, and "… undone" for the batch that undid a run (D12).
 		if ruleID, ok := strings.CutPrefix(sets[i].Device, opsync.RuleDevicePrefix); ok {
-			sets[i].DeviceLabel = "Rule"
+			sets[i].DeviceLabel = "Routine"
 			if sets[i].UserID == viewerID {
 				if r, err := s.sync.Get(ctx, viewerID, "rule", ruleID); err == nil && r != nil && !r.Deleted() {
 					if name := idOf(r["name"]); name != "" && !e2ee.IsCiphertext(name) {
-						sets[i].DeviceLabel = "Rule (" + name + ")"
+						sets[i].DeviceLabel = "Routine (" + name + ")"
 					}
 				}
+			}
+			if s.rules != nil && s.rules.Store.IsUndo(ctx, ruleID, sets[i].TS) {
+				sets[i].DeviceLabel += " undone"
 			}
 			continue
 		}

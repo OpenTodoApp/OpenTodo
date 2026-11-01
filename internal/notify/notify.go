@@ -225,6 +225,39 @@ func (m Multi) RulePaused(ctx context.Context, e RuleEvent) {
 	}
 }
 
+// KindRoutine is a routine's Notify me step (OpenSpec change routines-engine,
+// "Routine notices through channels"): the step's text with the routine's name
+// and the run.
+const KindRoutine = "routine"
+
+// RoutineNotice is one Notify me step of one run. Text is the step's text as
+// the routine produced it; the in-app inbox is the user's own, channels apply
+// their content rules.
+type RoutineNotice struct {
+	UserID   string `json:"-"`
+	RuleID   string `json:"ruleId"`
+	RuleName string `json:"ruleName"`
+	RunID    string `json:"runId"`
+	StepID   string `json:"stepId"`
+	Text     string `json:"text"`
+	TaskID   string `json:"taskId,omitempty"`
+	At       int64  `json:"at"`
+}
+
+// RoutineSink is implemented by sinks that deliver routine notices.
+type RoutineSink interface {
+	RoutineNotice(ctx context.Context, n RoutineNotice)
+}
+
+// RoutineNotice fans the notice out to every sink that implements RoutineSink.
+func (m Multi) RoutineNotice(ctx context.Context, n RoutineNotice) {
+	for _, s := range m {
+		if rs, ok := s.(RoutineSink); ok {
+			rs.RoutineNotice(ctx, n)
+		}
+	}
+}
+
 // KindMemberInvitation: someone who shares nothing with the recipient asked to
 // add them to a project or workspace (OpenSpec change member-add-consent, D5).
 const KindMemberInvitation = "member_invitation"
