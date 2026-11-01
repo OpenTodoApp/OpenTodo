@@ -6721,7 +6721,7 @@
   "Add from file": "Aus Datei hinzufügen",
   "Default (Server default: {name})": "Standard (Serverstandard: {name})",
   "Default theme": "Standarddesign",
-  "Everyone on this server can choose these, or customise a copy. Up to {max}.": "Alle auf diesem Server können diese wählen oder eine Kopie anpassen. Bis zu {max}.",
+  "Everyone on this server can choose these, or customise a copy. Up to 20.": "Alle auf diesem Server können diese wählen oder eine Kopie anpassen. Bis zu 20.",
   "From this server": "Von diesem Server",
   "From this server · Server default": "Von diesem Server · Serverstandard",
   "Make it the default": "Als Standard festlegen",

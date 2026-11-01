@@ -4,6 +4,7 @@ import { CATALOGUE } from '../lib/theme/builtin/index'
 import type { InstanceThemes } from '../lib/theme/instance'
 import type { ThemeDocument } from '../lib/theme/format'
 import { SettingsSection } from '../ui'
+import { cardCopy } from '../lib/settingsCopy'
 import { withClock } from './stories/fixtures'
 import { BrandingThemesView } from './BrandingThemes'
 
@@ -28,7 +29,7 @@ function Card({ online }: { online: boolean }) {
   const [value, setValue] = useState(VALUE)
   return (
     <div className="max-w-3xl bg-canvas p-4">
-      <SettingsSection title="Branding" description="Your own name and logo in the tab, the app icon, the sign-in screen and the sidebar.">
+      <SettingsSection {...cardCopy('branding')}>
         <BrandingThemesView value={value} online={online} busy={false} error={null} catalogue={mod} warnings={WARNINGS} own={[]}
           onDefault={(side, choice) => setValue((v) => ({ ...v, default: { ...v.default, [side]: choice } }))}
           onAdd={() => {}} onRemove={(x) => setValue((v) => ({ ...v, themes: v.themes.filter((t) => t.id !== x.id) }))} />

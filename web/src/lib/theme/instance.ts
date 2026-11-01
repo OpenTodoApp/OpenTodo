@@ -101,3 +101,9 @@ export function watchInstanceThemes(now: () => number = Date.now): void {
   window.addEventListener('online', check)
   document.addEventListener('visibilitychange', check)
 }
+
+/** After sign-in: reads the instance themes when their version moved, and keeps checking while the app is open. */
+export function followInstanceThemes(version: number | undefined): void {
+  void refreshInstanceThemes(version)
+  watchInstanceThemes()
+}

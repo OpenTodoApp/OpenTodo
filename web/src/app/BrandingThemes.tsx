@@ -8,6 +8,7 @@
 import { useEffect, useState, type ChangeEvent } from 'react'
 import { api, isNetworkError } from '../lib/api'
 import { t } from '../lib/i18n'
+import { rowCopy } from '../lib/settingsCopy'
 import { messageOf } from '../lib/errorText'
 import { useAction } from '../lib/useAction'
 import type { Side } from '../lib/theme/choice'
@@ -94,8 +95,8 @@ export function BrandingThemesView({ value, online, busy, error, catalogue, warn
   return (
     <>
       <div className="py-3" id="branding-default-theme" tabIndex={-1} data-setting-row="branding-default-theme">
-        <p className="text-body font-medium text-default">{t('Default theme')}</p>
-        <p className="mt-0.5 mb-2 text-meta text-muted">{t('People who never chose a theme see this one; their own choice always wins.')}</p>
+        <p className="text-body font-medium text-default">{rowCopy('branding', 'defaultTheme').label}</p>
+        <p className="mt-0.5 mb-2 text-meta text-muted">{rowCopy('branding', 'defaultTheme').description}</p>
         <div className="flex flex-col gap-3">
           {SIDES.map((side) => (
             <ThemeList key={side} data-branding-default={side} label={side === 'light' ? t('Light') : t('Dark')} themes={cards(side)}
@@ -103,8 +104,7 @@ export function BrandingThemesView({ value, online, busy, error, catalogue, warn
           ))}
         </div>
       </div>
-      <SettingRow id="branding-server-themes" label={t('Server themes')}
-        description={t('Everyone on this server can choose these, or customise a copy. Up to {max}.', { max: MAX_INSTANCE_THEMES })}
+      <SettingRow id="branding-server-themes" {...rowCopy('branding', 'serverThemes')}
         control={<>
           <label className={`ui-btn ui-btn--secondary ui-btn--sm focus-within:ring-2 focus-within:ring-focus ${disabled || full ? 'pointer-events-none text-faint' : 'cursor-pointer'}`} aria-disabled={disabled || full || undefined}>
             <Icon name="upload" size="sm" />{t('Add from file')}
