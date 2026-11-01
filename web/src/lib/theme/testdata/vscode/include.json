@@ -1,0 +1,9 @@
+{
+  "name": "Includes another",
+  "include": "./base.json",
+  "type": "light",
+  "colors": {
+    "editor.background": "#ffffff",
+    "button.background": "#005fb8"
+  }
+}

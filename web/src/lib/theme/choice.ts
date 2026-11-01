@@ -48,21 +48,38 @@ export interface SideChoice {
   /** The stored value, kept as it is whatever this app makes of it. */
   stored: string
   status: ChoiceStatus
-  /** The builtin theme that applies (the side's default unless status is `theme`). */
+  /** The theme that applies (the side's default unless status is `theme`): a builtin id, or a custom theme's entity id when `custom`. */
   id: string
+  /** The theme is one of the user's own (`user:<id>`, theme-editor D1). */
+  custom?: true
+}
+
+/** A custom theme as the choice reads it: its entity id and kind (the live, non-deleted rows). */
+export interface KnownCustomTheme {
+  id: string
+  kind: ThemeKind
 }
 
 const FIELD: Record<Side, 'theme_light' | 'theme_dark'> = { light: 'theme_light', dark: 'theme_dark' }
 const VALUE = /^(builtin|user|instance):([a-z0-9-]{1,64})$/
 
 /** Reads one side's choice from the synced row (design D6). Never writes. */
-export function readThemeChoice(row: Partial<UserPrefs> | null | undefined, side: Side, known: readonly BuiltinTheme[] | null = null): SideChoice {
+export function readThemeChoice(row: Partial<UserPrefs> | null | undefined, side: Side, known: readonly BuiltinTheme[] | null = null, custom: readonly KnownCustomTheme[] | null = null): SideChoice {
   const raw = row?.[FIELD[side]]
   const stored = typeof raw === 'string' ? raw : ''
   const fallback = DEFAULT_THEME[side]
   if (stored === '') return { stored, status: 'default', id: fallback }
   const m = VALUE.exec(stored)
   if (!m) return { stored, status: 'invalid', id: fallback }
+  if (m[1] === 'user') {
+    // Without the list of custom themes the lazy loader decides (a missing, deleted or other-kind theme reads as the default).
+    if (!custom) return { stored, status: 'theme', id: m[2], custom: true }
+    const c = custom.find((x) => x.id === m[2])
+    // A theme deleted or not synced yet reads as the side's default; the value stays (theme-editor D1).
+    if (!c) return { stored, status: 'default', id: fallback }
+    if (c.kind !== side) return { stored, status: 'invalid', id: fallback }
+    return { stored, status: 'theme', id: c.id, custom: true }
+  }
   if (m[1] !== 'builtin') return { stored, status: 'newer', id: fallback }
   const t = (known ?? BUILTIN_THEMES).find((b) => b.id === m[2])
   // Without the catalogue, a theme this code does not list may be one of its palettes: the lazy loader decides.
@@ -72,8 +89,8 @@ export function readThemeChoice(row: Partial<UserPrefs> | null | undefined, side
 }
 
 /** Both sides of the row. */
-export function readThemeChoices(row: Partial<UserPrefs> | null | undefined, known: readonly BuiltinTheme[] | null = null): Record<Side, SideChoice> {
-  return { light: readThemeChoice(row, 'light', known), dark: readThemeChoice(row, 'dark', known) }
+export function readThemeChoices(row: Partial<UserPrefs> | null | undefined, known: readonly BuiltinTheme[] | null = null, custom: readonly KnownCustomTheme[] | null = null): Record<Side, SideChoice> {
+  return { light: readThemeChoice(row, 'light', known, custom), dark: readThemeChoice(row, 'dark', known, custom) }
 }
 
 /**
@@ -85,3 +102,14 @@ export function setThemeChoice(side: Side, id: string, known: readonly BuiltinTh
   if (!t || t.kind !== side) return Promise.reject(new Error(`not a ${side} theme: ${id}`))
   return mutate('user_prefs', USER_PREFS_ID, { [FIELD[side]]: t.isDefault ? '' : `builtin:${id}` })
 }
+
+/** The stored value of a custom theme for a side (theme-editor D1). */
+export const customChoice = (id: string) => `user:${id}`
+
+/** Chooses one of the user's own themes for a side: one op for one field. */
+export function setCustomThemeChoice(side: Side, id: string): Promise<void> {
+  return mutate('user_prefs', USER_PREFS_ID, { [FIELD[side]]: customChoice(id) })
+}
+
+/** The field of a side, for batches that change a choice with other writes (deleting a chosen theme). */
+export const choiceField = (side: Side) => FIELD[side]

@@ -1,0 +1,13 @@
+// A theme written by hand, as VS Code allows: comments and trailing commas.
+{
+  "name": "Commented", // the theme's name
+  /* The colours.
+     A link like https://example.com/theme stays text inside a string. */
+  "type": "dark",
+  "colors": {
+    "editor.background": "#202020",
+    "editor.foreground": "#e0e0e0", // text
+    "button.background": "#c06030",
+    "descriptionForeground": "#a0a0a0",
+  },
+}

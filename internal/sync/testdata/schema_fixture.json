@@ -200,6 +200,12 @@
       "title",
       "workspace_id"
     ],
+    "theme": [
+      "created_at",
+      "deleted_at",
+      "doc",
+      "position"
+    ],
     "time_entry": [
       "created_at",
       "deleted_at",
