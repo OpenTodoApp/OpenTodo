@@ -48,8 +48,9 @@ export default defineConfig({
         name: 'OpenTodo',
         short_name: 'OpenTodo',
         description: 'Your tasks, your server. Open-source, local-first task manager.',
-        theme_color: '#0f172a',
-        background_color: '#0f172a',
+        theme_color: '#047857',
+        // The light page background (index.css --ot-canvas): the splash opens light, like the app.
+        background_color: '#eef0f2',
         display: 'standalone',
         start_url: '/',
         scope: '/',

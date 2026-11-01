@@ -90,6 +90,17 @@ describe('the tab bar', () => {
     await r.unmount()
   })
 
+  it('keeps the tab bar on Settings but not the add button, which would cover the ends of its rows', async () => {
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => !!document.querySelector('[data-add-button]'), 'the add button')
+    await act(async () => { navigate({ view: 'settings' }) })
+    await waitFor(() => !document.querySelector('[data-add-button]'), 'the add button gone')
+    expect(bar()).toBeTruthy()
+    await act(async () => { navigate({ view: 'inbox' }) })
+    await waitFor(() => !!document.querySelector('[data-add-button]'), 'the add button back')
+    await r.unmount()
+  })
+
   it('is not rendered from 768 px', async () => {
     width = 1024
     const r = await render(<Shell user={user} onLogout={() => {}} />)

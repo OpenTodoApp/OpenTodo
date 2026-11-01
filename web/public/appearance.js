@@ -85,8 +85,8 @@
       document.head.appendChild(el)
     }
     if (a.mode === 'dark') add(darkBar)
-    else if (a.mode === 'light') add(lightBar || '#0f172a')
-    else if (lightBar || dark) { add(lightBar || '#0f172a', '(prefers-color-scheme: light)'); add(darkBar, '(prefers-color-scheme: dark)') }
+    else if (a.mode === 'light') add(lightBar || '#047857')
+    else if (lightBar || dark) { add(lightBar || '#047857', '(prefers-color-scheme: light)'); add(darkBar, '(prefers-color-scheme: dark)') }
   } catch (e) {
     // Blocked storage or bad JSON: the defaults apply.
   }

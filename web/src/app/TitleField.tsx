@@ -118,7 +118,8 @@ export function TitleField({ title, value, onChange, onCommit, onCancel, project
     ...dataAttrs,
     onChange: (e: { target: { value: string } }) => change(e.target.value),
     onFocus: () => { base.current = title; setDismissed([]); setFocused(true); suggest.fieldProps.onFocus() },
-    onBlur: () => { suggest.fieldProps.onBlur(); setFocused(false); commit() },
+    // A long title scrolled to its end while edited shows its start again once left.
+    onBlur: () => { suggest.fieldProps.onBlur(); setFocused(false); commit(); if (multiline && input.current) input.current.scrollTop = 0 },
     onKeyDown,
   }
   return (
