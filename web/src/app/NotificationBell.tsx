@@ -1,7 +1,7 @@
 import { Icon, Popover } from '../ui'
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { getProject, useNotifications, useTask } from '../lib/localData'
-import { markTaskNotificationsRead } from '../lib/notifications'
+import { markNotificationRead, markTaskNotificationsRead } from '../lib/notifications'
 import type { AppNotification, MemberInvitationPayload, MentionedPayload, PagePayload } from '../lib/types'
 import { navigate, routePath, type Route } from './router'
 import { notificationsOpen } from './signals'
@@ -53,6 +53,12 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
   }), [])
 
   async function choose(n: AppNotification) {
+    // A routine's notice or failed run opens the run (routines-editor D11).
+    if ((n.kind === 'routine' || n.kind === 'routine_failed' || n.kind === 'routine_proposal') && 'runId' in n.payload && !n.payload.taskId) {
+      setOpen(false)
+      await markNotificationRead(n.id)
+      return navigate({ view: 'rules', id: n.payload.ruleId, run: n.payload.runId })
+    }
     if (!n.payload.taskId) return
     setOpen(false)
     await markTaskNotificationsRead(n.payload.taskId)
@@ -90,7 +96,13 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
                   <span className="user-text min-w-0 flex-1">
                     {(n.kind === 'page_replied' || n.kind === 'page_completed') && 'pageId' in n.payload ? (
                       <PageNotification kind={n.kind} payload={n.payload} />
-                    ) : n.kind === 'routine' && 'runId' in n.payload ? (
+                    ) : n.kind === 'routine_failed' && 'count' in n.payload ? (
+                      <span className="block" data-kind="routine_failed">{n.payload.count > 1
+                        ? t.rich('<b>{routine}</b> failed ({n} times today)', { routine: n.payload.ruleName || t('A routine'), n: n.payload.count, b: (chunks) => <strong>{chunks}</strong> })
+                        : n.payload.step > 0
+                          ? t.rich('<b>{routine}</b> failed at step {n}', { routine: n.payload.ruleName || t('A routine'), n: n.payload.step, b: (chunks) => <strong>{chunks}</strong> })
+                          : t.rich('<b>{routine}</b> failed', { routine: n.payload.ruleName || t('A routine'), b: (chunks) => <strong>{chunks}</strong> })}</span>
+                    ) : n.kind === 'routine' && 'text' in n.payload ? (
                       <span className="block" data-kind="routine">{t.rich('<b>{routine}</b>: {text}', { routine: n.payload.ruleName || t('A routine'), text: n.payload.text, b: (chunks) => <strong>{chunks}</strong> })}</span>
                     ) : n.kind === 'mentioned' ? (
                       <span className="block" data-mention-source={'source' in n.payload ? n.payload.source : undefined}>

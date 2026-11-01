@@ -2165,11 +2165,27 @@ export interface RoutinePayload {
   actorName?: undefined
 }
 
+/** A routine's failed run (routines-editor D11): one per routine and day, counting later failures. */
+export interface RoutineAlertPayload {
+  ruleId: string
+  ruleName: string
+  runId: string
+  step: number
+  stepKind?: string
+  day: string
+  count: number
+  at: number
+  taskId?: undefined
+  projectName?: undefined
+  projectId?: undefined
+  actorName?: undefined
+}
+
 export interface AppNotification {
   id: string
   kind: string
   /** AssignedPayload for kind `assigned`, MentionedPayload for `mentioned`, UnblockedPayload for `unblocked`, PagePayload for `page_replied` and `page_completed`, MemberInvitationPayload for `member_invitation`, RoutinePayload for `routine`. */
-  payload: AssignedPayload | MentionedPayload | UnblockedPayload | PagePayload | MemberInvitationPayload | RoutinePayload
+  payload: AssignedPayload | MentionedPayload | UnblockedPayload | PagePayload | MemberInvitationPayload | RoutinePayload | RoutineAlertPayload
   createdAt: number
   readAt: number | null
   readPending?: boolean

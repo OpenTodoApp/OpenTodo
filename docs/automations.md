@@ -9,7 +9,7 @@ order: 46
 ---
 # Automation rules
 
-<picture><source srcset="images/rules-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/rules-light.webp" alt="The Rules page with three rules, each with its switch and a one-line summary such as When label waiting is added → priority 3."></picture>
+<picture><source srcset="images/rules-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/rules-light.webp" alt="The Routines page with three routines, each with its switch, a one-line summary such as When label waiting is added → priority 3, and Run now."></picture>
 
 A rule says **when** something happens, **which tasks** it is for, and **what** to change. *When the label waiting is added, move the task to the Waiting section of Work.* Rules run on your server, so they work while every device is closed. Open **More → [Routines](routines.md)**.
 

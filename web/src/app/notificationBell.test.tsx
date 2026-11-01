@@ -25,6 +25,17 @@ describe('NotificationBell', () => {
     await r.unmount()
   })
 
+  it('words a routine\'s failed run with its count of the day (routines-editor "Failure in the bell")', async () => {
+    await db.notifications.put({ id: 'f1', kind: 'routine_failed', createdAt: 1_760_000_000_000, readAt: null,
+      payload: { ruleId: 'r1', ruleName: 'Weekly digest', runId: 'x2', step: 3, day: '2026-11-01', count: 2, at: 1 } })
+    const r = await render(<NotificationBell />)
+    await waitFor(() => !!document.querySelector('[data-unread]'))
+    await click(document.querySelector('[data-notifications]')!)
+    await waitFor(() => !!document.querySelector('[data-kind="routine_failed"]'))
+    expect(document.querySelector('[data-kind="routine_failed"]')!.textContent).toBe('Weekly digest failed (2 times today)')
+    await r.unmount()
+  })
+
   it('words a mention in a task\'s notes (editor-everywhere D7) apart from a comment mention', async () => {
     const base = { recipientId: 'bob', actorId: 'alice', actorName: 'Alice', commentId: '', taskId: 't1', taskTitle: 'Book flights', excerpt: '', at: 1 }
     await db.notifications.put({ id: 'm1', kind: 'mentioned', createdAt: 1_760_000_000_000, readAt: null, payload: { ...base, source: 'note' } } as never)
