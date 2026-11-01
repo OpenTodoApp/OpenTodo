@@ -17,9 +17,9 @@ afterEach(() => { vi.useRealTimers() })
 
 const projects = [{ id: 'p-work', name: 'Work' }]
 
-function Harness({ title, onCommit, readOnly = false }: { title: string; onCommit: (p: EditPlan) => void; readOnly?: boolean }) {
+function Harness({ title, onCommit, readOnly = false, multiline = false }: { title: string; onCommit: (p: EditPlan) => void; readOnly?: boolean; multiline?: boolean }) {
   const [value, setValue] = useState(title)
-  return <TitleField title={title} value={value} onChange={setValue} onCommit={onCommit} projects={projects} labels={[]} ariaLabel="Title" readOnly={readOnly} />
+  return <TitleField title={title} value={value} onChange={setValue} onCommit={onCommit} projects={projects} labels={[]} ariaLabel="Title" readOnly={readOnly} multiline={multiline} />
 }
 
 async function edit(field: HTMLInputElement, text: string) {
@@ -83,6 +83,16 @@ describe('TitleField', () => {
     await commit(field)
     await flush()
     expect(plans.at(-1)).toEqual({ patch: { title: 'Call the bank tomorrow' }, labels: [], reminders: [] })
+    await r.unmount()
+  })
+
+  it('a long panel title scrolled to its end shows its start again once left', async () => {
+    const r = await render(<Harness title={'Long title '.repeat(20).trim()} onCommit={() => {}} multiline />)
+    const field = r.container.querySelector('textarea')!
+    await act(async () => { field.focus() })
+    field.scrollTop = 80
+    await act(async () => { field.blur() })
+    expect(field.scrollTop).toBe(0)
     await r.unmount()
   })
 })
