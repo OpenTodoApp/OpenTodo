@@ -4,9 +4,11 @@
 // last change; the two never show at once (the undo offer wins, the message waits),
 // so the failure cannot cover the offer's Undo control (design-system "Toast
 // primitive"); its window starts when it is first shown, not when it was raised.
-import { useState } from 'react'
-import { Icon, ToastRegion } from '../ui'
+// Like the offer, it never covers the focused element (useToastClearance).
+import { useRef, useState } from 'react'
+import { Icon, ToastRegion, useToastClearance } from '../ui'
 import { ACTION_TOAST_MS, hideActionToast, useActionToast, useBulkToast, useToastTimer } from './bulk/toastStore'
+import { useResetOnChange } from '../lib/useResetOnChange'
 import { t } from '../lib/i18n'
 
 export function ToastActionHost() {
@@ -15,12 +17,18 @@ export function ToastActionHost() {
   const [hovered, setHovered] = useState(false)
   const [focused, setFocused] = useState(false)
   const shown = toast && !offer ? toast : null
+  const region = useRef<HTMLDivElement>(null)
+  // Removing the focused (or hovered) toast fires no blur (or pointerleave): the hold
+  // resets when the shown message changes or leaves, as the UndoToast's does.
+  useResetOnChange([shown?.key], () => { setHovered(false); setFocused(false) })
   // The window runs from the first render of this message (not from showActionToast:
   // while an offer holds the region the message waits), pausing on hover or focus.
   useToastTimer(shown?.key, shown?.label, ACTION_TOAST_MS, hovered || focused, hideActionToast)
+  // Where the focused element would sit under the message, the region moves aside.
+  const side = useToastClearance(region, !!shown)
   if (!shown) return null
   return (
-    <ToastRegion live="assertive" label={t('Last action')}>
+    <ToastRegion live="assertive" label={t('Last action')} side={side} regionRef={region}>
       <div key={shown.key} className="ui-toast pointer-events-auto flex items-center gap-3 rounded-control border border-default bg-surface px-3 py-2 text-body shadow-2" data-action-toast
         onPointerEnter={() => setHovered(true)} onPointerLeave={() => setHovered(false)}
         onFocus={() => setFocused(true)} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false) }}>
