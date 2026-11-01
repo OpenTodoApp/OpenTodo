@@ -4,7 +4,7 @@
 // client_request_id exactly as on the server (requestSeed, entityID), so a run
 // planned on a device and the same occurrence planned on the server name the
 // same entities. Pure: the snapshot is the run's view of the rows.
-import { nameId } from '../../ids'
+import { nameId, uuid } from '../../ids'
 import { running, startBatch, type EntryLike } from '../../time'
 import { dayPartFields, type DayPart } from '../../dayParts'
 import type { Membership } from '../../types'
@@ -67,7 +67,7 @@ function seedOf(s: ToolSnapshot, a: Args): string {
 
 function newId(seed: string, i: number): string {
   if (seed) return entityId(seed, i)
-  return globalThis.crypto.randomUUID()
+  return uuid()
 }
 
 function chosenId(a: Args, prefix: string): string {
@@ -233,7 +233,7 @@ function addComment(s: ToolSnapshot, a: Args): ToolPlan {
   if (!taskId) throw new ArgError('task_id: the task id is required')
   const body = text(a, 'body', true, 10000)!
   if (!liveTask(s, taskId)) throw notFound('task')
-  const id = chosenId(a, '') || globalThis.crypto.randomUUID()
+  const id = chosenId(a, '') || uuid()
   const patch = { task_id: taskId, author_id: s.userId, body, parent_id: null, mentions: [], created_at: s.now, edited_at: null, deleted_at: null }
   return { changes: [{ entity: 'comment', entityId: id, create: true, patch }] }
 }
@@ -381,7 +381,7 @@ function setFavourite(s: ToolSnapshot, a: Args): ToolPlan {
 function appendToNote(s: ToolSnapshot, a: Args): ToolPlan {
   const taskId = typeof a.task_id === 'string' ? a.task_id : ''
   const txt = text(a, 'text', true, 20000)!
-  const aid = typeof a.append_id === 'string' && a.append_id ? a.append_id : globalThis.crypto.randomUUID()
+  const aid = typeof a.append_id === 'string' && a.append_id ? a.append_id : uuid()
   if (!APPEND_ID.test(aid)) throw new ArgError('append_id: 1 to 64 letters, digits, - or _')
   const t = liveTask(s, taskId)
   const pid = t ? str(t, 'project_id') : ''
