@@ -73,4 +73,4 @@ Email to any address (the server would send mail its owner did not write), fetch
 
 ## Encrypted accounts
 
-A routine that only uses ids, dates, numbers and conditions runs on the server as for any account. One with a step that reads or writes text is skipped with **encrypted** until routines can run on your own devices; Email me is never available with [end-to-end encryption](e2ee.md).
+A routine that only uses ids, dates, numbers and conditions runs on the server as for any account. One with a step that reads or writes text is skipped with **encrypted** until routines can run on your own devices; Email me is never available with [end-to-end encryption](e2ee.md), and Ask AI and Summarise are not available yet.

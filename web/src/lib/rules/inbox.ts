@@ -81,6 +81,8 @@ export interface InboxLine {
   runs: RoutineInboxRun[]
   /** The newest run's time. */
   at: number
+  /** A result applied without asking: the line offers Undo (routines-ai-step D4). */
+  auto?: boolean
 }
 
 const REASON: Record<string, string> = {
@@ -88,8 +90,9 @@ const REASON: Record<string, string> = {
   no_webhook: msg('the webhook is gone'),
 }
 
-/** What a group of successful runs did ("3 tasks created", "23 tasks moved"). */
+/** What a group of successful runs did ("3 tasks created", "23 tasks moved"); "by AI" for results applied without asking. */
 function didText(runs: readonly RoutineInboxRun[]): string {
+  if (runs.some((r) => r.ai_auto)) return aiDidText(runs)
   let created = 0
   let changed = 0
   for (const r of runs) {
@@ -103,6 +106,14 @@ function didText(runs: readonly RoutineInboxRun[]): string {
   if (created) return t('{n, plural, one {# task created} other {# tasks created}}', { n: created })
   if (changed) return t('{n, plural, one {# task changed} other {# tasks changed}}', { n: changed })
   return t('{n, plural, one {# item written} other {# items written}}', { n: writes })
+}
+
+function aiDidText(runs: readonly RoutineInboxRun[]): string {
+  let created = 0
+  for (const r of runs) for (const s of r.steps ?? []) if (s.status === 'ok' && s.kind === 'create_tasks') created += s.items
+  const writes = runs.reduce((n, r) => n + r.writes, 0)
+  if (created) return t('{n, plural, one {# task created by AI} other {# tasks created by AI}}', { n: created })
+  return t('{n, plural, one {# item written by AI} other {# items written by AI}}', { n: writes })
 }
 
 /** Why a failed run stopped ("Not available: outgoing email is not set up"). */
@@ -144,7 +155,7 @@ export function inboxLines(runs: readonly RoutineInboxRun[], rules: readonly Pic
       const text = g.success.length === 1
         ? `${name}${by} · ${didText(g.success)} · ${when(last.at)}`
         : `${t('{name} ran {n} times', { name, n: g.success.length })}${by} · ${didText(g.success)}`
-      out.push({ ruleId, name, kind: 'success', runs: g.success, at: last.at, text })
+      out.push({ ruleId, name, kind: 'success', runs: g.success, at: last.at, text, ...(last.ai_auto && !last.undone_at ? { auto: true } : {}) })
     }
   }
   return out.sort((a, b) => (a.kind === b.kind ? b.at - a.at : ORDER[a.kind] - ORDER[b.kind]))

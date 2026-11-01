@@ -19,11 +19,14 @@ import { Button, Card, Icon, IconButton } from '../../ui'
 import { act } from '../actionError'
 import { ActionMenu, type ActionGroup } from '../menus/ActionMenu'
 import { navigate } from '../router'
+import { ProposalReview } from './ProposalReview'
 
 /** The card's view: its lines and actions (stories and tests render it directly). */
-export function InboxCardView({ lines, more, hide, online, onOpen, onDismiss, onSeen, onHide, onAll }: {
+export function InboxCardView({ lines, more, hide, online, onOpen, onDismiss, onSeen, onHide, onAll, onUndo }: {
   lines: InboxLine[]; more: number; hide: boolean; online: boolean
   onOpen: (line: InboxLine) => void; onDismiss: (line: InboxLine) => void; onSeen: () => void; onHide: (on: boolean) => void; onAll: () => void
+  /** Undo of a result applied without asking (routines-ai-step D4). */
+  onUndo?: (line: InboxLine) => void
 }) {
   const groups: ActionGroup[] = [{ items: [
     { kind: 'action', id: 'seen', label: t('Mark as seen'), icon: 'check', onSelect: onSeen },
@@ -45,6 +48,7 @@ export function InboxCardView({ lines, more, hide, online, onOpen, onDismiss, on
               className={`user-text min-h-11 min-w-0 flex-1 truncate rounded-control px-2 text-left text-meta hover:bg-sunken dark:hover:bg-raised ${l.kind === 'failure' ? 'text-danger' : l.kind === 'proposal' ? 'font-medium text-strong' : 'text-default'}`}>
               {l.text}
             </button>
+            {l.auto && onUndo && <Button size="sm" variant="ghost" disabled={!online} onClick={() => onUndo(l)} data-inbox-undo>{t('Undo')}</Button>}
             {l.kind === 'success' && (
               <IconButton icon="x" size="sm" variant="ghost" label={t('Dismiss {name}', { name: l.name })} disabled={!online} onClick={() => onDismiss(l)} />
             )}
@@ -79,6 +83,7 @@ export default function RoutinesInboxCard() {
   const [runs, setRuns] = useState<RoutineInboxRun[] | null>(() => cachedInbox()?.runs ?? null)
   const [gone, setGone] = useState<Set<string>>(new Set())
   const [frozen, setFrozen] = useState(false)
+  const [review, setReview] = useState<{ id: string; name: string; runs: string[] } | null>(null)
   const box = useRef<HTMLDivElement>(null)
   const marker = seen?.marker ?? 0
   // Fetched with the Inbox and after a sync; once the card counted as seen it keeps what it showed.
@@ -103,7 +108,16 @@ export default function RoutinesInboxCard() {
     return () => clearTimeout(timer)
   }, [visible, newest]) // eslint-disable-line react-hooks/exhaustive-deps
   if (!lines.length) return null
-  const open = (l: InboxLine) => navigate({ view: 'rules', id: l.ruleId, run: l.runs[0].run_id })
+  const open = (l: InboxLine) => {
+    const proposal = l.kind === 'proposal' ? l.runs[0].proposal : undefined
+    if (proposal) setReview({ id: proposal.id, name: l.name, runs: [l.runs[0].run_id] })
+    else navigate({ view: 'rules', id: l.ruleId, run: l.runs[0].run_id })
+  }
+  const undo = (l: InboxLine) => {
+    const run = l.runs[0]
+    setGone((g) => new Set([...g, run.run_id]))
+    act(api.undoRoutineRun(run.rule_id, run.run_id).then(() => undefined))
+  }
   const dismiss = (l: InboxLine) => {
     setGone((g) => new Set([...g, ...l.runs.map((r) => r.run_id)]))
     act(Promise.all(l.runs.map((r) => api.dismissRoutineRun(r.rule_id, r.run_id))).then(() => undefined))
@@ -111,9 +125,11 @@ export default function RoutinesInboxCard() {
   return (
     <div ref={box}>
       <InboxCardView lines={lines} more={all.length - lines.length} hide={hide} online={online}
-        onOpen={open} onDismiss={dismiss}
+        onOpen={open} onDismiss={dismiss} onUndo={undo}
         onSeen={() => { markSeen(); setGone((g) => new Set([...g, ...lines.filter((l) => l.kind === 'success').flatMap((l) => l.runs.map((r) => r.run_id))])) }}
         onHide={(on) => act(setHideSuccesses(on))} onAll={() => navigate({ view: 'rules', tab: 'runs' })} />
+      {review && <ProposalReview proposalId={review.id} ruleName={review.name} onClose={() => setReview(null)}
+        onDone={() => setGone((g) => new Set([...g, ...review.runs]))} />}
     </div>
   )
 }

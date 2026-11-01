@@ -23,6 +23,9 @@ const (
 	// AI steps (routines-ai-step D1, D10).
 	ReasonAINotConfigured = "ai_not_configured"
 	ReasonAINoConsent     = "ai_no_consent"
+	// ReasonAIEncrypted: an encrypted account's AI steps need one of its
+	// devices to run them (routines-ai-step D7), which is not offered yet.
+	ReasonAIEncrypted = "ai_encrypted"
 )
 
 // Settings that fix a reason (the web app links them; "" when nothing can).
@@ -52,6 +55,7 @@ var reasonText = map[string]string{
 	ReasonDemo:               "not offered on a demo instance",
 	ReasonAINotConfigured:    "the assistant is not set up for you on this server",
 	ReasonAINoConsent:        "accept the assistant's updated terms for routines",
+	ReasonAIEncrypted:        "AI steps cannot run for an end-to-end encrypted account yet",
 }
 
 // SettingFor is the setting that fixes a reason ("" when none can).
@@ -139,6 +143,8 @@ func Available(kind string, env Env) Availability {
 		}
 	case NeedsAI:
 		switch {
+		case env.Encrypted && !env.AI:
+			return unavailable(ReasonAIEncrypted)
 		case !env.AI:
 			return unavailable(ReasonAINotConfigured)
 		case !env.AIConsent:

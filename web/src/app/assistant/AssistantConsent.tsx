@@ -3,6 +3,7 @@ import type { AssistantStatus } from '../../lib/assistantStatus'
 import { t } from '../../lib/i18n'
 import type { DeviceSetup } from '../../lib/assistantDevice/settings'
 import { DeviceDisclosure } from './AssistantDevice'
+import { RoutinesDisclosure } from './RoutinesDisclosure'
 
 export interface ConsentProps {
   status: AssistantStatus
@@ -46,6 +47,7 @@ export function AssistantConsent({ status, connected, busy, error, onAccept, dev
       <p className="text-muted">
         {t('In shared projects this includes text other members wrote. Changes are only proposed: nothing in your tasks changes until you review and apply them, and you can undo them. Conversations stay on this device. You can withdraw consent in Settings → Integrations → Assistant.')}
       </p>
+      {!device && <RoutinesDisclosure />}
       {status.allow_member_keys && !own && !device && (
         <label className="block">
           {t.rich('<span>Your own API key (optional)</span><span2>Used instead of the server’s key. It is stored on the server, never shown again and never sent to your browser.</span2>', { span: (chunks) => <span className="font-medium">{chunks}</span>, span2: (chunks) => <span className="block text-meta text-muted">{chunks}</span> })}

@@ -6,7 +6,7 @@ Prerequisites: `routines-engine` and `routines-editor` are merged.
 
 - [x] 1.1 Step table: `ask_ai` and `summarise` (inputs, outputs, content, at most 3 per routine) in Go and TypeScript with vectors; availability `ai_not_configured` and `ai_no_consent`; verify `go test ./internal/ruleval/...` and `npm test`
 - [x] 1.2 `internal/assistant`: a single-shot completion without tools for routine steps (fixed instructions, untrusted context, response checks, 60 s per call), usage tagged `routine`, allowance and own-key rules; verify `go test ./internal/assistant/...` with a stub provider (answer, refusal, cut-off, quota)
-- [ ] 1.3 Consent: the disclosure paragraph and version, `routines` on the consent record, the on-device disclosure; verify `go test ./internal/httpapi/...` (401; consent required for AI steps only) and a happy-dom test
+- [x] 1.3 Consent: the disclosure paragraph and version, `routines` on the consent record, the on-device disclosure; verify `go test ./internal/httpapi/...` (401; consent required for AI steps only) and a happy-dom test
 - [x] 1.4 `rule.ai_apply` and `rule.ai_budget` in `internal/sync/ops.go`; regenerate with `UPDATE_OP_SCHEMA=1 go test ./internal/sync -run TestGeneratedOpSchema`; verify `go test ./internal/sync/...`
 
 ## 2. Proposals and auto mode
@@ -29,12 +29,12 @@ Prerequisites: `routines-engine` and `routines-editor` are merged.
 
 ## 4. Editor and Inbox
 
-- [ ] 4.1 AI cards, token estimate in previews (never calling the model), Test with the confirmation and real counts; verify happy-dom tests ("Estimate first")
-- [ ] 4.2 Apply without asking switch with reasons, the fallback notice, the budget field, 7-day usage; verify happy-dom tests
-- [ ] 4.3 Proposal review sheet (items, ticks, Written by AI, Apply, Dismiss, Undo toast), Inbox card and bell entries; auto runs shown even with successes hidden; verify happy-dom tests and `npm test`
+- [x] 4.1 AI cards, token estimate in previews (never calling the model), Test with the confirmation and real counts; verify happy-dom tests ("Estimate first")
+- [x] 4.2 Apply without asking switch with reasons, the fallback notice, the budget field, 7-day usage; verify happy-dom tests
+- [x] 4.3 Proposal review sheet (items, ticks, Written by AI, Apply, Dismiss, Undo toast), Inbox card and bell entries; auto runs shown even with successes hidden; verify happy-dom tests and `npm test`
 - [ ] 4.4 Encrypted-account warning and opt-in, unavailable email and text webhooks; verify a happy-dom test
-- [ ] 4.5 Shortcuts in the review (`Enter`, `Escape`) in the registry; verify the conflict test with `npm test`
-- [ ] 4.6 Strings in the six catalogs; verify `make i18n-check`
+- [x] 4.5 Shortcuts in the review (`Enter`, `Escape`) in the registry; verify the conflict test with `npm test`
+- [x] 4.6 Strings in the six catalogs; verify `make i18n-check`
 
 ## 5. Checks
 
