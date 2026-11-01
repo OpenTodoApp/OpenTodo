@@ -1,0 +1,494 @@
+{
+  "check": [
+    {
+      "name": "groceries from a note",
+      "trigger": "date",
+      "steps": [
+        {"id": "a", "kind": "note_text", "in": {"of": {"ref": "p"}}},
+        {"id": "b", "kind": "split_lines", "in": {"text": {"ref": "a"}}}
+      ],
+      "error": {"step": "a", "input": "of", "code": "unknown_ref"}
+    },
+    {
+      "name": "find project, note, lines, create tasks",
+      "trigger": "date",
+      "steps": [
+        {"id": "p", "kind": "find_project", "in": {"name": {"literal": "Groceries"}}},
+        {"id": "a", "kind": "note_text", "in": {"of": {"ref": "p"}}},
+        {"id": "b", "kind": "split_lines", "in": {"text": {"ref": "a"}}},
+        {"id": "c", "kind": "create_tasks", "in": {"text": {"ref": "b"}, "project": {"literal": {"project": "errands"}}}},
+        {"id": "d", "kind": "count", "in": {"list": {"ref": "c"}}},
+        {"id": "e", "kind": "if", "in": {"value": {"ref": "d"}, "is": {"literal": {">": 10}}},
+          "then": [{"id": "f", "kind": "notify", "in": {"text": {"literal": {"format": "{d} groceries, a big shop"}}}}],
+          "otherwise": []}
+      ],
+      "types": {"p": "project", "a": "text", "b": "lines", "c": "tasks", "d": "number", "e": "none", "f": "none"},
+      "content": "p"
+    },
+    {
+      "name": "wrong type: tasks as notify text",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"labels": {"any": ["waiting"]}}}}},
+        {"id": "b", "kind": "notify", "in": {"text": {"ref": "a"}}}
+      ],
+      "error": {"step": "b", "input": "text", "code": "type_mismatch", "message": "notify: text expects Text, got Tasks"}
+    },
+    {
+      "name": "for each: note text of tasks gives lines",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"query": {"literal": "today"}}},
+        {"id": "b", "kind": "note_text", "in": {"of": {"ref": "a"}}}
+      ],
+      "types": {"a": "tasks", "b": "lines"},
+      "content": "a"
+    },
+    {
+      "name": "coercion: a task where tasks is accepted",
+      "trigger": "task",
+      "steps": [{"id": "a", "kind": "change_tasks", "in": {"tasks": {"ref": "trigger"}, "set": {"literal": {"priority": 1}}}}],
+      "types": {"a": "tasks"},
+      "content": ""
+    },
+    {
+      "name": "coercion: a number where text is accepted",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "overdue"}}}},
+        {"id": "b", "kind": "count", "in": {"list": {"ref": "a"}}},
+        {"id": "c", "kind": "notify", "in": {"text": {"ref": "b"}}}
+      ],
+      "types": {"a": "tasks", "b": "number", "c": "none"},
+      "content": "c"
+    },
+    {
+      "name": "coercion: a date where text is accepted",
+      "trigger": "date",
+      "steps": [{"id": "a", "kind": "split_lines", "in": {"text": {"ref": "trigger"}}}],
+      "types": {"a": "lines"}
+    },
+    {
+      "name": "no coercion from tasks to text in join",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "today"}}}},
+        {"id": "b", "kind": "join", "in": {"lines": {"ref": "a"}}}
+      ],
+      "error": {"step": "b", "input": "lines", "code": "type_mismatch", "message": "join: lines expects Lines, got Tasks"}
+    },
+    {
+      "name": "reference to a later step",
+      "trigger": "task",
+      "steps": [
+        {"id": "b", "kind": "count", "in": {"list": {"ref": "c"}}},
+        {"id": "c", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "today"}}}}
+      ],
+      "error": {"step": "b", "input": "list", "code": "unknown_ref"}
+    },
+    {
+      "name": "21 steps",
+      "trigger": "task",
+      "steps": [
+        {"id": "s1", "kind": "stop_timer"}, {"id": "s2", "kind": "stop_timer"}, {"id": "s3", "kind": "stop_timer"},
+        {"id": "s4", "kind": "stop_timer"}, {"id": "s5", "kind": "stop_timer"}, {"id": "s6", "kind": "stop_timer"},
+        {"id": "s7", "kind": "stop_timer"}, {"id": "s8", "kind": "stop_timer"}, {"id": "s9", "kind": "stop_timer"},
+        {"id": "s10", "kind": "stop_timer"}, {"id": "s11", "kind": "stop_timer"}, {"id": "s12", "kind": "stop_timer"},
+        {"id": "s13", "kind": "stop_timer"}, {"id": "s14", "kind": "stop_timer"}, {"id": "s15", "kind": "stop_timer"},
+        {"id": "s16", "kind": "stop_timer"}, {"id": "s17", "kind": "stop_timer"}, {"id": "s18", "kind": "stop_timer"},
+        {"id": "s19", "kind": "stop_timer"}, {"id": "s20", "kind": "stop_timer"}, {"id": "s21", "kind": "stop_timer"}
+      ],
+      "error": {"step": "", "input": "", "code": "too_many_steps"}
+    },
+    {
+      "name": "steps inside blocks count",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "today"}}}},
+        {"id": "b", "kind": "repeat", "in": {"list": {"ref": "a"}}, "do": [
+          {"id": "c1", "kind": "stop_timer"}, {"id": "c2", "kind": "stop_timer"}, {"id": "c3", "kind": "stop_timer"},
+          {"id": "c4", "kind": "stop_timer"}, {"id": "c5", "kind": "stop_timer"}, {"id": "c6", "kind": "stop_timer"},
+          {"id": "c7", "kind": "stop_timer"}]},
+        {"id": "d1", "kind": "stop_timer"}, {"id": "d2", "kind": "stop_timer"}, {"id": "d3", "kind": "stop_timer"},
+        {"id": "d4", "kind": "stop_timer"}, {"id": "d5", "kind": "stop_timer"}, {"id": "d6", "kind": "stop_timer"},
+        {"id": "d7", "kind": "stop_timer"}, {"id": "d8", "kind": "stop_timer"}, {"id": "d9", "kind": "stop_timer"},
+        {"id": "d10", "kind": "stop_timer"}, {"id": "d11", "kind": "stop_timer"}, {"id": "d12", "kind": "stop_timer"},
+        {"id": "d13", "kind": "stop_timer"}
+      ],
+      "error": {"step": "", "input": "", "code": "too_many_steps"}
+    },
+    {
+      "name": "blocks nest at most 3 deep",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "if", "in": {"value": {"ref": "trigger"}, "is": {"literal": {"not_empty": true}}}, "then": [
+          {"id": "b", "kind": "if", "in": {"value": {"ref": "trigger"}, "is": {"literal": {"not_empty": true}}}, "then": [
+            {"id": "c", "kind": "if", "in": {"value": {"ref": "trigger"}, "is": {"literal": {"not_empty": true}}}, "then": [
+              {"id": "d", "kind": "if", "in": {"value": {"ref": "trigger"}, "is": {"literal": {"not_empty": true}}}, "then": [
+                {"id": "e", "kind": "stop"}]}]}]}]}
+      ],
+      "error": {"step": "d", "input": "", "code": "too_deep"}
+    },
+    {
+      "name": "three levels are fine",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "if", "in": {"value": {"ref": "trigger"}, "is": {"literal": {"not_empty": true}}}, "then": [
+          {"id": "b", "kind": "if", "in": {"value": {"ref": "trigger"}, "is": {"literal": {"not_empty": true}}}, "then": [
+            {"id": "c", "kind": "if", "in": {"value": {"ref": "trigger"}, "is": {"literal": {"not_empty": true}}}, "then": [
+              {"id": "e", "kind": "stop"}]}]}]}
+      ],
+      "types": {"a": "none", "b": "none", "c": "none", "e": "none"},
+      "content": ""
+    },
+    {
+      "name": "unknown kind",
+      "trigger": "task",
+      "steps": [{"id": "a", "kind": "fetch_url", "in": {}}],
+      "error": {"step": "a", "input": "", "code": "unknown_kind"}
+    },
+    {
+      "name": "email to another address is an unknown input",
+      "trigger": "task",
+      "steps": [{"id": "a", "kind": "email_me", "in": {"subject": {"literal": "Hi"}, "text": {"literal": "Body"}, "to": {"literal": "x@example.com"}}}],
+      "error": {"step": "a", "input": "to", "code": "unknown_input"}
+    },
+    {
+      "name": "duplicate id",
+      "trigger": "task",
+      "steps": [{"id": "a", "kind": "stop_timer"}, {"id": "a", "kind": "stop_timer"}],
+      "error": {"step": "a", "input": "", "code": "duplicate_id"}
+    },
+    {
+      "name": "reserved id",
+      "trigger": "task",
+      "steps": [{"id": "item", "kind": "stop_timer"}],
+      "error": {"step": "item", "input": "", "code": "invalid_step"}
+    },
+    {
+      "name": "id too long",
+      "trigger": "task",
+      "steps": [{"id": "abcdefghi", "kind": "stop_timer"}],
+      "error": {"step": "abcdefghi", "input": "", "code": "invalid_step"}
+    },
+    {
+      "name": "missing required input",
+      "trigger": "task",
+      "steps": [{"id": "a", "kind": "notify", "in": {}}],
+      "error": {"step": "a", "input": "text", "code": "missing_input"}
+    },
+    {
+      "name": "find tasks needs exactly one source",
+      "trigger": "task",
+      "steps": [{"id": "a", "kind": "find_tasks", "in": {"query": {"literal": "today"}, "view": {"literal": "v1"}}}],
+      "error": {"step": "a", "input": "query", "code": "missing_input"}
+    },
+    {
+      "name": "bad literal: if test",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "today"}}}},
+        {"id": "b", "kind": "if", "in": {"value": {"ref": "a"}, "is": {"literal": {"about": 3}}}}
+      ],
+      "error": {"step": "b", "input": "is", "code": "invalid_literal"}
+    },
+    {
+      "name": "literal-only input given a reference",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "today"}}}},
+        {"id": "b", "kind": "take", "in": {"list": {"ref": "a"}, "n": {"ref": "a"}}}
+      ],
+      "error": {"step": "b", "input": "n", "code": "invalid_step"}
+    },
+    {
+      "name": "reference-only input given a literal",
+      "trigger": "task",
+      "steps": [{"id": "a", "kind": "count", "in": {"list": {"literal": ["x"]}}}],
+      "error": {"step": "a", "input": "list", "code": "invalid_step"}
+    },
+    {
+      "name": "too many lines in a literal",
+      "trigger": "task",
+      "steps": [{"id": "a", "kind": "change_tasks", "in": {"tasks": {"ref": "trigger"}, "set": {"literal": {}}}}],
+      "error": {"step": "a", "input": "set", "code": "invalid_literal"}
+    },
+    {
+      "name": "set with energy and trash",
+      "trigger": "task",
+      "steps": [{"id": "a", "kind": "change_tasks", "in": {"tasks": {"ref": "trigger"}, "set": {"literal": {"energy": "low", "trash": true}}}}],
+      "types": {"a": "tasks"},
+      "content": ""
+    },
+    {
+      "name": "repeat: item and collected output",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"due": {"within_days": 0}}}},
+        {"id": "b", "kind": "repeat", "in": {"list": {"ref": "a"}}, "do": [
+          {"id": "c", "kind": "add_comment", "in": {"task": {"ref": "item"}, "text": {"literal": "Carried over"}}},
+          {"id": "d", "kind": "change_tasks", "in": {"tasks": {"ref": "item"}, "set": {"literal": {"due": "tomorrow"}}}}]},
+        {"id": "e", "kind": "count", "in": {"list": {"ref": "b"}}}
+      ],
+      "error": {"step": "a", "input": "condition", "code": "invalid_step"}
+    },
+    {
+      "name": "repeat over found tasks",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "today"}}}},
+        {"id": "b", "kind": "repeat", "in": {"list": {"ref": "a"}}, "do": [
+          {"id": "c", "kind": "add_comment", "in": {"task": {"ref": "item"}, "text": {"literal": "Carried over"}}},
+          {"id": "d", "kind": "change_tasks", "in": {"tasks": {"ref": "item"}, "set": {"literal": {"due": "tomorrow"}}}}]},
+        {"id": "e", "kind": "count", "in": {"list": {"ref": "b"}}}
+      ],
+      "types": {"a": "tasks", "b": "tasks", "c": "none", "d": "tasks", "e": "number"},
+      "content": "c"
+    },
+    {
+      "name": "item outside a repeat",
+      "trigger": "task",
+      "steps": [{"id": "a", "kind": "get_task", "in": {"task": {"ref": "item"}}}],
+      "error": {"step": "a", "input": "task", "code": "unknown_ref"}
+    },
+    {
+      "name": "a step inside a block is not visible after it",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "if", "in": {"value": {"ref": "trigger"}, "is": {"literal": {"not_empty": true}}}, "then": [
+          {"id": "b", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "today"}}}}]},
+        {"id": "c", "kind": "count", "in": {"list": {"ref": "b"}}}
+      ],
+      "error": {"step": "c", "input": "list", "code": "unknown_ref"}
+    },
+    {
+      "name": "a step with no output",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "stop_timer"},
+        {"id": "b", "kind": "count", "in": {"list": {"ref": "a"}}}
+      ],
+      "error": {"step": "b", "input": "list", "code": "no_output"}
+    },
+    {
+      "name": "template placeholder to a later step",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "format", "in": {"template": {"literal": "{b} tasks"}}},
+        {"id": "b", "kind": "stop_timer"}
+      ],
+      "error": {"step": "a", "input": "template", "code": "unknown_ref"}
+    },
+    {
+      "name": "template placeholder with no output",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "stop_timer"},
+        {"id": "b", "kind": "format", "in": {"template": {"literal": "{a} tasks"}}}
+      ],
+      "error": {"step": "b", "input": "template", "code": "no_output"}
+    },
+    {
+      "name": "plain text literal braces are not references",
+      "trigger": "task",
+      "steps": [{"id": "a", "kind": "notify", "in": {"text": {"literal": "{x} literally"}}}],
+      "types": {"a": "none"},
+      "content": "a"
+    },
+    {
+      "name": "for each with no list of the output",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "today"}}}},
+        {"id": "b", "kind": "tracked_time", "in": {"period": {"literal": "today"}, "project": {"ref": "a"}}}
+      ],
+      "error": {"step": "b", "input": "project", "code": "type_mismatch", "message": "tracked_time: project expects Project, got Tasks"}
+    },
+    {
+      "name": "for each of a project step is refused",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "split_lines", "in": {"text": {"literal": "Home\nWork"}}},
+        {"id": "b", "kind": "find_project", "in": {"name": {"ref": "a"}}}
+      ],
+      "error": {"step": "b", "input": "", "code": "for_each"}
+    },
+    {
+      "name": "filter keeps the list type",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "split_lines", "in": {"text": {"literal": "a\nb"}}},
+        {"id": "b", "kind": "filter", "in": {"list": {"ref": "a"}, "where": {"literal": {"contains": "a"}}}},
+        {"id": "c", "kind": "sort", "in": {"list": {"ref": "b"}, "by": {"literal": "text"}}},
+        {"id": "d", "kind": "take", "in": {"list": {"ref": "c"}, "n": {"literal": 1}}}
+      ],
+      "types": {"a": "lines", "b": "lines", "c": "lines", "d": "lines"},
+      "content": "a"
+    },
+    {
+      "name": "content-free routine on tasks",
+      "trigger": "tasks",
+      "steps": [
+        {"id": "a", "kind": "filter", "in": {"list": {"ref": "trigger"}, "where": {"literal": {"priority": {"in": [1]}}}}},
+        {"id": "b", "kind": "sort", "in": {"list": {"ref": "a"}, "by": {"literal": "due"}, "direction": {"literal": "desc"}}},
+        {"id": "c", "kind": "count", "in": {"list": {"ref": "b"}}},
+        {"id": "d", "kind": "if", "in": {"value": {"ref": "c"}, "is": {"literal": {">": 5}}}, "then": [
+          {"id": "e", "kind": "change_tasks", "in": {"tasks": {"ref": "b"}, "set": {"literal": {"due": "tomorrow"}}}}]},
+        {"id": "f", "kind": "webhook", "in": {"webhook_id": {"literal": "w1"}, "tasks": {"ref": "b"}}}
+      ],
+      "types": {"a": "tasks", "b": "tasks", "c": "number", "d": "none", "e": "tasks", "f": "none"},
+      "content": ""
+    },
+    {
+      "name": "webhook with text is content",
+      "trigger": "task",
+      "steps": [{"id": "a", "kind": "webhook", "in": {"webhook_id": {"literal": "w1"}, "text": {"literal": "hello"}}}],
+      "types": {"a": "none"},
+      "content": "a"
+    },
+    {
+      "name": "change tasks with a comment is content",
+      "trigger": "task",
+      "steps": [{"id": "a", "kind": "change_tasks", "in": {"tasks": {"ref": "trigger"}, "set": {"literal": {"comment": {"text": "hi"}}}}}],
+      "types": {"a": "tasks"},
+      "content": "a"
+    },
+    {
+      "name": "date literal shapes",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "create_tasks", "in": {"title": {"literal": "Pay rent"}, "due": {"literal": {"in_days": 3}}}},
+        {"id": "b", "kind": "project_from_template", "in": {"template": {"literal": "weekly-review"}, "start": {"literal": "today"}}}
+      ],
+      "types": {"a": "tasks", "b": "project"},
+      "content": "a"
+    },
+    {
+      "name": "bad date literal",
+      "trigger": "task",
+      "steps": [{"id": "a", "kind": "create_tasks", "in": {"title": {"literal": "Pay rent"}, "due": {"literal": "next tuesday"}}}],
+      "error": {"step": "a", "input": "due", "code": "invalid_literal"}
+    },
+    {
+      "name": "notify text too long",
+      "trigger": "task",
+      "steps": [{"id": "a", "kind": "notify", "in": {"text": {"literal": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}}}],
+      "error": {"step": "a", "input": "text", "code": "invalid_literal"}
+    },
+    {
+      "name": "a schedule's date as a trigger for change tasks",
+      "trigger": "date",
+      "steps": [{"id": "a", "kind": "change_tasks", "in": {"tasks": {"ref": "trigger"}, "set": {"literal": {"priority": 1}}}}],
+      "error": {"step": "a", "input": "tasks", "code": "type_mismatch", "message": "change_tasks: tasks expects Tasks, got Date"}
+    },
+    {
+      "name": "two different lists for each",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "today"}}}},
+        {"id": "b", "kind": "split_lines", "in": {"text": {"literal": "a"}}},
+        {"id": "c", "kind": "add_comment", "in": {"task": {"ref": "a"}, "text": {"ref": "b"}}}
+      ],
+      "error": {"step": "c", "input": "text", "code": "for_each"}
+    },
+    {
+      "name": "unknown member on a step",
+      "trigger": "task",
+      "steps": [{"id": "a", "kind": "stop_timer", "do": []}],
+      "error": {"step": "a", "input": "", "code": "invalid_step"}
+    },
+    {
+      "name": "an empty list",
+      "trigger": "task",
+      "steps": [],
+      "error": {"step": "", "input": "", "code": "invalid_step"}
+    }
+  ],
+  "reading": [
+    {
+      "name": "steps null: one change tasks step with the actions",
+      "actions": {"priority": 1},
+      "steps": null,
+      "legacy": true,
+      "read": [{"id": "a", "kind": "change_tasks", "in": {"tasks": {"ref": "trigger"}, "set": {"literal": {"priority": 1}}}}]
+    },
+    {
+      "name": "steps a list: the actions are ignored",
+      "actions": {"priority": 1},
+      "steps": [{"id": "x", "kind": "stop_timer"}],
+      "legacy": false,
+      "read": [{"id": "x", "kind": "stop_timer"}]
+    },
+    {
+      "name": "steps a list, actions null",
+      "actions": null,
+      "steps": [{"id": "x", "kind": "stop_timer"}],
+      "legacy": false,
+      "read": [{"id": "x", "kind": "stop_timer"}]
+    },
+    {
+      "name": "neither",
+      "actions": null,
+      "steps": null,
+      "legacy": true,
+      "read": null
+    }
+  ],
+  "data": [
+    {"fn": "split_lines", "in": {"text": "- oat milk\n- [ ] bread tomorrow\n\n- apples"}, "out": ["oat milk", "bread tomorrow", "apples"]},
+    {"fn": "split_lines", "in": {"text": "  one  \r\n* two\n+ three\n1. four\n2) five\n- [x] six\n[X] seven\n- \n-\n"}, "out": ["one", "two", "three", "four", "five", "six", "seven"]},
+    {"fn": "split_lines", "in": {"text": "-not a marker\n1.5 kg flour\n#tag"}, "out": ["-not a marker", "1.5 kg flour", "#tag"]},
+    {"fn": "split_lines", "in": {"text": ""}, "out": []},
+    {"fn": "join", "in": {"lines": ["a", "b", "c"], "separator": ""}, "out": "a\nb\nc"},
+    {"fn": "join", "in": {"lines": ["a", "b"], "separator": ", "}, "out": "a, b"},
+    {"fn": "join", "in": {"lines": [], "separator": ", "}, "out": ""},
+    {"fn": "format", "in": {"template": "{d} groceries, a big shop", "vals": {"d": "12"}}, "out": "12 groceries, a big shop"},
+    {"fn": "format", "in": {"template": "{a} and {b} and {zz}", "vals": {"a": "x", "b": "{a}"}}, "out": "x and {a} and {zz}"},
+    {"fn": "format", "in": {"template": "{A} {a-b} {}", "vals": {"a": "x"}}, "out": "{A} {a-b} {}"},
+    {"fn": "replace", "in": {"text": "Milk, milk, MILK", "find": "milk", "with": "oat", "case": false}, "out": "oat, oat, oat"},
+    {"fn": "replace", "in": {"text": "Milk, milk, MILK", "find": "milk", "with": "oat", "case": true}, "out": "Milk, oat, MILK"},
+    {"fn": "replace", "in": {"text": "a.b.c", "find": ".", "with": "-", "case": true}, "out": "a-b-c"},
+    {"fn": "replace", "in": {"text": "Çava ÇAVA", "find": "çava", "with": "ok", "case": false}, "out": "ok ok"},
+    {"fn": "replace", "in": {"text": "abc", "find": "", "with": "x", "case": false}, "out": "abc"},
+    {"fn": "filter_lines", "in": {"lines": ["Oat milk", "bread", "MILK chocolate"], "text": "milk", "not": false}, "out": ["Oat milk", "MILK chocolate"]},
+    {"fn": "filter_lines", "in": {"lines": ["Oat milk", "bread", "MILK chocolate"], "text": "milk", "not": true}, "out": ["bread"]},
+    {"fn": "sort_lines", "in": {"lines": ["banana", "Apple", "cherry", "apple"], "desc": false}, "out": ["Apple", "apple", "banana", "cherry"]},
+    {"fn": "sort_lines", "in": {"lines": ["banana", "Apple", "cherry"], "desc": true}, "out": ["cherry", "banana", "Apple"]},
+    {"fn": "sort_tasks", "in": {"tasks": [{"id": "1", "due": "2026-11-03"}, {"id": "2"}, {"id": "3", "due": "2026-11-01"}], "by": "due", "desc": false}, "out": ["3", "1", "2"]},
+    {"fn": "sort_tasks", "in": {"tasks": [{"id": "1", "due": "2026-11-03"}, {"id": "2"}, {"id": "3", "due": "2026-11-01"}], "by": "due", "desc": true}, "out": ["1", "3", "2"]},
+    {"fn": "sort_tasks", "in": {"tasks": [{"id": "1", "priority": 3}, {"id": "2"}, {"id": "3", "priority": 1}, {"id": "4", "priority": 4}], "by": "priority", "desc": false}, "out": ["3", "1", "2", "4"]},
+    {"fn": "sort_tasks", "in": {"tasks": [{"id": "1", "title": "b"}, {"id": "2", "title": "A"}, {"id": "3", "title": "c"}], "by": "title", "desc": false}, "out": ["2", "1", "3"]},
+    {"fn": "sort_tasks", "in": {"tasks": [{"id": "1", "created_at": 30}, {"id": "2", "created_at": 10}], "by": "created", "desc": false}, "out": ["2", "1"]},
+    {"fn": "take", "in": {"list": ["a", "b", "c", "d"], "n": 2, "from_end": false}, "out": ["a", "b"]},
+    {"fn": "take", "in": {"list": ["a", "b", "c", "d"], "n": 2, "from_end": true}, "out": ["c", "d"]},
+    {"fn": "take", "in": {"list": ["a"], "n": 5, "from_end": false}, "out": ["a"]},
+    {"fn": "number", "in": {"n": 12}, "out": "12"},
+    {"fn": "number", "in": {"n": 2.5}, "out": "2.5"},
+    {"fn": "number", "in": {"n": -3}, "out": "-3"},
+    {"fn": "holds", "in": {"value": {"type": "number", "number": 12}, "is": {">": 10}}, "out": true},
+    {"fn": "holds", "in": {"value": {"type": "number", "number": 4}, "is": {">": 10}}, "out": false},
+    {"fn": "holds", "in": {"value": {"type": "number", "number": 10}, "is": {">=": 10}}, "out": true},
+    {"fn": "holds", "in": {"value": {"type": "number", "number": 10}, "is": {"!=": 10}}, "out": false},
+    {"fn": "holds", "in": {"value": {"type": "tasks", "ids": ["a", "b"]}, "is": {"=": 2}}, "out": true},
+    {"fn": "holds", "in": {"value": {"type": "tasks", "ids": []}, "is": {"empty": true}}, "out": true},
+    {"fn": "holds", "in": {"value": {"type": "lines", "lines": ["x"]}, "is": {"not_empty": true}}, "out": true},
+    {"fn": "holds", "in": {"value": {"type": "lines", "lines": ["Oat milk"]}, "is": {"contains": "MILK"}}, "out": true},
+    {"fn": "holds", "in": {"value": {"type": "text", "text": "  "}, "is": {"empty": true}}, "out": true},
+    {"fn": "holds", "in": {"value": {"type": "text", "text": "Hello"}, "is": {"=": "Hello"}}, "out": true},
+    {"fn": "holds", "in": {"value": {"type": "text", "text": "Hello"}, "is": {">": "A"}}, "out": false},
+    {"fn": "holds", "in": {"value": {"type": "date", "date": "2026-11-02"}, "is": {"<": "2026-11-03"}}, "out": true},
+    {"fn": "holds", "in": {"value": {"type": "date", "date": "2026-11-02"}, "is": {"empty": true}}, "out": false},
+    {"fn": "holds", "in": {"value": {"type": "number", "number": 0}, "is": {"not_empty": true}}, "out": true},
+    {"fn": "holds", "in": {"value": {"type": "task", "id": ""}, "is": {"empty": true}}, "out": true},
+    {"fn": "cut", "in": {"text": "abc", "bytes": 65536}, "out": "abc", "truncated": false},
+    {"fn": "date", "in": {"literal": "today", "today": "2026-11-01"}, "out": "2026-11-01"},
+    {"fn": "date", "in": {"literal": "tomorrow", "today": "2026-11-30"}, "out": "2026-12-01"},
+    {"fn": "date", "in": {"literal": {"in_days": -2}, "today": "2026-11-01"}, "out": "2026-10-30"},
+    {"fn": "date", "in": {"literal": "2027-01-05", "today": "2026-11-01"}, "out": "2027-01-05"},
+    {"fn": "period", "in": {"period": "this_week", "today": "2026-11-04", "week_start": 1}, "out": ["2026-11-02", "2026-11-04"]},
+    {"fn": "period", "in": {"period": "last_week", "today": "2026-11-04", "week_start": 1}, "out": ["2026-10-26", "2026-11-01"]},
+    {"fn": "period", "in": {"period": "last_week", "today": "2026-11-04", "week_start": 0}, "out": ["2026-10-25", "2026-10-31"]},
+    {"fn": "period", "in": {"period": "this_month", "today": "2026-11-04", "week_start": 1}, "out": ["2026-11-01", "2026-11-04"]},
+    {"fn": "period", "in": {"period": {"from": "2026-10-01", "to": "2026-10-31"}, "today": "2026-11-04", "week_start": 1}, "out": ["2026-10-01", "2026-10-31"]}
+  ]
+}

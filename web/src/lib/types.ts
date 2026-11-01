@@ -562,11 +562,29 @@ export interface Rule extends RuleFields {
   trigger: RuleTrigger | null
   condition: RuleCondition | null
   actions: RuleActions | null
+  /** A routine's steps (routines-engine D2): null reads the rule as one Change tasks step with `actions`. */
+  steps?: RoutineStep[] | null
   position: number
   created_at: number
   deleted_at: number | null
   _clock: Clock
   _e2ee?: RowEncryption
+}
+
+/** The type of a routine step's output (routines-engine D3); lines is a list of text. */
+export type RoutineStepType = 'text' | 'task' | 'tasks' | 'project' | 'date' | 'number' | 'lines' | 'none'
+
+/** A step input: a reference to the trigger, an earlier step or a Repeat's item, or a literal. */
+export type RoutineArg = { ref: string } | { literal: unknown }
+
+/** One step of a routine (routines-engine D3); `then`/`otherwise` for if, `do` for repeat. */
+export interface RoutineStep {
+  id: string
+  kind: string
+  in?: Record<string, RoutineArg>
+  then?: RoutineStep[]
+  otherwise?: RoutineStep[]
+  do?: RoutineStep[]
 }
 
 /** 'deadline' (OpenSpec change `deadlines`): offset from 09:00 local on the task's deadline. */
