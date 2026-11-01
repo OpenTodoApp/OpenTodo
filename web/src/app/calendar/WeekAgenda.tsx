@@ -6,7 +6,7 @@ import { formatMinutes } from '../../lib/duration'
 import { t } from '../../lib/i18n'
 import type { PlacedFrame } from '../../lib/frames'
 import { slotCapacity, slotCount, slotName, type SlotView } from '../../lib/slots'
-import type { Task } from '../../lib/types'
+import type { CalendarSubscription, Task } from '../../lib/types'
 import { Button, hueFor, Icon, type HueName } from '../../ui'
 import { act } from '../actionError'
 import { completeWithUndo } from '../undoable'
@@ -18,14 +18,20 @@ import { formatTime } from './grid'
 import { dayLoadProjections, dayProjections, type ProjectionHue } from './DayColumn'
 import { spanDay } from '../../lib/span'
 import { ProjectedItem } from './projections'
+import { EventRow } from '../CalendarEvents'
 
 /**
  * The Week below 640 px: the days listed vertically, each with its capacity, its
  * unscheduled tasks and its timed blocks in time order; no seven-column grid. The
- * same selection, keyboard order and panel as the grid.
+ * same selection, keyboard order and panel as the grid. The subscribed calendars'
+ * events (calendar-events-all-views) are read-only rows: all-day ones after the
+ * spans, timed ones among the timed tasks at their start; never in the keyboard order.
  */
-export function WeekAgenda({ days, today, prefs, tasks, meetings, frames, taskMap, hueOf, projectionHue, deadlines, selectedId, onSelect, onOpen, onAdd }: {
+export function WeekAgenda({ days, today, prefs, tasks, meetings, frames, taskMap, hueOf, projectionHue, deadlines, selectedId, subMap, zone, onSelect, onOpen, onAdd }: {
   days: DayData[]
+  /** The subscriptions by id, for an event's colour and calendar name. */
+  subMap?: ReadonlyMap<string, CalendarSubscription>
+  zone?: string
   /** Frame occurrences per date (calendar-frames D6): headings among the day's timed tasks. */
   frames?: Map<string, PlacedFrame[]>
   today: string
@@ -82,7 +88,8 @@ export function WeekAgenda({ days, today, prefs, tasks, meetings, frames, taskMa
         // Each frame heading goes before the first timed task that starts at or after its start.
         const timed = [...dayFrames.map((f) => ({ at: f.start, order: 0, node: <FrameHeading key={`frame:${f.frame.id}`} occ={f} /> })),
           ...blocks.map(({ b, t: item }) => ({ at: b.start, order: 1, node: row(item, formatTime(b.start), d.date < today, d.date) })),
-          ...[...d.slots.values()].map((v) => ({ at: v.start, order: 1, node: <AgendaSlot key={v.key} view={v} past={d.date < today} onOpen={onOpen} /> }))]
+          ...[...d.slots.values()].map((v) => ({ at: v.start, order: 1, node: <AgendaSlot key={v.key} view={v} past={d.date < today} onOpen={onOpen} /> })),
+          ...[...d.events.values()].map((b) => ({ at: b.start, order: 2, node: <li key={b.id}><EventRow ev={b.event} start={b.start} end={b.end} sub={subMap?.get(b.event.subscriptionId)} zone={zone} variant="agenda" /></li> }))]
           .sort((a, b) => a.at - b.at || a.order - b.order)
         return (
           <section key={d.date} data-agenda-day={d.date} aria-labelledby={`agenda-${d.date}`}>
@@ -90,7 +97,7 @@ export function WeekAgenda({ days, today, prefs, tasks, meetings, frames, taskMa
               <h2 id={`agenda-${d.date}`} className={`text-body font-semibold ${d.date === today ? 'text-accent' : 'text-strong'}`}>{name} {dd}</h2>
               <CapacityLine load={load} dayLength={prefs.dayLength} />
             </div>
-            {d.lane.length === 0 && blocks.length === 0 && d.slots.size === 0 && !dayDeadlines.length && !projected.length && !spanRows.length
+            {d.lane.length === 0 && blocks.length === 0 && d.slots.size === 0 && !dayDeadlines.length && !projected.length && !spanRows.length && d.events.size === 0 && d.allDay.length === 0
               // One quiet line per empty day, as on Plan (precision-polish D5): seven filled buttons outweighed the days that have tasks.
               ? (
                 <>
@@ -104,6 +111,7 @@ export function WeekAgenda({ days, today, prefs, tasks, meetings, frames, taskMa
               : (
                 <ul className="mt-1 space-y-0.5">
                   {spanRows}
+                  {d.allDay.map((ev) => <li key={`event:${ev.id}`}><EventRow ev={ev} sub={subMap?.get(ev.subscriptionId)} zone={zone} variant="agenda" /></li>)}
                   {d.lane.map((tk) => row(tk, null, d.date < today, d.date))}
                   {timed.map((x) => x.node)}
                   {dayDeadlines.map((tk) => <li key={`deadline:${tk.id}`} className="min-h-11 flex items-center"><DeadlineMarker task={tk} date={d.date} today={today} variant="row" onOpen={onOpen} /></li>)}

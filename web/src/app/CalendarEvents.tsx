@@ -1,5 +1,5 @@
-// Events of subscribed calendars in Day and Week (OpenSpec change calendar-feeds,
-// design D8). Read-only: blocks and chips are buttons that open a popover with the
+// Events of subscribed calendars in Day, Week, Plan and Month (OpenSpec changes
+// calendar-feeds D8 and calendar-events-all-views). Read-only: blocks and chips are buttons that open a popover with the
 // summary, time, location and calendar name; they never start a drag, are never
 // selected with j/k and are never drop targets.
 import { hueFor, Icon, Tooltip, Popover } from '../ui'
@@ -120,34 +120,47 @@ export function EventChip({ ev, sub, zone }: { ev: CalendarEvent; sub?: Calendar
   )
 }
 
+/** Where an event row sits: a Plan column, the phone's Week agenda (44 px rows) or a Month cell. */
+export type EventRowVariant = 'plan' | 'agenda' | 'cell'
+
+const ROW_CLASS: Record<EventRowVariant, string> = {
+  plan: 'gap-1 px-1 py-0.5 text-meta',
+  agenda: 'min-h-11 gap-2 px-2 py-1 text-body',
+  cell: 'gap-1 px-1 py-0.5 text-meta',
+}
+
 /**
- * One timed event as a row of the Plan's columns (planner-view D3): time, summary and
- * the minutes inside this day, in the calendar's colour; read-only, reachable with Tab,
- * Enter opens the same details.
+ * One event as a row (planner-view D3, calendar-events-all-views): time, summary and,
+ * in the Plan and the Week agenda, the minutes inside this day, in the calendar's
+ * colour; an all-day event (no `start`) says "all day" in the agenda. Read-only,
+ * reachable with Tab, Enter opens the same details.
  */
-export function EventRow({ ev, start, end, sub, zone }: { ev: CalendarEvent; start: number; end: number; sub?: CalendarSubscription; zone?: string }) {
+export function EventRow({ ev, start, end, sub, zone, variant = 'plan' }: { ev: CalendarEvent; start?: number; end?: number; sub?: CalendarSubscription; zone?: string; variant?: EventRowVariant }) {
   const ref = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
-  const time = formatWallTime(toHHMM(start))
-  const length = formatMinutes(Math.max(0, end - start))
+  const timed = start !== undefined
+  const time = timed ? formatWallTime(toHHMM(start)) : t('all day')
+  const length = timed && variant !== 'cell' ? formatMinutes(Math.max(0, (end ?? start) - start)) : ''
   return (
     <>
       <button
         ref={ref}
         type="button"
-        data-plan-event={ev.id}
+        data-plan-event={variant === 'plan' ? ev.id : undefined}
+        data-agenda-event={variant === 'agenda' ? ev.id : undefined}
+        data-month-event={variant === 'cell' ? ev.id : undefined}
         data-free={ev.free || undefined}
         data-hue={hueFor(sub?.color)}
         aria-haspopup="dialog"
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => { e.stopPropagation(); setOpen((o) => !o) }}
-        className={`flex w-full min-w-0 items-center gap-1 px-1 py-0.5 text-left text-meta ${ev.free ? 'rounded-chip border border-dashed border-hue-solid text-hue' : 'ui-block ui-block--row ui-block--event'} focus-visible:outline-2 focus-visible:outline-focus`}
+        className={`flex w-full min-w-0 items-center text-left ${ROW_CLASS[variant]} ${ev.free ? 'rounded-chip border border-dashed border-hue-solid text-hue' : 'ui-block ui-block--row ui-block--event'} focus-visible:outline-2 focus-visible:outline-focus`}
       >
         {/* Named by its visible content (WCAG 2.5.3 Label in Name); the location and calendar are not shown, so they follow as hidden text. */}
         {!ev.free && <span aria-hidden className="ui-block-dot" />}
-        <span className="shrink-0 tabular-nums">{time}</span>
+        {(timed || variant === 'agenda') && <span className={`shrink-0 tabular-nums ${variant === 'agenda' ? 'w-14 text-meta' : ''}`}>{time}</span>}
         <span className="min-w-0 flex-1 truncate font-medium">{ev.summary || t('Busy')}</span>
-        <span className="shrink-0 text-hint tabular-nums">{length}</span>
+        {length && <span className="shrink-0 text-hint tabular-nums">{length}</span>}
         {(ev.location || sub?.name) && <span className="sr-only">{`, ${[ev.location, sub?.name].filter(Boolean).join(', ')}`}</span>}
       </button>
       <Popover open={open} onClose={() => setOpen(false)} anchor={ref} label={ev.summary || t('Event')} width="sm:w-72" className="p-3" align="start">
