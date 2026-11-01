@@ -47,7 +47,7 @@ export function RoutinePage({ route }: { route: Extract<Route, { view: 'rules' }
     )
   }
   return (
-    <RoutineEditor key={opened} rule={rule ?? undefined} draft={draft} dropped={handed?.dropped} described={described ?? undefined} run={route.run} history={history}
+    <RoutineEditor key={opened} rule={rule ?? undefined} draft={draft} project={route.project} dropped={handed?.dropped} described={described ?? undefined} run={route.run} history={history}
       onBack={back} onSaved={saved} />
   )
 }

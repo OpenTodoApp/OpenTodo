@@ -107,3 +107,22 @@ func TestServerDoesNotLinkYAML(t *testing.T) {
 		t.Fatal("ot does not link the YAML reader")
 	}
 }
+
+// `ot routine create --project` (OpenSpec change routines-shared, D11): the
+// routine belongs to the project, and list and show name it.
+func TestRoutineProject(t *testing.T) {
+	h := newHarness(t)
+	h.loginAdmin()
+	h.apiJSON("POST", "/api/v1/projects", map[string]any{"name": "Household"})
+	file := writeTemp(t, "chores.yaml", "name: Chores\ntrigger: {kind: manual}\nsteps:\n  - {id: a, kind: find_tasks, in: {condition: {literal: {}}}}\n")
+	h.mustRun("routine", "create", "--project", "household", "--file", file)
+	if out := h.mustRun("routine", "list"); !strings.Contains(out, "PROJECT") || !strings.Contains(out, "Household") {
+		t.Fatalf("list %q", out)
+	}
+	if out := h.mustRun("routine", "show", "Chores"); !strings.Contains(out, "Project: Household") {
+		t.Fatalf("show %q", out)
+	}
+	if code, _, errb := h.run("routine", "create", "--project", "Nowhere", "--file", file); code != ExitUsage || !strings.Contains(errb, "project Nowhere not found") {
+		t.Fatalf("unknown project: exit %d %q", code, errb)
+	}
+}

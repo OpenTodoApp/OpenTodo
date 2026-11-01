@@ -303,7 +303,14 @@ func TestAvailability(t *testing.T) {
 		{"encrypted", "email_me", with(func(e *Env) { e.Encrypted = true }), ReasonEncrypted},
 		{"demo email", "email_me", with(func(e *Env) { e.Demo = true }), ReasonDemo},
 		{"members outside a shared project", "email_members", ok, ReasonNotShared},
-		{"members in a shared project", "email_members", with(func(e *Env) { e.Shared = true }), ""},
+		// routines-shared D8: Email project members comes with routines-shared-email.
+		{"members in a shared project", "email_members", with(func(e *Env) { e.Shared = true }), ReasonNotYet},
+		// routines-shared D3: steps that act on personal things.
+		{"focus in a shared routine", "set_focus", with(func(e *Env) { e.Shared = true }), ReasonNotInShared},
+		{"email me in a shared routine", "email_me", with(func(e *Env) { e.Shared = true }), ReasonNotInShared},
+		{"webhook in a shared routine", "webhook", with(func(e *Env) { e.Shared = true }), ReasonNotInShared},
+		{"labels in a shared routine", "create_labels", with(func(e *Env) { e.Shared = true }), ReasonNotInShared},
+		{"tasks in a shared routine", "change_tasks", with(func(e *Env) { e.Shared = true }), ""},
 		{"no webhook", "webhook", with(func(e *Env) { e.Webhooks = nil }), ReasonNoWebhook},
 		{"demo webhook", "webhook", with(func(e *Env) { e.Demo = true }), ReasonDemo},
 		{"focus off", "set_focus", with(func(e *Env) { e.FocusOff = true }), ReasonFocusOff},
@@ -317,7 +324,7 @@ func TestAvailability(t *testing.T) {
 		if a.Reason != c.reason || a.Available != (c.reason == "") {
 			t.Errorf("%s: %+v, want %q", c.name, a, c.reason)
 		}
-		if c.reason != "" && c.reason != ReasonEncrypted && c.reason != ReasonDemo && c.reason != ReasonNotShared && a.Setting == "" {
+		if c.reason != "" && c.reason != ReasonEncrypted && c.reason != ReasonDemo && c.reason != ReasonNotShared && c.reason != ReasonNotInShared && c.reason != ReasonNotYet && a.Setting == "" {
 			t.Errorf("%s: no setting", c.name)
 		}
 	}

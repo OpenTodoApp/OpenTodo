@@ -307,11 +307,17 @@ func (st *runState) filterContext() (filter.Context, error) {
 		c.Projects = append(c.Projects, p)
 	}
 	for entity, dst := range map[string]*[]filter.Row{"label": &c.Labels, "section": &c.Sections, "field": &c.Fields} {
+		if st.w.project != "" && entity == "label" {
+			continue // labels are personal (routines-shared D3)
+		}
 		rows, err := st.e.Sync.List(st.ctx, st.w.uid, entity, false)
 		if err != nil {
 			return c, err
 		}
 		for _, r := range rows {
+			if st.w.project != "" && str(r, "project_id") != st.w.project {
+				continue
+			}
 			*dst = append(*dst, r)
 		}
 	}
@@ -436,6 +442,11 @@ func (st *runState) createTasks(s *ruleval.Step, in map[string]ruleval.Value, at
 			st.quickAdd(line, item)
 		} else {
 			item["title"] = line
+		}
+		if st.w.project != "" {
+			// A shared routine creates in its project, without labels (routines-shared D3).
+			item["project_id"] = st.w.project
+			delete(item, "labels")
 		}
 		if strings.TrimSpace(fmt.Sprint(item["title"])) == "" {
 			continue

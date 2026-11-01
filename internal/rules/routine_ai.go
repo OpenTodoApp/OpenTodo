@@ -301,8 +301,16 @@ type fieldMeta struct {
 // steps since, and no fallback is newer than the winning ai_apply op.
 func (e *Engine) AIMode(ctx context.Context, uid, ruleID string) (AIMode, error) {
 	var m AIMode
+	scope := "user:" + uid
+	pid, err := e.ruleProject(ctx, ruleID)
+	if err != nil {
+		return m, err
+	}
+	if pid != "" {
+		scope = opsync.ProjectScope(pid)
+	}
 	rows, err := e.db.QueryContext(ctx, `SELECT field, value, ts, device FROM scope_fields WHERE scope_id = ? AND entity = 'rule' AND entity_id = ?
-		AND field IN ('ai_apply', 'trigger', 'condition', 'steps', 'actions')`, "user:"+uid, ruleID)
+		AND field IN ('ai_apply', 'trigger', 'condition', 'steps', 'actions')`, scope, ruleID)
 	if err != nil {
 		return m, err
 	}
@@ -332,6 +340,12 @@ func (e *Engine) AIMode(ctx context.Context, uid, ruleID string) (AIMode, error)
 	m.Asked = true
 	if agentDevice(apply.device) {
 		m.Reason = FallbackAgent
+		return m, nil
+	}
+	if pid != "" && e.fieldAuthor(ctx, ruleID, "ai_apply", apply.ts, apply.device) != uid {
+		// In a shared routine only the run-as person's own choice counts
+		// (routines-shared D6).
+		m.Reason = FallbackNotRunAs
 		return m, nil
 	}
 	for _, f := range []string{"trigger", "condition", "steps", "actions"} {
