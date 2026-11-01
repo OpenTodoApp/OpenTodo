@@ -353,9 +353,11 @@ func Canonicalize(input string) (string, error) {
 func (r Rule) AfterCompletion() bool { return r.afterCompletion }
 
 // Until returns the end date ("" when none).
+// Kept: upstream now reads this accessor from internal/sync.
 func (r Rule) Until() string { return r.until }
 
 // Count returns the `for N times` limit (0 when none).
+// Kept: upstream now reads this accessor from internal/sync.
 func (r Rule) Count() int { return r.count }
 
 // ---- calendar arithmetic on day numbers (days since 1970-01-01) ----

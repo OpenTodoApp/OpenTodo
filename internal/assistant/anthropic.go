@@ -24,6 +24,9 @@ type AnthropicProvider struct {
 	HTTP    *http.Client
 	// MaxRetries for 429 and 5xx answers before the stream starts (SDK backoff).
 	MaxRetries int
+	// testOptions, set by tests only, adds client options (a tracer provider)
+	// a provider built from settings never gets.
+	testOptions []option.RequestOption
 }
 
 // DefaultEffort is the effort of chat turns: the Opus 5.5 default, set
@@ -48,6 +51,7 @@ func (p *AnthropicProvider) client() anthropic.Client {
 	if p.HTTP != nil {
 		opts = append(opts, option.WithHTTPClient(p.HTTP))
 	}
+	opts = append(opts, p.testOptions...)
 	return anthropic.NewClient(opts...)
 }
 

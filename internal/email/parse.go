@@ -17,10 +17,10 @@ import (
 	"regexp"
 	"strings"
 	"unicode"
-	"unicode/utf8"
 
 	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/textutil"
 )
 
 // Message limits (design D5, Risks).
@@ -115,7 +115,7 @@ func Parse(raw []byte) (*Parsed, error) {
 	if p.Title == "" {
 		p.Title = NoSubject
 	}
-	p.Title = truncateRunes(p.Title, MaxTitleRunes)
+	p.Title = trimCut(p.Title, MaxTitleRunes)
 	p.Description = description(p.Body, p.Attachments)
 	return p, nil
 }
@@ -159,18 +159,20 @@ func StripSubjectPrefixes(s string) string {
 func firstLine(body string) string {
 	for _, l := range strings.Split(body, "\n") {
 		if l = strings.TrimSpace(l); l != "" {
-			return truncateRunes(l, 200)
+			return trimCut(l, 200)
 		}
 	}
 	return ""
 }
 
-func truncateRunes(s string, n int) string {
-	if utf8.RuneCountInString(s) <= n {
+// trimCut cuts s to n runes the task titles need: a short s is unchanged, a
+// cut loses the whitespace left at the cut and ends with an ellipsis.
+func trimCut(s string, n int) string {
+	cut := textutil.TruncateRunes(s, n, "")
+	if cut == s {
 		return s
 	}
-	r := []rune(s)
-	return strings.TrimSpace(string(r[:n])) + "…"
+	return strings.TrimSpace(cut) + "…"
 }
 
 // description is the body followed by one line per attachment with its name and
@@ -202,21 +204,10 @@ func compose(body string, cut bool, atts []Attachment) string {
 				fmt.Fprintf(&b, "\n- and %d more", len(atts)-i)
 				break
 			}
-			fmt.Fprintf(&b, "\n- %s (%s)", a.Name, humanSize(a.Size))
+			fmt.Fprintf(&b, "\n- %s (%s)", a.Name, textutil.HumanBytes(a.Size))
 		}
 	}
 	return b.String()
-}
-
-func humanSize(n int64) string {
-	switch {
-	case n < 1024:
-		return fmt.Sprintf("%d B", n)
-	case n < 1024*1024:
-		return fmt.Sprintf("%.1f KB", float64(n)/1024)
-	default:
-		return fmt.Sprintf("%.1f MB", float64(n)/(1024*1024))
-	}
 }
 
 var reURL = regexp.MustCompile(`https?://[^\s)>\]]+`)
@@ -335,7 +326,7 @@ func (w *walker) walk(h textproto.MIMEHeader, body io.Reader, depth int) {
 		if name == "" {
 			name = "unnamed " + ct
 		}
-		w.attachments = append(w.attachments, Attachment{Name: truncateRunes(name, 200), Size: n})
+		w.attachments = append(w.attachments, Attachment{Name: textutil.TruncateRunes(name, 200, "…"), Size: n})
 	}
 }
 

@@ -69,8 +69,8 @@ func IsAgentDevice(device string) bool { return strings.HasPrefix(device, AgentD
 // trusted only from it) is reserved too (OpenSpec change attachments, design D3).
 func ReservedDevice(device string) bool {
 	return IsServerDevice(device) || strings.HasPrefix(device, AgentDevicePrefix) || strings.HasPrefix(device, CaldavDevicePrefix) ||
-		strings.HasPrefix(device, PublicDevicePrefix) || strings.HasPrefix(device, IssuesDevicePrefix) ||
-		strings.HasPrefix(device, PageDevicePrefix) || strings.HasPrefix(device, RuleDevicePrefix) ||
+		IsPublicDevice(device) || strings.HasPrefix(device, IssuesDevicePrefix) ||
+		IsPageDevice(device) || strings.HasPrefix(device, RuleDevicePrefix) ||
 		strings.HasPrefix(device, CalsyncDevicePrefix)
 }
 
