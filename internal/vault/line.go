@@ -359,6 +359,12 @@ func ParseLine(indent string, done bool, content string) Line {
 			}
 		}
 	}
+	// [evening:: true] wins over [daypart:: …] (day-parts: Evening is the
+	// evening flag and never pairs with a part), so the line keeps only the
+	// part it prints and reads back the same after a print.
+	if l.Evening {
+		l.DayPart = ""
+	}
 	l.Title = strings.Join(title, " ")
 	l.Trailing = strings.Join(trailing, " ")
 	return l
