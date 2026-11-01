@@ -5,9 +5,8 @@
 // the app sets them on the root. Workbench only.
 import type { CSSProperties, ReactNode } from 'react'
 import { deriveTheme } from '../../lib/theme/derive'
-import { CSS_TOKENS } from '../../lib/theme/tokens'
+import { CSS_TOKENS, HUES as HUE_NAMES } from '../../lib/theme/tokens'
 import type { ThemeDocument } from '../../lib/theme/format'
-import { HUE_NAMES } from '../../ui/tokens/pairs'
 import { Button } from '../../ui'
 import { HEX, label, project, task, TODAY, TOMORROW } from './fixtures'
 import { TaskCard, TaskRow } from '../TaskRow'
