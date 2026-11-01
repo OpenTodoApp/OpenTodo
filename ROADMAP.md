@@ -91,7 +91,7 @@ Phones, Apple, Obsidian and voice.
 
 | Change | What | Issues |
 | --- | --- | --- |
-| [`theme-engine`](openspec/changes/theme-engine/) | **Shipped.** A documented theme format, tokens derived from a few seeds, applied before the first paint, chosen per light and dark side and synced, with a contrast gate; OpenTodo Light and Dark become themes | [#708](https://github.com/OpenTodoApp/OpenTodo/issues/708) |
+| [`theme-engine`](openspec/changes/archive/2026-11-01-theme-engine/) | **Shipped.** A documented theme format, tokens derived from a few seeds, applied before the first paint, chosen per light and dark side and synced, with a contrast gate; OpenTodo Light and Dark become themes | [#708](https://github.com/OpenTodoApp/OpenTodo/issues/708) |
 | [`theme-catalogue`](openspec/changes/theme-catalogue/) | Built-in editor palettes (Solarized, Gruvbox, Catppuccin, Rosé Pine, Tokyo Night, One, Nord, Dracula), credited and AA-checked | [#709](https://github.com/OpenTodoApp/OpenTodo/issues/709) |
 | [`theme-editor`](openspec/changes/theme-editor/) | Your own themes: seeds, every token, live preview and contrast fixes, files, VS Code theme import | [#710](https://github.com/OpenTodoApp/OpenTodo/issues/710) |
 | [`theme-instance-default`](openspec/changes/theme-instance-default/) | The owner's default theme and server themes for every member | [#711](https://github.com/OpenTodoApp/OpenTodo/issues/711) |
