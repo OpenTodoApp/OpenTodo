@@ -2,7 +2,9 @@
 // Guard test (OpenSpec change search-and-command-palette, design D6): every item of
 // the project, view, label and section menus has a palette command for that row.
 import 'fake-indexeddb/auto'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
+import { db, useDatabase } from '../../lib/db'
+import { createTask, resetDeviceId } from '../../lib/ops'
 import type { Label, Project, Section, Task, User, View } from '../../lib/types'
 import type { ListState } from '../listActions'
 import { render } from '../../ui/test-utils'
@@ -14,6 +16,9 @@ import { viewMenuGroups } from '../ViewsView'
 import { HUES } from '../../ui'
 import { commands, type PaletteContext } from './registry'
 import { readFocus } from '../../lib/focus/state'
+import { bulkToast, hideBulkToast } from '../bulk/toastStore'
+
+afterEach(() => { hideBulkToast() })
 
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
@@ -100,6 +105,22 @@ describe('Focus commands (focus-mode D8)', () => {
   it('without a selected task only "Go to Focus", with its shortcut', () => {
     expect(focusLabels(base)).toEqual(['Go to Focus'])
     expect(commands(base).find((x) => x.id === 'go:focus')?.shortcut).toBe('g Shift+F')
+  })
+})
+
+describe('Trash command (single-action undo everywhere)', () => {
+  it('task:trash routes through deleteWithUndo: the toast offer, not a bare tombstone', async () => {
+    useDatabase(`palette-trash-${Date.now()}-${Math.random()}`)
+    resetDeviceId()
+    const id = await createTask({ title: 'Write the report' })
+    const task = (await db.tasks.get(id))! as unknown as Task
+    const list = { readOnly: () => false, open: () => {}, toggleComplete: () => {} } as unknown as ListState
+    const base: PaletteContext = { ...ctx, project: undefined, view: undefined, label: undefined, section: undefined, route: { view: 'inbox' } }
+    const cmd = commands({ ...base, list, task }).find((x) => x.id === 'task:trash')!
+    expect(cmd).toBeTruthy()
+    await cmd.run()
+    expect(bulkToast()?.undoId).toBeTruthy()
+    expect(bulkToast()?.label).toBe('Moved to Trash')
   })
 })
 

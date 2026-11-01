@@ -4,7 +4,7 @@
 // Object commands (project, saved view, label, section) are built from the menus'
 // own item lists, so the two cannot drift; a guard test checks it.
 import { createLabel } from '../../lib/labels'
-import { createProject, deleteTask, detachOccurrence, parkTask, skipOccurrence, unparkTask, updateProject, updateTask } from '../../lib/ops'
+import { createProject, detachOccurrence, parkTask, skipOccurrence, unparkTask, updateProject, updateTask } from '../../lib/ops'
 import { reorderLabel, updateLabel } from '../../lib/labels'
 import { deleteSection, renameSection, reorderSection } from '../../lib/sections'
 import { syncNow } from '../../lib/sync'
@@ -33,6 +33,7 @@ import { switchWorkspace, workspaceLabel } from '../workspaceNav'
 import { viewMenuGroups } from '../ViewsView'
 import type { Entry, Step } from './entries'
 import { runBulk } from '../bulk/BulkActions'
+import { deleteWithUndo } from '../undoable'
 import { keysOf } from '../../lib/shortcuts'
 import { runGroupDue } from '../task-list/EarlierActions'
 import { hueName } from '../../lib/colourNames'
@@ -225,7 +226,7 @@ export function commands(ctx: PaletteContext): Command[] {
       }
       // Start focus (focus-everywhere D2): the same as the Actions menu's item.
       if (!tk.completed_at && !tk.deleted_at) out.push({ id: 'task:focus', label: t('Start focus on {title}', { title }), icon: 'clock', keywords: 'focus timer pomodoro session start', run: () => startFocusOn(tk.id) })
-      out.push({ id: 'task:trash', label: t('Move {title} to the Trash', { title }), icon: 'trash-2', shortcut: keysOf('list.delete'), keywords: 'delete remove', run: () => deleteTask(tk.id) })
+      out.push({ id: 'task:trash', label: t('Move {title} to the Trash', { title }), icon: 'trash-2', shortcut: keysOf('list.delete'), keywords: 'delete remove', run: () => deleteWithUndo(tk.id) })
     }
   }
 

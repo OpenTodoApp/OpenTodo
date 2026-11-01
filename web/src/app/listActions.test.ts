@@ -1,15 +1,18 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from '../lib/db'
 import { createProject, createTask, resetDeviceId, setTaskCompleted } from '../lib/ops'
 import type { Task } from '../lib/types'
 import { registerListState, taskDefaults, type ListState } from './listActions'
 import { listActions, makeListActions } from './vim/actions'
+import { bulkToast, hideBulkToast } from './bulk/toastStore'
 
 let n = 0
 beforeEach(() => {
   useDatabase(`list-actions-${Date.now()}-${n++}`)
   resetDeviceId()
 })
+
+afterEach(() => { hideBulkToast() })
 
 /** A list over the given task ids, read fresh from IndexedDB like the live query does. */
 async function list(ids: string[], opts: Partial<ListState> = {}) {
@@ -50,6 +53,15 @@ describe('list actions', () => {
     expect(ops.some((o) => o.entityId === a && o.field === 'deleted_at' && typeof o.value === 'number')).toBe(true)
     expect(state.selected).toBe(b)
     expect(state.open).toBeNull()
+  })
+
+  it('deleteSelected offers Undo like the list does (the toast of the main list)', async () => {
+    const a = await createTask({ title: 'a' })
+    const { state, actions } = await list([a])
+    state.selected = a
+    await actions.deleteSelected()
+    expect(bulkToast()?.undoId).toBeTruthy()
+    expect(bulkToast()?.label).toBe('Moved to Trash')
   })
 
   it('toggleCompleteSelected flips completed_at', async () => {
