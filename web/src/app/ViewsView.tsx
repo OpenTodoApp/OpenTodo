@@ -1,7 +1,7 @@
 // Views overview (`g v`) and the per-view menu shared with the sidebar and the view
 // headers (OpenSpec `custom-views`). Every action is an op through lib/views, except
 // the start view, which is a per-device preference in local meta.
-import { lazy, Suspense, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { View } from '../lib/types'
 import { deleteView, evaluateViews, isDashboard, reorderView, setStartView, updateView } from '../lib/views'
 import { favouriteEdges, moveFavourite, setFavourite } from '../lib/favourites'
@@ -15,7 +15,7 @@ import { Button, CatalogueIcon, Icon, type IconName, type IconSize, IconPicker, 
 import { iconPickerSpec } from './menus/stylePickers'
 import { Tooltip } from '../ui'
 import { ActionMenu, type ActionGroup, type ActionItem } from './menus/ActionMenu'
-import type { RuleDraft } from './routines/ruleDraft'
+import { openRoutineDraft } from './routines/routineNav'
 import { useLabels, useProjects } from '../lib/localData'
 import { ruleDraftFromView } from './rules/convertDraft'
 import { pinItem } from './menus/pinItem'
@@ -23,7 +23,6 @@ import { t } from '../lib/i18n'
 import { act } from './actionError'
 
 // The rule editor is its own chunk with the Rules page (automation-rules D11).
-const RuleDraftEditor = lazy(() => import('./routines/RoutineEditor').then((m) => ({ default: m.RuleDraftEditor })))
 
 /** The default icon of a view's kind, shown while it has no icon of its own. */
 export const viewIcon = (v: View): IconName => (isDashboard(v) ? 'kanban' : 'list')
@@ -109,7 +108,6 @@ export function ViewMenu({ view, align = 'end', className = '', within }: { view
   const favourites = useFavourites()
   const isStart = start === `view:${view.id}`
   const [renaming, setRenaming] = useState(false)
-  const [ruleDraft, setRuleDraft] = useState<RuleDraft | null>(null)
   const labels = useLabels()
   const projects = useProjects()
   const inFavourites = within === 'favourites'
@@ -120,7 +118,7 @@ export function ViewMenu({ view, align = 'end', className = '', within }: { view
     startView: () => setStartView(`view:${view.id}`),
     remove: () => deleteView(view.id),
     display: () => navigate({ view: 'display', target: { kind: 'view', id: view.id }, options: { ...DEFAULT_DISPLAY_OPTIONS } }),
-    rule: () => setRuleDraft(ruleDraftFromView(view, { labels, projects })),
+    rule: () => openRoutineDraft(ruleDraftFromView(view, { labels, projects })),
     icon: (icon) => updateView(view.id, { icon }),
   }, inFavourites ? favouriteEdges(favourites, 'view', view.id) : undefined)
   return (
@@ -131,7 +129,6 @@ export function ViewMenu({ view, align = 'end', className = '', within }: { view
         <NamePrompt title={t('Rename view')} label={t('View name')} initial={view.name} onCancel={() => setRenaming(false)}
           onSubmit={async (name) => { await updateView(view.id, { name }); setRenaming(false) }} />
       )}
-      {ruleDraft && <Suspense fallback={null}><RuleDraftEditor draft={ruleDraft} onClose={() => setRuleDraft(null)} /></Suspense>}
     </>
   )
 }

@@ -71,7 +71,7 @@ describe('AI steps in the editor', () => {
   it('"Estimate first": the card estimates, Test asks before anything is sent, then shows the answer and the real count', async () => {
     const id = await notesRoutine()
     const rule = (await db.rules.get(id))!
-    const r = await render(<RoutineEditor rule={rule} onClose={() => undefined} />)
+    const r = await render(<RoutineEditor rule={rule} onBack={() => undefined} />)
     await waitFor(() => !!document.querySelector('[data-preview="ai"]'), 'the AI card preview')
     expect(document.querySelector('[data-preview="ai"]')!.textContent).toMatch(/The AI answer appears when you Test · about [\d,.]+ tokens/)
     await click(button('Test'))
@@ -89,7 +89,7 @@ describe('AI steps in the editor', () => {
   it('"Not allowed": Apply without asking is disabled with the reason when the routine also completes tasks', async () => {
     const id = await notesRoutine([{ id: 'd', kind: 'change_tasks', in: { tasks: { ref: 'c' }, set: { literal: { state: 'complete' } } } }])
     const rule = (await db.rules.get(id))!
-    const r = await render(<RoutineEditor rule={rule} onClose={() => undefined} />)
+    const r = await render(<RoutineEditor rule={rule} onBack={() => undefined} />)
     await waitFor(() => !!document.querySelector('[data-routine-ai] [role="switch"]'), 'the AI settings')
     const sw = document.querySelector<HTMLButtonElement>('[data-routine-ai] [role="switch"]')!
     expect(sw.disabled).toBe(true)
@@ -102,7 +102,7 @@ describe('AI steps in the editor', () => {
     await db.rules.update(id, { ai_apply: 'auto' })
     usage = { days: [{ day: new Date().toISOString().slice(0, 10), tokens: 3200 }], budget: 20000, mode: { auto: false, asked: true, reason: 'failures', at: 1 } }
     const rule = (await db.rules.get(id))!
-    const r = await render(<RoutineEditor rule={rule} onClose={() => undefined} />)
+    const r = await render(<RoutineEditor rule={rule} onBack={() => undefined} />)
     await waitFor(() => /Apply without asking was turned off after two failed runs in a row/.test(document.body.textContent ?? ''), 'the notice')
     expect(document.querySelector('[data-ai-usage]')!.textContent).toMatch(/AI tokens today: 3,200 of 20,000/)
     const sw = document.querySelector<HTMLButtonElement>('[data-routine-ai] [role="switch"]')!

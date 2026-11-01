@@ -1297,6 +1297,9 @@
     "web/src/app/notes/NoteFilters.tsx",
     "web/src/lib/shortcuts.ts"
   ],
+  "All runs": [
+    "web/src/app/routines/RoutineEditor.tsx"
+  ],
   "All shared projects": [
     "web/src/app/FeedView.tsx"
   ],
@@ -4734,9 +4737,6 @@
   "Edit link": [
     "web/src/app/LinkDialog.tsx"
   ],
-  "Edit routine": [
-    "web/src/app/routines/RoutineEditor.tsx"
-  ],
   "Edit scope": [
     "web/src/app/task-detail/OccurrenceScope.tsx"
   ],
@@ -6184,7 +6184,8 @@
     "web/src/app/palette/registry.ts"
   ],
   "Go to Routines": [
-    "web/src/app/palette/registry.ts"
+    "web/src/app/palette/registry.ts",
+    "web/src/app/routines/RoutinePage.tsx"
   ],
   "Go to Settings": [
     "web/src/app/palette/registry.ts",
@@ -7001,7 +7002,7 @@
   "In the routine editor: add a step below the focused step; Delete asks to delete it": [
     "web/src/lib/shortcuts.ts"
   ],
-  "In the routine editor: move between the words of a step; Esc closes a picker, then the editor": [
+  "In the routine editor: move between the words of a step; Esc closes a picker, then goes back to Routines": [
     "web/src/lib/shortcuts.ts"
   ],
   "In the routine editor: move the focused step down": [
@@ -7981,6 +7982,9 @@
   "Loading the review…": [
     "web/src/app/Shell.tsx"
   ],
+  "Loading the routine": [
+    "web/src/app/routines/RoutinePage.tsx"
+  ],
   "Loading the run": [
     "web/src/app/routines/RunHistory.tsx"
   ],
@@ -8094,6 +8098,7 @@
     "web/src/app/RestoreSection.tsx"
   ],
   "Made with a newer version": [
+    "web/src/app/routines/RoutinePage.tsx",
     "web/src/app/routines/RoutinesView.tsx"
   ],
   "Made with a newer version of OpenTodo": [
@@ -8773,6 +8778,7 @@
   "Needs a connection": [
     "web/src/app/palette/routineCommand.ts",
     "web/src/app/routines/ProposalReview.tsx",
+    "web/src/app/routines/RoutineEditor.tsx",
     "web/src/app/routines/RoutinesView.tsx",
     "web/src/app/routines/RunHistory.tsx"
   ],
@@ -10177,6 +10183,9 @@
   ],
   "On a phone": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "On a routine's page: back to Routines, asking first about unsaved changes": [
+    "web/src/lib/shortcuts.ts"
   ],
   "On a schedule": [
     "web/src/app/rules/RuleFields.tsx"
@@ -12596,6 +12605,7 @@
   ],
   "Routines": [
     "web/src/app/Sidebar.tsx",
+    "web/src/app/routines/RoutineEditor.tsx",
     "web/src/app/routines/RoutinesView.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
@@ -12637,6 +12647,9 @@
   ],
   "Run a command": [
     "web/src/app/palette/CommandPalette.tsx"
+  ],
+  "Run a test": [
+    "web/src/app/routines/RoutineEditor.tsx"
   ],
   "Run automation rules": [
     "web/src/app/rules/AutomationsSettings.tsx"
@@ -12824,12 +12837,18 @@
   "Save the query as a view, pinned to the sidebar": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Save the routine to see its runs.": [
+    "web/src/app/routines/RoutineEditor.tsx"
+  ],
   "Save these recovery codes now. They will not be shown again.": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
   "Save view": [
     "web/src/app/palette/registry.ts",
     "web/src/app/views/SaveViewCard.tsx"
+  ],
+  "Saved": [
+    "web/src/app/routines/RoutineEditor.tsx"
   ],
   "Saved locations": [
     "web/src/app/locations/LocationEditor.tsx"
@@ -14244,6 +14263,9 @@
     "web/src/app/routines/RoutineEditor.tsx",
     "web/src/app/routines/RunHistory.tsx"
   ],
+  "Steps of {name}": [
+    "web/src/app/routines/RoutineEditor.tsx"
+  ],
   "Still visible to the server: {PLAINTEXT_FIELDS}. Shared projects are not encrypted, and new projects cannot be shared while encryption is on.": [
     "web/src/app/EncryptionPanel.tsx"
   ],
@@ -14684,6 +14706,9 @@
     "web/src/app/routines/words.tsx",
     "web/src/lib/rules/sentence.ts"
   ],
+  "Test and history": [
+    "web/src/app/routines/RoutineEditor.tsx"
+  ],
   "Test connection": [
     "web/src/app/SsoPanel.tsx",
     "web/src/app/assistant/AssistantDevice.tsx",
@@ -14715,6 +14740,9 @@
   ],
   "Test notification: push works on this device.": [
     "web/public/push-sw.js"
+  ],
+  "Test runs every step against your tasks and shows what each would do. Nothing is written.": [
+    "web/src/app/routines/RoutineEditor.tsx"
   ],
   "Test sent": [
     "web/src/app/OutgoingEmailPanel.tsx"
@@ -16169,6 +16197,9 @@
   "This restore is no longer prepared. Choose the archive again.": [
     "web/src/lib/restore.ts"
   ],
+  "This routine no longer exists.": [
+    "web/src/app/routines/RoutinePage.tsx"
+  ],
   "This routine works on a task: open one, then run it.": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -17164,6 +17195,9 @@
   "Unpin {name}": [
     "web/src/app/ViewsView.tsx"
   ],
+  "Unsaved changes": [
+    "web/src/app/routines/RoutineEditor.tsx"
+  ],
   "Unschedule the selected task (keep the date)": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -17247,6 +17281,7 @@
   ],
   "Untitled routine": [
     "web/src/app/palette/routineCommand.ts",
+    "web/src/app/routines/RoutineEditor.tsx",
     "web/src/app/routines/RoutinesView.tsx",
     "web/src/app/routines/RunHistory.tsx"
   ],
