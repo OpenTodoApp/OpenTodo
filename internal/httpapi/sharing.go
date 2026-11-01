@@ -73,6 +73,11 @@ func (s *Server) respondMembers(w http.ResponseWriter, r *http.Request, status i
 	ctx := r.Context()
 	actor := userFrom(ctx).ID
 	s.sync.NotifyMembership(ch.Audience)
+	if s.rules != nil && ch.From != ch.To {
+		// A routine running as someone who no longer edits the project
+		// pauses now (routines-shared D9).
+		s.rules.CheckProject(ctx, r.PathValue("id"))
+	}
 	if ch.From != ch.To {
 		s.audit.Record(ctx, audit.RoleChanged(actor, targetID, projectRoleLabel(ch.From), projectRoleLabel(ch.To)))
 	}

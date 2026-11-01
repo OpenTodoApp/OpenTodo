@@ -95,3 +95,20 @@ func (rt routineTools) State(ctx context.Context, uid string) (map[string]string
 	}
 	return paused, last
 }
+
+func (rt routineTools) RunAs(ctx context.Context, uid string, ids []string) map[string]map[string]string {
+	out := map[string]map[string]string{}
+	if rt.s.rules == nil || len(ids) == 0 {
+		return out
+	}
+	runAs := rt.s.rules.RunAsOf(ctx, ids)
+	var people []string
+	for _, u := range runAs {
+		people = append(people, u)
+	}
+	names := rt.s.sync.UserNames(ctx, people)
+	for id, u := range runAs {
+		out[id] = map[string]string{"id": u, "name": names[u]}
+	}
+	return out
+}

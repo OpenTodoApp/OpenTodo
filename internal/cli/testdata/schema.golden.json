@@ -1372,7 +1372,12 @@
         {
           "name": "file",
           "type": "string",
-          "description": "the routine file: name, trigger, condition, steps (or actions), enabled"
+          "description": "the routine file: name, trigger, condition, steps (or actions), enabled, project"
+        },
+        {
+          "name": "project",
+          "type": "string",
+          "description": "the project the routine belongs to (name or id); in a shared project its editors change it and it runs as whoever turns it on"
         }
       ],
       "writes": true,

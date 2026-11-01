@@ -98,6 +98,11 @@ func (n *nameResolver) routine(doc map[string]any) error {
 	if steps, ok := doc["steps"].([]any); ok {
 		n.steps(steps)
 	}
+	// The project a routine belongs to (routines-shared D11), sent as project_id.
+	if p, ok := doc["project"]; ok {
+		delete(doc, "project")
+		doc["project_id"] = n.id("projects", "project", p)
+	}
 	return n.err
 }
 
@@ -183,4 +188,17 @@ func (n *nameResolver) steps(steps []any) {
 			}
 		}
 	}
+}
+
+// name is the name of an id of one kind ("" for none or unknown).
+func (n *nameResolver) name(kind, id string) string {
+	if id == "" {
+		return ""
+	}
+	for _, x := range n.load(kind) {
+		if x.id == id {
+			return x.name
+		}
+	}
+	return id
 }
