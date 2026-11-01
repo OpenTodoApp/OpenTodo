@@ -9,7 +9,7 @@ import { formatMinutes } from '../../lib/duration'
 import { t } from '../../lib/i18n'
 import type { DayMeetings } from './meetingCapacity'
 
-export function CapacityLine({ load, dayLength, unestimated = false, focusable = false, sayOver = true, ...rest }: Omit<ComponentPropsWithRef<'span'>, 'children'> & {
+export function CapacityLine({ load, dayLength, unestimated = false, focusable = false, sayOver = true, className = '', ...rest }: Omit<ComponentPropsWithRef<'span'>, 'children'> & {
   load: DayLoad
   dayLength: number
   /** Say "over capacity" here; false where the enclosing cell's label already says it (Month). */
@@ -29,7 +29,7 @@ export function CapacityLine({ load, dayLength, unestimated = false, focusable =
       data-over={load.overTasks || undefined}
       data-over-meetings={load.overWithEvents || undefined}
       tabIndex={focusable ? 0 : undefined}
-      className={`whitespace-nowrap rounded-chip px-1 text-hint tabular-nums ${tone}`}
+      className={`whitespace-nowrap rounded-chip px-1 text-hint tabular-nums ${tone} ${className}`}
     >
       {formatLoad(load, dayLength)}
       {load.over && sayOver && <span className="sr-only">{' '}{capacityState(load)}</span>}
