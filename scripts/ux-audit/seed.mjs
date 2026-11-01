@@ -116,6 +116,14 @@ export async function seed({ base, pw, lang = '', now = Date.now() }) {
   await A('PUT', '/api/v1/settings/assistant', { enabled: true, default_provider: 'compatible', allow_private_endpoint: true, allow_member_keys: true,
     providers: { compatible: { enabled: true, model: 'fake-model', base_url: `http://127.0.0.1:${llm.address().port}/v1` } } })
   await A('PUT', '/api/v1/me/assistant', { consent: true, provider: 'compatible' })
+  // A routine of four steps (routines-editor-page): the Routines page's row and the editor page.
+  const groceries = await A('POST', '/api/v1/tasks', { title: 'Groceries', description: '- oat milk\n- bread\n- eggs\n- apples\n- rice\n- tea\n- soap' })
+  const routine = await A('POST', '/api/v1/rules', { name: 'Groceries every Friday', trigger: { kind: 'schedule', at: '17:00', weekdays: [5] }, steps: [
+    { id: 'g', kind: 'get_task', in: { task: { literal: { task: groceries.id } } } },
+    { id: 'a', kind: 'note_text', in: { of: { ref: 'g' } } },
+    { id: 'b', kind: 'split_lines', in: { text: { ref: 'a' } } },
+    { id: 'c', kind: 'create_tasks', in: { text: { ref: 'b' }, project: { literal: { project: home.id } } } },
+  ] })
   await A('POST', '/api/v1/tasks', { title: 'Water the plants', due: { date: new Date(now - 2 * 86400e3).toISOString().slice(0, 10) } })
   if (lang) {
     // The interface language is a synced preference (user_prefs.language); written
@@ -125,5 +133,5 @@ export async function seed({ base, pw, lang = '', now = Date.now() }) {
   // One session for every browser context: logging in per context trips the rate limit.
   const storageState = await ctx.storageState()
   await browser.close()
-  return { storageState, projectInvite: projectLink.split('/invite/p/')[1], publicLink: publicLink.split('/public/')[1], pageSecret, home: home.id, work: work.id, view: v1.id, dashboard: dash.id, label: L.errand, quotes: quotes.id, llm }
+  return { storageState, projectInvite: projectLink.split('/invite/p/')[1], publicLink: publicLink.split('/public/')[1], pageSecret, home: home.id, work: work.id, view: v1.id, dashboard: dash.id, label: L.errand, quotes: quotes.id, routine: routine.id, llm }
 }

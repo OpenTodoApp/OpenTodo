@@ -2,6 +2,7 @@
 // every extra kilobyte matters on a low-end phone.
 import { useMemo, useSyncExternalStore } from 'react'
 import { readCalendarMode } from '../lib/calendarMode'
+import { resettable } from '../lib/moduleState'
 import { displayTargetPath, parseDisplayOptions, parseDisplayTarget, serializeDisplayOptions, type DisplayOptions, type DisplayTarget } from './display/displayOptions'
 
 export type Route =
@@ -26,9 +27,10 @@ export type Route =
   // Saved locations (task-locations, the `place` entity): /locations, and /location/<id> lists the open tasks linked to one.
   | { view: 'places' }
   | { view: 'place'; id: string }
-  // Routines (routines-editor; automation-rules before): /routines, /routines#new
-  // opens the editor, /routines/runs the Runs tab, /routines/<id> one routine's
-  // editor (a page on a phone); /rules is the old address.
+  // Routines (routines-editor; automation-rules before): /routines, /routines/runs
+  // the Runs tab; the editor page (routines-editor-page D1) at /routines/new
+  // (/routines#new before) and /routines/<id>, ?run=<run> one run on it; /rules is
+  // the old address.
   | { view: 'rules'; create?: boolean; tab?: 'runs'; id?: string; run?: string }
   // All projects (sidebar-favourites D6): /projects, and /projects#archived with the archived projects open.
   | { view: 'projects'; archived?: boolean }
@@ -142,7 +144,7 @@ export function parseRoute(pathname: string): Route {
     case 'rules':
     case 'routines':
     {
-      if (hash === 'new') return { view: 'rules', create: true }
+      if (hash === 'new' || parts[1] === 'new') return { view: 'rules', create: true }
       // ?run=<id>: a run opened from a notification, a channel message or an email.
       const run = new URLSearchParams(query).get('run')
       const base: Route = parts[1] === 'runs' ? { view: 'rules', tab: 'runs' } : parts[1] && /^[\w-]{1,64}$/.test(parts[1]) ? { view: 'rules', id: parts[1] } : { view: 'rules' }
@@ -274,7 +276,7 @@ export function routePath(r: Route): string {
     case 'places':
       return '/locations'
     case 'rules':
-      return (r.create ? '/routines#new' : r.tab === 'runs' ? '/routines/runs' : r.id ? `/routines/${encodeURIComponent(r.id)}` : '/routines') + (r.run ? `?run=${encodeURIComponent(r.run)}` : '')
+      return (r.create ? '/routines/new' : r.tab === 'runs' ? '/routines/runs' : r.id ? `/routines/${encodeURIComponent(r.id)}` : '/routines') + (r.run ? `?run=${encodeURIComponent(r.run)}` : '')
     case 'invite':
     case 'reset':
     case 'confirm-email':
@@ -331,8 +333,23 @@ export function routePath(r: Route): string {
  * whose presentation options live there (display-mode D2).
  */
 export function addressOf(loc: Pick<Location, 'pathname' | 'search'>): string {
-  return loc.pathname === '/display' || loc.pathname.startsWith('/display/') ? `${loc.pathname}${loc.search}` : loc.pathname
+  // A routine's page keeps ?run=<run> (routines-editor-page D1), so a reload shows the run.
+  return loc.pathname === '/display' || loc.pathname.startsWith('/display/') || loc.pathname.startsWith('/routines/') ? `${loc.pathname}${loc.search}` : loc.pathname
 }
+
+/**
+ * A page with unsaved changes (the routine editor, routines-editor-page D4): asked
+ * before every navigation; it returns true when it took over (it asks first and
+ * calls `go` to continue), false to let the navigation happen.
+ */
+export type LeaveGuard = (go: () => void) => boolean
+let leaveGuard: LeaveGuard | null = null
+
+/** Install or remove the page's leave guard. */
+export function setLeaveGuard(guard: LeaveGuard | null): void {
+  leaveGuard = guard
+}
+resettable('leaveGuard', () => { leaveGuard = null })
 
 const listeners = new Set<() => void>()
 let current = typeof location !== 'undefined' ? addressOf(location) : '/'
@@ -351,6 +368,12 @@ export function routeBeforeFocus(): Route {
 
 if (typeof window !== 'undefined') {
   window.addEventListener('popstate', () => {
+    // The browser's Back already left the page: put its address back and ask (D4).
+    if (leaveGuard) {
+      history.pushState(null, '', current)
+      leaveGuard(() => { leaveGuard = null; history.back() })
+      return
+    }
     track(addressOf(location))
     listeners.forEach((fn) => fn())
   })
@@ -360,6 +383,7 @@ if (typeof window !== 'undefined') {
 export function navigate(r: Route, opts: { replace?: boolean } = {}): void {
   const path = routePath(r)
   if (path === current) return
+  if (leaveGuard && leaveGuard(() => { leaveGuard = null; navigate(r, opts) })) return
   if (opts.replace) history.replaceState(null, '', path)
   else history.pushState(null, '', path)
   track(path)

@@ -1,11 +1,13 @@
-// The routine editor (OpenSpec change routines-editor, design D1-D8, D13): the
-// When card and one sentence card per step in one column, phone first (a
-// full-screen page below 640 px, a wide dialog above); + Add step, live
-// previews, type errors with one-tap fixes, Test (a logged test run for a saved
-// routine, the draft route otherwise), Save as operations (offline included)
-// and, for a saved routine, Run now and its History tab. Every edit is one undo
-// step (Ctrl+Z). Loaded lazily with the Routines page.
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+// The routine editor (OpenSpec change routines-editor, design D1-D8, D13; a page
+// since routines-editor-page): the When card and one sentence card per step in a
+// centred reading column; + Add step, live previews, type errors with one-tap
+// fixes, Save as operations (offline included), Test (a logged test run for a
+// saved routine, the draft route otherwise) and, for a saved routine, Run now and
+// its History. From 1024 px the test result, the History and a run's detail sit
+// in a sticky column beside the steps; below it tabs switch between them. Save,
+// Test and Run now are in the sticky header, on a phone in a bar at the bottom.
+// Every edit is one undo step (Ctrl+Z). Loaded lazily with the Routines page.
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { api } from '../../lib/api'
 import { messageOf } from '../../lib/errorText'
 import { t } from '../../lib/i18n'
@@ -26,13 +28,15 @@ import { useAssistantStatus } from '../../lib/assistantStatus'
 import { useEncryption } from '../../lib/e2ee'
 import { useMe } from '../../lib/timeEntries'
 import type { RoutineStepType, Rule, RoutineTestResult } from '../../lib/types'
-import { Badge, Button, ConfirmDialog, Dialog, Field, Input, Notice, Tabs } from '../../ui'
+import { Badge, Button, ConfirmDialog, DESKTOP_HEADER_QUERY, Field, Icon, Input, Notice, PAGE_FRAME, PageHeader, Tabs, useMediaQuery } from '../../ui'
 import { runRoutineNow } from '../palette/routineCommand'
+import { setLeaveGuard } from '../router'
+import { useShortcutScope } from '../shortcuts'
 import { AddStepSheet } from './AddStep'
 import { AISettings } from './AISettings'
 import { usePreviewData, useRoutineNames, valueNamer } from './data'
 import type { RuleDraft } from './ruleDraft'
-import { RunDetail, RunsList } from './RunHistory'
+import { RunDetailBody, RunsList } from './RunHistory'
 import { CardColumn, sentenceText, WhenCard, type CardEvents, type CardState } from './StepCard'
 
 /** A rule draft (a board conversion) as a routine draft: one Change tasks card. */
@@ -104,30 +108,116 @@ function TestResult({ result, draft, names }: { result: RoutineTestResult; draft
   )
 }
 
-/** The editor over a rule draft made from a view or a board column, naming the filter terms it could not carry over. */
-export function RuleDraftEditor({ draft, onClose }: { draft: RuleDraft; onClose: () => void }) {
-  return <RoutineEditor draft={routineDraftOf(draft)} dropped={draft.dropped} onClose={onClose} />
+export interface RoutineEditorProps {
+  /** The saved routine; undefined for a new one (and for a moment after its first save). */
+  rule?: Rule
+  /** A new routine's starting draft (a view's or a board column's rule). */
+  draft?: RoutineDraft
+  /** Terms of a converted filter that a rule cannot use. */
+  dropped?: string[]
+  /** A run to show in the History column (/routines/<id>?run=<run>). */
+  run?: string
+  /** Open with the History shown (the row menu's History). */
+  history?: boolean
+  /** Leave the page (Back, the breadcrumb, Escape); the router asks first while there are unsaved changes. */
+  onBack: () => void
+  /** A save went through: the routine's id, and whether it was created. */
+  onSaved?: (id: string, created: boolean) => void
 }
 
-export function RoutineEditor({ rule, draft: initial, dropped, onClose }: { rule?: Rule; draft?: RoutineDraft; dropped?: string[]; onClose: () => void }) {
+type Pane = 'steps' | 'test' | 'history'
+
+/** The page's two wide-screen breakpoints: the header's own row (768 px) and the side column (1024 px). */
+const WIDE_QUERY = '(min-width: 64rem)'
+
+/** Test (D8): a logged test run for a saved, unchanged routine, the draft route otherwise; AI steps ask first (routines-ai-step D11). */
+function useRoutineTest({ draft, rule, dirty, online, blocked, withAI, estimate, taskId, onStart, onAnnounce, onError }: {
+  draft: RoutineDraft; rule: Rule | undefined; dirty: boolean; online: boolean; blocked: boolean; withAI: boolean; estimate: number; taskId: string | undefined
+  onStart: () => void; onAnnounce: (text: string) => void; onError: (e: unknown) => void
+}) {
+  const [testing, setTesting] = useState(false)
+  const [confirmAI, setConfirmAI] = useState(false)
+  const [result, setResult] = useState<RoutineTestResult | null>(null)
+  const assistant = useAssistantStatus()
+  const runTest = (callAI: boolean) => {
+    setTesting(true)
+    setResult(null)
+    onStart()
+    const ai = callAI ? { call_ai: true } : {}
+    const req = rule && !dirty
+      ? api.testRoutine(rule.id, { run_id: uuid(), ...(taskId ? { task_id: taskId } : {}), ...ai })
+      : api.testRoutineDraft({ trigger: draft.trigger, condition: draft.condition, steps: draft.steps, ...(taskId ? { task_id: taskId } : {}), ...ai })
+    req.then((r) => {
+      setResult(r)
+      onAnnounce(r.run.outcome === 'failed' ? t('Test failed at step {n}, nothing was written', { n: r.run.failed_step + 1 }) : t('{n, plural, one {Test finished: would write # item, nothing was written} other {Test finished: would write # items, nothing was written}}', { n: r.writes }))
+    }, onError).finally(() => setTesting(false))
+  }
+  const test = () => {
+    if (!online || blocked || !draft.steps.length) return
+    if (withAI) setConfirmAI(true)
+    else runTest(false)
+  }
+  const confirm = confirmAI && (
+    <ConfirmDialog title={t('Test with AI?')} confirmLabel={t('Test')} tone="default"
+      consequence={t('This test sends the inputs to {provider} and uses about {n} tokens. Nothing is written.', { provider: assistant?.provider_label || t('your assistant’s provider'), n: roundEstimate(estimate) })}
+      onConfirm={() => { setConfirmAI(false); runTest(true) }} onCancel={() => setConfirmAI(false)} />
+  )
+  return { test, testing, result, confirm }
+}
+
+/** Leaving with unsaved changes asks first (D4), and Escape leaves the page (D5). */
+function usePageGuards(dirty: boolean, onBack: () => void): [(() => void) | null, (go: (() => void) | null) => void] {
+  const [leave, setLeave] = useState<(() => void) | null>(null)
+  // Unsaved changes: every way off the page asks first (D4); closing the tab gets the browser's prompt.
+  useEffect(() => {
+    if (!dirty) return
+    setLeaveGuard((go) => { setLeave(() => go); return true })
+    const unload = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = '' }
+    window.addEventListener('beforeunload', unload)
+    return () => {
+      setLeaveGuard(null)
+      window.removeEventListener('beforeunload', unload)
+    }
+  }, [dirty])
+  // Escape leaves the page (the registry's routines.escape), unless an overlay above it keeps its own Escape (D5).
+  useShortcutScope('view', {
+    'routines.escape': (e) => {
+      if ((e.target as HTMLElement | null)?.closest?.('[data-overlay], [data-overlay-root]')) return false
+      onBack()
+    },
+  }, { view: 'rules' })
+  return [leave, setLeave]
+}
+
+export function RoutineEditor({ rule, draft: initial, dropped, run, history, onBack, onSaved }: RoutineEditorProps) {
   const start = useMemo(() => (rule ? draftOf(rule) : initial ?? NEW_ROUTINE), [rule, initial])
-  const { draft, edit, undo, canUndo } = useDraft(start)
+  const { draft, edit: editDraft, undo, canUndo } = useDraft(start)
   const me = useMe() ?? ''
   const online = useOnline()
   const names = useRoutineNames()
   const catalogue = useCatalogue()
-  const [tab, setTab] = useState('steps')
+  const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
+  const wide = useMediaQuery(WIDE_QUERY)
+  const [pane, setPane] = useState<Pane>(run || history ? 'history' : 'steps')
   const [adding, setAdding] = useState<AddTarget | null>(null)
   const [saveError, setSaveError] = useState('')
-  const [discard, setDiscard] = useState(false)
-  const [testing, setTesting] = useState(false)
-  const [confirmAI, setConfirmAI] = useState(false)
-  const assistant = useAssistantStatus()
-  const [result, setResult] = useState<RoutineTestResult | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [justSaved, setJustSaved] = useState(false)
   const [announce, setAnnounce] = useState('')
-  const [openRun, setOpenRun] = useState<string | null>(null)
+  const [openRun, setOpenRun] = useState<string | null>(run ?? null)
+  // The last saved state: Save stays on the page (routines-editor-page D3), so unsaved means "since then".
+  const [baseline, setBaseline] = useState(start)
+  const [savedId, setSavedId] = useState(rule?.id)
   const focusAfter = useRef<string | null>(null)
+  const heading = useRef<HTMLHeadingElement>(null)
   const openers = useRef(new Map<string, () => void>()).current
+
+  // An edit clears a message about the last save attempt ("A routine needs at least one step").
+  const edit = useCallback((fn: (d: RoutineDraft) => RoutineDraft) => {
+    setSaveError('')
+    setJustSaved(false)
+    editDraft(fn)
+  }, [editDraft])
 
   const types = useMemo(() => draftTypes(draft), [draft])
   const outputs = useMemo(() => outputNames(draft.steps, valueNamer(names)), [draft.steps, names])
@@ -144,7 +234,18 @@ export function RoutineEditor({ rule, draft: initial, dropped, onClose }: { rule
     return out
   }, [local, server])
   const shownError = error ? { step: error.step, input: error.input, text: errorText(draft, error, outputs), fix: fixFor(draft, error) } : null
-  const dirty = !sameDraft(start, draft)
+  const dirty = !sameDraft(baseline, draft)
+  const saved = !!savedId
+  const [leave, setLeave] = usePageGuards(dirty, onBack)
+
+  // Focus moves to the page heading when the page opens (D5).
+  useEffect(() => { heading.current?.focus({ preventScroll: true }) }, [])
+  // The header's height, so the side column pins just under it.
+  const root = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const head = root.current?.querySelector<HTMLElement>('[data-page-header]')
+    root.current?.style.setProperty('--routine-header-h', `${head?.offsetHeight ?? 0}px`)
+  })
 
   // Focus stays on a moved card (D13).
   useEffect(() => {
@@ -153,6 +254,14 @@ export function RoutineEditor({ rule, draft: initial, dropped, onClose }: { rule
     focusAfter.current = null
     document.querySelector<HTMLElement>(`[data-step-card="${id}"]`)?.focus()
   }, [draft])
+
+
+  // A run opened from a link while the page is open (the Inbox card, a notification).
+  useEffect(() => {
+    if (!run) return
+    setOpenRun(run)
+    setPane('history')
+  }, [run])
 
   const events: CardEvents = {
     set: (id, input, arg) => edit((d) => ({ ...d, steps: setInput(d.steps, id, input, arg) })),
@@ -210,94 +319,187 @@ export function RoutineEditor({ rule, draft: initial, dropped, onClose }: { rule
     if (!name) { setSaveError(t('A routine needs a name')); return }
     if (!draft.steps.length) { setSaveError(t('A routine needs at least one step')); return }
     if (blocked) { setSaveError(t('Fix step {n} first', { n: stepNumber(draft.steps, blocked.step) || 1 })); return }
-    if (rule && !dirty) { onClose(); return }
+    if (saved && !dirty) return
     const stored = storedOf(draft)
-    const done = rule
-      ? updateRule(rule.id, { name, trigger: draft.trigger, condition: draft.condition, ...stored, ...(hasAI(draft.steps) || rule.ai_budget ? { ai_budget: draft.aiBudget ?? 0 } : {}) })
+    const snapshot = draft
+    setSaving(true)
+    const done = savedId
+      ? updateRule(savedId, { name, trigger: draft.trigger, condition: draft.condition, ...stored, ...(hasAI(draft.steps) || rule?.ai_budget ? { ai_budget: draft.aiBudget ?? 0 } : {}) }).then(() => savedId)
       : createRule({ name, trigger: draft.trigger, condition: draft.condition, ...stored, ai_apply: draft.aiApply, ai_budget: draft.aiBudget })
-    Promise.resolve(done).then(onClose, (e: unknown) => setSaveError(messageOf(e)))
+    Promise.resolve(done).then((id) => {
+      const created = !savedId
+      setBaseline(snapshot)
+      setSavedId(id)
+      setJustSaved(true)
+      setAnnounce(t('Saved'))
+      // The guard goes before the address moves to the new id (D3).
+      setLeaveGuard(null)
+      onSaved?.(id, created)
+    }, (e: unknown) => setSaveError(messageOf(e))).finally(() => setSaving(false))
   }
   const withAI = hasAI(draft.steps)
   const estimate = [...previews.values()].reduce((n, p) => n + (p.state === 'ai' ? p.estimate : 0), 0)
-  // A test of AI steps asks first: which provider gets the inputs, about how many tokens (D11).
-  const test = () => {
-    if (!online || blocked || !draft.steps.length) return
-    if (withAI) setConfirmAI(true)
-    else runTest(false)
-  }
-  const runTest = (callAI: boolean) => {
-    setTesting(true)
-    setResult(null)
-    const taskId = triggerType === 'task' ? data.triggerTask?.id : undefined
-    const ai = callAI ? { call_ai: true } : {}
-    const req = rule && !dirty
-      ? api.testRoutine(rule.id, { run_id: uuid(), ...(taskId ? { task_id: taskId } : {}), ...ai })
-      : api.testRoutineDraft({ trigger: draft.trigger, condition: draft.condition, steps: draft.steps, ...(taskId ? { task_id: taskId } : {}), ...ai })
-    req.then((r) => {
-      setResult(r)
-      setAnnounce(r.run.outcome === 'failed' ? t('Test failed at step {n}, nothing was written', { n: r.run.failed_step + 1 }) : t('{n, plural, one {Test finished: would write # item, nothing was written} other {Test finished: would write # items, nothing was written}}', { n: r.writes }))
-    }, (e: unknown) => setSaveError(messageOf(e))).finally(() => setTesting(false))
-  }
-  const close = () => (dirty ? setDiscard(true) : onClose())
+  const { test, testing, result, confirm } = useRoutineTest({
+    draft, rule, dirty, online, blocked: !!blocked, withAI, estimate, taskId: triggerType === 'task' ? data.triggerTask?.id : undefined,
+    onStart: () => setPane('test'), onAnnounce: setAnnounce, onError: (e) => setSaveError(messageOf(e)),
+  })
   const keys = (e: KeyboardEvent<HTMLDivElement>) => {
     const mod = e.ctrlKey || e.metaKey
     if (mod && e.key === 'Enter' && e.shiftKey) { e.preventDefault(); test() }
-    else if (mod && e.key === 'Enter') { e.preventDefault(); save() }
+    else if (mod && (e.key === 'Enter' || (e.key.toLowerCase() === 's' && !e.shiftKey && !e.altKey))) { e.preventDefault(); save() }
     else if (mod && e.key.toLowerCase() === 'z' && !e.shiftKey && canUndo && !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)) { e.preventDefault(); undo() }
   }
+
   const state: CardState = { ctx, catalogue, previews, online, error: shownError, me, openers }
-  const steps = (
-    <div className="mx-auto w-full max-w-[44rem] space-y-2">
+  const name = draft.name.trim() || (saved ? t('Untitled routine') : t('New routine'))
+
+  const actions = (
+    <>
+      <Button variant="secondary" size="sm" icon="list-checks" onClick={test} busy={testing} disabled={!online || !!blocked || !draft.steps.length}
+        data-routine-test>{t('Test')}</Button>
+      {saved && <Button variant="ghost" size="sm" icon="zap" disabled={!online || !rule} onClick={() => { if (rule) void runRoutineNow(rule, undefined) }} data-routine-run>{t('Run now')}</Button>}
+      <Button variant="primary" size="sm" onClick={save} busy={saving} data-routine-save>{t('Save')}</Button>
+    </>
+  )
+
+  const notices = <EditorNotices online={online} dropped={dropped} saveError={saveError} draft={draft} />
+  const stepsColumn = (
+    <section className="space-y-2" aria-label={t('Steps of {name}', { name })} data-routine-steps>
       {draft.steps.length === 0 && <p className="text-meta text-muted">{t('Add the first step: what should happen?')}</p>}
       <CardColumn steps={draft.steps} state={state} events={events} onAdd={addAtEnd}>
         <WhenCard trigger={draft.trigger} condition={draft.condition} ctx={ctx} me={me}
           onTrigger={(tr) => edit((d) => ({ ...d, trigger: tr }))} onCondition={(c) => edit((d) => ({ ...d, condition: c }))} />
       </CardColumn>
+      {withAI && <AISettings rule={rule} draft={draft} online={online} onDraft={edit} />}
+    </section>
+  )
+
+  const status = <SaveStatus dirty={dirty} justSaved={justSaved} />
+  const crumbs = <Crumbs name={name} onBack={onBack} />
+  const testPanel = <TestPanel result={result} draft={draft} names={names} online={online} testing={testing} disabled={!!blocked || !draft.steps.length} onTest={test} />
+  const historyPanel = <HistoryPanel rule={rule} openRun={openRun} onOpen={setOpenRun} />
+  const sideTabs = [{ id: 'test', label: t('Test') }, ...(saved ? [{ id: 'history', label: t('History') }] : [])]
+  const sidePane: Pane = pane === 'history' && saved ? 'history' : 'test'
+  let body: ReactNode
+  if (wide) {
+    body = (
+      <div className="mx-auto grid w-full max-w-[69rem] grid-cols-[minmax(0,44rem)_22rem] justify-center gap-12 pb-10 pt-4">
+        <div className="min-w-0 space-y-4">
+          <NameField draft={draft} edit={edit} />
+          {notices}
+          {stepsColumn}
+        </div>
+        <aside aria-label={t('Test and history')} className="sticky top-(--routine-header-h) max-h-[calc(100dvh-var(--routine-header-h)-2rem)] min-w-0 self-start overflow-y-auto border-l border-soft pl-8" data-routine-side data-scroll-y>
+          <Tabs label={t('Test and history')} value={sidePane} onChange={(id) => setPane(id as Pane)} tabs={sideTabs}>
+            <div className="pt-3">{sidePane === 'history' ? historyPanel : testPanel}</div>
+          </Tabs>
+        </aside>
+      </div>
+    )
+  } else {
+    const tabs = [{ id: 'steps', label: t('Steps') }, ...sideTabs]
+    body = (
+      <div className="mx-auto w-full max-w-[44rem] space-y-4 pb-6 pt-3">
+        <NameField draft={draft} edit={edit} />
+        {notices}
+        <Tabs label={t('Routine')} value={pane === 'history' && !saved ? 'test' : pane} onChange={(id) => setPane(id as Pane)} tabs={tabs}>
+          <div className="pt-3">{pane === 'steps' ? stepsColumn : pane === 'history' && saved ? historyPanel : testPanel}</div>
+        </Tabs>
+      </div>
+    )
+  }
+
+  return (
+    <div ref={root} className={`${PAGE_FRAME} px-4 md:px-8`} onKeyDown={keys} data-routine-editor data-testid="routine-editor" data-routine-page={savedId ?? 'new'}>
+      <PageHeader title={desktop ? crumbs : name} titleRef={heading} titleTabIndex={-1} help="routines"
+        back={desktop ? undefined : { label: t('Routines'), href: '/routines', onClick: onBack }}
+        actions={desktop ? <>{status}{actions}</> : undefined} />
+      <p className="sr-only" aria-live="polite" data-announce>{announce}</p>
+      {body}
+      {!desktop && (
+        <div className="sticky bottom-0 z-10 -mx-4 flex flex-wrap items-center gap-2 border-t border-soft bg-canvas px-4 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]" data-routine-actions>
+          <div className="mr-auto">{status}</div>
+          {actions}
+        </div>
+      )}
+      {adding && <AddStepSheet above={adding.above} catalogue={catalogue} onPick={pick} onClose={() => setAdding(null)} />}
+      {confirm}
+      {leave && (
+        <ConfirmDialog title={t('Discard your changes?')} consequence={t('The routine stays as it was saved.')} confirmLabel={t('Discard')}
+          onConfirm={() => { const go = leave; setLeave(null); go() }} onCancel={() => setLeave(null)} />
+      )}
     </div>
   )
+}
+
+function EditorNotices({ online, dropped, saveError, draft }: { online: boolean; dropped?: string[]; saveError: string; draft: RoutineDraft }) {
   return (
-    <Dialog title={rule ? t('Edit routine') : t('New routine')} onClose={close} onEscape={close} size="xl" testId="routine-editor">
-      <div className="space-y-3" onKeyDown={keys} data-routine-editor>
-        <div className="mx-auto flex w-full max-w-[44rem] flex-wrap items-end gap-2">
-          <Field label={t('Name')} className="min-w-0 flex-1">
-            <Input value={draft.name} maxLength={200} placeholder={t('Groceries')} onChange={(e) => { const name = e.target.value; edit((d) => ({ ...d, name })) }} />
-          </Field>
-          <Button variant="secondary" onClick={test} busy={testing} disabled={!online || !!blocked || !draft.steps.length}
-            >{t('Test')}</Button>
-          {rule && <Button variant="ghost" icon="zap" disabled={!online} onClick={() => void runRoutineNow(rule, undefined)}>{t('Run now')}</Button>}
-          <Button variant="primary" onClick={save}>{t('Save')}</Button>
+    <>
+      {!online && <p className="text-meta text-muted">{t('Offline: Save works and syncs later; Test and Run now need a connection.')}</p>}
+      {dropped && dropped.length > 0 && (
+        <ul className="space-y-0.5 text-meta text-muted" data-rule-dropped>
+          {dropped.map((d) => <li key={d}>{t('{term} cannot be used in a rule', { term: d })}</li>)}
+        </ul>
+      )}
+      {saveError && <p role="alert" className="text-meta text-danger" data-save-error>{saveError}</p>}
+      {draft.trigger.kind === 'schedule' && <EncryptedScheduleNote draft={draft} />}
+    </>
+  )
+}
+
+function SaveStatus({ dirty, justSaved }: { dirty: boolean; justSaved: boolean }) {
+  return (
+    <span className="inline-flex min-h-9 items-center gap-1.5 px-1 text-meta text-muted" role="status" data-unsaved={dirty || undefined}>
+      {dirty && <><span className="h-2 w-2 shrink-0 rounded-full bg-warning" aria-hidden="true" />{t('Unsaved changes')}</>}
+      {!dirty && justSaved && <><Icon name="check" size="xs" className="text-success" />{t('Saved')}</>}
+    </span>
+  )
+}
+
+function Crumbs({ name, onBack }: { name: string; onBack: () => void }) {
+  const crumbClass = 'rounded-control px-1 text-muted hover:bg-hover hover:text-default'
+  return (
+    <span className="flex min-w-0 items-center gap-0.5 text-body font-normal" data-breadcrumb>
+      <button type="button" className={`shrink-0 ${crumbClass}`} onClick={onBack} data-crumb="routines">{t('Routines')}</button>
+      <Icon name="chevron-right" size="xs" className="shrink-0 text-faint" />
+      <span className="user-text min-w-0 truncate px-1 text-strong" aria-current="page" data-crumb="routine">{name}</span>
+    </span>
+  )
+}
+
+function TestPanel({ result, draft, names, online, testing, disabled, onTest }: {
+  result: RoutineTestResult | null; draft: RoutineDraft; names: ReturnType<typeof useRoutineNames>; online: boolean; testing: boolean; disabled: boolean; onTest: () => void
+}) {
+  return (
+    <div className="space-y-3" data-routine-test-panel>
+      {result ? <TestResult result={result} draft={draft} names={names} /> : (
+        <div className="space-y-3 rounded-card border border-dashed border-default p-4">
+          <p className="text-body text-muted">{t('Test runs every step against your tasks and shows what each would do. Nothing is written.')}</p>
+          {!online && <p className="text-meta text-muted">{t('Needs a connection')}</p>}
+          <Button variant="secondary" size="sm" icon="list-checks" onClick={onTest} busy={testing} disabled={!online || disabled}>{t('Run a test')}</Button>
         </div>
-        {!online && <p className="mx-auto max-w-[44rem] text-meta text-muted">{t('Offline: Save works and syncs later; Test and Run now need a connection.')}</p>}
-        {dropped && dropped.length > 0 && (
-          <ul className="mx-auto max-w-[44rem] space-y-0.5 text-meta text-muted" data-rule-dropped>
-            {dropped.map((d) => <li key={d}>{t('{term} cannot be used in a rule', { term: d })}</li>)}
-          </ul>
-        )}
-        {saveError && <p role="alert" className="mx-auto max-w-[44rem] text-meta text-danger" data-save-error>{saveError}</p>}
-        {draft.trigger.kind === 'schedule' && <EncryptedScheduleNote draft={draft} />}
-        <p className="sr-only" aria-live="polite" data-announce>{announce}</p>
-        {result && <div className="mx-auto max-w-[44rem]"><TestResult result={result} draft={draft} names={names} /></div>}
-        {rule ? (
-          <Tabs label={t('Routine')} value={tab} onChange={setTab} tabs={[{ id: 'steps', label: t('Steps') }, { id: 'history', label: t('History') }]}>
-            {tab === 'steps' ? steps : (
-              <div className="mx-auto max-w-[44rem]"><RunsList rules={[rule]} ruleId={rule.id} onOpen={(r) => setOpenRun(r.run_id)} /></div>
-            )}
-          </Tabs>
-        ) : steps}
-        {withAI && tab === 'steps' && <AISettings rule={rule} draft={draft} online={online} onDraft={edit} />}
-      </div>
-      {adding && <AddStepSheet above={adding.above} catalogue={catalogue} onPick={pick} onClose={() => setAdding(null)} />}
-      {openRun && <RunDetail rule={rule} runId={openRun} onClose={() => setOpenRun(null)} />}
-      {confirmAI && (
-        <ConfirmDialog title={t('Test with AI?')} confirmLabel={t('Test')} tone="default"
-          consequence={t('This test sends the inputs to {provider} and uses about {n} tokens. Nothing is written.', { provider: assistant?.provider_label || t('your assistant’s provider'), n: roundEstimate(estimate) })}
-          onConfirm={() => { setConfirmAI(false); runTest(true) }} onCancel={() => setConfirmAI(false)} />
       )}
-      {discard && (
-        <ConfirmDialog title={t('Discard your changes?')} consequence={t('The routine stays as it was saved.')} confirmLabel={t('Discard')}
-          onConfirm={() => { setDiscard(false); onClose() }} onCancel={() => setDiscard(false)} />
-      )}
-    </Dialog>
+    </div>
+  )
+}
+
+function HistoryPanel({ rule, openRun, onOpen }: { rule: Rule | undefined; openRun: string | null; onOpen: (run: string | null) => void }) {
+  if (!rule) return <p className="text-meta text-muted">{t('Save the routine to see its runs.')}</p>
+  if (!openRun) return <RunsList rules={[rule]} ruleId={rule.id} onOpen={(r) => onOpen(r.run_id)} />
+  return (
+    <div className="space-y-3">
+      <Button variant="ghost" size="sm" icon="arrow-left" className="-ml-2" onClick={() => onOpen(null)} data-runs-back>{t('All runs')}</Button>
+      <RunDetailBody key={openRun} rule={rule} runId={openRun} />
+    </div>
+  )
+}
+
+function NameField({ draft, edit }: { draft: RoutineDraft; edit: (fn: (d: RoutineDraft) => RoutineDraft) => void }) {
+  return (
+    <Field label={t('Name')}>
+      <Input value={draft.name} maxLength={200} placeholder={t('Groceries')} className="text-h3" data-routine-name
+        onChange={(e) => { const name = e.target.value; edit((d) => ({ ...d, name })) }} />
+    </Field>
   )
 }
 

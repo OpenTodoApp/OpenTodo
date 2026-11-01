@@ -175,6 +175,15 @@ export function useRules(): Rule[] {
   return useLiveQuery(async () => activeRules(await db.rules.toArray()), [], NO_RULES)
 }
 
+/** One live rule: undefined while loading, null when it does not exist or was deleted (the editor page). */
+export function useRule(id: string | undefined): Rule | null | undefined {
+  return useLiveQuery(async () => {
+    if (!id) return null
+    const r = await db.rules.get(id)
+    return r && !r.deleted_at ? r : null
+  }, [id], undefined)
+}
+
 /** Titles of the live tasks among ids (a rule's history): a deleted task has none. */
 export function useTaskTitles(ids: readonly string[]): Map<string, string> {
   return useLiveQuery(async () => new Map((await db.tasks.bulkGet([...ids])).flatMap((x) => (x && !x.deleted_at ? [[x.id, x.title] as const] : []))), [ids.join()], NO_TITLES)
