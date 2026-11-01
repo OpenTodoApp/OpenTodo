@@ -734,7 +734,10 @@ func TestSyncCollectionReportsRemoved(t *testing.T) {
 }
 
 func TestCalendarQueryTimeRange(t *testing.T) {
-	_, c := davSetup(t)
+	e, c := davSetup(t)
+	// The undated task matches the range by its CREATED stamp, so the clock
+	// stays inside the queried October.
+	e.now.Freeze(time.Date(2026, 10, 20, 12, 0, 0, 0, time.UTC))
 	c.must("PUT", c.cal("inbox")+"oct.ics", vtodoBody("oct", "SUMMARY:Oct", "DUE;VALUE=DATE:20261015"), 201)
 	c.must("PUT", c.cal("inbox")+"dec.ics", vtodoBody("dec", "SUMMARY:Dec", "DUE:20261215T100000"), 201)
 	c.must("PUT", c.cal("inbox")+"none.ics", vtodoBody("none", "SUMMARY:Someday"), 201)
