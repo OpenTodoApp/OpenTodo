@@ -35,6 +35,7 @@ import { clearVimPref } from './vim/prefs'
 import { DEMO_LIMIT_NOTICE, expireSandboxIfGone, sandboxErrorMessage, setDemo, startSandbox, useDemo } from '../lib/demo'
 import { setHosted } from '../lib/hosted'
 import { setBranding } from '../lib/branding'
+import { refreshInstanceThemes, watchInstanceThemes } from '../lib/theme/instance'
 import { PanelBoundary } from './PanelBoundary'
 import { UpdateBanner } from './UpdateBanner'
 import { DemoBanner } from './DemoBanner'
@@ -79,6 +80,9 @@ export function App() {
         // End-to-end encryption (OpenSpec e2ee): learn the account mode before the
         // first sync, so a new device unlocks before anything is pulled.
         await adoptProfile(status.encryption, status.minClientVersion).catch(() => undefined)
+        // The instance's themes (theme-instance-default D3): read again when their version moved.
+        void refreshInstanceThemes(status.themes?.version)
+        watchInstanceThemes()
         // Ask the browser not to evict the local copy (Safari drops unpersisted
         // storage after weeks without a visit); its answer changes nothing else.
         void requestPersistentStorage()
