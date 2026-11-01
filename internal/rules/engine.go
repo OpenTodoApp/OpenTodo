@@ -62,6 +62,15 @@ type Engine struct {
 	Notify   notify.RuleSink
 	Webhook  Hook
 	Log      *slog.Logger
+	// Tools plans routine steps through the agent tool registry; Env reports
+	// step availability; Routine delivers Notify me steps (routines-engine).
+	Tools   Tools
+	Env     EnvFunc
+	Routine notify.RoutineSink
+	// Query evaluates a filter query for a Find tasks step (internal/filter);
+	// QuickAdd reads a line with quick-add syntax for Create tasks.
+	Query    QueryFunc
+	QuickAdd QuickAddFunc
 
 	db     *sql.DB
 	keys   *e2ee.Store
@@ -94,14 +103,23 @@ func (e *Engine) SetClock(now func() time.Time) { e.now = now; e.Store.SetClock(
 
 func (e *Engine) on(ctx context.Context) bool { return e.Enabled == nil || e.Enabled(ctx) }
 
-// rule is one decoded rule row.
+// QueryFunc compiles a filter query against the run's rows into a matcher.
+type QueryFunc func(ctx context.Context, uid, query string, tasks map[string]opsync.Entity) (func(opsync.Entity) bool, error)
+
+// QuickAddFunc reads a line with quick-add syntax into a create_tasks item
+// (its title, due, priority, labels by name, project by name).
+type QuickAddFunc func(ctx context.Context, w *world, line string, item map[string]any)
+
+// rule is one decoded rule row: a legacy rule has Actions, a routine Steps.
 type rule struct {
-	ID        string
-	Name      string
-	Enabled   bool
-	Trigger   ruleval.Trigger
-	Condition ruleval.Condition
-	Actions   ruleval.Actions
+	ID           string
+	Name         string
+	Enabled      bool
+	Trigger      ruleval.Trigger
+	Condition    ruleval.Condition
+	HasCondition bool
+	Actions      ruleval.Actions
+	Steps        []ruleval.Step
 }
 
 func str(e opsync.Entity, f string) string {
@@ -121,20 +139,9 @@ func (e *Engine) loadRules(ctx context.Context, uid string) ([]rule, error) {
 	}
 	out := make([]rule, 0, len(rows))
 	for _, row := range rows {
-		r := rule{ID: str(row, "id"), Name: str(row, "name"), Enabled: boolOf(row, "enabled")}
-		var perr error
-		if r.Trigger, perr = ruleval.ParseTrigger(row["trigger"]); perr != nil {
-			continue
+		if r, ok := readRule(row); ok {
+			out = append(out, r)
 		}
-		if !opsync.IsNull(row["condition"]) {
-			if r.Condition, perr = ruleval.ParseCondition(row["condition"]); perr != nil {
-				continue
-			}
-		}
-		if r.Actions, perr = ruleval.ParseActions(row["actions"]); perr != nil {
-			continue
-		}
-		out = append(out, r)
 	}
 	return out, nil
 }
@@ -186,11 +193,15 @@ type world struct {
 	shared    map[string]bool
 	tracked   map[string]int
 	encrypted bool
+	// projectRows and labelNames serve routine steps (routines-engine).
+	projectRows map[string]opsync.Entity
+	labelNames  map[string]bool
 }
 
 // load reads one user's rows, zone and preferences.
 func (e *Engine) load(ctx context.Context, uid string) (*world, error) {
-	w := &world{uid: uid, tasks: map[string]opsync.Entity{}, parent: map[string]string{}, labels: map[string]bool{}, sections: map[string]string{}}
+	w := &world{uid: uid, tasks: map[string]opsync.Entity{}, parent: map[string]string{}, labels: map[string]bool{}, sections: map[string]string{},
+		projectRows: map[string]opsync.Entity{}, labelNames: map[string]bool{}}
 	if found, err := settings.New(e.db).Get(ctx, "tz_offset:"+uid, &w.offset); err != nil || !found {
 		w.offset = 0
 	}
@@ -221,6 +232,7 @@ func (e *Engine) load(ctx context.Context, uid string) (*world, error) {
 	}
 	for _, p := range projects {
 		w.parent[str(p, "id")] = str(p, "parent_id")
+		w.projectRows[str(p, "id")] = p
 	}
 	labels, err := e.Sync.List(ctx, uid, "label", false)
 	if err != nil {
@@ -228,6 +240,7 @@ func (e *Engine) load(ctx context.Context, uid string) (*world, error) {
 	}
 	for _, l := range labels {
 		w.labels[str(l, "id")] = true
+		w.labelNames[strings.ToLower(strings.TrimSpace(str(l, "name")))] = true
 	}
 	sections, err := e.Sync.List(ctx, uid, "section", false)
 	if err != nil {

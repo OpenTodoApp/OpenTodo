@@ -81,6 +81,12 @@ type Caller struct {
 // ScopeAgent is the token scope that may call write tools (auth.ScopeAgent).
 const ScopeAgent = "agent"
 
+// ScopeRoutine is the routine caller (routines-engine D11): a routine's steps
+// are planned through the registry as the user's own automation. The engine
+// plans with it and writes itself with device rule:<rule-id>: no token gate,
+// no per-token limits and no agent.write audit apply, the routine limits do.
+const ScopeRoutine = "routine"
+
 // Write permission gate codes (design D3).
 const (
 	DeniedByOwner = "writes_disabled_by_owner"

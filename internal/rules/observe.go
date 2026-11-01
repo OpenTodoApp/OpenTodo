@@ -40,7 +40,7 @@ func (e *Engine) Observe(ctx context.Context, changes []opsync.Change) {
 			e.clearPauseOnEnable(ctx, c)
 		}
 	}
-	if !e.on(ctx) {
+	if !e.on(ctx) || isUndo(ctx) {
 		return
 	}
 	depth := depthOf(ctx)
