@@ -1,10 +1,11 @@
 // Actions over a registered list (vim-keybindings, design D3). Lives in the lazy
 // Vim chunk; the main bundle only carries the ListState registry.
-import { deleteTask, updateTask } from '../../lib/ops'
+import { updateTask } from '../../lib/ops'
 import { moveTaskBy } from '../../lib/move'
 import type { Task } from '../../lib/types'
 import { listState, type ListActions, type ListState } from '../listActions'
 import { runBulk } from '../bulk/BulkActions'
+import { deleteWithUndo } from '../undoable'
 
 export function makeListActions(s: ListState): ListActions {
   const selectedRow = () => {
@@ -58,7 +59,7 @@ export function makeListActions(s: ListState): ListActions {
       // Same as Delete: the selection moves to the next row (or the previous one).
       s.select(rows[idx + 1]?.id ?? rows[idx - 1]?.id ?? null)
       if (s.openId() === task.id) s.open(null)
-      await deleteTask(task.id)
+      await deleteWithUndo(task.id)
     },
     async setPrioritySelected(p) {
       const { task } = selectedRow()

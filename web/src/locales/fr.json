@@ -6831,5 +6831,10 @@
   "names of members and groups of shared projects and workspaces": "noms des membres et groupes des projets et espaces de travail partagés",
   "your display name, today's date and your time zone": "votre nom affiché, la date du jour et votre fuseau horaire",
   "the messages you type": "les messages que vous écrivez",
-  "photos you add": "les photos que vous ajoutez"
+  "photos you add": "les photos que vous ajoutez",
+  "Move {tasks} to the Trash?": "Mettre {tasks} à la Corbeille ?",
+  "Show Trash": "Voir la Corbeille",
+  "They go to the Trash with their subtasks. You can restore them from the Trash.": "Elles vont à la Corbeille avec leurs sous-tâches. Vous pouvez les restaurer depuis la Corbeille.",
+  "The time entry could not be started; this session is not being tracked. ({detail})": "Impossible de démarrer l’entrée de temps ; cette session n’est pas suivie. ({detail})",
+  "The time entry could not be stopped; the minutes may not be logged correctly. ({detail})": "Impossible d’arrêter l’entrée de temps ; les minutes ne seront peut-être pas enregistrées correctement. ({detail})"
 }

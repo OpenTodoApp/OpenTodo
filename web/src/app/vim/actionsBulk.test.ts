@@ -1,12 +1,15 @@
 // OpenSpec bulk-edit 2.2: Vim's `x` and `dd` act on the ticked tasks when there are any.
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from '../../lib/db'
 import { createTask, resetDeviceId } from '../../lib/ops'
 import type { ListState } from '../listActions'
+import { bulkToast, hideBulkToast } from '../bulk/toastStore'
 import { makeListActions } from './actions'
 
 let n = 0
 beforeEach(() => { useDatabase(`vim-bulk-${Date.now()}-${n++}`); resetDeviceId() })
+
+afterEach(() => { hideBulkToast() })
 
 function state(rows: string[], ticked: string[]): ListState {
   const tasks = rows.map((id) => ({ id } as never))
@@ -23,5 +26,11 @@ describe('vim actions on a selection', () => {
     for (const id of ids) expect((await db.tasks.get(id))!.completed_at).not.toBeNull()
     await makeListActions(state(ids, ids)).deleteSelected()
     for (const id of ids) expect((await db.tasks.get(id))!.deleted_at).not.toBeNull()
+  })
+
+  it('dd on one task offers Undo like the list does', async () => {
+    const a = await createTask({ title: 'a' })
+    await makeListActions(state([a], [])).deleteSelected()
+    expect(bulkToast()?.undoId).toBeTruthy()
   })
 })

@@ -48,7 +48,7 @@ Next to each change in the history is **Restore this value**, and **Restore this
 
 ## Undo a bulk action
 
-After you change several tasks at once, a notice with **Undo** stays for ten seconds; <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Z</kbd> undoes too. Tasks moved to the Trash in bulk come back with it, and so do the originals of a move into a shared project (the copies go to the Trash). Undo works offline. See [Change several tasks at once](bulk-actions.md).
+After you change several tasks at once, a notice with **Undo** stays for ten seconds; <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Z</kbd> undoes too. A bulk move to the Trash keeps its offer for fifteen seconds and adds **Show Trash**, and pressing <kbd>Delete</kbd> on more than twenty ticked tasks asks first (a menu click stays immediate). Tasks moved to the Trash in bulk come back with Undo, and so do the originals of a move into a shared project (the copies go to the Trash). Deleting one task from its menu, the command palette, Vim's `dd`, the Filter view or a saved view offers the same Undo. Undo works offline. See [Change several tasks at once](bulk-actions.md).
 
 ## Activity on a task
 
