@@ -304,3 +304,37 @@ func TestCatalogueIsWhole(t *testing.T) {
 		}
 	}
 }
+
+// TestFocusVectors: Set today's focus places like web/src/lib/focusSet.ts.
+func TestFocusVectors(t *testing.T) {
+	raw, err := os.ReadFile("../../web/src/lib/focusSet.vectors.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var vs []struct {
+		Name  string   `json:"name"`
+		Style string   `json:"style"`
+		Order string   `json:"order"`
+		IDs   []string `json:"ids"`
+		Tasks []struct {
+			ID          string `json:"id"`
+			CompletedAt *int64 `json:"completed_at"`
+			DeletedAt   *int64 `json:"deleted_at"`
+			Estimate    *int   `json:"estimate_minutes"`
+		} `json:"tasks"`
+		Out json.RawMessage `json:"out"`
+	}
+	if err := json.Unmarshal(raw, &vs); err != nil {
+		t.Fatal(err)
+	}
+	for _, v := range vs {
+		tasks := map[string]FocusTask{}
+		for _, x := range v.Tasks {
+			tasks[x.ID] = FocusTask{Open: x.CompletedAt == nil && x.DeletedAt == nil, Estimate: x.Estimate}
+		}
+		got, _ := json.Marshal(PlanSetFocus(v.IDs, tasks, v.Style, v.Order, "2026-11-04"))
+		if !sameJSONText(got, v.Out) {
+			t.Errorf("%s: %s, want %s", v.Name, got, v.Out)
+		}
+	}
+}

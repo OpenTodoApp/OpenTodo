@@ -38,6 +38,7 @@ const (
 	txtPageRepliedBy    = "page_replied_by"
 	txtPageDoneBy       = "page_completed_by"
 	txtPageReopenedBy   = "page_reopened_by"
+	txtRoutine          = "routine"
 	txtTestTitle        = "test_title"
 	txtTestBody         = "test_body"
 	txtGuest            = "guest"
@@ -49,6 +50,7 @@ const (
 // texts holds every message in the six app languages. {name} is the actor.
 var texts = map[string]map[string]string{
 	"en": {
+		txtRoutine:  "A routine sent you a notice",
 		txtReminder: "A reminder is due", txtAssigned: "A task was assigned to you", txtMentioned: "You were mentioned",
 		txtUnblocked: "A task you're assigned to is ready to start", txtPageReplied: "A guest replied on a task page",
 		txtPageDone: "A guest completed a task page", txtPageReopened: "A guest reopened a task page",
@@ -58,6 +60,7 @@ var texts = map[string]map[string]string{
 		txtTestTitle: "Test from OpenTodo", txtTestBody: "This channel works.", txtGuest: "A guest",
 	},
 	"de": {
+		txtRoutine:  "Eine Routine hat dir eine Nachricht geschickt",
 		txtReminder: "Eine Erinnerung ist fällig", txtAssigned: "Dir wurde eine Aufgabe zugewiesen", txtMentioned: "Du wurdest erwähnt",
 		txtUnblocked: "Eine dir zugewiesene Aufgabe kann beginnen", txtPageReplied: "Ein Gast hat auf einer Aufgabenseite geantwortet",
 		txtPageDone: "Ein Gast hat eine Aufgabenseite erledigt", txtPageReopened: "Ein Gast hat eine Aufgabenseite wieder geöffnet",
@@ -67,6 +70,7 @@ var texts = map[string]map[string]string{
 		txtTestTitle: "Test von OpenTodo", txtTestBody: "Dieser Kanal funktioniert.", txtGuest: "Ein Gast",
 	},
 	"fr": {
+		txtRoutine:  "Une routine vous a envoyé un avis",
 		txtReminder: "Un rappel arrive à échéance", txtAssigned: "Une tâche vous a été attribuée", txtMentioned: "Vous avez été mentionné",
 		txtUnblocked: "Une tâche qui vous est attribuée peut commencer", txtPageReplied: "Un invité a répondu sur une page de tâche",
 		txtPageDone: "Un invité a terminé une page de tâche", txtPageReopened: "Un invité a rouvert une page de tâche",
@@ -76,6 +80,7 @@ var texts = map[string]map[string]string{
 		txtTestTitle: "Test d’OpenTodo", txtTestBody: "Ce canal fonctionne.", txtGuest: "Un invité",
 	},
 	"es": {
+		txtRoutine:  "Una rutina te envió un aviso",
 		txtReminder: "Hay un recordatorio pendiente", txtAssigned: "Se te ha asignado una tarea", txtMentioned: "Te han mencionado",
 		txtUnblocked: "Una tarea asignada a ti ya puede empezar", txtPageReplied: "Un invitado respondió en una página de tarea",
 		txtPageDone: "Un invitado completó una página de tarea", txtPageReopened: "Un invitado reabrió una página de tarea",
@@ -85,6 +90,7 @@ var texts = map[string]map[string]string{
 		txtTestTitle: "Prueba de OpenTodo", txtTestBody: "Este canal funciona.", txtGuest: "Un invitado",
 	},
 	"it": {
+		txtRoutine:  "Una routine ti ha inviato un avviso",
 		txtReminder: "C’è un promemoria in scadenza", txtAssigned: "Ti è stata assegnata un’attività", txtMentioned: "Sei stato menzionato",
 		txtUnblocked: "Un’attività assegnata a te può iniziare", txtPageReplied: "Un ospite ha risposto su una pagina dell’attività",
 		txtPageDone: "Un ospite ha completato una pagina dell’attività", txtPageReopened: "Un ospite ha riaperto una pagina dell’attività",
@@ -94,6 +100,7 @@ var texts = map[string]map[string]string{
 		txtTestTitle: "Prova da OpenTodo", txtTestBody: "Questo canale funziona.", txtGuest: "Un ospite",
 	},
 	"pt": {
+		txtRoutine:  "Uma rotina enviou um aviso para você",
 		txtReminder: "Há um lembrete pendente", txtAssigned: "Uma tarefa foi atribuída a você", txtMentioned: "Você foi mencionado",
 		txtUnblocked: "Uma tarefa atribuída a você já pode começar", txtPageReplied: "Um convidado respondeu em uma página de tarefa",
 		txtPageDone: "Um convidado concluiu uma página de tarefa", txtPageReopened: "Um convidado reabriu uma página de tarefa",
@@ -145,6 +152,8 @@ type event struct {
 	actorName string
 	excerpt   string
 	at        int64
+	// runID links a routine notice to its run.
+	runID string
 }
 
 // render applies the content policy and the channel's language. content says
@@ -154,6 +163,19 @@ func (e event) render(lang, origin string, content bool) Message {
 	m := Message{Event: e.kind, TaskID: e.taskID, PageID: e.pageID, CreatedAt: e.at}
 	if origin != "" && e.taskID != "" {
 		m.URL = origin + "/?task=" + e.taskID
+	}
+	if e.kind == EventRoutine {
+		// A routine's notice: its name and the step's text, or the generic line.
+		if origin != "" {
+			m.URL = origin + "/rules?run=" + e.runID
+		}
+		name, body := plain(e.taskTitle), plain(e.excerpt)
+		if !content || name == "" || body == "" {
+			m.Title, m.Body = genericMessageTitle, text(lang, e.key, "")
+			return m
+		}
+		m.Title, m.Body = clip(name, maxTitleRunes), clip(body, maxBodyRunes)
+		return m
 	}
 	title, actor := plain(e.taskTitle), plain(e.actorName)
 	if !content || title == "" {

@@ -179,6 +179,10 @@ func Build(ctx context.Context, cfg config.Config, db, reader *sql.DB, o Options
 	s.Channels = openChannels(ctx, cfg, o, db, s.Sync, s.Push, s.Hooks, log)
 	if s.Channels != nil {
 		s.ChannelsOn = s.Channels.Switch()
+		if s.Rules != nil {
+			// A routine's Notify me reaches the inbox and the delivery channels.
+			s.Rules.Routine = notify.Multi{s.Inbox, s.Channels}
+		}
 	} else {
 		s.ChannelsOn = channels.NewSwitch(db, log)
 	}

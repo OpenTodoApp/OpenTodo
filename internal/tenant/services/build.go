@@ -111,6 +111,11 @@ func openRules(cfg config.Config, o Options, db *sql.DB, syncSvc *opsync.Service
 		}
 		return err
 	}
+	// A routine's Send a webhook step (routines-engine "Routine webhook step").
+	engine.RoutineHook = func(ctx context.Context, userID, webhookID string, d rules.RoutineDelivery) error {
+		return hooks.QueueRoutine(ctx, userID, webhookID, webhook.RuleRef{ID: d.RuleID, Name: d.RuleName},
+			webhook.RoutineRef{RunID: d.RunID, StepID: d.StepID, Text: d.Text, TaskIDs: d.TaskIDs})
+	}
 	return engine, sw
 }
 

@@ -41,11 +41,14 @@ var Kinds = []string{KindNtfy, KindPushover, KindGotify, KindWebhook}
 
 // Events a channel can receive, in display order.
 const (
-	EventReminder   = "reminder"
-	EventAssigned   = "assigned"
-	EventMentioned  = "mentioned"
-	EventUnblocked  = "unblocked"
-	EventPage       = "page"
+	EventReminder  = "reminder"
+	EventAssigned  = "assigned"
+	EventMentioned = "mentioned"
+	EventUnblocked = "unblocked"
+	EventPage      = "page"
+	// EventRoutine is a routine's Notify me step (routines-engine "Routine
+	// notices through channels").
+	EventRoutine    = "routine"
 	eventTest       = "test"
 	SecretsName     = "notification-channels"
 	MaxPerUser      = 5
@@ -56,7 +59,7 @@ const (
 )
 
 // Events lists the event names in display order.
-var Events = []string{EventReminder, EventAssigned, EventMentioned, EventUnblocked, EventPage}
+var Events = []string{EventReminder, EventAssigned, EventMentioned, EventUnblocked, EventPage, EventRoutine}
 
 var (
 	// ErrNotFound: no channel with this id belongs to the caller.
