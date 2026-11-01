@@ -1361,6 +1361,271 @@
       }
     },
     {
+      "name": "routine create",
+      "aliases": [
+        "routine add",
+        "routines create"
+      ],
+      "summary": "create a routine from a JSON or YAML file; projects, sections, labels, views and webhooks may be given by name",
+      "args": [],
+      "flags": [
+        {
+          "name": "file",
+          "type": "string",
+          "description": "the routine file: name, trigger, condition, steps (or actions), enabled"
+        }
+      ],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/rule"
+      }
+    },
+    {
+      "name": "routine disable",
+      "aliases": [
+        "routines disable"
+      ],
+      "summary": "turn a routine off",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/rule"
+      }
+    },
+    {
+      "name": "routine edit",
+      "aliases": [
+        "routines edit"
+      ],
+      "summary": "replace the parts of a routine the file gives",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [
+        {
+          "name": "file",
+          "type": "string",
+          "description": "the routine file"
+        }
+      ],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/rule"
+      }
+    },
+    {
+      "name": "routine enable",
+      "aliases": [
+        "routines enable"
+      ],
+      "summary": "turn a routine on (clears a pause for running too often)",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/rule"
+      }
+    },
+    {
+      "name": "routine list",
+      "aliases": [
+        "routine ls",
+        "routines list",
+        "routines ls"
+      ],
+      "summary": "list the account's routines with their trigger and number of steps",
+      "args": [],
+      "flags": [],
+      "writes": false,
+      "destructive": false,
+      "dry_run": false,
+      "idempotency_key": false,
+      "output_schema": {
+        "items": {
+          "$ref": "#/schemas/rule"
+        },
+        "type": "array"
+      }
+    },
+    {
+      "name": "routine rm",
+      "aliases": [
+        "routine delete",
+        "routines rm"
+      ],
+      "summary": "delete a routine (soft delete)",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [
+        {
+          "name": "yes",
+          "short": "y",
+          "type": "bool",
+          "description": "confirm a destructive command (required off a terminal and with --json)"
+        }
+      ],
+      "writes": true,
+      "destructive": true,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/rule"
+      }
+    },
+    {
+      "name": "routine run",
+      "aliases": [
+        "routines run"
+      ],
+      "summary": "run a routine now, or test it (--test plans every step and writes nothing); exit 6 when the run failed",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [
+        {
+          "name": "task",
+          "type": "string",
+          "description": "the trigger's task (id) for a routine whose steps read it"
+        },
+        {
+          "name": "test",
+          "type": "bool",
+          "description": "plan every step and log a test run; nothing is written"
+        }
+      ],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/routine_result"
+      }
+    },
+    {
+      "name": "routine runs",
+      "aliases": [
+        "routines runs"
+      ],
+      "summary": "print a routine's runs, newest first",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [
+        {
+          "name": "failed",
+          "type": "bool",
+          "description": "only failed runs"
+        },
+        {
+          "name": "limit",
+          "type": "int",
+          "default": 50,
+          "description": "print at most n runs (1 to 100)"
+        }
+      ],
+      "writes": false,
+      "destructive": false,
+      "dry_run": false,
+      "idempotency_key": false,
+      "output_schema": {
+        "items": {
+          "$ref": "#/schemas/routine_run"
+        },
+        "type": "array"
+      }
+    },
+    {
+      "name": "routine show",
+      "aliases": [
+        "routines show"
+      ],
+      "summary": "print a routine: its trigger, condition, steps as numbered sentences and steps that are not available",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [],
+      "writes": false,
+      "destructive": false,
+      "dry_run": false,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/rule"
+      }
+    },
+    {
+      "name": "routine undo",
+      "aliases": [
+        "routines undo"
+      ],
+      "summary": "take a routine run back: values it changed go back unless changed since, what it created goes to the Trash",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        },
+        {
+          "name": "run",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/routine_undo"
+      }
+    },
+    {
       "name": "rules disable",
       "summary": "turn an automation rule off",
       "args": [
@@ -2407,6 +2672,12 @@
       "code": 5,
       "meaning": "refused by scope, role, a switch, encryption or read-only mode",
       "name": "not_permitted"
+    },
+    {
+      "agent": "read the failed step's error; fix the routine or what it needs",
+      "code": 6,
+      "meaning": "`ot routine run` ran the routine and the run failed (the run record says at which step)",
+      "name": "run_failed"
     }
   ],
   "global_flags": [
@@ -3499,17 +3770,243 @@
         }
       }
     },
+    "routine_result": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "routine_result",
+      "description": "The answer of `ot routine run`: the run's record, each step's record (with a preview for a test) and how many items it wrote or would write.",
+      "type": "object",
+      "required": [
+        "run",
+        "steps",
+        "writes",
+        "test"
+      ],
+      "properties": {
+        "run": {
+          "$ref": "#/schemas/routine_run"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "index": {
+                "type": "integer"
+              },
+              "step_id": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string"
+              },
+              "status": {
+                "enum": [
+                  "ok",
+                  "skipped",
+                  "ended",
+                  "failed",
+                  "unavailable",
+                  "truncated"
+                ]
+              },
+              "duration_ms": {
+                "type": "integer"
+              },
+              "items": {
+                "type": "integer"
+              },
+              "output": {
+                "type": "string"
+              },
+              "ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "error": {
+                "type": "string"
+              },
+              "preview": {
+                "description": "a test's preview of the output (titles and text included, never stored)"
+              }
+            }
+          }
+        },
+        "writes": {
+          "type": "integer"
+        },
+        "test": {
+          "type": "boolean"
+        }
+      }
+    },
+    "routine_run": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "routine_run",
+      "description": "One run of a routine (OpenSpec routines-engine): ids, counts and codes only; resolve task ids yourself.",
+      "type": "object",
+      "required": [
+        "run_id",
+        "rule_id",
+        "at",
+        "outcome",
+        "source"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "the run's position, for paging back with before"
+        },
+        "run_id": {
+          "type": "string"
+        },
+        "rule_id": {
+          "type": "string"
+        },
+        "occurrence": {
+          "type": "string"
+        },
+        "at": {
+          "type": "integer",
+          "description": "Unix milliseconds"
+        },
+        "outcome": {
+          "enum": [
+            "pending",
+            "applied",
+            "already_matched",
+            "skipped",
+            "stopped",
+            "failed",
+            "partial",
+            "ended"
+          ]
+        },
+        "reason": {
+          "type": "string"
+        },
+        "source": {
+          "enum": [
+            "event",
+            "schedule",
+            "due",
+            "manual",
+            "mcp",
+            "test"
+          ]
+        },
+        "run_as": {
+          "type": "string"
+        },
+        "test": {
+          "type": "boolean"
+        },
+        "steps_count": {
+          "type": "integer"
+        },
+        "writes": {
+          "type": "integer"
+        },
+        "duration_ms": {
+          "type": "integer"
+        },
+        "undone_at": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "failed_step": {
+          "type": "integer"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "index": {
+                "type": "integer"
+              },
+              "step_id": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string"
+              },
+              "status": {
+                "enum": [
+                  "ok",
+                  "skipped",
+                  "ended",
+                  "failed",
+                  "unavailable",
+                  "truncated"
+                ]
+              },
+              "duration_ms": {
+                "type": "integer"
+              },
+              "items": {
+                "type": "integer"
+              },
+              "output": {
+                "type": "string"
+              },
+              "ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "error": {
+                "type": "string"
+              },
+              "preview": {
+                "description": "a test's preview of the output (titles and text included, never stored)"
+              }
+            }
+          }
+        }
+      }
+    },
+    "routine_undo": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "routine_undo",
+      "description": "What undoing a routine run did (OpenSpec routines-engine).",
+      "type": "object",
+      "required": [
+        "restored",
+        "kept",
+        "not_undoable"
+      ],
+      "properties": {
+        "restored": {
+          "type": "integer"
+        },
+        "kept": {
+          "type": "integer",
+          "description": "items left as they are because they changed after the run"
+        },
+        "not_undoable": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "notifications, webhook deliveries or emails the run sent"
+        }
+      }
+    },
     "rule": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "title": "rule",
-      "description": "An automation rule exactly as the REST API returns it (OpenSpec automation-rules). The name is ciphertext for an encrypted account.",
+      "description": "An automation rule, or routine, exactly as the REST API returns it (OpenSpec automation-rules, routines-engine). The name is ciphertext for an encrypted account. A routine of several steps has steps and actions null.",
       "type": "object",
       "required": [
         "id",
         "name",
         "enabled",
-        "trigger",
-        "actions"
+        "trigger"
       ],
       "properties": {
         "id": {
@@ -3539,7 +4036,50 @@
           ]
         },
         "actions": {
-          "type": "object"
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "steps": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "description": "the routine's steps ({id, kind, in, then?, otherwise?, do?}); null for a rule of one Change tasks step",
+          "items": {
+            "type": "object"
+          }
+        },
+        "paused_reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "warnings": {
+          "type": "array",
+          "description": "steps that are not available now",
+          "items": {
+            "type": "object",
+            "properties": {
+              "step": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string"
+              },
+              "setting": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          }
         },
         "position": {
           "type": "number"
