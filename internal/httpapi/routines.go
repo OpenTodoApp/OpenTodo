@@ -134,7 +134,7 @@ func collectStepRefs(st *ruleval.Step, ref *refs) {
 		}
 		return nil
 	}
-	for _, name := range []string{"project", "parent"} {
+	for _, name := range []string{"project", "parent", "of"} {
 		var p map[string]string
 		if json.Unmarshal(lit(name), &p) == nil && p["project"] != "" {
 			ref.project(p["project"], nil)

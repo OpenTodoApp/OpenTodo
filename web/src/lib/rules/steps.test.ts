@@ -63,7 +63,7 @@ describe('data steps (shared vectors with internal/ruleval)', () => {
       const a = v.in as In
       let got: unknown
       switch (v.fn) {
-        case 'split_lines': got = splitLines(a.text as string).lines; break
+        case 'split_lines': got = splitLines(a.text as string, a.only === 'open_checkboxes').lines; break
         case 'join': got = joinLines(a.lines as string[], a.separator as string); break
         case 'format': got = formatTemplate(a.template as string, a.vals as Record<string, string>); break
         case 'replace': got = replaceText(a.text as string, a.find as string, a.with as string, a.case as boolean); break

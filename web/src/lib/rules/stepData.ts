@@ -26,11 +26,13 @@ const LIST_MARKER = /^(?:[-*+]|\d{1,9}[.)])(?:\s+|$)/
 const CHECKBOX = /^\[[ xX]\](?:\s+|$)/
 
 /** Non-empty trimmed lines with list markers and checkboxes removed, at most 500. */
-export function splitLines(text: string): { lines: string[]; truncated: boolean } {
+export function splitLines(text: string, openCheckboxesOnly = false): { lines: string[]; truncated: boolean } {
   const lines: string[] = []
   for (let line of text.split('\n')) {
     line = line.replace(/\r$/, '').trim()
     line = line.replace(LIST_MARKER, '').trim()
+    // Only open checkboxes ("- [ ] book room"), for meeting notes (routines-dynamic-data D5).
+    if (openCheckboxesOnly && !line.startsWith('[ ]')) continue
     line = line.replace(CHECKBOX, '').trim()
     if (!line) continue
     if (lines.length === MAX_LIST_ITEMS) return { lines, truncated: true }

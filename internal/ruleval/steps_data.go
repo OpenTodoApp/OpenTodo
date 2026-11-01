@@ -28,11 +28,20 @@ var (
 
 // SplitLines splits a text into its non-empty, trimmed lines with list
 // markers and checkboxes removed, at most MaxListItems (truncated when more).
-func SplitLines(text string) ([]string, bool) {
+func SplitLines(text string) ([]string, bool) { return splitLines(text, false) }
+
+// SplitOpenCheckboxes is SplitLines keeping only the lines that are open
+// checkboxes ("- [ ] book room"), for meeting notes (routines-dynamic-data D5).
+func SplitOpenCheckboxes(text string) ([]string, bool) { return splitLines(text, true) }
+
+func splitLines(text string, openOnly bool) ([]string, bool) {
 	out := []string{}
 	for _, line := range strings.Split(text, "\n") {
 		line = strings.TrimSpace(strings.TrimSuffix(line, "\r"))
 		line = strings.TrimSpace(listMarkerRe.ReplaceAllString(line, ""))
+		if openOnly && !strings.HasPrefix(line, "[ ]") {
+			continue
+		}
 		line = strings.TrimSpace(checkboxRe.ReplaceAllString(line, ""))
 		if line == "" {
 			continue

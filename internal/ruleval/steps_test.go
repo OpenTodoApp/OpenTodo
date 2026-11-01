@@ -173,7 +173,11 @@ func TestStepDataVectors(t *testing.T) {
 		in := c.In
 		switch c.Fn {
 		case "split_lines":
-			got, _ = SplitLines(dec[string](t, in["text"]))
+			if _, only := in["only"]; only {
+				got, _ = SplitOpenCheckboxes(dec[string](t, in["text"]))
+			} else {
+				got, _ = SplitLines(dec[string](t, in["text"]))
+			}
 		case "join":
 			got = JoinLines(dec[[]string](t, in["lines"]), dec[string](t, in["separator"]))
 		case "format":
