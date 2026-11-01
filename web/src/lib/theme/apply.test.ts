@@ -71,10 +71,10 @@ describe('applyTheme', () => {
     expect(validApplied(hostile)).toBe(false)
   })
 
-  it('cannot be reached from a document that carries CSS: the validator refuses it first', () => {
+  it('cannot be reached from a document that carries CSS: the validator refuses it first', async () => {
     const r = parseTheme(JSON.stringify({ ...NORD, seeds: { ...NORD.seeds, canvas: 'url(https://example.com/x.png)' } }))
     expect(r.ok).toBe(false)
-    expect(resolveDocument({ ...NORD, tokens: { muted: 'var(--ot-text)' } })).toBeNull()
+    expect(await resolveDocument({ ...NORD, tokens: { muted: 'var(--ot-text)' } })).toBeNull()
   })
 
   it('serialises every token of the closed list', () => {
@@ -100,13 +100,13 @@ describe('the ot.theme cache', () => {
     expect(themeHash('{"a":1}', 1)).not.toBe(themeHash('{"a":2}', 1))
   })
 
-  it('keeps a cached result whose hash still matches, and re-derives otherwise', () => {
-    const first = resolveDocument(NORD)!
-    expect(resolveDocument(NORD, first)).toBe(first)
-    expect(resolveDocument({ ...NORD, seeds: { ...NORD.seeds, accent: '#bf616a' } }, first)).not.toBe(first)
+  it('keeps a cached result whose hash still matches, and re-derives otherwise', async () => {
+    const first = (await resolveDocument(NORD))!
+    expect(await resolveDocument(NORD, first)).toBe(first)
+    expect(await resolveDocument({ ...NORD, seeds: { ...NORD.seeds, accent: '#bf616a' } }, first)).not.toBe(first)
   })
 
-  it('reads a newer format as nothing to apply', () => {
-    expect(resolveDocument({ ...NORD, opentodoTheme: 2 })).toBeNull()
+  it('reads a newer format as nothing to apply', async () => {
+    expect(await resolveDocument({ ...NORD, opentodoTheme: 2 })).toBeNull()
   })
 })

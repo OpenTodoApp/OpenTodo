@@ -6717,5 +6717,19 @@
   "Not changed for days": "Seit Tagen unverändert",
   "every month on {days} at {time}": "jeden Monat am {days} um {time}",
   "the last day": "letzten Tag",
-  "{n, plural, one {not changed for # day} other {not changed for # days}}": "{n, plural, one {seit # Tag unverändert} other {seit # Tagen unverändert}}"
+  "{n, plural, one {not changed for # day} other {not changed for # days}}": "{n, plural, one {seit # Tag unverändert} other {seit # Tagen unverändert}}",
+  "Add from file": "Aus Datei hinzufügen",
+  "Default (Server default: {name})": "Standard (Serverstandard: {name})",
+  "Default theme": "Standarddesign",
+  "Everyone on this server can choose these, or customise a copy. Up to 20.": "Alle auf diesem Server können diese wählen oder eine Kopie anpassen. Bis zu 20.",
+  "From this server": "Von diesem Server",
+  "From this server · Server default": "Von diesem Server · Serverstandard",
+  "Make it the default": "Als Standard festlegen",
+  "Make {name} the default?": "{name} als Standard festlegen?",
+  "Offer one of my themes": "Eines meiner Designs anbieten",
+  "People who never chose a theme see this one; their own choice always wins.": "Wer noch kein Design gewählt hat, sieht dieses; die eigene Wahl hat immer Vorrang.",
+  "Server default": "Serverstandard",
+  "Server themes": "Serverdesigns",
+  "The server has {n} themes; remove one to add another.": "Der Server hat {n} Designs; entferne eines, um ein weiteres hinzuzufügen.",
+  "{n, plural, one {# pair of colours is} other {# pairs of colours are}} below the contrast people need to read comfortably:": "{n, plural, one {# Farbpaar liegt} other {# Farbpaare liegen}} unter dem Kontrast, der bequemes Lesen erlaubt:"
 }

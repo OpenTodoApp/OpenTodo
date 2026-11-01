@@ -1,21 +1,88 @@
 // The theme of each side (OpenSpec change theme-engine, design D6; themes "Theme
 // choice per light and dark side, synced"): `user_prefs.theme_light` and
-// `theme_dark`. Empty is the side's default (OpenTodo Light or Dark);
-// `builtin:<id>` names a theme shipped with the app; `user:<id>` and
-// `instance:<id>` are reserved for the user's own and the instance's themes. A value
-// this app cannot apply reads as the side's default, writes nothing and stays
-// stored, so it applies once the theme is available. First-load code: small and
-// without the derivation, which loads lazily (load.ts). The built-in catalogue
-// (theme-catalogue D6) is not part of the first load either: without it a
-// `builtin:` theme this code does not list reads as a theme provisionally, and the
-// lazy loader answers whether this app has it (an unknown or other-kind theme then
-// reads as the side's default); Settings loads the catalogue and passes it in.
+// `theme_dark`. Empty is the side's default: the server's default for the side
+// when it has one (theme-instance-default), else OpenTodo Light or Dark;
+// `builtin:<id>` names a theme shipped with the app, `user:<id>` one of the user's
+// own (theme-editor D1) and `instance:<id>` one of the server's. A value this app
+// cannot apply reads as the side's default, writes nothing and stays stored, so it
+// applies once the theme is available. First-load code: small and without the
+// derivation, which loads lazily (load.ts). The built-in catalogue (theme-catalogue
+// D6) is not part of the first load either: without it a `builtin:` theme this code
+// does not list reads as a theme provisionally, and the lazy loader answers whether
+// this app has it (an unknown or other-kind theme then reads as the side's default);
+// Settings loads the catalogue and passes it in.
+//
+// The server's themes on this device (theme-instance-default D3) are kept here too,
+// in the one first-load module that reads them: the owner's default of each side
+// and the server themes as last read from `GET /api/v1/themes/instance`, remembered
+// on the device (`ot.instanceThemes`) so offline use and the first frame have them.
+// A device that never read them has none: OpenTodo's themes. Reading them again
+// when their version moves is lazy (instanceSync.ts).
 import { mutate } from '../ops'
 import type { UserPrefs } from '../types'
 import { USER_PREFS_ID } from '../userPrefs'
-import type { ThemeKind } from './format'
+import type { ThemeDocument, ThemeKind } from './format'
+import { createStore } from '../store'
+import { readJSON, removeItem, writeJSON } from '../deviceStorage'
 
 export type Side = ThemeKind
+
+export interface InstanceThemeEntry {
+  /** The server id: `instance:<id>` in a choice; the document's id too. */
+  id: string
+  kind: ThemeKind
+  doc: ThemeDocument
+}
+
+export interface InstanceThemes {
+  version: number
+  /** Each side's default: "" (OpenTodo's), `builtin:<id>` or `instance:<id>`. */
+  default: { light: string; dark: string }
+  themes: InstanceThemeEntry[]
+}
+
+export const INSTANCE_THEMES_KEY = 'ot.instanceThemes'
+export const NO_INSTANCE_THEMES: InstanceThemes = { version: 0, default: { light: '', dark: '' }, themes: [] }
+
+const ID = /^[a-z0-9]{1,40}$/
+
+/** The answer of the server, or a remembered copy, with anything malformed dropped. */
+export function parseInstanceThemes(raw: unknown): InstanceThemes | null {
+  if (!raw || typeof raw !== 'object') return null
+  const o = raw as Partial<InstanceThemes>
+  if (typeof o.version !== 'number' || !Number.isFinite(o.version)) return null
+  const d = (o.default ?? {}) as Partial<InstanceThemes['default']>
+  const themes = Array.isArray(o.themes) ? o.themes.filter((x): x is InstanceThemeEntry =>
+    !!x && typeof x === 'object' && typeof x.id === 'string' && ID.test(x.id) && (x.kind === 'light' || x.kind === 'dark') && !!x.doc && typeof x.doc === 'object' && x.doc.kind === x.kind) : []
+  return {
+    version: o.version,
+    default: { light: typeof d.light === 'string' ? d.light : '', dark: typeof d.dark === 'string' ? d.dark : '' },
+    themes: themes.map((x) => ({ id: x.id, kind: x.kind, doc: { ...x.doc, id: x.id } })),
+  }
+}
+
+const read = () => readJSON<InstanceThemes>(INSTANCE_THEMES_KEY, NO_INSTANCE_THEMES, parseInstanceThemes)
+const store = createStore<InstanceThemes>('instanceThemes', read(), read)
+
+export const getInstanceThemes = store.get
+
+/** The instance themes, re-rendering when they change. */
+export const useInstanceThemes = store.use
+
+/** Remembers what the server answered (never an op). */
+export function setInstanceThemes(raw: unknown): void {
+  const next = parseInstanceThemes(raw)
+  if (!next) return
+  if (next.version === 0 && !next.themes.length && !next.default.light && !next.default.dark) removeItem(INSTANCE_THEMES_KEY)
+  else writeJSON(INSTANCE_THEMES_KEY, next)
+  store.set(next)
+}
+
+/** The instance theme with this id, of the given kind when one is asked for. */
+export function instanceTheme(id: string, kind?: ThemeKind, from: InstanceThemes = store.get()): InstanceThemeEntry | null {
+  const e = from.themes.find((x) => x.id === id)
+  return e && (!kind || e.kind === kind) ? e : null
+}
 
 /** A theme shipped with the app: its id and kind. The OpenTodo themes are the defaults and apply no sheet. */
 export interface BuiltinTheme {
@@ -48,10 +115,14 @@ export interface SideChoice {
   /** The stored value, kept as it is whatever this app makes of it. */
   stored: string
   status: ChoiceStatus
-  /** The theme that applies (the side's default unless status is `theme`): a builtin id, or a custom theme's entity id when `custom`. */
+  /** The theme that applies (the side's default unless status is `theme`): a builtin id, a custom theme's entity id when `custom`, an instance theme's server id when `instance`. */
   id: string
   /** The theme is one of the user's own (`user:<id>`, theme-editor D1). */
   custom?: true
+  /** The theme is one of the server's (`instance:<id>`, theme-instance-default D1). */
+  instance?: true
+  /** The theme is the server's default for the side, which applies because the member's own choice does not (theme-instance-default D3). */
+  fromDefault?: true
 }
 
 /** A custom theme as the choice reads it: its entity id and kind (the live, non-deleted rows). */
@@ -63,12 +134,35 @@ export interface KnownCustomTheme {
 const FIELD: Record<Side, 'theme_light' | 'theme_dark'> = { light: 'theme_light', dark: 'theme_dark' }
 const VALUE = /^(builtin|user|instance):([a-z0-9-]{1,64})$/
 
-/** Reads one side's choice from the synced row (design D6). Never writes. */
-export function readThemeChoice(row: Partial<UserPrefs> | null | undefined, side: Side, known: readonly BuiltinTheme[] | null = null, custom: readonly KnownCustomTheme[] | null = null): SideChoice {
+/**
+ * The server's default for a side (theme-instance-default D3), as a choice: null
+ * when there is none, or when this device cannot show it (an instance theme it has
+ * not read, a theme of the other kind); the side then shows OpenTodo's theme.
+ */
+function serverDefault(side: Side, known: readonly BuiltinTheme[] | null, inst: InstanceThemes): SideChoice | null {
+  const m = VALUE.exec(inst.default[side])
+  if (!m) return null
+  if (m[1] === 'instance') return instanceTheme(m[2], side, inst) ? { stored: '', status: 'theme', id: m[2], instance: true, fromDefault: true } : null
+  if (m[1] !== 'builtin') return null
+  const t = (known ?? BUILTIN_THEMES).find((b) => b.id === m[2])
+  if (!t) return known ? null : { stored: '', status: 'theme', id: m[2], fromDefault: true }
+  return t.kind === side && !t.isDefault ? { stored: '', status: 'theme', id: t.id, fromDefault: true } : null
+}
+
+/**
+ * Reads one side's choice from the synced row (design D6). Never writes. An empty
+ * value, or a theme that is gone, reads as the side's default: the server's when it
+ * has one (theme-instance-default), else OpenTodo's.
+ */
+export function readThemeChoice(row: Partial<UserPrefs> | null | undefined, side: Side, known: readonly BuiltinTheme[] | null = null, custom: readonly KnownCustomTheme[] | null = null, inst: InstanceThemes = getInstanceThemes()): SideChoice {
   const raw = row?.[FIELD[side]]
   const stored = typeof raw === 'string' ? raw : ''
   const fallback = DEFAULT_THEME[side]
-  if (stored === '') return { stored, status: 'default', id: fallback }
+  const sideDefault = (): SideChoice => {
+    const d = serverDefault(side, known, inst)
+    return d ? { ...d, stored } : { stored, status: 'default', id: fallback }
+  }
+  if (stored === '') return sideDefault()
   const m = VALUE.exec(stored)
   if (!m) return { stored, status: 'invalid', id: fallback }
   if (m[1] === 'user') {
@@ -76,11 +170,17 @@ export function readThemeChoice(row: Partial<UserPrefs> | null | undefined, side
     if (!custom) return { stored, status: 'theme', id: m[2], custom: true }
     const c = custom.find((x) => x.id === m[2])
     // A theme deleted or not synced yet reads as the side's default; the value stays (theme-editor D1).
-    if (!c) return { stored, status: 'default', id: fallback }
+    if (!c) return sideDefault()
     if (c.kind !== side) return { stored, status: 'invalid', id: fallback }
     return { stored, status: 'theme', id: c.id, custom: true }
   }
-  if (m[1] !== 'builtin') return { stored, status: 'newer', id: fallback }
+  if (m[1] === 'instance') {
+    const e = instanceTheme(m[2], undefined, inst)
+    // A theme the owner removed (or this device has not read yet) reads as the side's default; the value stays.
+    if (!e) return sideDefault()
+    if (e.kind !== side) return { stored, status: 'invalid', id: fallback }
+    return { stored, status: 'theme', id: e.id, instance: true }
+  }
   const t = (known ?? BUILTIN_THEMES).find((b) => b.id === m[2])
   // Without the catalogue, a theme this code does not list may be one of its palettes: the lazy loader decides.
   if (!t) return known ? { stored, status: 'newer', id: fallback } : { stored, status: 'theme', id: m[2] }
@@ -89,18 +189,35 @@ export function readThemeChoice(row: Partial<UserPrefs> | null | undefined, side
 }
 
 /** Both sides of the row. */
-export function readThemeChoices(row: Partial<UserPrefs> | null | undefined, known: readonly BuiltinTheme[] | null = null, custom: readonly KnownCustomTheme[] | null = null): Record<Side, SideChoice> {
-  return { light: readThemeChoice(row, 'light', known, custom), dark: readThemeChoice(row, 'dark', known, custom) }
+export function readThemeChoices(row: Partial<UserPrefs> | null | undefined, known: readonly BuiltinTheme[] | null = null, custom: readonly KnownCustomTheme[] | null = null, inst: InstanceThemes = getInstanceThemes()): Record<Side, SideChoice> {
+  return { light: readThemeChoice(row, 'light', known, custom, inst), dark: readThemeChoice(row, 'dark', known, custom, inst) }
 }
+
+/** Whether the server has a default for the side (then choosing OpenTodo's theme is stored explicitly). */
+export const hasServerDefault = (side: Side, inst: InstanceThemes = getInstanceThemes()) => inst.default[side] !== ''
 
 /**
  * Chooses a builtin theme for one side: one op for one field (offline-safe, synced).
- * The side's default is stored as the empty value.
+ * OpenTodo's theme is stored as the empty value, unless the server has a default for
+ * the side: then it is stored by name, so it wins over that default.
  */
-export function setThemeChoice(side: Side, id: string, known: readonly BuiltinTheme[] = BUILTIN_THEMES): Promise<void> {
+export function setThemeChoice(side: Side, id: string, known: readonly BuiltinTheme[] = BUILTIN_THEMES, inst: InstanceThemes = getInstanceThemes()): Promise<void> {
   const t = known.find((b) => b.id === id)
   if (!t || t.kind !== side) return Promise.reject(new Error(`not a ${side} theme: ${id}`))
-  return mutate('user_prefs', USER_PREFS_ID, { [FIELD[side]]: t.isDefault ? '' : `builtin:${id}` })
+  return mutate('user_prefs', USER_PREFS_ID, { [FIELD[side]]: t.isDefault && !hasServerDefault(side, inst) ? '' : `builtin:${id}` })
+}
+
+/** Follows the side's default again (the server's, else OpenTodo's): the empty value. */
+export function setDefaultThemeChoice(side: Side): Promise<void> {
+  return mutate('user_prefs', USER_PREFS_ID, { [FIELD[side]]: '' })
+}
+
+/** The stored value of an instance theme for a side (theme-instance-default D1). */
+export const instanceChoice = (id: string) => `instance:${id}`
+
+/** Chooses one of the server's themes for a side: one op for one field. */
+export function setInstanceThemeChoice(side: Side, id: string): Promise<void> {
+  return mutate('user_prefs', USER_PREFS_ID, { [FIELD[side]]: instanceChoice(id) })
 }
 
 /** The stored value of a custom theme for a side (theme-editor D1). */

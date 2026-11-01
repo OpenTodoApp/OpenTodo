@@ -71,6 +71,8 @@ func (s *Server) handleAuthStatus(w http.ResponseWriter, r *http.Request) {
 		// The web app reads its profile here (OpenSpec `e2ee`, design D5/D9).
 		out["encryption"] = s.encryptionStatus(r.Context(), u.ID)
 		out["minClientVersion"] = MinClientVersion
+		// The instance themes' version (theme-instance-default D3): devices read them again when it grows.
+		out["themes"] = map[string]int64{"version": s.themesVersion(r)}
 	}
 	writeJSON(w, http.StatusOK, out)
 }

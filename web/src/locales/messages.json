@@ -1027,6 +1027,9 @@
   "Add frame": [
     "web/src/app/calendar/FramesDialog.tsx"
   ],
+  "Add from file": [
+    "web/src/app/BrandingThemes.tsx"
+  ],
   "Add here": [
     "web/src/app/calendar/addHere.tsx"
   ],
@@ -3933,6 +3936,7 @@
   ],
   "Dark": [
     "web/src/app/AppearanceSection.tsx",
+    "web/src/app/BrandingThemes.tsx",
     "web/src/app/FirstRun.tsx",
     "web/src/app/ThemeRow.tsx",
     "web/src/app/themes/EditorSections.tsx",
@@ -4147,8 +4151,14 @@
     "web/src/app/WorkspacesSettings.tsx",
     "web/src/app/themes/EditorSections.tsx"
   ],
+  "Default (Server default: {name})": [
+    "web/src/app/ThemeRow.tsx"
+  ],
   "Default reminders": [
     "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Default theme": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Defer the selected task: type its start date, Enter": [
@@ -5467,6 +5477,9 @@
   "Everyone on the task sees “Comment deleted” in its place. Replies stay.": [
     "web/src/app/task-detail/CommentsTab.tsx"
   ],
+  "Everyone on this server can choose these, or customise a copy. Up to 20.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Everyone uses {provider} ({model}).": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
@@ -6205,6 +6218,13 @@
   ],
   "From the theme": [
     "web/src/app/AppearanceSection.tsx"
+  ],
+  "From this server": [
+    "web/src/app/BrandingThemes.tsx",
+    "web/src/app/ThemeRow.tsx"
+  ],
+  "From this server · Server default": [
+    "web/src/app/ThemeRow.tsx"
   ],
   "From {date} on: a change here starts a new repeating task from this date; earlier occurrences stay as they are.": [
     "web/src/app/task-detail/OccurrenceScope.tsx"
@@ -8028,6 +8048,7 @@
   ],
   "Light": [
     "web/src/app/AppearanceSection.tsx",
+    "web/src/app/BrandingThemes.tsx",
     "web/src/app/FirstRun.tsx",
     "web/src/app/ThemeRow.tsx",
     "web/src/app/themes/EditorSections.tsx",
@@ -8401,6 +8422,9 @@
   "Make floating": [
     "web/src/app/task-detail/ZoneControl.tsx"
   ],
+  "Make it the default": [
+    "web/src/app/BrandingThemes.tsx"
+  ],
   "Make it yours": [
     "web/src/app/templates/TemplateLibrary.tsx"
   ],
@@ -8430,6 +8454,9 @@
   ],
   "Make {name} an admin?": [
     "web/src/app/UsersPanel.tsx"
+  ],
+  "Make {name} the default?": [
+    "web/src/app/BrandingThemes.tsx"
   ],
   "Make {name} the owner of “{project}”? You become an admin.": [
     "web/src/app/ShareDialog.tsx"
@@ -10366,6 +10393,9 @@
   "Off: the push carries only encrypted ids and this device adds the title.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Offer one of my themes": [
+    "web/src/app/BrandingThemes.tsx"
+  ],
   "Offline": [
     "web/src/app/DataSettings.tsx",
     "web/src/app/SyncStatus.tsx",
@@ -11339,6 +11369,9 @@
     "web/src/lib/review.ts"
   ],
   "People who asked to add you to a project or workspace. Nothing is shared until you accept.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "People who never chose a theme see this one; their own choice always wins.": [
     "web/src/lib/settingsCopy.ts"
   ],
   "People who share a project with you see it. It is not end-to-end encrypted.": [
@@ -12369,6 +12402,7 @@
     "web/src/app/settingsIndex.ts"
   ],
   "Remove": [
+    "web/src/app/BrandingThemes.tsx",
     "web/src/app/DashboardView.tsx",
     "web/src/app/SecurityPanel.tsx",
     "web/src/app/ShareDialog.tsx",
@@ -12460,6 +12494,7 @@
     "web/src/app/DashboardView.tsx"
   ],
   "Remove {name}": [
+    "web/src/app/BrandingThemes.tsx",
     "web/src/app/ShareCapture.tsx",
     "web/src/app/ShareDialog.tsx",
     "web/src/app/WorkspaceMembers.tsx",
@@ -13627,6 +13662,9 @@
   "Server configuration warnings": [
     "web/src/app/ConfigWarnings.tsx"
   ],
+  "Server default": [
+    "web/src/app/ThemeRow.tsx"
+  ],
   "Server limit reached": [
     "web/src/app/SyncStatus.tsx"
   ],
@@ -13638,6 +13676,10 @@
   ],
   "Server reaches the push service": [
     "web/src/lib/push.ts"
+  ],
+  "Server themes": [
+    "web/src/app/BrandingThemes.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Service": [
     "web/src/app/NotificationChannelEditor.tsx"
@@ -15917,6 +15959,9 @@
   ],
   "The server has push notifications turned off (OPENTODO_PUSH=off). Reminders still appear inside the app.": [
     "web/src/lib/push.ts"
+  ],
+  "The server has {n} themes; remove one to add another.": [
+    "web/src/app/BrandingThemes.tsx"
   ],
   "The server is busy. Try again in a moment.": [
     "web/src/lib/i18n/errors.ts"
@@ -19283,6 +19328,7 @@
     "web/src/lib/colourNames.ts"
   ],
   "by {name}": [
+    "web/src/app/BrandingThemes.tsx",
     "web/src/app/MembersPanel.tsx",
     "web/src/ui/ThemeList.tsx"
   ],
@@ -21189,6 +21235,7 @@
     "web/src/app/themes/ContrastPanel.tsx"
   ],
   "{fg} on {bg}": [
+    "web/src/app/BrandingThemes.tsx",
     "web/src/app/themes/ContrastPanel.tsx",
     "web/src/app/themes/ImportReport.tsx"
   ],
@@ -21535,6 +21582,9 @@
   ],
   "{n, plural, one {# pair below AA} other {# pairs below AA}}": [
     "web/src/app/themes/ContrastPanel.tsx"
+  ],
+  "{n, plural, one {# pair of colours is} other {# pairs of colours are}} below the contrast people need to read comfortably:": [
+    "web/src/app/BrandingThemes.tsx"
   ],
   "{n, plural, one {# panel} other {# panels}}": [
     "web/src/app/ViewsView.tsx"

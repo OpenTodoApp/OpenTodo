@@ -1139,6 +1139,8 @@ export interface AuthStatus {
   demo?: DemoInfo
   /** The instance's name and logo (OpenSpec `instance-branding`); absent on older servers. */
   branding?: { name: string; logoVersion: number }
+  /** The version of the instance's themes (theme-instance-default D3), signed in only; absent on older servers. */
+  themes?: { version: number }
   /** Outgoing email (OpenSpec `outgoing-email`): email actions are shown only when enabled; absent on older servers. */
   outgoingEmail?: { enabled: boolean }
   /** A tenant of a hosted service (OpenSpec `multi-tenant-host`): the operator owns server settings; absent when self-hosted. */
