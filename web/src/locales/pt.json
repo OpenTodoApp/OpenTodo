@@ -6831,5 +6831,10 @@
   "names of members and groups of shared projects and workspaces": "nomes de membros e grupos de projetos e espaços de trabalho compartilhados",
   "your display name, today's date and your time zone": "seu nome de exibição, a data de hoje e seu fuso horário",
   "the messages you type": "as mensagens que você digita",
-  "photos you add": "as fotos que você adiciona"
+  "photos you add": "as fotos que você adiciona",
+  "Move {tasks} to the Trash?": "Mover {tasks} para a Lixeira?",
+  "Show Trash": "Ver a Lixeira",
+  "They go to the Trash with their subtasks. You can restore them from the Trash.": "Vão para a Lixeira com as suas subtarefas. Pode restaurá-las a partir da Lixeira.",
+  "The time entry could not be started; this session is not being tracked. ({detail})": "Não foi possível iniciar a entrada de tempo; esta sessão não está a ser registada. ({detail})",
+  "The time entry could not be stopped; the minutes may not be logged correctly. ({detail})": "Não foi possível parar a entrada de tempo; os minutos podem não ficar registados corretamente. ({detail})"
 }
