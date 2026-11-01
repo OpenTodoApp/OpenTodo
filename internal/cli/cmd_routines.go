@@ -172,8 +172,43 @@ type routineStep struct {
 	Do        []routineStep              `json:"do"`
 }
 
-// sentence writes a step as one line: its kind and its inputs.
+// pickWords names a Pick step's mode (OpenSpec change routines-dynamic-data
+// D2): take is "pick first|last|first N|last N|all", filter "pick where".
+func (s routineStep) pickWords() string {
+	if s.Kind == "filter" {
+		return "pick where"
+	}
+	var from string
+	var n float64 = 1
+	_ = json.Unmarshal(literalOf(s.In["from"]), &from)
+	_ = json.Unmarshal(literalOf(s.In["n"]), &n)
+	end := "first"
+	if from == "end" {
+		end = "last"
+	}
+	switch {
+	case from == "all":
+		return "pick all"
+	case n > 1:
+		return fmt.Sprintf("pick %s %d", end, int(n))
+	}
+	return "pick " + end
+}
+
+func literalOf(v json.RawMessage) json.RawMessage {
+	var arg struct {
+		Literal json.RawMessage `json:"literal"`
+	}
+	_ = json.Unmarshal(v, &arg)
+	return arg.Literal
+}
+
+// sentence writes a step as one line: its kind (Pick by its mode) and its inputs.
 func (s routineStep) sentence() string {
+	head := strings.ReplaceAll(s.Kind, "_", " ")
+	if s.Kind == "take" || s.Kind == "filter" {
+		head = s.pickWords()
+	}
 	var parts []string
 	for name, v := range s.In {
 		var arg struct {
@@ -188,7 +223,7 @@ func (s routineStep) sentence() string {
 		}
 	}
 	slices.Sort(parts)
-	return strings.ReplaceAll(s.Kind, "_", " ") + " (" + strings.Join(parts, ", ") + ")"
+	return head + " (" + strings.Join(parts, ", ") + ")"
 }
 
 func printSteps(a *App, steps []routineStep, indent string, n *int) {

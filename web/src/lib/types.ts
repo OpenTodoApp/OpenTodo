@@ -506,6 +506,8 @@ export interface RuleTrigger {
   /** `schedule`: HH:MM in the user's zone, on these weekdays (1 Monday … 7 Sunday). */
   at?: string
   weekdays?: number[]
+  /** `schedule` instead of weekdays: days of the month, 1 to 31 or "last" (routines-dynamic-data D5). */
+  month_days?: (number | 'last')[]
 }
 
 /** A date predicate (`due`, `deadline`). */
@@ -529,6 +531,8 @@ export interface RuleCondition {
   habit?: boolean
   estimate?: RuleMinutesPredicate
   tracked?: 'none' | { min_minutes: number }
+  /** No field of the task changed in this many days (routines-dynamic-data D5). */
+  unchanged?: { days: number }
 }
 
 /** An automation rule's actions: the on-drop keys plus the automation keys (automation-rules "Actions"). */

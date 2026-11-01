@@ -189,7 +189,7 @@ export function dateLiteral(v: unknown): { date?: string; word?: 'today' | 'tomo
   return null
 }
 
-const CONDITION_KEYS = ['project', 'section', 'labels', 'priority', 'due', 'deadline', 'start', 'evening', 'blocked', 'assignee', 'origin', 'habit', 'estimate', 'tracked']
+const CONDITION_KEYS = ['project', 'section', 'labels', 'priority', 'due', 'deadline', 'start', 'evening', 'blocked', 'assignee', 'origin', 'habit', 'estimate', 'tracked', 'unchanged']
 const ACTION_KEYS = ['add_labels', 'remove_labels', 'priority', 'due', 'start', 'state', 'section', 'deadline', 'assignee', 'comment', 'notify', 'webhook', 'energy', 'trash']
 const COMPARE_OPS = ['>', '>=', '=', '!=', '<=', '<', 'empty', 'not_empty', 'contains']
 const PERIODS = ['today', 'this_week', 'last_week', 'this_month']

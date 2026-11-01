@@ -28,6 +28,8 @@ type ucTask struct {
 	ProjectID   string   `json:"project_id"`
 	ParentID    string   `json:"parent_id"`
 	Description string   `json:"description"`
+	// ChangedOn writes the task on that day (its last change), before any newer write.
+	ChangedOn string `json:"changed_on"`
 }
 
 type ucSeed struct {
@@ -51,6 +53,8 @@ type ucExpect struct {
 	Emails []struct{ Subject, Text string } `json:"emails"`
 	Focus  string                           `json:"focus"`
 	Timer  string                           `json:"timer"`
+	// CreatedCount checks only how many tasks were created (a template's tasks).
+	CreatedCount int `json:"created_count"`
 }
 
 type ucCase struct {
@@ -205,7 +209,16 @@ func seedUseCase(t *testing.T, h *harness, seed ucSeed) map[string]map[string]an
 		if x.ParentID != "" {
 			fields["parent_id"] = x.ParentID
 		}
+		now := h.clock
+		if x.ChangedOn != "" {
+			day, err := time.Parse("2006-01-02", x.ChangedOn)
+			if err != nil {
+				t.Fatal(err)
+			}
+			h.clock = day.Add(10 * time.Hour)
+		}
 		h.task("alice", x.ID, fields)
+		h.clock = now
 		before[x.ID] = ucTaskState(h.get("alice", x.ID))
 	}
 	return before
@@ -291,7 +304,13 @@ func checkUseCase(t *testing.T, h *harness, c ucCase, seed ucSeed, before map[st
 		}
 	}
 	check("changed tasks", changed, wantChanged)
-	check("created tasks", created, c.Expect.Created)
+	if c.Expect.CreatedCount > 0 {
+		if len(created) != c.Expect.CreatedCount {
+			t.Errorf("created %d tasks, want %d", len(created), c.Expect.CreatedCount)
+		}
+	} else {
+		check("created tasks", created, c.Expect.Created)
+	}
 	check("comments", comments, c.Expect.Comments)
 	check("appended notes", appended, c.Expect.Appended)
 	var notices []string

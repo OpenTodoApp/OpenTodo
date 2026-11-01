@@ -4,7 +4,7 @@
 // type check is the shared checker of steps.ts; saving goes through store.ts.
 // Pure: no reads, no writes.
 import type { RoutineArg, RoutineStep, RoutineStepType, Rule, RuleActions, RuleCondition, RuleTrigger } from '../types'
-import { checkTypes, MAX_STEPS, parseSteps, readRoutine, stepError, stepKind, triggerOutput, type StepError } from './steps'
+import { checkTypes, MAX_STEPS, parseSteps, readRoutine, stepError, stepKind, triggerOutput, type StepError, type StepInput } from './steps'
 
 export interface RoutineDraft {
   name: string
@@ -144,10 +144,155 @@ export function newStep(kind: string, id: string, above?: { id: string; type: Ro
     if (fit) input[fit.name] = { ref: above.id }
   }
   if (kind === 'change_tasks') input.set = { literal: {} }
+  // Pick starts as "the first" and Get the date as today (routines-dynamic-data D2, D5).
+  if (kind === 'take') { input.n = { literal: 1 }; input.from = { literal: 'start' } }
+  if (kind === 'date') input.date = { literal: 'today' }
   if (kind === 'if') { step.then = []; step.otherwise = [] }
   if (kind === 'repeat') step.do = []
   if (Object.keys(input).length) step.in = input
   return step
+}
+
+/**
+ * How an input takes a value of a type (routines-dynamic-data D1): as it is (a
+ * Task where Tasks is accepted, a Number or Date as Text), once for each item
+ * of a list where it takes one item, or not at all.
+ */
+export function fitOf(def: StepInput, type: RoutineStepType): 'yes' | 'each' | 'no' {
+  if (def.accepts.includes(type)) return 'yes'
+  if (type === 'task' && def.accepts.includes('tasks')) return 'yes'
+  if ((type === 'number' || type === 'date') && def.accepts.includes('text')) return 'yes'
+  const el: RoutineStepType | '' = type === 'tasks' ? 'task' : type === 'lines' ? 'text' : ''
+  if (el && def.accepts.includes(el)) return 'each'
+  return 'no'
+}
+
+/** A value that flows into a step: a reference and its type. */
+export interface Flowing { ref: string; type: RoutineStepType }
+
+/** The type of the list a Repeat step reads, or '' when it is not known. */
+function repeatListType(d: RoutineDraft, repeatId: string, types: Record<string, RoutineStepType>): RoutineStepType | '' {
+  const arg = findStep(d.steps, repeatId)?.in?.list
+  if (!arg || !('ref' in arg)) return ''
+  if (arg.ref === 'trigger') return triggerOutput(d.trigger.kind, !!d.condition)
+  if (arg.ref === 'item') {
+    const outer = enclosingRepeat(d.steps, repeatId)
+    return outer ? (repeatListType(d, outer, types) === 'tasks' ? 'task' : '') : ''
+  }
+  return types[arg.ref] ?? ''
+}
+
+/**
+ * The values that flow to a step, nearest first (routines-dynamic-data D3): the
+ * enclosing Repeat's item, the outputs of earlier visible steps, then the
+ * trigger's output. `types` are the outputs as checked before the step was
+ * added. A manual routine's trigger (the task it is run on) is listed only
+ * when `manualTrigger` is set: the editor never wires it by itself.
+ */
+export function flowingTo(d: RoutineDraft, id: string, types: Record<string, RoutineStepType>, manualTrigger = false): Flowing[] {
+  const out: Flowing[] = []
+  const rep = enclosingRepeat(d.steps, id)
+  if (rep) {
+    const list = repeatListType(d, rep, types)
+    if (list === 'tasks' || list === 'lines') out.push({ ref: 'item', type: list === 'tasks' ? 'task' : 'text' })
+  }
+  for (const v of visibleBefore(d.steps, id)) {
+    const type = types[v.id]
+    if (type && type !== 'none') out.push({ ref: v.id, type })
+  }
+  if (d.trigger.kind !== 'manual' || manualTrigger) out.push({ ref: 'trigger', type: triggerOutput(d.trigger.kind, !!d.condition) })
+  return out
+}
+
+/** The input a step's main value goes into: its first required input that takes references, or the first of its source set. */
+export function mainInput(kind: string): StepInput | undefined {
+  const k = stepKind(kind)
+  return k?.inputs.find((def) => def.accepts.length > 0 && (def.required || (k.oneOf ?? []).some((set) => set[0] === def.name)))
+}
+
+/** The nearest flowing value an input of a step takes, or undefined. */
+export function nearestFlowing(d: RoutineDraft, id: string, def: StepInput, types: Record<string, RoutineStepType>): Flowing | undefined {
+  return flowingTo(d, id, types).find((f) => fitOf(def, f.type) !== 'no')
+}
+
+/**
+ * Fills a step's empty main input with the nearest flowing value that fits
+ * (routines-dynamic-data D3): the loop's item inside a Repeat, else the step
+ * above or an earlier one, else the trigger. Never a task chosen by hand.
+ */
+export function wireStep(d: RoutineDraft, id: string, types: Record<string, RoutineStepType>): RoutineDraft {
+  const step = findStep(d.steps, id)
+  const def = step ? mainInput(step.kind) : undefined
+  if (!step || !def || step.in?.[def.name]) return d
+  const f = nearestFlowing(d, id, def, types)
+  return f ? { ...d, steps: setInput(d.steps, id, def.name, { ref: f.ref }) } : d
+}
+
+/** Pick's modes (routines-dynamic-data D2): stored as `take` (first, last, N of them, all) or `filter` (where). */
+export type PickMode = 'first' | 'last' | 'first_n' | 'last_n' | 'all' | 'where'
+export const PICK_MODES: readonly PickMode[] = ['first', 'last', 'first_n', 'last_n', 'all', 'where']
+
+/** The Pick mode a `take` or `filter` step is in. */
+export function pickModeOf(step: Pick<RoutineStep, 'kind' | 'in'>): PickMode {
+  if (step.kind === 'filter') return 'where'
+  const lit = (name: string) => { const a = step.in?.[name]; return a && 'literal' in a ? a.literal : undefined }
+  const from = lit('from')
+  if (from === 'all') return 'all'
+  const n = typeof lit('n') === 'number' ? (lit('n') as number) : 1
+  const end = from === 'end'
+  return n > 1 ? (end ? 'last_n' : 'first_n') : end ? 'last' : 'first'
+}
+
+/** Switches a Pick step to a mode in place, keeping its id and its list, so later steps keep reading it. */
+export function setPickMode(d: RoutineDraft, id: string, mode: PickMode): RoutineDraft {
+  const step = findStep(d.steps, id)
+  if (!step || (step.kind !== 'take' && step.kind !== 'filter')) return d
+  const list = step.in?.list
+  const keep: Record<string, RoutineArg> = list ? { list } : {}
+  const lit = (name: string) => { const a = step.in?.[name]; return a && 'literal' in a ? a.literal : undefined }
+  const was = typeof lit('n') === 'number' && (lit('n') as number) > 1 ? (lit('n') as number) : 3
+  let next: RoutineStep
+  switch (mode) {
+    case 'where': next = { id, kind: 'filter', in: { ...keep, where: step.kind === 'filter' && step.in?.where ? step.in.where : { literal: {} } } }; break
+    case 'all': next = { id, kind: 'take', in: { ...keep, from: { literal: 'all' } } }; break
+    case 'first': case 'last': next = { id, kind: 'take', in: { ...keep, n: { literal: 1 }, from: { literal: mode === 'first' ? 'start' : 'end' } } }; break
+    default: next = { id, kind: 'take', in: { ...keep, n: { literal: was }, from: { literal: mode === 'first_n' ? 'start' : 'end' } } }
+  }
+  const replace = (steps: RoutineStep[]): RoutineStep[] => steps.map((s) => (s.id === id ? next : {
+    ...s, ...(s.then ? { then: replace(s.then) } : {}), ...(s.otherwise ? { otherwise: replace(s.otherwise) } : {}), ...(s.do ? { do: replace(s.do) } : {}),
+  }))
+  return { ...d, steps: replace(d.steps) }
+}
+
+/** Inserts a Sort step (by due, ascending) between a Pick step and the list it reads ("Sort first"). */
+export function sortBeforePick(d: RoutineDraft, id: string): RoutineDraft {
+  const step = findStep(d.steps, id)
+  const place = placeOf(d.steps, id)
+  const list = step?.in?.list
+  if (!step || !place || !list || !('ref' in list)) return d
+  const sid = newId(d.steps)
+  const steps = insertStep(d.steps, place, { id: sid, kind: 'sort', in: { list, by: { literal: 'due' }, direction: { literal: 'asc' } } })
+  return { ...d, steps: setInput(steps, id, 'list', { ref: sid }) }
+}
+
+/** Whether a Pick step reads its list straight, without a Sort step before it ("In list order"). */
+export function pickUnsorted(d: RoutineDraft, id: string): boolean {
+  const list = findStep(d.steps, id)?.in?.list
+  if (!list || !('ref' in list)) return false
+  const from = findStep(d.steps, list.ref)
+  return !from || from.kind !== 'sort'
+}
+
+/** The type of the nearest value that flows to a place, or 'start' when nothing does (Add step's suggestions). */
+export function flowingTypeAt(d: RoutineDraft, place: Pick<StepPlace, 'parent' | 'block' | 'index'>, types: Record<string, RoutineStepType>): RoutineStepType | 'start' {
+  const probe = '~probe'
+  const f = flowingTo({ ...d, steps: insertStep(d.steps, place, { id: probe, kind: 'stop' }) }, probe, types)[0]
+  return f ? f.type : 'start'
+}
+
+/** Inserts a new step of a kind at a place, wired to the data that flows there (D3). */
+export function insertNewStep(d: RoutineDraft, place: Pick<StepPlace, 'parent' | 'block' | 'index'>, kind: string, id: string, types: Record<string, RoutineStepType>): RoutineDraft {
+  return wireStep({ ...d, steps: insertStep(d.steps, place, newStep(kind, id)) }, id, types)
 }
 
 /** Inserts a step at a place (index: before which step; -1 at the end). */

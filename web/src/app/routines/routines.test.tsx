@@ -7,7 +7,7 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, useDatabase } from '../../lib/db'
 import { createLabel } from '../../lib/labels'
-import { createProject, createTask, resetDeviceId } from '../../lib/ops'
+import { createProject, createTask, resetDeviceId, updateProject } from '../../lib/ops'
 import { publishEncryption } from '../../lib/e2ee'
 import { resetCatalogueCache } from '../../lib/rules/catalogue'
 import { createRule } from '../../lib/rules/store'
@@ -61,17 +61,18 @@ const cards = () => [...document.querySelectorAll<HTMLElement>('[data-step-card]
 const button = (text: string, root: ParentNode = document) => [...root.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.trim() === text)!
 const editorText = () => document.querySelector('[data-testid="routine-editor"]')?.textContent ?? ''
 
-async function groceries(): Promise<{ id: string; project: string; task: string }> {
+// Groceries reads a project's note, chosen in the picker: no task chosen by hand (routines-dynamic-data).
+async function groceries(): Promise<{ id: string; project: string; list: string }> {
   const project = await createProject({ name: 'Errands' })
-  const task = await createTask({ title: 'Groceries', description: ['- oat milk', '- bread', '- eggs', '- apples', '- rice', '- tea', '- soap'].join('\n') })
+  const list = await createProject({ name: 'Groceries' })
+  await updateProject(list, { description: ['- oat milk', '- bread', '- eggs', '- apples', '- rice', '- tea', '- soap'].join('\n') })
   const steps: RoutineStep[] = [
-    { id: 'g', kind: 'get_task', in: { task: { literal: { task } } } },
-    { id: 'a', kind: 'note_text', in: { of: { ref: 'g' } } },
+    { id: 'a', kind: 'note_text', in: { of: { literal: { project: list } } } },
     { id: 'b', kind: 'split_lines', in: { text: { ref: 'a' } } },
     { id: 'c', kind: 'create_tasks', in: { text: { ref: 'b' }, project: { literal: { project } } } },
   ]
   const id = await createRule({ name: 'Groceries', trigger: { kind: 'schedule', at: '17:00', weekdays: [5] }, actions: null, steps })
-  return { id, project, task }
+  return { id, project, list }
 }
 
 describe('Routines page', () => {
@@ -96,7 +97,7 @@ describe('Routines page', () => {
     status.rules[id] = { last_run: Date.UTC(2026, 9, 30, 17), runs_7d: 1 }
     const r = await render(<RoutinesView />)
     await waitFor(() => rows().length === 2 && /14 runs this week/.test(rows()[0].textContent ?? '') && /When label waiting is added → priority 3/.test(rows()[0].textContent ?? ''), 'the legacy row')
-    await waitFor(() => /→ get the task Groceries, get the note text of Groceries, split the note text into lines, create tasks from the lines in Errands/.test(rows()[1].textContent ?? ''), 'the routine row')
+    await waitFor(() => /→ get the note text of Groceries, split the note text into lines, create tasks from the lines in Errands/.test(rows()[1].textContent ?? ''), 'the routine row')
     expect(rows()[1].textContent).toContain('1 run this week')
     expect(rows()[1].querySelector('[aria-label="Run now: Groceries"]')).not.toBeNull()
     await click(rows()[0].querySelector('[role="switch"]')!)
@@ -133,12 +134,12 @@ describe('Routine editor', () => {
     const { id } = await groceries()
     const rule = (await db.rules.get(id))!
     const r = await render(<RoutineEditor rule={rule} onBack={() => {}} />)
-    await waitFor(() => cards().length === 4 && cards()[3].getAttribute('aria-label') === 'Create tasks from the lines in Errands', 'four cards')
+    await waitFor(() => cards().length === 3 && cards()[2].getAttribute('aria-label') === 'Create tasks from the lines in Errands', 'three cards')
     expect(document.querySelector('[data-when-card]')!.textContent).toContain('Friday at 17:00')
     expect(cards().map((c) => c.getAttribute('aria-label'))).toEqual([
-      'Get the task Groceries', 'Get the note text of Groceries', 'Split the note text into lines', 'Create tasks from the lines in Errands'])
+      'Get the note text of Groceries', 'Split the note text into lines', 'Create tasks from the lines in Errands'])
     // "Screen reader": the project word of Create tasks.
-    expect(cards()[3].querySelector('[data-word="Project"]')!.getAttribute('aria-label')).toBe('Project: Errands, change')
+    expect(cards()[2].querySelector('[data-word="Project"]')!.getAttribute('aria-label')).toBe('Project: Errands, change')
     await r.unmount()
   })
 
@@ -146,9 +147,9 @@ describe('Routine editor', () => {
     vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
     const { id } = await groceries()
     const r = await render(<RoutineEditor rule={(await db.rules.get(id))!} onBack={() => {}} />)
-    await waitFor(() => /\+ 2 more/.test(cards()[2]?.textContent ?? ''), 'the preview')
-    expect(cards()[2].textContent).toContain('oat milk')
-    expect(cards()[3].textContent).toContain('Would create 7 tasks in Errands')
+    await waitFor(() => /\+ 2 more/.test(cards()[1]?.textContent ?? ''), 'the preview')
+    expect(cards()[1].textContent).toContain('oat milk')
+    expect(cards()[2].textContent).toContain('Would create 7 tasks in Errands')
     expect(requests.some((q) => q.path === '/api/v1/rules/test')).toBe(false)
     await r.unmount()
   })
@@ -172,18 +173,18 @@ describe('Routine editor', () => {
     const { id } = await groceries()
     const done = vi.fn()
     const r = await render(<RoutineEditor rule={(await db.rules.get(id))!} onBack={() => {}} onSaved={done} />)
-    await waitFor(() => cards().length === 4, 'the cards')
+    await waitFor(() => cards().length === 3, 'the cards')
     await click(document.querySelector('[data-add-step]')!)
     await waitFor(() => !!document.querySelector('[data-testid="add-step"]'), 'the sheet')
     // "Suggestions after lines" is the list after Split; here the step above is Create tasks.
     await type(document.querySelector<HTMLInputElement>('[data-testid="add-step"] input')!, 'count')
     await click(document.querySelector('[data-add-kind="count"] button')!)
-    await waitFor(() => cards().length === 5, 'the new card')
+    await waitFor(() => cards().length === 4, 'the new card')
     await click(button('Save'))
     await waitFor(() => done.mock.calls.length === 1, 'saved')
     const saved = await db.rules.get(id)
-    expect(saved!.steps!.map((s) => s.kind)).toEqual(['get_task', 'note_text', 'split_lines', 'create_tasks', 'count'])
-    expect(saved!.steps![4].in).toEqual({ list: { ref: 'c' } })
+    expect(saved!.steps!.map((s) => s.kind)).toEqual(['note_text', 'split_lines', 'create_tasks', 'count'])
+    expect(saved!.steps![3].in).toEqual({ list: { ref: 'c' } })
     await r.unmount()
   })
 
@@ -195,7 +196,7 @@ describe('Routine editor', () => {
     await waitFor(() => !!document.querySelector('[data-add-suggested]'), 'the suggestions')
     await waitFor(() => localStorage.getItem('routines.catalogue') !== null, 'the catalogue')
     const suggested = [...document.querySelectorAll('[data-add-suggested] [data-add-kind]')].map((x) => x.getAttribute('data-add-kind'))
-    expect(suggested).toEqual(['create_tasks', 'filter', 'count', 'join', 'sort', 'take'])
+    expect(suggested).toEqual(['create_tasks', 'take', 'count', 'join', 'sort', 'append_to_note'])
     expect(document.querySelector('[data-add-group="communication"] [data-add-kind="email_me"]')).toBeNull()
     await type(document.querySelector<HTMLInputElement>('[data-testid="add-step"] input')!, 'mail')
     await waitFor(() => !!document.querySelector('[data-add-results] [data-add-kind="email_me"][data-unavailable]'), 'the dimmed result')
@@ -272,7 +273,7 @@ describe('Routine editor', () => {
     const { id } = await groceries()
     const before = await db.tasks.count()
     const r = await render(<RoutineEditor rule={(await db.rules.get(id))!} onBack={() => {}} />)
-    await waitFor(() => cards().length === 4, 'the cards')
+    await waitFor(() => cards().length === 3, 'the cards')
     await click(button('Test'))
     await waitFor(() => !!document.querySelector('[data-test-result]'), 'the result')
     expect(requests.some((q) => q.path === `/api/v1/rules/${id}/run` && (q.body as { test: boolean }).test)).toBe(true)
@@ -288,7 +289,7 @@ describe('Routine editor page', () => {
   it('"From a link": the breadcrumb, the cards and focus on the heading', async () => {
     const { id } = await groceries()
     const r = await render(<RoutinePage route={{ view: 'rules', id }} />)
-    await waitFor(() => cards().length === 4, 'the cards')
+    await waitFor(() => cards().length === 3, 'the cards')
     expect(document.querySelector('[data-breadcrumb]')!.textContent).toBe('RoutinesGroceries')
     expect(document.activeElement?.hasAttribute('data-page-title')).toBe(true)
     expect(document.querySelector('[data-unsaved]')).toBeNull()
@@ -299,7 +300,7 @@ describe('Routine editor page', () => {
     const { id } = await groceries()
     navigate({ view: 'rules', id })
     const r = await render(<RoutinePage route={{ view: 'rules', id }} />)
-    await waitFor(() => cards().length === 4, 'the cards')
+    await waitFor(() => cards().length === 3, 'the cards')
     await type(nameInput(), 'Groceries for the week')
     await waitFor(() => !!document.querySelector('[data-unsaved]'), 'the indicator')
     await click(document.querySelector('[data-crumb="routines"]')!)
