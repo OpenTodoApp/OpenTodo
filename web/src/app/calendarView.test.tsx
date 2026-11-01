@@ -110,7 +110,7 @@ describe('calendar events', () => {
     const ev = r.container.querySelector('[data-event="ev1"]')!
     expect(ev.hasAttribute('data-overlap')).toBe(true)
     expect(r.container.querySelector('[data-block]')!.hasAttribute('data-overlap')).toBe(true)
-    expect(ev.getAttribute('aria-label')).toBe('Team sync, 10:00 to 11:00, Room 4, Work')
+    expect([...ev.childNodes].filter((n) => !(n as Element).hasAttribute?.('aria-hidden')).map((n) => n.textContent).join('')).toBe('Team sync, 10:00 to 11:00, Room 4, Work')
     expect(r.container.querySelector('[data-capacity]')!.textContent).toContain('30m / 8h')
     // The all-day strip shows the two-day event on this day.
     expect(r.container.querySelector('[data-all-day="2026-10-14"] [data-event-chip="ev2"]')?.textContent).toBe('Offsite')

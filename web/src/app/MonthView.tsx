@@ -5,7 +5,7 @@
 // may stack 2, 3 or 6 months (year-view D1); a phone always shows one. Loads on first use.
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Button, EmptyState, MenuItem, MenuSeparator, PageBody, useMediaQuery } from '../ui'
-import { calendarTasks, nudgeDue } from '../lib/calendar'
+import { calendarTasks, eventsByDay, nudgeDue, type DayEvents, type EventBlock } from '../lib/calendar'
 import { MONTHS_SHOWN, monthsShown, rememberCalendarMode } from '../lib/calendarMode'
 import { addDaysISO, dueFromView, viewedTask, formatDateParts, formatDateRange, monthName } from '../lib/dates'
 import { getTask, useMembershipMap, useProjects } from '../lib/localData'
@@ -16,7 +16,10 @@ import { updateTask } from '../lib/ops'
 import { canEditTasks, roleOf } from '../lib/sharing'
 import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
 import { slotsByDate, useSlots } from '../lib/slots'
-import type { Task } from '../lib/types'
+import type { CalendarEvent, Task } from '../lib/types'
+import { EventRow } from './CalendarEvents'
+import { CalendarsToggle } from './calendar/CalendarsToggle'
+import { CalendarStatus } from './calendar/CalendarStatus'
 import { CalendarRangeSwitch } from './CalendarRange'
 import { useCalendarShowCompleted, useGridPrefs } from '../lib/liveData'
 import { CalendarCompletedToggle } from './calendar/CalendarCompletedToggle'
@@ -49,16 +52,23 @@ export { addMonthsISO }
 /**
  * A cell's rows: its tasks and projected occurrences ordered together by time, priority
  * and position (series-occurrences D3, as Plan's columns), then the deadlines of tasks
- * due elsewhere (calendar-clarity D1); all take part in "+N more".
+ * due elsewhere (calendar-clarity D1), then the subscribed calendars' events, all-day
+ * ones first, then the timed ones by start (calendar-events-all-views); all take part
+ * in "+N more", so tasks keep the first rows.
  */
-function cellEntries(tasks: readonly Task[], deadlines: readonly Task[], projected: readonly Projection[] = NO_PROJECTIONS, date = '', zone?: string): CellEntry[] {
+function cellEntries(tasks: readonly Task[], deadlines: readonly Task[], projected: readonly Projection[] = NO_PROJECTIONS, date = '', zone?: string, events?: DayEvents): CellEntry[] {
   const rows: CellEntry[] = projected.length === 0
     ? tasks.map((task) => ({ kind: 'task' as const, task }))
     : columnEntries(tasks, projected, date, zone).map((e) => (e.kind === 'task' ? { kind: 'task' as const, task: e.task } : { kind: 'projected' as const, projection: e.projection }))
-  return [...rows, ...deadlines.map((task) => ({ kind: 'deadline' as const, task }))]
+  return [...rows, ...deadlines.map((task) => ({ kind: 'deadline' as const, task })), ...eventEntries(events)]
 }
 
-/** The focused day's rows below a phone's grid, or its empty state: tasks, deadlines, then projected occurrences (series-occurrences D3; the grid's count counts tasks only). */
+function eventEntries(events?: DayEvents): Extract<CellEntry, { kind: 'event' }>[] {
+  if (!events) return []
+  return [...events.allDay.map((event) => ({ kind: 'event' as const, event })), ...events.timed.map((block) => ({ kind: 'event' as const, event: block.event, block }))]
+}
+
+/** The focused day's rows below a phone's grid, or its empty state: tasks, deadlines, projected occurrences, then events (series-occurrences D3; the grid's count counts tasks only). */
 function MonthDayList({ focused, empty, onAdd, children }: { focused: string; empty: boolean; onAdd: () => void; children: ReactNode }) {
   return (
     <section aria-label={t('Tasks on {focused}', { focused })} className="mt-3 space-y-1" data-month-day-list>
@@ -68,9 +78,10 @@ function MonthDayList({ focused, empty, onAdd, children }: { focused: string; em
 }
 
 /** Previous, Today, Next and the mode switch of the Month. */
-function MonthRange({ anchor, date, today, goTo, showCompleted }: { anchor: string; date?: string; today: string; goTo: (d: string) => void; showCompleted: boolean }) {
+function MonthRange({ anchor, date, today, goTo, showCompleted, calendars }: { anchor: string; date?: string; today: string; goTo: (d: string) => void; showCompleted: boolean; calendars: ReactNode }) {
   return (
     <>
+      {calendars}
       <span className="flex items-center" role="group" aria-label={t('Range')}>
         <Button variant="ghost" size="sm" icon="chevron-left" aria-label={t('Previous month')} onClick={() => goTo(addMonthsISO(anchor, -1))} />
         <Button variant="ghost" size="sm" onClick={() => goTo(today)}>{t('Today')}</Button>
@@ -131,9 +142,10 @@ export function MonthView({ date }: { date?: string }) {
   const rawMap = useMemo(() => new Map(rawTasks.map((task) => [task.id, task])), [rawTasks])
   const canEdit = useCallback((task: Task) => canEditTasks(roleOf(task.project_id, memberMap)), [memberMap])
   const editable = useCallback((task: Task) => !task.completed_at && canEdit(task), [canEdit])
-  // Meetings count toward a cell's capacity only when this device counts them
-  // (meeting-aware-capacity D5); the events are fetched for the shown weeks only then.
-  const feeds = useCalendarFeeds(days[0], days[days.length - 1], prefs.countEvents)
+  // The shown weeks' events are rows of their cells (calendar-events-all-views); they
+  // count toward a cell's capacity only when this device counts meetings (meeting-aware-capacity D5).
+  const feeds = useCalendarFeeds(days[0], days[days.length - 1])
+  const dayEvents = useMemo(() => eventsByDay(feeds.visibleEvents, days[0], days[days.length - 1], zone), [feeds.visibleEvents, days, zone])
   const online = useOnline()
   const meetings = useMemo(() => meetingsByDay(days, feeds.visibleEvents, {
     count: prefs.countEvents, eventsShown: feeds.eventsShown, subscriptions: feeds.subs.length, win: feeds.win, online, zone,
@@ -250,9 +262,9 @@ export function MonthView({ date }: { date?: string }) {
     if (!selectedId) return
     const d = viewedMap.get(selectedId)?.due?.date
     if (spanIds.has(selectedId)) return
-    const entries = d ? cellEntries(cells.get(d) ?? [], deadlines.get(d) ?? [], projected.get(d), d, zone) : []
+    const entries = d ? cellEntries(cells.get(d) ?? [], deadlines.get(d) ?? [], projected.get(d), d, zone, dayEvents.get(d)) : []
     if (d && entries.length > CELL_ROWS && !visibleRows(entries, CELL_ROWS).shown.some((e) => e.kind === 'task' && e.task.id === selectedId)) setExpanded(d)
-  }, [selectedId, viewedMap, cells, deadlines, projected, zone, spanIds])
+  }, [selectedId, viewedMap, cells, deadlines, projected, zone, spanIds, dayEvents])
 
   const last = shownMonths[shownMonths.length - 1]
   const title = stacked ? formatDateRange(shownMonths[0].from, last.from, { month: 'short', year: 'numeric' }) : monthName(month, 'long', true)
@@ -264,20 +276,29 @@ export function MonthView({ date }: { date?: string }) {
       onSelect={(id, d) => { setSelectedId(id); if (d) setFocused(d) }} />
   )
   const deadlineRow = (task: Task, d: string) => <DeadlineMarker key={`deadline:${task.id}`} task={task} date={d} today={today} variant="row" onOpen={(id) => setPanelTaskId(id)} />
+  // Events are read-only rows (calendar-feeds D8): the same details popover as in Day, never dragged, selected or counted.
+  const eventRow = ({ event, block }: { event: CalendarEvent; block?: EventBlock }, variant: 'cell' | 'agenda') => (
+    <EventRow key={`event:${event.id}`} ev={event} start={block?.start} end={block?.end} sub={feeds.subMap.get(event.subscriptionId)} zone={zone} variant={variant} />
+  )
+  const focusedEvents = eventEntries(dayEvents.get(focused))
   const c: MonthCells = {
     today, focused, expanded, narrow, selectedId, cells, spans, projected, shownViewed, dayLength: prefs.dayLength, meetings, slotViews,
     outside: (d) => !stacked && d.slice(0, 7) !== month, add: chrome.add,
-    entries: (d, dayProjected) => cellEntries(cells.get(d) ?? [], deadlines.get(d) ?? [], dayProjected, d, zone),
-    row, deadlineRow, hueOf: chrome.color.hueOf, projectionHue, stored: (id) => rawMap.get(id),
+    entries: (d, dayProjected) => cellEntries(cells.get(d) ?? [], deadlines.get(d) ?? [], dayProjected, d, zone, dayEvents.get(d)),
+    row, deadlineRow, events: dayEvents, eventRow: (e) => eventRow(e, 'cell'), hueOf: chrome.color.hueOf, projectionHue, stored: (id) => rawMap.get(id),
     focus: setFocused, expand: setExpanded, select: setSelectedId, open: setPanelTaskId,
   }
   // The focused day's list on a phone: the spans covering it first, with their range (multi-day-tasks D8).
   const spansOn = (d: string) => spans.flatMap((x) => (x.kind === 'task' && spanCovers(x.span, d) ? [rawMap.get(x.id) ?? x.task] : []))
   const focusedTasks = [...spansOn(focused), ...(cells.get(focused) ?? [])]
   const focusedDeadlines = deadlines.get(focused) ?? []
+  // How fresh the calendars are, after the filter chip, as in Day and Week.
+  const status = <CalendarStatus status={feeds.status} online={online} fetchedAt={feeds.win?.fetchedAt} />
+  const meta = chrome.chip ? <span className="inline-flex min-w-0 max-w-full flex-wrap items-center gap-2">{chrome.chip}{status}</span> : status
   return (
     <PageBody width="full" className="flex flex-col" data-calendar-page="month">
-      <CalendarPageHeader chrome={chrome} title={title} meta={chrome.chip} actions={<MonthRange anchor={anchor} date={date} today={today} goTo={goTo} showCompleted={showCompleted} />}
+      <CalendarPageHeader chrome={chrome} title={title} meta={meta}
+        actions={<MonthRange anchor={anchor} date={date} today={today} goTo={goTo} showCompleted={showCompleted} calendars={<CalendarsToggle shown={feeds.eventsShown} count={feeds.subs.length} />} />}
         overflow={<>
           <CalendarCompletedToggle shown={showCompleted} menu />
           {!narrow && <MonthsShownItems count={preferred} />}
@@ -300,8 +321,9 @@ export function MonthView({ date }: { date?: string }) {
           )
         })}
       </div>
-      {narrow && <MonthDayList focused={focused} empty={focusedTasks.length === 0 && focusedDeadlines.length === 0 && !projected.get(focused)?.length} onAdd={() => chrome.add.add({ date: focused })}>
+      {narrow && <MonthDayList focused={focused} empty={focusedTasks.length === 0 && focusedDeadlines.length === 0 && !projected.get(focused)?.length && focusedEvents.length === 0} onAdd={() => chrome.add.add({ date: focused })}>
         {focusedTasks.map((task) => row(task))}{focusedDeadlines.map((task) => deadlineRow(task, focused))}{(projected.get(focused) ?? []).map((p) => <ProjectedItem key={p.id} p={p} hue={projectionHue(p)} variant="large" />)}
+        {focusedEvents.map((e) => eventRow(e, 'agenda'))}
       </MonthDayList>}
       <p className="mt-3 hidden text-meta text-faint sm:block">
         {t.rich('Arrows move the focused day, or the selected task. {j} / {k} select, {q} adds on the focused day.', { j: <span className="ui-kbd">j</span>, k: <span className="ui-kbd">k</span>, q: <span className="ui-kbd">q</span> })}

@@ -7,7 +7,7 @@ const calendarEvents = vi.fn(async (_from: string, _to: string) => ({
 }))
 vi.mock('./api', () => ({ api: { calendarEvents: (from: string, to: string) => calendarEvents(from, to) } }))
 
-import { cachedWindow, covers, ensureEventsFor, eventsStatus, fetchRange, refreshEvents, setShowEvents, showEvents } from './calendarFeeds'
+import { cachedWindow, covers, ensureEventsFor, eventsStatus, fetchRange, refreshEvents, requestRanges, setShowEvents, showEvents } from './calendarFeeds'
 import { clearLocalData, db, useDatabase } from './db'
 
 let n = 0
@@ -57,5 +57,20 @@ describe('calendar events cache (5.1, 5.2)', () => {
     expect(await showEvents()).toBe(true)
     await setShowEvents(false)
     expect(await showEvents()).toBe(false)
+  })
+
+  it('fetches a year (the Year view) in pieces the server accepts, keeping an event in two pieces once', async () => {
+    const year = { from: '2026-01-01', to: '2026-12-31' }
+    expect(fetchRange(year)).toEqual(year)
+    expect(fetchRange({ from: '2026-01-01', to: '2027-06-30' })).toEqual({ from: '2026-01-01', to: '2027-01-08' })
+    expect(requestRanges(year)).toEqual([
+      { from: '2026-01-01', to: '2026-04-02' }, { from: '2026-04-03', to: '2026-07-03' },
+      { from: '2026-07-04', to: '2026-10-03' }, { from: '2026-10-04', to: '2026-12-31' },
+    ])
+    await ensureEventsFor(year)
+    expect(calendarEvents.mock.calls.map(([from, to]) => [from, to])).toEqual(requestRanges(year).map((r) => [r.from, r.to]))
+    // The mock answers every piece with the same event: it is stored once.
+    expect(await db.calendarEvents.count()).toBe(1)
+    expect(covers(await cachedWindow(), year)).toBe(true)
   })
 })

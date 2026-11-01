@@ -230,6 +230,33 @@ export function smallTargets([rootSel, min]) {
   return out
 }
 
+// What an overlay holds fits in it (issue #731, the start guide in a narrow card):
+// nothing sticks out of the panel sideways, and no sentence is squeezed into a column a
+// word or two wide by the controls beside it (eight words or more need 8rem).
+export function overlayContentFit(rootSel) {
+  const root = document.querySelector(rootSel)
+  if (!root) return []
+  const box = root.getBoundingClientRect()
+  const out = []
+  const reported = []
+  const name = (el) => `${el.tagName.toLowerCase()} "${(el.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 40)}"`
+  for (const el of root.querySelectorAll('*')) {
+    if (el.closest('[data-scroll-x], [aria-hidden="true"]') || reported.some((r) => r.contains(el))) continue
+    const r = el.getBoundingClientRect()
+    if (r.width < 2 || r.height < 2) continue
+    if (r.left < box.left - 1 || r.right > box.right + 1) {
+      reported.push(el)
+      out.push(`${name(el)} sticks out of the overlay (${Math.round(r.left)} to ${Math.round(r.right)} px, panel ${Math.round(box.left)} to ${Math.round(box.right)} px)`)
+      continue
+    }
+    const own = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join(' ')
+    const words = own.split(/\s+/).filter(Boolean).length
+    if (words >= 8 && r.width < 128) { reported.push(el); out.push(`${name(el)} is squeezed into ${Math.round(r.width)} px`) }
+    if (out.length >= 5) break
+  }
+  return out
+}
+
 // An overlay's entrance (motion-v2: a dialog scales up over 250 ms) has finished: a click
 // on a control inside it while it still moves makes Playwright retry with other scroll
 // alignments, which scrolls the overlay; a person's click does not.

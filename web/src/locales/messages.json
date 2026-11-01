@@ -527,6 +527,9 @@
   "A slot holds up to {n} tasks.": [
     "web/src/lib/slots.ts"
   ],
+  "A small ring marks a day with calendar events.": [
+    "web/src/app/YearView.tsx"
+  ],
   "A source that no longer exists": [
     "web/src/app/calendar/FramesDialog.tsx"
   ],
@@ -2468,8 +2471,7 @@
     "web/src/lib/i18n/errors.ts"
   ],
   "Calendars": [
-    "web/src/app/CalendarView.tsx",
-    "web/src/app/PlanView.tsx"
+    "web/src/app/calendar/CalendarsToggle.tsx"
   ],
   "Calendars as of {wallTime}": [
     "web/src/app/calendar/CalendarStatus.tsx"
@@ -6810,8 +6812,7 @@
     "web/src/app/task-list/ClosedListActions.tsx"
   ],
   "Hide other calendars on this device": [
-    "web/src/app/CalendarView.tsx",
-    "web/src/app/PlanView.tsx"
+    "web/src/app/calendar/CalendarsToggle.tsx"
   ],
   "Hide sidebar": [
     "web/src/ui/patterns/PageHeader.tsx"
@@ -14198,8 +14199,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Show other calendars on this device": [
-    "web/src/app/CalendarView.tsx",
-    "web/src/app/PlanView.tsx"
+    "web/src/app/calendar/CalendarsToggle.tsx"
   ],
   "Show repeating occurrences": [
     "web/src/app/calendar/projectionSwitches.tsx"
@@ -19472,6 +19472,7 @@
     "web/src/lib/rules/sentence.ts"
   ],
   "all day": [
+    "web/src/app/CalendarEvents.tsx",
     "web/src/app/CalendarView.tsx",
     "web/src/app/calendar/WeekAgenda.tsx",
     "web/src/app/calendar/projections.tsx"
@@ -21737,6 +21738,9 @@
   "{n, plural, one {# day over} other {# days over}}": [
     "web/src/lib/facets.ts"
   ],
+  "{n, plural, one {# day with events} other {# days with events}}": [
+    "web/src/app/YearView.tsx"
+  ],
   "{n, plural, one {# day} other {# days}}": [
     "web/src/app/ProjectsTable.tsx",
     "web/src/app/PublicLinksSection.tsx",
@@ -21755,7 +21759,9 @@
     "web/src/app/EncryptionPanel.tsx"
   ],
   "{n, plural, one {# event} other {# events}}": [
-    "web/src/app/auditFormat.ts"
+    "web/src/app/YearView.tsx",
+    "web/src/app/auditFormat.ts",
+    "web/src/app/calendar/MonthWeek.tsx"
   ],
   "{n, plural, one {# hour after} other {# hours after}}": [
     "web/src/lib/nlp/reminders.ts"

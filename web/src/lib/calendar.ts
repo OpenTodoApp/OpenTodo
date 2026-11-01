@@ -148,18 +148,72 @@ function wallPoint(p: CalendarWhen, zone?: string): { date: string; minutes: num
 export function eventBlocks(events: readonly CalendarEvent[], date: string, zone?: string): EventBlock[] {
   const out: EventBlock[] = []
   for (const ev of events) {
-    if (ev.allDay) continue
-    const start = wallPoint(ev.start, zone)
-    if (!start) continue
-    const end = wallPoint(ev.end, zone) ?? { date: start.date, minutes: start.minutes }
-    if (start.date > date || end.date < date) continue
-    const from = start.date < date ? 0 : start.minutes
-    const to = end.date > date ? DAY_MINUTES : end.minutes
-    // An event ending at 00:00 is not on the next day; a zero-length one still gets a slot-high block.
-    if (to <= from && !(start.date === date && to === from)) continue
-    out.push({ id: `event:${ev.id}`, start: from, end: Math.max(to, Math.min(DAY_MINUTES, from + SLOT_MINUTES)), event: ev })
+    const span = timedSpan(ev, zone)
+    const b = span && blockOn(ev, span, date)
+    if (b) out.push(b)
   }
-  return out.sort((a, b) => a.start - b.start || b.end - a.end)
+  return out.sort(byStart)
+}
+
+const byStart = (a: EventBlock, b: EventBlock) => a.start - b.start || b.end - a.end
+
+type TimedSpan = { start: { date: string; minutes: number }; end: { date: string; minutes: number } }
+
+/** A timed event's start and end in the viewer's zone; null for all-day events. */
+function timedSpan(ev: CalendarEvent, zone?: string): TimedSpan | null {
+  if (ev.allDay) return null
+  const start = wallPoint(ev.start, zone)
+  if (!start) return null
+  return { start, end: wallPoint(ev.end, zone) ?? { date: start.date, minutes: start.minutes } }
+}
+
+/** The part of a timed event inside `date`, or null when it is not on that day. */
+function blockOn(ev: CalendarEvent, { start, end }: TimedSpan, date: string): EventBlock | null {
+  if (start.date > date || end.date < date) return null
+  const from = start.date < date ? 0 : start.minutes
+  const to = end.date > date ? DAY_MINUTES : end.minutes
+  // An event ending at 00:00 is not on the next day; a zero-length one still gets a slot-high block.
+  if (to <= from && !(start.date === date && to === from)) return null
+  return { id: `event:${ev.id}`, start: from, end: Math.max(to, Math.min(DAY_MINUTES, from + SLOT_MINUTES)), event: ev }
+}
+
+/** One day's events for Month and Year: all-day ones as allDayEvents orders them, timed ones as eventBlocks. */
+export interface DayEvents {
+  allDay: CalendarEvent[]
+  timed: EventBlock[]
+}
+
+/**
+ * The events of every day in [from, to] (calendar-events-all-views): each event is
+ * placed once on the days it covers, with the same rules as allDayEvents and
+ * eventBlocks, so a Month or a Year does not test every event against every day.
+ * Days without events are absent.
+ */
+export function eventsByDay(events: readonly CalendarEvent[], from: string, to: string, zone?: string): Map<string, DayEvents> {
+  const out = new Map<string, DayEvents>()
+  const day = (d: string) => {
+    let x = out.get(d)
+    if (!x) out.set(d, (x = { allDay: [], timed: [] }))
+    return x
+  }
+  for (const ev of events) {
+    if (ev.allDay) {
+      const end = ev.end.date > ev.start.date ? ev.end.date : addDaysISO(ev.start.date, 1)
+      for (let d = ev.start.date < from ? from : ev.start.date; d < end && d <= to; d = addDaysISO(d, 1)) day(d).allDay.push(ev)
+      continue
+    }
+    const span = timedSpan(ev, zone)
+    if (!span) continue
+    for (let d = span.start.date < from ? from : span.start.date; d <= span.end.date && d <= to; d = addDaysISO(d, 1)) {
+      const b = blockOn(ev, span, d)
+      if (b) day(d).timed.push(b)
+    }
+  }
+  for (const x of out.values()) {
+    x.allDay.sort((a, b) => (a.start.date < b.start.date ? -1 : a.start.date > b.start.date ? 1 : a.summary.localeCompare(b.summary)))
+    x.timed.sort(byStart)
+  }
+  return out
 }
 
 /** All-day events covering `date` (the end date is exclusive, as in iCalendar). */
