@@ -29,6 +29,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Fixed
 
+- **Routines no longer find tasks of archived projects or of projects in the Trash.** A routine's **Find tasks** (by a condition, a filter query or a saved view) read every task not itself in the Trash, so it also found the tasks of archived projects and of projects moved to the Trash, which no list in the app shows: a saved view listed more in a routine than on its own page, and a Sunday sweep commented on tasks archived away. Find tasks, the matching tasks of a routine or rule on a schedule, the card previews and the When card's count now follow the app's own rule: never a task in the Trash or of a project in the Trash, and tasks of archived projects only when the Find tasks card has **Archived projects** on (added from its menu; the additive `archived` input in the API, `ot routine` and MCP). Only the task's own project counts; completed tasks keep their rule. ([Routines](docs/routines.md#which-tasks-a-routine-finds), `routines-find-scope`, closes #734)
 - **A busy day in the Month no longer pushes the grid sideways.** A day cell showed its planned load ("3h 45m / 8h") on one line beside the date, wider than a cell on a tablet or a narrow window, so it ran over the next day and, in the last column, made the whole Month scroll sideways. The load now moves under the date when the two do not fit and is cut short inside its cell, with the full figure on hover.
 
 ## [0.19.0] - 2026-10-31

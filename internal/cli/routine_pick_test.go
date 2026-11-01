@@ -21,6 +21,8 @@ func TestRoutineSentencePick(t *testing.T) {
 		{"take", `{"list":{"ref":"a"},"from":{"literal":"all"}}`, `pick all (from = "all", list ← a)`},
 		{"filter", `{"list":{"ref":"a"},"where":{"literal":{"due":"overdue"}}}`, `pick where (list ← a, where = {"due":"overdue"})`},
 		{"add_comment", `{"task":{"ref":"b"},"text":{"literal":"Hi"}}`, `add comment (task ← b, text = "Hi")`},
+		// routines-find-scope: the archived input shows like every input.
+		{"find_tasks", `{"view":{"literal":"v1"},"archived":{"literal":true}}`, `find tasks (archived = true, view = "v1")`},
 	} {
 		if got := (routineStep{Kind: c.kind, In: in(c.in)}).sentence(); got != c.want {
 			t.Errorf("%s: %s, want %s", c.kind, got, c.want)

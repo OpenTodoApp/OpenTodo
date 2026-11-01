@@ -402,6 +402,48 @@
         {"id": "c", "kind": "notify", "in": {"text": {"literal": {"format": "{b} done this month"}}}}
       ],
       "expect": {"notices": ["2 done this month"]}
+    },
+    {
+      "row": 31, "editor": true,
+      "name": "When I run it, comment on my overdue tasks, but not in archived projects or projects in the Trash (routines-find-scope)",
+      "seed": "overdue",
+      "projects": [{"id": "work", "name": "Work"}, {"id": "old", "name": "Old", "archived": true}, {"id": "gone", "name": "Gone", "deleted": true}],
+      "tasks": [{"id": "w1", "due": "2026-10-19", "project_id": "work"}, {"id": "a1", "due": "2026-10-19", "project_id": "old"},
+        {"id": "g1", "due": "2026-10-19", "project_id": "gone"}, {"id": "d1", "due": "2026-10-19", "deleted": true}],
+      "trigger": {"kind": "manual"},
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "overdue"}}}},
+        {"id": "b", "kind": "add_comment", "in": {"task": {"ref": "a"}, "text": {"literal": "Still on it?"}}}
+      ],
+      "expect": {"comments": {"o1": ["Still on it?"], "o2": ["Still on it?"], "o3": ["Still on it?"], "o4": ["Still on it?"], "w1": ["Still on it?"]}}
+    },
+    {
+      "row": 32, "editor": true,
+      "name": "The same with Archived projects on: the archived project's task too, never the Trash's (routines-find-scope)",
+      "projects": [{"id": "work", "name": "Work"}, {"id": "old", "name": "Old", "archived": true}, {"id": "gone", "name": "Gone", "deleted": true}],
+      "tasks": [{"id": "w1", "due": "2026-10-19", "project_id": "work"}, {"id": "a1", "due": "2026-10-19", "project_id": "old"},
+        {"id": "g1", "due": "2026-10-19", "project_id": "gone"}, {"id": "d1", "due": "2026-10-19", "deleted": true}],
+      "trigger": {"kind": "manual"},
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "overdue"}}, "archived": {"literal": true}}},
+        {"id": "b", "kind": "add_comment", "in": {"task": {"ref": "a"}, "text": {"literal": "Still on it?"}}}
+      ],
+      "expect": {"comments": {"w1": ["Still on it?"], "a1": ["Still on it?"]}}
+    },
+    {
+      "row": 33, "editor": true,
+      "name": "Every Friday, notify me of the tasks of my saved view: what the view lists, without archived projects (routines-find-scope)",
+      "projects": [{"id": "work", "name": "Work"}, {"id": "old", "name": "Old", "archived": true}],
+      "views": [{"id": "v1", "name": "Urgent", "query": "p1"}],
+      "tasks": [{"id": "u1", "title": "Ship it", "priority": 1, "project_id": "work"}, {"id": "u2", "title": "Old urgent", "priority": 1, "project_id": "old"},
+        {"id": "u3", "title": "Done urgent", "priority": 1, "completed_on": "2026-10-20"}, {"id": "u4", "title": "Trashed urgent", "priority": 1, "deleted": true}],
+      "trigger": {"kind": "schedule", "at": "17:00", "weekdays": [5]},
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"view": {"literal": "v1"}}},
+        {"id": "b", "kind": "format", "in": {"template": {"literal": "Urgent: {a}"}}},
+        {"id": "c", "kind": "notify", "in": {"text": {"ref": "b"}}}
+      ],
+      "expect": {"notices": ["Urgent: Ship it"]}
     }
   ]
 }

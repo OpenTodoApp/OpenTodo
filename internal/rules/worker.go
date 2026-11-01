@@ -132,13 +132,15 @@ func movedInto(tr ruleval.Trigger, t map[string]json.RawMessage) bool {
 }
 
 // sweep runs a scheduled rule on every open, live task matching its
-// condition: one run in the log, one batch per task, at most PerRun tasks;
+// condition (not of archived projects or projects in the Trash,
+// routines-find-scope D2): one run in the log, one batch per task, at most PerRun tasks;
 // more is recorded as a partial run and left for the next firing (spec "Time
 // triggers").
 func (e *Engine) sweep(ctx context.Context, w *world, r *rule, ev Event) {
 	var due []map[string]json.RawMessage
+	scope := projectScope(w.projectRows)
 	for _, t := range w.tasks {
-		if opsync.IsNull(t["deleted_at"]) && opsync.IsNull(t["completed_at"]) && e.matches(ctx, w, r, t) {
+		if opsync.IsNull(t["deleted_at"]) && opsync.IsNull(t["completed_at"]) && ruleval.InFindScope(false, str(t, "project_id"), scope, false) && e.matches(ctx, w, r, t) {
 			due = append(due, t)
 		}
 	}

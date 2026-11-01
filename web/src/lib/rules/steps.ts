@@ -54,7 +54,9 @@ const anyList: StepType[] = ['tasks', 'lines']
 /** The step catalogue, grouped and ordered as the editor shows it (design D4). */
 export const STEPS: StepKind[] = [
   { kind: 'find_tasks', group: 'tasks', output: 'tasks', content: false, oneOf: [['query', 'view', 'condition']],
-    inputs: [inp('query', [], 'text', { ...C, max: 1000 }), inp('view', [], 'id', C), inp('condition', [], 'condition'), inp('limit', [], 'number', { max: MAX_LIST_ITEMS })] },
+    // archived: tasks of archived projects too (routines-find-scope D3).
+    inputs: [inp('query', [], 'text', { ...C, max: 1000 }), inp('view', [], 'id', C), inp('condition', [], 'condition'), inp('limit', [], 'number', { max: MAX_LIST_ITEMS }),
+      inp('archived', [], 'bool')] },
   { kind: 'create_tasks', group: 'tasks', output: 'tasks', content: true, tool: 'create_tasks', oneOf: [['text', 'title']],
     inputs: [inp('text', ['text', 'lines'], 'text', C), inp('title', ['text'], 'text', { ...C, max: 500 }), inp('project', ['project'], 'project'), inp('section', [], 'id'),
       inp('due', ['date'], 'date'), inp('priority', ['number'], 'number', { max: 4 }), inp('labels', [], 'ids'), en('energy', ['deep', 'medium', 'low']),

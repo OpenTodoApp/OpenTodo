@@ -7,7 +7,7 @@ import type { RoutineStep, Task } from '../types'
 import { draftError, draftOf, duplicateStep, moveStep, newId, newStep, removeStep, sameDraft, stepNumber, storedOf, type RoutineDraft } from './draft'
 import { errorText, fixFor } from './fixes'
 import { planDraft, type PreviewData } from './preview'
-import { outputNames, searchKinds, sentenceParts } from './sentence'
+import { addableInputs, inputLabel, outputNames, searchKinds, sentenceParts } from './sentence'
 
 const groceries: RoutineStep[] = [
   { id: 'g', kind: 'get_task', in: { task: { literal: { task: 't1' } } } },
@@ -152,5 +152,21 @@ describe('the device preview', () => {
     expect(p.get('d')?.state).toBe('effect')
     expect(p.get('e')?.state).toBe('skipped')
     expect(p.get('f')?.state).toBe('server')
+  })
+
+  it('Find tasks leaves out archived projects unless asked, and the Trash always (routines-find-scope)', () => {
+    const rows = [task('t1', 'Live'), task('t2', 'Archived'), task('t3', 'Trashed project'), task('t4', 'Trashed')]
+    rows[0].project_id = 'p1'; rows[1].project_id = 'old'; rows[2].project_id = 'gone'; rows[3].deleted_at = 5
+    const d = data(rows)
+    d.projects = [{ id: 'p1', name: 'Errands' } as never, { id: 'old', name: 'Old', archived: true } as never]
+    const find = (archived?: boolean): RoutineStep => ({ id: 'a', kind: 'find_tasks', in: { condition: { literal: {} }, ...(archived === undefined ? {} : { archived: { literal: archived } }) } })
+    const ids = (s: RoutineStep) => { const a = planDraft(draft([s]), d).get('a'); return a?.state === 'value' ? a.value.ids : null }
+    expect(ids(find())).toEqual(['t1'])
+    expect(ids(find(false))).toEqual(['t1'])
+    expect(ids(find(true))).toEqual(['t1', 't2'])
+    expect(sentenceParts(find(true))).toEqual(sentenceParts(find()))
+    // The card's menu offers it as "Add archived projects".
+    expect(addableInputs(find())).toContain('archived')
+    expect(inputLabel('archived', 'find_tasks')).toBe('Archived projects')
   })
 })

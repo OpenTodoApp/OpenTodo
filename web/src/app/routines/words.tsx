@@ -216,7 +216,7 @@ export function LiteralPicker({ step, def, ctx, onSet, me }: { step: RoutineStep
     case 'project':
       return <Combobox label={inputLabel(def.name)} placeholder={t('Find a project…')} source={n.projects.filter((p) => !p.archived && !p.deleted_at)}
         getKey={(p) => p.id} getLabel={(p) => p.name} rankContext="routine.project" emptyText={t('No projects yet.')} onPick={(p) => onSet({ literal: { project: p.id } })} />
-    case 'bool': return <Switch label={inputLabel(def.name)} checked={v === true} onChange={(on) => onSet({ literal: on })} />
+    case 'bool': return <Switch label={inputLabel(def.name, step.kind)} checked={v === true} onChange={(on) => onSet({ literal: on })} />
     case 'enum':
       return (
         <div className="flex flex-wrap gap-1" role="group" aria-label={inputLabel(def.name)}>
