@@ -116,13 +116,6 @@ func (p *Provider) SetUser(u User) {
 	p.mu.Unlock()
 }
 
-// SetAlg chooses the signing algorithm (RS256, PS256, ES256, EdDSA).
-func (p *Provider) SetAlg(alg string) {
-	p.mu.Lock()
-	p.alg = alg
-	p.mu.Unlock()
-}
-
 func (p *Provider) discovery(w http.ResponseWriter, r *http.Request) {
 	iss := p.Issuer()
 	if p.IssuerOverride != "" {
