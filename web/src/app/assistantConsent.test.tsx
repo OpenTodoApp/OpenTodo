@@ -1,6 +1,9 @@
 import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import type { AssistantStatus } from '../lib/assistantStatus'
+import { DISCLOSURE_FIELDS } from '../lib/assistantDisclosure'
+import { applyLanguagePreference } from '../lib/i18n'
+import it_ from '../locales/it.json'
 import { AssistantConsent } from './assistant/AssistantConsent'
 
 const status: AssistantStatus = {
@@ -12,6 +15,16 @@ const render = (over: Partial<AssistantStatus> = {}, connected = true) =>
   renderToStaticMarkup(<AssistantConsent status={{ ...status, ...over }} connected={connected} busy={false} error={null} onAccept={() => {}} />)
 
 describe('AssistantConsent', () => {
+  afterEach(async () => { await applyLanguagePreference('en', ['en-US']) })
+  it('shows every field the server lists in the reader’s language (assistant-disclosure-accuracy)', async () => {
+    await applyLanguagePreference('it', ['en-US'])
+    const catalog = it_ as Record<string, string>
+    const html = render({ fields: [...DISCLOSURE_FIELDS] })
+    for (const f of DISCLOSURE_FIELDS) {
+      expect(catalog[f], f).toBeTruthy()
+      expect(html).toContain(catalog[f].replace(/'/g, '&#x27;'))
+    }
+  })
   it('names the provider, the model and every field that may be sent', () => {
     const html = render()
     expect(html).toContain('<strong>Anthropic (Claude)</strong>')
