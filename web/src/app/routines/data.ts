@@ -8,6 +8,7 @@ import { useOpenTasks } from '../../lib/liveTasks'
 import { useAllTaskRows, useLabels, useLiveSections, useProjects, useViewRows } from '../../lib/localData'
 import { matchesCondition, type MatchTask } from '../../lib/rules/match'
 import type { PreviewData } from '../../lib/rules/preview'
+import { inFindScope, projectScope } from '../../lib/rules/stepData'
 import type { Label, Project, RoutineStep, RuleCondition, Section, Task, View, Webhook } from '../../lib/types'
 
 /** A task as the matcher reads it. */
@@ -82,7 +83,9 @@ export function useMatchCount(condition: RuleCondition | null, me: string): numb
   const projects = useProjects()
   return useMemo(() => {
     const ctx = matchContext(projects, tasks, me)
-    return tasks.filter((x) => matchesCondition(condition, matchTaskOf(x), ctx)).length
+    // The scope a scheduled run gathers in (routines-find-scope D2): no archived projects.
+    const scope = projectScope(projects)
+    return tasks.filter((x) => inFindScope(x, scope) && matchesCondition(condition, matchTaskOf(x), ctx)).length
   }, [tasks, projects, condition, me])
 }
 

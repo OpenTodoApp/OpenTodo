@@ -283,3 +283,20 @@ func Holds(v Value, c Compare) bool {
 	}
 	return false
 }
+
+// InFindScope reports whether a routine may gather a task (OpenSpec change
+// routines-find-scope, design D1), as inFindScope in stepData.ts: the task is
+// not in the Trash, and it has no project or its project is one of the user's
+// live projects (projects maps each live project id to its archived flag) that
+// is not archived unless archived is asked for. Only the task's own project
+// counts, like the app's lists.
+func InFindScope(deleted bool, projectID string, projects map[string]bool, archived bool) bool {
+	if deleted {
+		return false
+	}
+	if projectID == "" {
+		return true
+	}
+	isArchived, live := projects[projectID]
+	return live && (archived || !isArchived)
+}

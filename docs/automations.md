@@ -19,9 +19,9 @@ Choose **New routine**, name it, then fill its **When** card and one **Change ta
 
 - **When**: a task is created, completed or reopened; a label is added or removed; a task is assigned to you or moved to a project or section; a task is due (at its time, 09:00 for a date without a time); a task's date passes (at the start of the next day); or on a schedule, at a time on chosen weekdays or days of the month.
 - **Only for tasks that**: optional conditions, all of which must hold: project (with its sub-projects), labels, priority, date, deadline, assignee, blocked, not changed for N days. The editor shows how many open tasks match now.
-- **Then**: priority, date, start, deadline, assignee, labels to add or remove, project and section, complete or reopen, a comment, an in-app notification, or a delivery to one of your [webhooks](webhooks.md).
+- **Then**: priority, date, start, deadline, assignee, labels to add or remove, project and section, complete or reopen, a comment, an in-app notification, or a [webhook](webhooks.md) delivery.
 
-A rule saved offline runs after the next sync. Times use your devices' time zone and your day start.
+A rule saved offline runs after the next sync. Times use your devices' time zone and your day start. Scheduled rules skip [archived projects](routines.md#which-tasks-a-routine-finds).
 
 ## What a rule changes
 
