@@ -74,12 +74,7 @@ func (st *runState) notifyStep(s *ruleval.Step, in map[string]ruleval.Value) (ru
 		task = v.ID
 	}
 	n := notify.RoutineNotice{UserID: st.w.uid, RuleID: st.r.ID, RuleName: st.ruleName(), RunID: st.runID, StepID: s.ID, Text: text, TaskID: task, At: st.nowMs}
-	st.sides = append(st.sides, sideEffect{kind: "notify", run: func(ctx context.Context) error {
-		if st.e.Routine != nil {
-			st.e.Routine.RoutineNotice(ctx, n)
-		}
-		return nil
-	}})
+	st.sides = append(st.sides, st.side(sideSpec{Kind: "notify", Notice: &n}))
 	return none(), "", nil
 }
 
@@ -87,12 +82,70 @@ func (st *runState) notifyStep(s *ruleval.Step, in map[string]ruleval.Value) (ru
 func (st *runState) ruleFiredNotice(taskID string) sideEffect {
 	ev := notify.RuleEvent{UserID: st.w.uid, RuleID: st.r.ID, RuleName: st.ruleName(), TaskID: taskID,
 		TaskTitle: e2ee.Display(str(st.tasks[taskID], "title")), At: st.nowMs}
-	return sideEffect{kind: "notify", run: func(ctx context.Context) error {
-		if st.e.Notify != nil {
-			st.e.Notify.RuleFired(ctx, ev)
+	return st.side(sideSpec{Kind: "fired", Fired: &ev})
+}
+
+// sideSpec is a side effect as data, so a proposal can hold it and run it
+// on apply (routines-ai-step D2).
+type sideSpec struct {
+	Kind     string                `json:"kind"` // notify | fired | webhook | email
+	Notice   *notify.RoutineNotice `json:"notice,omitempty"`
+	Fired    *notify.RuleEvent     `json:"fired,omitempty"`
+	Hook     string                `json:"hook,omitempty"`
+	Delivery *RoutineDelivery      `json:"delivery,omitempty"`
+	Mail     *RoutineMail          `json:"mail,omitempty"`
+	Day      string                `json:"day,omitempty"`
+}
+
+// side builds the side effect a spec describes, for the run's user.
+func (st *runState) side(sp sideSpec) sideEffect {
+	e, uid := st.e, st.w.uid
+	out := sideEffect{kind: sp.Kind, spec: sp}
+	switch sp.Kind {
+	case "notify":
+		n := *sp.Notice
+		n.UserID = uid
+		out.run = func(ctx context.Context) error {
+			if e.Routine != nil {
+				e.Routine.RoutineNotice(ctx, n)
+			}
+			return nil
 		}
-		return nil
-	}}
+	case "fired":
+		ev := *sp.Fired
+		ev.UserID = uid
+		out.kind = "notify"
+		out.run = func(ctx context.Context) error {
+			if e.Notify != nil {
+				e.Notify.RuleFired(ctx, ev)
+			}
+			return nil
+		}
+	case "webhook":
+		d := *sp.Delivery
+		out.run = func(ctx context.Context) error {
+			if e.RoutineHook == nil {
+				return nil
+			}
+			return e.RoutineHook(ctx, uid, sp.Hook, d)
+		}
+	case "email":
+		m := *sp.Mail
+		out.run = func(ctx context.Context) error {
+			if e.Mail == nil {
+				return nil
+			}
+			ok, err := e.Store.TakeEmail(ctx, m.RuleID, uid, sp.Day)
+			if err != nil || !ok {
+				e.Mail.RefuseRoutine(ctx, uid, m, "rate_limited")
+				return err
+			}
+			return e.Mail.SendRoutine(ctx, uid, m)
+		}
+	default:
+		out.run = func(context.Context) error { return nil }
+	}
+	return out
 }
 
 // RoutineDelivery is a Send a webhook step's delivery (webhook.QueueRoutine).
@@ -129,12 +182,7 @@ func (st *runState) webhookStep(s *ruleval.Step, in map[string]ruleval.Value) (r
 	if v, ok := in["tasks"]; ok {
 		d.TaskIDs = append(d.TaskIDs, idsOf(v)...)
 	}
-	st.sides = append(st.sides, sideEffect{kind: "webhook", run: func(ctx context.Context) error {
-		if st.e.RoutineHook == nil {
-			return nil
-		}
-		return st.e.RoutineHook(ctx, st.w.uid, hook, d)
-	}})
+	st.sides = append(st.sides, st.side(sideSpec{Kind: "webhook", Hook: hook, Delivery: &d}))
 	return none(), "", nil
 }
 
@@ -162,16 +210,6 @@ func (st *runState) emailStep(s *ruleval.Step, in map[string]ruleval.Value) (rul
 		}
 		return none(), "", failf("rate_limited", "at most %d emails per routine and %d per account a day", EmailsPerRoutine, EmailsPerAccount)
 	}
-	st.sides = append(st.sides, sideEffect{kind: "email", run: func(ctx context.Context) error {
-		if st.e.Mail == nil {
-			return nil
-		}
-		ok, err := st.e.Store.TakeEmail(ctx, st.r.ID, st.w.uid, day)
-		if err != nil || !ok {
-			st.e.Mail.RefuseRoutine(ctx, st.w.uid, m, "rate_limited")
-			return err
-		}
-		return st.e.Mail.SendRoutine(ctx, st.w.uid, m)
-	}})
+	st.sides = append(st.sides, st.side(sideSpec{Kind: "email", Mail: &m, Day: day}))
 	return none(), "", nil
 }

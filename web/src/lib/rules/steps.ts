@@ -20,13 +20,13 @@ export interface StepInput {
 
 export interface StepKind {
   kind: string
-  group: 'tasks' | 'projects' | 'text' | 'logic' | 'time' | 'communication'
+  group: 'tasks' | 'projects' | 'text' | 'logic' | 'time' | 'communication' | 'ai'
   inputs: StepInput[]
   output: StepType
   sameAs?: string
   oneOf?: string[][]
   content: boolean
-  needs?: 'email' | 'webhook' | 'time_tracking' | 'focus' | 'shared'
+  needs?: 'email' | 'webhook' | 'time_tracking' | 'focus' | 'shared' | 'ai'
   blocks?: string[]
   tool?: string
 }
@@ -40,6 +40,10 @@ const MAX_LITERAL_TEXT = 20000
 const MAX_IDS = 32
 const MAX_ID_LEN = 64
 const MAX_COMMENT = 2000
+/** At most 3 AI steps per routine; an instruction of at most 2,000 characters (routines-ai-step D1). */
+export const MAX_AI_STEPS = 3
+export const MAX_AI_INSTRUCTION = 2000
+const aiContext: StepType[] = ['text', 'lines', 'tasks', 'project']
 
 const inp = (name: string, accepts: StepType[], literal: Lit, more: Partial<StepInput> = {}): StepInput => ({ name, accepts, literal, ...more })
 const en = (name: string, values: string[], more: Partial<StepInput> = {}): StepInput => ({ name, accepts: [], literal: 'enum', enum: values, ...more })
@@ -101,11 +105,22 @@ export const STEPS: StepKind[] = [
     inputs: [inp('webhook_id', [], 'id', R), inp('text', ['text'], 'text', { ...C, max: MAX_LITERAL_TEXT }), inp('tasks', ['tasks'], '')] },
   { kind: 'email_me', group: 'communication', output: 'none', content: true, needs: 'email',
     inputs: [inp('subject', ['text'], 'text', { ...R, ...C, max: 120 }), inp('text', ['text'], 'text', { ...R, ...C, max: 20000 })] },
+  { kind: 'ask_ai', group: 'ai', output: 'text', content: true, needs: 'ai',
+    inputs: [inp('instruction', [], 'text', { ...R, ...C, max: MAX_AI_INSTRUCTION }), inp('context', aiContext, ''), inp('context2', aiContext, ''), inp('context3', aiContext, ''),
+      en('answer', ['text', 'lines'])] },
+  { kind: 'summarise', group: 'ai', output: 'text', content: true, needs: 'ai',
+    inputs: [inp('text', ['text', 'lines', 'tasks'], '', R), en('length', ['short', 'medium'])] },
   { kind: 'email_members', group: 'communication', output: 'none', content: true, needs: 'shared',
     inputs: [inp('subject', ['text'], 'text', { ...R, ...C, max: 120 }), inp('text', ['text'], 'text', { ...R, ...C, max: 20000 })] },
 ]
 
 export const stepKind = (kind: string): StepKind | undefined => STEPS.find((k) => k.kind === kind)
+
+/** Whether a kind is an AI step (routines-ai-step D1). */
+export const isAIKind = (kind: string): boolean => kind === 'ask_ai' || kind === 'summarise'
+
+/** An Ask AI step's answer form: text (the default) or lines. */
+export const aiAnswer = (s: RoutineStep): 'text' | 'lines' => (s.in?.answer && 'literal' in s.in.answer && s.in.answer.literal === 'lines' ? 'lines' : 'text')
 
 /** The type of the reference "trigger" (design D3). */
 export function triggerOutput(kind: string, hasCondition: boolean): StepType {
@@ -238,12 +253,12 @@ function parseArg(k: StepKind, def: StepInput, id: string, v: unknown): RoutineA
   return { literal: v.literal }
 }
 
-function parseList(raw: unknown, depth: number, st: { ids: Set<string>; count: number }): RoutineStep[] {
+function parseList(raw: unknown, depth: number, st: { ids: Set<string>; count: number; ai: number }): RoutineStep[] {
   if (!Array.isArray(raw)) return fail('', '', 'invalid_step', 'steps must be a list')
   return raw.map((item) => parseStep(item, depth, st))
 }
 
-function parseStep(raw: unknown, depth: number, st: { ids: Set<string>; count: number }): RoutineStep {
+function parseStep(raw: unknown, depth: number, st: { ids: Set<string>; count: number; ai: number }): RoutineStep {
   if (!isObj(raw)) return fail('', '', 'invalid_step', 'every step must be an object')
   if (++st.count > MAX_STEPS) fail('', '', 'too_many_steps', `a routine may hold at most ${MAX_STEPS} steps`)
   const id = typeof raw.id === 'string' ? raw.id : ''
@@ -252,6 +267,7 @@ function parseStep(raw: unknown, depth: number, st: { ids: Set<string>; count: n
   st.ids.add(id)
   const kind = typeof raw.kind === 'string' ? raw.kind : ''
   const k = stepKind(kind) ?? fail(id, '', 'unknown_kind', `step ${id}: unknown kind "${kind}"`)
+  if (isAIKind(kind) && ++st.ai > MAX_AI_STEPS) fail(id, '', 'too_many_ai_steps', `a routine may hold at most ${MAX_AI_STEPS} AI steps`)
   const allowed = ['id', 'kind', 'in', ...(k.blocks ?? [])]
   for (const key of Object.keys(raw)) if (!allowed.includes(key)) fail(id, '', 'invalid_step', `step ${id} (${kind}) does not allow "${key}"`)
   const inputs = parseInputs(k, id, raw.in)
@@ -307,7 +323,7 @@ function checkRefs(list: RoutineStep[], visible: Set<string>, inRepeat: boolean)
 /** Decodes and checks a `steps` value (the sync shape check). Throws a StepError-carrying error. */
 export function parseSteps(raw: unknown): RoutineStep[] {
   if (utf8Bytes(JSON.stringify(raw)) > MAX_STEPS_BYTES) fail('', '', 'too_large', `steps may be at most ${MAX_STEPS_BYTES / 1024} KB`)
-  const steps = parseList(raw, 0, { ids: new Set(), count: 0 })
+  const steps = parseList(raw, 0, { ids: new Set(), count: 0, ai: 0 })
   if (!steps.length) fail('', '', 'invalid_step', 'a routine needs at least one step')
   checkRefs(steps, new Set(), false)
   return steps
@@ -365,6 +381,7 @@ export function checkTypes(steps: RoutineStep[], trigger: StepType): Record<stri
       if (name === k.sameAs) same = got
     }
     let out: StepType | '' = k.sameAs ? same : k.output
+    if (s.kind === 'ask_ai' && aiAnswer(s) === 'lines') out = 'lines'
     if (eachRef) {
       out = listOfType(out as StepType)
       if (!out) fail(s.id, '', 'for_each', `${s.kind}: cannot run once per item here; use Repeat for each`)
@@ -426,6 +443,42 @@ export function contentStep(steps: RoutineStep[], trigger: StepType, types: Reco
     }
     if (c) found = s.id
   })
+  return found
+}
+
+/** At most this many items are written by a run without asking (routines-ai-step D4). */
+export const MAX_AUTO_ITEMS = 20
+
+const AUTO_KINDS: Record<string, string> = {
+  create_project: 'projects', update_project: 'projects', create_sections: 'projects', favourite: 'projects', project_from_template: 'projects',
+  append_to_note: 'notes', clear_note: 'notes', set_focus: 'focus', start_timer: 'timers', stop_timer: 'timers', email_members: 'email_members',
+}
+
+/**
+ * The first step a routine may not hold while it applies AI results without
+ * asking, and what it does (routines-ai-step D4); null when every step is
+ * allowed. The same check as internal/ruleval/auto.go (the "auto" vectors).
+ */
+export function autoBlocker(steps: RoutineStep[]): { step: string; what: string } | null {
+  let out: { step: string; what: string } | null = null
+  walkSteps(steps, (s) => {
+    if (out) return
+    if (AUTO_KINDS[s.kind]) { out = { step: s.id, what: AUTO_KINDS[s.kind] }; return }
+    if (s.kind !== 'change_tasks') return
+    const set = literalOf(s, 'set')
+    if (!isObj(set)) return
+    if ('state' in set) out = { step: s.id, what: 'complete_tasks' }
+    else if (set.trash === true) out = { step: s.id, what: 'trash_tasks' }
+    else if (Array.isArray(set.remove_labels) && set.remove_labels.length) out = { step: s.id, what: 'remove_labels' }
+    else if ('assignee' in set) out = { step: s.id, what: 'assign' }
+  })
+  return out
+}
+
+/** Whether a routine holds an AI step. */
+export function hasAI(steps: RoutineStep[]): boolean {
+  let found = false
+  walkSteps(steps, (s) => { found ||= isAIKind(s.kind) })
   return found
 }
 

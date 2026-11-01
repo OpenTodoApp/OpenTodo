@@ -484,6 +484,9 @@
   "A session is running": [
     "web/src/app/focus/FocusView.tsx"
   ],
+  "A short summary written by AI": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "A short tone when a session or a break ends, while the app is shown.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -592,6 +595,9 @@
   "A year of done tasks": [
     "web/src/app/review/StatsView.tsx"
   ],
+  "AI": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "AI assistant": [
     "web/src/lib/history.ts"
   ],
@@ -662,6 +668,9 @@
   ],
   "Accept invitation": [
     "web/src/app/AuthScreen.tsx"
+  ],
+  "Accept the assistant’s updated terms to use this": [
+    "web/src/lib/rules/catalogue.ts"
   ],
   "Accept the disclosure first: the assistant sends task content to the model provider only after you agree.": [
     "web/src/lib/assistant.ts"
@@ -1392,6 +1401,9 @@
   "Also use {name} by day": [
     "web/src/app/ThemeRow.tsx"
   ],
+  "Also using": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Alternative text": [
     "web/src/app/editorImage.tsx"
   ],
@@ -1418,6 +1430,9 @@
   ],
   "An admin token can turn off two-factor authentication, create more tokens and app passwords, manage accounts and change single sign-on and other secret settings, without your password or a code. Create one only for a script that needs it, keep it like a password and revoke it when you are done.": [
     "web/src/app/TokensSection.tsx"
+  ],
+  "An answer written by AI from your instruction": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "An archive made by OpenTodo ({name}, optionally {suffix}), for example from another server.": [
     "web/src/app/RestoreSection.tsx"
@@ -1452,6 +1467,9 @@
   "An outcome you can finish.": [
     "web/src/lib/method/vocabulary.json"
   ],
+  "And using": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Android device": [
     "web/src/app/SecurityPanel.tsx"
   ],
@@ -1470,6 +1488,9 @@
   ],
   "Answer AI connectors here": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Answer as": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Answered": [
     "web/src/app/RelaySettings.tsx"
@@ -1701,6 +1722,12 @@
     "web/src/app/assistant/AskEntry.tsx",
     "web/src/app/palette/modes.ts",
     "web/src/ui/patterns/AskComposer.tsx"
+  ],
+  "Ask AI": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Ask AI {instruction} using {context}": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Ask OpenTodo": [
     "web/src/ui/patterns/AskComposer.tsx"
@@ -6994,6 +7021,9 @@
   "Installed, OpenTodo opens in its own window and works offline on your phone, tablet or computer.": [
     "web/src/app/FirstRun.tsx"
   ],
+  "Instruction": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Integrations": [
     "web/src/app/settingsSections.ts"
   ],
@@ -7592,6 +7622,9 @@
   ],
   "Leisure|icon category": [
     "web/src/ui/icons/catalogue.ts"
+  ],
+  "Length": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Length in minutes": [
     "web/src/app/focus/FocusParts.tsx"
@@ -13114,6 +13147,9 @@
   "Set up the assistant on this device": [
     "web/src/app/assistant/AssistantDevice.tsx"
   ],
+  "Set up the assistant to use this": [
+    "web/src/lib/rules/catalogue.ts"
+  ],
   "Set up two-factor authentication": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
@@ -14151,6 +14187,12 @@
   ],
   "Suggests projects or labels; Enter or Tab picks, #Home/Docs picks a sub-project": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Summarise": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Summarise {text}": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Summit: Medium first": [
     "web/src/app/method/HowYouWorkSection.tsx",
@@ -15693,6 +15735,9 @@
   "This is disabled on the demo instance.": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "This is encrypted: open it on one of your devices.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "This is managed by the operator of this hosted service.": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -15872,6 +15917,9 @@
   "This project no longer exists.": [
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/task-list/ListChrome.tsx"
+  ],
+  "This proposal was already applied, dismissed or expired.": [
+    "web/src/lib/i18n/errors.ts"
   ],
   "This quarter": [
     "web/src/lib/stats.ts"
@@ -17137,6 +17185,9 @@
   "Users, invitations, members, access policies and single sign-on": [
     "web/src/app/settingsSections.ts"
   ],
+  "Using": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Value": [
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/routines/words.tsx",
@@ -18158,6 +18209,9 @@
   "a workspace": [
     "web/src/app/MemberInvitations.tsx"
   ],
+  "accept the assistant’s updated terms for routines": [
+    "web/src/lib/rules/catalogue.ts"
+  ],
   "account deactivated": [
     "web/src/app/auditFormat.ts"
   ],
@@ -18196,6 +18250,9 @@
   ],
   "against {time} estimated": [
     "web/src/app/review/StatsView.tsx"
+  ],
+  "ai, assistant, prompt, ask, sort, classify, extract": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "all day": [
     "web/src/app/CalendarView.tsx",
@@ -18888,6 +18945,9 @@
   "limit, first, last, top": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "lines": [
+    "web/src/app/routines/words.tsx"
+  ],
   "lines, list, split, break": [
     "web/src/lib/rules/sentence.ts"
   ],
@@ -19442,6 +19502,9 @@
   "shared": [
     "web/src/app/assistant/ChangeSetReview.tsx"
   ],
+  "short": [
+    "web/src/app/routines/words.tsx"
+  ],
   "sign in to comment": [
     "web/src/lib/comments.ts"
   ],
@@ -19478,6 +19541,9 @@
   "stopped waiting for other tasks": [
     "web/src/lib/activity.ts"
   ],
+  "summary, summarize, digest, recap, ai": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "task": [
     "web/src/app/calendar/CalendarStatus.tsx"
   ],
@@ -19505,6 +19571,9 @@
   "text, template, write, message": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "the AI answer": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "the Daily check is due": [
     "web/src/app/Sidebar.tsx"
   ],
@@ -19513,6 +19582,9 @@
   ],
   "the assistant": [
     "web/src/app/settingsSections.ts"
+  ],
+  "the assistant is not set up for you on this server": [
+    "web/src/lib/rules/catalogue.ts"
   ],
   "the changed tasks": [
     "web/src/lib/rules/sentence.ts"
@@ -19643,6 +19715,9 @@
   ],
   "the start": [
     "web/src/app/routines/words.tsx"
+  ],
+  "the summary": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "the task": [
     "web/src/lib/rules/sentence.ts"
@@ -20851,6 +20926,12 @@
   ],
   "{name} settings": [
     "web/src/app/WorkspacesSettings.tsx"
+  ],
+  "{name} · proposal waiting · Review": [
+    "web/src/lib/rules/inbox.ts"
+  ],
+  "{name} · {n} proposals waiting · Review": [
+    "web/src/lib/rules/inbox.ts"
   ],
   "{name}, column {n} of {count}": [
     "web/src/app/BoardView.tsx"

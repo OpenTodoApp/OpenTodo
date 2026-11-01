@@ -268,7 +268,9 @@ func (s *Server) myAssistant(ctx context.Context, u *auth.User) (map[string]any,
 		"source": source, "own_key_in_use": route.Own,
 		"server_provider": set.DefaultProvider, "server_provider_label": assistant.ProviderLabel(set.DefaultProvider), "server_model": p.Model,
 		"consented": consent.Valid(route.Provider), "disclosure_version": assistant.DisclosureVersion, "fields": consentFields,
-		"allow_member_keys": set.AllowMemberKeys, "own_key_set": sec.Has(assistant.UserKey(u.ID, route.Provider)),
+		// routines_consented: the consent covers routines' AI steps (routines-ai-step D10).
+		"routines_consented": consent.RoutinesValid(route.Provider),
+		"allow_member_keys":  set.AllowMemberKeys, "own_key_set": sec.Has(assistant.UserKey(u.ID, route.Provider)),
 		"server_own_key_set": sec.Has(assistant.UserKey(u.ID, set.DefaultProvider)),
 		"operator_key_set":   sec.Has(assistant.OperatorKey(set.DefaultProvider)) || set.DefaultProvider == assistant.Compatible,
 		"cap_member_keys":    set.CapMemberKeys, "own_provider": nil,
@@ -310,6 +312,9 @@ func (s *Server) handlePutMyAssistant(w http.ResponseWriter, r *http.Request) {
 		// assistant) and OwnModel its model (assistant-member-provider).
 		OwnProvider *string `json:"own_provider"`
 		OwnModel    *string `json:"own_model"`
+		// Routines records (true) or withdraws (false) the consent for
+		// routines' AI steps with consent: true (routines-ai-step D10).
+		Routines *bool `json:"routines"`
 	}
 	if err := readJSONLimit(r, &in, 16<<10); err != nil {
 		badBodyWith(w, err, "invalid_input", err.Error())
@@ -327,6 +332,10 @@ func (s *Server) handlePutMyAssistant(w http.ResponseWriter, r *http.Request) {
 	}
 	if in.Consent == nil && in.OwnKey == nil && in.OwnProvider == nil && in.OwnModel == nil {
 		writeError(w, http.StatusBadRequest, "invalid_input", "consent: true or false, own_key, own_provider or own_model is required")
+		return
+	}
+	if in.Routines != nil && (in.Consent == nil || !*in.Consent) {
+		writeError(w, http.StatusBadRequest, "invalid_input", "routines: send it with consent: true")
 		return
 	}
 	// Storing a key or choosing a provider needs the owner's permission;
@@ -397,23 +406,8 @@ func (s *Server) handlePutMyAssistant(w http.ResponseWriter, r *http.Request) {
 	if set.AllowMemberKeys && next != nil {
 		effective = next.Provider
 	}
-	if in.Consent != nil && *in.Consent {
-		if !set.Active() {
-			writeError(w, http.StatusConflict, "assistant_disabled", "the assistant is not enabled on this server")
-			return
-		}
-		if enc, err := s.keys().Enabled(ctx, u.ID); err != nil {
-			s.internal(w, err)
-			return
-		} else if enc {
-			writeError(w, http.StatusConflict, "encryption_enabled", "the assistant cannot read end-to-end encrypted tasks")
-			return
-		}
-		// The disclosure the person accepted must name the provider in effect.
-		if in.Provider != effective {
-			writeError(w, http.StatusConflict, "provider_changed", "the provider changed; read the updated disclosure and accept again")
-			return
-		}
+	if in.Consent != nil && *in.Consent && !s.canConsent(w, r, set, in.Provider, effective) {
+		return
 	}
 	if in.OwnKey != nil {
 		if err := s.assistant.Store.SetUserKey(ctx, u.ID, keyProvider, *in.OwnKey, s.audit); err != nil {
@@ -440,12 +434,37 @@ func (s *Server) handlePutMyAssistant(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if in.Consent != nil {
-		if err := s.assistant.Store.SetConsent(ctx, u.ID, effective, *in.Consent); err != nil {
+		var routines []bool
+		if in.Routines != nil {
+			routines = []bool{*in.Routines}
+		}
+		if err := s.assistant.Store.SetConsent(ctx, u.ID, effective, *in.Consent, routines...); err != nil {
 			s.internal(w, err)
 			return
 		}
 	}
 	s.handleGetMyAssistant(w, r)
+}
+
+// canConsent checks an acceptance: the assistant on, a plaintext account, and
+// the disclosure the person accepted naming the provider in effect.
+func (s *Server) canConsent(w http.ResponseWriter, r *http.Request, set assistant.Settings, accepted, effective string) bool {
+	if !set.Active() {
+		writeError(w, http.StatusConflict, "assistant_disabled", "the assistant is not enabled on this server")
+		return false
+	}
+	if enc, err := s.keys().Enabled(r.Context(), userFrom(r.Context()).ID); err != nil {
+		s.internal(w, err)
+		return false
+	} else if enc {
+		writeError(w, http.StatusConflict, "encryption_enabled", "the assistant cannot read end-to-end encrypted tasks")
+		return false
+	}
+	if accepted != effective {
+		writeError(w, http.StatusConflict, "provider_changed", "the provider changed; read the updated disclosure and accept again")
+		return false
+	}
+	return true
 }
 
 func sameChoice(a, b *assistant.MemberChoice) bool {
@@ -510,7 +529,15 @@ func (s *Server) handleMyAssistantUsage(w http.ResponseWriter, r *http.Request) 
 		s.internal(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, usageView(u, set.CapMemberKeys))
+	v := usageView(u, set.CapMemberKeys)
+	// The month's routine AI steps, already counted in the totals (routines-ai-step D11).
+	ru, err := s.assistant.Store.RoutineUsage(r.Context(), userFrom(r.Context()).ID)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	v["routines"] = map[string]any{"input_tokens": ru.InputTokens, "output_tokens": ru.OutputTokens, "total_tokens": ru.InputTokens + ru.OutputTokens, "calls": ru.Calls}
+	writeJSON(w, http.StatusOK, v)
 }
 
 // usageView is the month's usage: total_tokens counts every turn,

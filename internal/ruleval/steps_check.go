@@ -149,6 +149,9 @@ func (c *checker) step(s *Step, env map[string]Type, item Type) (Type, error) {
 	if k.SameAs != "" {
 		out = same
 	}
+	if s.Kind == "ask_ai" && AIAnswer(s) == "lines" {
+		out = TLines
+	}
 	if eachRef != "" {
 		if out = listOfType(out); out == "" {
 			return "", stepErr(s.ID, "", CodeForEach, "%s: cannot run once per item here; use Repeat for each", s.Kind)
@@ -175,6 +178,18 @@ func (c *checker) step(s *Step, env map[string]Type, item Type) (Type, error) {
 		}
 	}
 	return out, nil
+}
+
+// AIAnswer is an Ask AI step's answer form: text (the default) or lines.
+func AIAnswer(s *Step) string {
+	var v string
+	if a, ok := s.In["answer"]; ok {
+		_ = json.Unmarshal(a.Lit, &v)
+	}
+	if v == "lines" {
+		return v
+	}
+	return "text"
 }
 
 func mustInput(k *StepKind, name string) *Input {

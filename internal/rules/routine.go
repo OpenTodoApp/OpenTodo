@@ -105,9 +105,11 @@ func readsTrigger(steps []ruleval.Step) bool {
 // never stored (design D8).
 type StepPreview struct {
 	StepRecord
-	Preview any                  `json:"preview,omitempty"`
-	Changes []agenttools.Change  `json:"changes,omitempty"`
-	Warning *ruleval.StepWarning `json:"warning,omitempty"`
+	// Estimate is an AI step's expected tokens (routines-ai-step D11).
+	Estimate int64                `json:"estimate,omitempty"`
+	Preview  any                  `json:"preview,omitempty"`
+	Changes  []agenttools.Change  `json:"changes,omitempty"`
+	Warning  *ruleval.StepWarning `json:"warning,omitempty"`
 }
 
 // Result is the answer of a run, a test run or a dry run.
@@ -129,6 +131,9 @@ type RunRequest struct {
 	Test   bool
 	// Source is manual or mcp.
 	Source string
+	// CallAI lets a test call the model for its AI steps (the person
+	// confirmed the estimate, routines-ai-step D11); real runs always do.
+	CallAI bool
 }
 
 // runState is one run in progress.
@@ -161,18 +166,30 @@ type runState struct {
 	iterations int
 	seq        int
 	emails     int
+	// AI steps (routines-ai-step): whether this run calls the model, the
+	// tokens it used, and the AI's answers (to mark items "Written by AI").
+	callAI   bool
+	aiTokens int64
+	aiTexts  []string
 }
 
 // sideEffect is a notification, a delivery or an email queued after commit.
 type sideEffect struct {
 	kind string
 	run  func(ctx context.Context) error
+	spec sideSpec
 }
 
 func (e *Engine) newRun(ctx context.Context, w *world, r *rule, key, runID string, test bool) *runState {
 	now := e.now()
 	st := &runState{e: e, ctx: ctx, w: w, r: r, key: key, runID: runID, test: test, start: now, deadline: now.Add(RunTimeLimit), nowMs: now.UnixMilli(),
-		tasks: map[string]opsync.Entity{}, projects: map[string]opsync.Entity{}, completing: map[string]bool{}, vals: map[string]ruleval.Value{}}
+		tasks: map[string]opsync.Entity{}, projects: map[string]opsync.Entity{}, completing: map[string]bool{}, vals: map[string]ruleval.Value{}, callAI: !test}
+	// A run with AI steps may take 90 s more per AI step (routines-ai-step D1).
+	ruleval.Walk(r.Steps, func(s *ruleval.Step) {
+		if ruleval.IsAI(s.Kind) {
+			st.deadline = st.deadline.Add(AIStepTime)
+		}
+	})
 	for id, t := range w.tasks {
 		st.tasks[id] = t
 	}

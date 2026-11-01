@@ -120,6 +120,12 @@ func (n *InApp) RoutineFailed(ctx context.Context, a RoutineAlert) {
 	}
 }
 
+// RoutineProposal stores a routine_proposal notification: a routine's AI step
+// left a proposal waiting (routines-ai-step D2). Count is the proposal's items.
+func (n *InApp) RoutineProposal(ctx context.Context, a RoutineAlert) {
+	n.insert(ctx, a.UserID, KindRoutineProposal, a)
+}
+
 // RulePaused stores a rule_paused notification for the rule's author.
 func (n *InApp) RulePaused(ctx context.Context, e RuleEvent) {
 	n.insert(ctx, e.UserID, KindRulePaused, e)

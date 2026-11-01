@@ -74,6 +74,9 @@ type Engine struct {
 	// RoutineHook queues a Send a webhook step's delivery; Mail sends Email me.
 	RoutineHook RoutineHook
 	Mail        RoutineMailer
+	// AI runs Ask AI and Summarise steps through the assistant
+	// (routines-ai-step D1); nil means no AI step can run.
+	AI AI
 
 	db     *sql.DB
 	keys   *e2ee.Store
@@ -123,6 +126,10 @@ type rule struct {
 	HasCondition bool
 	Actions      ruleval.Actions
 	Steps        []ruleval.Step
+	// AIApply is rule.ai_apply ("auto" asks for Apply without asking) and
+	// AIBudget the daily token budget as read (routines-ai-step D4, D11).
+	AIApply  string
+	AIBudget int64
 }
 
 func str(e opsync.Entity, f string) string {
@@ -199,12 +206,15 @@ type world struct {
 	// projectRows and labelNames serve routine steps (routines-engine).
 	projectRows map[string]opsync.Entity
 	labelNames  map[string]bool
+	// labelName and sectionName name ids for an AI step's material (routines-ai-step).
+	labelName   map[string]string
+	sectionName map[string]string
 }
 
 // load reads one user's rows, zone and preferences.
 func (e *Engine) load(ctx context.Context, uid string) (*world, error) {
 	w := &world{uid: uid, tasks: map[string]opsync.Entity{}, parent: map[string]string{}, labels: map[string]bool{}, sections: map[string]string{},
-		projectRows: map[string]opsync.Entity{}, labelNames: map[string]bool{}}
+		projectRows: map[string]opsync.Entity{}, labelNames: map[string]bool{}, labelName: map[string]string{}, sectionName: map[string]string{}}
 	if found, err := settings.New(e.db).Get(ctx, "tz_offset:"+uid, &w.offset); err != nil || !found {
 		w.offset = 0
 	}
@@ -244,6 +254,7 @@ func (e *Engine) load(ctx context.Context, uid string) (*world, error) {
 	for _, l := range labels {
 		w.labels[str(l, "id")] = true
 		w.labelNames[strings.ToLower(strings.TrimSpace(str(l, "name")))] = true
+		w.labelName[str(l, "id")] = str(l, "name")
 	}
 	sections, err := e.Sync.List(ctx, uid, "section", false)
 	if err != nil {
@@ -251,6 +262,9 @@ func (e *Engine) load(ctx context.Context, uid string) (*world, error) {
 	}
 	for _, s := range sections {
 		w.sections[str(s, "id")] = str(s, "project_id")
+		if opsync.IsNull(s["deleted_at"]) {
+			w.sectionName[str(s, "id")] = str(s, "name")
+		}
 	}
 	shared, err := e.Sync.SharedProjects(ctx, uid)
 	if err != nil {
