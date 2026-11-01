@@ -5,6 +5,10 @@ import { ACCENT_TOKENS } from './accents'
 import { parseAccents, parseContrastOverride, parseThemes } from './css'
 import { DERIVED_TOKENS, GLYPH_PAIRS, OVERRIDE_PAIRS, PAIRS, type Pair } from './pairs'
 import { deriveAccent, RED_GUARD, redDistance, type DerivedAccent } from '../../lib/accentDerive'
+import { deriveTheme, type ResolvedTheme } from '../../lib/theme/derive'
+import { checkTheme, describeFailure } from '../../lib/theme/check'
+import { SWEEP, sweepDocument } from '../../lib/theme/sweep'
+import type { ThemeDocument } from '../../lib/theme/format'
 
 // OpenSpec design-system "Accessible contrast in both themes".
 const themes = parseThemes(css)
@@ -162,5 +166,62 @@ describe('high-contrast override', () => {
     const found = failures('contrast-high', 'light', broken, pairs.filter((p) => p.fg === 'muted' && p.bg === 'surface'))
     expect(found).toHaveLength(1)
     expect(found[0]).toMatch(/^contrast-high light: muted on surface \(text\) 5\.\d\d:1, needs 7:1$/)
+  })
+})
+
+// OpenSpec theme-engine D10, themes "Every theme in the repository passes the contrast
+// gate": every theme document shipped in the repository, derived as the device
+// derives it, and a fixed sweep of seed-only themes, measured with the same resolver
+// and pairs as the stylesheet. checkTheme (the app's runtime measurement) must agree.
+describe('theme documents', () => {
+  const docs = Object.entries(import.meta.glob<ThemeDocument>('../../lib/theme/builtin/*.json', { eager: true, import: 'default' }))
+
+  /** Every failing pair of a resolved theme, naming the theme, the pair and both ratios. */
+  function themeFailures(name: string, t: ResolvedTheme): string[] {
+    const tokens = { ...t.tokens, ...DERIVED_TOKENS }
+    return [...PAIRS, ...GLYPH_PAIRS].flatMap(({ fg, bg, min, kind }) => {
+      const ratio = tokenContrast(tokens, fg, bg)
+      return ratio + 1e-9 >= min ? [] : [`${name}: ${fg} on ${bg} (${kind}) ${ratio.toFixed(2)}:1, needs ${min}:1`]
+    })
+  }
+
+  it('ships the OpenTodo themes', () => {
+    expect(docs.map(([, d]) => d.id).sort()).toEqual(['opentodo-dark', 'opentodo-light'])
+  })
+
+  for (const [path, doc] of docs) {
+    it(`${doc.id} (${path.split('/').pop()}) passes every pair for its kind, and checkTheme agrees`, () => {
+      const t = deriveTheme(doc)
+      const gate = themeFailures(doc.id, t)
+      expect(gate).toEqual([])
+      expect(checkTheme(t).map(describeFailure)).toEqual(gate)
+    })
+  }
+
+  it('names the theme, the pair and both ratios when a shipped value is lowered on purpose', () => {
+    const [, dark] = docs.find(([, d]) => d.id === 'opentodo-dark')!
+    const broken = deriveTheme({ ...dark, tokens: { ...dark.tokens, faint: '#5f636b' } })
+    const gate = themeFailures('opentodo-dark', broken).filter((f) => f.includes('faint on canvas'))
+    expect(gate).toHaveLength(1)
+    expect(gate[0]).toMatch(/^opentodo-dark: faint on canvas \(text\) [34]\.\d\d:1, needs 4\.5:1$/)
+    expect(checkTheme(broken).map(describeFailure)).toContain(gate[0])
+  })
+
+  it(`every one of the ${SWEEP.length} swept seed sets derives a theme that passes every pair, and checkTheme agrees`, () => {
+    const failures = SWEEP.flatMap((s) => {
+      const t = deriveTheme(sweepDocument(s))
+      const gate = themeFailures(s.name, t)
+      const runtime = checkTheme({ ...t, id: s.name }).map(describeFailure)
+      return runtime.join() === gate.join() ? gate : [...gate, `${s.name}: checkTheme disagrees: ${runtime.join('; ')}`]
+    })
+    expect(failures).toEqual([])
+  })
+
+  it('names the seed set, the pair and the ratio when a derivation step breaks', () => {
+    // A contributor makes the dark accent soft step as strong as the accent text: its text falls below 4.5:1.
+    const s = SWEEP.find((x) => x.kind === 'dark')!
+    const t = deriveTheme(sweepDocument(s))
+    const broken = { ...t, tokens: { ...t.tokens, 'accent-soft': t.tokens['accent-text'] } }
+    expect(themeFailures(s.name, broken).some((f) => f.startsWith(`${s.name}: accent-soft-text on accent-soft (text)`))).toBe(true)
   })
 })

@@ -5959,5 +5959,13 @@
   "{name}: the run did not start": "{name}: l’esecuzione non è partita",
   "{name}: the run failed": "{name}: l’esecuzione non è riuscita",
   "{name}: {n, plural, one {# item written} other {# items written}}": "{name}: {n, plural, one {# elemento scritto} other {# elementi scritti}}",
-  "{restored} restored, {kept} kept because they changed after the run": "{restored} ripristinati, {kept} mantenuti perché cambiati dopo l’esecuzione"
+  "{restored} restored, {kept} kept because they changed after the run": "{restored} ripristinati, {kept} mantenuti perché cambiati dopo l’esecuzione",
+  "Accent": "Accento",
+  "From the theme": "Dal tema",
+  "Made with a newer version of OpenTodo": "Creato con una versione più recente di OpenTodo",
+  "OpenTodo Dark": "OpenTodo Scuro",
+  "OpenTodo Light": "OpenTodo Chiaro",
+  "OpenTodo contributors": "Collaboratori di OpenTodo",
+  "The colours of the whole app, for light and for dark": "I colori di tutta l’app, per il chiaro e per lo scuro",
+  "Theme is invalid": "Il tema non è valido"
 }

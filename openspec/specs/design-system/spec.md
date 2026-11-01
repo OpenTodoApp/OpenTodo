@@ -38,7 +38,7 @@ The web app SHALL define named tokens for surfaces, text, borders (a container e
 - **THEN** the hairline uses the softer divider token and the card edge the container border token, and both stay visible (at least 1.1:1) on every surface in both themes
 
 ### Requirement: OpenTodo identity is preserved
-Emerald SHALL be the default accent, and the accent SHALL come from the fixed set of themes the user can choose. Neutrals SHALL remain one slate family in every theme, with low chroma so they read calm rather than blue. The light theme SHALL keep white cards on a near-white canvas, and the dark theme SHALL keep a near-black slate canvas that is lifted off pure black so that canvas, surface and raised surface are told apart by lightness alone. Primary actions, the focus ring and the current navigation item SHALL use the accent of the current theme.
+On the OpenTodo themes (OpenTodo Light and OpenTodo Dark, the defaults), emerald SHALL be the default accent, and the accent SHALL come from the fixed set of accent themes the user can choose or the custom accent. Neutrals SHALL remain one slate family in every accent theme, with low chroma so they read calm rather than blue. The light theme SHALL keep white cards on a near-white canvas, and the dark theme SHALL keep a near-black slate canvas that is lifted off pure black so that canvas, surface and raised surface are told apart by lightness alone. Primary actions, the focus ring and the current navigation item SHALL use the accent of the current theme. Another theme (`themes`) MAY replace these colours with its own, and SHALL still keep canvas, surface and raised surface told apart by lightness.
 
 #### Scenario: Primary button colour
 - **WHEN** a primary button renders in the light theme with the default theme
@@ -56,8 +56,12 @@ Emerald SHALL be the default accent, and the accent SHALL come from the fixed se
 - **WHEN** a card sits on the dark canvas and a popover opens over the card
 - **THEN** canvas, card and popover are three distinct lightness steps of the same hue, each at least 0.04 apart in OKLCH lightness, and the card is still readable with its border removed
 
+#### Scenario: A palette keeps the surface steps
+- **WHEN** a dark palette theme is active and a popover opens over a card on the canvas
+- **THEN** canvas, card and popover are distinct lightness steps at least 0.04 apart, in the palette's own hue
+
 ### Requirement: Accessible contrast in both themes
-Every text token SHALL reach a WCAG 2.2 contrast of at least 4.5:1 against every surface token it is allowed on, in both themes and for every accent theme. Non-text UI tokens (borders of inputs, focus ring, priority and palette solid steps) SHALL reach at least 3:1 against the surfaces they sit on. Text placed on a palette soft step SHALL reach 4.5:1. The contrast check SHALL measure the value the browser renders: a token written as an OKLCH literal or as a mix SHALL be resolved, and a translucent token SHALL be composited over the surface of the pair before the ratio is taken. Derived accent and palette steps SHALL be measured for every accent and every hue, not only the declared values.
+Every text token SHALL reach a WCAG 2.2 contrast of at least 4.5:1 against every surface token it is allowed on, in both themes, for every accent theme and for every theme document shipped with the app. Non-text UI tokens (borders of inputs, focus ring, priority and palette solid steps) SHALL reach at least 3:1 against the surfaces they sit on. Text placed on a palette soft step SHALL reach 4.5:1. The contrast check SHALL measure the value the browser renders: a token written as an OKLCH literal or as a mix SHALL be resolved, and a translucent token SHALL be composited over the surface of the pair before the ratio is taken. Derived accent and palette steps SHALL be measured for every accent and every hue, not only the declared values, and a theme's derived tokens SHALL be measured as the device derives them.
 
 #### Scenario: A token change breaks contrast
 - **WHEN** a contributor changes the muted text token so that it falls to 4.2:1 on the canvas in dark mode
@@ -78,6 +82,10 @@ Every text token SHALL reach a WCAG 2.2 contrast of at least 4.5:1 against every
 #### Scenario: A translucent border is measured over its surface
 - **WHEN** the dark divider token is a translucent white
 - **THEN** the check composites it over each surface it is allowed on and measures the result, and a divider that vanishes on the raised surface fails naming that surface
+
+#### Scenario: A shipped theme's derived token is measured
+- **WHEN** a shipped theme sets only seeds and its derived label chip text reaches 4.3:1
+- **THEN** the contrast check fails naming the theme, the pair and the ratio
 
 ### Requirement: Stored colours render through the palette
 Project, label and view colours already stored as hex strings SHALL render using the palette hue nearest to the stored value, for both its solid and soft steps, on every screen that shows them. Rendering SHALL never write an op or change the stored value. A colour picked in the UI SHALL store the chosen hue's canonical solid hex.
@@ -543,7 +551,7 @@ Every interactive control in screens SHALL show the token focus ring on keyboard
 - **THEN** the token focus ring is shown and the option's border does not change
 
 ### Requirement: High-contrast and no-motion presentation
-The tokens SHALL offer a high-contrast override (`data-contrast="high"` on the document root) in which surfaces are pure white or pure black, text reaches at least 7:1 on every surface it is allowed on, soft tints are replaced by outlines, and non-text UI reaches at least 3:1; and a no-motion attribute (`data-motion="none"`) that sets every transition and animation duration to zero. Both SHALL combine with any theme mode and accent and SHALL be covered by the contrast check.
+The tokens SHALL offer a high-contrast override (`data-contrast="high"` on the document root) in which surfaces are pure white or pure black, text reaches at least 7:1 on every surface it is allowed on, soft tints are replaced by outlines, and non-text UI reaches at least 3:1; and a no-motion attribute (`data-motion="none"`) that sets every transition and animation duration to zero. Both SHALL combine with any theme mode, accent and theme and SHALL be covered by the contrast check. Under the high-contrast override no theme's colours SHALL apply, whatever theme is chosen.
 
 #### Scenario: Override in both modes
 - **WHEN** the root carries `data-contrast="high"` in light mode and then in dark mode
@@ -556,6 +564,10 @@ The tokens SHALL offer a high-contrast override (`data-contrast="high"` on the d
 #### Scenario: No motion
 - **WHEN** the root carries `data-motion="none"` and a task is completed
 - **THEN** the row changes state with no transition or animation, as under the system's reduced-motion setting
+
+#### Scenario: High contrast over a palette
+- **WHEN** a palette theme is chosen and the root carries `data-contrast="high"`
+- **THEN** every surface, text and accent token has the high-contrast value, the same as over OpenTodo's themes
 
 ### Requirement: Hooks lint gate
 The web app's checks SHALL lint its source for the Rules of Hooks and for effect, memo and callback dependencies, and SHALL fail on any finding. A suppression of either rule SHALL state its reason, and a suppression that no longer suppresses anything SHALL fail the check. The gate is a development check only and adds nothing to the shipped app.

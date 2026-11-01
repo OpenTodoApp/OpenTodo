@@ -19,6 +19,7 @@ final class ShellController: NSObject, ObservableObject {
     @Published private(set) var loaded = false
     private var bridge: Bridge?
     private let refresher = UIRefreshControl()
+    private var barsObserver: NSObjectProtocol?
 
     init(origin: URL) {
         self.origin = origin
@@ -40,9 +41,24 @@ final class ShellController: NSObject, ObservableObject {
         // Pull to refresh: the gesture every iOS person tries when a page looks stale.
         refresher.addTarget(self, action: #selector(pulledToRefresh), for: .valueChanged)
         webView.scrollView.refreshControl = refresher
+        // The last bars the app asked for, before the page draws (theme-engine D8).
+        if let json = Prefs.shared.systemBars, let bars = SystemBars.parse(json) { apply(bars) }
+        barsObserver = NotificationCenter.default.addObserver(forName: SystemBars.changed, object: nil, queue: .main) { [weak self] note in
+            guard let json = note.userInfo?["json"] as? String, let bars = SystemBars.parse(json) else { return }
+            MainActor.assumeIsolated { self?.apply(bars) }
+        }
         #if DEBUG
         webView.isInspectable = true
         #endif
+    }
+
+    /// The theme's bar colour behind the page: the status bar area, the first frame and the overscroll.
+    func apply(_ bars: SystemBars) {
+        let color = bars.color
+        webView.isOpaque = false
+        webView.backgroundColor = color
+        webView.scrollView.backgroundColor = color
+        webView.underPageBackgroundColor = color
     }
 
     @objc private func pulledToRefresh() {

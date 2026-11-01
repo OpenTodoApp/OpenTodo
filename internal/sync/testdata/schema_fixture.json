@@ -249,6 +249,8 @@
       "task_open",
       "theme_accent",
       "theme_accent_custom",
+      "theme_dark",
+      "theme_light",
       "theme_mode",
       "time_format",
       "today_done",

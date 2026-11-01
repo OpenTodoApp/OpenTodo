@@ -8,13 +8,17 @@
 // task opens from a list, as a page or in a side panel (task-side-panel D1).
 // The Custom tile (accent-colour D5) ends the theme row and opens the lazily loaded
 // colour picker in a popover (a bottom sheet below 640 px).
+// The Theme row (theme-engine D14) comes right after Mode: one list of theme cards
+// for a fixed mode, a Light and a Dark list under System, one op per choice. While
+// the side shown has a theme other than OpenTodo's, the accent comes from that theme
+// and the tiles are not offered (D7).
 import { readMethodMode } from '../lib/method/mode'
 import { type DragEvent, type KeyboardEvent, Suspense, useEffect, useRef, useState } from 'react'
 import { cachedCustom, customAccentStyle, type CustomAccentValues, deriveCustom, DENSITIES, type Density, destinationOrder, type DestinationId, FIXED_DESTINATIONS, moveDestination, PROMOTABLE, type Promotable, readAppearance, readSidebarCounts, setAppearance, setCustomAccent, setPromoted, setSidebarCounts, SIDEBAR_COUNTS, type SidebarCounts, THEME_MODES, type Appearance } from '../lib/appearance'
 import { ActionMenu } from './menus/ActionMenu'
 import { useUserPrefsRow } from '../lib/localData'
 import type { ThemeModePref, UserPrefs } from '../lib/types'
-import { Icon, LazyAccentPicker, Popover, SettingRow, SettingsSection, Skeleton, Switch } from '../ui'
+import { Icon, LazyAccentPicker, Popover, SettingRow, SettingsSection, Skeleton, Switch, ThemeList, type ThemeCardData } from '../ui'
 import { ACCENTS, CUSTOM_ACCENT, type ThemeAccent } from '../ui'
 import { t, msg, translatedMap } from '../lib/i18n'
 import { accentName } from '../lib/colourNames'
@@ -25,6 +29,8 @@ import { canVibrate } from './motion'
 import { readTaskOpen, setTaskOpen, type TaskOpenPref } from '../lib/userPrefs'
 import { accountRowLayout, ROW_LAYOUTS, setAccountRowLayout, type RowLayout } from '../lib/rowLayout'
 import { ROW_LAYOUT_LABEL } from './views/DisplayPanel'
+import { BUILTIN_THEMES, readThemeChoices, setThemeChoice, type ChoiceStatus, type Side } from '../lib/theme/choice'
+import { effectiveSide } from '../lib/appearance'
 
 const MODE_LABEL = translatedMap<ThemeModePref>({ system: msg('System'), light: msg('Light'), dark: msg('Dark') })
 const DENSITY_LABEL = translatedMap<Density>({ comfortable: msg('Comfortable'), compact: msg('Compact') })
@@ -49,6 +55,53 @@ export interface AppearanceViewProps {
   rows?: { value: RowLayout; onChange: (r: RowLayout) => void }
   /** The haptics switch, only on a device that can vibrate (appearance-preferences "Haptic feedback preference"). */
   haptics?: { on: boolean; onChange: (on: boolean) => void }
+  /** The theme of each side (theme-engine D14): the lists to show and writing a choice. */
+  themes?: ThemeChoiceProps
+}
+
+export interface ThemeChoiceProps {
+  /** One list for a fixed mode, Light and Dark under System. */
+  lists: { side: Side; value: string; status: ChoiceStatus; cards: readonly ThemeCardData[] }[]
+  onChoose: (side: Side, id: string) => void
+  /** The side shown has a theme other than OpenTodo's: the accent comes from it (D7). */
+  accentFromTheme?: boolean
+}
+
+const SIDE_LABEL = translatedMap<Side>({ light: msg('Light'), dark: msg('Dark') })
+const STATUS_NOTE: Partial<Record<ChoiceStatus, () => string>> = {
+  newer: () => t('Made with a newer version of OpenTodo'),
+  invalid: () => t('Theme is invalid'),
+}
+
+/** The cards of the themes this app has for one side (in this version, the OpenTodo theme). */
+export function themeCards(side: Side): ThemeCardData[] {
+  return BUILTIN_THEMES.filter((b) => b.kind === side).map((b) => ({
+    id: b.id,
+    name: b.id === 'opentodo-light' ? t('OpenTodo Light') : b.id === 'opentodo-dark' ? t('OpenTodo Dark') : b.id,
+    author: t('OpenTodo contributors'),
+    // The OpenTodo themes preview through the stylesheet's own tokens, with the user's accent.
+    scheme: side,
+    swatches: {
+      canvas: 'var(--ot-canvas)', surface: 'var(--ot-surface)', text: 'var(--ot-text)', accent: 'var(--ot-accent)',
+      hues: ['green', 'blue', 'violet', 'orange'].map((h) => `var(--ot-hue-${h}-solid)`),
+    },
+  }))
+}
+
+/** The Theme row: one list, or a Light and a Dark list under System. */
+function ThemeRow({ lists, onChoose }: ThemeChoiceProps) {
+  const label = rowCopy('appearance', 'themes').label
+  return (
+    <div className="py-3" id="appearance-themes" tabIndex={-1} data-setting-row="appearance-themes">
+      {lists.length > 1 && <p className="mb-2 text-body font-medium text-default">{label}</p>}
+      <div className="flex flex-col gap-3">
+        {lists.map((l) => (
+          <ThemeList key={l.side} data-theme-side={l.side} label={lists.length > 1 ? SIDE_LABEL[l.side] : label}
+            themes={l.cards} value={l.value} onChange={(id) => onChoose(l.side, id)} note={STATUS_NOTE[l.status]?.()} />
+        ))}
+      </div>
+    </div>
+  )
 }
 
 /** Roving focus over a radio group: arrows move and select, Home and End jump. */
@@ -101,7 +154,7 @@ function TilePreview() {
 
 const TILE = 'flex w-28 shrink-0 snap-start flex-col gap-2 rounded-card border bg-surface p-2 text-left outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus sm:w-auto'
 
-export function AppearanceView({ value, onMode, onAccent, custom, onDensity, rows, haptics }: AppearanceViewProps) {
+export function AppearanceView({ value, onMode, onAccent, custom, onDensity, rows, haptics, themes }: AppearanceViewProps) {
   const tileRefs = useRef<(HTMLButtonElement | null)[]>([])
   const [picking, setPicking] = useState(false)
   const customRef = useRef<HTMLButtonElement | null>(null)
@@ -114,8 +167,10 @@ export function AppearanceView({ value, onMode, onAccent, custom, onDensity, row
     <SettingsSection {...cardCopy('appearance')}>
       <SettingRow id="appearance-mode" {...rowCopy('appearance', 'mode')}
         control={<span data-appearance-mode><Segmented label={t('Mode')} items={THEME_MODES} labels={MODE_LABEL} value={value.mode} onChange={onMode} testId="appearance-mode" /></span>} />
+      {themes && <ThemeRow {...themes} />}
       <div className="py-3" id="appearance-theme" tabIndex={-1} data-setting-row="appearance-theme">
         <p id="appearance-theme-label" className="mb-2 text-body font-medium text-default">{rowCopy('appearance', 'theme').label}</p>
+        {themes?.accentFromTheme ? <p className="text-meta text-muted" data-accent-from-theme>{t('From the theme')}</p> : (
         <div role="radiogroup" aria-labelledby="appearance-theme-label" data-appearance-themes data-scroll-x
           className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:gap-3 sm:overflow-visible sm:px-0 sm:pb-0">
           {ACCENTS.map((a, i) => {
@@ -149,7 +204,8 @@ export function AppearanceView({ value, onMode, onAccent, custom, onDensity, row
             </button>
           )}
         </div>
-        {custom && (
+        )}
+        {custom && !themes?.accentFromTheme && (
           <Popover open={picking} onClose={() => setPicking(false)} anchor={customRef} label={t('Custom colour')} align="start" width="sm:w-80" className="p-3">
             <Suspense fallback={<Skeleton count={3} />}>
               <LazyAccentPicker value={value.custom} onPick={custom.onPick} onDone={() => setPicking(false)} />
@@ -301,8 +357,15 @@ export function AppearanceSection() {
   const row = usePrefsRow()
   const value = readAppearance(row)
   const values = useCustomValues(value.custom)
+  const choices = readThemeChoices(row)
+  const sides: Side[] = value.mode === 'system' ? ['light', 'dark'] : [value.mode]
+  const themes: ThemeChoiceProps = {
+    lists: sides.map((side) => ({ side, value: choices[side].id, status: choices[side].status, cards: themeCards(side) })),
+    onChoose: (side, id) => { if (id !== choices[side].id) act(setThemeChoice(side, id)) },
+    accentFromTheme: choices[effectiveSide(value.mode)].status === 'theme',
+  }
   return <AppearanceView value={value} onMode={(m) => act(setAppearance('theme_mode', m))} onAccent={(a) => act(setAppearance('theme_accent', a))}
-    custom={{ values, onPick: (hex) => act(setCustomAccent(hex)) }}
+    custom={{ values, onPick: (hex) => act(setCustomAccent(hex)) }} themes={themes}
     onDensity={(d) => act(setAppearance('density', d))}
     rows={{ value: accountRowLayout(row), onChange: (r) => act(setAccountRowLayout(r)) }}
     haptics={canVibrate() ? { on: hapticsPrefOn(row), onChange: (on) => act(setHapticsPref(on)) } : undefined} />

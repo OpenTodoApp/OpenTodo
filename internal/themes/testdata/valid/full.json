@@ -1,0 +1,47 @@
+{
+  "opentodoTheme": 1,
+  "id": "nord-like",
+  "name": "Nord-like",
+  "author": "Example Author",
+  "licence": "MIT",
+  "source": "https://example.com/nord (shown as text, never fetched)",
+  "kind": "dark",
+  "seeds": {
+    "canvas": "#2e3440",
+    "surface": "#3b4252",
+    "text": "#eceff4",
+    "accent": "#88c0d0",
+    "success": "#a3be8c",
+    "warning": "#ebcb8b",
+    "danger": "#bf616a",
+    "info": "#81a1c1"
+  },
+  "tokens": {
+    "muted": "#d8dee9",
+    "hue-red": "#bf616a",
+    "scrim": "oklch(0 0 0 / 0.6)",
+    "p1": "oklch(0.65 0.12 20)"
+  },
+  "bar": "#2e3440",
+  "notes": {
+    "adapted": {
+      "muted": "#d8dee9"
+    },
+    "text": "Muted lifted for contrast."
+  },
+  "shape": {
+    "radius": {
+      "chip": 4,
+      "control": 5,
+      "card": 6,
+      "surface": 8,
+      "popover": 10
+    }
+  },
+  "type": {
+    "family": {
+      "local": "JetBrains Mono"
+    },
+    "list": 13
+  }
+}
