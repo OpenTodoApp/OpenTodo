@@ -2,7 +2,7 @@
 // Declare a field in internal/sync/ops.go, then run
 // UPDATE_OP_SCHEMA=1 go test ./internal/sync -run TestGeneratedOpSchema
 import type {
-  Attachment, Comment, Due, Entity, FieldDef, Frame, Geo, Label, Note, OnDropRule, Origin, Place, Priority, Project, ProjectPrefs, Reminder, ReminderKind, Review, Rule, RuleActions, RuleCondition, RuleTrigger, Section, Slot, SplitFrom, Task, TaskLocation, TimeEntry, UserPrefs, View,
+  Attachment, Comment, Due, Entity, FieldDef, Frame, Geo, Label, Note, OnDropRule, Origin, Place, Priority, Project, ProjectPrefs, Reminder, ReminderKind, Review, RoutineStep, Rule, RuleActions, RuleCondition, RuleTrigger, Section, Slot, SplitFrom, Task, TaskLocation, TimeEntry, UserPrefs, View,
 } from '../lib/types'
 
 /**
@@ -488,6 +488,7 @@ export interface TimeEntryFields {
  * a label it is personal: it resolves to the author's personal scope. trigger,
  * condition and actions are each one whole value; name is a content field.
  * The server engine (internal/rules) runs enabled rules for their author.
+ * The interface calls a rule a routine (routines-engine D1).
  * A row written before a field existed lacks it, so every field is optional here; the entity type may require it.
  */
 export interface RuleFields {
@@ -496,6 +497,13 @@ export interface RuleFields {
   trigger?: RuleTrigger | null
   condition?: RuleCondition | null
   actions?: RuleActions | null
+  /**
+   * A routine's steps (routines-engine D2, D3): null reads the rule as one
+   * Change tasks step over the trigger's output with its actions; a list is
+   * the routine, and actions is then null or ignored. Not a content field:
+   * an encrypted account's text literals inside are ciphertext envelopes.
+   */
+  steps?: RoutineStep[] | null
   position?: number
   created_at?: number
   deleted_at?: number | null
@@ -936,7 +944,7 @@ export const OP_DEFAULTS = {
     task_id: '', user_id: '', started_at: 0, ended_at: null, device_id: '', note: '', created_at: 0, deleted_at: null, focus_mode: '', focus_session: 0, planned_end_at: null,
   } satisfies Omit<TimeEntry, 'id' | '_clock'>,
   rule: {
-    name: '', enabled: false, trigger: null, condition: null, actions: null, position: 0, created_at: 0, deleted_at: null,
+    name: '', enabled: false, trigger: null, condition: null, actions: null, steps: null, position: 0, created_at: 0, deleted_at: null,
   } satisfies Omit<Rule, 'id' | '_clock'>,
   frame: {
     title: '', weekdays: '', start: '09:00', end: '10:00', color: '#64748b', source: '', from_date: null, until_date: null, position: 0, created_at: 0, deleted_at: null,

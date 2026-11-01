@@ -23,7 +23,10 @@ const keysOf = (v: unknown): string[] => (v && typeof v === 'object' && !Array.i
  * keys stay because the trigger, condition and actions are only ever written whole
  * from an editor that understood them.
  */
-export function isKnownRule(r: Pick<Rule, 'trigger' | 'condition' | 'actions'>): boolean {
+export function isKnownRule(r: Pick<Rule, 'trigger' | 'condition' | 'actions' | 'steps'>): boolean {
+  // A routine of more than one step is edited by the Routines editor
+  // (routines-editor); until then this page offers its switch and deletion.
+  if (r.steps !== null && r.steps !== undefined) return false
   const kind = (r.trigger as { kind?: unknown } | null)?.kind
   if (!RULE_TRIGGERS.includes(kind as RuleTrigger['kind'])) return false
   if (!keysOf(r.condition).every((k) => CONDITION_KEYS.includes(k))) return false

@@ -138,6 +138,7 @@
       "enabled",
       "name",
       "position",
+      "steps",
       "trigger"
     ],
     "section": [
