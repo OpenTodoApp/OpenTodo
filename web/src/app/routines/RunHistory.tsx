@@ -165,8 +165,19 @@ function Touched({ ids, output, names }: { ids: string[]; output: string; names:
   )
 }
 
-/** One run step by step (D9), with Undo run. */
-export function RunDetail({ rule, ruleId: givenRule, runId, initial, onClose }: { rule: Rule | undefined; ruleId?: string; runId: string; initial?: RoutineRun; onClose: () => void }) {
+interface RunDetailProps { rule: Rule | undefined; ruleId?: string; runId: string; initial?: RoutineRun }
+
+/** One run in a dialog: a run of a deleted routine, the Inbox card's quick look. */
+export function RunDetail({ onClose, ...props }: RunDetailProps & { onClose: () => void }) {
+  return (
+    <Dialog title={props.rule ? t('Run of {name}', { name: props.rule.name }) : t('Run')} onClose={onClose} size="lg" testId="run-detail">
+      <RunDetailBody {...props} />
+    </Dialog>
+  )
+}
+
+/** One run step by step (D9), with Undo run; inline on the routine's page (routines-editor-page D6). */
+export function RunDetailBody({ rule, ruleId: givenRule, runId, initial }: RunDetailProps) {
   const online = useOnline()
   const me = useMe() ?? ''
   const names = useRoutineNames()
@@ -195,7 +206,7 @@ export function RunDetail({ rule, ruleId: givenRule, runId, initial, onClose }: 
   }
   const o = run ? outcomeOf(run) : null
   return (
-    <Dialog title={rule ? t('Run of {name}', { name: rule.name }) : t('Run')} onClose={onClose} size="lg" testId="run-detail">
+    <div data-run-detail={runId}>
       {!run && (failed || !online) && <Notice tone="info">{t('The run is on the server: connect to see it.')}</Notice>}
       {!run && online && !failed && <Skeleton shape="line" count={3} label={t('Loading the run')} />}
       {run && o && (
@@ -246,6 +257,6 @@ export function RunDetail({ rule, ruleId: givenRule, runId, initial, onClose }: 
           )}
         </div>
       )}
-    </Dialog>
+    </div>
   )
 }

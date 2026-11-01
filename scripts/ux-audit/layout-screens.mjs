@@ -74,6 +74,10 @@ export function screens(ids, base) {
     { name: 'views', path: '/views', ready: heading('Views'), overlays: ['view-menu', 'rename-view', 'new-dashboard'] },
     // All projects (sidebar-favourites D6): the tree, the find field, and the archived projects opened from Settings → Data.
     { name: 'projects', path: '/projects', ready: heading('Projects') },
+    // Routines (routines-editor) and the editor page (routines-editor-page): one column on a phone with the actions in a bar at the bottom.
+    { name: 'routines', path: '/routines', ready: heading('Routines') },
+    { name: 'routine-page', path: `/routines/${ids.routine}`, ready: (p) => p.locator('[data-step-card]').first().waitFor() },
+    { name: 'routine-new', path: '/routines/new', ready: (p) => p.locator('[data-routine-editor] [data-when-card]').waitFor() },
     { name: 'locations', path: '/locations', ready: heading('Locations'), overlays: ['new-location'] },
     { name: 'projects-archived', path: '/projects#archived', ready: (p) => p.getByText('No archived projects').first().waitFor() },
     // Settings (settings-navigation): the overview and every section, each overlay on

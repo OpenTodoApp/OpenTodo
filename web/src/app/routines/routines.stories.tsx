@@ -6,13 +6,16 @@ import { createRule } from '../../lib/rules/store'
 import { seeded, withSeed } from '../stories/fixtures'
 import { AddStepSheet } from './AddStep'
 import { RoutineEditor } from './RoutineEditor'
+import { RoutinePage } from './RoutinePage'
 import { RoutinesView } from './RoutinesView'
 import { RunDetail } from './RunHistory'
 import { InboxCardView } from './RoutinesInboxCard'
 import type { InboxLine } from '../../lib/rules/inbox'
 
 // Routines (OpenSpec change routines-editor): the page, the sentence-card
-// editor, the Add step sheet and a run's detail. The workbench has no server,
+// editor as its own page (routines-editor-page: steps in a centred column, Test
+// and History beside them from 1024 px, tabs below), the Add step sheet and a
+// run's detail. The workbench has no server,
 // so the page shows its offline state and previews come from local data.
 const meta: Meta = { title: 'Screens/Routines' }
 export default meta
@@ -51,21 +54,31 @@ export const Editor: StoryObj = {
     publishEncryption({ enabled: false })
     seeded.task = await seedGroceries()
   }),
-  render: () => <RoutineEditor draft={{ name: 'Groceries', trigger: { kind: 'manual' }, condition: null, steps: [
+  render: () => <div className="-m-4 bg-canvas"><RoutineEditor draft={{ name: 'Groceries', trigger: { kind: 'manual' }, condition: null, steps: [
     { id: 'a', kind: 'split_lines', in: { text: { literal: 'oat milk\nbread\neggs' } } },
     { id: 'b', kind: 'count', in: { list: { ref: 'a' } } },
     { id: 'c', kind: 'if', in: { value: { ref: 'b' }, is: { literal: { '>': 2 } } }, then: [{ id: 'd', kind: 'notify', in: { text: { literal: '{b} groceries' } } }], otherwise: [] },
-  ] }} onClose={() => undefined} />,
+  ] }} onBack={() => undefined} /></div>,
+}
+
+/** A saved routine's page: breadcrumb, Save, Test and Run now, Test and History beside the steps. */
+export const EditorPage: StoryObj = {
+  name: 'Editor page, saved routine',
+  ...withSeed(async () => {
+    publishEncryption({ enabled: false })
+    seeded.rule = await seedGroceries()
+  }),
+  render: () => <div className="-m-4 bg-canvas"><RoutinePage route={{ view: 'rules', id: seeded.rule }} /></div>,
 }
 
 /** A type error on a card with its one-tap fix. */
 export const EditorError: StoryObj = {
   name: 'Editor, type error',
   ...withSeed(async () => undefined),
-  render: () => <RoutineEditor draft={{ name: 'Due today', trigger: { kind: 'manual' }, condition: null, steps: [
+  render: () => <div className="-m-4 bg-canvas"><RoutineEditor draft={{ name: 'Due today', trigger: { kind: 'manual' }, condition: null, steps: [
     { id: 'a', kind: 'find_tasks', in: { condition: { literal: { due: 'today' } } } },
     { id: 'b', kind: 'notify', in: { text: { ref: 'a' } } },
-  ] }} onClose={() => undefined} />,
+  ] }} onBack={() => undefined} /></div>,
 }
 
 /** Add step: suggestions after a list of lines, the groups below. */

@@ -11,10 +11,12 @@ import { createProject, createTask, resetDeviceId } from '../../lib/ops'
 import { publishEncryption } from '../../lib/e2ee'
 import { resetCatalogueCache } from '../../lib/rules/catalogue'
 import { createRule } from '../../lib/rules/store'
-import { canonicalPath, parseRoute, routePath } from '../router'
+import { addressOf, canonicalPath, navigate, parseRoute, routePath } from '../router'
 import type { RoutineCatalogueEntry, RoutineRun, RoutineStep } from '../../lib/types'
 import { click, key, mockFetch, render, type, waitFor } from '../../ui/test-utils'
 import { RoutineEditor } from './RoutineEditor'
+import { RoutinePage } from './RoutinePage'
+import { openRoutineDraft } from './routineNav'
 import { RoutinesView } from './RoutinesView'
 import { RunDetail } from './RunHistory'
 
@@ -77,6 +79,13 @@ describe('Routines page', () => {
     expect(canonicalPath('/rules')).toBe('/routines')
     expect(parseRoute('/routines/r1?run=x9')).toEqual({ view: 'rules', id: 'r1', run: 'x9' })
     expect(routePath({ view: 'rules', tab: 'runs' })).toBe('/routines/runs')
+    // The editor page (routines-editor-page D1).
+    expect(parseRoute('/routines/new')).toEqual({ view: 'rules', create: true })
+    expect(parseRoute('/routines#new')).toEqual({ view: 'rules', create: true })
+    expect(routePath({ view: 'rules', create: true })).toBe('/routines/new')
+    expect(canonicalPath('/rules/r1')).toBe('/routines/r1')
+    expect(addressOf({ pathname: '/routines/r1', search: '?run=x9' })).toBe('/routines/r1?run=x9')
+    expect(addressOf({ pathname: '/routines', search: '?x=1' })).toBe('/routines')
   })
 
   it('"Reading the list" and "A routine\'s row": the line, the counts, Run now and the switch', async () => {
@@ -96,14 +105,17 @@ describe('Routines page', () => {
   })
 
   it('"Provider removed": the row says how many steps are not available', async () => {
-    await createRule({ name: 'Digest', trigger: { kind: 'manual' }, actions: null, steps: [{ id: 'a', kind: 'email_me', in: { subject: { literal: 'Hi' }, text: { literal: 'x' } } }] })
+    const digest = await createRule({ name: 'Digest', trigger: { kind: 'manual' }, actions: null, steps: [{ id: 'a', kind: 'email_me', in: { subject: { literal: 'Hi' }, text: { literal: 'x' } } }] })
     catalogue = [{ kind: 'email_me', group: 'communication', available: false, reason: 'email_not_configured', setting: 'server.email' }]
     const r = await render(<RoutinesView />)
     await waitFor(() => /1 step not available/.test(rows()[0]?.textContent ?? ''), 'the count')
     await click(rows()[0].querySelector('button[data-edit-routine]')!)
+    expect(location.pathname).toBe(`/routines/${digest}`)
+    await r.unmount()
+    const page = await render(<RoutinePage route={{ view: 'rules', id: digest }} />)
     await waitFor(() => /Not available: outgoing email is not set up on this server/.test(editorText()), 'the badge')
     expect(document.querySelector<HTMLAnchorElement>('[data-unavailable] a')!.getAttribute('href')).toBe('/settings/server')
-    await r.unmount()
+    await page.unmount()
   })
 
   it('offline: routines are listed and the runs need a connection', async () => {
@@ -120,8 +132,8 @@ describe('Routine editor', () => {
   it('"Reading a routine": one card per step in order, and the screen-reader names', async () => {
     const { id } = await groceries()
     const rule = (await db.rules.get(id))!
-    const r = await render(<RoutineEditor rule={rule} onClose={() => {}} />)
-    await waitFor(() => cards().length === 4, 'four cards')
+    const r = await render(<RoutineEditor rule={rule} onBack={() => {}} />)
+    await waitFor(() => cards().length === 4 && cards()[3].getAttribute('aria-label') === 'Create tasks from the lines in Errands', 'four cards')
     expect(document.querySelector('[data-when-card]')!.textContent).toContain('Friday at 17:00')
     expect(cards().map((c) => c.getAttribute('aria-label'))).toEqual([
       'Get the task Groceries', 'Get the note text of Groceries', 'Split the note text into lines', 'Create tasks from the lines in Errands'])
@@ -133,7 +145,7 @@ describe('Routine editor', () => {
   it('"Preview offline": the split lines are previewed from local data, five and "+ 2 more"', async () => {
     vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
     const { id } = await groceries()
-    const r = await render(<RoutineEditor rule={(await db.rules.get(id))!} onClose={() => {}} />)
+    const r = await render(<RoutineEditor rule={(await db.rules.get(id))!} onBack={() => {}} />)
     await waitFor(() => /\+ 2 more/.test(cards()[2]?.textContent ?? ''), 'the preview')
     expect(cards()[2].textContent).toContain('oat milk')
     expect(cards()[3].textContent).toContain('Would create 7 tasks in Errands')
@@ -145,11 +157,12 @@ describe('Routine editor', () => {
     const id = await createRule({ name: 'Waiting', trigger: { kind: 'task.created' }, actions: { priority: 3 } })
     const before = await db.outbox.count()
     const done = vi.fn()
-    const r = await render(<RoutineEditor rule={(await db.rules.get(id))!} onClose={done} />)
+    const r = await render(<RoutineEditor rule={(await db.rules.get(id))!} onBack={() => {}} onSaved={done} />)
     await waitFor(() => cards().length === 1 && !!document.querySelector('[data-when-card]'), 'the cards')
     expect(cards()[0].getAttribute('data-step-kind')).toBe('change_tasks')
+    expect(document.querySelector('[data-unsaved]')).toBeNull()
     await click(button('Save'))
-    await waitFor(() => done.mock.calls.length === 1, 'closed')
+    expect(done).not.toHaveBeenCalled()
     expect(await db.outbox.count()).toBe(before)
     await r.unmount()
   })
@@ -158,7 +171,7 @@ describe('Routine editor', () => {
     vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
     const { id } = await groceries()
     const done = vi.fn()
-    const r = await render(<RoutineEditor rule={(await db.rules.get(id))!} onClose={done} />)
+    const r = await render(<RoutineEditor rule={(await db.rules.get(id))!} onBack={() => {}} onSaved={done} />)
     await waitFor(() => cards().length === 4, 'the cards')
     await click(document.querySelector('[data-add-step]')!)
     await waitFor(() => !!document.querySelector('[data-testid="add-step"]'), 'the sheet')
@@ -176,7 +189,7 @@ describe('Routine editor', () => {
 
   it('"Suggestions after lines" and "Search for an unavailable step"', async () => {
     catalogue = [{ kind: 'email_me', group: 'communication', available: false, reason: 'email_not_configured', setting: 'server.email' }]
-    const r = await render(<RoutineEditor draft={{ name: 'x', trigger: { kind: 'manual' }, condition: null, steps: [{ id: 'a', kind: 'split_lines', in: { text: { literal: 'a' } } }] }} onClose={() => {}} />)
+    const r = await render(<RoutineEditor draft={{ name: 'x', trigger: { kind: 'manual' }, condition: null, steps: [{ id: 'a', kind: 'split_lines', in: { text: { literal: 'a' } } }] }} onBack={() => {}} />)
     await waitFor(() => cards().length === 1, 'the card')
     await click(document.querySelector('[data-add-step]')!)
     await waitFor(() => !!document.querySelector('[data-add-suggested]'), 'the suggestions')
@@ -195,7 +208,7 @@ describe('Routine editor', () => {
       { id: 'a', kind: 'find_tasks', in: { condition: { literal: { due: 'today' } } } },
       { id: 'b', kind: 'notify', in: { text: { ref: 'a' } } },
     ]
-    const r = await render(<RoutineEditor draft={{ name: 'Due today', trigger: { kind: 'manual' }, condition: null, steps }} onClose={() => {}} />)
+    const r = await render(<RoutineEditor draft={{ name: 'Due today', trigger: { kind: 'manual' }, condition: null, steps }} onBack={() => {}} />)
     await waitFor(() => /Notify me expects Text, got Tasks/.test(cards()[1]?.textContent ?? ''), 'the error')
     await click(button('Save'))
     await waitFor(() => /Fix step 2 first/.test(document.querySelector('[data-save-error]')?.textContent ?? ''), 'save blocked')
@@ -213,7 +226,7 @@ describe('Routine editor', () => {
       { id: 'b', kind: 'join', in: { lines: { ref: 'a' } } },
       { id: 'c', kind: 'count', in: { list: { ref: 'a' } } },
     ]
-    const r = await render(<RoutineEditor draft={{ name: 'x', trigger: { kind: 'manual' }, condition: null, steps }} onClose={() => {}} />)
+    const r = await render(<RoutineEditor draft={{ name: 'x', trigger: { kind: 'manual' }, condition: null, steps }} onBack={() => {}} />)
     await waitFor(() => cards().length === 3, 'the cards')
     const count = cards()[2]
     count.focus()
@@ -230,7 +243,7 @@ describe('Routine editor', () => {
       { id: 'b', kind: 'count', in: { list: { ref: 'a' } } },
       { id: 'c', kind: 'notify', in: { text: { literal: 'x' } } },
     ]
-    const r = await render(<RoutineEditor draft={{ name: 'x', trigger: { kind: 'manual' }, condition: null, steps }} onClose={() => {}} />)
+    const r = await render(<RoutineEditor draft={{ name: 'x', trigger: { kind: 'manual' }, condition: null, steps }} onBack={() => {}} />)
     await waitFor(() => cards().length === 3, 'the cards')
     await click(cards()[2].querySelector('[data-word="Text"]')!)
     await waitFor(() => !!document.querySelector('[aria-label="Insert the count"]'), 'the insert chip')
@@ -245,7 +258,7 @@ describe('Routine editor', () => {
       { id: 'b', kind: 'split_lines', in: { text: { literal: 'a\nb' } } },
       { id: 'c', kind: 'create_tasks', in: { text: { literal: 'x' } } },
     ]
-    const r = await render(<RoutineEditor draft={{ name: 'x', trigger: { kind: 'manual' }, condition: null, steps }} onClose={() => {}} />)
+    const r = await render(<RoutineEditor draft={{ name: 'x', trigger: { kind: 'manual' }, condition: null, steps }} onBack={() => {}} />)
     await waitFor(() => cards().length === 3, 'the cards')
     await click(cards()[2].querySelector('[data-word="Text"]')!)
     await waitFor(() => !!document.querySelector('[data-chip-options]'), 'the chips')
@@ -258,7 +271,7 @@ describe('Routine editor', () => {
   it('"Test a routine": the test result is shown and nothing is written', async () => {
     const { id } = await groceries()
     const before = await db.tasks.count()
-    const r = await render(<RoutineEditor rule={(await db.rules.get(id))!} onClose={() => {}} />)
+    const r = await render(<RoutineEditor rule={(await db.rules.get(id))!} onBack={() => {}} />)
     await waitFor(() => cards().length === 4, 'the cards')
     await click(button('Test'))
     await waitFor(() => !!document.querySelector('[data-test-result]'), 'the result')
@@ -266,6 +279,76 @@ describe('Routine editor', () => {
     expect(document.querySelector('[data-announce]')!.textContent).toContain('nothing was written')
     expect(await db.tasks.count()).toBe(before)
     await r.unmount()
+  })
+})
+
+describe('Routine editor page', () => {
+  const nameInput = () => document.querySelector<HTMLInputElement>('[data-routine-name]')!
+
+  it('"From a link": the breadcrumb, the cards and focus on the heading', async () => {
+    const { id } = await groceries()
+    const r = await render(<RoutinePage route={{ view: 'rules', id }} />)
+    await waitFor(() => cards().length === 4, 'the cards')
+    expect(document.querySelector('[data-breadcrumb]')!.textContent).toBe('RoutinesGroceries')
+    expect(document.activeElement?.hasAttribute('data-page-title')).toBe(true)
+    expect(document.querySelector('[data-unsaved]')).toBeNull()
+    await r.unmount()
+  })
+
+  it('"Unsaved changes": leaving asks first; Cancel stays, Discard goes', async () => {
+    const { id } = await groceries()
+    navigate({ view: 'rules', id })
+    const r = await render(<RoutinePage route={{ view: 'rules', id }} />)
+    await waitFor(() => cards().length === 4, 'the cards')
+    await type(nameInput(), 'Groceries for the week')
+    await waitFor(() => !!document.querySelector('[data-unsaved]'), 'the indicator')
+    await click(document.querySelector('[data-crumb="routines"]')!)
+    await waitFor(() => /Discard your changes\?/.test(document.body.textContent ?? ''), 'the question')
+    expect(location.pathname).toBe(`/routines/${id}`)
+    await click(button('Cancel'))
+    expect(nameInput().value).toBe('Groceries for the week')
+    await click(document.querySelector('[data-crumb="routines"]')!)
+    await waitFor(() => !!button('Discard'), 'asked again')
+    await click(button('Discard'))
+    await waitFor(() => location.pathname === '/routines', 'left')
+    await r.unmount()
+  })
+
+  it('"Save a new routine": Ctrl+S saves, the address moves to its id, Run now and History appear', async () => {
+    // A view's rule handed to the page (D1): one Change tasks card.
+    openRoutineDraft({ name: '', trigger: { kind: 'task.created' }, condition: null, actions: { priority: 1 } })
+    const r = await render(<RoutinePage route={{ view: 'rules', create: true }} />)
+    await waitFor(() => cards().length === 1, 'the draft')
+    // "Stale save message": the error goes with the next edit.
+    await key(nameInput(), 's', { ctrlKey: true })
+    await waitFor(() => /A routine needs a name/.test(document.querySelector('[data-save-error]')?.textContent ?? ''), 'no name yet')
+    await type(nameInput(), 'Ping')
+    expect(document.querySelector('[data-save-error]')).toBeNull()
+    const press = new KeyboardEvent('keydown', { key: 's', ctrlKey: true, bubbles: true, cancelable: true })
+    nameInput().dispatchEvent(press)
+    expect(press.defaultPrevented).toBe(true)
+    await waitFor(() => !!document.querySelector('[data-save-error]') || location.pathname !== '/routines/new', 'saved or refused')
+    expect(document.querySelector('[data-save-error]')?.textContent ?? '').toBe('')
+    await waitFor(() => /^\/routines\/[\w-]{36}$/.test(location.pathname), 'the new address')
+    const id = location.pathname.split('/')[2]
+    expect((await db.rules.get(id))!.name).toBe('Ping')
+    expect((await db.rules.get(id))!.actions).toEqual({ priority: 1 })
+    await waitFor(() => document.querySelector('[data-unsaved]') === null && !!button('Run now'), 'saved')
+    await r.unmount()
+  })
+
+  it('"A run from the Runs tab": a live routine\'s run opens on its page', async () => {
+    const { id } = await groceries()
+    run = { id: 1, run_id: 'x1', rule_id: id, at: Date.UTC(2026, 9, 25, 7), outcome: 'applied', source: 'schedule', run_as: 'u1', test: false, steps_count: 4, writes: 7, duration_ms: 40, undone_at: null, failed_step: -1 }
+    const r = await render(<RoutinesView route={{ view: 'rules', tab: 'runs' }} />)
+    await waitFor(() => document.querySelectorAll('[data-run]').length === 1 && !!document.querySelector(`option[value="${id}"]`), 'the run')
+    await click(document.querySelector('[data-run] button')!)
+    expect(location.pathname + location.search).toBe(`/routines/${id}?run=x1`)
+    await r.unmount()
+    const page = await render(<RoutinePage route={parseRoute(`/routines/${id}?run=x1`) as Extract<ReturnType<typeof parseRoute>, { view: 'rules' }>} />)
+    await waitFor(() => !!document.querySelector('[data-run-detail="x1"]') && !!document.querySelector('[data-runs-back]'), 'the detail inline')
+    expect(document.querySelector('[data-testid="run-detail"]')).toBeNull()
+    await page.unmount()
   })
 })
 

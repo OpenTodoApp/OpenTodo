@@ -3,9 +3,10 @@
 // and steps as one line, its last run and 7-day count (from the server while
 // online), how many steps are not available, Run now and a menu (Edit,
 // Duplicate, Run now, Test, History, Move up, Move down, Delete). A Runs tab lists
-// every run. The page and the editor are one lazy chunk; offline they render
-// from local data and the run history says it needs a connection.
-import { useEffect, useMemo, useState } from 'react'
+// every run. A routine opens as its own page (routines-editor-page), and a run of
+// a live routine opens there; offline the list renders from local data and the
+// run history says it needs a connection.
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { api } from '../../lib/api'
 import { formatInstant } from '../../lib/dates'
 import { msg, t, translatedMap } from '../../lib/i18n'
@@ -25,8 +26,8 @@ import { ActionMenu, useConfirm, type ActionGroup } from '../menus/ActionMenu'
 import { runRoutineNow } from '../palette/routineCommand'
 import { navigate, type Route } from '../router'
 import { useRoutineNames, valueNamer, type RoutineNames } from './data'
-import { RoutineEditor } from './RoutineEditor'
 import { RunDetail, RunsList } from './RunHistory'
+import { clearHandover, openRoutineHistory, returnFocus } from './routineNav'
 import { sentenceText } from './StepCard'
 
 const PAUSE_REASON = translatedMap<string>({ runaway: msg('Paused: it ran too often') })
@@ -118,29 +119,31 @@ export function RoutinesView({ route }: { route?: Extract<Route, { view: 'rules'
   const names = useRoutineNames()
   const catalogue = useCatalogue()
   const [status, setStatus] = useRulesStatus(rules)
-  const [editing, setEditing] = useState<{ rule?: Rule } | null>(route?.create ? {} : null)
+  // A run of a deleted routine: its detail in a dialog (a live routine's run opens on its page).
   const [run, setRun] = useState<{ ruleId: string; runId: string } | null>(null)
   const tab = route?.tab === 'runs' ? 'runs' : 'routines'
   const byId = useMemo(() => new Map(rules.map((r) => [r.id, r])), [rules])
-  // /routines/<id> opens that routine's editor; /routines/<id>?run=<run> one run's
-  // detail (a notification, a channel message or an email links it).
-  useEffect(() => {
-    if (route?.id && route.run) setRun({ ruleId: route.id, runId: route.run })
-    else if (route?.id && byId.has(route.id)) setEditing({ rule: byId.get(route.id) })
-  }, [route?.id, route?.run, byId])
+  const edit = (id?: string) => navigate(id ? { view: 'rules', id } : { view: 'rules', create: true })
+  const openRun = (ruleId: string, runId: string) => (byId.has(ruleId) ? navigate({ view: 'rules', id: ruleId, run: runId }) : setRun({ ruleId, runId }))
+  // Back from a routine's page: focus returns to its row (routines-editor-page D5).
+  const returnTo = useRef(returnFocus())
+  useEffect(() => clearHandover(), [])
+  useLayoutEffect(() => {
+    const id = returnTo.current
+    const row = id && tab === 'routines' ? document.querySelector<HTMLElement>(`[data-rule-row="${CSS.escape(id)}"] [data-edit-routine]`) : null
+    if (!row) return
+    returnTo.current = null
+    row.focus()
+  }, [tab, rules])
   const pause = (paused: boolean) => act(api.pauseRules(paused).then((s) => status && setStatus({ ...status, ...s })))
   const setTab = (id: string) => navigate(id === 'runs' ? { view: 'rules', tab: 'runs' } : { view: 'rules' }, { replace: true })
-  const closeEditor = () => {
-    setEditing(null)
-    if (route?.id || route?.create) navigate({ view: 'rules' }, { replace: true })
-  }
   const overflowGroups: ActionGroup[] = status?.enabled && !status.paused
     ? [{ items: [{ kind: 'action', id: 'pause', label: t('Pause all routines'), icon: 'clock', onSelect: () => pause(true) }] }] : []
   return (
     <PageBody width="list" data-rules-page>
       <PageHeader title={t('Routines')} meta={rules.length} help="routines"
         actions={<>
-          <Button variant="primary" size="sm" icon="plus" onClick={() => setEditing({})}>{t('New routine')}</Button>
+          <Button variant="primary" size="sm" icon="plus" onClick={() => edit()}>{t('New routine')}</Button>
           {overflowGroups.length > 0 && <ActionMenu label={t('More')} groups={overflowGroups} />}
         </>} />
       {status && !status.enabled && <div className="mb-3"><Notice tone="warning">{t('Automations are off on this server.')}</Notice></div>}
@@ -154,21 +157,20 @@ export function RoutinesView({ route }: { route?: Extract<Route, { view: 'rules'
             {rules.length > 0 && (
               <ul className="space-y-0.5" aria-label={t('Routines')}>
                 {rules.map((r, i) => <RoutineRow key={r.id} rule={r} index={i} total={rules.length} status={status} catalogue={catalogue} names={names}
-                  onEdit={() => setEditing({ rule: r })} onHistory={() => setEditing({ rule: r })} />)}
+                  onEdit={() => edit(r.id)} onHistory={() => openRoutineHistory(r.id)} />)}
               </ul>
             )}
             {rules.length === 0 && (
               <EmptyState icon="zap" title={t('No routines yet')}
                 body={t('A routine does things for you in a row: every Friday, turn the lines of a note into tasks; when a task gets a label, move it.')}
-                control={<Button variant="primary" size="sm" icon="plus" onClick={() => setEditing({})}>{t('New routine')}</Button>} />
+                control={<Button variant="primary" size="sm" icon="plus" onClick={() => edit()}>{t('New routine')}</Button>} />
             )}
           </>
         ) : (
-          <RunsList rules={rules} onOpen={(r) => setRun({ ruleId: r.rule_id, runId: r.run_id })} />
+          <RunsList rules={rules} onOpen={(r) => openRun(r.rule_id, r.run_id)} />
         )}
       </Tabs>
-      {editing && <RoutineEditor rule={editing.rule} onClose={closeEditor} />}
-      {run && <RunDetail rule={byId.get(run.ruleId)} ruleId={run.ruleId} runId={run.runId} onClose={() => { setRun(null); if (route?.run) navigate({ view: 'rules' }, { replace: true }) }} />}
+      {run && <RunDetail rule={byId.get(run.ruleId)} ruleId={run.ruleId} runId={run.runId} onClose={() => setRun(null)} />}
     </PageBody>
   )
 }
