@@ -106,13 +106,15 @@
   --border-color-strong: var(--ot-line-strong);
   /* Precision type (precision-tokens D2): the list and control step is one token,
      --ot-text-list (13 px); set it to 0.875rem for 14 px. Prose (notes, help, the
-     briefing) keeps 15 px through --text-prose. */
-  --text-hint: 0.71875rem; --text-hint--line-height: 1rem; --text-hint--font-weight: 500;
-  --text-meta: 0.78125rem; --text-meta--line-height: 1.125rem;
+     briefing) keeps 15 px through --text-prose. The steps under 16 px read --ot-text-*
+     variables, so a text field on a touch screen can raise them to 16 px (#724, the
+     base layer below). */
+  --text-hint: var(--ot-text-hint); --text-hint--line-height: 1rem; --text-hint--font-weight: 500;
+  --text-meta: var(--ot-text-meta); --text-meta--line-height: 1.125rem;
   --text-body: var(--ot-text-list); --text-body--line-height: 1.25rem;
-  --text-prose: 0.9375rem; --text-prose--line-height: 1.5rem;
+  --text-prose: var(--ot-text-prose); --text-prose--line-height: 1.5rem;
   /* Headings and the display step (tokens-v2 D7): weight 600, tighter tracking as the size grows. */
-  --text-h3: 0.875rem; --text-h3--line-height: 1.25rem; --text-h3--font-weight: 600;
+  --text-h3: var(--ot-text-h3); --text-h3--line-height: 1.25rem; --text-h3--font-weight: 600;
   --text-h2: 1.25rem; --text-h2--line-height: 1.75rem; --text-h2--font-weight: 600; --text-h2--letter-spacing: -0.01em;
   --text-h1: 1.375rem; --text-h1--line-height: 1.75rem; --text-h1--font-weight: 600; --text-h1--letter-spacing: -0.015em;
   --text-display: 1.75rem; --text-display--line-height: 2.125rem; --text-display--font-weight: 650; --text-display--letter-spacing: -0.025em;
@@ -210,6 +212,10 @@
   --duration-moment: 400ms;
   --size-row: 36px;
   --ot-text-list: 0.8125rem;
+  --ot-text-hint: 0.71875rem;
+  --ot-text-meta: 0.78125rem;
+  --ot-text-prose: 0.9375rem;
+  --ot-text-h3: 0.875rem;
   /* Derivation ratios (tokens-v2 D4, D5): every accent and hue step is one of these
      mixes, so a theme or a hue is declared once. The contrast check reads them back.
      Soft steps mix into the surface in OKLab (a tinted dark surface would turn the
@@ -702,6 +708,24 @@ body {
 @layer base {
   :where(button:not(:disabled), [role="button"]:not([aria-disabled="true"]), [role="menuitem"]:not([aria-disabled="true"]), [role="menuitemcheckbox"], [role="menuitemradio"], [role="tab"], [role="option"]:not([aria-disabled="true"]), summary, label[for], a[href], li[data-task-id]) {
     cursor: pointer;
+  }
+}
+
+/* No zoom on focus (issue #724): Safari on iOS zooms the page in when a text field
+   with text smaller than 16 px gets focus, and an installed app stays zoomed after the
+   keyboard closes. On touch screens every field, and everything inside an editable
+   area, is at least 16 px: the variables behind the small type steps are 16 px there
+   (a utility such as text-meta reads them on the element itself; the list step's
+   choices stop at 15 px), and a field without one inherits at least 16 px. Larger tokens and the desktop design are unchanged, and pinch zoom stays
+   on (no maximum-scale). The layout check fails on a smaller field (scripts/e2e-layout.mjs). */
+@layer base {
+  @media (pointer: coarse) {
+    input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="hidden"], [type="file"], [type="button"], [type="submit"], [type="reset"], [type="image"]),
+    textarea, select, [contenteditable]:not([contenteditable="false"]) {
+      --ot-text-hint: 16px; --ot-text-meta: 16px; --ot-text-list: 16px;
+      --ot-text-prose: 16px; --ot-text-h3: 16px;
+      font-size: max(16px, 1em);
+    }
   }
 }
 
