@@ -17,10 +17,10 @@
 
 ## 4. The quick add is not pinned on a landscape phone
 
-- [ ] 4.1 Add the `pins` custom variant to `web/src/index.css` and use it for every class of `STICKY_QUICK_ADD`; verify the sticky-class test in `src/app/task-list/addPosition.test.tsx`
+- [x] 4.1 Add the `pins` custom variant to `web/src/index.css` and use it for every class of `STICKY_QUICK_ADD`; verify the sticky-class test in `src/app/task-list/addPosition.test.tsx`
 
 ## 5. Checks and release
 
-- [ ] 5.1 `cd web && npm run typecheck && npm run lint`, then `npx vitest run --maxWorkers=4`
-- [ ] 5.2 `make i18n-check` (no new string) and `openspec validate --all --strict`
-- [ ] 5.3 CHANGELOG entries under Unreleased → Fixed
+- [x] 5.1 `cd web && npm run typecheck && npm run lint`, then `npx vitest run --maxWorkers=4`
+- [x] 5.2 `make i18n-check` (no new string) and `openspec validate --all --strict`
+- [x] 5.3 CHANGELOG entries under Unreleased → Fixed
