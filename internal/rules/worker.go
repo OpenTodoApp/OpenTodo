@@ -72,6 +72,10 @@ func (e *Engine) process(ctx context.Context, ev Event) error {
 			}
 		}
 		if ev.Kind == ruleval.Schedule {
+			if r.isRoutine() {
+				e.routineRun(ctx, w, r, ev.Occurrence, 2, "")
+				continue
+			}
 			e.sweep(ctx, w, r, ev)
 			continue
 		}
@@ -91,6 +95,10 @@ func (e *Engine) process(ctx context.Context, ev Event) error {
 		key := ev.Occurrence
 		if key == "" {
 			key = "evt:" + strconv.FormatInt(ev.ID, 10) + ":" + ev.TaskID
+		}
+		if r.isRoutine() {
+			e.routineRun(ctx, w, r, key, ev.Depth+1, ev.TaskID)
+			continue
 		}
 		if err := e.run(ctx, w, r, []map[string]json.RawMessage{t}, key, ev.Depth+1, 0); err != nil {
 			e.Log.Error("rules: run", "rule", r.ID, "err", err)
@@ -380,4 +388,11 @@ func (w *world) openDescendants(id string) []string {
 	}
 	walk(id)
 	return out
+}
+
+// routineRun runs a routine for a queued occurrence (routines-engine D5).
+func (e *Engine) routineRun(ctx context.Context, w *world, r *rule, key string, depth int, taskID string) {
+	if _, err := e.runRoutine(ctx, w, r, runOpts{key: key, depth: depth, taskID: taskID, trigger: e.triggerValue(ctx, w, r, taskID)}); err != nil {
+		e.Log.Error("rules: routine", "rule", r.ID, "err", err)
+	}
 }

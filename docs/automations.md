@@ -25,7 +25,7 @@ A rule saved offline is listed at once and runs after the next sync. Times use t
 
 ## What a rule changes
 
-A rule writes the same changes you would: completing a repeating task moves it to its next date, and a moved date carries its reminders along. A change the task already has is not written. Each change appears in the task's history as **Rule (name)**, and **Restore this value** undoes it like any edit.
+A rule writes the same changes you would: completing a repeating task moves it to its next date, and a moved date carries its reminders along. A change the task already has is not written. Each change appears in the task's history as **Routine (name)**, and **Restore this value** undoes it like any edit.
 
 Rules fire only for your own edits, never for a teammate's change in a shared project or for an [import](import-export.md). A rule never moves tasks into or out of a shared project.
 
@@ -38,6 +38,10 @@ An account runs at most 60 rule runs a minute and 2,000 a day, a run changes at 
 ## History
 
 **History** in a rule's menu lists its recent runs (the last 100, for 30 days) with the tasks each one changed. The history is kept on the server, so it needs a connection.
+
+## Routines
+
+A rule is the simplest [routine](routines.md): one card that changes tasks. Routines can also have several steps, each using what the steps before it produced.
 
 ## Turn a filter into a rule
 

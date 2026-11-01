@@ -5937,5 +5937,8 @@
   "deep {colour}": "{colour} escuro",
   "From Obsidian": "Do Obsidian",
   "Open in Obsidian: {vault} › {path}": "Abrir no Obsidian: {vault} › {path}",
-  "For the Obsidian plugin, create a full token named after the device.": "Para o plugin do Obsidian, crie um token de acesso total com o nome do dispositivo."
+  "For the Obsidian plugin, create a full token named after the device.": "Para o plugin do Obsidian, crie um token de acesso total com o nome do dispositivo.",
+  "This run was undone already.": "Esta execução já foi desfeita.",
+  "The server paused this routine because it ran too often. Turn it on again first.": "O servidor pausou esta rotina porque foi executada vezes demais. Ative-a de novo primeiro.",
+  "This routine works on a task: open one, then run it.": "Esta rotina trabalha com uma tarefa: abra uma e depois execute-a."
 }
