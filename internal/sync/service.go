@@ -34,6 +34,9 @@ type Service struct {
 	attachmentLimit func() int64
 	// attachmentQuota is the per-account attachment quota in bytes (attachment_quota.go).
 	attachmentQuota func() int64
+	// holds is the ledger of attachment bytes held against the quota by
+	// uploads in progress and uncommitted restores (attachment_quota.go).
+	holds *QuotaHolds
 	// blobs removes attachment files after purges (attachments D13); nil in tests without files.
 	blobs BlobStore
 	// pullBudget overrides MaxPullBytes in tests; 0 means MaxPullBytes.
@@ -156,7 +159,7 @@ func (s *Service) SetAttachmentLimit(limit func() int64) { s.attachmentLimit = l
 
 // NewService wires a Service.
 func NewService(db *sql.DB) *Service {
-	s := &Service{db: db, now: time.Now, notifier: NewNotifier()}
+	s := &Service{db: db, now: time.Now, notifier: NewNotifier(), holds: &QuotaHolds{}}
 	s.SetCommentRateLimit(CommentRateLimit, CommentRateWindow)
 	s.seedClock()
 	return s
