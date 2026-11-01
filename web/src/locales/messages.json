@@ -4159,7 +4159,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Default theme": [
-    "web/src/app/BrandingThemes.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "Defer the selected task: type its start date, Enter": [
     "web/src/lib/shortcuts.ts"
@@ -5477,8 +5477,8 @@
   "Everyone on the task sees “Comment deleted” in its place. Replies stay.": [
     "web/src/app/task-detail/CommentsTab.tsx"
   ],
-  "Everyone on this server can choose these, or customise a copy. Up to {max}.": [
-    "web/src/app/BrandingThemes.tsx"
+  "Everyone on this server can choose these, or customise a copy. Up to 20.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Everyone uses {provider} ({model}).": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -11372,7 +11372,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "People who never chose a theme see this one; their own choice always wins.": [
-    "web/src/app/BrandingThemes.tsx"
+    "web/src/lib/settingsCopy.ts"
   ],
   "People who share a project with you see it. It is not end-to-end encrypted.": [
     "web/src/app/profile/PictureDialog.tsx"
@@ -13678,7 +13678,8 @@
     "web/src/lib/push.ts"
   ],
   "Server themes": [
-    "web/src/app/BrandingThemes.tsx"
+    "web/src/app/BrandingThemes.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Service": [
     "web/src/app/NotificationChannelEditor.tsx"

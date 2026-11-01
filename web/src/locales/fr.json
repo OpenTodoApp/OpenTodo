@@ -6721,7 +6721,7 @@
   "Add from file": "Ajouter depuis un fichier",
   "Default (Server default: {name})": "Par défaut (par défaut du serveur : {name})",
   "Default theme": "Thème par défaut",
-  "Everyone on this server can choose these, or customise a copy. Up to {max}.": "Tout le monde sur ce serveur peut les choisir ou en personnaliser une copie. Jusqu’à {max}.",
+  "Everyone on this server can choose these, or customise a copy. Up to 20.": "Tout le monde sur ce serveur peut les choisir ou en personnaliser une copie. Jusqu’à 20.",
   "From this server": "De ce serveur",
   "From this server · Server default": "De ce serveur · Par défaut du serveur",
   "Make it the default": "En faire le thème par défaut",
