@@ -42,3 +42,16 @@ export const ManyWithNote: StoryObj = {
     </div>
   ),
 }
+
+/** A server with a default (theme-instance-default D3): Default names it, the server's theme says where it comes from. */
+export const FromThisServer: StoryObj = {
+  render: () => (
+    <div className="max-w-2xl bg-surface p-4">
+      <List label="Dark" initial="server-default" themes={[
+        { ...palettes[0], id: 'server-default', name: 'Default (Server default: Example Night)', author: '' },
+        opentodo('dark'),
+        { ...palettes[0], origin: 'From this server · Server default' },
+      ]} />
+    </div>
+  ),
+}

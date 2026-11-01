@@ -6,7 +6,9 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import script from '../../public/appearance.js?raw'
 import { themeCss, type AppliedTheme } from './theme/apply'
 import { deriveTheme } from './theme/derive'
-import { toApplied } from './theme/load'
+import { loadInstanceAppliedTheme, toApplied } from './theme/load'
+import { readThemeChoices } from './theme/choice'
+import { setInstanceThemes } from './theme/instance'
 
 const boot = () => new Function(script)()
 const root = () => document.documentElement
@@ -120,5 +122,25 @@ describe('appearance.js with a cached theme', () => {
     boot()
     expect(root().getAttribute('data-theme')).toBe('dark')
     expect(style()).toBeNull()
+  })
+
+  // theme-instance-default D3, task 2.2: an offline start in the house theme.
+  it('starts offline in the server default the device resolved before, without reading the server', async () => {
+    setInstanceThemes({ version: 2, default: { light: '', dark: 'instance:house1' }, themes: [{ id: 'house1', kind: 'dark', doc: {
+      opentodoTheme: 1, id: 'x', name: 'House', author: 'Owner', licence: 'MIT', kind: 'dark',
+      seeds: { canvas: '#2e3440', surface: '#3b4252', text: '#eceff4', accent: '#88c0d0' }, bar: '#2e3440',
+    } }] })
+    // The app resolves the member's empty side through the server default and caches the result.
+    const choice = readThemeChoices({ theme_dark: '' } as never).dark
+    expect(choice).toMatchObject({ id: 'house1', instance: true, fromDefault: true })
+    const applied = (await loadInstanceAppliedTheme(choice.id, undefined, 'dark'))!
+    localStorage.setItem('ot.theme', JSON.stringify({ dark: applied }))
+    localStorage.setItem('ot.appearance', JSON.stringify({ mode: 'dark', accent: 'emerald' }))
+    // The next start, offline: the boot script alone puts the house theme on the first frame.
+    root().removeAttribute('data-ot-theme')
+    boot()
+    expect(root().getAttribute('data-ot-theme')).toBe('house1')
+    expect(style()).toBe(themeCss(applied))
+    expect(metas()).toEqual([['#2e3440', '']])
   })
 })

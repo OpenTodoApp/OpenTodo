@@ -11,7 +11,10 @@
 import { useEffect, type ReactNode } from 'react'
 import { applyAppearance, cachedCustom, deriveCustom, readAppearance, reapplyAppearance, setAppearanceThemes } from '../lib/appearance'
 import { useUserPrefsRow } from '../lib/localData'
-import { readThemeChoices } from '../lib/theme/choice'
+import { readThemeChoices, type SideChoice } from '../lib/theme/choice'
+import { useInstanceThemes } from '../lib/theme/instance'
+
+type Source = 'builtin' | 'custom' | 'instance'
 import { useCustomThemeStamp } from '../lib/theme/customStamp'
 import { readThemeCache, type AppliedTheme, type ThemeCache } from '../lib/theme/apply'
 
@@ -23,11 +26,17 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
   const accent = a?.accent
   const custom = a?.custom
   const density = a?.density
-  const choices = row === undefined ? null : readThemeChoices(row)
+  // The server's themes (theme-instance-default D3): a side following the server default, or one of its themes, re-resolves when they change.
+  const inst = useInstanceThemes()
+  const choices = row === undefined ? null : readThemeChoices(row, null, null, inst)
   const lightId = choices?.light.status === 'theme' ? choices.light.id : null
   const darkId = choices?.dark.status === 'theme' ? choices.dark.id : null
-  const lightCustom = !!choices?.light.custom
-  const darkCustom = !!choices?.dark.custom
+  const sourceOf = (c: SideChoice | undefined): Source => (c?.custom ? 'custom' : c?.instance ? 'instance' : 'builtin')
+  const lightSource = sourceOf(choices?.light)
+  const darkSource = sourceOf(choices?.dark)
+  const instStamp = lightSource === 'instance' || darkSource === 'instance' ? inst.version : 0
+  const lightCustom = lightSource === 'custom'
+  const darkCustom = darkSource === 'custom'
   // A custom theme (theme-editor D1) re-resolves when its synced row changes: the stamp is its clock.
   const customIds = [lightCustom ? lightId : null, darkCustom ? darkId : null].filter((x): x is string => !!x)
   const stamp = useCustomThemeStamp(customIds)
@@ -58,16 +67,17 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
     setAppearanceThemes(now)
     if (!lightId && !darkId) return
     let live = true
-    import('../lib/theme/load').then(async ({ loadAppliedTheme, loadCustomAppliedTheme }) => {
-      const load = (id: string | null, custom: boolean, side: 'light' | 'dark') => !id ? null : custom ? loadCustomAppliedTheme(id, cache[side], side) : loadAppliedTheme(id, cache[side], side)
-      const [light, dark] = await Promise.all([load(lightId, lightCustom, 'light'), load(darkId, darkCustom, 'dark')])
+    import('../lib/theme/load').then(async ({ loadAppliedTheme, loadCustomAppliedTheme, loadInstanceAppliedTheme }) => {
+      const loaders = { builtin: loadAppliedTheme, custom: loadCustomAppliedTheme, instance: loadInstanceAppliedTheme }
+      const load = (id: string | null, source: Source, side: 'light' | 'dark') => (id ? loaders[source](id, cache[side], side) : null)
+      const [light, dark] = await Promise.all([load(lightId, lightSource, 'light'), load(darkId, darkSource, 'dark')])
       // An invalid or newer document reads as the side's default, without an op (themes "Format versions and migration").
       if (live) setAppearanceThemes({ ...(light ? { light } : {}), ...(dark ? { dark } : {}) })
     }, () => {
       // The chunk could not load (offline on a fresh version): the cached themes stay.
     })
     return () => { live = false }
-  }, [loaded, lightId, darkId, lightCustom, darkCustom, stamp])
+  }, [loaded, lightId, darkId, lightSource, darkSource, stamp, instStamp])
   // Under "system" with a theme on either side, follow the operating system's switch.
   useEffect(() => {
     if (mode !== 'system' || (!lightId && !darkId)) return

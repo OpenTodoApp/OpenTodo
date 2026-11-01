@@ -30,6 +30,7 @@ import { readTaskOpen, setTaskOpen, type TaskOpenPref } from '../lib/userPrefs'
 import { accountRowLayout, ROW_LAYOUTS, setAccountRowLayout, type RowLayout } from '../lib/rowLayout'
 import { ROW_LAYOUT_LABEL } from './views/DisplayPanel'
 import { readThemeChoices } from '../lib/theme/choice'
+import { useInstanceThemes } from '../lib/theme/instance'
 import { knownThemes, useCatalogue, type ThemeSettingsProps } from './themeCatalogue'
 
 const ThemeSettings = lazy(() => import('./ThemeRow'))
@@ -316,7 +317,9 @@ export function AppearanceSection({ author = '' }: { author?: string }) {
   const value = readAppearance(row)
   const values = useCustomValues(value.custom)
   const catalogue = useCatalogue()
-  const choices = readThemeChoices(row, knownThemes(catalogue))
+  // The server's default and themes (theme-instance-default): re-rendered when they change.
+  const inst = useInstanceThemes()
+  const choices = readThemeChoices(row, knownThemes(catalogue), null, inst)
   const themes: ThemeSettingsProps = { mode: value.mode, choices, catalogue, accentFromTheme: choices[effectiveSide(value.mode)].status === 'theme', author }
   return <AppearanceView value={value} onMode={(m) => act(setAppearance('theme_mode', m))} onAccent={(a) => act(setAppearance('theme_accent', a))}
     custom={{ values, onPick: (hex) => act(setCustomAccent(hex)) }} themes={themes}

@@ -2,7 +2,8 @@
 // Appearance preference (OpenSpec change theming, tasks 3.1 and 3.3).
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { BUILTIN_THEMES, readThemeChoices, setThemeChoice } from './theme/choice'
+import { BUILTIN_THEMES, readThemeChoices, setDefaultThemeChoice, setInstanceThemeChoice, setThemeChoice } from './theme/choice'
+import { NO_INSTANCE_THEMES, parseInstanceThemes, type InstanceThemes } from './theme/instance'
 import type { AppliedTheme } from './theme/apply'
 import { applyAppearance, setAppearanceThemes, CACHE_KEY, cachedCustom, deriveCustom, setCustomAccent, destinationOrder, moveDestination, orderDestinations, readAppearance, readSidebarCounts, setAppearance, setSidebarCounts } from './appearance'
 import { db } from './db'
@@ -211,7 +212,8 @@ describe('theme choice per side', () => {
     expect(readThemeChoices({ theme_light: 'builtin:from-the-future' } as never, BUILTIN_THEMES).light).toMatchObject({ status: 'newer', id: 'opentodo-light' })
     // A custom theme (theme-editor D1): provisional without the list (the loader decides).
     expect(read('', 'user:0b5e0d8c-4f7c-4d3e-9c1e-2f3a4b5c6d7e').dark).toMatchObject({ status: 'theme', id: '0b5e0d8c-4f7c-4d3e-9c1e-2f3a4b5c6d7e', custom: true })
-    expect(read('', 'instance:corporate').dark).toMatchObject({ status: 'newer', id: 'opentodo-dark' })
+    // A server theme this device has not read (theme-instance-default) reads as the side's default; the value stays.
+    expect(read('', 'instance:corporate').dark).toMatchObject({ stored: 'instance:corporate', status: 'default', id: 'opentodo-dark' })
     expect(await db.outbox.count()).toBe(0)
   })
 
@@ -237,6 +239,43 @@ describe('theme choice per side', () => {
     const ops = await db.outbox.toArray()
     expect(ops.map((o) => [o.entity, o.field, o.value])).toEqual([['user_prefs', 'theme_dark', '']])
     await expect(setThemeChoice('light', 'opentodo-dark')).rejects.toThrow()
+  })
+})
+
+// theme-instance-default D3, task 2.2: the server's default and themes.
+describe('theme choice with a server default', () => {
+  const houseDoc = { opentodoTheme: 1, id: 'x', name: 'House', author: 'Owner', licence: 'MIT', kind: 'dark', seeds: { canvas: '#202020', surface: '#2a2a2a', text: '#eeeeee', accent: '#4c8bf5' } }
+  const inst = (light = '', dark = 'instance:house1'): InstanceThemes => parseInstanceThemes({ version: 3, default: { light, dark }, themes: [{ id: 'house1', kind: 'dark', doc: houseDoc }] })!
+  const row = (light: string, dark: string) => ({ theme_light: light, theme_dark: dark }) as never
+
+  it('an empty side follows the server default; the member\'s own choice wins', () => {
+    const c = readThemeChoices(row('', ''), BUILTIN_THEMES, null, inst('builtin:catppuccin-latte'))
+    expect(c.dark).toEqual({ stored: '', status: 'theme', id: 'house1', instance: true, fromDefault: true })
+    // Without the catalogue an unlisted builtin default reads as a theme provisionally.
+    expect(readThemeChoices(row('', ''), null, null, inst('builtin:catppuccin-latte')).light).toMatchObject({ status: 'theme', id: 'catppuccin-latte', fromDefault: true })
+    expect(readThemeChoices(row('', 'builtin:nord'), null, null, inst()).dark).toEqual({ stored: 'builtin:nord', status: 'theme', id: 'nord' })
+    // OpenTodo's theme chosen by name wins over the server default.
+    expect(readThemeChoices(row('', 'builtin:opentodo-dark'), BUILTIN_THEMES, null, inst()).dark).toMatchObject({ status: 'default', id: 'opentodo-dark' })
+    expect(readThemeChoices(row('', ''), BUILTIN_THEMES, null, NO_INSTANCE_THEMES).dark).toMatchObject({ status: 'default', id: 'opentodo-dark' })
+  })
+
+  it('an instance theme is chosen by its server id; one that is gone falls back to the side default', () => {
+    expect(readThemeChoices(row('', 'instance:house1'), BUILTIN_THEMES, null, inst('', '')).dark).toEqual({ stored: 'instance:house1', status: 'theme', id: 'house1', instance: true })
+    expect(readThemeChoices(row('instance:house1', ''), BUILTIN_THEMES, null, inst('', '')).light).toMatchObject({ status: 'invalid', id: 'opentodo-light' })
+    // Removed by the owner while another default is set: that default applies, the stored value stays.
+    const removed = parseInstanceThemes({ version: 4, default: { light: '', dark: 'builtin:nord' }, themes: [] })!
+    expect(readThemeChoices(row('', 'instance:house1'), BUILTIN_THEMES.concat({ id: 'nord', kind: 'dark' }), null, removed).dark)
+      .toEqual({ stored: 'instance:house1', status: 'theme', id: 'nord', fromDefault: true })
+    // A deleted custom theme follows the server default too.
+    expect(readThemeChoices(row('', 'user:gone'), BUILTIN_THEMES, [], inst()).dark).toMatchObject({ stored: 'user:gone', id: 'house1', fromDefault: true })
+  })
+
+  it('with a server default, choosing OpenTodo\'s theme stores it by name; Default stores empty', async () => {
+    await setThemeChoice('dark', 'opentodo-dark', BUILTIN_THEMES, inst())
+    await setDefaultThemeChoice('dark')
+    await setInstanceThemeChoice('light', 'house1')
+    const ops = await db.outbox.toArray()
+    expect(ops.map((o) => [o.field, o.value])).toEqual([['theme_dark', 'builtin:opentodo-dark'], ['theme_dark', ''], ['theme_light', 'instance:house1']])
   })
 })
 
