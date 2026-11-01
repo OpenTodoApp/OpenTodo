@@ -1,3 +1,4 @@
+import { RoutinesDisclosure } from './RoutinesDisclosure'
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { keysOf } from '../../lib/shortcuts'
 import { Kbd } from '../shortcuts/Kbd'
@@ -339,6 +340,8 @@ export interface UserViewProps {
   busy: boolean
   error: string | null
   onWithdraw: () => void
+  /** Accepts the terms for routines' AI steps (routines-ai-step D10). */
+  onAcceptRoutines?: () => void
   onOwnKey: (key: string) => void
   onAutoApply: (on: boolean) => void
   onClear: () => void
@@ -513,6 +516,13 @@ export function UserAssistantSettings(p: UserViewProps) {
           </span>
         )}
         control={s.consented ? <Button size="sm" disabled={!p.connected} onClick={p.onWithdraw}>{t('Withdraw consent')}</Button> : undefined} />
+      {s.consented && s.routines_consented === false && p.onAcceptRoutines && (
+        <div className="space-y-2 py-3" data-assistant-routines-consent>
+          <p className="text-body font-medium text-default">{t('Routines with AI steps')}</p>
+          <RoutinesDisclosure />
+          <Button size="sm" disabled={!p.connected} onClick={p.onAcceptRoutines} data-assistant-accept-routines>{t('Accept for routines')}</Button>
+        </div>
+      )}
       {p.usage && <SettingRow {...rowCopy('assistant-settings', 'usage')} status={<UsageMeter u={p.usage} />} />}
       {s.allow_member_keys && (ownSupported ? <OwnProviderForm key={`${s.own_provider?.provider ?? ''}:${s.own_provider?.model ?? ''}`} {...p} status={s} /> : <LegacyOwnKey {...p} status={s} />)}
       {keptChoice && (
@@ -650,6 +660,7 @@ export default function AssistantSettingsSection({ isOwner }: { isOwner: boolean
       <CardGroup title={t('For you')} id="assistant-you">
         <UserAssistantSettings status={status} usage={usage} autoApply={autoApply} connected={connected} busy={ownBusy} error={userError} cleared={cleared}
           onWithdraw={() => void updateMine({ consent: false })} onOwnKey={(k) => void updateMine({ own_key: k })}
+          onAcceptRoutines={() => void updateMine({ consent: true, routines: true })}
           onSaveOwn={saveOwn} onTestOwn={(v) => void testOwn(v)} ownTest={ownTest} ownMessage={ownMessage}
           onAutoApply={(on) => { setAuto(on); void setAutoApply(on) }} onClear={() => setClearing(true)} />
       </CardGroup>

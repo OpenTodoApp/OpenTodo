@@ -135,7 +135,7 @@ function useConsent(status: AssistantStatus | null, setStatus: (s: AssistantStat
       // On a device the consent names the device's provider (assistant-on-device D6); no key goes to the server.
       const next = status.mode === 'device'
         ? await api.setMyAssistant({ consent: true, provider: `device:${status.provider}` })
-        : await api.setMyAssistant({ consent: true, provider: status.provider, ...(ownKey ? { own_key: ownKey } : {}) })
+        : await api.setMyAssistant({ consent: true, provider: status.provider, routines: true, ...(ownKey ? { own_key: ownKey } : {}) })
       setAssistantStatus(next)
       setStatus(next)
     } catch (err) {
