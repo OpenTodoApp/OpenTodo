@@ -35,14 +35,14 @@ type ucTask struct {
 }
 
 type ucSeed struct {
-	Tasks    []ucTask                                 `json:"tasks"`
+	Tasks    []ucTask `json:"tasks"`
 	Projects []struct {
 		ID, Name, Description string
 		// Archived and Deleted: an archived project, a project in the Trash (routines-find-scope).
 		Archived, Deleted bool
 	} `json:"projects"`
-	Labels   []struct{ ID, Name string }              `json:"labels"`
-	Views    []struct{ ID, Name, Query string }       `json:"views"`
+	Labels []struct{ ID, Name string }        `json:"labels"`
+	Views  []struct{ ID, Name, Query string } `json:"views"`
 }
 
 type ucExpect struct {
