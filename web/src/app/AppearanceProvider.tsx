@@ -12,7 +12,7 @@ import { useEffect, type ReactNode } from 'react'
 import { applyAppearance, cachedCustom, deriveCustom, readAppearance, reapplyAppearance, setAppearanceThemes } from '../lib/appearance'
 import { useUserPrefsRow } from '../lib/localData'
 import { readThemeChoices, type SideChoice } from '../lib/theme/choice'
-import { useInstanceThemes } from '../lib/theme/instance'
+import { useInstanceThemes } from '../lib/theme/choice'
 
 type Source = 'builtin' | 'custom' | 'instance'
 import { useCustomThemeStamp } from '../lib/theme/customStamp'

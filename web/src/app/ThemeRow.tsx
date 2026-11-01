@@ -9,7 +9,7 @@
 // Settings › Appearance, out of the first load; the data is in themeCatalogue.ts.
 import { lazy, Suspense, useState, type ReactNode } from 'react'
 import { BUILTIN_THEMES, customChoice, DEFAULT_THEME, instanceChoice, readThemeChoices, setCustomThemeChoice, setDefaultThemeChoice, setInstanceThemeChoice, setThemeChoice, type ChoiceStatus, type SideChoice, type Side } from '../lib/theme/choice'
-import { useInstanceThemes, type InstanceThemes } from '../lib/theme/instance'
+import { useInstanceThemes, type InstanceThemes } from '../lib/theme/choice'
 import { canAddTheme, customiseDocument, deleteCustomThemeUndoable, duplicateDocument, knownCustom, limitMessage, newDocument, uniqueName, useCustomThemes, type LiveTheme } from '../lib/theme/custom'
 import { downloadTheme } from '../lib/theme/files'
 import { builtinDocument } from '../lib/theme/load'

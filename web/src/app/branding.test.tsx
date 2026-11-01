@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { click, render, waitFor } from '../ui/test-utils'
 import { BrandingThemesView, MAX_INSTANCE_THEMES, type BrandingThemesViewProps } from './BrandingThemes'
 import type { ContrastFailure } from '../lib/theme/check'
-import type { InstanceThemes } from '../lib/theme/instance'
+import type { InstanceThemes } from '../lib/theme/choice'
 import type { ThemeDocument } from '../lib/theme/format'
 
 const doc = (name: string, kind: 'light' | 'dark'): ThemeDocument => ({

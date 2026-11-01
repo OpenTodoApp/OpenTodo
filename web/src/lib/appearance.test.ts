@@ -3,7 +3,7 @@
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { BUILTIN_THEMES, readThemeChoices, setDefaultThemeChoice, setInstanceThemeChoice, setThemeChoice } from './theme/choice'
-import { NO_INSTANCE_THEMES, parseInstanceThemes, type InstanceThemes } from './theme/instance'
+import { NO_INSTANCE_THEMES, parseInstanceThemes, type InstanceThemes } from './theme/choice'
 import type { AppliedTheme } from './theme/apply'
 import { applyAppearance, setAppearanceThemes, CACHE_KEY, cachedCustom, deriveCustom, setCustomAccent, destinationOrder, moveDestination, orderDestinations, readAppearance, readSidebarCounts, setAppearance, setSidebarCounts } from './appearance'
 import { db } from './db'

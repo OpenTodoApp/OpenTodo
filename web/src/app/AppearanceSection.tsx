@@ -30,7 +30,7 @@ import { readTaskOpen, setTaskOpen, type TaskOpenPref } from '../lib/userPrefs'
 import { accountRowLayout, ROW_LAYOUTS, setAccountRowLayout, type RowLayout } from '../lib/rowLayout'
 import { ROW_LAYOUT_LABEL } from './views/DisplayPanel'
 import { readThemeChoices } from '../lib/theme/choice'
-import { useInstanceThemes } from '../lib/theme/instance'
+import { useInstanceThemes } from '../lib/theme/choice'
 import { knownThemes, useCatalogue, type ThemeSettingsProps } from './themeCatalogue'
 
 const ThemeSettings = lazy(() => import('./ThemeRow'))

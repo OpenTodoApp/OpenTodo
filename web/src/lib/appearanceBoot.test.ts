@@ -8,7 +8,7 @@ import { themeCss, type AppliedTheme } from './theme/apply'
 import { deriveTheme } from './theme/derive'
 import { loadInstanceAppliedTheme, toApplied } from './theme/load'
 import { readThemeChoices } from './theme/choice'
-import { setInstanceThemes } from './theme/instance'
+import { setInstanceThemes } from './theme/choice'
 
 const boot = () => new Function(script)()
 const root = () => document.documentElement
