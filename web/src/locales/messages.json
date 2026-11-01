@@ -4906,9 +4906,6 @@
   "Edit webhook": [
     "web/src/app/WebhooksPanel.tsx"
   ],
-  "Edit {name}": [
-    "web/src/app/themes/YourThemes.tsx"
-  ],
   "Editing. Enter saves, Escape cancels, Shift+Enter opens the details.": [
     "web/src/app/task-list/InlineEditor.tsx"
   ],
