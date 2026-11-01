@@ -6810,5 +6810,7 @@
   "Saving pauses this routine: it runs as {name}. Turn it on again afterwards to run it as you.": "Speichern pausiert diese Routine: Sie läuft als {name}. Schalte sie danach wieder ein, damit sie als du läuft.",
   "Show all routines": "Alle Routinen zeigen",
   "not available yet": "noch nicht verfügbar",
-  "someone": "jemand"
+  "someone": "jemand",
+  "A small ring marks a day with calendar events.": "Ein kleiner Ring markiert einen Tag mit Kalenderterminen.",
+  "{n, plural, one {# day with events} other {# days with events}}": "{n, plural, one {# Tag mit Terminen} other {# Tage mit Terminen}}"
 }
