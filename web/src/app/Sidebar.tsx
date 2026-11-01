@@ -609,7 +609,7 @@ function moreEntriesOf(o: { shared: boolean; reviewDot: ReactNode; reviewText: s
     // Saved locations (task-locations "Locations page"): in More in every mode, never primary.
     { id: 'places', route: { view: 'places' }, label: t('Locations'), icon: 'map-pin' },
     // Automation rules (automation-rules "Rules page"): after Locations in every mode.
-    { id: 'rules', route: { view: 'rules' }, label: t('Rules'), icon: 'zap' },
+    { id: 'rules', route: { view: 'rules' }, label: t('Routines'), icon: 'zap' },
     { id: 'trash', route: { view: 'trash' }, label: t('Trash'), icon: 'trash-2' },
     { id: 'filter', route: { view: 'filter' }, label: t('New view'), icon: 'filter' },
     ...(o.ask ? [{ id: 'ask' as const, route: { view: 'ask' } as Route, label: t('Assistant'), icon: 'message-circle' as IconName }] : []),

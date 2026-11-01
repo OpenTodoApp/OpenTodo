@@ -15,7 +15,7 @@
 **D2. Sentence cards.** Each card is one sentence built from the catalogue entry's template in the user's language, with its inputs as **word buttons**:
 
 - `When` card: "When **a task gets the label** **waiting**", "Every **Friday** at **17:00**", "Only when I run it"; its conditions follow as "if **in Work**" words, as rule conditions today.
-- step cards: "Get the note text of **Groceries**", "Split **the note text** into lines", "Create tasks from **the lines** in **Errands**", "If **the count** is **more than** **10**", "Notify me: **{count} groceries**".
+- step cards: "Get the task **Groceries**" (an input that takes a reference only starts from a choice: a task inserts Get a task above it, a project Find a project, and "Find tasks…" a Find tasks step; such an output is named by its value, so the next card reads "Get the note text of **Groceries**"), "Split **the note text** into lines", "Create tasks from **the lines** in **Errands**", "If **the count** is **more than** **10**", "Notify me: **{count} groceries**".
 - A word reads its value (a chip for a reference, the literal otherwise) or a placeholder in the accent colour ("**choose a project**"). Tapping it opens its picker in a popover on a computer and a bottom sheet on a phone.
 - Under the sentence: the output line ("→ **3 lines**", the chip later steps can use) and the preview (D4). A card's menu (`⋯`): Move up, Move down, Duplicate, Delete. Outputs are named after their step kind, numbered when repeated ("the lines", "the lines (2)"); nothing is stored for the name, which keeps the op value small and translates with the language.
 - Blocks: If shows "Then" and "Otherwise" lanes indented under it with their own "+ Add step"; Repeat shows "For each **task**" with its steps indented, and `item` offered as the chip "**each task**".
@@ -46,11 +46,10 @@ A card's preview shows its output: up to 5 lines or task titles and "+ 12 more",
 
 | Got → expected | Fix |
 |---|---|
-| Tasks → Text | Insert **Join** (titles, one per line) |
+| Tasks → Text | Insert **Format text** (the tasks' titles, one per line; Join takes lines only) |
 | Tasks → Number | Insert **Count** |
 | Lines → Text | Insert **Join** |
 | Text → Lines | Insert **Split into lines** |
-| Task(s) → Project | Use **the task's project** |
 | a reference to a removed step | Choose another value |
 | Tasks to a single-task input | Wrap in **Repeat for each** |
 

@@ -21,7 +21,7 @@ import type {
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput, IssueActionResult, IssueConnection, IssueConnectionInput,
   CalendarConnection, CalendarConnectionPatch, CalendarSyncRun, GoogleClientSetting, MicrosoftClientSetting,
   OwnTaskPage, PublishTaskPageInput, TaskPageCreated, TaskPageStatus,
-  AutomationsSetting, RuleRun, RulesStatus,
+  AutomationsSetting, RuleRun, RulesStatus, RoutineCatalogueEntry, RoutineInboxRun, RoutineRun, RoutineTestResult, RoutineStep, RuleCondition, RuleTrigger,
 } from './types'
 import { createSignal } from './store'
 
@@ -555,6 +555,19 @@ export const api = {
     request<{ run: { run_id: string; outcome: string; writes: number; reason?: string }; writes: number; test: boolean }>('POST', `/api/v1/rules/${encodeURIComponent(id)}/run`, body),
   undoRoutineRun: (id: string, runId: string) =>
     request<{ restored: number; kept: number; not_undoable: string[] }>('POST', `/api/v1/rules/${encodeURIComponent(id)}/runs/${encodeURIComponent(runId)}/undo`, {}),
+  /** Routines (routines-editor): the catalogue, tests of drafts, one run, all runs, the Inbox card. */
+  routineCatalogue: () => request<{ steps: RoutineCatalogueEntry[] }>('GET', '/api/v1/me/rules/catalogue'),
+  testRoutineDraft: (body: { trigger: RuleTrigger; condition?: RuleCondition | null; steps: RoutineStep[]; task_id?: string }) =>
+    request<RoutineTestResult>('POST', '/api/v1/rules/test', body),
+  testRoutine: (id: string, body: { run_id: string; task_id?: string }) =>
+    request<RoutineTestResult>('POST', `/api/v1/rules/${encodeURIComponent(id)}/run`, { ...body, test: true }),
+  routineRun: (id: string, runId: string) => request<RoutineRun>('GET', `/api/v1/rules/${encodeURIComponent(id)}/runs/${encodeURIComponent(runId)}`),
+  routineRuns: (q: { rule?: string; outcome?: string; source?: string; before?: number; limit?: number } = {}) => {
+    const p = new URLSearchParams(Object.entries(q).filter(([, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)]))
+    return request<{ runs: RoutineRun[]; before?: number }>('GET', `/api/v1/me/rules/runs${p.size ? `?${p}` : ''}`)
+  },
+  routineInbox: (since: number) => request<{ runs: RoutineInboxRun[]; seen_at: number; hide_successes: boolean }>('GET', `/api/v1/me/rules/runs?for=inbox&since=${Math.max(0, Math.floor(since))}`),
+  dismissRoutineRun: (id: string, runId: string) => request<void>('POST', `/api/v1/rules/${encodeURIComponent(id)}/runs/${encodeURIComponent(runId)}/dismiss`, {}),
   pauseRules: (paused: boolean) => request<{ enabled: boolean; paused: boolean }>('PUT', '/api/v1/me/rules/paused', { paused }),
   automationsSwitch: ownerSwitch<AutomationsSetting>('automations'),
   issuesSwitch: ownerSwitch('issues'),

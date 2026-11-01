@@ -280,6 +280,16 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>q</kbd> | On the Notes page: start a new note |
 | <kbd>/</kbd> | On the Notes page: focus the search field, which finds notes by every word |
 
+### Routine editor
+
+| Keys | What it does |
+| --- | --- |
+| <kbd>Alt+↑</kbd> | Focused step: in the routine editor: move the focused step up (Alt+↓ moves it down) |
+| <kbd>a</kbd> | Focused step: in the routine editor: add a step below the focused step; Delete asks to delete it |
+| <kbd>Ctrl+Enter</kbd> / <kbd>⌘+Enter</kbd> | In the routine editor: save the routine |
+| <kbd>Ctrl+Shift+Enter</kbd> / <kbd>⌘+Shift+Enter</kbd> | In the routine editor: test the routine (writes nothing) |
+| <kbd>←</kbd> / <kbd>→</kbd> | In the routine editor: move between the words of a step; Esc closes a picker, then the editor |
+
 ### Reviews
 
 | Keys | What it does |

@@ -5,7 +5,7 @@ The routine editor SHALL show a routine as cards stacked in one column, phone fi
 
 #### Scenario: Reading a routine
 - **WHEN** the user opens "Groceries" on a 390 px phone
-- **THEN** the page shows "Every Friday at 17:00", "Get the note text of Groceries", "Split the note text into lines", "Create tasks from the lines in Errands", one under the other, without sideways scrolling
+- **THEN** the page shows "Every Friday at 17:00", "Get the task Groceries", "Get the note text of Groceries", "Split the note text into lines", "Create tasks from the lines in Errands", one under the other, without sideways scrolling
 
 #### Scenario: An old rule
 - **WHEN** the user opens the rule "Label waiting → move to Waiting" and saves it without a change
@@ -24,7 +24,7 @@ Tapping an input word SHALL open its picker: the Combobox for projects, sections
 
 #### Scenario: Only fitting outputs
 - **WHEN** the user taps the "from" word of Create tasks after Find tasks and Split into lines
-- **THEN** "the lines" is offered first, and "the tasks" is listed under "Needs conversion" with "Join titles"
+- **THEN** "the lines" is offered first, and "the tasks" is listed under "Needs conversion" with "Insert Format text"
 
 ### Requirement: Live preview per step
 Each card SHALL show a preview of its output, refreshed shortly after every change: computed on the device from local data for text, list, logic and Change tasks steps (offline and on encrypted accounts included), and through the draft test route for the other steps while online, with "Preview needs a connection" otherwise. A preview SHALL show at most five items and the remaining count, or the number, date or the effect ("Would create 3 tasks in Errands", "Would email you"). A preview SHALL never write, send or log anything. A preview over a limit SHALL say so on the card.
@@ -42,11 +42,11 @@ Each card SHALL show a preview of its output, refreshed shortly after every chan
 - **THEN** the card reads "Would write 620 of 500" in the danger colour
 
 ### Requirement: Type errors with fixes
-The editor SHALL type-check the routine on every change with the shared checker and show each error on its card, naming the input and both types, with a one-tap fix where one exists (insert Join, Count or Split into lines, use the task's project, wrap in Repeat for each, choose another value for a removed step). Applying a fix SHALL be one undoable edit. A routine with a type error SHALL not be saved until it is fixed.
+The editor SHALL type-check the routine on every change with the shared checker and show each error on its card, naming the input and both types, with a one-tap fix where one exists (insert Format text, Join, Count or Split into lines, wrap in Repeat for each, choose another value for a removed step). Applying a fix SHALL be one undoable edit. A routine with a type error SHALL not be saved until it is fixed.
 
 #### Scenario: Fix in one tap
 - **WHEN** Notify me reads the tasks of Find tasks and the card says "Notify expects Text, got Tasks"
-- **THEN** tapping "Insert Join" adds a Join step between them and the error is gone
+- **THEN** tapping "Insert Format text" adds a Format text step (the tasks' titles, one per line) between them and the error is gone
 
 #### Scenario: Removed step
 - **WHEN** the user deletes the step whose output a later card uses

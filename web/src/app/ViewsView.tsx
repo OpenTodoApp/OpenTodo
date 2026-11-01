@@ -15,16 +15,15 @@ import { Button, CatalogueIcon, Icon, type IconName, type IconSize, IconPicker, 
 import { iconPickerSpec } from './menus/stylePickers'
 import { Tooltip } from '../ui'
 import { ActionMenu, type ActionGroup, type ActionItem } from './menus/ActionMenu'
-import type { RuleDraft } from './rules/RuleDialog'
+import type { RuleDraft } from './routines/ruleDraft'
 import { useLabels, useProjects } from '../lib/localData'
 import { ruleDraftFromView } from './rules/convertDraft'
-import { useMe } from '../lib/timeEntries'
 import { pinItem } from './menus/pinItem'
 import { t } from '../lib/i18n'
 import { act } from './actionError'
 
 // The rule editor is its own chunk with the Rules page (automation-rules D11).
-const RuleDialog = lazy(() => import('./rules/RuleDialog').then((m) => ({ default: m.RuleDialog })))
+const RuleDraftEditor = lazy(() => import('./routines/RoutineEditor').then((m) => ({ default: m.RuleDraftEditor })))
 
 /** The default icon of a view's kind, shown while it has no icon of its own. */
 export const viewIcon = (v: View): IconName => (isDashboard(v) ? 'kanban' : 'list')
@@ -113,7 +112,6 @@ export function ViewMenu({ view, align = 'end', className = '', within }: { view
   const [ruleDraft, setRuleDraft] = useState<RuleDraft | null>(null)
   const labels = useLabels()
   const projects = useProjects()
-  const me = useMe() ?? ''
   const inFavourites = within === 'favourites'
   const groups = viewMenuGroups(view, views, isStart, {
     rename: () => setRenaming(true),
@@ -133,7 +131,7 @@ export function ViewMenu({ view, align = 'end', className = '', within }: { view
         <NamePrompt title={t('Rename view')} label={t('View name')} initial={view.name} onCancel={() => setRenaming(false)}
           onSubmit={async (name) => { await updateView(view.id, { name }); setRenaming(false) }} />
       )}
-      {ruleDraft && <Suspense fallback={null}><RuleDialog draft={ruleDraft} me={me} onClose={() => setRuleDraft(null)} /></Suspense>}
+      {ruleDraft && <Suspense fallback={null}><RuleDraftEditor draft={ruleDraft} onClose={() => setRuleDraft(null)} /></Suspense>}
     </>
   )
 }

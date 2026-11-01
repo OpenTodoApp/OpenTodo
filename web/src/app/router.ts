@@ -26,8 +26,10 @@ export type Route =
   // Saved locations (task-locations, the `place` entity): /locations, and /location/<id> lists the open tasks linked to one.
   | { view: 'places' }
   | { view: 'place'; id: string }
-  // Automation rules (automation-rules): /rules, and /rules#new opens the editor.
-  | { view: 'rules'; create?: boolean }
+  // Routines (routines-editor; automation-rules before): /routines, /routines#new
+  // opens the editor, /routines/runs the Runs tab, /routines/<id> one routine's
+  // editor (a page on a phone); /rules is the old address.
+  | { view: 'rules'; create?: boolean; tab?: 'runs'; id?: string; run?: string }
   // All projects (sidebar-favourites D6): /projects, and /projects#archived with the archived projects open.
   | { view: 'projects'; archived?: boolean }
   | { view: 'filter'; q?: string }
@@ -138,7 +140,14 @@ export function parseRoute(pathname: string): Route {
     case 'locations':
       return { view: 'places' }
     case 'rules':
-      return hash === 'new' ? { view: 'rules', create: true } : { view: 'rules' }
+    case 'routines':
+    {
+      if (hash === 'new') return { view: 'rules', create: true }
+      // ?run=<id>: a run opened from a notification, a channel message or an email.
+      const run = new URLSearchParams(query).get('run')
+      const base: Route = parts[1] === 'runs' ? { view: 'rules', tab: 'runs' } : parts[1] && /^[\w-]{1,64}$/.test(parts[1]) ? { view: 'rules', id: parts[1] } : { view: 'rules' }
+      return run && /^[\w-]{1,64}$/.test(run) ? { ...base, run } as Route : base
+    }
     case 'location':
       return parts[1] ? { view: 'place', id: parts[1] } : { view: 'places' }
     case 'projects':
@@ -236,7 +245,7 @@ export function parseRoute(pathname: string): Route {
 export function canonicalPath(pathname: string): string | null {
   const [path] = pathname.split('?')
   const parts = path.split('/').filter(Boolean)
-  if (parts[0] === 'activity' || parts[0] === 'calendar') return routePath(parseRoute(path))
+  if (parts[0] === 'activity' || parts[0] === 'calendar' || parts[0] === 'rules') return routePath(parseRoute(path))
   // /filter and /view/<id> before views-and-display (D1); the caller keeps the query (?q=).
   if (parts[0] === 'filter') return '/views/new'
   if (parts[0] === 'view') return routePath(parseRoute(path))
@@ -265,7 +274,7 @@ export function routePath(r: Route): string {
     case 'places':
       return '/locations'
     case 'rules':
-      return r.create ? '/rules#new' : '/rules'
+      return (r.create ? '/routines#new' : r.tab === 'runs' ? '/routines/runs' : r.id ? `/routines/${encodeURIComponent(r.id)}` : '/routines') + (r.run ? `?run=${encodeURIComponent(r.run)}` : '')
     case 'invite':
     case 'reset':
     case 'confirm-email':
