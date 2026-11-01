@@ -6,7 +6,7 @@
 // collapsible strip above the controls. Changes stay a draft on the device until
 // Save; leaving with unsaved changes asks to save, discard or keep editing.
 // Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z and Ctrl/Cmd+S work inside the editor only.
-import { Suspense, useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useEncryption } from '../../lib/e2ee'
 import { t } from '../../lib/i18n'
 import { useUserPrefsRow } from '../../lib/localData'
