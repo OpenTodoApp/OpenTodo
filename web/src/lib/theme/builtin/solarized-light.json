@@ -1,0 +1,54 @@
+{
+  "opentodoTheme": 1,
+  "id": "solarized-light",
+  "name": "Solarized Light",
+  "author": "Ethan Schoonover",
+  "licence": "MIT",
+  "source": "https://github.com/altercation/solarized",
+  "kind": "light",
+  "seeds": {
+    "canvas": "#eee8d5",
+    "surface": "#fdf6e3",
+    "text": "oklch(0.5132 0.0285 221.9)",
+    "accent": "oklch(0.5149 0.1295 244.93)",
+    "success": "oklch(0.5094 0.1193 118.6)",
+    "warning": "oklch(0.5195 0.1064 85.72)",
+    "danger": "oklch(0.5413 0.2064 27.12)",
+    "info": "oklch(0.5037 0.0878 187.38)"
+  },
+  "tokens": {
+    "text-strong": "oklch(0.5055 0.0283 219.14)",
+    "faint": "oklch(0.5154 0.0159 196.79)",
+    "selected": "#eee8d5",
+    "hue-red": "#dc322f",
+    "hue-orange": "#cb4b16",
+    "hue-yellow": "oklch(0.6195 0.1269 85.72)",
+    "hue-lime": "oklch(0.6094 0.1427 118.6)",
+    "hue-green": "oklch(0.5974 0.1677 149.21)",
+    "hue-teal": "oklch(0.6037 0.1019 187.38)",
+    "hue-cyan": "oklch(0.6074 0.112 221.72)",
+    "hue-blue": "#268bd2",
+    "hue-indigo": "#6c71c4",
+    "hue-violet": "oklch(0.6124 0.2064 293.01)",
+    "hue-pink": "#d33682",
+    "hue-slate": "oklch(0.6154 0.0159 196.79)"
+  },
+  "bar": "#eee8d5",
+  "notes": {
+    "adapted": {
+      "text": "#657b83",
+      "accent": "#268bd2",
+      "success": "#859900",
+      "warning": "#b58900",
+      "danger": "#dc322f",
+      "info": "#2aa198",
+      "text-strong": "#586e75",
+      "faint": "#93a1a1",
+      "hue-yellow": "#b58900",
+      "hue-lime": "#859900",
+      "hue-teal": "#2aa198",
+      "hue-slate": "#93a1a1"
+    },
+    "text": "Solarized Light by Ethan Schoonover, mapped onto OpenTodo's tokens by web/src/lib/theme/builtin/MAPPING.md. Label colours not in the palette (green, cyan, violet) use OpenTodo's hue at the palette's lightness and chroma. Some colours were adapted for contrast: their published values are under adapted."
+  }
+}

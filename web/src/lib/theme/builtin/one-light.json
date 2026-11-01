@@ -1,0 +1,50 @@
+{
+  "opentodoTheme": 1,
+  "id": "one-light",
+  "name": "One Light",
+  "author": "GitHub Inc.",
+  "licence": "MIT",
+  "source": "https://github.com/atom/one-light-syntax",
+  "kind": "light",
+  "seeds": {
+    "canvas": "#fafafa",
+    "surface": "#fafafa",
+    "text": "#383a42",
+    "accent": "oklch(0.5317 0.193 263.25)",
+    "success": "oklch(0.5081 0.1419 143.46)",
+    "warning": "oklch(0.5284 0.1109 76.2)",
+    "danger": "oklch(0.5441 0.1792 28.34)",
+    "info": "oklch(0.5214 0.1142 237.19)"
+  },
+  "tokens": {
+    "muted": "oklch(0.5125 0.0175 273.63)",
+    "faint": "oklch(0.525 0.0087 278.58)",
+    "selected": "#e5e5e6",
+    "hue-red": "#e45649",
+    "hue-orange": "#986801",
+    "hue-yellow": "#c18401",
+    "hue-lime": "oklch(0.5918 0.1633 131.59)",
+    "hue-green": "#50a14f",
+    "hue-teal": "oklch(0.5918 0.1044 184.7)",
+    "hue-cyan": "#0184bc",
+    "hue-blue": "#4078f2",
+    "hue-indigo": "oklch(0.5918 0.211 276.97)",
+    "hue-violet": "#a626a4",
+    "hue-pink": "#ca1243",
+    "hue-slate": "oklch(0.6575 0.0087 278.58)"
+  },
+  "bar": "#fafafa",
+  "notes": {
+    "adapted": {
+      "accent": "#4078f2",
+      "success": "#50a14f",
+      "warning": "#c18401",
+      "danger": "#e45649",
+      "info": "#0184bc",
+      "muted": "#696c77",
+      "faint": "#a0a1a7",
+      "hue-slate": "#a0a1a7"
+    },
+    "text": "One Light by GitHub Inc., mapped onto OpenTodo's tokens by web/src/lib/theme/builtin/MAPPING.md. Label colours not in the palette (lime, teal, indigo) use OpenTodo's hue at the palette's lightness and chroma. Some colours were adapted for contrast: their published values are under adapted."
+  }
+}

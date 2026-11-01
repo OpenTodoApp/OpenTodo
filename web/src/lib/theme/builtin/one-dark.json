@@ -1,0 +1,51 @@
+{
+  "opentodoTheme": 1,
+  "id": "one-dark",
+  "name": "One Dark",
+  "author": "GitHub Inc.",
+  "licence": "MIT",
+  "source": "https://github.com/atom/one-dark-syntax",
+  "kind": "dark",
+  "seeds": {
+    "canvas": "#282c34",
+    "surface": "#282c34",
+    "text": "#abb2bf",
+    "accent": "#61afef",
+    "success": "#98c379",
+    "warning": "#e5c07b",
+    "danger": "oklch(0.7559 0.1448 17)",
+    "info": "oklch(0.7281 0.0916 206.31)"
+  },
+  "tokens": {
+    "muted": "oklch(0.759 0.0226 264.4)",
+    "faint": "oklch(0.7383 0.0225 262.91)",
+    "selected": "#3e4451",
+    "accent-text": "oklch(0.7354 0.1213 245.3)",
+    "hue-red": "oklch(0.6934 0.1448 17)",
+    "hue-orange": "#d19a66",
+    "hue-yellow": "#e5c07b",
+    "hue-lime": "oklch(0.7138 0.1635 128.85)",
+    "hue-green": "#98c379",
+    "hue-teal": "oklch(0.7138 0.1279 181.91)",
+    "hue-cyan": "#56b6c2",
+    "hue-blue": "#61afef",
+    "hue-indigo": "oklch(0.7138 0.1507 276.93)",
+    "hue-violet": "#c678dd",
+    "hue-pink": "oklch(0.692 0.1439 27.69)",
+    "hue-slate": "oklch(0.6758 0.0225 262.91)"
+  },
+  "bar": "#282c34",
+  "notes": {
+    "adapted": {
+      "danger": "#e06c75",
+      "info": "#56b6c2",
+      "muted": "#828997",
+      "faint": "#5c6370",
+      "accent-text": "#61afef",
+      "hue-red": "#e06c75",
+      "hue-pink": "#be5046",
+      "hue-slate": "#5c6370"
+    },
+    "text": "One Dark by GitHub Inc., mapped onto OpenTodo's tokens by web/src/lib/theme/builtin/MAPPING.md. Label colours not in the palette (lime, teal, indigo) use OpenTodo's hue at the palette's lightness and chroma. Some colours were adapted for contrast: their published values are under adapted."
+  }
+}

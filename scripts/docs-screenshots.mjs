@@ -656,6 +656,13 @@ const shots = [
     const field = p.locator('[data-accent-hex]'); await field.waitFor()
     await field.fill('#ffe066'); await p.locator('[data-accent-adjusted]').waitFor(); await settle(p, 400)
   } },
+  // The built-in catalogue (theme-catalogue): Solarized Light chosen, the Light and Dark lists and the offer of Solarized Dark at night.
+  { name: 'theme-catalogue', server: P, async run(p) {
+    await p.setViewportSize({ width: DESKTOP.width, height: 1300 })
+    await go(p, plainBase, '/settings/appearance/theme', () => p.locator('[data-theme-card="nord"]').waitFor())
+    await p.locator('[data-theme-card="solarized-light"]').click(); await p.locator('[data-theme-offer]').waitFor(); await settle(p, 600)
+    return clipOf(p, p.locator('#appearance-themes'), 16)
+  }, async after(p) { await p.locator('[data-theme-card="opentodo-light"]').click(); await settle(p, 600) } },
   // A task page as a guest sees it (task-pages): its own document at /t/<secret>.
   { name: 'task-page', server: P, async run(p) {
     await p.goto(plain.pageLink); await p.getByRole('heading', { level: 1, name: 'Paint the fence' }).waitFor(); await settle(p, 800)

@@ -1,0 +1,49 @@
+{
+  "opentodoTheme": 1,
+  "id": "gruvbox-dark",
+  "name": "Gruvbox Dark",
+  "author": "Pavel Pertsev",
+  "licence": "MIT",
+  "source": "https://github.com/morhetz/gruvbox",
+  "kind": "dark",
+  "seeds": {
+    "canvas": "#1d2021",
+    "surface": "#282828",
+    "text": "#ebdbb2",
+    "accent": "#8ec07c",
+    "success": "#b8bb26",
+    "warning": "#fabd2f",
+    "danger": "oklch(0.7347 0.1637 30.39)",
+    "info": "oklch(0.7077 0.042 169.77)"
+  },
+  "tokens": {
+    "text-strong": "#fbf1c7",
+    "muted": "oklch(0.7889 0.041 82.28)",
+    "faint": "oklch(0.7142 0.0286 67.26)",
+    "raised": "#3c3836",
+    "selected": "#504945",
+    "accent-text": "#8ec07c",
+    "hue-red": "#fb4934",
+    "hue-orange": "#fe8019",
+    "hue-yellow": "#fabd2f",
+    "hue-lime": "#b8bb26",
+    "hue-green": "oklch(0.7346 0.1945 151.71)",
+    "hue-teal": "#8ec07c",
+    "hue-cyan": "#83a598",
+    "hue-blue": "oklch(0.7346 0.1401 254.62)",
+    "hue-indigo": "oklch(0.7346 0.1386 276.93)",
+    "hue-violet": "oklch(0.7346 0.1525 293.54)",
+    "hue-pink": "#d3869b",
+    "hue-slate": "#928374"
+  },
+  "bar": "#1d2021",
+  "notes": {
+    "adapted": {
+      "danger": "#fb4934",
+      "info": "#83a598",
+      "muted": "#bdae93",
+      "faint": "#928374"
+    },
+    "text": "Gruvbox Dark by Pavel Pertsev, mapped onto OpenTodo's tokens by web/src/lib/theme/builtin/MAPPING.md. Label colours not in the palette (green, blue, indigo, violet) use OpenTodo's hue at the palette's lightness and chroma. Some colours were adapted for contrast: their published values are under adapted."
+  }
+}

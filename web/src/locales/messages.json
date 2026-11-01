@@ -643,6 +643,10 @@
   "About this demo": [
     "web/src/app/DemoBanner.tsx"
   ],
+  "About this theme": [
+    "web/src/app/ThemeAbout.tsx",
+    "web/src/app/ThemeRow.tsx"
+  ],
   "Absolute path on the server. Empty: the backups folder inside the data directory.": [
     "web/src/app/BackupsPanel.tsx"
   ],
@@ -1382,6 +1386,12 @@
   "Also show in Day and Week": [
     "web/src/app/CalendarSyncDialogs.tsx"
   ],
+  "Also use {name} at night": [
+    "web/src/app/ThemeRow.tsx"
+  ],
+  "Also use {name} by day": [
+    "web/src/app/ThemeRow.tsx"
+  ],
   "Alternative text": [
     "web/src/app/editorImage.tsx"
   ],
@@ -1925,6 +1935,9 @@
   ],
   "Authentication failed": [
     "web/src/app/OutgoingEmailPanel.tsx"
+  ],
+  "Author": [
+    "web/src/app/ThemeAbout.tsx"
   ],
   "Automatic": [
     "web/src/app/OutgoingEmailPanel.tsx"
@@ -2819,6 +2832,7 @@
     "web/src/app/PanelFrame.tsx",
     "web/src/app/ShareDialog.tsx",
     "web/src/app/SsoPanel.tsx",
+    "web/src/app/ThemeAbout.tsx",
     "web/src/app/assistant/AssistantSheet.tsx",
     "web/src/app/help/HelpPanel.tsx",
     "web/src/app/palette/CommandPalette.tsx",
@@ -3358,6 +3372,9 @@
   "Copying is blocked here; select the text above and copy it.": [
     "web/src/app/TokensSection.tsx"
   ],
+  "Copyright": [
+    "web/src/app/ThemeAbout.tsx"
+  ],
   "Cost": [
     "web/src/app/FieldsDialog.tsx"
   ],
@@ -3684,6 +3701,7 @@
   "Dark": [
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/FirstRun.tsx",
+    "web/src/app/ThemeRow.tsx",
     "web/src/ui/AccentPicker.tsx"
   ],
   "Dashboard": [
@@ -4265,6 +4283,7 @@
     "web/src/app/ReminderToasts.tsx",
     "web/src/app/RemindersField.tsx",
     "web/src/app/Shell.tsx",
+    "web/src/app/ThemeRow.tsx",
     "web/src/app/assistant/AssistantRoot.tsx",
     "web/src/app/assistant/ComposerCapture.tsx",
     "web/src/app/bulk/UndoToast.tsx"
@@ -7604,9 +7623,13 @@
   "Lets this server mail password resets, confirmations and invitations.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Licence": [
+    "web/src/app/ThemeAbout.tsx"
+  ],
   "Light": [
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/FirstRun.tsx",
+    "web/src/app/ThemeRow.tsx",
     "web/src/ui/AccentPicker.tsx"
   ],
   "Light or dark, colour and row density, on all your devices.": [
@@ -7912,7 +7935,7 @@
     "web/src/app/routines/RoutinesView.tsx"
   ],
   "Made with a newer version of OpenTodo": [
-    "web/src/app/AppearanceSection.tsx"
+    "web/src/app/ThemeRow.tsx"
   ],
   "Mail sent to your current address will no longer create tasks. Update anything that forwards to it.": [
     "web/src/app/EmailInboxPanel.tsx"
@@ -10376,10 +10399,10 @@
     "web/src/app/palette/registry.ts"
   ],
   "OpenTodo Dark": [
-    "web/src/app/AppearanceSection.tsx"
+    "web/src/app/ThemeRow.tsx"
   ],
   "OpenTodo Light": [
-    "web/src/app/AppearanceSection.tsx"
+    "web/src/app/ThemeRow.tsx"
   ],
   "OpenTodo asks the browser to recognise speech on this device when it offers that choice.": [
     "web/src/app/VoiceSettings.tsx"
@@ -10388,7 +10411,7 @@
     "web/src/app/App.tsx"
   ],
   "OpenTodo contributors": [
-    "web/src/app/AppearanceSection.tsx"
+    "web/src/app/ThemeRow.tsx"
   ],
   "OpenTodo export (JSON)": [
     "web/src/app/ImportScreen.tsx"
@@ -10401,6 +10424,9 @@
   ],
   "OpenTodo is free software (AGPL-3.0). No telemetry, no tracking, no subscription.": [
     "web/src/app/SettingsView.tsx"
+  ],
+  "OpenTodo is not affiliated with this project": [
+    "web/src/app/ThemeAbout.tsx"
   ],
   "OpenTodo reads {path}.": [
     "web/src/app/SsoPanel.tsx"
@@ -11198,6 +11224,7 @@
     "web/src/app/RuleEditor.tsx",
     "web/src/app/ShareCapture.tsx",
     "web/src/app/TaskListView.tsx",
+    "web/src/app/ThemeAbout.tsx",
     "web/src/app/TrashView.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/calendar/colorByControls.tsx",
@@ -13700,6 +13727,9 @@
   "So you know which one to revoke later.": [
     "web/src/app/CaldavPanel.tsx"
   ],
+  "Some colours were adapted for contrast": [
+    "web/src/app/ThemeAbout.tsx"
+  ],
   "Some decrypted files have not finished uploading. Encryption stays on until they have; try again in a moment.": [
     "web/src/app/EncryptionPanel.tsx"
   ],
@@ -15355,7 +15385,7 @@
     "web/src/app/settingsSections.ts"
   ],
   "Theme is invalid": [
-    "web/src/app/AppearanceSection.tsx"
+    "web/src/app/ThemeRow.tsx"
   ],
   "Then": [
     "web/src/app/routines/StepCard.tsx",

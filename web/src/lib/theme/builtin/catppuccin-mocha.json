@@ -1,0 +1,46 @@
+{
+  "opentodoTheme": 1,
+  "id": "catppuccin-mocha",
+  "name": "Catppuccin Mocha",
+  "author": "Catppuccin",
+  "licence": "MIT",
+  "source": "https://github.com/catppuccin/catppuccin",
+  "kind": "dark",
+  "seeds": {
+    "canvas": "#181825",
+    "surface": "#1e1e2e",
+    "text": "#cdd6f4",
+    "accent": "#cba6f7",
+    "success": "#a6e3a1",
+    "warning": "#f9e2af",
+    "danger": "#f38ba8",
+    "info": "#89b4fa"
+  },
+  "tokens": {
+    "muted": "oklch(0.7785 0.0396 273.93)",
+    "faint": "oklch(0.6901 0.0367 276)",
+    "raised": "#313244",
+    "selected": "#45475a",
+    "accent-text": "#cba6f7",
+    "hue-red": "#f38ba8",
+    "hue-orange": "#fab387",
+    "hue-yellow": "#f9e2af",
+    "hue-lime": "oklch(0.8302 0.1297 128.85)",
+    "hue-green": "#a6e3a1",
+    "hue-teal": "#94e2d5",
+    "hue-cyan": "#89dceb",
+    "hue-blue": "#89b4fa",
+    "hue-indigo": "#b4befe",
+    "hue-violet": "#cba6f7",
+    "hue-pink": "#f5c2e7",
+    "hue-slate": "#9399b2"
+  },
+  "bar": "#181825",
+  "notes": {
+    "adapted": {
+      "muted": "#a6adc8",
+      "faint": "#7f849c"
+    },
+    "text": "Catppuccin Mocha by Catppuccin, mapped onto OpenTodo's tokens by web/src/lib/theme/builtin/MAPPING.md. Label colours not in the palette (lime) use OpenTodo's hue at the palette's lightness and chroma. Some colours were adapted for contrast: their published values are under adapted."
+  }
+}

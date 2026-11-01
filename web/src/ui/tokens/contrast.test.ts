@@ -185,8 +185,11 @@ describe('theme documents', () => {
     })
   }
 
-  it('ships the OpenTodo themes', () => {
-    expect(docs.map(([, d]) => d.id).sort()).toEqual(['opentodo-dark', 'opentodo-light'])
+  it('ships the OpenTodo themes and the built-in catalogue (theme-catalogue)', () => {
+    expect(docs.map(([, d]) => d.id).sort()).toEqual([
+      'catppuccin-latte', 'catppuccin-mocha', 'dracula', 'gruvbox-dark', 'gruvbox-light', 'nord', 'one-dark', 'one-light',
+      'opentodo-dark', 'opentodo-light', 'rose-pine', 'rose-pine-dawn', 'solarized-dark', 'solarized-light', 'tokyo-night', 'tokyo-night-light',
+    ])
   })
 
   for (const [path, doc] of docs) {
