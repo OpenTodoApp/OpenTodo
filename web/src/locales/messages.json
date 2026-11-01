@@ -14120,6 +14120,9 @@
     "web/src/app/task-list/announceAdded.ts",
     "web/src/app/views/DisplayPanel.tsx"
   ],
+  "Show Today’s tasks before Tomorrow": [
+    "web/src/app/TaskListView.tsx"
+  ],
   "Show a local notification": [
     "web/src/app/NotificationsSettings.tsx"
   ],
@@ -14878,6 +14881,9 @@
   ],
   "Start view, briefing, keyboard, focus timer and maps": [
     "web/src/app/settingsSections.ts"
+  ],
+  "Start with Today": [
+    "web/src/app/TaskListView.tsx"
   ],
   "Start with three sample tasks": [
     "web/src/app/FirstRun.tsx"
