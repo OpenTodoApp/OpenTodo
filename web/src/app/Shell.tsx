@@ -38,9 +38,7 @@ import { onQuickAddSheetRequest, QuickAddSheet, requestQuickAddSheet } from './Q
 import { PanelHost } from './PanelHost'
 import { TaskPage } from './TaskPage'
 import { watchViewerZone } from '../lib/dates'
-import { UndoToast } from './bulk/UndoToast'
-import { BulkConfirmHost } from './bulk/BulkConfirmHost'
-import { ToastActionHost } from './ToastActionHost'
+import { ActionToasts } from './ActionToasts'
 import { DailyCheckToast } from './method/DailyCheckToast'
 import { PanelBoundary } from './PanelBoundary'
 import { TemplateDialogHost } from './TemplateDialogs'
@@ -346,9 +344,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       <Spotlight />
       <ReminderToasts />
       <BreakReminder />
-      <UndoToast />
-      <ToastActionHost />
-      <BulkConfirmHost />
+      <ActionToasts />
       <DailyCheckToast />
       <TemplateDialogHost />
       <ArchivePrompt /><WorkspaceHost route={route} panelTask={panelTaskId()} />
