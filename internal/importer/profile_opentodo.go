@@ -55,6 +55,9 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 		// Places are the exporting account's saved places (task-locations D1);
 		// tasks link to them by id in location.place_id.
 		Places []map[string]json.RawMessage `json:"places"`
+		// Themes are the exporting account's custom themes (theme-editor D1),
+		// chosen in user_prefs as "user:<id>"; ids are kept, so the choices hold.
+		Themes []map[string]json.RawMessage `json:"themes"`
 		// UserID is the exporting account.
 		UserID string `json:"userId"`
 		// UserPrefs is the exporting account's date and time preferences row
@@ -123,6 +126,13 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 				_ = json.Unmarshal(e["task_id"], &task)
 				row.Title = "Time entry: " + taskTitles[task]
 			}
+			if kind == KindTheme {
+				var d struct {
+					Name string `json:"name"`
+				}
+				_ = json.Unmarshal(e["doc"], &d)
+				row.Title = "Theme: " + d.Name
+			}
 			if kind == KindProjectPrefs {
 				row.Title = "Project preferences"
 			}
@@ -140,6 +150,7 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 	add(KindReminder, "", doc.Reminders)
 	add(KindView, "name", doc.Views)
 	add(KindRule, "name", doc.Rules)
+	add(KindTheme, "", doc.Themes)
 	add(KindUserPrefs, "", doc.UserPrefs)
 	add(KindReview, "", doc.Review)
 	add(KindProjectPrefs, "", doc.ProjectPrefs)

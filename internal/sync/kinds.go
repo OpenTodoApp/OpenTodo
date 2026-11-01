@@ -13,6 +13,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/origin"
 	"github.com/OpenTodoApp/opentodo/internal/recurrence"
 	"github.com/OpenTodoApp/opentodo/internal/ruleval"
+	"github.com/OpenTodoApp/opentodo/internal/themes"
 	"github.com/OpenTodoApp/opentodo/internal/zoned"
 )
 
@@ -55,6 +56,20 @@ var kindChecks = map[kind]func(raw json.RawMessage) error{
 	kOrderList:      checkOrderList,
 	kSplit:          orNull(checkSplit),
 	kFocusSession:   checkFocusSession,
+	kThemeDoc:       orNull(checkThemeDoc),
+}
+
+// checkThemeDoc accepts a JSON object that is a valid theme document of at most
+// themes.MaxBytes bytes (theme-editor D1). A document of a newer format is
+// refused like any other invalid one: the server and its web app ship together.
+func checkThemeDoc(raw json.RawMessage) error {
+	if len(raw) == 0 || raw[0] != '{' {
+		return errors.New("must be a theme document object")
+	}
+	if err := themes.Validate(raw); err != nil {
+		return fmt.Errorf("is not a valid theme document (%s)", themes.Code(err))
+	}
+	return nil
 }
 
 func isNullValue(raw json.RawMessage) bool { return string(raw) == "null" }

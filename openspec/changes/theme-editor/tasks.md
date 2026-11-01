@@ -4,10 +4,10 @@ Depends on `theme-engine`; uses the catalogue of `theme-catalogue` as starting p
 
 ## 1. Data model
 
-- [ ] 1.1 Add the kind `kThemeDoc` (null or a document passing `internal/themes.Validate`, at most `MaxThemeBytes`) and the `theme` entity (design D1) to `internal/sync/ops.go` with its comment, its id to `uniqueIDs` in `scope.go`, and regenerate the op schema; verify `go test ./internal/sync/...` (a 20 KB value and a `url()` canvas refused, a valid document accepted, the theme personal with a unique id)
-- [ ] 1.2 Add the `theme` table to the Dexie schema and the types in `web/src/lib/types.ts`; verify the Go/TS schema parity and `db` tests with `npm test`
-- [ ] 1.3 Read `user:<id>` choices in `appearance.ts` (a tombstoned or missing theme reads as the default); verify `appearance.test.ts`
-- [ ] 1.4 Carry the entity and the choices in the JSON export and import with the id map; verify the export round-trip tests in `go test ./internal/...` and the web import test
+- [x] 1.1 Add the kind `kThemeDoc` (null or a document passing `internal/themes.Validate`, at most `MaxThemeBytes`) and the `theme` entity (design D1) to `internal/sync/ops.go` with its comment, its id to `uniqueIDs` in `scope.go`, and regenerate the op schema; verify `go test ./internal/sync/...` (a 20 KB value and a `url()` canvas refused, a valid document accepted, the theme personal with a unique id)
+- [x] 1.2 Add the `theme` table to the Dexie schema and the types in `web/src/lib/types.ts`; verify the Go/TS schema parity and `db` tests with `npm test`
+- [x] 1.3 Read `user:<id>` choices in `appearance.ts` (a tombstoned or missing theme reads as the default); verify `appearance.test.ts`
+- [x] 1.4 Carry the entity and the choices in the JSON export and import with the id map; verify the export round-trip tests in `go test ./internal/...` and the web import test
 
 ## 2. Custom themes in Settings
 

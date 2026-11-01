@@ -2,7 +2,7 @@
 // Declare a field in internal/sync/ops.go, then run
 // UPDATE_OP_SCHEMA=1 go test ./internal/sync -run TestGeneratedOpSchema
 import type {
-  Attachment, Comment, Due, Entity, FieldDef, Frame, Geo, Label, Note, OnDropRule, Origin, Place, Priority, Project, ProjectPrefs, Reminder, ReminderKind, Review, RoutineStep, Rule, RuleActions, RuleCondition, RuleTrigger, Section, Slot, SplitFrom, Task, TaskLocation, TimeEntry, UserPrefs, View,
+  Attachment, Comment, CustomTheme, Due, Entity, FieldDef, Frame, Geo, Label, Note, OnDropRule, Origin, Place, Priority, Project, ProjectPrefs, Reminder, ReminderKind, Review, RoutineStep, Rule, RuleActions, RuleCondition, RuleTrigger, Section, Slot, SplitFrom, Task, TaskLocation, ThemeDocument, TimeEntry, UserPrefs, View,
 } from '../lib/types'
 
 /**
@@ -572,6 +572,24 @@ export interface SlotFields {
 }
 
 /**
+ * theme: a custom theme (OpenSpec change theme-editor, design D1). Personal
+ * like a rule, with ids unique on the server; chosen for a side as
+ * user_prefs.theme_light or theme_dark "user:<id>". doc is one whole theme
+ * document (theme-engine D1, validated by internal/themes, at most 16 KB), so
+ * two devices saving the same theme converge on the later save. Themes are
+ * appearance, not user content: no field is a content field, and an
+ * encrypted account stores them in plain text (docs/themes.md says so).
+ * Devices keep at most 20 live themes per user; the server does not count.
+ * A row written before a field existed lacks it, so every field is optional here; the entity type may require it.
+ */
+export interface CustomThemeFields {
+  doc?: ThemeDocument | null
+  position?: number
+  created_at?: number
+  deleted_at?: number | null
+}
+
+/**
  * The op fields of a place (sync.Schema).
  * A row written before a field existed lacks it, so every field is optional here; the entity type may require it.
  */
@@ -982,6 +1000,9 @@ export const OP_DEFAULTS = {
   slot: {
     title: '', date: null, start: '09:00', minutes: 30, task_ids: [], color: '#64748b', created_at: 0, deleted_at: null,
   } satisfies Omit<Slot, 'id' | '_clock'>,
+  theme: {
+    doc: null, position: 0, created_at: 0, deleted_at: null,
+  } satisfies Omit<CustomTheme, 'id' | '_clock'>,
   place: {
     name: '', address: '', geo: null, position: 0, created_at: 0, deleted_at: null,
   } satisfies Omit<Place, 'id' | '_clock'>,

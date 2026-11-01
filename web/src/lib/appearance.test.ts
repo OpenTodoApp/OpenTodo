@@ -209,9 +209,19 @@ describe('theme choice per side', () => {
     // with the list of the themes this app has, an unknown one is from a newer version.
     expect(read('builtin:nord').light).toMatchObject({ stored: 'builtin:nord', status: 'theme', id: 'nord' })
     expect(readThemeChoices({ theme_light: 'builtin:from-the-future' } as never, BUILTIN_THEMES).light).toMatchObject({ status: 'newer', id: 'opentodo-light' })
-    expect(read('', 'user:0b5e0d8c-4f7c-4d3e-9c1e-2f3a4b5c6d7e').dark).toMatchObject({ status: 'newer', id: 'opentodo-dark' })
+    // A custom theme (theme-editor D1): provisional without the list (the loader decides).
+    expect(read('', 'user:0b5e0d8c-4f7c-4d3e-9c1e-2f3a4b5c6d7e').dark).toMatchObject({ status: 'theme', id: '0b5e0d8c-4f7c-4d3e-9c1e-2f3a4b5c6d7e', custom: true })
     expect(read('', 'instance:corporate').dark).toMatchObject({ status: 'newer', id: 'opentodo-dark' })
     expect(await db.outbox.count()).toBe(0)
+  })
+
+  it('reads a custom theme against the live list: missing or deleted reads as the default, other kind as invalid (theme-editor 1.3)', () => {
+    const custom = [{ id: 'th-dark', kind: 'dark' as const }, { id: 'th-light', kind: 'light' as const }]
+    const row = (dark: string, light = '') => ({ theme_dark: dark, theme_light: light }) as never
+    expect(readThemeChoices(row('user:th-dark'), BUILTIN_THEMES, custom).dark).toEqual({ stored: 'user:th-dark', status: 'theme', id: 'th-dark', custom: true })
+    expect(readThemeChoices(row('user:gone'), BUILTIN_THEMES, custom).dark).toEqual({ stored: 'user:gone', status: 'default', id: 'opentodo-dark' })
+    expect(readThemeChoices(row('user:th-light'), BUILTIN_THEMES, custom).dark).toMatchObject({ status: 'invalid', id: 'opentodo-dark' })
+    expect(readThemeChoices(row('', 'user:th-light'), BUILTIN_THEMES, custom).light).toMatchObject({ status: 'theme', id: 'th-light', custom: true })
   })
 
   it('an incoming choice is stored, kept as it is and changes nothing on this version', async () => {
