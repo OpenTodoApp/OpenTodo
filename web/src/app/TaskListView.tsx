@@ -10,7 +10,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { ProjectCalendarLayout, useListExtras } from './task-list/listExtras'
 import { t } from '../lib/i18n'
 import { useMembership, useUserPrefsRow } from '../lib/localData'
-import { briefingHidden, preferredPlacement, setBriefingShown, setTodayEventsShown } from '../lib/userPrefs'
+import { briefingHidden, preferredPlacement, setBriefingShown, setTodayEventsShown, setUpcomingStartsWithToday, upcomingStartsWithToday } from '../lib/userPrefs'
 import { completedOpenKey, flatRow, sectionOfRows, type ListGroup, type ListRow } from '../lib/listGroups'
 import type { Step } from '../lib/move'
 import type { ViewPlacement } from '../lib/viewOrder'
@@ -400,7 +400,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               editable={m.projectEditable} renderRow={renderRow} addingTo={addingTo} setAddingTo={ui.setAddingTo} onToggleSection={toggleSection}
               doneBySection={m.showCompleted ? NO_DONE : m.doneBySection} revealed={revealed}
               completed={m.showCompleted && projectId ? { tasks: m.completedTasks, open: m.completedOpen, onToggle: () => m.toggleCollapsed(completedOpenKey(projectId)) } : undefined} toggleCollapsed={m.toggleCollapsed} collapsedGroups={collapsedGroups} projects={m.projects} labels={m.labels}
-              earlierActions={route.view === 'today' ? earlierActions : undefined}
+              earlierActions={route.view === 'today' || m.upcomingToday ? earlierActions : undefined}
               onReveal={(key) => setRevealed((s) => { const n = new Set(s); if (n.has(key)) n.delete(key); else n.add(key); return n })} />
           )}
           {own.length > 0 && hiddenDone > 0 && showCompleted && !board && !timeline && <HiddenNote count={hiddenDone} onShow={showCompleted} />}
@@ -458,6 +458,12 @@ function ListHeader({ route, title, label, meta, subtitle, actions, phone, agend
   )
   // The closed list (today-closed-list D5): in the method modes, or once a limit is set.
   const closedItems = route.view === 'today' && closedListOffered(prefs) && <ClosedListMenuItems prefs={prefs} />
+  // Start with Today (upcoming-start-with-today D1): Today's own groups lead Upcoming; synced per account.
+  const withToday = upcomingStartsWithToday(prefs)
+  const startItem = route.view === 'upcoming' && (
+    <MenuItem icon="sun" label={t('Start with Today')} checked={withToday} description={t('Show Today’s tasks before Tomorrow')} data-upcoming-today-toggle
+      onSelect={() => act(setUpcomingStartsWithToday(!withToday))} />
+  )
   const agendaItem = agenda !== undefined && (
     <MenuItem icon="calendar-range" label={agenda ? t('Hide calendar events') : t('Show calendar events')} data-today-events-toggle
       onSelect={() => act(setTodayEventsShown(!agenda))} />
@@ -465,7 +471,7 @@ function ListHeader({ route, title, label, meta, subtitle, actions, phone, agend
   const phoneItems = route.view !== 'inbox' && route.view !== 'label' && items.length > 0 ? <PhoneMenuItems items={items} /> : null
   return (
     <PageHeader title={title} help={HELP_SCREENS[route.view] ?? 'inbox'} actions={phone ? phone.slots : actions} barActions={!!phone}
-      overflow={phoneItems || toggle ? <>{phoneItems}{phoneItems && toggle && <MenuSeparator />}{toggle}{route.view === 'upcoming' && <ProjectionsMenuItem surface="upcoming" />}{agendaItem}{partsItem}{closedItems}{route.view === 'today' && <ReplanTodayItem />}</> : undefined}
+      overflow={phoneItems || toggle ? <>{phoneItems}{phoneItems && toggle && <MenuSeparator />}{toggle}{startItem}{route.view === 'upcoming' && <ProjectionsMenuItem surface="upcoming" />}{agendaItem}{partsItem}{closedItems}{route.view === 'today' && <ReplanTodayItem />}</> : undefined}
       leading={label && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: label.color }} />}
       meta={meta} subtitle={subtitle} menu={menu} kind={route.view === 'today' || route.view === 'upcoming' ? 'day' : 'tool'}
       briefing={briefing && <BriefingText briefing={briefing} />} />

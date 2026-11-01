@@ -6831,5 +6831,7 @@
   "names of members and groups of shared projects and workspaces": "nombres de miembros y grupos de proyectos y espacios de trabajo compartidos",
   "your display name, today's date and your time zone": "tu nombre visible, la fecha de hoy y tu zona horaria",
   "the messages you type": "los mensajes que escribes",
-  "photos you add": "las fotos que añades"
+  "photos you add": "las fotos que añades",
+  "Start with Today": "Empezar con Hoy",
+  "Show Today’s tasks before Tomorrow": "Mostrar las tareas de Hoy antes de Mañana"
 }

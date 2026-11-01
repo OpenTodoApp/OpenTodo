@@ -267,6 +267,7 @@
       "today_done",
       "today_events",
       "today_limit",
+      "upcoming_today",
       "week_start",
       "welcome"
     ],
