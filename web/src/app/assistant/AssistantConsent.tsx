@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { AssistantStatus } from '../../lib/assistantStatus'
 import { t } from '../../lib/i18n'
+import { disclosureField } from '../../lib/assistantDisclosure'
 import type { DeviceSetup } from '../../lib/assistantDevice/settings'
 import { DeviceDisclosure } from './AssistantDevice'
 import { RoutinesDisclosure } from './RoutinesDisclosure'
@@ -41,7 +42,7 @@ export function AssistantConsent({ status, connected, busy, error, onAccept, dev
       <div>
         <p className="font-medium">{t('What may be sent')}</p>
         <ul className="mt-1 list-disc space-y-0.5 pl-5 text-muted">
-          {status.fields.map((f) => <li key={f}>{f}</li>)}
+          {status.fields.map((f) => <li key={f}>{disclosureField(f)}</li>)}
         </ul>
       </div>
       <p className="text-muted">

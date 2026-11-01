@@ -13174,7 +13174,7 @@
   "Routines with AI steps": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
-  "Routines: an Ask AI or Summarise step of one of your routines sends what it reads (text, lines, or tasks with their title, due date, priority, labels and project) to the same provider on a schedule or after an event, while you may not be looking. Its result waits for your review unless you turn on Apply without asking for that routine.": [
+  "Routines: an Ask AI or Summarise step of one of your routines sends its instruction and what it reads (text, lines, tasks with their title, due date, priority, labels and project, or a project with its name, sections and open tasks) to the same provider on a schedule or after an event, while you may not be looking. Its result waits for your review unless you turn on Apply without asking for that routine.": [
     "web/src/app/assistant/RoutinesDisclosure.tsx"
   ],
   "Row": [
@@ -19671,6 +19671,9 @@
     "web/src/lib/activity.ts",
     "web/src/lib/activityRuns.ts"
   ],
+  "comments": [
+    "web/src/lib/assistantDisclosure.ts"
+  ],
   "completed": [
     "web/src/app/task-detail/HistoryTab.tsx",
     "web/src/lib/activity.ts",
@@ -19706,6 +19709,9 @@
   ],
   "creation": [
     "web/src/app/routines/words.tsx"
+  ],
+  "custom fields, task locations and the links tasks came from": [
+    "web/src/lib/assistantDisclosure.ts"
   ],
   "cyan": [
     "web/src/lib/colourNames.ts"
@@ -19811,6 +19817,9 @@
   ],
   "due dates, priority, completion and deletion times, ordering, project and parent links, project colours, archived state, label assignments and counts": [
     "web/src/app/EncryptionPanel.tsx"
+  ],
+  "due dates, repeats, priorities, estimates and completion": [
+    "web/src/lib/assistantDisclosure.ts"
   ],
   "due earlier": [
     "web/src/lib/rules/summary.ts"
@@ -20257,6 +20266,9 @@
   "must start with \"every\"": [
     "web/src/lib/recurrence.ts"
   ],
+  "names of members and groups of shared projects and workspaces": [
+    "web/src/lib/assistantDisclosure.ts"
+  ],
   "needs a due date": [
     "web/src/app/ParseChips.tsx"
   ],
@@ -20417,6 +20429,7 @@
   "notes": [
     "web/src/app/task-detail/HistoryTab.tsx",
     "web/src/lib/activityRuns.ts",
+    "web/src/lib/assistantDisclosure.ts",
     "web/src/lib/history.ts"
   ],
   "nothing tracked": [
@@ -20591,6 +20604,9 @@
   "periods: this, last or next week or month, 2 weeks ago, 3 months ago · = means within": [
     "web/src/app/FilterView.tsx"
   ],
+  "photos you add": [
+    "web/src/lib/assistantDisclosure.ts"
+  ],
   "pink": [
     "web/src/lib/colourNames.ts"
   ],
@@ -20627,6 +20643,9 @@
   ],
   "project, search, look up": [
     "web/src/lib/rules/sentence.ts"
+  ],
+  "project, section and label names, and project descriptions": [
+    "web/src/lib/assistantDisclosure.ts"
   ],
   "project, where, belongs, container": [
     "web/src/lib/rules/sentence.ts"
@@ -20725,6 +20744,9 @@
   "run by an AI assistant": [
     "web/src/lib/rules/inbox.ts"
   ],
+  "saved view names and the hosts of your webhooks, when you describe a routine": [
+    "web/src/lib/assistantDisclosure.ts"
+  ],
   "search, query, filter, view, look up, select": [
     "web/src/lib/rules/sentence.ts"
   ],
@@ -20815,6 +20837,9 @@
   ],
   "task panel open": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "task titles and descriptions": [
+    "web/src/lib/assistantDisclosure.ts"
   ],
   "task titles, descriptions and calendar extras, project, label, section and saved-view names, saved-view queries and your comments": [
     "web/src/app/EncryptionPanel.tsx"
@@ -20907,6 +20932,9 @@
   "the matching tasks": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "the messages you type": [
+    "web/src/lib/assistantDisclosure.ts"
+  ],
   "the model name your server serves": [
     "web/src/app/assistant/AssistantDevice.tsx",
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -20919,6 +20947,9 @@
   ],
   "the name": [
     "web/src/lib/activity.ts"
+  ],
+  "the names, types and links of attachments (never the files)": [
+    "web/src/lib/assistantDisclosure.ts"
   ],
   "the new project": [
     "web/src/lib/rules/sentence.ts"
@@ -21139,6 +21170,9 @@
   "tracked at least {n} min": [
     "web/src/lib/rules/summary.ts"
   ],
+  "tracked time and its notes": [
+    "web/src/lib/assistantDisclosure.ts"
+  ],
   "turn on Run my routines on a device with the on-device assistant set up": [
     "web/src/lib/rules/catalogue.ts"
   ],
@@ -21331,6 +21365,9 @@
   "without {labels}": [
     "web/src/lib/rules/summary.ts"
   ],
+  "workspace, project, section and label names, and project descriptions": [
+    "web/src/lib/assistantDisclosure.ts"
+  ],
   "workspaces": [
     "web/src/app/settingsSections.ts"
   ],
@@ -21361,11 +21398,17 @@
   "your assistant’s provider": [
     "web/src/app/routines/RoutineEditor.tsx"
   ],
+  "your display name, today's date and your time zone": [
+    "web/src/lib/assistantDisclosure.ts"
+  ],
   "your email address is not verified": [
     "web/src/lib/rules/catalogue.ts"
   ],
   "your own time entries": [
     "web/src/app/review/StatsView.tsx"
+  ],
+  "your routines and calendar frames": [
+    "web/src/lib/assistantDisclosure.ts"
   ],
   "your task": [
     "web/src/app/NotificationBell.tsx"
