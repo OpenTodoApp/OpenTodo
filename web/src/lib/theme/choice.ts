@@ -5,7 +5,11 @@
 // `instance:<id>` are reserved for the user's own and the instance's themes. A value
 // this app cannot apply reads as the side's default, writes nothing and stays
 // stored, so it applies once the theme is available. First-load code: small and
-// without the derivation, which loads lazily (load.ts).
+// without the derivation, which loads lazily (load.ts). The built-in catalogue
+// (theme-catalogue D6) is not part of the first load either: without it a
+// `builtin:` theme this code does not list reads as a theme provisionally, and the
+// lazy loader answers whether this app has it (an unknown or other-kind theme then
+// reads as the side's default); Settings loads the catalogue and passes it in.
 import { mutate } from '../ops'
 import type { UserPrefs } from '../types'
 import { USER_PREFS_ID } from '../userPrefs'
@@ -21,7 +25,7 @@ export interface BuiltinTheme {
   isDefault?: true
 }
 
-/** The themes shipped with this app, each side's default first (theme-catalogue adds the palettes). */
+/** The OpenTodo themes, each side's default; the palettes are in the lazy catalogue (builtin/index.ts). */
 export const BUILTIN_THEMES: readonly BuiltinTheme[] = [
   { id: 'opentodo-light', kind: 'light', isDefault: true },
   { id: 'opentodo-dark', kind: 'dark', isDefault: true },
@@ -52,7 +56,7 @@ const FIELD: Record<Side, 'theme_light' | 'theme_dark'> = { light: 'theme_light'
 const VALUE = /^(builtin|user|instance):([a-z0-9-]{1,64})$/
 
 /** Reads one side's choice from the synced row (design D6). Never writes. */
-export function readThemeChoice(row: Partial<UserPrefs> | null | undefined, side: Side): SideChoice {
+export function readThemeChoice(row: Partial<UserPrefs> | null | undefined, side: Side, known: readonly BuiltinTheme[] | null = null): SideChoice {
   const raw = row?.[FIELD[side]]
   const stored = typeof raw === 'string' ? raw : ''
   const fallback = DEFAULT_THEME[side]
@@ -60,23 +64,24 @@ export function readThemeChoice(row: Partial<UserPrefs> | null | undefined, side
   const m = VALUE.exec(stored)
   if (!m) return { stored, status: 'invalid', id: fallback }
   if (m[1] !== 'builtin') return { stored, status: 'newer', id: fallback }
-  const t = BUILTIN_THEMES.find((b) => b.id === m[2])
-  if (!t) return { stored, status: 'newer', id: fallback }
+  const t = (known ?? BUILTIN_THEMES).find((b) => b.id === m[2])
+  // Without the catalogue, a theme this code does not list may be one of its palettes: the lazy loader decides.
+  if (!t) return known ? { stored, status: 'newer', id: fallback } : { stored, status: 'theme', id: m[2] }
   if (t.kind !== side) return { stored, status: 'invalid', id: fallback }
   return t.isDefault ? { stored, status: 'default', id: t.id } : { stored, status: 'theme', id: t.id }
 }
 
 /** Both sides of the row. */
-export function readThemeChoices(row: Partial<UserPrefs> | null | undefined): Record<Side, SideChoice> {
-  return { light: readThemeChoice(row, 'light'), dark: readThemeChoice(row, 'dark') }
+export function readThemeChoices(row: Partial<UserPrefs> | null | undefined, known: readonly BuiltinTheme[] | null = null): Record<Side, SideChoice> {
+  return { light: readThemeChoice(row, 'light', known), dark: readThemeChoice(row, 'dark', known) }
 }
 
 /**
  * Chooses a builtin theme for one side: one op for one field (offline-safe, synced).
  * The side's default is stored as the empty value.
  */
-export function setThemeChoice(side: Side, id: string): Promise<void> {
-  const t = BUILTIN_THEMES.find((b) => b.id === id)
+export function setThemeChoice(side: Side, id: string, known: readonly BuiltinTheme[] = BUILTIN_THEMES): Promise<void> {
+  const t = known.find((b) => b.id === id)
   if (!t || t.kind !== side) return Promise.reject(new Error(`not a ${side} theme: ${id}`))
   return mutate('user_prefs', USER_PREFS_ID, { [FIELD[side]]: t.isDefault ? '' : `builtin:${id}` })
 }

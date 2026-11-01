@@ -80,7 +80,7 @@ export default defineConfig({
         // Precache only the built assets. The worker has deliberately no runtime
         // caching: nothing under /api/ (in particular the live event stream
         // /api/v1/sync/events) may ever be served from or stored in a cache.
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2,md}'],
         // The map (task-locations D5) is not precached: it needs the network for
         // its tiles anyway, and a device with maps off should never download it.
         globIgnores: ['**/MapView-*', '**/maplibre-gl-worker-*', 't.html', '**/assets/t-*'],

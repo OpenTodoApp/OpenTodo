@@ -143,3 +143,15 @@ func TestBrand(t *testing.T) {
 		t.Fatal("unparseable manifest changed")
 	}
 }
+
+// TestThemeCreditsAsText: the built-in themes' licence notices (theme-catalogue D4)
+// are served from the app's own origin as plain text, so the About dialog's
+// Licence link shows them in the browser instead of downloading a file.
+func TestThemeCreditsAsText(t *testing.T) {
+	sub := fstest.MapFS{"assets/CREDITS-abc.md": {Data: []byte("# Credits\n")}}
+	rec := httptest.NewRecorder()
+	handlerFor(sub, Options{}).ServeHTTP(rec, httptest.NewRequest("GET", "/assets/CREDITS-abc.md", nil))
+	if rec.Code != 200 || rec.Header().Get("Content-Type") != "text/plain; charset=utf-8" || rec.Body.String() != "# Credits\n" {
+		t.Fatalf("status %d, type %q, body %q", rec.Code, rec.Header().Get("Content-Type"), rec.Body.String())
+	}
+}

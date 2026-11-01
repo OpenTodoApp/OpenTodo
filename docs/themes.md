@@ -11,7 +11,47 @@ order: 24
 
 A theme sets the colours of the whole interface, the way a theme does in a code editor, and optionally its corner radii and typeface. You choose one theme for when the app is light and one for when it is dark, in **Settings → Appearance → Theme and density**, under **Theme**. With the mode **System** both lists show, **Light** and **Dark**, and the app switches between your two themes when your device switches between light and dark. The choice follows your account to every device, also offline, and applies at once.
 
-This version ships the two OpenTodo themes, **OpenTodo Light** and **OpenTodo Dark**, the defaults. More themes come in later versions; a theme chosen on a newer version shows as **Made with a newer version of OpenTodo** on an older one, which then shows the OpenTodo theme for that side and keeps your choice for when it is updated.
+Besides the two OpenTodo themes, **OpenTodo Light** and **OpenTodo Dark** (the defaults), the app ships fourteen themes from well-known editor palettes: the [catalogue](#catalogue). A theme chosen on a newer version shows as **Made with a newer version of OpenTodo** on an older one, which then shows the OpenTodo theme for that side and keeps your choice for when it is updated.
+
+## Catalogue
+
+<picture><source srcset="images/theme-catalogue-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/theme-catalogue-light.webp" alt="The Theme row with a Light and a Dark list of theme cards, each with a strip of its colours and its author; Solarized Light is chosen, About this theme is under the Light list, and the button Also use Solarized Dark at night is below."></picture>
+
+Each list shows the OpenTodo theme first, then the palettes of its kind by name; a palette that is only published dark (Nord, Dracula) is only in the **Dark** list. Each card credits the palette's author. Choosing a theme applies it at once, also offline: the themes are part of the app, and the catalogue loads with Settings, never with the first screen.
+
+| Light | Dark | Palette by |
+| --- | --- | --- |
+| Catppuccin Latte | Catppuccin Mocha | Catppuccin |
+| Gruvbox Light | Gruvbox Dark | Pavel Pertsev |
+| One Light | One Dark | GitHub Inc. (Atom's One themes) |
+| Rosé Pine Dawn | Rosé Pine | Rosé Pine |
+| Solarized Light | Solarized Dark | Ethan Schoonover |
+| Tokyo Night Light | Tokyo Night | Enkia |
+| | Nord | Sven Greb |
+| | Dracula | Dracula Theme |
+
+With the mode **System**, choosing a theme of a light and dark pair while the other side has a theme of another family offers its counterpart: **Also use Solarized Dark at night** (or **Also use … by day**) sets the other side too, and the cross dismisses the offer without changing anything.
+
+A palette is mapped onto OpenTodo's colours by one written mapping ([`MAPPING.md`](https://github.com/OpenTodoApp/OpenTodo/blob/main/web/src/lib/theme/builtin/MAPPING.md)): its background, panel, text and comment colours go to the surfaces and text tones, its accent to the accent, its green, yellow, red and blue to the status colours, and its accent colours to the label colours by nearest hue (a label colour the palette has none for uses OpenTodo's hue at the palette's lightness). The palettes set colours only: the typeface, corners and text size stay OpenTodo's, so switching never moves the layout. Every theme passes the [contrast](#contrast) check: where a published colour is too faint for its place (for example a palette's comment colour used for secondary text), the theme uses the same hue at the nearest lightness that passes and keeps the published value in its file (`notes.adapted`); its details then say **Some colours were adapted for contrast**.
+
+**About this theme**, under a list whose chosen theme is a palette, shows its author, licence, copyright line and project address (as text, nothing is loaded from it) and **Licence**, which opens the full notices served by your own server.
+
+### Credits
+
+Every palette is under the MIT licence; the full notices ship with the app ([`CREDITS.md`](https://github.com/OpenTodoApp/OpenTodo/blob/main/web/src/lib/theme/builtin/CREDITS.md)). The names are used only to credit the palettes: **OpenTodo is not affiliated with these projects.**
+
+| Palette | Project | Copyright |
+| --- | --- | --- |
+| Solarized | github.com/altercation/solarized | Copyright (c) 2011 Ethan Schoonover |
+| Gruvbox | github.com/morhetz/gruvbox (licence file of github.com/gruvbox-community/gruvbox) | Copyright (c) 2018 Pavel Pertsev |
+| Catppuccin | github.com/catppuccin/catppuccin | Copyright (c) 2021 Catppuccin |
+| Rosé Pine | github.com/rose-pine/rose-pine-theme | Copyright (c) 2023 Rosé Pine |
+| Tokyo Night | github.com/enkia/tokyo-night-vscode-theme | Copyright (c) 2018-present Enkia |
+| One Light, One Dark | github.com/atom/one-light-syntax, github.com/atom/one-dark-syntax | Copyright (c) 2016 GitHub Inc. |
+| Nord | github.com/nordtheme/nord | Copyright (c) 2016-present Sven Greb |
+| Dracula | github.com/dracula/dracula-theme | Copyright (c) 2023 Dracula Theme |
+
+Not shipped: GitHub's Primer palette (the names are GitHub's marks), Monokai (no clear open licence; Monokai Pro is a commercial product of the same name) and Material Theme (relicensed, the terms of the name unclear). A palette joins the catalogue only with a licence file, no naming terms that forbid the use, and an entry in the credits.
 
 ## Themes and the accent
 
@@ -19,7 +59,7 @@ The accent (**Emerald** to **Graphite**, or your [own colour](custom-accent.md))
 
 ## What a theme is
 
-A theme is a small JSON file (`.opentodo-theme.json`). It names a few **seeds**, and every colour it does not set is derived from them on your device, so a theme of four colours is complete, and stays complete when OpenTodo adds a colour later. The format is published as a JSON Schema, [`docs/themes/opentodo-theme.schema.json`](themes/opentodo-theme.schema.json); the two OpenTodo themes are the reference documents (`web/src/lib/theme/builtin/opentodo-light.json` and `opentodo-dark.json`, generated from the stylesheet).
+A theme is a small JSON file (`.opentodo-theme.json`). It names a few **seeds**, and every colour it does not set is derived from them on your device, so a theme of four colours is complete, and stays complete when OpenTodo adds a colour later. The format is published as a JSON Schema, [`docs/themes/opentodo-theme.schema.json`](themes/opentodo-theme.schema.json); the two OpenTodo themes are the reference documents (`web/src/lib/theme/builtin/opentodo-light.json` and `opentodo-dark.json`, generated from the stylesheet), and the catalogue's documents sit next to them (`nord.json`, `solarized-light.json` and the others).
 
 ```json
 {

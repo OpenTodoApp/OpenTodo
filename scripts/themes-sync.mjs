@@ -1,7 +1,8 @@
 // Regenerates the OpenTodo theme documents and the theme derivation's reference values
 // from web/src/index.css (OpenSpec change theme-engine, design D9):
 // web/src/lib/theme/builtin/opentodo-light.json, opentodo-dark.json and
-// web/src/lib/theme/reference.json, then the derivation vectors. index.css stays the
+// web/src/lib/theme/reference.json, then the derivation vectors, then the built-in
+// catalogue's documents and index (theme-catalogue). index.css stays the
 // source of the default tokens; web/src/lib/theme/themes.test.ts fails while the files
 // are stale. The generator is the TypeScript in web/src/lib/theme/generate.ts (it reads
 // the stylesheet with the same token resolver as the contrast check), so this script
@@ -17,3 +18,5 @@ const run = (env, files) => {
 }
 run({ UPDATE_THEMES: '1' }, ['src/lib/theme/themes.test.ts'])
 run({ UPDATE_THEME_VECTORS: '1' }, ['src/lib/theme/derive.test.ts'])
+// The built-in catalogue (theme-catalogue): its documents and index from catalogue/palettes.ts, adapted for contrast again.
+run({ UPDATE_CATALOGUE: '1' }, ['src/lib/theme/catalogue.test.ts'])

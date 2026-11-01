@@ -1,0 +1,47 @@
+{
+  "opentodoTheme": 1,
+  "id": "tokyo-night-light",
+  "name": "Tokyo Night Light",
+  "author": "Enkia",
+  "licence": "MIT",
+  "source": "https://github.com/enkia/tokyo-night-vscode-theme",
+  "kind": "light",
+  "seeds": {
+    "canvas": "#d6d8df",
+    "surface": "#e6e7ed",
+    "text": "#343b59",
+    "accent": "#2959aa",
+    "success": "#385f0d",
+    "warning": "oklch(0.4881 0.1044 71.02)",
+    "danger": "#8c4351",
+    "info": "oklch(0.4775 0.0883 222.06)"
+  },
+  "tokens": {
+    "muted": "oklch(0.4677 0.0217 279.21)",
+    "faint": "oklch(0.4843 0.0163 273.76)",
+    "hover": "#e1e2e8",
+    "border": "#c1c2c7",
+    "hue-red": "#8c4351",
+    "hue-orange": "#965027",
+    "hue-yellow": "#8f5e15",
+    "hue-lime": "#385f0d",
+    "hue-green": "oklch(0.482 0.1354 149.21)",
+    "hue-teal": "#33635c",
+    "hue-cyan": "#006c86",
+    "hue-blue": "#2959aa",
+    "hue-indigo": "#65359d",
+    "hue-violet": "#7b43ba",
+    "hue-pink": "oklch(0.482 0.1805 0.58)",
+    "hue-slate": "#707280"
+  },
+  "bar": "#d6d8df",
+  "notes": {
+    "adapted": {
+      "warning": "#8f5e15",
+      "info": "#006c86",
+      "muted": "#707280",
+      "faint": "#9da0ab"
+    },
+    "text": "Tokyo Night Light by Enkia, mapped onto OpenTodo's tokens by web/src/lib/theme/builtin/MAPPING.md. Label colours not in the palette (green, pink) use OpenTodo's hue at the palette's lightness and chroma. Some colours were adapted for contrast: their published values are under adapted."
+  }
+}
