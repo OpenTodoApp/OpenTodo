@@ -28,9 +28,13 @@ The model may call no other tool. The server type-checks the draft; if it fails,
 
 **D7. Demo:** the route is under the assistant's routes, which the demo refuses.
 
+**D8. CLI and MCP:** not offered. An assistant connected over MCP is itself a model and already writes routines with `create_routine` from the same catalogue and checks; a draft route for it would be a model calling a model. The CLI has no session (the route is session only, like the turn route) and its users write routines with `ot routine` or an MCP assistant.
+
+**D9. Shared prompt:** the device builds the same request as the server from the manifest the server generates (`routine_draft`: the fixed instructions, one catalogue line per kind, the tool), pinned by `routineDraft.vectors.json` (the system text, the message and the reading of the tool's answer). The fixed instructions carry four examples drawn from the starters; a Go test type-checks them.
+
 ## Data model impact
 
-None in the op schema: a routine started from a draft is an ordinary routine once saved. The assistant's usage record gains a `kind: routine_draft` tag (server state).
+None in the op schema: a routine started from a draft is an ordinary routine once saved. The assistant's usage gains its routine_draft part: the table `assistant_usage_drafts` (migration 0054, counts only), listed as `drafts` in `GET /api/v1/me/assistant/usage` (server state).
 
 ## Size and memory
 

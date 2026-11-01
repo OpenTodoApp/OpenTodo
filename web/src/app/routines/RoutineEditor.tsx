@@ -29,7 +29,7 @@ import { useAssistantStatus } from '../../lib/assistantStatus'
 import { useEncryption } from '../../lib/e2ee'
 import { useMe } from '../../lib/timeEntries'
 import type { RoutineStepType, Rule, RoutineTestResult } from '../../lib/types'
-import { Badge, Button, ConfirmDialog, DESKTOP_HEADER_QUERY, Field, Icon, Input, PAGE_FRAME, PageHeader, Tabs, useMediaQuery } from '../../ui'
+import { Badge, Button, ConfirmDialog, DESKTOP_HEADER_QUERY, Field, Icon, Input, Notice, PAGE_FRAME, PageHeader, Tabs, useMediaQuery } from '../../ui'
 import { runRoutineNow } from '../palette/routineCommand'
 import { setLeaveGuard } from '../router'
 import { useShortcutScope } from '../shortcuts'
@@ -37,6 +37,7 @@ import { AddStepSheet } from './AddStep'
 import { AISettings } from './AISettings'
 import { usePreviewData, useRoutineNames, valueNamer } from './data'
 import type { RuleDraft } from './ruleDraft'
+import type { DescribedDraft } from './routineNav'
 import { RunDetailBody, RunsList } from './RunHistory'
 import { CardColumn, sentenceText, WhenCard, type CardEvents, type CardState } from './StepCard'
 import { refName } from './words'
@@ -118,6 +119,8 @@ export interface RoutineEditorProps {
   draft?: RoutineDraft
   /** Terms of a converted filter that a rule cannot use. */
   dropped?: string[]
+  /** The draft came from Describe it (routines-describe-it D3): the banner, its errors shown at once, unsaved. */
+  described?: DescribedDraft
   /** A run to show in the History column (/routines/<id>?run=<run>). */
   run?: string
   /** Open with the History shown (the row menu's History). */
@@ -196,7 +199,7 @@ function usePageGuards(dirty: boolean, onBack: () => void): [(() => void) | null
   return [leave, setLeave]
 }
 
-export function RoutineEditor({ rule, draft: initial, dropped, run, history, onBack, onSaved }: RoutineEditorProps) {
+export function RoutineEditor({ rule, draft: initial, dropped, described, run, history, onBack, onSaved }: RoutineEditorProps) {
   const start = useMemo(() => (rule ? draftOf(rule) : initial ?? NEW_ROUTINE), [rule, initial])
   const { draft, edit: editDraft, undo, canUndo } = useDraft(start)
   const me = useMe() ?? ''
@@ -213,7 +216,8 @@ export function RoutineEditor({ rule, draft: initial, dropped, run, history, onB
   const [announce, setAnnounce] = useState('')
   const [openRun, setOpenRun] = useState<string | null>(run ?? null)
   // The last saved state: Save stays on the page (routines-editor-page D3), so unsaved means "since then".
-  const [baseline, setBaseline] = useState(start)
+  // A drafted routine is unsaved from the start: leaving asks first (routines-describe-it D3).
+  const [baseline, setBaseline] = useState(described ? NEW_ROUTINE : start)
   const [savedId, setSavedId] = useState(rule?.id)
   const focusAfter = useRef<string | null>(null)
   const heading = useRef<HTMLHeadingElement>(null)
@@ -245,7 +249,8 @@ export function RoutineEditor({ rule, draft: initial, dropped, run, history, onB
   // An empty input of a step being filled in is not an error yet: "needs a value here" shows once
   // focus has left its card, or Save was pressed (routines-editor-polish); type errors show at once.
   const [left, setLeft] = useState<ReadonlySet<string>>(() => new Set())
-  const [tried, setTried] = useState(false)
+  // A drafted routine shows every error at once, on its card (routines-describe-it D3).
+  const [tried, setTried] = useState(!!described)
   const leaveCard = useCallback((id: string) => setLeft((s) => (s.has(id) ? s : new Set(s).add(id))), [])
   const waiting = !!error && error.code === 'missing_input' && !tried && !left.has(error.step)
   const shownError = error && !waiting ? { step: error.step, input: error.input, text: errorText(draft, error, outputs), fix: fixFor(draft, error, flow) } : null
@@ -366,7 +371,7 @@ export function RoutineEditor({ rule, draft: initial, dropped, run, history, onB
     </>
   )
 
-  const notices = <EditorNotices online={online} dropped={dropped} saveError={saveError} draft={draft} />
+  const notices = <EditorNotices online={online} dropped={dropped} saveError={saveError} draft={draft} described={saved ? undefined : described} />
   const stepsColumn = (
     <section className="space-y-2" aria-label={t('Steps of {name}', { name })} data-routine-steps>
       {draft.steps.length === 0 && <p className="text-meta text-muted">{t('Add the first step: what should happen?')}</p>}
@@ -436,9 +441,17 @@ export function RoutineEditor({ rule, draft: initial, dropped, run, history, onB
   )
 }
 
-function EditorNotices({ online, dropped, saveError, draft }: { online: boolean; dropped?: string[]; saveError: string; draft: RoutineDraft }) {
+function EditorNotices({ online, dropped, saveError, draft, described }: { online: boolean; dropped?: string[]; saveError: string; draft: RoutineDraft; described?: DescribedDraft }) {
   return (
     <>
+      {described && (
+        <div data-ai-drafted>
+          <Notice tone="info">
+            <span className="block font-medium">{t('Drafted by AI: check each step, then Save')}</span>
+            {described.note && <span className="user-text block" data-ai-note>{described.note}</span>}
+          </Notice>
+        </div>
+      )}
       {!online && <p className="text-meta text-muted">{t('Offline: Save works and syncs later; Test and Run now need a connection.')}</p>}
       {dropped && dropped.length > 0 && (
         <ul className="space-y-0.5 text-meta text-muted" data-rule-dropped>
