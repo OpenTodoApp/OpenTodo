@@ -62,6 +62,17 @@ func (snap *snapshot) apply(cs ChangeSet) {
 			if !ok {
 				snap.projList = append(snap.projList, p)
 			}
+		case "section":
+			// A section planned earlier in the turn (a routine's template step)
+			// takes tasks like a stored one.
+			if _, ok := snap.sectionProject[ch.EntityID]; ok || ch.Create {
+				if pid, has := ch.Patch["project_id"]; has {
+					snap.sectionProject[ch.EntityID] = rawStr(opsync.Entity{"project_id": pid}, "project_id")
+				}
+				if name, has := ch.Patch["name"]; has {
+					snap.sections[ch.EntityID] = rawStr(opsync.Entity{"name": name}, "name")
+				}
+			}
 		case "label":
 			if _, ok := snap.labels[ch.EntityID]; ok || ch.Create {
 				l := merge(opsync.Entity{"id": raw(ch.EntityID)}, ch.Patch)

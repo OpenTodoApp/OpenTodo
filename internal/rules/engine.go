@@ -71,6 +71,9 @@ type Engine struct {
 	// QuickAdd reads a line with quick-add syntax for Create tasks.
 	Query    QueryFunc
 	QuickAdd QuickAddFunc
+	// RoutineHook queues a Send a webhook step's delivery; Mail sends Email me.
+	RoutineHook RoutineHook
+	Mail        RoutineMailer
 
 	db     *sql.DB
 	keys   *e2ee.Store

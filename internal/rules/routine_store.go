@@ -201,6 +201,14 @@ const (
 	EmailsPerAccount = 20
 )
 
+// emailCounts reads the emails a routine and its account sent on a UTC day.
+func (s *Store) emailCounts(ctx context.Context, ruleID, userID, day string) (int, int, error) {
+	var mine, all int
+	err := s.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(CASE WHEN rule_id = ? THEN sent ELSE 0 END), 0), COALESCE(SUM(sent), 0)
+		FROM routine_emails WHERE user_id = ? AND day = ?`, ruleID, userID, day).Scan(&mine, &all)
+	return mine, all, err
+}
+
 // TakeEmail counts one email of a routine for the UTC day, or reports the
 // limit it would pass.
 func (s *Store) TakeEmail(ctx context.Context, ruleID, userID, day string) (bool, error) {

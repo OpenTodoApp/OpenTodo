@@ -21,7 +21,7 @@ A delivery channel sends your notifications to a service you already use, even w
    - **Pushover:** your user key and an application token you create on pushover.net.
    - **Gotify:** your server's address and an application token.
    - **Webhook:** any address that accepts a JSON POST.
-3. Choose what to send: **Reminders**, **Assigned to me**, **Mentions**, **Ready to start** (a blocked task you're assigned to can begin) and **Task page replies**.
+3. Choose what to send: **Reminders**, **Assigned to me**, **Mentions**, **Ready to start** (a blocked task you're assigned to can begin), **Task page replies** and **Routine notices** (a [routine's](routines.md) Notify me step: the routine's name and its text, a link to the run).
 4. Save, then use **Send test** from the channel's menu to check it.
 
 You can have up to five channels. Tokens and keys are stored on your server only and never shown again, so to change one, paste a new one.

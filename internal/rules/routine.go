@@ -160,6 +160,7 @@ type runState struct {
 	records    []StepPreview
 	iterations int
 	seq        int
+	emails     int
 }
 
 // sideEffect is a notification, a delivery or an email queued after commit.

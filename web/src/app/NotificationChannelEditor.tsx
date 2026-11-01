@@ -39,6 +39,7 @@ export function eventName(e: ChannelEvent): string {
     case 'mentioned': return t('Mentions')
     case 'unblocked': return t('Ready to start')
     case 'page': return t('Task page replies')
+    case 'routine': return t('Routine notices')
   }
 }
 

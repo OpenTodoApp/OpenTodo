@@ -1,0 +1,12 @@
+{{.Subject}}
+
+{{.Text}}
+
+--
+This message was sent by your routine "{{.Routine}}" on OpenTodo at {{.Origin}}.
+
+See this run:
+
+{{.Link}}
+
+You get this message because your routine has an Email me step and sends it to {{.Email}}. To stop it, turn the routine off or remove the step on the Routines page.

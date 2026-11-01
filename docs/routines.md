@@ -15,7 +15,7 @@ A routine does several things in a row, each step using what the steps before it
 
 Each step produces one kind of value: **Text**, **Lines** (a list of texts), **Task**, **Tasks**, **Project**, **Date** or **Number**. A step that takes one task or text and receives a list runs once for each item. A Number or a Date can be used where a Text is expected; a list of tasks cannot, so use Join or Format text first.
 
-- **Tasks:** Find tasks (by a condition, a filter query or a saved view), Create tasks (one per line, or from fields), Change tasks (priority, dates, energy, assignee, labels, project and section, complete or reopen, move to the Trash), Add comment, Get one task.
+- **Tasks:** Find tasks (by a condition, a [filter query](filters.md) or a saved view), Create tasks (one per line, each read like [quick add](quick-add.md), or from fields), Change tasks (priority, dates, energy, assignee, labels, project and section, complete or reopen, move to the Trash), Add comment, Get one task.
 - **Projects:** Find project, Create project, Update project, Create sections, Create labels, Favourite, Create a project from a template.
 - **Notes and text:** Get note text, Append to note, Clear note, Split into lines, Join, Format text (`{a}` places the output of step `a`), Find and replace.
 - **Lists and logic:** Filter, Sort, Take first N, Count, If/Otherwise, Repeat for each, Stop.

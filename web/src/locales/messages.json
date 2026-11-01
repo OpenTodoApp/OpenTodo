@@ -179,6 +179,9 @@
   "<b>{name}</b> replied on <b2>{task}</b2>": [
     "web/src/app/NotificationBell.tsx"
   ],
+  "<b>{routine}</b>: {text}": [
+    "web/src/app/NotificationBell.tsx"
+  ],
   "<b>{task}</b> was marked done through its task page": [
     "web/src/app/NotificationBell.tsx"
   ],
@@ -401,6 +404,9 @@
   ],
   "A reset email was sent to {email}.": [
     "web/src/app/UsersPanel.tsx"
+  ],
+  "A routine": [
+    "web/src/app/NotificationBell.tsx"
   ],
   "A rule changes tasks for you when something happens: a label is added, a task’s date passes, or every Sunday evening.": [
     "web/src/app/rules/RulesView.tsx"
@@ -11761,6 +11767,9 @@
   ],
   "Rotate the feed URL?": [
     "web/src/app/CalendarFeedsPanel.tsx"
+  ],
+  "Routine notices": [
+    "web/src/app/NotificationChannelEditor.tsx"
   ],
   "Row": [
     "web/src/app/ImportScreen.tsx"

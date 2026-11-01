@@ -1,7 +1,8 @@
 // Compiles the template library (OpenSpec change template-library, design D1, D4): every
 // templates/<slug>/ folder, checked by scripts/templates-check.mjs, becomes one entry of
 // web/src/generated/templates.json, the module the app's template dialog loads lazily and
-// the site bundle publishes. Text is a map per language ({en, it, ...}; a missing language
+// the site bundle publishes, and its copy internal/templatelib/library.json, embedded in
+// the server for a routine's Create a project from a template step (routines-engine). Text is a map per language ({en, it, ...}; a missing language
 // falls back to English), labels are referenced by index, offsets stay relative, no ids.
 //
 //   node scripts/templates-build.mjs           writes web/src/generated/templates.json
@@ -14,6 +15,7 @@ import { checkLibrary, repoRoot } from './templates-check.mjs'
 
 export const SCHEMA = 1
 export const OUT = 'web/src/generated/templates.json'
+export const SERVER_OUT = 'internal/templatelib/library.json'
 /** The compiled library is a lazy chunk; this keeps it from growing unnoticed (design Risks). */
 export const BUDGET_GZIP_BYTES = 100 * 1024
 
@@ -104,17 +106,18 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.exit(1)
   }
   const text = serialise(library)
-  const path = join(repoRoot, OUT)
   if (process.argv.includes('--check')) {
-    let current = ''
-    try { current = readFileSync(path, 'utf8') } catch { /* missing */ }
-    if (current !== text) {
-      console.error(`templates: ${OUT} is out of date; run \`make templates\``)
-      process.exit(1)
+    for (const out of [OUT, SERVER_OUT]) {
+      let current = ''
+      try { current = readFileSync(join(repoRoot, out), 'utf8') } catch { /* missing */ }
+      if (current !== text) {
+        console.error(`templates: ${out} is out of date; run \`make templates\``)
+        process.exit(1)
+      }
     }
-    console.log(`templates: ${OUT} is current (${library.templates.length} templates)`)
+    console.log(`templates: ${OUT} and ${SERVER_OUT} are current (${library.templates.length} templates)`)
   } else {
-    writeFileSync(path, text)
-    console.log(`templates: wrote ${OUT} (${library.templates.length} templates, ${gzipSync(text).length} bytes gzipped)`)
+    for (const out of [OUT, SERVER_OUT]) writeFileSync(join(repoRoot, out), text)
+    console.log(`templates: wrote ${OUT} and ${SERVER_OUT} (${library.templates.length} templates, ${gzipSync(text).length} bytes gzipped)`)
   }
 }

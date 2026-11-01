@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/OpenTodoApp/opentodo/internal/agenttools"
+	"github.com/OpenTodoApp/opentodo/internal/mail"
 	"github.com/OpenTodoApp/opentodo/internal/rules"
 	"github.com/OpenTodoApp/opentodo/internal/ruleval"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
@@ -29,6 +30,42 @@ func (s *Server) wireRoutines() {
 	s.rules.Tools = agenttools.New(s.sync, agenttools.Options{Log: s.log, Now: s.now, UserZone: s.tzLocation,
 		LocalToday: func() string { return localToday(s.now()) }})
 	s.rules.Env = s.routineEnv
+	s.rules.Mail = routineMailer{s}
+}
+
+// routineMailer sends an Email me step to the account's own verified address
+// (internal/mail kind routine) in the account's language, with a link to the run.
+type routineMailer struct{ s *Server }
+
+func (m routineMailer) message(ctx context.Context, uid string, rm rules.RoutineMail) (mail.Message, bool) {
+	var email string
+	var verified bool
+	if err := m.s.sync.DB().QueryRowContext(ctx, `SELECT email, email_verified_at IS NOT NULL FROM users WHERE id = ?`, uid).Scan(&email, &verified); err != nil || email == "" || !verified {
+		return mail.Message{}, false
+	}
+	lang := "en"
+	if prefs, err := m.s.sync.Get(ctx, uid, "user_prefs", "me"); err == nil && prefs != nil {
+		if l := idOf(prefs["language"]); l != "" && l != "system" {
+			lang = l
+		}
+	}
+	origin := m.s.cfg.Origin()
+	return mail.Message{Kind: mail.KindRoutine, To: email, Lang: lang, UserID: uid, ActorID: uid, Origin: origin,
+		Vars: mail.Vars{Link: origin + "/rules?run=" + rm.RunID, Routine: &mail.RoutineVars{Name: rm.RuleName, Subject: rm.Subject, Text: rm.Text}}}, true
+}
+
+func (m routineMailer) SendRoutine(ctx context.Context, uid string, rm rules.RoutineMail) error {
+	msg, ok := m.message(ctx, uid, rm)
+	if !ok {
+		return errors.New("routine email: no verified address")
+	}
+	return m.s.mail.Send(ctx, msg)
+}
+
+func (m routineMailer) RefuseRoutine(ctx context.Context, uid string, rm rules.RoutineMail, reason string) {
+	if msg, ok := m.message(ctx, uid, rm); ok {
+		m.s.mail.RecordFailure(ctx, msg, reason)
+	}
 }
 
 func (s *Server) registerRoutineRoutes(mux *routes) {
