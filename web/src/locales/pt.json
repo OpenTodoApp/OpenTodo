@@ -6831,5 +6831,14 @@
   "names of members and groups of shared projects and workspaces": "nomes de membros e grupos de projetos e espaços de trabalho compartilhados",
   "your display name, today's date and your time zone": "seu nome de exibição, a data de hoje e seu fuso horário",
   "the messages you type": "as mensagens que você digita",
-  "photos you add": "as fotos que você adiciona"
+  "photos you add": "as fotos que você adiciona",
+  "No projects yet": "Ainda não há projetos",
+  "Projects hold tasks; labels describe them. Create a project to group work in the sidebar.": "Os projetos contêm tarefas; as etiquetas descrevem-nas. Crie um projeto para agrupar o trabalho na barra lateral.",
+  "Set a time for the reminder first.": "Defina primeiro uma hora para o lembrete.",
+  "That project is not available any more.": "Esse projeto já não está disponível.",
+  "That task is not available any more.": "Essa tarefa já não está disponível.",
+  "That time entry is not available any more.": "Essa entrada de tempo já não está disponível.",
+  "The parent project is not available any more.": "O projeto principal já não está disponível.",
+  "The parent task is not available any more.": "A tarefa principal já não está disponível.",
+  "The reminder offset must be whole minutes.": "O desvio do lembrete tem de ser em minutos inteiros."
 }
