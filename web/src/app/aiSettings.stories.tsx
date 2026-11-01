@@ -27,7 +27,7 @@ const status: AssistantStatus = {
 }
 const user = (over: Partial<Parameters<typeof UserAssistantSettings>[0]> = {}) => (
   <UserAssistantSettings status={status} usage={{ month: '2026-10', input_tokens: 80000, output_tokens: 10000, total_tokens: 90000, turns: 12, cap: 500000, resets_at: '2026-11-01' }}
-    autoApply={false} connected busy={false} error={null} cleared={false} onWithdraw={noop} onOwnKey={noop} onAutoApply={noop} onClear={noop}
+    autoApply={false} suggestAfterAdd={false} onSuggestAfterAdd={noop} connected busy={false} error={null} cleared={false} onWithdraw={noop} onOwnKey={noop} onAutoApply={noop} onClear={noop}
     onSaveOwn={async () => true} onTestOwn={noop} {...over} />
 )
 const card = (children: React.ReactNode) => <section className="rounded-card border border-default bg-surface p-4 shadow-1 sm:p-6">{children}</section>

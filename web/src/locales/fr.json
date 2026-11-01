@@ -6831,5 +6831,8 @@
   "names of members and groups of shared projects and workspaces": "noms des membres et groupes des projets et espaces de travail partagés",
   "your display name, today's date and your time zone": "votre nom affiché, la date du jour et votre fuseau horaire",
   "the messages you type": "les messages que vous écrivez",
-  "photos you add": "les photos que vous ajoutez"
+  "photos you add": "les photos que vous ajoutez",
+  "Suggest after adding": "Suggérer après l’ajout",
+  "This device: after an add, the assistant proposes a title, project, subtasks. You review.": "Cet appareil : après un ajout, l’assistant propose titre, projet, sous-tâches. Vous relisez.",
+  "Suggest after adding (this device)": "Suggérer après l’ajout (cet appareil)"
 }

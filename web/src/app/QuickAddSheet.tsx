@@ -7,7 +7,7 @@ import { Popover } from '../ui'
 import type { RefObject } from 'react'
 import { useLabels, useProjects } from '../lib/localData'
 import { logicalToday } from '../lib/dates'
-import { createTask } from '../lib/ops'
+import { createTaskThenSuggest } from '../lib/assistantSuggest'
 import { preferredPlacement } from '../lib/userPrefs'
 import { taskDefaults } from './listActions'
 import { addTasksUndoable } from '../lib/pasteTasks'
@@ -57,7 +57,7 @@ export function QuickAddSheet({ open, onClose, anchor, route, userId }: {
   }
   const onAdd = async (input: QuickAddInput) => {
     // Top or bottom of the list it lands in (add-position D3).
-    await createTask({ ...withDefaults(input), placement: await preferredPlacement() })
+    await createTaskThenSuggest({ ...withDefaults(input), placement: await preferredPlacement() })
     onClose()
   }
   // A pasted list (paste-to-tasks D3): one batch with the view's defaults per line, one Undo.

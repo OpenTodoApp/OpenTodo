@@ -7,6 +7,7 @@ import { api } from '../../lib/api'
 import { errorText } from '../../lib/errorText'
 import { testRequestError } from './testRequestError'
 import { clearThreads, getAutoApply, setAutoApply } from '../../lib/assistant'
+import { getSuggestAfterAdd, setSuggestAfterAdd } from '../../lib/assistantSuggest'
 import { refreshAssistantStatus, setAssistantStatus, type AssistantStatus } from '../../lib/assistantStatus'
 import {
   isOwnerSettings, MEMBER_MODEL_RE, MEMBER_PROVIDERS, PROVIDERS, type AssistantMemberSettings, type AssistantOwnerSettings, type AssistantSettingsInput,
@@ -337,6 +338,7 @@ export interface UserViewProps {
   status: AssistantStatus | null
   usage: AssistantUsage | null
   autoApply: boolean
+  suggestAfterAdd: boolean
   connected: boolean
   busy: boolean
   error: string | null
@@ -345,6 +347,7 @@ export interface UserViewProps {
   onAcceptRoutines?: () => void
   onOwnKey: (key: string) => void
   onAutoApply: (on: boolean) => void
+  onSuggestAfterAdd: (on: boolean) => void
   onClear: () => void
   cleared: boolean
   /** Saves "Which assistant you use"; resolves true when saved. */
@@ -487,6 +490,8 @@ export function UserAssistantSettings(p: UserViewProps) {
     <>
       <SettingRow {...rowCopy('assistant-settings', 'auto')}
         control={<Switch checked={p.autoApply} onChange={p.onAutoApply} label={t('Apply small changes without review (this device)')} hideLabel />} />
+      <SettingRow {...rowCopy('assistant-settings', 'suggest')}
+        control={<Switch checked={p.suggestAfterAdd} onChange={p.onSuggestAfterAdd} label={t('Suggest after adding (this device)')} hideLabel />} />
       <SettingRow {...rowCopy('assistant-settings', 'conversations')}
         status={p.cleared ? <span role="status" className="text-muted">{t('Cleared.')}</span> : undefined}
         control={<Button size="sm" variant="danger" onClick={p.onClear}>{t('Clear conversations on this device')}</Button>} />
@@ -550,6 +555,7 @@ export default function AssistantSettingsSection({ isOwner }: { isOwner: boolean
   const [status, setStatus] = useState<AssistantStatus | null>(null)
   const [usage, setUsage] = useState<AssistantUsage | null>(null)
   const [autoApply, setAuto] = useState(false)
+  const [suggest, setSuggest] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [userError, setUserError] = useState<string | null>(null)
@@ -578,6 +584,7 @@ export default function AssistantSettingsSection({ isOwner }: { isOwner: boolean
   useEffect(() => {
     void load()
     void getAutoApply().then(setAuto)
+    void getSuggestAfterAdd().then(setSuggest)
   }, [load])
 
   const save = async () => {
@@ -659,11 +666,11 @@ export default function AssistantSettingsSection({ isOwner }: { isOwner: boolean
         </CardGroup>
       )}
       <CardGroup title={t('For you')} id="assistant-you">
-        <UserAssistantSettings status={status} usage={usage} autoApply={autoApply} connected={connected} busy={ownBusy} error={userError} cleared={cleared}
+        <UserAssistantSettings status={status} usage={usage} autoApply={autoApply} suggestAfterAdd={suggest} connected={connected} busy={ownBusy} error={userError} cleared={cleared}
           onWithdraw={() => void updateMine({ consent: false })} onOwnKey={(k) => void updateMine({ own_key: k })}
           onAcceptRoutines={() => void updateMine({ consent: true, routines: true }).then(refreshCapabilities)}
           onSaveOwn={saveOwn} onTestOwn={(v) => void testOwn(v)} ownTest={ownTest} ownMessage={ownMessage}
-          onAutoApply={(on) => { setAuto(on); void setAutoApply(on) }} onClear={() => setClearing(true)} />
+          onAutoApply={(on) => { setAuto(on); void setAutoApply(on) }} onSuggestAfterAdd={(on) => { setSuggest(on); void setSuggestAfterAdd(on) }} onClear={() => setClearing(true)} />
       </CardGroup>
       {configuring && isOwner && settings && isOwnerSettings(settings) && draft && (
         <Dialog title={t('Configure the assistant')} onClose={() => setConfiguring(false)} size="lg" dismissable={false} testId="assistant-configure">
