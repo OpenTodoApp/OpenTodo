@@ -102,6 +102,8 @@ export const VIEW_SCOPES: Record<string, ShortcutScope[]> = {
   notes: [],
   // Routines (routines-editor D13): the page's list and the editor's cards, no task list; the editor's keys are local.
   rules: [],
+  // The theme editor (theme-editor D3): controls and an inert preview, no task list.
+  'theme-editor': [],
 }
 
 /** The scopes an entry in `scope` shadows when it binds the same keys (`vim` shadows every scope). */
@@ -414,6 +416,10 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'settings.user-actions', keys: ['d', 'r', 'Delete'], description: 'Settings → People → Users: deactivate or reactivate, create a reset link, delete the focused user (each confirms)', section: 'settings', scope: 'view', views: ['settings'], local: true, when: 'focused user' },
   { id: 'settings.audit-export', keys: ['e'], description: 'Settings → Server → Audit log: export with the current filters while the table has focus', section: 'settings', scope: 'view', views: ['settings'], local: true, when: 'focused table' },
   { id: 'settings.passkeys', keys: ['Tab'], description: 'Settings → Account → Security → Passkeys: add, rename (Enter saves, Esc cancels) or remove passkeys', section: 'settings', scope: 'view', views: ['settings'], local: true },
+  // The theme editor (theme-editor D3): only while the editor is open; text fields keep their own undo.
+  { id: 'themes.undo', keys: ['Ctrl+Z', '⌘+Z'], description: 'Theme editor: undo the last change', section: 'settings', scope: 'view', views: ['theme-editor'], overrides: ['global.undo-bulk'] },
+  { id: 'themes.redo', keys: ['Ctrl+Shift+Z', '⌘+Shift+Z'], description: 'Theme editor: redo the change undone last', section: 'settings', scope: 'view', views: ['theme-editor'] },
+  { id: 'themes.save', keys: ['Ctrl+S', '⌘+S'], description: 'Theme editor: save the theme', section: 'settings', scope: 'view', views: ['theme-editor'], typing: true },
 
   // ---- comments and notes
   { id: 'panel.comment', keys: ['Shift+C'], description: 'Comment on the open task: switch to the Comments tab and focus the composer (markdown; @ completes members, ↑ / ↓ and Enter pick)', section: 'comments', scope: 'panel' },

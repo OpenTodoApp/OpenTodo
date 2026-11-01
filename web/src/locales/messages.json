@@ -300,6 +300,9 @@
   "A comment on a task": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "A dark theme.": [
+    "web/src/app/themes/ImportReport.tsx"
+  ],
   "A dashboard cannot be shown in display mode. Open one of its views instead.": [
     "web/src/app/display/DisplayScreen.tsx"
   ],
@@ -354,6 +357,9 @@
   ],
   "A label needs a name": [
     "web/src/app/LabelsView.tsx"
+  ],
+  "A light theme.": [
+    "web/src/app/themes/ImportReport.tsx"
   ],
   "A link adds whoever opens it. It works once and expires after the time you choose.": [
     "web/src/lib/settingsCopy.ts"
@@ -664,14 +670,22 @@
   ],
   "About this theme": [
     "web/src/app/ThemeAbout.tsx",
-    "web/src/app/ThemeRow.tsx"
+    "web/src/app/ThemeRow.tsx",
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Absolute path on the server. Empty: the backups folder inside the data directory.": [
     "web/src/app/BackupsPanel.tsx"
   ],
   "Accent": [
     "web/src/app/settingsIndex.ts",
+    "web/src/app/themes/tokenNames.ts",
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Accent hover": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
+  "Accent text": [
+    "web/src/app/themes/tokenNames.ts"
   ],
   "Accept": [
     "web/src/app/MemberInvitations.tsx"
@@ -774,7 +788,9 @@
     "web/src/app/IssuesPanel.tsx",
     "web/src/app/NotificationChannels.tsx",
     "web/src/app/SecurityPanel.tsx",
-    "web/src/app/SsoPanel.tsx"
+    "web/src/app/SsoPanel.tsx",
+    "web/src/app/ThemeRow.tsx",
+    "web/src/app/themes/YourThemes.tsx"
   ],
   "Actions for {tasks}": [
     "web/src/app/bulk/BulkActions.tsx"
@@ -799,6 +815,9 @@
     "web/src/app/ProjectHeader.tsx",
     "web/src/app/task-detail/ActivityTab.tsx",
     "web/src/app/task-detail/ConversationTabs.tsx"
+  ],
+  "Ada · yesterday": [
+    "web/src/app/themes/ThemePreview.tsx"
   ],
   "Add": [
     "web/src/app/PlanView.tsx",
@@ -1236,6 +1255,9 @@
   "Admins can invite people and manage members.": [
     "web/src/app/UsersPanel.tsx"
   ],
+  "Advanced": [
+    "web/src/app/themes/TokenList.tsx"
+  ],
   "After its deadline": [
     "web/src/app/calendar/ReplanPreview.tsx"
   ],
@@ -1263,7 +1285,8 @@
   ],
   "All day": [
     "web/src/app/CalendarEvents.tsx",
-    "web/src/app/calendar/TodayAgenda.tsx"
+    "web/src/app/calendar/TodayAgenda.tsx",
+    "web/src/app/themes/ThemePreview.tsx"
   ],
   "All done for today.": [
     "web/src/app/Briefing.tsx"
@@ -1611,6 +1634,7 @@
   "Appearance": [
     "web/src/app/LabelsView.tsx",
     "web/src/app/settingsSections.ts",
+    "web/src/app/themes/ThemeEditor.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
   "Apple Reminders (JSON from the Shortcut)": [
@@ -1797,6 +1821,9 @@
   "Ask the assistant": [
     "web/src/app/assistant/AskEntry.tsx",
     "web/src/app/palette/BarParts.tsx"
+  ],
+  "Ask the electrician for a quote": [
+    "web/src/app/themes/previewData.ts"
   ],
   "Ask the server owner to turn it on.": [
     "web/src/lib/settingsCopy.ts"
@@ -2011,7 +2038,8 @@
     "web/src/app/OutgoingEmailPanel.tsx"
   ],
   "Author": [
-    "web/src/app/ThemeAbout.tsx"
+    "web/src/app/ThemeAbout.tsx",
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Automatic": [
     "web/src/app/OutgoingEmailPanel.tsx"
@@ -2039,6 +2067,9 @@
     "web/src/app/menus/ActionMenu.tsx",
     "web/src/app/palette/CommandPalette.tsx",
     "web/src/app/review/StepCard.tsx"
+  ],
+  "Back to Appearance": [
+    "web/src/app/themes/ThemeEditor.tsx"
   ],
   "Back to Today": [
     "web/src/app/review/DoneForToday.tsx"
@@ -2120,6 +2151,9 @@
   "Base URL": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
+  "Base colours": [
+    "web/src/app/themes/EditorSections.tsx"
+  ],
   "Based on this device's history": [
     "web/src/app/review/StatsView.tsx"
   ],
@@ -2190,6 +2224,7 @@
   ],
   "Board": [
     "web/src/app/task-list/ListChrome.tsx",
+    "web/src/app/themes/ThemePreview.tsx",
     "web/src/app/views/DisplayPanel.tsx"
   ],
   "Board and timeline": [
@@ -2206,12 +2241,18 @@
     "web/src/app/editorCommands.ts",
     "web/src/lib/richtextEditor.ts"
   ],
+  "Book the skip": [
+    "web/src/app/themes/previewData.ts"
+  ],
   "Bookmarklet": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Bookmarklet and extension": [
     "web/src/app/settingsIndex.ts",
     "web/src/app/settingsSections.ts"
+  ],
+  "Border": [
+    "web/src/app/themes/tokenNames.ts"
   ],
   "Branding": [
     "web/src/app/settingsIndex.ts",
@@ -2253,6 +2294,9 @@
   "Browser": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
+  "Browser bar": [
+    "web/src/app/themes/ImportReport.tsx"
+  ],
   "Browser extension": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -2261,6 +2305,9 @@
   ],
   "Bucket": [
     "web/src/app/BackupsPanel.tsx"
+  ],
+  "Builders on site": [
+    "web/src/app/themes/previewData.ts"
   ],
   "Built-in": [
     "web/src/app/PreferencesPanels.tsx"
@@ -2462,6 +2509,9 @@
     "web/src/app/task-detail/Composer.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
     "web/src/app/task-detail/ZoneControl.tsx",
+    "web/src/app/themes/ImportReport.tsx",
+    "web/src/app/themes/ThemeEditor.tsx",
+    "web/src/app/themes/ThemePreview.tsx",
     "web/src/app/views/SaveViewCard.tsx",
     "web/src/ui/patterns/ConfirmDialog.tsx"
   ],
@@ -2480,9 +2530,15 @@
   "Cancel the invitation of {email}": [
     "web/src/app/PendingInvitations.tsx"
   ],
+  "Canvas": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
   "Capture": [
     "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Cards": [
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Carry over": [
     "web/src/lib/review.ts"
@@ -2619,6 +2675,24 @@
   "Channels": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Chart": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
+  "Chart step 1": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
+  "Chart step 2": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
+  "Chart step 3": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
+  "Chart step 4": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
+  "Chart step 5": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
   "Check": [
     "web/src/app/task-detail/ReactionBar.tsx"
   ],
@@ -2672,6 +2746,9 @@
     "web/src/app/EditorChrome.tsx",
     "web/src/app/editorCommands.ts",
     "web/src/page/TaskPageScreen.tsx"
+  ],
+  "Chips": [
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Choice": [
     "web/src/lib/fields.ts"
@@ -2813,6 +2890,9 @@
   ],
   "Choose the calendar to write tasks into.": [
     "web/src/app/CalendarSyncPanel.tsx"
+  ],
+  "Choose the paint for the hallway": [
+    "web/src/app/themes/previewData.ts"
   ],
   "Choose the project first.": [
     "web/src/app/routines/words.tsx"
@@ -3136,6 +3216,9 @@
   "Compact tightens rows, headers and the sidebar; touch targets stay full size.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Compare the samples in daylight and in the evening before ordering.": [
+    "web/src/app/themes/ThemePreview.tsx"
+  ],
   "Comparison": [
     "web/src/app/filter/ConditionEditor.tsx"
   ],
@@ -3382,6 +3465,13 @@
   "Continues {title} from {date}": [
     "web/src/app/task-detail/OccurrenceScope.tsx"
   ],
+  "Contrast": [
+    "web/src/app/themes/ContrastPanel.tsx",
+    "web/src/app/themes/ImportReport.tsx"
+  ],
+  "Controls": [
+    "web/src/app/themes/EditorSections.tsx"
+  ],
   "Conversation": [
     "web/src/app/assistant/AssistantPanelBody.tsx",
     "web/src/page/TaskPageScreen.tsx"
@@ -3470,6 +3560,9 @@
   ],
   "Copyright": [
     "web/src/app/ThemeAbout.tsx"
+  ],
+  "Corners": [
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Cost": [
     "web/src/app/FieldsDialog.tsx"
@@ -3645,8 +3738,14 @@
   "Create the account for <strong>{email}</strong> with the name and password you chose. This link works until {instant}.": [
     "web/src/app/EmailScreens.tsx"
   ],
+  "Create the dark counterpart": [
+    "web/src/app/themes/ThemeEditor.tsx"
+  ],
   "Create the label {name}": [
     "web/src/lib/rules/proposal.ts"
+  ],
+  "Create the light counterpart": [
+    "web/src/app/themes/ThemeEditor.tsx"
   ],
   "Create the project {name}": [
     "web/src/lib/rules/proposal.ts",
@@ -3742,6 +3841,7 @@
   "Custom": [
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/ClosedListSettings.tsx",
+    "web/src/app/themes/EditorSections.tsx",
     "web/src/ui/AccentPicker.tsx"
   ],
   "Custom before the deadline…": [
@@ -3767,6 +3867,9 @@
   ],
   "Custom range": [
     "web/src/app/AuditPanel.tsx"
+  ],
+  "Customise": [
+    "web/src/app/ThemeRow.tsx"
   ],
   "Custom…": [
     "web/src/app/AuditPanel.tsx",
@@ -3806,6 +3909,9 @@
     "web/src/app/review/DailyCheck.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
+  "Danger": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
   "Danger zone": [
     "web/src/app/LabelsView.tsx",
     "web/src/lib/settingsCopy.ts"
@@ -3814,6 +3920,8 @@
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/FirstRun.tsx",
     "web/src/app/ThemeRow.tsx",
+    "web/src/app/themes/EditorSections.tsx",
+    "web/src/app/themes/YourThemes.tsx",
     "web/src/ui/AccentPicker.tsx"
   ],
   "Dashboard": [
@@ -4018,7 +4126,8 @@
     "web/src/app/calendar/FramesDialog.tsx"
   ],
   "Default": [
-    "web/src/app/WorkspacesSettings.tsx"
+    "web/src/app/WorkspacesSettings.tsx",
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Default reminders": [
     "web/src/app/settingsIndex.ts",
@@ -4060,7 +4169,10 @@
     "web/src/app/notes/NoteRow.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
     "web/src/app/task-detail/TaskActionsMenu.tsx",
-    "web/src/app/task-detail/TimeTab.tsx"
+    "web/src/app/task-detail/TimeTab.tsx",
+    "web/src/app/themes/ThemeEditor.tsx",
+    "web/src/app/themes/ThemePreview.tsx",
+    "web/src/app/themes/YourThemes.tsx"
   ],
   "Delete account": [
     "web/src/app/UsersPanel.tsx"
@@ -4137,6 +4249,9 @@
   "Delete the selected task (d alone does nothing after 1 s)": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Delete theme": [
+    "web/src/app/themes/ThemeEditor.tsx"
+  ],
   "Delete this and following": [
     "web/src/app/calendar/occurrenceMenu.tsx"
   ],
@@ -4174,7 +4289,8 @@
     "web/src/app/IssuesPanel.tsx",
     "web/src/app/NotificationChannels.tsx",
     "web/src/app/WorkspaceGeneral.tsx",
-    "web/src/app/WorkspaceGroups.tsx"
+    "web/src/app/WorkspaceGroups.tsx",
+    "web/src/app/themes/ThemeEditor.tsx"
   ],
   "Delete “{name}”?": [
     "web/src/app/ProjectHeader.tsx",
@@ -4389,7 +4505,8 @@
   ],
   "Discard": [
     "web/src/app/assistant/ChangeSetReview.tsx",
-    "web/src/app/routines/RoutineEditor.tsx"
+    "web/src/app/routines/RoutineEditor.tsx",
+    "web/src/app/themes/ThemeEditor.tsx"
   ],
   "Discard your changes?": [
     "web/src/app/routines/RoutineEditor.tsx"
@@ -4455,6 +4572,9 @@
   "Doesn’t repeat": [
     "web/src/app/task-detail/TaskFacts.tsx"
   ],
+  "Doing": [
+    "web/src/app/themes/previewData.ts"
+  ],
   "Don't store anything personal.": [
     "web/src/lib/demo.ts"
   ],
@@ -4486,6 +4606,7 @@
     "web/src/app/task-detail/TaskPageDialog.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/app/task-list/ListChrome.tsx",
+    "web/src/app/themes/previewData.ts",
     "web/src/page/TaskPageScreen.tsx",
     "web/src/ui/AccentPicker.tsx"
   ],
@@ -4566,6 +4687,9 @@
   "Drag to your bookmarks bar": [
     "web/src/app/CaptureSettings.tsx"
   ],
+  "Draw the kitchen plan": [
+    "web/src/app/themes/previewData.ts"
+  ],
   "Drop files to attach them to this task": [
     "web/src/app/task-detail/AttachmentsRow.tsx"
   ],
@@ -4626,7 +4750,9 @@
     "web/src/app/TemplateDialogs.tsx",
     "web/src/app/routines/RoutinesView.tsx",
     "web/src/app/routines/StepCard.tsx",
-    "web/src/app/task-detail/TaskActionsMenu.tsx"
+    "web/src/app/task-detail/TaskActionsMenu.tsx",
+    "web/src/app/themes/ThemeEditor.tsx",
+    "web/src/app/themes/YourThemes.tsx"
   ],
   "Duplicate a project": [
     "web/src/app/TemplateDialogs.tsx"
@@ -4698,7 +4824,8 @@
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/calendar/FrameBand.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
-    "web/src/app/task-detail/TimeTab.tsx"
+    "web/src/app/task-detail/TimeTab.tsx",
+    "web/src/app/themes/YourThemes.tsx"
   ],
   "Edit as text": [
     "web/src/app/views/ViewToolbar.tsx"
@@ -4779,6 +4906,9 @@
   "Edit webhook": [
     "web/src/app/WebhooksPanel.tsx"
   ],
+  "Edit {name}": [
+    "web/src/app/themes/YourThemes.tsx"
+  ],
   "Editing. Enter saves, Escape cancels, Shift+Enter opens the details.": [
     "web/src/app/task-list/InlineEditor.tsx"
   ],
@@ -4794,6 +4924,9 @@
   ],
   "Eisenhower matrix": [
     "web/src/lib/boardTemplates.ts"
+  ],
+  "Electrician call": [
+    "web/src/app/themes/previewData.ts"
   ],
   "Email": [
     "web/src/app/AuthScreen.tsx",
@@ -5196,6 +5329,9 @@
   "Every assistant conversation stored in this browser is deleted. Your tasks and changes already applied stay as they are.": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
+  "Every colour of the theme. Setting one keeps it as you set it; Reset lets it follow the base colours again.": [
+    "web/src/app/themes/TokenList.tsx"
+  ],
   "Every day": [
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/lib/frames.ts"
@@ -5233,6 +5369,13 @@
   ],
   "Every month on day {day}": [
     "web/src/app/task-detail/WhenControl.tsx"
+  ],
+  "Every other colour follows from these, unless you set it under Advanced.": [
+    "web/src/app/themes/EditorSections.tsx"
+  ],
+  "Every pair reaches AA": [
+    "web/src/app/themes/ContrastPanel.tsx",
+    "web/src/app/themes/ImportReport.tsx"
   ],
   "Every project always shows its very next action.": [
     "web/src/lib/method/vocabulary.json"
@@ -5451,7 +5594,10 @@
   ],
   "Export": [
     "web/src/app/AuditPanel.tsx",
+    "web/src/app/ThemeRow.tsx",
     "web/src/app/settingsIndex.ts",
+    "web/src/app/themes/ThemeEditor.tsx",
+    "web/src/app/themes/YourThemes.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
   "Export time entries": [
@@ -5492,6 +5638,9 @@
   ],
   "Failure": [
     "web/src/app/AuditPanel.tsx"
+  ],
+  "Faint text": [
+    "web/src/app/themes/tokenNames.ts"
   ],
   "Favourite": [
     "web/src/lib/rules/sentence.ts"
@@ -5587,6 +5736,9 @@
   ],
   "Filter by duration": [
     "web/src/app/task-list/ListChrome.tsx"
+  ],
+  "Filter colours": [
+    "web/src/app/themes/TokenList.tsx"
   ],
   "Filter feed by kind": [
     "web/src/app/FeedView.tsx"
@@ -5763,8 +5915,17 @@
   "Five minutes: the Inbox to zero, what is open from earlier, and today's focus.": [
     "web/src/lib/method/vocabulary.json"
   ],
+  "Fix": [
+    "web/src/app/themes/ContrastPanel.tsx"
+  ],
   "Fix a timed due to your time zone, or release it to a floating time": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Fix all": [
+    "web/src/app/themes/ContrastPanel.tsx"
+  ],
+  "Fix contrast now": [
+    "web/src/app/themes/ImportReport.tsx"
   ],
   "Fix step {n} first": [
     "web/src/app/routines/RoutineEditor.tsx"
@@ -5777,6 +5938,9 @@
   ],
   "Fix to {zoneCity}": [
     "web/src/app/task-detail/ZoneControl.tsx"
+  ],
+  "Fix {fg} on {bg}": [
+    "web/src/app/themes/ContrastPanel.tsx"
   ],
   "Fixed to a time zone (now):": [
     "web/src/app/task-detail/ZoneControl.tsx"
@@ -5819,6 +5983,9 @@
   "Focus on this task": [
     "web/src/app/task-detail/TaskActionsMenu.tsx"
   ],
+  "Focus ring": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
   "Focus the first row": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -5856,6 +6023,9 @@
   ],
   "Follow quick add ({language})": [
     "web/src/app/VoiceSettings.tsx"
+  ],
+  "Font": [
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Food|icon category": [
     "web/src/ui/icons/catalogue.ts"
@@ -6573,6 +6743,9 @@
   "Highlight, then dismiss the last chip": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Highlighted text": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
   "History": [
     "web/src/app/HistoryPanel.tsx",
     "web/src/app/ProjectHeader.tsx",
@@ -6598,6 +6771,9 @@
   "Home SSO": [
     "web/src/app/SsoPanel.tsx"
   ],
+  "Home renovation": [
+    "web/src/app/themes/previewData.ts"
+  ],
   "Home, Office, Gym…": [
     "web/src/app/locations/LocationEditor.tsx",
     "web/src/app/locations/PlacesView.tsx"
@@ -6610,6 +6786,9 @@
   ],
   "Hourly": [
     "web/src/app/BackupsPanel.tsx"
+  ],
+  "Hover": [
+    "web/src/app/themes/tokenNames.ts"
   ],
   "How": [
     "web/src/app/task-detail/Facets.tsx",
@@ -6751,6 +6930,12 @@
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
   ],
+  "Import a VS Code theme": [
+    "web/src/app/themes/YourThemes.tsx"
+  ],
+  "Import a theme file": [
+    "web/src/app/themes/YourThemes.tsx"
+  ],
   "Import completed": [
     "web/src/lib/webhooks.ts"
   ],
@@ -6778,6 +6963,9 @@
   ],
   "Import {actionable, plural, one {# item} other {# items}}": [
     "web/src/app/ImportScreen.tsx"
+  ],
+  "Import {name}": [
+    "web/src/app/themes/ImportReport.tsx"
   ],
   "Import: {note}": [
     "web/src/app/DataSettings.tsx"
@@ -7118,11 +7306,17 @@
   "Indigo": [
     "web/src/lib/colourNames.ts"
   ],
+  "Info": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
   "Inherited fields are edited in the project that defines them.": [
     "web/src/app/FieldsDialog.tsx"
   ],
   "Inline code": [
     "web/src/lib/richtextEditor.ts"
+  ],
+  "Input border": [
+    "web/src/app/themes/tokenNames.ts"
   ],
   "Insert": [
     "web/src/app/routines/words.tsx"
@@ -7146,6 +7340,12 @@
   ],
   "Install the app and use your phone's share menu.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Installed font": [
+    "web/src/app/themes/EditorSections.tsx"
+  ],
+  "Installed font name": [
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Installed, OpenTodo opens in its own window and works offline on your phone, tablet or computer.": [
     "web/src/app/FirstRun.tsx"
@@ -7378,6 +7578,9 @@
   "Keep away from AI assistants": [
     "web/src/app/AgentAccessRow.tsx"
   ],
+  "Keep editing": [
+    "web/src/app/themes/ThemeEditor.tsx"
+  ],
   "Keep events for": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -7398,6 +7601,9 @@
   ],
   "Keep mine (skip)": [
     "web/src/app/ImportScreen.tsx"
+  ],
+  "Keep my draft": [
+    "web/src/app/themes/ThemeEditor.tsx"
   ],
   "Keep my start view": [
     "web/src/app/method/MethodModeChooser.tsx"
@@ -7434,6 +7640,9 @@
     "web/src/app/ParseChips.tsx",
     "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/quickadd/SheetBar.tsx"
+  ],
+  "Keeps each colour's hue and moves only its lightness until the pair reads.": [
+    "web/src/app/themes/ImportReport.tsx"
   ],
   "Kept away": [
     "web/src/app/AgentAccessRow.tsx"
@@ -7486,7 +7695,11 @@
   ],
   "Kind": [
     "web/src/app/FeedView.tsx",
-    "web/src/app/ProjectActivity.tsx"
+    "web/src/app/ProjectActivity.tsx",
+    "web/src/app/themes/EditorSections.tsx"
+  ],
+  "Kitchen plan": [
+    "web/src/app/themes/previewData.ts"
   ],
   "Label": [
     "web/src/app/LabelPicker.tsx",
@@ -7540,6 +7753,7 @@
     "web/src/app/task-detail/TaskFacts.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/task-list/ListChrome.tsx",
+    "web/src/app/themes/tokenNames.ts",
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/facets.ts",
     "web/src/lib/rules/proposal.ts",
@@ -7680,6 +7894,7 @@
   ],
   "Later": [
     "web/src/app/display/DisplayScreen.tsx",
+    "web/src/app/themes/previewData.ts",
     "web/src/lib/listGroups.ts"
   ],
   "Later dates of this task follow its completions, so they cannot be changed one by one.": [
@@ -7787,12 +8002,15 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Licence": [
-    "web/src/app/ThemeAbout.tsx"
+    "web/src/app/ThemeAbout.tsx",
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Light": [
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/FirstRun.tsx",
     "web/src/app/ThemeRow.tsx",
+    "web/src/app/themes/EditorSections.tsx",
+    "web/src/app/themes/YourThemes.tsx",
     "web/src/ui/AccentPicker.tsx"
   ],
   "Light or dark, colour and row density, on all your devices.": [
@@ -7824,6 +8042,7 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "Lines": [
+    "web/src/app/themes/tokenNames.ts",
     "web/src/lib/rules/sentence.ts"
   ],
   "Link": [
@@ -7867,6 +8086,7 @@
   ],
   "List": [
     "web/src/app/task-list/ListChrome.tsx",
+    "web/src/app/themes/ThemePreview.tsx",
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/rules/sentence.ts"
   ],
@@ -7878,6 +8098,9 @@
   ],
   "List at most {n} repositories or projects.": [
     "web/src/app/IssueEditor.tsx"
+  ],
+  "List text size": [
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Listed in the evening group of Today": [
     "web/src/app/task-detail/WhenControl.tsx"
@@ -7918,6 +8141,9 @@
   ],
   "Load older updates": [
     "web/src/app/FeedView.tsx"
+  ],
+  "Load the saved version": [
+    "web/src/app/themes/ThemeEditor.tsx"
   ],
   "Loading": [
     "web/src/app/profile/PictureDialog.tsx",
@@ -7999,6 +8225,9 @@
   ],
   "Loading the run": [
     "web/src/app/routines/RunHistory.tsx"
+  ],
+  "Loading the theme…": [
+    "web/src/app/themes/ThemeEditor.tsx"
   ],
   "Loading users": [
     "web/src/app/UsersPanel.tsx"
@@ -8103,6 +8332,9 @@
     "web/src/app/routines/words.tsx",
     "web/src/lib/energy.ts"
   ],
+  "Low contrast · {n}": [
+    "web/src/app/themes/YourThemes.tsx"
+  ],
   "Low energy": [
     "web/src/lib/energy.ts"
   ],
@@ -8168,6 +8400,9 @@
   ],
   "Make this the start view on this device": [
     "web/src/app/display/DisplayScreen.tsx"
+  ],
+  "Make your own from any theme with Customise in its menu, start a new one, or import a theme file or a VS Code colour theme. You can also drop a file here.": [
+    "web/src/app/themes/YourThemes.tsx"
   ],
   "Make {name} a member again?": [
     "web/src/app/UsersPanel.tsx"
@@ -8244,6 +8479,10 @@
   ],
   "Maybe one day: parked without a date.": [
     "web/src/lib/method/vocabulary.json"
+  ],
+  "Measuring…": [
+    "web/src/app/themes/ContrastPanel.tsx",
+    "web/src/app/themes/ImportReport.tsx"
   ],
   "Medium": [
     "web/src/app/routines/words.tsx",
@@ -8422,6 +8661,9 @@
   "Money|icon category": [
     "web/src/ui/icons/catalogue.ts"
   ],
+  "Monospace": [
+    "web/src/app/themes/EditorSections.tsx"
+  ],
   "Month": [
     "web/src/app/CalendarRange.tsx",
     "web/src/app/review/StatsView.tsx",
@@ -8468,6 +8710,9 @@
   ],
   "More properties": [
     "web/src/app/task-detail/TaskFacts.tsx"
+  ],
+  "More theme actions": [
+    "web/src/app/themes/ThemeEditor.tsx"
   ],
   "Morning": [
     "web/src/app/ParseChips.tsx",
@@ -8726,6 +8971,9 @@
   "Must include openid; email is needed to match existing accounts.": [
     "web/src/app/SsoPanel.tsx"
   ],
+  "Muted text": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
   "Mutes the health warnings; deadlines still show": [
     "web/src/app/menus/reviewMenu.ts"
   ],
@@ -8735,6 +8983,9 @@
   ],
   "My own provider and key": [
     "web/src/app/assistant/AssistantSettings.tsx"
+  ],
+  "My theme": [
+    "web/src/app/ThemeRow.tsx"
   ],
   "Name": [
     "web/src/app/AuthScreen.tsx",
@@ -8942,6 +9193,9 @@
   "New tasks": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "New theme": [
+    "web/src/app/themes/YourThemes.tsx"
+  ],
   "New token": [
     "web/src/app/TokensSection.tsx",
     "web/src/lib/settingsCopy.ts"
@@ -9126,6 +9380,9 @@
     "web/src/app/Sections.tsx",
     "web/src/app/menus/stylePickers.tsx"
   ],
+  "No colour matches “{q}”.": [
+    "web/src/app/themes/TokenList.tsx"
+  ],
   "No comments yet. Ask a question or leave a note; comments work offline.": [
     "web/src/app/task-detail/CommentsTab.tsx"
   ],
@@ -9245,6 +9502,9 @@
   "No labels yet. Type a name and press Enter.": [
     "web/src/app/LabelPicker.tsx",
     "web/src/app/notes/NoteEditor.tsx"
+  ],
+  "No lightness of these colours reaches AA at their hue.": [
+    "web/src/app/themes/ContrastPanel.tsx"
   ],
   "No longer a subtask": [
     "web/src/lib/assistant.ts"
@@ -9672,6 +9932,9 @@
   "Not run yet.": [
     "web/src/lib/push.ts"
   ],
+  "Not saved yet: this theme is a draft on this device until you save it.": [
+    "web/src/app/themes/ThemeEditor.tsx"
+  ],
   "Not scheduled": [
     "web/src/app/RemindersField.tsx",
     "web/src/app/ScheduleSheet.tsx",
@@ -9751,6 +10014,7 @@
     "web/src/app/palette/entries.ts",
     "web/src/app/palette/notesSection.tsx",
     "web/src/app/task-detail/TaskNotes.tsx",
+    "web/src/app/themes/EditorSections.tsx",
     "web/src/lib/shortcuts.ts"
   ],
   "Notes and text": [
@@ -10472,6 +10736,9 @@
     "web/src/app/locations/LocationPreview.tsx",
     "web/src/page/TaskPageScreen.tsx"
   ],
+  "Open in the editor": [
+    "web/src/app/themes/ImportReport.tsx"
+  ],
   "Open it": [
     "web/src/app/LabelsView.tsx"
   ],
@@ -10592,6 +10859,9 @@
   "OpenTodo Dark": [
     "web/src/app/ThemeRow.tsx"
   ],
+  "OpenTodo Inter": [
+    "web/src/app/themes/EditorSections.tsx"
+  ],
   "OpenTodo Light": [
     "web/src/app/ThemeRow.tsx"
   ],
@@ -10709,6 +10979,9 @@
   "Order changed": [
     "web/src/lib/viewOrderMove.ts"
   ],
+  "Order the bathroom tiles": [
+    "web/src/app/themes/previewData.ts"
+  ],
   "Organize": [
     "web/src/app/LabelsView.tsx"
   ],
@@ -10727,6 +11000,7 @@
     "web/src/app/FilterView.tsx"
   ],
   "Other": [
+    "web/src/app/themes/tokenNames.ts",
     "web/src/lib/dashboard.ts",
     "web/src/lib/feed.ts",
     "web/src/lib/views.ts"
@@ -10835,6 +11109,18 @@
   ],
   "Ownership transferred": [
     "web/src/app/auditFormat.ts"
+  ],
+  "Paint chart": [
+    "web/src/app/themes/ThemePreview.tsx"
+  ],
+  "Paint shop": [
+    "web/src/app/themes/previewData.ts"
+  ],
+  "Pairs below AA": [
+    "web/src/app/themes/ContrastPanel.tsx"
+  ],
+  "Panels": [
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Parallel": [
     "web/src/app/menus/flowMenu.ts"
@@ -11104,6 +11390,9 @@
   "Pick one of the options.": [
     "web/src/lib/fields.ts"
   ],
+  "Pick three samples": [
+    "web/src/app/themes/previewData.ts"
+  ],
   "Pick up to three in the Daily check": [
     "web/src/app/method/LoopHome.tsx"
   ],
@@ -11221,6 +11510,12 @@
   "Pomodoro, Flowtime or Countdown, the lengths, breaks and the sound": [
     "web/src/app/settingsIndex.ts"
   ],
+  "Popover": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
+  "Popovers": [
+    "web/src/app/themes/EditorSections.tsx"
+  ],
   "Port": [
     "web/src/app/OutgoingEmailPanel.tsx"
   ],
@@ -11269,13 +11564,27 @@
   "Preview": [
     "web/src/app/ImportScreen.tsx",
     "web/src/app/RestoreSection.tsx",
-    "web/src/app/focus/FocusSettings.tsx"
+    "web/src/app/focus/FocusSettings.tsx",
+    "web/src/app/themes/ThemeEditor.tsx",
+    "web/src/app/themes/ThemePreview.tsx"
   ],
   "Preview loading…": [
     "web/src/app/routines/StepCard.tsx"
   ],
   "Preview needs a connection": [
     "web/src/app/routines/StepCard.tsx"
+  ],
+  "Preview of the theme on a board": [
+    "web/src/app/themes/ThemePreview.tsx"
+  ],
+  "Preview of the theme on a task list": [
+    "web/src/app/themes/ThemePreview.tsx"
+  ],
+  "Preview of the theme on the task panel": [
+    "web/src/app/themes/ThemePreview.tsx"
+  ],
+  "Preview of the theme on the week calendar": [
+    "web/src/app/themes/ThemePreview.tsx"
   ],
   "Preview · {format}": [
     "web/src/app/ImportScreen.tsx"
@@ -11316,6 +11625,9 @@
   "Print the keys in the app, next to quick add and in prompts": [
     "web/src/app/settingsIndex.ts"
   ],
+  "Priorities": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
   "Priority": [
     "web/src/app/ParseChips.tsx",
     "web/src/app/RuleEditor.tsx",
@@ -11332,8 +11644,21 @@
     "web/src/lib/rules/proposal.ts",
     "web/src/lib/rules/sentence.ts"
   ],
+  "Priority 1": [
+    "web/src/app/themes/ThemePreview.tsx",
+    "web/src/app/themes/tokenNames.ts"
+  ],
   "Priority 1 or 2": [
     "web/src/app/rules/RuleFields.tsx"
+  ],
+  "Priority 2": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
+  "Priority 3": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
+  "Priority 4": [
+    "web/src/app/themes/tokenNames.ts"
   ],
   "Priority P{from} → P{to}": [
     "web/src/lib/assistant.ts"
@@ -11771,6 +12096,9 @@
   "Quote\nOrdered\nDone": [
     "web/src/app/FieldsDialog.tsx"
   ],
+  "Raised surface": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
   "Ramble into tasks": [
     "web/src/app/palette/registry.ts"
   ],
@@ -11915,6 +12243,9 @@
   ],
   "Redirect address": [
     "web/src/app/CalendarSyncDialogs.tsx"
+  ],
+  "Redo": [
+    "web/src/app/themes/ThemeEditor.tsx"
   ],
   "Refresh": [
     "web/src/app/WebhooksPanel.tsx"
@@ -12495,6 +12826,9 @@
   "Review progress": [
     "web/src/app/review/ReviewProgress.tsx"
   ],
+  "Review the budget": [
+    "web/src/app/themes/previewData.ts"
+  ],
   "Review them too": [
     "web/src/app/review/ProjectWalk.tsx"
   ],
@@ -12604,6 +12938,9 @@
   ],
   "Rotate the feed URL?": [
     "web/src/app/CalendarFeedsPanel.tsx"
+  ],
+  "Round": [
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Routine": [
     "web/src/app/routines/RoutineEditor.tsx",
@@ -12791,7 +13128,9 @@
     "web/src/app/profile/ProfileSection.tsx",
     "web/src/app/routines/RoutineEditor.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
-    "web/src/app/task-detail/TimeTab.tsx"
+    "web/src/app/task-detail/TimeTab.tsx",
+    "web/src/app/themes/ThemeEditor.tsx",
+    "web/src/app/themes/ThemePreview.tsx"
   ],
   "Save as template": [
     "web/src/app/TemplateDialogs.tsx"
@@ -12809,6 +13148,9 @@
   ],
   "Save backup settings": [
     "web/src/app/BackupsPanel.tsx"
+  ],
+  "Save changes to this theme?": [
+    "web/src/app/themes/ThemeEditor.tsx"
   ],
   "Save for reuse": [
     "web/src/app/locations/LocationEditor.tsx"
@@ -12953,6 +13295,9 @@
   "Scopes": [
     "web/src/app/SsoPanel.tsx"
   ],
+  "Scrim": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
   "Scripts, apps and assistants using this token stop working at once. You cannot undo this.": [
     "web/src/app/TokensSection.tsx"
   ],
@@ -12986,6 +13331,9 @@
   ],
   "Search help, e.g. board, repeat, offline": [
     "web/src/app/help/HelpView.tsx"
+  ],
+  "Search highlight": [
+    "web/src/app/themes/tokenNames.ts"
   ],
   "Search icons": [
     "web/src/app/menus/stylePickers.tsx",
@@ -13146,6 +13494,12 @@
   "Selected": [
     "web/src/ui/AccentPicker.tsx"
   ],
+  "Selected item": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
+  "Selected row": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
   "Send": [
     "web/src/app/NotificationChannelEditor.tsx",
     "web/src/app/assistant/AssistantComposer.tsx",
@@ -13220,6 +13574,9 @@
   ],
   "Sequential": [
     "web/src/app/menus/flowMenu.ts"
+  ],
+  "Serif": [
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Server": [
     "web/src/app/CalendarSyncDialogs.tsx",
@@ -13441,6 +13798,9 @@
   ],
   "Shade the hours you keep for one kind of work": [
     "web/src/app/CalendarView.tsx"
+  ],
+  "Shape and type": [
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Shapes and symbols|icon category": [
     "web/src/ui/icons/catalogue.ts"
@@ -13671,6 +14031,7 @@
   ],
   "Sidebar": [
     "web/src/app/settingsSections.ts",
+    "web/src/app/themes/tokenNames.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Sidebar counts": [
@@ -13867,6 +14228,9 @@
   "Single sign-on is off on this server; your links are kept.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Site visit": [
+    "web/src/app/themes/previewData.ts"
+  ],
   "Six panels at most": [
     "web/src/app/DashboardView.tsx"
   ],
@@ -13981,6 +14345,36 @@
   ],
   "So you know which one to revoke later.": [
     "web/src/app/CaldavPanel.tsx"
+  ],
+  "Soft accent": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
+  "Soft border": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
+  "Soft danger": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
+  "Soft info": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
+  "Soft priority 1": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
+  "Soft priority 2": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
+  "Soft priority 3": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
+  "Soft priority 4": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
+  "Soft success": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
+  "Soft warning": [
+    "web/src/app/themes/tokenNames.ts"
   ],
   "Some colours were adapted for contrast": [
     "web/src/app/ThemeAbout.tsx"
@@ -14101,6 +14495,9 @@
   ],
   "Split {text} into lines": [
     "web/src/lib/rules/sentence.ts"
+  ],
+  "Square": [
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Stalled": [
     "web/src/app/review/MonthlyLook.tsx",
@@ -14264,7 +14661,11 @@
   "Status": [
     "web/src/app/RuleEditor.tsx",
     "web/src/app/rules/RuleFields.tsx",
+    "web/src/app/themes/tokenNames.ts",
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Status colours": [
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Step {n} of {count}": [
     "web/src/app/FirstRun.tsx"
@@ -14368,6 +14769,12 @@
     "web/src/app/editorCommands.ts",
     "web/src/lib/richtextEditor.ts"
   ],
+  "Strong line": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
+  "Strong text": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
   "Study": [
     "web/src/lib/templateLibrary.ts"
   ],
@@ -14403,7 +14810,8 @@
     "web/src/lib/backups.ts"
   ],
   "Success": [
-    "web/src/app/AuditPanel.tsx"
+    "web/src/app/AuditPanel.tsx",
+    "web/src/app/themes/tokenNames.ts"
   ],
   "Suggested": [
     "web/src/app/routines/AddStep.tsx"
@@ -14429,9 +14837,18 @@
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/filter/conditionText.ts"
   ],
+  "Sunken surface": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
   "Support OpenTodo": [
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Surface": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
+  "Surfaces": [
+    "web/src/app/themes/tokenNames.ts"
   ],
   "Suspicious": [
     "web/src/app/SecurityPanel.tsx"
@@ -14494,7 +14911,8 @@
   "System": [
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/DateTimeSettings.tsx",
-    "web/src/app/FirstRun.tsx"
+    "web/src/app/FirstRun.tsx",
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "System (as this browser)": [
     "web/src/app/DateTimeSettings.tsx"
@@ -14547,6 +14965,9 @@
   "Taken from OPENTODO_BASE_URL.": [
     "web/src/app/SsoPanel.tsx"
   ],
+  "Taken from the file": [
+    "web/src/app/themes/ImportReport.tsx"
+  ],
   "Taken out of {slot}": [
     "web/src/lib/slots.ts"
   ],
@@ -14556,6 +14977,7 @@
   "Task": [
     "web/src/app/FieldColumns.tsx",
     "web/src/app/TimelineView.tsx",
+    "web/src/app/themes/ThemePreview.tsx",
     "web/src/lib/rules/sentence.ts"
   ],
   "Task actions": [
@@ -14762,6 +15184,9 @@
   "Test sent": [
     "web/src/app/OutgoingEmailPanel.tsx"
   ],
+  "Test them on the wall": [
+    "web/src/app/themes/previewData.ts"
+  ],
   "Test token": [
     "web/src/app/IssuesPanel.tsx"
   ],
@@ -14775,6 +15200,7 @@
   ],
   "Text": [
     "web/src/app/task-detail/AttachmentsRow.tsx",
+    "web/src/app/themes/tokenNames.ts",
     "web/src/lib/fields.ts",
     "web/src/lib/rules/sentence.ts"
   ],
@@ -14786,6 +15212,24 @@
   ],
   "Text in the title or notes": [
     "web/src/app/filter/ConditionEditor.tsx"
+  ],
+  "Text on accent": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
+  "Text on soft accent": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
+  "Text on soft danger": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
+  "Text on soft info": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
+  "Text on soft success": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
+  "Text on soft warning": [
+    "web/src/app/themes/tokenNames.ts"
   ],
   "Text to write": [
     "web/src/app/RelayConfirm.tsx"
@@ -15061,10 +15505,15 @@
   "The file could not be read: {detail}": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "The file includes {file}, which was not read: the importer reads one file and never fetches another.": [
+    "web/src/app/themes/ImportReport.tsx"
+  ],
   "The file is larger than 1 MB.": [
+    "web/src/app/themes/YourThemes.tsx",
     "web/src/lib/theme/vscode.ts"
   ],
   "The file is larger than 64 KB.": [
+    "web/src/app/themes/YourThemes.tsx",
     "web/src/lib/theme/files.ts"
   ],
   "The file is larger than this server allows ({detail}).": [
@@ -15151,6 +15600,9 @@
   ],
   "The last four weeks": [
     "web/src/app/review/MonthlyLook.tsx"
+  ],
+  "The licence is set to unknown. Check the theme's licence before you share this file.": [
+    "web/src/app/themes/ImportReport.tsx"
   ],
   "The link expires {instant} and works once.": [
     "web/src/app/AuthScreen.tsx"
@@ -15315,6 +15767,9 @@
   "The query must not be empty": [
     "web/src/app/SavedViewView.tsx",
     "web/src/lib/views.ts"
+  ],
+  "The quick brown fox jumps over the lazy dog": [
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "The request was rejected because it came from another site.": [
     "web/src/lib/i18n/errors.ts"
@@ -15628,6 +16083,9 @@
   "The theme is larger than 16 KB.": [
     "web/src/lib/theme/files.ts"
   ],
+  "The theme is removed from all your devices. A side that uses it goes back to OpenTodo's theme. You can undo this.": [
+    "web/src/app/themes/ThemeEditor.tsx"
+  ],
   "The theme needs a name of at most 60 characters.": [
     "web/src/lib/theme/files.ts"
   ],
@@ -15660,6 +16118,9 @@
   ],
   "The view this device opens on. Not synced.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "The warm white looked best in the evening light.": [
+    "web/src/app/themes/previewData.ts"
   ],
   "The weekly digest is not available on this demo instance: it would send email.": [
     "web/src/lib/settingsCopy.ts"
@@ -15695,8 +16156,30 @@
   "Theme deleted": [
     "web/src/lib/theme/custom.ts"
   ],
+  "Theme editor: redo the change undone last": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Theme editor: save the theme": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Theme editor: undo the last change": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Theme is invalid": [
     "web/src/app/ThemeRow.tsx"
+  ],
+  "Theme name": [
+    "web/src/app/themes/ThemeEditor.tsx"
+  ],
+  "Theme not found": [
+    "web/src/app/themes/ThemeEditor.tsx"
+  ],
+  "Theme saved": [
+    "web/src/app/themes/useThemeEditor.ts"
+  ],
+  "Themes are not encrypted. Don't put private information in a theme's name or notes.": [
+    "web/src/app/themes/EditorSections.tsx",
+    "web/src/app/themes/ThemeEditor.tsx"
   ],
   "Then": [
     "web/src/app/routines/StepCard.tsx",
@@ -16000,6 +16483,9 @@
   ],
   "This invite link was issued for a different email address.": [
     "web/src/lib/i18n/errors.ts"
+  ],
+  "This is a high-contrast theme. OpenTodo's own high-contrast setting, under Appearance, may suit you better.": [
+    "web/src/app/themes/ImportReport.tsx"
   ],
   "This is a public demo of OpenTodo.": [
     "web/src/app/AuthScreen.tsx"
@@ -16333,11 +16819,17 @@
   "This test sends the inputs to {provider} and uses about {n} tokens. Nothing is written.": [
     "web/src/app/routines/RoutineEditor.tsx"
   ],
+  "This theme changed on another device.": [
+    "web/src/app/themes/ThemeEditor.tsx"
+  ],
   "This theme is larger than 16 KB.": [
     "web/src/lib/theme/custom.ts"
   ],
   "This theme is not valid ({path}).": [
     "web/src/lib/theme/custom.ts"
+  ],
+  "This theme was deleted, or it has not reached this device yet.": [
+    "web/src/app/themes/ThemeEditor.tsx"
   ],
   "This title could not be decrypted with this device's key": [
     "web/src/app/TaskRow.tsx"
@@ -16372,6 +16864,7 @@
   "This week": [
     "web/src/app/DateTimeSettings.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/themes/previewData.ts",
     "web/src/lib/stats.ts"
   ],
   "This weekend": [
@@ -16417,6 +16910,9 @@
   ],
   "Tied to <span>{domain}</span>.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Tiling": [
+    "web/src/app/themes/previewData.ts"
   ],
   "Time": [
     "web/src/app/AuditPanel.tsx",
@@ -16544,6 +17040,9 @@
   "To answer, this device sends what you type and the task data it needs <strong>directly to {provider}</strong>{model}, with your own key. The OpenTodo server sees none of it. Nothing is sent before you accept.": [
     "web/src/app/assistant/AssistantDevice.tsx"
   ],
+  "To do": [
+    "web/src/app/themes/previewData.ts"
+  ],
   "To do on {date}": [
     "web/src/page/TaskPageScreen.tsx"
   ],
@@ -16584,6 +17083,7 @@
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-list/EarlierActions.tsx",
     "web/src/app/task-list/RowSwipe.tsx",
+    "web/src/app/themes/ThemePreview.tsx",
     "web/src/lib/dates.ts",
     "web/src/lib/listGroups.ts",
     "web/src/lib/logbook.ts",
@@ -17067,7 +17567,8 @@
     "web/src/app/focus/startFocus.ts",
     "web/src/app/palette/routineCommand.ts",
     "web/src/app/routines/ProposalReview.tsx",
-    "web/src/app/routines/RoutinesInboxCard.tsx"
+    "web/src/app/routines/RoutinesInboxCard.tsx",
+    "web/src/app/themes/ThemeEditor.tsx"
   ],
   "Undo (Mod-Shift-z: redo)": [
     "web/src/lib/richtextEditor.ts"
@@ -17434,6 +17935,12 @@
   "Use an app code instead": [
     "web/src/app/ReauthDialog.tsx"
   ],
+  "Use for dark": [
+    "web/src/app/themes/YourThemes.tsx"
+  ],
+  "Use for light": [
+    "web/src/app/themes/YourThemes.tsx"
+  ],
   "Use issue labels as labels": [
     "web/src/app/IssueEditor.tsx"
   ],
@@ -17442,6 +17949,9 @@
   ],
   "Use it with your email ({email}) in the calendar app.": [
     "web/src/app/CaldavPanel.tsx"
+  ],
+  "Use letters, digits, spaces and hyphens only.": [
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Use minutes or hours, for example 20, 45m, 1h30 (up to one week).": [
     "web/src/app/EstimateField.tsx",
@@ -17482,6 +17992,9 @@
   ],
   "Use {name} ({type})": [
     "web/src/app/routines/words.tsx"
+  ],
+  "Used only on devices that have this font installed; others show the system font. It is never downloaded.": [
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Used to sign in on new devices.": [
     "web/src/lib/settingsCopy.ts"
@@ -17676,6 +18189,9 @@
     "web/src/app/method/LoopHome.tsx",
     "web/src/app/method/MethodListView.tsx"
   ],
+  "Warning": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
   "We send a link to the new address; the change happens when you open it.": [
     "web/src/app/profile/ProfileSection.tsx"
   ],
@@ -17711,6 +18227,7 @@
   ],
   "Week": [
     "web/src/app/CalendarRange.tsx",
+    "web/src/app/themes/ThemePreview.tsx",
     "web/src/lib/shortcuts.ts"
   ],
   "Week calendar": [
@@ -18284,6 +18801,9 @@
   "Your assistant": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Your changes are kept as a draft on this device until you save or discard them.": [
+    "web/src/app/themes/ThemeEditor.tsx"
+  ],
   "Your content is decrypted on this device and synced in plaintext again; the key record is deleted from the server. You will be asked to confirm your password.": [
     "web/src/app/EncryptionPanel.tsx"
   ],
@@ -18436,6 +18956,9 @@
   ],
   "Your tasks, your server.": [
     "web/src/app/AuthScreen.tsx"
+  ],
+  "Your themes": [
+    "web/src/app/themes/YourThemes.tsx"
   ],
   "Your webhooks are listed when you are online.": [
     "web/src/app/routines/words.tsx"
@@ -18599,6 +19122,9 @@
     "web/src/app/CalendarView.tsx",
     "web/src/app/calendar/WeekAgenda.tsx",
     "web/src/app/calendar/projections.tsx"
+  ],
+  "and {n} more": [
+    "web/src/app/themes/ImportReport.tsx"
   ],
   "and, or, not, grouping · quote names with spaces: @\"follow up\"": [
     "web/src/app/FilterView.tsx"
@@ -18861,6 +19387,9 @@
   "deep {colour}": [
     "web/src/ui/AccentPicker.tsx"
   ],
+  "deep-work": [
+    "web/src/app/themes/previewData.ts"
+  ],
   "deferred": [
     "web/src/lib/rules/summary.ts"
   ],
@@ -19018,6 +19547,9 @@
   ],
   "end-to-end encryption is on": [
     "web/src/app/auditFormat.ts"
+  ],
+  "errand": [
+    "web/src/app/themes/previewData.ts"
   ],
   "error": [
     "web/src/app/ViewsView.tsx"
@@ -20319,6 +20851,9 @@
   "vs the week before": [
     "web/src/app/review/StatsView.tsx"
   ],
+  "waiting": [
+    "web/src/app/themes/previewData.ts"
+  ],
   "waiting for": [
     "web/src/lib/history.ts"
   ],
@@ -20327,6 +20862,9 @@
   ],
   "waits for {title}": [
     "web/src/lib/facets.ts"
+  ],
+  "warm white": [
+    "web/src/app/themes/ThemePreview.tsx"
   ],
   "webhooks": [
     "web/src/app/settingsSections.ts"
@@ -20447,6 +20985,18 @@
   "{choice}, {date}": [
     "web/src/app/ScheduleSheet.tsx"
   ],
+  "{colour} label": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
+  "{colour} label fill": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
+  "{colour} label text": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
+  "{colour} past block": [
+    "web/src/app/themes/tokenNames.ts"
+  ],
   "{completed} completed": [
     "web/src/app/Sections.tsx"
   ],
@@ -20549,6 +21099,13 @@
   "{estimate} in {length}": [
     "web/src/lib/slots.ts"
   ],
+  "{fg} now {ratio} to 1 on {bg}": [
+    "web/src/app/themes/ContrastPanel.tsx"
+  ],
+  "{fg} on {bg}": [
+    "web/src/app/themes/ContrastPanel.tsx",
+    "web/src/app/themes/ImportReport.tsx"
+  ],
   "{field, select, title {This title} name {This name} other {This text}} is too long to encrypt (at most {max, number} bytes). Shorten it and try again.": [
     "web/src/lib/ops.ts"
   ],
@@ -20628,6 +21185,9 @@
   ],
   "{label} backup, {instant}, {kind}": [
     "web/src/app/BackupsPanel.tsx"
+  ],
+  "{mapped, plural, one {# colour was taken from the file} other {# colours were taken from the file}}; {derived, plural, one {# follows} other {# follow}} from them.": [
+    "web/src/app/themes/ImportReport.tsx"
   ],
   "{method} is an optional way to clear your head: write everything down, decide what each thing needs, and look back weekly. Choose how much of it you want; you can change this in Settings.": [
     "web/src/app/FirstRun.tsx"
@@ -20731,6 +21291,9 @@
   "{n, plural, one {# change was not accepted} other {# changes were not accepted}}": [
     "web/src/lib/sharing.ts"
   ],
+  "{n, plural, one {# colour derived} other {# colours derived}}": [
+    "web/src/app/themes/ImportReport.tsx"
+  ],
   "{n, plural, one {# comment} other {# comments}}": [
     "web/src/app/TaskRow.tsx",
     "web/src/app/task-list/RowDetails.tsx"
@@ -20808,6 +21371,9 @@
     "web/src/lib/history.ts",
     "web/src/ui/patterns/Sidebar.tsx"
   ],
+  "{n, plural, one {# key ignored} other {# keys ignored}}": [
+    "web/src/app/themes/ImportReport.tsx"
+  ],
   "{n, plural, one {# label} other {# labels}}": [
     "web/src/app/TemplateDialogs.tsx",
     "web/src/app/templates/TemplateLibrary.tsx"
@@ -20880,6 +21446,9 @@
     "web/src/app/TimelineView.tsx",
     "web/src/app/locations/PlacesView.tsx",
     "web/src/ui/patterns/ListGroupHeader.tsx"
+  ],
+  "{n, plural, one {# pair below AA} other {# pairs below AA}}": [
+    "web/src/app/themes/ContrastPanel.tsx"
   ],
   "{n, plural, one {# panel} other {# panels}}": [
     "web/src/app/ViewsView.tsx"
@@ -21077,6 +21646,9 @@
   "{n, plural, one {# waiting for other tasks} other {# waiting for other tasks}}": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
+  "{n, plural, one {# warning} other {# warnings}}": [
+    "web/src/app/themes/TokenList.tsx"
+  ],
   "{n, plural, one {# week ago} other {# weeks ago}}": [
     "web/src/app/filter/conditionText.ts"
   ],
@@ -21116,6 +21688,9 @@
   ],
   "{n, plural, one {Day reopened, # task back in Today} other {Day reopened, # tasks back in Today}}": [
     "web/src/lib/review.ts"
+  ],
+  "{n, plural, one {Fixed # pair} other {Fixed # pairs}}": [
+    "web/src/app/themes/ContrastPanel.tsx"
   ],
   "{n, plural, one {In # day} other {In # days}}": [
     "web/src/app/rules/RuleFields.tsx"
@@ -21167,6 +21742,9 @@
   ],
   "{n, plural, one {Public: # active link. Open the public links} other {Public: # active links. Open the public links}}": [
     "web/src/app/ProjectHeader.tsx"
+  ],
+  "{n, plural, one {Saved with # contrast warning} other {Saved with # contrast warnings}}": [
+    "web/src/app/themes/useThemeEditor.ts"
   ],
   "{n, plural, one {Show # completed} other {Show # completed}}": [
     "web/src/app/task-list/ListChrome.tsx"
@@ -21271,6 +21849,12 @@
   "{name} ({n})": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "{name} Dark": [
+    "web/src/app/themes/ThemeEditor.tsx"
+  ],
+  "{name} Light": [
+    "web/src/app/themes/ThemeEditor.tsx"
+  ],
   "{name} answered about <task>{title}</task>": [
     "web/src/app/Briefing.tsx"
   ],
@@ -21319,6 +21903,9 @@
   ],
   "{name} is {value}": [
     "web/src/app/filter/conditionText.ts"
+  ],
+  "{name} moved instead, as no lightness of the other colour could pass.": [
+    "web/src/app/themes/ContrastPanel.tsx"
   ],
   "{name} moved to position {n} of {count}": [
     "web/src/app/AppearanceSection.tsx",
@@ -21460,7 +22047,8 @@
   "{n} of {max}": [
     "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
-    "web/src/app/NotificationChannels.tsx"
+    "web/src/app/NotificationChannels.tsx",
+    "web/src/app/themes/YourThemes.tsx"
   ],
   "{n} of {max} characters": [
     "web/src/app/routines/words.tsx"
@@ -21500,6 +22088,9 @@
   ],
   "{n} s": [
     "web/src/app/routines/RunHistory.tsx"
+  ],
+  "{n} set": [
+    "web/src/app/themes/TokenList.tsx"
   ],
   "{n} skipped": [
     "web/src/app/ImportScreen.tsx"

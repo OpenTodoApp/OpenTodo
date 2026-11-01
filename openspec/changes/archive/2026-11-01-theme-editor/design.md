@@ -32,7 +32,7 @@
 - The document is **one whole value**: editing a theme on two devices offline ends with the later save, as for a rule's trigger. A theme is edited by one person in one place at a time; field-level merging of colours would produce combinations nobody chose and might fail contrast.
 - The entity id is the theme's id inside the app (`user:<entity id>`); the document's own `id` key is set to the entity id on save.
 - Deleting writes `deleted_at`. If the theme is chosen for a side, the same `mutateMany` batch writes that side back to `""`; another device that chose it concurrently reads the tombstoned theme as unavailable and falls back (theme-engine D6). Undo in the toast restores both.
-- In the JSON export and import like rules; ids are re-minted on import into another account, and choices pointing at them are rewritten (the existing importer's id map).
+- In the JSON export and import like rules: ids are kept as exported (the importer has no id map; rules keep theirs too), so the `user:<id>` choices in the same file keep pointing at them in the new account.
 
 - *Alternative: a `user_prefs` field holding a list of themes.* Rejected: one value of up to 320 KB would be rewritten on every save, and two devices saving different themes would lose one.
 - *Alternative: field-level tokens (one field per token).* Rejected: the token list grows; fields are declared once in the schema and never removed, and a document already has a format and a validator.
@@ -49,7 +49,7 @@ Layout from 64 rem: a header row (theme name field, kind, Undo, Redo, Save, a me
 
 ### D4. Starting from a theme
 
-Customise copies the source document with a new id, the name "<name> (custom)", the user's display name as `author`, and `notes.text` "Based on <name> by <author> (<licence>)"; the licence of the copy defaults to the source's licence (a modified MIT palette stays MIT with its notice in `notes.text`) and is editable. Explicit tokens and seeds are copied, so the copy looks identical. New theme starts from the OpenTodo theme of the current side.
+Customise copies the source document with a new id (explicit tokens that the seeds already give, colour for colour as the screen shows them, are dropped, so a copy of OpenTodo's own fully written themes follows its seeds), the name "<name> (custom)", the user's display name as `author`, and `notes.text` "Based on <name> by <author> (<licence>)"; the licence of the copy defaults to the source's licence (a modified MIT palette stays MIT with its notice in `notes.text`) and is editable. Explicit tokens and seeds are copied, so the copy looks identical. New theme starts from the OpenTodo theme of the current side.
 
 ### D5. Seeds
 
@@ -71,6 +71,8 @@ After every change (coalesced to one per animation frame), `checkTheme` measures
 
 **Fix to AA** keeps the hue and moves lightness: it moves the pair's explicit token (the foreground if both are explicit; derived tokens pass by construction, theme-engine D3); when that token is in several pairs, the search finds the nearest lightness that satisfies all of them at once; if none exists at that hue (a mid-grey surface between dark and light text), it moves the background instead and says so. The result is written as an explicit value, so it can be undone.
 
+The draft is derived and measured in a worker (`lib/theme/compute.worker.ts`), the latest change replacing one not yet started: a document whose seeds sit in the middle band makes the derivation's search walk far (1.7 to 2.5 s measured), which would freeze a slider. Fixes run there too.
+
 **Saving with warnings** is allowed: Save says "Saved with 3 contrast warnings". The card shows a "Low contrast" badge with the count; choosing it applies it as written. High contrast still replaces it (theme-engine D4).
 
 ### D9. Live preview
@@ -84,7 +86,7 @@ The preview renders the real components of four screens from the workbench's fix
 ### D11. Export and import of theme files
 
 - **Export** builds the document (validated, current format) and downloads `<slug>.opentodo-theme.json` through a blob link; no server round trip.
-- **Import** accepts a file of at most 64 KB through a file picker or drop, reads it on the device, parses JSON, migrates, validates; a valid document becomes a draft with a new id, its name suffixed " (2)" when the name is taken, opened in the editor for review; Save writes it. An invalid file shows what is wrong ("Line 12: `canvas` is not a colour"). Nothing is uploaded except the saved op.
+- **Import** accepts a file of at most 64 KB (the 16 KB document limit is measured on the document written compact, as it is synced, since exported files are indented) through a file picker or drop, reads it on the device, parses JSON, migrates, validates; a valid document becomes a draft with a new id, its name suffixed " (2)" when the name is taken, opened in the editor for review; Save writes it. An invalid file shows what is wrong ("Line 12: `canvas` is not a colour"). Nothing is uploaded except the saved op.
 
 ### D12. Importing a VS Code colour theme
 

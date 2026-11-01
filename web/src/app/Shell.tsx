@@ -67,6 +67,7 @@ const TriageView = lazy(() => import('./TriageView').then((m) => ({ default: m.T
 // In-app Help (user-documentation): the view, the panel and the guide text are
 // chunks of their own, fetched when Help first opens (and precached for offline).
 // Routines (routines-editor): the page, the editor and the runs are one chunk.
+const ThemeEditorPage = lazy(() => import('./themes/ThemeEditor').then((m) => ({ default: m.ThemeEditorPage })))
 const RoutinesView = lazy(() => import('./routines/RoutinesView').then((m) => ({ default: m.RoutinesView })))
 // The routine editor page (routines-editor-page D1): /routines/new and /routines/<id>.
 const RoutinePage = lazy(() => import('./routines/RoutinePage').then((m) => ({ default: m.RoutinePage })))
@@ -268,6 +269,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading help…')}</p>}><HelpView page={route.page} q={route.q} /></Suspense>
           ) : route.view === 'settings' ? (
             <SettingsView user={user} onLogout={onLogout} section={route.section} page={route.page} anchor={route.anchor} />
+          ) : route.view === 'theme-editor' ? (
+            <Suspense fallback={null}><ThemeEditorPage id={route.id} /></Suspense>
           ) : route.view === 'import' ? (
             <ImportScreen />
           ) : route.view === 'labels' ? (
