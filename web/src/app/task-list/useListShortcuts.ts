@@ -13,7 +13,7 @@ import { toggleTracking } from '../../lib/timeEntries'
 import type { Priority, Task } from '../../lib/types'
 import type { Tree } from '../../lib/tree'
 import { act } from '../actionError'
-import { runBulk } from '../bulk/BulkActions'
+import { runBulk, trashTicked } from '../bulk/BulkActions'
 import { panelTaskId, setPanelTaskId as setOpenId, sidePanelDocks, taskSplitDocks } from '../panel'
 import { closeSidePanelFrom } from '../sidePanel'
 import { navigate } from '../router'
@@ -235,7 +235,7 @@ export function useListShortcuts(c: ShortcutContext) {
       ui.setAssignFor(row.task.id)
     },
     'list.delete': () => {
-      if (ticked.length) { act(runBulk(ticked, { kind: 'trash' })); return }
+      if (ticked.length) { act(trashTicked(ticked)); return }
       if (!selectedId || (row && !writable)) return false
       act(deleteWithUndo(selectedId))
       setSelectedId(rows[idx + 1]?.task.id ?? rows[idx - 1]?.task.id ?? null)
