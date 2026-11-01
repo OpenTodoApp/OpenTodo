@@ -16,14 +16,18 @@ With [end-to-end encryption](e2ee.md) on, the server holds no key to your tasks,
 ## Set it up on a device
 
 1. Open the assistant (<kbd>Shift</kbd>+<kbd>I</kbd>). The panel asks you to **set up the assistant on this device**.
-2. Choose a provider the owner allows (Anthropic, OpenAI, Google Gemini, or a model server such as Ollama or LM Studio at an address the owner listed), a model, and paste your API key (optional for a model server). **Test connection** sends one request from this device. A rejected key, a model the provider does not serve, or a model without tool use is named as such; a model server address pasted with `/chat/completions` at the end is used without it.
+2. Choose a provider the owner allows (Anthropic, OpenAI, Google Gemini, or a model server such as Ollama or LM Studio at an address the owner listed), a model, and paste your API key (optional for a model server). **Test connection** sends one request from this device and names what is wrong (the key, the model, or no tool use); an address pasted with `/chat/completions` at the end is used without it.
 3. Select **Save on this device**, read what is sent and select **Accept and continue**.
 
 Proposals, review, undo, skills, pasted notes and [photos](assistant-capture.md) work as on the server; photos go from this device straight to your provider. On the device the assistant cannot set custom field values, repeat rules, locations or origins. A locked device asks you to unlock it first.
 
+## What the device sends
+
+Tasks, comments, projects, [Describe it](routines.md#describe-it) names, your messages and photos; never notes, tracked time, routines, frames, custom fields, locations or attachments.
+
 ## Your key and your usage
 
-- **Your key stays in this browser.** It is never synced, never sent to the OpenTodo server, and deleted when you sign out. Like any page that calls a provider itself, the app's page can read it. Each device is set up on its own; change or remove it in **Settings → Integrations → Assistant → On this device**.
+- **Your key stays in this browser.** It is never synced or sent to the OpenTodo server, and is deleted at sign-out. Like any page that calls a provider itself, the app's page can read it. Each device is set up on its own; change it in **Settings → Integrations → Assistant → On this device**.
 - **No connection to the server needed.** With a model server on the same computer, the assistant also answers while the OpenTodo server is unreachable.
 - **Usage stays on the device.** Each answer shows its tokens with "your key"; nothing is reported, and the owner's monthly allowance does not apply.
 
@@ -31,7 +35,7 @@ Proposals, review, undo, skills, pasted notes and [photos](assistant-capture.md)
 
 ## Providers and browsers
 
-Anthropic accepts requests from a browser (OpenTodo sends its `anthropic-dangerous-direct-browser-access` header), and OpenAI's API does too; Google's endpoint is expected to, and **Test connection** tells you. Ollama needs `OLLAMA_ORIGINS` set to the app's address, and LM Studio its CORS switch on; your browser may ask before a page reaches `localhost`. If a request is blocked right after the owner allowed a provider, reload the page.
+Anthropic accepts requests from a browser (OpenTodo sends its `anthropic-dangerous-direct-browser-access` header), and OpenAI's API does too; Google's endpoint is expected to, and **Test connection** tells you. Ollama needs `OLLAMA_ORIGINS` set to the app's address, and LM Studio its CORS switch on; your browser may ask before a page reaches `localhost`. Reload the page if a request is blocked right after the owner allowed a provider.
 
 ## For the server owner
 

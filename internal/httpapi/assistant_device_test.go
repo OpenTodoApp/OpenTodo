@@ -90,6 +90,11 @@ func TestDeviceAssistantSettings(t *testing.T) {
 	if out["available"] != true || out["mode"] != "device" || out["reason"] != "" || out["enabled"] != true || d["consented_provider"] != "" || len(d["providers"].([]any)) != 2 {
 		t.Fatalf("encrypted member: %v", out)
 	}
+	// The disclosure lists what the device sends, not the server's tools
+	// (assistant-disclosure-accuracy).
+	if f := strings.Join(toStrings(out["fields"]), "|"); f != strings.Join(deviceConsentFields, "|") || strings.Contains(f, "notes") {
+		t.Fatalf("device fields: %v", out["fields"])
+	}
 	for _, p := range []string{"device:openai", "device:skynet"} {
 		resp, out = m.do("PUT", "/api/v1/me/assistant", map[string]any{"consent": true, "provider": p})
 		if resp.StatusCode != 403 {
