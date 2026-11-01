@@ -42,8 +42,10 @@ export const notices: { message: string; actions: string[]; timeout?: number; el
 
 export class Notice {
   noticeEl: HTMLElement
+  messageEl: HTMLElement
   constructor(message: string | DocumentFragment, timeout?: number) {
     this.noticeEl = document.createElement('div')
+    this.messageEl = this.noticeEl
     const text = typeof message === 'string' ? message : message.textContent ?? ''
     this.noticeEl.append(text)
     notices.push({ message: text, actions: [], timeout, el: this.noticeEl })
@@ -57,10 +59,16 @@ export class Notice {
 export class Modal {
   contentEl: HTMLElement
   modalEl: HTMLElement
+  titleEl: HTMLElement
   constructor(public app: unknown) {
     this.modalEl = document.createElement('div')
+    this.titleEl = document.createElement('div')
     this.contentEl = document.createElement('div')
-    this.modalEl.append(this.contentEl)
+    this.modalEl.append(this.titleEl, this.contentEl)
+  }
+  setTitle(title: string): this {
+    this.titleEl.textContent = title
+    return this
   }
   open(): void {
     document.body.append(this.modalEl)
@@ -72,6 +80,12 @@ export class Modal {
   }
   onOpen(): void {}
   onClose(): void {}
+}
+
+/** Obsidian's normalizePath: forward slashes, no doubled, leading or trailing slash. */
+export function normalizePath(p: string): string {
+  const out = p.replace(/[\\/]+/g, '/').replace(/^\/|\/$/g, '').replace(/\u00a0|\u202f/g, ' ').normalize('NFC')
+  return out === '' ? '/' : out
 }
 
 export function setIcon(el: HTMLElement, icon: string): void {
@@ -192,6 +206,14 @@ export class App {
   files = new Map<string, string>()
   folders = new Set<string>()
   vault = memoryVault(this.files, this.folders)
+  /** FileManager.trashFile: the sync's removals, logged like the vault's own writes. */
+  fileManager = {
+    trashFile: async (f: TAbstractFile) => {
+      this.vault.log.push(`trash ${f.path}`)
+      this.files.delete(f.path)
+      this.folders.delete(f.path)
+    },
+  }
   workspace = Object.assign(new Events(), { onLayoutReady: (fn: () => void) => fn() })
   loadLocalStorage(key: string): unknown {
     return this.local.has(key) ? structuredClone(this.local.get(key)) : null
@@ -253,18 +275,37 @@ if (typeof HTMLElement !== 'undefined') {
   proto.addClass ??= function (this: HTMLElement, c: string) {
     this.classList.add(c)
   }
-  proto.createEl ??= function (this: HTMLElement, tag: string, o: { cls?: string; text?: string } = {}) {
+  type Info = { cls?: string | string[]; text?: string; attr?: Record<string, string | number | boolean | null>; type?: string }
+  const make = (parent: Node, tag: string, o: Info | string = {}) => {
+    const info: Info = typeof o === 'string' ? { cls: o } : o
     const el = document.createElement(tag)
-    if (o.cls) el.className = o.cls
-    if (o.text) el.textContent = o.text
-    this.append(el)
+    if (info.cls) el.className = Array.isArray(info.cls) ? info.cls.join(' ') : info.cls
+    if (info.text !== undefined) el.textContent = info.text
+    if (info.type) el.setAttribute('type', info.type)
+    for (const [k, v] of Object.entries(info.attr ?? {})) if (v !== null && v !== false) el.setAttribute(k, String(v))
+    parent.appendChild(el)
     return el
+  }
+  for (const target of [HTMLElement.prototype, DocumentFragment.prototype] as unknown as Record<string, unknown>[]) {
+    target.createEl ??= function (this: Node, tag: string, o?: Info | string) {
+      return make(this, tag, o)
+    }
+    target.createDiv ??= function (this: Node, o?: Info | string) {
+      return make(this, 'div', o)
+    }
+    target.createSpan ??= function (this: Node, o?: Info | string) {
+      return make(this, 'span', o)
+    }
+    target.appendText ??= function (this: Node, text: string) {
+      this.appendChild(document.createTextNode(text))
+    }
   }
 }
 
 /** A button, text field, dropdown or toggle of a Setting, with Obsidian's chained setters. */
 class Component {
   constructor(public el: HTMLElement) {}
+  get buttonEl() { return this.el }
   setButtonText(t: string) { this.el.textContent = t; return this }
   setCta() { this.el.classList.add('mod-cta'); return this }
   setWarning() { this.el.classList.add('mod-warning'); return this }

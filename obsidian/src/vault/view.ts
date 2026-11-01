@@ -1,7 +1,7 @@
 // Reading a store for printing (internal/vault/layout.go, render.go, status.go):
 // decrypted text, the project tree, file names, task lines and documents.
 import { estimateMinutes, type Line } from './line'
-import { emptyDoc, fileFlow, fileStatus, goFields, goTrim, trimNewlines, type Block, type Doc, type Item, type Node } from './doc'
+import { emptyDoc, fileFlow, fileStatus, goFields, goTrim, trimNewlines, type Block, type Doc, type Node } from './doc'
 import { byteOrder, goSprint, utf8 } from './gojson'
 import * as S from './store'
 import { localDate } from './zone'
@@ -312,7 +312,7 @@ export class View {
         if (!b.heading || used.has(b)) continue
         const prose: string[] = []
         for (const it of b.items) if (it.prose) prose.push(...it.prose)
-        if (prose.length > 0) d.blocks[0].items.push({ prose: ['## ' + b.section, '', ...prose] } as Item)
+        if (prose.length > 0) d.blocks[0].items.push({ prose: ['## ' + b.section, '', ...prose] })
       }
     }
     return d

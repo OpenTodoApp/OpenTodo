@@ -11,7 +11,7 @@ WEB_EXT := web-ext@10.7.0
 SKILL_ZIP := dist/opentodo-agent-skill.zip
 MCP_SKILL_ZIP := dist/opentodo-mcp-skill.zip
 
-.PHONY: brand-icons site-bundle all web server cli cli-release cli-smoke skill extension obsidian obsidian-e2e test-obsidian android build run dev test test-go test-web test-extension check lint staticcheck gosec gosec-sarif clean docker openspec-validate layout-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check release-prepare storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check bundle-budget fmt-check ci-checks e2e
+.PHONY: brand-icons site-bundle all web server cli cli-release cli-smoke skill extension obsidian obsidian-e2e obsidian-review test-obsidian android build run dev test test-go test-web test-extension check lint staticcheck gosec gosec-sarif clean docker openspec-validate layout-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check release-prepare storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check bundle-budget fmt-check ci-checks e2e
 
 all: build
 
@@ -72,6 +72,14 @@ obsidian:
 ## (make build) and `make obsidian` to have installed obsidian/node_modules.
 obsidian-e2e:
 	cd obsidian && ../web/node_modules/.bin/vitest run --config vitest.e2e.config.mjs
+
+## The checks of Obsidian's community directory (obsidian-plugin D14) on what the
+## release repository receives: npm ci, npm audit and npm run build there give
+## obsidian/dist byte for byte, it type-checks, and Obsidian's ESLint rules report
+## no error. Needs the network (npm) and `make obsidian` first.
+obsidian-review:
+	cd obsidian/review && npm ci --no-audit --no-fund
+	node obsidian/review/review.mjs
 
 ## The Android app (native-shells): unit tests, lint, the AndroidX-only dependency
 ## check, translations, store metadata and a debug APK. Needs JDK 17+ and the

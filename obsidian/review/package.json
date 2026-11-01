@@ -1,0 +1,11 @@
+{
+  "name": "opentodo-obsidian-review",
+  "private": true,
+  "description": "The checks of Obsidian's community directory review, run on what the release repository receives (make obsidian-review). Build time only: never part of the plugin or of the release repository.",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "devDependencies": {
+    "eslint-plugin-obsidianmd": "0.4.2",
+    "typescript": "6.0.3"
+  }
+}

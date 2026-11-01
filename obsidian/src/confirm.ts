@@ -19,34 +19,22 @@ export class ConfirmModal extends Modal {
 
   onOpen(): void {
     const el = this.contentEl
-    el.classList.add('opentodo-confirm')
-    const h = document.createElement('h3')
-    h.textContent = this.q.title
-    el.append(h)
-    for (const text of this.q.body) {
-      const p = document.createElement('p')
-      p.textContent = text
-      el.append(p)
-    }
-    const row = document.createElement('div')
-    row.className = 'modal-button-container'
-    const cancel = document.createElement('button')
-    cancel.textContent = tr('Cancel')
+    el.addClass('opentodo-confirm')
+    this.setTitle(this.q.title)
+    for (const text of this.q.body) el.createEl('p', { text })
+    const row = el.createDiv({ cls: 'modal-button-container' })
+    const cancel = row.createEl('button', { text: tr('Cancel') })
     cancel.addEventListener('click', () => this.close())
-    const ok = document.createElement('button')
-    ok.textContent = this.q.ok
-    ok.className = this.q.warning ? 'mod-warning' : 'mod-cta'
+    const ok = row.createEl('button', { text: this.q.ok, cls: this.q.warning ? 'mod-warning' : 'mod-cta' })
     ok.addEventListener('click', () => {
       this.answered = true
       this.close()
       this.done(true)
     })
-    row.append(cancel, ok)
-    el.append(row)
   }
 
   onClose(): void {
-    this.contentEl.replaceChildren()
+    this.contentEl.empty()
     if (!this.answered) this.done(false)
   }
 }
