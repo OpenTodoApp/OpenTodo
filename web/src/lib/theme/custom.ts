@@ -42,6 +42,11 @@ export function useCustomThemeList(): LiveTheme[] {
   return useCustomThemes() ?? NO_THEMES
 }
 
+/** One custom theme row, live: undefined while reading, null when there is none. */
+export function useCustomThemeRow(id: string): CustomTheme | null | undefined {
+  return useLiveQuery(async () => (await db.themes.get(id)) ?? null, [id])
+}
+
 /** What the theme choice needs of the custom themes: ids and kinds. */
 export function knownCustom(list: readonly LiveTheme[]): KnownCustomTheme[] {
   return list.map((r) => ({ id: r.id, kind: r.doc.kind }))

@@ -1,9 +1,9 @@
 ---
 title: Themes
-summary: How a theme sets the colours, corners and type of the app, the theme file format with every key and token, how missing colours are derived and checked, and why there is no custom CSS.
+summary: How a theme sets the colours, corners and type of the app, making your own in the editor, theme files and VS Code import, the file format, derivation, and why there is no custom CSS.
 audience: user
 section: Reference
-specs: [themes, appearance-preferences, design-system]
+specs: [themes, theme-editor, appearance-preferences, design-system]
 screens: []
 order: 24
 ---
@@ -52,6 +52,58 @@ Every palette is under the MIT licence; the full notices ship with the app ([`CR
 | Dracula | github.com/dracula/dracula-theme | Copyright (c) 2023 Dracula Theme |
 
 Not shipped: GitHub's Primer palette (the names are GitHub's marks), Monokai (no clear open licence; Monokai Pro is a commercial product of the same name) and Material Theme (relicensed, the terms of the name unclear). A palette joins the catalogue only with a licence file, no naming terms that forbid the use, and an entry in the credits.
+
+## Your own themes
+
+You can make up to 20 themes of your own. They are in **Your themes**, below the **Light** and **Dark** lists, and each one also appears in the list of its kind, where you choose it like any other theme. Your themes sync to all your devices, never to anyone else's, and they work offline: a theme you make or change on a plane is there at once and reaches your other devices when you are back online.
+
+- **Customise**, in the menu beside any theme card (the button with three dots), opens the editor on a copy that looks exactly like that theme, named "*Theme* (custom)", with you as the author. Its notes credit the original ("Based on Nord by Sven Greb (MIT)"), and it keeps the original's licence until you change it.
+- **New theme** starts from the OpenTodo theme of the side you are looking at, with every colour derived from four base colours.
+- The menu of one of your themes also offers **Use for light** or **Use for dark**, **Edit**, **Duplicate**, **Export** and **Delete**. Deleting a theme that a side uses puts that side back on its OpenTodo theme in the same change, and **Undo** in the notice brings both back.
+
+At 20 themes, **New theme**, **Customise**, **Duplicate** and **Import** say *You have 20 themes; delete one to add another.* Themes made on two devices while both were offline are all kept, even past 20.
+
+A theme of yours whose colours fail some [contrast](#contrast) pairs can still be saved and used. Its card then reads **Low contrast · 2** (the number of pairs). High contrast on the [display](display-mode.md) still replaces its colours.
+
+### The editor
+
+The editor is a page of its own: **Settings → Appearance → Theme and density → Your themes →** a theme. The header holds the theme's name, its kind (**Light** or **Dark**), **Undo**, **Redo**, **Save**, and a menu with **Export**, **Duplicate**, **Create the dark counterpart** (or light) and **Delete**. On a wide screen the controls are on the left and the preview on the right. On a narrower one the preview is a strip above the controls that you can fold away.
+
+- **Contrast** lists every pair of colours below AA, with both colours' names, the measured and required ratio and a sample. **Fix** on a pair keeps the colour's hue and moves only its lightness, to the nearest value at which every pair that colour is in passes. When no lightness can (a grey surface halfway between dark and light text), it moves the other colour of the pair instead and says so. **Fix all** fixes every pair as one change. A screen reader hears the number of failing pairs when it changes, and the result of each fix ("Muted text now 4.6 to 1 on Canvas").
+- **Base colours** are the canvas, surface, text and accent, plus four optional status colours (success, warning, danger, info) that are **Derived** until you set them. Each opens a colour picker with swatches, a hex field, and sliders for lightness, chroma and hue. The sliders work with the arrow keys (one step), Page Up and Page Down (ten steps), and Home and End, and they are read out in words. A colour a screen cannot show keeps its lightness and hue with less chroma, and the picker says *Adjusted to a displayable colour*. Changing a base colour changes every derived colour at once. Colours you set stay as you set them.
+- **Shape and type**: the corners as **Square**, **Default**, **Round** or **Custom** (five values from 0 to 20 px), and the font (**OpenTodo Inter**, **System**, **Serif**, **Monospace**, or **Installed font** with its name). An installed font is used only on devices that have it, others show the system font, and it is never downloaded. Last comes the list text size (13, 14 or 15 px).
+- **Advanced** lists every colour of the theme in its group (surfaces, text, lines, accent, status, priorities, labels, other). Each one shows whether it is **Derived** or **Set**, its value, its worst pair ("4.2:1 on Canvas"), **Undo** for its last change and **Reset**, which makes it derived again. Each group counts its set colours and its warnings. The filter finds colours by their name in your language, their English name or their id (`muted`).
+- **About this theme**: the author, the licence and notes.
+
+The **preview** shows a task list, a board, the week calendar and a task panel, built from sample tasks (never your own). It follows every change at once and does not change the rest of the app. It cannot take focus; the Contrast list and the Advanced rows describe the same colours to a screen reader. **Create the dark counterpart** (or light) starts a new theme of the other kind with the same accent and status colours, and with the canvas, surface and text mirrored at their hues.
+
+Every change is kept as a draft on this device until you **Save**, so a reload or a crash loses nothing, and nothing syncs before you save. **Undo** and **Redo** cover the whole session (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Z</kbd> and <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd>; <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>S</kbd> saves), and they work only inside the editor. Leaving with unsaved changes asks whether to **Save**, **Discard** or **Keep editing**. If the theme changed on another device while you had a draft, the editor offers **Keep my draft** or **Load the saved version**. When two devices save the same theme, the later save wins as a whole, so colours are never mixed half from each.
+
+### Theme files
+
+**Export** (in a theme's menu or the editor's) saves the theme as `name.opentodo-theme.json`, made on your device. **Import a theme file**, or dropping a file onto **Your themes**, reads a file of up to 64 KB on your device. A valid theme opens in the editor as an unsaved draft, renamed "Name (2)" when you already have one by that name, and saving it adds it to your themes. An invalid file says what is wrong and where, for example *Line 12: canvas is not a colour.*, and nothing is saved or synced. Only a saved theme ever leaves your device, as part of your synced data.
+
+### Importing a VS Code colour theme
+
+**Import a VS Code theme** reads a VS Code colour theme file (`.json`, comments and trailing commas allowed, up to 1 MB) on your device. Its kind (`light` or `dark`; `hcLight` and `hcDark` count as light and dark, with a note that OpenTodo's own high-contrast setting may suit you better) and its workbench `colors` are mapped onto the theme as below; the first key the file has wins. Translucent colours are blended over the colour they sit on, and every colour the file does not give is derived. Syntax colours (`tokenColors`, `semanticTokenColors`) are ignored. A file named in `include` is not read: the importer reads one file and never fetches another.
+
+| OpenTodo | VS Code keys, first present wins |
+| --- | --- |
+| Base colour canvas | `sideBar.background`, `activityBar.background`, `editor.background` |
+| Base colour surface | `editor.background` |
+| Base colour text | `editor.foreground`, `foreground` |
+| Base colour accent | `button.background`, `focusBorder`, `textLink.foreground` |
+| Status colours | danger `errorForeground`, `editorError.foreground`; warning `editorWarning.foreground`; info `editorInfo.foreground`; success `gitDecoration.addedResourceForeground`, `terminal.ansiGreen` |
+| `on-accent`, `accent-hover`, `accent-text`, `focus` | `button.foreground`, `button.hoverBackground`, `textLink.foreground`, `focusBorder` |
+| `muted`, `faint` | `descriptionForeground`; `disabledForeground`, `editorLineNumber.foreground` |
+| `raised`, `pop` | `editorWidget.background`, `menu.background`, `quickInput.background` |
+| `sunken`, `hover`, `selected`, `selected-row` | `input.background`, `list.hoverBackground`, `list.activeSelectionBackground`, `list.inactiveSelectionBackground` |
+| `border`, `border-soft`, `border-input`, `line-strong` | `panel.border`, `sideBar.border`, `editorGroup.border`; `input.border`; `widget.border`, `contrastBorder` |
+| `highlight`, `scrim` | `editor.findMatchHighlightBackground`, `widget.shadow` |
+| Label colours | the terminal's six ANSI colours (`terminal.ansiRed` … `terminal.ansiMagenta`), each to the nearest free label hue, then the bright ones within 30° |
+| Browser bar | `titleBar.activeBackground` |
+
+Before the editor opens, a report shows what was taken from the file (with its VS Code key), what was derived, which pairs fail contrast (**Fix contrast now** is ticked; untick it to keep the colours as published), and which keys were ignored. The licence is set to *unknown*: check the theme's licence before you share the file. The result opens as an unsaved draft.
 
 ## Themes and the accent
 
@@ -125,7 +177,7 @@ Every theme in the repository passes the same contrast rules as the stylesheet (
 
 ## Privacy and storage
 
-Your theme choices are preferences, not content: they are not end-to-end encrypted, also when your account is. They are part of the JSON export and come back with an import. A theme never contacts another server: there are no web fonts, images or links in a theme, and its source is only text. Each device remembers the resolved colours of your two themes so the first frame is already in your theme; that memory never syncs.
+Your theme choices are preferences, not content: they are not end-to-end encrypted, also when your account is. Your own themes are not encrypted either, as they are colours and short labels: on an encrypted account the editor says *Themes are not encrypted. Don't put private information in a theme's name or notes.* Choices and themes are part of the JSON export and come back with an import, keeping their ids so your choices still apply. A theme never contacts another server: there are no web fonts, images or links in a theme, and its source is only text. Each device remembers the resolved colours of your two themes so the first frame is already in your theme; that memory never syncs.
 
 ## No custom CSS
 
