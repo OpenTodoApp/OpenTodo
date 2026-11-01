@@ -25,6 +25,8 @@ import { sentenceText } from './StepCard'
 const OUTCOME = translatedMap<string>({
   pending: msg('Running'), applied: msg('Done'), already_matched: msg('Nothing to change'), skipped: msg('Skipped'), stopped: msg('Stopped'),
   failed: msg('Failed'), partial: msg('Partial'), ended: msg('Ended early'), proposal: msg('Proposal'),
+  // routines-ai-step D9: a run of an encrypted account waiting for, or missed by, the user's devices.
+  waiting_device: msg('Waiting for one of your devices'), missed: msg('Missed: no device was available'),
 })
 const PROPOSAL = translatedMap<string>({
   waiting: msg('Proposal waiting'), applied: msg('Proposal applied'), partly_applied: msg('Proposal partly applied'), dismissed: msg('Proposal dismissed'), expired: msg('Proposal expired'),

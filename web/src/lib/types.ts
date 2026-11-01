@@ -584,7 +584,7 @@ export interface RoutineRun {
   rule_id: string
   task_id?: string
   at: number
-  outcome: RuleRun['outcome'] | 'ended' | 'proposal'
+  outcome: RuleRun['outcome'] | 'ended' | 'proposal' | 'waiting_device' | 'missed'
   reason?: string
   source: 'event' | 'schedule' | 'due' | 'manual' | 'mcp' | 'test'
   run_as: string
@@ -603,7 +603,8 @@ export interface RoutineRun {
 
 /** A run the Inbox card lists (routines-editor D10; proposals: routines-ai-step D2). */
 export interface RoutineInboxRun extends RoutineRun {
-  kind: 'failure' | 'success' | 'proposal'
+  /** waiting: a run of an encrypted account waiting for one of the user's devices (routines-ai-step D9). */
+  kind: 'failure' | 'success' | 'proposal' | 'waiting'
 }
 
 /** One reviewable item of a routine's proposal (routines-ai-step D3). */

@@ -5,6 +5,13 @@
 // stream negotiates its own AES-GCM key over ECDH P-256), R3 (only content
 // fields of known entities, at most MAX_VALUES a request), R4/R5 (caps kept on
 // this device and counting both directions). Values are never stored here.
+//
+// The same stream runs the account's routines on this device (OpenSpec change
+// routines-ai-step, D7): "Run my routines on this device" is its own opt-in,
+// survives locking (the stream is open only while unlocked) and announces the
+// capabilities routines and ai. A routine.run request carries ids only; the
+// runner (lib/rules/deviceRun, loaded on the first request) plans on this
+// device's decrypted copy and commits ciphertext.
 import { api } from './api'
 import { b64url, decryptValue, encryptValue, fromB64url, utf8 } from './crypto'
 import { getMeta, setMeta } from './db'
@@ -25,6 +32,8 @@ const K_OPTED_IN = 'relay.optedIn'
 const K_CONFIRM = 'relay.confirmWrites'
 const K_USAGE = 'relay.usage'
 const K_RECENT = 'relay.recent'
+const K_ROUTINES = 'relay.routines'
+const K_ROUTINE_RECENT = 'relay.routineRecent'
 
 export interface RelayDevice {
   deviceId: string
@@ -32,6 +41,34 @@ export interface RelayDevice {
   enabledAt: number
   online: boolean
   thisSession: boolean
+  /** routines-ai-step D7: the device's opt-ins, its own stream and what it announced. */
+  mcp?: boolean
+  routines?: boolean
+  connected?: boolean
+  capabilities?: string[]
+}
+
+/** One routine run of this device, as its relay panel lists it: never text. */
+export interface RecentRoutineRun {
+  at: number
+  rule: string
+  name: string
+  outcome: string
+  writes: number
+}
+
+/** A routine.run request (ids and numbers only, routines-ai-step D7). */
+export interface RoutineRunRequest {
+  op: 'routine.run'
+  rule: string
+  run: string
+  occurrence: string
+  at: number
+  task?: string
+  rev: string
+  auto: boolean
+  tokens: number
+  budget: number
 }
 
 /** One relayed call, as the device lists it: never a value. */
@@ -67,9 +104,14 @@ export interface RelaySnapshot {
   confirmWrites: boolean
   recent: RecentCall[]
   pending: PendingConfirmation | null
+  /** "Run my routines on this device", the routine running now and the last runs. */
+  routines: boolean
+  running: { rule: string; name: string } | null
+  routineRecent: RecentRoutineRun[]
 }
 
-const snapshot = createStore<RelaySnapshot>('relay', { optedIn: false, connected: false, busy: false, confirmWrites: false, recent: [], pending: null })
+const snapshot = createStore<RelaySnapshot>('relay', { optedIn: false, connected: false, busy: false, confirmWrites: false, recent: [], pending: null,
+  routines: false, running: null, routineRecent: [] })
 
 function publish(patch: Partial<RelaySnapshot>): void {
   snapshot.update((cur) => ({ ...cur, ...patch }))
@@ -209,14 +251,28 @@ function disconnect(): void {
   publish({ connected: false, busy: false })
 }
 
+const wanted = () => snapshot.get().optedIn || snapshot.get().routines
+
+/** What this device announces for routines: routines, and ai when the on-device assistant can run routine steps. */
+async function capabilities(): Promise<string> {
+  if (!snapshot.get().routines) return ''
+  try {
+    const { deviceAIReady } = await import('./rules/deviceAI')
+    return (await deviceAIReady()) ? 'routines,ai' : 'routines'
+  } catch {
+    return 'routines'
+  }
+}
+
 async function connect(): Promise<void> {
-  if (source || !started || !leading || !snapshot.get().optedIn || !encryptionSnapshot().unlocked) return
+  if (source || !started || !leading || !wanted() || !encryptionSnapshot().unlocked) return
   if (typeof EventSource === 'undefined' || !crypto?.subtle) return
   const pair = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, false, ['deriveBits']) as CryptoKeyPair
   const pub = new Uint8Array(await crypto.subtle.exportKey('raw', pair.publicKey))
   const device = await getDeviceId()
-  if (source || !leading || !snapshot.get().optedIn) return
-  const es = new EventSource(`${EVENTS_PATH}?device=${encodeURIComponent(device)}&key=${b64url(pub)}`)
+  const caps = await capabilities()
+  if (source || !leading || !wanted()) return
+  const es = new EventSource(`${EVENTS_PATH}?device=${encodeURIComponent(device)}&key=${b64url(pub)}${caps ? `&caps=${caps}` : ''}`)
   source = es
   let key: CryptoKey | null = null
   es.addEventListener('hello', (ev) => {
@@ -241,7 +297,30 @@ async function connect(): Promise<void> {
       }
     })().catch(() => undefined)
   })
+  es.addEventListener('routine', (ev) => {
+    void (async () => {
+      if (!key) return
+      const { id, box } = JSON.parse((ev as MessageEvent<string>).data) as { id: string; box: string }
+      const req = JSON.parse(await open(key, box, id)) as RoutineRunRequest
+      if (req.op !== 'routine.run' || req.run !== id) return
+      await runRoutineRequest(req)
+    })().catch(() => undefined)
+  })
   es.onerror = () => fail(es)
+}
+
+let queue: Promise<void> = Promise.resolve()
+
+/** Runs one routine.run request on this device, one at a time (exported for Run now and tests). */
+export function runRoutineRequest(req: RoutineRunRequest): Promise<void> {
+  queue = queue.then(async () => {
+    const { runOnDevice } = await import('./rules/deviceRun')
+    const out = await runOnDevice(req, (name) => publish({ running: { rule: req.rule, name } }))
+    const recent = [{ at: Date.now(), rule: req.rule, name: out.name, outcome: out.outcome, writes: out.writes }, ...(await getMeta<RecentRoutineRun[]>(K_ROUTINE_RECENT, []))].slice(0, RECENT_MAX)
+    await setMeta(K_ROUTINE_RECENT, recent)
+    publish({ routineRecent: recent })
+  }).catch(() => undefined).finally(() => publish({ running: null }))
+  return queue
 }
 
 function fail(es: EventSource): void {
@@ -251,7 +330,9 @@ function fail(es: EventSource): void {
   // Opted out elsewhere, or the session changed: stop rather than retry forever.
   void api.relayDevices().then((r) => getDeviceId().then((device) => {
     const mine = r.devices.find((d) => d.deviceId === device && d.thisSession)
-    if (!mine) return setOptedIn(false)
+    if (!mine) return Promise.all([setOptedIn(false), setRoutines(false)])
+    if (mine.mcp === false && snapshot.get().optedIn) void setOptedIn(false)
+    if (mine.routines === false && snapshot.get().routines) void setRoutines(false)
     retry = setTimeout(() => void connect(), Math.min(60_000, 2000 * 2 ** Math.min(attempts, 5)))
   }), () => {
     retry = setTimeout(() => void connect(), Math.min(60_000, 2000 * 2 ** Math.min(attempts, 5)))
@@ -261,8 +342,37 @@ function fail(es: EventSource): void {
 async function setOptedIn(on: boolean): Promise<void> {
   await setMeta(K_OPTED_IN, on)
   publish({ optedIn: on })
-  if (on) void connect()
-  else disconnect()
+  reconnect()
+}
+
+async function setRoutines(on: boolean): Promise<void> {
+  await setMeta(K_ROUTINES, on)
+  publish({ routines: on })
+  reconnect()
+}
+
+/** Opens the stream again with the opt-ins and capabilities of now (the server reads them at open). */
+function reconnect(): void {
+  disconnect()
+  if (wanted()) void connect()
+}
+
+/** Turns on "Run my routines on this device" (needs an unlocked device and a recently confirmed session; the API asks). */
+export async function routinesOptIn(): Promise<void> {
+  await api.routinesDeviceOptIn(await getDeviceId(), deviceLabel())
+  await setRoutines(true)
+}
+
+/** Turns it off on this device, or for another device of the account. */
+export async function routinesOptOut(device?: string): Promise<void> {
+  const mine = await getDeviceId()
+  await api.routinesDeviceOptOut(device ?? mine)
+  if (!device || device === mine) await setRoutines(false)
+}
+
+/** The capabilities may have changed (the on-device assistant set up or its consent): announce them again. */
+export function refreshCapabilities(): void {
+  if (snapshot.get().routines && source) reconnect()
 }
 
 /** A short label for this device, from the browser. */
@@ -296,9 +406,10 @@ export async function setConfirmWrites(on: boolean): Promise<void> {
 /** Starts following leadership and the lock; returns a stop function. */
 export function startRelay(): () => void {
   started = true
-  void Promise.all([getMeta<boolean>(K_OPTED_IN, false), getMeta<boolean>(K_CONFIRM, false), getMeta<RecentCall[]>(K_RECENT, [])])
-    .then(([optedIn, confirmWrites, recent]) => {
-      publish({ optedIn, confirmWrites, recent })
+  void Promise.all([getMeta<boolean>(K_OPTED_IN, false), getMeta<boolean>(K_CONFIRM, false), getMeta<RecentCall[]>(K_RECENT, []),
+    getMeta<boolean>(K_ROUTINES, false), getMeta<RecentRoutineRun[]>(K_ROUTINE_RECENT, [])])
+    .then(([optedIn, confirmWrites, recent, routines, routineRecent]) => {
+      publish({ optedIn, confirmWrites, recent, routines, routineRecent })
       void connect()
     })
   const offLead = onLeadership((on) => {
@@ -315,10 +426,11 @@ export function startRelay(): () => void {
       void connect()
       return
     }
-    // Locking (an unlocked device becoming locked) ends the opt-in (design D3);
-    // other changes of the encryption state while locked do not.
+    // Locking (an unlocked device becoming locked) ends the AI connector
+    // opt-in (design D3); other changes of the encryption state while locked
+    // do not. The routines opt-in stays: the stream closes until unlocked.
+    if (locked) disconnect()
     if (locked && snapshot.get().optedIn) {
-      disconnect()
       void getDeviceId().then((d) => api.relayOptOut(d, 'locked')).catch(() => undefined).finally(() => void setOptedIn(false))
     }
   })

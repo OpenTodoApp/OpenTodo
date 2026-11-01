@@ -27,6 +27,8 @@ Proposals, review, undo, skills, pasted notes and [photos](assistant-capture.md)
 - **No connection to the server needed.** With a model server on the same computer, the assistant also answers while the OpenTodo server is unreachable.
 - **Usage stays on the device.** Each answer shows its tokens with "your key"; nothing is reported, and the owner's monthly allowance does not apply.
 
+[Routines](routines.md#encrypted-accounts) with AI steps use this setup on a device with **Run my routines on this device** on; the run keeps only token counts.
+
 ## Providers and browsers
 
 Anthropic accepts requests from a browser (OpenTodo sends its `anthropic-dangerous-direct-browser-access` header), and OpenAI's API does too; Google's endpoint is expected to, and **Test connection** tells you. Ollama needs `OLLAMA_ORIGINS` set to the app's address, and LM Studio its CORS switch on; your browser may ask before a page reaches `localhost`. If a request is blocked right after the owner allowed a provider, reload the page.

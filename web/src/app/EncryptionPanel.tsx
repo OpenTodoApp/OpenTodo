@@ -1,4 +1,4 @@
-import { type FormEvent, type ReactNode, useEffect, useRef, useState } from 'react'
+import { type FormEvent, type ReactNode, lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Button, Dialog, StatusIndicator } from '../ui'
 import { Field, Input } from '../ui'
 import { Checkbox } from '../ui'
@@ -19,6 +19,8 @@ import { cardCopy, rowCopy } from '../lib/settingsCopy'
 import { messageOf } from '../lib/errorText'
 import { useAction } from '../lib/useAction'
 import { copyText } from '../lib/clipboard'
+// Loaded with the Encryption page only (routines-ai-step: Run my routines on this device).
+const RoutinesDeviceSettings = lazy(() => import('./routines/RoutinesDevice').then((m) => ({ default: m.RoutinesDeviceSettings })))
 
 // Settings → End-to-end encryption (OpenSpec `e2ee`, task 4.1). The pure
 // EncryptionView renders every state from props (tested with static markup);
@@ -66,6 +68,8 @@ export interface EncryptionViewProps {
   onLock: () => void
   onDisable: () => void
   onLost: () => void
+  /** "Run my routines on this device" (routines-ai-step D7), shown while encryption is on. */
+  routines?: ReactNode
 }
 
 function PassphraseFields({ prefix }: { prefix: string }) {
@@ -189,6 +193,7 @@ export function EncryptionView(p: EncryptionViewProps) {
             <SettingRow {...rowCopy('e2ee', 'lost')}
               control={<Button variant="danger" onClick={() => p.onMode({ kind: 'confirmLost' })}>{t('I lost my passphrase and recovery key')}</Button>} />
           )}
+          {p.routines}
         </>
       )}
 
@@ -282,7 +287,7 @@ export function EncryptionPanel() {
 
   return (
     <EncryptionView
-      state={state} mode={mode} busy={busy} error={error} notice={notice}
+      state={state} mode={mode} busy={busy} error={error} notice={notice} routines={<Suspense fallback={null}><RoutinesDeviceSettings /></Suspense>}
       onMode={(m) => { setError(null); setMode(m) }}
       onSubmitPassphrase={(next, confirm) => void run(async () => {
         checkNew(next, confirm)

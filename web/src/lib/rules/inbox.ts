@@ -75,7 +75,7 @@ export const cachedInbox = (): InboxAnswer | null => readJSON<InboxAnswer | null
 export interface InboxLine {
   ruleId: string
   name: string
-  kind: 'failure' | 'success' | 'proposal'
+  kind: 'failure' | 'success' | 'proposal' | 'waiting'
   text: string
   /** The runs the line stands for, newest first. */
   runs: RoutineInboxRun[]
@@ -118,20 +118,21 @@ function aiDidText(runs: readonly RoutineInboxRun[]): string {
 
 /** Why a failed run stopped ("Not available: outgoing email is not set up"). */
 function failText(r: RoutineInboxRun): string {
+  if (r.outcome === 'missed') return t('no device was available')
   const step = r.steps?.find((s) => s.status === 'unavailable' || s.status === 'failed')
   if (step?.status === 'unavailable') return t('Not available: {reason}', { reason: REASON[step.error ?? ''] ? t(REASON[step.error ?? '']) : t('a step is not available') })
   if (r.failed_step >= 0) return t('failed at step {n}', { n: r.failed_step + 1 })
   return t('did not finish')
 }
 
-const ORDER: Record<InboxLine['kind'], number> = { proposal: 0, failure: 1, success: 2 }
+const ORDER: Record<InboxLine['kind'], number> = { proposal: 0, failure: 1, waiting: 2, success: 3 }
 
 /** One line per routine (D10): waiting proposals, then failures, then successes, newest first. */
 export function inboxLines(runs: readonly RoutineInboxRun[], rules: readonly Pick<Rule, 'id' | 'name'>[], when: (at: number) => string): InboxLine[] {
   const names = new Map(rules.map((r) => [r.id, r.name]))
-  const groups = new Map<string, { failure: RoutineInboxRun[]; success: RoutineInboxRun[]; proposal: RoutineInboxRun[] }>()
+  const groups = new Map<string, { failure: RoutineInboxRun[]; success: RoutineInboxRun[]; proposal: RoutineInboxRun[]; waiting: RoutineInboxRun[] }>()
   for (const r of runs) {
-    const g = groups.get(r.rule_id) ?? { failure: [], success: [], proposal: [] }
+    const g = groups.get(r.rule_id) ?? { failure: [], success: [], proposal: [], waiting: [] }
     ;(g[r.kind] ?? g.success).push(r)
     groups.set(r.rule_id, g)
   }
@@ -148,6 +149,9 @@ export function inboxLines(runs: readonly RoutineInboxRun[], rules: readonly Pic
     if (g.failure.length) {
       const last = g.failure[0]
       out.push({ ruleId, name, kind: 'failure', runs: g.failure, at: last.at, text: t('{name} failed · {why}', { name, why: failText(last) }) })
+    }
+    if (g.waiting.length) {
+      out.push({ ruleId, name, kind: 'waiting', runs: g.waiting, at: g.waiting[0].at, text: t('{name} · waiting for one of your devices', { name }) })
     }
     if (g.success.length) {
       const last = g.success[0]
