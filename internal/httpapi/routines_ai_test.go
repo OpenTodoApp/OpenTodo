@@ -157,7 +157,7 @@ func TestRoutineAIProposalRoutes(t *testing.T) {
 	// The routine's AI usage, and the assistant's usage under routines.
 	resp, out = e.do("GET", "/api/v1/rules/"+id+"/ai-usage", nil)
 	e.mustStatus(resp, 200, out)
-	if out["budget"] != float64(30000) || len(out["days"].([]any)) != 1 {
+	if out["budget"] != float64(30000) || len(out["days"].([]any)) != 1 || out["mode"] == nil {
 		t.Fatalf("ai usage %v", out)
 	}
 	resp, out = e.do("GET", "/api/v1/me/assistant/usage", nil)
