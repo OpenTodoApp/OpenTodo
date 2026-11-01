@@ -6812,5 +6812,10 @@
   "not available yet": "pas encore disponible",
   "someone": "quelqu’un",
   "A small ring marks a day with calendar events.": "Un petit anneau signale un jour avec des événements d’agenda.",
-  "{n, plural, one {# day with events} other {# days with events}}": "{n, plural, one {# jour avec des événements} other {# jours avec des événements}}"
+  "{n, plural, one {# day with events} other {# days with events}}": "{n, plural, one {# jour avec des événements} other {# jours avec des événements}}",
+  "App icon badge": "Pastille sur l’icône de l’app",
+  "On iPhone and iPad the badge appears only once notifications are allowed.": "Sur iPhone et iPad, la pastille n’apparaît qu’une fois les notifications autorisées.",
+  "Show today's count": "Afficher le nombre du jour",
+  "The installed app's icon shows how many of today's tasks are open.": "L’icône de l’app installée indique combien de tâches du jour restent ouvertes.",
+  "This device only. The count matches Today in the sidebar.": "Cet appareil uniquement. Le nombre correspond à Aujourd’hui dans la barre latérale."
 }
