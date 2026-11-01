@@ -6831,5 +6831,10 @@
   "names of members and groups of shared projects and workspaces": "nomi di membri e gruppi di progetti e spazi di lavoro condivisi",
   "your display name, today's date and your time zone": "il tuo nome visualizzato, la data di oggi e il tuo fuso orario",
   "the messages you type": "i messaggi che scrivi",
-  "photos you add": "le foto che aggiungi"
+  "photos you add": "le foto che aggiungi",
+  "Move {tasks} to the Trash?": "Spostare {tasks} nel Cestino?",
+  "Show Trash": "Mostra il Cestino",
+  "They go to the Trash with their subtasks. You can restore them from the Trash.": "Vanno nel Cestino con le loro sottoattività. Puoi ripristinarle dal Cestino.",
+  "The time entry could not be started; this session is not being tracked. ({detail})": "Impossibile avviare la voce di tempo; questa sessione non viene registrata. ({detail})",
+  "The time entry could not be stopped; the minutes may not be logged correctly. ({detail})": "Impossibile arrestare la voce di tempo; i minuti potrebbero non essere registrati correttamente. ({detail})"
 }

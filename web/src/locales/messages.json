@@ -4600,6 +4600,7 @@
     "web/src/app/RemindersField.tsx",
     "web/src/app/Shell.tsx",
     "web/src/app/ThemeRow.tsx",
+    "web/src/app/ToastActionHost.tsx",
     "web/src/app/assistant/AssistantRoot.tsx",
     "web/src/app/assistant/ComposerCapture.tsx",
     "web/src/app/bulk/UndoToast.tsx",
@@ -7940,6 +7941,7 @@
     "web/src/app/AuditPanel.tsx"
   ],
   "Last action": [
+    "web/src/app/ToastActionHost.tsx",
     "web/src/app/bulk/UndoToast.tsx"
   ],
   "Last compacted": [
@@ -9015,6 +9017,9 @@
   ],
   "Move {tasks} to the Trash": [
     "web/src/app/palette/registry.ts"
+  ],
+  "Move {tasks} to the Trash?": [
+    "web/src/app/bulk/BulkActions.tsx"
   ],
   "Move {tasks} to {target}": [
     "web/src/app/bulk/BulkActions.tsx"
@@ -14120,6 +14125,9 @@
     "web/src/app/task-list/announceAdded.ts",
     "web/src/app/views/DisplayPanel.tsx"
   ],
+  "Show Trash": [
+    "web/src/app/bulk/BulkActions.tsx"
+  ],
   "Show a local notification": [
     "web/src/app/NotificationsSettings.tsx"
   ],
@@ -16390,6 +16398,12 @@
   "The theme was made with a newer version of OpenTodo.": [
     "web/src/lib/theme/files.ts"
   ],
+  "The time entry could not be started; this session is not being tracked. ({detail})": [
+    "web/src/lib/focus/session.ts"
+  ],
+  "The time entry could not be stopped; the minutes may not be logged correctly. ({detail})": [
+    "web/src/lib/focus/session.ts"
+  ],
   "The token is removed from the server and nothing is polled any more. The {n, plural, one {# task} other {# tasks}} it created stay as ordinary tasks.": [
     "web/src/app/IssuesPanel.tsx"
   ],
@@ -16512,6 +16526,9 @@
   ],
   "They can sign in again with their existing password. Revoked tokens are not restored.": [
     "web/src/app/UsersPanel.tsx"
+  ],
+  "They go to the Trash with their subtasks. You can restore them from the Trash.": [
+    "web/src/app/bulk/BulkActions.tsx"
   ],
   "Things 3 database": [
     "web/src/app/ImportScreen.tsx"
