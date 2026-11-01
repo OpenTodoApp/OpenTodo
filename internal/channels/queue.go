@@ -78,7 +78,15 @@ func (s *Service) PageActivity(ctx context.Context, e notify.PageEvent) {
 // queued once per channel and step run (routines-engine).
 func (s *Service) RoutineNotice(ctx context.Context, n notify.RoutineNotice) {
 	s.emit(ctx, n.UserID, fmt.Sprintf("routine:%s:%s", n.RunID, n.StepID), event{kind: EventRoutine, key: txtRoutine,
-		taskID: n.TaskID, taskTitle: n.RuleName, excerpt: n.Text, at: n.At, runID: n.RunID})
+		taskID: n.TaskID, taskTitle: n.RuleName, excerpt: n.Text, at: n.At, ruleID: n.RuleID, runID: n.RunID})
+}
+
+// RoutineFailed implements notify.RoutineAlertSink: a routine's failed run,
+// queued once per channel, routine and day under the routine event
+// (routines-editor D11).
+func (s *Service) RoutineFailed(ctx context.Context, a notify.RoutineAlert) {
+	s.emit(ctx, a.UserID, fmt.Sprintf("routine_failed:%s:%s", a.RuleID, a.Day), event{kind: EventRoutine, key: txtRoutineFailed, withKey: txtRoutineFailedWith,
+		taskTitle: a.RuleName, at: a.At, ruleID: a.RuleID, runID: a.RunID})
 }
 
 // Reminder is one firing handed over by the reminder scheduler.

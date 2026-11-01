@@ -893,6 +893,16 @@ var Schema = map[string]map[string]Field{
 		// shows it, and clients keep the stored value. Whether the row is open
 		// is device storage and never synced. Settings, never content.
 		"formatting_toggle": {Kind: kString, Default: `""`},
+		// Routines seen marker (OpenSpec change routines-editor, design D10):
+		// the server time (a run's at, Unix ms) up to which the user has seen
+		// routine runs in the Inbox card. Clients never write a smaller value
+		// than the one they hold, so last-writer-wins keeps the later mark; the
+		// server's run-log retention reads it. Never content.
+		"routines_seen_at": {Kind: kNumber, Default: `0`},
+		// Hide successful runs (routines-editor D10): "on" leaves successes out
+		// of the Inbox card (failures and proposals stay); clients and the
+		// server read an empty or unknown value as off and keep it.
+		"routines_hide_successes": {Kind: kString, Default: `""`},
 	},
 	// review: when the user last finished a weekly review (OpenSpec change
 	// `stats-and-review`, design D4). One row with the entityId "me"; like

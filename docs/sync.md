@@ -149,6 +149,8 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | user_prefs | `row_layout` | string: `"line"` or `"detailed"`, the row layout of every list without its own (unknown or empty reads as `"line"`) |
 | user_prefs | `method_mode` | string: `"lists"`, `"companion"` or `"first"` (How you work; unknown or empty reads as `"lists"`) |
 | user_prefs | `sidebar_counts` | string: `"all"` shows the open-task count of every project, label and view row in the sidebar at rest; `""` or unknown keeps them on Inbox and Today only |
+| user_prefs | `routines_seen_at` | number (Unix ms: the server time of the newest routine run the Inbox card "Routines since your last visit" displayed; a client never writes a smaller value than it holds, LWW keeps the later mark; run-log retention reads it) |
+| user_prefs | `routines_hide_successes` | string: `"on"` leaves successful runs out of the Inbox card (failures stay); `""` or unknown reads as off |
 | user_prefs | `sidebar_order` | string: a comma-separated order of the primary sidebar destinations (`inbox`, `today`, `upcoming`, `calendar` and promotable ids); missing ids follow in the default order, unknown ids are ignored and kept |
 | user_prefs | `focus_presets` | string: up to four comma-separated whole minutes (5-180), the Countdown presets; empty or unreadable reads as `10,20,40`, entries out of range are ignored and the value is kept |
 | user_prefs | `focus_noise` | string: `"off"`, `"white"`, `"pink"` or `"brown"`, background noise during work sessions (empty or unknown reads as off and is kept); the volume is device storage, never synced |

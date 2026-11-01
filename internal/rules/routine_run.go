@@ -66,6 +66,9 @@ func (e *Engine) runRoutine(ctx context.Context, w *world, r *rule, o runOpts) (
 		}
 		run, err := e.Store.RunByID(ctx, w.uid, o.runID)
 		res.Run = run
+		if err == nil {
+			e.alertFailure(ctx, w.uid, r, run)
+		}
 		return res, err
 	}
 	if o.depth > MaxChainDepth {
