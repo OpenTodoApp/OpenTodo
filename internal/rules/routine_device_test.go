@@ -284,3 +284,32 @@ func TestDeviceRunWriteLimit(t *testing.T) {
 		t.Fatalf("write limit: %v", err)
 	}
 }
+
+// An AI routine whose plan writes nothing ends already matched (no fallback);
+// a Change tasks notify action reaches the bell as a fired notice.
+func TestDeviceRunNothingAndFired(t *testing.T) {
+	h, d := deviceHarness(t)
+	d.ai = true
+	h.routine("alice", "s", "Sort", `{"kind":"manual"}`, "", `[{"id":"a","kind":"ask_ai","in":{"instruction":{"literal":"ideas"},"answer":{"literal":"lines"}}},
+		{"id":"b","kind":"create_tasks","in":{"text":{"ref":"a"}}}]`)
+	res := h.runNow("alice", "s", "", false)
+	done, err := h.e.CommitDeviceRun(h.ctx, "alice", res.Run.RunID, "sess-laptop", DeviceCommit{Outcome: OutcomeApplied})
+	if err != nil || done.Run.Outcome != OutcomeAlreadyMatched {
+		t.Fatalf("nothing: %+v %v", done.Run, err)
+	}
+	h.task("alice", "t1", map[string]any{"title": sealed(9)})
+	h.routine("alice", "c", "Flag", `{"kind":"manual"}`, "", `[{"id":"a","kind":"find_tasks","in":{"query":{"literal":"p4"}}},
+		{"id":"b","kind":"change_tasks","in":{"tasks":{"ref":"a"},"set":{"literal":{"priority":1,"notify":true}}}}]`)
+	res = h.runNow("alice", "c", "", false)
+	if res.Run.Outcome != OutcomeWaiting {
+		t.Fatalf("query routine not sent: %+v", res.Run)
+	}
+	commit := DeviceCommit{Changes: []DeviceChange{{Entity: "task", ID: "t1", Fields: map[string]json.RawMessage{"priority": json.RawMessage(`1`)}}},
+		Sides: []DeviceSide{{Kind: "fired", TaskID: "t1"}}}
+	if done, err := h.e.CommitDeviceRun(h.ctx, "alice", res.Run.RunID, "sess-laptop", commit); err != nil || done.Run.Outcome != OutcomeApplied {
+		t.Fatalf("fired: %+v %v", done.Run, err)
+	}
+	if len(h.sink.calls) == 0 || h.sink.calls[len(h.sink.calls)-1].kind != "fired" {
+		t.Fatalf("no fired notice: %+v", h.sink.calls)
+	}
+}
