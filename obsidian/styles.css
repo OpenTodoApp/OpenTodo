@@ -1,0 +1,62 @@
+/* OpenTodo for Obsidian: only Obsidian's own variables, so every theme applies. */
+
+.opentodo-sheet-lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-3);
+  max-height: 50vh;
+  overflow-y: auto;
+  margin-bottom: var(--size-4-3);
+}
+
+.opentodo-sheet-head {
+  display: flex;
+  align-items: center;
+  gap: var(--size-4-2);
+}
+
+.opentodo-sheet-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.opentodo-sheet-line.is-excluded .opentodo-sheet-title,
+.opentodo-sheet-line.is-excluded .opentodo-sheet-chips {
+  opacity: 0.5;
+}
+
+.opentodo-sheet-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-4-1);
+  margin-top: var(--size-4-1);
+}
+
+.opentodo-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--size-2-1);
+  padding: var(--size-2-1) var(--size-4-1) var(--size-2-1) var(--size-4-2);
+  border-radius: var(--radius-l);
+  background: var(--background-modifier-hover);
+  font-size: var(--font-ui-small);
+}
+
+.opentodo-chip-remove {
+  padding: 0;
+  height: auto;
+}
+
+.opentodo-sheet-problems {
+  margin: var(--size-4-1) 0 0;
+  color: var(--text-warning);
+  font-size: var(--font-ui-small);
+}
+
+.opentodo-notice-action {
+  margin-left: var(--size-4-2);
+}
+
+.opentodo-status-line .setting-item-description {
+  user-select: text;
+}

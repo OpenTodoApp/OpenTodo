@@ -27,7 +27,7 @@ jobs:
   # action). A pull request runs the fast tier: the checks, and for code the web,
   # server and image jobs and one linux/amd64 binary; one Chromium layout and
   # end-to-end job when `layout` paths changed; the workbench checks when `ui` paths
-  # changed; Android, extension and skill only for their own paths; a docs-only
+  # changed; Android, extension, Obsidian plugin and skill only for their own paths; a docs-only
   # change runs the checks and the docs website. Pushes to main and tags run every
   # job and every matrix leg (every output is true). The interface audit runs
   # nightly (ux-audit.yml).
@@ -42,6 +42,7 @@ jobs:
       ui: ${{ steps.filter.outputs.ui }}
       layout: ${{ steps.filter.outputs.layout }}
       extension: ${{ steps.filter.outputs.extension }}
+      obsidian: ${{ steps.filter.outputs.obsidian }}
       skill: ${{ steps.filter.outputs.skill }}
       ios: ${{ steps.filter.outputs.ios }}
     steps:
@@ -60,7 +61,7 @@ jobs:
           BASE: ${{ github.event.pull_request.base.sha }}
         run: |
           if [ "$EVENT" != "pull_request" ]; then
-            for k in code docs mobile ui layout extension skill ios; do echo "$k=true" >> "$GITHUB_OUTPUT"; done
+            for k in code docs mobile ui layout extension obsidian skill ios; do echo "$k=true" >> "$GITHUB_OUTPUT"; done
             exit 0
           fi
           git diff --name-only "$BASE"...HEAD > changed.txt
@@ -490,6 +491,41 @@ jobs:
             dist/opentodo-browser-extension-chrome.zip
             dist/opentodo-browser-extension-firefox.zip
 
+  # The Obsidian plugin (OpenSpec change obsidian-plugin): type-check, unit tests,
+  # the build with its size budget and mobile check (make obsidian), then the
+  # plugin against a freshly built server (make obsidian-e2e). Runs for obsidian/
+  # and the shared code it bundles (quick add, the envelope, the line vectors).
+  obsidian:
+    name: Obsidian plugin (test, build, end-to-end)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: changes
+    if: needs.changes.outputs.obsidian == 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            web/package-lock.json
+            obsidian/package-lock.json
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - run: npm ci --no-audit --no-fund
+        working-directory: web
+      - run: make obsidian
+      - name: Server for the end-to-end check
+        run: |
+          (cd web && npm run build)
+          make server
+      - run: make obsidian-e2e
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: opentodo-obsidian
+          path: obsidian/dist
+
   # The Android app (OpenSpec change native-shells D9): unit tests, lint, the
   # AndroidX-only dependency check, translations and store metadata, a debug APK.
   # On tags, a release APK and AAB signed with the keystore from secrets (skipped
@@ -754,7 +790,7 @@ jobs:
     if: ${{ !cancelled() && !failure() && github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    needs: [changes, web-build, web, web-scale, server, layout, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, android, ios, skill, checks, image]
+    needs: [changes, web-build, web, web-scale, server, layout, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, obsidian, android, ios, skill, checks, image]
     permissions:
       contents: read
       packages: write
@@ -764,7 +800,7 @@ jobs:
       - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Log in to GHCR
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -834,7 +870,7 @@ jobs:
     if: ${{ !cancelled() && !failure() && startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [changes, web-build, web, web-scale, server, layout, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, android, ios, skill, checks, image, docker]
+    needs: [changes, web-build, web, web-scale, server, layout, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, obsidian, android, ios, skill, checks, image, docker]
     permissions:
       contents: write
       id-token: write # build provenance (Sigstore)
@@ -973,4 +1009,60 @@ jobs:
           git tag -f "v$version"
           git push origin HEAD
           git push -f origin "v$version"
+          rm -f "$RUNNER_TEMP/deploy_key"
+
+  # The Obsidian plugin's release repository (OpenSpec change obsidian-plugin D1):
+  # Obsidian installs a plugin from the release of its own repository whose tag is
+  # the manifest's version, so after the release this job builds the plugin of the
+  # tag and pushes manifest.json (version = the release's), main.js, styles.css,
+  # versions.json, the README and the licence to OpenTodoApp/obsidian-opentodo,
+  # tagged with the bare version; that repository's own workflow
+  # (obsidian/mirror/release.yml) attaches the three files to a release. The deploy
+  # key in OBSIDIAN_DEPLOY_KEY may write to that one repository only. Without it
+  # (a fork, or before the owner adds it) the job prints the manual steps and
+  # succeeds: the release never depends on it.
+  obsidian-plugin:
+    name: Obsidian plugin (publish)
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [release]
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - run: npm ci --no-audit --no-fund
+        working-directory: web
+      - run: make obsidian
+      - name: Publish to OpenTodoApp/obsidian-opentodo
+        env:
+          DEPLOY_KEY: ${{ secrets.OBSIDIAN_DEPLOY_KEY }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          if [ -z "$DEPLOY_KEY" ]; then
+            echo "::warning::OBSIDIAN_DEPLOY_KEY is not set; publish the plugin by hand (obsidian/README.md, Releases):"
+            echo "  node obsidian/scripts/mirror.mjs $version /tmp/obsidian-opentodo   # in a clone of OpenTodoApp/obsidian-opentodo"
+            echo "  cd /tmp/obsidian-opentodo && git add -A && git commit -m 'OpenTodo $version' && git tag $version && git push origin HEAD --tags"
+            exit 0
+          fi
+          install -m 600 /dev/null "$RUNNER_TEMP/deploy_key"
+          printf '%s\n' "$DEPLOY_KEY" > "$RUNNER_TEMP/deploy_key"
+          export GIT_SSH_COMMAND="ssh -i $RUNNER_TEMP/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+          git clone --depth 1 git@github.com:OpenTodoApp/obsidian-opentodo.git "$RUNNER_TEMP/mirror"
+          node obsidian/scripts/mirror.mjs "$version" "$RUNNER_TEMP/mirror"
+          cd "$RUNNER_TEMP/mirror"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "nothing changed since the last publish"
+          else
+            git commit -q -m "OpenTodo $version"
+          fi
+          git tag -f "$version"
+          git push origin HEAD
+          git push -f origin "$version"
           rm -f "$RUNNER_TEMP/deploy_key"

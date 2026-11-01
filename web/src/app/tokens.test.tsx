@@ -37,6 +37,12 @@ describe('TokensView', () => {
     expect(render({ tokens: [token({ scope: 'admin' })] })).toContain('>Admin<')
   })
 
+  it('hints at a full token for the Obsidian plugin while full access is chosen (obsidian-plugin)', () => {
+    expect(render({ creating: true })).toContain('For the Obsidian plugin, create a full token named after the device.')
+    expect(render({ creating: true, scope: 'read' })).not.toContain('Obsidian')
+    expect(render({ creating: true, scope: 'agent' })).not.toContain('Obsidian')
+  })
+
   it('Token rows: name, scope badge, "Created 3 Oct · Last used today", and Revoke; tokens from before scopes read as full', () => {
     const now = new Date(2026, 9, 14, 12).getTime()
     const claude = token({ name: 'Claude', scope: 'read', createdAt: new Date(2026, 9, 3, 9).getTime(), lastUsedAt: now - 3600_000 })
