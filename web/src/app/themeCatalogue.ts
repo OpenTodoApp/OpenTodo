@@ -35,4 +35,6 @@ export interface ThemeSettingsProps {
   catalogue: CatalogueModule | null
   /** The side shown has a theme other than OpenTodo's: the accent comes from it (theme-engine D7). */
   accentFromTheme?: boolean
+  /** The signed-in person's name, the author of a theme they make (theme-editor D4). */
+  author?: string
 }

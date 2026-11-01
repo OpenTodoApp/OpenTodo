@@ -4,6 +4,7 @@
 // word, never colour alone.
 import { Icon } from './Icon'
 import { t } from '../lib/i18n'
+import { formatRatio } from '../lib/theme/ratio'
 
 export interface ContrastBadgeProps {
   ratio: number
@@ -13,10 +14,6 @@ export interface ContrastBadgeProps {
   className?: string
 }
 
-/** A ratio as people read it: one decimal, truncated, so 4.49 never reads as 4.5. */
-export function formatRatio(r: number): string {
-  return (Math.floor(r * 10) / 10).toFixed(1)
-}
 
 export function ContrastBadge({ ratio, min, on, className = '' }: ContrastBadgeProps) {
   const pass = ratio + 1e-9 >= min

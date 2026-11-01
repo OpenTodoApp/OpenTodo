@@ -7,12 +7,20 @@
 // (one more op, only when accepted). Below a list whose chosen theme is a palette,
 // About this theme opens its credits (ThemeAbout, lazy). Lazy itself: loaded with
 // Settings › Appearance, out of the first load; the data is in themeCatalogue.ts.
-import { lazy, Suspense, useState } from 'react'
-import { BUILTIN_THEMES, setThemeChoice, type ChoiceStatus, type Side } from '../lib/theme/choice'
+import { lazy, Suspense, useState, type ReactNode } from 'react'
+import { BUILTIN_THEMES, customChoice, DEFAULT_THEME, readThemeChoices, setCustomThemeChoice, setThemeChoice, type ChoiceStatus, type Side } from '../lib/theme/choice'
+import { canAddTheme, customiseDocument, deleteCustomThemeUndoable, duplicateDocument, knownCustom, limitMessage, newDocument, uniqueName, useCustomThemes, type LiveTheme } from '../lib/theme/custom'
+import { downloadTheme } from '../lib/theme/files'
+import { builtinDocument } from '../lib/theme/load'
+import { effectiveSide } from '../lib/appearance'
+import { useUserPrefsRow } from '../lib/localData'
+import { showUndoToast } from './bulk/toastStore'
+import { openDraft } from './themes/openEditor'
+import { CustomThemeMenu, docSwatches, lowContrastBadge, useLowContrast, YourThemes, type ThemeCardActions } from './themes/YourThemes'
 import type { CatalogueTheme } from '../lib/theme/builtin/index'
 import { msg, t, translatedMap } from '../lib/i18n'
 import { rowCopy } from '../lib/settingsCopy'
-import { Button, IconButton, ThemeList, type ThemeCardData } from '../ui'
+import { Button, Icon, IconButton, Menu, MenuItem, ThemeList, type ThemeCardData } from '../ui'
 import { act } from './actionError'
 import { knownThemes, type CatalogueModule, type ThemeSettingsProps } from './themeCatalogue'
 
@@ -51,6 +59,8 @@ export function themeCards(side: Side, c: CatalogueModule | null = null): ThemeC
 }
 
 export interface ThemeChoiceProps {
+  /** A menu beside each card (theme-editor D3). */
+  menuFor?: (card: ThemeCardData) => ReactNode
   /** One list for a fixed mode, Light and Dark under System. */
   lists: { side: Side; value: string; status: ChoiceStatus; cards: readonly ThemeCardData[]; about?: CatalogueTheme }[]
   onChoose: (side: Side, id: string) => void
@@ -68,40 +78,94 @@ const STATUS_NOTE: Partial<Record<ChoiceStatus, () => string>> = {
 }
 
 /**
- * The Theme row with its data (lazy, Settings › Appearance): the cards of each side,
- * one op per choice, and under System the counterpart offer after a choice, until it
- * is accepted (one more op) or dismissed.
+ * The Theme row with its data (lazy, Settings › Appearance): the cards of each side
+ * (the built-in themes, then the user's own of that kind, theme-editor D3), one op
+ * per choice, and under System the counterpart offer after a choice, until it is
+ * accepted (one more op) or dismissed; below them, Your themes.
  */
-export default function ThemeSettings({ mode, choices, catalogue }: ThemeSettingsProps) {
+export default function ThemeSettings({ mode, catalogue, author = '' }: ThemeSettingsProps) {
   const known = knownThemes(catalogue)
+  const custom = useCustomThemes()
+  const list = custom ?? NO_THEMES
+  const prefs = useUserPrefsRow()
+  const choices = readThemeChoices(prefs, known, custom ? knownCustom(list) : null)
   const sides: Side[] = mode === 'system' ? ['light', 'dark'] : [mode]
   const [offerFor, setOfferFor] = useState<{ side: Side; id: string } | null>(null)
   const other = (s: Side): Side => (s === 'light' ? 'dark' : 'light')
   const offered = offerFor && mode === 'system' && familyOf(choices[offerFor.side].id, catalogue).family !== familyOf(offerFor.id, catalogue).family ? offerFor : null
+  const low = useLowContrast(list)
+  const room = canAddTheme(list.length)
+  const taken = list.map((x) => x.doc.name)
+  const cardActions: ThemeCardActions = {
+    onUse: (th, side) => act(setCustomThemeChoice(side, th.id)),
+    onDuplicate: (th) => openDraft(duplicateDocument(th.doc, taken)),
+    onExport: (doc) => downloadTheme(doc),
+    onDelete: (th) => act(deleteCustomThemeUndoable(th.id, prefs).then((r) => { if (r.entry) showUndoToast(r.label, r.entry.id) })),
+  }
+  const customise = async (id: string) => {
+    const doc = await builtinDocument(id)
+    if (!doc) return
+    const { simplifyDocument } = await import('../lib/theme/compute')
+    const copy = customiseDocument(simplifyDocument(doc), author)
+    openDraft({ ...copy, name: uniqueName(copy.name, taken) })
+  }
+  const exportBuiltin = async (id: string) => {
+    const doc = await builtinDocument(id)
+    if (doc) downloadTheme(doc)
+  }
+  const menuFor = (card: ThemeCardData) => {
+    const own = list.find((x) => customChoice(x.id) === card.id)
+    if (own) return <CustomThemeMenu theme={own} actions={cardActions} room={room} />
+    return (
+      <Menu label={t('Actions for {name}', { name: card.name })} trigger={<Icon name="ellipsis" />} kind="menu" triggerClassName="ui-btn ui-btn--ghost ui-btn--sm px-1.5"
+        triggerProps={{ 'data-theme-menu': card.id }}>
+        <MenuItem icon="palette" label={t('Customise')} disabled={!room} description={room ? undefined : limitMessage()} onSelect={() => act(customise(card.id))} data-theme-customise={card.id} />
+        <MenuItem icon="download" label={t('Export')} onSelect={() => act(exportBuiltin(card.id))} />
+      </Menu>
+    )
+  }
+  const cardsOf = (side: Side): ThemeCardData[] => [
+    ...themeCards(side, catalogue),
+    ...list.filter((x) => x.doc.kind === side).map((x): ThemeCardData => ({ id: customChoice(x.id), name: x.doc.name, author: x.doc.author, swatches: docSwatches(x.doc), badge: lowContrastBadge(low[x.id]) })),
+  ]
+  const valueOf = (side: Side) => (choices[side].custom ? customChoice(choices[side].id) : choices[side].id)
+  const onNew = async () => {
+    const side = effectiveSide(mode)
+    const base = await builtinDocument(DEFAULT_THEME[side])
+    if (base) openDraft(newDocument(base, author, uniqueName(t('My theme'), taken)))
+  }
   return (
-    <ThemeRow
-      lists={sides.map((side) => ({
-        side, value: choices[side].id, status: choices[side].status, cards: themeCards(side, catalogue),
-        about: catalogue?.CATALOGUE.find((e) => e.id === choices[side].id && choices[side].status === 'theme'),
-      }))}
-      onChoose={(side, id) => {
-        if (id === choices[side].id || !known) return
-        act(setThemeChoice(side, id, known))
-        const counterpart = familyOf(id, catalogue).counterpart
-        setOfferFor(mode === 'system' && counterpart ? { side: other(side), id: counterpart } : null)
-      }}
-      offer={offered && known ? {
-        side: offered.side, name: themeName(offered.id, catalogue),
-        onAccept: () => { setOfferFor(null); act(setThemeChoice(offered.side, offered.id, known)) },
-        onDismiss: () => setOfferFor(null),
-      } : undefined}
-      creditsUrl={catalogue?.creditsUrl}
-    />
+    <>
+      <ThemeRow
+        lists={sides.map((side) => ({
+          side, value: valueOf(side), status: choices[side].status, cards: cardsOf(side),
+          about: catalogue?.CATALOGUE.find((e) => e.id === choices[side].id && choices[side].status === 'theme' && !choices[side].custom),
+        }))}
+        menuFor={menuFor}
+        onChoose={(side, id) => {
+          if (id === valueOf(side)) return
+          if (id.startsWith('user:')) { act(setCustomThemeChoice(side, id.slice(5))); setOfferFor(null); return }
+          if (!known) return
+          act(setThemeChoice(side, id, known))
+          const counterpart = familyOf(id, catalogue).counterpart
+          setOfferFor(mode === 'system' && counterpart ? { side: other(side), id: counterpart } : null)
+        }}
+        offer={offered && known ? {
+          side: offered.side, name: themeName(offered.id, catalogue),
+          onAccept: () => { setOfferFor(null); act(setThemeChoice(offered.side, offered.id, known)) },
+          onDismiss: () => setOfferFor(null),
+        } : undefined}
+        creditsUrl={catalogue?.creditsUrl}
+      />
+      <YourThemes themes={list} lowContrast={low} actions={cardActions} takenNames={taken} onNew={() => act(onNew())} />
+    </>
   )
 }
 
+const NO_THEMES: LiveTheme[] = []
+
 /** The Theme row: one list, or a Light and a Dark list under System. */
-export function ThemeRow({ lists, onChoose, offer, creditsUrl }: ThemeChoiceProps) {
+export function ThemeRow({ lists, onChoose, offer, creditsUrl, menuFor }: ThemeChoiceProps) {
   const label = rowCopy('appearance', 'themes').label
   const [about, setAbout] = useState<CatalogueTheme | null>(null)
   return (
@@ -111,7 +175,7 @@ export function ThemeRow({ lists, onChoose, offer, creditsUrl }: ThemeChoiceProp
         {lists.map((l) => (
           <div key={l.side}>
             <ThemeList data-theme-side={l.side} label={lists.length > 1 ? SIDE_LABEL[l.side] : label}
-              themes={l.cards} value={l.value} onChange={(id) => onChoose(l.side, id)} note={STATUS_NOTE[l.status]?.()} />
+              themes={l.cards} value={l.value} onChange={(id) => onChoose(l.side, id)} note={STATUS_NOTE[l.status]?.()} menuFor={menuFor} />
             {l.about && (
               <Button variant="ghost" size="sm" className="mt-1" data-theme-about={l.about.id} onClick={() => setAbout(l.about!)}>
                 {t('About this theme')}

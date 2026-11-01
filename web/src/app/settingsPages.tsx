@@ -91,7 +91,7 @@ const PAGES: Record<string, (p: PageProps) => ReactNode> = {
   'language/language': () => <LanguageSection />,
   'language/date-time': () => <DateTimeSection />,
   'language/calendar': () => <CalendarSettingsSection />,
-  'appearance/theme': () => <AppearanceSection />,
+  'appearance/theme': ({ user }) => <AppearanceSection author={user.name || user.email} />,
   'appearance/sidebar': () => <SidebarSection />,
   'appearance/task-details': () => <TaskDetailsSection />,
   // Default reminders touch no server feature, so they stay usable on the demo (default-reminders D8).
