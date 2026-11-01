@@ -20,6 +20,9 @@ const (
 	ReasonTimeTrackingOff    = "time_tracking_off"
 	ReasonNotShared          = "not_shared"
 	ReasonDemo               = "demo"
+	// AI steps (routines-ai-step D1, D10).
+	ReasonAINotConfigured = "ai_not_configured"
+	ReasonAINoConsent     = "ai_no_consent"
 )
 
 // Settings that fix a reason (the web app links them; "" when nothing can).
@@ -31,6 +34,8 @@ var reasonSettings = map[string]string{
 	ReasonEnergyOff:          "how_you_work.energy",
 	ReasonFocusOff:           "how_you_work.focus",
 	ReasonTimeTrackingOff:    "how_you_work",
+	ReasonAINotConfigured:    "integrations.assistant",
+	ReasonAINoConsent:        "integrations.assistant",
 }
 
 // reasonText is the sentence a run log and a notice show.
@@ -45,6 +50,8 @@ var reasonText = map[string]string{
 	ReasonTimeTrackingOff:    "time tracking is turned off",
 	ReasonNotShared:          "the routine does not belong to a shared project",
 	ReasonDemo:               "not offered on a demo instance",
+	ReasonAINotConfigured:    "the assistant is not set up for you on this server",
+	ReasonAINoConsent:        "accept the assistant's updated terms for routines",
 }
 
 // SettingFor is the setting that fixes a reason ("" when none can).
@@ -72,6 +79,12 @@ type Env struct {
 	TimeTrackingOff bool
 	// Shared is true for a routine that belongs to a shared project (routines-shared).
 	Shared bool
+	// AI: the assistant is usable by the user (a provider with a key, or on
+	// an encrypted account a device that runs routines with its on-device
+	// assistant); AIConsent: the user accepted the disclosure for routines
+	// (routines-ai-step D1, D10).
+	AI        bool
+	AIConsent bool
 }
 
 // Availability is whether a step can run and, when not, why and where to fix it.
@@ -123,6 +136,13 @@ func Available(kind string, env Env) Availability {
 	case NeedsFocus:
 		if env.FocusOff {
 			return unavailable(ReasonFocusOff)
+		}
+	case NeedsAI:
+		switch {
+		case !env.AI:
+			return unavailable(ReasonAINotConfigured)
+		case !env.AIConsent:
+			return unavailable(ReasonAINoConsent)
 		}
 	}
 	return Availability{Available: true}

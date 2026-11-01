@@ -75,7 +75,7 @@ export const cachedInbox = (): InboxAnswer | null => readJSON<InboxAnswer | null
 export interface InboxLine {
   ruleId: string
   name: string
-  kind: 'failure' | 'success'
+  kind: 'failure' | 'success' | 'proposal'
   text: string
   /** The runs the line stands for, newest first. */
   runs: RoutineInboxRun[]
@@ -113,18 +113,27 @@ function failText(r: RoutineInboxRun): string {
   return t('did not finish')
 }
 
-/** One line per routine (D10): failures first, then successes, newest first. */
+const ORDER: Record<InboxLine['kind'], number> = { proposal: 0, failure: 1, success: 2 }
+
+/** One line per routine (D10): waiting proposals, then failures, then successes, newest first. */
 export function inboxLines(runs: readonly RoutineInboxRun[], rules: readonly Pick<Rule, 'id' | 'name'>[], when: (at: number) => string): InboxLine[] {
   const names = new Map(rules.map((r) => [r.id, r.name]))
-  const groups = new Map<string, { failure: RoutineInboxRun[]; success: RoutineInboxRun[] }>()
+  const groups = new Map<string, { failure: RoutineInboxRun[]; success: RoutineInboxRun[]; proposal: RoutineInboxRun[] }>()
   for (const r of runs) {
-    const g = groups.get(r.rule_id) ?? { failure: [], success: [] }
-    g[r.kind].push(r)
+    const g = groups.get(r.rule_id) ?? { failure: [], success: [], proposal: [] }
+    ;(g[r.kind] ?? g.success).push(r)
     groups.set(r.rule_id, g)
   }
   const out: InboxLine[] = []
   for (const [ruleId, g] of groups) {
     const name = names.get(ruleId) || t('A deleted routine')
+    if (g.proposal.length) {
+      const last = g.proposal[0]
+      const text = g.proposal.length === 1
+        ? t('{name} · proposal waiting · Review', { name })
+        : t('{name} · {n} proposals waiting · Review', { name, n: g.proposal.length })
+      out.push({ ruleId, name, kind: 'proposal', runs: g.proposal, at: last.at, text })
+    }
     if (g.failure.length) {
       const last = g.failure[0]
       out.push({ ruleId, name, kind: 'failure', runs: g.failure, at: last.at, text: t('{name} failed · {why}', { name, why: failText(last) }) })
@@ -138,5 +147,5 @@ export function inboxLines(runs: readonly RoutineInboxRun[], rules: readonly Pic
       out.push({ ruleId, name, kind: 'success', runs: g.success, at: last.at, text })
     }
   }
-  return out.sort((a, b) => (a.kind === b.kind ? b.at - a.at : a.kind === 'failure' ? -1 : 1))
+  return out.sort((a, b) => (a.kind === b.kind ? b.at - a.at : ORDER[a.kind] - ORDER[b.kind]))
 }

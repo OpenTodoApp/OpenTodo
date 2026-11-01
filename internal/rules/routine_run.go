@@ -23,6 +23,8 @@ type runOpts struct {
 	dry     bool // POST …/test: nothing is logged
 	trigger ruleval.Value
 	taskID  string
+	// callAI lets a test or dry run call the model (routines-ai-step D11).
+	callAI bool
 }
 
 // runRoutine runs one routine occurrence: claimed under its key (so a replay
@@ -47,8 +49,11 @@ func (e *Engine) runRoutine(ctx context.Context, w *world, r *rule, o runOpts) (
 	}
 	st := e.newRun(ctx, w, r, o.key, o.runID, o.test || o.dry)
 	st.trigger = o.trigger
+	st.callAI = st.callAI || o.callAI
+	proposed := -1
 	finish := func(f routineFinish) (Result, error) {
 		f.DurationMs = e.now().Sub(st.start).Milliseconds()
+		f.Tokens = st.aiTokens
 		f.Steps = make([]StepRecord, len(st.records))
 		for i := range st.records {
 			f.Steps[i] = st.records[i].StepRecord
@@ -65,10 +70,19 @@ func (e *Engine) runRoutine(ctx context.Context, w *world, r *rule, o runOpts) (
 			return Result{}, err
 		}
 		run, err := e.Store.RunByID(ctx, w.uid, o.runID)
-		res.Run = run
 		if err == nil {
 			e.alertFailure(ctx, w.uid, r, run)
+			if proposed >= 0 {
+				e.alertProposal(ctx, w.uid, r, run, proposed)
+				if ps, perr := e.Store.proposalsByRun(ctx, []string{run.RunID}); perr == nil {
+					if p, ok := ps[run.RunID]; ok {
+						run.Proposal = &p
+					}
+				}
+			}
+			e.afterAIRun(ctx, w.uid, r, run)
 		}
+		res.Run = run
 		return res, err
 	}
 	if o.depth > MaxChainDepth {
@@ -115,6 +129,33 @@ func (e *Engine) runRoutine(ctx context.Context, w *world, r *rule, o runOpts) (
 		}
 		return finish(routineFinish{Outcome: outcome, FailedStep: -1})
 	}
+	auto := false
+	if ruleval.HasAI(r.Steps) {
+		// A routine with AI steps writes only in effective auto mode, within
+		// its limits; otherwise (and on a fallback) the run is a proposal
+		// (routines-ai-step D2, D4, D5).
+		mode, err := e.AIMode(ctx, w.uid, r.ID)
+		if err != nil {
+			return Result{}, err
+		}
+		auto = mode.Auto
+		if auto {
+			if reason := st.autoCheck(); reason != "" {
+				if err := e.Store.setFallback(ctx, w.uid, r.ID, reason); err != nil {
+					return Result{}, err
+				}
+				auto = false
+			}
+		}
+		if !auto {
+			n, err := st.propose()
+			if err != nil {
+				return Result{}, err
+			}
+			proposed = n
+			return finish(routineFinish{Outcome: OutcomeProposal, FailedStep: -1})
+		}
+	}
 	wrote, n, refused, err := st.commit(o.depth)
 	if err != nil {
 		return finish(routineFinish{Outcome: OutcomeFailed, Reason: err.Error(), FailedStep: -1, Written: wrote, Writes: n})
@@ -124,7 +165,7 @@ func (e *Engine) runRoutine(ctx context.Context, w *world, r *rule, o runOpts) (
 	if refused > 0 {
 		outcome, reason = OutcomePartial, refusedReason(refused)
 	}
-	return finish(routineFinish{Outcome: outcome, Reason: reason, Writes: n, FailedStep: -1, Written: wrote})
+	return finish(routineFinish{Outcome: outcome, Reason: reason, Writes: n, FailedStep: -1, Written: wrote, AIAuto: auto})
 }
 
 func refusedReason(n int) string {

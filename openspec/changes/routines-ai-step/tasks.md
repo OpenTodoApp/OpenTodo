@@ -4,19 +4,19 @@ Prerequisites: `routines-engine` and `routines-editor` are merged.
 
 ## 1. AI steps
 
-- [ ] 1.1 Step table: `ask_ai` and `summarise` (inputs, outputs, content, at most 3 per routine) in Go and TypeScript with vectors; availability `ai_not_configured` and `ai_no_consent`; verify `go test ./internal/ruleval/...` and `npm test`
-- [ ] 1.2 `internal/assistant`: a single-shot completion without tools for routine steps (fixed instructions, untrusted context, response checks, 60 s per call), usage tagged `routine`, allowance and own-key rules; verify `go test ./internal/assistant/...` with a stub provider (answer, refusal, cut-off, quota)
+- [x] 1.1 Step table: `ask_ai` and `summarise` (inputs, outputs, content, at most 3 per routine) in Go and TypeScript with vectors; availability `ai_not_configured` and `ai_no_consent`; verify `go test ./internal/ruleval/...` and `npm test`
+- [x] 1.2 `internal/assistant`: a single-shot completion without tools for routine steps (fixed instructions, untrusted context, response checks, 60 s per call), usage tagged `routine`, allowance and own-key rules; verify `go test ./internal/assistant/...` with a stub provider (answer, refusal, cut-off, quota)
 - [ ] 1.3 Consent: the disclosure paragraph and version, `routines` on the consent record, the on-device disclosure; verify `go test ./internal/httpapi/...` (401; consent required for AI steps only) and a happy-dom test
-- [ ] 1.4 `rule.ai_apply` and `rule.ai_budget` in `internal/sync/ops.go`; regenerate with `UPDATE_OP_SCHEMA=1 go test ./internal/sync -run TestGeneratedOpSchema`; verify `go test ./internal/sync/...`
+- [x] 1.4 `rule.ai_apply` and `rule.ai_budget` in `internal/sync/ops.go`; regenerate with `UPDATE_OP_SCHEMA=1 go test ./internal/sync -run TestGeneratedOpSchema`; verify `go test ./internal/sync/...`
 
 ## 2. Proposals and auto mode
 
-- [ ] 2.1 Migration `NNNN_routines_ai.sql`: `routine_proposals`, `rule_ai_usage`, `rule_state` fallback columns, `relay_devices.routines` and capabilities; verify `go test ./internal/store/...`
-- [ ] 2.2 `internal/rules`: proposal mode (plan, write nothing, body for plaintext accounts, outcome `proposal`), expiry after 7 days with the body deleted; verify `go test ./internal/rules/...` ("Friday evening", "Expired")
-- [ ] 2.3 Proposal routes (list, get, apply with items and re-check, dismiss) through `routes.handle` with `.DemoDenied()`; writes with device `rule:<rule-id>` recorded on the run; verify `go test ./internal/httpapi/...` (401, 403 for `agent` and `read` tokens, 409 `proposal_closed`, "Apply some", "Changed since")
-- [ ] 2.4 Auto mode: allowed writes check at save and run, 20 items, effective mode from `ai_apply`'s op time and the fallback; fallback on limit, disallowed write and two failures; verify `go test ./internal/rules/...` (each scenario of "Apply without asking" and "Automatic fallback to proposals")
-- [ ] 2.5 Agents: `forbidden_for_agents` for `ai_apply` in MCP `create_routine`/`update_routine`, the assistant planner drops it; verify `go test ./internal/agenttools/... ./internal/mcp/...`
-- [ ] 2.6 Daily budget per routine and token records on runs; verify `go test ./internal/rules/...` ("Budget reached")
+- [x] 2.1 Migration `NNNN_routines_ai.sql`: `routine_proposals`, `rule_ai_usage`, `rule_state` fallback columns, `relay_devices.routines` and capabilities; verify `go test ./internal/store/...`
+- [x] 2.2 `internal/rules`: proposal mode (plan, write nothing, body for plaintext accounts, outcome `proposal`), expiry after 7 days with the body deleted; verify `go test ./internal/rules/...` ("Friday evening", "Expired")
+- [x] 2.3 Proposal routes (list, get, apply with items and re-check, dismiss) through `routes.handle` with `.DemoDenied()`; writes with device `rule:<rule-id>` recorded on the run; verify `go test ./internal/httpapi/...` (401, 403 for `agent` and `read` tokens, 409 `proposal_closed`, "Apply some", "Changed since")
+- [x] 2.4 Auto mode: allowed writes check at save and run, 20 items, effective mode from `ai_apply`'s op time and the fallback; fallback on limit, disallowed write and two failures; verify `go test ./internal/rules/...` (each scenario of "Apply without asking" and "Automatic fallback to proposals")
+- [x] 2.5 Agents: `forbidden_for_agents` for `ai_apply` in MCP `create_routine`/`update_routine`, the assistant planner drops it; verify `go test ./internal/agenttools/... ./internal/mcp/...`
+- [x] 2.6 Daily budget per routine and token records on runs; verify `go test ./internal/rules/...` ("Budget reached")
 
 ## 3. Device runs
 

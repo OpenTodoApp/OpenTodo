@@ -35,6 +35,8 @@ type StepRecord struct {
 	OutType    string   `json:"output"`
 	IDs        []string `json:"ids"`
 	Error      string   `json:"error,omitempty"`
+	// Tokens are an AI step's input and output tokens (routines-ai-step D11).
+	Tokens int64 `json:"tokens,omitempty"`
 }
 
 // written is one entity a run wrote, for Undo: its fields and whether the run created it.
@@ -54,6 +56,10 @@ type routineFinish struct {
 	FailedStep int
 	Steps      []StepRecord
 	Written    []written
+	// Tokens are the run's AI tokens; AIAuto marks an AI result applied
+	// without asking (routines-ai-step D4).
+	Tokens int64
+	AIAuto bool
 }
 
 // FinishRoutine records a claimed routine run's outcome, counts and step records.
@@ -67,8 +73,8 @@ func (s *Store) finishRoutine(ctx context.Context, id int64, runID string, f rou
 		f.Written = []written{}
 	}
 	batches, _ := json.Marshal(f.Written)
-	if _, err := tx.ExecContext(ctx, `UPDATE rule_runs SET outcome = ?, reason = ?, writes = ?, duration_ms = ?, steps_count = ?, failed_step = ?, batches_json = ?
-		WHERE id = ?`, f.Outcome, f.Reason, f.Writes, f.DurationMs, len(f.Steps), f.FailedStep, string(batches), id); err != nil {
+	if _, err := tx.ExecContext(ctx, `UPDATE rule_runs SET outcome = ?, reason = ?, writes = ?, duration_ms = ?, steps_count = ?, failed_step = ?, batches_json = ?,
+		tokens = ?, ai_auto = ? WHERE id = ?`, f.Outcome, f.Reason, f.Writes, f.DurationMs, len(f.Steps), f.FailedStep, string(batches), f.Tokens, f.AIAuto, id); err != nil {
 		return err
 	}
 	if _, err := tx.ExecContext(ctx, `DELETE FROM rule_step_runs WHERE run_id = ?`, runID); err != nil {
@@ -82,8 +88,8 @@ func (s *Store) finishRoutine(ctx context.Context, id int64, runID string, f rou
 			st.IDs = st.IDs[:MaxRecordedIDs]
 		}
 		idsJSON, _ := json.Marshal(st.IDs)
-		if _, err := tx.ExecContext(ctx, `INSERT INTO rule_step_runs (run_id, idx, step_id, kind, status, duration_ms, items, out_type, ids_json, error)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, runID, st.Idx, st.StepID, st.Kind, st.Status, st.DurationMs, st.Items, st.OutType, string(idsJSON), st.Error); err != nil {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO rule_step_runs (run_id, idx, step_id, kind, status, duration_ms, items, out_type, ids_json, error, tokens)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, runID, st.Idx, st.StepID, st.Kind, st.Status, st.DurationMs, st.Items, st.OutType, string(idsJSON), st.Error, st.Tokens); err != nil {
 			return err
 		}
 	}
@@ -112,7 +118,7 @@ func (s *Store) RunByID(ctx context.Context, userID, runID string) (Run, error) 
 }
 
 func (s *Store) stepRecords(ctx context.Context, runID string) ([]StepRecord, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT idx, step_id, kind, status, duration_ms, items, out_type, ids_json, error FROM rule_step_runs WHERE run_id = ? ORDER BY idx`, runID)
+	rows, err := s.db.QueryContext(ctx, `SELECT idx, step_id, kind, status, duration_ms, items, out_type, ids_json, error, tokens FROM rule_step_runs WHERE run_id = ? ORDER BY idx`, runID)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +127,7 @@ func (s *Store) stepRecords(ctx context.Context, runID string) ([]StepRecord, er
 	for rows.Next() {
 		var st StepRecord
 		var idsJSON string
-		if err := rows.Scan(&st.Idx, &st.StepID, &st.Kind, &st.Status, &st.DurationMs, &st.Items, &st.OutType, &idsJSON, &st.Error); err != nil {
+		if err := rows.Scan(&st.Idx, &st.StepID, &st.Kind, &st.Status, &st.DurationMs, &st.Items, &st.OutType, &idsJSON, &st.Error, &st.Tokens); err != nil {
 			return nil, err
 		}
 		_ = json.Unmarshal([]byte(idsJSON), &st.IDs)

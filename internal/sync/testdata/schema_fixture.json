@@ -132,6 +132,8 @@
     ],
     "rule": [
       "actions",
+      "ai_apply",
+      "ai_budget",
       "condition",
       "created_at",
       "deleted_at",

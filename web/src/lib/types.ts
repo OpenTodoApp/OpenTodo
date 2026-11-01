@@ -549,6 +549,9 @@ export interface RoutineStepRecord {
   error?: string
   /** A test's preview of the step's output (titles included, never stored). */
   preview?: unknown
+  /** An AI step's tokens, and a test's estimate before the model is called (routines-ai-step D11). */
+  tokens?: number
+  estimate?: number
   warning?: { step: string; kind: string; reason: string; setting?: string; message: string }
 }
 
@@ -559,7 +562,7 @@ export interface RoutineRun {
   rule_id: string
   task_id?: string
   at: number
-  outcome: RuleRun['outcome'] | 'ended'
+  outcome: RuleRun['outcome'] | 'ended' | 'proposal'
   reason?: string
   source: 'event' | 'schedule' | 'due' | 'manual' | 'mcp' | 'test'
   run_as: string
@@ -570,11 +573,44 @@ export interface RoutineRun {
   undone_at: number | null
   failed_step: number
   steps?: RoutineStepRecord[]
+  /** AI tokens of the run; an AI result applied without asking; its proposal (routines-ai-step). */
+  tokens?: number
+  ai_auto?: boolean
+  proposal?: RoutineProposal
 }
 
-/** A run the Inbox card lists (routines-editor D10). */
+/** A run the Inbox card lists (routines-editor D10; proposals: routines-ai-step D2). */
 export interface RoutineInboxRun extends RoutineRun {
-  kind: 'failure' | 'success'
+  kind: 'failure' | 'success' | 'proposal'
+}
+
+/** One reviewable item of a routine's proposal (routines-ai-step D3). */
+export interface RoutineProposalItem {
+  key: string
+  kind: 'create' | 'change' | 'notify' | 'webhook' | 'email'
+  entity?: string
+  id?: string
+  fields?: Record<string, unknown>
+  before?: Record<string, unknown>
+  /** Text the AI wrote ("Written by AI"). */
+  ai: boolean
+  side?: { kind: string; notice?: { text: string; taskId?: string }; fired?: { taskId?: string }; hook?: string; delivery?: { Text?: string | null }; mail?: { Subject: string; Text: string } }
+}
+
+/** A routine's proposal: its planned changes waiting for review (routines-ai-step D2). */
+export interface RoutineProposal {
+  id: string
+  rule_id: string
+  run_id: string
+  created_at: number
+  expires_at: number
+  state: 'waiting' | 'applied' | 'partly_applied' | 'dismissed' | 'expired'
+  items: number
+  applied: number
+  skipped: number
+  encrypted: boolean
+  list?: RoutineProposalItem[]
+  envelope?: string
 }
 
 /** A test of a routine or a draft (POST …/run with test, POST /api/v1/rules/test). */

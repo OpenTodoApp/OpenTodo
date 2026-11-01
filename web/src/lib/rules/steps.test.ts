@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { RoutineStepType } from '../types'
 import { cutText, filterLines, formatTemplate, holds, joinLines, periodRange, renderNumber, replaceText, resolveDate, sortLines, sortTasks, splitLines, take, type SortTask, type StepValue } from './stepData'
-import { checkTypes, contentStep, dateLiteral, parseSteps, readRoutine, STEPS, stepError } from './steps'
+import { autoBlocker, checkTypes, contentStep, dateLiteral, parseSteps, readRoutine, STEPS, stepError } from './steps'
 import vectors from './steps.vectors.json'
 
 interface CheckVector {
@@ -37,6 +37,10 @@ describe('routine steps (shared vectors with internal/ruleval)', () => {
       expect(types).toEqual(v.types)
       if (v.content !== undefined) expect(contentStep(steps, v.trigger, types)).toBe(v.content)
     })
+  }
+
+  for (const a of vectors.auto) {
+    it(`auto: ${a.name}`, () => expect(autoBlocker(parseSteps(a.steps))).toEqual(a.blocked))
   }
 
   for (const r of vectors.reading) {

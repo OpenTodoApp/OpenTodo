@@ -54,6 +54,8 @@ const TEXT: Record<string, KindText> = {
   notify: { name: msg('Notify me'), description: msg('A notification in the app and your channels'), synonyms: msg('notification, alert, ping, message, remind'), sentence: msg('Notify me: {text}'), output: '' },
   webhook: { name: msg('Send a webhook'), description: msg('A signed request to one of your webhooks'), synonyms: msg('http, post, integration, request'), sentence: msg('Send the webhook {webhook_id}'), output: '' },
   email_me: { name: msg('Email me'), description: msg('An email to your own address'), synonyms: msg('mail, email, message, send'), sentence: msg('Email me {subject}: {text}'), output: '' },
+  ask_ai: { name: msg('Ask AI'), description: msg('An answer written by AI from your instruction'), synonyms: msg('ai, assistant, prompt, ask, sort, classify, extract'), sentence: msg('Ask AI {instruction} using {context}'), output: msg('the AI answer') },
+  summarise: { name: msg('Summarise'), description: msg('A short summary written by AI'), synonyms: msg('summary, summarize, digest, recap, ai'), sentence: msg('Summarise {text}'), output: msg('the summary') },
   email_members: { name: msg('Email project members'), description: msg('An email to the members of the routine’s project'), synonyms: msg('mail, email, team, members, send'), sentence: msg('Email the project’s members {subject}: {text}'), output: '' },
 }
 
@@ -63,6 +65,7 @@ const CREATE_ONE = msg('Create the task {title} in {project}')
 
 export const GROUP_NAME: Record<StepKind['group'], string> = {
   tasks: msg('Tasks'), projects: msg('Projects'), text: msg('Notes and text'), logic: msg('Lists and logic'), time: msg('Time and focus'), communication: msg('Communication'),
+  ai: msg('AI'),
 }
 export const GROUPS = Object.keys(GROUP_NAME) as StepKind['group'][]
 
@@ -74,6 +77,7 @@ const INPUT_LABEL: Record<string, string> = {
   on: msg('Favourite'), template: msg('Template'), start: msg('Start'), of: msg('Of'), lines: msg('Lines'), separator: msg('Separator'), find: msg('Find'),
   with: msg('Replace with'), case: msg('Match case'), list: msg('List'), where: msg('Test'), by: msg('Order'), direction: msg('Direction'), n: msg('How many'),
   from: msg('From'), value: msg('Value'), is: msg('Test'), reason: msg('Reason'), period: msg('Period'), webhook_id: msg('Webhook'), subject: msg('Subject'),
+  instruction: msg('Instruction'), context: msg('Using'), context2: msg('Also using'), context3: msg('And using'), answer: msg('Answer as'), length: msg('Length'),
 }
 
 export const kindText = (kind: string): KindText | undefined => TEXT[kind]
