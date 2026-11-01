@@ -61,8 +61,16 @@ const DefaultMonthlyCap = 500_000
 // Consents from MinDisclosureVersion on still count: version 2 added "photos
 // you add" (voice-ramble D6) without asking everyone to consent again; version
 // 3 added the paragraph on routines (routines-ai-step D10), which AI steps
-// need (RoutineDisclosureVersion) while chats keep their consent.
-const DisclosureVersion = 3
+// need (RoutineDisclosureVersion) while chats keep their consent; version 4
+// (assistant-disclosure-accuracy) listed everything the assistant already
+// sent (notes, tracked time, routines, frames, workspaces, custom fields,
+// locations, attachments' names, and the views and webhook hosts of a
+// Describe it draft) and the instruction and project context of a routine's
+// AI step. Version 4 changes no data flow, so earlier consents still count
+// (MinDisclosureVersion stays 1): no spec asks for consent again when the
+// text grows, and asking would interrupt everyone for a correction. Raise
+// MinDisclosureVersion only when what is sent changes.
+const DisclosureVersion = 4
 
 // MinDisclosureVersion is the oldest disclosure a consent may name and still count.
 const MinDisclosureVersion = 1
