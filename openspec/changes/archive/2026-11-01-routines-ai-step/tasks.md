@@ -24,20 +24,20 @@ Prerequisites: `routines-engine` and `routines-editor` are merged.
 - [x] 3.2 `internal/relay`: the `routine.run` request (ids only), the routines opt-in (unlocked device, recent confirmation, survives lock, ends at sign-out or encryption off), capabilities `routines` and `ai`; dispatch to the most recently active suitable device; verify `go test ./internal/relay/...`
 - [x] 3.3 Waiting: `waiting_device`, latest occurrence per routine, superseded, missed after 24 hours; verify `go test ./internal/rules/...` with a stepped clock
 - [x] 3.4 Commit and fail routes (`signedIn.SessionOnly().DemoDenied()`): bound to the device, `routine_changed`, `fallback`, `write_limit`, ciphertext ops applied with device `rule:<rule-id>`; verify `go test ./internal/httpapi/...` (401, 403 for another device and for bearer tokens, 409 twice, 400) and `policy_test.go`
-- [ ] 3.5 `web/src/lib/relay.ts`: answer `routine.run` (decrypt, plan, AI through the on-device assistant, encrypt, commit), the running indicator and the recent runs list; Run now on the device in hand; verify `npm test` (a fake relay stream; the operations sent are ciphertext)
-- [ ] 3.6 Encrypted-account proposals: device writes the envelope, any device decrypts and applies through commit; verify `npm test` with two simulated devices
+- [x] 3.5 `web/src/lib/relay.ts`: answer `routine.run` (decrypt, plan, AI through the on-device assistant, encrypt, commit), the running indicator and the recent runs list; Run now on the device in hand; verify `npm test` (a fake relay stream; the operations sent are ciphertext)
+- [x] 3.6 Encrypted-account proposals: device writes the envelope, any device decrypts and applies through commit; verify `npm test` with two simulated devices
 
 ## 4. Editor and Inbox
 
 - [x] 4.1 AI cards, token estimate in previews (never calling the model), Test with the confirmation and real counts; verify happy-dom tests ("Estimate first")
 - [x] 4.2 Apply without asking switch with reasons, the fallback notice, the budget field, 7-day usage; verify happy-dom tests
 - [x] 4.3 Proposal review sheet (items, ticks, Written by AI, Apply, Dismiss, Undo toast), Inbox card and bell entries; auto runs shown even with successes hidden; verify happy-dom tests and `npm test`
-- [ ] 4.4 Encrypted-account warning and opt-in, unavailable email and text webhooks; verify a happy-dom test
+- [x] 4.4 Encrypted-account warning and opt-in, unavailable email and text webhooks; verify a happy-dom test
 - [x] 4.5 Shortcuts in the review (`Enter`, `Escape`) in the registry; verify the conflict test with `npm test`
 - [x] 4.6 Strings in the six catalogs; verify `make i18n-check`
 
 ## 5. Checks
 
-- [ ] 5.1 Bundle: the device runner lazy; verify `make bundle-budget`
-- [ ] 5.2 `docs/automations.md` (AI steps, proposals, auto mode and its limits, budget, encrypted accounts), `docs/assistant.md`, `docs/encryption.md`, `docs/mcp.md` (agents cannot turn on auto mode); verify `make docs-check`
-- [ ] 5.3 CHANGELOG Unreleased entry (at archive); `go test ./...`, `npm test`, `npm run build`, `make check`, `make openspec-validate`
+- [x] 5.1 Bundle: the device runner lazy; verify `make bundle-budget`
+- [x] 5.2 `docs/automations.md` (AI steps, proposals, auto mode and its limits, budget, encrypted accounts), `docs/assistant.md`, `docs/encryption.md`, `docs/mcp.md` (agents cannot turn on auto mode); verify `make docs-check`
+- [x] 5.3 CHANGELOG Unreleased entry (at archive); `go test ./...`, `npm test`, `npm run build`, `make check`, `make openspec-validate`

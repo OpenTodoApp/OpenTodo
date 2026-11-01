@@ -222,10 +222,12 @@ export function anthropicProvider(setup: DeviceSetup, f: Fetch = fetch): Provide
       const tools = req.tools.map((t) => ({ name: t.name, description: t.description, input_schema: t.strict_schema, strict: true }))
       return {
         async next(onText, signal) {
-          const body = {
-            model: setup.model, max_tokens: req.maxTokens, system: [{ type: 'text', text: req.system }], messages, tools, tool_choice: { type: 'auto' },
+          const body: Record<string, unknown> = {
+            model: setup.model, max_tokens: req.maxTokens, system: [{ type: 'text', text: req.system }], messages,
             thinking: { type: 'adaptive' }, output_config: { effort: 'medium' }, cache_control: { type: 'ephemeral' }, stream: true,
           }
+          // A routine step offers no tools (routines-ai-step D1): the API refuses tool_choice without them.
+          if (tools.length) { body.tools = tools; body.tool_choice = { type: 'auto' } }
           const res = await post(f, 'anthropic', baseUrlOf(setup) + '/messages', {
             'x-api-key': setup.key ?? '', 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true',
           }, body, signal, images)

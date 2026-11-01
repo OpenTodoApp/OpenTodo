@@ -7,7 +7,8 @@ import type { AgentAccess, ApiToken, McpStatus, TokenScope } from './assistants'
 import type { AssistantStatus } from './assistantStatus'
 import type { AssistantOwnerSettings, AssistantMemberSettings, AssistantSettingsInput, AssistantTestDraft, AssistantTestResult, MyAssistantTestDraft, AssistantUsage, MyAssistantInput } from './assistantTypes'
 import type { KeyRecord } from './crypto'
-import type { RelayDevice } from './relay'
+import type { RelayDevice, RoutineRunRequest } from './relay'
+import type { DeviceCommit, DeviceStepRecord } from './rules/deviceTypes'
 import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeys'
 import type {
   Profile,
@@ -557,8 +558,15 @@ export const api = {
   myRules: () => request<RulesStatus>('GET', '/api/v1/me/rules'),
   ruleRuns: (id: string) => request<{ runs: RuleRun[] }>('GET', `/api/v1/rules/${encodeURIComponent(id)}/runs`),
   /** Routines (routines-engine): run one now, undo one of its runs. */
-  runRoutine: (id: string, body: { run_id: string; task_id?: string; test?: boolean; call_ai?: boolean }) =>
-    request<{ run: { run_id: string; outcome: string; writes: number; reason?: string }; writes: number; test: boolean }>('POST', `/api/v1/rules/${encodeURIComponent(id)}/run`, body),
+  runRoutine: (id: string, body: { run_id: string; task_id?: string; test?: boolean; call_ai?: boolean; device?: string }) =>
+    request<{ run: { run_id: string; outcome: string; writes: number; reason?: string }; writes: number; test: boolean; device_run?: RoutineRunRequest }>('POST', `/api/v1/rules/${encodeURIComponent(id)}/run`, body),
+  /** Device runs of an encrypted account (routines-ai-step D8): the result as ciphertext, or the failure. */
+  commitDeviceRun: (runId: string, body: DeviceCommit) =>
+    request<{ run: { run_id: string; outcome: string; writes: number; reason?: string } }>('POST', `/api/v1/me/rules/runs/${encodeURIComponent(runId)}/commit`, body),
+  failDeviceRun: (runId: string, body: { step: number; code: string; steps?: DeviceStepRecord[]; duration_ms?: number; tokens?: number }) =>
+    request<{ run: { run_id: string; outcome: string } }>('POST', `/api/v1/me/rules/runs/${encodeURIComponent(runId)}/fail`, body),
+  routinesDeviceOptIn: (device: string, label: string) => request<void>('PUT', `/api/v1/relay/devices/${encodeURIComponent(device)}/routines`, { label }),
+  routinesDeviceOptOut: (device: string) => request<void>('DELETE', `/api/v1/relay/devices/${encodeURIComponent(device)}/routines`),
   undoRoutineRun: (id: string, runId: string) =>
     request<{ restored: number; kept: number; not_undoable: string[] }>('POST', `/api/v1/rules/${encodeURIComponent(id)}/runs/${encodeURIComponent(runId)}/undo`, {}),
   /** Routines (routines-editor): the catalogue, tests of drafts, one run, all runs, the Inbox card. */
@@ -577,6 +585,9 @@ export const api = {
   routineProposals: () => request<{ proposals: RoutineProposal[] }>('GET', '/api/v1/me/rules/proposals'),
   routineProposal: (id: string) => request<RoutineProposal>('GET', `/api/v1/me/rules/proposals/${encodeURIComponent(id)}`),
   applyRoutineProposal: (id: string, items: string[]) => request<RoutineProposalApplied>('POST', `/api/v1/me/rules/proposals/${encodeURIComponent(id)}/apply`, { items }),
+  /** An encrypted proposal: the ticked items as ciphertext changes (routines-ai-step D3). */
+  applyEncryptedProposal: (id: string, body: Omit<DeviceCommit, 'steps' | 'proposal' | 'outcome'> & { skipped: number; changed: number }) =>
+    request<RoutineProposalApplied>('POST', `/api/v1/me/rules/proposals/${encodeURIComponent(id)}/apply`, body),
   dismissRoutineProposal: (id: string) => request<void>('DELETE', `/api/v1/me/rules/proposals/${encodeURIComponent(id)}`),
   routineAIUsage: (id: string) => request<RoutineAIUsage>('GET', `/api/v1/rules/${encodeURIComponent(id)}/ai-usage`),
   dismissRoutineRun: (id: string, runId: string) => request<void>('POST', `/api/v1/rules/${encodeURIComponent(id)}/runs/${encodeURIComponent(runId)}/dismiss`, {}),
