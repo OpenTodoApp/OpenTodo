@@ -93,6 +93,17 @@ describe('every view opens a task as its page', () => {
     await r.unmount()
   })
 
+  it('loads the calendar, settings and import screens on first visit and renders them', async () => {
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    navigate({ view: 'week' })
+    await waitFor(() => !!document.querySelector('[data-calendar-page="week"]'))
+    navigate({ view: 'settings' })
+    await waitFor(() => !!document.querySelector('[data-settings-pane]'))
+    navigate({ view: 'import' })
+    await waitFor(() => r.container.textContent!.includes('Import data'))
+    await r.unmount()
+  })
+
   it('a task deleted while its page is open says so', async () => {
     // A project: the Inbox keeps its task beside the list from 1024 px instead (inbox-split).
     const pid = await createProject({ name: 'Home' })

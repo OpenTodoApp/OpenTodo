@@ -1,4 +1,4 @@
-import { DESKTOP_HEADER_QUERY, IconButton, setSidebarToggle, PageActions, PageBarTitle, TruncatedText, useMediaQuery, usePageBar, useOverlayDepth } from '../ui'
+import { DESKTOP_HEADER_QUERY, IconButton, setSidebarToggle, PageActions, PageBarTitle, Skeleton, TruncatedText, useMediaQuery, usePageBar, useOverlayDepth } from '../ui'
 import { useCommandBar } from './palette/useCommandBar'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { User } from '../lib/types'
@@ -8,7 +8,6 @@ import { keysOf } from '../lib/shortcuts'
 import { dismissRejected, useSyncStatus } from '../lib/sync'
 import { canonicalPath, navigate, parseRoute, useRoute } from './router'
 import { SIDEBAR_COLLAPSED_REM, SIDEBAR_MAX_REM, SIDEBAR_MIN_REM, setSidebarCollapsed, setSidebarWidth, toggleSidebarCollapsed, useSidebarLayout } from './sidebarLayout'
-import { CalendarView } from './CalendarView'
 import { FilterView } from './FilterView'
 import { LabelsView } from './LabelsView'
 import { PlacesView } from './locations/PlacesView'
@@ -20,8 +19,6 @@ import { TaskListView } from './TaskListView'
 import { AskScreen } from './assistant/AskEntry'
 import { TrashView } from './TrashView'
 import { FeedView } from './FeedView'
-import { ImportScreen } from './ImportScreen'
-import { SettingsView } from './SettingsView'
 import { ReminderToasts } from './ReminderToasts'
 import { WorkspaceHost } from './NewWorkspaceDialog'
 import { FramesHost } from './calendar/framesRequest'
@@ -93,6 +90,13 @@ const NotesPage = lazy(() => import('./notes/NotesPage'))
 const LoopHome = lazy(() => import('./method/LoopHome').then((m) => ({ default: m.LoopHome })))
 // The start guide (lean-chrome D5): its own chunk; it opens over the Inbox once per account, or from Settings.
 const FirstRunGuide = lazy(() => import('./FirstRun').then((m) => ({ default: m.FirstRunGuide })))
+// Calendar, Settings and Import are not on the Inbox's first screen: each loads on first visit.
+const CalendarView = lazy(() => import('./CalendarView').then((m) => ({ default: m.CalendarView })))
+const SettingsView = lazy(() => import('./SettingsView').then((m) => ({ default: m.SettingsView })))
+const ImportScreen = lazy(() => import('./ImportScreen').then((m) => ({ default: m.ImportScreen })))
+
+/** Shown while a screen's chunk is fetched: the page's rows, as the other screens do. */
+const SCREEN_LOADING = <div className="px-4 py-6"><Skeleton shape="row" count={4} /></div>
 
 /** Requests that need the sidebar on screen: the phone drawer opens, and for a find the icon rail expands. */
 function useSidebarRequests(setSidebarOpen: (open: boolean) => void) {
@@ -268,9 +272,9 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           {route.view === 'help' ? (
             <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading help…')}</p>}><HelpView page={route.page} q={route.q} /></Suspense>
           ) : route.view === 'settings' ? (
-            <SettingsView user={user} onLogout={onLogout} section={route.section} page={route.page} anchor={route.anchor} />
+            <Suspense fallback={SCREEN_LOADING}><SettingsView user={user} onLogout={onLogout} section={route.section} page={route.page} anchor={route.anchor} /></Suspense>
           ) : route.view === 'theme-editor' ? <Suspense fallback={null}><ThemeEditorPage id={route.id} /></Suspense> : route.view === 'import' ? (
-            <ImportScreen />
+            <Suspense fallback={SCREEN_LOADING}><ImportScreen /></Suspense>
           ) : route.view === 'labels' ? (
             <LabelsView route={route} />
           ) : route.view === 'places' ? (
@@ -310,7 +314,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           ) : route.view === 'ask' ? (
             <AskScreen role={user.role} name={user.name} />
           ) : route.view === 'day' || route.view === 'week' ? (
-            <CalendarView mode={route.view} date={route.date} />
+            <Suspense fallback={SCREEN_LOADING}><CalendarView mode={route.view} date={route.date} /></Suspense>
           ) : route.view === 'month' || route.view === 'plan' || route.view === 'year' ? (
             <Suspense fallback={null}>{route.view === 'month' ? <MonthView date={route.date} /> : route.view === 'plan' ? <PlanView date={route.date} /> : <YearView date={route.date} />}</Suspense>
           ) : (
