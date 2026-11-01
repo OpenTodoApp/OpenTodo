@@ -63,6 +63,8 @@ async function personalResolver(batch: Op[]): Promise<(entity: Entity, id: strin
       case 'task': return projectPersonal(await ref('task', id, 'project_id'))
       case 'section': return projectPersonal(await ref('section', id, 'project_id'))
       case 'field': return projectPersonal(await ref('field', id, 'project_id'))
+      // A routine of a shared project is the project's: plaintext (routines-shared D10).
+      case 'rule': return projectPersonal(await ref('rule', id, 'project_id'))
       case 'comment':
       case 'attachment': {
         const taskId = await ref(entity, id, 'task_id')

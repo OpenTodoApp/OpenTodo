@@ -126,6 +126,12 @@ func (n *InApp) RoutineProposal(ctx context.Context, a RoutineAlert) {
 	n.insert(ctx, a.UserID, KindRoutineProposal, a)
 }
 
+// RoutinePausedShared stores a routine_paused_shared notification for one
+// member of the routine's project (routines-shared D9).
+func (n *InApp) RoutinePausedShared(ctx context.Context, e RoutinePausedShared) {
+	n.insert(ctx, e.UserID, KindRoutinePausedShared, e)
+}
+
 // RulePaused stores a rule_paused notification for the rule's author.
 func (n *InApp) RulePaused(ctx context.Context, e RuleEvent) {
 	n.insert(ctx, e.UserID, KindRulePaused, e)

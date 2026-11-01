@@ -280,13 +280,14 @@ ot routine run Groceries --test           # plan every step, write nothing
 ot routine run "Waiting follow-up" --task 3f2a…
 ot routine runs Groceries --failed --limit 10
 ot routine create --file groceries.yaml
+ot routine create --project Household --file chores.yaml   # a routine of a (shared) project
 ot routine edit Groceries --file changes.json   # replaces the parts the file gives
 ot routine enable Groceries               # or disable
 ot routine undo Groceries <run-id>
 ot routine rm Groceries --yes
 ```
 
-A routine file is JSON or YAML with `name`, `trigger`, an optional `condition`, `steps` (or `actions`) and `enabled`, in the shapes of the [API](api.md#routines). Projects, sections, labels, saved views and webhooks may be written by name (`project: Errands`); the CLI resolves them before sending and fails naming one that matches nothing (`project Erands not found`), sending nothing.
+A routine file is JSON or YAML with `name`, `trigger`, an optional `condition`, `steps` (or `actions`), `enabled` and an optional `project` (the project it belongs to, by name or id; `--project` does the same), in the shapes of the [API](api.md#routines). Projects, sections, labels, saved views and webhooks may be written by name (`project: Errands`); the CLI resolves them before sending and fails naming one that matches nothing (`project Erands not found`), sending nothing.
 
 ```yaml
 name: Groceries
@@ -297,7 +298,7 @@ steps:
   - {id: c, kind: create_tasks, in: {text: {ref: b}, project: {literal: {project: Errands}}}}
 ```
 
-`ot routine run` prints each step's status, items and time, and exits 6 when the run failed (with `--json`, the run record is printed and says at which step). A read token can list, show and read runs but is refused on every other subcommand (exit 5). Saving a routine with a step that is not available prints a warning naming the step and the reason.
+`ot routine list` shows each routine's PROJECT and, for a routine of a [shared project](routines.md#routines-of-a-shared-project), RUNS AS (the person who last turned it on, `-` before anyone did); `ot routine show` prints both. `ot routine run` prints each step's status, items and time, and exits 6 when the run failed (with `--json`, the run record is printed and says at which step). A read token can list, show and read runs but is refused on every other subcommand (exit 5). Saving a routine with a step that is not available prints a warning naming the step and the reason.
 
 ## Calendar frames
 

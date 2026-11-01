@@ -14,6 +14,7 @@ import { t } from '../../lib/i18n'
 import { uuid } from '../../lib/ids'
 import { useOnline } from '../../lib/online'
 import { useCatalogue } from '../../lib/rules/catalogue'
+import { sharedCatalogue } from '../../lib/rules/shared'
 import {
   draftError, draftOf, draftTypes, duplicateStep, findStep, flowingTypeAt, insertNewStep, moveStep, newId, NEW_ROUTINE, placeOf, removeStep, sameDraft, setInput, stepCount, stepNumber, storedOf,
   type RoutineDraft,
@@ -39,6 +40,7 @@ import { usePreviewData, useRoutineNames, valueNamer } from './data'
 import type { RuleDraft } from './ruleDraft'
 import type { DescribedDraft } from './routineNav'
 import { RunDetailBody, RunsList } from './RunHistory'
+import { SharedRoutineLine, useSharedRoutine } from './SharedRoutine'
 import { CardColumn, sentenceText, WhenCard, type CardEvents, type CardState } from './StepCard'
 import { refName } from './words'
 
@@ -117,6 +119,8 @@ export interface RoutineEditorProps {
   rule?: Rule
   /** A new routine's starting draft (a view's or a board column's rule). */
   draft?: RoutineDraft
+  /** A new routine's project (New routine's Where, routines-shared D12). */
+  project?: string
   /** Terms of a converted filter that a rule cannot use. */
   dropped?: string[]
   /** The draft came from Describe it (routines-describe-it D3): the banner, its errors shown at once, unsaved. */
@@ -137,8 +141,10 @@ type Pane = 'steps' | 'test' | 'history'
 const WIDE_QUERY = '(min-width: 64rem)'
 
 /** Test (D8): a logged test run for a saved, unchanged routine, the draft route otherwise; AI steps ask first (routines-ai-step D11). */
-function useRoutineTest({ draft, rule, dirty, online, blocked, withAI, estimate, taskId, onStart, onAnnounce, onError }: {
+function useRoutineTest({ draft, rule, dirty, online, blocked, withAI, estimate, taskId, projectId, onStart, onAnnounce, onError }: {
   draft: RoutineDraft; rule: Rule | undefined; dirty: boolean; online: boolean; blocked: boolean; withAI: boolean; estimate: number; taskId: string | undefined
+  /** A shared routine's project: the draft is planned inside it (routines-shared D3). */
+  projectId?: string
   onStart: () => void; onAnnounce: (text: string) => void; onError: (e: unknown) => void
 }) {
   const [testing, setTesting] = useState(false)
@@ -152,7 +158,7 @@ function useRoutineTest({ draft, rule, dirty, online, blocked, withAI, estimate,
     const ai = callAI ? { call_ai: true } : {}
     const req = rule && !dirty
       ? api.testRoutine(rule.id, { run_id: uuid(), ...(taskId ? { task_id: taskId } : {}), ...ai })
-      : api.testRoutineDraft({ trigger: draft.trigger, condition: draft.condition, steps: draft.steps, ...(taskId ? { task_id: taskId } : {}), ...ai })
+      : api.testRoutineDraft({ trigger: draft.trigger, condition: draft.condition, steps: draft.steps, ...(taskId ? { task_id: taskId } : {}), ...(projectId ? { project_id: projectId } : {}), ...ai })
     req.then((r) => {
       setResult(r)
       onAnnounce(r.run.outcome === 'failed' ? t('Test failed at step {n}, nothing was written', { n: r.run.failed_step + 1 }) : t('{n, plural, one {Test finished: would write # item, nothing was written} other {Test finished: would write # items, nothing was written}}', { n: r.writes }))
@@ -199,13 +205,17 @@ function usePageGuards(dirty: boolean, onBack: () => void): [(() => void) | null
   return [leave, setLeave]
 }
 
-export function RoutineEditor({ rule, draft: initial, dropped, described, run, history, onBack, onSaved }: RoutineEditorProps) {
+export function RoutineEditor({ rule, draft: initial, project, dropped, described, run, history, onBack, onSaved }: RoutineEditorProps) {
   const start = useMemo(() => (rule ? draftOf(rule) : initial ?? NEW_ROUTINE), [rule, initial])
   const { draft, edit: editDraft, undo, canUndo } = useDraft(start)
   const me = useMe() ?? ''
   const online = useOnline()
   const names = useRoutineNames()
-  const catalogue = useCatalogue()
+  const shared = useSharedRoutine(rule?.id, rule ? rule.project_id : project)
+  const ownCatalogue = useCatalogue()
+  // A shared routine cannot use personal steps (routines-shared D3).
+  const catalogue = useMemo(() => (shared ? sharedCatalogue(ownCatalogue) : ownCatalogue), [shared?.projectId, ownCatalogue]) // eslint-disable-line react-hooks/exhaustive-deps
+  const readOnly = !!shared && !shared.canEdit
   const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
   const wide = useMediaQuery(WIDE_QUERY)
   const [pane, setPane] = useState<Pane>(run || history ? 'history' : 'steps')
@@ -329,12 +339,13 @@ export function RoutineEditor({ rule, draft: initial, dropped, described, run, h
     if (!draft.steps.length) { setSaveError(t('A routine needs at least one step')); return }
     if (blocked) { setSaveError(t('Fix step {n} first', { n: stepNumber(draft.steps, blocked.step) || 1 })); return }
     if (saved && !dirty) return
+    if (readOnly) return
     const stored = storedOf(draft)
     const snapshot = draft
     setSaving(true)
     const done = savedId
       ? updateRule(savedId, { name, trigger: draft.trigger, condition: draft.condition, ...stored, ...(hasAI(draft.steps) || rule?.ai_budget ? { ai_budget: draft.aiBudget ?? 0 } : {}) }).then(() => savedId)
-      : createRule({ name, trigger: draft.trigger, condition: draft.condition, ...stored, ai_apply: draft.aiApply, ai_budget: draft.aiBudget })
+      : createRule({ name, trigger: draft.trigger, condition: draft.condition, ...stored, ai_apply: draft.aiApply, ai_budget: draft.aiBudget, project_id: shared?.projectId ?? null })
     Promise.resolve(done).then((id) => {
       const created = !savedId
       setBaseline(snapshot)
@@ -349,7 +360,7 @@ export function RoutineEditor({ rule, draft: initial, dropped, described, run, h
   const withAI = hasAI(draft.steps)
   const estimate = [...previews.values()].reduce((n, p) => n + (p.state === 'ai' ? p.estimate : 0), 0)
   const { test, testing, result, confirm } = useRoutineTest({
-    draft, rule, dirty, online, blocked: !!blocked, withAI, estimate, taskId: triggerType === 'task' ? data.triggerTask?.id : undefined,
+    draft, rule, dirty, online, blocked: !!blocked, withAI, estimate, taskId: triggerType === 'task' ? data.triggerTask?.id : undefined, projectId: shared?.projectId,
     onStart: () => setPane('test'), onAnnounce: setAnnounce, onError: (e) => setSaveError(messageOf(e)),
   })
   const keys = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -366,12 +377,13 @@ export function RoutineEditor({ rule, draft: initial, dropped, described, run, h
     <>
       <Button variant="secondary" size="sm" icon="list-checks" onClick={test} busy={testing} disabled={!online || !!blocked || !draft.steps.length}
         data-routine-test>{t('Test')}</Button>
-      {saved && <Button variant="ghost" size="sm" icon="zap" disabled={!online || !rule} onClick={() => { if (rule) void runRoutineNow(rule, undefined) }} data-routine-run>{t('Run now')}</Button>}
-      <Button variant="primary" size="sm" onClick={save} busy={saving} data-routine-save>{t('Save')}</Button>
+      {saved && !readOnly && <Button variant="ghost" size="sm" icon="zap" disabled={!online || !rule} onClick={() => { if (rule) void runRoutineNow(rule, undefined) }} data-routine-run>{t('Run now')}</Button>}
+      <Button variant="primary" size="sm" onClick={save} busy={saving} disabled={readOnly} data-routine-save>{t('Save')}</Button>
     </>
   )
 
-  const notices = <EditorNotices online={online} dropped={dropped} saveError={saveError} draft={draft} described={saved ? undefined : described} />
+  const notices = <>{shared && <SharedRoutineLine shared={shared} me={me} baseline={baseline} draft={draft} saved={saved} />}
+    <EditorNotices online={online} dropped={dropped} saveError={saveError} draft={draft} described={saved ? undefined : described} shared={!!shared} /></>
   const stepsColumn = (
     <section className="space-y-2" aria-label={t('Steps of {name}', { name })} data-routine-steps>
       {draft.steps.length === 0 && <p className="text-meta text-muted">{t('Add the first step: what should happen?')}</p>}
@@ -441,7 +453,7 @@ export function RoutineEditor({ rule, draft: initial, dropped, described, run, h
   )
 }
 
-function EditorNotices({ online, dropped, saveError, draft, described }: { online: boolean; dropped?: string[]; saveError: string; draft: RoutineDraft; described?: DescribedDraft }) {
+function EditorNotices({ online, dropped, saveError, draft, described, shared }: { online: boolean; dropped?: string[]; saveError: string; draft: RoutineDraft; described?: DescribedDraft; shared: boolean }) {
   return (
     <>
       {described && (
@@ -459,7 +471,8 @@ function EditorNotices({ online, dropped, saveError, draft, described }: { onlin
         </ul>
       )}
       {saveError && <p role="alert" className="text-meta text-danger" data-save-error>{saveError}</p>}
-      {draft.trigger.kind !== 'manual' && <EncryptedScheduleNote draft={draft} />}
+      {/* A shared routine is plaintext and runs on the server (routines-shared D10). */}
+      {draft.trigger.kind !== 'manual' && !shared && <EncryptedScheduleNote draft={draft} />}
     </>
   )
 }
