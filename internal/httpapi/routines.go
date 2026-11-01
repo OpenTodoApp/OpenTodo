@@ -51,7 +51,7 @@ func (m routineMailer) message(ctx context.Context, uid string, rm rules.Routine
 	}
 	origin := m.s.cfg.Origin()
 	return mail.Message{Kind: mail.KindRoutine, To: email, Lang: lang, UserID: uid, ActorID: uid, Origin: origin,
-		Vars: mail.Vars{Link: origin + "/routines?run=" + rm.RunID, Routine: &mail.RoutineVars{Name: rm.RuleName, Subject: rm.Subject, Text: rm.Text}}}, true
+		Vars: mail.Vars{Link: origin + "/routines/" + rm.RuleID + "?run=" + rm.RunID, Routine: &mail.RoutineVars{Name: rm.RuleName, Subject: rm.Subject, Text: rm.Text}}}, true
 }
 
 func (m routineMailer) SendRoutine(ctx context.Context, uid string, rm rules.RoutineMail) error {

@@ -161,8 +161,8 @@ type event struct {
 	actorName string
 	excerpt   string
 	at        int64
-	// runID links a routine notice to its run.
-	runID string
+	// ruleID and runID link a routine notice to its run.
+	ruleID, runID string
 }
 
 // render applies the content policy and the channel's language. content says
@@ -176,7 +176,7 @@ func (e event) render(lang, origin string, content bool) Message {
 	if e.kind == EventRoutine {
 		// A routine's notice: its name and the step's text, or the generic line.
 		if origin != "" {
-			m.URL = origin + "/routines?run=" + e.runID
+			m.URL = origin + "/routines/" + e.ruleID + "?run=" + e.runID
 		}
 		name, body := plain(e.taskTitle), plain(e.excerpt)
 		if body == "" && e.withKey != "" {

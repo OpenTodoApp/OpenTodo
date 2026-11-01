@@ -570,8 +570,8 @@ func TestRoutineNotice(t *testing.T) {
 	if list, _ := h.svc.Deliveries(ctx, "u1", off.ID); len(list) != 0 {
 		t.Fatalf("event off: %+v", list)
 	}
-	e := event{kind: EventRoutine, key: txtRoutine, taskTitle: "Waiting check", excerpt: "Too much waiting", runID: "run1"}
-	if m := e.render("en", "https://todo.example.com", true); m.Title != "Waiting check" || m.Body != "Too much waiting" || m.URL != "https://todo.example.com/routines?run=run1" {
+	e := event{kind: EventRoutine, key: txtRoutine, taskTitle: "Waiting check", excerpt: "Too much waiting", ruleID: "r1", runID: "run1"}
+	if m := e.render("en", "https://todo.example.com", true); m.Title != "Waiting check" || m.Body != "Too much waiting" || m.URL != "https://todo.example.com/routines/r1?run=run1" {
 		t.Fatalf("with titles: %+v", m)
 	}
 	if m := e.render("en", "", false); m.Title != "OpenTodo" || m.Body != "A routine sent you a notice" {
@@ -593,8 +593,8 @@ func TestRoutineFailedToChannels(t *testing.T) {
 	if list, _ := h.svc.Deliveries(ctx, "u1", on.ID); len(list) != 1 {
 		t.Fatalf("deliveries: %+v", list)
 	}
-	e := event{kind: EventRoutine, key: txtRoutineFailed, withKey: txtRoutineFailedWith, taskTitle: "Weekly digest", runID: "run1"}
-	if m := e.render("de", "https://todo.example.com", true); m.Title != "Weekly digest" || m.Body != text("de", txtRoutineFailedWith, "") || m.URL != "https://todo.example.com/routines?run=run1" {
+	e := event{kind: EventRoutine, key: txtRoutineFailed, withKey: txtRoutineFailedWith, taskTitle: "Weekly digest", ruleID: "r1", runID: "run1"}
+	if m := e.render("de", "https://todo.example.com", true); m.Title != "Weekly digest" || m.Body != text("de", txtRoutineFailedWith, "") || m.URL != "https://todo.example.com/routines/r1?run=run1" {
 		t.Fatalf("with titles: %+v", m)
 	}
 	if m := e.render("en", "", false); m.Body != "A routine failed" {
