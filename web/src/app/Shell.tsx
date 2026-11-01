@@ -1,4 +1,4 @@
-import { DESKTOP_HEADER_QUERY, IconButton, setSidebarToggle, PageActions, PageBarTitle, TruncatedText, useMediaQuery, usePageBar, useOverlayDepth } from '../ui'
+import { DESKTOP_HEADER_QUERY, IconButton, setSidebarToggle, PageActions, PageBarTitle, TruncatedText, useBackToClose, useMediaQuery, usePageBar, useOverlayDepth } from '../ui'
 import { useCommandBar } from './palette/useCommandBar'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { User } from '../lib/types'
@@ -102,9 +102,17 @@ function useSidebarRequests(setSidebarOpen: (open: boolean) => void) {
   useEffect(() => notificationsOpen.subscribe(() => { if (!window.matchMedia?.('(min-width: 48rem)').matches) setSidebarOpen(true) }), [setSidebarOpen])
 }
 
+/** The phone drawer (phone-v2): Back closes it below 768 px, where it is an overlay; from there the sidebar is a column. */
+function usePhoneDrawer(sidebarOpen: boolean, onClose: () => void) {
+  const column = useMediaQuery(DESKTOP_HEADER_QUERY)
+  const open = sidebarOpen && !column
+  useBackToClose(open, onClose)
+  return { open }
+}
+
 export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) {
   const route = useRoute()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false), drawer = usePhoneDrawer(sidebarOpen, () => setSidebarOpen(false))
   useSidebarRequests(setSidebarOpen)
   const [notice, setNotice] = useState<string | null>(null)
   // Changes the server refused after a role change (project-sharing).
@@ -229,7 +237,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
     <div className="flex h-full bg-canvas">
       <SkipLink frame={frame} content={content} />
       {/* touch-none: a swipe on the scrim does not scroll the page behind the open drawer (sidebar-drawer-scroll). */}
-      {sidebarOpen && <div className="fixed inset-0 z-[45] touch-none bg-scrim md:hidden" onClick={() => setSidebarOpen(false)} />}
+      {drawer.open && <div className="fixed inset-0 z-[45] touch-none bg-scrim md:hidden" onClick={() => setSidebarOpen(false)} />}
       {/* The sidebar column: a drawer below 768 px, a column from there, resizable and collapsible from 1024 px (app-shell); its colour, shared by the sticky group headers, is --sidebar-bg: the surface in the drawer, the canvas as a column (precision-tokens D1), where it sits beside the inset content surface without an edge (precision-shell D1). */}
       <aside data-sidebar data-sidebar-width={sidebar.collapsed ? 'collapsed' : sidebar.width}
         style={{ '--sidebar-w': `${sidebar.collapsed ? SIDEBAR_COLLAPSED_REM : sidebar.width}rem` } as React.CSSProperties}
