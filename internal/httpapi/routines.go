@@ -51,7 +51,7 @@ func (m routineMailer) message(ctx context.Context, uid string, rm rules.Routine
 	}
 	origin := m.s.cfg.Origin()
 	return mail.Message{Kind: mail.KindRoutine, To: email, Lang: lang, UserID: uid, ActorID: uid, Origin: origin,
-		Vars: mail.Vars{Link: origin + "/rules?run=" + rm.RunID, Routine: &mail.RoutineVars{Name: rm.RuleName, Subject: rm.Subject, Text: rm.Text}}}, true
+		Vars: mail.Vars{Link: origin + "/routines?run=" + rm.RunID, Routine: &mail.RoutineVars{Name: rm.RuleName, Subject: rm.Subject, Text: rm.Text}}}, true
 }
 
 func (m routineMailer) SendRoutine(ctx context.Context, uid string, rm rules.RoutineMail) error {
@@ -74,6 +74,7 @@ func (s *Server) registerRoutineRoutes(mux *routes) {
 	mux.handle("POST /api/v1/rules/{id}/run", user, s.handleRoutineRun)
 	mux.handle("GET /api/v1/rules/{id}/runs/{run}", user, s.handleRoutineRunGet)
 	mux.handle("POST /api/v1/rules/{id}/runs/{run}/undo", user, s.handleRoutineUndo)
+	mux.handle("POST /api/v1/rules/{id}/runs/{run}/dismiss", user, s.handleRoutineDismiss)
 	mux.handle("GET /api/v1/me/rules/runs", user, s.handleMyRoutineRuns)
 	mux.handle("GET /api/v1/me/rules/catalogue", user, s.handleRoutineCatalogue)
 }
@@ -307,6 +308,10 @@ func (s *Server) handleRoutineUndo(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleMyRoutineRuns(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
+	if q.Get("for") == "inbox" {
+		s.handleRoutineInbox(w, r)
+		return
+	}
 	f := rules.RunFilter{Outcome: q.Get("outcome"), Source: q.Get("source"), RuleID: q.Get("rule")}
 	if v := q.Get("limit"); v != "" {
 		n, err := strconv.Atoi(v)
@@ -385,4 +390,50 @@ func (s *Server) handleRoutineDraftTest(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	writeJSON(w, http.StatusOK, res)
+}
+
+// handleRoutineInbox answers the Inbox card "Routines since your last visit"
+// (routines-editor D10): the runs it shows, after the later of the device's
+// marker (since) and the synced one, and the synced marker itself.
+func (s *Server) handleRoutineInbox(w http.ResponseWriter, r *http.Request) {
+	var since int64
+	if v := r.URL.Query().Get("since"); v != "" {
+		n, err := strconv.ParseInt(v, 10, 64)
+		if err != nil || n < 0 {
+			writeError(w, http.StatusBadRequest, "invalid_input", "since must be a time in Unix milliseconds")
+			return
+		}
+		since = n
+	}
+	out := map[string]any{"runs": []rules.InboxRun{}, "seen_at": 0, "hide_successes": false}
+	if s.rules == nil {
+		writeJSON(w, http.StatusOK, out)
+		return
+	}
+	uid := userFrom(r.Context()).ID
+	marker, hide, err := s.rules.Store.SeenPrefs(r.Context(), uid)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	list, err := s.rules.Store.InboxRuns(r.Context(), uid, max(since, marker), hide)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	out["runs"], out["seen_at"], out["hide_successes"] = list, marker, hide
+	writeJSON(w, http.StatusOK, out)
+}
+
+// handleRoutineDismiss hides one success line of the Inbox card on every device.
+func (s *Server) handleRoutineDismiss(w http.ResponseWriter, r *http.Request) {
+	if s.rules == nil {
+		writeError(w, http.StatusNotFound, "not_found", "run not found")
+		return
+	}
+	if err := s.rules.Dismiss(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"), r.PathValue("run")); err != nil {
+		s.routineError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }

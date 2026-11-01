@@ -240,6 +240,8 @@
       "method_mode",
       "reminder_default_dated",
       "reminder_default_timed",
+      "routines_hide_successes",
+      "routines_seen_at",
       "row_detail",
       "row_layout",
       "sidebar_counts",
