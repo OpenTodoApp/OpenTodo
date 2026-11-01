@@ -106,3 +106,38 @@ func TestInAppSweepAtTheRetentionDeadline(t *testing.T) {
 		t.Fatalf("unread notification removed: %+v", list)
 	}
 }
+
+// routine-inbox "Failure in the bell": one routine_failed per routine and
+// day; a later failure counts up, points at its run and is unread again.
+func TestInAppRoutineFailedOncePerDay(t *testing.T) {
+	ctx := context.Background()
+	db, err := store.Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if _, err := db.Exec(`INSERT INTO users(id,email,password_hash,created_at) VALUES('u','u@example.com','h',1)`); err != nil {
+		t.Fatal(err)
+	}
+	n := NewInApp(db, nil)
+	a := RoutineAlert{UserID: "u", RuleID: "r", RuleName: "Weekly digest", RunID: "run1", Step: 3, Day: "2026-11-01", At: 1}
+	Multi{n}.RoutineFailed(ctx, a)
+	list, _, _ := n.List(ctx, "u")
+	if len(list) != 1 || list[0].Kind != KindRoutineFailed {
+		t.Fatalf("first %+v", list)
+	}
+	if err := n.MarkRead(ctx, "u", list[0].ID); err != nil {
+		t.Fatal(err)
+	}
+	a.RunID = "run2"
+	n.RoutineFailed(ctx, a)
+	list, unread, _ := n.List(ctx, "u")
+	if len(list) != 1 || unread != 1 || !strings.Contains(string(list[0].Payload), `"count":2`) || !strings.Contains(string(list[0].Payload), `"runId":"run2"`) {
+		t.Fatalf("second %+v unread %d", list, unread)
+	}
+	a.Day, a.RunID = "2026-11-02", "run3"
+	n.RoutineFailed(ctx, a)
+	if list, _, _ := n.List(ctx, "u"); len(list) != 2 {
+		t.Fatalf("next day %+v", list)
+	}
+}

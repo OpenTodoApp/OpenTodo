@@ -258,6 +258,44 @@ func (m Multi) RoutineNotice(ctx context.Context, n RoutineNotice) {
 	}
 }
 
+// Routine alerts in the bell (OpenSpec change routines-editor, design D11):
+// routine_failed when a routine's run failed (at most one per routine and UTC
+// day; later failures of the day update its count), routine_proposal when a
+// routine's AI step left a proposal waiting (routines-ai-step). Never for test
+// runs or runs the user started by hand; successes never notify.
+const (
+	KindRoutineFailed   = "routine_failed"
+	KindRoutineProposal = "routine_proposal"
+)
+
+// RoutineAlert is one failed run (or waiting proposal) of a routine. Step is
+// the failing step's position from 1, or -1 when the run failed before a step.
+type RoutineAlert struct {
+	UserID   string `json:"-"`
+	RuleID   string `json:"ruleId"`
+	RuleName string `json:"ruleName"`
+	RunID    string `json:"runId"`
+	Step     int    `json:"step"`
+	StepKind string `json:"stepKind,omitempty"`
+	Day      string `json:"day"`
+	Count    int    `json:"count"`
+	At       int64  `json:"at"`
+}
+
+// RoutineAlertSink is implemented by sinks that deliver routine alerts.
+type RoutineAlertSink interface {
+	RoutineFailed(ctx context.Context, a RoutineAlert)
+}
+
+// RoutineFailed fans the alert out to every sink that implements RoutineAlertSink.
+func (m Multi) RoutineFailed(ctx context.Context, a RoutineAlert) {
+	for _, s := range m {
+		if rs, ok := s.(RoutineAlertSink); ok {
+			rs.RoutineFailed(ctx, a)
+		}
+	}
+}
+
 // KindMemberInvitation: someone who shares nothing with the recipient asked to
 // add them to a project or workspace (OpenSpec change member-add-consent, D5).
 const KindMemberInvitation = "member_invitation"
