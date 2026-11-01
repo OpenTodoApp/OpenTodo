@@ -20,6 +20,14 @@ type stepVectors struct {
 		Content *string         `json:"content"`
 		Error   *StepError      `json:"error"`
 	} `json:"check"`
+	Auto []struct {
+		Name    string          `json:"name"`
+		Steps   json.RawMessage `json:"steps"`
+		Blocked *struct {
+			Step string `json:"step"`
+			What string `json:"what"`
+		} `json:"blocked"`
+	} `json:"auto"`
 	Reading []struct {
 		Name    string          `json:"name"`
 		Actions json.RawMessage `json:"actions"`
@@ -46,6 +54,29 @@ func readStepVectors(t *testing.T) stepVectors {
 		t.Fatal(err)
 	}
 	return v
+}
+
+// TestAutoVectors: Apply without asking refuses the same steps as
+// web/src/lib/rules/steps.ts (routines-ai-step D4).
+func TestAutoVectors(t *testing.T) {
+	v := readStepVectors(t)
+	if len(v.Auto) < 5 {
+		t.Fatalf("only %d auto vectors", len(v.Auto))
+	}
+	for _, c := range v.Auto {
+		steps, err := ParseSteps(c.Steps)
+		if err != nil {
+			t.Fatalf("%s: %v", c.Name, err)
+		}
+		step, what := AutoBlocker(steps)
+		want := [2]string{}
+		if c.Blocked != nil {
+			want = [2]string{c.Blocked.Step, c.Blocked.What}
+		}
+		if [2]string{step, what} != want {
+			t.Errorf("%s: %s %s, want %v", c.Name, step, what, want)
+		}
+	}
 }
 
 // TestStepVectors: the shape check and the type checker agree with

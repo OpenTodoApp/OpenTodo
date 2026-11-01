@@ -504,6 +504,19 @@ export interface RuleFields {
    * an encrypted account's text literals inside are ciphertext envelopes.
    */
   steps?: RoutineStep[] | null
+  /**
+   * "Apply without asking" for a routine with AI steps (routines-ai-step
+   * D4): "auto" turns it on, anything else reads as off (proposals). Set
+   * only by the person in the app: agent paths refuse it, and the server
+   * ignores a value an agent or assistant device wrote (D6). The server
+   * compares its winning op's time with its own fallback state (D5).
+   */
+  ai_apply?: string
+  /**
+   * The routine's AI tokens per UTC day (routines-ai-step D11): 0 reads as
+   * 20,000; the routes accept 1,000 to 200,000.
+   */
+  ai_budget?: number
   position?: number
   created_at?: number
   deleted_at?: number | null
@@ -961,7 +974,7 @@ export const OP_DEFAULTS = {
     task_id: '', user_id: '', started_at: 0, ended_at: null, device_id: '', note: '', created_at: 0, deleted_at: null, focus_mode: '', focus_session: 0, planned_end_at: null,
   } satisfies Omit<TimeEntry, 'id' | '_clock'>,
   rule: {
-    name: '', enabled: false, trigger: null, condition: null, actions: null, steps: null, position: 0, created_at: 0, deleted_at: null,
+    name: '', enabled: false, trigger: null, condition: null, actions: null, steps: null, ai_apply: '', ai_budget: 0, position: 0, created_at: 0, deleted_at: null,
   } satisfies Omit<Rule, 'id' | '_clock'>,
   frame: {
     title: '', weekdays: '', start: '09:00', end: '10:00', color: '#64748b', source: '', from_date: null, until_date: null, position: 0, created_at: 0, deleted_at: null,

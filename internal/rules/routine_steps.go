@@ -136,6 +136,8 @@ func (st *runState) exec(s *ruleval.Step, in map[string]ruleval.Value, at int) (
 		return st.notifyStep(s, in)
 	case "webhook":
 		return st.webhookStep(s, in)
+	case "ask_ai", "summarise":
+		return st.aiStep(s, in, at)
 	case "email_me":
 		return st.emailStep(s, in)
 	}

@@ -94,6 +94,11 @@ type Run struct {
 	DurationMs    int64           `json:"duration_ms"`
 	UndoneAt      *int64          `json:"undone_at"`
 	FailedStep    int             `json:"failed_step"`
+	// Tokens are the run's AI tokens; AIAuto marks an AI result applied
+	// without asking; Proposal is the run's proposal (routines-ai-step).
+	Tokens   int64     `json:"tokens"`
+	AIAuto   bool      `json:"ai_auto"`
+	Proposal *Proposal `json:"proposal,omitempty"`
 	// Steps are the run's step records (one run's answer only).
 	Steps []StepRecord `json:"steps,omitempty"`
 }
@@ -235,7 +240,7 @@ func (s *Store) Record(ctx context.Context, userID string, r Run) error {
 }
 
 // runColumns are the columns scanRuns reads.
-const runColumns = `id, rule_id, occurrence_key, task_id, at, outcome, reason, changes_json, depth, run_id, source, run_as, test, steps_count, writes, duration_ms, undone_at, failed_step`
+const runColumns = `id, rule_id, occurrence_key, task_id, at, outcome, reason, changes_json, depth, run_id, source, run_as, test, steps_count, writes, duration_ms, undone_at, failed_step, tokens, ai_auto`
 
 func scanRuns(rows *sql.Rows) ([]Run, error) {
 	defer rows.Close()
@@ -245,7 +250,7 @@ func scanRuns(rows *sql.Rows) ([]Run, error) {
 		var changes string
 		var undone sql.NullInt64
 		if err := rows.Scan(&r.ID, &r.RuleID, &r.OccurrenceKey, &r.TaskID, &r.At, &r.Outcome, &r.Reason, &changes, &r.Depth,
-			&r.RunID, &r.Source, &r.RunAs, &r.Test, &r.StepsCount, &r.Writes, &r.DurationMs, &undone, &r.FailedStep); err != nil {
+			&r.RunID, &r.Source, &r.RunAs, &r.Test, &r.StepsCount, &r.Writes, &r.DurationMs, &undone, &r.FailedStep, &r.Tokens, &r.AIAuto); err != nil {
 			return nil, err
 		}
 		r.Changes = json.RawMessage(changes)
@@ -361,6 +366,9 @@ func (s *Store) SetUserPaused(ctx context.Context, userID string, paused bool) e
 // step records go with their run.
 func (s *Store) Prune(ctx context.Context) (int64, error) {
 	if err := s.markSeenFailures(ctx); err != nil {
+		return 0, err
+	}
+	if err := s.expireProposals(ctx); err != nil {
 		return 0, err
 	}
 	cutoff := s.now().Add(-KeepRunsFor).UnixMilli()

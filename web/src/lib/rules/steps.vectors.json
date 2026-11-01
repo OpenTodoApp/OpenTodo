@@ -402,7 +402,113 @@
       "trigger": "task",
       "steps": [],
       "error": {"step": "", "input": "", "code": "invalid_step"}
+    },
+    {
+      "name": "ask AI for lines, create tasks from them",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "note_text", "in": {"of": {"ref": "trigger"}}},
+        {"id": "b", "kind": "ask_ai", "in": {"instruction": {"literal": "list the action items, one per line"}, "context": {"ref": "a"}, "answer": {"literal": "lines"}}},
+        {"id": "c", "kind": "create_tasks", "in": {"text": {"ref": "b"}}}
+      ],
+      "types": {"a": "text", "b": "lines", "c": "tasks"},
+      "content": "a"
+    },
+    {
+      "name": "ask AI answers text by default; summarise tasks",
+      "trigger": "date",
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"labels": {"any": ["work"]}}}}},
+        {"id": "b", "kind": "summarise", "in": {"text": {"ref": "a"}, "length": {"literal": "short"}}},
+        {"id": "c", "kind": "ask_ai", "in": {"instruction": {"literal": "a title for this"}, "context": {"ref": "b"}, "context2": {"ref": "a"}}},
+        {"id": "d", "kind": "notify", "in": {"text": {"ref": "c"}}}
+      ],
+      "types": {"a": "tasks", "b": "text", "c": "text", "d": "none"},
+      "content": "b"
+    },
+    {
+      "name": "ask AI reads a project",
+      "trigger": "date",
+      "steps": [
+        {"id": "p", "kind": "find_project", "in": {"name": {"literal": "Home"}}},
+        {"id": "a", "kind": "ask_ai", "in": {"instruction": {"literal": "what is next?"}, "context": {"ref": "p"}}}
+      ],
+      "types": {"p": "project", "a": "text"},
+      "content": "p"
+    },
+    {
+      "name": "summarise: a project is not text",
+      "trigger": "date",
+      "steps": [
+        {"id": "p", "kind": "find_project", "in": {"name": {"literal": "Home"}}},
+        {"id": "a", "kind": "summarise", "in": {"text": {"ref": "p"}}}
+      ],
+      "error": {"step": "a", "input": "text", "code": "type_mismatch"}
+    },
+    {
+      "name": "ask AI needs an instruction",
+      "trigger": "date",
+      "steps": [
+        {"id": "a", "kind": "ask_ai", "in": {"answer": {"literal": "lines"}}}
+      ],
+      "error": {"step": "a", "input": "instruction", "code": "missing_input"}
+    },
+    {
+      "name": "ask AI: an instruction of at most 2,000 characters",
+      "trigger": "date",
+      "steps": [
+        {"id": "a", "kind": "ask_ai", "in": {"instruction": {"literal": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}}}
+      ],
+      "error": {"step": "a", "input": "instruction", "code": "invalid_literal"}
+    },
+    {
+      "name": "summarise: an unknown length",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "note_text", "in": {"of": {"ref": "trigger"}}},
+        {"id": "b", "kind": "summarise", "in": {"text": {"ref": "a"}, "length": {"literal": "long"}}}
+      ],
+      "error": {"step": "b", "input": "length", "code": "invalid_literal"}
+    },
+    {
+      "name": "at most 3 AI steps",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "note_text", "in": {"of": {"ref": "trigger"}}},
+        {"id": "b", "kind": "summarise", "in": {"text": {"ref": "a"}}},
+        {"id": "c", "kind": "summarise", "in": {"text": {"ref": "b"}}},
+        {"id": "d", "kind": "if", "in": {"value": {"ref": "c"}, "is": {"literal": {"contains": "x"}}}, "then": [{"id": "e", "kind": "summarise", "in": {"text": {"ref": "c"}}}, {"id": "f", "kind": "summarise", "in": {"text": {"ref": "e"}}}]}
+      ],
+      "error": {"step": "f", "input": "", "code": "too_many_ai_steps"}
     }
+  ],
+  "auto": [
+    {"name": "only additive steps", "steps": [
+      {"id": "a", "kind": "ask_ai", "in": {"instruction": {"literal": "action items"}, "answer": {"literal": "lines"}}},
+      {"id": "b", "kind": "create_tasks", "in": {"text": {"ref": "a"}}},
+      {"id": "c", "kind": "change_tasks", "in": {"tasks": {"ref": "b"}, "set": {"literal": {"priority": 2, "add_labels": ["x"], "due": "tomorrow"}}}},
+      {"id": "d", "kind": "notify", "in": {"text": {"ref": "a"}}}
+    ], "blocked": null},
+    {"name": "completing tasks", "steps": [
+      {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"labels": {"any": ["x"]}}}}},
+      {"id": "b", "kind": "summarise", "in": {"text": {"ref": "a"}}},
+      {"id": "c", "kind": "change_tasks", "in": {"tasks": {"ref": "a"}, "set": {"literal": {"state": "complete"}}}}
+    ], "blocked": {"step": "c", "what": "complete_tasks"}},
+    {"name": "removing labels", "steps": [
+      {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"labels": {"any": ["x"]}}}}},
+      {"id": "c", "kind": "change_tasks", "in": {"tasks": {"ref": "a"}, "set": {"literal": {"remove_labels": ["x"]}}}}
+    ], "blocked": {"step": "c", "what": "remove_labels"}},
+    {"name": "trashing inside a block", "steps": [
+      {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"labels": {"any": ["x"]}}}}},
+      {"id": "b", "kind": "repeat", "in": {"list": {"ref": "a"}}, "do": [{"id": "c", "kind": "change_tasks", "in": {"tasks": {"ref": "item"}, "set": {"literal": {"trash": true}}}}]}
+    ], "blocked": {"step": "c", "what": "trash_tasks"}},
+    {"name": "appending to a note", "steps": [
+      {"id": "a", "kind": "ask_ai", "in": {"instruction": {"literal": "hi"}}},
+      {"id": "b", "kind": "append_to_note", "in": {"of": {"ref": "trigger"}, "text": {"ref": "a"}}}
+    ], "blocked": {"step": "b", "what": "notes"}},
+    {"name": "a project step", "steps": [
+      {"id": "a", "kind": "create_project", "in": {"name": {"literal": "New"}}}
+    ], "blocked": {"step": "a", "what": "projects"}}
   ],
   "reading": [
     {

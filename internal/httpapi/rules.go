@@ -113,6 +113,9 @@ func (s *Server) checkRule(ctx context.Context, uid string, body map[string]json
 			return invalidRule("rule.name must not be empty")
 		}
 	}
+	if err := checkRuleAI(body); err != nil {
+		return err
+	}
 	return s.checkRuleParts(ctx, uid, body, existing)
 }
 

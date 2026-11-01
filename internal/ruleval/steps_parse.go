@@ -63,6 +63,7 @@ const (
 	CodeTypeMismatch = "type_mismatch"
 	CodeForEach      = "for_each"
 	CodeNoOutput     = "no_output"
+	CodeTooManyAI    = "too_many_ai_steps"
 )
 
 func stepErr(step, input, code, format string, args ...any) *StepError {
@@ -114,6 +115,7 @@ func CheckSteps(raw json.RawMessage) error { _, err := ParseSteps(raw); return e
 type stepParser struct {
 	ids   map[string]bool
 	count int
+	ai    int
 }
 
 func (p *stepParser) list(raw json.RawMessage, depth int) ([]Step, error) {
@@ -153,6 +155,11 @@ func (p *stepParser) step(raw json.RawMessage, depth int) (Step, error) {
 	k, ok := StepKindOf(s.Kind)
 	if !ok {
 		return s, stepErr(s.ID, "", CodeUnknownKind, "step %s: unknown kind %q", s.ID, s.Kind)
+	}
+	if IsAI(s.Kind) {
+		if p.ai++; p.ai > MaxAISteps {
+			return s, stepErr(s.ID, "", CodeTooManyAI, "a routine may hold at most %d AI steps", MaxAISteps)
+		}
 	}
 	allowed := append([]string{"id", "kind", "in"}, k.Blocks...)
 	for key := range m {
