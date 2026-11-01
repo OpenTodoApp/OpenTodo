@@ -354,6 +354,32 @@ describe('pickers next to the word, never a centred modal (routines-dynamic-data
     await e.unmount()
   })
 
+  it('"Escape keeps the text" from + value too: Escape there, or anywhere on the page while the text is open, never leaves it behind', async () => {
+    const steps: RoutineStep[] = [{ id: 'a', kind: 'split_lines', in: { text: { literal: 'a\nb' } } }, { id: 'b', kind: 'count', in: { list: { ref: 'a' } } }, { id: 'c', kind: 'notify', in: { text: { literal: 'x' } } }]
+    const back = vi.fn()
+    const r = await render(<RoutineEditor draft={{ name: 'x', trigger: { kind: 'manual' }, condition: null, steps }} onBack={back} />)
+    await waitFor(() => cards().length === 3, 'the cards')
+    const card = byKind('notify')
+    await click(card.querySelector('[data-word="Text"]')!)
+    await waitFor(() => !!card.querySelector('[data-inline-text] textarea'), 'the field')
+    const area = card.querySelector<HTMLTextAreaElement>('[data-inline-text] textarea')!
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(area, 'x typed')
+      area.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    // Escape on the page itself (focus lost while a list closed) returns to the field.
+    await key(document.body, 'Escape')
+    expect(back).not.toHaveBeenCalled()
+    expect(card.querySelector('[data-inline-text]')).not.toBeNull()
+    // Escape on + value keeps the text.
+    const plus = button('value', card)
+    await act(async () => { plus.focus() })
+    await key(plus, 'Escape')
+    await waitFor(() => !card.querySelector('[data-inline-text]') && card.querySelector('[data-word="Text"]')?.textContent === 'x typed', 'kept')
+    expect(back).not.toHaveBeenCalled()
+    await r.unmount()
+  })
+
   it('a text shows whole, wrapped, with its values as chips', async () => {
     const steps: RoutineStep[] = [
       { id: 'a', kind: 'find_tasks', in: { condition: { literal: {} } } },

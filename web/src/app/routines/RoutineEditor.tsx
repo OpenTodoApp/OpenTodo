@@ -185,6 +185,10 @@ function usePageGuards(dirty: boolean, onBack: () => void): [(() => void) | null
   useShortcutScope('view', {
     'routines.escape': (e) => {
       if ((e.target as HTMLElement | null)?.closest?.('[data-overlay], [data-overlay-root]')) return false
+      // A text being typed in a card is never left behind by Escape (routines-editor-polish):
+      // focus goes back to it, and Escape there keeps it.
+      const typing = document.querySelector<HTMLTextAreaElement>('[data-inline-text] textarea')
+      if (typing) { typing.focus(); return }
       onBack()
     },
   }, { view: 'rules' })
