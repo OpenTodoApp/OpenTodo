@@ -13,7 +13,7 @@ export interface ContrastBadgeProps {
   className?: string
 }
 
-/** A ratio as people read it: one decimal, cut rather than rounded up, so 4.49 never reads as 4.5. */
+/** A ratio as people read it: one decimal, truncated, so 4.49 never reads as 4.5. */
 export function formatRatio(r: number): string {
   return (Math.floor(r * 10) / 10).toFixed(1)
 }

@@ -9,7 +9,7 @@ const meta: Meta = { title: 'UI/Colour field' }
 export default meta
 
 function Seeds() {
-  const [accent, setAccent] = useState<string | undefined>('oklch(0.55 0.14 250)')
+  const [accent, setAccent] = useState<string | undefined>('oklch(0.55 0.14 250)') // token-lint-allow: a theme colour is data, not styling
   const [danger, setDanger] = useState<string | undefined>(undefined)
   return (
     <div className="flex w-96 max-w-full flex-col rounded-card border border-default bg-surface p-3">
@@ -32,6 +32,6 @@ function Picker({ value }: { value?: string }) {
 }
 
 /** The picker open on a set colour: swatches, hex, the three sliders and Reset. */
-export const PickerSet: StoryObj = { render: () => <Picker value="oklch(0.62 0.15 160)" /> }
+export const PickerSet: StoryObj = { render: () => <Picker value="oklch(0.62 0.15 160)" /> } // token-lint-allow: a theme colour is data, not styling
 /** The picker on a derived colour: no Reset. */
 export const PickerDerived: StoryObj = { render: () => <Picker /> }
