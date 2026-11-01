@@ -6717,5 +6717,19 @@
   "Not changed for days": "Sin cambios durante días",
   "every month on {days} at {time}": "cada mes el {days} a las {time}",
   "the last day": "último día",
-  "{n, plural, one {not changed for # day} other {not changed for # days}}": "{n, plural, one {sin cambios desde hace # día} other {sin cambios desde hace # días}}"
+  "{n, plural, one {not changed for # day} other {not changed for # days}}": "{n, plural, one {sin cambios desde hace # día} other {sin cambios desde hace # días}}",
+  "Add from file": "Añadir desde archivo",
+  "Default (Server default: {name})": "Predeterminado (predeterminado del servidor: {name})",
+  "Default theme": "Tema predeterminado",
+  "Everyone on this server can choose these, or customise a copy. Up to {max}.": "Todos en este servidor pueden elegirlos o personalizar una copia. Hasta {max}.",
+  "From this server": "De este servidor",
+  "From this server · Server default": "De este servidor · Predeterminado del servidor",
+  "Make it the default": "Hacerlo predeterminado",
+  "Make {name} the default?": "¿Hacer {name} el tema predeterminado?",
+  "Offer one of my themes": "Ofrecer uno de mis temas",
+  "People who never chose a theme see this one; their own choice always wins.": "Quien nunca eligió un tema ve este; su propia elección siempre prevalece.",
+  "Server default": "Predeterminado del servidor",
+  "Server themes": "Temas del servidor",
+  "The server has {n} themes; remove one to add another.": "El servidor tiene {n} temas; quita uno para añadir otro.",
+  "{n, plural, one {# pair of colours is} other {# pairs of colours are}} below the contrast people need to read comfortably:": "{n, plural, one {# par de colores está} other {# pares de colores están}} por debajo del contraste necesario para leer con comodidad:"
 }
