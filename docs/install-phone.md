@@ -25,6 +25,8 @@ OpenTodo now has an icon on your home screen. Open it from there from now on. On
 
 Recent iOS versions also offer **Add to Home Screen** from the share menu of other browsers. If you don't see it, use Safari.
 
+Typing doesn't zoom the screen: on a phone or tablet every text field uses text of at least 16 px, the size below which Safari zooms in on a field you tap. Pinch to zoom still works everywhere, and pinching back out returns to the normal size.
+
 ## Android
 
 1. Open your OpenTodo address in **Chrome** (Edge and Samsung Internet work the same way).

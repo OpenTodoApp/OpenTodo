@@ -7,6 +7,8 @@
 //   - an overlay does not close with Escape, with its close button (sheets and
 //     dialogs) or with a tap outside (popovers),
 //   - a control on the touch screen is smaller than 44 × 44 px or only appears on hover,
+//   - a text field (input, textarea, select, editable area) has text under 16 px on the
+//     touch screen, which makes Safari on iOS zoom in on focus (issue #724),
 //   - any screen or overlay has a serious or critical axe-core issue (colour contrast,
 //     names, labels, roles), in light and dark (release 0.2.0; first added for the
 //     Help view by user-documentation),
@@ -38,7 +40,7 @@ const pw = await import('playwright').catch(async () => {
   return createRequire(execSync('npm root -g').toString().trim() + '/')('playwright')
 })
 import { mkdirSync, writeFileSync } from 'node:fs'
-import { MAX_SCROLLERS, addButtonCovers, axeProblems, pageOverflow, rowCheckReach, rowMisalignment, settled, smallTargets, tabRowOverflow, verticalScrollers } from './ux-audit/measure.mjs'
+import { MAX_SCROLLERS, addButtonCovers, axeProblems, pageOverflow, rowCheckReach, rowMisalignment, settled, smallFields, smallTargets, tabRowOverflow, verticalScrollers } from './ux-audit/measure.mjs'
 import { seed as seedAccount } from './ux-audit/seed.mjs'
 import { OVERLAYS, chooseLayout, closes, screens } from './ux-audit/layout-screens.mjs'
 
@@ -63,6 +65,8 @@ const OTHER_LANG = !!LANG && LANG !== 'en'
 // phone bar title squeezed by long action labels, F7 of the test audit) never shows.
 const anyReady = (p) => p.locator('main :is(h1, [data-page-body], [data-task-id]), [data-screen], h1, form').filter({ visible: true }).first().waitFor({ timeout: 15000 })
 const MIN_TARGET = 44
+// Safari on iOS zooms in on a focused field with smaller text (issue #724).
+const MIN_FIELD_TEXT = 16
 mkdirSync(outDir, { recursive: true })
 
 const failures = []
@@ -215,6 +219,7 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
       if (scrollers.length > MAX_SCROLLERS) await fail(p, s.name, null, `${scrollers.length} vertical scroll regions (at most ${MAX_SCROLLERS}): ${scrollers.join(', ')}`)
       for (const m of await p.evaluate(tabRowOverflow)) await fail(p, s.name, null, m)
       for (const m of await p.evaluate(smallTargets, [null, MIN_TARGET])) await fail(p, s.name, null, `touch target: ${m}`)
+      for (const m of await p.evaluate(smallFields, [null, MIN_FIELD_TEXT])) await fail(p, s.name, null, `text field: ${m}`)
       for (const m of await p.evaluate(rowMisalignment)) await fail(p, s.name, null, m)
       for (const m of await p.evaluate(rowCheckReach)) await fail(p, s.name, null, m)
       for (const m of await p.evaluate(addButtonCovers)) await fail(p, s.name, null, m)
@@ -306,6 +311,7 @@ async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructi
   const tagged = await overlay.evaluate((el) => (el.hasAttribute('data-overlay') ? el : el.closest('[data-overlay]')) ? true : false)
   const sel = await overlay.evaluate((el) => { el.setAttribute('data-layout-check', ''); return '[data-layout-check]' })
   for (const m of await p.evaluate(smallTargets, [sel, MIN_TARGET])) await fail(p, screen, name, `touch target: ${m}`)
+  for (const m of await p.evaluate(smallFields, [sel, MIN_FIELD_TEXT])) await fail(p, screen, name, `text field: ${m}`)
   await overlay.evaluate((el) => el.removeAttribute('data-layout-check'))
   await shot(p, screen, name)
   if (kind === 'toast' || kind === 'inline' || kind === 'drawer' || kind === 'combobox') {

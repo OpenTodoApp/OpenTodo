@@ -153,6 +153,42 @@ export function rowCheckReach() {
   return out
 }
 
+// Text fields under 16 px (issue #724): Safari on iOS zooms the page in when such a
+// field gets focus, and an installed app stays zoomed. Every input that takes text, every
+// textarea and select, and every editable area with the text inside it, measured under
+// the touch emulation the layout check runs with (pointer: coarse).
+export function smallFields([rootSel, min]) {
+  const root = rootSel ? document.querySelector(rootSel) : document.body
+  if (!root) return []
+  const NOT_TEXT = new Set(['checkbox', 'radio', 'range', 'color', 'hidden', 'file', 'button', 'submit', 'reset', 'image'])
+  const out = []
+  const seen = new Set()
+  const name = (el) => (el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.getAttribute('name') || el.id || el.className?.toString?.().split(' ')[0] || el.tagName).trim().replace(/\s+/g, ' ').slice(0, 40)
+  const report = (el, field) => {
+    const cs = getComputedStyle(el)
+    if (cs.display === 'none' || cs.visibility === 'hidden') return
+    const size = parseFloat(cs.fontSize)
+    if (!(size + 0.01 < min)) return
+    const key = `${field.tagName}:${name(field)}:${size}`
+    if (seen.has(key)) return
+    seen.add(key)
+    out.push(`"${name(field)}" (${field.tagName.toLowerCase()}${el === field ? '' : ' > ' + el.tagName.toLowerCase()}) has ${Math.round(size * 100) / 100}px text: iOS zooms in on focus below ${min}px`)
+  }
+  for (const el of root.querySelectorAll('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) {
+    if (el.tagName === 'INPUT' && NOT_TEXT.has((el.getAttribute('type') || 'text').toLowerCase())) continue
+    if (el.closest('[inert]')) continue
+    const r = el.getBoundingClientRect()
+    if (r.width === 0 && r.height === 0) continue
+    report(el, el)
+    if (el.isContentEditable && el.tagName !== 'INPUT' && el.tagName !== 'TEXTAREA') {
+      for (const d of el.querySelectorAll('*')) {
+        if ([...d.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) report(d, el)
+      }
+    }
+  }
+  return out
+}
+
 export function smallTargets([rootSel, min]) {
   const root = rootSel ? document.querySelector(rootSel) : document.body
   if (!root) return []
