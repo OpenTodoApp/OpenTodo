@@ -36,6 +36,10 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 		return ApplyResult{}, err
 	}
 	b.rs.attachmentQuota = attachmentQuota
+	// Restores hold their size until the batch committed or rolled back: this
+	// deferred release runs after finish's commit (issue #676).
+	b.rs.holds = s.holds
+	defer b.rs.releaseHolds()
 	// A plain-text replacement's version check (notes-overview D13), in the
 	// same transaction as the write.
 	if err := checkBodyVersion(ctx, tx, b.acc); err != nil {
