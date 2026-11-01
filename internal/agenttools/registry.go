@@ -174,6 +174,9 @@ type Plan struct {
 	Result  map[string]any
 	Changes ChangeSet
 	Count   int
+	// exec carries out a call that is no ChangeSet (run_routine): Call runs it
+	// after the gate in place of Apply and counts the writes it reports.
+	exec func(ctx context.Context) (map[string]any, int, error)
 }
 
 // ExtraOps lets the transport add the ops a REST write of the same change
@@ -198,6 +201,8 @@ type Registry struct {
 	exclusions *Exclusions
 	// userZone is the user's time zone for reminders (nil: UTC).
 	userZone func(ctx context.Context, uid string) *time.Location
+	// routines serves the routine tools (routines-engine); nil: unavailable.
+	routines Routines
 }
 
 // Options configure a Registry.
@@ -392,6 +397,19 @@ func (r *Registry) write(ctx context.Context, c Caller, name string, rawArgs jso
 	p, err := r.Plan(ctx, c, name, rawArgs, nil)
 	if err != nil {
 		return nil, err
+	}
+	if p.exec != nil {
+		// A routine run (run_routine) writes as the routine; its writes count
+		// against this token's daily items once it ran.
+		out, n, err := p.exec(ctx)
+		if err != nil {
+			return nil, err
+		}
+		r.limits.Reserve(c.TokenID, n)
+		*count = n
+		out["server_time"] = r.serverTime()
+		out["_notice"] = Notice
+		return out, nil
 	}
 	if c.relayed() {
 		if err := relayEncrypt(ctx, c, name, p.Changes); err != nil {

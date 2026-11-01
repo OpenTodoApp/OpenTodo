@@ -474,7 +474,7 @@ func TestSchemaWorksWithoutConfig(t *testing.T) {
 	if err := json.Unmarshal([]byte(out), &doc); err != nil {
 		t.Fatal(err)
 	}
-	if doc.OutputVersion != 1 || len(doc.Schemas) < 8 || len(doc.ExitCodes) != 6 {
+	if doc.OutputVersion != 1 || len(doc.Schemas) < 8 || len(doc.ExitCodes) != 7 {
 		t.Fatalf("schema doc: v%d, %d schemas, %d exit codes", doc.OutputVersion, len(doc.Schemas), len(doc.ExitCodes))
 	}
 	found := false
@@ -605,6 +605,13 @@ func TestDryRunSendsNoWrites(t *testing.T) {
 		{"issues", "sync", issueConn[:6]},
 		{"rules", "enable", "Sweep"},
 		{"rules", "disable", "Sweep"},
+		{"routine", "run", "Sweep"},
+		{"routine", "enable", "Sweep"},
+		{"routine", "disable", "Sweep"},
+		{"routine", "create", "--file", writeTemp(t, "dry.yaml", "name: Dry\ntrigger: {kind: manual}\nsteps:\n  - {id: a, kind: stop}\n")},
+		{"routine", "edit", "Sweep", "--file", writeTemp(t, "dry2.json", `{"enabled": false}`)},
+		{"routine", "rm", "Sweep"},
+		{"routine", "undo", "Sweep", "r1"},
 		{"frames", "add", "Dry frame", "--days", "mon-fri"},
 		{"frames", "rm", "Admin"},
 		{"slots", "add", "Dry slot", "--date", "2026-11-05"},

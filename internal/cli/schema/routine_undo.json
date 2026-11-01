@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "routine_undo",
+  "description": "What undoing a routine run did (OpenSpec routines-engine).",
+  "type": "object",
+  "required": [
+    "restored",
+    "kept",
+    "not_undoable"
+  ],
+  "properties": {
+    "restored": {
+      "type": "integer"
+    },
+    "kept": {
+      "type": "integer",
+      "description": "items left as they are because they changed after the run"
+    },
+    "not_undoable": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "notifications, webhook deliveries or emails the run sent"
+    }
+  }
+}

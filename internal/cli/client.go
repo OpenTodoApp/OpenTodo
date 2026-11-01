@@ -25,6 +25,8 @@ const (
 	// ExitNotPermitted: refused by scope, role, a switch, encryption or
 	// read-only mode. Retrying cannot help (agent-ready-cli D2).
 	ExitNotPermitted = 5
+	// ExitRunFailed: `ot routine run` ran the routine and the run failed.
+	ExitRunFailed = 6
 )
 
 // notPermittedCodes are the envelope codes that exit with ExitNotPermitted.
@@ -41,6 +43,9 @@ type exitError struct {
 	jsonCode string
 	msg      string
 	envelope []byte // raw server envelope when the server produced one
+	// printed: the command already wrote its JSON answer (a failed routine
+	// run's record); only the stderr line follows.
+	printed bool
 }
 
 func (e *exitError) Error() string { return e.msg }
