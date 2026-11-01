@@ -56,7 +56,7 @@ export function SyncStatus({ compact = false }: { compact?: boolean } = {}) {
   return (
     <div className={failed ? 'flex min-w-0 flex-col' : undefined}>
       <Tooltip label={quiet ? name : detail} side={compact ? 'right' : 'top'}>{button}</Tooltip>
-      {failed && <p role="alert" className="max-w-full truncate px-2 pb-1 text-meta text-danger" title={s.error!}>{s.error}</p>}
+      {failed && <p role="alert" className="max-w-full truncate px-2 pb-1 text-meta text-danger">{s.error}</p>}
     </div>
   )
 }
