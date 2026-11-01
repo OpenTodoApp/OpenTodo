@@ -69,7 +69,6 @@ export function EventBlockView({ block, lane, lanes, overlap, pxPerMinute, minHe
         data-free={ev.free || undefined}
         data-overlap={overlap || undefined}
         data-hue={hueFor(sub?.color)}
-        aria-label={eventLabel(ev, sub, zone)}
         aria-haspopup="dialog"
         // Not a drag source: the grid's pointer handling never sees it.
         onPointerDown={(e) => e.stopPropagation()}
@@ -82,7 +81,9 @@ export function EventBlockView({ block, lane, lanes, overlap, pxPerMinute, minHe
         }}
       >
         <span className="flex min-w-0 items-center gap-1 font-medium">{!ev.free && <span aria-hidden className="ui-block-dot" />}<span className="truncate">{ev.summary || t('Busy')}</span></span>
-        {height >= 30 && <span className="block truncate text-hint tabular-nums" data-event-time>{formatWallTime(toHHMM(block.start))}{ev.location ? ` · ${ev.location}` : ''}</span>}
+        {/* Named by its visible summary, then the time, location and calendar as hidden text (WCAG 2.5.3 Label in Name): the short time line below is not read twice. */}
+        <span className="sr-only">{eventLabel(ev, sub, zone).slice((ev.summary || t('Busy')).length)}</span>
+        {height >= 30 && <span aria-hidden className="block truncate text-hint tabular-nums" data-event-time>{formatWallTime(toHHMM(block.start))}{ev.location ? ` · ${ev.location}` : ''}</span>}
       </button>
       </Tooltip>
       <Popover open={open} onClose={() => setOpen(false)} anchor={ref} label={ev.summary || t('Event')} width="sm:w-72" className="p-3" align="start">
@@ -126,7 +127,7 @@ export type EventRowVariant = 'plan' | 'agenda' | 'cell'
 const ROW_CLASS: Record<EventRowVariant, string> = {
   plan: 'gap-1 px-1 py-0.5 text-meta',
   agenda: 'min-h-11 gap-2 px-2 py-1 text-body',
-  cell: 'gap-1 px-1 py-0.5 text-meta',
+  cell: 'min-h-6 gap-1 px-1 py-0.5 text-meta',
 }
 
 /**
