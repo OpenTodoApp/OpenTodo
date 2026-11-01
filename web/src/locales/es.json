@@ -5011,9 +5011,7 @@
   "assigns to me": "me la asigna",
   "blocked": "bloqueada",
   "deadline cleared": "plazo quitado",
-  "deadline: {when}": "plazo: {when}",
   "deferred": "aplazada",
-  "due: {when}": "fecha: {when}",
   "estimate at least {n} min": "estimación de al menos {n} min",
   "estimate at most {n} min": "estimación de como máximo {n} min",
   "every day": "cada día",
@@ -5058,7 +5056,6 @@
   "{n, plural, one {deadline in # day} other {deadline in # days}}": "{n, plural, one {plazo en # día} other {plazo en # días}}",
   "{n, plural, one {due in # day} other {due in # days}}": "{n, plural, one {fecha en # día} other {fecha en # días}}",
   "{n, plural, one {in # day} other {in # days}}": "{n, plural, one {en # día} other {en # días}}",
-  "{n, plural, one {within # day} other {within # days}}": "{n, plural, one {dentro de # día} other {dentro de # días}}",
   "{name} (copy)": "{name} (copia)",
   "{term} cannot be used in a rule": "{term} no se puede usar en una regla",
   "A server variable sets this; change it in the server configuration.": "Una variable del servidor lo fija; cámbialo en la configuración del servidor.",
@@ -5385,7 +5382,6 @@
   "A text as a list of its lines": "Un texto como lista de sus líneas",
   "A text with values of earlier steps": "Un texto con valores de pasos anteriores",
   "when a task’s date passes": "cuando la fecha de una tarea pasa",
-  "due earlier": "con fecha anterior",
   "Layout": "Diseño",
   "Pick a day…": "Elegir un día…",
   "Schedule…": "Programar…",
@@ -6748,5 +6744,10 @@
   "{n, plural, one {# starter} other {# starters}}": "{n, plural, one {# plantilla de inicio} other {# plantillas de inicio}}",
   "{n, plural, one {Fill # choice first} other {Fill # choices first}}": "{n, plural, one {Haz antes # elección} other {Haz antes # elecciones}}",
   "{step}: available": "{step}: disponible",
-  "{step}: not available, {reason}": "{step}: no disponible, {reason}"
+  "{step}: not available, {reason}": "{step}: no disponible, {reason}",
+  "has a deadline": "tiene fecha límite",
+  "past the deadline": "fecha límite pasada",
+  "{n, plural, one {due within # day} other {due within # days}}": "{n, plural, one {con fecha dentro de # día} other {con fecha dentro de # días}}",
+  "{n, plural, one {deadline within # day} other {deadline within # days}}": "{n, plural, one {fecha límite dentro de # día} other {fecha límite dentro de # días}}",
+  "due earlier": "con fecha anterior"
 }

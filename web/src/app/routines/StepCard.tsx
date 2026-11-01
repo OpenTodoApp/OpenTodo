@@ -3,7 +3,7 @@
 // inputs are word buttons, with its output line, its live preview, its error and
 // one-tap fix, "Not available" with a link, a menu (move, duplicate, delete, add
 // an input), and If / Repeat blocks indented under it.
-import { useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { useRef, useState, type FocusEvent, type KeyboardEvent, type ReactNode } from 'react'
 import { t } from '../../lib/i18n'
 import type { Catalogue } from '../../lib/rules/catalogue'
 import { isAvailable, reasonText, settingPath } from '../../lib/rules/catalogue'
@@ -21,6 +21,7 @@ import { ConditionFields, TriggerFields } from '../rules/RuleFields'
 import { useMatchCount } from './data'
 import { inputDefs, wordValue, type WordContext } from './words'
 import { InputWord } from './wordPicker'
+import { ChoicePopover, type Choice } from './pickers'
 
 export interface CardEvents {
   set: (id: string, input: string, arg: RoutineArg | undefined) => void
@@ -42,6 +43,8 @@ export interface CardState {
   me: string
   /** The editor registers each word's opener for "Choose another value". */
   openers: Map<string, () => void>
+  /** Focus left a step's card: its "needs a value here" error may show from now on. */
+  leave: (stepId: string) => void
 }
 
 /** The plain sentence of a step, for its group's name and its announcement. */
@@ -108,18 +111,12 @@ function PickModeWord({ step, events }: { step: RoutineStep; events: CardEvents 
     setOpen(false)
     if (m !== mode) events.edit((d) => setPickMode(d, step.id, m))
   }
+  // The same anchored list as every other word: a row with a check marks the mode (routines-editor-polish).
+  const choices: Choice[] = PICK_MODES.map((m) => ({ key: m, label: t(PICK_MENU[m]), selected: m === mode, run: () => choose(m) }))
   return (
     <>
-      <WordButton ref={anchor} label={t('Which')} value={t(PICK_WORD[mode])} placeholder="" action={t('change')} onClick={() => setOpen(true)} />
-      <Popover open={open} onClose={() => setOpen(false)} anchor={anchor} label={t('Which')} className="p-2">
-        <ul className="space-y-0.5" data-pick-modes>
-          {PICK_MODES.map((m) => (
-            <li key={m}>
-              <Button size="sm" variant={m === mode ? 'primary' : 'ghost'} aria-pressed={m === mode} data-pick-mode={m} onClick={() => choose(m)}>{t(PICK_MENU[m])}</Button>
-            </li>
-          ))}
-        </ul>
-      </Popover>
+      <WordButton ref={anchor} label={t('Which')} value={t(PICK_WORD[mode])} placeholder="" action={t('change')} haspopup="listbox" expanded={open} onClick={() => setOpen(true)} />
+      <ChoicePopover open={open} onClose={() => { setOpen(false); requestAnimationFrame(() => anchor.current?.focus()) }} anchor={anchor} label={t('Which')} choices={choices} />
     </>
   )
 }
@@ -139,7 +136,12 @@ function PickOrder({ step, state, events }: { step: RoutineStep; state: CardStat
 }
 
 /** The words of a step: the sentence with its slots, then its extra set inputs. */
-function StepWords({ step, state, events, adding }: { step: RoutineStep; state: CardState; events: CardEvents; adding: readonly string[] }) {
+function StepWords({ step, state, events, adding, errorAt, onTyping }: {
+  step: RoutineStep; state: CardState; events: CardEvents; adding: readonly string[]
+  /** The input whose error shows (outlined), if any. */
+  errorAt: string | null
+  onTyping: (input: string, typing: boolean) => void
+}) {
   const k = stepKind(step.kind)
   const word = (name: string) => {
     if (isPick(step.kind) && name === 'from') return <PickModeWord key={name} step={step} events={events} />
@@ -147,8 +149,9 @@ function StepWords({ step, state, events, adding }: { step: RoutineStep; state: 
     const def = k?.inputs.find((d) => d.name === name)
     if (!def) return null
     return (
-      <InputWord key={name} step={step} def={def} ctx={state.ctx} me={state.me} error={state.error?.step === step.id && state.error.input === name}
-        onSet={(a) => events.set(step.id, name, a)} onEdit={events.edit} openRef={(open) => state.openers.set(`${step.id}.${name}`, open)} />
+      <InputWord key={name} step={step} def={def} ctx={state.ctx} me={state.me} error={errorAt === name}
+        onSet={(a) => events.set(step.id, name, a)} onEdit={events.edit} openRef={(open) => state.openers.set(`${step.id}.${name}`, open)}
+        onTyping={(on) => onTyping(name, on)} />
     )
   }
   return (
@@ -196,8 +199,17 @@ export function StepCard({ step, index, total, state, events, depth = 0 }: {
   const k = stepKind(step.kind)
   const cat = state.catalogue?.[step.kind]
   const available = isAvailable(state.catalogue, step.kind)
+  const [typing, setTyping] = useState<string | null>(null)
   const sentence = sentenceText(step, state.ctx)
-  const err = state.error?.step === step.id ? state.error : null
+  // The error of an input whose text is being typed waits until the text is kept (routines-editor-polish).
+  const err = state.error?.step === step.id && state.error.input !== typing ? state.error : null
+  const onTyping = (input: string, on: boolean) => setTyping((cur) => (on ? input : cur === input ? null : cur))
+  // Leaving the card (not for one of its own pickers) lets its "needs a value" error show.
+  const onLeave = (e: FocusEvent<HTMLElement>) => {
+    const to = e.relatedTarget as HTMLElement | null
+    if (to && (e.currentTarget.contains(to) || to.closest('[data-overlay-root]'))) return
+    state.leave(step.id)
+  }
   const groups: ActionGroup[] = [
     { items: [
       { kind: 'action', id: 'up', label: t('Move up'), icon: 'arrow-up', disabled: index === 0, onSelect: () => events.move(step.id, -1) },
@@ -219,9 +231,11 @@ export function StepCard({ step, index, total, state, events, depth = 0 }: {
   return (
     <section className={`surface-card space-y-1 p-3 outline-none focus-visible:ring-2 focus-visible:ring-accent ${err ? 'border-danger' : ''}`} tabIndex={0}
       role="group" aria-label={sentence} data-step-card={step.id} data-step-kind={step.kind} data-word-group
-      onKeyDown={(e) => cardKeys(e, step, events, () => setConfirm(true))}>
+      onKeyDown={(e) => cardKeys(e, step, events, () => setConfirm(true))} onBlur={onLeave}>
       <div className="flex items-start gap-2">
-        <p className="min-w-0 flex-1 leading-8 text-body text-default"><StepWords step={step} state={state} events={events} adding={adding} /></p>
+        <p className="min-w-0 flex-1 leading-8 text-body text-default">
+          <StepWords step={step} state={state} events={events} adding={adding} errorAt={err?.input ?? null} onTyping={onTyping} />
+        </p>
         <ActionMenu label={t('Menu for step {name}', { name: stepName(step.kind) })} groups={groups} />
       </div>
       {/* A word's bigger editor opens here from 1024 px (routines-dynamic-data D13). */}

@@ -1741,6 +1741,7 @@
   ],
   "Archived projects": [
     "web/src/app/ArchivedProjects.tsx",
+    "web/src/lib/rules/sentence.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Archived {join}: no open tasks for 30 days.": [
@@ -14031,6 +14032,7 @@
     "web/src/app/ProjectNote.tsx",
     "web/src/app/calendar/DayColumn.tsx",
     "web/src/app/calendar/MonthWeek.tsx",
+    "web/src/app/routines/wordPicker.tsx",
     "web/src/app/task-list/RowDetails.tsx"
   ],
   "Show maps and address search": [
@@ -14040,6 +14042,7 @@
     "web/src/app/ProjectNote.tsx",
     "web/src/app/notes/NotesPage.tsx",
     "web/src/app/routines/RunHistory.tsx",
+    "web/src/app/routines/wordPicker.tsx",
     "web/src/app/task-list/RowDetails.tsx"
   ],
   "Show more {older}": [
@@ -19533,13 +19536,11 @@
   "deadline today": [
     "web/src/app/TaskRow.tsx",
     "web/src/app/calendar/DeadlineMarker.tsx",
-    "web/src/lib/facets.ts"
+    "web/src/lib/facets.ts",
+    "web/src/lib/rules/summary.ts"
   ],
   "deadline {date}, {count}": [
     "web/src/lib/facets.ts"
-  ],
-  "deadline: {when}": [
-    "web/src/lib/rules/summary.ts"
   ],
   "declined on the device": [
     "web/src/app/auditFormat.ts"
@@ -19621,16 +19622,14 @@
     "web/src/lib/rules/index.ts"
   ],
   "due today": [
-    "web/src/lib/rules/index.ts"
+    "web/src/lib/rules/index.ts",
+    "web/src/lib/rules/summary.ts"
   ],
   "due tomorrow": [
     "web/src/lib/rules/index.ts"
   ],
   "due, not done yet": [
     "web/src/app/HabitHistory.tsx"
-  ],
-  "due: {when}": [
-    "web/src/lib/rules/summary.ts"
   ],
   "duplicate": [
     "web/src/app/LabelsView.tsx"
@@ -19830,6 +19829,9 @@
     "web/src/lib/rules/summary.ts"
   ],
   "has a date": [
+    "web/src/lib/rules/summary.ts"
+  ],
+  "has a deadline": [
     "web/src/lib/rules/summary.ts"
   ],
   "here": [
@@ -20099,7 +20101,8 @@
     "web/src/lib/rules/summary.ts"
   ],
   "no deadline": [
-    "web/src/app/RemindersField.tsx"
+    "web/src/app/RemindersField.tsx",
+    "web/src/lib/rules/summary.ts"
   ],
   "no device online to answer": [
     "web/src/app/auditFormat.ts"
@@ -20375,6 +20378,9 @@
   ],
   "password and two-factor authentication": [
     "web/src/app/settingsSections.ts"
+  ],
+  "past the deadline": [
+    "web/src/lib/rules/summary.ts"
   ],
   "pending": [
     "web/src/app/task-detail/ActivityTab.tsx"
@@ -20900,8 +20906,7 @@
     "web/src/app/filter/conditionText.ts",
     "web/src/app/method/LoopHome.tsx",
     "web/src/app/routines/words.tsx",
-    "web/src/lib/review.ts",
-    "web/src/lib/rules/summary.ts"
+    "web/src/lib/review.ts"
   ],
   "today holds {planned} of work, more than your {length} day": [
     "web/src/app/Briefing.tsx"
@@ -22008,7 +22013,13 @@
   "{n, plural, one {deadline in # day} other {deadline in # days}}": [
     "web/src/lib/rules/summary.ts"
   ],
+  "{n, plural, one {deadline within # day} other {deadline within # days}}": [
+    "web/src/lib/rules/summary.ts"
+  ],
   "{n, plural, one {due in # day} other {due in # days}}": [
+    "web/src/lib/rules/summary.ts"
+  ],
+  "{n, plural, one {due within # day} other {due within # days}}": [
     "web/src/lib/rules/summary.ts"
   ],
   "{n, plural, one {in # day} other {in # days}}": [
@@ -22034,9 +22045,6 @@
   ],
   "{n, plural, one {task} other {tasks}}": [
     "web/src/app/method/LoopHome.tsx"
-  ],
-  "{n, plural, one {within # day} other {within # days}}": [
-    "web/src/lib/rules/summary.ts"
   ],
   "{n, plural, one {{days} is already full} other {{days} are already full}}": [
     "web/src/app/Briefing.tsx"
