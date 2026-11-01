@@ -201,6 +201,11 @@ const (
 	// entries that are no Focus session (time_entry.focus_session, OpenSpec
 	// change focus-session-readable, design D2).
 	kFocusSession
+	// kThemeDoc is null or one whole custom theme document (OpenSpec change
+	// theme-editor, design D1): a JSON object of at most themes.MaxBytes bytes
+	// that passes internal/themes.Validate (format 1: seeds, explicit tokens,
+	// shape and type; colours only as #rrggbb or in-gamut oklch, never CSS).
+	kThemeDoc
 )
 
 // MaxFocusSession is the largest time_entry.focus_session (focus-session-readable D2).
@@ -690,6 +695,20 @@ var Schema = map[string]map[string]Field{
 		// Ordered task ids, at most MaxSlotTasks, one whole-list value like task.blocked_by; ids of tasks not shown are kept.
 		"task_ids":   {Kind: kIDList, Default: `[]`},
 		"color":      {Kind: kString, Default: `"#64748b"`},
+		"created_at": {Kind: kNumber, Default: `0`},
+		"deleted_at": {Kind: kNullableNumber, Default: `null`},
+	},
+	// theme: a custom theme (OpenSpec change theme-editor, design D1). Personal
+	// like a rule, with ids unique on the server; chosen for a side as
+	// user_prefs.theme_light or theme_dark "user:<id>". doc is one whole theme
+	// document (theme-engine D1, validated by internal/themes, at most 16 KB), so
+	// two devices saving the same theme converge on the later save. Themes are
+	// appearance, not user content: no field is a content field, and an
+	// encrypted account stores them in plain text (docs/themes.md says so).
+	// Devices keep at most 20 live themes per user; the server does not count.
+	"theme": {
+		"doc":        {Kind: kThemeDoc, Default: `null`},
+		"position":   {Kind: kNumber, Default: `0`},
 		"created_at": {Kind: kNumber, Default: `0`},
 		"deleted_at": {Kind: kNullableNumber, Default: `null`},
 	},

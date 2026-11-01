@@ -69,6 +69,14 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out["places"] = places
+	// The caller's custom themes (theme-editor D1): personal, no REST
+	// collection; user_prefs' theme_light and theme_dark name them "user:<id>".
+	themes, err := s.sync.List(r.Context(), uid, "theme", true)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	out["themes"] = themes
 	// The caller's date and time preferences (date-time-preferences D1): personal,
 	// no REST collection, but part of what the user owns, so the export carries them.
 	prefs, err := s.sync.List(r.Context(), uid, "user_prefs", true)
