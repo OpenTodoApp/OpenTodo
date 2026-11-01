@@ -86,9 +86,7 @@ func waitUploading(t *testing.T, s *Server, uid string, want int64) {
 	t.Helper()
 	deadline := time.Now().Add(10 * time.Second)
 	for {
-		s.uploadsMu.Lock()
-		held := s.uploading[uid]
-		s.uploadsMu.Unlock()
+		held := s.sync.QuotaHolds().Held(uid)
 		if held >= want {
 			return
 		}
@@ -238,10 +236,7 @@ func TestAttachmentQuotaHoldsOnRestoreAndUploadsInProgress(t *testing.T) {
 		}
 		// A finished upload holds no room once its answer arrives: the next
 		// upload, sent at once, must not find its file counted twice.
-		e.server.uploadsMu.Lock()
-		held := e.server.uploading[uid]
-		e.server.uploadsMu.Unlock()
-		if held != 0 {
+		if held := e.server.sync.QuotaHolds().Held(uid); held != 0 {
 			t.Fatalf("%s: %d bytes still held after the upload answered", id, held)
 		}
 	}
