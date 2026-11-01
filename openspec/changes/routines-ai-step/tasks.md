@@ -21,9 +21,9 @@ Prerequisites: `routines-engine` and `routines-editor` are merged.
 ## 3. Device runs
 
 - [x] 3.1 TypeScript planner for every step kind, the step vectors extended to all kinds and run by both sides; verify `npm test` and `go test ./internal/ruleval/... ./internal/rules/...`
-- [ ] 3.2 `internal/relay`: the `routine.run` request (ids only), the routines opt-in (unlocked device, recent confirmation, survives lock, ends at sign-out or encryption off), capabilities `routines` and `ai`; dispatch to the most recently active suitable device; verify `go test ./internal/relay/...`
-- [ ] 3.3 Waiting: `waiting_device`, latest occurrence per routine, superseded, missed after 24 hours; verify `go test ./internal/rules/...` with a stepped clock
-- [ ] 3.4 Commit and fail routes (`signedIn.SessionOnly().DemoDenied()`): bound to the device, `routine_changed`, `fallback`, `write_limit`, ciphertext ops applied with device `rule:<rule-id>`; verify `go test ./internal/httpapi/...` (401, 403 for another device and for bearer tokens, 409 twice, 400) and `policy_test.go`
+- [x] 3.2 `internal/relay`: the `routine.run` request (ids only), the routines opt-in (unlocked device, recent confirmation, survives lock, ends at sign-out or encryption off), capabilities `routines` and `ai`; dispatch to the most recently active suitable device; verify `go test ./internal/relay/...`
+- [x] 3.3 Waiting: `waiting_device`, latest occurrence per routine, superseded, missed after 24 hours; verify `go test ./internal/rules/...` with a stepped clock
+- [x] 3.4 Commit and fail routes (`signedIn.SessionOnly().DemoDenied()`): bound to the device, `routine_changed`, `fallback`, `write_limit`, ciphertext ops applied with device `rule:<rule-id>`; verify `go test ./internal/httpapi/...` (401, 403 for another device and for bearer tokens, 409 twice, 400) and `policy_test.go`
 - [ ] 3.5 `web/src/lib/relay.ts`: answer `routine.run` (decrypt, plan, AI through the on-device assistant, encrypt, commit), the running indicator and the recent runs list; Run now on the device in hand; verify `npm test` (a fake relay stream; the operations sent are ciphertext)
 - [ ] 3.6 Encrypted-account proposals: device writes the envelope, any device decrypts and applies through commit; verify `npm test` with two simulated devices
 

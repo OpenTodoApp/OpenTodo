@@ -32,6 +32,7 @@ func (s *Server) wireRoutines() {
 	s.rules.Env = s.routineEnv
 	s.rules.Mail = routineMailer{s}
 	s.rules.AI = routineAI{s}
+	s.rules.Devices = routineDevices{s}
 }
 
 // routineMailer sends an Email me step to the account's own verified address
@@ -79,6 +80,7 @@ func (s *Server) registerRoutineRoutes(mux *routes) {
 	mux.handle("GET /api/v1/me/rules/runs", user, s.handleMyRoutineRuns)
 	mux.handle("GET /api/v1/me/rules/catalogue", user, s.handleRoutineCatalogue)
 	s.registerRoutineAIRoutes(mux)
+	s.registerRoutineDeviceRoutes(mux)
 }
 
 // routineEnv is what step availability reads for a user (design D15).
@@ -266,16 +268,28 @@ func (s *Server) handleRoutineRun(w http.ResponseWriter, r *http.Request) {
 		Test   bool   `json:"test"`
 		// CallAI: a test runs its AI steps for real (routines-ai-step D11).
 		CallAI bool `json:"call_ai"`
+		// Device: Run now on the device in hand of an encrypted account
+		// (routines-ai-step D7); only from that device's session.
+		Device string `json:"device"`
 	}
-	if err := readJSON(r, &in); err != nil || in.RunID == "" || len(in.RunID) > 64 {
-		badBodyWith(w, err, "invalid_input", `body must be {"run_id": string, "task_id"?: string, "test"?: bool, "call_ai"?: bool}`)
+	if err := readJSON(r, &in); err != nil || in.RunID == "" || len(in.RunID) > 64 || len(in.Device) > 128 {
+		badBodyWith(w, err, "invalid_input", `body must be {"run_id": string, "task_id"?: string, "test"?: bool, "call_ai"?: bool, "device"?: string}`)
 		return
 	}
 	if s.rules == nil {
 		writeError(w, http.StatusNotFound, "not_found", "rule not found")
 		return
 	}
-	res, err := s.rules.RunNow(r.Context(), userFrom(r.Context()).ID, rules.RunRequest{RuleID: r.PathValue("id"), RunID: in.RunID, TaskID: in.TaskID, Test: in.Test, CallAI: in.CallAI})
+	req := rules.RunRequest{RuleID: r.PathValue("id"), RunID: in.RunID, TaskID: in.TaskID, Test: in.Test, CallAI: in.CallAI}
+	if in.Device != "" {
+		sess := sessionFrom(r.Context())
+		if sess == nil {
+			writeError(w, http.StatusForbidden, "session_only", "only a signed-in device runs a routine itself")
+			return
+		}
+		req.Device, req.Session = in.Device, sess.TokenHash
+	}
+	res, err := s.rules.RunNow(r.Context(), userFrom(r.Context()).ID, req)
 	if err != nil {
 		s.routineError(w, err)
 		return

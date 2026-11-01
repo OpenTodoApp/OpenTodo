@@ -633,9 +633,6 @@
   "AI results": [
     "web/src/app/routines/AISettings.tsx"
   ],
-  "AI steps cannot run for an end-to-end encrypted account yet": [
-    "web/src/lib/rules/catalogue.ts"
-  ],
   "AI tokens today: {today} of {budget} · last 7 days: {week}": [
     "web/src/app/routines/AISettings.tsx"
   ],
@@ -1680,6 +1677,9 @@
   ],
   "Apply without asking": [
     "web/src/app/routines/AISettings.tsx"
+  ],
+  "Apply without asking does not allow this result, so it waits as a proposal.": [
+    "web/src/lib/i18n/errors.ts"
   ],
   "Apply without asking was turned off after a run that would have made a change it does not allow": [
     "web/src/lib/rules/ai.ts"
@@ -10672,6 +10672,9 @@
   "Only": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "Only a signed-in device can run a routine itself.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "Only accept mail from (optional)": [
     "web/src/app/EmailInboxPanel.tsx"
   ],
@@ -15916,6 +15919,9 @@
   "The restore of <span>{archive}</span> on {instant} failed, and the server kept its previous data. {error}": [
     "web/src/app/RestoreSection.tsx"
   ],
+  "The routine changed while this run waited. Nothing was written.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "The routine could not run.": [
     "web/src/app/palette/routineCommand.ts",
     "web/src/app/routines/RoutinesView.tsx"
@@ -15932,6 +15938,9 @@
   ],
   "The run is on the server: connect to see it.": [
     "web/src/app/routines/RunHistory.tsx"
+  ],
+  "The run would write more than 500 items. Nothing was written.": [
+    "web/src/lib/i18n/errors.ts"
   ],
   "The runs are on the server: connect to see them.": [
     "web/src/app/routines/RunHistory.tsx"
@@ -16394,6 +16403,9 @@
   "This account is deactivated. Reactivate it first.": [
     "web/src/app/UsersPanel.tsx"
   ],
+  "This account is encrypted: the change must be sent encrypted.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "This account is not linked to {provider} yet. Sign in with your password (and code) first, then link {provider} in Settings → Account.": [
     "web/src/app/sso.ts"
   ],
@@ -16844,6 +16856,9 @@
     "web/src/app/routines/RoutinePage.tsx"
   ],
   "This routine works on a task: open one, then run it.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
+  "This run already finished.": [
     "web/src/lib/i18n/errors.ts"
   ],
   "This run was undone already.": [
@@ -19676,9 +19691,6 @@
   "email": [
     "web/src/app/AuditPanel.tsx"
   ],
-  "email cannot be built for an encrypted account": [
-    "web/src/lib/rules/catalogue.ts"
-  ],
   "email to task": [
     "web/src/app/settingsSections.ts"
   ],
@@ -20867,6 +20879,9 @@
     "web/src/app/filter/conditionText.ts",
     "web/src/app/routines/words.tsx"
   ],
+  "this step would send text through the server, which an encrypted account never does": [
+    "web/src/lib/rules/catalogue.ts"
+  ],
   "this week": [
     "web/src/app/filter/conditionText.ts",
     "web/src/app/routines/words.tsx"
@@ -20932,6 +20947,9 @@
   ],
   "tracked at least {n} min": [
     "web/src/lib/rules/summary.ts"
+  ],
+  "turn on Run my routines on a device with the on-device assistant set up": [
+    "web/src/lib/rules/catalogue.ts"
   ],
   "turned off": [
     "web/src/app/auditFormat.ts"

@@ -3530,7 +3530,7 @@
   "edited the {field}": "editou {field}",
   "editor": "editor",
   "email": "e-mail",
-  "email cannot be built for an encrypted account": "o e-mail não pode ser montado para uma conta criptografada",
+  "this step would send text through the server, which an encrypted account never does": "este passo enviaria texto através do servidor, algo que uma conta encriptada nunca faz",
   "email to task": "e-mail para tarefa",
   "encrypted": "criptografado",
   "encrypted account": "conta criptografada",
@@ -6423,7 +6423,7 @@
   "{name}: proposal dismissed, nothing was changed": "{name}: proposta descartada, nada foi alterado",
   "{n} applied, {m, plural, one {# skipped because it changed} other {# skipped because they changed}}": "{n} aplicados, {m, plural, one {# ignorado porque mudou} other {# ignorados porque mudaram}}",
   "{n} applied, {m} skipped": "{n} aplicados, {m} ignorados",
-  "AI steps cannot run for an end-to-end encrypted account yet": "Os passos de IA ainda não podem ser executados em uma conta com criptografia de ponta a ponta",
+  "turn on Run my routines on a device with the on-device assistant set up": "ative Executar as minhas rotinas num dispositivo com o assistente no dispositivo configurado",
   "Adjusted to a displayable colour": "Ajustado a uma cor que se pode mostrar",
   "Based on {name} by {author} ({licence})": "Baseado em {name} de {author} ({licence})",
   "Change {name}, {value}, {state}": "Alterar {name}, {value}, {state}",
@@ -6749,5 +6749,11 @@
   "past the deadline": "prazo ultrapassado",
   "{n, plural, one {due within # day} other {due within # days}}": "{n, plural, one {com data em até # dia} other {com data em até # dias}}",
   "{n, plural, one {deadline within # day} other {deadline within # days}}": "{n, plural, one {prazo em até # dia} other {prazo em até # dias}}",
-  "due earlier": "com data anterior"
+  "due earlier": "com data anterior",
+  "This run already finished.": "Esta execução já terminou.",
+  "The routine changed while this run waited. Nothing was written.": "A rotina mudou enquanto esta execução aguardava. Nada foi gravado.",
+  "Apply without asking does not allow this result, so it waits as a proposal.": "Aplicar sem perguntar não permite este resultado, por isso aguarda como proposta.",
+  "The run would write more than 500 items. Nothing was written.": "A execução gravaria mais de 500 itens. Nada foi gravado.",
+  "This account is encrypted: the change must be sent encrypted.": "Esta conta é encriptada: a alteração tem de ser enviada encriptada.",
+  "Only a signed-in device can run a routine itself.": "Só um dispositivo com sessão iniciada pode executar uma rotina por si."
 }
