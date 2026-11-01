@@ -39,6 +39,8 @@ export type Route =
   | { view: 'view'; id: string }
   // A settings section, or one of its sub-pages at /settings/<section>/<page> (settings-subpages).
   | { view: 'settings'; section?: SettingsSectionId; page?: string; anchor?: string }
+  // The theme editor (theme-editor D3): /settings/appearance/themes/<id>, a Settings sub-page.
+  | { view: 'theme-editor'; id: string }
   | { view: 'import' }
   | { view: 'invite'; token: string }
   | { view: 'project-invite'; token: string }
@@ -136,6 +138,7 @@ export function parseRoute(pathname: string): Route {
       if (parts[1] && parts[1] in LEGACY_SETTINGS_IDS) { const l = LEGACY_SETTINGS_IDS[parts[1]]; return { view: 'settings', section: l.section, ...(l.page ? { page: l.page } : {}), ...(l.anchor ? { anchor: l.anchor } : {}) } }
       // A sub-page id is checked against the section table by the Settings screen (settings-subpages).
       if (!isSettingsSection(parts[1])) return { view: 'settings' }
+      if (parts[1] === 'appearance' && parts[2] === 'themes' && parts[3] && /^[a-z0-9-]{1,64}$/.test(parts[3])) return { view: 'theme-editor', id: parts[3] }
       return parts[2] && /^[a-z][a-z-]*$/.test(parts[2]) ? { view: 'settings', section: parts[1], page: parts[2] } : { view: 'settings', section: parts[1] }
     case 'labels':
       return { view: 'labels' }
@@ -301,6 +304,8 @@ export function routePath(r: Route): string {
       return '/'
     case 'settings':
       return r.section ? `/settings/${r.section}${r.page ? `/${r.page}` : ''}` : '/settings'
+    case 'theme-editor':
+      return `/settings/appearance/themes/${encodeURIComponent(r.id)}`
     case 'import':
       return '/settings/import'
     case 'projects':

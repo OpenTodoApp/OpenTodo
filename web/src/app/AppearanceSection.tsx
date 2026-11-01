@@ -311,13 +311,13 @@ function useCustomValues(hex: string | undefined): CustomAccentValues | null {
 }
 
 /** The panel with its data: the synced row, written through ops. */
-export function AppearanceSection() {
+export function AppearanceSection({ author = '' }: { author?: string }) {
   const row = usePrefsRow()
   const value = readAppearance(row)
   const values = useCustomValues(value.custom)
   const catalogue = useCatalogue()
   const choices = readThemeChoices(row, knownThemes(catalogue))
-  const themes: ThemeSettingsProps = { mode: value.mode, choices, catalogue, accentFromTheme: choices[effectiveSide(value.mode)].status === 'theme' }
+  const themes: ThemeSettingsProps = { mode: value.mode, choices, catalogue, accentFromTheme: choices[effectiveSide(value.mode)].status === 'theme', author }
   return <AppearanceView value={value} onMode={(m) => act(setAppearance('theme_mode', m))} onAccent={(a) => act(setAppearance('theme_accent', a))}
     custom={{ values, onPick: (hex) => act(setCustomAccent(hex)) }} themes={themes}
     onDensity={(d) => act(setAppearance('density', d))}
