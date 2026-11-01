@@ -30,13 +30,17 @@ export interface RuleEditorProps {
 
 type LabelKey = 'add_labels' | 'remove_labels'
 
-export function LabelsField({ title, ids, labels, onChange }: { title: string; ids: string[]; labels: readonly Label[]; onChange: (ids: string[]) => void }) {
+export function LabelsField({ title, ids, labels, onChange, titleHidden }: {
+  title: string; ids: string[]; labels: readonly Label[]; onChange: (ids: string[]) => void
+  /** The title is shown beside the field by its form (a grid of rows), and only named to assistive technology here. */
+  titleHidden?: boolean
+}) {
   const live = useMemo(() => activeLabels([...labels]), [labels])
   const byId = new Map(labels.filter((l) => !l.deleted_at).map((l) => [l.id, l]))
   const toggle = (id: string) => onChange(ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id])
   return (
-    <fieldset className="space-y-1">
-      <legend className="text-meta font-medium text-muted">{title}</legend>
+    <fieldset className="min-w-0 space-y-1">
+      <legend className={titleHidden ? 'sr-only' : 'text-meta font-medium text-muted'}>{title}</legend>
       {ids.length > 0 && (
         <ul className="flex flex-wrap gap-1" aria-label={title}>
           {ids.map((id) => {

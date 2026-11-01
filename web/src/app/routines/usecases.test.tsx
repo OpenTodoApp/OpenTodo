@@ -12,7 +12,8 @@ import { db, useDatabase } from '../../lib/db'
 import { publishEncryption } from '../../lib/e2ee'
 import { resetDeviceId } from '../../lib/ops'
 import { resetCatalogueCache } from '../../lib/rules/catalogue'
-import type { RoutineDraft } from '../../lib/rules/draft'
+import type { PickMode, RoutineDraft } from '../../lib/rules/draft'
+import { PICK_MENU } from '../../lib/rules/sentence'
 import suite from '../../lib/rules/usecases.json'
 import type { RoutineStep, RuleTrigger } from '../../lib/types'
 import { click, key, mockFetch, render, type, waitFor } from '../../ui/test-utils'
@@ -79,7 +80,7 @@ async function open(c: UseCase, steps: RoutineStep[]): Promise<{ unmount: () => 
   const draft: RoutineDraft = { name: c.name.slice(0, 60), trigger: c.trigger, condition: (c.condition ?? null) as RoutineDraft['condition'], steps }
   const done = vi.fn()
   const r = await render(<RoutineEditor draft={draft} onBack={() => {}} onSaved={done} />)
-  await waitFor(() => cards().length === steps.length, 'the cards')
+  await waitFor(() => cards().length >= steps.length, 'the cards')
   return {
     unmount: () => r.unmount(),
     saved: async () => {
@@ -116,13 +117,20 @@ async function write(c: HTMLElement, text: string) {
   await waitFor(() => !c.querySelector('[data-inline-text]'), 'the text kept')
 }
 
+/** Moves focus out of the cards, to the routine's name. */
+async function leaveCards() {
+  await act(async () => { document.querySelector<HTMLInputElement>('[data-routine-name]')!.focus() })
+}
+
 /** The options of the open word list, by their label. */
 const options = () => [...document.querySelectorAll<HTMLElement>('[data-word-choices] [role="option"]')]
 
-async function mode(c: HTMLElement, m: string) {
+/** Chooses Pick's mode in its word's list (an anchored list like every word's, routines-editor-polish). */
+async function mode(c: HTMLElement, m: PickMode) {
   await click(c.querySelector('[data-word="Which"]')!)
-  await waitFor(() => !!document.querySelector(`[data-pick-mode="${m}"]`), 'the modes')
-  await click(document.querySelector(`[data-pick-mode="${m}"]`)!)
+  await waitFor(() => options().some((o) => o.textContent === PICK_MENU[m]), 'the modes')
+  await click(options().find((o) => o.textContent === PICK_MENU[m])!)
+  await waitFor(() => options().length === 0, 'the modes closed')
 }
 
 const byKind = (kind: string) => cards().find((c) => c.getAttribute('data-step-kind') === kind)!
@@ -320,20 +328,43 @@ describe('pickers next to the word, never a centred modal (routines-dynamic-data
     await e.unmount()
   })
 
-  it('"/" in a text inserts a value; Escape puts the word back unchanged', async () => {
+  it('"Escape keeps the text": "/" lists the values at the caret, the nearest first; Escape closes it, and a second Escape keeps what was typed', async () => {
     const steps: RoutineStep[] = [{ id: 'a', kind: 'split_lines', in: { text: { literal: 'a\nb' } } }, { id: 'b', kind: 'count', in: { list: { ref: 'a' } } }, { id: 'c', kind: 'notify', in: { text: { literal: 'x' } } }]
     const e = await open({ row: 0, name: 'x', trigger: { kind: 'manual' }, steps: [] }, steps)
     const card = byKind('notify')
     await click(card.querySelector('[data-word="Text"]')!)
     await waitFor(() => !!card.querySelector('[data-inline-text] textarea'), 'the field')
     const area = card.querySelector<HTMLTextAreaElement>('[data-inline-text] textarea')!
-    await act(async () => { area.setSelectionRange(0, 0) })
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(area, 'x and more ')
+      area.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    await act(async () => { area.setSelectionRange(11, 11) })
     await key(area, '/')
     await waitFor(() => options().some((o) => o.textContent === 'the count'), 'the values')
+    // Anchored at the caret, the nearest value active.
+    expect(document.querySelector('[data-caret-anchor]')).not.toBeNull()
+    expect(options()[0].getAttribute('data-active')).toBe('true')
+    expect(options()[0].textContent).toBe('the count')
     await key(document.querySelector<HTMLElement>('[data-word-choices] input')!, 'Escape')
     await waitFor(() => options().length === 0, 'closed')
+    expect(card.querySelector('[data-inline-text] textarea')).not.toBeNull()
     await key(area, 'Escape')
-    await waitFor(() => !card.querySelector('[data-inline-text]') && card.querySelector('[data-word="Text"]')?.textContent === 'x', 'unchanged')
+    await waitFor(() => !card.querySelector('[data-inline-text]') && card.querySelector('[data-word="Text"]')?.textContent?.trim() === 'x and more', 'kept')
+    await e.unmount()
+  })
+
+  it('a text shows whole, wrapped, with its values as chips', async () => {
+    const steps: RoutineStep[] = [
+      { id: 'a', kind: 'find_tasks', in: { condition: { literal: {} } } },
+      { id: 'b', kind: 'repeat', in: { list: { ref: 'a' } }, do: [{ id: 'c', kind: 'add_comment', in: { task: { ref: 'item' }, text: { literal: { format: 'Any news on this? Following up on {item} before the end of the week' } } } }] },
+    ]
+    const e = await open({ row: 0, name: 'x', trigger: { kind: 'manual' }, steps: [] }, steps)
+    const word = byKind('add_comment').querySelector<HTMLElement>('[data-word="Text"]')!
+    expect(word.textContent).toBe('Any news on this? Following up on each task before the end of the week')
+    expect(word.querySelector('[data-chip]')?.textContent).toBe('each task')
+    expect(word.querySelector(':scope > .truncate')).toBeNull()
+    expect(word.getAttribute('aria-label')).toContain('Following up on each task before the end of the week')
     await e.unmount()
   })
 })
@@ -342,10 +373,34 @@ describe('editor fixes and errors (routines-dynamic-data D3, D7)', () => {
   it('"Nothing flowing": a manual routine\'s first comment offers Find tasks…, never a task picker', async () => {
     const e = await open({ row: 0, name: 'x', trigger: { kind: 'manual' }, steps: [] }, [])
     await add('add_comment', 'comment')
+    await leaveCards()
     await waitFor(() => !!button('Find tasks…', byKind('add_comment')), 'the fix')
     await click(button('Find tasks…', byKind('add_comment')))
     await waitFor(() => cards().length === 2 && cards()[0].getAttribute('data-step-kind') === 'find_tasks', 'Find tasks above')
     expect(byKind('add_comment').getAttribute('aria-label')).toContain('Comment on the tasks')
+    await e.unmount()
+  })
+
+  it('"An empty input is not an error yet": "needs a value here" waits until focus leaves the new card', async () => {
+    const e = await open({ row: 0, name: 'x', trigger: { kind: 'manual' }, steps: [] }, [{ id: 'a', kind: 'find_tasks', in: { condition: { literal: {} } } }])
+    await add('notify', 'notify')
+    await waitFor(() => document.activeElement === byKind('notify'), 'the new card focused')
+    expect(byKind('notify').querySelector('[data-step-error]')).toBeNull()
+    expect(byKind('notify').querySelector('[aria-invalid="true"]')).toBeNull()
+    await leaveCards()
+    await waitFor(() => /needs a value here/.test(byKind('notify').querySelector('[data-step-error]')?.textContent ?? ''), 'the error after leaving')
+    // A value clears it at once.
+    await write(byKind('notify'), 'Hello')
+    expect(byKind('notify').querySelector('[data-step-error]')).toBeNull()
+    await e.unmount()
+  })
+
+  it('"Save shows the errors": a new card\'s empty input shows its error when Save is pressed', async () => {
+    const e = await open({ row: 0, name: 'x', trigger: { kind: 'manual' }, steps: [] }, [{ id: 'a', kind: 'find_tasks', in: { condition: { literal: {} } } }])
+    await add('notify', 'notify')
+    expect(byKind('notify').querySelector('[data-step-error]')).toBeNull()
+    await click(button('Save'))
+    await waitFor(() => /needs a value here/.test(byKind('notify').querySelector('[data-step-error]')?.textContent ?? ''), 'the error')
     await e.unmount()
   })
 

@@ -13,7 +13,7 @@ import { inputLabel, itemName, triggerOutputName } from '../../lib/rules/sentenc
 import { actionParts, conditionParts } from '../../lib/rules/summary'
 import { dateLiteral, stepKind, textLiteral, triggerOutput, type StepInput } from '../../lib/rules/steps'
 import type { RoutineArg, RoutineStep, RoutineStepType, RuleActions, RuleCondition } from '../../lib/types'
-import { Button, Combobox, Field, Input, Switch } from '../../ui'
+import { Button, Combobox, DataChip, Field, Input, Switch } from '../../ui'
 import { ActionFields, ConditionFields } from '../rules/RuleFields'
 import type { RoutineNames } from './data'
 
@@ -65,6 +65,24 @@ function findList(ctx: WordContext, repeatId: string): RoutineStepType | '' {
 /** A text literal with its {id} placeholders shown as «names». */
 function templateShown(text: string, ctx: WordContext, at: string): string {
   return text.replace(/\{([a-z0-9]{1,8})\}/g, (m, id: string) => (id === 'trigger' || id === 'item' || ctx.outputs.has(id) ? `«${refName(id, ctx, at)}»` : m))
+}
+
+/**
+ * A text value as its word shows it (routines-editor-polish): the whole text,
+ * wrapped, with the values in it as chips («each task» reads as a chip in the
+ * line); `long` asks the word to keep it to a few lines with a way to see all.
+ */
+export function textValue(step: RoutineStep, def: StepInput, ctx: WordContext): { node: ReactNode; text: string; long: boolean } | null {
+  if (def.literal !== 'text') return null
+  const a = step.in?.[def.name]
+  const tl = a && 'literal' in a ? textLiteral(a.literal) : null
+  if (!tl?.text) return null
+  const known = (id: string) => id === 'trigger' || id === 'item' || ctx.outputs.has(id)
+  const node = tl.text.split(/(\{[a-z0-9]{1,8}\})/).map((part, i) => {
+    const id = /^\{([a-z0-9]{1,8})\}$/.exec(part)?.[1]
+    return id && known(id) ? <DataChip key={i} inline>{refName(id, ctx, step.id)}</DataChip> : part
+  })
+  return { node, text: templateShown(tl.text, ctx, step.id).replace(/[«»]/g, ''), long: tl.text.length > 280 }
 }
 
 const clip = (s: string, n = 48) => (s.length > n ? `${s.slice(0, n - 1)}…` : s)

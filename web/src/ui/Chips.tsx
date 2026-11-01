@@ -104,7 +104,10 @@ export function LabelChip({ name, color, onRemove, className }: LabelChipProps) 
       <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
       <span className="truncate">{name}</span>
       {onRemove && (
-        <button type="button" aria-label={t('Remove label {name}', { name })} onClick={onRemove} className="ml-0.5 leading-none text-faint hover:text-danger"><Icon name="x" size={10} /></button>
+        // The touch rule's 44 px minimum would blow the chip up to a box: the button stays
+        // icon-sized and a transparent 44 px area around it (::after) takes the tap.
+        <button type="button" data-touch-exempt="hit-area" aria-label={t('Remove label {name}', { name })} onClick={onRemove} style={{ minWidth: 0, minHeight: 0 }}
+          className="relative ml-0.5 leading-none text-faint after:absolute after:-inset-[17px] hover:text-danger"><Icon name="x" size={10} /></button>
       )}
     </span>
   )

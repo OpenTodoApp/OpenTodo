@@ -255,7 +255,8 @@ describe('Routine editor', () => {
     await click([...document.querySelectorAll<HTMLElement>('[data-word-choices] [role="option"]')].find((o) => o.textContent === 'the count')!)
     await waitFor(() => /«the count»/.test(cards()[2].querySelector<HTMLTextAreaElement>('[data-inline-text] textarea')?.value ?? ''), 'the chip in the field')
     await key(cards()[2].querySelector('[data-inline-text] textarea')!, 'Enter')
-    await waitFor(() => /«the count»/.test(cards()[2].querySelector('[data-word="Text"]')?.textContent ?? ''), 'the chip in the text')
+    // Kept as a value chip inside the text, not as «the count» (routines-editor-polish).
+    await waitFor(() => cards()[2].querySelector('[data-word="Text"] [data-chip]')?.textContent === 'the count', 'the chip in the text')
     await r.unmount()
   })
 

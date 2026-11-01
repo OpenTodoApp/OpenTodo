@@ -14,6 +14,8 @@ import { InboxCardView } from './RoutinesInboxCard'
 import { ChoicePopover, InlineText } from './pickers'
 import { WordButton } from '../../ui'
 import type { InboxLine } from '../../lib/rules/inbox'
+import type { Label, RuleCondition } from '../../lib/types'
+import { ConditionFields } from '../rules/RuleFields'
 
 // Routines (OpenSpec change routines-editor): the page, the sentence-card
 // editor as its own page (routines-editor-page: steps in a centred column, Test
@@ -124,6 +126,21 @@ export const EditorRepeat: StoryObj = {
   ] }} onBack={() => undefined} /></div>,
 }
 
+/**
+ * The owner's waiting-on use case (routines-editor-polish): Pick all, then a
+ * comment on each task whose text reads «each task» as a chip, whole and wrapped.
+ */
+export const EditorCommentValue: StoryObj = {
+  name: 'Editor, comment with a value',
+  ...withSeed(seedOverdue),
+  render: () => <div className="-m-4 bg-canvas"><RoutineEditor draft={{ name: 'Nudge waiting-on tasks', trigger: { kind: 'manual' }, condition: null, steps: [
+    { id: 'a', kind: 'find_tasks', in: { condition: { literal: { due: 'overdue' } } } },
+    { id: 'b', kind: 'take', in: { list: { ref: 'a' }, from: { literal: 'all' } } },
+    { id: 'c', kind: 'repeat', in: { list: { ref: 'b' } }, do: [{ id: 'd', kind: 'add_comment', in: { task: { ref: 'item' },
+      text: { literal: { format: 'Any news on this? Following up on {item} before the end of the week, so we can close it.' } } } }] },
+  ] }} onBack={() => undefined} /></div>,
+}
+
 /** A word's list next to it (routines-dynamic-data D13): flowing values first, then More; no centred modal. */
 function WordList() {
   const anchor = useRef<HTMLButtonElement>(null)
@@ -144,13 +161,26 @@ function WordList() {
 
 export const WordListOpen: StoryObj = { name: 'Word list, open', render: () => <WordList /> }
 
+/** Condition rows (routines-editor-polish): one grid, names in one plain style, selects of one width. */
+function ConditionRows() {
+  const [value, setValue] = useState<RuleCondition>({ due: 'overdue', labels: { all: ['l1'] } })
+  const names = { projects: [], sections: [], labels: [{ id: 'l1', name: 'waiting-on', color: '#e8a33d' } as Label] }
+  return (
+    <div className="-m-4 bg-canvas p-4">
+      <section className="max-w-xl rounded-control border border-default bg-sunken p-3"><ConditionFields value={value} onChange={setValue} names={names} /></section>
+    </div>
+  )
+}
+
+export const ConditionRowsStory: StoryObj = { name: 'Condition rows', render: () => <ConditionRows /> }
+
 /** A text edited in place, with "+ value" to insert what an earlier step produced. */
 export const TextInPlace: StoryObj = {
   name: 'Text in place',
   render: () => (
     <div className="-m-4 bg-canvas p-4">
       <div className="surface-card max-w-xl p-3 text-body">
-        Notify me: <InlineText label="Text" value="«the count» tasks waiting" max={300} insertable={[{ ref: 'b', name: 'the count' }, { ref: 'a', name: 'the tasks' }]} onCommit={() => undefined} onCancel={() => undefined} />
+        Notify me: <InlineText label="Text" value="«the count» tasks waiting" max={300} insertable={[{ ref: 'b', name: 'the count' }, { ref: 'a', name: 'the tasks' }]} onCommit={() => undefined} />
       </div>
     </div>
   ),

@@ -132,23 +132,31 @@ const DATE_PRED_LABEL = translatedMap<string>({ '': msg('Any'), none: msg('No da
 function DatePredicate({ label, value, overdue, onChange }: { label: string; value: RuleCondition['due']; overdue: boolean; onChange: (v: RuleCondition['due']) => void }) {
   const kind = value === undefined ? '' : typeof value === 'object' ? 'within' : value
   return (
-    <div className={row}>
-      <span>{label}</span>
-      <span className="flex items-center gap-2">
-        {kind === 'within' && typeof value === 'object' && (
-          <Input aria-label={t('Days')} className="w-16" type="number" min={0} max={365} value={value.within_days}
-            onChange={(e) => onChange({ within_days: Math.max(0, Math.min(365, Number(e.target.value) || 0)) })} />
-        )}
-        <select className="ui-input w-36" aria-label={label} value={kind} onChange={(e) => {
+    <>
+      <span className={cellLabel} aria-hidden="true">{label}</span>
+      <span className="flex min-w-0 items-center gap-2">
+        <select className="ui-input min-w-0 flex-1" aria-label={label} value={kind} onChange={(e) => {
           const k = e.target.value
           onChange(k === '' ? undefined : k === 'within' ? { within_days: 3 } : (k as 'none'))
         }}>
           {DATE_PRED.filter((k) => overdue || (k !== 'today' && k !== 'overdue')).map((k) => <option key={k} value={k}>{DATE_PRED_LABEL[k]}</option>)}
         </select>
+        {kind === 'within' && typeof value === 'object' && (
+          <Input aria-label={t('Days')} className="w-20 shrink-0" type="number" min={0} max={365} value={value.within_days}
+            onChange={(e) => onChange({ within_days: Math.max(0, Math.min(365, Number(e.target.value) || 0)) })} />
+        )}
       </span>
-    </div>
+    </>
   )
 }
+
+/**
+ * The condition rows as one grid (routines-editor-polish): every name in the
+ * first column in the same plain style, every control the full width of the
+ * second, so the selects line up whatever their content.
+ */
+const conditionGrid = 'grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] items-center gap-x-3 gap-y-2'
+const cellLabel = 'min-w-0 text-body text-default'
 
 /** Sets or clears one predicate of a condition. */
 function withPredicate<K extends keyof RuleCondition>(c: RuleCondition, key: K, value: RuleCondition[K] | undefined): RuleCondition {
@@ -164,50 +172,53 @@ export function ConditionFields({ value, onChange, names }: { value: RuleConditi
   const project = value.project && value.project !== 'none' ? value.project : null
   const pick = (v: string, map: Record<string, RuleCondition[keyof RuleCondition] | undefined>) => map[v]
   return (
-    <fieldset className="space-y-2" data-rule-condition>
-      <legend className="text-meta font-medium text-muted">{t('Only for tasks that')}</legend>
-      <div className={row}>
-        <span>{t('Project')}</span>
+    <fieldset className="min-w-0" data-rule-condition>
+      <legend className="mb-2 text-meta font-medium text-muted">{t('Only for tasks that')}</legend>
+      <div className={conditionGrid}>
+        <span className={cellLabel} aria-hidden="true">{t('Project')}</span>
         <ProjectPickerField label={t('Project')} projects={names.projects} value={project?.in[0] ?? null} inbox={false} noneLabel={t('Any')} rankContext="rule.project"
-          className="w-44" onChange={(id) => set('project', id ? { in: [id], descendants: true } : undefined)} />
+          className="w-full" onChange={(id) => set('project', id ? { in: [id], descendants: true } : undefined)} />
+        <span className={`${cellLabel} self-start pt-2`} aria-hidden="true">{t('Have every label')}</span>
+        <LabelsField title={t('Have every label')} titleHidden ids={value.labels?.all ?? []} labels={names.labels}
+          onChange={(ids) => set('labels', ids.length || value.labels?.none?.length ? { ...value.labels, all: ids } : undefined)} />
+        <span className={`${cellLabel} self-start pt-2`} aria-hidden="true">{t('Have none of the labels')}</span>
+        <LabelsField title={t('Have none of the labels')} titleHidden ids={value.labels?.none ?? []} labels={names.labels}
+          onChange={(ids) => set('labels', ids.length || value.labels?.all?.length ? { ...value.labels, none: ids } : undefined)} />
+        <label className="contents">
+          <span className={cellLabel}>{t('Priority')}</span>
+          <select className="ui-input" value={value.priority?.in.join(',') ?? ''} onChange={(e) => set('priority', e.target.value ? { in: e.target.value.split(',').map(Number) } : undefined)}>
+            <option value="">{t('Any')}</option>
+            {[1, 2, 3, 4].map((p) => <option key={p} value={p}>{t('Priority {p}', { p })}</option>)}
+            <option value="1,2">{t('Priority 1 or 2')}</option>
+          </select>
+        </label>
+        <DatePredicate label={t('Date')} value={value.due} overdue onChange={(v) => set('due', v)} />
+        <DatePredicate label={t('Deadline')} value={value.deadline} overdue={false} onChange={(v) => set('deadline', v as RuleCondition['deadline'])} />
+        <label className="contents">
+          <span className={cellLabel}>{t('Assignee')}</span>
+          <select className="ui-input" value={value.assignee ?? ''} onChange={(e) => set('assignee', (e.target.value || undefined) as RuleCondition['assignee'])}>
+            <option value="">{t('Any')}</option>
+            <option value="me">{t('Assigned to me')}</option>
+            <option value="none">{t('Unassigned')}</option>
+            <option value="anyone">{t('Assigned to someone')}</option>
+          </select>
+        </label>
+        <label className="contents">
+          <span className={cellLabel}>{t('Blocked')}</span>
+          <select className="ui-input" value={value.blocked === undefined ? '' : String(value.blocked)}
+            onChange={(e) => set('blocked', pick(e.target.value, { true: true, false: false }) as boolean | undefined)}>
+            <option value="">{t('Any')}</option>
+            <option value="true">{t('Blocked')}</option>
+            <option value="false">{t('Not blocked')}</option>
+          </select>
+        </label>
+        {/* Stale tasks: no field changed in N days (routines-dynamic-data D5); empty for any. */}
+        <label className="contents">
+          <span className={cellLabel}>{t('Not changed for days')}</span>
+          <Input type="number" min={1} max={365} placeholder={t('Any')} value={value.unchanged?.days ?? ''} data-rule-unchanged
+            onChange={(e) => { const n = Math.round(Number(e.target.value)); set('unchanged', e.target.value && n >= 1 ? { days: Math.min(365, n) } : undefined) }} />
+        </label>
       </div>
-      <LabelsField title={t('Have every label')} ids={value.labels?.all ?? []} labels={names.labels}
-        onChange={(ids) => set('labels', ids.length || value.labels?.none?.length ? { ...value.labels, all: ids } : undefined)} />
-      <LabelsField title={t('Have none of the labels')} ids={value.labels?.none ?? []} labels={names.labels}
-        onChange={(ids) => set('labels', ids.length || value.labels?.all?.length ? { ...value.labels, none: ids } : undefined)} />
-      <label className={row}>
-        <span>{t('Priority')}</span>
-        <select className="ui-input w-44" value={value.priority?.in.join(',') ?? ''} onChange={(e) => set('priority', e.target.value ? { in: e.target.value.split(',').map(Number) } : undefined)}>
-          <option value="">{t('Any')}</option>
-          {[1, 2, 3, 4].map((p) => <option key={p} value={p}>{t('Priority {p}', { p })}</option>)}
-          <option value="1,2">{t('Priority 1 or 2')}</option>
-        </select>
-      </label>
-      <DatePredicate label={t('Date')} value={value.due} overdue onChange={(v) => set('due', v)} />
-      <DatePredicate label={t('Deadline')} value={value.deadline} overdue={false} onChange={(v) => set('deadline', v as RuleCondition['deadline'])} />
-      <label className={row}>
-        <span>{t('Assignee')}</span>
-        <select className="ui-input w-44" value={value.assignee ?? ''} onChange={(e) => set('assignee', (e.target.value || undefined) as RuleCondition['assignee'])}>
-          <option value="">{t('Any')}</option>
-          <option value="me">{t('Assigned to me')}</option>
-          <option value="none">{t('Unassigned')}</option>
-          <option value="anyone">{t('Assigned to someone')}</option>
-        </select>
-      </label>
-      <label className={row}>
-        <span>{t('Blocked')}</span>
-        <select className="ui-input w-44" value={value.blocked === undefined ? '' : String(value.blocked)}
-          onChange={(e) => set('blocked', pick(e.target.value, { true: true, false: false }) as boolean | undefined)}>
-          <option value="">{t('Any')}</option>
-          <option value="true">{t('Blocked')}</option>
-          <option value="false">{t('Not blocked')}</option>
-        </select>
-      </label>
-      {/* Stale tasks: no field changed in N days (routines-dynamic-data D5); empty for any. */}
-      <Field label={t('Not changed for days')} className="w-44">
-        <Input type="number" min={1} max={365} placeholder={t('Any')} value={value.unchanged?.days ?? ''} data-rule-unchanged
-          onChange={(e) => { const n = Math.round(Number(e.target.value)); set('unchanged', e.target.value && n >= 1 ? { days: Math.min(365, n) } : undefined) }} />
-      </Field>
     </fieldset>
   )
 }
