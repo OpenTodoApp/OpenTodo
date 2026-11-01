@@ -76,7 +76,8 @@ export function screens(ids, base) {
     { name: 'projects', path: '/projects', ready: heading('Projects') },
     // Routines (routines-editor) and the editor page (routines-editor-page): one column on a phone with the actions in a bar at the bottom.
     { name: 'routines', path: '/routines', ready: heading('Routines') },
-    { name: 'routine-page', path: `/routines/${ids.routine}`, ready: (p) => p.locator('[data-step-card]').first().waitFor() },
+    // A word's list opens next to it, never a centred modal (routines-dynamic-data D13).
+    { name: 'routine-page', path: `/routines/${ids.routine}`, ready: (p) => p.locator('[data-step-card]').first().waitFor(), overlays: ['routine-word-list'] },
     { name: 'routine-new', path: '/routines/new', ready: (p) => p.locator('[data-routine-editor] [data-when-card]').waitFor() },
     { name: 'locations', path: '/locations', ready: heading('Locations'), overlays: ['new-location'] },
     { name: 'projects-archived', path: '/projects#archived', ready: (p) => p.getByText('No archived projects').first().waitFor() },
@@ -241,6 +242,18 @@ export const OVERLAYS = {
     await p.getByRole('menuitem', { name: 'Expand all' }).click()
     await aside.locator('[data-guide-line]').first().waitFor()
     return { overlay: aside, kind: 'drawer' }
+  },
+  // The first card's "Of" word on the routine page (the project whose note it reads): a compact list
+  // anchored to the word (a sheet on phones). Opened from the keyboard: the seeded reminder toast can
+  // cover a word lower on the page, and pressing Escape with focus on the toast would dismiss it for
+  // every other combination.
+  async 'routine-word-list'(p) {
+    const trigger = p.locator('[data-step-card]').first().locator('[data-word="Of"]')
+    const reopen = async () => { await trigger.focus(); await p.keyboard.press('Enter') }
+    await reopen()
+    await p.locator('[data-word-choices] [role="option"]').first().waitFor()
+    // The panel holding the list (not the reminder toast, which shows on every screen).
+    return { overlay: p.locator('[data-overlay]').filter({ has: p.locator('[data-word-choices]') }).last(), trigger, reopen, kind: 'popover' }
   },
   async 'sidebar-view-menu'(p) {
     await openSidebar(p)

@@ -15,7 +15,7 @@ import { resetCatalogueCache } from '../../lib/rules/catalogue'
 import type { RoutineDraft } from '../../lib/rules/draft'
 import suite from '../../lib/rules/usecases.json'
 import type { RoutineStep, RuleTrigger } from '../../lib/types'
-import { click, mockFetch, render, type, waitFor } from '../../ui/test-utils'
+import { click, key, mockFetch, render, type, waitFor } from '../../ui/test-utils'
 import { RoutineEditor } from './RoutineEditor'
 
 let n = 0
@@ -103,16 +103,21 @@ async function add(kind: string, search: string, lane?: HTMLElement) {
 }
 
 /** Types a text into a card's Text word. */
+/** Types a text into a card's Text word, edited in place (routines-dynamic-data D13), and keeps it with Enter. */
 async function write(c: HTMLElement, text: string) {
   await click(c.querySelector('[data-word="Text"]')!)
-  await waitFor(() => !!document.querySelector('[role="dialog"] textarea, [data-popover] textarea, textarea'), 'the text field')
-  const area = document.querySelector<HTMLTextAreaElement>('textarea')!
+  await waitFor(() => !!c.querySelector('[data-inline-text] textarea'), 'the text field in the card')
+  const area = c.querySelector<HTMLTextAreaElement>('[data-inline-text] textarea')!
   await act(async () => {
     Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(area, text)
     area.dispatchEvent(new Event('input', { bubbles: true }))
   })
-  await click(button('Done'))
+  await key(area, 'Enter')
+  await waitFor(() => !c.querySelector('[data-inline-text]'), 'the text kept')
 }
+
+/** The options of the open word list, by their label. */
+const options = () => [...document.querySelectorAll<HTMLElement>('[data-word-choices] [role="option"]')]
 
 async function mode(c: HTMLElement, m: string) {
   await click(c.querySelector('[data-word="Which"]')!)
@@ -177,12 +182,12 @@ describe('routine use cases built in the editor (routines-dynamic-data D12)', ()
     const comment = byKind('add_comment')
     expect(comment.getAttribute('aria-label')).toContain('Comment on each task')
     await click(comment.querySelector('[data-word="Task"]')!)
-    await waitFor(() => !!document.querySelector('[data-chip-options]'), 'the chips')
-    // "Picker order": the item first, then the earlier output, then Find tasks…, and a specific task folded last.
-    const chips = [...document.querySelectorAll('[data-chip-options] ul li')].map((x) => x.textContent)
-    expect(chips).toEqual(['each task', 'the tasks', 'the task you run it on'])
-    expect(document.querySelector('[data-specific-task]')!.textContent).toBe('A specific task…')
-    await click(button('Done'))
+    await waitFor(() => options().length > 0, 'the list next to the word')
+    // "Picker order": the item first, then the earlier output, the trigger, Find tasks…, and a specific task last.
+    expect(options().map((o) => o.textContent)).toEqual(['each task', 'the tasks', 'the task you run it on', 'Find tasks…', 'A specific task…'])
+    expect(comment.querySelector('[data-word="Task"]')!.getAttribute('aria-expanded')).toBe('true')
+    await key(document.querySelector<HTMLElement>('[data-word-choices] input')!, 'Escape')
+    await waitFor(() => options().length === 0, 'the list closed')
     await write(byKind('add_comment'), 'Still on it?')
     const steps = await e.saved()
     expect(canonical(steps)).toEqual(canonical(c.steps))
@@ -231,17 +236,16 @@ describe('routine use cases built in the editor (routines-dynamic-data D12)', ()
 
 /** Picks a chip by its name in an open word picker. */
 async function chip(name: string) {
-  await waitFor(() => [...document.querySelectorAll('[data-chip-options] button')].some((b) => b.textContent === name), `the chip ${name}`)
-  await click([...document.querySelectorAll<HTMLButtonElement>('[data-chip-options] button')].find((b) => b.textContent === name)!)
+  await waitFor(() => options().some((o) => o.textContent === name), `the value ${name}`)
+  await click(options().find((o) => o.textContent === name)!)
 }
 
 /** Picks an entity in an open Combobox by typing its name. */
 async function pickIn(name: string) {
-  const input = document.querySelector<HTMLInputElement>('[role="combobox"]')!
-  await act(async () => { input.focus() })
-  await type(input, name)
-  await waitFor(() => [...document.querySelectorAll('[role="option"]')].some((o) => o.textContent?.includes(name)), `the option ${name}`)
-  await click([...document.querySelectorAll<HTMLElement>('[role="option"]')].find((o) => o.textContent?.includes(name))!)
+  await waitFor(() => !!document.querySelector('[data-word-choices] input'), 'the list')
+  await type(document.querySelector<HTMLInputElement>('[data-word-choices] input')!, name)
+  await waitFor(() => options().some((o) => o.textContent?.includes(name)), `the option ${name}`)
+  await click(options().find((o) => o.textContent?.includes(name))!)
 }
 
 describe('routine use cases with projects and the task a routine runs on', () => {
@@ -283,6 +287,53 @@ describe('routine use cases with projects and the task a routine runs on', () =>
     const steps = await e.saved()
     expect(canonical(steps)).toEqual(canonical(c.steps))
     noHandPicked(steps)
+    await e.unmount()
+  })
+})
+
+/** Media queries answer as on a screen of this width (useMediaQuery, useWide). */
+function screenWidth(px: number) {
+  vi.stubGlobal('matchMedia', (q: string) => {
+    const min = /min-width:\s*([\d.]+)(rem|px)/.exec(q)
+    const at = min ? Number(min[1]) * (min[2] === 'rem' ? 16 : 1) : 0
+    return { matches: px >= at, media: q, addEventListener: () => {}, removeEventListener: () => {}, addListener: () => {}, removeListener: () => {}, onchange: null, dispatchEvent: () => false }
+  })
+}
+
+describe('pickers next to the word, never a centred modal (routines-dynamic-data D13)', () => {
+  it('condition rows open inside the card from 1024 px', async () => {
+    screenWidth(1280)
+    const e = await open({ row: 0, name: 'x', trigger: { kind: 'manual' }, steps: [] }, [{ id: 'a', kind: 'find_tasks', in: { condition: { literal: {} } } }])
+    await click(byKind('find_tasks').querySelector('[data-word="Condition"]')!)
+    await waitFor(() => !!byKind('find_tasks').querySelector('[data-word-inspector] [data-rule-condition]'), 'the rows in the card')
+    expect(document.querySelector('[data-overlay="dialog"]')).toBeNull()
+    await click(button('Done', byKind('find_tasks')))
+    await waitFor(() => !byKind('find_tasks').querySelector('[data-word-inspector]'), 'closed')
+    await e.unmount()
+  })
+
+  it('below 1024 px they open as a bottom sheet', async () => {
+    screenWidth(768)
+    const e = await open({ row: 0, name: 'x', trigger: { kind: 'manual' }, steps: [] }, [{ id: 'a', kind: 'find_tasks', in: { condition: { literal: {} } } }])
+    await click(byKind('find_tasks').querySelector('[data-word="Condition"]')!)
+    await waitFor(() => document.querySelector('[data-testid="word-inspector"]')?.getAttribute('data-placement') === 'bottom', 'the bottom sheet')
+    await e.unmount()
+  })
+
+  it('"/" in a text inserts a value; Escape puts the word back unchanged', async () => {
+    const steps: RoutineStep[] = [{ id: 'a', kind: 'split_lines', in: { text: { literal: 'a\nb' } } }, { id: 'b', kind: 'count', in: { list: { ref: 'a' } } }, { id: 'c', kind: 'notify', in: { text: { literal: 'x' } } }]
+    const e = await open({ row: 0, name: 'x', trigger: { kind: 'manual' }, steps: [] }, steps)
+    const card = byKind('notify')
+    await click(card.querySelector('[data-word="Text"]')!)
+    await waitFor(() => !!card.querySelector('[data-inline-text] textarea'), 'the field')
+    const area = card.querySelector<HTMLTextAreaElement>('[data-inline-text] textarea')!
+    await act(async () => { area.setSelectionRange(0, 0) })
+    await key(area, '/')
+    await waitFor(() => options().some((o) => o.textContent === 'the count'), 'the values')
+    await key(document.querySelector<HTMLElement>('[data-word-choices] input')!, 'Escape')
+    await waitFor(() => options().length === 0, 'closed')
+    await key(area, 'Escape')
+    await waitFor(() => !card.querySelector('[data-inline-text]') && card.querySelector('[data-word="Text"]')?.textContent === 'x', 'unchanged')
     await e.unmount()
   })
 })

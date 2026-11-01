@@ -19,7 +19,8 @@ import { Badge, Button, DataChip, Icon, Popover, WordButton } from '../../ui'
 import { ActionMenu, type ActionGroup } from '../menus/ActionMenu'
 import { ConditionFields, TriggerFields } from '../rules/RuleFields'
 import { useMatchCount } from './data'
-import { InputWord, inputDefs, wordValue, type WordContext } from './words'
+import { inputDefs, wordValue, type WordContext } from './words'
+import { InputWord } from './wordPicker'
 
 export interface CardEvents {
   set: (id: string, input: string, arg: RoutineArg | undefined) => void
@@ -223,6 +224,8 @@ export function StepCard({ step, index, total, state, events, depth = 0 }: {
         <p className="min-w-0 flex-1 leading-8 text-body text-default"><StepWords step={step} state={state} events={events} adding={adding} /></p>
         <ActionMenu label={t('Menu for step {name}', { name: stepName(step.kind) })} groups={groups} />
       </div>
+      {/* A word's bigger editor opens here from 1024 px (routines-dynamic-data D13). */}
+      <div data-card-inspector={step.id} />
       {!available && (
         <p className="flex flex-wrap items-center gap-2 text-meta" data-unavailable>
           <Badge hue="orange">{t('Not available: {reason}', { reason: reasonText(cat?.reason) })}</Badge>

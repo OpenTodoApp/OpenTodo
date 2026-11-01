@@ -164,19 +164,36 @@ The routine editor SHALL show a routine as cards stacked in one column, phone fi
 - **THEN** the message is gone
 
 ### Requirement: Pickers and output chips
-Tapping an input word SHALL open its picker: values that flow into the step first, then the controls for literals: the Combobox for projects, sections, labels, views and webhooks (from local data), a text field with an Insert menu of chips for text, date and number fields, the condition rows with their live count, and the filter field for queries. Each card SHALL end with its output. Pickers SHALL offer, as chips of an accepted type (a list counts for a one-task input), the enclosing Repeat's item ("↳ each task", "↳ each line"), then the outputs of earlier visible steps nearest first, then the trigger's output ("the task that triggered", "the matching tasks", "the day", or "the task you run it on" for a manual routine). Outputs of other types SHALL be listed separately with their conversion. A task or tasks input SHALL offer "Find tasks…", which inserts a Find tasks step above and reads it. A one-task input SHALL offer "A specific task…" folded, last. The word of an empty task input SHALL read "choose which tasks".
+Tapping an input word SHALL open its picker next to the word, never as a centred modal:
+- **Choices** (a value that flows into the step, a project, a section, labels, a view, a webhook, a mode such as Pick's, a date, a number): a compact list anchored to the word (a bottom sheet below 640 px), with a search field, arrow keys, Enter to choose, Escape to close, and focus back on the word. The list SHALL offer, as values of an accepted type (a list counts for a one-task input), the enclosing Repeat's item ("each task", "each line") first, then the outputs of earlier visible steps nearest first, then the trigger's output ("the task that triggered", "the matching tasks", "the date", or "the task you run it on" for a manual routine). Outputs of other types SHALL be listed under "Needs conversion" with their conversion. The fixed targets of the input follow. A task or tasks input SHALL offer "Find tasks…", which inserts a Find tasks step above and reads it, and a one-task input "A specific task…", last, which only then lists tasks. A date, a number, a test or a text to match SHALL have its small field under the list.
+- **Text** (a comment, a notification, a note, a format): edited in place in the card, in a field that grows with the text; "/" or "+ value" inserts a value of an earlier step, shown as «its name»; Enter or leaving the field keeps it, Shift+Enter starts a new line, Escape puts the word back unchanged.
+- **Bigger editors** (condition rows, the changes of Change tasks): inside the card under its sentence from 1024 px, a bottom sheet sized to its content below.
+
+A word SHALL announce its picker (`aria-haspopup`, `aria-expanded`), lists SHALL be listboxes with options, and a choice SHALL be announced. Each card SHALL end with its output. The word of an empty task input SHALL read "choose which tasks"; an error on an empty input ("needs a value here") SHALL open the same picker.
 
 #### Scenario: A chip from an earlier step
-- **WHEN** the user taps the text word of a Notify me card after a Count step
-- **THEN** the Insert menu offers "the count" and inserting it shows the chip in the text
+- **WHEN** the user taps the text word of a Notify me card after a Count step and chooses "+ value", then "the count"
+- **THEN** the text is edited in the card, «the count» is inserted where the cursor was, and Enter keeps it
 
 #### Scenario: Only fitting outputs
-- **WHEN** the user taps the "from" word of Create tasks after Find tasks and Split into lines
-- **THEN** "the lines" is offered first, and "the tasks" is listed under "Needs conversion" with "Insert Format text"
+- **WHEN** the user taps the priority word of Create tasks after Find tasks and Count
+- **THEN** a list opens next to the word with "the count" first, "the tasks" under "Needs conversion" with "Insert Count", and a number field under the list
 
 #### Scenario: A list fits a one-task input
 - **WHEN** the user taps the task word of Add a comment after Find tasks
-- **THEN** "the tasks" is offered as a fitting chip, not under "Needs conversion"
+- **THEN** "the tasks" is offered as a fitting value, not under "Needs conversion"
+
+#### Scenario: Keyboard
+- **WHEN** the user focuses the task word of Add a comment, presses Enter, types "pick", presses Enter and then Escape on another word's list
+- **THEN** the list opens with its search focused, "the picked task" is chosen and announced, and Escape closes the other list with focus back on its word
+
+#### Scenario: Condition rows in the card
+- **WHEN** the user taps the condition word of Find tasks on a 1280 px screen, and then on a 768 px screen
+- **THEN** the condition rows open inside the card under its sentence on the wide screen, and as a bottom sheet on the narrower one, never as a centred dialog
+
+#### Scenario: Layout at three widths
+- **WHEN** the layout check opens the routine page at 360, 768 and 1280 px and opens the Project word of Create tasks
+- **THEN** the list stays inside the viewport, closes with Escape and a tap outside, and the page has no sideways scroll
 
 ### Requirement: Type errors with fixes
 The editor SHALL type-check the routine on every change with the shared checker and show each error on its card, naming the input and both types, with a one-tap fix where one exists. The fixes SHALL be: insert Format text, Join, Count or Split into lines; wrap in Repeat for each when two lists reach one step; use the nearest flowing value for an empty input or one whose step was removed; insert Find tasks for a task input with nothing flowing; choose another value otherwise. A fix SHALL never insert a task chosen by hand or a Get a specific task step. Applying a fix SHALL be one undoable edit. A routine with a type error SHALL not be saved until it is fixed.

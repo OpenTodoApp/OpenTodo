@@ -515,7 +515,7 @@ The Calendar (Day, Week, Month and Plan together) and Upcoming SHALL each offer 
 - **THEN** the term is the notes keyword, and the field is reachable only through its quoted name
 
 ### Requirement: Evaluation on the server for routines
-The server SHALL evaluate a filter query, or a saved view's query, for a routine's Find tasks step with the same results as the device for the same data, time zone and day start, pinned by evaluation vectors shared by the Go and TypeScript evaluators. Terms that read user-written text (search words, `notes: text`) SHALL make the step a content step, which the server does not run for an encrypted account. An invalid query SHALL fail the step with the parser's error.
+The server SHALL evaluate a filter query, or a saved view's query, for a routine's Find tasks step with the same results as the device for the same data, time zone and day start, pinned by evaluation vectors shared by the Go and TypeScript evaluators. Terms that read user-written text (search words, `notes: text`) SHALL make the step a content step, which the server does not run for an encrypted account. An invalid query SHALL fail the step with the parser's error. Find tasks SHALL apply the rule of open, completed and deleted tasks to the query: open tasks only unless the query names `completed` or `open` or compares the completion date, deleted tasks never.
 
 #### Scenario: Same answer on both sides
 - **WHEN** the shared evaluation vectors are run by the Go and the TypeScript evaluators
@@ -528,3 +528,7 @@ The server SHALL evaluate a filter query, or a saved view's query, for a routine
 #### Scenario: Query invalid after an edit
 - **WHEN** the saved view's query was changed to `due before:` and the routine runs
 - **THEN** the run fails at Find tasks with the parser's error and nothing is written
+
+#### Scenario: Completed tasks
+- **WHEN** a routine's Find tasks step uses the query `completed = last week` and the user completed four tasks last week, one of them since deleted
+- **THEN** the step's output is the three live completed tasks, the same list the device shows for the query
