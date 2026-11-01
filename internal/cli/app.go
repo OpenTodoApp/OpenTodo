@@ -117,7 +117,9 @@ func (a *App) MainContext(ctx context.Context, args []string) int {
 	if g.json {
 		// The envelope stays on stdout (the documented contract) and one human
 		// line goes to stderr for harnesses that only show stderr (design D1).
-		fmt.Fprintln(a.Stdout, string(ee.Envelope()))
+		if !ee.printed {
+			fmt.Fprintln(a.Stdout, string(ee.Envelope()))
+		}
 		line, _, _ := strings.Cut(ee.msg, "\n")
 		fmt.Fprintln(a.Stderr, "ot: "+line)
 	} else {
@@ -181,6 +183,7 @@ func init() {
 		{"vault", "Markdown vault: a folder of project files in two-way sync", "ot vault init <dir> [--adopt]\not vault sync [<dir>] [--take-over]\not vault status [<dir>]\not vault watch [<dir>] [--take-over]\not vault tasknotes <folder> [--vault <dir>] [--inside] | --off", cmdVault},
 		{"issues", "issue connections: list, sync", "ot issues list\not issues sync [<id>]", cmdIssues},
 		{"rules", "automation rules: list, enable, disable, runs", "ot rules list\not rules enable <id>\not rules disable <id>\not rules runs <id>", cmdRules},
+		{"routine", "routines: list, show, runs, run, enable, disable, create, edit, rm, undo (also ot routines)", routineUsage, cmdRoutine},
 		{"frames", "calendar frames: list, add, rm", "ot frames\not frames add <title> [--days mon-fri] [--from HH:MM] [--to HH:MM] [--color #rrggbb] [--source label:<id>]\not frames rm <id> [--yes]", cmdFrames},
 		{"slots", "calendar slots: list, add, put, rm", "ot slots [--from <day>] [--to <day>]\not slots add <title> [--date <day>] [--at HH:MM] [--for 45m] [--color #rrggbb]\not slots put <slot> <task>…\not slots rm <id> [--yes]", cmdSlots},
 		{"time", "track time: start, stop, status, log, list, export", "ot time start <ref> [--note <text>]\not time stop\not time status\not time log <ref> <duration> [--on <day>] [--note <text>]\not time log <ref> --from HH:MM --to HH:MM [--on <day>] [--note <text>]\not time list [--task <ref>] [--from <day>] [--to <day>] [--running] [--limit <n>]\not time export [--from <day>] [--to <day>] [-o <file>]", cmdTime},
@@ -196,6 +199,9 @@ func init() {
 }
 
 func findCommand(name string) *command {
+	if name == "routines" {
+		name = "routine" // `ot routines` is `ot routine` (routines-engine D16)
+	}
 	for i := range commands {
 		if commands[i].name == name {
 			return &commands[i]

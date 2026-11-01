@@ -29,6 +29,12 @@ var notAStep = map[string]string{
 	"reorder_sections":    "order is a person's arrangement, not an automation",
 	"update_sections":     "as reorder_sections",
 	"update_labels":       "labels are created by Create labels; renaming is the person's",
+	// No routine step creates, edits, enables or runs a routine (design D11).
+	"create_routine":      "a routine never makes routines",
+	"update_routine":      "a routine never edits routines",
+	"set_routine_enabled": "a routine never switches routines",
+	"run_routine":         "a routine never runs routines",
+	"trash_routine":       "a routine never deletes routines",
 }
 
 func TestEveryToolStepNamesARegistryTool(t *testing.T) {

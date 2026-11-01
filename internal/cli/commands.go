@@ -270,6 +270,24 @@ var cmdSpecs = []cmdSpec{
 	{Name: "rules disable", Summary: "turn an automation rule off", Args: []argSpec{{Name: "id", Required: true}},
 		Writes: true, DryRun: true, Output: ref("rule")},
 	{Name: "rules runs", Summary: "print an automation rule's run log, newest first", Args: []argSpec{{Name: "id", Required: true}}, Output: arrayOf("rule_run")},
+	{Name: "routine list", Aliases: []string{"routine ls", "routines list", "routines ls"}, Summary: "list the account's routines with their trigger and number of steps", Output: arrayOf("rule")},
+	{Name: "routine show", Aliases: []string{"routines show"}, Summary: "print a routine: its trigger, condition, steps as numbered sentences and steps that are not available", Args: []argSpec{{Name: "ref", Required: true}}, Output: ref("rule")},
+	{Name: "routine runs", Aliases: []string{"routines runs"}, Summary: "print a routine's runs, newest first", Args: []argSpec{{Name: "ref", Required: true}},
+		Flags: []flagSpec{{Name: "failed", Type: "bool", Description: "only failed runs"}, {Name: "limit", Type: "int", Default: 50, Description: "print at most n runs (1 to 100)"}}, Output: arrayOf("routine_run")},
+	{Name: "routine run", Aliases: []string{"routines run"}, Summary: "run a routine now, or test it (--test plans every step and writes nothing); exit 6 when the run failed",
+		Args: []argSpec{{Name: "ref", Required: true}}, Flags: []flagSpec{{Name: "task", Type: "string", Description: "the trigger's task (id) for a routine whose steps read it"},
+			{Name: "test", Type: "bool", Description: "plan every step and log a test run; nothing is written"}}, Writes: true, DryRun: true, Output: ref("routine_result")},
+	{Name: "routine enable", Aliases: []string{"routines enable"}, Summary: "turn a routine on (clears a pause for running too often)", Args: []argSpec{{Name: "ref", Required: true}},
+		Writes: true, DryRun: true, Output: ref("rule")},
+	{Name: "routine disable", Aliases: []string{"routines disable"}, Summary: "turn a routine off", Args: []argSpec{{Name: "ref", Required: true}}, Writes: true, DryRun: true, Output: ref("rule")},
+	{Name: "routine create", Aliases: []string{"routine add", "routines create"}, Summary: "create a routine from a JSON or YAML file; projects, sections, labels, views and webhooks may be given by name",
+		Flags: []flagSpec{{Name: "file", Type: "string", Description: "the routine file: name, trigger, condition, steps (or actions), enabled"}}, Writes: true, DryRun: true, Output: ref("rule")},
+	{Name: "routine edit", Aliases: []string{"routines edit"}, Summary: "replace the parts of a routine the file gives", Args: []argSpec{{Name: "ref", Required: true}},
+		Flags: []flagSpec{{Name: "file", Type: "string", Description: "the routine file"}}, Writes: true, DryRun: true, Output: ref("rule")},
+	{Name: "routine rm", Aliases: []string{"routine delete", "routines rm"}, Summary: "delete a routine (soft delete)", Args: []argSpec{{Name: "ref", Required: true}}, Flags: []flagSpec{yesFlag},
+		Writes: true, Destructive: true, DryRun: true, Output: ref("rule")},
+	{Name: "routine undo", Aliases: []string{"routines undo"}, Summary: "take a routine run back: values it changed go back unless changed since, what it created goes to the Trash",
+		Args: []argSpec{{Name: "ref", Required: true}, {Name: "run", Required: true}}, Writes: true, DryRun: true, Output: ref("routine_undo")},
 	{Name: "frames list", Aliases: []string{"frames ls"}, Summary: "list the account's calendar frames (recurring background windows on the Day and Week grid)", Output: arrayOf("frame")},
 	{Name: "frames add", Aliases: []string{"frames create"}, Summary: "create a calendar frame and print its id", Args: []argSpec{{Name: "title", Required: true, Repeatable: true}},
 		Flags: []flagSpec{
@@ -331,6 +349,7 @@ var exitCodes = []map[string]any{
 	{"code": ExitAuth, "name": "auth", "meaning": "authentication or configuration (no profile, revoked token)", "agent": "ask the user to sign in"},
 	{"code": ExitUnreachable, "name": "unreachable", "meaning": "the server could not be reached", "agent": "retry later"},
 	{"code": ExitNotPermitted, "name": "not_permitted", "meaning": "refused by scope, role, a switch, encryption or read-only mode", "agent": "do not retry; tell the user what to change"},
+	{"code": ExitRunFailed, "name": "run_failed", "meaning": "`ot routine run` ran the routine and the run failed (the run record says at which step)", "agent": "read the failed step's error; fix the routine or what it needs"},
 }
 
 // errorCodes lists the envelope codes ot produces or passes through.

@@ -1,18 +1,98 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "rule",
-  "description": "An automation rule exactly as the REST API returns it (OpenSpec automation-rules). The name is ciphertext for an encrypted account.",
+  "description": "An automation rule, or routine, exactly as the REST API returns it (OpenSpec automation-rules, routines-engine). The name is ciphertext for an encrypted account. A routine of several steps has steps and actions null.",
   "type": "object",
-  "required": ["id", "name", "enabled", "trigger", "actions"],
+  "required": [
+    "id",
+    "name",
+    "enabled",
+    "trigger"
+  ],
   "properties": {
-    "id": {"type": "string"},
-    "name": {"type": "string"},
-    "enabled": {"type": "boolean"},
-    "trigger": {"type": "object", "required": ["kind"], "properties": {"kind": {"type": "string"}}},
-    "condition": {"type": ["object", "null"]},
-    "actions": {"type": "object"},
-    "position": {"type": "number"},
-    "created_at": {"type": "number"},
-    "deleted_at": {"type": ["number", "null"]}
+    "id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "trigger": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string"
+        }
+      }
+    },
+    "condition": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "actions": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "steps": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "description": "the routine's steps ({id, kind, in, then?, otherwise?, do?}); null for a rule of one Change tasks step",
+      "items": {
+        "type": "object"
+      }
+    },
+    "paused_reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "warnings": {
+      "type": "array",
+      "description": "steps that are not available now",
+      "items": {
+        "type": "object",
+        "properties": {
+          "step": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "setting": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "position": {
+      "type": "number"
+    },
+    "created_at": {
+      "type": "number"
+    },
+    "deleted_at": {
+      "type": [
+        "number",
+        "null"
+      ]
+    }
   }
 }
