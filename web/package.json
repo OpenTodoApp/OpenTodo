@@ -33,7 +33,7 @@
     "prosemirror-state": "1.4.4",
     "prosemirror-tables": "1.8.5",
     "prosemirror-transform": "1.12.4",
-    "prosemirror-view": "1.42.7",
+    "prosemirror-view": "1.42.8",
     "qrcode-generator": "2.0.4",
     "react": "19.3.1",
     "react-dom": "19.3.1",
