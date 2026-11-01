@@ -13,7 +13,7 @@
 
 ## 3. A tap in Select mode ticks the row
 
-- [ ] 3.1 Add `selectMode` to `TaskRow` and treat it as Shift/Ctrl/⌘ in both click handlers; pass it through `RowContext` from `TaskListView`; verify the Select-mode test in `src/app/rowSwipe.test.tsx`
+- [x] 3.1 Add `selectMode` to `TaskRow` and treat it as Shift/Ctrl/⌘ in both click handlers; pass it through `RowContext` from `TaskListView`; verify the Select-mode test in `src/app/rowSwipe.test.tsx`
 
 ## 4. The quick add is not pinned on a landscape phone
 
