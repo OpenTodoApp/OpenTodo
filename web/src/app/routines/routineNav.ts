@@ -9,6 +9,7 @@ import type { RuleDraft } from './ruleDraft'
 
 let pending: RuleDraft | null = null
 let pendingRoutine: RoutineDraft | null = null
+let pendingDescribed: DescribedDraft | null = null
 let returnTo: string | null = null
 
 /** Open the editor page on a new routine made from a view's or a board column's rule. */
@@ -21,6 +22,24 @@ export function openRoutineDraft(draft: RuleDraft): void {
 export function openStarterDraft(draft: RoutineDraft): void {
   pendingRoutine = draft
   navigate({ view: 'rules', create: true })
+}
+
+/** What Describe it says about a draft it hands over (routines-describe-it D3). */
+export interface DescribedDraft {
+  /** The model's sentence for the person ("Email is not available, so…"), or ''. */
+  note: string
+}
+
+/** Open the editor page on a routine the assistant drafted: unsaved, with the "Drafted by AI" banner. */
+export function openDescribedDraft(draft: RoutineDraft, about: DescribedDraft): void {
+  pendingRoutine = draft
+  pendingDescribed = about
+  navigate({ view: 'rules', create: true })
+}
+
+/** Describe it's note about the routine handed over, if it came from Describe it. */
+export function pendingDescription(): DescribedDraft | null {
+  return pendingDescribed
 }
 
 /** The starter's routine handed over, if any (read without clearing). */
@@ -59,6 +78,7 @@ export function historyRequested(): boolean {
 export function clearHandover(): void {
   pending = null
   pendingRoutine = null
+  pendingDescribed = null
   historyFirst = false
   returnTo = null
 }
