@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/OpenTodoApp/opentodo/internal/textutil"
 )
 
 // Message is one unseen message in the polled mailbox.
@@ -422,7 +424,7 @@ func (c *imapConn) run(args ...any) ([]resp, error) {
 			if strings.HasPrefix(strings.ToUpper(status), "OK") {
 				return untagged, nil
 			}
-			return untagged, fmt.Errorf("imap %s: %s", verb, truncateRunes(status, 200))
+			return untagged, fmt.Errorf("imap %s: %s", verb, textutil.TruncateRunes(status, 200, "…"))
 		}
 		if strings.HasPrefix(r.line, "* BYE") && verb != "LOGOUT" {
 			return untagged, fmt.Errorf("imap %s: server closed the connection", verb)
