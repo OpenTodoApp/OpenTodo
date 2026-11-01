@@ -34,12 +34,12 @@
 ## 6. Native shells
 
 - [x] 6.1 Add the `system-bars` capability and `setSystemBars` to `web/src/lib/shell.ts`, called only when listed, and its payload to the shared bridge fixtures; verify `shell.test.ts` and the fixture test
-- [ ] 6.2 Android: implement `system-bars` in `mobile/android` (status and navigation bar colour, icon appearance, the colour remembered and applied at launch, a malformed payload ignored); verify the unit tests over the shared fixture with `make android`
-- [ ] 6.3 iOS: implement `system-bars` in `mobile/ios` (status bar style, web view background and under-page colour, remembered at launch); verify the iOS unit tests over the shared fixture
+- [x] 6.2 Android: implement `system-bars` in `mobile/android` (status and navigation bar colour, icon appearance, the colour remembered and applied at launch, a malformed payload ignored); verify the unit tests over the shared fixture with `make android`
+- [x] 6.3 iOS: implement `system-bars` in `mobile/ios` (status bar style, web view background and under-page colour, remembered at launch); verify the iOS unit tests over the shared fixture
 
 ## 7. Settings
 
-- [ ] 7.1 Build the theme card and theme list primitives in `web/src/ui` (radio group, swatch strip, credit line, horizontal row below 40 rem) with stories in light and dark at 375 and 1280 px; verify `make ui-check`
+- [x] 7.1 Build the theme card and theme list primitives in `web/src/ui` (radio group, swatch strip, credit line, horizontal row below 40 rem) with stories in light and dark at 375 and 1280 px; verify `make ui-check`
 - [x] 7.2 Add the Theme row to `web/src/app/AppearanceSection.tsx` (one list for a fixed mode, Light and Dark lists under `system`, one op per choice, the accent tiles' "From the theme" state, announcements); verify `appearance.test.tsx` cases for the two lists, the single op, keyboard operation and the offline write
 - [x] 7.3 Add the strings (Theme, Light, Dark, From the theme, Made with a newer version of OpenTodo, Theme is invalid, by {author}, OpenTodo Light, OpenTodo Dark) to the six catalogs; verify `node scripts/i18n-check.mjs`
 
@@ -47,4 +47,4 @@
 
 - [x] 8.1 Write `docs/themes.md` (the format, every key and token, seeds and derivation, the contrast gate, that themes are not encrypted, why there is no custom CSS) and link it from the appearance docs and `docs/design-system.md`; verify `make docs` and the docs check
 - [x] 8.2 Report the bundle impact with `node scripts/bundle-budget.mjs` (first-load engine, lazy derivation chunk, boot script growth) and keep it within the budget or raise it on purpose with the reason
-- [ ] 8.3 Run `make check` before marking the change done; add a CHANGELOG.md entry under Unreleased at archive time
+- [x] 8.3 Run `make check` before marking the change done; add a CHANGELOG.md entry under Unreleased at archive time
