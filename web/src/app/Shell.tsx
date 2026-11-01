@@ -40,6 +40,7 @@ import { TaskPage } from './TaskPage'
 import { watchViewerZone } from '../lib/dates'
 import { UndoToast } from './bulk/UndoToast'
 import { BulkConfirmHost } from './bulk/BulkConfirmHost'
+import { ToastActionHost } from './ToastActionHost'
 import { DailyCheckToast } from './method/DailyCheckToast'
 import { PanelBoundary } from './PanelBoundary'
 import { TemplateDialogHost } from './TemplateDialogs'
@@ -346,6 +347,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       <ReminderToasts />
       <BreakReminder />
       <UndoToast />
+      <ToastActionHost />
       <BulkConfirmHost />
       <DailyCheckToast />
       <TemplateDialogHost />

@@ -5,10 +5,21 @@
 // never are: starting or resuming work starts an entry, pausing, finishing,
 // taking a break, completing or leaving stops it.
 import { focusLogger } from './index'
+import { actionErrorMessage } from '../../app/actionError'
+import { showActionToast } from '../../app/bulk/toastStore'
+import { t } from '../i18n'
 import type { FocusPrefs } from './prefs'
 import { readFocus, transitionFocus, writeFocus } from './state'
 import { complete, continuousWork, finish, idleState, inRun, isDue, isRunning, pause, plannedEnd, resume, start, stopWork, takeBreak, type FocusState } from './timer'
 import type { EntryFocus } from '../timeEntries'
+
+/** A failed start or stop is never silent: the message lands in the action toast, so the user knows the minutes were not logged. */
+function reportEntryFailure(what: 'start' | 'stop', err: unknown): void {
+  const detail = actionErrorMessage(err)
+  showActionToast(what === 'start'
+    ? t('The time entry could not be started; this session is not being tracked. ({detail})', { detail })
+    : t('The time entry could not be stopped; the minutes may not be logged correctly. ({detail})', { detail }))
+}
 
 async function stopEntry(entryId: string | null, at: number): Promise<void> {
   if (!entryId) return
@@ -16,6 +27,7 @@ async function stopEntry(entryId: string | null, at: number): Promise<void> {
     await focusLogger().stop(entryId, at)
   } catch (err) {
     console.warn('focus: stopping the time entry failed', err)
+    reportEntryFailure('stop', err)
   }
 }
 
@@ -41,6 +53,7 @@ async function attachEntry(s: FocusState, at: number): Promise<void> {
     id = await focusLogger().start(s.taskId, at, focus)
   } catch (err) {
     console.warn('focus: starting the time entry failed', err)
+    reportEntryFailure('start', err)
   }
   if (!id) return
   const entry = id
