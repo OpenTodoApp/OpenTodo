@@ -30,7 +30,8 @@ export async function undoToast(undoId: string): Promise<void> {
  * The toast's timer: `ttl` ms of being shown, not counting the time it is held (hover or
  * focus). A new message in the same toast (the result after Undo) starts it again.
  */
-function useToastTimer(key: number | undefined, message: string | undefined, ttl: number, held: boolean) {
+/** The toast's timer: ttl ms of being shown, not counting hover or focus. Also the action toast's. */
+export function useToastTimer(key: number | undefined, message: string | undefined, ttl: number, held: boolean) {
   const left = useRef(ttl)
   useEffect(() => { left.current = ttl }, [key, message, ttl])
   useEffect(() => {

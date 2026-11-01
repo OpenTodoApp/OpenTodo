@@ -18,9 +18,35 @@ export interface BulkToast {
   second?: { label: string; run: () => void }
 }
 
+/** A background failure or notice (the focus engine's failed time entry): no undo, one message, the same window. */
+export interface ActionToast {
+  key: number
+  label: string
+  tone: 'danger' | 'info'
+}
+
 const store = createStore<BulkToast | null>('bulkToast', null)
 let seq = 0
 resettable('bulkToastSeq', () => { seq = 0 })
+
+// The action toast lives beside the undo offer in the same module so its timing and
+// reset stay in one place; only one of the two renders at a time (the hosts check).
+const actions = createStore<ActionToast | null>('actionToast', null)
+let actionSeq = 0
+resettable('actionToastSeq', () => { actionSeq = 0 })
+
+/** Show (or replace) the background action's message. */
+export function showActionToast(label: string, tone: ActionToast['tone'] = 'danger'): void {
+  actions.set({ key: ++actionSeq, label, tone })
+}
+
+/** The background action's message now shown, if any. */
+export const actionToast = actions.get
+export const useActionToast = actions.use
+export function hideActionToast(key?: number): void {
+  if (key !== undefined && actions.get()?.key !== key) return
+  actions.set(null)
+}
 
 /** Show (or replace) the toast for a bulk action. */
 export function showBulkToast(label: string, undoId: string | null, opts: { ttl?: number; action?: BulkToast['action']; second?: BulkToast['second'] } = {}): void {
