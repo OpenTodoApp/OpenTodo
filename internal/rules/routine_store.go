@@ -201,9 +201,9 @@ const (
 	EmailsPerAccount = 20
 )
 
-// takeEmail counts one email of a routine for the UTC day, or reports the
+// TakeEmail counts one email of a routine for the UTC day, or reports the
 // limit it would pass.
-func (s *Store) takeEmail(ctx context.Context, ruleID, userID, day string) (bool, error) {
+func (s *Store) TakeEmail(ctx context.Context, ruleID, userID, day string) (bool, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return false, err
