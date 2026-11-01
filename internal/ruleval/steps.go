@@ -66,6 +66,8 @@ const (
 	GroupLogic    = "logic"
 	GroupTime     = "time"
 	GroupComms    = "communication"
+	// GroupAI holds Ask AI and Summarise (routines-ai-step D1).
+	GroupAI = "ai"
 )
 
 // Needs of a step beyond automations.enabled (design D15).
@@ -75,6 +77,9 @@ const (
 	NeedsTimeTracking = "time_tracking"
 	NeedsFocus        = "focus"
 	NeedsShared       = "shared"
+	// NeedsAI: the assistant usable by the user with consent for routines
+	// (routines-ai-step D1, D10).
+	NeedsAI = "ai"
 )
 
 // StepKind is one row of the step catalogue (design D4).
@@ -100,6 +105,8 @@ type StepKind struct {
 var (
 	anyList = []Type{TTasks, TLines}
 	textIn  = []Type{TText}
+	// aiContext is what an Ask AI step may read (routines-ai-step D1).
+	aiContext = []Type{TText, TLines, TTasks, TProject}
 )
 
 func in(name string, accepts []Type, lit Lit) Input {
@@ -130,6 +137,9 @@ const (
 	MaxIterations  = 500
 	MaxFocusTasks  = 3
 	MaxLiteralText = 20000
+	// AI steps (routines-ai-step D1).
+	MaxAISteps       = 3
+	MaxAIInstruction = 2000
 )
 
 // Steps is the step catalogue, grouped and ordered as the editor shows it.
@@ -207,8 +217,24 @@ var Steps = []StepKind{
 		Inputs: []Input{req(in("webhook_id", nil, LitID)), content(bound(in("text", textIn, LitText), MaxLiteralText)), in("tasks", []Type{TTasks}, LitNone)}},
 	{Kind: "email_me", Group: GroupComms, Out: TNone, Content: true, Needs: NeedsEmail,
 		Inputs: []Input{req(content(bound(in("subject", textIn, LitText), MaxSubject))), req(content(bound(in("text", textIn, LitText), MaxEmailText)))}},
+	// AI (routines-ai-step D1): one provider call without tools; the answer is text.
+	{Kind: "ask_ai", Group: GroupAI, Out: TText, Content: true, Needs: NeedsAI,
+		Inputs: []Input{req(content(bound(in("instruction", nil, LitText), MaxAIInstruction))),
+			in("context", aiContext, LitNone), in("context2", aiContext, LitNone), in("context3", aiContext, LitNone), enum("answer", "text", "lines")}},
+	{Kind: "summarise", Group: GroupAI, Out: TText, Content: true, Needs: NeedsAI,
+		Inputs: []Input{req(in("text", []Type{TText, TLines, TTasks}, LitNone)), enum("length", "short", "medium")}},
 	{Kind: "email_members", Group: GroupComms, Out: TNone, Content: true, Needs: NeedsShared,
 		Inputs: []Input{req(content(bound(in("subject", textIn, LitText), MaxSubject))), req(content(bound(in("text", textIn, LitText), MaxEmailText)))}},
+}
+
+// IsAI reports an AI step kind (routines-ai-step D1).
+func IsAI(kind string) bool { return kind == "ask_ai" || kind == "summarise" }
+
+// HasAI reports whether a routine holds an AI step.
+func HasAI(steps []Step) bool {
+	found := false
+	Walk(steps, func(s *Step) { found = found || IsAI(s.Kind) })
+	return found
 }
 
 // StepKindOf returns a kind's row.

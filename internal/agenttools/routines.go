@@ -329,9 +329,22 @@ func checkError(err error) error {
 	return &ToolError{Code: "invalid_argument", Message: err.Error()}
 }
 
+// refuseAIApply refuses "Apply without asking" on every agent path
+// (routines-ai-step D6): only the person turns it on, in the app. A routine an
+// agent creates or edits runs its AI steps as proposals.
+func refuseAIApply(a args) error {
+	if a.present("ai_apply") {
+		return toolErr("forbidden_for_agents", "an AI assistant cannot turn on Apply without asking for a routine: its AI results wait as proposals until the person turns it on in the app")
+	}
+	return nil
+}
+
 func (r *Registry) planCreateRoutine(ctx context.Context, c Caller, a args, _ ChangeSet) (Plan, error) {
 	if r.routines == nil {
 		return Plan{}, routinesOff()
+	}
+	if err := refuseAIApply(a); err != nil {
+		return Plan{}, err
 	}
 	if err := a.only("", "name", "trigger", "condition", "steps", "actions", "enabled"); err != nil {
 		return Plan{}, err
@@ -364,6 +377,9 @@ func (r *Registry) planCreateRoutine(ctx context.Context, c Caller, a args, _ Ch
 func (r *Registry) planUpdateRoutine(ctx context.Context, c Caller, a args, _ ChangeSet) (Plan, error) {
 	if r.routines == nil {
 		return Plan{}, routinesOff()
+	}
+	if err := refuseAIApply(a); err != nil {
+		return Plan{}, err
 	}
 	if err := a.only("", "routine", "name", "trigger", "condition", "steps", "actions"); err != nil {
 		return Plan{}, err

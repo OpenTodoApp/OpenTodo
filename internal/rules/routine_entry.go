@@ -17,7 +17,7 @@ import (
 // readRule decodes a rule row; ok is false for a rule this server cannot read
 // (made by a newer version).
 func readRule(row opsync.Entity) (rule, bool) {
-	r := rule{ID: str(row, "id"), Name: str(row, "name"), Enabled: boolOf(row, "enabled")}
+	r := rule{ID: str(row, "id"), Name: str(row, "name"), Enabled: boolOf(row, "enabled"), AIApply: str(row, "ai_apply"), AIBudget: AIBudget(num(row, "ai_budget"))}
 	var err error
 	if r.Trigger, err = ruleval.ParseTrigger(row["trigger"]); err != nil {
 		return r, false
@@ -148,7 +148,7 @@ func (e *Engine) RunNow(ctx context.Context, uid string, req RunRequest) (Result
 		source = SourceTest
 	}
 	return e.runRoutine(ctx, w, r, runOpts{key: key, runID: req.RunID, source: source, depth: 2, test: req.Test,
-		trigger: e.triggerValue(ctx, w, r, req.TaskID), taskID: req.TaskID})
+		trigger: e.triggerValue(ctx, w, r, req.TaskID), taskID: req.TaskID, callAI: req.CallAI})
 }
 
 // Draft is an unsaved routine (POST /api/v1/rules/test).
@@ -158,6 +158,9 @@ type Draft struct {
 	Actions   json.RawMessage `json:"actions"`
 	Steps     json.RawMessage `json:"steps"`
 	TaskID    string          `json:"task_id"`
+	// CallAI runs the AI steps for real (Test after the estimate,
+	// routines-ai-step D11); the live preview never does.
+	CallAI bool `json:"call_ai"`
 }
 
 // TestRule plans a saved rule's steps on a task (when its steps read one) and
@@ -169,21 +172,21 @@ func (e *Engine) TestRule(ctx context.Context, uid, ruleID, taskID string) (Resu
 	}
 	row, _ := e.Sync.Get(ctx, uid, "rule", r.ID)
 	r.asSteps(row["actions"])
-	return e.testRule(ctx, uid, r, taskID)
+	return e.testRule(ctx, uid, r, taskID, false)
 }
 
 // TestDraft plans an unsaved routine and writes nothing.
 func (e *Engine) TestDraft(ctx context.Context, uid string, d Draft) (Result, error) {
-	row := opsync.Entity{"id": raw("draft"), "name": raw(""), "trigger": d.Trigger, "condition": orNull(d.Condition), "actions": orNull(d.Actions), "steps": orNull(d.Steps)}
+	row := opsync.Entity{"id": raw(draftID), "name": raw(""), "trigger": d.Trigger, "condition": orNull(d.Condition), "actions": orNull(d.Actions), "steps": orNull(d.Steps)}
 	r, ok := readRule(row)
 	if !ok {
 		return Result{}, ErrInvalidDraft
 	}
 	r.asSteps(d.Actions)
-	return e.testRule(ctx, uid, &r, d.TaskID)
+	return e.testRule(ctx, uid, &r, d.TaskID, d.CallAI)
 }
 
-func (e *Engine) testRule(ctx context.Context, uid string, r *rule, taskID string) (Result, error) {
+func (e *Engine) testRule(ctx context.Context, uid string, r *rule, taskID string, callAI bool) (Result, error) {
 	w, err := e.load(ctx, uid)
 	if err != nil {
 		return Result{}, err
@@ -196,7 +199,7 @@ func (e *Engine) testRule(ctx context.Context, uid string, r *rule, taskID strin
 		return Result{}, ErrTaskRequired
 	}
 	return e.runRoutine(ctx, w, r, runOpts{key: "test", runID: "test", source: SourceTest, depth: 2, dry: true,
-		trigger: e.triggerValue(ctx, w, r, taskID), taskID: taskID})
+		trigger: e.triggerValue(ctx, w, r, taskID), taskID: taskID, callAI: callAI})
 }
 
 func orNull(v json.RawMessage) json.RawMessage {

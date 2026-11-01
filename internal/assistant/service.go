@@ -29,6 +29,9 @@ type Service struct {
 	// Backoff between retries of the Chat Completions adapter (tests: 1 ms).
 	Backoff time.Duration
 
+	// stub replaces every provider (package tests only).
+	stub Provider
+
 	mu       sync.Mutex
 	running  map[string]bool
 	inFlight int
@@ -85,6 +88,9 @@ var ErrNoKey = errors.New("no_key")
 func (s *Service) ProviderFor(r Route, set Settings) (Provider, error) {
 	if r.Member && !IsMemberProvider(r.Provider) {
 		return nil, errors.New("members cannot use this provider")
+	}
+	if s.stub != nil {
+		return s.stub, nil
 	}
 	return s.provider(r.Provider, r.base, r.key, set.AllowPrivateEndpoint)
 }

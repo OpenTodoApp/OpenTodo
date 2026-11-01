@@ -67,6 +67,8 @@ const REASON: Record<string, string> = {
   time_tracking_off: msg('time tracking is turned off'),
   not_shared: msg('the routine does not belong to a shared project'),
   demo: msg('not offered on a demo instance'),
+  ai_not_configured: msg('the assistant is not set up for you on this server'),
+  ai_no_consent: msg('accept the assistant’s updated terms for routines'),
 }
 
 const HINT: Record<string, string> = {
@@ -77,6 +79,8 @@ const HINT: Record<string, string> = {
   energy_off: msg('Turn on Energy levels to use this'),
   focus_off: msg('Turn on today’s focus to use this'),
   time_tracking_off: msg('Turn on time tracking to use this'),
+  ai_not_configured: msg('Set up the assistant to use this'),
+  ai_no_consent: msg('Accept the assistant’s updated terms to use this'),
 }
 
 /** Why a step is not available, as a sentence. */

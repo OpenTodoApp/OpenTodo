@@ -638,7 +638,16 @@ var Schema = map[string]map[string]Field{
 		// Change tasks step over the trigger's output with its actions; a list is
 		// the routine, and actions is then null or ignored. Not a content field:
 		// an encrypted account's text literals inside are ciphertext envelopes.
-		"steps":      {Kind: kRoutineSteps, Default: `null`},
+		"steps": {Kind: kRoutineSteps, Default: `null`},
+		// "Apply without asking" for a routine with AI steps (routines-ai-step
+		// D4): "auto" turns it on, anything else reads as off (proposals). Set
+		// only by the person in the app: agent paths refuse it, and the server
+		// ignores a value an agent or assistant device wrote (D6). The server
+		// compares its winning op's time with its own fallback state (D5).
+		"ai_apply": {Kind: kString, Default: `""`},
+		// The routine's AI tokens per UTC day (routines-ai-step D11): 0 reads as
+		// 20,000; the routes accept 1,000 to 200,000.
+		"ai_budget":  {Kind: kNumber, Default: `0`},
 		"position":   {Kind: kNumber, Default: `0`},
 		"created_at": {Kind: kNumber, Default: `0`},
 		"deleted_at": {Kind: kNullableNumber, Default: `null`},

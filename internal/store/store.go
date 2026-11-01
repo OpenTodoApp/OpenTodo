@@ -209,6 +209,9 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 	if err := migrateRoutineRuns(ctx, db); err != nil {
 		return err
 	}
+	if err := migrateRoutinesAI(ctx, db); err != nil {
+		return err
+	}
 	return migrateEmailVerified(ctx, db)
 }
 

@@ -59,8 +59,10 @@ const DefaultMonthlyCap = 500_000
 
 // DisclosureVersion is bumped whenever the consent text changes materially.
 // Consents from MinDisclosureVersion on still count: version 2 added "photos
-// you add" (voice-ramble D6) without asking everyone to consent again.
-const DisclosureVersion = 2
+// you add" (voice-ramble D6) without asking everyone to consent again; version
+// 3 added the paragraph on routines (routines-ai-step D10), which AI steps
+// need (RoutineDisclosureVersion) while chats keep their consent.
+const DisclosureVersion = 3
 
 // MinDisclosureVersion is the oldest disclosure a consent may name and still count.
 const MinDisclosureVersion = 1
@@ -484,13 +486,16 @@ type Consent struct {
 	AcceptedAt        int64  `json:"accepted_at"`
 	DisclosureVersion int    `json:"disclosure_version"`
 	Provider          string `json:"provider"`
+	// RoutinesVersion is the disclosure version accepted for routines' AI
+	// steps, 0 when not accepted (routines-ai-step D10).
+	RoutinesVersion int `json:"routines_version"`
 }
 
 // Consent returns the user's consent, or nil.
 func (st *Store) Consent(ctx context.Context, userID string) (*Consent, error) {
 	var c Consent
-	err := st.db.QueryRowContext(ctx, `SELECT accepted_at, disclosure_version, provider FROM assistant_consent WHERE user_id = ?`, userID).
-		Scan(&c.AcceptedAt, &c.DisclosureVersion, &c.Provider)
+	err := st.db.QueryRowContext(ctx, `SELECT accepted_at, disclosure_version, provider, routines_version FROM assistant_consent WHERE user_id = ?`, userID).
+		Scan(&c.AcceptedAt, &c.DisclosureVersion, &c.Provider, &c.RoutinesVersion)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -510,15 +515,27 @@ func (c *Consent) Current() bool {
 	return c != nil && c.DisclosureVersion >= MinDisclosureVersion && c.DisclosureVersion <= DisclosureVersion
 }
 
-// SetConsent records (accept) or withdraws consent.
-func (st *Store) SetConsent(ctx context.Context, userID, provider string, accept bool) error {
+// SetConsent records (accept) or withdraws consent. routines, when not nil,
+// records (true) or withdraws (false) the consent for routines' AI steps at
+// the current disclosure (routines-ai-step D10); when nil, a consent for the
+// same provider keeps its routines consent and one for another provider has none.
+func (st *Store) SetConsent(ctx context.Context, userID, provider string, accept bool, routines ...bool) error {
 	if !accept {
 		_, err := st.db.ExecContext(ctx, `DELETE FROM assistant_consent WHERE user_id = ?`, userID)
 		return err
 	}
-	_, err := st.db.ExecContext(ctx, `INSERT INTO assistant_consent(user_id, accepted_at, disclosure_version, provider) VALUES(?,?,?,?)
-		ON CONFLICT(user_id) DO UPDATE SET accepted_at = excluded.accepted_at, disclosure_version = excluded.disclosure_version, provider = excluded.provider`,
-		userID, st.now().UnixMilli(), DisclosureVersion, provider)
+	keep, set := 1, 0
+	if len(routines) > 0 {
+		keep = 0
+		if routines[0] {
+			set = DisclosureVersion
+		}
+	}
+	_, err := st.db.ExecContext(ctx, `INSERT INTO assistant_consent(user_id, accepted_at, disclosure_version, provider, routines_version) VALUES(?,?,?,?,?)
+		ON CONFLICT(user_id) DO UPDATE SET accepted_at = excluded.accepted_at, disclosure_version = excluded.disclosure_version,
+		routines_version = CASE WHEN ? = 1 AND assistant_consent.provider = excluded.provider THEN assistant_consent.routines_version ELSE excluded.routines_version END,
+		provider = excluded.provider`,
+		userID, st.now().UnixMilli(), DisclosureVersion, provider, set, keep)
 	if err != nil {
 		return fmt.Errorf("store assistant consent: %w", err)
 	}

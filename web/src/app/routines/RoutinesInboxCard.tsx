@@ -42,7 +42,7 @@ export function InboxCardView({ lines, more, hide, online, onOpen, onDismiss, on
         {lines.map((l) => (
           <li key={`${l.ruleId}:${l.kind}`} className="flex items-center gap-1" data-inbox-line={l.kind}>
             <button type="button" onClick={() => onOpen(l)}
-              className={`user-text min-h-11 min-w-0 flex-1 truncate rounded-control px-2 text-left text-meta hover:bg-sunken dark:hover:bg-raised ${l.kind === 'failure' ? 'text-danger' : 'text-default'}`}>
+              className={`user-text min-h-11 min-w-0 flex-1 truncate rounded-control px-2 text-left text-meta hover:bg-sunken dark:hover:bg-raised ${l.kind === 'failure' ? 'text-danger' : l.kind === 'proposal' ? 'font-medium text-strong' : 'text-default'}`}>
               {l.text}
             </button>
             {l.kind === 'success' && (
@@ -89,7 +89,7 @@ export default function RoutinesInboxCard() {
     return () => { live = false }
   }, [seen === undefined, online, synced, frozen]) // eslint-disable-line react-hooks/exhaustive-deps
   const hide = seen?.hide ?? false
-  const all = useMemo(() => inboxLines((runs ?? []).filter((r) => !gone.has(r.run_id) && !(hide && r.kind === 'success')), rules, (at) => formatInstant(at, 'datetime')), [runs, gone, hide, rules])
+  const all = useMemo(() => inboxLines((runs ?? []).filter((r) => !gone.has(r.run_id) && !(hide && r.kind === 'success' && !r.ai_auto)), rules, (at) => formatInstant(at, 'datetime')), [runs, gone, hide, rules])
   const lines = all.slice(0, MAX_LINES)
   const newest = lines.flatMap((l) => l.runs).reduce((m, r) => Math.max(m, r.at), 0)
   const visible = useOnScreen(box, lines.length > 0)

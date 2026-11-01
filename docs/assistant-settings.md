@@ -13,6 +13,8 @@ order: 79
 
 **Settings → Integrations → Assistant** holds your consent, which assistant you use, this month's usage, **Small changes without review** (this device) and **Clear conversations on this device**, which are stored only on this device. The owner's part of the card is described in [Set up the assistant](assistant-setup.md).
 
+Your consent also covers the [AI steps of routines](routines.md#ai-steps), which send what they read to the same provider on a schedule, while you may not be looking. If you accepted before routines had AI steps, **Accept for routines** asks again; your chats keep working meanwhile. The usage counts the month's routine calls separately too.
+
 ## Use your own provider and key
 
 When the server owner turns on **Let members bring their own key**, **Settings → Integrations → Assistant** shows **Which assistant you use**:

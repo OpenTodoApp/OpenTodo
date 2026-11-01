@@ -31,6 +31,7 @@ func (s *Server) wireRoutines() {
 		LocalToday: func() string { return localToday(s.now()) }})
 	s.rules.Env = s.routineEnv
 	s.rules.Mail = routineMailer{s}
+	s.rules.AI = routineAI{s}
 }
 
 // routineMailer sends an Email me step to the account's own verified address
@@ -77,6 +78,7 @@ func (s *Server) registerRoutineRoutes(mux *routes) {
 	mux.handle("POST /api/v1/rules/{id}/runs/{run}/dismiss", user, s.handleRoutineDismiss)
 	mux.handle("GET /api/v1/me/rules/runs", user, s.handleMyRoutineRuns)
 	mux.handle("GET /api/v1/me/rules/catalogue", user, s.handleRoutineCatalogue)
+	s.registerRoutineAIRoutes(mux)
 }
 
 // routineEnv is what step availability reads for a user (design D15).
@@ -102,6 +104,7 @@ func (s *Server) routineEnv(ctx context.Context, uid string) ruleval.Env {
 	if prefs, err := s.sync.Get(ctx, uid, "user_prefs", "me"); err == nil && prefs != nil {
 		env.Energy = idOf(prefs["energy"]) == "on"
 	}
+	s.routineAIEnv(ctx, uid, &env)
 	return env
 }
 
@@ -224,6 +227,7 @@ func (s *Server) annotateRules(ctx context.Context, uid string, list ...opsync.E
 		if w := s.routineWarnings(ctx, uid, e); len(w) > 0 {
 			e["warnings"] = jsonRaw(w)
 		}
+		s.annotateRuleAI(ctx, uid, e)
 	}
 }
 
@@ -260,16 +264,18 @@ func (s *Server) handleRoutineRun(w http.ResponseWriter, r *http.Request) {
 		RunID  string `json:"run_id"`
 		TaskID string `json:"task_id"`
 		Test   bool   `json:"test"`
+		// CallAI: a test runs its AI steps for real (routines-ai-step D11).
+		CallAI bool `json:"call_ai"`
 	}
 	if err := readJSON(r, &in); err != nil || in.RunID == "" || len(in.RunID) > 64 {
-		badBodyWith(w, err, "invalid_input", `body must be {"run_id": string, "task_id"?: string, "test"?: bool}`)
+		badBodyWith(w, err, "invalid_input", `body must be {"run_id": string, "task_id"?: string, "test"?: bool, "call_ai"?: bool}`)
 		return
 	}
 	if s.rules == nil {
 		writeError(w, http.StatusNotFound, "not_found", "rule not found")
 		return
 	}
-	res, err := s.rules.RunNow(r.Context(), userFrom(r.Context()).ID, rules.RunRequest{RuleID: r.PathValue("id"), RunID: in.RunID, TaskID: in.TaskID, Test: in.Test})
+	res, err := s.rules.RunNow(r.Context(), userFrom(r.Context()).ID, rules.RunRequest{RuleID: r.PathValue("id"), RunID: in.RunID, TaskID: in.TaskID, Test: in.Test, CallAI: in.CallAI})
 	if err != nil {
 		s.routineError(w, err)
 		return

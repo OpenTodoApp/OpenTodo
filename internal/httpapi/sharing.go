@@ -369,6 +369,7 @@ func stripAnnotations(entity string, body map[string]json.RawMessage) {
 	if entity == "rule" {
 		delete(body, "paused_reason")
 		delete(body, "warnings")
+		delete(body, "ai_mode")
 	}
 }
 

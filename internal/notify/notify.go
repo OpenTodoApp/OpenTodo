@@ -287,6 +287,21 @@ type RoutineAlertSink interface {
 	RoutineFailed(ctx context.Context, a RoutineAlert)
 }
 
+// RoutineProposalSink is implemented by sinks that announce a routine's
+// waiting proposal (routines-ai-step D2): one notification per run.
+type RoutineProposalSink interface {
+	RoutineProposal(ctx context.Context, a RoutineAlert)
+}
+
+// RoutineProposal fans the alert out to every sink that implements RoutineProposalSink.
+func (m Multi) RoutineProposal(ctx context.Context, a RoutineAlert) {
+	for _, s := range m {
+		if rs, ok := s.(RoutineProposalSink); ok {
+			rs.RoutineProposal(ctx, a)
+		}
+	}
+}
+
 // RoutineFailed fans the alert out to every sink that implements RoutineAlertSink.
 func (m Multi) RoutineFailed(ctx context.Context, a RoutineAlert) {
 	for _, s := range m {

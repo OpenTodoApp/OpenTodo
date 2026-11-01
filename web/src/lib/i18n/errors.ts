@@ -16,6 +16,8 @@ export const ERROR_MESSAGES: Record<string, string> = {
   account_deactivated: msg('This account has been deactivated. Ask the server owner or an admin.'),
   already_member: msg('This account is already a member of the project.'),
   already_undone: msg('This run was undone already.'),
+  proposal_closed: msg('This proposal was already applied, dismissed or expired.'),
+  encrypted: msg('This is encrypted: open it on one of your devices.'),
   already_uploaded: msg('This file is already stored.'),
   assistant_busy: msg('The assistant is busy on this server. Try again in a few seconds.'),
   assistant_disabled: msg('The assistant is not enabled on this server.'),
