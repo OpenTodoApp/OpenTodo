@@ -290,6 +290,9 @@ export function parseLine(indent: string, done: boolean, content: string): Line 
         if (tok.kind.startsWith('ro:')) l.readOnly[tok.kind.slice(3)] = tok.value
     }
   }
+  // [evening:: true] wins over [daypart:: …], as in the printer and the merge,
+  // so the line reads back the same after a print.
+  if (l.evening) l.dayPart = ''
   l.title = title.join(' ')
   l.trailing = trailing.join(' ')
   return l
