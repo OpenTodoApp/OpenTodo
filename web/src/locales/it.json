@@ -6810,5 +6810,10 @@
   "Saving pauses this routine: it runs as {name}. Turn it on again afterwards to run it as you.": "Salvare mette in pausa questa routine: viene eseguita come {name}. Riattivala dopo per eseguirla come te.",
   "Show all routines": "Mostra tutte le routine",
   "not available yet": "non ancora disponibile",
-  "someone": "qualcuno"
+  "someone": "qualcuno",
+  "App icon badge": "Badge sull’icona dell’app",
+  "On iPhone and iPad the badge appears only once notifications are allowed.": "Su iPhone e iPad il badge appare solo dopo aver consentito le notifiche.",
+  "Show today's count": "Mostra il numero di oggi",
+  "The installed app's icon shows how many of today's tasks are open.": "L’icona dell’app installata mostra quante attività di oggi sono ancora aperte.",
+  "This device only. The count matches Today in the sidebar.": "Solo questo dispositivo. Il numero corrisponde a Oggi nella barra laterale."
 }

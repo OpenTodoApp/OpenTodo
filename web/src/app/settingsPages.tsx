@@ -23,6 +23,7 @@ import { CalendarSettingsSection } from './CalendarSettings'
 import { PasswordSection } from './PasswordSection'
 import { AdministrationSections } from './UsersPanel'
 import { NotificationsSettings } from './NotificationsSettings'
+import { AppBadgeSection } from './AppBadge'
 import { NotificationChannelsCard } from './NotificationChannels'
 import { DigestCard } from './DigestCard'
 import { ActivityPanel } from './ActivityPanel'
@@ -95,7 +96,7 @@ const PAGES: Record<string, (p: PageProps) => ReactNode> = {
   'appearance/sidebar': () => <SidebarSection />,
   'appearance/task-details': () => <TaskDetailsSection />,
   // Default reminders touch no server feature, so they stay usable on the demo (default-reminders D8).
-  'notifications/push': ({ demo }) => <><DefaultRemindersSection /><DemoDisabled on={demo}><NotificationsSettings /></DemoDisabled><RoutineRunsSection /></>,
+  'notifications/push': ({ demo }) => <><DefaultRemindersSection /><DemoDisabled on={demo}><NotificationsSettings /></DemoDisabled><AppBadgeSection /><RoutineRunsSection /></>,
   'notifications/channels': ({ user, demo }) => <DemoDisabled on={demo}><NotificationChannelsCard isOwner={user.role === 'owner'} /></DemoDisabled>,
   'notifications/digest': ({ demo }) => <DemoDisabled on={demo}><DigestCard /></DemoDisabled>,
   'capture/quick-add': () => <><QuickAddSettingsSection /><AddPositionSection /></>,

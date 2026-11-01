@@ -27,7 +27,7 @@ Below the options, **Delivery check** lists everything push needs on this device
 
 ## On iPhone and iPad
 
-Push needs iOS or iPadOS 16.4 or later, and only works in the installed app. Add OpenTodo to your home screen first ([Install on your phone](install-phone.md#iphone-and-ipad)), open it from there, then turn on notifications in its settings.
+Push needs iOS or iPadOS 16.4 or later, and only works in the installed app. Add OpenTodo to your home screen first ([Install on your phone](install-phone.md#iphone-and-ipad)), open it from there, then turn on notifications in its settings. Allowing them also lets the icon show today's open tasks ([App icon badge](app-icon-badge.md)).
 
 ## In the Android app
 

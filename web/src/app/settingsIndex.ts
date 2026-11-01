@@ -66,6 +66,7 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = translatedList<SettingsE
   // Notifications
   { section: 'notifications', label: msg('Push notifications'), description: msg('Reminders delivered to this device, and a test'), page: 'push', anchor: 'notifications-heading', keywords: 'reminders' },
   { section: 'notifications', label: msg('Default reminders'), description: msg('A reminder added when a task gets a date or a time'), page: 'push', anchor: 'default-reminders-heading', keywords: 'reminder default automatic alarm due time all-day before' },
+  { section: 'notifications', label: msg('App icon badge'), description: msg('The installed app\'s icon shows how many of today\'s tasks are open.'), page: 'push', anchor: 'app-badge-heading', keywords: 'badge count icon home screen today' },
   { section: 'notifications', label: msg('Delivery channels'), description: msg('Send notifications to ntfy, Pushover, Gotify or any address you choose.'), page: 'channels', anchor: 'notification-channels-heading', keywords: 'ntfy pushover gotify webhook phone' },
   { section: 'notifications', label: msg('Weekly digest'), description: msg('An email on your review day with last week\'s numbers'), page: 'digest', anchor: 'email-digest-heading', keywords: 'email summary review statistics' },
   // About (welcome-note)

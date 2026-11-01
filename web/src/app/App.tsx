@@ -8,6 +8,7 @@ import { useLanguageVersion, t } from '../lib/i18n'
 import { api, onEnrolmentRequired } from '../lib/api'
 import { consumeRestored, RESTORED_NOTICE } from '../lib/restore'
 import { clearLocalData, requestPersistentStorage } from '../lib/db'
+import { clearBadge } from '../lib/appBadge'
 import { adoptProfile, forgetMemoryKeys, loadEncryptionState, useEncryption } from '../lib/e2ee'
 import { clearInbox } from '../lib/shareInbox'
 import { RecordMissingScreen, UnlockScreen } from './UnlockScreen'
@@ -15,6 +16,7 @@ import { unsubscribeOnSignOut } from '../lib/push'
 import { announceSignOut, onSignOutElsewhere, startSync, stopSync, stopSyncAndWait, syncNow, useSyncStatus, withSyncLock } from '../lib/sync'
 import { startRelay } from '../lib/relay'
 import { RelayConfirm } from './RelayConfirm'
+import { AppBadgeSync } from './AppBadge'
 import type { AuthStatus, User } from '../lib/types'
 import { AuthScreen } from './AuthScreen'
 import { InviteScreen } from './InviteScreen'
@@ -318,7 +320,7 @@ export function App() {
         ) : (
           <Shell user={phase.user} onLogout={() => void logout()} />
         )}
-        <RelayConfirm />
+        <RelayConfirm /><AppBadgeSync />
       </>
     )
   }
@@ -334,6 +336,8 @@ async function clearDeviceData() {
   // Files shared to the app and not saved yet (OpenSpec attachments D9).
   await clearInbox().catch(() => undefined)
   forgetMemoryKeys()
+  // The badge on the app icon belongs to the account (app-icon-badge).
+  await clearBadge().catch(() => undefined)
   localStorage.removeItem('opentodo.user')
   // The profile's last loaded values and picture version (settings-refresh D10).
   localStorage.removeItem('opentodo.profile')

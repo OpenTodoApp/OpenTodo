@@ -7,7 +7,7 @@ import { CLOCK_OFFSET_META } from './hlc'
 import { createTask, getDeviceId, resetDeviceId } from './ops'
 import { addReminder } from './reminders'
 import { checkReminders, SHOWN_KEY, type ShownSet } from './reminderWatcher'
-import { formatDate, formatTime, resolveDateTime } from './dates'
+import { formatDate, formatTime, logicalDay, resolveDateTime } from './dates'
 import { setUserPref, type DateTimePrefs } from './userPrefs'
 import source from '../../public/push-sw.js?raw'
 
@@ -21,14 +21,16 @@ interface Scope {
   opened: string[]
 }
 
-function loadWorker(opts: { windows?: { focused: boolean }[]; fetchOk?: boolean; answer?: (body: { ops: { id: string; field: string }[] }) => unknown } = {}): Scope {
+function loadWorker(opts: { windows?: { focused: boolean }[]; fetchOk?: boolean; answer?: (body: { ops: { id: string; field: string }[] }) => unknown; badge?: (number | 'clear')[] } = {}): Scope {
   const scope: Scope = { listeners: {}, shown: [], messages: [], fetches: [], opened: [] }
+  const badge = opts.badge
   const windows = (opts.windows ?? []).map((w) => ({
     focused: w.focused, visibilityState: w.focused ? 'visible' : 'hidden',
     postMessage: (m: unknown) => scope.messages.push(m), focus: async () => undefined,
   }))
   const self = {
     crypto: globalThis.crypto,
+    navigator: badge ? { setAppBadge: async (n: number) => { badge.push(n) }, clearAppBadge: async () => { badge.push('clear') } } : {},
     addEventListener: (type: string, fn: (ev: unknown) => void) => (scope.listeners[type] = fn),
     clients: { matchAll: async () => windows, openWindow: vi.fn(async (url: string) => scope.opened.push(url)) },
     registration: { showNotification: async (title: string, options: Record<string, unknown>) => scope.shown.push({ title, options }) },
@@ -315,5 +317,54 @@ describe('focus session notifications (focus-mode D12)', () => {
     const again = loadWorker()
     await dispatch(again, 'notificationclick', { notification: { data: { reminderId: 'r1', taskId: 't1', fireAt: 1 }, close: () => undefined }, action: '' })
     expect(again.opened).toEqual(['/?task=t1'])
+  })
+})
+
+describe('app icon badge (app-icon-badge)', () => {
+  const day = (offset: number) => {
+    const d = new Date()
+    d.setDate(d.getDate() + offset)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  }
+
+  it('a reminder push with the app closed sets the badge to today\'s stored count', async () => {
+    const { taskId, reminderId, now } = await setup()
+    await setMeta('badge:today', { dayStart: 0, counts: { [day(-1)]: 9, [day(0)]: 3, [day(1)]: 4 } })
+    const badge: (number | 'clear')[] = []
+    const sw = loadWorker({ badge })
+    await dispatch(sw, 'push', pushEvent({ type: 'reminder', reminderId, taskId, fireAt: now - 1000 }))
+    expect(badge).toEqual([3])
+    expect(sw.shown).toHaveLength(1)
+  })
+
+  it('a zero count clears it; no stored counts or no count for today leave it alone', async () => {
+    const { taskId, reminderId, now } = await setup()
+    const badge: (number | 'clear')[] = []
+    await dispatch(loadWorker({ badge }), 'push', pushEvent({ type: 'reminder', reminderId, taskId, fireAt: now - 1000 }))
+    expect(badge).toEqual([])
+    await setMeta('badge:today', { dayStart: 0, counts: { [day(5)]: 2 } })
+    await dispatch(loadWorker({ badge }), 'push', pushEvent({ type: 'reminder', reminderId, taskId, fireAt: now - 1000 }))
+    expect(badge).toEqual([])
+    await setMeta('badge:today', { dayStart: 0, counts: { [day(0)]: 0 } })
+    await dispatch(loadWorker({ badge }), 'push', pushEvent({ type: 'reminder', reminderId, taskId, fireAt: now - 1000 }))
+    expect(badge).toEqual(['clear'])
+  })
+
+  it('with the app in front the worker leaves the badge to the app', async () => {
+    const { taskId, reminderId, now } = await setup()
+    await setMeta('badge:today', { dayStart: 0, counts: { [day(0)]: 3 } })
+    const badge: (number | 'clear')[] = []
+    await dispatch(loadWorker({ badge, windows: [{ focused: true }] }), 'push', pushEvent({ type: 'reminder', reminderId, taskId, fireAt: now - 1000 }))
+    expect(badge).toEqual([])
+  })
+
+  it('finds the same logical day as the app, day start included (day-boundary)', () => {
+    const self: { addEventListener: () => void; __opentodoBadgeDay?: (now: number, dayStart: number) => string } = { addEventListener: () => undefined }
+    new Function('self', 'fetch', 'indexedDB', source)(self, undefined, undefined)
+    const badgeDay = self.__opentodoBadgeDay!
+    for (const [h, m] of [[0, 30], [3, 59], [4, 0], [12, 0], [23, 59]]) {
+      const at = new Date(2026, 10, 1, h, m).getTime()
+      for (const start of [0, 240, 360]) expect(badgeDay(at, start)).toBe(logicalDay(at, start))
+    }
   })
 })
