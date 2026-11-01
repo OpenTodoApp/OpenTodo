@@ -846,6 +846,19 @@
   "story": "Screens/Routines"
  },
  {
+  "id": "theme-editor",
+  "route": "theme-editor",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": null,
+  "layoutCheckReason": "the theme editor opens on a custom theme the seed does not have; the tour shows its not-found state",
+  "story": "Settings/App/Theme editor",
+  "path": "/settings/appearance/themes/none",
+  "ready": "main h1"
+ },
+ {
   "id": "projects-archived",
   "route": "projects",
   "kind": "screen",
