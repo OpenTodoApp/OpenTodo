@@ -24,7 +24,14 @@
 // (default 3), SHOTS=all (also save a screenshot of every screen and overlay),
 // CHROMIUM_PATH / WEBKIT_PATH (optional executables), OPENTODO_LANG (an interface
 // language such as de: the synced preference is written before capturing, and
-// signed-out screens start in it too; OpenSpec change app-localization 11.1).
+// signed-out screens start in it too; OpenSpec change app-localization 11.1),
+// LAYOUT_DATE (default 2026-11-01: the browsers' clock and the seeded dates).
+//
+// The browsers' clock is fixed at 09:00 UTC on LAYOUT_DATE and the account is seeded
+// around that day, so the check sees the same calendars whatever day it runs: which
+// month and weekday "today" is changed the Month grid (a Sunday today put its load line
+// in the last column) and a run passed or failed by date. The default is a Sunday in a
+// long-named month with six week rows.
 const pw = await import('playwright').catch(async () => {
   const { createRequire } = await import('node:module')
   const { execSync } = await import('node:child_process')
@@ -45,6 +52,9 @@ const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(',')) : null
 const CONCURRENCY = Number(process.env.CONCURRENCY ?? 3)
 const SHOTS_ALL = process.env.SHOTS === 'all'
 const LANG = process.env.OPENTODO_LANG ?? ''
+const LAYOUT_DATE = process.env.LAYOUT_DATE ?? '2026-11-01'
+const NOW = new Date(`${LAYOUT_DATE}T09:00:00Z`).getTime()
+if (!/^\d{4}-\d{2}-\d{2}$/.test(LAYOUT_DATE) || Number.isNaN(NOW)) throw new Error(`LAYOUT_DATE ${LAYOUT_DATE}: expected YYYY-MM-DD`)
 // Screens wait on English headings and overlays are opened by English names: in another
 // language (the German leg, ux-audit-three-widths F4) every screen is checked once a
 // heading, a task row or an alert shows, without its overlays or layout switches.
@@ -161,6 +171,7 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
     const anonCtx = await browser.newContext(ctxOpts)
     const ctx = await browser.newContext({ ...ctxOpts, storageState: ids.storageState })
     // First paint in the chosen language (the device mirror the app keeps), also signed out.
+    for (const c of [anonCtx, ctx]) await c.clock.setFixedTime(NOW)
     if (LANG) for (const c of [anonCtx, ctx]) await c.addInitScript((code) => { try { localStorage.setItem('opentodo.lang', code) } catch { /* storage blocked */ } }, LANG)
     const page = await ctx.newPage()
     page.on('dialog', (d) => d.dismiss())
@@ -383,7 +394,7 @@ async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructi
 
 // ------------------------------------------------------------------ main
 log('· seeding', base)
-const ids = await seedAccount({ base, pw, lang: LANG })
+const ids = { ...await seedAccount({ base, pw, lang: LANG, now: NOW }), date: LAYOUT_DATE }
 const llmServer = ids.llm
 const combos = []
 for (const e of ENGINES) for (const w of WIDTHS) for (const t of THEMES) combos.push([e, w, t])

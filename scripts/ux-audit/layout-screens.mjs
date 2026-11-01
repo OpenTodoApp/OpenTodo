@@ -36,6 +36,8 @@ export function screens(ids, base) {
     { name: 'day', path: '/day', ready: (p) => p.locator('[data-now-line], main').first().waitFor() },
     { name: 'week', path: '/week', ready: (p) => p.locator('main').first().waitFor() },
     { name: 'month', path: '/month', ready: (p) => p.locator('[data-month-grid]').waitFor() },
+    // September, a long month name in several languages, at the tablet width (the check's own date is in November).
+    ...(ids.date ? [{ name: 'month-september', path: `/month/${ids.date.slice(0, 4)}-09-30`, widths: [768], ready: (p) => p.locator('[data-month-grid]').waitFor() }] : []),
     // The Plan (planner-view 4.2): seven columns per row from 640 px, the agenda below it.
     { name: 'plan', path: '/plan', ready: (p) => p.locator('[data-plan-grid], [data-plan-agenda]').first().waitFor() },
     // The Year (year-view 2.5): four, three or two columns of months; below 640 px a month is the touch target.
