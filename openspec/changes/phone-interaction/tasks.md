@@ -8,8 +8,8 @@
 
 ## 2. The phone drawer is inert when closed and owns the page when open
 
-- [ ] 2.1 Mark the drawer `inert` and `aria-hidden` below 768 px while closed, and the page behind it `inert` while it is open; keep the column from 768 px free of both; verify the phone and 1280 px cases in `src/app/phoneDrawer.test.tsx`
-- [ ] 2.2 Make the open drawer an overlay through `useOverlay` (Escape, Back, focus in and back to the menu button) with `trapTab` staying inside it, and move its scrim into that overlay so a swipe on it does not scroll the page; verify `src/app/phoneDrawer.test.tsx` and `src/app/tabBar.test.tsx`
+- [x] 2.1 Mark the drawer `inert` and `aria-hidden` below 768 px while closed, and the page behind it `inert` while it is open; keep the column from 768 px free of both; verify the phone and 1280 px cases in `src/app/phoneDrawer.test.tsx`
+- [x] 2.2 Make the open drawer an overlay through `useOverlay` (Escape, Back, focus in and back to the menu button) with `trapTab` staying inside it, and move its scrim into that overlay so a swipe on it does not scroll the page; verify `src/app/phoneDrawer.test.tsx` and `src/app/tabBar.test.tsx`
 
 ## 3. A tap in Select mode ticks the row
 
