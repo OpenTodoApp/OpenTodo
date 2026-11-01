@@ -43,6 +43,13 @@ type ucSeed struct {
 	} `json:"projects"`
 	Labels []struct{ ID, Name string }        `json:"labels"`
 	Views  []struct{ ID, Name, Query string } `json:"views"`
+	// Entries are the user's time entries (routines-ai-step: tracked time, timers).
+	Entries []struct {
+		ID      string `json:"id"`
+		TaskID  string `json:"task_id"`
+		Started string `json:"started"`
+		Ended   string `json:"ended"`
+	} `json:"entries"`
 }
 
 type ucExpect struct {
@@ -61,6 +68,12 @@ type ucExpect struct {
 	Timer  string                           `json:"timer"`
 	// CreatedCount checks only how many tasks were created (a template's tasks).
 	CreatedCount int `json:"created_count"`
+	// Compared when a case states them (routines-ai-step: every step kind).
+	ChangedProjects map[string]map[string]any `json:"changed_projects"`
+	CreatedProjects []string                  `json:"created_projects"`
+	Sections        []string                  `json:"sections"`
+	LabelsCreated   []string                  `json:"labels_created"`
+	Favourites      *string                   `json:"favourites"`
 }
 
 type ucCase struct {
@@ -75,8 +88,26 @@ type ucCase struct {
 	Steps     json.RawMessage `json:"steps"`
 	Webhooks  []string        `json:"webhooks"`
 	Email     bool            `json:"email"`
-	Expect    ucExpect        `json:"expect"`
+	// AI is the model's answers in call order; such a case runs with Apply
+	// without asking on (routines-ai-step).
+	AI     []AIAnswer `json:"ai"`
+	Expect ucExpect   `json:"expect"`
 }
+
+// ucAI answers a case's AI steps in order.
+type ucAI struct{ answers []AIAnswer }
+
+func (a *ucAI) Complete(context.Context, string, AICall) (AIAnswer, error) {
+	if len(a.answers) == 0 {
+		return AIAnswer{Input: 100, Output: 20}, nil
+	}
+	ans := a.answers[0]
+	a.answers = a.answers[1:]
+	ans.Input, ans.Output = 100, 20
+	return ans, nil
+}
+
+func (a *ucAI) Estimate(AICall) int64 { return 500 }
 
 type ucFile struct {
 	Seeds map[string]ucSeed `json:"seeds"`
@@ -158,6 +189,11 @@ func runUseCase(t *testing.T, f ucFile, c ucCase) {
 		cond = string(c.Condition)
 	}
 	h.routine("alice", "uc", c.Name, string(c.Trigger), cond, string(c.Steps))
+	if len(c.AI) > 0 {
+		env.AI, env.AIConsent = true, true
+		h.e.AI = &ucAI{answers: slices.Clone(c.AI)}
+		h.write("alice", "laptop", "rule", "uc", map[string]any{"ai_apply": "auto"})
+	}
 	res := h.runNow("alice", "uc", c.RunOn, false)
 	want := c.Expect.Outcome
 	if want == "" {
@@ -167,6 +203,94 @@ func runUseCase(t *testing.T, f ucFile, c ucCase) {
 		t.Fatalf("outcome %s, want %s: %v", res.Run.Outcome, want, statuses(res))
 	}
 	checkUseCase(t, h, c, seed, before, res, sink, deliveries, mailer)
+	checkUseCaseProjects(t, h, c, seed)
+}
+
+// checkUseCaseProjects compares the projects, sections, labels and favourites
+// a run wrote, for the keys a case states.
+func checkUseCaseProjects(t *testing.T, h *harness, c ucCase, seed ucSeed) {
+	t.Helper()
+	e := c.Expect
+	projects, err := h.sync.List(h.ctx, "alice", "project", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	seeded := map[string]bool{}
+	for _, p := range seed.Projects {
+		seeded[p.ID] = true
+	}
+	names := map[string]string{}
+	changed := map[string]map[string]any{}
+	created := []string{}
+	for _, p := range projects {
+		id := strOf(p["id"])
+		names[id] = strOf(p["name"])
+		if !seeded[id] {
+			created = append(created, strOf(p["name"]))
+			continue
+		}
+		for _, sp := range seed.Projects {
+			if sp.ID != id {
+				continue
+			}
+			if strOf(p["name"]) != sp.Name {
+				ensure(changed, id)["name"] = strOf(p["name"])
+			}
+			if a := boolOf(p, "archived"); a != sp.Archived {
+				ensure(changed, id)["archived"] = a
+			}
+		}
+	}
+	slices.Sort(created)
+	if e.ChangedProjects != nil && !reflect.DeepEqual(changed, e.ChangedProjects) {
+		t.Errorf("changed projects %v, want %v", changed, e.ChangedProjects)
+	}
+	if e.CreatedProjects != nil && !slices.Equal(created, e.CreatedProjects) {
+		t.Errorf("created projects %v, want %v", created, e.CreatedProjects)
+	}
+	if e.Sections != nil {
+		rows, err := h.sync.List(h.ctx, "alice", "section", false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := []string{}
+		for _, r := range rows {
+			got = append(got, names[strOf(r["project_id"])]+"/"+strOf(r["name"]))
+		}
+		slices.Sort(got)
+		if !slices.Equal(got, e.Sections) {
+			t.Errorf("sections %v, want %v", got, e.Sections)
+		}
+	}
+	if e.LabelsCreated != nil {
+		rows, err := h.sync.List(h.ctx, "alice", "label", false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := []string{}
+		for _, r := range rows {
+			if !slices.ContainsFunc(seed.Labels, func(l struct{ ID, Name string }) bool { return l.ID == strOf(r["id"]) }) {
+				got = append(got, strOf(r["name"]))
+			}
+		}
+		slices.Sort(got)
+		if !slices.Equal(got, e.LabelsCreated) {
+			t.Errorf("labels created %v, want %v", got, e.LabelsCreated)
+		}
+	}
+	if e.Favourites != nil {
+		prefs, _ := h.sync.Get(h.ctx, "alice", "user_prefs", "me")
+		if got := strOf(prefs["favourites"]); got != *e.Favourites {
+			t.Errorf("favourites %q, want %q", got, *e.Favourites)
+		}
+	}
+}
+
+func ensure(m map[string]map[string]any, id string) map[string]any {
+	if m[id] == nil {
+		m[id] = map[string]any{}
+	}
+	return m[id]
 }
 
 type delivery struct {
@@ -235,6 +359,23 @@ func seedUseCase(t *testing.T, h *harness, seed ucSeed) map[string]map[string]an
 		h.task("alice", x.ID, fields)
 		h.clock = now
 		before[x.ID] = ucTaskState(h.get("alice", x.ID))
+	}
+	// Time entries after their tasks (an entry lives in its task's scope).
+	for _, x := range seed.Entries {
+		start, err := time.Parse(time.RFC3339, x.Started)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var end any
+		if x.Ended != "" {
+			e, err := time.Parse(time.RFC3339, x.Ended)
+			if err != nil {
+				t.Fatal(err)
+			}
+			end = e.UnixMilli()
+		}
+		h.write("alice", "laptop", "time_entry", x.ID, map[string]any{"task_id": x.TaskID, "user_id": "alice", "started_at": start.UnixMilli(), "ended_at": end,
+			"device_id": "laptop", "created_at": 1, "deleted_at": nil})
 	}
 	return before
 }
