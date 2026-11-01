@@ -822,11 +822,28 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
-  "layoutCheck": null,
-  "layoutCheckReason": "automation rules, added after the layout check list",
-  "story": "Screens/Rules",
-  "path": "/rules",
-  "ready": "main h1"
+  "layoutCheck": "routines",
+  "story": "Screens/Routines"
+ },
+ {
+  "id": "routine-page",
+  "route": "rules",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "routine-page",
+  "story": "Screens/Routines"
+ },
+ {
+  "id": "routine-new",
+  "route": "rules",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "routine-new",
+  "story": "Screens/Routines"
  },
  {
   "id": "projects-archived",
