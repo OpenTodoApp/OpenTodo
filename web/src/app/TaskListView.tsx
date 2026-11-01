@@ -65,6 +65,7 @@ import { useListShortcuts, type ListUi } from './task-list/useListShortcuts'
 import { noteTodayOpened } from '../lib/firstDay'
 import { InboxMenu } from './SampleNotice'
 import { TodayAgenda, useTodayAgenda } from './calendar/TodayAgenda'
+import { RoutinesInboxSlot } from './routines/InboxSlot'
 import { closedListMeta } from './task-list/useClosedList'
 import { ClosedListMenuItems } from './task-list/ClosedListActions'
 import { ReplanTodayItem } from './calendar/ReplanMenuItem'
@@ -371,7 +372,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           )}
           {rowMenu.element}{queryHost}
 
-          {route.view === 'project' && currentProject && <ProjectNote project={currentProject} phone={phone} />}
+          {route.view === 'inbox' && <RoutinesInboxSlot />}{route.view === 'project' && currentProject && <ProjectNote project={currentProject} phone={phone} />}
           {route.view === 'project' && !board && <SubProjects projectId={route.id} />}
           {m.offerColumns && (
             // The list's columns layout (custom-fields): per project, on this device only.

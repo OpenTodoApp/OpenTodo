@@ -240,6 +240,14 @@ export const SETTINGS_COPY = {
     rows: { show: { label: msg('Show the briefing') } },
   },
   // Today by part of the day (day-parts D4): the synced user_prefs.day_parts, as in Today's menu.
+  // The Inbox card of routines (routines-editor D10): the synced user_prefs.routines_hide_successes.
+  'routine-runs': {
+    title: msg('Routines'),
+    icon: 'zap',
+    description: msg('Runs you did not start show in the Inbox card "Routines since your last visit".'),
+    learnMore: 'routines',
+    rows: { hide: { label: msg('Hide successful runs'), description: msg('The card shows only runs that failed or wait for you.') } },
+  },
   'day-parts': {
     title: msg('Today'),
     icon: 'sun',

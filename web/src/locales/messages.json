@@ -188,6 +188,15 @@
   "<b>{name}</b> replied on <b2>{task}</b2>": [
     "web/src/app/NotificationBell.tsx"
   ],
+  "<b>{routine}</b> failed": [
+    "web/src/app/NotificationBell.tsx"
+  ],
+  "<b>{routine}</b> failed ({n} times today)": [
+    "web/src/app/NotificationBell.tsx"
+  ],
+  "<b>{routine}</b> failed at step {n}": [
+    "web/src/app/NotificationBell.tsx"
+  ],
   "<b>{routine}</b>: {text}": [
     "web/src/app/NotificationBell.tsx"
   ],
@@ -295,7 +304,8 @@
     "web/src/app/filter/ConditionEditor.tsx"
   ],
   "A deleted routine": [
-    "web/src/app/routines/RunHistory.tsx"
+    "web/src/app/routines/RunHistory.tsx",
+    "web/src/lib/rules/inbox.ts"
   ],
   "A field": [
     "web/src/lib/assistant.ts"
@@ -4259,6 +4269,9 @@
     "web/src/app/assistant/ComposerCapture.tsx",
     "web/src/app/bulk/UndoToast.tsx"
   ],
+  "Dismiss {name}": [
+    "web/src/app/routines/RoutinesInboxCard.tsx"
+  ],
   "Display mode": [
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/ProjectHeader.tsx",
@@ -6367,6 +6380,11 @@
   "Hide sidebar": [
     "web/src/ui/patterns/PageHeader.tsx"
   ],
+  "Hide successful runs": [
+    "web/src/app/routines/RoutineRunsSection.tsx",
+    "web/src/app/routines/RoutinesInboxCard.tsx",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Hide table": [
     "web/src/app/review/charts.tsx"
   ],
@@ -8001,6 +8019,9 @@
   "Mark as done": [
     "web/src/page/TaskPageScreen.tsx"
   ],
+  "Mark as seen": [
+    "web/src/app/routines/RoutinesInboxCard.tsx"
+  ],
   "Mark tasks Deep, Medium or Low and filter by the energy they need.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -8084,6 +8105,9 @@
   ],
   "Menu for routine {name}": [
     "web/src/app/routines/RoutinesView.tsx"
+  ],
+  "Menu for routines since your last visit": [
+    "web/src/app/routines/RoutinesInboxCard.tsx"
   ],
   "Menu for step {name}": [
     "web/src/app/routines/StepCard.tsx"
@@ -9387,7 +9411,8 @@
   ],
   "Not available: {reason}": [
     "web/src/app/routines/RunHistory.tsx",
-    "web/src/app/routines/StepCard.tsx"
+    "web/src/app/routines/StepCard.tsx",
+    "web/src/lib/rules/inbox.ts"
   ],
   "Not before its start date.": [
     "web/src/lib/method/vocabulary.json"
@@ -12340,7 +12365,11 @@
   ],
   "Routines": [
     "web/src/app/Sidebar.tsx",
-    "web/src/app/routines/RoutinesView.tsx"
+    "web/src/app/routines/RoutinesView.tsx",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Routines since your last visit": [
+    "web/src/app/routines/RoutinesInboxCard.tsx"
   ],
   "Row": [
     "web/src/app/ImportScreen.tsx"
@@ -12420,6 +12449,9 @@
   "Runs": [
     "web/src/app/routines/RoutinesView.tsx",
     "web/src/app/routines/RunHistory.tsx"
+  ],
+  "Runs you did not start show in the Inbox card \"Routines since your last visit\".": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "S3-compatible": [
     "web/src/app/BackupsPanel.tsx"
@@ -12777,6 +12809,9 @@
   "Security": [
     "web/src/app/OutgoingEmailPanel.tsx",
     "web/src/app/settingsSections.ts"
+  ],
+  "See all runs": [
+    "web/src/app/routines/RoutinesInboxCard.tsx"
   ],
   "See statistics": [
     "web/src/app/review/MonthlyLook.tsx",
@@ -13284,6 +13319,9 @@
   ],
   "Show sidebar": [
     "web/src/ui/patterns/PageHeader.tsx"
+  ],
+  "Show successful runs": [
+    "web/src/app/routines/RoutinesInboxCard.tsx"
   ],
   "Show text": [
     "web/src/app/task-detail/HistoryTab.tsx"
@@ -14630,6 +14668,9 @@
   ],
   "The calendar's secret or public iCal address (https, ending in .ics on most services).": [
     "web/src/app/CalendarFeedsPanel.tsx"
+  ],
+  "The card shows only runs that failed or wait for you.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "The change applies at once. You may be asked for your password first.": [
     "web/src/app/profile/ProfileSection.tsx"
@@ -18069,6 +18110,9 @@
   "a shared project": [
     "web/src/app/FeedView.tsx"
   ],
+  "a step is not available": [
+    "web/src/lib/rules/inbox.ts"
+  ],
   "a task": [
     "web/src/app/FeedView.tsx",
     "web/src/app/NotificationBell.tsx",
@@ -18420,6 +18464,9 @@
   "device locked": [
     "web/src/app/auditFormat.ts"
   ],
+  "did not finish": [
+    "web/src/lib/rules/inbox.ts"
+  ],
   "dismissed": [
     "web/src/app/RemindersField.tsx"
   ],
@@ -18588,6 +18635,9 @@
   ],
   "expires {instant}": [
     "web/src/app/PublicLinksSection.tsx"
+  ],
+  "failed at step {n}": [
+    "web/src/lib/rules/inbox.ts"
   ],
   "failure": [
     "web/src/app/AuditPanel.tsx"
@@ -19137,6 +19187,9 @@
   "outgoing email": [
     "web/src/app/settingsSections.ts"
   ],
+  "outgoing email is not set up": [
+    "web/src/lib/rules/inbox.ts"
+  ],
   "outgoing email is not set up on this server": [
     "web/src/lib/rules/catalogue.ts"
   ],
@@ -19318,6 +19371,9 @@
   ],
   "resumes {when}": [
     "web/src/app/IssuesPanel.tsx"
+  ],
+  "run by an AI assistant": [
+    "web/src/lib/rules/inbox.ts"
   ],
   "search, query, filter, view, look up, select": [
     "web/src/lib/rules/sentence.ts"
@@ -19587,6 +19643,9 @@
   ],
   "the webhook does not exist or is turned off": [
     "web/src/lib/rules/catalogue.ts"
+  ],
+  "the webhook is gone": [
+    "web/src/lib/rules/inbox.ts"
   ],
   "the weekly digest": [
     "web/src/app/settingsSections.ts"
@@ -20240,6 +20299,9 @@
   "{n, plural, one {# item changed} other {# items changed}}": [
     "web/src/app/auditFormat.ts"
   ],
+  "{n, plural, one {# item written} other {# items written}}": [
+    "web/src/lib/rules/inbox.ts"
+  ],
   "{n, plural, one {# item} other {# items}}": [
     "web/src/app/routines/RunHistory.tsx",
     "web/src/lib/history.ts",
@@ -20275,6 +20337,9 @@
   ],
   "{n, plural, one {# more matches, keep typing} other {# more match, keep typing}}": [
     "web/src/ui/Combobox/Combobox.tsx"
+  ],
+  "{n, plural, one {# more routine} other {# more routines}}": [
+    "web/src/app/routines/RoutinesInboxCard.tsx"
   ],
   "{n, plural, one {# new field} other {# new fields}}": [
     "web/src/app/ImportScreen.tsx"
@@ -20417,8 +20482,14 @@
   "{n, plural, one {# task carrying “{source}” will carry “{target}” instead, and “{source}” is deleted on all your devices.} other {# tasks carrying “{source}” will carry “{target}” instead, and “{source}” is deleted on all your devices.}}": [
     "web/src/app/LabelsView.tsx"
   ],
+  "{n, plural, one {# task changed} other {# tasks changed}}": [
+    "web/src/lib/rules/inbox.ts"
+  ],
   "{n, plural, one {# task completed} other {# tasks completed}}": [
     "web/src/lib/bulk.ts"
+  ],
+  "{n, plural, one {# task created} other {# tasks created}}": [
+    "web/src/lib/rules/inbox.ts"
   ],
   "{n, plural, one {# task hidden by the filter} other {# tasks hidden by the filter}}": [
     "web/src/app/calendar/CapacityLine.tsx"
@@ -20692,6 +20763,9 @@
   "{name} cleared": [
     "web/src/lib/assistant.ts"
   ],
+  "{name} failed · {why}": [
+    "web/src/lib/rules/inbox.ts"
+  ],
   "{name} is at least {value}": [
     "web/src/app/filter/conditionText.ts"
   ],
@@ -20735,6 +20809,9 @@
   ],
   "{name} no longer exists": [
     "web/src/lib/rules/fixes.ts"
+  ],
+  "{name} ran {n} times": [
+    "web/src/lib/rules/inbox.ts"
   ],
   "{name} replied": [
     "web/src/app/Briefing.tsx"

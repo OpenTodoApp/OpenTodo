@@ -4,7 +4,7 @@ summary: A routine is a rule with several steps, each using what the steps befor
 audience: user
 section: Reference
 screens: [routines]
-specs: [automation-rules, routines]
+specs: [automation-rules, routines, routine-inbox]
 order: 31
 ---
 # Routines
@@ -46,7 +46,13 @@ At most 20 steps, 60 seconds per run, 500 items written per run (each task, comm
 
 ## Runs and undo
 
-Every run is logged with its trigger, each step's status, time, count and the items it touched, and its outcome. A routine's **History** tab (in the editor) and the page's **Runs** tab list runs newest first, 50 at a time, filtered by routine, outcome and source (scheduled, by its trigger, by hand, an AI assistant, test). A run opens step by step: each step's status and time, the tasks it touched as links (*Deleted task* when gone), why it stopped with a link to the setting, and steps after a failure as *Not run*. Offline the last page fetched is shown with its age. The server keeps only ids and counts, your devices show the titles. **Undo** takes a whole run back: values it changed go back unless you changed them since, and what it created goes to the Trash. Notifications, deliveries and emails cannot be taken back. The undo shows in history as **Routine (name) undone**.
+Every run is logged with its trigger, each step's status, time, count and the items it touched, and its outcome. A routine's **History** tab (in the editor) and the page's **Runs** tab list runs newest first, 50 at a time, filtered by routine, outcome and source (scheduled, by its trigger, by hand, an AI assistant, test). A run opens step by step: each step's status and time, the tasks it touched as links (*Deleted task* when gone), why it stopped with a link to the setting, and steps after a failure as *Not run*. Offline the last page fetched is shown with its age. Runs are kept 30 days (100 per routine); a failed run until you have seen it and 30 days more, at most 90. The server keeps only ids and counts, your devices show the titles. **Undo** takes a whole run back: values it changed go back unless you changed them since, and what it created goes to the Trash. Notifications, deliveries and emails cannot be taken back. The undo shows in history as **Routine (name) undone**.
+
+## Since your last visit
+
+A routine that ran at night is noticed in the morning without a stream of notifications: the Inbox shows a card **Routines since your last visit** above the first task when something happened, one line per routine (*Morning sweep ran 2 times · 9 tasks changed*, *Weekly digest failed · Not available: outgoing email is not set up*), at most five, then **See all runs**. A line opens its run. Runs you started yourself, by hand or as a test, are never listed; a run started by an AI assistant is, and says so.
+
+The card counts as seen after two seconds on screen, or with **Mark as seen**; your other devices then stop showing what you saw. A failed run stays until it is handled (the run is undone, or the routine later runs fine); a successful one stays until seen, or until you dismiss its line, on every device. **Hide successful runs** (in the card's menu and in Settings → Notifications) leaves only failures. A routine that fails also rings the [bell](notifications.md), once a day per routine (*Weekly digest failed (2 times today)*), and reaches your [delivery channels](notification-channels.md) that have **Routine notices** on; successful runs never notify.
 
 ## Not offered, on purpose
 
