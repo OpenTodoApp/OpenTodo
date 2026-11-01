@@ -550,6 +550,11 @@ export const api = {
   /** Automation rules (automation-rules): the server's state, run log and switches; the rules themselves sync. */
   myRules: () => request<RulesStatus>('GET', '/api/v1/me/rules'),
   ruleRuns: (id: string) => request<{ runs: RuleRun[] }>('GET', `/api/v1/rules/${encodeURIComponent(id)}/runs`),
+  /** Routines (routines-engine): run one now, undo one of its runs. */
+  runRoutine: (id: string, body: { run_id: string; task_id?: string; test?: boolean }) =>
+    request<{ run: { run_id: string; outcome: string; writes: number; reason?: string }; writes: number; test: boolean }>('POST', `/api/v1/rules/${encodeURIComponent(id)}/run`, body),
+  undoRoutineRun: (id: string, runId: string) =>
+    request<{ restored: number; kept: number; not_undoable: string[] }>('POST', `/api/v1/rules/${encodeURIComponent(id)}/runs/${encodeURIComponent(runId)}/undo`, {}),
   pauseRules: (paused: boolean) => request<{ enabled: boolean; paused: boolean }>('PUT', '/api/v1/me/rules/paused', { paused }),
   automationsSwitch: ownerSwitch<AutomationsSetting>('automations'),
   issuesSwitch: ownerSwitch('issues'),
