@@ -100,7 +100,10 @@ async function seedInboxSources(select: boolean): Promise<void> {
   if (select) selectTask.set(dentist)
 }
 
-/** The Inbox from 1024 px with nothing selected: the source lines, Process as the primary action, "No task selected" (inbox-split D1 to D4). */
+/**
+ * The Inbox with nothing selected: the source lines and Process as the primary action (inbox-split D1 to D4). At the
+ * workbench's 1280 px it stays one full-width list; "No task selected" stands beside it only from 1440 px (task-list-width D4).
+ */
 export const InboxSplitEmpty: StoryObj = {
   ...withSeed(() => seedInboxSources(false)),
   render: () => <Split><TaskListView route={{ view: 'inbox' }} userId={storyUser.id} userRole={storyUser.role} /></Split>,

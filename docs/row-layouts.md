@@ -13,7 +13,7 @@ order: 19
 
 Task rows come in two layouts:
 
-- **One line** (the default): the title, with the date, project, labels, estimate and assignee in columns on the right that give way as the window narrows.
+- **One line** (the default): the title, with the date, project, labels, estimate and assignee in columns on the right that give way as the window narrows. A long title wraps onto a second line and ends with **…** after that; rest the pointer on it to read it all, or open the task. On a phone the title keeps one line.
 - **Detailed**: the title (two lines if it needs them), the parent task's name when the parent isn't shown just above, then one line with the date and time, the **priority** (bars and the letters P1, P2 or P3), the deadline, the start date, the project, the estimate and the assignee, and the labels: as many as fit the row, then **+2** for the rest. Hover or focus the labels to read every name. On a phone or with a large text size the line wraps, so nothing is cut off.
 
 The date stays on the row in both layouts. Priority is never shown by colour alone: a one-line row shows the bars (three for priority 1, two for priority 2, one for priority 3) after the title, and screen readers read "Priority 1".

@@ -1119,8 +1119,9 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
   [data-row-open] { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; align-content: start; column-gap: 0.75rem; row-gap: 0.125rem; }
   [data-row-head] { grid-area: 1 / 1; }
   [data-row-meta="row"] { display: contents; }
+  /* On the title's first line, also when the title takes two (task-list-width D1). */
   [data-row-props] {
-    grid-area: 1 / 2; display: grid; align-items: center; column-gap: 0.75rem; white-space: nowrap;
+    grid-area: 1 / 2; align-self: start; min-height: 1.25rem; display: grid; align-items: center; column-gap: 0.75rem; white-space: nowrap;
     grid-template-columns: [date] 5.75rem [extra] 6.875rem [estimate] 4rem [assignee] 1.25rem;
   }
   [data-row-props="project"] { grid-template-columns: [date] 5.75rem [project] 9.375rem [extra] 6rem [estimate] 4rem [assignee] 1.25rem; }
@@ -1138,8 +1139,11 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
   [data-row-meta="row"] > [data-row-props] + [data-row-rest] > :first-child [data-row-item]:first-child::before,
   [data-row-meta="row"] > [data-row-props] + [data-row-rest] > [data-row-item]:first-child::before { content: none; }
   [data-row-meta="row"] [data-row-labels] { margin-inline: 0; }
-  /* The revealed actions float over the column's end (precision-rows D5), so the row keeps no room for them. */
-  [data-row-trailing] { min-width: 0; }
+  /* A readable measure on a very wide list (task-list-width D1): a long title wraps
+     at about 100 characters before its two lines end, whatever room the column leaves. */
+  [data-row-title] { max-width: 48rem; }
+  /* The Inbox's source line, in the column's place: on the title's first line too. */
+  [data-row-source] { align-self: start; min-height: 1.25rem; margin-top: 0; }
 }
 @container row (40rem <= width < 48rem) {
   [data-row-props] { grid-template-columns: [date] 5.75rem [extra] 6.875rem; }
@@ -1170,7 +1174,8 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
     [data-row-time] { width: auto; margin-inline-end: 0.25rem; }
     [data-row-open] { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 0.75rem; }
     [data-row-head] { grid-area: 1 / 1; }
-    [data-row-title] { font-size: 0.90625rem; }
+    /* The phone row stays one line (task-list-width D1): its title ends with an ellipsis. */
+    [data-row-title] { font-size: 0.90625rem; -webkit-line-clamp: 1; line-clamp: 1; }
     [data-row-meta="row"] { display: contents; }
     [data-row-props] { grid-area: 1 / 2; display: flex; align-items: center; white-space: nowrap; }
     [data-row-props] > [data-row-cell]:not([data-row-phone]), [data-row-rest] { display: none; }

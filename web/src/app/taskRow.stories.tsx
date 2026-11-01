@@ -276,7 +276,7 @@ export const ActionsRevealed: StoryObj = {
   render: () => <TodayRows forceActions />,
 }
 
-/** Long titles truncate beside the column and the trailing group, at every width. */
+/** Long titles wrap to two lines beside the column, then end with an ellipsis (task-list-width D1); a phone row keeps one line. */
 export const LongTitle: StoryObj = {
   render: () => (
     <List>
@@ -284,7 +284,27 @@ export const LongTitle: StoryObj = {
         task={task({ id: 't1', title: 'Collect testimonials from the first three customers, pick two quotes and send them to the designer before Friday', project_id: work.id, due: { date: TODAY, time: '09:30' }, estimate_minutes: 45, labels: [errand.id, call.id] })} />
       <TaskRow {...base} timeColumn showProject project={home}
         task={task({ id: 't2', title: 'Compare the three quotes for the kitchen renovation and call the one with the earliest start date', project_id: home.id, deadline: '2026-10-17' })} />
+      <TaskRow {...base} timeColumn showProject project={home}
+        task={task({ id: 't3', title: 'Email the cutting board company about the warped board, the replacement they promised in September, the refund for the shipping and why the second board never arrived either', project_id: home.id })} />
     </List>
+  ),
+}
+
+/**
+ * A narrow list (under 40 rem, the Inbox beside a medium window; GitHub issue 650): the
+ * titles take the row's whole width and two lines, the revealed actions float over the
+ * row's end instead of keeping room, and the row's height does not change on hover.
+ */
+export const LongTitleNarrow: StoryObj = {
+  render: () => (
+    <div className="max-w-md">
+      <List>
+        <TaskRow {...base} onMore={noop} task={task({ id: 't1', title: 'Find hottub details from invoice' })} />
+        <TaskRow {...base} onMore={noop} forceActions
+          task={task({ id: 't2', title: 'Email cutting board company (Babylonian Woodworks) about the warped board and the replacement they promised' })} />
+        <TaskRow {...base} onMore={noop} task={task({ id: 't3', title: 'Start organizing and listing Facebook items for sale before the move, starting with the furniture in the garage and the old bikes', estimate_minutes: 90 })} />
+      </List>
+    </div>
   ),
 }
 
