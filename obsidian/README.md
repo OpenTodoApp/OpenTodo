@@ -1,6 +1,6 @@
 # OpenTodo for Obsidian
 
-Send a line, or a selection of lines, from any note to your own [OpenTodo](https://github.com/OpenTodoApp/OpenTodo) server as tasks. Each task links back to the note it came from, and the line gets a link to the task. It works on Obsidian for desktop and mobile, offline, and with end-to-end encrypted accounts.
+Send a line, or a selection of lines, from any note to your own [OpenTodo](https://github.com/OpenTodoApp/OpenTodo) server as tasks, and keep a folder of task files in two-way sync with it. Each task sent links back to the note it came from, and the line gets a link to the task. It works on Obsidian for desktop and mobile, offline, and with end-to-end encrypted accounts.
 
 - **Send line to OpenTodo**: from the command palette, the editor's context menu or the mobile toolbar. With no selection it sends the line at the cursor; with a selection, each non-empty line (at most 50).
 - **Two grammars.** A checkbox line (`- [ ] Renew passport 📅 2026-11-05 ⏫ #errand`) is read like the [Tasks](https://publish.obsidian.md/tasks/) plugin and OpenTodo's vault: due date, start date, priority, `#tags` as labels, `[time:: 09:00]`, `[estimate:: 45m]`, `[deadline:: …]`. Any other line is read like OpenTodo's quick add: `Call the plumber tomorrow 9am p2 #Home @errand`.
@@ -9,6 +9,7 @@ Send a line, or a selection of lines, from any note to your own [OpenTodo](https
 - **The task links back**: its origin is `obsidian://open?vault=…&file=…`, so the chip on the task opens the note. Renaming or moving the note in Obsidian updates the links; "Fix OpenTodo links in this note" repairs links after a rename made elsewhere.
 - **Offline**: tasks wait on the device and are sent when OpenTodo can be reached (on start, when the network returns, every minute, or with "Send pending to OpenTodo").
 - **Encrypted accounts**: titles, notes and origins are encrypted on the device with OpenTodo's own code before they are queued; the passphrase unlocks the account key for the session ("Remember on this device" keeps it).
+- **Sync a folder**: one folder of the vault (default `OpenTodo/`) in two-way sync with OpenTodo, with the files and rules of `ot vault`: one file per project, one Tasks line per task, `.opentodo/state.json`. It syncs when the plugin starts, a second after a file in the folder changes, every 30 seconds while Obsidian is in front and with "Sync vault with OpenTodo now"; never in the background. A folder that Obsidian Sync, iCloud or git copies to several devices is synced by one of them; the others show which and offer "Take over syncing here".
 
 It needs OpenTodo 0.19.1 or newer on the server, and Obsidian 1.8.7 or newer.
 
@@ -21,9 +22,9 @@ The token is kept in Obsidian's storage on this device, never in the plugin's `d
 
 ## Network use and privacy
 
-The plugin connects only to the OpenTodo server you configure, through Obsidian's own request function, for these routes: `/healthz` (the server's version), `/api/v1/me`, `/api/v1/projects`, `/api/v1/labels`, `/api/v1/tasks/{id}` (the project of a linked task, after a rename on an encrypted account), `/api/v1/encryption/keys` (the wrapped key record of an encrypted account) and `/api/v1/sync` (sending tasks). Addresses must be `https`; plain `http` is accepted only for this device and private networks, after a warning.
+The plugin connects only to the OpenTodo server you configure, through Obsidian's own request function, for these routes: `/healthz` (the server's version), `/api/v1/me`, `/api/v1/projects`, `/api/v1/labels`, `/api/v1/tasks/{id}` (the project of a linked task, after a rename on an encrypted account), `/api/v1/encryption/keys` (the wrapped key record of an encrypted account) and `/api/v1/sync` (sending tasks, and the folder sync's exchange as a vault device `vault:<id>`). Addresses must be `https`; plain `http` is accepted only for this device and private networks, after a warning.
 
-It collects nothing: no analytics, no crash reports, no update check of its own (Obsidian updates plugins), no other destination. What it sends to your server is the tasks you send and the changes to their links.
+It collects nothing: no analytics, no crash reports, no update check of its own (Obsidian updates plugins), no other destination. What it sends to your server is the tasks you send, the changes to their links and, with folder sync on, the changes made in the synced folder.
 
 ## Install
 
@@ -35,15 +36,26 @@ The guide is [docs/obsidian.md](https://github.com/OpenTodoApp/OpenTodo/blob/mai
 
 ## Development
 
-The source lives in [`obsidian/`](https://github.com/OpenTodoApp/OpenTodo/tree/main/obsidian) of the OpenTodo repository; the release repository holds only the built files. The plugin bundles OpenTodo's own quick-add parser (`web/src/lib/nlp`), envelope code (`web/src/lib/crypto.ts`, `web/src/lib/e2eeEnvelope.ts`) and clock (`web/src/lib/hlc.ts`), and the TypeScript twin of the vault's task-line grammar (`src/vault/line.ts`, pinned with `internal/vault` by `internal/vault/testdata/lines.vectors.json`), so the shared vectors pin the plugin too.
+The source lives in [`obsidian/`](https://github.com/OpenTodoApp/OpenTodo/tree/main/obsidian) of the OpenTodo repository; the release repository holds only the built files. The plugin bundles OpenTodo's own quick-add parser (`web/src/lib/nlp`), envelope code (`web/src/lib/crypto.ts`, `web/src/lib/e2eeEnvelope.ts`) and clock (`web/src/lib/hlc.ts`), and the TypeScript twin of the vault (`src/vault/`: the task-line grammar, pinned with `internal/vault` by `internal/vault/testdata/lines.vectors.json`, and the sync engine, pinned by the step-by-step sync vectors in `internal/vault/testdata/sync/` that `go test ./internal/vault -run TestSyncVectors -update` writes from the Go engine), so the shared vectors pin the plugin too.
 
-- `make obsidian`: type-check, unit tests (web/'s vitest and happy-dom, with an in-memory `obsidian` module), and the build of `obsidian/dist/`, which fails when `main.js` is over 250 KB or needs a Node or Electron module (Obsidian mobile has neither).
+- `make obsidian`: type-check, unit tests (web/'s vitest and happy-dom, with an in-memory `obsidian` module), and the build of `obsidian/dist/`, which fails when `main.js` is over 400 KB (258 KB with the vault engine) or needs a Node or Electron module (Obsidian mobile has neither).
 - `make obsidian-e2e`: the plugin against `bin/opentodo` (`make build` first).
 - `cd obsidian && node esbuild.config.mjs --watch`, with `obsidian/dist` linked into a test vault's `.obsidian/plugins/opentodo`.
 
 Dependencies: none at run time. Build time: `obsidian` (the API's types) and `esbuild`, pinned in `package.json`.
 
 The plugin's strings are in `locales/` in the six languages OpenTodo ships, follow Obsidian's language and are checked by `make i18n-check`.
+
+## Manual runs of the folder sync
+
+The unit tests and `make obsidian-e2e` run the engine and the plugin against stand-ins and a real server; these runs on real devices are recorded here (obsidian-vault-sync task 5.3).
+
+| Run | Device and sync service | Date | Result |
+| --- | --- | --- | --- |
+| Turn on, tick a line, see it done in the app; a task made in the app appears within 30 s | iPhone, vault in iCloud Drive | not yet run | |
+| A file iCloud has not downloaded is skipped, then merged once it arrives | iPhone, vault in iCloud Drive | not yet run | |
+| Same folder on two devices: the second shows "Synced by …", then takes over | Android with Obsidian Sync, and a laptop with `ot vault watch` | not yet run | |
+| A folder moved from `ot vault` to the plugin and back (`--take-over` both ways) | laptop | not yet run | |
 
 ## Releases
 

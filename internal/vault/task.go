@@ -233,7 +233,7 @@ func (e *engine) mergeTask(m *mergeRun, pl place) error {
 	fileP := e.fileProj(m, pl, baseP)
 	if !a.Live() {
 		for f, v := range fileP {
-			if b.Live() && v != baseP[f] {
+			if e.takeOver || b.Live() && v != baseP[f] {
 				e.conflict(pl.path, pl.node.Raw, "trashed in the app")
 				break
 			}
@@ -247,7 +247,8 @@ func (e *engine) mergeTask(m *mergeRun, pl place) error {
 		if !ok || fv == baseP[f] || fv == appP[f] {
 			continue
 		}
-		if appP[f] != baseP[f] {
+		// After a take-over every difference keeps the server's value (design D5).
+		if appP[f] != baseP[f] || e.takeOver {
 			both = append(both, f)
 			continue
 		}

@@ -1,0 +1,1728 @@
+{
+  "name": "first-write",
+  "description": "the first sync writes one file per project, folder notes for parents and the Inbox; a second sync with no change writes nothing",
+  "loc": "UTC",
+  "user": "user-1",
+  "steps": [
+    {
+      "name": "init",
+      "now": 1793610060000,
+      "init": true,
+      "server": [
+        {
+          "id": "app-p-home-archived-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "archived",
+          "value": false,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-color-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "color",
+          "value": "#22c55e",
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-created_at-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "created_at",
+          "value": 1793602800000,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-deleted_at-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-icon-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "icon",
+          "value": "house",
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-name-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "name",
+          "value": "Home",
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-parent_id-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "parent_id",
+          "value": null,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-position-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "position",
+          "value": 1000,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-work-archived-1793606400002",
+          "entity": "project",
+          "entityId": "p-work",
+          "field": "archived",
+          "value": false,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-p-work-color-1793606400002",
+          "entity": "project",
+          "entityId": "p-work",
+          "field": "color",
+          "value": "#3b82f6",
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-p-work-created_at-1793606400002",
+          "entity": "project",
+          "entityId": "p-work",
+          "field": "created_at",
+          "value": 1793602800000,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-p-work-deleted_at-1793606400002",
+          "entity": "project",
+          "entityId": "p-work",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-p-work-name-1793606400002",
+          "entity": "project",
+          "entityId": "p-work",
+          "field": "name",
+          "value": "Work",
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-p-work-parent_id-1793606400002",
+          "entity": "project",
+          "entityId": "p-work",
+          "field": "parent_id",
+          "value": null,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-p-work-position-1793606400002",
+          "entity": "project",
+          "entityId": "p-work",
+          "field": "position",
+          "value": 2000,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-p-launch-archived-1793606400003",
+          "entity": "project",
+          "entityId": "p-launch",
+          "field": "archived",
+          "value": false,
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-p-launch-color-1793606400003",
+          "entity": "project",
+          "entityId": "p-launch",
+          "field": "color",
+          "value": "#22c55e",
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-p-launch-created_at-1793606400003",
+          "entity": "project",
+          "entityId": "p-launch",
+          "field": "created_at",
+          "value": 1793602800000,
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-p-launch-deleted_at-1793606400003",
+          "entity": "project",
+          "entityId": "p-launch",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-p-launch-name-1793606400003",
+          "entity": "project",
+          "entityId": "p-launch",
+          "field": "name",
+          "value": "Launch",
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-p-launch-parent_id-1793606400003",
+          "entity": "project",
+          "entityId": "p-launch",
+          "field": "parent_id",
+          "value": "p-work",
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-p-launch-position-1793606400003",
+          "entity": "project",
+          "entityId": "p-launch",
+          "field": "position",
+          "value": 1000,
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-p-odd-archived-1793606400004",
+          "entity": "project",
+          "entityId": "p-odd",
+          "field": "archived",
+          "value": false,
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-p-odd-color-1793606400004",
+          "entity": "project",
+          "entityId": "p-odd",
+          "field": "color",
+          "value": "#22c55e",
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-p-odd-created_at-1793606400004",
+          "entity": "project",
+          "entityId": "p-odd",
+          "field": "created_at",
+          "value": 1793602800000,
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-p-odd-deleted_at-1793606400004",
+          "entity": "project",
+          "entityId": "p-odd",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-p-odd-name-1793606400004",
+          "entity": "project",
+          "entityId": "p-odd",
+          "field": "name",
+          "value": "Q4/Q1: plans?",
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-p-odd-parent_id-1793606400004",
+          "entity": "project",
+          "entityId": "p-odd",
+          "field": "parent_id",
+          "value": null,
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-p-odd-position-1793606400004",
+          "entity": "project",
+          "entityId": "p-odd",
+          "field": "position",
+          "value": 3000,
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-p-gone-archived-1793606400005",
+          "entity": "project",
+          "entityId": "p-gone",
+          "field": "archived",
+          "value": true,
+          "ts": 1793606400005,
+          "device": "app"
+        },
+        {
+          "id": "app-p-gone-color-1793606400005",
+          "entity": "project",
+          "entityId": "p-gone",
+          "field": "color",
+          "value": "#22c55e",
+          "ts": 1793606400005,
+          "device": "app"
+        },
+        {
+          "id": "app-p-gone-created_at-1793606400005",
+          "entity": "project",
+          "entityId": "p-gone",
+          "field": "created_at",
+          "value": 1793602800000,
+          "ts": 1793606400005,
+          "device": "app"
+        },
+        {
+          "id": "app-p-gone-deleted_at-1793606400005",
+          "entity": "project",
+          "entityId": "p-gone",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400005,
+          "device": "app"
+        },
+        {
+          "id": "app-p-gone-name-1793606400005",
+          "entity": "project",
+          "entityId": "p-gone",
+          "field": "name",
+          "value": "Old",
+          "ts": 1793606400005,
+          "device": "app"
+        },
+        {
+          "id": "app-p-gone-parent_id-1793606400005",
+          "entity": "project",
+          "entityId": "p-gone",
+          "field": "parent_id",
+          "value": null,
+          "ts": 1793606400005,
+          "device": "app"
+        },
+        {
+          "id": "app-p-gone-position-1793606400005",
+          "entity": "project",
+          "entityId": "p-gone",
+          "field": "position",
+          "value": 4000,
+          "ts": 1793606400005,
+          "device": "app"
+        },
+        {
+          "id": "app-t-one-completed_at-1793606400006",
+          "entity": "task",
+          "entityId": "t-one",
+          "field": "completed_at",
+          "value": null,
+          "ts": 1793606400006,
+          "device": "app"
+        },
+        {
+          "id": "app-t-one-created_at-1793606400006",
+          "entity": "task",
+          "entityId": "t-one",
+          "field": "created_at",
+          "value": 1793602800000,
+          "ts": 1793606400006,
+          "device": "app"
+        },
+        {
+          "id": "app-t-one-deleted_at-1793606400006",
+          "entity": "task",
+          "entityId": "t-one",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400006,
+          "device": "app"
+        },
+        {
+          "id": "app-t-one-labels-1793606400006",
+          "entity": "task",
+          "entityId": "t-one",
+          "field": "labels",
+          "value": [],
+          "ts": 1793606400006,
+          "device": "app"
+        },
+        {
+          "id": "app-t-one-position-1793606400006",
+          "entity": "task",
+          "entityId": "t-one",
+          "field": "position",
+          "value": 1000,
+          "ts": 1793606400006,
+          "device": "app"
+        },
+        {
+          "id": "app-t-one-priority-1793606400006",
+          "entity": "task",
+          "entityId": "t-one",
+          "field": "priority",
+          "value": 4,
+          "ts": 1793606400006,
+          "device": "app"
+        },
+        {
+          "id": "app-t-one-project_id-1793606400006",
+          "entity": "task",
+          "entityId": "t-one",
+          "field": "project_id",
+          "value": null,
+          "ts": 1793606400006,
+          "device": "app"
+        },
+        {
+          "id": "app-t-one-title-1793606400006",
+          "entity": "task",
+          "entityId": "t-one",
+          "field": "title",
+          "value": "One",
+          "ts": 1793606400006,
+          "device": "app"
+        },
+        {
+          "id": "app-t-two-completed_at-1793606400007",
+          "entity": "task",
+          "entityId": "t-two",
+          "field": "completed_at",
+          "value": null,
+          "ts": 1793606400007,
+          "device": "app"
+        },
+        {
+          "id": "app-t-two-created_at-1793606400007",
+          "entity": "task",
+          "entityId": "t-two",
+          "field": "created_at",
+          "value": 1793602800000,
+          "ts": 1793606400007,
+          "device": "app"
+        },
+        {
+          "id": "app-t-two-deleted_at-1793606400007",
+          "entity": "task",
+          "entityId": "t-two",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400007,
+          "device": "app"
+        },
+        {
+          "id": "app-t-two-labels-1793606400007",
+          "entity": "task",
+          "entityId": "t-two",
+          "field": "labels",
+          "value": [],
+          "ts": 1793606400007,
+          "device": "app"
+        },
+        {
+          "id": "app-t-two-position-1793606400007",
+          "entity": "task",
+          "entityId": "t-two",
+          "field": "position",
+          "value": 500,
+          "ts": 1793606400007,
+          "device": "app"
+        },
+        {
+          "id": "app-t-two-priority-1793606400007",
+          "entity": "task",
+          "entityId": "t-two",
+          "field": "priority",
+          "value": 4,
+          "ts": 1793606400007,
+          "device": "app"
+        },
+        {
+          "id": "app-t-two-project_id-1793606400007",
+          "entity": "task",
+          "entityId": "t-two",
+          "field": "project_id",
+          "value": null,
+          "ts": 1793606400007,
+          "device": "app"
+        },
+        {
+          "id": "app-t-two-title-1793606400007",
+          "entity": "task",
+          "entityId": "t-two",
+          "field": "title",
+          "value": "Two",
+          "ts": 1793606400007,
+          "device": "app"
+        },
+        {
+          "id": "app-t-plumber-completed_at-1793606400008",
+          "entity": "task",
+          "entityId": "t-plumber",
+          "field": "completed_at",
+          "value": null,
+          "ts": 1793606400008,
+          "device": "app"
+        },
+        {
+          "id": "app-t-plumber-created_at-1793606400008",
+          "entity": "task",
+          "entityId": "t-plumber",
+          "field": "created_at",
+          "value": 1793602800000,
+          "ts": 1793606400008,
+          "device": "app"
+        },
+        {
+          "id": "app-t-plumber-deleted_at-1793606400008",
+          "entity": "task",
+          "entityId": "t-plumber",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400008,
+          "device": "app"
+        },
+        {
+          "id": "app-t-plumber-due-1793606400008",
+          "entity": "task",
+          "entityId": "t-plumber",
+          "field": "due",
+          "value": {
+            "date": "2026-11-05",
+            "time": "09:00"
+          },
+          "ts": 1793606400008,
+          "device": "app"
+        },
+        {
+          "id": "app-t-plumber-labels-1793606400008",
+          "entity": "task",
+          "entityId": "t-plumber",
+          "field": "labels",
+          "value": [],
+          "ts": 1793606400008,
+          "device": "app"
+        },
+        {
+          "id": "app-t-plumber-position-1793606400008",
+          "entity": "task",
+          "entityId": "t-plumber",
+          "field": "position",
+          "value": 1000,
+          "ts": 1793606400008,
+          "device": "app"
+        },
+        {
+          "id": "app-t-plumber-priority-1793606400008",
+          "entity": "task",
+          "entityId": "t-plumber",
+          "field": "priority",
+          "value": 2,
+          "ts": 1793606400008,
+          "device": "app"
+        },
+        {
+          "id": "app-t-plumber-project_id-1793606400008",
+          "entity": "task",
+          "entityId": "t-plumber",
+          "field": "project_id",
+          "value": "p-home",
+          "ts": 1793606400008,
+          "device": "app"
+        },
+        {
+          "id": "app-t-plumber-title-1793606400008",
+          "entity": "task",
+          "entityId": "t-plumber",
+          "field": "title",
+          "value": "Book the plumber",
+          "ts": 1793606400008,
+          "device": "app"
+        },
+        {
+          "id": "app-t-ship-completed_at-1793606400009",
+          "entity": "task",
+          "entityId": "t-ship",
+          "field": "completed_at",
+          "value": null,
+          "ts": 1793606400009,
+          "device": "app"
+        },
+        {
+          "id": "app-t-ship-created_at-1793606400009",
+          "entity": "task",
+          "entityId": "t-ship",
+          "field": "created_at",
+          "value": 1793602800000,
+          "ts": 1793606400009,
+          "device": "app"
+        },
+        {
+          "id": "app-t-ship-deadline-1793606400009",
+          "entity": "task",
+          "entityId": "t-ship",
+          "field": "deadline",
+          "value": "2026-11-20",
+          "ts": 1793606400009,
+          "device": "app"
+        },
+        {
+          "id": "app-t-ship-deleted_at-1793606400009",
+          "entity": "task",
+          "entityId": "t-ship",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400009,
+          "device": "app"
+        },
+        {
+          "id": "app-t-ship-estimate_minutes-1793606400009",
+          "entity": "task",
+          "entityId": "t-ship",
+          "field": "estimate_minutes",
+          "value": 90,
+          "ts": 1793606400009,
+          "device": "app"
+        },
+        {
+          "id": "app-t-ship-labels-1793606400009",
+          "entity": "task",
+          "entityId": "t-ship",
+          "field": "labels",
+          "value": [],
+          "ts": 1793606400009,
+          "device": "app"
+        },
+        {
+          "id": "app-t-ship-position-1793606400009",
+          "entity": "task",
+          "entityId": "t-ship",
+          "field": "position",
+          "value": 1000,
+          "ts": 1793606400009,
+          "device": "app"
+        },
+        {
+          "id": "app-t-ship-priority-1793606400009",
+          "entity": "task",
+          "entityId": "t-ship",
+          "field": "priority",
+          "value": 4,
+          "ts": 1793606400009,
+          "device": "app"
+        },
+        {
+          "id": "app-t-ship-project_id-1793606400009",
+          "entity": "task",
+          "entityId": "t-ship",
+          "field": "project_id",
+          "value": "p-launch",
+          "ts": 1793606400009,
+          "device": "app"
+        },
+        {
+          "id": "app-t-ship-title-1793606400009",
+          "entity": "task",
+          "entityId": "t-ship",
+          "field": "title",
+          "value": "Ship it",
+          "ts": 1793606400009,
+          "device": "app"
+        },
+        {
+          "id": "app-t-done-completed_at-1793606400010",
+          "entity": "task",
+          "entityId": "t-done",
+          "field": "completed_at",
+          "value": 1793347200000,
+          "ts": 1793606400010,
+          "device": "app"
+        },
+        {
+          "id": "app-t-done-created_at-1793606400010",
+          "entity": "task",
+          "entityId": "t-done",
+          "field": "created_at",
+          "value": 1793602800000,
+          "ts": 1793606400010,
+          "device": "app"
+        },
+        {
+          "id": "app-t-done-deleted_at-1793606400010",
+          "entity": "task",
+          "entityId": "t-done",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400010,
+          "device": "app"
+        },
+        {
+          "id": "app-t-done-labels-1793606400010",
+          "entity": "task",
+          "entityId": "t-done",
+          "field": "labels",
+          "value": [],
+          "ts": 1793606400010,
+          "device": "app"
+        },
+        {
+          "id": "app-t-done-position-1793606400010",
+          "entity": "task",
+          "entityId": "t-done",
+          "field": "position",
+          "value": 1000,
+          "ts": 1793606400010,
+          "device": "app"
+        },
+        {
+          "id": "app-t-done-priority-1793606400010",
+          "entity": "task",
+          "entityId": "t-done",
+          "field": "priority",
+          "value": 4,
+          "ts": 1793606400010,
+          "device": "app"
+        },
+        {
+          "id": "app-t-done-project_id-1793606400010",
+          "entity": "task",
+          "entityId": "t-done",
+          "field": "project_id",
+          "value": "p-home",
+          "ts": 1793606400010,
+          "device": "app"
+        },
+        {
+          "id": "app-t-done-title-1793606400010",
+          "entity": "task",
+          "entityId": "t-done",
+          "field": "title",
+          "value": "Done before",
+          "ts": 1793606400010,
+          "device": "app"
+        }
+      ],
+      "device": "vault:vectors",
+      "want": {
+        "pushed": [],
+        "files": {
+          "Home.md": "---\nopentodo-id: p-home\nopentodo-color: \"#22c55e\"\nopentodo-icon: house\n---\n\n- [ ] Book the plumber 📅 2026-11-05 [time:: 09:00] ⏫ 🆔 t-plumber\n",
+          "Inbox.md": "- [ ] Two 🆔 t-two\n- [ ] One 🆔 t-one\n",
+          "Q4-Q1- plans-.md": "---\nopentodo-id: p-odd\nopentodo-color: \"#22c55e\"\n---\n",
+          "Work/Launch.md": "---\nopentodo-id: p-launch\nopentodo-color: \"#22c55e\"\n---\n\n- [ ] Ship it [deadline:: 2026-11-20] [estimate:: 1h30m] 🆔 t-ship\n",
+          "Work/Work.md": "---\nopentodo-id: p-work\nopentodo-color: \"#3b82f6\"\n---\n"
+        },
+        "report": {
+          "written": 5,
+          "created": 0,
+          "updated": 0,
+          "trashed": 0,
+          "conflicts": 0,
+          "warnings": [],
+          "cursor": 79,
+          "events": [
+            {
+              "kind": "written",
+              "file": "Inbox.md",
+              "text": "wrote Inbox.md"
+            },
+            {
+              "kind": "written",
+              "file": "Home.md",
+              "text": "wrote Home.md"
+            },
+            {
+              "kind": "written",
+              "file": "Work/Launch.md",
+              "text": "wrote Work/Launch.md"
+            },
+            {
+              "kind": "written",
+              "file": "Q4-Q1- plans-.md",
+              "text": "wrote Q4-Q1- plans-.md"
+            },
+            {
+              "kind": "written",
+              "file": "Work/Work.md",
+              "text": "wrote Work/Work.md"
+            }
+          ],
+          "projects": 4,
+          "tasks": 4
+        },
+        "state": {
+          "version": 2,
+          "device": "vault:vectors",
+          "profile": "default",
+          "server": "https://todo.example.com",
+          "cursor": 79,
+          "clock": 1793606400010,
+          "offset": 0,
+          "store": {
+            "project": {
+              "p-gone": {
+                "archived": {
+                  "v": true,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Old",
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 4000,
+                  "t": 1793606400005,
+                  "d": "app"
+                }
+              },
+              "p-home": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "icon": {
+                  "v": "house",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Home",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400001,
+                  "d": "app"
+                }
+              },
+              "p-launch": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Launch",
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": "p-work",
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400003,
+                  "d": "app"
+                }
+              },
+              "p-odd": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Q4/Q1: plans?",
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 3000,
+                  "t": 1793606400004,
+                  "d": "app"
+                }
+              },
+              "p-work": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#3b82f6",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Work",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793606400002,
+                  "d": "app"
+                }
+              }
+            },
+            "task": {
+              "t-done": {
+                "completed_at": {
+                  "v": 1793347200000,
+                  "t": 1793606400010,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400010,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400010,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400010,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400010,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400010,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400010,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Done before",
+                  "t": 1793606400010,
+                  "d": "app"
+                }
+              },
+              "t-one": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": null,
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "One",
+                  "t": 1793606400006,
+                  "d": "app"
+                }
+              },
+              "t-plumber": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400008,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400008,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400008,
+                  "d": "app"
+                },
+                "due": {
+                  "v": {
+                    "date": "2026-11-05",
+                    "time": "09:00"
+                  },
+                  "t": 1793606400008,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400008,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400008,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 2,
+                  "t": 1793606400008,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400008,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Book the plumber",
+                  "t": 1793606400008,
+                  "d": "app"
+                }
+              },
+              "t-ship": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400009,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400009,
+                  "d": "app"
+                },
+                "deadline": {
+                  "v": "2026-11-20",
+                  "t": 1793606400009,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400009,
+                  "d": "app"
+                },
+                "estimate_minutes": {
+                  "v": 90,
+                  "t": 1793606400009,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400009,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400009,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400009,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-launch",
+                  "t": 1793606400009,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Ship it",
+                  "t": 1793606400009,
+                  "d": "app"
+                }
+              },
+              "t-two": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 500,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": null,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Two",
+                  "t": 1793606400007,
+                  "d": "app"
+                }
+              }
+            }
+          },
+          "files": {
+            "Home.md": {
+              "project": "p-home",
+              "hash": "7d1a2ba1e63f8c0b3f7190b035f62407ada3960e7ea756a63f7213619050127a"
+            },
+            "Inbox.md": {
+              "project": "",
+              "hash": "0f20980d741faab41646722a4bf557a595abe21c76bf53b7b246bad58356f6b6"
+            },
+            "Q4-Q1- plans-.md": {
+              "project": "p-odd",
+              "hash": "63bacbae54e5027965df783d4d3583d311ab40bc090073357d4e8265a43c9f84"
+            },
+            "Work/Launch.md": {
+              "project": "p-launch",
+              "hash": "4cda7a4b7e597495adbe064f8663ea8fdbbc9093e0c2604a5804fe408605a58c"
+            },
+            "Work/Work.md": {
+              "project": "p-work",
+              "hash": "aa2da551b4088e3bc5fa8f1efe3788d104d9f38e0b417cba06d0c021d6004022"
+            }
+          },
+          "printed": {
+            "t-one": "Inbox.md",
+            "t-plumber": "Home.md",
+            "t-ship": "Work/Launch.md",
+            "t-two": "Inbox.md"
+          },
+          "initialized": true
+        }
+      }
+    },
+    {
+      "name": "idle",
+      "now": 1793610120000,
+      "want": {
+        "pushed": [],
+        "files": {
+          "Home.md": "---\nopentodo-id: p-home\nopentodo-color: \"#22c55e\"\nopentodo-icon: house\n---\n\n- [ ] Book the plumber 📅 2026-11-05 [time:: 09:00] ⏫ 🆔 t-plumber\n",
+          "Inbox.md": "- [ ] Two 🆔 t-two\n- [ ] One 🆔 t-one\n",
+          "Q4-Q1- plans-.md": "---\nopentodo-id: p-odd\nopentodo-color: \"#22c55e\"\n---\n",
+          "Work/Launch.md": "---\nopentodo-id: p-launch\nopentodo-color: \"#22c55e\"\n---\n\n- [ ] Ship it [deadline:: 2026-11-20] [estimate:: 1h30m] 🆔 t-ship\n",
+          "Work/Work.md": "---\nopentodo-id: p-work\nopentodo-color: \"#3b82f6\"\n---\n"
+        },
+        "report": {
+          "written": 0,
+          "created": 0,
+          "updated": 0,
+          "trashed": 0,
+          "conflicts": 0,
+          "warnings": [],
+          "cursor": 79,
+          "events": [],
+          "projects": 4,
+          "tasks": 4
+        },
+        "state": {
+          "version": 2,
+          "device": "vault:vectors",
+          "profile": "default",
+          "server": "https://todo.example.com",
+          "cursor": 79,
+          "clock": 1793606400010,
+          "offset": 0,
+          "store": {
+            "project": {
+              "p-gone": {
+                "archived": {
+                  "v": true,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Old",
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400005,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 4000,
+                  "t": 1793606400005,
+                  "d": "app"
+                }
+              },
+              "p-home": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "icon": {
+                  "v": "house",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Home",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400001,
+                  "d": "app"
+                }
+              },
+              "p-launch": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Launch",
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": "p-work",
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400003,
+                  "d": "app"
+                }
+              },
+              "p-odd": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Q4/Q1: plans?",
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 3000,
+                  "t": 1793606400004,
+                  "d": "app"
+                }
+              },
+              "p-work": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#3b82f6",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Work",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793606400002,
+                  "d": "app"
+                }
+              }
+            },
+            "task": {
+              "t-done": {
+                "completed_at": {
+                  "v": 1793347200000,
+                  "t": 1793606400010,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400010,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400010,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400010,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400010,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400010,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400010,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Done before",
+                  "t": 1793606400010,
+                  "d": "app"
+                }
+              },
+              "t-one": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": null,
+                  "t": 1793606400006,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "One",
+                  "t": 1793606400006,
+                  "d": "app"
+                }
+              },
+              "t-plumber": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400008,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400008,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400008,
+                  "d": "app"
+                },
+                "due": {
+                  "v": {
+                    "date": "2026-11-05",
+                    "time": "09:00"
+                  },
+                  "t": 1793606400008,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400008,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400008,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 2,
+                  "t": 1793606400008,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-home",
+                  "t": 1793606400008,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Book the plumber",
+                  "t": 1793606400008,
+                  "d": "app"
+                }
+              },
+              "t-ship": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400009,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400009,
+                  "d": "app"
+                },
+                "deadline": {
+                  "v": "2026-11-20",
+                  "t": 1793606400009,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400009,
+                  "d": "app"
+                },
+                "estimate_minutes": {
+                  "v": 90,
+                  "t": 1793606400009,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400009,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400009,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400009,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-launch",
+                  "t": 1793606400009,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Ship it",
+                  "t": 1793606400009,
+                  "d": "app"
+                }
+              },
+              "t-two": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 500,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": null,
+                  "t": 1793606400007,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Two",
+                  "t": 1793606400007,
+                  "d": "app"
+                }
+              }
+            }
+          },
+          "files": {
+            "Home.md": {
+              "project": "p-home",
+              "hash": "7d1a2ba1e63f8c0b3f7190b035f62407ada3960e7ea756a63f7213619050127a"
+            },
+            "Inbox.md": {
+              "project": "",
+              "hash": "0f20980d741faab41646722a4bf557a595abe21c76bf53b7b246bad58356f6b6"
+            },
+            "Q4-Q1- plans-.md": {
+              "project": "p-odd",
+              "hash": "63bacbae54e5027965df783d4d3583d311ab40bc090073357d4e8265a43c9f84"
+            },
+            "Work/Launch.md": {
+              "project": "p-launch",
+              "hash": "4cda7a4b7e597495adbe064f8663ea8fdbbc9093e0c2604a5804fe408605a58c"
+            },
+            "Work/Work.md": {
+              "project": "p-work",
+              "hash": "aa2da551b4088e3bc5fa8f1efe3788d104d9f38e0b417cba06d0c021d6004022"
+            }
+          },
+          "printed": {
+            "t-one": "Inbox.md",
+            "t-plumber": "Home.md",
+            "t-ship": "Work/Launch.md",
+            "t-two": "Inbox.md"
+          },
+          "initialized": true
+        }
+      }
+    }
+  ]
+}

@@ -360,13 +360,13 @@ The note tools work through the bridge too: `create_note`, `update_note` and `ap
 
 ## Markdown vault
 
-`ot vault` keeps a folder of Markdown files, one per project, in two-way sync with the account; it is the one command group that keeps local state (the files and `<dir>/.opentodo/`). It is a sync device of its own and needs a `full` token; with `--read-only` it pulls and writes the files but sends nothing. See [Markdown vault](vault.md).
+`ot vault` keeps a folder of Markdown files, one per project, in two-way sync with the account; it is the one command group that keeps local state (the files and `<dir>/.opentodo/`). It is a sync device of its own and needs a `full` token; with `--read-only` it pulls and writes the files but sends nothing. A folder another device syncs (another machine, or the Obsidian plugin on a phone) is refused before any request with `vault_owned`, exit 2; `--take-over` makes this machine its syncing device. See [Markdown vault](vault.md#one-syncing-device).
 
 ```bash
 ot vault init ~/Notes/Tasks [--adopt]
-ot vault sync [<dir>] [--dry-run] [--read-only] [--json]
+ot vault sync [<dir>] [--dry-run] [--read-only] [--take-over] [--json]
 ot vault status [<dir>] [--json]
-ot vault watch [<dir>]
+ot vault watch [<dir>] [--take-over]
 ```
 
 ## Scripting: JSON output and exit codes

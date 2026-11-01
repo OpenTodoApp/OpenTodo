@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/e2ee/crypt"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
 	"github.com/OpenTodoApp/opentodo/internal/vault"
 )
 
@@ -136,15 +137,46 @@ func (a *App) vaultConnect(ctx context.Context, g *globalFlags, dir string) (*va
 	return s, nil
 }
 
+// vaultOwner is this machine's installation as a vault owner (OpenSpec change
+// obsidian-vault-sync, design D4): a random id kept in the profile directory,
+// next to config.json, and the host name. nil when the profile directory is
+// unknown, which skips the ownership check.
+func (a *App) vaultOwner() *vault.Owner {
+	if a.ConfigPath == "" {
+		return nil
+	}
+	p := filepath.Join(filepath.Dir(a.ConfigPath), "vault-install")
+	id := ""
+	if b, err := os.ReadFile(p); err == nil {
+		id = strings.TrimSpace(string(b))
+	}
+	if id == "" {
+		id = ids.Hex(12)
+		if err := os.MkdirAll(filepath.Dir(p), 0o700); err != nil {
+			return nil
+		}
+		if err := os.WriteFile(p, []byte(id+"\n"), 0o600); err != nil {
+			return nil
+		}
+	}
+	return &vault.Owner{Kind: "cli", Install: id, Label: a.Hostname}
+}
+
+// takeOverHelp describes --take-over on vault sync and watch.
+const takeOverHelp = "sync a folder another device owns from this machine: a new vault device, and a first sync that keeps the server's values and lists differing lines in conflict files"
+
 // vaultErr maps the vault's errors to exit codes.
 func vaultErr(dir string, err error) error {
 	var le *vault.LimitError
 	var ue *vault.UnreachableError
 	var he *vault.HTTPError
 	var se *vault.SettingsError
+	var oe *vault.OwnedError
 	switch {
 	case err == nil:
 		return nil
+	case errors.As(err, &oe):
+		return &exitError{code: ExitUsage, jsonCode: "vault_owned", msg: oe.Error() + ". Nothing was sent. Run `ot vault sync --take-over " + dir + "` to sync it on this machine instead"}
 	case errors.As(err, &le):
 		return &exitError{code: ExitUsage, jsonCode: "vault_limit", msg: le.Msg + "; nothing was written or sent"}
 	case errors.As(err, &se):
@@ -200,6 +232,7 @@ func vaultInit(a *App, ctx context.Context, g *globalFlags, args []string) error
 		}
 	}
 	s.opts.State = vault.NewState(s.target.Profile, s.target.URL)
+	s.opts.Owner = a.vaultOwner()
 	rep, err := vault.Sync(ctx, s.opts)
 	if err != nil {
 		if errors.Is(statErr, fs.ErrNotExist) {
@@ -223,10 +256,15 @@ func vaultInit(a *App, ctx context.Context, g *globalFlags, args []string) error
 	return nil
 }
 
-// syncVault runs one sync of an existing vault with its profile.
-func (a *App) syncVault(ctx context.Context, g *globalFlags, dir string) (*vault.Report, *vaultSession, error) {
+// syncVault runs one sync of an existing vault with its profile. A folder
+// another installation owns is refused before any request unless takeOver.
+func (a *App) syncVault(ctx context.Context, g *globalFlags, dir string, takeOver bool) (*vault.Report, *vaultSession, error) {
 	st, err := vault.LoadState(dir)
 	if err != nil {
+		return nil, nil, vaultErr(dir, err)
+	}
+	owner := a.vaultOwner()
+	if err := st.CheckOwner(owner, time.Now()); err != nil && !takeOver {
 		return nil, nil, vaultErr(dir, err)
 	}
 	if g.profile == "" {
@@ -239,17 +277,19 @@ func (a *App) syncVault(ctx context.Context, g *globalFlags, dir string) (*vault
 	if strings.TrimRight(s.target.URL, "/") != strings.TrimRight(st.Server, "/") {
 		return nil, nil, usageErr("%s is a vault of %s, not %s; use --profile to pick its profile", dir, st.Server, s.target.URL)
 	}
+	s.opts.Owner, s.opts.TakeOver = owner, takeOver
 	rep, err := vault.Sync(ctx, s.opts)
 	return rep, s, vaultErr(dir, err)
 }
 
 func vaultSync(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	set := a.flagSet("vault sync", g)
+	takeOver := set.Bool("take-over", false, takeOverHelp)
 	dir, err := a.vaultParse(g, set, "vault sync", args, false)
 	if err != nil {
 		return a.helpOr("vault", err)
 	}
-	rep, _, err := a.syncVault(ctx, g, dir)
+	rep, _, err := a.syncVault(ctx, g, dir, *takeOver)
 	if err != nil {
 		return err
 	}
@@ -352,6 +392,7 @@ func sameSnapshot(a, b map[string]string) bool {
 
 func vaultWatch(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	set := a.flagSet("vault watch", g)
+	takeOver := set.Bool("take-over", false, takeOverHelp)
 	dir, err := a.vaultParse(g, set, "vault watch", args, false)
 	if err != nil {
 		return a.helpOr("vault", err)
@@ -388,27 +429,34 @@ func vaultWatch(a *App, ctx context.Context, g *globalFlags, args []string) erro
 			}
 		}
 	}()
-	return a.watchLoop(ctx, g, dir, wake, streamUp)
+	return a.watchLoop(ctx, g, dir, *takeOver, wake, streamUp)
 }
 
 // watchLoop syncs once, then on a wake from the live channel, on a changed
 // file stable for watchStable, and every watchFallback while the channel is
-// down; a failed sync is printed and retried with a growing wait.
-func (a *App) watchLoop(ctx context.Context, g *globalFlags, dir string, wake <-chan struct{}, streamUp <-chan bool) error {
+// down; a failed sync is printed and retried with a growing wait. takeOver
+// applies to the first sync; a folder another installation owns (or takes
+// over while this runs) stops the loop with vault_owned.
+func (a *App) watchLoop(ctx context.Context, g *globalFlags, dir string, takeOver bool, wake <-chan struct{}, streamUp <-chan bool) error {
 	up := false
 	fail := 0
+	var owned error
 	var retryAt time.Time
 	last := map[string]string{}
 	run := func() {
 		// Taken before the sync: a save that lands while it runs must still look
 		// new afterwards. The sync's own writes cost one more sync, which writes nothing.
 		before := snapshot(dir)
-		rep, _, err := a.syncVault(ctx, g, dir)
+		rep, _, err := a.syncVault(ctx, g, dir, takeOver)
 		if ctx.Err() != nil {
 			return
 		}
 		if err != nil {
 			var ee *exitError
+			if errors.As(err, &ee) && ee.jsonCode == "vault_owned" {
+				owned = err
+				return
+			}
 			if errors.As(err, &ee) && ee.code == ExitNotPermitted {
 				fmt.Fprintln(a.Stderr, "ot: "+ee.msg)
 			} else {
@@ -423,7 +471,7 @@ func (a *App) watchLoop(ctx context.Context, g *globalFlags, dir string, wake <-
 			fmt.Fprintf(a.Stderr, "ot: retrying in %s\n", wait.Round(time.Second))
 			return
 		}
-		fail, retryAt = 0, time.Time{}
+		fail, retryAt, takeOver = 0, time.Time{}, false
 		last = before
 		if g.json {
 			_ = a.printJSON(rep)
@@ -436,6 +484,9 @@ func (a *App) watchLoop(ctx context.Context, g *globalFlags, dir string, wake <-
 	defer tick.Stop()
 	lastFull := time.Now()
 	for {
+		if owned != nil {
+			return owned
+		}
 		select {
 		case <-ctx.Done():
 			return nil

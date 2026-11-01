@@ -15,8 +15,8 @@ import esbuild from 'esbuild'
 
 const here = (p) => fileURLToPath(new URL(p, import.meta.url))
 
-/** The budget of main.js, minified (design "Size"). */
-export const BUDGET_BYTES = 250 * 1024
+/** The budget of main.js, minified: 250 KB in obsidian-plugin, 400 KB with the vault engine (obsidian-vault-sync, design "Size"). */
+export const BUDGET_BYTES = 400 * 1024
 
 /** Modules Obsidian provides at run time. */
 const EXTERNAL = ['obsidian', 'electron', '@codemirror/*', '@lezer/*', ...builtinModules, ...builtinModules.map((m) => `node:${m}`)]

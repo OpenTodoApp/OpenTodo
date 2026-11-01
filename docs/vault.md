@@ -13,7 +13,7 @@ order: 25
 
 ```bash
 ot vault init ~/Notes/Tasks     # new or empty folder; --adopt accepts .md files
-ot vault sync ~/Notes/Tasks     # --dry-run plans; --read-only pushes nothing
+ot vault sync ~/Notes/Tasks     # --dry-run plans; --read-only pushes nothing; --take-over (below)
 ot vault status ~/Notes/Tasks   # changed and conflict files, offline
 ot vault watch ~/Notes/Tasks    # keep syncing until Ctrl+C
 ot vault tasknotes <folder>     # also sync a TaskNotes folder (see below)
@@ -21,7 +21,7 @@ ot vault tasknotes <folder>     # also sync a TaskNotes folder (see below)
 
 It needs a `full` token, and it is the one part of `ot` that keeps data locally: the files and `.opentodo/state.json`.
 
-To send single lines from daily and meeting notes instead, on a phone too, use the [Obsidian plugin](obsidian.md): it reads checkbox lines with the same grammar and links each task back to its note.
+The [Obsidian plugin](obsidian.md#sync-a-folder) syncs a folder with the same rules and files, on a phone too, so a folder can move between it and `ot vault`. It also sends single lines from daily and meeting notes, with the same grammar, linking each task back to its note.
 
 ## The files
 
@@ -97,6 +97,12 @@ TASK FROM "Tasks" WHERE !completed AND deadline <= date(today) + dur(7 days)
 | Line removed, task unchanged | task trashed |
 | Line removed, task changed | line written back |
 | Project archived | file removed, or renamed `.conflict.md` if edited |
+
+## One syncing device
+
+A folder has one syncing device at a time. `.opentodo/state.json` names the installation that syncs it (`owner`: `ot` on a machine, by host name, or the Obsidian plugin on a device) and until when (`lease_until`, five minutes after its last sync; `watch` renews it on every cycle). When Obsidian Sync, iCloud or git copies the folder to other machines, only the owner talks to the server; elsewhere `ot vault sync` and `watch` stop before any request with exit code 2 and the error `vault_owned`, naming the owner. Edits made there reach the server through the copy and the owner's next sync.
+
+When the owner is gone for good, `ot vault sync --take-over` (or `watch --take-over`) makes this machine the owner: a new vault device and a first sync that compares every line with the server. A line that differs keeps the server's values and goes to `<file>.conflict.md`, a line without an id becomes a task, nothing is trashed or created twice. A state file written before this rule has no owner; the first machine that syncs it becomes the owner.
 
 ## TaskNotes
 
@@ -176,6 +182,8 @@ The vault doesn't write new notes for tasks created elsewhere: those go to proje
 ## Limits
 
 1 MB and 5,000 task lines per file, 20,000 tasks, 64 KB per note. A task note counts as one task. Over a limit, nothing is written or sent.
+
+A file that iCloud Drive has not downloaded yet (only a `.<name>.icloud` placeholder is there) is skipped, and its tasks are left alone until it arrives.
 
 ## Encrypted accounts
 
