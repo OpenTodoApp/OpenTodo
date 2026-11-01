@@ -8,10 +8,10 @@ import { getMeta, setMeta } from './db'
 import { currentLanguage } from './i18n'
 
 export type ChannelKind = 'ntfy' | 'pushover' | 'gotify' | 'webhook'
-export type ChannelEvent = 'reminder' | 'assigned' | 'mentioned' | 'unblocked' | 'page'
+export type ChannelEvent = 'reminder' | 'assigned' | 'mentioned' | 'unblocked' | 'page' | 'routine'
 
 export const CHANNEL_KINDS: readonly ChannelKind[] = ['ntfy', 'pushover', 'gotify', 'webhook']
-export const CHANNEL_EVENTS: readonly ChannelEvent[] = ['reminder', 'assigned', 'mentioned', 'unblocked', 'page']
+export const CHANNEL_EVENTS: readonly ChannelEvent[] = ['reminder', 'assigned', 'mentioned', 'unblocked', 'page', 'routine']
 export const MAX_CHANNELS = 5
 export const NTFY_DEFAULT = 'https://ntfy.sh'
 

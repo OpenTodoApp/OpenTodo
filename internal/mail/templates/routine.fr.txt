@@ -1,0 +1,12 @@
+{{.Subject}}
+
+{{.Text}}
+
+--
+Ce message a été envoyé par votre routine « {{.Routine}} » sur OpenTodo à {{.Origin}}.
+
+Voir cette exécution :
+
+{{.Link}}
+
+Vous recevez ce message parce que votre routine a une étape M’envoyer un e-mail qui écrit à {{.Email}}. Pour l’arrêter, désactivez la routine ou retirez l’étape sur la page Routines.

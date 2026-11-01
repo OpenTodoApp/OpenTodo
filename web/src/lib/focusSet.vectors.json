@@ -1,0 +1,11 @@
+[
+  {"name": "three: the first three open tasks", "style": "", "order": "", "ids": ["a", "b", "c", "d"], "tasks": [{"id": "a"}, {"id": "b"}, {"id": "c"}, {"id": "d"}], "out": {"focus_date": "2026-11-04", "focus": "a,b,c"}},
+  {"name": "three: completed and deleted left out", "style": "three", "order": "", "ids": ["a", "b", "c", "d"], "tasks": [{"id": "a", "completed_at": 5}, {"id": "b"}, {"id": "c", "deleted_at": 5}, {"id": "d"}], "out": {"focus_date": "2026-11-04", "focus": "b,d"}},
+  {"name": "three: unknown ids and duplicates", "style": "three", "order": "", "ids": ["x", "a", "a"], "tasks": [{"id": "a"}], "out": {"focus_date": "2026-11-04", "focus": "a"}},
+  {"name": "three: nothing", "style": "three", "order": "", "ids": [], "tasks": [], "out": {"focus_date": "2026-11-04", "focus": ""}},
+  {"name": "bento: by estimate", "style": "bento", "order": "", "ids": ["s", "l", "m"], "tasks": [{"id": "s", "estimate_minutes": 15}, {"id": "l", "estimate_minutes": 120}, {"id": "m", "estimate_minutes": 45}], "out": {"focus_date": "2026-11-04", "focus": "l,m,s", "focus_slots": "L:l,M:m,S:s"}},
+  {"name": "bento: two small, the second takes the first free slot", "style": "bento", "order": "", "ids": ["s1", "s2"], "tasks": [{"id": "s1", "estimate_minutes": 10}, {"id": "s2", "estimate_minutes": 20}], "out": {"focus_date": "2026-11-04", "focus": "s2,s1", "focus_slots": "L:s2,S:s1"}},
+  {"name": "bento: no estimate fills free slots in Frog order", "style": "bento", "order": "", "ids": ["a", "b"], "tasks": [{"id": "a"}, {"id": "b"}], "out": {"focus_date": "2026-11-04", "focus": "a,b", "focus_slots": "L:a,M:b"}},
+  {"name": "bento: a fourth is left out", "style": "bento", "order": "", "ids": ["a", "b", "c", "d"], "tasks": [{"id": "a"}, {"id": "b"}, {"id": "c"}, {"id": "d"}], "out": {"focus_date": "2026-11-04", "focus": "a,b,c", "focus_slots": "L:a,M:b,S:c"}},
+  {"name": "bento: summit order lists Medium first", "style": "bento", "order": "summit", "ids": ["l", "m", "s"], "tasks": [{"id": "l", "estimate_minutes": 90}, {"id": "m", "estimate_minutes": 31}, {"id": "s", "estimate_minutes": 30}], "out": {"focus_date": "2026-11-04", "focus": "m,l,s", "focus_slots": "M:m,L:l,S:s"}}
+]

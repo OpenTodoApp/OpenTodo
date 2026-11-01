@@ -93,6 +93,10 @@ Messages are written in the language of the browser that caused them (English, G
 
 With outgoing email configured, each user can opt in to a weekly digest in **Settings → Notifications** ([user guide](../statistics.md#weekly-digest-by-email)). The server sends it on the user's chosen weekday and hour in their time zone, from one background pass every 5 minutes. A failed send is retried every 15 minutes for six hours, then given up and recorded as `email.failed` with reason `skipped`; a restart never sends a second digest for the same day. Digests count towards the per-recipient limit but not the server-wide one, so a busy digest morning never blocks a password reset. The digest contains task and project names, so it is never built for an account with end-to-end encryption. Without `OPENTODO_BASE_URL` the review link uses the address the user saved the setting from.
 
+## Routine email
+
+A user's [routine](../routines.md) can have an **Email me** step: it sends the text the routine produced to the account's own verified address, never to an address typed into the routine, with the routine's name, a link to the run and how to turn it off. It is offered only while outgoing email is configured and the account has a verified address, never for an account with end-to-end encryption and never on a demo instance. Besides the limits below, a routine sends at most 10 messages a day and an account 20; a message past them is recorded as `email.failed` with reason `rate_limited` and the run fails at that step.
+
 ## Limits
 
 At most 5 messages of one kind to one address per hour, and 100 messages per hour for the whole server. A message over a limit is not sent and is recorded in the audit log. Sending is immediate and never retried: if the SMTP server cannot be reached, an invitation or reset sent by email is not created and the screen says so, so you can try again or copy a link instead.

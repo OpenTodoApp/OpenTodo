@@ -1,7 +1,7 @@
 // Package filter is a Go port of the filter query tokenizer and parser
-// (web/src/lib/filter/parse.ts, grammar in docs/filters.md). The server only needs to
-// accept or reject a query so the REST API can validate saved views (OpenSpec
-// `custom-views`, design D6); evaluation stays on the client. Messages and positions
+// (web/src/lib/filter/parse.ts, grammar in docs/filters.md). The REST API uses it to
+// validate saved views (OpenSpec `custom-views`, design D6), and routines evaluate
+// a query on the server (evaluate.go, routines-engine). Messages and positions
 // match the TypeScript parser, and both test suites run the examples in
 // docs/filters.md. Positions count Unicode code points from 1 (the TypeScript parser
 // counts UTF-16 units, which differs only for characters outside the BMP).
@@ -321,119 +321,188 @@ func (p *parser) missingTerm(prev *token) error {
 	return fail(at, "Expected a term at position %d", at+1)
 }
 
-func (p *parser) parseOr(prev *token) error {
-	if err := p.parseAnd(prev); err != nil {
-		return err
+func (p *parser) parseOr(prev *token) (*Node, error) {
+	first, err := p.parseAnd(prev)
+	if err != nil {
+		return nil, err
 	}
+	items := []*Node{first}
 	for t := p.peek(); t != nil && t.typ == tOr; t = p.peek() {
 		p.i++
-		if err := p.parseAnd(t); err != nil {
-			return err
+		n, err := p.parseAnd(t)
+		if err != nil {
+			return nil, err
 		}
+		items = append(items, n)
 	}
-	return nil
+	if len(items) == 1 {
+		return first, nil
+	}
+	return &Node{Kind: KindOr, Items: items}, nil
 }
 
-func (p *parser) parseAnd(prev *token) error {
-	if err := p.parseNot(prev); err != nil {
-		return err
+func (p *parser) parseAnd(prev *token) (*Node, error) {
+	first, err := p.parseNot(prev)
+	if err != nil {
+		return nil, err
 	}
+	items := []*Node{first}
 	for t := p.peek(); t != nil && t.typ == tAnd; t = p.peek() {
 		p.i++
-		if err := p.parseNot(t); err != nil {
-			return err
+		n, err := p.parseNot(t)
+		if err != nil {
+			return nil, err
 		}
+		items = append(items, n)
 	}
-	return nil
+	if len(items) == 1 {
+		return first, nil
+	}
+	return &Node{Kind: KindAnd, Items: items}, nil
 }
 
-func (p *parser) parseNot(prev *token) error {
+func (p *parser) parseNot(prev *token) (*Node, error) {
 	t := p.peek()
 	if t == nil {
-		return p.missingTerm(prev)
+		return nil, p.missingTerm(prev)
 	}
 	switch t.typ {
 	case tNot:
 		p.i++
 		if err := p.enter(t); err != nil {
-			return err
+			return nil, err
 		}
 		defer func() { p.depth-- }()
-		return p.parseNot(t)
+		item, err := p.parseNot(t)
+		if err != nil {
+			return nil, err
+		}
+		return &Node{Kind: KindNot, Item: item}, nil
 	case tLParen:
 		p.i++
 		if err := p.enter(t); err != nil {
-			return err
+			return nil, err
 		}
 		defer func() { p.depth-- }()
-		if err := p.parseOr(t); err != nil {
-			return err
+		inner, err := p.parseOr(t)
+		if err != nil {
+			return nil, err
 		}
 		c := p.peek()
 		if c == nil {
-			return fail(p.end, `Missing ")" at end of query`)
+			return nil, fail(p.end, `Missing ")" at end of query`)
 		}
 		if c.typ != tRParen {
-			return fail(c.pos, `Expected "&", "|" or ")" before "%s" at position %d`, c.raw, c.pos+1)
+			return nil, fail(c.pos, `Expected "&", "|" or ")" before "%s" at position %d`, c.raw, c.pos+1)
 		}
 		p.i++
-		return nil
+		return inner, nil
 	}
 	return p.parseTerm(prev)
 }
 
-func (p *parser) parseTerm(prev *token) error {
+func (p *parser) parseTerm(prev *token) (*Node, error) {
 	t := p.peek()
 	switch t.typ {
-	case tLabel, tProject, tPriority, tSearch, tOrigin, tWorkspace, tEnergy, tNotes:
+	case tLabel:
 		p.i++
-		return nil
+		return &Node{Kind: KindLabel, Name: t.value}, nil
+	case tProject:
+		p.i++
+		return &Node{Kind: KindProject, Name: t.value, Descendants: strings.HasPrefix(t.raw, "##")}, nil
+	case tPriority:
+		p.i++
+		n, _ := strconv.Atoi(t.raw[1:])
+		return &Node{Kind: KindPriority, Priority: n}, nil
+	case tSearch:
+		p.i++
+		return &Node{Kind: KindSearch, Text: t.value}, nil
+	case tOrigin:
+		p.i++
+		return &Node{Kind: KindOrigin, Text: t.value}, nil
+	case tWorkspace:
+		p.i++
+		return &Node{Kind: KindWorkspace, Name: t.value}, nil
+	case tEnergy:
+		p.i++
+		return &Node{Kind: KindEnergy, Text: t.value}, nil
+	case tNotes:
+		p.i++
+		return &Node{Kind: KindNotes, Text: t.value}, nil
 	case tWord:
 		return p.parseWordTerm(t)
 	case tString:
 		// A quoted name followed by a comparison is a custom field term (custom-fields).
 		if p.i+1 < len(p.toks) && p.toks[p.i+1].typ == tCmp {
 			p.i++
-			return p.parseFieldTerm()
+			return p.parseFieldTerm(t.value)
 		}
-		return fail(t.pos, `Unexpected text %s at position %d; quote names after "@" or "#", or use search:`, t.raw, t.pos+1)
+		return nil, fail(t.pos, `Unexpected text %s at position %d; quote names after "@" or "#", or use search:`, t.raw, t.pos+1)
 	}
-	return p.missingTerm(prev)
+	return nil, p.missingTerm(prev)
 }
 
 var (
 	dateStarts = map[string]bool{"today": true, "tomorrow": true, "yesterday": true, "this": true, "last": true, "next": true}
 	dateUnits  = map[string]bool{"days": true, "week": true, "weeks": true, "month": true, "months": true}
+	fieldNum   = regexp.MustCompile(`^-?\d+(\.\d+)?$`)
 )
 
 // parseFieldTerm reads `cmp value` after a custom field name (OpenSpec change
 // custom-fields): a quoted text, true or false, a date (anything the date
-// grammar starts with), a number, or any other bare word as text. The field's
-// type is the client's business: the server only checks the shape.
-func (p *parser) parseFieldTerm() error {
+// grammar starts with), a number, or any other bare word as text.
+func (p *parser) parseFieldTerm(name string) (*Node, error) {
 	c := p.peek()
 	p.i++
+	n := &Node{Kind: KindField, Name: name, Op: c.value}
 	t := p.peek()
 	if t != nil && t.typ == tString {
 		p.i++
-		return nil
+		n.Value = FieldValue{Type: "text", Text: t.value}
+		return n, nil
 	}
 	if t == nil || t.typ != tWord {
-		return fail(c.pos, `Expected a value after "%s" at position %d`, c.raw, c.pos+1)
+		return nil, fail(c.pos, `Expected a value after "%s" at position %d`, c.raw, c.pos+1)
 	}
 	w := strings.ToLower(t.value)
+	if w == "true" || w == "false" {
+		p.i++
+		n.Value = FieldValue{Type: "bool", Bool: w == "true"}
+		return n, nil
+	}
 	unit := ""
 	if digits.MatchString(w) && p.i+1 < len(p.toks) {
 		unit = lower(&p.toks[p.i+1])
 	}
 	if dateStarts[w] || weekdays[w] || isoDate.MatchString(w) || dateUnits[unit] {
-		return p.parseDate(c)
+		d, err := p.parseDate(c)
+		if err != nil {
+			return nil, err
+		}
+		n.Value = FieldValue{Type: "date", Date: d}
+		return n, nil
 	}
 	p.i++
-	return nil
+	if fieldNum.MatchString(w) {
+		f, _ := strconv.ParseFloat(w, 64)
+		n.Value = FieldValue{Type: "number", Number: f}
+		return n, nil
+	}
+	n.Value = FieldValue{Type: "text", Text: t.value}
+	return n, nil
 }
 
-func (p *parser) parseWordTerm(t *token) error {
+func cmpOf(c *token) string {
+	switch lower(c) {
+	case "before":
+		return "<"
+	case "after":
+		return ">"
+	}
+	return c.value
+}
+
+func (p *parser) parseWordTerm(t *token) (*Node, error) {
 	w := strings.ToLower(t.value)
 	p.i++
 	// `completed` is the state keyword unless a comparison follows (OpenSpec
@@ -445,88 +514,114 @@ func (p *parser) parseWordTerm(t *token) error {
 		c := p.peek()
 		ok := c != nil && (c.typ == tCmp || lower(c) == "before" || lower(c) == "after")
 		if !ok {
-			return fail(t.pos, `Expected a comparison (<, <=, =, >=, >, before or after) after "%s" at position %d`, t.raw, t.pos+1)
+			return nil, fail(t.pos, `Expected a comparison (<, <=, =, >=, >, before or after) after "%s" at position %d`, t.raw, t.pos+1)
 		}
 		p.i++
-		return p.parseDate(c)
+		d, err := p.parseDate(c)
+		if err != nil {
+			return nil, err
+		}
+		return &Node{Kind: KindDate, Field: w, Op: cmpOf(c), Date: d}, nil
 	case w == "tracked":
 		// Tracked time (OpenSpec change time-tracking, design D9): the keyword, or
 		// `tracked cmp duration`. A reserved word: a field named "tracked" is
 		// reachable only quoted.
 		c := p.peek()
 		if c == nil || c.typ != tCmp {
-			return nil
+			return &Node{Kind: KindKeyword, Keyword: "tracked"}, nil
 		}
 		p.i++
 		v := p.peek()
 		if v == nil || v.typ != tWord {
-			return fail(c.pos, `Expected a duration such as 30m or 1h30 after "%s" at position %d`, c.raw, c.pos+1)
+			return nil, fail(c.pos, `Expected a duration such as 30m or 1h30 after "%s" at position %d`, c.raw, c.pos+1)
 		}
-		if _, ok := timetrack.ParseDuration(v.value); !ok {
-			return fail(v.pos, `Expected a duration such as 30m or 1h30 after "%s" at position %d`, c.raw, v.pos+1)
+		minutes, ok := timetrack.ParseDuration(v.value)
+		if !ok {
+			return nil, fail(v.pos, `Expected a duration such as 30m or 1h30 after "%s" at position %d`, c.raw, v.pos+1)
 		}
 		p.i++
-		return nil
+		return &Node{Kind: KindTracked, Op: c.value, Minutes: minutes}, nil
 	case w == "no":
 		// A keyword, or any other name: a custom field without a value (custom-fields).
-		if nt := p.peek(); noKeywords[lower(nt)] || (nt != nil && (nt.typ == tWord || nt.typ == tString)) {
+		nt := p.peek()
+		if noKeywords[lower(nt)] && nt.typ == tWord {
 			p.i++
-			return nil
+			return &Node{Kind: KindKeyword, Keyword: "no " + lower(nt)}, nil
 		}
-		return fail(t.pos, `Expected "date", "project", "labels", "time", "deadline", "start", "origin" or a field name after "no" at position %d`, t.pos+1)
+		if nt != nil && (nt.typ == tWord || nt.typ == tString) {
+			p.i++
+			return &Node{Kind: KindNoField, Name: nt.value}, nil
+		}
+		return nil, fail(t.pos, `Expected "date", "project", "labels", "time", "deadline", "start", "origin" or a field name after "no" at position %d`, t.pos+1)
 	case simpleKeywords[w]:
-		return nil
+		return &Node{Kind: KindKeyword, Keyword: w}, nil
 	case anyPriority.MatchString(w):
-		return fail(t.pos, "Priority must be p1, p2, p3 or p4 at position %d", t.pos+1)
+		return nil, fail(t.pos, "Priority must be p1, p2, p3 or p4 at position %d", t.pos+1)
 	case next != nil && next.typ == tCmp:
 		// Any other word followed by a comparison names a custom field (custom-fields).
-		return p.parseFieldTerm()
+		return p.parseFieldTerm(t.value)
 	}
-	return fail(t.pos, `Unknown term "%s" at position %d`, t.raw, t.pos+1)
+	return nil, fail(t.pos, `Unknown term "%s" at position %d`, t.raw, t.pos+1)
 }
 
-func (p *parser) parseDate(after *token) error {
+var weekdayIndex = map[string]int{"sunday": 0, "monday": 1, "tuesday": 2, "wednesday": 3, "thursday": 4, "friday": 5, "saturday": 6}
+
+func (p *parser) parseDate(after *token) (DateExpr, error) {
 	t := p.peek()
 	if t == nil || t.typ != tWord {
-		return fail(after.pos, `Expected a date after "%s" at position %d`, after.raw, after.pos+1)
+		return DateExpr{}, fail(after.pos, `Expected a date after "%s" at position %d`, after.raw, after.pos+1)
 	}
 	w := strings.ToLower(t.value)
 	p.i++
 	switch {
-	case w == "today" || w == "tomorrow" || w == "yesterday" || weekdays[w]:
-		return nil
+	case w == "today":
+		return DateExpr{Type: "relative"}, nil
+	case w == "tomorrow":
+		return DateExpr{Type: "relative", Days: 1}, nil
+	case w == "yesterday":
+		return DateExpr{Type: "relative", Days: -1}, nil
+	case weekdays[w]:
+		return DateExpr{Type: "weekday", Day: weekdayIndex[w]}, nil
 	case isoDate.MatchString(w):
 		if !validISO(w) {
-			return fail(t.pos, `Invalid date "%s" at position %d`, t.raw, t.pos+1)
+			return DateExpr{}, fail(t.pos, `Invalid date "%s" at position %d`, t.raw, t.pos+1)
 		}
-		return nil
+		return DateExpr{Type: "iso", ISO: w}, nil
 	case w == "this" || w == "last" || w == "next":
 		// A period (completed-date-filters D1): this, last or next week or month.
-		if u := lower(p.peek()); u != "week" && u != "month" {
-			return fail(t.pos, `Expected "week" or "month" after "%s" at position %d`, t.raw, t.pos+1)
+		u := lower(p.peek())
+		if u != "week" && u != "month" {
+			return DateExpr{}, fail(t.pos, `Expected "week" or "month" after "%s" at position %d`, t.raw, t.pos+1)
 		}
 		p.i++
-		return nil
+		offset := map[string]int{"this": 0, "last": -1, "next": 1}[w]
+		return DateExpr{Type: "period", Unit: u, Offset: offset}, nil
 	case digits.MatchString(w):
+		n, _ := strconv.Atoi(w)
 		unit := p.peek()
 		switch lower(unit) {
 		case "days":
 			p.i++
 			if lower(p.peek()) == "ago" {
 				p.i++
+				return DateExpr{Type: "relative", Days: -n}, nil
 			}
-			return nil
+			return DateExpr{Type: "relative", Days: n}, nil
 		case "week", "weeks", "month", "months":
 			p.i++
 			if lower(p.peek()) != "ago" {
-				return fail(unit.pos, `Expected "ago" after "%s" at position %d`, unit.raw, unit.pos+1)
+				return DateExpr{}, fail(unit.pos, `Expected "ago" after "%s" at position %d`, unit.raw, unit.pos+1)
 			}
 			p.i++
-			return nil
+			u := "month"
+			if strings.HasPrefix(lower(unit), "week") {
+				u = "week"
+			}
+			return DateExpr{Type: "period", Unit: u, Offset: -n}, nil
 		}
-		return fail(t.pos, `Expected "days", "weeks" or "months" after "%s" at position %d`, t.raw, t.pos+1)
+		return DateExpr{}, fail(t.pos, `Expected "days", "weeks" or "months" after "%s" at position %d`, t.raw, t.pos+1)
 	}
-	return fail(t.pos, `Invalid date "%s" at position %d`, t.raw, t.pos+1)
+	return DateExpr{}, fail(t.pos, `Invalid date "%s" at position %d`, t.raw, t.pos+1)
 }
 
 func validISO(s string) bool {
@@ -542,26 +637,34 @@ func validISO(s string) bool {
 // that themselves. Errors are *SyntaxError. A query longer than MaxQueryLength or
 // nested deeper than MaxNesting is refused.
 func Parse(query string) error {
+	_, err := ParseQuery(query)
+	return err
+}
+
+// ParseQuery parses a query into its tree (nil for an empty query), for the
+// server's evaluator (routines-engine "Evaluation on the server for routines").
+func ParseQuery(query string) (*Node, error) {
 	if n := utf8.RuneCountInString(query); n > MaxQueryLength {
-		return fail(MaxQueryLength, "Query is too long: %d characters, at most %d", n, MaxQueryLength)
+		return nil, fail(MaxQueryLength, "Query is too long: %d characters, at most %d", n, MaxQueryLength)
 	}
 	src := []rune(query)
 	toks, err := tokenize(src)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if len(toks) == 0 {
-		return nil
+		return nil, nil
 	}
 	p := &parser{toks: toks, end: len(src)}
-	if err := p.parseOr(nil); err != nil {
-		return err
+	ast, err := p.parseOr(nil)
+	if err != nil {
+		return nil, err
 	}
 	if rest := p.peek(); rest != nil {
 		if rest.typ == tRParen {
-			return fail(rest.pos, `Unexpected ")" at position %d`, rest.pos+1)
+			return nil, fail(rest.pos, `Unexpected ")" at position %d`, rest.pos+1)
 		}
-		return fail(rest.pos, `Expected "&" or "|" before "%s" at position %d`, rest.raw, rest.pos+1)
+		return nil, fail(rest.pos, `Expected "&" or "|" before "%s" at position %d`, rest.raw, rest.pos+1)
 	}
-	return nil
+	return ast, nil
 }

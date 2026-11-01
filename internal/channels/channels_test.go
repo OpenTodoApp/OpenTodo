@@ -552,3 +552,29 @@ func TestPruneKeepsTheNewest(t *testing.T) {
 		t.Fatalf("old entries kept: %d", len(list))
 	}
 }
+
+// routines-engine "Routine notices through channels": "Notify me on the
+// phone" (the routine event on) and "Event off" (only in app).
+func TestRoutineNotice(t *testing.T) {
+	h := newHarness(t)
+	ctx := context.Background()
+	on := h.create("u1", ntfyInput(h.recv.srv.URL, EventRoutine))
+	off := h.create("u1", ntfyInput(h.recv.srv.URL, EventReminder))
+	n := notify.RoutineNotice{UserID: "u1", RuleID: "r1", RuleName: "Waiting check", RunID: "run1", StepID: "d", Text: "Too much waiting", At: 10}
+	h.svc.RoutineNotice(ctx, n)
+	h.svc.RoutineNotice(ctx, n) // the same step run again
+	h.drain()
+	if list, _ := h.svc.Deliveries(ctx, "u1", on.ID); len(list) != 1 {
+		t.Fatalf("routine channel: %+v", list)
+	}
+	if list, _ := h.svc.Deliveries(ctx, "u1", off.ID); len(list) != 0 {
+		t.Fatalf("event off: %+v", list)
+	}
+	e := event{kind: EventRoutine, key: txtRoutine, taskTitle: "Waiting check", excerpt: "Too much waiting", runID: "run1"}
+	if m := e.render("en", "https://todo.example.com", true); m.Title != "Waiting check" || m.Body != "Too much waiting" || m.URL != "https://todo.example.com/rules?run=run1" {
+		t.Fatalf("with titles: %+v", m)
+	}
+	if m := e.render("en", "", false); m.Title != "OpenTodo" || m.Body != "A routine sent you a notice" {
+		t.Fatalf("titles off: %+v", m)
+	}
+}

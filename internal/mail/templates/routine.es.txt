@@ -1,0 +1,12 @@
+{{.Subject}}
+
+{{.Text}}
+
+--
+Este mensaje lo envió tu rutina «{{.Routine}}» en OpenTodo, en {{.Origin}}.
+
+Ver esta ejecución:
+
+{{.Link}}
+
+Recibes este mensaje porque tu rutina tiene un paso Enviarme un correo que escribe a {{.Email}}. Para detenerlo, desactiva la rutina o quita el paso en la página Rutinas.

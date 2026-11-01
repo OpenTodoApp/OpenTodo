@@ -90,6 +90,8 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
                   <span className="user-text min-w-0 flex-1">
                     {(n.kind === 'page_replied' || n.kind === 'page_completed') && 'pageId' in n.payload ? (
                       <PageNotification kind={n.kind} payload={n.payload} />
+                    ) : n.kind === 'routine' && 'runId' in n.payload ? (
+                      <span className="block" data-kind="routine">{t.rich('<b>{routine}</b>: {text}', { routine: n.payload.ruleName || t('A routine'), text: n.payload.text, b: (chunks) => <strong>{chunks}</strong> })}</span>
                     ) : n.kind === 'mentioned' ? (
                       <span className="block" data-mention-source={'source' in n.payload ? n.payload.source : undefined}>
                         <MentionText payload={n.payload as MentionedPayload} />

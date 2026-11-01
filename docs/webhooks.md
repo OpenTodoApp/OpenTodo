@@ -26,7 +26,7 @@ OpenTodo can notify other systems when your tasks and projects change: switch on
 | `project.deleted` | the project gets a tombstone |
 | `import.completed` | an [import](import.md) job finished (done or failed): one summary for the whole job, see [Imports](#imports) |
 | `import.undone` | an import was undone: one summary, see [Imports](#imports) |
-| `rule.fired` | an [automation rule](automations.md) with a webhook action changed a task: sent only to the webhook the rule names, with `data.task`, `data.rule` (`id`, `name` as stored, ciphertext for an encrypted account) and the rule's changes |
+| `rule.fired` | an [automation rule](automations.md) with a webhook action changed a task: sent only to the webhook the rule names, with `data.task`, `data.rule` (`id`, `name` as stored, ciphertext for an encrypted account) and the rule's changes. A [routine's](routines.md) Send a webhook step sends it too, to the webhook it names, with `data.rule`, `data.routine` (`run_id`, `step_id`, `text` or null, `task_ids`, at most 500) and `data.task` only when exactly one task was given |
 | `ping` | you pressed **Send test** (not subscribable, always sent on request) |
 
 Task and project events are derived on the server from the operation log, whatever wrote the change: a phone or browser syncing, the REST API, the `ot` CLI and CalDAV. Imports are the exception: they are reported once per job (see [Imports](#imports)). Rules:

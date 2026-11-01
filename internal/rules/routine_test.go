@@ -164,8 +164,13 @@ func TestRoutineGroceriesFromANote(t *testing.T) {
 		titles = append(titles, strOf(t["title"]))
 	}
 	slices.Sort(titles)
-	if !slices.Equal(titles, []string{"apples", "bread tomorrow", "oat milk"}) {
+	if !slices.Equal(titles, []string{"apples", "bread", "oat milk"}) {
 		t.Fatalf("titles %v", titles)
+	}
+	for _, x := range h.live("alice", inProject("errands")) {
+		if d := dueOf(x["due"]); strOf(x["title"]) == "bread" && (d == nil || d.Date != "2026-10-22") {
+			t.Fatalf("bread due %v", d)
+		}
 	}
 }
 
@@ -468,5 +473,163 @@ func TestRoutineDraftTest(t *testing.T) {
 	lres, err = h.e.TestRule(h.ctx, "alice", "legacy", "t1")
 	if err != nil || lres.Writes != 1 || lres.Steps[0].Kind != "change_tasks" {
 		t.Fatalf("legacy %+v %v", lres, err)
+	}
+}
+
+// filter-queries "Evaluation on the server for routines": a saved view's
+// query, and an invalid query failing the step with the parser's error.
+func TestRoutineFindTasksByQueryAndView(t *testing.T) {
+	h, _, _ := routineHarness(t)
+	h.project("alice", "errands", "Errands", "")
+	h.task("alice", "t1", map[string]any{"project_id": "errands"})
+	h.task("alice", "t2", map[string]any{"project_id": "errands", "priority": 1})
+	h.task("alice", "t3", nil)
+	h.write("alice", "laptop", "view", "v1", map[string]any{"name": "Errands", "query": "#Errands", "created_at": 1, "deleted_at": nil})
+	h.routine("alice", "r1", "Count", `{"kind":"manual"}`, "", `[
+		{"id":"a","kind":"find_tasks","in":{"view":{"literal":"v1"}}},
+		{"id":"b","kind":"count","in":{"list":{"ref":"a"}}}]`)
+	res := h.runNow("alice", "r1", "", true)
+	if res.Steps[1].Preview != float64(2) {
+		t.Fatalf("view: %+v %v", res.Steps, statuses(res))
+	}
+	h.write("alice", "laptop", "view", "v1", map[string]any{"query": "due before:"})
+	res = h.runNow("alice", "r1", "", false)
+	if got := statuses(res); !slices.Equal(got, []string{"a:failed:invalid_argument"}) || !strings.Contains(res.Run.Reason, "Expected a comparison") {
+		t.Fatalf("invalid query: %v %q", got, res.Run.Reason)
+	}
+}
+
+// "From a template": the library's weekly review, its sections and tasks, with
+// the dates its own instantiation gives for the start day.
+func TestRoutineProjectFromTemplate(t *testing.T) {
+	h, _, _ := routineHarness(t)
+	h.routine("alice", "r1", "Monthly", `{"kind":"manual"}`, "", `[
+		{"id":"a","kind":"project_from_template","in":{"template":{"literal":"weekly-review"},"start":{"literal":"today"}}}]`)
+	res := h.runNow("alice", "r1", "", false)
+	if res.Run.Outcome != OutcomeApplied {
+		t.Fatalf("run %+v %v", res.Run, statuses(res))
+	}
+	pid := res.Run.Steps[0].IDs[0]
+	tasks := h.live("alice", inProject(pid))
+	sections, _ := h.sync.List(h.ctx, "alice", "section", false)
+	labels, _ := h.sync.List(h.ctx, "alice", "label", false)
+	if len(tasks) != 9 || len(sections) != 3 || len(labels) != 1 {
+		t.Fatalf("%d tasks %d sections %d labels", len(tasks), len(sections), len(labels))
+	}
+	for _, x := range tasks {
+		if strOf(x["title"]) == "Empty the inbox" {
+			if d := dueOf(x["due"]); d == nil || d.Date != "2026-10-21" || d.Time == nil || *d.Time != "16:00" {
+				t.Fatalf("due %v", d)
+			}
+		}
+	}
+	h.routine("alice", "r2", "Nope", `{"kind":"manual"}`, "", `[{"id":"a","kind":"project_from_template","in":{"template":{"literal":"nope"},"start":{"literal":"today"}}}]`)
+	if got := statuses(h.runNow("alice", "r2", "", false)); !slices.Equal(got, []string{"a:failed:not_found"}) {
+		t.Fatalf("unknown template %v", got)
+	}
+}
+
+// "Today's focus": three highest-priority tasks; a fourth is left out.
+func TestRoutineSetFocus(t *testing.T) {
+	h, _, _ := routineHarness(t)
+	for i, p := range []int{1, 1, 2, 3} {
+		h.task("alice", fmt.Sprintf("f%d", i), map[string]any{"priority": p, "due": map[string]string{"date": "2026-10-21"}})
+	}
+	h.routine("alice", "r1", "Focus", `{"kind":"manual"}`, "", `[
+		{"id":"a","kind":"find_tasks","in":{"condition":{"literal":{"due":"today"}}}},
+		{"id":"b","kind":"sort","in":{"list":{"ref":"a"},"by":{"literal":"priority"}}},
+		{"id":"c","kind":"set_focus","in":{"tasks":{"ref":"b"}}}]`)
+	res := h.runNow("alice", "r1", "", false)
+	if got := statuses(res); !slices.Equal(got, []string{"a:ok", "b:ok", "c:truncated"}) {
+		t.Fatalf("steps %v", got)
+	}
+	review, _ := h.sync.Get(h.ctx, "alice", "review", "me")
+	if review == nil || strOf(review["focus"]) != "f0,f1,f2" || strOf(review["focus_date"]) != "2026-10-21" {
+		t.Fatalf("review %v", review)
+	}
+}
+
+// Clear note: the projection and the document are emptied; an older copy from
+// another device does not bring the note back.
+func TestRoutineClearNoteTwoDevices(t *testing.T) {
+	h, _, _ := routineHarness(t)
+	h.task("alice", "t1", map[string]any{"description": "old note", "notes_doc": ""})
+	old := h.sync.ServerTSAt(h.clock.UnixMilli()) // device B's copy, written before the clear
+	h.clock = h.clock.Add(time.Minute)
+	h.routine("alice", "r1", "Clear", `{"kind":"manual"}`, "", `[
+		{"id":"a","kind":"get_task","in":{"task":{"literal":{"task":"t1"}}}},
+		{"id":"b","kind":"clear_note","in":{"of":{"ref":"a"}}}]`)
+	if res := h.runNow("alice", "r1", "", false); res.Run.Outcome != OutcomeApplied {
+		t.Fatalf("run %+v %v", res.Run, statuses(res))
+	}
+	stale := opsync.Op{ID: "stale", Entity: "task", EntityID: "t1", Field: "description", Value: json.RawMessage(`"old note, edited offline"`), TS: old + 1, Device: "phone-b"}
+	if _, err := h.sync.Apply(h.ctx, "alice", []opsync.Op{stale}); err != nil {
+		t.Fatal(err)
+	}
+	if d := strOf(h.get("alice", "t1")["description"]); d != "" {
+		t.Fatalf("description %q", d)
+	}
+}
+
+type fakeMailer struct {
+	sent    []RoutineMail
+	refused []string
+}
+
+func (f *fakeMailer) SendRoutine(_ context.Context, _ string, m RoutineMail) error {
+	f.sent = append(f.sent, m)
+	return nil
+}
+
+func (f *fakeMailer) RefuseRoutine(_ context.Context, _ string, _ RoutineMail, reason string) {
+	f.refused = append(f.refused, reason)
+}
+
+// 2.5: Send a webhook queues one delivery after commit; Email me sends to the
+// account within 10 per routine a day, then fails with rate_limited.
+func TestRoutineWebhookAndEmail(t *testing.T) {
+	h, _, env := routineHarness(t)
+	env.Webhooks, env.EmailConfigured, env.EmailVerified = []string{"w1"}, true, true
+	var deliveries []RoutineDelivery
+	h.e.RoutineHook = func(_ context.Context, uid, hook string, d RoutineDelivery) error {
+		if uid != "alice" || hook != "w1" {
+			t.Errorf("delivery to %s %s", uid, hook)
+		}
+		deliveries = append(deliveries, d)
+		return nil
+	}
+	mailer := &fakeMailer{}
+	h.e.Mail = mailer
+	for i := range 3 {
+		h.task("alice", fmt.Sprintf("t%d", i), map[string]any{"due": map[string]string{"date": "2026-10-21"}})
+	}
+	h.routine("alice", "r1", "Morning", `{"kind":"manual"}`, "", `[
+		{"id":"a","kind":"find_tasks","in":{"condition":{"literal":{"due":"today"}}}},
+		{"id":"b","kind":"count","in":{"list":{"ref":"a"}}},
+		{"id":"c","kind":"webhook","in":{"webhook_id":{"literal":"w1"},"text":{"literal":{"format":"{b} tasks today"}},"tasks":{"ref":"a"}}},
+		{"id":"d","kind":"email_me","in":{"subject":{"literal":"Today"},"text":{"literal":{"format":"{a}"}}}}]`)
+	test := h.runNow("alice", "r1", "", true)
+	if len(deliveries) != 0 || len(mailer.sent) != 0 || test.Writes != 2 {
+		t.Fatalf("a test sent something: %d %d %d", len(deliveries), len(mailer.sent), test.Writes)
+	}
+	res := h.runNow("alice", "r1", "", false)
+	if res.Run.Outcome != OutcomeApplied || len(deliveries) != 1 || len(mailer.sent) != 1 {
+		t.Fatalf("run %+v %v: %d deliveries %d mails", res.Run, statuses(res), len(deliveries), len(mailer.sent))
+	}
+	if d := deliveries[0]; *d.Text != "3 tasks today" || len(d.TaskIDs) != 3 || d.RunID != res.Run.RunID || d.StepID != "c" {
+		t.Fatalf("delivery %+v", d)
+	}
+	if m := mailer.sent[0]; m.Subject != "Today" || !strings.Contains(m.Text, "t0") && !strings.Contains(m.Text, "t1") {
+		t.Fatalf("mail %+v", m)
+	}
+	for range 9 {
+		h.runNow("alice", "r1", "", false)
+	}
+	if len(mailer.sent) != 10 {
+		t.Fatalf("%d mails", len(mailer.sent))
+	}
+	res = h.runNow("alice", "r1", "", false)
+	if got := statuses(res); got[len(got)-1] != "d:failed:rate_limited" || len(mailer.sent) != 10 || !slices.Equal(mailer.refused, []string{"rate_limited"}) {
+		t.Fatalf("limit: %v %d %v", got, len(mailer.sent), mailer.refused)
 	}
 }

@@ -5940,5 +5940,8 @@
   "For the Obsidian plugin, create a full token named after the device.": "Für das Obsidian-Plugin einen Token mit vollem Zugriff erstellen und nach dem Gerät benennen.",
   "This run was undone already.": "Dieser Lauf wurde bereits rückgängig gemacht.",
   "The server paused this routine because it ran too often. Turn it on again first.": "Der Server hat diese Routine angehalten, weil sie zu oft lief. Schalte sie zuerst wieder ein.",
-  "This routine works on a task: open one, then run it.": "Diese Routine arbeitet mit einer Aufgabe: Öffne eine und führe sie dann aus."
+  "This routine works on a task: open one, then run it.": "Diese Routine arbeitet mit einer Aufgabe: Öffne eine und führe sie dann aus.",
+  "Routine notices": "Routinen-Hinweise",
+  "<b>{routine}</b>: {text}": "<b>{routine}</b>: {text}",
+  "A routine": "Eine Routine"
 }

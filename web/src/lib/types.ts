@@ -2093,11 +2093,25 @@ export interface MemberInvitationPayload {
  * `notifications` table so it shows offline. Server-side account data, not an op.
  * `readPending` marks a local "read" not yet confirmed by the server.
  */
+/** A routine's Notify me step (OpenSpec change routines-engine): the routine, the run and the step's text. */
+export interface RoutinePayload {
+  ruleId: string
+  ruleName: string
+  runId: string
+  stepId: string
+  text: string
+  taskId?: string
+  at: number
+  projectName?: undefined
+  projectId?: undefined
+  actorName?: undefined
+}
+
 export interface AppNotification {
   id: string
   kind: string
-  /** AssignedPayload for kind `assigned`, MentionedPayload for `mentioned`, UnblockedPayload for `unblocked`, PagePayload for `page_replied` and `page_completed`, MemberInvitationPayload for `member_invitation`. */
-  payload: AssignedPayload | MentionedPayload | UnblockedPayload | PagePayload | MemberInvitationPayload
+  /** AssignedPayload for kind `assigned`, MentionedPayload for `mentioned`, UnblockedPayload for `unblocked`, PagePayload for `page_replied` and `page_completed`, MemberInvitationPayload for `member_invitation`, RoutinePayload for `routine`. */
+  payload: AssignedPayload | MentionedPayload | UnblockedPayload | PagePayload | MemberInvitationPayload | RoutinePayload
   createdAt: number
   readAt: number | null
   readPending?: boolean

@@ -248,7 +248,8 @@ func TestTemplatesEveryKindAndLanguage(t *testing.T) {
 					continue
 				}
 				m := Message{Kind: kind, To: "bob@example.com", Lang: lang, Origin: "https://todo.example.com",
-					Vars: Vars{Link: link, Expiry: 24 * time.Hour, Inviter: "Alice", Role: "editor", Existing: existing}}
+					Vars: Vars{Link: link, Expiry: 24 * time.Hour, Inviter: "Alice", Role: "editor", Existing: existing,
+						Routine: &RoutineVars{Name: "Friday digest", Subject: "This week", Text: "14 tasks done"}}}
 				subj, body, err := Render(m, m.Origin)
 				if err != nil {
 					t.Fatalf("%s %s: %v", kind, lang, err)
@@ -260,7 +261,7 @@ func TestTemplatesEveryKindAndLanguage(t *testing.T) {
 				if strings.Contains(body, "\n"+link+"\n") != withLink {
 					t.Fatalf("%s %s: link on its own line = %v", kind, lang, !withLink)
 				}
-				if withLink && kind != KindDigest && !strings.Contains(body, "24 ") {
+				if withLink && kind != KindDigest && kind != KindRoutine && !strings.Contains(body, "24 ") {
 					t.Fatalf("%s %s: no expiry: %q", kind, lang, body)
 				}
 				if kind == KindInvitation && !strings.Contains(body, "Alice") {
@@ -293,7 +294,7 @@ func TestTemplateVariablesCarryNoContent(t *testing.T) {
 		t.Fatalf("template variables changed: %v", got)
 	}
 	for _, k := range Kinds {
-		if carriesContent[k] != (k == KindDigest) {
+		if carriesContent[k] != (k == KindDigest || k == KindRoutine) {
 			t.Fatalf("%s carries content = %v", k, carriesContent[k])
 		}
 	}
@@ -534,5 +535,20 @@ func TestDigestIsPacedButLimitedPerRecipient(t *testing.T) {
 	}
 	if l.Allow(KindDigest, "ana@example.com") {
 		t.Fatal("the per-recipient limit does not apply to digests")
+	}
+}
+
+// routines-engine "Routine email": the step's subject on one line and its text,
+// the routine's name, the run's link and how to turn it off.
+func TestRoutineMessage(t *testing.T) {
+	m := Message{Kind: KindRoutine, To: "bob@example.com", Lang: "en", Origin: "https://todo.example.com",
+		Vars: Vars{Link: "https://todo.example.com/routines?run=r1", Routine: &RoutineVars{Name: "Friday digest", Subject: "This week:\n14 done", Text: "This week: 14 tasks done"}}}
+	subj, body, err := Render(m, m.Origin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if subj != "This week: 14 done" || !strings.Contains(body, "This week: 14 tasks done") || !strings.Contains(body, `"Friday digest"`) ||
+		!strings.Contains(body, "turn the routine off") || !strings.Contains(body, "run=r1") {
+		t.Fatalf("%q / %q", subj, body)
 	}
 }
