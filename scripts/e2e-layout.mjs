@@ -41,7 +41,7 @@ const pw = await import('playwright').catch(async () => {
 })
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { MAX_SCROLLERS, addButtonCovers, axeProblems, pageOverflow, rowCheckReach, rowMisalignment, settled, smallFields, smallTargets, tabRowOverflow, verticalScrollers } from './ux-audit/measure.mjs'
-import { seed as seedAccount } from './ux-audit/seed.mjs'
+import { calendarEvents, seed as seedAccount } from './ux-audit/seed.mjs'
 import { OVERLAYS, chooseLayout, closes, screens } from './ux-audit/layout-screens.mjs'
 
 const base = process.env.OPENTODO_URL ?? 'http://127.0.0.1:8080'
@@ -176,6 +176,10 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
     const ctx = await browser.newContext({ ...ctxOpts, storageState: ids.storageState })
     // First paint in the chosen language (the device mirror the app keeps), also signed out.
     for (const c of [anonCtx, ctx]) await c.clock.setFixedTime(NOW)
+    // A subscribed calendar's events in every calendar view (calendar-events-all-views):
+    // answered here, since a real feed needs an outbound fetch.
+    const events = calendarEvents(NOW)
+    await ctx.route('**/api/v1/calendar-feeds/events?*', (route) => route.fulfill({ json: events }))
     if (LANG) for (const c of [anonCtx, ctx]) await c.addInitScript((code) => { try { localStorage.setItem('opentodo.lang', code) } catch { /* storage blocked */ } }, LANG)
     const page = await ctx.newPage()
     page.on('dialog', (d) => d.dismiss())

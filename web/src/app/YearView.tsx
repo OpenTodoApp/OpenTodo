@@ -5,7 +5,11 @@
 // months (D5); below 640 px a month is the touch target (D6). Loads on first use.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Button, PageBody, useMediaQuery } from '../ui'
-import { calendarTasks } from '../lib/calendar'
+import { calendarTasks, eventsByDay } from '../lib/calendar'
+import { useOnline } from '../lib/online'
+import { CalendarsToggle } from './calendar/CalendarsToggle'
+import { CalendarStatus } from './calendar/CalendarStatus'
+import { useCalendarFeeds } from './calendar/useCalendarFeeds'
 import { rememberCalendarMode } from '../lib/calendarMode'
 import { addDaysISO, formatDateParts, monthName, viewedTask } from '../lib/dates'
 import { t } from '../lib/i18n'
@@ -31,10 +35,28 @@ const NO_DAY: YearDay = { count: 0, minutes: 0, titles: [] }
 const STEP_BAR = ['', 'w-1/3 bg-chart-seq-3', 'w-2/3 bg-chart-seq-4', 'w-full bg-chart-seq-5']
 const STEP_WEIGHT = ['font-normal', 'font-medium', 'font-semibold', 'font-bold']
 
-/** "4 tasks" and up to three titles, then "+1 more" (the day's tip). */
-function tipText(day: YearDay): string[] {
+/** "4 tasks" and up to three titles, then "+1 more", then "2 events" (the day's tip). */
+function tipText(day: YearDay, events: number): string[] {
   const rest = day.count - day.titles.length
-  return [t('{n, plural, one {# task} other {# tasks}}', { n: day.count }), ...day.titles.map((x) => x || t('Untitled')), ...(rest > 0 ? [t('+{hidden} more', { hidden: rest })] : [])]
+  const tasks = day.count > 0 ? [t('{n, plural, one {# task} other {# tasks}}', { n: day.count }), ...day.titles.map((x) => x || t('Untitled')), ...(rest > 0 ? [t('+{hidden} more', { hidden: rest })] : [])] : []
+  return [...tasks, ...(events > 0 ? [t('{n, plural, one {# event} other {# events}}', { n: events })] : [])]
+}
+
+/**
+ * The number of shown events per day of the year (calendar-events-all-views): the
+ * enabled calendars while the Calendars toggle shows them; a mark of their own, never
+ * part of the density.
+ */
+function useYearEvents(year: string) {
+  const zone = useViewerZone()
+  const from = `${year}-01-01`, to = `${year}-12-31`
+  const feeds = useCalendarFeeds(from, to)
+  const counts = useMemo(() => {
+    const out = new Map<string, number>()
+    for (const [d, x] of eventsByDay(feeds.visibleEvents, from, to, zone)) out.set(d, x.allDay.length + x.timed.length)
+    return out
+  }, [feeds.visibleEvents, from, to, zone])
+  return { feeds, counts }
 }
 
 /** The counts of the shown year: the calendar's selection, the scope and filter, and the projections while they are shown. */
@@ -72,6 +94,8 @@ export default function YearView({ date }: { date?: string }) {
   const narrow = useMediaQuery('(max-width: 39.99rem)')
   useEffect(() => rememberCalendarMode('year'), [])
   const { chrome, counts, extra } = useYearCounts(year, today)
+  const { feeds, counts: eventCounts } = useYearEvents(year)
+  const online = useOnline()
 
   const [focused, setFocused] = useState(anchor)
   useResetOnChange([anchor], () => setFocused(anchor))
@@ -125,11 +149,17 @@ export default function YearView({ date }: { date?: string }) {
   const dayOf = (d: string) => counts.get(d) ?? NO_DAY
   const over = (d: string, day: YearDay) => day.minutes + extra(d) > prefs.dayLength
   const tipDay = tip ? dayOf(tip.date) : null
+  const eventsOf = (d: string) => eventCounts.get(d) ?? 0
+  const tipEvents = tip ? eventsOf(tip.date) : 0
+  // How fresh the calendars are, after the filter chip, as in Day and Week.
+  const status = <CalendarStatus status={feeds.status} online={online} fetchedAt={feeds.win?.fetchedAt} />
+  const meta = chrome.chip ? <span className="inline-flex min-w-0 max-w-full flex-wrap items-center gap-2">{chrome.chip}{status}</span> : status
 
   return (
     <PageBody width="full" className="flex flex-col" data-calendar-page="year">
-      <CalendarPageHeader chrome={chrome} title={year} meta={chrome.chip} overflow={chrome.overflow}
+      <CalendarPageHeader chrome={chrome} title={year} meta={meta} overflow={chrome.overflow}
         actions={<>
+          <CalendarsToggle shown={feeds.eventsShown} count={feeds.subs.length} />
           <span className="flex items-center" role="group" aria-label={t('Range')}>
             <Button variant="ghost" size="sm" icon="chevron-left" aria-label={t('Previous year')} onClick={() => goTo(addMonthsISO(focused, -12))} />
             <Button variant="ghost" size="sm" onClick={() => goTo(today)}>{t('Today')}</Button>
@@ -148,16 +178,17 @@ export default function YearView({ date }: { date?: string }) {
             const name = monthName(m, 'long')
             const weeks = monthGrid(`${m}-01`, resolved.weekStart)
             const total = weeks.flat().reduce((n, d) => n + (d.slice(0, 7) === m ? dayOf(d).count : 0), 0)
+            const eventDays = weeks.flat().reduce((n, d) => n + (d.slice(0, 7) === m && eventsOf(d) > 0 ? 1 : 0), 0)
             const cells = (
               <MonthCells weeks={weeks} month={m} today={today} focused={focused} tipped={tip?.date} weekdays={weekdays} interactive={!narrow}
-                day={dayOf} over={over} label={name} />
+                day={dayOf} events={eventsOf} over={over} label={name} />
             )
             // On a phone the whole month opens Month (D6): day cells are too small to tap, so the
             // month's name is a button stretched over the month and the cells are only drawn.
             return narrow ? (
               <div key={m} data-year-month={m} className="relative min-w-0 rounded-card p-1 pointer-fine:hover:bg-hover">
                 <button type="button" onClick={() => openMonth(m)} data-year-month-link={m}
-                  aria-label={[monthName(m, 'long', true), total ? t('{n, plural, one {# task} other {# tasks}}', { n: total }) : ''].filter(Boolean).join(', ')}
+                  aria-label={[monthName(m, 'long', true), total ? t('{n, plural, one {# task} other {# tasks}}', { n: total }) : '', eventDays ? t('{n, plural, one {# day with events} other {# days with events}}', { n: eventDays }) : ''].filter(Boolean).join(', ')}
                   className="mb-1 block w-full truncate rounded-card text-left text-h3 text-strong after:absolute after:inset-0 after:rounded-card focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-solid focus-visible:after:outline-focus">
                   {name}
                 </button>
@@ -175,17 +206,18 @@ export default function YearView({ date }: { date?: string }) {
           })}
         </div>
       </div>
-      {tip && tipDay && tipDay.count > 0 && !narrow && (
+      {tip && tipDay && (tipDay.count > 0 || tipEvents > 0) && !narrow && (
         <div role="tooltip" id="year-day-tip" data-tooltip data-year-tip={tip.date}
           className="overlay-fade-in pointer-events-none fixed z-[70] max-w-64 -translate-x-1/2 rounded-chip border border-strong bg-pop px-2 py-1 text-meta text-default shadow-2"
           style={{ top: tip.top, left: tip.left }}>
-          {tipText(tipDay).map((line, i) => <span key={i} className={`block truncate ${i === 0 ? 'font-medium' : ''}`}>{line}</span>)}
+          {tipText(tipDay, tipEvents).map((line, i) => <span key={i} className={`block truncate ${i === 0 ? 'font-medium' : ''}`}>{line}</span>)}
         </div>
       )}
       <p className="mt-4 hidden text-meta text-faint sm:block">
         {t.rich('Arrows move the focused day, {pgup} / {pgdn} a month, {open} opens it in Day. Marks count open tasks, repeating occurrences while shown and every day of a multi-day task.', {
           pgup: <span className="ui-kbd">Page Up</span>, pgdn: <span className="ui-kbd">Page Down</span>, open: <span className="ui-kbd">Enter</span>,
         })}
+        {feeds.visibleEvents.length > 0 ? ` ${t('A small ring marks a day with calendar events.')}` : ''}
       </p>
       {chrome.element}
     </PageBody>
@@ -197,7 +229,7 @@ export default function YearView({ date }: { date?: string }) {
  * state per cell (D7). On a phone the cells are drawn inside the month's button, without
  * grid roles.
  */
-function MonthCells({ weeks, month, today, focused, tipped, weekdays, interactive, day, over, label }: {
+function MonthCells({ weeks, month, today, focused, tipped, weekdays, interactive, day, events, over, label }: {
   weeks: string[][]
   month: string
   today: string
@@ -207,6 +239,8 @@ function MonthCells({ weeks, month, today, focused, tipped, weekdays, interactiv
   weekdays: string[]
   interactive: boolean
   day: (d: string) => YearDay
+  /** The shown calendar events of a day (calendar-events-all-views): a ring of its own, not part of the density. */
+  events: (d: string) => number
   over: (d: string, day: YearDay) => boolean
   label: string
 }) {
@@ -224,16 +258,18 @@ function MonthCells({ weeks, month, today, focused, tipped, weekdays, interactiv
             const step = densityStep(x.count)
             const isOver = over(d, x)
             const isFocused = g && d === focused
-            const name = [formatDateParts(d, { day: 'numeric', month: 'long' }), x.count ? t('{n, plural, one {# task} other {# tasks}}', { n: x.count }) : '', isOver ? t('over capacity') : ''].filter(Boolean).join(', ')
+            const evs = events(d)
+            const name = [formatDateParts(d, { day: 'numeric', month: 'long' }), x.count ? t('{n, plural, one {# task} other {# tasks}}', { n: x.count }) : '', evs ? t('{n, plural, one {# event} other {# events}}', { n: evs }) : '', isOver ? t('over capacity') : ''].filter(Boolean).join(', ')
             return (
               <div key={d} role={g ? 'gridcell' : undefined} tabIndex={g ? (isFocused ? 0 : -1) : undefined} data-year-day={g ? d : undefined} data-density={step}
-                aria-selected={g ? isFocused : undefined} aria-current={d === today ? 'date' : undefined} aria-describedby={g && d === tipped && x.count > 0 ? 'year-day-tip' : undefined}
-                {...(isOver ? { 'data-over': '' } : {})}
+                aria-selected={g ? isFocused : undefined} aria-current={d === today ? 'date' : undefined} aria-describedby={g && d === tipped && (x.count > 0 || evs > 0) ? 'year-day-tip' : undefined}
+                {...(isOver ? { 'data-over': '' } : {})} {...(evs ? { 'data-events': evs } : {})}
                 className={`relative flex min-h-6 min-w-0 flex-col items-center justify-center rounded-chip py-0.5 outline-none ${g ? 'cursor-pointer pointer-fine:hover:bg-hover focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[-2px] focus-visible:outline-focus' : ''} ${isFocused ? 'bg-accent-soft/40' : ''}`}>
                 <span className="sr-only">{name}</span>
                 <span aria-hidden className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-0.5 text-hint tabular-nums ${STEP_WEIGHT[step]} ${d === today ? 'bg-accent text-on-accent' : d < today ? 'text-faint' : 'text-default'}`}>{Number(d.slice(8))}</span>
                 <span aria-hidden className="flex h-1 w-4/5 justify-center">{step > 0 && <span data-density-mark className={`h-1 rounded-full ${STEP_BAR[step]}`} />}</span>
                 {isOver && <span aria-hidden data-over-mark className="absolute end-0.5 top-0.5 size-1.5 rounded-full bg-danger" />}
+                {evs > 0 && <span aria-hidden data-event-mark className="ui-event-mark absolute start-0.5 top-0.5" />}
               </div>
             )
           })}

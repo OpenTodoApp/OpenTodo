@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ReactNode } from 'react'
 import { CalendarView } from './CalendarView'
 import { PlanView } from './PlanView'
-import { seedCalendarClarity, seedCalendarPlan, seedCalendarSpans, seedCalendarWeek, withSeed } from './stories/fixtures'
+import { seedCalendarClarity, seedCalendarEvents, seedCalendarPlan, seedCalendarSpans, seedCalendarWeek, withSeed } from './stories/fixtures'
 import { completeTask, createTask } from '../lib/ops'
 import { setCalendarShowCompleted } from '../lib/localData'
 
@@ -76,5 +76,15 @@ export const WeekByPriority: StoryObj = {
  */
 export const WeekWithSpans: StoryObj = {
   ...withSeed(seedCalendarSpans),
+  render: () => <Column><CalendarView mode="week" /></Column>,
+}
+
+/**
+ * A subscribed calendar's events (calendar-events-all-views, GitHub issue #733): blocks and
+ * all-day chips in the grid; below 640 px the agenda lists the all-day offsite and the
+ * meetings among the day's timed tasks.
+ */
+export const WeekWithEvents: StoryObj = {
+  ...withSeed(seedCalendarEvents()),
   render: () => <Column><CalendarView mode="week" /></Column>,
 }

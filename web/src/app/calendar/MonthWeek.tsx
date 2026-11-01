@@ -10,7 +10,8 @@ import type { Projection } from '../../lib/occurrences'
 import { slotCapacity, type SlotView } from '../../lib/slots'
 import { spanCovers } from '../../lib/span'
 import type { DaySpan } from '../../lib/calendarDays'
-import type { Task } from '../../lib/types'
+import type { CalendarEvent, Task } from '../../lib/types'
+import type { DayEvents, EventBlock } from '../../lib/calendar'
 import type { HueName } from '../../ui'
 import { addHandlers } from './DayColumn'
 import type { AddHere } from './addHere'
@@ -22,7 +23,8 @@ import { bandLayout } from './spanModel'
 /** Task rows a desktop cell shows before "+N more". */
 export const CELL_ROWS = 3
 
-export type CellEntry = { kind: 'task'; task: Task } | { kind: 'deadline'; task: Task } | { kind: 'projected'; projection: Projection }
+/** A cell's row: a task, a deadline, a projected occurrence or a subscribed calendar's event (all-day without `block`). */
+export type CellEntry = { kind: 'task'; task: Task } | { kind: 'deadline'; task: Task } | { kind: 'projected'; projection: Projection } | { kind: 'event'; event: CalendarEvent; block?: EventBlock }
 export const NO_PROJECTIONS: readonly Projection[] = []
 
 /** What every cell of the grid reads: the month's data and the view's callbacks. */
@@ -45,6 +47,9 @@ export interface MonthCells {
   entries: (d: string, projected: readonly Projection[]) => CellEntry[]
   row: (task: Task) => ReactNode
   deadlineRow: (task: Task, d: string) => ReactNode
+  /** The shown events per day (calendar-events-all-views): rows after the day's tasks, a mark on a phone. */
+  events: ReadonlyMap<string, DayEvents>
+  eventRow: (e: { event: CalendarEvent; block?: EventBlock }) => ReactNode
   hueOf: (task: Task) => HueName
   projectionHue: (p: Projection) => HueName | undefined
   stored: (id: string) => Task | undefined
@@ -79,6 +84,8 @@ export function MonthWeek({ week, own, c }: {
         const shown = rows.shown, hidden = rows.hidden + (open ? 0 : band?.hiddenOn.get(d) ?? 0)
         const isFocused = d === c.focused
         const n = list.length + daySpans
+        const dayEvents = c.events.get(d)
+        const eventCount = dayEvents ? dayEvents.allDay.length + dayEvents.timed.length : 0
         return (
           <div key={d} role="gridcell" tabIndex={isFocused ? 0 : -1} data-month-day={d} data-drop-target={`day:${d}`}
             aria-selected={isFocused} aria-current={d === c.today ? 'date' : undefined}
@@ -88,7 +95,7 @@ export function MonthWeek({ week, own, c }: {
             onFocus={(e) => { if (e.target === e.currentTarget) c.focus(d) }}
             className={`relative min-w-0 border-b border-l border-default p-1 outline-none first:border-l-0 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[-2px] focus-visible:outline-focus data-[drop-active]:bg-accent-soft ${c.narrow ? 'min-h-14' : 'min-h-28'} ${c.outside(d) ? 'bg-sunken text-faint' : ''} ${isFocused ? 'bg-accent-soft/40' : 'pointer-fine:hover:bg-hover'}`}>
             {/* Named by its content (WCAG 2.5.3 Label in Name): the date and counts first, then the tasks' own names. */}
-            <span className="sr-only">{[d, n ? t('{n, plural, one {# task} other {# tasks}}', { n }) : '', capacityState(load)].filter(Boolean).join(', ')}</span>
+            <span className="sr-only">{[d, n ? t('{n, plural, one {# task} other {# tasks}}', { n }) : '', eventCount ? t('{n, plural, one {# event} other {# events}}', { n: eventCount }) : '', capacityState(load)].filter(Boolean).join(', ')}</span>
             {/* The load wraps under the date when the cell is too narrow for both and is cut
                 short within the cell, never past it: in the last column it made the grid
                 scroll sideways (a Sunday "today" at 768 px). */}
@@ -97,11 +104,15 @@ export function MonthWeek({ week, own, c }: {
               {!c.narrow && load.planned > 0 && <CapacityLine load={load} dayLength={c.dayLength} sayOver={false} title={formatLoad(load, c.dayLength)} className="min-w-0 max-w-full truncate" />}
             </div>
             {c.narrow ? (
-              n > 0 && <span aria-hidden data-month-count className="block text-center text-meta font-medium text-default">{n}</span>
+<>
+                {n > 0 && <span aria-hidden data-month-count className="block text-center text-meta font-medium text-default">{n}</span>}
+                {/* A day with events on a phone: a small hatched mark under the count, the events listed under the grid. */}
+                {eventCount > 0 && <span aria-hidden data-month-event-mark className="ui-event-mark mx-auto mt-0.5 block" />}
+              </>
             ) : (
               <div className="space-y-0.5">
                 {lanes > 0 && <div aria-hidden data-span-spacer style={{ height: lanes * 26 }} />}
-                {shown.map((e) => (e.kind === 'task' ? c.row(e.task) : e.kind === 'projected' ? <ProjectedItem key={e.projection.id} p={e.projection} hue={c.projectionHue(e.projection)} variant="row" className="px-1" onDrag={dayDrag(e.projection)} /> : c.deadlineRow(e.task, d)))}
+                {shown.map((e) => (e.kind === 'task' ? c.row(e.task) : e.kind === 'projected' ? <ProjectedItem key={e.projection.id} p={e.projection} hue={c.projectionHue(e.projection)} variant="row" className="px-1" onDrag={dayDrag(e.projection)} /> : e.kind === 'event' ? c.eventRow(e) : c.deadlineRow(e.task, d)))}
                 {hidden > 0 && (
                   <button type="button" tabIndex={-1} data-month-more={hidden} aria-expanded={false}
                     onClick={(e) => { e.stopPropagation(); c.expand(d) }}
