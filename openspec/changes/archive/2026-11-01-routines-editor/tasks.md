@@ -23,15 +23,15 @@ Prerequisite: `routines-engine` is merged.
 
 ## 3. Inbox card
 
-- [ ] 3.1 The card inside the Inbox list (lazy, only for users with routines), grouping, five lines and See all runs, Dismiss, Mark as seen, 2-second seen rule, the per-device baseline; verify happy-dom tests (each `routine-inbox` scenario) and `npm test`
-- [ ] 3.2 Settings → Notifications: Hide successful runs; verify a happy-dom test
+- [x] 3.1 The card inside the Inbox list (lazy, only for users with routines), grouping, five lines and See all runs, Dismiss, Mark as seen, 2-second seen rule, the per-device baseline; verify happy-dom tests (each `routine-inbox` scenario) and `npm test`
+- [x] 3.2 Settings → Notifications: Hide successful runs; verify a happy-dom test
 
 ## 4. Quality
 
 - [x] 4.1 Shortcuts `routines.move-up`, `routines.move-down`, `routines.save`, `routines.test`, `routines.add-step` in `web/src/lib/shortcuts.ts`, editor-scoped; the registry conflict test and the cheat sheet; verify `npm test`
-- [ ] 4.2 Accessibility: card groups, word button names, polite announcements, 44 px targets, no sideways scroll at 360 px; verify `make e2e` (frame and axe steps) and happy-dom tests
-- [ ] 4.3 Strings in the six catalogs; verify `make i18n-check`
-- [ ] 4.4 Stories for the card, word button, chip, Add step sheet, run detail and Inbox card; verify `make ui-lint` and `make ui-check`
+- [x] 4.2 Accessibility: card groups, word button names, polite announcements, 44 px targets, no sideways scroll at 360 px; verify `make e2e` (frame and axe steps) and happy-dom tests
+- [x] 4.3 Strings in the six catalogs; verify `make i18n-check`
+- [x] 4.4 Stories for the card, word button, chip, Add step sheet, run detail and Inbox card; verify `make ui-lint` and `make ui-check`
 - [x] 4.5 Bundle: the editor chunk lazy, measure first load; raise `web/bundle-budget.json` only with the reason; verify `make bundle-budget`
-- [ ] 4.6 `docs/automations.md` (the editor, history, the Inbox card), user guide screenshots; verify `make docs-check`
-- [ ] 4.7 CHANGELOG Unreleased entry (at archive); `go test ./...`, `npm test`, `npm run build`, `make check`, `make openspec-validate`
+- [x] 4.6 `docs/automations.md` (the editor, history, the Inbox card), user guide screenshots; verify `make docs-check`
+- [x] 4.7 CHANGELOG Unreleased entry (at archive); `go test ./...`, `npm test`, `npm run build`, `make check`, `make openspec-validate`

@@ -5,7 +5,7 @@ The Inbox SHALL show, inside its list above the first task, a card "Routines sin
 
 #### Scenario: Monday morning
 - **WHEN** the user opens the Inbox on Monday after "Morning sweep" ran on Saturday and Sunday and "Weekly digest" failed on Sunday
-- **THEN** the card reads "Morning sweep ran 2 times · 9 tasks moved" and "Weekly digest failed · …", each opening its runs
+- **THEN** the card reads "Morning sweep ran 2 times · 9 tasks changed" and "Weekly digest failed · …", each opening its runs
 
 #### Scenario: Nothing new
 - **WHEN** no run happened since the marker and nothing is waiting
