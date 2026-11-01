@@ -53,7 +53,7 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
     if (!lightId && !darkId) return
     let live = true
     import('../lib/theme/load').then(async ({ loadAppliedTheme }) => {
-      const [light, dark] = await Promise.all([lightId ? loadAppliedTheme(lightId, cache.light) : null, darkId ? loadAppliedTheme(darkId, cache.dark) : null])
+      const [light, dark] = await Promise.all([lightId ? loadAppliedTheme(lightId, cache.light, 'light') : null, darkId ? loadAppliedTheme(darkId, cache.dark, 'dark') : null])
       // An invalid or newer document reads as the side's default, without an op (themes "Format versions and migration").
       if (live) setAppearanceThemes({ ...(light ? { light } : {}), ...(dark ? { dark } : {}) })
     }, () => {

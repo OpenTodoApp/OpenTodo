@@ -1,0 +1,58 @@
+{
+  "opentodoTheme": 1,
+  "id": "solarized-dark",
+  "name": "Solarized Dark",
+  "author": "Ethan Schoonover",
+  "licence": "MIT",
+  "source": "https://github.com/altercation/solarized",
+  "kind": "dark",
+  "seeds": {
+    "canvas": "#002b36",
+    "surface": "#002b36",
+    "text": "oklch(0.7137 0.0197 205.26)",
+    "accent": "#268bd2",
+    "success": "oklch(0.6944 0.1508 118.6)",
+    "warning": "oklch(0.7195 0.134 85.72)",
+    "danger": "oklch(0.7363 0.1618 27.12)",
+    "info": "oklch(0.7037 0.1019 187.38)"
+  },
+  "tokens": {
+    "text-strong": "oklch(0.7229 0.0159 196.79)",
+    "faint": "oklch(0.713 0.0283 219.14)",
+    "raised": "#073642",
+    "selected": "#073642",
+    "accent-text": "oklch(0.7124 0.1394 244.93)",
+    "hue-red": "oklch(0.6713 0.2064 27.12)",
+    "hue-orange": "oklch(0.6608 0.1732 39.5)",
+    "hue-yellow": "#b58900",
+    "hue-lime": "#859900",
+    "hue-green": "oklch(0.6249 0.1622 151.71)",
+    "hue-teal": "#2aa198",
+    "hue-cyan": "oklch(0.6299 0.1065 211.53)",
+    "hue-blue": "oklch(0.6374 0.1394 244.93)",
+    "hue-indigo": "oklch(0.6473 0.1261 279.1)",
+    "hue-violet": "oklch(0.6599 0.2014 293.54)",
+    "hue-pink": "oklch(0.6674 0.2025 355.89)",
+    "hue-slate": "oklch(0.638 0.0283 219.14)"
+  },
+  "bar": "#002b36",
+  "notes": {
+    "adapted": {
+      "text": "#839496",
+      "success": "#859900",
+      "warning": "#b58900",
+      "danger": "#dc322f",
+      "info": "#2aa198",
+      "text-strong": "#93a1a1",
+      "faint": "#586e75",
+      "accent-text": "#268bd2",
+      "hue-red": "#dc322f",
+      "hue-orange": "#cb4b16",
+      "hue-blue": "#268bd2",
+      "hue-indigo": "#6c71c4",
+      "hue-pink": "#d33682",
+      "hue-slate": "#586e75"
+    },
+    "text": "Solarized Dark by Ethan Schoonover, mapped onto OpenTodo's tokens by web/src/lib/theme/builtin/MAPPING.md. Label colours not in the palette (green, cyan, violet) use OpenTodo's hue at the palette's lightness and chroma. Some colours were adapted for contrast: their published values are under adapted."
+  }
+}

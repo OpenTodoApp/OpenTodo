@@ -59,3 +59,21 @@ func TestRefusalNamesThePath(t *testing.T) {
 		t.Fatalf("got %v", err)
 	}
 }
+
+// TestBuiltinDocumentsAreValid: every theme the web app ships (OpenTodo's two and
+// the built-in catalogue, theme-catalogue) is a document the server accepts too.
+func TestBuiltinDocumentsAreValid(t *testing.T) {
+	files, _ := filepath.Glob("../../web/src/lib/theme/builtin/*.json")
+	if len(files) < 16 {
+		t.Fatalf("found %d built-in documents, want the 16 shipped", len(files))
+	}
+	for _, f := range files {
+		doc, err := os.ReadFile(f)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := Validate(doc); err != nil {
+			t.Errorf("%s: %v", filepath.Base(f), err)
+		}
+	}
+}

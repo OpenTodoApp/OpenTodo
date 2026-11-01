@@ -34,7 +34,9 @@ export function resolveDocument(doc: ThemeDocument, cached?: AppliedTheme): Appl
 }
 
 /** Loads, validates and resolves a shipped theme for one side. */
-export async function loadAppliedTheme(id: string, cached?: AppliedTheme): Promise<AppliedTheme | null> {
+export async function loadAppliedTheme(id: string, cached?: AppliedTheme, side?: ThemeDocument['kind']): Promise<AppliedTheme | null> {
   const doc = await builtinDocument(id)
-  return doc ? resolveDocument(doc, cached) : null
+  // A theme of the other kind reads as the side's default (choice.ts reads unknown ids provisionally).
+  if (!doc || (side && doc.kind !== side)) return null
+  return resolveDocument(doc, cached)
 }

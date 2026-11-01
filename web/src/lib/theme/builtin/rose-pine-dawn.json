@@ -1,0 +1,52 @@
+{
+  "opentodoTheme": 1,
+  "id": "rose-pine-dawn",
+  "name": "Rosé Pine Dawn",
+  "author": "Rosé Pine",
+  "licence": "MIT",
+  "source": "https://github.com/rose-pine/rose-pine-theme",
+  "kind": "light",
+  "seeds": {
+    "canvas": "#faf4ed",
+    "surface": "#fffaf3",
+    "text": "#575279",
+    "accent": "oklch(0.5271 0.0738 305.7)",
+    "success": "#286983",
+    "warning": "oklch(0.5305 0.1151 69.74)",
+    "danger": "oklch(0.5339 0.1071 2.66)",
+    "info": "oklch(0.5139 0.0661 210.12)"
+  },
+  "tokens": {
+    "muted": "oklch(0.4918 0.0458 291)",
+    "faint": "oklch(0.5259 0.0268 298.37)",
+    "raised": "#f2e9e1",
+    "selected": "#dfdad9",
+    "hue-red": "#b4637a",
+    "hue-orange": "oklch(0.6312 0.1459 41.12)",
+    "hue-yellow": "oklch(0.653 0.1417 69.74)",
+    "hue-lime": "oklch(0.6312 0.1459 131.59)",
+    "hue-green": "oklch(0.6287 0.1459 149.21)",
+    "hue-teal": "oklch(0.6312 0.1114 184.7)",
+    "hue-cyan": "#56949f",
+    "hue-blue": "#286983",
+    "hue-indigo": "oklch(0.6312 0.1459 276.97)",
+    "hue-violet": "#907aa9",
+    "hue-pink": "oklch(0.6582 0.1058 23.03)",
+    "hue-slate": "oklch(0.6484 0.0268 298.37)"
+  },
+  "bar": "#faf4ed",
+  "notes": {
+    "adapted": {
+      "accent": "#907aa9",
+      "warning": "#ea9d34",
+      "danger": "#b4637a",
+      "info": "#56949f",
+      "muted": "#797593",
+      "faint": "#9893a5",
+      "hue-yellow": "#ea9d34",
+      "hue-pink": "#d7827e",
+      "hue-slate": "#9893a5"
+    },
+    "text": "Rosé Pine Dawn by Rosé Pine, mapped onto OpenTodo's tokens by web/src/lib/theme/builtin/MAPPING.md. Label colours not in the palette (orange, lime, green, teal, indigo) use OpenTodo's hue at the palette's lightness and chroma. Some colours were adapted for contrast: their published values are under adapted."
+  }
+}

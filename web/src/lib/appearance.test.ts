@@ -2,7 +2,7 @@
 // Appearance preference (OpenSpec change theming, tasks 3.1 and 3.3).
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { readThemeChoices, setThemeChoice } from './theme/choice'
+import { BUILTIN_THEMES, readThemeChoices, setThemeChoice } from './theme/choice'
 import type { AppliedTheme } from './theme/apply'
 import { applyAppearance, setAppearanceThemes, CACHE_KEY, cachedCustom, deriveCustom, setCustomAccent, destinationOrder, moveDestination, orderDestinations, readAppearance, readSidebarCounts, setAppearance, setSidebarCounts } from './appearance'
 import { db } from './db'
@@ -205,17 +205,20 @@ describe('theme choice per side', () => {
     expect(read('builtin:opentodo-dark').light).toMatchObject({ stored: 'builtin:opentodo-dark', status: 'invalid', id: 'opentodo-light' })
     expect(read('url(x)').light).toMatchObject({ status: 'invalid', id: 'opentodo-light' })
     expect(read(42).light).toMatchObject({ stored: '', status: 'default' })
-    expect(read('builtin:nord').light).toMatchObject({ stored: 'builtin:nord', status: 'newer', id: 'opentodo-light' })
+    // Without the lazy catalogue an unlisted builtin reads as a theme provisionally (the loader decides);
+    // with the list of the themes this app has, an unknown one is from a newer version.
+    expect(read('builtin:nord').light).toMatchObject({ stored: 'builtin:nord', status: 'theme', id: 'nord' })
+    expect(readThemeChoices({ theme_light: 'builtin:from-the-future' } as never, BUILTIN_THEMES).light).toMatchObject({ status: 'newer', id: 'opentodo-light' })
     expect(read('', 'user:0b5e0d8c-4f7c-4d3e-9c1e-2f3a4b5c6d7e').dark).toMatchObject({ status: 'newer', id: 'opentodo-dark' })
     expect(read('', 'instance:corporate').dark).toMatchObject({ status: 'newer', id: 'opentodo-dark' })
     expect(await db.outbox.count()).toBe(0)
   })
 
   it('an incoming choice is stored, kept as it is and changes nothing on this version', async () => {
-    await applyOps([{ id: 't1', entity: 'user_prefs', entityId: 'me', field: 'theme_dark', value: 'builtin:nord', ts: '0000001:0000:dev', device: 'phone' }] as never)
+    await applyOps([{ id: 't1', entity: 'user_prefs', entityId: 'me', field: 'theme_dark', value: 'builtin:from-the-future', ts: '0000001:0000:dev', device: 'phone' }] as never)
     const row = await db.userPrefs.get('me')
-    expect(row?.theme_dark).toBe('builtin:nord')
-    expect(readThemeChoices(row).dark.status).toBe('newer')
+    expect(row?.theme_dark).toBe('builtin:from-the-future')
+    expect(readThemeChoices(row, BUILTIN_THEMES).dark.status).toBe('newer')
     expect(await db.outbox.count()).toBe(0)
   })
 
