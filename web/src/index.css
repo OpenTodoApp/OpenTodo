@@ -985,6 +985,9 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
   content: '·'; color: var(--ot-faint); margin-inline-end: 0.125rem;
 }
 [data-row-meta="row"] [data-row-labels] { margin-inline: 0.25rem; }
+/* A routine word followed by punctuation ("Comment on [each task]: …"): no gap before
+   the colon or comma (routines-describe-it). Unlayered, so it wins over the word's mx and px. */
+[data-word]:has(+ [data-punct]) { margin-inline-end: 0; padding-inline-end: 0; }
 /* The time column's width (rows-v2 D2): one value for every list, from the user's time
    format; DateTimePrefsProvider sets it on the root ("23:59" or "12:00 PM"). */
 :root { --row-time-w: 3.25rem; }

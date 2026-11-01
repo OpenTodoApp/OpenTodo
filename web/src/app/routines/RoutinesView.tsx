@@ -29,6 +29,7 @@ import { useRoutineNames, valueNamer, type RoutineNames } from './data'
 import { RunDetail, RunsList } from './RunHistory'
 import { clearHandover, openRoutineHistory, returnFocus } from './routineNav'
 import { StarterGallery, StartersPage } from './Starters'
+import { DescribeSheet, useDescribeMode } from './DescribeIt'
 import { sentenceText } from './StepCard'
 
 const PAUSE_REASON = translatedMap<string>({ runaway: msg('Paused: it ran too often') })
@@ -145,6 +146,16 @@ function RoutinesList({ route }: { route?: Extract<Route, { view: 'rules' }> }) 
     returnTo.current = null
     row.focus()
   }, [tab, rules])
+  // Describe it (routines-describe-it D1): only when the person can make an assistant turn; /routines/describe opens it.
+  const describeMode = useDescribeMode()
+  const [describing, setDescribing] = useState(!!route?.describe)
+  const closeDescribe = () => {
+    setDescribing(false)
+    if (route?.describe) navigate({ view: 'rules' }, { replace: true })
+  }
+  const describeButton = describeMode && (
+    <Button variant="secondary" size="sm" icon="message-circle" onClick={() => setDescribing(true)} data-describe-routine>{t('Describe it')}</Button>
+  )
   const pause = (paused: boolean) => act(api.pauseRules(paused).then((s) => status && setStatus({ ...status, ...s })))
   const setTab = (id: string) => navigate(id === 'runs' ? { view: 'rules', tab: 'runs' } : { view: 'rules' }, { replace: true })
   const overflowGroups: ActionGroup[] = status?.enabled && !status.paused
@@ -153,6 +164,7 @@ function RoutinesList({ route }: { route?: Extract<Route, { view: 'rules' }> }) 
     <PageBody width="list" data-rules-page>
       <PageHeader title={t('Routines')} meta={rules.length} help="routines"
         actions={<>
+          {describeButton}
           <Button variant="secondary" size="sm" icon="sparkles" onClick={openStarters} data-open-starters>{t('Start from a starter')}</Button>
           <Button variant="primary" size="sm" icon="plus" onClick={() => edit()}>{t('New routine')}</Button>
           {overflowGroups.length > 0 && <ActionMenu label={t('More')} groups={overflowGroups} />}
@@ -178,6 +190,7 @@ function RoutinesList({ route }: { route?: Extract<Route, { view: 'rules' }> }) 
                   control={<div className="flex flex-wrap justify-center gap-2">
                     <Button variant="primary" size="sm" icon="plus" onClick={() => edit()}>{t('New routine')}</Button>
                     <Button variant="secondary" size="sm" icon="sparkles" onClick={openStarters}>{t('Start from a starter')}</Button>
+                    {describeButton}
                   </div>} />
                 <StarterGallery />
               </>
@@ -187,6 +200,7 @@ function RoutinesList({ route }: { route?: Extract<Route, { view: 'rules' }> }) 
           <RunsList rules={rules} onOpen={(r) => openRun(r.rule_id, r.run_id)} />
         )}
       </Tabs>
+      {describing && describeMode && <DescribeSheet mode={describeMode} catalogue={catalogue} onClose={closeDescribe} />}
       {run && <RunDetail rule={byId.get(run.ruleId)} ruleId={run.ruleId} runId={run.runId} onClose={() => setRun(null)} />}
     </PageBody>
   )

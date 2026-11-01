@@ -56,6 +56,7 @@ func (s *Server) registerAssistantRoutes(mux *routes) {
 	mux.handle("POST /api/v1/me/assistant/test", signedIn.SessionOnly().DemoDenied(), s.handleTestMyAssistant)
 	mux.handle("POST /api/v1/assistant/turn", signedIn.SessionOnly().DemoDenied(), s.handleAssistantTurn)
 	mux.handle("GET /api/v1/assistant/skills", signedIn.DemoDenied(), s.handleAssistantSkills)
+	s.registerRoutineDraft(mux)
 }
 
 // handleAssistantSkills lists the built-in skills (assistant-skills), or an
@@ -537,6 +538,13 @@ func (s *Server) handleMyAssistantUsage(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	v["routines"] = map[string]any{"input_tokens": ru.InputTokens, "output_tokens": ru.OutputTokens, "total_tokens": ru.InputTokens + ru.OutputTokens, "calls": ru.Calls}
+	// Describe it's routine drafts, also already counted (routines-describe-it D4).
+	du, err := s.assistant.Store.DraftUsage(r.Context(), userFrom(r.Context()).ID)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	v["drafts"] = map[string]any{"input_tokens": du.InputTokens, "output_tokens": du.OutputTokens, "total_tokens": du.InputTokens + du.OutputTokens, "calls": du.Calls}
 	writeJSON(w, http.StatusOK, v)
 }
 

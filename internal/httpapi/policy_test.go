@@ -237,6 +237,7 @@ func TestSecurityRoutePolicies(t *testing.T) {
 		"DELETE /api/v1/projects/{id}/member-invitations/{invitationId}":   "auth demo",
 		"DELETE /api/v1/workspaces/{id}/member-invitations/{invitationId}": "auth full-tokens demo",
 		"POST /api/v1/assistant/turn":                                      "auth session-only demo",
+		"POST /api/v1/assistant/routine-draft":                             "auth session-only demo",
 		"POST /api/v1/me/assistant/test":                                   "auth session-only demo",
 		// Regular content routes.
 		"POST /api/v1/sync":                       "auth",

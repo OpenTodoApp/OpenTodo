@@ -156,7 +156,7 @@ function StepWords({ step, state, events, adding, errorAt, onTyping }: {
   }
   return (
     <>
-      {sentenceParts(step).map((p, i) => ('text' in p ? <span key={i}>{p.text}</span> : word(p.slot)))}
+      {sentenceParts(step).map((p, i) => ('text' in p ? <span key={i} data-punct={/^[:,.;)]/.test(p.text) || undefined}>{p.text}</span> : word(p.slot)))}
       {inputDefs(step, [...extraInputs(step), ...adding.filter((n) => !(step.in && n in step.in))]).map((d) => (
         <span key={d.name} className="text-muted"> · {inputLabel(d.name, step.kind)}{word(d.name)}</span>
       ))}
