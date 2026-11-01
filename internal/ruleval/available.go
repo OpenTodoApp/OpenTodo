@@ -20,6 +20,10 @@ const (
 	ReasonTimeTrackingOff    = "time_tracking_off"
 	ReasonNotShared          = "not_shared"
 	ReasonDemo               = "demo"
+	// Shared routines (routines-shared D3, D8): a step that acts on personal
+	// things, and Email project members until routines-shared-email.
+	ReasonNotInShared = "not_in_shared"
+	ReasonNotYet      = "not_yet"
 	// AI steps (routines-ai-step D1, D10).
 	ReasonAINotConfigured = "ai_not_configured"
 	ReasonAINoConsent     = "ai_no_consent"
@@ -52,6 +56,8 @@ var reasonText = map[string]string{
 	ReasonFocusOff:           "today's focus is turned off",
 	ReasonTimeTrackingOff:    "time tracking is turned off",
 	ReasonNotShared:          "the routine does not belong to a shared project",
+	ReasonNotInShared:        "not available in a shared routine",
+	ReasonNotYet:             "not available yet",
 	ReasonDemo:               "not offered on a demo instance",
 	ReasonAINotConfigured:    "the assistant is not set up for you on this server",
 	ReasonAINoConsent:        "accept the assistant's updated terms for routines",
@@ -91,6 +97,16 @@ type Env struct {
 	AIConsent bool
 }
 
+// NotInShared lists the step kinds that act on personal things, not available
+// in a routine of a shared project (routines-shared D3): its run sees only the
+// project, and labels, focus, timers, other projects, Email me and webhooks
+// belong to one member.
+var NotInShared = map[string]bool{
+	"favourite": true, "set_focus": true, "start_timer": true, "stop_timer": true, "tracked_time": true,
+	"create_project": true, "update_project": true, "project_from_template": true, "create_labels": true,
+	"email_me": true, "webhook": true,
+}
+
 // Availability is whether a step can run and, when not, why and where to fix it.
 type Availability struct {
 	Available bool   `json:"available"`
@@ -111,6 +127,12 @@ func Available(kind string, env Env) Availability {
 	}
 	if !env.Automations {
 		return unavailable(ReasonAutomationsOff)
+	}
+	if env.Shared && NotInShared[kind] {
+		return unavailable(ReasonNotInShared)
+	}
+	if k.Needs == NeedsShared && env.Shared {
+		return unavailable(ReasonNotYet)
 	}
 	switch k.Needs {
 	case NeedsEmail, NeedsShared:

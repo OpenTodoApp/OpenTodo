@@ -82,6 +82,12 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
       await markNotificationRead(n.id)
       return navigate({ view: 'rules', id: n.payload.ruleId, run: n.payload.runId })
     }
+    // A shared routine that paused opens the routine (routines-shared D9).
+    if (n.kind === 'routine_paused_shared' && 'runAsName' in n.payload) {
+      setOpen(false)
+      await markNotificationRead(n.id)
+      return navigate({ view: 'rules', id: n.payload.ruleId })
+    }
     if (!n.payload.taskId) return
     setOpen(false)
     await markTaskNotificationsRead(n.payload.taskId)
@@ -127,6 +133,10 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
                           : t.rich('<b>{routine}</b> failed', { routine: n.payload.ruleName || t('A routine'), b: (chunks) => <strong>{chunks}</strong> })}</span>
                     ) : n.kind === 'routine_proposal' && 'count' in n.payload ? (
                       <span className="block" data-kind="routine_proposal">{t.rich('<b>{routine}</b> has a proposal waiting ({n, plural, one {# change} other {# changes}})', { routine: n.payload.ruleName || t('A routine'), n: n.payload.count, b: (chunks) => <strong>{chunks}</strong> })}</span>
+                    ) : n.kind === 'routine_paused_shared' && 'runAsName' in n.payload ? (
+                      <span className="block" data-kind="routine_paused_shared">{(n.payload.reason === 'run_as_viewer'
+                        ? t.rich('<b>{routine}</b> paused: {name} can no longer edit {project}. Turn it on to run it as you.', { routine: n.payload.ruleName || t('A routine'), name: n.payload.runAsName, project: n.payload.projectName, b: (chunks) => <strong>{chunks}</strong> })
+                        : t.rich('<b>{routine}</b> paused: {name} no longer edits {project}. Turn it on to run it as you.', { routine: n.payload.ruleName || t('A routine'), name: n.payload.runAsName, project: n.payload.projectName, b: (chunks) => <strong>{chunks}</strong> }))}</span>
                     ) : n.kind === 'routine' && 'text' in n.payload ? (
                       <RoutineNotice payload={n.payload as RoutinePayload} />
                     ) : n.kind === 'mentioned' ? (

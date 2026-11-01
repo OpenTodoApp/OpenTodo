@@ -57,19 +57,26 @@ func (e *Engine) process(ctx context.Context, ev Event) error {
 	if err != nil {
 		return err
 	}
-	var w *world
+	var user *world
 	for i := range list {
 		r := &list[i]
-		if !r.Enabled || !triggered(r, ev) {
+		if !r.Enabled || !triggered(r, ev) || !forEvent(r, ev) {
 			continue
 		}
 		if st, _, err := e.Store.State(ctx, r.ID); err != nil || st.PausedReason != "" {
 			continue
 		}
-		if w == nil {
-			if w, err = e.load(ctx, ev.UserID); err != nil {
+		if !e.mayRun(ctx, r, ev.UserID) {
+			continue
+		}
+		if user == nil {
+			if user, err = e.load(ctx, ev.UserID); err != nil {
 				return err
 			}
+		}
+		w := user.worldFor(r)
+		if w == nil {
+			continue // a shared routine's project is in the Trash
 		}
 		if ev.Kind == ruleval.Schedule {
 			if r.isRoutine() {
@@ -121,6 +128,19 @@ func triggered(r *rule, ev Event) bool {
 		return r.Trigger.LabelID == ev.LabelID
 	}
 	return true
+}
+
+// forEvent keeps a task event to its rules: a shared project's event to that
+// project's routines, any other to the author's personal rules
+// (routines-shared D3). A time trigger names its rule.
+func forEvent(r *rule, ev Event) bool {
+	if ev.RuleID != "" {
+		return true
+	}
+	if ev.ForProject != "" {
+		return r.Shared && r.ProjectID == ev.ForProject
+	}
+	return !r.Shared
 }
 
 // movedInto reports whether a task now sits where a task.moved trigger names.

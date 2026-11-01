@@ -53,11 +53,18 @@ func cmdRoutine(a *App, ctx context.Context, g *globalFlags, args []string) erro
 
 // routineRow is a routine as GET /api/v1/rules returns it.
 type routineRow struct {
-	ID       string          `json:"id"`
-	Name     string          `json:"name"`
-	Enabled  bool            `json:"enabled"`
-	Trigger  json.RawMessage `json:"trigger"`
-	Steps    json.RawMessage `json:"steps"`
+	ID      string          `json:"id"`
+	Name    string          `json:"name"`
+	Enabled bool            `json:"enabled"`
+	Trigger json.RawMessage `json:"trigger"`
+	Steps   json.RawMessage `json:"steps"`
+	// ProjectID and RunAs: a routine of a project and, when the project is
+	// shared, the person it runs as (routines-shared D11).
+	ProjectID string `json:"project_id"`
+	RunAs     *struct {
+		ID   string `json:"id"`
+		Name string `json:"name"`
+	} `json:"run_as"`
 	Warnings []struct {
 		Step    string `json:"step"`
 		Message string `json:"message"`
@@ -150,13 +157,15 @@ func routineList(a *App, ctx context.Context, g *globalFlags, args []string) err
 		fmt.Fprintln(a.Stdout, "No routines.")
 		return nil
 	}
-	tbl := newTable("ID", "NAME", "ON", "TRIGGER", "STEPS")
+	projects := newNameResolver(ctx, c)
+	tbl := newTable("ID", "NAME", "ON", "TRIGGER", "STEPS", "PROJECT", "RUNS AS")
 	for _, r := range rows {
 		on := "off"
 		if r.Enabled {
 			on = "on"
 		}
-		tbl.add(cell{text: shortID(r.ID), style: styleCyan}, plain(r.Name), plain(on), plain(triggerKind(r.Trigger)), plain(strconv.Itoa(stepCount(r.Steps))))
+		tbl.add(cell{text: shortID(r.ID), style: styleCyan}, plain(r.Name), plain(on), plain(triggerKind(r.Trigger)), plain(strconv.Itoa(stepCount(r.Steps))),
+			plain(projects.name("projects", r.ProjectID)), plain(r.runAsName()))
 	}
 	tbl.render(a.Stdout, a.color())
 	return nil
@@ -273,7 +282,14 @@ func routineShow(a *App, ctx context.Context, g *globalFlags, args []string) err
 	if r.Enabled {
 		on = "on"
 	}
-	fmt.Fprintf(a.Stdout, "%s  (%s, %s)\nWhen: %s\n", r.Name, shortID(r.ID), on, string(full.Trigger))
+	fmt.Fprintf(a.Stdout, "%s  (%s, %s)\n", r.Name, shortID(r.ID), on)
+	if r.ProjectID != "" {
+		fmt.Fprintf(a.Stdout, "Project: %s\n", newNameResolver(ctx, c).name("projects", r.ProjectID))
+	}
+	if who := r.runAsName(); who != "" {
+		fmt.Fprintf(a.Stdout, "Runs as: %s\n", who)
+	}
+	fmt.Fprintf(a.Stdout, "When: %s\n", string(full.Trigger))
 	if c := string(full.Condition); c != "" && c != "null" {
 		fmt.Fprintf(a.Stdout, "Only for tasks that: %s\n", c)
 	}
@@ -487,9 +503,9 @@ func readRoutineFile(path string) (map[string]any, error) {
 	}
 	for k := range doc {
 		switch k {
-		case "name", "trigger", "condition", "steps", "actions", "enabled":
+		case "name", "trigger", "condition", "steps", "actions", "enabled", "project":
 		default:
-			return nil, usageErr("%s: unknown key %q (a routine file holds name, trigger, condition, steps or actions, and enabled)", path, k)
+			return nil, usageErr("%s: unknown key %q (a routine file holds name, trigger, condition, steps or actions, enabled and project)", path, k)
 		}
 	}
 	return doc, nil
@@ -498,7 +514,11 @@ func readRoutineFile(path string) (map[string]any, error) {
 func routineWrite(a *App, ctx context.Context, g *globalFlags, verb string, args []string) error {
 	name := "routine " + verb
 	fs := a.flagSet(name, g)
-	file := fs.String("file", "", "the routine as JSON or YAML: name, trigger, condition, steps (or actions), enabled")
+	file := fs.String("file", "", "the routine as JSON or YAML: name, trigger, condition, steps (or actions), enabled, project")
+	project := ""
+	if verb == "create" {
+		fs.StringVar(&project, "project", "", "the project the routine belongs to (name or id); in a shared project its editors change it and it runs as whoever turns it on")
+	}
 	pos, err := a.parse(g, fs, name, args)
 	if err != nil {
 		return a.helpOr("routine", err)
@@ -514,6 +534,9 @@ func routineWrite(a *App, ctx context.Context, g *globalFlags, verb string, args
 	doc, err := readRoutineFile(*file)
 	if err != nil {
 		return err
+	}
+	if project != "" {
+		doc["project"] = project
 	}
 	c, _, err := a.connect(g)
 	if err != nil {
@@ -641,4 +664,16 @@ func routineUndo(a *App, ctx context.Context, g *globalFlags, args []string) err
 		fmt.Fprintf(a.Stdout, "not undone: %s\n", strings.Join(u.NotUndoable, ", "))
 	}
 	return nil
+}
+
+// runAsName is a shared routine's run-as person, "-" when not turned on yet,
+// "" for a personal routine.
+func (r routineRow) runAsName() string {
+	if r.RunAs != nil {
+		return r.RunAs.Name
+	}
+	if r.ProjectID != "" && strings.Contains(string(r.Raw), `"run_as":null`) {
+		return "-"
+	}
+	return ""
 }

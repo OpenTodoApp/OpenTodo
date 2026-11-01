@@ -82,7 +82,9 @@ func (e *Engine) tickUser(ctx context.Context, uid string) (int, error) {
 					return 0, err
 				}
 			}
-			events = append(events, Occurrences(r.ID, r.Trigger, w, st.Watermark, now)...)
+			if rw := w.worldFor(r); rw != nil {
+				events = append(events, Occurrences(r.ID, r.Trigger, rw, st.Watermark, now)...)
+			}
 		}
 		st.Watermark = now
 		if err := e.Store.SaveState(ctx, r.ID, uid, st); err != nil {

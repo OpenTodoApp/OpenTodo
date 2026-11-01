@@ -7,6 +7,7 @@ import { db } from '../db'
 import { t } from '../i18n'
 import { uuid } from '../ids'
 import { mutate, mutateMany } from '../ops'
+import { membershipMap } from '../sharing'
 import { RULE_TRIGGERS, type Rule, type RuleActions, type RuleCondition, type RuleTrigger, type RoutineStep } from '../types'
 import { parseSteps } from './steps'
 
@@ -65,6 +66,8 @@ export interface NewRule {
   /** Apply without asking and the daily AI budget (routines-ai-step). */
   ai_apply?: string
   ai_budget?: number
+  /** The project the routine belongs to (routines-shared D1); absent or null for a personal routine. */
+  project_id?: string | null
 }
 
 function checkParts(name: string, actions: RuleActions | null | undefined, steps?: RoutineStep[] | null): void {
@@ -81,7 +84,13 @@ export async function createRule(input: NewRule): Promise<string> {
   const name = input.name.trim()
   checkParts(name, input.actions, input.steps)
   const live = await liveRules()
-  if (live.length >= MAX_RULES) throw new Error(t('You can have at most {n} rules', { n: MAX_RULES }))
+  // 50 personal routines per account, 50 per shared project (routines-shared D2).
+  const shared = await membershipMap()
+  const home = (pid: string | null | undefined) => (pid && shared.has(pid) ? pid : null)
+  const mine = home(input.project_id)
+  if (live.filter((r) => home(r.project_id) === mine).length >= MAX_RULES) {
+    throw new Error(mine ? t('A shared project can have at most {n} routines', { n: MAX_RULES }) : t('You can have at most {n} rules', { n: MAX_RULES }))
+  }
   const id = uuid()
   const now = Date.now()
   let position = now
@@ -95,6 +104,7 @@ export async function createRule(input: NewRule): Promise<string> {
     ...(input.steps ? { steps: input.steps } : {}),
     ...(input.ai_apply ? { ai_apply: input.ai_apply } : {}),
     ...(input.ai_budget ? { ai_budget: input.ai_budget } : {}),
+    ...(input.project_id ? { project_id: input.project_id } : {}),
     position,
     created_at: now,
     deleted_at: null,
@@ -144,6 +154,8 @@ export async function duplicateRule(id: string): Promise<string> {
     actions: rule.actions as RuleActions | null,
     steps: rule.steps ?? null,
     enabled: false,
+    // A copy stays in the routine's project (routines-shared).
+    project_id: rule.project_id ?? null,
   })
   return copy
 }

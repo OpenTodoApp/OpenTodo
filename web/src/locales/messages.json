@@ -200,6 +200,12 @@
   "<b>{routine}</b> has a proposal waiting ({n, plural, one {# change} other {# changes}})": [
     "web/src/app/NotificationBell.tsx"
   ],
+  "<b>{routine}</b> paused: {name} can no longer edit {project}. Turn it on to run it as you.": [
+    "web/src/app/NotificationBell.tsx"
+  ],
+  "<b>{routine}</b> paused: {name} no longer edits {project}. Turn it on to run it as you.": [
+    "web/src/app/NotificationBell.tsx"
+  ],
   "<b>{routine}</b>: {text}": [
     "web/src/app/NotificationBell.tsx"
   ],
@@ -493,6 +499,12 @@
   ],
   "A session is running": [
     "web/src/app/focus/FocusView.tsx"
+  ],
+  "A shared project": [
+    "web/src/app/routines/RoutinesView.tsx"
+  ],
+  "A shared project can have at most {n} routines": [
+    "web/src/lib/rules/store.ts"
   ],
   "A short summary written by AI": [
     "web/src/lib/rules/sentence.ts"
@@ -5514,6 +5526,9 @@
   "Everyone in the workspace is in this group.": [
     "web/src/app/WorkspaceGroups.tsx"
   ],
+  "Everyone in {project} sees this routine; it runs as whoever turns it on.": [
+    "web/src/app/routines/SharedRoutine.tsx"
+  ],
   "Everyone in {workspace} is on this project": [
     "web/src/app/ShareDirectory.tsx"
   ],
@@ -7646,6 +7661,9 @@
   ],
   "Joining…": [
     "web/src/app/ProjectInviteScreen.tsx"
+  ],
+  "Just me": [
+    "web/src/app/routines/RoutinesView.tsx"
   ],
   "Just your tasks and lists, nothing else.": [
     "web/src/lib/settingsCopy.ts"
@@ -9964,6 +9982,9 @@
   "Not available": [
     "web/src/app/routines/RunHistory.tsx"
   ],
+  "Not available in a shared routine": [
+    "web/src/lib/rules/catalogue.ts"
+  ],
   "Not available offline.": [
     "web/src/app/RestoreSection.tsx"
   ],
@@ -10085,6 +10106,9 @@
   ],
   "Not today": [
     "web/src/app/method/DailyCheckToast.tsx"
+  ],
+  "Not turned on yet": [
+    "web/src/app/routines/SharedRoutine.tsx"
   ],
   "Not waiting on another task": [
     "web/src/app/filter/conditionText.ts"
@@ -10725,6 +10749,12 @@
   ],
   "Only an account with end-to-end encryption answers AI connectors from a device.": [
     "web/src/lib/i18n/errors.ts"
+  ],
+  "Only editors can run it": [
+    "web/src/app/routines/RoutinesView.tsx"
+  ],
+  "Only editors of {project} can change this routine.": [
+    "web/src/app/routines/SharedRoutine.tsx"
   ],
   "Only for project": [
     "web/src/app/WebhooksPanel.tsx"
@@ -11398,14 +11428,25 @@
   "Paused": [
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/routines/RoutinesView.tsx",
+    "web/src/app/routines/SharedRoutine.tsx",
     "web/src/lib/reviewCadence.ts",
     "web/src/lib/webhooks.ts"
   ],
+  "Paused: edited by {who}. Turn it on again to run it as you.": [
+    "web/src/app/routines/SharedRoutine.tsx"
+  ],
   "Paused: it ran too often": [
-    "web/src/app/routines/RoutinesView.tsx"
+    "web/src/app/routines/RoutinesView.tsx",
+    "web/src/app/routines/SharedRoutine.tsx"
   ],
   "Paused: the time entry was stopped on another device. Start again to go on.": [
     "web/src/app/focus/FocusParts.tsx"
+  ],
+  "Paused: {who} can no longer edit {project}. Turn it on to run it as you.": [
+    "web/src/app/routines/SharedRoutine.tsx"
+  ],
+  "Paused: {who} no longer edits {project}. Turn it on to run it as you.": [
+    "web/src/app/routines/SharedRoutine.tsx"
   ],
   "Pending": [
     "web/src/app/MembersPanel.tsx",
@@ -13106,11 +13147,15 @@
     "web/src/app/routines/RoutinesView.tsx"
   ],
   "Routines": [
+    "web/src/app/ProjectHeader.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/routines/RoutineEditor.tsx",
     "web/src/app/routines/RoutinesView.tsx",
     "web/src/app/routines/Starters.tsx",
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Routines of {project}": [
+    "web/src/app/routines/RoutinesView.tsx"
   ],
   "Routines since your last visit": [
     "web/src/app/routines/RoutinesInboxCard.tsx"
@@ -13215,6 +13260,9 @@
   "Runs": [
     "web/src/app/routines/RoutinesView.tsx",
     "web/src/app/routines/RunHistory.tsx"
+  ],
+  "Runs as {name}": [
+    "web/src/app/routines/SharedRoutine.tsx"
   ],
   "Runs on: {devices}": [
     "web/src/app/routines/RoutinesDevice.tsx"
@@ -13405,6 +13453,9 @@
   ],
   "Saved. Leave empty to keep it; it is never shown again.": [
     "web/src/app/NotificationChannelEditor.tsx"
+  ],
+  "Saving pauses this routine: it runs as {name}. Turn it on again afterwards to run it as you.": [
+    "web/src/app/routines/SharedRoutine.tsx"
   ],
   "Saving…": [
     "web/src/app/BackupsPanel.tsx",
@@ -14066,6 +14117,9 @@
   ],
   "Show all ({n})": [
     "web/src/app/ActivityPanel.tsx"
+  ],
+  "Show all routines": [
+    "web/src/app/routines/RoutinesView.tsx"
   ],
   "Show archived projects": [
     "web/src/app/ProjectsSettings.tsx"
@@ -19328,7 +19382,9 @@
     "web/src/lib/sections.ts"
   ],
   "a shared project": [
-    "web/src/app/FeedView.tsx"
+    "web/src/app/FeedView.tsx",
+    "web/src/app/routines/RoutinesView.tsx",
+    "web/src/app/routines/SharedRoutine.tsx"
   ],
   "a step is not available": [
     "web/src/lib/rules/inbox.ts"
@@ -20303,6 +20359,9 @@
     "web/src/app/routines/RunHistory.tsx",
     "web/src/lib/rules/catalogue.ts"
   ],
+  "not available yet": [
+    "web/src/lib/rules/catalogue.ts"
+  ],
   "not blocked": [
     "web/src/lib/rules/summary.ts"
   ],
@@ -20716,6 +20775,9 @@
   ],
   "someday": [
     "web/src/lib/rules/summary.ts"
+  ],
+  "someone": [
+    "web/src/app/routines/SharedRoutine.tsx"
   ],
   "specific task, fixed task, always": [
     "web/src/lib/rules/sentence.ts"

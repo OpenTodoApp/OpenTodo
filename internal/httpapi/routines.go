@@ -198,7 +198,16 @@ func (s *Server) routineWarnings(ctx context.Context, uid string, row opsync.Ent
 	if err != nil {
 		return []ruleval.StepWarning{}
 	}
-	out := ruleval.Unavailable(steps, s.routineEnv(ctx, uid))
+	env := s.routineEnv(ctx, uid)
+	if idOf(row["project_id"]) != "" {
+		// A shared routine's availability (routines-shared D3): the run-as
+		// person's environment, plaintext, without personal steps.
+		if _, shared, _, err := s.sync.ProjectStatus(ctx, uid, idOf(row["project_id"])); err == nil && shared {
+			env = s.routineEnv(ctx, s.runAsOf(ctx, uid, row))
+			env.Shared, env.Encrypted = true, false
+		}
+	}
+	out := ruleval.Unavailable(steps, env)
 	if out == nil {
 		out = []ruleval.StepWarning{}
 	}
@@ -229,8 +238,9 @@ func (s *Server) annotateRules(ctx context.Context, uid string, list ...opsync.E
 		if w := s.routineWarnings(ctx, uid, e); len(w) > 0 {
 			e["warnings"] = jsonRaw(w)
 		}
-		s.annotateRuleAI(ctx, uid, e)
+		s.annotateRuleAI(ctx, s.runAsOf(ctx, uid, e), e)
 	}
+	s.annotateShared(ctx, uid, list)
 }
 
 func jsonRaw(v any) json.RawMessage {
@@ -256,6 +266,8 @@ func (s *Server) routineError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusConflict, "automations_off", err.Error())
 	case errors.Is(err, rules.ErrAlreadyUndone):
 		writeError(w, http.StatusConflict, "already_undone", err.Error())
+	case errors.Is(err, rules.ErrForbidden):
+		writeError(w, http.StatusForbidden, "forbidden", err.Error())
 	default:
 		s.internal(w, err)
 	}
@@ -395,6 +407,9 @@ func (s *Server) handleRoutineDraftTest(w http.ResponseWriter, r *http.Request) 
 		if len(strings.TrimSpace(string(v))) > 0 {
 			body[f] = v
 		}
+	}
+	if d.ProjectID != "" {
+		body["project_id"] = jsonRaw(d.ProjectID)
 	}
 	if err := s.checkRuleParts(r.Context(), uid, body, nil); err != nil {
 		s.ruleError(w, err)
