@@ -5,7 +5,7 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useDatabase } from '../../lib/db'
 import { createLabel } from '../../lib/labels'
-import { createTask, resetDeviceId } from '../../lib/ops'
+import { createTask, mutate, resetDeviceId } from '../../lib/ops'
 import { publishEncryption } from '../../lib/e2ee'
 import { createRule } from '../../lib/rules/store'
 import type { RuleRun } from '../../lib/types'
@@ -65,6 +65,14 @@ describe('Rules page', () => {
       && /When label waiting is added → priority 3/.test(rows()[0].textContent ?? ''), 'the row with its counts and its summary')
     await click(rows()[0].querySelector('[role="switch"]')!)
     await waitFor(() => rows()[0].querySelector('[role="switch"]')?.getAttribute('aria-checked') === 'false', 'the rule off')
+    await r.unmount()
+  })
+
+  it('lists a routine of more than one step as made with a newer version (routines-engine 1.5)', async () => {
+    const id = await createRule({ name: 'Groceries', trigger: { kind: 'task.created' }, actions: { priority: 1 } })
+    await mutate('rule', id, { actions: null, steps: [{ id: 'a', kind: 'find_tasks', in: { condition: { literal: { due: 'today' } } } }, { id: 'b', kind: 'count', in: { list: { ref: 'a' } } }] })
+    const r = await render(<RulesView />)
+    await waitFor(() => rows().length === 1 && /Made with a newer version/.test(rows()[0].textContent ?? ''), 'the routine as newer')
     await r.unmount()
   })
 

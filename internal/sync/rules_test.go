@@ -47,7 +47,7 @@ func TestRuleValidationRefuses(t *testing.T) {
 		{"actions", `{}`},
 		{"actions", `{"colour":"red"}`},
 		{"condition", `{"title":"x"}`},
-		{"actions", `null`},
+		{"trigger", `null`},
 	}
 	for i, b := range bad {
 		res, err := s.Apply(ctx, "u1", []Op{op("bad"+string(rune('a'+i)), "rule", "rl1", b.field, b.value, int64(100+i), "A")})
@@ -57,4 +57,49 @@ func TestRuleValidationRefuses(t *testing.T) {
 	}
 	// A null condition is fine.
 	mustApply(t, s, "u1", op("ok", "rule", "rl1", "condition", `null`, 500, "A"))
+}
+
+// routines-engine "Routine steps": valid steps apply; a reference to a later
+// step, a 21st step and an unknown kind are refused; an older value of steps
+// loses by last-writer-wins and the value converges whole. actions may be null
+// on the sync path (a routine of more than one step stores its card in steps).
+func TestRoutineStepsShapeAndLWW(t *testing.T) {
+	ctx := context.Background()
+	s := newTestService(t)
+	steps := `[{"id":"a","kind":"find_tasks","in":{"condition":{"literal":{"due":"today"}}}},{"id":"b","kind":"count","in":{"list":{"ref":"a"}}}]`
+	mustApply(t, s, "u1",
+		op("s1", "rule", "rl1", "trigger", `{"kind":"manual"}`, 100, "A"),
+		op("s2", "rule", "rl1", "actions", `null`, 100, "A"),
+		op("s3", "rule", "rl1", "steps", steps, 100, "A"),
+	)
+	many := "["
+	for i := 0; i < 21; i++ {
+		if i > 0 {
+			many += ","
+		}
+		many += `{"id":"s` + string(rune('a'+i)) + `","kind":"stop_timer"}`
+	}
+	many += "]"
+	for i, bad := range []string{
+		`[{"id":"b","kind":"count","in":{"list":{"ref":"c"}}},{"id":"c","kind":"find_tasks","in":{"condition":{"literal":{"due":"today"}}}}]`,
+		many,
+		`[{"id":"a","kind":"fetch_url"}]`,
+		`{"id":"a"}`,
+	} {
+		res, err := s.Apply(ctx, "u1", []Op{op("bad"+string(rune('a'+i)), "rule", "rl1", "steps", bad, int64(200+i), "A")})
+		if err == nil && len(res.Rejected) == 0 {
+			t.Fatalf("steps %d was accepted", i)
+		}
+	}
+	// Device A adds a step at 300, device B's older list (250) loses whole.
+	later := `[{"id":"a","kind":"find_tasks","in":{"condition":{"literal":{"due":"today"}}}},{"id":"b","kind":"count","in":{"list":{"ref":"a"}}},{"id":"c","kind":"stop"}]`
+	mustApply(t, s, "u1", op("a3", "rule", "rl1", "steps", later, 300, "A"))
+	mustApply(t, s, "u1", op("b3", "rule", "rl1", "steps", `[{"id":"z","kind":"stop"}]`, 250, "B"))
+	e, err := s.Get(ctx, "u1", "rule", "rl1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(e["steps"]) != later {
+		t.Fatalf("steps = %s", e["steps"])
+	}
 }
