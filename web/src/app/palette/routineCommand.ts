@@ -52,7 +52,7 @@ export async function runRoutineNow(rule: Rule, task: Task | undefined): Promise
     const res = await api.runRoutine(rule.id, { run_id: uuid(), ...(taskId ? { task_id: taskId } : {}) })
     const runId = res.run.run_id
     showBulkToast(runSummary(name, res.run), null, {
-      action: { label: t('View run'), run: () => navigate({ view: 'rules' }) },
+      action: { label: t('View run'), run: () => navigate({ view: 'rules', id: rule.id, run: runId }) },
       ...(res.run.writes > 0 ? { second: { label: t('Undo'), run: () => {
         api.undoRoutineRun(rule.id, runId).then(
           (u) => updateBulkToast({ result: t('{restored} restored, {kept} kept because they changed after the run', { restored: u.restored, kept: u.kept }) }),

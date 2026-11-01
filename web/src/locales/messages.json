@@ -62,6 +62,9 @@
   "+ Add section": [
     "web/src/app/Sections.tsx"
   ],
+  "+ {n} more": [
+    "web/src/app/routines/StepCard.tsx"
+  ],
   "+{hidden} more": [
     "web/src/app/YearView.tsx",
     "web/src/app/calendar/MonthWeek.tsx"
@@ -102,6 +105,12 @@
   ],
   "1 passkey": [
     "web/src/app/SecurityPanel.tsx"
+  ],
+  "1 project": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "1 task": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "1 week before": [
     "web/src/app/DefaultRemindersSettings.tsx",
@@ -276,11 +285,17 @@
   "A code from your phone on top of your password, and recovery codes": [
     "web/src/app/settingsIndex.ts"
   ],
+  "A comment on a task": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "A dashboard cannot be shown in display mode. Open one of its views instead.": [
     "web/src/app/display/DisplayScreen.tsx"
   ],
   "A day of the week": [
     "web/src/app/filter/ConditionEditor.tsx"
+  ],
+  "A deleted routine": [
+    "web/src/app/routines/RunHistory.tsx"
   ],
   "A field": [
     "web/src/lib/assistant.ts"
@@ -330,6 +345,9 @@
   "A link adds whoever opens it. It works once and expires after the time you choose.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "A list as one text": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "A map style URL; OpenFreeMap by default.": [
     "web/src/app/locations/MapsSettings.tsx"
   ],
@@ -348,6 +366,12 @@
   "A new link is on its way; the earlier one no longer works.": [
     "web/src/app/AuthScreen.tsx"
   ],
+  "A new project": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "A new project from a template, with dates from a start": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "A new version of OpenTodo is ready.": [
     "web/src/app/UpdateBanner.tsx"
   ],
@@ -362,6 +386,9 @@
   ],
   "A notice on any screen after a long stretch of work without a break.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "A notification in the app and your channels": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "A number of days ago": [
     "web/src/app/filter/ConditionEditor.tsx"
@@ -393,6 +420,9 @@
   "A project": [
     "web/src/app/IssuesPanel.tsx"
   ],
+  "A project by its name": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "A project can have at most {n} fields.": [
     "web/src/lib/fields.ts"
   ],
@@ -408,8 +438,17 @@
   "A routine": [
     "web/src/app/NotificationBell.tsx"
   ],
-  "A rule changes tasks for you when something happens: a label is added, a task’s date passes, or every Sunday evening.": [
-    "web/src/app/rules/RulesView.tsx"
+  "A routine can have at most 20 steps": [
+    "web/src/lib/rules/fixes.ts"
+  ],
+  "A routine does things for you in a row: every Friday, turn the lines of a note into tasks; when a task gets a label, move it.": [
+    "web/src/app/routines/RoutinesView.tsx"
+  ],
+  "A routine needs a name": [
+    "web/src/app/routines/RoutineEditor.tsx"
+  ],
+  "A routine needs at least one step": [
+    "web/src/app/routines/RoutineEditor.tsx"
   ],
   "A rule needs a name": [
     "web/src/lib/rules/store.ts"
@@ -443,6 +482,9 @@
   ],
   "A sign-in with this passkey was refused because its counter went backwards. It may have been copied. Delete it unless you can explain this.": [
     "web/src/app/SecurityPanel.tsx"
+  ],
+  "A signed request to one of your webhooks": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "A six-digit code from an authenticator app after your password.": [
     "web/src/lib/settingsCopy.ts"
@@ -509,6 +551,12 @@
   ],
   "A task’s date passes": [
     "web/src/app/rules/RuleFields.tsx"
+  ],
+  "A text as a list of its lines": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "A text with values of earlier steps": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "A token is shown once, when you create it.": [
     "web/src/lib/settingsCopy.ts"
@@ -726,6 +774,9 @@
   "Add a blocker": [
     "web/src/app/task-detail/TaskFacts.tsx"
   ],
+  "Add a comment": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Add a field": [
     "web/src/app/FieldsDialog.tsx"
   ],
@@ -761,6 +812,9 @@
   ],
   "Add a place": [
     "web/src/app/task-detail/TaskFacts.tsx"
+  ],
+  "Add a project to Favourites or remove it": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Add a property": [
     "web/src/app/task-detail/Facets.tsx"
@@ -863,6 +917,9 @@
   "Add a webhook": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Add a webhook to use this": [
+    "web/src/lib/rules/catalogue.ts"
+  ],
   "Add an estimate": [
     "web/src/app/task-detail/TaskFacts.tsx"
   ],
@@ -963,6 +1020,13 @@
   "Add row below": [
     "web/src/app/editorCommands.ts"
   ],
+  "Add step": [
+    "web/src/app/routines/AddStep.tsx",
+    "web/src/app/routines/StepCard.tsx"
+  ],
+  "Add step below": [
+    "web/src/app/routines/StepCard.tsx"
+  ],
   "Add subtask": [
     "web/src/app/task-detail/Subtasks.tsx"
   ],
@@ -978,12 +1042,18 @@
   "Add tasks to": [
     "web/src/app/IssueEditor.tsx"
   ],
+  "Add the first step: what should happen?": [
+    "web/src/app/routines/RoutineEditor.tsx"
+  ],
   "Add time": [
     "web/src/app/task-detail/TimeTab.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Add to OpenTodo": [
     "web/src/app/CaptureSettings.tsx"
+  ],
+  "Add to a note": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Add to all, or remove from all…": [
     "web/src/app/bulk/BulkActions.tsx"
@@ -1020,6 +1090,12 @@
   ],
   "Add your first task": [
     "web/src/app/FirstRun.tsx"
+  ],
+  "Add {input}": [
+    "web/src/app/routines/StepCard.tsx"
+  ],
+  "Add {text} to the note of {of}": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Add “{text}” as a task": [
     "web/src/app/palette/CommandPalette.tsx"
@@ -1287,9 +1363,6 @@
     "web/src/app/Sections.tsx",
     "web/src/app/ViewsView.tsx"
   ],
-  "Already matched": [
-    "web/src/app/rules/RuleHistory.tsx"
-  ],
   "Also past ones": [
     "web/src/app/task-detail/OccurrenceScope.tsx"
   ],
@@ -1307,6 +1380,9 @@
   ],
   "An AI assistant changes tasks only through its tools, while you and the owner allow it.": [
     "web/src/app/TokensSection.tsx"
+  ],
+  "An AI assistant ran it": [
+    "web/src/app/routines/RunHistory.tsx"
   ],
   "An AI connector wants to make a change": [
     "web/src/app/RelayConfirm.tsx"
@@ -1337,6 +1413,12 @@
   ],
   "An email on your review day with last week's numbers and what is due.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "An email to the members of the routine’s project": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "An email to your own address": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "An invitation is a single-use link that lets one person create an account here.": [
     "web/src/app/MembersPanel.tsx"
@@ -1393,6 +1475,12 @@
   ],
   "Any of these": [
     "web/src/app/filter/FilterBuilder.tsx"
+  ],
+  "Any outcome": [
+    "web/src/app/routines/RunHistory.tsx"
+  ],
+  "Any source": [
+    "web/src/app/routines/RunHistory.tsx"
   ],
   "Any time": [
     "web/src/app/AuditPanel.tsx",
@@ -1465,9 +1553,6 @@
   "Application token": [
     "web/src/app/NotificationChannelEditor.tsx"
   ],
-  "Applied": [
-    "web/src/app/rules/RuleHistory.tsx"
-  ],
   "Apply": [
     "web/src/app/RelayConfirm.tsx",
     "web/src/app/calendar/ReplanPreview.tsx"
@@ -1524,7 +1609,8 @@
   ],
   "Archived": [
     "web/src/app/ProjectsView.tsx",
-    "web/src/app/notes/NoteRow.tsx"
+    "web/src/app/notes/NoteRow.tsx",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Archived projects": [
     "web/src/app/ArchivedProjects.tsx",
@@ -1621,6 +1707,9 @@
   ],
   "Ask the server owner to turn it on.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Ask the server owner to turn on automations": [
+    "web/src/lib/rules/catalogue.ts"
   ],
   "Asks for your passphrase again before showing your tasks.": [
     "web/src/lib/settingsCopy.ts"
@@ -1737,6 +1826,9 @@
   "At least {MIN_PASSPHRASE_LENGTH} characters.": [
     "web/src/app/EncryptionPanel.tsx"
   ],
+  "At most": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "At most 4 photos go with one message.": [
     "web/src/lib/assistantImages.ts"
   ],
@@ -1836,7 +1928,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Automations are off on this server.": [
-    "web/src/app/rules/RulesView.tsx",
+    "web/src/app/routines/RoutinesView.tsx",
     "web/src/lib/i18n/errors.ts"
   ],
   "Available now": [
@@ -1990,6 +2082,9 @@
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/TaskFacts.tsx"
   ],
+  "Blocks can be nested at most 3 deep": [
+    "web/src/lib/rules/fixes.ts"
+  ],
   "Blue": [
     "web/src/lib/colourNames.ts"
   ],
@@ -2090,6 +2185,9 @@
   "Buy me a coffee": [
     "web/src/app/WelcomeDialog.tsx",
     "web/src/app/settingsIndex.ts"
+  ],
+  "By its trigger": [
+    "web/src/app/routines/RunHistory.tsx"
   ],
   "CSV files and other apps’ exports go through Settings → Data → Import.": [
     "web/src/app/TemplateDialogs.tsx"
@@ -2258,7 +2356,7 @@
     "web/src/app/locations/LocationEditor.tsx",
     "web/src/app/locations/PlacesView.tsx",
     "web/src/app/profile/ProfileSection.tsx",
-    "web/src/app/rules/RuleDialog.tsx",
+    "web/src/app/routines/StepCard.tsx",
     "web/src/app/shortcuts/Spotlight.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/app/task-detail/Composer.tsx",
@@ -2339,6 +2437,9 @@
   "Change task": [
     "web/src/app/focus/FocusView.tsx"
   ],
+  "Change tasks": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Change who recognises speech?": [
     "web/src/app/VoiceSettings.tsx"
   ],
@@ -2347,6 +2448,9 @@
   ],
   "Change your password in Settings → Account → Password. To reset the password of another account, sign out first.": [
     "web/src/app/EmailScreens.tsx"
+  ],
+  "Change {tasks}: {set}": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Changed from {date} on": [
     "web/src/lib/seriesSplitActions.ts"
@@ -2358,7 +2462,8 @@
     "web/src/app/reopenDay.ts"
   ],
   "Changes": [
-    "web/src/app/HistoryPanel.tsx"
+    "web/src/app/HistoryPanel.tsx",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Changes appear here once this task has synced.": [
     "web/src/app/task-detail/HistoryTab.tsx"
@@ -2504,6 +2609,7 @@
   ],
   "Choose a project": [
     "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/routines/words.tsx",
     "web/src/app/rules/RuleFields.tsx"
   ],
   "Choose a slot": [
@@ -2517,7 +2623,8 @@
   "Choose a task": [
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/focus/FocusView.tsx",
-    "web/src/app/review/BentoSlots.tsx"
+    "web/src/app/review/BentoSlots.tsx",
+    "web/src/app/routines/words.tsx"
   ],
   "Choose a task for the {slot} slot": [
     "web/src/app/focus/FocusPicker.tsx"
@@ -2527,6 +2634,9 @@
   ],
   "Choose a type.": [
     "web/src/lib/fields.ts"
+  ],
+  "Choose a value": [
+    "web/src/lib/rules/fixes.ts"
   ],
   "Choose a whole number from 1 to 20.": [
     "web/src/app/ClosedListSettings.tsx"
@@ -2554,6 +2664,9 @@
   ],
   "Choose another task": [
     "web/src/app/focus/FocusView.tsx"
+  ],
+  "Choose another value": [
+    "web/src/lib/rules/fixes.ts"
   ],
   "Choose at least one day": [
     "web/src/lib/frames.ts"
@@ -2592,6 +2705,9 @@
   "Choose the calendar to write tasks into.": [
     "web/src/app/CalendarSyncPanel.tsx"
   ],
+  "Choose the project first.": [
+    "web/src/app/routines/words.tsx"
+  ],
   "Choose the tasks the selected task waits for (Blocked by)": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -2612,6 +2728,9 @@
     "web/src/app/task-detail/FacetEditor.tsx",
     "web/src/app/task-detail/FieldsGroup.tsx",
     "web/src/app/views/ViewToolbar.tsx"
+  ],
+  "Clear a note": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Clear conversations": [
     "web/src/app/assistant/AssistantPage.tsx",
@@ -2644,6 +2763,9 @@
   "Clear the filter": [
     "web/src/app/FilterView.tsx",
     "web/src/app/task-list/ListChrome.tsx"
+  ],
+  "Clear the note of {of}": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Clear the selection": [
     "web/src/app/bulk/BulkActions.tsx"
@@ -2783,7 +2905,8 @@
     "web/src/app/Sections.tsx",
     "web/src/app/WorkspaceGeneral.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
-    "web/src/app/menus/stylePickers.tsx"
+    "web/src/app/menus/stylePickers.tsx",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Colour by": [
     "web/src/app/calendar/colorByControls.tsx",
@@ -2852,6 +2975,9 @@
   "Comment on the open task: switch to the Comments tab and focus the composer (markdown; @ completes members, ↑ / ↓ and Enter pick)": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Comment on {task}: {text}": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Comment on “{task}”": [
     "web/src/lib/assistant.ts"
   ],
@@ -2874,6 +3000,9 @@
   ],
   "Common tasks": [
     "web/src/app/help/HelpView.tsx"
+  ],
+  "Communication": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Communication|icon category": [
     "web/src/ui/icons/catalogue.ts"
@@ -3001,7 +3130,9 @@
     "web/src/app/BackupsPanel.tsx"
   ],
   "Condition": [
-    "web/src/app/filter/FilterBuilder.tsx"
+    "web/src/app/filter/FilterBuilder.tsx",
+    "web/src/app/routines/StepCard.tsx",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Conditions": [
     "web/src/app/views/FilterChips.tsx"
@@ -3247,12 +3378,18 @@
   "Could not save the note: {reason}": [
     "web/src/app/NotesEditor.tsx"
   ],
+  "Count": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Count meetings in capacity": [
     "web/src/app/CalendarSettings.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
   "Count members’ own keys toward the monthly limit": [
     "web/src/app/assistant/AssistantSettings.tsx"
+  ],
+  "Count {list}": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Count: move the selection that many tasks (clamped)": [
     "web/src/lib/shortcuts.ts"
@@ -3287,6 +3424,12 @@
   ],
   "Create a password reset link for {name}?": [
     "web/src/app/UsersPanel.tsx"
+  ],
+  "Create a project": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Create a project from the template {template} starting {start}": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Create a task with the current view’s defaults (project, date, label)": [
     "web/src/app/vim/commands.ts"
@@ -3323,6 +3466,12 @@
   "Create label “{name}”": [
     "web/src/app/TokenSuggest.tsx"
   ],
+  "Create labels": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Create labels {names}": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Create link": [
     "web/src/app/InviteLinksSection.tsx",
     "web/src/app/UsersPanel.tsx",
@@ -3352,14 +3501,32 @@
   "Create reset link": [
     "web/src/app/UsersPanel.tsx"
   ],
+  "Create sections": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Create sections {names} in {project}": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Create tasks": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Create tasks from email": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Create tasks from email sent to this address": [
     "web/src/app/EmailInboxPanel.tsx"
   ],
+  "Create tasks from {text} in {project}": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Create the account for <strong>{email}</strong> with the name and password you chose. This link works until {instant}.": [
     "web/src/app/EmailScreens.tsx"
+  ],
+  "Create the project {name}": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Create the task {title} in {project}": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Create them": [
     "web/src/app/method/MethodModeChooser.tsx"
@@ -3471,6 +3638,9 @@
     "web/src/app/RemindersField.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
   ],
+  "Cut at the limit": [
+    "web/src/app/routines/RunHistory.tsx"
+  ],
   "Cut off: the answer reached its length limit.": [
     "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
@@ -3546,7 +3716,8 @@
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/task-list/RowSwipe.tsx",
     "web/src/app/views/DisplayPanel.tsx",
-    "web/src/lib/fields.ts"
+    "web/src/lib/fields.ts",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Date and time": [
     "web/src/app/settingsSections.ts",
@@ -3696,6 +3867,7 @@
     "web/src/app/RelaySettings.tsx"
   ],
   "Deep": [
+    "web/src/app/routines/words.tsx",
     "web/src/lib/energy.ts"
   ],
   "Deep energy": [
@@ -3788,11 +3960,11 @@
   "Delete reminder": [
     "web/src/app/RemindersField.tsx"
   ],
+  "Delete routine": [
+    "web/src/app/routines/RoutinesView.tsx"
+  ],
   "Delete row": [
     "web/src/app/editorCommands.ts"
-  ],
-  "Delete rule": [
-    "web/src/app/rules/RulesView.tsx"
   ],
   "Delete safety copy": [
     "web/src/app/RestoreSection.tsx"
@@ -3808,6 +3980,9 @@
   ],
   "Delete slot": [
     "web/src/app/calendar/SlotDetails.tsx"
+  ],
+  "Delete step": [
+    "web/src/app/routines/StepCard.tsx"
   ],
   "Delete table": [
     "web/src/app/editorCommands.ts"
@@ -3863,7 +4038,8 @@
   "Delete “{name}”?": [
     "web/src/app/ProjectHeader.tsx",
     "web/src/app/locations/PlacesView.tsx",
-    "web/src/app/rules/RulesView.tsx"
+    "web/src/app/routines/RoutinesView.tsx",
+    "web/src/app/routines/StepCard.tsx"
   ],
   "Deleted / restored": [
     "web/src/lib/activity.ts"
@@ -3883,8 +4059,12 @@
   "Deleted permanently after {retention} days": [
     "web/src/app/TrashView.tsx"
   ],
-  "Deleted task ({id})": [
-    "web/src/app/rules/RuleHistory.tsx"
+  "Deleted project": [
+    "web/src/app/routines/RunHistory.tsx"
+  ],
+  "Deleted task": [
+    "web/src/app/routines/RunHistory.tsx",
+    "web/src/app/routines/StepCard.tsx"
   ],
   "Deletes earlier (superseded) versions of your titles, descriptions and names from the server's history, including any plaintext from before encryption was on. Revision history for those fields is gone afterwards. Backups made before now, and copies of the database, may still contain plaintext: delete them if that matters to you.": [
     "web/src/app/EncryptionPanel.tsx"
@@ -4033,7 +4213,8 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Direction": [
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/views/DisplayPanel.tsx",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Disable": [
     "web/src/app/CalendarFeedsPanel.tsx",
@@ -4060,7 +4241,11 @@
     "web/src/app/CalendarSyncPanel.tsx"
   ],
   "Discard": [
-    "web/src/app/assistant/ChangeSetReview.tsx"
+    "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/routines/RoutineEditor.tsx"
+  ],
+  "Discard your changes?": [
+    "web/src/app/routines/RoutineEditor.tsx"
   ],
   "Dismiss": [
     "web/public/push-sw.js",
@@ -4141,6 +4326,10 @@
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/review/ReviewView.tsx",
     "web/src/app/review/StatsView.tsx",
+    "web/src/app/routines/RoutineEditor.tsx",
+    "web/src/app/routines/RunHistory.tsx",
+    "web/src/app/routines/StepCard.tsx",
+    "web/src/app/routines/words.tsx",
     "web/src/app/task-detail/FacetEditor.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
@@ -4238,7 +4427,8 @@
     "web/src/app/ScheduleSheet.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/views/DisplayPanel.tsx",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Due date and time (6 languages)": [
     "web/src/lib/shortcuts.ts"
@@ -4281,7 +4471,8 @@
   ],
   "Duplicate": [
     "web/src/app/TemplateDialogs.tsx",
-    "web/src/app/rules/RulesView.tsx",
+    "web/src/app/routines/RoutinesView.tsx",
+    "web/src/app/routines/StepCard.tsx",
     "web/src/app/task-detail/TaskActionsMenu.tsx"
   ],
   "Duplicate a project": [
@@ -4393,8 +4584,8 @@
   "Edit link": [
     "web/src/app/LinkDialog.tsx"
   ],
-  "Edit rule": [
-    "web/src/app/rules/RuleDialog.tsx"
+  "Edit routine": [
+    "web/src/app/routines/RoutineEditor.tsx"
   ],
   "Edit scope": [
     "web/src/app/task-detail/OccurrenceScope.tsx"
@@ -4446,7 +4637,7 @@
   ],
   "Edit…": [
     "web/src/app/LabelsView.tsx",
-    "web/src/app/rules/RulesView.tsx"
+    "web/src/app/routines/RoutinesView.tsx"
   ],
   "Eisenhower": [
     "web/src/lib/boardTemplates.ts"
@@ -4483,8 +4674,14 @@
     "web/src/app/EmailScreens.tsx",
     "web/src/app/auditFormat.ts"
   ],
+  "Email me": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Email me the digest": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Email me {subject}: {text}": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Email not sent": [
     "web/src/app/auditFormat.ts"
@@ -4492,8 +4689,14 @@
   "Email of an account on this server": [
     "web/src/app/ShareDialog.tsx"
   ],
+  "Email project members": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Email sent": [
     "web/src/app/auditFormat.ts"
+  ],
+  "Email the project’s members {subject}: {text}": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Email to confirm deletion": [
     "web/src/app/UsersPanel.tsx"
@@ -4535,6 +4738,9 @@
   ],
   "Empty group: add a condition to it.": [
     "web/src/app/filter/FilterBuilder.tsx"
+  ],
+  "Empty the note of a task or a project": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Enable": [
     "web/src/app/CalendarFeedsPanel.tsx",
@@ -4619,6 +4825,9 @@
   "End the break": [
     "web/src/app/focus/FocusParts.tsx"
   ],
+  "End the run here": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "End-to-end encryption": [
     "web/src/app/settingsIndex.ts",
     "web/src/app/settingsSections.ts",
@@ -4629,6 +4838,12 @@
   ],
   "Ended": [
     "web/src/app/calendar/TodayAgenda.tsx"
+  ],
+  "Ended early": [
+    "web/src/app/routines/RunHistory.tsx"
+  ],
+  "Ended here": [
+    "web/src/app/routines/RunHistory.tsx"
   ],
   "Endpoint": [
     "web/src/app/AssistantsPanel.tsx",
@@ -4648,7 +4863,8 @@
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/TaskFacts.tsx",
     "web/src/app/views/DisplayPanel.tsx",
-    "web/src/lib/facets.ts"
+    "web/src/lib/facets.ts",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Energy cleared": [
     "web/src/lib/undoActions.ts"
@@ -4659,6 +4875,9 @@
   "Energy levels": [
     "web/src/app/method/HowYouWorkSection.tsx",
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Energy levels are turned off": [
+    "web/src/lib/rules/catalogue.ts"
   ],
   "Energy must be deep, medium or low at position {pos}": [
     "web/src/lib/filter/parse.ts"
@@ -4868,6 +5087,9 @@
   ],
   "Every quarter": [
     "web/src/lib/reviewCadence.ts"
+  ],
+  "Every routine": [
+    "web/src/app/routines/RunHistory.tsx"
   ],
   "Every slot is full.": [
     "web/src/app/review/BentoSlots.tsx"
@@ -5096,7 +5318,10 @@
     "web/src/app/BackupsPanel.tsx",
     "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
-    "web/src/app/rules/RuleHistory.tsx"
+    "web/src/app/routines/RunHistory.tsx"
+  ],
+  "Failed at step {n}": [
+    "web/src/app/routines/RunHistory.tsx"
   ],
   "Failed {when}: {error}": [
     "web/src/lib/backups.ts"
@@ -5109,6 +5334,15 @@
   ],
   "Failure": [
     "web/src/app/AuditPanel.tsx"
+  ],
+  "Favourite": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Favourite a project": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Favourite {project}: {on}": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Favourites": [
     "web/src/app/FavouritesGroup.tsx"
@@ -5181,7 +5415,8 @@
   "Filter": [
     "web/src/app/task-list/ListChrome.tsx",
     "web/src/app/views/FilterChips.tsx",
-    "web/src/app/views/ViewToolbar.tsx"
+    "web/src/app/views/ViewToolbar.tsx",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Filter Upcoming": [
     "web/src/app/task-list/listExtras.tsx"
@@ -5213,6 +5448,9 @@
   "Filter results": [
     "web/src/app/FilterView.tsx"
   ],
+  "Filter runs": [
+    "web/src/app/routines/RunHistory.tsx"
+  ],
   "Filter the calendar": [
     "web/src/app/calendar/useCalendarChrome.tsx"
   ],
@@ -5230,6 +5468,9 @@
     "web/src/app/calendar/useCalendarChrome.tsx",
     "web/src/app/task-list/ListChrome.tsx"
   ],
+  "Find": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Find a calendar…": [
     "web/src/app/CalendarSyncDialogs.tsx"
   ],
@@ -5242,7 +5483,8 @@
   "Find a label…": [
     "web/src/app/LabelsView.tsx",
     "web/src/app/RuleEditor.tsx",
-    "web/src/app/notes/NoteFilters.tsx"
+    "web/src/app/notes/NoteFilters.tsx",
+    "web/src/app/routines/words.tsx"
   ],
   "Find a member…": [
     "web/src/app/bulk/BulkActions.tsx"
@@ -5251,7 +5493,8 @@
     "web/src/app/TriageView.tsx"
   ],
   "Find a project": [
-    "web/src/app/ProjectsView.tsx"
+    "web/src/app/ProjectsView.tsx",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Find a project, label or filter in the sidebar (opens the sidebar when it is collapsed or a drawer)": [
     "web/src/lib/shortcuts.ts"
@@ -5266,7 +5509,8 @@
     "web/src/app/ProjectPickerField.tsx",
     "web/src/app/ProjectsView.tsx",
     "web/src/app/bulk/BulkActions.tsx",
-    "web/src/app/notes/NoteFilters.tsx"
+    "web/src/app/notes/NoteFilters.tsx",
+    "web/src/app/routines/words.tsx"
   ],
   "Find a routine…": [
     "web/src/app/palette/routineCommand.ts"
@@ -5276,6 +5520,7 @@
   ],
   "Find a section…": [
     "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/routines/words.tsx",
     "web/src/app/task-detail/Facets.tsx"
   ],
   "Find a task this one waits for…": [
@@ -5284,7 +5529,14 @@
   "Find a task…": [
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/focus/FocusPicker.tsx",
+    "web/src/app/routines/words.tsx",
     "web/src/app/task-detail/Facets.tsx"
+  ],
+  "Find a view…": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "Find a webhook…": [
+    "web/src/app/routines/words.tsx"
   ],
   "Find a workspace…": [
     "web/src/app/ProjectHeader.tsx"
@@ -5294,6 +5546,9 @@
   ],
   "Find an option…": [
     "web/src/app/task-detail/FieldsGroup.tsx"
+  ],
+  "Find and replace in a text": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Find calendars": [
     "web/src/app/CalendarSyncDialogs.tsx"
@@ -5307,6 +5562,24 @@
   ],
   "Find or create a project…": [
     "web/src/app/task-detail/Facets.tsx"
+  ],
+  "Find tasks": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Find tasks matching {query}": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Find tasks where {condition}": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Find tasks…": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "Find the project named {name}": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Find the tasks of the view {view}": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Fingerprint or face did not unlock. Enter your passphrase; you can turn biometric unlock on again below.": [
     "web/src/app/UnlockScreen.tsx"
@@ -5334,6 +5607,9 @@
   ],
   "Fix a timed due to your time zone, or release it to a floating time": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Fix step {n} first": [
+    "web/src/app/routines/RoutineEditor.tsx"
   ],
   "Fix to another time zone": [
     "web/src/app/task-detail/ZoneControl.tsx"
@@ -5432,6 +5708,9 @@
   "For Gmail and similar services, an app password.": [
     "web/src/app/OutgoingEmailPanel.tsx"
   ],
+  "For each item": [
+    "web/src/app/routines/StepCard.tsx"
+  ],
   "For everyone on this server": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
@@ -5479,6 +5758,9 @@
   ],
   "Format": [
     "web/src/app/ImportScreen.tsx"
+  ],
+  "Format text": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Formatting": [
     "web/src/app/EditorChrome.tsx",
@@ -5534,7 +5816,8 @@
     "web/src/app/review/DailyCheck.tsx"
   ],
   "From": [
-    "web/src/app/AuditPanel.tsx"
+    "web/src/app/AuditPanel.tsx",
+    "web/src/lib/rules/sentence.ts"
   ],
   "From Obsidian": [
     "web/src/lib/taskSource.ts"
@@ -5627,6 +5910,9 @@
   "Generated on this device; plays only while you work.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Get a task": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Get clear": [
     "web/src/lib/review.ts"
   ],
@@ -5639,8 +5925,20 @@
   "Get it on another device": [
     "web/src/app/FirstDay.tsx"
   ],
+  "Get note text": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Get reminders while the app is closed. Each device decides for itself.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Get the note text of {of}": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Get the task {task}": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Get the time tracked {period}": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Get whatever is on your mind into the Inbox the moment it appears.": [
     "web/src/lib/method/vocabulary.json"
@@ -5882,6 +6180,9 @@
   "Grid starts": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Groceries": [
+    "web/src/app/routines/RoutineEditor.tsx"
+  ],
   "Group": [
     "web/src/app/filter/FilterBuilder.tsx",
     "web/src/app/review/StatsView.tsx"
@@ -6100,7 +6401,8 @@
     "web/src/app/ProjectHeader.tsx",
     "web/src/app/assistant/AssistantPage.tsx",
     "web/src/app/assistant/AssistantPanel.tsx",
-    "web/src/app/rules/RulesView.tsx",
+    "web/src/app/routines/RoutineEditor.tsx",
+    "web/src/app/routines/RoutinesView.tsx",
     "web/src/app/task-detail/ConversationTabs.tsx"
   ],
   "History could not be loaded.": [
@@ -6112,9 +6414,6 @@
   ],
   "History needs a connection to the server.": [
     "web/src/app/HistoryPanel.tsx"
-  ],
-  "History of {name}": [
-    "web/src/app/rules/RuleHistory.tsx"
   ],
   "Home": [
     "web/src/lib/templateLibrary.ts"
@@ -6159,6 +6458,12 @@
   ],
   "How long the audit log keeps events, and whether it records addresses.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "How many": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "How many items a list has": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "How many tasks Today holds, and what you got done. On all your devices.": [
     "web/src/lib/settingsCopy.ts"
@@ -6218,6 +6523,7 @@
     "web/src/app/ViewsView.tsx",
     "web/src/app/WorkspaceGeneral.tsx",
     "web/src/app/menus/stylePickers.tsx",
+    "web/src/lib/rules/sentence.ts",
     "web/src/ui/IconPicker.tsx"
   ],
   "Icons are not available offline yet.": [
@@ -6232,6 +6538,9 @@
   "Identity confirmed with the provider.": [
     "web/src/app/SsoPanel.tsx"
   ],
+  "If / Otherwise": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "If an account exists for <strong>{trim}</strong>, a message with a reset link is on its way. The link works once, for 24 hours.": [
     "web/src/app/EmailScreens.tsx"
   ],
@@ -6243,6 +6552,9 @@
   ],
   "If {email} has an account on this server, they get an invitation to accept. For someone without an account, create an invite link.": [
     "web/src/app/ShareDialog.tsx"
+  ],
+  "If {value} {is}": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Ignore": [
     "web/src/app/ImportScreen.tsx"
@@ -6449,6 +6761,9 @@
   "In a task's notes: make the check-list line a subtask (Ctrl+Z takes it back)": [
     "web/src/lib/shortcuts.ts"
   ],
+  "In days": [
+    "web/src/app/routines/words.tsx"
+  ],
   "In maintenance": [
     "web/src/app/ProjectHeader.tsx",
     "web/src/app/review/ProjectWalk.tsx"
@@ -6504,6 +6819,24 @@
   "In the query of New view: recall recent queries on this device": [
     "web/src/lib/shortcuts.ts"
   ],
+  "In the routine editor: add a step below the focused step; Delete asks to delete it": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In the routine editor: move between the words of a step; Esc closes a picker, then the editor": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In the routine editor: move the focused step down": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In the routine editor: move the focused step up (Alt+↓ moves it down)": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In the routine editor: save the routine": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In the routine editor: test the routine (writes nothing)": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "In the scheduling sheet of a task with a deadline: on the deadline, 1 day, 3 days, 1 week, 2 weeks or 1 month before": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -6518,6 +6851,9 @@
   ],
   "In {name}": [
     "web/src/app/ArchivedProjects.tsx"
+  ],
+  "In {text}, replace {find} with {with}": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Inbox": [
     "web/src/app/AppearanceSection.tsx",
@@ -6594,6 +6930,18 @@
   ],
   "Inline code": [
     "web/src/lib/richtextEditor.ts"
+  ],
+  "Insert": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "Insert a value": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "Insert {name}": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "Insert {step}": [
+    "web/src/lib/rules/fixes.ts"
   ],
   "Install": [
     "web/src/app/FirstRun.tsx"
@@ -6778,6 +7126,9 @@
   "JSON: task list": [
     "web/src/app/ImportScreen.tsx"
   ],
+  "Join": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Join <span>{projectName}</span>": [
     "web/src/app/ProjectInviteScreen.tsx"
   ],
@@ -6792,6 +7143,9 @@
   ],
   "Join workspace": [
     "web/src/app/WorkspaceInviteScreen.tsx"
+  ],
+  "Join {lines} into one text": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Join {name}": [
     "web/src/app/WorkspaceInviteScreen.tsx"
@@ -6843,6 +7197,9 @@
   "Keep it secret. With it, anyone who can sign in to your account can read your encrypted tasks.": [
     "web/src/app/EncryptionPanel.tsx"
   ],
+  "Keep lines that contain": [
+    "web/src/app/routines/words.tsx"
+  ],
   "Keep mine (skip)": [
     "web/src/app/ImportScreen.tsx"
   ],
@@ -6854,6 +7211,12 @@
   ],
   "Keep text literally": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Keep the items of {list} that match {where}": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Keep the items that match": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Keep the last": [
     "web/src/app/BackupsPanel.tsx"
@@ -6983,6 +7346,7 @@
     "web/src/app/task-list/ListChrome.tsx",
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/facets.ts",
+    "web/src/lib/rules/sentence.ts",
     "web/src/lib/shortcuts.ts"
   ],
   "Labels (does not move on, so you can add a label and then decide)": [
@@ -7006,6 +7370,12 @@
   ],
   "Labels of the selected task, or of the ticked tasks (type to find, Enter adds or creates); or drag the task onto a label in the sidebar": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Labels, dates, priority, section, completion": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Labels, one per line": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Labels: {labels}": [
     "web/src/lib/assistant.ts"
@@ -7076,9 +7446,6 @@
   ],
   "Last review {instant}": [
     "web/src/app/review/ReviewView.tsx"
-  ],
-  "Last run {when}": [
-    "web/src/app/rules/RulesView.tsx"
   ],
   "Last run:": [
     "web/src/app/BackupsPanel.tsx"
@@ -7243,6 +7610,9 @@
   "Linear export (CSV)": [
     "web/src/app/ImportScreen.tsx"
   ],
+  "Lines": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Link": [
     "web/src/app/EditorChrome.tsx",
     "web/src/app/editorCommands.ts",
@@ -7284,7 +7654,8 @@
   ],
   "List": [
     "web/src/app/task-list/ListChrome.tsx",
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/views/DisplayPanel.tsx",
+    "web/src/lib/rules/sentence.ts"
   ],
   "List at least one repository or project.": [
     "web/src/app/IssueEditor.tsx"
@@ -7309,6 +7680,9 @@
   ],
   "Lists": [
     "web/src/app/calendar/PlanPanel.tsx"
+  ],
+  "Lists and logic": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Lists sorted by date or priority keep their order.": [
     "web/src/lib/settingsCopy.ts"
@@ -7370,7 +7744,7 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "Loading runs": [
-    "web/src/app/rules/RuleHistory.tsx"
+    "web/src/app/routines/RunHistory.tsx"
   ],
   "Loading statistics…": [
     "web/src/app/Shell.tsx"
@@ -7403,6 +7777,9 @@
   ],
   "Loading the review…": [
     "web/src/app/Shell.tsx"
+  ],
+  "Loading the run": [
+    "web/src/app/routines/RunHistory.tsx"
   ],
   "Loading users": [
     "web/src/app/UsersPanel.tsx"
@@ -7504,6 +7881,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Low": [
+    "web/src/app/routines/words.tsx",
     "web/src/lib/energy.ts"
   ],
   "Low energy": [
@@ -7513,7 +7891,7 @@
     "web/src/app/RestoreSection.tsx"
   ],
   "Made with a newer version": [
-    "web/src/app/rules/RulesView.tsx"
+    "web/src/app/routines/RoutinesView.tsx"
   ],
   "Made with a newer version of OpenTodo": [
     "web/src/app/AppearanceSection.tsx"
@@ -7632,6 +8010,9 @@
   "Markdown typing becomes formatting (``` and Enter starts a code block); Shift+Enter is a line break, Esc leaves the notes": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Match case": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Match the tasks this condition does not match": [
     "web/src/app/filter/ConditionEditor.tsx"
   ],
@@ -7642,6 +8023,7 @@
     "web/src/lib/method/vocabulary.json"
   ],
   "Medium": [
+    "web/src/app/routines/words.tsx",
     "web/src/lib/bentoSlots.ts",
     "web/src/lib/energy.ts"
   ],
@@ -7700,8 +8082,11 @@
   "Menu for project {name}": [
     "web/src/app/ProjectRowMenu.tsx"
   ],
-  "Menu for rule {name}": [
-    "web/src/app/rules/RulesView.tsx"
+  "Menu for routine {name}": [
+    "web/src/app/routines/RoutinesView.tsx"
+  ],
+  "Menu for step {name}": [
+    "web/src/app/routines/StepCard.tsx"
   ],
   "Menu for the start guide": [
     "web/src/app/FirstDay.tsx"
@@ -7763,6 +8148,9 @@
   ],
   "Mind sweep": [
     "web/src/lib/review.ts"
+  ],
+  "Minutes tracked in a period": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Missing \")\" at end of query": [
     "web/src/lib/filter/parse.ts"
@@ -7833,7 +8221,8 @@
   ],
   "More": [
     "web/src/app/Sidebar.tsx",
-    "web/src/app/review/charts.tsx"
+    "web/src/app/review/charts.tsx",
+    "web/src/app/routines/RoutinesView.tsx"
   ],
   "More actions": [
     "web/src/app/review/StatsView.tsx",
@@ -7879,7 +8268,8 @@
     "web/src/app/Sections.tsx",
     "web/src/app/ViewsView.tsx",
     "web/src/app/locations/PlacesView.tsx",
-    "web/src/app/rules/RulesView.tsx"
+    "web/src/app/routines/RoutinesView.tsx",
+    "web/src/app/routines/StepCard.tsx"
   ],
   "Move earlier tasks to today": [
     "web/src/app/palette/registry.ts"
@@ -8000,7 +8390,8 @@
     "web/src/app/Sections.tsx",
     "web/src/app/ViewsView.tsx",
     "web/src/app/locations/PlacesView.tsx",
-    "web/src/app/rules/RulesView.tsx"
+    "web/src/app/routines/RoutinesView.tsx",
+    "web/src/app/routines/StepCard.tsx"
   ],
   "Move {nameOf} earlier": [
     "web/src/app/DashboardView.tsx"
@@ -8048,6 +8439,9 @@
   "Moved": [
     "web/src/lib/activity.ts"
   ],
+  "Moved down: {step}": [
+    "web/src/app/routines/RoutineEditor.tsx"
+  ],
   "Moved from {from} to {to}": [
     "web/src/lib/assistant.ts"
   ],
@@ -8091,6 +8485,9 @@
   "Moved to {target}": [
     "web/src/lib/undoActions.ts"
   ],
+  "Moved up: {step}": [
+    "web/src/app/routines/RoutineEditor.tsx"
+  ],
   "Moves": [
     "web/src/app/calendar/ReplanPreview.tsx"
   ],
@@ -8130,7 +8527,8 @@
     "web/src/app/WorkspaceInviteScreen.tsx",
     "web/src/app/locations/PlacesView.tsx",
     "web/src/app/profile/ProfileSection.tsx",
-    "web/src/app/rules/RuleDialog.tsx",
+    "web/src/app/routines/RoutineEditor.tsx",
+    "web/src/lib/rules/sentence.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Name (optional)": [
@@ -8148,6 +8546,9 @@
   "Name this view": [
     "web/src/app/views/SaveViewCard.tsx"
   ],
+  "Names": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Natural-language parsing, its languages and the date order": [
     "web/src/app/settingsIndex.ts"
   ],
@@ -8161,13 +8562,18 @@
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Needs a connection": [
-    "web/src/app/palette/routineCommand.ts"
+    "web/src/app/palette/routineCommand.ts",
+    "web/src/app/routines/RoutinesView.tsx",
+    "web/src/app/routines/RunHistory.tsx"
   ],
   "Needs a subscription first.": [
     "web/src/lib/push.ts"
   ],
   "Needs at least three completed tasks with an estimate and tracked time; {n} so far.": [
     "web/src/app/review/StatsView.tsx"
+  ],
+  "Needs conversion": [
+    "web/src/app/routines/words.tsx"
   ],
   "Needs outgoing email, set up by the server owner under Settings → Server.": [
     "web/src/lib/settingsCopy.ts"
@@ -8284,10 +8690,10 @@
   "New reply on the page of <b>{task}</b>": [
     "web/src/app/NotificationBell.tsx"
   ],
-  "New rule": [
+  "New routine": [
     "web/src/app/palette/registry.ts",
-    "web/src/app/rules/RuleDialog.tsx",
-    "web/src/app/rules/RulesView.tsx"
+    "web/src/app/routines/RoutineEditor.tsx",
+    "web/src/app/routines/RoutinesView.tsx"
   ],
   "New section name": [
     "web/src/app/Sections.tsx"
@@ -8389,6 +8795,7 @@
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/palette/registry.ts",
+    "web/src/app/routines/words.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-list/EarlierActions.tsx",
     "web/src/app/task-list/RowSwipe.tsx",
@@ -8497,6 +8904,9 @@
   "No conditions yet: every open task matches.": [
     "web/src/app/filter/FilterBuilder.tsx"
   ],
+  "No conversion": [
+    "web/src/app/routines/words.tsx"
+  ],
   "No date": [
     "web/src/app/RuleEditor.tsx",
     "web/src/app/bulk/BulkActions.tsx",
@@ -8601,7 +9011,8 @@
     "web/src/app/LabelsView.tsx"
   ],
   "No labels yet.": [
-    "web/src/app/RuleEditor.tsx"
+    "web/src/app/RuleEditor.tsx",
+    "web/src/app/routines/words.tsx"
   ],
   "No labels yet. Type a name and press Enter.": [
     "web/src/app/LabelPicker.tsx",
@@ -8740,7 +9151,8 @@
   ],
   "No projects yet.": [
     "web/src/app/ProjectsView.tsx",
-    "web/src/app/Sidebar.tsx"
+    "web/src/app/Sidebar.tsx",
+    "web/src/app/routines/words.tsx"
   ],
   "No recent activity.": [
     "web/src/app/ActivityPanel.tsx"
@@ -8754,14 +9166,17 @@
   "No review finished yet": [
     "web/src/app/review/ReviewView.tsx"
   ],
+  "No routines yet": [
+    "web/src/app/routines/RoutinesView.tsx"
+  ],
   "No routines yet.": [
     "web/src/app/palette/routineCommand.ts"
   ],
   "No rule": [
     "web/src/app/RuleEditor.tsx"
   ],
-  "No rules yet": [
-    "web/src/app/rules/RulesView.tsx"
+  "No runs yet.": [
+    "web/src/app/routines/RunHistory.tsx"
   ],
   "No saved location matches. Type coordinates such as 45.4642, 9.19.": [
     "web/src/app/locations/LocationEditor.tsx"
@@ -8783,6 +9198,9 @@
     "web/src/lib/listGroups.ts",
     "web/src/lib/pickerSources.ts"
   ],
+  "No sections in this project.": [
+    "web/src/app/routines/words.tsx"
+  ],
   "No setting matches “{trim}”.": [
     "web/src/app/SettingsView.tsx"
   ],
@@ -8799,6 +9217,9 @@
   ],
   "No status fetched yet.": [
     "web/src/app/BackupsPanel.tsx"
+  ],
+  "No step matches.": [
+    "web/src/app/routines/AddStep.tsx"
   ],
   "No task carries it.": [
     "web/src/app/LabelsView.tsx"
@@ -8828,6 +9249,9 @@
   "No tasks match this panel.": [
     "web/src/app/DashboardView.tsx"
   ],
+  "No tasks match.": [
+    "web/src/app/routines/words.tsx"
+  ],
   "No tasks yet.": [
     "web/src/app/calendar/WeekAgenda.tsx"
   ],
@@ -8856,8 +9280,14 @@
   "No view to add": [
     "web/src/app/DashboardView.tsx"
   ],
+  "No views yet.": [
+    "web/src/app/routines/words.tsx"
+  ],
   "No webhooks yet": [
     "web/src/app/WebhooksPanel.tsx"
+  ],
+  "No webhooks yet.": [
+    "web/src/app/routines/words.tsx"
   ],
   "No workspace named \"{name}\"": [
     "web/src/lib/filter/evaluate.ts"
@@ -8934,6 +9364,9 @@
   "Not asked yet": [
     "web/src/app/NotificationsSettings.tsx"
   ],
+  "Not available": [
+    "web/src/app/routines/RunHistory.tsx"
+  ],
   "Not available offline.": [
     "web/src/app/RestoreSection.tsx"
   ],
@@ -8951,6 +9384,10 @@
   ],
   "Not available with end-to-end encryption: {detail}": [
     "web/src/lib/i18n/errors.ts"
+  ],
+  "Not available: {reason}": [
+    "web/src/app/routines/RunHistory.tsx",
+    "web/src/app/routines/StepCard.tsx"
   ],
   "Not before its start date.": [
     "web/src/lib/method/vocabulary.json"
@@ -8997,8 +9434,11 @@
     "web/src/app/WorkspaceInviteScreen.tsx",
     "web/src/app/focus/BreakReminder.tsx"
   ],
-  "Not run yet": [
-    "web/src/app/rules/RulesView.tsx"
+  "Not run": [
+    "web/src/app/routines/RunHistory.tsx"
+  ],
+  "Not run in this preview": [
+    "web/src/app/routines/StepCard.tsx"
   ],
   "Not run yet.": [
     "web/src/lib/push.ts"
@@ -9084,6 +9524,9 @@
     "web/src/app/task-detail/TaskNotes.tsx",
     "web/src/lib/shortcuts.ts"
   ],
+  "Notes and text": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Notes edited": [
     "web/src/app/task-detail/HistoryTab.tsx"
   ],
@@ -9095,6 +9538,9 @@
   ],
   "Notes:": [
     "web/src/app/CardNotes.tsx"
+  ],
+  "Nothing": [
+    "web/src/app/routines/StepCard.tsx"
   ],
   "Nothing changes until you apply": [
     "web/src/app/assistant/ChangeSetReview.tsx"
@@ -9216,6 +9662,9 @@
   "Nothing stands out today.": [
     "web/src/app/Briefing.tsx"
   ],
+  "Nothing to change": [
+    "web/src/app/routines/RunHistory.tsx"
+  ],
   "Nothing to re-plan": [
     "web/src/app/calendar/useReplanPreview.ts"
   ],
@@ -9271,7 +9720,11 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Notify me": [
-    "web/src/app/rules/RuleFields.tsx"
+    "web/src/app/rules/RuleFields.tsx",
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Notify me: {text}": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Now": [
     "web/src/app/calendar/SidebarSchedule.tsx"
@@ -9280,7 +9733,8 @@
     "web/src/app/calendar/SidebarSchedule.tsx"
   ],
   "Number": [
-    "web/src/lib/fields.ts"
+    "web/src/lib/fields.ts",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Number of days": [
     "web/src/app/filter/ConditionEditor.tsx"
@@ -9315,6 +9769,9 @@
   ],
   "Occurrence skipped": [
     "web/src/lib/occurrenceActions.ts"
+  ],
+  "Of": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Off": [
     "web/src/app/AssistantsPanel.tsx",
@@ -9402,6 +9859,9 @@
   "Offline: CalDAV is managed on the server.": [
     "web/src/app/CaldavPanel.tsx"
   ],
+  "Offline: Save works and syncs later; Test and Run now need a connection.": [
+    "web/src/app/routines/RoutineEditor.tsx"
+  ],
   "Offline: backups run on the server; the status below is the last one fetched.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -9417,8 +9877,8 @@
   "Offline: linked accounts are managed on the server.": [
     "web/src/lib/settingsCopy.ts"
   ],
-  "Offline: rules are saved here and run on the server after the next sync.": [
-    "web/src/app/rules/RulesView.tsx"
+  "Offline: routines are saved here and run on the server after the next sync.": [
+    "web/src/app/routines/RoutinesView.tsx"
   ],
   "Offline: single sign-on is configured on the server.": [
     "web/src/app/SsoPanel.tsx"
@@ -9496,6 +9956,9 @@
   ],
   "On a dashboard: move between panels; j / k inside a panel, Enter opens, o opens the view": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "On a date": [
+    "web/src/app/routines/words.tsx"
   ],
   "On a phone": [
     "web/src/lib/settingsCopy.ts"
@@ -9614,14 +10077,23 @@
   "One per device, so you can revoke a lost phone without touching the others. They only work for CalDAV.": [
     "web/src/app/CaldavPanel.tsx"
   ],
+  "One per line": [
+    "web/src/app/routines/words.tsx"
+  ],
   "One project at a time: is it still alive, and is its next step clear? r marks it reviewed, q adds a next action, e sets how often it comes up.": [
     "web/src/app/review/ReviewView.tsx"
   ],
   "One step at a time, in list order": [
     "web/src/app/menus/flowMenu.ts"
   ],
+  "One task to use in later steps": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "One task, a timer, a break when you need one": [
     "web/src/app/task-detail/TaskActionsMenu.tsx"
+  ],
+  "One task, or one task per line": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Only accept mail from (optional)": [
     "web/src/app/EmailInboxPanel.tsx"
@@ -9664,6 +10136,9 @@
   ],
   "Only this person can use the link. Leave empty for anyone with the link.": [
     "web/src/app/MembersPanel.tsx"
+  ],
+  "Only when I run it": [
+    "web/src/app/rules/RuleFields.tsx"
   ],
   "Only when you run it": [
     "web/src/app/palette/routineCommand.ts"
@@ -9840,6 +10315,11 @@
   "Open the selected task; accept \"complete parent too?\"": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Open the setting": [
+    "web/src/app/routines/AddStep.tsx",
+    "web/src/app/routines/RunHistory.tsx",
+    "web/src/app/routines/StepCard.tsx"
+  ],
   "Open the start guide": [
     "web/src/app/method/HowYouWorkSection.tsx"
   ],
@@ -9975,7 +10455,11 @@
   ],
   "Order": [
     "web/src/app/review/DailyCheck.tsx",
+    "web/src/lib/rules/sentence.ts",
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Order a list": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Order by": [
     "web/src/app/views/DisplayPanel.tsx"
@@ -10020,12 +10504,16 @@
   "Other tasks": [
     "web/src/app/focus/FocusPicker.tsx"
   ],
+  "Otherwise": [
+    "web/src/app/routines/StepCard.tsx"
+  ],
   "Out of Someday": [
     "web/src/lib/assistant.ts"
   ],
   "Outcome": [
     "web/src/app/AuditPanel.tsx",
-    "web/src/app/ImportScreen.tsx"
+    "web/src/app/ImportScreen.tsx",
+    "web/src/app/routines/RunHistory.tsx"
   ],
   "Outcomes that take more than one step.": [
     "web/src/lib/method/vocabulary.json"
@@ -10112,7 +10600,8 @@
   "Parent project": [
     "web/src/app/Sidebar.tsx",
     "web/src/app/TemplateDialogs.tsx",
-    "web/src/app/templates/TemplateLibrary.tsx"
+    "web/src/app/templates/TemplateLibrary.tsx",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Parent task": [
     "web/src/app/task-detail/Facets.tsx",
@@ -10150,7 +10639,7 @@
     "web/src/page/TaskPageScreen.tsx"
   ],
   "Partial": [
-    "web/src/app/rules/RuleHistory.tsx"
+    "web/src/app/routines/RunHistory.tsx"
   ],
   "Party popper": [
     "web/src/app/task-detail/ReactionBar.tsx"
@@ -10252,17 +10741,17 @@
   "Pause": [
     "web/src/app/focus/FocusView.tsx"
   ],
-  "Pause all rules": [
-    "web/src/app/rules/RulesView.tsx"
+  "Pause all routines": [
+    "web/src/app/routines/RoutinesView.tsx"
   ],
   "Paused": [
     "web/src/app/focus/FocusParts.tsx",
-    "web/src/app/rules/RulesView.tsx",
+    "web/src/app/routines/RoutinesView.tsx",
     "web/src/lib/reviewCadence.ts",
     "web/src/lib/webhooks.ts"
   ],
   "Paused: it ran too often": [
-    "web/src/app/rules/RulesView.tsx"
+    "web/src/app/routines/RoutinesView.tsx"
   ],
   "Paused: the time entry was stopped on another device. Start again to go on.": [
     "web/src/app/focus/FocusParts.tsx"
@@ -10312,7 +10801,9 @@
     "web/src/ui/icons/catalogue.ts"
   ],
   "Period": [
-    "web/src/app/review/StatsView.tsx"
+    "web/src/app/review/StatsView.tsx",
+    "web/src/app/routines/words.tsx",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Permanently delete “{title}” and its tasks? This cannot be undone.": [
     "web/src/app/TrashView.tsx"
@@ -10538,6 +11029,12 @@
     "web/src/app/RestoreSection.tsx",
     "web/src/app/focus/FocusSettings.tsx"
   ],
+  "Preview loading…": [
+    "web/src/app/routines/StepCard.tsx"
+  ],
+  "Preview needs a connection": [
+    "web/src/app/routines/StepCard.tsx"
+  ],
   "Preview · {format}": [
     "web/src/app/ImportScreen.tsx"
   ],
@@ -10589,7 +11086,8 @@
     "web/src/app/task-detail/TaskFacts.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/task-list/RowActionCluster.tsx",
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/views/DisplayPanel.tsx",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Priority 1 or 2": [
     "web/src/app/rules/RuleFields.tsx"
@@ -10694,6 +11192,7 @@
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/dashboard.ts",
     "web/src/lib/listGroups.ts",
+    "web/src/lib/rules/sentence.ts",
     "web/src/lib/stats.ts"
   ],
   "Project archived": [
@@ -10704,6 +11203,9 @@
   ],
   "Project deleted": [
     "web/src/lib/webhooks.ts"
+  ],
+  "Project from a template": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Project invite": [
     "web/src/app/auditFormat.ts"
@@ -10816,6 +11318,7 @@
     "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/palette/entries.ts",
     "web/src/lib/review.ts",
+    "web/src/lib/rules/sentence.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Projects in this workspace can be shared with these people and their groups only.": [
@@ -11080,6 +11583,9 @@
   "Ready: {mode}": [
     "web/src/app/focus/FocusParts.tsx"
   ],
+  "Reason": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Received on this device at {time}. If no banner appeared, the operating system hid it.": [
     "web/src/lib/push.ts"
   ],
@@ -11240,6 +11746,7 @@
     "web/src/app/WorkspaceGroups.tsx",
     "web/src/app/WorkspaceMembers.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/routines/words.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx"
   ],
   "Remove attachment?": [
@@ -11390,6 +11897,9 @@
     "web/src/app/FieldsDialog.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx"
   ],
+  "Rename, colour, icon or archive a project": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Renamed “{from}” → “{to}”": [
     "web/src/lib/assistant.ts"
   ],
@@ -11437,6 +11947,12 @@
   "Repeat and remind (6 languages)": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Repeat for each": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Repeat for each item of {list}": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Repeat it": [
     "web/src/app/EncryptionPanel.tsx"
   ],
@@ -11460,8 +11976,14 @@
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/lib/assistant.ts"
   ],
+  "Replace text": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Replace token": [
     "web/src/app/IssueEditor.tsx"
+  ],
+  "Replace with": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Replies": [
     "web/src/app/task-detail/CommentsTab.tsx"
@@ -11640,11 +12162,12 @@
     "web/src/app/DataSettings.tsx"
   ],
   "Results": [
-    "web/src/app/palette/CommandPalette.tsx"
+    "web/src/app/palette/CommandPalette.tsx",
+    "web/src/app/routines/AddStep.tsx"
   ],
   "Resume": [
     "web/src/app/focus/FocusView.tsx",
-    "web/src/app/rules/RulesView.tsx"
+    "web/src/app/routines/RoutinesView.tsx"
   ],
   "Retention": [
     "web/src/app/BackupsPanel.tsx",
@@ -11802,8 +12325,22 @@
   "Rotate the feed URL?": [
     "web/src/app/CalendarFeedsPanel.tsx"
   ],
+  "Routine": [
+    "web/src/app/routines/RoutineEditor.tsx",
+    "web/src/app/routines/RunHistory.tsx"
+  ],
+  "Routine editor": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Routine notices": [
     "web/src/app/NotificationChannelEditor.tsx"
+  ],
+  "Routine {name} on": [
+    "web/src/app/routines/RoutinesView.tsx"
+  ],
+  "Routines": [
+    "web/src/app/Sidebar.tsx",
+    "web/src/app/routines/RoutinesView.tsx"
   ],
   "Row": [
     "web/src/app/ImportScreen.tsx"
@@ -11828,15 +12365,9 @@
   "Rule not found": [
     "web/src/lib/rules/store.ts"
   ],
-  "Rule {name} on": [
-    "web/src/app/rules/RulesView.tsx"
-  ],
-  "Rules": [
-    "web/src/app/Sidebar.tsx",
-    "web/src/app/rules/RulesView.tsx"
-  ],
   "Run": [
-    "web/src/app/palette/BarParts.tsx"
+    "web/src/app/palette/BarParts.tsx",
+    "web/src/app/routines/RunHistory.tsx"
   ],
   "Run a command": [
     "web/src/app/palette/CommandPalette.tsx"
@@ -11844,12 +12375,31 @@
   "Run automation rules": [
     "web/src/app/rules/AutomationsSettings.tsx"
   ],
+  "Run by hand": [
+    "web/src/app/routines/RunHistory.tsx"
+  ],
+  "Run now": [
+    "web/src/app/routines/RoutineEditor.tsx",
+    "web/src/app/routines/RoutinesView.tsx"
+  ],
+  "Run now: {name}": [
+    "web/src/app/routines/RoutinesView.tsx"
+  ],
+  "Run of {name}": [
+    "web/src/app/routines/RunHistory.tsx"
+  ],
   "Run routine: {name}": [
     "web/src/app/palette/routineCommand.ts"
   ],
   "Run routine…": [
     "web/src/app/palette/registry.ts",
     "web/src/app/palette/routineCommand.ts"
+  ],
+  "Run steps once for every item of a list": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Run steps only when a value passes a test": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Run this in a terminal.": [
     "web/src/app/AssistantsPanel.tsx"
@@ -11859,7 +12409,7 @@
   ],
   "Running": [
     "web/src/app/BackupsPanel.tsx",
-    "web/src/app/rules/RuleHistory.tsx"
+    "web/src/app/routines/RunHistory.tsx"
   ],
   "Running since {when}": [
     "web/src/lib/backups.ts"
@@ -11868,7 +12418,8 @@
     "web/src/app/help/HelpView.tsx"
   ],
   "Runs": [
-    "web/src/app/rules/RuleHistory.tsx"
+    "web/src/app/routines/RoutinesView.tsx",
+    "web/src/app/routines/RunHistory.tsx"
   ],
   "S3-compatible": [
     "web/src/app/BackupsPanel.tsx"
@@ -11941,7 +12492,7 @@
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/locations/LocationEditor.tsx",
     "web/src/app/profile/ProfileSection.tsx",
-    "web/src/app/rules/RuleDialog.tsx",
+    "web/src/app/routines/RoutineEditor.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
     "web/src/app/task-detail/TimeTab.tsx"
   ],
@@ -12069,6 +12620,9 @@
   "Schedule: pick a choice or a day, or type a date (fri, 3/11) and press Enter, then the next task": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Scheduled": [
+    "web/src/app/routines/RunHistory.tsx"
+  ],
   "Scheduled backups, destinations, recent runs and restore": [
     "web/src/app/settingsIndex.ts"
   ],
@@ -12155,6 +12709,9 @@
   "Search shortcuts": [
     "web/src/app/ShortcutHelp.tsx"
   ],
+  "Search steps": [
+    "web/src/app/routines/AddStep.tsx"
+  ],
   "Search tasks, projects and commands": [
     "web/src/app/palette/CommandPalette.tsx"
   ],
@@ -12184,10 +12741,12 @@
   ],
   "Section": [
     "web/src/app/RuleEditor.tsx",
+    "web/src/app/routines/words.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/TaskFacts.tsx",
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/views/DisplayPanel.tsx",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Section flow changed": [
     "web/src/app/menus/flowMenu.ts"
@@ -12211,6 +12770,9 @@
   ],
   "Sections": [
     "web/src/app/ImportScreen.tsx"
+  ],
+  "Sections in a project, one per line": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Security": [
     "web/src/app/OutgoingEmailPanel.tsx",
@@ -12291,6 +12853,9 @@
   "Send a test notification": [
     "web/src/app/ShellNotifications.tsx"
   ],
+  "Send a webhook": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Send any email to your personal address and it becomes an Inbox task.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -12322,6 +12887,9 @@
   "Send the link again": [
     "web/src/app/AuthScreen.tsx"
   ],
+  "Send the webhook {webhook_id}": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Send to {name}": [
     "web/src/app/NotificationChannels.tsx"
   ],
@@ -12336,6 +12904,9 @@
   ],
   "Sent. It appears here once the owner’s device picks it up.": [
     "web/src/page/TaskPageScreen.tsx"
+  ],
+  "Separator": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Sequential": [
     "web/src/app/menus/flowMenu.ts"
@@ -12462,9 +13033,18 @@
   "Set the priority of the selected task, or of the ticked tasks": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Set today’s focus": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Set today’s focus to {tasks}": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Set up": [
     "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/assistant/AssistantDevice.tsx"
+  ],
+  "Set up email to use this": [
+    "web/src/lib/rules/catalogue.ts"
   ],
   "Set up encryption": [
     "web/src/app/EncryptionPanel.tsx"
@@ -12669,6 +13249,7 @@
   "Show more": [
     "web/src/app/ProjectNote.tsx",
     "web/src/app/notes/NotesPage.tsx",
+    "web/src/app/routines/RunHistory.tsx",
     "web/src/app/task-list/RowDetails.tsx"
   ],
   "Show more {older}": [
@@ -13023,7 +13604,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Skipped": [
-    "web/src/app/rules/RuleHistory.tsx"
+    "web/src/app/routines/RunHistory.tsx"
   ],
   "Skipped {day}: the mail server could not be reached for six hours": [
     "web/src/app/DigestCard.tsx"
@@ -13146,8 +13727,14 @@
   "Something you will recognise later, such as the device or script.": [
     "web/src/app/TokensSection.tsx"
   ],
+  "Sort": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Sort direction": [
     "web/src/app/views/DisplayPanel.tsx"
+  ],
+  "Sort {list} by {by}": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Sorted by date (or their own rule): no drag or Alt moves there": [
     "web/src/lib/shortcuts.ts"
@@ -13159,7 +13746,8 @@
     "web/src/app/focus/FocusSettings.tsx"
   ],
   "Source": [
-    "web/src/app/notes/NoteFilters.tsx"
+    "web/src/app/notes/NoteFilters.tsx",
+    "web/src/app/routines/RunHistory.tsx"
   ],
   "Source code": [
     "web/src/app/SettingsView.tsx",
@@ -13185,6 +13773,12 @@
   "Spent {duration}": [
     "web/src/app/ParseChips.tsx"
   ],
+  "Split into lines": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Split {text} into lines": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Stalled": [
     "web/src/app/review/MonthlyLook.tsx",
     "web/src/app/review/ProjectWalk.tsx"
@@ -13206,13 +13800,17 @@
     "web/src/app/task-detail/TimeTab.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/app/views/DisplayPanel.tsx",
-    "web/src/lib/facets.ts"
+    "web/src/lib/facets.ts",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Start 15 minutes earlier / later, keeping the end": [
     "web/src/lib/shortcuts.ts"
   ],
   "Start a new sandbox": [
     "web/src/app/App.tsx"
+  ],
+  "Start a timer": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Start again: choose a passphrase.": [
     "web/src/app/EncryptionPanel.tsx"
@@ -13272,6 +13870,9 @@
   ],
   "Start the next session": [
     "web/src/app/focus/FocusView.tsx"
+  ],
+  "Start the timer on {task}": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Start tracking": [
     "web/src/app/bulk/BulkActions.tsx",
@@ -13349,13 +13950,18 @@
     "web/src/app/review/ReviewProgress.tsx",
     "web/src/app/review/ReviewView.tsx"
   ],
+  "Steps": [
+    "web/src/app/routines/RoutineEditor.tsx",
+    "web/src/app/routines/RunHistory.tsx"
+  ],
   "Still visible to the server: {PLAINTEXT_FIELDS}. Shared projects are not encrypted, and new projects cannot be shared while encryption is on.": [
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Stop": [
     "web/src/app/TrackingIndicator.tsx",
     "web/src/app/assistant/AssistantComposer.tsx",
-    "web/src/app/assistant/ComposerCapture.tsx"
+    "web/src/app/assistant/ComposerCapture.tsx",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Stop dictating": [
     "web/src/lib/shortcuts.ts"
@@ -13378,6 +13984,15 @@
   "Stop repeating": [
     "web/src/app/RecurrenceField.tsx"
   ],
+  "Stop the routine": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Stop the running timer": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Stop the timer": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Stop tracking": [
     "web/src/app/TrackingIndicator.tsx",
     "web/src/app/bulk/BulkActions.tsx",
@@ -13386,7 +14001,8 @@
   "Stopped": [
     "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
-    "web/src/app/assistant/useRamble.ts"
+    "web/src/app/assistant/useRamble.ts",
+    "web/src/app/routines/RunHistory.tsx"
   ],
   "Stopped at 5:00, the longest recording. The text so far is in the field.": [
     "web/src/lib/voice/ramble.ts"
@@ -13396,9 +14012,6 @@
   ],
   "Stopped.": [
     "web/src/app/assistant/useAssistantConversation.ts"
-  ],
-  "Stopped: too many rules in a row": [
-    "web/src/app/rules/RuleHistory.tsx"
   ],
   "Stopped: {reason}": [
     "web/src/app/CalendarFeedsPanel.tsx"
@@ -13434,6 +14047,9 @@
   "Sub-projects": [
     "web/src/app/SubProjects.tsx"
   ],
+  "Subject": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Subscribed on the server": [
     "web/src/lib/push.ts"
   ],
@@ -13462,6 +14078,9 @@
   "Success": [
     "web/src/app/AuditPanel.tsx"
   ],
+  "Suggested": [
+    "web/src/app/routines/AddStep.tsx"
+  ],
   "Suggests projects or labels; Enter or Tab picks, #Home/Docs picks a sub-project": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -13476,9 +14095,6 @@
     "web/src/app/DateTimeSettings.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/filter/conditionText.ts"
-  ],
-  "Sunday sweep": [
-    "web/src/app/rules/RuleDialog.tsx"
   ],
   "Support OpenTodo": [
     "web/src/app/settingsIndex.ts",
@@ -13583,6 +14199,12 @@
   "Take a slot for {title}": [
     "web/src/app/palette/registry.ts"
   ],
+  "Take first": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Take the first {n} of {list}": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Take {title} out of the slot": [
     "web/src/app/calendar/SlotDetails.tsx"
   ],
@@ -13597,7 +14219,8 @@
   ],
   "Task": [
     "web/src/app/FieldColumns.tsx",
-    "web/src/app/TimelineView.tsx"
+    "web/src/app/TimelineView.tsx",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Task actions": [
     "web/src/app/task-detail/TaskActionsMenu.tsx"
@@ -13676,10 +14299,14 @@
     "web/src/app/PublicListScreen.tsx",
     "web/src/app/display/DisplayColumn.tsx",
     "web/src/app/palette/entries.ts",
-    "web/src/app/review/StatsView.tsx"
+    "web/src/app/review/StatsView.tsx",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Tasks and fields": [
     "web/src/app/FieldColumns.tsx"
+  ],
+  "Tasks for today’s focus": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Tasks go to {calendar} · {n, plural, one {# calendar shown} other {# calendars shown}}": [
     "web/src/app/CalendarSyncPanel.tsx"
@@ -13703,6 +14330,9 @@
   ],
   "Tasks that don’t fit": [
     "web/src/app/calendar/ReplanPreview.tsx"
+  ],
+  "Tasks that match a filter, a saved view or a condition": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Tasks to plan": [
     "web/src/app/calendar/PlanPanel.tsx"
@@ -13734,6 +14364,9 @@
   "Tell the assistant your time zone: due dates are evaluated in the time zone it passes (UTC otherwise). Changes made offline on a device appear once it syncs.": [
     "web/src/app/AssistantsPanel.tsx"
   ],
+  "Template": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Template file": [
     "web/src/app/TemplateDialogs.tsx"
   ],
@@ -13745,7 +14378,12 @@
   ],
   "Test": [
     "web/src/app/IssueEditor.tsx",
-    "web/src/app/SpeechServerPanel.tsx"
+    "web/src/app/SpeechServerPanel.tsx",
+    "web/src/app/routines/RoutineEditor.tsx",
+    "web/src/app/routines/RoutinesView.tsx",
+    "web/src/app/routines/RunHistory.tsx",
+    "web/src/app/routines/words.tsx",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Test connection": [
     "web/src/app/SsoPanel.tsx",
@@ -13763,6 +14401,9 @@
   ],
   "Test failed (status {status}): {error}": [
     "web/src/app/NotificationChannels.tsx"
+  ],
+  "Test failed at step {n}, nothing was written": [
+    "web/src/app/routines/RoutineEditor.tsx"
   ],
   "Test failed: {error}": [
     "web/src/app/NotificationChannels.tsx"
@@ -13789,7 +14430,11 @@
   ],
   "Text": [
     "web/src/app/task-detail/AttachmentsRow.tsx",
-    "web/src/lib/fields.ts"
+    "web/src/lib/fields.ts",
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Text at the end of a note": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Text in the note": [
     "web/src/app/filter/ConditionEditor.tsx"
@@ -14080,6 +14725,9 @@
   "The filter language of saved views, for example ##Work & p1 or @errand.": [
     "web/src/app/calendar/QueryFilterDialog.tsx"
   ],
+  "The first or last items of a list": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "The five moves": [
     "web/src/app/method/LoopHome.tsx"
   ],
@@ -14097,9 +14745,6 @@
   ],
   "The guides of this version, inside the app and offline.": [
     "web/src/lib/settingsCopy.ts"
-  ],
-  "The history is on the server: connect to see it.": [
-    "web/src/app/rules/RuleHistory.tsx"
   ],
   "The history is read from the server; reconnect to see it.": [
     "web/src/app/task-detail/HistoryTab.tsx"
@@ -14200,6 +14845,9 @@
   ],
   "The note leaves the task; Undo puts it back": [
     "web/src/app/task-detail/TaskActionsMenu.tsx"
+  ],
+  "The note of a task or a project": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "The offline service worker is not active yet. Reload the page; on iPhone and iPad, install the app to the Home Screen first.": [
     "web/src/lib/push.ts"
@@ -14311,13 +14959,24 @@
     "web/src/app/RestoreSection.tsx"
   ],
   "The routine could not run.": [
-    "web/src/app/palette/routineCommand.ts"
+    "web/src/app/palette/routineCommand.ts",
+    "web/src/app/routines/RoutinesView.tsx"
   ],
-  "The rule stops running. Changes it already made stay, and each task’s history keeps them.": [
-    "web/src/app/rules/RulesView.tsx"
+  "The routine stays as it was saved.": [
+    "web/src/app/routines/RoutineEditor.tsx"
+  ],
+  "The routine stops running. Changes it already made stay, and each task’s history keeps them.": [
+    "web/src/app/routines/RoutinesView.tsx"
   ],
   "The run could not be undone.": [
-    "web/src/app/palette/routineCommand.ts"
+    "web/src/app/palette/routineCommand.ts",
+    "web/src/app/routines/RunHistory.tsx"
+  ],
+  "The run is on the server: connect to see it.": [
+    "web/src/app/routines/RunHistory.tsx"
+  ],
+  "The runs are on the server: connect to see them.": [
+    "web/src/app/routines/RunHistory.tsx"
   ],
   "The same guides on the website, with setup and self-hosting.": [
     "web/src/app/settingsIndex.ts",
@@ -14583,8 +15242,14 @@
   "The test failed": [
     "web/src/app/OutgoingEmailPanel.tsx"
   ],
+  "The test fails: Otherwise runs": [
+    "web/src/lib/rules/preview.ts"
+  ],
   "The test needs the server; go online to run it.": [
     "web/src/lib/push.ts"
+  ],
+  "The test passes: Then runs": [
+    "web/src/lib/rules/preview.ts"
   ],
   "The thank-you shown the first time you opened this server.": [
     "web/src/app/settingsIndex.ts",
@@ -14652,6 +15317,7 @@
     "web/src/app/AppearanceSection.tsx"
   ],
   "Then": [
+    "web/src/app/routines/StepCard.tsx",
     "web/src/app/rules/RuleFields.tsx"
   ],
   "There are no labels yet": [
@@ -15157,9 +15823,6 @@
   "This routine works on a task: open one, then run it.": [
     "web/src/lib/i18n/errors.ts"
   ],
-  "This rule has not run yet.": [
-    "web/src/app/rules/RuleHistory.tsx"
-  ],
   "This run was undone already.": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -15357,6 +16020,9 @@
   "Time (server time)": [
     "web/src/app/BackupsPanel.tsx"
   ],
+  "Time and focus": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Time entries": [
     "web/src/app/task-detail/TimeTab.tsx"
   ],
@@ -15439,7 +16105,8 @@
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/task-detail/TaskHead.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/views/DisplayPanel.tsx",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Title or notes": [
     "web/src/app/filter/ConditionEditor.tsx"
@@ -15505,6 +16172,7 @@
     "web/src/app/palette/registry.ts",
     "web/src/app/review/CloseDay.tsx",
     "web/src/app/review/DailyCheck.tsx",
+    "web/src/app/routines/words.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-list/EarlierActions.tsx",
     "web/src/app/task-list/RowSwipe.tsx",
@@ -15578,6 +16246,7 @@
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/palette/registry.ts",
     "web/src/app/review/CarryOver.tsx",
+    "web/src/app/routines/words.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-list/EarlierActions.tsx",
     "web/src/app/task-list/RowSwipe.tsx",
@@ -15685,12 +16354,16 @@
   "Track as a habit": [
     "web/src/app/RecurrenceField.tsx"
   ],
+  "Track time on a task": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Tracked": [
     "web/src/app/review/StatsView.tsx"
   ],
   "Tracked time": [
     "web/src/app/filter/ConditionEditor.tsx",
-    "web/src/app/filter/conditionText.ts"
+    "web/src/app/filter/conditionText.ts",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Tracked time per project: {values}.": [
     "web/src/app/review/StatsView.tsx"
@@ -15797,6 +16470,9 @@
     "web/src/app/TwoFactorPanel.tsx",
     "web/src/app/VoiceSettings.tsx"
   ],
+  "Turn on Energy levels to use this": [
+    "web/src/lib/rules/catalogue.ts"
+  ],
   "Turn on Vim keybindings": [
     "web/src/app/palette/registry.ts"
   ],
@@ -15808,6 +16484,12 @@
   ],
   "Turn on the endpoint above to connect an assistant.": [
     "web/src/app/AssistantsPanel.tsx"
+  ],
+  "Turn on time tracking to use this": [
+    "web/src/lib/rules/catalogue.ts"
+  ],
+  "Turn on today’s focus to use this": [
+    "web/src/lib/rules/catalogue.ts"
   ],
   "Turn on voice capture?": [
     "web/src/app/VoiceSettings.tsx"
@@ -15958,6 +16640,9 @@
   "Undo last restore": [
     "web/src/app/RestoreSection.tsx"
   ],
+  "Undo run": [
+    "web/src/app/routines/RunHistory.tsx"
+  ],
   "Undo the last bulk action": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -15969,6 +16654,9 @@
   ],
   "Undoing…": [
     "web/src/app/assistant/AssistantRoot.tsx"
+  ],
+  "Undone": [
+    "web/src/app/routines/RunHistory.tsx"
   ],
   "Undone, except: {items}.": [
     "web/src/app/assistant/AssistantRoot.tsx",
@@ -16166,10 +16854,9 @@
     "web/src/lib/trash.ts"
   ],
   "Untitled routine": [
-    "web/src/app/palette/routineCommand.ts"
-  ],
-  "Untitled rule": [
-    "web/src/app/rules/RulesView.tsx"
+    "web/src/app/palette/routineCommand.ts",
+    "web/src/app/routines/RoutinesView.tsx",
+    "web/src/app/routines/RunHistory.tsx"
   ],
   "Untitled section": [
     "web/src/app/BoardView.tsx",
@@ -16212,8 +16899,20 @@
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/lib/shortcuts.ts"
   ],
+  "Update a project": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Update the project {project}": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Updated": [
     "web/src/app/ProjectsTable.tsx"
+  ],
+  "Updated {n} h ago": [
+    "web/src/app/routines/RunHistory.tsx"
+  ],
+  "Updated {n} min ago": [
+    "web/src/app/routines/RunHistory.tsx"
   ],
   "Updated {time}": [
     "web/src/app/PublicListScreen.tsx",
@@ -16330,6 +17029,9 @@
   "Use {coords}": [
     "web/src/app/locations/LocationEditor.tsx"
   ],
+  "Use {name} ({type})": [
+    "web/src/app/routines/words.tsx"
+  ],
   "Used to sign in on new devices.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -16365,11 +17067,19 @@
     "web/src/app/settingsSections.ts"
   ],
   "Value": [
-    "web/src/app/filter/ConditionEditor.tsx"
+    "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/routines/words.tsx",
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Values from earlier steps": [
+    "web/src/app/routines/words.tsx"
   ],
   "Verify": [
     "web/src/app/AuthScreen.tsx",
     "web/src/app/RestoreSection.tsx"
+  ],
+  "Verify your email address to use this": [
+    "web/src/lib/rules/catalogue.ts"
   ],
   "Version, documentation, website, feedback and support": [
     "web/src/app/settingsSections.ts"
@@ -16378,7 +17088,9 @@
     "web/src/app/task-detail/HistoryTab.tsx"
   ],
   "View": [
-    "web/src/app/display/DisplayScreen.tsx"
+    "web/src/app/display/DisplayScreen.tsx",
+    "web/src/app/routines/words.tsx",
+    "web/src/lib/rules/sentence.ts"
   ],
   "View name": [
     "web/src/app/ViewsView.tsx",
@@ -16398,7 +17110,8 @@
     "web/src/app/SavedViewView.tsx"
   ],
   "View run": [
-    "web/src/app/palette/routineCommand.ts"
+    "web/src/app/palette/routineCommand.ts",
+    "web/src/app/routines/RoutinesView.tsx"
   ],
   "View “{name}”": [
     "web/src/app/palette/registry.ts"
@@ -16517,7 +17230,9 @@
   ],
   "Webhook": [
     "web/src/app/NotificationChannelEditor.tsx",
-    "web/src/app/rules/RuleFields.tsx"
+    "web/src/app/routines/words.tsx",
+    "web/src/app/rules/RuleFields.tsx",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Webhook created": [
     "web/src/app/WebhooksPanel.tsx"
@@ -16635,6 +17350,7 @@
     "web/src/app/AuditPanel.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/quickadd/FieldRows.tsx",
+    "web/src/app/routines/StepCard.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
@@ -16823,6 +17539,36 @@
   "Work|icon category": [
     "web/src/ui/icons/catalogue.ts"
   ],
+  "Would add a comment": [
+    "web/src/lib/rules/preview.ts"
+  ],
+  "Would email the project’s members": [
+    "web/src/lib/rules/preview.ts"
+  ],
+  "Would email you": [
+    "web/src/lib/rules/preview.ts"
+  ],
+  "Would end the run here": [
+    "web/src/lib/rules/preview.ts"
+  ],
+  "Would not run": [
+    "web/src/lib/rules/preview.ts"
+  ],
+  "Would notify you": [
+    "web/src/lib/rules/preview.ts"
+  ],
+  "Would run": [
+    "web/src/lib/rules/preview.ts"
+  ],
+  "Would send the webhook": [
+    "web/src/lib/rules/preview.ts"
+  ],
+  "Would write {n} of {max}": [
+    "web/src/app/routines/StepCard.tsx"
+  ],
+  "Wrap in {step}": [
+    "web/src/lib/rules/fixes.ts"
+  ],
   "Write a comment": [
     "web/src/app/task-detail/CommentsTab.tsx"
   ],
@@ -16843,6 +17589,9 @@
   ],
   "Write tasks into": [
     "web/src/app/CalendarSyncDialogs.tsx"
+  ],
+  "Write the text {template}": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "XXXXX-XXXXX": [
     "web/src/app/AuthScreen.tsx"
@@ -17006,6 +17755,9 @@
   "You planned <n-planned>{planned}</n-planned> {planned, plural, one {task} other {tasks}} and finished <n-done>{done}</n-done>.": [
     "web/src/app/review/CloseDay.tsx"
   ],
+  "You ran it": [
+    "web/src/app/routines/RunHistory.tsx"
+  ],
   "You seem to be offline": [
     "web/src/app/EmailScreens.tsx",
     "web/src/app/InviteScreen.tsx",
@@ -17040,6 +17792,9 @@
   ],
   "Your OpenTodo server never receives audio or transcripts. Only the task you save with Enter is stored and synced, like a typed one.": [
     "web/src/app/VoiceSettings.tsx"
+  ],
+  "Your account is encrypted: the server cannot read text, so a scheduled run skips this routine. Run now works on this device.": [
+    "web/src/app/routines/RoutineEditor.tsx"
   ],
   "Your account is end-to-end encrypted, so the server cannot read your tasks. This device can: it sends what a question needs directly to the provider you choose, with your own key. The OpenTodo server sees none of it.": [
     "web/src/app/assistant/AssistantDevice.tsx"
@@ -17193,8 +17948,8 @@
   "Your role does not allow this action.": [
     "web/src/app/UsersPanel.tsx"
   ],
-  "Your rules are paused.": [
-    "web/src/app/rules/RulesView.tsx"
+  "Your routines are paused.": [
+    "web/src/app/routines/RoutinesView.tsx"
   ],
   "Your secret address; emails sent there become tasks": [
     "web/src/app/settingsIndex.ts"
@@ -17220,6 +17975,9 @@
   ],
   "Your tasks, your server.": [
     "web/src/app/AuthScreen.tsx"
+  ],
+  "Your webhooks are listed when you are online.": [
+    "web/src/app/routines/words.tsx"
   ],
   "Your weekly email digest was turned off, because it would contain your task titles.": [
     "web/src/app/EncryptionPanel.tsx"
@@ -17251,6 +18009,9 @@
   "a comment needs some text": [
     "web/src/lib/comments.ts"
   ],
+  "a deleted task": [
+    "web/src/app/routines/words.tsx"
+  ],
   "a label": [
     "web/src/lib/assistant.ts"
   ],
@@ -17279,8 +18040,22 @@
   "a removed item": [
     "web/src/lib/rules/summary.ts"
   ],
+  "a removed label": [
+    "web/src/app/routines/words.tsx"
+  ],
   "a removed project": [
+    "web/src/app/routines/StepCard.tsx",
+    "web/src/app/routines/words.tsx",
     "web/src/lib/rules/index.ts"
+  ],
+  "a removed section": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "a removed step": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "a removed view": [
+    "web/src/app/routines/words.tsx"
   ],
   "a repeating task": [
     "web/src/app/TaskRow.tsx"
@@ -17303,6 +18078,9 @@
   "a task cannot be its own parent": [
     "web/src/lib/ops.ts"
   ],
+  "a webhook": [
+    "web/src/app/routines/words.tsx"
+  ],
   "a workspace": [
     "web/src/app/MemberInvitations.tsx"
   ],
@@ -17314,6 +18092,12 @@
   ],
   "activity log": [
     "web/src/app/ActivityPanel.tsx"
+  ],
+  "add, new, make, todo": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "add, new, project": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "address": [
     "web/src/app/CalendarFeedsPanel.tsx"
@@ -17357,8 +18141,20 @@
   "any of {labels}": [
     "web/src/lib/rules/summary.ts"
   ],
+  "any open task": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "any task": [
+    "web/src/app/routines/StepCard.tsx"
+  ],
+  "anything": [
+    "web/src/app/routines/words.tsx"
+  ],
   "app password": [
     "web/src/app/CaldavPanel.tsx"
+  ],
+  "append, note, write": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "archive offered": [
     "web/src/lib/shortcuts.ts"
@@ -17368,6 +18164,9 @@
   ],
   "as {role}": [
     "web/src/app/auditFormat.ts"
+  ],
+  "ascending": [
+    "web/src/app/routines/words.tsx"
   ],
   "assigned": [
     "web/src/lib/rules/summary.ts"
@@ -17412,6 +18211,9 @@
   "audit log": [
     "web/src/app/AuditPanel.tsx"
   ],
+  "automations are turned off on this server": [
+    "web/src/lib/rules/catalogue.ts"
+  ],
   "backups": [
     "web/src/app/settingsSections.ts"
   ],
@@ -17449,6 +18251,10 @@
   "cannot decrypt this value": [
     "web/src/lib/crypto.ts"
   ],
+  "change": [
+    "web/src/app/routines/StepCard.tsx",
+    "web/src/app/routines/words.tsx"
+  ],
   "changed since proposed": [
     "web/src/app/assistant/ChangeSetReview.tsx"
   ],
@@ -17460,6 +18266,48 @@
   ],
   "changed {fields}": [
     "web/src/lib/activity.ts"
+  ],
+  "choose": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "choose a date": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "choose a number": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "choose a period": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "choose a project": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "choose a task": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "choose a test": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "choose a value": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "choose labels": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "choose the changes": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "choose what matches": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "choose when": [
+    "web/src/app/routines/StepCard.tsx"
+  ],
+  "combine, merge, concatenate, text": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "comment, reply, note": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "commented": [
     "web/src/lib/activity.ts",
@@ -17481,6 +18329,15 @@
   "compressed": [
     "web/src/app/BackupsPanel.tsx"
   ],
+  "condition, when, else, otherwise, branch": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "contains": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "contains “{text}”": [
+    "web/src/app/routines/words.tsx"
+  ],
   "created the project": [
     "web/src/lib/activity.ts"
   ],
@@ -17488,8 +18345,14 @@
     "web/src/lib/activity.ts",
     "web/src/lib/activityRuns.ts"
   ],
+  "creation": [
+    "web/src/app/routines/words.tsx"
+  ],
   "cyan": [
     "web/src/lib/colourNames.ts"
+  ],
+  "date": [
+    "web/src/app/routines/words.tsx"
   ],
   "day {n}": [
     "web/src/lib/templateLibrary.ts"
@@ -17502,7 +18365,8 @@
     "web/src/app/UsersPanel.tsx"
   ],
   "deadline": [
-    "web/src/app/ScheduleSheet.tsx"
+    "web/src/app/ScheduleSheet.tsx",
+    "web/src/app/routines/words.tsx"
   ],
   "deadline cleared": [
     "web/src/lib/rules/summary.ts"
@@ -17550,11 +18414,17 @@
   "deleted|version": [
     "web/src/lib/historyVersions.ts"
   ],
+  "descending": [
+    "web/src/app/routines/words.tsx"
+  ],
   "device locked": [
     "web/src/app/auditFormat.ts"
   ],
   "dismissed": [
     "web/src/app/RemindersField.tsx"
+  ],
+  "does not contain “{text}”": [
+    "web/src/app/routines/words.tsx"
   ],
   "does not match the field": [
     "web/src/app/task-detail/FieldsGroup.tsx"
@@ -17610,6 +18480,15 @@
   "e.g. laptop CLI": [
     "web/src/app/TokensSection.tsx"
   ],
+  "each item": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "each line": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "each task": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "edited": [
     "web/src/app/task-detail/CommentsTab.tsx",
     "web/src/lib/activity.ts"
@@ -17633,11 +18512,17 @@
   "email": [
     "web/src/app/AuditPanel.tsx"
   ],
+  "email cannot be built for an encrypted account": [
+    "web/src/lib/rules/catalogue.ts"
+  ],
   "email to task": [
     "web/src/app/settingsSections.ts"
   ],
   "empty": [
     "web/src/app/method/LoopHome.tsx"
+  ],
+  "empty, erase, note, reset": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "encrypted": [
     "web/src/app/BackupsPanel.tsx",
@@ -17648,6 +18533,9 @@
   ],
   "encryption turned off": [
     "web/src/app/auditFormat.ts"
+  ],
+  "end, exit, quit, halt": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "end-to-end encryption": [
     "web/src/app/settingsSections.ts"
@@ -17704,16 +18592,28 @@
   "failure": [
     "web/src/app/AuditPanel.tsx"
   ],
+  "favorite, star, pin, sidebar": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "find, substitute, swap": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "fired": [
     "web/src/app/RemindersField.tsx"
   ],
   "fixed to {zone}": [
     "web/src/app/TaskRow.tsx"
   ],
+  "focus, today, plan": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "focused invitation": [
     "web/src/lib/shortcuts.ts"
   ],
   "focused label": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "focused step": [
     "web/src/lib/shortcuts.ts"
   ],
   "focused table": [
@@ -17762,6 +18662,9 @@
     "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/app/RemindersField.tsx"
   ],
+  "http, post, integration, request": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "http://192.168.1.20:11434/v1": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
@@ -17785,6 +18688,9 @@
   ],
   "iPhone or iPad": [
     "web/src/app/SecurityPanel.tsx"
+  ],
+  "if": [
+    "web/src/app/routines/StepCard.tsx"
   ],
   "in New view results": [
     "web/src/lib/shortcuts.ts"
@@ -17819,6 +18725,30 @@
   "interval must be from 1 to {n}": [
     "web/src/lib/recurrence.ts"
   ],
+  "is": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "is at least": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "is at most": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "is empty": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "is less than": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "is more than": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "is not": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "is not empty": [
+    "web/src/app/routines/words.tsx"
+  ],
   "issue import": [
     "web/src/lib/history.ts"
   ],
@@ -17830,11 +18760,17 @@
     "web/src/app/task-detail/RelativeTime.tsx",
     "web/src/lib/dates.ts"
   ],
+  "keep, where, only, select": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "label {labels}": [
     "web/src/lib/rules/summary.ts"
   ],
   "label, project, project with its sub-projects": [
     "web/src/app/FilterView.tsx"
+  ],
+  "label, tag, add": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "labels": [
     "web/src/lib/activityRuns.ts"
@@ -17845,6 +18781,9 @@
   "last opened {time}": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
+  "last ran {when}": [
+    "web/src/app/routines/RoutinesView.tsx"
+  ],
   "last sign-in {instant}": [
     "web/src/app/UsersPanel.tsx"
   ],
@@ -17854,7 +18793,8 @@
     "web/src/app/IssuesPanel.tsx"
   ],
   "last week": [
-    "web/src/app/filter/conditionText.ts"
+    "web/src/app/filter/conditionText.ts",
+    "web/src/app/routines/words.tsx"
   ],
   "last weekly review {ago}": [
     "web/src/app/Sidebar.tsx"
@@ -17865,11 +18805,20 @@
   "lime": [
     "web/src/lib/colourNames.ts"
   ],
+  "limit, first, last, top": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "lines, list, split, break": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "linked accounts": [
     "web/src/app/settingsSections.ts"
   ],
   "longer than {n} characters": [
     "web/src/lib/recurrence.ts"
+  ],
+  "loop, each, every, for each, iterate": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "mail server refused the message": [
     "web/src/app/auditFormat.ts"
@@ -17879,6 +18828,12 @@
   ],
   "mail server unreachable": [
     "web/src/app/auditFormat.ts"
+  ],
+  "mail, email, message, send": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "mail, email, team, members, send": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "member": [
     "web/src/lib/roleNames.ts"
@@ -17951,6 +18906,7 @@
   ],
   "no": [
     "web/src/app/filter/conditionText.ts",
+    "web/src/app/routines/words.tsx",
     "web/src/lib/history.ts"
   ],
   "no date": [
@@ -17982,7 +18938,12 @@
   "no origin": [
     "web/src/lib/rules/summary.ts"
   ],
+  "no output": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "no project": [
+    "web/src/lib/rules/preview.ts",
+    "web/src/lib/rules/sentence.ts",
     "web/src/lib/rules/summary.ts"
   ],
   "no section": [
@@ -17993,6 +18954,10 @@
   ],
   "no start": [
     "web/src/lib/rules/summary.ts"
+  ],
+  "no task": [
+    "web/src/lib/rules/preview.ts",
+    "web/src/lib/rules/sentence.ts"
   ],
   "no weekly review yet": [
     "web/src/app/Sidebar.tsx"
@@ -18024,17 +18989,27 @@
   "not applied": [
     "web/src/app/task-detail/HistoryTab.tsx"
   ],
+  "not available here": [
+    "web/src/app/routines/RunHistory.tsx",
+    "web/src/lib/rules/catalogue.ts"
+  ],
   "not blocked": [
     "web/src/lib/rules/summary.ts"
   ],
   "not created by this assistant": [
     "web/src/app/auditFormat.ts"
   ],
+  "not offered on a demo instance": [
+    "web/src/lib/rules/catalogue.ts"
+  ],
   "not on or off": [
     "web/src/app/task-detail/FieldsGroup.tsx"
   ],
   "not opened yet": [
     "web/src/app/PublicLinksSection.tsx"
+  ],
+  "not run yet": [
+    "web/src/app/routines/RoutinesView.tsx"
   ],
   "not scheduled": [
     "web/src/app/HabitHistory.tsx"
@@ -18048,6 +19023,9 @@
   "not yet encrypted": [
     "web/src/app/TaskRow.tsx"
   ],
+  "note, read, notes, description": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "notes": [
     "web/src/app/task-detail/HistoryTab.tsx",
     "web/src/lib/activityRuns.ts",
@@ -18058,6 +19036,9 @@
   ],
   "nothing waiting": [
     "web/src/app/method/LoopHome.tsx"
+  ],
+  "notification, alert, ping, message, remind": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "notifies me": [
     "web/src/lib/rules/summary.ts"
@@ -18070,6 +19051,9 @@
   ],
   "ntfy.sh or the address of your own ntfy server.": [
     "web/src/app/NotificationChannelEditor.tsx"
+  ],
+  "number, how many, total": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "occurrence": [
     "web/src/app/TaskRow.tsx"
@@ -18111,6 +19095,9 @@
   "only the owner can restore a shared project": [
     "web/src/lib/ops.ts"
   ],
+  "only when I run it": [
+    "web/src/lib/rules/summary.ts"
+  ],
   "on|comment": [
     "web/src/app/FeedView.tsx",
     "web/src/app/ProjectActivity.tsx"
@@ -18138,6 +19125,9 @@
   "order": [
     "web/src/lib/activityRuns.ts"
   ],
+  "order, arrange, rank": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "origin": [
     "web/src/lib/history.ts"
   ],
@@ -18146,6 +19136,9 @@
   ],
   "outgoing email": [
     "web/src/app/settingsSections.ts"
+  ],
+  "outgoing email is not set up on this server": [
+    "web/src/lib/rules/catalogue.ts"
   ],
   "over capacity": [
     "web/src/app/PlanView.tsx",
@@ -18209,6 +19202,7 @@
   ],
   "priority": [
     "web/src/app/FilterView.tsx",
+    "web/src/app/routines/words.tsx",
     "web/src/lib/activityRuns.ts"
   ],
   "priority {n}": [
@@ -18233,6 +19227,9 @@
   ],
   "project {project}": [
     "web/src/lib/rules/index.ts"
+  ],
+  "project, search, look up": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "projected": [
     "web/src/app/calendar/PlanRow.tsx"
@@ -18272,6 +19269,9 @@
   ],
   "removes {labels}": [
     "web/src/lib/rules/index.ts"
+  ],
+  "rename, archive, edit, colour, icon": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "renamed the task": [
     "web/src/lib/activityRuns.ts"
@@ -18319,6 +19319,9 @@
   "resumes {when}": [
     "web/src/app/IssuesPanel.tsx"
   ],
+  "search, query, filter, view, look up, select": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "section": [
     "web/src/lib/activityRuns.ts",
     "web/src/lib/history.ts"
@@ -18331,6 +19334,9 @@
   ],
   "section {section} of {project}": [
     "web/src/lib/rules/index.ts"
+  ],
+  "section, add, columns": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "secure connection failed": [
     "web/src/app/auditFormat.ts"
@@ -18395,11 +19401,23 @@
   "task titles, descriptions and calendar extras, project, label, section and saved-view names, saved-view queries and your comments": [
     "web/src/app/EncryptionPanel.tsx"
   ],
+  "task, pick, choose": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "teal": [
     "web/src/lib/colourNames.ts"
   ],
   "template library add create": [
     "web/src/app/palette/registry.ts"
+  ],
+  "template, checklist, copy": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "text": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "text, template, write, message": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "the Daily check is due": [
     "web/src/app/Sidebar.tsx"
@@ -18410,8 +19428,17 @@
   "the assistant": [
     "web/src/app/settingsSections.ts"
   ],
+  "the changed tasks": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "the colour": [
     "web/src/lib/activity.ts"
+  ],
+  "the count": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "the date": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "the day is closed": [
     "web/src/app/Sidebar.tsx"
@@ -18426,11 +19453,29 @@
   "the device reached its limit": [
     "web/src/app/auditFormat.ts"
   ],
+  "the end": [
+    "web/src/app/routines/words.tsx"
+  ],
   "the estimate": [
     "web/src/lib/activity.ts"
   ],
+  "the filtered items": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "the first items": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "the joined text": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "the labels": [
     "web/src/lib/activity.ts"
+  ],
+  "the lines": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "the matching tasks": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "the model name your server serves": [
     "web/src/app/assistant/AssistantDevice.tsx",
@@ -18444,6 +19489,18 @@
   ],
   "the name": [
     "web/src/lib/activity.ts"
+  ],
+  "the new project": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "the new tasks": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "the new text": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "the note text": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "the notes": [
     "web/src/lib/activity.ts"
@@ -18474,7 +19531,8 @@
     "web/src/app/task-detail/usePropertiesModel.ts",
     "web/src/app/task-detail/useTaskDetail.ts",
     "web/src/app/task-list/InlineEditor.tsx",
-    "web/src/app/titleEdit.ts"
+    "web/src/app/titleEdit.ts",
+    "web/src/lib/rules/sentence.ts"
   ],
   "the provider": [
     "web/src/app/sso.ts"
@@ -18482,17 +19540,53 @@
   "the repeat rule": [
     "web/src/lib/activity.ts"
   ],
+  "the results": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "the routine does not belong to a shared project": [
+    "web/src/lib/rules/catalogue.ts"
+  ],
   "the same clock time wherever you are.": [
     "web/src/app/task-detail/ZoneControl.tsx"
   ],
   "the series": [
     "web/src/lib/activity.ts"
   ],
+  "the sorted items": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "the start": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "the task": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "the tasks": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "the text": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "the title": [
     "web/src/lib/activity.ts"
   ],
+  "the tracked minutes": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "the trigger": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "the trigger’s task": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "the two-factor policy": [
     "web/src/app/settingsSections.ts"
+  ],
+  "the value": [
+    "web/src/lib/rules/fixes.ts"
+  ],
+  "the webhook does not exist or is turned off": [
+    "web/src/lib/rules/catalogue.ts"
   ],
   "the weekly digest": [
     "web/src/app/settingsSections.ts"
@@ -18513,16 +19607,33 @@
     "web/src/lib/crypto.ts"
   ],
   "this month": [
-    "web/src/app/filter/conditionText.ts"
+    "web/src/app/filter/conditionText.ts",
+    "web/src/app/routines/words.tsx"
   ],
   "this week": [
-    "web/src/app/filter/conditionText.ts"
+    "web/src/app/filter/conditionText.ts",
+    "web/src/app/routines/words.tsx"
   ],
   "through the task page": [
     "web/src/app/task-detail/CommentsTab.tsx"
   ],
   "time tracked on the task: any, or compared with 30m, 1h30, 90": [
     "web/src/app/FilterView.tsx"
+  ],
+  "time tracking is turned off": [
+    "web/src/lib/rules/catalogue.ts"
+  ],
+  "time, minutes, hours, report": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "timer, track, time": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "timer, track, time, stop": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "title": [
+    "web/src/app/routines/words.tsx"
   ],
   "title or notes contain the text": [
     "web/src/app/FilterView.tsx"
@@ -18537,11 +19648,15 @@
     "web/src/app/TokensSection.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/method/LoopHome.tsx",
+    "web/src/app/routines/words.tsx",
     "web/src/lib/review.ts",
     "web/src/lib/rules/summary.ts"
   ],
   "today holds {planned} of work, more than your {length} day": [
     "web/src/app/Briefing.tsx"
+  ],
+  "today’s focus is turned off": [
+    "web/src/lib/rules/catalogue.ts"
   ],
   "token": [
     "web/src/app/TokensSection.tsx"
@@ -18550,7 +19665,8 @@
     "web/src/app/AssistantsPanel.tsx"
   ],
   "tomorrow": [
-    "web/src/app/filter/conditionText.ts"
+    "web/src/app/filter/conditionText.ts",
+    "web/src/app/routines/words.tsx"
   ],
   "too many attempts": [
     "web/src/app/auditFormat.ts"
@@ -18634,6 +19750,9 @@
   ],
   "upcoming": [
     "web/src/app/HabitHistory.tsx"
+  ],
+  "update, edit, set, move, complete, label": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "us-east-1": [
     "web/src/app/BackupsPanel.tsx"
@@ -18737,6 +19856,9 @@
   "workspaces": [
     "web/src/app/settingsSections.ts"
   ],
+  "write a text": [
+    "web/src/app/routines/words.tsx"
+  ],
   "wrong password": [
     "web/src/app/auditFormat.ts"
   ],
@@ -18745,6 +19867,7 @@
   ],
   "yes": [
     "web/src/app/filter/conditionText.ts",
+    "web/src/app/routines/words.tsx",
     "web/src/lib/history.ts"
   ],
   "yesterday": [
@@ -18755,6 +19878,9 @@
   ],
   "you@example.com": [
     "web/src/app/EmailInboxPanel.tsx"
+  ],
+  "your email address is not verified": [
+    "web/src/lib/rules/catalogue.ts"
   ],
   "your own time entries": [
     "web/src/app/review/StatsView.tsx"
@@ -18914,6 +20040,9 @@
   ],
   "{field} {date}": [
     "web/src/app/filter/conditionText.ts"
+  ],
+  "{from} to {to}": [
+    "web/src/app/routines/words.tsx"
   ],
   "{hostOf} · used {relativeTime}": [
     "web/src/app/SsoPanel.tsx"
@@ -19112,12 +20241,16 @@
     "web/src/app/auditFormat.ts"
   ],
   "{n, plural, one {# item} other {# items}}": [
+    "web/src/app/routines/RunHistory.tsx",
     "web/src/lib/history.ts",
     "web/src/ui/patterns/Sidebar.tsx"
   ],
   "{n, plural, one {# label} other {# labels}}": [
     "web/src/app/TemplateDialogs.tsx",
     "web/src/app/templates/TemplateLibrary.tsx"
+  ],
+  "{n, plural, one {# line} other {# lines}}": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "{n, plural, one {# member} other {# members}}": [
     "web/src/app/WorkspaceGroups.tsx"
@@ -19171,7 +20304,7 @@
     "web/src/app/TemplateDialogs.tsx"
   ],
   "{n, plural, one {# open task matches now} other {# open tasks match now}}": [
-    "web/src/app/rules/RuleDialog.tsx"
+    "web/src/app/routines/StepCard.tsx"
   ],
   "{n, plural, one {# open task} other {# open tasks}}": [
     "web/src/app/ArchivedProjects.tsx",
@@ -19228,6 +20361,9 @@
   "{n, plural, one {# repository} other {# repositories}}": [
     "web/src/app/IssuesPanel.tsx"
   ],
+  "{n, plural, one {# restored} other {# restored}}": [
+    "web/src/app/routines/RunHistory.tsx"
+  ],
   "{n, plural, one {# result available} other {# results available}}": [
     "web/src/ui/Combobox/useCombobox.ts",
     "web/src/ui/IconPicker.tsx"
@@ -19238,8 +20374,8 @@
   "{n, plural, one {# row} other {# rows}}: {summary}": [
     "web/src/app/ImportScreen.tsx"
   ],
-  "{n, plural, one {# run in 7 days} other {# runs in 7 days}}": [
-    "web/src/app/rules/RulesView.tsx"
+  "{n, plural, one {# run this week} other {# runs this week}}": [
+    "web/src/app/routines/RoutinesView.tsx"
   ],
   "{n, plural, one {# sample task removed} other {# sample tasks removed}}": [
     "web/src/lib/sampleTasks.ts"
@@ -19259,6 +20395,9 @@
   ],
   "{n, plural, one {# stalled} other {# stalled}}": [
     "web/src/app/method/LoopHome.tsx"
+  ],
+  "{n, plural, one {# step not available} other {# steps not available}}": [
+    "web/src/app/routines/RoutinesView.tsx"
   ],
   "{n, plural, one {# subtask added} other {# subtasks added}}": [
     "web/src/lib/pasteTasks.ts"
@@ -19330,9 +20469,9 @@
     "web/src/app/calendar/MonthWeek.tsx",
     "web/src/app/palette/filterEntries.ts",
     "web/src/app/palette/registry.ts",
-    "web/src/app/rules/RuleHistory.tsx",
     "web/src/app/task-list/EarlierActions.tsx",
-    "web/src/app/templates/TemplateLibrary.tsx"
+    "web/src/app/templates/TemplateLibrary.tsx",
+    "web/src/lib/rules/sentence.ts"
   ],
   "{n, plural, one {# task} other {# tasks}} without estimate": [
     "web/src/app/calendar/CapacityLine.tsx",
@@ -19365,6 +20504,9 @@
   ],
   "{n, plural, one {# week ago} other {# weeks ago}}": [
     "web/src/app/filter/conditionText.ts"
+  ],
+  "{n, plural, one {# write} other {# writes}}": [
+    "web/src/app/routines/RunHistory.tsx"
   ],
   "{n, plural, one {+# more reminder} other {+# more reminders}}": [
     "web/src/app/ReminderToasts.tsx"
@@ -19456,6 +20598,9 @@
   "{n, plural, one {Start # minute} other {Start # minutes}}": [
     "web/src/app/focus/FocusParts.tsx"
   ],
+  "{n, plural, one {Test finished: would write # item, nothing was written} other {Test finished: would write # items, nothing was written}}": [
+    "web/src/app/routines/RoutineEditor.tsx"
+  ],
   "{n, plural, one {The # item it created will be deleted on every device. Items it updated are kept.} other {The # items it created will be deleted on every device. Items it updated are kept.}}": [
     "web/src/app/ImportScreen.tsx"
   ],
@@ -19464,6 +20609,18 @@
   ],
   "{n, plural, one {Values on # task are kept but hidden.} other {Values on # tasks are kept but hidden.}}": [
     "web/src/app/FieldsDialog.tsx"
+  ],
+  "{n, plural, one {Would change # task} other {Would change # tasks}}": [
+    "web/src/lib/rules/preview.ts"
+  ],
+  "{n, plural, one {Would create # task in {project}} other {Would create # tasks in {project}}}": [
+    "web/src/lib/rules/preview.ts"
+  ],
+  "{n, plural, one {Would create # task} other {Would create # tasks}}": [
+    "web/src/lib/rules/preview.ts"
+  ],
+  "{n, plural, one {Would run once} other {Would run # times}}": [
+    "web/src/lib/rules/preview.ts"
   ],
   "{n, plural, one {You completed # task this week.} other {You completed # tasks this week.}}": [
     "web/src/app/review/ReviewView.tsx"
@@ -19482,6 +20639,9 @@
   ],
   "{n, plural, one {due in # day} other {due in # days}}": [
     "web/src/lib/rules/summary.ts"
+  ],
+  "{n, plural, one {in # day} other {in # days}}": [
+    "web/src/app/routines/words.tsx"
   ],
   "{n, plural, one {label} other {labels}} {labels}": [
     "web/src/app/IssuesPanel.tsx"
@@ -19519,6 +20679,9 @@
   ],
   "{name} (you)": [
     "web/src/app/ShareDialog.tsx"
+  ],
+  "{name} ({n})": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "{name} answered about <task>{title}</task>": [
     "web/src/app/Briefing.tsx"
@@ -19570,6 +20733,9 @@
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/LabelsView.tsx"
   ],
+  "{name} no longer exists": [
+    "web/src/lib/rules/fixes.ts"
+  ],
   "{name} replied": [
     "web/src/app/Briefing.tsx"
   ],
@@ -19600,6 +20766,9 @@
   ],
   "{name}: needs a connection": [
     "web/src/app/palette/routineCommand.ts"
+  ],
+  "{name}: test would write {n}": [
+    "web/src/app/routines/RoutinesView.tsx"
   ],
   "{name}: the run did not start": [
     "web/src/app/palette/routineCommand.ts"
@@ -19673,6 +20842,9 @@
   "{n} moved to tomorrow": [
     "web/src/app/review/DoneForToday.tsx"
   ],
+  "{n} ms": [
+    "web/src/app/routines/RunHistory.tsx"
+  ],
   "{n} of 3 done": [
     "web/src/app/FirstDay.tsx"
   ],
@@ -19680,6 +20852,9 @@
     "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
     "web/src/app/NotificationChannels.tsx"
+  ],
+  "{n} of {max} characters": [
+    "web/src/app/routines/words.tsx"
   ],
   "{n} of {total}": [
     "web/src/app/TriageView.tsx",
@@ -19713,6 +20888,9 @@
   ],
   "{n} recurring": [
     "web/src/app/ImportScreen.tsx"
+  ],
+  "{n} s": [
+    "web/src/app/routines/RunHistory.tsx"
   ],
   "{n} skipped": [
     "web/src/app/ImportScreen.tsx"
@@ -19796,7 +20974,8 @@
     "web/src/lib/facets.ts"
   ],
   "{restored} restored, {kept} kept because they changed after the run": [
-    "web/src/app/palette/routineCommand.ts"
+    "web/src/app/palette/routineCommand.ts",
+    "web/src/app/routines/RunHistory.tsx"
   ],
   "{secret} (stored; type to replace)": [
     "web/src/app/SsoPanel.tsx"
@@ -19822,6 +21001,15 @@
   "{slot} resized": [
     "web/src/lib/slots.ts"
   ],
+  "{step} can take only one item here": [
+    "web/src/lib/rules/fixes.ts"
+  ],
+  "{step} expects {want}, got {got}": [
+    "web/src/lib/rules/fixes.ts"
+  ],
+  "{step} needs a value here": [
+    "web/src/lib/rules/fixes.ts"
+  ],
   "{tasks, plural, one {It leaves the sidebar with # open task.} other {It leaves the sidebar with # open tasks.}} You can unarchive it from Settings → Data.": [
     "web/src/app/ProjectHeader.tsx"
   ],
@@ -19832,7 +21020,7 @@
     "web/src/lib/undoActions.ts"
   ],
   "{term} cannot be used in a rule": [
-    "web/src/app/rules/RuleDialog.tsx"
+    "web/src/app/routines/RoutineEditor.tsx"
   ],
   "{text} and {n} more": [
     "web/src/lib/activityRuns.ts"

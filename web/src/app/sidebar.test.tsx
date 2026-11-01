@@ -241,7 +241,7 @@ describe('the desktop sidebar (sidebar-compact-desktop)', () => {
     await click(trigger)
     // The review state arrives on its own: wait for its marker on the Review entry.
     await waitFor(() => menuItems().length > 0 && !!document.querySelector('[data-menu-label="Review"]')?.textContent?.includes('Review due'), 'the More menu with Review due')
-    expect(menuItems()).toEqual(['Loop home', 'Next', 'Waiting', 'Anytime', 'Someday', 'Completed', 'Review', 'Statistics', 'Focus', 'Notes', 'Locations', 'Rules', 'Trash', 'New view'])
+    expect(menuItems()).toEqual(['Loop home', 'Next', 'Waiting', 'Anytime', 'Someday', 'Completed', 'Review', 'Statistics', 'Focus', 'Notes', 'Locations', 'Routines', 'Trash', 'New view'])
     // Never reviewed: the dot and the words are on the Review entry.
     const reviewItem = document.querySelector('[data-menu-label="Review"]')!
     expect(reviewItem.textContent).toContain('Review due')

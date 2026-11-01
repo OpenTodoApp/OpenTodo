@@ -27,6 +27,7 @@ export function triggerText(tr: RuleTrigger | null | undefined, names: RuleNames
       : t('when a task is moved to {project}', { project: nameOf(names.projects, tr.project_id) })
     case 'due.reached': return t('when a task is due')
     case 'overdue': return t('when a task’s date passes')
+    case 'manual': return t('only when I run it')
     case 'schedule': {
       const days = (tr.weekdays ?? []).slice().sort()
       const every = days.length === 7 ? t('every day') : days.map(dayName).join(', ')

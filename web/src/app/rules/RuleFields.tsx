@@ -18,6 +18,7 @@ export const TRIGGER_LABEL = translatedMap<RuleTriggerKind>({
   'due.reached': msg('A task is due'),
   overdue: msg('A task’s date passes'),
   schedule: msg('On a schedule'),
+  manual: msg('Only when I run it'),
 })
 const DUE_LABEL = translatedMap({ today: msg('Today'), tomorrow: msg('Tomorrow'), 'next-week': msg('Next week'), clear: msg('No date') })
 const START_LABEL = translatedMap({ someday: msg('Someday'), clear: msg('Clear the start') })

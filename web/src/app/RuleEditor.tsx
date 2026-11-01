@@ -11,12 +11,11 @@ import { setOnDrop } from '../lib/views'
 import { Button, Combobox, Dialog, LabelChip } from '../ui'
 import { ProjectPickerField } from './ProjectPickerField'
 import { ruleDraftFromView } from './rules/convertDraft'
-import { useMe } from '../lib/timeEntries'
 import { t, translatedMap, msg } from '../lib/i18n'
 import { messageOf } from '../lib/errorText'
 
 // The rule editor is its own chunk with the Rules page (automation-rules D11).
-const RuleDialog = lazy(() => import('./rules/RuleDialog').then((m) => ({ default: m.RuleDialog })))
+const RuleDraftEditor = lazy(() => import('./routines/RoutineEditor').then((m) => ({ default: m.RuleDraftEditor })))
 
 const DUE_LABEL = translatedMap({ today: msg('Today'), tomorrow: msg('Tomorrow'), 'next-week': msg('Next week'), clear: msg('No date') })
 const START_LABEL = translatedMap({ someday: msg('Someday'), clear: msg('Clear the start') })
@@ -82,7 +81,6 @@ function withKey<K extends keyof OnDropRule>(rule: OnDropRule, key: K, value: On
 export function RuleEditor({ view, labels, projects, sections, onClose }: RuleEditorProps) {
   const [draft, setDraft] = useState<OnDropRule>(() => knownRule(view.on_drop) ?? {})
   const [automation, setAutomation] = useState(false)
-  const me = useMe() ?? ''
   const [error, setError] = useState<string | null>(null)
   const set = <K extends keyof OnDropRule>(key: K, value: OnDropRule[K] | undefined) => setDraft((d) => withKey(d, key, value))
   const save = (rule: OnDropRule | null) => {
@@ -134,7 +132,7 @@ export function RuleEditor({ view, labels, projects, sections, onClose }: RuleEd
           <Button type="submit" variant="primary">{t('Save')}</Button>
         </div>
       </form>
-      {automation && <Suspense fallback={null}><RuleDialog draft={ruleDraftFromView({ ...view, on_drop: draft }, { labels, projects })} me={me} onClose={() => setAutomation(false)} /></Suspense>}
+      {automation && <Suspense fallback={null}><RuleDraftEditor draft={ruleDraftFromView({ ...view, on_drop: draft }, { labels, projects })} onClose={() => setAutomation(false)} /></Suspense>}
     </Dialog>
   )
 }

@@ -66,7 +66,8 @@ const YearView = lazy(() => import('./YearView'))
 const TriageView = lazy(() => import('./TriageView').then((m) => ({ default: m.TriageView })))
 // In-app Help (user-documentation): the view, the panel and the guide text are
 // chunks of their own, fetched when Help first opens (and precached for offline).
-const RulesView = lazy(() => import('./rules/RulesView').then((m) => ({ default: m.RulesView })))
+// Routines (routines-editor): the page, the editor and the runs are one chunk.
+const RoutinesView = lazy(() => import('./routines/RoutinesView').then((m) => ({ default: m.RoutinesView })))
 const HelpView = lazy(() => import('./help/HelpBundle').then((m) => ({ default: m.HelpView })))
 const HelpPanel = lazy(() => import('./help/HelpBundle').then((m) => ({ default: m.HelpPanel })))
 // In-app assistant (in-app-assistant D9): its own chunk, fetched on first open;
@@ -270,7 +271,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           ) : route.view === 'places' ? (
             <PlacesView />
           ) : route.view === 'rules' ? (
-            <Suspense fallback={null}><RulesView create={route.create} /></Suspense>
+            <Suspense fallback={null}><RoutinesView route={route} /></Suspense>
           ) : route.view === 'projects' ? (
             <ProjectsView archived={route.archived} />
           ) : route.view === 'filter' ? (
