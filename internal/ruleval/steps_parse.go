@@ -231,6 +231,12 @@ func (p *stepParser) inputs(k *StepKind, id string, raw json.RawMessage) (map[st
 			return nil, stepErr(id, def.Name, CodeMissing, "%s: %s is required", k.Kind, def.Name)
 		}
 	}
+	// Subtasks take their parent's project (routines-dynamic-data D5).
+	if _, parent := out["parent"]; parent && k.Kind == "create_tasks" {
+		if _, project := out["project"]; project {
+			return nil, stepErr(id, "project", CodeInvalid, "create_tasks: subtasks take the parent's project; give parent or project, not both")
+		}
+	}
 	for _, set := range k.OneOf {
 		n := 0
 		for _, name := range set {

@@ -4631,7 +4631,6 @@
   "Already has {label}": "Hat {label} bereits",
   "These tasks already have {label}": "Diese Aufgaben haben {label} bereits",
   "Work|icon category": "Arbeit",
-  "Would add a comment": "Würde einen Kommentar hinzufügen",
   "Would email the project’s members": "Würde den Projektmitgliedern mailen",
   "Would email you": "Würde dir mailen",
   "Would end the run here": "Würde den Lauf hier beenden",
@@ -6501,5 +6500,17 @@
   "Test runs every step against your tasks and shows what each would do. Nothing is written.": "Ein Test führt jeden Schritt mit deinen Aufgaben aus und zeigt, was er tun würde. Es wird nichts geschrieben.",
   "This routine no longer exists.": "Diese Routine gibt es nicht mehr.",
   "Unsaved changes": "Ungespeicherte Änderungen",
-  "On a routine's page: back to Routines, asking first about unsaved changes": "Auf der Seite einer Routine: zurück zu Routinen, bei ungespeicherten Änderungen erst nachfragen"
+  "On a routine's page: back to Routines, asking first about unsaved changes": "Auf der Seite einer Routine: zurück zu Routinen, bei ungespeicherten Änderungen erst nachfragen",
+  "Get the date": "Datum holen",
+  "Get the date {date}": "Datum holen: {date}",
+  "Get the project of a task": "Projekt einer Aufgabe holen",
+  "Get the project of {task}": "Projekt von {task} holen",
+  "Only": "Nur",
+  "The project a task is in": "Das Projekt, in dem eine Aufgabe liegt",
+  "Today, tomorrow or a day a few days away": "Heute, morgen oder ein Tag in einigen Tagen",
+  "project, where, belongs, container": "Projekt, wo, gehört, Ordner",
+  "the task’s project": "das Projekt der Aufgabe",
+  "today, date, day, now, tomorrow, current": "heute, Datum, Tag, jetzt, morgen, aktuell",
+  "{n, plural, one {Would add # comment} other {Would add # comments}}": "{n, plural, one {Würde # Kommentar hinzufügen} other {Würde # Kommentare hinzufügen}}",
+  "{n, plural, one {Would add to # note} other {Would add to # notes}}": "{n, plural, one {Würde # Notiz ergänzen} other {Würde # Notizen ergänzen}}"
 }

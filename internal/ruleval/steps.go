@@ -150,16 +150,23 @@ var Steps = []StepKind{
 	{Kind: "create_tasks", Group: GroupTasks, Out: TTasks, Content: true, Tool: "create_tasks", OneOf: [][]string{{"text", "title"}},
 		Inputs: []Input{content(in("text", []Type{TText, TLines}, LitText)), content(bound(in("title", textIn, LitText), 500)),
 			in("project", []Type{TProject}, LitProject), in("section", nil, LitID), in("due", []Type{TDate}, LitDate),
-			bound(in("priority", []Type{TNumber}, LitNumber), 4), in("labels", nil, LitIDs), enum("energy", "deep", "medium", "low")}},
+			bound(in("priority", []Type{TNumber}, LitNumber), 4), in("labels", nil, LitIDs), enum("energy", "deep", "medium", "low"),
+			// parent: subtasks of a task (routines-dynamic-data D5); the project comes from it.
+			in("parent", []Type{TTask}, LitNone)}},
 	{Kind: "change_tasks", Group: GroupTasks, Out: TTasks, SameAs: "", Tool: "update_tasks",
 		Inputs: []Input{req(in("tasks", []Type{TTasks}, LitNone)), req(in("set", nil, LitActions))}},
 	{Kind: "add_comment", Group: GroupTasks, Out: TNone, Content: true, Tool: "add_comment",
 		Inputs: []Input{req(in("task", []Type{TTask}, LitTask)), req(content(bound(in("text", textIn, LitText), MaxComment)))}},
+	// get_task holds a task chosen by hand: the rare fixed target, never a
+	// default or a fix (routines-dynamic-data D4).
 	{Kind: "get_task", Group: GroupTasks, Out: TTask,
 		Inputs: []Input{req(in("task", []Type{TTask}, LitTask))}},
 	// Projects
 	{Kind: "find_project", Group: GroupProjects, Out: TProject, Content: true,
 		Inputs: []Input{req(content(bound(in("name", textIn, LitText), 120)))}},
+	// project_of: the project of a task; the Inbox for a task without one (routines-dynamic-data D5).
+	{Kind: "project_of", Group: GroupProjects, Out: TProject,
+		Inputs: []Input{req(in("task", []Type{TTask}, LitNone))}},
 	{Kind: "create_project", Group: GroupProjects, Out: TProject, Content: true, Tool: "create_project",
 		Inputs: []Input{req(content(bound(in("name", textIn, LitText), 120))), in("parent", []Type{TProject}, LitProject), in("color", nil, LitID), in("icon", nil, LitID)}},
 	{Kind: "update_project", Group: GroupProjects, Out: TProject, Tool: "update_project",
@@ -174,13 +181,13 @@ var Steps = []StepKind{
 		Inputs: []Input{req(in("template", nil, LitID)), req(in("start", []Type{TDate}, LitDate)), content(bound(in("name", textIn, LitText), 120))}},
 	// Notes and text
 	{Kind: "note_text", Group: GroupText, Out: TText, Content: true,
-		Inputs: []Input{req(in("of", []Type{TTask, TProject}, LitNone))}},
+		Inputs: []Input{req(in("of", []Type{TTask, TProject}, LitProject))}},
 	{Kind: "append_to_note", Group: GroupText, Out: TNone, Content: true, Tool: "append_to_note",
-		Inputs: []Input{req(in("of", []Type{TTask, TProject}, LitNone)), req(content(in("text", textIn, LitText)))}},
+		Inputs: []Input{req(in("of", []Type{TTask, TProject}, LitProject)), req(content(in("text", textIn, LitText)))}},
 	{Kind: "clear_note", Group: GroupText, Out: TNone, Content: true,
-		Inputs: []Input{req(in("of", []Type{TTask, TProject}, LitNone))}},
+		Inputs: []Input{req(in("of", []Type{TTask, TProject}, LitProject))}},
 	{Kind: "split_lines", Group: GroupText, Out: TLines, Content: true,
-		Inputs: []Input{req(in("text", textIn, LitText))}},
+		Inputs: []Input{req(in("text", textIn, LitText)), enum("only", "open_checkboxes")}},
 	{Kind: "join", Group: GroupText, Out: TText, Content: true,
 		Inputs: []Input{req(in("lines", []Type{TLines}, LitLines)), bound(in("separator", nil, LitText), 20)}},
 	{Kind: "format", Group: GroupText, Out: TText, Content: true,
@@ -193,7 +200,7 @@ var Steps = []StepKind{
 	{Kind: "sort", Group: GroupLogic, Out: TNone, SameAs: "list",
 		Inputs: []Input{req(in("list", anyList, LitNone)), req(enum("by", "due", "deadline", "priority", "created", "title", "text")), enum("direction", "asc", "desc")}},
 	{Kind: "take", Group: GroupLogic, Out: TNone, SameAs: "list",
-		Inputs: []Input{req(in("list", anyList, LitNone)), req(bound(in("n", nil, LitNumber), MaxListItems)), enum("from", "start", "end")}},
+		Inputs: []Input{req(in("list", anyList, LitNone)), bound(in("n", nil, LitNumber), MaxListItems), enum("from", "start", "end", "all")}},
 	{Kind: "count", Group: GroupLogic, Out: TNumber,
 		Inputs: []Input{req(in("list", anyList, LitNone))}},
 	{Kind: "if", Group: GroupLogic, Out: TNone, Blocks: []string{"then", "otherwise"},
@@ -203,6 +210,9 @@ var Steps = []StepKind{
 	{Kind: "stop", Group: GroupLogic, Out: TNone,
 		Inputs: []Input{bound(in("reason", nil, LitText), MaxStopReason)}},
 	// Time and focus
+	// date: today, tomorrow, in N days or a date (routines-dynamic-data D5).
+	{Kind: "date", Group: GroupTime, Out: TDate,
+		Inputs: []Input{in("date", []Type{TDate}, LitDate)}},
 	{Kind: "start_timer", Group: GroupTime, Out: TNone, Needs: NeedsTimeTracking, Tool: "start_timer",
 		Inputs: []Input{req(in("task", []Type{TTask}, LitTask))}},
 	{Kind: "stop_timer", Group: GroupTime, Out: TNone, Needs: NeedsTimeTracking, Tool: "stop_timer"},

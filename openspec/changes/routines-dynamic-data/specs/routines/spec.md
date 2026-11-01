@@ -97,7 +97,7 @@ Each step kind SHALL declare the types its inputs accept and the type of its out
 The catalogue SHALL offer these steps, grouped as listed, with the inputs and outputs of the designs' catalogues:
 - **Tasks:** Find tasks (a filter query, a saved view or a rule condition, at most 500, live; a condition finds open tasks, and a query or view follows the filter rule of open tasks unless it names `completed` or `open` or compares the completion date), Create tasks (one per line of a Text or Lines, each line read with quick-add syntax, or from fields; in a project, or as subtasks of a parent task), Change tasks (priority, due, start, deadline, energy, assignee, labels added and removed, project and section, complete or reopen, move to the Trash), Add a comment, Get a specific task.
 - **Projects:** Find project (by name), Get the project of a task, Create project, Update project (name, colour, icon, archived), Create sections, Create labels, Favourite, Create a project from a template of the library.
-- **Notes and text:** Get note text, Add to a note and Clear a note (of a task, of a project from an earlier step, or of a project chosen in the picker), Split into lines, Join, Format text (placeholders for earlier outputs), Find and replace (plain text).
+- **Notes and text:** Get note text, Add to a note and Clear a note (of a task, of a project from an earlier step, or of a project chosen in the picker), Split into lines (optionally only the open checkboxes), Join, Format text (placeholders for earlier outputs), Find and replace (plain text).
 - **Lists and logic:** Pick (first, last, first N, last N, all, or where), Sort, Count, If/Otherwise, Repeat for each, Stop.
 - **Time and focus:** Get the date (today, tomorrow, in N days or a date), Start timer, Stop timer, Tracked time for a period (minutes), Set today's focus (three tasks, or Bento slots by estimate, by the same rules as the Daily check).
 - **Communication:** Notify me, Send a webhook, Email me, Email project members (shared routines only).
@@ -121,7 +121,7 @@ Steps with a counterpart in the agent tool registry SHALL be validated and plann
 - **THEN** the task gets the comment "Waiting since 2026-11-03"
 
 #### Scenario: Meeting notes into the task's project
-- **WHEN** a manual routine is run on the task "Planning meeting" in Work, whose note reads "- [ ] book room\n- notes\n- [ ] send agenda", and it gets the note text of the task it runs on, splits it into lines, picks the lines that contain "[ ]", gets the project of the task and creates tasks from the picked lines in that project
+- **WHEN** a manual routine is run on the task "Planning meeting" in Work, whose note reads "- [ ] book room\n- notes\n- [x] done already\n- [ ] send agenda", and it gets the note text of the task it runs on, splits it into lines keeping only open checkboxes, gets the project of the task and creates tasks from the lines in that project
 - **THEN** "book room" and "send agenda" are created in Work
 
 #### Scenario: Subtasks from a note
