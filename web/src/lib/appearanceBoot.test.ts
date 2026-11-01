@@ -48,7 +48,7 @@ describe('appearance.js', () => {
     boot()
     expect(root().hasAttribute('data-accent')).toBe(false)
     expect(prop('--ot-al-accent')).toBe('')
-    expect(metas()).toEqual([['#0f172a', '']])
+    expect(metas()).toEqual([['#047857', '']])
   })
 
   it('survives bad JSON', () => {
