@@ -196,21 +196,17 @@ func TestVaultScopeAndEncryption(t *testing.T) {
 	}
 }
 
-func TestVaultWatch(t *testing.T) {
-	watchPoll, watchStable, watchFallback = 50*time.Millisecond, 20*time.Millisecond, 200*time.Millisecond
+// startWatch runs `ot vault watch dir` until the returned halt, which gives
+// its exit code; a failed test halts it before the harness's server closes.
+func startWatch(t *testing.T, h *harness, dir string, stable time.Duration) (halt func() int) {
+	t.Helper()
+	watchPoll, watchStable, watchFallback = 50*time.Millisecond, stable, 200*time.Millisecond
 	t.Cleanup(func() { watchPoll, watchStable, watchFallback = 2*time.Second, time.Second, 30*time.Second })
-	h := newHarness(t)
-	h.login()
-	h.put("project", "home0001", map[string]any{"name": "Home", "color": "#10b981", "archived": false})
-	dir := filepath.Join(t.TempDir(), "Tasks")
-	h.mustRun("vault", "init", dir)
-	home := filepath.Join(dir, "Home.md")
 	done := make(chan int, 1)
 	stop := make(chan struct{})
 	var stopOnce sync.Once
 	exit := 0
-	halt := func() int { stopOnce.Do(func() { close(stop); exit = <-done }); return exit }
-	// A failed wait still stops the watch before the harness's server closes.
+	halt = func() int { stopOnce.Do(func() { close(stop); exit = <-done }); return exit }
 	t.Cleanup(func() { halt() })
 	go func() {
 		a := &App{Stdin: strings.NewReader(""), Stdout: &strings.Builder{}, Stderr: &strings.Builder{}, ConfigPath: h.configPath,
@@ -219,16 +215,37 @@ func TestVaultWatch(t *testing.T) {
 		defer cancel()
 		done <- a.MainContext(ctx, []string{"vault", "watch", dir})
 	}()
+	return halt
+}
+
+func waitForFile(t *testing.T, what, path string, ok func(text string) bool) {
+	t.Helper()
+	deadline := time.Now().Add(10 * time.Second)
+	for time.Now().Before(deadline) {
+		if b, _ := os.ReadFile(path); ok(string(b)) {
+			return
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	b, _ := os.ReadFile(path)
+	t.Fatalf("timed out waiting for %s; %s holds %q", what, filepath.Base(path), b)
+}
+
+func newWatchVault(t *testing.T) (*harness, string, string) {
+	h := newHarness(t)
+	h.login()
+	h.put("project", "home0001", map[string]any{"name": "Home", "color": "#10b981", "archived": false})
+	dir := filepath.Join(t.TempDir(), "Tasks")
+	h.mustRun("vault", "init", dir)
+	return h, dir, filepath.Join(dir, "Home.md")
+}
+
+func TestVaultWatch(t *testing.T) {
+	h, dir, home := newWatchVault(t)
+	halt := startWatch(t, h, dir, 20*time.Millisecond)
 	waitFor := func(what string, ok func() bool) {
 		t.Helper()
-		deadline := time.Now().Add(10 * time.Second)
-		for time.Now().Before(deadline) {
-			if ok() {
-				return
-			}
-			time.Sleep(20 * time.Millisecond)
-		}
-		t.Fatalf("timed out waiting for %s", what)
+		waitForFile(t, what, home, func(string) bool { return ok() })
 	}
 	// App change reaches the file.
 	h.put("task", "lamp0001", map[string]any{"title": "Fix the lamp", "project_id": "home0001"})
@@ -242,6 +259,39 @@ func TestVaultWatch(t *testing.T) {
 		b, _ := os.ReadFile(home)
 		return strings.Contains(string(b), "Oil the hinge 🆔 ")
 	})
+	if code := halt(); code != 0 {
+		t.Fatalf("watch exit %d", code)
+	}
+}
+
+// TestVaultWatchHalfSavedFile (the TestVaultWatch flake): an editor saves in
+// two steps, an empty file and then its text, and an app change wakes the
+// watch in between. The wake used to sync at once, read the empty file as
+// every line removed, trash its tasks in the app and write the file over the
+// save, losing the new line. It now waits until the file holds still.
+func TestVaultWatchHalfSavedFile(t *testing.T) {
+	h, dir, home := newWatchVault(t)
+	h.put("task", "lamp0001", map[string]any{"title": "Fix the lamp", "project_id": "home0001"})
+	h.mustRun("vault", "sync", dir)
+	saved := readFile(t, home)
+	if !strings.Contains(saved, "Fix the lamp") {
+		t.Fatalf("Home.md: %q", saved)
+	}
+	halt := startWatch(t, h, dir, 300*time.Millisecond)
+	time.Sleep(200 * time.Millisecond) // the first sync, which finds nothing to do
+	writeFile(t, home, "")
+	h.put("task", "plum0001", map[string]any{"title": "Call the plumber", "project_id": "home0001"})
+	time.Sleep(100 * time.Millisecond) // the wake arrives while the file is empty
+	writeFile(t, home, saved+"- [ ] Oil the hinge\n")
+	waitForFile(t, "the saved line's id and the app's task", home, func(s string) bool {
+		return strings.Contains(s, "Oil the hinge 🆔 ") && strings.Contains(s, "Call the plumber")
+	})
+	if lamp := h.task("lamp0001"); lamp == nil || lamp["deleted_at"] != nil {
+		t.Fatalf("the lamp task was trashed: %v", lamp)
+	}
+	if s := readFile(t, home); !strings.Contains(s, "Fix the lamp") {
+		t.Fatalf("Home.md lost the lamp: %q", s)
+	}
 	if code := halt(); code != 0 {
 		t.Fatalf("watch exit %d", code)
 	}

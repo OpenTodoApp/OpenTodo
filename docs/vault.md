@@ -19,6 +19,8 @@ ot vault watch ~/Notes/Tasks    # keep syncing until Ctrl+C
 ot vault tasknotes <folder>     # also sync a TaskNotes folder (see below)
 ```
 
+`watch` syncs when the app changes (over the live channel) and when a file is saved. A file that changed since the last sync is read only once it has held still for a second, also when the app's change arrives meanwhile, so a save in progress is never read half written.
+
 It needs a `full` token, and it is the one part of `ot` that keeps data locally: the files and `.opentodo/state.json`.
 
 The [Obsidian plugin](obsidian.md#sync-a-folder) syncs a folder with the same rules and files, on a phone too, so a folder can move between it and `ot vault`. It also sends single lines from daily and meeting notes, with the same grammar, linking each task back to its note.
