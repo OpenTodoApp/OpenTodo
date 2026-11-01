@@ -8,7 +8,7 @@ import { formatMessage } from '../../../web/src/lib/i18n/format'
 type Values = Record<string, string | number | undefined> & { context?: string }
 
 export function t(message: string, values?: Values): string {
-  return formatMessage(message, (values ?? {}) as Record<string, string | number>, 'en')
+  return formatMessage(message, values ?? {}, 'en')
 }
 
 export function msg<S extends string>(message: S): S {

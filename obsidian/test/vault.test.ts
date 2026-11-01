@@ -31,7 +31,7 @@ describe('the vault in the plugin', () => {
     const h = await seeded()
     const tab = tabOf(h)
     const el = tab.containerEl
-    expect(el.textContent).toContain('Sync a folder with OpenTodo')
+    expect(el.textContent).toContain('Folder sync')
     expect(el.textContent).toContain('It does not sync in the background or while Obsidian is closed.')
     const select = [...el.querySelectorAll('select')].at(-1) as HTMLSelectElement
     expect([...select.options].map((o) => o.value)).toContain('OpenTodo')

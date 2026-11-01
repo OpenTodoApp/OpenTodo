@@ -492,8 +492,9 @@ jobs:
             dist/opentodo-browser-extension-firefox.zip
 
   # The Obsidian plugin (OpenSpec change obsidian-plugin): type-check, unit tests,
-  # the build with its size budget and mobile check (make obsidian), then the
-  # plugin against a freshly built server (make obsidian-e2e). Runs for obsidian/
+  # the build with its size budget and mobile check (make obsidian), the community
+  # directory's checks on what the release repository receives (make
+  # obsidian-review), then the plugin against a freshly built server (make obsidian-e2e). Runs for obsidian/
   # and the shared code it bundles (quick add, the envelope, the line vectors).
   obsidian:
     name: Obsidian plugin (test, build, end-to-end)
@@ -510,12 +511,14 @@ jobs:
           cache-dependency-path: |
             web/package-lock.json
             obsidian/package-lock.json
+            obsidian/review/package-lock.json
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
       - run: npm ci --no-audit --no-fund
         working-directory: web
       - run: make obsidian
+      - run: make obsidian-review
       - name: Server for the end-to-end check
         run: |
           (cd web && npm run build)
