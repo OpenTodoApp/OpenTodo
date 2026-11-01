@@ -14,7 +14,7 @@ import { navigate } from './router'
 import { Shell } from './Shell'
 import { hideBulkToast } from './bulk/toastStore'
 import { UndoToast } from './bulk/UndoToast'
-import { resetPanel } from './panel'
+import { panelTaskId, resetPanel } from './panel'
 import { TaskListView } from './TaskListView'
 import { TaskRow } from './TaskRow'
 
@@ -185,6 +185,30 @@ describe('the swipes\' twins and touch selection', () => {
     await waitFor(() => [...document.querySelectorAll('[data-tick]')].filter((i) => i.closest('label')!.className.includes('inline-flex')).length === 1)
     expect(document.querySelectorAll('[data-ticked]')).toHaveLength(1)
     expect(document.querySelector('[data-selection-bar]')).toBeTruthy()
+  })
+
+  it('in Select mode a tap on a row ticks it and does not open it, the title or the bare row alike', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
+    const one = await createTask({ title: 'One' })
+    const two = await createTask({ title: 'Two' })
+    navigate({ view: 'inbox' })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    mounted.push(r)
+    await waitFor(() => !!document.querySelector('[data-phone-bar] [data-inbox-menu]'))
+    await act(async () => { document.querySelector<HTMLButtonElement>('[data-phone-bar] [data-inbox-menu]')!.click() })
+    await waitFor(() => !!document.querySelector('[data-phone-item="select"]'))
+    await act(async () => { document.querySelector<HTMLElement>('[data-phone-item="select"]')!.click() })
+    await waitFor(() => document.querySelectorAll('[data-tick]').length === 2)
+    await act(async () => { row(one).querySelector<HTMLButtonElement>('[data-row-open]')!.click() })
+    await waitFor(() => row(one).hasAttribute('data-ticked'))
+    // Ticked, not opened: no task is in the side panel.
+    expect(panelTaskId()).toBeNull()
+    // The bare row (outside its title button) ticks too.
+    await act(async () => { row(two).click() })
+    await waitFor(() => document.querySelectorAll('[data-ticked]').length === 2)
+    await act(async () => { row(one).querySelector<HTMLButtonElement>('[data-row-open]')!.click() })
+    await waitFor(() => document.querySelectorAll('[data-ticked]').length === 1)
+    expect(row(two).hasAttribute('data-ticked')).toBe(true)
   })
 })
 
