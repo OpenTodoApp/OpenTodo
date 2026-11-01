@@ -86,7 +86,7 @@ type DeviceFail struct {
 	Tokens     int64        `json:"tokens"`
 }
 
-var codeRe = regexp.MustCompile(`^[a-z][a-z0-9_]{0,63}$`)
+var codeRe = regexp.MustCompile(`^[a-z][a-z0-9_:]{0,63}$`)
 
 // cleanSteps keeps a device's step records to ids, counts and codes.
 func cleanSteps(list []StepRecord, max int) ([]StepRecord, int64, error) {
