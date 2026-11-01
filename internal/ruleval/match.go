@@ -39,6 +39,9 @@ type Context struct {
 	Open func(id string) bool
 	// Tracked returns the minutes tracked on a task (every member's live entries).
 	Tracked func(id string) int
+	// Changed returns the user's logical date of a task's newest field change
+	// ("" when unknown), for `unchanged`.
+	Changed func(id string) string
 }
 
 // LogicalDate is the user's calendar date at now (Unix ms) in a fixed offset
@@ -112,6 +115,7 @@ func Matches(c *Condition, t Task, ctx Context) bool {
 		func() bool { return c.Habit == nil || *c.Habit == t.Habit },
 		func() bool { return c.Estimate == nil || matchMinutes(c.Estimate, t.Estimate) },
 		func() bool { return c.Tracked == nil || matchTracked(c.Tracked, t, ctx) },
+		func() bool { return c.Unchanged == nil || matchUnchanged(*c.Unchanged, t, ctx) },
 	}
 	for _, ok := range checks {
 		if !ok() {
@@ -119,6 +123,16 @@ func Matches(c *Condition, t Task, ctx Context) bool {
 		}
 	}
 	return true
+}
+
+// matchUnchanged: none of the task's own fields changed in the last n days, its
+// newest change falling on a day at least n days before today (routines-dynamic-data D5).
+func matchUnchanged(n int, t Task, ctx Context) bool {
+	if ctx.Changed == nil {
+		return false
+	}
+	d := ctx.Changed(t.ID)
+	return d != "" && d <= AddDays(ctx.Today, -n)
 }
 
 func matchProject(p *ProjectPred, t Task, ctx Context) bool {

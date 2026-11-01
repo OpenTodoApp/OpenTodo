@@ -292,8 +292,7 @@ A routine file is JSON or YAML with `name`, `trigger`, an optional `condition`, 
 name: Groceries
 trigger: {kind: schedule, at: "17:00", weekdays: [5]}
 steps:
-  - {id: p, kind: find_project, in: {name: {literal: Groceries}}}
-  - {id: a, kind: note_text, in: {of: {ref: p}}}
+  - {id: a, kind: note_text, in: {of: {literal: {project: Groceries}}}}
   - {id: b, kind: split_lines, in: {text: {ref: a}}}
   - {id: c, kind: create_tasks, in: {text: {ref: b}, project: {literal: {project: Errands}}}}
 ```

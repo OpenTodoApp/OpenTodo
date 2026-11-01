@@ -13,7 +13,7 @@ import { parseSteps } from './steps'
 /** At most this many live rules per account (spec "Limits"). */
 export const MAX_RULES = 50
 
-const CONDITION_KEYS = ['project', 'section', 'labels', 'priority', 'due', 'deadline', 'start', 'evening', 'blocked', 'assignee', 'origin', 'habit', 'estimate', 'tracked']
+const CONDITION_KEYS = ['project', 'section', 'labels', 'priority', 'due', 'deadline', 'start', 'evening', 'blocked', 'assignee', 'origin', 'habit', 'estimate', 'tracked', 'unchanged']
 const ACTION_KEYS = ['add_labels', 'remove_labels', 'priority', 'due', 'start', 'state', 'section', 'deadline', 'assignee', 'comment', 'notify', 'webhook']
 
 const keysOf = (v: unknown): string[] => (v && typeof v === 'object' && !Array.isArray(v) ? Object.keys(v) : [])

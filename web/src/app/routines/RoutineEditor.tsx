@@ -15,7 +15,7 @@ import { uuid } from '../../lib/ids'
 import { useOnline } from '../../lib/online'
 import { useCatalogue } from '../../lib/rules/catalogue'
 import {
-  draftError, draftOf, draftTypes, duplicateStep, findStep, insertStep, moveStep, newId, newStep, NEW_ROUTINE, placeOf, removeStep, sameDraft, setInput, stepCount, stepNumber, storedOf,
+  draftError, draftOf, draftTypes, duplicateStep, findStep, flowingTypeAt, insertNewStep, moveStep, newId, NEW_ROUTINE, placeOf, removeStep, sameDraft, setInput, stepCount, stepNumber, storedOf,
   type RoutineDraft,
 } from '../../lib/rules/draft'
 import { errorText, fixFor, type Fix } from '../../lib/rules/fixes'
@@ -38,6 +38,7 @@ import { usePreviewData, useRoutineNames, valueNamer } from './data'
 import type { RuleDraft } from './ruleDraft'
 import { RunDetailBody, RunsList } from './RunHistory'
 import { CardColumn, sentenceText, WhenCard, type CardEvents, type CardState } from './StepCard'
+import { refName } from './words'
 
 /** A rule draft (a board conversion) as a routine draft: one Change tasks card. */
 export function routineDraftOf(d: RuleDraft): RoutineDraft {
@@ -80,8 +81,9 @@ function useServerPreview(draft: RoutineDraft, local: Map<string, Preview>, ok: 
 }
 
 function TestResult({ result, draft, names }: { result: RoutineTestResult; draft: RoutineDraft; names: ReturnType<typeof useRoutineNames> }) {
-  const outputs = outputNames(draft.steps, valueNamer(names))
-  const ctx = { draft, types: draftTypes(draft), outputs, names }
+  const types = draftTypes(draft)
+  const outputs = outputNames(draft.steps, valueNamer(names), types)
+  const ctx = { draft, types, outputs, names }
   const ok = result.run.outcome !== 'failed'
   const tokens = result.steps.reduce((n, r) => n + (r.tokens ?? 0), 0)
   const answers = result.steps.filter((r) => isAIKind(r.kind) && r.status === 'ok')
@@ -220,7 +222,7 @@ export function RoutineEditor({ rule, draft: initial, dropped, run, history, onB
   }, [editDraft])
 
   const types = useMemo(() => draftTypes(draft), [draft])
-  const outputs = useMemo(() => outputNames(draft.steps, valueNamer(names)), [draft.steps, names])
+  const outputs = useMemo(() => outputNames(draft.steps, valueNamer(names), types), [draft.steps, names, types])
   const ctx = useMemo(() => ({ draft, types, outputs, names }), [draft, types, outputs, names])
   const error = useMemo(() => draftError(draft), [draft])
   const triggerType = triggerOutput(draft.trigger.kind, !!draft.condition)
@@ -233,7 +235,9 @@ export function RoutineEditor({ rule, draft: initial, dropped, run, history, onB
     for (const [id, p] of local) if (p.state === 'server' && server.has(id)) out.set(id, server.get(id)!)
     return out
   }, [local, server])
-  const shownError = error ? { step: error.step, input: error.input, text: errorText(draft, error, outputs), fix: fixFor(draft, error) } : null
+  // Fixes wire the data that flows into the step (routines-dynamic-data D3).
+  const flow = { types, name: (ref: string) => refName(ref, ctx, error?.step ?? '') }
+  const shownError = error ? { step: error.step, input: error.input, text: errorText(draft, error, outputs), fix: fixFor(draft, error, flow) } : null
   const dirty = !sameDraft(baseline, draft)
   const saved = !!savedId
   const [leave, setLeave] = usePageGuards(dirty, onBack)
@@ -276,25 +280,18 @@ export function RoutineEditor({ rule, draft: initial, dropped, run, history, onB
     },
     duplicate: (id) => edit((d) => (stepCount(d.steps) >= MAX_STEPS ? d : { ...d, steps: duplicateStep(d.steps, id) })),
     remove: (id) => edit((d) => ({ ...d, steps: removeStep(d.steps, id) })),
+    // Suggestions follow the data that flows to the place: the step above, a Repeat's item, the trigger (routines-dynamic-data D3).
     addBelow: (id) => {
       const p = placeOf(draft.steps, id)
-      if (p) setAdding({ parent: p.parent, block: p.block, index: p.index + 1, above: types[id] ?? 'none' })
+      if (p) setAdding({ parent: p.parent, block: p.block, index: p.index + 1, above: flowingTypeAt(draft, { ...p, index: p.index + 1 }, types) })
     },
-    addIn: (parent, block) => {
-      const holder = findStep(draft.steps, parent)
-      const list = (holder?.[block] ?? [])
-      const last = list[list.length - 1]
-      setAdding({ parent, block, index: -1, above: last ? types[last.id] ?? 'none' : 'start' })
-    },
+    addIn: (parent, block) => setAdding({ parent, block, index: -1, above: flowingTypeAt(draft, { parent, block, index: -1 }, types) }),
     fix: (f: Fix) => {
       if (f.kind === 'edit') edit(f.apply)
       else openers.get(`${f.step}.${f.input}`)?.()
     },
   }
-  const addAtEnd = () => {
-    const last = draft.steps[draft.steps.length - 1]
-    setAdding({ parent: '', block: '', index: -1, above: last ? types[last.id] ?? 'none' : 'start' })
-  }
+  const addAtEnd = () => setAdding({ parent: '', block: '', index: -1, above: flowingTypeAt(draft, { parent: '', block: '', index: -1 }, types) })
   const pick = (kind: string) => {
     if (!adding) return
     const target = adding
@@ -302,14 +299,9 @@ export function RoutineEditor({ rule, draft: initial, dropped, run, history, onB
     edit((d) => {
       if (stepCount(d.steps) >= MAX_STEPS) return d
       const id = newId(d.steps)
-      // The step above: the one before the insertion point in its list.
-      const holder = target.parent ? findStep(d.steps, target.parent) : null
-      const list = target.parent ? ((holder?.[target.block as 'then'] ?? []) as typeof d.steps) : d.steps
-      const at = target.index < 0 ? list.length : target.index
-      const prev = list[at - 1]
-      const above = prev && types[prev.id] && types[prev.id] !== 'none' ? { id: prev.id, type: types[prev.id] } : undefined
       focusAfter.current = id
-      return { ...d, steps: insertStep(d.steps, target, newStep(kind, id, above)) }
+      // The new step reads the data that flows to it, never a task chosen by hand (routines-dynamic-data D3).
+      return insertNewStep(d, target, kind, id, types)
     })
   }
   const blocked = error && error.code !== 'unavailable' ? error : null

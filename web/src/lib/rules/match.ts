@@ -35,6 +35,8 @@ export interface MatchContext {
   open: (taskId: string) => boolean
   /** Minutes tracked on a task (every member's live entries). */
   tracked: (taskId: string) => number
+  /** The logical date of a task's newest field change, '' when unknown (`unchanged`). */
+  changed?: (taskId: string) => string
 }
 
 function dayStartMinutes(s: string): number {
@@ -139,6 +141,11 @@ export function matchesCondition(c: RuleCondition | null | undefined, t: MatchTa
   if (c.tracked !== undefined) {
     const m = ctx.tracked(t.id)
     if (c.tracked === 'none' ? m !== 0 : m < c.tracked.min_minutes) return false
+  }
+  // Not changed in the last N days: the newest field change is on or before today - N (routines-dynamic-data D5).
+  if (c.unchanged !== undefined) {
+    const d = ctx.changed?.(t.id) ?? ''
+    if (!d || d > addDays(ctx.today, -c.unchanged.days)) return false
   }
   return true
 }
