@@ -6,6 +6,7 @@
 // language. Pure: no reads, no writes.
 import { msg, t } from '../i18n'
 import type { RoutineStep, RoutineStepType } from '../types'
+import { pickModeOf, type PickMode } from './draft'
 import { stepKind, STEPS, type StepKind } from './steps'
 
 interface KindText {
@@ -25,7 +26,8 @@ const TEXT: Record<string, KindText> = {
   create_tasks: { name: msg('Create tasks'), description: msg('One task, or one task per line'), synonyms: msg('add, new, make, todo'), sentence: msg('Create tasks from {text} in {project}'), output: msg('the new tasks') },
   change_tasks: { name: msg('Change tasks'), description: msg('Labels, dates, priority, section, completion'), synonyms: msg('update, edit, set, move, complete, label'), sentence: msg('Change {tasks}: {set}'), output: msg('the changed tasks') },
   add_comment: { name: msg('Add a comment'), description: msg('A comment on a task'), synonyms: msg('comment, reply, note'), sentence: msg('Comment on {task}: {text}'), output: '' },
-  get_task: { name: msg('Get a task'), description: msg('One task to use in later steps'), synonyms: msg('task, pick, choose'), sentence: msg('Get the task {task}'), output: msg('the task') },
+  // A task chosen by hand: found by search only, never suggested (routines-dynamic-data D4).
+  get_task: { name: msg('Get a specific task'), description: msg('Always the same task, chosen by hand'), synonyms: msg('specific task, fixed task, always'), sentence: msg('Get the specific task {task}'), output: msg('the task') },
   find_project: { name: msg('Find a project'), description: msg('A project by its name'), synonyms: msg('project, search, look up'), sentence: msg('Find the project named {name}'), output: msg('the project') },
   project_of: { name: msg('Get the project of a task'), description: msg('The project a task is in'), synonyms: msg('project, where, belongs, container'), sentence: msg('Get the project of {task}'), output: msg('the task’s project') },
   create_project: { name: msg('Create a project'), description: msg('A new project'), synonyms: msg('add, new, project'), sentence: msg('Create the project {name}'), output: msg('the new project') },
@@ -41,9 +43,10 @@ const TEXT: Record<string, KindText> = {
   join: { name: msg('Join'), description: msg('A list as one text'), synonyms: msg('combine, merge, concatenate, text'), sentence: msg('Join {lines} into one text'), output: msg('the joined text') },
   format: { name: msg('Format text'), description: msg('A text with values of earlier steps'), synonyms: msg('text, template, write, message'), sentence: msg('Write the text {template}'), output: msg('the text') },
   replace: { name: msg('Replace text'), description: msg('Find and replace in a text'), synonyms: msg('find, substitute, swap'), sentence: msg('In {text}, replace {find} with {with}'), output: msg('the new text') },
-  filter: { name: msg('Filter'), description: msg('Keep the items that match'), synonyms: msg('keep, where, only, select'), sentence: msg('Keep the items of {list} that match {where}'), output: msg('the filtered items') },
+  // Filter is Pick's "the ones where" mode (routines-dynamic-data D2).
+  filter: { name: msg('Filter'), description: msg('Keep the items that match'), synonyms: msg('keep, where, only, select'), sentence: msg('Pick {from} of {list} where {where}'), output: msg('the matching items') },
   sort: { name: msg('Sort'), description: msg('Order a list'), synonyms: msg('order, arrange, rank'), sentence: msg('Sort {list} by {by}'), output: msg('the sorted items') },
-  take: { name: msg('Take first'), description: msg('The first or last items of a list'), synonyms: msg('limit, first, last, top'), sentence: msg('Take the first {n} of {list}'), output: msg('the first items') },
+  take: { name: msg('Pick'), description: msg('The first, the last, all, or the ones that match'), synonyms: msg('first, last, all, top, limit, take, choose, where, keep, filter'), sentence: msg('Pick {from} {n} of {list}'), output: msg('the picked items') },
   count: { name: msg('Count'), description: msg('How many items a list has'), synonyms: msg('number, how many, total'), sentence: msg('Count {list}'), output: msg('the count') },
   if: { name: msg('If / Otherwise'), description: msg('Run steps only when a value passes a test'), synonyms: msg('condition, when, else, otherwise, branch'), sentence: msg('If {value} {is}'), output: '' },
   repeat: { name: msg('Repeat for each'), description: msg('Run steps once for every item of a list'), synonyms: msg('loop, each, every, for each, iterate'), sentence: msg('Repeat for each item of {list}'), output: msg('the results') },
@@ -64,6 +67,9 @@ const TEXT: Record<string, KindText> = {
 // Sentences for kinds whose main input depends on which one is set.
 const FIND_BY = { query: msg('Find tasks matching {query}'), view: msg('Find the tasks of the view {view}'), condition: msg('Find tasks where {condition}') }
 const CREATE_ONE = msg('Create the task {title} in {project}')
+// Subtasks take their parent's project (routines-dynamic-data D5).
+const CREATE_SUB = msg('Create subtasks of {parent} from {text}')
+const CREATE_SUB_ONE = msg('Create the subtask {title} of {parent}')
 
 export const GROUP_NAME: Record<StepKind['group'], string> = {
   tasks: msg('Tasks'), projects: msg('Projects'), text: msg('Notes and text'), logic: msg('Lists and logic'), time: msg('Time and focus'), communication: msg('Communication'),
@@ -86,12 +92,18 @@ const INPUT_LABEL: Record<string, string> = {
 export const kindText = (kind: string): KindText | undefined => TEXT[kind]
 export const stepName = (kind: string): string => (TEXT[kind] ? t(TEXT[kind].name) : kind)
 export const stepDescription = (kind: string): string => (TEXT[kind] ? t(TEXT[kind].description) : '')
-export const inputLabel = (name: string): string => (INPUT_LABEL[name] ? t(INPUT_LABEL[name]) : name)
+/** Labels of inputs whose meaning depends on the kind ("kind.input"). */
+const KIND_INPUT_LABEL: Record<string, string> = { 'create_tasks.parent': msg('Parent task') }
+export const inputLabel = (name: string, kind = ''): string => {
+  const own = KIND_INPUT_LABEL[`${kind}.${name}`] ?? INPUT_LABEL[name]
+  return own ? t(own) : name
+}
 
 /** The English source and the translated template of a step's sentence. */
 function sentenceOf(step: Pick<RoutineStep, 'kind' | 'in'>): string {
   const has = (n: string) => !!step.in && n in step.in
   if (step.kind === 'find_tasks') return has('query') ? FIND_BY.query : has('view') ? FIND_BY.view : FIND_BY.condition
+  if (step.kind === 'create_tasks' && has('parent')) return has('title') ? CREATE_SUB_ONE : CREATE_SUB
   if (step.kind === 'create_tasks' && has('title')) return CREATE_ONE
   return TEXT[step.kind]?.sentence ?? step.kind
 }
@@ -153,10 +165,28 @@ export function searchKinds(query: string, kinds: readonly string[] = STEPS.map(
   })
 }
 
-const TRIGGER_OUTPUT: Partial<Record<RoutineStepType, string>> = { task: msg('the trigger’s task'), tasks: msg('the matching tasks'), date: msg('the date') }
+const TRIGGER_OUTPUT: Partial<Record<RoutineStepType, string>> = { task: msg('the task that triggered'), tasks: msg('the matching tasks'), date: msg('the date') }
 
 /** The name of the trigger's output. */
 export const triggerOutputName = (type: RoutineStepType): string => (TRIGGER_OUTPUT[type] ? t(TRIGGER_OUTPUT[type]!) : t('the trigger'))
+
+/** Pick's mode words: on the card ("Pick the first of the tasks") and in its mode menu (routines-dynamic-data D2). */
+export const PICK_WORD: Record<PickMode, string> = {
+  first: msg('the first'), last: msg('the last'), first_n: msg('the first'), last_n: msg('the last'), all: msg('all'), where: msg('the ones'),
+}
+export const PICK_MENU: Record<PickMode, string> = {
+  first: msg('The first'), last: msg('The last'), first_n: msg('The first N…'), last_n: msg('The last N…'), all: msg('All'), where: msg('The ones where…'),
+}
+
+/** The name of a Pick step's output, by its mode and its list's type ("the picked task", "the matching lines"). */
+function pickOutput(s: RoutineStep, type: RoutineStepType | undefined): string | undefined {
+  if ((s.kind !== 'take' && s.kind !== 'filter') || (type !== 'tasks' && type !== 'lines')) return undefined
+  const mode = pickModeOf(s)
+  const lines = type === 'lines'
+  if (mode === 'where') return lines ? msg('the matching lines') : msg('the matching tasks')
+  if (mode === 'first' || mode === 'last') return lines ? msg('the picked line') : msg('the picked task')
+  return lines ? msg('the picked lines') : msg('the picked tasks')
+}
 
 /** The current item of a Repeat ("each task", "each line"). */
 export const itemName = (type: RoutineStepType | ''): string => (type === 'task' ? t('each task') : type === 'text' ? t('each line') : t('each item'))
@@ -166,12 +196,12 @@ export const itemName = (type: RoutineStepType | ''): string => (type === 'task'
  * the same name is used again ("the lines (2)"); nothing is stored. `named`
  * may name an output by its value instead (Get a task: the task's title).
  */
-export function outputNames(steps: readonly RoutineStep[], named?: (s: RoutineStep) => string | undefined): Map<string, string> {
+export function outputNames(steps: readonly RoutineStep[], named?: (s: RoutineStep) => string | undefined, types?: Record<string, RoutineStepType>): Map<string, string> {
   const out = new Map<string, string>()
   const seen = new Map<string, number>()
   const visit = (list: readonly RoutineStep[]) => {
     for (const s of list) {
-      const base = TEXT[s.kind]?.output
+      const base = pickOutput(s, types?.[s.id]) ?? TEXT[s.kind]?.output
       const own = named?.(s)
       if (own) out.set(s.id, own)
       else if (base) {

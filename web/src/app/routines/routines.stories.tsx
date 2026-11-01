@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { publishEncryption } from '../../lib/e2ee'
 import { createLabel } from '../../lib/labels'
-import { createProject, createTask } from '../../lib/ops'
+import { createProject, createTask, updateProject } from '../../lib/ops'
 import { createRule } from '../../lib/rules/store'
 import { seeded, withSeed } from '../stories/fixtures'
 import { AddStepSheet } from './AddStep'
@@ -22,10 +22,11 @@ export default meta
 
 async function seedGroceries(): Promise<string> {
   const errands = await createProject({ name: 'Errands' })
-  const list = await createTask({ title: 'Groceries', description: '- oat milk\n- bread\n- eggs\n- apples\n- rice\n- tea\n- soap' })
+  const list = await createProject({ name: 'Groceries' })
+  await updateProject(list, { description: '- oat milk\n- bread\n- eggs\n- apples\n- rice\n- tea\n- soap' })
+  // A project's note, chosen in the picker: no task chosen by hand (routines-dynamic-data).
   return createRule({ name: 'Groceries', trigger: { kind: 'schedule', at: '17:00', weekdays: [5] }, actions: null, steps: [
-    { id: 'g', kind: 'get_task', in: { task: { literal: { task: list } } } },
-    { id: 'a', kind: 'note_text', in: { of: { ref: 'g' } } },
+    { id: 'a', kind: 'note_text', in: { of: { literal: { project: list } } } },
     { id: 'b', kind: 'split_lines', in: { text: { ref: 'a' } } },
     { id: 'c', kind: 'create_tasks', in: { text: { ref: 'b' }, project: { literal: { project: errands } } } },
   ] })
@@ -78,6 +79,33 @@ export const EditorError: StoryObj = {
   render: () => <div className="-m-4 bg-canvas"><RoutineEditor draft={{ name: 'Due today', trigger: { kind: 'manual' }, condition: null, steps: [
     { id: 'a', kind: 'find_tasks', in: { condition: { literal: { due: 'today' } } } },
     { id: 'b', kind: 'notify', in: { text: { ref: 'a' } } },
+  ] }} onBack={() => undefined} /></div>,
+}
+
+async function seedOverdue(): Promise<void> {
+  for (const [title, date] of [['Call the plumber', '2026-10-15'], ['Renew passport', '2026-10-18'], ['Send invoice', '2026-10-19'], ['Book dentist', '2026-10-20']]) {
+    await createTask({ title, due: { date } })
+  }
+}
+
+/** The owner's example (routines-dynamic-data): Find → Pick the first → Comment on the picked task, nothing chosen by hand. */
+export const EditorPick: StoryObj = {
+  name: 'Editor, pick then comment',
+  ...withSeed(seedOverdue),
+  render: () => <div className="-m-4 bg-canvas"><RoutineEditor draft={{ name: 'Nudge the oldest', trigger: { kind: 'manual' }, condition: null, steps: [
+    { id: 'a', kind: 'find_tasks', in: { condition: { literal: { due: 'overdue' } } } },
+    { id: 'b', kind: 'take', in: { list: { ref: 'a' }, n: { literal: 1 }, from: { literal: 'start' } } },
+    { id: 'c', kind: 'add_comment', in: { task: { ref: 'b' }, text: { literal: 'Still on it?' } } },
+  ] }} onBack={() => undefined} /></div>,
+}
+
+/** The owner's second example: inside Repeat for each, the comment reads each task. */
+export const EditorRepeat: StoryObj = {
+  name: 'Editor, repeat with each task',
+  ...withSeed(seedOverdue),
+  render: () => <div className="-m-4 bg-canvas"><RoutineEditor draft={{ name: 'Nudge each', trigger: { kind: 'manual' }, condition: null, steps: [
+    { id: 'a', kind: 'find_tasks', in: { condition: { literal: { due: 'overdue' } } } },
+    { id: 'b', kind: 'repeat', in: { list: { ref: 'a' } }, do: [{ id: 'c', kind: 'add_comment', in: { task: { ref: 'item' }, text: { literal: 'Still on it?' } } }] },
   ] }} onBack={() => undefined} /></div>,
 }
 

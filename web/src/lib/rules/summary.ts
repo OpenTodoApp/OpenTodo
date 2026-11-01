@@ -2,7 +2,7 @@
 // D11): "When label waiting is added · in Work → section Waiting of Work". The
 // action half reuses the column rule's wording (describeRule).
 import { weekday } from '../dates'
-import { t } from '../i18n'
+import { formatList, t } from '../i18n'
 import type { OnDropRule, Rule, RuleActions, RuleCondition, RuleTrigger } from '../types'
 import { ruleParts, type RuleNames } from '.'
 import { addDays } from './match'
@@ -29,6 +29,11 @@ export function triggerText(tr: RuleTrigger | null | undefined, names: RuleNames
     case 'overdue': return t('when a task’s date passes')
     case 'manual': return t('only when I run it')
     case 'schedule': {
+      if (tr.month_days?.length) {
+        const nums = tr.month_days.filter((d): d is number => typeof d === 'number').sort((a, b) => a - b).map(String)
+        const list = formatList([...nums, ...(tr.month_days.includes('last') ? [t('the last day')] : [])])
+        return t('every month on {days} at {time}', { days: list, time: tr.at ?? '' })
+      }
       const days = (tr.weekdays ?? []).slice().sort()
       const every = days.length === 7 ? t('every day') : days.map(dayName).join(', ')
       return t('{days} at {time}', { days: every, time: tr.at ?? '' })
@@ -77,6 +82,7 @@ export function conditionParts(c: RuleCondition | null | undefined, names: RuleN
   else if (c.estimate) parts.push(t('estimate at most {n} min', { n: c.estimate.max_minutes }))
   if (c.tracked === 'none') parts.push(t('nothing tracked'))
   else if (c.tracked) parts.push(t('tracked at least {n} min', { n: c.tracked.min_minutes }))
+  if (c.unchanged) parts.push(t('{n, plural, one {not changed for # day} other {not changed for # days}}', { n: c.unchanged.days }))
   return parts
 }
 

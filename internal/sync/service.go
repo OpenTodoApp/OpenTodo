@@ -854,6 +854,34 @@ func listQuery(n int) string {
 	return `SELECT scope_id,entity_id,field,value FROM scope_fields WHERE scope_id IN (` + placeholders(n) + `) AND entity = ?`
 }
 
+// LastChanged is, per entity id the user can see, the timestamp (Unix ms) of
+// its newest winning field value over every visible scope: when anything of it
+// last changed (the routines condition `unchanged`, OpenSpec change
+// routines-dynamic-data D5). Plaintext metadata on every account.
+func (s *Service) LastChanged(ctx context.Context, userID, entity string) (map[string]int64, error) {
+	acc, err := loadAccess(ctx, s.reader(), userID)
+	if err != nil {
+		return nil, err
+	}
+	scopes := acc.scopes()
+	rows, err := s.reader().QueryContext(ctx, `SELECT entity_id, MAX(ts) FROM scope_fields WHERE scope_id IN (`+placeholders(len(scopes))+`) AND entity = ? GROUP BY entity_id`,
+		append(anys(scopes), entity)...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[string]int64{}
+	for rows.Next() {
+		var id string
+		var ts int64
+		if err := rows.Scan(&id, &ts); err != nil {
+			return nil, err
+		}
+		out[id] = ts
+	}
+	return out, rows.Err()
+}
+
 // FieldTS is the timestamp of the winning op of one field of an entity the user
 // can see, over every visible scope; 0 when the field was never written. A
 // server write that must win over a device whose clock runs ahead (an

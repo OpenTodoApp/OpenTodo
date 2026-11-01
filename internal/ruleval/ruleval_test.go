@@ -125,7 +125,9 @@ type vector struct {
 	Projects map[string]string `json:"projects"`
 	Open     []string          `json:"open"`
 	Tracked  map[string]int    `json:"tracked"`
-	Match    bool              `json:"match"`
+	// Changed is the logical date of a task's newest field change (unchanged).
+	Changed map[string]string `json:"changed"`
+	Match   bool              `json:"match"`
 }
 
 func deref(s *string) string {
@@ -169,7 +171,7 @@ func TestVectors(t *testing.T) {
 			open[id] = true
 		}
 		ctx := Context{UserID: "me", Today: LogicalDate(v.Now, v.Offset, v.DayStart), Parent: v.Projects,
-			Open: func(id string) bool { return open[id] }, Tracked: func(id string) int { return v.Tracked[id] }}
+			Open: func(id string) bool { return open[id] }, Tracked: func(id string) int { return v.Tracked[id] }, Changed: func(id string) string { return v.Changed[id] }}
 		if got := Matches(cond, task, ctx); got != v.Match {
 			t.Errorf("%s: Matches = %v, want %v (today %s)", v.Name, got, v.Match, ctx.Today)
 		}

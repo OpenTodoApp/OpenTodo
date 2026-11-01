@@ -8,7 +8,7 @@ import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { useEncryption } from '../../lib/e2ee'
 import { formatList, msg, t, translatedMap } from '../../lib/i18n'
 import { useMemberships } from '../../lib/localData'
-import { enclosingRepeat, insertStep, newId, placeOf, setInput, visibleBefore, type RoutineDraft } from '../../lib/rules/draft'
+import { enclosingRepeat, fitOf, flowingTo, insertStep, newId, placeOf, setInput, type RoutineDraft } from '../../lib/rules/draft'
 import { fixFor } from '../../lib/rules/fixes'
 import { inputLabel, itemName, triggerOutputName, typeLabel } from '../../lib/rules/sentence'
 import { actionParts, conditionParts } from '../../lib/rules/summary'
@@ -39,6 +39,7 @@ export interface WordContext {
 
 /** The name of a reference ("the lines", "the trigger's task", "each task"). */
 export function refName(ref: string, ctx: WordContext, at: string): string {
+  if (ref === 'trigger' && ctx.draft.trigger.kind === 'manual') return t('the task you run it on')
   if (ref === 'trigger') return triggerOutputName(triggerOutput(ctx.draft.trigger.kind, !!ctx.draft.condition))
   if (ref === 'item') {
     const rep = enclosingRepeat(ctx.draft.steps, at)
@@ -124,7 +125,8 @@ export function wordValue(step: RoutineStep, def: StepInput, ctx: WordContext): 
 export function wordPlaceholder(def: StepInput): string {
   switch (def.literal) {
     case 'project': return t('choose a project')
-    case 'task': return t('choose a task')
+    // Task inputs take a list: name what is wanted, not one pick (routines-dynamic-data D3).
+    case 'task': return t('choose which tasks')
     case 'text': return t('write a text')
     case 'number': return t('choose a number')
     case 'date': return t('choose a date')
@@ -135,38 +137,23 @@ export function wordPlaceholder(def: StepInput): string {
     case 'compare': return t('choose a test')
     case 'period': return t('choose a period')
   }
+  if (def.accepts.includes('task') || def.accepts.includes('tasks')) return t('choose which tasks')
   if (def.accepts.length) return t('choose a value')
   return t('choose')
 }
 
-/** Accepted types of an input, as the shared checker reads them. */
-function fits(def: StepInput, type: RoutineStepType): 'yes' | 'each' | 'no' {
-  if (def.accepts.includes(type)) return 'yes'
-  if (type === 'task' && def.accepts.includes('tasks')) return 'yes'
-  if ((type === 'number' || type === 'date') && def.accepts.includes('text')) return 'yes'
-  const el = type === 'tasks' ? 'task' : type === 'lines' ? 'text' : ''
-  if (el && def.accepts.includes(el as RoutineStepType)) return 'each'
-  return 'no'
-}
-
 interface ChipOption { ref: string; name: string; type: RoutineStepType; fit: 'yes' | 'each' | 'no' }
 
-/** The references an input of a step can read: earlier outputs, the trigger and a Repeat's item (D3). */
+/**
+ * The references an input of a step can read, in the order of routines-dynamic-data D3:
+ * a Repeat's item, earlier outputs nearest first, then the trigger (a manual
+ * routine's "task you run it on" included). A list fits a one-task input.
+ */
 export function chipOptions(step: RoutineStep, def: StepInput, ctx: WordContext): ChipOption[] {
-  const out: ChipOption[] = []
-  if (enclosingRepeat(ctx.draft.steps, step.id)) {
-    const list = findList(ctx, enclosingRepeat(ctx.draft.steps, step.id))
-    const type: RoutineStepType = list === 'tasks' ? 'task' : 'text'
-    out.push({ ref: 'item', name: refName('item', ctx, step.id), type, fit: fits(def, type) })
-  }
-  for (const v of visibleBefore(ctx.draft.steps, step.id)) {
-    const type = ctx.types[v.id]
-    if (!type || type === 'none') continue
-    out.push({ ref: v.id, name: ctx.outputs.get(v.id) ?? v.id, type, fit: fits(def, type) })
-  }
-  const tr = triggerOutput(ctx.draft.trigger.kind, !!ctx.draft.condition)
-  if (ctx.draft.trigger.kind !== 'manual' || tr !== 'task') out.push({ ref: 'trigger', name: refName('trigger', ctx, step.id), type: tr, fit: fits(def, tr) })
-  return out
+  return flowingTo(ctx.draft, step.id, ctx.types, true).map((f) => ({
+    ref: f.ref, type: f.type, fit: fitOf(def, f.type),
+    name: f.ref === 'item' || f.ref === 'trigger' ? refName(f.ref, ctx, step.id) : ctx.outputs.get(f.ref) ?? f.ref,
+  }))
 }
 
 function ChipList({ options, onPick, fixLabel }: { options: ChipOption[]; onPick: (ref: string) => void; fixLabel: (o: ChipOption) => string }) {
@@ -304,8 +291,8 @@ function LiteralPicker({ step, def, ctx, onSet, me }: { step: RoutineStep; def: 
       return <Combobox label={inputLabel(def.name)} placeholder={t('Find a project…')} source={n.projects.filter((p) => !p.archived && !p.deleted_at)}
         getKey={(p) => p.id} getLabel={(p) => p.name} rankContext="routine.project" emptyText={t('No projects yet.')} onPick={(p) => onSet({ literal: { project: p.id } })} />
     case 'task':
-      return <Combobox label={inputLabel(def.name)} placeholder={t('Find a task…')} source={n.tasks.filter((x: Task) => !x.deleted_at && !x.completed_at)}
-        getKey={(x: Task) => x.id} getLabel={(x: Task) => x.title} emptyText={t('No tasks match.')} onPick={(x: Task) => onSet({ literal: { task: x.id } })} />
+      // A task chosen by hand is the rare fixed target: folded, last (routines-dynamic-data D4).
+      return <SpecificTask label={inputLabel(def.name)} tasks={n.tasks} open={!!v} onPick={(x: Task) => onSet({ literal: { task: x.id } })} />
     case 'lines': {
       const text = Array.isArray(v) ? (v as string[]).join('\n') : ''
       return <Field label={t('One per line')}><textarea className="ui-input min-h-20 w-full" autoFocus defaultValue={text}
@@ -373,7 +360,7 @@ export function InputWord({ step, def, ctx, error, me, onSet, onEdit, openRef }:
   const anchor = useRef<HTMLButtonElement>(null)
   openRef?.(() => setOpen(true))
   const { shown, chip } = wordValue(step, def, ctx)
-  const label = inputLabel(def.name)
+  const label = inputLabel(def.name, step.kind)
   const options = def.accepts.length ? chipOptions(step, def, ctx) : []
   const pickRef = (ref: string) => {
     const o = options.find((x) => x.ref === ref)
@@ -392,8 +379,8 @@ export function InputWord({ step, def, ctx, error, me, onSet, onEdit, openRef }:
       <WordButton ref={anchor} label={label} value={shown} chip={chip} placeholder={wordPlaceholder(def)} error={error} action={t('change')} onClick={() => setOpen(true)} />
       <Popover open={open} onClose={() => setOpen(false)} anchor={anchor} label={label} width="sm:w-96" className="max-h-[70dvh] space-y-3 overflow-y-auto p-3">
         <ChipList options={options} onPick={pickRef} fixLabel={fixLabel} />
-        {def.literal ? <LiteralPicker step={step} def={def} ctx={ctx} me={me} onSet={(x) => onSet(x)} />
-          : <InsertAbove step={step} def={def} ctx={ctx} onEdit={onEdit} done={() => setOpen(false)} />}
+        {(!def.literal || def.accepts.includes('task')) && <InsertAbove step={step} def={def} ctx={ctx} onEdit={onEdit} done={() => setOpen(false)} />}
+        {def.literal && <LiteralPicker step={step} def={def} ctx={ctx} me={me} onSet={(x) => onSet(x)} />}
         <div className="flex justify-end gap-2">
           {step.in?.[def.name] && !def.required && <Button size="sm" variant="ghost" onClick={() => { onSet(undefined); setOpen(false) }}>{t('Remove')}</Button>}
           <Button size="sm" variant="primary" onClick={() => setOpen(false)}>{t('Done')}</Button>
@@ -404,9 +391,32 @@ export function InputWord({ step, def, ctx, error, me, onSet, onEdit, openRef }:
 }
 
 /**
- * Inputs that take a reference only can still start from a choice (D3): a task
- * inserts Get a task above, a project Find a project, and "Find tasks…" a Find
- * tasks step; the input then reads the new step.
+ * A task chosen by hand, folded behind "A specific task…" at the end of a
+ * picker (routines-dynamic-data D4): the rare fixed target, never the default.
+ */
+function SpecificTask({ label, tasks, open: initial, onPick }: { label: string; tasks: readonly Task[]; open: boolean; onPick: (x: Task) => void }) {
+  const [open, setOpen] = useState(initial)
+  if (!open) {
+    return (
+      <div className="border-t border-default pt-2" data-specific-task>
+        <Button size="sm" variant="ghost" icon="chevron-right" onClick={() => setOpen(true)}>{t('A specific task…')}</Button>
+      </div>
+    )
+  }
+  return (
+    <div className="space-y-1 border-t border-default pt-2" data-specific-task="open">
+      <p className="text-meta text-muted">{t('Always this task, whatever the routine finds')}</p>
+      <Combobox label={label} placeholder={t('Find a task…')} source={tasks.filter((x) => !x.deleted_at && !x.completed_at)}
+        getKey={(x: Task) => x.id} getLabel={(x: Task) => x.title} emptyText={t('No tasks match.')} onPick={onPick} />
+    </div>
+  )
+}
+
+/**
+ * Inputs can start from a step inserted above (D3): "Find tasks…" for a task
+ * or tasks input, Find a project for a project input without a project picker;
+ * the input then reads the new step. A task chosen by hand is never inserted
+ * here (routines-dynamic-data D4).
  */
 function InsertAbove({ step, def, ctx, onEdit, done }: { step: RoutineStep; def: StepInput; ctx: WordContext; onEdit: (fn: (d: RoutineDraft) => RoutineDraft) => void; done: () => void }) {
   const add = (inserted: (id: string) => RoutineStep) => {
@@ -422,17 +432,12 @@ function InsertAbove({ step, def, ctx, onEdit, done }: { step: RoutineStep; def:
   const n = ctx.names
   return (
     <div className="space-y-2 border-t border-default pt-2">
-      {def.accepts.includes('task') && (
-        <Combobox label={t('Choose a task')} placeholder={t('Find a task…')} source={n.tasks.filter((x: Task) => !x.deleted_at && !x.completed_at)}
-          getKey={(x: Task) => x.id} getLabel={(x: Task) => x.title} emptyText={t('No tasks match.')}
-          onPick={(x: Task) => add((id) => ({ id, kind: 'get_task', in: { task: { literal: { task: x.id } } } }))} />
-      )}
-      {def.accepts.includes('project') && (
+      {def.accepts.includes('project') && !def.literal && (
         <Combobox label={t('Choose a project')} placeholder={t('Find a project…')} source={n.projects.filter((p) => !p.archived && !p.deleted_at)}
           getKey={(p) => p.id} getLabel={(p) => p.name} rankContext="routine.project" emptyText={t('No projects yet.')}
           onPick={(p) => add((id) => ({ id, kind: 'find_project', in: { name: { literal: p.name } } }))} />
       )}
-      {def.accepts.includes('tasks') && (
+      {(def.accepts.includes('tasks') || def.accepts.includes('task')) && (
         <Button size="sm" variant="secondary" icon="search" onClick={() => add((id) => ({ id, kind: 'find_tasks', in: { condition: { literal: {} } } }))}>{t('Find tasks…')}</Button>
       )}
     </div>

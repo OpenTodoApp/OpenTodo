@@ -3,7 +3,7 @@
 // preview plans with, and the condition matcher's task shape.
 import { useEffect, useMemo, useState } from 'react'
 import { api } from '../../lib/api'
-import { logicalToday } from '../../lib/dates'
+import { logicalDay, logicalToday } from '../../lib/dates'
 import { useOpenTasks } from '../../lib/liveTasks'
 import { useAllTaskRows, useLabels, useLiveSections, useProjects, useViewRows } from '../../lib/localData'
 import { matchesCondition, type MatchTask } from '../../lib/rules/match'
@@ -62,7 +62,18 @@ export function useRoutineNames(): RoutineNames {
 function matchContext(projects: readonly Project[], open: readonly Task[], me: string) {
   const parent = new Map(projects.map((p) => [p.id, p.parent_id]))
   const ids = new Set(open.map((x) => x.id))
-  return { userId: me, today: logicalToday(), parent: (id: string) => parent.get(id) ?? null, open: (id: string) => ids.has(id), tracked: () => 0 }
+  const byId = new Map(open.map((x) => [x.id, x]))
+  return {
+    userId: me, today: logicalToday(), parent: (id: string) => parent.get(id) ?? null, open: (id: string) => ids.has(id), tracked: () => 0,
+    // The day of a task's newest field change, from its field clocks (`unchanged`, routines-dynamic-data D5).
+    changed: (id: string) => lastChangedDay(byId.get(id)),
+  }
+}
+
+/** The logical day of a task's newest field change, or '' without clocks. */
+export function lastChangedDay(task: Pick<Task, '_clock'> | undefined): string {
+  const ts = Math.max(0, ...Object.values(task?._clock ?? {}).map((c) => c.ts))
+  return ts > 0 ? logicalDay(ts) : ''
 }
 
 /** How many open tasks a condition matches now on this device. */

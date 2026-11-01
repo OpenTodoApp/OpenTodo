@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"regexp"
 	"slices"
+	"time"
 	"unicode/utf8"
 
 	"github.com/OpenTodoApp/opentodo/internal/origin"
@@ -60,6 +61,60 @@ type Trigger struct {
 	SectionID *string `json:"section_id,omitempty"`
 	At        string  `json:"at,omitempty"`
 	Weekdays  []int   `json:"weekdays,omitempty"`
+	// MonthDays: days of the month (1 to 31, LastDay for "last") instead of
+	// weekdays (routines-dynamic-data D5).
+	MonthDays []MonthDay `json:"month_days,omitempty"`
+}
+
+// MonthDay is a day of the month, 1 to 31, or LastDay ("last" in JSON).
+type MonthDay int
+
+// LastDay is the month's last day.
+const LastDay MonthDay = -1
+
+// UnmarshalJSON reads 1 to 31 or "last".
+func (d *MonthDay) UnmarshalJSON(b []byte) error {
+	var s string
+	if json.Unmarshal(b, &s) == nil {
+		if s != "last" {
+			return errors.New(`a month day is 1 to 31 or "last"`)
+		}
+		*d = LastDay
+		return nil
+	}
+	var n int
+	if err := json.Unmarshal(b, &n); err != nil {
+		return errors.New(`a month day is 1 to 31 or "last"`)
+	}
+	*d = MonthDay(n)
+	return nil
+}
+
+// MarshalJSON writes "last" for LastDay.
+func (d MonthDay) MarshalJSON() ([]byte, error) {
+	if d == LastDay {
+		return []byte(`"last"`), nil
+	}
+	return json.Marshal(int(d))
+}
+
+// FiresOn reports whether a schedule fires on a calendar day: its weekday, or
+// its day of the month ("last" on the month's last day; 31 never in April).
+func (t Trigger) FiresOn(day time.Time) bool {
+	if len(t.MonthDays) > 0 {
+		last := time.Date(day.Year(), day.Month()+1, 0, 0, 0, 0, 0, day.Location()).Day()
+		for _, d := range t.MonthDays {
+			if int(d) == day.Day() || (d == LastDay && day.Day() == last) {
+				return true
+			}
+		}
+		return false
+	}
+	wd := int(day.Weekday())
+	if wd == 0 {
+		wd = 7
+	}
+	return slices.Contains(t.Weekdays, wd)
 }
 
 var hhmm = regexp.MustCompile(`^([01][0-9]|2[0-3]):[0-5][0-9]$`)
@@ -124,7 +179,7 @@ func ParseTrigger(raw json.RawMessage) (Trigger, error) {
 		LabelAdded:   {"kind", "label_id"},
 		LabelRemoved: {"kind", "label_id"},
 		TaskMoved:    {"kind", "project_id", "section_id"},
-		Schedule:     {"kind", "at", "weekdays"},
+		Schedule:     {"kind", "at", "weekdays", "month_days"},
 	}[kind]
 	if allowed == nil {
 		allowed = []string{"kind"}
@@ -153,6 +208,14 @@ func ParseTrigger(raw json.RawMessage) (Trigger, error) {
 		if !hhmm.MatchString(t.At) {
 			return t, errors.New("trigger.at must be a time HH:MM")
 		}
+		_, hasWeekdays := m["weekdays"]
+		_, hasMonthDays := m["month_days"]
+		if hasWeekdays == hasMonthDays {
+			return t, errors.New("trigger.schedule takes exactly one of weekdays and month_days")
+		}
+		if hasMonthDays {
+			return t, checkMonthDays(t.MonthDays)
+		}
 		if len(t.Weekdays) == 0 || len(t.Weekdays) > 7 {
 			return t, errors.New("trigger.weekdays must list 1 to 7 weekdays (1 is Monday)")
 		}
@@ -165,6 +228,20 @@ func ParseTrigger(raw json.RawMessage) (Trigger, error) {
 		}
 	}
 	return t, nil
+}
+
+func checkMonthDays(days []MonthDay) error {
+	if len(days) == 0 || len(days) > 32 {
+		return errors.New(`trigger.month_days must list 1 to 32 days (1 to 31 and "last")`)
+	}
+	seen := map[MonthDay]bool{}
+	for _, d := range days {
+		if (d < 1 || d > 31) && d != LastDay || seen[d] {
+			return errors.New(`trigger.month_days must be distinct days from 1 to 31 or "last"`)
+		}
+		seen[d] = true
+	}
+	return nil
 }
 
 // Condition is a decoded condition: every predicate that is set must hold.
@@ -183,6 +260,8 @@ type Condition struct {
 	Habit    *bool
 	Estimate *MinutesPred
 	Tracked  *MinutesPred
+	// Unchanged: no field of the task changed in this many days (routines-dynamic-data D5).
+	Unchanged *int
 }
 
 // ProjectPred is `project`: one of the ids (and their sub-projects), or none.
@@ -225,7 +304,7 @@ type MinutesPred struct {
 }
 
 // ConditionKeys is the closed set of predicate names.
-var ConditionKeys = []string{"project", "section", "labels", "priority", "due", "deadline", "start", "evening", "blocked", "assignee", "origin", "habit", "estimate", "tracked"}
+var ConditionKeys = []string{"project", "section", "labels", "priority", "due", "deadline", "start", "evening", "blocked", "assignee", "origin", "habit", "estimate", "tracked", "unchanged"}
 
 // ParseCondition decodes and checks a non-null condition value.
 func ParseCondition(raw json.RawMessage) (Condition, error) {
@@ -300,6 +379,14 @@ func (c *Condition) parsePredicate(k string, v json.RawMessage) error {
 		c.Estimate, err = parseMinutesPred(v, "estimate", true)
 	case "tracked":
 		c.Tracked, err = parseMinutesPred(v, "tracked", false)
+	case "unchanged":
+		var p struct {
+			Days *int `json:"days"`
+		}
+		if strict(v, &p, "condition.unchanged") != nil || p.Days == nil || *p.Days < 1 || *p.Days > MaxDays {
+			return fmt.Errorf("condition.unchanged must be {days: 1..%d}", MaxDays)
+		}
+		c.Unchanged = p.Days
 	}
 	return err
 }
