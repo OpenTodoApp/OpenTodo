@@ -1,0 +1,5 @@
+# Focus del mattino: Italian text for templates/routines/morning-focus/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-9db121bbd935
+title: "Focus del mattino"
+summary: "Nei giorni feriali, mette nel focus di oggi le tre attività più importanti in scadenza oggi."
+description: "Ogni giorno feriale alle 7:30 questa routine trova le attività in scadenza oggi, le ordina per priorità e imposta le prime tre come focus di oggi, così inizi la giornata sapendo cosa viene prima.\n\nCambia il numero nella scheda Scegli per un focus più corto o più lungo. Serve il focus di oggi attivo."

@@ -1,0 +1,7 @@
+# Diario de lo hecho: Spanish text for templates/routines/done-journal/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-0c19b22827ea
+title: "Diario de lo hecho"
+summary: "Cuando completas una tarea, añade una línea con su título a la nota de tu proyecto diario."
+description: "Una lista de lo que has terminado sirve para las revisiones semanales, las reuniones diarias y los días malos. Cada vez que completas una tarea, esta rutina añade \"Hecho:\" y el título de la tarea a la nota de un proyecto que eliges, y la nota se convierte en un registro de tu trabajo.\n\nAñade una condición en la tarjeta Cuándo para registrar solo las tareas de un proyecto."
+ask.journal.suggest: "Diario"
+steps.0.in.text: "Hecho: {trigger}"

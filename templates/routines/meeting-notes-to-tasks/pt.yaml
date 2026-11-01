@@ -1,0 +1,5 @@
+# Das notas da reunião a tarefas: Portuguese text for templates/routines/meeting-notes-to-tasks/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-01d2cced429b
+title: "Das notas da reunião a tarefas"
+summary: "Executa-a numa tarefa de reunião para transformar as caixas abertas da nota em tarefas do seu projeto."
+description: "Toma notas numa tarefa de reunião e escreve cada ação como caixa de seleção: `- [ ] enviar a agenda`. Depois da reunião, executa esta rotina na tarefa a partir da paleta de comandos ou do menu da tarefa. Cada caixa aberta torna-se uma tarefa no projeto da tarefa de reunião; as linhas simples e as caixas marcadas ficam de fora.\n\nUma tarefa de reunião sem projeto envia as tarefas novas para a caixa de entrada."

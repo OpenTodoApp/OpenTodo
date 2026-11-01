@@ -30,8 +30,9 @@ export type Route =
   // Routines (routines-editor; automation-rules before): /routines, /routines/runs
   // the Runs tab; the editor page (routines-editor-page D1) at /routines/new
   // (/routines#new before) and /routines/<id>, ?run=<run> one run on it; /rules is
-  // the old address.
-  | { view: 'rules'; create?: boolean; tab?: 'runs'; id?: string; run?: string }
+  // the old address. The starters (routines-starters D5): /routines/starters and
+  // /routines/starters/<slug>.
+  | { view: 'rules'; create?: boolean; tab?: 'runs'; id?: string; run?: string; starters?: boolean; starter?: string }
   // All projects (sidebar-favourites D6): /projects, and /projects#archived with the archived projects open.
   | { view: 'projects'; archived?: boolean }
   | { view: 'filter'; q?: string }
@@ -148,6 +149,7 @@ export function parseRoute(pathname: string): Route {
     case 'routines':
     {
       if (hash === 'new' || parts[1] === 'new') return { view: 'rules', create: true }
+      if (parts[1] === 'starters') return parts[2] && /^[a-z0-9-]{1,64}$/.test(parts[2]) ? { view: 'rules', starters: true, starter: parts[2] } : { view: 'rules', starters: true }
       // ?run=<id>: a run opened from a notification, a channel message or an email.
       const run = new URLSearchParams(query).get('run')
       const base: Route = parts[1] === 'runs' ? { view: 'rules', tab: 'runs' } : parts[1] && /^[\w-]{1,64}$/.test(parts[1]) ? { view: 'rules', id: parts[1] } : { view: 'rules' }
@@ -279,6 +281,7 @@ export function routePath(r: Route): string {
     case 'places':
       return '/locations'
     case 'rules':
+      if (r.starters) return r.starter ? `/routines/starters/${encodeURIComponent(r.starter)}` : '/routines/starters'
       return (r.create ? '/routines/new' : r.tab === 'runs' ? '/routines/runs' : r.id ? `/routines/${encodeURIComponent(r.id)}` : '/routines') + (r.run ? `?run=${encodeURIComponent(r.run)}` : '')
     case 'invite':
     case 'reset':

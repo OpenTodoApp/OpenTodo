@@ -1,0 +1,5 @@
+# Foco de la mañana: Spanish text for templates/routines/morning-focus/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-9db121bbd935
+title: "Foco de la mañana"
+summary: "Las mañanas de diario, pone en el foco de hoy las tres tareas más importantes que vencen hoy."
+description: "Cada día laborable a las 7:30 esta rutina busca las tareas que vencen hoy, las ordena por prioridad y pone las tres primeras como foco de hoy, para empezar el día sabiendo qué va primero.\n\nCambia el número en la tarjeta Elegir para un foco más corto o más largo. Necesita el foco de hoy activado."

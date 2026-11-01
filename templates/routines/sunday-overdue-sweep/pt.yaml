@@ -1,0 +1,6 @@
+# Limpeza de atrasadas ao domingo: Portuguese text for templates/routines/sunday-overdue-sweep/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-070a8f99e646
+title: "Limpeza de atrasadas ao domingo"
+summary: "Todos os domingos às 18:00, move as tarefas atrasadas para segunda e diz-te quantas foram."
+description: "As tarefas atrasadas acumulam-se e fazem qualquer lista parecer pior do que é. Todos os domingos ao fim do dia esta rotina dá a cada tarefa atrasada uma data nova, segunda-feira, e envia-te uma só notificação com o número.\n\nNa segunda, revê-as: faz, reagenda ou apaga. Se a mesma tarefa muda de data todas as semanas, talvez não pertença à tua lista."
+steps.2.in.text: "{b} tarefas atrasadas movidas para segunda"

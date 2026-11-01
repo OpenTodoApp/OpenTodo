@@ -1,18 +1,11 @@
 ## ADDED Requirements
 
-### Requirement: New routine chooser
-"New routine" on the Routines page and in the palette SHALL open a chooser with Start empty, From a starter and Describe it. Describe it SHALL be shown only when the user can make an assistant turn: on a plaintext account the assistant is on and the user has consented for the provider in use; on an encrypted account the on-device assistant is set up and consented on this device. Otherwise the chooser SHALL leave it out and its search SHALL show "Set up the assistant to describe a routine" with a link to the assistant's settings. The chooser SHALL be usable by keyboard and work offline except for Describe it.
+### Requirement: Describe a routine
+The Routines page SHALL offer Describe it only when the user can make an assistant turn: on a plaintext account the assistant is on and the user has consented for the provider in use; on an encrypted account the on-device assistant is set up and consented on this device. Describe it SHALL take one sentence of at most 500 characters and SHALL produce a routine draft through the assistant: the model receives the catalogue of steps available to the user as the schema of one tool `draft_routine` and the names and ids of the user's projects, sections, labels, views and webhooks marked as untrusted, may call no other tool, and its draft SHALL be type-checked, with one retry carrying the errors. The draft SHALL open in the editor with "Drafted by AI: check each step, then Save" and its errors on their cards. Describe it SHALL never save, enable, test or run a routine. It SHALL use the provider, consent, allowance and usage of the assistant; on an encrypted account it SHALL run on the device through the on-device assistant, and nothing SHALL reach the OpenTodo server. Offline, Describe it SHALL say it needs a connection to the provider; nothing is queued.
 
 #### Scenario: No provider
-- **WHEN** the owner has not turned the assistant on and the user opens New routine
-- **THEN** the chooser offers Start empty and From a starter only
-
-#### Scenario: Not consented yet
-- **WHEN** the assistant is on but the user has not consented and types "describe" in the chooser's search
-- **THEN** the result reads "Set up the assistant to describe a routine" and opens the consent
-
-### Requirement: Describe a routine
-Describe it SHALL take one sentence of at most 500 characters and SHALL produce a routine draft through the assistant: the model receives the catalogue of steps available to the user as the schema of one tool `draft_routine` and the names and ids of the user's projects, sections, labels, views and webhooks marked as untrusted, may call no other tool, and its draft SHALL be type-checked, with one retry carrying the errors. The draft SHALL open in the editor with "Drafted by AI: check each step, then Save" and its errors on their cards. Describe it SHALL never save, enable, test or run a routine. It SHALL use the provider, consent, allowance and usage of the assistant; on an encrypted account it SHALL run on the device through the on-device assistant, and nothing SHALL reach the OpenTodo server.
+- **WHEN** the owner has not turned the assistant on and the user opens the Routines page
+- **THEN** the page offers New routine and Start from a starter only
 
 #### Scenario: A sentence becomes a draft
 - **WHEN** the user describes "every Friday at five, make tasks in Errands from my Groceries note"

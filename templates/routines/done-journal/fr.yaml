@@ -1,0 +1,7 @@
+# Journal du fait: French text for templates/routines/done-journal/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-0c19b22827ea
+title: "Journal du fait"
+summary: "Quand tu termines une tâche, ajoute une ligne avec son titre à la note de ton projet journal."
+description: "La liste de ce que tu as terminé est utile pour les revues de la semaine, les points du matin et les mauvais jours. Chaque fois que tu termines une tâche, cette routine ajoute « Fait : » et le titre de la tâche à la note d'un projet que tu choisis, et la note devient un registre de ton travail.\n\nAjoute une condition sur la carte Quand pour ne noter que les tâches d'un projet."
+ask.journal.suggest: "Journal"
+steps.0.in.text: "Fait : {trigger}"

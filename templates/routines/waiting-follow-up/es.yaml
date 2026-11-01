@@ -1,0 +1,7 @@
+# Seguimiento de esperas: Spanish text for templates/routines/waiting-follow-up/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-bdd3ab2f2d6d
+title: "Seguimiento de esperas"
+summary: "Cuando una tarea recibe tu etiqueta de espera, anota la fecha y te la devuelve en tres días."
+description: "Esperar a alguien es fácil de olvidar. Cuando añades tu etiqueta de espera a una tarea, esta rutina comenta \"Esperando desde\" con la fecha de hoy y hace que la tarea venza en tres días, para que vuelva a ti y hagas el seguimiento.\n\nCambia el número de días en la última tarjeta según lo rápido que suela responder la gente."
+ask.waiting.suggest: "en espera"
+steps.1.in.text: "Esperando desde {a}"

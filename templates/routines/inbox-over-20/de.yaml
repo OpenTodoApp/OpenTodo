@@ -1,0 +1,6 @@
+# Eingang über 20: German text for templates/routines/inbox-over-20/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-7616aafaa5e8
+title: "Eingang über 20"
+summary: "An Werktagen morgens erfährst du, wenn dein Eingang mehr als 20 Aufgaben enthält."
+description: "Ein Eingang funktioniert, wenn er oft geleert wird. Jeden Werktag um 9:00 zählt diese Routine die Aufgaben ohne Projekt und benachrichtigt dich, wenn es mehr als 20 sind, damit du weißt, dass es Zeit zum Sortieren ist.\n\nÄndere die Zahl auf der Wenn-Karte auf die Größe, die dir zu viel ist."
+steps.2.then.0.in.text: "Dein Eingang enthält {b} Aufgaben: Zeit zum Sortieren"

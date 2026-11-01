@@ -1,0 +1,7 @@
+# Resumo de sexta por email: Portuguese text for templates/routines/friday-digest-email/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-926c1534c942
+title: "Resumo de sexta por email"
+summary: "Todas as sextas às 16:00, envia-te por email a lista das tarefas que concluíste esta semana."
+description: "Todas as sextas à tarde esta rotina encontra as tarefas que concluíste esta semana, conta-as e envia-te a lista por email. É um registo discreto da semana, útil para uma revisão ou um relatório.\n\nPrecisa do email de saída no teu servidor e de um endereço de email verificado. Sem eles, usa Notificar-me em vez de Enviar e-mail para mim."
+steps.2.in.template: "{b} tarefas feitas esta semana:\n{a}"
+steps.3.in.subject: "A tua semana"
