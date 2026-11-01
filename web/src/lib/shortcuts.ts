@@ -8,7 +8,7 @@
 // the same keys in one scope, or in a scope and an ancestor scope, without an
 // explicit `overrides`.
 
-export type ShortcutSection = 'everywhere' | 'go' | 'tasks' | 'board' | 'calendar' | 'filter' | 'trash' | 'triage' | 'focus' | 'notes' | 'review' | 'display' | 'comments' | 'settings' | 'vim'
+export type ShortcutSection = 'everywhere' | 'go' | 'tasks' | 'board' | 'calendar' | 'filter' | 'trash' | 'triage' | 'focus' | 'notes' | 'routines' | 'review' | 'display' | 'comments' | 'settings' | 'vim'
 
 /**
  * Where a shortcut applies. The dispatcher runs the innermost active scope first:
@@ -69,6 +69,7 @@ export const SHORTCUT_SECTIONS: { id: ShortcutSection; title: string }[] = [
   { id: 'triage', title: 'Process the Inbox' },
   { id: 'focus', title: 'Focus' },
   { id: 'notes', title: 'Notes' },
+  { id: 'routines', title: 'Routine editor' },
   { id: 'review', title: 'Reviews' },
   { id: 'display', title: 'Display mode' },
   { id: 'comments', title: 'Comments and notes' },
@@ -99,6 +100,8 @@ export const VIEW_SCOPES: Record<string, ShortcutScope[]> = {
   focus: [],
   // Notes (notes-overview D7): the page's own list of notes, not a task list; `q` and `/` are its `view` entries.
   notes: [],
+  // Routines (routines-editor D13): the page's list and the editor's cards, no task list; the editor's keys are local.
+  rules: [],
 }
 
 /** The scopes an entry in `scope` shadows when it binds the same keys (`vim` shadows every scope). */
@@ -349,6 +352,13 @@ export const SHORTCUTS: Shortcut[] = [
   // ---- Notes (notes-overview D7): `q` overrides the global quick add as the calendar's does; `/` focuses the search as in Settings.
   { id: 'notes.new', keys: ['q'], description: 'On the Notes page: start a new note', section: 'notes', scope: 'view', views: ['notes'], overrides: ['list.quick-add'] },
   { id: 'notes.search', keys: ['/'], description: 'On the Notes page: focus the search field, which finds notes by every word', section: 'notes', scope: 'view', views: ['notes'] },
+  // The routine editor (routines-editor D13): handled by the editor itself, only while it is open.
+  { id: 'routines.move-up', keys: ['Alt+↑'], description: 'In the routine editor: move the focused step up (Alt+↓ moves it down)', section: 'routines', scope: 'view', views: ['rules'], local: true, when: 'focused step' },
+  { id: 'routines.move-down', keys: ['Alt+↓'], description: 'In the routine editor: move the focused step down', section: 'routines', scope: 'view', views: ['rules'], local: true, when: 'focused step', hidden: true },
+  { id: 'routines.add-step', keys: ['a'], description: 'In the routine editor: add a step below the focused step; Delete asks to delete it', section: 'routines', scope: 'view', views: ['rules'], local: true, when: 'focused step' },
+  { id: 'routines.save', keys: ['Ctrl+Enter', '⌘+Enter'], description: 'In the routine editor: save the routine', section: 'routines', scope: 'view', views: ['rules'], local: true, typing: true },
+  { id: 'routines.test', keys: ['Ctrl+Shift+Enter', '⌘+Shift+Enter'], description: 'In the routine editor: test the routine (writes nothing)', section: 'routines', scope: 'view', views: ['rules'], local: true, typing: true },
+  { id: 'routines.words', keys: ['←', '→'], description: 'In the routine editor: move between the words of a step; Esc closes a picker, then the editor', section: 'routines', scope: 'view', views: ['rules'], local: true },
 
   // ---- Process the Inbox (inbox-triage): one Inbox task at a time, a key per decision; every decision but Labels moves on to the next task.
   { id: 'triage.today', keys: ['t'], description: 'Due today, then the next task', section: 'triage', scope: 'view', views: ['triage'] },

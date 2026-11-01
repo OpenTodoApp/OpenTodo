@@ -11,11 +11,11 @@ order: 46
 
 <picture><source srcset="images/rules-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/rules-light.webp" alt="The Rules page with three rules, each with its switch and a one-line summary such as When label waiting is added → priority 3."></picture>
 
-A rule says **when** something happens, **which tasks** it is for, and **what** to change. *When the label waiting is added, move the task to the Waiting section of Work.* Rules run on your server, so they work while every device is closed. Open **More → Rules**.
+A rule says **when** something happens, **which tasks** it is for, and **what** to change. *When the label waiting is added, move the task to the Waiting section of Work.* Rules run on your server, so they work while every device is closed. Open **More → [Routines](routines.md)**.
 
 ## Make a rule
 
-Choose **New rule**, name it, then:
+Choose **New routine**, name it, then fill its **When** card and one **Change tasks** card:
 
 - **When**: a task is created, completed or reopened; a label is added or removed; a task is assigned to you or moved to a project or section; a task is due (at its time, 09:00 for a date without a time); a task's date passes (at the start of the next day); or on a schedule, at a time on chosen weekdays.
 - **Only for tasks that**: optional conditions, all of which must hold: project (with its sub-projects), labels, priority, date, deadline, assignee, blocked. The editor shows how many open tasks match now.

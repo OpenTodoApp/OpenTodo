@@ -113,7 +113,7 @@ const ROUTES: RouteCommand[] = translatedList<RouteCommand, 'label'>([
   // Saved locations (task-locations D7): a command without a default key.
   { label: msg('Go to Locations'), route: { view: 'places' }, icon: 'map-pin', keywords: 'places map addresses' },
   { label: msg('Go to Routines'), route: { view: 'rules' }, icon: 'zap', keywords: 'rules automations automation triggers' },
-  { label: msg('New rule'), route: { view: 'rules', create: true }, icon: 'zap', keywords: 'automation create' },
+  { label: msg('New routine'), route: { view: 'rules', create: true }, icon: 'zap', keywords: 'rule automation create' },
   { label: msg('Go to Updates'), route: { view: 'feed' }, icon: 'newspaper', shortcut: keysOf('go.feed'), keywords: 'activity feed changes' },
   { label: msg('Go to Assistant'), route: { view: 'ask' }, icon: 'message-circle', shortcut: keysOf('go.ask') },
   { label: msg('Open Help'), route: { view: 'help' }, icon: 'list', shortcut: keysOf('go.help') },
