@@ -6349,5 +6349,13 @@
   "OpenTodo Light": "OpenTodo Claro",
   "OpenTodo contributors": "Colaboradores do OpenTodo",
   "The colours of the whole app, for light and for dark": "As cores de toda a app, para claro e para escuro",
-  "Theme is invalid": "O tema é inválido"
+  "Theme is invalid": "O tema é inválido",
+  "About this theme": "Sobre este tema",
+  "Also use {name} at night": "Usar também {name} à noite",
+  "Also use {name} by day": "Usar também {name} de dia",
+  "Author": "Autor",
+  "Licence": "Licença",
+  "Copyright": "Direitos de autor",
+  "Some colours were adapted for contrast": "Algumas cores foram adaptadas para ter contraste suficiente",
+  "OpenTodo is not affiliated with this project": "O OpenTodo não está afiliado a este projeto"
 }

@@ -1,0 +1,52 @@
+{
+  "opentodoTheme": 1,
+  "id": "nord",
+  "name": "Nord",
+  "author": "Sven Greb",
+  "licence": "MIT",
+  "source": "https://github.com/nordtheme/nord",
+  "kind": "dark",
+  "seeds": {
+    "canvas": "#2e3440",
+    "surface": "#2e3440",
+    "text": "#d8dee9",
+    "accent": "#88c0d0",
+    "success": "#a3be8c",
+    "warning": "#ebcb8b",
+    "danger": "oklch(0.7911 0.1206 15.34)",
+    "info": "oklch(0.7765 0.0591 248.69)"
+  },
+  "tokens": {
+    "text-strong": "#eceff4",
+    "faint": "oklch(0.7748 0.0352 264.13)",
+    "raised": "#3b4252",
+    "selected": "#434c5e",
+    "accent-text": "#88c0d0",
+    "hue-red": "oklch(0.7486 0.1206 15.34)",
+    "hue-orange": "oklch(0.7429 0.0963 38.24)",
+    "hue-yellow": "#ebcb8b",
+    "hue-lime": "#a3be8c",
+    "hue-green": "oklch(0.731 0.1206 151.71)",
+    "hue-teal": "#8fbcbb",
+    "hue-cyan": "#88c0d0",
+    "hue-blue": "oklch(0.7315 0.0591 248.69)",
+    "hue-indigo": "oklch(0.7385 0.1206 276.93)",
+    "hue-violet": "oklch(0.741 0.1206 293.54)",
+    "hue-pink": "oklch(0.7396 0.0625 332.66)",
+    "hue-slate": "oklch(0.7323 0.0352 264.13)"
+  },
+  "bar": "#2e3440",
+  "notes": {
+    "adapted": {
+      "danger": "#bf616a",
+      "info": "#81a1c1",
+      "faint": "#4c566a",
+      "hue-red": "#bf616a",
+      "hue-orange": "#d08770",
+      "hue-blue": "#81a1c1",
+      "hue-pink": "#b48ead",
+      "hue-slate": "#4c566a"
+    },
+    "text": "Nord by Sven Greb, mapped onto OpenTodo's tokens by web/src/lib/theme/builtin/MAPPING.md. Label colours not in the palette (green, indigo, violet) use OpenTodo's hue at the palette's lightness and chroma. Some colours were adapted for contrast: their published values are under adapted."
+  }
+}
