@@ -279,7 +279,7 @@
       "steps": [
         {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "today"}}}},
         {"id": "b", "kind": "sort", "in": {"list": {"ref": "a"}, "by": {"literal": "priority"}}},
-        {"id": "c", "kind": "take", "in": {"list": {"ref": "b"}, "n": {"literal": 1}}},
+        {"id": "c", "kind": "take", "in": {"list": {"ref": "b"}, "n": {"literal": 1}, "from": {"literal": "start"}}},
         {"id": "d", "kind": "start_timer", "in": {"task": {"ref": "c"}}}
       ],
       "expect": {"timer": "d2"}
@@ -371,6 +371,37 @@
           {"id": "f", "kind": "add_comment", "in": {"task": {"ref": "item"}, "text": {"ref": "e"}}}]}
       ],
       "expect": {"comments": {"w1": ["Call Ada"], "w2": ["Book room"]}}
+    },
+    {
+      "row": 14,
+      "name": "Monthly review (starter): on the 1st of each month, create the review project from the template",
+      "trigger": {"kind": "schedule", "at": "09:00", "month_days": [1]},
+      "steps": [
+        {"id": "a", "kind": "project_from_template", "in": {"template": {"literal": "weekly-review"}, "start": {"ref": "trigger"}}}
+      ],
+      "expect": {"created_count": 9}
+    },
+    {
+      "row": 16, "editor": true,
+      "name": "Every Monday, comment Still relevant? on tasks nobody changed for 30 days",
+      "tasks": [{"id": "s1", "changed_on": "2026-09-01"}, {"id": "s2", "changed_on": "2026-09-15"}, {"id": "n1"}],
+      "trigger": {"kind": "schedule", "at": "09:00", "weekdays": [1]}, "condition": {"unchanged": {"days": 30}},
+      "steps": [
+        {"id": "a", "kind": "add_comment", "in": {"task": {"ref": "trigger"}, "text": {"literal": "Still relevant?"}}}
+      ],
+      "expect": {"comments": {"s1": ["Still relevant?"], "s2": ["Still relevant?"]}}
+    },
+    {
+      "row": 30,
+      "name": "On the last day of the month, notify me how many tasks I completed this month",
+      "tasks": [{"id": "c1", "completed_on": "2026-10-05"}, {"id": "c2", "completed_on": "2026-10-20"}, {"id": "c3", "completed_on": "2026-09-30"}, {"id": "x1"}],
+      "trigger": {"kind": "schedule", "at": "20:00", "month_days": ["last"]},
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"query": {"literal": "completed = this month"}}},
+        {"id": "b", "kind": "count", "in": {"list": {"ref": "a"}}},
+        {"id": "c", "kind": "notify", "in": {"text": {"literal": {"format": "{b} done this month"}}}}
+      ],
+      "expect": {"notices": ["2 done this month"]}
     }
   ]
 }

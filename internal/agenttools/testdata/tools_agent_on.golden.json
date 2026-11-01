@@ -1910,7 +1910,7 @@
             "type": "string"
           },
           "task_id": {
-            "description": "The task the routine's steps read as the trigger's task, for a routine that reads one.",
+            "description": "The task a manual routine is run on (its steps read it as the trigger), for a routine that reads one.",
             "type": "string"
           },
           "test": {
@@ -1988,12 +1988,12 @@
             "type": "string"
           },
           "steps": {
-            "description": "JSON text of the steps, a list of at most 20: {id, kind, in: {name: {ref: step-id|trigger|item} | {literal: value}}, then?, otherwise?, do?}. Step kinds and their inputs: see docs/routines.md and the API's catalogue. No step may create, edit or run a routine.",
+            "description": "JSON text of the steps, a list of at most 20: {id, kind, in: {name: {ref: step-id|trigger|item} | {literal: value}}, then?, otherwise?, do?}. Step kinds and their inputs: see docs/routines.md and the API's catalogue. Steps read tasks from the trigger or earlier steps: a step that takes a task and gets a list runs once per task, so add_comment with task {ref: a} comments on each task step a found. Pick is take (from start|end|all, n default 1) or filter (where). A specific task literal {task: id} is for rare fixed targets only. No step may create, edit or run a routine.",
             "maxLength": 32768,
             "type": "string"
           },
           "trigger": {
-            "description": "JSON text of the trigger: {kind} with kind task.created, task.completed, task.reopened, label.added or label.removed (label_id), assigned.to_me, task.moved (project_id, section_id?), due.reached, overdue, schedule (at HH:MM, weekdays 1-7) or manual (only when run).",
+            "description": "JSON text of the trigger: {kind} with kind task.created, task.completed, task.reopened, label.added or label.removed (label_id), assigned.to_me, task.moved (project_id, section_id?), due.reached, overdue, schedule (at HH:MM, and weekdays 1-7 or month_days 1-31 and \"last\") or manual (only when run).",
             "maxLength": 2000,
             "type": "string"
           }
@@ -2039,12 +2039,12 @@
             "type": "string"
           },
           "steps": {
-            "description": "JSON text of the steps, a list of at most 20: {id, kind, in: {name: {ref: step-id|trigger|item} | {literal: value}}, then?, otherwise?, do?}. Step kinds and their inputs: see docs/routines.md and the API's catalogue. No step may create, edit or run a routine.",
+            "description": "JSON text of the steps, a list of at most 20: {id, kind, in: {name: {ref: step-id|trigger|item} | {literal: value}}, then?, otherwise?, do?}. Step kinds and their inputs: see docs/routines.md and the API's catalogue. Steps read tasks from the trigger or earlier steps: a step that takes a task and gets a list runs once per task, so add_comment with task {ref: a} comments on each task step a found. Pick is take (from start|end|all, n default 1) or filter (where). A specific task literal {task: id} is for rare fixed targets only. No step may create, edit or run a routine.",
             "maxLength": 32768,
             "type": "string"
           },
           "trigger": {
-            "description": "JSON text of the trigger: {kind} with kind task.created, task.completed, task.reopened, label.added or label.removed (label_id), assigned.to_me, task.moved (project_id, section_id?), due.reached, overdue, schedule (at HH:MM, weekdays 1-7) or manual (only when run).",
+            "description": "JSON text of the trigger: {kind} with kind task.created, task.completed, task.reopened, label.added or label.removed (label_id), assigned.to_me, task.moved (project_id, section_id?), due.reached, overdue, schedule (at HH:MM, and weekdays 1-7 or month_days 1-31 and \"last\") or manual (only when run).",
             "maxLength": 2000,
             "type": "string"
           }

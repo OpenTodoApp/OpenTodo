@@ -193,7 +193,8 @@ export function RunDetailBody({ rule, ruleId: givenRule, runId, initial }: RunDe
   const steps: RoutineStep[] = []
   if (rule) walkSteps(draftOf(rule).steps, (s) => steps.push(s))
   const draft = rule ? draftOf(rule) : null
-  const ctx = draft ? { draft, types: draftTypes(draft), outputs: outputNames(draft.steps, valueNamer(names)), names } : null
+  const types = draft ? draftTypes(draft) : {}
+  const ctx = draft ? { draft, types, outputs: outputNames(draft.steps, valueNamer(names), types), names } : null
   const records = new Map((run?.steps ?? []).map((r) => [r.step_id, r]))
   const undo = () => {
     if (!run) return

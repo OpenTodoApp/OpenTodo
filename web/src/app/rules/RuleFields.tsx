@@ -24,6 +24,7 @@ const DUE_LABEL = translatedMap({ today: msg('Today'), tomorrow: msg('Tomorrow')
 const START_LABEL = translatedMap({ someday: msg('Someday'), clear: msg('Clear the start') })
 const STATE_LABEL = translatedMap({ complete: msg('Complete'), reopen: msg('Reopen') })
 const WEEKDAYS = [1, 2, 3, 4, 5, 6, 7] as const
+const MONTH_DAYS = Array.from({ length: 31 }, (_, i) => i + 1)
 const WEEKDAY_SHORT = translatedMap<string>({ 1: msg('Mon'), 2: msg('Tue'), 3: msg('Wed'), 4: msg('Thu'), 5: msg('Fri'), 6: msg('Sat'), 7: msg('Sun') })
 
 const row = 'flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-body'
@@ -62,6 +63,8 @@ export function TriggerFields({ value, onChange, names, sharedProjects }: { valu
     else onChange({ kind })
   }
   const days = value.weekdays ?? []
+  const monthDays = value.month_days ?? []
+  const monthly = monthDays.length > 0
   return (
     <fieldset className="space-y-2" data-rule-trigger>
       <legend className="text-meta font-medium text-muted">{t('When')}</legend>
@@ -90,13 +93,33 @@ export function TriggerFields({ value, onChange, names, sharedProjects }: { valu
           <Field label={t('Time')}>
             <Input type="time" value={value.at ?? ''} onChange={(e) => onChange({ ...value, at: e.target.value })} />
           </Field>
-          <div className="flex flex-wrap gap-1" role="group" aria-label={t('Days')}>
-            {WEEKDAYS.map((d) => (
-              <button key={d} type="button" aria-pressed={days.includes(d)}
-                className={`ui-btn ui-btn--sm ${days.includes(d) ? 'ui-btn--primary' : 'ui-btn--ghost'}`}
-                onClick={() => onChange({ ...value, weekdays: days.includes(d) ? days.filter((x) => x !== d) : [...days, d].sort() })}>{WEEKDAY_SHORT[d]}</button>
-            ))}
+          <div className="flex flex-wrap gap-1" role="group" aria-label={t('Repeats')}>
+            <button type="button" aria-pressed={!monthly} className={`ui-btn ui-btn--sm ${!monthly ? 'ui-btn--primary' : 'ui-btn--ghost'}`}
+              onClick={() => onChange({ kind: 'schedule', at: value.at, weekdays: [7] })}>{t('Every week')}</button>
+            <button type="button" aria-pressed={monthly} className={`ui-btn ui-btn--sm ${monthly ? 'ui-btn--primary' : 'ui-btn--ghost'}`}
+              onClick={() => onChange({ kind: 'schedule', at: value.at, month_days: [1] })}>{t('Every month')}</button>
           </div>
+          {monthly ? (
+            // Days of the month (routines-dynamic-data D5): 31 does not fire in April; "Last" does.
+            <div className="flex flex-wrap gap-1" role="group" aria-label={t('Days of the month')} data-month-days>
+              {[...MONTH_DAYS, 'last' as const].map((d) => {
+                const on = monthDays.includes(d)
+                const next = on ? monthDays.filter((x) => x !== d) : [...monthDays, d]
+                return (
+                  <button key={d} type="button" aria-pressed={on} className={`ui-btn ui-btn--sm ${on ? 'ui-btn--primary' : 'ui-btn--ghost'}`}
+                    onClick={() => next.length && onChange({ ...value, month_days: next })}>{d === 'last' ? t('Last day') : d}</button>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-1" role="group" aria-label={t('Days')}>
+              {WEEKDAYS.map((d) => (
+                <button key={d} type="button" aria-pressed={days.includes(d)}
+                  className={`ui-btn ui-btn--sm ${days.includes(d) ? 'ui-btn--primary' : 'ui-btn--ghost'}`}
+                  onClick={() => onChange({ ...value, weekdays: days.includes(d) ? days.filter((x) => x !== d) : [...days, d].sort() })}>{WEEKDAY_SHORT[d]}</button>
+              ))}
+            </div>
+          )}
         </>
       )}
     </fieldset>
@@ -180,6 +203,11 @@ export function ConditionFields({ value, onChange, names }: { value: RuleConditi
           <option value="false">{t('Not blocked')}</option>
         </select>
       </label>
+      {/* Stale tasks: no field changed in N days (routines-dynamic-data D5); empty for any. */}
+      <Field label={t('Not changed for days')} className="w-44">
+        <Input type="number" min={1} max={365} placeholder={t('Any')} value={value.unchanged?.days ?? ''} data-rule-unchanged
+          onChange={(e) => { const n = Math.round(Number(e.target.value)); set('unchanged', e.target.value && n >= 1 ? { days: Math.min(365, n) } : undefined) }} />
+      </Field>
     </fieldset>
   )
 }

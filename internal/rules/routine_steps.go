@@ -204,7 +204,8 @@ func (st *runState) matchCond(c *ruleval.Condition, t opsync.Entity) bool {
 	ctx := ruleval.Context{UserID: st.w.uid, Today: st.w.today, Parent: st.w.parent, Open: func(id string) bool {
 		x, ok := st.tasks[id]
 		return ok && opsync.IsNull(x["completed_at"]) && opsync.IsNull(x["deleted_at"])
-	}, Tracked: func(id string) int { return st.e.trackedMinutes(st.ctx, st.w)[id] }}
+	}, Tracked: func(id string) int { return st.e.trackedMinutes(st.ctx, st.w)[id] },
+		Changed: func(id string) string { return st.e.changedDates(st.ctx, st.w)[id] }}
 	return ruleval.Matches(c, st.w.matchTask(t), ctx)
 }
 

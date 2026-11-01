@@ -48,7 +48,8 @@ function useRulesStatus(rules: Rule[]): [RulesStatus | null, (s: RulesStatus) =>
 export function routineLine(rule: Rule, names: RoutineNames): string {
   if (!rule.steps) return summarizeRule(rule, names)
   const draft = draftOf(rule)
-  const ctx = { draft, types: draftTypes(draft), outputs: outputNames(draft.steps, valueNamer(names)), names }
+  const types = draftTypes(draft)
+  const ctx = { draft, types, outputs: outputNames(draft.steps, valueNamer(names), types), names }
   const lower = (s: string) => s.charAt(0).toLocaleLowerCase() + s.slice(1)
   const when = triggerText(rule.trigger, names)
   return `${when.charAt(0).toLocaleUpperCase()}${when.slice(1)} → ${draft.steps.map((s) => lower(sentenceText(s, ctx))).join(', ')}`

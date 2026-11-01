@@ -13,17 +13,26 @@ import type { RoutineStepType } from '../../lib/types'
 import { Dialog, Icon, Input } from '../../ui'
 
 /** Suggestions per output type of the step above, best first (D6). */
+// A list flows into every task step, so Add a comment follows Tasks; Pick
+// (take) chooses which items; Get a specific task is never suggested
+// (routines-dynamic-data D2, D4).
 const SUGGEST: Record<RoutineStepType | 'start', string[]> = {
-  lines: ['create_tasks', 'filter', 'count', 'join', 'sort', 'take'],
-  tasks: ['change_tasks', 'count', 'filter', 'sort', 'take', 'repeat'],
+  lines: ['create_tasks', 'take', 'count', 'join', 'sort', 'append_to_note'],
+  tasks: ['change_tasks', 'add_comment', 'take', 'sort', 'count', 'repeat'],
   text: ['split_lines', 'notify', 'create_tasks', 'replace', 'email_me', 'append_to_note'],
   number: ['if', 'notify', 'format'],
-  task: ['change_tasks', 'add_comment', 'note_text', 'get_task', 'start_timer'],
+  task: ['change_tasks', 'add_comment', 'note_text', 'start_timer', 'project_of'],
   project: ['create_tasks', 'note_text', 'update_project', 'create_sections'],
   date: ['create_tasks', 'find_tasks', 'format'],
   none: ['find_tasks', 'create_tasks', 'note_text', 'notify', 'format', 'if'],
   start: ['find_tasks', 'create_tasks', 'note_text', 'notify', 'format', 'split_lines'],
 }
+
+/**
+ * Kinds found by search only: Get a specific task (the rare fixed target) and
+ * Filter (Pick's "the ones where" mode), routines-dynamic-data D2, D4.
+ */
+const SEARCH_ONLY = new Set(['get_task', 'filter'])
 
 /** The suggested kinds after a step with this output, available only, at most six. */
 export function suggestions(above: RoutineStepType | 'start', cat: Catalogue | null): string[] {
@@ -77,7 +86,7 @@ export function AddStepSheet({ above, catalogue, onPick, onClose }: {
               </section>
             )}
             {GROUPS.map((g) => {
-              const kinds = all.filter((k) => STEPS.find((x) => x.kind === k)!.group === g && isAvailable(catalogue, k))
+              const kinds = all.filter((k) => !SEARCH_ONLY.has(k) && STEPS.find((x) => x.kind === k)!.group === g && isAvailable(catalogue, k))
               if (!kinds.length) return null
               return (
                 <details key={g} className="group" data-add-group={g} open={typeof window !== 'undefined' && window.matchMedia?.('(min-width: 40rem)').matches}>

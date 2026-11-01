@@ -1,10 +1,12 @@
 // One-tap fixes for type errors (OpenSpec change routines-editor, design D5):
 // a fixed table from the shared checker's error to one edit of the draft. A fix
 // either changes the steps (insert a conversion, wrap in Repeat) or asks the
-// editor to open the word's picker ("Choose another value"). Pure.
+// editor to open the word's picker ("Choose another value"). A fix wires the
+// data that flows into the step and never inserts a task chosen by hand
+// (routines-dynamic-data D3). Pure.
 import { t } from '../i18n'
 import type { RoutineStep, RoutineStepType } from '../types'
-import { findStep, insertStep, newId, placeOf, removeStep, setInput, type RoutineDraft } from './draft'
+import { findStep, insertStep, nearestFlowing, newId, placeOf, removeStep, setInput, type RoutineDraft } from './draft'
 import { stepName, typeLabel } from './sentence'
 import { stepKind, type StepError } from './steps'
 
@@ -58,12 +60,45 @@ function wrapInRepeat(from: string, id: string, input: string) {
   }
 }
 
-/** The fix for an error, or null when the table has none. */
-export function fixFor(d: RoutineDraft, e: StepError): Fix | null {
+/** Inserts Find tasks above a step and points its input at the found tasks. */
+function findTasksAbove(id: string, input: string) {
+  return (d: RoutineDraft): RoutineDraft => {
+    const place = placeOf(d.steps, id)
+    if (!place) return d
+    const fid = newId(d.steps)
+    const steps = insertStep(d.steps, place, { id: fid, kind: 'find_tasks', in: { condition: { literal: {} } } })
+    return { ...d, steps: setInput(steps, id, input, { ref: fid }) }
+  }
+}
+
+/** What a fix needs to wire flowing data: the outputs' types (as checked) and their names. */
+export interface FlowContext {
+  types: Record<string, RoutineStepType>
+  name: (ref: string) => string
+}
+
+/** The fix for an empty input or a removed reference: the nearest flowing value, else Find tasks for a task input. */
+function wireFix(d: RoutineDraft, e: StepError, step: RoutineStep, flow: FlowContext): Fix | null {
+  const def = stepKind(step.kind)?.inputs.find((x) => x.name === e.input)
+  if (!def || !def.accepts.length) return null
+  const f = nearestFlowing(d, step.id, def, flow.types)
+  if (f) {
+    return { kind: 'edit', label: t('Use {name}', { name: flow.name(f.ref) }), apply: (x) => ({ ...x, steps: setInput(x.steps, step.id, def.name, { ref: f.ref }) }) }
+  }
+  if (def.accepts.includes('task') || def.accepts.includes('tasks')) return { kind: 'edit', label: t('Find tasks…'), apply: findTasksAbove(step.id, def.name) }
+  return null
+}
+
+/** The fix for an error, or null when the table has none. With `flow`, an empty input is wired to the data that flows there. */
+export function fixFor(d: RoutineDraft, e: StepError, flow?: FlowContext): Fix | null {
   const step = findStep(d.steps, e.step)
   if (!step || !e.input) return null
   const arg = step.in?.[e.input]
   const from = arg && 'ref' in arg ? arg.ref : ''
+  if (flow && (e.code === 'missing_input' || e.code === 'unknown_ref')) {
+    const w = wireFix(d, e, step, flow)
+    if (w) return w
+  }
   if (e.code === 'unknown_ref' || e.code === 'missing_input' || e.code === 'no_output' || e.code === 'invalid_literal') {
     return { kind: 'choose', label: e.code === 'missing_input' ? t('Choose a value') : t('Choose another value'), step: e.step, input: e.input }
   }
@@ -79,7 +114,6 @@ export function fixFor(d: RoutineDraft, e: StepError): Fix | null {
   if ((got === 'tasks' || got === 'lines') && wants('number')) return { kind: 'edit', label: insert('count'), apply: convert('count', from, e.step, e.input, 'list') }
   if (got === 'lines' && wants('text')) return { kind: 'edit', label: insert('join'), apply: convert('join', from, e.step, e.input, 'lines') }
   if (got === 'text' && wants('lines')) return { kind: 'edit', label: insert('split_lines'), apply: convert('split_lines', from, e.step, e.input, 'text') }
-  if (got === 'tasks' && wants('task')) return { kind: 'edit', label: t('Wrap in {step}', { step: stepName('repeat') }), apply: wrapInRepeat(from, e.step, e.input) }
   return null
 }
 

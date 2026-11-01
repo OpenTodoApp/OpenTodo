@@ -7,11 +7,11 @@ import { useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { t } from '../../lib/i18n'
 import type { Catalogue } from '../../lib/rules/catalogue'
 import { isAvailable, reasonText, settingPath } from '../../lib/rules/catalogue'
-import type { RoutineDraft } from '../../lib/rules/draft'
+import { pickModeOf, pickUnsorted, PICK_MODES, setPickMode, sortBeforePick, type PickMode, type RoutineDraft } from '../../lib/rules/draft'
 import type { Fix } from '../../lib/rules/fixes'
 import { roundEstimate } from '../../lib/rules/ai'
 import { previewLines, type Preview } from '../../lib/rules/preview'
-import { addableInputs, countText, extraInputs, inputLabel, sentenceParts, stepName } from '../../lib/rules/sentence'
+import { addableInputs, countText, extraInputs, inputLabel, PICK_MENU, PICK_WORD, sentenceParts, stepName } from '../../lib/rules/sentence'
 import { conditionParts, triggerText } from '../../lib/rules/summary'
 import { stepKind } from '../../lib/rules/steps'
 import type { RoutineArg, RoutineStep, RuleCondition, RuleTrigger } from '../../lib/types'
@@ -48,6 +48,8 @@ export function sentenceText(step: RoutineStep, ctx: WordContext): string {
   const k = stepKind(step.kind)
   return sentenceParts(step).map((p) => {
     if ('text' in p) return p.text
+    if (isPick(step.kind) && p.slot === 'from') return t(PICK_WORD[pickModeOf(step)])
+    if (isPick(step.kind) && p.slot === 'n' && !['first_n', 'last_n'].includes(pickModeOf(step))) return ''
     const def = k?.inputs.find((d) => d.name === p.slot)
     return def ? wordValue(step, def, ctx).shown || '…' : ''
   }).join('').replace(/\s+/g, ' ').trim()
@@ -94,10 +96,53 @@ function OutputLine({ step, state }: { step: RoutineStep; state: CardState }) {
   )
 }
 
+const isPick = (kind: string) => kind === 'take' || kind === 'filter'
+
+/** Pick's mode word and its menu (routines-dynamic-data D2): switching keeps the step's id, so later steps keep reading it. */
+function PickModeWord({ step, events }: { step: RoutineStep; events: CardEvents }) {
+  const [open, setOpen] = useState(false)
+  const anchor = useRef<HTMLButtonElement>(null)
+  const mode = pickModeOf(step)
+  const choose = (m: PickMode) => {
+    setOpen(false)
+    if (m !== mode) events.edit((d) => setPickMode(d, step.id, m))
+  }
+  return (
+    <>
+      <WordButton ref={anchor} label={t('Which')} value={t(PICK_WORD[mode])} placeholder="" action={t('change')} onClick={() => setOpen(true)} />
+      <Popover open={open} onClose={() => setOpen(false)} anchor={anchor} label={t('Which')} className="p-2">
+        <ul className="space-y-0.5" data-pick-modes>
+          {PICK_MODES.map((m) => (
+            <li key={m}>
+              <Button size="sm" variant={m === mode ? 'primary' : 'ghost'} aria-pressed={m === mode} data-pick-mode={m} onClick={() => choose(m)}>{t(PICK_MENU[m])}</Button>
+            </li>
+          ))}
+        </ul>
+      </Popover>
+    </>
+  )
+}
+
+/** "In list order · Sort first" under a Pick card that reads its tasks without a Sort step (D2). */
+function PickOrder({ step, state, events }: { step: RoutineStep; state: CardState; events: CardEvents }) {
+  const mode = pickModeOf(step)
+  const list = step.in?.list
+  const type = list && 'ref' in list ? (list.ref === 'trigger' || list.ref === 'item' ? undefined : state.ctx.types[list.ref]) : undefined
+  if (mode === 'all' || mode === 'where' || type !== 'tasks' || !pickUnsorted(state.ctx.draft, step.id)) return null
+  return (
+    <p className="flex flex-wrap items-center gap-2 text-meta text-muted" data-pick-order>
+      <span>{t('In list order')}</span>
+      <Button size="sm" variant="ghost" icon="list-ordered" onClick={() => events.edit((d) => sortBeforePick(d, step.id))}>{t('Sort first')}</Button>
+    </p>
+  )
+}
+
 /** The words of a step: the sentence with its slots, then its extra set inputs. */
 function StepWords({ step, state, events, adding }: { step: RoutineStep; state: CardState; events: CardEvents; adding: readonly string[] }) {
   const k = stepKind(step.kind)
   const word = (name: string) => {
+    if (isPick(step.kind) && name === 'from') return <PickModeWord key={name} step={step} events={events} />
+    if (isPick(step.kind) && name === 'n' && !['first_n', 'last_n'].includes(pickModeOf(step))) return null
     const def = k?.inputs.find((d) => d.name === name)
     if (!def) return null
     return (
@@ -109,7 +154,7 @@ function StepWords({ step, state, events, adding }: { step: RoutineStep; state: 
     <>
       {sentenceParts(step).map((p, i) => ('text' in p ? <span key={i}>{p.text}</span> : word(p.slot)))}
       {inputDefs(step, [...extraInputs(step), ...adding.filter((n) => !(step.in && n in step.in))]).map((d) => (
-        <span key={d.name} className="text-muted"> · {inputLabel(d.name)}{word(d.name)}</span>
+        <span key={d.name} className="text-muted"> · {inputLabel(d.name, step.kind)}{word(d.name)}</span>
       ))}
     </>
   )
@@ -160,7 +205,7 @@ export function StepCard({ step, index, total, state, events, depth = 0 }: {
       { kind: 'action', id: 'duplicate', label: t('Duplicate'), icon: 'copy', onSelect: () => events.duplicate(step.id) },
     ] },
     ...(addableInputs(step).length ? [{ items: addableInputs(step).map((name) => ({
-      kind: 'action' as const, id: `add-${name}`, label: t('Add {input}', { input: inputLabel(name).toLocaleLowerCase() }), icon: 'plus' as const,
+      kind: 'action' as const, id: `add-${name}`, label: t('Add {input}', { input: inputLabel(name, step.kind).toLocaleLowerCase() }), icon: 'plus' as const,
       onSelect: () => {
         const arg = defaultArg(step, name)
         if (arg) events.set(step.id, name, arg)
@@ -190,6 +235,7 @@ export function StepCard({ step, index, total, state, events, depth = 0 }: {
           {err.fix && <Button size="sm" variant="secondary" onClick={() => events.fix(err.fix!)}>{err.fix.label}</Button>}
         </p>
       )}
+      {isPick(step.kind) && <PickOrder step={step} state={state} events={events} />}
       <OutputLine step={step} state={state} />
       <PreviewBlock p={state.previews.get(step.id)} ctx={state.ctx} online={state.online} />
       {k?.blocks?.includes('then') && <Lane title={t('Then')} steps={step.then ?? []} parent={step.id} block="then" state={state} events={events} depth={depth} />}

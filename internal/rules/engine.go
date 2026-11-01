@@ -202,6 +202,7 @@ type world struct {
 	sections  map[string]string
 	shared    map[string]bool
 	tracked   map[string]int
+	changed   map[string]string
 	encrypted bool
 	// projectRows and labelNames serve routine steps (routines-engine).
 	projectRows map[string]opsync.Entity
@@ -296,6 +297,23 @@ func (e *Engine) trackedMinutes(ctx context.Context, w *world) map[string]int {
 	return w.tracked
 }
 
+// changedDates is each task's logical date of its newest field change, read
+// once per world, for the condition `unchanged` (routines-dynamic-data D5).
+func (e *Engine) changedDates(ctx context.Context, w *world) map[string]string {
+	if w.changed != nil {
+		return w.changed
+	}
+	w.changed = map[string]string{}
+	last, err := e.Sync.LastChanged(ctx, w.uid, "task")
+	if err != nil {
+		return w.changed
+	}
+	for id, ms := range last {
+		w.changed[id] = ruleval.LogicalDate(ms, w.offset, w.dayStart)
+	}
+	return w.changed
+}
+
 func (w *world) open(id string) bool {
 	t, ok := w.tasks[id]
 	return ok && opsync.IsNull(t["completed_at"]) && opsync.IsNull(t["deleted_at"])
@@ -336,7 +354,7 @@ func zonedDate(d *dueValue, offset int) string {
 // matches evaluates a rule's condition on a task.
 func (e *Engine) matches(ctx context.Context, w *world, r *rule, t opsync.Entity) bool {
 	c := ruleval.Context{UserID: w.uid, Today: w.today, Parent: w.parent, Open: w.open,
-		Tracked: func(id string) int { return e.trackedMinutes(ctx, w)[id] }}
+		Tracked: func(id string) int { return e.trackedMinutes(ctx, w)[id] }, Changed: func(id string) string { return e.changedDates(ctx, w)[id] }}
 	return ruleval.Matches(&r.Condition, w.matchTask(t), c)
 }
 

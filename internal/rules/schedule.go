@@ -164,16 +164,16 @@ func dueInstant(d *dueValue, zone *time.Location) time.Time {
 }
 
 // lastScheduled is the latest scheduled minute in (from, to], looking back at
-// most eight days.
+// most eight days for weekdays and 32 for days of the month.
 func lastScheduled(tr ruleval.Trigger, zone *time.Location, from, to int64) (time.Time, bool) {
 	end := time.UnixMilli(to).In(zone)
-	for i := 0; i <= 8; i++ {
+	back := 8
+	if len(tr.MonthDays) > 0 {
+		back = 32
+	}
+	for i := 0; i <= back; i++ {
 		day := end.AddDate(0, 0, -i)
-		wd := int(day.Weekday())
-		if wd == 0 {
-			wd = 7
-		}
-		if !slices.Contains(tr.Weekdays, wd) {
+		if !tr.FiresOn(day) {
 			continue
 		}
 		at, err := time.ParseInLocation("2006-01-02 15:04", day.Format("2006-01-02")+" "+tr.At, zone)
