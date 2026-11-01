@@ -30,10 +30,18 @@ Prerequisites: `routines-engine` and `routines-editor` are archived. The editor 
 - [x] 3.4 When card: "Every week" / "Every month", days 1 to 31 and "Last day", the trigger summary "every month on 1, 15 and the last day at 09:00"; verify `npm test -- flow`
 - [x] 3.5 Use-case rows 14, 16 and 30 in `usecases.json` (engine; row 16 seeds tasks last changed weeks ago); verify `go test ./internal/rules -run TestUseCases` and `npm test -- usecases`
 
-## 4. CLI, MCP, docs, starters, archive (PR 3)
+## 5. Pickers next to the word (PR 3, design D13)
 
-- [ ] 4.1 `ot routine show` sentences for Pick (`pick first|last|first N|last N|all of`, `pick … where`), `date`, `project_of`, `parent`; verify `go test ./internal/cli/...`
-- [ ] 4.2 MCP descriptions of `create_routine`, `update_routine` and `run_routine.task_id` (D9); verify `go test ./internal/agenttools/... ./internal/mcp/...` (description golden)
-- [ ] 4.3 Docs: `docs/routines.md` (Steps and values, Pick, examples without a specific task), `docs/api.md` (kinds, inputs, `from: all`, `unchanged`, `month_days`), `docs/mcp.md`, `docs/automations.md`; verify `make docs-check`
+- [x] 5.1 `pickers.tsx`: ChoicePopover (anchored Popover with the Combobox list, groups, search, keys, focus back), InlineText (auto-growing, "/" and "+ value", «name» chips, Enter/blur/Escape), Inspector (in the card from 1024 px, `Dialog placement="bottom"` below); verify `npm test -- usecases`
+- [x] 5.2 `wordPicker.tsx`: the word's mode (choice, text, inspector), the choices (flowing values, conversions, fixed targets, Find tasks…, A specific task…, Remove) and the small fields; StepCard's inspector slot; `WordButton` `haspopup`/`expanded`; verify `npm test -- routines` and `make ui-lint`
+- [x] 5.3 `Dialog` `placement="bottom"` and its story (Dialog/Bottom); verify `make ui-check`
+- [x] 5.4 Stories "Word list, open" and "Text in place", baselines; the layout check's `routine-word-list` on the routine page (seed without a hand-picked task) at 360/768/1280 px; verify `node scripts/e2e-layout.mjs` (ONLY=routine-page, WIDTHS=360,768,1280)
+- [x] 5.5 Six catalogs; docs (`docs/routines.md`, the editor); verify `make i18n-check` and `make docs-check`
+
+## 4. CLI, MCP, docs, starters, archive (PR 4)
+
+- [x] 4.1 `ot routine show` sentences for Pick (`pick first`, `pick last 3`, `pick all`, `pick where`; other kinds by name and inputs) (`internal/cli/routine_pick_test.go`); verify `go test ./internal/cli/...`
+- [x] 4.2 MCP descriptions of `create_routine`, `update_routine` and `run_routine.task_id` (D9); verify `go test ./internal/agenttools/... ./internal/mcp/...` (description golden)
+- [x] 4.3 Docs: `docs/routines.md` (Steps and values, Pick, examples without a specific task), `docs/api.md` (kinds, inputs, `from: all`, `unchanged`, `month_days`), `docs/mcp.md`, `docs/automations.md`; verify `make docs-check`
 - [x] 4.4 `routines-starters` design D3 table corrected per D11 (in the design PR), its check refusing `{task}` literals and `get_task` in starters (D2), and its dependency on this change; verify `make openspec-validate`
-- [ ] 4.5 CHANGELOG entry under Unreleased, ROADMAP row, archive the change (`npx -y @fission-ai/openspec@1.13.2 archive routines-dynamic-data --yes`); verify `make openspec-validate` and `make check`
+- [x] 4.5 CHANGELOG entry under Unreleased, ROADMAP row, archive the change (`npx -y @fission-ai/openspec@1.13.2 archive routines-dynamic-data --yes`); verify `make openspec-validate` and `make check`

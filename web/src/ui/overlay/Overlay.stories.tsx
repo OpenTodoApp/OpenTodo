@@ -45,6 +45,23 @@ function SheetDemo() {
   )
 }
 
+/** placement="bottom" (routines-dynamic-data D13): a bottom sheet at every width, sized to its content. */
+function BottomDemo() {
+  const [open, setOpen] = useState(true)
+  return (
+    <>
+      <p className="text-body">An editor that belongs to a place on the page opens from the bottom.</p>
+      <Button onClick={() => setOpen(true)}>Open bottom sheet</Button>
+      {open && (
+        <Dialog title="Condition" placement="bottom" onClose={() => setOpen(false)}>
+          <p className="text-body text-muted">Only for tasks that are due earlier and have the label waiting.</p>
+          <div className="mt-3 flex justify-end"><Button size="sm" variant="primary" onClick={() => setOpen(false)}>Done</Button></div>
+        </Dialog>
+      )}
+    </>
+  )
+}
+
 function PopoverDemo() {
   const anchor = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(true)
@@ -74,6 +91,7 @@ export default meta
 export const DialogOpen: StoryObj = { render: () => <DialogDemo /> }
 // Recorded at 375 and 1280 px like the patterns, so the sheet has its own baselines.
 export const DialogSheet: StoryObj = { name: 'Dialog/Sheet', tags: ['!no-visual'], render: () => <SheetDemo /> }
+export const DialogBottom: StoryObj = { name: 'Dialog/Bottom', tags: ['!no-visual'], render: () => <BottomDemo /> }
 export const PopoverOpen: StoryObj = { render: () => <PopoverDemo /> }
 export const MenuOpen: StoryObj = { render: () => <MenuDemo /> }
 export const Toasts: StoryObj = {
