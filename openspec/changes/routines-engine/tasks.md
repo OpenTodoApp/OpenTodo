@@ -2,11 +2,11 @@
 
 ## 1. Entity and shared step model
 
-- [ ] 1.1 `internal/sync/ops.go`: `rule.steps` (kind `kRoutineSteps`, default `null`, documented), the `manual` trigger kind; the sync shape check (known kinds, unique ids, visible references, at most 20 steps and 3 block levels, 32 KB); regenerate with `UPDATE_OP_SCHEMA=1 go test ./internal/sync -run TestGeneratedOpSchema`; verify `go test ./internal/sync/...` (valid steps apply, a reference to a later step and a 21st step are refused, an older value of `steps` loses by LWW)
-- [ ] 1.2 `internal/ruleval/steps.go`: the step table (groups, inputs, output types, content flags), the type checker with the three coercions and implicit for-each, the D2 reading of `actions`/`steps`; `web/src/lib/rules/steps.ts` the same; shared vectors `web/src/lib/rules/steps.vectors.json` (types, errors, the D2 reading); verify `go test ./internal/ruleval/...` and `npm test`
-- [ ] 1.3 Data steps as pure functions in Go and TypeScript (note text cut at 64 KB, split lines, join, format, replace, filter, sort, take, count, if, repeat, stop, date) with vectors; verify `go test ./internal/ruleval/...` and `npm test` give the same outputs
-- [ ] 1.4 `ruleval.Available`: availability with reason and setting for every row of design D15; verify table tests in `go test ./internal/ruleval/...` (email without SMTP, unverified address, encrypted, no webhook, energy off, focus off, demo, automations off; notify stays available without channels)
-- [ ] 1.5 Web: `Rule.steps` in `web/src/lib/types.ts`; the existing Rules page lists a multi-step routine as "Made with a newer version" until `routines-editor`; verify `npm test` (`rules.test.tsx`)
+- [x] 1.1 `internal/sync/ops.go`: `rule.steps` (kind `kRoutineSteps`, default `null`, documented), the `manual` trigger kind; the sync shape check (known kinds, unique ids, visible references, at most 20 steps and 3 block levels, 32 KB); regenerate with `UPDATE_OP_SCHEMA=1 go test ./internal/sync -run TestGeneratedOpSchema`; verify `go test ./internal/sync/...` (valid steps apply, a reference to a later step and a 21st step are refused, an older value of `steps` loses by LWW)
+- [x] 1.2 `internal/ruleval/steps.go`: the step table (groups, inputs, output types, content flags), the type checker with the three coercions and implicit for-each, the D2 reading of `actions`/`steps`; `web/src/lib/rules/steps.ts` the same; shared vectors `web/src/lib/rules/steps.vectors.json` (types, errors, the D2 reading); verify `go test ./internal/ruleval/...` and `npm test`
+- [x] 1.3 Data steps as pure functions in Go and TypeScript (note text cut at 64 KB, split lines, join, format, replace, filter, sort, take, count, if, repeat, stop, date) with vectors; verify `go test ./internal/ruleval/...` and `npm test` give the same outputs
+- [x] 1.4 `ruleval.Available`: availability with reason and setting for every row of design D15; verify table tests in `go test ./internal/ruleval/...` (email without SMTP, unverified address, encrypted, no webhook, energy off, focus off, demo, automations off; notify stays available without channels)
+- [x] 1.5 Web: `Rule.steps` in `web/src/lib/types.ts`; the existing Rules page lists a multi-step routine as "Made with a newer version" until `routines-editor`; verify `npm test` (`rules.test.tsx`)
 
 ## 2. Engine
 

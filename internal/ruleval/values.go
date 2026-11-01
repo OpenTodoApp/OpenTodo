@@ -40,10 +40,12 @@ const (
 	DueReached    = "due.reached"
 	Overdue       = "overdue"
 	Schedule      = "schedule"
+	// Manual fires only when the routine is run by hand (routines-engine D7).
+	Manual = "manual"
 )
 
 // TriggerKinds is the closed set of trigger kinds.
-var TriggerKinds = []string{TaskCreated, TaskCompleted, TaskReopened, LabelAdded, LabelRemoved, AssignedToMe, TaskMoved, DueReached, Overdue, Schedule}
+var TriggerKinds = []string{TaskCreated, TaskCompleted, TaskReopened, LabelAdded, LabelRemoved, AssignedToMe, TaskMoved, DueReached, Overdue, Schedule, Manual}
 
 // IsTimeTrigger reports the kinds the scheduler fires (the rest come from batches).
 func IsTimeTrigger(kind string) bool {
