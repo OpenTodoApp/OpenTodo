@@ -18,6 +18,8 @@ export interface ThemeCardData {
   scheme?: 'light' | 'dark'
   /** A short mark after the author ("Low contrast · 2", theme-editor D8). */
   badge?: string
+  /** Where the theme comes from, in muted text after the author ("From this server · Server default", theme-instance-default D3). */
+  origin?: string
 }
 
 export interface ThemeListProps {
@@ -50,6 +52,7 @@ function CardText({ theme, roomForMenu }: { theme: ThemeCardData; roomForMenu?: 
     <span className={`min-w-0${roomForMenu ? ' pr-7' : ''}`}>
       <span className="block truncate text-meta font-medium text-default">{theme.name}</span>
       {theme.author && <span className="block truncate text-hint text-muted">{t('by {name}', { name: theme.author })}</span>}
+      {theme.origin && <span className="block truncate text-hint text-muted" data-theme-origin>{theme.origin}</span>}
       {theme.badge && <span className="mt-0.5 block truncate text-hint font-medium text-warning" data-theme-badge>{theme.badge}</span>}
     </span>
   )

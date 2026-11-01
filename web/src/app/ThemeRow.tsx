@@ -8,7 +8,8 @@
 // About this theme opens its credits (ThemeAbout, lazy). Lazy itself: loaded with
 // Settings › Appearance, out of the first load; the data is in themeCatalogue.ts.
 import { lazy, Suspense, useState, type ReactNode } from 'react'
-import { BUILTIN_THEMES, customChoice, DEFAULT_THEME, readThemeChoices, setCustomThemeChoice, setThemeChoice, type ChoiceStatus, type Side } from '../lib/theme/choice'
+import { BUILTIN_THEMES, customChoice, DEFAULT_THEME, instanceChoice, readThemeChoices, setCustomThemeChoice, setDefaultThemeChoice, setInstanceThemeChoice, setThemeChoice, type ChoiceStatus, type SideChoice, type Side } from '../lib/theme/choice'
+import { useInstanceThemes, type InstanceThemes } from '../lib/theme/choice'
 import { canAddTheme, customiseDocument, deleteCustomThemeUndoable, duplicateDocument, knownCustom, limitMessage, newDocument, uniqueName, useCustomThemes, type LiveTheme } from '../lib/theme/custom'
 import { downloadTheme } from '../lib/theme/files'
 import { builtinDocument } from '../lib/theme/load'
@@ -18,6 +19,7 @@ import { showUndoToast } from './bulk/toastStore'
 import { openDraft } from './themes/openEditor'
 import { CustomThemeMenu, docSwatches, lowContrastBadge, useLowContrast, YourThemes, type ThemeCardActions } from './themes/YourThemes'
 import type { CatalogueTheme } from '../lib/theme/builtin/index'
+import type { ThemeDocument } from '../lib/theme/format'
 import { msg, t, translatedMap } from '../lib/i18n'
 import { rowCopy } from '../lib/settingsCopy'
 import { Button, Icon, IconButton, Menu, MenuItem, ThemeList, type ThemeCardData } from '../ui'
@@ -88,7 +90,8 @@ export default function ThemeSettings({ mode, catalogue, author = '' }: ThemeSet
   const custom = useCustomThemes()
   const list = custom ?? NO_THEMES
   const prefs = useUserPrefsRow()
-  const choices = readThemeChoices(prefs, known, custom ? knownCustom(list) : null)
+  const inst = useInstanceThemes()
+  const choices = readThemeChoices(prefs, known, custom ? knownCustom(list) : null, inst)
   const sides: Side[] = mode === 'system' ? ['light', 'dark'] : [mode]
   const [offerFor, setOfferFor] = useState<{ side: Side; id: string } | null>(null)
   const other = (s: Side): Side => (s === 'light' ? 'dark' : 'light')
@@ -113,9 +116,26 @@ export default function ThemeSettings({ mode, catalogue, author = '' }: ThemeSet
     const doc = await builtinDocument(id)
     if (doc) downloadTheme(doc)
   }
+  const customiseInstance = async (doc: ThemeDocument) => {
+    const { simplifyDocument } = await import('../lib/theme/compute')
+    const copy = customiseDocument(simplifyDocument(doc), author)
+    openDraft({ ...copy, name: uniqueName(copy.name, taken) })
+  }
   const menuFor = (card: ThemeCardData) => {
+    if (card.id === SERVER_DEFAULT) return null
     const own = list.find((x) => customChoice(x.id) === card.id)
     if (own) return <CustomThemeMenu theme={own} actions={cardActions} room={room} />
+    const served = inst.themes.find((x) => instanceChoice(x.id) === card.id)
+    if (served) {
+      // A server theme can be chosen, customised as a copy or exported, never changed here (theme-instance-default D3).
+      return (
+        <Menu label={t('Actions for {name}', { name: card.name })} trigger={<Icon name="ellipsis" />} kind="menu" triggerClassName="ui-btn ui-btn--ghost ui-btn--sm px-1.5"
+          triggerProps={{ 'data-theme-menu': card.id }}>
+          <MenuItem icon="palette" label={t('Customise')} disabled={!room} description={room ? undefined : limitMessage()} onSelect={() => act(customiseInstance(served.doc))} data-theme-customise={card.id} />
+          <MenuItem icon="download" label={t('Export')} onSelect={() => downloadTheme(served.doc)} />
+        </Menu>
+      )
+    }
     return (
       <Menu label={t('Actions for {name}', { name: card.name })} trigger={<Icon name="ellipsis" />} kind="menu" triggerClassName="ui-btn ui-btn--ghost ui-btn--sm px-1.5"
         triggerProps={{ 'data-theme-menu': card.id }}>
@@ -125,10 +145,10 @@ export default function ThemeSettings({ mode, catalogue, author = '' }: ThemeSet
     )
   }
   const cardsOf = (side: Side): ThemeCardData[] => [
-    ...themeCards(side, catalogue),
+    ...serverCards(side, inst, catalogue),
     ...list.filter((x) => x.doc.kind === side).map((x): ThemeCardData => ({ id: customChoice(x.id), name: x.doc.name, author: x.doc.author, swatches: docSwatches(x.doc), badge: lowContrastBadge(low[x.id]) })),
   ]
-  const valueOf = (side: Side) => (choices[side].custom ? customChoice(choices[side].id) : choices[side].id)
+  const valueOf = (side: Side) => choiceValue(choices[side], inst.default[side] !== '')
   const onNew = async () => {
     const side = effectiveSide(mode)
     const base = await builtinDocument(DEFAULT_THEME[side])
@@ -139,20 +159,22 @@ export default function ThemeSettings({ mode, catalogue, author = '' }: ThemeSet
       <ThemeRow
         lists={sides.map((side) => ({
           side, value: valueOf(side), status: choices[side].status, cards: cardsOf(side),
-          about: catalogue?.CATALOGUE.find((e) => e.id === choices[side].id && choices[side].status === 'theme' && !choices[side].custom),
+          about: catalogue?.CATALOGUE.find((e) => e.id === choices[side].id && choices[side].status === 'theme' && !choices[side].custom && !choices[side].instance),
         }))}
         menuFor={menuFor}
         onChoose={(side, id) => {
           if (id === valueOf(side)) return
+          if (id === SERVER_DEFAULT) { act(setDefaultThemeChoice(side)); setOfferFor(null); return }
           if (id.startsWith('user:')) { act(setCustomThemeChoice(side, id.slice(5))); setOfferFor(null); return }
+          if (id.startsWith('instance:')) { act(setInstanceThemeChoice(side, id.slice(9))); setOfferFor(null); return }
           if (!known) return
-          act(setThemeChoice(side, id, known))
+          act(setThemeChoice(side, id, known, inst))
           const counterpart = familyOf(id, catalogue).counterpart
           setOfferFor(mode === 'system' && counterpart ? { side: other(side), id: counterpart } : null)
         }}
         offer={offered && known ? {
           side: offered.side, name: themeName(offered.id, catalogue),
-          onAccept: () => { setOfferFor(null); act(setThemeChoice(offered.side, offered.id, known)) },
+          onAccept: () => { setOfferFor(null); act(setThemeChoice(offered.side, offered.id, known, inst)) },
           onDismiss: () => setOfferFor(null),
         } : undefined}
         creditsUrl={catalogue?.creditsUrl}
@@ -163,6 +185,37 @@ export default function ThemeSettings({ mode, catalogue, author = '' }: ThemeSet
 }
 
 const NO_THEMES: LiveTheme[] = []
+
+/** The card that follows the server's default for a side (theme-instance-default D3). */
+export const SERVER_DEFAULT = 'server-default'
+
+/** The card a side's choice selects: Default while it follows the server's default. */
+export function choiceValue(c: SideChoice, serverDefault: boolean): string {
+  if (serverDefault && (c.stored === '' || c.fromDefault)) return SERVER_DEFAULT
+  if (c.custom) return customChoice(c.id)
+  if (c.instance) return instanceChoice(c.id)
+  return c.id
+}
+
+/**
+ * The cards of one side before the user's own themes: Default (Server default: name)
+ * when the server has a default, OpenTodo's theme and the palettes, then the server's
+ * themes, each saying it is from this server; the server's default is marked.
+ */
+export function serverCards(side: Side, inst: InstanceThemes, c: CatalogueModule | null): ThemeCardData[] {
+  const def = /^(builtin|instance):(.+)$/.exec(inst.default[side])
+  const isDefault = (source: string, id: string) => !!def && def[1] === source && def[2] === id
+  const own = themeCards(side, c).map((card) => (isDefault('builtin', card.id) ? { ...card, origin: t('Server default') } : card))
+  const served = inst.themes.filter((x) => x.kind === side).map((x): ThemeCardData => ({
+    id: instanceChoice(x.id), name: x.doc.name, author: x.doc.author, swatches: docSwatches(x.doc),
+    origin: isDefault('instance', x.id) ? t('From this server · Server default') : t('From this server'),
+  }))
+  if (!def) return [...own, ...served]
+  const shown = def[1] === 'instance' ? served.find((x) => x.id === inst.default[side]) : own.find((x) => x.id === def[2])
+  const name = shown?.name ?? def[2]
+  const first: ThemeCardData = { id: SERVER_DEFAULT, name: t('Default (Server default: {name})', { name }), author: '', swatches: shown?.swatches ?? own[0].swatches, ...(shown?.scheme ? { scheme: shown.scheme } : {}) }
+  return [first, ...own, ...served]
+}
 
 /** The Theme row: one list, or a Light and a Dark list under System. */
 export function ThemeRow({ lists, onChoose, offer, creditsUrl, menuFor }: ThemeChoiceProps) {

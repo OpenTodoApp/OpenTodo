@@ -506,6 +506,11 @@ export const api = {
   putBrandingName: (name: string) => request<Branding>('PUT', '/api/v1/settings/branding', { name }),
   putBrandingLogo: (logo: Blob) => sendRaw<Branding>('PUT', '/api/v1/settings/branding/logo', logo),
   deleteBrandingLogo: () => request<Branding>('DELETE', '/api/v1/settings/branding/logo'),
+  // The instance's default theme and themes (theme-instance-default D2); members read them in lib/theme/instance.ts.
+  instanceThemes: () => request<unknown>('GET', '/api/v1/themes/instance'),
+  putThemeDefault: (d: { light: string; dark: string }) => request<unknown>('PUT', '/api/v1/settings/themes/default', d),
+  putInstanceTheme: (id: string, doc: unknown) => request<unknown>('PUT', `/api/v1/settings/themes/instance/${encodeURIComponent(id)}`, doc),
+  deleteInstanceTheme: (id: string) => request<unknown>('DELETE', `/api/v1/settings/themes/instance/${encodeURIComponent(id)}`),
   // Calendar feeds (OpenSpec calendar-feeds).
   calendarFeedsSwitch: ownerSwitch('calendar-feeds'),
   calendarSubscriptions: () => request<{ subscriptions: CalendarSubscription[] }>('GET', '/api/v1/calendar-feeds/subscriptions'),

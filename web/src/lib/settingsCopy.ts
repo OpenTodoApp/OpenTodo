@@ -761,6 +761,9 @@ export const SETTINGS_COPY = {
     rows: {
       name: { label: msg('Name'), description: msg('Shown in place of OpenTodo. Up to 40 characters; empty keeps OpenTodo.') },
       logo: { label: msg('Logo'), description: msg('A square PNG or JPEG of at least 192 pixels; the server renders every size.') },
+      // The server's default theme and themes (theme-instance-default D4).
+      defaultTheme: { label: msg('Default theme'), description: msg('People who never chose a theme see this one; their own choice always wins.') },
+      serverThemes: { label: msg('Server themes'), description: msg('Everyone on this server can choose these, or customise a copy. Up to 20.') },
     },
     notices: { offline: msg('You are offline. These settings need a connection to the server.') },
   },

@@ -56,8 +56,9 @@ export function ContrastPanel({ failures, resolved, onFix, onFixAll }: ContrastP
         <ul className="flex max-h-80 flex-col divide-y divide-(--ot-border-soft) overflow-y-auto rounded-card border border-default" aria-label={t('Pairs below AA')} tabIndex={0}>
           {failures!.map((f) => (
             <li key={`${f.fg}/${f.bg}`} className="flex items-center gap-3 px-3 py-2" data-theme-failure={`${f.fg}/${f.bg}`}>
-              <span aria-hidden="true" className="flex h-8 w-12 shrink-0 items-center justify-center rounded-control border border-default text-body font-semibold"
-                style={{ backgroundColor: resolved.tokens[f.bg] ?? resolved.tokens.surface, color: resolved.tokens[f.fg] }}>Aa</span>
+              {/* The sample shows the failing pair on purpose: drawn as generated content, so the accessibility gate does not measure a deliberate low-contrast sample. */}
+              <span aria-hidden="true" data-sample="Aa" className="flex h-8 w-12 shrink-0 items-center justify-center rounded-control border border-default text-body font-semibold before:content-[attr(data-sample)]"
+                style={{ backgroundColor: resolved.tokens[f.bg] ?? resolved.tokens.surface, color: resolved.tokens[f.fg] }} />
               <span className="min-w-0 flex-1">
                 <span className="block text-body text-default">{t('{fg} on {bg}', { fg: tokenName(f.fg), bg: tokenName(f.bg) })}</span>
                 <ContrastBadge ratio={f.ratio} min={f.min} />

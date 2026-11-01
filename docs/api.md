@@ -1482,6 +1482,19 @@ The owner gives the server a name and a logo (**Settings → Server → Branding
 
 Branding is refused on a demo instance like every server setting.
 
+### Server themes
+
+The owner sets the default light and dark theme of the server and offers up to 20 server themes to everyone (**Settings → Server → Branding**). A member whose choice for a side is empty sees the server default; a member's own choice always wins, and nothing is written to anyone's data. `GET /api/v1/auth/status` carries `"themes": {"version": 3}` for a signed-in caller; the version grows with every change, so a device reads the themes again when it differs from the one it has.
+
+| Route | Does |
+| --- | --- |
+| `GET /api/v1/themes/instance` | Signed in (read tokens too). Answers `{version, default: {light, dark}, themes: [{id, kind, doc}]}`: each default is `""` (OpenTodo's), `builtin:<id>` or `instance:<id>`; each `doc` is a theme document (`docs/themes.md`) whose `id` is the server id. 401 `unauthorized` without a session or token |
+| `PUT /api/v1/settings/themes/default` | Owner. `{light, dark}`, each `""`, `builtin:<id>` or `instance:<id>` of that side's kind (400 `invalid_input` for an unknown id or a theme of the other kind; OpenTodo's own theme is stored as `""`). Answers like the read; recorded as `settings.changed` (`themes.default.light`, `themes.default.dark`, the ids only) |
+| `PUT /api/v1/settings/themes/instance/{id}` | Owner. A theme document as the body, at most 16 KB (413 `too_large`), valid (400 `invalid_input`); `{id}` is `new` to add one (409 `limit_reached` past 20) or the id of one to replace (404 `not_found`). The server sets the document's `id`. A theme that is a default keeps its kind (400 `invalid_input`). Answers the read plus the theme's `id`; recorded as `settings.changed` (`themes.instance`, `added` or `changed` and the id) |
+| `DELETE /api/v1/settings/themes/instance/{id}` | Owner. Removes the theme and clears a default that names it in the same change (404 `not_found` for an unknown id). Members who chose it fall back to their side's default and keep their stored choice. Recorded as `settings.changed` (`themes.instance`, `removed` and the id) |
+
+The writes are refused on a demo instance. There is no environment variable for the default theme.
+
 `GET /api/v1/me` includes `attachments: {enabled, max_file_bytes, quota_bytes, used_bytes}`.
 
 **Downloads** are served with `Content-Security-Policy: default-src 'none'; sandbox`, `X-Content-Type-Options: nosniff`, `Content-Disposition` with the file name, `Cache-Control: private, no-cache` and the digest as `ETag`, so a browser revalidates its copy (304 while signed in) and shows nothing without a session; signing out answers `Clear-Site-Data: "cache"`. Only images (PNG, JPEG, GIF, WebP, AVIF), PDF, plain text, audio and video are served inline with their type; everything else (HTML and SVG included) and every encrypted file is `application/octet-stream` with `attachment`.

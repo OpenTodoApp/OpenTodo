@@ -3,7 +3,7 @@ title: Themes
 summary: How a theme sets the colours, corners and type of the app, making your own in the editor, theme files and VS Code import, the file format, derivation, and why there is no custom CSS.
 audience: user
 section: Reference
-specs: [themes, theme-editor, appearance-preferences, design-system]
+specs: [themes, theme-editor, appearance-preferences, design-system, instance-branding]
 screens: []
 order: 24
 ---
@@ -105,6 +105,16 @@ Every change is kept as a draft on this device until you **Save**, so a reload o
 
 Before the editor opens, a report shows what was taken from the file (with its VS Code key), what was derived, which pairs fail contrast (**Fix contrast now** is ticked; untick it to keep the colours as published), and which keys were ignored. The licence is set to *unknown*: check the theme's licence before you share the file. The result opens as an unsaved draft.
 
+## Themes from your server
+
+The owner of your server can choose a **default theme** for each side and offer **server themes** to everyone (**Settings → Server → Branding**, see [Branding](self-hosting/branding.md#themes)):
+
+- While you have not chosen a theme for a side, you see the server's default for it. The list then starts with **Default (Server default: *name*)**, and the server's default is marked **Server default**. Your own choice always wins, and choosing **Default** again follows the server's default from then on. Choosing **OpenTodo Light** or **OpenTodo Dark** while the server has a default keeps OpenTodo's theme even when the owner changes the default later.
+- Server themes appear in the list of their kind after the built-in ones, marked **From this server**. You can choose one, and its menu offers **Customise** (a copy of your own, as for any theme) and **Export**; only the owner can change or remove it. If the owner removes a theme you chose, that side shows its default again, and your choice comes back if the theme does.
+- Your device remembers the server's default and themes, so they work offline and the first frame is already in your theme. It reads them again when they change, at the next start or when the app comes back to the front. A device that has never read them uses OpenTodo's themes until it does.
+
+The sign-in, invitation and password-reset screens, emails, the splash screen and the app's icons always keep OpenTodo's neutral look.
+
 ## Themes and the accent
 
 The accent (**Emerald** to **Graphite**, or your [own colour](custom-accent.md)) colours the OpenTodo themes. Another theme brings its own accent: while it is shown, the accent row says **From the theme**, and your accent comes back when you choose an OpenTodo theme again. High contrast (on the [display](display-mode.md)) always wins over a theme's colours; the theme's corners and type stay.
@@ -177,7 +187,7 @@ Every theme in the repository passes the same contrast rules as the stylesheet (
 
 ## Privacy and storage
 
-Your theme choices are preferences, not content: they are not end-to-end encrypted, also when your account is. Your own themes are not encrypted either, as they are colours and short labels: on an encrypted account the editor says *Themes are not encrypted. Don't put private information in a theme's name or notes.* Choices and themes are part of the JSON export and come back with an import, keeping their ids so your choices still apply. A theme never contacts another server: there are no web fonts, images or links in a theme, and its source is only text. Each device remembers the resolved colours of your two themes so the first frame is already in your theme; that memory never syncs.
+Your theme choices are preferences, not content: they are not end-to-end encrypted, also when your account is. Your own themes are not encrypted either, as they are colours and short labels: on an encrypted account the editor says *Themes are not encrypted. Don't put private information in a theme's name or notes.* Choices and themes are part of the JSON export and come back with an import, keeping their ids so your choices still apply. A theme never contacts another server: there are no web fonts, images or links in a theme, and its source is only text. Each device remembers the resolved colours of your two themes so the first frame is already in your theme; that memory never syncs. Working out a theme's colours from its base colours can take a moment for some colours, so the app does it in the background and shows the remembered colours meanwhile.
 
 ## No custom CSS
 

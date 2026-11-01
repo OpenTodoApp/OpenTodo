@@ -79,6 +79,7 @@ export function App() {
         // End-to-end encryption (OpenSpec e2ee): learn the account mode before the
         // first sync, so a new device unlocks before anything is pulled.
         await adoptProfile(status.encryption, status.minClientVersion).catch(() => undefined)
+        void import('../lib/theme/instanceSync').then((m) => m.followInstanceThemes(status.themes?.version)) // theme-instance-default D3
         // Ask the browser not to evict the local copy (Safari drops unpersisted
         // storage after weeks without a visit); its answer changes nothing else.
         void requestPersistentStorage()
