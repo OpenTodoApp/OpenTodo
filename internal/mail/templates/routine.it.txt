@@ -1,0 +1,12 @@
+{{.Subject}}
+
+{{.Text}}
+
+--
+Questo messaggio è stato inviato dalla tua routine «{{.Routine}}» su OpenTodo all’indirizzo {{.Origin}}.
+
+Vedi questa esecuzione:
+
+{{.Link}}
+
+Ricevi questo messaggio perché la tua routine ha un passo Inviami un’email che scrive a {{.Email}}. Per fermarlo, disattiva la routine o togli il passo nella pagina Routine.

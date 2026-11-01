@@ -7,8 +7,10 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/agenttools"
+	"github.com/OpenTodoApp/opentodo/internal/filter"
 	"github.com/OpenTodoApp/opentodo/internal/ids"
 	"github.com/OpenTodoApp/opentodo/internal/ruleval"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
@@ -96,6 +98,12 @@ func (st *runState) exec(s *ruleval.Step, in map[string]ruleval.Value, at int) (
 		return st.noteText(s, in)
 	case "append_to_note":
 		return st.appendNote(s, in, at)
+	case "clear_note":
+		return st.clearNote(s, in)
+	case "set_focus":
+		return st.setFocus(s, in)
+	case "project_from_template":
+		return st.projectFromTemplate(s, in, at)
 	case "split_lines":
 		text, _ := st.textIn(s, in, "text")
 		lines, cut := ruleval.SplitLines(text)
@@ -126,6 +134,10 @@ func (st *runState) exec(s *ruleval.Step, in map[string]ruleval.Value, at int) (
 		return st.trackedTime(s, in)
 	case "notify":
 		return st.notifyStep(s, in)
+	case "webhook":
+		return st.webhookStep(s, in)
+	case "email_me":
+		return st.emailStep(s, in)
 	}
 	return none(), "", failf(ErrCodeInvalid, "%s is not available on this server yet", s.Kind)
 }
@@ -211,11 +223,9 @@ func (st *runState) findTasks(s *ruleval.Step) (ruleval.Value, string, error) {
 	return tasksVal(out), status, nil
 }
 
-// queryMatcher evaluates a filter query or a saved view's query (find_tasks).
+// queryMatcher evaluates a filter query or a saved view's query (find_tasks)
+// with internal/filter, the server's port of the device's evaluator.
 func (st *runState) queryMatcher(s *ruleval.Step) (func(opsync.Entity) bool, error) {
-	if st.e.Query == nil {
-		return nil, failf(ErrCodeInvalid, "filter queries are not available on this server")
-	}
 	q, _ := lit[string](s, "query")
 	if view, ok := lit[string](s, "view"); ok {
 		v, err := st.e.Sync.Get(st.ctx, st.w.uid, "view", view)
@@ -224,11 +234,45 @@ func (st *runState) queryMatcher(s *ruleval.Step) (func(opsync.Entity) bool, err
 		}
 		q = str(v, "query")
 	}
-	m, err := st.e.Query(st.ctx, st.w.uid, q, st.tasks)
+	if st.e.Query != nil {
+		m, err := st.e.Query(st.ctx, st.w.uid, q, st.tasks)
+		if err != nil {
+			return nil, failf(ErrCodeInvalid, "%s", err)
+		}
+		return m, nil
+	}
+	c, err := st.filterContext()
+	if err != nil {
+		return nil, err
+	}
+	pred, _, err := filter.Evaluate(q, c)
 	if err != nil {
 		return nil, failf(ErrCodeInvalid, "%s", err)
 	}
-	return m, nil
+	return func(t opsync.Entity) bool { return pred(t) }, nil
+}
+
+// filterContext is what the filter evaluator reads, from the run's view.
+func (st *runState) filterContext() (filter.Context, error) {
+	ws := int(st.w.weekStart)
+	c := filter.Context{Today: st.w.today, WeekStart: ws, Zone: time.FixedZone("", st.w.offset*60), DayStart: ruleval.DayStartMinutes(st.w.dayStart),
+		Tracked: st.e.trackedMinutes(st.ctx, st.w)}
+	for _, t := range st.tasks {
+		c.Tasks = append(c.Tasks, t)
+	}
+	for _, p := range st.projects {
+		c.Projects = append(c.Projects, p)
+	}
+	for entity, dst := range map[string]*[]filter.Row{"label": &c.Labels, "section": &c.Sections, "field": &c.Fields} {
+		rows, err := st.e.Sync.List(st.ctx, st.w.uid, entity, false)
+		if err != nil {
+			return c, err
+		}
+		for _, r := range rows {
+			*dst = append(*dst, r)
+		}
+	}
+	return c, nil
 }
 
 // clientID derives a create tool's client_request_id from the run, the step
@@ -325,12 +369,13 @@ func (st *runState) createTasks(s *ruleval.Step, in map[string]ruleval.Value, at
 		base["energy"] = e
 	}
 	var lines []string
+	parse := true
 	if v, ok := in["text"]; ok && v.Type == ruleval.TLines {
 		lines = v.Lines
 	} else if text, ok := st.textIn(s, in, "text"); ok {
 		lines, _ = ruleval.SplitLines(text)
 	} else if title, ok := st.textIn(s, in, "title"); ok {
-		lines = []string{title}
+		lines, parse = []string{title}, false
 	}
 	var items []map[string]any
 	for _, line := range lines {
@@ -338,7 +383,11 @@ func (st *runState) createTasks(s *ruleval.Step, in map[string]ruleval.Value, at
 		for k, v := range base {
 			item[k] = v
 		}
-		st.quickAdd(line, item)
+		if parse {
+			st.quickAdd(line, item)
+		} else {
+			item["title"] = line
+		}
 		if strings.TrimSpace(fmt.Sprint(item["title"])) == "" {
 			continue
 		}
@@ -363,12 +412,14 @@ func (st *runState) createTasks(s *ruleval.Step, in map[string]ruleval.Value, at
 }
 
 // quickAdd reads a line with quick-add syntax into a create_tasks item
-// (internal/quickadd, injected); without a reader the line is the title.
+// (internal/quickadd); a title given as a field is taken as written.
 func (st *runState) quickAdd(line string, item map[string]any) {
 	item["title"] = line
 	if st.e.QuickAdd != nil {
 		st.e.QuickAdd(st.ctx, st.w, line, item)
+		return
 	}
+	st.quickAddLine(line, item)
 }
 
 func (st *runState) changeTasks(s *ruleval.Step, in map[string]ruleval.Value, _ int) (ruleval.Value, string, error) {

@@ -1,0 +1,12 @@
+{{.Subject}}
+
+{{.Text}}
+
+--
+Esta mensagem foi enviada pela sua rotina "{{.Routine}}" no OpenTodo em {{.Origin}}.
+
+Ver esta execução:
+
+{{.Link}}
+
+Você recebe esta mensagem porque a sua rotina tem um passo Enviar-me um e-mail que escreve para {{.Email}}. Para parar, desative a rotina ou remova o passo na página Rotinas.

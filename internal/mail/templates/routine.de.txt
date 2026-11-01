@@ -1,0 +1,12 @@
+{{.Subject}}
+
+{{.Text}}
+
+--
+Diese Nachricht hat deine Routine „{{.Routine}}“ in OpenTodo unter {{.Origin}} gesendet.
+
+Diesen Lauf ansehen:
+
+{{.Link}}
+
+Du bekommst diese Nachricht, weil deine Routine einen Schritt „Mir mailen“ hat und an {{.Email}} sendet. Schalte die Routine aus oder entferne den Schritt auf der Seite Routinen, um sie zu beenden.

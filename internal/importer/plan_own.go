@@ -41,6 +41,9 @@ func (pl *planner) planOwn(rows []Row) []change {
 			if row.Kind == KindProject && (k == "role" || k == "owner_id") {
 				continue // read-only sharing annotations of the export, not data
 			}
+			if row.Kind == KindRule && (k == "paused_reason" || k == "warnings") {
+				continue // read-only server annotations of a routine (routines-engine)
+			}
 			if !opsync.KnownField(row.Kind, k) {
 				res.Warnings = append(res.Warnings, fmt.Sprintf("unknown field %q dropped", k))
 				continue

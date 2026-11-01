@@ -74,6 +74,13 @@ func (s *Service) PageActivity(ctx context.Context, e notify.PageEvent) {
 		taskID: e.TaskID, pageID: e.PageID, taskTitle: title, actorName: guest, at: e.At})
 }
 
+// RoutineNotice implements notify.RoutineSink: a routine's Notify me step,
+// queued once per channel and step run (routines-engine).
+func (s *Service) RoutineNotice(ctx context.Context, n notify.RoutineNotice) {
+	s.emit(ctx, n.UserID, fmt.Sprintf("routine:%s:%s", n.RunID, n.StepID), event{kind: EventRoutine, key: txtRoutine,
+		taskID: n.TaskID, taskTitle: n.RuleName, excerpt: n.Text, at: n.At, runID: n.RunID})
+}
+
 // Reminder is one firing handed over by the reminder scheduler.
 type Reminder struct {
 	UserID, ID, TaskID string
