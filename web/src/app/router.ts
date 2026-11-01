@@ -401,7 +401,10 @@ export function navigate(r: Route, opts: { replace?: boolean } = {}): void {
   const path = routePath(r)
   if (path === current) return
   if (leaveGuard && leaveGuard(() => { leaveGuard = null; navigate(r, opts) })) return
-  if (opts.replace) history.replaceState(null, '', path)
+  // An open overlay owns the top history entry (useBackToClose): the new route takes its place,
+  // so Back returns to the page the overlay was opened from, not to a stale marker.
+  const onMarker = ((history.state as { overlay?: number } | null)?.overlay ?? 0) > 0
+  if (opts.replace || onMarker) history.replaceState(null, '', path)
   else history.pushState(null, '', path)
   track(path)
   listeners.forEach((fn) => fn())

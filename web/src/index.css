@@ -36,6 +36,10 @@
   }
 }
 
+/* `pins`: from 768 px, except on a phone held in landscape (coarse pointer, under 500 px
+   tall), where a pinned row would cover the top of the list (stickyQuickAdd.ts). */
+@custom-variant pins (@media (width >= 48rem) and (not ((pointer: coarse) and (height < 500px))));
+
 @theme inline {
   /* A theme may set --ot-font (theme-engine D1: a system, serif, monospace or installed
      font, never one from another host); without it the bundled Inter applies. */

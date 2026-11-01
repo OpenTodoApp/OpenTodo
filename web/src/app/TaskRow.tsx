@@ -404,6 +404,8 @@ export interface TaskRowProps {
   ticked?: boolean
   /** Checkboxes always shown: something is ticked, or touch Select mode is on. */
   showCheckbox?: boolean
+  /** Select mode: a plain tap anywhere on the row ticks it instead of opening it. */
+  selectMode?: boolean
   /** Tick or untick; `range` for Shift (extend from the anchor). */
   onTick?: (range: boolean) => void
   onToggleCollapse?: () => void
@@ -632,7 +634,7 @@ export const TaskRow = memo(function TaskRow(props: TaskRowProps | CompactRowPro
   return props.shape === 'compact' ? <CompactRow {...props} /> : <FullRow {...props} />
 })
 
-function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout, edge, notes = false }: TaskRowProps) {
+function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, selectMode = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout, edge, notes = false }: TaskRowProps) {
   const card = shape === 'card'
   // The row's layout (row-layouts D1): the list's own choice, else the account's; a card keeps its shape.
   const accountLayout = useAccountRowLayout()
@@ -774,7 +776,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
       onClick={inline || departing ? undefined : (e) => {
         const hit = (e.target as Element).closest(ROW_CONTROL)
         if (hit && e.currentTarget.contains(hit)) return
-        if (onTick && !readOnly && (e.shiftKey || e.ctrlKey || e.metaKey)) { onTick(e.shiftKey); return }
+        if (onTick && !readOnly && (selectMode || e.shiftKey || e.ctrlKey || e.metaKey)) { onTick(e.shiftKey); return }
         onOpen()
       }}
       onContextMenu={onContextMenu}
@@ -833,8 +835,8 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
       {inline ?? <button type="button" className="flex min-w-0 flex-1 flex-col text-left pointer-fine:-my-px pointer-fine:py-px" data-row-open
         aria-expanded={canExpand ? showDetails : undefined} aria-controls={showDetails ? detailsId : undefined}
         onClick={(e) => {
-          // Shift+click extends, Ctrl/⌘+click toggles the tick instead of opening (bulk-edit D3).
-          if (onTick && !readOnly && (e.shiftKey || e.ctrlKey || e.metaKey)) { e.preventDefault(); onTick(e.shiftKey); return }
+          // Shift+click extends, Ctrl/⌘+click toggles the tick instead of opening (bulk-edit D3); in Select mode a tap does.
+          if (onTick && !readOnly && (selectMode || e.shiftKey || e.ctrlKey || e.metaKey)) { e.preventDefault(); onTick(e.shiftKey); return }
           onOpen(e)
         }}>
         <div className={card ? '' : 'flex min-w-0 items-center gap-2'} data-row-head>
