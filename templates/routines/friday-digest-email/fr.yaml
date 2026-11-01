@@ -1,0 +1,7 @@
+# Bilan du vendredi par e-mail: French text for templates/routines/friday-digest-email/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-926c1534c942
+title: "Bilan du vendredi par e-mail"
+summary: "Chaque vendredi à 16:00, t'envoie par e-mail la liste des tâches terminées cette semaine."
+description: "Chaque vendredi après-midi, cette routine trouve les tâches que tu as terminées cette semaine, les compte et t'envoie la liste par e-mail. Un registre discret de la semaine, pratique pour une revue ou un compte rendu.\n\nIl faut l'e-mail sortant sur ton serveur et une adresse e-mail vérifiée. Sinon, utilise Me notifier au lieu de M’envoyer un e-mail."
+steps.2.in.template: "{b} tâches terminées cette semaine :\n{a}"
+steps.3.in.subject: "Ta semaine"

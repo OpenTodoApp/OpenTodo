@@ -1,0 +1,1071 @@
+{
+ "schema": 1,
+ "starters": [
+  {
+   "slug": "done-journal",
+   "category": "personal",
+   "icon": "notebook-pen",
+   "author": "OpenTodo",
+   "reviewed": "2026-11-01",
+   "languages": [
+    "en",
+    "de",
+    "es",
+    "fr",
+    "it",
+    "pt"
+   ],
+   "text": {
+    "title": {
+     "en": "Done journal",
+     "de": "Erledigt-Journal",
+     "es": "Diario de lo hecho",
+     "fr": "Journal du fait",
+     "it": "Diario del fatto",
+     "pt": "Diário do que fiz"
+    },
+    "summary": {
+     "en": "When you complete a task, add a line with its title to the note of your journal project.",
+     "de": "Wenn du eine Aufgabe erledigst, kommt eine Zeile mit ihrem Titel in die Notiz deines Journal-Projekts.",
+     "es": "Cuando completas una tarea, añade una línea con su título a la nota de tu proyecto diario.",
+     "fr": "Quand tu termines une tâche, ajoute une ligne avec son titre à la note de ton projet journal.",
+     "it": "Quando completi un'attività, aggiunge una riga con il suo titolo alla nota del tuo progetto diario.",
+     "pt": "Quando concluis uma tarefa, acrescenta uma linha com o título à nota do teu projeto diário."
+    },
+    "description": {
+     "en": "A list of what you finished is good for weekly reviews, stand-ups and bad days. Each time you complete a task, this routine adds \"Done:\" and the task's title to the note of a project you choose, so the note grows into a log of your work.\n\nAdd a condition on the When card to log only one project's tasks.",
+     "de": "Eine Liste dessen, was du geschafft hast, hilft bei Wochenrückblicken, Stand-ups und schlechten Tagen. Jedes Mal, wenn du eine Aufgabe erledigst, fügt diese Routine \"Erledigt:\" und den Titel der Aufgabe zur Notiz eines Projekts deiner Wahl hinzu, und die Notiz wird zum Protokoll deiner Arbeit.\n\nFüge auf der Wann-Karte eine Bedingung hinzu, um nur die Aufgaben eines Projekts festzuhalten.",
+     "es": "Una lista de lo que has terminado sirve para las revisiones semanales, las reuniones diarias y los días malos. Cada vez que completas una tarea, esta rutina añade \"Hecho:\" y el título de la tarea a la nota de un proyecto que eliges, y la nota se convierte en un registro de tu trabajo.\n\nAñade una condición en la tarjeta Cuándo para registrar solo las tareas de un proyecto.",
+     "fr": "La liste de ce que tu as terminé est utile pour les revues de la semaine, les points du matin et les mauvais jours. Chaque fois que tu termines une tâche, cette routine ajoute « Fait : » et le titre de la tâche à la note d'un projet que tu choisis, et la note devient un registre de ton travail.\n\nAjoute une condition sur la carte Quand pour ne noter que les tâches d'un projet.",
+     "it": "Una lista di quello che hai finito è utile per le revisioni settimanali, le riunioni del mattino e le giornate storte. Ogni volta che completi un'attività, questa routine aggiunge \"Fatto:\" e il titolo dell'attività alla nota di un progetto che scegli, così la nota diventa un registro del tuo lavoro.\n\nAggiungi una condizione nella scheda Quando per registrare solo le attività di un progetto.",
+     "pt": "Uma lista do que terminaste ajuda nas revisões semanais, nas reuniões diárias e nos dias maus. Sempre que concluis uma tarefa, esta rotina acrescenta \"Feito:\" e o título da tarefa à nota de um projeto que escolhes, e a nota torna-se um registo do teu trabalho.\n\nAcrescenta uma condição no cartão Quando para registar só as tarefas de um projeto."
+    }
+   },
+   "ask": {
+    "journal": {
+     "type": "project",
+     "suggest": {
+      "en": "Journal",
+      "de": "Journal",
+      "es": "Diario",
+      "fr": "Journal",
+      "it": "Diario",
+      "pt": "Diário"
+     }
+    }
+   },
+   "trigger": {
+    "kind": "task.completed"
+   },
+   "steps": [
+    {
+     "id": "a",
+     "kind": "append_to_note",
+     "in": {
+      "of": {
+       "literal": {
+        "project": {
+         "ask": "journal"
+        }
+       }
+      },
+      "text": {
+       "literal": {
+        "format": "Done: {trigger}"
+       }
+      }
+     }
+    }
+   ],
+   "texts": {
+    "steps.0.in.text": {
+     "en": "Done: {trigger}",
+     "de": "Erledigt: {trigger}",
+     "es": "Hecho: {trigger}",
+     "fr": "Fait : {trigger}",
+     "it": "Fatto: {trigger}",
+     "pt": "Feito: {trigger}"
+    }
+   }
+  },
+  {
+   "slug": "evening-roll-over",
+   "category": "personal",
+   "icon": "moon",
+   "author": "OpenTodo",
+   "reviewed": "2026-11-01",
+   "languages": [
+    "en",
+    "de",
+    "es",
+    "fr",
+    "it",
+    "pt"
+   ],
+   "text": {
+    "title": {
+     "en": "Evening roll-over",
+     "de": "Abendlicher Übertrag",
+     "es": "Arrastre nocturno",
+     "fr": "Report du soir",
+     "it": "Riporto serale",
+     "pt": "Transição da noite"
+    },
+    "summary": {
+     "en": "Every evening at 21:00, move what is still due today to tomorrow, and tell you how many.",
+     "de": "Jeden Abend um 21:00 wird, was heute noch fällig ist, auf morgen verschoben, und du erfährst, wie viel.",
+     "es": "Cada noche a las 21:00, mueve a mañana lo que aún vence hoy, y te dice cuántas tareas.",
+     "fr": "Chaque soir à 21:00, reporte à demain ce qui est encore prévu aujourd'hui, et te dit combien.",
+     "it": "Ogni sera alle 21:00, sposta a domani quello che scade ancora oggi e ti dice quante attività sono.",
+     "pt": "Todas as noites às 21:00, move para amanhã o que ainda vence hoje e diz-te quantas tarefas."
+    },
+    "description": {
+     "en": "A day rarely goes to plan. Every evening at 21:00 this routine moves the tasks still due today to tomorrow, so the next morning starts from an honest list instead of a wall of overdue tasks.\n\nThe notification tells you how many moved. Change the time on the When card to match the end of your day.",
+     "de": "Ein Tag läuft selten nach Plan. Jeden Abend um 21:00 verschiebt diese Routine die Aufgaben, die heute noch fällig sind, auf morgen, damit der nächste Morgen mit einer ehrlichen Liste beginnt statt mit einer Wand überfälliger Aufgaben.\n\nDie Benachrichtigung sagt dir, wie viele verschoben wurden. Passe die Uhrzeit auf der Wann-Karte an das Ende deines Tages an.",
+     "es": "Un día rara vez sale según el plan. Cada noche a las 21:00 esta rutina mueve a mañana las tareas que aún vencen hoy, para que la mañana siguiente empiece con una lista honesta en lugar de un muro de tareas atrasadas.\n\nLa notificación te dice cuántas se movieron. Cambia la hora en la tarjeta Cuándo para que coincida con el final de tu día.",
+     "fr": "Une journée se passe rarement comme prévu. Chaque soir à 21:00, cette routine reporte à demain les tâches encore prévues aujourd'hui, pour que le matin commence par une liste honnête plutôt que par un mur de tâches en retard.\n\nLa notification te dit combien ont été reportées. Change l'heure sur la carte Quand pour l'accorder à la fin de ta journée.",
+     "it": "Una giornata va raramente come previsto. Ogni sera alle 21:00 questa routine sposta a domani le attività che scadono ancora oggi, così la mattina dopo parte da una lista onesta invece che da un muro di attività scadute.\n\nLa notifica ti dice quante sono state spostate. Cambia l'orario nella scheda Quando per farlo coincidere con la fine della tua giornata.",
+     "pt": "Um dia raramente corre como planeado. Todas as noites às 21:00 esta rotina move para amanhã as tarefas que ainda vencem hoje, para que a manhã seguinte comece com uma lista honesta em vez de um muro de tarefas atrasadas.\n\nA notificação diz-te quantas foram movidas. Muda a hora no cartão Quando para coincidir com o fim do teu dia."
+    }
+   },
+   "ask": {},
+   "trigger": {
+    "kind": "schedule",
+    "at": "21:00",
+    "weekdays": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7
+    ]
+   },
+   "condition": {
+    "due": "today"
+   },
+   "steps": [
+    {
+     "id": "a",
+     "kind": "change_tasks",
+     "in": {
+      "tasks": {
+       "ref": "trigger"
+      },
+      "set": {
+       "literal": {
+        "due": "tomorrow"
+       }
+      }
+     }
+    },
+    {
+     "id": "b",
+     "kind": "count",
+     "in": {
+      "list": {
+       "ref": "a"
+      }
+     }
+    },
+    {
+     "id": "c",
+     "kind": "notify",
+     "in": {
+      "text": {
+       "literal": {
+        "format": "{b} tasks moved to tomorrow"
+       }
+      }
+     }
+    }
+   ],
+   "texts": {
+    "steps.2.in.text": {
+     "en": "{b} tasks moved to tomorrow",
+     "de": "{b} Aufgaben auf morgen verschoben",
+     "es": "{b} tareas movidas a mañana",
+     "fr": "{b} tâches reportées à demain",
+     "it": "{b} attività spostate a domani",
+     "pt": "{b} tarefas movidas para amanhã"
+    }
+   }
+  },
+  {
+   "slug": "morning-focus",
+   "category": "personal",
+   "icon": "sunrise",
+   "author": "OpenTodo",
+   "reviewed": "2026-11-01",
+   "languages": [
+    "en",
+    "de",
+    "es",
+    "fr",
+    "it",
+    "pt"
+   ],
+   "text": {
+    "title": {
+     "en": "Morning focus",
+     "de": "Morgenfokus",
+     "es": "Foco de la mañana",
+     "fr": "Focus du matin",
+     "it": "Focus del mattino",
+     "pt": "Foco da manhã"
+    },
+    "summary": {
+     "en": "On weekday mornings, put the three most important tasks due today into today's focus.",
+     "de": "An Werktagen morgens kommen die drei wichtigsten heute fälligen Aufgaben in den heutigen Fokus.",
+     "es": "Las mañanas de diario, pone en el foco de hoy las tres tareas más importantes que vencen hoy.",
+     "fr": "Les matins de semaine, place dans le focus du jour les trois tâches les plus importantes prévues aujourd'hui.",
+     "it": "Nei giorni feriali, mette nel focus di oggi le tre attività più importanti in scadenza oggi.",
+     "pt": "Nas manhãs de dias úteis, põe no foco de hoje as três tarefas mais importantes que vencem hoje."
+    },
+    "description": {
+     "en": "Every weekday at 07:30 this routine finds the tasks due today, sorts them by priority and sets the first three as today's focus, so you start the day knowing what comes first.\n\nChange the number on the Pick card for a shorter or longer focus. Needs today's focus to be turned on.",
+     "de": "Jeden Werktag um 7:30 findet diese Routine die heute fälligen Aufgaben, sortiert sie nach Priorität und setzt die ersten drei als heutigen Fokus, damit du weißt, was zuerst kommt.\n\nÄndere die Zahl auf der Auswählen-Karte für einen kürzeren oder längeren Fokus. Der heutige Fokus muss eingeschaltet sein.",
+     "es": "Cada día laborable a las 7:30 esta rutina busca las tareas que vencen hoy, las ordena por prioridad y pone las tres primeras como foco de hoy, para empezar el día sabiendo qué va primero.\n\nCambia el número en la tarjeta Elegir para un foco más corto o más largo. Necesita el foco de hoy activado.",
+     "fr": "Chaque matin de semaine à 7:30, cette routine trouve les tâches prévues aujourd'hui, les trie par priorité et place les trois premières dans le focus du jour, pour commencer en sachant ce qui passe en premier.\n\nChange le nombre sur la carte Choisir pour un focus plus court ou plus long. Le focus du jour doit être activé.",
+     "it": "Ogni giorno feriale alle 7:30 questa routine trova le attività in scadenza oggi, le ordina per priorità e imposta le prime tre come focus di oggi, così inizi la giornata sapendo cosa viene prima.\n\nCambia il numero nella scheda Scegli per un focus più corto o più lungo. Serve il focus di oggi attivo.",
+     "pt": "Todos os dias úteis às 7:30 esta rotina encontra as tarefas que vencem hoje, ordena-as por prioridade e define as três primeiras como foco de hoje, para começares o dia a saber o que vem primeiro.\n\nMuda o número no cartão Escolher para um foco mais curto ou mais longo. Precisa do foco de hoje ligado."
+    }
+   },
+   "ask": {},
+   "trigger": {
+    "kind": "schedule",
+    "at": "07:30",
+    "weekdays": [
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "steps": [
+    {
+     "id": "a",
+     "kind": "find_tasks",
+     "in": {
+      "condition": {
+       "literal": {
+        "due": "today"
+       }
+      }
+     }
+    },
+    {
+     "id": "b",
+     "kind": "sort",
+     "in": {
+      "list": {
+       "ref": "a"
+      },
+      "by": {
+       "literal": "priority"
+      }
+     }
+    },
+    {
+     "id": "c",
+     "kind": "take",
+     "in": {
+      "list": {
+       "ref": "b"
+      },
+      "n": {
+       "literal": 3
+      },
+      "from": {
+       "literal": "start"
+      }
+     }
+    },
+    {
+     "id": "d",
+     "kind": "set_focus",
+     "in": {
+      "tasks": {
+       "ref": "c"
+      }
+     }
+    }
+   ],
+   "texts": {}
+  },
+  {
+   "slug": "note-to-subtasks",
+   "category": "personal",
+   "icon": "list-checks",
+   "author": "OpenTodo",
+   "reviewed": "2026-11-01",
+   "languages": [
+    "en",
+    "de",
+    "es",
+    "fr",
+    "it",
+    "pt"
+   ],
+   "text": {
+    "title": {
+     "en": "Note to subtasks",
+     "de": "Notiz zu Unteraufgaben",
+     "es": "De la nota a subtareas",
+     "fr": "De la note aux sous-tâches",
+     "it": "Dalla nota alle sotto-attività",
+     "pt": "Da nota a subtarefas"
+    },
+    "summary": {
+     "en": "Run it on a task to turn each line of its note into a subtask.",
+     "de": "Starte sie auf einer Aufgabe, und jede Zeile ihrer Notiz wird zu einer Unteraufgabe.",
+     "es": "Ejecútala sobre una tarea para convertir cada línea de su nota en una subtarea.",
+     "fr": "Lance-la sur une tâche pour transformer chaque ligne de sa note en sous-tâche.",
+     "it": "Avviala su un'attività per trasformare ogni riga della sua nota in una sotto-attività.",
+     "pt": "Executa-a numa tarefa para transformar cada linha da sua nota numa subtarefa."
+    },
+    "description": {
+     "en": "Write the parts of a bigger task in its note, one per line, then run this routine on the task from the command palette or the task's menu. Each line becomes a subtask, in the task's project.\n\nList markers and checkboxes are removed from each line. The note stays as it is.",
+     "de": "Schreib die Teile einer größeren Aufgabe in ihre Notiz, einen pro Zeile, und starte diese Routine dann über die Befehlspalette oder das Menü der Aufgabe auf ihr. Jede Zeile wird zu einer Unteraufgabe im Projekt der Aufgabe.\n\nListenzeichen und Kontrollkästchen werden aus jeder Zeile entfernt. Die Notiz bleibt, wie sie ist.",
+     "es": "Escribe las partes de una tarea grande en su nota, una por línea, y ejecuta esta rutina sobre la tarea desde la paleta de comandos o el menú de la tarea. Cada línea se convierte en una subtarea, en el proyecto de la tarea.\n\nLas viñetas y las casillas se quitan de cada línea. La nota queda como está.",
+     "fr": "Écris les étapes d'une grosse tâche dans sa note, une par ligne, puis lance cette routine sur la tâche depuis la palette de commandes ou le menu de la tâche. Chaque ligne devient une sous-tâche, dans le projet de la tâche.\n\nLes puces et les cases à cocher sont retirées de chaque ligne. La note reste telle quelle.",
+     "it": "Scrivi le parti di un'attività più grande nella sua nota, una per riga, poi avvia questa routine sull'attività dalla palette dei comandi o dal menu dell'attività. Ogni riga diventa una sotto-attività, nel progetto dell'attività.\n\nI segni di elenco e le caselle vengono tolti da ogni riga. La nota resta com'è.",
+     "pt": "Escreve as partes de uma tarefa maior na sua nota, uma por linha, e executa esta rotina na tarefa a partir da paleta de comandos ou do menu da tarefa. Cada linha torna-se uma subtarefa, no projeto da tarefa.\n\nOs marcadores de lista e as caixas de seleção são retirados de cada linha. A nota fica como está."
+    }
+   },
+   "ask": {},
+   "trigger": {
+    "kind": "manual"
+   },
+   "steps": [
+    {
+     "id": "a",
+     "kind": "note_text",
+     "in": {
+      "of": {
+       "ref": "trigger"
+      }
+     }
+    },
+    {
+     "id": "b",
+     "kind": "split_lines",
+     "in": {
+      "text": {
+       "ref": "a"
+      }
+     }
+    },
+    {
+     "id": "c",
+     "kind": "create_tasks",
+     "in": {
+      "text": {
+       "ref": "b"
+      },
+      "parent": {
+       "ref": "trigger"
+      }
+     }
+    }
+   ],
+   "texts": {}
+  },
+  {
+   "slug": "sunday-overdue-sweep",
+   "category": "personal",
+   "icon": "calendar-clock",
+   "author": "OpenTodo",
+   "reviewed": "2026-11-01",
+   "languages": [
+    "en",
+    "de",
+    "es",
+    "fr",
+    "it",
+    "pt"
+   ],
+   "text": {
+    "title": {
+     "en": "Sunday overdue sweep",
+     "de": "Sonntäglicher Überfällig-Kehraus",
+     "es": "Barrido de atrasadas del domingo",
+     "fr": "Ménage du dimanche",
+     "it": "Pulizia domenicale degli arretrati",
+     "pt": "Limpeza de atrasadas ao domingo"
+    },
+    "summary": {
+     "en": "Every Sunday at 18:00, move your overdue tasks to Monday and tell you how many moved.",
+     "de": "Jeden Sonntag um 18:00 werden überfällige Aufgaben auf Montag verschoben, und du erfährst, wie viele.",
+     "es": "Cada domingo a las 18:00, mueve tus tareas atrasadas al lunes y te dice cuántas se movieron.",
+     "fr": "Chaque dimanche à 18:00, déplace tes tâches en retard à lundi et te dit combien ont bougé.",
+     "it": "Ogni domenica alle 18:00, sposta a lunedì le attività scadute e ti dice quante sono.",
+     "pt": "Todos os domingos às 18:00, move as tarefas atrasadas para segunda e diz-te quantas foram."
+    },
+    "description": {
+     "en": "Overdue tasks pile up and make every list look worse than it is. Every Sunday evening this routine gives each overdue task a fresh date, Monday, and sends you one notification with the count.\n\nOn Monday, go through them: do, reschedule or delete. If the same task moves every week, it may not belong on your list.",
+     "de": "Überfällige Aufgaben stapeln sich und lassen jede Liste schlimmer aussehen, als sie ist. Jeden Sonntagabend gibt diese Routine jeder überfälligen Aufgabe ein neues Datum, Montag, und schickt dir eine einzige Benachrichtigung mit der Anzahl.\n\nGeh sie am Montag durch: erledigen, neu planen oder löschen. Wandert dieselbe Aufgabe jede Woche weiter, gehört sie vielleicht nicht auf deine Liste.",
+     "es": "Las tareas atrasadas se acumulan y hacen que cada lista parezca peor de lo que es. Cada domingo por la tarde esta rutina da a cada tarea atrasada una fecha nueva, el lunes, y te envía una sola notificación con el número.\n\nEl lunes, revísalas: hazlas, reprográmalas o bórralas. Si la misma tarea se mueve cada semana, quizá no pertenezca a tu lista.",
+     "fr": "Les tâches en retard s'accumulent et rendent chaque liste pire qu'elle ne l'est. Chaque dimanche soir, cette routine donne une nouvelle date à chaque tâche en retard, lundi, et t'envoie une seule notification avec le nombre.\n\nLundi, passe-les en revue : fais-les, replanifie-les ou supprime-les. Si la même tâche bouge chaque semaine, elle n'a peut-être pas sa place dans ta liste.",
+     "it": "Le attività scadute si accumulano e fanno sembrare ogni lista peggiore di quanto sia. Ogni domenica sera questa routine dà a ogni attività scaduta una data nuova, lunedì, e ti manda una sola notifica con il conteggio.\n\nLunedì passale in rassegna: falle, riprogrammale o eliminale. Se la stessa attività si sposta ogni settimana, forse non appartiene alla tua lista.",
+     "pt": "As tarefas atrasadas acumulam-se e fazem qualquer lista parecer pior do que é. Todos os domingos ao fim do dia esta rotina dá a cada tarefa atrasada uma data nova, segunda-feira, e envia-te uma só notificação com o número.\n\nNa segunda, revê-as: faz, reagenda ou apaga. Se a mesma tarefa muda de data todas as semanas, talvez não pertença à tua lista."
+    }
+   },
+   "ask": {},
+   "trigger": {
+    "kind": "schedule",
+    "at": "18:00",
+    "weekdays": [
+     7
+    ]
+   },
+   "condition": {
+    "due": "overdue"
+   },
+   "steps": [
+    {
+     "id": "a",
+     "kind": "change_tasks",
+     "in": {
+      "tasks": {
+       "ref": "trigger"
+      },
+      "set": {
+       "literal": {
+        "due": "tomorrow"
+       }
+      }
+     }
+    },
+    {
+     "id": "b",
+     "kind": "count",
+     "in": {
+      "list": {
+       "ref": "a"
+      }
+     }
+    },
+    {
+     "id": "c",
+     "kind": "notify",
+     "in": {
+      "text": {
+       "literal": {
+        "format": "{b} overdue tasks moved to Monday"
+       }
+      }
+     }
+    }
+   ],
+   "texts": {
+    "steps.2.in.text": {
+     "en": "{b} overdue tasks moved to Monday",
+     "de": "{b} überfällige Aufgaben auf Montag verschoben",
+     "es": "{b} tareas atrasadas movidas al lunes",
+     "fr": "{b} tâches en retard déplacées à lundi",
+     "it": "{b} attività scadute spostate a lunedì",
+     "pt": "{b} tarefas atrasadas movidas para segunda"
+    }
+   }
+  },
+  {
+   "slug": "groceries-from-note",
+   "category": "home",
+   "icon": "shopping-cart",
+   "author": "OpenTodo",
+   "reviewed": "2026-11-01",
+   "languages": [
+    "en",
+    "de",
+    "es",
+    "fr",
+    "it",
+    "pt"
+   ],
+   "text": {
+    "title": {
+     "en": "Groceries from a note",
+     "de": "Einkauf aus einer Notiz",
+     "es": "La compra desde una nota",
+     "fr": "Courses depuis une note",
+     "it": "Spesa da una nota",
+     "pt": "Compras a partir de uma nota"
+    },
+    "summary": {
+     "en": "Every Friday at 17:00, turn the lines of your groceries note into tasks.",
+     "de": "Jeden Freitag um 17:00 werden die Zeilen deiner Einkaufsnotiz zu Aufgaben.",
+     "es": "Cada viernes a las 17:00, convierte las líneas de tu nota de la compra en tareas.",
+     "fr": "Chaque vendredi à 17:00, transforme les lignes de ta note de courses en tâches.",
+     "it": "Ogni venerdì alle 17:00, trasforma le righe della tua nota della spesa in attività.",
+     "pt": "Todas as sextas às 17:00, transforma as linhas da tua nota de compras em tarefas."
+    },
+    "description": {
+     "en": "Keep one project whose note lists what you need, one item per line. Every Friday at 17:00 this routine reads the note and creates one task per line in your errands project, ready for the weekend shop.\n\nList markers and checkboxes are removed from each line. Clear the note when you are back, or keep it as your standing list.",
+     "de": "Führe ein Projekt, dessen Notiz auflistet, was du brauchst, ein Eintrag pro Zeile. Jeden Freitag um 17:00 liest diese Routine die Notiz und legt pro Zeile eine Aufgabe in deinem Besorgungen-Projekt an, bereit für den Wocheneinkauf.\n\nListenzeichen und Kontrollkästchen werden aus jeder Zeile entfernt. Leere die Notiz, wenn du zurück bist, oder behalte sie als feste Liste.",
+     "es": "Ten un proyecto cuya nota lista lo que necesitas, un artículo por línea. Cada viernes a las 17:00 esta rutina lee la nota y crea una tarea por línea en tu proyecto de recados, lista para la compra del fin de semana.\n\nLas viñetas y las casillas se quitan de cada línea. Vacía la nota al volver, o guárdala como lista fija.",
+     "fr": "Garde un projet dont la note liste ce qu'il te faut, un article par ligne. Chaque vendredi à 17:00, cette routine lit la note et crée une tâche par ligne dans ton projet de commissions, prête pour les courses du week-end.\n\nLes puces et les cases à cocher sont retirées de chaque ligne. Vide la note à ton retour, ou garde-la comme liste permanente.",
+     "it": "Tieni un progetto la cui nota elenca quello che ti serve, una voce per riga. Ogni venerdì alle 17:00 questa routine legge la nota e crea un'attività per riga nel tuo progetto delle commissioni, pronta per la spesa del fine settimana.\n\nI segni di elenco e le caselle vengono tolti da ogni riga. Svuota la nota quando torni, oppure tienila come lista fissa.",
+     "pt": "Mantém um projeto cuja nota lista o que precisas, um item por linha. Todas as sextas às 17:00 esta rotina lê a nota e cria uma tarefa por linha no teu projeto de recados, pronta para as compras do fim de semana.\n\nOs marcadores de lista e as caixas de seleção são retirados de cada linha. Limpa a nota quando voltares, ou mantém-na como lista fixa."
+    }
+   },
+   "ask": {
+    "list": {
+     "type": "project",
+     "suggest": {
+      "en": "Groceries",
+      "de": "Einkauf",
+      "es": "Compra",
+      "fr": "Courses",
+      "it": "Spesa",
+      "pt": "Compras"
+     }
+    },
+    "into": {
+     "type": "project",
+     "suggest": {
+      "en": "Errands",
+      "de": "Besorgungen",
+      "es": "Recados",
+      "fr": "Commissions",
+      "it": "Commissioni",
+      "pt": "Recados"
+     }
+    }
+   },
+   "trigger": {
+    "kind": "schedule",
+    "at": "17:00",
+    "weekdays": [
+     5
+    ]
+   },
+   "steps": [
+    {
+     "id": "a",
+     "kind": "note_text",
+     "in": {
+      "of": {
+       "literal": {
+        "project": {
+         "ask": "list"
+        }
+       }
+      }
+     }
+    },
+    {
+     "id": "b",
+     "kind": "split_lines",
+     "in": {
+      "text": {
+       "ref": "a"
+      }
+     }
+    },
+    {
+     "id": "c",
+     "kind": "create_tasks",
+     "in": {
+      "text": {
+       "ref": "b"
+      },
+      "project": {
+       "literal": {
+        "project": {
+         "ask": "into"
+        }
+       }
+      }
+     }
+    }
+   ],
+   "texts": {}
+  },
+  {
+   "slug": "friday-digest-email",
+   "category": "work",
+   "icon": "mail",
+   "author": "OpenTodo",
+   "reviewed": "2026-11-01",
+   "languages": [
+    "en",
+    "de",
+    "es",
+    "fr",
+    "it",
+    "pt"
+   ],
+   "text": {
+    "title": {
+     "en": "Friday digest by email",
+     "de": "Freitagsrückblick per E-Mail",
+     "es": "Resumen del viernes por correo",
+     "fr": "Bilan du vendredi par e-mail",
+     "it": "Riepilogo del venerdì per email",
+     "pt": "Resumo de sexta por email"
+    },
+    "summary": {
+     "en": "Every Friday at 16:00, email yourself the list of tasks you completed this week.",
+     "de": "Jeden Freitag um 16:00 bekommst du per E-Mail die Liste der Aufgaben, die du diese Woche erledigt hast.",
+     "es": "Cada viernes a las 16:00, te envía por correo la lista de tareas que completaste esta semana.",
+     "fr": "Chaque vendredi à 16:00, t'envoie par e-mail la liste des tâches terminées cette semaine.",
+     "it": "Ogni venerdì alle 16:00, ti manda per email la lista delle attività completate questa settimana.",
+     "pt": "Todas as sextas às 16:00, envia-te por email a lista das tarefas que concluíste esta semana."
+    },
+    "description": {
+     "en": "Every Friday afternoon this routine finds the tasks you completed this week, counts them and emails you the list. It is a quiet record of the week, handy for a weekly review or a report.\n\nNeeds outgoing email on your server and a verified email address. Without them, use Notify me instead of Email me.",
+     "de": "Jeden Freitagnachmittag findet diese Routine die Aufgaben, die du diese Woche erledigt hast, zählt sie und schickt dir die Liste per E-Mail. Ein stilles Protokoll der Woche, praktisch für einen Wochenrückblick oder einen Bericht.\n\nBraucht ausgehende E-Mail auf deinem Server und eine bestätigte E-Mail-Adresse. Ohne sie nimm Benachrichtige mich statt Mir mailen.",
+     "es": "Cada viernes por la tarde esta rutina busca las tareas que completaste esta semana, las cuenta y te envía la lista por correo. Es un registro discreto de la semana, útil para una revisión o un informe.\n\nNecesita el correo saliente en tu servidor y una dirección de correo verificada. Sin ellos, usa Avisarme en lugar de Enviarme un correo.",
+     "fr": "Chaque vendredi après-midi, cette routine trouve les tâches que tu as terminées cette semaine, les compte et t'envoie la liste par e-mail. Un registre discret de la semaine, pratique pour une revue ou un compte rendu.\n\nIl faut l'e-mail sortant sur ton serveur et une adresse e-mail vérifiée. Sinon, utilise Me notifier au lieu de M’envoyer un e-mail.",
+     "it": "Ogni venerdì pomeriggio questa routine trova le attività che hai completato questa settimana, le conta e ti manda la lista per email. È un registro discreto della settimana, utile per una revisione o un resoconto.\n\nServono l'email in uscita sul tuo server e un indirizzo email verificato. Senza, usa Avvisami al posto di Inviami un’email.",
+     "pt": "Todas as sextas à tarde esta rotina encontra as tarefas que concluíste esta semana, conta-as e envia-te a lista por email. É um registo discreto da semana, útil para uma revisão ou um relatório.\n\nPrecisa do email de saída no teu servidor e de um endereço de email verificado. Sem eles, usa Notificar-me em vez de Enviar e-mail para mim."
+    }
+   },
+   "ask": {},
+   "trigger": {
+    "kind": "schedule",
+    "at": "16:00",
+    "weekdays": [
+     5
+    ]
+   },
+   "steps": [
+    {
+     "id": "a",
+     "kind": "find_tasks",
+     "in": {
+      "query": {
+       "literal": "completed = this week"
+      }
+     }
+    },
+    {
+     "id": "b",
+     "kind": "count",
+     "in": {
+      "list": {
+       "ref": "a"
+      }
+     }
+    },
+    {
+     "id": "c",
+     "kind": "format",
+     "in": {
+      "template": {
+       "literal": "{b} tasks done this week:\n{a}"
+      }
+     }
+    },
+    {
+     "id": "d",
+     "kind": "email_me",
+     "in": {
+      "subject": {
+       "literal": "Your week"
+      },
+      "text": {
+       "ref": "c"
+      }
+     }
+    }
+   ],
+   "texts": {
+    "steps.2.in.template": {
+     "en": "{b} tasks done this week:\n{a}",
+     "de": "{b} Aufgaben diese Woche erledigt:\n{a}",
+     "es": "{b} tareas hechas esta semana:\n{a}",
+     "fr": "{b} tâches terminées cette semaine :\n{a}",
+     "it": "{b} attività fatte questa settimana:\n{a}",
+     "pt": "{b} tarefas feitas esta semana:\n{a}"
+    },
+    "steps.3.in.subject": {
+     "en": "Your week",
+     "de": "Deine Woche",
+     "es": "Tu semana",
+     "fr": "Ta semaine",
+     "it": "La tua settimana",
+     "pt": "A tua semana"
+    }
+   }
+  },
+  {
+   "slug": "meeting-notes-to-tasks",
+   "category": "work",
+   "icon": "clipboard-list",
+   "author": "OpenTodo",
+   "reviewed": "2026-11-01",
+   "languages": [
+    "en",
+    "de",
+    "es",
+    "fr",
+    "it",
+    "pt"
+   ],
+   "text": {
+    "title": {
+     "en": "Meeting notes to tasks",
+     "de": "Besprechungsnotizen zu Aufgaben",
+     "es": "De las notas de reunión a tareas",
+     "fr": "Des notes de réunion aux tâches",
+     "it": "Dagli appunti della riunione alle attività",
+     "pt": "Das notas da reunião a tarefas"
+    },
+    "summary": {
+     "en": "Run it on a meeting task to turn the open checkboxes of its note into tasks in its project.",
+     "de": "Starte sie auf einer Besprechungsaufgabe, und die offenen Kontrollkästchen ihrer Notiz werden Aufgaben in ihrem Projekt.",
+     "es": "Ejecútala sobre una tarea de reunión para convertir las casillas abiertas de su nota en tareas de su proyecto.",
+     "fr": "Lance-la sur une tâche de réunion pour transformer les cases ouvertes de sa note en tâches de son projet.",
+     "it": "Avviala su un'attività di riunione per trasformare le caselle aperte della nota in attività del suo progetto.",
+     "pt": "Executa-a numa tarefa de reunião para transformar as caixas abertas da nota em tarefas do seu projeto."
+    },
+    "description": {
+     "en": "Take notes in a meeting task and write each action as a checkbox: `- [ ] send the agenda`. After the meeting, run this routine on the task from the command palette or the task's menu. Each open checkbox becomes a task in the meeting task's project; plain lines and ticked boxes are left out.\n\nA meeting task without a project sends the new tasks to the Inbox.",
+     "de": "Schreib Notizen in eine Besprechungsaufgabe und jede Aktion als Kontrollkästchen: `- [ ] Agenda verschicken`. Starte diese Routine nach der Besprechung über die Befehlspalette oder das Menü der Aufgabe auf ihr. Jedes offene Kontrollkästchen wird zu einer Aufgabe im Projekt der Besprechungsaufgabe; einfache Zeilen und abgehakte Kästchen bleiben draußen.\n\nHat die Besprechungsaufgabe kein Projekt, landen die neuen Aufgaben im Eingang.",
+     "es": "Toma notas en una tarea de reunión y escribe cada acción como casilla: `- [ ] enviar el orden del día`. Después de la reunión, ejecuta esta rutina sobre la tarea desde la paleta de comandos o el menú de la tarea. Cada casilla abierta se convierte en una tarea en el proyecto de la tarea de reunión; las líneas simples y las casillas marcadas se quedan fuera.\n\nUna tarea de reunión sin proyecto envía las tareas nuevas a la bandeja de entrada.",
+     "fr": "Prends des notes dans une tâche de réunion et écris chaque action comme une case : `- [ ] envoyer l'ordre du jour`. Après la réunion, lance cette routine sur la tâche depuis la palette de commandes ou le menu de la tâche. Chaque case ouverte devient une tâche dans le projet de la tâche de réunion ; les lignes simples et les cases cochées sont ignorées.\n\nUne tâche de réunion sans projet envoie les nouvelles tâches dans la boîte de réception.",
+     "it": "Prendi appunti in un'attività di riunione e scrivi ogni azione come casella: `- [ ] mandare l'ordine del giorno`. Dopo la riunione, avvia questa routine sull'attività dalla palette dei comandi o dal menu dell'attività. Ogni casella aperta diventa un'attività nel progetto dell'attività di riunione; le righe semplici e le caselle spuntate restano fuori.\n\nUn'attività di riunione senza progetto manda le nuove attività in In arrivo.",
+     "pt": "Toma notas numa tarefa de reunião e escreve cada ação como caixa de seleção: `- [ ] enviar a agenda`. Depois da reunião, executa esta rotina na tarefa a partir da paleta de comandos ou do menu da tarefa. Cada caixa aberta torna-se uma tarefa no projeto da tarefa de reunião; as linhas simples e as caixas marcadas ficam de fora.\n\nUma tarefa de reunião sem projeto envia as tarefas novas para a caixa de entrada."
+    }
+   },
+   "ask": {},
+   "trigger": {
+    "kind": "manual"
+   },
+   "steps": [
+    {
+     "id": "a",
+     "kind": "note_text",
+     "in": {
+      "of": {
+       "ref": "trigger"
+      }
+     }
+    },
+    {
+     "id": "b",
+     "kind": "split_lines",
+     "in": {
+      "text": {
+       "ref": "a"
+      },
+      "only": {
+       "literal": "open_checkboxes"
+      }
+     }
+    },
+    {
+     "id": "c",
+     "kind": "project_of",
+     "in": {
+      "task": {
+       "ref": "trigger"
+      }
+     }
+    },
+    {
+     "id": "d",
+     "kind": "create_tasks",
+     "in": {
+      "text": {
+       "ref": "b"
+      },
+      "project": {
+       "ref": "c"
+      }
+     }
+    }
+   ],
+   "texts": {}
+  },
+  {
+   "slug": "waiting-follow-up",
+   "category": "work",
+   "icon": "hourglass",
+   "author": "OpenTodo",
+   "reviewed": "2026-11-01",
+   "languages": [
+    "en",
+    "de",
+    "es",
+    "fr",
+    "it",
+    "pt"
+   ],
+   "text": {
+    "title": {
+     "en": "Waiting follow-up",
+     "de": "Nachfassen beim Warten",
+     "es": "Seguimiento de esperas",
+     "fr": "Relance en attente",
+     "it": "Sollecito in attesa",
+     "pt": "Seguimento de esperas"
+    },
+    "summary": {
+     "en": "When a task gets your waiting label, note the date and bring it back in three days.",
+     "de": "Bekommt eine Aufgabe dein Warte-Label, wird das Datum notiert und sie kommt in drei Tagen zurück.",
+     "es": "Cuando una tarea recibe tu etiqueta de espera, anota la fecha y te la devuelve en tres días.",
+     "fr": "Quand une tâche reçoit ton étiquette d'attente, note la date et la ramène dans trois jours.",
+     "it": "Quando un'attività riceve l'etichetta di attesa, annota la data e te la ripropone tra tre giorni.",
+     "pt": "Quando uma tarefa recebe a tua etiqueta de espera, regista a data e trá-la de volta daqui a três dias."
+    },
+    "description": {
+     "en": "Waiting for someone is easy to forget. When you add your waiting label to a task, this routine comments \"Waiting since\" with today's date and makes the task due in three days, so it comes back to you to follow up.\n\nChange the number of days on the last card to suit how quickly people usually answer.",
+     "de": "Auf jemanden zu warten gerät leicht in Vergessenheit. Wenn du einer Aufgabe dein Warte-Label gibst, kommentiert diese Routine \"Wartet seit\" mit dem heutigen Datum und macht die Aufgabe in drei Tagen fällig, damit sie zum Nachfassen zu dir zurückkommt.\n\nÄndere die Anzahl der Tage auf der letzten Karte, je nachdem, wie schnell Leute meist antworten.",
+     "es": "Esperar a alguien es fácil de olvidar. Cuando añades tu etiqueta de espera a una tarea, esta rutina comenta \"Esperando desde\" con la fecha de hoy y hace que la tarea venza en tres días, para que vuelva a ti y hagas el seguimiento.\n\nCambia el número de días en la última tarjeta según lo rápido que suela responder la gente.",
+     "fr": "Attendre quelqu'un s'oublie facilement. Quand tu ajoutes ton étiquette d'attente à une tâche, cette routine commente « En attente depuis le » avec la date du jour et la rend due dans trois jours, pour qu'elle te revienne au moment de relancer.\n\nChange le nombre de jours sur la dernière carte selon la rapidité habituelle des réponses.",
+     "it": "Aspettare qualcuno è facile da dimenticare. Quando aggiungi la tua etichetta di attesa a un'attività, questa routine commenta \"In attesa dal\" con la data di oggi e mette la scadenza tra tre giorni, così l'attività torna da te per il sollecito.\n\nCambia il numero di giorni nell'ultima scheda secondo i tempi di risposta abituali.",
+     "pt": "Esperar por alguém é fácil de esquecer. Quando acrescentas a tua etiqueta de espera a uma tarefa, esta rotina comenta \"À espera desde\" com a data de hoje e faz a tarefa vencer daqui a três dias, para voltar a ti na altura de insistir.\n\nMuda o número de dias no último cartão conforme a rapidez habitual das respostas."
+    }
+   },
+   "ask": {
+    "waiting": {
+     "type": "label",
+     "suggest": {
+      "en": "waiting",
+      "de": "wartend",
+      "es": "en espera",
+      "fr": "en attente",
+      "it": "in attesa",
+      "pt": "em espera"
+     }
+    }
+   },
+   "trigger": {
+    "kind": "label.added",
+    "label_id": {
+     "ask": "waiting"
+    }
+   },
+   "steps": [
+    {
+     "id": "a",
+     "kind": "date",
+     "in": {
+      "date": {
+       "literal": "today"
+      }
+     }
+    },
+    {
+     "id": "b",
+     "kind": "add_comment",
+     "in": {
+      "task": {
+       "ref": "trigger"
+      },
+      "text": {
+       "literal": {
+        "format": "Waiting since {a}"
+       }
+      }
+     }
+    },
+    {
+     "id": "c",
+     "kind": "change_tasks",
+     "in": {
+      "tasks": {
+       "ref": "trigger"
+      },
+      "set": {
+       "literal": {
+        "due": {
+         "in_days": 3
+        }
+       }
+      }
+     }
+    }
+   ],
+   "texts": {
+    "steps.1.in.text": {
+     "en": "Waiting since {a}",
+     "de": "Wartet seit {a}",
+     "es": "Esperando desde {a}",
+     "fr": "En attente depuis le {a}",
+     "it": "In attesa dal {a}",
+     "pt": "À espera desde {a}"
+    }
+   }
+  },
+  {
+   "slug": "inbox-over-20",
+   "category": "method",
+   "icon": "inbox",
+   "author": "OpenTodo",
+   "reviewed": "2026-11-01",
+   "languages": [
+    "en",
+    "de",
+    "es",
+    "fr",
+    "it",
+    "pt"
+   ],
+   "text": {
+    "title": {
+     "en": "Inbox over 20",
+     "de": "Eingang über 20",
+     "es": "Bandeja de entrada por encima de 20",
+     "fr": "Boîte de réception au-delà de 20",
+     "it": "In arrivo oltre 20",
+     "pt": "Caixa de entrada acima de 20"
+    },
+    "summary": {
+     "en": "On weekday mornings, tell you when your Inbox holds more than 20 tasks.",
+     "de": "An Werktagen morgens erfährst du, wenn dein Eingang mehr als 20 Aufgaben enthält.",
+     "es": "Las mañanas de diario, te avisa cuando tu bandeja de entrada tiene más de 20 tareas.",
+     "fr": "Les matins de semaine, te prévient quand ta boîte de réception contient plus de 20 tâches.",
+     "it": "Nelle mattine dei giorni feriali, ti avvisa quando In arrivo contiene più di 20 attività.",
+     "pt": "Nas manhãs de dias úteis, avisa-te quando a tua caixa de entrada tem mais de 20 tarefas."
+    },
+    "description": {
+     "en": "An Inbox works when it is emptied often. Every weekday at 09:00 this routine counts the tasks without a project and notifies you when there are more than 20, so you know it is time to sort them.\n\nChange the number on the If card to the size that feels too big for you.",
+     "de": "Ein Eingang funktioniert, wenn er oft geleert wird. Jeden Werktag um 9:00 zählt diese Routine die Aufgaben ohne Projekt und benachrichtigt dich, wenn es mehr als 20 sind, damit du weißt, dass es Zeit zum Sortieren ist.\n\nÄndere die Zahl auf der Wenn-Karte auf die Größe, die dir zu viel ist.",
+     "es": "Una bandeja de entrada funciona cuando se vacía a menudo. Cada día laborable a las 9:00 esta rutina cuenta las tareas sin proyecto y te avisa cuando hay más de 20, para que sepas que toca ordenarlas.\n\nCambia el número en la tarjeta Si al tamaño que te parezca demasiado.",
+     "fr": "Une boîte de réception fonctionne quand on la vide souvent. Chaque matin de semaine à 9:00, cette routine compte les tâches sans projet et te prévient quand il y en a plus de 20, pour que tu saches qu'il est temps de les trier.\n\nChange le nombre sur la carte Si pour la taille qui te semble trop grande.",
+     "it": "In arrivo funziona quando si svuota spesso. Ogni giorno feriale alle 9:00 questa routine conta le attività senza progetto e ti avvisa quando sono più di 20, così sai che è ora di smistarle.\n\nCambia il numero nella scheda Se con la dimensione che per te è troppa.",
+     "pt": "Uma caixa de entrada funciona quando é esvaziada com frequência. Todos os dias úteis às 9:00 esta rotina conta as tarefas sem projeto e avisa-te quando são mais de 20, para saberes que é hora de as organizar.\n\nMuda o número no cartão Se para o tamanho que te parece demasiado."
+    }
+   },
+   "ask": {},
+   "trigger": {
+    "kind": "schedule",
+    "at": "09:00",
+    "weekdays": [
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "steps": [
+    {
+     "id": "a",
+     "kind": "find_tasks",
+     "in": {
+      "query": {
+       "literal": "no project"
+      }
+     }
+    },
+    {
+     "id": "b",
+     "kind": "count",
+     "in": {
+      "list": {
+       "ref": "a"
+      }
+     }
+    },
+    {
+     "id": "c",
+     "kind": "if",
+     "in": {
+      "value": {
+       "ref": "b"
+      },
+      "is": {
+       "literal": {
+        ">": 20
+       }
+      }
+     },
+     "then": [
+      {
+       "id": "d",
+       "kind": "notify",
+       "in": {
+        "text": {
+         "literal": {
+          "format": "Your Inbox holds {b} tasks: time to sort it"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ],
+   "texts": {
+    "steps.2.then.0.in.text": {
+     "en": "Your Inbox holds {b} tasks: time to sort it",
+     "de": "Dein Eingang enthält {b} Aufgaben: Zeit zum Sortieren",
+     "es": "Tu bandeja de entrada tiene {b} tareas: toca ordenarla",
+     "fr": "Ta boîte de réception contient {b} tâches : il est temps de la trier",
+     "it": "In arrivo ci sono {b} attività: è ora di smistarle",
+     "pt": "A tua caixa de entrada tem {b} tarefas: é hora de a organizar"
+    }
+   }
+  },
+  {
+   "slug": "monthly-review",
+   "category": "method",
+   "icon": "calendar-check",
+   "author": "OpenTodo",
+   "reviewed": "2026-11-01",
+   "languages": [
+    "en",
+    "de",
+    "es",
+    "fr",
+    "it",
+    "pt"
+   ],
+   "text": {
+    "title": {
+     "en": "Monthly review",
+     "de": "Monatsrückblick",
+     "es": "Revisión mensual",
+     "fr": "Revue mensuelle",
+     "it": "Revisione mensile",
+     "pt": "Revisão mensal"
+    },
+    "summary": {
+     "en": "On the first of every month, create a review project from the Weekly review template.",
+     "de": "Am Ersten jedes Monats entsteht ein Rückblick-Projekt aus der Vorlage Wochenrückblick.",
+     "es": "El día 1 de cada mes, crea un proyecto de revisión a partir de la plantilla Revisión semanal.",
+     "fr": "Le premier de chaque mois, crée un projet de revue à partir du modèle Revue hebdomadaire.",
+     "it": "Il primo di ogni mese, crea un progetto di revisione dal modello Revisione settimanale.",
+     "pt": "No dia 1 de cada mês, cria um projeto de revisão a partir do modelo Revisão semanal."
+    },
+    "description": {
+     "en": "A review keeps a task list trustworthy. On the first day of each month at 09:00 this routine creates a project from the library's Weekly review template, with its sections and small tasks, starting that day.\n\nPrefer a weekly rhythm? Change the When card to a weekday.",
+     "de": "Ein Rückblick hält eine Aufgabenliste verlässlich. Am ersten Tag jedes Monats um 9:00 erstellt diese Routine ein Projekt aus der Bibliotheksvorlage Wochenrückblick, mit ihren Abschnitten und kleinen Aufgaben, beginnend an diesem Tag.\n\nLieber wöchentlich? Stell die Wann-Karte auf einen Wochentag um.",
+     "es": "Una revisión mantiene fiable una lista de tareas. El primer día de cada mes a las 9:00 esta rutina crea un proyecto a partir de la plantilla Revisión semanal de la biblioteca, con sus secciones y sus tareas pequeñas, empezando ese día.\n\n¿Prefieres un ritmo semanal? Cambia la tarjeta Cuándo a un día de la semana.",
+     "fr": "Une revue garde une liste de tâches digne de confiance. Le premier jour de chaque mois à 9:00, cette routine crée un projet à partir du modèle Revue hebdomadaire de la bibliothèque, avec ses sections et ses petites tâches, à partir de ce jour.\n\nTu préfères un rythme hebdomadaire ? Règle la carte Quand sur un jour de la semaine.",
+     "it": "Una revisione mantiene affidabile una lista di attività. Il primo giorno di ogni mese alle 9:00 questa routine crea un progetto dal modello Revisione settimanale della libreria, con le sue sezioni e le sue piccole attività, a partire da quel giorno.\n\nPreferisci un ritmo settimanale? Cambia la scheda Quando in un giorno della settimana.",
+     "pt": "Uma revisão mantém fiável uma lista de tarefas. No primeiro dia de cada mês às 9:00 esta rotina cria um projeto a partir do modelo Revisão semanal da biblioteca, com as suas secções e pequenas tarefas, a começar nesse dia.\n\nPreferes um ritmo semanal? Muda o cartão Quando para um dia da semana."
+    }
+   },
+   "ask": {},
+   "trigger": {
+    "kind": "schedule",
+    "at": "09:00",
+    "month_days": [
+     1
+    ]
+   },
+   "steps": [
+    {
+     "id": "a",
+     "kind": "project_from_template",
+     "in": {
+      "template": {
+       "literal": "weekly-review"
+      },
+      "start": {
+       "ref": "trigger"
+      }
+     }
+    }
+   ],
+   "texts": {}
+  }
+ ]
+}

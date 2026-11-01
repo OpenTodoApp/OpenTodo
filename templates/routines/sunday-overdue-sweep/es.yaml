@@ -1,0 +1,6 @@
+# Barrido de atrasadas del domingo: Spanish text for templates/routines/sunday-overdue-sweep/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-070a8f99e646
+title: "Barrido de atrasadas del domingo"
+summary: "Cada domingo a las 18:00, mueve tus tareas atrasadas al lunes y te dice cuántas se movieron."
+description: "Las tareas atrasadas se acumulan y hacen que cada lista parezca peor de lo que es. Cada domingo por la tarde esta rutina da a cada tarea atrasada una fecha nueva, el lunes, y te envía una sola notificación con el número.\n\nEl lunes, revísalas: hazlas, reprográmalas o bórralas. Si la misma tarea se mueve cada semana, quizá no pertenezca a tu lista."
+steps.2.in.text: "{b} tareas atrasadas movidas al lunes"

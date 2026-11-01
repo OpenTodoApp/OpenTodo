@@ -1,0 +1,5 @@
+# Revisione mensile: Italian text for templates/routines/monthly-review/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-b86adf551d28
+title: "Revisione mensile"
+summary: "Il primo di ogni mese, crea un progetto di revisione dal modello Revisione settimanale."
+description: "Una revisione mantiene affidabile una lista di attività. Il primo giorno di ogni mese alle 9:00 questa routine crea un progetto dal modello Revisione settimanale della libreria, con le sue sezioni e le sue piccole attività, a partire da quel giorno.\n\nPreferisci un ritmo settimanale? Cambia la scheda Quando in un giorno della settimana."

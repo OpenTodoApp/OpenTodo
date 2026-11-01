@@ -1,0 +1,6 @@
+# Riporto serale: Italian text for templates/routines/evening-roll-over/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-4b18f9ec8a3b
+title: "Riporto serale"
+summary: "Ogni sera alle 21:00, sposta a domani quello che scade ancora oggi e ti dice quante attività sono."
+description: "Una giornata va raramente come previsto. Ogni sera alle 21:00 questa routine sposta a domani le attività che scadono ancora oggi, così la mattina dopo parte da una lista onesta invece che da un muro di attività scadute.\n\nLa notifica ti dice quante sono state spostate. Cambia l'orario nella scheda Quando per farlo coincidere con la fine della tua giornata."
+steps.2.in.text: "{b} attività spostate a domani"

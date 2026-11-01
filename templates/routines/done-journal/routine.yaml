@@ -1,0 +1,43 @@
+title: Done journal
+summary: When you complete a task, add a line with its title to the note of your journal project.
+description: |
+  A list of what you finished is good for weekly reviews, stand-ups and bad days. Each time you complete a task, this routine adds "Done:" and the task's title to the note of a project you choose, so the note grows into a log of your work.
+
+  Add a condition on the When card to log only one project's tasks.
+category: personal
+icon: notebook-pen
+author: OpenTodo
+reviewed: 2026-11-01
+ask:
+  journal:
+    type: project
+    suggest: Journal
+trigger:
+  kind: task.completed
+steps:
+  - id: a
+    kind: append_to_note
+    in:
+      of:
+        literal:
+          project:
+            ask: journal
+      text:
+        literal:
+          format: "Done: {trigger}"
+test:
+  fill:
+    journal: journal
+  run_on: k1
+  projects:
+    - id: journal
+      name: Journal
+      description: Log
+  tasks:
+    - id: k1
+      title: Ship it
+      completed_on: 2026-10-21
+  expect:
+    appended:
+      journal:
+        - "Done: Ship it"

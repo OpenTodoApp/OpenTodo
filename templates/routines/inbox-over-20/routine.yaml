@@ -1,0 +1,66 @@
+title: Inbox over 20
+summary: On weekday mornings, tell you when your Inbox holds more than 20 tasks.
+description: |
+  An Inbox works when it is emptied often. Every weekday at 09:00 this routine counts the tasks without a project and notifies you when there are more than 20, so you know it is time to sort them.
+
+  Change the number on the If card to the size that feels too big for you.
+category: method
+icon: inbox
+author: OpenTodo
+reviewed: 2026-11-01
+trigger:
+  kind: schedule
+  at: "09:00"
+  weekdays: [1, 2, 3, 4, 5]
+steps:
+  - id: a
+    kind: find_tasks
+    in:
+      query:
+        literal: no project
+  - id: b
+    kind: count
+    in:
+      list:
+        ref: a
+  - id: c
+    kind: if
+    in:
+      value:
+        ref: b
+      is:
+        literal:
+          ">": 20
+    then:
+      - id: d
+        kind: notify
+        in:
+          text:
+            literal:
+              format: "Your Inbox holds {b} tasks: time to sort it"
+test:
+  tasks:
+    - id: i0
+    - id: i1
+    - id: i2
+    - id: i3
+    - id: i4
+    - id: i5
+    - id: i6
+    - id: i7
+    - id: i8
+    - id: i9
+    - id: i10
+    - id: i11
+    - id: i12
+    - id: i13
+    - id: i14
+    - id: i15
+    - id: i16
+    - id: i17
+    - id: i18
+    - id: i19
+    - id: i20
+  expect:
+    notices:
+      - "Your Inbox holds 21 tasks: time to sort it"

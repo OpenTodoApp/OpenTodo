@@ -1,0 +1,6 @@
+# Bandeja de entrada por encima de 20: Spanish text for templates/routines/inbox-over-20/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-7616aafaa5e8
+title: "Bandeja de entrada por encima de 20"
+summary: "Las mañanas de diario, te avisa cuando tu bandeja de entrada tiene más de 20 tareas."
+description: "Una bandeja de entrada funciona cuando se vacía a menudo. Cada día laborable a las 9:00 esta rutina cuenta las tareas sin proyecto y te avisa cuando hay más de 20, para que sepas que toca ordenarlas.\n\nCambia el número en la tarjeta Si al tamaño que te parezca demasiado."
+steps.2.then.0.in.text: "Tu bandeja de entrada tiene {b} tareas: toca ordenarla"

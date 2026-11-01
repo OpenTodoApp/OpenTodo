@@ -52,6 +52,18 @@ export const Empty: StoryObj = {
   render: () => <div className="-m-4 bg-canvas"><RoutinesView /></div>,
 }
 
+/** The starters page (routines-starters D5): cards by category with a search. */
+export const Starters: StoryObj = {
+  ...withSeed(async () => undefined),
+  render: () => <div className="-m-4 bg-canvas"><RoutinesView route={{ view: 'rules', starters: true }} /></div>,
+}
+
+/** A starter's page: description, steps, choices (Errands chosen already, Groceries to create), Use this starter. */
+export const Starter: StoryObj = {
+  ...withSeed(async () => { await createProject({ name: 'Errands' }) }),
+  render: () => <div className="-m-4 bg-canvas"><RoutinesView route={{ view: 'rules', starters: true, starter: 'groceries-from-note' }} /></div>,
+}
+
 /** The editor: sentence cards with chips, outputs and previews from local data. */
 export const Editor: StoryObj = {
   ...withSeed(async () => {

@@ -8,7 +8,7 @@ import { t } from '../../lib/i18n'
 import { PageBody, Skeleton } from '../../ui'
 import { navigate, type Route } from '../router'
 import { RoutineEditor, routineDraftOf } from './RoutineEditor'
-import { clearHandover, historyRequested, pendingDraft, setReturnFocus } from './routineNav'
+import { clearHandover, historyRequested, pendingDraft, pendingStarter, setReturnFocus } from './routineNav'
 import { isKnownRule, useRule } from '../../lib/rules/store'
 
 export function RoutinePage({ route }: { route: Extract<Route, { view: 'rules' }> }) {
@@ -16,9 +16,11 @@ export function RoutinePage({ route }: { route: Extract<Route, { view: 'rules' }
   const [opened] = useState(() => route.id ?? 'new')
   const rule = useRule(route.id)
   const [handed] = useState(() => (route.create ? pendingDraft() : null))
+  // A starter's routine, its choices filled (routines-starters D5).
+  const [starter] = useState(() => (route.create ? pendingStarter() : null))
   const [history] = useState(() => historyRequested())
   useEffect(() => clearHandover(), [])
-  const draft = useMemo(() => (handed ? routineDraftOf(handed) : undefined), [handed])
+  const draft = useMemo(() => starter ?? (handed ? routineDraftOf(handed) : undefined), [handed, starter])
 
   const back = () => {
     setReturnFocus(route.id ?? null)

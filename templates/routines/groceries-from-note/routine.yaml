@@ -1,0 +1,59 @@
+title: Groceries from a note
+summary: Every Friday at 17:00, turn the lines of your groceries note into tasks.
+description: |
+  Keep one project whose note lists what you need, one item per line. Every Friday at 17:00 this routine reads the note and creates one task per line in your errands project, ready for the weekend shop.
+
+  List markers and checkboxes are removed from each line. Clear the note when you are back, or keep it as your standing list.
+category: home
+icon: shopping-cart
+author: OpenTodo
+reviewed: 2026-11-01
+ask:
+  list:
+    type: project
+    suggest: Groceries
+  into:
+    type: project
+    suggest: Errands
+trigger:
+  kind: schedule
+  at: "17:00"
+  weekdays: [5]
+steps:
+  - id: a
+    kind: note_text
+    in:
+      of:
+        literal:
+          project:
+            ask: list
+  - id: b
+    kind: split_lines
+    in:
+      text:
+        ref: a
+  - id: c
+    kind: create_tasks
+    in:
+      text:
+        ref: b
+      project:
+        literal:
+          project:
+            ask: into
+test:
+  fill:
+    list: groc
+    into: errands
+  projects:
+    - id: groc
+      name: Groceries
+      description: "- oat milk\n- [ ] apples\n"
+    - id: errands
+      name: Errands
+  expect:
+    created:
+      - title: apples
+        project_id: errands
+      - title: oat milk
+        project_id: errands

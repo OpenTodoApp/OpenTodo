@@ -1,0 +1,7 @@
+# Riepilogo del venerdì per email: Italian text for templates/routines/friday-digest-email/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-926c1534c942
+title: "Riepilogo del venerdì per email"
+summary: "Ogni venerdì alle 16:00, ti manda per email la lista delle attività completate questa settimana."
+description: "Ogni venerdì pomeriggio questa routine trova le attività che hai completato questa settimana, le conta e ti manda la lista per email. È un registro discreto della settimana, utile per una revisione o un resoconto.\n\nServono l'email in uscita sul tuo server e un indirizzo email verificato. Senza, usa Avvisami al posto di Inviami un’email."
+steps.2.in.template: "{b} attività fatte questa settimana:\n{a}"
+steps.3.in.subject: "La tua settimana"

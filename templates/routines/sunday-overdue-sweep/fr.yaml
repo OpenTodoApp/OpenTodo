@@ -1,0 +1,6 @@
+# Ménage du dimanche: French text for templates/routines/sunday-overdue-sweep/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-070a8f99e646
+title: "Ménage du dimanche"
+summary: "Chaque dimanche à 18:00, déplace tes tâches en retard à lundi et te dit combien ont bougé."
+description: "Les tâches en retard s'accumulent et rendent chaque liste pire qu'elle ne l'est. Chaque dimanche soir, cette routine donne une nouvelle date à chaque tâche en retard, lundi, et t'envoie une seule notification avec le nombre.\n\nLundi, passe-les en revue : fais-les, replanifie-les ou supprime-les. Si la même tâche bouge chaque semaine, elle n'a peut-être pas sa place dans ta liste."
+steps.2.in.text: "{b} tâches en retard déplacées à lundi"

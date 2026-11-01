@@ -1333,6 +1333,9 @@
   "All shared projects": [
     "web/src/app/FeedView.tsx"
   ],
+  "All starters": [
+    "web/src/app/routines/Starters.tsx"
+  ],
   "All subtasks done. Complete <b>{title}</b> too?": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
@@ -3792,6 +3795,9 @@
   ],
   "Create webhook": [
     "web/src/app/WebhooksPanel.tsx"
+  ],
+  "Create “{name}”": [
+    "web/src/app/routines/Starters.tsx"
   ],
   "Created": [
     "web/src/app/filter/ConditionEditor.tsx",
@@ -6809,6 +6815,7 @@
     "web/src/app/HistoryPanel.tsx"
   ],
   "Home": [
+    "web/src/app/routines/Starters.tsx",
     "web/src/lib/templateLibrary.ts"
   ],
   "Home SSO": [
@@ -7746,6 +7753,7 @@
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/notes/NoteFilters.tsx",
     "web/src/app/quickadd/FieldRows.tsx",
+    "web/src/app/routines/Starters.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/views/DisplayPanel.tsx"
   ],
@@ -7786,6 +7794,7 @@
     "web/src/app/review/DailyCheck.tsx",
     "web/src/app/review/MonthlyLook.tsx",
     "web/src/app/review/ReviewView.tsx",
+    "web/src/app/routines/Starters.tsx",
     "web/src/app/routines/wordPicker.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/TaskFacts.tsx",
@@ -8268,6 +8277,9 @@
   "Loading the run": [
     "web/src/app/routines/RunHistory.tsx"
   ],
+  "Loading the starters": [
+    "web/src/app/routines/Starters.tsx"
+  ],
   "Loading the theme…": [
     "web/src/app/themes/ThemeEditor.tsx"
   ],
@@ -8635,6 +8647,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Method": [
+    "web/src/app/routines/Starters.tsx",
     "web/src/lib/templateLibrary.ts"
   ],
   "Microphone access is blocked. Allow the microphone for this site in your browser’s site settings (usually the icon next to the address), then try again.": [
@@ -9087,6 +9100,9 @@
   "Needed for a model server on your own network (Ollama, LM Studio). Off, the compatible endpoint may only be a public address.": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
+  "Needs": [
+    "web/src/app/routines/Starters.tsx"
+  ],
   "Needs a connection": [
     "web/src/app/palette/routineCommand.ts",
     "web/src/app/routines/ProposalReview.tsx",
@@ -9123,7 +9139,8 @@
     "web/src/app/NotificationChannelEditor.tsx"
   ],
   "New": [
-    "web/src/app/FeedView.tsx"
+    "web/src/app/FeedView.tsx",
+    "web/src/app/routines/Starters.tsx"
   ],
   "New API token": [
     "web/src/app/TokensSection.tsx"
@@ -9753,6 +9770,9 @@
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/lib/assistant.ts"
   ],
+  "No starter matches. Try another word, or start an empty routine.": [
+    "web/src/app/routines/Starters.tsx"
+  ],
   "No status fetched yet.": [
     "web/src/app/BackupsPanel.tsx"
   ],
@@ -10143,6 +10163,9 @@
   "Nothing is ready to start today.": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
+  "Nothing is saved until you save the routine in the editor.": [
+    "web/src/app/routines/Starters.tsx"
+  ],
   "Nothing is sent until you add one. A webhook posts a signed request to your endpoint when tasks or projects change.": [
     "web/src/app/WebhooksPanel.tsx"
   ],
@@ -10513,7 +10536,7 @@
   "On a phone": [
     "web/src/lib/settingsCopy.ts"
   ],
-  "On a routine's page: back to Routines, asking first about unsaved changes": [
+  "On a routine's page: back to Routines, asking first about unsaved changes; on a starter's page: back to the starters": [
     "web/src/lib/shortcuts.ts"
   ],
   "On a schedule": [
@@ -11406,6 +11429,7 @@
   ],
   "Personal": [
     "web/src/app/WorkspaceControl.tsx",
+    "web/src/app/routines/Starters.tsx",
     "web/src/app/workspaceNav.ts",
     "web/src/lib/templateLibrary.ts"
   ],
@@ -11816,6 +11840,7 @@
     "web/src/app/palette/notesSection.tsx",
     "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/review/StatsView.tsx",
+    "web/src/app/routines/Starters.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/TaskFacts.tsx",
@@ -11950,6 +11975,7 @@
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/palette/entries.ts",
+    "web/src/app/routines/Starters.tsx",
     "web/src/app/routines/wordPicker.tsx",
     "web/src/lib/review.ts",
     "web/src/lib/rules/sentence.ts",
@@ -12238,6 +12264,9 @@
   ],
   "Ready to start": [
     "web/src/app/NotificationChannelEditor.tsx"
+  ],
+  "Ready-made routines to start from. Choose one, make its choices, then edit it like any routine.": [
+    "web/src/app/routines/Starters.tsx"
   ],
   "Ready: {mode}": [
     "web/src/app/focus/FocusParts.tsx"
@@ -13026,6 +13055,7 @@
     "web/src/app/Sidebar.tsx",
     "web/src/app/routines/RoutineEditor.tsx",
     "web/src/app/routines/RoutinesView.tsx",
+    "web/src/app/routines/Starters.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
   "Routines since your last visit": [
@@ -13428,6 +13458,12 @@
   ],
   "Search shortcuts": [
     "web/src/app/ShortcutHelp.tsx"
+  ],
+  "Search starters": [
+    "web/src/app/routines/Starters.tsx"
+  ],
+  "Search starters…": [
+    "web/src/app/routines/Starters.tsx"
   ],
   "Search steps": [
     "web/src/app/routines/AddStep.tsx"
@@ -14640,6 +14676,10 @@
   "Start from a skill": [
     "web/src/app/assistant/AssistantWelcome.tsx"
   ],
+  "Start from a starter": [
+    "web/src/app/routines/RoutinesView.tsx",
+    "web/src/app/routines/Starters.tsx"
+  ],
   "Start guide": [
     "web/src/app/FirstDay.tsx",
     "web/src/lib/settingsCopy.ts"
@@ -14710,6 +14750,9 @@
   ],
   "Started {date}": [
     "web/src/app/TaskRow.tsx"
+  ],
+  "Starters": [
+    "web/src/app/routines/Starters.tsx"
   ],
   "Starts": [
     "web/src/app/calendar/FramesDialog.tsx"
@@ -14856,6 +14899,7 @@
     "web/src/app/themes/tokenNames.ts"
   ],
   "Study": [
+    "web/src/app/routines/Starters.tsx",
     "web/src/lib/templateLibrary.ts"
   ],
   "Sub-projects": [
@@ -16886,6 +16930,9 @@
   "This site may show notifications.": [
     "web/src/lib/push.ts"
   ],
+  "This starter is not in this version.": [
+    "web/src/app/routines/Starters.tsx"
+  ],
   "This task does not repeat.": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -18079,6 +18126,9 @@
   "Use this address to sign in from now on.": [
     "web/src/app/EmailScreens.tsx"
   ],
+  "Use this starter": [
+    "web/src/app/routines/Starters.tsx"
+  ],
   "Use {coords}": [
     "web/src/app/locations/LocationEditor.tsx"
   ],
@@ -18382,6 +18432,9 @@
   "What is {method}?": [
     "web/src/app/method/MethodModeChooser.tsx"
   ],
+  "What it does": [
+    "web/src/app/routines/Starters.tsx"
+  ],
   "What keeps slipping?": [
     "web/src/app/review/StatsView.tsx"
   ],
@@ -18411,6 +18464,7 @@
     "web/src/app/AuditPanel.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/quickadd/FieldRows.tsx",
+    "web/src/app/routines/Starters.tsx",
     "web/src/app/routines/StepCard.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx",
@@ -18519,6 +18573,7 @@
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Work": [
+    "web/src/app/routines/Starters.tsx",
     "web/src/lib/templateLibrary.ts"
   ],
   "Work done before this time counts for the previous day.": [
@@ -18896,6 +18951,9 @@
   ],
   "Your changes are kept as a draft on this device until you save or discard them.": [
     "web/src/app/themes/ThemeEditor.tsx"
+  ],
+  "Your choices": [
+    "web/src/app/routines/Starters.tsx"
   ],
   "Your content is decrypted on this device and synced in plaintext again; the key record is deleted from the server. You will be asked to confirm your password.": [
     "web/src/app/EncryptionPanel.tsx"
@@ -19347,6 +19405,7 @@
     "web/src/lib/crypto.ts"
   ],
   "change": [
+    "web/src/app/routines/Starters.tsx",
     "web/src/app/routines/StepCard.tsx",
     "web/src/app/routines/wordPicker.tsx"
   ],
@@ -19368,6 +19427,9 @@
   "choose a date": [
     "web/src/app/routines/words.tsx"
   ],
+  "choose a label": [
+    "web/src/app/routines/Starters.tsx"
+  ],
   "choose a number": [
     "web/src/app/routines/words.tsx"
   ],
@@ -19375,6 +19437,7 @@
     "web/src/app/routines/words.tsx"
   ],
   "choose a project": [
+    "web/src/app/routines/Starters.tsx",
     "web/src/app/routines/words.tsx"
   ],
   "choose a test": [
@@ -21670,6 +21733,9 @@
   "{n, plural, one {# stalled} other {# stalled}}": [
     "web/src/app/method/LoopHome.tsx"
   ],
+  "{n, plural, one {# starter} other {# starters}}": [
+    "web/src/app/routines/Starters.tsx"
+  ],
   "{n, plural, one {# step not available} other {# steps not available}}": [
     "web/src/app/routines/RoutinesView.tsx"
   ],
@@ -21827,6 +21893,9 @@
   ],
   "{n, plural, one {Day reopened, # task back in Today} other {Day reopened, # tasks back in Today}}": [
     "web/src/lib/review.ts"
+  ],
+  "{n, plural, one {Fill # choice first} other {Fill # choices first}}": [
+    "web/src/app/routines/Starters.tsx"
   ],
   "{n, plural, one {Fixed # pair} other {Fixed # pairs}}": [
     "web/src/app/themes/ContrastPanel.tsx"
@@ -22355,6 +22424,12 @@
   ],
   "{step} needs a value here": [
     "web/src/lib/rules/fixes.ts"
+  ],
+  "{step}: available": [
+    "web/src/app/routines/Starters.tsx"
+  ],
+  "{step}: not available, {reason}": [
+    "web/src/app/routines/Starters.tsx"
   ],
   "{tasks, plural, one {It leaves the sidebar with # open task.} other {It leaves the sidebar with # open tasks.}} You can unarchive it from Settings → Data.": [
     "web/src/app/ProjectHeader.tsx"

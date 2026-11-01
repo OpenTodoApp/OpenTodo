@@ -28,6 +28,7 @@ import { navigate, type Route } from '../router'
 import { useRoutineNames, valueNamer, type RoutineNames } from './data'
 import { RunDetail, RunsList } from './RunHistory'
 import { clearHandover, openRoutineHistory, returnFocus } from './routineNav'
+import { StarterGallery, StartersPage } from './Starters'
 import { sentenceText } from './StepCard'
 
 const PAUSE_REASON = translatedMap<string>({ runaway: msg('Paused: it ran too often') })
@@ -115,7 +116,15 @@ function RoutineRow({ rule, index, total, status, catalogue, names, onEdit, onHi
   )
 }
 
+/** The Routines page, or the starters (/routines/starters[/<slug>], routines-starters D5). */
 export function RoutinesView({ route }: { route?: Extract<Route, { view: 'rules' }> }) {
+  if (route?.starters) return <StartersPage slug={route.starter} />
+  return <RoutinesList route={route} />
+}
+
+const openStarters = () => navigate({ view: 'rules', starters: true })
+
+function RoutinesList({ route }: { route?: Extract<Route, { view: 'rules' }> }) {
   const rules = useRules()
   const names = useRoutineNames()
   const catalogue = useCatalogue()
@@ -144,6 +153,7 @@ export function RoutinesView({ route }: { route?: Extract<Route, { view: 'rules'
     <PageBody width="list" data-rules-page>
       <PageHeader title={t('Routines')} meta={rules.length} help="routines"
         actions={<>
+          <Button variant="secondary" size="sm" icon="sparkles" onClick={openStarters} data-open-starters>{t('Start from a starter')}</Button>
           <Button variant="primary" size="sm" icon="plus" onClick={() => edit()}>{t('New routine')}</Button>
           {overflowGroups.length > 0 && <ActionMenu label={t('More')} groups={overflowGroups} />}
         </>} />
@@ -162,9 +172,15 @@ export function RoutinesView({ route }: { route?: Extract<Route, { view: 'rules'
               </ul>
             )}
             {rules.length === 0 && (
-              <EmptyState icon="zap" title={t('No routines yet')}
-                body={t('A routine does things for you in a row: every Friday, turn the lines of a note into tasks; when a task gets a label, move it.')}
-                control={<Button variant="primary" size="sm" icon="plus" onClick={() => edit()}>{t('New routine')}</Button>} />
+              <>
+                <EmptyState icon="zap" title={t('No routines yet')}
+                  body={t('A routine does things for you in a row: every Friday, turn the lines of a note into tasks; when a task gets a label, move it.')}
+                  control={<div className="flex flex-wrap justify-center gap-2">
+                    <Button variant="primary" size="sm" icon="plus" onClick={() => edit()}>{t('New routine')}</Button>
+                    <Button variant="secondary" size="sm" icon="sparkles" onClick={openStarters}>{t('Start from a starter')}</Button>
+                  </div>} />
+                <StarterGallery />
+              </>
             )}
           </>
         ) : (

@@ -1,0 +1,5 @@
+# Dalla nota alle sotto-attività: Italian text for templates/routines/note-to-subtasks/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-3d6498714c4e
+title: "Dalla nota alle sotto-attività"
+summary: "Avviala su un'attività per trasformare ogni riga della sua nota in una sotto-attività."
+description: "Scrivi le parti di un'attività più grande nella sua nota, una per riga, poi avvia questa routine sull'attività dalla palette dei comandi o dal menu dell'attività. Ogni riga diventa una sotto-attività, nel progetto dell'attività.\n\nI segni di elenco e le caselle vengono tolti da ogni riga. La nota resta com'è."

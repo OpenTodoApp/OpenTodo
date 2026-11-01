@@ -1,0 +1,6 @@
+# Boîte de réception au-delà de 20: French text for templates/routines/inbox-over-20/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-7616aafaa5e8
+title: "Boîte de réception au-delà de 20"
+summary: "Les matins de semaine, te prévient quand ta boîte de réception contient plus de 20 tâches."
+description: "Une boîte de réception fonctionne quand on la vide souvent. Chaque matin de semaine à 9:00, cette routine compte les tâches sans projet et te prévient quand il y en a plus de 20, pour que tu saches qu'il est temps de les trier.\n\nChange le nombre sur la carte Si pour la taille qui te semble trop grande."
+steps.2.then.0.in.text: "Ta boîte de réception contient {b} tâches : il est temps de la trier"

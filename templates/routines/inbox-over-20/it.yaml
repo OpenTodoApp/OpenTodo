@@ -1,0 +1,6 @@
+# In arrivo oltre 20: Italian text for templates/routines/inbox-over-20/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-7616aafaa5e8
+title: "In arrivo oltre 20"
+summary: "Nelle mattine dei giorni feriali, ti avvisa quando In arrivo contiene più di 20 attività."
+description: "In arrivo funziona quando si svuota spesso. Ogni giorno feriale alle 9:00 questa routine conta le attività senza progetto e ti avvisa quando sono più di 20, così sai che è ora di smistarle.\n\nCambia il numero nella scheda Se con la dimensione che per te è troppa."
+steps.2.then.0.in.text: "In arrivo ci sono {b} attività: è ora di smistarle"
