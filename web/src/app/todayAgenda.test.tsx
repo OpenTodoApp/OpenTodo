@@ -17,7 +17,12 @@ import { resetPanel } from './panel'
 import { navigate } from './router'
 import { TaskListView } from './TaskListView'
 
-const fetchMock = vi.fn(async () => new Response('{"error":{"code":"feeds_disabled","message":"off"}}', { status: 404 }))
+// The server's answers: both switches are plain reads (off by default), the events route is 404 while they are off.
+const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
+const fetchMock = vi.fn(async (url: unknown) =>
+  String(url).includes('/api/v1/settings/') ? json({ enabled: false }) : json({ error: { code: 'feeds_disabled', message: 'off' } }, 404))
+const eventCalls = () => fetchMock.mock.calls.filter((c) => String(c[0]).includes('/calendar-feeds/events'))
+const switchCalls = () => fetchMock.mock.calls.filter((c) => String(c[0]).includes('/settings/calendar-feeds'))
 let n = 0
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
@@ -92,10 +97,10 @@ describe('the option', () => {
     await r.unmount()
   })
 
-  it('is not offered without a subscription (feeds off), and Today asks the server at most once in ten minutes', async () => {
+  it('is not offered without a subscription (feeds off), and Today looks at the switches at most once in ten minutes', async () => {
     await setTodayEventsShown(true)
     let r = await openToday()
-    await waitFor(() => fetchMock.mock.calls.length === 1)
+    await waitFor(() => switchCalls().length === 1)
     await click(menu())
     await waitFor(() => !!document.querySelector('[data-briefing-toggle]'))
     expect(toggle()).toBeNull()
@@ -104,7 +109,8 @@ describe('the option', () => {
     r = await openToday()
     // eslint-disable-next-line test-hygiene/no-fixed-wait -- a request not made leaves no signal; give a wrong second request time to go out
     await flush(10)
-    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(switchCalls()).toHaveLength(1)
+    expect(eventCalls()).toHaveLength(0)
     await r.unmount()
   })
 
@@ -112,14 +118,15 @@ describe('the option', () => {
     const r = await openToday()
     // eslint-disable-next-line test-hygiene/no-fixed-wait -- a request not made leaves no signal; give a wrong request time to go out
     await flush(10)
-    expect(fetchMock).not.toHaveBeenCalled()
+    expect(eventCalls()).toHaveLength(0)
     await r.unmount()
   })
 
   it('learns about a first calendar added in Settings, without a calendar view opened before', async () => {
-    fetchMock.mockImplementationOnce(async () => new Response(JSON.stringify({ events: [standup], subscriptions: [work] }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    fetchMock.mockImplementation(async (url: unknown) =>
+      String(url).includes('/settings/calendar-feeds') ? json({ enabled: true }) : json({ events: [standup], subscriptions: [work] }))
     expect(await refreshAfterChange()).toBe(true)
-    expect(String((fetchMock.mock.calls[0] as unknown[])[0])).toContain('from=2026-09-24&to=2026-11-19')
+    expect(String((eventCalls()[0] as unknown[])[0])).toContain('from=2026-09-24&to=2026-11-19')
     const r = await openToday()
     await click(menu())
     await waitFor(() => toggle()?.textContent?.includes('Show calendar events') === true)

@@ -5,7 +5,15 @@ const calendarEvents = vi.fn(async (_from: string, _to: string) => ({
   events: [{ id: 'e1', subscriptionId: 's1', uid: 'u', summary: 'Team sync', location: '', start: { date: '2026-10-19', time: '10:00', tz: 'Europe/Berlin' }, end: { date: '2026-10-19', time: '11:00', tz: 'Europe/Berlin' }, allDay: false, free: false }],
   subscriptions: [{ id: 's1', name: 'Work', color: '#3b82f6', enabled: true, lastSuccessAt: 1 }],
 }))
-vi.mock('./api', () => ({ api: { calendarEvents: (from: string, to: string) => calendarEvents(from, to) } }))
+const feedsSwitch = vi.fn(async () => ({ enabled: true }))
+const syncSwitch = vi.fn(async () => ({ enabled: false }))
+vi.mock('./api', () => ({
+  api: {
+    calendarEvents: (from: string, to: string) => calendarEvents(from, to),
+    calendarFeedsSwitch: { get: () => feedsSwitch() },
+    calendarSyncSwitch: { get: () => syncSwitch() },
+  },
+}))
 
 import { cachedWindow, covers, ensureEventsFor, eventsStatus, fetchRange, refreshEvents, requestRanges, setShowEvents, showEvents } from './calendarFeeds'
 import { clearLocalData, db, useDatabase } from './db'
@@ -14,6 +22,8 @@ let n = 0
 beforeEach(() => {
   useDatabase(`calfeeds-${Date.now()}-${n++}`)
   calendarEvents.mockClear()
+  feedsSwitch.mockResolvedValue({ enabled: true })
+  syncSwitch.mockResolvedValue({ enabled: false })
 })
 
 describe('calendar events cache (5.1, 5.2)', () => {
@@ -44,6 +54,35 @@ describe('calendar events cache (5.1, 5.2)', () => {
 
   it('keeps the cache when the API fails', async () => {
     await refreshEvents(week)
+    calendarEvents.mockRejectedValueOnce(new TypeError('offline'))
+    expect(await refreshEvents(week)).toBe(false)
+    expect(await db.calendarEvents.count()).toBe(1)
+  })
+
+  it('asks nothing while feeds and sync are both off, empties the cache, and asks again once one is on', async () => {
+    await refreshEvents(week)
+    expect(await db.calendarEvents.count()).toBe(1)
+    calendarEvents.mockClear()
+    feedsSwitch.mockResolvedValue({ enabled: false })
+    expect(await refreshEvents(week)).toBe(false)
+    await ensureEventsFor(week)
+    expect(calendarEvents).not.toHaveBeenCalled()
+    expect(await db.calendarEvents.count()).toBe(0)
+    expect(await db.calendarSubscriptions.count()).toBe(0)
+    expect(await cachedWindow()).toBeNull()
+    syncSwitch.mockResolvedValue({ enabled: true })
+    await ensureEventsFor(week)
+    expect(calendarEvents).toHaveBeenCalledTimes(1)
+    expect(await db.calendarEvents.count()).toBe(1)
+  })
+
+  it('still asks for events when the switches cannot be read, and keeps the cache if that fails too', async () => {
+    await refreshEvents(week)
+    calendarEvents.mockClear()
+    feedsSwitch.mockRejectedValueOnce(new TypeError('offline'))
+    expect(await refreshEvents(week)).toBe(true)
+    expect(calendarEvents).toHaveBeenCalledTimes(1)
+    feedsSwitch.mockRejectedValueOnce(new TypeError('offline'))
     calendarEvents.mockRejectedValueOnce(new TypeError('offline'))
     expect(await refreshEvents(week)).toBe(false)
     expect(await db.calendarEvents.count()).toBe(1)
