@@ -24,7 +24,7 @@ Not **BREAKING**: additive library files and one assistant route; no op change; 
 
 ## Roadmap
 
-Advances milestone **1.1 "Routines"**, item `routines-starters`, third of five. **Depends on** `routines-engine` and `routines-editor`. GitHub issue: [#660](https://github.com/OpenTodoApp/OpenTodo/issues/660).
+Advances milestone **1.1 "Routines"**, item `routines-starters`, third of five. **Depends on** `routines-engine`, `routines-editor` and `routines-dynamic-data`. GitHub issue: [#660](https://github.com/OpenTodoApp/OpenTodo/issues/660).
 
 ## Capabilities
 

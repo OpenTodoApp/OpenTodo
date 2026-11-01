@@ -33,20 +33,22 @@ steps:
 - Translations (`it.yaml`…) overlay only text: title, summary, description, the suggested names and the text literals of steps (format templates, notify texts), keyed by path; never structure (the project template rule).
 - The engine's step format is used unchanged, so a starter is a routine once its placeholders are filled.
 
-**D2. Validation in CI.** `scripts/templates-check.mjs` gains the routine rules, failing with template, file and path: the field rules above; every `ask` used is declared and every declared one used; the steps type-check with the shared checker (run from the vectors' TypeScript module) after replacing placeholders with typed sample values; step kinds exist in the catalogue; no fetch, email-to-address or other step the catalogue does not have; at most 20 steps; no email address, phone number or URL other than `https` links in descriptions; unique English title; at most 16 KB per file. A Go test (`internal/rules`) plans every starter with its placeholders filled against a fixture account through the dry run and checks each step's status is `ok` (or `ended` where the starter ends by design).
+**D2. Validation in CI.** `scripts/templates-check.mjs` gains the routine rules, failing with template, file and path: the field rules above; every `ask` used is declared and every declared one used; the steps type-check with the shared checker (run from the vectors' TypeScript module) after replacing placeholders with typed sample values; step kinds exist in the catalogue; no `{task: id}` literal and no `get_task` step (`routines-dynamic-data`: starters never hold a task chosen by hand); no fetch, email-to-address or other step the catalogue does not have; at most 20 steps; no email address, phone number or URL other than `https` links in descriptions; unique English title; at most 16 KB per file. A Go test (`internal/rules`) plans every starter with its placeholders filled against a fixture account through the dry run and checks each step's status is `ok` (or `ended` where the starter ends by design).
 
 **D3. The eight starters.**
 
 | Slug | Trigger | Steps | Needs |
 |---|---|---|---|
-| `groceries-from-note` | Friday 17:00 | Get note text of *list* → Split into lines → Create tasks in *into* | — |
-| `sunday-overdue-sweep` | Sunday 18:00, condition overdue | Change tasks: due tomorrow → Count → Notify me "{count} tasks moved to Monday" | — |
-| `waiting-follow-up` | a task gets the label *waiting* | Add comment "Waiting since {date}" → Change tasks: due in 3 days | — |
-| `friday-digest-email` | Friday 16:00 | Find tasks (completed this week) → Count → Format text → Email me | email |
-| `morning-focus` | weekdays 07:30 | Find tasks (due today, by priority) → Take first 3 → Set today's focus | focus |
-| `inbox-over-20` | weekdays 09:00 | Find tasks (Inbox) → Count → If more than *n*: Notify me | — |
-| `monthly-review-project` | day 1 of the month (a schedule on the weekdays of the first week, ended by If when the date is not the 1st) | Date → If day is 1 → Create a project from the template "Weekly review" | — |
-| `meeting-notes-to-tasks` | manual, on a task | Get note text of the trigger's task → Split into lines → Filter lines starting with "- [ ]" → Create tasks in the task's project | — |
+| `groceries-from-note` | Friday 17:00 | Get the note text of *list* (a project) → Split into lines → Create tasks from the lines in *into* | — |
+| `sunday-overdue-sweep` | Sunday 18:00, condition overdue | Change the matching tasks: due tomorrow → Count → Notify me "{count} tasks moved to Monday" | — |
+| `waiting-follow-up` | a task gets the label *waiting* | Get the date today → Comment on the task that triggered "Waiting since {date}" → Change it: due in 3 days | — |
+| `friday-digest-email` | Friday 16:00 | Find tasks `completed = this week` → Count → Format text → Email me | email |
+| `morning-focus` | weekdays 07:30 | Find tasks due today → Sort by priority → Pick the first 3 → Set today's focus | focus |
+| `inbox-over-20` | weekdays 09:00 | Find tasks `no project` → Count → If more than *n*: Notify me | — |
+| `monthly-review-project` | every month on day 1 (`month_days: [1]`) | Create a project from the template "Weekly review" starting the day | — |
+| `meeting-notes-to-tasks` | manual, run on a task | Get the note text of the task you run it on → Split into lines → Pick the ones that contain "[ ]" → Get the project of the task → Create tasks from the picked lines in the task's project | — |
+
+Starters follow `routines-dynamic-data`: data flows from the trigger and earlier steps, and no starter holds a task chosen by hand. The table above is that change's D11; the project literal on `of`, Get the date, Get the project of a task, Find over completed tasks and `month_days` come with it.
 
 Each has an English source and the five translations at release.
 
