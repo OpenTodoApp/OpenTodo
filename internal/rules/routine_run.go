@@ -220,6 +220,10 @@ func (st *runState) commit(depth int) ([]written, int, int, error) {
 		res, err := e.Sync.ApplyStrict(withDepth(st.ctx, depth), st.w.uid, ops)
 		if err != nil {
 			var rej *opsync.RejectedError
+			if errors.As(err, &rej) && opsync.IsLimitReason(rej.Reason) {
+				// A hosted tenant over its limits (design D13): stop here.
+				return wrote, writes, refused, errors.New(ErrCodeTenantLimit)
+			}
 			if errors.As(err, &rej) {
 				refused++
 				continue

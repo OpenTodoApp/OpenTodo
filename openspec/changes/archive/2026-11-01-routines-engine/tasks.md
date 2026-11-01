@@ -28,11 +28,11 @@
 - [x] 3.3 `internal/cli`: `ot routine list|show|runs|run [--task] [--test]|enable|disable|create --file|edit --file|rm|undo`, alias `ot routines`, `ot rules` kept; names resolved before sending; JSON and YAML (`go.yaml.in/yaml/v3`, a test keeps it out of the server binary); `ot schema` entries; exit codes 5 and 6; `docs/cli.md`; verify `go test ./internal/cli/...`
 - [x] 3.4 MCP read tools `list_routines`, `get_routine`, `list_routine_runs`, `get_routine_run`, resources `opentodo://routines` and `opentodo://routines/{id}`, untrusted marking, `e2ee.Display`; verify `go test ./internal/agenttools/... ./internal/mcp/...`
 - [x] 3.5 MCP write tools `run_routine`, `set_routine_enabled`, `create_routine`, `update_routine`, `trash_routine` behind the write gate, same validation and availability warnings, write limits, `agent.write` audit, device `agent:<token-id>` for definitions and `rule:<rule-id>` for runs; ciphertext-only names on encrypted accounts; verify `go test ./internal/agenttools/... ./internal/mcp/...` (gate closed, invalid steps, create then test)
-- [ ] 3.6 Palette: "Run routine…" and "Go to Routines" with the open task passed, toast with View run and Undo, offline "Needs a connection"; verify `palette.test.tsx` and `registry.test.tsx` with `npm test`
-- [ ] 3.7 Host mode: a routine within the tenant's limits, `tenant_limit` failure; verify `go test ./internal/host/...`
+- [x] 3.6 Palette: "Run routine…" and "Go to Routines" with the open task passed, toast with View run and Undo, offline "Needs a connection"; verify `palette.test.tsx` and `registry.test.tsx` with `npm test`
+- [x] 3.7 Host mode: a routine within the tenant's limits, `tenant_limit` failure; verify `go test ./internal/host/...`
 
 ## 4. Docs and checks
 
-- [ ] 4.1 `docs/automations.md` (routines, the catalogue, availability, limits, runs, undo, what is not offered and why), `docs/api.md`, `docs/cli.md`, `docs/mcp.md`, `docs/sync.md` (`rule.steps`); verify `make docs-check`
-- [ ] 4.2 CHANGELOG Unreleased entry (at archive)
-- [ ] 4.3 `go test ./...`, `npm test`, `npm run build`, `make check`, `make openspec-validate`
+- [x] 4.1 `docs/automations.md` (routines, the catalogue, availability, limits, runs, undo, what is not offered and why), `docs/api.md`, `docs/cli.md`, `docs/mcp.md`, `docs/sync.md` (`rule.steps`); verify `make docs-check`
+- [x] 4.2 CHANGELOG Unreleased entry (at archive)
+- [x] 4.3 `go test ./...`, `npm test`, `npm run build`, `make check`, `make openspec-validate`

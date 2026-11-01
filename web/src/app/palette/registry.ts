@@ -112,7 +112,7 @@ const ROUTES: RouteCommand[] = translatedList<RouteCommand, 'label'>([
   { label: msg('Go to Trash'), route: { view: 'trash' }, icon: 'trash-2', shortcut: keysOf('go.trash') },
   // Saved locations (task-locations D7): a command without a default key.
   { label: msg('Go to Locations'), route: { view: 'places' }, icon: 'map-pin', keywords: 'places map addresses' },
-  { label: msg('Go to Rules'), route: { view: 'rules' }, icon: 'zap', keywords: 'automations automation triggers' },
+  { label: msg('Go to Routines'), route: { view: 'rules' }, icon: 'zap', keywords: 'rules automations automation triggers' },
   { label: msg('New rule'), route: { view: 'rules', create: true }, icon: 'zap', keywords: 'automation create' },
   { label: msg('Go to Updates'), route: { view: 'feed' }, icon: 'newspaper', shortcut: keysOf('go.feed'), keywords: 'activity feed changes' },
   { label: msg('Go to Assistant'), route: { view: 'ask' }, icon: 'message-circle', shortcut: keysOf('go.ask') },
@@ -333,6 +333,8 @@ export function commands(ctx: PaletteContext): Command[] {
     // Frames (calendar-frames D5): the form of the Frames dialog; no default key.
     { id: 'new:frame', label: t('New frame'), icon: 'rows-2', keywords: 'frame calendar time block window deep work focus add create', run: () => requestFrames({ mode: 'new' }) },
     // Slots (calendar-slots "Create slots"): today at the next free quarter hour; no default key.
+    // Routines (routines-engine "Run a routine from the palette"): the open task goes along.
+    { id: 'routine:run', label: t('Run routine…'), icon: 'zap', keywords: 'routine rule automation run now', run: async () => (await import('./routineCommand')).runRoutineStep(ctx.task) },
     { id: 'new:slot', label: t('New slot'), icon: 'layers', keywords: 'slot calendar batch small tasks admin errands checklist add create', run: () => act(newSlotNow()) },
     ...ROUTES.map((r): Command => ({ id: `go:${r.route.view}${'step' in r.route && r.route.step ? `:${r.route.step}` : ''}`, label: r.label, icon: r.icon, shortcut: r.shortcut, keywords: r.keywords, run: () => navigate(r.route) })),
     ...(ctx.user ? visibleSections(ctx.user) : []).map((s): Command => ({ id: `go:settings:${s.id}`, label: t('Open Settings: {section}', { section: s.label }), icon: s.icon, run: () => navigate({ view: 'settings', section: s.id }) })),
