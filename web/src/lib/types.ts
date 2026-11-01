@@ -597,6 +597,36 @@ export interface RoutineProposalItem {
   side?: { kind: string; notice?: { text: string; taskId?: string }; fired?: { taskId?: string }; hook?: string; delivery?: { Text?: string | null }; mail?: { Subject: string; Text: string } }
 }
 
+/** What applying a proposal did. */
+export interface RoutineProposalApplied {
+  state: RoutineProposal['state']
+  applied: number
+  skipped: number
+  changed: number
+  refused: number
+  run_id: string
+  rule_id: string
+}
+
+/** A routine's AI mode (routines-ai-step D4, D5): auto when it applies AI results itself. */
+export interface RoutineAIMode {
+  auto: boolean
+  /** ai_apply is "auto". */
+  asked: boolean
+  /** Why auto mode is off although asked: limit, failures, disallowed_write or agent. */
+  reason?: string
+  at?: number
+  /** The first step Apply without asking cannot run with, and what it does. */
+  blocked?: { step: string; what: string }
+}
+
+/** GET /api/v1/rules/{id}/ai-usage. */
+export interface RoutineAIUsage {
+  days: { day: string; tokens: number }[]
+  budget: number
+  mode: RoutineAIMode | null
+}
+
 /** A routine's proposal: its planned changes waiting for review (routines-ai-step D2). */
 export interface RoutineProposal {
   id: string

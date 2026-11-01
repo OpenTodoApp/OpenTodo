@@ -9,6 +9,7 @@ import type { Catalogue } from '../../lib/rules/catalogue'
 import { isAvailable, reasonText, settingPath } from '../../lib/rules/catalogue'
 import type { RoutineDraft } from '../../lib/rules/draft'
 import type { Fix } from '../../lib/rules/fixes'
+import { roundEstimate } from '../../lib/rules/ai'
 import { previewLines, type Preview } from '../../lib/rules/preview'
 import { addableInputs, countText, extraInputs, inputLabel, sentenceParts, stepName } from '../../lib/rules/sentence'
 import { conditionParts, triggerText } from '../../lib/rules/summary'
@@ -56,6 +57,9 @@ function PreviewBlock({ p, ctx, online }: { p: Preview | undefined; ctx: WordCon
   if (!p || p.state === 'unknown') return null
   if (p.state === 'skipped') return <p className="text-meta text-faint" data-preview="skipped">{t('Not run in this preview')}</p>
   if (p.state === 'server') return <p className="text-meta text-faint" data-preview="server">{online ? t('Preview loading…') : t('Preview needs a connection')}</p>
+  if (p.state === 'ai') {
+    return <p className="text-meta text-muted" data-preview="ai">{t('The AI answer appears when you Test · about {n} tokens', { n: roundEstimate(p.estimate) })}</p>
+  }
   if (p.state === 'effect') {
     const over = p.n !== undefined && p.max !== undefined && p.n > p.max
     return (

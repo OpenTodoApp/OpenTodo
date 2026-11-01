@@ -103,6 +103,8 @@ export interface AssistantUsage {
   counted_tokens?: number
   cap_member_keys?: boolean
   own_key?: { input_tokens: number; output_tokens: number; total_tokens: number; turns: number }
+  /** routines-ai-step: the month's routine AI calls (already in the totals). */
+  routines?: { input_tokens: number; output_tokens: number; total_tokens: number; calls: number }
 }
 
 /** PUT /api/v1/me/assistant. */
@@ -114,6 +116,8 @@ export interface MyAssistantInput {
   /** Your own provider (anthropic, openai, gemini); "" goes back to the server's assistant. */
   own_provider?: string
   own_model?: string
+  /** routines-ai-step D10: with consent: true, accept (or withdraw) the terms for routines' AI steps. */
+  routines?: boolean
 }
 
 /** Providers a member may choose for their own key. */

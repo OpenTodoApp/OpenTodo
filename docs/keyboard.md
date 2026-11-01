@@ -288,6 +288,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>a</kbd> | Focused step: in the routine editor: add a step below the focused step; Delete asks to delete it |
 | <kbd>Ctrl+Enter</kbd> / <kbd>⌘+Enter</kbd> | In the routine editor: save the routine |
 | <kbd>Ctrl+Shift+Enter</kbd> / <kbd>⌘+Shift+Enter</kbd> | In the routine editor: test the routine (writes nothing) |
+| <kbd>Enter</kbd> / <kbd>Esc</kbd> | Routine proposal: in a routine’s proposal: apply the ticked changes / close the review; Space toggles an item |
 | <kbd>←</kbd> / <kbd>→</kbd> | In the routine editor: move between the words of a step; Esc closes a picker, then the editor |
 
 ### Reviews

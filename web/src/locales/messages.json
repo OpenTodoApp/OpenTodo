@@ -197,6 +197,9 @@
   "<b>{routine}</b> failed at step {n}": [
     "web/src/app/NotificationBell.tsx"
   ],
+  "<b>{routine}</b> has a proposal waiting ({n, plural, one {# change} other {# changes}})": [
+    "web/src/app/NotificationBell.tsx"
+  ],
   "<b>{routine}</b>: {text}": [
     "web/src/app/NotificationBell.tsx"
   ],
@@ -446,7 +449,8 @@
     "web/src/app/UsersPanel.tsx"
   ],
   "A routine": [
-    "web/src/app/NotificationBell.tsx"
+    "web/src/app/NotificationBell.tsx",
+    "web/src/app/routines/RunHistory.tsx"
   ],
   "A routine can have at most 20 steps": [
     "web/src/lib/rules/fixes.ts"
@@ -617,6 +621,15 @@
     "web/src/app/AssistantsPanel.tsx",
     "web/src/app/auditFormat.ts"
   ],
+  "AI results": [
+    "web/src/app/routines/AISettings.tsx"
+  ],
+  "AI steps cannot run for an end-to-end encrypted account yet": [
+    "web/src/lib/rules/catalogue.ts"
+  ],
+  "AI tokens today: {today} of {budget} · last 7 days: {week}": [
+    "web/src/app/routines/AISettings.tsx"
+  ],
   "API key": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
@@ -665,6 +678,9 @@
   ],
   "Accept and continue": [
     "web/src/app/assistant/AssistantConsent.tsx"
+  ],
+  "Accept for routines": [
+    "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Accept invitation": [
     "web/src/app/AuthScreen.tsx"
@@ -942,6 +958,9 @@
   ],
   "Add a webhook to use this": [
     "web/src/lib/rules/catalogue.ts"
+  ],
+  "Add an Ask AI or Summarise step first": [
+    "web/src/lib/rules/ai.ts"
   ],
   "Add an estimate": [
     "web/src/app/task-detail/TaskFacts.tsx"
@@ -1419,6 +1438,9 @@
   "An AI connector wants to make a change": [
     "web/src/app/RelayConfirm.tsx"
   ],
+  "An AI step that would use more today does not run. Default {n}.": [
+    "web/src/app/routines/AISettings.tsx"
+  ],
   "An OpenTodo export, a CSV file or another app’s JSON export; open it with {kbd}.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -1594,6 +1616,9 @@
   "Application token": [
     "web/src/app/NotificationChannelEditor.tsx"
   ],
+  "Applied without asking": [
+    "web/src/app/routines/RunHistory.tsx"
+  ],
   "Apply": [
     "web/src/app/RelayConfirm.tsx",
     "web/src/app/calendar/ReplanPreview.tsx"
@@ -1606,6 +1631,21 @@
   ],
   "Apply to": [
     "web/src/app/task-detail/OccurrenceScope.tsx"
+  ],
+  "Apply without asking": [
+    "web/src/app/routines/AISettings.tsx"
+  ],
+  "Apply without asking was turned off after a run that would have made a change it does not allow": [
+    "web/src/lib/rules/ai.ts"
+  ],
+  "Apply without asking was turned off after a run that would have written more than {n} items": [
+    "web/src/lib/rules/ai.ts"
+  ],
+  "Apply without asking was turned off after two failed runs in a row": [
+    "web/src/lib/rules/ai.ts"
+  ],
+  "Apply without asking was turned off because an AI assistant changed this routine": [
+    "web/src/lib/rules/ai.ts"
   ],
   "Archive": [
     "web/src/app/ArchivePrompt.tsx",
@@ -1824,7 +1864,8 @@
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/TaskFacts.tsx",
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/views/DisplayPanel.tsx",
+    "web/src/lib/rules/proposal.ts"
   ],
   "Assistant": [
     "web/src/app/AssistantsPanel.tsx",
@@ -2490,6 +2531,9 @@
   "Change tasks": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "Change the project {name}": [
+    "web/src/lib/rules/proposal.ts"
+  ],
   "Change who recognises speech?": [
     "web/src/app/VoiceSettings.tsx"
   ],
@@ -2501,6 +2545,9 @@
   ],
   "Change {tasks}: {set}": [
     "web/src/lib/rules/sentence.ts"
+  ],
+  "Change “{task}”": [
+    "web/src/lib/rules/proposal.ts"
   ],
   "Changed from {date} on": [
     "web/src/lib/seriesSplitActions.ts"
@@ -3032,6 +3079,9 @@
   "Comment on “{task}”": [
     "web/src/lib/assistant.ts"
   ],
+  "Comment on “{task}”: {text}": [
+    "web/src/lib/rules/proposal.ts"
+  ],
   "Comment time": [
     "web/src/app/DateTimeSettings.tsx"
   ],
@@ -3142,6 +3192,7 @@
     "web/src/app/task-list/ListGroups.tsx",
     "web/src/lib/assistant.ts",
     "web/src/lib/feed.ts",
+    "web/src/lib/rules/proposal.ts",
     "web/src/lib/shortcuts.ts"
   ],
   "Completed / reopened": [
@@ -3576,11 +3627,24 @@
   "Create the account for <strong>{email}</strong> with the name and password you chose. This link works until {instant}.": [
     "web/src/app/EmailScreens.tsx"
   ],
+  "Create the label {name}": [
+    "web/src/lib/rules/proposal.ts"
+  ],
   "Create the project {name}": [
+    "web/src/lib/rules/proposal.ts",
     "web/src/lib/rules/sentence.ts"
+  ],
+  "Create the section {name}": [
+    "web/src/lib/rules/proposal.ts"
   ],
   "Create the task {title} in {project}": [
     "web/src/lib/rules/sentence.ts"
+  ],
+  "Create the task “{title}”": [
+    "web/src/lib/rules/proposal.ts"
+  ],
+  "Create the task “{title}” in {project}": [
+    "web/src/lib/rules/proposal.ts"
   ],
   "Create them": [
     "web/src/app/method/MethodModeChooser.tsx"
@@ -3703,6 +3767,9 @@
   ],
   "Daily": [
     "web/src/app/BackupsPanel.tsx"
+  ],
+  "Daily AI budget (tokens)": [
+    "web/src/app/routines/AISettings.tsx"
   ],
   "Daily check done. See you tomorrow.": [
     "web/src/app/review/DailyCheck.tsx"
@@ -3877,7 +3944,8 @@
     "web/src/app/task-detail/TaskFacts.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/app/views/DisplayPanel.tsx",
-    "web/src/lib/facets.ts"
+    "web/src/lib/facets.ts",
+    "web/src/lib/rules/proposal.ts"
   ],
   "Deadline reminders fire once the task has a deadline.": [
     "web/src/app/RemindersField.tsx"
@@ -4119,7 +4187,8 @@
   ],
   "Deleted task": [
     "web/src/app/routines/RunHistory.tsx",
-    "web/src/app/routines/StepCard.tsx"
+    "web/src/app/routines/StepCard.tsx",
+    "web/src/lib/rules/proposal.ts"
   ],
   "Deletes earlier (superseded) versions of your titles, descriptions and names from the server's history, including any plaintext from before encryption was on. Revision history for those fields is gone afterwards. Backups made before now, and copies of the database, may still contain plaintext: delete them if that matters to you.": [
     "web/src/app/EncryptionPanel.tsx"
@@ -4194,6 +4263,7 @@
   "Description": [
     "web/src/app/RelayConfirm.tsx",
     "web/src/app/ShareCapture.tsx",
+    "web/src/lib/rules/proposal.ts",
     "web/src/page/TaskPageScreen.tsx"
   ],
   "Description changed": [
@@ -4313,7 +4383,8 @@
     "web/src/app/ThemeRow.tsx",
     "web/src/app/assistant/AssistantRoot.tsx",
     "web/src/app/assistant/ComposerCapture.tsx",
-    "web/src/app/bulk/UndoToast.tsx"
+    "web/src/app/bulk/UndoToast.tsx",
+    "web/src/app/routines/ProposalReview.tsx"
   ],
   "Dismiss {name}": [
     "web/src/app/routines/RoutinesInboxCard.tsx"
@@ -4487,6 +4558,7 @@
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/app/views/DisplayPanel.tsx",
+    "web/src/lib/rules/proposal.ts",
     "web/src/lib/rules/sentence.ts"
   ],
   "Due date and time (6 languages)": [
@@ -4742,6 +4814,9 @@
   "Email me {subject}: {text}": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "Email me: {subject}": [
+    "web/src/lib/rules/proposal.ts"
+  ],
   "Email not sent": [
     "web/src/app/auditFormat.ts"
   ],
@@ -4923,6 +4998,7 @@
     "web/src/app/task-detail/TaskFacts.tsx",
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/facets.ts",
+    "web/src/lib/rules/proposal.ts",
     "web/src/lib/rules/sentence.ts"
   ],
   "Energy cleared": [
@@ -4976,6 +5052,9 @@
   ],
   "Enter a start and an end time": [
     "web/src/app/task-detail/TimeTab.tsx"
+  ],
+  "Enter a whole number from {min} to {max}": [
+    "web/src/app/routines/AISettings.tsx"
   ],
   "Enter a whole number.": [
     "web/src/app/DefaultRemindersSettings.tsx",
@@ -6816,6 +6895,9 @@
   "In a number of days": [
     "web/src/app/filter/ConditionEditor.tsx"
   ],
+  "In a routine’s proposal: apply the ticked changes / close the review; Space toggles an item": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "In a side panel": [
     "web/src/app/AppearanceSection.tsx"
   ],
@@ -6946,6 +7028,7 @@
     "web/src/lib/listGroups.ts",
     "web/src/lib/pickerSources.ts",
     "web/src/lib/review.ts",
+    "web/src/lib/rules/proposal.ts",
     "web/src/lib/shortcuts.ts",
     "web/src/lib/stats.ts",
     "web/src/lib/trash.ts",
@@ -7413,6 +7496,7 @@
     "web/src/app/task-list/ListChrome.tsx",
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/facets.ts",
+    "web/src/lib/rules/proposal.ts",
     "web/src/lib/rules/sentence.ts",
     "web/src/lib/shortcuts.ts"
   ],
@@ -7848,6 +7932,9 @@
   "Loading the list…": [
     "web/src/app/ProjectsView.tsx",
     "web/src/app/PublicListScreen.tsx"
+  ],
+  "Loading the proposal": [
+    "web/src/app/routines/ProposalReview.tsx"
   ],
   "Loading the review…": [
     "web/src/app/Shell.tsx"
@@ -8643,6 +8730,7 @@
   ],
   "Needs a connection": [
     "web/src/app/palette/routineCommand.ts",
+    "web/src/app/routines/ProposalReview.tsx",
     "web/src/app/routines/RoutinesView.tsx",
     "web/src/app/routines/RunHistory.tsx"
   ],
@@ -9804,7 +9892,11 @@
     "web/src/app/rules/RuleFields.tsx",
     "web/src/lib/rules/sentence.ts"
   ],
+  "Notify me about the task {task}": [
+    "web/src/lib/rules/proposal.ts"
+  ],
   "Notify me: {text}": [
+    "web/src/lib/rules/proposal.ts",
     "web/src/lib/rules/sentence.ts"
   ],
   "Now": [
@@ -11171,6 +11263,7 @@
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/task-list/RowActionCluster.tsx",
     "web/src/app/views/DisplayPanel.tsx",
+    "web/src/lib/rules/proposal.ts",
     "web/src/lib/rules/sentence.ts"
   ],
   "Priority 1 or 2": [
@@ -11277,6 +11370,7 @@
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/dashboard.ts",
     "web/src/lib/listGroups.ts",
+    "web/src/lib/rules/proposal.ts",
     "web/src/lib/rules/sentence.ts",
     "web/src/lib/stats.ts"
   ],
@@ -11428,14 +11522,33 @@
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/TaskFacts.tsx"
   ],
+  "Proposal": [
+    "web/src/app/routines/RunHistory.tsx"
+  ],
+  "Proposal applied": [
+    "web/src/app/routines/RunHistory.tsx"
+  ],
   "Proposal discarded.": [
     "web/src/app/assistant/useAssistantConversation.ts"
   ],
   "Proposal discarded. Nothing was changed.": [
     "web/src/app/assistant/ChangeSetReview.tsx"
   ],
+  "Proposal dismissed": [
+    "web/src/app/routines/RunHistory.tsx"
+  ],
+  "Proposal expired": [
+    "web/src/app/routines/RunHistory.tsx"
+  ],
+  "Proposal partly applied": [
+    "web/src/app/routines/RunHistory.tsx"
+  ],
+  "Proposal waiting": [
+    "web/src/app/routines/RunHistory.tsx"
+  ],
   "Proposed changes": [
-    "web/src/app/assistant/ChangeSetReview.tsx"
+    "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/routines/ProposalReview.tsx"
   ],
   "Provider": [
     "web/src/app/IssueEditor.tsx",
@@ -11534,6 +11647,9 @@
   ],
   "Puts the whole server back to the state in an archive: every account, project, task and the sync log. The server restarts, and everything is checked before anything changes. On a stopped server you can also use the <a>command line</a>.": [
     "web/src/app/RestoreSection.tsx"
+  ],
+  "P{n}": [
+    "web/src/lib/rules/proposal.ts"
   ],
   "QR code to scan with your authenticator app": [
     "web/src/app/TwoFactorPanel.tsx"
@@ -12275,6 +12391,7 @@
   ],
   "Review": [
     "web/src/app/Sidebar.tsx",
+    "web/src/app/routines/RunHistory.tsx",
     "web/src/lib/shortcuts.ts"
   ],
   "Review and planning": [
@@ -12309,11 +12426,17 @@
   "Review them too": [
     "web/src/app/review/ProjectWalk.tsx"
   ],
+  "Review: {name}": [
+    "web/src/app/routines/ProposalReview.tsx"
+  ],
   "Reviewed {ago}": [
     "web/src/app/review/ProjectWalk.tsx"
   ],
   "Reviewed, not due yet": [
     "web/src/app/review/ProjectWalk.tsx"
+  ],
+  "Reviewing a proposal needs a connection.": [
+    "web/src/app/routines/ProposalReview.tsx"
   ],
   "Reviews": [
     "web/src/lib/shortcuts.ts"
@@ -12430,6 +12553,12 @@
   ],
   "Routines since your last visit": [
     "web/src/app/routines/RoutinesInboxCard.tsx"
+  ],
+  "Routines with AI steps": [
+    "web/src/app/assistant/AssistantSettings.tsx"
+  ],
+  "Routines: an Ask AI or Summarise step of one of your routines sends what it reads (text, lines, or tasks with their title, due date, priority, labels and project) to the same provider on a schedule or after an event, while you may not be looking. Its result waits for your review unless you turn on Apply without asking for that routine.": [
+    "web/src/app/assistant/RoutinesDisclosure.tsx"
   ],
   "Row": [
     "web/src/app/ImportScreen.tsx"
@@ -12838,6 +12967,7 @@
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/TaskFacts.tsx",
     "web/src/app/views/DisplayPanel.tsx",
+    "web/src/lib/rules/proposal.ts",
     "web/src/lib/rules/sentence.ts"
   ],
   "Section flow changed": [
@@ -12981,6 +13111,9 @@
   ],
   "Send the link again": [
     "web/src/app/AuthScreen.tsx"
+  ],
+  "Send the webhook": [
+    "web/src/lib/rules/proposal.ts"
   ],
   "Send the webhook {webhook_id}": [
     "web/src/lib/rules/sentence.ts"
@@ -13905,6 +14038,7 @@
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/facets.ts",
+    "web/src/lib/rules/proposal.ts",
     "web/src/lib/rules/sentence.ts"
   ],
   "Start 15 minutes earlier / later, keeping the end": [
@@ -14533,6 +14667,9 @@
   "Test token": [
     "web/src/app/IssuesPanel.tsx"
   ],
+  "Test with AI?": [
+    "web/src/app/routines/RoutineEditor.tsx"
+  ],
   "Testing…": [
     "web/src/app/BackupsPanel.tsx",
     "web/src/app/NotificationsSettings.tsx",
@@ -14616,6 +14753,9 @@
   ],
   "That workspace is no longer available": [
     "web/src/app/workspaceNav.ts"
+  ],
+  "The AI answer appears when you Test · about {n} tokens": [
+    "web/src/app/routines/StepCard.tsx"
   ],
   "The CalDAV address, the server’s host name, or your email address: caldav.icloud.com, caldav.fastmail.com, your Nextcloud.": [
     "web/src/app/CalendarSyncDialogs.tsx"
@@ -15918,7 +16058,11 @@
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/task-list/ListChrome.tsx"
   ],
+  "This proposal is encrypted: open it on one of your devices that runs your routines.": [
+    "web/src/app/routines/ProposalReview.tsx"
+  ],
   "This proposal was already applied, dismissed or expired.": [
+    "web/src/app/routines/ProposalReview.tsx",
     "web/src/lib/i18n/errors.ts"
   ],
   "This quarter": [
@@ -16050,6 +16194,9 @@
   ],
   "This task was moved elsewhere.": [
     "web/src/lib/triage.ts"
+  ],
+  "This test sends the inputs to {provider} and uses about {n} tokens. Nothing is written.": [
+    "web/src/app/routines/RoutineEditor.tsx"
   ],
   "This title could not be decrypted with this device's key": [
     "web/src/app/TaskRow.tsx"
@@ -16225,6 +16372,7 @@
     "web/src/app/task-detail/TaskHead.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/views/DisplayPanel.tsx",
+    "web/src/lib/rules/proposal.ts",
     "web/src/lib/rules/sentence.ts"
   ],
   "Title or notes": [
@@ -16517,6 +16665,7 @@
     "web/src/app/Sidebar.tsx",
     "web/src/app/TrashView.tsx",
     "web/src/app/TriageView.tsx",
+    "web/src/lib/rules/proposal.ts",
     "web/src/lib/shortcuts.ts"
   ],
   "Trash and projects": [
@@ -16615,6 +16764,33 @@
   ],
   "Turn this into tasks": [
     "web/src/app/assistant/useAssistantConversation.ts"
+  ],
+  "Turn this off to assign tasks: Apply without asking only adds and sets fields": [
+    "web/src/lib/rules/ai.ts"
+  ],
+  "Turn this off to change notes: Apply without asking only adds and sets fields": [
+    "web/src/lib/rules/ai.ts"
+  ],
+  "Turn this off to change projects: Apply without asking only adds and sets fields": [
+    "web/src/lib/rules/ai.ts"
+  ],
+  "Turn this off to complete tasks: Apply without asking only adds and sets fields": [
+    "web/src/lib/rules/ai.ts"
+  ],
+  "Turn this off to email project members: Apply without asking only adds and sets fields": [
+    "web/src/lib/rules/ai.ts"
+  ],
+  "Turn this off to move tasks to the Trash: Apply without asking only adds and sets fields": [
+    "web/src/lib/rules/ai.ts"
+  ],
+  "Turn this off to remove labels: Apply without asking only adds and sets fields": [
+    "web/src/lib/rules/ai.ts"
+  ],
+  "Turn this off to set today’s focus: Apply without asking only adds and sets fields": [
+    "web/src/lib/rules/ai.ts"
+  ],
+  "Turn this off to start or stop timers: Apply without asking only adds and sets fields": [
+    "web/src/lib/rules/ai.ts"
   ],
   "Turned away from the colour for errors": [
     "web/src/ui/AccentPicker.tsx"
@@ -16745,7 +16921,9 @@
     "web/src/app/assistant/ChangeSetReview.tsx",
     "web/src/app/bulk/UndoToast.tsx",
     "web/src/app/focus/startFocus.ts",
-    "web/src/app/palette/routineCommand.ts"
+    "web/src/app/palette/routineCommand.ts",
+    "web/src/app/routines/ProposalReview.tsx",
+    "web/src/app/routines/RoutinesInboxCard.tsx"
   ],
   "Undo (Mod-Shift-z: redo)": [
     "web/src/lib/richtextEditor.ts"
@@ -17564,6 +17742,9 @@
   "Without encryption, no sign-in can be used and messages travel in the clear.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Without it, each run’s changes wait in the Inbox as a proposal you review. With it, the routine creates tasks, comments and labels and sets task fields at once, at most {n} items a run, always listed in the Inbox with Undo.": [
+    "web/src/app/routines/AISettings.tsx"
+  ],
   "Without it, encrypted backups are unreadable, for you and for anyone else. Store it in a password manager.": [
     "web/src/app/BackupsPanel.tsx"
   ],
@@ -17714,6 +17895,10 @@
   ],
   "Write the text {template}": [
     "web/src/lib/rules/sentence.ts"
+  ],
+  "Written by AI": [
+    "web/src/app/routines/ProposalReview.tsx",
+    "web/src/app/routines/RoutineEditor.tsx"
   ],
   "XXXXX-XXXXX": [
     "web/src/app/AuthScreen.tsx"
@@ -18171,7 +18356,8 @@
     "web/src/lib/rules/index.ts"
   ],
   "a removed section": [
-    "web/src/app/routines/words.tsx"
+    "web/src/app/routines/words.tsx",
+    "web/src/lib/rules/proposal.ts"
   ],
   "a removed step": [
     "web/src/app/routines/words.tsx"
@@ -18198,7 +18384,8 @@
     "web/src/app/FeedView.tsx",
     "web/src/app/NotificationBell.tsx",
     "web/src/app/ProjectActivity.tsx",
-    "web/src/lib/assistant.ts"
+    "web/src/lib/assistant.ts",
+    "web/src/lib/rules/proposal.ts"
   ],
   "a task cannot be its own parent": [
     "web/src/lib/ops.ts"
@@ -18446,7 +18633,8 @@
   ],
   "completed": [
     "web/src/app/task-detail/HistoryTab.tsx",
-    "web/src/lib/activity.ts"
+    "web/src/lib/activity.ts",
+    "web/src/lib/rules/proposal.ts"
   ],
   "completed the task": [
     "web/src/lib/activityRuns.ts"
@@ -18844,6 +19032,9 @@
   "in the Inbox": [
     "web/src/app/method/LoopHome.tsx"
   ],
+  "in the Trash": [
+    "web/src/lib/rules/proposal.ts"
+  ],
   "in the picture dialog": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -19103,7 +19294,8 @@
     "web/src/app/Sidebar.tsx"
   ],
   "none": [
-    "web/src/app/ImportScreen.tsx"
+    "web/src/app/ImportScreen.tsx",
+    "web/src/lib/rules/proposal.ts"
   ],
   "none · type a day or a date": [
     "web/src/app/quickadd/FieldRows.tsx"
@@ -19461,6 +19653,9 @@
   ],
   "resumes {when}": [
     "web/src/app/IssuesPanel.tsx"
+  ],
+  "routine proposal": [
+    "web/src/lib/shortcuts.ts"
   ],
   "run by an AI assistant": [
     "web/src/lib/rules/inbox.ts"
@@ -20043,6 +20238,9 @@
   "you@example.com": [
     "web/src/app/EmailInboxPanel.tsx"
   ],
+  "your assistant’s provider": [
+    "web/src/app/routines/RoutineEditor.tsx"
+  ],
   "your email address is not verified": [
     "web/src/lib/rules/catalogue.ts"
   ],
@@ -20072,6 +20270,9 @@
   ],
   "{checked} of {count} selected": [
     "web/src/app/assistant/ChangeSetReview.tsx"
+  ],
+  "{checked} of {count} selected · nothing changes until you apply · waits until {when}": [
+    "web/src/app/routines/ProposalReview.tsx"
   ],
   "{choice}, {date}": [
     "web/src/app/ScheduleSheet.tsx"
@@ -20205,6 +20406,9 @@
   "{field} {date}": [
     "web/src/app/filter/conditionText.ts"
   ],
+  "{field}: {from} → {to}": [
+    "web/src/app/routines/ProposalReview.tsx"
+  ],
   "{from} to {to}": [
     "web/src/app/routines/words.tsx"
   ],
@@ -20295,6 +20499,9 @@
   "{n, plural, =0 {The Inbox is empty} one {# in the Inbox} other {# in the Inbox}}": [
     "web/src/app/method/LoopHome.tsx"
   ],
+  "{n, plural, one {# AI token} other {# AI tokens}}": [
+    "web/src/app/routines/RunHistory.tsx"
+  ],
   "{n, plural, one {# API token} other {# API tokens}}": [
     "web/src/app/auditFormat.ts"
   ],
@@ -20330,7 +20537,8 @@
     "web/src/app/assistant/useAssistantConversation.ts"
   ],
   "{n, plural, one {# change applied} other {# changes applied}}": [
-    "web/src/app/bulk/BulkReview.tsx"
+    "web/src/app/bulk/BulkReview.tsx",
+    "web/src/lib/rules/proposal.ts"
   ],
   "{n, plural, one {# change waiting to upload.} other {# changes waiting to upload.}}": [
     "web/src/app/DataSettings.tsx"
@@ -20403,6 +20611,9 @@
   ],
   "{n, plural, one {# item changed} other {# items changed}}": [
     "web/src/app/auditFormat.ts"
+  ],
+  "{n, plural, one {# item written by AI} other {# items written by AI}}": [
+    "web/src/lib/rules/inbox.ts"
   ],
   "{n, plural, one {# item written} other {# items written}}": [
     "web/src/lib/rules/inbox.ts"
@@ -20593,6 +20804,9 @@
   "{n, plural, one {# task completed} other {# tasks completed}}": [
     "web/src/lib/bulk.ts"
   ],
+  "{n, plural, one {# task created by AI} other {# tasks created by AI}}": [
+    "web/src/lib/rules/inbox.ts"
+  ],
   "{n, plural, one {# task created} other {# tasks created}}": [
     "web/src/lib/rules/inbox.ts"
   ],
@@ -20706,7 +20920,8 @@
     "web/src/app/views/FilterChips.tsx"
   ],
   "{n, plural, one {Apply # change} other {Apply # changes}}": [
-    "web/src/app/assistant/ChangeSetReview.tsx"
+    "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/routines/ProposalReview.tsx"
   ],
   "{n, plural, one {Assistant: # change applied.} other {Assistant: # changes applied.}}": [
     "web/src/app/assistant/useAssistantConversation.ts"
@@ -20779,6 +20994,9 @@
   ],
   "{n, plural, one {The # item it created will be deleted on every device. Items it updated are kept.} other {The # items it created will be deleted on every device. Items it updated are kept.}}": [
     "web/src/app/ImportScreen.tsx"
+  ],
+  "{n, plural, one {The AI steps used # token} other {The AI steps used # tokens}}": [
+    "web/src/app/routines/RoutineEditor.tsx"
   ],
   "{n, plural, one {The last send failed: {error}.} other {The last # sends failed: {error}.}}": [
     "web/src/lib/push.ts"
@@ -20955,6 +21173,9 @@
   "{name}: needs a connection": [
     "web/src/app/palette/routineCommand.ts"
   ],
+  "{name}: proposal dismissed, nothing was changed": [
+    "web/src/app/routines/ProposalReview.tsx"
+  ],
   "{name}: test would write {n}": [
     "web/src/app/routines/RoutinesView.tsx"
   ],
@@ -20975,6 +21196,12 @@
   ],
   "{name}: {n, plural, one {# item written} other {# items written}}": [
     "web/src/app/palette/routineCommand.ts"
+  ],
+  "{n} applied, {m, plural, one {# skipped because it changed} other {# skipped because they changed}}": [
+    "web/src/lib/rules/proposal.ts"
+  ],
+  "{n} applied, {m} skipped": [
+    "web/src/lib/rules/proposal.ts"
   ],
   "{n} days": [
     "web/src/app/PlanView.tsx"
@@ -21163,6 +21390,7 @@
   ],
   "{restored} restored, {kept} kept because they changed after the run": [
     "web/src/app/palette/routineCommand.ts",
+    "web/src/app/routines/ProposalReview.tsx",
     "web/src/app/routines/RunHistory.tsx"
   ],
   "{secret} (stored; type to replace)": [

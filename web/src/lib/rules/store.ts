@@ -62,6 +62,9 @@ export interface NewRule {
   /** A routine's steps; null or absent keeps the rule form. */
   steps?: RoutineStep[] | null
   enabled?: boolean
+  /** Apply without asking and the daily AI budget (routines-ai-step). */
+  ai_apply?: string
+  ai_budget?: number
 }
 
 function checkParts(name: string, actions: RuleActions | null | undefined, steps?: RoutineStep[] | null): void {
@@ -90,6 +93,8 @@ export async function createRule(input: NewRule): Promise<string> {
     condition: input.condition ?? null,
     actions: input.steps ? null : input.actions,
     ...(input.steps ? { steps: input.steps } : {}),
+    ...(input.ai_apply ? { ai_apply: input.ai_apply } : {}),
+    ...(input.ai_budget ? { ai_budget: input.ai_budget } : {}),
     position,
     created_at: now,
     deleted_at: null,
@@ -97,7 +102,19 @@ export async function createRule(input: NewRule): Promise<string> {
   return id
 }
 
-export type RulePatch = Partial<Pick<Rule, 'name' | 'enabled' | 'trigger' | 'condition' | 'actions' | 'steps'>>
+export type RulePatch = Partial<Pick<Rule, 'name' | 'enabled' | 'trigger' | 'condition' | 'actions' | 'steps' | 'ai_budget'>>
+
+/**
+ * Turns Apply without asking on or off (routines-ai-step D4, D5): always one
+ * new op, so turning it on again after the server fell back to proposals is
+ * newer than the fallback and resumes auto mode. Only the person does this, in
+ * the app; agent paths refuse it.
+ */
+export async function setApplyWithoutAsking(id: string, on: boolean): Promise<void> {
+  const rule = await db.rules.get(id)
+  if (!rule || rule.deleted_at) throw new Error(t('Rule not found'))
+  await mutate('rule', id, { ai_apply: on ? 'auto' : '' })
+}
 
 /** Edit a rule: one op per changed field, each part written whole. */
 export async function updateRule(id: string, patch: RulePatch): Promise<void> {

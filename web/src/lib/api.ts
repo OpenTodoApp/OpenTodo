@@ -22,6 +22,7 @@ import type {
   CalendarConnection, CalendarConnectionPatch, CalendarSyncRun, GoogleClientSetting, MicrosoftClientSetting,
   OwnTaskPage, PublishTaskPageInput, TaskPageCreated, TaskPageStatus,
   AutomationsSetting, RuleRun, RulesStatus, RoutineCatalogueEntry, RoutineInboxRun, RoutineRun, RoutineTestResult, RoutineStep, RuleCondition, RuleTrigger,
+  RoutineAIUsage, RoutineProposal, RoutineProposalApplied,
 } from './types'
 import { createSignal } from './store'
 
@@ -551,15 +552,15 @@ export const api = {
   myRules: () => request<RulesStatus>('GET', '/api/v1/me/rules'),
   ruleRuns: (id: string) => request<{ runs: RuleRun[] }>('GET', `/api/v1/rules/${encodeURIComponent(id)}/runs`),
   /** Routines (routines-engine): run one now, undo one of its runs. */
-  runRoutine: (id: string, body: { run_id: string; task_id?: string; test?: boolean }) =>
+  runRoutine: (id: string, body: { run_id: string; task_id?: string; test?: boolean; call_ai?: boolean }) =>
     request<{ run: { run_id: string; outcome: string; writes: number; reason?: string }; writes: number; test: boolean }>('POST', `/api/v1/rules/${encodeURIComponent(id)}/run`, body),
   undoRoutineRun: (id: string, runId: string) =>
     request<{ restored: number; kept: number; not_undoable: string[] }>('POST', `/api/v1/rules/${encodeURIComponent(id)}/runs/${encodeURIComponent(runId)}/undo`, {}),
   /** Routines (routines-editor): the catalogue, tests of drafts, one run, all runs, the Inbox card. */
   routineCatalogue: () => request<{ steps: RoutineCatalogueEntry[] }>('GET', '/api/v1/me/rules/catalogue'),
-  testRoutineDraft: (body: { trigger: RuleTrigger; condition?: RuleCondition | null; steps: RoutineStep[]; task_id?: string }) =>
+  testRoutineDraft: (body: { trigger: RuleTrigger; condition?: RuleCondition | null; steps: RoutineStep[]; task_id?: string; call_ai?: boolean }) =>
     request<RoutineTestResult>('POST', '/api/v1/rules/test', body),
-  testRoutine: (id: string, body: { run_id: string; task_id?: string }) =>
+  testRoutine: (id: string, body: { run_id: string; task_id?: string; call_ai?: boolean }) =>
     request<RoutineTestResult>('POST', `/api/v1/rules/${encodeURIComponent(id)}/run`, { ...body, test: true }),
   routineRun: (id: string, runId: string) => request<RoutineRun>('GET', `/api/v1/rules/${encodeURIComponent(id)}/runs/${encodeURIComponent(runId)}`),
   routineRuns: (q: { rule?: string; outcome?: string; source?: string; before?: number; limit?: number } = {}) => {
@@ -567,6 +568,12 @@ export const api = {
     return request<{ runs: RoutineRun[]; before?: number }>('GET', `/api/v1/me/rules/runs${p.size ? `?${p}` : ''}`)
   },
   routineInbox: (since: number) => request<{ runs: RoutineInboxRun[]; seen_at: number; hide_successes: boolean }>('GET', `/api/v1/me/rules/runs?for=inbox&since=${Math.max(0, Math.floor(since))}`),
+  /** Routines' AI steps (routines-ai-step): proposals, and a routine's AI usage and mode. */
+  routineProposals: () => request<{ proposals: RoutineProposal[] }>('GET', '/api/v1/me/rules/proposals'),
+  routineProposal: (id: string) => request<RoutineProposal>('GET', `/api/v1/me/rules/proposals/${encodeURIComponent(id)}`),
+  applyRoutineProposal: (id: string, items: string[]) => request<RoutineProposalApplied>('POST', `/api/v1/me/rules/proposals/${encodeURIComponent(id)}/apply`, { items }),
+  dismissRoutineProposal: (id: string) => request<void>('DELETE', `/api/v1/me/rules/proposals/${encodeURIComponent(id)}`),
+  routineAIUsage: (id: string) => request<RoutineAIUsage>('GET', `/api/v1/rules/${encodeURIComponent(id)}/ai-usage`),
   dismissRoutineRun: (id: string, runId: string) => request<void>('POST', `/api/v1/rules/${encodeURIComponent(id)}/runs/${encodeURIComponent(runId)}/dismiss`, {}),
   pauseRules: (paused: boolean) => request<{ enabled: boolean; paused: boolean }>('PUT', '/api/v1/me/rules/paused', { paused }),
   automationsSwitch: ownerSwitch<AutomationsSetting>('automations'),
