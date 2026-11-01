@@ -206,6 +206,9 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 	if err := migrateProfileColumns(ctx, db); err != nil {
 		return err
 	}
+	if err := migrateRoutineRuns(ctx, db); err != nil {
+		return err
+	}
 	return migrateEmailVerified(ctx, db)
 }
 

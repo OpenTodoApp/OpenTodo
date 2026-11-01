@@ -21,7 +21,13 @@ import (
 // applyRuleDefaults fills the defaults of a rule being created: on, no
 // condition, live.
 func applyRuleDefaults(body map[string]json.RawMessage) {
-	for f, v := range map[string]string{"enabled": "true", "condition": "null", "deleted_at": "null"} {
+	// A routine of more than one step stores its card in steps (routines-engine D2).
+	if raw, has := body["steps"]; has && !isNullish(raw) {
+		if _, has := body["actions"]; !has {
+			body["actions"] = json.RawMessage("null")
+		}
+	}
+	for f, v := range map[string]string{"enabled": "true", "condition": "null", "steps": "null", "deleted_at": "null"} {
 		if _, has := body[f]; !has {
 			body[f] = json.RawMessage(v)
 		}
@@ -62,6 +68,8 @@ func (s *Server) registerRuleRoutes(mux *routes) {
 	mux.handle("POST /api/v1/rules/{id}/test", user, s.handleRuleTest)
 	mux.handle("GET /api/v1/me/rules", user, s.handleMyRules)
 	mux.handle("PUT /api/v1/me/rules/paused", user, s.handleRulesPaused)
+	s.wireRoutines()
+	s.registerRoutineRoutes(mux)
 	s.switchRoutes(mux, "/api/v1/settings/automations", switchRoute{sw: s.ruleSwitch,
 		get: ownerOnly("see the automations setting").DemoDenied(), put: ownerOnly("manage the automations setting").DemoDenied(),
 		more: s.automationsLock, putMore: s.automationsLock})
@@ -86,7 +94,7 @@ func (s *Server) ruleError(w http.ResponseWriter, err error) {
 // refused for an encrypted account, and at most rules.MaxRules rules.
 func (s *Server) checkRule(ctx context.Context, uid string, body map[string]json.RawMessage, existing opsync.Entity) error {
 	if existing == nil {
-		for _, f := range []string{"name", "trigger", "actions"} {
+		for _, f := range []string{"name", "trigger"} {
 			if _, has := body[f]; !has {
 				return invalidRule("rule.%s is required", f)
 			}
@@ -104,6 +112,28 @@ func (s *Server) checkRule(ctx context.Context, uid string, body map[string]json
 		if json.Unmarshal(raw, &name) != nil || strings.TrimSpace(name) == "" {
 			return invalidRule("rule.name must not be empty")
 		}
+	}
+	return s.checkRuleParts(ctx, uid, body, existing)
+}
+
+// fieldOf is a field of the body, or of the stored rule when the body leaves it out.
+func fieldOf(body map[string]json.RawMessage, existing opsync.Entity, f string) json.RawMessage {
+	if v, has := body[f]; has {
+		return v
+	}
+	if existing != nil {
+		return existing[f]
+	}
+	return nil
+}
+
+// checkRuleParts validates the trigger, condition, actions and steps of a rule
+// body (a create, a patch or an unsaved draft): a rule needs actions or steps;
+// steps are type-checked against the trigger's output (routines-engine).
+func (s *Server) checkRuleParts(ctx context.Context, uid string, body map[string]json.RawMessage, existing opsync.Entity) error {
+	actions, steps := fieldOf(body, existing, "actions"), fieldOf(body, existing, "steps")
+	if isNullish(actions) && isNullish(steps) {
+		return invalidRule("a rule needs actions or steps")
 	}
 	ref := refs{}
 	if raw, has := body["trigger"]; has {
@@ -130,7 +160,17 @@ func (s *Server) checkRule(ctx context.Context, uid string, body map[string]json
 			}
 		}
 	}
-	if raw, has := body["actions"]; has {
+	if raw, has := body["steps"]; has && !isNullish(raw) {
+		trig, err := ruleval.ParseTrigger(fieldOf(body, existing, "trigger"))
+		if err != nil {
+			return invalidRule("%s", err.Error())
+		}
+		cond := !isNullish(fieldOf(body, existing, "condition"))
+		if err := s.checkSteps(ctx, uid, raw, ruleval.TriggerOutput(trig.Kind, cond), &ref); err != nil {
+			return err
+		}
+	}
+	if raw, has := body["actions"]; has && !isNullish(raw) {
 		a, err := ruleval.ParseActions(raw)
 		if err != nil {
 			return invalidRule("%s", err.Error())
@@ -158,6 +198,12 @@ type refs struct {
 	sections map[string]string // section -> its project
 	moveTo   string
 	webhook  string
+	// Routine steps (routines-engine): tasks, saved views, webhooks and the
+	// projects tasks move into.
+	tasks       []string
+	views       []string
+	webhooks    []string
+	moveTargets []string
 }
 
 func (r *refs) label(ids ...string) {
@@ -213,8 +259,11 @@ func (s *Server) resolveRuleRefs(ctx context.Context, uid string, ref refs) erro
 			return invalidRule("section %s does not belong to project %s", sid, pid)
 		}
 	}
-	if ref.moveTo != "" {
-		_, shared, _, err := s.sync.ProjectStatus(ctx, uid, ref.moveTo)
+	for _, pid := range append(ref.moveTargets, ref.moveTo) {
+		if pid == "" {
+			continue
+		}
+		_, shared, _, err := s.sync.ProjectStatus(ctx, uid, pid)
 		if err != nil {
 			return err
 		}
@@ -222,13 +271,30 @@ func (s *Server) resolveRuleRefs(ctx context.Context, uid string, ref refs) erro
 			return invalidRule("a rule cannot move tasks into or out of a shared project")
 		}
 	}
-	if ref.webhook != "" {
+	for _, id := range ref.tasks {
+		if e, err := live("task", id); err != nil {
+			return err
+		} else if e == nil {
+			return invalidRule("task %s does not exist", id)
+		}
+	}
+	for _, id := range ref.views {
+		if e, err := live("view", id); err != nil {
+			return err
+		} else if e == nil {
+			return invalidRule("saved view %s does not exist", id)
+		}
+	}
+	for _, id := range append(ref.webhooks, ref.webhook) {
+		if id == "" {
+			continue
+		}
 		var n int
-		if err := s.sync.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM webhooks WHERE id = ? AND user_id = ?`, ref.webhook, uid).Scan(&n); err != nil {
+		if err := s.sync.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM webhooks WHERE id = ? AND user_id = ?`, id, uid).Scan(&n); err != nil {
 			return err
 		}
 		if n == 0 {
-			return invalidRule("webhook %s does not exist", ref.webhook)
+			return invalidRule("webhook %s does not exist", id)
 		}
 	}
 	return nil
@@ -273,7 +339,8 @@ func (s *Server) handleRuleTest(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "rule not found")
 		return
 	}
-	out, err := s.rules.Test(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"), in.TaskID)
+	uid := userFrom(r.Context()).ID
+	out, err := s.rules.Test(r.Context(), uid, r.PathValue("id"), in.TaskID)
 	if errors.Is(err, rules.ErrNotFound) {
 		writeError(w, http.StatusNotFound, "not_found", "rule or task not found")
 		return
@@ -282,7 +349,14 @@ func (s *Server) handleRuleTest(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, out)
+	// The rule's answer, and each step's plan (routines-engine D8): a rule is
+	// read as its one Change tasks step.
+	res, err := s.rules.TestRule(r.Context(), uid, r.PathValue("id"), in.TaskID)
+	if err != nil && !errors.Is(err, rules.ErrInvalidDraft) {
+		s.routineError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"matches": out.Matches, "changes": out.Changes, "skipped": out.Skipped, "steps": res.Steps, "writes": res.Writes})
 }
 
 // automationsStatus is the profile's automations object: whether rules run on

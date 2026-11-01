@@ -285,6 +285,12 @@ func (s *Server) annotateProjects(ctx context.Context, entity string, list ...op
 	if err := s.annotateBody(ctx, entity, list...); err != nil {
 		return err
 	}
+	if entity == "rule" {
+		if u := userFrom(ctx); u != nil {
+			s.annotateRules(ctx, u.ID, list...)
+		}
+		return nil
+	}
 	if entity == "task" {
 		for _, e := range list {
 			foldFieldsInPlace(e)
@@ -359,6 +365,10 @@ func stripAnnotations(entity string, body map[string]json.RawMessage) {
 	if entity == "project" {
 		delete(body, "role")
 		delete(body, "owner_id")
+	}
+	if entity == "rule" {
+		delete(body, "paused_reason")
+		delete(body, "warnings")
 	}
 }
 
