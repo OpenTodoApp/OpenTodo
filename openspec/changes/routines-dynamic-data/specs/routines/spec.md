@@ -145,7 +145,7 @@ Steps with a counterpart in the agent tool registry SHALL be validated and plann
 - **THEN** the project, its sections and tasks are created with the dates the library's own instantiation gives for that start day
 
 ### Requirement: Sentence-card editor
-The routine editor SHALL show a routine as cards stacked in one column, phone first: a When card (the trigger and its conditions) and one card per step, each read as a sentence in the user's language whose inputs are buttons ("Create tasks from **the lines** in **Errands**"). If/Otherwise and Repeat for each SHALL show their blocks indented under them. On a phone the editor SHALL be a page and on a computer a wide dialog with the same content. A rule written before routines SHALL open as a When card and one Change tasks card holding the rule's action controls, and saving it with one card SHALL keep it in the rule form so older devices can edit it. Saving SHALL write the routine as operations, offline included, converging like any rule edit.
+The routine editor SHALL show a routine as cards stacked in one column, phone first: a When card (the trigger and its conditions) and one card per step, each read as a sentence in the user's language whose inputs are buttons ("Create tasks from **the lines** in **Errands**"). If/Otherwise and Repeat for each SHALL show their blocks indented under them. The editor SHALL be a page on every screen size (see "Routine editor page"), never a dialog. A rule written before routines SHALL open as a When card and one Change tasks card holding the rule's action controls, and saving it with one card SHALL keep it in the rule form so older devices can edit it. Saving SHALL write the routine as operations, offline included, converging like any rule edit. A message about a failed save SHALL disappear as soon as the routine is edited.
 
 #### Scenario: Reading a routine
 - **WHEN** the user opens "Groceries" on a 390 px phone
@@ -158,6 +158,10 @@ The routine editor SHALL show a routine as cards stacked in one column, phone fi
 #### Scenario: Saved offline
 - **WHEN** the device is offline and the user adds a Count step and saves
 - **THEN** the routine shows the new card at once, and every device shows it after sync
+
+#### Scenario: Stale save message
+- **WHEN** Save said "A routine needs at least one step" and the user then adds a step
+- **THEN** the message is gone
 
 ### Requirement: Pickers and output chips
 Tapping an input word SHALL open its picker: values that flow into the step first, then the controls for literals: the Combobox for projects, sections, labels, views and webhooks (from local data), a text field with an Insert menu of chips for text, date and number fields, the condition rows with their live count, and the filter field for queries. Each card SHALL end with its output. Pickers SHALL offer, as chips of an accepted type (a list counts for a one-task input), the enclosing Repeat's item ("↳ each task", "↳ each line"), then the outputs of earlier visible steps nearest first, then the trigger's output ("the task that triggered", "the matching tasks", "the day", or "the task you run it on" for a manual routine). Outputs of other types SHALL be listed separately with their conversion. A task or tasks input SHALL offer "Find tasks…", which inserts a Find tasks step above and reads it. A one-task input SHALL offer "A specific task…" folded, last. The word of an empty task input SHALL read "choose which tasks".
@@ -217,7 +221,7 @@ The editor SHALL type-check the routine on every change with the shared checker 
 - **THEN** "Ripeti per ogni elemento" (Repeat for each) is found
 
 ### Requirement: Test and save
-The editor SHALL offer Test, which runs the draft as a logged test run that writes nothing and shows it step by step under the editor's header, Save, and for a saved routine Run now. Test and Run now need a connection and SHALL say so offline; Save SHALL not. A save error SHALL describe the draft as it is: it SHALL be cleared by the next edit, and "A routine needs at least one step" SHALL be shown only when Save is pressed on a routine without steps.
+The editor SHALL offer Test, which runs the draft as a logged test run that writes nothing and shows it step by step in the page's Test column (the Test tab below 1024 px), Save, and for a saved routine Run now. Test and Run now need a connection and SHALL say so offline; Save SHALL not. A save error SHALL describe the draft as it is: it SHALL be cleared by the next edit, and "A routine needs at least one step" SHALL be shown only when Save is pressed on a routine without steps.
 
 #### Scenario: Test a routine
 - **WHEN** the user taps Test on "Groceries"
