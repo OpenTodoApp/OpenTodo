@@ -68,7 +68,7 @@ export function sliderStep(key: string, n: number, max: number): number | null {
 
 /** The picker's content: swatches, hex, sliders, the gamut note and Reset. */
 export function ColourPicker({ label, value, derived, onChange, onReset }: Pick<ColourFieldProps, 'label' | 'value' | 'derived' | 'onChange' | 'onReset'>) {
-  const shown = value ?? derived ?? '#808080'
+  const shown = value ?? derived ?? '#808080' // token-lint-allow: a neutral colour to start the picker from, data not styling
   const base = parseOklch(shown) ?? { L: 0.5, C: 0, H: 0 }
   const [text, setText] = useState(colourToHex(shown) ?? '')
   const [error, setError] = useState<string | null>(null)
