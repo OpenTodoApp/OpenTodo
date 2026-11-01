@@ -99,9 +99,13 @@ func (s *Store) finishRoutine(ctx context.Context, id int64, runID string, f rou
 // ErrRunNotFound is the answer for a run the user does not own.
 var ErrRunNotFound = errors.New("run not found")
 
-// RunByID returns one of the user's runs with its step records.
+// visibleRuns is the condition of the runs a user sees: their own, and a
+// shared routine's runs in a project they belong to (routines-shared D7).
+const visibleRuns = `(user_id = ? OR (project_id != '' AND project_id IN (SELECT project_id FROM project_members WHERE user_id = ?)))`
+
+// RunByID returns one of the runs the user sees, with its step records.
 func (s *Store) RunByID(ctx context.Context, userID, runID string) (Run, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT `+runColumns+` FROM rule_runs WHERE run_id = ? AND user_id = ?`, runID, userID)
+	rows, err := s.db.QueryContext(ctx, `SELECT `+runColumns+` FROM rule_runs WHERE run_id = ? AND `+visibleRuns, runID, userID, userID)
 	if err != nil {
 		return Run{}, err
 	}
@@ -146,10 +150,11 @@ type RunFilter struct {
 	Limit  int
 }
 
-// UserRuns lists a user's runs of every routine, newest first.
+// UserRuns lists the runs a user sees of every routine (their own, and the
+// shared routines' of their projects), newest first.
 func (s *Store) UserRuns(ctx context.Context, userID string, f RunFilter) ([]Run, error) {
-	where := []string{"user_id = ?", "outcome != 'pending'"}
-	args := []any{userID}
+	where := []string{visibleRuns, "outcome != 'pending'"}
+	args := []any{userID, userID}
 	if f.Outcome != "" {
 		where, args = append(where, "outcome = ?"), append(args, f.Outcome)
 	}

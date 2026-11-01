@@ -140,6 +140,7 @@
       "enabled",
       "name",
       "position",
+      "project_id",
       "steps",
       "trigger"
     ],

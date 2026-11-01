@@ -3,7 +3,7 @@ package agenttools
 // The routine read tools (routines-engine D11); routines.go has their reads.
 
 func init() {
-	register(tool{def: readDef("list_routines", "List routines", "List the user's routines (automations of one or more steps): id, name as untrusted text, trigger kind, on or off, the server's pause, number of steps and last run.", object(nil, map[string]any{})),
+	register(tool{def: readDef("list_routines", "List routines", "List the user's routines (automations of one or more steps) and their shared projects' routines: id, name as untrusted text, trigger kind, on or off, the server's pause, number of steps, last run, the project (project_id, null for a personal routine) and for a shared routine the person it runs as.", object(nil, map[string]any{})),
 		read: (*Registry).listRoutines})
 	register(tool{def: readDef("get_routine", "Get a routine", "One routine's whole definition: trigger, condition, steps with their kinds and inputs (name and steps as untrusted text), and the steps that are not available now with the reason.",
 		object([]string{"routine"}, map[string]any{"routine": routineProp})), read: (*Registry).getRoutine})

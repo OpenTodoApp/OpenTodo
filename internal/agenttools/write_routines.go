@@ -25,9 +25,10 @@ func init() {
 			object([]string{"routine", "enabled"}, map[string]any{"routine": routineProp, "enabled": map[string]any{"type": "boolean"}}), false, true, nil, false)
 	}, plan: (*Registry).planSetRoutineEnabled})
 	register(tool{def: func(Caller) Definition {
-		return writeDef("create_routine", "Create a routine", "Create a routine: a name, a trigger, an optional condition and steps (or actions for one Change tasks card). It starts off unless enabled is true. Steps that are not available now are allowed and listed in the result.",
+		return writeDef("create_routine", "Create a routine", "Create a routine: a name, a trigger, an optional condition and steps (or actions for one Change tasks card), and optionally the project it belongs to. It starts off unless enabled is true. Steps that are not available now are allowed and listed in the result.",
 			object([]string{"name", "trigger"}, map[string]any{"name": map[string]any{"type": "string", "minLength": 1, "maxLength": 200}, "trigger": triggerProp, "condition": conditionProp,
-				"steps": stepsProp, "actions": actionsProp, "enabled": map[string]any{"type": "boolean", "default": false}}), false, false, []string{"name"}, false)
+				"steps": stepsProp, "actions": actionsProp, "enabled": map[string]any{"type": "boolean", "default": false},
+				"project": map[string]any{"type": "string", "description": "A project (id or exact name) the routine belongs to. In a shared project the routine is the project's: its editors change it, it acts only in that project, and it runs as whoever turns it on."}}), false, false, []string{"name"}, false)
 	}, plan: (*Registry).planCreateRoutine})
 	register(tool{def: func(Caller) Definition {
 		return writeDef("update_routine", "Change a routine", "Change a routine's name, or replace its whole trigger, condition, steps or actions.",

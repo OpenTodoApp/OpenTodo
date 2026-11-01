@@ -3,6 +3,7 @@ package rules
 import (
 	"context"
 	"slices"
+	"strings"
 
 	"github.com/OpenTodoApp/opentodo/internal/ruleval"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
@@ -36,8 +37,12 @@ func (e *Engine) Observe(ctx context.Context, changes []opsync.Change) {
 	}
 	for _, c := range changes {
 		if c.Entity == "rule" {
-			e.forget(c.UserID)
-			e.clearPauseOnEnable(ctx, c)
+			if strings.HasPrefix(c.ScopeID, "project:") {
+				e.forgetAll()
+			} else {
+				e.forget(c.UserID)
+			}
+			e.observeRule(ctx, c)
 		}
 	}
 	if !e.on(ctx) || isUndo(ctx) {
@@ -49,6 +54,8 @@ func (e *Engine) Observe(ctx context.Context, changes []opsync.Change) {
 		if c.Entity != "task" || c.Origin == importDevice || c.UserID == "" {
 			continue
 		}
+		// A shared project's routines fire on any member's batch (routines-shared D3).
+		events = append(events, e.sharedEvents(ctx, c, depth)...)
 		kinds := e.ruleKinds(ctx, c.UserID)
 		if len(kinds) == 0 {
 			continue
@@ -69,23 +76,6 @@ func (e *Engine) Observe(ctx context.Context, changes []opsync.Change) {
 	}
 	if e.wake != nil {
 		e.wake()
-	}
-}
-
-// clearPauseOnEnable lifts the server's pause when the user turns a rule on,
-// and starts its watermark at now so turning it on never fires for the past.
-func (e *Engine) clearPauseOnEnable(ctx context.Context, c opsync.Change) {
-	f, ok := c.Fields["enabled"]
-	if !ok || string(f.To) != "true" {
-		return
-	}
-	st, _, err := e.Store.State(ctx, c.EntityID)
-	if err != nil {
-		return
-	}
-	st.PausedReason, st.Refusals, st.Watermark = "", nil, e.now().UnixMilli()
-	if err := e.Store.SaveState(context.WithoutCancel(ctx), c.EntityID, c.UserID, st); err != nil {
-		e.Log.Error("rules: clear pause", "err", err)
 	}
 }
 

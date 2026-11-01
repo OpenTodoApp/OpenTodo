@@ -38,7 +38,7 @@ A public link shows a project's open tasks to anyone with it, no account needed,
 
 ## Choose a role
 
-Viewers see the project and comment, editors also change tasks and the project's note, admins also manage the project and its members, and the one owner can also delete or hand it over. Change roles next to a name in **Share**; **Remove** takes someone out. See [Roles and assignments](roles-and-assignments.md#choose-a-role).
+Viewers see the project and comment, editors also change tasks, the note and the [routines](routines.md#routines-of-a-shared-project), admins also manage the project and its members, and the one owner can also delete or hand it over. Change roles next to a name in **Share**; **Remove** takes someone out. See [Roles and assignments](roles-and-assignments.md#choose-a-role).
 
 ## Invite someone new
 
