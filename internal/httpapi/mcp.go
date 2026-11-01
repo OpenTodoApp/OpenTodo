@@ -44,6 +44,10 @@ func (s *Server) registerMCPRoutes(mux *routes) {
 			return s.agentReminderOps(ctx, uid, c.EntityID, c.Create, c.Patch, ts, device)
 		},
 	})
+	if s.rules != nil {
+		// Routine tools (routines-engine D11): the REST checks and the engine's runs.
+		s.agentTools.SetRoutines(routineTools{s})
+	}
 	s.mcp = mcp.New(s.sync, mcp.Options{Version: s.version, Log: s.log, Tools: s.agentTools, IssuesResource: s.issuesResource})
 	// Every method reaches the handler so a disabled endpoint is 404 for all of
 	// them and an enabled one can answer 405 for anything but POST.

@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "routine_result",
+  "description": "The answer of `ot routine run`: the run's record, each step's record (with a preview for a test) and how many items it wrote or would write.",
+  "type": "object",
+  "required": [
+    "run",
+    "steps",
+    "writes",
+    "test"
+  ],
+  "properties": {
+    "run": {
+      "$ref": "#/schemas/routine_run"
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "index": {
+            "type": "integer"
+          },
+          "step_id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "skipped",
+              "ended",
+              "failed",
+              "unavailable",
+              "truncated"
+            ]
+          },
+          "duration_ms": {
+            "type": "integer"
+          },
+          "items": {
+            "type": "integer"
+          },
+          "output": {
+            "type": "string"
+          },
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "error": {
+            "type": "string"
+          },
+          "preview": {
+            "description": "a test's preview of the output (titles and text included, never stored)"
+          }
+        }
+      }
+    },
+    "writes": {
+      "type": "integer"
+    },
+    "test": {
+      "type": "boolean"
+    }
+  }
+}

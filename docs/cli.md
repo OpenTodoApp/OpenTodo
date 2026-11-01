@@ -13,7 +13,7 @@ order: 20
 
 It is an **online** client: it keeps no local copy of your tasks and makes no change when the server cannot be reached. The one exception is [`ot vault`](vault.md), which keeps a folder of Markdown files and its own sync state. Every write goes through the REST API, which records it in the operation log, so changes made with `ot` reach your phone and browser on their next sync and converge under the same per-field last-writer-wins rule as any other edit.
 
-`ot rules list` lists your [automation rules](automations.md); `ot rules enable <id>` and `ot rules disable <id>` turn one on or off (an id prefix or the exact name works; `--dry-run` prints the request); `ot rules runs <id>` prints its run log. Rules are built in the app. A read token lists but cannot switch (exit 5).
+`ot rules list` lists your [automation rules](automations.md); `ot rules enable <id>` and `ot rules disable <id>` turn one on or off (an id prefix or the exact name works; `--dry-run` prints the request); `ot rules runs <id>` prints its run log. A read token lists but cannot switch (exit 5). [Routines](routines.md) have their own command, `ot routine` (below).
 
 ## Install
 
@@ -269,6 +269,37 @@ A duration is `45m`, `1h30`, `1.5h` or `90` (minutes); anything else exits 2 bef
 0 18 * * 5  ot time export --from monday --to today -o "$HOME/time/week-$(date +\%F).csv"
 ```
 
+## Routines
+
+`ot routine` (or `ot routines`) works with [routines](routines.md); a routine is named by its id, an id prefix or its exact name.
+
+```sh
+ot routine list
+ot routine show Groceries                 # trigger, condition and steps as numbered sentences
+ot routine run Groceries --test           # plan every step, write nothing
+ot routine run "Waiting follow-up" --task 3f2a…
+ot routine runs Groceries --failed --limit 10
+ot routine create --file groceries.yaml
+ot routine edit Groceries --file changes.json   # replaces the parts the file gives
+ot routine enable Groceries               # or disable
+ot routine undo Groceries <run-id>
+ot routine rm Groceries --yes
+```
+
+A routine file is JSON or YAML with `name`, `trigger`, an optional `condition`, `steps` (or `actions`) and `enabled`, in the shapes of the [API](api.md#routines). Projects, sections, labels, saved views and webhooks may be written by name (`project: Errands`); the CLI resolves them before sending and fails naming one that matches nothing (`project Erands not found`), sending nothing.
+
+```yaml
+name: Groceries
+trigger: {kind: schedule, at: "17:00", weekdays: [5]}
+steps:
+  - {id: p, kind: find_project, in: {name: {literal: Groceries}}}
+  - {id: a, kind: note_text, in: {of: {ref: p}}}
+  - {id: b, kind: split_lines, in: {text: {ref: a}}}
+  - {id: c, kind: create_tasks, in: {text: {ref: b}, project: {literal: {project: Errands}}}}
+```
+
+`ot routine run` prints each step's status, items and time, and exits 6 when the run failed (with `--json`, the run record is printed and says at which step). A read token can list, show and read runs but is refused on every other subcommand (exit 5). Saving a routine with a step that is not available prints a warning naming the step and the reason.
+
 ## Calendar frames
 
 Your [frames](frames.md), the recurring background windows of the Day and Week calendar:
@@ -406,6 +437,7 @@ Exit codes:
 | 3 | Authentication or configuration error (wrong password, revoked token, unreadable config file) | sign in again |
 | 4 | The server could not be reached within the timeout (15 s) | retry later |
 | 5 | Not permitted: `insufficient_scope`, `forbidden`, `not_permitted`, `writes_disabled_by_owner`, `writes_disabled_by_user`, `encryption_enabled` or `read_only` | do not retry; change the token, the switch or the role |
+| 6 | `ot routine run` ran the routine and the run failed | read the failed step's error in the run record; fix the routine or what it needs |
 
 ### Machine-readable help: `ot schema`
 

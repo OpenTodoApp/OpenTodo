@@ -201,7 +201,7 @@ func TestToolSurfaceIsClosed(t *testing.T) {
 		}
 	}
 	sort.Strings(names)
-	want := "add_comment,add_reminders,append_to_note,archive_projects,complete_tasks,create_label,create_note,create_project,create_sections,create_tasks,get_note,get_task,list_frames,list_icons,list_notes,list_projects,list_slots,list_tasks,list_time_entries,list_workspaces,log_time,move_tasks,note_to_task,remove_reminders,reopen_tasks,reorder_sections,schedule_tasks,search_notes,search_tasks,set_favourite,start_timer,stop_timer,today_summary,trash_note,trash_tasks,update_labels,update_note,update_project,update_reminders,update_sections,update_tasks,update_time_entries"
+	want := "add_comment,add_reminders,append_to_note,archive_projects,complete_tasks,create_label,create_note,create_project,create_routine,create_sections,create_tasks,get_note,get_routine,get_routine_run,get_task,list_frames,list_icons,list_notes,list_projects,list_routine_runs,list_routines,list_slots,list_tasks,list_time_entries,list_workspaces,log_time,move_tasks,note_to_task,remove_reminders,reopen_tasks,reorder_sections,run_routine,schedule_tasks,search_notes,search_tasks,set_favourite,set_routine_enabled,start_timer,stop_timer,today_summary,trash_note,trash_routine,trash_tasks,update_labels,update_note,update_project,update_reminders,update_routine,update_sections,update_tasks,update_time_entries"
 	if got := strings.Join(names, ","); got != want {
 		t.Fatalf("tools = %s", got)
 	}
