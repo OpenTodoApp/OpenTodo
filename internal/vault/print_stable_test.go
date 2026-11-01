@@ -2,6 +2,27 @@ package vault
 
 import "testing"
 
+// TestEveningLineDropsDayPart (found by FuzzParseDoc, issue #679): a line with
+// both [evening:: true] and [daypart:: …] kept the part when read, but the
+// printer writes only the evening flag, so the task read back differently after
+// a print. Evening wins, as in the merge and in daypart.Of.
+func TestEveningLineDropsDayPart(t *testing.T) {
+	for _, content := range []string{"[evening::true][daypart::0]0", "Call [evening:: true] [daypart:: morning]"} {
+		l := ParseLine("", false, content)
+		if !l.Evening || l.DayPart != "" {
+			t.Fatalf("%q reads as evening %v, daypart %q", content, l.Evening, l.DayPart)
+		}
+		printed := PrintLine(l)
+		indent, done, c, ok := isTaskLine(printed)
+		if !ok {
+			t.Fatalf("%q is not one task line", printed)
+		}
+		if back := ParseLine(indent, done, c); PrintLine(back) != printed || back.DayPart != "" || !back.Evening {
+			t.Errorf("%q reads back as %+v", printed, back)
+		}
+	}
+}
+
 // TestReadOnlyValuesStayInTheirField (found by FuzzParseLine and FuzzParseDoc):
 // a read-only value holding a bracket or a line break, or a title that starts
 // like a field, used to print a line that reads back differently, so the next
