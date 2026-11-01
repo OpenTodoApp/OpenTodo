@@ -14,7 +14,7 @@ import { createProject, createSubtask, createTask, resetDeviceId, updateTask } f
 import { createSection, saveViewMode } from '../../lib/sections'
 import { setCurrentUserId } from '../../lib/sharing'
 import { logTime, startTracking } from '../../lib/timeEntries'
-import type { Label, Project, Task, User } from '../../lib/types'
+import type { CalendarEvent, Label, Project, Task, User } from '../../lib/types'
 import { HUES, type HueName } from '../../ui'
 import { resetPanel } from '../panel'
 
@@ -315,6 +315,30 @@ export async function seedCalendarPlan(): Promise<void> {
   await db.calendarSubscriptions.put({ id: 'story-sub', name: 'Work calendar', color: hue('blue'), enabled: true, lastSuccessAt: Date.parse('2026-10-14T11:00:00') })
   await db.calendarEvents.put({ id: 'story-ev', subscriptionId: 'story-sub', uid: 'story-ev', summary: 'Team sync', location: 'Room 4', start: { date: TOMORROW, time: '13:00' }, end: { date: TOMORROW, time: '14:30' }, allDay: false, free: false })
   await setMeta('calendar.events.window', { from: '2026-10-01', to: '2026-11-30', fetchedAt: Date.parse('2026-10-14T11:00:00') })
+}
+
+/**
+ * A subscribed calendar over `base` (calendar-events-all-views): a meeting today, a
+ * two-day all-day offsite from tomorrow, a crowded Friday, a free block and a long
+ * planning morning next week, for the Week agenda, the Month's cells and the Year's rings.
+ */
+export function seedCalendarEvents(base: () => Promise<void> = seedCalendarWeek): () => Promise<void> {
+  return async () => {
+    await base()
+    const ev = (id: string, summary: string, start: CalendarEvent['start'], end: CalendarEvent['end'], extra: Partial<CalendarEvent> = {}): CalendarEvent =>
+      ({ id, subscriptionId: 'story-sub', uid: id, summary, location: '', start, end, allDay: !start.time, free: false, ...extra })
+    await db.calendarSubscriptions.put({ id: 'story-sub', name: 'Work calendar', color: hue('blue'), enabled: true, lastSuccessAt: Date.parse('2026-10-14T11:00:00') })
+    await db.calendarEvents.bulkPut([
+      ev('story-sync', 'Team sync', { date: TODAY, time: '11:00' }, { date: TODAY, time: '11:30' }, { location: 'Room 4' }),
+      ev('story-offsite', 'Offsite', { date: TOMORROW }, { date: '2026-10-17' }),
+      ev('story-one', '1:1 with Sam', { date: '2026-10-16', time: '09:00' }, { date: '2026-10-16', time: '09:30' }),
+      ev('story-demo', 'Sprint demo', { date: '2026-10-16', time: '15:00' }, { date: '2026-10-16', time: '16:00' }),
+      ev('story-focus', 'Focus time', { date: '2026-10-19', time: '13:00' }, { date: '2026-10-19', time: '15:00' }, { free: true }),
+      ev('story-planning', 'Quarterly planning', { date: '2026-10-20', time: '09:00' }, { date: '2026-10-20', time: '12:00' }),
+      ev('story-conf', 'Conference', { date: '2026-11-24' }, { date: '2026-11-27' }),
+    ])
+    await setMeta('calendar.events.window', { from: '2026-01-01', to: '2026-12-31', fetchedAt: Date.parse('2026-10-14T11:00:00') })
+  }
 }
 
 /**

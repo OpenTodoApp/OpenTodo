@@ -4,14 +4,14 @@
 // by pointer or keyboard, is one `updateTask` call (an ordinary field op). Since
 // web-component-structure the days come from lib/calendarDays, the live reads from
 // lib/liveData, and the columns, agenda, planning list and keys live in ./calendar.
-import { Button, DESKTOP_HEADER_QUERY, MenuItem, PageBody, Tooltip, useMediaQuery } from '../ui'
+import { Button, DESKTOP_HEADER_QUERY, MenuItem, PageBody, useMediaQuery } from '../ui'
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { calendarTasks, DEFAULT_BLOCK_MINUTES, formatTime as toHHMM, placementStart, weekDates, type GridPrefs } from '../lib/calendar'
 import { fitInFrame, frameTarget, framesByDate, useFrames, type PlacedFrame } from '../lib/frames'
 import { clampSlotMinutes, slotAt, slotKey, slotName, type SlotView } from '../lib/slots'
 import { calendarDays, calendarOrder, type DayData } from '../lib/calendarDays'
 import { useOnline } from '../lib/online'
-import { setShowEvents } from '../lib/calendarFeeds'
+import { CalendarsToggle } from './calendar/CalendarsToggle'
 import { addDaysISO, dueFromView, formatDate, formatShort, viewedTask } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
 import { getTask, readGridPrefs, useCalendarShowCompleted, useGridPrefs, useLiveProjects } from '../lib/liveData'
@@ -307,13 +307,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
     {chrome.overflow}
   </>
   const rangeActions = <>
-            {feeds.subs.length > 0 && (
-              <Tooltip label={feeds.eventsShown ? t('Hide other calendars on this device') : t('Show other calendars on this device')}>
-                <Button variant="ghost" size="sm" icon="calendar-range" aria-pressed={feeds.eventsShown} data-calendars-toggle
-                  className={feeds.eventsShown ? 'bg-sunken dark:bg-raised' : 'text-muted'}
-                  onClick={() => act(setShowEvents(!feeds.eventsShown))}>{t('Calendars')}</Button>
-              </Tooltip>
-            )}
+            <CalendarsToggle shown={feeds.eventsShown} count={feeds.subs.length} />
             <span className="flex items-center" role="group" aria-label={t('Range')}>
               <Button variant="ghost" size="sm" icon="chevron-left" aria-label={mode === 'day' ? t('Previous day') : t('Previous week')} onClick={() => step(-1)} />
               <Button variant="ghost" size="sm" onClick={() => goTo(today)}>{t('Today')}</Button>
@@ -332,7 +326,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
         <div ref={scroller} className="relative min-h-0 flex-1 overflow-auto outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[-2px] focus-visible:outline-focus"
           data-calendar-scroller data-scroll-x tabIndex={0} role="region" aria-label={mode === 'week' ? t('Week calendar') : t('Day calendar')}>
           {mode === 'week' && !wide ? (
-            <WeekAgenda days={days} today={today} prefs={prefs} tasks={shown} meetings={meetings} frames={frames} taskMap={taskMap} hueOf={hueOf} projectionHue={projectionHue} deadlines={deadlines} selectedId={selectedId}
+            <WeekAgenda days={days} today={today} prefs={prefs} tasks={shown} meetings={meetings} frames={frames} taskMap={taskMap} hueOf={hueOf} projectionHue={projectionHue} deadlines={deadlines} selectedId={selectedId} subMap={feeds.subMap} zone={zone}
               onSelect={select} onOpen={open} onAdd={(d) => chrome.add.add({ date: d })} />
           ) : (
             <CalendarGrid mode={mode} days={days} today={today} nowMinutes={nowMinutes} prefs={prefs} shown={shown} meetings={meetings} frames={frames} taskMap={taskMap} rawMap={rawMap} hueOf={hueOf} projectionHue={projectionHue} deadlines={deadlines} hidden={hidden} gestures={gestures} dragSlot={dragSlot}
