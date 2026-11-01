@@ -8,16 +8,16 @@
 // - a text: edited in place (InlineText);
 // - condition rows and the changes of Change tasks: inside the card from 1024 px,
 //   a bottom sheet below (Inspector).
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { t } from '../../lib/i18n'
 import { insertStep, newId, placeOf, setInput, type RoutineDraft } from '../../lib/rules/draft'
 import { fixFor } from '../../lib/rules/fixes'
 import { inputLabel } from '../../lib/rules/sentence'
 import { placeholders, textLiteral, triggerOutput, type StepInput } from '../../lib/rules/steps'
 import type { RoutineArg, RoutineStep, RoutineStepType, Task } from '../../lib/types'
-import { Field, Input, WordButton } from '../../ui'
+import { Button, Field, Input, WordButton } from '../../ui'
 import { ChoicePopover, InlineText, Inspector, type Choice } from './pickers'
-import { chipOptions, ComparePicker, DatePicker, ENUM_LABEL, LiteralPicker, PERIOD_LABEL, wordPlaceholder, wordValue, type ChipOption, type WordContext } from './words'
+import { chipOptions, ComparePicker, DatePicker, ENUM_LABEL, LiteralPicker, PERIOD_LABEL, textValue, wordPlaceholder, wordValue, type ChipOption, type WordContext } from './words'
 
 /** How an input is edited. */
 type Mode = 'choice' | 'text' | 'inspector'
@@ -155,20 +155,30 @@ function Footer({ step, def, ctx, onSet }: { step: RoutineStep; def: StepInput; 
 }
 
 /** One input's word and its picker. */
-export function InputWord({ step, def, ctx, error, me, onSet, onEdit, openRef }: {
+export function InputWord({ step, def, ctx, error, me, onSet, onEdit, openRef, onTyping }: {
   step: RoutineStep; def: StepInput; ctx: WordContext; error: boolean; me: string
   onSet: (a: RoutineArg | undefined) => void
   /** Applies a whole-draft edit (a conversion, a step inserted above). */
   onEdit: (fn: (d: RoutineDraft) => RoutineDraft) => void
   /** Lets the editor open this word's picker ("Choose a value"). */
   openRef?: (open: () => void) => void
+  /** The text of this word is being typed (its error waits until it is kept). */
+  onTyping?: (typing: boolean) => void
 }) {
   const [open, setOpen] = useState(false)
   const [specific, setSpecific] = useState(false)
+  const [all, setAll] = useState(false)
   const anchor = useRef<HTMLButtonElement>(null)
   openRef?.(() => setOpen(true))
   const mode = modeOf(step, def, ctx)
+  const typing = mode === 'text' && open
+  useEffect(() => {
+    if (!typing) return
+    onTyping?.(true)
+    return () => onTyping?.(false)
+  }, [typing]) // eslint-disable-line react-hooks/exhaustive-deps -- onTyping is a fresh callback every render
   const { shown, chip } = wordValue(step, def, ctx)
+  const text = textValue(step, def, ctx)
   const label = inputLabel(def.name, step.kind)
   const close = () => { setOpen(false); setSpecific(false); requestAnimationFrame(() => anchor.current?.focus()) }
   const act: Actions = { onSet, onEdit, specific, setSpecific }
@@ -193,12 +203,16 @@ export function InputWord({ step, def, ctx, error, me, onSet, onEdit, openRef }:
       if (!text) return onSet(undefined)
       onSet({ literal: template || placeholders(text).length === 0 ? text : { format: text } })
     }
-    return <InlineText label={label} value={start} max={def.max ?? 20000} insertable={insertable} onCommit={commit} onCancel={close} />
+    return <InlineText label={label} value={start} max={def.max ?? 20000} insertable={insertable} onCommit={commit} />
   }
   return (
     <>
-      <WordButton ref={anchor} label={label} value={shown} chip={chip} placeholder={wordPlaceholder(def)} error={error} action={t('change')}
+      <WordButton ref={anchor} label={label} value={text?.node ?? shown} valueText={text?.text} chip={chip} wrap={!!text} clamp={!!text?.long && !all}
+        placeholder={wordPlaceholder(def)} error={error} action={t('change')}
         haspopup={mode === 'choice' ? 'listbox' : mode === 'inspector' ? 'dialog' : undefined} expanded={open} onClick={() => setOpen(true)} />
+      {text?.long && (
+        <Button size="sm" variant="ghost" aria-expanded={all} onClick={() => setAll((x) => !x)} data-word-more>{all ? t('Show less') : t('Show more')}</Button>
+      )}
       {mode === 'choice' && (
         <ChoicePopover open={open} onClose={close} anchor={anchor} label={label} choices={choices} multiple={def.literal === 'ids'}
           placeholder={specific ? t('Find a task…') : undefined} footer={specific || !hasFooter(def) ? undefined : <Footer step={step} def={def} ctx={ctx} onSet={onSet} />} />
