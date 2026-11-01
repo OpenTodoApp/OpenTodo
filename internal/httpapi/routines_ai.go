@@ -60,7 +60,18 @@ func (a routineAI) Complete(ctx context.Context, uid string, c rules.AICall) (ru
 // assistant usable by the user with consent for routines (D1, D10). An
 // encrypted account's AI steps need a device (routines run there).
 func (s *Server) routineAIEnv(ctx context.Context, uid string, env *ruleval.Env) {
-	if s.assistant == nil || env.Encrypted {
+	if env.Encrypted {
+		// A device opted in to run routines that announced the on-device
+		// assistant (set up and consented there, with the routines
+		// paragraph) runs the AI steps (D1, D7, D10).
+		if s.relayStore != nil {
+			if _, ai, err := s.relayStore.RoutineDevices(ctx, uid); err == nil {
+				env.AI, env.AIConsent = ai, ai
+			}
+		}
+		return
+	}
+	if s.assistant == nil {
 		return
 	}
 	configured, consented, err := s.assistant.RoutineReady(ctx, uid, s.assistantSettings(ctx))
@@ -169,13 +180,29 @@ func (s *Server) handleProposal(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleApplyProposal(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		Items *[]string `json:"items"`
+		// An encrypted account's proposal: the device sends the ticked items
+		// as ciphertext changes (routines-ai-step D3).
+		rules.EncryptedApply
 	}
-	if err := readJSONLimit(r, &in, 64<<10); err != nil {
-		badBodyWith(w, err, "invalid_input", `body must be {"items"?: [item key, …]}`)
+	if err := readJSONLimit(r, &in, maxDeviceCommit); err != nil {
+		badBodyWith(w, err, "invalid_input", `body must be {"items"?: [item key, …]} or, for an encrypted account, {"changes", "completing"?, "sides"?, "skipped"?, "changed"?}`)
 		return
 	}
 	if s.rules == nil {
 		writeError(w, http.StatusNotFound, "not_found", "proposal not found")
+		return
+	}
+	if in.Changes != nil || in.Sides != nil {
+		res, err := s.rules.ApplyEncryptedProposal(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"), in.EncryptedApply)
+		if err != nil {
+			if errors.Is(err, rules.ErrBadCommit) || errors.Is(err, rules.ErrPlaintext) {
+				s.deviceRunError(w, err)
+				return
+			}
+			s.proposalError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, res)
 		return
 	}
 	var keys []string

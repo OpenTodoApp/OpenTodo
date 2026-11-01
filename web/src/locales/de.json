@@ -3530,7 +3530,7 @@
   "edited the {field}": "bearbeitete {field}",
   "editor": "Bearbeiter",
   "email": "E-Mail",
-  "email cannot be built for an encrypted account": "für ein verschlüsseltes Konto kann keine E-Mail erstellt werden",
+  "this step would send text through the server, which an encrypted account never does": "dieser Schritt würde Text über den Server senden, was ein verschlüsseltes Konto nie tut",
   "email to task": "E-Mail zu Aufgabe",
   "encrypted": "verschlüsselt",
   "encrypted account": "verschlüsseltes Konto",
@@ -6423,7 +6423,7 @@
   "{name}: proposal dismissed, nothing was changed": "{name}: Vorschlag verworfen, nichts wurde geändert",
   "{n} applied, {m, plural, one {# skipped because it changed} other {# skipped because they changed}}": "{n} übernommen, {m, plural, one {# übersprungen, weil es sich geändert hat} other {# übersprungen, weil sie sich geändert haben}}",
   "{n} applied, {m} skipped": "{n} übernommen, {m} übersprungen",
-  "AI steps cannot run for an end-to-end encrypted account yet": "KI-Schritte können für ein Ende-zu-Ende-verschlüsseltes Konto noch nicht laufen",
+  "turn on Run my routines on a device with the on-device assistant set up": "aktiviere „Meine Routinen ausführen“ auf einem Gerät, auf dem der Assistent auf dem Gerät eingerichtet ist",
   "Adjusted to a displayable colour": "An eine darstellbare Farbe angepasst",
   "Based on {name} by {author} ({licence})": "Basiert auf {name} von {author} ({licence})",
   "Change {name}, {value}, {state}": "{name} ändern, {value}, {state}",
@@ -6749,5 +6749,11 @@
   "past the deadline": "Frist überschritten",
   "{n, plural, one {due within # day} other {due within # days}}": "{n, plural, one {fällig innerhalb von # Tag} other {fällig innerhalb von # Tagen}}",
   "{n, plural, one {deadline within # day} other {deadline within # days}}": "{n, plural, one {Frist innerhalb von # Tag} other {Frist innerhalb von # Tagen}}",
-  "due earlier": "früher fällig"
+  "due earlier": "früher fällig",
+  "This run already finished.": "Dieser Lauf ist bereits beendet.",
+  "The routine changed while this run waited. Nothing was written.": "Die Routine wurde geändert, während dieser Lauf wartete. Es wurde nichts geschrieben.",
+  "Apply without asking does not allow this result, so it waits as a proposal.": "„Ohne Nachfrage übernehmen“ erlaubt dieses Ergebnis nicht, daher wartet es als Vorschlag.",
+  "The run would write more than 500 items. Nothing was written.": "Der Lauf würde mehr als 500 Einträge schreiben. Es wurde nichts geschrieben.",
+  "This account is encrypted: the change must be sent encrypted.": "Dieses Konto ist verschlüsselt: Die Änderung muss verschlüsselt gesendet werden.",
+  "Only a signed-in device can run a routine itself.": "Nur ein angemeldetes Gerät kann eine Routine selbst ausführen."
 }

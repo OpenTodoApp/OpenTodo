@@ -211,10 +211,22 @@ func (e *Engine) NextDue(ctx context.Context) (time.Time, bool, error) {
 	e.mu.Lock()
 	changed := e.changed
 	e.mu.Unlock()
+	// A run waiting for a device is missed after WaitLimit (routines-ai-step D9).
+	miss, waiting, err := e.nextMiss(ctx)
+	if err != nil {
+		return time.Time{}, false, err
+	}
 	if timed == 0 && !changed {
+		if waiting {
+			return miss, true, nil
+		}
 		return time.Time{}, false, nil
 	}
-	return now.Truncate(TickInterval).Add(TickInterval), true, nil
+	next := now.Truncate(TickInterval).Add(TickInterval)
+	if waiting && miss.Before(next) {
+		next = miss
+	}
+	return next, true, nil
 }
 
 // RunOnce is one run of the tenant's "rules" job: the time triggers, then
@@ -225,4 +237,7 @@ func (e *Engine) RunOnce(ctx context.Context) {
 	e.mu.Unlock()
 	e.Tick(ctx)
 	e.Drain(ctx)
+	if err := e.missWaiting(ctx); err != nil {
+		e.Log.Warn("routines: missed device runs", "err", err)
+	}
 }

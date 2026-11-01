@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/agenttools"
+	"github.com/OpenTodoApp/opentodo/internal/relay"
 	"github.com/OpenTodoApp/opentodo/internal/ruleval"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
@@ -120,6 +121,8 @@ type Result struct {
 	// Writes is how many entities the run wrote, or would write.
 	Writes int  `json:"writes"`
 	Test   bool `json:"test"`
+	// DeviceRun is what the device in hand runs (routines-ai-step D7).
+	DeviceRun *relay.RoutineRun `json:"device_run,omitempty"`
 }
 
 // RunRequest is a manual run: the page, the palette, the CLI, REST or MCP.
@@ -134,6 +137,11 @@ type RunRequest struct {
 	// CallAI lets a test call the model for its AI steps (the person
 	// confirmed the estimate, routines-ai-step D11); real runs always do.
 	CallAI bool
+	// Device and Session: Run now from the device in hand on an encrypted
+	// account (routines-ai-step D7): the run waits for that device's commit
+	// and is not sent over the relay. Session is the caller's session hash.
+	Device  string
+	Session string
 }
 
 // runState is one run in progress.

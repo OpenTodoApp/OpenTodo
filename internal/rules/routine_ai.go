@@ -496,10 +496,10 @@ func (s *Store) countRun(ctx context.Context, uid, ruleID string, failed bool) (
 // afterAIRun keeps the failure count of a routine with AI steps and falls
 // back to proposals after two failed runs in a row while in auto mode (D5).
 func (e *Engine) afterAIRun(ctx context.Context, uid string, r *rule, run Run) {
-	if run.Test || !ruleval.HasAI(r.Steps) {
+	if run.Test || !ruleval.HasAI(r.Steps) || run.Outcome == OutcomeWaiting {
 		return
 	}
-	failed := run.Outcome == OutcomeFailed || run.Outcome == OutcomeStopped
+	failed := run.Outcome == OutcomeFailed || run.Outcome == OutcomeStopped || run.Outcome == OutcomeMissed
 	n, err := e.Store.countRun(ctx, uid, r.ID, failed)
 	if err != nil {
 		e.Log.Warn("routines: AI failures not counted", "rule", r.ID, "err", err)
