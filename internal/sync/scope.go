@@ -168,6 +168,11 @@ type resolver struct {
 	// attachmentQuota is the per-account quota in bytes (0 = none), checked when
 	// a removed attachment is restored (attachment_quota.go).
 	attachmentQuota int64
+	// holds is the service's ledger of held attachment bytes; heldByBatch is
+	// what this batch's restores hold in it per author, released when the
+	// batch ends (attachment_quota.go).
+	holds       *QuotaHolds
+	heldByBatch map[string]int64
 	// Time entries (timeentries.go): creation fields per new entry and what is
 	// known about each entry id.
 	batchTimeEntry map[string]*batchTimeEntry
