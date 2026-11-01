@@ -183,9 +183,18 @@ export function useFinePointer(): boolean {
 export function watchVisualViewport(): () => void {
   const vv = typeof window === 'undefined' ? undefined : window.visualViewport
   if (!vv) return () => {}
+  let keyboard = false
   const update = () => {
     const covered = Math.max(0, window.innerHeight - (vv.height + vv.offsetTop))
     document.documentElement.style.setProperty('--vv-bottom', `${Math.round(covered)}px`)
+    // The keyboard closed (issue #724): Safari on iOS can leave the document scrolled
+    // where it moved the focused field to, with a strip of nothing under the app. The
+    // app scrolls inside its own regions, so a document no taller than the window goes
+    // back to the top; a pinch zoom (scale above 1) is the person's own and is left alone.
+    const open = window.innerHeight - vv.height > 80
+    const fits = (document.scrollingElement?.scrollHeight ?? 0) <= window.innerHeight + 1
+    if (keyboard && !open && fits && vv.scale <= 1.01 && (window.scrollX || window.scrollY)) window.scrollTo(0, 0)
+    keyboard = open
     const el = document.activeElement as HTMLElement | null
     if (el && el.matches?.('input, textarea, select, [contenteditable="true"]')) {
       const r = el.getBoundingClientRect()

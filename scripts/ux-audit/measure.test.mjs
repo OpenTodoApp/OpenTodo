@@ -8,6 +8,7 @@ import {
   chromeRows, focusWalk, horizontalOverflow, installHelpers, layoutShift, LAYOUT_SHIFT_INIT, motionSeen, movingAnimations,
   overlaps, primaryDestinations, rowMetaItems, targetSize, truncation, watchMotion,
 } from './audit-measures.mjs'
+import { smallFields } from './measure.mjs'
 
 const pw = await import('playwright').catch(async () => {
   const { createRequire } = await import('node:module')
@@ -146,4 +147,14 @@ test('M15 over a moment: a short slide that ends before the snapshot is caught, 
   const r = await page.evaluate(motionSeen)
   assert.deepEqual(rules(r), ['M15'])
   assert.match(r[0].value, /transform/)
+})
+
+test('text fields under 16 px (issue #724): 16 px fields pass, smaller fields and editable text fail', { skip }, async () => {
+  await fixture('<input aria-label="Big" style="font-size:16px"><textarea aria-label="Note" style="font-size:16px"></textarea><input type="checkbox" style="font-size:10px"><div contenteditable="true"><p>notes</p></div>')
+  assert.deepEqual(await page.evaluate(smallFields, [null, 16]), [])
+  await fixture('<input aria-label="Quick add" style="font-size:13px"><select aria-label="Pick" style="font-size:14px"><option>a</option></select><div contenteditable="true" aria-label="Notes"><p style="font-size:15px">notes</p></div><input aria-label="Gone" style="display:none;font-size:10px">')
+  const r = await page.evaluate(smallFields, [null, 16])
+  assert.equal(r.length, 3)
+  assert.match(r[0], /"Quick add" \(input\) has 13px/)
+  assert.match(r[2], /"Notes" \(div > p\) has 15px/)
 })
