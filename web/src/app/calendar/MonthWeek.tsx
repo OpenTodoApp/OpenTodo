@@ -3,7 +3,7 @@
 // week's span bars. With several months stacked (year-view D1) a row belongs to one
 // month: the days of the other month are empty cells, so no day appears twice.
 import type { ReactNode } from 'react'
-import { dayLoad } from '../../lib/calendar'
+import { dayLoad, formatLoad } from '../../lib/calendar'
 import { t } from '../../lib/i18n'
 import { visibleRows } from '../../lib/month'
 import type { Projection } from '../../lib/occurrences'
@@ -89,9 +89,12 @@ export function MonthWeek({ week, own, c }: {
             className={`relative min-w-0 border-b border-l border-default p-1 outline-none first:border-l-0 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[-2px] focus-visible:outline-focus data-[drop-active]:bg-accent-soft ${c.narrow ? 'min-h-14' : 'min-h-28'} ${c.outside(d) ? 'bg-sunken text-faint' : ''} ${isFocused ? 'bg-accent-soft/40' : 'pointer-fine:hover:bg-hover'}`}>
             {/* Named by its content (WCAG 2.5.3 Label in Name): the date and counts first, then the tasks' own names. */}
             <span className="sr-only">{[d, n ? t('{n, plural, one {# task} other {# tasks}}', { n }) : '', capacityState(load)].filter(Boolean).join(', ')}</span>
-            <div aria-hidden className="mb-0.5 flex items-center justify-between gap-1">
+            {/* The load wraps under the date when the cell is too narrow for both and is cut
+                short within the cell, never past it: in the last column it made the grid
+                scroll sideways (a Sunday "today" at 768 px). */}
+            <div aria-hidden className="mb-0.5 flex min-w-0 flex-wrap items-center justify-between gap-x-1">
               <span className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-meta tabular-nums ${d === c.today ? 'bg-accent font-semibold text-on-accent' : ''}`}>{Number(d.slice(8))}</span>
-              {!c.narrow && load.planned > 0 && <CapacityLine load={load} dayLength={c.dayLength} sayOver={false} />}
+              {!c.narrow && load.planned > 0 && <CapacityLine load={load} dayLength={c.dayLength} sayOver={false} title={formatLoad(load, c.dayLength)} className="min-w-0 max-w-full truncate" />}
             </div>
             {c.narrow ? (
               n > 0 && <span aria-hidden data-month-count className="block text-center text-meta font-medium text-default">{n}</span>

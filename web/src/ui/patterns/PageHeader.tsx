@@ -148,7 +148,9 @@ export function PageHeader({ title, subtitle, meta, leading, actions, barActions
   // The lead line: beside a day page's title at the prose step, beside a tool page's title at the metadata step;
   // there it takes the room that is left (basis 0), so a narrow head wraps its actions under the title, never sideways.
   const lead = (ownRow || phoneDay) && meta && <div className={`min-w-0 text-muted ${day ? 'text-prose' : 'flex-1 basis-0 truncate text-meta'}`} data-page-lead data-page-meta>{meta}</div>
-  const toolsEnd = <div className="ml-auto flex shrink-0 items-center gap-1" data-page-actions><PageActions actions={actions} overflow={overflow} menu={menu} help={help} /></div>
+  // At most the row's width: actions longer than a line (the calendar's range, view switch and
+  // menus in German or French at 768 px) wrap inside it instead of pushing the page sideways.
+  const toolsEnd = <div className="ml-auto flex max-w-full shrink-0 flex-wrap items-center justify-end gap-1" data-page-actions><PageActions actions={actions} overflow={overflow} menu={menu} help={help} /></div>
   return (
     <header data-page-header data-page-head={day ? 'day' : 'tool'} data-testid={testId}
       className={`${sticky && !phoneDay ? 'sticky top-0 z-10 -mx-4 bg-canvas px-4 md:-mx-8 md:bg-surface md:px-8' : ''} ${ownRow || phoneDay || (actions && !barActions) ? (day ? 'mb-3 pb-3' : 'mb-2 border-b border-soft') : ''} ${level === 1 ? (ownRow || phoneDay ? (day ? 'pt-2' : '') : '') : 'pt-5'}`}>

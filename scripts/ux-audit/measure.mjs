@@ -60,6 +60,9 @@ export function pageOverflow() {
     const wide = [...box.querySelectorAll('*')]
       .filter((c) => c.getBoundingClientRect().width > 0 && (c.getBoundingClientRect().right > right + 1 || c.scrollWidth > c.clientWidth + 1))
       .filter((c, _, all) => !all.some((o) => o !== c && c.contains(o)))
+      // What reaches past the box's right edge first: that is what makes it scroll; a
+      // child that only overflows itself (a clipped sr-only label) is named after it.
+      .sort((a, b) => Number(b.getBoundingClientRect().right > right + 1) - Number(a.getBoundingClientRect().right > right + 1))
       .slice(0, 3)
     return wide.length ? `; widest: ${wide.map((c) => `${describe(c)} (${Math.round(c.getBoundingClientRect().width)}px, scroll ${c.scrollWidth}px)`).join(', ')}` : ''
   }
