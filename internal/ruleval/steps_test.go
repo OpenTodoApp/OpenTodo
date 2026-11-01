@@ -223,6 +223,28 @@ func TestStepDataVectors(t *testing.T) {
 			}
 			from, to := p.Range(dec[string](t, in["today"]), time.Weekday(dec[int](t, in["week_start"])))
 			got = []string{from, to}
+		case "find_scope":
+			projects := map[string]bool{}
+			for _, p := range dec[[]struct {
+				ID       string `json:"id"`
+				Archived bool   `json:"archived"`
+				Deleted  bool   `json:"deleted"`
+			}](t, in["projects"]) {
+				if !p.Deleted {
+					projects[p.ID] = p.Archived
+				}
+			}
+			ids := []string{}
+			for _, x := range dec[[]struct {
+				ID        string `json:"id"`
+				ProjectID string `json:"project_id"`
+				Deleted   bool   `json:"deleted"`
+			}](t, in["tasks"]) {
+				if InFindScope(x.Deleted, x.ProjectID, projects, dec[bool](t, in["archived"])) {
+					ids = append(ids, x.ID)
+				}
+			}
+			got = ids
 		default:
 			t.Fatalf("vector %d: unknown fn %s", i, c.Fn)
 		}

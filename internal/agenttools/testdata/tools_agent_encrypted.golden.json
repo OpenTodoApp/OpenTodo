@@ -1896,7 +1896,7 @@
             "type": "string"
           },
           "steps": {
-            "description": "JSON text of the steps, a list of at most 20: {id, kind, in: {name: {ref: step-id|trigger|item} | {literal: value}}, then?, otherwise?, do?}. Step kinds and their inputs: see docs/routines.md and the API's catalogue. Steps read tasks from the trigger or earlier steps: a step that takes a task and gets a list runs once per task, so add_comment with task {ref: a} comments on each task step a found. Pick is take (from start|end|all, n default 1) or filter (where). A specific task literal {task: id} is for rare fixed targets only. No step may create, edit or run a routine.",
+            "description": "JSON text of the steps, a list of at most 20: {id, kind, in: {name: {ref: step-id|trigger|item} | {literal: value}}, then?, otherwise?, do?}. Step kinds and their inputs: see docs/routines.md and the API's catalogue. Steps read tasks from the trigger or earlier steps: a step that takes a task and gets a list runs once per task, so add_comment with task {ref: a} comments on each task step a found. Pick is take (from start|end|all, n default 1) or filter (where). find_tasks never finds tasks in the Trash or of a project in the Trash, and leaves out archived projects unless archived is {literal: true}. A specific task literal {task: id} is for rare fixed targets only. No step may create, edit or run a routine.",
             "maxLength": 32768,
             "type": "string"
           },
@@ -1946,7 +1946,7 @@
             "type": "string"
           },
           "steps": {
-            "description": "JSON text of the steps, a list of at most 20: {id, kind, in: {name: {ref: step-id|trigger|item} | {literal: value}}, then?, otherwise?, do?}. Step kinds and their inputs: see docs/routines.md and the API's catalogue. Steps read tasks from the trigger or earlier steps: a step that takes a task and gets a list runs once per task, so add_comment with task {ref: a} comments on each task step a found. Pick is take (from start|end|all, n default 1) or filter (where). A specific task literal {task: id} is for rare fixed targets only. No step may create, edit or run a routine.",
+            "description": "JSON text of the steps, a list of at most 20: {id, kind, in: {name: {ref: step-id|trigger|item} | {literal: value}}, then?, otherwise?, do?}. Step kinds and their inputs: see docs/routines.md and the API's catalogue. Steps read tasks from the trigger or earlier steps: a step that takes a task and gets a list runs once per task, so add_comment with task {ref: a} comments on each task step a found. Pick is take (from start|end|all, n default 1) or filter (where). find_tasks never finds tasks in the Trash or of a project in the Trash, and leaves out archived projects unless archived is {literal: true}. A specific task literal {task: id} is for rare fixed targets only. No step may create, edit or run a routine.",
             "maxLength": 32768,
             "type": "string"
           },

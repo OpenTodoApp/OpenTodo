@@ -30,13 +30,19 @@ type ucTask struct {
 	Description string   `json:"description"`
 	// ChangedOn writes the task on that day (its last change), before any newer write.
 	ChangedOn string `json:"changed_on"`
+	// Deleted puts the task in the Trash (routines-find-scope).
+	Deleted bool `json:"deleted"`
 }
 
 type ucSeed struct {
-	Tasks    []ucTask                                 `json:"tasks"`
-	Projects []struct{ ID, Name, Description string } `json:"projects"`
-	Labels   []struct{ ID, Name string }              `json:"labels"`
-	Views    []struct{ ID, Name, Query string }       `json:"views"`
+	Tasks    []ucTask `json:"tasks"`
+	Projects []struct {
+		ID, Name, Description string
+		// Archived and Deleted: an archived project, a project in the Trash (routines-find-scope).
+		Archived, Deleted bool
+	} `json:"projects"`
+	Labels []struct{ ID, Name string }        `json:"labels"`
+	Views  []struct{ ID, Name, Query string } `json:"views"`
 }
 
 type ucExpect struct {
@@ -177,6 +183,12 @@ func seedUseCase(t *testing.T, h *harness, seed ucSeed) map[string]map[string]an
 	}
 	for _, p := range seed.Projects {
 		h.project("alice", p.ID, p.Name, p.Description)
+		if p.Archived {
+			h.write("alice", "laptop", "project", p.ID, map[string]any{"archived": true})
+		}
+		if p.Deleted {
+			h.write("alice", "laptop", "project", p.ID, map[string]any{"deleted_at": 5})
+		}
 	}
 	for _, v := range seed.Views {
 		h.write("alice", "laptop", "view", v.ID, map[string]any{"name": v.Name, "query": v.Query, "created_at": 1, "deleted_at": nil})
@@ -208,6 +220,9 @@ func seedUseCase(t *testing.T, h *harness, seed ucSeed) map[string]map[string]an
 		}
 		if x.ParentID != "" {
 			fields["parent_id"] = x.ParentID
+		}
+		if x.Deleted {
+			fields["deleted_at"] = 5
 		}
 		now := h.clock
 		if x.ChangedOn != "" {

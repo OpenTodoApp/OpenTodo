@@ -131,7 +131,7 @@ A [custom field](custom-fields.md) is named like a project or label, ignoring ca
 
 ### Open, completed and deleted tasks
 
-A query matches **open tasks only**, unless `completed` or `open` appears somewhere in it, or it compares the completion date (`completed >= this week`). `completed` on its own lists only completed tasks, `p1 & completed` the completed priority-1 tasks, and `completed | open` both. Deleted tasks never match, and neither does the record a skipped day of a habit leaves (it is neither completed nor open). Parked and deferred tasks match like any other unless you exclude them: `!someday`, `!deferred`. Like the other cross-project views, the New view page leaves out tasks of archived projects.
+A query matches **open tasks only**, unless `completed` or `open` appears somewhere in it, or it compares the completion date (`completed >= this week`). `completed` on its own lists only completed tasks, `p1 & completed` the completed priority-1 tasks, and `completed | open` both. Deleted tasks never match, and neither does the record a skipped day of a habit leaves (it is neither completed nor open). Parked and deferred tasks match like any other unless you exclude them: `!someday`, `!deferred`. Like the other cross-project views, the New view page leaves out tasks of archived projects, and so does a [routine](routines.md#which-tasks-a-routine-finds) that finds tasks with a query or a saved view, unless its Find tasks step has **Archived projects** on. The filter language has no term for archived projects.
 
 ### Dates
 

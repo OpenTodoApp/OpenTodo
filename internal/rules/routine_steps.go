@@ -194,6 +194,18 @@ func (st *runState) tasksWhere(keep func(opsync.Entity) bool) []opsync.Entity {
 	return out
 }
 
+// projectScope maps each live project id to its archived flag, what
+// ruleval.InFindScope reads (routines-find-scope D1).
+func projectScope(projects map[string]opsync.Entity) map[string]bool {
+	out := make(map[string]bool, len(projects))
+	for id, p := range projects {
+		if opsync.IsNull(p["deleted_at"]) {
+			out[id] = boolOf(p, "archived")
+		}
+	}
+	return out
+}
+
 func num(e opsync.Entity, f string) float64 {
 	var n float64
 	_ = json.Unmarshal(e[f], &n)
@@ -235,10 +247,14 @@ func (st *runState) findTasks(s *ruleval.Step) (ruleval.Value, string, error) {
 	if _, cond := s.In["condition"]; !cond {
 		rows = st.liveTasks()
 	}
+	// Tasks of projects in the Trash never, of archived projects only when
+	// asked (routines-find-scope D1, D3).
+	archived, _ := lit[bool](s, "archived")
+	scope := projectScope(st.projects)
 	var out []string
 	status := ""
 	for _, t := range rows {
-		if !match(t) {
+		if !ruleval.InFindScope(false, str(t, "project_id"), scope, archived) || !match(t) {
 			continue
 		}
 		if len(out) == limit {

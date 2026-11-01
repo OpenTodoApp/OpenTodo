@@ -146,7 +146,9 @@ const (
 var Steps = []StepKind{
 	// Tasks
 	{Kind: "find_tasks", Group: GroupTasks, Out: TTasks, OneOf: [][]string{{"query", "view", "condition"}},
-		Inputs: []Input{content(bound(in("query", nil, LitText), 1000)), content(in("view", nil, LitID)), in("condition", nil, LitCondition), bound(in("limit", nil, LitNumber), MaxListItems)}},
+		// archived: tasks of archived projects too (routines-find-scope D3).
+		Inputs: []Input{content(bound(in("query", nil, LitText), 1000)), content(in("view", nil, LitID)), in("condition", nil, LitCondition), bound(in("limit", nil, LitNumber), MaxListItems),
+			in("archived", nil, LitBool)}},
 	{Kind: "create_tasks", Group: GroupTasks, Out: TTasks, Content: true, Tool: "create_tasks", OneOf: [][]string{{"text", "title"}},
 		Inputs: []Input{content(in("text", []Type{TText, TLines}, LitText)), content(bound(in("title", textIn, LitText), 500)),
 			in("project", []Type{TProject}, LitProject), in("section", nil, LitID), in("due", []Type{TDate}, LitDate),

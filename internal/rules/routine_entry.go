@@ -46,15 +46,17 @@ func readRule(row opsync.Entity) (rule, bool) {
 }
 
 // triggerValue is the trigger's output for an occurrence: the task, or for a
-// schedule the matching open tasks (with a condition) or the firing day.
+// schedule the matching open tasks (with a condition; not of archived projects
+// or projects in the Trash, routines-find-scope D2) or the firing day.
 func (e *Engine) triggerValue(ctx context.Context, w *world, r *rule, taskID string) ruleval.Value {
 	if r.Trigger.Kind == ruleval.Schedule {
 		if !r.HasCondition {
 			return ruleval.Value{Type: ruleval.TDate, Date: w.today}
 		}
 		var ids []string
+		scope := projectScope(w.projectRows)
 		for id, t := range w.tasks {
-			if opsync.IsNull(t["deleted_at"]) && opsync.IsNull(t["completed_at"]) && e.matches(ctx, w, r, t) {
+			if opsync.IsNull(t["deleted_at"]) && opsync.IsNull(t["completed_at"]) && ruleval.InFindScope(false, str(t, "project_id"), scope, false) && e.matches(ctx, w, r, t) {
 				ids = append(ids, id)
 			}
 		}
