@@ -25,6 +25,8 @@ type runOpts struct {
 	taskID  string
 	// callAI lets a test or dry run call the model (routines-ai-step D11).
 	callAI bool
+	// device and session bind a Run now to the device in hand (D7).
+	device, session string
 }
 
 // runRoutine runs one routine occurrence: claimed under its key (so a replay
@@ -97,11 +99,16 @@ func (e *Engine) runRoutine(ctx context.Context, w *world, r *rule, o runOpts) (
 			return finish(routineFinish{Outcome: OutcomeSkipped, Reason: limit, FailedStep: -1})
 		}
 	}
-	if w.encrypted {
-		types, _ := ruleval.Check(r.Steps, r.triggerType())
-		if ruleval.ContentStep(r.Steps, r.triggerType(), types) != "" {
-			return finish(routineFinish{Outcome: OutcomeSkipped, Reason: ErrCodeEncrypted, FailedStep: -1})
+	if w.encrypted && r.needsDevice() {
+		// Content or AI on an encrypted account runs on one of the user's
+		// devices (routines-ai-step D7); without one opted in it is skipped.
+		switch err := e.deviceGate(ctx, w.uid, r, o); {
+		case err == nil:
+			return e.waitForDevice(ctx, w.uid, r, claimID, o, o.device, o.session)
+		case !errors.Is(err, errNoWait):
+			return Result{}, err
 		}
+		return finish(routineFinish{Outcome: OutcomeSkipped, Reason: ErrCodeEncrypted, FailedStep: -1})
 	}
 	failed, err := st.plan()
 	var f *stepFail

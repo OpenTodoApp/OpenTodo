@@ -40,6 +40,7 @@
   "encryption_conflict",
   "encryption_disabled",
   "encryption_enabled",
+  "fallback",
   "feeds_disabled",
   "forbidden",
   "google_not_configured",
@@ -105,6 +106,7 @@
   "passphrase_invalid",
   "passphrase_required",
   "paused",
+  "plaintext",
   "private_target",
   "project_id_conflict",
   "project_invite_not_allowed",
@@ -115,8 +117,11 @@
   "rate_limited",
   "reauth_required",
   "reset_invalid",
+  "routine_changed",
+  "run_closed",
   "scope_change",
   "self_action",
+  "session_only",
   "session_required",
   "set_by_environment",
   "setup_code_invalid",
@@ -138,5 +143,6 @@
   "unsupported_protocol_version",
   "user_not_found",
   "verification_invalid",
-  "workspace_not_empty"
+  "workspace_not_empty",
+  "write_limit"
 ]

@@ -60,7 +60,7 @@ const REASON: Record<string, string> = {
   automations_off: msg('automations are turned off on this server'),
   email_not_configured: msg('outgoing email is not set up on this server'),
   email_not_verified: msg('your email address is not verified'),
-  encrypted: msg('email cannot be built for an encrypted account'),
+  encrypted: msg('this step would send text through the server, which an encrypted account never does'),
   no_webhook: msg('the webhook does not exist or is turned off'),
   energy_off: msg('Energy levels are turned off'),
   focus_off: msg('today’s focus is turned off'),
@@ -69,7 +69,7 @@ const REASON: Record<string, string> = {
   demo: msg('not offered on a demo instance'),
   ai_not_configured: msg('the assistant is not set up for you on this server'),
   ai_no_consent: msg('accept the assistant’s updated terms for routines'),
-  ai_encrypted: msg('AI steps cannot run for an end-to-end encrypted account yet'),
+  ai_encrypted: msg('turn on Run my routines on a device with the on-device assistant set up'),
 }
 
 const HINT: Record<string, string> = {

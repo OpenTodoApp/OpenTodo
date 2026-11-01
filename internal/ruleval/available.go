@@ -24,7 +24,7 @@ const (
 	ReasonAINotConfigured = "ai_not_configured"
 	ReasonAINoConsent     = "ai_no_consent"
 	// ReasonAIEncrypted: an encrypted account's AI steps need one of its
-	// devices to run them (routines-ai-step D7), which is not offered yet.
+	// devices with the on-device assistant to run them (routines-ai-step D7).
 	ReasonAIEncrypted = "ai_encrypted"
 )
 
@@ -46,7 +46,7 @@ var reasonText = map[string]string{
 	ReasonAutomationsOff:     "automations are turned off on this server",
 	ReasonEmailNotConfigured: "outgoing email is not set up on this server",
 	ReasonEmailNotVerified:   "the account's email address is not verified",
-	ReasonEncrypted:          "email cannot be built for an encrypted account",
+	ReasonEncrypted:          "this step would send text through the server, which an encrypted account never does",
 	ReasonNoWebhook:          "the webhook does not exist or is turned off",
 	ReasonEnergyOff:          "Energy levels are turned off",
 	ReasonFocusOff:           "today's focus is turned off",
@@ -55,7 +55,7 @@ var reasonText = map[string]string{
 	ReasonDemo:               "not offered on a demo instance",
 	ReasonAINotConfigured:    "the assistant is not set up for you on this server",
 	ReasonAINoConsent:        "accept the assistant's updated terms for routines",
-	ReasonAIEncrypted:        "AI steps cannot run for an end-to-end encrypted account yet",
+	ReasonAIEncrypted:        "turn on Run my routines on a device with the on-device assistant set up",
 }
 
 // SettingFor is the setting that fixes a reason ("" when none can).
@@ -167,6 +167,10 @@ func StepAvailable(s *Step, env Env) Availability {
 		_ = json.Unmarshal(s.In["webhook_id"].Lit, &id)
 		if !slices.Contains(env.Webhooks, id) {
 			return unavailable(ReasonNoWebhook)
+		}
+		// Its text would pass through the server in plaintext (routines-ai-step D7).
+		if _, text := s.In["text"]; text && env.Encrypted {
+			return unavailable(ReasonEncrypted)
 		}
 	case "change_tasks":
 		if set, err := ParseStepActions(s.In["set"].Lit); err == nil && set.Energy != nil && !env.Energy {
