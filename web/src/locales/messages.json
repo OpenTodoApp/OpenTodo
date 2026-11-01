@@ -9769,8 +9769,10 @@
   "No project “{name}” · stays in the title": [
     "web/src/app/ParseChips.tsx"
   ],
+  "No projects yet": [
+    "web/src/app/ProjectsView.tsx"
+  ],
   "No projects yet.": [
-    "web/src/app/ProjectsView.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/routines/words.tsx"
   ],
@@ -12079,6 +12081,9 @@
     "web/src/lib/rules/sentence.ts",
     "web/src/lib/settingsCopy.ts"
   ],
+  "Projects hold tasks; labels describe them. Create a project to group work in the sidebar.": [
+    "web/src/app/ProjectsView.tsx"
+  ],
   "Projects in this workspace can be shared with these people and their groups only.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -13888,6 +13893,9 @@
   "Set a start": [
     "web/src/app/task-detail/TaskFacts.tsx"
   ],
+  "Set a time for the reminder first.": [
+    "web/src/app/actionError.ts"
+  ],
   "Set a time to fix this due to a time zone": [
     "web/src/app/task-detail/ZoneControl.tsx"
   ],
@@ -14324,6 +14332,7 @@
     "web/src/app/task-detail/CommentsTab.tsx"
   ],
   "Sign in to continue.": [
+    "web/src/app/actionError.ts",
     "web/src/lib/i18n/errors.ts"
   ],
   "Sign in to join “{name}”. You come back to this link afterwards.": [
@@ -15534,6 +15543,9 @@
   "That password is not correct.": [
     "web/src/app/ReauthDialog.tsx"
   ],
+  "That project is not available any more.": [
+    "web/src/app/actionError.ts"
+  ],
   "That setup code is not right. Copy it from the server log and try again.": [
     "web/src/app/AuthScreen.tsx",
     "web/src/lib/i18n/errors.ts"
@@ -15550,8 +15562,14 @@
   "That task is not available any more, so today’s focus is shown.": [
     "web/src/app/focus/FocusView.tsx"
   ],
+  "That task is not available any more.": [
+    "web/src/app/actionError.ts"
+  ],
   "That task left the Inbox on another device, so the next one is shown.": [
     "web/src/app/TriageView.tsx"
+  ],
+  "That time entry is not available any more.": [
+    "web/src/app/actionError.ts"
   ],
   "That took too long. Please try again.": [
     "web/src/app/AuthScreen.tsx",
@@ -15975,6 +15993,12 @@
   "The owner of this server requires a second sign-in step for {email}. Set it up to continue; your tasks and any changes waiting on this device are kept and sync as soon as you are done.": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
+  "The parent project is not available any more.": [
+    "web/src/app/actionError.ts"
+  ],
+  "The parent task is not available any more.": [
+    "web/src/app/actionError.ts"
+  ],
   "The passkey request expired or was already used. Try again.": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -16059,6 +16083,9 @@
   ],
   "The quick brown fox jumps over the lazy dog": [
     "web/src/app/themes/EditorSections.tsx"
+  ],
+  "The reminder offset must be whole minutes.": [
+    "web/src/app/actionError.ts"
   ],
   "The request was rejected because it came from another site.": [
     "web/src/lib/i18n/errors.ts"

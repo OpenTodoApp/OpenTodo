@@ -36,6 +36,9 @@ export function SyncStatus({ compact = false }: { compact?: boolean } = {}) {
   // while something needs attention (offline, error, pending, locked…); when synced
   // the dot alone shows and the text lives in the tooltip and the accessible name.
   const quiet = s.state === 'idle' && s.pending === 0
+  // A sync error is not tooltip-only (compact mode and touch have no hover): the
+  // pill keeps its label in compact mode too, so the red dot is always named.
+  const failed = s.state === 'error' && !!s.error
   const detail = s.state === 'locked' ? t('This device is locked: unlock it with your encryption passphrase to sync.') : s.state === 'restricted' ? t('The server owner requires two-factor authentication for your account. Click to set it up; your changes upload afterwards.') : s.error ?? `${lastSynced} · ${liveTitle}`
   const name = `${map.text}${showLive ? ` · ${liveTitle}` : ''}`
   const button = (
@@ -47,8 +50,13 @@ export function SyncStatus({ compact = false }: { compact?: boolean } = {}) {
       className={`flex min-h-9 items-center gap-2 rounded-control text-meta text-muted hover:bg-sunken dark:hover:bg-raised ${compact ? 'justify-center px-0' : 'px-2 py-1'}`}
     >
       <span className={`h-2 w-2 shrink-0 rounded-full ${map.dot}`} />
-      {!quiet && !compact && <span className="min-w-0 truncate">{map.text}</span>}
+      {(!quiet && !compact || failed) && <span className="min-w-0 truncate">{map.text}</span>}
     </button>
   )
-  return <Tooltip label={quiet ? name : detail} side={compact ? 'right' : 'top'}>{button}</Tooltip>
+  return (
+    <div className={failed ? 'flex min-w-0 flex-col' : undefined}>
+      <Tooltip label={quiet ? name : detail} side={compact ? 'right' : 'top'}>{button}</Tooltip>
+      {failed && <p role="alert" className="max-w-full truncate px-2 pb-1 text-meta text-danger">{s.error}</p>}
+    </div>
+  )
 }
