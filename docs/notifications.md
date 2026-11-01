@@ -20,6 +20,7 @@ The bell at the bottom of the sidebar shows a small dot when one new thing arriv
 
 - **assigned you**: someone assigned you a task in a shared project,
 - **mentioned you**: someone wrote `@your name` in a comment,
+- **failed**: one of your [routines](routines.md) failed; once a day per routine, with a count, and it opens the run,
 - **is ready to start**: someone completed the last task that a task assigned to you was [waiting for](tasks-and-projects.md#wait-for-another-task), for example "Sam completed Confirm dates: Book flights is ready to start". It's in the bell only, not sent as a push notification.
 
 Select an entry to open the task. Opening the task marks it as read. You don't get notified about your own actions.

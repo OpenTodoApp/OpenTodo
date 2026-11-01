@@ -8,6 +8,8 @@ import { AddStepSheet } from './AddStep'
 import { RoutineEditor } from './RoutineEditor'
 import { RoutinesView } from './RoutinesView'
 import { RunDetail } from './RunHistory'
+import { InboxCardView } from './RoutinesInboxCard'
+import type { InboxLine } from '../../lib/rules/inbox'
 
 // Routines (OpenSpec change routines-editor): the page, the sentence-card
 // editor, the Add step sheet and a run's detail. The workbench has no server,
@@ -77,4 +79,17 @@ export const RunDetailOffline: StoryObj = {
   name: 'Run detail, offline',
   ...withSeed(async () => { seeded.task = await seedGroceries() }),
   render: () => <RunDetail rule={undefined} ruleId="r1" runId="x1" onClose={() => undefined} />,
+}
+
+const inboxLines: InboxLine[] = [
+  { ruleId: 'd', name: 'Weekly digest', kind: 'failure', text: 'Weekly digest failed · Not available: outgoing email is not set up', runs: [], at: 3 },
+  { ruleId: 's', name: 'Morning sweep', kind: 'success', text: 'Morning sweep ran 2 times · 9 tasks changed', runs: [], at: 2 },
+  { ruleId: 'g', name: 'Groceries', kind: 'success', text: 'Groceries · 7 tasks created · Friday 17:00', runs: [], at: 1 },
+]
+
+/** The Inbox card "Routines since your last visit". */
+export const InboxCard: StoryObj = {
+  name: 'Inbox card',
+  render: () => <div className="max-w-xl"><InboxCardView lines={inboxLines} more={0} hide={false} online onOpen={() => undefined} onDismiss={() => undefined}
+    onSeen={() => undefined} onHide={() => undefined} onAll={() => undefined} /></div>,
 }
