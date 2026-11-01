@@ -1647,6 +1647,10 @@
   "App": [
     "web/src/app/settingsSections.ts"
   ],
+  "App icon badge": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "App password": [
     "web/src/app/CalendarSyncDialogs.tsx"
   ],
@@ -10630,6 +10634,9 @@
   "On for your account, from your own device": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
+  "On iPhone and iPad the badge appears only once notifications are allowed.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "On iPhone and iPad, push works only in the app installed to the Home Screen: check Settings → Notifications → OpenTodo, and Focus.": [
     "web/src/lib/push.ts"
   ],
@@ -14233,6 +14240,10 @@
   "Show times": [
     "web/src/app/datetime/TimeField.tsx"
   ],
+  "Show today's count": [
+    "web/src/app/AppBadge.tsx",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Show your other calendars beside your tasks, and subscribe to your tasks from a calendar app": [
     "web/src/app/settingsIndex.ts"
   ],
@@ -15845,6 +15856,10 @@
   "The in-app assistant: consent, provider, model and usage": [
     "web/src/app/settingsIndex.ts"
   ],
+  "The installed app's icon shows how many of today's tasks are open.": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "The invitation was sent to {sentTo}.": [
     "web/src/app/MembersPanel.tsx"
   ],
@@ -16697,6 +16712,9 @@
     "web/src/app/method/MethodModeChooser.tsx"
   ],
   "This device only.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "This device only. The count matches Today in the sidebar.": [
     "web/src/lib/settingsCopy.ts"
   ],
   "This device: up to 3 existing tasks, done, dates, priority or labels. Undo appears.": [

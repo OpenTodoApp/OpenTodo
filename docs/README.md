@@ -82,6 +82,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | &nbsp;&nbsp;↳ [Delivery channels](notification-channels.md) | Send reminders and notifications to ntfy, Pushover, Gotify, or any address through a signed webhook, including Apprise and Home Assistant. |
 | &nbsp;&nbsp;↳ [Push notifications](push-notifications.md) | Turn on reminders for when the app is closed, device by device, what iPhone and iPad need, what a push message contains, and what to do when nothing arrives. |
 | &nbsp;&nbsp;↳ [Check that push works](push-delivery-check.md) | The Delivery check under Settings → Notifications, each step it lists, and what every result of a test notification means. |
+| &nbsp;&nbsp;↳ [App icon badge](app-icon-badge.md) | The number of today's open tasks on the installed app's icon, where it works, why iPhone and iPad need notifications, and how it updates while the app is closed. |
 | [Offline and sync](offline-and-sync.md) | How OpenTodo keeps working without a connection, what the sync status means, and what happens when two devices change the same task. |
 | [Keyboard shortcuts](keyboard.md) | Every shortcut in OpenTodo, from quick add to the calendar, plus the optional Vim keybindings. |
 | [Account security](account-security.md) | Sign in with a passkey, add two-factor authentication, change your password and check where your account is signed in. |
