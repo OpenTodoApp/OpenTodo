@@ -42,6 +42,10 @@ The app appears in the share sheet of other apps. A link, some text or files ope
 
 **Today**, in the medium size, shows the tasks due today and the overdue ones, with the time and priority, from the last thing the web app published. Tap a task to open it. For an encrypted account the widget shows counts only until you unlock.
 
+## Theme colours
+
+The area behind the page (under the status bar before the page draws, and when you pull past the top or the bottom) takes the bar colour of your [theme](themes.md), and the app remembers it for the next launch. The status bar's icons follow the phone's light or dark appearance.
+
 ## Face ID unlock
 
 On a phone with Face ID or Touch ID, the [encrypted account](e2ee.md) offers **Unlock with Face ID next time**. After you unlock with the passphrase, the app keeps a copy of the account key encrypted by the Secure Enclave under a key that opens only with your face or finger, and the unlock screen offers that from then on; the passphrase still works.

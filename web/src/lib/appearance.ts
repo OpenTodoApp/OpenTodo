@@ -11,6 +11,9 @@ import { mutate } from './ops'
 import type { ThemeModePref, UserPrefs } from './types'
 import { USER_PREFS_ID } from './userPrefs'
 import { readJSON, writeJSON } from './deviceStorage'
+import { applyTheme, readThemeCache, writeThemeCache, type ThemeCache } from './theme/apply'
+import { setSystemBars } from './shell'
+import { resettable } from './moduleState'
 
 export const THEME_MODES: readonly ThemeModePref[] = ['system', 'light', 'dark']
 
@@ -193,10 +196,50 @@ export async function deriveCustom(hex: string): Promise<CustomAccentValues> {
 }
 
 /**
+ * The resolved themes of each side (theme-engine D4, D5): what public/appearance.js
+ * applied from the device cache until the app resolves the synced choice. An absent
+ * side is its OpenTodo theme.
+ */
+let themesNow: ThemeCache = readThemeCache()
+let lastApplied: { a: Appearance; doc: Document; derived?: CustomAccentValues | null } | null = null
+/** The bar colour last handed to a native shell, so it is sent only when it changes. */
+let barsSent = ''
+resettable('appearanceThemes', () => { themesNow = readThemeCache(); lastApplied = null; barsSent = '' })
+
+/** The side the app shows: the mode, or under `system` the operating system's scheme. */
+export function effectiveSide(mode: ThemeModePref, doc: Document | undefined = typeof document === 'undefined' ? undefined : document): 'light' | 'dark' {
+  if (mode !== 'system') return mode
+  return doc?.defaultView?.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
+
+/**
+ * Sets the resolved themes of both sides, remembers them on the device (never an op)
+ * and applies them with the last appearance. A side left out shows its OpenTodo theme.
+ */
+export function setAppearanceThemes(t: ThemeCache): void {
+  themesNow = t
+  writeThemeCache(t)
+  reapplyAppearance()
+}
+
+/** The resolved themes now in use (tests and Settings). */
+export function appearanceThemes(): ThemeCache {
+  return themesNow
+}
+
+/** Applies the last appearance again (the operating system switched between light and dark). */
+export function reapplyAppearance(): void {
+  if (lastApplied) applyAppearance(lastApplied.a, lastApplied.doc, lastApplied.derived)
+}
+
+/**
  * Applies an appearance to a document (normally the app's own). The custom accent
- * needs its derived values; without them the default accent shows.
+ * needs its derived values; without them the default accent shows. The theme of the
+ * side shown applies on top (theme-engine D4): its sheet sets every colour token, so
+ * the accent preference only shows on the OpenTodo themes (D7).
  */
 export function applyAppearance(a: Appearance, doc: Document = document, derived?: CustomAccentValues | null): void {
+  lastApplied = { a, doc, derived }
   const root = doc.documentElement
   if (a.mode === 'system') root.removeAttribute('data-theme')
   else root.setAttribute('data-theme', a.mode)
@@ -215,9 +258,14 @@ export function applyAppearance(a: Appearance, doc: Document = document, derived
   if (a.density === 'compact') root.setAttribute('data-density', 'compact')
   else root.removeAttribute('data-density')
   setMeta(doc, 'color-scheme', a.mode === 'system' ? 'light dark' : a.mode)
+  const side = effectiveSide(a.mode, doc)
+  applyTheme(themesNow[side] ?? null, doc)
   // The bar: the accent in light mode, the dark canvas in dark mode; under system
-  // both, with media queries, so the browser switches on its own (design D8).
+  // both, with media queries, so the browser switches on its own (design D8). A theme
+  // brings its own bar colour (theme-engine D8).
   const bar = custom ? custom.light : lightBar(accent as AccentId)
+  const lightBarColour = themesNow.light?.bar ?? bar
+  const darkBarColour = themesNow.dark?.bar ?? DARK_BAR
   for (const m of [...doc.head.querySelectorAll('meta[name="theme-color"]')]) m.remove()
   const add = (content: string, media?: string) => {
     const m = doc.createElement('meta')
@@ -227,9 +275,12 @@ export function applyAppearance(a: Appearance, doc: Document = document, derived
     doc.head.append(m)
   }
   if (a.mode === 'system') {
-    add(bar, '(prefers-color-scheme: light)')
-    add(DARK_BAR, '(prefers-color-scheme: dark)')
-  } else add(a.mode === 'dark' ? DARK_BAR : bar)
+    add(lightBarColour, '(prefers-color-scheme: light)')
+    add(darkBarColour, '(prefers-color-scheme: dark)')
+  } else add(a.mode === 'dark' ? darkBarColour : lightBarColour)
+  // A native shell colours its status and navigation bars the same (native-shells "System bars follow the app's theme").
+  const shown = side === 'dark' ? darkBarColour : lightBarColour
+  if (doc === document && shown !== barsSent && setSystemBars(shown)) barsSent = shown
   // Private mode or blocked storage: the next start shows the defaults until the row is read.
   writeJSON(CACHE_KEY, { mode: a.mode, accent, bar, ...(custom ? { custom: { input: a.custom, ...custom } } : {}) })
 }

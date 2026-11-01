@@ -45,6 +45,7 @@ final class AppModel: ObservableObject {
         ShareInbox.clear()
         BiometricKeyStore.forget()
         prefs.serverOrigin = nil
+        prefs.systemBars = nil
         // The http warning belonged to the old address; the next one is checked afresh.
         prefs.insecureLocalServer = false
         origin = nil

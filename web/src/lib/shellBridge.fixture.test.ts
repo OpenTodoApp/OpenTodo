@@ -9,7 +9,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { forgetShellData, type OpenTodoShell } from './shell'
+import { forgetShellData, setSystemBars, type OpenTodoShell } from './shell'
 import { shellUrlAction } from './shellActions'
 import { shellReminders, shellWidget } from './shellPublish'
 import { openOrigin } from './taskOrigin'
@@ -140,6 +140,28 @@ function externalLinks() {
   }
 }
 
+/**
+ * theme-engine D8: the strings setSystemBars hands a shell that lists system-bars,
+ * captured from the real call, with what the shell must read (the colour, and
+ * whether its icons are light), and payloads it must ignore.
+ */
+function systemBars() {
+  const handed: { payload: string; color: string; lightIcons: boolean }[] = []
+  window.opentodoShell = {
+    bridge: 1, platform: 'android', app: '0.20.0', capabilities: ['system-bars'],
+    setSystemBars: (json) => { const p = JSON.parse(json) as { color: string; dark: boolean }; handed.push({ payload: json, color: p.color, lightIcons: p.dark }) },
+  }
+  // The emerald accent bar, the dark canvas, a pale light theme and a pale accent.
+  for (const c of ['#047857', '#0d0e10', '#fdf6e3', '#88c0d0']) setSystemBars(c)
+  delete window.opentodoShell
+  return {
+    description: 'System bars (theme-engine D8, native-shells "System bars follow the app\'s theme"): what setSystemBars hands a shell that lists system-bars, with the colour and icon appearance the shell must apply (dark: true means light icons), and payloads the shell must ignore, keeping its bars and logging nothing of them.',
+    method: 'setSystemBars',
+    handed,
+    refused: ['{"color":"red","dark":true}', '{"color":"#2e3440"}', '{"dark":true}', '{"color":"#2E3440","dark":true}', '{"color":"#2e344","dark":false}', '{"color":"#2e3440","dark":"yes"}', '{"color":"url(x)","dark":true}', 'null', '[]', 'not json'],
+  }
+}
+
 const text = (v: unknown) => JSON.stringify(v, null, 2) + '\n'
 
 afterEach(() => {
@@ -148,7 +170,7 @@ afterEach(() => {
 
 describe('Android bridge fixtures', () => {
   it('are current (mobile/android/app/src/test/resources/bridge)', () => {
-    const want: Record<string, string> = { 'actions.json': text(actions()), 'external-links.json': text(externalLinks()) }
+    const want: Record<string, string> = { 'actions.json': text(actions()), 'external-links.json': text(externalLinks()), 'system-bars.json': text(systemBars()) }
     for (const [name, f] of Object.entries(fixtures())) want[name] = text(f)
     if (update) {
       mkdirSync(dir, { recursive: true })

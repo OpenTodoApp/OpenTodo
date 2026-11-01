@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opentodo.app/schemas/opentodo-theme-1.json",
+  "title": "OpenTodo theme, format 1",
+  "description": "A theme sets the colours, corners and type of the OpenTodo web app (docs/themes.md). Every token a document leaves out is derived on the device from its seeds. Beyond this schema the app and the server also require every oklch() value to lie inside the sRGB gamut and the document to be at most 16 KB of UTF-8 JSON; internal/themes and web/src/lib/theme/format.ts are the validators.",
+  "type": "object",
+  "required": ["opentodoTheme", "id", "name", "author", "licence", "kind", "seeds"],
+  "properties": {
+    "opentodoTheme": { "description": "The format version. A newer format is not applied by an older app.", "const": 1 },
+    "id": { "description": "1 to 64 characters of a-z, 0-9 and hyphens.", "type": "string", "pattern": "^[a-z0-9-]{1,64}$" },
+    "name": { "description": "The name shown in Settings, 1 to 60 characters.", "type": "string", "minLength": 1, "maxLength": 60, "pattern": "\\S" },
+    "author": { "description": "Credited on the theme's card; at most 120 characters.", "type": "string", "maxLength": 120 },
+    "licence": { "description": "An SPDX identifier where one applies; at most 120 characters.", "type": "string", "maxLength": 120 },
+    "source": { "description": "Where the palette comes from, as text. Shown as a credit and never fetched.", "type": "string", "maxLength": 300 },
+    "kind": { "description": "A theme is one side: the light or the dark one.", "enum": ["light", "dark"] },
+    "seeds": {
+      "description": "The few colours every other token is derived from.",
+      "type": "object",
+      "required": ["canvas", "surface", "text", "accent"],
+      "properties": {
+        "canvas": { "description": "The page behind the cards.", "$ref": "#/$defs/colour" },
+        "surface": { "description": "Cards, rows and dialogs.", "$ref": "#/$defs/colour" },
+        "text": { "description": "Body text.", "$ref": "#/$defs/colour" },
+        "accent": { "description": "Buttons, links, focus and selection.", "$ref": "#/$defs/colour" },
+        "success": { "$ref": "#/$defs/colour" },
+        "warning": { "$ref": "#/$defs/colour" },
+        "danger": { "$ref": "#/$defs/colour" },
+        "info": { "$ref": "#/$defs/colour" }
+      },
+      "propertyNames": { "$ref": "#/$defs/tokenName" },
+      "additionalProperties": { "$ref": "#/$defs/colour" }
+    },
+    "tokens": {
+      "description": "Explicit values for semantic tokens (docs/themes.md lists them). An unknown name is kept and ignored, so a document written by a newer app survives an older one.",
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/tokenName" },
+      "properties": { "scrim": { "$ref": "#/$defs/colourAlpha" } },
+      "additionalProperties": { "$ref": "#/$defs/colour" }
+    },
+    "bar": { "description": "The browser and system bar colour; by default the accent of a light theme and the canvas of a dark one.", "$ref": "#/$defs/colour" },
+    "notes": {
+      "type": "object",
+      "properties": {
+        "adapted": {
+          "description": "For a palette adapted for contrast: the published colour each adjusted token replaced.",
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/tokenName" },
+          "additionalProperties": { "$ref": "#/$defs/colour" }
+        },
+        "text": { "description": "Shown in the theme's details.", "type": "string", "maxLength": 500 }
+      },
+      "additionalProperties": false
+    },
+    "shape": {
+      "type": "object",
+      "properties": {
+        "radius": {
+          "description": "Corner radii in px. A step left out keeps OpenTodo's value.",
+          "type": "object",
+          "properties": {
+            "chip": { "$ref": "#/$defs/radius" },
+            "control": { "$ref": "#/$defs/radius" },
+            "card": { "$ref": "#/$defs/radius" },
+            "surface": { "$ref": "#/$defs/radius" },
+            "popover": { "$ref": "#/$defs/radius" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "type": {
+      "type": "object",
+      "properties": {
+        "family": {
+          "description": "The bundled typeface (inter), the platform's UI, serif or monospace stack, or a font installed on the device. Never a font from another host.",
+          "oneOf": [
+            { "enum": ["inter", "system", "serif", "mono"] },
+            {
+              "type": "object",
+              "required": ["local"],
+              "properties": { "local": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9 -]{0,63}$" } },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "list": { "description": "The list text size in px.", "enum": [13, 14, 15] }
+      },
+      "additionalProperties": false
+    }
+  },
+  "propertyNames": { "pattern": "^[A-Za-z][A-Za-z0-9]{0,39}$" },
+  "$defs": {
+    "tokenName": { "type": "string", "pattern": "^[a-z0-9-]{1,40}$" },
+    "colour": {
+      "description": "#rrggbb, or oklch(L C H) with L 0 to 1, C 0 to 0.4 and H 0 to 360, inside the sRGB gamut.",
+      "type": "string",
+      "pattern": "^(#[0-9a-fA-F]{6}|oklch\\([ \\t]*(\\d+(\\.\\d+)?|\\.\\d+)[ \\t]+(\\d+(\\.\\d+)?|\\.\\d+)[ \\t]+(\\d+(\\.\\d+)?|\\.\\d+)[ \\t]*\\))$"
+    },
+    "colourAlpha": {
+      "description": "A colour that may be translucent: #rrggbbaa or oklch(L C H / a).",
+      "type": "string",
+      "pattern": "^(#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?|oklch\\([ \\t]*(\\d+(\\.\\d+)?|\\.\\d+)[ \\t]+(\\d+(\\.\\d+)?|\\.\\d+)[ \\t]+(\\d+(\\.\\d+)?|\\.\\d+)[ \\t]*(/[ \\t]*(\\d+(\\.\\d+)?|\\.\\d+)[ \\t]*)?\\))$"
+    },
+    "radius": { "type": "integer", "minimum": 0, "maximum": 20 }
+  }
+}

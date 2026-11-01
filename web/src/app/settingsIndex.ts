@@ -42,7 +42,8 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = translatedList<SettingsE
   { section: 'account', label: msg('Recent activity'), description: msg('Sign-ins and token changes on your account over the last 90 days'), page: 'activity', anchor: 'activity-heading', keywords: 'sessions sign-ins' },
   // Appearance
   { section: 'appearance', label: msg('Mode'), description: msg('System, light or dark'), page: 'theme', anchor: 'appearance-mode', keywords: 'dark light theme' },
-  { section: 'appearance', label: msg('Theme'), description: msg('The colour of buttons, links and selection'), page: 'theme', anchor: 'appearance-theme', keywords: 'accent colour color' },
+  { section: 'appearance', label: msg('Theme'), description: msg('The colours of the whole app, for light and for dark'), page: 'theme', anchor: 'appearance-themes', keywords: 'palette colours colors look' },
+  { section: 'appearance', label: msg('Accent'), description: msg('The colour of buttons, links and selection'), page: 'theme', anchor: 'appearance-theme', keywords: 'accent colour color theme' },
   { section: 'appearance', label: msg('Density'), description: msg('Comfortable or compact rows'), page: 'theme', anchor: 'appearance-density', keywords: 'compact rows' },
   { section: 'appearance', label: msg('Task rows'), description: msg('One line or detailed rows in every list without its own choice'), page: 'theme', anchor: 'appearance-rows', keywords: 'row layout detailed one line priority labels' },
   { section: 'appearance', label: msg('Sidebar destinations'), description: msg('Which of Anytime, Someday, Assigned to me, Completed, Updates, Trash and New view sit next to Inbox, Today, Upcoming and Calendar'), page: 'sidebar', anchor: 'sidebar-destinations', keywords: 'promote more group order reorder move' },

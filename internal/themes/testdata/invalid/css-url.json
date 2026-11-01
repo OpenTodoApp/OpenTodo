@@ -1,0 +1,14 @@
+{
+  "opentodoTheme": 1,
+  "id": "example-dark",
+  "name": "Example Dark",
+  "author": "OpenTodo contributors",
+  "licence": "CC0-1.0",
+  "kind": "dark",
+  "seeds": {
+    "canvas": "url(https://example.com/x.png)",
+    "surface": "#282c34",
+    "text": "#e6e6e6",
+    "accent": "#61afef"
+  }
+}
