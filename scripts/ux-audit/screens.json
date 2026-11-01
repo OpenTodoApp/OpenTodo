@@ -1121,8 +1121,8 @@
   "seed": "layout-check",
   "frequency": "rare",
   "core": false,
-  "layoutCheck": null,
-  "layoutCheckReason": "shown once to a new account; covered by its story",
+  "layoutCheck": "start-guide-first",
+  "on": "settings-account-profile",
   "story": "Screens/Start guide",
   "tour": false
  },
