@@ -16,6 +16,9 @@ import { confirmSend } from './sheet'
 import { ACCOUNT_KEYS, appStorage, installId, K, type DeviceStorage } from './storage'
 import { currentLanguage, setLanguage, tr } from './strings'
 import { askUnlock } from './unlock'
+import { ObsidianFiles } from './vault/obsidianFiles'
+import type { Owner } from './vault/types'
+import { deviceLabel, EVERY_MS, VaultSync, type VaultStatus } from './vaultSync'
 
 /** While tasks wait, the outbox is pushed this often (D9). */
 const PUSH_EVERY_MS = 60_000
@@ -27,6 +30,7 @@ export default class OpenTodoPlugin extends Plugin {
   lists!: Lists
   keys!: Keyring
   sender!: Sender
+  vault!: VaultSync
   device = ''
   private statusEl: HTMLElement | null = null
   private listeners = new Set<() => void>()
@@ -56,6 +60,11 @@ export default class OpenTodoPlugin extends Plugin {
         }
       },
     }, currentLanguage)
+    this.vault = new VaultSync({
+      store: this.store, keys: this.keys, client: () => this.client(), account: () => this.account(), server: () => this.server(),
+      files: (folder) => new ObsidianFiles(this.app.vault, folder), owner: () => this.owner(),
+      visible: () => document.visibilityState !== 'hidden', changed: () => this.changed(),
+    })
 
     this.addCommand({
       id: 'send-line', name: tr('Send line to OpenTodo'), icon: 'send',
@@ -69,24 +78,46 @@ export default class OpenTodoPlugin extends Plugin {
       },
     })
     this.addCommand({ id: 'unlock', name: tr('Unlock OpenTodo'), icon: 'lock-open', callback: () => this.unlock() })
+    this.addCommand({ id: 'sync-vault', name: tr('Sync vault with OpenTodo now'), icon: 'refresh-cw', callback: () => void this.syncVaultNow() })
     this.registerEvent(this.app.workspace.on('editor-menu', (menu, editor, view) => {
       menu.addItem((item) => item.setTitle(tr('Send line to OpenTodo')).setIcon('send').onClick(() => void this.sendFrom(editor, view.file ?? null)))
     }))
-    this.registerEvent(this.app.vault.on('rename', (file: TAbstractFile) => void this.renamed(file)))
+    this.registerEvent(this.app.vault.on('rename', (file: TAbstractFile, old: string) => {
+      void this.renamed(file)
+      this.vault.fileChanged(old)
+      this.vault.fileChanged(file.path)
+    }))
+    for (const name of ['modify', 'create', 'delete'] as const) {
+      this.registerEvent(this.app.vault.on(name as 'modify', (file: TAbstractFile) => this.vault.fileChanged(file.path)))
+    }
     if (!Platform.isMobile) {
       this.statusEl = this.addStatusBarItem()
       this.statusEl.addClass('opentodo-status')
     }
     this.addSettingTab(new OpenTodoSettingTab(this.app, this))
     this.registerDomEvent(window, 'online', () => void this.pushNow())
+    this.registerDomEvent(document, 'visibilitychange', () => this.vault.shown())
+    this.registerInterval(window.setInterval(() => this.vault.tick(), EVERY_MS))
     this.registerInterval(window.setInterval(() => {
       if (this.outbox.waiting > 0) void this.pushNow()
     }, PUSH_EVERY_MS))
-    this.app.workspace.onLayoutReady(() => void this.pushNow())
+    this.app.workspace.onLayoutReady(() => {
+      void this.pushNow()
+      void this.vault.run('load')
+    })
     this.changed()
   }
 
+  onunload(): void {
+    this.vault?.stop()
+  }
+
   // ---- state ----
+
+  /** This installation as the owner of a synced folder (obsidian-vault-sync D4). */
+  owner(): Owner {
+    return { kind: 'obsidian', install: installId(this.store), label: deviceLabel(Platform as never) }
+  }
 
   server(): string | null {
     return this.store.get<string>(K.server)
@@ -110,8 +141,9 @@ export default class OpenTodoPlugin extends Plugin {
   changed(): void {
     const n = this.outbox.waiting
     if (this.statusEl) {
-      this.statusEl.setText(n ? tr('OpenTodo: {n} waiting', { n }) : '')
-      this.statusEl.toggle(n > 0)
+      const parts = [n ? tr('OpenTodo: {n} waiting', { n }) : '', this.vault ? vaultBar(this.vault.status) : ''].filter(Boolean)
+      this.statusEl.setText(parts.join(' · '))
+      this.statusEl.toggle(parts.length > 0)
     }
     for (const fn of this.listeners) fn()
   }
@@ -140,6 +172,7 @@ export default class OpenTodoPlugin extends Plugin {
 
   /** Disconnect: the token, the cached lists, the outbox and any remembered key leave this device. */
   disconnect(): void {
+    void this.vault.disable()
     for (const k of ACCOUNT_KEYS) this.store.remove(k)
     this.keys.lock()
     this.changed()
@@ -191,6 +224,8 @@ export default class OpenTodoPlugin extends Plugin {
 
   private async sendFrom(editor: Editor, file: TFile | null): Promise<void> {
     if (!file) return
+    // Lines of the synced folder are vault lines: sending one would make the task twice (D8).
+    if (this.vault.covers(file.path)) return this.notify(tr('This line is already synced by the vault.'))
     void this.refreshLists()
     const from = editor.getCursor('from').line
     const to = editor.getCursor('to').line
@@ -234,6 +269,20 @@ export default class OpenTodoPlugin extends Plugin {
     return res
   }
 
+  /** "Sync vault with OpenTodo now": runs a sync and says how it went. */
+  async syncVaultNow(): Promise<VaultStatus> {
+    if (this.vault.folder() === null) {
+      this.notify(tr('Vault sync is off. Turn it on in the plugin settings.'), [{ label: tr('Open settings'), run: () => this.openSettings() }])
+      return this.vault.status
+    }
+    const s = await this.vault.run('command')
+    if (s.kind === 'synced') this.notify(s.report.events.length ? tr('{n, plural, one {# change} other {# changes}} synced with OpenTodo.', { n: s.report.events.length }) : tr('The vault is up to date.'))
+    else if (s.kind === 'locked') this.notify(tr('Unlock OpenTodo to sync the vault.'), [{ label: tr('Unlock OpenTodo'), run: () => this.unlock() }])
+    else if (s.kind === 'owned') this.notify(tr('{label} syncs this folder. Take over in the plugin settings to sync it here.', { label: s.owner.label }), [{ label: tr('Open settings'), run: () => this.openSettings() }])
+    else if (s.kind === 'failed' || s.kind === 'disconnected' || s.kind === 'tasknotes') this.notify(s.kind === 'failed' ? s.message : s.kind === 'tasknotes' ? tr('This folder has a TaskNotes folder linked; keep syncing it with ot vault.') : tr('Connect OpenTodo first.'))
+    return s
+  }
+
   notify(message: string, actions: Action[] = [], ms = 5000): void {
     const frag = document.createDocumentFragment()
     const span = document.createElement('span')
@@ -263,3 +312,14 @@ export function pickSettings(v: Partial<Settings> | null | undefined): Settings 
   return out
 }
 
+
+/** The vault's part of the desktop status bar. */
+function vaultBar(s: VaultStatus): string {
+  switch (s.kind) {
+    case 'syncing': return tr('OpenTodo vault: syncing…')
+    case 'failed': return tr('OpenTodo vault: sync failed')
+    case 'locked': return tr('OpenTodo vault: locked')
+    case 'owned': return tr('OpenTodo vault: synced by {label}', { label: s.owner.label })
+    default: return ''
+  }
+}

@@ -1,0 +1,1358 @@
+{
+  "name": "recurring",
+  "description": "ticking a recurring line completes the occurrence as a record and moves the series to its next date",
+  "loc": "UTC",
+  "user": "user-1",
+  "steps": [
+    {
+      "name": "init",
+      "now": 1793610060000,
+      "init": true,
+      "server": [
+        {
+          "id": "app-t-bins-completed_at-1793606400001",
+          "entity": "task",
+          "entityId": "t-bins",
+          "field": "completed_at",
+          "value": null,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-t-bins-created_at-1793606400001",
+          "entity": "task",
+          "entityId": "t-bins",
+          "field": "created_at",
+          "value": 1793602800000,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-t-bins-deadline-1793606400001",
+          "entity": "task",
+          "entityId": "t-bins",
+          "field": "deadline",
+          "value": "2026-11-03",
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-t-bins-deleted_at-1793606400001",
+          "entity": "task",
+          "entityId": "t-bins",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-t-bins-due-1793606400001",
+          "entity": "task",
+          "entityId": "t-bins",
+          "field": "due",
+          "value": {
+            "date": "2026-11-02"
+          },
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-t-bins-labels-1793606400001",
+          "entity": "task",
+          "entityId": "t-bins",
+          "field": "labels",
+          "value": [],
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-t-bins-position-1793606400001",
+          "entity": "task",
+          "entityId": "t-bins",
+          "field": "position",
+          "value": 1000,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-t-bins-priority-1793606400001",
+          "entity": "task",
+          "entityId": "t-bins",
+          "field": "priority",
+          "value": 4,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-t-bins-project_id-1793606400001",
+          "entity": "task",
+          "entityId": "t-bins",
+          "field": "project_id",
+          "value": null,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-t-bins-recurrence-1793606400001",
+          "entity": "task",
+          "entityId": "t-bins",
+          "field": "recurrence",
+          "value": "every week",
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-t-bins-title-1793606400001",
+          "entity": "task",
+          "entityId": "t-bins",
+          "field": "title",
+          "value": "Bins",
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-t-water-completed_at-1793606400002",
+          "entity": "task",
+          "entityId": "t-water",
+          "field": "completed_at",
+          "value": null,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-t-water-created_at-1793606400002",
+          "entity": "task",
+          "entityId": "t-water",
+          "field": "created_at",
+          "value": 1793602800000,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-t-water-deleted_at-1793606400002",
+          "entity": "task",
+          "entityId": "t-water",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-t-water-due-1793606400002",
+          "entity": "task",
+          "entityId": "t-water",
+          "field": "due",
+          "value": {
+            "date": "2026-11-01",
+            "time": "08:00"
+          },
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-t-water-labels-1793606400002",
+          "entity": "task",
+          "entityId": "t-water",
+          "field": "labels",
+          "value": [],
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-t-water-position-1793606400002",
+          "entity": "task",
+          "entityId": "t-water",
+          "field": "position",
+          "value": 2000,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-t-water-priority-1793606400002",
+          "entity": "task",
+          "entityId": "t-water",
+          "field": "priority",
+          "value": 4,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-t-water-project_id-1793606400002",
+          "entity": "task",
+          "entityId": "t-water",
+          "field": "project_id",
+          "value": null,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-t-water-recurrence-1793606400002",
+          "entity": "task",
+          "entityId": "t-water",
+          "field": "recurrence",
+          "value": "every 3 days after completion",
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-t-water-title-1793606400002",
+          "entity": "task",
+          "entityId": "t-water",
+          "field": "title",
+          "value": "Water",
+          "ts": 1793606400002,
+          "device": "app"
+        }
+      ],
+      "device": "vault:vectors",
+      "want": {
+        "pushed": [],
+        "files": {
+          "Inbox.md": "- [ ] Bins 📅 2026-11-02 [deadline:: 2026-11-03] 🔁 every week 🆔 t-bins\n- [ ] Water 📅 2026-11-01 [time:: 08:00] 🔁 every 3 days when done 🆔 t-water\n"
+        },
+        "report": {
+          "written": 1,
+          "created": 0,
+          "updated": 0,
+          "trashed": 0,
+          "conflicts": 0,
+          "warnings": [],
+          "cursor": 21,
+          "events": [
+            {
+              "kind": "written",
+              "file": "Inbox.md",
+              "text": "wrote Inbox.md"
+            }
+          ],
+          "projects": 0,
+          "tasks": 2
+        },
+        "state": {
+          "version": 2,
+          "device": "vault:vectors",
+          "profile": "default",
+          "server": "https://todo.example.com",
+          "cursor": 21,
+          "clock": 1793606400002,
+          "offset": 0,
+          "store": {
+            "task": {
+              "t-bins": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "deadline": {
+                  "v": "2026-11-03",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "due": {
+                  "v": {
+                    "date": "2026-11-02"
+                  },
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "recurrence": {
+                  "v": "every week",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Bins",
+                  "t": 1793606400001,
+                  "d": "app"
+                }
+              },
+              "t-water": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "due": {
+                  "v": {
+                    "date": "2026-11-01",
+                    "time": "08:00"
+                  },
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "recurrence": {
+                  "v": "every 3 days after completion",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Water",
+                  "t": 1793606400002,
+                  "d": "app"
+                }
+              }
+            }
+          },
+          "files": {
+            "Inbox.md": {
+              "project": "",
+              "hash": "609d09b805b790670a3362f55c96f856574514fc508c4a561bac096b3ae222b8"
+            }
+          },
+          "printed": {
+            "t-bins": "Inbox.md",
+            "t-water": "Inbox.md"
+          },
+          "initialized": true
+        }
+      }
+    },
+    {
+      "name": "ticked",
+      "now": 1793610120000,
+      "files": {
+        "Inbox.md": "- [x] Bins 📅 2026-11-02 [deadline:: 2026-11-03] 🔁 every week 🆔 t-bins\n- [x] Water ✅ 2026-11-02 📅 2026-11-01 [time:: 08:00] 🔁 every 3 days when done 🆔 t-water\n"
+      },
+      "want": {
+        "pushed": [
+          {
+            "id": "v-0ddcdffd7a3569bc451e341626990857350410c0",
+            "entity": "task",
+            "entityId": "t-bins",
+            "field": "deadline",
+            "value": "2026-11-10",
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-769365db5184e60d0b2f2f847e8a873a42572f67",
+            "entity": "task",
+            "entityId": "t-bins",
+            "field": "due",
+            "value": {
+              "date": "2026-11-09"
+            },
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-999887bcbf39369199cab7496ed8f9b2636baf7f",
+            "entity": "task",
+            "entityId": "a3c288cf-e37d-8dc1-a3bd-2a1c026c601d",
+            "field": "completed_at",
+            "value": 1793610120000,
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-1d32a4ecbc46243fc4ebadb0ff53a9418c5c21b0",
+            "entity": "task",
+            "entityId": "a3c288cf-e37d-8dc1-a3bd-2a1c026c601d",
+            "field": "completed_by",
+            "value": "user-1",
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-baabf3ab3c3d3bb2453649e3d4b665e22adab5d8",
+            "entity": "task",
+            "entityId": "a3c288cf-e37d-8dc1-a3bd-2a1c026c601d",
+            "field": "created_at",
+            "value": 1793610120000,
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-3546d3c81e088e0384a1a8f252e5c977c5dea916",
+            "entity": "task",
+            "entityId": "a3c288cf-e37d-8dc1-a3bd-2a1c026c601d",
+            "field": "deadline",
+            "value": "2026-11-03",
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-5772231a78b14cd415cea0164cd283e4e90fd397",
+            "entity": "task",
+            "entityId": "a3c288cf-e37d-8dc1-a3bd-2a1c026c601d",
+            "field": "deleted_at",
+            "value": null,
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-1efb8d89711a1eceac90ddb288ccd12c4ab46292",
+            "entity": "task",
+            "entityId": "a3c288cf-e37d-8dc1-a3bd-2a1c026c601d",
+            "field": "description",
+            "value": "",
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-15d519b6db0108b952ba3d8f65ea849054e3eae7",
+            "entity": "task",
+            "entityId": "a3c288cf-e37d-8dc1-a3bd-2a1c026c601d",
+            "field": "due",
+            "value": {
+              "date": "2026-11-02"
+            },
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-39fd2dc67bad83512182977e6d90edb6ca6317e4",
+            "entity": "task",
+            "entityId": "a3c288cf-e37d-8dc1-a3bd-2a1c026c601d",
+            "field": "labels",
+            "value": [],
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-f696696e6dadde94bfa821a4d7e6afb45608caf1",
+            "entity": "task",
+            "entityId": "a3c288cf-e37d-8dc1-a3bd-2a1c026c601d",
+            "field": "occurrence_date",
+            "value": "2026-11-02",
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-03b0f3789fa1ac43c74ff5e84df293323956ee7e",
+            "entity": "task",
+            "entityId": "a3c288cf-e37d-8dc1-a3bd-2a1c026c601d",
+            "field": "position",
+            "value": 1000,
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-12bf0c73929d9b09a22fbbb2d0aca0f60bcbf353",
+            "entity": "task",
+            "entityId": "a3c288cf-e37d-8dc1-a3bd-2a1c026c601d",
+            "field": "priority",
+            "value": 4,
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-b38067cd32d78164292dab2452c314c692723407",
+            "entity": "task",
+            "entityId": "a3c288cf-e37d-8dc1-a3bd-2a1c026c601d",
+            "field": "project_id",
+            "value": null,
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-e4d9bbfbbff7166795ce611a46c6405269fd955c",
+            "entity": "task",
+            "entityId": "a3c288cf-e37d-8dc1-a3bd-2a1c026c601d",
+            "field": "recurrence",
+            "value": null,
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-a76f0b2a3f6dd336f334ed939b8cc628c32ac071",
+            "entity": "task",
+            "entityId": "a3c288cf-e37d-8dc1-a3bd-2a1c026c601d",
+            "field": "series_id",
+            "value": "t-bins",
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-010decc6ee731acb79fc6ba0e510b6395929bfdb",
+            "entity": "task",
+            "entityId": "a3c288cf-e37d-8dc1-a3bd-2a1c026c601d",
+            "field": "skipped",
+            "value": false,
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-b7aac2def9385e7525e1625727f325d52550a518",
+            "entity": "task",
+            "entityId": "a3c288cf-e37d-8dc1-a3bd-2a1c026c601d",
+            "field": "title",
+            "value": "Bins",
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-c1092bf0b1c4e26a04730930aeed1a53b1475748",
+            "entity": "task",
+            "entityId": "t-water",
+            "field": "due",
+            "value": {
+              "date": "2026-11-05",
+              "time": "08:00"
+            },
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-e6339b3e81cb7ecc1add829758e2dff0abaaa9bf",
+            "entity": "task",
+            "entityId": "e5bc0af7-f018-8816-b2ec-8adfc66fa467",
+            "field": "completed_at",
+            "value": 1793620800000,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-6da1be42286fa6ac3206b1403fa443e919c91f2a",
+            "entity": "task",
+            "entityId": "e5bc0af7-f018-8816-b2ec-8adfc66fa467",
+            "field": "completed_by",
+            "value": "user-1",
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-a07548e59d34865c533166993e85816982532ba5",
+            "entity": "task",
+            "entityId": "e5bc0af7-f018-8816-b2ec-8adfc66fa467",
+            "field": "created_at",
+            "value": 1793620800000,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-e533b719705d50880b0b5c526bb2789599dcb11d",
+            "entity": "task",
+            "entityId": "e5bc0af7-f018-8816-b2ec-8adfc66fa467",
+            "field": "deleted_at",
+            "value": null,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-dd1837e8ef710387a9cd7f1543e70197f1dfc8bc",
+            "entity": "task",
+            "entityId": "e5bc0af7-f018-8816-b2ec-8adfc66fa467",
+            "field": "description",
+            "value": "",
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-101def82b7b0dac59d0fe91167f37a2bcc71dd74",
+            "entity": "task",
+            "entityId": "e5bc0af7-f018-8816-b2ec-8adfc66fa467",
+            "field": "due",
+            "value": {
+              "date": "2026-11-01",
+              "time": "08:00"
+            },
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-84e449999f4c70ccaa04f8943966f473217cedbf",
+            "entity": "task",
+            "entityId": "e5bc0af7-f018-8816-b2ec-8adfc66fa467",
+            "field": "labels",
+            "value": [],
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-0d7c8b52249f7e514adf0226a29f47946e59cbdb",
+            "entity": "task",
+            "entityId": "e5bc0af7-f018-8816-b2ec-8adfc66fa467",
+            "field": "occurrence_date",
+            "value": "2026-11-01",
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-ec58b23dae628cd18fa7d7109bd5039d77ad51ad",
+            "entity": "task",
+            "entityId": "e5bc0af7-f018-8816-b2ec-8adfc66fa467",
+            "field": "position",
+            "value": 2000,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-41214f454e4d075083392c027bd9b256cce3544d",
+            "entity": "task",
+            "entityId": "e5bc0af7-f018-8816-b2ec-8adfc66fa467",
+            "field": "priority",
+            "value": 4,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-83bb054f5d10a335e9bafd9429c148e690fb45fc",
+            "entity": "task",
+            "entityId": "e5bc0af7-f018-8816-b2ec-8adfc66fa467",
+            "field": "project_id",
+            "value": null,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-abbab648f043673adbc1ba2cd4c90eded5f8d799",
+            "entity": "task",
+            "entityId": "e5bc0af7-f018-8816-b2ec-8adfc66fa467",
+            "field": "recurrence",
+            "value": null,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-759cfd67f983508c5d09a3163e96465ad75600f1",
+            "entity": "task",
+            "entityId": "e5bc0af7-f018-8816-b2ec-8adfc66fa467",
+            "field": "series_id",
+            "value": "t-water",
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-837c72c81b6c170247722281158e16ec41117952",
+            "entity": "task",
+            "entityId": "e5bc0af7-f018-8816-b2ec-8adfc66fa467",
+            "field": "skipped",
+            "value": false,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-8a2b93d878f3713b5c59df67272ec427119c6483",
+            "entity": "task",
+            "entityId": "e5bc0af7-f018-8816-b2ec-8adfc66fa467",
+            "field": "title",
+            "value": "Water",
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          }
+        ],
+        "files": {
+          "Inbox.md": "- [ ] Bins 📅 2026-11-09 [deadline:: 2026-11-10] 🔁 every week 🆔 t-bins\n- [ ] Water 📅 2026-11-05 [time:: 08:00] 🔁 every 3 days when done 🆔 t-water\n"
+        },
+        "report": {
+          "written": 1,
+          "created": 0,
+          "updated": 2,
+          "trashed": 0,
+          "conflicts": 0,
+          "warnings": [],
+          "cursor": 55,
+          "events": [
+            {
+              "kind": "completed",
+              "file": "Inbox.md",
+              "task": "t-bins",
+              "text": "completed \"Bins\"; the next one is on the line"
+            },
+            {
+              "kind": "completed",
+              "file": "Inbox.md",
+              "task": "t-water",
+              "text": "completed \"Water\"; the next one is on the line"
+            },
+            {
+              "kind": "written",
+              "file": "Inbox.md",
+              "text": "wrote Inbox.md"
+            }
+          ],
+          "projects": 0,
+          "tasks": 2
+        },
+        "state": {
+          "version": 2,
+          "device": "vault:vectors",
+          "profile": "default",
+          "server": "https://todo.example.com",
+          "cursor": 55,
+          "clock": 1793610120003,
+          "offset": 0,
+          "store": {
+            "task": {
+              "a3c288cf-e37d-8dc1-a3bd-2a1c026c601d": {
+                "completed_at": {
+                  "v": 1793610120000,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "completed_by": {
+                  "v": "user-1",
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "created_at": {
+                  "v": 1793610120000,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "deadline": {
+                  "v": "2026-11-03",
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "description": {
+                  "v": "",
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "due": {
+                  "v": {
+                    "date": "2026-11-02"
+                  },
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "occurrence_date": {
+                  "v": "2026-11-02",
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "project_id": {
+                  "v": null,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "recurrence": {
+                  "v": null,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "series_id": {
+                  "v": "t-bins",
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "skipped": {
+                  "v": false,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "title": {
+                  "v": "Bins",
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                }
+              },
+              "e5bc0af7-f018-8816-b2ec-8adfc66fa467": {
+                "completed_at": {
+                  "v": 1793620800000,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "completed_by": {
+                  "v": "user-1",
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "created_at": {
+                  "v": 1793620800000,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "description": {
+                  "v": "",
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "due": {
+                  "v": {
+                    "date": "2026-11-01",
+                    "time": "08:00"
+                  },
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "occurrence_date": {
+                  "v": "2026-11-01",
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "project_id": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "recurrence": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "series_id": {
+                  "v": "t-water",
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "skipped": {
+                  "v": false,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "title": {
+                  "v": "Water",
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                }
+              },
+              "t-bins": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "deadline": {
+                  "v": "2026-11-10",
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "due": {
+                  "v": {
+                    "date": "2026-11-09"
+                  },
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "recurrence": {
+                  "v": "every week",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Bins",
+                  "t": 1793606400001,
+                  "d": "app"
+                }
+              },
+              "t-water": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "due": {
+                  "v": {
+                    "date": "2026-11-05",
+                    "time": "08:00"
+                  },
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "recurrence": {
+                  "v": "every 3 days after completion",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Water",
+                  "t": 1793606400002,
+                  "d": "app"
+                }
+              }
+            }
+          },
+          "files": {
+            "Inbox.md": {
+              "project": "",
+              "hash": "610cf7ac3b086e62642d12bb11e692b7eb2e3a61b7fadee575bbce562be1a8d5"
+            }
+          },
+          "printed": {
+            "t-bins": "Inbox.md",
+            "t-water": "Inbox.md"
+          },
+          "initialized": true
+        }
+      }
+    },
+    {
+      "name": "idle",
+      "now": 1793610180000,
+      "want": {
+        "pushed": [],
+        "files": {
+          "Inbox.md": "- [ ] Bins 📅 2026-11-09 [deadline:: 2026-11-10] 🔁 every week 🆔 t-bins\n- [ ] Water 📅 2026-11-05 [time:: 08:00] 🔁 every 3 days when done 🆔 t-water\n"
+        },
+        "report": {
+          "written": 0,
+          "created": 0,
+          "updated": 0,
+          "trashed": 0,
+          "conflicts": 0,
+          "warnings": [],
+          "cursor": 55,
+          "events": [],
+          "projects": 0,
+          "tasks": 2
+        },
+        "state": {
+          "version": 2,
+          "device": "vault:vectors",
+          "profile": "default",
+          "server": "https://todo.example.com",
+          "cursor": 55,
+          "clock": 1793610120003,
+          "offset": 0,
+          "store": {
+            "task": {
+              "a3c288cf-e37d-8dc1-a3bd-2a1c026c601d": {
+                "completed_at": {
+                  "v": 1793610120000,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "completed_by": {
+                  "v": "user-1",
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "created_at": {
+                  "v": 1793610120000,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "deadline": {
+                  "v": "2026-11-03",
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "description": {
+                  "v": "",
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "due": {
+                  "v": {
+                    "date": "2026-11-02"
+                  },
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "occurrence_date": {
+                  "v": "2026-11-02",
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "project_id": {
+                  "v": null,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "recurrence": {
+                  "v": null,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "series_id": {
+                  "v": "t-bins",
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "skipped": {
+                  "v": false,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "title": {
+                  "v": "Bins",
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                }
+              },
+              "e5bc0af7-f018-8816-b2ec-8adfc66fa467": {
+                "completed_at": {
+                  "v": 1793620800000,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "completed_by": {
+                  "v": "user-1",
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "created_at": {
+                  "v": 1793620800000,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "description": {
+                  "v": "",
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "due": {
+                  "v": {
+                    "date": "2026-11-01",
+                    "time": "08:00"
+                  },
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "occurrence_date": {
+                  "v": "2026-11-01",
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "project_id": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "recurrence": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "series_id": {
+                  "v": "t-water",
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "skipped": {
+                  "v": false,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "title": {
+                  "v": "Water",
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                }
+              },
+              "t-bins": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "deadline": {
+                  "v": "2026-11-10",
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "due": {
+                  "v": {
+                    "date": "2026-11-09"
+                  },
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "recurrence": {
+                  "v": "every week",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Bins",
+                  "t": 1793606400001,
+                  "d": "app"
+                }
+              },
+              "t-water": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "due": {
+                  "v": {
+                    "date": "2026-11-05",
+                    "time": "08:00"
+                  },
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "recurrence": {
+                  "v": "every 3 days after completion",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Water",
+                  "t": 1793606400002,
+                  "d": "app"
+                }
+              }
+            }
+          },
+          "files": {
+            "Inbox.md": {
+              "project": "",
+              "hash": "610cf7ac3b086e62642d12bb11e692b7eb2e3a61b7fadee575bbce562be1a8d5"
+            }
+          },
+          "printed": {
+            "t-bins": "Inbox.md",
+            "t-water": "Inbox.md"
+          },
+          "initialized": true
+        }
+      }
+    }
+  ]
+}

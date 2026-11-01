@@ -184,6 +184,9 @@ func (e *engine) plan(dry bool) error {
 		}
 		target, old := layout[pid], recorded[pid]
 		src := e.sourceOf(pid, old, target)
+		if e.pending[src] || e.pending[old] || e.pending[target] {
+			continue // not downloaded yet: neither read nor written
+		}
 		if e.o.ReadOnly && (e.changed[src] || e.changed[target]) {
 			continue // the file's edits are pending; it is left as it is
 		}
@@ -224,7 +227,7 @@ func (e *engine) plan(dry bool) error {
 	}
 	for _, p := range sortedKeys(e.st.Files) {
 		fs := e.st.Files[p]
-		if fs.Project == "" || v.projectLive(fs.Project) {
+		if e.pending[p] || fs.Project == "" || v.projectLive(fs.Project) {
 			continue
 		}
 		delete(files, p)
@@ -238,11 +241,20 @@ func (e *engine) plan(dry bool) error {
 			renames[p] = conflictName(p)
 		}
 	}
+	// A file not downloaded yet keeps its project and loses its hash: once it
+	// arrives it is read as changed and printed again.
+	for p := range e.pending {
+		if fs, ok := files[p]; ok {
+			fs.Hash = ""
+			files[p] = fs
+		}
+	}
 	for p := range e.skip {
 		delete(files, p)
 		renames[p] = conflictName(p)
 	}
-	for from, to := range renames {
+	for _, from := range sortedKeys(renames) {
+		to := renames[from]
 		e.rep.Conflicts++
 		e.rep.event("conflict", to, "", "the project of %s is archived or trashed in the app, and the file was edited; it is now %s", from, to)
 	}

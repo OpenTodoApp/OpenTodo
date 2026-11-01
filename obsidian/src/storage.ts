@@ -25,6 +25,8 @@ export const K = {
   key: 'key',
   clock: 'clock',
   sent: 'sent',
+  /** The synced vault folder on this device (obsidian-vault-sync). */
+  vaultFolder: 'vaultFolder',
 } as const
 
 /** Everything Disconnect removes; the install id stays, so the device keeps its name. */
