@@ -48,7 +48,7 @@ export default defineConfig({
         name: 'OpenTodo',
         short_name: 'OpenTodo',
         description: 'Your tasks, your server. Open-source, local-first task manager.',
-        theme_color: '#0f172a',
+        theme_color: '#047857',
         background_color: '#0f172a',
         display: 'standalone',
         start_url: '/',
