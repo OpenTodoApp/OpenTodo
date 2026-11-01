@@ -133,7 +133,7 @@ Multi-step routines with AI steps, built on Automations: every existing rule bec
 
 | Change | What | Issues |
 | --- | --- | --- |
-| [`routines-engine`](openspec/changes/routines-engine/) | Rules grow into routines: typed steps, manual runs, Test, step-by-step run log, Undo a run, full CLI and MCP | [#658](https://github.com/OpenTodoApp/OpenTodo/issues/658) |
+| [`routines-engine`](openspec/changes/archive/2026-11-01-routines-engine/) | **Shipped.** Rules grow into routines: typed steps, manual runs, Test, step-by-step run log, Undo a run, full CLI and MCP | [#658](https://github.com/OpenTodoApp/OpenTodo/issues/658) |
 | [`routines-editor`](openspec/changes/routines-editor/) | Sentence-card editor with live previews, run history, and "Routines since your last visit" in the Inbox | [#659](https://github.com/OpenTodoApp/OpenTodo/issues/659) |
 | [`routines-starters`](openspec/changes/routines-starters/) | Starter routines in the template library, and "Describe it" to draft one with AI | [#660](https://github.com/OpenTodoApp/OpenTodo/issues/660) |
 | [`routines-ai-step`](openspec/changes/routines-ai-step/) | Ask AI and Summarise steps, proposals by default, a bounded "apply without asking", device runs for encrypted accounts | [#661](https://github.com/OpenTodoApp/OpenTodo/issues/661) |

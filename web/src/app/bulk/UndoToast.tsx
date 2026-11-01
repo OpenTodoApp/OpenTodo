@@ -117,6 +117,10 @@ export function UndoToast() {
           <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-accent" data-toast-action
             onClick={() => { toast.action!.run(); hideBulkToast(toast.key) }}>{toast.action.label}</button>
         )}
+        {toast.second && !toast.result && (
+          <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-accent" data-toast-second
+            onClick={() => toast.second!.run()}>{toast.second.label}</button>
+        )}
         {/* Dismiss is not one of the toast's two actions: it only closes it (app-shell "Notices are toasts"). */}
         <Tooltip label={t('Dismiss')} shortcut="Esc">
           <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm -mr-1 px-1 py-1 text-muted" aria-label={t('Dismiss')} data-toast-dismiss
