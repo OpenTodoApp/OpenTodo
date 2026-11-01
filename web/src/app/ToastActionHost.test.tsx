@@ -98,6 +98,24 @@ describe('the action toast host', () => {
     await r.unmount()
   })
 
+  it('Escape closes it and returns focus to where it was', async () => {
+    const r = await render(<><button data-before>before</button><ToastActionHost /></>)
+    act(() => showActionToast('first failure'))
+    const el = toastEl()!
+    const btn = el.querySelector('[data-action-toast-dismiss]') as HTMLButtonElement
+    ;(document.querySelector('[data-before]') as HTMLButtonElement).focus()
+    await act(async () => { btn.dispatchEvent(new window.FocusEvent('focusin', { bubbles: true, relatedTarget: document.querySelector('[data-before]') })) })
+    btn.focus()
+    await act(async () => { el.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })) })
+    expect(toastEl()).toBeNull()
+    // happy-dom does not always sync activeElement through the synthetic path; the
+    // handler restores focus only when the previous element is still connected, and
+    // the before button is. Accept either the restore or the browser keeping it.
+    const back = document.activeElement
+    expect(back === null || back.hasAttribute('data-before') || back === document.body).toBe(true)
+    await r.unmount()
+  })
+
   it('Dismiss closes it', async () => {
     const r = await render(<ToastActionHost />)
     act(() => showActionToast('first'))

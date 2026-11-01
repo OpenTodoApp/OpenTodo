@@ -18,6 +18,8 @@ export function ToastActionHost() {
   const [focused, setFocused] = useState(false)
   const shown = toast && !offer ? toast : null
   const region = useRef<HTMLDivElement>(null)
+  /** Where focus was before it entered the toast, to give it back on dismiss. */
+  const returnTo = useRef<HTMLElement | null>(null)
   // Removing the focused (or hovered) toast fires no blur (or pointerleave): the hold
   // resets when the shown message changes or leaves, as the UndoToast's does.
   useResetOnChange([shown?.key], () => { setHovered(false); setFocused(false) })
@@ -31,7 +33,19 @@ export function ToastActionHost() {
     <ToastRegion live="assertive" label={t('Last action')} side={side} regionRef={region}>
       <div key={shown.key} className="ui-toast pointer-events-auto flex items-center gap-3 rounded-control border border-default bg-surface px-3 py-2 text-body shadow-2" data-action-toast
         onPointerEnter={() => setHovered(true)} onPointerLeave={() => setHovered(false)}
-        onFocus={() => setFocused(true)} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false) }}>
+        onFocus={(e) => {
+          setFocused(true)
+          const from = e.relatedTarget as HTMLElement | null
+          if (from && !e.currentTarget.contains(from)) returnTo.current = from
+        }}
+        onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false) }}
+        onKeyDown={(e) => {
+          if (e.key !== 'Escape') return
+          e.preventDefault(); e.stopPropagation()
+          const inside = region.current?.contains(document.activeElement)
+          hideActionToast(shown.key)
+          if (inside && returnTo.current?.isConnected) returnTo.current.focus()
+        }}>
         <span className={shown.tone === 'danger' ? 'shrink-0 text-danger' : 'shrink-0 text-muted'}>
           <Icon name={shown.tone === 'danger' ? 'circle-alert' : 'circle-check-big'} />
         </span>
