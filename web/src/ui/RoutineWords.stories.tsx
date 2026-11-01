@@ -22,6 +22,19 @@ function Sentence() {
         Notify me:
         <WordButton label="Text" value="the tasks" chip error action="change" placeholder="write the text" onClick={noop} />
       </p>
+      <p>
+        Pick
+        <WordButton label="Which" value="all" action="change" placeholder="" onClick={noop} />
+        of
+        <WordButton label="List" value="the tasks" chip action="change" placeholder="choose which tasks" onClick={noop} />
+      </p>
+      <p>
+        Comment on
+        <WordButton label="Task" value="each task" chip action="change" placeholder="choose which tasks" onClick={noop} />:
+        <WordButton label="Text" wrap action="change" placeholder="write a text" onClick={noop}
+          valueText="Any news on this? Following up on each task before the end of the week."
+          value={<>Any news on this? Following up on <DataChip inline>each task</DataChip> before the end of the week.</>} />
+      </p>
     </div>
   )
 }

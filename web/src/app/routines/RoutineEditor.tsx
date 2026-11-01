@@ -237,7 +237,13 @@ export function RoutineEditor({ rule, draft: initial, dropped, run, history, onB
   }, [local, server])
   // Fixes wire the data that flows into the step (routines-dynamic-data D3).
   const flow = { types, name: (ref: string) => refName(ref, ctx, error?.step ?? '') }
-  const shownError = error ? { step: error.step, input: error.input, text: errorText(draft, error, outputs), fix: fixFor(draft, error, flow) } : null
+  // An empty input of a step being filled in is not an error yet: "needs a value here" shows once
+  // focus has left its card, or Save was pressed (routines-editor-polish); type errors show at once.
+  const [left, setLeft] = useState<ReadonlySet<string>>(() => new Set())
+  const [tried, setTried] = useState(false)
+  const leaveCard = useCallback((id: string) => setLeft((s) => (s.has(id) ? s : new Set(s).add(id))), [])
+  const waiting = !!error && error.code === 'missing_input' && !tried && !left.has(error.step)
+  const shownError = error && !waiting ? { step: error.step, input: error.input, text: errorText(draft, error, outputs), fix: fixFor(draft, error, flow) } : null
   const dirty = !sameDraft(baseline, draft)
   const saved = !!savedId
   const [leave, setLeave] = usePageGuards(dirty, onBack)
@@ -307,6 +313,7 @@ export function RoutineEditor({ rule, draft: initial, dropped, run, history, onB
   const blocked = error && error.code !== 'unavailable' ? error : null
   const save = () => {
     setSaveError('')
+    setTried(true)
     const name = draft.name.trim()
     if (!name) { setSaveError(t('A routine needs a name')); return }
     if (!draft.steps.length) { setSaveError(t('A routine needs at least one step')); return }
@@ -342,7 +349,7 @@ export function RoutineEditor({ rule, draft: initial, dropped, run, history, onB
     else if (mod && e.key.toLowerCase() === 'z' && !e.shiftKey && canUndo && !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)) { e.preventDefault(); undo() }
   }
 
-  const state: CardState = { ctx, catalogue, previews, online, error: shownError, me, openers }
+  const state: CardState = { ctx, catalogue, previews, online, error: shownError, me, openers, leave: leaveCard }
   const name = draft.name.trim() || (saved ? t('Untitled routine') : t('New routine'))
 
   const actions = (
@@ -375,7 +382,7 @@ export function RoutineEditor({ rule, draft: initial, dropped, run, history, onB
   let body: ReactNode
   if (wide) {
     body = (
-      <div className="mx-auto grid w-full max-w-[69rem] grid-cols-[minmax(0,44rem)_22rem] justify-center gap-12 pb-10 pt-4">
+      <div className="mx-auto grid w-full max-w-[69rem] grid-cols-[minmax(0,44rem)_22rem] justify-center gap-12 pb-[min(40vh,20rem)] pt-4">
         <div className="min-w-0 space-y-4">
           <NameField draft={draft} edit={edit} />
           {notices}
@@ -489,7 +496,7 @@ function HistoryPanel({ rule, openRun, onOpen }: { rule: Rule | undefined; openR
 function NameField({ draft, edit }: { draft: RoutineDraft; edit: (fn: (d: RoutineDraft) => RoutineDraft) => void }) {
   return (
     <Field label={t('Name')}>
-      <Input value={draft.name} maxLength={200} placeholder={t('Groceries')} className="text-h3" data-routine-name
+      <Input value={draft.name} maxLength={200} placeholder={t('Groceries')} className="text-h3 placeholder:font-normal" data-routine-name
         onChange={(e) => { const name = e.target.value; edit((d) => ({ ...d, name })) }} />
     </Field>
   )

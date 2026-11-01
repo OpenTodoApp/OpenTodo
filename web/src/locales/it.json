@@ -5011,9 +5011,7 @@
   "assigns to me": "la assegna a me",
   "blocked": "bloccata",
   "deadline cleared": "scadenza rimossa",
-  "deadline: {when}": "scadenza: {when}",
   "deferred": "rimandata",
-  "due: {when}": "data: {when}",
   "estimate at least {n} min": "stima di almeno {n} min",
   "estimate at most {n} min": "stima di al massimo {n} min",
   "every day": "ogni giorno",
@@ -5058,7 +5056,6 @@
   "{n, plural, one {deadline in # day} other {deadline in # days}}": "{n, plural, one {scadenza tra # giorno} other {scadenza tra # giorni}}",
   "{n, plural, one {due in # day} other {due in # days}}": "{n, plural, one {data tra # giorno} other {data tra # giorni}}",
   "{n, plural, one {in # day} other {in # days}}": "{n, plural, one {tra # giorno} other {tra # giorni}}",
-  "{n, plural, one {within # day} other {within # days}}": "{n, plural, one {entro # giorno} other {entro # giorni}}",
   "{name} (copy)": "{name} (copia)",
   "{term} cannot be used in a rule": "{term} non può essere usato in una regola",
   "A server variable sets this; change it in the server configuration.": "Una variabile del server lo imposta; cambialo nella configurazione del server.",
@@ -5385,7 +5382,6 @@
   "A text as a list of its lines": "Un testo come elenco delle sue righe",
   "A text with values of earlier steps": "Un testo con i valori dei passaggi precedenti",
   "when a task’s date passes": "quando la data di un’attività è passata",
-  "due earlier": "con data precedente",
   "Layout": "Layout",
   "Pick a day…": "Scegli un giorno…",
   "Schedule…": "Pianifica…",
@@ -6748,5 +6744,10 @@
   "{n, plural, one {# starter} other {# starters}}": "{n, plural, one {# modello di partenza} other {# modelli di partenza}}",
   "{n, plural, one {Fill # choice first} other {Fill # choices first}}": "{n, plural, one {Fai prima # scelta} other {Fai prima # scelte}}",
   "{step}: available": "{step}: disponibile",
-  "{step}: not available, {reason}": "{step}: non disponibile, {reason}"
+  "{step}: not available, {reason}": "{step}: non disponibile, {reason}",
+  "has a deadline": "ha una scadenza",
+  "past the deadline": "scadenza superata",
+  "{n, plural, one {due within # day} other {due within # days}}": "{n, plural, one {con data entro # giorno} other {con data entro # giorni}}",
+  "{n, plural, one {deadline within # day} other {deadline within # days}}": "{n, plural, one {scadenza entro # giorno} other {scadenza entro # giorni}}",
+  "due earlier": "con data precedente"
 }

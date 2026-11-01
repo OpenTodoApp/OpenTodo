@@ -5011,9 +5011,7 @@
   "assigns to me": "weist mir zu",
   "blocked": "blockiert",
   "deadline cleared": "Frist entfernt",
-  "deadline: {when}": "Frist: {when}",
   "deferred": "zurückgestellt",
-  "due: {when}": "Datum: {when}",
   "estimate at least {n} min": "Schätzung mindestens {n} Min.",
   "estimate at most {n} min": "Schätzung höchstens {n} Min.",
   "every day": "jeden Tag",
@@ -5058,7 +5056,6 @@
   "{n, plural, one {deadline in # day} other {deadline in # days}}": "{n, plural, one {Frist in # Tag} other {Frist in # Tagen}}",
   "{n, plural, one {due in # day} other {due in # days}}": "{n, plural, one {Datum in # Tag} other {Datum in # Tagen}}",
   "{n, plural, one {in # day} other {in # days}}": "{n, plural, one {in # Tag} other {in # Tagen}}",
-  "{n, plural, one {within # day} other {within # days}}": "{n, plural, one {innerhalb von # Tag} other {innerhalb von # Tagen}}",
   "{name} (copy)": "{name} (Kopie)",
   "{term} cannot be used in a rule": "{term} kann nicht in einer Regel verwendet werden",
   "A server variable sets this; change it in the server configuration.": "Eine Servervariable legt das fest; ändere es in der Serverkonfiguration.",
@@ -5385,7 +5382,6 @@
   "A text as a list of its lines": "Ein Text als Liste seiner Zeilen",
   "A text with values of earlier steps": "Ein Text mit Werten aus früheren Schritten",
   "when a task’s date passes": "wenn das Datum einer Aufgabe vorbei ist",
-  "due earlier": "früher fällig",
   "Layout": "Ansicht",
   "Pick a day…": "Tag wählen…",
   "Schedule…": "Planen…",
@@ -6748,5 +6744,10 @@
   "{n, plural, one {# starter} other {# starters}}": "{n, plural, one {# Startvorlage} other {# Startvorlagen}}",
   "{n, plural, one {Fill # choice first} other {Fill # choices first}}": "{n, plural, one {Erst # Auswahl treffen} other {Erst # Auswahlen treffen}}",
   "{step}: available": "{step}: verfügbar",
-  "{step}: not available, {reason}": "{step}: nicht verfügbar, {reason}"
+  "{step}: not available, {reason}": "{step}: nicht verfügbar, {reason}",
+  "has a deadline": "hat eine Frist",
+  "past the deadline": "Frist überschritten",
+  "{n, plural, one {due within # day} other {due within # days}}": "{n, plural, one {fällig innerhalb von # Tag} other {fällig innerhalb von # Tagen}}",
+  "{n, plural, one {deadline within # day} other {deadline within # days}}": "{n, plural, one {Frist innerhalb von # Tag} other {Frist innerhalb von # Tagen}}",
+  "due earlier": "früher fällig"
 }

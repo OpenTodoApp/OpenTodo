@@ -126,7 +126,9 @@ function OptionRow<T>({ state, o, i, renderLeading, renderTrailing, renderSecond
       aria-posinset={i + 1}
       data-active={active || undefined}
       onMouseDown={(e) => e.preventDefault()}
-      onMouseEnter={() => state.setActive(i)}
+      // A move, not an enter: a list opening under a resting pointer keeps its first
+      // (most likely) option active (routines-editor-polish).
+      onMouseMove={() => { if (!active) state.setActive(i) }}
       onClick={() => void state.pick(o)}
       className={palette
         ? `relative flex items-center gap-2.5 px-4 text-body ${active ? 'row-selected' : ''} ${o.kind === 'create' ? 'text-accent' : 'text-default'}`

@@ -5011,9 +5011,7 @@
   "assigns to me": "me l’assigne",
   "blocked": "bloquée",
   "deadline cleared": "échéance retirée",
-  "deadline: {when}": "échéance : {when}",
   "deferred": "reportée",
-  "due: {when}": "date : {when}",
   "estimate at least {n} min": "estimation d’au moins {n} min",
   "estimate at most {n} min": "estimation d’au plus {n} min",
   "every day": "chaque jour",
@@ -5058,7 +5056,6 @@
   "{n, plural, one {deadline in # day} other {deadline in # days}}": "{n, plural, one {échéance dans # jour} other {échéance dans # jours}}",
   "{n, plural, one {due in # day} other {due in # days}}": "{n, plural, one {date dans # jour} other {date dans # jours}}",
   "{n, plural, one {in # day} other {in # days}}": "{n, plural, one {dans # jour} other {dans # jours}}",
-  "{n, plural, one {within # day} other {within # days}}": "{n, plural, one {d’ici # jour} other {d’ici # jours}}",
   "{name} (copy)": "{name} (copie)",
   "{term} cannot be used in a rule": "{term} ne peut pas être utilisé dans une règle",
   "A server variable sets this; change it in the server configuration.": "Une variable du serveur le fixe ; modifiez-le dans la configuration du serveur.",
@@ -5385,7 +5382,6 @@
   "A text as a list of its lines": "Un texte en liste de ses lignes",
   "A text with values of earlier steps": "Un texte avec des valeurs des étapes précédentes",
   "when a task’s date passes": "quand la date d’une tâche est passée",
-  "due earlier": "prévue avant",
   "Layout": "Disposition",
   "Pick a day…": "Choisir un jour…",
   "Schedule…": "Planifier…",
@@ -6748,5 +6744,10 @@
   "{n, plural, one {# starter} other {# starters}}": "{n, plural, one {# modèle de départ} other {# modèles de départ}}",
   "{n, plural, one {Fill # choice first} other {Fill # choices first}}": "{n, plural, one {Fais d'abord # choix} other {Fais d'abord # choix}}",
   "{step}: available": "{step} : disponible",
-  "{step}: not available, {reason}": "{step} : non disponible, {reason}"
+  "{step}: not available, {reason}": "{step} : non disponible, {reason}",
+  "has a deadline": "a une échéance",
+  "past the deadline": "échéance dépassée",
+  "{n, plural, one {due within # day} other {due within # days}}": "{n, plural, one {prévue d’ici # jour} other {prévue d’ici # jours}}",
+  "{n, plural, one {deadline within # day} other {deadline within # days}}": "{n, plural, one {échéance d’ici # jour} other {échéance d’ici # jours}}",
+  "due earlier": "prévue avant"
 }
