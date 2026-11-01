@@ -1,0 +1,51 @@
+title: Friday digest by email
+summary: Every Friday at 16:00, email yourself the list of tasks you completed this week.
+description: |
+  Every Friday afternoon this routine finds the tasks you completed this week, counts them and emails you the list. It is a quiet record of the week, handy for a weekly review or a report.
+
+  Needs outgoing email on your server and a verified email address. Without them, use Notify me instead of Email me.
+category: work
+icon: mail
+author: OpenTodo
+reviewed: 2026-11-01
+trigger:
+  kind: schedule
+  at: "16:00"
+  weekdays: [5]
+steps:
+  - id: a
+    kind: find_tasks
+    in:
+      query:
+        literal: completed = this week
+  - id: b
+    kind: count
+    in:
+      list:
+        ref: a
+  - id: c
+    kind: format
+    in:
+      template:
+        literal: "{b} tasks done this week:\n{a}"
+  - id: d
+    kind: email_me
+    in:
+      subject:
+        literal: Your week
+      text:
+        ref: c
+test:
+  email: true
+  tasks:
+    - id: c1
+      completed_on: 2026-10-20
+    - id: c2
+      completed_on: 2026-10-21
+    - id: c3
+      completed_on: 2026-10-10
+    - id: x1
+  expect:
+    emails:
+      - subject: Your week
+        text: "2 tasks done this week:\nc1\nc2"

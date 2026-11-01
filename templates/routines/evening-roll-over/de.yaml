@@ -1,0 +1,6 @@
+# Abendlicher Übertrag: German text for templates/routines/evening-roll-over/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-4b18f9ec8a3b
+title: "Abendlicher Übertrag"
+summary: "Jeden Abend um 21:00 wird, was heute noch fällig ist, auf morgen verschoben, und du erfährst, wie viel."
+description: "Ein Tag läuft selten nach Plan. Jeden Abend um 21:00 verschiebt diese Routine die Aufgaben, die heute noch fällig sind, auf morgen, damit der nächste Morgen mit einer ehrlichen Liste beginnt statt mit einer Wand überfälliger Aufgaben.\n\nDie Benachrichtigung sagt dir, wie viele verschoben wurden. Passe die Uhrzeit auf der Wann-Karte an das Ende deines Tages an."
+steps.2.in.text: "{b} Aufgaben auf morgen verschoben"

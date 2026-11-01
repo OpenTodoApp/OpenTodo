@@ -8,6 +8,7 @@ import { test } from 'node:test'
 import { compileLibrary, compileTemplate } from './templates-build.mjs'
 import { checkLibrary, personalData, readTemplate, repoRoot, sourceHash } from './templates-check.mjs'
 import { parseYaml, YAML_TEMPLATE } from './deploy/yaml.mjs'
+import { checkRoutineLibrary, compileRoutine, compileRoutines } from './routine-templates.mjs'
 
 const ICONS = new Set(['plane', 'house', 'leaf'])
 const BASE = `title: Garden season
@@ -133,4 +134,103 @@ test('readTemplate reports a missing template.yaml', () => {
   const root = mkdtempSync(join(tmpdir(), 'tpl-'))
   mkdirSync(join(root, 'empty'))
   assert.deepEqual(readTemplate(join(root, 'empty'), { icons: ICONS, sectionStyle: false, languages: [] }).problems, ['empty/template.yaml: missing'])
+})
+
+// ---- routine templates (OpenSpec change routines-starters, task 1.1) ----
+
+const ROUTINE = `title: Plant watering
+summary: Every Monday, remind me to water the plants.
+description: |
+  A reminder for the plants, see [routines](https://open-todo.app/docs/routines/).
+category: home
+icon: leaf
+author: OpenTodo
+reviewed: 2026-11-01
+ask:
+  log:
+    type: project
+    suggest: Garden
+trigger:
+  kind: schedule
+  at: "09:00"
+  weekdays: [1]
+steps:
+  - id: a
+    kind: append_to_note
+    in:
+      of:
+        literal:
+          project:
+            ask: log
+      text:
+        literal:
+          format: "Watered on {b}"
+  - id: b
+    kind: notify
+    in:
+      text:
+        literal: Water the plants
+test:
+  fill:
+    log: garden
+  expect:
+    notices:
+      - Water the plants
+`
+const KINDS = new Set(['append_to_note', 'notify', 'get_task', 'add_comment', 'date'])
+
+function routines(files, opts = {}) {
+  const root = mkdtempSync(join(tmpdir(), 'rtpl-'))
+  for (const [path, text] of Object.entries(files)) {
+    mkdirSync(join(root, 'routines', path.split('/')[0]), { recursive: true })
+    writeFileSync(join(root, 'routines', path), text)
+  }
+  return checkRoutineLibrary(repoRoot, { dir: join(root, 'routines'), icons: ICONS, kinds: KINDS, languages: ['de', 'it'], ...opts })
+}
+
+test('routine templates: a valid starter passes and compiles, with its test only in the Go copy', () => {
+  const res = routines({ 'plant-watering/routine.yaml': ROUTINE, 'plant-watering/it.yaml': 'ask.log.suggest: Orto\nsteps.0.in.text: "Annaffiate il {b}"\n' })
+  assert.deepEqual(res.problems, [])
+  const app = compileRoutine(res.routines[0])
+  assert.equal(app.test, undefined)
+  assert.deepEqual(app.ask.log, { type: 'project', suggest: { en: 'Garden', it: 'Orto' } })
+  assert.deepEqual(app.texts['steps.0.in.text'], { en: 'Watered on {b}', it: 'Annaffiate il {b}' })
+  assert.deepEqual(app.texts['steps.1.in.text'], { en: 'Water the plants' })
+  assert.deepEqual(compileRoutine(res.routines[0], true).test.fill, { log: 'garden' })
+})
+
+test('routine templates: choices declared and used, known kinds, no task chosen by hand', () => {
+  expectProblem(routines({ 'p/routine.yaml': ROUTINE.replace('ask: log', 'ask: list') }), /^routines\/p\/routine\.yaml: steps\[0\]\.in\.of\.literal\.project: choice "list" is not declared$/)
+  expectProblem(routines({ 'p/routine.yaml': ROUTINE.replace('ask: log', 'ask: list') }), /: ask\.log: choice "log" is declared but not used/)
+  expectProblem(routines({ 'p/routine.yaml': ROUTINE.replace('kind: notify', 'kind: fetch_url') }), /: steps\[1\]\.kind: step kind "fetch_url" does not exist/)
+  expectProblem(routines({ 'p/routine.yaml': ROUTINE.replace('kind: notify', 'kind: get_task') }), /: steps\[1\]\.kind: a starter never holds a task chosen by hand/)
+  expectProblem(routines({ 'p/routine.yaml': ROUTINE.replace('        literal: Water the plants', '        literal: Water\n      task:\n        literal:\n          task: t1') }), /: steps\[1\]\.in\.task: a starter never holds a task chosen by hand/)
+  expectProblem(routines({ 'p/routine.yaml': ROUTINE.replace('    type: project', '    type: view') }), /: ask\.log\.type: must be project or label/)
+})
+
+test('routine templates: field rules, steps limit, test, size, personal data', () => {
+  expectProblem(routines({ 'p/routine.yaml': ROUTINE.replace('category: home', 'category: garden') }), /: category: must be one of/)
+  expectProblem(routines({ 'p/routine.yaml': ROUTINE.replace('Every Monday', 'Mail anna@example.org every Monday') }), /: summary: holds an e-mail address/)
+  expectProblem(routines({ 'p/routine.yaml': ROUTINE.replace(/test:[\s\S]*$/, '') }), /: test: is required/)
+  expectProblem(routines({ 'p/routine.yaml': ROUTINE.replace('    log: garden', '    other: x') }), /: test\.fill\.log: choice "log" needs an id/)
+  const many = Array.from({ length: 21 }, (_, i) => `  - id: s${i}\n    kind: date`).join('\n')
+  expectProblem(routines({ 'p/routine.yaml': ROUTINE.replace(/steps:\n[\s\S]*?test:/, `steps:\n${many}\ntest:`) }), /: steps: holds 21 steps, at most 20/)
+  expectProblem(routines({ 'p/routine.yaml': ROUTINE + '# ' + 'x'.repeat(17 * 1024) + '\n' }), /routines\/p\/routine\.yaml: is \d+ bytes, at most 16384/)
+  expectProblem(routines({ 'a/routine.yaml': ROUTINE, 'b/routine.yaml': ROUTINE }), /^routines\/b\/routine\.yaml: title: "Plant watering" is also the title of routines\/a$/)
+})
+
+test('routine templates: a translation keeps the values a text inserts, and holds only text', () => {
+  expectProblem(routines({ 'p/routine.yaml': ROUTINE, 'p/de.yaml': 'steps.0.in.text: Gegossen\n' }), /^routines\/p\/de\.yaml: steps\[0\]\.in\.text: must insert the same values as the English text \(\{b\}\), not none$/)
+  expectProblem(routines({ 'p/routine.yaml': ROUTINE, 'p/de.yaml': 'steps.0.kind: notify\n' }), /: steps\[0\]\.kind: is not in the English source/)
+})
+
+test('the repository routine starters are valid, tested and their compiled files current', () => {
+  const { app, server, problems } = compileRoutines()
+  assert.deepEqual(problems, [])
+  assert.ok(app.starters.length >= 8)
+  assert.ok(server.starters.every((s) => s.test && s.test.expect))
+  assert.equal(readFileSync(join(repoRoot, 'web/src/generated/routineStarters.json'), 'utf8'), JSON.stringify(app, null, 1) + '\n', 'run `make templates`')
+  assert.equal(readFileSync(join(repoRoot, 'internal/rules/testdata/starters.json'), 'utf8'), JSON.stringify(server, null, 1) + '\n', 'run `make templates`')
+  // The project template check leaves templates/routines/ to the routine check.
+  assert.ok(!checkLibrary().templates.some((t) => t.slug === 'routines'))
 })

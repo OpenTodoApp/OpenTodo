@@ -137,6 +137,110 @@ Commit the regenerated `web/src/generated/templates.json` together with your tem
 2. Run `make templates` and commit the template and the regenerated file.
 3. Open a pull request and tick the template line of the checklist.
 
+## Routine templates
+
+`templates/routines/` holds the **routine starters**: ready-made [routines](../docs/routines.md) the app offers under **Routines › Start from a starter**, offline, in the reader's language. A starter is a routine in the engine's own format, plus the **choices** the person makes before it opens in the editor, and a **test** that runs it.
+
+The bar is the one above, plus: a starter solves one everyday situation, uses data that flows from its trigger and earlier steps, and never holds a task chosen by hand. Fixed references are containers only: a project or a label, and those are choices.
+
+```
+templates/routines/
+  groceries-from-note/    the slug
+    routine.yaml          the starter, in English
+    it.yaml               optional translations
+```
+
+### routine.yaml
+
+A complete example (`#` starts a comment; block style only, the check refuses `{…}` maps):
+
+```yaml
+title: Groceries from a note              # at most 60 characters, unique among starters
+summary: Every Friday at 17:00, turn the lines of your groceries note into tasks.   # at most 160
+description: |                            # Markdown, at most 2,000 characters; https links only
+  Keep one project whose note lists what you need, one item per line.
+category: home                            # personal, home, work, study or method
+icon: shopping-cart                       # from the icon catalogue
+author: OpenTodo
+reviewed: 2026-11-01
+ask:                                      # the choices: a project or a label, with a suggested name
+  list:
+    type: project
+    suggest: Groceries                    # "Create Groceries" when the person has no such project
+  into:
+    type: project
+    suggest: Errands
+trigger:                                  # the engine's trigger (docs/api.md, "Routines")
+  kind: schedule
+  at: "17:00"
+  weekdays: [5]
+steps:                                    # the engine's steps; {ask: name} stands for the chosen id
+  - id: a
+    kind: note_text
+    in:
+      of:
+        literal:
+          project:
+            ask: list
+  - id: b
+    kind: split_lines
+    in:
+      text:
+        ref: a
+  - id: c
+    kind: create_tasks
+    in:
+      text:
+        ref: b
+      project:
+        literal:
+          project:
+            ask: into
+test:                                     # seeded data, the choices filled, the writes expected
+  fill:
+    list: groc
+    into: errands
+  projects:
+    - id: groc
+      name: Groceries
+      description: "- oat milk\n- [ ] apples\n"
+    - id: errands
+      name: Errands
+  expect:
+    created:
+      - title: apples
+        project_id: errands
+      - title: oat milk
+        project_id: errands
+```
+
+- `condition` is optional: the engine's condition, as on the When card.
+- A choice is used where an id goes: a project in a step (`project: {ask: name}` under `literal`), a label in the trigger (`label_id: {ask: name}`) or in a list of labels. Every choice is used, and every one used is declared.
+- Steps are the kinds the editor offers (`web/src/lib/rules/steps.ts`), at most 20. A starter never holds Get a specific task or a `{task: id}` literal.
+- The **test** seeds `projects`, `labels` and `tasks` (with `due`, `completed_on`, `labels`, `priority`, `project_id`, `description`), fills every choice with a seeded id, sets `run_on` (a task id) for a routine run on a task and `email: true` when it emails. `expect` lists what the run writes: `created` tasks, `changed` fields per task, `comments`, `appended` notes, `notices`, `emails`, `focus` or `created_count`. The test day is Wednesday 2026-10-21.
+
+### Translations of a starter
+
+The same rules as for project templates. The paths are `title`, `summary`, `description`, `ask.<name>.suggest` and each text of a step, by its path: `steps.2.in.text`, `steps.3.in.subject`, `steps.2.then.0.in.text` (Format text's `template` too). A translated text must insert the same values as the English one: `{b}` stays `{b}`.
+
+```yaml
+# templates/routines/groceries-from-note/it.yaml
+title: Spesa da una nota
+ask.list.suggest: Spesa
+ask.into.suggest: Commissioni
+```
+
+### Check and test a starter
+
+```bash
+make templates        # check, then compile web/src/generated/routineStarters.json and internal/rules/testdata/starters.json
+make templates-check  # the check CI runs, plus its tests
+go test ./internal/rules -run TestStarters        # runs every starter against its test
+cd web && npx vitest run src/lib/rules/starters   # the device's type check, in every language
+```
+
+Commit the regenerated files with the starter. To propose one, follow "Propose a template" with `templates/routines/<slug>/routine.yaml`.
+
 ## Licence
 
 Templates are content, not code: everything in this folder is licensed under [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/), like the website's content. By opening a pull request that adds or changes a template you confirm that you wrote it, or may license it under CC BY 4.0, and that `author` names you or the person who wrote it.

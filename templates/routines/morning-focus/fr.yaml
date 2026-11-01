@@ -1,0 +1,5 @@
+# Focus du matin: French text for templates/routines/morning-focus/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-9db121bbd935
+title: "Focus du matin"
+summary: "Les matins de semaine, place dans le focus du jour les trois tâches les plus importantes prévues aujourd'hui."
+description: "Chaque matin de semaine à 7:30, cette routine trouve les tâches prévues aujourd'hui, les trie par priorité et place les trois premières dans le focus du jour, pour commencer en sachant ce qui passe en premier.\n\nChange le nombre sur la carte Choisir pour un focus plus court ou plus long. Le focus du jour doit être activé."

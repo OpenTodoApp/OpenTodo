@@ -13,7 +13,29 @@ A routine does several things in a row, each step using what the steps before it
 
 ## The Routines page
 
-Each routine is one row: its switch, its trigger and steps as one line (*Every Friday at 17:00 → get the note text of the task, split the note text into lines, create tasks from the lines in Errands*), when it last ran and how often this week, how many steps are not available, **Run now** and a menu (Edit, Duplicate, Run now, Test, History, Move up, Move down, Delete). **Pause all routines** is in the page's menu. The **Runs** tab lists every run. Offline the routines are listed and editable from your device; runs and counts need a connection.
+**New routine** opens the editor on an empty routine; **Start from a starter** opens the starters (below). Each routine is one row: its switch, its trigger and steps as one line (*Every Friday at 17:00 → get the note text of the task, split the note text into lines, create tasks from the lines in Errands*), when it last ran and how often this week, how many steps are not available, **Run now** and a menu (Edit, Duplicate, Run now, Test, History, Move up, Move down, Delete). **Pause all routines** is in the page's menu. The **Runs** tab lists every run. Offline the routines are listed and editable from your device; runs and counts need a connection.
+
+## Start from a starter
+
+**Start from a starter** (on the Routines page, and under it while you have no routine yet) lists ready-made routines by category, at `/routines/starters`. They ship with the app, so they work offline, in your language. Type to search their names, summaries and step names, in your language or in English; `↓` moves into the list, the arrows move between starters and Enter opens one.
+
+| Starter | What it does |
+|---|---|
+| Groceries from a note | Every Friday at 17:00, the lines of a project's note become tasks in another project |
+| Sunday overdue sweep | Every Sunday at 18:00, overdue tasks move to Monday, and a notification says how many |
+| Evening roll-over | Every evening at 21:00, what is still due today moves to tomorrow |
+| Morning focus | On weekday mornings, the three highest-priority tasks due today become today's focus (needs today's focus) |
+| Done journal | When you complete a task, "Done:" and its title are added to the note of a project |
+| Note to subtasks | Run on a task: each line of its note becomes a subtask |
+| Waiting follow-up | When a task gets your waiting label, a comment notes the day and the task is due in three days |
+| Friday digest by email | Every Friday at 16:00, an email lists the tasks you completed this week (needs outgoing email) |
+| Meeting notes to tasks | Run on a meeting task: the open checkboxes of its note become tasks in its project |
+| Inbox over 20 | On weekday mornings, a notification when the Inbox holds more than 20 tasks |
+| Monthly review | On the first of every month, a review project from the Weekly review template |
+
+A starter's page shows what it does as the editor's sentences, what it **needs** (a step that is not set up on your server says why), and **your choices**: the project or label it works with. A project or label with the suggested name is chosen already; otherwise the list next to the word starts with **Create *Groceries***. **Use this starter** waits until every choice is made (*Fill 1 choice first*), then opens the editor on a new routine with the starter's name. Nothing is saved until you save it there, apart from a project or label you chose to create; from then on it is your routine, edited like any other. Starters never hold a task chosen by hand: they read the task that triggered, the task you run them on, or tasks an earlier step found.
+
+Anyone can propose a starter: see [the template library's guide](https://github.com/OpenTodoApp/OpenTodo/blob/main/templates/README.md#routine-templates).
 
 ## The editor
 

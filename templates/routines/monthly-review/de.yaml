@@ -1,0 +1,5 @@
+# Monatsrückblick: German text for templates/routines/monthly-review/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-b86adf551d28
+title: "Monatsrückblick"
+summary: "Am Ersten jedes Monats entsteht ein Rückblick-Projekt aus der Vorlage Wochenrückblick."
+description: "Ein Rückblick hält eine Aufgabenliste verlässlich. Am ersten Tag jedes Monats um 9:00 erstellt diese Routine ein Projekt aus der Bibliotheksvorlage Wochenrückblick, mit ihren Abschnitten und kleinen Aufgaben, beginnend an diesem Tag.\n\nLieber wöchentlich? Stell die Wann-Karte auf einen Wochentag um."
