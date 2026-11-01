@@ -16,7 +16,9 @@ type alertSink struct {
 	alerts []notify.RoutineAlert
 }
 
-func (a *alertSink) RoutineFailed(_ context.Context, x notify.RoutineAlert) { a.alerts = append(a.alerts, x) }
+func (a *alertSink) RoutineFailed(_ context.Context, x notify.RoutineAlert) {
+	a.alerts = append(a.alerts, x)
+}
 
 const brokenSteps = `[{"id":"a","kind":"split_lines","in":{"text":{"literal":"a\nb"}}},
 	{"id":"b","kind":"create_tasks","in":{"text":{"ref":"a"},"project":{"literal":{"project":"gone"}}}}]`
