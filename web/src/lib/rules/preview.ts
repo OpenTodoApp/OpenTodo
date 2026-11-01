@@ -7,7 +7,8 @@
 import { t } from '../i18n'
 import type { Project, RoutineArg, RoutineStep, RoutineStepRecord, RuleCondition, Task } from '../types'
 import { matchesCondition, type MatchContext } from './match'
-import { dateLiteral, MAX_LIST_ITEMS, stepKind, textLiteral } from './steps'
+import { aiMaxTokens, estimateTokens } from './ai'
+import { dateLiteral, isAIKind, MAX_LIST_ITEMS, stepKind, textLiteral } from './steps'
 import { filterLines, formatTemplate, holds, joinLines, renderNumber, replaceText, resolveDate, sortLines, sortTasks, splitLines, take, type StepValue } from './stepData'
 import type { RoutineDraft } from './draft'
 
@@ -21,6 +22,8 @@ export type Preview =
   | { state: 'unknown' }
   /** Not run: the other lane of an If. */
   | { state: 'skipped' }
+  /** An AI step: the model is never called for a preview; about this many tokens when tested (routines-ai-step D11). */
+  | { state: 'ai'; estimate: number }
 
 export interface PreviewData {
   tasks: readonly Task[]
@@ -92,6 +95,16 @@ function valueIn(s: RoutineStep, name: string, env: Env, data: PreviewData): Ste
 }
 
 const asText = (v: StepValue, data: PreviewData): string => renderValue(v, data)
+
+/** About the characters a value adds to an AI call: tasks carry due, priority, labels and project too. */
+function materialChars(v: StepValue, data: PreviewData): number {
+  const n = v.type === 'tasks' ? (v.ids ?? []).length : v.type === 'task' ? 1 : 0
+  if (v.type === 'project') {
+    const open = data.tasks.filter((x) => x.project_id === v.id && !x.completed_at && !x.deleted_at)
+    return renderValue(v, data).length + open.reduce((sum, x) => sum + x.title.length + 40, 0)
+  }
+  return renderValue(v, data).length + n * 40
+}
 
 function noteOf(v: StepValue, data: PreviewData): string | null {
   if (v.type === 'task') return data.tasks.find((x) => x.id === v.id)?.description ?? null
@@ -195,6 +208,17 @@ function planStep(s: RoutineStep, env: Env, data: PreviewData): Preview {
     case 'webhook': return { state: 'effect', text: t('Would send the webhook') }
     case 'add_comment': return { state: 'effect', text: t('Would add a comment') }
     case 'stop': return { state: 'effect', text: t('Would end the run here') }
+    case 'ask_ai':
+    case 'summarise': {
+      let chars = s.kind === 'ask_ai' ? (textLiteral(litOf(s, 'instruction'))?.text ?? '').length : 60
+      for (const name of s.kind === 'ask_ai' ? ['context', 'context2', 'context3'] : ['text']) {
+        if (!argOf(s, name)) continue
+        const x = v(name)
+        if (!x) return { state: x === null ? 'unknown' : 'server' }
+        chars += materialChars(x, data)
+      }
+      return { state: 'ai', estimate: estimateTokens(chars, aiMaxTokens(s)) }
+    }
     case 'if':
     case 'repeat':
       return { state: 'unknown' }
@@ -261,6 +285,7 @@ export function planDraft(d: RoutineDraft, data: PreviewData): Map<string, Previ
 /** A server test's step record as a preview. */
 export function serverPreview(r: RoutineStepRecord): Preview {
   const p = r.preview as unknown
+  if (isAIKind(r.kind) && r.status === 'skipped') return { state: 'ai', estimate: r.estimate ?? 0 }
   switch (r.output) {
     case 'text': return { state: 'value', value: { type: 'text', text: typeof p === 'string' ? p : '' } }
     case 'lines': return { state: 'value', value: { type: 'lines', lines: Array.isArray(p) ? (p as string[]) : [] } }

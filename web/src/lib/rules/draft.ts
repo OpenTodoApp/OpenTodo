@@ -11,6 +11,9 @@ export interface RoutineDraft {
   trigger: RuleTrigger
   condition: RuleCondition | null
   steps: RoutineStep[]
+  /** Apply without asking ("auto" or "") and the daily AI token budget (0 = 20,000), routines-ai-step D4, D11. */
+  aiApply?: string
+  aiBudget?: number
 }
 
 /** Where a step sits: its list (the top level or a block of a step) and its index there. */
@@ -24,14 +27,14 @@ export interface StepPlace {
 export const NEW_ROUTINE: RoutineDraft = { name: '', trigger: { kind: 'manual' }, condition: null, steps: [] }
 
 /** A rule as a draft: a rule without steps is one Change tasks step over the trigger (D1). */
-export function draftOf(rule: Pick<Rule, 'name' | 'trigger' | 'condition' | 'actions' | 'steps'>): RoutineDraft {
+export function draftOf(rule: Pick<Rule, 'name' | 'trigger' | 'condition' | 'actions' | 'steps'> & Partial<Pick<Rule, 'ai_apply' | 'ai_budget'>>): RoutineDraft {
   let steps: RoutineStep[] = []
   try {
     steps = readRoutine(rule.actions, rule.steps ?? null)?.steps ?? []
   } catch {
     steps = Array.isArray(rule.steps) ? rule.steps : []
   }
-  return { name: rule.name, trigger: rule.trigger ?? NEW_ROUTINE.trigger, condition: rule.condition, steps }
+  return { name: rule.name, trigger: rule.trigger ?? NEW_ROUTINE.trigger, condition: rule.condition, steps, aiApply: rule.ai_apply ?? '', aiBudget: rule.ai_budget ?? 0 }
 }
 
 /**
@@ -51,7 +54,7 @@ export function storedOf(d: RoutineDraft): { actions: RuleActions | null; steps:
 
 /** Whether two drafts store the same routine (saving an unchanged one writes nothing). */
 export function sameDraft(a: RoutineDraft, b: RoutineDraft): boolean {
-  const s = (d: RoutineDraft) => JSON.stringify([d.name.trim(), d.trigger, d.condition ?? null, storedOf(d)])
+  const s = (d: RoutineDraft) => JSON.stringify([d.name.trim(), d.trigger, d.condition ?? null, storedOf(d), d.aiApply ?? '', d.aiBudget ?? 0])
   return s(a) === s(b)
 }
 

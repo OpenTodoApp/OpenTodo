@@ -19,11 +19,15 @@ import { useMe } from '../../lib/timeEntries'
 import type { Rule, RoutineRun, RoutineStep, RoutineStepRecord } from '../../lib/types'
 import { Badge, Button, Dialog, Notice, Skeleton } from '../../ui'
 import { useRoutineNames, valueNamer, type RoutineNames } from './data'
+import { ProposalReview } from './ProposalReview'
 import { sentenceText } from './StepCard'
 
 const OUTCOME = translatedMap<string>({
   pending: msg('Running'), applied: msg('Done'), already_matched: msg('Nothing to change'), skipped: msg('Skipped'), stopped: msg('Stopped'),
-  failed: msg('Failed'), partial: msg('Partial'), ended: msg('Ended early'),
+  failed: msg('Failed'), partial: msg('Partial'), ended: msg('Ended early'), proposal: msg('Proposal'),
+})
+const PROPOSAL = translatedMap<string>({
+  waiting: msg('Proposal waiting'), applied: msg('Proposal applied'), partly_applied: msg('Proposal partly applied'), dismissed: msg('Proposal dismissed'), expired: msg('Proposal expired'),
 })
 const STATUS = translatedMap<string>({
   ok: msg('Done'), skipped: msg('Skipped'), ended: msg('Ended here'), failed: msg('Failed'), unavailable: msg('Not available'), truncated: msg('Cut at the limit'),
@@ -35,7 +39,7 @@ type Hue = 'green' | 'red' | 'orange' | 'slate' | 'blue'
 export function outcomeOf(run: Pick<RoutineRun, 'outcome' | 'failed_step' | 'undone_at'>): { text: string; hue: Hue } {
   if (run.undone_at) return { text: t('Undone'), hue: 'slate' }
   if (run.outcome === 'failed' && run.failed_step >= 0) return { text: t('Failed at step {n}', { n: run.failed_step + 1 }), hue: 'red' }
-  const hue: Hue = run.outcome === 'failed' || run.outcome === 'stopped' ? 'red' : run.outcome === 'partial' || run.outcome === 'skipped' ? 'orange' : run.outcome === 'applied' || run.outcome === 'ended' ? 'green' : 'slate'
+  const hue: Hue = run.outcome === 'failed' || run.outcome === 'stopped' ? 'red' : run.outcome === 'partial' || run.outcome === 'skipped' ? 'orange' : run.outcome === 'applied' || run.outcome === 'ended' ? 'green' : run.outcome === 'proposal' ? 'blue' : 'slate'
   return { text: OUTCOME[run.outcome] ?? run.outcome, hue }
 }
 
@@ -169,6 +173,7 @@ export function RunDetail({ rule, ruleId: givenRule, runId, initial, onClose }: 
   const [run, setRun] = useState<RoutineRun | null>(initial?.steps ? initial : null)
   const [failed, setFailed] = useState(false)
   const [answer, setAnswer] = useState('')
+  const [reviewing, setReviewing] = useState(false)
   const ruleId = rule?.id ?? givenRule ?? initial?.rule_id ?? ''
   useEffect(() => {
     if (!online || !ruleId) return
@@ -200,7 +205,17 @@ export function RunDetail({ rule, ruleId: givenRule, runId, initial, onClose }: 
             <Badge hue={o.hue}>{o.text}</Badge>
             {run.test && <Badge hue="blue">{t('Test')}</Badge>}
             <span className="text-meta text-muted">{sourceText(run, rule, me, names)} · {t('{n, plural, one {# write} other {# writes}}', { n: run.writes })} · {duration(run.duration_ms)}</span>
+            {!!run.tokens && <span className="text-meta text-muted" data-run-tokens>{t('{n, plural, one {# AI token} other {# AI tokens}}', { n: run.tokens })}</span>}
+            {run.ai_auto && <Badge hue="blue">{t('Applied without asking')}</Badge>}
           </p>
+          {run.proposal && (
+            <div className="flex flex-wrap items-center gap-2" data-run-proposal={run.proposal.state}>
+              <span className="text-meta text-muted">{PROPOSAL[run.proposal.state] ?? run.proposal.state} · {t('{n, plural, one {# item} other {# items}}', { n: run.proposal.items })}</span>
+              {run.proposal.state === 'waiting' && <Button variant="primary" disabled={!online} onClick={() => setReviewing(true)}>{t('Review')}</Button>}
+            </div>
+          )}
+          {reviewing && run.proposal && <ProposalReview proposalId={run.proposal.id} ruleName={rule?.name || t('A routine')} onClose={() => setReviewing(false)}
+            onDone={() => api.routineRun(run.rule_id, run.run_id).then(setRun, () => undefined)} />}
           {run.reason && <p className="text-meta text-muted">{reasonText(run.reason) !== t('not available here') ? reasonText(run.reason) : run.reason}</p>}
           <ol className="space-y-2" aria-label={t('Steps')}>
             {steps.map((s, i) => {

@@ -91,22 +91,29 @@ func checkRuleAI(body map[string]json.RawMessage) error {
 // annotateRuleAI adds a routine's AI mode and the step Apply without asking
 // cannot run with (read-only, dropped on write like the other annotations).
 func (s *Server) annotateRuleAI(ctx context.Context, uid string, e opsync.Entity) {
+	if mode := s.ruleAIMode(ctx, uid, e); mode != nil {
+		e["ai_mode"] = jsonRaw(mode)
+	}
+}
+
+// ruleAIMode is a routine's AI mode as the routes show it, nil without AI steps.
+func (s *Server) ruleAIMode(ctx context.Context, uid string, e opsync.Entity) map[string]any {
 	if s.rules == nil || isNullish(e["steps"]) {
-		return
+		return nil
 	}
 	steps, err := ruleval.ParseSteps(e["steps"])
 	if err != nil || !ruleval.HasAI(steps) {
-		return
+		return nil
 	}
 	mode, err := s.rules.AIMode(ctx, uid, idOf(e["id"]))
 	if err != nil {
-		return
+		return nil
 	}
 	out := map[string]any{"auto": mode.Auto, "asked": mode.Asked, "reason": mode.Reason, "at": mode.At}
 	if step, what := ruleval.AutoBlocker(steps); what != "" {
 		out["blocked"] = map[string]string{"step": step, "what": what}
 	}
-	e["ai_mode"] = jsonRaw(out)
+	return out
 }
 
 func (s *Server) registerRoutineAIRoutes(mux *routes) {
@@ -198,8 +205,8 @@ func (s *Server) handleDismissProposal(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// handleRoutineAIUsage answers a routine's AI tokens of the last 7 days and
-// its daily budget (the editor's usage line, D12).
+// handleRoutineAIUsage answers a routine's AI tokens of the last 7 days, its
+// daily budget and its AI mode (the editor's AI settings, D12).
 func (s *Server) handleRoutineAIUsage(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	uid := userFrom(ctx).ID
@@ -219,5 +226,5 @@ func (s *Server) handleRoutineAIUsage(w http.ResponseWriter, r *http.Request) {
 	}
 	var budget float64
 	_ = json.Unmarshal(row["ai_budget"], &budget)
-	writeJSON(w, http.StatusOK, map[string]any{"days": days, "budget": rules.AIBudget(budget)})
+	writeJSON(w, http.StatusOK, map[string]any{"days": days, "budget": rules.AIBudget(budget), "mode": s.ruleAIMode(ctx, uid, row)})
 }

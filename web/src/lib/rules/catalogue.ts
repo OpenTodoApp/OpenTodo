@@ -69,6 +69,7 @@ const REASON: Record<string, string> = {
   demo: msg('not offered on a demo instance'),
   ai_not_configured: msg('the assistant is not set up for you on this server'),
   ai_no_consent: msg('accept the assistant’s updated terms for routines'),
+  ai_encrypted: msg('AI steps cannot run for an end-to-end encrypted account yet'),
 }
 
 const HINT: Record<string, string> = {

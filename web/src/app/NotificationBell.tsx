@@ -102,6 +102,8 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
                         : n.payload.step > 0
                           ? t.rich('<b>{routine}</b> failed at step {n}', { routine: n.payload.ruleName || t('A routine'), n: n.payload.step, b: (chunks) => <strong>{chunks}</strong> })
                           : t.rich('<b>{routine}</b> failed', { routine: n.payload.ruleName || t('A routine'), b: (chunks) => <strong>{chunks}</strong> })}</span>
+                    ) : n.kind === 'routine_proposal' && 'count' in n.payload ? (
+                      <span className="block" data-kind="routine_proposal">{t.rich('<b>{routine}</b> has a proposal waiting ({n, plural, one {# change} other {# changes}})', { routine: n.payload.ruleName || t('A routine'), n: n.payload.count, b: (chunks) => <strong>{chunks}</strong> })}</span>
                     ) : n.kind === 'routine' && 'text' in n.payload ? (
                       <span className="block" data-kind="routine">{t.rich('<b>{routine}</b>: {text}', { routine: n.payload.ruleName || t('A routine'), text: n.payload.text, b: (chunks) => <strong>{chunks}</strong> })}</span>
                     ) : n.kind === 'mentioned' ? (

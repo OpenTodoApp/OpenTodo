@@ -14,9 +14,9 @@ import { Dialog, Icon, Input } from '../../ui'
 
 /** Suggestions per output type of the step above, best first (D6). */
 const SUGGEST: Record<RoutineStepType | 'start', string[]> = {
-  lines: ['create_tasks', 'filter', 'count', 'join', 'sort', 'take'],
-  tasks: ['change_tasks', 'count', 'filter', 'sort', 'take', 'repeat'],
-  text: ['split_lines', 'notify', 'create_tasks', 'replace', 'email_me', 'append_to_note'],
+  lines: ['create_tasks', 'filter', 'count', 'ask_ai', 'join', 'sort', 'take'],
+  tasks: ['change_tasks', 'count', 'filter', 'summarise', 'sort', 'take', 'repeat'],
+  text: ['split_lines', 'notify', 'create_tasks', 'ask_ai', 'summarise', 'replace', 'email_me', 'append_to_note'],
   number: ['if', 'notify', 'format'],
   task: ['change_tasks', 'add_comment', 'note_text', 'get_task', 'start_timer'],
   project: ['create_tasks', 'note_text', 'update_project', 'create_sections'],

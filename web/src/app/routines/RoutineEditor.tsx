@@ -20,13 +20,16 @@ import { errorText, fixFor, type Fix } from '../../lib/rules/fixes'
 import { planDraft, serverPreview, type Preview } from '../../lib/rules/preview'
 import { outputNames, stepName } from '../../lib/rules/sentence'
 import { createRule, updateRule } from '../../lib/rules/store'
-import { contentStep, MAX_STEPS, triggerOutput } from '../../lib/rules/steps'
+import { contentStep, hasAI, isAIKind, MAX_STEPS, triggerOutput } from '../../lib/rules/steps'
+import { roundEstimate } from '../../lib/rules/ai'
+import { useAssistantStatus } from '../../lib/assistantStatus'
 import { useEncryption } from '../../lib/e2ee'
 import { useMe } from '../../lib/timeEntries'
 import type { RoutineStepType, Rule, RoutineTestResult } from '../../lib/types'
-import { Button, ConfirmDialog, Dialog, Field, Input, Notice, Tabs } from '../../ui'
+import { Badge, Button, ConfirmDialog, Dialog, Field, Input, Notice, Tabs } from '../../ui'
 import { runRoutineNow } from '../palette/routineCommand'
 import { AddStepSheet } from './AddStep'
+import { AISettings } from './AISettings'
 import { usePreviewData, useRoutineNames, valueNamer } from './data'
 import type { RuleDraft } from './ruleDraft'
 import { RunDetail, RunsList } from './RunHistory'
@@ -76,12 +79,21 @@ function TestResult({ result, draft, names }: { result: RoutineTestResult; draft
   const outputs = outputNames(draft.steps, valueNamer(names))
   const ctx = { draft, types: draftTypes(draft), outputs, names }
   const ok = result.run.outcome !== 'failed'
+  const tokens = result.steps.reduce((n, r) => n + (r.tokens ?? 0), 0)
+  const answers = result.steps.filter((r) => isAIKind(r.kind) && r.status === 'ok')
   return (
     <section className="surface-card space-y-2 p-3" aria-label={t('Test')} data-test-result={result.run.outcome}>
       <p className={`text-body ${ok ? 'text-default' : 'text-danger'}`}>
         {ok ? t('{n, plural, one {Test finished: would write # item, nothing was written} other {Test finished: would write # items, nothing was written}}', { n: result.writes })
           : t('Test failed at step {n}, nothing was written', { n: result.run.failed_step + 1 })}
       </p>
+      {tokens > 0 && <p className="text-meta text-muted" data-test-tokens>{t('{n, plural, one {The AI steps used # token} other {The AI steps used # tokens}}', { n: tokens })}</p>}
+      {answers.map((r) => (
+        <div key={r.step_id} className="space-y-1" data-test-ai={r.step_id}>
+          <Badge hue="blue">{t('Written by AI')}</Badge>
+          <p className="user-text whitespace-pre-wrap text-meta text-default">{Array.isArray(r.preview) ? (r.preview as string[]).join('\n') : String(r.preview ?? '')}</p>
+        </div>
+      ))}
       <ol className="space-y-1 text-meta text-muted">
         {result.steps.map((r) => {
           const s = findStep(draft.steps, r.step_id)
@@ -109,6 +121,8 @@ export function RoutineEditor({ rule, draft: initial, dropped, onClose }: { rule
   const [saveError, setSaveError] = useState('')
   const [discard, setDiscard] = useState(false)
   const [testing, setTesting] = useState(false)
+  const [confirmAI, setConfirmAI] = useState(false)
+  const assistant = useAssistantStatus()
   const [result, setResult] = useState<RoutineTestResult | null>(null)
   const [announce, setAnnounce] = useState('')
   const [openRun, setOpenRun] = useState<string | null>(null)
@@ -199,18 +213,26 @@ export function RoutineEditor({ rule, draft: initial, dropped, onClose }: { rule
     if (rule && !dirty) { onClose(); return }
     const stored = storedOf(draft)
     const done = rule
-      ? updateRule(rule.id, { name, trigger: draft.trigger, condition: draft.condition, ...stored })
-      : createRule({ name, trigger: draft.trigger, condition: draft.condition, ...stored })
+      ? updateRule(rule.id, { name, trigger: draft.trigger, condition: draft.condition, ...stored, ...(hasAI(draft.steps) || rule.ai_budget ? { ai_budget: draft.aiBudget ?? 0 } : {}) })
+      : createRule({ name, trigger: draft.trigger, condition: draft.condition, ...stored, ai_apply: draft.aiApply, ai_budget: draft.aiBudget })
     Promise.resolve(done).then(onClose, (e: unknown) => setSaveError(messageOf(e)))
   }
+  const withAI = hasAI(draft.steps)
+  const estimate = [...previews.values()].reduce((n, p) => n + (p.state === 'ai' ? p.estimate : 0), 0)
+  // A test of AI steps asks first: which provider gets the inputs, about how many tokens (D11).
   const test = () => {
     if (!online || blocked || !draft.steps.length) return
+    if (withAI) setConfirmAI(true)
+    else runTest(false)
+  }
+  const runTest = (callAI: boolean) => {
     setTesting(true)
     setResult(null)
     const taskId = triggerType === 'task' ? data.triggerTask?.id : undefined
+    const ai = callAI ? { call_ai: true } : {}
     const req = rule && !dirty
-      ? api.testRoutine(rule.id, { run_id: uuid(), ...(taskId ? { task_id: taskId } : {}) })
-      : api.testRoutineDraft({ trigger: draft.trigger, condition: draft.condition, steps: draft.steps, ...(taskId ? { task_id: taskId } : {}) })
+      ? api.testRoutine(rule.id, { run_id: uuid(), ...(taskId ? { task_id: taskId } : {}), ...ai })
+      : api.testRoutineDraft({ trigger: draft.trigger, condition: draft.condition, steps: draft.steps, ...(taskId ? { task_id: taskId } : {}), ...ai })
     req.then((r) => {
       setResult(r)
       setAnnounce(r.run.outcome === 'failed' ? t('Test failed at step {n}, nothing was written', { n: r.run.failed_step + 1 }) : t('{n, plural, one {Test finished: would write # item, nothing was written} other {Test finished: would write # items, nothing was written}}', { n: r.writes }))
@@ -262,9 +284,15 @@ export function RoutineEditor({ rule, draft: initial, dropped, onClose }: { rule
             )}
           </Tabs>
         ) : steps}
+        {withAI && tab === 'steps' && <AISettings rule={rule} draft={draft} online={online} onDraft={edit} />}
       </div>
       {adding && <AddStepSheet above={adding.above} catalogue={catalogue} onPick={pick} onClose={() => setAdding(null)} />}
       {openRun && <RunDetail rule={rule} runId={openRun} onClose={() => setOpenRun(null)} />}
+      {confirmAI && (
+        <ConfirmDialog title={t('Test with AI?')} confirmLabel={t('Test')} tone="default"
+          consequence={t('This test sends the inputs to {provider} and uses about {n} tokens. Nothing is written.', { provider: assistant?.provider_label || t('your assistant’s provider'), n: roundEstimate(estimate) })}
+          onConfirm={() => { setConfirmAI(false); runTest(true) }} onCancel={() => setConfirmAI(false)} />
+      )}
       {discard && (
         <ConfirmDialog title={t('Discard your changes?')} consequence={t('The routine stays as it was saved.')} confirmLabel={t('Discard')}
           onConfirm={() => { setDiscard(false); onClose() }} onCancel={() => setDiscard(false)} />
