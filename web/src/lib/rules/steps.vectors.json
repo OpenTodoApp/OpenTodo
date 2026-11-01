@@ -480,6 +480,162 @@
         {"id": "d", "kind": "if", "in": {"value": {"ref": "c"}, "is": {"literal": {"contains": "x"}}}, "then": [{"id": "e", "kind": "summarise", "in": {"text": {"ref": "c"}}}, {"id": "f", "kind": "summarise", "in": {"text": {"ref": "e"}}}]}
       ],
       "error": {"step": "f", "input": "", "code": "too_many_ai_steps"}
+    },
+    {
+      "name": "dynamic: add a comment on each found task",
+      "trigger": "none",
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "overdue"}}}},
+        {"id": "b", "kind": "add_comment", "in": {"task": {"ref": "a"}, "text": {"literal": "Still on it?"}}}
+      ],
+      "types": {"a": "tasks", "b": "none"},
+      "content": "b"
+    },
+    {
+      "name": "dynamic: pick the first, then comment",
+      "trigger": "none",
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "overdue"}}}},
+        {"id": "b", "kind": "take", "in": {"list": {"ref": "a"}, "n": {"literal": 1}}},
+        {"id": "c", "kind": "add_comment", "in": {"task": {"ref": "b"}, "text": {"literal": "Still on it?"}}}
+      ],
+      "types": {"a": "tasks", "b": "tasks", "c": "none"},
+      "content": "c"
+    },
+    {
+      "name": "dynamic: pick the last without n",
+      "trigger": "none",
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "overdue"}}}},
+        {"id": "b", "kind": "take", "in": {"list": {"ref": "a"}, "from": {"literal": "end"}}}
+      ],
+      "types": {"a": "tasks", "b": "tasks"},
+      "content": ""
+    },
+    {
+      "name": "dynamic: pick all",
+      "trigger": "none",
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "overdue"}}}},
+        {"id": "b", "kind": "take", "in": {"list": {"ref": "a"}, "from": {"literal": "all"}}},
+        {"id": "c", "kind": "start_timer", "in": {"task": {"ref": "b"}}}
+      ],
+      "types": {"a": "tasks", "b": "tasks", "c": "none"},
+      "content": ""
+    },
+    {
+      "name": "dynamic: pick from an unknown end",
+      "trigger": "none",
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "overdue"}}}},
+        {"id": "b", "kind": "take", "in": {"list": {"ref": "a"}, "from": {"literal": "middle"}}}
+      ],
+      "error": {"step": "b", "input": "from", "code": "invalid_literal"}
+    },
+    {
+      "name": "dynamic: repeat item into a comment",
+      "trigger": "none",
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "overdue"}}}},
+        {"id": "b", "kind": "repeat", "in": {"list": {"ref": "a"}}, "do": [{"id": "c", "kind": "add_comment", "in": {"task": {"ref": "item"}, "text": {"literal": "Still on it?"}}}]}
+      ],
+      "types": {"a": "tasks", "b": "none", "c": "none"},
+      "content": "c"
+    },
+    {
+      "name": "dynamic: notify about each task",
+      "trigger": "none",
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "overdue"}}}},
+        {"id": "b", "kind": "notify", "in": {"text": {"literal": "Overdue"}, "task": {"ref": "a"}}}
+      ],
+      "types": {"a": "tasks", "b": "none"},
+      "content": "b"
+    },
+    {
+      "name": "dynamic: comment on the task that triggered",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "add_comment", "in": {"task": {"ref": "trigger"}, "text": {"literal": "On it"}}}
+      ],
+      "types": {"a": "none"},
+      "content": "a"
+    },
+    {
+      "name": "dynamic: note of a project chosen in the picker",
+      "trigger": "date",
+      "steps": [
+        {"id": "a", "kind": "note_text", "in": {"of": {"literal": {"project": "p1"}}}},
+        {"id": "b", "kind": "split_lines", "in": {"text": {"ref": "a"}}},
+        {"id": "c", "kind": "create_tasks", "in": {"text": {"ref": "b"}, "project": {"literal": {"project": "p2"}}}}
+      ],
+      "types": {"a": "text", "b": "lines", "c": "tasks"},
+      "content": "a"
+    },
+    {
+      "name": "dynamic: a task literal on a note is refused",
+      "trigger": "date",
+      "steps": [
+        {"id": "a", "kind": "note_text", "in": {"of": {"literal": {"task": "t1"}}}}
+      ],
+      "error": {"step": "a", "input": "of", "code": "invalid_literal"}
+    },
+    {
+      "name": "dynamic: get the date",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "date", "in": {}},
+        {"id": "b", "kind": "add_comment", "in": {"task": {"ref": "trigger"}, "text": {"literal": {"format": "Waiting since {a}"}}}},
+        {"id": "c", "kind": "date", "in": {"date": {"literal": {"in_days": 3}}}}
+      ],
+      "types": {"a": "date", "b": "none", "c": "date"},
+      "content": "b"
+    },
+    {
+      "name": "dynamic: the project of a task",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "project_of", "in": {"task": {"ref": "trigger"}}},
+        {"id": "b", "kind": "create_tasks", "in": {"title": {"literal": "Follow up"}, "project": {"ref": "a"}}}
+      ],
+      "types": {"a": "project", "b": "tasks"},
+      "content": "b"
+    },
+    {
+      "name": "dynamic: the project of each task is refused",
+      "trigger": "none",
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "overdue"}}}},
+        {"id": "b", "kind": "project_of", "in": {"task": {"ref": "a"}}}
+      ],
+      "error": {"step": "b", "input": "", "code": "for_each"}
+    },
+    {
+      "name": "dynamic: the project of a task takes no literal",
+      "trigger": "none",
+      "steps": [
+        {"id": "a", "kind": "project_of", "in": {"task": {"literal": {"task": "t1"}}}}
+      ],
+      "error": {"step": "a", "input": "task", "code": "invalid_step"}
+    },
+    {
+      "name": "dynamic: subtasks of the task it runs on",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "note_text", "in": {"of": {"ref": "trigger"}}},
+        {"id": "b", "kind": "split_lines", "in": {"text": {"ref": "a"}}},
+        {"id": "c", "kind": "create_tasks", "in": {"text": {"ref": "b"}, "parent": {"ref": "trigger"}}}
+      ],
+      "types": {"a": "text", "b": "lines", "c": "tasks"},
+      "content": "a"
+    },
+    {
+      "name": "dynamic: subtasks with a project are refused",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "create_tasks", "in": {"title": {"literal": "x"}, "parent": {"ref": "trigger"}, "project": {"literal": {"project": "p1"}}}}
+      ],
+      "error": {"step": "a", "input": "project", "code": "invalid_step"}
     }
   ],
   "auto": [
@@ -543,6 +699,7 @@
   "data": [
     {"fn": "split_lines", "in": {"text": "- oat milk\n- [ ] bread tomorrow\n\n- apples"}, "out": ["oat milk", "bread tomorrow", "apples"]},
     {"fn": "split_lines", "in": {"text": "  one  \r\n* two\n+ three\n1. four\n2) five\n- [x] six\n[X] seven\n- \n-\n"}, "out": ["one", "two", "three", "four", "five", "six", "seven"]},
+    {"fn": "split_lines", "in": {"text": "- [ ] book room\n- notes\n- [x] done already\n[ ] send agenda\n* [ ]\n2. [ ] call Ada", "only": "open_checkboxes"}, "out": ["book room", "send agenda", "call Ada"]},
     {"fn": "split_lines", "in": {"text": "-not a marker\n1.5 kg flour\n#tag"}, "out": ["-not a marker", "1.5 kg flour", "#tag"]},
     {"fn": "split_lines", "in": {"text": ""}, "out": []},
     {"fn": "join", "in": {"lines": ["a", "b", "c"], "separator": ""}, "out": "a\nb\nc"},

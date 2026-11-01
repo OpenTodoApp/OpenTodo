@@ -6089,7 +6089,19 @@
   "Get reminders while the app is closed. Each device decides for itself.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Get the date": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Get the date {date}": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Get the note text of {of}": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Get the project of a task": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Get the project of {task}": [
     "web/src/lib/rules/sentence.ts"
   ],
   "Get the task {task}": [
@@ -10317,6 +10329,9 @@
     "web/src/app/task-detail/TaskActionsMenu.tsx"
   ],
   "One task, or one task per line": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Only": [
     "web/src/lib/rules/sentence.ts"
   ],
   "Only accept mail from (optional)": [
@@ -15240,6 +15255,9 @@
   "The position is not available right now.": [
     "web/src/app/locations/LocationEditor.tsx"
   ],
+  "The project a task is in": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "The provider answers, but this model does not support tool use, which the assistant needs. Choose another model.": [
     "web/src/lib/assistant.ts"
   ],
@@ -16587,6 +16605,9 @@
   ],
   "Today limit": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Today, tomorrow or a day a few days away": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Today’s focus": [
     "web/src/app/method/LoopHome.tsx",
@@ -17974,9 +17995,6 @@
   ],
   "Work|icon category": [
     "web/src/ui/icons/catalogue.ts"
-  ],
-  "Would add a comment": [
-    "web/src/lib/rules/preview.ts"
   ],
   "Would email the project’s members": [
     "web/src/lib/rules/preview.ts"
@@ -19708,6 +19726,9 @@
   "project, search, look up": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "project, where, belongs, container": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "projected": [
     "web/src/app/calendar/PlanRow.tsx"
   ],
@@ -20062,6 +20083,9 @@
   "the tasks": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "the task’s project": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "the text": [
     "web/src/lib/rules/sentence.ts"
   ],
@@ -20155,6 +20179,9 @@
   ],
   "today holds {planned} of work, more than your {length} day": [
     "web/src/app/Briefing.tsx"
+  ],
+  "today, date, day, now, tomorrow, current": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "today’s focus is turned off": [
     "web/src/lib/rules/catalogue.ts"
@@ -21161,6 +21188,12 @@
   ],
   "{n, plural, one {Values on # task are kept but hidden.} other {Values on # tasks are kept but hidden.}}": [
     "web/src/app/FieldsDialog.tsx"
+  ],
+  "{n, plural, one {Would add # comment} other {Would add # comments}}": [
+    "web/src/lib/rules/preview.ts"
+  ],
+  "{n, plural, one {Would add to # note} other {Would add to # notes}}": [
+    "web/src/lib/rules/preview.ts"
   ],
   "{n, plural, one {Would change # task} other {Would change # tasks}}": [
     "web/src/lib/rules/preview.ts"

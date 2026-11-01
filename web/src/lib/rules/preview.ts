@@ -130,7 +130,7 @@ function planStep(s: RoutineStep, env: Env, data: PreviewData): Preview {
   switch (s.kind) {
     case 'split_lines': {
       const x = v('text'); if (!x) return { state: x === null ? 'unknown' : 'server' }
-      return value({ type: 'lines', lines: splitLines(asText(x, data)).lines })
+      return value({ type: 'lines', lines: splitLines(asText(x, data), litOf(s, 'only') === 'open_checkboxes').lines })
     }
     case 'join': {
       const x = v('lines'); if (!x) return { state: 'unknown' }
@@ -148,8 +148,9 @@ function planStep(s: RoutineStep, env: Env, data: PreviewData): Preview {
       return value({ type: 'number', number: x.type === 'tasks' ? (x.ids ?? []).length : (x.lines ?? []).length })
     }
     case 'take': {
-      const x = v('list'); const n = typeof litOf(s, 'n') === 'number' ? (litOf(s, 'n') as number) : 0
+      const x = v('list'); const n = typeof litOf(s, 'n') === 'number' ? (litOf(s, 'n') as number) : 1
       if (!x) return { state: 'unknown' }
+      if (litOf(s, 'from') === 'all') return value(x)
       const end = litOf(s, 'from') === 'end'
       return value(x.type === 'tasks' ? { type: 'tasks', ids: take(x.ids ?? [], n, end) } : { type: 'lines', lines: take(x.lines ?? [], n, end) })
     }
@@ -173,10 +174,21 @@ function planStep(s: RoutineStep, env: Env, data: PreviewData): Preview {
     }
     case 'note_text': {
       const x = v('of'); if (!x) return { state: 'unknown' }
+      // A list runs once per task: one line per task's note (routines-dynamic-data D1).
+      if (x.type === 'tasks') return value({ type: 'lines', lines: (x.ids ?? []).map((id) => noteOf({ type: 'task', id }, data) ?? '') })
       const note = noteOf(x, data)
       return note === null ? { state: 'server' } : value({ type: 'text', text: note })
     }
     case 'get_task': { const x = v('task'); return x ? value(x) : { state: 'unknown' } }
+    case 'project_of': {
+      const x = v('task'); if (!x) return { state: 'unknown' }
+      const task = data.tasks.find((y) => y.id === x.id)
+      return task ? value({ type: 'project', id: task.project_id ?? '' }) : { state: 'server' }
+    }
+    case 'date': {
+      if (!argOf(s, 'date')) return value({ type: 'date', date: data.today })
+      const x = v('date'); return x ? value(x) : { state: 'unknown' }
+    }
     case 'find_tasks': {
       if (argOf(s, 'condition')) return value(findTasks((litOf(s, 'condition') ?? null) as RuleCondition | null, data, litOf(s, 'limit') as number | undefined))
       return { state: 'server' }
@@ -206,7 +218,15 @@ function planStep(s: RoutineStep, env: Env, data: PreviewData): Preview {
     case 'email_me': return { state: 'effect', text: t('Would email you') }
     case 'email_members': return { state: 'effect', text: t('Would email the project’s members') }
     case 'webhook': return { state: 'effect', text: t('Would send the webhook') }
-    case 'add_comment': return { state: 'effect', text: t('Would add a comment') }
+    case 'add_comment': {
+      // One comment per task of a list (routines-dynamic-data D1).
+      const x = v('task'); const n = x?.type === 'tasks' ? (x.ids ?? []).length : 1
+      return { state: 'effect', n, max: MAX_WRITES, text: t('{n, plural, one {Would add # comment} other {Would add # comments}}', { n }) }
+    }
+    case 'append_to_note': {
+      const x = v('of'); const n = x?.type === 'tasks' ? (x.ids ?? []).length : 1
+      return { state: 'effect', n, max: MAX_WRITES, text: t('{n, plural, one {Would add to # note} other {Would add to # notes}}', { n }) }
+    }
     case 'stop': return { state: 'effect', text: t('Would end the run here') }
     case 'ask_ai':
     case 'summarise': {

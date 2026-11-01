@@ -104,7 +104,7 @@ func (st *runState) quickAddLine(line string, item map[string]any) {
 // the document together, and any appended text no device merged yet, as a
 // REST write of the note does; a device's older copy loses by last-writer-wins.
 func (st *runState) clearNote(s *ruleval.Step, in map[string]ruleval.Value) (ruleval.Value, string, error) {
-	of := in["of"]
+	of, _ := st.entityIn(s, in, "of")
 	entity := "task"
 	row, ok := st.liveTask(of.ID)
 	if of.Type == ruleval.TProject {
@@ -167,6 +167,31 @@ func (st *runState) setFocus(s *ruleval.Step, in map[string]ruleval.Value) (rule
 		status = StepTruncated
 	}
 	return tasksVal(placed), status, nil
+}
+
+// projectOf is the project of a task: the Inbox value (an empty id) for a
+// task without one (routines-dynamic-data D5).
+func (st *runState) projectOf(s *ruleval.Step, in map[string]ruleval.Value) (ruleval.Value, string, error) {
+	v, _ := st.entityIn(s, in, "task")
+	t, ok := st.liveTask(v.ID)
+	if !ok {
+		return none(), "", failf(ErrCodeNotFound, "task %s not found", v.ID)
+	}
+	return ruleval.Value{Type: ruleval.TProject, ID: str(t, "project_id")}, "", nil
+}
+
+// dateStep is Get the date: today by default, in the user's time zone and day start.
+func (st *runState) dateStep(s *ruleval.Step, in map[string]ruleval.Value) (ruleval.Value, string, error) {
+	if v, ok := in["date"]; ok {
+		return v, "", nil
+	}
+	day := st.w.today
+	if a, ok := s.In["date"]; ok {
+		if d, ok := ruleval.DateLiteral(a.Lit); ok {
+			day = d.Resolve(st.w.today)
+		}
+	}
+	return ruleval.Value{Type: ruleval.TDate, Date: day}, "", nil
 }
 
 // projectFromTemplate starts a library template on a start day: its labels

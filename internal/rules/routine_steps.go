@@ -84,6 +84,10 @@ func (st *runState) exec(s *ruleval.Step, in map[string]ruleval.Value, at int) (
 		return st.changeTasks(s, in, at)
 	case "add_comment":
 		return st.addComment(s, in, at)
+	case "project_of":
+		return st.projectOf(s, in)
+	case "date":
+		return st.dateStep(s, in)
 	case "get_task":
 		v, _ := st.entityIn(s, in, "task")
 		if _, ok := st.liveTask(v.ID); !ok {
@@ -106,7 +110,11 @@ func (st *runState) exec(s *ruleval.Step, in map[string]ruleval.Value, at int) (
 		return st.projectFromTemplate(s, in, at)
 	case "split_lines":
 		text, _ := st.textIn(s, in, "text")
-		lines, cut := ruleval.SplitLines(text)
+		split := ruleval.SplitLines
+		if only, _ := lit[string](s, "only"); only == "open_checkboxes" {
+			split = ruleval.SplitOpenCheckboxes
+		}
+		lines, cut := split(text)
 		return ruleval.Value{Type: ruleval.TLines, Lines: lines}, truncatedIf(cut), nil
 	case "join":
 		lines := in["lines"].Lines
@@ -158,9 +166,18 @@ func (st *runState) textOut(text string) (ruleval.Value, string, error) {
 
 // openTasks lists the open, live tasks in list order (position, then id).
 func (st *runState) openTasks() []opsync.Entity {
+	return st.tasksWhere(func(t opsync.Entity) bool { return opsync.IsNull(t["completed_at"]) })
+}
+
+// liveTasks lists the live tasks, completed ones included, in list order.
+func (st *runState) liveTasks() []opsync.Entity {
+	return st.tasksWhere(func(opsync.Entity) bool { return true })
+}
+
+func (st *runState) tasksWhere(keep func(opsync.Entity) bool) []opsync.Entity {
 	var out []opsync.Entity
 	for _, t := range st.tasks {
-		if opsync.IsNull(t["deleted_at"]) && opsync.IsNull(t["completed_at"]) {
+		if opsync.IsNull(t["deleted_at"]) && keep(t) {
 			out = append(out, t)
 		}
 	}
@@ -210,9 +227,16 @@ func (st *runState) findTasks(s *ruleval.Step) (ruleval.Value, string, error) {
 		}
 		match = m
 	}
+	// A query or a view follows the filter rule: open tasks unless it names
+	// completed or open (filter.Evaluate decides); a condition finds open
+	// tasks (routines-dynamic-data D5).
+	rows := st.openTasks()
+	if _, cond := s.In["condition"]; !cond {
+		rows = st.liveTasks()
+	}
 	var out []string
 	status := ""
-	for _, t := range st.openTasks() {
+	for _, t := range rows {
 		if !match(t) {
 			continue
 		}
@@ -346,8 +370,14 @@ func createdIDs(p agenttools.Plan, entity string) []string {
 
 func (st *runState) createTasks(s *ruleval.Step, in map[string]ruleval.Value, at int) (ruleval.Value, string, error) {
 	base := map[string]any{}
-	if v, ok := st.entityIn(s, in, "project"); ok {
+	if v, ok := st.entityIn(s, in, "project"); ok && v.ID != "" {
 		base["project_id"] = v.ID
+	}
+	if v, ok := in["parent"]; ok {
+		if _, live := st.liveTask(v.ID); !live {
+			return none(), "", failf(ErrCodeNotFound, "task %s not found", v.ID)
+		}
+		base["parent_id"] = v.ID
 	}
 	if sec, ok := lit[string](s, "section"); ok {
 		base["section_id"] = sec
@@ -621,7 +651,7 @@ func (st *runState) labelExists(name string) bool {
 }
 
 func (st *runState) noteText(s *ruleval.Step, in map[string]ruleval.Value) (ruleval.Value, string, error) {
-	of := in["of"]
+	of, _ := st.entityIn(s, in, "of")
 	var row opsync.Entity
 	var ok bool
 	if of.Type == ruleval.TProject {
@@ -636,7 +666,7 @@ func (st *runState) noteText(s *ruleval.Step, in map[string]ruleval.Value) (rule
 }
 
 func (st *runState) appendNote(s *ruleval.Step, in map[string]ruleval.Value, at int) (ruleval.Value, string, error) {
-	of := in["of"]
+	of, _ := st.entityIn(s, in, "of")
 	text, _ := st.textIn(s, in, "text")
 	if strings.TrimSpace(text) == "" {
 		return none(), StepSkipped, nil
@@ -657,8 +687,14 @@ func (st *runState) listStep(s *ruleval.Step, in map[string]ruleval.Value) (rule
 	case "count":
 		return ruleval.Value{Type: ruleval.TNumber, Number: float64(list.Len())}, "", nil
 	case "take":
-		n, _ := lit[float64](s, "n")
+		n, has := lit[float64](s, "n")
+		if !has {
+			n = 1
+		}
 		from, _ := lit[string](s, "from")
+		if from == "all" {
+			return list, "", nil
+		}
 		if list.Type == ruleval.TLines {
 			return ruleval.Value{Type: ruleval.TLines, Lines: ruleval.Take(list.Lines, int(n), from == "end")}, "", nil
 		}

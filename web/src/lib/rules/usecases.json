@@ -1,0 +1,376 @@
+{
+  "about": "The use-case suite of OpenSpec change routines-dynamic-data (design D12): realistic routines, each run by internal/rules (usecases_test.go) against seeded data with the expected writes, and type-checked by the TypeScript checker (usecases.test.ts). The clock is Wednesday 2026-10-21 12:00 UTC; tasks are listed in seed order (position). Seed tasks take title = id unless given; due and completed_on are dates.",
+  "seeds": {
+    "overdue": {
+      "tasks": [
+        {"id": "o1", "due": "2026-10-18"},
+        {"id": "o2", "due": "2026-10-15"},
+        {"id": "o3", "due": "2026-10-19"},
+        {"id": "o4", "due": "2026-10-20"},
+        {"id": "f1", "due": "2026-10-25"}
+      ]
+    }
+  },
+  "cases": [
+    {
+      "row": 1, "editor": true,
+      "name": "When I run it, find my overdue tasks, pick the first, and comment",
+      "seed": "overdue",
+      "trigger": {"kind": "manual"},
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "overdue"}}}},
+        {"id": "b", "kind": "take", "in": {"list": {"ref": "a"}, "n": {"literal": 1}, "from": {"literal": "start"}}},
+        {"id": "c", "kind": "add_comment", "in": {"task": {"ref": "b"}, "text": {"literal": "Still on it?"}}}
+      ],
+      "expect": {"comments": {"o1": ["Still on it?"]}}
+    },
+    {
+      "row": 2, "editor": true,
+      "name": "Same, but the last one",
+      "seed": "overdue",
+      "trigger": {"kind": "manual"},
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "overdue"}}}},
+        {"id": "b", "kind": "take", "in": {"list": {"ref": "a"}, "n": {"literal": 1}, "from": {"literal": "end"}}},
+        {"id": "c", "kind": "add_comment", "in": {"task": {"ref": "b"}, "text": {"literal": "Still on it?"}}}
+      ],
+      "expect": {"comments": {"o4": ["Still on it?"]}}
+    },
+    {
+      "row": 3, "editor": true,
+      "name": "Same, on all of them (Pick all)",
+      "seed": "overdue",
+      "trigger": {"kind": "manual"},
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "overdue"}}}},
+        {"id": "b", "kind": "take", "in": {"list": {"ref": "a"}, "from": {"literal": "all"}}},
+        {"id": "c", "kind": "add_comment", "in": {"task": {"ref": "b"}, "text": {"literal": "Still on it?"}}}
+      ],
+      "expect": {"comments": {"o1": ["Still on it?"], "o2": ["Still on it?"], "o3": ["Still on it?"], "o4": ["Still on it?"]}}
+    },
+    {
+      "row": 3,
+      "name": "Same, on all of them, straight from Find tasks",
+      "seed": "overdue",
+      "trigger": {"kind": "manual"},
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "overdue"}}}},
+        {"id": "b", "kind": "add_comment", "in": {"task": {"ref": "a"}, "text": {"literal": "Still on it?"}}}
+      ],
+      "expect": {"comments": {"o1": ["Still on it?"], "o2": ["Still on it?"], "o3": ["Still on it?"], "o4": ["Still on it?"]}}
+    },
+    {
+      "row": 4, "editor": true,
+      "name": "Same, on the three most overdue",
+      "seed": "overdue",
+      "trigger": {"kind": "manual"},
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "overdue"}}}},
+        {"id": "b", "kind": "sort", "in": {"list": {"ref": "a"}, "by": {"literal": "due"}, "direction": {"literal": "asc"}}},
+        {"id": "c", "kind": "take", "in": {"list": {"ref": "b"}, "n": {"literal": 3}, "from": {"literal": "start"}}},
+        {"id": "d", "kind": "add_comment", "in": {"task": {"ref": "c"}, "text": {"literal": "Still on it?"}}}
+      ],
+      "expect": {"comments": {"o1": ["Still on it?"], "o2": ["Still on it?"], "o3": ["Still on it?"]}}
+    },
+    {
+      "row": 5, "editor": true,
+      "name": "Find my overdue tasks, and for each: comment",
+      "seed": "overdue",
+      "trigger": {"kind": "manual"},
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "overdue"}}}},
+        {"id": "b", "kind": "repeat", "in": {"list": {"ref": "a"}}, "do": [
+          {"id": "c", "kind": "add_comment", "in": {"task": {"ref": "item"}, "text": {"literal": "Still on it?"}}}]}
+      ],
+      "expect": {"comments": {"o1": ["Still on it?"], "o2": ["Still on it?"], "o3": ["Still on it?"], "o4": ["Still on it?"]}}
+    },
+    {
+      "row": 6, "editor": true,
+      "name": "Every Friday at 17:00, turn the lines of my Groceries project note into tasks in Errands",
+      "projects": [{"id": "groc", "name": "Groceries", "description": "- oat milk\n- [ ] apples\n"}, {"id": "errands", "name": "Errands"}],
+      "trigger": {"kind": "schedule", "at": "17:00", "weekdays": [5]},
+      "steps": [
+        {"id": "a", "kind": "note_text", "in": {"of": {"literal": {"project": "groc"}}}},
+        {"id": "b", "kind": "split_lines", "in": {"text": {"ref": "a"}}},
+        {"id": "c", "kind": "create_tasks", "in": {"text": {"ref": "b"}, "project": {"literal": {"project": "errands"}}}}
+      ],
+      "expect": {"created": [{"title": "apples", "project_id": "errands"}, {"title": "oat milk", "project_id": "errands"}]}
+    },
+    {
+      "row": 7,
+      "name": "When a task gets the label waiting, count my waiting tasks and notify me when there are more than 10",
+      "labels": [{"id": "lw", "name": "waiting"}],
+      "tasks": [{"id": "w0", "labels": ["lw"]}, {"id": "w1", "labels": ["lw"]}, {"id": "w2", "labels": ["lw"]}, {"id": "w3", "labels": ["lw"]}, {"id": "w4", "labels": ["lw"]}, {"id": "w5", "labels": ["lw"]},
+        {"id": "w6", "labels": ["lw"]}, {"id": "w7", "labels": ["lw"]}, {"id": "w8", "labels": ["lw"]}, {"id": "w9", "labels": ["lw"]}, {"id": "w10", "labels": ["lw"]}],
+      "trigger": {"kind": "label.added", "label_id": "lw"}, "run_on": "w0",
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"labels": {"any": ["lw"]}}}}},
+        {"id": "b", "kind": "count", "in": {"list": {"ref": "a"}}},
+        {"id": "c", "kind": "if", "in": {"value": {"ref": "b"}, "is": {"literal": {">": 10}}}, "then": [
+          {"id": "d", "kind": "notify", "in": {"text": {"literal": {"format": "{b} waiting"}}}}]}
+      ],
+      "expect": {"notices": ["11 waiting"]}
+    },
+    {
+      "row": 8,
+      "name": "Every morning, move what is overdue to today and send the list to my webhook",
+      "seed": "overdue", "webhooks": ["w1"],
+      "trigger": {"kind": "schedule", "at": "07:00", "weekdays": [1, 2, 3, 4, 5]}, "condition": {"due": "overdue"},
+      "steps": [
+        {"id": "a", "kind": "change_tasks", "in": {"tasks": {"ref": "trigger"}, "set": {"literal": {"due": "today"}}}},
+        {"id": "b", "kind": "webhook", "in": {"webhook_id": {"literal": "w1"}, "tasks": {"ref": "a"}}}
+      ],
+      "expect": {
+        "changed": {"o1": {"due": "2026-10-21"}, "o2": {"due": "2026-10-21"}, "o3": {"due": "2026-10-21"}, "o4": {"due": "2026-10-21"}},
+        "webhooks": [{"tasks": ["o1", "o2", "o3", "o4"]}]
+      }
+    },
+    {
+      "row": 9,
+      "name": "Sunday overdue sweep (starter)",
+      "seed": "overdue",
+      "trigger": {"kind": "schedule", "at": "18:00", "weekdays": [7]}, "condition": {"due": "overdue"},
+      "steps": [
+        {"id": "a", "kind": "change_tasks", "in": {"tasks": {"ref": "trigger"}, "set": {"literal": {"due": "tomorrow"}}}},
+        {"id": "b", "kind": "count", "in": {"list": {"ref": "a"}}},
+        {"id": "c", "kind": "notify", "in": {"text": {"literal": {"format": "{b} tasks moved to Monday"}}}}
+      ],
+      "expect": {
+        "changed": {"o1": {"due": "2026-10-22"}, "o2": {"due": "2026-10-22"}, "o3": {"due": "2026-10-22"}, "o4": {"due": "2026-10-22"}},
+        "notices": ["4 tasks moved to Monday"]
+      }
+    },
+    {
+      "row": 10, "editor": true,
+      "name": "Waiting follow-up (starter): comment Waiting since today and set it due in 3 days",
+      "labels": [{"id": "lw", "name": "waiting"}],
+      "tasks": [{"id": "w0", "labels": ["lw"]}],
+      "trigger": {"kind": "label.added", "label_id": "lw"}, "run_on": "w0",
+      "steps": [
+        {"id": "a", "kind": "date", "in": {"date": {"literal": "today"}}},
+        {"id": "b", "kind": "add_comment", "in": {"task": {"ref": "trigger"}, "text": {"literal": {"format": "Waiting since {a}"}}}},
+        {"id": "c", "kind": "change_tasks", "in": {"tasks": {"ref": "trigger"}, "set": {"literal": {"due": {"in_days": 3}}}}}
+      ],
+      "expect": {"comments": {"w0": ["Waiting since 2026-10-21"]}, "changed": {"w0": {"due": "2026-10-24"}}}
+    },
+    {
+      "row": 11,
+      "name": "Friday digest (starter): email me what I completed this week",
+      "email": true,
+      "tasks": [{"id": "c1", "completed_on": "2026-10-20"}, {"id": "c2", "completed_on": "2026-10-21"}, {"id": "c3", "completed_on": "2026-10-10"}, {"id": "x1"}],
+      "trigger": {"kind": "schedule", "at": "16:00", "weekdays": [5]},
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"query": {"literal": "completed = this week"}}},
+        {"id": "b", "kind": "count", "in": {"list": {"ref": "a"}}},
+        {"id": "c", "kind": "format", "in": {"template": {"literal": "{b} done:\n{a}"}}},
+        {"id": "d", "kind": "email_me", "in": {"subject": {"literal": "This week"}, "text": {"ref": "c"}}}
+      ],
+      "expect": {"emails": [{"subject": "This week", "text": "2 done:\nc1\nc2"}]}
+    },
+    {
+      "row": 12,
+      "name": "Morning focus (starter): the three highest-priority tasks due today",
+      "tasks": [{"id": "f0", "due": "2026-10-21", "priority": 3}, {"id": "f1", "due": "2026-10-21", "priority": 1}, {"id": "f2", "due": "2026-10-21", "priority": 4}, {"id": "f3", "due": "2026-10-21", "priority": 2}],
+      "trigger": {"kind": "schedule", "at": "07:30", "weekdays": [1, 2, 3, 4, 5]},
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "today"}}}},
+        {"id": "b", "kind": "sort", "in": {"list": {"ref": "a"}, "by": {"literal": "priority"}}},
+        {"id": "c", "kind": "take", "in": {"list": {"ref": "b"}, "n": {"literal": 3}}},
+        {"id": "d", "kind": "set_focus", "in": {"tasks": {"ref": "c"}}}
+      ],
+      "expect": {"focus": "f1,f3,f0"}
+    },
+    {
+      "row": 13,
+      "name": "Inbox over 20 (starter): notify me when the Inbox has more than 20 tasks",
+      "tasks": [{"id": "i0"}, {"id": "i1"}, {"id": "i2"}, {"id": "i3"}, {"id": "i4"}, {"id": "i5"}, {"id": "i6"}, {"id": "i7"}, {"id": "i8"}, {"id": "i9"}, {"id": "i10"},
+        {"id": "i11"}, {"id": "i12"}, {"id": "i13"}, {"id": "i14"}, {"id": "i15"}, {"id": "i16"}, {"id": "i17"}, {"id": "i18"}, {"id": "i19"}, {"id": "i20"}],
+      "trigger": {"kind": "schedule", "at": "09:00", "weekdays": [1, 2, 3, 4, 5]},
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"query": {"literal": "no project"}}},
+        {"id": "b", "kind": "count", "in": {"list": {"ref": "a"}}},
+        {"id": "c", "kind": "if", "in": {"value": {"ref": "b"}, "is": {"literal": {">": 20}}}, "then": [
+          {"id": "d", "kind": "notify", "in": {"text": {"literal": {"format": "Inbox has {b} tasks"}}}}]}
+      ],
+      "expect": {"notices": ["Inbox has 21 tasks"]}
+    },
+    {
+      "row": 15, "editor": true,
+      "name": "Meeting notes (starter): the open checkboxes of the task's note become tasks in its project",
+      "projects": [{"id": "work", "name": "Work"}],
+      "tasks": [{"id": "m1", "title": "Planning meeting", "project_id": "work", "description": "- [ ] book room\n- notes\n- [x] done already\n- [ ] send agenda"}],
+      "trigger": {"kind": "manual"}, "run_on": "m1",
+      "steps": [
+        {"id": "a", "kind": "note_text", "in": {"of": {"ref": "trigger"}}},
+        {"id": "b", "kind": "split_lines", "in": {"text": {"ref": "a"}, "only": {"literal": "open_checkboxes"}}},
+        {"id": "c", "kind": "project_of", "in": {"task": {"ref": "trigger"}}},
+        {"id": "d", "kind": "create_tasks", "in": {"text": {"ref": "b"}, "project": {"ref": "c"}}}
+      ],
+      "expect": {"created": [{"title": "book room", "project_id": "work"}, {"title": "send agenda", "project_id": "work"}]}
+    },
+    {
+      "row": 17,
+      "name": "When I complete a task in Clients, create a follow-up in Admin due in 3 days",
+      "projects": [{"id": "clients", "name": "Clients"}, {"id": "admin", "name": "Admin"}],
+      "tasks": [{"id": "k1", "title": "Send invoice", "project_id": "clients", "completed_on": "2026-10-21"}],
+      "trigger": {"kind": "task.completed"}, "condition": {"project": {"in": ["clients"]}}, "run_on": "k1",
+      "steps": [
+        {"id": "a", "kind": "create_tasks", "in": {"title": {"literal": {"format": "Follow up: {trigger}"}}, "project": {"literal": {"project": "admin"}}, "due": {"literal": {"in_days": 3}}}}
+      ],
+      "expect": {"created": [{"title": "Follow up: Send invoice", "project_id": "admin", "due": "2026-10-24"}]}
+    },
+    {
+      "row": 18,
+      "name": "Move the last 3 tasks of my Someday view to tomorrow",
+      "labels": [{"id": "ls", "name": "someday"}],
+      "views": [{"id": "vs", "name": "Someday", "query": "@someday"}],
+      "tasks": [{"id": "s1", "labels": ["ls"]}, {"id": "s2", "labels": ["ls"]}, {"id": "s3", "labels": ["ls"]}, {"id": "s4", "labels": ["ls"]}, {"id": "s5", "labels": ["ls"]}, {"id": "x1"}],
+      "trigger": {"kind": "manual"},
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"view": {"literal": "vs"}}},
+        {"id": "b", "kind": "take", "in": {"list": {"ref": "a"}, "n": {"literal": 3}, "from": {"literal": "end"}}},
+        {"id": "c", "kind": "change_tasks", "in": {"tasks": {"ref": "b"}, "set": {"literal": {"due": "tomorrow"}}}}
+      ],
+      "expect": {"changed": {"s3": {"due": "2026-10-22"}, "s4": {"due": "2026-10-22"}, "s5": {"due": "2026-10-22"}}}
+    },
+    {
+      "row": 19,
+      "name": "Email me a list of today's tasks",
+      "email": true,
+      "tasks": [{"id": "d1", "due": "2026-10-21"}, {"id": "d2", "due": "2026-10-21"}, {"id": "d3", "due": "2026-10-25"}],
+      "trigger": {"kind": "schedule", "at": "07:00", "weekdays": [1, 2, 3, 4, 5]},
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "today"}}}},
+        {"id": "b", "kind": "format", "in": {"template": {"literal": "{a}"}}},
+        {"id": "c", "kind": "email_me", "in": {"subject": {"literal": "Today"}, "text": {"ref": "b"}}}
+      ],
+      "expect": {"emails": [{"subject": "Today", "text": "d1\nd2"}]}
+    },
+    {
+      "row": 20, "editor": true,
+      "name": "For each overdue task labelled waiting, comment and make it priority 1",
+      "labels": [{"id": "lw", "name": "waiting"}],
+      "tasks": [{"id": "o1", "due": "2026-10-18", "labels": ["lw"]}, {"id": "o2", "due": "2026-10-15"}, {"id": "o3", "due": "2026-10-19", "labels": ["lw"]}, {"id": "f1", "due": "2026-10-25", "labels": ["lw"]}],
+      "trigger": {"kind": "manual"},
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "overdue", "labels": {"any": ["lw"]}}}}},
+        {"id": "b", "kind": "add_comment", "in": {"task": {"ref": "a"}, "text": {"literal": "Any news?"}}},
+        {"id": "c", "kind": "change_tasks", "in": {"tasks": {"ref": "a"}, "set": {"literal": {"priority": 1}}}}
+      ],
+      "expect": {"comments": {"o1": ["Any news?"], "o3": ["Any news?"]}, "changed": {"o1": {"priority": 1}, "o3": {"priority": 1}}}
+    },
+    {
+      "row": 21,
+      "name": "Every evening, move today's open tasks to tomorrow and tell me how many",
+      "tasks": [{"id": "d1", "due": "2026-10-21"}, {"id": "d2", "due": "2026-10-21"}, {"id": "d3", "due": "2026-10-25"}],
+      "trigger": {"kind": "schedule", "at": "21:00", "weekdays": [1, 2, 3, 4, 5, 6, 7]}, "condition": {"due": "today"},
+      "steps": [
+        {"id": "a", "kind": "change_tasks", "in": {"tasks": {"ref": "trigger"}, "set": {"literal": {"due": "tomorrow"}}}},
+        {"id": "b", "kind": "count", "in": {"list": {"ref": "a"}}},
+        {"id": "c", "kind": "notify", "in": {"text": {"literal": {"format": "{b} moved to tomorrow"}}}}
+      ],
+      "expect": {"changed": {"d1": {"due": "2026-10-22"}, "d2": {"due": "2026-10-22"}}, "notices": ["2 moved to tomorrow"]}
+    },
+    {
+      "row": 22, "editor": true,
+      "name": "When I run it, start the timer on my most important task due today",
+      "tasks": [{"id": "d1", "due": "2026-10-21", "priority": 3}, {"id": "d2", "due": "2026-10-21", "priority": 1}, {"id": "d3", "due": "2026-10-21", "priority": 2}],
+      "trigger": {"kind": "manual"},
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "today"}}}},
+        {"id": "b", "kind": "sort", "in": {"list": {"ref": "a"}, "by": {"literal": "priority"}}},
+        {"id": "c", "kind": "take", "in": {"list": {"ref": "b"}, "n": {"literal": 1}}},
+        {"id": "d", "kind": "start_timer", "in": {"task": {"ref": "c"}}}
+      ],
+      "expect": {"timer": "d2"}
+    },
+    {
+      "row": 23,
+      "name": "When I complete a task, add Done: <title> to the note of my Journal project",
+      "projects": [{"id": "journal", "name": "Journal", "description": "Log"}],
+      "tasks": [{"id": "k1", "title": "Ship it", "completed_on": "2026-10-21"}],
+      "trigger": {"kind": "task.completed"}, "run_on": "k1",
+      "steps": [
+        {"id": "a", "kind": "append_to_note", "in": {"of": {"literal": {"project": "journal"}}, "text": {"literal": {"format": "Done: {trigger}"}}}}
+      ],
+      "expect": {"appended": {"journal": ["Done: Ship it"]}}
+    },
+    {
+      "row": 24,
+      "name": "When I add a task labelled idea, add its title to the note of my Ideas task and move it to the Trash (a specific task: the rare standing target)",
+      "labels": [{"id": "li", "name": "idea"}],
+      "tasks": [{"id": "ideas", "title": "Ideas"}, {"id": "n1", "title": "Plant a tree", "labels": ["li"]}],
+      "trigger": {"kind": "label.added", "label_id": "li"}, "run_on": "n1",
+      "steps": [
+        {"id": "a", "kind": "get_task", "in": {"task": {"literal": {"task": "ideas"}}}},
+        {"id": "b", "kind": "append_to_note", "in": {"of": {"ref": "a"}, "text": {"literal": {"format": "{trigger}"}}}},
+        {"id": "c", "kind": "change_tasks", "in": {"tasks": {"ref": "trigger"}, "set": {"literal": {"trash": true}}}}
+      ],
+      "expect": {"appended": {"ideas": ["Plant a tree"]}, "changed": {"n1": {"deleted": true}}}
+    },
+    {
+      "row": 25, "editor": true,
+      "name": "Run on a task: turn the lines of its note into subtasks",
+      "projects": [{"id": "home", "name": "Home"}],
+      "tasks": [{"id": "mv", "title": "Move house", "project_id": "home", "description": "pack\nbook van"}],
+      "trigger": {"kind": "manual"}, "run_on": "mv",
+      "steps": [
+        {"id": "a", "kind": "note_text", "in": {"of": {"ref": "trigger"}}},
+        {"id": "b", "kind": "split_lines", "in": {"text": {"ref": "a"}}},
+        {"id": "c", "kind": "create_tasks", "in": {"text": {"ref": "b"}, "parent": {"ref": "trigger"}}}
+      ],
+      "expect": {"created": [{"title": "book van", "project_id": "home", "parent_id": "mv"}, {"title": "pack", "project_id": "home", "parent_id": "mv"}]}
+    },
+    {
+      "row": 26,
+      "name": "Every Sunday, send the tasks I completed last week to my webhook",
+      "webhooks": ["w1"],
+      "tasks": [{"id": "c1", "completed_on": "2026-10-14"}, {"id": "c2", "completed_on": "2026-10-21"}, {"id": "x1"}],
+      "trigger": {"kind": "schedule", "at": "18:00", "weekdays": [7]},
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"query": {"literal": "completed = last week"}}},
+        {"id": "b", "kind": "webhook", "in": {"webhook_id": {"literal": "w1"}, "tasks": {"ref": "a"}}}
+      ],
+      "expect": {"webhooks": [{"tasks": ["c1"]}]}
+    },
+    {
+      "row": 27,
+      "name": "Every Friday, if I tracked less than 10 hours this week, notify me",
+      "trigger": {"kind": "schedule", "at": "17:00", "weekdays": [5]},
+      "steps": [
+        {"id": "a", "kind": "tracked_time", "in": {"period": {"literal": "this_week"}}},
+        {"id": "b", "kind": "if", "in": {"value": {"ref": "a"}, "is": {"literal": {"<": 600}}}, "then": [
+          {"id": "c", "kind": "notify", "in": {"text": {"literal": {"format": "Only {a} minutes tracked this week"}}}}]}
+      ],
+      "expect": {"notices": ["Only 0 minutes tracked this week"]}
+    },
+    {
+      "row": 28, "editor": true,
+      "name": "When a task is assigned to me, comment On it and set it due today",
+      "tasks": [{"id": "a1", "title": "Review draft"}],
+      "trigger": {"kind": "assigned.to_me"}, "run_on": "a1",
+      "steps": [
+        {"id": "a", "kind": "add_comment", "in": {"task": {"ref": "trigger"}, "text": {"literal": "On it"}}},
+        {"id": "b", "kind": "change_tasks", "in": {"tasks": {"ref": "trigger"}, "set": {"literal": {"due": "today"}}}}
+      ],
+      "expect": {"comments": {"a1": ["On it"]}, "changed": {"a1": {"due": "2026-10-21"}}}
+    },
+    {
+      "row": 29,
+      "name": "For each task due today in Work, comment with the first line of its note",
+      "projects": [{"id": "work", "name": "Work"}, {"id": "home", "name": "Home"}],
+      "tasks": [{"id": "w1", "due": "2026-10-21", "project_id": "work", "description": "Call Ada\nmore"}, {"id": "w2", "due": "2026-10-21", "project_id": "work", "description": "Book room"},
+        {"id": "h1", "due": "2026-10-21", "project_id": "home", "description": "Not this"}],
+      "trigger": {"kind": "manual"},
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "today", "project": {"in": ["work"]}}}}},
+        {"id": "b", "kind": "repeat", "in": {"list": {"ref": "a"}}, "do": [
+          {"id": "c", "kind": "note_text", "in": {"of": {"ref": "item"}}},
+          {"id": "d", "kind": "split_lines", "in": {"text": {"ref": "c"}}},
+          {"id": "e", "kind": "take", "in": {"list": {"ref": "d"}, "n": {"literal": 1}}},
+          {"id": "f", "kind": "add_comment", "in": {"task": {"ref": "item"}, "text": {"ref": "e"}}}]}
+      ],
+      "expect": {"comments": {"w1": ["Call Ada"], "w2": ["Book room"]}}
+    }
+  ]
+}

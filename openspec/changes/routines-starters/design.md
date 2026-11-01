@@ -46,7 +46,7 @@ steps:
 | `morning-focus` | weekdays 07:30 | Find tasks due today → Sort by priority → Pick the first 3 → Set today's focus | focus |
 | `inbox-over-20` | weekdays 09:00 | Find tasks `no project` → Count → If more than *n*: Notify me | — |
 | `monthly-review-project` | every month on day 1 (`month_days: [1]`) | Create a project from the template "Weekly review" starting the day | — |
-| `meeting-notes-to-tasks` | manual, run on a task | Get the note text of the task you run it on → Split into lines → Pick the ones that contain "[ ]" → Get the project of the task → Create tasks from the picked lines in the task's project | — |
+| `meeting-notes-to-tasks` | manual, run on a task | Get the note text of the task you run it on → Split into lines, only open checkboxes → Get the project of the task → Create tasks from the lines in the task's project | — |
 
 Starters follow `routines-dynamic-data`: data flows from the trigger and earlier steps, and no starter holds a task chosen by hand. The table above is that change's D11; the project literal on `of`, Get the date, Get the project of a task, Find over completed tasks and `month_days` come with it.
 
