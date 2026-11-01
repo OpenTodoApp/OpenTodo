@@ -279,8 +279,8 @@ func TestLoopCapsChangeSetAt50(t *testing.T) {
 	}
 }
 
-// TestLoopRoundLimit: a model that keeps calling tools stops after 8 model
-// calls with no change set.
+// TestLoopRoundLimit: a model that keeps calling tools stops after MaxRounds
+// model calls with no change set.
 func TestLoopRoundLimit(t *testing.T) {
 	f := newFixture(t)
 	f.task("u1", "a", "A", nil)
