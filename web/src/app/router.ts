@@ -32,7 +32,7 @@ export type Route =
   // (/routines#new before) and /routines/<id>, ?run=<run> one run on it; /rules is
   // the old address. The starters (routines-starters D5): /routines/starters and
   // /routines/starters/<slug>.
-  | { view: 'rules'; create?: boolean; tab?: 'runs'; id?: string; run?: string; starters?: boolean; starter?: string }
+  | { view: 'rules'; create?: boolean; tab?: 'runs'; id?: string; run?: string; starters?: boolean; starter?: string; describe?: boolean }
   // All projects (sidebar-favourites D6): /projects, and /projects#archived with the archived projects open.
   | { view: 'projects'; archived?: boolean }
   | { view: 'filter'; q?: string }
@@ -149,6 +149,8 @@ export function parseRoute(pathname: string): Route {
     case 'routines':
     {
       if (hash === 'new' || parts[1] === 'new') return { view: 'rules', create: true }
+      // /routines/describe: the Routines page with Describe it open (routines-describe-it).
+      if (parts[1] === 'describe') return { view: 'rules', describe: true }
       if (parts[1] === 'starters') return parts[2] && /^[a-z0-9-]{1,64}$/.test(parts[2]) ? { view: 'rules', starters: true, starter: parts[2] } : { view: 'rules', starters: true }
       // ?run=<id>: a run opened from a notification, a channel message or an email.
       const run = new URLSearchParams(query).get('run')
@@ -281,6 +283,7 @@ export function routePath(r: Route): string {
     case 'places':
       return '/locations'
     case 'rules':
+      if (r.describe) return '/routines/describe'
       if (r.starters) return r.starter ? `/routines/starters/${encodeURIComponent(r.starter)}` : '/routines/starters'
       return (r.create ? '/routines/new' : r.tab === 'runs' ? '/routines/runs' : r.id ? `/routines/${encodeURIComponent(r.id)}` : '/routines') + (r.run ? `?run=${encodeURIComponent(r.run)}` : '')
     case 'invite':

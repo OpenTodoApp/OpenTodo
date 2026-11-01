@@ -40,6 +40,15 @@ export interface Manifest {
   endpoints: Record<'anthropic' | 'openai' | 'gemini', string>
   tools: ManifestTool[]
   skills: ManifestSkill[]
+  /** Describe it on the device (routines-describe-it D5): the server's instructions, catalogue lines and tool. */
+  routine_draft: {
+    system: string
+    step_lines: Record<string, string>
+    order: string[]
+    context_note: string
+    tool: ManifestTool
+    limits: { max_text: number; max_tokens: number; max_names: number }
+  }
 }
 
 export const manifest = data as unknown as Manifest

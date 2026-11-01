@@ -1,6 +1,9 @@
 package assistant
 
-import "github.com/OpenTodoApp/opentodo/internal/agenttools"
+import (
+	"github.com/OpenTodoApp/opentodo/internal/agenttools"
+	"github.com/OpenTodoApp/opentodo/internal/ruleval"
+)
 
 // The on-device assistant's manifest (OpenSpec change assistant-on-device, design
 // D8): everything the browser's loop needs from the server's assistant, built
@@ -77,6 +80,34 @@ type Manifest struct {
 	Endpoints      map[string]string `json:"endpoints"`
 	Tools          []ManifestTool    `json:"tools"`
 	Skills         []ManifestSkill   `json:"skills"`
+	// RoutineDraft is Describe it on the device (routines-describe-it D5).
+	RoutineDraft DraftManifest `json:"routine_draft"`
+}
+
+// DraftManifest is what a device needs to draft a routine like the server:
+// the fixed instructions, each kind's catalogue line, the tool and limits.
+type DraftManifest struct {
+	System      string            `json:"system"`
+	StepLines   map[string]string `json:"step_lines"`
+	Order       []string          `json:"order"`
+	ContextNote string            `json:"context_note"`
+	Tool        ManifestTool      `json:"tool"`
+	Limits      map[string]int    `json:"limits"`
+}
+
+// draftManifest builds the device's Describe it part.
+func draftManifest() DraftManifest {
+	d := DraftManifest{System: DraftSystem, StepLines: map[string]string{}, ContextNote: DraftContextNote,
+		Limits: map[string]int{"max_text": MaxDraftText, "max_tokens": DraftTokens, "max_names": MaxDraftNames}}
+	for _, k := range ruleval.Steps {
+		if DraftOffered(k.Kind) {
+			d.StepLines[k.Kind] = DraftStepLine(k)
+			d.Order = append(d.Order, k.Kind)
+		}
+	}
+	t := DraftToolDef()
+	d.Tool = ManifestTool{Name: t.Name, Kind: "write", Description: t.Description, InputSchema: t.Schema, Strict: strictSchema(t.Schema, false), StrictNullable: strictSchema(t.Schema, true)}
+	return d
 }
 
 // DeviceManifest builds the manifest from the registry's definitions for an
@@ -93,7 +124,8 @@ func DeviceManifest(reg *agenttools.Registry) Manifest {
 		Limits: map[string]int{"max_rounds": MaxRounds, "max_output_tokens": MaxOutputTokens, "max_entities": MaxEntities, "max_items": agenttools.MaxItems,
 			"max_images": MaxImages, "max_image_bytes": MaxImageBytes},
 		AnthropicModel: DefaultAnthropicModel, AnthropicList: AnthropicModels,
-		Endpoints: map[string]string{Anthropic: "https://api.anthropic.com/v1", OpenAI: OpenAIBaseURL, Gemini: GeminiBaseURL},
+		Endpoints:    map[string]string{Anthropic: "https://api.anthropic.com/v1", OpenAI: OpenAIBaseURL, Gemini: GeminiBaseURL},
+		RoutineDraft: draftManifest(),
 	}
 	offered := map[string]bool{}
 	for _, t := range deviceTools {

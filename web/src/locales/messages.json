@@ -1979,6 +1979,9 @@
   "At most {MAX_FIELDS} fields": [
     "web/src/app/FieldsDialog.tsx"
   ],
+  "At most {n} characters": [
+    "web/src/app/routines/DescribeIt.tsx"
+  ],
   "At most {n} characters.": [
     "web/src/lib/fields.ts"
   ],
@@ -2526,6 +2529,7 @@
     "web/src/app/locations/LocationEditor.tsx",
     "web/src/app/locations/PlacesView.tsx",
     "web/src/app/profile/ProfileSection.tsx",
+    "web/src/app/routines/DescribeIt.tsx",
     "web/src/app/routines/StepCard.tsx",
     "web/src/app/shortcuts/Spotlight.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx",
@@ -4436,8 +4440,21 @@
   "Descending (p1 first)": [
     "web/src/app/views/DisplayPanel.tsx"
   ],
+  "Describe a routine": [
+    "web/src/app/palette/registry.ts",
+    "web/src/app/routines/DescribeIt.tsx"
+  ],
+  "Describe it": [
+    "web/src/app/routines/RoutinesView.tsx"
+  ],
+  "Describe it needs a connection to the assistant’s provider.": [
+    "web/src/app/routines/DescribeIt.tsx"
+  ],
   "Describe the image": [
     "web/src/app/editorImage.tsx"
+  ],
+  "Describe what should happen, and when": [
+    "web/src/app/routines/DescribeIt.tsx"
   ],
   "Description": [
     "web/src/app/RelayConfirm.tsx",
@@ -4706,6 +4723,12 @@
   ],
   "Do|method": [
     "web/src/lib/method/vocabulary.json"
+  ],
+  "Draft": [
+    "web/src/app/routines/DescribeIt.tsx"
+  ],
+  "Drafted by AI: check each step, then Save": [
+    "web/src/app/routines/RoutineEditor.tsx"
   ],
   "Drag <strong>Add to OpenTodo</strong> to your bookmarks bar, then click it on any page.": [
     "web/src/lib/settingsCopy.ts"
@@ -6108,6 +6131,9 @@
   ],
   "For example: OpenTodo <todo@example.com>. Your mail provider may require an address it owns.": [
     "web/src/app/OutgoingEmailPanel.tsx"
+  ],
+  "For example: every Friday at five, make tasks in Errands from my Groceries note.": [
+    "web/src/app/routines/DescribeIt.tsx"
   ],
   "For scripts, the ot command and AI assistants. Sent as {header}.": [
     "web/src/lib/settingsCopy.ts"
@@ -13879,6 +13905,9 @@
   "Set up the assistant on this device": [
     "web/src/app/assistant/AssistantDevice.tsx"
   ],
+  "Set up the assistant to describe a routine": [
+    "web/src/app/palette/registry.ts"
+  ],
   "Set up the assistant to use this": [
     "web/src/lib/rules/catalogue.ts"
   ],
@@ -15425,6 +15454,9 @@
   "That identity is already linked to another account on this server.": [
     "web/src/app/sso.ts"
   ],
+  "That is a lot of drafts in an hour. Try again later.": [
+    "web/src/app/routines/DescribeIt.tsx"
+  ],
   "That is more than {max} lines. Use Import for long lists.": [
     "web/src/app/quickadd/PasteOffer.tsx"
   ],
@@ -15517,6 +15549,9 @@
     "web/src/app/assistant/AssistantPanelBody.tsx",
     "web/src/lib/assistant.ts"
   ],
+  "The assistant did not draft a routine. Try saying what should happen, and when.": [
+    "web/src/app/routines/DescribeIt.tsx"
+  ],
   "The assistant is busy on this server. Try again in a few seconds.": [
     "web/src/lib/assistant.ts",
     "web/src/lib/i18n/errors.ts"
@@ -15532,6 +15567,9 @@
   ],
   "The assistant is not turned on on this server.": [
     "web/src/app/assistant/AskEntry.tsx"
+  ],
+  "The assistant is still answering something else. Try again in a moment.": [
+    "web/src/app/routines/DescribeIt.tsx"
   ],
   "The assistant needs a connection.": [
     "web/src/app/assistant/AssistantPanelBody.tsx"
@@ -16778,6 +16816,9 @@
   "This month": [
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/lib/stats.ts"
+  ],
+  "This month’s assistant allowance is used. Describe it works again when it resets.": [
+    "web/src/app/routines/DescribeIt.tsx"
   ],
   "This needs a signed-in browser session, not an API token.": [
     "web/src/lib/i18n/errors.ts"
@@ -19163,6 +19204,12 @@
   ],
   "Your secret address; emails sent there become tasks": [
     "web/src/app/settingsIndex.ts"
+  ],
+  "Your sentence and the names of your projects, sections, labels, views and webhooks go from this device to your assistant provider. Nothing is saved until you save the routine.": [
+    "web/src/app/routines/DescribeIt.tsx"
+  ],
+  "Your sentence and the names of your projects, sections, labels, views and webhooks go to the assistant’s provider. Nothing is saved until you save the routine.": [
+    "web/src/app/routines/DescribeIt.tsx"
   ],
   "Your server cannot be reached. Try again when you are online.": [
     "web/src/app/ReauthDialog.tsx",

@@ -105,6 +105,8 @@ export interface AssistantUsage {
   own_key?: { input_tokens: number; output_tokens: number; total_tokens: number; turns: number }
   /** routines-ai-step: the month's routine AI calls (already in the totals). */
   routines?: { input_tokens: number; output_tokens: number; total_tokens: number; calls: number }
+  /** routines-describe-it: the month's routine drafts of Describe it (already in the totals). */
+  drafts?: { input_tokens: number; output_tokens: number; total_tokens: number; calls: number }
 }
 
 /** PUT /api/v1/me/assistant. */

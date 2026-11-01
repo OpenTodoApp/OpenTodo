@@ -24,7 +24,7 @@ The Routines page SHALL offer Describe it only when the user can make an assista
 - **THEN** the draft uses Notify me or says that email is not available, and holds no Email me step
 
 ### Requirement: Describe it route
-`POST /api/v1/assistant/routine-draft` with `{text}` SHALL require a session (bearer tokens get 403 `session_required`), a configured assistant and the user's consent (403 `consent_required`), SHALL refuse text over 500 characters with 413 `too_large`, SHALL answer 409 `turn_in_progress` while the user has a turn running, 429 `assistant_quota` at the monthly cap and 429 `rate_limited` after 10 drafts in an hour, and SHALL answer `{draft, errors, warnings, usage}` without writing anything. It SHALL be refused on a demo instance.
+`POST /api/v1/assistant/routine-draft` with `{text}` SHALL require a session (bearer tokens get 403 `session_required`), a configured assistant and the user's consent (403 `consent_required`), SHALL refuse text over 500 characters with 413 `too_large`, SHALL answer 409 `turn_in_progress` while the user has a turn running, 429 `assistant_quota` at the monthly cap and 429 `rate_limited` after 10 drafts in an hour, and SHALL answer `{draft, note, errors, warnings, usage}` without writing anything; `note` is the model's sentence for the person (what it could not do), and `draft` is null when the model answered only in words. A draft SHALL never hold a task chosen by hand (Get a specific task, a task literal) nor `ai_apply`. It SHALL be refused on a demo instance.
 
 #### Scenario: Unauthenticated request
 - **WHEN** a request without credentials calls the route

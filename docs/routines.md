@@ -9,11 +9,11 @@ order: 31
 ---
 # Routines
 
-A routine does several things in a row, each step using what the steps before it produced: *every Friday at 17:00, read the note of Groceries, split it into lines and make each line a task in Errands*. Every [automation rule](automations.md) is a routine of one step and keeps working as before; nothing is converted. Routines are in the sidebar's **More** group and in the command palette (**Go to Routines**, **New routine**, **Run routine…**); the old address `/rules` opens them.
+A routine does several things in a row, each step using what the steps before it produced: *every Friday at 17:00, read the note of Groceries, split it into lines and make each line a task in Errands*. Every [automation rule](automations.md) is a routine of one step and keeps working as before; nothing is converted. Routines are in the sidebar's **More** group and in the command palette (**Go to Routines**, **New routine**, **Describe a routine**, **Run routine…**); the old address `/rules` opens them.
 
 ## The Routines page
 
-**New routine** opens the editor on an empty routine; **Start from a starter** opens the starters (below). Each routine is one row: its switch, its trigger and steps as one line (*Every Friday at 17:00 → get the note text of the task, split the note text into lines, create tasks from the lines in Errands*), when it last ran and how often this week, how many steps are not available, **Run now** and a menu (Edit, Duplicate, Run now, Test, History, Move up, Move down, Delete). **Pause all routines** is in the page's menu. The **Runs** tab lists every run. Offline the routines are listed and editable from your device; runs and counts need a connection.
+**New routine** opens the editor on an empty routine; **Start from a starter** opens the starters (below); **Describe it** lets the assistant draft one from a sentence (below). Each routine is one row: its switch, its trigger and steps as one line (*Every Friday at 17:00 → get the note text of the task, split the note text into lines, create tasks from the lines in Errands*), when it last ran and how often this week, how many steps are not available, **Run now** and a menu (Edit, Duplicate, Run now, Test, History, Move up, Move down, Delete). **Pause all routines** is in the page's menu. The **Runs** tab lists every run. Offline the routines are listed and editable from your device; runs and counts need a connection.
 
 ## Start from a starter
 
@@ -36,6 +36,18 @@ A routine does several things in a row, each step using what the steps before it
 A starter's page shows what it does as the editor's sentences, what it **needs** (a step that is not set up on your server says why), and **your choices**: the project or label it works with. A project or label with the suggested name is chosen already; otherwise the list next to the word starts with **Create *Groceries***. **Use this starter** waits until every choice is made (*Fill 1 choice first*), then opens the editor on a new routine with the starter's name. Nothing is saved until you save it there, apart from a project or label you chose to create; from then on it is your routine, edited like any other. Starters never hold a task chosen by hand: they read the task that triggered, the task you run them on, or tasks an earlier step found.
 
 Anyone can propose a starter: see [the template library's guide](https://github.com/OpenTodoApp/OpenTodo/blob/main/templates/README.md#routine-templates).
+
+## Describe it
+
+Some routines are easier to say than to build. **Describe it** (on the Routines page, and **Describe a routine** in the command palette, at `/routines/describe`) opens a sheet with one field: *Describe what should happen, and when*, at most 500 characters, such as *every Friday at five, make tasks in Errands from my Groceries note*. **Draft** sends it to your [assistant](assistant.md) and opens the editor on the routine it drafted: here a Friday 17:00 trigger, **Get the note text of Groceries**, **Split into lines** and **Create tasks in Errands**, with the banner **Drafted by AI: check each step, then Save**.
+
+- **Nothing happens by itself.** The draft is not saved, switched on, tested or run: it is an unsaved routine in the editor (leaving asks first), and only Save makes it yours. A draft never turns on Apply without asking.
+- **Only what you can use.** The assistant gets the steps available to you (a step that is not set up, such as Email me without outgoing email, is never offered; the banner then says what it did instead) and the names of your projects, sections, labels, saved views and webhooks (by their host), so it can point at them. Those names are sent as material whose instructions are ignored. It never picks a task by hand: tasks come from the trigger, Find tasks, Pick or Repeat for each.
+- **Checked before you see it.** The draft is type-checked like a routine you build; if it does not check, the assistant gets the errors and one more try. Errors it could not fix show on their cards, with their fixes, as in any routine.
+- **Who sees it.** Describe it is offered only when you can use the assistant: the server owner turned it on and you accepted its terms for the provider in use. Otherwise the Routines page shows New routine and Start from a starter, and a search for *describe* in the command palette offers **Set up the assistant to describe a routine**. It counts as one assistant turn toward your monthly allowance (shown in your assistant usage as routine drafts), and at most 10 drafts an hour. Offline it says it needs a connection to the provider; nothing is queued.
+- **Encrypted accounts.** With [end-to-end encryption](e2ee.md) the draft is made on your device by the [on-device assistant](assistant.md), with your device's provider and key and your decrypted names, and checked there; nothing about it reaches the OpenTodo server.
+
+Describe it is not offered in the CLI or over MCP: an AI assistant connected over MCP already writes routines itself with `create_routine`, from the same catalogue and checks.
 
 ## The editor
 

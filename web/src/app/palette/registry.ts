@@ -360,6 +360,17 @@ export function commands(ctx: PaletteContext): Command[] {
     out.push({ id: 'assistant:ramble', label: t('Ramble into tasks'), icon: 'mic', keywords: 'voice speak dictate brain dump photo whiteboard notes capture assistant',
       run: () => openAssistantWith({ skill: 'capture', listen: true }) })
   }
+  // Describe it (routines-describe-it D1): offered when the person can make an assistant turn; otherwise a
+  // search for "describe" says how to set the assistant up.
+  const st = assistantStatus()
+  const canDescribe = !!st && st.reason !== 'demo' && (st.mode === 'device' ? !!st.device?.consented_provider : st.available && st.consented)
+  if (canDescribe) {
+    out.push({ id: 'routine:describe', label: t('Describe a routine'), icon: 'message-circle', keywords: 'routine automation describe draft ai assistant sentence',
+      run: () => navigate({ view: 'rules', describe: true }) })
+  } else if (st && st.reason !== 'demo' && /describ/i.test(ctx.query)) {
+    out.push({ id: 'routine:describe-setup', label: t('Set up the assistant to describe a routine'), icon: 'settings', keywords: 'routine describe draft ai assistant',
+      run: () => navigate({ view: 'settings', section: 'integrations', page: 'assistant' }) })
+  }
   if (ctx.query.trim()) {
     const q = ctx.query.trim()
     out.push({ id: 'app:help-search', label: t('Search Help for “{query}”', { query: q }), icon: 'search', run: () => navigate({ view: 'help', q }) })
