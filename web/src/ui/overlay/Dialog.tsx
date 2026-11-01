@@ -30,8 +30,11 @@ export interface DialogProps {
    * from 640 px a 40 rem card 12 vh from the top, without a visible title bar or body
    * padding, so the content brings its own field and footer; the close button sits at
    * the end of the first row, which leaves 2.5 rem for it.
+   * `bottom`: a bottom sheet at every width, sized to its content (at most 80 % of the
+   * screen high, 42 rem wide from 640 px), for an editor that belongs to a place on
+   * the page, such as a routine card's condition rows (routines-dynamic-data D13).
    */
-  placement?: 'center' | 'sheet' | 'palette'
+  placement?: 'center' | 'sheet' | 'palette' | 'bottom'
   /**
    * What Escape does, when it is not closing: a dialog with a second view (the template
    * library's detail) steps back first. The close button and a tap outside still close.
@@ -54,6 +57,7 @@ const CARD = {
   center: 'h-fit min-h-full w-full bg-surface outline-none sm:surface-overlay sm:my-auto sm:min-h-0',
   palette: 'h-fit min-h-full w-full bg-surface outline-none sm:surface-overlay sm:relative sm:mt-[12vh] sm:mb-auto sm:min-h-0 sm:overflow-hidden sm:max-w-[40rem]',
   sheet: 'dialog-sheet mt-auto h-fit max-h-[66dvh] w-full overflow-y-auto overscroll-contain rounded-t-card border-t border-default bg-surface shadow-3 outline-none sm:surface-overlay sm:my-auto sm:max-h-none sm:overflow-visible sm:border-t-0',
+  bottom: 'dialog-sheet mt-auto h-fit max-h-[80dvh] w-full overflow-y-auto overscroll-contain rounded-t-card border-t border-default bg-surface shadow-3 outline-none sm:max-w-2xl',
 }
 
 /**
@@ -76,12 +80,12 @@ export function Dialog({ title, onClose, children, size = 'sm', dismissable = tr
     return () => { if (motion === 'dialog') playExit(el, { closing: '.dialog-card', className: 'overlay-scrim-exit' }) }
   }, [motion])
   const tree = (
-    <div ref={root} className="fixed inset-0 z-50 flex justify-center overflow-y-auto overscroll-contain bg-scrim sm:p-4" data-overlay-root {...isolate}
+    <div ref={root} className={`fixed inset-0 z-50 flex justify-center overflow-y-auto overscroll-contain bg-scrim ${placement === 'bottom' ? 'sm:px-4 sm:pt-4' : 'sm:p-4'}`} data-overlay-root {...isolate}
       onClick={(e) => { if (dismissable && e.target === e.currentTarget) onClose() }}
       onKeyDown={(e) => { if (panel.current) trapTab(e, panel.current); e.stopPropagation() }}>
       <div ref={panel} role={role} aria-modal="true" aria-labelledby={label ? undefined : titleId} aria-label={label} tabIndex={-1} data-overlay="dialog" data-testid={testId}
-        data-placement={placement === 'center' ? undefined : placement} className={`${CARD[placement]} ${motion === 'fade' ? 'overlay-fade-in' : 'dialog-card'} ${placement === 'palette' ? '' : WIDTH[size]}`}>
-        <div className={placement === 'sheet' ? HEADER_SHEET : placement === 'palette' ? HEADER_PALETTE : HEADER}>
+        data-placement={placement === 'center' ? undefined : placement} className={`${CARD[placement]} ${motion === 'fade' ? 'overlay-fade-in' : 'dialog-card'} ${placement === 'palette' || placement === 'bottom' ? '' : WIDTH[size]}`}>
+        <div className={placement === 'sheet' || placement === 'bottom' ? HEADER_SHEET : placement === 'palette' ? HEADER_PALETTE : HEADER}>
           <h2 id={titleId} className={`min-w-0 flex-1 py-2 text-body font-semibold ${placement === 'palette' ? 'sm:sr-only' : ''}`}>{title}</h2>
           <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target my-1 px-2 text-h3 leading-none" onClick={onClose} aria-label={t('Close')} data-overlay-close><Icon name="x" size="md" /></button>
         </div>

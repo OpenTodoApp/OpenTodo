@@ -23,6 +23,10 @@ export interface WordButtonProps {
   onClick: () => void
   /** "change" in "Project: Errands, change". */
   action: string
+  /** The picker the word opens (routines-dynamic-data D13): a list of choices or an editor. */
+  haspopup?: 'listbox' | 'dialog'
+  /** Whether that picker is open. */
+  expanded?: boolean
 }
 
 /** Moves focus to the previous or next word button of the same card. */
@@ -40,13 +44,13 @@ export function wordKeys(e: KeyboardEvent<HTMLElement>): void {
 }
 
 export const WordButton = forwardRef<HTMLButtonElement, WordButtonProps>(function WordButton(
-  { label, value, valueText, placeholder, error, chip, onClick, action }, ref,
+  { label, value, valueText, placeholder, error, chip, onClick, action, haspopup, expanded }, ref,
 ) {
   const empty = value === undefined || value === null || value === ''
   const read = empty ? placeholder : valueText ?? (typeof value === 'string' ? value : '')
   return (
     <button ref={ref} type="button" data-word={label} onClick={onClick} onKeyDown={wordKeys}
-      aria-label={`${label}: ${read}, ${action}`} aria-invalid={error || undefined}
+      aria-label={`${label}: ${read}, ${action}`} aria-invalid={error || undefined} aria-haspopup={haspopup} aria-expanded={haspopup ? !!expanded : undefined}
       className={`mx-0.5 inline-flex min-h-11 max-w-full items-center rounded-control px-1 align-baseline font-semibold underline decoration-dotted underline-offset-4 outline-none focus-visible:ring-2 focus-visible:ring-accent sm:min-h-8 ${
         error ? 'ring-1 ring-danger text-danger' : empty ? 'text-accent' : 'text-strong'} hover:bg-sunken dark:hover:bg-raised`}>
       {chip && !empty ? <DataChip>{value}</DataChip> : <span className="truncate">{empty ? placeholder : value}</span>}
