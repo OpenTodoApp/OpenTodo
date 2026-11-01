@@ -47,10 +47,11 @@ type DeviceChange struct {
 }
 
 // DeviceSide is a side effect of a device run: a Notify me (text as
-// ciphertext; channels receive it without text) or a Send a webhook without
-// text (D7: a webhook with text is unavailable on an encrypted account).
+// ciphertext; channels receive it without text), a Change tasks step's notify
+// action about a task (fired), or a Send a webhook without text (D7: a
+// webhook with text is unavailable on an encrypted account).
 type DeviceSide struct {
-	Kind    string   `json:"kind"` // notify | webhook
+	Kind    string   `json:"kind"` // notify | fired | webhook
 	StepID  string   `json:"step"`
 	Text    string   `json:"text,omitempty"`
 	TaskID  string   `json:"task,omitempty"`
@@ -243,6 +244,16 @@ func (e *Engine) CommitDeviceRun(ctx context.Context, uid, runID, session string
 	if st.writesPlanned() > MaxWrites {
 		return Result{}, ErrDeviceWrites
 	}
+	switch c.Outcome {
+	case OutcomeEnded, OutcomeAlreadyMatched:
+		f.Outcome = c.Outcome
+	}
+	if len(st.overlay) == 0 && len(st.sides) == 0 {
+		if f.Outcome == OutcomeApplied {
+			f.Outcome = OutcomeAlreadyMatched
+		}
+		return e.deviceDone(ctx, uid, r, run, f)
+	}
 	if ruleval.HasAI(r.Steps) {
 		mode, err := e.AIMode(ctx, uid, r.ID)
 		if err != nil {
@@ -258,17 +269,6 @@ func (e *Engine) CommitDeviceRun(ctx context.Context, uid, runID, session string
 			return Result{}, ErrFallback
 		}
 		f.AIAuto = true
-	}
-	switch c.Outcome {
-	case OutcomeEnded, OutcomeAlreadyMatched:
-		f.Outcome = c.Outcome
-	}
-	if len(st.overlay) == 0 && len(st.sides) == 0 {
-		if f.Outcome == OutcomeApplied {
-			f.Outcome = OutcomeAlreadyMatched
-		}
-		f.AIAuto = false
-		return e.deviceDone(ctx, uid, r, run, f)
 	}
 	// The run still waits (devicePass, under e.work, which every pass that
 	// closes waiting runs holds too), so this commit is its only finish.
@@ -337,9 +337,11 @@ func (st *runState) layDevice(c DeviceCommit) error {
 		}
 		st.completing[id] = true
 	}
-	hooks, notifies := map[string]bool{}, map[string]bool{}
+	hooks, notifies, changes := map[string]bool{}, map[string]bool{}, false
 	ruleval.Walk(st.r.Steps, func(s *ruleval.Step) {
 		switch s.Kind {
+		case "change_tasks":
+			changes = true
 		case "webhook":
 			var id string
 			_ = json.Unmarshal(s.In["webhook_id"].Lit, &id)
@@ -358,6 +360,8 @@ func (st *runState) layDevice(c DeviceCommit) error {
 		case sd.Kind == "notify" && notifies[sd.StepID] && (sd.Text == "" || e2ee.IsEnvelope(sd.Text)) && len(sd.Text) <= 64*1024:
 			n := notify.RoutineNotice{UserID: st.w.uid, RuleID: st.r.ID, RuleName: st.ruleName(), RunID: st.runID, StepID: sd.StepID, Text: sd.Text, TaskID: sd.TaskID, At: st.nowMs}
 			st.sides = append(st.sides, st.side(sideSpec{Kind: "notify", Notice: &n}))
+		case sd.Kind == "fired" && changes && sd.TaskID != "" && len(sd.TaskID) <= 128:
+			st.sides = append(st.sides, st.ruleFiredNotice(sd.TaskID))
 		case sd.Kind == "webhook" && hooks[sd.Webhook] && sd.Text == "" && len(sd.Tasks) <= ruleval.MaxListItems:
 			d := RoutineDelivery{RuleID: st.r.ID, RuleName: st.ruleName(), RunID: st.runID, StepID: sd.StepID, TaskIDs: slices.Clone(sd.Tasks)}
 			st.sides = append(st.sides, st.side(sideSpec{Kind: "webhook", Hook: sd.Webhook, Delivery: &d}))
