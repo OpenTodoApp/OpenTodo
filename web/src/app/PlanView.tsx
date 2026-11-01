@@ -5,9 +5,9 @@
 // a task, by drag onto a day or with the arrows, is one due edit that keeps its time
 // and zone. Projections and events are read-only and written nowhere. Works offline.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Button, hueFor, MenuItem, MenuSeparator, PageBody, Skeleton, useWide, Tooltip } from '../ui'
+import { Button, hueFor, MenuItem, MenuSeparator, PageBody, Skeleton, useWide } from '../ui'
 import { allDayEvents, calendarTasks, deadlineMarkers, eventBlocks, nudgeDue } from '../lib/calendar'
-import { setShowEvents } from '../lib/calendarFeeds'
+import { CalendarsToggle } from './calendar/CalendarsToggle'
 import { rememberCalendarMode } from '../lib/calendarMode'
 import { addDaysISO, daysBetweenISO, dueFromView, formatShort, viewedTask, formatDateParts } from '../lib/dates'
 import { beginDrag } from '../lib/dnd'
@@ -228,13 +228,7 @@ export function PlanView({ date }: { date?: string }) {
     {chrome.overflow}
   </>
   const rangeActions = <>
-          {feeds.subs.length > 0 && (
-            <Tooltip label={feeds.eventsShown ? t('Hide other calendars on this device') : t('Show other calendars on this device')}>
-              <Button variant="ghost" size="sm" icon="calendar-range" aria-pressed={feeds.eventsShown} data-calendars-toggle
-                className={feeds.eventsShown ? 'bg-sunken dark:bg-raised' : 'text-muted'}
-                onClick={() => act(setShowEvents(!feeds.eventsShown))}>{t('Calendars')}</Button>
-            </Tooltip>
-          )}
+          <CalendarsToggle shown={feeds.eventsShown} count={feeds.subs.length} />
           <span className="flex items-center" role="group" aria-label={t('Range')}>
             <Button variant="ghost" size="sm" icon="chevron-left" aria-label={t('Previous week')} onClick={() => goTo(addDaysISO(anchor, -7))} />
             <Button variant="ghost" size="sm" onClick={() => goTo(today)}>{t('Today')}</Button>

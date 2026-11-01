@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest'
 import {
   DAY_MINUTES,
   allDayEvents,
-  eventBlocks,
+  eventBlocks, eventsByDay,
   blockFor, calendarTasks, dayLoad, DEFAULT_GRID_PREFS, eventMinutes, dropStart, formatLoad, formatTime, normalizeGridPrefs, nudgeDue, parseTime,
   placementStart, resizeEstimate, resizeStart, slotFromOffset, stepEstimate, stepStart, weekDates,
 } from './calendar'
-import { formatHour, formatTime as formatWallTime, resolveDateTime, viewedTask } from './dates'
+import { addDaysISO, formatHour, formatTime as formatWallTime, resolveDateTime, viewedTask } from './dates'
 import type { CalendarEvent, Task } from './types'
 
 function task(p: Partial<Task> = {}): Task {
@@ -324,5 +324,37 @@ describe('calendar-feeds events on the grid (6.1)', () => {
     expect(allDayEvents(trip, '2026-10-21')).toHaveLength(1)
     expect(allDayEvents(trip, '2026-10-22')).toEqual([])
     expect(eventBlocks(trip, '2026-10-20')).toEqual([])
+  })
+})
+
+describe('events by day for Month and Year (calendar-events-all-views)', () => {
+  const ev = (id: string, start: CalendarEvent['start'], end: CalendarEvent['end'], allDay = false): CalendarEvent => ({ id, subscriptionId: 's', uid: id, summary: id, location: '', start, end, allDay, free: false })
+  const events = [
+    ev('late', { date: '2026-10-20', time: '22:00' }, { date: '2026-10-21', time: '02:00' }),
+    ev('midnight', { date: '2026-10-22', time: '23:00' }, { date: '2026-10-23', time: '00:00' }),
+    ev('zoned', { date: '2026-10-21', time: '08:00', tz: 'UTC' }, { date: '2026-10-21', time: '09:00', tz: 'UTC' }),
+    ev('trip', { date: '2026-10-18' }, { date: '2026-10-22' }, true),
+    ev('alpha', { date: '2026-10-20' }, { date: '2026-10-20' }, true),
+    ev('far', { date: '2027-03-01', time: '10:00' }, { date: '2027-03-01', time: '11:00' }),
+  ]
+
+  it('matches allDayEvents and eventBlocks on every day of the range', () => {
+    const from = '2026-10-19', to = '2026-10-24'
+    const byDay = eventsByDay(events, from, to, 'Europe/Berlin')
+    for (let d = from; d <= to; d = addDaysISO(d, 1)) {
+      const x = byDay.get(d)
+      expect(x?.allDay.map((e) => e.id) ?? []).toEqual(allDayEvents(events, d).map((e) => e.id))
+      expect(x?.timed.map((b) => [b.id, b.start, b.end]) ?? []).toEqual(eventBlocks(events, d, 'Europe/Berlin').map((b) => [b.id, b.start, b.end]))
+    }
+  })
+
+  it('keeps to the range and leaves days without events out', () => {
+    const byDay = eventsByDay(events, '2026-10-19', '2026-10-24')
+    expect(byDay.has('2026-10-18')).toBe(false)
+    expect(byDay.get('2026-10-19')!.allDay.map((e) => e.id)).toEqual(['trip'])
+    expect(byDay.get('2026-10-20')!.allDay.map((e) => e.id)).toEqual(['trip', 'alpha'])
+    expect(byDay.get('2026-10-23')).toBeUndefined()
+    expect(byDay.has('2026-10-24')).toBe(false)
+    expect(byDay.has('2027-03-01')).toBe(false)
   })
 })

@@ -10,6 +10,26 @@ export const PASSWORD = 'correct horse battery staple'
 // A 2×2 grey PNG for image attachments and shared files.
 export const TINY_PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAEElEQVR4nGOYs3g9EDFAKAA1yge5YXhuBgAAAABJRU5ErkJggg=='
 export const LONG_URL = 'https://example.com/a/very/long/path/that/does/not/fit/on/a/phone/screen/' + 'segment'.repeat(6) + '?ref=layout-check'
+
+// A subscribed calendar's events around `now` (calendar-events-all-views): the answer
+// the layout check gives for GET /api/v1/calendar-feeds/events, since a real feed needs
+// an outbound fetch. A timed meeting, a long-named one, a free one, a crowded day for
+// the Month's "+N more" and a two-day all-day event, in Day, Week, Plan, Month and Year.
+export function calendarEvents(now) {
+  const day = (n) => new Date(now + n * 86400e3).toISOString().slice(0, 10)
+  const ev = (id, summary, start, end, extra = {}) => ({ id, subscriptionId: 'layout-cal', uid: id, summary, location: '', start, end, allDay: !start.time, free: false, ...extra })
+  return {
+    subscriptions: [{ id: 'layout-cal', name: 'Work calendar', color: '#2563eb', enabled: true, lastSuccessAt: now }],
+    events: [
+      ev('layout-sync', 'Team sync', { date: day(0), time: '11:00' }, { date: day(0), time: '11:30' }, { location: 'Room 4' }),
+      ev('layout-long', 'Quarterly planning review with the whole department and guests', { date: day(1), time: '09:00' }, { date: day(1), time: '10:30' }),
+      ev('layout-free', 'Focus time', { date: day(1), time: '13:00' }, { date: day(1), time: '15:00' }, { free: true }),
+      ...[8, 10, 12, 15].map((h, i) => ev(`layout-busy-${i}`, `Meeting ${i + 1}`, { date: day(3), time: `${String(h).padStart(2, '0')}:00` }, { date: day(3), time: `${String(h).padStart(2, '0')}:45` })),
+      ev('layout-offsite', 'Offsite', { date: day(5) }, { date: day(7) }),
+      ev('layout-later', 'Dentist', { date: day(40), time: '08:30' }, { date: day(40), time: '09:00' }),
+    ],
+  }
+}
 // `now` is the moment the account is seeded around (Unix ms; the layout check passes
 // its fixed clock): today's tasks, the due reminder, the overdue and completed tasks.
 export async function seed({ base, pw, lang = '', now = Date.now() }) {
