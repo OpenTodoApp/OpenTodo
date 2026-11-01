@@ -1,5 +1,5 @@
 {
-  "about": "The use-case suite of OpenSpec change routines-dynamic-data (design D12): realistic routines, each run by internal/rules (usecases_test.go) against seeded data with the expected writes, and type-checked by the TypeScript checker (usecases.test.ts). The clock is Wednesday 2026-10-21 12:00 UTC; tasks are listed in seed order (position). Seed tasks take title = id unless given; due and completed_on are dates.",
+  "about": "The use-case suite of OpenSpec change routines-dynamic-data (design D12): realistic routines, each run by internal/rules (usecases_test.go) against seeded data with the expected writes, type-checked by the TypeScript checker (usecases.test.ts) and planned by the device's planner (run/usecases.test.ts, routines-ai-step D7). The clock is Wednesday 2026-10-21 12:00 UTC; tasks are listed in seed order (position). Seed tasks take title = id unless given; due and completed_on are dates. entries are time entries of the user (started, ended as RFC 3339; no end runs). ai lists the model's answers in call order ({text} or {lines}); a case with ai runs with Apply without asking on. changed_projects, created_projects, sections (\"Project/Section\"), labels_created and favourites are compared when a case states them.",
   "seeds": {
     "overdue": {
       "tasks": [
@@ -379,7 +379,7 @@
       "steps": [
         {"id": "a", "kind": "project_from_template", "in": {"template": {"literal": "weekly-review"}, "start": {"ref": "trigger"}}}
       ],
-      "expect": {"created_count": 9}
+      "expect": {"created_count": 9, "created_projects": ["Weekly review"]}
     },
     {
       "row": 16, "editor": true,
@@ -444,6 +444,102 @@
         {"id": "c", "kind": "notify", "in": {"text": {"ref": "b"}}}
       ],
       "expect": {"notices": ["Urgent: Ship it"]}
+    },
+    {
+      "row": 34,
+      "name": "Rename my Errands project to Shopping, archive it and make it a favourite (find_project, update_project, favourite)",
+      "projects": [{"id": "errands", "name": "Errands"}, {"id": "home", "name": "Home"}],
+      "trigger": {"kind": "manual"},
+      "steps": [
+        {"id": "p", "kind": "find_project", "in": {"name": {"literal": "errands"}}},
+        {"id": "u", "kind": "update_project", "in": {"project": {"ref": "p"}, "name": {"literal": "Shopping"}, "archived": {"literal": true}}},
+        {"id": "f", "kind": "favourite", "in": {"project": {"ref": "p"}, "on": {"literal": true}}}
+      ],
+      "expect": {"changed_projects": {"errands": {"name": "Shopping", "archived": true}}, "favourites": "project:errands"}
+    },
+    {
+      "row": 35,
+      "name": "Start a Move house project with two sections and the labels it needs (create_project, create_sections, create_labels)",
+      "labels": [{"id": "lu", "name": "urgent"}],
+      "trigger": {"kind": "manual"},
+      "steps": [
+        {"id": "p", "kind": "create_project", "in": {"name": {"literal": "Move house"}, "color": {"literal": "#2563eb"}}},
+        {"id": "s", "kind": "create_sections", "in": {"project": {"ref": "p"}, "names": {"literal": ["Packing", "Admin"]}}},
+        {"id": "l", "kind": "create_labels", "in": {"names": {"literal": ["boxes", "Urgent"]}}}
+      ],
+      "expect": {"created_projects": ["Move house"], "sections": ["Move house/Admin", "Move house/Packing"], "labels_created": ["boxes"]}
+    },
+    {
+      "row": 36,
+      "name": "Run on a task: the lines of its note with a b, joined, a word replaced, notified, and the note cleared (join, replace, filter, clear_note)",
+      "tasks": [{"id": "m1", "title": "Shopping list", "description": "- milk\n- bread\n- butter beans"}],
+      "trigger": {"kind": "manual"}, "run_on": "m1",
+      "steps": [
+        {"id": "a", "kind": "note_text", "in": {"of": {"ref": "trigger"}}},
+        {"id": "b", "kind": "split_lines", "in": {"text": {"ref": "a"}}},
+        {"id": "c", "kind": "filter", "in": {"list": {"ref": "b"}, "where": {"literal": {"contains": "B"}}}},
+        {"id": "d", "kind": "join", "in": {"lines": {"ref": "c"}, "separator": {"literal": ", "}}},
+        {"id": "e", "kind": "replace", "in": {"text": {"ref": "d"}, "find": {"literal": "BREAD"}, "with": {"literal": "rye bread"}}},
+        {"id": "f", "kind": "notify", "in": {"text": {"ref": "e"}}},
+        {"id": "g", "kind": "clear_note", "in": {"of": {"ref": "trigger"}}}
+      ],
+      "expect": {"notices": ["rye bread, butter beans"], "changed": {"m1": {"description": ""}}}
+    },
+    {
+      "row": 37,
+      "name": "Tell me, then stop when more than two tasks are overdue (stop)",
+      "seed": "overdue",
+      "trigger": {"kind": "manual"},
+      "steps": [
+        {"id": "x", "kind": "notify", "in": {"text": {"literal": "before"}}},
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "overdue"}}}},
+        {"id": "b", "kind": "count", "in": {"list": {"ref": "a"}}},
+        {"id": "c", "kind": "if", "in": {"value": {"ref": "b"}, "is": {"literal": {">": 2}}},
+          "then": [{"id": "d", "kind": "stop", "in": {"reason": {"literal": "too many"}}}], "otherwise": []},
+        {"id": "e", "kind": "notify", "in": {"text": {"literal": "after"}}}
+      ],
+      "expect": {"outcome": "ended", "notices": ["before"]}
+    },
+    {
+      "row": 38,
+      "name": "At the end of the day, note the minutes tracked this week and stop the running timer (tracked_time, stop_timer)",
+      "tasks": [{"id": "t1", "title": "Write report"}],
+      "entries": [{"id": "e0", "task_id": "t1", "started": "2026-10-20T09:00:00Z", "ended": "2026-10-20T10:00:00Z"},
+        {"id": "e1", "task_id": "t1", "started": "2026-10-21T10:00:00Z"}],
+      "trigger": {"kind": "manual"},
+      "steps": [
+        {"id": "a", "kind": "tracked_time", "in": {"period": {"literal": "this_week"}}},
+        {"id": "b", "kind": "stop_timer", "in": {}},
+        {"id": "c", "kind": "notify", "in": {"text": {"literal": {"format": "{a} minutes this week"}}}}
+      ],
+      "expect": {"notices": ["180 minutes this week"]}
+    },
+    {
+      "row": 39,
+      "name": "Run on meeting notes: Ask AI for the action items as lines and create them in Work (ask_ai, applied without asking)",
+      "projects": [{"id": "work", "name": "Work"}],
+      "tasks": [{"id": "m1", "title": "Team meeting", "description": "Ada books the room. Bo sends the agenda."}],
+      "trigger": {"kind": "manual"}, "run_on": "m1",
+      "ai": [{"lines": ["Book the room", "Send the agenda"]}],
+      "steps": [
+        {"id": "a", "kind": "note_text", "in": {"of": {"ref": "trigger"}}},
+        {"id": "b", "kind": "ask_ai", "in": {"instruction": {"literal": "List the action items, one per line"}, "context": {"ref": "a"}, "answer": {"literal": "lines"}}},
+        {"id": "c", "kind": "create_tasks", "in": {"text": {"ref": "b"}, "project": {"literal": {"project": "work"}}}}
+      ],
+      "expect": {"created": [{"title": "Book the room", "project_id": "work"}, {"title": "Send the agenda", "project_id": "work"}]}
+    },
+    {
+      "row": 40,
+      "name": "Run on a task: summarise my overdue tasks into a comment on it (summarise, applied without asking)",
+      "seed": "overdue",
+      "trigger": {"kind": "manual"}, "run_on": "o1",
+      "ai": [{"text": "Four tasks are late, the oldest since the 15th."}],
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {"due": "overdue"}}}},
+        {"id": "b", "kind": "summarise", "in": {"text": {"ref": "a"}, "length": {"literal": "short"}}},
+        {"id": "c", "kind": "add_comment", "in": {"task": {"ref": "trigger"}, "text": {"ref": "b"}}}
+      ],
+      "expect": {"comments": {"o1": ["Four tasks are late, the oldest since the 15th."]}}
     }
   ]
 }
