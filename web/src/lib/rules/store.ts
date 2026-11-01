@@ -43,6 +43,9 @@ async function liveRules(): Promise<Rule[]> {
   return activeRules(await db.rules.toArray())
 }
 
+/** The live rules (routines) in list order, read once (the palette's Run routine…). */
+export const listRules = liveRules
+
 export interface NewRule {
   name: string
   trigger: RuleTrigger

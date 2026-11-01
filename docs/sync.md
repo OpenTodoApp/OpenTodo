@@ -100,6 +100,8 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | view | `icon` | null or a name from the icon catalogue (not content; any string is accepted so a newer catalogue stays additive, and a name a client does not know shows the default icon) |
 | view | `position`, `created_at` | number |
 | view | `deleted_at` | number or null |
+| rule | `trigger`, `condition`, `actions` | an [automation rule's](automations.md) whole values: the trigger object (a kind from a closed set, `manual` included), null or a condition object, null or an actions object; checked for shape by `internal/ruleval` |
+| rule | `steps` | null or a [routine's](routines.md) list of at most 20 steps (`{id, kind, in, then?, otherwise?, do?}`, at most 3 block levels, 32 KB), one whole value converging by last-writer-wins; null reads the rule as one Change tasks step with its `actions`. Sync checks known kinds, unique ids, declared inputs and literal shapes and references to earlier steps; REST also checks types and ids. Not content: an encrypted account's text literals inside are envelopes |
 | reminder | `task_id` | string (task id, required) |
 | reminder | `kind` | `"relative"`, `"absolute"` or `"deadline"` (fires at 09:00 local on the task's deadline plus the offset) |
 | reminder | `offset_minutes` | integer −525600…525600 (minutes from the due time, or from 09:00 on the deadline for `deadline`; negative = before) or null |

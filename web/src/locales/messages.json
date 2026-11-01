@@ -1289,6 +1289,9 @@
   "Also past ones": [
     "web/src/app/task-detail/OccurrenceScope.tsx"
   ],
+  "Also runs by itself": [
+    "web/src/app/palette/routineCommand.ts"
+  ],
   "Also show in Day and Week": [
     "web/src/app/CalendarSyncDialogs.tsx"
   ],
@@ -5261,6 +5264,9 @@
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/notes/NoteFilters.tsx"
   ],
+  "Find a routine…": [
+    "web/src/app/palette/routineCommand.ts"
+  ],
   "Find a saved location or type coordinates": [
     "web/src/app/locations/LocationEditor.tsx"
   ],
@@ -5714,7 +5720,7 @@
   "Go to Review": [
     "web/src/app/palette/registry.ts"
   ],
-  "Go to Rules": [
+  "Go to Routines": [
     "web/src/app/palette/registry.ts"
   ],
   "Go to Settings": [
@@ -8144,6 +8150,9 @@
   "Needed for a model server on your own network (Ollama, LM Studio). Off, the compatible endpoint may only be a public address.": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
+  "Needs a connection": [
+    "web/src/app/palette/routineCommand.ts"
+  ],
   "Needs a subscription first.": [
     "web/src/lib/push.ts"
   ],
@@ -8734,6 +8743,9 @@
   ],
   "No review finished yet": [
     "web/src/app/review/ReviewView.tsx"
+  ],
+  "No routines yet.": [
+    "web/src/app/palette/routineCommand.ts"
   ],
   "No rule": [
     "web/src/app/RuleEditor.tsx"
@@ -9642,6 +9654,9 @@
   ],
   "Only this person can use the link. Leave empty for anyone with the link.": [
     "web/src/app/MembersPanel.tsx"
+  ],
+  "Only when you run it": [
+    "web/src/app/palette/routineCommand.ts"
   ],
   "Only with these labels": [
     "web/src/app/IssueEditor.tsx"
@@ -11809,6 +11824,13 @@
   ],
   "Run automation rules": [
     "web/src/app/rules/AutomationsSettings.tsx"
+  ],
+  "Run routine: {name}": [
+    "web/src/app/palette/routineCommand.ts"
+  ],
+  "Run routine…": [
+    "web/src/app/palette/registry.ts",
+    "web/src/app/palette/routineCommand.ts"
   ],
   "Run this in a terminal.": [
     "web/src/app/AssistantsPanel.tsx"
@@ -14266,8 +14288,14 @@
   "The restore of <span>{archive}</span> on {instant} failed, and the server kept its previous data. {error}": [
     "web/src/app/RestoreSection.tsx"
   ],
+  "The routine could not run.": [
+    "web/src/app/palette/routineCommand.ts"
+  ],
   "The rule stops running. Changes it already made stay, and each task’s history keeps them.": [
     "web/src/app/rules/RulesView.tsx"
+  ],
+  "The run could not be undone.": [
+    "web/src/app/palette/routineCommand.ts"
   ],
   "The same guides on the website, with setup and self-hosting.": [
     "web/src/app/settingsIndex.ts",
@@ -15890,7 +15918,8 @@
     "web/src/app/assistant/AssistantRoot.tsx",
     "web/src/app/assistant/ChangeSetReview.tsx",
     "web/src/app/bulk/UndoToast.tsx",
-    "web/src/app/focus/startFocus.ts"
+    "web/src/app/focus/startFocus.ts",
+    "web/src/app/palette/routineCommand.ts"
   ],
   "Undo (Mod-Shift-z: redo)": [
     "web/src/lib/richtextEditor.ts"
@@ -16110,6 +16139,9 @@
   ],
   "Untitled project": [
     "web/src/lib/trash.ts"
+  ],
+  "Untitled routine": [
+    "web/src/app/palette/routineCommand.ts"
   ],
   "Untitled rule": [
     "web/src/app/rules/RulesView.tsx"
@@ -16339,6 +16371,9 @@
   ],
   "View results": [
     "web/src/app/SavedViewView.tsx"
+  ],
+  "View run": [
+    "web/src/app/palette/routineCommand.ts"
   ],
   "View “{name}”": [
     "web/src/app/palette/registry.ts"
@@ -19537,6 +19572,15 @@
   "{name}, {n, plural, one {# task} other {# tasks}}, folded": [
     "web/src/app/views/ViewResults.tsx"
   ],
+  "{name}: needs a connection": [
+    "web/src/app/palette/routineCommand.ts"
+  ],
+  "{name}: the run did not start": [
+    "web/src/app/palette/routineCommand.ts"
+  ],
+  "{name}: the run failed": [
+    "web/src/app/palette/routineCommand.ts"
+  ],
   "{name}: uploading": [
     "web/src/app/Markdown.tsx"
   ],
@@ -19545,6 +19589,9 @@
   ],
   "{name}: {a} {aName}, {b} {bName}": [
     "web/src/app/review/charts.tsx"
+  ],
+  "{name}: {n, plural, one {# item written} other {# items written}}": [
+    "web/src/app/palette/routineCommand.ts"
   ],
   "{n} days": [
     "web/src/app/PlanView.tsx"
@@ -19721,6 +19768,9 @@
   ],
   "{reminders, plural, one {# reminder} other {# reminders}}": [
     "web/src/lib/facets.ts"
+  ],
+  "{restored} restored, {kept} kept because they changed after the run": [
+    "web/src/app/palette/routineCommand.ts"
   ],
   "{secret} (stored; type to replace)": [
     "web/src/app/SsoPanel.tsx"

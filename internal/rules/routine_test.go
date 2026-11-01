@@ -2,6 +2,7 @@ package rules
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -631,5 +632,28 @@ func TestRoutineWebhookAndEmail(t *testing.T) {
 	res = h.runNow("alice", "r1", "", false)
 	if got := statuses(res); got[len(got)-1] != "d:failed:rate_limited" || len(mailer.sent) != 10 || !slices.Equal(mailer.refused, []string{"rate_limited"}) {
 		t.Fatalf("limit: %v %d %v", got, len(mailer.sent), mailer.refused)
+	}
+}
+
+type fullQuota struct{}
+
+func (fullQuota) Admit(context.Context, *sql.Tx) (func(opsync.Op) string, error) {
+	return func(opsync.Op) string { return opsync.ReasonLimitOpsHour }, nil
+}
+func (fullQuota) Stored(int) {}
+
+// Host mode (3.7): a tenant over its write allowance fails the run with
+// tenant_limit and nothing is written.
+func TestRoutineTenantLimit(t *testing.T) {
+	h, _, _ := routineHarness(t)
+	h.routine("alice", "r1", "Make", `{"kind":"manual"}`, "", `[{"id":"a","kind":"create_tasks","in":{"text":{"literal":"one\ntwo"}}}]`)
+	h.sync.SetQuota(fullQuota{})
+	res := h.runNow("alice", "r1", "", false)
+	h.sync.SetQuota(nil)
+	if res.Run.Outcome != OutcomeFailed || res.Run.Reason != ErrCodeTenantLimit {
+		t.Fatalf("run %+v", res.Run)
+	}
+	if n := len(h.live("alice", func(opsync.Entity) bool { return true })); n != 0 {
+		t.Fatalf("%d tasks written", n)
 	}
 }

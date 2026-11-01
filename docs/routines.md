@@ -4,7 +4,7 @@ summary: A routine is a rule with several steps, each using what the steps befor
 audience: user
 section: Reference
 screens: []
-specs: [automation-rules]
+specs: [automation-rules, routines]
 order: 31
 ---
 # Routines
@@ -26,7 +26,7 @@ A step is offered only when what it needs is set up: Email me needs the server's
 
 ## How a run works
 
-A run plans every step against your tasks and what the earlier steps planned (a step after Create tasks sees the new tasks), and writes only when every step planned without error: if step 4 fails, nothing of steps 1 to 3 is written either. A routine can be run by hand at any time, and tested: a test shows what each step would do and writes nothing.
+A run plans every step against your tasks and what the earlier steps planned (a step after Create tasks sees the new tasks), and writes only when every step planned without error: if step 4 fails, nothing of steps 1 to 3 is written either. A routine can be run by hand at any time: **Run routine…** in the command palette (`Ctrl+K`; the open task goes along when the routine reads one, and the toast offers **View run** and **Undo**), [`ot routine run`](cli.md#routines) or an assistant's `run_routine` ([MCP](mcp.md)). It can also be tested: a test shows what each step would do and writes nothing. Running by hand needs a connection.
 
 At most 20 steps, 60 seconds per run, 500 items written per run (each task, comment, notification, delivery and email counts one), lists of 500 items, texts of 64 KB, and 10 emails per routine and 20 per account a day. A run counts once against the rule limits, however many steps it has.
 

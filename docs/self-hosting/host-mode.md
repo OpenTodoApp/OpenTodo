@@ -51,6 +51,8 @@ All variables are optional; `OPENTODO_HOST_URL` turns host mode on.
 | `workspace_groups` | Groups of one workspace (at most 50) | `409 limit_reached` |
 | `group_members` | Members of one group (at most 100) | `409 limit_reached` |
 
+A tenant's [routines](../routines.md) run in its own background jobs and their changes count against these limits like any other; a routine run that a limit refuses fails with `tenant_limit` and is logged, and other tenants' routines are not affected.
+
 `0` or a missing key means no limit (for the four workspace keys: the built-in maximum, which a value can only lower). Changes are refused one at a time: the rest of a device's changes still sync, the refused ones stay on the device, marked as waiting, and are sent again later. Reads always work.
 
 ## Operator interface
