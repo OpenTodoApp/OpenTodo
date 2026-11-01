@@ -157,6 +157,7 @@ export function TokensView(p: TokensViewProps) {
                   {t('An admin token can turn off two-factor authentication, create more tokens and app passwords, manage accounts and change single sign-on and other secret settings, without your password or a code. Create one only for a script that needs it, keep it like a password and revoke it when you are done.')}
                 </Notice>
               )}
+              {p.scope === 'full' && <p className="text-meta text-muted" data-obsidian-hint>{t('For the Obsidian plugin, create a full token named after the device.')}</p>}
               {p.error && <Notice tone="danger">{p.error}</Notice>}
               <div className="flex justify-end gap-2">
                 <Button variant="ghost" onClick={p.onCloseNew}>{t('Cancel')}</Button>

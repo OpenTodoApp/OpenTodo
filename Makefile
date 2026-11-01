@@ -11,7 +11,7 @@ WEB_EXT := web-ext@10.7.0
 SKILL_ZIP := dist/opentodo-agent-skill.zip
 MCP_SKILL_ZIP := dist/opentodo-mcp-skill.zip
 
-.PHONY: brand-icons site-bundle all web server cli cli-release cli-smoke skill extension android build run dev test test-go test-web test-extension check lint staticcheck gosec gosec-sarif clean docker openspec-validate layout-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check release-prepare storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check bundle-budget fmt-check ci-checks e2e
+.PHONY: brand-icons site-bundle all web server cli cli-release cli-smoke skill extension obsidian obsidian-e2e test-obsidian android build run dev test test-go test-web test-extension check lint staticcheck gosec gosec-sarif clean docker openspec-validate layout-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check release-prepare storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check bundle-budget fmt-check ci-checks e2e
 
 all: build
 
@@ -58,6 +58,20 @@ skill:
 extension: test-extension
 	node extension/build.mjs
 	npx --yes $(WEB_EXT) lint --source-dir dist/extension-firefox --output text
+
+## The Obsidian plugin (obsidian-plugin): type-check, unit tests and the build of
+## obsidian/dist (main.js, manifest.json, styles.css), which fails above the size
+## budget or when the bundle needs a Node or Electron module. The tests use web/'s
+## TypeScript, vitest and happy-dom, so web/node_modules is installed first.
+obsidian:
+	@test -d web/node_modules || (cd web && npm ci --no-audit --no-fund)
+	cd obsidian && npm ci --no-audit --no-fund
+	cd obsidian && npm run check && npm test && npm run build
+
+## The plugin against a real server (obsidian/e2e.test.ts): expects bin/opentodo
+## (make build) and `make obsidian` to have installed obsidian/node_modules.
+obsidian-e2e:
+	cd obsidian && ../web/node_modules/.bin/vitest run --config vitest.e2e.config.mjs
 
 ## The Android app (native-shells): unit tests, lint, the AndroidX-only dependency
 ## check, translations, store metadata and a debug APK. Needs JDK 17+ and the
@@ -155,7 +169,7 @@ dev:
 	  (cd web && npm run dev) & \
 	  wait
 
-test: test-go test-web test-extension
+test: test-go test-web test-extension test-obsidian
 
 test-go:
 	go test ./...
@@ -166,6 +180,8 @@ test-web:
 test-extension:
 	cd extension && npm test
 	node --test scripts/brand-icons.test.mjs
+
+test-obsidian: obsidian
 
 lint:
 	go vet ./...
@@ -316,7 +332,7 @@ web-lint:
 ## or malformed entries, placeholders as in the source; script tests included.
 ## The iOS shell's String Catalog is checked the same way (ios-shell).
 i18n-check:
-	node --test scripts/i18n/extract.test.mjs scripts/i18n/untranslated.test.mjs scripts/i18n-check.test.mjs scripts/i18n/shell.test.mjs
+	node --test scripts/i18n/extract.test.mjs scripts/i18n/untranslated.test.mjs scripts/i18n-check.test.mjs scripts/i18n/shell.test.mjs scripts/i18n/obsidian.test.mjs
 	node scripts/i18n-check.mjs
 
 docker:

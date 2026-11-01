@@ -5936,5 +5936,6 @@
   "Turned away from the colour for errors": "Éloignée de la couleur des erreurs",
   "deep {colour}": "{colour} foncé",
   "From Obsidian": "Depuis Obsidian",
-  "Open in Obsidian: {vault} › {path}": "Ouvrir dans Obsidian : {vault} › {path}"
+  "Open in Obsidian: {vault} › {path}": "Ouvrir dans Obsidian : {vault} › {path}",
+  "For the Obsidian plugin, create a full token named after the device.": "Pour le plugin Obsidian, créez un jeton à accès complet nommé d’après l’appareil."
 }

@@ -20,7 +20,9 @@ type syncRequest struct {
 	// Features names the protocol additions the device supports (optional,
 	// additive; OpenSpec change sync-convergence): "clock_skew" (refuse ops
 	// stamped too far ahead with reason clock_skew instead of clamping them)
-	// and "backfill_ack" (confirm member backfill pages with BackfillAck).
+	// and "backfill_ack" (confirm member backfill pages with BackfillAck);
+	// "push_only" (OpenSpec change obsidian-plugin D4): apply, skip the pull
+	// and answer with the head cursor, for devices that only write.
 	Features []string `json:"features,omitempty"`
 	// BackfillAck echoes the backfillSeq of the last backfill page applied.
 	BackfillAck int64 `json:"backfillAck,omitempty"`
@@ -75,6 +77,10 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 		// Wake the other devices of everyone who can see the change; this one
 		// learns the cursor from the response.
 		s.sync.NotifyApplied(res, in.Device)
+	}
+	if in.supports("push_only") {
+		s.writePushOnly(w, r, uid, res)
+		return
 	}
 	pull, err := s.sync.PullWith(r.Context(), uid, in.Cursor, in.Device, opsync.MaxOpsPerRequest,
 		opsync.PullOptions{ConfirmBackfill: in.supports("backfill_ack"), BackfillAck: in.BackfillAck})
@@ -133,4 +139,38 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 		out["backfillSeq"] = pull.BackfillSeq
 	}
 	writeJSON(w, http.StatusOK, out)
+}
+
+// writePushOnly answers a push-only exchange: the apply result, the head cursor
+// of the caller's op log and nothing pulled (OpenSpec change obsidian-plugin D4).
+// The server's values of refused fields are not sent: the device keeps no rows.
+func (s *Server) writePushOnly(w http.ResponseWriter, r *http.Request, uid string, res opsync.ApplyResult) {
+	head, err := s.sync.Cursor(r.Context(), uid)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	gen, err := s.sync.Generation(r.Context())
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	rejected := res.Rejected
+	if rejected == nil {
+		rejected = []opsync.Rejection{}
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"applied":            res.Applied,
+		"duplicates":         res.Duplicates,
+		"ops":                []opsync.Op{},
+		"cursor":             head,
+		"hasMore":            false,
+		"serverTime":         s.now().UnixMilli(),
+		"generation":         gen,
+		"rejected":           rejected,
+		"memberships":        []any{},
+		"workspaces":         []any{},
+		"purged":             []opsync.PurgedEntity{},
+		"trashRetentionDays": s.cfg.TrashRetentionDays,
+	})
 }

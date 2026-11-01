@@ -7,7 +7,7 @@
 // The device is the trust boundary (design D4): local tables hold plaintext, and
 // nothing leaves the device for an encrypted account except ciphertext for the
 // content fields below and wrapped key material.
-import { OP_CONTENT_FIELDS } from '../generated/opSchema'
+import { CONTENT_FIELDS, contentFromString, contentToString, isContentField } from './e2eeEnvelope'
 import { api, ApiError } from './api'
 import {
   checkRecordParams, createKeyRecord, decryptValue, KeyRecordParamsError, isEnvelope, resetWithRecoveryKey, rewrapWithPassphrase, unlockWithPassphrase, unlockWithRecoveryKey,
@@ -22,59 +22,9 @@ import { createStore } from './store'
 /** The client's ciphertext-awareness level; the server's minClientVersion is compared with it (design D9). */
 export const CLIENT_VERSION = 1
 
-/**
- * Fields encrypted for an encrypted account, in its personal scope only (shared
- * projects are never encrypted). Keep in step with internal/e2ee ContentFields.
- * task.labels holds label ids, so label names are encrypted instead of the
- * array (design.md, implementation notes).
- */
-export const CONTENT_FIELDS: Partial<Record<Entity, readonly string[]>> = OP_CONTENT_FIELDS
-
-/**
- * Families of content fields named by a prefix: a task's custom field values
- * `fields.<id>` (custom-fields D4). Only string values are encrypted (text, link,
- * date, choice); numbers and checkboxes stay plaintext. Keep in step with
- * internal/e2ee ContentPrefixes.
- */
-export const CONTENT_PREFIXES: Partial<Record<Entity, readonly string[]>> = {
-  // Pending appends `appends.<id>` (notes-overview D13) are note text.
-  task: ['fields.', 'appends.'],
-  note: ['appends.'],
-}
-
-export function isContentField(entity: Entity, field: string): boolean {
-  if (CONTENT_FIELDS[entity]?.includes(field)) return true
-  return CONTENT_PREFIXES[entity]?.some((p) => field.startsWith(p) && field.length > p.length) ?? false
-}
-
-/** Content values that are objects on the device and one encrypted JSON string on the wire (task-origin D2). */
-const OBJECT_CONTENT: Partial<Record<Entity, readonly string[]>> = { task: ['origin', 'location'], place: ['geo'] }
-
-function isObjectContent(entity: Entity, field: string): boolean {
-  return OBJECT_CONTENT[entity]?.includes(field) ?? false
-}
-
-/**
- * The plaintext a content value encrypts as: a string as it is, an object-valued
- * field (task.origin) as its JSON. null, numbers, booleans and a string in an
- * object-valued field (an envelope or the undecryptable placeholder) give null:
- * nothing to encrypt.
- */
-export function contentToString(entity: Entity, field: string, value: unknown): string | null {
-  if (isObjectContent(entity, field)) return value !== null && typeof value === 'object' ? JSON.stringify(value) : null
-  return typeof value === 'string' ? value : null
-}
-
-/** The device value of decrypted plaintext: the object for an object-valued field, else the string. */
-export function contentFromString(entity: Entity, field: string, plaintext: string): unknown {
-  if (!isObjectContent(entity, field)) return plaintext
-  try {
-    const v: unknown = JSON.parse(plaintext)
-    return v !== null && typeof v === 'object' ? v : plaintext
-  } catch {
-    return plaintext
-  }
-}
+// The content-field list and the value <-> plaintext rules live in the pure
+// e2eeEnvelope.ts, which the Obsidian plugin bundles too (obsidian-plugin D10).
+export { CONTENT_FIELDS, CONTENT_PREFIXES, contentFromString, contentToString, isContentField } from './e2eeEnvelope'
 
 /** What a field shows when its ciphertext cannot be decrypted with this device's key. */
 export const UNDECRYPTABLE = msg('[Cannot decrypt]')

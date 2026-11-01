@@ -1,0 +1,34 @@
+# The release workflow of OpenTodoApp/obsidian-opentodo, copied there by
+# obsidian/scripts/mirror.mjs. Do not edit it in the release repository: the
+# source is obsidian/mirror/release.yml in OpenTodoApp/OpenTodo.
+#
+# OpenTodo's CI pushes the built plugin and a tag equal to the manifest's version
+# (no "v"); this attaches main.js, manifest.json and styles.css to a release of
+# that tag, which is what Obsidian (and BRAT) install.
+name: Release
+on:
+  push:
+    tags: ['[0-9]+.[0-9]+.[0-9]+']
+permissions:
+  contents: write
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          test "$(jq -r .version manifest.json)" = "$TAG" || { echo "manifest.json version is not $TAG"; exit 1; }
+          notes="OpenTodo for Obsidian $TAG, built from OpenTodo $TAG: https://github.com/OpenTodoApp/OpenTodo/releases/tag/v$TAG"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" main.js manifest.json styles.css --clobber
+          else
+            gh release create "$TAG" main.js manifest.json styles.css --title "$TAG" --notes "$notes"
+          fi

@@ -120,71 +120,12 @@ func (e *engine) fileProj(m *mergeRun, pl place, baseP map[string]string) map[st
 	bad := func(format string, args ...any) {
 		e.rep.warn("%s: %q: %s", pl.path, l.Title, fmt.Sprintf(format, args...))
 	}
-	p := map[string]string{
-		"title": l.Title, "done": boolStr(l.Done), "evening": boolStr(l.Evening), "priority": prio(l.Priority),
-		"note": strings.TrimRight(pl.node.NoteText(), "\n"), "parent": pl.parent, "section": pl.section, "project": pl.project,
+	p, problems := LineFields(l)
+	for _, msg := range problems {
+		bad("%s", msg)
 	}
-	if l.Done && l.DoneDate != "" {
-		if validDate(l.DoneDate) {
-			p["donedate"] = l.DoneDate
-		} else {
-			bad("✅ %s is not a date", l.DoneDate)
-		}
-	}
-	switch {
-	case l.Due == "" && (l.Time != "" || l.TZ != ""):
-		bad("a time needs a 📅 date")
-	case l.Due != "" && !validDate(l.Due):
-		bad("📅 %s is not a date", l.Due)
-	case l.Time != "" && !clockRe.MatchString(l.Time):
-		bad("time %s is not between 00:00 and 23:59", l.Time)
-	case l.TZ != "" && (l.Time == "" || !zoned.Valid(l.TZ)):
-		bad("tz %s is not a time zone with a time", l.TZ)
-	default:
-		p["due"] = ""
-		if l.Due != "" {
-			p["due"] = l.Due + "|" + l.Time + "|" + l.TZ
-		}
-	}
-	for _, f := range []struct{ key, val, mark string }{{"start", l.Start, "🛫"}, {"deadline", l.Deadline, "deadline"}} {
-		if f.val == "" || validDate(f.val) || f.key == "start" && f.val == "someday" {
-			p[f.key] = f.val
-		} else {
-			bad("%s %s is not a date", f.mark, f.val)
-		}
-	}
-	// [daypart:: …] (day-parts): a line with [evening:: true] reads as Evening.
-	switch part := strings.ToLower(strings.TrimSpace(l.DayPart)); {
-	case l.Evening || part == "":
-		p["daypart"] = ""
-	case daypart.Stored(part):
-		p["daypart"] = part
-	default:
-		bad("daypart %s is not morning or afternoon", l.DayPart)
-	}
-	// [span:: …] (multi-day-tasks): true or false, case ignored; absent is false.
-	switch s := strings.ToLower(strings.TrimSpace(l.Span)); s {
-	case "", "false", "true":
-		p["span"] = boolStr(s == "true")
-	default:
-		bad("span %s is not true or false", l.Span)
-	}
-	// [energy:: …] (task-energy): a level, case ignored.
-	switch e := strings.ToLower(strings.TrimSpace(l.Energy)); {
-	case e == "":
-		p["energy"] = ""
-	case validEnergy(e):
-		p["energy"] = e
-	default:
-		bad("energy %s is not deep, medium or low", l.Energy)
-	}
-	if l.Estimate == "" {
-		p["estimate"] = ""
-	} else if mins, ok := parseMinutes(l.Estimate); ok {
-		p["estimate"] = strconv.Itoa(mins)
-	} else {
-		bad("estimate %s is not a duration from 1 minute to 7 days", l.Estimate)
-	}
+	p["note"] = strings.TrimRight(pl.node.NoteText(), "\n")
+	p["parent"], p["section"], p["project"] = pl.parent, pl.section, pl.project
 	if l.Recur == "" {
 		p["recur"] = ""
 	} else if rule, err := ruleFromFile(l.Recur); err == nil {
@@ -638,4 +579,78 @@ func (e *engine) seriesBudget(id, except string) (int, map[string]bool) {
 // occurrenceID is internal/sync.OccurrenceID.
 func occurrenceID(seriesID, date string) string {
 	return ids.NameID("occurrence", seriesID+":"+date)
+}
+
+// LineFields projects the fields a task line sets by itself (title, done and
+// its date, due with time and zone, start, deadline, part of day, span,
+// energy, estimate, priority) onto the compared strings, and lists the values
+// that did not parse; those fields are left out. The Obsidian plugin's
+// TypeScript twin (obsidian/src/vault/line.ts) runs the same
+// testdata/lines.vectors.json.
+func LineFields(l Line) (map[string]string, []string) {
+	p := map[string]string{"title": l.Title, "done": boolStr(l.Done), "evening": boolStr(l.Evening), "priority": prio(l.Priority)}
+	var problems []string
+	bad := func(format string, args ...any) { problems = append(problems, fmt.Sprintf(format, args...)) }
+	if l.Done && l.DoneDate != "" {
+		if validDate(l.DoneDate) {
+			p["donedate"] = l.DoneDate
+		} else {
+			bad("✅ %s is not a date", l.DoneDate)
+		}
+	}
+	switch {
+	case l.Due == "" && (l.Time != "" || l.TZ != ""):
+		bad("a time needs a 📅 date")
+	case l.Due != "" && !validDate(l.Due):
+		bad("📅 %s is not a date", l.Due)
+	case l.Time != "" && !clockRe.MatchString(l.Time):
+		bad("time %s is not between 00:00 and 23:59", l.Time)
+	case l.TZ != "" && (l.Time == "" || !zoned.Valid(l.TZ)):
+		bad("tz %s is not a time zone with a time", l.TZ)
+	default:
+		p["due"] = ""
+		if l.Due != "" {
+			p["due"] = l.Due + "|" + l.Time + "|" + l.TZ
+		}
+	}
+	for _, f := range []struct{ key, val, mark string }{{"start", l.Start, "🛫"}, {"deadline", l.Deadline, "deadline"}} {
+		if f.val == "" || validDate(f.val) || f.key == "start" && f.val == "someday" {
+			p[f.key] = f.val
+		} else {
+			bad("%s %s is not a date", f.mark, f.val)
+		}
+	}
+	// [daypart:: …] (day-parts): a line with [evening:: true] reads as Evening.
+	switch part := strings.ToLower(strings.TrimSpace(l.DayPart)); {
+	case l.Evening || part == "":
+		p["daypart"] = ""
+	case daypart.Stored(part):
+		p["daypart"] = part
+	default:
+		bad("daypart %s is not morning or afternoon", l.DayPart)
+	}
+	// [span:: …] (multi-day-tasks): true or false, case ignored; absent is false.
+	switch s := strings.ToLower(strings.TrimSpace(l.Span)); s {
+	case "", "false", "true":
+		p["span"] = boolStr(s == "true")
+	default:
+		bad("span %s is not true or false", l.Span)
+	}
+	// [energy:: …] (task-energy): a level, case ignored.
+	switch e := strings.ToLower(strings.TrimSpace(l.Energy)); {
+	case e == "":
+		p["energy"] = ""
+	case validEnergy(e):
+		p["energy"] = e
+	default:
+		bad("energy %s is not deep, medium or low", l.Energy)
+	}
+	if l.Estimate == "" {
+		p["estimate"] = ""
+	} else if mins, ok := parseMinutes(l.Estimate); ok {
+		p["estimate"] = strconv.Itoa(mins)
+	} else {
+		bad("estimate %s is not a duration from 1 minute to 7 days", l.Estimate)
+	}
+	return p, problems
 }
