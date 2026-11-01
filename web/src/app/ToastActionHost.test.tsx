@@ -5,7 +5,7 @@ import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from '../ui/test-utils'
 import { ToastActionHost } from './ToastActionHost'
-import { hideActionToast, showActionToast } from './bulk/toastStore'
+import { hideActionToast, hideBulkToast, showActionToast, showBulkToast } from './bulk/toastStore'
 
 beforeEach(() => { vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] }) })
 afterEach(() => {
@@ -33,6 +33,48 @@ describe('the action toast host', () => {
     advance(1_000)
     act(() => showActionToast('second'))
     expect(toastEl()!.querySelector('[role="status"]')!.textContent).toBe('second')
+    await r.unmount()
+  })
+
+  it('waits while an undo offer shows, then takes its place with a full window', async () => {
+    const r = await render(<ToastActionHost />)
+    act(() => showBulkToast('3 tasks trashed', 'u1'))
+    act(() => showActionToast('The time entry could not be started; this session is not being tracked. (test)'))
+    expect(toastEl()).toBeNull()
+    advance(6_000)
+    expect(toastEl()).toBeNull()
+    act(() => hideBulkToast())
+    expect(toastEl()).not.toBeNull()
+    advance(5_100)
+    expect(toastEl()).toBeNull()
+    await r.unmount()
+  })
+
+  it('the window starts when first shown, not when raised', async () => {
+    const r = await render(<ToastActionHost />)
+    act(() => showBulkToast('3 tasks trashed', 'u1'))
+    act(() => showActionToast('first failure'))
+    advance(4_000)
+    act(() => hideBulkToast())
+    expect(toastEl()).not.toBeNull()
+    advance(1_000)
+    expect(toastEl()).not.toBeNull()
+    advance(4_200)
+    expect(toastEl()).toBeNull()
+    await r.unmount()
+  })
+
+  it('hover holds the message', async () => {
+    const r = await render(<ToastActionHost />)
+    act(() => showActionToast('first failure'))
+    advance(4_000)
+    const el = toastEl()!
+    await act(async () => { el.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, relatedTarget: document.body })) })
+    advance(6_000)
+    expect(toastEl()).not.toBeNull()
+    await act(async () => { el.dispatchEvent(new PointerEvent('pointerout', { bubbles: true, relatedTarget: document.body })) })
+    advance(5_100)
+    expect(toastEl()).toBeNull()
     await r.unmount()
   })
 
