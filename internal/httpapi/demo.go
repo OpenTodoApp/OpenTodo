@@ -191,6 +191,8 @@ var demoRules = []demoRule{
 	{"Task pages", false, taskPage},
 	{"Task pages", false, prefix("/api/v1/task-pages")},
 	{"Task pages", false, prefix("/api/v1/pages")},
+	// The instance's default theme and themes (theme-instance-default D2): changes are refused.
+	{"Server themes", true, prefix("/api/v1/settings/themes")},
 	{"Server settings", true, prefix("/api/v1/settings")},
 	// The server's file sizes are the operator's business (op-log-compaction D7).
 	{"Database storage", false, exact("/api/v1/settings/storage")},
