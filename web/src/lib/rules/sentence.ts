@@ -27,6 +27,7 @@ const TEXT: Record<string, KindText> = {
   add_comment: { name: msg('Add a comment'), description: msg('A comment on a task'), synonyms: msg('comment, reply, note'), sentence: msg('Comment on {task}: {text}'), output: '' },
   get_task: { name: msg('Get a task'), description: msg('One task to use in later steps'), synonyms: msg('task, pick, choose'), sentence: msg('Get the task {task}'), output: msg('the task') },
   find_project: { name: msg('Find a project'), description: msg('A project by its name'), synonyms: msg('project, search, look up'), sentence: msg('Find the project named {name}'), output: msg('the project') },
+  project_of: { name: msg('Get the project of a task'), description: msg('The project a task is in'), synonyms: msg('project, where, belongs, container'), sentence: msg('Get the project of {task}'), output: msg('the task’s project') },
   create_project: { name: msg('Create a project'), description: msg('A new project'), synonyms: msg('add, new, project'), sentence: msg('Create the project {name}'), output: msg('the new project') },
   update_project: { name: msg('Update a project'), description: msg('Rename, colour, icon or archive a project'), synonyms: msg('rename, archive, edit, colour, icon'), sentence: msg('Update the project {project}'), output: msg('the project') },
   create_sections: { name: msg('Create sections'), description: msg('Sections in a project, one per line'), synonyms: msg('section, add, columns'), sentence: msg('Create sections {names} in {project}'), output: '' },
@@ -47,6 +48,7 @@ const TEXT: Record<string, KindText> = {
   if: { name: msg('If / Otherwise'), description: msg('Run steps only when a value passes a test'), synonyms: msg('condition, when, else, otherwise, branch'), sentence: msg('If {value} {is}'), output: '' },
   repeat: { name: msg('Repeat for each'), description: msg('Run steps once for every item of a list'), synonyms: msg('loop, each, every, for each, iterate'), sentence: msg('Repeat for each item of {list}'), output: msg('the results') },
   stop: { name: msg('Stop'), description: msg('End the run here'), synonyms: msg('end, exit, quit, halt'), sentence: msg('Stop the routine'), output: '' },
+  date: { name: msg('Get the date'), description: msg('Today, tomorrow or a day a few days away'), synonyms: msg('today, date, day, now, tomorrow, current'), sentence: msg('Get the date {date}'), output: msg('the date') },
   start_timer: { name: msg('Start a timer'), description: msg('Track time on a task'), synonyms: msg('timer, track, time'), sentence: msg('Start the timer on {task}'), output: '' },
   stop_timer: { name: msg('Stop the timer'), description: msg('Stop the running timer'), synonyms: msg('timer, track, time, stop'), sentence: msg('Stop the running timer'), output: '' },
   tracked_time: { name: msg('Tracked time'), description: msg('Minutes tracked in a period'), synonyms: msg('time, minutes, hours, report'), sentence: msg('Get the time tracked {period}'), output: msg('the tracked minutes') },
@@ -77,6 +79,7 @@ const INPUT_LABEL: Record<string, string> = {
   on: msg('Favourite'), template: msg('Template'), start: msg('Start'), of: msg('Of'), lines: msg('Lines'), separator: msg('Separator'), find: msg('Find'),
   with: msg('Replace with'), case: msg('Match case'), list: msg('List'), where: msg('Test'), by: msg('Order'), direction: msg('Direction'), n: msg('How many'),
   from: msg('From'), value: msg('Value'), is: msg('Test'), reason: msg('Reason'), period: msg('Period'), webhook_id: msg('Webhook'), subject: msg('Subject'),
+  date: msg('Date'), only: msg('Only'),
   instruction: msg('Instruction'), context: msg('Using'), context2: msg('Also using'), context3: msg('And using'), answer: msg('Answer as'), length: msg('Length'),
 }
 

@@ -4631,7 +4631,6 @@
   "Already has {label}": "Já tem {label}",
   "These tasks already have {label}": "Estas tarefas já têm {label}",
   "Work|icon category": "Trabalho",
-  "Would add a comment": "Adicionaria um comentário",
   "Would email the project’s members": "Enviaria e-mail aos membros do projeto",
   "Would email you": "Enviaria um e-mail para você",
   "Would end the run here": "Encerraria a execução aqui",
@@ -6501,5 +6500,17 @@
   "Test runs every step against your tasks and shows what each would do. Nothing is written.": "O teste executa cada etapa sobre as suas tarefas e mostra o que cada uma faria. Nada é escrito.",
   "This routine no longer exists.": "Esta rotina já não existe.",
   "Unsaved changes": "Alterações por guardar",
-  "On a routine's page: back to Routines, asking first about unsaved changes": "Na página de uma rotina: voltar às rotinas, perguntando antes se há alterações por guardar"
+  "On a routine's page: back to Routines, asking first about unsaved changes": "Na página de uma rotina: voltar às rotinas, perguntando antes se há alterações por guardar",
+  "Get the date": "Obter a data",
+  "Get the date {date}": "Obter a data {date}",
+  "Get the project of a task": "Obter o projeto de uma tarefa",
+  "Get the project of {task}": "Obter o projeto de {task}",
+  "Only": "Apenas",
+  "The project a task is in": "O projeto em que uma tarefa está",
+  "Today, tomorrow or a day a few days away": "Hoje, amanhã ou um dia daqui a alguns dias",
+  "project, where, belongs, container": "projeto, onde, pertence, contêiner",
+  "the task’s project": "o projeto da tarefa",
+  "today, date, day, now, tomorrow, current": "hoje, data, dia, agora, amanhã, atual",
+  "{n, plural, one {Would add # comment} other {Would add # comments}}": "{n, plural, one {Adicionaria # comentário} other {Adicionaria # comentários}}",
+  "{n, plural, one {Would add to # note} other {Would add to # notes}}": "{n, plural, one {Adicionaria a # nota} other {Adicionaria a # notas}}"
 }

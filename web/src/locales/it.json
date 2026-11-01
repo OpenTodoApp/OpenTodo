@@ -4631,7 +4631,6 @@
   "Already has {label}": "Ha già {label}",
   "These tasks already have {label}": "Queste attività hanno già {label}",
   "Work|icon category": "Lavoro",
-  "Would add a comment": "Aggiungerebbe un commento",
   "Would email the project’s members": "Invierebbe un’email ai membri del progetto",
   "Would email you": "Ti invierebbe un’email",
   "Would end the run here": "Terminerebbe qui l’esecuzione",
@@ -6501,5 +6500,17 @@
   "Test runs every step against your tasks and shows what each would do. Nothing is written.": "Il test esegue ogni passaggio sulle tue attività e mostra cosa farebbe ciascuno. Non viene scritto nulla.",
   "This routine no longer exists.": "Questa routine non esiste più.",
   "Unsaved changes": "Modifiche non salvate",
-  "On a routine's page: back to Routines, asking first about unsaved changes": "Nella pagina di una routine: torna alle routine, chiedendo prima se ci sono modifiche non salvate"
+  "On a routine's page: back to Routines, asking first about unsaved changes": "Nella pagina di una routine: torna alle routine, chiedendo prima se ci sono modifiche non salvate",
+  "Get the date": "Ottieni la data",
+  "Get the date {date}": "Ottieni la data {date}",
+  "Get the project of a task": "Ottieni il progetto di un’attività",
+  "Get the project of {task}": "Ottieni il progetto di {task}",
+  "Only": "Solo",
+  "The project a task is in": "Il progetto in cui si trova un’attività",
+  "Today, tomorrow or a day a few days away": "Oggi, domani o un giorno tra qualche giorno",
+  "project, where, belongs, container": "progetto, dove, appartiene, contenitore",
+  "the task’s project": "il progetto dell’attività",
+  "today, date, day, now, tomorrow, current": "oggi, data, giorno, adesso, domani, attuale",
+  "{n, plural, one {Would add # comment} other {Would add # comments}}": "{n, plural, one {Aggiungerebbe # commento} other {Aggiungerebbe # commenti}}",
+  "{n, plural, one {Would add to # note} other {Would add to # notes}}": "{n, plural, one {Aggiungerebbe a # nota} other {Aggiungerebbe a # note}}"
 }

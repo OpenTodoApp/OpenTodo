@@ -4631,7 +4631,6 @@
   "Already has {label}": "A déjà {label}",
   "These tasks already have {label}": "Ces tâches ont déjà {label}",
   "Work|icon category": "Travail",
-  "Would add a comment": "Ajouterait un commentaire",
   "Would email the project’s members": "Enverrait un e-mail aux membres du projet",
   "Would email you": "Vous enverrait un e-mail",
   "Would end the run here": "Terminerait l’exécution ici",
@@ -6501,5 +6500,17 @@
   "Test runs every step against your tasks and shows what each would do. Nothing is written.": "Le test exécute chaque étape sur vos tâches et montre ce que chacune ferait. Rien n’est écrit.",
   "This routine no longer exists.": "Cette routine n’existe plus.",
   "Unsaved changes": "Modifications non enregistrées",
-  "On a routine's page: back to Routines, asking first about unsaved changes": "Sur la page d’une routine : revenir aux routines, en demandant d’abord s’il reste des modifications non enregistrées"
+  "On a routine's page: back to Routines, asking first about unsaved changes": "Sur la page d’une routine : revenir aux routines, en demandant d’abord s’il reste des modifications non enregistrées",
+  "Get the date": "Obtenir la date",
+  "Get the date {date}": "Obtenir la date {date}",
+  "Get the project of a task": "Obtenir le projet d’une tâche",
+  "Get the project of {task}": "Obtenir le projet de {task}",
+  "Only": "Seulement",
+  "The project a task is in": "Le projet dans lequel se trouve une tâche",
+  "Today, tomorrow or a day a few days away": "Aujourd’hui, demain ou un jour dans quelques jours",
+  "project, where, belongs, container": "projet, où, appartient, conteneur",
+  "the task’s project": "le projet de la tâche",
+  "today, date, day, now, tomorrow, current": "aujourd’hui, date, jour, maintenant, demain, actuel",
+  "{n, plural, one {Would add # comment} other {Would add # comments}}": "{n, plural, one {Ajouterait # commentaire} other {Ajouterait # commentaires}}",
+  "{n, plural, one {Would add to # note} other {Would add to # notes}}": "{n, plural, one {Ajouterait à # note} other {Ajouterait à # notes}}"
 }

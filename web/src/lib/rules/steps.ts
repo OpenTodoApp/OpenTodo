@@ -57,13 +57,18 @@ export const STEPS: StepKind[] = [
     inputs: [inp('query', [], 'text', { ...C, max: 1000 }), inp('view', [], 'id', C), inp('condition', [], 'condition'), inp('limit', [], 'number', { max: MAX_LIST_ITEMS })] },
   { kind: 'create_tasks', group: 'tasks', output: 'tasks', content: true, tool: 'create_tasks', oneOf: [['text', 'title']],
     inputs: [inp('text', ['text', 'lines'], 'text', C), inp('title', ['text'], 'text', { ...C, max: 500 }), inp('project', ['project'], 'project'), inp('section', [], 'id'),
-      inp('due', ['date'], 'date'), inp('priority', ['number'], 'number', { max: 4 }), inp('labels', [], 'ids'), en('energy', ['deep', 'medium', 'low'])] },
+      inp('due', ['date'], 'date'), inp('priority', ['number'], 'number', { max: 4 }), inp('labels', [], 'ids'), en('energy', ['deep', 'medium', 'low']),
+      // parent: subtasks of a task (routines-dynamic-data D5); the project comes from it.
+      inp('parent', ['task'], '')] },
   { kind: 'change_tasks', group: 'tasks', output: 'tasks', content: false, tool: 'update_tasks',
     inputs: [inp('tasks', ['tasks'], '', R), inp('set', [], 'actions', R)] },
   { kind: 'add_comment', group: 'tasks', output: 'none', content: true, tool: 'add_comment',
     inputs: [inp('task', ['task'], 'task', R), inp('text', ['text'], 'text', { ...R, ...C, max: MAX_COMMENT })] },
+  // get_task holds a task chosen by hand: the rare fixed target, never a default or a fix (routines-dynamic-data D4).
   { kind: 'get_task', group: 'tasks', output: 'task', content: false, inputs: [inp('task', ['task'], 'task', R)] },
   { kind: 'find_project', group: 'projects', output: 'project', content: true, inputs: [inp('name', ['text'], 'text', { ...R, ...C, max: 120 })] },
+  // project_of: the project of a task; the Inbox for a task without one (routines-dynamic-data D5).
+  { kind: 'project_of', group: 'projects', output: 'project', content: false, inputs: [inp('task', ['task'], '', R)] },
   { kind: 'create_project', group: 'projects', output: 'project', content: true, tool: 'create_project',
     inputs: [inp('name', ['text'], 'text', { ...R, ...C, max: 120 }), inp('parent', ['project'], 'project'), inp('color', [], 'id'), inp('icon', [], 'id')] },
   { kind: 'update_project', group: 'projects', output: 'project', content: false, tool: 'update_project',
@@ -75,11 +80,11 @@ export const STEPS: StepKind[] = [
     inputs: [inp('project', ['project'], 'project', R), inp('on', [], 'bool', R)] },
   { kind: 'project_from_template', group: 'projects', output: 'project', content: true,
     inputs: [inp('template', [], 'id', R), inp('start', ['date'], 'date', R), inp('name', ['text'], 'text', { ...C, max: 120 })] },
-  { kind: 'note_text', group: 'text', output: 'text', content: true, inputs: [inp('of', ['task', 'project'], '', R)] },
+  { kind: 'note_text', group: 'text', output: 'text', content: true, inputs: [inp('of', ['task', 'project'], 'project', R)] },
   { kind: 'append_to_note', group: 'text', output: 'none', content: true, tool: 'append_to_note',
-    inputs: [inp('of', ['task', 'project'], '', R), inp('text', ['text'], 'text', { ...R, ...C })] },
-  { kind: 'clear_note', group: 'text', output: 'none', content: true, inputs: [inp('of', ['task', 'project'], '', R)] },
-  { kind: 'split_lines', group: 'text', output: 'lines', content: true, inputs: [inp('text', ['text'], 'text', R)] },
+    inputs: [inp('of', ['task', 'project'], 'project', R), inp('text', ['text'], 'text', { ...R, ...C })] },
+  { kind: 'clear_note', group: 'text', output: 'none', content: true, inputs: [inp('of', ['task', 'project'], 'project', R)] },
+  { kind: 'split_lines', group: 'text', output: 'lines', content: true, inputs: [inp('text', ['text'], 'text', R), en('only', ['open_checkboxes'])] },
   { kind: 'join', group: 'text', output: 'text', content: true, inputs: [inp('lines', ['lines'], 'lines', R), inp('separator', [], 'text', { max: 20 })] },
   { kind: 'format', group: 'text', output: 'text', content: true, inputs: [inp('template', [], 'text', { ...R, ...C, max: 4000 })] },
   { kind: 'replace', group: 'text', output: 'text', content: true,
@@ -88,12 +93,14 @@ export const STEPS: StepKind[] = [
   { kind: 'sort', group: 'logic', output: 'none', sameAs: 'list', content: false,
     inputs: [inp('list', anyList, '', R), en('by', ['due', 'deadline', 'priority', 'created', 'title', 'text'], R), en('direction', ['asc', 'desc'])] },
   { kind: 'take', group: 'logic', output: 'none', sameAs: 'list', content: false,
-    inputs: [inp('list', anyList, '', R), inp('n', [], 'number', { ...R, max: MAX_LIST_ITEMS }), en('from', ['start', 'end'])] },
+    inputs: [inp('list', anyList, '', R), inp('n', [], 'number', { max: MAX_LIST_ITEMS }), en('from', ['start', 'end', 'all'])] },
   { kind: 'count', group: 'logic', output: 'number', content: false, inputs: [inp('list', anyList, '', R)] },
   { kind: 'if', group: 'logic', output: 'none', content: false, blocks: ['then', 'otherwise'],
     inputs: [inp('value', ['number', 'text', 'date', 'tasks', 'lines', 'task', 'project'], '', R), inp('is', [], 'compare', R)] },
   { kind: 'repeat', group: 'logic', output: 'none', content: false, blocks: ['do'], inputs: [inp('list', anyList, '', R)] },
   { kind: 'stop', group: 'logic', output: 'none', content: false, inputs: [inp('reason', [], 'text', { max: 200 })] },
+  // date: today, tomorrow, in N days or a date (routines-dynamic-data D5).
+  { kind: 'date', group: 'time', output: 'date', content: false, inputs: [inp('date', ['date'], 'date')] },
   { kind: 'start_timer', group: 'time', output: 'none', content: false, needs: 'time_tracking', tool: 'start_timer', inputs: [inp('task', ['task'], 'task', R)] },
   { kind: 'stop_timer', group: 'time', output: 'none', content: false, needs: 'time_tracking', tool: 'stop_timer', inputs: [] },
   { kind: 'tracked_time', group: 'time', output: 'number', content: false, needs: 'time_tracking',
@@ -289,6 +296,10 @@ function parseInputs(k: StepKind, id: string, raw: unknown): Record<string, Rout
     for (const def of k.inputs) if (def.name in m) out[def.name] = parseArg(k, def, id, m[def.name])
   }
   for (const def of k.inputs) if (def.required && !(def.name in out)) fail(id, def.name, 'missing_input', `${k.kind}: ${def.name} is required`)
+  // Subtasks take their parent's project (routines-dynamic-data D5).
+  if (k.kind === 'create_tasks' && 'parent' in out && 'project' in out) {
+    fail(id, 'project', 'invalid_step', "create_tasks: subtasks take the parent's project; give parent or project, not both")
+  }
   for (const set of k.oneOf ?? []) {
     if (set.filter((n) => n in out).length !== 1) fail(id, set[0], 'missing_input', `${k.kind}: give exactly one of ${set.join(', ')}`)
   }
