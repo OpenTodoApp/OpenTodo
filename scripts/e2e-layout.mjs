@@ -4,6 +4,8 @@
 //   - a page scrolls sideways outside a designated scroll region (`data-scroll-x`),
 //   - more than three regions scroll vertically outside designated ones (`data-scroll-y`),
 //   - an overlay or its close control is outside the viewport or not clickable,
+//   - content of an overlay that asks for it (the start guide, issue #731) sticks out of
+//     its panel or squeezes a sentence to a word a line beside its buttons,
 //   - an overlay does not close with Escape, with its close button (sheets and
 //     dialogs) or with a tap outside (popovers),
 //   - a control on the touch screen is smaller than 44 × 44 px or only appears on hover,
@@ -40,9 +42,9 @@ const pw = await import('playwright').catch(async () => {
   return createRequire(execSync('npm root -g').toString().trim() + '/')('playwright')
 })
 import { mkdirSync, writeFileSync } from 'node:fs'
-import { MAX_SCROLLERS, addButtonCovers, axeProblems, pageOverflow, rowCheckReach, rowMisalignment, settled, smallFields, smallTargets, tabRowOverflow, verticalScrollers } from './ux-audit/measure.mjs'
+import { MAX_SCROLLERS, addButtonCovers, axeProblems, overlayContentFit, pageOverflow, rowCheckReach, rowMisalignment, settled, smallFields, smallTargets, tabRowOverflow, verticalScrollers } from './ux-audit/measure.mjs'
 import { calendarEvents, seed as seedAccount } from './ux-audit/seed.mjs'
-import { OVERLAYS, chooseLayout, closes, screens } from './ux-audit/layout-screens.mjs'
+import { ANY_LANG_OVERLAYS, OVERLAYS, chooseLayout, closes, screens } from './ux-audit/layout-screens.mjs'
 
 const base = process.env.OPENTODO_URL ?? 'http://127.0.0.1:8080'
 const outDir = process.argv[2] ?? 'layout-report'
@@ -244,7 +246,8 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
         }
       }
       await shot(p, s.name)
-      for (const o of OTHER_LANG ? [] : s.overlays ?? []) {
+      // In another language only the overlays opened by data attributes (the start guide).
+      for (const o of (s.overlays ?? []).filter((n) => !OTHER_LANG || ANY_LANG_OVERLAYS.has(n))) {
         run.step = `screen ${s.name} › ${o}`
         const checkOne = async () => {
           await visit()
@@ -302,7 +305,7 @@ async function settledBox(p, overlay) {
   return prev
 }
 
-async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructive, escapes = 1, reopen }, fail, shot) {
+async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructive, escapes = 1, reopen, fit }, fail, shot) {
   // How to open it again: the trigger, or a step through a menu (`reopen`).
   const open = reopen ?? (() => trigger.click())
   await overlay.waitFor({ state: 'visible', timeout: 5000 })
@@ -316,6 +319,8 @@ async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructi
   const sel = await overlay.evaluate((el) => { el.setAttribute('data-layout-check', ''); return '[data-layout-check]' })
   for (const m of await p.evaluate(smallTargets, [sel, MIN_TARGET])) await fail(p, screen, name, `touch target: ${m}`)
   for (const m of await p.evaluate(smallFields, [sel, MIN_FIELD_TEXT])) await fail(p, screen, name, `text field: ${m}`)
+  // Its content fits the panel: nothing sideways out of it, no sentence squeezed by its buttons (issue #731).
+  if (fit) for (const m of await p.evaluate(overlayContentFit, sel)) await fail(p, screen, name, m)
   await overlay.evaluate((el) => el.removeAttribute('data-layout-check'))
   await shot(p, screen, name)
   if (kind === 'toast' || kind === 'inline' || kind === 'drawer' || kind === 'combobox') {
