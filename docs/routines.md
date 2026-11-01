@@ -4,7 +4,7 @@ summary: A routine is a rule with several steps, each using what the steps befor
 audience: user
 section: Reference
 screens: [routines]
-specs: [automation-rules, routines, routine-inbox]
+specs: [automation-rules, routines, routine-inbox, project-sharing]
 order: 31
 ---
 # Routines
@@ -108,6 +108,22 @@ Every run is logged with its trigger, each step's status, time, count and the it
 A routine that ran at night is noticed in the morning without a stream of notifications: the Inbox shows a card **Routines since your last visit** above the first task when something happened, one line per routine (*Morning sweep ran 2 times · 9 tasks changed*, *Weekly digest failed · Not available: outgoing email is not set up*), at most five, then **See all runs**. A line opens its run. Runs you started yourself, by hand or as a test, are never listed; a run started by an AI assistant is, and says so.
 
 The card counts as seen after two seconds on screen, or with **Mark as seen**; your other devices then stop showing what you saw. A failed run stays until it is handled (the run is undone, or the routine later runs fine); a successful one stays until seen, or until you dismiss its line, on every device. **Hide successful runs** (in the card's menu and in Settings → Notifications) leaves only failures. A routine that fails also rings the [bell](notifications.md), once a day per routine (*Weekly digest failed (2 times today)*), and reaches your [delivery channels](notification-channels.md) that have **Routine notices** on; successful runs never notify.
+
+## Routines of a shared project
+
+A routine can belong to a [shared project](sharing.md) instead of to you: *every Monday, give this week's chores a date*, *when anyone adds a task to Releases, set it due in three days*. On the Routines page, **New routine** asks **Where**: **Just me**, or one of the shared projects where you are an editor, an admin or the owner. A project's menu has **Routines**, which opens the Routines page filtered to that project (**Show all routines** removes the filter).
+
+- **Who changes it.** Everyone in the project sees the routine and its runs. Editors, admins and the owner create, edit, turn on and off and delete it; a viewer sees it read-only (*Only editors of Household can change this routine*). A project holds at most 50 routines.
+- **It runs as whoever turned it on.** The routine's row and page say **Runs as Alice**: the last person who turned it on. Its scheduled and triggered runs act with that person's current role, never more than an editor can do, and each run says who it ran as. **Run now** and **Test** run as the member who presses them; viewers cannot run it.
+- **It acts only in its project.** A shared routine sees only the project's tasks: Find tasks, conditions and due or overdue triggers never reach anyone's personal tasks. Create tasks creates in the project, and a step that would write outside the project fails the run before anything is written. Saving is refused when the routine names another project or a label (labels are personal). Steps that act on personal things are marked **Not available in a shared routine**: Favourite, Set today's focus, the timers and tracked time, Create or update a project, a project from a template, Create labels, Email me and Send a webhook. Email project members comes later.
+- **Anyone's change fires it.** A trigger such as *Task created* or *Task completed* fires when any member changes the project's tasks; *Assigned to me* means assigned to the person it runs as.
+- **Edits pause it.** When someone else changes the trigger, the condition, the steps or the AI settings of a routine that runs as Alice, it pauses (*Paused: edited by Bob*), so nobody's role or AI tokens are used for steps they did not approve. The editor says so before you save (*Saving pauses this routine: it runs as Alice*). Turn it off and on again and it runs as you. Renaming and reordering do not pause it.
+- **When the person leaves.** If the person it runs as leaves the project, is removed or becomes a viewer, the routine pauses and the project's owner, admins and editors get a notification (*Weekly chores paused: Alice no longer edits Household. Turn it on to run it as you.*). A routine of a project in the Trash does not run; deleting the project for good removes it.
+- **AI steps** use the assistant, the consent and the monthly allowance of the person it runs as, and their tokens count for that person. **Apply without asking** only counts when that person turned it on; otherwise AI results wait as proposals for them.
+- **Runs and undo.** Every member sees the runs in the routine's History and on the Runs tab; editors and above can **Undo** a run. The *Since your last visit* card and the bell for failures and proposals go to the person it runs as.
+- **Encryption.** Shared projects are not end-to-end encrypted, so a shared routine runs on the server even when the person it runs as has an encrypted account; it reads only the project, never their personal data.
+
+From the [command line](cli.md), `ot routine create --project Household --file chores.yaml` creates a routine of a project and `ot routine list` shows PROJECT and RUNS AS; AI assistants pass `project` to `create_routine` ([MCP](mcp.md)).
 
 ## Not offered, on purpose
 

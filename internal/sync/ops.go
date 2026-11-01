@@ -652,7 +652,12 @@ var Schema = map[string]map[string]Field{
 		"ai_apply": {Kind: kString, Default: `""`},
 		// The routine's AI tokens per UTC day (routines-ai-step D11): 0 reads as
 		// 20,000; the routes accept 1,000 to 200,000.
-		"ai_budget":  {Kind: kNumber, Default: `0`},
+		"ai_budget": {Kind: kNumber, Default: `0`},
+		// The project a routine belongs to (routines-shared D1): null for a
+		// personal routine. A routine of a shared project lives in the
+		// project's scope like a task, its editors write it, and it runs as
+		// whoever last turned it on, only inside that project.
+		"project_id": {Kind: kNullableString, Default: `null`},
 		"position":   {Kind: kNumber, Default: `0`},
 		"created_at": {Kind: kNumber, Default: `0`},
 		"deleted_at": {Kind: kNullableNumber, Default: `null`},

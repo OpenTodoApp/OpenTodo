@@ -574,7 +574,7 @@ export const api = {
   routineCatalogue: () => request<{ steps: RoutineCatalogueEntry[] }>('GET', '/api/v1/me/rules/catalogue'),
   /** Describe it (routines-describe-it): the assistant drafts a routine from one sentence; nothing is saved. */
   draftRoutine: (text: string) => request<DraftAnswer>('POST', '/api/v1/assistant/routine-draft', { text }),
-  testRoutineDraft: (body: { trigger: RuleTrigger; condition?: RuleCondition | null; steps: RoutineStep[]; task_id?: string; call_ai?: boolean }) =>
+  testRoutineDraft: (body: { trigger: RuleTrigger; condition?: RuleCondition | null; steps: RoutineStep[]; task_id?: string; call_ai?: boolean; project_id?: string }) =>
     request<RoutineTestResult>('POST', '/api/v1/rules/test', body),
   testRoutine: (id: string, body: { run_id: string; task_id?: string; call_ai?: boolean }) =>
     request<RoutineTestResult>('POST', `/api/v1/rules/${encodeURIComponent(id)}/run`, { ...body, test: true }),

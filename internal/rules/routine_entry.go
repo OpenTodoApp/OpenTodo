@@ -17,7 +17,8 @@ import (
 // readRule decodes a rule row; ok is false for a rule this server cannot read
 // (made by a newer version).
 func readRule(row opsync.Entity) (rule, bool) {
-	r := rule{ID: str(row, "id"), Name: str(row, "name"), Enabled: boolOf(row, "enabled"), AIApply: str(row, "ai_apply"), AIBudget: AIBudget(num(row, "ai_budget"))}
+	r := rule{ID: str(row, "id"), Name: str(row, "name"), Enabled: boolOf(row, "enabled"), AIApply: str(row, "ai_apply"), AIBudget: AIBudget(num(row, "ai_budget")),
+		ProjectID: str(row, "project_id")}
 	var err error
 	if r.Trigger, err = ruleval.ParseTrigger(row["trigger"]); err != nil {
 		return r, false
@@ -85,7 +86,48 @@ func (e *Engine) findRule(ctx context.Context, uid, ruleID string) (*rule, error
 	if !ok {
 		return nil, ErrInvalidDraft
 	}
+	if r.ProjectID != "" {
+		pid, err := e.ruleProject(ctx, ruleID)
+		if err != nil {
+			return nil, err
+		}
+		r.Shared = pid != ""
+	}
 	return &r, nil
+}
+
+// memberMayRun refuses a shared routine's Run now or Test below editor
+// (routines-shared D4): ErrNotFound for a non-member, ErrForbidden for a viewer.
+func (e *Engine) memberMayRun(ctx context.Context, uid string, r *rule) error {
+	if !r.Shared {
+		return nil
+	}
+	role, _, err := e.projectRole(ctx, r.ProjectID, uid)
+	switch {
+	case err != nil:
+		return err
+	case role == "":
+		return ErrNotFound
+	case !canEdit(role):
+		return ErrForbidden
+	}
+	return nil
+}
+
+// sharedWorld is the world a member's Run now or Test of a shared routine
+// reads (routines-shared D4): their own view of the project, refused with
+// ErrForbidden below editor.
+func (e *Engine) sharedWorld(ctx context.Context, uid string, r *rule, w *world) (*world, error) {
+	if !r.Shared {
+		return w, nil
+	}
+	if err := e.memberMayRun(ctx, uid, r); err != nil {
+		return nil, err
+	}
+	if b := w.bound(r.ProjectID); b != nil {
+		return b, nil
+	}
+	return nil, ErrNotFound
 }
 
 // asSteps is the rule read as steps: a legacy rule is its one Change tasks step.
@@ -113,6 +155,9 @@ func (e *Engine) RunNow(ctx context.Context, uid string, req RunRequest) (Result
 	if err != nil {
 		return Result{}, err
 	}
+	if err := e.memberMayRun(ctx, uid, r); err != nil {
+		return Result{}, err
+	}
 	if st, _, err := e.Store.State(ctx, r.ID); err != nil {
 		return Result{}, err
 	} else if st.PausedReason != "" {
@@ -128,6 +173,9 @@ func (e *Engine) RunNow(ctx context.Context, uid string, req RunRequest) (Result
 	r.asSteps(row["actions"])
 	w, err := e.load(ctx, uid)
 	if err != nil {
+		return Result{}, err
+	}
+	if w, err = e.sharedWorld(ctx, uid, r, w); err != nil {
 		return Result{}, err
 	}
 	if req.TaskID != "" {
@@ -163,6 +211,8 @@ type Draft struct {
 	// CallAI runs the AI steps for real (Test after the estimate,
 	// routines-ai-step D11); the live preview never does.
 	CallAI bool `json:"call_ai"`
+	// ProjectID plans a routine of that project (routines-shared D3).
+	ProjectID string `json:"project_id"`
 }
 
 // TestRule plans a saved rule's steps on a task (when its steps read one) and
@@ -184,6 +234,13 @@ func (e *Engine) TestDraft(ctx context.Context, uid string, d Draft) (Result, er
 	if !ok {
 		return Result{}, ErrInvalidDraft
 	}
+	if d.ProjectID != "" {
+		if _, shared, err := e.projectRole(ctx, d.ProjectID, uid); err != nil {
+			return Result{}, err
+		} else if shared {
+			r.ProjectID, r.Shared = d.ProjectID, true
+		}
+	}
 	r.asSteps(d.Actions)
 	return e.testRule(ctx, uid, &r, d.TaskID, d.CallAI)
 }
@@ -191,6 +248,9 @@ func (e *Engine) TestDraft(ctx context.Context, uid string, d Draft) (Result, er
 func (e *Engine) testRule(ctx context.Context, uid string, r *rule, taskID string, callAI bool) (Result, error) {
 	w, err := e.load(ctx, uid)
 	if err != nil {
+		return Result{}, err
+	}
+	if w, err = e.sharedWorld(ctx, uid, r, w); err != nil {
 		return Result{}, err
 	}
 	if taskID != "" {

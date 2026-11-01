@@ -103,3 +103,33 @@ func TestRoutineMCPTools(t *testing.T) {
 		t.Fatalf("trashed routine: %d", resp.StatusCode)
 	}
 }
+
+// routines-shared 3.2: create_routine takes a project; list and get name the
+// project and the run-as person; a viewer's agent cannot turn it on.
+func TestSharedRoutineMCPTools(t *testing.T) {
+	e := rulesEnv(t, nil)
+	e.allowWrites(true)
+	e.allowMyAssistants(true)
+	_, secret := e.namedToken("Desk assistant", "agent")
+	c := e.bearerClient()
+	viewer, _ := e.member("viewer@example.com", "10.0.0.5")
+	home := e.create("/api/v1/projects", map[string]any{"name": "Household"})
+	addByEmail(e, viewer, "/api/v1/projects/"+home+"/members", "viewer@example.com", "viewer")
+	created := c.mustTool(secret, "create_routine", map[string]any{"name": "Chores", "trigger": `{"kind":"manual"}`, "project": "Household", "enabled": true,
+		"steps": `[{"id":"a","kind":"find_tasks","in":{"condition":{"literal":{}}}}]`})
+	id := created["results"].([]any)[0].(map[string]any)["id"].(string)
+	list := c.mustTool(secret, "list_routines", nil)
+	item := list["routines"].([]any)[0].(map[string]any)
+	if item["project_id"] != home || item["run_as"].(map[string]any)["id"] != e.userID() {
+		t.Fatalf("list %v", item)
+	}
+	got := c.mustTool(secret, "get_routine", map[string]any{"routine": id})
+	if got["routine"].(map[string]any)["project_id"] != home {
+		t.Fatalf("get %v", got)
+	}
+	viewer.allowMyAssistants(true)
+	_, vsecret := viewer.namedToken("Viewer assistant", "agent")
+	if _, isErr := viewer.bearerClient().toolCall(vsecret, "set_routine_enabled", map[string]any{"routine": id, "enabled": false}); !isErr {
+		t.Fatal("a viewer's agent turned a shared routine off")
+	}
+}

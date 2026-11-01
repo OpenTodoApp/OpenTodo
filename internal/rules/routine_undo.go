@@ -95,6 +95,15 @@ func (e *Engine) Undo(ctx context.Context, uid, ruleID, runID string) (UndoResul
 	if err != nil || run.RuleID != ruleID {
 		return out, ErrRunNotFound
 	}
+	if run.ProjectID != "" {
+		// A shared routine's run is undone by an editor or above, as them
+		// (routines-shared D7).
+		if role, _, err := e.projectRole(ctx, run.ProjectID, uid); err != nil {
+			return out, err
+		} else if !canEdit(role) {
+			return out, ErrForbidden
+		}
+	}
 	if run.UndoneAt != nil {
 		return out, ErrAlreadyUndone
 	}

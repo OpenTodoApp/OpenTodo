@@ -32,7 +32,9 @@ export type Route =
   // (/routines#new before) and /routines/<id>, ?run=<run> one run on it; /rules is
   // the old address. The starters (routines-starters D5): /routines/starters and
   // /routines/starters/<slug>.
-  | { view: 'rules'; create?: boolean; tab?: 'runs'; id?: string; run?: string; starters?: boolean; starter?: string; describe?: boolean }
+  | { view: 'rules'; create?: boolean; tab?: 'runs'; id?: string; run?: string; starters?: boolean; starter?: string; describe?: boolean
+    /** The routines of one project (routines-shared D12): the list filtered, or a new routine of it. */
+    project?: string }
   // All projects (sidebar-favourites D6): /projects, and /projects#archived with the archived projects open.
   | { view: 'projects'; archived?: boolean }
   | { view: 'filter'; q?: string }
@@ -148,13 +150,16 @@ export function parseRoute(pathname: string): Route {
     case 'rules':
     case 'routines':
     {
-      if (hash === 'new' || parts[1] === 'new') return { view: 'rules', create: true }
+      // ?project=<id>: the routines of one project, or a new one of it (routines-shared D12).
+      const project = new URLSearchParams(query).get('project')
+      const inProject = project && /^[\w-]{1,64}$/.test(project) ? { project } : {}
+      if (hash === 'new' || parts[1] === 'new') return { view: 'rules', create: true, ...inProject }
       // /routines/describe: the Routines page with Describe it open (routines-describe-it).
       if (parts[1] === 'describe') return { view: 'rules', describe: true }
       if (parts[1] === 'starters') return parts[2] && /^[a-z0-9-]{1,64}$/.test(parts[2]) ? { view: 'rules', starters: true, starter: parts[2] } : { view: 'rules', starters: true }
       // ?run=<id>: a run opened from a notification, a channel message or an email.
       const run = new URLSearchParams(query).get('run')
-      const base: Route = parts[1] === 'runs' ? { view: 'rules', tab: 'runs' } : parts[1] && /^[\w-]{1,64}$/.test(parts[1]) ? { view: 'rules', id: parts[1] } : { view: 'rules' }
+      const base: Route = parts[1] === 'runs' ? { view: 'rules', tab: 'runs' } : parts[1] && /^[\w-]{1,64}$/.test(parts[1]) ? { view: 'rules', id: parts[1] } : { view: 'rules', ...inProject }
       return run && /^[\w-]{1,64}$/.test(run) ? { ...base, run } as Route : base
     }
     case 'location':
@@ -286,6 +291,7 @@ export function routePath(r: Route): string {
       if (r.describe) return '/routines/describe'
       if (r.starters) return r.starter ? `/routines/starters/${encodeURIComponent(r.starter)}` : '/routines/starters'
       return (r.create ? '/routines/new' : r.tab === 'runs' ? '/routines/runs' : r.id ? `/routines/${encodeURIComponent(r.id)}` : '/routines') + (r.run ? `?run=${encodeURIComponent(r.run)}` : '')
+        + (r.project && !r.id && r.tab !== 'runs' ? `?project=${encodeURIComponent(r.project)}` : '')
     case 'invite':
     case 'reset':
     case 'confirm-email':

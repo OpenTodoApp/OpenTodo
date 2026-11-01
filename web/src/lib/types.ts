@@ -687,7 +687,13 @@ export interface RoutineCatalogueEntry {
 export interface RulesStatus {
   enabled: boolean
   paused: boolean
-  rules: Record<string, { last_run?: number; runs_7d?: number; paused_reason?: string }>
+  rules: Record<string, {
+    last_run?: number; runs_7d?: number; paused_reason?: string
+    /** A shared routine's run-as person, null before anyone turned it on (routines-shared D4). */
+    run_as?: { id: string; name: string } | null
+    /** Whose edit paused it (paused_reason edited_by_other, D5). */
+    paused_by?: { id: string; name: string }
+  }>
 }
 
 /** The owner's automations switch (GET /api/v1/settings/automations). */
@@ -2272,11 +2278,24 @@ export interface RoutineAlertPayload {
   actorName?: undefined
 }
 
+/** A shared project's routine paused because its run-as person no longer edits the project (routines-shared D9). */
+export interface RoutinePausedSharedPayload {
+  ruleId: string
+  ruleName: string
+  projectId: string
+  projectName: string
+  runAsName: string
+  reason: 'run_as_left' | 'run_as_viewer' | string
+  at: number
+  taskId?: undefined
+  actorName?: undefined
+}
+
 export interface AppNotification {
   id: string
   kind: string
   /** AssignedPayload for kind `assigned`, MentionedPayload for `mentioned`, UnblockedPayload for `unblocked`, PagePayload for `page_replied` and `page_completed`, MemberInvitationPayload for `member_invitation`, RoutinePayload for `routine`. */
-  payload: AssignedPayload | MentionedPayload | UnblockedPayload | PagePayload | MemberInvitationPayload | RoutinePayload | RoutineAlertPayload
+  payload: AssignedPayload | MentionedPayload | UnblockedPayload | PagePayload | MemberInvitationPayload | RoutinePayload | RoutineAlertPayload | RoutinePausedSharedPayload
   createdAt: number
   readAt: number | null
   readPending?: boolean

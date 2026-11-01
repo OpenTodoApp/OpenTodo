@@ -133,6 +133,11 @@ type rule struct {
 	// AIBudget the daily token budget as read (routines-ai-step D4, D11).
 	AIApply  string
 	AIBudget int64
+	// ProjectID is rule.project_id; Shared marks a routine of a shared
+	// project, which runs as its run-as person inside the project
+	// (routines-shared D3, D4).
+	ProjectID string
+	Shared    bool
 }
 
 func str(e opsync.Entity, f string) string {
@@ -156,7 +161,8 @@ func (e *Engine) loadRules(ctx context.Context, uid string) ([]rule, error) {
 			out = append(out, r)
 		}
 	}
-	return out, nil
+	// A shared routine runs for its run-as person only (routines-shared D4).
+	return e.forUser(ctx, uid, out)
 }
 
 // ruleKinds is the cached set of trigger kinds of a user's enabled rules.
@@ -213,6 +219,9 @@ type world struct {
 	// labelName and sectionName name ids for an AI step's material (routines-ai-step).
 	labelName   map[string]string
 	sectionName map[string]string
+	// project is set on a shared routine's world: only that project's
+	// tasks and sections (routines-shared D3).
+	project string
 }
 
 // load reads one user's rows, zone and preferences.
