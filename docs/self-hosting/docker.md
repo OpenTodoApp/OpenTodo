@@ -226,6 +226,10 @@ docker compose exec opentodo /opentodo reset-owner-password
 
 The command needs only the data volume: shell access to the host is the proof of ownership. It opens no port, needs no configuration and works while the server runs (or with `docker compose run --rm --no-deps opentodo reset-owner-password` while it is stopped). The link starts with `OPENTODO_BASE_URL`; pass `--base-url https://…` otherwise. It works once, any earlier owner link stops working, and using it signs the owner out everywhere. It is recorded as `password.reset_issued` in the audit log. If the owner also lost their second factor, run `mfa-reset` as described above.
 
+## Host kernel
+
+A container shares the host's kernel, so kernel flaws reachable from the network affect OpenTodo however it is installed. OpenTodo turns Multipath TCP off on its listeners, which keeps the kernel's MPTCP code out of reach for [CVE-2026-98432](https://www.openwall.com/lists/oss-security/2026/10/30/1), a use-after-free in TCP connection handling. That is a mitigation, not the fix: update the host kernel through your distribution as soon as a patched one is available.
+
 ## Updating
 
 `docker compose pull && docker compose up -d` replaces the container; the new version applies migrations at startup. Orchestrators that start the new container before stopping the old one (Coolify, Docker Swarm, Kubernetes with a shared volume on one node) work too: several server processes may use the data directory at once, and the background jobs (reminder push, webhooks, backups, email polling, Trash cleanup) run in only one of them and move to the newer one when the old one exits. Maintenance commands (`restore`, `mfa-reset`, `reset-owner-password` without a running server) still need every server stopped.

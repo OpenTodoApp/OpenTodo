@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Security
+
+- **Multipath TCP is off.** Go turns on Multipath TCP for Linux listeners by default, and CVE-2026-98432, a Linux kernel use-after-free in TCP connection handling, can be reached through MPTCP listeners. OpenTodo gains nothing from MPTCP, so `go.mod` now sets `godebug multipathtcp=0` for the server and `ot`, pinned by a test. The real fix is a patched kernel: the server, and its container, run on the host's kernel, so update it ([advisory](https://www.openwall.com/lists/oss-security/2026/10/30/1), [Host kernel](docs/self-hosting/docker.md#host-kernel)). The Go toolchain stays at 1.27.3, which already carries the crypto/x509 fix for CVE-2026-111943.
+
 ### Added
 
 - **Today's count on the app icon.** The installed app's icon now shows how many of today's tasks are still open, the same number as Today in the sidebar (all of them, not only the Today limit's places), and goes away when nothing is left (#725). It follows every change and every sync while the app runs; while it is closed, a reminder push sets it to the current day's count from the counts the device stored for the next seven days, and the push itself carries nothing new. It works in the home-screen app on iPhone and iPad (iOS 16.4 or later, once notifications are allowed) and in apps installed from Chrome or Edge; **Settings → Notifications → App icon badge** turns it off per device and only appears where badges are supported. See [App icon badge](docs/app-icon-badge.md).
