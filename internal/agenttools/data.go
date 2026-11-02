@@ -509,6 +509,10 @@ type taskOut struct {
 	// change today-waiting-time-sensitive): true when it is due today with a
 	// time or its deadline is today.
 	TimeSensitive *bool `json:"time_sensitive,omitempty"`
+	// TimePassed is set by today_summary on a time-sensitive waiting task only
+	// (OpenSpec change today-waiting-time-passed): true once its time today is
+	// before now in the asked time zone (a deadline without a time never is).
+	TimePassed *bool `json:"time_passed,omitempty"`
 }
 
 // render builds the assistant-facing view of a task, evaluating dates in loc
