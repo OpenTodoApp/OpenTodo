@@ -93,10 +93,85 @@ func containsDotDot(name string) bool {
 	return false
 }
 
+// expandInner replaces ZIP entries by their own entries, one level deep: a
+// Notion export can arrive as a ZIP of "Part-N" ZIPs. The unpacked total stays
+// under the same limit as one archive.
+func expandInner(entries []archiveEntry, maxBytes int64) ([]archiveEntry, error) {
+	var out []archiveEntry
+	var total int64
+	for _, e := range entries {
+		if !strings.HasSuffix(strings.ToLower(e.name), ".zip") || !isZip(e.data) {
+			out = append(out, e)
+			total += int64(len(e.data))
+			continue
+		}
+		inner, err := readArchive(e.data, maxBytes)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", e.name, err)
+		}
+		for _, ie := range inner {
+			total += int64(len(ie.data))
+			out = append(out, ie)
+		}
+	}
+	if len(out) > MaxArchiveEntries {
+		return nil, &FileError{fmt.Sprintf("the archive has more than %d entries", MaxArchiveEntries)}
+	}
+	if total > maxBytes*archiveExpansion {
+		return nil, &FileError{fmt.Sprintf("the archive is too large when unpacked (more than %d MB)", (maxBytes*archiveExpansion)>>20)}
+	}
+	return out, nil
+}
+
+// archiveFormatOf names the format of an archive's entries as parseArchive
+// would read them without a chosen format ("" when none matches).
+func archiveFormatOf(entries []archiveEntry) string {
+	for _, e := range entries {
+		if e.name == "export.json" && (opentodoProfile{}).Detect(e.data) {
+			return "opentodo"
+		}
+		if path.Base(e.name) == "main.sqlite" {
+			return thingsFormat
+		}
+	}
+	if isNotionArchive(entries) {
+		return notionFormat
+	}
+	if _, ok := isVikunjaArchive(entries); ok {
+		return vikunjaFormat
+	}
+	if p, err := Detect(entries[0].data, ""); err == nil {
+		return archiveFormat(p.Name())
+	}
+	return ""
+}
+
+// DetectedFormat is the format data is read as when no format is chosen, ""
+// when none matches: the preview names it when the chosen format differs.
+func DetectedFormat(data []byte, maxBytes int64) string {
+	if isZip(data) {
+		entries, err := readArchive(data, maxBytes)
+		if err == nil {
+			entries, err = expandInner(entries, maxBytes)
+		}
+		if err != nil || len(entries) == 0 {
+			return ""
+		}
+		return archiveFormatOf(entries)
+	}
+	if p, err := Detect(data, ""); err == nil {
+		return p.Name()
+	}
+	return ""
+}
+
 // parseArchive reads every entry with one profile and concatenates the rows.
 func parseArchive(data []byte, opts Options) (*Parsed, error) {
 	entries, err := readArchive(data, opts.maxBytesOrDefault())
 	if err != nil {
+		return nil, err
+	}
+	if entries, err = expandInner(entries, opts.maxBytesOrDefault()); err != nil {
 		return nil, err
 	}
 	// The newest entry time is when the export was made: Todoist dates without a
@@ -134,6 +209,10 @@ func parseArchive(data []byte, opts Options) (*Parsed, error) {
 			}
 			return parseOne(thingsDBProfile{}, e.data, opts)
 		}
+	}
+	// A Notion export: database CSVs named with their page id, row pages beside them.
+	if isNotionArchive(entries) {
+		return parseNotionArchive(entries, opts)
 	}
 	// A Vikunja export: data.json, with the attachment files beside it.
 	if data, ok := isVikunjaArchive(entries); ok {

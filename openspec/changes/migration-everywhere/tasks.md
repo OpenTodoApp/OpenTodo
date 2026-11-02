@@ -5,8 +5,8 @@ Each of groups 2–6 can land as its own pull request; group 7 lands last.
 ## 1. Shared
 
 - [x] 1.1 `Row.TimeEntries` (importer-internal) and the planner writing `time_entry` ops validated by `internal/timetrack`, with the 24-hour cap; verify `go test ./internal/importer -run TimeEntries`
-- [ ] 1.2 `internal/importer/sanitize`: modes for the five new formats (CSV, ZIP with JSON, ZIP with CSV and Markdown, JSON, SQLite); verify `go test ./internal/importer/sanitize/...`
-- [ ] 1.3 Detection regression: every existing fixture keeps its format after each new profile is added to `Profiles`, and a bare CSV with `Name`/`Status` is not `notion-csv`; verify `go test ./internal/importer -run Detect`
+- [x] 1.2 `internal/importer/sanitize`: modes for the five new formats (CSV, ZIP with JSON, ZIP with CSV and Markdown, JSON, SQLite); verify `go test ./internal/importer/sanitize/...`
+- [x] 1.3 Detection regression: every existing fixture keeps its format after each new profile is added to `Profiles`, and a bare CSV with `Name`/`Status` is not `notion-csv`; verify `go test ./internal/importer -run Detect`
 
 ## 2. OmniFocus (`omnifocus-csv`)
 
@@ -22,11 +22,11 @@ Each of groups 2–6 can land as its own pull request; group 7 lands last.
 
 ## 4. Notion (`notion-csv`)
 
-- [ ] 4.1 `profile_notion.go`: ZIP detection by page-id suffix, one project per database, the title column, Markdown bodies, the parent-item relation, and date parsing including ranges; verify `go test ./internal/importer -run Notion`
-- [ ] 4.2 Column guesses in six languages and the `columns` option on preview and commit (`internal/httpapi/import.go`), 400 `invalid_input` for an unknown column; verify `go test ./internal/httpapi -run ImportNotion` (guess, override, unknown column, 401 without credentials)
-- [ ] 4.3 Client: role selects in the preview card for `notion-csv`, re-preview on change, `columns` in `web/src/lib/api.ts`; verify `api.import.test.ts` and an ImportScreen interaction test (`npm test`)
-- [ ] 4.4 Real exports from a free Notion account (a task database and a database with sub-items), sanitised, with goldens
-- [ ] 4.5 `docs/switch/notion.md` and the `docs/import.md` row; verify `make docs-check`
+- [x] 4.1 `profile_notion.go`: ZIP detection by page-id suffix, one project per database, the title column, Markdown bodies, the parent-item relation, and date parsing including ranges; verify `go test ./internal/importer -run Notion`
+- [x] 4.2 Column guesses in six languages and the `columns` option on preview and commit (`internal/httpapi/import.go`), 400 `invalid_input` for an unknown column; verify `go test ./internal/httpapi -run ImportNotion` (guess, override, unknown column, 401 without credentials)
+- [x] 4.3 Client: role selects in the preview card for `notion-csv`, re-preview on change, `columns` in `web/src/lib/api.ts`; verify `api.import.test.ts` and an ImportScreen interaction test (`npm test`)
+- [x] 4.4 Fixtures (a task database and a database with sub-items in a Part-1 ZIP) built in the shape of five published real Notion exports (none is licensed for copying: BOM and CRLF CSVs, `_all.csv`, ids on files, url-encoded relation links, D/M/Y dates), with goldens and the sanitiser run over them; a sanitised export from a real Notion account replaces them when the owner has one (QUESTIONS.md)
+- [x] 4.5 `docs/switch/notion.md` and the `docs/import.md` row; verify `make docs-check`
 
 ## 5. Super Productivity (`super-productivity-json`)
 

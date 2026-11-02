@@ -507,6 +507,7 @@
   "Any source": "Cualquier origen",
   "Any time": "En cualquier momento",
   "Any.do (JSON from a data request)": "Any.do (JSON de una solicitud de datos)",
+  "Notion (Markdown and CSV export)": "Notion (exportación Markdown y CSV)",
   "OmniFocus (CSV)": "OmniFocus (CSV)",
   "Super Productivity (backup JSON)": "Super Productivity (JSON de copia de seguridad)",
   "Tududi (database)": "Tududi (base de datos)",
@@ -7046,5 +7047,8 @@
   "no point on the map": "sin punto en el mapa",
   "the task’s location": "el lugar de la tarea",
   "{km} km": "{km} km",
-  "{m} m": "{m} m"
+  "{m} m": "{m} m",
+  "Done or status": "Hecho o estado",
+  "Not imported": "No se importa",
+  "Which column holds what": "Qué columna contiene qué"
 }

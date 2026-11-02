@@ -507,6 +507,7 @@
   "Any source": "Jede Quelle",
   "Any time": "Jederzeit",
   "Any.do (JSON from a data request)": "Any.do (JSON aus einer Datenanfrage)",
+  "Notion (Markdown and CSV export)": "Notion (Export Markdown & CSV)",
   "OmniFocus (CSV)": "OmniFocus (CSV)",
   "Super Productivity (backup JSON)": "Super Productivity (Backup-JSON)",
   "Tududi (database)": "Tududi (Datenbank)",
@@ -7046,5 +7047,8 @@
   "no point on the map": "kein Punkt auf der Karte",
   "the task’s location": "dem Ort der Aufgabe",
   "{km} km": "{km} km",
-  "{m} m": "{m} m"
+  "{m} m": "{m} m",
+  "Done or status": "Erledigt oder Status",
+  "Not imported": "Nicht importiert",
+  "Which column holds what": "Welche Spalte was enthält"
 }
