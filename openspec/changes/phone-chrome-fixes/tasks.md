@@ -11,7 +11,7 @@
 ## 3. Install appearance
 
 - [x] 3.1 Set the static light and dark `theme-color` metas and `mobile-web-app-capable` in `web/index.html`, the light fallback in `web/public/appearance.js`, and `theme_color` in `web/vite.config.ts` from the default appearance; verified by `web/src/lib/appearance.test.ts`
-- [x] 3.2 Set the manifest splash `background_color` to the light canvas `#eef0f2` in `web/vite.config.ts`; verified by `web/src/lib/appearance.test.ts`
+- [x] 3.2 Set the manifest splash `background_color` to the dark canvas `#0d0e10` (`DARK_BAR`) in `web/vite.config.ts`; verified by `web/src/lib/appearance.test.ts`
 
 ## 4. Checks
 

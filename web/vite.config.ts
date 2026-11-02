@@ -49,8 +49,10 @@ export default defineConfig({
         short_name: 'OpenTodo',
         description: 'Your tasks, your server. Open-source, local-first task manager.',
         theme_color: '#047857',
-        // The light page background (index.css --ot-canvas): the splash opens light, like the app.
-        background_color: '#eef0f2',
+        // The dark canvas (DARK_BAR in src/ui/tokens/accents.ts): a manifest has one splash
+        // colour, and a bright flash on a phone in dark mode is worse than a dark splash
+        // before a light app. appearance.test.ts pins it to DARK_BAR.
+        background_color: '#0d0e10',
         display: 'standalone',
         start_url: '/',
         scope: '/',
