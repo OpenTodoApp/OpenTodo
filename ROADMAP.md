@@ -105,7 +105,7 @@ Longer horizons, and the household.
 | [`time-sectors`](openspec/changes/archive/2026-11-02-time-sectors/) | **Shipped.** This week, Next week, This month, Next quarter, without a fake due date | [#579](https://github.com/OpenTodoApp/OpenTodo/issues/579) |
 | [`plan-objectives`](openspec/changes/plan-objectives/) | Quarterly and weekly objectives as small cards in Plan and the weekly review |  |
 | [`reusable-lists`](openspec/changes/archive/2026-11-02-reusable-lists/) | **Shipped.** Grocery mode: adding an existing item reopens it | [#581](https://github.com/OpenTodoApp/OpenTodo/issues/581) |
-| [`chore-rotation`](openspec/changes/chore-rotation/) | Recurring tasks that rotate between members of a group |  |
+| [`chore-rotation`](openspec/changes/archive/2026-11-02-chore-rotation/) | **Shipped.** Recurring tasks that rotate between members of a group | [#582](https://github.com/OpenTodoApp/OpenTodo/issues/582) |
 | [`location-reminders`](openspec/changes/location-reminders/) | Reminders when you arrive at or leave a place |  |
 | [`more-languages`](openspec/changes/more-languages/) | Dutch, and a kit for community languages |  |
 | [`priority-names`](openspec/changes/priority-names/) | Rename the four priorities |  |
