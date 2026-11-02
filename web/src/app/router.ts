@@ -385,8 +385,10 @@ export function routeBeforeFocus(): Route {
 
 if (typeof window !== 'undefined') {
   window.addEventListener('popstate', () => {
-    // The browser's Back already left the page: put its address back and ask (D4).
-    if (leaveGuard) {
+    // The browser's Back already left the page: put its address back and ask (D4). An
+    // overlay's marker entries (useBackToClose) share the page's address: stepping over one
+    // leaves nothing, so it never asks.
+    if (leaveGuard && addressOf(location) !== current) {
       history.pushState(null, '', current)
       leaveGuard(() => { leaveGuard = null; history.back() })
       return
