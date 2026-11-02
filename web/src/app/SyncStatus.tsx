@@ -3,6 +3,7 @@ import { requestSync, useSyncStatus } from '../lib/sync'
 import { useDemo } from '../lib/demo'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
+import { showBulkToast } from './bulk/toastStore'
 
 /** Fired to show the two-factor enrolment wizard (App listens; OpenSpec `mfa-totp`). */
 export const ENROLMENT_EVENT = 'opentodo:mfa-enrolment-required'
@@ -44,7 +45,12 @@ export function SyncStatus({ compact = false }: { compact?: boolean } = {}) {
   const button = (
     <button
       type="button"
-      onClick={() => (s.state === 'restricted' ? window.dispatchEvent(new Event(ENROLMENT_EVENT)) : requestSync(0))}
+      onClick={() => {
+        if (s.state === 'restricted') return window.dispatchEvent(new Event(ENROLMENT_EVENT))
+        // The rail has no room for the sentence and touch has no hover: a tap shows it in full.
+        if (compact && failed) showBulkToast(s.error!, null)
+        requestSync(0)
+      }}
       aria-label={quiet ? name : `${name}. ${detail}`}
       data-sync-status={s.state}
       className={`flex min-h-9 items-center gap-2 rounded-control text-meta text-muted hover:bg-sunken dark:hover:bg-raised ${compact ? 'justify-center px-0' : 'px-2 py-1'}`}
@@ -56,7 +62,11 @@ export function SyncStatus({ compact = false }: { compact?: boolean } = {}) {
   return (
     <div className={failed ? 'flex min-w-0 flex-col' : undefined}>
       <Tooltip label={quiet ? name : detail} side={compact ? 'right' : 'top'}>{button}</Tooltip>
-      {failed && <p role="alert" className="max-w-full truncate px-2 pb-1 text-meta text-danger">{s.error}</p>}
+      {/* Announced once when the sync starts failing (a fixed sentence, so a changed detail does not repeat it); the
+          detail follows as plain text. In the expanded sidebar it wraps on two lines; the icon rail (about 2.5 rem)
+          cannot hold a sentence, so there it stays for assistive technology and a tap shows it in a toast. */}
+      {failed && <span role="alert" className="sr-only">{map.text}</span>}
+      {failed && <p className={compact ? 'sr-only' : 'line-clamp-2 max-w-full break-words px-2 pb-1 text-meta text-danger'}>{s.error}</p>}
     </div>
   )
 }

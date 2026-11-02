@@ -8,6 +8,7 @@ import { mutate, mutateMany, type Change } from './ops'
 import { deadlineFireAt, relativeFireAt, snoozeUntil, type SnoozeChoice } from './reminderTime'
 import type { Op, Reminder, Task } from './types'
 import { uuid } from './ids'
+import { LOCAL_ERRORS } from './localErrors'
 
 export type ReminderInput =
   | { kind: 'relative'; offset_minutes: number }
@@ -23,11 +24,11 @@ function offsetFireAt(kind: 'relative' | 'deadline', task: Pick<Task, 'due' | 'd
 /** Add a reminder to a task; returns its id. A relative reminder on an undated task has no firing time yet. */
 export async function addReminder(taskId: string, input: ReminderInput, now = Date.now()): Promise<string> {
   const task = await db.tasks.get(taskId)
-  if (!task || task.deleted_at) throw new Error('task not found')
+  if (!task || task.deleted_at) throw new Error(LOCAL_ERRORS.taskNotFound)
   const id = uuid()
   const offset = input.kind === 'absolute' ? null : input.offset_minutes
-  if (input.kind !== 'absolute' && !Number.isInteger(offset)) throw new Error('offset must be a whole number of minutes')
-  if (input.kind === 'absolute' && !(input.fire_at > 0)) throw new Error('reminder time is required')
+  if (input.kind !== 'absolute' && !Number.isInteger(offset)) throw new Error(LOCAL_ERRORS.offsetNotWhole)
+  if (input.kind === 'absolute' && !(input.fire_at > 0)) throw new Error(LOCAL_ERRORS.reminderTimeRequired)
   await mutate('reminder', id, {
     task_id: taskId,
     kind: input.kind,
@@ -51,11 +52,11 @@ export async function updateReminder(id: string, input: ReminderInput): Promise<
   const task = await db.tasks.get(r.task_id)
   const patch: Partial<Reminder> = { kind: input.kind }
   if (input.kind !== 'absolute') {
-    if (!Number.isInteger(input.offset_minutes)) throw new Error('offset must be a whole number of minutes')
+    if (!Number.isInteger(input.offset_minutes)) throw new Error(LOCAL_ERRORS.offsetNotWhole)
     patch.offset_minutes = input.offset_minutes
     patch.fire_at = offsetFireAt(input.kind, task, input.offset_minutes)
   } else {
-    if (!(input.fire_at > 0)) throw new Error('reminder time is required')
+    if (!(input.fire_at > 0)) throw new Error(LOCAL_ERRORS.reminderTimeRequired)
     patch.offset_minutes = null
     patch.fire_at = input.fire_at
   }
