@@ -262,8 +262,9 @@ function SectionGroup({ g, first, last, rowList, project, ...p }: GroupedListPro
 /** A date, project, Later or Blocked group; collapsible per device. */
 function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, renderRow, earlierActions, projects }: GroupedListProps & { g: ListGroup; rowList: RowList }) {
   if (g.rows.length === 0 && g.folded === undefined && !g.projected?.length) return null
-  // Today's Earlier group (page-rhythm D5): folded above five tasks until this device chooses.
-  const earlier = view === 'today' && g.key === 'earlier'
+  // Today's Earlier group (page-rhythm D5): folded above five tasks until this device chooses;
+  // Upcoming's Start with Today shares the choice (upcoming-start-with-today D2).
+  const earlier = (view === 'today' || view === 'upcoming') && g.key === 'earlier'
   const collapsed = earlier ? earlierCollapsed(collapsedGroups, g.rows.length) : collapsedGroups.has(groupKey(view, g.key))
   const toggle = () => {
     if (!earlier) return setGroupCollapsed(view, g.key, !collapsed)

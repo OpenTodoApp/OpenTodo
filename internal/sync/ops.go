@@ -936,6 +936,12 @@ var Schema = map[string]map[string]Field{
 		// of the Inbox card (failures and proposals stay); clients and the
 		// server read an empty or unknown value as off and keep it.
 		"routines_hide_successes": {Kind: kString, Default: `""`},
+		// Upcoming starts with Today (OpenSpec change upcoming-start-with-today,
+		// design D1): "on" opens Upcoming with Today's own groups (Earlier,
+		// Today, the parts of the day, This Evening, Blocked and Waiting for a
+		// slot) before Tomorrow; clients read an empty or unknown value as off
+		// and keep the stored value. Settings, never content.
+		"upcoming_today": {Kind: kString, Default: `""`},
 	},
 	// review: when the user last finished a weekly review (OpenSpec change
 	// `stats-and-review`, design D4). One row with the entityId "me"; like
