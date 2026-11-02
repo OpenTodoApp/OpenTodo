@@ -64,7 +64,7 @@ A `Dropped` action SHALL be imported completed with a warning. Repeat rules are 
 ### Requirement: Vikunja structure and attributes
 A Vikunja data export SHALL be recognised by a ZIP holding `VERSION` and a `data.json` array of projects with `id`, `title`, `tasks` and `hex_color`. The export SHALL be mapped as follows:
 - Projects SHALL become projects, with `parent_project_id` giving sub-projects, and archived projects SHALL be archived.
-- The buckets of a project's first Kanban view SHALL become sections, except its done bucket.
+- The buckets of a project's first Kanban view SHALL become sections, except its done bucket, and the project SHALL open as a board. A project whose open tasks all sit in one bucket never used its board and SHALL get no sections. The default `Inbox` project SHALL not be created: its tasks go to the import's target project.
 - A task SHALL keep `title`, its `description` as text, `done` and `done_at`, `due_date`, `start_date` as the start date, labels, its subtask and parent relations, and its `blocked` relations as `blocked_by`.
 - `priority` SHALL map 5 and 4 to 1, 3 to 2, 2 to 3, and 0 and 1 to 4.
 - `repeat_after` SHALL become a recurrence rule when it is a whole number of days, and `repeat_mode` 1 SHALL become a monthly rule.
