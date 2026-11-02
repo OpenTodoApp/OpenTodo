@@ -6919,5 +6919,12 @@
   "carried over": "arrastrado",
   "{n, plural, one {# repeating task skipped} other {# repeating tasks skipped}}": "{n, plural, one {# tarea repetida omitida} other {# tareas repetidas omitidas}}",
   "{n, plural, one {Planned for {name}} other {# tasks planned for {name}}}": "{n, plural, one {Planificada para {name}} other {# tareas planificadas para {name}}}",
-  "Set a time sector": "Fijar un periodo"
+  "Set a time sector": "Fijar un periodo",
+  "Date…": "Fecha…",
+  "Do today: {title}": "Hacer hoy: {title}",
+  "Keep this week": "Mantener esta semana",
+  "No task has a time sector.": "Ninguna tarea tiene un periodo.",
+  "Plan {title}": "Planificar {title}",
+  "Show the available tasks": "Mostrar las tareas disponibles",
+  "Waiting in {group}": "En espera en {group}"
 }
