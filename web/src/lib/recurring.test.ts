@@ -420,3 +420,72 @@ describe('start and evening follow the series (OpenSpec someday-and-evening 7.1)
     expect((await db.tasks.get(id))?.start).toBe('2026-10-24')
   })
 })
+
+// OpenSpec change chore-rotation (D2, D3): completion passes the turn.
+describe('rotating series', () => {
+  const people = ['alice', 'bob', 'carol']
+  /** The shared project "house" (alice, bob, carol) and the series "bins" on this device. */
+  async function seed(extra: Record<string, unknown> = {}) {
+    await db.memberships.put({ projectId: 'house', role: 'editor', ownerId: 'alice',
+      members: people.map((u) => ({ userId: u, name: u, email: `${u}@example.com`, role: 'editor' as const })) })
+    const fields: Record<string, unknown> = { title: 'Bins', project_id: 'house', parent_id: null, priority: 4, labels: [], position: 1, created_at: 1,
+      completed_at: null, deleted_at: null, recurrence: 'every monday', series_id: null, due: { date: '2026-11-09' }, assignee_id: 'alice',
+      rotation: people, section_id: null, ...extra }
+    await applyOps(Object.entries(fields).map(([field, value]) => ({ id: `seed-${field}-${run()}`, entity: 'task', entityId: 'bins', field, value, ts: 10 + n, device: 'seed' })))
+  }
+
+  it('assigns the next person and keeps the holder on the record', async () => {
+    await seed()
+    const rec = await completeTask('bins', { today: '2026-11-09' })
+    expect((await db.tasks.get('bins'))?.assignee_id).toBe('bob')
+    expect((await db.tasks.get(rec!))?.assignee_id).toBe('alice')
+    await completeTask('bins', { today: '2026-11-16' })
+    await completeTask('bins', { today: '2026-11-23' })
+    expect((await db.tasks.get('bins'))?.assignee_id).toBe('alice') // wrapped around
+  })
+
+  it('does not rotate on skip or when the series ends', async () => {
+    await seed()
+    await skipOccurrence('bins', { today: '2026-11-09' })
+    expect((await db.tasks.get('bins'))?.assignee_id).toBe('alice')
+    await use(`end-${run()}`)
+    await seed({ recurrence: 'every monday for 1 times' })
+    await completeTask('bins', { today: '2026-11-09' })
+    const t = await db.tasks.get('bins')
+    expect(t?.completed_at).not.toBeNull()
+    expect(t?.assignee_id).toBe('alice')
+  })
+
+  it('is inert on a subtask and in a project the device does not share', async () => {
+    await seed({ parent_id: 'other' })
+    await completeTask('bins', { today: '2026-11-09' })
+    expect((await db.tasks.get('bins'))?.assignee_id).toBe('alice')
+    await use(`personal-${run()}`)
+    await seed()
+    await db.memberships.clear()
+    await completeTask('bins', { today: '2026-11-09' })
+    expect((await db.tasks.get('bins'))?.assignee_id).toBe('alice')
+  })
+
+  it('two devices completing the same occurrence offline write the same batch', async () => {
+    const a = `A-${run()}`
+    const b = `B-${run()}`
+    const batches: Record<string, unknown>[][] = []
+    for (const dev of [a, b]) {
+      await use(dev)
+      await seed()
+      await db.outbox.clear()
+      await completeTask('bins', { today: '2026-11-09', now: 5000 })
+      batches.push((await outbox()).map(({ entityId, field, value }) => ({ entityId, field, value }))
+        .sort((x, y) => `${x.entityId}${x.field}`.localeCompare(`${y.entityId}${y.field}`)))
+    }
+    expect(batches[0]).toEqual(batches[1])
+    expect(batches[0]).toContainEqual({ entityId: 'bins', field: 'assignee_id', value: 'bob' })
+    await syncAll([a, b])
+    for (const dev of [a, b]) {
+      await use(dev)
+      expect((await db.tasks.get('bins'))?.assignee_id).toBe('bob')
+      expect(await records('bins')).toHaveLength(1)
+    }
+  })
+})

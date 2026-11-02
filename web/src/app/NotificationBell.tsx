@@ -146,6 +146,8 @@ export function NotificationBell({ compact = false }: { compact?: boolean } = {}
                       </span>
                     ) : n.kind === 'unblocked' && 'blockerTitle' in n.payload ? (
                       <span className="block" data-kind="unblocked">{t.rich('<b>{actor}</b> completed <b2>{blocker}</b2>: <b3>{task}</b3> is ready to start', { actor: n.payload.actorName || t('Someone'), blocker: n.payload.blockerTitle || t('a task'), task: n.payload.taskTitle || t('your task'), b: (chunks) => <strong>{chunks}</strong>, b2: (chunks) => <strong>{chunks}</strong>, b3: (chunks) => <strong>{chunks}</strong> })}</span>
+                    ) : 'turn' in n.payload && n.payload.turn ? (
+                      <span className="block" data-kind="turn">{t.rich('It’s your turn: <b>{task}</b>', { task: n.payload.taskTitle || t('a task'), b: (chunks) => <strong>{chunks}</strong> })}</span>
                     ) : (
                       <span className="block">{t.rich('<b>{actor}</b> assigned you <b2>{task}</b2>', { actor: n.payload.actorName || t('Someone'), task: ('taskTitle' in n.payload && n.payload.taskTitle) || t('a task'), b: (chunks) => <strong>{chunks}</strong>, b2: (chunks) => <strong>{chunks}</strong> })}</span>
                     )}
