@@ -2,8 +2,66 @@ package agenttools
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 )
+
+// TestTodaySummaryTimeSensitive (OpenSpec change today-waiting-time-sensitive,
+// task 3.1, and today-waiting-time-passed): a waiting task due today with a
+// time, or with a deadline today, is marked time_sensitive and listed in
+// waiting_time_sensitive soonest first, with time_passed once its time is
+// before now (the fixture's clock reads 10:00 UTC); the slots are unchanged.
+func TestTodaySummaryTimeSensitive(t *testing.T) {
+	f := newFixture(t)
+	c := agent("u1")
+	day := "2026-10-12"
+	f.task("u1", "a", "A", map[string]any{"due": map[string]any{"date": day}, "created_at": 1})
+	f.task("u1", "form", "Send the form", map[string]any{"due": map[string]any{"date": day, "time": "16:00"}, "created_at": 2})
+	f.task("u1", "plain", "Plain", map[string]any{"due": map[string]any{"date": day}, "created_at": 3})
+	f.task("u1", "taxes", "File the taxes", map[string]any{"due": map[string]any{"date": day}, "deadline": day, "created_at": 4})
+	f.task("u1", "call", "Call", map[string]any{"due": map[string]any{"date": day, "time": "09:00"}, "created_at": 5})
+	f.put("u1", "user_prefs", "me", map[string]any{"today_limit": 1})
+
+	out := f.mustCall(c, "today_summary", map[string]any{"timezone": "UTC"})
+	raw, _ := json.Marshal(out)
+	var res struct {
+		DueToday []struct {
+			ID            string `json:"id"`
+			Waiting       *bool  `json:"waiting_for_slot"`
+			TimeSensitive *bool  `json:"time_sensitive"`
+			TimePassed    *bool  `json:"time_passed"`
+		} `json:"due_today"`
+		Soon []string `json:"waiting_time_sensitive"`
+	}
+	if err := json.Unmarshal(raw, &res); err != nil {
+		t.Fatal(err)
+	}
+	if got := fmt.Sprint(res.Soon); got != "[call form taxes]" {
+		t.Fatalf("waiting_time_sensitive = %s", got)
+	}
+	want := map[string]string{"a": "slot", "form": "true", "plain": "false", "taxes": "true", "call": "true"}
+	for _, x := range res.DueToday {
+		got := "slot"
+		if x.Waiting != nil && *x.Waiting {
+			got = "nil"
+			if x.TimeSensitive != nil {
+				got = fmt.Sprint(*x.TimeSensitive)
+			}
+		} else if x.TimeSensitive != nil {
+			t.Fatalf("%s is in a slot and has time_sensitive", x.ID)
+		}
+		if got != want[x.ID] {
+			t.Fatalf("%s: %s, want %s", x.ID, got, want[x.ID])
+		}
+		passed := "nil"
+		if x.TimePassed != nil {
+			passed = fmt.Sprint(*x.TimePassed)
+		}
+		if wantPassed := map[string]string{"form": "false", "taxes": "false", "call": "true"}[x.ID]; passed != wantPassed && (wantPassed != "" || passed != "nil") {
+			t.Fatalf("%s: time_passed %s, want %s", x.ID, passed, wantPassed)
+		}
+	}
+}
 
 // TestTodaySummaryLimit (OpenSpec change today-closed-list, task 4.1):
 // today_summary reports the Today limit and marks the tasks waiting for a slot

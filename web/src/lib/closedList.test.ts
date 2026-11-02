@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import vectors from './closedList.vectors.json'
-import { fillSlots, giveBackSlotList, notBlocked, readTodayLimit, takeSlotList, takenSlots, type SlotTask } from './closedList'
+import { fillSlots, giveBackSlotList, nextWaiting, notBlocked, readTodayLimit, takeSlotList, takenSlots, timeSensitive, waitingNow, type SlotTask, type TimeSensitive } from './closedList'
 
 type VTask = SlotTask & { available?: boolean }
 type Vector = {
@@ -11,6 +11,9 @@ type Vector = {
   tasks: VTask[]
   expect: { limit: number; slots: string[]; waiting: string[]; chosen: number }
   take?: { id: string; taken: string[] | 'full' }
+  now?: string
+  time_sensitive?: TimeSensitive[]
+  next?: string | null
 }
 
 const review = (r: Vector['review']) => ({ focus_date: '', focus: '', slots_date: '', slots: '', ...r })
@@ -25,9 +28,18 @@ describe('closed list fill (shared vectors with internal/closedlist)', () => {
       const available = v.predicate === 'flow' ? (t: SlotTask) => (t as VTask).available !== false : notBlocked
       const fill = fillSlots({ tasks: v.tasks, limit: v.limit, today: vectors.today, review: review(v.review) }, available)
       expect(fill).toEqual(v.expect)
+      const byId = new Map(v.tasks.map((t) => [t.id, t]))
+      const soon = timeSensitive(fill.waiting.map((id) => byId.get(id)!), vectors.today, v.now)
+      expect(soon).toEqual(v.time_sensitive ?? [])
+      expect(nextWaiting(soon)?.id ?? null).toBe(v.next ?? null)
       if (v.take) expect(takeSlotList(fill, takenSlots(review(v.review), vectors.today), v.take.id)).toEqual(v.take.taken)
     })
   }
+
+  it('reads now on the logical today: past 24:00 after midnight before the day start', () => {
+    expect(waitingNow(new Date(2026, 9, 30, 9, 5), '2026-10-30', '2026-10-30')).toBe('09:05')
+    expect(waitingNow(new Date(2026, 9, 31, 1, 30), '2026-10-30', '2026-10-31')).toBe('25:30')
+  })
 
   it('gives a slot back', () => {
     expect(giveBackSlotList(['a', 'b', 'c'], 'b')).toEqual(['a', 'c'])

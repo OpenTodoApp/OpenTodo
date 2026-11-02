@@ -65,3 +65,22 @@ export const Notices: StoryObj = {
     </div>
   ),
 }
+/**
+ * A notice with actions (issue 731): beside the text while the text keeps a readable
+ * measure, under it in a narrow card such as the start guide's, never squeezing the text.
+ */
+export const NoticeWithActions: StoryObj = {
+  render: () => {
+    const notice = (
+      <Notice action={<span className="flex flex-wrap gap-2"><Button size="sm" variant="primary">Open on the Loop home</Button><Button size="sm" variant="ghost">Keep my start view</Button></span>}>
+        Open on the Loop home on this device? It shows what needs your attention today. Your other devices keep their own start view.
+      </Notice>
+    )
+    return (
+      <div className="space-y-4">
+        <div className="max-w-2xl">{notice}</div>
+        <div className="max-w-sm">{notice}</div>
+      </div>
+    )
+  },
+}

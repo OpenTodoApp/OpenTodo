@@ -61,11 +61,25 @@ const DefaultMonthlyCap = 500_000
 // Consents from MinDisclosureVersion on still count: version 2 added "photos
 // you add" (voice-ramble D6) without asking everyone to consent again; version
 // 3 added the paragraph on routines (routines-ai-step D10), which AI steps
-// need (RoutineDisclosureVersion) while chats keep their consent.
-const DisclosureVersion = 3
+// need (RoutineDisclosureVersion) while chats keep their consent; version 4
+// (assistant-disclosure-accuracy) listed everything the assistant already
+// sent (notes, tracked time, routines, frames, workspaces, custom fields,
+// locations, attachments' names, and the views and webhook hosts of a
+// Describe it draft) and the instruction and project context of a routine's
+// AI step. Version 4 changes no data flow, so earlier consents still count
+// (MinDisclosureVersion stays 1): no spec asks for consent again when the
+// text grows, and asking would interrupt everyone for a correction. Raise
+// MinDisclosureVersion only when what is sent changes.
+const DisclosureVersion = 4
 
 // MinDisclosureVersion is the oldest disclosure a consent may name and still count.
 const MinDisclosureVersion = 1
+
+// CompleteDisclosureVersion is the first disclosure whose list names
+// everything the assistant sends (assistant-disclosure-accuracy). A consent
+// that names an older one keeps counting, but its person is told once that
+// the list is now complete (assistant-disclosure-notice D2).
+const CompleteDisclosureVersion = 4
 
 // ProviderSettings is one provider's owner configuration.
 type ProviderSettings struct {
@@ -489,13 +503,34 @@ type Consent struct {
 	// RoutinesVersion is the disclosure version accepted for routines' AI
 	// steps, 0 when not accepted (routines-ai-step D10).
 	RoutinesVersion int `json:"routines_version"`
+	// SeenVersion is the disclosure version whose notice the person
+	// dismissed with Got it, 0 when none (assistant-disclosure-notice D1).
+	SeenVersion int `json:"seen_version"`
+}
+
+// NeedsNotice reports whether the person should be told once that the list
+// is now complete: a consent that still counts names an older disclosure and
+// its notice was not dismissed (assistant-disclosure-notice D2).
+func (c *Consent) NeedsNotice() bool {
+	return c.Current() && c.DisclosureVersion < CompleteDisclosureVersion && c.SeenVersion < CompleteDisclosureVersion
+}
+
+// MarkDisclosureSeen records that the person saw the current disclosure's
+// notice; false when there is no consent to attach it to.
+func (st *Store) MarkDisclosureSeen(ctx context.Context, userID string) (bool, error) {
+	res, err := st.db.ExecContext(ctx, `UPDATE assistant_consent SET seen_version = MAX(seen_version, ?) WHERE user_id = ?`, DisclosureVersion, userID)
+	if err != nil {
+		return false, fmt.Errorf("store assistant disclosure seen: %w", err)
+	}
+	n, err := res.RowsAffected()
+	return n > 0, err
 }
 
 // Consent returns the user's consent, or nil.
 func (st *Store) Consent(ctx context.Context, userID string) (*Consent, error) {
 	var c Consent
-	err := st.db.QueryRowContext(ctx, `SELECT accepted_at, disclosure_version, provider, routines_version FROM assistant_consent WHERE user_id = ?`, userID).
-		Scan(&c.AcceptedAt, &c.DisclosureVersion, &c.Provider, &c.RoutinesVersion)
+	err := st.db.QueryRowContext(ctx, `SELECT accepted_at, disclosure_version, provider, routines_version, seen_version FROM assistant_consent WHERE user_id = ?`, userID).
+		Scan(&c.AcceptedAt, &c.DisclosureVersion, &c.Provider, &c.RoutinesVersion, &c.SeenVersion)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}

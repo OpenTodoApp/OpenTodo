@@ -6,6 +6,7 @@
 import { t } from '../i18n'
 import { MAX_THEME_BYTES, THEME_FORMAT, validateTheme, type ThemeDocument, type ThemeError } from './format'
 import { newThemeId, uniqueName } from './custom'
+import { stripJsonc } from './jsonc'
 
 /** The largest theme file the importer reads (design D11). */
 export const MAX_THEME_FILE_BYTES = 64 * 1024
@@ -75,11 +76,14 @@ export function describeThemeError(code: ThemeError | 'size-file', path: string)
 }
 
 /**
- * Reads a theme file (design D11): the size, JSON, the format and its rules, then
- * the migration. A valid one is returned as it is (the caller makes the draft).
+ * Reads a theme file (design D11): the size, JSON (comments and trailing commas
+ * allowed, as in a template), the format and its rules, then the migration. A
+ * valid one is returned as it is (the caller makes the draft).
  */
-export function readThemeFile(text: string, bytes = new TextEncoder().encode(text).length): ThemeFileResult {
+export function readThemeFile(file: string, bytes = new TextEncoder().encode(file).length): ThemeFileResult {
   if (bytes > MAX_THEME_FILE_BYTES) return { ok: false, message: describeThemeError('size-file', '') }
+  // A template's notes (`//` comments) and trailing commas are allowed; blanking them keeps every offset and line.
+  const text = stripJsonc(file.replace(/^\uFEFF/, ''))
   let value: unknown
   try {
     value = JSON.parse(text)
@@ -106,5 +110,12 @@ export function fileErrorText(r: Extract<ThemeFileResult, { ok: false }>): strin
 
 /** An imported document as a draft: a new id, and its name made free among the user's themes (design D11). */
 export function importedDraft(doc: ThemeDocument, takenNames: readonly string[], id = newThemeId()): ThemeDocument {
-  return { ...doc, id, name: uniqueName(doc.name, takenNames) }
+  return { ...withoutFileKeys(doc), id, name: uniqueName(doc.name, takenNames) }
+}
+
+/** A document as a theme keeps it: without the file's `$schema` and an empty `tokens` a template may leave. */
+export function withoutFileKeys(doc: ThemeDocument): ThemeDocument {
+  const { $schema: _s, tokens, ...rest } = doc
+  void _s
+  return tokens && Object.keys(tokens).length ? { ...rest, tokens } : rest
 }

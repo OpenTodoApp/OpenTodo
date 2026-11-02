@@ -30,6 +30,12 @@ export const it: Vocabulary = {
   before: ['il', 'entro', 'per'],
   deadlineWords: ['scadenza'],
   somedayWords: ['prima o poi'],
+  // Time sectors (time-sectors D8), read only while the switch is on; "next week" alone stays a date.
+  sectorPhrases: {
+    'this-week': ['questa settimana', 'nel corso della settimana'], 'next-week': ['nel corso della prossima settimana', 'nel corso della settimana prossima'],
+    'this-month': ['questo mese', 'nel corso del mese'], 'next-month': ['nel corso del prossimo mese', 'nel corso del mese prossimo'],
+    'this-quarter': ['questo trimestre', 'nel corso del trimestre'], 'next-quarter': ['il prossimo trimestre', 'nel corso del prossimo trimestre'],
+  },
   eveningWords: ['stasera'],
   morningWords: ['stamattina', 'stamani', 'questa mattina'],
   afternoonWords: ['oggi pomeriggio', 'questo pomeriggio'],
