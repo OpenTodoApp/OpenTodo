@@ -33,7 +33,7 @@ func TestObjectivesCollection(t *testing.T) {
 			t.Fatalf("%v: %d %v", body, resp.StatusCode, out)
 		}
 	}
-	resp, out = e.do("POST", "/api/v1/objectives", map[string]any{"title": "Monthly", "period": "2026-11"})
+	_, out = e.do("POST", "/api/v1/objectives", map[string]any{"title": "Monthly", "period": "2026-11"})
 	if msg := fmt.Sprint(out["error"]); !strings.Contains(msg, "period") {
 		t.Fatalf("message does not name the field: %v", msg)
 	}
