@@ -235,7 +235,7 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 	// Today's closed list (today-closed-list D7): the slots first, then the waiting tasks.
 	var split *todaySplit
 	if view == "today" && planning == "" && !o.ranged() {
-		if split, err = a.todayClosedList(ctx, c, all, projects, tasks, today); err != nil {
+		if split, err = a.todayClosedList(ctx, c, all, projects, tasks, today, a.Now().Format("15:04")); err != nil {
 			return err
 		}
 		tasks = split.ordered(tasks)

@@ -73,6 +73,8 @@ export const SETTINGS_COPY = {
       // Today's focus style and Bento order (bento-daily-check D4): synced user_prefs, as in the Daily check's menu.
       focus: { label: msg('Daily focus'), description: msg('Three tasks of any size, or a Bento: one Large, one Medium and one Small.') },
       order: { label: msg('Order'), description: msg('Frog does the Large task first; Summit warms up with the Medium one.') },
+      // Time sectors (time-sectors D7): synced user_prefs.time_sectors, off by default in every mode.
+      sectors: { label: msg('Time sectors'), description: msg('Plan tasks into this week, next week or this month without a fake date.') },
       // Energy levels (task-energy D3): synced user_prefs.energy, off by default in every mode.
       energy: { label: msg('Energy levels'), description: msg('Mark tasks Deep, Medium or Low and filter by the energy they need.') },
       // Formatting button (notes-toolbar-desktop D4): synced user_prefs.formatting_toggle, on by default.

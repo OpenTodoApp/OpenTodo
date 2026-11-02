@@ -13,6 +13,8 @@ The OpenTodo app for Android opens your own OpenTodo server, like the [installed
 
 ## Install the app
 
+**Install from GitHub for now.** The Google Play and F-Droid links below don't open yet: the app is still in Google Play's closed testing and waiting for its first F-Droid build. You can switch to a store later (see below).
+
 The same app comes from three places. Pick the one you already use; all three are signed with the same certificate, so updates from one install over the others.
 
 - **Google Play**: search for **OpenTodo** in the Play Store, or open [play.google.com/store/apps/details?id=app.opentodo](https://play.google.com/store/apps/details?id=app.opentodo). Play updates it by itself.
@@ -20,8 +22,6 @@ The same app comes from three places. Pick the one you already use; all three ar
 - **GitHub**: download `opentodo-android-<version>.apk` from the [latest release](https://github.com/OpenTodoApp/OpenTodo/releases/latest) and open it on the phone (Android asks you to allow installing from your browser or file manager once). You update it the same way; tools such as Obtainium can follow the releases for you.
 
 Release candidates (`-rc` versions) are only on GitHub, never in the stores.
-
-While the app is in Google Play's closed testing and waiting for its first F-Droid build, the two store links above don't open yet: install from GitHub meanwhile, and switch to a store later (next section).
 
 ### Switching between Google Play, F-Droid and GitHub
 

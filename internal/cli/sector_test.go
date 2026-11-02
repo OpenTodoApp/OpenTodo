@@ -54,4 +54,17 @@ func TestSectorFlag(t *testing.T) {
 	if w := writesIn(h.requestLog()); len(w) != 0 {
 		t.Fatalf("invalid --sector wrote %v", w)
 	}
+
+	// --natural reads sector phrases only while the account has Time sectors on (task 4.2).
+	off := strings.TrimSpace(h.mustRun("add", "Clean the garage this month", "--natural"))
+	if got := h.task(off); got["title"] != "Clean the garage this month" || got["sector"] != nil {
+		t.Fatalf("off = %v", got)
+	}
+	h.apiJSON("POST", "/api/v1/sync", map[string]any{"device": "seed", "cursor": 0, "ops": []map[string]any{
+		{"id": "prefs/sectors", "entity": "user_prefs", "entityId": "me", "field": "time_sectors", "value": "on", "ts": 1, "device": "seed"},
+	}})
+	on := strings.TrimSpace(h.mustRun("add", "Clean the garage this month", "--natural"))
+	if got := h.task(on); got["title"] != "Clean the garage" || got["sector"] != "2026-10" {
+		t.Fatalf("on = %v", got)
+	}
 }

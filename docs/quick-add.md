@@ -101,6 +101,19 @@ Words like `on`, `by` and `due` in front of a date are removed with it (`Pay bil
 
 **Energy.** With **Energy levels** on ([Set up](method/set-up.md#energy-levels)), `~deep`, `~medium` and `~low`, or any start of them (`~d`, `~me`, `~L`), set the task's energy, in every language and in any letter case: `Draft the strategy #Work ~deep +2h` → *Draft the strategy*, in Work, 2 hours, Deep. The chip reads "Deep energy"; typing `~` suggests the three, and on a phone the lightning tool under the line starts one. The last one on the line wins. `~` followed by anything else stays in the title (`Dinner for ~6 people`), and with Energy levels off the token is not read.
 
+**Time sectors.** With **Time sectors** on (Settings → Account → How you work), a phrase for a period plans the task for that week, month or quarter instead of a date: `Draft the budget this week #Work` → *Draft the budget*, in Work, This week. `next week` and `next month` alone keep their date meaning; say `sometime next week` for the sector. A line that also has a date takes the date and keeps the phrase in the title (`Review this week plan friday` is due Friday), and with the switch off no phrase is read. A deadline stays beside the sector. See [Time sectors](time-sectors.md).
+
+| Language | This week | Next week | This month | Next month | This quarter | Next quarter |
+| --- | --- | --- | --- | --- | --- | --- |
+| English | `this week` | `sometime next week` | `this month` | `sometime next month` | `this quarter` | `next quarter` |
+| German | `diese Woche` | `irgendwann nächste Woche` | `diesen Monat` | `irgendwann nächsten Monat` | `dieses Quartal` | `nächstes Quartal` |
+| French | `cette semaine` | `dans le courant de la semaine prochaine` | `ce mois-ci` | `dans le courant du mois prochain` | `ce trimestre` | `le trimestre prochain` |
+| Italian | `questa settimana` | `nel corso della prossima settimana` | `questo mese` | `nel corso del prossimo mese` | `questo trimestre` | `il prossimo trimestre` |
+| Spanish | `esta semana` | `en algún momento de la próxima semana` | `este mes` | `en algún momento del próximo mes` | `este trimestre` | `el próximo trimestre` |
+| Portuguese | `esta semana` | `em algum momento da próxima semana` | `este mês` | `em algum momento do próximo mês` | `este trimestre` | `no próximo trimestre` |
+
+Every "this" phrase also has its "sometime" form (`sometime this month`, `irgendwann diese Woche`, …).
+
 **Morning and afternoon.** With [day parts](day-parts.md) on, `this morning` and `this afternoon` make the task due today with that part, and a part word right after a date phrase gives that date the part: `Stretch tomorrow morning` → *Stretch*, due tomorrow, Morning; `Dinner fri evening` → due Friday, This Evening. A part word anywhere else stays in the title (`Morning run tomorrow` keeps *Morning run*), and with day parts off none of these are read. Each gets its own chip.
 
 | Language | This morning, this afternoon | After a date |
