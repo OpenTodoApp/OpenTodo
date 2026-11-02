@@ -1,4 +1,9 @@
-## ADDED Requirements
+# plan-objectives Specification
+
+## Purpose
+Pin a few quarterly and weekly objectives where planning happens: a small personal entity (one line, a quarter or an ISO week, at most five open per period) shown above the Plan and in the weekly review's Look ahead, carried to a later period only on request, end-to-end encrypted, behind a per-user switch, and readable through the API, the CLI and MCP.
+
+## Requirements
 
 ### Requirement: Objective entity
 The product SHALL store objectives as a personal entity `objective` with these fields:
@@ -48,7 +53,7 @@ While objectives are on, the Plan mode SHALL show an Objectives strip inside its
 - this week's (the viewer's This week of OpenSpec `time-sectors`);
 - next week's as well when the span starts in next week.
 
-Each objective SHALL be a one-line card with a done checkbox and its title. A group under the limit SHALL end with Add. Cards SHALL be editable in place with Enter, toggled done with Space, dropped with Delete after a confirmation and with Undo, and reordered by drag or Alt+Up/Down, each change written as one operation batch. A done objective SHALL stay, struck through, until its period ends, and objectives of past periods SHALL not be shown. Whether the strip is collapsed SHALL be remembered per device and never synced. Below 640 px the strip SHALL be one summary line that opens a sheet with the same groups. The strip SHALL add no chrome row, no scroll region and no shortcut.
+Each objective SHALL be a one-line card with a done checkbox and its title. A group under the limit SHALL end with Add. Cards SHALL be editable in place with Enter, toggled done with Space, dropped with Delete after a confirmation and with Undo, and reordered by drag or Alt+Up/Down, each change written as one operation batch. A done objective SHALL stay, struck through, until its period ends, and objectives of past periods SHALL not be shown. Whether the strip is collapsed SHALL be remembered per device and never synced. Below 640 px the strip SHALL be one summary line that opens the same groups in place, never in a dialog. The strip SHALL add no chrome row, no scroll region and no shortcut.
 
 #### Scenario: Plan the week with the quarter in view
 - **WHEN** objectives are on, Q4 2026 has three objectives and week 44 has two, and the user opens the Plan on Wednesday 2026-10-28
@@ -60,7 +65,7 @@ Each objective SHALL be a one-line card with a done checkbox and its title. A gr
 
 #### Scenario: Phone
 - **WHEN** the Plan is opened on a 390 px screen
-- **THEN** one line reads "Q4: 3 · This week: 2", and tapping it opens a sheet with the cards
+- **THEN** one line reads "Q4: 3 · This week: 2", and tapping it opens the cards in place below it
 
 #### Scenario: Encrypted account
 - **WHEN** an encrypted account's device shows the strip
