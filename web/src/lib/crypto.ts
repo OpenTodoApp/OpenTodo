@@ -96,7 +96,7 @@ const dec = new TextDecoder('utf-8', { fatal: true })
 type Bytes = Uint8Array<ArrayBuffer>
 
 export function utf8(s: string): Bytes {
-  return enc.encode(s) as Bytes
+  return enc.encode(s)
 }
 
 export function b64url(bytes: Uint8Array): string {
@@ -357,8 +357,8 @@ export async function decryptValue(key: CryptoKey, entity: string, entityId: str
   if (raw.length < NONCE_BYTES + 16) throw new DecryptError()
   try {
     const pt = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: raw.slice(0, NONCE_BYTES) as Bytes, additionalData: bindingOf(entity, entityId, field), tagLength: 128 },
-      key, raw.slice(NONCE_BYTES) as Bytes,
+      { name: 'AES-GCM', iv: raw.slice(0, NONCE_BYTES), additionalData: bindingOf(entity, entityId, field), tagLength: 128 },
+      key, raw.slice(NONCE_BYTES),
     )
     return dec.decode(pt)
   } catch {
@@ -387,7 +387,7 @@ function fileNonce(prefix: Uint8Array, index: number, final: boolean): Bytes {
   n[9] = (index >> 8) & 0xff
   n[10] = index & 0xff
   n[11] = final ? 1 : 0
-  return n as Bytes
+  return n
 }
 
 function fileAad(id: string, header: Uint8Array): Bytes {
@@ -395,7 +395,7 @@ function fileAad(id: string, header: Uint8Array): Bytes {
   const aad = new Uint8Array(label.length + header.length)
   aad.set(label)
   aad.set(header, label.length)
-  return aad as Bytes
+  return aad
 }
 
 /**
@@ -417,7 +417,7 @@ export async function encryptFile(key: CryptoKey, id: string, file: Blob, opts: 
     const end = Math.min((i + 1) * chunkSize, file.size)
     const final = end === file.size
     const plain = new Uint8Array(await file.slice(i * chunkSize, end).arrayBuffer())
-    parts.push(new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv: fileNonce(prefix, i, final), additionalData: aad, tagLength: 128 }, key, plain as Bytes)))
+    parts.push(new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv: fileNonce(prefix, i, final), additionalData: aad, tagLength: 128 }, key, plain)))
     if (final) break
   }
   return new Blob(parts, { type: 'application/octet-stream' })
@@ -445,7 +445,7 @@ export async function decryptFile(key: CryptoKey, id: string, envelope: Blob, ty
     const chunk = new Uint8Array(await envelope.slice(start, Math.min(start + sealed, envelope.size)).arrayBuffer())
     if (chunk.length < TAG_BYTES) throw new DecryptError()
     try {
-      parts.push(new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: fileNonce(prefix, i, i === count - 1), additionalData: aad, tagLength: 128 }, key, chunk as Bytes)))
+      parts.push(new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: fileNonce(prefix, i, i === count - 1), additionalData: aad, tagLength: 128 }, key, chunk)))
     } catch {
       throw new DecryptError()
     }

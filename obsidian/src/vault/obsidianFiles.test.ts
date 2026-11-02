@@ -21,7 +21,7 @@ function vaultWith(files: Record<string, string>) {
 describe('ObsidianFiles', () => {
   it('lists the folder with hidden files, but not hidden folders', async () => {
     const app = vaultWith({ 'OpenTodo/Home.md': 'x', 'OpenTodo/.Work.md.icloud': 'p', 'OpenTodo/.opentodo/state.json': '{}', 'OpenTodo/Sub/Garden.md': 'g', 'Other.md': 'o' })
-    const f = new ObsidianFiles(app.vault as never, 'OpenTodo/')
+    const f = new ObsidianFiles(app.vault as never, 'OpenTodo/', app.fileManager)
     expect(await f.list()).toEqual(['.Work.md.icloud', 'Home.md', 'Sub/Garden.md'])
     expect(await f.read('.opentodo/state.json')).toBe('{}')
     expect(await f.read('Missing.md')).toBeNull()
@@ -29,7 +29,7 @@ describe('ObsidianFiles', () => {
 
   it('writes notes through the vault and an open editor’s newer text is not overwritten', async () => {
     const app = vaultWith({ 'OpenTodo/Home.md': 'old' })
-    const f = new ObsidianFiles(app.vault as never, 'OpenTodo')
+    const f = new ObsidianFiles(app.vault as never, 'OpenTodo', app.fileManager)
     expect(await f.write('Home.md', 'printed', 'old')).toBe(true)
     expect(app.vault.log).toContain('process OpenTodo/Home.md')
     expect(app.files.get('OpenTodo/Home.md')).toBe('printed')
@@ -45,7 +45,7 @@ describe('ObsidianFiles', () => {
 
   it('writes the state as state.json.tmp, then renames it; an interrupted write is read back', async () => {
     const app = vaultWith({ 'OpenTodo/.opentodo/state.json': 'v1' })
-    const f = new ObsidianFiles(app.vault as never, 'OpenTodo')
+    const f = new ObsidianFiles(app.vault as never, 'OpenTodo', app.fileManager)
     await f.writeAtomic(STATE_PATH, 'v2')
     expect(app.vault.log).toEqual(['write OpenTodo/.opentodo/state.json.tmp', 'remove OpenTodo/.opentodo/state.json', 'rename OpenTodo/.opentodo/state.json.tmp OpenTodo/.opentodo/state.json'])
     expect(app.files.get('OpenTodo/.opentodo/state.json')).toBe('v2')
@@ -56,7 +56,7 @@ describe('ObsidianFiles', () => {
 
   it('removes files and folders left empty', async () => {
     const app = vaultWith({ 'OpenTodo/Work/Work.md': 'w' })
-    const f = new ObsidianFiles(app.vault as never, 'OpenTodo')
+    const f = new ObsidianFiles(app.vault as never, 'OpenTodo', app.fileManager)
     await f.remove('Work/Work.md')
     await f.removeDir('Work')
     expect(app.files.size).toBe(0)
@@ -65,7 +65,7 @@ describe('ObsidianFiles', () => {
 
   it('a sync through the adapter writes the folder ot vault would', async () => {
     const app = vaultWith({})
-    const files = new ObsidianFiles(app.vault as never, 'OpenTodo')
+    const files = new ObsidianFiles(app.vault as never, 'OpenTodo', app.fileManager)
     const server = new VectorServer()
     server.now = Date.UTC(2026, 10, 2, 9)
     server.log.push(

@@ -374,7 +374,8 @@ export interface FieldDef extends FieldDefFields {
   id: string
   name: string
   project_id: string
-  type: FieldType | string
+  /** A FieldType, or a type a newer server added. */
+  type: string
   options: string
   position: number
   created_at: number
@@ -2285,7 +2286,8 @@ export interface RoutinePausedSharedPayload {
   projectId: string
   projectName: string
   runAsName: string
-  reason: 'run_as_left' | 'run_as_viewer' | string
+  /** 'run_as_left', 'run_as_viewer' or a reason a newer server added. */
+  reason: string
   at: number
   taskId?: undefined
   actorName?: undefined

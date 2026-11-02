@@ -26,18 +26,13 @@ export interface SheetOptions {
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(parent: HTMLElement, tag: K, props: { cls?: string; text?: string; attr?: Record<string, string> } = {}): HTMLElementTagNameMap[K] {
-  const e = parent.ownerDocument.createElement(tag)
-  if (props.cls) e.className = props.cls
-  if (props.text !== undefined) e.textContent = props.text
-  for (const [k, v] of Object.entries(props.attr ?? {})) e.setAttribute(k, v)
-  parent.appendChild(e)
-  return e
+  return parent.createEl(tag, { cls: props.cls, text: props.text, attr: props.attr })
 }
 
 /** Renders the sheet into `root`; returns a function that sends as if Enter was pressed. */
 export function renderSheet(root: HTMLElement, o: SheetOptions): { send: () => void } {
-  root.replaceChildren()
-  root.classList.add('opentodo-sheet')
+  root.empty()
+  root.addClass('opentodo-sheet')
   const drafts = o.drafts.map((d) => ({ ...d }))
   const edited = new Set<number>()
   let finished = false
@@ -67,7 +62,7 @@ export function renderSheet(root: HTMLElement, o: SheetOptions): { send: () => v
   const list = el(root, 'div', { cls: 'opentodo-sheet-lines' })
   const projectNames = new Map(o.projects.map((p) => [p.id, p.name]))
   const renderRow = (row: HTMLElement, i: number) => {
-    row.replaceChildren()
+    row.empty()
     const d = drafts[i]
     const head = el(row, 'div', { cls: 'opentodo-sheet-head' })
     if (drafts.length > 1) {
@@ -152,7 +147,7 @@ export function confirmSend(app: App, o: Omit<SheetOptions, 'onSend' | 'onCancel
         })
       }
       onClose() {
-        this.contentEl.replaceChildren()
+        this.contentEl.empty()
         if (!settled) resolve(null)
         settled = true
       }

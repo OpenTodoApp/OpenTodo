@@ -60,7 +60,7 @@ export class VectorServer implements Transport {
     const sent = JSON.parse(JSON.stringify(req.ops)) as Op[]
     this.received.push(...sent)
     const rep: Reply = { ops: [], serverTime: this.now, generation: this.gen, cursor: this.log.length, memberships: this.shared.map((projectId) => ({ projectId })) }
-    if (req.cursor < this.log.length) rep.ops = JSON.parse(JSON.stringify(this.log.slice(req.cursor)))
+    if (req.cursor < this.log.length) rep.ops = JSON.parse(JSON.stringify(this.log.slice(req.cursor))) as Op[]
     this.log.push(...sent)
     if (sent.length > 0) rep.cursor = this.log.length
     return rep

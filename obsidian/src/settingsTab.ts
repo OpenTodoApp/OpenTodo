@@ -1,7 +1,9 @@
 // Settings → Community plugins → OpenTodo (obsidian-plugin task 3.2): the server
-// and token (kept on this device only), the connection's status, and the three
-// settings the vault's data.json carries.
+// and token (kept on this device only) or the connection's status at the top,
+// without a heading as Obsidian's guidelines ask, then "Sending" with the three
+// settings the vault's data.json carries, then "Folder sync".
 import { PluginSettingTab, Setting, type App } from 'obsidian'
+import { warning } from './buttons'
 import type OpenTodoPlugin from './main'
 import { ConnectError, serverAddress } from './connect'
 import { sheetProjects } from './send'
@@ -24,8 +26,13 @@ export class OpenTodoSettingTab extends PluginSettingTab {
   }
 
   display(): void {
+    this.redraw()
+  }
+
+  /** Renders the tab again (Obsidian calls display() when it opens). */
+  private redraw(): void {
     this.off ??= this.plugin.onChange(() => {
-      if (this.containerEl.isConnected) this.display()
+      if (this.containerEl.isConnected) this.redraw()
     })
     const { containerEl: el } = this
     el.empty()
@@ -35,7 +42,7 @@ export class OpenTodoSettingTab extends PluginSettingTab {
     else this.connectForm(el)
     this.preferences(el)
     if (account && server) {
-      this.vault ??= new VaultSection(this.app, this.plugin, () => this.display())
+      this.vault ??= new VaultSection(this.app, this.plugin, () => this.redraw())
       this.vault.display(el)
     }
   }
@@ -46,7 +53,6 @@ export class OpenTodoSettingTab extends PluginSettingTab {
   }
 
   private connectForm(el: HTMLElement): void {
-    new Setting(el).setName(tr('Connect to OpenTodo')).setHeading()
     el.createEl('p', { cls: 'setting-item-description', text: tr('The plugin talks only to the server you enter here. Create a full token for it in OpenTodo under Settings → Integrations → API tokens, named after this device. The token stays on this device and is not written into the vault.') })
     new Setting(el).setName(tr('Server address')).setDesc(tr('The address you open OpenTodo at.')).addText((t) => {
       t.setPlaceholder('todo.example.com').setValue(this.address).onChange((v) => {
@@ -81,11 +87,11 @@ export class OpenTodoSettingTab extends PluginSettingTab {
       if (plainHttp && this.httpConfirmed !== url) {
         this.httpConfirmed = url
         this.message = tr('{address} uses plain http: anyone on this network could read the token and your tasks. Press Connect again to use it anyway.', { address: url })
-        return this.display()
+        return this.redraw()
       }
       this.busy = true
       this.message = ''
-      this.display()
+      this.redraw()
       await this.plugin.connectWith(this.address, this.token)
       this.token = ''
       this.address = ''
@@ -95,11 +101,10 @@ export class OpenTodoSettingTab extends PluginSettingTab {
     } finally {
       this.busy = false
     }
-    this.display()
+    this.redraw()
   }
 
   private connected(el: HTMLElement, account: NonNullable<ReturnType<OpenTodoPlugin['account']>>, server: string): void {
-    new Setting(el).setName(tr('OpenTodo')).setHeading()
     const who = account.name || account.email || account.userId
     const parts = [tr('Connected to {server} as {who}', { server, who }), tr('OpenTodo {version}', { version: account.serverVersion || '?' })]
     if (account.encrypted) parts.push(this.plugin.keys.unlocked ? tr('Encrypted, unlocked') : tr('Encrypted, locked'))
@@ -118,10 +123,10 @@ export class OpenTodoSettingTab extends PluginSettingTab {
     new Setting(el).setName(tr('Disconnect')).setDesc(waiting
       ? tr('{n, plural, one {# task is still waiting and is discarded} other {# tasks are still waiting and are discarded}}. The token, the cached projects and labels and any remembered key are removed from this device.', { n: waiting })
       : tr('The token, the cached projects and labels and any remembered key are removed from this device.'))
-      .addButton((b) => b.setButtonText(tr('Disconnect')).setWarning().onClick(() => {
+      .addButton((b) => warning(b.setButtonText(tr('Disconnect')).onClick(() => {
         this.plugin.disconnect()
-        this.display()
-      }))
+        this.redraw()
+      })))
   }
 
   private preferences(el: HTMLElement): void {

@@ -124,7 +124,8 @@ function parseOrThrow(input: string): Rule {
     if (word === null && num === null) throw new RuleError(t('unknown pattern "{word}"', { word: tok }))
     const next = peek(1)
     if (has(WEEKDAY_ALIASES, next)) {
-      const ordinal = num ?? (word as number)
+      // One of the two is set (checked above).
+      const ordinal = num ?? word ?? 0
       if (ordinal > 4) throw new RuleError(t('weekday ordinal must be 1st to 4th or last'))
       rule = { kind: 'nthWeekday', ordinal, weekday: WEEKDAY_ALIASES[next], afterCompletion: false, ...ends }
       i += 2
