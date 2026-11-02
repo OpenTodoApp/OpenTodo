@@ -1,0 +1,130 @@
+{
+  "format": "omnifocus-csv",
+  "notes": [
+    "OmniFocus's CSV has no repeat rules, folders or attachments; repeating actions arrive without their repeat"
+  ],
+  "totals": {
+    "rows": 10,
+    "create": 10,
+    "update": 0,
+    "skip": 0,
+    "error": 0,
+    "possibleDuplicates": 0,
+    "warnings": 2,
+    "newProjects": 3,
+    "newLabels": 4,
+    "newSections": 0,
+    "recurring": 0,
+    "reminders": 0,
+    "deadlines": 1,
+    "attachments": 0,
+    "fields": 0,
+    "timeEntries": 0,
+    "places": 0,
+    "notes": 0,
+    "entities": 14,
+    "written": 0,
+    "ops": 0
+  },
+  "viewHints": null,
+  "rows": [
+    {
+      "row": 2,
+      "sourceId": "omnifocus:951b2e70fbef2350",
+      "kind": "project",
+      "title": "Move house",
+      "outcome": "create"
+    },
+    {
+      "row": 3,
+      "sourceId": "omnifocus:970f5bedaee412cc",
+      "kind": "task",
+      "title": "Pack",
+      "project": "Move house",
+      "outcome": "create"
+    },
+    {
+      "row": 4,
+      "sourceId": "omnifocus:af2bbcdeec7c3dea",
+      "kind": "task",
+      "title": "Buy boxes",
+      "project": "Move house",
+      "outcome": "create"
+    },
+    {
+      "row": 5,
+      "sourceId": "omnifocus:1e21941f06051bdc",
+      "kind": "task",
+      "title": "Label the boxes",
+      "project": "Move house",
+      "outcome": "create"
+    },
+    {
+      "row": 6,
+      "sourceId": "omnifocus:b18265990cbf9da5",
+      "kind": "task",
+      "title": "Call the movers",
+      "project": "Move house",
+      "outcome": "create"
+    },
+    {
+      "row": 8,
+      "sourceId": "omnifocus:9fc760a6627fb84a",
+      "kind": "project",
+      "title": "Garden",
+      "outcome": "create",
+      "warnings": [
+        "project on hold in OmniFocus; imported as an active project"
+      ]
+    },
+    {
+      "row": 9,
+      "sourceId": "omnifocus:d19deb4d58fcc21f",
+      "kind": "task",
+      "title": "Plant tulips",
+      "project": "Garden",
+      "outcome": "create"
+    },
+    {
+      "row": 10,
+      "sourceId": "omnifocus:2dc9c0b20be6dac2",
+      "kind": "project",
+      "title": "Old blog",
+      "outcome": "create",
+      "warnings": [
+        "dropped project imported as an archived project"
+      ]
+    },
+    {
+      "row": 11,
+      "sourceId": "omnifocus:eebab41201f6ca34",
+      "kind": "task",
+      "title": "Write about the move",
+      "project": "Old blog",
+      "outcome": "create"
+    },
+    {
+      "row": 12,
+      "sourceId": "omnifocus:4dbbc3f20e48a876",
+      "kind": "task",
+      "title": "Return the library book",
+      "outcome": "create"
+    }
+  ],
+  "fields": [
+    "label id-0005: name=\"Home\" created_at=1791979200000",
+    "label id-0007: name=\"Errands\" created_at=1791979200000",
+    "label id-0008: name=\"Phone\" created_at=1791979200000",
+    "label id-0013: name=\"Computer\" created_at=1791979200000",
+    "project id-0001: name=\"Move house\" archived=false created_at=1791979200000 description=\"Everything for the move in December.\"",
+    "project id-0002: name=\"Garden\" archived=false created_at=1791979200000",
+    "project id-0003: name=\"Old blog\" archived=true created_at=1791979200000",
+    "task id-0004: title=\"Pack\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" due={\"date\":\"2026-12-01\",\"time\":\"16:00\"} estimate_minutes=120 start=\"2026-11-20\" origin={\"kind\":\"import\",\"provider\":\"omnifocus\",\"id\":\"970f5bedaee412cc\"} labels=[\"id-0005\"]",
+    "task id-0006: title=\"Buy boxes\" description=\"\" priority=1 created_at=1791979200000 project_id=\"id-0001\" parent_id=\"id-0004\" due={\"date\":\"2026-11-18\",\"time\":\"09:00\"} estimate_minutes=30 deadline=\"2026-11-21\" origin={\"kind\":\"import\",\"provider\":\"omnifocus\",\"id\":\"af2bbcdeec7c3dea\"} labels=[\"id-0007\",\"id-0008\"]",
+    "task id-0009: title=\"Label the boxes\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" parent_id=\"id-0004\" estimate_minutes=15 origin={\"kind\":\"import\",\"provider\":\"omnifocus\",\"id\":\"1e21941f06051bdc\"} completed_at=1793643160000 labels=[\"id-0005\"]",
+    "task id-0010: title=\"Call the movers\" description=\"Ask for a quote.\\nMention the piano.\" priority=1 created_at=1791979200000 project_id=\"id-0001\" due={\"date\":\"2026-11-10\",\"time\":\"16:00\"} origin={\"kind\":\"import\",\"provider\":\"omnifocus\",\"id\":\"b18265990cbf9da5\"} labels=[\"id-0008\"]",
+    "task id-0011: title=\"Plant tulips\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0002\" due={\"date\":\"2027-03-15\"} estimate_minutes=90 origin={\"kind\":\"import\",\"provider\":\"omnifocus\",\"id\":\"d19deb4d58fcc21f\"} labels=[]",
+    "task id-0012: title=\"Write about the move\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0003\" origin={\"kind\":\"import\",\"provider\":\"omnifocus\",\"id\":\"eebab41201f6ca34\"} labels=[\"id-0013\"]",
+    "task id-0014: title=\"Return the library book\" description=\"\" priority=4 created_at=1791979200000 due={\"date\":\"2026-11-05\",\"time\":\"16:00\"} origin={\"kind\":\"import\",\"provider\":\"omnifocus\",\"id\":\"4dbbc3f20e48a876\"} labels=[\"id-0007\"]"
+  ]
+}

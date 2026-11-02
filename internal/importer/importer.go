@@ -293,7 +293,7 @@ type Profile interface {
 var Profiles = []Profile{opentodoProfile{}, tududiProfile{}, thingsDBProfile{},
 	vikunjaProfile{}, superProductivityProfile{}, googleTasksProfile{}, trelloProfile{}, msTodoProfile{}, appleRemindersProfile{}, anydoProfile{},
 	itemsProfile{}, listsProfile{}, genericProfile{},
-	todoistProfile{}, tickTickProfile{}, linearProfile{}, asanaProfile{}, csvProfile{}}
+	todoistProfile{}, tickTickProfile{}, linearProfile{}, omnifocusProfile{}, asanaProfile{}, csvProfile{}}
 
 // formatAliases are format names that select a profile for a container: a
 // Todoist backup is a ZIP of todoist-csv files.

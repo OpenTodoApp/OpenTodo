@@ -10,9 +10,9 @@ Each of groups 2–6 can land as its own pull request; group 7 lands last.
 
 ## 2. OmniFocus (`omnifocus-csv`)
 
-- [ ] 2.1 `profile_omnifocus.go`: detection (`Context` and `Tags` headers), dotted-id hierarchy, mapping and the dropped and repeat notes (design D2); verify `go test ./internal/importer -run OmniFocus`
-- [ ] 2.2 Real exports from OmniFocus 4 (a small one and a rich one), sanitised, with goldens; verify the golden test
-- [ ] 2.3 `docs/switch/omnifocus.md` with an `#export` section and the `docs/import.md` row; verify `make docs-check`
+- [x] 2.1 `profile_omnifocus.go`: detection (`Context` and `Tags` headers), dotted-id hierarchy, mapping and the dropped and repeat notes (design D2); verify `go test ./internal/importer -run OmniFocus`
+- [x] 2.2 Real exports, sanitised, with goldens: the published real OmniFocus 2 export (MIT) and a file in the OmniFocus 4.7 layout; a sanitised OmniFocus 4 export from a Mac replaces the latter when the owner has one (QUESTIONS.md); verify the golden test
+- [x] 2.3 `docs/switch/omnifocus.md` with an `#export` section and the `docs/import.md` row; verify `make docs-check`
 
 ## 3. Vikunja (`vikunja-export`)
 
