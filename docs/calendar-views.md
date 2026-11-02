@@ -21,7 +21,7 @@ Choose **Calendar** in the sidebar, then **Day**, **Week**, **Month**, **Plan** 
 
 - Tasks with a date **and** a time appear as blocks at that time, filled in their project's colour. The block is as tall as the estimate.
 - A timed task without an estimate gets a 30-minute block with a dashed edge.
-- Tasks with a date but no time wait in the **Unscheduled** lane at the top of their day.
+- Tasks with a date but no time wait in the **Unscheduled** lane at the top of their day. On a touch screen, more than three fold under a tappable count.
 - Past days are dimmed.
 - A red line marks the current time.
 - **+N** shows more all-day events.
@@ -37,7 +37,7 @@ Double-click adding, colours, filters: [Add and colour](calendar-add-and-colour.
 
 ## See the month
 
-**Month** shows six weeks at a glance, starting on your first day of the week, with today marked and the days of other months dimmed. Each day lists its open tasks: the timed ones first by time, then the rest by priority. [Events](other-calendars.md) follow them. A crowded day shows the first few and **+N more**, which expands the day in place. When its tasks have estimates, a day shows the planned total against your day length: red when over, amber when [counted meetings](place-tasks-on-the-calendar.md#see-whether-the-day-fits) tip it over.
+**Month** shows six weeks from your first day of the week, with today marked and other months dimmed. Each day lists its open tasks: the timed ones first by time, then the rest by priority. [Events](other-calendars.md) follow them. A crowded day shows **+N more**, which expands it in place. With estimates, a day shows the planned total against your day length: red when over, amber when [counted meetings](place-tasks-on-the-calendar.md#see-whether-the-day-fits) tip it over.
 
 - Drag a task onto another day to move it. It keeps its time.
 - Select a task with <kbd>j</kbd> and <kbd>k</kbd>, or by clicking it. The arrows then move it a day (<kbd>←</kbd> <kbd>→</kbd>) or a week (<kbd>↑</kbd> <kbd>↓</kbd>), into the next month if needed. <kbd>Enter</kbd> opens it, and <kbd>Esc</kbd> clears the selection.
