@@ -112,6 +112,16 @@ export function setTodayEventsShown(shown: boolean): Promise<void> {
   return mutate('user_prefs', USER_PREFS_ID, { today_events: shown ? 'shown' : 'hidden' })
 }
 
+/** Upcoming starts with Today's groups (OpenSpec change upcoming-start-with-today, D1): off unless the account chose "on". */
+export function upcomingStartsWithToday(row: Partial<UserPrefs> | null | undefined): boolean {
+  return row?.upcoming_today === 'on'
+}
+
+/** Turns Start with Today on or off for the account: one synced op, offline included. */
+export function setUpcomingStartsWithToday(on: boolean): Promise<void> {
+  return mutate('user_prefs', USER_PREFS_ID, { upcoming_today: on ? 'on' : 'off' })
+}
+
 /** How a task opens from a list (OpenSpec change task-side-panel, D1): its page, or a side panel beside the list. */
 export type TaskOpenPref = 'page' | 'panel'
 

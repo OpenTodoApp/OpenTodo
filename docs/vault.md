@@ -19,6 +19,8 @@ ot vault watch ~/Notes/Tasks    # keep syncing until Ctrl+C
 ot vault tasknotes <folder>     # also sync a TaskNotes folder (see below)
 ```
 
+`watch` syncs when the app changes (over the live channel) and when a file is saved. A file that changed since the last sync is read only once it has held still for a second, also when the app's change arrives meanwhile, so a save in progress is never read half written.
+
 It needs a `full` token, and it is the one part of `ot` that keeps data locally: the files and `.opentodo/state.json`.
 
 The [Obsidian plugin](obsidian.md#sync-a-folder) syncs a folder with the same rules and files, on a phone too, so a folder can move between it and `ot vault`. It also sends single lines from daily and meeting notes, with the same grammar, linking each task back to its note.
@@ -57,6 +59,7 @@ Things for the flat. The task lines sync with OpenTodo; this paragraph stays her
 - [ ] Clean the windows [someday:: true] [evening:: true] [energy:: low] 🆔 t-home6
 - [ ] Stretch 📅 2026-10-25 [daypart:: morning] 🆔 t-home7
 - [ ] Lisbon trip 📅 2026-11-05 🛫 2026-11-03 [span:: true] 🆔 t-home8
+- [ ] Sort the photos [sector:: 2026-11] 🆔 t-home9
 ```
 
 | Field | Meaning |
@@ -67,6 +70,7 @@ Things for the flat. The task lines sync with OpenTodo; this paragraph stays her
 | `[span:: true]` | a multi-day task, drawn from its `🛫` date to its `📅` date; written after `[evening:: true]`, read anywhere on the line. `[span:: false]` or removing it clears it. Another value is reported and changes nothing |
 | `[daypart:: morning]` `[daypart:: afternoon]` | the part of the day; never beside `[evening:: true]`, which wins when both are there. Another value is reported and changes nothing |
 | `[energy:: deep]` `[energy:: medium]` `[energy:: low]` | the energy the task asks for, read in any letter case and written in lower case; removing it clears the energy. Another value is reported and changes nothing |
+| `[sector:: 2026-W44]` `[sector:: 2026-11]` `[sector:: 2026-Q4]` | the [time sector](time-sectors.md): the week, month or quarter the task is planned for without a date; written after `[evening:: true]`, read anywhere on the line, letters in any case. Removing it clears the sector. A value that is not a period is reported for the file and line and changes nothing |
 | `🔺` `⏫` `🔼` | priority 1–3 (`🔽` `⏬` read as 4) |
 | `🔁` | repeat rule (`when done`: after completion) |
 | `#tag` `⛔` `✅` `🆔` | label, blocked by, done date, id |

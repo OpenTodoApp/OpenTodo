@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/recurrence"
+	"github.com/OpenTodoApp/opentodo/internal/sector"
 	"github.com/OpenTodoApp/opentodo/internal/zoned"
 )
 
@@ -173,7 +174,7 @@ func (d *decoder) prop(master *Component, i int) {
 		if ms, err := instantOf(p); err == nil {
 			in.CreatedAt = &ms
 		}
-	case "X-OPENTODO-START", "X-OPENTODO-EVENING", "X-OPENTODO-SPAN", "X-OPENTODO-DAY-PART", "X-OPENTODO-ENERGY":
+	case "X-OPENTODO-START", "X-OPENTODO-EVENING", "X-OPENTODO-SPAN", "X-OPENTODO-DAY-PART", "X-OPENTODO-ENERGY", "X-OPENTODO-SECTOR":
 		d.opentodoProp(p)
 	case "ESTIMATED-DURATION":
 		d.estimate(p)
@@ -270,10 +271,21 @@ func (d *decoder) estimate(p Prop) {
 }
 
 // opentodoProp reads this server's own X-OPENTODO-START, X-OPENTODO-EVENING,
-// X-OPENTODO-SPAN, X-OPENTODO-DAY-PART and X-OPENTODO-ENERGY; a value it does not know is kept in ical_extra.
+// X-OPENTODO-SPAN, X-OPENTODO-DAY-PART, X-OPENTODO-ENERGY and X-OPENTODO-SECTOR;
+// a value it does not know is kept in ical_extra.
 func (d *decoder) opentodoProp(p Prop) {
 	in := d.in
 	v := strings.ToUpper(strings.TrimSpace(p.Value))
+	// X-OPENTODO-SECTOR (time-sectors D9): a valid period sets the sector; any
+	// other value is kept in ical_extra and leaves it alone, like the start.
+	if p.Name == "X-OPENTODO-SECTOR" {
+		if sector.Valid(v) {
+			in.Sector = &v
+		} else {
+			d.keep(p)
+		}
+		return
+	}
 	// X-OPENTODO-ENERGY (task-energy D7): a level, case ignored; any other value
 	// is kept in ical_extra and leaves the energy alone.
 	if p.Name == "X-OPENTODO-ENERGY" {

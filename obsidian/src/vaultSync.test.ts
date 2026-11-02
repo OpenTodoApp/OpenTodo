@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 // When the plugin's vault syncs (obsidian-vault-sync task 4.2) and what it does
 // around the engine: the triggers with fake timers, the back-off, a locked
 // account, a folder another device owns, taking over and turning off.

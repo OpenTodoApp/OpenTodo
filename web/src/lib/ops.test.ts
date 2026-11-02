@@ -951,3 +951,26 @@ describe('createTasks (paste-to-tasks 2.1)', () => {
     }
   })
 })
+
+describe('time sectors (time-sectors)', () => {
+  it('creates a task without a sector op and leaves the Inbox when one is set', async () => {
+    const id = await createTask({ title: 'Book the venue' })
+    const ops = await db.outbox.toArray()
+    expect(ops.some((o) => o.entityId === id && o.field === 'sector')).toBe(false)
+    expect(inboxTasks(await db.tasks.toArray()).map((t) => t.id)).toContain(id)
+    await mutateMany([{ entity: 'task', entityId: id, patch: { sector: '2026-W45', due: null, start: null, evening: false } }])
+    expect((await db.tasks.get(id))?.sector).toBe('2026-W45')
+    expect(inboxTasks(await db.tasks.toArray()).map((t) => t.id)).not.toContain(id)
+  })
+
+  it('converges one-when batches on the later batch, never a mix', async () => {
+    const sectored = [op({ field: 'sector', value: '2026-W45', ts: 300, device: 'A' }), op({ field: 'due', value: null, ts: 300, device: 'A' })]
+    const dated = [op({ field: 'due', value: { date: '2026-11-05' }, ts: 200, device: 'B' }), op({ field: 'sector', value: '', ts: 200, device: 'B' })]
+    for (const order of [[sectored, dated], [dated, sectored]]) {
+      const local = useDatabase(`sector-${order[0][0].device}-${Date.now()}`)
+      for (const batch of order) await applyOps(batch)
+      const t = await local.tasks.get('t1')
+      expect({ sector: t?.sector, due: t?.due }).toEqual({ sector: '2026-W45', due: null })
+    }
+  })
+})

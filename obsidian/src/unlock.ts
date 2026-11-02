@@ -9,35 +9,18 @@ export interface UnlockAnswer {
 
 /** Renders the prompt into `root`; `submit` resolves with the answer or an error message to show. */
 export function renderUnlock(root: HTMLElement, submit: (a: UnlockAnswer) => Promise<string | null>, cancel: () => void): void {
-  const doc = root.ownerDocument
-  root.replaceChildren()
-  const h = doc.createElement('h2')
-  h.textContent = tr('Unlock OpenTodo')
-  const p = doc.createElement('p')
-  p.textContent = tr('Your account is encrypted. Enter its passphrase (or recovery key) to send tasks from this device. The key stays in memory until Obsidian closes.')
-  const input = doc.createElement('input')
-  input.type = 'password'
-  input.setAttribute('aria-label', tr('Passphrase'))
-  input.autocomplete = 'current-password'
-  const rememberRow = doc.createElement('label')
-  const remember = doc.createElement('input')
-  remember.type = 'checkbox'
-  rememberRow.append(remember, ' ' + tr('Remember on this device'))
-  const hint = doc.createElement('p')
-  hint.className = 'setting-item-description'
-  hint.textContent = tr('Remembering keeps the account key in Obsidian’s storage on this device, so anyone who can open Obsidian here can read your tasks’ titles as they are sent.')
-  const error = doc.createElement('p')
-  error.className = 'mod-warning'
-  error.setAttribute('role', 'alert')
-  const bar = doc.createElement('div')
-  bar.className = 'modal-button-container'
-  const cancelBtn = doc.createElement('button')
-  cancelBtn.textContent = tr('Cancel')
-  const ok = doc.createElement('button')
-  ok.className = 'mod-cta'
-  ok.textContent = tr('Unlock')
-  bar.append(cancelBtn, ok)
-  root.append(h, p, input, rememberRow, hint, error, bar)
+  root.empty()
+  root.createEl('h2', { text: tr('Unlock OpenTodo') })
+  root.createEl('p', { text: tr('Your account is encrypted. Enter its passphrase (or recovery key) to send tasks from this device. The key stays in memory until Obsidian closes.') })
+  const input = root.createEl('input', { type: 'password', attr: { 'aria-label': tr('Passphrase'), autocomplete: 'current-password' } })
+  const rememberRow = root.createEl('label')
+  const remember = rememberRow.createEl('input', { type: 'checkbox' })
+  rememberRow.appendText(' ' + tr('Remember on this device'))
+  root.createEl('p', { cls: 'setting-item-description', text: tr('Remembering keeps the account key in Obsidian’s storage on this device, so anyone who can open Obsidian here can read your tasks’ titles as they are sent.') })
+  const error = root.createEl('p', { cls: 'mod-warning', attr: { role: 'alert' } })
+  const bar = root.createDiv({ cls: 'modal-button-container' })
+  const cancelBtn = bar.createEl('button', { text: tr('Cancel') })
+  const ok = bar.createEl('button', { cls: 'mod-cta', text: tr('Unlock') })
   let busy = false
   const go = async () => {
     if (busy || !input.value) return
@@ -71,7 +54,7 @@ export function askUnlock(app: App, submit: (a: UnlockAnswer) => Promise<string 
       }, () => this.close())
     }
     onClose() {
-      this.contentEl.replaceChildren()
+      this.contentEl.empty()
     }
   })(app).open()
 }

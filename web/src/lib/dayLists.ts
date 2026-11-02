@@ -32,6 +32,15 @@ export function upcomingList(tasks: readonly Task[], today: string): Task[] {
   return tasks.filter((t) => inUpcoming(t, today)).sort(compareDueThenPriority)
 }
 
+/**
+ * Upcoming with Start with Today (OpenSpec change upcoming-start-with-today, D2):
+ * Today's list as Today holds it, then the Upcoming tasks Today does not already
+ * hold (a task due tomorrow whose deadline has passed is Today's), each task once.
+ */
+export function upcomingWithToday(tasks: readonly Task[], today: string): Task[] {
+  return [...todayList(tasks, today), ...upcomingList(tasks, today).filter((t) => !inToday(t, today))]
+}
+
 /** A project's open tasks (any order; the project list builds its tree and sections from them). */
 export function projectOpenList(tasks: readonly Task[], projectId: string): Task[] {
   return tasks.filter((t) => !t.completed_at && t.project_id === projectId)

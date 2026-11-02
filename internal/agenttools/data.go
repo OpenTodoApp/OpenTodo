@@ -283,6 +283,7 @@ func inboxTask(t opsync.Entity) inbox.Task {
 		Completed: !isOpen(t),
 		Deleted:   num(t, "deleted_at") != 0,
 		ParentID:  rawStr(t, "parent_id"),
+		Sector:    rawStr(t, "sector"),
 	}
 }
 
@@ -493,7 +494,10 @@ type taskOut struct {
 	// Evening stays the evening flag.
 	DayPart *string `json:"day_part"`
 	// Energy is "deep", "medium", "low" or null (OpenSpec change task-energy).
-	Energy    *string      `json:"energy"`
+	Energy *string `json:"energy"`
+	// Sector is the time sector as stored (2026-W45, 2026-11, 2026-Q4) or null
+	// (OpenSpec change time-sectors); plaintext for encrypted accounts too.
+	Sector    *string      `json:"sector"`
 	BlockedBy []string     `json:"blocked_by"`
 	Blocked   bool         `json:"blocked"`
 	Location  *locationOut `json:"location"`
@@ -501,6 +505,10 @@ type taskOut struct {
 	// today-closed-list): true when the user's Today limit keeps the task
 	// waiting for a slot.
 	WaitingForSlot *bool `json:"waiting_for_slot,omitempty"`
+	// TimeSensitive is set by today_summary on a waiting task only (OpenSpec
+	// change today-waiting-time-sensitive): true when it is due today with a
+	// time or its deadline is today.
+	TimeSensitive *bool `json:"time_sensitive,omitempty"`
 }
 
 // render builds the assistant-facing view of a task, evaluating dates in loc
@@ -570,6 +578,9 @@ func (snap *snapshot) render(t opsync.Entity, loc *time.Location, today string, 
 	}
 	if e := str(t, "energy"); slices.Contains(opsync.EnergyLevels, e) {
 		out.Energy = &e
+	}
+	if sec := str(t, "sector"); sec != "" {
+		out.Sector = &sec
 	}
 	out.BlockedBy = stringList(t, "blocked_by")
 	if out.BlockedBy == nil {

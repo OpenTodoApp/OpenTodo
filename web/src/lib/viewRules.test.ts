@@ -6,7 +6,7 @@ import vectors from './views.vectors.json'
 import type { Due } from './types'
 import { inAnytime, isSomeday } from './views'
 
-type Vector = { name: string; task: { due: Due | null; deadline: string | null; start: string | null; completed_at: number | null }; someday: boolean; anytime: boolean }
+type Vector = { name: string; task: { due: Due | null; deadline: string | null; start: string | null; completed_at: number | null; sector?: string }; someday: boolean; anytime: boolean }
 
 describe('Someday and Anytime (shared vectors with internal/inbox)', () => {
   for (const v of vectors as Vector[]) {

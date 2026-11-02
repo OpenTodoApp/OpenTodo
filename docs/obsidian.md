@@ -9,7 +9,7 @@ order: 52
 ---
 # Obsidian plugin
 
-The OpenTodo plugin for [Obsidian](https://obsidian.md) turns a line of a note into a task on your own server. Write `Call the plumber tomorrow 9am p2` in today's daily note, run **Send line to OpenTodo**, and the task is in your Inbox on every device, with a chip that opens the note again. It can also keep a folder of task files in two-way sync with OpenTodo, the way [`ot vault`](vault.md) does, on a phone too. It runs on Obsidian for desktop and for phones and tablets, works offline, and works with [end-to-end encrypted](e2ee.md) accounts.
+The OpenTodo plugin for [Obsidian](https://obsidian.md) turns a line of a note into a task on your own server. Write `Call the plumber tomorrow 9am p2` in today's daily note, run **Send line to OpenTodo** from the editor's menu, and the task is in your Inbox on every device, with a chip that opens the note again. It can also keep a folder of task files in two-way sync with OpenTodo, the way [`ot vault`](vault.md) does, on a phone too. It runs on Obsidian for desktop and for phones and tablets, works offline, and works with [end-to-end encrypted](e2ee.md) accounts.
 
 ## Install
 
@@ -26,11 +26,13 @@ The plugin needs OpenTodo 0.19.1 or newer on the server and Obsidian 1.8.7 or ne
 
 The token stays in Obsidian's storage on this device. It is never written into the vault (the plugin's `data.json` holds only the three settings below), so a vault that Obsidian Sync, iCloud or git copies to another device arrives there unconnected: connect each device with its own token, and you can revoke one device's token without touching the others. **Disconnect** removes the token, the cached projects and labels and a remembered key from the device.
 
+The settings tab starts with the connection, then **Sending** and **Folder sync**.
+
 The address must use `https`. Plain `http` works only for this device and your own network (`localhost`, `192.168.…`, `10.…`, `.local` names), after a warning and a second **Connect**. The plugin talks to that one server only and collects nothing: no analytics, no crash reports, no update check of its own.
 
 ## Send a line
 
-Put the cursor on a line, or select several lines, and run **Send line to OpenTodo** from the command palette, the editor's context menu, or the toolbar on a phone (add it in Obsidian's mobile toolbar settings). Each non-empty line becomes one task, at most 50 at a time.
+Put the cursor on a line, or select several lines, and pick **Send line to OpenTodo** in the editor's context menu, or run **OpenTodo: Send line as a task** from the command palette or the toolbar on a phone (add it in Obsidian's mobile toolbar settings). The plugin sets no hotkeys; give the command one under Settings → Hotkeys if you like. Each non-empty line becomes one task, at most 50 at a time.
 
 - A **checkbox line** is read like the [Tasks](https://publish.obsidian.md/tasks/) plugin and the [Markdown vault](vault.md): `- [ ] Renew passport 📅 2026-11-05 ⏫ #errand` is "Renew passport", do on 5 November, priority 2, label errand. It knows `📅` (do on), `🛫` (start), `🔺 ⏫ 🔼 🔽 ⏬` (priority), `#tags` (labels), `[time:: 09:00]`, `[estimate:: 45m]`, `[deadline:: 2026-11-30]`, `[someday:: true]`, `[evening:: true]`, `[daypart:: morning]` and `[energy:: deep]`.
 - **Any other line**, a plain bullet included, is read like [quick add](quick-add.md): `Call the plumber tomorrow 9am p2 #Home @errand` is "Call the plumber", tomorrow at 09:00, priority 2, in the project Home, label errand. Dates are read in Obsidian's language and English.
@@ -49,25 +51,25 @@ Call the plumber tomorrow 9am p2 [opentodo:: https://todo.example.com/?task=8c2a
 
 A line that already carries an `[opentodo:: …]` link (or a vault `🆔`) is not sent again; the notice offers **Open in OpenTodo** instead. Ticking a sent line in Obsidian does not complete the task: the line is a capture, not a copy.
 
-The task's origin is the note, `obsidian://open?vault=…&file=…`, so its chip opens the note in Obsidian (see [Capturing pages](capture.md)). When you rename or move the note in Obsidian on this device, the plugin updates the origin of every task linked from its lines. After a rename made elsewhere (another device, a file-sync service, the file manager), run **Fix OpenTodo links in this note**.
+The task's origin is the note, `obsidian://open?vault=…&file=…`, so its chip opens the note in Obsidian (see [Capturing pages](capture.md)). When you rename or move the note in Obsidian on this device, the plugin updates the origin of every task linked from its lines. After a rename made elsewhere (another device, a file-sync service, the file manager), run **OpenTodo: Fix task links in this note**.
 
 ## Offline
 
-Sending never waits for the network. The task is prepared on the device and kept in the plugin's outbox, and the line gets its link at once. Waiting tasks are sent when Obsidian starts, when the network returns, every minute while some wait, and with **Send pending to OpenTodo**; the settings tab (and the status bar on a computer) shows how many wait. Sending the same tasks twice after an interrupted connection creates nothing twice. A task the server refuses, for example because you became a viewer of its project meanwhile, is dropped from the outbox and named in a notice with the project, the reason and the note.
+Sending never waits for the network. The task is prepared on the device and kept in the plugin's outbox, and the line gets its link at once. Waiting tasks are sent when Obsidian starts, when the network returns, every minute while some wait, and with **OpenTodo: Send pending tasks**; the settings tab (and the status bar on a computer) shows how many wait. Sending the same tasks twice after an interrupted connection creates nothing twice. A task the server refuses, for example because you became a viewer of its project meanwhile, is dropped from the outbox and named in a notice with the project, the reason and the note.
 
 ## Encrypted accounts
 
-For an account with [end-to-end encryption](e2ee.md), the plugin asks for your passphrase (or recovery key) with **Unlock OpenTodo** and encrypts the title, the notes and the origin on the device before anything is queued, with the same code as the web app; project and label names are decrypted for the sheet. The key stays in memory until Obsidian closes. **Remember on this device** keeps it in Obsidian's storage on this device, so anyone who can open Obsidian there can read what is sent; it is off by default. While the account is locked, nothing is sent or queued and the line stays as it is.
+For an account with [end-to-end encryption](e2ee.md), the plugin asks for your passphrase (or recovery key) when you run **OpenTodo: Unlock encrypted account** or pick **Unlock OpenTodo** in its settings or a notice, and encrypts the title, the notes and the origin on the device before anything is queued, with the same code as the web app; project and label names are decrypted for the sheet. The key stays in memory until Obsidian closes. **Remember on this device** keeps it in Obsidian's storage on this device, so anyone who can open Obsidian there can read what is sent; it is off by default. While the account is locked, nothing is sent or queued and the line stays as it is.
 
 ## Sync a folder
 
 The plugin can keep one folder of your Obsidian vault in two-way sync with OpenTodo, with the same files and rules as [`ot vault`](vault.md): one file per project (`Inbox.md`, `Home.md`, `Work/Work.md` with its sub-projects beside it), one Obsidian Tasks line per task, and `.opentodo/state.json` for what was last synced. Tick a line on your phone and the task is done everywhere; create a task in the app and its line appears in the file.
 
-1. Connect the plugin (above), then open **Settings → OpenTodo → Sync a folder with OpenTodo**.
+1. Connect the plugin (above), then open **Settings → OpenTodo → Folder sync**.
 2. Pick the folder: **OpenTodo** (a new folder), any folder of the vault, or a folder that `ot vault` or the plugin on another device already syncs. A folder that holds notes but no `.opentodo/` asks first: its Markdown files become projects and their task lines tasks, as `ot vault init --adopt` does.
 3. Pick **Turn on**. The first sync writes the files.
 
-**When it syncs.** When the plugin starts, a second after you change a file in the folder, every 30 seconds while Obsidian is in front, when you come back to Obsidian, and with **Sync vault with OpenTodo now** from the command palette. It does not sync in the background or while Obsidian is closed: phones do not run plugins then. Edits made offline are sent at the next sync, and changes from other devices merge field by field as everywhere else. A sync that fails (no connection, the server down) changes no file and is tried again after 30 seconds, then 1, 2 and every 5 minutes; the settings tab shows why, and on a computer the status bar too.
+**When it syncs.** When the plugin starts, a second after you change a file in the folder, every 30 seconds while Obsidian is in front, when you come back to Obsidian, and with **OpenTodo: Sync folder now** from the command palette. It does not sync in the background or while Obsidian is closed: phones do not run plugins then. Edits made offline are sent at the next sync, and changes from other devices merge field by field as everywhere else. A sync that fails (no connection, the server down) changes no file and is tried again after 30 seconds, then 1, 2 and every 5 minutes; the settings tab shows why, and on a computer the status bar too.
 
 **One device per folder.** If the folder also travels between your devices with Obsidian Sync, iCloud or git, only one device talks to OpenTodo for it: the folder's state names the device that syncs it, renewed on every sync. On the others the settings tab says **Synced by laptop** (or whichever device it is) and nothing is sent; an edit you make there reaches OpenTodo through the file-sync service and that device's next sync. When that device is gone for good, pick **Take over syncing here**: this device becomes the folder's new vault device, every line is compared with OpenTodo, a line that differs is kept in `<file>.conflict.md` with OpenTodo's values in the file, new lines become tasks once, and nothing is trashed. `ot vault sync --take-over` does the same on a computer. **Turn off** stops syncing and gives the folder up, so another device can sync it without taking over; the files stay.
 
@@ -75,7 +77,7 @@ The plugin can keep one folder of your Obsidian vault in two-way sync with OpenT
 
 **Encrypted accounts.** Unlock OpenTodo first; while it is locked, the sync is skipped and nothing is sent. Turning sync on asks you to confirm that the folder, and anything that copies the vault, holds your tasks in plain text. What is sent is encrypted on the device; a value that cannot be decrypted shows as "Encrypted item" and is never sent back.
 
-A folder with a [TaskNotes](vault.md#tasknotes) folder linked keeps syncing with `ot vault`; the plugin does not sync it. Lines inside the synced folder are vault lines: **Send line to OpenTodo** refuses them, so no task is made twice.
+A folder with a [TaskNotes](vault.md#tasknotes) folder linked keeps syncing with `ot vault`; the plugin does not sync it. Lines inside the synced folder are vault lines: sending refuses them, so no task is made twice.
 
 ## How it differs from `ot vault`
 

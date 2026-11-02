@@ -2,7 +2,7 @@
 // web-component-structure): what TaskListView renders, tested without a DOM.
 import { describe, expect, it } from 'vitest'
 import { currentDateTime } from './dates'
-import { BLOCKED_OPEN_KEY, DONE_OPEN_KEY, WAITING_OPEN_KEY, EARLIER_KEY, EARLIER_OPEN_KEY, earlierCollapsed, boardColumns, completedBySection, flatRow, listGroups, sectionBuckets, sectionOfRows, siblingPositions, tasksForView, type GroupInput } from './listGroups'
+import { BLOCKED_OPEN_KEY, DONE_OPEN_KEY, WAITING_OPEN_KEY, EARLIER_KEY, EARLIER_OPEN_KEY, earlierCollapsed, boardColumns, completedBySection, flatRow, listGroups, sectionBuckets, sectionOfRows, siblingPositions, splitLater, tasksForView, type GroupInput } from './listGroups'
 import { buildTaskTree } from './subtasks'
 import type { Project, Section, Task } from './types'
 
@@ -108,6 +108,32 @@ describe('listGroups', () => {
     expect(parts.map(titles)).toEqual([['A'], ['B'], [], []])
   })
 
+  it('folded Waiting keeps the tasks with a time today in sight, soonest first (today-waiting-time-sensitive D2)', () => {
+    const a = task({ title: 'A', due: { date: TODAY } })
+    const form = task({ title: 'Send the form', due: { date: TODAY, time: '16:00' } })
+    const plain = task({ title: 'Plain', due: { date: TODAY } })
+    const taxes = task({ title: 'File the taxes', deadline: TODAY })
+    const resolved = { ...currentDateTime(), time: '12h' as const }
+    const base = input({ view: 'today', tasks: [a, form, plain, taxes], resolved, closedList: { limit: 1, waiting: [form, plain, taxes] } })
+    const folded = listGroups(base).find((x) => x.key === 'waiting')!
+    expect(folded.soon!.map((s) => [s.task.title, s.time])).toEqual([['Send the form', '16:00'], ['File the taxes', null]])
+    expect(folded.detail).toBe('next: Send the form, 4:00 PM')
+    // Opened, the group is as before.
+    const open = listGroups({ ...base, collapsed: new Set([WAITING_OPEN_KEY]) }).find((x) => x.key === 'waiting')!
+    expect(open.soon).toBeUndefined()
+    expect(titles(open)).toEqual(['Send the form', 'Plain', 'File the taxes'])
+    // Only a deadline: named as such.
+    const deadline = listGroups(input({ view: 'today', tasks: [a, taxes], closedList: { limit: 1, waiting: [taxes] } })).find((x) => x.key === 'waiting')!
+    expect(deadline.detail).toBe('next: File the taxes, deadline today')
+    // Upcoming's Start with Today draws the same folded group (upcoming-start-with-today D2).
+    const tomorrow = task({ title: 'Tomorrow', due: { date: '2026-10-15' } })
+    const upcoming = listGroups({ ...base, view: 'upcoming', tasks: [a, form, plain, taxes, tomorrow], upcomingToday: true }).find((x) => x.key === 'waiting')!
+    expect(upcoming.soon!.map((s) => s.task.title)).toEqual(['Send the form', 'File the taxes'])
+    expect(upcoming.detail).toBe('next: Send the form, 4:00 PM')
+    // No time today: a plain heading.
+    expect(listGroups(input({ view: 'today', tasks: [a, plain], closedList: { limit: 1, waiting: [plain] } })).find((x) => x.key === 'waiting')!.detail).toBeUndefined()
+  })
+
   it('Today ends with a folded Done today group, newest first (today-closed-list D6)', () => {
     const open = task({ title: 'Open', due: { date: TODAY } })
     const done1 = task({ title: 'Done 1', completed_at: 5 })
@@ -155,6 +181,41 @@ describe('listGroups', () => {
     const closed = listGroups(input({ tree, collapsed: new Set([parent.id]) }))
     expect(titles(closed[0])).toEqual(['Parent'])
     expect(closed[0].rows[0].collapsed).toBe(true)
+  })
+
+  // GitHub issue #755: a parent deferred to Later left its subtasks behind in its old group.
+  it('a deferred parent takes its subtasks into Later, nested, with their own dates (subtasks-follow-later)', () => {
+    const parent = task({ title: 'Paint fence', project_id: 'p', start: '2026-11-20' })
+    const plain = task({ title: 'Buy paint', project_id: 'p', parent_id: parent.id })
+    const dated = task({ title: 'Book sprayer', project_id: 'p', parent_id: parent.id, due: { date: TODAY } })
+    const grandchild = task({ title: 'Compare prices', project_id: 'p', parent_id: plain.id })
+    const other = task({ title: 'Water plants', project_id: 'p', due: { date: TODAY } })
+    const all = [parent, plain, dated, grandchild, other]
+    const { active, later } = splitLater(all, TODAY)
+    expect(active.map((x) => x.title)).toEqual(['Water plants'])
+    expect(later.map((x) => x.title)).toEqual(['Paint fence', 'Buy paint', 'Book sprayer', 'Compare prices'])
+    const g = listGroups(input({ view: 'project', tasks: all, tree: buildTaskTree(active), laterTasks: later, taskMap: new Map(all.map((x) => [x.id, x])) }))
+    expect(g.map((x) => x.key)).toEqual(['all', 'later'])
+    expect(titles(g[0])).toEqual(['Water plants'])
+    expect(g[1].rows.map((r) => [r.task.title, r.depth, r.parent, r.breadcrumb])).toEqual([
+      ['Paint fence', 0, null, null], ['Buy paint', 1, parent.id, null], ['Compare prices', 2, plain.id, null], ['Book sprayer', 1, parent.id, null],
+    ])
+    // Folding the parent in Later hides its subtasks like anywhere else in the tree.
+    const folded = listGroups(input({ view: 'project', tree: buildTaskTree(active), laterTasks: later, collapsed: new Set([parent.id]) }))
+    expect(titles(folded[1])).toEqual(['Paint fence'])
+  })
+
+  it('a deferred or parked subtask of an active parent stays under it; grouping by date keeps the subtree together', () => {
+    const parent = task({ title: 'Plan trip', project_id: 'p', due: { date: TODAY } })
+    const deferred = task({ title: 'Renew passport', project_id: 'p', parent_id: parent.id, start: '2026-12-01' })
+    const parked = task({ title: 'Upgrade seats', project_id: 'p', parent_id: parent.id, start: 'someday' })
+    const { active, later } = splitLater([parent, deferred, parked], TODAY)
+    expect(later).toEqual([])
+    const display = { groupBy: 'due', sortBy: 'position', sortDir: 'asc', rowLayout: 'line' } as GroupInput['display']
+    const g = listGroups(input({ view: 'project', tasks: active, tree: buildTaskTree(active), laterTasks: later, display }))
+    const today = g.find((x) => x.rows.some((r) => r.task.id === parent.id))!
+    expect(titles(today)).toEqual(['Plan trip', 'Renew passport', 'Upgrade seats'])
+    expect(g.some((x) => x.key === 'later')).toBe(false)
   })
 
   it('a sectioned project lists "No section" first, then sections by position; a folded section keeps its count', () => {

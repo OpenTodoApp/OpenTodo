@@ -57,7 +57,7 @@ export class Engine {
     this.base = st.store
     this.app = S.clone(st.store)
     this.startCursor = st.cursor
-    this.plain = o.plain ?? new Map()
+    this.plain = o.plain ?? new Map<string, string | null>()
   }
 
   event(kind: string, file: string, task: string, text: string): void {
@@ -97,10 +97,10 @@ export class Engine {
   /** The pending field values of an entity, creating it. */
   body(entity: string, id: string): Body {
     let byID = this.bodies.get(entity)
-    if (!byID) this.bodies.set(entity, (byID = new Map()))
+    if (!byID) this.bodies.set(entity, (byID = new Map<string, Body>()))
     let b = byID.get(id)
     if (!b) {
-      byID.set(id, (b = new Map()))
+      byID.set(id, (b = new Map<string, unknown>()))
       this.order.push(`${entity}:${id}`)
     }
     return b
