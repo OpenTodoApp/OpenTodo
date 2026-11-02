@@ -46,3 +46,68 @@ func TestTruncateAlwaysValid(t *testing.T) {
 		}
 	}
 }
+
+func TestHumanBytes(t *testing.T) {
+	cases := []struct {
+		n    int64
+		want string
+	}{
+		{0, "0 B"},
+		{1023, "1023 B"},
+		{1024, "1.0 KiB"},
+		{1536, "1.5 KiB"},
+		{1024 * 1024, "1.0 MiB"},
+		{300 * 1024, "300.0 KiB"},
+		{1 << 60, "1.0 EiB"},
+		{-5, "-5 B"}, // negative sizes are not expected; pinned so a change is deliberate
+	}
+	for _, c := range cases {
+		if got := HumanBytes(c.n); got != c.want {
+			t.Errorf("HumanBytes(%d) = %q, want %q", c.n, got, c.want)
+		}
+	}
+}
+
+func TestTruncateRunes(t *testing.T) {
+	cases := []struct {
+		s      string
+		max    int
+		suffix string
+		want   string
+	}{
+		{"abc", 5, "…", "abc"},         // fits: no suffix
+		{"abc", 3, "…", "abc"},         // exactly fits: no suffix
+		{"abcdef", 3, "", "abc"},       // no suffix
+		{"abcdef", 3, "...", "abc..."}, // suffix is not counted in the limit
+		{"äöü😀", 3, "", "äöü"},         // multi-byte runes count once
+		{"äöü😀", 4, "", "äöü😀"},
+		{"äöü😀", 2, "…", "äö…"},
+		{"abc", 0, "", ""},
+		{"abc", 0, "…", "…"},
+	}
+	for _, c := range cases {
+		if got := TruncateRunes(c.s, c.max, c.suffix); got != c.want {
+			t.Errorf("TruncateRunes(%q, %d, %q) = %q, want %q", c.s, c.max, c.suffix, got, c.want)
+		}
+	}
+}
+
+func TestTruncateEllipsis(t *testing.T) {
+	cases := []struct {
+		s    string
+		max  int
+		want string
+	}{
+		{"abc", 5, "abc"},
+		{"abc", 3, "abc"}, // exactly maxBytes: no ellipsis
+		{"abcdef", 3, "abc…"},
+		{"Zoë", 3, "Zo…"}, // the cut falls inside ë: it is dropped whole
+		{"Zoë", 4, "Zoë"},
+		{"a😀b", 3, "a…"},
+	}
+	for _, c := range cases {
+		if got := TruncateEllipsis(c.s, c.max); got != c.want {
+			t.Errorf("TruncateEllipsis(%q, %d) = %q, want %q", c.s, c.max, got, c.want)
+		}
+	}
+}
