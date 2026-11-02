@@ -853,6 +853,7 @@
     "web/src/app/PlanView.tsx",
     "web/src/app/WorkspaceMembers.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/objectives/ObjectiveCards.tsx",
     "web/src/app/palette/CommandPalette.tsx",
     "web/src/app/palette/modes.ts",
     "web/src/app/quickadd/FieldRows.tsx",
@@ -2651,6 +2652,9 @@
     "web/src/app/filter/conditionText.ts",
     "web/src/app/review/SectorReview.tsx",
     "web/src/lib/sectorNames.ts"
+  ],
+  "Carry": [
+    "web/src/app/objectives/ReviewObjectives.tsx"
   ],
   "Carry over": [
     "web/src/lib/review.ts"
@@ -4773,6 +4777,7 @@
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/calendar/QueryFilterDialog.tsx",
     "web/src/app/focus/FocusParts.tsx",
+    "web/src/app/objectives/ReviewObjectives.tsx",
     "web/src/app/review/ReviewView.tsx",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/routines/RoutineEditor.tsx",
@@ -4886,8 +4891,15 @@
   "Drinks": [
     "web/src/lib/aisles/index.ts"
   ],
+  "Drop": [
+    "web/src/app/objectives/ObjectiveCards.tsx",
+    "web/src/app/objectives/ReviewObjectives.tsx"
+  ],
   "Drop files to attach them to this task": [
     "web/src/app/task-detail/AttachmentsRow.tsx"
+  ],
+  "Drop “{title}”?": [
+    "web/src/app/objectives/ObjectiveCards.tsx"
   ],
   "Due": [
     "web/src/app/ParseChips.tsx",
@@ -5414,6 +5426,9 @@
   ],
   "Enter common, organizations, consumers, a tenant ID or a domain name.": [
     "web/src/app/CalendarSyncDialogs.tsx"
+  ],
+  "Enter edits, Space marks done, Delete drops, Alt and the arrow keys move.": [
+    "web/src/app/objectives/ObjectivesStrip.tsx"
   ],
   "Enter one of your recovery codes. Each code works once.": [
     "web/src/app/AuthScreen.tsx"
@@ -6132,6 +6147,11 @@
   ],
   "First task": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Five is plenty. Finish or drop one first.": [
+    "web/src/app/objectives/ObjectiveCards.tsx",
+    "web/src/app/objectives/ReviewObjectives.tsx",
+    "web/src/lib/i18n/errors.ts"
   ],
   "Five minutes: the Inbox to zero, what is open from earlier, and today's focus.": [
     "web/src/lib/method/vocabulary.json"
@@ -7831,6 +7851,7 @@
   ],
   "Keep": [
     "web/src/app/RuleEditor.tsx",
+    "web/src/app/objectives/ObjectiveCards.tsx",
     "web/src/app/rules/RuleFields.tsx"
   ],
   "Keep as sections": [
@@ -8758,6 +8779,12 @@
   "Mark {title} for This Evening": [
     "web/src/app/palette/registry.ts"
   ],
+  "Mark “{title}” done": [
+    "web/src/app/objectives/ObjectiveCards.tsx"
+  ],
+  "Mark “{title}” not done": [
+    "web/src/app/objectives/ObjectiveCards.tsx"
+  ],
   "Markdown typing becomes formatting (``` and Enter starts a code block); Shift+Enter is a line break, Esc leaves the notes": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -9454,6 +9481,9 @@
     "web/src/app/notes/NotesPage.tsx",
     "web/src/app/palette/registry.ts"
   ],
+  "New objective for {period}": [
+    "web/src/app/objectives/ObjectiveCards.tsx"
+  ],
   "New owner": [
     "web/src/app/WorkspaceGeneral.tsx"
   ],
@@ -9876,6 +9906,9 @@
   ],
   "No notifications.": [
     "web/src/app/NotificationBell.tsx"
+  ],
+  "No objectives yet.": [
+    "web/src/app/objectives/ObjectiveCards.tsx"
   ],
   "No one sees the assistant and the server contacts no model provider.": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -10602,6 +10635,42 @@
   ],
   "OK": [
     "web/src/app/NotificationsSettings.tsx"
+  ],
+  "Objective": [
+    "web/src/app/objectives/ObjectiveCards.tsx"
+  ],
+  "Objective added": [
+    "web/src/lib/objectives.ts"
+  ],
+  "Objective carried over": [
+    "web/src/lib/objectives.ts"
+  ],
+  "Objective done": [
+    "web/src/lib/objectives.ts"
+  ],
+  "Objective dropped": [
+    "web/src/lib/objectives.ts"
+  ],
+  "Objective moved": [
+    "web/src/lib/objectives.ts"
+  ],
+  "Objective renamed": [
+    "web/src/lib/objectives.ts"
+  ],
+  "Objective reopened": [
+    "web/src/lib/objectives.ts"
+  ],
+  "Objectives": [
+    "web/src/app/method/HowYouWorkSection.tsx",
+    "web/src/app/objectives/ObjectivesStrip.tsx",
+    "web/src/app/objectives/ReviewObjectives.tsx",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Objectives for next week": [
+    "web/src/app/objectives/ReviewObjectives.tsx"
+  ],
+  "Objectives for this week": [
+    "web/src/app/objectives/ReviewObjectives.tsx"
   ],
   "Occurrence actions": [
     "web/src/app/calendar/occurrenceMenu.tsx"
@@ -11825,6 +11894,9 @@
   "Pin to sidebar": [
     "web/src/app/menus/pinItem.ts"
   ],
+  "Pin up to five quarterly and weekly objectives in Plan and the weekly review.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Pin {name}": [
     "web/src/app/ViewsView.tsx"
   ],
@@ -11878,8 +11950,14 @@
   "Plan from this frame": [
     "web/src/app/calendar/FrameBand.tsx"
   ],
+  "Plan next week instead": [
+    "web/src/app/objectives/ReviewObjectives.tsx"
+  ],
   "Plan tasks into this week, next week or this month without a fake date.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Plan this week instead": [
+    "web/src/app/objectives/ReviewObjectives.tsx"
   ],
   "Plan today": [
     "web/src/app/FirstDay.tsx"
@@ -15255,6 +15333,15 @@
   "Steps of {name}": [
     "web/src/app/routines/RoutineEditor.tsx"
   ],
+  "Still open from last week": [
+    "web/src/app/objectives/ReviewObjectives.tsx"
+  ],
+  "Still open from this week": [
+    "web/src/app/objectives/ReviewObjectives.tsx"
+  ],
+  "Still open from {quarter}": [
+    "web/src/app/objectives/ReviewObjectives.tsx"
+  ],
   "Still visible to the server: {PLAINTEXT_FIELDS}. Shared projects are not encrypted, and new projects cannot be shared while encryption is on.": [
     "web/src/app/EncryptionPanel.tsx"
   ],
@@ -18488,6 +18575,8 @@
     "web/src/app/focus/startFocus.ts",
     "web/src/app/focus/useFocusTimer.ts",
     "web/src/app/notes/NoteRow.tsx",
+    "web/src/app/objectives/ObjectiveCards.tsx",
+    "web/src/app/objectives/ReviewObjectives.tsx",
     "web/src/app/palette/CommandPalette.tsx",
     "web/src/app/palette/index.ts",
     "web/src/app/palette/registry.ts",
@@ -19065,6 +19154,9 @@
   ],
   "What this device ran, without the text.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "What to do with “{title}”": [
+    "web/src/app/objectives/ReviewObjectives.tsx"
   ],
   "What will happen": [
     "web/src/app/RestoreSection.tsx"
@@ -22210,6 +22302,9 @@
   ],
   "{n, plural, one {# change was not accepted} other {# changes were not accepted}}": [
     "web/src/lib/sharing.ts"
+  ],
+  "{n, plural, one {# character left} other {# characters left}}": [
+    "web/src/app/objectives/ObjectiveCards.tsx"
   ],
   "{n, plural, one {# colour derived} other {# colours derived}}": [
     "web/src/app/themes/ImportReport.tsx"
