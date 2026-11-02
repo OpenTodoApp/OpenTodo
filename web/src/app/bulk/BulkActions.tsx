@@ -32,15 +32,15 @@ import { slotAction, slotLabel, useSlotState, type SlotState } from '../task-lis
 import { focusMenuLabel, focusMenuState, runFocusPress, type FocusMenuState } from '../focus/focusRequest'
 import { useToday } from '../useViews'
 
-/** Confirm the trash from this count up (the keyboard's big selection; a menu click stays immediate). */
-export const BULK_TRASH_CONFIRM_FROM = 20
+/** Confirm the trash of more than this many ticked tasks (the keyboard's big selection; a menu click stays immediate). */
+export const BULK_TRASH_CONFIRM_ABOVE = 20
 
 /**
  * The keyboard's Delete on the ticked set: a big one asks first (the same way a
  * project delete does), a small one runs at once.
  */
 export async function trashTicked(ids: readonly string[]): Promise<void> {
-  if (ids.length > BULK_TRASH_CONFIRM_FROM) {
+  if (ids.length > BULK_TRASH_CONFIRM_ABOVE) {
     askBulkConfirm({
       title: t('Move {tasks} to the Trash?', { tasks: tasksWord(ids.length) }),
       body: t('They go to the Trash with their subtasks. You can restore them from the Trash.'),

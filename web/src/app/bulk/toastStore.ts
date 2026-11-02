@@ -19,11 +19,10 @@ export interface BulkToast {
   second?: { label: string; run: () => void }
 }
 
-/** A background failure or notice (the focus engine's failed time entry): no undo, one message, the same window. */
+/** A background failure (the focus engine's failed time entry): no undo, one message, the same window. */
 export interface ActionToast {
   key: number
   label: string
-  tone: 'danger' | 'info'
 }
 
 const store = createStore<BulkToast | null>('bulkToast', null)
@@ -37,8 +36,8 @@ let actionSeq = 0
 resettable('actionToastSeq', () => { actionSeq = 0 })
 
 /** Show (or replace) the background action's message. */
-export function showActionToast(label: string, tone: ActionToast['tone'] = 'danger'): void {
-  actions.set({ key: ++actionSeq, label, tone })
+export function showActionToast(label: string): void {
+  actions.set({ key: ++actionSeq, label })
 }
 
 /** The background action's message now shown, if any. */

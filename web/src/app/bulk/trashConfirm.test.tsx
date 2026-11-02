@@ -9,7 +9,7 @@ import { db, useDatabase } from '../../lib/db'
 import { createTask, resetDeviceId } from '../../lib/ops'
 import { render, waitFor } from '../../ui/test-utils'
 import { BulkConfirmHost } from './BulkConfirmHost'
-import { BULK_TRASH_CONFIRM_FROM, clearBulkConfirm, trashTicked } from './BulkActions'
+import { BULK_TRASH_CONFIRM_ABOVE, clearBulkConfirm, trashTicked } from './BulkActions'
 import { bulkToast, hideBulkToast } from './toastStore'
 
 let n = 0
@@ -27,9 +27,17 @@ describe('trashTicked', () => {
     expect(bulkToast()?.undoId).toBeTruthy()
   })
 
-  it(`a set past ${BULK_TRASH_CONFIRM_FROM} asks first: the dialog names the count, confirming trashes`, async () => {
+  it(`a set of exactly ${BULK_TRASH_CONFIRM_ABOVE} still runs at once`, async () => {
     const ids: string[] = []
-    for (let i = 0; i < BULK_TRASH_CONFIRM_FROM + 1; i++) ids.push(await createTask({ title: `task ${i}` }))
+    for (let i = 0; i < BULK_TRASH_CONFIRM_ABOVE; i++) ids.push(await createTask({ title: `task ${i}` }))
+    await trashTicked(ids)
+    expect((await db.tasks.get(ids[0]))!.deleted_at).not.toBeNull()
+    expect(bulkToast()?.undoId).toBeTruthy()
+  })
+
+  it(`a set past ${BULK_TRASH_CONFIRM_ABOVE} asks first: the dialog names the count, confirming trashes`, async () => {
+    const ids: string[] = []
+    for (let i = 0; i < BULK_TRASH_CONFIRM_ABOVE + 1; i++) ids.push(await createTask({ title: `task ${i}` }))
     const r = await render(<BulkConfirmHost />)
     await act(async () => { await trashTicked(ids) })
     await waitFor(() => document.querySelector('[data-testid="confirm-dialog"]') !== null, 'the confirm dialog')
