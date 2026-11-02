@@ -154,6 +154,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
   sso_required: msg('This server requires signing in with single sign-on.'),
   too_large: msg('This is too large for the server: {detail}'),
   too_many_appends: msg('This note has too many additions waiting. Open it in the app, then try again.'),
+  too_many_objectives: msg('Five is plenty. Finish or drop one first.'),
   turn_in_progress: msg('Another answer is still being written. Wait for it or stop it first.'),
   unauthorized: msg('Sign in to continue.'),
   unavailable: msg('This is not available on this server.'),
