@@ -319,14 +319,16 @@ function dueText(v: unknown): string {
  * 2026-10-12", "assigned to Bob". `name` resolves account ids, `project`
  * project ids.
  */
-export function describeEvent(ev: ActivityEvent, name: (id: string) => string, project: (id: string | null) => string, task?: (id: string) => string | undefined): string {
+export function describeEvent(ev: ActivityEvent, name: (id: string) => string, project: (id: string | null) => string, task?: (id: string) => string | undefined,
+  /** A deleted item a reusable list's duplicate collapse merged (reusable-lists D4). */
+  merged?: (id: string) => boolean): string {
   const to = (f: string) => ev.changes.find((c) => c.field === f)?.to
   const isProject = ev.entity === 'project'
   switch (ev.kind) {
     case 'created': return isProject ? t('created the project') : t('created the task')
     case 'completed': return t('completed')
     case 'reopened': return t('reopened')
-    case 'deleted': return isProject ? t('deleted the project') : t('deleted the task')
+    case 'deleted': return isProject ? t('deleted the project') : merged?.(ev.entityId) ? t('merged a duplicate') : t('deleted the task')
     case 'restored': return isProject ? t('restored the project') : t('restored the task')
     case 'rescheduled': return to('due') ? t('moved the due date to {date}', { date: dueText(to('due')) }) : t('removed the due date')
     case 'assigned': return t('assigned to {name}', { name: name(String(to('assignee_id'))) })
