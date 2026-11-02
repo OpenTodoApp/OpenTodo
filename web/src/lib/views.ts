@@ -26,7 +26,7 @@ import { spanOf } from './span'
 // ---- Today and Upcoming selection (OpenSpec change `deadlines`, design D3) ----
 // One definition shared by the list, its grouping and the sidebar count.
 
-type DatedTask = Pick<Task, 'completed_at' | 'due' | 'deadline' | 'start'> & { project_id?: string | null; span?: boolean }
+type DatedTask = Pick<Task, 'completed_at' | 'due' | 'deadline' | 'start'> & { project_id?: string | null; span?: boolean; sector?: string }
 
 // ---- start dates, Someday and This Evening (OpenSpec change `someday-and-evening`, D2) ----
 
@@ -58,7 +58,7 @@ export function inToday(item: DatedTask, today: string): boolean {
 
 /** Anytime: open, active tasks with no date of any kind and no start. */
 export function inAnytime(item: DatedTask, today: string): boolean {
-  return !item.completed_at && isActive(item, today) && !item.due && !(item.deadline ?? null) && (item.start ?? null) === null
+  return !item.completed_at && isActive(item, today) && !item.due && !(item.deadline ?? null) && (item.start ?? null) === null && !item.sector
 }
 
 /** Counted in the sidebar (Inbox, projects): open and active. */

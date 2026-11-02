@@ -3,7 +3,7 @@ import vectors from './inbox.vectors.json'
 import { inboxTasks, isInboxTask, type InboxFields } from './inbox'
 import type { Due } from './types'
 
-type VTask = { project_id: string | null; due: Due | null; start: string | null; completed_at: number | null; deleted_at: number | null }
+type VTask = { project_id: string | null; due: Due | null; start: string | null; completed_at: number | null; deleted_at: number | null; sector?: string }
 type Vector = { name: string; task: VTask; parents?: VTask[]; parent_missing?: boolean; inbox: boolean }
 
 /** The vector's task with its parents chained as p0 (nearest), p1, …; a missing parent is p0 with no entry. */

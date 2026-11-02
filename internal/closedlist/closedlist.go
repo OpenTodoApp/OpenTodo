@@ -41,6 +41,11 @@ type Task struct {
 	Habit bool
 	// Blocked by an open task: the fallback rule when no predicate is given.
 	Blocked bool
+	// Time is the due time in the user's zone (HH:MM) when the task has a due
+	// date (then Due is that date); empty otherwise.
+	Time string
+	// Deadline is the task's deadline (YYYY-MM-DD) or empty.
+	Deadline string
 }
 
 // Review is the part of the personal review row the rule reads.
@@ -186,6 +191,54 @@ func (f Fill) WaitingSet() map[string]bool {
 	out := make(map[string]bool, len(f.Waiting))
 	for _, id := range f.Waiting {
 		out[id] = true
+	}
+	return out
+}
+
+// Sensitive is a waiting task with a time today (OpenSpec change
+// today-waiting-time-sensitive): its due time, or empty for a deadline today
+// without one.
+type Sensitive struct {
+	ID   string
+	Time string
+}
+
+// TimeSensitive returns the waiting tasks due today with a time or with a
+// deadline today, soonest first: by time, then the deadlines without a time
+// (the end of the day), ties in fill order. waiting is the waiting tasks in
+// fill order; the fill order itself is never changed.
+func TimeSensitive(waiting []Task, today string) []Sensitive {
+	out := []Sensitive{}
+	for _, t := range waiting {
+		timed := ""
+		if t.Due == today && t.Time != "" {
+			timed = t.Time
+		}
+		if timed != "" || t.Deadline == today {
+			out = append(out, Sensitive{ID: t.ID, Time: timed})
+		}
+	}
+	key := func(s Sensitive) string {
+		if s.Time == "" {
+			return "24:00"
+		}
+		return s.Time
+	}
+	sort.SliceStable(out, func(i, j int) bool { return key(out[i]) < key(out[j]) })
+	return out
+}
+
+// WaitingTasks is the waiting tasks of f in fill order, from tasks.
+func (f Fill) WaitingTasks(tasks []Task) []Task {
+	byID := make(map[string]Task, len(tasks))
+	for _, t := range tasks {
+		byID[t.ID] = t
+	}
+	out := make([]Task, 0, len(f.Waiting))
+	for _, id := range f.Waiting {
+		if t, ok := byID[id]; ok {
+			out = append(out, t)
+		}
 	}
 	return out
 }

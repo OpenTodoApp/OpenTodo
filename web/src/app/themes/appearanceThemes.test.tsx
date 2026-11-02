@@ -62,8 +62,35 @@ describe('Your themes', () => {
     expect(q('[data-theme-limit]')!.textContent).toBe('You have 20 themes; delete one to add another.')
     expect(q<HTMLButtonElement>('[data-theme-new]')!.disabled).toBe(true)
     expect(q<HTMLButtonElement>('[data-theme-import]')!.disabled).toBe(true)
-    expect(q<HTMLButtonElement>('[data-theme-import-vscode]')!.disabled).toBe(true)
+    // A template can still be downloaded: it adds nothing.
+    expect(q<HTMLButtonElement>('[data-theme-template]')!.disabled).toBe(false)
     await r.unmount()
+  })
+
+  it('Download a template saves a starter file of the theme in use that reads back as that theme', async () => {
+    await saveCustomTheme('th-1', DOC())
+    const files: { name: string; blob: Blob }[] = []
+    const create = URL.createObjectURL
+    let last: Blob | null = null
+    URL.createObjectURL = (b: Blob) => { last = b; return 'blob:template' }
+    const clickA = HTMLAnchorElement.prototype.click
+    HTMLAnchorElement.prototype.click = function (this: HTMLAnchorElement) { if (last) files.push({ name: this.download, blob: last }) }
+    try {
+      const r = await render(<AppearanceSection author="Ada" />)
+      await waitFor(() => !!q('[data-theme-template]'), 'the button')
+      await click(q('[data-theme-template]')!)
+      await waitFor(() => files.length === 1, 'the file', 20_000)
+      expect(files[0].name).toMatch(/-template\.opentodo-theme\.jsonc$/)
+      const text = await files[0].blob.text()
+      expect(text).toContain('"$schema"')
+      expect(text).toContain('// "muted":')
+      const { readThemeFile } = await import('../../lib/theme/files')
+      expect(readThemeFile(text).ok).toBe(true)
+      await r.unmount()
+    } finally {
+      URL.createObjectURL = create
+      HTMLAnchorElement.prototype.click = clickA
+    }
   })
 
   it('Customise on a built-in card opens the editor on an unsaved copy that credits it', async () => {
