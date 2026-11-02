@@ -4,7 +4,8 @@
 // disclosure in the card (never a dialog), then the shell asks for background
 // location; with only foreground location the card explains what is missing and
 // nothing is armed. In a browser, and in an older app, one line says where location
-// reminders fire.
+// reminders fire. The Android app built for Google Play has no `geofences` until
+// Play approves background location (play-location-later): one line says so.
 import { useEffect, useState } from 'react'
 import { Badge, Button, Notice, SettingRow, SettingsSection, Switch } from '../ui'
 import { t } from '../lib/i18n'
@@ -12,7 +13,7 @@ import { geofencesEnabled, setShellGeofences } from '../lib/geofences'
 import { has, shell, type ShellLocationPermission } from '../lib/shell'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 
-export type LocationRemindersMode = 'shell' | 'update' | 'browser'
+export type LocationRemindersMode = 'shell' | 'play' | 'update' | 'browser'
 
 export interface LocationRemindersState {
   enabled: boolean
@@ -21,7 +22,7 @@ export interface LocationRemindersState {
 }
 
 export function LocationRemindersSection() {
-  const mode: LocationRemindersMode = has('geofences') ? 'shell' : shell() ? 'update' : 'browser'
+  const mode: LocationRemindersMode = has('geofences') ? 'shell' : shell()?.store === 'play' ? 'play' : shell() ? 'update' : 'browser'
   const [state, setState] = useState<LocationRemindersState | null>(null)
   const [disclosing, setDisclosing] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -62,6 +63,7 @@ export function LocationRemindersView({ mode, platform, state: s, disclosing, bu
   return (
     <SettingsSection {...cardCopy('location-reminders')} testId="location-reminders-settings">
       {mode === 'browser' && <p className="py-2 text-meta text-muted" data-location-reminders-browser>{noticeCopy('location-reminders', 'browser')}</p>}
+      {mode === 'play' && <p className="py-2 text-meta text-muted" data-location-reminders-play>{noticeCopy('location-reminders', 'play')}</p>}
       {mode === 'update' && <Notice>{noticeCopy('location-reminders', 'update')}</Notice>}
       {mode === 'shell' && (!s ? (
         <p className="py-2 text-meta text-faint">{t('Checking…')}</p>

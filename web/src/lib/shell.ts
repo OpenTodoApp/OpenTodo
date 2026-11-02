@@ -71,6 +71,12 @@ export interface OpenTodoShell {
   platform: 'android' | 'ios' | 'desktop'
   app: string
   capabilities: string[]
+  /**
+   * play-location-later: set by the Android app built for Google Play, which leaves
+   * location reminders out until Play approves background location (the GitHub and
+   * F-Droid app has them). Absent elsewhere.
+   */
+  store?: 'play'
   scheduleReminders?(json: string): Promise<ShellPermission> | ShellPermission | void
   testNotification?(): Promise<boolean> | boolean | void
   publishWidget?(json: string): void

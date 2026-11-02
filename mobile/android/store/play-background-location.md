@@ -1,6 +1,8 @@
 # Play Console: background location declaration
 
-The text for the Play Console's **App content → Sensitive app permissions → Location permissions** form (OpenSpec change `location-reminders`, design D4). The owner submits it; nothing here is sent automatically. Until Play approves it, builds with `ACCESS_BACKGROUND_LOCATION` ship on F-Droid and GitHub only (owner decision, 2026-10-29).
+The text for the Play Console's **App content → Sensitive app permissions → Location permissions** form (OpenSpec change `location-reminders`, design D4). The owner submits it; nothing here is sent automatically.
+
+**The Play build leaves location reminders out until the declaration is approved** (owner decision, 2026-10-29; OpenSpec change `play-location-later`). The AAB that CI uploads to Play is built with `-Popentodo.play=true`: `app/src/play/AndroidManifest.xml` removes `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION` and `ACCESS_BACKGROUND_LOCATION`, the bridge offers no `geofences` and says `store: 'play'`, and Settings → Notifications → Location reminders reads "Location reminders come to the Google Play version later; the GitHub/F-Droid app has them." The APK on GitHub and F-Droid keeps the feature. CI fails when the AAB declares a location permission or the APK lost one (`scripts/android-store-check.sh`). Submit this form with a build that includes the feature (for example on a closed testing track); once Play approves it, drop `-Popentodo.play=true` from the release step in `.github/workflows/ci.yml` and the AAB check in `scripts/android-store-check.sh`.
 
 ## Does your app access location in the background?
 

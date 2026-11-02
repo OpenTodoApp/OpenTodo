@@ -7020,6 +7020,7 @@
   "Leaving {place}": "Al salir de {place}",
   "Location access is off for OpenTodo. Allow it in the phone's settings to use location reminders.": "El acceso a la ubicación está desactivado para OpenTodo. Permítelo en los ajustes del teléfono para usar los recordatorios de lugar.",
   "Location reminders": "Recordatorios de lugar",
+  "Location reminders come to the Google Play version later; the GitHub/F-Droid app has them.": "Los recordatorios de lugar llegarán más adelante a la versión de Google Play; la app de GitHub o F-Droid ya los tiene.",
   "Location reminders fire only in the Android or iPhone app, with Location reminders on.": "Los recordatorios de lugar solo avisan en la app de Android o iPhone, con los recordatorios de lugar activados.",
   "Location reminders need Allow all the time. Choose it for OpenTodo in Android settings; nothing is watched until then.": "Los recordatorios de lugar necesitan «Permitir siempre». Elígelo para OpenTodo en los ajustes de Android; hasta entonces no se vigila nada.",
   "Location reminders need Always. Choose Always for OpenTodo in the iPhone settings; nothing is watched until then.": "Los recordatorios de lugar necesitan «Siempre». Elige «Siempre» para OpenTodo en los ajustes del iPhone; hasta entonces no se vigila nada.",

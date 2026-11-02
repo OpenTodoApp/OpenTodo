@@ -184,7 +184,7 @@ Record each run here: date, device, Android version, server version.
 
 ## Release signing
 
-Release builds are signed only in CI, on a `v*` tag, from four repository secrets: `ANDROID_KEYSTORE_BASE64` (the keystore file, base64), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. The job writes `keystore.properties` and the keystore to the runner's temporary directory, builds `opentodo-android-<version>.apk` and `.aab`, deletes both files, and the release job attaches the two files with build provenance. Without the secrets the tag build skips signing with a warning. Never commit a keystore or `keystore.properties` (both are ignored).
+Release builds are signed only in CI, on a `v*` tag, from four repository secrets: `ANDROID_KEYSTORE_BASE64` (the keystore file, base64), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. The job writes `keystore.properties` and the keystore to the runner's temporary directory, builds `opentodo-android-<version>.apk` and `.aab` (the AAB with `-Popentodo.play=true`, the Google Play build without location permissions until Play approves background location; `scripts/android-store-check.sh` checks both on every CI run), deletes both files, and the release job attaches the two files with build provenance. Without the secrets the tag build skips signing with a warning. Never commit a keystore or `keystore.properties` (both are ignored).
 
 **One certificate everywhere** (`play-production` D1). The release key signs the GitHub APK, F-Droid publishes that same signed APK (`AllowedAPKSigningKeys` in the F-Droid metadata), and Google Play signs with the same key through Play App Signing ("use my own key"). Its certificate's SHA-256 is
 

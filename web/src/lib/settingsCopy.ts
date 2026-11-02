@@ -364,6 +364,7 @@ export const SETTINGS_COPY = {
     notices: {
       browser: msg('Location reminders fire only in the Android or iPhone app, with Location reminders on.'),
       update: msg('Update the OpenTodo app on this phone to use location reminders here.'),
+      play: msg('Location reminders come to the Google Play version later; the GitHub/F-Droid app has them.'),
     },
   },
   // Settings → Notifications → App icon badge (app-icon-badge): a device-local flag.
