@@ -30,6 +30,10 @@ Your server's reminders arrive as notifications, scheduled on the phone from the
 
 Two limits come from iOS. A WKWebView cannot receive web push, so unlike the [installed web app](push-notifications.md) the app has no immediate push; it refreshes the schedule whenever you open it, and iOS lets it refresh in the background about hourly when it decides to. Reminders that change while the app is closed can therefore arrive late, and notifications further away than seven days are not scheduled at all. If you want push per reminder, use the installed web app on iOS 16.4 or later; both can be on the same phone, and they share the same account.
 
+## Location reminders
+
+[Location reminders](location-reminders.md) do not fire in the iPhone app yet: it does not offer **Location reminders on this phone**, and the reminders say **Fires on your phone**. Watching places with iOS region monitoring (When In Use, then Always) comes in a later version of the app; until then they fire in the [Android app](android-app.md#location-reminders).
+
 ## Offline
 
 Whether the app starts without a network depends on how it was built. A build for one known server — set `OPENTODO_APP_BOUND_HOST=todo.example.com` when you build — gets the whole installed-web-app treatment: the service worker, the precache and an offline start. A build without that setting can open any server, which iOS does not allow a service worker for, so it needs the network and says so. Whoever builds the app decides; there is no switch inside it.

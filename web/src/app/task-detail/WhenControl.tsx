@@ -228,7 +228,7 @@ function RepeatPresets({ task, onOpen }: { task: Task; onOpen?: (id: string) => 
   )
 }
 
-export function WhenControl({ task, readOnly = false, focus = 'due', segment, onDone, onOpen, onClose }: {
+export function WhenControl({ task, readOnly = false, focus = 'due', segment, onDone, onOpen, onClose, onAddLocation }: {
   task: Task
   readOnly?: boolean
   /** The segment that takes focus when the control opens. */
@@ -241,6 +241,8 @@ export function WhenControl({ task, readOnly = false, focus = 'due', segment, on
   onOpen?: (id: string) => void
   /** Close the popover (after a sector is chosen, time-sectors D6). */
   onClose?: () => void
+  /** Open the task's location editor (a location reminder needs a point, location-reminders D5). */
+  onAddLocation?: () => void
 }) {
   const zone = useViewerZone()
   const local = localDueOf(task.due, zone)
@@ -294,7 +296,7 @@ export function WhenControl({ task, readOnly = false, focus = 'due', segment, on
       </Segment>}
 
       {shows('reminders') && <Segment id="reminders" icon="alarm-clock" label={t('Reminders')} bare={!!segment}>
-        <fieldset disabled={readOnly} className="min-w-0"><RemindersField task={task} /></fieldset>
+        <fieldset disabled={readOnly} className="min-w-0"><RemindersField task={task} onAddLocation={onAddLocation} /></fieldset>
       </Segment>}
 
       {onDone && (

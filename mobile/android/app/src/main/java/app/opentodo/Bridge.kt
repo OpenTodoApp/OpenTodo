@@ -16,7 +16,7 @@ import org.json.JSONObject
  * script, both restricted to the configured origin, so no other page sees
  * `window.opentodoShell`. The activity is the [Host] for what needs a screen (permission
  * prompts, the biometric prompt, the system browser); the hidden background run has none,
- * so it offers only reminders and widgets.
+ * so it offers only reminders, widgets and geofences (and never asks for a permission).
  */
 class Bridge(private val context: Context, private val origin: String, private val host: Host?) {
     interface Host {
@@ -27,12 +27,17 @@ class Bridge(private val context: Context, private val origin: String, private v
         fun openExternal(url: String)
         /** theme-engine D8: colour the status and navigation bars (main thread). */
         fun setSystemBars(bars: SystemBars) {}
+        /** location-reminders D4: fine (with coarse) location; done(true) when either is granted. */
+        fun requestLocationPermission(done: (Boolean) -> Unit) = done(false)
+        /** "Allow all the time" (Android 10+; on 11+ the system sends the user to the setting). */
+        fun requestBackgroundLocation(done: (Boolean) -> Unit) = done(false)
     }
 
     private val main = Handler(Looper.getMainLooper())
 
     fun capabilities(): List<String> {
-        val caps = mutableListOf("reminders", "widgets")
+        // geofences also in the hidden run, which hands the regions over hourly (it never asks).
+        val caps = mutableListOf("reminders", "widgets", "geofences")
         if (host != null) {
             caps += listOf("share", "links", "obsidian-links", "system-bars")
             if (BiometricKeyStore.available(context)) caps += "biometric"
@@ -60,6 +65,7 @@ class Bridge(private val context: Context, private val origin: String, private v
         val answer = { value: Any? -> if (id > 0) main.post { reply.postMessage(JSONObject().put("id", id).put("result", value ?: JSONObject.NULL).toString()) } }
         when (msg.optString("method")) {
             "scheduleReminders" -> scheduleReminders(args.optString(0, "[]"), answer)
+            "scheduleGeofences" -> scheduleGeofences(args.optString(0, ""), answer)
             "testNotification" -> answer(Notifier.test(context))
             "publishWidget" -> WidgetStore.publish(context, args.optString(0, ""))
             "biometricStore" -> {
@@ -91,6 +97,22 @@ class Bridge(private val context: Context, private val origin: String, private v
         }
         if (Scheduler.notificationsAllowed(context) || !wantsAlarms || host == null) afterPermission(Scheduler.notificationsAllowed(context))
         else host.requestNotificationPermission { afterPermission(it) }
+    }
+
+    /**
+     * location-reminders D3/D4: replaces the watched regions. Only with `ask` and a screen does
+     * the shell ask, fine location first, then "Allow all the time"; the answer is the state after.
+     */
+    private fun scheduleGeofences(json: String, answer: (Any?) -> Unit) {
+        val payload = GeofenceSchedule.parse(json)
+        val finish: () -> Unit = { answer(Geofences.replace(context, payload.regions)) }
+        val h: Host = host ?: return finish()
+        if (!payload.ask || !Geofences.available(context)) return finish()
+        val askBackground: () -> Unit = {
+            if (Geofences.background(context)) finish() else h.requestBackgroundLocation { finish() }
+        }
+        if (Geofences.fine(context)) askBackground()
+        else h.requestLocationPermission { if (Geofences.fine(context)) askBackground() else finish() }
     }
 
     companion object {
@@ -135,6 +157,7 @@ class Bridge(private val context: Context, private val origin: String, private v
                 bridge: $VERSION, platform: 'android', app: ${JSONObject.quote(app)},
                 capabilities: Object.freeze(${JSONArray(caps)}),
                 scheduleReminders: function (json) { return call('scheduleReminders', [String(json)]) },
+                scheduleGeofences: function (json) { return call('scheduleGeofences', [String(json)]) },
                 testNotification: function () { return call('testNotification', []) },
                 publishWidget: function (json) { send('publishWidget', [String(json)]) },
                 biometricStore: function (key) { return call('biometricStore', [String(key)]) },

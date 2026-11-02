@@ -100,6 +100,17 @@ The page itself (`/` and the app's files under `/assets/`) still goes through th
 
 In **Settings → Notifications**, turn on **Notifications through the app**. The app schedules the next seven days of reminders on the phone itself and refreshes them about once an hour, so a reminder you add on your computer reaches the phone too. Details in [Notifications](push-notifications.md#in-the-android-app).
 
+## Location reminders
+
+[Location reminders](location-reminders.md) ("when I arrive at the post office") fire on the phone. Turn on **Settings → Notifications → Location reminders → On this phone**: the app explains what the location is for, then Android asks twice, first for your location (**While using the app** or **Only this time**), then for **Allow all the time**, which on Android 11 and later is a choice on the app's location settings page. Without **Allow all the time** nothing is watched and the setting says so, with **Open settings**.
+
+- The app uses Android's own proximity alerts, with no Google Play services, so it works the same on F-Droid, GitHub and Play builds and on phones without Google.
+- It watches at most 19 places, the nearest to where you are, plus one larger circle around that spot; leaving that circle makes it pick the nearest places again.
+- Your position stays on the phone. It is never sent to your server or anyone else, never passed to the app's pages and never logged; the app keeps only the point it last picked the places from, in its private storage.
+- A notification offers **Done** and **Dismiss**; a crossing fires at most once an hour per reminder.
+- Sign-out, locking an encrypted account and **Change server** remove every watched place.
+- The Play Store version gets location reminders once Google has reviewed the background-location use; F-Droid and GitHub builds have them first.
+
 ## Sharing
 
 The app appears in Android's share menu for links, text, photos and files, also on phones without Google Play services. See [Capturing pages](capture.md#from-the-android-app).
@@ -118,4 +129,4 @@ With [end-to-end encryption](e2ee.md#unlock-with-a-fingerprint), the unlock scre
 
 ## Privacy
 
-No trackers, no analytics, no advertising. The app stores the server address, the scheduled reminders, the widget data and, if you turned on fingerprint unlock, the encrypted account key, only in its private storage, excluded from Android backup.
+No trackers, no analytics, no advertising. The app stores the server address, the scheduled reminders, the watched places of your location reminders, the widget data and, if you turned on fingerprint unlock, the encrypted account key, only in its private storage, excluded from Android backup.

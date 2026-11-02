@@ -695,6 +695,9 @@
   "About OpenTodo": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "About location access": [
+    "web/src/app/LocationRemindersSettings.tsx"
+  ],
   "About this demo": [
     "web/src/app/DemoBanner.tsx"
   ],
@@ -879,6 +882,12 @@
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/TaskActionsMenu.tsx"
+  ],
+  "Add a location with a point on the map first": [
+    "web/src/app/LocationReminders.tsx"
+  ],
+  "Add a location…": [
+    "web/src/app/LocationReminders.tsx"
   ],
   "Add a member…": [
     "web/src/app/WorkspaceGroups.tsx"
@@ -1829,6 +1838,9 @@
   "Area|method": [
     "web/src/lib/method/vocabulary.json"
   ],
+  "Arm again": [
+    "web/src/app/RemindersField.tsx"
+  ],
   "Arrange": [
     "web/src/app/DashboardView.tsx"
   ],
@@ -1838,6 +1850,9 @@
   "Arrived after a newer change and was never applied": [
     "web/src/app/HistoryPanel.tsx",
     "web/src/app/task-detail/HistoryTab.tsx"
+  ],
+  "Arriving at {place}": [
+    "web/src/app/LocationReminders.tsx"
   ],
   "Arrows move by day and week, Page Up and Page Down by month.": [
     "web/src/app/datetime/DateField.tsx"
@@ -2015,6 +2030,9 @@
   ],
   "At (minutes count)": [
     "web/src/app/BackupsPanel.tsx"
+  ],
+  "At a place": [
+    "web/src/app/LocationReminders.tsx"
   ],
   "At a time": [
     "web/src/app/RemindersField.tsx"
@@ -2573,6 +2591,7 @@
     "web/src/app/FieldsDialog.tsx",
     "web/src/app/IssueEditor.tsx",
     "web/src/app/LinkDialog.tsx",
+    "web/src/app/LocationReminders.tsx",
     "web/src/app/MembersPanel.tsx",
     "web/src/app/NamePrompt.tsx",
     "web/src/app/NewBoardDialog.tsx",
@@ -2859,6 +2878,7 @@
   "Checking…": [
     "web/src/app/DigestCard.tsx",
     "web/src/app/EncryptionPanel.tsx",
+    "web/src/app/LocationRemindersSettings.tsx",
     "web/src/app/NotificationsSettings.tsx",
     "web/src/app/ReauthDialog.tsx",
     "web/src/app/ShellNotifications.tsx",
@@ -3583,6 +3603,7 @@
   ],
   "Continue": [
     "web/src/app/FirstRun.tsx",
+    "web/src/app/LocationRemindersSettings.tsx",
     "web/src/app/ReauthDialog.tsx",
     "web/src/app/SecurityPanel.tsx",
     "web/src/app/TwoFactorPanel.tsx",
@@ -6139,6 +6160,9 @@
   "Finished": [
     "web/src/app/method/HowYouWorkSection.tsx"
   ],
+  "Fires on your phone": [
+    "web/src/app/LocationReminders.tsx"
+  ],
   "Fires once the task has a due date": [
     "web/src/app/RemindersField.tsx"
   ],
@@ -8259,6 +8283,9 @@
   "Leave “{project}”?": [
     "web/src/app/ShareDialog.tsx"
   ],
+  "Leaving {place}": [
+    "web/src/app/LocationReminders.tsx"
+  ],
   "Left {title}": [
     "web/src/app/focus/startFocus.ts"
   ],
@@ -8565,6 +8592,25 @@
     "web/src/app/task-detail/TaskFacts.tsx",
     "web/src/lib/facets.ts",
     "web/src/page/TaskPageScreen.tsx"
+  ],
+  "Location access is off for OpenTodo. Allow it in the phone's settings to use location reminders.": [
+    "web/src/app/LocationRemindersSettings.tsx"
+  ],
+  "Location reminders": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Location reminders fire only in the Android or iPhone app, with Location reminders on.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Location reminders need Allow all the time. Choose it for OpenTodo in Android settings; nothing is watched until then.": [
+    "web/src/app/LocationRemindersSettings.tsx"
+  ],
+  "Location reminders need Always. Choose Always for OpenTodo in the iPhone settings; nothing is watched until then.": [
+    "web/src/app/LocationRemindersSettings.tsx"
+  ],
+  "Location reminders on this phone": [
+    "web/src/app/LocationRemindersSettings.tsx"
   ],
   "Location removed": [
     "web/src/lib/assistant.ts"
@@ -9637,6 +9683,12 @@
   "Next {n} days": [
     "web/src/app/PlanView.tsx"
   ],
+  "Next, Android asks for your location: allow it, then choose Allow all the time.": [
+    "web/src/app/LocationRemindersSettings.tsx"
+  ],
+  "Next, iOS asks for your location: allow it, then choose Always.": [
+    "web/src/app/LocationRemindersSettings.tsx"
+  ],
   "Next: {instant}": [
     "web/src/app/DigestCard.tsx"
   ],
@@ -10292,6 +10344,7 @@
   ],
   "Not now": [
     "web/src/app/ArchivePrompt.tsx",
+    "web/src/app/LocationRemindersSettings.tsx",
     "web/src/app/ProjectInviteScreen.tsx",
     "web/src/app/WorkspaceInviteScreen.tsx",
     "web/src/app/focus/BreakReminder.tsx",
@@ -10701,6 +10754,7 @@
     "web/src/app/EmailInboxPanel.tsx",
     "web/src/app/EncryptionPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
+    "web/src/app/LocationRemindersSettings.tsx",
     "web/src/app/NotificationChannels.tsx",
     "web/src/app/NotificationsSettings.tsx",
     "web/src/app/ShellNotifications.tsx",
@@ -10854,6 +10908,7 @@
     "web/src/app/EmailInboxPanel.tsx",
     "web/src/app/EncryptionPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
+    "web/src/app/LocationRemindersSettings.tsx",
     "web/src/app/NotificationChannels.tsx",
     "web/src/app/NotificationsSettings.tsx",
     "web/src/app/ShellNotifications.tsx",
@@ -10937,6 +10992,9 @@
   ],
   "On this page": [
     "web/src/app/help/HelpView.tsx"
+  ],
+  "On this phone": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "On this server": [
     "web/src/app/AssistantsPanel.tsx",
@@ -11208,6 +11266,9 @@
   "Open recurring task": [
     "web/src/app/task-detail/TaskActionsMenu.tsx"
   ],
+  "Open settings": [
+    "web/src/app/LocationRemindersSettings.tsx"
+  ],
   "Open since {date}": [
     "web/src/app/review/CarryOver.tsx"
   ],
@@ -11309,6 +11370,9 @@
   ],
   "OpenTodo can't reach the server.": [
     "web/src/app/App.tsx"
+  ],
+  "OpenTodo checks your location only to notice when you arrive at or leave the places of your location reminders. Your location stays on this phone and is never sent to your server.": [
+    "web/src/app/LocationRemindersSettings.tsx"
   ],
   "OpenTodo contributors": [
     "web/src/app/ThemeRow.tsx"
@@ -12603,6 +12667,12 @@
   "Q{n} {year}": [
     "web/src/lib/sectorNames.ts"
   ],
+  "Radius": [
+    "web/src/app/LocationReminders.tsx"
+  ],
+  "Radius presets": [
+    "web/src/app/LocationReminders.tsx"
+  ],
   "Raised surface": [
     "web/src/app/themes/tokenNames.ts"
   ],
@@ -12810,6 +12880,9 @@
   "Remembered browsers": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
+  "Remind me": [
+    "web/src/app/LocationReminders.tsx"
+  ],
   "Remind me after": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -12850,6 +12923,10 @@
   ],
   "Reminders delivered to this device, and a test": [
     "web/src/app/settingsIndex.ts"
+  ],
+  "Reminders when you arrive at or leave a place. Your position stays on the phone.": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Remove": [
     "web/src/app/BrandingThemes.tsx",
@@ -13669,6 +13746,7 @@
     "web/src/app/FieldsDialog.tsx",
     "web/src/app/IssueEditor.tsx",
     "web/src/app/LinkDialog.tsx",
+    "web/src/app/LocationReminders.tsx",
     "web/src/app/NamePrompt.tsx",
     "web/src/app/NotificationChannelEditor.tsx",
     "web/src/app/OutgoingEmailPanel.tsx",
@@ -17398,6 +17476,9 @@
   "This person is not a member of the workspace. Ask the workspace owner to add them first.": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "This phone cannot watch places for OpenTodo.": [
+    "web/src/app/LocationRemindersSettings.tsx"
+  ],
   "This photo is still larger than 3.75 MB after scaling. Try a smaller one.": [
     "web/src/lib/assistantImages.ts"
   ],
@@ -18673,6 +18754,9 @@
   "Update a project": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "Update the OpenTodo app on this phone to use location reminders here.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Update the project {project}": [
     "web/src/lib/rules/sentence.ts"
   ],
@@ -19026,6 +19110,9 @@
   "Warnings and due soon.": [
     "web/src/app/themes/templateText.ts"
   ],
+  "Watches the places of your location reminders, even with the app closed.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "We send a link to the new address; the change happens when you open it.": [
     "web/src/app/profile/ProfileSection.tsx"
   ],
@@ -19177,6 +19264,12 @@
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/app/task-list/RowDetails.tsx"
+  ],
+  "When I arrive": [
+    "web/src/app/LocationReminders.tsx"
+  ],
+  "When I leave": [
+    "web/src/app/LocationReminders.tsx"
   ],
   "When do I get things done?": [
     "web/src/app/review/StatsView.tsx"
@@ -20877,6 +20970,9 @@
   "no output": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "no point on the map": [
+    "web/src/app/RemindersField.tsx"
+  ],
   "no project": [
     "web/src/lib/rules/preview.ts",
     "web/src/lib/rules/sentence.ts",
@@ -21598,6 +21694,9 @@
   "the tasks": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "the task’s location": [
+    "web/src/app/LocationReminders.tsx"
+  ],
   "the task’s project": [
     "web/src/lib/rules/sentence.ts"
   ],
@@ -22195,6 +22294,9 @@
   "{kind} to {email}": [
     "web/src/app/auditFormat.ts"
   ],
+  "{km} km": [
+    "web/src/app/LocationReminders.tsx"
+  ],
   "{label} backup, {instant}, {kind}": [
     "web/src/app/BackupsPanel.tsx"
   ],
@@ -22229,6 +22331,9 @@
   ],
   "{moved} of {n, plural, one {# task rescheduled} other {# tasks rescheduled}}": [
     "web/src/lib/bulk.ts"
+  ],
+  "{m} m": [
+    "web/src/app/LocationReminders.tsx"
   ],
   "{m} min ago": [
     "web/src/app/ProjectsTable.tsx",
