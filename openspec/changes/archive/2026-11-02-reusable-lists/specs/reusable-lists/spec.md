@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Reusable list mode
-A project SHALL be markable as a reusable list through its synced `reusable` field, from a "Reusable list" switch in the project's Edit dialog, off by default. Editors, admins and the owner of a shared project SHALL be able to change it; viewers SHALL see the mode and SHALL NOT change it. The mode SHALL be written as an ordinary project operation, applied locally first so it works offline, and SHALL converge by last-writer-wins on every member's devices. Turning it off SHALL write nothing to the project's tasks.
+A project SHALL be markable as a reusable list through its synced `reusable` field, from a "Reusable list" switch in the "List…" step of the project menu (an anchored step of the menu, never a modal dialog), off by default. Editors, admins and the owner of a shared project SHALL be able to change it; viewers SHALL see the mode and SHALL NOT change it. The mode SHALL be written as an ordinary project operation, applied locally first so it works offline, and SHALL converge by last-writer-wins on every member's devices. Turning it off SHALL write nothing to the project's tasks.
 
 #### Scenario: Turn on offline
 - **WHEN** the owner of "Groceries" turns on Reusable list while offline
@@ -12,7 +12,7 @@ A project SHALL be markable as a reusable list through its synced `reusable` fie
 - **THEN** every device shows the renamed project in reusable mode
 
 #### Scenario: Viewer
-- **WHEN** a viewer opens the Edit dialog of a reusable shared project
+- **WHEN** a viewer opens the "List…" step of a reusable shared project's menu
 - **THEN** the switch is shown on and disabled, and no operation can be queued
 
 ### Requirement: Adding an existing item reopens it
@@ -61,7 +61,7 @@ When a device that may edit a reusable list holds two or more live, open, top-le
 - **THEN** both stay on the list
 
 ### Requirement: Aisle sections
-While a reusable list has "Sort into aisles" on, the user SHALL be offered to add the nine standard aisle sections (produce, bakery, dairy and eggs, meat and fish, frozen, pantry, drinks, household, personal care), named in the app's language and each carrying its fixed aisle key. A new item added from quick add without a section token SHALL be placed in the first live section of the project whose aisle key matches a word or two-word sequence of its title in the bundled vocabulary of the app's language, falling back to English. Without a matching section or word it SHALL go where quick add places it today. A reopened item SHALL NOT be moved. The vocabulary SHALL be bundled and evaluated on the device, with no network request.
+While a reusable list has "Sort into aisles" on, the user SHALL be offered to add the nine standard aisle sections (produce, bakery, dairy and eggs, meat and fish, frozen, pantry, drinks, household, personal care), named in the app's language and each carrying its fixed aisle key. A new item added from quick add without a section token SHALL be placed in the first live section of the project whose aisle key matches a word or a sequence of up to four words of its title (the longest wins) in the bundled vocabulary of the app's language, falling back to English. Without a matching section or word it SHALL go where quick add places it today. A reopened item SHALL NOT be moved. The vocabulary SHALL be bundled and evaluated on the device, with no network request.
 
 #### Scenario: Yoghurt to Dairy
 - **WHEN** a reusable list with aisle sections and an app in English receives the new item "Greek yoghurt"

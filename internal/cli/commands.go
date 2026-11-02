@@ -92,6 +92,7 @@ var (
 		{Name: "natural", Type: "bool", Description: "parse the title like the app's quick add: dates, #project, @label, p1, +30m, every …, remind me …"},
 		{Name: "lang", Type: "string", Description: "languages for --natural and --remind, e.g. de,en (default: the locale; English always)"},
 		{Name: "done", Type: "bool", Description: "log a win: create the task already completed now (refuses --repeat and --remind)"},
+		{Name: "new", Type: "bool", Description: "in a reusable list, create a new task even when an item with the same title is there"},
 	}
 	refsArg = []argSpec{{Name: "ref", Required: true, Repeatable: true}}
 
@@ -140,6 +141,13 @@ var cmdSpecs = []cmdSpec{
 		Flags: []flagSpec{{Name: "color", Type: "string", Description: "colour as #rrggbb (default: derived from the name)"}, idemFlag}, Writes: true, DryRun: true, IdempotencyKey: true, Output: ref("project")},
 	{Name: "project move", Summary: "move a project to the workspace named by --workspace (only its owner)", Args: []argSpec{{Name: "ref", Required: true}}, Writes: true, DryRun: true, Output: ref("project")},
 	{Name: "project rename", Summary: "rename a project", Args: []argSpec{{Name: "ref", Required: true}, {Name: "new-name", Required: true, Repeatable: true}}, Writes: true, DryRun: true, Output: ref("project")},
+	{Name: "project edit", Summary: "change a project's reusable-list mode", Args: []argSpec{{Name: "ref", Required: true}},
+		Flags: []flagSpec{
+			{Name: "reusable", Type: "bool", Description: "make it a reusable list: adding an item already there reopens it"},
+			{Name: "no-reusable", Type: "bool", Description: "make it an ordinary project again"},
+			{Name: "aisles", Type: "bool", Description: "sort new items of the reusable list into aisle sections"},
+			{Name: "no-aisles", Type: "bool", Description: "stop sorting new items into aisle sections"},
+		}, Writes: true, DryRun: true, Output: ref("project")},
 	{Name: "project archive", Summary: "archive a project, or restore it with --undo", Args: []argSpec{{Name: "ref", Required: true}},
 		Flags: []flagSpec{{Name: "undo", Type: "bool", Description: "restore an archived project"}}, Writes: true, DryRun: true, Output: ref("project")},
 	{Name: "project rm", Aliases: []string{"project delete"}, Summary: "delete a project (soft delete)", Args: []argSpec{{Name: "ref", Required: true}}, Flags: []flagSpec{yesFlag}, Writes: true, Destructive: true, DryRun: true, Output: ref("project")},

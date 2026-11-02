@@ -10,7 +10,6 @@ import { useProjects } from '../lib/localData'
 import { colourPickerSpec, iconPickerSpec } from './menus/stylePickers'
 import { useRowMenuShortcut } from './menus/useRowMenuShortcut'
 import { type FormEvent, type KeyboardEvent, useRef, useState } from 'react'
-import { createTask } from '../lib/ops'
 import { preferredPlacement } from '../lib/userPrefs'
 import { selectTask } from './signals'
 import { addTasksUndoable } from '../lib/pasteTasks'
@@ -20,6 +19,7 @@ import type { Label, Project, Section } from '../lib/types'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import { t } from '../lib/i18n'
 import { act } from './actionError'
+import { addManyToList, createUnlessReused } from './reuseAdd'
 
 /** The section menu as data (labels-and-menus 3.1). */
 export function sectionMenuGroups(title: string, o: { first: boolean; last: boolean; layout: 'list' | 'board'; count: number },
@@ -198,7 +198,9 @@ export function SectionQuickAdd({ project, sectionId, sectionName, projects, lab
     const target = project_id ?? project.id
     // Top or bottom of the section or column (add-position D3).
     const placement = await preferredPlacement()
-    const id = await createTask({ ...rest, placement, project_id: target, section_id: target === project.id ? sectionId : null })
+    // A reusable list reopens or points at an item it has (reusable-lists D3).
+    const id = await createUnlessReused({ ...rest, placement, project_id: target, section_id: target === project.id ? sectionId : null })
+    if (!id) return
     // Out of sight in a long section or column: say where it went (add-position D5).
     const list = root.current?.closest<HTMLElement>('[data-list-page]')
     // Loaded with the first add: not needed on first load (web/bundle-budget.json).
@@ -207,11 +209,13 @@ export function SectionQuickAdd({ project, sectionId, sectionName, projects, lab
   // A pasted list (paste-to-tasks D3): every line in this section unless it names a #project; one batch, one Undo.
   const onAddMany = async (inputs: QuickAddInput[]) => {
     const placement = await preferredPlacement()
-    const added = await addTasksUndoable(inputs.map(({ project_id, ...rest }) => {
+    await addManyToList(inputs.map(({ project_id, ...rest }) => {
       const target = project_id ?? project.id
       return { ...rest, project_id: target, section_id: target === project.id ? sectionId : null }
-    }), { placement })
-    showBulkToast(added.label, added.undoId)
+    }), async (fresh) => {
+      const added = await addTasksUndoable(fresh, { placement })
+      showBulkToast(added.label, added.undoId)
+    })
   }
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Escape') onClose()
