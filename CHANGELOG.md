@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- **Time sectors: plan for this week, next week or this month without a fake date.** A task can now be planned for a week, a month or a quarter instead of a day (#579). Turn on **Time sectors** in Settings → Account → How you work, then choose **This week**, **Next week**, **This month**, **Next month**, **This quarter** or **Next quarter** (or **Later…**) in the **Sector** tab of a task's When editor, run **Set time sector…** from the command palette on a selection, or type `this week` or `sometime next week` in quick add (in all six languages). A sectored task leaves the Inbox and Anytime, is never overdue, and keeps its deadline. Rows show the sector where the date would be, named from your date and first day of the week, and a sector whose period has ended reads **From week 44** without anything being rewritten. In the Calendar, **Plan from a list › Time sectors** groups the tasks you can work on by sector, ready to drag onto a day, and the weekly review's Look ahead lists what was carried over and next week's tasks. Filters gain `sector: this week`, `carried` and `no sector`, and the API, `ot --sector`, the assistant tools, CalDAV (`X-OPENTODO-SECTOR`) and the Markdown vault (`[sector:: 2026-W45]`) carry the stored period. See [Time sectors](docs/time-sectors.md).
+
 ### Fixed
 
 - **Subtasks go to Later with their parent.** Deferring a task with subtasks (giving it a start date in the future, or parking it in Someday) moved the task to its project's **Later** group but left its subtasks behind in the old group, at the top level with only the parent's name, so they looked cut off (#755). A project's list now keeps each subtree together: the subtasks of a deferred or parked task are listed under it in Later, each with its own dates, and a deferred subtask of an active task stays under its parent with its **Starts** chip. Display mode's project page does the same. Nothing is written; it is how the list is drawn, offline included.

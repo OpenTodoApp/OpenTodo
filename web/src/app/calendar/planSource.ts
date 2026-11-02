@@ -38,12 +38,20 @@ export interface PlanSourceData {
   views: readonly View[]
 }
 
-/** Every source the picker offers: the three lists, live projects, labels, list views. */
-export function planSources({ projects, labels, views }: PlanSourceData): PlanSource[] {
+/** The Time sectors source (time-sectors D5): grouped by sector, offered while the switch is on. */
+export const SECTORS_SOURCE = 'sectors'
+
+/**
+ * Every source the picker offers: the lists (with Time sectors while `sectors` is on),
+ * live projects, labels, list views. A remembered Time sectors source with the switch
+ * off is not offered, so it reads as the Inbox (resolveSource).
+ */
+export function planSources({ projects, labels, views }: PlanSourceData, opts: { sectors?: boolean } = {}): PlanSource[] {
   return [
     { key: 'inbox', kind: 'list', label: t('Inbox') },
     { key: 'nodate', kind: 'list', label: t('No date') },
     { key: 'overdue', kind: 'list', label: t('Earlier') },
+    ...(opts.sectors ? [{ key: SECTORS_SOURCE, kind: 'list', label: t('Time sectors') } as PlanSource] : []),
     ...projects.filter((p) => !p.archived && !p.deleted_at).map((p): PlanSource => ({ key: `project:${p.id}`, kind: 'project', label: p.name, color: p.color })),
     ...labels.filter((l) => !l.deleted_at).map((l): PlanSource => ({ key: `label:${l.id}`, kind: 'label', label: l.name, color: l.color })),
     ...views.filter((v) => !v.deleted_at && !isDashboard(v)).map((v): PlanSource => ({ key: `view:${v.id}`, kind: 'view', label: v.name })),
