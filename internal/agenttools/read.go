@@ -102,7 +102,7 @@ func init() {
 	})
 	register(tool{
 		def: readDef("today_summary", "Today summary",
-			"One-call overview of the user's day: overdue tasks, tasks due today, and open task counts for the Inbox (tasks without a project that are not scheduled) and each project. today_limit is the user's Today limit (null when off); each listed task has waiting_for_slot, true when that limit keeps it waiting.",
+			"One-call overview of the user's day: overdue tasks, tasks due today, and open task counts for the Inbox (tasks without a project that are not scheduled) and each project. today_limit is the user's Today limit (null when off); each listed task has waiting_for_slot, true when that limit keeps it waiting; a waiting task also has time_sensitive, true when it is due today with a time or its deadline is today, and waiting_time_sensitive lists those ids soonest first (the slots stay first come, first served).",
 			object(nil, map[string]any{
 				"timezone": timezoneProp,
 			})),
@@ -712,11 +712,21 @@ func (r *Registry) todaySummary(ctx context.Context, userID string, a args) (map
 	}
 	// Today's closed list (today-closed-list): which of these wait for a slot.
 	limit, rev := r.todayLimit(ctx, userID)
-	waiting := snap.waitingForSlot(limit, rev, today, loc, todayRows)
+	waiting, sensitive := snap.waitingForSlot(limit, rev, today, loc, todayRows)
+	soon := map[string]bool{}
+	soonIDs := []string{}
+	for _, s := range sensitive {
+		soon[s.ID] = true
+		soonIDs = append(soonIDs, s.ID)
+	}
 	for _, list := range [][]keyed[taskOut]{overdueItems, todayItems} {
 		for i := range list {
 			w := waiting[list[i].id]
 			list[i].v.WaitingForSlot = &w
+			if w {
+				ts := soon[list[i].id]
+				list[i].v.TimeSensitive = &ts
+			}
 		}
 	}
 	overdue, _, _ := page(overdueItems, "", MaxItems)
@@ -737,6 +747,8 @@ func (r *Registry) todaySummary(ctx context.Context, userID string, a args) (map
 		"timezone": loc.String(), "today": today,
 		"overdue": overdue, "due_today": dueToday,
 		"today_limit": nullableInt(limit),
+		// The waiting tasks with a time today, soonest first (today-waiting-time-sensitive).
+		"waiting_time_sensitive": soonIDs,
 		"counts": map[string]any{
 			"overdue": len(overdueItems), "due_today": len(todayItems), "inbox": inbox, "per_project": counts,
 		},

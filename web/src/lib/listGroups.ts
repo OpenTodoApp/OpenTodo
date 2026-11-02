@@ -3,7 +3,8 @@
 // headings (dates, projects, sections, Later, Blocked, the logbook's days), and the
 // tree positions assistive technology announces. TaskListView only wires these to
 // the live data; tests call them directly.
-import { formatDateHeading, type ResolvedDateTime } from './dates'
+import { waitingTimeSensitive } from './closedList'
+import { formatDateHeading, formatTime, type ResolvedDateTime } from './dates'
 import type { Projection } from './occurrences'
 import { inboxTasks } from './inbox'
 import { groupToday, groupUpcoming, projectOpenList, todayList, upcomingList, upcomingWithToday, withoutArchived } from './dayLists'
@@ -81,10 +82,23 @@ export interface ListGroup {
   dropPart?: DayPart | 'none'
   /** One line under an open folded group's heading (today-closed-list: the Waiting hint). */
   hint?: string
+  /**
+   * Today's folded Waiting for a slot group (today-waiting-time-sensitive D2): the waiting
+   * tasks with a time today, soonest first, listed under the heading while it is folded.
+   */
+  soon?: WaitingSoon[]
+  /** Words after a folded heading's count, inside its toggle ("next: Send the form, 4:00 PM"). */
+  detail?: string
   /** Upcoming's projected occurrences of the day, after its rows and outside its count (series-occurrences D4). */
   projected?: Projection[]
   /** On the last day with projections: "Repeating tasks shown up to <date>". */
   projectedNote?: string
+}
+
+/** A waiting task with a time today: its due time in the user's zone, null for a deadline today without one. */
+export interface WaitingSoon {
+  task: Task
+  time: string | null
 }
 
 /** A board column: a section ('' = "No section") and its top-level cards. */
@@ -365,9 +379,12 @@ function closedListGroups(p: GroupInput, row: (task: Task) => ListRow): ListGrou
   const waiting = p.closedList?.waiting ?? []
   if (p.closedList && waiting.length) {
     const folded = !p.collapsed.has(WAITING_OPEN_KEY)
+    // Folded, the waiting tasks with a time today stay in sight (today-waiting-time-sensitive D2); opened, the group is as before.
+    const soon = folded ? waitingTimeSensitive(waiting, p.today) : []
     g.push({
       key: 'waiting', heading: t('Waiting for a slot'), count: waiting.length, folded, openKey: WAITING_OPEN_KEY, rows: folded ? [] : waiting.map(row),
       hint: t('Today holds {n}. The next one comes in when you finish one.', { n: p.closedList.limit }),
+      ...(soon.length ? { soon, detail: nextDetail(soon[0], p.resolved) } : {}),
     })
   }
   if (p.doneToday) {
@@ -375,6 +392,12 @@ function closedListGroups(p: GroupInput, row: (task: Task) => ListRow): ListGrou
     g.push({ key: 'done', heading: t('Done today'), count: p.doneToday.length, folded, openKey: DONE_OPEN_KEY, rows: folded ? [] : p.doneToday.map(row) })
   }
   return g
+}
+
+/** The folded Waiting heading's "next: Send the form, 4:00 PM" (a deadline today without a time: "next: File the taxes, deadline today"). */
+export function nextDetail(next: WaitingSoon, resolved?: ResolvedDateTime): string {
+  const title = next.task._e2ee?.raw?.title || !next.task.title ? t('Untitled') : next.task.title
+  return next.time ? t('next: {title}, {time}', { title, time: formatTime(next.time, resolved) }) : t('next: {title}, deadline today', { title })
 }
 
 /**
