@@ -4,9 +4,18 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-11-02
+
+OpenTodo 0.21.0 is about **planning horizons and the home**. Plan a task for **this week, next week or this month** without a made-up date (time sectors), and pin a few **objectives** for the quarter and the week above Plan and in the weekly review. A project can be a **reusable list** for groceries or packing, where adding an item that is already there brings it back instead of duplicating it. A repeating chore in a shared project can **take turns** between people. On Android, **location reminders** fire when you arrive at or leave a place (GitHub and F-Droid builds; Google Play follows). Also: buttons that only close a panel now say **Close**, the phone Day calendar leaves room for the hours, and a fix for encrypted accounts (see Security).
+
 ### Security
 
 - **Turning on end-to-end encryption now encrypts all your existing content, and finishes the job for accounts that already turned it on.** When encryption is turned on, the app re-writes the text you already have as ciphertext. That job missed several kinds of content, so their text written before encryption was turned on stayed in plaintext on the server: **notes** (title, text and appended lines, since 0.19.0), **time entry notes** and **the line for tomorrow** from closing the day (since 0.9.0), **saved locations** (name, address and coordinates) and **routine names** (since 0.10.0), and **calendar frame and slot titles** (since 0.18.0). Text written after encryption was on was always encrypted. The job now covers every kind of content, and a test fails if a new kind is ever left out. If your account already encrypts, there is nothing to do: after the update, each unlocked device checks once, at the end of its next complete sync, and re-writes as ciphertext whatever of that text the server still holds in plaintext. Values already encrypted are left alone, so the check writes nothing when another device got there first. Run **Purge plaintext history** in Settings → Account → End-to-end encryption afterwards to delete the superseded plaintext operations; [backups](docs/backups.md) made before then may still contain that text. Turning encryption off now writes all of these kinds back as plaintext too.
+
+### Upgrade notes
+
+- **Replace the image or the binary and restart; upgrade the server before the devices.** No migration and no new variable. New synced entity `objective` and new synced fields `project.reusable`, `project.aisles`, `section.aisle`, `task.sector`, `task.rotation`, `reminder.radius_m` (with the reminder kinds `arrive` and `leave`), `user_prefs.time_sectors` and `user_prefs.objectives`, all additive: older devices keep working and ignore them, but only an upgraded server stores and serves them. Back up first; there are no down-migrations.
+- **Encrypted accounts:** after updating, open the app once on an unlocked device; it finishes encrypting older content by itself (see Security).
 
 ### Added
 
@@ -1224,7 +1233,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.20.0...HEAD
+[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.21.0...HEAD
+[0.21.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.20.0...v0.21.0
 [0.20.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.19.0...v0.20.0
 [0.19.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.18.1...v0.19.0
 [0.18.1]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.18.0...v0.18.1
