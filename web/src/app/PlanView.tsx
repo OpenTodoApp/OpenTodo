@@ -4,7 +4,7 @@
 // recurring tasks. A pure projection of local rows like Day, Week and Month; moving
 // a task, by drag onto a day or with the arrows, is one due edit that keeps its time
 // and zone. Projections and events are read-only and written nowhere. Works offline.
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Button, hueFor, MenuItem, MenuSeparator, PageBody, Skeleton, useWide } from '../ui'
 import { allDayEvents, calendarTasks, deadlineMarkers, eventBlocks, nudgeDue } from '../lib/calendar'
 import { CalendarsToggle } from './calendar/CalendarsToggle'
@@ -28,6 +28,7 @@ import { useCalendarGo } from './calendar/scope'
 import { CalendarCompletedToggle } from './calendar/CalendarCompletedToggle'
 import { CalendarStatus } from './calendar/CalendarStatus'
 import { PlanAgenda } from './calendar/PlanAgenda'
+import { useObjectivesOn } from '../lib/objectivePrefs'
 import { usePlanActions, usePlanPanel, type PlanActions } from './calendar/PlanPanel'
 import { CapacityBar, PlanDayRows, type PlanDayData } from './calendar/PlanRow'
 import { useCalendarFeeds } from './calendar/useCalendarFeeds'
@@ -86,6 +87,9 @@ function usePlanDays(dates: string[], today: string, dayLength: number, showComp
   return { zone, projects, rawTasks, viewed, feeds, days, chrome, loading: live === undefined }
 }
 
+// The Objectives strip (plan-objectives D3): its own chunk, loaded only while the switch is on.
+const ObjectivesStrip = lazy(() => import('./objectives/ObjectivesStrip'))
+
 export function PlanView({ date }: { date?: string }) {
   const today = useToday()
   const anchor = date ?? today
@@ -95,6 +99,7 @@ export function PlanView({ date }: { date?: string }) {
   const dates = useMemo(() => spanDates(anchor, span), [anchor, span])
   const wide = useWide()
   const online = useOnline()
+  const objectivesOn = useObjectivesOn()
   useEffect(() => rememberCalendarMode('plan'), [])
 
   const { zone, projects, rawTasks, viewed, feeds, days, chrome, loading } = usePlanDays(dates, today, prefs.dayLength, showCompleted)
@@ -241,6 +246,8 @@ export function PlanView({ date }: { date?: string }) {
   return (
     <PageBody width="full" className="flex flex-col" data-calendar-page="plan">
       <CalendarPageHeader chrome={chrome} title={title} meta={meta} actions={rangeActions} overflow={overflow} />
+      {/* Inside the content, above the columns; Tab reaches it before the first column (plan-objectives D3). */}
+      {objectivesOn && <Suspense fallback={null}><ObjectivesStrip today={today} spanStart={dates[0]} /></Suspense>}
       {/* Until the local database answers: the skeleton, so the days do not jump as their tasks arrive (motion-polish D2). */}
       {loading ? <Skeleton shape="row" count={6} label={t('Loading your tasks')} /> : wide ? (
         <PlanGrid gridRef={gridRef} title={title} days={days} today={today} focused={focused} dayLength={prefs.dayLength} eventHue={eventHue}

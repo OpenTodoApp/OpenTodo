@@ -334,6 +334,21 @@ ot slots rm 7f3a [--yes]                                      # its tasks stay o
 
 `--date` takes `YYYY-MM-DD`, `today`, `tomorrow` or a weekday name (default today); `--for` a length from 15 minutes to 8 hours in 15-minute steps (default `30m`). `put` adds the tasks at the end of the slot and, in the same batch, sets each one's date to the slot's day without a time and takes it out of your other slots of that day; a slot holds at most 20 tasks, and a task you may not edit (a viewer of its project) is refused with `forbidden` and nothing changes. `add`, `put` and `rm` write, so `--dry-run`, `--read-only` and token scope apply (a `read` or `agent` token exits 5). `--json` prints the [`slot`](#machine-readable-help-ot-schema) objects; an encrypted account's titles are ciphertext and the table shows `(encrypted)`.
 
+## Objectives
+
+Your quarterly and weekly [objectives](objectives.md), a few short lines per period:
+
+```bash
+ot objectives [--quarter|--week] [--period 2026-W45]          # this quarter's and this week's by default
+ot objectives add "Draft the talk" --week [--next]             # --quarter or --week; --next for next quarter or week
+ot objectives done 3fa1                                        # an id or id prefix
+ot objectives undone 3fa1
+ot objectives edit 3fa1 --title "Give the talk"
+ot objectives delete 3fa1 [--yes]
+```
+
+Weeks are ISO weeks starting on Monday, taken from this machine's date. A period holds at most 5 open objectives: a sixth exits 1 with `too_many_objectives`. `add`, `done`, `undone`, `edit` and `delete` write, so `--dry-run`, `--read-only` and token scope apply (a `read` or `agent` token exits 5). `--json` prints the [`objective`](#machine-readable-help-ot-schema) objects. On an encrypted account titles are decrypted after `ot encryption unlock` and print as `[encrypted]` otherwise; adding or editing a title needs the key (exit 5 `encryption_enabled` without it).
+
 ## Issue connections
 
 Your [issue import](issue-import.md) connections, once the server owner has turned the feature on:

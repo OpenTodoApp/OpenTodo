@@ -17,7 +17,7 @@ The research is equally clear about what not to build (§5). Todoist retired "Go
   - Titles up to 140 characters, one line.
   - No progress percentages, key results, linked tasks, owners, charts or history view.
   - A done objective stays visible, struck through, until its period ends.
-- **Pinned in Plan.** The calendar's Plan mode shows a compact **Objectives** strip above its columns: this quarter's cards, then this week's, with inline add, edit, done and reorder. The strip collapses per device. On a phone it's one summary line that opens a sheet.
+- **Pinned in Plan.** The calendar's Plan mode shows a compact **Objectives** strip above its columns: this quarter's cards, then this week's, with inline add, edit, done and reorder. The strip collapses per device. On a phone it's one summary line that opens the cards in place.
 - **In the weekly review.** The Look ahead step gains an Objectives section:
   - This quarter's objectives are shown for reference.
   - The week being planned (this week, or next week from Friday to Sunday) can get its objectives written right there.
@@ -70,7 +70,7 @@ Advances 0.21 "Horizons and home", item `plan-objectives` in the 1.0 roadmap (re
   - `created_at`;
   - `deleted_at`.
 
-  It resolves to the author's personal scope like `place` and `review`. The user_prefs field `objectives` is added too. All of it goes in `internal/sync/ops.go` `Schema`, `web/src/lib/types.ts`, the defaults in `web/src/lib/ops.ts`, and the `Plural` map (`objectives`). A materialized table migration is needed.
+  It resolves to the author's personal scope like `place` and `review`. The user_prefs field `objectives` is added too. All of it goes in `internal/sync/ops.go` `Schema`, `web/src/lib/types.ts`, the defaults in `web/src/lib/ops.ts`, and the `Plural` map (`objectives`). No table migration is needed: entities materialize into the generic fields table.
 - **E2EE:** `objective.title` is added to `internal/e2ee.ContentFields` and `CONTENT_FIELDS` in `web/src/lib/e2ee.ts`. The MCP read degrades to `title: null, encrypted: true` unless an opted-in device answers through the relay.
 - **API:** existing `/api/v1/{collection}` routes and their `signedIn` policy. There's a new row in the route matrix test, and the demo isn't denied (sandboxed personal data).
 - **Export and import:** `objectives` in the export, restored by the own-export importer.

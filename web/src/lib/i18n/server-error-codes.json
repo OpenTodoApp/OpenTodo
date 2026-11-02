@@ -136,6 +136,7 @@
   "task_required",
   "too_large",
   "too_many_appends",
+  "too_many_objectives",
   "turn_in_progress",
   "unauthorized",
   "unauthorized_remote",

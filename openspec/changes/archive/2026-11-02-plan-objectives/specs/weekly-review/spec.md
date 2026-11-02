@@ -6,7 +6,7 @@ While objectives are on (OpenSpec `plan-objectives`), the Look ahead step SHALL 
 - the planned week's objectives, with Add and edit under the limit;
 - the open weekly objectives of the week before the planned week, each offering Carry (to the planned week), Done and Drop.
 
-The planned week SHALL be next week when the review is opened from Friday to Sunday of the viewer's week, and this week otherwise, with a toggle to switch. In the first review whose local date falls in a new quarter, the previous quarter's open quarterly objectives SHALL be offered with Carry (to the current quarter), Done and Drop. Each action SHALL be one undoable batch written through the operation log, applied locally first and working offline. The section SHALL not change whether the step is done, the number of steps or the progress indicator.
+The planned week SHALL be next week when the review is opened on the last three days of the viewer's week (Friday to Sunday with Monday weeks), and this week otherwise, with a toggle to switch. In the first review whose local date falls in a new quarter, the previous quarter's open quarterly objectives SHALL be offered with Carry (to the current quarter), Done and Drop. Each action SHALL be one undoable batch written through the operation log, applied locally first and working offline. The section SHALL not change whether the step is done, the number of steps or the progress indicator.
 
 #### Scenario: Sunday review plans next week
 - **WHEN** objectives are on and the user opens the review on Sunday 2026-11-01 with Monday weeks
