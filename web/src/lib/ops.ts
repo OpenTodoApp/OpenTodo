@@ -11,6 +11,7 @@ import { defaultReminderChanges } from './defaultReminder'
 import { withSectorClears } from './sectorWrites'
 import { planCompletion, planSkip, seriesRule, skipsInstead } from './recurring'
 import { assignableIn, currentUserId, membershipMap, roleOf, scopeOf } from './sharing'
+import { memberSet } from './rotation'
 import { descendants, isDescendant } from './tree'
 import { GAP } from './ordering'
 import { ENTITIES, type Clock, type Attachment, type Comment, type Entity, type FieldDef, type Label, type Op, type Origin, type Place, type Project, type Rule, type Frame, type CustomTheme, type Note, type Slot, type TaskLocation, type ProjectPrefs, type Reminder, type Review, type Section, type Task, type TimeEntry, type UserPrefs, type View } from './types'
@@ -1195,6 +1196,9 @@ export async function completeTask(id: string, opts: { now?: number; today?: str
   const today = opts.today ?? logicalToday()
   await getDeviceId()
   const stops = await trackingStops(id, now)
+  // The project's members as this device knows them, for a rotating series (chore-rotation D2).
+  const pid = (await db.tasks.get(id))?.project_id
+  const members = pid ? memberSet(await db.memberships.get(pid)) : undefined
   let recordId: string | null = null
   let plain = false
   await db.transaction('rw', mutationTables(), async () => {
@@ -1204,7 +1208,7 @@ export async function completeTask(id: string, opts: { now?: number; today?: str
       plain = true
       return
     }
-    const plan = planCompletion(series, rule, await db.tasks.toArray(), now, today)
+    const plan = planCompletion(series, rule, await db.tasks.toArray(), now, today, series.project_id === pid ? members : undefined)
     if (plan.kind === 'end') {
       plain = true
       return

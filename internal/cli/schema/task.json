@@ -33,6 +33,7 @@
     "series_id": {"type": ["string", "null"]},
     "split_from": {"type": ["object", "null"], "description": "on a series that continues a split one (This and following): the series it continues and the date it starts", "properties": {"series": {"type": "string"}, "date": {"type": "string", "description": "YYYY-MM-DD"}}},
     "assignee_id": {"type": ["string", "null"]},
+    "rotation": {"type": "array", "items": {"type": "string"}, "description": "account ids of the people who take turns on a recurring task, in order; completing it assigns the next of them"},
     "deadline": {"type": ["string", "null"], "description": "YYYY-MM-DD: the day the task must be finished by, separate from due"},
     "start": {"type": ["string", "null"], "description": "\"someday\" (parked) or YYYY-MM-DD (deferred until that day)"},
     "evening": {"type": "boolean", "description": "in This Evening"},

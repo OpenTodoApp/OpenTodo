@@ -194,6 +194,7 @@
       "priority",
       "project_id",
       "recurrence",
+      "rotation",
       "sample",
       "section_id",
       "sector",
