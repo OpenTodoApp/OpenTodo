@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ReactNode } from 'react'
-import { createTask } from '../lib/ops'
-import { seedBase, seeded, seedProjectWithSections, seedToday, storyUser, TODAY, withSeed } from './stories/fixtures'
+import { createSubtask, createTask } from '../lib/ops'
+import { setTodayLimit } from '../lib/closedListPrefs'
+import { seedBase, seeded, seedProjectWithSections, seedToday, storyUser, TODAY, TOMORROW, withSeed } from './stories/fixtures'
 import { db } from '../lib/db'
 import { setTaskOpen } from '../lib/userPrefs'
 import { PANEL_WIDTH_KEY, SIDE_PANEL_CLOSED_KEY } from './panel'
@@ -50,6 +51,22 @@ export const TodayEarlierCollapsed: StoryObj = {
   render: () => <Column><TaskListView route={{ view: 'today' }} userId={storyUser.id} userRole={storyUser.role} /></Column>,
 }
 
+/**
+ * Today with a limit of three and a full day (today-waiting-time-sensitive): the folded
+ * Waiting for a slot heading names the next task with a time today, and the waiting
+ * tasks due today with a time or a deadline today are listed under it, soonest first,
+ * each with Take a slot.
+ */
+export const TodayWaitingWithTimes: StoryObj = {
+  ...withSeed(async () => {
+    await seedToday()
+    await createTask({ title: 'Send the form to the school', due: { date: TODAY, time: '16:00' } })
+    await createTask({ title: 'File the expense report', deadline: TODAY })
+    await setTodayLimit(3)
+  }),
+  render: () => <Column><TaskListView route={{ view: 'today' }} userId={storyUser.id} userRole={storyUser.role} /></Column>,
+}
+
 /** Upcoming: the coming days as groups, each with its date heading. */
 export const UpcomingByDay: StoryObj = {
   ...withSeed(seedToday),
@@ -60,6 +77,24 @@ export const UpcomingByDay: StoryObj = {
 export const ProjectBySection: StoryObj = {
   ...withSeed(() => seedProjectWithSections(false)),
   render: () => <Column><TaskListView route={{ view: 'project', id: seeded.website }} userId={storyUser.id} userRole={storyUser.role} /></Column>,
+}
+
+/**
+ * A project whose parent was deferred to Later (subtasks-follow-later, GitHub issue #755):
+ * its subtasks go with it, nested under it in the Later group, one keeping its own date.
+ */
+export const ProjectLaterWithSubtasks: StoryObj = {
+  ...withSeed(async () => {
+    await seedBase()
+    const p = seeded.home
+    await createTask({ title: 'Water the plants', project_id: p, due: { date: TODAY } })
+    await createTask({ title: 'Fix the bike light', project_id: p })
+    const fence = await createTask({ title: 'Paint the fence', project_id: p, start: '2026-10-24' })
+    await createSubtask(fence, 'Buy paint')
+    await createTask({ title: 'Book the sprayer', project_id: p, parent_id: fence, due: { date: TOMORROW } })
+    await createSubtask(fence, 'Sand the boards')
+  }),
+  render: () => <Column><TaskListView route={{ view: 'project', id: seeded.home }} userId={storyUser.id} userRole={storyUser.role} /></Column>,
 }
 
 /** Nothing due today: one sentence, Add a task and the Open Upcoming link. */
@@ -100,7 +135,10 @@ async function seedInboxSources(select: boolean): Promise<void> {
   if (select) selectTask.set(dentist)
 }
 
-/** The Inbox from 1024 px with nothing selected: the source lines, Process as the primary action, "No task selected" (inbox-split D1 to D4). */
+/**
+ * The Inbox with nothing selected: the source lines and Process as the primary action (inbox-split D1 to D4). At the
+ * workbench's 1280 px it stays one full-width list; "No task selected" stands beside it only from 1440 px (task-list-width D4).
+ */
 export const InboxSplitEmpty: StoryObj = {
   ...withSeed(() => seedInboxSources(false)),
   render: () => <Split><TaskListView route={{ view: 'inbox' }} userId={storyUser.id} userRole={storyUser.role} /></Split>,

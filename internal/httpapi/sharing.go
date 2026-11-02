@@ -306,6 +306,7 @@ func (s *Server) annotateProjects(ctx context.Context, entity string, list ...op
 			}
 			// And energy, null when none (task-energy D7).
 			presentEnergy(e)
+			presentSector(e)
 		}
 		return nil
 	}

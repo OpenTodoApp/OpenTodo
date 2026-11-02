@@ -11,6 +11,10 @@ import { settled } from './measure.mjs'
 export const closes = (overlay) => overlay.waitFor({ state: 'hidden', timeout: 2000 }).then(() => true, () => false)
 
 // `overlays` names openers from OVERLAYS below; each runs on the screen it is listed for.
+// Settings pages checked for crowded controls (themes-layout-template): no two controls
+// overlap and none touches a row divider. The theme rows and Branding's server themes.
+const CROWDED = new Set(['appearance/theme', 'server/branding'])
+
 export function screens(ids, base) {
   const row = (title) => (p) => p.locator('[data-task-id]').filter({ hasText: title }).first().waitFor()
   const heading = (name) => (p) => p.getByRole('heading', { name, level: 1 }).first().waitFor()
@@ -77,7 +81,8 @@ export function screens(ids, base) {
     // Routines (routines-editor) and the editor page (routines-editor-page): one column on a phone with the actions in a bar at the bottom.
     { name: 'routines', path: '/routines', ready: heading('Routines') },
     // A word's list opens next to it, never a centred modal (routines-dynamic-data D13).
-    { name: 'routine-page', path: `/routines/${ids.routine}`, ready: (p) => p.locator('[data-step-card]').first().waitFor(), overlays: ['routine-word-list'] },
+    // The trigger's kinds and the step catalogue: next to what was pressed, never a dialog (routines-editor-no-modals).
+    { name: 'routine-page', path: `/routines/${ids.routine}`, ready: (p) => p.locator('[data-step-card]').first().waitFor(), overlays: ['routine-word-list', 'routine-trigger-list', 'routine-add-step'] },
     { name: 'routine-new', path: '/routines/new', ready: (p) => p.locator('[data-routine-editor] [data-when-card]').waitFor() },
     { name: 'locations', path: '/locations', ready: heading('Locations'), overlays: ['new-location'] },
     { name: 'projects-archived', path: '/projects#archived', ready: (p) => p.getByText('No archived projects').first().waitFor() },
@@ -94,8 +99,8 @@ export function screens(ids, base) {
       ['account/profile', 'Profile', START_GUIDE_OVERLAYS], ['account/security', 'Security'], ['appearance/theme', 'Theme and density'], ['general/focus', 'Focus timer'],
       ['language/date-time', 'Date and time'], ['capture/voice', 'Voice capture', ['voice-consent']],
       ['integrations/webhooks', 'Webhooks'], ['integrations/mcp', 'AI assistants (MCP)'],
-      ['people/users', 'Users and invitations', ['delete-user']], ['server/backups', 'Backups'], ['server/audit', 'Audit log'],
-    ].map(([id, title, overlays]) => ({ name: `settings-${id.replace('/', '-')}`, path: `/settings/${id}`, ready: heading(title), ...(overlays ? { overlays } : {}) })),
+      ['people/users', 'Users and invitations', ['delete-user']], ['server/backups', 'Backups'], ['server/audit', 'Audit log'], ['server/branding', 'Branding'],
+    ].map(([id, title, overlays]) => ({ name: `settings-${id.replace('/', '-')}`, path: `/settings/${id}`, ready: heading(title), ...(overlays ? { overlays } : {}), ...(CROWDED.has(id) ? { crowded: true } : {}) })),
     // A legacy address opens the page that holds its content (settings-navigation "Legacy settings addresses").
     { name: 'settings-legacy', path: '/settings/security', ready: heading('Security') },
     { name: 'import', path: '/settings/import', ready: heading(/Import/) },
@@ -290,6 +295,39 @@ export const OVERLAYS = {
     // The panel holding the list (not the reminder toast, which shows on every screen).
     return { overlay: p.locator('[data-overlay]').filter({ has: p.locator('[data-word-choices]') }).last(), trigger, reopen, kind: 'popover' }
   },
+  // The When card's trigger word (routines-editor-no-modals): the trigger's kinds in the word
+  // pickers' list, from 640 px anchored under the word at its start edge, inside the content
+  // column (never over the sidebar); a bottom sheet on phones.
+  async 'routine-trigger-list'(p, ctx) {
+    const trigger = p.locator('[data-when-card] [data-word="When"]')
+    const reopen = async () => { await trigger.focus(); await p.keyboard.press('Enter') }
+    await reopen()
+    await p.locator('[data-word-choices] [role="option"]').first().waitFor()
+    const overlay = p.locator('[data-overlay]').filter({ has: p.locator('[data-word-choices]') }).last()
+    if (ctx.width >= 640) {
+      await p.waitForTimeout(250)
+      const word = await trigger.boundingBox()
+      const list = await overlay.boundingBox()
+      const main = await p.locator('main').first().boundingBox()
+      if (word && list && Math.abs(list.x - word.x) > 12) throw new Error(`the trigger list is not at the word's start edge (list ${Math.round(list.x)}, word ${Math.round(word.x)})`)
+      if (word && list && list.y < word.y + word.height - 2) throw new Error('the trigger list is not under the word')
+      if (main && list && list.x < main.x) throw new Error(`the trigger list sticks out of the content column (list ${Math.round(list.x)}, main ${Math.round(main.x)})`)
+    }
+    return { overlay, trigger, reopen, kind: 'popover' }
+  },
+  // "+ Add step" (routines-editor-no-modals): the step catalogue expands in place under the
+  // button, in the column, with its search focused; Escape collapses it. Opened from the keyboard,
+  // as the word list is: the seeded reminder toast can cover the button at the page's foot, and a
+  // tap or Escape that reached the toast would dismiss it for every other combination.
+  async 'routine-add-step'(p) {
+    const trigger = p.locator('[data-add-step]')
+    await trigger.focus()
+    await p.keyboard.press('Enter')
+    const overlay = p.locator('[data-add-step-panel]')
+    await overlay.locator('[role="option"]').first().waitFor()
+    if (await p.locator('[data-overlay="dialog"], [role="dialog"]').count()) throw new Error('Add step opened a dialog')
+    return { overlay, trigger, kind: 'combobox' }
+  },
   async 'sidebar-view-menu'(p) {
     await openSidebar(p)
     const trigger = p.locator('aside[data-sidebar]').getByRole('button', { name: /^Menu for view/ }).first()
@@ -422,7 +460,13 @@ export const OVERLAYS = {
     // cover it on a phone; focus it as a keyboard user would.
     await box.focus()
     await box.pressSequentially('@B')
-    return { overlay: p.getByRole('listbox', { name: 'Mention a member' }), kind: 'combobox', after: async () => { await box.fill(''); await p.keyboard.press('Escape'); await p.keyboard.press('Escape') } }
+    // The member list reads the project's members first; on a busy CI runner that took
+    // more than the generic 5 s (PR 756). Wait longer here, and type the mention again
+    // once if the composer took the keys before it was ready.
+    const list = p.getByRole('listbox', { name: 'Mention a member' })
+    const shown = await list.waitFor({ state: 'visible', timeout: 15000 }).then(() => true, () => false)
+    if (!shown) { await box.fill(''); await box.pressSequentially('@B'); await list.waitFor({ state: 'visible', timeout: 15000 }) }
+    return { overlay: list, kind: 'combobox', after: async () => { await box.fill(''); await p.keyboard.press('Escape'); await p.keyboard.press('Escape') } }
   },
   // Task panel (task-panel-facets): a property's picker opens in a popover anchored to its
   // part; a property without a value has no part yet and is reached through Add.

@@ -34,7 +34,8 @@ export function parseMessage(src: string): Part[] {
   }
 
   // inPlural: `#` is special; closeTag: the tag whose end ends this run.
-  function parts(inPlural: boolean, until: '}' | 'end' | string): Part[] {
+  // until: '}', 'end' or the name of the tag whose closing tag ends this run.
+  function parts(inPlural: boolean, until: string): Part[] {
     const out: Part[] = []
     let text = ''
     const flush = () => { if (text) { out.push({ k: 'text', v: text }); text = '' } }

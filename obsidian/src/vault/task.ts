@@ -2,6 +2,7 @@
 // strings, the merge rules of design D7, op values and the recurring
 // completion the app does.
 import { occurrenceId } from '../../../web/src/lib/ids'
+import { isSector } from '../../../web/src/lib/sectors'
 import { followingOccurrence, parseRule, type Rule } from '../../../web/src/lib/recurrence'
 import { goTrim, noteText, trimNewlines, type Node } from './doc'
 import type { Body, Engine } from './engine'
@@ -12,7 +13,7 @@ import { storedPart, validEnergy, type View } from './view'
 import { localDate, midnight } from './zone'
 
 /** The projections the merge compares (design D6). */
-export const TASK_FIELDS = ['title', 'done', 'donedate', 'due', 'start', 'deadline', 'estimate', 'evening', 'span', 'daypart', 'energy', 'priority', 'recur', 'labels', 'blocked', 'note', 'parent', 'section', 'project']
+export const TASK_FIELDS = ['title', 'done', 'donedate', 'due', 'start', 'deadline', 'estimate', 'evening', 'span', 'daypart', 'energy', 'sector', 'priority', 'recur', 'labels', 'blocked', 'note', 'parent', 'section', 'project']
 
 /** Where a task line sits in a parsed file. */
 export interface Place {
@@ -58,7 +59,7 @@ export function proj(v: View, id: string): Proj {
     ['due', dueKey(S.dueOf(r))], ['start', S.str(r, 'start')], ['deadline', S.str(r, 'deadline')], ['estimate', ''],
     ['evening', String(S.bool(r, 'evening'))], ['span', String(S.bool(r, 'span'))],
     ['daypart', S.bool(r, 'evening') || !storedPart(S.str(r, 'day_part')) ? '' : S.str(r, 'day_part')],
-    ['energy', validEnergy(S.str(r, 'energy')) ? S.str(r, 'energy') : ''], ['priority', prio(Math.trunc(S.num(r, 'priority')))], ['recur', S.str(r, 'recurrence')],
+    ['energy', validEnergy(S.str(r, 'energy')) ? S.str(r, 'energy') : ''], ['sector', isSector(S.str(r, 'sector')) ? S.str(r, 'sector') : ''], ['priority', prio(Math.trunc(S.num(r, 'priority')))], ['recur', S.str(r, 'recurrence')],
     ['note', trimNewlines(v.text('task', id, 'description'))],
     ['parent', S.str(r, 'parent_id')], ['section', S.str(r, 'section_id')], ['project', S.str(r, 'project_id')],
   ])
@@ -279,6 +280,7 @@ function setField(e: Engine, m: MergeRun, b: Body, f: string, pl: Place, fileP: 
       if (fv !== '') b.set('evening', false)
       break
     case 'energy': b.set('energy', fv); break
+    case 'sector': b.set('sector', fv); break
     case 'priority': b.set('priority', atoi(fv) ?? 0); break
     case 'recur': b.set('recurrence', nullable(fv)); break
     case 'labels': {
@@ -345,7 +347,7 @@ function createTask(e: Engine, m: MergeRun, pl: Place): void {
   for (const [k, v] of defaults) b.set(k, v)
   for (const f of TASK_FIELDS) {
     const v = fileP.get(f)
-    if (v !== undefined && f !== 'donedate' && !((f === 'daypart' || f === 'energy') && v === '') && !(f === 'span' && v === 'false')) setField(e, m, b, f, pl, fileP)
+    if (v !== undefined && f !== 'donedate' && !((f === 'daypart' || f === 'energy' || f === 'sector') && v === '') && !(f === 'span' && v === 'false')) setField(e, m, b, f, pl, fileP)
   }
   e.rep.created++
   e.event('created', pl.path, id, `created ${goQuote(l.title)} in ${pl.path}`)

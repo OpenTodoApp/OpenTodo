@@ -18,6 +18,7 @@ import { roleOf } from '../../lib/sharing'
 import type { Project, Task } from '../../lib/types'
 import { Icon, Tooltip, type HueName } from '../../ui'
 import { useCalendarProjectionsOn } from './projectionSwitches'
+import { act } from '../actionError'
 import { setPanelTaskId } from '../panel'
 import { startHold } from './hold'
 
@@ -96,15 +97,15 @@ export function commitProjectionDrop(id: string, target: { type: string; date?: 
   if (!id.startsWith('proj:')) return false
   const occurrence = id.slice(id.lastIndexOf(':') + 1)
   const seriesId = id.slice('proj:'.length, id.lastIndexOf(':'))
-  if (target.type === 'slot' && target.date && target.start !== undefined) void moveProjectionTo({ seriesId, occurrence }, target.date, hhmm(target.start))
-  else if (target.type === 'lane' && target.date) void moveProjectionTo({ seriesId, occurrence }, target.date, null)
+  if (target.type === 'slot' && target.date && target.start !== undefined) act(moveProjectionTo({ seriesId, occurrence }, target.date, hhmm(target.start)))
+  else if (target.type === 'lane' && target.date) act(moveProjectionTo({ seriesId, occurrence }, target.date, null))
   return true
 }
 
 /** A Month or Plan drag of a projection: dropped on a day, the occurrence moves there alone. */
 export function dayDrag(p: Projection): (e: React.PointerEvent) => void {
   return (e) => {
-    beginDrag(e, { label: p.title || t('Untitled'), onDrop: (key) => { if (key.startsWith('day:') && key.slice(4) !== p.date) void moveProjectionTo(p, key.slice(4)) } })
+    beginDrag(e, { label: p.title || t('Untitled'), onDrop: (key) => { if (key.startsWith('day:') && key.slice(4) !== p.date) act(moveProjectionTo(p, key.slice(4))) } })
   }
 }
 

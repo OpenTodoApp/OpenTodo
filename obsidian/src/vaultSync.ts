@@ -91,8 +91,8 @@ export class VaultSync {
   private failures = 0
   private retryAt = 0
   private lastEnd = 0
-  private stableTimer: ReturnType<typeof setTimeout> | null = null
-  private retryTimer: ReturnType<typeof setTimeout> | null = null
+  private stableTimer: number | null = null
+  private retryTimer: number | null = null
   /** What the account key opened, across syncs; cleared when the folder or the lock changes. */
   private plain = new Map<string, string | null>()
 
@@ -177,8 +177,8 @@ export class VaultSync {
   }
 
   stop(): void {
-    if (this.stableTimer) clearTimeout(this.stableTimer)
-    if (this.retryTimer) clearTimeout(this.retryTimer)
+    if (this.stableTimer) window.clearTimeout(this.stableTimer)
+    if (this.retryTimer) window.clearTimeout(this.retryTimer)
     this.stableTimer = this.retryTimer = null
   }
 
@@ -188,8 +188,8 @@ export class VaultSync {
     if (!inFolder(path, folder) || this.running || this.now() - this.lastEnd < OWN_WRITES_MS) return
     const rel = folder === '' ? path : path.slice(folder!.length + 1)
     if (rel.startsWith('.opentodo/') || (!vaultFile(rel) && !rel.endsWith('.icloud'))) return
-    if (this.stableTimer) clearTimeout(this.stableTimer)
-    this.stableTimer = setTimeout(() => {
+    if (this.stableTimer) window.clearTimeout(this.stableTimer)
+    this.stableTimer = window.setTimeout(() => {
       this.stableTimer = null
       void this.run('files')
     }, STABLE_MS)
@@ -252,7 +252,7 @@ export class VaultSync {
       })
       this.failures = 0
       this.retryAt = 0
-      if (this.retryTimer) clearTimeout(this.retryTimer)
+      if (this.retryTimer) window.clearTimeout(this.retryTimer)
       return this.set({ kind: 'synced', at: this.now(), report })
     } catch (err) {
       if (err instanceof OwnedError) return this.set({ kind: 'owned', owner: err.owner, leaseUntil: err.leaseUntil, running: err.running })
@@ -265,8 +265,8 @@ export class VaultSync {
     const wait = BACKOFF_MS[Math.min(this.failures, BACKOFF_MS.length - 1)]
     this.failures++
     this.retryAt = this.now() + wait
-    if (this.retryTimer) clearTimeout(this.retryTimer)
-    this.retryTimer = setTimeout(() => {
+    if (this.retryTimer) window.clearTimeout(this.retryTimer)
+    this.retryTimer = window.setTimeout(() => {
       this.retryTimer = null
       if (this.host.visible()) void this.run('interval')
     }, wait)

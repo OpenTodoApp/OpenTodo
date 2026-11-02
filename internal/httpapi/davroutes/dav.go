@@ -437,6 +437,7 @@ func (v *davView) encode(t opsync.Entity) ([]byte, string) {
 	}
 	ct.Deadline = idOf(t["deadline"])
 	ct.Start = idOf(t["start"])
+	ct.Sector = idOf(t["sector"])
 	ct.Evening, ct.Span = string(t["evening"]) == "true", string(t["span"]) == "true"
 	ct.DayPart = daypart.OfRow(t)
 	ct.Energy = idOf(t["energy"])

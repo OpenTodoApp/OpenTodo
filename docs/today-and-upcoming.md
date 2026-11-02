@@ -11,7 +11,7 @@ order: 22
 
 <picture><source srcset="images/today-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/today-light.webp" alt="The Today view with an Earlier group above today's tasks."></picture>
 
-Today (<kbd>g</kbd> <kbd>t</kbd>) and Upcoming (<kbd>g</kbd> <kbd>u</kbd>) are the two views most people live in: one for the day, one for the days ahead. The other built-in views are listed in [The built-in views](built-in-views.md).
+Today (<kbd>g</kbd> <kbd>t</kbd>) and Upcoming (<kbd>g</kbd> <kbd>u</kbd>) are the two views most people live in. The other built-in views are listed in [The built-in views](built-in-views.md).
 
 ## Plan your day with Today
 
@@ -36,6 +36,8 @@ A task you add here with [quick add](quick-add.md) is due tomorrow unless you ty
 <picture><source srcset="images/upcoming-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/upcoming-light.webp" alt="The Upcoming view with tasks grouped under Tomorrow and the following weekdays."></picture>
 
 A task with a deadline but no due date is listed under its deadline day, after the tasks due that day, so you see it while there is still time to plan it. A task with both dates is listed under its due date only; its row shows the deadline countdown. Deferred and parked tasks are left out until they start, except one without a project or due date, listed under its start day.
+
+One list for both: [Start with Today](upcoming-with-today.md).
 
 ## Where planned tasks go
 

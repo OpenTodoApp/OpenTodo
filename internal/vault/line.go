@@ -48,7 +48,7 @@ var priorityMarker = map[int]string{1: markHighest, 2: markHigh, 3: markMedium}
 // The inline fields (Dataview `[key:: value]`) the vault maps, and the
 // read-only ones it writes from the app and never pushes.
 var (
-	inlineFields   = map[string]bool{"time": true, "tz": true, "deadline": true, "estimate": true, "someday": true, "evening": true, "span": true, "daypart": true, "energy": true}
+	inlineFields   = map[string]bool{"time": true, "tz": true, "deadline": true, "estimate": true, "someday": true, "evening": true, "span": true, "daypart": true, "energy": true, "sector": true}
 	readOnlyFields = map[string]bool{"origin": true, "location": true, "tracked": true}
 )
 
@@ -94,6 +94,9 @@ type Line struct {
 	// Energy is [energy:: …] as written (OpenSpec change task-energy); checked
 	// by the merge, which reports a value it does not know.
 	Energy string
+	// Sector is [sector:: …] as written (OpenSpec change time-sectors);
+	// checked by the merge, which reports a period it does not know.
+	Sector string
 	// ReadOnly holds the read-only inline fields as written: origin, location,
 	// tracked and field:<name>.
 	ReadOnly map[string]string
@@ -353,6 +356,8 @@ func ParseLine(indent string, done bool, content string) Line {
 			l.DayPart = tok.value
 		case "energy":
 			l.Energy = tok.value
+		case "sector":
+			l.Sector = tok.value
 		default:
 			if strings.HasPrefix(tok.kind, "ro:") {
 				l.ReadOnly[strings.TrimPrefix(tok.kind, "ro:")] = tok.value
@@ -455,6 +460,9 @@ func PrintLine(l Line) string {
 	}
 	if l.Energy != "" {
 		parts = append(parts, "[energy:: "+l.Energy+"]")
+	}
+	if l.Sector != "" {
+		parts = append(parts, "[sector:: "+l.Sector+"]")
 	}
 	if m := priorityMarker[l.Priority]; m != "" {
 		parts = append(parts, m)
