@@ -154,9 +154,31 @@ export interface AssistantPrefill {
   selected?: string[]
   /** Start the microphone when voice capture is on (the palette's "Ramble into tasks", voice-ramble D1). */
   listen?: boolean
+  /**
+   * Always show the change set for review, even when this device applies small changes without review: for a turn the
+   * person did not type themselves (suggest after adding), where nothing may land before Apply.
+   */
+  review?: boolean
+  /** Do not move focus into the panel: the person is typing elsewhere (the quick-add line the suggestion came from). */
+  keepFocus?: boolean
 }
 
 let prefill: AssistantPrefill | null = null
+// Whether a turn is running in a panel or on the Assistant page (published by the conversation).
+let turnBusy = false
+
+export function setAssistantTurnBusy(busy: boolean): void {
+  turnBusy = busy
+}
+
+/**
+ * The assistant is occupied: the panel is open (a turn is running, a proposal waits for review, or the person is
+ * typing), a request waits for the panel, or a turn runs on the Assistant page. A request the person did not make
+ * (suggest after adding) must not replace the draft or the proposal on screen.
+ */
+export function assistantBusy(): boolean {
+  return open || prefill !== null || turnBusy
+}
 
 /** Opens the panel with text, a skill or pasted material filled in. */
 export function openAssistantWith(p: AssistantPrefill): void {
@@ -191,6 +213,7 @@ export function resetAssistantStatus(): void {
   status = null
   open = false
   prefill = null
+  turnBusy = false
   emit()
 }
 resettable('assistantStatus', resetAssistantStatus)

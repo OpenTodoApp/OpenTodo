@@ -2,7 +2,7 @@
 // the assistant proposes a clearer title, the right project and a few subtasks. It reuses the assistant panel, so the
 // proposal is the usual change set: every item can be unchecked, nothing changes before Apply, and Undo puts it back.
 import { getMeta, setMeta } from './db'
-import { assistantStatus, openAssistantWith } from './assistantStatus'
+import { assistantBusy, assistantStatus, openAssistantWith } from './assistantStatus'
 import { getDeviceSetup } from './assistantDevice/settings'
 import { createTask, type NewTaskInput } from './ops'
 
@@ -21,18 +21,25 @@ export async function setSuggestAfterAdd(on: boolean): Promise<void> {
   await setMeta(KEY, on)
 }
 
-/** The question the assistant gets: bounded on purpose (title, project, at most 4 subtasks, nothing else touched). */
-export function suggestionPrompt(title: string): string {
-  // Not translated on purpose: it is an instruction to the model (which answers in the task's language), not text the person reads.
-  return `Improve the task “${title}”: propose a clearer title only if it helps, the right project only if it is clearly better, and at most 4 subtasks only if the task is really several steps. Change nothing else, invent no date, and answer in the language of the task.`
-}
+/**
+ * The question the assistant gets: bounded on purpose (title, project, at most 4 subtasks, nothing else touched).
+ * A constant: the task is named by the turn's `selected`, never by text spliced into the instruction, so a title
+ * cannot change it. Not translated on purpose: it is an instruction to the model (which answers in the task's
+ * language), not text the person reads.
+ */
+export const SUGGESTION_PROMPT = 'Improve the selected task: propose a clearer title only if it helps, the right project only if it is clearly better, and at most 4 subtasks only if the task is really several steps. Change nothing else, invent no date, and answer in the language of the task.'
 
 /**
  * Asks for a suggestion about a task that was just added. Does nothing unless the device turned it on and the
  * assistant is available to this account (enabled, available and consented, on the server or on the device).
  * Never throws: adding a task must not depend on the assistant.
+ *
+ * The turn is a proposal only: `review` makes the change set wait for Apply even when this device applies small
+ * changes without review, and `keepFocus` leaves the cursor in the quick-add line. While the assistant is busy (a
+ * turn running, a proposal waiting, the panel open) the suggestion is skipped, not queued: a second add in a row
+ * would replace the first one's draft, and sending would discard the proposal still waiting for review.
  */
-export async function suggestAfterAdd(taskId: string, title: string): Promise<void> {
+export async function suggestAfterAdd(taskId: string): Promise<void> {
   try {
     const s = assistantStatus()
     if (!s || !s.enabled || !s.available) return
@@ -43,7 +50,8 @@ export async function suggestAfterAdd(taskId: string, title: string): Promise<vo
       if (!setup || s.device?.consented_provider !== setup.provider) return
     } else if (!s.consented) return
     if (!(await getSuggestAfterAdd())) return
-    openAssistantWith({ text: suggestionPrompt(title), selected: [taskId], send: true })
+    if (assistantBusy()) return
+    openAssistantWith({ text: SUGGESTION_PROMPT, selected: [taskId], send: true, review: true, keepFocus: true })
   } catch {
     // The task is already created; a suggestion is a bonus.
   }
@@ -52,6 +60,6 @@ export async function suggestAfterAdd(taskId: string, title: string): Promise<vo
 /** `createTask` for a line the person typed: the same task, then a suggestion about it when the device asks for one. */
 export async function createTaskThenSuggest(input: NewTaskInput): Promise<string> {
   const id = await createTask(input)
-  void suggestAfterAdd(id, input.title)
+  void suggestAfterAdd(id)
   return id
 }
