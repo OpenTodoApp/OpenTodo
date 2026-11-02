@@ -2614,6 +2614,7 @@
   ],
   "Carried over": [
     "web/src/app/filter/conditionText.ts",
+    "web/src/app/review/SectorReview.tsx",
     "web/src/lib/sectorNames.ts"
   ],
   "Carry over": [
@@ -4090,6 +4091,9 @@
   "Dates and times, {project}, {label}, {p1}–{p4} and {estimate}; \"quotes\" keep text as is.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Date…": [
+    "web/src/app/review/SectorReview.tsx"
+  ],
   "Day": [
     "web/src/app/BackupsPanel.tsx",
     "web/src/app/CalendarRange.tsx",
@@ -4683,6 +4687,9 @@
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/task-list/RowSchedule.tsx"
+  ],
+  "Do today: {title}": [
+    "web/src/app/calendar/SectorGroups.tsx"
   ],
   "Documentation": [
     "web/src/app/settingsIndex.ts",
@@ -7824,6 +7831,9 @@
   "Keep the locations you use often (home, the office, the gym) and give tasks a location in one step. A task’s location editor saves any address for reuse.": [
     "web/src/app/locations/PlacesView.tsx"
   ],
+  "Keep this week": [
+    "web/src/app/review/SectorReview.tsx"
+  ],
   "Keep “{project}” away from AI assistants?": [
     "web/src/app/AgentAccessRow.tsx",
     "web/src/app/palette/registry.ts"
@@ -9949,6 +9959,9 @@
   "No task carries it.": [
     "web/src/app/LabelsView.tsx"
   ],
+  "No task has a time sector.": [
+    "web/src/app/calendar/SectorGroups.tsx"
+  ],
   "No task holds a value for it.": [
     "web/src/app/FieldsDialog.tsx"
   ],
@@ -11784,6 +11797,9 @@
   ],
   "Plan today: due at 10:00, takes 15 minutes": [
     "web/src/lib/sampleTasks.ts"
+  ],
+  "Plan {title}": [
+    "web/src/app/review/SectorReview.tsx"
   ],
   "Planned estimates against a {minutes} day": [
     "web/src/app/calendar/CapacityLine.tsx"
@@ -14383,6 +14399,9 @@
   ],
   "Show text": [
     "web/src/app/task-detail/HistoryTab.tsx"
+  ],
+  "Show the available tasks": [
+    "web/src/app/calendar/SectorGroups.tsx"
   ],
   "Show the briefing": [
     "web/src/app/PreferencesPanels.tsx",
@@ -17479,6 +17498,7 @@
     "web/src/lib/sectorNames.ts"
   ],
   "Time sectors": [
+    "web/src/app/calendar/planSource.ts",
     "web/src/app/method/HowYouWorkSection.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
@@ -18306,9 +18326,9 @@
     "web/src/app/calendar/FrameBand.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/calendar/MonthRow.tsx",
-    "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/calendar/PlanRow.tsx",
     "web/src/app/calendar/ReplanPreview.tsx",
+    "web/src/app/calendar/SectorGroups.tsx",
     "web/src/app/calendar/SidebarSchedule.tsx",
     "web/src/app/calendar/SlotBlock.tsx",
     "web/src/app/calendar/SlotDetails.tsx",
@@ -18326,6 +18346,7 @@
     "web/src/app/palette/registry.ts",
     "web/src/app/review/CarryOver.tsx",
     "web/src/app/review/ProjectWalk.tsx",
+    "web/src/app/review/SectorReview.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/OccurrenceScope.tsx",
     "web/src/app/task-detail/Subtasks.tsx",
@@ -18727,6 +18748,9 @@
   ],
   "Waiting for the first sync": [
     "web/src/app/CalendarSyncPanel.tsx"
+  ],
+  "Waiting in {group}": [
+    "web/src/app/calendar/SectorGroups.tsx"
   ],
   "Waiting on another task": [
     "web/src/app/filter/conditionText.ts"
@@ -22887,6 +22911,7 @@
     "web/src/app/method/LoopHome.tsx"
   ],
   "{n} waiting": [
+    "web/src/app/calendar/SectorGroups.tsx",
     "web/src/app/method/LoopHome.tsx"
   ],
   "{n} with deadlines": [

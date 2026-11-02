@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { formatShort, formatTime } from '../../lib/dates'
-import { formatMinutes } from '../../lib/duration'
 import { clockOf, frameSourceRequest, frameTarget } from '../../lib/frames'
 import { t } from '../../lib/i18n'
 import { useLabels } from '../../lib/localData'
@@ -8,11 +7,13 @@ import { Button, ComboboxPanel, EmptyState, hueFor, Icon, Popover, useMediaQuery
 import { closePanel, openPanel, panelOccupant, SPLIT_QUERY, usePanelOccupantKey } from '../panel'
 import { PanelFrame } from '../PanelFrame'
 import { useViewData } from '../useViews'
-import { planSources, planSourceTasks, readTray, resolveSource, saveTray, type PlanSource, type PlanSourceKind } from './planSource'
+import { planSources, planSourceTasks, readTray, resolveSource, saveTray, SECTORS_SOURCE, type PlanSource, type PlanSourceKind } from './planSource'
+import { useTimeSectors } from '../../lib/sectorPrefs'
+import { PlanRow, SectorGroups } from './SectorGroups'
 import { readString, writeString } from '../../lib/deviceStorage'
 
 const KIND_ICON: Record<PlanSourceKind, IconName> = { list: 'inbox', project: 'folder', label: 'tag', view: 'filter' }
-const LIST_ICON: Record<string, IconName> = { inbox: 'inbox', nodate: 'calendar-days', overdue: 'hourglass' }
+const LIST_ICON: Record<string, IconName> = { inbox: 'inbox', nodate: 'calendar-days', overdue: 'hourglass', [SECTORS_SOURCE]: 'calendar-range' }
 const iconOf = (s: PlanSource): IconName => (s.kind === 'list' ? LIST_ICON[s.key] ?? 'inbox' : KIND_ICON[s.kind])
 
 export const PLAN_PANEL = 'calendar-plan'
@@ -90,7 +91,8 @@ export function PlanPanel() {
   const [source, setSource] = useState<string>(readTray)
   const [picking, setPicking] = useState(false)
   const anchor = useRef<HTMLButtonElement>(null)
-  const sources = useMemo(() => planSources({ projects, labels, views }), [projects, labels, views])
+  const sectors = useTimeSectors()
+  const sources = useMemo(() => planSources({ projects, labels, views }, { sectors }), [projects, labels, views, sectors])
   const chosen = resolveSource(source, sources)
   const list = useMemo(() => planSourceTasks(chosen, { projects, labels, views, tasks, today: ctx.today, ctx }), [chosen, projects, labels, views, tasks, ctx])
   const group: Record<PlanSourceKind, string> = { list: t('Lists'), project: t('Projects'), label: t('Labels'), view: t('Saved views') }
@@ -144,31 +146,13 @@ export function PlanPanel() {
           <Button variant="ghost" size="sm" icon="x" aria-label={t('Stop placing into the frame')} onClick={() => frameTarget.set(null)} />
         </p>
       )}
-      <ul className="space-y-0.5" aria-label={t('Tasks to plan')}>
-        {/* The empty-state pattern with the sentence the panel needs (ux-audit-three-widths F2, F13). */}
-        {list.length === 0 && <li><EmptyState compact title={t('Every task of these days is placed.')} /></li>}
-        {list.map((task) => (
-          <li key={task.id}>
-            <button
-              type="button"
-              data-tray-task={task.id}
-              onPointerDown={(e) => current()?.onPointerDown(e, task.id)}
-              onKeyDown={(e) => {
-                if (e.key === 's' || e.key === 'Enter') {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  current()?.onPlace(task.id)
-                }
-              }}
-              onDoubleClick={() => current()?.onOpen(task.id)}
-              className="flex w-full cursor-grab touch-manipulation items-center gap-1 rounded-control px-2 py-1.5 text-left text-body hover:bg-sunken dark:hover:bg-raised"
-            >
-              <span className="truncate">{task.title || t('Untitled')}</span>
-              {task.estimate_minutes ? <span className="ml-auto shrink-0 text-meta tabular-nums text-muted">{formatMinutes(task.estimate_minutes)}</span> : null}
-            </button>
-          </li>
-        ))}
-      </ul>
+      {chosen.key === SECTORS_SOURCE ? <SectorGroups tasks={tasks} projects={projects} sections={ctx.sections ?? []} today={ctx.today} actions={current} /> : (
+        <ul className="space-y-0.5" aria-label={t('Tasks to plan')}>
+          {/* The empty-state pattern with the sentence the panel needs (ux-audit-three-widths F2, F13). */}
+          {list.length === 0 && <li><EmptyState compact title={t('Every task of these days is placed.')} /></li>}
+          {list.map((task) => <li key={task.id}><PlanRow task={task} actions={current} /></li>)}
+        </ul>
+      )}
     </PanelFrame>
   )
 }
