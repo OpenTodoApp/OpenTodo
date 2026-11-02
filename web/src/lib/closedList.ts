@@ -122,37 +122,59 @@ export function giveBackSlotList(taken: readonly string[], id: string): string[]
   return taken.filter((x) => x !== id)
 }
 
-/** A waiting task that has a time today (today-waiting-time-sensitive D1): its due time, or null for a deadline today without one. */
+/**
+ * A waiting task that has a time today (today-waiting-time-sensitive D1): its due time,
+ * or null for a deadline today without one; `passed` once that time is before now
+ * (today-waiting-time-passed D1; a deadline without a time never passes today).
+ */
 export interface TimeSensitive {
   id: string
   time: string | null
+  passed: boolean
 }
 
 /**
  * The waiting tasks that are time-sensitive (today-waiting-time-sensitive D1): due
  * today with a time, or with a deadline today. Soonest first: by time, then the
  * deadlines without a time (the end of the day), ties in fill order. `waiting` is
- * the waiting tasks in fill order; the fill order itself is never changed.
+ * the waiting tasks in fill order; the fill order itself is never changed. `now` is
+ * the wall time of the logical today ("HH:MM", past "24:00" after midnight before the
+ * day start, waitingNow); a task whose time is before it is `passed`.
  */
-export function timeSensitive(waiting: readonly SlotTask[], today: string): TimeSensitive[] {
+export function timeSensitive(waiting: readonly SlotTask[], today: string, now?: string): TimeSensitive[] {
   const out: (TimeSensitive & { at: number })[] = []
   waiting.forEach((t, at) => {
     const timed = t.due === today && t.time ? t.time : null
-    if (timed || t.deadline === today) out.push({ id: t.id, time: timed, at })
+    if (timed || t.deadline === today) out.push({ id: t.id, time: timed, passed: !!timed && !!now && timed < now, at })
   })
   const key = (x: TimeSensitive) => x.time ?? '24:00'
-  return out.sort((a, b) => (key(a) < key(b) ? -1 : key(a) > key(b) ? 1 : a.at - b.at)).map(({ id, time }) => ({ id, time }))
+  return out.sort((a, b) => (key(a) < key(b) ? -1 : key(a) > key(b) ? 1 : a.at - b.at)).map(({ id, time, passed }) => ({ id, time, passed }))
+}
+
+/** The one the folded heading names (today-waiting-time-passed D2): the first whose time has not passed, or undefined. */
+export function nextWaiting<T extends { passed: boolean }>(soon: readonly T[]): T | undefined {
+  return soon.find((x) => !x.passed)
+}
+
+/**
+ * Now as `timeSensitive` reads it: the wall time "HH:MM" of the logical today, with
+ * 24 hours added after midnight before the day start (day-boundary), when every time
+ * of the logical today has passed.
+ */
+export function waitingNow(date: Date, logicalDay: string, calendarDay: string): string {
+  const h = date.getHours() + (logicalDay < calendarDay ? 24 : 0)
+  return `${String(h).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
 }
 
 /**
  * `timeSensitive` over Today's waiting tasks in fill order, with each task and its
  * due time in the user's zone (null for a deadline today without one).
  */
-export function waitingTimeSensitive(waiting: readonly Task[], today: string): { task: Task; time: string | null }[] {
+export function waitingTimeSensitive(waiting: readonly Task[], today: string, now?: string): { task: Task; time: string | null; passed: boolean }[] {
   const byId = new Map(waiting.map((t) => [t.id, t]))
   const rows = waiting.map((t) => {
     const local = localDueOf(t.due)
     return { id: t.id, created_at: t.created_at, due: local ? local.date : (t.deadline ?? null), time: local?.time ?? null, deadline: t.deadline ?? null }
   })
-  return timeSensitive(rows, today).map((x) => ({ task: byId.get(x.id)!, time: x.time }))
+  return timeSensitive(rows, today, now).map((x) => ({ task: byId.get(x.id)!, time: x.time, passed: x.passed }))
 }

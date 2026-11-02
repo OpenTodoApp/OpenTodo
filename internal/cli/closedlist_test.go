@@ -58,9 +58,10 @@ func TestTodayClosedList(t *testing.T) {
 }
 
 // TestTodayTimeSensitive (OpenSpec change today-waiting-time-sensitive, task
-// 3.2): the Waiting heading names the next task with a time today and lists
-// those tasks soonest first, the table keeps fill order, and --json marks
-// time_sensitive on waiting tasks.
+// 3.2, and today-waiting-time-passed): the Waiting heading names the next task
+// with a time today that has not passed (the clock reads 12:00) and lists those
+// tasks soonest first, a passed one marked, the table keeps fill order, and
+// --json marks time_sensitive and time_passed on waiting tasks.
 func TestTodayTimeSensitive(t *testing.T) {
 	h := newHarness(t)
 	h.login()
@@ -73,7 +74,7 @@ func TestTodayTimeSensitive(t *testing.T) {
 	h.putPersonal("user_prefs", map[string]any{"today_limit": 1})
 
 	out := h.mustRun("today")
-	if !strings.Contains(out, "Waiting for a slot · 4 — next: Call the school, 09:00") {
+	if !strings.Contains(out, "Waiting for a slot · 4 — next: Send the form, 16:00") || !strings.Contains(out, "Call the school  (time passed)") {
 		t.Fatalf("heading:\n%s", out)
 	}
 	call, form, taxes := strings.Index(out, "09:00     eeee"), strings.Index(out, "16:00     bbbb"), strings.Index(out, "deadline  dddd")
@@ -89,12 +90,35 @@ func TestTodayTimeSensitive(t *testing.T) {
 	if err := json.Unmarshal([]byte(h.mustRun("today", "--json")), &list); err != nil {
 		t.Fatal(err)
 	}
-	got := map[string]any{}
+	got, passed := map[string]any{}, map[string]any{}
 	for _, e := range list {
 		got[e["id"].(string)] = e["time_sensitive"]
+		passed[e["id"].(string)] = e["time_passed"]
 	}
 	if got["aaaa0002"] != nil || got["bbbb0002"] != true || got["cccc0002"] != false || got["dddd0002"] != true || got["eeee0002"] != true {
 		t.Fatalf("time_sensitive = %v", got)
+	}
+	if passed["eeee0002"] != true || passed["bbbb0002"] != false || passed["dddd0002"] != false || passed["cccc0002"] != nil {
+		t.Fatalf("time_passed = %v", passed)
+	}
+}
+
+// TestTodayTimePassed (OpenSpec change today-waiting-time-passed): when every
+// waiting time today has passed (the clock reads 12:00), the heading says so
+// instead of naming a next one: the task for one, the count for more.
+func TestTodayTimePassed(t *testing.T) {
+	h := newHarness(t)
+	h.login()
+	day := "2026-10-10"
+	h.put("task", "aaaa0003", map[string]any{"title": "Planned", "due": map[string]any{"date": day}, "created_at": 1000})
+	h.put("task", "bbbb0003", map[string]any{"title": "Call the school", "due": map[string]any{"date": day, "time": "09:00"}, "created_at": 2000})
+	h.putPersonal("user_prefs", map[string]any{"today_limit": 1})
+	if out := h.mustRun("today"); !strings.Contains(out, "Waiting for a slot · 1 — time passed: Call the school, 09:00") {
+		t.Fatalf("one passed:\n%s", out)
+	}
+	h.put("task", "cccc0003", map[string]any{"title": "Send the form", "due": map[string]any{"date": day, "time": "11:30"}, "created_at": 3000})
+	if out := h.mustRun("today"); !strings.Contains(out, "Waiting for a slot · 2 — 2 past their time") {
+		t.Fatalf("two passed:\n%s", out)
 	}
 }
 

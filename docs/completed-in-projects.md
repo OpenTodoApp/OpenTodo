@@ -27,6 +27,8 @@ A section whose tasks are all done no longer offers its own "n completed" while 
 
 ## Good to know
 
+- A [reusable list](reusable-lists.md) always keeps its ticked items, in a **Got it** group on every device, so it has no **Show completed tasks** choice.
+
 - The setting is per project and per device, like the board layout, and it is not synced. Turn it on separately on your phone and your computer.
 - It applies to the list layout. The board and the timeline keep showing open tasks only.
 - Every completed task, from every project, is still in **Completed** in the sidebar. See [Built-in views](built-in-views.md).

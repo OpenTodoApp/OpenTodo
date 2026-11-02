@@ -37,10 +37,13 @@ type vector struct {
 		Waiting []string `json:"waiting"`
 		Chosen  int      `json:"chosen"`
 	} `json:"expect"`
+	Now           string `json:"now"`
 	TimeSensitive []struct {
-		ID   string  `json:"id"`
-		Time *string `json:"time"`
+		ID     string  `json:"id"`
+		Time   *string `json:"time"`
+		Passed bool    `json:"passed"`
 	} `json:"time_sensitive"`
+	Next *string `json:"next"`
 	Take *struct {
 		ID    string          `json:"id"`
 		Taken json.RawMessage `json:"taken"`
@@ -98,14 +101,26 @@ func TestVectors(t *testing.T) {
 			}
 			wantTS := []Sensitive{}
 			for _, x := range v.TimeSensitive {
-				s := Sensitive{ID: x.ID}
+				s := Sensitive{ID: x.ID, Passed: x.Passed}
 				if x.Time != nil {
 					s.Time = *x.Time
 				}
 				wantTS = append(wantTS, s)
 			}
-			if got := TimeSensitive(f.WaitingTasks(tasks), file.Today); !reflect.DeepEqual(got, wantTS) {
-				t.Fatalf("time sensitive = %v, want %v", got, wantTS)
+			soon := TimeSensitive(f.WaitingTasks(tasks), file.Today, v.Now)
+			if !reflect.DeepEqual(soon, wantTS) {
+				t.Fatalf("time sensitive = %v, want %v", soon, wantTS)
+			}
+			gotNext := ""
+			if n, ok := Next(soon); ok {
+				gotNext = n.ID
+			}
+			wantNext := ""
+			if v.Next != nil {
+				wantNext = *v.Next
+			}
+			if gotNext != wantNext {
+				t.Fatalf("next = %q, want %q", gotNext, wantNext)
 			}
 			if v.Take == nil {
 				return

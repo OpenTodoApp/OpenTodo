@@ -5,7 +5,8 @@
 // Esc discards the title change, Shift+Enter saves and opens the panel. The title is
 // the panel's TitleField, so `tomorrow p1 #work` typed here applies as it does there.
 import { type FocusEvent, type KeyboardEvent, useMemo, useRef, useState } from 'react'
-import { describeDue, localDueOf } from '../../lib/dates'
+import { describeDue, localDueOf, logicalToday } from '../../lib/dates'
+import { sectorLabel } from '../../lib/sectorNames'
 import { removeLabel, resolveLabels } from '../../lib/labels'
 import type { EditPlan } from '../../lib/nlp/edit'
 import { updateTask } from '../../lib/ops'
@@ -110,10 +111,12 @@ export function EditBar({ task, projects, labelMap, onDetails }: { task: Task; p
   const dateAnchor = useMemo(() => ({ get current() { return anchors.current.date ?? null } }), [])
   const labelsAnchor = useMemo(() => ({ get current() { return anchors.current.labels ?? null } }), [])
   const due = describeDue(localDueOf(task.due, zone))
+  // An undated task's time sector reads in the date's place; picking a date replaces it (time-sectors D2, D4).
+  const sector = due ? null : sectorLabel(task.sector, logicalToday())
   const labels = resolveLabels(task.labels, labelMap)
   return (
     <div className="mt-1 flex min-h-8 flex-wrap items-center gap-0.5" data-edit-bar role="group" aria-label={t('Task properties')}>
-      <BarButton icon="calendar-days" label={t('Date')} text={due?.label ?? t('Date')} empty={!due} expanded={open === 'date'}
+      <BarButton icon="calendar-days" label={t('Date')} text={due?.label ?? sector?.text ?? t('Date')} empty={!due && !sector} expanded={open === 'date'}
         buttonRef={(el) => { anchors.current.date = el }} onClick={() => setOpen(open === 'date' ? null : 'date')} />
       <Menu kind="menu" label={`${t('Priority')}: ${PRIORITY_TEXT[task.priority]}`} align="start"
         trigger={<span className={`inline-flex items-center gap-1 text-meta ${task.priority === 4 ? 'text-faint' : 'text-muted'}`}><Icon name="flag" size="xs" />{PRIORITY_TEXT[task.priority]}</span>}

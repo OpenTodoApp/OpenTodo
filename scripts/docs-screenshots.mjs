@@ -208,6 +208,33 @@ async function plainSetup() {
   const state = await c.storageState(); await c.close(); return { state, home, pageLink: page.link }
 }
 
+// ------------------------------------------------------------------ reusable list
+// The Groceries list of the reusable-list scenes, created once on the plain instance
+// (or deleted with `remove`): four aisle sections, open items and two ticked off.
+let groceryId = null
+let groceryShots = 0
+async function groceries(ctx, remove = false) {
+  const api = async (method, path, body) => {
+    const r = await ctx.request.fetch(plainBase + path, { method, headers: { Origin: plainBase, 'Content-Type': 'application/json' }, data: body === undefined ? undefined : JSON.stringify(body) })
+    if (!r.ok()) throw new Error(`${method} ${path} → ${r.status()} ${await r.text()}`)
+    const t = await r.text(); return t ? JSON.parse(t) : null
+  }
+  if (remove) { if (groceryId) await api('DELETE', `/api/v1/projects/${groceryId}`); groceryId = null; return null }
+  if (groceryId) return groceryId
+  const g = await api('POST', '/api/v1/projects', { name: 'Groceries', color: '#22c55e', icon: 'shopping-cart', reusable: true, aisles: true })
+  const sec = {}
+  for (const [aisle, name, icon] of [['produce', 'Produce', 'carrot'], ['bakery', 'Bakery', 'croissant'], ['dairy', 'Dairy and eggs', 'milk'], ['drinks', 'Drinks', 'cup-soda']]) {
+    sec[aisle] = (await api('POST', '/api/v1/sections', { name, project_id: g.id, aisle, icon })).id
+  }
+  const items = [['Bananas', 'produce'], ['Cherry tomatoes', 'produce'], ['Sourdough loaf', 'bakery'], ['Greek yoghurt', 'dairy'], ['Eggs', 'dairy'], ['Sparkling water', 'drinks'], ['Milk', 'dairy', true], ['Butter', 'dairy', true]]
+  for (const [title, aisle, done] of items) {
+    const t = await api('POST', '/api/v1/tasks', { title, project_id: g.id, section_id: sec[aisle] })
+    if (done) await api('PATCH', `/api/v1/tasks/${t.id}`, { completed_at: Date.now() - (title === 'Milk' ? 3_600_000 : 7_200_000) })
+  }
+  groceryId = g.id
+  return g.id
+}
+
 // ------------------------------------------------------------------ assistant instance
 // The in-app assistant (in-app-assistant) on its own instance, so the other
 // screenshots keep their header: the "compatible endpoint" is the scripted fake
@@ -789,6 +816,23 @@ const shots = [
     await go(p, plainBase, '/settings/workspaces', () => p.getByRole('heading', { name: 'Workspaces', level: 1 }).waitFor())
     await p.getByRole('button', { name: /^Family/ }).first().click(); await p.getByRole('tab', { name: /^Members/ }).click()
     await p.locator('#workspace-members').waitFor(); await settle(p, 600)
+  } },
+  // A reusable list sorting into aisles (reusable-lists): made for these two scenes and
+  // deleted after the last one, so no other screenshot shows it.
+  { name: 'reusable-list', server: P, async run(p, { ctx }) {
+    const id = await groceries(ctx)
+    await go(p, plainBase, `/project/${id}`, () => p.getByRole('heading', { level: 1, name: 'Groceries' }).waitFor())
+    await unfold(p, p.locator('[data-completed-group] button[aria-expanded]').first()); await p.locator('[data-completed-group] [data-task-id]').first().waitFor()
+    await p.mouse.move(700, 120); await settle(p, 500)
+  } },
+  { name: 'reusable-list-menu', server: P, async run(p, { ctx }) {
+    const id = await groceries(ctx)
+    await go(p, plainBase, `/project/${id}`, () => p.getByRole('heading', { level: 1, name: 'Groceries' }).waitFor())
+    await p.getByRole('button', { name: 'Project menu' }).click(); await p.locator('[data-menu-label="List…"]').click()
+    await p.locator('[data-list-mode]').waitFor(); await p.locator('[data-list-mode]').hover(); await settle(p, 500)
+  }, async after(p, { ctx }) {
+    await p.keyboard.press('Escape')
+    if (++groceryShots === 2) await groceries(ctx, true)
   } },
   { name: 'assistant-settings', server: 'assistant', async run(p) {
     await go(p, assistantBase, '/settings/integrations/assistant', () => p.getByRole('heading', { name: 'Assistant', level: 1 }).waitFor())
