@@ -1,0 +1,26 @@
+{
+  "comment": "Next assignee of a rotating recurring task (OpenSpec change chore-rotation, design D2). Read by web/src/lib/rotation.test.ts and internal/sync/rotation_test.go. members are the task scope's current members.",
+  "next": [
+    { "name": "next in order", "rotation": ["alice", "bob", "carol"], "current": "alice", "members": ["alice", "bob", "carol"], "next": "bob" },
+    { "name": "wrap around", "rotation": ["alice", "bob", "carol"], "current": "carol", "members": ["alice", "bob", "carol"], "next": "alice" },
+    { "name": "current outside the list starts at the first", "rotation": ["alice", "bob", "carol"], "current": "dave", "members": ["alice", "bob", "carol", "dave"], "next": "alice" },
+    { "name": "empty current starts at the first", "rotation": ["alice", "bob", "carol"], "current": "", "members": ["alice", "bob", "carol"], "next": "alice" },
+    { "name": "departed member in the middle is skipped", "rotation": ["alice", "bob", "carol"], "current": "alice", "members": ["alice", "carol"], "next": "carol" },
+    { "name": "departed first member is skipped on wrap", "rotation": ["alice", "bob", "carol"], "current": "carol", "members": ["bob", "carol"], "next": "bob" },
+    { "name": "departed current starts at the first live", "rotation": ["alice", "bob", "carol"], "current": "bob", "members": ["alice", "carol"], "next": "alice" },
+    { "name": "all departed keeps the assignee", "rotation": ["alice", "bob"], "current": "alice", "members": ["carol"], "next": "alice" },
+    { "name": "all departed and nobody assigned", "rotation": ["alice", "bob"], "current": "", "members": ["carol"], "next": "" },
+    { "name": "single live member keeps it", "rotation": ["alice", "bob"], "current": "alice", "members": ["alice"], "next": "alice" },
+    { "name": "single live member takes it over", "rotation": ["alice", "bob"], "current": "carol", "members": ["alice", "carol"], "next": "alice" },
+    { "name": "empty rotation keeps the assignee", "rotation": [], "current": "alice", "members": ["alice", "bob"], "next": "alice" },
+    { "name": "two people alternate", "rotation": ["bob", "alice"], "current": "bob", "members": ["alice", "bob"], "next": "alice" }
+  ],
+  "valid": [
+    { "name": "two people", "rotation": ["alice", "bob"], "valid": true },
+    { "name": "empty clears", "rotation": [], "valid": true },
+    { "name": "duplicates refused", "rotation": ["alice", "bob", "alice"], "valid": false },
+    { "name": "empty id refused", "rotation": ["alice", ""], "valid": false },
+    { "name": "twenty people", "rotation": ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10", "p11", "p12", "p13", "p14", "p15", "p16", "p17", "p18", "p19", "p20"], "valid": true },
+    { "name": "twenty-one people refused", "rotation": ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10", "p11", "p12", "p13", "p14", "p15", "p16", "p17", "p18", "p19", "p20", "p21"], "valid": false }
+  ]
+}
