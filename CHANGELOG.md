@@ -4,9 +4,19 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.20.0] - 2026-11-02
+
+OpenTodo 0.20.0 is about **routines** and **themes**. Automation rules become routines: a routine has a trigger and steps that find tasks, change them, create tasks or projects and comment, built on a page with a plain sentence for each step, started from a starter or **described in one sentence**, tried against your data before it runs, with a run history and "Routines since your last visit". A routine can **ask AI** to judge or summarise, and shows you the proposal before anything changes; a shared project can have its own routines, and encrypted accounts run theirs on one of their devices. The look of the app becomes **themes**: OpenTodo Light and Dark plus fourteen editor palettes, your own made in an editor, from a file or from a VS Code theme, and a server default for everyone. Also new: **Outlook and Microsoft 365** in calendar sync, an **Obsidian plugin** that sends a line as a task and syncs a folder of task files on a phone too, **Upcoming that starts with Today**, Today's count on the app icon, and tasks with a time that stay in sight while they wait for a Today slot. The server turns **Multipath TCP off** (CVE-2026-98432); update the host's kernel too (see Security).
+
 ### Security
 
 - **Multipath TCP is off.** Go turns on Multipath TCP for Linux listeners by default, and CVE-2026-98432, a Linux kernel use-after-free in TCP connection handling, can be reached through MPTCP listeners. OpenTodo gains nothing from MPTCP, so `go.mod` now sets `godebug multipathtcp=0` for the server and `ot`, pinned by a test. The real fix is a patched kernel: the server, and its container, run on the host's kernel, so update it ([advisory](https://www.openwall.com/lists/oss-security/2026/10/30/1), [Host kernel](docs/self-hosting/docker.md#host-kernel)). The Go toolchain stays at 1.27.3, which already carries the crypto/x509 fix for CVE-2026-111943.
+
+### Upgrade notes
+
+- **Replace the image or the binary and restart; upgrade the server before the devices.** Four migrations run at start (`0051`–`0054`: calendar sync cursors, routines, routine AI steps, assistant usage drafts); there are no down-migrations, so back up first. New synced entity `custom_theme` and new synced fields `rule.steps`, `rule.ai_apply`, `rule.ai_budget`, `rule.project_id`, `time_entry.focus_mode`, `time_entry.focus_session`, `time_entry.planned_end_at`, `user_prefs.theme_light`, `user_prefs.theme_dark`, `user_prefs.routines_seen_at`, `user_prefs.routines_hide_successes` and `user_prefs.upcoming_today`, all additive: older devices keep working and ignore them, but a routine with steps runs only on an upgraded server.
+- **No new mandatory variable.** Outlook calendar sync is optional and needs a Microsoft client, set in Settings or with `OPENTODO_MICROSOFT_CLIENT_ID`, `OPENTODO_MICROSOFT_CLIENT_SECRET` (or `_FILE`) and `OPENTODO_MICROSOFT_TENANT` ([Calendar sync](docs/calendar-sync.md#set-up-the-microsoft-client-server-owner)).
+- **Update the host's kernel.** Multipath TCP is now off in OpenTodo, but the kernel fix for CVE-2026-98432 is the real one ([Host kernel](docs/self-hosting/docker.md#host-kernel)).
 
 ### Added
 
@@ -1173,7 +1183,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.19.0...HEAD
+[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.20.0...HEAD
+[0.20.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.19.0...v0.20.0
 [0.19.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.18.1...v0.19.0
 [0.18.1]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.18.0...v0.18.1
 [0.18.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.17.0...v0.18.0
