@@ -15,7 +15,7 @@ Sign in once in the browser first, at your server's `https://` address; then add
 
 Once installed, the round **+** at the bottom right adds a task, and the menu button at the top left opens a drawer with your projects, labels and views.
 
-On Settings the round **+** is hidden, because that page has no quick-add action and the button would cover the rows; it returns on the next list. The installed app opens on a splash in the light page colour, and its status bar uses the same colour as the app's bar from the first frame.
+On Settings the round **+** is hidden, because that page has no quick-add action and the button would cover the rows; it returns on the next list. The installed app opens on a splash in the dark canvas colour (a manifest has one splash colour, and a bright flash in dark mode is worse than a dark one before a light app), and its status bar uses the same colour as the app's bar from the first frame.
 
 ## iPhone and iPad
 
