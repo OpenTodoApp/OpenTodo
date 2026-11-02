@@ -1,0 +1,95 @@
+// OpenTodo theme template.
+// Lines that start with // are notes.
+{
+  "$schema": "https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/docs/themes/opentodo-theme.schema.json",
+  "opentodoTheme": 1, // Keep 1.
+  "id": "opentodo-light", // An id.
+  "name": "OpenTodo Light", // A name.
+  "author": "OpenTodo contributors", // You.
+  "licence": "AGPL-3.0-only", // SPDX.
+  "source": "web/src/index.css", // Text.
+  "kind": "light", // light or dark.
+  "seeds": {
+    // Base colours.
+    "canvas": "oklch(0.9542 0.0034 247.86)", // The canvas seed.
+    "surface": "oklch(1 0 0)", // The surface seed.
+    "text": "oklch(0.2126 0.0067 258.37)", // The text seed.
+    "accent": "oklch(0.5081 0.1049 165.61)", // The accent seed.
+    // Status colours.
+    // "success": "#047857", // The success seed.
+    // "warning": "#8a5200", // The warning seed.
+    // "danger": "#bd2f2a", // The danger seed.
+    // "info": "#2860c0", // The info seed.
+  },
+  "tokens": {
+    // Every other colour.
+    // — surfaces —
+    // "raised": "#f7f7f7", // raised
+    // "sunken": "#f1f3f5", // sunken
+    // "pop": "#ffffff", // pop
+    // "hover": "#f8f8f8", // hover
+    // "selected": "#e7e9ec", // selected
+    // "selected-row": "#f1f3f5", // selected-row
+    // "sidebar": "#eef0f2", // sidebar
+    // — text —
+    // "text-strong": "#17191c", // text-strong
+    // "muted": "#5c6169", // muted
+    // "faint": "#62686f", // faint
+    // — lines —
+    // "border": "#dee0e3", // border
+    // "border-soft": "#e1e3e6", // border-soft
+    // "border-input": "#7c8799", // border-input
+    // "line-strong": "#d4d7db", // line-strong
+    // — accent —
+    // "accent-hover": "#036146", // accent-hover
+    // "on-accent": "#ffffff", // on-accent
+    // "accent-text": "#047857", // accent-text
+    // "accent-soft": "#e9f1ed", // accent-soft
+    // "accent-soft-text": "#02573e", // accent-soft-text
+    // "focus": "#3f8c6e", // focus
+    // — status —
+    // "success-soft": "#ecfdf5", // success-soft
+    // "success-soft-text": "#065f46", // success-soft-text
+    // "warning-soft": "#fffbeb", // warning-soft
+    // "warning-soft-text": "#92400e", // warning-soft-text
+    // "danger-soft": "#fef2f2", // danger-soft
+    // "danger-soft-text": "#991b1b", // danger-soft-text
+    // "info-soft": "#f0f9ff", // info-soft
+    // "info-soft-text": "#075985", // info-soft-text
+    // — priorities —
+    // "p1": "#dc2626", // p1
+    // "p1-soft": "#fef2f2", // p1-soft
+    // "p2": "#ea580c", // p2
+    // "p2-soft": "#fff7ed", // p2-soft
+    // "p3": "#2563eb", // p3
+    // "p3-soft": "#eff6ff", // p3-soft
+    // "p4": "#64748b", // p4
+    // "p4-soft": "#f8fafc", // p4-soft
+    // — labels —
+    // "hue-red": "#dc2626", // hue-red
+    // "hue-orange": "#ea580c", // hue-orange
+    // "hue-yellow": "#d27100", // hue-yellow
+    // "hue-lime": "#4d7c0f", // hue-lime
+    // "hue-green": "#059e45", // hue-green
+    // "hue-teal": "#0d9488", // hue-teal
+    // "hue-cyan": "#0891b2", // hue-cyan
+    // "hue-blue": "#2563eb", // hue-blue
+    // "hue-indigo": "#4f46e5", // hue-indigo
+    // "hue-violet": "#7c3aed", // hue-violet
+    // "hue-pink": "#db2777", // hue-pink
+    // "hue-slate": "#64748b", // hue-slate
+    // — other —
+    // "scrim": "oklch(0.1288 0.0406 264.7 / 0.35)", // scrim
+    // "highlight": "#fde68a", // highlight
+    // "highlight-text": "#0f172a", // highlight-text
+    // "chart-base": "#047857", // chart-base
+    // "chart-seq-1": "#e4e5e7", // chart-seq-1
+    // "chart-seq-2": "#93bca9", // chart-seq-2
+    // "chart-seq-3": "#6da58d", // chart-seq-3
+    // "chart-seq-4": "#479073", // chart-seq-4
+    // "chart-seq-5": "#047857", // chart-seq-5
+  },
+  "bar": "#047857", // Bar.
+  // "shape": {"radius":{"chip":6,"control":7,"card":8,"surface":10,"popover":12}}, // Corners.
+  // "type": {"family":"inter","list":13}, // Type.
+}

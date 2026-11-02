@@ -16,6 +16,7 @@
   "invalid/not-json.json": "json",
   "invalid/out-of-gamut.json": "gamut",
   "invalid/radius-out-of-range.json": "shape",
+  "invalid/schema-not-text.json": "key",
   "invalid/too-large.json": "size",
   "invalid/unknown-kind.json": "kind",
   "invalid/version-not-a-number.json": "version",
@@ -24,5 +25,6 @@
   "valid/seeds-only-dark.json": "ok",
   "valid/seeds-only-light-oklch.json": "ok",
   "valid/unknown-key-kept.json": "ok",
-  "valid/unknown-token-kept.json": "ok"
+  "valid/unknown-token-kept.json": "ok",
+  "valid/with-schema.json": "ok"
 }

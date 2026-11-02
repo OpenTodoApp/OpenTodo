@@ -4,7 +4,7 @@ summary: How a theme sets the colours, corners and type of the app, making your 
 audience: user
 section: Reference
 specs: [themes, theme-editor, appearance-preferences, design-system, instance-branding]
-screens: []
+screens: [themes-files#theme-files]
 order: 24
 ---
 # Themes
@@ -59,21 +59,22 @@ You can make up to 20 themes of your own. They are in **Your themes**, below the
 
 - **Customise**, in the menu beside any theme card (the button with three dots), opens the editor on a copy that looks exactly like that theme, named "*Theme* (custom)", with you as the author. Its notes credit the original ("Based on Nord by Sven Greb (MIT)"), and it keeps the original's licence until you change it.
 - **New theme** starts from the OpenTodo theme of the side you are looking at, with every colour derived from four base colours.
+- **Import** reads a theme file or a VS Code colour theme ([below](#theme-files)), and **Download a template** saves a starter file to fill in with a text editor.
 - The menu of one of your themes also offers **Use for light** or **Use for dark**, **Edit**, **Duplicate**, **Export** and **Delete**. Deleting a theme that a side uses puts that side back on its OpenTodo theme in the same change, and **Undo** in the notice brings both back.
 
-At 20 themes, **New theme**, **Customise**, **Duplicate** and **Import** say *You have 20 themes; delete one to add another.* Themes made on two devices while both were offline are all kept, even past 20.
+At 20 themes, **New theme**, **Customise**, **Duplicate** and **Import** are unavailable (**Download a template** still works) and say *You have 20 themes; delete one to add another.* Themes made on two devices while both were offline are all kept, even past 20.
 
 A theme of yours whose colours fail some [contrast](#contrast) pairs can still be saved and used. Its card then reads **Low contrast · 2** (the number of pairs). High contrast on the [display](display-mode.md) still replaces its colours.
 
 ### The editor
 
-The editor is a page of its own: **Settings → Appearance → Theme and density → Your themes →** a theme. The header holds the theme's name, its kind (**Light** or **Dark**), **Undo**, **Redo**, **Save**, and a menu with **Export**, **Duplicate**, **Create the dark counterpart** (or light) and **Delete**. On a wide screen the controls are on the left and the preview on the right. On a narrower one the preview is a strip above the controls that you can fold away.
+The editor is a page of its own: **Settings → Appearance → Theme and density → Your themes →** a theme. The header holds the theme's name, **Undo**, **Redo**, **Save**, and a menu with **Export**, **Download as a template**, **Duplicate**, **Create the dark counterpart** (or light) and **Delete**. When the editor has room (about 830 pixels), the controls are on the left and the preview stays in view on the right while you scroll; the colours then sit two to a line. With less room (a phone, a tablet, a window with the sidebar open) the preview is a strip above the controls that you can fold away with **Preview**.
 
 - **Contrast** lists every pair of colours below AA, with both colours' names, the measured and required ratio and a sample. **Fix** on a pair keeps the colour's hue and moves only its lightness, to the nearest value at which every pair that colour is in passes. When no lightness can (a grey surface halfway between dark and light text), it moves the other colour of the pair instead and says so. **Fix all** fixes every pair as one change. A screen reader hears the number of failing pairs when it changes, and the result of each fix ("Muted text now 4.6 to 1 on Canvas").
-- **Base colours** are the canvas, surface, text and accent, plus four optional status colours (success, warning, danger, info) that are **Derived** until you set them. Each opens a colour picker with swatches, a hex field, and sliders for lightness, chroma and hue. The sliders work with the arrow keys (one step), Page Up and Page Down (ten steps), and Home and End, and they are read out in words. A colour a screen cannot show keeps its lightness and hue with less chroma, and the picker says *Adjusted to a displayable colour*. Changing a base colour changes every derived colour at once. Colours you set stay as you set them.
+- **Base colours** are the canvas, surface, text and accent, and **Status colours** four optional ones (success, warning, danger, info) that are **Derived** until you set them. Each is one line: its swatch, its name with **Derived** or **Set**, and its hex value, which you can type over (<kbd>Enter</kbd> or leaving the field applies it; a value that is not a colour says so and changes nothing). A colour in a pair below AA says how many under its name, for example *2 pairs below AA*. A set status colour has **Reset**. The swatch opens a colour picker with swatches, a hex field, and sliders for lightness, chroma and hue. The sliders work with the arrow keys (one step), Page Up and Page Down (ten steps), and Home and End, and they are read out in words. A colour a screen cannot show keeps its lightness and hue with less chroma, and the picker says *Adjusted to a displayable colour*. Changing a base colour changes every derived colour at once. Colours you set stay as you set them.
 - **Shape and type**: the corners as **Square**, **Default**, **Round** or **Custom** (five values from 0 to 20 px), and the font (**OpenTodo Inter**, **System**, **Serif**, **Monospace**, or **Installed font** with its name). An installed font is used only on devices that have it, others show the system font, and it is never downloaded. Last comes the list text size (13, 14 or 15 px).
-- **Advanced** lists every colour of the theme in its group (surfaces, text, lines, accent, status, priorities, labels, other). Each one shows whether it is **Derived** or **Set**, its value, its worst pair ("4.2:1 on Canvas"), **Undo** for its last change and **Reset**, which makes it derived again. Each group counts its set colours and its warnings. The filter finds colours by their name in your language, their English name or their id (`muted`).
-- **About this theme**: the author, the licence and notes.
+- **Advanced** is folded, with how many colours are set and how many have warnings beside it; it opens by itself while a colour has a warning. It lists every colour of the theme in its group (surfaces, text, lines, accent, status, priorities, labels, other). Each one shows whether it is **Derived** or **Set**, its value, its worst pair ("4.2:1 on Canvas"), **Undo** for its last change and **Reset**, which makes it derived again. Each group counts its set colours and its warnings. The filter finds colours by their name in your language, their English name or their id (`muted`).
+- **About this theme**: its kind (**Light** or **Dark**), the author, the licence and notes.
 
 The **preview** shows a task list, a board, the week calendar and a task panel, built from sample tasks (never your own). It follows every change at once and does not change the rest of the app. It cannot take focus; the Contrast list and the Advanced rows describe the same colours to a screen reader. **Create the dark counterpart** (or light) starts a new theme of the other kind with the same accent and status colours, and with the canvas, surface and text mirrored at their hues.
 
@@ -81,7 +82,24 @@ Every change is kept as a draft on this device until you **Save**, so a reload o
 
 ### Theme files
 
-**Export** (in a theme's menu or the editor's) saves the theme as `name.opentodo-theme.json`, made on your device. **Import a theme file**, or dropping a file onto **Your themes**, reads a file of up to 64 KB on your device. A valid theme opens in the editor as an unsaved draft, renamed "Name (2)" when you already have one by that name, and saving it adds it to your themes. An invalid file says what is wrong and where, for example *Line 12: canvas is not a colour.*, and nothing is saved or synced. Only a saved theme ever leaves your device, as part of your synced data.
+**Export** (in a theme's menu or the editor's) saves the theme as `name.opentodo-theme.json`, made on your device. **Import a theme file**, or dropping a file onto **Your themes**, reads a file of up to 64 KB on your device. A valid theme opens in the editor as an unsaved draft, renamed "Name (2)" when you already have one by that name, and saving it adds it to your themes. An invalid file says what is wrong and where, for example *Line 12: canvas is not a colour.*, and nothing is saved or synced. Only a saved theme ever leaves your device, as part of your synced data. A theme file may hold notes (lines and line ends after `//`, and `/* … */`) and trailing commas.
+
+**Download a template** (under **Your themes**) saves a starter file, `name-template.opentodo-theme.jsonc`, made on your device from the theme you are using (or, in the editor's menu, from the theme you are editing). It holds every key of the format with a short note in your language, the base and status colours, and every colour of the [token list](#tokens). The colours the theme does not set are lines that start with `//` and show the colour they have now: remove the `//` to set one yourself, change any value, then **Import → Theme file**. The file starts with `$schema`, the address of the format's [JSON Schema](themes/opentodo-theme.schema.json), so an editor such as VS Code checks the file and completes keys as you type; OpenTodo never opens that address. Imported unchanged, a template looks exactly like the theme it was made from.
+
+```jsonc
+{
+  "$schema": "https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/docs/themes/opentodo-theme.schema.json",
+  "opentodoTheme": 1, // The format version. Keep 1.
+  "kind": "light", // light or dark: a theme is one side.
+  "seeds": {
+    "accent": "#047857", // Buttons, links, focus and selection.
+    // "danger": "#bd2f2a", // Errors, late tasks and delete.
+  },
+  "tokens": {
+    // "muted": "#5c6169", // Muted text
+  },
+}
+```
 
 ### Importing a VS Code colour theme
 
@@ -144,6 +162,7 @@ A theme is a small JSON file (`.opentodo-theme.json`). It names a few **seeds**,
 
 | Key | Required | Value |
 | --- | --- | --- |
+| `$schema` | no | The address of the JSON Schema, for editors that check the file; up to 300 characters of text, never opened by OpenTodo. Dropped on import. |
 | `opentodoTheme` | yes | The format version, `1`. Adding a token never changes it; a newer format is not applied by an older app. |
 | `id` | yes | 1 to 64 characters of `a-z`, `0-9` and `-`. |
 | `name` | yes | 1 to 60 characters, shown on the theme's card. |

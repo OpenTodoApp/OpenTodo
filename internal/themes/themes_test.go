@@ -4,8 +4,71 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"regexp"
 	"testing"
 )
+
+// TestTemplatesAreValid: the theme templates the web app makes (template.test.ts
+// writes OpenTodo Light's and Dark's into testdata/template) are documents the
+// server accepts once their notes and trailing commas are taken out, as written and
+// with every commented value line set.
+func TestTemplatesAreValid(t *testing.T) {
+	files, _ := filepath.Glob("testdata/template/*.jsonc")
+	if len(files) != 2 {
+		t.Fatalf("found %d templates, want OpenTodo Light's and Dark's", len(files))
+	}
+	uncomment := regexp.MustCompile(`(?m)^(\s*)// (".*)$`)
+	for _, f := range files {
+		raw, err := os.ReadFile(f)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for name, text := range map[string][]byte{"as written": raw, "uncommented": uncomment.ReplaceAll(raw, []byte("$1$2"))} {
+			doc := stripJSONC(text)
+			var v map[string]any
+			if err := json.Unmarshal(doc, &v); err != nil {
+				t.Fatalf("%s %s: %v", f, name, err)
+			}
+			if v["$schema"] == nil {
+				t.Errorf("%s %s: no $schema", f, name)
+			}
+			if err := Validate(doc); err != nil {
+				t.Errorf("%s %s: %v", f, name, err)
+			}
+		}
+	}
+}
+
+// stripJSONC drops // comments outside strings and commas before a closing bracket,
+// as the web app's theme file reader does (web/src/lib/theme/jsonc.ts).
+func stripJSONC(src []byte) []byte {
+	var out []byte
+	inString := false
+	for i := 0; i < len(src); i++ {
+		c := src[i]
+		switch {
+		case inString:
+			out = append(out, c)
+			if c == '\\' && i+1 < len(src) {
+				i++
+				out = append(out, src[i])
+			} else if c == '"' {
+				inString = false
+			}
+		case c == '"':
+			inString = true
+			out = append(out, c)
+		case c == '/' && i+1 < len(src) && src[i+1] == '/':
+			for i < len(src) && src[i] != '\n' {
+				i++
+			}
+			i--
+		default:
+			out = append(out, c)
+		}
+	}
+	return regexp.MustCompile(`,(\s*[}\]])`).ReplaceAll(out, []byte("$1"))
+}
 
 // TestSharedExamples reads the documents the web app's format.test.ts reads and
 // requires the same answer for each (theme-engine D1, docs/contracts.md).

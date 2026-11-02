@@ -74,11 +74,11 @@ export function BrandingView({ value, online, busy, error, saved, onSaveName, on
         control={<>
           <label className={`ui-btn ui-btn--secondary ui-btn--sm focus-within:ring-2 focus-within:ring-focus ${disabled ? 'pointer-events-none text-faint' : 'cursor-pointer'}`} aria-disabled={disabled || undefined}>
             {logo ? t('Change logo') : t('Choose logo')}
-            <input type="file" accept={LOGO_TYPES.join(',')} className="sr-only" disabled={disabled} onChange={choose} data-branding-file />
+            <input type="file" accept={LOGO_TYPES.join(',')} className="sr-only" disabled={disabled} onChange={choose} data-branding-file data-touch-exempt />
           </label>
           {logo && <Button variant="danger" size="sm" disabled={disabled} busy={busy} onClick={onRemoveLogo} data-branding-remove>{t('Remove logo')}</Button>}
         </>} />
-      <div className="flex flex-wrap items-center gap-3 pt-3 text-meta">
+      <div className="flex flex-wrap items-center gap-3 py-3 text-meta empty:hidden" data-branding-status>
         {tooLong && <span className="text-danger" role="alert">{t('The name is at most {max} characters.', { max: NAME_MAX })}</span>}
         {(fileError || error) && <span className="text-danger" role="alert">{fileError ?? error}</span>}
         {saved && !dirty && !fileError && !error && <span className="text-muted" role="status">{t('Saved.')}</span>}

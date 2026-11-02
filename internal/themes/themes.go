@@ -53,7 +53,7 @@ var (
 )
 
 var (
-	knownKeys     = []string{"opentodoTheme", "id", "name", "author", "licence", "source", "kind", "seeds", "tokens", "bar", "notes", "shape", "type"}
+	knownKeys     = []string{"$schema", "opentodoTheme", "id", "name", "author", "licence", "source", "kind", "seeds", "tokens", "bar", "notes", "shape", "type"}
 	requiredSeeds = []string{"canvas", "surface", "text", "accent"}
 	radiusSteps   = []string{"chip", "control", "card", "surface", "popover"}
 	families      = []string{"inter", "system", "serif", "mono"}
@@ -130,6 +130,10 @@ func validate(v any) {
 	text(d["name"], "name", 60, "name", 1)
 	text(d["author"], "author", 120, "text", 0)
 	text(d["licence"], "licence", 120, "text", 0)
+	// "$schema" names the JSON Schema for an editor (a theme template carries it); text only, never fetched.
+	if s, ok := d["$schema"]; ok {
+		text(s, "$schema", 300, "key", 0)
+	}
 	if s, ok := d["source"]; ok {
 		text(s, "source", 300, "text", 0)
 	}
