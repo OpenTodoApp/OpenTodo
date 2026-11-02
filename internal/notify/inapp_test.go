@@ -67,6 +67,38 @@ func TestInAppStoresUnblocked(t *testing.T) {
 	}
 }
 
+// chore-rotation D5: a turn passing is an assigned notification marked as a turn.
+func TestInAppStoresTurn(t *testing.T) {
+	ctx := context.Background()
+	db, err := store.Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if _, err := db.Exec(`INSERT INTO users(id,email,password_hash,created_at) VALUES('bob','b@example.com','h',1)`); err != nil {
+		t.Fatal(err)
+	}
+	n := NewInApp(db, nil)
+	n.Assigned(ctx, Assigned{AssigneeID: "bob", ActorID: "alice", TaskID: "t", TaskTitle: "Bins", Turn: true})
+	n.Assigned(ctx, Assigned{AssigneeID: "bob", ActorID: "alice", TaskID: "u", TaskTitle: "Lamp"})
+	list, _, err := n.List(ctx, "bob")
+	if err != nil || len(list) != 2 {
+		t.Fatalf("list = %+v, %v", list, err)
+	}
+	turns := 0
+	for _, l := range list {
+		if l.Kind != KindAssigned {
+			t.Fatalf("kind = %s", l.Kind)
+		}
+		if strings.Contains(string(l.Payload), `"turn":true`) {
+			turns++
+		}
+	}
+	if turns != 1 {
+		t.Fatalf("payloads = %+v", list)
+	}
+}
+
 // reliable-background-jobs, one-job-model: the 90-day retention is applied
 // when the oldest read notification passes it (NextSweep is the housekeeping
 // job's deadline), not only when the server starts; every kind is stored by

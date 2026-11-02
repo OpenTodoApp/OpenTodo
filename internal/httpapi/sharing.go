@@ -307,6 +307,8 @@ func (s *Server) annotateProjects(ctx context.Context, entity string, list ...op
 			// And energy, null when none (task-energy D7).
 			presentEnergy(e)
 			presentSector(e)
+			// And the people who take turns, [] when none (chore-rotation D6).
+			presentRotation(e)
 		}
 		return nil
 	}

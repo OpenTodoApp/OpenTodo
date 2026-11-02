@@ -396,6 +396,19 @@ func (r *resolver) resolve(op Op) (scope, reason string, err error) {
 			}
 		}
 	}
+	if op.Entity == "task" && op.Field == "rotation" {
+		// Every person who takes turns must be assignable (chore-rotation D1).
+		for _, id := range idList(op.Value) {
+			ok, err := r.canBeAssigned(scope, id)
+			if err != nil {
+				return "", "", err
+			}
+			if !ok {
+				r.detail = id
+				return "", ReasonNotAMember, nil
+			}
+		}
+	}
 	return scope, "", nil
 }
 

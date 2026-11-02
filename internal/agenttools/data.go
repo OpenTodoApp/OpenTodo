@@ -32,7 +32,9 @@ type snapshot struct {
 	sections map[string]string // id → name
 	tasks    []opsync.Entity
 	people   map[string]string // account id → display name
-	shared   map[string]opsync.ProjectAccess
+	// members maps a shared project id onto its current members (chore-rotation).
+	members map[string]map[string]bool
+	shared  map[string]opsync.ProjectAccess
 	// sectionProject maps a section id onto its project id (write validation).
 	sectionProject map[string]string
 	// sectionRows are the live section rows, for the flow of their tasks (project-flow-modes).
@@ -89,7 +91,7 @@ func (r *Registry) keptAway(ctx context.Context, projects []opsync.Entity) (map[
 }
 
 func (r *Registry) load(ctx context.Context, userID string) (*snapshot, error) {
-	snap := &snapshot{projects: map[string]opsync.Entity{}, labels: map[string]string{}, sections: map[string]string{}, people: map[string]string{}, sectionProject: map[string]string{}, fieldDefs: map[string][]opsync.Entity{}}
+	snap := &snapshot{projects: map[string]opsync.Entity{}, labels: map[string]string{}, sections: map[string]string{}, people: map[string]string{}, members: map[string]map[string]bool{}, sectionProject: map[string]string{}, fieldDefs: map[string][]opsync.Entity{}}
 	var err error
 	if snap.projList, err = r.list(ctx, userID, "project", false); err != nil {
 		return nil, err
@@ -186,7 +188,9 @@ func (r *Registry) load(ctx context.Context, userID string) (*snapshot, error) {
 			return nil, err
 		}
 		for _, m := range ms {
+			snap.members[m.ProjectID] = map[string]bool{}
 			for _, mem := range m.Members {
+				snap.members[m.ProjectID][mem.UserID] = true
 				name := mem.Name
 				if name == "" {
 					name = mem.Email
@@ -393,6 +397,8 @@ type taskText struct {
 	Section     string   `json:"section,omitempty"`
 	Labels      []string `json:"labels"`
 	Assignee    string   `json:"assignee,omitempty"`
+	// Rotation names the people who take turns, in order (chore-rotation).
+	Rotation []string `json:"rotation,omitempty"`
 	// Fields holds the string custom field values (text, link, date, choice)
 	// keyed by definition id: people wrote them (custom-fields).
 	Fields map[string]string `json:"fields,omitempty"`
@@ -444,6 +450,9 @@ type taskOut struct {
 	Overdue    bool     `json:"overdue,omitempty"`
 	LabelIDs   []string `json:"label_ids"`
 	AssigneeID *string  `json:"assignee_id,omitempty"`
+	// Rotation is the account ids of the people who take turns on a recurring
+	// task, in order; completing it assigns the next (chore-rotation).
+	Rotation   []string `json:"rotation,omitempty"`
 	Recurrence *string  `json:"recurrence,omitempty"`
 	// NextOccurrences are the next three projected dates of an open recurring
 	// task (floating YYYY-MM-DD), from the calculator every device draws
@@ -558,6 +567,7 @@ func (snap *snapshot) render(t opsync.Entity, loc *time.Location, today string, 
 		out.AssigneeID = &aid
 		out.Untrusted.Assignee = snap.people[aid]
 	}
+	snap.rotationView(t, &out)
 	if m := int(num(t, "estimate_minutes")); m > 0 {
 		out.EstimateMinutes = &m
 	}
