@@ -9,6 +9,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 	"github.com/OpenTodoApp/opentodo/internal/location"
 	"github.com/OpenTodoApp/opentodo/internal/origin"
 	"github.com/OpenTodoApp/opentodo/internal/recurrence"
@@ -144,49 +145,90 @@ const (
 	// "YYYY-MM" or a quarter "YYYY-Qn" with a year from 2000 to 2999, checked by
 	// internal/sector (task.sector, OpenSpec change time-sectors, design D1).
 	kSector
+	// kObjectiveTitle is an objective's title (OpenSpec change plan-objectives,
+	// design D1): 1 to MaxObjectiveTitle characters after trimming, on one line,
+	// or an encrypted account's ciphertext string in its place.
+	kObjectiveTitle
+	// kObjectivePeriod is an objective's period: a quarter "YYYY-Qn" or an ISO
+	// week "YYYY-Www" checked by internal/sector. Months and "" are refused
+	// (plan-objectives D1).
+	kObjectivePeriod
 )
+
+// MaxObjectiveTitle is the longest objective title in characters (plan-objectives D2).
+const MaxObjectiveTitle = 140
 
 // kindChecks validates an op value per field kind (see the kind constants
 // above). checkKind looks the check up; kinds_test.go keeps the table whole.
 var kindChecks = map[kind]func(raw json.RawMessage) error{
-	kString:         checkString,
-	kNullableString: orNull(checkIDString),
-	kNumber:         checkNumber,
-	kNullableNumber: orNull(checkNullableNumber),
-	kBool:           checkBool,
-	kPriority:       checkPriority,
-	kStart:          orNull(checkStart),
-	kDate:           orNull(checkDate),
-	kDue:            orNull(checkDue),
-	kStringList:     checkStringList,
-	kIDList:         checkIDList,
-	kPositiveInt:    orNull(checkPositiveInt),
-	kRecurrence:     orNull(checkRecurrence),
-	kID:             checkID,
-	kReminderKind:   checkReminderKind,
-	kOffsetMinutes:  orNull(checkOffsetMinutes),
-	kNullableText:   orNull(checkNullableText),
-	kDoc:            checkDoc,
-	kFieldValue:     checkFieldValue,
-	kInstant:        orNull(checkInstant),
-	kOrigin:         origin.CheckValue,
-	kRule:           orNull(checkRule),
-	kLocation:       location.CheckValue,
-	kGeo:            location.CheckGeo,
-	kRuleTrigger:    ruleval.CheckTrigger,
-	kRuleCondition:  orNull(ruleval.CheckCondition),
-	kRuleActions:    orNull(ruleval.CheckActions),
-	kRoutineSteps:   orNull(ruleval.CheckSteps),
-	kReactions:      checkReactions,
-	kDayPart:        orNull(checkDayPart),
-	kClock:          checkClock,
-	kWeekdays:       checkWeekdays,
-	kEnergy:         checkEnergy,
-	kOrderList:      checkOrderList,
-	kSplit:          orNull(checkSplit),
-	kFocusSession:   checkFocusSession,
-	kThemeDoc:       orNull(checkThemeDoc),
-	kSector:         checkSector,
+	kString:          checkString,
+	kNullableString:  orNull(checkIDString),
+	kNumber:          checkNumber,
+	kNullableNumber:  orNull(checkNullableNumber),
+	kBool:            checkBool,
+	kPriority:        checkPriority,
+	kStart:           orNull(checkStart),
+	kDate:            orNull(checkDate),
+	kDue:             orNull(checkDue),
+	kStringList:      checkStringList,
+	kIDList:          checkIDList,
+	kPositiveInt:     orNull(checkPositiveInt),
+	kRecurrence:      orNull(checkRecurrence),
+	kID:              checkID,
+	kReminderKind:    checkReminderKind,
+	kOffsetMinutes:   orNull(checkOffsetMinutes),
+	kNullableText:    orNull(checkNullableText),
+	kDoc:             checkDoc,
+	kFieldValue:      checkFieldValue,
+	kInstant:         orNull(checkInstant),
+	kOrigin:          origin.CheckValue,
+	kRule:            orNull(checkRule),
+	kLocation:        location.CheckValue,
+	kGeo:             location.CheckGeo,
+	kRuleTrigger:     ruleval.CheckTrigger,
+	kRuleCondition:   orNull(ruleval.CheckCondition),
+	kRuleActions:     orNull(ruleval.CheckActions),
+	kRoutineSteps:    orNull(ruleval.CheckSteps),
+	kReactions:       checkReactions,
+	kDayPart:         orNull(checkDayPart),
+	kClock:           checkClock,
+	kWeekdays:        checkWeekdays,
+	kEnergy:          checkEnergy,
+	kOrderList:       checkOrderList,
+	kSplit:           orNull(checkSplit),
+	kFocusSession:    checkFocusSession,
+	kThemeDoc:        orNull(checkThemeDoc),
+	kSector:          checkSector,
+	kObjectiveTitle:  checkObjectiveTitle,
+	kObjectivePeriod: checkObjectivePeriod,
+}
+
+// checkObjectiveTitle accepts a one-line title of 1 to MaxObjectiveTitle
+// characters after trimming, or ciphertext (plan-objectives D1).
+func checkObjectiveTitle(raw json.RawMessage) error {
+	var v string
+	if err := json.Unmarshal(raw, &v); err != nil || isNullValue(raw) {
+		return errors.New("must be a string")
+	}
+	if e2ee.IsCiphertext(v) {
+		return nil
+	}
+	v = strings.TrimSpace(v)
+	if v == "" || utf8.RuneCountInString(v) > MaxObjectiveTitle || strings.ContainsAny(v, "\r\n") {
+		return fmt.Errorf("must be one line of 1 to %d characters", MaxObjectiveTitle)
+	}
+	return nil
+}
+
+// checkObjectivePeriod accepts a quarter or an ISO week, never a month or ""
+// (plan-objectives D1).
+func checkObjectivePeriod(raw json.RawMessage) error {
+	var v string
+	_ = json.Unmarshal(raw, &v)
+	if p, ok := sector.Parse(v); !ok || isNullValue(raw) || p.Kind == sector.Month {
+		return errors.New(`must be a quarter "YYYY-Qn" or an ISO week "YYYY-Www"`)
+	}
+	return nil
 }
 
 // checkSector accepts "" or a valid time sector (time-sectors D1); null is refused.

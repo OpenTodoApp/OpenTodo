@@ -849,6 +849,29 @@ var Schema = map[string]map[string]Field{
 		// slot) before Tomorrow; clients read an empty or unknown value as off
 		// and keep the stored value. Settings, never content.
 		"upcoming_today": {Kind: kString, Default: `""`},
+		// Objectives (OpenSpec change plan-objectives, design D8): "on" shows the
+		// Plan's objectives strip and the weekly review's Objectives section;
+		// clients read an empty or unknown value as off and keep the stored
+		// value. Objectives stay in the export, REST, the CLI and MCP either way.
+		"objectives": {Kind: kString, Default: `""`},
+	},
+	// objective: one quarterly or weekly objective (OpenSpec change
+	// plan-objectives, design D1). Personal like place: it resolves to the
+	// author's personal scope, syncs to that user's devices only and derives no
+	// activity event. At most 5 open objectives per period: REST refuses a
+	// sixth, sync cannot refuse convergently and devices show all of them.
+	"objective": {
+		// The objective, one line of 1 to 140 characters (ciphertext for an
+		// encrypted account).
+		"title": {Kind: kObjectiveTitle, Default: `""`, Content: true},
+		// The quarter "YYYY-Qn" or ISO week "YYYY-Www" it is for; never a month.
+		"period": {Kind: kObjectivePeriod, Default: `""`},
+		// Order within its period.
+		"position": {Kind: kNumber, Default: `0`},
+		// When it was marked done, Unix ms; 0 = open.
+		"done_at":    {Kind: kNumber, Default: `0`},
+		"created_at": {Kind: kNumber, Default: `0`},
+		"deleted_at": {Kind: kNullableNumber, Default: `null`},
 	},
 	// review: when the user last finished a weekly review (OpenSpec change
 	// `stats-and-review`, design D4). One row with the entityId "me"; like
@@ -894,7 +917,7 @@ var Schema = map[string]map[string]Field{
 }
 
 // Plural maps REST collection names to entity names.
-var Plural = map[string]string{"projects": "project", "tasks": "task", "labels": "label", "views": "view", "reminders": "reminder", "sections": "section", "fields": "field", "rules": "rule", "frames": "frame", "slots": "slot", "notes": "note"}
+var Plural = map[string]string{"projects": "project", "tasks": "task", "labels": "label", "views": "view", "reminders": "reminder", "sections": "section", "fields": "field", "rules": "rule", "frames": "frame", "slots": "slot", "notes": "note", "objectives": "objective"}
 
 // ErrInvalidOp wraps every validation failure.
 var ErrInvalidOp = errors.New("invalid op")
