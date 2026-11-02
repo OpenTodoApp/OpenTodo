@@ -146,6 +146,11 @@
           "description": "log a win: create the task already completed now (refuses --repeat and --remind)"
         },
         {
+          "name": "new",
+          "type": "bool",
+          "description": "in a reusable list, create a new task even when an item with the same title is there"
+        },
+        {
           "name": "idempotency-key",
           "type": "string",
           "description": "1-128 characters of [A-Za-z0-9._:-]; running again with the same key returns the same entity instead of creating another"
@@ -1203,6 +1208,46 @@
           "name": "undo",
           "type": "bool",
           "description": "restore an archived project"
+        }
+      ],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/project"
+      }
+    },
+    {
+      "name": "project edit",
+      "summary": "change a project's reusable-list mode",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [
+        {
+          "name": "reusable",
+          "type": "bool",
+          "description": "make it a reusable list: adding an item already there reopens it"
+        },
+        {
+          "name": "no-reusable",
+          "type": "bool",
+          "description": "make it an ordinary project again"
+        },
+        {
+          "name": "aisles",
+          "type": "bool",
+          "description": "sort new items of the reusable list into aisle sections"
+        },
+        {
+          "name": "no-aisles",
+          "type": "bool",
+          "description": "stop sorting new items into aisle sections"
         }
       ],
       "writes": true,
@@ -3781,6 +3826,14 @@
             "null"
           ]
         },
+        "reusable": {
+          "type": "boolean",
+          "description": "a reusable list: adding an item already there reopens it"
+        },
+        "aisles": {
+          "type": "boolean",
+          "description": "a reusable list that sorts new items into aisle sections"
+        },
         "role": {
           "type": "string",
           "description": "your role in a shared project"
@@ -4345,6 +4398,15 @@
             "number",
             "null"
           ]
+        },
+        "reused": {
+          "type": "string",
+          "enum": [
+            "reopened",
+            "open",
+            "unavailable"
+          ],
+          "description": "only on ot add in a reusable list: the item was reopened, was already open, or the server could not match an encrypted title"
         },
         "completed_by": {
           "type": [

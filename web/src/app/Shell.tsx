@@ -54,6 +54,7 @@ import { useRunningRepair } from '../lib/timeEntries'
 import { TrackingPill } from './TrackingIndicator'
 import { BreakReminder } from './focus/BreakReminder'
 import { SkipLink, usePageFocus } from './pageFocus'
+import { useDuplicateCollapse } from '../lib/duplicateCollapse'
 
 // Optional Vim layer (vim-keybindings): its own chunk, fetched only while the
 // per-device switch is on, so the default bundle carries just this boundary.
@@ -112,8 +113,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   // A travelling device: re-read the time zone whenever the app becomes visible
   // (absolute-datetimes), so zoned dues re-render in the new zone.
   useEffect(() => watchViewerZone(), [])
-  // Two devices started tracking while offline: keep one running entry (time-tracking D2).
-  useRunningRepair()
+  // Offline doubles converge: one running time entry (time-tracking D2), one item per title in a reusable list (reusable-lists D4).
+  useRunningRepair(); useDuplicateCollapse()
   // Start view (per device, OpenSpec `custom-views`): applied once per launch, and only
   // when the app opens at its root, so deep links and reloads keep their page.
   useEffect(() => {

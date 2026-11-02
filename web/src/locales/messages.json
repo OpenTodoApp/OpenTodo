@@ -1005,6 +1005,9 @@
   "Add a webhook to use this": [
     "web/src/lib/rules/catalogue.ts"
   ],
+  "Add aisle sections?": [
+    "web/src/app/menus/ListModeStep.tsx"
+  ],
   "Add an Ask AI or Summarise step first": [
     "web/src/lib/rules/ai.ts"
   ],
@@ -1013,6 +1016,9 @@
   ],
   "Add and open": [
     "web/src/app/quickadd/FieldRows.tsx"
+  ],
+  "Add anyway": [
+    "web/src/app/reuseList.ts"
   ],
   "Add by email": [
     "web/src/app/WorkspaceMembers.tsx"
@@ -1110,6 +1116,9 @@
   ],
   "Add row below": [
     "web/src/app/editorCommands.ts"
+  ],
+  "Add sections": [
+    "web/src/app/menus/ListModeStep.tsx"
   ],
   "Add step": [
     "web/src/app/routines/AddStep.tsx",
@@ -1242,6 +1251,9 @@
   ],
   "Added {label}": [
     "web/src/lib/undoActions.ts"
+  ],
+  "Adding an item that’s already here brings it back instead of duplicating it.": [
+    "web/src/app/menus/ListModeStep.tsx"
   ],
   "Adding by email works for accounts on this server; invite anyone else with a link. Labels stay personal.": [
     "web/src/app/ShareDialog.tsx"
@@ -2207,6 +2219,9 @@
   ],
   "Backups, attachments, outgoing email, branding, maps, automations, speech to text and the audit log": [
     "web/src/app/settingsSections.ts"
+  ],
+  "Bakery": [
+    "web/src/lib/aisles/index.ts"
   ],
   "Base URL": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -4008,6 +4023,9 @@
     "web/src/app/review/DailyCheck.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
+  "Dairy and eggs": [
+    "web/src/lib/aisles/index.ts"
+  ],
   "Danger": [
     "web/src/app/themes/tokenNames.ts"
   ],
@@ -4838,6 +4856,9 @@
   ],
   "Draw the kitchen plan": [
     "web/src/app/themes/previewData.ts"
+  ],
+  "Drinks": [
+    "web/src/lib/aisles/index.ts"
   ],
   "Drop files to attach them to this task": [
     "web/src/app/task-detail/AttachmentsRow.tsx"
@@ -6397,6 +6418,9 @@
   "From {text}": [
     "web/src/app/OriginChip.tsx"
   ],
+  "Frozen": [
+    "web/src/lib/aisles/index.ts"
+  ],
   "Full Open Loops method": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -6696,6 +6720,9 @@
   "Got it": [
     "web/src/app/assistant/DisclosureNotice.tsx"
   ],
+  "Got it|list": [
+    "web/src/app/task-list/ListGroups.tsx"
+  ],
   "Graphite": [
     "web/src/lib/colourNames.ts"
   ],
@@ -6982,6 +7009,9 @@
   ],
   "Hourly": [
     "web/src/app/BackupsPanel.tsx"
+  ],
+  "Household": [
+    "web/src/lib/aisles/index.ts"
   ],
   "Hover": [
     "web/src/app/themes/tokenNames.ts"
@@ -8306,6 +8336,7 @@
     "web/src/lib/attachments.ts"
   ],
   "List": [
+    "web/src/app/menus/listMenu.tsx",
     "web/src/app/task-list/ListChrome.tsx",
     "web/src/app/themes/ThemePreview.tsx",
     "web/src/app/views/DisplayPanel.tsx",
@@ -8713,6 +8744,9 @@
   "Measuring…": [
     "web/src/app/themes/ContrastPanel.tsx",
     "web/src/app/themes/ImportReport.tsx"
+  ],
+  "Meat and fish": [
+    "web/src/lib/aisles/index.ts"
   ],
   "Medium": [
     "web/src/app/routines/words.tsx",
@@ -9357,6 +9391,9 @@
   ],
   "New invitation": [
     "web/src/app/MembersPanel.tsx"
+  ],
+  "New items go to the aisle section their name suggests.": [
+    "web/src/app/menus/ListModeStep.tsx"
   ],
   "New label": [
     "web/src/app/LabelsView.tsx",
@@ -10190,7 +10227,8 @@
     "web/src/app/ArchivePrompt.tsx",
     "web/src/app/ProjectInviteScreen.tsx",
     "web/src/app/WorkspaceInviteScreen.tsx",
-    "web/src/app/focus/BreakReminder.tsx"
+    "web/src/app/focus/BreakReminder.tsx",
+    "web/src/app/menus/ListModeStep.tsx"
   ],
   "Not run": [
     "web/src/app/routines/RunHistory.tsx"
@@ -10889,6 +10927,9 @@
   "Only an account with end-to-end encryption answers AI connectors from a device.": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "Only editors can change this.": [
+    "web/src/app/menus/ListModeStep.tsx"
+  ],
   "Only editors can run it": [
     "web/src/app/routines/RoutinesView.tsx"
   ],
@@ -11420,6 +11461,9 @@
   "Panels": [
     "web/src/app/themes/EditorSections.tsx"
   ],
+  "Pantry": [
+    "web/src/lib/aisles/index.ts"
+  ],
   "Parallel": [
     "web/src/app/menus/flowMenu.ts"
   ],
@@ -11668,6 +11712,9 @@
     "web/src/app/routines/Starters.tsx",
     "web/src/app/workspaceNav.ts",
     "web/src/lib/templateLibrary.ts"
+  ],
+  "Personal care": [
+    "web/src/lib/aisles/index.ts"
   ],
   "Photo {n}": [
     "web/src/app/assistant/ComposerCapture.tsx"
@@ -12048,6 +12095,9 @@
   ],
   "Process {count}": [
     "web/src/app/task-list/ListChrome.tsx"
+  ],
+  "Produce": [
+    "web/src/lib/aisles/index.ts"
   ],
   "Profile": [
     "web/src/app/settingsIndex.ts",
@@ -12881,6 +12931,9 @@
   "Reopened": [
     "web/src/lib/assistant.ts"
   ],
+  "Reopened on the list": [
+    "web/src/lib/reuseAdd.ts"
+  ],
   "Reorder tasks in project lists, boards and the Inbox, and projects in the sidebar; drop on the middle of a row to nest it; Esc cancels": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -13147,6 +13200,10 @@
     "web/src/app/ProjectInviteScreen.tsx",
     "web/src/app/ResetScreen.tsx",
     "web/src/app/WorkspaceInviteScreen.tsx"
+  ],
+  "Reusable list": [
+    "web/src/app/menus/ListModeStep.tsx",
+    "web/src/app/menus/listMenu.tsx"
   ],
   "Review": [
     "web/src/app/Sidebar.tsx",
@@ -14906,6 +14963,10 @@
   "Sort first": [
     "web/src/app/routines/StepCard.tsx"
   ],
+  "Sort into aisles": [
+    "web/src/app/menus/ListModeStep.tsx",
+    "web/src/app/menus/listMenu.tsx"
+  ],
   "Sort {list} by {by}": [
     "web/src/lib/rules/sentence.ts"
   ],
@@ -15184,6 +15245,9 @@
   ],
   "Stop repeating": [
     "web/src/app/RecurrenceField.tsx"
+  ],
+  "Stop sorting into aisles": [
+    "web/src/app/menus/listMenu.tsx"
   ],
   "Stop the routine": [
     "web/src/lib/rules/sentence.ts"
@@ -16807,6 +16871,9 @@
   "This address is on a private network. The server owner can allow private targets.": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "This aisle is not one of the standard aisles.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "This and following": [
     "web/src/app/task-detail/OccurrenceScope.tsx"
   ],
@@ -17936,6 +18003,9 @@
     "web/src/app/routines/RoutinesDevice.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
+  "Turn off Reusable list": [
+    "web/src/app/menus/listMenu.tsx"
+  ],
   "Turn off Vim keybindings": [
     "web/src/app/palette/registry.ts"
   ],
@@ -17974,6 +18044,9 @@
   ],
   "Turn on Energy levels to use this": [
     "web/src/lib/rules/catalogue.ts"
+  ],
+  "Turn on Reusable list": [
+    "web/src/app/menus/listMenu.tsx"
   ],
   "Turn on Run my routines on a device.": [
     "web/src/app/routines/RoutinesDevice.tsx"
@@ -20532,6 +20605,9 @@
   "member": [
     "web/src/lib/roleNames.ts"
   ],
+  "merged a duplicate": [
+    "web/src/lib/activity.ts"
+  ],
   "minutes": [
     "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/app/RemindersField.tsx"
@@ -22146,6 +22222,9 @@
   "{n, plural, one {# item changed} other {# items changed}}": [
     "web/src/app/auditFormat.ts"
   ],
+  "{n, plural, one {# item ticked off} other {# items ticked off}}": [
+    "web/src/app/task-list/ListGroups.tsx"
+  ],
   "{n, plural, one {# item written by AI} other {# items written by AI}}": [
     "web/src/lib/rules/inbox.ts"
   ],
@@ -22471,6 +22550,9 @@
   ],
   "{n, plural, one {Add # task} other {Add # tasks}}": [
     "web/src/app/quickadd/PasteOffer.tsx"
+  ],
+  "{n, plural, one {Added # aisle section} other {Added # aisle sections}}": [
+    "web/src/app/menus/ListModeStep.tsx"
   ],
   "{n, plural, one {All of # condition} other {All of # conditions}}": [
     "web/src/app/views/FilterChips.tsx"
@@ -23006,6 +23088,9 @@
   "{reminders, plural, one {# reminder} other {# reminders}}": [
     "web/src/lib/facets.ts"
   ],
+  "{reopened, plural, one {# back on the list} other {# back on the list}}, {open, plural, one {# already there} other {# already there}}, {added, plural, one {# added} other {# added}}": [
+    "web/src/app/reuseList.ts"
+  ],
   "{restored} restored, {kept} kept because they changed after the run": [
     "web/src/app/palette/routineCommand.ts",
     "web/src/app/routines/ProposalReview.tsx",
@@ -23098,6 +23183,13 @@
   "{title} calendar": [
     "web/src/app/MonthView.tsx",
     "web/src/app/YearView.tsx"
+  ],
+  "{title} is already on the list": [
+    "web/src/app/reuseList.ts"
+  ],
+  "{title} is back on the list": [
+    "web/src/app/reuseList.ts",
+    "web/src/lib/reuseAdd.ts"
   ],
   "{title} is in the {slot} slot.": [
     "web/src/lib/focusEdit.ts"

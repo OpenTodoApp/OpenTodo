@@ -127,7 +127,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
 | GET | `/api/v1/tasks` | yes | `{tasks:[…]}` (yours and those of projects shared with you); `?include_deleted=true` to include tombstones; `?completed_after=…&completed_before=…` for [tasks completed in a range](#tasks-completed-in-a-range) |
-| POST | `/api/v1/tasks` | yes | create → 201 task, see [Task fields](#task-fields); optional `Idempotency-Key` header, see [Idempotency keys](#idempotency-keys) (every collection below accepts it on create); `?default_reminder=true` adds your [default reminder](#default-reminders) |
+| POST | `/api/v1/tasks` | yes | create → 201 task, see [Task fields](#task-fields); optional `Idempotency-Key` header, see [Idempotency keys](#idempotency-keys) (every collection below accepts it on create); `?default_reminder=true` adds your [default reminder](#default-reminders); `"reuse": true` in a reusable list reopens a matching item instead, see [Reusable lists](#reusable-lists) |
 | POST | `/api/v1/quick-add/parse` | yes, every scope | read a quick-add line with the account's languages, projects and labels; writes nothing, so a `read` token may call it; see [Quick-add parse](#quick-add-parse) |
 | GET | `/api/v1/tasks/{id}` | yes | task or 404 |
 | PATCH | `/api/v1/tasks/{id}` | yes | partial update → task; `?default_reminder=true` adds your [default reminder](#default-reminders) when the task gets a due date |
@@ -705,6 +705,26 @@ curl -X PATCH -H "Authorization: Bearer $T" -d '{"status":"paused"}' $BASE/api/v
 # 400 {"error":{"code":"invalid_input","message":"project.status must be active or maintenance, got \"paused\""}}
 ```
 
+`reusable` and `aisles` (booleans) are the reusable-list mode (OpenSpec change `reusable-lists`, guide: [Reusable lists](reusable-lists.md)). Every representation carries both, `false` when never set; `aisles` reads `false` while `reusable` is `false`. Editors, admins and the owner may write them (`403` for viewers); anything but `true` or `false` is `400 invalid_input`.
+
+#### Reusable lists
+
+`POST /api/v1/tasks` takes an optional boolean `reuse` (default `false`, so existing clients see no change). With `reuse: true` and a `project_id` whose project has `reusable` on, the server looks for a live top-level task of that project whose title is the same apart from case, accents, surrounding and repeated white space and one trailing full stop:
+
+| Match | Written | Answer |
+| --- | --- | --- |
+| a completed task | `completed_at: null`, `completed_by: null` through the op log | `200` with the task and `"reused": "reopened"` |
+| an open task | nothing | `200` with the task and `"reused": "open"` |
+| none | the task, as without `reuse` | `201` with the task |
+| the account has end-to-end encryption, or the title is ciphertext | the task, as without `reuse` | `201` with the task and `"reused": "unavailable"` |
+
+Only the reopen is written: other fields of the request (due date, labels) are not applied to a reopened task, and a subtask (`parent_id`) or a task created completed never matches. The server never sorts API items into aisle sections; send `section_id` for that. `Idempotency-Key` works as for any create: a retry replays the first answer's task. Without credentials the answer is `401`; a viewer of the project gets `403 forbidden` and nothing is reopened. `reuse` that is not a boolean is `400 invalid_input`. `ot add` sends `reuse: true` for a reusable project unless `--new` is given.
+
+```sh
+curl -X POST -H "Authorization: Bearer $T" -d '{"title":"Milk","project_id":"<groceries>","reuse":true}' $BASE/api/v1/tasks
+# 200 {…,"id":"<milk>","title":"Milk","completed_at":null,"reused":"reopened"}
+```
+
 How often each person reviews a project (`review_every`: `week`, `2weeks`, `month`, `quarter` or `paused`) is a personal preference next to their review stamp. It has no REST collection: it syncs as an ordinary `project_prefs` op through `POST /api/v1/sync` (see [Sync protocol](sync.md)).
 
 ### Sub-projects
@@ -763,6 +783,7 @@ A section is a named, ordered container inside one project (OpenSpec change `boa
 | `color` | string or null | a `#rrggbb` colour shown before the name, `null` for none (the default); anything else is `400 invalid_input` |
 | `icon` | string or null | a name from the icon catalogue (`web/src/ui/icons/catalogue.json`, such as `hourglass`), `null` for none (the default); an unknown name is `400 invalid_input`. Responses always carry both fields |
 | `flow_mode` | string | `""` follows the project's flow (the default), `parallel` offers the section's tasks together and `sequential` one at a time (OpenSpec change `project-flow-modes`); anything else is `400 invalid_input`. Responses always carry it |
+| `aisle` | string or null | the aisle an aisle section of a [reusable list](#reusable-lists) stands for: `produce`, `bakery`, `dairy`, `meat`, `frozen`, `pantry`, `drinks`, `household` or `personal`, `null` for none (the default). Anything else is `400 invalid_aisle` and nothing is written; the sync endpoint accepts any string, which clients read as none. Responses always carry it |
 | `created_at` | number | set by the server when omitted |
 | `deleted_at` | number or null | set by `DELETE` |
 
@@ -771,7 +792,7 @@ A section is a named, ordered container inside one project (OpenSpec change `boa
 ```sh
 # Create a section, put a task in it, then move the task back to "No section"
 curl -X POST -H "Authorization: Bearer $T" -d '{"name":"Doing","project_id":"<project>"}' $BASE/api/v1/sections
-# 201 {"id":"…","name":"Doing","project_id":"<project>","position":1760000000000,"created_at":1760000000000,"color":null,"icon":null,"flow_mode":""}
+# 201 {"id":"…","name":"Doing","project_id":"<project>","position":1760000000000,"created_at":1760000000000,"color":null,"icon":null,"flow_mode":"","aisle":null}
 curl -X PATCH -H "Authorization: Bearer $T" -d '{"section_id":"<section>"}' $BASE/api/v1/tasks/$TASK
 curl -X PATCH -H "Authorization: Bearer $T" -d '{"section_id":null}' $BASE/api/v1/tasks/$TASK
 curl -X POST -H "Authorization: Bearer $T" -d '{"name":"Doing","project_id":"missing"}' $BASE/api/v1/sections
