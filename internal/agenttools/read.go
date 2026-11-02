@@ -6,6 +6,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 	"github.com/OpenTodoApp/opentodo/internal/flow"
 	"github.com/OpenTodoApp/opentodo/internal/inbox"
+	"github.com/OpenTodoApp/opentodo/internal/sector"
 	"sort"
 	"strings"
 	"time"
@@ -69,6 +70,7 @@ func init() {
 				"priority":          map[string]any{"type": "integer", "minimum": 1, "maximum": 4, "description": "Only tasks of this priority: 1 is the highest, 4 the default."},
 				"due_from":          map[string]any{"type": "string", "format": "date", "description": "Only tasks due on or after this date (YYYY-MM-DD)."},
 				"due_to":            map[string]any{"type": "string", "format": "date", "description": "Only tasks due on or before this date (YYYY-MM-DD)."},
+				"sector":            map[string]any{"type": "string", "description": "Only tasks with this time sector: an absolute period (2026-W45, 2026-11 or 2026-Q4), or carried for tasks whose period has ended (evaluated in timezone with weeks from Monday). Relative words like next week are refused."},
 				"completed_after":   map[string]any{"type": "string", "description": "Only tasks completed at or after this time: YYYY-MM-DD (start of that day in timezone), an RFC 3339 time or Unix milliseconds. Implies completed tasks only."},
 				"completed_before":  map[string]any{"type": "string", "description": "Only tasks completed before this time, in the same forms as completed_after. Implies completed tasks only."},
 				"include_completed": completedArg,
@@ -240,12 +242,14 @@ type taskQuery struct {
 	// blocked filters by the derived blocked state when set (agent-planning-fields).
 	blocked *bool
 	// available filters by the derived available state when set (project-flow-modes).
-	available        *bool
-	projectID        string
-	workspace        string
-	label            string
-	priority         int
-	dueFrom, dueTo   string
+	available      *bool
+	projectID      string
+	workspace      string
+	label          string
+	priority       int
+	dueFrom, dueTo string
+	// sector is "", a period or "carried" (OpenSpec change time-sectors).
+	sector           string
 	includeCompleted bool
 	// Completion range [completedAfter, completedBefore) in Unix ms; 0 = open end
 	// (OpenSpec change completed-date-filters, design D6).
@@ -301,6 +305,12 @@ func parseTaskQuery(a args) (taskQuery, error) {
 	}
 	if q.dueTo, err = a.date("due_to"); err != nil {
 		return q, err
+	}
+	if q.sector, err = a.str("sector"); err != nil {
+		return q, err
+	}
+	if q.sector != "" && q.sector != "carried" && !sector.Valid(q.sector) {
+		return q, argErr("sector: must be a period YYYY-Www, YYYY-MM or YYYY-Qn, or carried (absolute, not a word like \"next week\")")
 	}
 	if q.includeCompleted, err = a.boolean("include_completed"); err != nil {
 		return q, err
@@ -425,6 +435,9 @@ func (r *Registry) queryTasks(snap *snapshot, q taskQuery) (map[string]any, erro
 			continue
 		}
 		if wantLabels != nil && !hasAny(stringList(t, "labels"), wantLabels) {
+			continue
+		}
+		if sec := str(t, "sector"); q.sector != "" && !(sec == q.sector || (q.sector == "carried" && sector.Carried(sec, today, 1))) {
 			continue
 		}
 		items = append(items, keyed[taskOut]{key: taskKey(t, q.loc), id: str(t, "id"), v: snap.render(t, q.loc, today, false)})
@@ -762,6 +775,6 @@ func (r *Registry) todaySummary(ctx context.Context, userID string, a args) (map
 
 // plannedOf is the part of a task the Someday and Anytime rules read.
 func plannedOf(t opsync.Entity) inbox.Planned {
-	return inbox.Planned{Start: rawStr(t, "start"), HasDue: taskDue(t) != nil, HasDeadline: rawStr(t, "deadline") != "",
+	return inbox.Planned{Start: rawStr(t, "start"), HasDue: taskDue(t) != nil, HasDeadline: rawStr(t, "deadline") != "", Sector: rawStr(t, "sector"),
 		Completed: !isOpen(t), Deleted: deleted(t)}
 }
