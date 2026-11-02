@@ -10,7 +10,7 @@ Households use a task app for the same short lists every week: groceries, the ph
 
 ## What Changes
 
-- **A synced project setting, "Reusable list".** It's in the project's Edit dialog under a "List" heading, off by default, and stored on the project as the additive op field `reusable`. Every member sees the same mode.
+- **A synced project setting, "Reusable list".** It's in the Project menu's "List…" step, off by default, and stored on the project as the additive op field `reusable`. Every member sees the same mode.
 - **Adding an existing item reopens it.** In a reusable list, adding a task whose title matches an item already in the project (ignoring case, accents, surrounding spaces and repeated spaces) does not create a task:
   - a completed match is reopened in place, keeping its section, notes and labels;
   - an open match is left as is.

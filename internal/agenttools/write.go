@@ -68,9 +68,10 @@ func init() {
 			"origin_url":       originURLProp,
 			"id":               chosenIDProp,
 			"workspace_id":     map[string]any{"type": []string{"string", "null"}, "description": "For a task without a project: its workspace (see list_workspaces); default the default workspace."},
+			"new":              newItemProp,
 		}))
 		return writeDef("create_tasks", "Create tasks",
-			fmt.Sprintf("Create up to %d tasks in one call. Returns their ids in order. Plan with the fields: due is the day to do it, deadline the day it must be done by, start the day it shows up (or someday to park it), evening This Evening, span to draw it from start to due across days, day_part the part of the day, energy deep, medium or low, sector a period it is planned for without a date (2026-W45, 2026-11, 2026-Q4), blocked_by what it waits for, location where.", PerCall),
+			fmt.Sprintf("Create up to %d tasks in one call. Returns their ids in order; in a reusable list an item already there is reopened (status reopened) or left as it is (already_on_list) instead. Plan with the fields: due is the day to do it, deadline the day it must be done by, start the day it shows up (or someday to park it), evening This Evening, span to draw it from start to due across days, day_part the part of the day, energy deep, medium or low, sector a period it is planned for without a date (2026-W45, 2026-11, 2026-Q4), blocked_by what it waits for, location where.", PerCall),
 			object([]string{"items"}, map[string]any{
 				"items":             map[string]any{"type": "array", "minItems": 1, "maxItems": PerCall, "items": item},
 				"client_request_id": requestIDProp,

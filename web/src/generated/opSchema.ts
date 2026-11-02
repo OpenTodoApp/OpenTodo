@@ -52,6 +52,15 @@ export interface ProjectFields {
    * checks the kind only; REST and the agent tools check the set. Not user text.
    */
   status?: string
+  /**
+   * The reusable-list mode (OpenSpec change reusable-lists, design D1):
+   * adding an item already in the project reopens it instead of
+   * duplicating it, and ticked items always show. aisles sorts new items
+   * into aisle sections and reads as false while reusable is false. Flags,
+   * not user text, so not content; additive.
+   */
+  reusable?: boolean
+  aisles?: boolean
 }
 
 /**
@@ -235,6 +244,15 @@ export interface SectionFields {
    * project. Sync checks the kind only. Not user text.
    */
   flow_mode?: string
+  /**
+   * The aisle an aisle section stands for in a reusable list (OpenSpec
+   * change reusable-lists, design D1): produce, bakery, dairy, meat,
+   * frozen, pantry, drinks, household or personal, or null. A fixed key,
+   * not user text, so it survives a rename and reads the same in every
+   * language; clients read an unknown key as null, and the REST API
+   * refuses it (invalid_aisle). Sync checks the kind only. Additive.
+   */
+  aisle?: string | null
 }
 
 /**
@@ -991,13 +1009,13 @@ export interface ReviewFields {
 /** The row a field op creates when its entity is new: one key per op field, a family (`fields.<id>`) in one key named after its prefix. */
 export const OP_DEFAULTS = {
   project: {
-    name: '', color: '#64748b', position: 0, archived: false, parent_id: null, created_at: 0, deleted_at: null, icon: null, description: '', notes_doc: '', workspace_id: null, flow_mode: '', status: '',
+    name: '', color: '#64748b', position: 0, archived: false, parent_id: null, created_at: 0, deleted_at: null, icon: null, description: '', notes_doc: '', workspace_id: null, flow_mode: '', status: '', reusable: false, aisles: false,
   } satisfies Omit<Project, 'id' | '_clock'>,
   task: {
     title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, span: false, day_part: null, energy: '', sector: '', blocked_by: [], note_mentions: [], recurrence: null, series_id: null, occurrence_date: null, split_from: null, assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, origin: null, location: null, sample: false, workspace_id: null, fields: {}, appends: {},
   } satisfies Omit<Task, 'id' | '_clock'>,
   section: {
-    name: '', project_id: '', position: 0, created_at: 0, deleted_at: null, color: null, icon: null, flow_mode: '',
+    name: '', project_id: '', position: 0, created_at: 0, deleted_at: null, color: null, icon: null, flow_mode: '', aisle: null,
   } satisfies Omit<Section, 'id' | '_clock'>,
   field: {
     name: '', project_id: '', type: 'text', options: '', position: 0, created_at: 0, deleted_at: null,

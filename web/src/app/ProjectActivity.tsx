@@ -11,6 +11,7 @@ import { openTask } from './signals'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { useFieldDefs } from './useFields'
 import { t } from '../lib/i18n'
+import { isReusable, mergedDuplicates } from '../lib/reusable'
 
 /**
  * A project's activity (OpenSpec `comments-and-activity`; ux-overhaul): every
@@ -54,6 +55,8 @@ function ActivityList({ project }: { project: Project }) {
   }, [shared, local, project.id])
 
   const events = useMemo(() => mergeOlder(local, older), [local, older])
+  // A reusable list's merged duplicates read as such (reusable-lists D4).
+  const merged = useMemo(() => (isReusable(project) ? mergedDuplicates(project.id, tasks) : new Set<string>()), [project, tasks])
   const names = useMemo(() => {
     const m = new Map<string, string>()
     for (const e of older) if (e.actorName) m.set(e.actor, e.actorName)
@@ -110,7 +113,7 @@ function ActivityList({ project }: { project: Project }) {
             <li key={e.id} className="flex items-baseline gap-2 text-meta text-muted" data-event={e.kind} data-actor={e.actor}>
               <span className="min-w-0 flex-1">
                 <strong className="font-medium text-muted">{guestActorLabel(e) ?? name(e.actor)}</strong>{' '}
-                {describeEvent(e, name, projectName)}
+                {describeEvent(e, name, projectName, undefined, (id) => merged.has(id))}
                 {title && e.entity !== 'project' && (
                   <> {e.entity === 'comment' ? t('on', { context: 'comment' }) : '·'}{' '}
                     <button type="button" className="text-muted underline decoration-dotted" onClick={() => e.taskId && openTask.request(e.taskId)}>

@@ -101,6 +101,10 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 		badBody(w, err)
 		return
 	}
+	reusing, ok := takeReuse(w, entity, body)
+	if !ok {
+		return
+	}
 	key, keyed, handled := idempotencyKey(w, r)
 	if handled {
 		return
@@ -119,22 +123,7 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 			body["priority"] = json.RawMessage("4")
 		}
 	}
-	if entity == "label" {
-		if _, has := body["name"]; !has {
-			body["name"] = json.RawMessage(`""`)
-		}
-		if _, has := body["color"]; !has {
-			pick := int(now)
-			if keyed {
-				// A retried keyed create must plan the same colour.
-				pick = int(id[0])
-			}
-			body["color"] = json.RawMessage(opsync.QuoteJSON(labelPalette[pick%len(labelPalette)]))
-		}
-	}
-	if entity == "view" {
-		applyViewDefaults(body)
-	}
+	applyCreateDefaults(entity, body, now, keyed, id)
 	if _, has := body["position"]; !has && entity != "reminder" {
 		body["position"] = json.RawMessage(fmt.Sprint(now))
 	}
@@ -153,10 +142,10 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	if !valuesOK(w, entity, body) {
+		return
+	}
 	if entity == "task" {
-		if !taskBodyOK(w, body) {
-			return
-		}
 		canonicalizeRecurrence(body)
 		pairDayPart(body)
 		// Custom field values become fields.<id> keys before an idempotent
@@ -220,6 +209,11 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 		s.parentError(w, err)
 		return
 	}
+	if reusing {
+		if r, ok = s.reuseCreate(w, r, body); ok {
+			return
+		}
+	}
 	ts := s.opTS()
 	extra, err := s.createDefaultReminder(r.Context(), uid, id, body, ts, withDefault, keyed)
 	if err != nil {
@@ -235,6 +229,28 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.writeFieldsAt(w, r, entity, id, body, http.StatusCreated, extra, ts)
+}
+
+// applyCreateDefaults fills a new label's name and colour and a new view's
+// defaults when the body leaves them out.
+func applyCreateDefaults(entity string, body map[string]json.RawMessage, now int64, keyed bool, id string) {
+	if entity == "view" {
+		applyViewDefaults(body)
+	}
+	if entity != "label" {
+		return
+	}
+	if _, has := body["name"]; !has {
+		body["name"] = json.RawMessage(`""`)
+	}
+	if _, has := body["color"]; !has {
+		pick := int(now)
+		if keyed {
+			// A retried keyed create must plan the same colour.
+			pick = int(id[0])
+		}
+		body["color"] = json.RawMessage(opsync.QuoteJSON(labelPalette[pick%len(labelPalette)]))
+	}
 }
 
 // labelPalette gives API-created labels a colour when the caller sets none.
@@ -429,7 +445,7 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "not found")
 		return
 	}
-	if entity == "task" && !taskBodyOK(w, body) {
+	if !valuesOK(w, entity, body) {
 		return
 	}
 	if msg, err := s.checkReferences(r.Context(), userFrom(r.Context()).ID, entity, body); err != nil {
@@ -644,5 +660,6 @@ func (s *Server) writeOps(w http.ResponseWriter, r *http.Request, entity, id str
 		s.internal(w, err)
 		return
 	}
+	presentReused(r, e)
 	writeJSON(w, status, e)
 }
