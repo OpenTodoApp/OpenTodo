@@ -94,6 +94,10 @@
             "description": "Only tasks of this project (see list_projects).",
             "type": "string"
           },
+          "sector": {
+            "description": "Only tasks with this time sector: an absolute period (2026-W45, 2026-11 or 2026-Q4), or carried for tasks whose period has ended (evaluated in timezone with weeks from Monday). Relative words like next week are refused.",
+            "type": "string"
+          },
           "timezone": {
             "description": "IANA time zone used to decide what is today, overdue or upcoming, e.g. \"Europe/Rome\". Default: UTC. Due dates are floating, so pass the user's zone.",
             "type": "string"
@@ -206,7 +210,7 @@
         "readOnlyHint": true,
         "title": "Today summary"
       },
-      "description": "One-call overview of the user's day: overdue tasks, tasks due today, and open task counts for the Inbox (tasks without a project that are not scheduled) and each project. today_limit is the user's Today limit (null when off); each listed task has waiting_for_slot, true when that limit keeps it waiting.",
+      "description": "One-call overview of the user's day: overdue tasks, tasks due today, and open task counts for the Inbox (tasks without a project that are not scheduled) and each project. today_limit is the user's Today limit (null when off); each listed task has waiting_for_slot, true when that limit keeps it waiting; a waiting task also has time_sensitive, true when it is due today with a time or its deadline is today, a time-sensitive one time_passed, true once its time is before now, and waiting_time_sensitive lists those ids soonest first (the slots stay first come, first served).",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {

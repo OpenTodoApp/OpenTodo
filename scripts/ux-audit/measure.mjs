@@ -189,6 +189,65 @@ export function smallFields([rootSel, min]) {
   return out
 }
 
+// Crowded controls (themes-layout-template): on a settings page, two visible controls
+// that overlap, or a control within `gap` px of a row divider (a line drawn as a top or
+// bottom border of an element without side borders, as `divide-y` and row separators
+// draw it); a control drawn wholly inside another (a menu in a card's corner) is allowed.
+// The owner found the actions under "New theme" touching the next row; this
+// catches that on every row of the page, not only the one reported. At most five reports.
+export function crowdedControls([rootSel, gap]) {
+  const root = rootSel ? document.querySelector(rootSel) : document.body
+  if (!root) return []
+  const visible = (el) => {
+    // The page's own header (title bar and its buttons) is chrome, not a row of the page.
+    if (el.closest('[aria-hidden="true"], [inert], .sr-only, [data-overlay-root], header, [data-page-header]')) return false
+    const cs = getComputedStyle(el)
+    if (cs.display === 'none' || cs.visibility === 'hidden' || cs.position === 'fixed') return false
+    const r = el.getBoundingClientRect()
+    return r.width > 2 && r.height > 2
+  }
+  const sel = 'a[href], button, [role="button"], [role="radio"], input:not([type="hidden"]), select, textarea, summary'
+  const controls = [...root.querySelectorAll(sel)].filter(visible)
+  const name = (el) => (el.getAttribute('aria-label') || el.textContent || el.getAttribute('placeholder') || el.tagName).trim().replace(/\s+/g, ' ').slice(0, 40)
+  const out = []
+  // Overlap: two controls neither of which holds the other, crossing by more than 1 px both ways.
+  const rects = controls.map((el) => [el, el.getBoundingClientRect()])
+  for (let i = 0; i < rects.length && out.length < 5; i++) {
+    const [a, ra] = rects[i]
+    for (let j = i + 1; j < rects.length; j++) {
+      const [b, rb] = rects[j]
+      if (a.contains(b) || b.contains(a)) continue
+      // A control drawn wholly inside another (a card's menu button in its corner) is a deliberate layer, not a collision.
+      const inside = (p, q) => q.left >= p.left - 0.5 && q.right <= p.right + 0.5 && q.top >= p.top - 0.5 && q.bottom <= p.bottom + 0.5
+      if (inside(ra, rb) || inside(rb, ra)) continue
+      const x = Math.min(ra.right, rb.right) - Math.max(ra.left, rb.left)
+      const y = Math.min(ra.bottom, rb.bottom) - Math.max(ra.top, rb.top)
+      if (x > 1 && y > 1) { out.push(`"${name(a)}" and "${name(b)}" overlap (${Math.round(x)}×${Math.round(y)} px)`); break }
+    }
+  }
+  // Dividers: horizontal lines between rows.
+  const lines = []
+  for (const el of root.querySelectorAll('*')) {
+    const cs = getComputedStyle(el)
+    if (parseFloat(cs.borderLeftWidth) > 0 || parseFloat(cs.borderRightWidth) > 0) continue
+    const r = el.getBoundingClientRect()
+    if (r.width < 120 || cs.display === 'none') continue
+    if (parseFloat(cs.borderTopWidth) > 0 && cs.borderTopStyle !== 'none') lines.push([el, r.top, r])
+    if (parseFloat(cs.borderBottomWidth) > 0 && cs.borderBottomStyle !== 'none') lines.push([el, r.bottom, r])
+  }
+  for (const [el, r] of rects) {
+    if (out.length >= 5) break
+    for (const [line, y, lr] of lines) {
+      if (line === el || line.contains(el) && (y === lr.top ? r.top - y >= gap : y - r.bottom >= gap)) continue
+      if (el.contains(line)) continue
+      if (r.right <= lr.left || r.left >= lr.right) continue
+      const away = r.bottom <= y ? y - r.bottom : r.top >= y ? r.top - y : -1
+      if (away < gap) { out.push(`"${name(el)}" is ${away < 0 ? 'across' : `${Math.round(away)} px from`} a row divider (at least ${gap} px)`); break }
+    }
+  }
+  return out
+}
+
 export function smallTargets([rootSel, min]) {
   const root = rootSel ? document.querySelector(rootSel) : document.body
   if (!root) return []
@@ -226,6 +285,33 @@ export function smallTargets([rootSel, min]) {
     if (seen.has(key)) continue
     if (opacity < 0.05) { seen.add(key); out.push(`"${name}" (${el.tagName.toLowerCase()}) is invisible until hovered`); continue }
     if (r.width + 0.5 < min || r.height + 0.5 < min) { seen.add(key); out.push(`"${name}" (${el.tagName.toLowerCase()}) is ${Math.round(r.width)}×${Math.round(r.height)}px`) }
+  }
+  return out
+}
+
+// What an overlay holds fits in it (issue #731, the start guide in a narrow card):
+// nothing sticks out of the panel sideways, and no sentence is squeezed into a column a
+// word or two wide by the controls beside it (eight words or more need 8rem).
+export function overlayContentFit(rootSel) {
+  const root = document.querySelector(rootSel)
+  if (!root) return []
+  const box = root.getBoundingClientRect()
+  const out = []
+  const reported = []
+  const name = (el) => `${el.tagName.toLowerCase()} "${(el.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 40)}"`
+  for (const el of root.querySelectorAll('*')) {
+    if (el.closest('[data-scroll-x], [aria-hidden="true"]') || reported.some((r) => r.contains(el))) continue
+    const r = el.getBoundingClientRect()
+    if (r.width < 2 || r.height < 2) continue
+    if (r.left < box.left - 1 || r.right > box.right + 1) {
+      reported.push(el)
+      out.push(`${name(el)} sticks out of the overlay (${Math.round(r.left)} to ${Math.round(r.right)} px, panel ${Math.round(box.left)} to ${Math.round(box.right)} px)`)
+      continue
+    }
+    const own = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join(' ')
+    const words = own.split(/\s+/).filter(Boolean).length
+    if (words >= 8 && r.width < 128) { reported.push(el); out.push(`${name(el)} is squeezed into ${Math.round(r.width)} px`) }
+    if (out.length >= 5) break
   }
   return out
 }

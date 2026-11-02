@@ -6,6 +6,7 @@ import { Icon } from '../ui'
 import { logicalToday } from '../lib/dates'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { dayPartsOn } from '../lib/dayParts'
+import { timeSectorsOn } from '../lib/sectorNames'
 import { energyLevelsOn } from '../lib/energy'
 import { useUserPrefsRow } from '../lib/localData'
 import { createLabel, LabelExistsError } from '../lib/labels'
@@ -91,6 +92,8 @@ function useParseContext(settings: QuickAddSettings, projects: readonly ProjectR
   const dayParts = dayPartsOn(prefs)
   // The `~deep` tokens only while the account offers energy (task-energy D3).
   const energy = energyLevelsOn(prefs)
+  // Sector phrases only while the account uses time sectors (time-sectors D8).
+  const sectors = timeSectorsOn(prefs)
   return useCallback(() => {
     if (!settings.enabled) return null
     const langs = preferredLanguages()
@@ -103,8 +106,9 @@ function useParseContext(settings: QuickAddSettings, projects: readonly ProjectR
       projects,
       dayParts,
       energy,
+      sectors,
     }
-  }, [settings, projects, dtPrefs, resolved, dayParts, energy])
+  }, [settings, projects, dtPrefs, resolved, dayParts, energy, sectors])
 }
 
 /**

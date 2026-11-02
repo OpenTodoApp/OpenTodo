@@ -149,7 +149,7 @@ func TestEarlierConsentStillSendsTurns(t *testing.T) {
 	}
 	resp, st := e.do("GET", "/api/v1/me/assistant", nil)
 	e.mustStatus(resp, 200, st)
-	if st["consented"] != true || st["disclosure_version"].(float64) != 3 || !strings.Contains(strings.Join(toStrings(st["fields"]), ","), "photos you add") {
+	if st["consented"] != true || st["disclosure_version"].(float64) != 4 || !strings.Contains(strings.Join(toStrings(st["fields"]), ","), "photos you add") {
 		t.Fatalf("status %v", st)
 	}
 	if code, out, events := e.turn(ask("hi")); code != 200 || len(named(events, "done")) != 1 {

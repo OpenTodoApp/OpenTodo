@@ -355,7 +355,7 @@ const FIELD_LABELS = translatedMap<string>({
   position: msg('the order'), estimate_minutes: msg('the estimate'), recurrence: msg('the repeat rule'), name: msg('the name'), color: msg('the colour'),
   series_id: msg('the series'), deadline: msg('the deadline'),
   start: msg('when it starts'), evening: msg('This Evening'), origin: msg('the origin'),
-  day_part: msg('the part of the day'),
+  day_part: msg('the part of the day'), sector: msg('the time sector'),
 })
 
 /** The event kinds a project activity view can filter by, with labels. */

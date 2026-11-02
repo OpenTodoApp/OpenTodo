@@ -1,5 +1,6 @@
 import { t } from '../i18n'
 import { durationMinutes } from '../time'
+import { isSector, SECTOR_WORDS } from '../sectors'
 // Filter query language (OpenSpec change `filter-query-language`): tokenizer,
 // recursive-descent parser and date expressions. Pure and dependency-free; the
 // grammar is documented in docs/filters.md and this file accepts exactly it.
@@ -12,6 +13,7 @@ import { durationMinutes } from '../time'
 //            | ("due" | "created" | "deadline" | "start" | "completed") cmp date | keyword | "search:" text
 //            | "origin:" value                        (task origins, OpenSpec task-origin)
 //            | "energy:" ("deep" | "medium" | "low")   (task energy, OpenSpec task-energy)
+//            | "sector:" (relative word | period)     (time sectors, OpenSpec time-sectors)
 //            | "workspace:" name                      (workspaces, OpenSpec group-mentions)
 //            | "notes:" text                          (text in the note, OpenSpec notes-overview)
 //            | "tracked" cmp duration                 (tracked time, OpenSpec time-tracking)
@@ -36,12 +38,21 @@ export type Token =
   | { type: 'search'; text: string; pos: number; raw: string }
   | { type: 'origin'; value: string; pos: number; raw: string }
   | { type: 'energy'; value: 'deep' | 'medium' | 'low'; pos: number; raw: string }
+  | { type: 'sector'; value: string; pos: number; raw: string }
   | { type: 'workspace'; name: string; pos: number; raw: string }
   | { type: 'notes'; text: string; pos: number; raw: string }
   | { type: 'word'; value: string; pos: number; raw: string }
   | { type: 'string'; value: string; pos: number; raw: string }
 
 export type Priority = 1 | 2 | 3 | 4
+
+/** A `sector:` term's value: a relative word ("this-week") or a period in upper case ("2026-W44"), or null. */
+export function sectorTermValue(text: string): string | null {
+  const word = text.trim().toLowerCase().split(/[\s_-]+/).join('-')
+  if ((SECTOR_WORDS as readonly string[]).includes(word)) return word
+  const period = text.trim().toUpperCase()
+  return isSector(period) ? period : null
+}
 
 /** A syntax error with a 0-based offset, a 1-based column and the set of things that were expected. */
 export class FilterSyntaxError extends Error {
@@ -172,6 +183,21 @@ export function tokenize(src: string): Token[] {
       out.push({ type: 'energy', value, pos, raw: src.slice(pos, i) })
       continue
     }
+    // `sector: this week`, `sector: next-month` or `sector: 2026-W44` (time-sectors): a
+    // relative word, two words when it is written with a space, or a period.
+    if (/^sector:/i.test(word)) {
+      let text = readPrefixed('sector:')
+      if (/^(this|next)$/i.test(text)) {
+        while (i < n && isSpace(src[i])) i++
+        text = `${text} ${readBare()}`
+      }
+      const value = sectorTermValue(text)
+      if (!value) {
+        throw new FilterSyntaxError(t('Unknown time sector "{value}" at position {pos}; use this week, next week, this month, next month, this quarter, next quarter or a period such as 2026-W44', { value: text, pos: pos + 1 }), pos, ['"this week"', '"2026-W44"'])
+      }
+      out.push({ type: 'sector', value, pos, raw: src.slice(pos, i) })
+      continue
+    }
     const pm = /^p([1-4])$/i.exec(word)
     if (pm) {
       out.push({ type: 'priority', value: Number(pm[1]) as Priority, pos, raw: word })
@@ -184,7 +210,7 @@ export function tokenize(src: string): Token[] {
 
 // ---- AST ----
 
-export type Keyword = 'overdue' | 'today' | 'tomorrow' | 'no date' | 'no project' | 'no labels' | 'no time' | 'no deadline' | 'no start' | 'someday' | 'deferred' | 'evening' | 'morning' | 'afternoon' | 'completed' | 'open' | 'subtask' | 'blocked' | 'unblocked' | 'available' | 'habit' | 'origin' | 'no origin' | 'tracked' | 'energy' | 'no energy' | 'notes' | 'no notes'
+export type Keyword = 'overdue' | 'today' | 'tomorrow' | 'no date' | 'no project' | 'no labels' | 'no time' | 'no deadline' | 'no start' | 'someday' | 'deferred' | 'evening' | 'morning' | 'afternoon' | 'completed' | 'open' | 'subtask' | 'blocked' | 'unblocked' | 'available' | 'habit' | 'origin' | 'no origin' | 'tracked' | 'energy' | 'no energy' | 'notes' | 'no notes' | 'sector' | 'no sector' | 'carried'
 
 /**
  * today = 0, tomorrow = 1, yesterday = -1, `N days` = N, `N days ago` = -N.
@@ -215,6 +241,8 @@ export type Node =
   | { kind: 'origin'; value: string }
   /** `energy: value`: the task's energy equals value (task-energy D5). */
   | { kind: 'energy'; value: 'deep' | 'medium' | 'low' }
+  /** `sector: value`: the task's time sector is that period, or the viewer's period a relative word names (time-sectors). */
+  | { kind: 'sector'; value: string }
   /** `workspace: name`: the task's workspace has that name, ignoring case (group-mentions D6). */
   | { kind: 'workspace'; name: string; pos: number }
   /** `name cmp value` over a custom field (custom-fields); `opPos` places type errors. */
@@ -232,8 +260,8 @@ export type FieldValueExpr =
   | { type: 'date'; date: DateExpr }
 
 export const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const
-const SIMPLE_KEYWORDS = new Set<Keyword>(['overdue', 'today', 'tomorrow', 'completed', 'open', 'subtask', 'someday', 'deferred', 'evening', 'morning', 'afternoon', 'blocked', 'unblocked', 'available', 'habit', 'origin', 'energy', 'notes'])
-const NO_KEYWORDS = ['date', 'project', 'labels', 'time', 'deadline', 'start', 'origin', 'energy', 'notes'] as const
+const SIMPLE_KEYWORDS = new Set<Keyword>(['overdue', 'today', 'tomorrow', 'completed', 'open', 'subtask', 'someday', 'deferred', 'evening', 'morning', 'afternoon', 'blocked', 'unblocked', 'available', 'habit', 'origin', 'energy', 'notes', 'sector', 'carried'])
+const NO_KEYWORDS = ['date', 'project', 'labels', 'time', 'deadline', 'start', 'origin', 'energy', 'notes', 'sector'] as const
 /** Words that start a date expression in a field term's value; a number starts one only before a unit. */
 const DATE_STARTS = new Set(['today', 'tomorrow', 'yesterday', 'this', 'last', 'next'])
 const DATE_UNITS = new Set(['days', 'week', 'weeks', 'month', 'months'])
@@ -348,8 +376,9 @@ export function parse(src: string): Node | null {
         i++
         return { kind: 'origin', value: tok.value }
       case 'energy':
+      case 'sector':
         i++
-        return { kind: 'energy', value: tok.value }
+        return tok.type === 'energy' ? { kind: 'energy', value: tok.value } : { kind: 'sector', value: tok.value }
       case 'workspace':
         i++
         return { kind: 'workspace', name: tok.name, pos: tok.pos }
@@ -638,6 +667,8 @@ export function printQuery(n: Node): string {
       return `origin: ${quote(n.value)}`
     case 'energy':
       return `energy: ${n.value}`
+    case 'sector':
+      return `sector: ${n.value.includes('-W') || /^\d/.test(n.value) ? n.value : n.value.replace('-', ' ')}`
     case 'workspace':
       return `workspace: ${quote(n.name)}`
     case 'field':

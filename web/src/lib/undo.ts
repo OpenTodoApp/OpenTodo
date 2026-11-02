@@ -7,6 +7,7 @@
 import { db, tableOf, type AssistantUndo } from './db'
 import { mutateMany, readField, unfoldFieldPatches, type Change } from './ops'
 import { defaultReminderChanges } from './defaultReminder'
+import { withSectorClears } from './sectorWrites'
 import type { ProposedChange } from './assistantTypes'
 import type { Entity } from './types'
 import { uuid } from './ids'
@@ -28,6 +29,8 @@ export async function applyBatch(changes: ProposedChange[], opts: BatchOptions):
   if (changes.length === 0) return null
   // A `fields` map becomes one `fields.<id>` entry per value, each with its own clock (custom-fields).
   changes = unfoldFieldPatches(changes as Change[]).map((u, i) => ({ ...changes[i], patch: u.patch }))
+  // Dating a sectored task clears its sector here, so one Undo restores it (time-sectors D2).
+  changes = await withSectorClears(changes)
   const inverse: AssistantUndo['inverse'] = []
   for (const c of changes) {
     if (c.create) {
@@ -39,6 +42,8 @@ export async function applyBatch(changes: ProposedChange[], opts: BatchOptions):
     for (const f of Object.keys(c.patch)) patch[f] = norm((local ? readField(local, f) : undefined) ?? c.base?.[f])
     // A task stored before task.energy has none: its undo writes '' (none), never null, which the field refuses.
     if (c.entity === 'task' && 'energy' in patch && patch.energy === null) patch.energy = ''
+    // Likewise task.sector (time-sectors): a task stored before it has none, which is ''.
+    if (c.entity === 'task' && 'sector' in patch && patch.sector === null) patch.sector = ''
     inverse.push({ entity: c.entity, entityId: c.entityId, patch })
   }
   const batch: Change[] = changes.map((c) => ({ entity: c.entity, entityId: c.entityId, patch: { ...c.patch } }))

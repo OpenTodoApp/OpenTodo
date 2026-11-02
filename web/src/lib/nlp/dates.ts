@@ -2,6 +2,7 @@
 // only on the tokens, the reference date/time and the vocabularies passed in.
 import { nthWeekdayDate } from '../recurrence'
 import type { Token } from './tokenize'
+import type { SectorWord } from '../sectors'
 import { normalize, type DayMonthOrder, type Vocabulary } from './vocab'
 
 export interface DateContext {
@@ -241,6 +242,19 @@ export function wordsAt(tokens: readonly Token[], i: number, ctx: DateContext, f
   if (!tokens[i] || tokens[i].quoted) return 0
   let best = 0
   for (const v of ctx.vocabs) best = Math.max(best, phraseAt(tokens, i, v[field], `${v.code}:${field}`))
+  return best
+}
+
+/** A time sector phrase at `i` (time-sectors D8): the longest in any active language, with the sector word it means, or null. */
+export function sectorPhraseAt(tokens: readonly Token[], i: number, ctx: DateContext): { n: number; word: SectorWord } | null {
+  if (!tokens[i] || tokens[i].quoted) return null
+  let best: { n: number; word: SectorWord } | null = null
+  for (const v of ctx.vocabs) {
+    for (const [word, list] of Object.entries(v.sectorPhrases) as [SectorWord, string[]][]) {
+      const n = phraseAt(tokens, i, list, `${v.code}:sector:${word}`)
+      if (n && (!best || n > best.n)) best = { n, word }
+    }
+  }
   return best
 }
 

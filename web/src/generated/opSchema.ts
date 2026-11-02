@@ -106,6 +106,16 @@ export interface TaskFields {
    */
   energy?: string
   /**
+   * The period the task is planned for without a date (OpenSpec change
+   * time-sectors, design D1): "" (none), an ISO week "2026-W44", a month
+   * "2026-11" or a quarter "2026-Q4". A sector with no do-on date schedules
+   * the task (it leaves the Inbox and Anytime) and is never overdue; clients
+   * name it relative to the viewer's date and derive carry-over, never
+   * writing it. A scheduling field like start: plaintext, not content;
+   * additive.
+   */
+  sector?: string
+  /**
    * The tasks this one waits for, in its own sharing scope (OpenSpec change
    * task-dependencies): one whole-list register; the resolver refuses ids of
    * other scopes and lists that close a cycle.
@@ -733,6 +743,13 @@ export interface UserPrefsFields {
    */
   method_mode?: string
   /**
+   * Time sectors (OpenSpec change time-sectors, design D7): "on" shows the
+   * Sector segment, the planning list's Time sectors source, the quick-add
+   * sector phrases and the review's sector section; empty or any other value
+   * reads as off and is kept. Sectors on tasks keep working either way.
+   */
+  time_sectors?: string
+  /**
    * The first-day checklist (OpenSpec change moments-and-onboarding, design
    * D5): "hidden" once its sidebar entry was hidden on any device; clients
    * read an empty or unknown value as shown.
@@ -904,6 +921,14 @@ export interface UserPrefsFields {
    * server read an empty or unknown value as off and keep it.
    */
   routines_hide_successes?: string
+  /**
+   * Upcoming starts with Today (OpenSpec change upcoming-start-with-today,
+   * design D1): "on" opens Upcoming with Today's own groups (Earlier,
+   * Today, the parts of the day, This Evening, Blocked and Waiting for a
+   * slot) before Tomorrow; clients read an empty or unknown value as off
+   * and keep the stored value. Settings, never content.
+   */
+  upcoming_today?: string
 }
 
 /**
@@ -969,7 +994,7 @@ export const OP_DEFAULTS = {
     name: '', color: '#64748b', position: 0, archived: false, parent_id: null, created_at: 0, deleted_at: null, icon: null, description: '', notes_doc: '', workspace_id: null, flow_mode: '', status: '',
   } satisfies Omit<Project, 'id' | '_clock'>,
   task: {
-    title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, span: false, day_part: null, energy: '', blocked_by: [], note_mentions: [], recurrence: null, series_id: null, occurrence_date: null, split_from: null, assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, origin: null, location: null, sample: false, workspace_id: null, fields: {}, appends: {},
+    title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, span: false, day_part: null, energy: '', sector: '', blocked_by: [], note_mentions: [], recurrence: null, series_id: null, occurrence_date: null, split_from: null, assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, origin: null, location: null, sample: false, workspace_id: null, fields: {}, appends: {},
   } satisfies Omit<Task, 'id' | '_clock'>,
   section: {
     name: '', project_id: '', position: 0, created_at: 0, deleted_at: null, color: null, icon: null, flow_mode: '',
@@ -1017,7 +1042,7 @@ export const OP_DEFAULTS = {
     feed_seen_at: 0, reviewed_at: 0, group_by: '', sort_by: '', sort_dir: '', row_layout: '', review_every: '', card_notes: false,
   } satisfies Omit<ProjectPrefs, 'id' | '_clock'>,
   user_prefs: {
-    date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', theme_accent_custom: '', theme_light: '', theme_dark: '', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '', today_events: '', add_position: '', reminder_default_timed: '', reminder_default_dated: '', sidebar_counts: '', sidebar_order: '', focus_presets: '', focus_noise: '', day_parts: '', today_limit: 0, today_done: '', focus_style: '', energy: '', bento_order: '', formatting_toggle: '', routines_seen_at: 0, routines_hide_successes: '',
+    date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', theme_accent_custom: '', theme_light: '', theme_dark: '', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', time_sectors: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '', today_events: '', add_position: '', reminder_default_timed: '', reminder_default_dated: '', sidebar_counts: '', sidebar_order: '', focus_presets: '', focus_noise: '', day_parts: '', today_limit: 0, today_done: '', focus_style: '', energy: '', bento_order: '', formatting_toggle: '', routines_seen_at: 0, routines_hide_successes: '', upcoming_today: '',
   } satisfies Omit<UserPrefs, 'id' | '_clock'>,
   review: {
     completed_at: 0, daily_at: 0, monthly_at: 0, focus_date: '', focus: '', closed_at: 0, tomorrow_note: '', closed_day: '', carry_over: '', slots_date: '', slots: '', focus_slots: '',

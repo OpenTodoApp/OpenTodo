@@ -9,7 +9,7 @@ import (
 
 // Every kind has a check: a kind missing from kindChecks would accept any value.
 func TestKindChecksCoverEveryKind(t *testing.T) {
-	for k := kString; k <= kThemeDoc; k++ {
+	for k := kString; k <= kSector; k++ {
 		if _, ok := kindChecks[k]; !ok {
 			t.Errorf("kind %d has no entry in kindChecks", k)
 		}
@@ -44,6 +44,13 @@ func TestCheckKindTable(t *testing.T) {
 		{"start null", kStart, `null`, ""},
 		{"start missing date", kStart, `"2026-02-30"`, "that exists"},
 		{"start word", kStart, `"later"`, `must be null, "someday" or a date`},
+		{"sector none", kSector, `""`, ""},
+		{"sector week", kSector, `"2026-W53"`, ""},
+		{"sector month", kSector, `"2026-11"`, ""},
+		{"sector quarter", kSector, `"2026-Q4"`, ""},
+		{"sector week 53 of 2027", kSector, `"2027-W53"`, "time sector"},
+		{"sector words", kSector, `"this week"`, "time sector"},
+		{"sector null", kSector, `null`, "time sector"},
 		{"energy none", kEnergy, `""`, ""},
 		{"energy deep", kEnergy, `"deep"`, ""},
 		{"energy medium", kEnergy, `"medium"`, ""},
