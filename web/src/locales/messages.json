@@ -2548,7 +2548,7 @@
     "web/src/app/locations/PlacesView.tsx",
     "web/src/app/profile/ProfileSection.tsx",
     "web/src/app/routines/DescribeIt.tsx",
-    "web/src/app/routines/StepCard.tsx",
+    "web/src/app/routines/RoutineEditor.tsx",
     "web/src/app/shortcuts/Spotlight.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/app/task-detail/Composer.tsx",
@@ -2640,6 +2640,9 @@
   ],
   "Change tasks": [
     "web/src/lib/rules/sentence.ts"
+  ],
+  "Change the details": [
+    "web/src/app/routines/StepCard.tsx"
   ],
   "Change the project {name}": [
     "web/src/lib/rules/proposal.ts"
@@ -3051,6 +3054,8 @@
     "web/src/app/assistant/AssistantSheet.tsx",
     "web/src/app/help/HelpPanel.tsx",
     "web/src/app/palette/CommandPalette.tsx",
+    "web/src/app/routines/AddStep.tsx",
+    "web/src/app/routines/DescribeIt.tsx",
     "web/src/app/sidePanel.tsx",
     "web/src/app/task-detail/TaskDetail.tsx",
     "web/src/app/task-detail/TaskPageView.tsx",
@@ -4358,8 +4363,7 @@
   "Delete “{name}”?": [
     "web/src/app/ProjectHeader.tsx",
     "web/src/app/locations/PlacesView.tsx",
-    "web/src/app/routines/RoutinesView.tsx",
-    "web/src/app/routines/StepCard.tsx"
+    "web/src/app/routines/RoutinesView.tsx"
   ],
   "Deleted / restored": [
     "web/src/lib/activity.ts"
@@ -9987,6 +9991,9 @@
   "Not available": [
     "web/src/app/routines/RunHistory.tsx"
   ],
+  "Not available here": [
+    "web/src/app/routines/AddStep.tsx"
+  ],
   "Not available in a shared routine": [
     "web/src/lib/rules/catalogue.ts"
   ],
@@ -14933,6 +14940,9 @@
   "Status colours": [
     "web/src/app/themes/EditorSections.tsx"
   ],
+  "Step deleted: {step}": [
+    "web/src/app/routines/RoutineEditor.tsx"
+  ],
   "Step {n} of {count}": [
     "web/src/app/FirstRun.tsx"
   ],
@@ -14942,6 +14952,7 @@
     "web/src/app/review/ReviewView.tsx"
   ],
   "Steps": [
+    "web/src/app/routines/AddStep.tsx",
     "web/src/app/routines/RoutineEditor.tsx",
     "web/src/app/routines/RunHistory.tsx"
   ],
@@ -17638,9 +17649,6 @@
   "Trello board (JSON)": [
     "web/src/app/ImportScreen.tsx"
   ],
-  "Trigger": [
-    "web/src/app/rules/RuleFields.tsx"
-  ],
   "Try again": [
     "web/src/app/EmailScreens.tsx",
     "web/src/app/TwoFactorPanel.tsx",
@@ -17891,6 +17899,7 @@
     "web/src/app/focus/startFocus.ts",
     "web/src/app/palette/routineCommand.ts",
     "web/src/app/routines/ProposalReview.tsx",
+    "web/src/app/routines/RoutineEditor.tsx",
     "web/src/app/routines/RoutinesInboxCard.tsx",
     "web/src/app/themes/ThemeEditor.tsx"
   ],
@@ -18660,7 +18669,6 @@
     "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/routines/Starters.tsx",
     "web/src/app/routines/StepCard.tsx",
-    "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/app/task-list/RowDetails.tsx"
@@ -22814,6 +22822,9 @@
   ],
   "{what} ×{n}": [
     "web/src/app/ActivityPanel.tsx"
+  ],
+  "{when}: details": [
+    "web/src/app/routines/StepCard.tsx"
   ],
   "· ignored: {columns}": [
     "web/src/app/ImportScreen.tsx"

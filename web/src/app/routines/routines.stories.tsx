@@ -5,7 +5,7 @@ import { createLabel } from '../../lib/labels'
 import { createProject, createTask, updateProject } from '../../lib/ops'
 import { createRule } from '../../lib/rules/store'
 import { seeded, withSeed } from '../stories/fixtures'
-import { AddStepSheet } from './AddStep'
+import { AddStepPanel } from './AddStep'
 import { RoutineEditor } from './RoutineEditor'
 import { RoutinePage } from './RoutinePage'
 import { RoutinesView } from './RoutinesView'
@@ -19,8 +19,8 @@ import { ConditionFields } from '../rules/RuleFields'
 
 // Routines (OpenSpec change routines-editor): the page, the sentence-card
 // editor as its own page (routines-editor-page: steps in a centred column, Test
-// and History beside them from 1024 px, tabs below), the Add step sheet and a
-// run's detail. The workbench has no server,
+// and History beside them from 1024 px, tabs below), the step catalogue in
+// place (routines-editor-no-modals) and a run's detail. The workbench has no server,
 // so the page shows its offline state and previews come from local data.
 const meta: Meta = { title: 'Screens/Routines' }
 export default meta
@@ -186,10 +186,18 @@ export const TextInPlace: StoryObj = {
   ),
 }
 
-/** Add step: suggestions after a list of lines, the groups below. */
+/** Add step, in place (routines-editor-no-modals): the catalogue expands where "+ Add step" was pressed, suggestions after a list of lines, the groups below. */
 export const AddStep: StoryObj = {
-  name: 'Add step sheet',
-  render: () => <AddStepSheet above="lines" catalogue={{ email_me: { kind: 'email_me', group: 'communication', available: false, reason: 'email_not_configured', setting: 'server.email' } }} onPick={() => undefined} onClose={() => undefined} />,
+  name: 'Add step, in place',
+  render: () => (
+    <div className="-m-4 min-h-[36rem] bg-canvas p-4">
+      <div className="max-w-xl space-y-2">
+        <p className="surface-card p-3 text-body">Split <span className="font-medium">the note text</span> into lines</p>
+        <AddStepPanel above="lines" catalogue={{ email_me: { kind: 'email_me', group: 'communication', available: false, reason: 'email_not_configured', setting: 'server.email' } }}
+          onPick={() => undefined} onClose={() => undefined} />
+      </div>
+    </div>
+  ),
 }
 
 /** A run's detail, offline: the run is on the server. */

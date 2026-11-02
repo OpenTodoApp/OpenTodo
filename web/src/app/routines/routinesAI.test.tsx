@@ -77,8 +77,9 @@ describe('AI steps in the editor', () => {
     await click(button('Test'))
     await waitFor(() => /This test sends the inputs to Anthropic \(Claude\) and uses about [\d,.]+ tokens/.test(document.body.textContent ?? ''), 'the question first')
     expect(requests.some((x) => x.path.includes('/run') && x.body?.call_ai)).toBe(false)
-    const confirm = button('Test', document.querySelector('[data-testid="confirm-dialog"]')!)
-    await click(confirm)
+    // The question is in the Test panel, never a dialog (routines-editor-no-modals).
+    expect(document.querySelector('[role="dialog"], [role="alertdialog"]')).toBeNull()
+    await click(document.querySelector('[data-test-ask-ai] [data-test-ai-confirm]')!)
     await waitFor(() => !!document.querySelector('[data-test-tokens]'), 'the real count')
     expect(requests.find((x) => x.path.endsWith(`/rules/${id}/run`))?.body).toMatchObject({ test: true, call_ai: true })
     expect(document.querySelector('[data-test-tokens]')!.textContent).toContain('3,412')

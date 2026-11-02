@@ -1,7 +1,7 @@
 // The parts of the rule editor (OpenSpec change automation-rules, design D11):
 // the trigger, the condition and the actions. Each part edits one whole value;
 // the dialog saves them through createRule/updateRule.
-import { RULE_DUE, RULE_START, RULE_STATE, RULE_TRIGGERS, type Label, type Priority, type Project, type RuleActions, type RuleCondition, type RuleTrigger, type RuleTriggerKind, type Section, type Webhook } from '../../lib/types'
+import { RULE_DUE, RULE_START, RULE_STATE, type Label, type Priority, type Project, type RuleActions, type RuleCondition, type RuleTrigger, type RuleTriggerKind, type Section, type Webhook } from '../../lib/types'
 import { t, msg, translatedMap } from '../../lib/i18n'
 import { Field, Input, Switch } from '../../ui'
 import { Choice, LabelsField } from '../RuleEditor'
@@ -56,24 +56,20 @@ function LabelSelect({ value, labels, onChange }: { value: string | undefined; l
   )
 }
 
-/** The trigger: its kind and the members that kind takes. */
-export function TriggerFields({ value, onChange, names, sharedProjects }: { value: RuleTrigger; onChange: (v: RuleTrigger) => void; names: Names; sharedProjects: Set<string> }) {
-  const setKind = (kind: RuleTriggerKind) => {
-    if (kind === 'schedule') onChange({ kind, at: '18:00', weekdays: [7] })
-    else onChange({ kind })
-  }
+/** A trigger of this kind, as it starts when chosen (a schedule: Sundays at 18:00). */
+export const triggerOf = (kind: RuleTriggerKind): RuleTrigger => (kind === 'schedule' ? { kind, at: '18:00', weekdays: [7] } : { kind })
+
+/** Whether a trigger kind takes members beyond its kind (a time and days, a label, a project). */
+export const triggerHasDetails = (kind: RuleTriggerKind): boolean =>
+  kind === 'schedule' || kind === 'label.added' || kind === 'label.removed' || kind === 'task.moved'
+
+/** The members a trigger's kind takes: a schedule's time and days, a label, a project and section. */
+export function TriggerDetails({ value, onChange, names, sharedProjects }: { value: RuleTrigger; onChange: (v: RuleTrigger) => void; names: Names; sharedProjects: Set<string> }) {
   const days = value.weekdays ?? []
   const monthDays = value.month_days ?? []
   const monthly = monthDays.length > 0
   return (
-    <fieldset className="space-y-2" data-rule-trigger>
-      <legend className="text-meta font-medium text-muted">{t('When')}</legend>
-      <label className={row}>
-        <span>{t('Trigger')}</span>
-        <select className="ui-input w-56 max-w-full" value={value.kind} onChange={(e) => setKind(e.target.value as RuleTriggerKind)}>
-          {RULE_TRIGGERS.map((k) => <option key={k} value={k}>{TRIGGER_LABEL[k]}</option>)}
-        </select>
-      </label>
+    <>
       {(value.kind === 'label.added' || value.kind === 'label.removed') && (
         <LabelSelect value={value.label_id} labels={names.labels} onChange={(id) => onChange({ kind: value.kind, label_id: id })} />
       )}
@@ -122,7 +118,7 @@ export function TriggerFields({ value, onChange, names, sharedProjects }: { valu
           )}
         </>
       )}
-    </fieldset>
+    </>
   )
 }
 

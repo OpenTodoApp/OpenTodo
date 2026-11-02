@@ -3,9 +3,10 @@
 // the person can make an assistant turn: the server's assistant with consent,
 // or for an encrypted account the on-device assistant set up and consented on
 // this device (the draft then runs on the device and nothing reaches the
-// server). A bottom sheet with one text field, never a centred modal
-// (DECISIONS.md "Routines UX"). Never saves, enables, tests or runs.
-import { useEffect, useMemo, useRef, useState } from 'react'
+// server). One text field that expands in place on the Routines page, under
+// its header, never a dialog (routines-editor-no-modals). Never saves,
+// enables, tests or runs.
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { ApiError, api } from '../../lib/api'
 import { getDeviceSetup } from '../../lib/assistantDevice/settings'
 import { refreshAssistantStatus, useAssistantStatus, type AssistantStatus } from '../../lib/assistantStatus'
@@ -14,7 +15,7 @@ import { t } from '../../lib/i18n'
 import { useOnline } from '../../lib/online'
 import type { Catalogue } from '../../lib/rules/catalogue'
 import { draftNamesOf, editorDraftOf, MAX_DRAFT_TEXT, type DraftAnswer } from '../../lib/rules/describe'
-import { Button, Dialog, Field, Notice, Textarea } from '../../ui'
+import { Button, Field, IconButton, Notice, Textarea } from '../../ui'
 import { navigate } from '../router'
 import { useRoutineNames } from './data'
 import { openDescribedDraft } from './routineNav'
@@ -56,8 +57,13 @@ function failure(e: unknown): string {
   return messageOf(e)
 }
 
-/** The Describe it sheet: a sentence, then Draft. */
-export function DescribeSheet({ mode, catalogue, onClose }: { mode: Exclude<DescribeMode, null>; catalogue: Catalogue | null; onClose: () => void }) {
+/** The id of the Describe it panel, for its button's aria-controls. */
+export const DESCRIBE_PANEL_ID = 'describe-routine'
+
+/** Describe it, expanded in place: a sentence, then Draft. Escape, Cancel and the close button collapse it. */
+export function DescribePanel({ mode, catalogue, onClose }: { mode: Exclude<DescribeMode, null>; catalogue: Catalogue | null; onClose: () => void }) {
+  const panel = useRef<HTMLElement>(null)
+  useLayoutEffect(() => { panel.current?.scrollIntoView?.({ block: 'nearest' }) }, [])
   const online = useOnline()
   const names = useRoutineNames()
   const [text, setText] = useState('')
@@ -97,7 +103,12 @@ export function DescribeSheet({ mode, catalogue, onClose }: { mode: Exclude<Desc
     }
   }
   return (
-    <Dialog title={t('Describe a routine')} onClose={onClose} size="md" placement="sheet" testId="describe-routine">
+    <section ref={panel} id={DESCRIBE_PANEL_ID} className="surface-card mb-3 space-y-3 p-3" aria-labelledby="describe-routine-title" data-testid="describe-routine" data-describe-panel data-overlay="inline"
+      onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onClose() } }}>
+      <div className="flex items-center gap-2">
+        <h2 id="describe-routine-title" className="min-w-0 flex-1 text-body font-semibold text-strong">{t('Describe a routine')}</h2>
+        <IconButton size="sm" icon="x" label={t('Close')} onClick={onClose} />
+      </div>
       <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); void submit() }} data-describe-form>
         <Field label={t('Describe what should happen, and when')}
           description={t('For example: every Friday at five, make tasks in Errands from my Groceries note.')}
@@ -118,7 +129,7 @@ export function DescribeSheet({ mode, catalogue, onClose }: { mode: Exclude<Desc
           <Button type="submit" variant="primary" size="sm" icon="message-circle" busy={busy} disabled={!online || !text.trim() || tooLong} data-describe-submit>{t('Draft')}</Button>
         </div>
       </form>
-    </Dialog>
+    </section>
   )
 }
 

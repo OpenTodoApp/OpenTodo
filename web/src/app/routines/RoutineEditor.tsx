@@ -13,10 +13,10 @@ import { messageOf } from '../../lib/errorText'
 import { t } from '../../lib/i18n'
 import { uuid } from '../../lib/ids'
 import { useOnline } from '../../lib/online'
-import { useCatalogue } from '../../lib/rules/catalogue'
+import { useCatalogue, type Catalogue } from '../../lib/rules/catalogue'
 import { sharedCatalogue } from '../../lib/rules/shared'
 import {
-  draftError, draftOf, draftTypes, duplicateStep, findStep, flowingTypeAt, insertNewStep, moveStep, newId, NEW_ROUTINE, placeOf, removeStep, sameDraft, setInput, stepCount, stepNumber, storedOf,
+  draftError, draftOf, draftTypes, duplicateStep, findStep, flowingTypeAt, insertNewStep, insertStep, moveStep, newId, NEW_ROUTINE, placeOf, removeStep, sameDraft, setInput, stepCount, stepNumber, storedOf,
   type RoutineDraft,
 } from '../../lib/rules/draft'
 import { errorText, fixFor, type Fix } from '../../lib/rules/fixes'
@@ -34,14 +34,15 @@ import { Badge, Button, ConfirmDialog, DESKTOP_HEADER_QUERY, Field, Icon, Input,
 import { runRoutineNow } from '../palette/routineCommand'
 import { setLeaveGuard } from '../router'
 import { useShortcutScope } from '../shortcuts'
-import { AddStepSheet } from './AddStep'
+import { AddStepPanel } from './AddStep'
+import { showBulkToast } from '../bulk/toastStore'
 import { AISettings } from './AISettings'
 import { usePreviewData, useRoutineNames, valueNamer } from './data'
 import type { RuleDraft } from './ruleDraft'
 import type { DescribedDraft } from './routineNav'
 import { RunDetailBody, RunsList } from './RunHistory'
 import { SharedRoutineLine, useSharedRoutine } from './SharedRoutine'
-import { CardColumn, sentenceText, WhenCard, type CardEvents, type CardState } from './StepCard'
+import { ADD_PANEL_ID, CardColumn, sentenceText, WhenCard, type CardEvents, type CardState } from './StepCard'
 import { refName } from './words'
 
 /** A rule draft (a board conversion) as a routine draft: one Change tasks card. */
@@ -51,6 +52,74 @@ export function routineDraftOf(d: RuleDraft): RoutineDraft {
 
 /** Where "+ Add step" inserts: below a card, or at the end of a list. */
 type AddTarget = { parent: string; block: 'then' | 'otherwise' | 'do' | ''; index: number; above: RoutineStepType | 'start' }
+
+type Edit = (fn: (d: RoutineDraft) => RoutineDraft) => void
+
+/**
+ * The step catalogue, expanded in place where "+ Add step" was pressed
+ * (routines-editor-no-modals): its place, what gets focus when it collapses,
+ * and the new step at that place. Pressing the same "+ Add step" again closes
+ * it. Suggestions follow the data that flows to the place: the step above, a
+ * Repeat's item, the trigger (routines-dynamic-data D3).
+ */
+function useStepCatalogue({ draft, types, catalogue, edit, focusAfter }: {
+  draft: RoutineDraft; types: ReturnType<typeof draftTypes>; catalogue: Catalogue | null; edit: Edit; focusAfter: { current: string | null }
+}) {
+  const [adding, setAdding] = useState<AddTarget | null>(null)
+  const opener = useRef('')
+  const open = (target: Omit<AddTarget, 'above'>, from: string) => {
+    const same = adding && adding.parent === target.parent && adding.block === target.block && adding.index === target.index
+    opener.current = from
+    setAdding(same ? null : { ...target, above: flowingTypeAt(draft, target, types) })
+  }
+  const close = (refocus = true) => {
+    setAdding(null)
+    const from = opener.current
+    if (refocus) requestAnimationFrame(() => document.querySelector<HTMLElement>(from)?.focus())
+  }
+  const pick = (kind: string) => {
+    if (!adding) return
+    const target = adding
+    setAdding(null)
+    edit((d) => {
+      if (stepCount(d.steps) >= MAX_STEPS) return d
+      const id = newId(d.steps)
+      focusAfter.current = id
+      // The new step reads the data that flows to it, never a task chosen by hand (routines-dynamic-data D3).
+      return insertNewStep(d, target, kind, id, types)
+    })
+  }
+  return {
+    adding,
+    close,
+    atEnd: () => open({ parent: '', block: '', index: -1 }, '[data-add-step]'),
+    below: (id: string) => {
+      const p = placeOf(draft.steps, id)
+      if (p) open({ parent: p.parent, block: p.block, index: p.index + 1 }, `[data-step-card="${id}"]`)
+    },
+    inBlock: (parent: string, block: 'then' | 'otherwise' | 'do') => open({ parent, block, index: -1 }, `[data-add-in="${parent}.${block}"]`),
+    panel: adding && <AddStepPanel key={`${adding.parent}.${adding.block}.${adding.index}`} id={ADD_PANEL_ID} above={adding.above} catalogue={catalogue} onPick={pick} onClose={() => close()} />,
+  }
+}
+
+/** A step goes at once, with Undo in a toast (routines-editor-no-modals); focus moves to a neighbouring card. */
+function removeWithUndo(draft: RoutineDraft, id: string, edit: Edit, focusAfter: { current: string | null }, announce: (text: string) => void) {
+  const s = findStep(draft.steps, id)
+  const place = placeOf(draft.steps, id)
+  if (!s || !place) return
+  const card = document.querySelector<HTMLElement>(`[data-step-card="${id}"]`)
+  const near = [card?.nextElementSibling, card?.previousElementSibling].find((x) => x?.hasAttribute('data-step-card'))
+  focusAfter.current = near?.getAttribute('data-step-card') ?? null
+  if (!focusAfter.current) requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-add-step]')?.focus())
+  edit((d) => ({ ...d, steps: removeStep(d.steps, id) }))
+  const text = t('Step deleted: {step}', { step: stepName(s.kind) })
+  announce(text)
+  showBulkToast(text, null, { action: { label: t('Undo'), run: () => {
+    focusAfter.current = id
+    // Back where it was, unless it is already back or its block is gone.
+    edit((d) => (findStep(d.steps, id) || (place.parent && !findStep(d.steps, place.parent)) ? d : { ...d, steps: insertStep(d.steps, place, s) }))
+  } } })
+}
 
 /** The draft with undo (one edit is one step back). */
 function useDraft(start: RoutineDraft) {
@@ -166,16 +235,19 @@ function useRoutineTest({ draft, rule, dirty, online, blocked, withAI, estimate,
   }
   const test = () => {
     if (!online || blocked || !draft.steps.length) return
-    if (withAI) setConfirmAI(true)
-    else runTest(false)
+    // AI steps ask first, inside the Test panel, never in a dialog (routines-editor-no-modals).
+    if (withAI) { onStart(); setConfirmAI(true) } else runTest(false)
   }
-  const confirm = confirmAI && (
-    <ConfirmDialog title={t('Test with AI?')} confirmLabel={t('Test')} tone="default"
-      consequence={t('This test sends the inputs to {provider} and uses about {n} tokens. Nothing is written.', { provider: assistant?.provider_label || t('your assistant’s provider'), n: roundEstimate(estimate) })}
-      onConfirm={() => { setConfirmAI(false); runTest(true) }} onCancel={() => setConfirmAI(false)} />
-  )
-  return { test, testing, result, confirm }
+  const ask: AskAI | null = confirmAI ? {
+    consequence: t('This test sends the inputs to {provider} and uses about {n} tokens. Nothing is written.', { provider: assistant?.provider_label || t('your assistant’s provider'), n: roundEstimate(estimate) }),
+    confirm: () => { setConfirmAI(false); runTest(true) },
+    cancel: () => { setConfirmAI(false); requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-routine-test]')?.focus()) },
+  } : null
+  return { test, testing, result, ask }
 }
+
+/** The question before a test that calls the AI: what it sends and costs, Test or Cancel. */
+interface AskAI { consequence: string; confirm: () => void; cancel: () => void }
 
 /** Leaving with unsaved changes asks first (D4), and Escape leaves the page (D5). */
 function usePageGuards(dirty: boolean, onBack: () => void): [(() => void) | null, (go: (() => void) | null) => void] {
@@ -219,7 +291,6 @@ export function RoutineEditor({ rule, draft: initial, project, dropped, describe
   const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
   const wide = useMediaQuery(WIDE_QUERY)
   const [pane, setPane] = useState<Pane>(run || history ? 'history' : 'steps')
-  const [adding, setAdding] = useState<AddTarget | null>(null)
   const [saveError, setSaveError] = useState('')
   const [saving, setSaving] = useState(false)
   const [justSaved, setJustSaved] = useState(false)
@@ -293,6 +364,7 @@ export function RoutineEditor({ rule, draft: initial, project, dropped, describe
     setPane('history')
   }, [run])
 
+  const add = useStepCatalogue({ draft, types, catalogue, edit, focusAfter })
   const events: CardEvents = {
     set: (id, input, arg) => edit((d) => ({ ...d, steps: setInput(d.steps, id, input, arg) })),
     edit,
@@ -305,30 +377,16 @@ export function RoutineEditor({ rule, draft: initial, project, dropped, describe
       setAnnounce(delta < 0 ? t('Moved up: {step}', { step: stepName(s.kind) }) : t('Moved down: {step}', { step: stepName(s.kind) }))
     },
     duplicate: (id) => edit((d) => (stepCount(d.steps) >= MAX_STEPS ? d : { ...d, steps: duplicateStep(d.steps, id) })),
-    remove: (id) => edit((d) => ({ ...d, steps: removeStep(d.steps, id) })),
-    // Suggestions follow the data that flows to the place: the step above, a Repeat's item, the trigger (routines-dynamic-data D3).
-    addBelow: (id) => {
-      const p = placeOf(draft.steps, id)
-      if (p) setAdding({ parent: p.parent, block: p.block, index: p.index + 1, above: flowingTypeAt(draft, { ...p, index: p.index + 1 }, types) })
+    remove: (id) => {
+      add.close(false)
+      removeWithUndo(draft, id, edit, focusAfter, setAnnounce)
     },
-    addIn: (parent, block) => setAdding({ parent, block, index: -1, above: flowingTypeAt(draft, { parent, block, index: -1 }, types) }),
+    addBelow: add.below,
+    addIn: add.inBlock,
     fix: (f: Fix) => {
       if (f.kind === 'edit') edit(f.apply)
       else openers.get(`${f.step}.${f.input}`)?.()
     },
-  }
-  const addAtEnd = () => setAdding({ parent: '', block: '', index: -1, above: flowingTypeAt(draft, { parent: '', block: '', index: -1 }, types) })
-  const pick = (kind: string) => {
-    if (!adding) return
-    const target = adding
-    setAdding(null)
-    edit((d) => {
-      if (stepCount(d.steps) >= MAX_STEPS) return d
-      const id = newId(d.steps)
-      focusAfter.current = id
-      // The new step reads the data that flows to it, never a task chosen by hand (routines-dynamic-data D3).
-      return insertNewStep(d, target, kind, id, types)
-    })
   }
   const blocked = error && error.code !== 'unavailable' ? error : null
   const save = () => {
@@ -359,7 +417,7 @@ export function RoutineEditor({ rule, draft: initial, project, dropped, describe
   }
   const withAI = hasAI(draft.steps)
   const estimate = [...previews.values()].reduce((n, p) => n + (p.state === 'ai' ? p.estimate : 0), 0)
-  const { test, testing, result, confirm } = useRoutineTest({
+  const { test, testing, result, ask } = useRoutineTest({
     draft, rule, dirty, online, blocked: !!blocked, withAI, estimate, taskId: triggerType === 'task' ? data.triggerTask?.id : undefined, projectId: shared?.projectId,
     onStart: () => setPane('test'), onAnnounce: setAnnounce, onError: (e) => setSaveError(messageOf(e)),
   })
@@ -370,7 +428,7 @@ export function RoutineEditor({ rule, draft: initial, project, dropped, describe
     else if (mod && e.key.toLowerCase() === 'z' && !e.shiftKey && canUndo && !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)) { e.preventDefault(); undo() }
   }
 
-  const state: CardState = { ctx, catalogue, previews, online, error: shownError, me, openers, leave: leaveCard }
+  const state: CardState = { ctx, catalogue, previews, online, error: shownError, me, openers, leave: leaveCard, adding: add.adding, addPanel: add.panel }
   const name = draft.name.trim() || (saved ? t('Untitled routine') : t('New routine'))
 
   const actions = (
@@ -387,7 +445,7 @@ export function RoutineEditor({ rule, draft: initial, project, dropped, describe
   const stepsColumn = (
     <section className="space-y-2" aria-label={t('Steps of {name}', { name })} data-routine-steps>
       {draft.steps.length === 0 && <p className="text-meta text-muted">{t('Add the first step: what should happen?')}</p>}
-      <CardColumn steps={draft.steps} state={state} events={events} onAdd={addAtEnd}>
+      <CardColumn steps={draft.steps} state={state} events={events} onAdd={add.atEnd}>
         <WhenCard trigger={draft.trigger} condition={draft.condition} ctx={ctx} me={me}
           onTrigger={(tr) => edit((d) => ({ ...d, trigger: tr }))} onCondition={(c) => edit((d) => ({ ...d, condition: c }))} />
       </CardColumn>
@@ -397,7 +455,7 @@ export function RoutineEditor({ rule, draft: initial, project, dropped, describe
 
   const status = <SaveStatus dirty={dirty} justSaved={justSaved} />
   const crumbs = <Crumbs name={name} onBack={onBack} />
-  const testPanel = <TestPanel result={result} draft={draft} names={names} online={online} testing={testing} disabled={!!blocked || !draft.steps.length} onTest={test} />
+  const testPanel = <TestPanel result={result} draft={draft} names={names} online={online} testing={testing} disabled={!!blocked || !draft.steps.length} onTest={test} ask={ask} />
   const historyPanel = <HistoryPanel rule={rule} openRun={openRun} onOpen={setOpenRun} />
   const sideTabs = [{ id: 'test', label: t('Test') }, ...(saved ? [{ id: 'history', label: t('History') }] : [])]
   const sidePane: Pane = pane === 'history' && saved ? 'history' : 'test'
@@ -443,8 +501,6 @@ export function RoutineEditor({ rule, draft: initial, project, dropped, describe
           {actions}
         </div>
       )}
-      {adding && <AddStepSheet above={adding.above} catalogue={catalogue} onPick={pick} onClose={() => setAdding(null)} />}
-      {confirm}
       {leave && (
         <ConfirmDialog title={t('Discard your changes?')} consequence={t('The routine stays as it was saved.')} confirmLabel={t('Discard')}
           onConfirm={() => { const go = leave; setLeave(null); go() }} onCancel={() => setLeave(null)} />
@@ -497,12 +553,26 @@ function Crumbs({ name, onBack }: { name: string; onBack: () => void }) {
   )
 }
 
-function TestPanel({ result, draft, names, online, testing, disabled, onTest }: {
+function TestPanel({ result, draft, names, online, testing, disabled, onTest, ask }: {
   result: RoutineTestResult | null; draft: RoutineDraft; names: ReturnType<typeof useRoutineNames>; online: boolean; testing: boolean; disabled: boolean; onTest: () => void
+  ask: AskAI | null
 }) {
+  if (ask) {
+    return (
+      <section className="surface-card space-y-3 p-3" aria-label={t('Test with AI?')} data-routine-test-panel data-test-ask-ai data-overlay="inline"
+        onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); ask.cancel() } }}>
+        <p className="text-body font-medium text-default">{t('Test with AI?')}</p>
+        <p className="text-meta text-muted">{ask.consequence}</p>
+        <div className="flex justify-end gap-2">
+          <Button size="sm" variant="ghost" onClick={ask.cancel}>{t('Cancel')}</Button>
+          <Button size="sm" variant="primary" icon="list-checks" onClick={ask.confirm} autoFocus data-test-ai-confirm>{t('Test')}</Button>
+        </div>
+      </section>
+    )
+  }
   return (
     <div className="space-y-3" data-routine-test-panel>
-      {result ? <TestResult result={result} draft={draft} names={names} /> : (
+      {result ?<TestResult result={result} draft={draft} names={names} /> : (
         <div className="space-y-3 rounded-card border border-dashed border-default p-4">
           <p className="text-body text-muted">{t('Test runs every step against your tasks and shows what each would do. Nothing is written.')}</p>
           {!online && <p className="text-meta text-muted">{t('Needs a connection')}</p>}

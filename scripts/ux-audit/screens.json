@@ -870,6 +870,28 @@
   "on": "routine-page"
  },
  {
+  "id": "routine-trigger-list",
+  "route": "rules",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "routine-trigger-list",
+  "story": "Screens/Routines",
+  "on": "routine-page"
+ },
+ {
+  "id": "routine-add-step",
+  "route": "rules",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "routine-add-step",
+  "story": "Screens/Routines",
+  "on": "routine-page"
+ },
+ {
   "id": "projects-archived",
   "route": "projects",
   "kind": "screen",
