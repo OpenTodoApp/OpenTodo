@@ -8,6 +8,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 - **Getting a chore's turn because someone left now tells you.** When the person whose turn it is leaves a shared project, is removed or deletes their account, the next person in the rotation now gets the same **It's your turn** notification as after a completion, in the app, by push and on their notification channels. Before, the task moved to them silently ([Take turns](docs/take-turns.md)).
 
+### Fixed
+
+- **`ot vault sync` and `watch` no longer overwrite a file saved while a sync runs.** Each sync reads a project file or task note again right before writing or removing it; a file saved meanwhile is left as saved, and the next sync merges it with what changed in the app in between. New lines in it still get their `🆔`, so no task is created twice.
+
 ## [0.21.0] - 2026-11-02
 
 OpenTodo 0.21.0 is about **planning horizons and the home**. Plan a task for **this week, next week or this month** without a made-up date (time sectors), and pin a few **objectives** for the quarter and the week above Plan and in the weekly review. A project can be a **reusable list** for groceries or packing, where adding an item that is already there brings it back instead of duplicating it. A repeating chore in a shared project can **take turns** between people. On Android, **location reminders** fire when you arrive at or leave a place (GitHub and F-Droid builds; Google Play follows). Also: buttons that only close a panel now say **Close**, the phone Day calendar leaves room for the hours, and a fix for encrypted accounts (see Security).
