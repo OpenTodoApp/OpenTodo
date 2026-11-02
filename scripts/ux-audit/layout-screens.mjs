@@ -316,10 +316,13 @@ export const OVERLAYS = {
     return { overlay, trigger, reopen, kind: 'popover' }
   },
   // "+ Add step" (routines-editor-no-modals): the step catalogue expands in place under the
-  // button, in the column, with its search focused; Escape collapses it.
+  // button, in the column, with its search focused; Escape collapses it. Opened from the keyboard,
+  // as the word list is: the seeded reminder toast can cover the button at the page's foot, and a
+  // tap or Escape that reached the toast would dismiss it for every other combination.
   async 'routine-add-step'(p) {
     const trigger = p.locator('[data-add-step]')
-    await trigger.click()
+    await trigger.focus()
+    await p.keyboard.press('Enter')
     const overlay = p.locator('[data-add-step-panel]')
     await overlay.locator('[role="option"]').first().waitFor()
     if (await p.locator('[data-overlay="dialog"], [role="dialog"]').count()) throw new Error('Add step opened a dialog')
