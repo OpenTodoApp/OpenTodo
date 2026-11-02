@@ -43,6 +43,16 @@ func (s *Service) emitAssignments(ctx context.Context, author string, at int64, 
 	}
 	var actorName string
 	actorLoaded := false
+	// Series completed in this batch: a new occurrence record names them
+	// (chore-rotation D5), so their assignee change is a turn passing.
+	completed := map[string]bool{}
+	for _, c := range changes {
+		if fc, ok := c.Fields["series_id"]; ok && c.Entity == "task" {
+			if id := idValue(fc.To); id != "" {
+				completed[id] = true
+			}
+		}
+	}
 	for _, c := range changes {
 		if c.Entity != "task" {
 			continue
@@ -59,7 +69,7 @@ func (s *Service) emitAssignments(ctx context.Context, author string, at int64, 
 			actorName = s.userName(ctx, author)
 			actorLoaded = true
 		}
-		e := notify.Assigned{AssigneeID: assignee, ActorID: author, ActorName: actorName, TaskID: c.EntityID, At: at}
+		e := notify.Assigned{AssigneeID: assignee, ActorID: author, ActorName: actorName, TaskID: c.EntityID, At: at, Turn: completed[c.EntityID]}
 		e.TaskTitle = s.stringField(ctx, c.ScopeID, "task", c.EntityID, "title")
 		e.ProjectID = idValue(json.RawMessage(s.rawField(ctx, c.ScopeID, "task", c.EntityID, "project_id")))
 		if e.ProjectID == "" {

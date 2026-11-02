@@ -38,6 +38,8 @@ const (
 	MaxIDLen         = 64
 	// MaxBlockedBy caps a task's blockers (OpenSpec change task-dependencies).
 	MaxBlockedBy = 50
+	// MaxRotation caps the people of a task's rotation (OpenSpec change chore-rotation).
+	MaxRotation = 20
 	// MaxManualOrder caps the task ids of a label's or view's own manual order
 	// (OpenSpec change view-manual-order, design D2): about 19 KB of UUIDs.
 	MaxManualOrder  = 500
@@ -376,6 +378,13 @@ var Schema = map[string]map[string]Field{
 		// editor-everywhere, design D7): written with notes_doc, filtered to
 		// current members of the task's shared project at receipt, plaintext.
 		"note_mentions": {Kind: kIDList, Default: `[]`},
+		// The people who take turns on a recurring task (OpenSpec change
+		// chore-rotation, design D1): at most MaxRotation distinct account ids in
+		// turn order, one whole-list register. Completing the series assigns the
+		// next of them; Apply refuses ids that are not members of the task's
+		// scope. Inert on a task without a rule or in a scope with one member.
+		// Plaintext account ids like assignee_id, not content; additive.
+		"rotation": {Kind: kIDList, Default: `[]`},
 		// Recurrence rule and the series an occurrence record belongs to
 		// (OpenSpec change recurring-tasks); additive. See docs/recurrence.md.
 		"recurrence": {Kind: kRecurrence, Default: `null`},
@@ -1060,6 +1069,9 @@ func Validate(op Op) error {
 	}
 	if k == kIDList && slices.Contains(idList(op.Value), op.EntityID) {
 		return fmt.Errorf("%w: %s.%s cannot name the task itself", ErrInvalidOp, op.Entity, op.Field)
+	}
+	if op.Entity == "task" && op.Field == "rotation" && len(idList(op.Value)) > MaxRotation {
+		return fmt.Errorf("%w: task.rotation may hold at most %d people", ErrInvalidOp, MaxRotation)
 	}
 	if op.Entity == "attachment" {
 		if err := checkAttachment(op.Field, op.Value); err != nil {
