@@ -31,9 +31,11 @@ import { useRoutineNames, valueNamer, type RoutineNames } from './data'
 import { RunDetail, RunsList } from './RunHistory'
 import { clearHandover, openRoutineHistory, returnFocus } from './routineNav'
 import { StarterGallery, StartersPage } from './Starters'
-import { DescribeSheet, useDescribeMode } from './DescribeIt'
+import { DESCRIBE_PANEL_ID, DescribePanel, useDescribeMode } from './DescribeIt'
 import { pausedText, runsAsText } from './SharedRoutine'
 import { sentenceText } from './StepCard'
+import { useAssistantStatus } from '../../lib/assistantStatus'
+import { DisclosureNotice } from '../assistant/DisclosureNotice'
 
 const PAUSE_REASON = translatedMap<string>({ runaway: msg('Paused: it ran too often') })
 
@@ -167,6 +169,9 @@ function RoutinesList({ route }: { route?: Extract<Route, { view: 'rules' }> }) 
   const rules = useMemo(() => (project ? allRules.filter((r) => r.project_id === project) : allRules), [allRules, project])
   const catalogue = useCatalogue()
   const [status, setStatus] = useRulesStatus(rules)
+  // The notice that the assistant's list is now complete, for a consent that covers AI steps (assistant-disclosure-notice D4).
+  const assistant = useAssistantStatus()
+  const online = useOnline()
   // A run of a deleted routine: its detail in a dialog (a live routine's run opens on its page).
   const [run, setRun] = useState<{ ruleId: string; runId: string } | null>(null)
   const tab = route?.tab === 'runs' ? 'runs' : 'routines'
@@ -189,9 +194,13 @@ function RoutinesList({ route }: { route?: Extract<Route, { view: 'rules' }> }) 
   const closeDescribe = () => {
     setDescribing(false)
     if (route?.describe) navigate({ view: 'rules' }, { replace: true })
+    requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-describe-routine]')?.focus())
   }
+  // Describe it expands in place under the header (routines-editor-no-modals); the button toggles it.
+  const describeOpen = describing && !!describeMode
   const describeButton = describeMode && (
-    <Button variant="secondary" size="sm" icon="message-circle" onClick={() => setDescribing(true)} data-describe-routine>{t('Describe it')}</Button>
+    <Button variant="secondary" size="sm" icon="message-circle" onClick={() => (describeOpen ? closeDescribe() : setDescribing(true))}
+      aria-expanded={describeOpen} aria-controls={describeOpen ? DESCRIBE_PANEL_ID : undefined} data-describe-routine>{t('Describe it')}</Button>
   )
   const pause = (paused: boolean) => act(api.pauseRules(paused).then((s) => status && setStatus({ ...status, ...s })))
   const setTab = (id: string) => navigate(id === 'runs' ? { view: 'rules', tab: 'runs' } : { view: 'rules' }, { replace: true })
@@ -206,6 +215,8 @@ function RoutinesList({ route }: { route?: Extract<Route, { view: 'rules' }> }) 
           <NewRoutineButton names={names} project={project} />
           {overflowGroups.length > 0 && <ActionMenu label={t('More')} groups={overflowGroups} />}
         </>} />
+      {describing && describeMode && <DescribePanel mode={describeMode} catalogue={catalogue} onClose={closeDescribe} />}
+      {assistant?.routines_consented && assistant.disclosure_notice && <div className="mb-3"><DisclosureNotice status={assistant} connected={online} /></div>}
       {status && !status.enabled && <div className="mb-3"><Notice tone="warning">{t('Automations are off on this server.')}</Notice></div>}
       {status?.enabled && status.paused && (
         <div className="mb-3"><Notice tone="info" action={<Button size="sm" variant="ghost" onClick={() => pause(false)}>{t('Resume')}</Button>}>{t('Your routines are paused.')}</Notice></div>
@@ -243,7 +254,6 @@ function RoutinesList({ route }: { route?: Extract<Route, { view: 'rules' }> }) 
           <RunsList rules={rules} onOpen={(r) => openRun(r.rule_id, r.run_id)} />
         )}
       </Tabs>
-      {describing && describeMode && <DescribeSheet mode={describeMode} catalogue={catalogue} onClose={closeDescribe} />}
       {run && <RunDetail rule={byId.get(run.ruleId)} ruleId={run.ruleId} runId={run.runId} onClose={() => setRun(null)} />}
     </PageBody>
   )

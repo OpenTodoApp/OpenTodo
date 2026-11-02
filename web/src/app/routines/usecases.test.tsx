@@ -96,10 +96,12 @@ async function open(c: UseCase, steps: RoutineStep[]): Promise<{ unmount: () => 
 async function add(kind: string, search: string, lane?: HTMLElement) {
   const before = cards().length
   await click(lane ? button('Add step', lane) : document.querySelector('[data-add-step]')!)
-  await waitFor(() => !!document.querySelector('[data-testid="add-step"]'), 'the sheet')
-  await type(document.querySelector<HTMLInputElement>('[data-testid="add-step"] input')!, search)
-  await waitFor(() => !!document.querySelector(`[data-add-results] [data-add-kind="${kind}"] button`), `the result ${kind}`)
-  await click(document.querySelector(`[data-add-results] [data-add-kind="${kind}"] button`)!)
+  // The catalogue expands in place, never as a dialog (routines-editor-no-modals).
+  await waitFor(() => !!document.querySelector('[data-add-step-panel]'), 'the catalogue in place')
+  expect(document.querySelector('[role="dialog"]')).toBeNull()
+  await type(document.querySelector<HTMLInputElement>('[data-add-step-panel] input')!, search)
+  await waitFor(() => !!document.querySelector(`[data-add-results] [data-add-kind="${kind}"]`), `the result ${kind}`)
+  await click(document.querySelector(`[data-add-results] [data-add-kind="${kind}"]`)!)
   await waitFor(() => cards().length === before + 1, `the ${kind} card`)
 }
 

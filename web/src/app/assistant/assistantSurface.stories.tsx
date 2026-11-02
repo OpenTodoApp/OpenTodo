@@ -4,6 +4,7 @@ import type { Review } from '../../lib/assistant'
 import type { AssistantStatus } from '../../lib/assistantStatus'
 import { Composer } from './AssistantComposer'
 import { AssistantPanelBody, type PanelViewProps } from './AssistantPanelBody'
+import { DisclosureNoticeView } from './DisclosureNotice'
 import { withClock } from '../stories/fixtures'
 
 // The assistant's surface (OpenSpec change assistant-surface): the empty page with the
@@ -79,6 +80,19 @@ export const EmptySheet: StoryObj = {
       <div className="border-t border-default px-3 py-2">
         <Composer draft="" onDraft={noop} onSend={noop} onStop={noop} streaming={false} connected disabled={false} skills={SKILLS} onSkill={noop} context="Today" />
       </div>
+    </div>
+  ),
+}
+
+/**
+ * The one-time notice for a consent given to an older, shorter list
+ * (assistant-disclosure-notice), in the side sheet with the list opened.
+ */
+export const CompleteListNotice: StoryObj = {
+  render: () => (
+    <div className="-m-4 w-full max-w-[28rem] border-l border-default bg-surface px-4 py-3">
+      <DisclosureNoticeView connected open device={false} onSeen={noop} onTurnOff={noop}
+        fields={['task titles and descriptions', 'due dates, repeats, priorities, estimates and completion', 'comments', 'notes', 'tracked time and its notes', 'your routines and calendar frames']} />
     </div>
   ),
 }

@@ -19,7 +19,8 @@ import { useSyncStatus } from '../../lib/sync'
 import { NO_TASKS, useLiveTasks } from '../../lib/liveTasks'
 import { flattenTree, type TreeNode } from '../../lib/tree'
 import type { Task } from '../../lib/types'
-import { inLater, isDashboard, runView, setStartView } from '../../lib/views'
+import { isDashboard, runView, setStartView } from '../../lib/views'
+import { splitLater } from '../../lib/listGroups'
 import { useOnline } from '../../lib/online'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { navigate, routePath, type Route } from '../router'
@@ -138,8 +139,9 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
         const project = live.find((p) => p.id === target.id)
         if (!project) return { title: t('Project'), missing: { message: t('This project no longer exists.') }, groups: [], columns: [] }
         const open = projectOpenList(all, project.id)
-        const later = open.filter((task) => inLater(task, today))
-        const tree = buildTaskTree(later.length ? open.filter((task) => !inLater(task, today)) : open)
+        // A subtree goes where its top-level task goes (subtasks-follow-later).
+        const { active, later } = splitLater(open, today)
+        const tree = buildTaskTree(active)
         const byId = new Map(tree.roots.map((n) => [n.id, n]))
         const groups: Group[] = groupBySection(project.id, tree.roots.map((n) => n.item), sections)
           .filter((s) => s.tasks.length > 0)
@@ -147,7 +149,7 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
             id: `section:${s.key}`, heading: s.section?.name ?? null,
             rows: flattenTree(s.tasks.map((task) => byId.get(task.id) as TreeNode<Task>)).map((n) => toRow(n.item, `section:${s.key}`, { depth: n.depth })),
           }))
-        if (later.length) groups.push({ id: 'later', heading: t('Later'), rows: later.map((task) => toRow(task, 'later')) })
+        if (later.length) groups.push({ id: 'later', heading: t('Later'), rows: flattenTree(buildTaskTree(later).roots).map((n) => toRow(n.item, 'later', { depth: n.depth })) })
         if (groups.length === 0) groups.push({ id: 'empty', rows: [], empty: t('Nothing left to do in this project') })
         return { title: project.name, groups, columns: [] }
       }

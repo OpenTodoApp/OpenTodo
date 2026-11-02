@@ -57,6 +57,47 @@ func TestTodayClosedList(t *testing.T) {
 	}
 }
 
+// TestTodayTimeSensitive (OpenSpec change today-waiting-time-sensitive, task
+// 3.2): the Waiting heading names the next task with a time today and lists
+// those tasks soonest first, the table keeps fill order, and --json marks
+// time_sensitive on waiting tasks.
+func TestTodayTimeSensitive(t *testing.T) {
+	h := newHarness(t)
+	h.login()
+	day := "2026-10-10"
+	h.put("task", "aaaa0002", map[string]any{"title": "Planned", "due": map[string]any{"date": day}, "created_at": 1000})
+	h.put("task", "bbbb0002", map[string]any{"title": "Send the form", "due": map[string]any{"date": day, "time": "16:00"}, "created_at": 2000})
+	h.put("task", "cccc0002", map[string]any{"title": "Plain", "due": map[string]any{"date": day}, "created_at": 3000})
+	h.put("task", "dddd0002", map[string]any{"title": "File the taxes", "due": map[string]any{"date": day}, "deadline": day, "created_at": 4000})
+	h.put("task", "eeee0002", map[string]any{"title": "Call the school", "due": map[string]any{"date": day, "time": "09:00"}, "created_at": 5000})
+	h.putPersonal("user_prefs", map[string]any{"today_limit": 1})
+
+	out := h.mustRun("today")
+	if !strings.Contains(out, "Waiting for a slot · 4 — next: Call the school, 09:00") {
+		t.Fatalf("heading:\n%s", out)
+	}
+	call, form, taxes := strings.Index(out, "09:00     eeee"), strings.Index(out, "16:00     bbbb"), strings.Index(out, "deadline  dddd")
+	if call < 0 || form < call || taxes < form {
+		t.Fatalf("soonest first:\n%s", out)
+	}
+	// The table after it keeps fill order: Send the form, Plain, File the taxes, Call the school.
+	table := out[taxes:]
+	if i, j := strings.Index(table, "Plain"), strings.LastIndex(table, "Call the school"); i < 0 || j < i {
+		t.Fatalf("fill order:\n%s", out)
+	}
+	var list []map[string]any
+	if err := json.Unmarshal([]byte(h.mustRun("today", "--json")), &list); err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]any{}
+	for _, e := range list {
+		got[e["id"].(string)] = e["time_sensitive"]
+	}
+	if got["aaaa0002"] != nil || got["bbbb0002"] != true || got["cccc0002"] != false || got["dddd0002"] != true || got["eeee0002"] != true {
+		t.Fatalf("time_sensitive = %v", got)
+	}
+}
+
 // putPersonal writes fields of a personal row (user_prefs, review), which have
 // no created_at or position.
 func (h *harness) putPersonal(entity string, fields map[string]any) {

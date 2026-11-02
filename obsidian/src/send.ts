@@ -1,4 +1,4 @@
-// "Send line to OpenTodo" (spec "Send a line or a selection to OpenTodo", "The
+// "Send line as a task" (spec "Send a line or a selection to OpenTodo", "The
 // task links back to its note", "Sends work offline"): read the lines, confirm,
 // build and seal the ops, queue them, then change the lines, offer Undo and push.
 // Everything Obsidian-specific comes in through Deps, so the flow is unit tested
@@ -192,7 +192,7 @@ export class Sender {
   }
 
   /**
-   * A note was renamed or moved (D11), or "Fix OpenTodo links in this note" ran:
+   * A note was renamed or moved (D11), or "Fix task links in this note" ran:
    * each task linked from its lines gets an origin naming `path`. Returns how
    * many were queued.
    */
@@ -235,7 +235,7 @@ export class Sender {
     }
     this.d.store.set(K.sent, sent)
     if (entries.length) this.d.outbox.add(entries)
-    if (unknown) this.d.notify(tr('{n, plural, one {# linked task} other {# linked tasks}} could not be updated while offline. Run "Fix OpenTodo links in this note" again later.', { n: unknown }))
+    if (unknown) this.d.notify(tr('{n, plural, one {# linked task} other {# linked tasks}} could not be updated while offline. Run "Fix task links in this note" again later.', { n: unknown }))
     else if (!opts.quiet) this.d.notify(tr('{n, plural, one {# link updated} other {# links updated}}', { n: entries.length }))
     this.d.push()
     return entries.length

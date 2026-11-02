@@ -1,8 +1,9 @@
-// The "Sync a folder with OpenTodo" part of the settings tab
+// The "Folder sync" part of the settings tab
 // (obsidian-vault-sync task 4.1): the folder, the adopt and plaintext
 // confirmations, the status (who syncs the folder and until when), "Take over
 // syncing here", "Sync now" and "Turn off".
 import { Setting, type App } from 'obsidian'
+import { warning } from './buttons'
 import { confirm } from './confirm'
 import type OpenTodoPlugin from './main'
 import { currentLanguage, tr } from './strings'
@@ -51,8 +52,8 @@ export class VaultSection {
 
   display(el: HTMLElement): void {
     const vs = this.plugin.vault
-    new Setting(el).setName(tr('Sync a folder with OpenTodo')).setHeading()
-    el.createEl('p', { cls: 'setting-item-description', text: tr('Keeps one folder of this vault in two-way sync with OpenTodo, with the files and rules of ot vault: one file per project, one line per task. It syncs while Obsidian is open and in front: when the plugin starts, a second after you change a file in the folder, every 30 seconds and with “Sync vault with OpenTodo now”. It does not sync in the background or while Obsidian is closed.') })
+    new Setting(el).setName(tr('Folder sync')).setHeading()
+    el.createEl('p', { cls: 'setting-item-description', text: tr('Keeps one folder of this vault in two-way sync with OpenTodo, with the files and rules of ot vault: one file per project, one line per task. It syncs while Obsidian is open and in front: when the plugin starts, a second after you change a file in the folder, every 30 seconds and with “Sync folder now”. It does not sync in the background or while Obsidian is closed.') })
     const folder = vs.folder()
     if (folder === null) {
       const s = new Setting(el).setName(tr('Folder')).setDesc(tr('A new folder, or one already synced by ot vault or by this plugin on another device.'))
@@ -69,7 +70,7 @@ export class VaultSection {
     const status = new Setting(el).setName(tr('Folder {folder}', { folder: folder || '/' })).setDesc(vaultStatusText(vs.status, this.plugin.owner().label))
     status.settingEl.addClass('opentodo-vault-status')
     status.addButton((b) => b.setButtonText(tr('Sync now')).setDisabled(vs.status.kind === 'syncing').onClick(() => void vs.run('command')))
-    if (vs.status.kind === 'owned') status.addButton((b) => b.setButtonText(tr('Take over syncing here')).setWarning().onClick(() => void this.takeOver()))
+    if (vs.status.kind === 'owned') status.addButton((b) => warning(b.setButtonText(tr('Take over syncing here')).onClick(() => void this.takeOver())))
     if (vs.status.kind === 'locked') status.addButton((b) => b.setButtonText(tr('Unlock OpenTodo')).setCta().onClick(() => this.plugin.unlock()))
     if (this.message) el.createEl('p', { cls: 'setting-item-description mod-warning', text: this.message })
     new Setting(el).setName(tr('Turn off')).setDesc(tr('The files and the folder’s state stay. This device stops syncing them and gives up the folder, so another device or ot vault can sync it.'))
