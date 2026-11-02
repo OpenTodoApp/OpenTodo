@@ -13,10 +13,10 @@ import { t } from './i18n'
 import { logbookHeading, type LogbookGroup } from './logbook'
 import { byPosition, compareByPosition, compareDueThenPriority } from './ordering'
 import { effectiveSection, groupBySection } from './sections'
-import { breadcrumbOf } from './subtasks'
-import { flattenTree, type Tree, type TreeNode } from './tree'
+import { breadcrumbOf, buildTaskTree } from './subtasks'
+import { effectiveParents, flattenTree, type Tree, type TreeNode } from './tree'
 import type { Label, Project, Section, Task } from './types'
-import { compareTasks, groupTasks, inAnytime, inToday, isSomeday } from './views'
+import { compareTasks, groupTasks, inAnytime, inLater, inToday, isSomeday } from './views'
 import { compareManual } from './viewOrder'
 import type { ListDisplay } from './listDisplay'
 import type { DayPart } from './dayParts'
@@ -139,7 +139,7 @@ export function earlierCollapsed(stored: ReadonlySet<string>, count: number): bo
   return count > EARLIER_FOLD_ABOVE
 }
 
-/** A row outside the tree (flat views, cards, Later): depth 0, no children. */
+/** A row outside the tree (flat views, cards): depth 0, no children. */
 export function flatRow(task: Task, breadcrumb: string | null = null): ListRow {
   return { task, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb }
 }
@@ -180,6 +180,26 @@ export function tasksForView(scope: ListScope, allTasks: readonly Task[], projec
   }
 }
 
+/**
+ * A project list's open tasks split into the main list and its Later group
+ * (subtasks-follow-later): a whole subtree goes where its top-level task goes, so
+ * a deferred or parked parent takes its subtasks into Later, and a deferred
+ * subtask of an active parent stays under it. Both keep the input order.
+ */
+export function splitLater(tasks: readonly Task[], today: string): { active: Task[]; later: Task[] } {
+  const parents = effectiveParents(tasks as Task[])
+  const byId = new Map(tasks.map((task) => [task.id, task]))
+  const rootOf = (id: string): Task => {
+    let cur = id
+    for (let up = parents.get(cur); up; up = parents.get(cur)) cur = up
+    return byId.get(cur)!
+  }
+  const active: Task[] = []
+  const later: Task[] = []
+  for (const task of tasks) (inLater(rootOf(task.id), today) ? later : active).push(task)
+  return { active, later }
+}
+
 /** Top-level tasks of the project bucketed by section: list headings and board columns. */
 export function sectionBuckets(projectId: string | null, tree: Tree<Task> | null, sections: Section[]): SectionBucket[] | null {
   if (!projectId || !tree) return null
@@ -200,7 +220,7 @@ export interface GroupInput {
   view: ListScope['view']
   /** The view's tasks after filters; for tree views without the Later ones. */
   tasks: Task[]
-  /** Project views: deferred and parked tasks, shown in a Later group at the end (Inbox tasks are never deferred or parked). */
+  /** Project views: deferred and parked top-level tasks with their subtasks (splitLater), shown as a tree in a Later group at the end (Inbox tasks are never deferred or parked). */
   laterTasks: Task[]
   tree: Tree<Task> | null
   today: string
@@ -256,9 +276,6 @@ function sortedRoots(roots: TreeNode<Task>[], order: ((a: Task, b: Task) => numb
 
 /** The list's groups, in render order: one pass, linear in the number of tasks. */
 export function listGroups(p: GroupInput): ListGroup[] {
-  const later: ListGroup[] = p.laterTasks.length
-    ? [{ key: 'later', heading: t('Later'), rows: p.laterTasks.map((task) => flatRow(task, task.parent_id ? breadcrumbOf(task, p.taskMap) : null)) }]
-    : []
   const toRow = (n: TreeNode<Task>): ListRow => ({
     task: n.item,
     depth: n.depth,
@@ -269,6 +286,10 @@ export function listGroups(p: GroupInput): ListGroup[] {
     breadcrumb: n.parent === null && n.item.parent_id ? breadcrumbOf(n.item, p.taskMap) : null,
   })
   const isCollapsed = (id: string) => p.collapsed.has(id)
+  // Later keeps each subtree together under its top-level task (subtasks-follow-later).
+  const later: ListGroup[] = p.laterTasks.length
+    ? [{ key: 'later', heading: t('Later'), rows: flattenTree(buildTaskTree(p.laterTasks).roots, isCollapsed).map(toRow) }]
+    : []
   // Board: cards are top-level tasks, column by column (keyboard order); a folded column has none on screen (board-polish D1).
   if (p.board) return p.columns.map((c) => ({ key: c.key, heading: null, rows: c.folded ? [] : c.cards.map((task) => flatRow(task)) }))
   const order = displayOrder(p.display, p.manualOrder)
