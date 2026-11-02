@@ -10,13 +10,21 @@ import { t, useLanguageVersion } from '../lib/i18n'
 
 export { initials } from '../ui'
 
-/** Compact assignee chip (task rows in shared projects); the avatar colour follows the account id. */
-export function AssigneeChip({ id, name, me }: { id: string; name: string; me?: boolean }) {
+/**
+ * Compact assignee chip (task rows in shared projects); the avatar colour follows the
+ * account id. `turns` marks a rotating chore with a small rotate glyph on the avatar
+ * (chore-rotation D5), named "<name>, takes turns".
+ */
+export function AssigneeChip({ id, name, me, turns = false }: { id: string; name: string; me?: boolean; turns?: boolean }) {
+  const shown = me ? t('You') : name
   return (
-    <Tooltip label={t('Assigned to {name}', { name })}>
-      <span className="inline-flex items-center gap-1 text-muted" data-assignee>
-        <PersonAvatar id={id} name={name} size="xs" />
-        <span className="max-w-24 truncate">{me ? t('You') : name}</span>
+    <Tooltip label={turns ? t('Assigned to {name}, taking turns', { name }) : t('Assigned to {name}', { name })}>
+      <span className="inline-flex items-center gap-1 text-muted" data-assignee data-turns={turns || undefined}>
+        <span className="inline-flex shrink-0 items-center gap-0.5">
+          <PersonAvatar id={id} name={name} size="xs" />
+          {turns && <Icon name="rotate-ccw" size={10} className="text-faint" />}
+        </span>
+        <span className="max-w-24 truncate">{shown}{turns && <span className="sr-only">{`, ${t('takes turns')}`}</span>}</span>
       </span>
     </Tooltip>
   )
