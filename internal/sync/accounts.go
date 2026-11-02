@@ -49,12 +49,16 @@ func WithAccountDeletion(ctx context.Context) (context.Context, *AccountDeletion
 }
 
 // ObserveAccountDeletion hands the unassignments of a committed account
-// deletion to the post-commit observer (webhooks), like RemoveMember does.
+// deletion to the post-commit observer (webhooks), and the rotating tasks it
+// handed on to the assignment sinks, like RemoveMember does.
 func (s *Service) ObserveAccountDeletion(ctx context.Context, d *AccountDeletion) {
-	if d == nil || s.observer == nil || len(d.changes) == 0 {
+	if d == nil || len(d.changes) == 0 {
 		return
 	}
-	s.observer(context.WithoutCancel(ctx), d.changes)
+	if s.observer != nil {
+		s.observer(context.WithoutCancel(ctx), d.changes)
+	}
+	s.EmitHandOffs(context.WithoutCancel(ctx), d.changes)
 }
 
 // DeleteAccountData is the account deletion hook (see the package function of
