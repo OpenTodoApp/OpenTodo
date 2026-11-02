@@ -154,7 +154,9 @@ func Seed(ctx context.Context, db *sql.DB, o Options) (Summary, error) {
 	svc := opsync.NewService(db)
 	// A seeded history is not a person posting: no comment rate limit.
 	svc.SetCommentRateLimit(0, 0)
-	g := &gen{ctx: ctx, sync: svc, rng: rand.New(rand.NewPCG(o.Seed, o.Seed^0x9e3779b97f4a7c15)),
+	// A seeded generator on purpose: the same seed must build the same account.
+	rng := rand.New(rand.NewPCG(o.Seed, o.Seed^0x9e3779b97f4a7c15)) // #nosec G404 -- test data from a fixed seed, never a secret
+	g := &gen{ctx: ctx, sync: svc, rng: rng,
 		o: o, owner: owner.ID, member: member.ID, counts: map[string]int{}}
 	u := o.Now.UTC()
 	g.today = time.Date(u.Year(), u.Month(), u.Day(), 0, 0, 0, 0, time.UTC)
