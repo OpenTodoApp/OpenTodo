@@ -116,15 +116,19 @@ export function DayHeader({ day, today, tasks, meetings, prefs, showName, select
   const shape = compact ? laneShape(count, choice) : { toggle: false, open: true }
   // A folded lane opens while the keyboard selection is one of its tasks, so the selection stays visible.
   const open = shape.open || (selectedId !== null && day.lane.some((tk) => tk.id === selectedId))
+  // A narrow column (Week beside the planning list, issue: "T… 0m / 8h +1?") puts the
+  // capacity under the day's name instead of cutting the name to a letter.
   const head = (
-      <div className="flex items-baseline justify-between gap-1 px-1">
+    <div className="@container/dayhead">
+      <div className="flex flex-col items-start px-1 @min-[10rem]/dayhead:flex-row @min-[10rem]/dayhead:items-baseline @min-[10rem]/dayhead:justify-between @min-[10rem]/dayhead:gap-1">
         {showName ? (
-          <TruncatedText className={`text-meta font-medium ${day.date === today ? 'text-accent' : 'text-muted'}`} text={`${weekdayName} ${d}`} />
+          <TruncatedText data-day-name="" className={`max-w-full text-meta font-medium ${day.date === today ? 'text-accent' : 'text-muted'}`} text={`${weekdayName} ${d}`} />
         ) : <span />}
         <Tooltip label={[capacityTooltip(load, prefs.dayLength, meetings), hiddenByFilter(hidden)].filter(Boolean).join(' ')}>
           <CapacityLine load={load} dayLength={prefs.dayLength} unestimated focusable />
         </Tooltip>
       </div>
+    </div>
   )
   const body = <>
       {day.allDay.length + deadlines.length + spanHidden > 0 && <AllDayStrip day={day} deadlines={deadlines} today={today} subMap={subMap} zone={zone} onOpen={onOpen} spanRows={spanRows} spanHidden={spanHidden} />}
