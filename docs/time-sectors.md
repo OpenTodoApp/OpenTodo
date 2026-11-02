@@ -11,7 +11,7 @@ order: 14
 
 <picture><source srcset="images/today-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/today-light.webp" alt="The Today view with its title, the date and the list of the day's tasks."></picture>
 
-Some work belongs to a week, not a day: "sometime this week", "next month", "this quarter". A due date for it is a fake date. It turns red on Tuesday and has to be moved every night. A **time sector** says what you mean: the task is planned for a period, and only real appointments and [deadlines](deadlines-and-start-dates.md) keep a date.
+Some work belongs to a week, not a day. A due date for it is a fake date that turns red on Tuesday. A **time sector** plans the task for a period instead; only real appointments and [deadlines](deadlines-and-start-dates.md) keep a date.
 
 ## What a sector is
 
@@ -25,7 +25,19 @@ A task with a sector and no do-on date is planned. It leaves the Inbox and [Anyt
 
 The stored value never changes by itself. "This week" is worked out on each device from today's date and your first day of the week, so the same task reads **This week** on Wednesday and **From week 45** after the week has ended. A sector whose period has ended is **carried over**: it is shown quietly, never in the overdue colour, and nothing is rewritten. Everyone who shares a project sees the same period, whatever day their week starts on.
 
-A task can hold a do-on date and a sector at once when a script or another app writes both. The date wins: the task is placed by its date and the sector waits until the date is cleared.
+## Turn them on
+
+Time sectors are off until you turn on **Time sectors** in **Settings → Account → How you work**, whatever way of working you chose there. It syncs to your devices. Off hides the controls, never a sector: a task that has one keeps its chip and can be cleared.
+
+## Plan a task for a period
+
+- **When editor:** the **Sector** tab, after **Do on** and **Start**, offers **This week**, **Next week**, **This month**, **Next month**, **This quarter** and **Next quarter**, each with its dates, and **Later…** for a week, month or quarter further out. **Clear** removes the sector.
+- **Command palette:** **Set time sector…** plans the selected tasks at once, with one **Undo**.
+- **Quick add:** `Draft the budget this week` or `Call Bo sometime next week` (see [quick add](quick-add.md)).
+
+A sector is the task's one "when": choosing it clears the do-on date and the start, and giving the task a date or parking it in Someday clears the sector, in one change you can undo. The deadline stays. A repeating task keeps its date, so the Sector tab says so instead.
+
+A row shows the sector where the date would be: **This week**, **Next month**, **Week 47**. A task can hold a date and a sector at once when a script or another app writes both: the date wins, and the When line says the sector is ignored while dated, with **Clear**. Filter with `sector: this week`, `carried` or `no sector` ([filters](filters.md)).
 
 ## From other apps and scripts
 

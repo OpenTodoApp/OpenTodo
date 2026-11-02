@@ -523,16 +523,18 @@ func (c *client) meAuth(ctx context.Context) (*user, credential, error) {
 	return out.User, out.Auth, nil
 }
 
-// quickPrefs reports the account's Day parts and Energy levels preferences
-// (GET /api/v1/me day_parts and energy_levels, OpenSpec changes day-parts and
-// task-energy): quick-add parsing follows them.
-func (c *client) quickPrefs(ctx context.Context) (dayParts, energy bool, err error) {
+// quickPrefs reports the account's Day parts, Energy levels and Time sectors
+// preferences (GET /api/v1/me day_parts, energy_levels and time_sectors,
+// OpenSpec changes day-parts, task-energy and time-sectors): quick-add parsing
+// follows them.
+func (c *client) quickPrefs(ctx context.Context) (dayParts, energy, sectors bool, err error) {
 	var out struct {
 		DayParts bool `json:"day_parts"`
 		Energy   bool `json:"energy_levels"`
+		Sectors  bool `json:"time_sectors"`
 	}
 	err = c.getJSON(ctx, "/me", &out)
-	return out.DayParts, out.Energy, err
+	return out.DayParts, out.Energy, out.Sectors, err
 }
 
 // normalizeURL accepts "todo.example.com", "http://host:8080/" and friends.

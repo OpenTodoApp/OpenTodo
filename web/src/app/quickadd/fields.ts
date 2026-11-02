@@ -29,7 +29,7 @@ const EXTRA: FieldKind[] = ['deadline', 'recurrence', 'reminder', 'spent', 'ener
 
 /** The row a chip belongs to: due, someday, evening and the day part are all "When". */
 export function fieldOf(kind: Chip['kind']): FieldKind {
-  return kind === 'due' || kind === 'someday' || kind === 'evening' || kind === 'daypart' ? 'when' : kind
+  return kind === 'due' || kind === 'someday' || kind === 'sector' || kind === 'evening' || kind === 'daypart' ? 'when' : kind
 }
 
 /** The rows, in order: each base field once (one row per label), then the set extras. */

@@ -20,6 +20,7 @@ import { uuid } from './ids'
 import { labelKey } from './labels'
 import { dayPartFields, dayPartName, dayPartOf, type DayPart } from './dayParts'
 import { energyName, type Energy } from './energy'
+import { sectorPatch } from './sectorWrites'
 import { replanChanges, type ReplanProposal, type UnfitChoice } from './replan'
 import { keepWorkspaceFor, Partition, readWorkspaceState, workspaceIdFor } from './workspaces'
 
@@ -199,6 +200,30 @@ export async function energyUndoable(ids: readonly string[], energy: Energy | nu
     .map((task) => ({ entity: 'task', entityId: task.id, patch: { energy: energy ?? '' } }))
   if (!changes.length) return { entry: null, label: '' }
   return apply(changes, energy ? t('Energy set to {level}', { level: energyName(energy) }) : t('Energy cleared'))
+}
+
+export interface SectorResult extends UndoableResult {
+  /** Repeating tasks left as they are: they keep a date (time-sectors D2). */
+  skipped: number
+}
+
+/**
+ * Plan the tasks for a time sector, or with '' clear it (time-sectors D2, D6): one
+ * batch writing the sector and clearing each task's do-on date, start and evening,
+ * with one Undo. Repeating tasks keep their date and are counted, not changed.
+ */
+export async function sectorUndoable(ids: readonly string[], sector: string, name = ''): Promise<SectorResult> {
+  const { tasks } = await readTicked(ids)
+  const repeating = sector ? tasks.filter((task) => !!task.recurrence) : []
+  const changes: Change[] = tasks
+    .filter((task) => !repeating.includes(task))
+    .map((task): Change => ({ entity: 'task', entityId: task.id, patch: sectorPatch(task, sector) }))
+    .filter((c) => Object.keys(c.patch).length > 0)
+  if (!changes.length) return { entry: null, label: '', skipped: repeating.length }
+  const label = sector
+    ? t('{n, plural, one {Planned for {name}} other {# tasks planned for {name}}}', { n: changes.length, name })
+    : t('Time sector cleared')
+  return { ...(await apply(changes, label)), skipped: repeating.length }
 }
 
 export interface DropResult extends UndoableResult {
