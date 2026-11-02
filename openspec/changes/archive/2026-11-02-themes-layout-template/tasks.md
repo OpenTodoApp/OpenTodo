@@ -13,7 +13,7 @@
 
 - [x] 3.1 Your themes is one row with row padding, a Learn more on theme files, an empty state, and New theme · Import ▾ · Download a template; custom theme swatches show their derived label colours
 - [x] 3.2 Branding's server themes are one row: title, actions and list share its padding
-- [x] 3.3 Editor: size containers, controls beside a sticky preview from 52 rem, compact colour rows two by two from 30 rem with hex field and inline contrast warning, labelled Corners, List text size, Font and Kind, Advanced folded with counts, Author and Licence side by side; `themeEditor.test.tsx` passes
+- [x] 3.3 Editor: size containers, controls beside a sticky preview from 52 rem, compact colour rows two by two when two 12.5 rem rows fit, with hex field and inline contrast warning, labelled Corners, List text size, Font and Kind, Advanced folded with counts, Author and Licence side by side; `themeEditor.test.tsx` passes
 - [x] 3.4 `scripts/ux-audit/measure.mjs` `crowdedControls` (overlapping controls, a control within 4 px of a row divider) run by `scripts/e2e-layout.mjs` on Settings › Appearance and Server › Branding; `measure.test.mjs` covers it
 - [x] 3.5 Stories: Your themes empty, colour rows with a warning; `make ui-check`
 
