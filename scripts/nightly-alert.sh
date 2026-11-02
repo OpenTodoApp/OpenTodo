@@ -17,14 +17,19 @@ gh_() {
   if [ -n "${DRY_RUN:-}" ]; then echo "gh $*"; else gh "$@"; fi
 }
 
+# A job may name what failed in an output called failures (perf: one metric over
+# budget per line, "first sync, desktop, 41 s, budget 30 s").
 failed=$(node -e '
-  for (const [job, { result }] of Object.entries(JSON.parse(process.argv[1])))
-    if (result !== "success" && result !== "skipped") console.log(`${job} (${result})`)
+  for (const [job, { result, outputs }] of Object.entries(JSON.parse(process.argv[1]))) {
+    if (result === "success" || result === "skipped") continue
+    console.log(`${job} (${result})`)
+    for (const line of (outputs?.failures ?? "").split("\n").filter(Boolean)) console.log(`  ${line}`)
+  }
 ' "$RESULTS")
 open=$(gh issue list --label "$label" --state open --json number --jq '.[0].number // empty' 2>/dev/null || true)
 
 if [ -n "$failed" ]; then
-  body=$(printf 'The nightly run failed: %s\n\nFailed jobs:\n%s\n' "$RUN_URL" "$(printf '%s\n' "$failed" | sed 's/^/- /')")
+  body=$(printf 'The nightly run failed: %s\n\nFailed jobs:\n%s\n' "$RUN_URL" "$(printf '%s\n' "$failed" | sed -e 's/^  /  - /' -e t -e 's/^/- /')")
   if [ -n "$open" ]; then
     gh_ issue comment "$open" --body "$body"
   else
