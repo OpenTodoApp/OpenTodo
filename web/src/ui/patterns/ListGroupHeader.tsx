@@ -31,6 +31,11 @@ export interface ListGroupHeaderProps {
   actionsAlwaysVisible?: boolean
   /** Always-visible trailing text ("2 completed"). */
   note?: ReactNode
+  /**
+   * Words after the count, part of the heading and its toggle's name, cut short before
+   * the label is (Today's folded Waiting for a slot: "next: Send the form, 4:00 PM").
+   */
+  detail?: string
   /** Heading level inside the page; h2 under a page title. */
   level?: 2 | 3
   /** Marks the header's element for tests and drop targets. */
@@ -43,13 +48,14 @@ export interface ListGroupHeaderProps {
 /** The label's classes (precision-rows D4): one style whether the view or the user named the group; `kind` stays a hook for tests and drop targets. */
 const GROUP_LABEL = 'min-w-0 truncate text-meta font-medium text-default'
 
-export function ListGroupHeader({ title, count, countLabel, countTone = 'faint', kind = 'generated', collapsed, onToggle, actions, actionsAlwaysVisible = false, note, level = 2, testId, className = '', bar = true }: ListGroupHeaderProps) {
+export function ListGroupHeader({ title, count, countLabel, countTone = 'faint', kind = 'generated', collapsed, onToggle, actions, actionsAlwaysVisible = false, note, detail, level = 2, testId, className = '', bar = true }: ListGroupHeaderProps) {
   const H = level === 2 ? 'h2' : 'h3'
   const collapsible = onToggle !== undefined
   const text = (
     <>
-      <span className={GROUP_LABEL} data-group-label={kind}>{title}</span>
+      <span className={`${GROUP_LABEL} ${detail ? 'shrink-0' : ''}`} data-group-label={kind}>{title}</span>
       {count !== undefined && <span className={`text-meta tabular-nums ${countTone === 'muted' ? 'text-muted' : 'text-faint'}`} data-group-count><ReadAs label={countLabel ? countLabel(count) : t('{n, plural, one {# open task} other {# open tasks}}', { n: count })}>{count}</ReadAs></span>}
+      {detail && <span className="min-w-0 truncate text-meta text-muted" data-group-detail><span aria-hidden="true" className="text-faint">— </span>{detail}</span>}
     </>
   )
   return (

@@ -501,6 +501,10 @@ type taskOut struct {
 	// today-closed-list): true when the user's Today limit keeps the task
 	// waiting for a slot.
 	WaitingForSlot *bool `json:"waiting_for_slot,omitempty"`
+	// TimeSensitive is set by today_summary on a waiting task only (OpenSpec
+	// change today-waiting-time-sensitive): true when it is due today with a
+	// time or its deadline is today.
+	TimeSensitive *bool `json:"time_sensitive,omitempty"`
 }
 
 // render builds the assistant-facing view of a task, evaluating dates in loc

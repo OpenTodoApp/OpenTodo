@@ -125,7 +125,7 @@ ID        P   DUE                 PROJECT  TITLE
 3f1d7a22  P1  2026-10-10 09:00             Call the plumber
 ```
 
-With a [Today limit](today-limit.md) on, `ot today` prints the tasks in the slots, then a **Waiting for a slot** heading and the waiting tasks in fill order (the first comes in next), with the app's rule: today's focus, the tasks you let in, Earlier oldest first, then the rest by when they were created. `--all` prints every task in one table, and `--json` adds `waiting_for_slot` to each task while the limit is on.
+With a [Today limit](today-limit.md) on, `ot today` prints the tasks in the slots, then a **Waiting for a slot** heading and the waiting tasks in fill order (the first comes in next), with the app's rule: today's focus, the tasks you let in, Earlier oldest first, then the rest by when they were created. `--all` prints every task in one table, and `--json` adds `waiting_for_slot` to each task while the limit is on. When waiting tasks are due today with a time or have a deadline today, the heading names the next one (`Waiting for a slot · 4 — next: Send the form, 16:00`) and lists them first, soonest first, with their time (`deadline` for a deadline without one), before the waiting tasks in fill order; `--json` marks them with `time_sensitive: true` (`false` on the other waiting tasks).
 
 ### Add and edit
 

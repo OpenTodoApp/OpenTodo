@@ -49,6 +49,20 @@ export const Collapsible: StoryObj = {
   },
 }
 
+/**
+ * Today's folded Waiting for a slot names the next task with a time today
+ * (today-waiting-time-sensitive): the words after the count are part of the toggle's
+ * name and are cut short before the label is, at phone width too.
+ */
+export const FoldedWithDetail: StoryObj = {
+  render: () => (
+    <div className="w-full max-w-[28rem] space-y-4">
+      <ListGroupHeader title="Waiting for a slot" count={4} collapsed onToggle={() => {}} detail="next: Send the form, 4:00 PM" />
+      <ListGroupHeader title="Waiting for a slot" count={2} collapsed onToggle={() => {}} detail="next: Call the insurance about the claim for the broken window, 11:30 AM" />
+    </div>
+  ),
+}
+
 /** A section with only completed tasks keeps its header with a note and a reveal. */
 export const CompletedOnly: StoryObj = {
   render: function CompletedOnlyStory() {
