@@ -17,8 +17,8 @@ import { SEEDS, STATUS_SEEDS, tokenName } from './tokenNames'
 
 type Change = (doc: ThemeDocument, group?: string) => void
 
-/** Colour rows two by two as soon as two rows of 12.5 rem fit beside each other (a 768 px screen with the sidebar too). */
-export const TWO_COLUMNS = 'grid grid-cols-[repeat(auto-fill,minmax(12.5rem,1fr))] gap-x-6 gap-y-1'
+/** Colour rows two by two as soon as two rows of 12.5 rem fit beside each other (a 768 px screen with the sidebar too), never more than two. */
+export const TWO_COLUMNS = 'grid grid-cols-[repeat(auto-fill,minmax(max(12.5rem,calc((100%-1.5rem)/2)),1fr))] gap-x-6 gap-y-1'
 
 export function Section({ id, title, children, note }: { id: string; title: string; children: ReactNode; note?: string }) {
   return (
