@@ -131,13 +131,13 @@ export function useListKeys(opts: ListKeys): void {
       else o.setOpenId(row.id)
     },
     'list.complete': () => {
-      if (b?.ticked.length) { void runBulk(b.ticked, { kind: 'complete' }); return }
+      if (b?.ticked.length) { act(runBulk(b.ticked, { kind: 'complete' })); return }
       if (!row) return false
       act(setTaskCompleted(row.id, !row.completed_at))
     },
     'list.priority': (e) => {
       const priority = Number(e.key) as Priority
-      if (b?.ticked.length) { void runBulk(b.ticked, { kind: 'priority', priority }); return }
+      if (b?.ticked.length) { act(runBulk(b.ticked, { kind: 'priority', priority })); return }
       if (!row) return false
       act(updateTask(row.id, { priority }))
     },
@@ -159,7 +159,7 @@ export function useListKeys(opts: ListKeys): void {
     'list.defer': openWith(deferFocus),
     'list.blocked-by': openWith(blockedByFocus),
     // Park or un-park (someday-and-evening D5).
-    'list.park': () => { if (!row) return false; void (row.start === 'someday' ? unparkTask(row.id) : parkTask(row.id)) },
+    'list.park': () => { if (!row) return false; act(row.start === 'someday' ? unparkTask(row.id) : parkTask(row.id)) },
     'list.evening': () => { if (!row) return false; act(updateTask(row.id, dayPartFields(row.evening ? null : 'evening'))) },
     ...o.extra,
   }, { paused: o.paused })
