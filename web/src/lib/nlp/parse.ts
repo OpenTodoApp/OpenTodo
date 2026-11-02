@@ -4,13 +4,14 @@
 import type { Due, Priority } from '../types'
 import { matchDuration, matchEnergy, matchLabel, matchPriority, matchProject, matchSpent, projectMiss, type ProjectRef } from './attributes'
 import { firstOccurrence } from '../recurrence'
-import { matchDateAt, matchDeadlineAt, matchTimeAt, ordinalOutOfRangeAt, partWordAt, wordsAt, type DateContext, type DateMatch, type TimeMatch } from './dates'
+import { matchDateAt, matchDeadlineAt, matchTimeAt, ordinalOutOfRangeAt, partWordAt, sectorPhraseAt, wordsAt, type DateContext, type DateMatch, type TimeMatch } from './dates'
+import { resolvePhrase, type SectorWord } from '../sectors'
 import { matchRecurrenceAt, type RecurrenceMatch } from './recurrence'
 import { matchReminderAt, type ReminderMatch, type ReminderPhrase } from './reminders'
 import { stripSpans, tokenize, type Span, type Token } from './tokenize'
 import { vocabulariesFor, type DayMonthOrder } from './vocab'
 
-export type AttributeKind = 'due' | 'deadline' | 'someday' | 'evening' | 'daypart' | 'project' | 'label' | 'priority' | 'estimate' | 'spent' | 'recurrence' | 'reminder' | 'energy'
+export type AttributeKind = 'due' | 'deadline' | 'someday' | 'sector' | 'evening' | 'daypart' | 'project' | 'label' | 'priority' | 'estimate' | 'spent' | 'recurrence' | 'reminder' | 'energy'
 
 /** One recognised attribute; drives a preview chip. `spans` are removed from the title. */
 export interface Chip {
@@ -40,6 +41,8 @@ export interface ParseContext {
   dayParts?: boolean
   /** The account offers energy (task-energy D3): the `~deep` tokens are read. */
   energy?: boolean
+  /** The account uses time sectors (time-sectors D8): "this week", "sometime next month" are read. */
+  sectors?: boolean
 }
 
 export interface ParseResult {
@@ -49,6 +52,8 @@ export interface ParseResult {
   deadline: string | null
   /** "someday" from a someday phrase on a line without a date (someday-and-evening), or null. */
   start: 'someday' | null
+  /** The time sector from a sector phrase on a line without a date (time-sectors D8), only with `sectors`; null otherwise. */
+  sector: string | null
   /** Set by "tonight" / "this evening" (the task is also due today), or by "evening" after a date with day parts on. */
   evening: boolean
   /** Morning or Afternoon from a part phrase (day-parts D5), only with `dayParts`; null otherwise. */
@@ -89,6 +94,17 @@ function overlaps(a: Span, list: readonly Span[]): boolean {
   return list.some((b) => a.start < b.end && b.start < a.end)
 }
 
+/** A time sector phrase read on a line: the sector it means on the line's day, its span and its length in tokens. */
+type SectorHit = { value: string; span: Span; n: number }
+
+/** A time sector phrase at token `i` that no dismissal covers (time-sectors D8). */
+function sectorAt(line: string, tokens: readonly Token[], i: number, ctx: ParseContext, dctx: DateContext, dismissed: readonly Span[]): SectorHit | null {
+  const sp: { n: number; word: SectorWord } | null = sectorPhraseAt(tokens, i, dctx)
+  const span = sp ? spanOf(line, tokens, i, i + sp.n) : null
+  if (!sp || !span || overlaps(span, dismissed)) return null
+  return { value: resolvePhrase(sp.word, ctx.today, ctx.weekStart ?? 1)!, span, n: sp.n }
+}
+
 export function parse(line: string, ctx: ParseContext): ParseResult {
   const vocabs = vocabulariesFor(ctx.languages)
   const dctx: DateContext = {
@@ -124,7 +140,7 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
     else dayPart = { value: pw.part, span }
     return to + pw.n
   }
-  let someday: Span | null = null
+  let someday: Span | null = null, sector: SectorHit | null = null
   let recurrence: { value: string; span: Span; start?: string } | null = null
   const reminders: { value: ReminderPhrase; span: Span }[] = []
   const labels: { value: string; span: Span }[] = []
@@ -274,6 +290,8 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
       time = { value: tm.time, date: tm.date, span: tSpan }
       i = tm.to
     } else {
+      const sm: SectorHit | null = ctx.sectors && !sector ? sectorAt(line, tokens, i, ctx, dctx, dismissed) : null
+      if (sm) { sector = sm; i += sm.n; continue }
       // A someday phrase counts only if the line ends up without a date (below).
       const n: number = someday ? 0 : wordsAt(tokens, i, dctx, 'somedayWords')
       const span: Span | null = n ? spanOf(line, tokens, i, i + n) : null
@@ -285,7 +303,8 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
       }
     }
   }
-  const parked = !!someday && !date && !time && !deadline && !recurrence
+  // A sector phrase, like a someday phrase, counts only if the line ends up without a date (time-sectors D8).
+  const sectored = !!sector && !date && !time && !recurrence, parked = !!someday && !sectored && !date && !time && !deadline && !recurrence
 
   // A rule without a date phrase starts on its first occurrence on or after today,
   // or on the weekday it was typed with ("every other friday", D3).
@@ -305,6 +324,7 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
   if (evening) chip('evening', [evening], true)
   if (dayPart) chip('daypart', [dayPart.span], dayPart.value)
   if (parked && someday) chip('someday', [someday], 'someday')
+  if (sectored && sector) chip('sector', [sector.span], sector.value)
   if (deadline) chip('deadline', [deadline.span], deadline.value)
   if (project) chip('project', [project.span], project.id)
   for (const l of labels) chip('label', [l.span], l.value)
@@ -320,6 +340,7 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
     due,
     deadline: deadline?.value ?? null,
     start: parked ? 'someday' : null,
+    sector: sectored && sector ? sector.value : null,
     evening: !!evening,
     dayPart: dayPart?.value ?? null,
     projectId: project?.id ?? null,

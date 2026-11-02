@@ -30,6 +30,12 @@ export const de: Vocabulary = {
   before: ['am', 'bis'],
   deadlineWords: ['frist', 'deadline'],
   somedayWords: ['irgendwann'],
+  // Time sectors (time-sectors D8), read only while the switch is on; "next week" alone stays a date.
+  sectorPhrases: {
+    'this-week': ['diese woche', 'irgendwann diese woche'], 'next-week': ['irgendwann nächste woche'],
+    'this-month': ['diesen monat', 'irgendwann diesen monat'], 'next-month': ['irgendwann nächsten monat'],
+    'this-quarter': ['dieses quartal', 'irgendwann dieses quartal'], 'next-quarter': ['nächstes quartal', 'im nächsten quartal', 'irgendwann nächstes quartal'],
+  },
   eveningWords: ['heute abend'],
   morningWords: ['heute morgen', 'heute früh', 'heute vormittag'],
   afternoonWords: ['heute nachmittag'],

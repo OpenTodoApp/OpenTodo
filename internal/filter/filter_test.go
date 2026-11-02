@@ -51,6 +51,9 @@ func TestFilterParserAcceptsDocsExamples(t *testing.T) {
 		"no origin & #Work", "origin: github & open", "!origin",
 		// Energy terms (task-energy).
 		"energy", "no energy", "energy: deep", "energy:LOW", `energy: "medium"`, "energy: low & unblocked & today", "energy: deep & #Work", `"energy" = 3`,
+		// Time sector terms (time-sectors).
+		"sector", "no sector", "carried", "sector: this week", "sector:next-month", `sector: "this quarter"`, "SECTOR: Next Quarter",
+		"sector: 2026-W44", "sector:2026-11", "sector: 2026-q4", "#Work & sector: this week", "carried | sector: this week", "!sector & open",
 		// Notes terms (notes-overview).
 		"notes", "no notes", "notes: permit", "notes:permit", `notes: "permit office"`, "NOTES: x", "notes & #Renovation", "no notes & p1",
 		"!notes", `"Notes" = 3`, `no "Notes"`, `notes: "a & b"`,
@@ -118,6 +121,9 @@ func TestFilterParserRejects(t *testing.T) {
 		"energy: high":       "Energy must be deep, medium or low at position 1",
 		"p1 & energy:":       "Energy must be deep, medium or low at position 6",
 		"energy = deep":      `Expected "&" or "|" before "=" at position 8`,
+		"sector: 2026-W60":   `Unknown time sector "2026-W60" at position 1; use this week, next week, this month, next month, this quarter, next quarter or a period such as 2026-W44`,
+		"p1 & sector: soon":  `Unknown time sector "soon" at position 6; use this week, next week, this month, next month, this quarter, next quarter or a period such as 2026-W44`,
+		"sector: this year":  `Unknown time sector "this year" at position 1; use this week, next week, this month, next month, this quarter, next quarter or a period such as 2026-W44`,
 		"notes:":             `Expected text after "notes:" at position 1`,
 		"p1 & notes: ":       `Expected text after "notes:" at position 6`,
 		"notes: & p1":        `Expected text after "notes:" at position 1`,
