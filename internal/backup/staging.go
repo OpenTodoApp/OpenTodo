@@ -19,6 +19,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/audit"
 	"github.com/OpenTodoApp/opentodo/internal/ids"
 	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/textutil"
 )
 
 // Web restore (OpenSpec backup-restore-web, design D1, D6, D7). A restore is
@@ -190,7 +191,7 @@ func fetchArchive(ctx context.Context, d Destination, name, dst string, limit in
 	}
 	defer body.Close()
 	if limit >= 0 && size > limit {
-		return 0, fmt.Errorf("%w: the archive is %s", ErrInsufficientStorage, humanBytes(size))
+		return 0, fmt.Errorf("%w: the archive is %s", ErrInsufficientStorage, textutil.HumanBytes(size))
 	}
 	return writeLimited(dst, body, limit)
 }
@@ -208,7 +209,7 @@ func writeLimited(dst string, r io.Reader, limit int64) (int64, error) {
 	}
 	n, err := io.Copy(f, src)
 	if err == nil && limit >= 0 && n > limit {
-		err = fmt.Errorf("%w: the archive is larger than the %s the data directory can take", ErrInsufficientStorage, humanBytes(limit))
+		err = fmt.Errorf("%w: the archive is larger than the %s the data directory can take", ErrInsufficientStorage, textutil.HumanBytes(limit))
 	}
 	if err == nil {
 		err = f.Sync()

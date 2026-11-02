@@ -88,6 +88,15 @@ ot notes append 3fa1c2d0 "- decided: ship Friday" --json
 ot task note 8c2a41f0 --append "- called, no answer" --json
 ```
 
+The user's quarterly and weekly objectives are context for planning (a few short lines per period, at most 5 open; read them before proposing a week's plan):
+
+```bash
+ot objectives --json
+ot objectives --period 2026-W45 --json
+```
+
+Add, complete or edit objectives only when the user asks (`ot objectives add "<title>" --week --next`, `ot objectives done <id>`); a sixth open one in a period fails with `too_many_objectives` (exit 1).
+
 Prefer appending to replacing: an append adds text at the end and never overwrites what the user typed on another device. A replacement (`ot notes edit --body`, `ot task note --set`) fails with `body_changed` (exit 1) when the note changed since you read it; read it again before retrying, never retry blindly. Writing notes through `ot` needs a full token; with an agent token use the MCP note tools instead.
 
 `ot time start` stops the running entry first (one runs at a time), except with an agent token: then it fails with `timer_running` (exit 1) while another timer of the user runs, often a Focus session on their phone. **Never take over a running timer without asking**: tell the user which task it is on and let them stop it (`ot time stop` once they agree). `ot time log` is the safe way to record work you did beside them. `ot time stop` exits 1 when nothing runs. A duration logged on another day than today ends at 17:00 local time.

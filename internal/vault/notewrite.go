@@ -26,11 +26,13 @@ func (e *engine) planNotes(dry bool) error {
 	v := newView(e.app, e.o.Crypter, e.o.Loc, e.sharedSet())
 	m := &mergeRun{av: v, bv: v, labels: v.labelSlugs(), newLabels: map[string]string{}}
 	type write struct {
-		p    string
-		text string
+		p, id, text string
+		read        []byte // what the sync read; had false: no file
+		had         bool
+		hash        string // the recorded hash before this run
 	}
 	var writes []write
-	var removes []string
+	var removes []*noteFile
 	for _, id := range sortedKeys(tn.Notes) {
 		p := tn.Notes[id]
 		if tn.Archived[id] {
@@ -42,7 +44,7 @@ func (e *engine) planNotes(dry bool) error {
 			switch {
 			case n == nil:
 			case hashOf(n.raw) == tn.Hashes[p]:
-				removes = append(removes, p)
+				removes = append(removes, n)
 				e.rep.event("removed", e.notePath(p), id, "removed %s: its task is in the app's trash", e.notePath(p))
 			default:
 				e.noteConflict(n, []string{"trashed in the app while the note was edited; the note is no longer synced"}, nil)
@@ -53,6 +55,7 @@ func (e *engine) planNotes(dry bool) error {
 		if e.o.ReadOnly && ns.changed[p] {
 			continue // the note's edits are pending; it is left as it is
 		}
+		had := n != nil
 		if n == nil {
 			if !ns.restore[id] {
 				continue
@@ -64,7 +67,7 @@ func (e *engine) planNotes(dry bool) error {
 			tn.Hashes[p] = hashOf(n.raw)
 			continue
 		}
-		writes = append(writes, write{p, text})
+		writes = append(writes, write{p: p, id: id, text: text, read: n.raw, had: had, hash: tn.Hashes[p]})
 		tn.Hashes[p] = hashOf([]byte(text))
 	}
 	if dry {
@@ -73,15 +76,45 @@ func (e *engine) planNotes(dry bool) error {
 		}
 		return nil
 	}
+	if testHookBeforeWrite != nil {
+		testHookBeforeWrite()
+	}
 	for _, w := range writes {
-		if err := writeAtomic(filepath.Join(ns.dir, filepath.FromSlash(w.p)), []byte(w.text)); err != nil {
+		full := filepath.Join(ns.dir, filepath.FromSlash(w.p))
+		if !unchanged(full, w.read, w.had) {
+			// Saved while the sync ran: left as it is and read as changed
+			// by the next sync, which merges it against the old values.
+			tn.Hashes[w.p] = w.hash
+			e.racedTasks[w.id] = true
+			e.rep.event("skipped", e.notePath(w.p), w.id, "skipped %s: it was saved while the sync ran; the next sync merges it", e.notePath(w.p))
+			if ns.fresh[w.p] == w.id {
+				// A new note keeps the id of the task this run created.
+				if cur, err := os.ReadFile(full); err == nil {
+					if f := ParseFront(string(cur)); f.str(keyID) == "" {
+						text := f.apply([]fmEdit{{name: keyID, lines: fmScalarLine(keyID, w.id)}}, nil)
+						if unchanged(full, cur, true) {
+							if err := writeAtomic(full, []byte(text)); err != nil {
+								return err
+							}
+						}
+					}
+				}
+			}
+			continue
+		}
+		if err := writeAtomic(full, []byte(w.text)); err != nil {
 			return err
 		}
 		e.rep.Written++
 		e.rep.event("written", e.notePath(w.p), "", "wrote %s", e.notePath(w.p))
 	}
-	for _, p := range removes {
-		if err := os.Remove(filepath.Join(ns.dir, filepath.FromSlash(p))); err != nil && !errors.Is(err, fs.ErrNotExist) {
+	for _, n := range removes {
+		full := filepath.Join(ns.dir, filepath.FromSlash(n.path))
+		if !unchanged(full, n.raw, true) {
+			e.rep.event("skipped", e.notePath(n.path), "", "kept %s: it was saved while the sync ran", e.notePath(n.path))
+			continue
+		}
+		if err := os.Remove(full); err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return err
 		}
 	}

@@ -2,6 +2,8 @@ package vault
 
 import (
 	"bytes"
+	"errors"
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
@@ -177,6 +179,7 @@ func (e *engine) plan(dry bool) error {
 	}
 	var removes []string
 	renames := map[string]string{}
+	from := map[string][]string{} // written file → the files its lines moved from
 	pids := sortedKeys(touched)
 	for _, pid := range pids {
 		if pid != "" && !v.projectLive(pid) {
@@ -220,6 +223,7 @@ func (e *engine) plan(dry bool) error {
 				delete(files, p)
 				if _, ok := e.disk[p]; ok && (e.parsed[p] != nil || !e.changed[p]) {
 					removes = append(removes, p)
+					from[target] = append(from[target], p)
 				}
 			}
 		}
@@ -269,12 +273,102 @@ func (e *engine) plan(dry bool) error {
 		sort.Strings(e.rep.Files)
 		return nil
 	}
-	if err := e.apply(writes, removes, renames); err != nil {
+	raced, err := e.apply(writes, removes, renames, from)
+	if err != nil {
 		return err
 	}
+	e.keepRaced(raced, files, printedBefore)
 	e.st.Files = files
 	return nil
 }
+
+// keepRaced leaves the files saved while the sync ran as the run found them
+// in the state: their recorded hash and the lines printed in them stay as
+// before the run, so the next sync reads the save as an edit and merges it
+// against the values the file was printed from, like a file not downloaded
+// yet (saveBase keeps those values).
+func (e *engine) keepRaced(raced map[string]bool, files map[string]FileState, printedBefore map[string]string) {
+	for p := range raced {
+		e.raced[p] = true
+		if was, ok := e.st.Files[p]; ok {
+			files[p] = was
+		} else if now, ok := files[p]; ok {
+			now.Hash = ""
+			files[p] = now
+		}
+	}
+	if len(raced) == 0 {
+		return
+	}
+	for id, p := range e.st.Printed {
+		if raced[p] {
+			if before := printedBefore[id]; before != "" {
+				e.st.Printed[id] = before
+			} else {
+				delete(e.st.Printed, id)
+			}
+		}
+	}
+	for id, p := range printedBefore {
+		if raced[p] {
+			e.st.Printed[id] = p
+		}
+	}
+}
+
+// unchanged reports whether the file at full still holds what the sync read
+// (had false: it was not there). It is checked right before a write or a
+// remove, so a save made while the sync ran is never overwritten.
+func unchanged(full string, read []byte, had bool) bool {
+	b, err := os.ReadFile(full)
+	if errors.Is(err, fs.ErrNotExist) {
+		return !had
+	}
+	return err == nil && had && bytes.Equal(b, read)
+}
+
+// giveFreshIDs writes into a file saved during the run the ids this run gave
+// to its new lines, matched by the line's text and occurrence, so the next
+// sync does not create their tasks again. Everything else in the save is
+// left for the next sync to merge.
+func (e *engine) giveFreshIDs(p, full string) error {
+	fresh := e.freshLines[p]
+	if len(fresh) == 0 {
+		return nil
+	}
+	cur, err := os.ReadFile(full)
+	if err != nil {
+		return nil // removed meanwhile: nothing to give
+	}
+	lines := strings.Split(string(cur), "\n")
+	seen := map[string]int{}
+	given := false
+	for i, l := range lines {
+		indent, done, content, ok := isTaskLine(strings.TrimSuffix(l, "\r"))
+		if !ok || ParseLine(indent, done, content).ID != "" {
+			continue
+		}
+		raw := strings.TrimSpace(l)
+		seen[raw]++
+		id := fresh[raw+"\x00"+strconv.Itoa(seen[raw])]
+		if id == "" {
+			continue
+		}
+		cr := ""
+		if strings.HasSuffix(l, "\r") {
+			cr = "\r"
+		}
+		lines[i] = strings.TrimRight(strings.TrimSuffix(l, "\r"), " \t") + " " + markID + " " + id + cr
+		given = true
+	}
+	if !given || !unchanged(full, cur, true) {
+		return nil
+	}
+	return writeAtomic(full, []byte(strings.Join(lines, "\n")))
+}
+
+// testHookBeforeWrite runs right before a sync writes the vault's files.
+var testHookBeforeWrite func()
 
 // sourceOf is the file on disk that holds a project's lines: the file parsed
 // for it this run, else its recorded file, else the file at its new place.
@@ -302,11 +396,34 @@ func (e *engine) sectionNames(v *view, pid string) func(string) bool {
 }
 
 // apply writes the planned files atomically, appends to conflict files and
-// removes or renames what the plan says.
-func (e *engine) apply(writes map[string][]byte, removes []string, renames map[string]string) error {
+// removes or renames what the plan says. Right before it writes or removes a
+// file it checks that the file still holds what the sync read: a file saved
+// meanwhile is left as it is, and so are the files its lines moved from
+// (from). Those files are returned as raced.
+func (e *engine) apply(writes map[string][]byte, removes []string, renames map[string]string, from map[string][]string) (map[string]bool, error) {
+	if testHookBeforeWrite != nil {
+		testHookBeforeWrite()
+	}
+	raced := map[string]bool{}
+	race := func(p string) {
+		raced[p] = true
+		e.rep.event("skipped", p, "", "skipped %s: it was saved while the sync ran; the next sync merges it", p)
+	}
 	for _, p := range sortedKeys(writes) {
-		if err := writeAtomic(filepath.Join(e.o.Dir, filepath.FromSlash(p)), writes[p]); err != nil {
-			return err
+		full := filepath.Join(e.o.Dir, filepath.FromSlash(p))
+		if read, had := e.disk[p]; !unchanged(full, read, had) {
+			race(p)
+			e.rep.Written--
+			for _, src := range from[p] {
+				raced[src] = true
+			}
+			if err := e.giveFreshIDs(p, full); err != nil {
+				return nil, err
+			}
+			continue
+		}
+		if err := writeAtomic(full, writes[p]); err != nil {
+			return nil, err
 		}
 	}
 	for _, cp := range sortedKeys(e.conf) {
@@ -316,27 +433,41 @@ func (e *engine) apply(writes map[string][]byte, removes []string, renames map[s
 			prev = append(prev, '\n')
 		}
 		if err := writeAtomic(full, append(prev, []byte(strings.Join(e.conf[cp], "\n")+"\n")...)); err != nil {
-			return err
+			return nil, err
 		}
 	}
-	for _, from := range sortedKeys(renames) {
-		to := filepath.Join(e.o.Dir, filepath.FromSlash(renames[from]))
-		b := e.disk[from]
+	moved := map[string]bool{}
+	for _, src := range sortedKeys(renames) {
+		to := filepath.Join(e.o.Dir, filepath.FromSlash(renames[src]))
+		// The file as it is now, with a save made during the sync.
+		b, err := os.ReadFile(filepath.Join(e.o.Dir, filepath.FromSlash(src)))
+		if err != nil {
+			b = e.disk[src]
+		}
 		if prev, err := os.ReadFile(to); err == nil {
 			b = append(append(prev, '\n'), b...)
 		}
 		if err := writeAtomic(to, b); err != nil {
-			return err
+			return nil, err
 		}
-		removes = append(removes, from)
+		moved[src] = true
+		removes = append(removes, src)
 	}
 	dirs := map[string]bool{}
 	for _, p := range removes {
-		if _, written := writes[p]; written {
+		if _, written := writes[p]; written || raced[p] {
 			continue
 		}
-		if err := os.Remove(filepath.Join(e.o.Dir, filepath.FromSlash(p))); err != nil && !os.IsNotExist(err) {
-			return err
+		full := filepath.Join(e.o.Dir, filepath.FromSlash(p))
+		if _, err := os.Stat(full); errors.Is(err, fs.ErrNotExist) {
+			continue // already removed (a path can be listed twice)
+		}
+		if read, had := e.disk[p]; !moved[p] && !unchanged(full, read, had) {
+			race(p)
+			continue
+		}
+		if err := os.Remove(full); err != nil && !os.IsNotExist(err) {
+			return nil, err
 		}
 		for d := path.Dir(p); d != "." && d != "/"; d = path.Dir(d) {
 			dirs[d] = true
@@ -348,7 +479,7 @@ func (e *engine) apply(writes map[string][]byte, removes []string, renames map[s
 	for _, d := range ds {
 		_ = os.Remove(filepath.Join(e.o.Dir, filepath.FromSlash(d)))
 	}
-	return nil
+	return raced, nil
 }
 
 // writeAtomic writes a file through a temporary file and a rename.

@@ -71,6 +71,8 @@ export function planSplit(
   const due = pieceDue(series.due, first, patch)
   const fields: Record<string, unknown> = { ...recordFields(series, first, now, today) }
   delete fields.occurrence_date
+  // The people who take turns go on with the piece (chore-rotation).
+  if (series.rotation?.length) fields.rotation = series.rotation
   const { due: _due, recurrence: _rule, ...rest } = patch
   Object.assign(fields, rest, {
     due, recurrence: text, series_id: null, split_from: { series: series.id, date }, created_at: now, completed_at: null, deleted_at: null,

@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"slices"
 	"strings"
 )
 
@@ -85,132 +84,6 @@ func QuoteJSON(s string) string {
 	}
 	return string(b)
 }
-
-type kind int
-
-const (
-	kString kind = iota
-	kNullableString
-	kNumber
-	kNullableNumber
-	kBool
-	kPriority
-	kDue
-	kStringList
-	// kPositiveInt is null or a positive integer no larger than MaxPositiveInt.
-	kPositiveInt
-	// kRecurrence is null or a rule accepted by internal/recurrence (at most
-	// recurrence.MaxLen characters). Clients store the canonical form; any
-	// parseable spelling is accepted so the op log is never rewritten.
-	kRecurrence
-	// kID is a non-empty id string of at most MaxIDLen characters (reminder.task_id).
-	kID
-	// kReminderKind is "relative", "absolute" (OpenSpec change reminders) or
-	// "deadline" (OpenSpec change deadlines).
-	kReminderKind
-	// kOffsetMinutes is null or an integer within ±MaxReminderOffset minutes.
-	kOffsetMinutes
-	// kInstant is null or a positive Unix millisecond timestamp (reminder.fire_at).
-	kInstant
-	// kNullableText is null or any string, bounded by MaxValueBytes like every
-	// value (task.ical_extra, OpenSpec change caldav).
-	kNullableText
-	// kDoc is an opaque, mergeable document (OpenSpec change
-	// collaborative-rich-text, docs/sync.md "Mergeable documents"): "" (no
-	// document) or an envelope "<format>:v<n>:<base64>" of at most MaxDocBytes
-	// characters. The server checks only the envelope shape and that the payload
-	// is base64 (standard or URL alphabet, padding optional); it never decodes
-	// the document, so a client format (or an end-to-end encrypted value) can
-	// change without a server change.
-	kDoc
-	// kDate is null or a bare calendar date "YYYY-MM-DD" with no time or zone
-	// (task.deadline, OpenSpec change deadlines).
-	kDate
-	// kStart is null, the word "someday" or a calendar date "YYYY-MM-DD"
-	// (task.start, OpenSpec change someday-and-evening).
-	kStart
-	// kIDList is an array of at most MaxBlockedBy distinct, non-empty ids of at
-	// most MaxIDLen characters (task.blocked_by, OpenSpec change task-dependencies).
-	kIDList
-	// kFieldValue is a custom field value (OpenSpec change custom-fields, design
-	// D2): null, a string (bounded by MaxValueBytes like every value), a finite
-	// JSON number or a boolean. Objects and arrays are refused. The server never
-	// checks a value against its definition: clients, REST and the assistant
-	// tools do, so a value and its definition may arrive in any order.
-	kFieldValue
-	// kOrigin is a task's origin (OpenSpec change task-origin, design D1):
-	// null, an encrypted account's ciphertext string, or the object
-	// {kind, provider?, id?, url?, title?} validated by internal/origin
-	// (closed kind list, http(s) URL only, bounded lengths, no unknown members).
-	kOrigin
-	// kRule is a saved list view's on-drop rule (OpenSpec change rule-boards,
-	// design D2): null or an object of at most one choice per kind, checked in
-	// rule.go (closed key set, enumerations, bounded label lists). Sync checks
-	// the shape only; REST resolves the ids.
-	kRule
-	// kLocation is a task's location (OpenSpec change task-locations, design
-	// D1): null, an encrypted account's ciphertext string, or the object
-	// {name?, address?, lat?, lon?, place_id?} validated by internal/location.
-	kLocation
-	// kGeo is a place's coordinate pair (task-locations D1): null, a ciphertext
-	// string, or {lat, lon} validated by internal/location.
-	kGeo
-	// kRuleTrigger, kRuleCondition and kRuleActions are an automation rule's
-	// whole values (OpenSpec change automation-rules, design D1), checked by
-	// internal/ruleval (closed key sets, enumerations, bounds). Sync checks the
-	// shape only; REST resolves the ids. A condition may be null.
-	kRuleTrigger
-	kRuleCondition
-	kRuleActions
-	// kRoutineSteps is null or a routine's steps (OpenSpec change
-	// routines-engine, design D3): one whole value, an ordered list of at most
-	// 20 steps checked by internal/ruleval (known kinds, unique ids, inputs of
-	// the declared names and literal shapes, references only to visible
-	// outputs, at most 3 block levels, 32 KB encoded). Sync checks the shape
-	// only; REST also type-checks and resolves the ids.
-	kRoutineSteps
-	// kReactions is one account's reactions on a comment (OpenSpec change
-	// editor-everywhere, design D8): a list of distinct names from ReactionNames.
-	kReactions
-	// kDayPart is null, "morning" or "afternoon" (task.day_part, OpenSpec
-	// change day-parts, design D1). Evening stays the task's evening flag; a
-	// later part is a new value behind a schema note, read by older clients as
-	// no part.
-	kDayPart
-	// kClock is a wall time "HH:MM" from "00:00" to "23:59" with no date or
-	// zone (frame.start and frame.end, OpenSpec change calendar-frames, design D1).
-	kClock
-	// kWeekdays is "" or a comma list of distinct ISO weekdays "1" (Monday) to
-	// "7" (Sunday), e.g. "1,2,3,4,5" (frame.weekdays, calendar-frames D1).
-	kWeekdays
-	// kEnergy is "" (none), "deep", "medium" or "low" (task.energy, OpenSpec
-	// change task-energy, design D1). A later value is a spec change; older
-	// clients read it as none and keep it.
-	kEnergy
-	// kOrderList is an array of at most MaxManualOrder distinct, non-empty ids of
-	// at most MaxIDLen characters (label.manual_order and view.manual_order,
-	// OpenSpec change view-manual-order, design D2). Unknown ids are accepted:
-	// the order is a personal preference and a task may arrive later.
-	kOrderList
-	// kSplit is null or the series a piece was split from and the date it starts
-	// (task.split_from, OpenSpec change series-split, design D2): one whole value
-	// {series: id, date: "YYYY-MM-DD"} with no other members.
-	kSplit
-	// kFocusSession is an integer from 0 to MaxFocusSession: a Focus work
-	// session's number in its Pomodoro cycle, 0 for the other modes and for
-	// entries that are no Focus session (time_entry.focus_session, OpenSpec
-	// change focus-session-readable, design D2).
-	kFocusSession
-	// kThemeDoc is null or one whole custom theme document (OpenSpec change
-	// theme-editor, design D1): a JSON object of at most themes.MaxBytes bytes
-	// that passes internal/themes.Validate (format 1: seeds, explicit tokens,
-	// shape and type; colours only as #rrggbb or in-gamut oklch, never CSS).
-	kThemeDoc
-	// kSector is "" (none) or a time sector: an ISO week "YYYY-Www", a month
-	// "YYYY-MM" or a quarter "YYYY-Qn" with a year from 2000 to 2999, checked by
-	// internal/sector (task.sector, OpenSpec change time-sectors, design D1).
-	kSector
-)
 
 // MaxFocusSession is the largest time_entry.focus_session (focus-session-readable D2).
 const MaxFocusSession = 99
@@ -376,6 +249,9 @@ var Schema = map[string]map[string]Field{
 		// editor-everywhere, design D7): written with notes_doc, filtered to
 		// current members of the task's shared project at receipt, plaintext.
 		"note_mentions": {Kind: kIDList, Default: `[]`},
+		// Who takes turns on a recurring task, in order (OpenSpec change chore-rotation; see rotation.go):
+		// plaintext member ids like assignee_id, not content; inert without a rule or a second member.
+		"rotation": {Kind: kIDList, Default: `[]`},
 		// Recurrence rule and the series an occurrence record belongs to
 		// (OpenSpec change recurring-tasks); additive. See docs/recurrence.md.
 		"recurrence": {Kind: kRecurrence, Default: `null`},
@@ -580,6 +456,13 @@ var Schema = map[string]map[string]Field{
 		"dismissed_at":   {Kind: kNullableNumber, Default: `null`},
 		"created_at":     {Kind: kNumber, Default: `0`},
 		"deleted_at":     {Kind: kNullableNumber, Default: `null`},
+		// A location reminder's radius in metres, 100 to 5,000 (OpenSpec change
+		// location-reminders, design D1): set only on the kinds "arrive" and
+		// "leave", which fire on a phone that enters or leaves the circle
+		// around the task's location and never have a fire_at or an offset
+		// (reminder_check.go refuses the mixes). Not content: the place is in
+		// the task's encrypted location.
+		"radius_m": {Kind: kRadius, Default: `null`},
 	},
 	// comment: a threaded markdown comment on a task (OpenSpec change
 	// `comments-and-activity`, design D1). It lives in its task's scope; Apply
@@ -973,6 +856,29 @@ var Schema = map[string]map[string]Field{
 		// slot) before Tomorrow; clients read an empty or unknown value as off
 		// and keep the stored value. Settings, never content.
 		"upcoming_today": {Kind: kString, Default: `""`},
+		// Objectives (OpenSpec change plan-objectives, design D8): "on" shows the
+		// Plan's objectives strip and the weekly review's Objectives section;
+		// clients read an empty or unknown value as off and keep the stored
+		// value. Objectives stay in the export, REST, the CLI and MCP either way.
+		"objectives": {Kind: kString, Default: `""`},
+	},
+	// objective: one quarterly or weekly objective (OpenSpec change
+	// plan-objectives, design D1). Personal like place: it resolves to the
+	// author's personal scope, syncs to that user's devices only and derives no
+	// activity event. At most 5 open objectives per period: REST refuses a
+	// sixth, sync cannot refuse convergently and devices show all of them.
+	"objective": {
+		// The objective, one line of 1 to 140 characters (ciphertext for an
+		// encrypted account).
+		"title": {Kind: kObjectiveTitle, Default: `""`, Content: true},
+		// The quarter "YYYY-Qn" or ISO week "YYYY-Www" it is for; never a month.
+		"period": {Kind: kObjectivePeriod, Default: `""`},
+		// Order within its period.
+		"position": {Kind: kNumber, Default: `0`},
+		// When it was marked done, Unix ms; 0 = open.
+		"done_at":    {Kind: kNumber, Default: `0`},
+		"created_at": {Kind: kNumber, Default: `0`},
+		"deleted_at": {Kind: kNullableNumber, Default: `null`},
 	},
 	// review: when the user last finished a weekly review (OpenSpec change
 	// `stats-and-review`, design D4). One row with the entityId "me"; like
@@ -1018,7 +924,7 @@ var Schema = map[string]map[string]Field{
 }
 
 // Plural maps REST collection names to entity names.
-var Plural = map[string]string{"projects": "project", "tasks": "task", "labels": "label", "views": "view", "reminders": "reminder", "sections": "section", "fields": "field", "rules": "rule", "frames": "frame", "slots": "slot", "notes": "note"}
+var Plural = map[string]string{"projects": "project", "tasks": "task", "labels": "label", "views": "view", "reminders": "reminder", "sections": "section", "fields": "field", "rules": "rule", "frames": "frame", "slots": "slot", "notes": "note", "objectives": "objective"}
 
 // ErrInvalidOp wraps every validation failure.
 var ErrInvalidOp = errors.New("invalid op")
@@ -1058,8 +964,8 @@ func Validate(op Op) error {
 	if err := checkKind(k, op.Value); err != nil {
 		return fmt.Errorf("%w: %s.%s %v", ErrInvalidOp, op.Entity, op.Field, err)
 	}
-	if k == kIDList && slices.Contains(idList(op.Value), op.EntityID) {
-		return fmt.Errorf("%w: %s.%s cannot name the task itself", ErrInvalidOp, op.Entity, op.Field)
+	if err := checkIDListOp(op, k); err != nil {
+		return err
 	}
 	if op.Entity == "attachment" {
 		if err := checkAttachment(op.Field, op.Value); err != nil {
@@ -1074,25 +980,8 @@ func Validate(op Op) error {
 	return nil
 }
 
-// checkKind checks an op value against its field's kind; the per-kind checks
-// are in kinds.go. A kind without a check accepts any value.
-func checkKind(k kind, raw json.RawMessage) error {
-	check, ok := kindChecks[k]
-	if !ok {
-		return nil
-	}
-	return check(raw)
-}
-
 // Wins reports whether (ts, device) beats the existing (ets, edevice).
 // Ties on timestamp are broken by device id so every replica picks the same winner.
 func Wins(ts int64, device string, ets int64, edevice string) bool {
 	return ts > ets || (ts == ets && device > edevice)
-}
-
-// idList reads a kIDList value (nil when it is not one).
-func idList(raw json.RawMessage) []string {
-	var l []string
-	_ = json.Unmarshal(raw, &l)
-	return l
 }

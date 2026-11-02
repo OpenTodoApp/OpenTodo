@@ -1,0 +1,62 @@
+{
+  "description": "Ranking (location-reminders D3): 40 armed regions in two cities. A shell registers the 19 nearest to its position; from either city that is the 19 of that city nearest to it, and it re-ranks after leaving the 1 km region around the position it ranked from.",
+  "method": "scheduleGeofences",
+  "payload": "{\"version\":1,\"regions\":[{\"id\":\"r-berlin-00\",\"taskId\":\"berlin-00\",\"lat\":52.52,\"lon\":13.405,\"radius\":150,\"on\":\"arrive\"},{\"id\":\"r-berlin-01\",\"taskId\":\"berlin-01\",\"lat\":52.521,\"lon\":13.405999999999999,\"radius\":150,\"on\":\"leave\"},{\"id\":\"r-berlin-02\",\"taskId\":\"berlin-02\",\"lat\":52.522000000000006,\"lon\":13.407,\"radius\":150,\"on\":\"arrive\"},{\"id\":\"r-berlin-03\",\"taskId\":\"berlin-03\",\"lat\":52.523,\"lon\":13.408,\"radius\":150,\"on\":\"leave\"},{\"id\":\"r-berlin-04\",\"taskId\":\"berlin-04\",\"lat\":52.524,\"lon\":13.408999999999999,\"radius\":150,\"on\":\"arrive\"},{\"id\":\"r-berlin-05\",\"taskId\":\"berlin-05\",\"lat\":52.525000000000006,\"lon\":13.41,\"radius\":150,\"on\":\"leave\"},{\"id\":\"r-berlin-06\",\"taskId\":\"berlin-06\",\"lat\":52.526,\"lon\":13.411,\"radius\":150,\"on\":\"arrive\"},{\"id\":\"r-berlin-07\",\"taskId\":\"berlin-07\",\"lat\":52.527,\"lon\":13.411999999999999,\"radius\":150,\"on\":\"leave\"},{\"id\":\"r-berlin-08\",\"taskId\":\"berlin-08\",\"lat\":52.528000000000006,\"lon\":13.412999999999998,\"radius\":150,\"on\":\"arrive\"},{\"id\":\"r-berlin-09\",\"taskId\":\"berlin-09\",\"lat\":52.529,\"lon\":13.414,\"radius\":150,\"on\":\"leave\"},{\"id\":\"r-berlin-10\",\"taskId\":\"berlin-10\",\"lat\":52.53,\"lon\":13.415,\"radius\":150,\"on\":\"arrive\"},{\"id\":\"r-berlin-11\",\"taskId\":\"berlin-11\",\"lat\":52.531000000000006,\"lon\":13.415999999999999,\"radius\":150,\"on\":\"leave\"},{\"id\":\"r-berlin-12\",\"taskId\":\"berlin-12\",\"lat\":52.532000000000004,\"lon\":13.417,\"radius\":150,\"on\":\"arrive\"},{\"id\":\"r-berlin-13\",\"taskId\":\"berlin-13\",\"lat\":52.533,\"lon\":13.418,\"radius\":150,\"on\":\"leave\"},{\"id\":\"r-berlin-14\",\"taskId\":\"berlin-14\",\"lat\":52.534000000000006,\"lon\":13.418999999999999,\"radius\":150,\"on\":\"arrive\"},{\"id\":\"r-berlin-15\",\"taskId\":\"berlin-15\",\"lat\":52.535000000000004,\"lon\":13.42,\"radius\":150,\"on\":\"leave\"},{\"id\":\"r-berlin-16\",\"taskId\":\"berlin-16\",\"lat\":52.536,\"lon\":13.421,\"radius\":150,\"on\":\"arrive\"},{\"id\":\"r-berlin-17\",\"taskId\":\"berlin-17\",\"lat\":52.537000000000006,\"lon\":13.421999999999999,\"radius\":150,\"on\":\"leave\"},{\"id\":\"r-berlin-18\",\"taskId\":\"berlin-18\",\"lat\":52.538000000000004,\"lon\":13.423,\"radius\":150,\"on\":\"arrive\"},{\"id\":\"r-berlin-19\",\"taskId\":\"berlin-19\",\"lat\":52.539,\"lon\":13.424,\"radius\":150,\"on\":\"leave\"},{\"id\":\"r-milan-00\",\"taskId\":\"milan-00\",\"lat\":45.4642,\"lon\":9.19,\"radius\":150,\"on\":\"arrive\"},{\"id\":\"r-milan-01\",\"taskId\":\"milan-01\",\"lat\":45.465199999999996,\"lon\":9.190999999999999,\"radius\":150,\"on\":\"leave\"},{\"id\":\"r-milan-02\",\"taskId\":\"milan-02\",\"lat\":45.4662,\"lon\":9.192,\"radius\":150,\"on\":\"arrive\"},{\"id\":\"r-milan-03\",\"taskId\":\"milan-03\",\"lat\":45.4672,\"lon\":9.193,\"radius\":150,\"on\":\"leave\"},{\"id\":\"r-milan-04\",\"taskId\":\"milan-04\",\"lat\":45.468199999999996,\"lon\":9.193999999999999,\"radius\":150,\"on\":\"arrive\"},{\"id\":\"r-milan-05\",\"taskId\":\"milan-05\",\"lat\":45.4692,\"lon\":9.195,\"radius\":150,\"on\":\"leave\"},{\"id\":\"r-milan-06\",\"taskId\":\"milan-06\",\"lat\":45.4702,\"lon\":9.196,\"radius\":150,\"on\":\"arrive\"},{\"id\":\"r-milan-07\",\"taskId\":\"milan-07\",\"lat\":45.471199999999996,\"lon\":9.197,\"radius\":150,\"on\":\"leave\"},{\"id\":\"r-milan-08\",\"taskId\":\"milan-08\",\"lat\":45.4722,\"lon\":9.197999999999999,\"radius\":150,\"on\":\"arrive\"},{\"id\":\"r-milan-09\",\"taskId\":\"milan-09\",\"lat\":45.4732,\"lon\":9.199,\"radius\":150,\"on\":\"leave\"},{\"id\":\"r-milan-10\",\"taskId\":\"milan-10\",\"lat\":45.474199999999996,\"lon\":9.2,\"radius\":150,\"on\":\"arrive\"},{\"id\":\"r-milan-11\",\"taskId\":\"milan-11\",\"lat\":45.4752,\"lon\":9.200999999999999,\"radius\":150,\"on\":\"leave\"},{\"id\":\"r-milan-12\",\"taskId\":\"milan-12\",\"lat\":45.4762,\"lon\":9.202,\"radius\":150,\"on\":\"arrive\"},{\"id\":\"r-milan-13\",\"taskId\":\"milan-13\",\"lat\":45.477199999999996,\"lon\":9.203,\"radius\":150,\"on\":\"leave\"},{\"id\":\"r-milan-14\",\"taskId\":\"milan-14\",\"lat\":45.4782,\"lon\":9.203999999999999,\"radius\":150,\"on\":\"arrive\"},{\"id\":\"r-milan-15\",\"taskId\":\"milan-15\",\"lat\":45.4792,\"lon\":9.205,\"radius\":150,\"on\":\"leave\"},{\"id\":\"r-milan-16\",\"taskId\":\"milan-16\",\"lat\":45.480199999999996,\"lon\":9.206,\"radius\":150,\"on\":\"arrive\"},{\"id\":\"r-milan-17\",\"taskId\":\"milan-17\",\"lat\":45.4812,\"lon\":9.206999999999999,\"radius\":150,\"on\":\"leave\"},{\"id\":\"r-milan-18\",\"taskId\":\"milan-18\",\"lat\":45.4822,\"lon\":9.208,\"radius\":150,\"on\":\"arrive\"},{\"id\":\"r-milan-19\",\"taskId\":\"milan-19\",\"lat\":45.4832,\"lon\":9.209,\"radius\":150,\"on\":\"leave\"}]}",
+  "now": 1792670400000,
+  "expect": [
+    {
+      "from": {
+        "lat": 45.4642,
+        "lon": 9.19
+      },
+      "registered": [
+        "r-milan-00",
+        "r-milan-01",
+        "r-milan-02",
+        "r-milan-03",
+        "r-milan-04",
+        "r-milan-05",
+        "r-milan-06",
+        "r-milan-07",
+        "r-milan-08",
+        "r-milan-09",
+        "r-milan-10",
+        "r-milan-11",
+        "r-milan-12",
+        "r-milan-13",
+        "r-milan-14",
+        "r-milan-15",
+        "r-milan-16",
+        "r-milan-17",
+        "r-milan-18"
+      ]
+    },
+    {
+      "from": {
+        "lat": 52.52,
+        "lon": 13.405
+      },
+      "registered": [
+        "r-berlin-00",
+        "r-berlin-01",
+        "r-berlin-02",
+        "r-berlin-03",
+        "r-berlin-04",
+        "r-berlin-05",
+        "r-berlin-06",
+        "r-berlin-07",
+        "r-berlin-08",
+        "r-berlin-09",
+        "r-berlin-10",
+        "r-berlin-11",
+        "r-berlin-12",
+        "r-berlin-13",
+        "r-berlin-14",
+        "r-berlin-15",
+        "r-berlin-16",
+        "r-berlin-17",
+        "r-berlin-18"
+      ]
+    }
+  ]
+}

@@ -41,5 +41,7 @@ Expected rating: Everyone / PEGI 3 (with "Users interact").
 ## Foreground services and other declarations
 
 - **Foreground service:** none.
-- **Background location, photos and videos, all files access, accessibility, VPN:** not used.
+- **Background location:** used only for optional location reminders ("Location reminders on this phone" in Settings → Notifications, off by default). The app shows a disclosure that the position stays on the phone before Android's permission prompt, watches the reminders' places with Android's proximity alerts, and never sends the position anywhere. The Console's background-location declaration is prepared with the `location-reminders` change.
+- **Does the app share the user's location?** No: it is used on the device only and is not collected (see `data-safety.md`).
+- **Photos and videos, all files access, accessibility, VPN:** not used.
 - **Account deletion:** the app creates no account with the developer. Accounts live on the server the user entered and are deleted there by whoever runs it (**Settings → Server → People → Users**). If the Console asks for a deletion URL anyway: `https://github.com/OpenTodoApp/OpenTodo/blob/main/docs/settings-server.md#people`.

@@ -42,7 +42,7 @@ export async function completeUndoable(id: string, completed: boolean, opts: { n
   const { tasks, all } = await readTicked([id])
   const task = tasks[0]
   if (!task) return { entry: null, label: '' }
-  const changes = completed ? planComplete([task], all, opts.now ?? Date.now(), opts.today ?? logicalToday()) : planReopen([task])
+  const changes = completed ? planComplete([task], all, opts.now ?? Date.now(), opts.today ?? logicalToday(), await membershipMap()) : planReopen([task])
   return apply(changes, completed ? t('Task completed') : t('Task reopened'))
 }
 

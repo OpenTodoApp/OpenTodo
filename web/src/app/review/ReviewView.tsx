@@ -5,7 +5,7 @@
 // steps use the ordinary task rows, so the list keys work inside them; the Projects
 // step is the project walk, which owns its keys while it is shown. "Finish review"
 // writes the synced `review` row; the menu opens the Daily check and the Monthly look.
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Badge, Button, Card, Dialog, Icon, MenuItem, Notice, PageBody, PageHeader, Skeleton, type IconName } from '../../ui'
 import { useAllLabels, useAllProjects, useProjectPrefsLoaded, useReviewEvery, useReviewRow, useReviewedAt } from '../../lib/localData'
 import { formatInstant } from '../../lib/dates'
@@ -31,8 +31,12 @@ import { ReviewProgress } from './ReviewProgress'
 import { StepCard } from './StepCard'
 import { SectorReview, sectorReviewTasks } from './SectorReview'
 import { useTimeSectors } from '../../lib/sectorPrefs'
+import { useObjectivesOn } from '../../lib/objectivePrefs'
 import { useShortcutScope } from '../shortcuts'
 import { useResetOnChange } from '../../lib/useResetOnChange'
+
+// The Objectives section (plan-objectives D4): its own chunk, loaded only while the switch is on.
+const ReviewObjectives = lazy(() => import('../objectives/ReviewObjectives'))
 
 const LIST_STEPS: readonly StepId[] = ['clear', 'back', 'waiting', 'ahead', 'someday']
 
@@ -82,6 +86,8 @@ export function ReviewView({ step: routeStep }: { userId?: string; step?: string
   const timeColumn = useMemo(() => hasTimeColumn(taskRows), [taskRows])
   // Time sectors in Look ahead (time-sectors): carried over and Next week, part of the step's key list.
   const sectorsOn = useTimeSectors()
+  // Objectives in Look ahead (plan-objectives D4): above the next seven days, outside the step's counts.
+  const objectivesOn = useObjectivesOn()
   const sectorRows = useMemo(() => (input ? sectorReviewTasks(input.tasks, input.today, weekStart, sectorsOn) : { carried: [], next: [] }), [input, weekStart, sectorsOn])
   const keyRows = useMemo(() => [...taskRows, ...(current === 'ahead' ? [...sectorRows.carried, ...sectorRows.next] : [])].map((tk) => ({ key: tk.id, task: tk })), [taskRows, current, sectorRows])
   useListKeys({
@@ -146,6 +152,9 @@ export function ReviewView({ step: routeStep }: { userId?: string; step?: string
             onBack={prev ? () => go(prev) : null}
             next={next ? { label: t('Next: {step}', { step: STEP_TITLES[next] }), onClick: () => go(next) } : { label: t('Finish review'), onClick: finish, finish: true }}>
             <StepIntro step={step} steps={steps} />
+            {step === 'ahead' && objectivesOn && input && (
+              <Suspense fallback={null}><ReviewObjectives today={input.today} lastReviewAt={review?.completed_at || 0} /></Suspense>
+            )}
             {step === 'projects' ? (
               <ProjectWalk walk={steps.walk} notDue={steps.notDue} now={now} paused={!!addTo || !!openId} onAdd={(w: WalkProject) => setAddTo(w.project)} />
             ) : step === 'sweep' ? (

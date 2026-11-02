@@ -75,6 +75,10 @@ func PlanSplit(id string, row Entity, date string, patch map[string]json.RawMess
 	plan.Series = map[string]json.RawMessage{"recurrence": JSONOf(s.rule.WithUntil(recurrence.AddDays(date, -1)).Canonical())}
 	piece := recordFields(row, id, s.dueDate(today), first, now)
 	delete(piece, "occurrence_date")
+	// The people who take turns go on with the piece (chore-rotation).
+	if l := idList(row["rotation"]); len(l) > 0 {
+		piece["rotation"] = JSONOf(l)
+	}
 	for k, v := range patch {
 		if k != "due" && k != "recurrence" {
 			piece[k] = v

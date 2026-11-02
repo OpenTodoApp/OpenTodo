@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "objective",
+  "description": "A quarterly or weekly objective as the REST API returns it (OpenSpec plan-objectives), with the title decrypted when this machine holds the account key, \"[encrypted]\" when it cannot be decrypted.",
+  "type": "object",
+  "required": ["id", "title", "period", "done_at"],
+  "properties": {
+    "id": {"type": "string"},
+    "title": {"type": "string", "description": "one line of 1 to 140 characters"},
+    "period": {"type": "string", "description": "a quarter YYYY-Qn or an ISO week YYYY-Www"},
+    "position": {"type": "number"},
+    "done_at": {"type": "number", "description": "Unix ms when it was marked done; 0 while open"},
+    "created_at": {"type": "number"},
+    "deleted_at": {"type": ["number", "null"]}
+  }
+}

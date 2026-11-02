@@ -117,6 +117,8 @@ in Someday clears its due date and so ends the repetition.
   again; the series is not moved back. Reopening a series that ended keeps its rule,
   so its next completion continues the schedule.
 
+In a shared project a repeating task can pass between people each time it is completed; see [Take turns](take-turns.md).
+
 ## One occurrence alone
 
 Any occurrence from the current one on can be acted on alone, as calendars do with
