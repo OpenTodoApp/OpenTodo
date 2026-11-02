@@ -87,6 +87,23 @@ export function tabRowOverflow() {
   return out
 }
 
+// Cut labels (polish 2026-11-02): an option of a segmented control and the day's name
+// in a Day or Week header are never cut. The scope toggle split its row evenly and cut
+// "This occurrence" with room to spare; the Week header beside the planning list cut
+// "Tue 3" to "T…". Their full text is in the accessible name, so the truncation rule
+// of the audit (M10) does not see them.
+export function cutLabels() {
+  const out = []
+  const cut = (el) => el.clientWidth > 0 && el.scrollWidth > el.clientWidth + 1
+  for (const el of document.querySelectorAll('[role="radiogroup"] > [role="radio"]')) {
+    if (cut(el)) out.push(`option "${el.textContent.trim()}" of "${el.parentElement.getAttribute('aria-label') ?? ''}" is cut (${el.scrollWidth}px in ${el.clientWidth}px)`)
+  }
+  for (const el of document.querySelectorAll('[data-day-header] [data-day-name]')) {
+    if (cut(el)) out.push(`day name "${el.textContent.trim()}" in the calendar header is cut (${el.scrollWidth}px in ${el.clientWidth}px)`)
+  }
+  return out
+}
+
 // Vertical scroll regions (OpenSpec ux-overhaul, app-shell "Three columns, three
 // scrollers"): at most the sidebar, the content column and the panel may scroll
 // vertically; everything else scrolls inside them. Designated regions
