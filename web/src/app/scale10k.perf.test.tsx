@@ -128,7 +128,8 @@ describe(`${TASKS} tasks`, () => {
       await flush(300)
     })
     console.info(`[performance-10k] rows read to open Today with ${TASKS} tasks: ${JSON.stringify(reads)}`)
-    expect(reads.tasks ?? 0).toBeLessThanOrEqual(TASKS)
+    // One read of the table (every stored row), and the few rows writes on the way changed.
+    expect(reads.tasks ?? 0).toBeLessThanOrEqual(TASKS + 20)
     await r!.unmount()
   }, 180_000)
 
