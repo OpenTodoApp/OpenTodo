@@ -87,6 +87,36 @@ describe('the editor page', () => {
     await r.unmount()
   })
 
+  it('a base colour is a compact row: typing a hex sets it, and its contrast warning shows beside it', async () => {
+    // Text set almost the colour of the surface: it fails, and the Text row says so beside the colour.
+    await saveCustomTheme('th-e', DOC({ tokens: { text: '#dddddd' } }))
+    const r = await render(<ThemeEditorPage id="th-e" />)
+    await ready()
+    await waitFor(() => !!q('[data-theme-seed="text"] [data-colour-warning]'), 'the warning beside Text', 20_000)
+    expect(q('[data-theme-seed="text"] [data-colour-warning]')!.textContent).toMatch(/pairs? below AA/)
+    const hex = q<HTMLInputElement>('[data-theme-seed="accent"] [data-colour-row-hex]')!
+    expect(hex.getAttribute('aria-label')).toBe('Accent, hex value')
+    await type(hex, '#1d4ed8')
+    await key(hex, 'Enter')
+    await waitFor(() => readDraft('th-e')?.doc.seeds.accent === '#1d4ed8', 'the seed set')
+    // Not a colour: said on the row, nothing written.
+    await type(hex, 'blue')
+    await key(hex, 'Enter')
+    await waitFor(() => q('[data-theme-seed="accent"] [data-colour-warning]')?.textContent === 'Enter a colour as #rrggbb or #rgb.', 'the hex error')
+    expect(readDraft('th-e')!.doc.seeds.accent).toBe('#1d4ed8')
+    await r.unmount()
+  })
+
+  it('Advanced is folded with its counts until opened', async () => {
+    await saveCustomTheme('th-e', DOC({ tokens: { faint: '#62686f' } }))
+    const r = await render(<ThemeEditorPage id="th-e" />)
+    await ready()
+    const details = q<HTMLDetailsElement>('[data-theme-advanced-details]')!
+    expect(details.open).toBe(false)
+    expect(q('[data-theme-advanced-counts]')!.textContent).toBe('1 set')
+    await r.unmount()
+  })
+
   it('the Advanced list filters by name and id, and setting a token makes it Set', async () => {
     await saveCustomTheme('th-e', DOC())
     const r = await render(<ThemeEditorPage id="th-e" />)
