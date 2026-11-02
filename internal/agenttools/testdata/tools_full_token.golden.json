@@ -89,6 +89,10 @@
             "description": "Only tasks of this project (see list_projects).",
             "type": "string"
           },
+          "sector": {
+            "description": "Only tasks with this time sector: an absolute period (2026-W45, 2026-11 or 2026-Q4), or carried for tasks whose period has ended (evaluated in timezone with weeks from Monday). Relative words like next week are refused.",
+            "type": "string"
+          },
           "timezone": {
             "description": "IANA time zone used to decide what is today, overdue or upcoming, e.g. \"Europe/Rome\". Default: UTC. Due dates are floating, so pass the user's zone.",
             "type": "string"
