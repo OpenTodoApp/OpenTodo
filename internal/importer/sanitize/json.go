@@ -9,7 +9,8 @@ import (
 	"strings"
 )
 
-// ---- JSON (Google Tasks, Trello, Microsoft To Do, Apple Reminders, Any.do) ----
+// ---- JSON (Google Tasks, Trello, Microsoft To Do, Apple Reminders, Any.do,
+// Super Productivity, Vikunja's data.json) ----
 
 // jsonKinds names the keys whose string values are personal text, with the
 // placeholder kind each becomes (OpenSpec change more-importers, design D9). The
@@ -25,6 +26,11 @@ var jsonKinds = map[string]string{
 
 // jsonLabelKeys hold tag names (strings in an array), scrubbed like labels.
 var jsonLabelKeys = map[string]bool{"tags": true, "categories": true}
+
+// jsonSecretKeys hold credentials (Super Productivity's sync and issue
+// provider settings): their values are blanked.
+var jsonSecretKeys = map[string]bool{"password": true, "token": true, "accesstoken": true, "refreshtoken": true,
+	"apikey": true, "encryptkey": true, "authcode": true, "clientsecret": true}
 
 // jsonURLKeys hold addresses: the scheme and host stay, the rest is replaced.
 var jsonURLKeys = map[string]bool{"url": true, "link": true, "weburl": true, "weblink": true, "shorturl": true}
@@ -126,6 +132,8 @@ func (s *scrubber) jsonString(key, v string) string {
 	}
 	k := strings.ToLower(key)
 	switch {
+	case jsonSecretKeys[k]:
+		return ""
 	case jsonLabelKeys[k]:
 		return s.labelName(v)
 	case jsonURLKeys[k]:
