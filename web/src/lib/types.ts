@@ -2212,6 +2212,8 @@ export interface AssignedPayload {
   projectId?: string
   projectName?: string
   at: number
+  /** The turn of a rotating recurring task passed to the recipient (chore-rotation D5). */
+  turn?: boolean
 }
 
 /** Payload of an `unblocked` notification (task-dependencies): the assignee's task is ready to start. */

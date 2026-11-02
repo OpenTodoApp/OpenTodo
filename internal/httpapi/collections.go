@@ -146,6 +146,9 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if entity == "task" {
+		if !s.rotationOK(r.Context(), w, body, nil) {
+			return
+		}
 		canonicalizeRecurrence(body)
 		pairDayPart(body)
 		// Custom field values become fields.<id> keys before an idempotent
@@ -445,7 +448,7 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "not found")
 		return
 	}
-	if !valuesOK(w, entity, body) {
+	if !valuesOK(w, entity, body) || (entity == "task" && !s.rotationOK(r.Context(), w, body, existing)) {
 		return
 	}
 	if msg, err := s.checkReferences(r.Context(), userFrom(r.Context()).ID, entity, body); err != nil {
@@ -602,8 +605,7 @@ var collectionRefusals = refusals{
 		"task.occurrence_date: only an occurrence record (a task with series_id) has one, and it never changes once set"),
 	opsync.ReasonInvalidSplit: refuse(http.StatusBadRequest, "invalid_input",
 		"task.split_from: only a recurring task names the series it continues, in the same project sharing, and it never changes once set"),
-	opsync.ReasonNotAMember: refuse(http.StatusBadRequest, "not_a_member",
-		"task.assignee_id: the assignee must be a member of the task's project (or yourself for a personal task)"),
+	opsync.ReasonNotAMember: notAMember,
 	otherRefusal: func(w http.ResponseWriter, rej *opsync.RejectedError) {
 		writeError(w, http.StatusForbidden, "forbidden", "your role on this project does not allow changing "+rej.Op.Entity+"."+rej.Op.Field)
 	},

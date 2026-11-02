@@ -49,6 +49,7 @@ import type { ProjectionHue, ReplanGhosts } from './calendar/DayColumn'
 import { commitProjectionDrop, useCalendarProjections } from './calendar/projections'
 import { bandLayout, startExtend, uniqueSpans, usePreloadSpanDrag, useSpanEditable } from './calendar/spanModel'
 import { ALL_DAY_CAP, useAllDayExpanded } from './calendar/allDayExpanded'
+import { LANE_REGION_MAX, useCompactLane } from './calendar/laneFold'
 
 // The re-plan bar and sheet load only when someone re-plans (replan-the-day).
 const ReplanPreview = lazy(() => import('./calendar/ReplanPreview'))
@@ -428,6 +429,8 @@ function CalendarGrid({ mode, days, today, nowMinutes, prefs, shown, meetings, f
   const dates = days.map((d) => d.date)
   const spans = uniqueSpans(days.map((d) => d.spans))
   const allDayOpen = useAllDayExpanded()
+  // On a touch screen or a narrow window the lanes fold and scroll inside a capped region (GitHub issue 775).
+  const compact = useCompactLane()
   const { pieces: cappedPieces, hiddenOn } = bandLayout(dates, spans, ALL_DAY_CAP)
   const spanRowsOn = (date: string) => cappedPieces.filter((p) => p.first <= date && date <= p.last).length
   const editable = useSpanEditable()
@@ -440,7 +443,7 @@ function CalendarGrid({ mode, days, today, nowMinutes, prefs, shown, meetings, f
       laneTarget={drag?.target?.type === 'lane' && drag.target.date === d.date} onSelect={onSelect} onOpen={onOpen}
       onPointerDown={(e, id) => onDragStart(e, { taskId: id, kind: 'move' })} hueOf={hueOf} projectionHue={projectionHue}
       deadlines={deadlines.get(d.date)} hidden={hidden.get(d.date) ?? 0} gestures={gestures}
-      spanRows={spanRowsOn(d.date)} spanHidden={hiddenOn.get(d.date) ?? 0} onExtend={extend} />
+      spanRows={spanRowsOn(d.date)} spanHidden={hiddenOn.get(d.date) ?? 0} onExtend={extend} compact={compact} />
   )
   const gutter = (label: boolean) => (
     <div className="w-12 shrink-0 pt-1 text-right text-hint text-faint" aria-hidden>
@@ -450,25 +453,31 @@ function CalendarGrid({ mode, days, today, nowMinutes, prefs, shown, meetings, f
   return (
     <div className="min-w-full" style={{ width: mode === 'week' ? 'max(100%, 56rem)' : undefined }}>
       {/* Sticky header: day name, capacity, the span band, the all-day strip and the unscheduled lane of each column. */}
-      {spans.length === 0 ? (
+      {spans.length === 0 && !compact ? (
         <div className="sticky top-0 z-20 flex border-b border-default bg-surface">
           {gutter(true)}
           {days.map((d) => header(d, 'all'))}
         </div>
       ) : (
-        <div className="sticky top-0 z-20 border-b border-default bg-surface" data-span-header>
+        <div className="sticky top-0 z-20 border-b border-default bg-surface" data-span-header={spans.length > 0 ? '' : undefined}>
           <div className="flex">{gutter(true)}{days.map((d) => header(d, 'head'))}</div>
-          <div className="flex">
-            {gutter(false)}
-            <Suspense fallback={null}><SpanBand days={dates} spans={spans} today={today} variant={mode === 'day' ? 'day' : 'week'} maxLanes={dates.some((d) => allDayOpen.has(d)) ? Infinity : ALL_DAY_CAP}
-              selectedId={selectedId} hueOf={hueOf} projectionHue={projectionHue} drags onSelect={onSelect} onOpen={onOpen} stored={(id) => rawMap.get(id)}
-              columnLines className="min-w-0 flex-1 pt-1" /></Suspense>
-          </div>
-          <div className="flex">{gutter(false)}{days.map((d) => header(d, 'body'))}</div>
+          {spans.length > 0 && (
+            <div className="flex">
+              {gutter(false)}
+              <Suspense fallback={null}><SpanBand days={dates} spans={spans} today={today} variant={mode === 'day' ? 'day' : 'week'} maxLanes={dates.some((d) => allDayOpen.has(d)) ? Infinity : ALL_DAY_CAP}
+                selectedId={selectedId} hueOf={hueOf} projectionHue={projectionHue} drags onSelect={onSelect} onOpen={onOpen} stored={(id) => rawMap.get(id)}
+                columnLines className="min-w-0 flex-1 pt-1" /></Suspense>
+            </div>
+          )}
+          {compact ? (
+            // The all-day strips and lanes scroll inside a capped region, so the hour grid keeps most of the screen.
+            <div className="flex overflow-y-auto overscroll-contain" data-lane-region style={{ maxHeight: LANE_REGION_MAX }}>{gutter(false)}{days.map((d) => header(d, 'body'))}</div>
+          ) : <div className="flex">{gutter(false)}{days.map((d) => header(d, 'body'))}</div>}
         </div>
       )}
 
-      <div className="flex">
+      {/* Its own stacking layer, below the sticky header: the now line and ghosts never paint over the lanes (GitHub issue 775). */}
+      <div className="isolate flex" data-calendar-grid>
         <HourGutter />
         {days.map((d) => (
           <DayColumn key={d.date} day={d} prefs={prefs} isToday={d.date === today} isPast={d.date < today} nowMinutes={nowMinutes} taskMap={taskMap} hueOf={hueOf} projectionHue={projectionHue} gestures={gestures}
