@@ -1,6 +1,6 @@
-// A failed time entry is never silent: start and stop failures surface in the
-// action toast, whose message says the minutes were not logged. The session keeps
-// working either way.
+// A failed time entry is never silent: the session reports start and stop failures
+// to whoever subscribed (the app's toast host words them, see ToastActionHost.test).
+// The session keeps working either way.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useDatabase } from '../db'
 import { createTask, resetDeviceId } from '../ops'
@@ -8,9 +8,11 @@ import { noopLogger, setFocusLogger, timeTrackingLogger } from './index'
 import { FOCUS_DEFAULTS } from './prefs'
 import { readFocus } from './state'
 import { startSession, stopSession } from './session'
-import { actionToast, hideActionToast } from '../../app/bulk/toastStore'
+import { onEntryFailure, type EntryFailure } from './failures'
 
 let n = 0
+let seen: EntryFailure[] = []
+let off = () => {}
 const T0 = new Date(2026, 9, 20, 9, 0).getTime()
 
 /** The logger whose start (or stop) always fails. */
@@ -25,41 +27,50 @@ function failingLogger(mode: 'start' | 'stop') {
 beforeEach(() => {
   useDatabase(`focus-session-toast-${Date.now()}-${n++}`)
   resetDeviceId()
+  seen = []
+  off = onEntryFailure((f) => seen.push(f))
 })
 
 afterEach(() => {
   setFocusLogger(timeTrackingLogger)
-  hideActionToast()
+  off()
   vi.restoreAllMocks()
 })
 
-describe('a failed time entry surfaces in the action toast', () => {
-  it('start failure: the session still runs and the toast says nothing is tracked', async () => {
+describe('a failed time entry is reported to the subscribers', () => {
+  it('start failure: the session still runs and the failure names the start', async () => {
     const id = await createTask({ title: 'Deep work' })
     setFocusLogger(failingLogger('start'))
     const s = await startSession(id, FOCUS_DEFAULTS, T0)
     expect(s.phase).toBe('work')
     expect((await readFocus())?.entryId).toBeNull()
-    const toast = actionToast()
-    expect(toast?.tone).toBe('danger')
-    expect(toast?.label).toContain('could not be started')
-    expect(toast?.label).toContain('not being tracked')
+    expect(seen).toHaveLength(1)
+    expect(seen[0].phase).toBe('start')
+    expect((seen[0].error as Error).message).toBe('time entry not found')
   })
 
-  it('stop failure: the toast warns the minutes may not be logged', async () => {
+  it('stop failure: the failure names the stop', async () => {
     const id = await createTask({ title: 'Deep work' })
     setFocusLogger(failingLogger('stop'))
     await startSession(id, FOCUS_DEFAULTS, T0)
     await stopSession(T0 + 5 * 60_000)
-    const toast = actionToast()
-    expect(toast?.tone).toBe('danger')
-    expect(toast?.label).toContain('could not be stopped')
+    expect(seen.map((f) => f.phase)).toEqual(['stop'])
   })
 
-  it('a working logger raises no toast', async () => {
+  it('a working logger reports nothing', async () => {
     const id = await createTask({ title: 'Deep work' })
     setFocusLogger(noopLogger)
     await startSession(id, FOCUS_DEFAULTS, T0)
-    expect(actionToast()).toBeNull()
+    expect(seen).toEqual([])
+  })
+})
+
+describe('the subscription', () => {
+  it('stops delivering after the unsubscribe', async () => {
+    const id = await createTask({ title: 'Deep work' })
+    setFocusLogger(failingLogger('start'))
+    off()
+    await startSession(id, FOCUS_DEFAULTS, T0)
+    expect(seen).toEqual([])
   })
 })

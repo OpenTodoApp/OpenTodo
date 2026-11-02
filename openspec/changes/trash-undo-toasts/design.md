@@ -12,7 +12,7 @@ The base batch window stays ten seconds. A bulk Trash offer holds fifteen second
 
 ### D2. Confirm above twenty
 
-The shared confirmation dialog (`design-system` "Confirmation dialog") asks when trashing more than `BULK_TRASH_CONFIRM_FROM` (20) ticked tasks and never below it, so the common small trash stays immediate. The threshold is a constant in `BulkActions.tsx`, checked before the batch starts. A menu click stays immediate: only the keyboard's Delete on a selection goes through the count check.
+The shared confirmation dialog (`design-system` "Confirmation dialog") asks when trashing more than `BULK_TRASH_CONFIRM_ABOVE` (20) ticked tasks and never at or below it, so the common small trash stays immediate. The threshold is a constant in `BulkActions.tsx`, checked before the batch starts. A menu click stays immediate: only the keyboard's Delete on a selection goes through the count check.
 
 ### D3. Show Trash as the second control
 
@@ -24,7 +24,7 @@ The palette, Vim's `dd`, the Filter view and saved views called `deleteTask`, wh
 
 ### D5. The failed time entry is an action toast, not an undo offer
 
-A failed time-entry write has nothing to undo: it is a message with a tone and a dismiss, held in `toastStore.ts` beside the undo offer so its timing and reset stay in one place. It never offers Undo and never enters the undo state machine. The session still runs: start and stop failures report the consequence and continue.
+A failed time-entry write has nothing to undo: it is one message with a dismiss, held in `toastStore.ts` beside the undo offer so its timing and reset stay in one place. It never offers Undo and never enters the undo state machine. The session still runs: start and stop failures report the consequence and continue. The data layer does not show it: `lib/focus/failures.ts` lets the session report a failure and the app subscribe (`onEntryFailure`), so `lib` never imports `app`; the toast host words the message.
 
 ### D6. The failure message waits for the offer
 

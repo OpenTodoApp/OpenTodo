@@ -5,7 +5,8 @@ import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from '../ui/test-utils'
 import { ToastActionHost } from './ToastActionHost'
-import { hideActionToast, hideBulkToast, showActionToast, showBulkToast } from './bulk/toastStore'
+import { reportEntryFailure } from '../lib/focus/failures'
+import { actionToast, hideActionToast, hideBulkToast, showActionToast, showBulkToast } from './bulk/toastStore'
 
 beforeEach(() => { vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] }) })
 afterEach(() => {
@@ -122,5 +123,17 @@ describe('the action toast host', () => {
     await act(async () => { (toastEl()!.querySelector('[data-action-toast-dismiss]') as HTMLButtonElement).click() })
     expect(toastEl()).toBeNull()
     await r.unmount()
+  })
+
+  it('words a focus time-entry failure it hears from the session, and stops listening on unmount', async () => {
+    const r = await render(<ToastActionHost />)
+    act(() => reportEntryFailure('start', new Error('boom')))
+    expect(toastEl()!.querySelector('[role="status"]')!.textContent).toBe('The time entry could not be started; this session is not being tracked. (boom)')
+    act(() => reportEntryFailure('stop', new Error('bang')))
+    expect(toastEl()!.querySelector('[role="status"]')!.textContent).toContain('could not be stopped; the minutes may not be logged correctly. (bang)')
+    await r.unmount()
+    act(() => hideActionToast())
+    act(() => reportEntryFailure('start', new Error('late')))
+    expect(actionToast()).toBeNull()
   })
 })

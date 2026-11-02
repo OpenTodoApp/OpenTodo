@@ -147,7 +147,7 @@ export function useListKeys(opts: ListKeys): void {
       o.setPickerFor(row.id)
     },
     'list.delete': () => {
-      if (b?.ticked.length) { void trashTicked(b.ticked); return }
+      if (b?.ticked.length) { act(trashTicked(b.ticked)); return }
       if (!row) return false
       act(deleteWithUndo(row.id))
       o.setSelected(o.rows[idx + 1]?.key ?? o.rows[idx - 1]?.key ?? null)
