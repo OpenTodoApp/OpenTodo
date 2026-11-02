@@ -315,6 +315,13 @@ var Schema = map[string]map[string]Field{
 		// marker and "without a next action"; a passed deadline still shows. Sync
 		// checks the kind only; REST and the agent tools check the set. Not user text.
 		"status": {Kind: kString, Default: `""`},
+		// The reusable-list mode (OpenSpec change reusable-lists, design D1):
+		// adding an item already in the project reopens it instead of
+		// duplicating it, and ticked items always show. aisles sorts new items
+		// into aisle sections and reads as false while reusable is false. Flags,
+		// not user text, so not content; additive.
+		"reusable": {Kind: kBool, Default: `false`},
+		"aisles":   {Kind: kBool, Default: `false`},
 	},
 	"task": {
 		"title":        {Kind: kString, Default: `""`, Content: true},
@@ -443,6 +450,13 @@ var Schema = map[string]map[string]Field{
 		// "parallel" or "sequential"; empty, missing or unknown follows the
 		// project. Sync checks the kind only. Not user text.
 		"flow_mode": {Kind: kString, Default: `""`},
+		// The aisle an aisle section stands for in a reusable list (OpenSpec
+		// change reusable-lists, design D1): produce, bakery, dairy, meat,
+		// frozen, pantry, drinks, household or personal, or null. A fixed key,
+		// not user text, so it survives a rename and reads the same in every
+		// language; clients read an unknown key as null, and the REST API
+		// refuses it (invalid_aisle). Sync checks the kind only. Additive.
+		"aisle": {Kind: kNullableString, Default: `null`},
 	},
 	// field: a custom field definition of one project (OpenSpec change
 	// custom-fields, design D1). Like a section it lives in its project's sharing
