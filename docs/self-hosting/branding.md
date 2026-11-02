@@ -44,7 +44,8 @@ Below the logo, the owner chooses how the server looks for people who have not c
 
 **Server themes** holds up to 20 themes everyone can choose, or customise a copy of; only you can change or remove them:
 
-- **Add from file** takes a `.opentodo-theme.json` (a theme exported from the [editor](../themes.md#theme-files)); it is checked on your device first, then on the server (at most 16 KB).
+- **Add from file** takes a `.opentodo-theme.json` (a theme exported from the [editor](../themes.md#theme-files), or a filled-in template); it is checked on your device first, then on the server (at most 16 KB).
+- **Download a template** saves a starter file made from OpenTodo Light: every colour of the format with a note on each, ready to edit in a text editor and add with **Add from file** ([theme files](../themes.md#theme-files)).
 - **Offer one of my themes** copies one of your own themes to the server. The copy is independent: changing your theme later does not change it.
 - **Remove** stops offering a theme. If it was a default, that side goes back to OpenTodo's theme; people who chose it see their side's default and keep their choice.
 

@@ -6,6 +6,7 @@
   "type": "object",
   "required": ["opentodoTheme", "id", "name", "author", "licence", "kind", "seeds"],
   "properties": {
+    "$schema": { "description": "The address of this schema, for editors that check and complete the file (a theme template carries it). Text only: the app never fetches it.", "type": "string", "maxLength": 300 },
     "opentodoTheme": { "description": "The format version. A newer format is not applied by an older app.", "const": 1 },
     "id": { "description": "1 to 64 characters of a-z, 0-9 and hyphens.", "type": "string", "pattern": "^[a-z0-9-]{1,64}$" },
     "name": { "description": "The name shown in Settings, 1 to 60 characters.", "type": "string", "minLength": 1, "maxLength": 60, "pattern": "\\S" },
@@ -89,7 +90,7 @@
       "additionalProperties": false
     }
   },
-  "propertyNames": { "pattern": "^[A-Za-z][A-Za-z0-9]{0,39}$" },
+  "propertyNames": { "pattern": "^([A-Za-z][A-Za-z0-9]{0,39}|\\$schema)$" },
   "$defs": {
     "tokenName": { "type": "string", "pattern": "^[a-z0-9-]{1,40}$" },
     "colour": {

@@ -116,6 +116,9 @@
     "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/lib/relativeDoOn.ts"
   ],
+  "1. Change the colours: #rrggbb, or oklch(L C H) with L from 0 to 1.": [
+    "web/src/app/themes/templateText.ts"
+  ],
   "10 minutes before": [
     "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/lib/reminderTime.ts"
@@ -131,6 +134,9 @@
   ],
   "2 weeks before": [
     "web/src/lib/relativeDoOn.ts"
+  ],
+  "2. Import the file: Settings → Appearance → Your themes → Import → Theme file.": [
+    "web/src/app/themes/templateText.ts"
   ],
   "24-hour": [
     "web/src/app/DateTimeSettings.tsx"
@@ -280,6 +286,9 @@
   ],
   "A Photon server; the public Photon by default.": [
     "web/src/app/locations/MapsSettings.tsx"
+  ],
+  "A VS Code colour theme file": [
+    "web/src/app/themes/YourThemes.tsx"
   ],
   "A backup is already running.": [
     "web/src/app/BackupsPanel.tsx"
@@ -1504,6 +1513,12 @@
   "An OpenTodo export, a CSV file or another app’s JSON export; open it with {kbd}.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "An OpenTodo theme or a filled-in template": [
+    "web/src/app/themes/YourThemes.tsx"
+  ],
+  "An SPDX identifier where one applies, such as CC0-1.0 or MIT.": [
+    "web/src/app/themes/templateText.ts"
+  ],
   "An account with this email already exists.": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -2199,6 +2214,9 @@
   "Base colours": [
     "web/src/app/themes/EditorSections.tsx"
   ],
+  "Base colours: every other colour follows from these.": [
+    "web/src/app/themes/templateText.ts"
+  ],
   "Based on this device's history": [
     "web/src/app/review/StatsView.tsx"
   ],
@@ -2280,6 +2298,9 @@
   ],
   "Boards": [
     "web/src/app/ViewsView.tsx"
+  ],
+  "Body text.": [
+    "web/src/app/themes/templateText.ts"
   ],
   "Bold": [
     "web/src/app/EditorChrome.tsx",
@@ -2373,6 +2394,9 @@
   ],
   "Button label": [
     "web/src/app/SsoPanel.tsx"
+  ],
+  "Buttons, links, focus and selection.": [
+    "web/src/app/themes/templateText.ts"
   ],
   "Buy me a coffee": [
     "web/src/app/WelcomeDialog.tsx",
@@ -2584,6 +2608,9 @@
   ],
   "Cards": [
     "web/src/app/themes/EditorSections.tsx"
+  ],
+  "Cards, rows and dialogs.": [
+    "web/src/app/themes/templateText.ts"
   ],
   "Carry over": [
     "web/src/lib/review.ts"
@@ -3605,6 +3632,9 @@
   "Copyright": [
     "web/src/app/ThemeAbout.tsx"
   ],
+  "Corner radii in pixels, 0 to 20.": [
+    "web/src/app/themes/templateText.ts"
+  ],
   "Corners": [
     "web/src/app/themes/EditorSections.tsx"
   ],
@@ -3881,6 +3911,9 @@
   ],
   "Creating…": [
     "web/src/app/InviteLinksSection.tsx"
+  ],
+  "Credited on the theme card.": [
+    "web/src/app/themes/templateText.ts"
   ],
   "Current logo": [
     "web/src/app/BrandingPanel.tsx"
@@ -4693,6 +4726,9 @@
   "Done already": [
     "web/src/app/review/CarryOver.tsx"
   ],
+  "Done and success messages.": [
+    "web/src/app/themes/templateText.ts"
+  ],
   "Done for today": [
     "web/src/app/review/DailyCheck.tsx"
   ],
@@ -4712,8 +4748,15 @@
   "Download": [
     "web/src/app/TemplateDialogs.tsx"
   ],
+  "Download a template": [
+    "web/src/app/BrandingThemes.tsx",
+    "web/src/app/themes/YourThemes.tsx"
+  ],
   "Download archive": [
     "web/src/app/ServerArchivePanel.tsx"
+  ],
+  "Download as a template": [
+    "web/src/app/themes/ThemeEditor.tsx"
   ],
   "Download as text": [
     "web/src/app/EncryptionPanel.tsx",
@@ -5349,6 +5392,9 @@
     "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/IssuesPanel.tsx"
   ],
+  "Errors, late tasks and delete.": [
+    "web/src/app/themes/templateText.ts"
+  ],
   "Estimate": [
     "web/src/app/EstimateField.tsx",
     "web/src/app/ParseChips.tsx",
@@ -5418,6 +5464,12 @@
   "Every colour of the theme. Setting one keeps it as you set it; Reset lets it follow the base colours again.": [
     "web/src/app/themes/TokenList.tsx"
   ],
+  "Every colour with a note, to edit in a text editor": [
+    "web/src/app/themes/ThemeEditor.tsx"
+  ],
+  "Every colour you leave out is derived from the base colours.": [
+    "web/src/app/themes/templateText.ts"
+  ],
   "Every day": [
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/lib/frames.ts"
@@ -5459,6 +5511,9 @@
   ],
   "Every other colour follows from these, unless you set it under Advanced.": [
     "web/src/app/themes/EditorSections.tsx"
+  ],
+  "Every other colour. A line that starts with // shows the colour derived now;": [
+    "web/src/app/themes/templateText.ts"
   ],
   "Every pair reaches AA": [
     "web/src/app/themes/ContrastPanel.tsx",
@@ -7037,12 +7092,10 @@
   "Import": [
     "web/src/app/quickadd/PasteOffer.tsx",
     "web/src/app/settingsIndex.ts",
+    "web/src/app/themes/YourThemes.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
-  "Import a VS Code theme": [
-    "web/src/app/themes/YourThemes.tsx"
-  ],
-  "Import a theme file": [
+  "Import a theme": [
     "web/src/app/themes/YourThemes.tsx"
   ],
   "Import completed": [
@@ -7420,6 +7473,9 @@
   ],
   "Info": [
     "web/src/app/themes/tokenNames.ts"
+  ],
+  "Information and tips.": [
+    "web/src/app/themes/templateText.ts"
   ],
   "Inherited fields are edited in the project that defines them.": [
     "web/src/app/FieldsDialog.tsx"
@@ -8113,6 +8169,9 @@
   "Lets this server mail password resets, confirmations and invitations.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Letters a-z, digits and hyphens. Importing gives the theme a new id.": [
+    "web/src/app/themes/templateText.ts"
+  ],
   "Licence": [
     "web/src/app/ThemeAbout.tsx",
     "web/src/app/themes/EditorSections.tsx"
@@ -8157,6 +8216,9 @@
   "Lines": [
     "web/src/app/themes/tokenNames.ts",
     "web/src/lib/rules/sentence.ts"
+  ],
+  "Lines that start with // are notes: the app ignores them, and trailing commas too.": [
+    "web/src/app/themes/templateText.ts"
   ],
   "Link": [
     "web/src/app/EditorChrome.tsx",
@@ -8520,7 +8582,7 @@
   "Make this the start view on this device": [
     "web/src/app/display/DisplayScreen.tsx"
   ],
-  "Make your own from any theme with Customise in its menu, start a new one, or import a theme file or a VS Code colour theme. You can also drop a file here.": [
+  "Make your own theme, or import a theme file. A template lists every colour a theme file can set, with a note on each.": [
     "web/src/app/themes/YourThemes.tsx"
   ],
   "Make {name} a member again?": [
@@ -9881,6 +9943,9 @@
   "No thanks": [
     "web/src/app/method/MethodModeChooser.tsx"
   ],
+  "No themes of your own yet. Start a new one, use Customise in any theme's menu, or download a template, change its colours and import it. You can also drop a file here.": [
+    "web/src/app/themes/YourThemes.tsx"
+  ],
   "No time of day": [
     "web/src/app/filter/conditionText.ts"
   ],
@@ -11023,6 +11088,7 @@
     "web/src/app/themes/EditorSections.tsx"
   ],
   "OpenTodo Light": [
+    "web/src/app/BrandingThemes.tsx",
     "web/src/app/ThemeRow.tsx"
   ],
   "OpenTodo asks the browser to recognise speech on this device when it offers that choice.": [
@@ -11057,6 +11123,9 @@
   ],
   "OpenTodo recovery key": [
     "web/src/app/EncryptionPanel.tsx"
+  ],
+  "OpenTodo theme template, made from {name}.": [
+    "web/src/app/themes/templateText.ts"
   ],
   "OpenTodo {appVersion}": [
     "web/src/app/RestoreSection.tsx"
@@ -11098,6 +11167,9 @@
   ],
   "Optional. With a passphrase, archives are encrypted (AES-256-GCM) before they leave the server.": [
     "web/src/app/BackupsPanel.tsx"
+  ],
+  "Optional: each one is derived until you set it.": [
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Optional; the calendar's own name is used otherwise.": [
     "web/src/app/CalendarFeedsPanel.tsx"
@@ -12886,6 +12958,7 @@
     "web/src/app/EmailScreens.tsx"
   ],
   "Reset {name} to derived": [
+    "web/src/ui/ColourField.tsx",
     "web/src/ui/TokenRow.tsx"
   ],
   "Resize sidebar": [
@@ -13848,6 +13921,9 @@
   "Server reaches the push service": [
     "web/src/lib/push.ts"
   ],
+  "Server theme": [
+    "web/src/app/BrandingThemes.tsx"
+  ],
   "Server themes": [
     "web/src/app/BrandingThemes.tsx",
     "web/src/lib/settingsCopy.ts"
@@ -14279,8 +14355,14 @@
   "Shown in place of OpenTodo. Up to 40 characters; empty keeps OpenTodo.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Shown in the theme's details.": [
+    "web/src/app/themes/templateText.ts"
+  ],
   "Shown instead of your initials. Not end-to-end encrypted.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Shown on the theme card, up to 60 characters.": [
+    "web/src/app/themes/templateText.ts"
   ],
   "Shown with your replies, followed by “(guest)”.": [
     "web/src/page/TaskPageScreen.tsx"
@@ -14938,6 +15020,9 @@
   ],
   "Status colours": [
     "web/src/app/themes/EditorSections.tsx"
+  ],
+  "Status colours: optional. A line that starts with // is derived.": [
+    "web/src/app/themes/templateText.ts"
   ],
   "Step {n} of {count}": [
     "web/src/app/FirstRun.tsx"
@@ -15663,6 +15748,9 @@
   "The backups folder inside the data directory": [
     "web/src/app/BackupsPanel.tsx"
   ],
+  "The browser and phone bar colour.": [
+    "web/src/app/themes/templateText.ts"
+  ],
   "The browser did not share the position.": [
     "web/src/app/locations/LocationEditor.tsx"
   ],
@@ -15826,6 +15914,12 @@
   "The five moves": [
     "web/src/app/method/LoopHome.tsx"
   ],
+  "The format version. Keep 1.": [
+    "web/src/app/themes/templateText.ts"
+  ],
+  "The format: {url}": [
+    "web/src/app/themes/templateText.ts"
+  ],
   "The full Open Loops method arranges the sidebar; these choices apply in the other modes.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -15980,6 +16074,9 @@
   ],
   "The owner of this server requires a second sign-in step for {email}. Set it up to continue; your tasks and any changes waiting on this device are kept and sync as soon as you are done.": [
     "web/src/app/TwoFactorPanel.tsx"
+  ],
+  "The page behind the cards.": [
+    "web/src/app/themes/templateText.ts"
   ],
   "The passkey request expired or was already used. Try again.": [
     "web/src/lib/i18n/errors.ts"
@@ -16468,6 +16565,12 @@
   ],
   "Theme editor: undo the last change": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Theme file": [
+    "web/src/app/themes/YourThemes.tsx"
+  ],
+  "Theme files": [
+    "web/src/app/themes/YourThemes.tsx"
   ],
   "Theme is invalid": [
     "web/src/app/ThemeRow.tsx"
@@ -18369,6 +18472,9 @@
   "Using": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "VS Code theme": [
+    "web/src/app/themes/YourThemes.tsx"
+  ],
   "Value": [
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/routines/words.tsx",
@@ -18527,6 +18633,9 @@
   ],
   "Warning": [
     "web/src/app/themes/tokenNames.ts"
+  ],
+  "Warnings and due soon.": [
+    "web/src/app/themes/templateText.ts"
   ],
   "We send a link to the new address; the change happens when you open it.": [
     "web/src/app/profile/ProfileSection.tsx"
@@ -18694,6 +18803,9 @@
   ],
   "Where the Week view and calendars start": [
     "web/src/app/settingsIndex.ts"
+  ],
+  "Where the palette comes from, as text; never opened.": [
+    "web/src/app/themes/templateText.ts"
   ],
   "Whether automation rules run on this server": [
     "web/src/app/settingsIndex.ts"
@@ -19974,6 +20086,9 @@
   "failure": [
     "web/src/app/AuditPanel.tsx"
   ],
+  "family: inter, system, serif or mono, or an installed font by name; list: the list text size, 13, 14 or 15.": [
+    "web/src/app/themes/templateText.ts"
+  ],
   "favorite, star, pin, sidebar": [
     "web/src/lib/rules/sentence.ts"
   ],
@@ -20195,6 +20310,9 @@
   ],
   "less than": [
     "web/src/app/filter/ConditionEditor.tsx"
+  ],
+  "light or dark: a theme is one side.": [
+    "web/src/app/themes/templateText.ts"
   ],
   "lime": [
     "web/src/lib/colourNames.ts"
@@ -20685,6 +20803,9 @@
   ],
   "refused: private network target": [
     "web/src/lib/webhooks.ts"
+  ],
+  "remove the // to set that colour yourself.": [
+    "web/src/app/themes/templateText.ts"
   ],
   "removed the assignee": [
     "web/src/lib/activity.ts"
@@ -22420,6 +22541,9 @@
   ],
   "{name}, column {n} of {count}": [
     "web/src/app/BoardView.tsx"
+  ],
+  "{name}, hex value": [
+    "web/src/ui/ColourField.tsx"
   ],
   "{name}, revoked": [
     "web/src/app/CaldavPanel.tsx"

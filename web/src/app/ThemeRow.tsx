@@ -17,7 +17,8 @@ import { effectiveSide } from '../lib/appearance'
 import { useUserPrefsRow } from '../lib/localData'
 import { showUndoToast } from './bulk/toastStore'
 import { openDraft } from './themes/openEditor'
-import { CustomThemeMenu, docSwatches, lowContrastBadge, useLowContrast, YourThemes, type ThemeCardActions } from './themes/YourThemes'
+import { CustomThemeMenu, docSwatches, lowContrastBadge, useThemeMeasures, YourThemes, type ThemeCardActions } from './themes/YourThemes'
+import { downloadThemeTemplate } from './themes/downloadTemplate'
 import type { CatalogueTheme } from '../lib/theme/builtin/index'
 import type { ThemeDocument } from '../lib/theme/format'
 import { msg, t, translatedMap } from '../lib/i18n'
@@ -96,7 +97,7 @@ export default function ThemeSettings({ mode, catalogue, author = '' }: ThemeSet
   const [offerFor, setOfferFor] = useState<{ side: Side; id: string } | null>(null)
   const other = (s: Side): Side => (s === 'light' ? 'dark' : 'light')
   const offered = offerFor && mode === 'system' && familyOf(choices[offerFor.side].id, catalogue).family !== familyOf(offerFor.id, catalogue).family ? offerFor : null
-  const low = useLowContrast(list)
+  const { low, resolved } = useThemeMeasures(list)
   const room = canAddTheme(list.length)
   const taken = list.map((x) => x.doc.name)
   const cardActions: ThemeCardActions = {
@@ -146,13 +147,26 @@ export default function ThemeSettings({ mode, catalogue, author = '' }: ThemeSet
   }
   const cardsOf = (side: Side): ThemeCardData[] => [
     ...serverCards(side, inst, catalogue),
-    ...list.filter((x) => x.doc.kind === side).map((x): ThemeCardData => ({ id: customChoice(x.id), name: x.doc.name, author: x.doc.author, swatches: docSwatches(x.doc), badge: lowContrastBadge(low[x.id]) })),
+    ...list.filter((x) => x.doc.kind === side).map((x): ThemeCardData => ({ id: customChoice(x.id), name: x.doc.name, author: x.doc.author, swatches: docSwatches(x.doc, resolved[x.id]), badge: lowContrastBadge(low[x.id]) })),
   ]
   const valueOf = (side: Side) => choiceValue(choices[side], inst.default[side] !== '')
   const onNew = async () => {
     const side = effectiveSide(mode)
     const base = await builtinDocument(DEFAULT_THEME[side])
     if (base) openDraft(newDocument(base, author, uniqueName(t('My theme'), taken)))
+  }
+  // Download a template (themes-layout-template): made from the theme in use on the side shown now.
+  const onTemplate = async () => {
+    const side = effectiveSide(mode)
+    const c = choices[side]
+    const own = c.custom ? list.find((x) => x.id === c.id)?.doc : undefined
+    if (own) return downloadThemeTemplate(own, own.name)
+    const served = c.instance ? inst.themes.find((x) => x.id === c.id)?.doc : undefined
+    const doc = served ?? (c.status === 'theme' && !c.custom && !c.instance ? await builtinDocument(c.id) : null) ?? await builtinDocument(DEFAULT_THEME[side])
+    if (!doc) return
+    const { simplifyDocument } = await import('../lib/theme/compute')
+    const from = served ? doc.name : themeName(doc.id, catalogue)
+    await downloadThemeTemplate(customiseDocument(simplifyDocument(doc), author), from)
   }
   return (
     <>
@@ -179,7 +193,7 @@ export default function ThemeSettings({ mode, catalogue, author = '' }: ThemeSet
         } : undefined}
         creditsUrl={catalogue?.creditsUrl}
       />
-      <YourThemes themes={list} lowContrast={low} actions={cardActions} takenNames={taken} onNew={() => act(onNew())} />
+      <YourThemes themes={list} lowContrast={low} resolved={resolved} actions={cardActions} takenNames={taken} onNew={() => act(onNew())} onTemplate={() => act(onTemplate())} />
     </>
   )
 }

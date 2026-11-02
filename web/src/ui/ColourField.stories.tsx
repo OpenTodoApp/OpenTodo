@@ -15,11 +15,12 @@ function Seeds() {
     <div className="flex w-96 max-w-full flex-col rounded-card border border-default bg-surface p-3">
       <ColourField label="Accent" value={accent} onChange={(v) => setAccent(v)} />
       <ColourField label="Danger" value={danger} derived="#c62828" onChange={(v) => setDanger(v)} onReset={() => setDanger(undefined)} /> {/* token-lint-allow: a theme colour is data, not styling */}
+      <ColourField label="Text" value="#dddddd" warning="2 pairs below AA" onChange={() => {}} /> {/* token-lint-allow: a theme colour is data, not styling */}
     </div>
   )
 }
 
-/** Two seed rows: a set accent, and an optional status colour still derived. */
+/** Three colour rows: a set accent, an optional status colour still derived, and a text colour with its contrast warning. */
 export const Rows: StoryObj = { render: () => <Seeds /> }
 
 function Picker({ value }: { value?: string }) {
