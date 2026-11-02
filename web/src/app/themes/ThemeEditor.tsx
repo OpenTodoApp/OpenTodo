@@ -96,7 +96,7 @@ export function ThemeEditor({ id, state, actions }: { id: string; state: ThemeEd
   const roomForMore = canAddTheme(themes.length)
   const set = (token: string, value: string | undefined, group?: string) => actions.change(withToken(doc, token, value), group)
   const fix = (f: ContrastFailure) => actions.fix({ fg: f.fg, bg: f.bg })
-  // The controls are their own size container: the colour rows and the shape and type controls go two by two once it is 30 rem wide.
+  // The controls are their own size container: shape and type and the details share lines from 30 rem; colour rows go two by two when two 12.5 rem rows fit.
   const controls = (
     <Suspense fallback={<Skeleton count={6} />}>
     <div className="@container/theme-controls flex min-w-0 flex-col gap-6" data-theme-controls>
