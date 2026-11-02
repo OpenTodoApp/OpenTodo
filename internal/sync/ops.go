@@ -1070,36 +1070,6 @@ func checkKind(k kind, raw json.RawMessage) error {
 	return check(raw)
 }
 
-func isDate(s string) bool {
-	if len(s) != 10 || s[4] != '-' || s[7] != '-' {
-		return false
-	}
-	for i, c := range s {
-		if i == 4 || i == 7 {
-			continue
-		}
-		if c < '0' || c > '9' {
-			return false
-		}
-	}
-	return true
-}
-
-func isClock(s string) bool {
-	if len(s) != 5 || s[2] != ':' {
-		return false
-	}
-	for i, c := range s {
-		if i == 2 {
-			continue
-		}
-		if c < '0' || c > '9' {
-			return false
-		}
-	}
-	return true
-}
-
 // Wins reports whether (ts, device) beats the existing (ets, edevice).
 // Ties on timestamp are broken by device id so every replica picks the same winner.
 func Wins(ts int64, device string, ets int64, edevice string) bool {
