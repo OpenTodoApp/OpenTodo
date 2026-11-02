@@ -32,7 +32,7 @@ Editors, admins and the owner SHALL be able to assign and unassign tasks in a sh
 - **THEN** the task is assigned to them immediately, with no network round trip
 
 ### Requirement: Unassign on departure
-When a member leaves or is removed from a project, or their account is deleted, every task in that project assigned to them SHALL be unassigned by operations written by the server, except that a recurring task with a rotation (see "Rotating assignee on recurring tasks") SHALL instead be assigned to the next person of its rotation among the remaining members, or unassigned when none remains; in the same server-authored batch the departing account SHALL be removed from every rotation in that project, so devices that were offline during the departure converge on the unassigned state without client logic. Assignments to that person submitted afterwards SHALL be rejected.
+When a member leaves or is removed from a project, or their account is deleted, every task in that project assigned to them SHALL be unassigned by operations written by the server, except that a recurring task with a rotation (see "Rotating assignee on recurring tasks") SHALL instead be assigned to the next person of its rotation among the remaining members, or unassigned when none remains; in the same server-authored batch the departing account SHALL be removed from every rotation in that project, so devices that were offline during the departure converge on the unassigned state without client logic. The person a rotating task is handed to SHALL receive the assignment notification worded as their turn, as after a completion, unless they are the author of the departure; an unassignment SHALL NOT notify anyone. Assignments to that person submitted afterwards SHALL be rejected.
 
 #### Scenario: Removed member had tasks
 - **WHEN** Bob, assignee of four tasks in a shared project, is removed
@@ -49,6 +49,10 @@ When a member leaves or is removed from a project, or their account is deleted, 
 #### Scenario: Departing member held a rotating chore
 - **WHEN** Bob is removed from "House" while it is his turn on "Bins", which rotates Alice → Bob → Carol
 - **THEN** after the next sync every member's device shows Bins assigned to Carol with the rotation Alice → Carol, both written as server-authored changes
+
+#### Scenario: Turn handed on by a departure is announced
+- **WHEN** Bob leaves "House" while it is his turn on "Bins", which rotates Alice → Bob → Carol
+- **THEN** Carol is notified "It's your turn: Bins", as if Bob had completed it, and nobody is notified about Bob's other tasks being unassigned
 
 #### Scenario: Last other member leaves
 - **WHEN** Carol leaves a project whose rotating task "Litter" rotates Alice → Carol and is assigned to Carol
