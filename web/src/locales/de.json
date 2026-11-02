@@ -6880,5 +6880,13 @@
   "“{name}” would go over your {quota} of attachments.": "„{name}“ würde deine {quota} für Anhänge überschreiten.",
   "“{title}” already waits for this task, so it cannot block it": "„{title}“ wartet bereits auf diese Aufgabe und kann sie daher nicht blockieren",
   "“{title}” is in a project shared differently; a task can only wait for tasks shared the same way": "„{title}“ liegt in einem anders geteilten Projekt; eine Aufgabe kann nur auf gleich geteilte Aufgaben warten",
-  "⤼ Skip": "⤼ Überspringen"
+  "⤼ Skip": "⤼ Überspringen",
+  "The list of what the assistant sends is now complete": "Die Liste dessen, was der Assistent sendet, ist jetzt vollständig",
+  "It now names everything the assistant could already read and send to the model provider, such as notes, tracked time, routines, calendar frames and attachment names. Nothing new is sent, and your consent still counts.": "Sie nennt jetzt alles, was der Assistent schon bisher lesen und an den Modellanbieter senden konnte, etwa Notizen, erfasste Zeit, Routinen, Kalenderrahmen und die Namen von Anhängen. Es wird nichts Neues gesendet, und deine Zustimmung gilt weiter.",
+  "In shared projects this includes text other members wrote.": "In geteilten Projekten umfasst das auch Text anderer Mitglieder.",
+  "Review the list": "Liste ansehen",
+  "Hide the list": "Liste ausblenden",
+  "Turn off the assistant": "Assistent ausschalten",
+  "Got it": "Verstanden",
+  "Closing this notice needs a connection.": "Zum Schließen dieses Hinweises ist eine Verbindung nötig."
 }
