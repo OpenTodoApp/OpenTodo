@@ -31,6 +31,7 @@ The format is detected from the content, in this order; the preview shows what w
 | `microsoft-todo-json` | lists with `wellknownListName`, or with `tasks` that have `importance` and `dueDateTime` or `isReminderOn` | written by a PowerShell script, see [Microsoft To Do](#microsoft-to-do-microsoft-todo-json) |
 | `apple-reminders-json` | an array whose every element has `identifier` and `isCompleted` | written by a Shortcut, see [Apple Reminders](#apple-reminders-apple-reminders-json) |
 | `anydo-json` | `categories` and `tasks` arrays, tasks with `categoryId` and `status` | Any.do's data request, see [Any.do](#anydo-anydo-json) |
+| `vikunja-export` | a ZIP with `VERSION` and a `data.json` array of projects with `id`, `title`, `tasks` and `hex_color` (or that `data.json` alone) | Vikunja's data export, see [Vikunja](#vikunja-vikunja-export) |
 | `json-items` | top-level `items` and `projects` arrays | "projects / sections / items" backups |
 | `json-lists` | a top-level `lists` array | lists of tasks; each list becomes a project |
 | `json-generic` | a top-level array of objects, or a `tasks` array | a generic task list |
@@ -41,7 +42,7 @@ The format is detected from the content, in this order; the preview shows what w
 | `asana-csv` | a header with `Task ID`, `Created At`, `Completed At`, `Last Modified`, `Name`, `Section/Column`, `Assignee`, `Due Date` and `Parent task` | one Asana project, see [Asana](#asana-asana-csv) |
 | `csv` | a header row with a `title` column | the documented columns below |
 
-**ZIP files.** A ZIP whose files are all of one format is imported as one job, one preview and one undo; each preview row shows the file it came from. Folders, `__MACOSX/` and hidden files are skipped. An archive with more than 1,000 files, mixed formats, an unsafe file name, or more than ten times the upload limit when unpacked is refused with `400 invalid_file` before anything is written. A zipped `Things Database.thingsdatabase` folder is read as a [Things database](#things-database-things-db).
+**ZIP files.** A ZIP whose files are all of one format is imported as one job, one preview and one undo; each preview row shows the file it came from. Folders, `__MACOSX/` and hidden files are skipped. An archive with more than 1,000 files, mixed formats, an unsafe file name, or more than ten times the upload limit when unpacked is refused with `400 invalid_file` before anything is written. A zipped `Things Database.thingsdatabase` folder is read as a [Things database](#things-database-things-db). A Vikunja export ZIP is read as one [Vikunja export](#vikunja-vikunja-export), with its attachment files.
 
 A file matching none of these is refused with `400 unsupported_format`, naming the supported formats. If a JSON export from another app is not recognised, convert it to the CSV columns below; every field the data model holds can be expressed there.
 
@@ -259,6 +260,33 @@ Any.do sends your data as JSON when you ask for it (see the [Any.do guide](switc
 | `alert` | a reminder at that moment |
 | shared members, attachments, the daily plan | dropped with a warning |
 | `globalTaskId` | the task's origin, `{kind: "import", provider: "anydo", id: <globalTaskId>}` |
+
+### Vikunja (`vikunja-export`)
+
+Vikunja (0.22 and later) exports all of an account's data as a ZIP from **Settings → Export your data** (see the [Vikunja guide](switch/vikunja.md)). Upload the ZIP as it is: `data.json` holds the projects and tasks, `files/` the attached files. A `data.json` uploaded alone imports everything except the files. Verified against exports of Vikunja 0.22.1 and 2.7.1.
+
+| Vikunja | Becomes |
+| --- | --- |
+| project, `parent_project_id` | a project, a sub-project; `is_archived` projects arrive archived |
+| the default project `Inbox` | none: its tasks go to the target project (the Inbox unless you choose one), with a note |
+| the buckets of the project's first Kanban view (on the view from 0.23, on the project in 0.22) | sections of open tasks, and the project opens as a board; not the done bucket, and none when every open task is in one bucket |
+| `title`, `description` (HTML) | the title, the description as Markdown text (paragraphs, lists, links, bold and italic) |
+| `done`, `done_at` | completed at `done_at`, or at `updated` when Vikunja left `done_at` unset |
+| `due_date`, `start_date` | the due date (with its time unless midnight) and the start date, in the import's time zone |
+| `end_date` | dropped with a warning |
+| `priority` 5 and 4, 3, 2, 1 and 0 | priority 1, 2, 3, 4 |
+| `labels` | labels |
+| `repeat_after` (seconds) with `repeat_mode` 0 | `every N days` when it is a whole number of days; other intervals are dropped with a warning |
+| `repeat_mode` 1, 2 | `every month`; the interval `after completion` |
+| `reminders` absolute, or `relative_to` `due_date` | absolute reminders, reminders relative to the due time |
+| `reminders` relative to `start_date`, to `end_date` | an absolute reminder at the time Vikunja computed; dropped with a warning |
+| `related_tasks` `parenttask`, `blocked` | the parent task, [Blocked by](#mapping-rules); other relation kinds are dropped with a warning |
+| `attachments` with their file in `files/<file id>` | file attachments, stored under the attachment limits like an [own export's files](#own-export-opentodo) |
+| `comments` | appended to the description with their date |
+| `assignees` | dropped with a warning |
+| `id` | the task's origin, `{kind: "import", provider: "vikunja", id}` |
+
+Colours, `percent_done`, favourites, `filters.json`, backgrounds and the List, Gantt and Table views are not imported.
 
 ### CSV (`csv`)
 

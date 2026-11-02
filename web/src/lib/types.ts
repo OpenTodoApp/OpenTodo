@@ -1928,9 +1928,11 @@ export type ImportFormat =
   | 'opentodo' | 'things-db' | 'json-items' | 'json-lists' | 'json-generic'
   | 'todoist-csv' | 'todoist-backup' | 'ticktick-csv' | 'linear-csv' | 'csv'
   | 'google-tasks-json' | 'trello-json' | 'asana-csv' | 'microsoft-todo-json' | 'apple-reminders-json' | 'anydo-json'
+  | 'vikunja-export'
 export const IMPORT_FORMATS: readonly ImportFormat[] = [
   'opentodo', 'todoist-backup', 'todoist-csv', 'things-db', 'ticktick-csv', 'linear-csv',
   'google-tasks-json', 'trello-json', 'asana-csv', 'microsoft-todo-json', 'apple-reminders-json', 'anydo-json',
+  'vikunja-export',
   'json-items', 'json-lists', 'json-generic', 'csv',
 ]
 

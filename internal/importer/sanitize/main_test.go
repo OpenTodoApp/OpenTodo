@@ -136,3 +136,65 @@ func TestThingsSQLite(t *testing.T) {
 		t.Fatalf("task: %q %d %v", title, start, err)
 	}
 }
+
+// zipEntries reads every entry of a ZIP into a map.
+func zipEntries(t *testing.T, b []byte) map[string]string {
+	t.Helper()
+	zr, err := zip.NewReader(bytes.NewReader(b), int64(len(b)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := map[string]string{}
+	for _, f := range zr.File {
+		rc, _ := f.Open()
+		data, _ := io.ReadAll(rc)
+		rc.Close()
+		out[f.Name] = string(data)
+	}
+	return out
+}
+
+func zipOf(t *testing.T, files map[string]string) []byte {
+	t.Helper()
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	for name, body := range files {
+		w, _ := zw.Create(name)
+		io.WriteString(w, body)
+	}
+	zw.Close()
+	return buf.Bytes()
+}
+
+// A Vikunja export keeps its layout, ids, dates and HTML tags; titles, text,
+// people and file bytes become placeholders, and the default Inbox keeps its name.
+func TestVikunjaZip(t *testing.T) {
+	in := zipOf(t, map[string]string{
+		"VERSION": "v2.7.1",
+		"data.json": `[{"id":1,"title":"Inbox","hex_color":"","tasks":null},{"id":7,"title":"Secret plans","hex_color":"1973ff",
+			"tasks":[{"id":5,"title":"Call Jane","description":"<p>Ring <a href=\"https://example.org/private\">her</a></p><ul><li><p>Mention money</p></li></ul>",
+			"due_date":"2026-11-20T17:00:00Z","created_by":{"username":"janedoe"},"comments":[{"comment":"<p>Finished soon</p>"}],
+			"attachments":[{"file":{"id":2,"name":"diary.txt","mime":"text/plain"}}]}]}]`,
+		"filters.json": "null",
+		"files/2":      "my secret diary",
+	})
+	out, err := newScrubber().zip(in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := zipEntries(t, out)
+	if got["VERSION"] != "v2.7.1" || got["filters.json"] != "null\n" {
+		t.Fatalf("entries = %v", got)
+	}
+	data := got["data.json"]
+	for _, gone := range []string{"Secret", "Jane", "money", "private", "janedoe", "Finished soon", "diary"} {
+		if strings.Contains(data+got["files/2"], gone) {
+			t.Fatalf("%q survived:\n%s\n%s", gone, data, got["files/2"])
+		}
+	}
+	for _, kept := range []string{`"Inbox"`, `2026-11-20T17:00:00Z`, `\u003cul\u003e\u003cli\u003e\u003cp\u003e`, `https://example.org/`, `"hex_color": "1973ff"`, `"text/plain"`} {
+		if !strings.Contains(data, kept) {
+			t.Fatalf("%q lost:\n%s", kept, data)
+		}
+	}
+}
