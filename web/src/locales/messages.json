@@ -21231,6 +21231,9 @@
   "the text": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "the time sector": [
+    "web/src/lib/activity.ts"
+  ],
   "the title": [
     "web/src/lib/activity.ts"
   ],
@@ -21283,6 +21286,9 @@
   ],
   "through the task page": [
     "web/src/app/task-detail/CommentsTab.tsx"
+  ],
+  "time sector": [
+    "web/src/lib/history.ts"
   ],
   "time tracked on the task: any, or compared with 30m, 1h30, 90": [
     "web/src/app/FilterView.tsx"

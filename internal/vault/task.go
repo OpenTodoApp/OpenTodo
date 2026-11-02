@@ -12,12 +12,13 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/daypart"
 	"github.com/OpenTodoApp/opentodo/internal/ids"
 	"github.com/OpenTodoApp/opentodo/internal/recurrence"
+	"github.com/OpenTodoApp/opentodo/internal/sector"
 	"github.com/OpenTodoApp/opentodo/internal/zoned"
 )
 
 // taskFields are the projections the merge compares, each a string so that
 // "changed" is plain inequality (design D6).
-var taskFields = []string{"title", "done", "donedate", "due", "start", "deadline", "estimate", "evening", "span", "daypart", "energy", "priority", "recur", "labels", "blocked", "note", "parent", "section", "project"}
+var taskFields = []string{"title", "done", "donedate", "due", "start", "deadline", "estimate", "evening", "span", "daypart", "energy", "sector", "priority", "recur", "labels", "blocked", "note", "parent", "section", "project"}
 
 var clockRe = regexp.MustCompile(`^([01]\d|2[0-3]):[0-5]\d$`)
 
@@ -62,6 +63,15 @@ func storedPart(part string, evening bool) string {
 // validEnergy reports the stored energy levels (task-energy D1).
 func validEnergy(e string) bool { return e == "deep" || e == "medium" || e == "low" }
 
+// storedSector is the projection of a task's time sector (time-sectors): the
+// period, or "" for none and for a value that is not a period.
+func storedSector(s string) string {
+	if sector.Valid(s) {
+		return s
+	}
+	return ""
+}
+
 // storedEnergy is the projection of a task's energy: a level, or "" for none
 // and for a value this version does not know.
 func storedEnergy(e string) string {
@@ -77,7 +87,7 @@ func (e *engine) proj(v *view, id string) map[string]string {
 	p := map[string]string{
 		"title": v.text("task", id, "title"), "done": boolStr(r.Set("completed_at")), "donedate": "",
 		"due": dueKey(r.DueOf()), "start": r.Str("start"), "deadline": r.Str("deadline"), "estimate": "",
-		"evening": boolStr(r.Bool("evening")), "span": boolStr(r.Bool("span")), "daypart": storedPart(r.Str("day_part"), r.Bool("evening")), "energy": storedEnergy(r.Str("energy")), "priority": prio(int(r.Num("priority"))), "recur": r.Str("recurrence"),
+		"evening": boolStr(r.Bool("evening")), "span": boolStr(r.Bool("span")), "daypart": storedPart(r.Str("day_part"), r.Bool("evening")), "energy": storedEnergy(r.Str("energy")), "sector": storedSector(r.Str("sector")), "priority": prio(int(r.Num("priority"))), "recur": r.Str("recurrence"),
 		"note":   strings.TrimRight(v.text("task", id, "description"), "\n"),
 		"parent": r.Str("parent_id"), "section": r.Str("section_id"), "project": r.Str("project_id"),
 	}
@@ -357,6 +367,9 @@ func (e *engine) setField(m *mergeRun, b map[string]any, f string, pl place, fil
 	case "energy":
 		// "" clears it (task-energy D1).
 		b["energy"] = fileP[f]
+	case "sector":
+		// "" clears it (time-sectors D9).
+		b["sector"] = fileP[f]
 	case "priority":
 		n, _ := strconv.Atoi(fileP[f])
 		b["priority"] = n
@@ -429,7 +442,7 @@ func (e *engine) createTask(m *mergeRun, pl place) {
 	b["estimate_minutes"], b["deadline"], b["start"], b["evening"], b["blocked_by"], b["recurrence"] = nil, nil, nil, false, []string{}, nil
 	for _, f := range taskFields {
 		// A new line without a part writes no day_part (its default).
-		if v, ok := fileP[f]; ok && f != "donedate" && !((f == "daypart" || f == "energy") && v == "") && !(f == "span" && v == "false") {
+		if v, ok := fileP[f]; ok && f != "donedate" && !((f == "daypart" || f == "energy" || f == "sector") && v == "") && !(f == "span" && v == "false") {
 			e.setField(m, b, f, pl, fileP)
 		}
 	}
@@ -584,7 +597,7 @@ func occurrenceID(seriesID, date string) string {
 
 // LineFields projects the fields a task line sets by itself (title, done and
 // its date, due with time and zone, start, deadline, part of day, span,
-// energy, estimate, priority) onto the compared strings, and lists the values
+// energy, sector, estimate, priority) onto the compared strings, and lists the values
 // that did not parse; those fields are left out. The Obsidian plugin's
 // TypeScript twin (obsidian/src/vault/line.ts) runs the same
 // testdata/lines.vectors.json.
@@ -645,6 +658,15 @@ func LineFields(l Line) (map[string]string, []string) {
 		p["energy"] = e
 	default:
 		bad("energy %s is not deep, medium or low", l.Energy)
+	}
+	// [sector:: …] (time-sectors D9): a period, letters in any case.
+	switch s := strings.ToUpper(strings.TrimSpace(l.Sector)); {
+	case s == "":
+		p["sector"] = ""
+	case sector.Valid(s):
+		p["sector"] = s
+	default:
+		bad("sector %s is not a period such as 2026-W44, 2026-11 or 2026-Q4", l.Sector)
 	}
 	if l.Estimate == "" {
 		p["estimate"] = ""
