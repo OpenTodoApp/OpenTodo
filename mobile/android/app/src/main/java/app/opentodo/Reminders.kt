@@ -113,6 +113,25 @@ object Notifier {
         return try { NotificationManagerCompat.from(context).notify(notificationId(r.id), n); true } catch (e: SecurityException) { false }
     }
 
+    /** A location reminder crossed in its direction (location-reminders): Done and Dismiss, a tap opens the task. */
+    fun location(context: Context, r: ShellGeofence): Boolean {
+        if (!Scheduler.notificationsAllowed(context)) return false
+        channel(context)
+        val n = NotificationCompat.Builder(context, CHANNEL)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(r.title ?: context.getString(R.string.reminder_generic))
+            .setContentText(context.getString(if (r.on == "arrive") R.string.location_arrived else R.string.location_left))
+            .setWhen(System.currentTimeMillis()).setShowWhen(true)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setContentIntent(open(context, ReminderSchedule.taskPath(r.taskId), notificationId(r.id)))
+            .addAction(0, context.getString(R.string.action_done), action(context, r.id, "done"))
+            .addAction(0, context.getString(R.string.action_dismiss), action(context, r.id, "dismiss"))
+            .build()
+        return try { NotificationManagerCompat.from(context).notify(notificationId(r.id), n); true } catch (e: SecurityException) { false }
+    }
+
     fun test(context: Context): Boolean {
         if (!Scheduler.notificationsAllowed(context)) return false
         channel(context)
@@ -135,24 +154,36 @@ class AlarmReceiver : BroadcastReceiver() {
     }
 }
 
-/** Snooze 10 min and Dismiss: the web app applies them in a hidden web view, as ordinary ops. */
+/**
+ * Snooze 10 min and Dismiss, and a location reminder's Done: the web app applies them in a
+ * hidden web view, as ordinary ops.
+ */
 class NotificationActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val id = intent.getStringExtra("id") ?: return
-        val action = intent.getStringExtra("action")?.takeIf { it == "snooze" || it == "dismiss" } ?: return
+        val action = intent.getStringExtra("action")?.takeIf { it == "snooze" || it == "dismiss" || it == "done" } ?: return
         NotificationManagerCompat.from(context).cancel(Notifier.notificationId(id))
         HiddenRun.enqueueOnce(context, ReminderSchedule.actionPath(id, action))
     }
 }
 
-/** Alarms do not survive a reboot or a change of the exact-alarm permission: arm them again. */
+/**
+ * Alarms do not survive a reboot or a change of the exact-alarm permission, and proximity
+ * alerts not a reboot or an app update: arm them again.
+ */
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
-            Intent.ACTION_BOOT_COMPLETED, AlarmManager.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED -> {
+            Intent.ACTION_BOOT_COMPLETED -> {
+                Scheduler.rearm(context)
+                Geofences.rearm(context)
+                HiddenRun.schedulePeriodic(context)
+            }
+            AlarmManager.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED -> {
                 Scheduler.rearm(context)
                 HiddenRun.schedulePeriodic(context)
             }
+            Intent.ACTION_MY_PACKAGE_REPLACED -> Geofences.rearm(context)
         }
     }
 }

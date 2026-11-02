@@ -39,7 +39,7 @@ describe('reminder entity', () => {
     expect(new Set(states).size).toBe(1)
     expect(JSON.parse(states[0])).toEqual({
       id: 'r1', task_id: 't1', kind: 'relative', offset_minutes: -60, fire_at: 1000,
-      delivered_at: null, dismissed_at: 50, created_at: 0, deleted_at: 99,
+      delivered_at: null, dismissed_at: 50, created_at: 0, deleted_at: 99, radius_m: null,
     })
   })
 

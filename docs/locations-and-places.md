@@ -25,6 +25,8 @@ Open a task and choose its location on the **Where** line, or **Add → Location
 
 **Open in maps** opens your phone's maps app, or the position on openstreetmap.org on a computer.
 
+A task with a point on the map can also remind you when you arrive there or leave: see [Location reminders](location-reminders.md). They fire in the Android app.
+
 ## Saved locations
 
 **Save for reuse** keeps a task's location under a name such as *Office*. A task linked to a saved location follows it: rename the location or move its pin, and every linked task shows the change. Delete it, and the tasks keep the address they had.
