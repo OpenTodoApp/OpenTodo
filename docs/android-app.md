@@ -104,12 +104,12 @@ In **Settings → Notifications**, turn on **Notifications through the app**. Th
 
 [Location reminders](location-reminders.md) ("when I arrive at the post office") fire on the phone. Turn on **Settings → Notifications → Location reminders → On this phone**: the app explains what the location is for, then Android asks twice, first for your location (**While using the app** or **Only this time**), then for **Allow all the time**, which on Android 11 and later is a choice on the app's location settings page. Without **Allow all the time** nothing is watched and the setting says so, with **Open settings**.
 
-- The app uses Android's own proximity alerts, with no Google Play services, so it works the same on F-Droid, GitHub and Play builds and on phones without Google.
+- The app uses Android's own proximity alerts, with no Google Play services, so it works on phones without Google.
 - It watches at most 19 places, the nearest to where you are, plus one larger circle around that spot; leaving that circle makes it pick the nearest places again.
 - Your position stays on the phone. It is never sent to your server or anyone else, never passed to the app's pages and never logged; the app keeps only the point it last picked the places from, in its private storage.
 - A notification offers **Done** and **Dismiss**; a crossing fires at most once an hour per reminder.
 - Sign-out, locking an encrypted account and **Change server** remove every watched place.
-- The Play Store version gets location reminders once Google has reviewed the background-location use; F-Droid and GitHub builds have them first.
+- **Only the app from GitHub or F-Droid has location reminders for now.** The Google Play version leaves them out, and doesn't ask for your location at all, until Google has approved the background-location use; there the setting reads "Location reminders come to the Google Play version later". To use them now, install the app from GitHub or F-Droid over the Play one ([switching keeps everything](#switching-between-google-play-f-droid-and-github)).
 
 ## Sharing
 

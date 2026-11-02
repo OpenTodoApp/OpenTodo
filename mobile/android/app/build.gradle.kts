@@ -10,6 +10,12 @@ plugins {
 val appVersion: String = (System.getenv("OPENTODO_VERSION") ?: "0.0.0-dev").removePrefix("v")
 val versionParts = Regex("""^(\d+)\.(\d+)\.(\d+)""").find(appVersion)?.destructured?.toList()?.map { it.toInt() } ?: listOf(0, 0, 0)
 
+// The Google Play build (play-location-later): `-Popentodo.play=true`, used only for the AAB that
+// goes to Play. It removes the location permissions from the manifest (src/play/AndroidManifest.xml)
+// and location reminders from the bridge until Play approves the background-location declaration.
+// The APK for GitHub and F-Droid is built without it, so its reproducible build stays as it was.
+val playBuild = providers.gradleProperty("opentodo.play").orNull == "true"
+
 // Release signing only when CI provides a keystore (secrets); never committed.
 val keystoreProps = Properties().apply {
     val f = rootProject.file("keystore.properties")
@@ -29,7 +35,11 @@ android {
         versionCode = (versionParts[0] * 10000 + versionParts[1] * 100 + versionParts[2]).coerceAtLeast(1)
         versionName = appVersion
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("boolean", "PLAY_BUILD", playBuild.toString())
     }
+
+    // Only the Play build overlays the release manifest (tools:node="remove" on the location permissions).
+    if (playBuild) sourceSets.getByName("release").manifest.srcFile("src/play/AndroidManifest.xml")
 
     signingConfigs {
         if (keystoreProps.getProperty("storeFile") != null) {

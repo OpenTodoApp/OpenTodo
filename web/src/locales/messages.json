@@ -2591,7 +2591,7 @@
     "web/src/app/FieldsDialog.tsx",
     "web/src/app/IssueEditor.tsx",
     "web/src/app/LinkDialog.tsx",
-    "web/src/app/LocationReminders.tsx",
+    "web/src/app/LocationReminderEditor.tsx",
     "web/src/app/MembersPanel.tsx",
     "web/src/app/NamePrompt.tsx",
     "web/src/app/NewBoardDialog.tsx",
@@ -3146,13 +3146,18 @@
     "web/src/app/SsoPanel.tsx",
     "web/src/app/ThemeAbout.tsx",
     "web/src/app/assistant/AssistantSheet.tsx",
+    "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/help/HelpPanel.tsx",
     "web/src/app/palette/CommandPalette.tsx",
     "web/src/app/routines/AddStep.tsx",
     "web/src/app/routines/DescribeIt.tsx",
     "web/src/app/sidePanel.tsx",
+    "web/src/app/task-detail/FacetEditor.tsx",
     "web/src/app/task-detail/TaskDetail.tsx",
+    "web/src/app/task-detail/TaskPageDialog.tsx",
     "web/src/app/task-detail/TaskPageView.tsx",
+    "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/app/task-list/ListChrome.tsx",
     "web/src/ui/overlay/Dialog.tsx",
     "web/src/ui/overlay/Popover.tsx"
   ],
@@ -4795,9 +4800,7 @@
     "web/src/app/TwoFactorPanel.tsx",
     "web/src/app/UsersPanel.tsx",
     "web/src/app/WebhooksPanel.tsx",
-    "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/calendar/QueryFilterDialog.tsx",
-    "web/src/app/focus/FocusParts.tsx",
     "web/src/app/objectives/ReviewObjectives.tsx",
     "web/src/app/review/ReviewView.tsx",
     "web/src/app/review/StatsView.tsx",
@@ -4805,10 +4808,6 @@
     "web/src/app/routines/RunHistory.tsx",
     "web/src/app/routines/StepCard.tsx",
     "web/src/app/routines/pickers.tsx",
-    "web/src/app/task-detail/FacetEditor.tsx",
-    "web/src/app/task-detail/TaskPageDialog.tsx",
-    "web/src/app/task-detail/WhenControl.tsx",
-    "web/src/app/task-list/ListChrome.tsx",
     "web/src/app/themes/previewData.ts",
     "web/src/page/TaskPageScreen.tsx",
     "web/src/ui/AccentPicker.tsx"
@@ -8598,6 +8597,9 @@
   ],
   "Location reminders": [
     "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Location reminders come to the Google Play version later; the GitHub/F-Droid app has them.": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Location reminders fire only in the Android or iPhone app, with Location reminders on.": [
@@ -12668,10 +12670,10 @@
     "web/src/lib/sectorNames.ts"
   ],
   "Radius": [
-    "web/src/app/LocationReminders.tsx"
+    "web/src/app/LocationReminderEditor.tsx"
   ],
   "Radius presets": [
-    "web/src/app/LocationReminders.tsx"
+    "web/src/app/LocationReminderEditor.tsx"
   ],
   "Raised surface": [
     "web/src/app/themes/tokenNames.ts"
@@ -12881,7 +12883,7 @@
     "web/src/app/TwoFactorPanel.tsx"
   ],
   "Remind me": [
-    "web/src/app/LocationReminders.tsx"
+    "web/src/app/LocationReminderEditor.tsx"
   ],
   "Remind me after": [
     "web/src/lib/settingsCopy.ts"
@@ -13746,7 +13748,7 @@
     "web/src/app/FieldsDialog.tsx",
     "web/src/app/IssueEditor.tsx",
     "web/src/app/LinkDialog.tsx",
-    "web/src/app/LocationReminders.tsx",
+    "web/src/app/LocationReminderEditor.tsx",
     "web/src/app/NamePrompt.tsx",
     "web/src/app/NotificationChannelEditor.tsx",
     "web/src/app/OutgoingEmailPanel.tsx",
@@ -15463,6 +15465,7 @@
     "web/src/lib/rules/sentence.ts"
   ],
   "Stop the timer": [
+    "web/src/app/focus/FocusParts.tsx",
     "web/src/lib/rules/sentence.ts"
   ],
   "Stop tracking": [
@@ -19266,9 +19269,11 @@
     "web/src/app/task-list/RowDetails.tsx"
   ],
   "When I arrive": [
+    "web/src/app/LocationReminderEditor.tsx",
     "web/src/app/LocationReminders.tsx"
   ],
   "When I leave": [
+    "web/src/app/LocationReminderEditor.tsx",
     "web/src/app/LocationReminders.tsx"
   ],
   "When do I get things done?": [
@@ -21695,6 +21700,7 @@
     "web/src/lib/rules/sentence.ts"
   ],
   "the task’s location": [
+    "web/src/app/LocationReminderEditor.tsx",
     "web/src/app/LocationReminders.tsx"
   ],
   "the task’s project": [
