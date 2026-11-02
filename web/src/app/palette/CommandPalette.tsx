@@ -47,6 +47,7 @@ import { AddPanel, AskPanel, BarFooter, ModeSwitch, ShortcutKeys } from './BarPa
 import { barModes, PREFIX_OF, prefixSwitch, type BarMode } from './modes'
 import { useResetOnChange } from '../../lib/useResetOnChange'
 import { Snippet, usePaletteNotes } from './notesSection'
+import { perfMark, SEARCH_RESULTS } from '../../lib/perfMarks'
 
 /** At most this many entries are listed; the rest are counted. */
 export const PALETTE_LIMIT = 50
@@ -185,6 +186,8 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
     onClose: () => { if (keepOpen.current) keepOpen.current = false; else onClose() },
   })
   useResetOnChange([state.query], () => setTyped(state.query))
+  // The results for the text typed so far are on screen (performance-10k D4).
+  useEffect(() => { if (state.query.trim()) perfMark(SEARCH_RESULTS) }, [state.query, state.options])
   // The prefixes switch mode as the first character of an empty field (modes.ts).
   const field = { ...state, setQuery: (next: SetStateAction<string>) => {
     const v = typeof next === 'function' ? next(state.query) : next

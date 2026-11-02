@@ -69,12 +69,14 @@ Advances ROADMAP-1.0 milestone 1.0 "Trust", item `performance-10k`. The notes fi
 
 ### Modified Capabilities
 
-None. `task-list-presentation` "Large lists stay responsive", `self-hosting` "Read cost bounded by the visible data" and `offline-first-sync` "Bounded pull pages" keep their requirements; the new capability measures them at 10,000 tasks.
+- `http-api`: `GET /api/v1/{collection}?project_id=` lists one project's items (it was ignored, so listing the 2,000-task project listed the whole account; found by the first measurement, design D8).
+
+`task-list-presentation` "Large lists stay responsive", `self-hosting` "Read cost bounded by the visible data" and `offline-first-sync` "Bounded pull pages" keep their requirements; the new capability measures them at 10,000 tasks.
 
 ## Impact
 
 - **Data model, sync, op schema, E2EE:** none. Fixes may add IndexedDB indexes (Dexie schema version bump, local only) or SQLite indexes (a migration). Each is listed in tasks when found.
-- **API/CLI/MCP:** none.
+- **API/CLI/MCP:** `project_id` filters the REST collection lists (additive).
 - **Web app:** `performance.mark` calls at a few milestones (list ready, search results, sync done). They're local to the browser and never sent anywhere (no telemetry).
 - **CI:** the web scale job grows from 2,000 to 10,000 rows (about +2 minutes). There's a new nightly `perf` workflow (about 20 minutes, plus about 15 minutes and 5 GB of runner disk for the notes fixture).
 - **Binary and bundle size:** no change from the harness. Fixes are checked by `bundle-budget`.
