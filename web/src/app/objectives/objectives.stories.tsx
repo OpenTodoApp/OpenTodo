@@ -25,7 +25,7 @@ const rows = [
   o('Draft the talk', '2026-W42'),
   o('Book the venue for the offsite', '2026-W42', { done_at: 1 }),
 ]
-const full = [...rows, ...['Reply to the landlord', 'Renew the passport', 'Call the accountant'].map((t) => o(t, '2026-W42'))]
+const full = [...rows, ...['Reply to the landlord', 'Renew the passport', 'Call the accountant', 'Pay the rent'].map((t) => o(t, '2026-W42'))]
 
 const none: ObjectiveActions = { onToggle: () => {}, onRename: () => {}, onDrop: () => {}, onMove: () => {}, onPlace: () => {}, onAdd: () => {} }
 
