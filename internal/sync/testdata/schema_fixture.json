@@ -82,6 +82,7 @@
       "position"
     ],
     "project": [
+      "aisles",
       "archived",
       "color",
       "created_at",
@@ -93,6 +94,7 @@
       "notes_doc",
       "parent_id",
       "position",
+      "reusable",
       "status",
       "workspace_id"
     ],
@@ -145,6 +147,7 @@
       "trigger"
     ],
     "section": [
+      "aisle",
       "color",
       "created_at",
       "deleted_at",

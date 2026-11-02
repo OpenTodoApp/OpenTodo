@@ -23,6 +23,7 @@ import { createLabelByName, nowHHMM, type QuickAddInput } from '../QuickAdd'
 import { navigate, routePath, type Route } from '../router'
 import { selectTask } from '../signals'
 import { openTaskPage } from '../taskTrail'
+import { addManyToList, addToList } from '../reuseAdd'
 
 /** The route whose defaults a task added from the bar takes: a list screen's own, else the Inbox's. */
 export function defaultsRoute(route: Route): Route {
@@ -43,7 +44,14 @@ function barInput({ labels: typed, ...rest }: QuickAddInput, route: Route, today
 export async function addFromBar(input: QuickAddInput, route: Route, userId?: string, open = false): Promise<string> {
   const today = logicalToday()
   // Top or bottom of the list it lands in (add-position D3).
-  const id = await createTaskThenSuggest({ ...barInput(input, route, today, userId), placement: await preferredPlacement() })
+  // A reusable list reopens or points at an item it has, with its own toast (reusable-lists D3).
+  let created = false
+  const planned = { ...barInput(input, route, today, userId), placement: await preferredPlacement() }
+  const id = await addToList(planned, (x) => { created = true; return createTaskThenSuggest(x) })
+  if (!created) {
+    if (open && planned.project_id) openAt(id, { view: 'project', id: planned.project_id })
+    return id
+  }
   const task = await getTask(id)
   const project = task?.project_id ? await getProject(task.project_id) : undefined
   const where = task ? addedWhere(task, today, currentDateTime()) : null
@@ -77,9 +85,14 @@ export async function logWinFromBar(input: QuickAddInput, route: Route, open = f
 /** A pasted list from the bar (paste-to-tasks D3): every line with the screen's defaults, one batch and one toast with Undo. */
 export async function addManyFromBar(inputs: QuickAddInput[], route: Route, userId?: string): Promise<string[]> {
   const today = logicalToday()
-  const added = await addTasksUndoable(inputs.map((input) => barInput(input, route, today, userId)), { placement: await preferredPlacement() })
-  showBulkToast(added.label, added.undoId)
-  return added.ids
+  const placement = await preferredPlacement()
+  let ids: string[] = []
+  await addManyToList(inputs.map((input) => barInput(input, route, today, userId)), async (fresh) => {
+    const added = await addTasksUndoable(fresh, { placement })
+    showBulkToast(added.label, added.undoId)
+    ids = added.ids
+  })
+  return ids
 }
 
 /** Opens the new task as its page; Esc goes to the list it went to (task-full-page). */

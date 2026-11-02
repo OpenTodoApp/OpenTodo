@@ -41,6 +41,8 @@ import { useMethodMode, type MethodMode } from '../lib/method/mode'
 import { openTaskCount, useOpenTaskCount } from '../lib/liveTasks'
 import { useProjectPrefsRow, useProjectViewMode, useShowCompletedPref } from '../lib/liveData'
 import { saveShowCompleted } from '../lib/sections'
+import { isReusable } from '../lib/reusable'
+import { listModeItem } from './menus/listMenu'
 
 /** A "Move to" target: a project, or the top level (id ''). */
 export interface MoveTarget { id: string; name: string; path: string[] }
@@ -112,7 +114,9 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
   // "Review every…" (project-review-cadence D6): personal, for whoever is in the walk (editors and up).
   const every = o.mode && canEditTasks(role) ? reviewEveryItem(project.id, o.reviewEvery, { mode: o.mode }) : null
   const review: ActionGroup[] = every ? [{ items: [every] }] : []
-  if (!canEditProject(role)) return [...pin, ...copies, ...fields, ...review]
+  // "List…" (reusable-lists D7): the reusable-list switches; editors and up change them, viewers see them.
+  const list: ActionGroup[] = [{ items: [listModeItem(project, { canEdit: canEditTasks(role) })] }]
+  if (!canEditProject(role)) return [...pin, ...copies, ...fields, ...review, ...list]
   // "Flow…" (project-flow-modes D7): the menus pass the mode; the palette offers its own "Set project flow…".
   const flow = o.mode ? projectFlowItem(project, { mode: o.mode, canEdit: true }) : null
   // "Put in maintenance" / "End maintenance" (project-review-cadence D6): owner and admins, like the flow.
@@ -122,6 +126,7 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
     ...copies,
     ...fields,
     ...review,
+    ...list,
     { items: [
       { kind: 'picker', id: 'move', label: t('Move to'), icon: 'folder-input', shortcut: keysOf('project.move'), picker: {
         title: t('Move to'), placeholder: t('Find a project…'), emptyText: t('No other project can hold this one'),
@@ -250,7 +255,8 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
   const mode = useMethodMode()
   const reviewEvery = useProjectPrefsRow(project.id)?.review_every
   const panels: ActionGroup = { items: [
-    ...(listLayout ? [{ kind: 'check' as const, id: 'show-completed', label: t('Show completed tasks'), icon: 'circle-check-big' as const, checked: showCompleted, onSelect: () => saveShowCompleted(project.id, !showCompleted) }] : []),
+    // A reusable list always shows its ticked items (reusable-lists D7), so it offers no switch.
+    ...(listLayout && !isReusable(project) ? [{ kind: 'check' as const, id: 'show-completed', label: t('Show completed tasks'), icon: 'circle-check-big' as const, checked: showCompleted, onSelect: () => saveShowCompleted(project.id, !showCompleted) }] : []),
     { kind: 'action', id: 'activity', label: t('Activity'), icon: 'history', shortcut: keysOf('project.activity'), onSelect: showActivity },
     { kind: 'action', id: 'history', label: t('History'), icon: 'rotate-ccw', onSelect: showHistory },
     // The project's routines on the Routines page (routines-shared D12).

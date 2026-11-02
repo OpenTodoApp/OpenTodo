@@ -15,7 +15,7 @@ Projects keep related tasks together, and projects can sit inside other projects
 
 ## Organise with projects
 
-To create a project, click **+** next to **Projects** in the sidebar, type a name and choose **Create**. Pick a parent project in the same form to make it a sub-project. Inside a project, [quick add](quick-add.md) puts new tasks in it. See also [workspaces](workspaces.md).
+To create a project, click **+** next to **Projects**, type a name and choose **Create**. Pick a parent project to make it a sub-project. Inside a project, [quick add](quick-add.md) puts new tasks in it. See also [workspaces](workspaces.md).
 
 The **Project** menu at the top right of a project lets you:
 
@@ -25,6 +25,7 @@ The **Project** menu at the top right of a project lets you:
 - **Rename** it,
 - pick an **Icon…**: type to search, or **No icon** for the dot,
 - choose a **Flow…** ([flows](project-flows.md)), **Review every…** or **Put in maintenance** ([intervals](review-intervals.md)),
+- make it a [reusable list](reusable-lists.md) with **List…**,
 - **Archive…** it: it and its sub-projects leave the sidebar, every task kept,
 - **Delete project…**, which moves it to the Trash.
 
