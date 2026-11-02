@@ -25,6 +25,7 @@ The format is detected from the content, in this order; the preview shows what w
 | Format id | Recognised by | Notes |
 | --- | --- | --- |
 | `opentodo` | a top-level `"format": "opentodo-export"` | Exact round trip, see below |
+| `tududi-db` | a SQLite database with Tududi's `tasks`, `projects`, `areas`, `tags` and `tasks_tags` tables | a copy of Tududi's `production.sqlite3`, see [Tududi](#tududi-tududi-db) |
 | `things-db` | a SQLite database with Things 3's tables | a copy of Things' `main.sqlite`, see [Things](#things-database-things-db) |
 | `google-tasks-json` | `"kind": "tasks#taskLists"`, or `items` of kind `tasks#taskList` | Google Takeout's `Tasks.json`, see [Google Tasks](#google-tasks-google-tasks-json) |
 | `trello-json` | top-level `id`, `name` and `lists`, `cards`, `checklists` arrays | one Trello board, see [Trello](#trello-trello-json) |
@@ -42,7 +43,7 @@ The format is detected from the content, in this order; the preview shows what w
 | `asana-csv` | a header with `Task ID`, `Created At`, `Completed At`, `Last Modified`, `Name`, `Section/Column`, `Assignee`, `Due Date` and `Parent task` | one Asana project, see [Asana](#asana-asana-csv) |
 | `csv` | a header row with a `title` column | the documented columns below |
 
-**ZIP files.** A ZIP whose files are all of one format is imported as one job, one preview and one undo; each preview row shows the file it came from. Folders, `__MACOSX/` and hidden files are skipped. An archive with more than 1,000 files, mixed formats, an unsafe file name, or more than ten times the upload limit when unpacked is refused with `400 invalid_file` before anything is written. A zipped `Things Database.thingsdatabase` folder is read as a [Things database](#things-database-things-db). A Vikunja export ZIP is read as one [Vikunja export](#vikunja-vikunja-export), with its attachment files.
+**ZIP files.** A ZIP whose files are all of one format is imported as one job, one preview and one undo; each preview row shows the file it came from. Folders, `__MACOSX/` and hidden files are skipped. An archive with more than 1,000 files, mixed formats, an unsafe file name, or more than ten times the upload limit when unpacked is refused with `400 invalid_file` before anything is written. A zipped `Things Database.thingsdatabase` folder is read as a [Things database](#things-database-things-db). A Vikunja export ZIP is read as one [Vikunja export](#vikunja-vikunja-export), with its attachment files. A ZIP holding a Tududi database is read as a [Tududi database](#tududi-tududi-db).
 
 A file matching none of these is refused with `400 unsupported_format`, naming the supported formats. If a JSON export from another app is not recognised, convert it to the CSV columns below; every field the data model holds can be expressed there.
 
@@ -260,6 +261,32 @@ Any.do sends your data as JSON when you ask for it (see the [Any.do guide](switc
 | `alert` | a reminder at that moment |
 | shared members, attachments, the daily plan | dropped with a warning |
 | `globalTaskId` | the task's origin, `{kind: "import", provider: "anydo", id: <globalTaskId>}` |
+
+### Tududi (`tududi-db`)
+
+Tududi keeps its data in one SQLite file (`production.sqlite3`); upload a copy of it, or a ZIP holding it (see the [Tududi guide](switch/tududi.md)). Like a [Things database](#things-database-things-db) it is read on the server from a private temporary copy, read-only, with fixed queries over plain tables, and the copy is deleted after the preview or import. A database whose tables lack a column the mapping reads is refused with `400 unsupported_format`, naming the Tududi version the mapping was verified against (1.14). With several accounts in the file, the first account's data is imported and a note says so. Dates are read in the time zone of the Tududi account.
+
+| Tududi | Becomes |
+| --- | --- |
+| area | a parent project |
+| project (`area_id`) | a project inside its area's project; status `done` or `cancelled`: archived, with a warning |
+| project `description` and the project's `notes` (title and Markdown) | the project's notes, the notes after the description |
+| notes without a project | not imported; a note counts them |
+| task `name`, `note` | the title, the description |
+| `project_id`, `area_id`, neither | the project, the area's project, the target project (the Inbox unless you choose one) |
+| `parent_task_id` | the parent task |
+| `priority` 2 (high), 1 (medium), 0 (low), none | priority 1, 2, 3, 4 |
+| `due_date` with `due_has_time` | the due date, with its time when it has one |
+| `start_date`, `estimated_minutes`, `reminder_at` | the start date, the estimate, an absolute reminder |
+| `status` 2 (done), 3 (archived), 5 (cancelled, with a warning) | completed at `completed_at` (or `updated_at`) |
+| tags (`tasks_tags`) | labels; the built-in `someday` tag parks the task in Someday |
+| on the latest Today plan (`daily_plan_items`), without a due date | due on the import date, with a warning |
+| `recurrence_type` `daily`, `weekly` (`recurrence_weekdays`), `monthly` (`recurrence_month_day`), `monthly_weekday`, `monthly_last_day`, with `recurrence_interval`, `completion_based` and `recurrence_end_date` | `every N days`, `every monday, thursday` or `every N weeks` (weekdays every 2+ weeks: with a warning), `every 15th`, `every 2nd tuesday`, `every last day`, `after completion`, `until YYYY-MM-DD`; what the grammar cannot say is dropped with a warning |
+| `comments` | appended to the description with their date |
+| `inbox_items` with status `added` | tasks without a project |
+| `uid` | the task's origin, `{kind: "import", provider: "tududi", id: <uid>}` |
+
+Tags on projects are dropped with a warning; attachments (not in the database) and task relations are counted in a note; onboarding example tasks (`example_of`) are skipped.
 
 ### Vikunja (`vikunja-export`)
 

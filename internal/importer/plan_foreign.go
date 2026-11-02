@@ -651,7 +651,7 @@ func (pl *planner) links(taskID string, list []Link, res *RowResult) []change {
 }
 
 func displaySource(s string) string {
-	for _, p := range []string{"google-tasks:", "trello:", "asana:", "microsoft-todo:", "apple-reminders:", "anydo:", "vikunja:"} {
+	for _, p := range []string{"google-tasks:", "trello:", "asana:", "microsoft-todo:", "apple-reminders:", "anydo:", "vikunja:", "tududi:"} {
 		s = strings.TrimPrefix(s, p)
 	}
 	for _, p := range []string{"id:", "task:", "item:"} {

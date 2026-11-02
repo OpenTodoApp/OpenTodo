@@ -18204,6 +18204,9 @@
   "Try the demo": [
     "web/src/app/AuthScreen.tsx"
   ],
+  "Tududi (database)": [
+    "web/src/app/ImportScreen.tsx"
+  ],
   "Tue": [
     "web/src/app/rules/RuleFields.tsx"
   ],
