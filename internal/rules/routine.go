@@ -212,6 +212,8 @@ func (e *Engine) newRun(ctx context.Context, w *world, r *rule, key, runID strin
 	}
 	st.env.Automations = st.env.Automations && e.on(ctx)
 	st.env.Encrypted = w.encrypted
+	// A shared routine's steps follow its availability (routines-shared D3).
+	st.env.Shared = w.project != ""
 	return st
 }
 

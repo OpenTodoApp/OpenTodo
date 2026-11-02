@@ -1,10 +1,11 @@
 // Reading a store for printing (internal/vault/layout.go, render.go, status.go):
 // decrypted text, the project tree, file names, task lines and documents.
 import { estimateMinutes, type Line } from './line'
-import { emptyDoc, fileFlow, fileStatus, goFields, goTrim, trimNewlines, type Block, type Doc, type Item, type Node } from './doc'
+import { emptyDoc, fileFlow, fileStatus, goFields, goTrim, trimNewlines, type Block, type Doc, type Node } from './doc'
 import { byteOrder, goSprint, utf8 } from './gojson'
 import * as S from './store'
 import { localDate } from './zone'
+import { isSector } from '../../../web/src/lib/sectors'
 
 export const INBOX_FILE = 'Inbox.md'
 export const PLACEHOLDER = 'Encrypted item'
@@ -106,7 +107,7 @@ export class View {
     const r = S.get(this.s, 'task', id)
     const l: Line = {
       indent: '', done: false, title: this.text('task', id, 'title'), trailing: extra, due: '', start: '', doneDate: '', created: '', recur: '', priority: 0, id,
-      blocked: [], tags: [], time: '', tz: '', deadline: '', estimate: '', evening: false, span: '', dayPart: '', energy: '', readOnly: {}, has: {},
+      blocked: [], tags: [], time: '', tz: '', deadline: '', estimate: '', evening: false, span: '', dayPart: '', energy: '', sector: '', readOnly: {}, has: {},
     }
     if (S.isSet(r, 'completed_at')) {
       l.done = true
@@ -129,6 +130,8 @@ export class View {
     if (!l.evening && storedPart(part)) l.dayPart = part
     const e = S.str(r, 'energy')
     if (validEnergy(e)) l.energy = e
+    const sec = S.str(r, 'sector')
+    if (isSector(sec)) l.sector = sec
     if (S.bool(r, 'span')) l.span = 'true'
     const p = Math.trunc(S.num(r, 'priority'))
     if (p >= 1 && p <= 3) l.priority = p
@@ -312,7 +315,7 @@ export class View {
         if (!b.heading || used.has(b)) continue
         const prose: string[] = []
         for (const it of b.items) if (it.prose) prose.push(...it.prose)
-        if (prose.length > 0) d.blocks[0].items.push({ prose: ['## ' + b.section, '', ...prose] } as Item)
+        if (prose.length > 0) d.blocks[0].items.push({ prose: ['## ' + b.section, '', ...prose] })
       }
     }
     return d

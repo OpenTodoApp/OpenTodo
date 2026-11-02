@@ -228,6 +228,11 @@ async function parse<T>(res: Response): Promise<T> {
   const data = await res.json().catch((err: unknown) => {
     // The deadline passed while the body was still arriving: no answer, not an empty one.
     if (err instanceof DOMException && (err.name === 'TimeoutError' || err.name === 'AbortError')) throw new RequestTimeoutError()
+    // Only a body that arrived but is not JSON (an empty one, a proxy's page) reads as {}.
+    // A body that stopped arriving (WebKit's "Load failed" TypeError when the connection
+    // or the page goes away mid-read) is no answer: as {} it gave callers a success
+    // without the fields they rely on, such as `links` of listPublicLinks.
+    if (!(err instanceof SyntaxError)) throw new NetworkError(err)
     return {}
   })
   if (!res.ok) {
@@ -574,7 +579,7 @@ export const api = {
   routineCatalogue: () => request<{ steps: RoutineCatalogueEntry[] }>('GET', '/api/v1/me/rules/catalogue'),
   /** Describe it (routines-describe-it): the assistant drafts a routine from one sentence; nothing is saved. */
   draftRoutine: (text: string) => request<DraftAnswer>('POST', '/api/v1/assistant/routine-draft', { text }),
-  testRoutineDraft: (body: { trigger: RuleTrigger; condition?: RuleCondition | null; steps: RoutineStep[]; task_id?: string; call_ai?: boolean }) =>
+  testRoutineDraft: (body: { trigger: RuleTrigger; condition?: RuleCondition | null; steps: RoutineStep[]; task_id?: string; call_ai?: boolean; project_id?: string }) =>
     request<RoutineTestResult>('POST', '/api/v1/rules/test', body),
   testRoutine: (id: string, body: { run_id: string; task_id?: string; call_ai?: boolean }) =>
     request<RoutineTestResult>('POST', `/api/v1/rules/${encodeURIComponent(id)}/run`, { ...body, test: true }),
@@ -669,6 +674,8 @@ export const api = {
   /** Built-in assistant skills (assistant-skills); empty when the assistant is not available to you. */
   assistantSkills: () => request<{ skills: AssistantSkill[] }>('GET', '/api/v1/assistant/skills'),
   setMyAssistant: (input: MyAssistantInput) => request<AssistantStatus>('PUT', '/api/v1/me/assistant', input),
+  /** Got it on the notice that the disclosure is now complete (assistant-disclosure-notice). */
+  assistantDisclosureSeen: () => request<AssistantStatus>('POST', '/api/v1/me/assistant/disclosure-seen'),
   /** Your own provider's "Test connection" (assistant-member-provider; sessions only, rate limited). */
   testMyAssistant: (draft: MyAssistantTestDraft = {}) => request<AssistantTestResult>('POST', '/api/v1/me/assistant/test', draft),
   assistantUsage: () => request<AssistantUsage>('GET', '/api/v1/me/assistant/usage'),

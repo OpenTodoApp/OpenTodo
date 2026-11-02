@@ -12,6 +12,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/daypart"
 	"github.com/OpenTodoApp/opentodo/internal/flow"
 	"github.com/OpenTodoApp/opentodo/internal/inbox"
+	"github.com/OpenTodoApp/opentodo/internal/sector"
 )
 
 // Planning fields on `ot add`, `ot edit` and `ot list` (OpenSpec change
@@ -23,7 +24,9 @@ type planningFlags struct {
 	// part is --part: morning, afternoon, evening or none (day-parts).
 	part string
 	// energy is --energy: deep, medium, low or none (task-energy).
-	energy  string
+	energy string
+	// sector is --sector: a relative word, a period or none (time-sectors).
+	sector  string
 	evening bool
 	// span and noSpan are --span and --no-span (multi-day-tasks).
 	span, noSpan bool
@@ -38,6 +41,7 @@ func (f *planningFlags) bind(fs *flag.FlagSet) {
 	fs.BoolVar(&f.noSpan, "no-span", false, "draw it on its due date only (edit: takes a span back to one day; the start date stays)")
 	fs.StringVar(&f.part, "part", "", "the part of the day: morning, afternoon, evening or none")
 	fs.StringVar(&f.energy, "energy", "", "the energy the task asks for: deep, medium, low (edit: `none` clears)")
+	fs.StringVar(&f.sector, "sector", "", "the time sector: this-week, next-week, this-month, next-month, this-quarter, next-quarter or a period such as 2026-W45 (edit: `none` clears)")
 	fs.Var(&f.blockedBy, "blocked-by", "a task this one waits for, id or unique id prefix (repeatable; edit replaces the list)")
 	fs.StringVar(&f.location, "location", "", "a saved location's name or id, or lat,lon (edit: `none` clears)")
 }
@@ -82,6 +86,11 @@ func (f *planningFlags) validateLocal(set map[string]bool, now time.Time, edit b
 			return usageErr("invalid --energy %q: use deep, medium, low or none", f.energy)
 		}
 	}
+	if set["sector"] {
+		if _, err := sectorWord(f.sector, now, edit); err != nil {
+			return err
+		}
+	}
 	if set["location"] && !none(f.location) && strings.TrimSpace(f.location) == "" {
 		return usageErr("--location needs a saved location's name or id, lat,lon or none")
 	}
@@ -92,7 +101,44 @@ func (f *planningFlags) validateLocal(set map[string]bool, now time.Time, edit b
 }
 
 func (f *planningFlags) any(set map[string]bool) bool {
-	return set["deadline"] || set["start"] || set["evening"] || set["span"] || set["no-span"] || set["part"] || set["energy"] || set["blocked-by"] || set["location"]
+	return set["deadline"] || set["start"] || set["evening"] || set["span"] || set["no-span"] || set["part"] || set["energy"] || set["sector"] || set["blocked-by"] || set["location"]
+}
+
+// sectorWord resolves a --sector value (OpenSpec change time-sectors, D9): a
+// relative word on today's local date with Monday weeks (a profile has no week
+// start), an absolute period, or none ("", only with edit for --sector and
+// always for the list filter, which passes edit true). "carried" is the list
+// filter's own word and is returned as is when allowCarried.
+func sectorWord(v string, now time.Time, edit bool, allowCarried ...bool) (string, error) {
+	w := strings.TrimSpace(v)
+	switch {
+	case strings.EqualFold(w, "none") && edit:
+		return "", nil
+	case strings.EqualFold(w, "carried") && len(allowCarried) > 0 && allowCarried[0]:
+		return "carried", nil
+	case sector.Valid(strings.ToUpper(w)):
+		return strings.ToUpper(w), nil
+	}
+	if s := sector.Resolve(w, localDate(now), 1); s != "" {
+		return s, nil
+	}
+	return "", usageErr("invalid --sector %q: use this-week, next-week, this-month, next-month, this-quarter, next-quarter, a period such as 2026-W45, 2026-11 or 2026-Q4%s", v, map[bool]string{true: ", or none"}[edit])
+}
+
+// sectorLabel is what the DUE cell adds for a task with a sector and no due
+// date (time-sectors D9): the relative name, "from <period>" when carried
+// over, else the period.
+func sectorLabel(t task, today string) string {
+	if t.Due != nil || !sector.Valid(t.Sector) {
+		return ""
+	}
+	if sector.Carried(t.Sector, today, 1) {
+		return "from " + t.Sector
+	}
+	if w := sector.Relative(t.Sector, today, 1); w != "" {
+		return strings.ReplaceAll(w, "-", " ")
+	}
+	return t.Sector
 }
 
 // parseLatLon reads "lat,lon"; ok is false when v does not look like a pair.
@@ -146,6 +192,15 @@ func (f *planningFlags) fill(ctx context.Context, a *App, c *client, set map[str
 			out["energy"] = nil
 		} else {
 			out["energy"] = e
+		}
+	}
+	// --sector none clears the sector (time-sectors D9); written as sent, like --start.
+	if set["sector"] {
+		s, _ := sectorWord(f.sector, now, true)
+		if s == "" {
+			out["sector"] = nil
+		} else {
+			out["sector"] = s
 		}
 	}
 	// --part writes both fields, paired (day-parts D2); it wins over --evening.
@@ -262,7 +317,7 @@ func (o *listOptions) planningView() (string, error) {
 
 func plannedOf(t task) inbox.Planned {
 	p := inbox.Planned{HasDue: t.Due != nil, HasDeadline: t.Deadline != nil && *t.Deadline != "",
-		Completed: t.CompletedAt != nil, Deleted: t.DeletedAt != nil}
+		Completed: t.CompletedAt != nil, Deleted: t.DeletedAt != nil, Sector: t.Sector}
 	if t.Start != nil {
 		p.Start = *t.Start
 	}
@@ -306,6 +361,18 @@ func availableRule(all []task, projects []project, sections []json.RawMessage, t
 	}
 	states := flow.Compute(in)
 	return func(t task) bool { return states.Available(t.ID) }
+}
+
+// filterSector keeps the tasks of one time sector, or the carried-over ones
+// (time-sectors D9).
+func filterSector(tasks []task, want, today string) []task {
+	out := tasks[:0]
+	for _, t := range tasks {
+		if t.Sector == want || (want == "carried" && sector.Carried(t.Sector, today, 1)) {
+			out = append(out, t)
+		}
+	}
+	return out
 }
 
 // filterPlanning keeps the tasks of one planning filter; available is needed only for "available".
@@ -376,6 +443,9 @@ func planningSuffix(t task, today string, blocked bool) string {
 		case s > today:
 			parts = append(parts, "starts "+s)
 		}
+	}
+	if s := sectorLabel(t, today); s != "" {
+		parts = append(parts, s)
 	}
 	if t.Evening {
 		parts = append(parts, "evening")

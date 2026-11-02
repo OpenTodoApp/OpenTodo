@@ -22,7 +22,7 @@ OpenTodo is one container with one volume and no required settings. Its Portaine
 2. Open your environment, go to **App Templates** and pick **OpenTodo**.
 3. Check the settings below and click **Deploy the container**.
 
-OpenTodo has been submitted to the community list [Lissy93/portainer-templates](https://github.com/Lissy93/portainer-templates) ([#160](https://github.com/lissy93/portainer-templates/pull/160)); once it is merged, people who load that list find it there as well.
+OpenTodo is listed in the community list [Lissy93/portainer-templates](https://github.com/Lissy93/portainer-templates) ([portainer-templates.as93.net/opentodo](https://portainer-templates.as93.net/opentodo)), so people who load that list find it there as well.
 
 Without templates, the same container is:
 

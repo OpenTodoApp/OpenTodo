@@ -52,6 +52,7 @@ func (s *Server) registerAssistantRoutes(mux *routes) {
 	mux.handle("POST /api/v1/settings/assistant/test", ownerOnly("manage the assistant settings").DemoDenied(), s.handleTestAssistant)
 	mux.handle("GET /api/v1/me/assistant", signedIn.DemoDenied(), s.handleGetMyAssistant)
 	mux.handle("PUT /api/v1/me/assistant", signedIn.FullTokens().DemoDenied(), s.handlePutMyAssistant)
+	mux.handle("POST /api/v1/me/assistant/disclosure-seen", signedIn.FullTokens().DemoDenied(), s.handleDisclosureSeen)
 	mux.handle("GET /api/v1/me/assistant/usage", signedIn.DemoDenied(), s.handleMyAssistantUsage)
 	mux.handle("POST /api/v1/me/assistant/test", signedIn.SessionOnly().DemoDenied(), s.handleTestMyAssistant)
 	mux.handle("POST /api/v1/assistant/turn", signedIn.SessionOnly().DemoDenied(), s.handleAssistantTurn)
@@ -214,9 +215,44 @@ func (s *Server) handleTestAssistant(w http.ResponseWriter, r *http.Request) {
 
 // ---- the user's consent, own key and usage ----
 
-// consentFields lists what the disclosure says may be sent.
-var consentFields = []string{"task titles and descriptions", "project, section and label names", "due dates, priorities and completion",
-	"comments", "names of members of shared projects", "your display name, today's date and your time zone", "the messages you type", "photos you add"}
+// consentFields lists what the disclosure says may be sent by the server's
+// assistant: everything the read tools of the registry return (tasks with
+// their fields, comments and attachments, notes, projects and workspaces,
+// routines, frames and time entries), the names a Describe it draft adds as
+// context (views and webhook hosts, routines-describe-it D2), and what the
+// turn itself carries. The browser shows each entry translated
+// (web/src/lib/assistantDisclosure.ts lists them for the catalogues).
+var consentFields = []string{
+	"task titles and descriptions",
+	"due dates, repeats, priorities, estimates and completion",
+	"custom fields, task locations and the links tasks came from",
+	"comments",
+	"the names, types and links of attachments (never the files)",
+	"notes",
+	"workspace, project, section and label names, and project descriptions",
+	"saved view names and the hosts of your webhooks, when you describe a routine",
+	"your routines and calendar frames",
+	"tracked time and its notes",
+	"names of members and groups of shared projects and workspaces",
+	"your display name, today's date and your time zone",
+	"the messages you type",
+	"photos you add",
+}
+
+// deviceConsentFields is consentFields for the on-device assistant of an
+// encrypted account (assistant-on-device): its read tools return tasks,
+// comments and projects only (web/src/lib/assistantDevice/read.ts), and a
+// Describe it draft on the device adds the same names as the server's.
+var deviceConsentFields = []string{
+	"task titles and descriptions",
+	"due dates, repeats, priorities, estimates and completion",
+	"comments",
+	"project, section and label names, and project descriptions",
+	"saved view names and the hosts of your webhooks, when you describe a routine",
+	"your display name, today's date and your time zone",
+	"the messages you type",
+	"photos you add",
+}
 
 func (s *Server) myAssistant(ctx context.Context, u *auth.User) (map[string]any, error) {
 	set := s.assistantSettings(ctx)
@@ -256,6 +292,10 @@ func (s *Server) myAssistant(ctx context.Context, u *auth.User) (map[string]any,
 		mode = ""
 	}
 	p := set.Providers[set.DefaultProvider]
+	fields := consentFields
+	if mode == "device" {
+		fields = deviceConsentFields
+	}
 	source := "server"
 	if route.Member {
 		source = "own"
@@ -268,10 +308,12 @@ func (s *Server) myAssistant(ctx context.Context, u *auth.User) (map[string]any,
 		"provider": route.Provider, "provider_label": assistant.ProviderLabel(route.Provider), "model": route.Model,
 		"source": source, "own_key_in_use": route.Own,
 		"server_provider": set.DefaultProvider, "server_provider_label": assistant.ProviderLabel(set.DefaultProvider), "server_model": p.Model,
-		"consented": consent.Valid(route.Provider), "disclosure_version": assistant.DisclosureVersion, "fields": consentFields,
+		"consented": consent.Valid(route.Provider), "disclosure_version": assistant.DisclosureVersion, "fields": fields,
 		// routines_consented: the consent covers routines' AI steps (routines-ai-step D10).
 		"routines_consented": consent.RoutinesValid(route.Provider),
-		"allow_member_keys":  set.AllowMemberKeys, "own_key_set": sec.Has(assistant.UserKey(u.ID, route.Provider)),
+		// disclosure_notice: tell once that the list is now complete (assistant-disclosure-notice D2).
+		"disclosure_notice": consent.NeedsNotice(),
+		"allow_member_keys": set.AllowMemberKeys, "own_key_set": sec.Has(assistant.UserKey(u.ID, route.Provider)),
 		"server_own_key_set": sec.Has(assistant.UserKey(u.ID, set.DefaultProvider)),
 		"operator_key_set":   sec.Has(assistant.OperatorKey(set.DefaultProvider)) || set.DefaultProvider == assistant.Compatible,
 		"cap_member_keys":    set.CapMemberKeys, "own_provider": nil,
@@ -300,6 +342,22 @@ func (s *Server) handleGetMyAssistant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, v)
+}
+
+// handleDisclosureSeen records Got it on the notice of the completed
+// disclosure (assistant-disclosure-notice D3), for the server's and the
+// on-device consent alike, and answers with the status.
+func (s *Server) handleDisclosureSeen(w http.ResponseWriter, r *http.Request) {
+	ok, err := s.assistant.Store.MarkDisclosureSeen(r.Context(), userFrom(r.Context()).ID)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	if !ok {
+		writeError(w, http.StatusConflict, "consent_required", "there is no consent to the assistant's disclosure on record")
+		return
+	}
+	s.handleGetMyAssistant(w, r)
 }
 
 func (s *Server) handlePutMyAssistant(w http.ResponseWriter, r *http.Request) {

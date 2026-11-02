@@ -6,6 +6,7 @@
 //
 // Go indexes strings by byte and this file by UTF-16 code unit; every pattern
 // below works on whole code points, so the two read a line the same way.
+import { isSector } from '../../../web/src/lib/sectors'
 
 const MARK_DUE = '📅'
 const MARK_START = '🛫'
@@ -27,14 +28,14 @@ const PRIORITY_MARKERS: [string, number][] = [[MARK_HIGHEST, 1], [MARK_HIGH, 2],
 const UNKNOWN_MARKERS = ['⏳', '❌', '🏁', '⏰']
 const PRIORITY_MARKER: Record<number, string> = { 1: MARK_HIGHEST, 2: MARK_HIGH, 3: MARK_MEDIUM }
 
-const INLINE_FIELDS = new Set(['time', 'tz', 'deadline', 'estimate', 'someday', 'evening', 'span', 'daypart', 'energy'])
+const INLINE_FIELDS = new Set(['time', 'tz', 'deadline', 'estimate', 'someday', 'evening', 'span', 'daypart', 'energy', 'sector'])
 const READ_ONLY_FIELDS = new Set(['origin', 'location', 'tracked'])
 
 const TASK_LINE = /^([ \t]*)- \[([ xX])\](?:[ \t]+(.*))?$/su
 const DATE = /^\d{4}-\d{2}-\d{2}/
 const ID = /^[A-Za-z0-9_-]+/
 const BLOCKED = /^[A-Za-z0-9_-]+(?:[ \t]*,[ \t]*[A-Za-z0-9_-]+)*/
-const INLINE = /^\[([A-Za-z][A-Za-z0-9_\- ]*(?::[^:\[\]]+)?)::[ \t]*([^\[\]\\]*)\]/u
+const INLINE = /^\[([A-Za-z][A-Za-z0-9_\- ]*(?::[^:[\]]+)?)::[ \t]*([^[\]\\]*)\]/u
 const TAG = /^#([\p{L}\p{N}_/-]+)/u
 const SPACE = /^\s$/u
 const DIGIT = /^\p{Nd}$/u
@@ -65,6 +66,8 @@ export interface Line {
   span: string
   dayPart: string
   energy: string
+  /** [sector:: …] as written (time-sectors). */
+  sector: string
   /** origin, location, tracked and field:<name>, as written. */
   readOnly: Record<string, string>
   /** Which fields the line carries at all. */
@@ -237,7 +240,7 @@ const trimSpace = (s: string) => s.replace(/^\s+|\s+$/gu, '')
 export function parseLine(indent: string, done: boolean, content: string): Line {
   const l: Line = {
     indent, done, title: '', trailing: '', due: '', start: '', doneDate: '', created: '', recur: '', priority: 0, id: '', blocked: [], tags: [],
-    time: '', tz: '', deadline: '', estimate: '', evening: false, span: '', dayPart: '', energy: '', readOnly: {}, has: {},
+    time: '', tz: '', deadline: '', estimate: '', evening: false, span: '', dayPart: '', energy: '', sector: '', readOnly: {}, has: {},
   }
   const title: string[] = []
   const trailing: string[] = []
@@ -286,10 +289,14 @@ export function parseLine(indent: string, done: boolean, content: string): Line 
       case 'span': l.span = tok.value; break
       case 'daypart': l.dayPart = tok.value; break
       case 'energy': l.energy = tok.value; break
+      case 'sector': l.sector = tok.value; break
       default:
         if (tok.kind.startsWith('ro:')) l.readOnly[tok.kind.slice(3)] = tok.value
     }
   }
+  // [evening:: true] wins over [daypart:: …], as in the printer and the merge,
+  // so the line reads back the same after a print.
+  if (l.evening) l.dayPart = ''
   l.title = title.join(' ')
   l.trailing = trailing.join(' ')
   return l
@@ -350,6 +357,7 @@ export function printLine(l: Line): string {
   else if (l.dayPart) parts.push(`[daypart:: ${l.dayPart}]`)
   if (l.span) parts.push(`[span:: ${l.span}]`)
   if (l.energy) parts.push(`[energy:: ${l.energy}]`)
+  if (l.sector) parts.push(`[sector:: ${l.sector}]`)
   const pm = PRIORITY_MARKER[l.priority]
   if (pm) parts.push(pm)
   if (l.recur) parts.push(`${MARK_RECUR} ${l.recur}`)
@@ -450,6 +458,10 @@ export function lineFields(l: Line): { fields: Record<string, string>; problems:
   if (energy === '') p.energy = ''
   else if (energy === 'deep' || energy === 'medium' || energy === 'low') p.energy = energy
   else bad(`energy ${l.energy} is not deep, medium or low`)
+  const sector = l.sector.trim().toUpperCase()
+  if (sector === '') p.sector = ''
+  else if (isSector(sector)) p.sector = sector
+  else bad(`sector ${l.sector} is not a period such as 2026-W44, 2026-11 or 2026-Q4`)
   if (l.estimate === '') p.estimate = ''
   else {
     const mins = estimateMinutes(l.estimate)

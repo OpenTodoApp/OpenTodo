@@ -3,6 +3,9 @@ package cli
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
+	"strconv"
 
 	"github.com/OpenTodoApp/opentodo/internal/closedlist"
 )
@@ -17,10 +20,14 @@ type todaySplit struct {
 	waiting map[string]bool
 	// rank is each counted task's place in fill order.
 	rank map[string]int
+	// soon is the waiting tasks with a time today, soonest first
+	// (OpenSpec change today-waiting-time-sensitive), each marked Passed once
+	// its time is before now (today-waiting-time-passed).
+	soon []closedlist.Sensitive
 }
 
 // todayClosedList fills Today's slots from its listed tasks; nil when the limit is off.
-func (a *App) todayClosedList(ctx context.Context, c *client, all []task, projects []project, tasks []task, today string) (*todaySplit, error) {
+func (a *App) todayClosedList(ctx context.Context, c *client, all []task, projects []project, tasks []task, today, now string) (*todaySplit, error) {
 	var me struct {
 		ClosedList struct {
 			Limit     int    `json:"limit"`
@@ -58,11 +65,18 @@ func (a *App) todayClosedList(ctx context.Context, c *client, all []task, projec
 		} else if row.Deadline != nil {
 			due = *row.Deadline
 		}
+		clock, deadline := "", ""
+		if t.Due != nil && t.Due.Time != nil {
+			clock = *t.Due.Time
+		}
+		if row.Deadline != nil {
+			deadline = *row.Deadline
+		}
 		in.Tasks = append(in.Tasks, closedlist.Task{ID: t.ID, CreatedAt: int64(t.CreatedAt), Earlier: due != "" && due < today, Due: due,
-			Habit: row.Habit, Blocked: !available(t)})
+			Habit: row.Habit, Blocked: !available(t), Time: clock, Deadline: deadline})
 	}
 	f := closedlist.Compute(in, nil)
-	s := &todaySplit{waiting: f.WaitingSet(), rank: map[string]int{}}
+	s := &todaySplit{waiting: f.WaitingSet(), rank: map[string]int{}, soon: closedlist.TimeSensitive(f.WaitingTasks(in.Tasks), today, now)}
 	for i, id := range append(append([]string{}, f.Slots...), f.Waiting...) {
 		s.rank[id] = i
 	}
@@ -95,7 +109,53 @@ func (s *todaySplit) parts(tasks []task) (listed, waiting []task) {
 // heading reports whether the table prints a "Waiting for a slot" section.
 func (s *todaySplit) heading(all bool) bool { return s != nil && !all && len(s.waiting) > 0 }
 
-// raw is the task's JSON with waiting_for_slot set (ot today --json).
+// printWaiting prints the "Waiting for a slot" heading with its count and,
+// when some waiting tasks have a time today, the next one whose time has not
+// passed (or, when every time has passed, that they have), then those tasks
+// soonest first with their time (a deadline today without one reads
+// "deadline") and "time passed" on those whose time is before now. The table
+// of the waiting tasks in fill order follows it.
+func (s *todaySplit) printWaiting(w io.Writer, waiting []task) {
+	byID := map[string]task{}
+	for _, t := range waiting {
+		byID[t.ID] = t
+	}
+	var soon []closedlist.Sensitive
+	for _, x := range s.soon {
+		if _, ok := byID[x.ID]; ok {
+			soon = append(soon, x)
+		}
+	}
+	at := func(x closedlist.Sensitive) string {
+		if x.Time == "" {
+			return "deadline"
+		}
+		return x.Time
+	}
+	if len(soon) == 0 {
+		fmt.Fprintf(w, "Waiting for a slot · %d\n", len(waiting))
+		return
+	}
+	switch next, ok := closedlist.Next(soon); {
+	case ok:
+		fmt.Fprintf(w, "Waiting for a slot · %d — next: %s, %s\n", len(waiting), byID[next.ID].Title, at(next))
+	case len(soon) == 1:
+		fmt.Fprintf(w, "Waiting for a slot · %d — time passed: %s, %s\n", len(waiting), byID[soon[0].ID].Title, at(soon[0]))
+	default:
+		fmt.Fprintf(w, "Waiting for a slot · %d — %d past their time\n", len(waiting), len(soon))
+	}
+	for _, x := range soon {
+		passed := ""
+		if x.Passed {
+			passed = "  (time passed)"
+		}
+		fmt.Fprintf(w, "  %-9s %s  %s%s\n", at(x), shortID(x.ID), byID[x.ID].Title, passed)
+	}
+	fmt.Fprintln(w)
+}
+
+// raw is the task's JSON with waiting_for_slot set (ot today --json),
+// time_sensitive on a waiting task and time_passed on a time-sensitive one.
 func (s *todaySplit) raw(t task) json.RawMessage {
 	if s == nil {
 		return t.Raw
@@ -107,6 +167,13 @@ func (s *todaySplit) raw(t task) json.RawMessage {
 	m["waiting_for_slot"] = json.RawMessage("false")
 	if s.waiting[t.ID] {
 		m["waiting_for_slot"] = json.RawMessage("true")
+		m["time_sensitive"] = json.RawMessage("false")
+		for _, x := range s.soon {
+			if x.ID == t.ID {
+				m["time_sensitive"] = json.RawMessage("true")
+				m["time_passed"] = json.RawMessage(strconv.FormatBool(x.Passed))
+			}
+		}
 	}
 	out, err := json.Marshal(m)
 	if err != nil {

@@ -2,16 +2,19 @@
 
 Send a line, or a selection of lines, from any note to your own [OpenTodo](https://github.com/OpenTodoApp/OpenTodo) server as tasks, and keep a folder of task files in two-way sync with it. Each task sent links back to the note it came from, and the line gets a link to the task. It works on Obsidian for desktop and mobile, offline, and with end-to-end encrypted accounts.
 
-- **Send line to OpenTodo**: from the command palette, the editor's context menu or the mobile toolbar. With no selection it sends the line at the cursor; with a selection, each non-empty line (at most 50).
+- **Send line to OpenTodo** in the editor's context menu, or **OpenTodo: Send line as a task** in the command palette and the mobile toolbar. With no selection it sends the line at the cursor; with a selection, each non-empty line (at most 50). The plugin sets no hotkeys.
 - **Two grammars.** A checkbox line (`- [ ] Renew passport 📅 2026-11-05 ⏫ #errand`) is read like the [Tasks](https://publish.obsidian.md/tasks/) plugin and OpenTodo's vault: due date, start date, priority, `#tags` as labels, `[time:: 09:00]`, `[estimate:: 45m]`, `[deadline:: …]`. Any other line is read like OpenTodo's quick add: `Call the plumber tomorrow 9am p2 #Home @errand`.
 - **A sheet before sending** shows the title, what was recognised (each chip can be removed) and the project. Enter sends, Escape cancels. "Send without asking" skips it.
 - **After sending** the line gains `[opentodo:: https://your-server/?task=…]` (or, by setting, is ticked or removed). "Undo" in the notice for ten seconds puts the line back and moves the task to OpenTodo's Trash. A line that already carries the link is never sent twice.
-- **The task links back**: its origin is `obsidian://open?vault=…&file=…`, so the chip on the task opens the note. Renaming or moving the note in Obsidian updates the links; "Fix OpenTodo links in this note" repairs links after a rename made elsewhere.
-- **Offline**: tasks wait on the device and are sent when OpenTodo can be reached (on start, when the network returns, every minute, or with "Send pending to OpenTodo").
+- **The task links back**: its origin is `obsidian://open?vault=…&file=…`, so the chip on the task opens the note. Renaming or moving the note in Obsidian updates the links; "Fix task links in this note" repairs links after a rename made elsewhere.
+- **Offline**: tasks wait on the device and are sent when OpenTodo can be reached (on start, when the network returns, every minute, or with "Send pending tasks").
 - **Encrypted accounts**: titles, notes and origins are encrypted on the device with OpenTodo's own code before they are queued; the passphrase unlocks the account key for the session ("Remember on this device" keeps it).
-- **Sync a folder**: one folder of the vault (default `OpenTodo/`) in two-way sync with OpenTodo, with the files and rules of `ot vault`: one file per project, one Tasks line per task, `.opentodo/state.json`. It syncs when the plugin starts, a second after a file in the folder changes, every 30 seconds while Obsidian is in front and with "Sync vault with OpenTodo now"; never in the background. A folder that Obsidian Sync, iCloud or git copies to several devices is synced by one of them; the others show which and offer "Take over syncing here".
+- **Sync a folder**: one folder of the vault (default `OpenTodo/`) in two-way sync with OpenTodo, with the files and rules of `ot vault`: one file per project, one Tasks line per task, `.opentodo/state.json`. It syncs when the plugin starts, a second after a file in the folder changes, every 30 seconds while Obsidian is in front and with "Sync folder now"; never in the background. A folder that Obsidian Sync, iCloud or git copies to several devices is synced by one of them; the others show which and offer "Take over syncing here".
 
-It needs OpenTodo 0.19.1 or newer on the server, and Obsidian 1.8.7 or newer.
+## Requirements
+
+- **An OpenTodo account.** The plugin works with an [OpenTodo](https://github.com/OpenTodoApp/OpenTodo) server, which you run yourself (or someone runs for you): OpenTodo is free, open-source (AGPL-3.0) software, and the plugin does nothing until it is connected to one. Nothing is paid, and no account with anyone else is needed.
+- OpenTodo 0.19.1 or newer on the server, and Obsidian 1.8.7 or newer, on desktop or mobile.
 
 ## Connect
 
@@ -22,7 +25,7 @@ The token is kept in Obsidian's storage on this device, never in the plugin's `d
 
 ## Network use and privacy
 
-The plugin connects only to the OpenTodo server you configure, through Obsidian's own request function, for these routes: `/healthz` (the server's version), `/api/v1/me`, `/api/v1/projects`, `/api/v1/labels`, `/api/v1/tasks/{id}` (the project of a linked task, after a rename on an encrypted account), `/api/v1/encryption/keys` (the wrapped key record of an encrypted account) and `/api/v1/sync` (sending tasks, and the folder sync's exchange as a vault device `vault:<id>`). Addresses must be `https`; plain `http` is accepted only for this device and private networks, after a warning.
+The plugin makes no request until you connect it. It then connects only to the OpenTodo server you configure, through Obsidian's own request function, for these routes: `/healthz` (the server's version), `/api/v1/me`, `/api/v1/projects`, `/api/v1/labels`, `/api/v1/tasks/{id}` (the project of a linked task, after a rename on an encrypted account), `/api/v1/encryption/keys` (the wrapped key record of an encrypted account) and `/api/v1/sync` (sending tasks, and the folder sync's exchange as a vault device `vault:<id>`). Addresses must be `https`; plain `http` is accepted only for this device and private networks, after a warning. With folder sync on, it reads and writes only the folder you pick (and its `.opentodo/` state); it never touches files outside the vault.
 
 It collects nothing: no analytics, no crash reports, no update check of its own (Obsidian updates plugins), no other destination. What it sends to your server is the tasks you send, the changes to their links and, with folder sync on, the changes made in the synced folder.
 
@@ -36,10 +39,11 @@ The guide is [docs/obsidian.md](https://github.com/OpenTodoApp/OpenTodo/blob/mai
 
 ## Development
 
-The source lives in [`obsidian/`](https://github.com/OpenTodoApp/OpenTodo/tree/main/obsidian) of the OpenTodo repository; the release repository holds only the built files. The plugin bundles OpenTodo's own quick-add parser (`web/src/lib/nlp`), envelope code (`web/src/lib/crypto.ts`, `web/src/lib/e2eeEnvelope.ts`) and clock (`web/src/lib/hlc.ts`), and the TypeScript twin of the vault (`src/vault/`: the task-line grammar, pinned with `internal/vault` by `internal/vault/testdata/lines.vectors.json`, and the sync engine, pinned by the step-by-step sync vectors in `internal/vault/testdata/sync/` that `go test ./internal/vault -run TestSyncVectors -update` writes from the Go engine), so the shared vectors pin the plugin too.
+The source lives in [`obsidian/`](https://github.com/OpenTodoApp/OpenTodo/tree/main/obsidian) of the OpenTodo repository. Each release copies it into the release repository, [OpenTodoApp/obsidian-opentodo](https://github.com/OpenTodoApp/obsidian-opentodo), together with the shared web modules it bundles (`web/src/…`), in the same layout: `npm ci && npm run build` there rebuilds `main.js` and `styles.css` byte for byte. Report issues in either repository; changes are made in OpenTodo. The plugin bundles OpenTodo's own quick-add parser (`web/src/lib/nlp`), envelope code (`web/src/lib/crypto.ts`, `web/src/lib/e2eeEnvelope.ts`) and clock (`web/src/lib/hlc.ts`), and the TypeScript twin of the vault (`src/vault/`: the task-line grammar, pinned with `internal/vault` by `internal/vault/testdata/lines.vectors.json`, and the sync engine, pinned by the step-by-step sync vectors in `internal/vault/testdata/sync/` that `go test ./internal/vault -run TestSyncVectors -update` writes from the Go engine), so the shared vectors pin the plugin too.
 
 - `make obsidian`: type-check, unit tests (web/'s vitest and happy-dom, with an in-memory `obsidian` module), and the build of `obsidian/dist/`, which fails when `main.js` is over 400 KB (258 KB with the vault engine) or needs a Node or Electron module (Obsidian mobile has neither).
 - `make obsidian-e2e`: the plugin against `bin/opentodo` (`make build` first).
+- `make obsidian-review`: the checks of Obsidian's community directory on what the release repository receives: it fills a folder as the release does, runs `npm ci`, `npm audit` and `npm run build` there and compares the result with `obsidian/dist`, type-checks it, and lints it with Obsidian's own rules ([eslint-plugin-obsidianmd](https://github.com/obsidianmd/eslint-plugin)), failing on any error (`review/`).
 - `cd obsidian && node esbuild.config.mjs --watch`, with `obsidian/dist` linked into a test vault's `.obsidian/plugins/opentodo`.
 
 Dependencies: none at run time. Build time: `obsidian` (the API's types) and `esbuild`, pinned in `package.json`.
@@ -59,32 +63,21 @@ The unit tests and `make obsidian-e2e` run the engine and the plugin against sta
 
 ## Releases
 
-Every OpenTodo release (`v0.20.0`) publishes the plugin with the same version (`0.20.0`): CI builds it from the tag and pushes `manifest.json`, `main.js`, `styles.css`, `versions.json`, this README and the licence to [OpenTodoApp/obsidian-opentodo](https://github.com/OpenTodoApp/obsidian-opentodo) with a tag equal to the version, and that repository's workflow attaches the three files to a release ([`mirror/release.yml`](mirror/release.yml)). By hand: `node obsidian/scripts/mirror.mjs 0.20.0 <checkout>` after `make obsidian`.
+Every OpenTodo release (`v0.20.0`) publishes the plugin with the same version (`0.20.0`): CI builds it from the tag and pushes `manifest.json`, `main.js`, `styles.css`, `versions.json`, this README, the licence and the source the bundle is built from (`obsidian/`, `web/src/…`, `package.json`, `package-lock.json`, `tsconfig.json`) to [OpenTodoApp/obsidian-opentodo](https://github.com/OpenTodoApp/obsidian-opentodo) with a tag equal to the version, and that repository's workflow attaches the three files to a release ([`mirror/release.yml`](mirror/release.yml)). The push uses the deploy key in the `OBSIDIAN_DEPLOY_KEY` secret; without it the job prints the manual steps and succeeds. By hand: `node obsidian/scripts/mirror.mjs 0.20.0 <checkout>` after `make obsidian`.
 
-Owner actions:
+**The community directory.** Plugins are submitted at [community.obsidian.md](https://community.obsidian.md) (Obsidian stopped taking pull requests to `obsidianmd/obsidian-releases` in May 2026; its `community-plugins.json` is now copied from the directory). After the first release exists in the release repository, a maintainer signs in there with an Obsidian account linked to GitHub, adds the plugin with the repository `https://github.com/OpenTodoApp/obsidian-opentodo` and the owner OpenTodoApp, and fixes anything the automated review reports. What to enter, and the checklist, are in [`store/submission.md`](store/submission.md). Once published, the directory's entry reads:
 
-1. **The release repository's deploy key**: `OpenTodoApp/obsidian-opentodo` exists. It needs a deploy key that may write to it (the organisation must allow deploy keys first: Organization settings → Member privileges → Deploy keys), whose private half is the `OBSIDIAN_DEPLOY_KEY` secret of OpenTodoApp/OpenTodo:
+```json
+{
+  "id": "opentodo",
+  "name": "OpenTodo",
+  "author": "OpenTodo",
+  "description": "Send lines from any note to your own OpenTodo server as tasks that link back to the note, and keep a folder of task files in two-way sync. Works offline and with encrypted accounts.",
+  "repo": "OpenTodoApp/obsidian-opentodo"
+}
+```
 
-   ```sh
-   ssh-keygen -t ed25519 -N '' -C opentodo-ci-obsidian -f obsidian_deploy
-   gh repo deploy-key add obsidian_deploy.pub -R OpenTodoApp/obsidian-opentodo --allow-write --title "OpenTodoApp/OpenTodo CI"
-   gh secret set OBSIDIAN_DEPLOY_KEY -R OpenTodoApp/OpenTodo < obsidian_deploy && rm obsidian_deploy obsidian_deploy.pub
-   ```
-
-   Without the secret the CI job prints the manual steps and succeeds.
-2. **The community directory**: after the first release in the release repository, a maintainer opens a pull request to [obsidianmd/obsidian-releases](https://github.com/obsidianmd/obsidian-releases) adding to `community-plugins.json`:
-
-   ```json
-   {
-     "id": "opentodo",
-     "name": "OpenTodo",
-     "author": "OpenTodo",
-     "description": "Send a line or a selection from any note to your own OpenTodo server as tasks that link back to the note. Works offline and with encrypted accounts.",
-     "repo": "OpenTodoApp/obsidian-opentodo"
-   }
-   ```
-
-   and answers the review. Until it is listed, the plugin installs by hand or with BRAT.
+Until it is listed, the plugin installs by hand or with BRAT.
 
 ## Licence
 

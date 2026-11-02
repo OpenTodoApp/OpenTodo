@@ -24,6 +24,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | [Tasks and projects](tasks-and-projects.md) | Add and edit tasks, write notes, break work into subtasks, set priorities and organise everything into projects and sub-projects. |
 | &nbsp;&nbsp;↳ [The task panel](task-panel.md) | Everything in a task's panel: the title and its menu, the notes, the property chips and the Add menu, what a viewer can do, and how to close it. |
 | &nbsp;&nbsp;↳ [Dates and times](dates-and-times.md) | How due dates and times work, every way to type or pick them, and fixing a time to a time zone for something that happens at one moment worldwide. |
+| &nbsp;&nbsp;↳ [Time sectors](time-sectors.md) | Plan a task for this week, next week or this month without a fake date: the stored week, month or quarter, carry-over, and how the API, CLI, CalDAV and the vault carry it. |
 | &nbsp;&nbsp;↳ [Deadlines and start dates](deadlines-and-start-dates.md) | A deadline is the day a task must be done by; a start date defers it until it matters. Countdowns, Someday, This Evening and the keys for each. |
 | &nbsp;&nbsp;↳ [Notes, subtasks and dependencies](notes-and-subtasks.md) | Write formatted notes, break a task into subtasks and nest them, and make a task wait for another one with Blocked by. |
 | &nbsp;&nbsp;↳ [Work from the list](work-from-the-list.md) | Add, complete and delete tasks, change them with one key, undo, and put them in the order you want, all without opening a task. |
@@ -82,6 +83,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | &nbsp;&nbsp;↳ [Delivery channels](notification-channels.md) | Send reminders and notifications to ntfy, Pushover, Gotify, or any address through a signed webhook, including Apprise and Home Assistant. |
 | &nbsp;&nbsp;↳ [Push notifications](push-notifications.md) | Turn on reminders for when the app is closed, device by device, what iPhone and iPad need, what a push message contains, and what to do when nothing arrives. |
 | &nbsp;&nbsp;↳ [Check that push works](push-delivery-check.md) | The Delivery check under Settings → Notifications, each step it lists, and what every result of a test notification means. |
+| &nbsp;&nbsp;↳ [App icon badge](app-icon-badge.md) | The number of today's open tasks on the installed app's icon, where it works, why iPhone and iPad need notifications, and how it updates while the app is closed. |
 | [Offline and sync](offline-and-sync.md) | How OpenTodo keeps working without a connection, what the sync status means, and what happens when two devices change the same task. |
 | [Keyboard shortcuts](keyboard.md) | Every shortcut in OpenTodo, from quick add to the calendar, plus the optional Vim keybindings. |
 | [Account security](account-security.md) | Sign in with a passkey, add two-factor authentication, change your password and check where your account is signed in. |
@@ -111,7 +113,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | [Recurring task rules](recurrence.md) | Rule grammar, how next dates are computed, completing, skipping and detaching |
 | [Reminders reference](reminders.md) | Relative and absolute reminders, snooze, web push and its privacy |
 | [Capturing pages](capture.md) | Share sheet, bookmarklet and browser extension |
-| [Obsidian plugin](obsidian.md) | Send a line or a selection from any note to OpenTodo, with a link back to the note: connect, send, offline, encrypted accounts |
+| [Obsidian plugin](obsidian.md) | Send lines from any note to OpenTodo with a link back to the note, and sync a folder of task files: connect, send, offline, encrypted accounts |
 | [Import formats](import.md) | Own export, CSV and other apps' JSON exports; duplicates and undo |
 | [End-to-end encryption](e2ee.md) | What is encrypted, the threat model, devices, recovery and limits |
 | [Feedback and support](feedback-and-support.md) | Where to report a problem or suggest an idea, where to talk to other people who use OpenTodo, how to star it on GitHub, and how to buy the maintainer a coffee. |

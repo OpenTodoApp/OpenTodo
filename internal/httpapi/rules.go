@@ -99,12 +99,12 @@ func (s *Server) checkRule(ctx context.Context, uid string, body map[string]json
 				return invalidRule("rule.%s is required", f)
 			}
 		}
-		live, err := s.sync.List(ctx, uid, "rule", false)
+		pid, err := s.ruleProject(ctx, uid, body, nil)
 		if err != nil {
 			return err
 		}
-		if len(live) >= rules.MaxRules {
-			return &errRuleConflict{"limit_reached", fmt.Sprintf("at most %d rules per account", rules.MaxRules)}
+		if err := s.checkRuleLimit(ctx, uid, pid); err != nil {
+			return err
 		}
 	}
 	if raw, has := body["name"]; has {
@@ -138,11 +138,20 @@ func (s *Server) checkRuleParts(ctx context.Context, uid string, body map[string
 	if isNullish(actions) && isNullish(steps) {
 		return invalidRule("a rule needs actions or steps")
 	}
-	ref := refs{}
+	pid, err := s.ruleProject(ctx, uid, body, existing)
+	if err != nil {
+		return err
+	}
+	ref := refs{shared: pid}
 	if raw, has := body["trigger"]; has {
 		tr, err := ruleval.ParseTrigger(raw)
 		if err != nil {
 			return invalidRule("%s", err.Error())
+		}
+		if pid != "" {
+			if err := sharedTrigger(tr); err != nil {
+				return err
+			}
 		}
 		ref.label(tr.LabelID)
 		ref.project(tr.ProjectID, tr.SectionID)
@@ -184,7 +193,8 @@ func (s *Server) checkRuleParts(ctx context.Context, uid string, body map[string
 			ref.project(a.Section.ProjectID, a.Section.SectionID)
 			ref.moveTo = a.Section.ProjectID
 		}
-		if a.Comment != nil {
+		if a.Comment != nil && pid == "" {
+			// A shared project is plaintext (routines-shared D10).
 			if on, _ := s.keys().Enabled(ctx, uid); on {
 				return &errRuleConflict{"encryption_enabled", "a rule cannot write a comment for an encrypted account: the server cannot encrypt it"}
 			}
@@ -207,6 +217,8 @@ type refs struct {
 	views       []string
 	webhooks    []string
 	moveTargets []string
+	// shared is a shared routine's project (routines-shared D3).
+	shared string
 }
 
 func (r *refs) label(ids ...string) {
@@ -262,8 +274,13 @@ func (s *Server) resolveRuleRefs(ctx context.Context, uid string, ref refs) erro
 			return invalidRule("section %s does not belong to project %s", sid, pid)
 		}
 	}
+	if ref.shared != "" {
+		if err := s.checkSharedRefs(ctx, uid, ref.shared, ref); err != nil {
+			return err
+		}
+	}
 	for _, pid := range append(ref.moveTargets, ref.moveTo) {
-		if pid == "" {
+		if pid == "" || pid == ref.shared {
 			continue
 		}
 		_, shared, _, err := s.sync.ProjectStatus(ctx, uid, pid)
@@ -398,6 +415,26 @@ func (s *Server) handleMyRules(w http.ResponseWriter, r *http.Request) {
 				perRule[id] = map[string]any{}
 			}
 			perRule[id]["paused_reason"] = reason
+		}
+		// Shared routines: who they run as, and whose edit paused them (routines-shared D4, D5).
+		rows, err := s.sync.List(r.Context(), uid, "rule", false)
+		if err != nil {
+			s.internal(w, err)
+			return
+		}
+		s.annotateShared(r.Context(), uid, rows)
+		for _, row := range rows {
+			if _, ok := row["run_as"]; !ok {
+				continue
+			}
+			id := idOf(row["id"])
+			if perRule[id] == nil {
+				perRule[id] = map[string]any{}
+			}
+			perRule[id]["run_as"] = row["run_as"]
+			if by, ok := row["paused_by"]; ok {
+				perRule[id]["paused_by"] = by
+			}
 		}
 	}
 	out["rules"] = perRule

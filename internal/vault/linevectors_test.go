@@ -38,6 +38,7 @@ type lineVectorParse struct {
 	Span     string            `json:"span"`
 	DayPart  string            `json:"dayPart"`
 	Energy   string            `json:"energy"`
+	Sector   string            `json:"sector"`
 	ReadOnly map[string]string `json:"readOnly"`
 }
 
@@ -69,7 +70,7 @@ func lineVectorOf(name, raw string) lineVector {
 		Indent: l.Indent, Done: l.Done, Title: l.Title, Trailing: l.Trailing, Due: l.Due, Start: l.Start,
 		DoneDate: l.DoneDate, Created: l.Created, Recur: l.Recur, Priority: l.Priority, ID: l.ID,
 		Blocked: nonNil(l.Blocked), Tags: nonNil(l.Tags), Time: l.Time, TZ: l.TZ, Deadline: l.Deadline,
-		Estimate: l.Estimate, Evening: l.Evening, Span: l.Span, DayPart: l.DayPart, Energy: l.Energy, ReadOnly: l.ReadOnly,
+		Estimate: l.Estimate, Evening: l.Evening, Span: l.Span, DayPart: l.DayPart, Energy: l.Energy, Sector: l.Sector, ReadOnly: l.ReadOnly,
 	}
 	v.Fields, v.Problems = LineFields(l)
 	v.Printed = PrintLine(l)

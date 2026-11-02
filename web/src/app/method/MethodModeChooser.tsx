@@ -56,15 +56,17 @@ export function MethodModeChooser({ value, onChosen, writeOnChoose = true, offer
   }
   const drop = (o: Offer) => setOffers((list) => list.filter((x) => x !== o))
   return (
-    <div data-method-chooser>
-      <div role="radiogroup" aria-label={t('How you work')} className="grid gap-2 sm:grid-cols-3">
+    // The cards sit side by side only when the chooser itself is wide enough (a container
+    // query, not the viewport): in the start guide's 28rem card they stack (issue 731).
+    <div data-method-chooser className="@container/method">
+      <div role="radiogroup" aria-label={t('How you work')} className="grid gap-2 @xl/method:grid-cols-3">
         {METHOD_MODES.map((mode, i) => {
           const on = mode === value
           return (
             <button key={mode} ref={(el) => { refs.current[i] = el }} type="button" role="radio" aria-checked={on} tabIndex={on ? 0 : -1}
               data-method-mode={mode} onClick={() => choose(mode)} onKeyDown={(e) => onKey(e, i)}
               className={`touch-target rounded-card border p-3 text-left transition duration-(--duration-ui) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${on ? 'border-accent bg-accent-soft' : 'border-default bg-surface hover:bg-sunken'}`}>
-              <span className="block text-body font-semibold text-default">{MODE_LABEL[mode]}</span>
+              <span className="block text-body font-semibold text-default hyphens-auto break-words">{MODE_LABEL[mode]}</span>
               <span className="mt-1 block text-meta text-muted">{MODE_DESCRIPTION[mode]}</span>
             </button>
           )

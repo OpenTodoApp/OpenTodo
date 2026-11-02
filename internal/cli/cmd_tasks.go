@@ -34,6 +34,8 @@ type listOptions struct {
 	completedAfter, completedBefore string
 	// todayAll is `ot today --all` (today-closed-list D7): no waiting heading.
 	todayAll bool
+	// sector is --sector: a relative word, a period or carried (time-sectors).
+	sector string
 }
 
 func (o *listOptions) bind(fs *flag.FlagSet) {
@@ -48,6 +50,7 @@ func (o *listOptions) bind(fs *flag.FlagSet) {
 	fs.BoolVar(&o.blocked, "blocked", false, "open tasks waiting for an open task")
 	fs.BoolVar(&o.available, "available", false, "open tasks that can be done now (not blocked, not waiting for an earlier step, not in Someday or starting later)")
 	fs.IntVar(&o.limit, "limit", 0, "print at most n tasks")
+	fs.StringVar(&o.sector, "sector", "", "only tasks with this time sector: a relative word, a period or carried")
 	fs.StringVar(&o.completedAfter, "completed-after", "", "only tasks completed at or after: YYYY-MM-DD (local), an RFC 3339 time or Unix ms")
 	fs.StringVar(&o.completedBefore, "completed-before", "", "only tasks completed before: YYYY-MM-DD (local), an RFC 3339 time or Unix ms")
 }
@@ -167,6 +170,12 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 	if err != nil {
 		return err
 	}
+	wantSector := ""
+	if strings.TrimSpace(o.sector) != "" {
+		if wantSector, err = sectorWord(o.sector, a.Now(), false, true); err != nil {
+			return err
+		}
+	}
 	c, t, err := a.connect(g)
 	if err != nil {
 		return err
@@ -216,6 +225,9 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 		}
 		tasks = filterPlanning(tasks, all, planning, available)
 	}
+	if wantSector != "" {
+		tasks = filterSector(tasks, wantSector, today)
+	}
 	// One workspace's tasks (workspaces); a named project is shown wherever it is.
 	if view != "project" {
 		tasks = scope.filterTasks(projects, all, tasks)
@@ -223,7 +235,7 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 	// Today's closed list (today-closed-list D7): the slots first, then the waiting tasks.
 	var split *todaySplit
 	if view == "today" && planning == "" && !o.ranged() {
-		if split, err = a.todayClosedList(ctx, c, all, projects, tasks, today); err != nil {
+		if split, err = a.todayClosedList(ctx, c, all, projects, tasks, today, a.Now().Format("15:04")); err != nil {
 			return err
 		}
 		tasks = split.ordered(tasks)
@@ -246,7 +258,7 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 		slots, waiting := split.parts(tasks)
 		a.renderTasks(slots, projects, all, today)
 		fmt.Fprintln(a.Stdout)
-		fmt.Fprintln(a.Stdout, "Waiting for a slot")
+		split.printWaiting(a.Stdout, waiting)
 		a.renderTasks(waiting, projects, all, today)
 		return nil
 	}
@@ -744,7 +756,7 @@ func cmdEdit(a *App, ctx context.Context, g *globalFlags, args []string) error {
 		}
 	}
 	if !set["title"] && !set["priority"] && !set["label"] && !set["note"] && !set["due"] && !set["time"] && !set["project"] && !set["repeat"] && !set["origin-url"] && !f.plan.any(set) {
-		return usageErr("nothing to change; pass at least one of --title, --project, --due, --time, --priority, --label, --note, --repeat, --origin-url, --deadline, --start, --evening, --span, --no-span, --part, --energy, --blocked-by, --location")
+		return usageErr("nothing to change; pass at least one of --title, --project, --due, --time, --priority, --label, --note, --repeat, --origin-url, --deadline, --start, --evening, --span, --no-span, --part, --energy, --sector, --blocked-by, --location")
 	}
 	c, _, err := a.connect(g)
 	if err != nil {
@@ -1015,7 +1027,7 @@ func cmdRm(a *App, ctx context.Context, g *globalFlags, args []string) error {
 
 // inboxTask is the part of a task the Inbox rule reads (internal/inbox).
 func inboxTask(t task) inbox.Task {
-	it := inbox.Task{HasDue: t.Due != nil, Completed: t.CompletedAt != nil, Deleted: t.DeletedAt != nil}
+	it := inbox.Task{HasDue: t.Due != nil, Completed: t.CompletedAt != nil, Deleted: t.DeletedAt != nil, Sector: t.Sector}
 	if t.ProjectID != nil {
 		it.ProjectID = *t.ProjectID
 	}

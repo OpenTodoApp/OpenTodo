@@ -28,10 +28,11 @@ This device remembers the choice; your other devices keep their own. On a phone,
 
 - Under each day's number a mark shows how much is planned: none for an empty day, then a short, a longer and a full bar for 1–2, 3–5 and 6 or more. The number gets bolder with each step too, so the marks don't rely on colour.
 - A red dot marks a day whose estimates are over your day length, counted the same way as the Month's planned total.
-- Hover over or move to a day to see how many tasks it has and the first three titles.
+- A small ring in a day's top corner marks a day with events from your [other calendars](other-calendars.md), while the **Calendars** button shows them.
+- Hover over or move to a day to see how many tasks it has and the first three titles, and how many events.
 - Today is marked, and days before today are dimmed.
 
-A day counts its open tasks (not completed ones), every day of a [multi-day task](tasks-that-span-days.md), and the coming occurrences of [repeating tasks](repeating-on-the-calendar.md) while **Show repeating occurrences** is on. Events from [other calendars](other-calendars.md) and deadlines don't count. The calendar's [filter](calendar-filter.md) applies, and in a project's Calendar layout only the project's tasks count.
+A day counts its open tasks (not completed ones), every day of a [multi-day task](tasks-that-span-days.md), and the coming occurrences of [repeating tasks](repeating-on-the-calendar.md) while **Show repeating occurrences** is on. Events from [other calendars](other-calendars.md) and deadlines don't count toward the bar; events get their ring instead. The calendar's [filter](calendar-filter.md) applies, and in a project's Calendar layout only the project's tasks count.
 
 Click a day to open it in Day; click a month's name to open it in Month. With the keyboard, the twelve months are one grid:
 

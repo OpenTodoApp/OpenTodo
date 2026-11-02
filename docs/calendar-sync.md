@@ -9,7 +9,7 @@ order: 33
 ---
 # Calendar sync
 
-Connect the calendar account you already use and OpenTodo writes your dated tasks into one of its calendars as ordinary events. Move an event to another time there, make it longer, rename it or delete it, and the task follows. Change the task in OpenTodo and the event follows. Other calendars of the same account can be shown next to your tasks in Day and Week.
+Connect the calendar account you already use and OpenTodo writes your dated tasks into one of its calendars as ordinary events. Move an event to another time there, make it longer, rename it or delete it, and the task follows. Change the task in OpenTodo and the event follows. Other calendars of the same account can be shown next to your tasks in the calendar views.
 
 It works with every calendar service that speaks CalDAV with an app password (iCloud, Fastmail, Nextcloud, Synology Calendar, Radicale, Baïkal, mailbox.org and others) with Google Calendar, and with Outlook.com and Microsoft 365 (work or school) calendars: see [Connect Microsoft Outlook](#connect-microsoft-outlook).
 
@@ -40,7 +40,7 @@ And back:
 
 With **Include tasks without a time** off, an event you make all-day is removed from the calendar at the next check; the task keeps its date.
 
-Only events OpenTodo wrote change tasks. Your other events are never changed and never become tasks; the ones in the calendar tasks are written into are shown next to your tasks in Day and Week, read-only.
+Only events OpenTodo wrote change tasks. Your other events are never changed and never become tasks; the ones in the calendar tasks are written into are shown next to your tasks in the calendar views, read-only.
 
 Tasks are written from 30 days back to a year ahead, the same tasks as the [task feed](calendar-feeds.md): your own and those of projects shared with you, outside archived projects. A zoned task (due 09:00 Europe/Berlin) keeps its zone; a floating task keeps its wall-clock time in your calendar's zone (for Outlook, your mailbox's time zone).
 

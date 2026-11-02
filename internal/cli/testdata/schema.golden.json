@@ -106,6 +106,11 @@
           "description": "the energy the task asks for (edit: none clears)"
         },
         {
+          "name": "sector",
+          "type": "string",
+          "description": "the time sector: this-week, next-week, this-month, next-month, this-quarter, next-quarter (weeks from Monday) or a period such as 2026-W45, 2026-11 or 2026-Q4; written as sent, the due date is kept (edit: none clears)"
+        },
+        {
           "name": "blocked-by",
           "type": "string_list",
           "description": "a task this one waits for: id or unique id prefix, repeatable (edit replaces the list; none clears)"
@@ -363,6 +368,11 @@
             "none"
           ],
           "description": "the energy the task asks for (edit: none clears)"
+        },
+        {
+          "name": "sector",
+          "type": "string",
+          "description": "the time sector: this-week, next-week, this-month, next-month, this-quarter, next-quarter (weeks from Monday) or a period such as 2026-W45, 2026-11 or 2026-Q4; written as sent, the due date is kept (edit: none clears)"
         },
         {
           "name": "blocked-by",
@@ -760,6 +770,11 @@
           "name": "completed-before",
           "type": "string",
           "description": "only tasks completed before: YYYY-MM-DD (local), an RFC 3339 time or Unix ms"
+        },
+        {
+          "name": "sector",
+          "type": "string",
+          "description": "only tasks with this time sector: this-week, next-week, this-month, next-month, this-quarter, next-quarter, a period such as 2026-W45, or carried for periods that have ended"
         },
         {
           "name": "limit",
@@ -1372,7 +1387,12 @@
         {
           "name": "file",
           "type": "string",
-          "description": "the routine file: name, trigger, condition, steps (or actions), enabled"
+          "description": "the routine file: name, trigger, condition, steps (or actions), enabled, project"
+        },
+        {
+          "name": "project",
+          "type": "string",
+          "description": "the project the routine belongs to (name or id); in a shared project its editors change it and it runs as whoever turns it on"
         }
       ],
       "writes": true,
@@ -4425,6 +4445,13 @@
             null
           ],
           "description": "the energy the task asks for; null for none"
+        },
+        "sector": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "the time sector: an ISO week YYYY-Www, a month YYYY-MM or a quarter YYYY-Qn the task is planned for without a date; null for none"
         },
         "waiting_for_slot": {
           "type": "boolean",

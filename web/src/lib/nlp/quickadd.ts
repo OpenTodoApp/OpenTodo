@@ -24,6 +24,8 @@ export interface QuickAddInput {
   day_part?: 'morning' | 'afternoon'
   /** Deep, Medium or Low from a `~` token (task-energy D4). */
   energy?: 'deep' | 'medium' | 'low'
+  /** The time sector from a sector phrase (time-sectors D8). */
+  sector?: string
   /** The canonical rule (quick-add-recurrence). */
   recurrence?: string
   /** Typed reminders; createTask resolves them against the final due. */
@@ -85,6 +87,7 @@ export async function toTaskInput(
   if (r.due) out.due = r.due
   if (r.deadline) out.deadline = r.deadline
   if (r.start) out.start = r.start
+  if (r.sector) out.sector = r.sector
   if (r.evening) out.evening = true
   else if (r.dayPart) out.day_part = r.dayPart
   if (r.recurrence) out.recurrence = r.recurrence

@@ -311,6 +311,38 @@ func (m Multi) RoutineFailed(ctx context.Context, a RoutineAlert) {
 	}
 }
 
+// KindRoutinePausedShared: a shared project's routine paused because the
+// person it runs as no longer edits the project (OpenSpec change
+// routines-shared, D9). Sent to the project's owner, admins and editors.
+const KindRoutinePausedShared = "routine_paused_shared"
+
+// RoutinePausedShared is one routine of a shared project that paused. Reason
+// is run_as_left or run_as_viewer; names are as people see them.
+type RoutinePausedShared struct {
+	UserID      string `json:"-"`
+	RuleID      string `json:"ruleId"`
+	RuleName    string `json:"ruleName"`
+	ProjectID   string `json:"projectId"`
+	ProjectName string `json:"projectName"`
+	RunAsName   string `json:"runAsName"`
+	Reason      string `json:"reason"`
+	At          int64  `json:"at"`
+}
+
+// RoutinePausedSink is implemented by sinks that announce a paused shared routine.
+type RoutinePausedSink interface {
+	RoutinePausedShared(ctx context.Context, e RoutinePausedShared)
+}
+
+// RoutinePausedShared fans the event out to every sink that implements RoutinePausedSink.
+func (m Multi) RoutinePausedShared(ctx context.Context, e RoutinePausedShared) {
+	for _, s := range m {
+		if rs, ok := s.(RoutinePausedSink); ok {
+			rs.RoutinePausedShared(ctx, e)
+		}
+	}
+}
+
 // KindMemberInvitation: someone who shares nothing with the recipient asked to
 // add them to a project or workspace (OpenSpec change member-add-consent, D5).
 const KindMemberInvitation = "member_invitation"
