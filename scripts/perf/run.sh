@@ -11,15 +11,17 @@
 # flags, such as "-scale 5"), PERF_RUNS, PERF_PROFILES, PERF_BIN.
 set -uo pipefail
 
-fixture=${PERF_FIXTURE:-perf-report/fixture}
-mkdir -p perf-report
+# Absolute: go test runs the server half from its package directory.
+fixture=$(realpath -m "${PERF_FIXTURE:-perf-report/fixture}")
+reports=$(realpath -m perf-report)
+mkdir -p "$reports"
 rm -rf "$fixture"
 # shellcheck disable=SC2086 # the flags are words
 go run ./cmd/perfseed -data "$fixture" ${PERF_SEED_FLAGS:-} || exit 1
 
 st=0
-PERF_FIXTURE=$fixture PERF_REPORT=perf-report/server.json go test -tags perf -count=1 -timeout 40m ./internal/perf/... || st=1
-PERF_FIXTURE=$fixture PERF_REPORT=perf-report/web.json node scripts/perf/run.mjs || st=1
+PERF_FIXTURE=$fixture PERF_REPORT=$reports/server.json go test -tags perf -count=1 -timeout 40m ./internal/perf/... || st=1
+PERF_FIXTURE=$fixture PERF_REPORT=$reports/web.json node scripts/perf/run.mjs || st=1
 node scripts/perf/failures.mjs perf-report/server.json perf-report/web.json > perf-report/failures.txt
 cat perf-report/failures.txt
 exit $st
