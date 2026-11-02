@@ -9,6 +9,7 @@ import { db, useDatabase } from '../lib/db'
 import { setDateTime } from '../lib/dates'
 import { createTask, mutate, resetDeviceId } from '../lib/ops'
 import { setTodayLimit } from '../lib/closedListPrefs'
+import { setUpcomingStartsWithToday } from '../lib/userPrefs'
 import { click, mockFetch, noPublicLinks, render, waitFor } from '../ui/test-utils'
 import { bulkToast } from './bulk/toastStore'
 import { resetPanel } from './panel'
@@ -71,6 +72,20 @@ describe('time-sensitive tasks waiting for a slot', () => {
     expect(toggle().textContent).toContain('Waiting for a slot')
     expect(group()!.querySelector('[data-group-detail]')!.textContent).toBe('— next: Call the school, 09:00')
     expect(toggle().getAttribute('aria-expanded')).toBe('false')
+  })
+
+  it('Upcoming with Start with Today shows the same list, and Take a slot works there', async () => {
+    const ids = await seed()
+    await setTodayLimit(2)
+    await setUpcomingStartsWithToday(true)
+    const r = await render(<TaskListView route={{ view: 'upcoming' }} />)
+    mounted.push(r)
+    await waitFor(() => soonRows().length === 3)
+    expect(soonRows()).toEqual(['09:00 Call the school', '16:00 Send the form', 'Deadline File the taxes'])
+    expect(group()!.querySelector('[data-group-detail]')!.textContent).toBe('— next: Call the school, 09:00')
+    await click(group()!.querySelector<HTMLElement>(`[data-take-slot="${ids.call}"]`)!)
+    await waitFor(() => soonRows().length === 2)
+    expect((await queued()).map((o) => [o.field, o.value])).toEqual(expect.arrayContaining([['slots', ids.call]]))
   })
 
   it('opened: the group is as before, in fill order, with no time-sensitive list', async () => {
