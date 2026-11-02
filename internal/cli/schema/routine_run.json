@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "routine_run",
+  "description": "One run of a routine (OpenSpec routines-engine): ids, counts and codes only; resolve task ids yourself.",
+  "type": "object",
+  "required": [
+    "run_id",
+    "rule_id",
+    "at",
+    "outcome",
+    "source"
+  ],
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "the run's position, for paging back with before"
+    },
+    "run_id": {
+      "type": "string"
+    },
+    "rule_id": {
+      "type": "string"
+    },
+    "occurrence": {
+      "type": "string"
+    },
+    "at": {
+      "type": "integer",
+      "description": "Unix milliseconds"
+    },
+    "outcome": {
+      "enum": [
+        "pending",
+        "applied",
+        "already_matched",
+        "skipped",
+        "stopped",
+        "failed",
+        "partial",
+        "ended"
+      ]
+    },
+    "reason": {
+      "type": "string"
+    },
+    "source": {
+      "enum": [
+        "event",
+        "schedule",
+        "due",
+        "manual",
+        "mcp",
+        "test"
+      ]
+    },
+    "run_as": {
+      "type": "string"
+    },
+    "test": {
+      "type": "boolean"
+    },
+    "steps_count": {
+      "type": "integer"
+    },
+    "writes": {
+      "type": "integer"
+    },
+    "duration_ms": {
+      "type": "integer"
+    },
+    "undone_at": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "failed_step": {
+      "type": "integer"
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "index": {
+            "type": "integer"
+          },
+          "step_id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "skipped",
+              "ended",
+              "failed",
+              "unavailable",
+              "truncated"
+            ]
+          },
+          "duration_ms": {
+            "type": "integer"
+          },
+          "items": {
+            "type": "integer"
+          },
+          "output": {
+            "type": "string"
+          },
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "error": {
+            "type": "string"
+          },
+          "preview": {
+            "description": "a test's preview of the output (titles and text included, never stored)"
+          }
+        }
+      }
+    }
+  }
+}

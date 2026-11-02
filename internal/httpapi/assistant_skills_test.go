@@ -20,7 +20,7 @@ func TestAssistantSkillsRoute(t *testing.T) {
 	}
 	e.enableAssistant(nil)
 	skills := list(e)
-	if len(skills) != 5 {
+	if len(skills) != 6 || skills[5].(map[string]any)["id"] != "capture" {
 		t.Fatalf("skills = %v", skills)
 	}
 	first := skills[0].(map[string]any)
@@ -36,7 +36,7 @@ func TestAssistantSkillsRoute(t *testing.T) {
 	m := newClientAt(e, "10.0.0.9")
 	resp, out = m.do("POST", "/api/v1/auth/register", map[string]string{"email": "m@example.com", "name": "M", "password": "correct horse battery"})
 	m.mustStatus(resp, 201, out)
-	if n := len(list(m)); n != 5 {
+	if n := len(list(m)); n != 6 {
 		t.Fatalf("member lists %d skills", n)
 	}
 	resp, out = m.do("PUT", "/api/v1/encryption/keys", keyRecord(1, 1))

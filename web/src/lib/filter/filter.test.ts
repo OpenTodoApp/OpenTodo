@@ -194,7 +194,7 @@ describe('parse: errors', () => {
     expect(errorOf('p0 | p1').message).toBe('Priority must be p1, p2, p3 or p4 at position 1')
     expect(errorOf('"milk"').message).toBe('Unexpected text "milk" at position 1; quote names after "@" or "#", or use search:')
     expect(errorOf('no').message).toBe('Expected "date", "project", "labels", "time", "deadline", "start", "origin" or a field name after "no" at position 1')
-    expect(errorOf('no').expected).toEqual(['"date"', '"project"', '"labels"', '"time"', '"deadline"', '"start"', '"origin"', '"energy"', '"notes"', 'field name'])
+    expect(errorOf('no').expected).toEqual(['"date"', '"project"', '"labels"', '"time"', '"deadline"', '"start"', '"origin"', '"energy"', '"notes"', '"sector"', 'field name'])
   })
 
   it('reports incomplete date terms', () => {
@@ -687,7 +687,7 @@ describe('evaluate: origin terms (OpenSpec task-origin 3.3)', () => {
     expect(() => parse('origin:')).toThrow('Expected a provider or kind after "origin:" at position 1')
   })
   it('suggests the kinds and the local providers after origin:', () => {
-    expect(originSuggestions('origin: ', L).map((x) => x.name)).toEqual(['url', 'email', 'issue', 'import', 'github', 'ticktick'])
+    expect(originSuggestions('origin: ', L).map((x) => x.name)).toEqual(['url', 'email', 'issue', 'import', 'obsidian', 'github', 'ticktick'])
     expect(originSuggestions('#Work & origin: gi', L)).toEqual([{ name: 'github', query: '#Work & origin: github ' }])
     expect(originSuggestions('origin: github', L)).toEqual([])
     expect(originSuggestions('search: origin', L)).toEqual([])

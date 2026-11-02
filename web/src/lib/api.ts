@@ -7,7 +7,9 @@ import type { AgentAccess, ApiToken, McpStatus, TokenScope } from './assistants'
 import type { AssistantStatus } from './assistantStatus'
 import type { AssistantOwnerSettings, AssistantMemberSettings, AssistantSettingsInput, AssistantTestDraft, AssistantTestResult, MyAssistantTestDraft, AssistantUsage, MyAssistantInput } from './assistantTypes'
 import type { KeyRecord } from './crypto'
-import type { RelayDevice } from './relay'
+import type { RelayDevice, RoutineRunRequest } from './relay'
+import type { DraftAnswer } from './rules/describe'
+import type { DeviceCommit, DeviceStepRecord } from './rules/deviceTypes'
 import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeys'
 import type {
   Profile,
@@ -21,7 +23,8 @@ import type {
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput, IssueActionResult, IssueConnection, IssueConnectionInput,
   CalendarConnection, CalendarConnectionPatch, CalendarSyncRun, GoogleClientSetting, MicrosoftClientSetting,
   OwnTaskPage, PublishTaskPageInput, TaskPageCreated, TaskPageStatus,
-  AutomationsSetting, RuleRun, RulesStatus,
+  AutomationsSetting, RuleRun, RulesStatus, RoutineCatalogueEntry, RoutineInboxRun, RoutineRun, RoutineTestResult, RoutineStep, RuleCondition, RuleTrigger,
+  RoutineAIUsage, RoutineProposal, RoutineProposalApplied,
 } from './types'
 import { createSignal } from './store'
 
@@ -505,6 +508,11 @@ export const api = {
   putBrandingName: (name: string) => request<Branding>('PUT', '/api/v1/settings/branding', { name }),
   putBrandingLogo: (logo: Blob) => sendRaw<Branding>('PUT', '/api/v1/settings/branding/logo', logo),
   deleteBrandingLogo: () => request<Branding>('DELETE', '/api/v1/settings/branding/logo'),
+  // The instance's default theme and themes (theme-instance-default D2); members read them in lib/theme/instance.ts.
+  instanceThemes: () => request<unknown>('GET', '/api/v1/themes/instance'),
+  putThemeDefault: (d: { light: string; dark: string }) => request<unknown>('PUT', '/api/v1/settings/themes/default', d),
+  putInstanceTheme: (id: string, doc: unknown) => request<unknown>('PUT', `/api/v1/settings/themes/instance/${encodeURIComponent(id)}`, doc),
+  deleteInstanceTheme: (id: string) => request<unknown>('DELETE', `/api/v1/settings/themes/instance/${encodeURIComponent(id)}`),
   // Calendar feeds (OpenSpec calendar-feeds).
   calendarFeedsSwitch: ownerSwitch('calendar-feeds'),
   calendarSubscriptions: () => request<{ subscriptions: CalendarSubscription[] }>('GET', '/api/v1/calendar-feeds/subscriptions'),
@@ -550,6 +558,42 @@ export const api = {
   /** Automation rules (automation-rules): the server's state, run log and switches; the rules themselves sync. */
   myRules: () => request<RulesStatus>('GET', '/api/v1/me/rules'),
   ruleRuns: (id: string) => request<{ runs: RuleRun[] }>('GET', `/api/v1/rules/${encodeURIComponent(id)}/runs`),
+  /** Routines (routines-engine): run one now, undo one of its runs. */
+  runRoutine: (id: string, body: { run_id: string; task_id?: string; test?: boolean; call_ai?: boolean; device?: string }) =>
+    request<{ run: { run_id: string; outcome: string; writes: number; reason?: string }; writes: number; test: boolean; device_run?: RoutineRunRequest }>('POST', `/api/v1/rules/${encodeURIComponent(id)}/run`, body),
+  /** Device runs of an encrypted account (routines-ai-step D8): the result as ciphertext, or the failure. */
+  commitDeviceRun: (runId: string, body: DeviceCommit) =>
+    request<{ run: { run_id: string; outcome: string; writes: number; reason?: string } }>('POST', `/api/v1/me/rules/runs/${encodeURIComponent(runId)}/commit`, body),
+  failDeviceRun: (runId: string, body: { step: number; code: string; steps?: DeviceStepRecord[]; duration_ms?: number; tokens?: number }) =>
+    request<{ run: { run_id: string; outcome: string } }>('POST', `/api/v1/me/rules/runs/${encodeURIComponent(runId)}/fail`, body),
+  routinesDeviceOptIn: (device: string, label: string) => request<void>('PUT', `/api/v1/relay/devices/${encodeURIComponent(device)}/routines`, { label }),
+  routinesDeviceOptOut: (device: string) => request<void>('DELETE', `/api/v1/relay/devices/${encodeURIComponent(device)}/routines`),
+  undoRoutineRun: (id: string, runId: string) =>
+    request<{ restored: number; kept: number; not_undoable: string[] }>('POST', `/api/v1/rules/${encodeURIComponent(id)}/runs/${encodeURIComponent(runId)}/undo`, {}),
+  /** Routines (routines-editor): the catalogue, tests of drafts, one run, all runs, the Inbox card. */
+  routineCatalogue: () => request<{ steps: RoutineCatalogueEntry[] }>('GET', '/api/v1/me/rules/catalogue'),
+  /** Describe it (routines-describe-it): the assistant drafts a routine from one sentence; nothing is saved. */
+  draftRoutine: (text: string) => request<DraftAnswer>('POST', '/api/v1/assistant/routine-draft', { text }),
+  testRoutineDraft: (body: { trigger: RuleTrigger; condition?: RuleCondition | null; steps: RoutineStep[]; task_id?: string; call_ai?: boolean; project_id?: string }) =>
+    request<RoutineTestResult>('POST', '/api/v1/rules/test', body),
+  testRoutine: (id: string, body: { run_id: string; task_id?: string; call_ai?: boolean }) =>
+    request<RoutineTestResult>('POST', `/api/v1/rules/${encodeURIComponent(id)}/run`, { ...body, test: true }),
+  routineRun: (id: string, runId: string) => request<RoutineRun>('GET', `/api/v1/rules/${encodeURIComponent(id)}/runs/${encodeURIComponent(runId)}`),
+  routineRuns: (q: { rule?: string; outcome?: string; source?: string; before?: number; limit?: number } = {}) => {
+    const p = new URLSearchParams(Object.entries(q).filter(([, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)]))
+    return request<{ runs: RoutineRun[]; before?: number }>('GET', `/api/v1/me/rules/runs${p.size ? `?${p}` : ''}`)
+  },
+  routineInbox: (since: number) => request<{ runs: RoutineInboxRun[]; seen_at: number; hide_successes: boolean }>('GET', `/api/v1/me/rules/runs?for=inbox&since=${Math.max(0, Math.floor(since))}`),
+  /** Routines' AI steps (routines-ai-step): proposals, and a routine's AI usage and mode. */
+  routineProposals: () => request<{ proposals: RoutineProposal[] }>('GET', '/api/v1/me/rules/proposals'),
+  routineProposal: (id: string) => request<RoutineProposal>('GET', `/api/v1/me/rules/proposals/${encodeURIComponent(id)}`),
+  applyRoutineProposal: (id: string, items: string[]) => request<RoutineProposalApplied>('POST', `/api/v1/me/rules/proposals/${encodeURIComponent(id)}/apply`, { items }),
+  /** An encrypted proposal: the ticked items as ciphertext changes (routines-ai-step D3). */
+  applyEncryptedProposal: (id: string, body: Omit<DeviceCommit, 'steps' | 'proposal' | 'outcome'> & { skipped: number; changed: number }) =>
+    request<RoutineProposalApplied>('POST', `/api/v1/me/rules/proposals/${encodeURIComponent(id)}/apply`, body),
+  dismissRoutineProposal: (id: string) => request<void>('DELETE', `/api/v1/me/rules/proposals/${encodeURIComponent(id)}`),
+  routineAIUsage: (id: string) => request<RoutineAIUsage>('GET', `/api/v1/rules/${encodeURIComponent(id)}/ai-usage`),
+  dismissRoutineRun: (id: string, runId: string) => request<void>('POST', `/api/v1/rules/${encodeURIComponent(id)}/runs/${encodeURIComponent(runId)}/dismiss`, {}),
   pauseRules: (paused: boolean) => request<{ enabled: boolean; paused: boolean }>('PUT', '/api/v1/me/rules/paused', { paused }),
   automationsSwitch: ownerSwitch<AutomationsSetting>('automations'),
   issuesSwitch: ownerSwitch('issues'),
@@ -625,6 +669,8 @@ export const api = {
   /** Built-in assistant skills (assistant-skills); empty when the assistant is not available to you. */
   assistantSkills: () => request<{ skills: AssistantSkill[] }>('GET', '/api/v1/assistant/skills'),
   setMyAssistant: (input: MyAssistantInput) => request<AssistantStatus>('PUT', '/api/v1/me/assistant', input),
+  /** Got it on the notice that the disclosure is now complete (assistant-disclosure-notice). */
+  assistantDisclosureSeen: () => request<AssistantStatus>('POST', '/api/v1/me/assistant/disclosure-seen'),
   /** Your own provider's "Test connection" (assistant-member-provider; sessions only, rate limited). */
   testMyAssistant: (draft: MyAssistantTestDraft = {}) => request<AssistantTestResult>('POST', '/api/v1/me/assistant/test', draft),
   assistantUsage: () => request<AssistantUsage>('GET', '/api/v1/me/assistant/usage'),

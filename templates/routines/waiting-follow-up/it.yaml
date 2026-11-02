@@ -1,0 +1,7 @@
+# Sollecito in attesa: Italian text for templates/routines/waiting-follow-up/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-bdd3ab2f2d6d
+title: "Sollecito in attesa"
+summary: "Quando un'attività riceve l'etichetta di attesa, annota la data e te la ripropone tra tre giorni."
+description: "Aspettare qualcuno è facile da dimenticare. Quando aggiungi la tua etichetta di attesa a un'attività, questa routine commenta \"In attesa dal\" con la data di oggi e mette la scadenza tra tre giorni, così l'attività torna da te per il sollecito.\n\nCambia il numero di giorni nell'ultima scheda secondo i tempi di risposta abituali."
+ask.waiting.suggest: "in attesa"
+steps.1.in.text: "In attesa dal {a}"

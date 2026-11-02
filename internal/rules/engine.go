@@ -62,6 +62,24 @@ type Engine struct {
 	Notify   notify.RuleSink
 	Webhook  Hook
 	Log      *slog.Logger
+	// Tools plans routine steps through the agent tool registry; Env reports
+	// step availability; Routine delivers Notify me steps (routines-engine).
+	Tools   Tools
+	Env     EnvFunc
+	Routine notify.RoutineSink
+	// Query evaluates a filter query for a Find tasks step (internal/filter);
+	// QuickAdd reads a line with quick-add syntax for Create tasks.
+	Query    QueryFunc
+	QuickAdd QuickAddFunc
+	// RoutineHook queues a Send a webhook step's delivery; Mail sends Email me.
+	RoutineHook RoutineHook
+	Mail        RoutineMailer
+	// AI runs Ask AI and Summarise steps through the assistant
+	// (routines-ai-step D1); nil means no AI step can run.
+	AI AI
+	// Devices runs an encrypted account's content and AI routines on its
+	// devices (routines-ai-step D7); nil keeps them skipped.
+	Devices Devices
 
 	db     *sql.DB
 	keys   *e2ee.Store
@@ -94,14 +112,32 @@ func (e *Engine) SetClock(now func() time.Time) { e.now = now; e.Store.SetClock(
 
 func (e *Engine) on(ctx context.Context) bool { return e.Enabled == nil || e.Enabled(ctx) }
 
-// rule is one decoded rule row.
+// QueryFunc compiles a filter query against the run's rows into a matcher.
+type QueryFunc func(ctx context.Context, uid, query string, tasks map[string]opsync.Entity) (func(opsync.Entity) bool, error)
+
+// QuickAddFunc reads a line with quick-add syntax into a create_tasks item
+// (its title, due, priority, labels by name, project by name).
+type QuickAddFunc func(ctx context.Context, w *world, line string, item map[string]any)
+
+// rule is one decoded rule row: a legacy rule has Actions, a routine Steps.
 type rule struct {
-	ID        string
-	Name      string
-	Enabled   bool
-	Trigger   ruleval.Trigger
-	Condition ruleval.Condition
-	Actions   ruleval.Actions
+	ID           string
+	Name         string
+	Enabled      bool
+	Trigger      ruleval.Trigger
+	Condition    ruleval.Condition
+	HasCondition bool
+	Actions      ruleval.Actions
+	Steps        []ruleval.Step
+	// AIApply is rule.ai_apply ("auto" asks for Apply without asking) and
+	// AIBudget the daily token budget as read (routines-ai-step D4, D11).
+	AIApply  string
+	AIBudget int64
+	// ProjectID is rule.project_id; Shared marks a routine of a shared
+	// project, which runs as its run-as person inside the project
+	// (routines-shared D3, D4).
+	ProjectID string
+	Shared    bool
 }
 
 func str(e opsync.Entity, f string) string {
@@ -121,22 +157,12 @@ func (e *Engine) loadRules(ctx context.Context, uid string) ([]rule, error) {
 	}
 	out := make([]rule, 0, len(rows))
 	for _, row := range rows {
-		r := rule{ID: str(row, "id"), Name: str(row, "name"), Enabled: boolOf(row, "enabled")}
-		var perr error
-		if r.Trigger, perr = ruleval.ParseTrigger(row["trigger"]); perr != nil {
-			continue
+		if r, ok := readRule(row); ok {
+			out = append(out, r)
 		}
-		if !opsync.IsNull(row["condition"]) {
-			if r.Condition, perr = ruleval.ParseCondition(row["condition"]); perr != nil {
-				continue
-			}
-		}
-		if r.Actions, perr = ruleval.ParseActions(row["actions"]); perr != nil {
-			continue
-		}
-		out = append(out, r)
 	}
-	return out, nil
+	// A shared routine runs for its run-as person only (routines-shared D4).
+	return e.forUser(ctx, uid, out)
 }
 
 // ruleKinds is the cached set of trigger kinds of a user's enabled rules.
@@ -185,12 +211,23 @@ type world struct {
 	sections  map[string]string
 	shared    map[string]bool
 	tracked   map[string]int
+	changed   map[string]string
 	encrypted bool
+	// projectRows and labelNames serve routine steps (routines-engine).
+	projectRows map[string]opsync.Entity
+	labelNames  map[string]bool
+	// labelName and sectionName name ids for an AI step's material (routines-ai-step).
+	labelName   map[string]string
+	sectionName map[string]string
+	// project is set on a shared routine's world: only that project's
+	// tasks and sections (routines-shared D3).
+	project string
 }
 
 // load reads one user's rows, zone and preferences.
 func (e *Engine) load(ctx context.Context, uid string) (*world, error) {
-	w := &world{uid: uid, tasks: map[string]opsync.Entity{}, parent: map[string]string{}, labels: map[string]bool{}, sections: map[string]string{}}
+	w := &world{uid: uid, tasks: map[string]opsync.Entity{}, parent: map[string]string{}, labels: map[string]bool{}, sections: map[string]string{},
+		projectRows: map[string]opsync.Entity{}, labelNames: map[string]bool{}, labelName: map[string]string{}, sectionName: map[string]string{}}
 	if found, err := settings.New(e.db).Get(ctx, "tz_offset:"+uid, &w.offset); err != nil || !found {
 		w.offset = 0
 	}
@@ -221,6 +258,7 @@ func (e *Engine) load(ctx context.Context, uid string) (*world, error) {
 	}
 	for _, p := range projects {
 		w.parent[str(p, "id")] = str(p, "parent_id")
+		w.projectRows[str(p, "id")] = p
 	}
 	labels, err := e.Sync.List(ctx, uid, "label", false)
 	if err != nil {
@@ -228,6 +266,8 @@ func (e *Engine) load(ctx context.Context, uid string) (*world, error) {
 	}
 	for _, l := range labels {
 		w.labels[str(l, "id")] = true
+		w.labelNames[strings.ToLower(strings.TrimSpace(str(l, "name")))] = true
+		w.labelName[str(l, "id")] = str(l, "name")
 	}
 	sections, err := e.Sync.List(ctx, uid, "section", false)
 	if err != nil {
@@ -235,6 +275,9 @@ func (e *Engine) load(ctx context.Context, uid string) (*world, error) {
 	}
 	for _, s := range sections {
 		w.sections[str(s, "id")] = str(s, "project_id")
+		if opsync.IsNull(s["deleted_at"]) {
+			w.sectionName[str(s, "id")] = str(s, "name")
+		}
 	}
 	shared, err := e.Sync.SharedProjects(ctx, uid)
 	if err != nil {
@@ -264,6 +307,23 @@ func (e *Engine) trackedMinutes(ctx context.Context, w *world) map[string]int {
 	}
 	w.tracked = timetrack.TotalsByTask(entries, e.now().UnixMilli())
 	return w.tracked
+}
+
+// changedDates is each task's logical date of its newest field change, read
+// once per world, for the condition `unchanged` (routines-dynamic-data D5).
+func (e *Engine) changedDates(ctx context.Context, w *world) map[string]string {
+	if w.changed != nil {
+		return w.changed
+	}
+	w.changed = map[string]string{}
+	last, err := e.Sync.LastChanged(ctx, w.uid, "task")
+	if err != nil {
+		return w.changed
+	}
+	for id, ms := range last {
+		w.changed[id] = ruleval.LogicalDate(ms, w.offset, w.dayStart)
+	}
+	return w.changed
 }
 
 func (w *world) open(id string) bool {
@@ -306,7 +366,7 @@ func zonedDate(d *dueValue, offset int) string {
 // matches evaluates a rule's condition on a task.
 func (e *Engine) matches(ctx context.Context, w *world, r *rule, t opsync.Entity) bool {
 	c := ruleval.Context{UserID: w.uid, Today: w.today, Parent: w.parent, Open: w.open,
-		Tracked: func(id string) int { return e.trackedMinutes(ctx, w)[id] }}
+		Tracked: func(id string) int { return e.trackedMinutes(ctx, w)[id] }, Changed: func(id string) string { return e.changedDates(ctx, w)[id] }}
 	return ruleval.Matches(&r.Condition, w.matchTask(t), c)
 }
 

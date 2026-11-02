@@ -1,0 +1,7 @@
+# Nachfassen beim Warten: German text for templates/routines/waiting-follow-up/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-bdd3ab2f2d6d
+title: "Nachfassen beim Warten"
+summary: "Bekommt eine Aufgabe dein Warte-Label, wird das Datum notiert und sie kommt in drei Tagen zurück."
+description: "Auf jemanden zu warten gerät leicht in Vergessenheit. Wenn du einer Aufgabe dein Warte-Label gibst, kommentiert diese Routine \"Wartet seit\" mit dem heutigen Datum und macht die Aufgabe in drei Tagen fällig, damit sie zum Nachfassen zu dir zurückkommt.\n\nÄndere die Anzahl der Tage auf der letzten Karte, je nachdem, wie schnell Leute meist antworten."
+ask.waiting.suggest: "wartend"
+steps.1.in.text: "Wartet seit {a}"

@@ -1,0 +1,5 @@
+# Revisão mensal: Portuguese text for templates/routines/monthly-review/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-b86adf551d28
+title: "Revisão mensal"
+summary: "No dia 1 de cada mês, cria um projeto de revisão a partir do modelo Revisão semanal."
+description: "Uma revisão mantém fiável uma lista de tarefas. No primeiro dia de cada mês às 9:00 esta rotina cria um projeto a partir do modelo Revisão semanal da biblioteca, com as suas secções e pequenas tarefas, a começar nesse dia.\n\nPreferes um ritmo semanal? Muda o cartão Quando para um dia da semana."

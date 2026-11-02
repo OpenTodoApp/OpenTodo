@@ -1,0 +1,52 @@
+title: Sunday overdue sweep
+summary: Every Sunday at 18:00, move your overdue tasks to Monday and tell you how many moved.
+description: |
+  Overdue tasks pile up and make every list look worse than it is. Every Sunday evening this routine gives each overdue task a fresh date, Monday, and sends you one notification with the count.
+
+  On Monday, go through them: do, reschedule or delete. If the same task moves every week, it may not belong on your list.
+category: personal
+icon: calendar-clock
+author: OpenTodo
+reviewed: 2026-11-01
+trigger:
+  kind: schedule
+  at: "18:00"
+  weekdays: [7]
+condition:
+  due: overdue
+steps:
+  - id: a
+    kind: change_tasks
+    in:
+      tasks:
+        ref: trigger
+      set:
+        literal:
+          due: tomorrow
+  - id: b
+    kind: count
+    in:
+      list:
+        ref: a
+  - id: c
+    kind: notify
+    in:
+      text:
+        literal:
+          format: "{b} overdue tasks moved to Monday"
+test:
+  tasks:
+    - id: o1
+      due: 2026-10-18
+    - id: o2
+      due: 2026-10-15
+    - id: f1
+      due: 2026-10-25
+  expect:
+    changed:
+      o1:
+        due: 2026-10-22
+      o2:
+        due: 2026-10-22
+    notices:
+      - 2 overdue tasks moved to Monday

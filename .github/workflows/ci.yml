@@ -27,7 +27,7 @@ jobs:
   # action). A pull request runs the fast tier: the checks, and for code the web,
   # server and image jobs and one linux/amd64 binary; one Chromium layout and
   # end-to-end job when `layout` paths changed; the workbench checks when `ui` paths
-  # changed; Android, extension and skill only for their own paths; a docs-only
+  # changed; Android, extension, Obsidian plugin and skill only for their own paths; a docs-only
   # change runs the checks and the docs website. Pushes to main and tags run every
   # job and every matrix leg (every output is true). The interface audit runs
   # nightly (ux-audit.yml).
@@ -42,6 +42,7 @@ jobs:
       ui: ${{ steps.filter.outputs.ui }}
       layout: ${{ steps.filter.outputs.layout }}
       extension: ${{ steps.filter.outputs.extension }}
+      obsidian: ${{ steps.filter.outputs.obsidian }}
       skill: ${{ steps.filter.outputs.skill }}
       ios: ${{ steps.filter.outputs.ios }}
     steps:
@@ -60,7 +61,7 @@ jobs:
           BASE: ${{ github.event.pull_request.base.sha }}
         run: |
           if [ "$EVENT" != "pull_request" ]; then
-            for k in code docs mobile ui layout extension skill ios; do echo "$k=true" >> "$GITHUB_OUTPUT"; done
+            for k in code docs mobile ui layout extension obsidian skill ios; do echo "$k=true" >> "$GITHUB_OUTPUT"; done
             exit 0
           fi
           git diff --name-only "$BASE"...HEAD > changed.txt
@@ -170,6 +171,9 @@ jobs:
       - name: govulncheck
         run: go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
       - run: go test ./...
+      # Shows whether the Multipath TCP check ran or skipped on this runner's kernel.
+      - name: Multipath TCP is off (CVE-2026-98432)
+        run: go test ./cmd/opentodo -run TestListenerHasNoMultipathTCP -v -count=1
       - run: CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/opentodo ./cmd/opentodo
       - name: Smoke test the binary
         run: |
@@ -490,14 +494,55 @@ jobs:
             dist/opentodo-browser-extension-chrome.zip
             dist/opentodo-browser-extension-firefox.zip
 
+  # The Obsidian plugin (OpenSpec change obsidian-plugin): type-check, unit tests,
+  # the build with its size budget and mobile check (make obsidian), the community
+  # directory's checks on what the release repository receives (make
+  # obsidian-review), then the plugin against a freshly built server (make obsidian-e2e). Runs for obsidian/
+  # and the shared code it bundles (quick add, the envelope, the line vectors).
+  obsidian:
+    name: Obsidian plugin (test, build, end-to-end)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: changes
+    if: needs.changes.outputs.obsidian == 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            web/package-lock.json
+            obsidian/package-lock.json
+            obsidian/review/package-lock.json
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - run: npm ci --no-audit --no-fund
+        working-directory: web
+      - run: make obsidian
+      - run: make obsidian-review
+      - name: Server for the end-to-end check
+        run: |
+          (cd web && npm run build)
+          make server
+      - run: make obsidian-e2e
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: opentodo-obsidian
+          path: obsidian/dist
+
   # The Android app (OpenSpec change native-shells D9): unit tests, lint, the
   # AndroidX-only dependency check, translations and store metadata, a debug APK.
   # On tags, a release APK and AAB signed with the keystore from secrets (skipped
   # with a warning while the secrets are not set); the release job attaches them.
+  # Tags also prove the build reproducible (play-production D5): a second build in a
+  # fresh checkout, compared with the first by scripts/android-repro.sh. The JDK is
+  # pinned to the exact Temurin release named in mobile/README.md (D4).
   android:
     name: Android app (test, lint, build)
     runs-on: ubuntu-latest
-    timeout-minutes: 50
+    timeout-minutes: 60
     needs: changes
     if: needs.changes.outputs.mobile == 'true'
     steps:
@@ -505,7 +550,7 @@ jobs:
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 17.0.21+9
       - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
         with:
           packages: "platforms;android-37.0 build-tools;36.0.0"
@@ -595,6 +640,33 @@ jobs:
           mkdir -p ../../dist
           cp app/build/outputs/apk/release/app-release.apk "../../dist/opentodo-android-$version.apk"
           cp app/build/outputs/bundle/release/app-release.aab "../../dist/opentodo-android-$version.aab"
+          # The release certificate (play-production D1): the one documented in docs/android-app.md
+          # and allowed in the F-Droid metadata, so Play, F-Droid and GitHub share one signature.
+          cert=$("$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "../../dist/opentodo-android-$version.apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+          want=$(sed -n 's/^AllowedAPKSigningKeys: *\([0-9a-f]\{64\}\)$/\1/p' store/fdroid/app.opentodo.yml)
+          printf '### Android release certificate\n\nSHA-256 `%s`\n' "$cert" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$cert" != "$want" ]; then
+            if [ "$GITHUB_REPOSITORY" = "OpenTodoApp/OpenTodo" ]; then
+              echo "::error::The APK is signed with $cert, not the release certificate $want (docs/android-app.md)"
+              exit 1
+            fi
+            echo "::warning::The APK is signed with $cert, not OpenTodo's release certificate (a fork's own key)"
+          fi
+      - name: Reproducible build (tags)
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          REPRO_CLEAN_CACHE: "1"
+        run: |
+          python3 -m venv "$RUNNER_TEMP/repro"
+          "$RUNNER_TEMP/repro/bin/pip" install --quiet --require-hashes -r scripts/release/requirements-repro.txt
+          export PATH="$RUNNER_TEMP/repro/bin:$PATH"
+          apk="dist/opentodo-android-${GITHUB_REF_NAME#v}.apk"
+          # Against the signed release APK when there is one, otherwise two unsigned builds.
+          if [ -f "$apk" ]; then
+            scripts/android-repro.sh "$GITHUB_REF_NAME" "$apk"
+          else
+            scripts/android-repro.sh "$GITHUB_REF_NAME"
+          fi
       - if: startsWith(github.ref, 'refs/tags/v')
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -724,7 +796,7 @@ jobs:
     if: ${{ !cancelled() && !failure() && github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    needs: [changes, web-build, web, web-scale, server, layout, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, android, ios, skill, checks, image]
+    needs: [changes, web-build, web, web-scale, server, layout, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, obsidian, android, ios, skill, checks, image]
     permissions:
       contents: read
       packages: write
@@ -734,7 +806,7 @@ jobs:
       - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Log in to GHCR
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -804,7 +876,7 @@ jobs:
     if: ${{ !cancelled() && !failure() && startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [changes, web-build, web, web-scale, server, layout, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, android, ios, skill, checks, image, docker]
+    needs: [changes, web-build, web, web-scale, server, layout, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, obsidian, android, ios, skill, checks, image, docker]
     permissions:
       contents: write
       id-token: write # build provenance (Sigstore)
@@ -815,10 +887,9 @@ jobs:
         with:
           path: artifacts
       - name: Collect assets and checksums
-        run: |
-          mkdir -p release
-          find artifacts -type f \( -name 'opentodo-*' -o -name 'ot-*' \) -exec cp {} release/ \;
-          cd release && sha256sum * > SHA256SUMS && cat SHA256SUMS
+        # Only the files named in the script, never the rest of an artifact (the web
+        # app's build chunks reached v0.20.0 through a catch-all name pattern).
+        run: scripts/release/collect-assets.sh artifacts release
       - name: Build provenance for every asset
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
@@ -841,6 +912,62 @@ jobs:
             gh release create "$GITHUB_REF_NAME" --verify-tag --title "OpenTodo $GITHUB_REF_NAME" --notes-file notes.md $pre
           fi
           gh release upload "$GITHUB_REF_NAME" release/* --clobber
+
+  # Google Play (OpenSpec change play-production D1, D2): after the release, the AAB of a
+  # final tag is signed with the upload key and put on Play's internal testing track
+  # (scripts/release/play-upload.mjs); a person promotes it to production in the Play
+  # Console (RELEASING.md). The secrets live in the `release` environment. Release
+  # candidates upload nothing; without the secrets the job warns and succeeds, and the
+  # release never depends on it.
+  play:
+    name: Google Play (internal track)
+    if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [release]
+    environment: release
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: 17.0.21+9
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: opentodo-android
+          path: dist
+        continue-on-error: true
+      - name: Sign the AAB with the upload key and upload it
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          UPLOAD_KEYSTORE_BASE64: ${{ secrets.PLAY_UPLOAD_KEYSTORE_BASE64 }}
+          UPLOAD_KEYSTORE_PASSWORD: ${{ secrets.PLAY_UPLOAD_KEYSTORE_PASSWORD }}
+          UPLOAD_KEY_ALIAS: ${{ secrets.PLAY_UPLOAD_KEY_ALIAS }}
+          UPLOAD_KEY_PASSWORD: ${{ secrets.PLAY_UPLOAD_KEY_PASSWORD }}
+        run: |
+          aab="dist/opentodo-android-${GITHUB_REF_NAME#v}.aab"
+          if [ -z "$PLAY_SERVICE_ACCOUNT_JSON" ] || [ -z "$UPLOAD_KEYSTORE_BASE64" ]; then
+            echo "::warning::PLAY_SERVICE_ACCOUNT_JSON or PLAY_UPLOAD_KEYSTORE_BASE64 is not set: no Google Play upload for this release"
+            exit 0
+          fi
+          if [ ! -f "$aab" ]; then
+            echo "::warning::No signed AAB for $GITHUB_REF_NAME: no Google Play upload for this release"
+            exit 0
+          fi
+          # The release key's signature comes off, the upload key's goes on (Play App Signing
+          # re-signs with the release key, so every source keeps one certificate).
+          upload="$RUNNER_TEMP/upload.aab"
+          cp "$aab" "$upload"
+          zip -q -d "$upload" 'META-INF/*.SF' 'META-INF/*.RSA' 'META-INF/*.EC' 'META-INF/*.DSA' 'META-INF/MANIFEST.MF' || true
+          printf '%s' "$UPLOAD_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          jarsigner -keystore "$RUNNER_TEMP/upload.jks" -storepass:env UPLOAD_KEYSTORE_PASSWORD -keypass:env UPLOAD_KEY_PASSWORD "$upload" "$UPLOAD_KEY_ALIAS" > /dev/null
+          rm -f "$RUNNER_TEMP/upload.jks"
+          node scripts/release/play-upload.mjs "$GITHUB_REF_NAME" "$upload"
 
   # The Claude Code plugin marketplace (OpenSpec change claude-plugin): after the
   # release, deploy/claude-plugin/upstream/ of the tag becomes the content of
@@ -887,4 +1014,60 @@ jobs:
           git tag -f "v$version"
           git push origin HEAD
           git push -f origin "v$version"
+          rm -f "$RUNNER_TEMP/deploy_key"
+
+  # The Obsidian plugin's release repository (OpenSpec change obsidian-plugin D1):
+  # Obsidian installs a plugin from the release of its own repository whose tag is
+  # the manifest's version, so after the release this job builds the plugin of the
+  # tag and pushes manifest.json (version = the release's), main.js, styles.css,
+  # versions.json, the README and the licence to OpenTodoApp/obsidian-opentodo,
+  # tagged with the bare version; that repository's own workflow
+  # (obsidian/mirror/release.yml) attaches the three files to a release. The deploy
+  # key in OBSIDIAN_DEPLOY_KEY may write to that one repository only. Without it
+  # (a fork, or before the owner adds it) the job prints the manual steps and
+  # succeeds: the release never depends on it.
+  obsidian-plugin:
+    name: Obsidian plugin (publish)
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [release]
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - run: npm ci --no-audit --no-fund
+        working-directory: web
+      - run: make obsidian
+      - name: Publish to OpenTodoApp/obsidian-opentodo
+        env:
+          DEPLOY_KEY: ${{ secrets.OBSIDIAN_DEPLOY_KEY }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          if [ -z "$DEPLOY_KEY" ]; then
+            echo "::warning::OBSIDIAN_DEPLOY_KEY is not set; publish the plugin by hand (obsidian/README.md, Releases):"
+            echo "  node obsidian/scripts/mirror.mjs $version /tmp/obsidian-opentodo   # in a clone of OpenTodoApp/obsidian-opentodo"
+            echo "  cd /tmp/obsidian-opentodo && git add -A && git commit -m 'OpenTodo $version' && git tag $version && git push origin HEAD --tags"
+            exit 0
+          fi
+          install -m 600 /dev/null "$RUNNER_TEMP/deploy_key"
+          printf '%s\n' "$DEPLOY_KEY" > "$RUNNER_TEMP/deploy_key"
+          export GIT_SSH_COMMAND="ssh -i $RUNNER_TEMP/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+          git clone --depth 1 git@github.com:OpenTodoApp/obsidian-opentodo.git "$RUNNER_TEMP/mirror"
+          node obsidian/scripts/mirror.mjs "$version" "$RUNNER_TEMP/mirror"
+          cd "$RUNNER_TEMP/mirror"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "nothing changed since the last publish"
+          else
+            git commit -q -m "OpenTodo $version"
+          fi
+          git tag -f "$version"
+          git push origin HEAD
+          git push -f origin "$version"
           rm -f "$RUNNER_TEMP/deploy_key"

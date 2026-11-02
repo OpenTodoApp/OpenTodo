@@ -57,21 +57,32 @@ func (e *Engine) process(ctx context.Context, ev Event) error {
 	if err != nil {
 		return err
 	}
-	var w *world
+	var user *world
 	for i := range list {
 		r := &list[i]
-		if !r.Enabled || !triggered(r, ev) {
+		if !r.Enabled || !triggered(r, ev) || !forEvent(r, ev) {
 			continue
 		}
 		if st, _, err := e.Store.State(ctx, r.ID); err != nil || st.PausedReason != "" {
 			continue
 		}
-		if w == nil {
-			if w, err = e.load(ctx, ev.UserID); err != nil {
+		if !e.mayRun(ctx, r, ev.UserID) {
+			continue
+		}
+		if user == nil {
+			if user, err = e.load(ctx, ev.UserID); err != nil {
 				return err
 			}
 		}
+		w := user.worldFor(r)
+		if w == nil {
+			continue // a shared routine's project is in the Trash
+		}
 		if ev.Kind == ruleval.Schedule {
+			if r.isRoutine() {
+				e.routineRun(ctx, w, r, ev.Occurrence, 2, "")
+				continue
+			}
 			e.sweep(ctx, w, r, ev)
 			continue
 		}
@@ -91,6 +102,10 @@ func (e *Engine) process(ctx context.Context, ev Event) error {
 		key := ev.Occurrence
 		if key == "" {
 			key = "evt:" + strconv.FormatInt(ev.ID, 10) + ":" + ev.TaskID
+		}
+		if r.isRoutine() {
+			e.routineRun(ctx, w, r, key, ev.Depth+1, ev.TaskID)
+			continue
 		}
 		if err := e.run(ctx, w, r, []map[string]json.RawMessage{t}, key, ev.Depth+1, 0); err != nil {
 			e.Log.Error("rules: run", "rule", r.ID, "err", err)
@@ -115,6 +130,19 @@ func triggered(r *rule, ev Event) bool {
 	return true
 }
 
+// forEvent keeps a task event to its rules: a shared project's event to that
+// project's routines, any other to the author's personal rules
+// (routines-shared D3). A time trigger names its rule.
+func forEvent(r *rule, ev Event) bool {
+	if ev.RuleID != "" {
+		return true
+	}
+	if ev.ForProject != "" {
+		return r.Shared && r.ProjectID == ev.ForProject
+	}
+	return !r.Shared
+}
+
 // movedInto reports whether a task now sits where a task.moved trigger names.
 func movedInto(tr ruleval.Trigger, t map[string]json.RawMessage) bool {
 	if strOf(t["project_id"]) != tr.ProjectID {
@@ -124,13 +152,15 @@ func movedInto(tr ruleval.Trigger, t map[string]json.RawMessage) bool {
 }
 
 // sweep runs a scheduled rule on every open, live task matching its
-// condition: one run in the log, one batch per task, at most PerRun tasks;
+// condition (not of archived projects or projects in the Trash,
+// routines-find-scope D2): one run in the log, one batch per task, at most PerRun tasks;
 // more is recorded as a partial run and left for the next firing (spec "Time
 // triggers").
 func (e *Engine) sweep(ctx context.Context, w *world, r *rule, ev Event) {
 	var due []map[string]json.RawMessage
+	scope := projectScope(w.projectRows)
 	for _, t := range w.tasks {
-		if opsync.IsNull(t["deleted_at"]) && opsync.IsNull(t["completed_at"]) && e.matches(ctx, w, r, t) {
+		if opsync.IsNull(t["deleted_at"]) && opsync.IsNull(t["completed_at"]) && ruleval.InFindScope(false, str(t, "project_id"), scope, false) && e.matches(ctx, w, r, t) {
 			due = append(due, t)
 		}
 	}
@@ -380,4 +410,11 @@ func (w *world) openDescendants(id string) []string {
 	}
 	walk(id)
 	return out
+}
+
+// routineRun runs a routine for a queued occurrence (routines-engine D5).
+func (e *Engine) routineRun(ctx context.Context, w *world, r *rule, key string, depth int, taskID string) {
+	if _, err := e.runRoutine(ctx, w, r, runOpts{key: key, depth: depth, taskID: taskID, trigger: e.triggerValue(ctx, w, r, taskID)}); err != nil {
+		e.Log.Error("rules: routine", "rule", r.ID, "err", err)
+	}
 }

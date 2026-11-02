@@ -112,6 +112,8 @@ func (s *Server) registerFeatureRoutes(mux *routes) {
 	// Membership invitations (OpenSpec change member-add-consent).
 	s.registerMemberInvitationRoutes(mux)
 	s.registerBrandingRoutes(mux)
+	// The instance's default theme and themes (OpenSpec `theme-instance-default`).
+	s.registerInstanceThemeRoutes(mux)
 	// Database storage and notes compaction (OpenSpec `op-log-compaction`).
 	s.registerStorageRoutes(mux)
 	// Web push (OpenSpec `reminders`): registered only while push is enabled.

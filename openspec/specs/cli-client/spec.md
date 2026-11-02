@@ -474,11 +474,15 @@ Each release SHALL ship `opentodo-agent-skill.zip` containing `SKILL.md`, and `o
 - **THEN** the command exits with a usage error and creates nothing
 
 ### Requirement: Today limit and logged wins in the CLI
-While the user's Today limit is on, `ot today` SHALL print the tasks in the slots, then a "Waiting for a slot" heading with the waiting tasks in fill order (OpenSpec `today-closed-list`); `--all` SHALL print every task without the heading, and `--json` SHALL carry `waiting_for_slot` on each task. `ot add --done <title>` SHALL create the task already completed now by the user, in one request, refusing `--repeat` and `--remind` with a usage error.
+While the user's Today limit is on, `ot today` SHALL print the tasks in the slots, then a "Waiting for a slot" heading with the waiting tasks in fill order (OpenSpec `today-closed-list`); the heading SHALL carry the number of waiting tasks and, when some are due today with a time or have a deadline today, the soonest of them with its time, followed by those tasks soonest first with their time (OpenSpec `today-waiting-time-sensitive`). `--all` SHALL print every task without the heading, and `--json` SHALL carry `waiting_for_slot` on each task and `time_sensitive` on each waiting task. `ot add --done <title>` SHALL create the task already completed now by the user, in one request, refusing `--repeat` and `--remind` with a usage error.
 
 #### Scenario: Waiting section
 - **WHEN** the limit is 2 and Today has three tasks
 - **THEN** `ot today` prints two tasks, then "Waiting for a slot" and the third
+
+#### Scenario: Time-sensitive waiting tasks
+- **WHEN** the limit is 1 and "Send the form" at 16:00 and "Call the school" at 09:00 wait with two other tasks
+- **THEN** `ot today` prints "Waiting for a slot · 4 — next: Call the school, 09:00", the two lines 09:00 then 16:00, then the waiting tasks in fill order, and `--json` has `time_sensitive: true` on those two
 
 #### Scenario: Log a win from the terminal
 - **WHEN** the user runs `ot add --done "Fixed the printer"`
@@ -510,3 +514,23 @@ While the user's Today limit is on, `ot today` SHALL print the tasks in the slot
 #### Scenario: Two options
 - **WHEN** the user runs `ot task note 8c2a --set "x" --append "y"`
 - **THEN** nothing is sent and the exit code is 2
+
+### Requirement: Time sector flags
+`ot add` and `ot edit` SHALL accept `--sector`, with one of these values:
+- `this-week`, `next-week`, `this-month`, `next-month`, `this-quarter` or `next-quarter`, resolved on the client with the profile's week start (Monday when unset);
+- an absolute period (OpenSpec `time-sectors`);
+- `none`, which clears the sector.
+
+`ot list` SHALL accept `--sector` with the same values or `carried` as a filter. The table SHALL append the relative name to the `DUE` cell. `--json` output SHALL carry `sector` on every task, and the `task` schema of `ot schema` SHALL describe it within output version 1. An invalid value SHALL exit with the usage error code, naming the value, and write nothing.
+
+#### Scenario: Add for next week
+- **WHEN** the user runs `ot add "Book the venue" --sector next-week` on 2026-10-28
+- **THEN** the task is created with the sector `2026-W45`, and `ot list --sector next-week` prints it with `next week` in the DUE cell
+
+#### Scenario: Invalid value
+- **WHEN** the user runs `ot edit <id> --sector soon`
+- **THEN** the command exits with the usage error code naming `soon` and the task is unchanged
+
+#### Scenario: Schema lists the field
+- **WHEN** an agent runs `ot schema --json`
+- **THEN** the `task` schema lists `sector` and the `add`, `edit` and `list` commands list `--sector`

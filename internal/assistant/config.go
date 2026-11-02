@@ -57,9 +57,29 @@ var AnthropicModels = []string{"claude-opus-5-5", "claude-sonnet-5-5", "claude-h
 // DefaultMonthlyCap is the default per-user monthly token cap (0 = unlimited).
 const DefaultMonthlyCap = 500_000
 
-// DisclosureVersion is bumped whenever the consent text changes materially;
-// earlier consents then no longer count.
-const DisclosureVersion = 1
+// DisclosureVersion is bumped whenever the consent text changes materially.
+// Consents from MinDisclosureVersion on still count: version 2 added "photos
+// you add" (voice-ramble D6) without asking everyone to consent again; version
+// 3 added the paragraph on routines (routines-ai-step D10), which AI steps
+// need (RoutineDisclosureVersion) while chats keep their consent; version 4
+// (assistant-disclosure-accuracy) listed everything the assistant already
+// sent (notes, tracked time, routines, frames, workspaces, custom fields,
+// locations, attachments' names, and the views and webhook hosts of a
+// Describe it draft) and the instruction and project context of a routine's
+// AI step. Version 4 changes no data flow, so earlier consents still count
+// (MinDisclosureVersion stays 1): no spec asks for consent again when the
+// text grows, and asking would interrupt everyone for a correction. Raise
+// MinDisclosureVersion only when what is sent changes.
+const DisclosureVersion = 4
+
+// MinDisclosureVersion is the oldest disclosure a consent may name and still count.
+const MinDisclosureVersion = 1
+
+// CompleteDisclosureVersion is the first disclosure whose list names
+// everything the assistant sends (assistant-disclosure-accuracy). A consent
+// that names an older one keeps counting, but its person is told once that
+// the list is now complete (assistant-disclosure-notice D2).
+const CompleteDisclosureVersion = 4
 
 // ProviderSettings is one provider's owner configuration.
 type ProviderSettings struct {
@@ -67,6 +87,10 @@ type ProviderSettings struct {
 	Model   string `json:"model"`
 	// BaseURL is the compatible provider's endpoint (owner only).
 	BaseURL string `json:"base_url,omitempty"`
+	// Images marks the compatible endpoint's model as reading images ("This
+	// model reads images", voice-ramble D5); off by default. The built-in
+	// providers always read images.
+	Images bool `json:"images,omitempty"`
 }
 
 // Settings is the owner configuration (settings key "assistant"). Keys are not
@@ -254,6 +278,9 @@ func validateProvider(name string, p ProviderSettings, noModel string) error {
 	if name != Compatible && p.BaseURL != "" {
 		return invalid("providers."+name+".base_url", "only the compatible provider takes a base URL")
 	}
+	if name != Compatible && p.Images {
+		return invalid("providers."+name+".images", "only the compatible provider takes this mark (the others always read images)")
+	}
 	if !p.Enabled {
 		return nil
 	}
@@ -403,6 +430,7 @@ func diffSettings(a, b Settings) [][3]string {
 		add("assistant."+n+".enabled", fmt.Sprint(pa.Enabled), fmt.Sprint(pb.Enabled))
 		add("assistant."+n+".model", pa.Model, pb.Model)
 		add("assistant."+n+".base_url", hostOf(pa.BaseURL), hostOf(pb.BaseURL))
+		add("assistant."+n+".images", fmt.Sprint(pa.Images), fmt.Sprint(pb.Images))
 	}
 	return out
 }
@@ -472,13 +500,37 @@ type Consent struct {
 	AcceptedAt        int64  `json:"accepted_at"`
 	DisclosureVersion int    `json:"disclosure_version"`
 	Provider          string `json:"provider"`
+	// RoutinesVersion is the disclosure version accepted for routines' AI
+	// steps, 0 when not accepted (routines-ai-step D10).
+	RoutinesVersion int `json:"routines_version"`
+	// SeenVersion is the disclosure version whose notice the person
+	// dismissed with Got it, 0 when none (assistant-disclosure-notice D1).
+	SeenVersion int `json:"seen_version"`
+}
+
+// NeedsNotice reports whether the person should be told once that the list
+// is now complete: a consent that still counts names an older disclosure and
+// its notice was not dismissed (assistant-disclosure-notice D2).
+func (c *Consent) NeedsNotice() bool {
+	return c.Current() && c.DisclosureVersion < CompleteDisclosureVersion && c.SeenVersion < CompleteDisclosureVersion
+}
+
+// MarkDisclosureSeen records that the person saw the current disclosure's
+// notice; false when there is no consent to attach it to.
+func (st *Store) MarkDisclosureSeen(ctx context.Context, userID string) (bool, error) {
+	res, err := st.db.ExecContext(ctx, `UPDATE assistant_consent SET seen_version = MAX(seen_version, ?) WHERE user_id = ?`, DisclosureVersion, userID)
+	if err != nil {
+		return false, fmt.Errorf("store assistant disclosure seen: %w", err)
+	}
+	n, err := res.RowsAffected()
+	return n > 0, err
 }
 
 // Consent returns the user's consent, or nil.
 func (st *Store) Consent(ctx context.Context, userID string) (*Consent, error) {
 	var c Consent
-	err := st.db.QueryRowContext(ctx, `SELECT accepted_at, disclosure_version, provider FROM assistant_consent WHERE user_id = ?`, userID).
-		Scan(&c.AcceptedAt, &c.DisclosureVersion, &c.Provider)
+	err := st.db.QueryRowContext(ctx, `SELECT accepted_at, disclosure_version, provider, routines_version, seen_version FROM assistant_consent WHERE user_id = ?`, userID).
+		Scan(&c.AcceptedAt, &c.DisclosureVersion, &c.Provider, &c.RoutinesVersion, &c.SeenVersion)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -490,18 +542,35 @@ func (st *Store) Consent(ctx context.Context, userID string) (*Consent, error) {
 
 // Valid reports whether a consent covers the current disclosure and provider.
 func (c *Consent) Valid(provider string) bool {
-	return c != nil && c.Provider == provider && c.DisclosureVersion == DisclosureVersion
+	return c != nil && c.Provider == provider && c.Current()
 }
 
-// SetConsent records (accept) or withdraws consent.
-func (st *Store) SetConsent(ctx context.Context, userID, provider string, accept bool) error {
+// Current reports whether the consent names a disclosure that still counts.
+func (c *Consent) Current() bool {
+	return c != nil && c.DisclosureVersion >= MinDisclosureVersion && c.DisclosureVersion <= DisclosureVersion
+}
+
+// SetConsent records (accept) or withdraws consent. routines, when not nil,
+// records (true) or withdraws (false) the consent for routines' AI steps at
+// the current disclosure (routines-ai-step D10); when nil, a consent for the
+// same provider keeps its routines consent and one for another provider has none.
+func (st *Store) SetConsent(ctx context.Context, userID, provider string, accept bool, routines ...bool) error {
 	if !accept {
 		_, err := st.db.ExecContext(ctx, `DELETE FROM assistant_consent WHERE user_id = ?`, userID)
 		return err
 	}
-	_, err := st.db.ExecContext(ctx, `INSERT INTO assistant_consent(user_id, accepted_at, disclosure_version, provider) VALUES(?,?,?,?)
-		ON CONFLICT(user_id) DO UPDATE SET accepted_at = excluded.accepted_at, disclosure_version = excluded.disclosure_version, provider = excluded.provider`,
-		userID, st.now().UnixMilli(), DisclosureVersion, provider)
+	keep, set := 1, 0
+	if len(routines) > 0 {
+		keep = 0
+		if routines[0] {
+			set = DisclosureVersion
+		}
+	}
+	_, err := st.db.ExecContext(ctx, `INSERT INTO assistant_consent(user_id, accepted_at, disclosure_version, provider, routines_version) VALUES(?,?,?,?,?)
+		ON CONFLICT(user_id) DO UPDATE SET accepted_at = excluded.accepted_at, disclosure_version = excluded.disclosure_version,
+		routines_version = CASE WHEN ? = 1 AND assistant_consent.provider = excluded.provider THEN assistant_consent.routines_version ELSE excluded.routines_version END,
+		provider = excluded.provider`,
+		userID, st.now().UnixMilli(), DisclosureVersion, provider, set, keep)
 	if err != nil {
 		return fmt.Errorf("store assistant consent: %w", err)
 	}

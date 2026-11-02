@@ -1,0 +1,25 @@
+title: Monthly review
+summary: On the first of every month, create a review project from the Weekly review template.
+description: |
+  A review keeps a task list trustworthy. On the first day of each month at 09:00 this routine creates a project from the library's Weekly review template, with its sections and small tasks, starting that day.
+
+  Prefer a weekly rhythm? Change the When card to a weekday.
+category: method
+icon: calendar-check
+author: OpenTodo
+reviewed: 2026-11-01
+trigger:
+  kind: schedule
+  at: "09:00"
+  month_days: [1]
+steps:
+  - id: a
+    kind: project_from_template
+    in:
+      template:
+        literal: weekly-review
+      start:
+        ref: trigger
+test:
+  expect:
+    created_count: 9

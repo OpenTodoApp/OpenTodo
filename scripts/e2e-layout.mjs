@@ -4,9 +4,15 @@
 //   - a page scrolls sideways outside a designated scroll region (`data-scroll-x`),
 //   - more than three regions scroll vertically outside designated ones (`data-scroll-y`),
 //   - an overlay or its close control is outside the viewport or not clickable,
+//   - content of an overlay that asks for it (the start guide, issue #731) sticks out of
+//     its panel or squeezes a sentence to a word a line beside its buttons,
 //   - an overlay does not close with Escape, with its close button (sheets and
 //     dialogs) or with a tap outside (popovers),
 //   - a control on the touch screen is smaller than 44 × 44 px or only appears on hover,
+//   - a text field (input, textarea, select, editable area) has text under 16 px on the
+//     touch screen, which makes Safari on iOS zoom in on focus (issue #724),
+//   - on the settings pages that ask for it, two controls overlap or a control touches a
+//     row divider (themes-layout-template),
 //   - any screen or overlay has a serious or critical axe-core issue (colour contrast,
 //     names, labels, roles), in light and dark (release 0.2.0; first added for the
 //     Help view by user-documentation),
@@ -24,16 +30,23 @@
 // (default 3), SHOTS=all (also save a screenshot of every screen and overlay),
 // CHROMIUM_PATH / WEBKIT_PATH (optional executables), OPENTODO_LANG (an interface
 // language such as de: the synced preference is written before capturing, and
-// signed-out screens start in it too; OpenSpec change app-localization 11.1).
+// signed-out screens start in it too; OpenSpec change app-localization 11.1),
+// LAYOUT_DATE (default 2026-11-01: the browsers' clock and the seeded dates).
+//
+// The browsers' clock is fixed at 09:00 UTC on LAYOUT_DATE and the account is seeded
+// around that day, so the check sees the same calendars whatever day it runs: which
+// month and weekday "today" is changed the Month grid (a Sunday today put its load line
+// in the last column) and a run passed or failed by date. The default is a Sunday in a
+// long-named month with six week rows.
 const pw = await import('playwright').catch(async () => {
   const { createRequire } = await import('node:module')
   const { execSync } = await import('node:child_process')
   return createRequire(execSync('npm root -g').toString().trim() + '/')('playwright')
 })
 import { mkdirSync, writeFileSync } from 'node:fs'
-import { MAX_SCROLLERS, addButtonCovers, axeProblems, pageOverflow, rowCheckReach, rowMisalignment, settled, smallTargets, tabRowOverflow, verticalScrollers } from './ux-audit/measure.mjs'
-import { seed as seedAccount } from './ux-audit/seed.mjs'
-import { OVERLAYS, chooseLayout, closes, screens } from './ux-audit/layout-screens.mjs'
+import { MAX_SCROLLERS, addButtonCovers, axeProblems, crowdedControls, overlayContentFit, pageOverflow, rowCheckReach, rowMisalignment, settled, smallFields, smallTargets, tabRowOverflow, verticalScrollers } from './ux-audit/measure.mjs'
+import { calendarEvents, seed as seedAccount } from './ux-audit/seed.mjs'
+import { ANY_LANG_OVERLAYS, OVERLAYS, chooseLayout, closes, screens } from './ux-audit/layout-screens.mjs'
 
 const base = process.env.OPENTODO_URL ?? 'http://127.0.0.1:8080'
 const outDir = process.argv[2] ?? 'layout-report'
@@ -45,6 +58,9 @@ const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(',')) : null
 const CONCURRENCY = Number(process.env.CONCURRENCY ?? 3)
 const SHOTS_ALL = process.env.SHOTS === 'all'
 const LANG = process.env.OPENTODO_LANG ?? ''
+const LAYOUT_DATE = process.env.LAYOUT_DATE ?? '2026-11-01'
+const NOW = new Date(`${LAYOUT_DATE}T09:00:00Z`).getTime()
+if (!/^\d{4}-\d{2}-\d{2}$/.test(LAYOUT_DATE) || Number.isNaN(NOW)) throw new Error(`LAYOUT_DATE ${LAYOUT_DATE}: expected YYYY-MM-DD`)
 // Screens wait on English headings and overlays are opened by English names: in another
 // language (the German leg, ux-audit-three-widths F4) every screen is checked once a
 // heading, a task row or an alert shows, without its overlays or layout switches.
@@ -53,6 +69,8 @@ const OTHER_LANG = !!LANG && LANG !== 'en'
 // phone bar title squeezed by long action labels, F7 of the test audit) never shows.
 const anyReady = (p) => p.locator('main :is(h1, [data-page-body], [data-task-id]), [data-screen], h1, form').filter({ visible: true }).first().waitFor({ timeout: 15000 })
 const MIN_TARGET = 44
+// Safari on iOS zooms in on a focused field with smaller text (issue #724).
+const MIN_FIELD_TEXT = 16
 mkdirSync(outDir, { recursive: true })
 
 const failures = []
@@ -161,6 +179,11 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
     const anonCtx = await browser.newContext(ctxOpts)
     const ctx = await browser.newContext({ ...ctxOpts, storageState: ids.storageState })
     // First paint in the chosen language (the device mirror the app keeps), also signed out.
+    for (const c of [anonCtx, ctx]) await c.clock.setFixedTime(NOW)
+    // A subscribed calendar's events in every calendar view (calendar-events-all-views):
+    // answered here, since a real feed needs an outbound fetch.
+    const events = calendarEvents(NOW)
+    await ctx.route('**/api/v1/calendar-feeds/events?*', (route) => route.fulfill({ json: events }))
     if (LANG) for (const c of [anonCtx, ctx]) await c.addInitScript((code) => { try { localStorage.setItem('opentodo.lang', code) } catch { /* storage blocked */ } }, LANG)
     const page = await ctx.newPage()
     page.on('dialog', (d) => d.dismiss())
@@ -204,9 +227,12 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
       if (scrollers.length > MAX_SCROLLERS) await fail(p, s.name, null, `${scrollers.length} vertical scroll regions (at most ${MAX_SCROLLERS}): ${scrollers.join(', ')}`)
       for (const m of await p.evaluate(tabRowOverflow)) await fail(p, s.name, null, m)
       for (const m of await p.evaluate(smallTargets, [null, MIN_TARGET])) await fail(p, s.name, null, `touch target: ${m}`)
+      for (const m of await p.evaluate(smallFields, [null, MIN_FIELD_TEXT])) await fail(p, s.name, null, `text field: ${m}`)
       for (const m of await p.evaluate(rowMisalignment)) await fail(p, s.name, null, m)
       for (const m of await p.evaluate(rowCheckReach)) await fail(p, s.name, null, m)
       for (const m of await p.evaluate(addButtonCovers)) await fail(p, s.name, null, m)
+      // Crowded controls on the settings pages that ask for it (themes-layout-template).
+      if (s.crowded) for (const m of await p.evaluate(crowdedControls, ['main', 4])) await fail(p, s.name, null, `crowded: ${m}`)
       // Accessibility of the whole screen (axe-core, serious and critical issues).
       for (const m of await axeProblems(p)) await fail(p, s.name, null, m)
       if (s.offline && engine === 'chromium' && !OTHER_LANG) {
@@ -224,7 +250,8 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
         }
       }
       await shot(p, s.name)
-      for (const o of OTHER_LANG ? [] : s.overlays ?? []) {
+      // In another language only the overlays opened by data attributes (the start guide).
+      for (const o of (s.overlays ?? []).filter((n) => !OTHER_LANG || ANY_LANG_OVERLAYS.has(n))) {
         run.step = `screen ${s.name} › ${o}`
         const checkOne = async () => {
           await visit()
@@ -282,7 +309,7 @@ async function settledBox(p, overlay) {
   return prev
 }
 
-async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructive, escapes = 1, reopen }, fail, shot) {
+async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructive, escapes = 1, reopen, fit }, fail, shot) {
   // How to open it again: the trigger, or a step through a menu (`reopen`).
   const open = reopen ?? (() => trigger.click())
   await overlay.waitFor({ state: 'visible', timeout: 5000 })
@@ -295,6 +322,9 @@ async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructi
   const tagged = await overlay.evaluate((el) => (el.hasAttribute('data-overlay') ? el : el.closest('[data-overlay]')) ? true : false)
   const sel = await overlay.evaluate((el) => { el.setAttribute('data-layout-check', ''); return '[data-layout-check]' })
   for (const m of await p.evaluate(smallTargets, [sel, MIN_TARGET])) await fail(p, screen, name, `touch target: ${m}`)
+  for (const m of await p.evaluate(smallFields, [sel, MIN_FIELD_TEXT])) await fail(p, screen, name, `text field: ${m}`)
+  // Its content fits the panel: nothing sideways out of it, no sentence squeezed by its buttons (issue #731).
+  if (fit) for (const m of await p.evaluate(overlayContentFit, sel)) await fail(p, screen, name, m)
   await overlay.evaluate((el) => el.removeAttribute('data-layout-check'))
   await shot(p, screen, name)
   if (kind === 'toast' || kind === 'inline' || kind === 'drawer' || kind === 'combobox') {
@@ -383,7 +413,7 @@ async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructi
 
 // ------------------------------------------------------------------ main
 log('· seeding', base)
-const ids = await seedAccount({ base, pw, lang: LANG })
+const ids = { ...await seedAccount({ base, pw, lang: LANG, now: NOW }), date: LAYOUT_DATE }
 const llmServer = ids.llm
 const combos = []
 for (const e of ENGINES) for (const w of WIDTHS) for (const t of THEMES) combos.push([e, w, t])

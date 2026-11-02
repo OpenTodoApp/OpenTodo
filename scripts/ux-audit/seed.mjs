@@ -10,7 +10,29 @@ export const PASSWORD = 'correct horse battery staple'
 // A 2×2 grey PNG for image attachments and shared files.
 export const TINY_PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAEElEQVR4nGOYs3g9EDFAKAA1yge5YXhuBgAAAABJRU5ErkJggg=='
 export const LONG_URL = 'https://example.com/a/very/long/path/that/does/not/fit/on/a/phone/screen/' + 'segment'.repeat(6) + '?ref=layout-check'
-export async function seed({ base, pw, lang = '' }) {
+
+// A subscribed calendar's events around `now` (calendar-events-all-views): the answer
+// the layout check gives for GET /api/v1/calendar-feeds/events, since a real feed needs
+// an outbound fetch. A timed meeting, a long-named one, a free one, a crowded day for
+// the Month's "+N more" and a two-day all-day event, in Day, Week, Plan, Month and Year.
+export function calendarEvents(now) {
+  const day = (n) => new Date(now + n * 86400e3).toISOString().slice(0, 10)
+  const ev = (id, summary, start, end, extra = {}) => ({ id, subscriptionId: 'layout-cal', uid: id, summary, location: '', start, end, allDay: !start.time, free: false, ...extra })
+  return {
+    subscriptions: [{ id: 'layout-cal', name: 'Work calendar', color: '#2563eb', enabled: true, lastSuccessAt: now }],
+    events: [
+      ev('layout-sync', 'Team sync', { date: day(0), time: '11:00' }, { date: day(0), time: '11:30' }, { location: 'Room 4' }),
+      ev('layout-long', 'Quarterly planning review with the whole department and guests', { date: day(1), time: '09:00' }, { date: day(1), time: '10:30' }),
+      ev('layout-free', 'Focus time', { date: day(1), time: '13:00' }, { date: day(1), time: '15:00' }, { free: true }),
+      ...[8, 10, 12, 15].map((h, i) => ev(`layout-busy-${i}`, `Meeting ${i + 1}`, { date: day(3), time: `${String(h).padStart(2, '0')}:00` }, { date: day(3), time: `${String(h).padStart(2, '0')}:45` })),
+      ev('layout-offsite', 'Offsite', { date: day(5) }, { date: day(7) }),
+      ev('layout-later', 'Dentist', { date: day(40), time: '08:30' }, { date: day(40), time: '09:00' }),
+    ],
+  }
+}
+// `now` is the moment the account is seeded around (Unix ms; the layout check passes
+// its fixed clock): today's tasks, the due reminder, the overdue and completed tasks.
+export async function seed({ base, pw, lang = '', now = Date.now() }) {
   const browser = await pw.chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {})
   const ctx = await browser.newContext()
   const call = (c) => async (method, path, body) => {
@@ -50,7 +72,7 @@ export async function seed({ base, pw, lang = '' }) {
   const sections = {}
   let i = 1
   for (const n of ['Planning', 'In progress', 'Waiting']) sections[n] = (await A('POST', '/api/v1/sections', { name: n, project_id: home.id, position: i++ })).id
-  const today = new Date().toISOString().slice(0, 10)
+  const today = new Date(now).toISOString().slice(0, 10)
   const T = (b) => A('POST', '/api/v1/tasks', b)
   await T({ title: 'Inbox task with a deliberately long title that has to wrap or truncate on a narrow phone screen', priority: 1, due: { date: today }, labels: [L.errand, L.waiting] })
   // Undated and without a project: an Inbox task (inbox-means-unplaced); dated tasks without a project are not.
@@ -63,7 +85,7 @@ export async function seed({ base, pw, lang = '' }) {
   await T({ title: 'Book the kitchen fitters', project_id: home.id, section_id: sections.Waiting, due: { date: today }, blocked_by: [quotes.id] })
   await T({ title: 'Call the plumber', project_id: home.id, section_id: sections.Waiting, assignee_id: bob.id })
   await T({ title: 'Plan the team offsite', project_id: work.id, due: { date: today, time: '14:00' }, estimate_minutes: 90 })
-  await T({ title: 'Submit expense report', project_id: work.id, completed_at: Date.now() - 3600e3 })
+  await T({ title: 'Submit expense report', project_id: work.id, completed_at: now - 3600e3 })
   // A slot holding two small tasks (calendar-slots): the block and checklist in Day and Week, the agenda row on a phone.
   const small = [(await T({ title: 'Reply to the landlord', estimate_minutes: 5 })).id, (await T({ title: 'Pay the electricity bill', estimate_minutes: 10 })).id]
   await A('POST', '/api/v1/slots', { title: 'Admin', date: today, start: '16:00', minutes: 45, task_ids: small, move_tasks: true })
@@ -76,7 +98,7 @@ export async function seed({ base, pw, lang = '' }) {
   await A('PATCH', `/api/v1/tasks/${offsite.id}`, { fields: { [F.Cost]: 12500, [F.Client]: 'Acme', [F['Order date']]: today, [F.Quote]: LONG_URL, [F.Paid]: true } })
   // A reminder that is already due: its toast shows on every screen.
   const passport = (await A('GET', '/api/v1/tasks')).tasks.find((t) => t.title === 'Renew passport')
-  await A('POST', '/api/v1/reminders', { task_id: passport.id, kind: 'absolute', fire_at: Date.now() - 60e3 })
+  await A('POST', '/api/v1/reminders', { task_id: passport.id, kind: 'absolute', fire_at: now - 60e3 })
   const trashed = await T({ title: 'Old shopping list' })
   await A('DELETE', `/api/v1/tasks/${trashed.id}`)
 
@@ -114,7 +136,15 @@ export async function seed({ base, pw, lang = '' }) {
   await A('PUT', '/api/v1/settings/assistant', { enabled: true, default_provider: 'compatible', allow_private_endpoint: true, allow_member_keys: true,
     providers: { compatible: { enabled: true, model: 'fake-model', base_url: `http://127.0.0.1:${llm.address().port}/v1` } } })
   await A('PUT', '/api/v1/me/assistant', { consent: true, provider: 'compatible' })
-  await A('POST', '/api/v1/tasks', { title: 'Water the plants', due: { date: new Date(Date.now() - 2 * 86400e3).toISOString().slice(0, 10) } })
+  // A routine of three steps (routines-editor-page): the Routines page's row and the editor page.
+  // It reads a project's note, chosen in the picker: no task chosen by hand (routines-dynamic-data).
+  const groceries = await A('POST', '/api/v1/projects', { name: 'Groceries', description: '- oat milk\n- bread\n- eggs\n- apples\n- rice\n- tea\n- soap' })
+  const routine = await A('POST', '/api/v1/rules', { name: 'Groceries every Friday', trigger: { kind: 'schedule', at: '17:00', weekdays: [5] }, steps: [
+    { id: 'a', kind: 'note_text', in: { of: { literal: { project: groceries.id } } } },
+    { id: 'b', kind: 'split_lines', in: { text: { ref: 'a' } } },
+    { id: 'c', kind: 'create_tasks', in: { text: { ref: 'b' }, project: { literal: { project: home.id } } } },
+  ] })
+  await A('POST', '/api/v1/tasks', { title: 'Water the plants', due: { date: new Date(now - 2 * 86400e3).toISOString().slice(0, 10) } })
   if (lang) {
     // The interface language is a synced preference (user_prefs.language); written
     // like any device would, so every screen of the run opens in it.
@@ -123,5 +153,5 @@ export async function seed({ base, pw, lang = '' }) {
   // One session for every browser context: logging in per context trips the rate limit.
   const storageState = await ctx.storageState()
   await browser.close()
-  return { storageState, projectInvite: projectLink.split('/invite/p/')[1], publicLink: publicLink.split('/public/')[1], pageSecret, home: home.id, work: work.id, view: v1.id, dashboard: dash.id, label: L.errand, quotes: quotes.id, llm }
+  return { storageState, projectInvite: projectLink.split('/invite/p/')[1], publicLink: publicLink.split('/public/')[1], pageSecret, home: home.id, work: work.id, view: v1.id, dashboard: dash.id, label: L.errand, quotes: quotes.id, routine: routine.id, llm }
 }

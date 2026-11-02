@@ -32,7 +32,7 @@ One page per area:
 - **Attachments**: turn attachments on or off, and set the size per file (25 MB unless changed, up to 2048 MB) and the total per account (1 GB unless changed; 0 means no total). See [Attachments](attachments.md#limits).
 - **Outgoing email**: the SMTP server this server sends mail through, for password resets, sign-up confirmations and invitations; nothing is sent until it is configured. **Configure** opens the form, where fields set by `OPENTODO_SMTP_*` variables are read-only. **Send test email** sends a message to you and shows the mail server's answer when it fails. See [Outgoing email](self-hosting/outgoing-email.md).
 - **Speech to text**: the speech service for dictation, see [Speech to text](self-hosting/speech-to-text.md).
-- **Branding**: name and logo, see [Branding](self-hosting/branding.md).
+- **Branding**: name, logo and themes, see [Branding](self-hosting/branding.md).
 - **Maps** and **Automations**: the owner's switches for maps and address search, and for automation rules. See [Locations and places](locations-and-places.md) and [Automations](automations.md).
 - **Audit log**: how long events are kept, and sign-ins, tokens, invitations, exports and setting changes, and who made them; task content is never recorded. Recording client addresses is off by default, turning it off erases every stored address, and behind a reverse proxy the address comes from `X-Forwarded-For`.
 

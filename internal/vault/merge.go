@@ -560,6 +560,13 @@ func (e *engine) positions(m *mergeRun, group []string) {
 		rank[id] = i
 	}
 	keep := lis(known, rank)
+	if e.takeOver {
+		// After a take-over the server's order stands; only new lines are placed.
+		keep = map[string]bool{}
+		for _, id := range known {
+			keep[id] = true
+		}
+	}
 	pos := func(id string) float64 {
 		if b := e.bodies["task"][id]; b != nil {
 			if p, ok := b["position"].(float64); ok {

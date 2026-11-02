@@ -73,6 +73,8 @@ export const SETTINGS_COPY = {
       // Today's focus style and Bento order (bento-daily-check D4): synced user_prefs, as in the Daily check's menu.
       focus: { label: msg('Daily focus'), description: msg('Three tasks of any size, or a Bento: one Large, one Medium and one Small.') },
       order: { label: msg('Order'), description: msg('Frog does the Large task first; Summit warms up with the Medium one.') },
+      // Time sectors (time-sectors D7): synced user_prefs.time_sectors, off by default in every mode.
+      sectors: { label: msg('Time sectors'), description: msg('Plan tasks into this week, next week or this month without a fake date.') },
       // Energy levels (task-energy D3): synced user_prefs.energy, off by default in every mode.
       energy: { label: msg('Energy levels'), description: msg('Mark tasks Deep, Medium or Low and filter by the energy they need.') },
       // Formatting button (notes-toolbar-desktop D4): synced user_prefs.formatting_toggle, on by default.
@@ -167,6 +169,10 @@ export const SETTINGS_COPY = {
       device: { label: msg('This device'), description: msg('Asks for your passphrase again before showing your tasks.') },
       off: { label: msg('Turn off encryption'), description: msg('Your content is synced in plaintext again.') },
       lost: { label: msg('Lost both keys?'), description: msg('Without your passphrase or recovery key, encrypted content cannot be recovered.') },
+      // routines-ai-step D7: routines that read text or ask AI run on a device.
+      routines: { label: msg('Run my routines'), description: msg('Routines that read text or ask AI run here, while this device is online and unlocked.') },
+      routinesDevices: { label: msg('Devices running routines') },
+      routinesRecent: { label: msg('Recent routine runs'), description: msg('What this device ran, without the text.') },
     },
   },
   activity: {
@@ -184,7 +190,8 @@ export const SETTINGS_COPY = {
     learnMore: 'settings/appearance',
     rows: {
       mode: { label: msg('Mode'), description: msg("System follows your device's light or dark setting.") },
-      theme: { label: msg('Theme') },
+      themes: { label: msg('Theme') },
+      theme: { label: msg('Accent') },
       density: { label: msg('Density'), description: msg('Compact tightens rows, headers and the sidebar; touch targets stay full size.') },
       rows: { label: msg('Task rows'), description: msg('Detailed adds the parent task and a line of dates, priority and labels.') },
       haptics: { label: msg('Haptic feedback'), description: msg('A short vibration when you complete a task or pick one up with a long press.') },
@@ -239,6 +246,14 @@ export const SETTINGS_COPY = {
     rows: { show: { label: msg('Show the briefing') } },
   },
   // Today by part of the day (day-parts D4): the synced user_prefs.day_parts, as in Today's menu.
+  // The Inbox card of routines (routines-editor D10): the synced user_prefs.routines_hide_successes.
+  'routine-runs': {
+    title: msg('Routines'),
+    icon: 'zap',
+    description: msg('Runs you did not start show in the Inbox card "Routines since your last visit".'),
+    learnMore: 'routines',
+    rows: { hide: { label: msg('Hide successful runs'), description: msg('The card shows only runs that failed or wait for you.') } },
+  },
   'day-parts': {
     title: msg('Today'),
     icon: 'sun',
@@ -334,6 +349,15 @@ export const SETTINGS_COPY = {
       blocked: msg('Notifications are blocked in your browser settings; reminders still appear in the app.'),
       renew: msg('The push service stopped accepting notifications for this device.'),
     },
+  },
+  // Settings → Notifications → App icon badge (app-icon-badge): a device-local flag.
+  'app-badge': {
+    title: msg('App icon badge'),
+    icon: 'bell',
+    description: msg('The installed app\'s icon shows how many of today\'s tasks are open.'),
+    learnMore: 'app-icon-badge',
+    rows: { show: { label: msg('Show today\'s count'), description: msg('This device only. The count matches Today in the sidebar.') } },
+    notices: { permission: msg('On iPhone and iPad the badge appears only once notifications are allowed.') },
   },
   // Settings → Notifications → Delivery channels (notification-channels).
   'notification-channels': {
@@ -752,6 +776,9 @@ export const SETTINGS_COPY = {
     rows: {
       name: { label: msg('Name'), description: msg('Shown in place of OpenTodo. Up to 40 characters; empty keeps OpenTodo.') },
       logo: { label: msg('Logo'), description: msg('A square PNG or JPEG of at least 192 pixels; the server renders every size.') },
+      // The server's default theme and themes (theme-instance-default D4).
+      defaultTheme: { label: msg('Default theme'), description: msg('People who never chose a theme see this one; their own choice always wins.') },
+      serverThemes: { label: msg('Server themes'), description: msg('Everyone on this server can choose these, or customise a copy. Up to 20.') },
     },
     notices: { offline: msg('You are offline. These settings need a connection to the server.') },
   },

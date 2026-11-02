@@ -225,6 +225,124 @@ func (m Multi) RulePaused(ctx context.Context, e RuleEvent) {
 	}
 }
 
+// KindRoutine is a routine's Notify me step (OpenSpec change routines-engine,
+// "Routine notices through channels"): the step's text with the routine's name
+// and the run.
+const KindRoutine = "routine"
+
+// RoutineNotice is one Notify me step of one run. Text is the step's text as
+// the routine produced it; the in-app inbox is the user's own, channels apply
+// their content rules.
+type RoutineNotice struct {
+	UserID   string `json:"-"`
+	RuleID   string `json:"ruleId"`
+	RuleName string `json:"ruleName"`
+	RunID    string `json:"runId"`
+	StepID   string `json:"stepId"`
+	Text     string `json:"text"`
+	TaskID   string `json:"taskId,omitempty"`
+	At       int64  `json:"at"`
+}
+
+// RoutineSink is implemented by sinks that deliver routine notices.
+type RoutineSink interface {
+	RoutineNotice(ctx context.Context, n RoutineNotice)
+}
+
+// RoutineNotice fans the notice out to every sink that implements RoutineSink.
+func (m Multi) RoutineNotice(ctx context.Context, n RoutineNotice) {
+	for _, s := range m {
+		if rs, ok := s.(RoutineSink); ok {
+			rs.RoutineNotice(ctx, n)
+		}
+	}
+}
+
+// Routine alerts in the bell (OpenSpec change routines-editor, design D11):
+// routine_failed when a routine's run failed (at most one per routine and UTC
+// day; later failures of the day update its count), routine_proposal when a
+// routine's AI step left a proposal waiting (routines-ai-step). Never for test
+// runs or runs the user started by hand; successes never notify.
+const (
+	KindRoutineFailed   = "routine_failed"
+	KindRoutineProposal = "routine_proposal"
+)
+
+// RoutineAlert is one failed run (or waiting proposal) of a routine. Step is
+// the failing step's position from 1, or -1 when the run failed before a step.
+type RoutineAlert struct {
+	UserID   string `json:"-"`
+	RuleID   string `json:"ruleId"`
+	RuleName string `json:"ruleName"`
+	RunID    string `json:"runId"`
+	Step     int    `json:"step"`
+	StepKind string `json:"stepKind,omitempty"`
+	Day      string `json:"day"`
+	Count    int    `json:"count"`
+	At       int64  `json:"at"`
+}
+
+// RoutineAlertSink is implemented by sinks that deliver routine alerts.
+type RoutineAlertSink interface {
+	RoutineFailed(ctx context.Context, a RoutineAlert)
+}
+
+// RoutineProposalSink is implemented by sinks that announce a routine's
+// waiting proposal (routines-ai-step D2): one notification per run.
+type RoutineProposalSink interface {
+	RoutineProposal(ctx context.Context, a RoutineAlert)
+}
+
+// RoutineProposal fans the alert out to every sink that implements RoutineProposalSink.
+func (m Multi) RoutineProposal(ctx context.Context, a RoutineAlert) {
+	for _, s := range m {
+		if rs, ok := s.(RoutineProposalSink); ok {
+			rs.RoutineProposal(ctx, a)
+		}
+	}
+}
+
+// RoutineFailed fans the alert out to every sink that implements RoutineAlertSink.
+func (m Multi) RoutineFailed(ctx context.Context, a RoutineAlert) {
+	for _, s := range m {
+		if rs, ok := s.(RoutineAlertSink); ok {
+			rs.RoutineFailed(ctx, a)
+		}
+	}
+}
+
+// KindRoutinePausedShared: a shared project's routine paused because the
+// person it runs as no longer edits the project (OpenSpec change
+// routines-shared, D9). Sent to the project's owner, admins and editors.
+const KindRoutinePausedShared = "routine_paused_shared"
+
+// RoutinePausedShared is one routine of a shared project that paused. Reason
+// is run_as_left or run_as_viewer; names are as people see them.
+type RoutinePausedShared struct {
+	UserID      string `json:"-"`
+	RuleID      string `json:"ruleId"`
+	RuleName    string `json:"ruleName"`
+	ProjectID   string `json:"projectId"`
+	ProjectName string `json:"projectName"`
+	RunAsName   string `json:"runAsName"`
+	Reason      string `json:"reason"`
+	At          int64  `json:"at"`
+}
+
+// RoutinePausedSink is implemented by sinks that announce a paused shared routine.
+type RoutinePausedSink interface {
+	RoutinePausedShared(ctx context.Context, e RoutinePausedShared)
+}
+
+// RoutinePausedShared fans the event out to every sink that implements RoutinePausedSink.
+func (m Multi) RoutinePausedShared(ctx context.Context, e RoutinePausedShared) {
+	for _, s := range m {
+		if rs, ok := s.(RoutinePausedSink); ok {
+			rs.RoutinePausedShared(ctx, e)
+		}
+	}
+}
+
 // KindMemberInvitation: someone who shares nothing with the recipient asked to
 // add them to a project or workspace (OpenSpec change member-add-consent, D5).
 const KindMemberInvitation = "member_invitation"

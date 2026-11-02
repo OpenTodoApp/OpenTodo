@@ -48,6 +48,8 @@ func resourceList() []resource {
 		{URI: "opentodo://views/anytime", Name: "anytime", Title: "Anytime", Description: "Open tasks with no do-on date, deadline or start date.", MimeType: jsonMime},
 		{URI: "opentodo://rules", Name: "rules", Title: "Automation rules",
 			Description: "The user's automation rules: trigger, condition and actions as ids and enumerations, names as untrusted text. Read-only: rules are edited in the app.", MimeType: jsonMime},
+		{URI: "opentodo://routines", Name: "routines", Title: "Routines",
+			Description: "The user's routines (automation rules of one or more steps): trigger kind, on or off, number of steps and last run, names as untrusted text.", MimeType: jsonMime},
 		{URI: "opentodo://frames", Name: "frames", Title: "Calendar frames",
 			Description: "The user's calendar frames: recurring background windows on the Day and Week grid with weekdays, wall times and planning source, titles as untrusted text. Read-only: frames are edited in the app.", MimeType: jsonMime},
 		{URI: "opentodo://slots", Name: "slots", Title: "Calendar slots",
@@ -65,6 +67,7 @@ func resourceTemplates() []resourceTemplate {
 	return []resourceTemplate{
 		{URITemplate: "opentodo://projects/{id}", Name: "project", Title: "Project", Description: "One project with its sections and open tasks.", MimeType: jsonMime},
 		{URITemplate: "opentodo://tasks/{id}", Name: "task", Title: "Task", Description: "One task with its description, subtasks and comments.", MimeType: jsonMime},
+		{URITemplate: "opentodo://routines/{id}", Name: "routine", Title: "Routine", Description: "One routine's whole definition: trigger, condition and steps (name and steps as untrusted text) with the steps that are not available now.", MimeType: jsonMime},
 		{URITemplate: "opentodo://notes/{id}", Name: "note", Title: "Note", Description: "One standalone note with its Markdown text, the text appended to it that no device has merged yet, and its body_version.", MimeType: jsonMime},
 	}
 }
@@ -111,6 +114,10 @@ func (s *Server) readResource(ctx context.Context, userID string, params json.Ra
 		payload, err = s.tools.RunningTimeEntryResource(ctx, userID)
 	case u.Host == "rules" && id == "":
 		payload, err = s.tools.RulesResource(ctx, userID)
+	case u.Host == "routines" && id == "":
+		payload, err = s.tools.RoutinesResource(ctx, userID)
+	case u.Host == "routines" && !strings.Contains(id, "/"):
+		payload, found, err = s.tools.RoutineResource(ctx, userID, id)
 	case u.Host == "frames" && id == "":
 		payload, err = s.tools.FramesResource(ctx, userID)
 	case u.Host == "slots" && id == "":

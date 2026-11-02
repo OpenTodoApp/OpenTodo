@@ -1,0 +1,7 @@
+# Resumen del viernes por correo: Spanish text for templates/routines/friday-digest-email/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-926c1534c942
+title: "Resumen del viernes por correo"
+summary: "Cada viernes a las 16:00, te envía por correo la lista de tareas que completaste esta semana."
+description: "Cada viernes por la tarde esta rutina busca las tareas que completaste esta semana, las cuenta y te envía la lista por correo. Es un registro discreto de la semana, útil para una revisión o un informe.\n\nNecesita el correo saliente en tu servidor y una dirección de correo verificada. Sin ellos, usa Avisarme en lugar de Enviarme un correo."
+steps.2.in.template: "{b} tareas hechas esta semana:\n{a}"
+steps.3.in.subject: "Tu semana"

@@ -1,0 +1,7 @@
+# Compras a partir de uma nota: Portuguese text for templates/routines/groceries-from-note/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-877ea84023de
+title: "Compras a partir de uma nota"
+summary: "Todas as sextas às 17:00, transforma as linhas da tua nota de compras em tarefas."
+description: "Mantém um projeto cuja nota lista o que precisas, um item por linha. Todas as sextas às 17:00 esta rotina lê a nota e cria uma tarefa por linha no teu projeto de recados, pronta para as compras do fim de semana.\n\nOs marcadores de lista e as caixas de seleção são retirados de cada linha. Limpa a nota quando voltares, ou mantém-na como lista fixa."
+ask.list.suggest: "Compras"
+ask.into.suggest: "Recados"

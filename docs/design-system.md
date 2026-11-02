@@ -102,6 +102,10 @@ Every colour token is written in OKLCH: an `oklch(L C H)` literal inside the sRG
 
 Steps toward black or white mix `in oklch`, which keeps the hue; steps into a surface mix `in oklab`, because the dark surfaces are slightly blue and an OKLCH mix would turn the hue toward them. A browser without OKLCH gets six plain surface and text values from an `@supports` fallback: readable, not themed.
 
+### Themes
+
+A theme (OpenSpec `themes`, [Themes](themes.md)) sets every semantic token at once from a JSON document of a few seeds. `index.css` stays the source of OpenTodo's own tokens: OpenTodo Light and Dark are generated from it as documents (`node scripts/themes-sync.mjs`, checked by `web/src/lib/theme/themes.test.ts`) and choosing them writes nothing extra. Another theme is derived on the device (`web/src/lib/theme/derive.ts`, every token starting from OpenTodo's value carried onto the seeds, then moved in lightness only as far as its pairs need) and applied as one rule, `html:root[data-ot-theme]:not([data-contrast="high"])`, which outranks every mode and accent block and never matches under high contrast; the radius steps (`--ot-radius-*`), `--ot-font` and `--ot-text-list` sit in a second rule that does. `public/appearance.js` writes the same rule from the device cache before the first paint. `contrast.test.ts` measures every theme document in `web/src/lib/theme/builtin/` and a sweep of 200 seed-only themes through the resolver, and `checkTheme` (`check.ts`) is the same measurement at run time. A new token needs a reference value in the stylesheet: run the sync script so the derivation and the documents know it.
+
 ### High contrast and no motion
 
 Two root attributes change the presentation for screens that ask for them (OpenSpec `display-mode`, design-system "High-contrast and no-motion presentation"):
@@ -197,7 +201,7 @@ Name it in `Illustration.tsx` and pass that name to the empty-state pattern (`<E
 
 ### Form controls
 
-Wrap a control in `<Field label description error>`: the label, the description and the error are wired to the control (`aria-describedby`, `aria-invalid`). `Input`, `Textarea` and `Select` are styled native elements; use `Select` for small fixed sets (role, sort order) and the Combobox for choosing an entity. A setting that applies immediately is a `Switch` (`role="switch"`): a 32 × 18 px track, accent when on, whose hit area grows to 44 px on a touch screen. A choice submitted with a form is a `Checkbox` (with an indeterminate state). A `Select` draws its own chevron, two gradients in the muted text colour, instead of the platform's arrow (precision-settings).
+Wrap a control in `<Field label description error>`: the label, the description and the error are wired to the control (`aria-describedby`, `aria-invalid`). `Input`, `Textarea` and `Select` are styled native elements; use `Select` for small fixed sets (role, sort order) and the Combobox for choosing an entity. A setting that applies immediately is a `Switch` (`role="switch"`): a 32 × 18 px track, accent when on, whose hit area grows to 44 px on a touch screen. A choice submitted with a form is a `Checkbox` (with an indeterminate state). A `Select` draws its own chevron, two gradients in the muted text colour, instead of the platform's arrow (precision-settings). On a touch screen (`pointer: coarse`) every text field, select and editable area, and the text inside an editable area, is at least 16 px, or Safari on iOS zooms in on focus (#724): the type steps under 16 px (`text-hint`, `text-meta`, `text-body`, `text-prose`, `text-h3`) read `--ot-text-*` variables, and the base layer sets those to 16 px on such elements, so a field styled with `text-meta` needs nothing more; a fixed `font-size` on a field would bypass it, and the layout check (`smallFields` in `scripts/ux-audit/measure.mjs`) fails on it. Never turn off zoom in the viewport tag (`maximum-scale`, `user-scalable=no`).
 
 ### Menus
 

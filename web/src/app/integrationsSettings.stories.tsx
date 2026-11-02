@@ -58,4 +58,6 @@ export const ApiTokens: StoryObj = { render: () => tokens() }
 export const ApiTokensEmpty: StoryObj = { render: () => tokens({ tokens: [] }) }
 export const ApiTokensError: StoryObj = { render: () => tokens({ tokens: null, error: 'You are offline. Tokens are managed on your server.' }) }
 export const ApiTokensNew: StoryObj = { render: () => tokens({ creating: true, scope: 'read', name: 'Dashboard' }) }
+/** A full token, with the hint for the Obsidian plugin (obsidian-plugin task 6.2). */
+export const ApiTokensNewFull: StoryObj = { render: () => tokens({ creating: true, scope: 'full', name: 'Obsidian on my phone' }) }
 export const ApiTokensCreated: StoryObj = { render: () => tokens({ creating: true, secret: 'ot_8f2c41d09a7e' }) }

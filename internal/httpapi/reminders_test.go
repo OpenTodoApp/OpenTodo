@@ -54,6 +54,9 @@ func TestExportIncludesUserPrefs(t *testing.T) {
 		rop("p4", "user_prefs", "me", "language", "de", 1),
 		// accent-colour D1: the picked colour travels with the theme.
 		rop("p5", "user_prefs", "me", "theme_accent_custom", "#1f6feb", 1),
+		// theme-engine D6: the theme of each side.
+		rop("p6", "user_prefs", "me", "theme_light", "builtin:solarized-light", 1),
+		rop("p7", "user_prefs", "me", "theme_dark", "builtin:nord", 1),
 	)
 	resp, out := e.do("GET", "/api/v1/export", nil)
 	e.mustStatus(resp, 200, out)
@@ -62,7 +65,8 @@ func TestExportIncludesUserPrefs(t *testing.T) {
 		t.Fatalf("export user_prefs = %v", out["user_prefs"])
 	}
 	row := list[0].(map[string]any)
-	if row["id"] != "me" || row["date_format"] != "iso" || row["time_format"] != "24h" || row["theme_accent"] != "custom" || row["theme_accent_custom"] != "#1f6feb" || row["language"] != "de" {
+	if row["id"] != "me" || row["date_format"] != "iso" || row["time_format"] != "24h" || row["theme_accent"] != "custom" || row["theme_accent_custom"] != "#1f6feb" || row["language"] != "de" ||
+		row["theme_light"] != "builtin:solarized-light" || row["theme_dark"] != "builtin:nord" {
 		t.Fatalf("exported row = %v", row)
 	}
 }

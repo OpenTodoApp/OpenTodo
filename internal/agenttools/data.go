@@ -283,6 +283,7 @@ func inboxTask(t opsync.Entity) inbox.Task {
 		Completed: !isOpen(t),
 		Deleted:   num(t, "deleted_at") != 0,
 		ParentID:  rawStr(t, "parent_id"),
+		Sector:    rawStr(t, "sector"),
 	}
 }
 
@@ -396,8 +397,8 @@ type taskText struct {
 	// keyed by definition id: people wrote them (custom-fields).
 	Fields map[string]string `json:"fields,omitempty"`
 	// Origin holds the free text of the task's origin, its page title and URL
-	// (OpenSpec change task-origin, design D11); kind, provider and id are in
-	// taskOut.Origin.
+	// (OpenSpec change task-origin, design D11) and an Obsidian note's path;
+	// kind, provider and an external id are in taskOut.Origin.
 	Origin *originText `json:"origin,omitempty"`
 	// Location holds the name and address of the task's location
 	// (agent-planning-fields D4); its coordinates and place_id are in taskOut.Location.
@@ -421,6 +422,8 @@ type locationOut struct {
 type originText struct {
 	Title string `json:"title,omitempty"`
 	URL   string `json:"url,omitempty"`
+	// Note is an Obsidian origin's vault-relative note path (obsidian-origin).
+	Note string `json:"note,omitempty"`
 }
 
 // originOut is the structural part of a task's origin.
@@ -491,7 +494,10 @@ type taskOut struct {
 	// Evening stays the evening flag.
 	DayPart *string `json:"day_part"`
 	// Energy is "deep", "medium", "low" or null (OpenSpec change task-energy).
-	Energy    *string      `json:"energy"`
+	Energy *string `json:"energy"`
+	// Sector is the time sector as stored (2026-W45, 2026-11, 2026-Q4) or null
+	// (OpenSpec change time-sectors); plaintext for encrypted accounts too.
+	Sector    *string      `json:"sector"`
 	BlockedBy []string     `json:"blocked_by"`
 	Blocked   bool         `json:"blocked"`
 	Location  *locationOut `json:"location"`
@@ -499,6 +505,10 @@ type taskOut struct {
 	// today-closed-list): true when the user's Today limit keeps the task
 	// waiting for a slot.
 	WaitingForSlot *bool `json:"waiting_for_slot,omitempty"`
+	// TimeSensitive is set by today_summary on a waiting task only (OpenSpec
+	// change today-waiting-time-sensitive): true when it is due today with a
+	// time or its deadline is today.
+	TimeSensitive *bool `json:"time_sensitive,omitempty"`
 }
 
 // render builds the assistant-facing view of a task, evaluating dates in loc
@@ -552,8 +562,13 @@ func (snap *snapshot) render(t opsync.Entity, loc *time.Location, today string, 
 		out.Encrypted = true
 	} else if o, err := origin.Decode(t["origin"]); err == nil {
 		out.Origin = &originOut{Kind: o.Kind, Provider: o.Provider, ID: o.ID}
-		if o.Title != "" || o.URL != "" {
-			out.Untrusted.Origin = &originText{Title: o.Title, URL: o.URL}
+		text := originText{Title: o.Title, URL: o.URL}
+		if o.Kind == origin.KindObsidian {
+			// A note's path is the user's own text (obsidian-origin), not an external id.
+			out.Origin.ID, text.Note = "", o.ID
+		}
+		if text != (originText{}) {
+			out.Untrusted.Origin = &text
 		}
 	}
 	out.Deadline, out.Start = strPtr(t, "deadline"), strPtr(t, "start")
@@ -563,6 +578,9 @@ func (snap *snapshot) render(t opsync.Entity, loc *time.Location, today string, 
 	}
 	if e := str(t, "energy"); slices.Contains(opsync.EnergyLevels, e) {
 		out.Energy = &e
+	}
+	if sec := str(t, "sector"); sec != "" {
+		out.Sector = &sec
 	}
 	out.BlockedBy = stringList(t, "blocked_by")
 	if out.BlockedBy == nil {

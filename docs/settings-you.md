@@ -29,18 +29,19 @@ The **You** group of [Settings](settings.md) holds your account and how the app 
 
 ## How you work
 
-**How you work** chooses how much the app shows [Open Loops](method/overview.md), its method for everything on your mind: **Simple lists**, **Lists with method hints** or **Full Open Loops method** (the Loop home first). It syncs and never changes a task; see [Set up in ten minutes](method/set-up.md). **Daily focus** is **Three tasks** or a [Bento](method/rhythms.md#bento), with its **Order** while Bento is on. **Energy levels** adds [task energy](method/set-up.md#energy-levels), **Formatting button** [the formatting row](formatting-row.md).
+**How you work** chooses how much the app shows [Open Loops](method/overview.md): **Simple lists**, **Lists with method hints** or **Full Open Loops method** (the Loop home first). It never changes a task; see [Set up in ten minutes](method/set-up.md). **Daily focus** is **Three tasks** or a [Bento](method/rhythms.md#bento), with its **Order** while Bento is on. **Time sectors** plans tasks [for a week or month](time-sectors.md), **Energy levels** adds [task energy](method/set-up.md#energy-levels), **Formatting button** [the formatting row](formatting-row.md).
 
 ## Appearance
 
 Three pages, **Theme and density**, **Sidebar** and **Task details**. These choices follow your account to every device, also offline:
 
 - **Mode**: **System** follows your device's light or dark setting (the default), **Light** and **Dark** keep the app that way whatever the device says.
-- **Theme**: the colour of buttons, links, the focus ring and selected items: **Emerald** (the default), **Blue**, **Indigo**, **Violet**, **Rose**, **Orange**, **Teal**, **Graphite** or [**Custom**](custom-accent.md). Each tile previews its theme; the arrow keys move between them. On a phone the tiles are one scrollable row.
+- **Theme**: the colours of the whole app, one [theme](themes.md) for light and one for dark.
+- **Accent**: the colour of buttons, links and selected items: **Emerald** (the default) to **Graphite**, or [**Custom**](custom-accent.md). The arrow keys move between the tiles; on a phone they are one scrollable row.
 - **Density**: **Comfortable** (the default) or **Compact**, which makes task rows, group headers and the sidebar tighter. On a touch screen every target stays full size in both.
 - **Task rows**: [one line or detailed](row-layouts.md).
 - **Haptic feedback**: on a phone or tablet that can vibrate, a short tick when you complete a task or pick one up with a long press. On by default; turning it off on one device turns it off on all of them. Computers without vibration do not show the switch.
 - **Open tasks** (Task details): **As a page** (the default) or **In a side panel** beside every list, from 1024 px wide. See [The task page](task-panel.md#open-tasks-beside-the-list).
 - **Sidebar**: numbers on every list or only on Inbox and Today, the order of the main destinations, and which **More** destinations sit next to them. See [Sidebar counts and order](sidebar-counts-and-order.md).
 
-Mode and theme apply at once, without a reload. They never change other people's app. Priority colours (P1 to P4), warnings and errors, and the colours of your projects, labels and views keep their meaning in every theme. The installed app's title bar follows the theme too; its splash screen stays neutral. Every theme meets the same contrast rules in light and dark.
+Mode, theme and accent apply at once and never change other people's app. Priority colours (P1 to P4), warnings and errors, and the colours of your projects, labels and views keep their meaning in every theme. The installed app's title bar follows the theme; its splash screen stays neutral. Every theme meets the same contrast rules in light and dark.

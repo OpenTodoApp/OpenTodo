@@ -11,7 +11,8 @@ import { createProject, setRecurrence, unparkTask, updateTask } from '../../lib/
 import { INBOX_KEY, itemKeywords, NONE_KEY, sectionSource, type PickerItem } from '../../lib/pickerSources'
 import { moveTaskToSection } from '../../lib/sections'
 import { keysOf } from '../../lib/shortcuts'
-import { openOrigin, originOf } from '../../lib/taskOrigin'
+import { openOrigin, originLink, originOf } from '../../lib/taskOrigin'
+import { copyText } from '../../lib/clipboard'
 import type { Label, Priority, Project, Task } from '../../lib/types'
 import { isZoned, zoneCity } from '../../lib/dates'
 import { ComboboxPanel, Icon, type IconName, Menu, MenuGroup, MenuItem, MenuSeparator, Switch } from '../../ui'
@@ -19,7 +20,7 @@ import { AssigneePicker } from '../AssigneePicker'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { EstimateField } from '../EstimateField'
 import { LabelChip, LabelPicker } from '../LabelPicker'
-import { originText } from '../OriginChip'
+import { originText, originTip } from '../OriginChip'
 import { LocationEditor, useShownLocation } from '../locations/LocationEditor'
 import { LocationPreview } from '../locations/LocationPreview'
 import { setTaskLocation, locationLabel } from '../../lib/locations'
@@ -29,7 +30,8 @@ import { FacetEditor } from './FacetEditor'
 import { FacetLine } from './FacetLine'
 import { usePropertiesModel, type PropertiesModel } from './usePropertiesModel'
 import type { Optional } from './usePropertyEditing'
-import { WhenControl, WhenSegmentPicker } from './WhenControl'
+import { useSectorSegment, WhenControl, WhenSegmentPicker } from './WhenControl'
+import { setSectorWithUndo } from './SectorChoice'
 import { t } from '../../lib/i18n'
 import { act, reportActionError } from '../actionError'
 import { dayPartFields } from '../../lib/dayParts'
@@ -68,7 +70,7 @@ const itemMeta = (i: PickerItem) => i.meta
 /** The parts that are optional (revealed by Add, removed when left empty); the rest are fixed. */
 export const OPTIONAL = new Set<string>(['deadline', 'when', 'evening', 'reminders', 'estimate', 'repeat', 'labels', 'assignee', 'blocked-by', 'parent', 'section', 'location', 'energy'])
 /** The When segment a part opens on. */
-const SEGMENT_OF: Record<string, WhenSegmentId> = { due: 'due', evening: 'due', repeat: 'repeat', deadline: 'deadline', when: 'start', reminders: 'reminders' }
+const SEGMENT_OF: Record<string, WhenSegmentId> = { due: 'due', evening: 'due', repeat: 'repeat', deadline: 'deadline', when: 'start', sector: 'sector', reminders: 'reminders' }
 
 function Dot({ color }: { color?: string }) {
   return <span aria-hidden="true" className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: color ?? 'var(--ot-faint)' }} />
@@ -88,7 +90,8 @@ export function useFacetParts(props: PropertiesProps, m: PropertiesModel, reveal
     sectionName: m.shownSection ? m.sectionMap.get(m.shownSection)?.name || t('Untitled section') : null,
     parentTitle: task.parent_id ? (parent?.title ?? '') : null,
     originText: origin ? originText(origin) : null,
-    originTitle: origin?.title ?? null,
+    // An origin the device will not open (a shell without Obsidian links) copies its link instead (obsidian-origin).
+    originTitle: origin ? (originLink(origin) ? originTip(origin) : origin.url ? t('Copy link') : origin.title) ?? null : null,
     originLinked: !!origin?.url,
     locationText: shownLocation ? locationLabel(shownLocation) || t('Location') : null,
     labels: m.labels,
@@ -118,8 +121,13 @@ export function usePartEditor(m: PropertiesModel, task: Task) {
   const setEditing = (id: string, on: boolean) => (OPTIONAL.has(id) ? ed.chipProps(id as Optional) : ed.fixedChip(id)).onEditingChange(on)
   const close = () => { if (ed.editing) setEditing(ed.editing, false) }
   const activate = (id: string) => {
-    // The origin opens its source (task-origin); removing it is in the header menu.
-    if (id === 'origin') { const origin = originOf(task); if (origin?.url) openOrigin(origin); return }
+    // The origin opens its source (task-origin), or copies a link the device will not
+    // open (obsidian-origin); removing it is in the header menu.
+    if (id === 'origin') {
+      const origin = originOf(task)
+      if (origin?.url) { if (originLink(origin)) openOrigin(origin); else act(copyText(origin.url)) }
+      return
+    }
     // A second activation of the open part closes its editor (task-panel-polish "Popover triggers toggle").
     if (ed.editing === id) { close(); return }
     if (ed.editing) setEditing(ed.editing, false)
@@ -171,6 +179,7 @@ export function PartEditor({ id, props, m, anchor, segment, onSegment, onClose }
   onClose: () => void
 }) {
   const { task, readOnly, userId, childCount, onOpen } = props
+  const sectorSegment = useSectorSegment(task)
   const frame = (icon: IconName, title: string, body: ReactNode, onClear?: () => void, extra: { header?: ReactNode; width?: string } = {}) => (
     <FacetEditor anchor={anchor} icon={icon} title={title} onClose={onClose} onClear={onClear} {...extra}>{body}</FacetEditor>
   )
@@ -181,9 +190,10 @@ export function PartEditor({ id, props, m, anchor, segment, onSegment, onClose }
       start: task.start ? () => void unparkTask(task.id) : undefined,
       deadline: task.deadline ? () => act(updateTask(task.id, { deadline: null })) : undefined,
       repeat: task.recurrence ? () => act(setRecurrence(task.id, null)) : undefined,
+      sector: task.sector ? () => act(setSectorWithUndo(task.id, '')) : undefined,
     }
-    return frame('calendar-days', t('When'), <WhenControl task={task} readOnly={readOnly} segment={segment} onOpen={onOpen} />, clear[segment],
-      { header: <WhenSegmentPicker value={segment} onChange={onSegment} />, width: 'sm:w-[28rem]' })
+    return frame('calendar-days', t('When'), <WhenControl task={task} readOnly={readOnly} segment={segment} onOpen={onOpen} onClose={onClose} />, clear[segment],
+      { header: <WhenSegmentPicker value={segment} onChange={onSegment} sector={sectorSegment} />, width: 'sm:w-[28rem]' })
   }
 
   switch (id) {

@@ -39,15 +39,25 @@ const (
 	// project or workspace, with a link to answer in the app (OpenSpec change
 	// member-add-consent). Like a project invite it never names the project.
 	KindMemberInvitation Kind = "member_invitation"
+	// KindRoutine is a routine's Email me step (OpenSpec change routines-engine,
+	// "Routine email"): the subject and text the user's routine produced, to
+	// the account's own verified address only.
+	KindRoutine Kind = "routine"
 )
 
 // Kinds lists every kind.
-var Kinds = []Kind{KindVerifySignup, KindPasswordReset, KindInvitation, KindProjectInvite, KindWorkspaceInvite, KindTest, KindDigest, KindEmailChange, KindEmailChangeNotice, KindMemberInvitation}
+var Kinds = []Kind{KindVerifySignup, KindPasswordReset, KindInvitation, KindProjectInvite, KindWorkspaceInvite, KindTest, KindDigest, KindEmailChange, KindEmailChangeNotice, KindMemberInvitation, KindRoutine}
 
 // carriesContent marks kinds that include entity content and must never be
-// built for an account with end-to-end encryption (design D8). Only the
-// weekly digest of `stats-and-review` does: it lists task and project names.
-var carriesContent = map[Kind]bool{KindDigest: true}
+// built for an account with end-to-end encryption (design D8): the weekly
+// digest of `stats-and-review` (task and project names) and a routine's email.
+var carriesContent = map[Kind]bool{KindDigest: true, KindRoutine: true}
+
+// RoutineVars are a routine email's values (KindRoutine only): the routine's
+// name and the step's subject and text, as the user's routine produced them.
+type RoutineVars struct {
+	Name, Subject, Text string
+}
 
 // Languages are the supported message languages, English first.
 var Languages = []string{"en", "de", "fr", "es", "it", "pt"}
@@ -66,6 +76,9 @@ type Vars struct {
 	// Digest holds the weekly digest's numbers and lists (KindDigest only);
 	// Link is then the review address.
 	Digest *DigestVars
+	// Routine holds a routine email's text (KindRoutine only); Link is then
+	// the run's address.
+	Routine *RoutineVars
 }
 
 // Message is one message to render and send.
@@ -97,6 +110,9 @@ type templateData struct {
 	digest map[string]string
 }
 
+// routineKnown are the variables only routine templates may use.
+var routineKnown = map[string]bool{"Routine": true, "Subject": true, "Text": true}
+
 // placeholder matches `{{.Field}}`, with optional spaces inside the braces.
 var placeholder = regexp.MustCompile(`\{\{\s*\.(\w+)\s*\}\}`)
 
@@ -115,9 +131,10 @@ var templates = func() map[string]string {
 		raw, _ := templateFS.ReadFile("templates/" + e.Name())
 		name := strings.TrimSuffix(e.Name(), ".txt")
 		isDigest := strings.HasPrefix(name, string(KindDigest)+".")
+		isRoutine := strings.HasPrefix(name, string(KindRoutine)+".")
 		text := placeholder.ReplaceAllStringFunc(string(raw), func(m string) string {
 			field := placeholder.FindStringSubmatch(m)[1]
-			if !known[field] && !(isDigest && digestKnown[field]) {
+			if !known[field] && !(isDigest && digestKnown[field]) && !(isRoutine && routineKnown[field]) {
 				panic(fmt.Sprintf("mail: template %s uses unknown variable %s", e.Name(), field))
 			}
 			return "{{." + field + "}}"
@@ -253,6 +270,11 @@ func Render(m Message, origin string) (subject, body string, err error) {
 		Inviter: inviter, Role: role}
 	if m.Kind == KindDigest {
 		data.digest = digestValues(m.Vars.Digest, lang)
+	}
+	if m.Kind == KindRoutine && m.Vars.Routine != nil {
+		// The subject is a header: one line, whatever the routine wrote.
+		subject := strings.Join(strings.Fields(m.Vars.Routine.Subject), " ")
+		data.digest = map[string]string{"Routine": m.Vars.Routine.Name, "Subject": subject, "Text": m.Vars.Routine.Text}
 	}
 	subject, body, _ = strings.Cut(data.execute(t), "\n")
 	return strings.TrimSpace(subject), strings.TrimLeft(body, "\n"), nil

@@ -73,6 +73,11 @@ func (s *Server) respondMembers(w http.ResponseWriter, r *http.Request, status i
 	ctx := r.Context()
 	actor := userFrom(ctx).ID
 	s.sync.NotifyMembership(ch.Audience)
+	if s.rules != nil && ch.From != ch.To {
+		// A routine running as someone who no longer edits the project
+		// pauses now (routines-shared D9).
+		s.rules.CheckProject(ctx, r.PathValue("id"))
+	}
 	if ch.From != ch.To {
 		s.audit.Record(ctx, audit.RoleChanged(actor, targetID, projectRoleLabel(ch.From), projectRoleLabel(ch.To)))
 	}
@@ -285,6 +290,12 @@ func (s *Server) annotateProjects(ctx context.Context, entity string, list ...op
 	if err := s.annotateBody(ctx, entity, list...); err != nil {
 		return err
 	}
+	if entity == "rule" {
+		if u := userFrom(ctx); u != nil {
+			s.annotateRules(ctx, u.ID, list...)
+		}
+		return nil
+	}
 	if entity == "task" {
 		for _, e := range list {
 			foldFieldsInPlace(e)
@@ -295,6 +306,7 @@ func (s *Server) annotateProjects(ctx context.Context, entity string, list ...op
 			}
 			// And energy, null when none (task-energy D7).
 			presentEnergy(e)
+			presentSector(e)
 		}
 		return nil
 	}
@@ -359,6 +371,11 @@ func stripAnnotations(entity string, body map[string]json.RawMessage) {
 	if entity == "project" {
 		delete(body, "role")
 		delete(body, "owner_id")
+	}
+	if entity == "rule" {
+		delete(body, "paused_reason")
+		delete(body, "warnings")
+		delete(body, "ai_mode")
 	}
 }
 

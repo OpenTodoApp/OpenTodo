@@ -253,6 +253,8 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
     ...(listLayout ? [{ kind: 'check' as const, id: 'show-completed', label: t('Show completed tasks'), icon: 'circle-check-big' as const, checked: showCompleted, onSelect: () => saveShowCompleted(project.id, !showCompleted) }] : []),
     { kind: 'action', id: 'activity', label: t('Activity'), icon: 'history', shortcut: keysOf('project.activity'), onSelect: showActivity },
     { kind: 'action', id: 'history', label: t('History'), icon: 'rotate-ccw', onSelect: showHistory },
+    // The project's routines on the Routines page (routines-shared D12).
+    { kind: 'action', id: 'routines', label: t('Routines'), icon: 'zap', onSelect: () => navigate({ view: 'rules', project: project.id }) },
     // Display mode (display-mode D6): the project in large type, without the shell.
     { kind: 'action', id: 'display', label: t('Display mode'), icon: 'monitor', onSelect: () => navigate({ view: 'display', target: { kind: 'project', id: project.id }, options: { ...DEFAULT_DISPLAY_OPTIONS } }) },
   ] }

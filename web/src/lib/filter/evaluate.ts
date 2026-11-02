@@ -14,6 +14,7 @@ import { fieldValueText, FilterSyntaxError, parse, resolveRange, shiftISO, type 
 import { t } from '../i18n'
 import { dayPartOf } from '../dayParts'
 import { energyOf } from '../energy'
+import { isCarried, isSector, resolvePhrase } from '../sectors'
 
 export interface FilterContext {
   /** The viewer's local calendar date, YYYY-MM-DD. */
@@ -366,6 +367,11 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
       }
       case 'origin':
         return (task) => originMatches(originOf(task), n.value)
+      // A relative word is the viewer's period of that name, on this evaluation's day (time-sectors).
+      case 'sector': {
+        const want = resolvePhrase(n.value, today, weekStart) ?? n.value
+        return (task) => task.sector === want
+      }
       // A value this client does not know reads as none (task-energy D5).
       case 'energy': {
         const want = n.value
@@ -414,6 +420,9 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
           case 'no origin': return (task) => originOf(task) === null
           case 'energy': return (task) => energyOf(task) !== null
           case 'no energy': return (task) => energyOf(task) === null
+          case 'sector': return (task) => isSector(task.sector)
+          case 'no sector': return (task) => !isSector(task.sector)
+          case 'carried': return (task) => isCarried(task.sector ?? '', today, weekStart)
           // A note of only whitespace is no note (notes-overview D5).
           case 'notes': return (task) => (task.description ?? '').trim() !== ''
           case 'no notes': return (task) => (task.description ?? '').trim() === ''

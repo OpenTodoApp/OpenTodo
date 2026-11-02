@@ -9,6 +9,7 @@ import { createHash } from 'node:crypto'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseYaml, YAML_TEMPLATE } from './deploy/yaml.mjs'
+import { checkRoutineLibrary, ROUTINES_DIR } from './routine-templates.mjs'
 
 const here = fileURLToPath(import.meta.url)
 export const repoRoot = resolve(dirname(here), '..')
@@ -279,7 +280,8 @@ export function checkLibrary(root = repoRoot, opts = {}) {
   const languages = opts.languages ?? overlayLanguages(root)
   for (const name of readdirSync(dir).sort()) {
     const p = join(dir, name)
-    if (!statSync(p).isDirectory()) continue
+    // templates/routines/ holds the routine templates (routines-starters), checked by routine-templates.mjs.
+    if (!statSync(p).isDirectory() || name === ROUTINES_DIR) continue
     const tpl = readTemplate(p, { root, icons, sectionStyle, languages })
     problems.push(...tpl.problems)
     warnings.push(...tpl.warnings)
@@ -298,10 +300,13 @@ export function checkLibrary(root = repoRoot, opts = {}) {
 
 if (process.argv[1] === here) {
   const { templates, problems, warnings } = checkLibrary()
+  const routines = checkRoutineLibrary()
+  problems.push(...routines.problems)
+  warnings.push(...routines.warnings)
   for (const w of warnings) console.warn(`warning: ${w}`)
   if (problems.length) {
     console.error(`templates: ${problems.length} problem(s)\n${problems.map((p) => `  - ${p}`).join('\n')}`)
     process.exit(1)
   }
-  console.log(`templates: ${templates.length} valid template(s)${warnings.length ? `, ${warnings.length} warning(s)` : ''}`)
+  console.log(`templates: ${templates.length} valid template(s), ${routines.routines.length} valid routine template(s)${warnings.length ? `, ${warnings.length} warning(s)` : ''}`)
 }

@@ -17,11 +17,13 @@ import { AppearanceSection, SidebarSection, TaskDetailsSection } from './Appeara
 import { BackupsPanel } from './BackupsPanel'
 import { AddPositionSection, QuickAddSettingsSection } from './QuickAddSettings'
 import { DefaultRemindersSection } from './DefaultRemindersSettings'
+import { RoutineRunsSection } from './routines/RoutineRunsSection'
 import { VoiceSettingsSection } from './VoiceSettings'
 import { CalendarSettingsSection } from './CalendarSettings'
 import { PasswordSection } from './PasswordSection'
 import { AdministrationSections } from './UsersPanel'
 import { NotificationsSettings } from './NotificationsSettings'
+import { AppBadgeSection } from './AppBadge'
 import { NotificationChannelsCard } from './NotificationChannels'
 import { DigestCard } from './DigestCard'
 import { ActivityPanel } from './ActivityPanel'
@@ -90,11 +92,11 @@ const PAGES: Record<string, (p: PageProps) => ReactNode> = {
   'language/language': () => <LanguageSection />,
   'language/date-time': () => <DateTimeSection />,
   'language/calendar': () => <CalendarSettingsSection />,
-  'appearance/theme': () => <AppearanceSection />,
+  'appearance/theme': ({ user }) => <AppearanceSection author={user.name || user.email} />,
   'appearance/sidebar': () => <SidebarSection />,
   'appearance/task-details': () => <TaskDetailsSection />,
   // Default reminders touch no server feature, so they stay usable on the demo (default-reminders D8).
-  'notifications/push': ({ demo }) => <><DefaultRemindersSection /><DemoDisabled on={demo}><NotificationsSettings /></DemoDisabled></>,
+  'notifications/push': ({ demo }) => <><DefaultRemindersSection /><DemoDisabled on={demo}><NotificationsSettings /></DemoDisabled><AppBadgeSection /><RoutineRunsSection /></>,
   'notifications/channels': ({ user, demo }) => <DemoDisabled on={demo}><NotificationChannelsCard isOwner={user.role === 'owner'} /></DemoDisabled>,
   'notifications/digest': ({ demo }) => <DemoDisabled on={demo}><DigestCard /></DemoDisabled>,
   'capture/quick-add': () => <><QuickAddSettingsSection /><AddPositionSection /></>,

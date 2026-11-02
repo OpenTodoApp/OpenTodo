@@ -14,6 +14,8 @@ export interface BulkToast {
   ttl?: number
   /** A second control, such as "Open" for where a new task went (inbox-means-unplaced D5). */
   action?: { label: string; run: () => void }
+  /** A second control (a routine run's Undo on the server, routines-engine); it keeps the toast for its result. */
+  second?: { label: string; run: () => void }
 }
 
 const store = createStore<BulkToast | null>('bulkToast', null)
@@ -21,8 +23,8 @@ let seq = 0
 resettable('bulkToastSeq', () => { seq = 0 })
 
 /** Show (or replace) the toast for a bulk action. */
-export function showBulkToast(label: string, undoId: string | null, opts: { ttl?: number; action?: BulkToast['action'] } = {}): void {
-  store.set({ key: ++seq, label, undoId, ...(opts.ttl ? { ttl: opts.ttl } : {}), ...(opts.action ? { action: opts.action } : {}) })
+export function showBulkToast(label: string, undoId: string | null, opts: { ttl?: number; action?: BulkToast['action']; second?: BulkToast['second'] } = {}): void {
+  store.set({ key: ++seq, label, undoId, ...(opts.ttl ? { ttl: opts.ttl } : {}), ...(opts.action ? { action: opts.action } : {}), ...(opts.second ? { second: opts.second } : {}) })
 }
 
 /** Five seconds: the offer after one task's own action (task-list-presentation "Completion feedback"). */

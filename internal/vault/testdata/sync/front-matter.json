@@ -1,0 +1,665 @@
+{
+  "name": "front-matter",
+  "description": "colour, icon, flow and status in the front matter merge per key; unknown values stay as written; foreign keys are kept",
+  "loc": "UTC",
+  "user": "user-1",
+  "steps": [
+    {
+      "name": "init",
+      "now": 1793610060000,
+      "init": true,
+      "server": [
+        {
+          "id": "app-p-home-archived-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "archived",
+          "value": false,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-color-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "color",
+          "value": "#22c55e",
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-created_at-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "created_at",
+          "value": 1793602800000,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-deleted_at-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-name-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "name",
+          "value": "Home",
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-parent_id-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "parent_id",
+          "value": null,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-position-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "position",
+          "value": 1000,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-work-archived-1793606400002",
+          "entity": "project",
+          "entityId": "p-work",
+          "field": "archived",
+          "value": false,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-p-work-color-1793606400002",
+          "entity": "project",
+          "entityId": "p-work",
+          "field": "color",
+          "value": "#22c55e",
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-p-work-created_at-1793606400002",
+          "entity": "project",
+          "entityId": "p-work",
+          "field": "created_at",
+          "value": 1793602800000,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-p-work-deleted_at-1793606400002",
+          "entity": "project",
+          "entityId": "p-work",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-p-work-flow_mode-1793606400002",
+          "entity": "project",
+          "entityId": "p-work",
+          "field": "flow_mode",
+          "value": "sequential",
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-p-work-name-1793606400002",
+          "entity": "project",
+          "entityId": "p-work",
+          "field": "name",
+          "value": "Work",
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-p-work-parent_id-1793606400002",
+          "entity": "project",
+          "entityId": "p-work",
+          "field": "parent_id",
+          "value": null,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-p-work-position-1793606400002",
+          "entity": "project",
+          "entityId": "p-work",
+          "field": "position",
+          "value": 2000,
+          "ts": 1793606400002,
+          "device": "app"
+        }
+      ],
+      "device": "vault:vectors",
+      "want": {
+        "pushed": [],
+        "files": {
+          "Home.md": "---\nopentodo-id: p-home\nopentodo-color: \"#22c55e\"\n---\n",
+          "Inbox.md": "",
+          "Work.md": "---\nopentodo-id: p-work\nopentodo-color: \"#22c55e\"\nopentodo-flow: sequential\n---\n"
+        },
+        "report": {
+          "written": 3,
+          "created": 0,
+          "updated": 0,
+          "trashed": 0,
+          "conflicts": 0,
+          "warnings": [],
+          "cursor": 15,
+          "events": [
+            {
+              "kind": "written",
+              "file": "Inbox.md",
+              "text": "wrote Inbox.md"
+            },
+            {
+              "kind": "written",
+              "file": "Home.md",
+              "text": "wrote Home.md"
+            },
+            {
+              "kind": "written",
+              "file": "Work.md",
+              "text": "wrote Work.md"
+            }
+          ],
+          "projects": 2,
+          "tasks": 0
+        },
+        "state": {
+          "version": 2,
+          "device": "vault:vectors",
+          "profile": "default",
+          "server": "https://todo.example.com",
+          "cursor": 15,
+          "clock": 1793606400002,
+          "offset": 0,
+          "store": {
+            "project": {
+              "p-home": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Home",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400001,
+                  "d": "app"
+                }
+              },
+              "p-work": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "flow_mode": {
+                  "v": "sequential",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Work",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793606400002,
+                  "d": "app"
+                }
+              }
+            }
+          },
+          "files": {
+            "Home.md": {
+              "project": "p-home",
+              "hash": "1087a64bb47ccca8aa8979cb9e2faeaa3ab17c00581e3d32b50ea100bfb3e60a"
+            },
+            "Inbox.md": {
+              "project": "",
+              "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "Work.md": {
+              "project": "p-work",
+              "hash": "eb1c2f1b3f7183406fec7a4a7856c686be35ff87a9c473871daf7854ca21eced"
+            }
+          },
+          "printed": {},
+          "initialized": true
+        }
+      }
+    },
+    {
+      "name": "edited",
+      "now": 1793610120000,
+      "files": {
+        "Home.md": "---\nopentodo-id: p-home\nopentodo-color: \"#ef4444\"\nopentodo-icon: house\nopentodo-flow: area\nopentodo-status: maintenance\naliases: [flat]\n---\n",
+        "Work.md": "---\nopentodo-id: p-work\nopentodo-color: \"#22c55e\"\nopentodo-flow: waterfall\nopentodo-color: red\n---\n"
+      },
+      "want": {
+        "pushed": [
+          {
+            "id": "v-2544481615906f1d761e651f391bb46c0cef7fb0",
+            "entity": "project",
+            "entityId": "p-home",
+            "field": "color",
+            "value": "#ef4444",
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-2ff909c502a821b647d27128643f03b7f14682b1",
+            "entity": "project",
+            "entityId": "p-home",
+            "field": "flow_mode",
+            "value": "area",
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-5c3b0f03f3f0625a9afe41ce45d073355de1639c",
+            "entity": "project",
+            "entityId": "p-home",
+            "field": "icon",
+            "value": "house",
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-a4c2b98ca5aff18c239e89089a4c1630bc94c4c9",
+            "entity": "project",
+            "entityId": "p-home",
+            "field": "status",
+            "value": "maintenance",
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          }
+        ],
+        "files": {
+          "Home.md": "---\nopentodo-id: p-home\nopentodo-color: \"#ef4444\"\nopentodo-icon: house\nopentodo-flow: area\nopentodo-status: maintenance\naliases: [flat]\n---\n",
+          "Inbox.md": "",
+          "Work.md": "---\nopentodo-id: p-work\nopentodo-color: \"#22c55e\"\nopentodo-flow: waterfall\n---\n"
+        },
+        "report": {
+          "written": 1,
+          "created": 0,
+          "updated": 0,
+          "trashed": 0,
+          "conflicts": 0,
+          "warnings": [
+            "Work.md: opentodo-color \"red\" is not a colour like #22c55e",
+            "Work.md: opentodo-flow \"waterfall\" is not a flow (sequential or area); it is left as it is"
+          ],
+          "cursor": 19,
+          "events": [
+            {
+              "kind": "written",
+              "file": "Work.md",
+              "text": "wrote Work.md"
+            }
+          ],
+          "projects": 2,
+          "tasks": 0
+        },
+        "state": {
+          "version": 2,
+          "device": "vault:vectors",
+          "profile": "default",
+          "server": "https://todo.example.com",
+          "cursor": 19,
+          "clock": 1793610120000,
+          "offset": 0,
+          "store": {
+            "project": {
+              "p-home": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#ef4444",
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "flow_mode": {
+                  "v": "area",
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "icon": {
+                  "v": "house",
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "name": {
+                  "v": "Home",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "status": {
+                  "v": "maintenance",
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                }
+              },
+              "p-work": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "flow_mode": {
+                  "v": "sequential",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Work",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793606400002,
+                  "d": "app"
+                }
+              }
+            }
+          },
+          "files": {
+            "Home.md": {
+              "project": "p-home",
+              "hash": "7a4cca9315a7bacab146feb3cae6239c4636646ba419847767e206fe4f733388"
+            },
+            "Inbox.md": {
+              "project": "",
+              "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "Work.md": {
+              "project": "p-work",
+              "hash": "f39043e4c91d09e23f9b0a5c8ab400de26862b84de04c29c7896d770e715de00"
+            }
+          },
+          "printed": {},
+          "initialized": true
+        }
+      }
+    },
+    {
+      "name": "app changes",
+      "now": 1793610180000,
+      "server": [
+        {
+          "id": "app-p-home-icon-1793610130001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "icon",
+          "value": null,
+          "ts": 1793610130001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-status-1793610130001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "status",
+          "value": "active",
+          "ts": 1793610130001,
+          "device": "app"
+        }
+      ],
+      "want": {
+        "pushed": [],
+        "files": {
+          "Home.md": "---\nopentodo-id: p-home\nopentodo-color: \"#ef4444\"\nopentodo-flow: area\naliases: [flat]\n---\n",
+          "Inbox.md": "",
+          "Work.md": "---\nopentodo-id: p-work\nopentodo-color: \"#22c55e\"\nopentodo-flow: waterfall\n---\n"
+        },
+        "report": {
+          "written": 1,
+          "created": 0,
+          "updated": 0,
+          "trashed": 0,
+          "conflicts": 0,
+          "warnings": [],
+          "cursor": 21,
+          "events": [
+            {
+              "kind": "written",
+              "file": "Home.md",
+              "text": "wrote Home.md"
+            }
+          ],
+          "projects": 2,
+          "tasks": 0
+        },
+        "state": {
+          "version": 2,
+          "device": "vault:vectors",
+          "profile": "default",
+          "server": "https://todo.example.com",
+          "cursor": 21,
+          "clock": 1793610130001,
+          "offset": 0,
+          "store": {
+            "project": {
+              "p-home": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#ef4444",
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "flow_mode": {
+                  "v": "area",
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "icon": {
+                  "v": null,
+                  "t": 1793610130001,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Home",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "status": {
+                  "v": "active",
+                  "t": 1793610130001,
+                  "d": "app"
+                }
+              },
+              "p-work": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "flow_mode": {
+                  "v": "sequential",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Work",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793606400002,
+                  "d": "app"
+                }
+              }
+            }
+          },
+          "files": {
+            "Home.md": {
+              "project": "p-home",
+              "hash": "ed39e373ede3e34b6009a867269149b60889ba9d31e661d02c3ef7e5c1242244"
+            },
+            "Inbox.md": {
+              "project": "",
+              "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "Work.md": {
+              "project": "p-work",
+              "hash": "f39043e4c91d09e23f9b0a5c8ab400de26862b84de04c29c7896d770e715de00"
+            }
+          },
+          "printed": {},
+          "initialized": true
+        }
+      }
+    }
+  ]
+}

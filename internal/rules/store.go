@@ -5,13 +5,17 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"strings"
 	"time"
+
+	"github.com/OpenTodoApp/opentodo/internal/ids"
 )
 
-// Run log bounds (spec "Run log").
+// Run log bounds (spec "Run log"): failed runs are kept longer (routines-engine D10).
 const (
-	KeepRuns    = 100
-	KeepRunsFor = 30 * 24 * time.Hour
+	KeepRuns          = 100
+	KeepRunsFor       = 30 * 24 * time.Hour
+	KeepFailedRunsFor = 90 * 24 * time.Hour
 )
 
 // Run outcomes (spec "Run log").
@@ -23,7 +27,32 @@ const (
 	OutcomeStopped        = "stopped"
 	OutcomeFailed         = "failed"
 	OutcomePartial        = "partial"
+	// OutcomeEnded is a routine stopped by its Stop step (routines-engine D4).
+	OutcomeEnded = "ended"
 )
+
+// Run sources (routines-engine D7).
+const (
+	SourceEvent    = "event"
+	SourceSchedule = "schedule"
+	SourceDue      = "due"
+	SourceManual   = "manual"
+	SourceMCP      = "mcp"
+	SourceTest     = "test"
+)
+
+// sourceOf is the source a run key implies (event, schedule or due).
+func sourceOf(key string) string {
+	switch {
+	case strings.HasPrefix(key, "sched:"):
+		return SourceSchedule
+	case strings.HasPrefix(key, "due:"), strings.HasPrefix(key, "overdue:"):
+		return SourceDue
+	case strings.HasPrefix(key, "manual:"):
+		return SourceManual
+	}
+	return SourceEvent
+}
 
 // PausedRunaway is the server's pause of a rule that ran too often (design D8).
 const PausedRunaway = "runaway"
@@ -43,11 +72,15 @@ type Event struct {
 	Occurrence string
 	Depth      int
 	CreatedAt  int64
+	// ForProject marks an event for one shared project's routines only
+	// (routines-shared D3): UserID is then their run-as person.
+	ForProject string
 }
 
-// Run is one row of a rule's run log.
+// Run is one row of a rule's run log (ids, counts and codes, never content).
 type Run struct {
 	ID            int64           `json:"id"`
+	RunID         string          `json:"run_id"`
 	RuleID        string          `json:"rule_id"`
 	OccurrenceKey string          `json:"occurrence"`
 	TaskID        string          `json:"task_id,omitempty"`
@@ -56,6 +89,26 @@ type Run struct {
 	Reason        string          `json:"reason,omitempty"`
 	Changes       json.RawMessage `json:"changes"`
 	Depth         int             `json:"depth"`
+	Source        string          `json:"source"`
+	RunAs         string          `json:"run_as"`
+	Test          bool            `json:"test"`
+	StepsCount    int             `json:"steps_count"`
+	Writes        int             `json:"writes"`
+	DurationMs    int64           `json:"duration_ms"`
+	UndoneAt      *int64          `json:"undone_at"`
+	FailedStep    int             `json:"failed_step"`
+	// Tokens are the run's AI tokens; AIAuto marks an AI result applied
+	// without asking; Proposal is the run's proposal (routines-ai-step).
+	Tokens   int64     `json:"tokens"`
+	AIAuto   bool      `json:"ai_auto"`
+	Proposal *Proposal `json:"proposal,omitempty"`
+	// DeviceID is the device a run of an encrypted account was sent to (D7).
+	DeviceID string `json:"device_id,omitempty"`
+	// Steps are the run's step records (one run's answer only).
+	Steps []StepRecord `json:"steps,omitempty"`
+	// ProjectID is a shared routine's project: every member sees the run
+	// (routines-shared D7).
+	ProjectID string `json:"project_id,omitempty"`
 }
 
 // State is a rule's server state: its watermark for time triggers, the
@@ -64,6 +117,12 @@ type State struct {
 	Watermark    int64
 	PausedReason string
 	Refusals     []int64
+	// RunAs is a shared routine's run-as person, the author of the winning
+	// enabled: true (routines-shared D4), since RunAsSince; PausedBy names
+	// the member whose edit paused it (D5).
+	RunAs      string
+	RunAsSince int64
+	PausedBy   string
 }
 
 // Store is the engine's tables (migration 0043_rules_engine.sql).
@@ -93,8 +152,8 @@ func (s *Store) Enqueue(ctx context.Context, events []Event) error {
 		if e.Depth < 1 {
 			e.Depth = 1
 		}
-		if _, err := tx.ExecContext(ctx, `INSERT INTO rule_events (user_id, rule_id, task_id, kind, label_id, project_id, section_id, origin, occurrence, depth, created_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, e.UserID, e.RuleID, e.TaskID, e.Kind, e.LabelID, e.ProjectID, e.SectionID, e.Origin, e.Occurrence, e.Depth, now); err != nil {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO rule_events (user_id, rule_id, task_id, kind, label_id, project_id, section_id, origin, occurrence, depth, created_at, for_project)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, e.UserID, e.RuleID, e.TaskID, e.Kind, e.LabelID, e.ProjectID, e.SectionID, e.Origin, e.Occurrence, e.Depth, now, e.ForProject); err != nil {
 			return err
 		}
 	}
@@ -104,7 +163,7 @@ func (s *Store) Enqueue(ctx context.Context, events []Event) error {
 // Take returns up to limit queued events, oldest first (so one user's events
 // keep the order of their batches).
 func (s *Store) Take(ctx context.Context, limit int) ([]Event, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT id, user_id, rule_id, task_id, kind, label_id, project_id, section_id, origin, occurrence, depth, created_at
+	rows, err := s.db.QueryContext(ctx, `SELECT id, user_id, rule_id, task_id, kind, label_id, project_id, section_id, origin, occurrence, depth, created_at, for_project
 		FROM rule_events ORDER BY id LIMIT ?`, limit)
 	if err != nil {
 		return nil, err
@@ -113,7 +172,7 @@ func (s *Store) Take(ctx context.Context, limit int) ([]Event, error) {
 	var out []Event
 	for rows.Next() {
 		var e Event
-		if err := rows.Scan(&e.ID, &e.UserID, &e.RuleID, &e.TaskID, &e.Kind, &e.LabelID, &e.ProjectID, &e.SectionID, &e.Origin, &e.Occurrence, &e.Depth, &e.CreatedAt); err != nil {
+		if err := rows.Scan(&e.ID, &e.UserID, &e.RuleID, &e.TaskID, &e.Kind, &e.LabelID, &e.ProjectID, &e.SectionID, &e.Origin, &e.Occurrence, &e.Depth, &e.CreatedAt, &e.ForProject); err != nil {
 			return nil, err
 		}
 		out = append(out, e)
@@ -141,8 +200,18 @@ func (s *Store) Claim(ctx context.Context, userID string, r Run) (int64, bool, e
 	if r.Depth < 1 {
 		r.Depth = 1
 	}
-	res, err := s.db.ExecContext(ctx, `INSERT OR IGNORE INTO rule_runs (rule_id, user_id, occurrence_key, task_id, at, outcome, reason, changes_json, depth)
-		VALUES (?, ?, ?, ?, ?, ?, '', '[]', ?)`, r.RuleID, userID, r.OccurrenceKey, r.TaskID, s.now().UnixMilli(), OutcomePending, r.Depth)
+	if r.RunID == "" {
+		r.RunID = ids.New()
+	}
+	if r.Source == "" {
+		r.Source = sourceOf(r.OccurrenceKey)
+	}
+	if r.RunAs == "" {
+		r.RunAs = userID
+	}
+	res, err := s.db.ExecContext(ctx, `INSERT OR IGNORE INTO rule_runs (rule_id, user_id, occurrence_key, task_id, at, outcome, reason, changes_json, depth, run_id, source, run_as, test, project_id)
+		VALUES (?, ?, ?, ?, ?, ?, '', '[]', ?, ?, ?, ?, ?, ?)`, r.RuleID, userID, r.OccurrenceKey, r.TaskID, s.now().UnixMilli(), OutcomePending, r.Depth,
+		r.RunID, r.Source, r.RunAs, r.Test, r.ProjectID)
 	if err != nil {
 		return 0, false, err
 	}
@@ -184,25 +253,36 @@ func (s *Store) Record(ctx context.Context, userID string, r Run) error {
 	return s.Finish(ctx, id, r.Outcome, r.Reason, nil)
 }
 
-// Runs lists a rule's runs, newest first.
-func (s *Store) Runs(ctx context.Context, ruleID string, limit int) ([]Run, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT id, rule_id, occurrence_key, task_id, at, outcome, reason, changes_json, depth
-		FROM rule_runs WHERE rule_id = ? ORDER BY at DESC, id DESC LIMIT ?`, ruleID, limit)
-	if err != nil {
-		return nil, err
-	}
+// runColumns are the columns scanRuns reads.
+const runColumns = `id, rule_id, occurrence_key, task_id, at, outcome, reason, changes_json, depth, run_id, source, run_as, test, steps_count, writes, duration_ms, undone_at, failed_step, tokens, ai_auto, device_id, project_id`
+
+func scanRuns(rows *sql.Rows) ([]Run, error) {
 	defer rows.Close()
 	out := []Run{}
 	for rows.Next() {
 		var r Run
 		var changes string
-		if err := rows.Scan(&r.ID, &r.RuleID, &r.OccurrenceKey, &r.TaskID, &r.At, &r.Outcome, &r.Reason, &changes, &r.Depth); err != nil {
+		var undone sql.NullInt64
+		if err := rows.Scan(&r.ID, &r.RuleID, &r.OccurrenceKey, &r.TaskID, &r.At, &r.Outcome, &r.Reason, &changes, &r.Depth,
+			&r.RunID, &r.Source, &r.RunAs, &r.Test, &r.StepsCount, &r.Writes, &r.DurationMs, &undone, &r.FailedStep, &r.Tokens, &r.AIAuto, &r.DeviceID, &r.ProjectID); err != nil {
 			return nil, err
 		}
 		r.Changes = json.RawMessage(changes)
+		if undone.Valid {
+			r.UndoneAt = &undone.Int64
+		}
 		out = append(out, r)
 	}
 	return out, rows.Err()
+}
+
+// Runs lists a rule's runs, newest first.
+func (s *Store) Runs(ctx context.Context, ruleID string, limit int) ([]Run, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT `+runColumns+` FROM rule_runs WHERE rule_id = ? ORDER BY at DESC, id DESC LIMIT ?`, ruleID, limit)
+	if err != nil {
+		return nil, err
+	}
+	return scanRuns(rows)
 }
 
 // Summary is a rule's last run time and its run count for the last 7 days.
@@ -211,11 +291,12 @@ type Summary struct {
 	Week    int   `json:"runs_7d"`
 }
 
-// Summaries returns the run summary of every rule of a user that has runs.
+// Summaries returns the run summary of every rule a user sees that has runs
+// (their own, and their projects' shared routines).
 func (s *Store) Summaries(ctx context.Context, userID string) (map[string]Summary, error) {
 	since := s.now().Add(-7 * 24 * time.Hour).UnixMilli()
 	rows, err := s.db.QueryContext(ctx, `SELECT rule_id, MAX(at), SUM(CASE WHEN at >= ? AND outcome IN ('applied', 'partial') THEN 1 ELSE 0 END)
-		FROM rule_runs WHERE user_id = ? AND outcome != 'pending' GROUP BY rule_id`, since, userID)
+		FROM rule_runs WHERE `+visibleRuns+` AND outcome != 'pending' GROUP BY rule_id`, since, userID, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -236,7 +317,8 @@ func (s *Store) Summaries(ctx context.Context, userID string) (map[string]Summar
 func (s *Store) State(ctx context.Context, ruleID string) (State, bool, error) {
 	var st State
 	var refusals string
-	err := s.db.QueryRowContext(ctx, `SELECT watermark_ms, paused_reason, refusals FROM rule_state WHERE rule_id = ?`, ruleID).Scan(&st.Watermark, &st.PausedReason, &refusals)
+	err := s.db.QueryRowContext(ctx, `SELECT watermark_ms, paused_reason, refusals, run_as, run_as_since, paused_by FROM rule_state WHERE rule_id = ?`, ruleID).Scan(
+		&st.Watermark, &st.PausedReason, &refusals, &st.RunAs, &st.RunAsSince, &st.PausedBy)
 	if errors.Is(err, sql.ErrNoRows) {
 		return State{}, false, nil
 	}
@@ -253,15 +335,19 @@ func (s *Store) SaveState(ctx context.Context, ruleID, userID string, st State) 
 		st.Refusals = []int64{}
 	}
 	b, _ := json.Marshal(st.Refusals)
-	_, err := s.db.ExecContext(ctx, `INSERT INTO rule_state (rule_id, user_id, watermark_ms, paused_reason, refusals) VALUES (?, ?, ?, ?, ?)
-		ON CONFLICT(rule_id) DO UPDATE SET watermark_ms = excluded.watermark_ms, paused_reason = excluded.paused_reason, refusals = excluded.refusals`,
-		ruleID, userID, st.Watermark, st.PausedReason, string(b))
+	_, err := s.db.ExecContext(ctx, `INSERT INTO rule_state (rule_id, user_id, watermark_ms, paused_reason, refusals, run_as, run_as_since, paused_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(rule_id) DO UPDATE SET watermark_ms = excluded.watermark_ms, paused_reason = excluded.paused_reason, refusals = excluded.refusals,
+		run_as = excluded.run_as, run_as_since = excluded.run_as_since, paused_by = excluded.paused_by`,
+		ruleID, userID, st.Watermark, st.PausedReason, string(b), st.RunAs, st.RunAsSince, st.PausedBy)
 	return err
 }
 
-// Paused lists the server-paused rules of a user with their reasons.
+// Paused lists the server-paused rules a user sees with their reasons: their
+// own, and the shared routines of their projects (routines-shared).
 func (s *Store) Paused(ctx context.Context, userID string) (map[string]string, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT rule_id, paused_reason FROM rule_state WHERE user_id = ? AND paused_reason != ''`, userID)
+	rows, err := s.db.QueryContext(ctx, `SELECT rule_id, paused_reason FROM rule_state WHERE paused_reason != '' AND (user_id = ? OR rule_id IN (
+		SELECT f.entity_id FROM scope_fields f JOIN project_members m ON f.scope_id = 'project:' || m.project_id
+		WHERE m.user_id = ? AND f.entity = 'rule' AND f.field = 'enabled'))`, userID, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -294,13 +380,35 @@ func (s *Store) SetUserPaused(ctx context.Context, userID string, paused bool) e
 	return err
 }
 
-// Prune keeps each rule's newest KeepRuns runs younger than KeepRunsFor.
+// Prune keeps each rule's newest KeepRuns runs younger than KeepRunsFor. A
+// failed run stays until the user's seen marker passed it and then
+// KeepSeenFailedFor more, and at most KeepFailedRunsFor (routines-editor D12);
+// step records go with their run.
 func (s *Store) Prune(ctx context.Context) (int64, error) {
+	if err := s.markSeenFailures(ctx); err != nil {
+		return 0, err
+	}
+	if err := s.expireProposals(ctx); err != nil {
+		return 0, err
+	}
 	cutoff := s.now().Add(-KeepRunsFor).UnixMilli()
-	res, err := s.db.ExecContext(ctx, `DELETE FROM rule_runs WHERE outcome != 'pending' AND (at < ? OR id IN (
-		SELECT id FROM (SELECT id, ROW_NUMBER() OVER (PARTITION BY rule_id ORDER BY at DESC, id DESC) AS n FROM rule_runs) WHERE n > ?))`, cutoff, KeepRuns)
+	failedCutoff := s.now().Add(-KeepFailedRunsFor).UnixMilli()
+	seenCutoff := s.now().Add(-KeepSeenFailedFor).UnixMilli()
+	res, err := s.db.ExecContext(ctx, `DELETE FROM rule_runs WHERE outcome != 'pending' AND (
+		(outcome NOT IN (`+inboxFailed+`) AND at < ?) OR at < ?
+		OR (outcome IN (`+inboxFailed+`) AND seen_at IS NOT NULL AND seen_at < ? AND at < ?)
+		OR id IN (
+		SELECT id FROM (SELECT id, outcome, ROW_NUMBER() OVER (PARTITION BY rule_id ORDER BY at DESC, id DESC) AS n FROM rule_runs) WHERE n > ? AND outcome NOT IN (`+inboxFailed+`)))`,
+		cutoff, failedCutoff, seenCutoff, cutoff, KeepRuns)
 	if err != nil {
 		return 0, err
 	}
-	return res.RowsAffected()
+	n, err := res.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	if _, err := s.db.ExecContext(ctx, `DELETE FROM rule_step_runs WHERE run_id NOT IN (SELECT run_id FROM rule_runs)`); err != nil {
+		return n, err
+	}
+	return n, nil
 }

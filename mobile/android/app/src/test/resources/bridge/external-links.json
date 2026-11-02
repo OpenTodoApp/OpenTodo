@@ -1,0 +1,43 @@
+{
+  "description": "Obsidian note links (obsidian-origin): what the web app hands openExternal for a note origin, and the links the shell must hand to the system (accepted) or refuse (refused) when it lists obsidian-links. Other schemes keep the http(s), mailto and tel rule.",
+  "handed": [
+    "obsidian://open?vault=Notes&file=Daily%2F2026-10-29"
+  ],
+  "accepted": [
+    "obsidian://open?vault=Notes&file=Inbox",
+    "obsidian://open?vault=Notes&file=Daily%2F2026-10-29",
+    "obsidian://open?vault=Work%20notes&file=Meetings%2FKick-off",
+    "obsidian://open?vault=R%26D%20%232%20%D0%97%D0%B0%D0%BC%D0%B5%D1%82%D0%BA%D0%B8&file=%D0%98%D0%B4%D0%B5%D0%B8%2F%D0%9F%D0%BB%D0%B0%D0%BD",
+    "obsidian://open?vault=Notes&file=Projects%2FPlan.md",
+    "obsidian://open?vault=Notes&file=Boards%2FRoadmap.canvas",
+    "obsidian://open?vault=Notes&file=Private%2Fdiary",
+    "obsidian://open?vault=Notes&file=a"
+  ],
+  "refused": [
+    "obsidian://new?vault=Notes&name=x",
+    "obsidian://search?vault=Notes&query=x",
+    "obsidian://adv-uri?vault=Notes&filepath=a.md",
+    "obsidian://open?path=%2FUsers%2Fme%2FNotes%2Fa.md",
+    "obsidian://open?vault=Notes&path=%2FUsers%2Fme%2Fa.md",
+    "obsidian://open?vault=Notes&file=a&content=x",
+    "obsidian://open?vault=Notes&vault=Other",
+    "obsidian://open?vault=Notes&file=a#h",
+    "obsidian://me@open?vault=Notes&file=a",
+    "OBSIDIAN://open?vault=Notes&file=a",
+    "obsidian://open/x?vault=Notes&file=a",
+    "obsidian://open?vault=&file=a",
+    "obsidian://open?vault=Notes&file=",
+    "obsidian://open?vault=Notes&file=%2Fa",
+    "obsidian://open?vault=My Notes&file=a",
+    "obsidian://open?vault=My+Notes&file=a",
+    "obsidian://open?vault=Notes%2&file=a",
+    "obsidian://open?vault=Notes&file=a%0Ab",
+    "obsidian://open?vault=vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv&file=a",
+    "obsidian://open?vault=Notes&file=fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "obsidian://open?vault=Notes&file=%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF%D0%AF",
+    "https://example.com/a",
+    "javascript:alert(1)",
+    "file:///etc/passwd",
+    "obsidian://open?vault=Notes&file=a&vault=Other"
+  ]
+}

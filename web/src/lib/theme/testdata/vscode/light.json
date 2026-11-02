@@ -1,0 +1,16 @@
+{
+  "name": "Paper Morning",
+  "type": "light",
+  "colors": {
+    "editor.background": "#fbfaf7",
+    "editor.foreground": "#2b2b2b",
+    "sideBar.background": "#f1efe9",
+    "button.background": "#2f6f4f",
+    "button.foreground": "#ffffff",
+    "list.inactiveSelectionBackground": "#e6e3da",
+    "list.hoverBackground": "#00000010",
+    "editorError.foreground": "#b3261e",
+    "terminal.ansiRed": "#c0392b",
+    "terminal.ansiBlue": "#2563eb"
+  }
+}

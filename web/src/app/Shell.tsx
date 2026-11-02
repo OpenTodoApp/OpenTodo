@@ -66,7 +66,11 @@ const YearView = lazy(() => import('./YearView'))
 const TriageView = lazy(() => import('./TriageView').then((m) => ({ default: m.TriageView })))
 // In-app Help (user-documentation): the view, the panel and the guide text are
 // chunks of their own, fetched when Help first opens (and precached for offline).
-const RulesView = lazy(() => import('./rules/RulesView').then((m) => ({ default: m.RulesView })))
+// Routines (routines-editor): the page, the editor and the runs are one chunk.
+const ThemeEditorPage = lazy(() => import('./themes/ThemeEditor').then((m) => ({ default: m.ThemeEditorPage })))
+const RoutinesView = lazy(() => import('./routines/RoutinesView').then((m) => ({ default: m.RoutinesView })))
+// The routine editor page (routines-editor-page D1): /routines/new and /routines/<id>.
+const RoutinePage = lazy(() => import('./routines/RoutinePage').then((m) => ({ default: m.RoutinePage })))
 const HelpView = lazy(() => import('./help/HelpBundle').then((m) => ({ default: m.HelpView })))
 const HelpPanel = lazy(() => import('./help/HelpBundle').then((m) => ({ default: m.HelpPanel })))
 // In-app assistant (in-app-assistant D9): its own chunk, fetched on first open;
@@ -177,7 +181,9 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const addButton = useRef<HTMLButtonElement>(null)
   const sheetOpen = useOverlayDepth() > 0
   const panelOpen = !!usePanel()
-  const phoneChrome = !sheetOpen && !panelOpen && !['share', 'invite', 'project-invite', 'workspace-invite', 'reset', 'task'].includes(route.view)
+  // The routine editor page keeps its own action bar at the bottom (routines-editor-page D2).
+  const routinePage = route.view === 'rules' && !!(route.id || route.create)
+  const phoneChrome = !sheetOpen && !panelOpen && !routinePage && !['share', 'invite', 'project-invite', 'workspace-invite', 'reset', 'task'].includes(route.view)
   // The one keydown listener (keyboard-shortcuts "One shortcut registry with
   // scopes"); the shell owns the `global` scope: the palette, `g` navigation, the
   // cheat sheet, the sidebar toggle and the assistant.
@@ -263,14 +269,14 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading help…')}</p>}><HelpView page={route.page} q={route.q} /></Suspense>
           ) : route.view === 'settings' ? (
             <SettingsView user={user} onLogout={onLogout} section={route.section} page={route.page} anchor={route.anchor} />
-          ) : route.view === 'import' ? (
+          ) : route.view === 'theme-editor' ? <Suspense fallback={null}><ThemeEditorPage id={route.id} /></Suspense> : route.view === 'import' ? (
             <ImportScreen />
           ) : route.view === 'labels' ? (
             <LabelsView route={route} />
           ) : route.view === 'places' ? (
             <PlacesView />
           ) : route.view === 'rules' ? (
-            <Suspense fallback={null}><RulesView create={route.create} /></Suspense>
+            <Suspense fallback={null}>{route.id || route.create ? <RoutinePage route={route} /> : <RoutinesView route={route} />}</Suspense>
           ) : route.view === 'projects' ? (
             <ProjectsView archived={route.archived} />
           ) : route.view === 'filter' ? (

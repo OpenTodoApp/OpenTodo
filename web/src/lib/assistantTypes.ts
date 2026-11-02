@@ -10,6 +10,8 @@ export interface ProviderView {
   key_set: boolean
   label: string
   base_url?: string
+  /** The compatible endpoint reads images (voice-ramble D5). */
+  images?: boolean
 }
 
 /** The owner's view of GET/PUT /api/v1/settings/assistant: presence flags, never keys. */
@@ -53,7 +55,7 @@ export interface AssistantMemberSettings {
 
 export interface AssistantSettingsInput {
   enabled?: boolean
-  providers?: Partial<Record<ProviderName, { enabled: boolean; model: string; base_url?: string }>>
+  providers?: Partial<Record<ProviderName, { enabled: boolean; model: string; base_url?: string; images?: boolean }>>
   default_provider?: ProviderName
   allow_member_keys?: boolean
   monthly_token_cap_per_user?: number
@@ -71,6 +73,8 @@ export interface AssistantTestDraft {
   /** Absent: the saved key; "": no key; otherwise used for this test only. */
   key?: string
   allow_private_endpoint?: boolean
+  /** The compatible endpoint's "This model reads images". */
+  images?: boolean
 }
 
 /** A member's on-screen provider, model and key sent with "Test connection". */
@@ -99,6 +103,10 @@ export interface AssistantUsage {
   counted_tokens?: number
   cap_member_keys?: boolean
   own_key?: { input_tokens: number; output_tokens: number; total_tokens: number; turns: number }
+  /** routines-ai-step: the month's routine AI calls (already in the totals). */
+  routines?: { input_tokens: number; output_tokens: number; total_tokens: number; calls: number }
+  /** routines-describe-it: the month's routine drafts of Describe it (already in the totals). */
+  drafts?: { input_tokens: number; output_tokens: number; total_tokens: number; calls: number }
 }
 
 /** PUT /api/v1/me/assistant. */
@@ -110,6 +118,8 @@ export interface MyAssistantInput {
   /** Your own provider (anthropic, openai, gemini); "" goes back to the server's assistant. */
   own_provider?: string
   own_model?: string
+  /** routines-ai-step D10: with consent: true, accept (or withdraw) the terms for routines' AI steps. */
+  routines?: boolean
 }
 
 /** Providers a member may choose for their own key. */

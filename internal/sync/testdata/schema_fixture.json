@@ -132,12 +132,16 @@
     ],
     "rule": [
       "actions",
+      "ai_apply",
+      "ai_budget",
       "condition",
       "created_at",
       "deleted_at",
       "enabled",
       "name",
       "position",
+      "project_id",
+      "steps",
       "trigger"
     ],
     "section": [
@@ -189,6 +193,7 @@
       "recurrence",
       "sample",
       "section_id",
+      "sector",
       "series_id",
       "skipped",
       "span",
@@ -196,6 +201,12 @@
       "start",
       "title",
       "workspace_id"
+    ],
+    "theme": [
+      "created_at",
+      "deleted_at",
+      "doc",
+      "position"
     ],
     "time_entry": [
       "created_at",
@@ -239,6 +250,8 @@
       "method_mode",
       "reminder_default_dated",
       "reminder_default_timed",
+      "routines_hide_successes",
+      "routines_seen_at",
       "row_detail",
       "row_layout",
       "sidebar_counts",
@@ -248,11 +261,15 @@
       "task_open",
       "theme_accent",
       "theme_accent_custom",
+      "theme_dark",
+      "theme_light",
       "theme_mode",
       "time_format",
+      "time_sectors",
       "today_done",
       "today_events",
       "today_limit",
+      "upcoming_today",
       "week_start",
       "welcome"
     ],

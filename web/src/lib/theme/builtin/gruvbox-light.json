@@ -1,0 +1,48 @@
+{
+  "opentodoTheme": 1,
+  "id": "gruvbox-light",
+  "name": "Gruvbox Light",
+  "author": "Pavel Pertsev",
+  "licence": "MIT",
+  "source": "https://github.com/morhetz/gruvbox",
+  "kind": "light",
+  "seeds": {
+    "canvas": "#f2e5bc",
+    "surface": "#fbf1c7",
+    "text": "#3c3836",
+    "accent": "oklch(0.4936 0.0822 155.4)",
+    "success": "oklch(0.5013 0.1072 106.46)",
+    "warning": "oklch(0.5076 0.1096 70.67)",
+    "danger": "#9d0006",
+    "info": "#076678"
+  },
+  "tokens": {
+    "text-strong": "#282828",
+    "muted": "#665c54",
+    "faint": "oklch(0.5055 0.0234 62.57)",
+    "selected": "#ebdbb2",
+    "hue-red": "#9d0006",
+    "hue-orange": "#af3a03",
+    "hue-yellow": "#b57614",
+    "hue-lime": "#79740e",
+    "hue-green": "oklch(0.5153 0.1447 149.21)",
+    "hue-teal": "#427b58",
+    "hue-cyan": "#076678",
+    "hue-blue": "oklch(0.5153 0.1789 262.88)",
+    "hue-indigo": "oklch(0.5153 0.1789 276.97)",
+    "hue-violet": "oklch(0.5153 0.1789 293.01)",
+    "hue-pink": "#8f3f71",
+    "hue-slate": "oklch(0.6117 0.0286 67.26)"
+  },
+  "bar": "#f2e5bc",
+  "notes": {
+    "adapted": {
+      "accent": "#427b58",
+      "success": "#79740e",
+      "warning": "#b57614",
+      "faint": "#7c6f64",
+      "hue-slate": "#928374"
+    },
+    "text": "Gruvbox Light by Pavel Pertsev, mapped onto OpenTodo's tokens by web/src/lib/theme/builtin/MAPPING.md. Label colours not in the palette (green, blue, indigo, violet) use OpenTodo's hue at the palette's lightness and chroma. Some colours were adapted for contrast: their published values are under adapted."
+  }
+}

@@ -8,11 +8,12 @@ import { CLOCK_OFFSET_META, HLC_META, hlcLast, hlcNow, hlcReceive, hlcSeed, hlcS
 import { firstOccurrence, parseRule } from './recurrence'
 import { deadlineFireAt, relativeFireAt } from './reminderTime'
 import { defaultReminderChanges } from './defaultReminder'
+import { withSectorClears } from './sectorWrites'
 import { planCompletion, planSkip, seriesRule, skipsInstead } from './recurring'
 import { assignableIn, currentUserId, membershipMap, roleOf, scopeOf } from './sharing'
 import { descendants, isDescendant } from './tree'
 import { GAP } from './ordering'
-import { ENTITIES, type Clock, type Attachment, type Comment, type Entity, type FieldDef, type Label, type Op, type Origin, type Place, type Project, type Rule, type Frame, type Note, type Slot, type TaskLocation, type ProjectPrefs, type Reminder, type Review, type Section, type Task, type TimeEntry, type UserPrefs, type View } from './types'
+import { ENTITIES, type Clock, type Attachment, type Comment, type Entity, type FieldDef, type Label, type Op, type Origin, type Place, type Project, type Rule, type Frame, type CustomTheme, type Note, type Slot, type TaskLocation, type ProjectPrefs, type Reminder, type Review, type Section, type Task, type TimeEntry, type UserPrefs, type View } from './types'
 import { recordActivity, type RecordInput } from './activity'
 import { DOC_FIELDS, DocTooLargeError, isDocField, loadRichText, MAX_DOC_CHARS, MAX_DOC_CHARS_ENCRYPTED, MAX_TEXT_VALUE, NOTE_ENTITIES, type RichText } from './docfields'
 import { byteLength, MAX_PLAINTEXT_BYTES } from './crypto'
@@ -88,11 +89,13 @@ export const FRAME_DEFAULTS: Omit<Frame, 'id' | '_clock'> = OP_DEFAULTS.frame
 export const SLOT_DEFAULTS: Omit<Slot, 'id' | '_clock'> = OP_DEFAULTS.slot
 /** A standalone note (notes-overview D1): untitled and empty until its ops arrive. */
 export const NOTE_DEFAULTS: Omit<Note, 'id' | '_clock'> = OP_DEFAULTS.note
+/** A custom theme (theme-editor D1): no document, so never applied or listed, until its ops arrive. */
+export const THEME_DEFAULTS: Omit<CustomTheme, 'id' | '_clock'> = OP_DEFAULTS.theme
 /** The row a field op creates when its entity is new; one key per op field (the schema contract in internal/sync/testdata/schema_fixture.json), `fields` holding the `fields.<id>` values. */
 export const DEFAULTS: Record<Entity, Record<string, unknown>> = {
   project: PROJECT_DEFAULTS, task: TASK_DEFAULTS, label: LABEL_DEFAULTS, view: VIEW_DEFAULTS, reminder: REMINDER_DEFAULTS, section: SECTION_DEFAULTS,
   comment: COMMENT_DEFAULTS, project_prefs: PROJECT_PREFS_DEFAULTS, user_prefs: USER_PREFS_DEFAULTS, attachment: ATTACHMENT_DEFAULTS, field: FIELD_DEFAULTS,
-  review: REVIEW_DEFAULTS, time_entry: TIME_ENTRY_DEFAULTS, place: PLACE_DEFAULTS, rule: RULE_DEFAULTS, frame: FRAME_DEFAULTS, slot: SLOT_DEFAULTS, note: NOTE_DEFAULTS,
+  review: REVIEW_DEFAULTS, time_entry: TIME_ENTRY_DEFAULTS, place: PLACE_DEFAULTS, rule: RULE_DEFAULTS, frame: FRAME_DEFAULTS, slot: SLOT_DEFAULTS, note: NOTE_DEFAULTS, theme: THEME_DEFAULTS,
 }
 
 /**
@@ -394,6 +397,8 @@ export async function mutateMany(changes: Change[], opts: MutateOptions = {}): P
   changes = unfoldFieldPatches(changes)
   checkEncryptedSize(changes)
   const device = await deviceFor(opts)
+  // Dating a task that holds a time sector clears it in the same batch (time-sectors D2).
+  if (!opts.restore) changes = await withSectorClears(changes)
   // A task that gets a due date gets the person's default reminder (default-reminders D3).
   if (!opts.restore) changes = [...changes, ...(await defaultReminderChanges(changes))]
   changes = [...changes, ...(await reminderFollowUps(changes))]
@@ -697,6 +702,8 @@ export type NewTaskInput = {
   day_part?: 'morning' | 'afternoon' | null
   /** Deep, Medium or Low (task-energy); only sent when set. */
   energy?: 'deep' | 'medium' | 'low' | null
+  /** A time sector such as "2026-W45" (time-sectors); only sent when set. */
+  sector?: string | null
   /** A recurrence rule (any spelling the grammar accepts; stored canonical). Throws when invalid. */
   recurrence?: string | null
   /** Assignee account id (task-assignment); only sent when set. */
@@ -754,6 +761,8 @@ export async function planTask(input: NewTaskInput, position?: number): Promise<
   else if (input.day_part) extra.day_part = input.day_part
   // Only tasks created with an energy carry the field (task-energy).
   if (input.energy) extra.energy = input.energy
+  // Only tasks created with a time sector carry the field (time-sectors).
+  if (input.sector) extra.sector = input.sector
   // Only captured, mailed or imported tasks carry the field (task-origin).
   if (input.origin) extra.origin = input.origin
   if (input.location) extra.location = input.location
@@ -922,7 +931,7 @@ export async function setTaskParent(id: string, parentId: string | null): Promis
  * different project, and changing a task's project clears its section (board-view).
  */
 // blocked_by stays behind: blockers live in one sharing scope (task-dependencies D5).
-const COPY_FIELDS = ['title', 'description', 'notes_doc', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'start', 'evening', 'span', 'day_part', 'energy', 'recurrence', 'series_id', 'assignee_id', 'completed_at', 'completed_by', 'position', 'created_at', 'origin'] as const
+const COPY_FIELDS = ['title', 'description', 'notes_doc', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'start', 'evening', 'span', 'day_part', 'energy', 'sector', 'recurrence', 'series_id', 'assignee_id', 'completed_at', 'completed_by', 'position', 'created_at', 'origin'] as const
 
 /**
  * Copy tasks into `projectId` under new ids, keeping parent links between copied
@@ -948,6 +957,8 @@ function copyTasks(
     if (typeof patch.day_part !== 'string') delete patch.day_part
     // And its energy (task-energy); none needs no op.
     if (typeof patch.energy !== 'string' || !patch.energy) delete patch.energy
+    // And its time sector (time-sectors); none needs no op.
+    if (typeof patch.sector !== 'string' || !patch.sector) delete patch.sector
     // The copy keeps where the task came from (task-origin); none needs no op.
     if (!patch.origin || typeof patch.origin !== 'object') delete patch.origin
     // Custom field values travel with the copy (custom-fields), one op each.

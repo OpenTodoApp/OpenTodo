@@ -1,0 +1,5 @@
+# De la note aux sous-tâches: French text for templates/routines/note-to-subtasks/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-3d6498714c4e
+title: "De la note aux sous-tâches"
+summary: "Lance-la sur une tâche pour transformer chaque ligne de sa note en sous-tâche."
+description: "Écris les étapes d'une grosse tâche dans sa note, une par ligne, puis lance cette routine sur la tâche depuis la palette de commandes ou le menu de la tâche. Chaque ligne devient une sous-tâche, dans le projet de la tâche.\n\nLes puces et les cases à cocher sont retirées de chaque ligne. La note reste telle quelle."

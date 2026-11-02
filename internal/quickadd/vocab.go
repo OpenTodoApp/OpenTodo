@@ -34,7 +34,10 @@ type Vocab struct {
 	Before        []string       `json:"before"`
 	DeadlineWords []string       `json:"deadlineWords"`
 	SomedayWords  []string       `json:"somedayWords"`
-	EveningWords  []string       `json:"eveningWords"`
+	// SectorPhrases are the time sector phrases by the word they mean
+	// (time-sectors D8): "this-week" → ["this week", "sometime this week"].
+	SectorPhrases map[string][]string `json:"sectorPhrases"`
+	EveningWords  []string            `json:"eveningWords"`
 	// MorningWords, AfternoonWords and PartWords are the day-part phrases
 	// (OpenSpec change day-parts, D5), read only with Context.DayParts.
 	MorningWords   []string          `json:"morningWords"`

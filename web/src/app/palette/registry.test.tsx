@@ -102,3 +102,21 @@ describe('Focus commands (focus-mode D8)', () => {
     expect(commands(base).find((x) => x.id === 'go:focus')?.shortcut).toBe('g Shift+F')
   })
 })
+
+// voice-ramble 6.1: "Ramble into tasks" only while the assistant is available, with no default key.
+describe('Ramble into tasks', () => {
+  it('is listed only when the assistant is available and opens it with capture and the microphone', async () => {
+    const { resetAssistantStatus, setAssistantStatus, takeAssistantPrefill } = await import('../../lib/assistantStatus')
+    resetAssistantStatus()
+    expect(commands(ctx).some((c) => c.id === 'assistant:ramble')).toBe(false)
+    setAssistantStatus({ available: false, enabled: false, reason: 'disabled' } as never)
+    expect(commands(ctx).some((c) => c.id === 'assistant:ramble')).toBe(false)
+    setAssistantStatus({ available: true, enabled: true, reason: '' } as never)
+    const ramble = commands(ctx).find((c) => c.id === 'assistant:ramble')!
+    expect(ramble.label).toBe('Ramble into tasks')
+    expect(ramble.shortcut).toBeUndefined()
+    ramble.run()
+    expect(takeAssistantPrefill()).toEqual({ skill: 'capture', listen: true })
+    resetAssistantStatus()
+  })
+})

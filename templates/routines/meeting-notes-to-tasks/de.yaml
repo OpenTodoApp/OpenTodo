@@ -1,0 +1,5 @@
+# Besprechungsnotizen zu Aufgaben: German text for templates/routines/meeting-notes-to-tasks/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-01d2cced429b
+title: "Besprechungsnotizen zu Aufgaben"
+summary: "Starte sie auf einer Besprechungsaufgabe, und die offenen Kontrollkästchen ihrer Notiz werden Aufgaben in ihrem Projekt."
+description: "Schreib Notizen in eine Besprechungsaufgabe und jede Aktion als Kontrollkästchen: `- [ ] Agenda verschicken`. Starte diese Routine nach der Besprechung über die Befehlspalette oder das Menü der Aufgabe auf ihr. Jedes offene Kontrollkästchen wird zu einer Aufgabe im Projekt der Besprechungsaufgabe; einfache Zeilen und abgehakte Kästchen bleiben draußen.\n\nHat die Besprechungsaufgabe kein Projekt, landen die neuen Aufgaben im Eingang."

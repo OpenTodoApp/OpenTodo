@@ -13,6 +13,7 @@ interface Vector {
   projects?: Record<string, string>
   open?: string[]
   tracked?: Record<string, number>
+  changed?: Record<string, string>
   match: boolean
 }
 
@@ -27,6 +28,7 @@ describe('rule conditions (shared vectors with internal/ruleval)', () => {
         parent: (id) => v.projects?.[id] || null,
         open: (id) => (v.open ?? []).includes(id),
         tracked: (id) => v.tracked?.[id] ?? 0,
+        changed: (id) => v.changed?.[id] ?? '',
       })
       expect(got).toBe(v.match)
     })

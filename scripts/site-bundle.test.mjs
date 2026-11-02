@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
 import {
-  brandFiles, buildManifest, iconSprite, METHOD_FEATURES, methodVocabulary, serverFacts, missingScreenshots, parseChangelog, repoRoot, SCREENSHOTS, SHOTS_DIR, templateLibraryFiles, TEMPLATES_SCHEMA, tokensCss, validateManifest,
+  brandFiles, buildManifest, iconSprite, METHOD_FEATURES, methodVocabulary, serverFacts, missingScreenshots, parseChangelog, repoRoot, SCREENSHOTS, SHOTS_DIR, routineTemplateFile, templateLibraryFiles, TEMPLATES_SCHEMA, tokensCss, validateManifest,
 } from './site-bundle.mjs'
 
 const read = (p) => readFileSync(join(repoRoot, p), 'utf8')
@@ -167,6 +167,20 @@ test('the template library is in the bundle: index.json, one file per template, 
   assert.ok(file.text.description.en.length > 0)
   const m = buildManifest({ version: 'v0.10.0', date: '2026-10-21', commit: 'abc', formats: ['opentodo'], docsPages: 40 })
   assert.deepEqual(m.facts.templates, slugs)
+  assert.deepEqual(validateManifest(m), [])
+})
+
+test('the routine starters are in the bundle without their tests, with the routineTemplates fact (routines-starters 1.2)', () => {
+  const { file, slugs } = routineTemplateFile()
+  const compiled = JSON.parse(read('web/src/generated/routineStarters.json'))
+  assert.equal(file.schema, TEMPLATES_SCHEMA)
+  assert.deepEqual(slugs, compiled.starters.map((s) => s.slug), 'the bundle ships exactly the starters the app ships')
+  const groceries = file.starters.find((s) => s.slug === 'groceries-from-note')
+  assert.equal(groceries.text.title.it, 'Spesa da una nota')
+  assert.equal(groceries.ask.list.type, 'project')
+  assert.ok(file.starters.every((s) => !('test' in s)), 'no test data on the website')
+  const m = buildManifest({ version: 'v0.10.0', date: '2026-10-21', commit: 'abc', formats: ['opentodo'], docsPages: 40 })
+  assert.deepEqual(m.facts.routineTemplates, slugs)
   assert.deepEqual(validateManifest(m), [])
 })
 

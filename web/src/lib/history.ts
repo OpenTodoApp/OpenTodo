@@ -55,7 +55,7 @@ export function deviceLabel(set: Pick<ChangeSet, 'device' | 'userId' | 'device_l
 
 /** Fields whose old value can be put back from the timeline. */
 export const RESTORABLE: Record<'task' | 'project', readonly string[]> = {
-  task: ['title', 'description', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'start', 'evening', 'day_part', 'recurrence', 'completed_at', 'deleted_at', 'project_id', 'parent_id'],
+  task: ['title', 'description', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'start', 'evening', 'day_part', 'sector', 'recurrence', 'completed_at', 'deleted_at', 'project_id', 'parent_id'],
   // A project's note (project-notes): its Markdown projection; the device folds it into notes_doc.
   project: ['name', 'color', 'archived', 'parent_id', 'deleted_at', 'description', 'status'],
 }
@@ -80,7 +80,7 @@ export async function restoreValue(entity: 'task' | 'project', id: string, field
 /** Reference fields whose ids the timeline shows by name, and their labels. */
 const REF_LABELS = translatedMap<string>({ assignee_id: msg('assignee'), project_id: msg('project'), section_id: msg('section'), parent_id: msg('parent') })
 /** Labels of fields whose name alone reads badly. */
-const FIELD_LABELS = translatedMap<string>({ blocked_by: msg('waiting for'), description: msg('notes'), notes_doc: msg('notes'), origin: msg('origin'), day_part: msg('part of the day') })
+const FIELD_LABELS = translatedMap<string>({ blocked_by: msg('waiting for'), description: msg('notes'), notes_doc: msg('notes'), origin: msg('origin'), day_part: msg('part of the day'), sector: msg('time sector') })
 
 /** The label of a field in the timeline (`assignee_id` reads as "assignee"). */
 export function fieldLabel(field: string): string {

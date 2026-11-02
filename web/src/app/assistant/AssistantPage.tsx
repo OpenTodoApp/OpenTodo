@@ -7,7 +7,7 @@ import { useOnline } from '../../lib/online'
 import { t } from '../../lib/i18n'
 import { Button, PageBody, PageHeader } from '../../ui'
 import { Composer } from './AssistantComposer'
-import { contextName, focusComposer, useConversationReady } from './AssistantPanel'
+import { captureProps, contextName, focusComposer, useConversationReady } from './AssistantPanel'
 import { AssistantPanelBody, OFFLINE_MESSAGE } from './AssistantPanelBody'
 import { useAssistantConversation } from './useAssistantConversation'
 
@@ -27,7 +27,7 @@ export default function AssistantPage({ name }: { name: string }) {
   const composerFor = (large: boolean) => (
     <Composer draft={composer.draft} onDraft={composer.setDraft} onSend={() => void c.send()} onStop={c.stop} streaming={!!streaming} connected={connected} disabled={!ready}
       skills={composer.skills} skill={composer.skill} onSkill={composer.chooseSkill} pasted={composer.pasted} onPasted={composer.setPasted}
-      context={contextName(undefined, composer.selection?.length ?? 0)} large={large}
+      context={contextName(undefined, composer.selection?.length ?? 0)} large={large} {...captureProps(c, ready)}
       placeholder={large ? t('Ask about your tasks, or tell me what to plan…') : t('Reply or ask for changes…')} />
   )
   return (
@@ -55,7 +55,7 @@ export default function AssistantPage({ name }: { name: string }) {
           consentBusy={c.consent.consentBusy} consentError={c.consent.consentError} threads={c.threads} reviewRef={rv.reviewRef}
           onToggle={rv.toggle} onApply={() => void rv.apply()} onDiscard={() => void rv.discard()} onUndo={() => void rv.undo()} onDraft={composer.setDraft} onSend={() => void c.send()}
           onStop={c.stop} onAccept={(k) => void c.consent.accept(k)} onPickThread={c.pickThread}
-          name={name} skills={composer.skills} onStarter={(s) => { composer.chooseSkill(s); focusComposer() }} composer={composerFor(true)} layout="page" device={c.device} />
+          name={name} skills={composer.skills} onStarter={(s) => { composer.chooseSkill(s); focusComposer() }} composer={composerFor(true)} layout="page" device={c.device} onStatus={c.consent.update} />
       </div>
       {usable && !empty && (
         <div className="sticky bottom-0 mx-auto w-full max-w-[46rem] space-y-1 bg-surface pb-4 pt-2" data-assistant-foot>
