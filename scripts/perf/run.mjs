@@ -154,6 +154,14 @@ async function session(browser, profileName) {
     let t0 = await go(page, `/project/${summary.bigProject}`)
     out['open-project'] = (await markAfter(page, 'ot:list-ready', t0)) - t0
     await page.locator('[data-task-id]').nth(50).waitFor()
+    // A long list draws its rows a step at a time after the first frame: the
+    // interactions below run once all of them are in the document.
+    await page.waitForFunction(() => {
+      const n = document.querySelectorAll('[data-task-id]').length
+      const w = window.__perf
+      if (n !== w.rowCount) { w.rowCount = n; w.rowSince = performance.now(); return false }
+      return performance.now() - w.rowSince > 1000
+    }, null, { polling: 100, timeout: 60_000 })
 
     debug('Cursor moves in that list')
     // Cursor moves in that list.
@@ -183,7 +191,9 @@ async function session(browser, profileName) {
     out['complete-task'] = p95(completes)
 
     debug('A remote edit')
-    // A remote edit (another device, through the API) painted here over the live channel.
+    // A remote edit (another device, through the API) painted here over the live channel,
+    // once the completions above are synced.
+    await page.waitForTimeout(3000)
     const remote = []
     for (let i = 0; i < 3; i++) {
       const id = await page.locator('li[data-task-id]').nth(5 + i).getAttribute('data-task-id')

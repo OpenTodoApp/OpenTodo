@@ -58,7 +58,8 @@ describe('Act on one occurrence', () => {
     await waitFor(() => projectionOn(r.container, '2026-10-19') === null, 'no projection on the 19th')
     expect(projectionOn(r.container, '2026-10-26')).toBeTruthy()
     expect((await db.tasks.get(id))?.due).toEqual({ date: '2026-10-12' })
-    expect(bulkToast()?.label).toBe('Occurrence skipped')
+    // The list follows the write as soon as it commits; the toast follows the action's end.
+    await waitFor(() => bulkToast()?.label === 'Occurrence skipped', 'the toast')
     await r.unmount()
   })
 
@@ -94,7 +95,7 @@ describe('Act on one occurrence', () => {
     await waitFor(() => projectionOn(r.container, '2026-10-19') === null && !!r.container.querySelector(`[data-month-day="2026-10-20"] [data-month-task="${occurrenceId(id, '2026-10-19')}"]`), 'the record on the 20th')
     expect(projectionOn(r.container, '2026-10-26')).toBeTruthy()
     expect((await db.tasks.get(id))?.due).toEqual({ date: '2026-10-12' })
-    expect(bulkToast()?.label).toBe('Occurrence moved')
+    await waitFor(() => bulkToast()?.label === 'Occurrence moved', 'the toast')
     await r.unmount()
   })
 

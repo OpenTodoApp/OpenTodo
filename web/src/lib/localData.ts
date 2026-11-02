@@ -473,6 +473,11 @@ export function useMeta<T>(key: string, fallback: T): T {
   return useLiveQuery(() => getMeta<T>(key, fallback), [key], fallback)
 }
 
+/** useMeta, but undefined until the stored value has been read. */
+export function useMetaRead<T>(key: string, fallback: T): T | undefined {
+  return useLiveQuery(() => getMeta<T>(key, fallback), [key])
+}
+
 // ---- names for history ----
 
 /**

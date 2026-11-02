@@ -5,6 +5,8 @@
 // below everything pinned at the top, above the bottom edge, and all the way to
 // the top for the first row.
 
+import { resettable } from '../../lib/moduleState'
+
 /** Room kept between the row and a pinned header or the bottom edge, in px. */
 const GAP = 4
 
@@ -22,12 +24,26 @@ export function scrollParent(el: HTMLElement): HTMLElement | null {
  * (viewport y), counting a stack: the page header, then what is pinned right
  * under it (the selection bar, a group header).
  */
+/** The elements that can be sticky in a scroller, found again at most every STICKY_TTL_MS. */
+const STICKY_TTL_MS = 1_000
+let stickyCache: { scroller: HTMLElement; at: number; list: HTMLElement[] } | null = null
+resettable('revealRow', () => { stickyCache = null })
+
+function stickyCandidates(scroller: HTMLElement): HTMLElement[] {
+  const now = performance.now()
+  if (stickyCache?.scroller === scroller && now - stickyCache.at < STICKY_TTL_MS) return stickyCache.list.filter((el) => el.isConnected)
+  // Only what can be sticky (the app pins with Tailwind's sticky classes): reading
+  // the style of every element cost 80 ms a key in a 2,000-row list (performance-10k),
+  // and finding them again on every key of a run of j presses most of the rest.
+  const list = [...scroller.querySelectorAll<HTMLElement>('[class*="sticky"], [style*="sticky"]')]
+  stickyCache = { scroller, at: now, list }
+  return list
+}
+
 export function pinnedBottom(scroller: HTMLElement, row: HTMLElement): number {
   let bottom = scroller.getBoundingClientRect().top
   const pinned: DOMRect[] = []
-  // Only what can be sticky (the app pins with Tailwind's sticky classes): reading
-  // the style of every element cost 80 ms a key in a 2,000-row list (performance-10k).
-  for (const s of scroller.querySelectorAll<HTMLElement>('[class*="sticky"], [style*="sticky"]')) {
+  for (const s of stickyCandidates(scroller)) {
     if (s.contains(row) || getComputedStyle(s).position !== 'sticky') continue
     const r = s.getBoundingClientRect()
     if (r.height > 0) pinned.push(r)
