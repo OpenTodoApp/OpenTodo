@@ -83,6 +83,13 @@ export async function buildAll(repoRoot, { site = OUT_SITE } = {}) {
   if (existsSync(imgDir)) for (const name of readdirSync(imgDir).sort()) {
     if (/\.(webp|png|svg)$/.test(name)) files.set(`${OUT_SITE}/images/${name}`, readFileSync(join(imgDir, name)))
   }
+  // Other files under docs/ that a page links (the theme format's JSON Schema): served
+  // beside the pages at the same path, so the link written as /docs/<path> resolves.
+  for (const page of sorted) for (const l of rendered.get(page.rel).site.links) {
+    if (l.kind !== 'image' || l.path.startsWith('docs/images/')) continue
+    const src = join(repoRoot, l.path)
+    if (existsSync(src) && statSync(src).isFile()) files.set(`${OUT_SITE}/${l.path.slice('docs/'.length)}`, readFileSync(src))
+  }
 
   // In-app help: user pages only, with the same index.
   const user = sorted.filter((p) => p.fm.audience === 'user')
