@@ -171,6 +171,9 @@ jobs:
       - name: govulncheck
         run: go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
       - run: go test ./...
+      # Shows whether the Multipath TCP check ran or skipped on this runner's kernel.
+      - name: Multipath TCP is off (CVE-2026-98432)
+        run: go test ./cmd/opentodo -run TestListenerHasNoMultipathTCP -v -count=1
       - run: CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/opentodo ./cmd/opentodo
       - name: Smoke test the binary
         run: |
