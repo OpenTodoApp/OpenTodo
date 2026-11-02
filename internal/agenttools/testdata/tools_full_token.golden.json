@@ -205,7 +205,7 @@
     {
       "name": "today_summary",
       "title": "Today summary",
-      "description": "One-call overview of the user's day: overdue tasks, tasks due today, and open task counts for the Inbox (tasks without a project that are not scheduled) and each project. today_limit is the user's Today limit (null when off); each listed task has waiting_for_slot, true when that limit keeps it waiting; a waiting task also has time_sensitive, true when it is due today with a time or its deadline is today, and waiting_time_sensitive lists those ids soonest first (the slots stay first come, first served).",
+      "description": "One-call overview of the user's day: overdue tasks, tasks due today, and open task counts for the Inbox (tasks without a project that are not scheduled) and each project. today_limit is the user's Today limit (null when off); each listed task has waiting_for_slot, true when that limit keeps it waiting; a waiting task also has time_sensitive, true when it is due today with a time or its deadline is today, a time-sensitive one time_passed, true once its time is before now, and waiting_time_sensitive lists those ids soonest first (the slots stay first come, first served).",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -421,6 +421,32 @@
         "openWorldHint": false,
         "readOnlyHint": true,
         "title": "Get a note"
+      }
+    },
+    {
+      "name": "list_objectives",
+      "title": "List objectives",
+      "description": "List the user's quarterly and weekly objectives: a few short lines the user pins to a quarter (2026-Q4) or an ISO week (2026-W44) while planning, open and done. Default: the current quarter's and the current week's in timezone, weeks from Monday. An objective has no tasks, progress or owner; it is context for planning.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "period": {
+            "description": "Only this period: a quarter YYYY-Qn or an ISO week YYYY-Www (months are not objective periods).",
+            "type": "string"
+          },
+          "timezone": {
+            "description": "IANA time zone used to decide what is today, overdue or upcoming, e.g. \"Europe/Rome\". Default: UTC. Due dates are floating, so pass the user's zone.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "title": "List objectives"
       }
     },
     {

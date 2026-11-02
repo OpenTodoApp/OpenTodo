@@ -33,7 +33,7 @@ var (
 func init() {
 	register(tool{def: func(Caller) Definition {
 		return writeDef("update_project", "Update a project",
-			"Rename, recolour or give an icon to a project, set its flow or status (maintenance), move it under another project (parent_id, null for the top level) or change its position. Replace the project's note with description, or add a block at its end with append_description (prefer appending: nothing written before is replaced). Archive with archive_projects; deleting is not available.",
+			"Rename, recolour or give an icon to a project, set its flow or status (maintenance), make it a reusable list (reusable, aisles), move it under another project (parent_id, null for the top level) or change its position. Replace the project's note with description, or add a block at its end with append_description (prefer appending: nothing written before is replaced). Archive with archive_projects; deleting is not available.",
 			object([]string{"id"}, map[string]any{
 				"id":                 map[string]any{"type": "string", "description": "Project id."},
 				"name":               map[string]any{"type": "string", "minLength": 1, "maxLength": 200, "description": "New name."},
@@ -44,6 +44,8 @@ func init() {
 				"workspace_id":       map[string]any{"type": []string{"string", "null"}, "description": "Move the project to this workspace (see list_workspaces), or null for the default workspace. Only the project's owner may."},
 				"flow_mode":          projectFlowProp,
 				"status":             projectStatusProp,
+				"reusable":           map[string]any{"type": "boolean", "description": "A reusable list (shopping, packing): adding an item already there reopens it instead of duplicating it."},
+				"aisles":             map[string]any{"type": "boolean", "description": "In a reusable list, sort new items into aisle sections (produce, dairy, …) in the app."},
 				"description":        projectNoteProp,
 				"append_description": projectAppendProp,
 			}), false, true, []string{"name", "description", "append_description"}, false)
@@ -176,7 +178,7 @@ func (r *Registry) claimIDs(ctx context.Context, c Caller, cs ChangeSet, chosen 
 // ---- update_project ----
 
 func (r *Registry) planUpdateProject(ctx context.Context, c Caller, a args, overlay ChangeSet) (Plan, error) {
-	if err := a.only("", "id", "name", "color", "icon", "parent_id", "position", "workspace_id", "flow_mode", "status", "description", "append_description"); err != nil {
+	if err := a.only("", "id", "name", "color", "icon", "parent_id", "position", "workspace_id", "flow_mode", "status", "reusable", "aisles", "description", "append_description"); err != nil {
 		return Plan{}, err
 	}
 	if a.present("description") && a.present("append_description") {
@@ -222,6 +224,14 @@ func (r *Registry) planUpdateProject(ctx context.Context, c Caller, a args, over
 	} else if has {
 		patch["status"] = v
 	}
+	for _, f := range []string{"reusable", "aisles"} {
+		if v, ok := a[f]; ok {
+			if string(v) != "true" && string(v) != "false" {
+				return Plan{}, argErr(f + ": must be true or false")
+			}
+			patch[f] = v
+		}
+	}
 	snap, err := r.loadFor(ctx, c, overlay)
 	if err != nil {
 		return Plan{}, err
@@ -255,7 +265,7 @@ func (r *Registry) planUpdateProject(ctx context.Context, c Caller, a args, over
 		}
 	}
 	if len(patch) == 0 {
-		return Plan{}, argErr("nothing to change: give name, color, icon, parent_id, position, workspace_id, flow_mode, status, description or append_description")
+		return Plan{}, argErr("nothing to change: give name, color, icon, parent_id, position, workspace_id, flow_mode, status, reusable, aisles, description or append_description")
 	}
 	role := snap.role(id)
 	for f := range patch {

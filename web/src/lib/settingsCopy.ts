@@ -75,6 +75,8 @@ export const SETTINGS_COPY = {
       order: { label: msg('Order'), description: msg('Frog does the Large task first; Summit warms up with the Medium one.') },
       // Time sectors (time-sectors D7): synced user_prefs.time_sectors, off by default in every mode.
       sectors: { label: msg('Time sectors'), description: msg('Plan tasks into this week, next week or this month without a fake date.') },
+      // Objectives (plan-objectives D8): synced user_prefs.objectives, off by default in every mode.
+      objectives: { label: msg('Objectives'), description: msg('Pin up to five quarterly and weekly objectives in Plan and the weekly review.') },
       // Energy levels (task-energy D3): synced user_prefs.energy, off by default in every mode.
       energy: { label: msg('Energy levels'), description: msg('Mark tasks Deep, Medium or Low and filter by the energy they need.') },
       // Formatting button (notes-toolbar-desktop D4): synced user_prefs.formatting_toggle, on by default.

@@ -39,6 +39,9 @@ const (
 	txtPageDoneBy     = "page_completed_by"
 	txtPageReopenedBy = "page_reopened_by"
 	txtRoutine        = "routine"
+	// A rotating chore's turn passed to the recipient (chore-rotation D5).
+	txtTurn     = "turn"
+	txtTurnWith = "turn_with"
 	// A routine's failed run (routines-editor D11): generic, and under its name.
 	txtRoutineFailed     = "routine_failed"
 	txtRoutineFailedWith = "routine_failed_with"
@@ -53,6 +56,7 @@ const (
 // texts holds every message in the six app languages. {name} is the actor.
 var texts = map[string]map[string]string{
 	"en": {
+		txtTurn: "It's your turn on a task", txtTurnWith: "It's your turn",
 		txtRoutine:       "A routine sent you a notice",
 		txtRoutineFailed: "A routine failed", txtRoutineFailedWith: "It did not finish. Open the run to see why.",
 		txtReminder: "A reminder is due", txtAssigned: "A task was assigned to you", txtMentioned: "You were mentioned",
@@ -64,6 +68,7 @@ var texts = map[string]map[string]string{
 		txtTestTitle: "Test from OpenTodo", txtTestBody: "This channel works.", txtGuest: "A guest",
 	},
 	"de": {
+		txtTurn: "Du bist bei einer Aufgabe an der Reihe", txtTurnWith: "Du bist an der Reihe",
 		txtRoutine:       "Eine Routine hat dir eine Nachricht geschickt",
 		txtRoutineFailed: "Eine Routine ist fehlgeschlagen", txtRoutineFailedWith: "Sie wurde nicht beendet. Öffne den Lauf, um den Grund zu sehen.",
 		txtReminder: "Eine Erinnerung ist fällig", txtAssigned: "Dir wurde eine Aufgabe zugewiesen", txtMentioned: "Du wurdest erwähnt",
@@ -75,6 +80,7 @@ var texts = map[string]map[string]string{
 		txtTestTitle: "Test von OpenTodo", txtTestBody: "Dieser Kanal funktioniert.", txtGuest: "Ein Gast",
 	},
 	"fr": {
+		txtTurn: "C’est votre tour pour une tâche", txtTurnWith: "C’est votre tour",
 		txtRoutine:       "Une routine vous a envoyé un avis",
 		txtRoutineFailed: "Une routine a échoué", txtRoutineFailedWith: "Elle ne s’est pas terminée. Ouvrez l’exécution pour voir pourquoi.",
 		txtReminder: "Un rappel arrive à échéance", txtAssigned: "Une tâche vous a été attribuée", txtMentioned: "Vous avez été mentionné",
@@ -86,6 +92,7 @@ var texts = map[string]map[string]string{
 		txtTestTitle: "Test d’OpenTodo", txtTestBody: "Ce canal fonctionne.", txtGuest: "Un invité",
 	},
 	"es": {
+		txtTurn: "Te toca una tarea", txtTurnWith: "Te toca a ti",
 		txtRoutine:       "Una rutina te envió un aviso",
 		txtRoutineFailed: "Una rutina falló", txtRoutineFailedWith: "No terminó. Abre la ejecución para ver por qué.",
 		txtReminder: "Hay un recordatorio pendiente", txtAssigned: "Se te ha asignado una tarea", txtMentioned: "Te han mencionado",
@@ -97,6 +104,7 @@ var texts = map[string]map[string]string{
 		txtTestTitle: "Prueba de OpenTodo", txtTestBody: "Este canal funciona.", txtGuest: "Un invitado",
 	},
 	"it": {
+		txtTurn: "Tocca a te per un’attività", txtTurnWith: "Tocca a te",
 		txtRoutine:       "Una routine ti ha inviato un avviso",
 		txtRoutineFailed: "Una routine non è riuscita", txtRoutineFailedWith: "Non è stata completata. Apri l’esecuzione per vedere perché.",
 		txtReminder: "C’è un promemoria in scadenza", txtAssigned: "Ti è stata assegnata un’attività", txtMentioned: "Sei stato menzionato",
@@ -108,6 +116,7 @@ var texts = map[string]map[string]string{
 		txtTestTitle: "Prova da OpenTodo", txtTestBody: "Questo canale funziona.", txtGuest: "Un ospite",
 	},
 	"pt": {
+		txtTurn: "É a sua vez em uma tarefa", txtTurnWith: "É a sua vez",
 		txtRoutine:       "Uma rotina enviou um aviso para você",
 		txtRoutineFailed: "Uma rotina falhou", txtRoutineFailedWith: "Ela não terminou. Abra a execução para ver o motivo.",
 		txtReminder: "Há um lembrete pendente", txtAssigned: "Uma tarefa foi atribuída a você", txtMentioned: "Você foi mencionado",

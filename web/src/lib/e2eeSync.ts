@@ -255,7 +255,7 @@ export async function normalizeOnSight(inc: Incoming): Promise<number> {
 
 const K_MIGRATION = 'e2ee.migration'
 // New kinds go at the end: a stored job's `entity` is an index into this list.
-const MIGRATION_ORDER: Entity[] = ['project', 'label', 'section', 'view', 'field', 'task', 'comment', 'attachment']
+const MIGRATION_ORDER: Entity[] = ['project', 'label', 'section', 'view', 'field', 'task', 'comment', 'attachment', 'objective']
 /** The content fields a link attachment carries; the server fixes url and mime at creation. */
 const LINK_FIELDS = ['task_id', 'author_id', 'comment_id', 'name', 'mime', 'size', 'sha256', 'url', 'encrypted', 'created_at']
 /** Entities re-written per batch (one mutateMany each). */

@@ -128,9 +128,11 @@ func CanWrite(role, entity, field string) bool {
 		return entity == "task" || entity == "section" || entity == "field" || entity == "note" || entity == "rule" || (entity == "project" && field != "deleted_at" && field != "workspace_id")
 	case RoleEditor:
 		// Editors may write the project's note but nothing else of the project
-		// (OpenSpec change project-notes, design D2). Editors and admins write
-		// the project's routines (routines-shared D2).
-		return entity == "task" || entity == "section" || entity == "field" || entity == "note" || entity == "rule" || (entity == "project" && (field == "description" || field == "notes_doc"))
+		// (OpenSpec change project-notes, design D2), except the reusable-list
+		// switches, which shape how they add items (reusable-lists D1). Editors
+		// and admins write the project's routines (routines-shared D2).
+		return entity == "task" || entity == "section" || entity == "field" || entity == "note" || entity == "rule" ||
+			(entity == "project" && (field == "description" || field == "notes_doc" || field == "reusable" || field == "aisles"))
 	}
 	return false
 }
@@ -390,6 +392,19 @@ func (r *resolver) resolve(op Op) (scope, reason string, err error) {
 				return "", "", err
 			}
 			if !ok {
+				return "", ReasonNotAMember, nil
+			}
+		}
+	}
+	if op.Entity == "task" && op.Field == "rotation" {
+		// Every person who takes turns must be assignable (chore-rotation D1).
+		for _, id := range idList(op.Value) {
+			ok, err := r.canBeAssigned(scope, id)
+			if err != nil {
+				return "", "", err
+			}
+			if !ok {
+				r.detail = id
 				return "", ReasonNotAMember, nil
 			}
 		}

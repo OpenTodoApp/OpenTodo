@@ -104,7 +104,7 @@ func init() {
 	})
 	register(tool{
 		def: readDef("today_summary", "Today summary",
-			"One-call overview of the user's day: overdue tasks, tasks due today, and open task counts for the Inbox (tasks without a project that are not scheduled) and each project. today_limit is the user's Today limit (null when off); each listed task has waiting_for_slot, true when that limit keeps it waiting; a waiting task also has time_sensitive, true when it is due today with a time or its deadline is today, and waiting_time_sensitive lists those ids soonest first (the slots stay first come, first served).",
+			"One-call overview of the user's day: overdue tasks, tasks due today, and open task counts for the Inbox (tasks without a project that are not scheduled) and each project. today_limit is the user's Today limit (null when off); each listed task has waiting_for_slot, true when that limit keeps it waiting; a waiting task also has time_sensitive, true when it is due today with a time or its deadline is today, a time-sensitive one time_passed, true once its time is before now, and waiting_time_sensitive lists those ids soonest first (the slots stay first come, first served).",
 			object(nil, map[string]any{
 				"timezone": timezoneProp,
 			})),
@@ -143,7 +143,11 @@ type projectOut struct {
 	// FlowMode is how the project's tasks flow: parallel, sequential or area (project-flow-modes).
 	FlowMode string `json:"flow_mode"`
 	// Status is active or maintenance (project-review-cadence).
-	Status    string  `json:"status"`
+	Status string `json:"status"`
+	// Reusable and Aisles are the reusable-list mode (reusable-lists): adding an
+	// item already there reopens it, and new items go to aisle sections.
+	Reusable  bool    `json:"reusable"`
+	Aisles    bool    `json:"aisles"`
 	ParentID  *string `json:"parent_id,omitempty"`
 	Shared    bool    `json:"shared"`
 	Role      string  `json:"role,omitempty"`
@@ -179,7 +183,7 @@ func (snap *snapshot) openCounts() map[string]int {
 func (snap *snapshot) renderProject(p opsync.Entity, counts map[string]int) projectOut {
 	id := str(p, "id")
 	out := projectOut{ID: id, Untrusted: projectText{Name: str(p, "name"), Description: str(p, "description")}, Color: str(p, "color"),
-		Archived: boolean(p, "archived"), FlowMode: flow.ProjectFlow(str(p, "flow_mode")), Status: statusOf(str(p, "status")), ParentID: strPtr(p, "parent_id"), OpenCount: counts[id], Fields: snap.renderFields(id),
+		Archived: boolean(p, "archived"), FlowMode: flow.ProjectFlow(str(p, "flow_mode")), Status: statusOf(str(p, "status")), Reusable: boolean(p, "reusable"), Aisles: boolean(p, "reusable") && boolean(p, "aisles"), ParentID: strPtr(p, "parent_id"), OpenCount: counts[id], Fields: snap.renderFields(id),
 		Encrypted: e2ee.IsCiphertext(rawStr(p, "name")) || e2ee.IsCiphertext(rawStr(p, "description"))}
 	if acc, ok := snap.shared[id]; ok {
 		out.Shared, out.Role = true, acc.Role
@@ -725,11 +729,14 @@ func (r *Registry) todaySummary(ctx context.Context, userID string, a args) (map
 	}
 	// Today's closed list (today-closed-list): which of these wait for a slot.
 	limit, rev := r.todayLimit(ctx, userID)
-	waiting, sensitive := snap.waitingForSlot(limit, rev, today, loc, todayRows)
+	_, now := zoned.Local(r.now(), loc)
+	waiting, sensitive := snap.waitingForSlot(limit, rev, today, now, loc, todayRows)
 	soon := map[string]bool{}
+	passed := map[string]bool{}
 	soonIDs := []string{}
 	for _, s := range sensitive {
 		soon[s.ID] = true
+		passed[s.ID] = s.Passed
 		soonIDs = append(soonIDs, s.ID)
 	}
 	for _, list := range [][]keyed[taskOut]{overdueItems, todayItems} {
@@ -739,6 +746,10 @@ func (r *Registry) todaySummary(ctx context.Context, userID string, a args) (map
 			if w {
 				ts := soon[list[i].id]
 				list[i].v.TimeSensitive = &ts
+				if ts {
+					p := passed[list[i].id]
+					list[i].v.TimePassed = &p
+				}
 			}
 		}
 	}

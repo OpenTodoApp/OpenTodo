@@ -7,6 +7,7 @@ import (
 	"unicode/utf8"
 
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/textutil"
 )
 
 // Imported custom fields (OpenSpec change more-importers, design D3): typed values
@@ -77,7 +78,7 @@ func (fp *foreignPlan) customFields() {
 				continue
 			}
 			if utf8.RuneCountInString(name) > maxImportedFieldName {
-				res.Warnings = append(res.Warnings, fmt.Sprintf("field %q dropped (a field name has at most %d characters)", truncateRunes(name, 40), maxImportedFieldName))
+				res.Warnings = append(res.Warnings, fmt.Sprintf("field %q dropped (a field name has at most %d characters)", textutil.TruncateRunes(name, 40, "…"), maxImportedFieldName))
 				continue
 			}
 			key := fieldKey(project, name)
@@ -207,12 +208,4 @@ func fieldNames(list []FieldValue) string {
 		names = append(names, f.Name)
 	}
 	return strings.Join(names, ", ")
-}
-
-func truncateRunes(s string, n int) string {
-	r := []rune(s)
-	if len(r) <= n {
-		return s
-	}
-	return string(r[:n]) + "…"
 }

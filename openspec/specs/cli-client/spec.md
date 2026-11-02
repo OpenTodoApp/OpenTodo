@@ -474,15 +474,19 @@ Each release SHALL ship `opentodo-agent-skill.zip` containing `SKILL.md`, and `o
 - **THEN** the command exits with a usage error and creates nothing
 
 ### Requirement: Today limit and logged wins in the CLI
-While the user's Today limit is on, `ot today` SHALL print the tasks in the slots, then a "Waiting for a slot" heading with the waiting tasks in fill order (OpenSpec `today-closed-list`); the heading SHALL carry the number of waiting tasks and, when some are due today with a time or have a deadline today, the soonest of them with its time, followed by those tasks soonest first with their time (OpenSpec `today-waiting-time-sensitive`). `--all` SHALL print every task without the heading, and `--json` SHALL carry `waiting_for_slot` on each task and `time_sensitive` on each waiting task. `ot add --done <title>` SHALL create the task already completed now by the user, in one request, refusing `--repeat` and `--remind` with a usage error.
+While the user's Today limit is on, `ot today` SHALL print the tasks in the slots, then a "Waiting for a slot" heading with the waiting tasks in fill order (OpenSpec `today-closed-list`); the heading SHALL carry the number of waiting tasks and, when some are due today with a time or have a deadline today, the soonest of them whose time has not passed with its time (or, when every one has passed, "time passed: <title>, <time>" for one and "<n> past their time" for more), followed by those tasks soonest first with their time and "(time passed)" on those whose time is before now (OpenSpec `today-waiting-time-sensitive`, `today-waiting-time-passed`). `--all` SHALL print every task without the heading, and `--json` SHALL carry `waiting_for_slot` on each task, `time_sensitive` on each waiting task and `time_passed` on each time-sensitive waiting task. `ot add --done <title>` SHALL create the task already completed now by the user, in one request, refusing `--repeat` and `--remind` with a usage error.
 
 #### Scenario: Waiting section
 - **WHEN** the limit is 2 and Today has three tasks
 - **THEN** `ot today` prints two tasks, then "Waiting for a slot" and the third
 
 #### Scenario: Time-sensitive waiting tasks
-- **WHEN** the limit is 1 and "Send the form" at 16:00 and "Call the school" at 09:00 wait with two other tasks
-- **THEN** `ot today` prints "Waiting for a slot · 4 — next: Call the school, 09:00", the two lines 09:00 then 16:00, then the waiting tasks in fill order, and `--json` has `time_sensitive: true` on those two
+- **WHEN** it is 12:00, the limit is 1 and "Send the form" at 16:00 and "Call the school" at 09:00 wait with two other tasks
+- **THEN** `ot today` prints "Waiting for a slot · 4 — next: Send the form, 16:00", the two lines 09:00 (with "(time passed)") then 16:00, then the waiting tasks in fill order, and `--json` has `time_sensitive: true` on those two and `time_passed` true on the 09:00 task and false on the 16:00 one
+
+#### Scenario: Every time passed
+- **WHEN** it is 12:00, the limit is 1 and the waiting tasks are "Call the school" at 09:00 and "Send the form" at 11:30
+- **THEN** the heading reads "Waiting for a slot · 2 — 2 past their time"
 
 #### Scenario: Log a win from the terminal
 - **WHEN** the user runs `ot add --done "Fixed the printer"`
@@ -534,3 +538,19 @@ While the user's Today limit is on, `ot today` SHALL print the tasks in the slot
 #### Scenario: Schema lists the field
 - **WHEN** an agent runs `ot schema --json`
 - **THEN** the `task` schema lists `sector` and the `add`, `edit` and `list` commands list `--sector`
+
+### Requirement: Objective commands
+The CLI SHALL offer these commands, each calling the objectives routes (OpenSpec `plan-objectives`):
+- `ot objectives`: by default the current quarter's and current week's objectives, Monday weeks; filtered with `--quarter`, `--week` or `--period <p>`; `--json` for JSON output;
+- `ot objectives add "<title>" --quarter|--week [--next]`;
+- `ot objectives done`, `undone`, `edit --title` and `delete` with an `<id>`.
+
+The commands SHALL honour `--dry-run`, read-only mode and the JSON exit codes like every other command, and `ot schema` SHALL describe them. An encrypted title the CLI cannot decrypt SHALL print as `[encrypted]`. A refused limit SHALL exit non-zero with the server's message.
+
+#### Scenario: Add next week's objective
+- **WHEN** the user runs `ot objectives add "Draft the talk" --week --next` on 2026-10-28
+- **THEN** an objective with the period `2026-W45` is created, and `ot objectives --period 2026-W45` lists it
+
+#### Scenario: Limit reached
+- **WHEN** the current week already has five open objectives and the user runs `ot objectives add "One more" --week`
+- **THEN** the command exits non-zero with the message for `too_many_objectives`, and nothing is created
