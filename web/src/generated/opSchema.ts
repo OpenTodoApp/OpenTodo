@@ -137,12 +137,8 @@ export interface TaskFields {
    */
   note_mentions?: string[]
   /**
-   * The people who take turns on a recurring task (OpenSpec change
-   * chore-rotation, design D1): at most MaxRotation distinct account ids in
-   * turn order, one whole-list register. Completing the series assigns the
-   * next of them; Apply refuses ids that are not members of the task's
-   * scope. Inert on a task without a rule or in a scope with one member.
-   * Plaintext account ids like assignee_id, not content; additive.
+   * Who takes turns on a recurring task, in order (OpenSpec change chore-rotation; see rotation.go):
+   * plaintext member ids like assignee_id, not content; inert without a rule or a second member.
    */
   rotation?: string[]
   /**

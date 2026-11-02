@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"slices"
 	"strings"
 )
@@ -11,6 +12,21 @@ import (
 // Rotating assignees on recurring tasks (OpenSpec change chore-rotation). The
 // web client computes the same thing in web/src/lib/rotation.ts; both are
 // pinned by web/src/lib/rotation.vectors.json.
+
+// MaxRotation caps the people of a task's rotation (design D1).
+const MaxRotation = 20
+
+// checkIDListOp refuses an id list naming its own entity, and a rotation of
+// more than MaxRotation people.
+func checkIDListOp(op Op, k kind) error {
+	if k == kIDList && slices.Contains(idList(op.Value), op.EntityID) {
+		return fmt.Errorf("%w: %s.%s cannot name the task itself", ErrInvalidOp, op.Entity, op.Field)
+	}
+	if op.Entity == "task" && op.Field == "rotation" && len(idList(op.Value)) > MaxRotation {
+		return fmt.Errorf("%w: task.rotation may hold at most %d people", ErrInvalidOp, MaxRotation)
+	}
+	return nil
+}
 
 // NextAssignee is the person whose turn follows current (design D2): the one
 // after current among the rotation's people who are members, wrapping around,
