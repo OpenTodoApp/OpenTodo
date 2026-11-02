@@ -187,6 +187,8 @@ var cmdSpecs = []cmdSpec{
 		Writes: true, DryRun: true, Output: ref("note_append")},
 	{Name: "notes rm", Aliases: []string{"notes delete"}, Summary: "move one or more standalone notes to the Trash", Args: refsArg, Flags: []flagSpec{yesFlag}, Writes: true, Destructive: true, DryRun: true, Output: oneOrMany("note_result")},
 	{Name: "notes to-task", Summary: "turn a standalone note into a task (the note goes to the Trash) and print the task id", Args: []argSpec{{Name: "ref", Required: true}}, Writes: true, DryRun: true, Output: ref("task")},
+	{Name: "task show", Summary: "print a task's details and its reminders, location reminders included (When I arrive at Post office (150 m)); read-only", Args: []argSpec{{Name: "ref", Required: true}},
+		Output: ref("task_detail")},
 	{Name: "task note", Summary: "print a task's note as Markdown, or replace (--set, --file, --clear) or append to it (--append); one option per call", Args: []argSpec{{Name: "ref", Required: true}},
 		Flags: []flagSpec{
 			{Name: "set", Type: "string", Description: "replace the note with this text (only when nobody changed it since it was read: body_changed)"},

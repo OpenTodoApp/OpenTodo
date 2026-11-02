@@ -890,13 +890,22 @@ A reminder belongs to one task and fires at an instant (OpenSpec change `reminde
 | Field | Type | Notes |
 | --- | --- | --- |
 | `task_id` | string | required on create; must name an existing, non-deleted task |
-| `kind` | `"relative"`, `"absolute"` or `"deadline"` | default `absolute` |
+| `kind` | `"relative"`, `"absolute"`, `"deadline"`, `"arrive"` or `"leave"` | default `absolute`; `arrive` and `leave` are [location reminders](location-reminders.md) |
+| `radius_m` | integer or null | location reminders only, and required for them: metres from 100 to 5000 around the task's location |
 | `offset_minutes` | integer or null | relative: minutes from the task's due time; deadline: minutes from 09:00 on the task's deadline; negative = before (−525600…525600) |
 | `fire_at` | unix ms or null | absolute: required. Relative: computed by the server from the task's due date when omitted (09:00 for a date-only due, in the zone offset the user's devices last reported, UTC until then; a zoned due in its own zone); null while the task has no due date. Deadline: computed the same way from 09:00 on the task's deadline; null while it has none |
 | `delivered_at` | unix ms or null | written by the server when it pushed the reminder |
 | `dismissed_at`, `created_at`, `deleted_at` | unix ms (or null) | |
 
 `PATCH /api/v1/tasks/{id}` that changes `due` (including completing a recurring task, which moves the series) recomputes `fire_at` of the task's relative reminders in the same batch, with the same timestamp as the due op. A change to `deadline` does the same for the task's deadline reminders; `due` edits never move them.
+
+**Location reminders** (OpenSpec change `location-reminders`) have `kind` `arrive` or `leave`, a `radius_m` and never a `fire_at` or an offset. They fire only on a phone running the OpenTodo app with location reminders on; the server never evaluates, pushes or dismisses them, and no position ever reaches it. On `POST` and `PATCH` these are refused with 400 `invalid_input` and nothing is written: a missing or out-of-range `radius_m` (100 to 5000) on a location kind, a `fire_at` or `offset_minutes` on one, and a `radius_m` on any other kind. A `PATCH` that changes the kind clears what the new kind does not have (the radius, or the firing time and offset). The usual rules apply: 401 without credentials, 403 `insufficient_scope` for a `read` token, and reminders are personal, so a viewer of a shared project keeps their own.
+
+```bash
+curl -s -X POST "$OT/api/v1/reminders" -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' -d '{"task_id": "8c2a41f0", "kind": "arrive", "radius_m": 200}'
+# 201 {"id": "…", "task_id": "8c2a41f0", "kind": "arrive", "radius_m": 200, "fire_at": null, …}
+```
 
 **Push subscriptions** are per device and outside the op log and the export. `POST /api/v1/push/subscriptions` takes the browser's `PushSubscription.toJSON()` plus the device id:
 

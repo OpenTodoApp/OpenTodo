@@ -52,7 +52,7 @@ func tsKind(k kind) string {
 		return "string | null"
 	case kNumber, kFocusSession:
 		return "number"
-	case kNullableNumber, kPositiveInt, kOffsetMinutes, kInstant:
+	case kNullableNumber, kPositiveInt, kOffsetMinutes, kInstant, kRadius:
 		return "number | null"
 	case kBool:
 		return "boolean"

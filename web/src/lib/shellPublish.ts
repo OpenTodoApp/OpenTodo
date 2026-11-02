@@ -9,6 +9,7 @@ import { localDueOf, logicalToday } from './dates'
 import { todayList } from './dayLists'
 import { db, getMeta, setMeta } from './db'
 import { encryptionSnapshot, onEncryptionChange } from './e2ee'
+import { publishGeofences } from './geofences'
 import { has, publishWidget, scheduleReminders, shell, type ShellPermission, type ShellReminder, type ShellWidgetData } from './shell'
 import type { Reminder, Task } from './types'
 
@@ -102,7 +103,7 @@ let started = false
 
 /** Starts the publishers when the page runs in a shell with `reminders` or `widgets`; a no-op otherwise. */
 export function startShellPublishers(): () => void {
-  if (started || !shell() || (!has('reminders') && !has('widgets'))) return () => {}
+  if (started || !shell() || (!has('reminders') && !has('widgets') && !has('geofences'))) return () => {}
   started = true
   let timer: ReturnType<typeof setTimeout> | null = null
   const run = () => {
@@ -111,10 +112,12 @@ export function startShellPublishers(): () => void {
       timer = null
       if (has('reminders')) void publishReminders().catch(() => undefined)
       if (has('widgets')) void publishToday().catch(() => undefined)
+      // Location reminders (location-reminders D3): the armed regions, on every change and on the tick.
+      if (has('geofences')) void publishGeofences().catch(() => undefined)
     }, DEBOUNCE_MS)
   }
-  // Any change to tasks, reminders or the meta table (the switch, the titles option).
-  const sub: Subscription = liveQuery(() => Promise.all([db.tasks.count(), db.reminders.toArray(), db.tasks.toArray(), db.meta.toArray()])).subscribe({ next: run, error: () => undefined })
+  // Any change to tasks, reminders, places (a linked place's pin) or the meta table (the switches, the titles option).
+  const sub: Subscription = liveQuery(() => Promise.all([db.tasks.count(), db.reminders.toArray(), db.tasks.toArray(), db.places.toArray(), db.meta.toArray()])).subscribe({ next: run, error: () => undefined })
   const offEnc = onEncryptionChange(run)
   // The day rolls over at the logical day start even when nothing changes.
   const tick = setInterval(run, 15 * 60 * 1000)

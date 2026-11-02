@@ -352,6 +352,20 @@ export const SETTINGS_COPY = {
       renew: msg('The push service stopped accepting notifications for this device.'),
     },
   },
+  // Settings → Notifications → Location reminders (location-reminders D4): a per-device switch in the phone app.
+  'location-reminders': {
+    title: msg('Location reminders'),
+    icon: 'map-pin',
+    description: msg('Reminders when you arrive at or leave a place. Your position stays on the phone.'),
+    learnMore: 'settings/location-reminders',
+    rows: {
+      phone: { label: msg('On this phone'), description: msg('Watches the places of your location reminders, even with the app closed.') },
+    },
+    notices: {
+      browser: msg('Location reminders fire only in the Android or iPhone app, with Location reminders on.'),
+      update: msg('Update the OpenTodo app on this phone to use location reminders here.'),
+    },
+  },
   // Settings → Notifications → App icon badge (app-icon-badge): a device-local flag.
   'app-badge': {
     title: msg('App icon badge'),

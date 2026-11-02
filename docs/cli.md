@@ -196,6 +196,15 @@ A `<ref>` is a full task id or an id prefix that matches exactly one non-deleted
 
 A task that is already in the requested state (`ot done` on a completed task, `ot reopen` on an open one) is reported as `unchanged`, keeps its completion time and nothing is sent; the command still exits 0. `ot edit` with values equal to the current ones sends nothing either.
 
+### One task's details
+
+```bash
+ot task show 8c2a          # title, due date, deadline, location and reminders
+ot task show 8c2a --json   # {"task": {…}, "reminders": [{…}]}
+```
+
+`ot task show <ref>` prints a task with its due date, deadline, location and your reminders, one per line: "30 minutes before the due time", "At 2026-10-13 09:00", and [location reminders](location-reminders.md) as "When I arrive at Post office (150 m)" or "When I leave Home (300 m)". It only reads, so a `read` token will do. Location reminders are created in the app or through [`POST /api/v1/reminders`](api.md#reminders-and-push), not with `ot`.
+
 ### Repeating tasks ahead
 
 ```bash
