@@ -17,6 +17,7 @@ import type { Route } from './router'
 import { t } from '../lib/i18n'
 import { takeQuickAddPrefill } from '../lib/shellActions'
 import { useMemo } from 'react'
+import { addManyToList, addToList } from './reuseAdd'
 
 // An empty view's "Add a task" on a touch device opens this sheet (lean-chrome D7,
 // task-list-presentation "Empty views"): the Shell registers the opener; without a
@@ -57,13 +58,16 @@ export function QuickAddSheet({ open, onClose, anchor, route, userId }: {
   }
   const onAdd = async (input: QuickAddInput) => {
     // Top or bottom of the list it lands in (add-position D3).
-    await createTask({ ...withDefaults(input), placement: await preferredPlacement() })
+    await addToList({ ...withDefaults(input), placement: await preferredPlacement() }, createTask)
     onClose()
   }
   // A pasted list (paste-to-tasks D3): one batch with the view's defaults per line, one Undo.
   const onAddMany = async (inputs: QuickAddInput[]) => {
-    const added = await addTasksUndoable(inputs.map(withDefaults), { placement: await preferredPlacement() })
-    showBulkToast(added.label, added.undoId)
+    const placement = await preferredPlacement()
+    await addManyToList(inputs.map(withDefaults), async (fresh) => {
+      const added = await addTasksUndoable(fresh, { placement })
+      showBulkToast(added.label, added.undoId)
+    })
     onClose()
   }
   return (

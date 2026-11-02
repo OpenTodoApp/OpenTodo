@@ -143,7 +143,11 @@ type projectOut struct {
 	// FlowMode is how the project's tasks flow: parallel, sequential or area (project-flow-modes).
 	FlowMode string `json:"flow_mode"`
 	// Status is active or maintenance (project-review-cadence).
-	Status    string  `json:"status"`
+	Status string `json:"status"`
+	// Reusable and Aisles are the reusable-list mode (reusable-lists): adding an
+	// item already there reopens it, and new items go to aisle sections.
+	Reusable  bool    `json:"reusable"`
+	Aisles    bool    `json:"aisles"`
 	ParentID  *string `json:"parent_id,omitempty"`
 	Shared    bool    `json:"shared"`
 	Role      string  `json:"role,omitempty"`
@@ -179,7 +183,7 @@ func (snap *snapshot) openCounts() map[string]int {
 func (snap *snapshot) renderProject(p opsync.Entity, counts map[string]int) projectOut {
 	id := str(p, "id")
 	out := projectOut{ID: id, Untrusted: projectText{Name: str(p, "name"), Description: str(p, "description")}, Color: str(p, "color"),
-		Archived: boolean(p, "archived"), FlowMode: flow.ProjectFlow(str(p, "flow_mode")), Status: statusOf(str(p, "status")), ParentID: strPtr(p, "parent_id"), OpenCount: counts[id], Fields: snap.renderFields(id),
+		Archived: boolean(p, "archived"), FlowMode: flow.ProjectFlow(str(p, "flow_mode")), Status: statusOf(str(p, "status")), Reusable: boolean(p, "reusable"), Aisles: boolean(p, "reusable") && boolean(p, "aisles"), ParentID: strPtr(p, "parent_id"), OpenCount: counts[id], Fields: snap.renderFields(id),
 		Encrypted: e2ee.IsCiphertext(rawStr(p, "name")) || e2ee.IsCiphertext(rawStr(p, "description"))}
 	if acc, ok := snap.shared[id]; ok {
 		out.Shared, out.Role = true, acc.Role
