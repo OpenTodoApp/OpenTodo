@@ -180,6 +180,8 @@ The jobs:
 | `themes` | The theme document format (OpenSpec `themes`): `Validate` checks a document against format 1 (seeds, the token list, colours as `#rrggbb` or in-gamut `oklch()`, shape, type, 16 KB) with the same refusal codes as `web/src/lib/theme/format.ts`, both pinned by the shared examples in `testdata/`; `Migrate` brings an older format to the current one. No derivation and no renderer: the server never draws a theme. See [themes.md](themes.md) |
 | `iconset` | The icon catalogue's names, categories and keywords, generated from `web/src/ui/icons/catalogue.json` and checked against it by a test; `Valid` checks an icon name in REST and MCP writes, `Search` orders matches as the app's icon picker does |
 | `cli` | The `ot` command-line client (`cmd/ot`): profiles, REST calls, table and `--json` output. See [cli.md](cli.md) |
+| `perfseed` | The 10,000-task account of the performance budgets, for `cmd/perfseed` only (a test keeps it out of the server): built from a fixed seed through the op log (device `perfseed`), an encrypted variant, a summary of counts and ids; its tests are the server's count checks at that size. See [performance.md](performance.md) |
+| `perf` | The server half of the nightly time benchmark (built only with the `perf` tag): the server binary on copies of the fixture, every server budget of `scripts/perf/budgets.json` five times, memory from `/proc` |
 | `vault` | The Markdown vault behind `ot vault`, for the client only (a test keeps it out of the server): the Obsidian Tasks line grammar, the document parser and printer, the state file, the three-way merge per field and the sync loop over `POST /api/v1/sync` as device `vault:<id>`. See [vault.md](vault.md) |
 
 ### Tables

@@ -1,0 +1,42 @@
+{
+  "$comment": [
+    "Performance budgets of the 10,000-task account (OpenSpec change performance-10k). docs/performance.md shows the same table; `node --test scripts/perf/budgets.test.mjs` (make repo-check) fails when the two differ.",
+    "Settings: desktop and phone are measured nightly by scripts/perf/run.mjs (phone: 4x CPU throttling, 412x915), server by `go test -tags perf ./internal/perf`; a nightly run fails when the median of five runs exceeds the limit. device-android, device-ios and pi4 are recorded by hand before each minor release (scripts/perf/device.md) in docs/performance/results-<version>.md.",
+    "A limit is only raised in a pull request that states the reason, here and in its description.",
+    "Baseline: the limits are the design's (D2) and were checked against the first measurement on 2026-11-02 (notes in the PR); none needed raising."
+  ],
+  "settings": {
+    "desktop": "CI runner, Chromium",
+    "phone": "CI runner, Chromium, 4x CPU throttling, 412x915 viewport",
+    "server": "CI runner, the server binary",
+    "device-android": "2022 mid-range Android phone, Android shell",
+    "device-ios": "iPhone 12, iOS shell",
+    "pi4": "Raspberry Pi 4 (4 GB), arm64 image"
+  },
+  "gated": ["desktop", "phone", "server"],
+  "metrics": [
+    { "id": "cold-start", "name": "cold start to the Today list", "unit": "ms", "limits": { "desktop": 1200, "phone": 3000, "device-android": 3000, "device-ios": 3000 } },
+    { "id": "open-project", "name": "open the 2,000-task project", "unit": "ms", "limits": { "desktop": 400, "phone": 1200, "device-android": 1200, "device-ios": 1200 } },
+    { "id": "search-keystroke", "name": "search keystroke, p95", "unit": "ms", "limits": { "desktop": 50, "phone": 150, "device-android": 150, "device-ios": 150 } },
+    { "id": "saved-view", "name": "saved view (8 clauses)", "unit": "ms", "limits": { "desktop": 100, "phone": 300 } },
+    { "id": "complete-task", "name": "complete a task in the 2,000-row list, p95", "unit": "ms", "limits": { "desktop": 50, "phone": 150, "device-android": 150, "device-ios": 150 } },
+    { "id": "cursor-move", "name": "cursor move, p95", "unit": "ms", "limits": { "desktop": 16, "phone": 50 } },
+    { "id": "first-sync", "name": "first sync", "unit": "s", "limits": { "desktop": 30, "phone": 75, "device-android": 90, "device-ios": 90 } },
+    { "id": "first-sync-long-task", "name": "longest main-thread task during first sync", "unit": "ms", "limits": { "desktop": 200 } },
+    { "id": "remote-edit", "name": "remote edit painted on another device", "unit": "ms", "limits": { "desktop": 1000 } },
+    { "id": "js-heap", "name": "JS heap after the session", "unit": "MB", "limits": { "desktop": 150, "phone": 150 } },
+    { "id": "indexeddb", "name": "IndexedDB usage", "unit": "MB", "limits": { "desktop": 80 } },
+    { "id": "app-memory", "name": "app process memory", "unit": "MB", "limits": { "device-android": 350, "device-ios": 350 } },
+    { "id": "server-start", "name": "server start to healthy", "unit": "ms", "limits": { "server": 2000, "pi4": 8000 } },
+    { "id": "server-idle-rss", "name": "server idle memory", "unit": "MB", "limits": { "server": 60, "pi4": 240 } },
+    { "id": "server-pull-rss", "name": "server peak memory during a first pull", "unit": "MB", "limits": { "server": 150, "pi4": 600 } },
+    { "id": "server-export-rss", "name": "server peak memory during the export", "unit": "MB", "limits": { "server": 200, "pi4": 800 } },
+    { "id": "server-pull-page", "name": "pull page of 1,000 ops, p95", "unit": "ms", "limits": { "server": 80, "pi4": 320 } },
+    { "id": "server-push", "name": "push of 100 ops, p95", "unit": "ms", "limits": { "server": 100, "pi4": 400 } },
+    { "id": "server-list-project", "name": "REST list of the 2,000-task project, p95", "unit": "ms", "limits": { "server": 150, "pi4": 600 } },
+    { "id": "server-get-task", "name": "REST read of one task, p95", "unit": "ms", "limits": { "server": 10, "pi4": 40 } },
+    { "id": "server-export", "name": "full JSON export", "unit": "ms", "limits": { "server": 3000, "pi4": 12000 } },
+    { "id": "server-mcp-search", "name": "MCP search_tasks, p95", "unit": "ms", "limits": { "server": 200, "pi4": 800 } },
+    { "id": "server-db-size", "name": "database file", "unit": "MB", "limits": { "server": 150, "pi4": 150 } }
+  ]
+}

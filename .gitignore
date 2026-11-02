@@ -28,6 +28,7 @@ __pycache__/
 
 # Tooling
 coverage.out
+/perf-report/
 gosec.sarif
 *.log
 .DS_Store
