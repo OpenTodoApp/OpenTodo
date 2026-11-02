@@ -5191,7 +5191,7 @@
   "Thumbs up": "Pollice in su",
   "Thursday": "Giovedì",
   "Tick every task in the list": "Spunta tutte le attività dell’elenco",
-  "Tick it and show every checkbox; Select tasks in the page menu does the same, Done hides them": "La spunta e mostra tutte le caselle; «Seleziona attività» nel menu della pagina fa lo stesso, «Fine» le nasconde",
+  "Tick it and show every checkbox; Select tasks in the page menu does the same, Close hides them": "La spunta e mostra tutte le caselle; «Seleziona attività» nel menu della pagina fa lo stesso, «Chiudi» le nasconde",
   "Tick me off when you have read this": "Spuntami quando hai letto questo",
   "Tick the selected task for a bulk action (Space with Vim keybindings on)": "Spunta l’attività selezionata per un’azione di gruppo (Spazio con le scorciatoie Vim attive)",
   "Tick {title}": "Spunta {title}",

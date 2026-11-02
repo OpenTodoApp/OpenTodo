@@ -80,7 +80,7 @@ export function TaskPageDialog({ task, status, onClose }: { task: Task; status: 
           <div className="flex flex-wrap justify-end gap-2">
             {copied && <span role="status" className="self-center text-meta text-muted">{t('Link copied')}</span>}
             <Button icon="copy" onClick={copy} data-page-copy>{t('Copy link')}</Button>
-            <Button variant="primary" onClick={onClose}>{t('Done')}</Button>
+            <Button variant="primary" onClick={onClose}>{t('Close')}</Button>
           </div>
         </div>
       </Dialog>
