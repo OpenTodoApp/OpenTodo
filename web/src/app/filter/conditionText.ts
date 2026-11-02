@@ -5,6 +5,8 @@ import { formatMinutes, type Leaf } from '../../lib/filter/builder'
 import type { Cmp, Keyword } from '../../lib/filter/parse'
 import { msg, t, translatedMap } from '../../lib/i18n'
 import { energyName } from '../../lib/energy'
+import { SECTOR_WORDS, type SectorWord } from '../../lib/sectors'
+import { sectorWordName } from '../../lib/sectorNames'
 
 export const DATE_FIELD_NAME = translatedMap({
   due: msg('Due'), deadline: msg('Deadline'), start: msg('Start'), created: msg('Created'), completed: msg('Completed'),
@@ -38,6 +40,9 @@ export const KEYWORD_NAME = translatedMap<Keyword>({
   'no origin': msg('No origin'),
   tracked: msg('Has tracked time'),
   energy: msg('Has an energy'),
+  sector: msg('Has a time sector'),
+  'no sector': msg('No time sector'),
+  carried: msg('Carried over'),
   'no energy': msg('No energy'),
   notes: msg('Has a note'),
   'no notes': msg('No note'),
@@ -110,6 +115,7 @@ export function conditionText(leaf: Leaf): string {
     case 'notes': return t('Note contains {text}', { text: leaf.text })
     case 'origin': return t('Origin is {value}', { value: leaf.value })
     case 'energy': return t('Energy is {level}', { level: energyName(leaf.value) })
+    case 'sector': return t('Time sector is {name}', { name: (SECTOR_WORDS as readonly string[]).includes(leaf.value) ? sectorWordName(leaf.value as SectorWord) : leaf.value })
     case 'workspace': return t('Workspace is {name}', { name: leaf.name })
     case 'tracked': return compareText(t('Tracked time'), leaf.op, formatMinutes(leaf.minutes))
     case 'field': return compareText(leaf.name, leaf.op, fieldValueWords(leaf.value))

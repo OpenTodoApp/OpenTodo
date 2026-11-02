@@ -34,6 +34,8 @@ func TestSharedVectors(t *testing.T) {
 				Evening *bool   `json:"evening"`
 				// Energy is compared when a case states it (task-energy).
 				Energy *string `json:"energy"`
+				// Sector is compared when a case states it (time-sectors).
+				Sector *string `json:"sector"`
 			} `json:"expect"`
 		} `json:"cases"`
 	}
@@ -68,6 +70,11 @@ func TestSharedVectors(t *testing.T) {
 				want.Energy = *c.Expect.Energy
 			} else {
 				got.Energy = ""
+			}
+			if c.Expect.Sector != nil {
+				want.Sector = *c.Expect.Sector
+			} else {
+				got.Sector = ""
 			}
 			if want.Reminders == nil {
 				want.Reminders = []Reminder{}

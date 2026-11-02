@@ -197,17 +197,21 @@ func (f Fill) WaitingSet() map[string]bool {
 
 // Sensitive is a waiting task with a time today (OpenSpec change
 // today-waiting-time-sensitive): its due time, or empty for a deadline today
-// without one.
+// without one. Passed is true once its time is before now
+// (today-waiting-time-passed); a deadline without a time never passes today.
 type Sensitive struct {
-	ID   string
-	Time string
+	ID     string
+	Time   string
+	Passed bool
 }
 
 // TimeSensitive returns the waiting tasks due today with a time or with a
 // deadline today, soonest first: by time, then the deadlines without a time
 // (the end of the day), ties in fill order. waiting is the waiting tasks in
-// fill order; the fill order itself is never changed.
-func TimeSensitive(waiting []Task, today string) []Sensitive {
+// fill order; the fill order itself is never changed. now is the wall time of
+// today ("HH:MM"; past "24:00" once the day has ended before the day start),
+// and a task whose time is before it is marked Passed.
+func TimeSensitive(waiting []Task, today, now string) []Sensitive {
 	out := []Sensitive{}
 	for _, t := range waiting {
 		timed := ""
@@ -215,7 +219,7 @@ func TimeSensitive(waiting []Task, today string) []Sensitive {
 			timed = t.Time
 		}
 		if timed != "" || t.Deadline == today {
-			out = append(out, Sensitive{ID: t.ID, Time: timed})
+			out = append(out, Sensitive{ID: t.ID, Time: timed, Passed: timed != "" && now != "" && timed < now})
 		}
 	}
 	key := func(s Sensitive) string {
@@ -226,6 +230,28 @@ func TimeSensitive(waiting []Task, today string) []Sensitive {
 	}
 	sort.SliceStable(out, func(i, j int) bool { return key(out[i]) < key(out[j]) })
 	return out
+}
+
+// Next is the first time-sensitive task whose time has not passed (the one the
+// folded heading names); false when there is none or every one has passed.
+func Next(soon []Sensitive) (Sensitive, bool) {
+	for _, s := range soon {
+		if !s.Passed {
+			return s, true
+		}
+	}
+	return Sensitive{}, false
+}
+
+// Passed counts the time-sensitive tasks whose time has passed.
+func Passed(soon []Sensitive) int {
+	n := 0
+	for _, s := range soon {
+		if s.Passed {
+			n++
+		}
+	}
+	return n
 }
 
 // WaitingTasks is the waiting tasks of f in fill order, from tasks.

@@ -103,7 +103,8 @@ function compareSame(a: Period, b: Period): number {
   return a.year - b.year || a.n - b.n
 }
 
-function nextOf(p: Period): Period {
+/** The period after `p`, of the same kind. */
+export function nextOf(p: Period): Period {
   const max = p.kind === 'week' ? isoWeeksIn(p.year) : p.kind === 'month' ? 12 : 4
   return p.n < max ? { ...p, n: p.n + 1 } : { kind: p.kind, year: p.year + 1, n: 1 }
 }
