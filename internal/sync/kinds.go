@@ -403,3 +403,34 @@ func checkInstant(raw json.RawMessage) error {
 	}
 	return nil
 }
+
+// isDate and isClock check the shape of "YYYY-MM-DD" and "HH:MM" (digits and separators).
+func isDate(s string) bool {
+	if len(s) != 10 || s[4] != '-' || s[7] != '-' {
+		return false
+	}
+	for i, c := range s {
+		if i == 4 || i == 7 {
+			continue
+		}
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+func isClock(s string) bool {
+	if len(s) != 5 || s[2] != ':' {
+		return false
+	}
+	for i, c := range s {
+		if i == 2 {
+			continue
+		}
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
+}
