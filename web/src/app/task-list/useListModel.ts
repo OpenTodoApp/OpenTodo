@@ -15,6 +15,7 @@ import { useListDisplay } from './useListDisplay'
 import { orderRank } from '../../lib/viewOrder'
 import { useAccountRowLayout } from '../../lib/rowLayout'
 import { useUserPrefsRow } from '../../lib/localData'
+import { upcomingStartsWithToday } from '../../lib/userPrefs'
 import { dayPartsOn } from '../../lib/dayParts'
 import { useClosedList } from './useClosedList'
 import { NO_TASKS, useLiveTasks } from '../../lib/liveTasks'
@@ -22,7 +23,7 @@ import { LOGBOOK_PAGE, logbookGroups } from '../../lib/logbook'
 import { canEditTasks, roleOf } from '../../lib/sharing'
 import { buildTaskTree, progressMap } from '../../lib/subtasks'
 import type { Task } from '../../lib/types'
-import { inLater } from '../../lib/views'
+import { inLater, inToday } from '../../lib/views'
 import { DESKTOP_HEADER_QUERY, useMediaQuery } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { hasTimeColumn } from '../../lib/rowTime'
@@ -147,8 +148,11 @@ export function useListModel(route: ListRoute, userId?: string) {
 
   const filter = useDurationFilter(route)
   const { duration, filterKey } = filter
+  // Upcoming's Start with Today (upcoming-start-with-today D1): the account's synced choice.
+  const accountPrefs = useUserPrefsRow()
+  const upcomingToday = route.view === 'upcoming' && upcomingStartsWithToday(accountPrefs)
   // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  const viewTasks = useMemo(() => tasksForView(route, allTasks, projects, today, userId), [allTasks, projects, route, today, zone, userId])
+  const viewTasks = useMemo(() => tasksForView(route, allTasks, projects, today, userId, upcomingToday), [allTasks, projects, route, today, zone, userId, upcomingToday])
   // Upcoming's query filter (calendar-clarity D4), under the duration filter; per device, on local rows.
   const upcoming = useQueryFilter(UPCOMING_FILTER_KEY, allTasks)
   const queryTest = route.view === 'upcoming' ? upcoming.test : null
@@ -188,20 +192,23 @@ export function useListModel(route: ListRoute, userId?: string) {
   const manualOrder = useMemo(() => (route.view === 'label' ? orderRank(labelOrder) : undefined), [route.view, labelOrder])
 
   // Today grouped by part of the day (day-parts D3): the account's synced choice.
-  const dayParts = dayPartsOn(useUserPrefsRow())
-  // Today's closed list (today-closed-list): slots from the whole of Today, before the duration filter.
-  const closed = useClosedList(route.view === 'today', viewTasks, allTasks, today, flow, blocked)
+  const dayParts = dayPartsOn(accountPrefs)
+  // Today's closed list (today-closed-list): slots from the whole of Today, before the duration filter;
+  // Upcoming's Start with Today fills them from the same Today tasks (upcoming-start-with-today D3).
+  const todayTasks = useMemo(() => (upcomingToday ? viewTasks.filter((x) => inToday(x, today)) : viewTasks), [upcomingToday, viewTasks, today])
+  const closed = useClosedList(route.view === 'today' || upcomingToday, todayTasks, allTasks, today, flow, blocked)
   const closedList = useMemo(() => {
     if (!closed.fill.limit) return undefined
     const shown = new Set(tasks.map((x) => x.id))
     return { limit: closed.fill.limit, waiting: closed.fill.waiting.filter((id) => shown.has(id)).map((id) => taskMap.get(id)!).filter(Boolean) }
   }, [closed.fill, tasks, taskMap])
-  const doneToday = closed.doneToday ?? undefined
+  // Done today stays Today's own: Upcoming looks ahead (upcoming-start-with-today D3).
+  const doneToday = route.view === 'today' ? closed.doneToday ?? undefined : undefined
   const groups = useMemo<ListGroup[]>(() => listGroups({
     view: route.view, tasks, laterTasks, tree, today, resolved: dt.resolved, collapsed, blocked: held, taskMap,
-    projects, projectMap, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday,
+    projects, projectMap, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday, upcomingToday,
     // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  }), [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, board, columns, buckets, liveSections, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday])
+  }), [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, board, columns, buckets, liveSections, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday, upcomingToday])
   // Upcoming's projected occurrences (series-occurrences D4): off by default, per device; never rows.
   const projectedGroups = useUpcomingGroups(route.view === 'upcoming', groups, { allTasks, projects, today, zone, duration: filterKey ? duration : null, queryTest, resolved: dt.resolved })
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
@@ -237,7 +244,7 @@ export function useListModel(route: ListRoute, userId?: string) {
     projectEditable: !!projectId && canEditTasks(roleOf(projectId, memberMap)),
     allTasks, taskMap, progress, blocked, flow, habits, ...filter, logbook, logbookLimit, setLogbookLimit,
     collapsed, toggleCollapsed, ...layout, tree, columns, groups: projectedGroups, rows, ownRows, siblingPos, timeColumn, doneBySection,
-    showCompleted, completedTasks, completedOpen, display, displayScope, listDisplay, dayParts, closed,
+    showCompleted, completedTasks, completedOpen, display, displayScope, listDisplay, dayParts, closed, upcomingToday,
     queryFilter: route.view === 'upcoming' ? upcoming : null,
   }
 }
