@@ -44,19 +44,23 @@ func nullableInt(n int) any {
 }
 
 // waitingForSlot fills Today's slots from its open tasks (overdue and due
-// today) and returns the ids that wait; nil when the limit is off.
-func (snap *snapshot) waitingForSlot(limit int, rev closedlist.Review, today string, loc *time.Location, tasks []opsync.Entity) map[string]bool {
+// today) and returns the ids that wait, and those of them with a time today
+// (due today with a time, or a deadline today), soonest first (OpenSpec change
+// today-waiting-time-sensitive); nil when the limit is off.
+func (snap *snapshot) waitingForSlot(limit int, rev closedlist.Review, today string, loc *time.Location, tasks []opsync.Entity) (map[string]bool, []closedlist.Sensitive) {
 	if limit == 0 {
-		return nil
+		return nil, nil
 	}
 	states := snap.flowStates(today)
 	in := closedlist.Input{Limit: limit, Today: today, Review: rev}
 	for _, t := range tasks {
-		date, _ := localDue(taskDue(t), loc)
+		date, clock := localDue(taskDue(t), loc)
 		in.Tasks = append(in.Tasks, closedlist.Task{
 			ID: str(t, "id"), CreatedAt: int64(num(t, "created_at")), Earlier: date < today, Due: date,
 			Habit: boolean(t, "habit"), Blocked: !states.Available(str(t, "id")),
+			Time: clock, Deadline: rawStr(t, "deadline"),
 		})
 	}
-	return closedlist.Compute(in, nil).WaitingSet()
+	f := closedlist.Compute(in, nil)
+	return f.WaitingSet(), closedlist.TimeSensitive(f.WaitingTasks(in.Tasks), today)
 }

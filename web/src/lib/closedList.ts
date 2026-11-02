@@ -6,7 +6,8 @@
 //
 // The Go twin is internal/closedlist; both evaluate web/src/lib/closedList.vectors.json
 // and must agree. Change them together.
-import type { Review, UserPrefs } from './types'
+import { localDueOf } from './dates'
+import type { Review, Task, UserPrefs } from './types'
 
 /** The largest limit (and the most ids a taken list keeps). */
 export const TODAY_LIMIT_MAX = 20
@@ -46,6 +47,10 @@ export interface SlotTask {
   habit?: boolean
   /** Blocked by an open task: the fallback rule when no availability predicate is given. */
   blocked?: boolean
+  /** The due time in the user's zone, HH:MM, when the task has a due date (with `due` that date). */
+  time?: string | null
+  /** The deadline, YYYY-MM-DD. */
+  deadline?: string | null
 }
 
 export interface SlotInput {
@@ -115,4 +120,39 @@ export function takeSlotList(fill: SlotFill, taken: readonly string[], id: strin
 /** The taken list after Give back the slot for `id`. */
 export function giveBackSlotList(taken: readonly string[], id: string): string[] {
   return taken.filter((x) => x !== id)
+}
+
+/** A waiting task that has a time today (today-waiting-time-sensitive D1): its due time, or null for a deadline today without one. */
+export interface TimeSensitive {
+  id: string
+  time: string | null
+}
+
+/**
+ * The waiting tasks that are time-sensitive (today-waiting-time-sensitive D1): due
+ * today with a time, or with a deadline today. Soonest first: by time, then the
+ * deadlines without a time (the end of the day), ties in fill order. `waiting` is
+ * the waiting tasks in fill order; the fill order itself is never changed.
+ */
+export function timeSensitive(waiting: readonly SlotTask[], today: string): TimeSensitive[] {
+  const out: (TimeSensitive & { at: number })[] = []
+  waiting.forEach((t, at) => {
+    const timed = t.due === today && t.time ? t.time : null
+    if (timed || t.deadline === today) out.push({ id: t.id, time: timed, at })
+  })
+  const key = (x: TimeSensitive) => x.time ?? '24:00'
+  return out.sort((a, b) => (key(a) < key(b) ? -1 : key(a) > key(b) ? 1 : a.at - b.at)).map(({ id, time }) => ({ id, time }))
+}
+
+/**
+ * `timeSensitive` over Today's waiting tasks in fill order, with each task and its
+ * due time in the user's zone (null for a deadline today without one).
+ */
+export function waitingTimeSensitive(waiting: readonly Task[], today: string): { task: Task; time: string | null }[] {
+  const byId = new Map(waiting.map((t) => [t.id, t]))
+  const rows = waiting.map((t) => {
+    const local = localDueOf(t.due)
+    return { id: t.id, created_at: t.created_at, due: local ? local.date : (t.deadline ?? null), time: local?.time ?? null, deadline: t.deadline ?? null }
+  })
+  return timeSensitive(rows, today).map((x) => ({ task: byId.get(x.id)!, time: x.time }))
 }

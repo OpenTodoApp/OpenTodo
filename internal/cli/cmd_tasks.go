@@ -246,7 +246,7 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 		slots, waiting := split.parts(tasks)
 		a.renderTasks(slots, projects, all, today)
 		fmt.Fprintln(a.Stdout)
-		fmt.Fprintln(a.Stdout, "Waiting for a slot")
+		split.printWaiting(a.Stdout, waiting)
 		a.renderTasks(waiting, projects, all, today)
 		return nil
 	}

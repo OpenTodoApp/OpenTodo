@@ -16,6 +16,8 @@ type vTask struct {
 	Habit     bool    `json:"habit"`
 	Blocked   bool    `json:"blocked"`
 	Available *bool   `json:"available"`
+	Time      *string `json:"time"`
+	Deadline  *string `json:"deadline"`
 }
 
 type vector struct {
@@ -35,6 +37,10 @@ type vector struct {
 		Waiting []string `json:"waiting"`
 		Chosen  int      `json:"chosen"`
 	} `json:"expect"`
+	TimeSensitive []struct {
+		ID   string  `json:"id"`
+		Time *string `json:"time"`
+	} `json:"time_sensitive"`
 	Take *struct {
 		ID    string          `json:"id"`
 		Taken json.RawMessage `json:"taken"`
@@ -70,6 +76,12 @@ func TestVectors(t *testing.T) {
 				if x.Due != nil {
 					task.Due = *x.Due
 				}
+				if x.Time != nil {
+					task.Time = *x.Time
+				}
+				if x.Deadline != nil {
+					task.Deadline = *x.Deadline
+				}
 				avail[x.ID] = x.Available == nil || *x.Available
 				tasks = append(tasks, task)
 			}
@@ -83,6 +95,17 @@ func TestVectors(t *testing.T) {
 			want := fmt.Sprint(v.Expect.Limit, v.Expect.Slots, v.Expect.Waiting, v.Expect.Chosen)
 			if got != want {
 				t.Fatalf("fill = %s, want %s", got, want)
+			}
+			wantTS := []Sensitive{}
+			for _, x := range v.TimeSensitive {
+				s := Sensitive{ID: x.ID}
+				if x.Time != nil {
+					s.Time = *x.Time
+				}
+				wantTS = append(wantTS, s)
+			}
+			if got := TimeSensitive(f.WaitingTasks(tasks), file.Today); !reflect.DeepEqual(got, wantTS) {
+				t.Fatalf("time sensitive = %v, want %v", got, wantTS)
 			}
 			if v.Take == nil {
 				return

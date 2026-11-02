@@ -108,6 +108,27 @@ describe('listGroups', () => {
     expect(parts.map(titles)).toEqual([['A'], ['B'], [], []])
   })
 
+  it('folded Waiting keeps the tasks with a time today in sight, soonest first (today-waiting-time-sensitive D2)', () => {
+    const a = task({ title: 'A', due: { date: TODAY } })
+    const form = task({ title: 'Send the form', due: { date: TODAY, time: '16:00' } })
+    const plain = task({ title: 'Plain', due: { date: TODAY } })
+    const taxes = task({ title: 'File the taxes', deadline: TODAY })
+    const resolved = { ...currentDateTime(), time: '12h' as const }
+    const base = input({ view: 'today', tasks: [a, form, plain, taxes], resolved, closedList: { limit: 1, waiting: [form, plain, taxes] } })
+    const folded = listGroups(base).find((x) => x.key === 'waiting')!
+    expect(folded.soon!.map((s) => [s.task.title, s.time])).toEqual([['Send the form', '16:00'], ['File the taxes', null]])
+    expect(folded.detail).toBe('next: Send the form, 4:00 PM')
+    // Opened, the group is as before.
+    const open = listGroups({ ...base, collapsed: new Set([WAITING_OPEN_KEY]) }).find((x) => x.key === 'waiting')!
+    expect(open.soon).toBeUndefined()
+    expect(titles(open)).toEqual(['Send the form', 'Plain', 'File the taxes'])
+    // Only a deadline: named as such.
+    const deadline = listGroups(input({ view: 'today', tasks: [a, taxes], closedList: { limit: 1, waiting: [taxes] } })).find((x) => x.key === 'waiting')!
+    expect(deadline.detail).toBe('next: File the taxes, deadline today')
+    // No time today: a plain heading.
+    expect(listGroups(input({ view: 'today', tasks: [a, plain], closedList: { limit: 1, waiting: [plain] } })).find((x) => x.key === 'waiting')!.detail).toBeUndefined()
+  })
+
   it('Today ends with a folded Done today group, newest first (today-closed-list D6)', () => {
     const open = task({ title: 'Open', due: { date: TODAY } })
     const done1 = task({ title: 'Done 1', completed_at: 5 })
