@@ -125,12 +125,13 @@ jobs:
         working-directory: web
 
   web-scale:
-    # The 2,000-row scale tests (*.perf.test.tsx) on a runner of their own, beside the
-    # web job: in the parallel unit pool they raced every other file and timed out under
-    # load (test audit F4). They assert counts, not times.
-    name: Web scale tests (2,000 rows)
+    # The scale tests (*.perf.test.tsx: lists of 2,000 rows, the 10,000-task account of
+    # performance-10k) on a runner of their own, beside the web job: in the parallel
+    # unit pool they raced every other file and timed out under load (test audit F4).
+    # They assert counts, not times.
+    name: Web scale tests (10,000 tasks)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     needs: changes
     if: needs.changes.outputs.code == 'true'
     steps:
