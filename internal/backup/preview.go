@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/textutil"
 )
 
 // restoreMargin is kept free on top of what a restore or a backup needs.
@@ -38,7 +39,7 @@ func ensureSpace(freeFn func(string) (int64, bool), dir string, need int64, base
 	if !ok || free >= need+restoreMargin {
 		return nil
 	}
-	return fmt.Errorf("%w: %s needed in %s, %s free", base, humanBytes(need+restoreMargin), dir, humanBytes(free))
+	return fmt.Errorf("%w: %s needed in %s, %s free", base, textutil.HumanBytes(need+restoreMargin), dir, textutil.HumanBytes(free))
 }
 
 // uploadCap is the largest archive the data directory can take for a restore:
@@ -53,19 +54,6 @@ func uploadCap(freeFn func(string) (int64, bool), dataDir string) int64 {
 		return 0
 	}
 	return c
-}
-
-func humanBytes(n int64) string {
-	const unit = 1024
-	if n < unit {
-		return fmt.Sprintf("%d B", n)
-	}
-	div, exp := int64(unit), 0
-	for m := n / unit; m >= unit; m /= unit {
-		div *= unit
-		exp++
-	}
-	return fmt.Sprintf("%.1f %ciB", float64(n)/float64(div), "KMGTPE"[exp])
 }
 
 // Counts summarise what a restore brings back.

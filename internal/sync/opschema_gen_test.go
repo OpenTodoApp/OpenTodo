@@ -39,14 +39,14 @@ const (
 var tsEntity = map[string]string{
 	"project": "Project", "task": "Task", "label": "Label", "view": "View", "reminder": "Reminder", "section": "Section",
 	"comment": "Comment", "project_prefs": "ProjectPrefs", "user_prefs": "UserPrefs", "attachment": "Attachment",
-	"field": "FieldDef", "review": "Review", "time_entry": "TimeEntry", "place": "Place", "rule": "Rule", "frame": "Frame", "slot": "Slot", "note": "Note", "theme": "CustomTheme",
+	"field": "FieldDef", "review": "Review", "time_entry": "TimeEntry", "place": "Place", "rule": "Rule", "frame": "Frame", "slot": "Slot", "note": "Note", "theme": "CustomTheme", "objective": "Objective",
 }
 
 // tsKind is the web type of a field of each kind. A hand-written entity type
 // may narrow it (a literal union, a required field).
 func tsKind(k kind) string {
 	switch k {
-	case kString, kID, kDoc, kClock, kWeekdays, kEnergy, kSector:
+	case kString, kID, kDoc, kClock, kWeekdays, kEnergy, kSector, kObjectiveTitle, kObjectivePeriod:
 		return "string"
 	case kNullableString, kRecurrence, kNullableText, kDate, kStart, kDayPart:
 		return "string | null"

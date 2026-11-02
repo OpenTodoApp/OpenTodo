@@ -73,6 +73,9 @@ const (
 	// KindTheme is a custom theme (OpenSpec change theme-editor, D1), restored
 	// verbatim from an own export with its id, like a rule.
 	KindTheme = "theme"
+	// KindObjective is a quarterly or weekly objective (OpenSpec change
+	// plan-objectives, D7), restored verbatim from an own export with its id.
+	KindObjective = "objective"
 )
 
 // Due is a floating due date with an optional wall-clock time.

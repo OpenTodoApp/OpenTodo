@@ -107,13 +107,6 @@ type apiError struct {
 	Raw     []byte
 }
 
-func (e *apiError) Error() string {
-	if e.Message != "" {
-		return e.Message
-	}
-	return fmt.Sprintf("server returned HTTP %d", e.Status)
-}
-
 const defaultTimeout = 15 * time.Second
 
 // client is a thin bearer-token HTTP client for /api/v1.
@@ -347,8 +340,11 @@ type project struct {
 	// FlowMode is the stored flow (project-flow-modes); read it with flow.ProjectFlow.
 	FlowMode string `json:"flow_mode"`
 	// Status is active or maintenance (project-review-cadence); empty reads as active.
-	Status string          `json:"status"`
-	Raw    json.RawMessage `json:"-"`
+	Status string `json:"status"`
+	// Reusable and Aisles are the reusable-list mode (reusable-lists).
+	Reusable bool            `json:"reusable"`
+	Aisles   bool            `json:"aisles"`
+	Raw      json.RawMessage `json:"-"`
 }
 
 type token struct {

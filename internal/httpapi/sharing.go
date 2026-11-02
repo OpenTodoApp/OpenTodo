@@ -307,6 +307,8 @@ func (s *Server) annotateProjects(ctx context.Context, entity string, list ...op
 			// And energy, null when none (task-energy D7).
 			presentEnergy(e)
 			presentSector(e)
+			// And the people who take turns, [] when none (chore-rotation D6).
+			presentRotation(e)
 		}
 		return nil
 	}
@@ -314,7 +316,7 @@ func (s *Server) annotateProjects(ctx context.Context, entity string, list ...op
 		// Every section representation carries color and icon, null when unset
 		// (OpenSpec change icons-and-section-style, "Sections API").
 		for _, e := range list {
-			for _, f := range []string{"color", "icon"} {
+			for _, f := range []string{"color", "icon", "aisle"} {
 				if _, has := e[f]; e != nil && !has {
 					e[f] = json.RawMessage("null")
 				}
@@ -341,6 +343,7 @@ func (s *Server) annotateProjects(ctx context.Context, entity string, list ...op
 	for _, e := range list {
 		defaultFlowMode(e)
 		defaultProjectStatus(e)
+		presentReusable(e)
 	}
 	shared, err := s.sync.SharedProjects(ctx, userFrom(ctx).ID)
 	if err != nil || len(shared) == 0 {
@@ -367,6 +370,9 @@ func stripAnnotations(entity string, body map[string]json.RawMessage) {
 	delete(body, "body_version")
 	if entity == "task" || entity == "note" {
 		delete(body, "appends")
+	}
+	if entity == "task" {
+		delete(body, "reused") // the answer of a create with reuse (reusable-lists)
 	}
 	if entity == "project" {
 		delete(body, "role")

@@ -25,6 +25,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | &nbsp;&nbsp;↳ [The task panel](task-panel.md) | Everything in a task's panel: the title and its menu, the notes, the property chips and the Add menu, what a viewer can do, and how to close it. |
 | &nbsp;&nbsp;↳ [Dates and times](dates-and-times.md) | How due dates and times work, every way to type or pick them, and fixing a time to a time zone for something that happens at one moment worldwide. |
 | &nbsp;&nbsp;↳ [Time sectors](time-sectors.md) | Plan a task for this week, next week or this month without a fake date: the stored week, month or quarter, carry-over, and how the API, CLI, CalDAV and the vault carry it. |
+| &nbsp;&nbsp;↳ [Objectives](objectives.md) | Pin up to five quarterly and five weekly objectives in the Plan and the weekly review: the limit, carry-over, encryption, and the API, CLI and MCP. |
 | &nbsp;&nbsp;↳ [Deadlines and start dates](deadlines-and-start-dates.md) | A deadline is the day a task must be done by; a start date defers it until it matters. Countdowns, Someday, This Evening and the keys for each. |
 | &nbsp;&nbsp;↳ [Notes, subtasks and dependencies](notes-and-subtasks.md) | Write formatted notes, break a task into subtasks and nest them, and make a task wait for another one with Blocked by. |
 | &nbsp;&nbsp;↳ [Work from the list](work-from-the-list.md) | Add, complete and delete tasks, change them with one key, undo, and put them in the order you want, all without opening a task. |
@@ -33,6 +34,8 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | &nbsp;&nbsp;↳ [All projects](all-projects.md) | Every project in a table with its health, progress, open tasks, next due date, people and last change; how health is worked out, sorting, the keyboard and the Archived tab. |
 | &nbsp;&nbsp;↳ [Project notes](project-notes.md) | The note at the top of a project: what it is for, who can edit it, Shift+P, folding long notes, and how the API and history see it. |
 | &nbsp;&nbsp;↳ [Completed tasks in a project](completed-in-projects.md) | Keep a project's completed tasks at the end of its list in a Completed group, for lists you tick off and reuse such as groceries. |
+| &nbsp;&nbsp;↳ [Reusable lists](reusable-lists.md) | Make a project a reusable list for groceries or packing, so adding an item that is already there brings it back and ticked items stay in a Got it group. |
+| &nbsp;&nbsp;↳ [Sort a list into aisles](reusable-list-aisles.md) | Let new items of a reusable list go to aisle sections such as Produce or Dairy and eggs, and reuse items from the API, the command line and AI assistants. |
 | [Views](views.md) | Inbox, Today, Upcoming, Assigned to me, Completed and the calendar, plus views you save yourself, dashboards and the view each device opens on. |
 | &nbsp;&nbsp;↳ [The built-in views](built-in-views.md) | What Inbox, Today, Upcoming, Anytime, Someday, Assigned to me, Calendar, Completed, Filter, Trash and Updates show, their shortcuts, and the duration filter. |
 | &nbsp;&nbsp;↳ [Weekly review](review-and-statistics.md) | A guided weekly review with live data in seven steps, from the Inbox through every project, one card at a time, to Someday. |

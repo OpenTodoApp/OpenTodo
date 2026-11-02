@@ -237,6 +237,7 @@ func TestOutputsMatchSchemas(t *testing.T) {
 	var proj map[string]any
 	_ = json.Unmarshal([]byte(check("project add", "project", "add", "Garden")), &proj)
 	check("project rename", "project", "rename", "Garden", "Garden 2")
+	check("project edit", "project", "edit", "Garden 2", "--reusable")
 	check("project archive", "project", "archive", "Garden 2")
 	check("project rm", "project", "rm", proj["id"].(string), "--yes")
 	check("token create", "token", "create", "schema-token", "--scope", "read")
@@ -581,6 +582,7 @@ func TestDryRunSendsNoWrites(t *testing.T) {
 	h.seedFrame()
 	h.seedSlot()
 	h.put("note", "meet0001", map[string]any{"title": "Meeting", "description": "- agenda", "labels": []string{}, "project_id": nil, "deleted_at": nil})
+	h.put("objective", "obj00001", map[string]any{"title": "Ship", "period": "2026-Q4", "position": 1, "done_at": 0})
 	cfgBefore, _ := os.ReadFile(h.configPath)
 	schemas := loadSchemas(t)
 	cases := [][]string{
@@ -591,6 +593,7 @@ func TestDryRunSendsNoWrites(t *testing.T) {
 		{"rm", "book"},
 		{"project", "add", "Dry project"},
 		{"project", "rename", "Home", "Elsewhere"},
+		{"project", "edit", "Home", "--reusable", "--aisles"},
 		{"project", "move", "Home", "--workspace", "Personal"},
 		{"project", "archive", "Home"},
 		{"project", "rm", "Home"},
@@ -617,6 +620,11 @@ func TestDryRunSendsNoWrites(t *testing.T) {
 		{"slots", "add", "Dry slot", "--date", "2026-11-05"},
 		{"slots", "put", "Errands", "plum"},
 		{"slots", "rm", "Errands"},
+		{"objectives", "add", "Dry objective", "--week"},
+		{"objectives", "done", "obj0"},
+		{"objectives", "undone", "obj0"},
+		{"objectives", "edit", "obj0", "--title", "Renamed"},
+		{"objectives", "delete", "obj0"},
 		{"import", writeTemp(t, "dry.csv", "title\nDry import\n")},
 		{"notes", "add", "Dry note", "--body", "- item"},
 		{"notes", "edit", "Meeting", "--body", "replaced"},

@@ -34,6 +34,23 @@ func TestCanWriteWorkspaceID(t *testing.T) {
 	}
 }
 
+// TestCanWriteReusable: editors and above turn a shared project's reusable-list
+// switches on and off (OpenSpec reusable-lists, "Reusable list mode"); viewers
+// do not, and editors still change no other project field.
+func TestCanWriteReusable(t *testing.T) {
+	t.Parallel()
+	for _, f := range []string{"reusable", "aisles"} {
+		for role, want := range map[string]bool{RoleOwner: true, RoleAdmin: true, RoleEditor: true, RoleViewer: false} {
+			if got := CanWrite(role, "project", f); got != want {
+				t.Errorf("CanWrite(%s, project, %s) = %v, want %v", role, f, got, want)
+			}
+		}
+	}
+	if CanWrite(RoleEditor, "project", "name") || CanWrite(RoleEditor, "project", "status") {
+		t.Fatal("editors gained other project fields")
+	}
+}
+
 func TestAdminCannotMoveSharedProject(t *testing.T) {
 	t.Parallel()
 	f := newSharing(t)

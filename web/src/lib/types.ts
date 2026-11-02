@@ -1,11 +1,11 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-import type { AttachmentFields, CommentFields, FieldDefFields, FrameFields, CustomThemeFields, LabelFields, NoteFields, PlaceFields, ProjectFields, ProjectPrefsFields, ReminderFields, ReviewFields, RuleFields, SectionFields, SlotFields, TaskFields, TimeEntryFields, UserPrefsFields, ViewFields } from '../generated/opSchema'
+import type { AttachmentFields, CommentFields, FieldDefFields, FrameFields, CustomThemeFields, ObjectiveFields, LabelFields, NoteFields, PlaceFields, ProjectFields, ProjectPrefsFields, ReminderFields, ReviewFields, RuleFields, SectionFields, SlotFields, TaskFields, TimeEntryFields, UserPrefsFields, ViewFields } from '../generated/opSchema'
 import type { ThemeDocument } from './theme/format'
 
-export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place' | 'rule' | 'frame' | 'slot' | 'note' | 'theme'
-export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry', 'place', 'rule', 'frame', 'slot', 'note', 'theme']
+export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place' | 'rule' | 'frame' | 'slot' | 'note' | 'theme' | 'objective'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry', 'place', 'rule', 'frame', 'slot', 'note', 'theme', 'objective']
 
 export interface Op {
   id: string
@@ -338,6 +338,24 @@ export interface CustomTheme extends CustomThemeFields {
   id: string
   doc: ThemeDocument | null
   position: number
+  created_at: number
+  deleted_at: number | null
+  _clock: Clock
+  _e2ee?: RowEncryption
+}
+
+/**
+ * A quarterly or weekly objective (OpenSpec change `plan-objectives`):
+ * personal, at most five open per period. `period` is a quarter "YYYY-Qn" or
+ * an ISO week "YYYY-Www"; `done_at` is 0 while open. A title this device
+ * could not decrypt is the placeholder string.
+ */
+export interface Objective extends ObjectiveFields {
+  id: string
+  title: string
+  period: string
+  position: number
+  done_at: number
   created_at: number
   deleted_at: number | null
   _clock: Clock
@@ -2239,6 +2257,8 @@ export interface AssignedPayload {
   projectId?: string
   projectName?: string
   at: number
+  /** The turn of a rotating recurring task passed to the recipient (chore-rotation D5). */
+  turn?: boolean
 }
 
 /** Payload of an `unblocked` notification (task-dependencies): the assignee's task is ready to start. */

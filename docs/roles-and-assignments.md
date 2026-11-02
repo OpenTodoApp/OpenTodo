@@ -32,6 +32,10 @@ Adding someone by email who shares no project or [workspace](workspaces.md) with
 
 The dialog answers the same whether or not the address has an account, so nobody can use it to find out who is on the server: an address without an account simply never answers. Invitations expire after 14 days, and someone who declines is not asked again by the same project for 14 days. For someone without an account, use an [invite link](sharing.md#invite-with-a-link).
 
+## Take turns
+
+A repeating chore in a shared project can pass from person to person each time it is completed; see [Take turns](take-turns.md).
+
 ## Leave or hand over a project
 
 - **Leave**: in the Share dialog, select **Leave** next to your own name. The project disappears from your devices; everyone else keeps it.

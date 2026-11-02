@@ -127,7 +127,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
 | GET | `/api/v1/tasks` | yes | `{tasks:[…]}` (yours and those of projects shared with you); `?include_deleted=true` to include tombstones; `?completed_after=…&completed_before=…` for [tasks completed in a range](#tasks-completed-in-a-range) |
-| POST | `/api/v1/tasks` | yes | create → 201 task, see [Task fields](#task-fields); optional `Idempotency-Key` header, see [Idempotency keys](#idempotency-keys) (every collection below accepts it on create); `?default_reminder=true` adds your [default reminder](#default-reminders) |
+| POST | `/api/v1/tasks` | yes | create → 201 task, see [Task fields](#task-fields); optional `Idempotency-Key` header, see [Idempotency keys](#idempotency-keys) (every collection below accepts it on create); `?default_reminder=true` adds your [default reminder](#default-reminders); `"reuse": true` in a reusable list reopens a matching item instead, see [Reusable lists](#reusable-lists) |
 | POST | `/api/v1/quick-add/parse` | yes, every scope | read a quick-add line with the account's languages, projects and labels; writes nothing, so a `read` token may call it; see [Quick-add parse](#quick-add-parse) |
 | GET | `/api/v1/tasks/{id}` | yes | task or 404 |
 | PATCH | `/api/v1/tasks/{id}` | yes | partial update → task; `?default_reminder=true` adds your [default reminder](#default-reminders) when the task gets a due date |
@@ -140,8 +140,9 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | GET/POST/GET/PATCH/DELETE | `/api/v1/reminders…` | yes | same shape for reminders, see [Reminders and push](#reminders-and-push) |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/notes…` | yes | same shape for [standalone notes](#standalone-notes): `{title, description, project_id, labels}`; a read carries `body_version` and `appends` |
 | POST | `/api/v1/notes/{id}/append`, `/api/v1/tasks/{id}/note/append` | yes | `{id?, text}` adds Markdown at the end of the note without replacing it → 201 `{entity, entity_id, append_id, body_version}`; see [Appending to a note](#appending-to-a-note); 409 `too_many_appends` past 100 waiting; `read` and `agent` tokens get 403 `insufficient_scope` |
+| GET/POST/GET/PATCH/DELETE | `/api/v1/objectives…` | yes | same shape for your quarterly and weekly [objectives](#objectives): `{title, period, position, done_at}`; the list takes `?period=<YYYY-Qn or YYYY-Www>` and `?open=true`; 409 `too_many_objectives` past 5 open in a period |
 | POST | `/api/v1/notes/{id}/to-task` | yes | turn the note into a task in one batch (the note goes to the Trash) → 201 task; on an encrypted account the body carries `{task_id, title, description, notes_doc?}` sealed for that id, else 409 `encryption_enabled` |
-| GET/POST | `/api/v1/{collection}` | yes | the shape the rows above share, for `tasks`, `projects`, `sections`, `fields`, `labels`, `views`, `reminders`, `notes` and `rules` ([Automation rules](#automation-rules)): list, create; any other name is 404 `not_found` |
+| GET/POST | `/api/v1/{collection}` | yes | the shape the rows above share, for `tasks`, `projects`, `sections`, `fields`, `labels`, `views`, `reminders`, `notes`, `objectives` ([Objectives](#objectives)) and `rules` ([Automation rules](#automation-rules)): list, create; any other name is 404 `not_found` |
 | GET/PATCH/DELETE | `/api/v1/{collection}/{id}` | yes | read, partial update, soft delete one item of those collections |
 | GET | `/api/v1/tasks/{id}/history`, `/api/v1/projects/{id}/history`, `/api/v1/notes/{id}/history` | yes | change sets from the operation log, oldest first; `?before=<ts>&limit=<1-200>` pages backwards; see [Trash and history](#trash-and-history) |
 | DELETE | `/api/v1/tasks/{id}/purge`, `/api/v1/projects/{id}/purge`, `/api/v1/notes/{id}/purge` | yes | permanently delete an item that is in the Trash → `{purged:{tasks,projects,notes,reminders,sections,comments}}`; 409 `not_deleted` otherwise |
@@ -199,7 +200,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/api/v1/time-entries/stop` | yes (not `read`; `agent` through the [agent routes](#agent-tokens)) | stop your running entry → the entry; 404 when none runs |
 | PATCH | `/api/v1/time-entries/{id}` | yes (not `read`; `agent` only its own entries), author only | `{startedAt?, endedAt?, note?}` → the entry |
 | DELETE | `/api/v1/time-entries/{id}` | yes (not `read`, not `agent`) | tombstone an entry (author, project admin or owner) → 204 |
-| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`, `reminders`, `sections`, `comments`, `time_entries`, `places`, `themes` (your custom themes, [Themes](themes.md)), `user_prefs`, `workspaces` (each with your role; for those you own, the members' ids and roles and the groups), `encryption`, and `userId`, the exporting account), every task with its `origin` (`null` when unset), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events or push subscriptions; reminders are personal, so only your own |
+| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`, `reminders`, `sections`, `comments`, `time_entries`, `places`, `themes` (your custom themes, [Themes](themes.md)), `objectives` (your quarterly and weekly [objectives](objectives.md), deleted ones included), `user_prefs`, `workspaces` (each with your role; for those you own, the members' ids and roles and the groups), `encryption`, and `userId`, the exporting account), every task with its `origin` (`null` when unset), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events or push subscriptions; reminders are personal, so only your own |
 | POST | `/api/v1/import/preview` | yes | multipart `file` + options → dry run `{format, totals, rows, …}`, see [Import](#import) |
 | POST | `/api/v1/import` | yes | multipart `file` + options → 202 `{job}`; the import runs in the background |
 | GET | `/api/v1/import/jobs` | yes | `{jobs:[…]}`, newest first (last 50) |
@@ -570,6 +571,7 @@ The owner of a project, or an admin of a shared one, can keep it and its sub-pro
 | `habit` | boolean | the recurring task is tracked as a habit: the app shows its streak and month history, computed on each device. Settable like any field; `400 invalid_input` for anything but `true` or `false`. Completing a habit through the API records a done day like any recurring task. See [recurrence.md](recurrence.md#habits) |
 | `skipped` | boolean | set by the app on the occurrence record a skipped habit day writes (that record also has `series_id` and `completed_at`). Such records are returned in lists and the export like any task but are not completions: the app hides them from Completed and `completed` filters, and they never count towards `for N times` |
 | `assignee_id` | string or null | account id of the assignee; see [Assignment and notifications](#assignment-and-notifications). `400 not_a_member` when it is not a member of the task's shared project (or not you, for a personal task) |
+| `rotation` | array of strings | account ids of the people who [take turns](#taking-turns) on a recurring task, in order; `[]` when nobody does. `400 invalid_rotation`, `409 not_a_member` |
 | `section_id` | string or null | section of the task's project; see [Sections](#sections). `400 invalid_input` for an unknown or deleted section or one of another project. Changing `project_id` without naming a section clears it |
 | `origin` | object or null | where the task came from, null when unset: `{kind, provider?, id?, url?, title?}` with `kind` one of `url` (a page; needs `url`), `email` (needs `id`, the Message-ID), `issue` (needs `id`, e.g. `o/r#7` or `ENG-123`), `import` (needs `id`, the source id) or `obsidian` (a note in an Obsidian vault: needs `id`, the note's vault-relative path such as `Daily/2026-10-29.md`, and `url`, see below; no `provider`). `provider` is 1–32 of `a-z`, `0-9` and `-` (`github`, `gitlab`, `jira`, `linear`, `todoist`…); `url` is `http` or `https` with a host, at most 2,048 bytes, except on an `obsidian` origin, whose `url` must be exactly `obsidian://open?vault=<vault>&file=<note>` (only those two members, once each, percent-encoded with `+` refused, `vault` 1–255 and `file` 1–1,024 characters, no fragment, no `path=`) and name the note its `id` names (`id` is `file`, with `.md` added when `file` has no extension); `id` at most 512 and `title` at most 500 characters; no other member. Written as one value (last writer wins, never mixed), accepted on create and PATCH (`null` clears) for `full`, `admin` and `agent` tokens; anything else is `400 invalid_input` naming `origin`. The server writes what you send: it derives nothing from the URL and never requests it (`ot add --origin-url` and the MCP tools recognise issue links on their side). Returned by every read, the export and webhook payloads; an end-to-end encrypted account holds one ciphertext string here. See [Where a task came from](capture.md#where-a-task-came-from) |
 | `ical_extra` | string or null | opaque iCalendar lines a CalDAV client sent that the app does not model (alarms the reminder model cannot express, `X-` properties…); kept so calendar apps do not lose them. Display alarms become reminders instead. See [caldav.md](caldav.md#what-maps-to-what) |
@@ -705,6 +707,26 @@ curl -X PATCH -H "Authorization: Bearer $T" -d '{"status":"paused"}' $BASE/api/v
 # 400 {"error":{"code":"invalid_input","message":"project.status must be active or maintenance, got \"paused\""}}
 ```
 
+`reusable` and `aisles` (booleans) are the reusable-list mode (OpenSpec change `reusable-lists`, guide: [Reusable lists](reusable-lists.md)). Every representation carries both, `false` when never set; `aisles` reads `false` while `reusable` is `false`. Editors, admins and the owner may write them (`403` for viewers); anything but `true` or `false` is `400 invalid_input`.
+
+#### Reusable lists
+
+`POST /api/v1/tasks` takes an optional boolean `reuse` (default `false`, so existing clients see no change). With `reuse: true` and a `project_id` whose project has `reusable` on, the server looks for a live top-level task of that project whose title is the same apart from case, accents, surrounding and repeated white space and one trailing full stop:
+
+| Match | Written | Answer |
+| --- | --- | --- |
+| a completed task | `completed_at: null`, `completed_by: null` through the op log | `200` with the task and `"reused": "reopened"` |
+| an open task | nothing | `200` with the task and `"reused": "open"` |
+| none | the task, as without `reuse` | `201` with the task |
+| the account has end-to-end encryption, or the title is ciphertext | the task, as without `reuse` | `201` with the task and `"reused": "unavailable"` |
+
+Only the reopen is written: other fields of the request (due date, labels) are not applied to a reopened task, and a subtask (`parent_id`) or a task created completed never matches. The server never sorts API items into aisle sections; send `section_id` for that. `Idempotency-Key` works as for any create: a retry replays the first answer's task. Without credentials the answer is `401`; a viewer of the project gets `403 forbidden` and nothing is reopened. `reuse` that is not a boolean is `400 invalid_input`. `ot add` sends `reuse: true` for a reusable project unless `--new` is given.
+
+```sh
+curl -X POST -H "Authorization: Bearer $T" -d '{"title":"Milk","project_id":"<groceries>","reuse":true}' $BASE/api/v1/tasks
+# 200 {…,"id":"<milk>","title":"Milk","completed_at":null,"reused":"reopened"}
+```
+
 How often each person reviews a project (`review_every`: `week`, `2weeks`, `month`, `quarter` or `paused`) is a personal preference next to their review stamp. It has no REST collection: it syncs as an ordinary `project_prefs` op through `POST /api/v1/sync` (see [Sync protocol](sync.md)).
 
 ### Sub-projects
@@ -751,6 +773,20 @@ curl -sS -X PATCH "$OT/api/v1/notes/<note>" -H "Authorization: Bearer $TOKEN" -H
 
 On an [end-to-end encrypted](e2ee.md) account the server holds no key: text must arrive encrypted (409 `encryption_enabled` for plaintext appends), and `to-task` needs the task id and the title and text sealed for it in the body (`{task_id, title, description, notes_doc?}`); `ot notes` does this for you after `ot encryption unlock`.
 
+### Objectives
+
+An objective is one short line you pin to a quarter or a week while planning (OpenSpec change `plan-objectives`, see [Objectives](objectives.md)). It has `title` (one line of 1 to 140 characters), `period` (a quarter `YYYY-Qn` or an ISO week `YYYY-Www`; months are refused), `position` (order within its period), `done_at` (Unix ms, `0` while open), `created_at` and `deleted_at`. Objectives are personal: they never reach another member, and another account's id answers 404. A create needs `title` and `period`; anything invalid is 400 `invalid_input` naming the field. A period holds at most 5 open objectives: a sixth create, or a `PATCH` of `period` into a full period, is refused with 409 `too_many_objectives` and nothing is written (devices that were offline together can still end up with more; every device shows them all). `DELETE` is a tombstone. `read` tokens may list and get; `read` and `agent` tokens get 403 `insufficient_scope` on writes. On an [end-to-end encrypted](e2ee.md) account `title` is ciphertext.
+
+```sh
+curl -sS -X POST "$OT/api/v1/objectives" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"title":"Ship 1.0","period":"2026-Q4"}'
+# 201 {"id":"<objective>","title":"Ship 1.0","period":"2026-Q4","position":1761638400000,"done_at":0,"created_at":1761638400000}
+curl -sS "$OT/api/v1/objectives?period=2026-W44&open=true" -H "Authorization: Bearer $TOKEN"
+# {"objectives":[…]}
+curl -sS -X PATCH "$OT/api/v1/objectives/<objective>" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"done_at":1761900000000}'
+```
+
 ### Sections
 
 A section is a named, ordered container inside one project (OpenSpec change `board-view`): a heading in the list view and a column on the board. Sections are soft-deleted like everything else, live in the sharing scope of their project (editors and up may write them, viewers read them) and appear in the export, deleted ones included.
@@ -763,6 +799,7 @@ A section is a named, ordered container inside one project (OpenSpec change `boa
 | `color` | string or null | a `#rrggbb` colour shown before the name, `null` for none (the default); anything else is `400 invalid_input` |
 | `icon` | string or null | a name from the icon catalogue (`web/src/ui/icons/catalogue.json`, such as `hourglass`), `null` for none (the default); an unknown name is `400 invalid_input`. Responses always carry both fields |
 | `flow_mode` | string | `""` follows the project's flow (the default), `parallel` offers the section's tasks together and `sequential` one at a time (OpenSpec change `project-flow-modes`); anything else is `400 invalid_input`. Responses always carry it |
+| `aisle` | string or null | the aisle an aisle section of a [reusable list](#reusable-lists) stands for: `produce`, `bakery`, `dairy`, `meat`, `frozen`, `pantry`, `drinks`, `household` or `personal`, `null` for none (the default). Anything else is `400 invalid_aisle` and nothing is written; the sync endpoint accepts any string, which clients read as none. Responses always carry it |
 | `created_at` | number | set by the server when omitted |
 | `deleted_at` | number or null | set by `DELETE` |
 
@@ -771,7 +808,7 @@ A section is a named, ordered container inside one project (OpenSpec change `boa
 ```sh
 # Create a section, put a task in it, then move the task back to "No section"
 curl -X POST -H "Authorization: Bearer $T" -d '{"name":"Doing","project_id":"<project>"}' $BASE/api/v1/sections
-# 201 {"id":"…","name":"Doing","project_id":"<project>","position":1760000000000,"created_at":1760000000000,"color":null,"icon":null,"flow_mode":""}
+# 201 {"id":"…","name":"Doing","project_id":"<project>","position":1760000000000,"created_at":1760000000000,"color":null,"icon":null,"flow_mode":"","aisle":null}
 curl -X PATCH -H "Authorization: Bearer $T" -d '{"section_id":"<section>"}' $BASE/api/v1/tasks/$TASK
 curl -X PATCH -H "Authorization: Bearer $T" -d '{"section_id":null}' $BASE/api/v1/tasks/$TASK
 curl -X POST -H "Authorization: Bearer $T" -d '{"name":"Doing","project_id":"missing"}' $BASE/api/v1/sections
@@ -1409,6 +1446,19 @@ The `link` carries the secret and is returned only here; the server keeps a hash
 A task's `assignee_id` (OpenSpec `task-assignment`) is an ordinary task field: set it with `POST /api/v1/tasks` or `PATCH /api/v1/tasks/{id}`, clear it with `null`. In a shared project the assignee must be a current member; for a task in your Inbox or an unshared project it must be you. Viewers cannot assign (`403 forbidden`, like any write). A refused assignment answers `400 not_a_member` and stores nothing; the sync endpoint refuses the same operation individually with `rejected: [{"id":"…","reason":"not_a_member"}]`.
 
 When a member leaves or is removed, or their account is deleted, the server clears `assignee_id` on every task of that project assigned to them with operations of its own (device `server:<boot id>`), so every member's devices see the tasks unassigned after their next sync.
+
+#### Taking turns
+
+`rotation` (OpenSpec `chore-rotation`) lists the people who take turns on a recurring task, in order, at most 20 different account ids. Set it with `PATCH /api/v1/tasks/{id}` (or `POST /api/v1/tasks`) under the same rules as the assignee (viewers get `403 forbidden`, no credentials `401 unauthorized`); `[]` clears it. A non-empty list is refused with `400 invalid_rotation` when it holds duplicates or more than 20 ids, or when the task has no recurrence, is a subtask or is in a project with fewer than two members; one that names someone who is not a member of the task's project is refused with `409 not_a_member`. On the sync endpoint the same operation is refused individually with reason `not_a_member`; a list kept on a task that stops qualifying is stored but does nothing.
+
+Completing the task (`PATCH` with `completed_at`, CalDAV, the MCP tools, automation rules, the app) records the occurrence as usual and assigns the series to the next person: the one after the current assignee among the list's current members, wrapping around, or the first of them when the current assignee is not in the list. A write that sets `assignee_id` itself keeps that value. Skipping, detaching and reopening don't rotate. The new assignee's notification has `"turn": true` in its payload. When a member leaves, the server removes them from every `rotation` in the project and, if it was their turn, assigns the next remaining person instead of clearing the assignee.
+
+```sh
+curl -X PATCH -H "Authorization: Bearer $T" -d '{"rotation":["<alice>","<bob>","<carol>"]}' $BASE/api/v1/tasks/$BINS
+# 200 task with "rotation":["<alice>","<bob>","<carol>"]
+curl -X PATCH -H "Authorization: Bearer $T" -d '{"completed_at":1760000000000}' $BASE/api/v1/tasks/$BINS
+# 200 task due next Monday with "assignee_id":"<bob>"
+```
 
 Assigning a task to someone other than yourself creates an in-app notification for the assignee. Notifications are server-side account data: they are not part of the op log or the export. Read notifications older than 90 days are removed when the server starts and then once a day. Both routes require a session or token (`401 unauthorized`).
 
@@ -2342,6 +2392,8 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `scope_change` | 400 | `PATCH` of a task's `project_id` into another sharing scope |
 | `not_a_member` | 400 | a task's `assignee_id` that is not a member of its project (or not you, for a personal task) |
 | `invalid_energy` | 400 | a task's `energy` that is not `deep`, `medium`, `low`, `null` or `""` |
+| `invalid_rotation` | 400 | a task's `rotation` with duplicates or more than 20 people, or a non-empty one on a task without a recurrence, a subtask or a project with fewer than two members |
+| `not_a_member` | 409 | a task's `rotation` that names someone who is not a member of its project |
 | `user_not_found` | 404 | adding a project member by an email that has no account |
 | `already_member` | 409 | adding an account that is already a member of the project, or accepting a project invite link as one |
 | `owner_must_transfer` | 409 | the project owner leaving the project; the workspace owner leaving the workspace |

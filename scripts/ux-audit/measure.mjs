@@ -341,3 +341,31 @@ export async function addButtonCovers() {
   content.scrollTop = 0
   return out
 }
+
+// The Day and Week grid (GitHub issue 775): the sticky header (day names, all-day
+// strips, unscheduled lanes) leaves at least half of the calendar to the hour grid,
+// and the now line, scrolled under the header, is painted below it, never over a lane.
+export function calendarGridRoom() {
+  const sc = document.querySelector('[data-calendar-scroller]')
+  const head = sc?.querySelector('.sticky')
+  if (!sc || !head || !sc.clientHeight) return []
+  const out = []
+  const h = head.getBoundingClientRect().height
+  if (h > sc.clientHeight / 2) out.push(`the calendar header takes ${Math.round(h)} px of ${sc.clientHeight} px`)
+  const line = sc.querySelector('[data-now-line]')
+  if (line) {
+    const before = sc.scrollTop
+    const hr = head.getBoundingClientRect()
+    sc.scrollTop += line.getBoundingClientRect().top - (hr.top + hr.height / 2)
+    const lr = line.getBoundingClientRect()
+    if (lr.top > hr.top && lr.top < hr.bottom) {
+      // The line ignores the pointer; hit-test it for a moment to see what is painted on top.
+      line.style.pointerEvents = 'auto'
+      const at = document.elementFromPoint(lr.left + lr.width / 2, lr.top + 1)
+      line.style.pointerEvents = ''
+      if (at?.closest('[data-now-line]')) out.push('the now line paints over the calendar header')
+    }
+    sc.scrollTop = before
+  }
+  return out
+}

@@ -146,6 +146,11 @@
           "description": "log a win: create the task already completed now (refuses --repeat and --remind)"
         },
         {
+          "name": "new",
+          "type": "bool",
+          "description": "in a reusable list, create a new task even when an item with the same title is there"
+        },
+        {
           "name": "idempotency-key",
           "type": "string",
           "description": "1-128 characters of [A-Za-z0-9._:-]; running again with the same key returns the same entity instead of creating another"
@@ -388,6 +393,16 @@
           "name": "no-default-reminder",
           "type": "bool",
           "description": "add no default reminder when the task gets a due date (--remind also leaves it out)"
+        },
+        {
+          "name": "rotate",
+          "type": "string",
+          "description": "people who take turns on a recurring task in a shared project, in order: member names or emails, comma-separated; completing the task assigns the next of them"
+        },
+        {
+          "name": "no-rotate",
+          "type": "bool",
+          "description": "stop taking turns (the assignee stays)"
         }
       ],
       "writes": true,
@@ -1156,6 +1171,171 @@
       }
     },
     {
+      "name": "objectives add",
+      "aliases": [
+        "objectives create"
+      ],
+      "summary": "add an objective to the current (or next) quarter or week and print its id; at most 5 open per period",
+      "args": [
+        {
+          "name": "title",
+          "required": true,
+          "repeatable": true
+        }
+      ],
+      "flags": [
+        {
+          "name": "quarter",
+          "type": "bool",
+          "description": "a quarterly objective"
+        },
+        {
+          "name": "week",
+          "type": "bool",
+          "description": "a weekly objective"
+        },
+        {
+          "name": "next",
+          "type": "bool",
+          "description": "for next quarter or next week"
+        }
+      ],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/objective"
+      }
+    },
+    {
+      "name": "objectives delete",
+      "aliases": [
+        "objectives rm"
+      ],
+      "summary": "delete an objective (soft delete)",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [
+        {
+          "name": "yes",
+          "short": "y",
+          "type": "bool",
+          "description": "confirm a destructive command (required off a terminal and with --json)"
+        }
+      ],
+      "writes": true,
+      "destructive": true,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/objective"
+      }
+    },
+    {
+      "name": "objectives done",
+      "summary": "mark an objective done",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/objective"
+      }
+    },
+    {
+      "name": "objectives edit",
+      "summary": "change an objective's title",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [
+        {
+          "name": "title",
+          "type": "string",
+          "description": "the new title, one line of up to 140 characters"
+        }
+      ],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/objective"
+      }
+    },
+    {
+      "name": "objectives list",
+      "aliases": [
+        "objectives ls"
+      ],
+      "summary": "list the current quarter's and current week's objectives (weeks from Monday)",
+      "args": [],
+      "flags": [
+        {
+          "name": "quarter",
+          "type": "bool",
+          "description": "only the current quarter's"
+        },
+        {
+          "name": "week",
+          "type": "bool",
+          "description": "only the current week's"
+        },
+        {
+          "name": "period",
+          "type": "string",
+          "description": "only this period: a quarter YYYY-Qn or an ISO week YYYY-Www"
+        }
+      ],
+      "writes": false,
+      "destructive": false,
+      "dry_run": false,
+      "idempotency_key": false,
+      "output_schema": {
+        "items": {
+          "$ref": "#/schemas/objective"
+        },
+        "type": "array"
+      }
+    },
+    {
+      "name": "objectives undone",
+      "summary": "mark a done objective open again",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/objective"
+      }
+    },
+    {
       "name": "project add",
       "aliases": [
         "project create"
@@ -1203,6 +1383,46 @@
           "name": "undo",
           "type": "bool",
           "description": "restore an archived project"
+        }
+      ],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/project"
+      }
+    },
+    {
+      "name": "project edit",
+      "summary": "change a project's reusable-list mode",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [
+        {
+          "name": "reusable",
+          "type": "bool",
+          "description": "make it a reusable list: adding an item already there reopens it"
+        },
+        {
+          "name": "no-reusable",
+          "type": "bool",
+          "description": "make it an ordinary project again"
+        },
+        {
+          "name": "aisles",
+          "type": "bool",
+          "description": "sort new items of the reusable list into aisle sections"
+        },
+        {
+          "name": "no-aisles",
+          "type": "bool",
+          "description": "stop sorting new items into aisle sections"
         }
       ],
       "writes": true,
@@ -2619,6 +2839,11 @@
       "meaning": "the note changed since the command read it (on a device or by another write); nothing was replaced: read it again"
     },
     {
+      "code": "too_many_objectives",
+      "exit": 1,
+      "meaning": "the period already has 5 open objectives; finish or delete one first"
+    },
+    {
       "code": "too_many_appends",
       "exit": 1,
       "meaning": "the note already holds 100 appends no device has merged yet; open it in the app, then append again"
@@ -3668,6 +3893,47 @@
         }
       }
     },
+    "objective": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "objective",
+      "description": "A quarterly or weekly objective as the REST API returns it (OpenSpec plan-objectives), with the title decrypted when this machine holds the account key, \"[encrypted]\" when it cannot be decrypted.",
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "period",
+        "done_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string",
+          "description": "one line of 1 to 140 characters"
+        },
+        "period": {
+          "type": "string",
+          "description": "a quarter YYYY-Qn or an ISO week YYYY-Www"
+        },
+        "position": {
+          "type": "number"
+        },
+        "done_at": {
+          "type": "number",
+          "description": "Unix ms when it was marked done; 0 while open"
+        },
+        "created_at": {
+          "type": "number"
+        },
+        "deleted_at": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
     "occurrences": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "title": "occurrences",
@@ -3780,6 +4046,14 @@
             "number",
             "null"
           ]
+        },
+        "reusable": {
+          "type": "boolean",
+          "description": "a reusable list: adding an item already there reopens it"
+        },
+        "aisles": {
+          "type": "boolean",
+          "description": "a reusable list that sorts new items into aisle sections"
         },
         "role": {
           "type": "string",
@@ -4346,6 +4620,15 @@
             "null"
           ]
         },
+        "reused": {
+          "type": "string",
+          "enum": [
+            "reopened",
+            "open",
+            "unavailable"
+          ],
+          "description": "only on ot add in a reusable list: the item was reopened, was already open, or the server could not match an encrypted title"
+        },
         "completed_by": {
           "type": [
             "string",
@@ -4398,6 +4681,13 @@
             "string",
             "null"
           ]
+        },
+        "rotation": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "account ids of the people who take turns on a recurring task, in order; completing it assigns the next of them"
         },
         "deadline": {
           "type": [

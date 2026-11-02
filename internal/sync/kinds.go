@@ -9,6 +9,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 	"github.com/OpenTodoApp/opentodo/internal/location"
 	"github.com/OpenTodoApp/opentodo/internal/origin"
 	"github.com/OpenTodoApp/opentodo/internal/recurrence"
@@ -18,47 +19,216 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/zoned"
 )
 
-// kindChecks validates an op value per field kind (see the kind constants in
-// ops.go). checkKind looks the check up; kinds_test.go keeps the table whole.
+// kind is a field's value kind: what Validate accepts for it. Each kind has
+// its check in kindChecks below.
+type kind int
+
+const (
+	kString kind = iota
+	kNullableString
+	kNumber
+	kNullableNumber
+	kBool
+	kPriority
+	kDue
+	kStringList
+	// kPositiveInt is null or a positive integer no larger than MaxPositiveInt.
+	kPositiveInt
+	// kRecurrence is null or a rule accepted by internal/recurrence (at most
+	// recurrence.MaxLen characters). Clients store the canonical form; any
+	// parseable spelling is accepted so the op log is never rewritten.
+	kRecurrence
+	// kID is a non-empty id string of at most MaxIDLen characters (reminder.task_id).
+	kID
+	// kReminderKind is "relative", "absolute" (OpenSpec change reminders) or
+	// "deadline" (OpenSpec change deadlines).
+	kReminderKind
+	// kOffsetMinutes is null or an integer within ±MaxReminderOffset minutes.
+	kOffsetMinutes
+	// kInstant is null or a positive Unix millisecond timestamp (reminder.fire_at).
+	kInstant
+	// kNullableText is null or any string, bounded by MaxValueBytes like every
+	// value (task.ical_extra, OpenSpec change caldav).
+	kNullableText
+	// kDoc is an opaque, mergeable document (OpenSpec change
+	// collaborative-rich-text, docs/sync.md "Mergeable documents"): "" (no
+	// document) or an envelope "<format>:v<n>:<base64>" of at most MaxDocBytes
+	// characters. The server checks only the envelope shape and that the payload
+	// is base64 (standard or URL alphabet, padding optional); it never decodes
+	// the document, so a client format (or an end-to-end encrypted value) can
+	// change without a server change.
+	kDoc
+	// kDate is null or a bare calendar date "YYYY-MM-DD" with no time or zone
+	// (task.deadline, OpenSpec change deadlines).
+	kDate
+	// kStart is null, the word "someday" or a calendar date "YYYY-MM-DD"
+	// (task.start, OpenSpec change someday-and-evening).
+	kStart
+	// kIDList is an array of at most MaxBlockedBy distinct, non-empty ids of at
+	// most MaxIDLen characters (task.blocked_by, OpenSpec change task-dependencies).
+	kIDList
+	// kFieldValue is a custom field value (OpenSpec change custom-fields, design
+	// D2): null, a string (bounded by MaxValueBytes like every value), a finite
+	// JSON number or a boolean. Objects and arrays are refused. The server never
+	// checks a value against its definition: clients, REST and the assistant
+	// tools do, so a value and its definition may arrive in any order.
+	kFieldValue
+	// kOrigin is a task's origin (OpenSpec change task-origin, design D1):
+	// null, an encrypted account's ciphertext string, or the object
+	// {kind, provider?, id?, url?, title?} validated by internal/origin
+	// (closed kind list, http(s) URL only, bounded lengths, no unknown members).
+	kOrigin
+	// kRule is a saved list view's on-drop rule (OpenSpec change rule-boards,
+	// design D2): null or an object of at most one choice per kind, checked in
+	// rule.go (closed key set, enumerations, bounded label lists). Sync checks
+	// the shape only; REST resolves the ids.
+	kRule
+	// kLocation is a task's location (OpenSpec change task-locations, design
+	// D1): null, an encrypted account's ciphertext string, or the object
+	// {name?, address?, lat?, lon?, place_id?} validated by internal/location.
+	kLocation
+	// kGeo is a place's coordinate pair (task-locations D1): null, a ciphertext
+	// string, or {lat, lon} validated by internal/location.
+	kGeo
+	// kRuleTrigger, kRuleCondition and kRuleActions are an automation rule's
+	// whole values (OpenSpec change automation-rules, design D1), checked by
+	// internal/ruleval (closed key sets, enumerations, bounds). Sync checks the
+	// shape only; REST resolves the ids. A condition may be null.
+	kRuleTrigger
+	kRuleCondition
+	kRuleActions
+	// kRoutineSteps is null or a routine's steps (OpenSpec change
+	// routines-engine, design D3): one whole value, an ordered list of at most
+	// 20 steps checked by internal/ruleval (known kinds, unique ids, inputs of
+	// the declared names and literal shapes, references only to visible
+	// outputs, at most 3 block levels, 32 KB encoded). Sync checks the shape
+	// only; REST also type-checks and resolves the ids.
+	kRoutineSteps
+	// kReactions is one account's reactions on a comment (OpenSpec change
+	// editor-everywhere, design D8): a list of distinct names from ReactionNames.
+	kReactions
+	// kDayPart is null, "morning" or "afternoon" (task.day_part, OpenSpec
+	// change day-parts, design D1). Evening stays the task's evening flag; a
+	// later part is a new value behind a schema note, read by older clients as
+	// no part.
+	kDayPart
+	// kClock is a wall time "HH:MM" from "00:00" to "23:59" with no date or
+	// zone (frame.start and frame.end, OpenSpec change calendar-frames, design D1).
+	kClock
+	// kWeekdays is "" or a comma list of distinct ISO weekdays "1" (Monday) to
+	// "7" (Sunday), e.g. "1,2,3,4,5" (frame.weekdays, calendar-frames D1).
+	kWeekdays
+	// kEnergy is "" (none), "deep", "medium" or "low" (task.energy, OpenSpec
+	// change task-energy, design D1). A later value is a spec change; older
+	// clients read it as none and keep it.
+	kEnergy
+	// kOrderList is an array of at most MaxManualOrder distinct, non-empty ids of
+	// at most MaxIDLen characters (label.manual_order and view.manual_order,
+	// OpenSpec change view-manual-order, design D2). Unknown ids are accepted:
+	// the order is a personal preference and a task may arrive later.
+	kOrderList
+	// kSplit is null or the series a piece was split from and the date it starts
+	// (task.split_from, OpenSpec change series-split, design D2): one whole value
+	// {series: id, date: "YYYY-MM-DD"} with no other members.
+	kSplit
+	// kFocusSession is an integer from 0 to MaxFocusSession: a Focus work
+	// session's number in its Pomodoro cycle, 0 for the other modes and for
+	// entries that are no Focus session (time_entry.focus_session, OpenSpec
+	// change focus-session-readable, design D2).
+	kFocusSession
+	// kThemeDoc is null or one whole custom theme document (OpenSpec change
+	// theme-editor, design D1): a JSON object of at most themes.MaxBytes bytes
+	// that passes internal/themes.Validate (format 1: seeds, explicit tokens,
+	// shape and type; colours only as #rrggbb or in-gamut oklch, never CSS).
+	kThemeDoc
+	// kSector is "" (none) or a time sector: an ISO week "YYYY-Www", a month
+	// "YYYY-MM" or a quarter "YYYY-Qn" with a year from 2000 to 2999, checked by
+	// internal/sector (task.sector, OpenSpec change time-sectors, design D1).
+	kSector
+	// kObjectiveTitle is an objective's title (OpenSpec change plan-objectives,
+	// design D1): 1 to MaxObjectiveTitle characters after trimming, on one line,
+	// or an encrypted account's ciphertext string in its place.
+	kObjectiveTitle
+	// kObjectivePeriod is an objective's period: a quarter "YYYY-Qn" or an ISO
+	// week "YYYY-Www" checked by internal/sector. Months and "" are refused
+	// (plan-objectives D1).
+	kObjectivePeriod
+)
+
+// MaxObjectiveTitle is the longest objective title in characters (plan-objectives D2).
+const MaxObjectiveTitle = 140
+
+// kindChecks validates an op value per field kind (see the kind constants
+// above). checkKind looks the check up; kinds_test.go keeps the table whole.
 var kindChecks = map[kind]func(raw json.RawMessage) error{
-	kString:         checkString,
-	kNullableString: orNull(checkIDString),
-	kNumber:         checkNumber,
-	kNullableNumber: orNull(checkNullableNumber),
-	kBool:           checkBool,
-	kPriority:       checkPriority,
-	kStart:          orNull(checkStart),
-	kDate:           orNull(checkDate),
-	kDue:            orNull(checkDue),
-	kStringList:     checkStringList,
-	kIDList:         checkIDList,
-	kPositiveInt:    orNull(checkPositiveInt),
-	kRecurrence:     orNull(checkRecurrence),
-	kID:             checkID,
-	kReminderKind:   checkReminderKind,
-	kOffsetMinutes:  orNull(checkOffsetMinutes),
-	kNullableText:   orNull(checkNullableText),
-	kDoc:            checkDoc,
-	kFieldValue:     checkFieldValue,
-	kInstant:        orNull(checkInstant),
-	kOrigin:         origin.CheckValue,
-	kRule:           orNull(checkRule),
-	kLocation:       location.CheckValue,
-	kGeo:            location.CheckGeo,
-	kRuleTrigger:    ruleval.CheckTrigger,
-	kRuleCondition:  orNull(ruleval.CheckCondition),
-	kRuleActions:    orNull(ruleval.CheckActions),
-	kRoutineSteps:   orNull(ruleval.CheckSteps),
-	kReactions:      checkReactions,
-	kDayPart:        orNull(checkDayPart),
-	kClock:          checkClock,
-	kWeekdays:       checkWeekdays,
-	kEnergy:         checkEnergy,
-	kOrderList:      checkOrderList,
-	kSplit:          orNull(checkSplit),
-	kFocusSession:   checkFocusSession,
-	kThemeDoc:       orNull(checkThemeDoc),
-	kSector:         checkSector,
+	kString:          checkString,
+	kNullableString:  orNull(checkIDString),
+	kNumber:          checkNumber,
+	kNullableNumber:  orNull(checkNullableNumber),
+	kBool:            checkBool,
+	kPriority:        checkPriority,
+	kStart:           orNull(checkStart),
+	kDate:            orNull(checkDate),
+	kDue:             orNull(checkDue),
+	kStringList:      checkStringList,
+	kIDList:          checkIDList,
+	kPositiveInt:     orNull(checkPositiveInt),
+	kRecurrence:      orNull(checkRecurrence),
+	kID:              checkID,
+	kReminderKind:    checkReminderKind,
+	kOffsetMinutes:   orNull(checkOffsetMinutes),
+	kNullableText:    orNull(checkNullableText),
+	kDoc:             checkDoc,
+	kFieldValue:      checkFieldValue,
+	kInstant:         orNull(checkInstant),
+	kOrigin:          origin.CheckValue,
+	kRule:            orNull(checkRule),
+	kLocation:        location.CheckValue,
+	kGeo:             location.CheckGeo,
+	kRuleTrigger:     ruleval.CheckTrigger,
+	kRuleCondition:   orNull(ruleval.CheckCondition),
+	kRuleActions:     orNull(ruleval.CheckActions),
+	kRoutineSteps:    orNull(ruleval.CheckSteps),
+	kReactions:       checkReactions,
+	kDayPart:         orNull(checkDayPart),
+	kClock:           checkClock,
+	kWeekdays:        checkWeekdays,
+	kEnergy:          checkEnergy,
+	kOrderList:       checkOrderList,
+	kSplit:           orNull(checkSplit),
+	kFocusSession:    checkFocusSession,
+	kThemeDoc:        orNull(checkThemeDoc),
+	kSector:          checkSector,
+	kObjectiveTitle:  checkObjectiveTitle,
+	kObjectivePeriod: checkObjectivePeriod,
+}
+
+// checkObjectiveTitle accepts a one-line title of 1 to MaxObjectiveTitle
+// characters after trimming, or ciphertext (plan-objectives D1).
+func checkObjectiveTitle(raw json.RawMessage) error {
+	var v string
+	if err := json.Unmarshal(raw, &v); err != nil || isNullValue(raw) {
+		return errors.New("must be a string")
+	}
+	if e2ee.IsCiphertext(v) {
+		return nil
+	}
+	v = strings.TrimSpace(v)
+	if v == "" || utf8.RuneCountInString(v) > MaxObjectiveTitle || strings.ContainsAny(v, "\r\n") {
+		return fmt.Errorf("must be one line of 1 to %d characters", MaxObjectiveTitle)
+	}
+	return nil
+}
+
+// checkObjectivePeriod accepts a quarter or an ISO week, never a month or ""
+// (plan-objectives D1).
+func checkObjectivePeriod(raw json.RawMessage) error {
+	var v string
+	_ = json.Unmarshal(raw, &v)
+	if p, ok := sector.Parse(v); !ok || isNullValue(raw) || p.Kind == sector.Month {
+		return errors.New(`must be a quarter "YYYY-Qn" or an ISO week "YYYY-Www"`)
+	}
+	return nil
 }
 
 // checkSector accepts "" or a valid time sector (time-sectors D1); null is refused.
