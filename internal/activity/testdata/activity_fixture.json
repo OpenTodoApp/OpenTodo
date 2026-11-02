@@ -695,6 +695,15 @@
       ]
     },
     {
+      "name": "a time sector edit is an edited event like a start edit (time-sectors)",
+      "ops": [
+        {"id":"ts1","seq":1,"actor":"alice","entity":"task","entityId":"t1","field":"sector","value":"2026-W45","ts":320000,"device":"da"}
+      ],
+      "events": [
+        {"id":"ts1","kind":"edited","actor":"alice","entity":"task","entityId":"t1","taskId":"t1","ts":320000,"opIds":["ts1"],"changes":[{"field":"sector","from":null,"to":"2026-W45"}]}
+      ]
+    },
+    {
       "name": "a part of the day is one edited event with both fields (day-parts)",
       "ops": [
         {"id":"dp1","seq":1,"actor":"alice","entity":"task","entityId":"t1","field":"day_part","value":"morning","ts":350000,"device":"da"},

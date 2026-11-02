@@ -924,7 +924,7 @@ export async function setTaskParent(id: string, parentId: string | null): Promis
  * different project, and changing a task's project clears its section (board-view).
  */
 // blocked_by stays behind: blockers live in one sharing scope (task-dependencies D5).
-const COPY_FIELDS = ['title', 'description', 'notes_doc', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'start', 'evening', 'span', 'day_part', 'energy', 'recurrence', 'series_id', 'assignee_id', 'completed_at', 'completed_by', 'position', 'created_at', 'origin'] as const
+const COPY_FIELDS = ['title', 'description', 'notes_doc', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'start', 'evening', 'span', 'day_part', 'energy', 'sector', 'recurrence', 'series_id', 'assignee_id', 'completed_at', 'completed_by', 'position', 'created_at', 'origin'] as const
 
 /**
  * Copy tasks into `projectId` under new ids, keeping parent links between copied
@@ -950,6 +950,8 @@ function copyTasks(
     if (typeof patch.day_part !== 'string') delete patch.day_part
     // And its energy (task-energy); none needs no op.
     if (typeof patch.energy !== 'string' || !patch.energy) delete patch.energy
+    // And its time sector (time-sectors); none needs no op.
+    if (typeof patch.sector !== 'string' || !patch.sector) delete patch.sector
     // The copy keeps where the task came from (task-origin); none needs no op.
     if (!patch.origin || typeof patch.origin !== 'object') delete patch.origin
     // Custom field values travel with the copy (custom-fields), one op each.

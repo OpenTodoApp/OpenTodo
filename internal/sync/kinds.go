@@ -13,6 +13,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/origin"
 	"github.com/OpenTodoApp/opentodo/internal/recurrence"
 	"github.com/OpenTodoApp/opentodo/internal/ruleval"
+	"github.com/OpenTodoApp/opentodo/internal/sector"
 	"github.com/OpenTodoApp/opentodo/internal/themes"
 	"github.com/OpenTodoApp/opentodo/internal/zoned"
 )
@@ -57,6 +58,16 @@ var kindChecks = map[kind]func(raw json.RawMessage) error{
 	kSplit:          orNull(checkSplit),
 	kFocusSession:   checkFocusSession,
 	kThemeDoc:       orNull(checkThemeDoc),
+	kSector:         checkSector,
+}
+
+// checkSector accepts "" or a valid time sector (time-sectors D1); null is refused.
+func checkSector(raw json.RawMessage) error {
+	var v string
+	if err := json.Unmarshal(raw, &v); err != nil || isNullValue(raw) || sector.Check(v) != nil {
+		return errors.New(`must be "" or a time sector "YYYY-Www", "YYYY-MM" or "YYYY-Qn"`)
+	}
+	return nil
 }
 
 // checkThemeDoc accepts a JSON object that is a valid theme document of at most

@@ -13,6 +13,8 @@ type Planned struct {
 	HasDeadline bool
 	Completed   bool
 	Deleted     bool
+	// Sector is "" or the task's time sector (OpenSpec change time-sectors).
+	Sector string
 }
 
 // Someday reports an open task parked in Someday.
@@ -21,7 +23,7 @@ func Someday(t Planned) bool {
 }
 
 // Anytime reports an open task that is neither scheduled nor parked: no do-on
-// date, no deadline and no start.
+// date, no deadline, no start and no time sector.
 func Anytime(t Planned) bool {
-	return !t.Completed && !t.Deleted && !t.HasDue && !t.HasDeadline && t.Start == ""
+	return !t.Completed && !t.Deleted && !t.HasDue && !t.HasDeadline && t.Start == "" && t.Sector == ""
 }

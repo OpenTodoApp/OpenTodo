@@ -7,5 +7,7 @@
   {"name": "deadline only", "task": {"due": null, "deadline": "2026-11-06", "start": null, "completed_at": null}, "someday": false, "anytime": false},
   {"name": "start date in the past", "task": {"due": null, "deadline": null, "start": "2026-01-02", "completed_at": null}, "someday": false, "anytime": false},
   {"name": "start date in the future", "task": {"due": null, "deadline": null, "start": "2030-01-02", "completed_at": null}, "someday": false, "anytime": false},
-  {"name": "completed, nothing set", "task": {"due": null, "deadline": null, "start": null, "completed_at": 1760000000000}, "someday": false, "anytime": false}
+  {"name": "completed, nothing set", "task": {"due": null, "deadline": null, "start": null, "completed_at": 1760000000000}, "someday": false, "anytime": false},
+  {"name": "time sector (time-sectors)", "task": {"due": null, "deadline": null, "start": null, "completed_at": null, "sector": "2026-W44"}, "someday": false, "anytime": false},
+  {"name": "empty time sector", "task": {"due": null, "deadline": null, "start": null, "completed_at": null, "sector": ""}, "someday": false, "anytime": true}
 ]
