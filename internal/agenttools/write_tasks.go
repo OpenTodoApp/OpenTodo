@@ -40,7 +40,7 @@ func (r *Registry) planCreateTasks(ctx context.Context, c Caller, a args, overla
 	for i, it := range list {
 		p := fmt.Sprintf("items[%d].", i)
 		if err := it.only(p, "title", "description", "project_id", "section_id", "parent_id", "priority", "due", "labels", "estimate_minutes", "recurrence", "fields", "origin_url", "origin", "id",
-			"deadline", "start", "evening", "span", "day_part", "energy", "sector", "blocked_by", "location", "workspace_id"); err != nil {
+			"deadline", "start", "evening", "span", "day_part", "energy", "sector", "blocked_by", "location", "workspace_id", "new"); err != nil {
 			return Plan{}, err
 		}
 		title, _, err := it.contentText(c, "title", true, 500)
@@ -153,6 +153,7 @@ func (r *Registry) planCreateTasks(ctx context.Context, c Caller, a args, overla
 	if len(refused) > 0 {
 		return Plan{}, forbidden(refused)
 	}
+	cs, out = snap.reuseItems(c, list, cs, out)
 	if err := r.checkBlockers(ctx, c, snap, blockers, created); err != nil {
 		return Plan{}, err
 	}
