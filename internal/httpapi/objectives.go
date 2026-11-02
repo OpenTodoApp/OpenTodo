@@ -54,7 +54,7 @@ func objectiveDone(e opsync.Entity) bool {
 	return at != 0
 }
 
-// objectiveWriteOK checks a create (existing nil) or a patch of an objective:
+// objectiveWriteOK checks a create (existing nil; done_at defaults to 0) or a patch:
 // a create needs a title and a period, and an objective may not be created
 // in, or moved into, a period that already holds MaxOpenObjectives open ones
 // (409 too_many_objectives). Value errors are left to the op validation, so
@@ -62,6 +62,9 @@ func objectiveDone(e opsync.Entity) bool {
 // write is refused.
 func (s *Server) objectiveWriteOK(ctx context.Context, w http.ResponseWriter, uid, id string, body map[string]json.RawMessage, existing opsync.Entity) bool {
 	if existing == nil {
+		if _, has := body["done_at"]; !has {
+			body["done_at"] = json.RawMessage("0")
+		}
 		for _, f := range []string{"title", "period"} {
 			if _, has := body[f]; !has {
 				writeError(w, http.StatusBadRequest, "invalid_input", "objective."+f+" is required")

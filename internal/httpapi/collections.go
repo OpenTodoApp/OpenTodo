@@ -146,16 +146,8 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	if !valuesOK(w, entity, body) {
+	if !valuesOK(w, entity, body) || (entity == "objective" && !s.objectiveWriteOK(r.Context(), w, uid, id, body, nil)) {
 		return
-	}
-	if entity == "objective" {
-		if _, has := body["done_at"]; !has {
-			body["done_at"] = json.RawMessage("0")
-		}
-		if !s.objectiveWriteOK(r.Context(), w, uid, id, body, nil) {
-			return
-		}
 	}
 	if entity == "task" {
 		if !s.rotationOK(r.Context(), w, body, nil) {
