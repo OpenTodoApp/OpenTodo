@@ -6919,5 +6919,12 @@
   "carried over": "riportato",
   "{n, plural, one {# repeating task skipped} other {# repeating tasks skipped}}": "{n, plural, one {# attività ricorrente saltata} other {# attività ricorrenti saltate}}",
   "{n, plural, one {Planned for {name}} other {# tasks planned for {name}}}": "{n, plural, one {Pianificata per {name}} other {# attività pianificate per {name}}}",
-  "Set a time sector": "Imposta un periodo"
+  "Set a time sector": "Imposta un periodo",
+  "Date…": "Data…",
+  "Do today: {title}": "Fai oggi: {title}",
+  "Keep this week": "Tieni questa settimana",
+  "No task has a time sector.": "Nessuna attività ha un periodo.",
+  "Plan {title}": "Pianifica {title}",
+  "Show the available tasks": "Mostra le attività disponibili",
+  "Waiting in {group}": "In attesa in {group}"
 }

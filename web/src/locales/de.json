@@ -6919,5 +6919,12 @@
   "carried over": "übertragen",
   "{n, plural, one {# repeating task skipped} other {# repeating tasks skipped}}": "{n, plural, one {# wiederkehrende Aufgabe übersprungen} other {# wiederkehrende Aufgaben übersprungen}}",
   "{n, plural, one {Planned for {name}} other {# tasks planned for {name}}}": "{n, plural, one {Geplant für {name}} other {# Aufgaben geplant für {name}}}",
-  "Set a time sector": "Zeitabschnitt festlegen"
+  "Set a time sector": "Zeitabschnitt festlegen",
+  "Date…": "Datum…",
+  "Do today: {title}": "Heute erledigen: {title}",
+  "Keep this week": "Diese Woche behalten",
+  "No task has a time sector.": "Keine Aufgabe hat einen Zeitabschnitt.",
+  "Plan {title}": "{title} planen",
+  "Show the available tasks": "Verfügbare Aufgaben zeigen",
+  "Waiting in {group}": "Wartend in {group}"
 }
