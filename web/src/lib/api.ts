@@ -228,6 +228,11 @@ async function parse<T>(res: Response): Promise<T> {
   const data = await res.json().catch((err: unknown) => {
     // The deadline passed while the body was still arriving: no answer, not an empty one.
     if (err instanceof DOMException && (err.name === 'TimeoutError' || err.name === 'AbortError')) throw new RequestTimeoutError()
+    // Only a body that arrived but is not JSON (an empty one, a proxy's page) reads as {}.
+    // A body that stopped arriving (WebKit's "Load failed" TypeError when the connection
+    // or the page goes away mid-read) is no answer: as {} it gave callers a success
+    // without the fields they rely on, such as `links` of listPublicLinks.
+    if (!(err instanceof SyntaxError)) throw new NetworkError(err)
     return {}
   })
   if (!res.ok) {
