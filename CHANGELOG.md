@@ -18,6 +18,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 ### Changed
 
 - **Attachment sizes in an email-to-task description use binary units.** The list of attachments read `300.0 KB`; it now reads `300.0 KiB` (and `MiB`, `GiB`…), the unit that matches the 1024 divisor, and keeps scaling past MB.
+- **Close, not Done, on buttons that only close.** The editors of a task's details (When, Assignee, Take turns, Labels) ended with **Done**, which on a phone sits right under the task's checkbox and reads as "complete the task" (#801). They now say **Close**, as do the When editor's own button and the dialog after publishing a task page. On a touch screen, **Select** in a list now switches to **Close**, and the selection bar's button that hides the checkboxes says **Close**. On the Focus screen, a Flowtime session's button that ends the count, beside **Complete**, now says **Stop the timer**. Nothing else changes: the buttons do what they did. See [Task panel](docs/task-panel.md).
 
 ### Fixed
 

@@ -5191,7 +5191,7 @@
   "Thumbs up": "Polegar para cima",
   "Thursday": "Quinta-feira",
   "Tick every task in the list": "Marcar todas as tarefas da lista",
-  "Tick it and show every checkbox; Select tasks in the page menu does the same, Done hides them": "Marca-a e mostra todas as caixas; «Selecionar tarefas» no menu da página faz o mesmo, «Concluído» oculta-as",
+  "Tick it and show every checkbox; Select tasks in the page menu does the same, Close hides them": "Marca-a e mostra todas as caixas; «Selecionar tarefas» no menu da página faz o mesmo, «Fechar» oculta-as",
   "Tick me off when you have read this": "Marque-me quando tiver lido isto",
   "Tick the selected task for a bulk action (Space with Vim keybindings on)": "Marcar a tarefa selecionada para uma ação em massa (Espaço com os atalhos do Vim ativados)",
   "Tick {title}": "Marcar {title}",

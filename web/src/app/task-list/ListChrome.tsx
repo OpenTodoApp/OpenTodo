@@ -96,7 +96,7 @@ export function ListPageActions({ route, userRole, rowCount, selectMode, onSelec
       )}
       {route.view !== 'completed' && rowCount > 0 && (
         <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm hidden px-2 py-1 text-body pointer-coarse:inline-flex" aria-pressed={selectMode} onClick={onSelectMode} data-select-mode>
-          {selectMode ? t('Done') : t('Select')}
+          {selectMode ? t('Close') : t('Select')}
         </button>
       )}
       {queryFilter?.query && <FilterQueryChip query={queryFilter.query} onOpen={queryFilter.onOpen} onClear={queryFilter.onClear} />}

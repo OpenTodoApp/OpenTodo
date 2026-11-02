@@ -33,7 +33,7 @@ The task's notes and subtasks are shown below the timer. Tick subtasks there; **
 Choose the timer in the screen's menu or in Settings. It can't change while a session runs.
 
 - **Pomodoro**: 25 minutes of work, then a 5 minute break, and a 15 minute break after every fourth session. All four numbers are yours to change.
-- **Flowtime**: counts up from 0:00 until you select **Done**, then offers a break.
+- **Flowtime**: counts up from 0:00 until you select **Stop the timer**, then offers a break.
 - **Countdown**: asks for a length first, from 5 to 180 minutes, and remembers the last one on this device. Your [presets](focus-options.md#countdown-presets) start a length in one tap.
 
 When a session or a break ends, Focus says what ended and how long you worked, and offers the next step: start the break, complete the task, the next task, or [a few more minutes](focus-options.md#a-few-more-minutes). A tone, a [break reminder](focus-options.md#breaks-sound-and-notifications) and a notification are optional.

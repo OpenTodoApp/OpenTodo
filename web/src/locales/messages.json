@@ -17657,7 +17657,7 @@
   "Tick every task in the list": [
     "web/src/lib/shortcuts.ts"
   ],
-  "Tick it and show every checkbox; Select tasks in the page menu does the same, Done hides them": [
+  "Tick it and show every checkbox; Select tasks in the page menu does the same, Close hides them": [
     "web/src/lib/shortcuts.ts"
   ],
   "Tick me off when you have read this": [
