@@ -112,7 +112,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | [Recurring task rules](recurrence.md) | Rule grammar, how next dates are computed, completing, skipping and detaching |
 | [Reminders reference](reminders.md) | Relative and absolute reminders, snooze, web push and its privacy |
 | [Capturing pages](capture.md) | Share sheet, bookmarklet and browser extension |
-| [Obsidian plugin](obsidian.md) | Send a line or a selection from any note to OpenTodo, with a link back to the note: connect, send, offline, encrypted accounts |
+| [Obsidian plugin](obsidian.md) | Send lines from any note to OpenTodo with a link back to the note, and sync a folder of task files: connect, send, offline, encrypted accounts |
 | [Import formats](import.md) | Own export, CSV and other apps' JSON exports; duplicates and undo |
 | [End-to-end encryption](e2ee.md) | What is encrypted, the threat model, devices, recovery and limits |
 | [Feedback and support](feedback-and-support.md) | Where to report a problem or suggest an idea, where to talk to other people who use OpenTodo, how to star it on GitHub, and how to buy the maintainer a coffee. |
