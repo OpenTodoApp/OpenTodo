@@ -460,7 +460,13 @@ export const OVERLAYS = {
     // cover it on a phone; focus it as a keyboard user would.
     await box.focus()
     await box.pressSequentially('@B')
-    return { overlay: p.getByRole('listbox', { name: 'Mention a member' }), kind: 'combobox', after: async () => { await box.fill(''); await p.keyboard.press('Escape'); await p.keyboard.press('Escape') } }
+    // The member list reads the project's members first; on a busy CI runner that took
+    // more than the generic 5 s (PR 756). Wait longer here, and type the mention again
+    // once if the composer took the keys before it was ready.
+    const list = p.getByRole('listbox', { name: 'Mention a member' })
+    const shown = await list.waitFor({ state: 'visible', timeout: 15000 }).then(() => true, () => false)
+    if (!shown) { await box.fill(''); await box.pressSequentially('@B'); await list.waitFor({ state: 'visible', timeout: 15000 }) }
+    return { overlay: list, kind: 'combobox', after: async () => { await box.fill(''); await p.keyboard.press('Escape'); await p.keyboard.press('Escape') } }
   },
   // Task panel (task-panel-facets): a property's picker opens in a popover anchored to its
   // part; a property without a value has no part yet and is reached through Add.
