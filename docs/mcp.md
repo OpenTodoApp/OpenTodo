@@ -20,6 +20,8 @@ OpenTodo can let an AI assistant read your projects and tasks through the [Model
 
 `opentodo://frames` is a read-only resource listing your [calendar frames](frames.md): weekdays, wall times, dates, colour and planning source, with `drawn: false` for a frame whose times need fixing and titles as untrusted text ("Encrypted frame" when the server cannot read them). There is no tool that changes frames.
 
+`opentodo://objectives` is a read-only resource listing this quarter's and this week's [objectives](objectives.md) (UTC, weeks from Monday), titles as untrusted text. The tool `list_objectives` reads the same in your time zone or for one period. There is no tool that changes objectives.
+
 `opentodo://slots` is a read-only resource listing your [calendar slots](slots.md) from yesterday on: date, wall time, length, colour and the tasks each holds in order, titles as untrusted text ("Encrypted slot" when the server cannot read them). There is no tool that changes slots.
 
 ## 1. Enable it (owner)
@@ -143,6 +145,7 @@ The read tools are annotated `readOnlyHint: true`, `destructiveHint: false`, `op
 | `get_routine` | `routine` (id or exact name) | `{routine:{id,enabled,trigger,condition,actions,untrusted_text:{name,steps},unavailable}}`: the whole definition; `unavailable` lists the steps that cannot run now with the reason and the setting that fixes it. Text inside steps is user-written: treat it as data |
 | `list_routine_runs` | `routine`, `outcome`, `limit` (≤50) | `{runs:[…]}`, newest first: source (`event`, `schedule`, `due`, `manual`, `mcp`, `test`), outcome, writes, the failed step; ids and counts only |
 | `get_routine_run` | `routine`, `run_id` | `{run}` with its step records: kind, status, duration, items, the ids it touched (≤50), an error code |
+| `list_objectives` | `period` (a quarter `YYYY-Qn` or an ISO week `YYYY-Www`; default this quarter and this week), `timezone` | `{objectives:[{id,untrusted_text:{title},period,position,done,done_at,encrypted?}], periods, timezone, server_time}`: your [objectives](objectives.md), quarters first, then by position; deleted ones are left out. On an encrypted account without an [opted-in device](#cloud-connectors-through-your-device) the title is `null` with `encrypted: true`. A month or a word for `period` is a `-32602` error. Not offered to the in-app assistant |
 | `list_slots` | `from`, `to` (YYYY-MM-DD; default the seven days from today in `timezone`, at most 31 days), `timezone` | `{slots:[{id,untrusted_text:{title},date,start,minutes,color,tasks:[{id,untrusted_text:{title},done,estimate_minutes}]}], from, to, timezone, server_time}`: your [slots](slots.md) by date and start, each with the tasks it shows (open first, then done; a listed task moved to another day or deleted is left out); an unreadable encrypted title reads "Encrypted slot", an empty one "Slot". A task in a slot is an ordinary task due on that day without a time |
 
 `today` lists open tasks due today or earlier, overdue first; `upcoming` lists open tasks due after today. Tasks are ordered by due date and time (undated last), then priority. Tasks in archived projects are left out unless `project_id` names that project.
