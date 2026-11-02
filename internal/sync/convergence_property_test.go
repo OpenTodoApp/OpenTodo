@@ -255,6 +255,19 @@ func (w *propWorld) step(i int) {
 	}
 }
 
+// syncProject exchanges d until the server holds project id for d's user.
+func (w *propWorld) syncProject(d *propDevice, id string) {
+	w.t.Helper()
+	for range 10 {
+		if e, err := w.s.Get(w.ctx, d.user, "project", id); err == nil && e != nil {
+			return
+		}
+		w.now += 1000
+		w.exchange(d)
+	}
+	w.t.Fatalf("%s never uploaded project %s", d.id, id)
+}
+
 // workspace picks a workspace_id value: the default (null) or one of two ids.
 func (w *propWorld) workspace() string {
 	return []string{"null", `"w-work"`, `"w-family"`}[w.rng.IntN(3)]
@@ -293,6 +306,13 @@ func runConvergence(t *testing.T, seed uint64) {
 	const steps = 240
 	for i := range steps {
 		if i == steps/2 {
+			// Sharing happens from a device that holds the project on the
+			// server: in the app the owner shares a project the server knows.
+			// A random run can reach this step before A1 has uploaded it (no
+			// exchange of A1 yet, or its upload refused for the clock and still
+			// queued), and AddMember then rightly answers not found. A1 syncs
+			// first in that case only, so the other seeds replay unchanged.
+			w.syncProject(a1, "p")
 			if _, err := s.AddMember(w.ctx, "alice", "p", "bob", RoleEditor); err != nil {
 				t.Fatal(err)
 			}
@@ -408,6 +428,13 @@ func TestConvergenceProperty(t *testing.T) {
 		t.Logf("seed %d (replay with OPENTODO_PROPERTY_SEED=%d)", seed, seed)
 		runConvergence(t, seed)
 	}
+}
+
+// Seed 1793554386122448369 (CI of PR #742) reaches the sharing step before
+// A1 has exchanged once, so the server has no project to share yet.
+func TestConvergenceSharesAfterUpload(t *testing.T) {
+	t.Parallel()
+	runConvergence(t, 1793554386122448369)
 }
 
 // Issue #651 (seed 1793402778061697617), reduced: a device two hours fast

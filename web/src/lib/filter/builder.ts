@@ -67,6 +67,7 @@ export function formatLeaf(n: Node): string {
     case 'notes': return `notes: ${quoteText(n.text)}`
     case 'origin': return `origin: ${quoteText(n.value)}`
     case 'energy': return `energy: ${n.value}`
+    case 'sector': return `sector: ${/^\d/.test(n.value) ? n.value : n.value.replace('-', ' ')}`
     case 'workspace': return `workspace: ${quoteText(n.name)}`
     // Field names are always quoted: a bare one could be a reserved word.
     case 'field': return `${quoteAlways(n.name)} ${n.op} ${formatFieldValue(n.value)}`

@@ -154,7 +154,7 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if entity == "task" {
-		if !energyOK(w, body) {
+		if !taskBodyOK(w, body) {
 			return
 		}
 		canonicalizeRecurrence(body)
@@ -429,7 +429,7 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "not found")
 		return
 	}
-	if entity == "task" && !energyOK(w, body) {
+	if entity == "task" && !taskBodyOK(w, body) {
 		return
 	}
 	if msg, err := s.checkReferences(r.Context(), userFrom(r.Context()).ID, entity, body); err != nil {

@@ -33,6 +33,9 @@ type Routines interface {
 	RunNow(ctx context.Context, userID, ruleID, taskID string, test bool) (map[string]any, int, error)
 	// State is the server's pause and the last run time per routine.
 	State(ctx context.Context, userID string) (paused map[string]string, lastRun map[string]int64)
+	// RunAs names the person each shared routine runs as (routines-shared D4):
+	// id and display name, by routine id.
+	RunAs(ctx context.Context, userID string, ids []string) map[string]map[string]string
 }
 
 // SetRoutines installs the routine tools' engine.
@@ -113,8 +116,10 @@ func (r *Registry) listRoutines(ctx context.Context, userID string, _ args) (map
 	}
 	var paused map[string]string
 	var last map[string]int64
+	runAs := map[string]map[string]string{}
 	if r.routines != nil {
 		paused, last = r.routines.State(ctx, userID)
+		runAs = r.routines.RunAs(ctx, userID, sharedIDs(rows))
 	}
 	out := []map[string]any{}
 	for _, row := range rows {
@@ -124,7 +129,11 @@ func (r *Registry) listRoutines(ctx context.Context, userID string, _ args) (map
 		}
 		_ = json.Unmarshal(row["trigger"], &tr)
 		item := map[string]any{"id": id, "untrusted_text": nameText{Name: e2ee.Display(str(row, "name"))}, "trigger_kind": tr.Kind,
-			"enabled": string(row["enabled"]) == "true", "paused_reason": nil, "steps": stepsCount(row["steps"]), "last_run": nil}
+			"enabled": string(row["enabled"]) == "true", "paused_reason": nil, "steps": stepsCount(row["steps"]), "last_run": nil,
+			"project_id": nullable(str(row, "project_id")), "run_as": nil}
+		if p := runAs[id]; p != nil {
+			item["run_as"] = p
+		}
 		if p := paused[id]; p != "" {
 			item["paused_reason"] = p
 		}
@@ -146,8 +155,12 @@ func (r *Registry) routineDetail(ctx context.Context, userID string, row opsync.
 	}
 	out := map[string]any{"id": str(row, "id"), "enabled": string(row["enabled"]) == "true", "trigger": null(row["trigger"]), "condition": null(row["condition"]),
 		"actions":        displayValue(null(row["actions"])),
-		"untrusted_text": map[string]any{"name": e2ee.Display(str(row, "name")), "steps": displayValue(null(row["steps"]))}, "unavailable": []ruleval.StepWarning{}}
+		"untrusted_text": map[string]any{"name": e2ee.Display(str(row, "name")), "steps": displayValue(null(row["steps"]))}, "unavailable": []ruleval.StepWarning{},
+		"project_id": nullable(str(row, "project_id")), "run_as": nil}
 	if r.routines != nil {
+		if p := r.routines.RunAs(ctx, userID, sharedIDs([]opsync.Entity{row}))[str(row, "id")]; p != nil {
+			out["run_as"] = p
+		}
 		w, err := r.routines.Check(ctx, userID, map[string]json.RawMessage{}, row)
 		if err == nil && w != nil {
 			out["unavailable"] = w
@@ -346,12 +359,19 @@ func (r *Registry) planCreateRoutine(ctx context.Context, c Caller, a args, _ Ch
 	if err := refuseAIApply(a); err != nil {
 		return Plan{}, err
 	}
-	if err := a.only("", "name", "trigger", "condition", "steps", "actions", "enabled"); err != nil {
+	if err := a.only("", "name", "trigger", "condition", "steps", "actions", "enabled", "project"); err != nil {
 		return Plan{}, err
 	}
 	body, err := r.routineBody(c, a)
 	if err != nil {
 		return Plan{}, err
+	}
+	if ref, _ := a.str("project"); ref != "" {
+		pid, err := r.projectRef(ctx, c.UserID, ref)
+		if err != nil {
+			return Plan{}, err
+		}
+		body["project_id"] = raw(pid)
 	}
 	enabled := false
 	if a.present("enabled") {
@@ -478,4 +498,41 @@ func (r *Registry) planRunRoutine(ctx context.Context, c Caller, a args, _ Chang
 		}
 		return res, n, nil
 	}}, nil
+}
+
+// sharedIDs lists the routines with a project (the run-as person matters for
+// those of a shared project).
+func sharedIDs(rows []opsync.Entity) []string {
+	var out []string
+	for _, row := range rows {
+		if str(row, "project_id") != "" {
+			out = append(out, str(row, "id"))
+		}
+	}
+	return out
+}
+
+// projectRef resolves a project id or exact name (ignoring case) among the
+// user's live projects (a routine of a project, routines-shared D11).
+func (r *Registry) projectRef(ctx context.Context, userID, ref string) (string, error) {
+	rows, err := r.list(ctx, userID, "project", false)
+	if err != nil {
+		return "", err
+	}
+	var byName []string
+	for _, row := range rows {
+		if str(row, "id") == ref {
+			return ref, nil
+		}
+		if strings.EqualFold(strings.TrimSpace(e2ee.Display(str(row, "name"))), strings.TrimSpace(ref)) {
+			byName = append(byName, str(row, "id"))
+		}
+	}
+	switch len(byName) {
+	case 1:
+		return byName[0], nil
+	case 0:
+		return "", notFound("project", []string{ref})
+	}
+	return "", argErr("project: more than one project is named " + ref + "; use its id")
 }

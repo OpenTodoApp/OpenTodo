@@ -41,6 +41,11 @@ type Task struct {
 	Habit bool
 	// Blocked by an open task: the fallback rule when no predicate is given.
 	Blocked bool
+	// Time is the due time in the user's zone (HH:MM) when the task has a due
+	// date (then Due is that date); empty otherwise.
+	Time string
+	// Deadline is the task's deadline (YYYY-MM-DD) or empty.
+	Deadline string
 }
 
 // Review is the part of the personal review row the rule reads.
@@ -186,6 +191,80 @@ func (f Fill) WaitingSet() map[string]bool {
 	out := make(map[string]bool, len(f.Waiting))
 	for _, id := range f.Waiting {
 		out[id] = true
+	}
+	return out
+}
+
+// Sensitive is a waiting task with a time today (OpenSpec change
+// today-waiting-time-sensitive): its due time, or empty for a deadline today
+// without one. Passed is true once its time is before now
+// (today-waiting-time-passed); a deadline without a time never passes today.
+type Sensitive struct {
+	ID     string
+	Time   string
+	Passed bool
+}
+
+// TimeSensitive returns the waiting tasks due today with a time or with a
+// deadline today, soonest first: by time, then the deadlines without a time
+// (the end of the day), ties in fill order. waiting is the waiting tasks in
+// fill order; the fill order itself is never changed. now is the wall time of
+// today ("HH:MM"; past "24:00" once the day has ended before the day start),
+// and a task whose time is before it is marked Passed.
+func TimeSensitive(waiting []Task, today, now string) []Sensitive {
+	out := []Sensitive{}
+	for _, t := range waiting {
+		timed := ""
+		if t.Due == today && t.Time != "" {
+			timed = t.Time
+		}
+		if timed != "" || t.Deadline == today {
+			out = append(out, Sensitive{ID: t.ID, Time: timed, Passed: timed != "" && now != "" && timed < now})
+		}
+	}
+	key := func(s Sensitive) string {
+		if s.Time == "" {
+			return "24:00"
+		}
+		return s.Time
+	}
+	sort.SliceStable(out, func(i, j int) bool { return key(out[i]) < key(out[j]) })
+	return out
+}
+
+// Next is the first time-sensitive task whose time has not passed (the one the
+// folded heading names); false when there is none or every one has passed.
+func Next(soon []Sensitive) (Sensitive, bool) {
+	for _, s := range soon {
+		if !s.Passed {
+			return s, true
+		}
+	}
+	return Sensitive{}, false
+}
+
+// Passed counts the time-sensitive tasks whose time has passed.
+func Passed(soon []Sensitive) int {
+	n := 0
+	for _, s := range soon {
+		if s.Passed {
+			n++
+		}
+	}
+	return n
+}
+
+// WaitingTasks is the waiting tasks of f in fill order, from tasks.
+func (f Fill) WaitingTasks(tasks []Task) []Task {
+	byID := make(map[string]Task, len(tasks))
+	for _, t := range tasks {
+		byID[t.ID] = t
+	}
+	out := make([]Task, 0, len(f.Waiting))
+	for _, id := range f.Waiting {
+		if t, ok := byID[id]; ok {
+			out = append(out, t)
+		}
 	}
 	return out
 }

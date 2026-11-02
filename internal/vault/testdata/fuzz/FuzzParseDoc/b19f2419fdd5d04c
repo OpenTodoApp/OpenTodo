@@ -1,0 +1,2 @@
+go test fuzz v1
+string("- [X] [evening::true][daypart::0]0")

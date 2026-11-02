@@ -23,7 +23,7 @@
 // The row is its own size container (`@container/row`), so every host gets the layout
 // its width allows; the rules are in index.css, "The property column".
 import { isSample } from '../lib/sampleTasks'
-import { hueFor, Icon, LabelChips, ReadAs, ToneText, Tooltip, TruncatedText, type HueName, type IconName, type Tone } from '../ui'
+import { hueFor, Icon, LabelChips, ReadAs, ToneText, Tooltip, TruncatedText, useOverflowing, type HueName, type IconName, type Tone } from '../ui'
 import { slotName, useSlotOf } from '../lib/slots'
 import { lazy, memo, type ReactNode, Suspense, useLayoutEffect, useRef } from 'react'
 import type { RowImplied } from '../lib/listGroups'
@@ -54,6 +54,7 @@ import { useAccountRowLayout, type RowLayout } from '../lib/rowLayout'
 import { DRAG_THRESHOLD, finePointer, swallowNextClick, trackHold } from '../lib/dnd'
 import { dayPartName, dayPartOf, dayPartWord, type DayPart } from '../lib/dayParts'
 import { energyChipLabel, energyName, energyOf, type Energy } from '../lib/energy'
+import { sectorLabel } from '../lib/sectorNames'
 import { formatSpan, spanOf, type Span } from '../lib/span'
 
 /** The details of an expanded row (row-expand D3), loaded on the first expand. */
@@ -149,6 +150,8 @@ interface MetaValues {
   breadcrumb?: string | null
   date: string | null
   dateTone: Tone
+  /** The date slot holds the time sector of a task without a do-on date (time-sectors D4): its read-out name. */
+  sectorLabel?: string | null
   hint: string | null
   zone: string
   repeat: string | null
@@ -198,6 +201,12 @@ function BlockMark({ m, rowItem = false }: { m: MetaValues; rowItem?: boolean })
   )
 }
 
+/** The date slot: the do-on date, or a time sector in the same place (time-sectors D4), carried over in the faint tone. */
+function DateText({ m }: { m: MetaValues }) {
+  if (m.sectorLabel) return <ToneText tone={m.dateTone} icon="calendar-range" data-date="" data-sector="" label={m.sectorLabel}>{m.date}</ToneText>
+  return <ToneText tone={m.dateTone} icon="calendar-days" data-date="">{m.date}</ToneText>
+}
+
 /** The energy as one muted word, read as "Deep energy" (task-energy D6). */
 function EnergyWord({ energy, rowItem = false }: { energy: Energy; rowItem?: boolean }) {
   return <ToneText data-energy={energy} data-row-item={rowItem ? '' : undefined} label={energyChipLabel(energy)}>{energyName(energy)}</ToneText>
@@ -218,7 +227,7 @@ function CardMeta({ m }: { m: MetaValues }) {
   const more = m.badges.slice(MAX_FIELD_BADGES)
   return (
     <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1" data-row-meta="card">
-      {m.date && <ToneText tone={m.dateTone} icon="calendar-days" data-date="">{m.date}</ToneText>}
+      {m.date && <DateText m={m} />}
       {m.estimate && <ToneText icon="clock" data-estimate="" data-tracked={m.estimate.tracked ? '' : undefined} label={m.estimate.label}>{m.estimate.text}</ToneText>}
       {m.progress && <ToneText icon="circle-check-big" data-progress="" label={m.progress.label}>{m.progress.text}</ToneText>}
       {m.energy && <EnergyWord energy={m.energy} />}
@@ -275,7 +284,7 @@ function DetailedMeta({ m, priority, projectColor, labels }: { m: MetaValues; pr
   const facts = [
     (m.date || m.hint) && (
       <span key="date" data-row-cell="date" className="inline-flex min-w-0 items-center gap-1">
-        {m.date && <ToneText tone={m.dateTone} icon="calendar-days" data-date="">{m.date}</ToneText>}
+        {m.date && <DateText m={m} />}
         {m.hint && <ToneText tone="faint" data-zone-hint="" label={t('fixed to {zone}', { zone: m.zone })}>{m.hint}</ToneText>}
       </span>
     ),
@@ -352,7 +361,7 @@ function RowLine({ m, extra, progress, projectColor, projectColumn }: { m: MetaV
       <span className="contents" data-row-props={projectColumn ? 'project' : ''}>
         {(m.date || m.hint) && (
           <span data-row-cell="date" data-row-item="" {...keep('date')} className="inline-flex min-w-0 items-center gap-1">
-            {m.date && <ToneText tone={m.dateTone} icon="calendar-days" data-date="">{m.date}</ToneText>}
+            {m.date && <DateText m={m} />}
             {m.hint && <ToneText tone="faint" data-zone-hint="" label={t('fixed to {zone}', { zone: m.zone })}>{m.hint}</ToneText>}
           </span>
         )}
@@ -624,6 +633,29 @@ function startWords(start: string, span: Span | null, p: ResolvedDateTime): stri
 }
 
 /**
+ * A list row's title (task-list-width D1, D3): two lines, then an ellipsis. The whole
+ * title is the open control's name, and its tooltip while it is cut; its own component,
+ * so a change of "cut" re-renders the title only.
+ */
+function RowTitle({ title, tone, waiting, undecryptable, unencrypted, measure }: { title: string; tone: string; waiting: boolean; undecryptable: boolean; unencrypted: boolean; measure: boolean }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const cut = useOverflowing(ref, title, measure && !undecryptable)
+  return (
+    <Tooltip label={title} disabled={!cut}>
+      <div ref={ref} className={`user-text min-w-0 text-body line-clamp-2 break-words ${tone}`} data-row-title data-waiting={waiting ? '' : undefined}>
+        {undecryptable ? <span className="italic text-faint"><ReadAs label={t('This title could not be decrypted with this device\'s key')}>{title}</ReadAs></span>
+          : title || <span className="italic text-faint">{t('Untitled')}</span>}
+        {unencrypted && (
+          <span className="ml-2 rounded-chip bg-warning-soft px-1.5 py-0.5 align-middle text-hint text-on-warning-soft">
+            <ReadAs label={t('The server still holds this text unencrypted; it is encrypted after the next sync of an unlocked device.')}>{t('not yet encrypted')}</ReadAs>
+          </span>
+        )}
+      </div>
+    </Tooltip>
+  )
+}
+
+/**
  * Memoized (large-list-performance D1): a list re-renders a row only when one of its
  * props changes, so callers pass stable handlers and per-row values (`selected` is a
  * boolean, not the list's selected id).
@@ -685,11 +717,14 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   const originChip = origin ? <OriginChip origin={origin} quiet /> : null
   const projectName = showProject && project && !hides('project') ? project.name : null
   const hint = zoneHint(task.due)
+  // A task without a do-on date shows its time sector in the date slot (time-sectors D4); a dated task never does.
+  const sector = !task.due && !hides('date') ? sectorLabel(task.sector, logicalToday(), dt.resolved) : null
   const m: MetaValues = {
     sample: isSample(task),
     breadcrumb,
-    date: hides('date') ? null : span ? formatSpan(span) : rowDateText(due, dueDay, done ? null : dayPartOf(task), implied, timeInColumn),
-    dateTone: dueDay ? ladderTone(dueDay, logicalToday()) : 'muted',
+    date: hides('date') ? null : sector ? sector.text : span ? formatSpan(span) : rowDateText(due, dueDay, done ? null : dayPartOf(task), implied, timeInColumn),
+    dateTone: dueDay ? ladderTone(dueDay, logicalToday()) : sector?.carried ? 'faint' : 'muted',
+    sectorLabel: sector?.label ?? null,
     hint, zone: task.due?.tz ?? '', repeatLabel: repeatLabelOf(task),
     repeat: task.recurrence ? t('repeats') : task.series_id ? t('occurrence') : null, recurring: !!task.recurrence,
     deadline: deadlineInColumn ? null : deadline, deadlineLabel,
@@ -738,8 +773,8 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   // card at the top right, as before rows-v2 (a link nested in a button is invalid).
   const trailing = card ? originChip && <span data-row-trailing="" className="ml-auto flex shrink-0 items-start">{originChip}</span>
     : (originChip || revealed) && (
-    // While a two-line row can reveal its actions the group keeps their width (7 rem), so they never cover the open control (ux-fixes-phone, audit M11) and revealing them moves nothing; a one-line row lets them float over its column (index.css).
-    <span data-row-trailing="" className={`ml-auto mt-0.5 flex h-5 min-w-0 items-center justify-end gap-2 transition-opacity duration-(--duration-ui) ${revealed ? `${readOnly ? 'md:pointer-fine:min-w-8' : 'md:pointer-fine:min-w-36'} ${forceActions ? 'md:pointer-fine:opacity-0' : 'md:pointer-fine:group-hover:opacity-0 md:pointer-fine:group-focus-within:opacity-0'}` : ''}`}>
+    // The revealed actions float over the row's end at every width (task-list-width D2): the row keeps no room for them, so the title has the whole width and revealing them moves nothing.
+    <span data-row-trailing="" className={`ml-auto mt-0.5 flex h-5 min-w-0 items-center justify-end gap-2 transition-opacity duration-(--duration-ui) ${revealed ? (forceActions ? 'md:pointer-fine:opacity-0' : 'md:pointer-fine:group-hover:opacity-0 md:pointer-fine:group-focus-within:opacity-0') : ''}`}>
       {originChip && <span className="flex shrink-0">{originChip}</span>}
     </span>
   )
@@ -837,16 +872,9 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
           if (onTick && !readOnly && (e.shiftKey || e.ctrlKey || e.metaKey)) { e.preventDefault(); onTick(e.shiftKey); return }
           onOpen(e)
         }}>
-        <div className={card ? '' : 'flex min-w-0 items-center gap-2'} data-row-head>
-        <div className={`user-text text-body ${card || detailed ? 'line-clamp-2' : 'min-w-0 truncate'} ${checked ? 'text-faint line-through' : blockedBy > 0 || (waitsFor && !done) ? 'text-muted' : ''}`} data-row-title data-waiting={waitsFor && !done ? '' : undefined}>
-          {undecryptable ? <span className="italic text-faint"><ReadAs label={t('This title could not be decrypted with this device\'s key')}>{task.title}</ReadAs></span>
-            : task.title || <span className="italic text-faint">{t('Untitled')}</span>}
-          {unencrypted && (
-            <span className="ml-2 rounded-chip bg-warning-soft px-1.5 py-0.5 align-middle text-hint text-on-warning-soft">
-              <ReadAs label={t('The server still holds this text unencrypted; it is encrypted after the next sync of an unlocked device.')}>{t('not yet encrypted')}</ReadAs>
-            </span>
-          )}
-        </div>
+        <div className={card ? '' : 'flex min-w-0 items-start gap-2'} data-row-head>
+        <RowTitle title={task.title} tone={checked ? 'text-faint line-through' : blockedBy > 0 || (waitsFor && !done) ? 'text-muted' : ''} waiting={!!waitsFor && !done}
+          undecryptable={undecryptable} unencrypted={unencrypted} measure={!inline && !departing} />
         {!card && !detailed && priority && <PriorityMark priority={priority} />}
         {!card && m.repeat && <ToneText tone="faint" icon="repeat" data-repeat="" data-recurring={m.recurring ? '' : undefined} label={m.repeatLabel ?? m.repeat} className="shrink-0">{null}</ToneText>}
         {!card && headCounts.length > 0 && <RowCounts counts={headCounts} />}

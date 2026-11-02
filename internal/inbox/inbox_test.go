@@ -11,6 +11,7 @@ type vtask struct {
 	ProjectID   *string         `json:"project_id"`
 	Due         json.RawMessage `json:"due"`
 	Start       *string         `json:"start"`
+	Sector      string          `json:"sector"`
 	CompletedAt *int64          `json:"completed_at"`
 	DeletedAt   *int64          `json:"deleted_at"`
 }
@@ -20,6 +21,7 @@ func (v vtask) task() Task {
 		HasDue:    len(v.Due) > 0 && string(v.Due) != "null",
 		Completed: v.CompletedAt != nil,
 		Deleted:   v.DeletedAt != nil,
+		Sector:    v.Sector,
 	}
 	if v.ProjectID != nil {
 		t.ProjectID = *v.ProjectID

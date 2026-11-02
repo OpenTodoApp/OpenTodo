@@ -3,19 +3,20 @@
 // headings (dates, projects, sections, Later, Blocked, the logbook's days), and the
 // tree positions assistive technology announces. TaskListView only wires these to
 // the live data; tests call them directly.
-import { formatDateHeading, type ResolvedDateTime } from './dates'
+import { nextWaiting, waitingTimeSensitive } from './closedList'
+import { formatDateHeading, formatTime, type ResolvedDateTime } from './dates'
 import type { Projection } from './occurrences'
 import { inboxTasks } from './inbox'
-import { groupToday, groupUpcoming, projectOpenList, todayList, upcomingList, withoutArchived } from './dayLists'
+import { groupToday, groupUpcoming, projectOpenList, todayList, upcomingList, upcomingWithToday, withoutArchived } from './dayLists'
 import { appendTo, groupBy } from './collections'
 import { t } from './i18n'
 import { logbookHeading, type LogbookGroup } from './logbook'
 import { byPosition, compareByPosition, compareDueThenPriority } from './ordering'
 import { effectiveSection, groupBySection } from './sections'
-import { breadcrumbOf } from './subtasks'
-import { flattenTree, type Tree, type TreeNode } from './tree'
+import { breadcrumbOf, buildTaskTree } from './subtasks'
+import { effectiveParents, flattenTree, type Tree, type TreeNode } from './tree'
 import type { Label, Project, Section, Task } from './types'
-import { compareTasks, groupTasks, inAnytime, isSomeday } from './views'
+import { compareTasks, groupTasks, inAnytime, inLater, inToday, isSomeday } from './views'
 import { compareManual } from './viewOrder'
 import type { ListDisplay } from './listDisplay'
 import type { DayPart } from './dayParts'
@@ -81,10 +82,24 @@ export interface ListGroup {
   dropPart?: DayPart | 'none'
   /** One line under an open folded group's heading (today-closed-list: the Waiting hint). */
   hint?: string
+  /**
+   * Today's folded Waiting for a slot group (today-waiting-time-sensitive D2): the waiting
+   * tasks with a time today, soonest first, listed under the heading while it is folded.
+   */
+  soon?: WaitingSoon[]
+  /** Words after a folded heading's count, inside its toggle ("next: Send the form, 4:00 PM"). */
+  detail?: string
   /** Upcoming's projected occurrences of the day, after its rows and outside its count (series-occurrences D4). */
   projected?: Projection[]
   /** On the last day with projections: "Repeating tasks shown up to <date>". */
   projectedNote?: string
+}
+
+/** A waiting task with a time today: its due time in the user's zone, null for a deadline today without one; `passed` once that time is before now (today-waiting-time-passed). */
+export interface WaitingSoon {
+  task: Task
+  time: string | null
+  passed: boolean
 }
 
 /** A board column: a section ('' = "No section") and its top-level cards. */
@@ -125,13 +140,16 @@ export function earlierCollapsed(stored: ReadonlySet<string>, count: number): bo
   return count > EARLIER_FOLD_ABOVE
 }
 
-/** A row outside the tree (flat views, cards, Later): depth 0, no children. */
+/** A row outside the tree (flat views, cards): depth 0, no children. */
 export function flatRow(task: Task, breadcrumb: string | null = null): ListRow {
   return { task, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb }
 }
 
-/** The tasks a list view holds, in its order (archived projects stay out of cross-project views). */
-export function tasksForView(scope: ListScope, allTasks: readonly Task[], projects: readonly Project[], today: string, userId?: string): Task[] {
+/**
+ * The tasks a list view holds, in its order (archived projects stay out of cross-project views).
+ * `upcomingToday`: Upcoming starts with Today's tasks (upcoming-start-with-today D2).
+ */
+export function tasksForView(scope: ListScope, allTasks: readonly Task[], projects: readonly Project[], today: string, userId?: string, upcomingToday = false): Task[] {
   // Tasks of archived projects stay out of the cross-project views (lib/dayLists, shared with the display).
   const all = withoutArchived(allTasks as Task[], projects as Project[], scope.view === 'project' ? scope.id : undefined)
   switch (scope.view) {
@@ -141,7 +159,7 @@ export function tasksForView(scope: ListScope, allTasks: readonly Task[], projec
     case 'today':
       return todayList(all, today)
     case 'upcoming':
-      return upcomingList(all, today)
+      return upcomingToday ? upcomingWithToday(all, today) : upcomingList(all, today)
     // Someday and Anytime (someday-and-evening D5), grouped by project in listGroups.
     case 'someday':
       return all.filter((task) => !task.completed_at && isSomeday(task)).sort(byPosition)
@@ -161,6 +179,26 @@ export function tasksForView(scope: ListScope, allTasks: readonly Task[], projec
     case 'assigned':
       return all.filter((task) => !task.completed_at && !!userId && task.assignee_id === userId).sort(compareDueThenPriority)
   }
+}
+
+/**
+ * A project list's open tasks split into the main list and its Later group
+ * (subtasks-follow-later): a whole subtree goes where its top-level task goes, so
+ * a deferred or parked parent takes its subtasks into Later, and a deferred
+ * subtask of an active parent stays under it. Both keep the input order.
+ */
+export function splitLater(tasks: readonly Task[], today: string): { active: Task[]; later: Task[] } {
+  const parents = effectiveParents(tasks as Task[])
+  const byId = new Map(tasks.map((task) => [task.id, task]))
+  const rootOf = (id: string): Task => {
+    let cur = id
+    for (let up = parents.get(cur); up; up = parents.get(cur)) cur = up
+    return byId.get(cur)!
+  }
+  const active: Task[] = []
+  const later: Task[] = []
+  for (const task of tasks) (inLater(rootOf(task.id), today) ? later : active).push(task)
+  return { active, later }
 }
 
 /** Top-level tasks of the project bucketed by section: list headings and board columns. */
@@ -183,7 +221,7 @@ export interface GroupInput {
   view: ListScope['view']
   /** The view's tasks after filters; for tree views without the Later ones. */
   tasks: Task[]
-  /** Project views: deferred and parked tasks, shown in a Later group at the end (Inbox tasks are never deferred or parked). */
+  /** Project views: deferred and parked top-level tasks with their subtasks (splitLater), shown as a tree in a Later group at the end (Inbox tasks are never deferred or parked). */
   laterTasks: Task[]
   tree: Tree<Task> | null
   today: string
@@ -213,9 +251,11 @@ export interface GroupInput {
    * Today with a limit (today-closed-list D1, D2): the limit, and the tasks waiting for
    * a slot in fill order (left out of the day's groups, listed in a folded group).
    */
-  closedList?: { limit: number; waiting: readonly Task[] }
+  closedList?: { limit: number; waiting: readonly Task[]; now?: string }
   /** Today's Done today group (today-closed-list D6): the tasks completed today, newest first; absent when hidden. */
   doneToday?: readonly Task[]
+  /** Upcoming starts with Today's own groups, then Tomorrow onwards (upcoming-start-with-today D2). */
+  upcomingToday?: boolean
 }
 
 /**
@@ -237,9 +277,6 @@ function sortedRoots(roots: TreeNode<Task>[], order: ((a: Task, b: Task) => numb
 
 /** The list's groups, in render order: one pass, linear in the number of tasks. */
 export function listGroups(p: GroupInput): ListGroup[] {
-  const later: ListGroup[] = p.laterTasks.length
-    ? [{ key: 'later', heading: t('Later'), rows: p.laterTasks.map((task) => flatRow(task, task.parent_id ? breadcrumbOf(task, p.taskMap) : null)) }]
-    : []
   const toRow = (n: TreeNode<Task>): ListRow => ({
     task: n.item,
     depth: n.depth,
@@ -250,6 +287,10 @@ export function listGroups(p: GroupInput): ListGroup[] {
     breadcrumb: n.parent === null && n.item.parent_id ? breadcrumbOf(n.item, p.taskMap) : null,
   })
   const isCollapsed = (id: string) => p.collapsed.has(id)
+  // Later keeps each subtree together under its top-level task (subtasks-follow-later).
+  const later: ListGroup[] = p.laterTasks.length
+    ? [{ key: 'later', heading: t('Later'), rows: flattenTree(buildTaskTree(p.laterTasks).roots, isCollapsed).map(toRow) }]
+    : []
   // Board: cards are top-level tasks, column by column (keyboard order); a folded column has none on screen (board-polish D1).
   if (p.board) return p.columns.map((c) => ({ key: c.key, heading: null, rows: c.folded ? [] : c.cards.map((task) => flatRow(task)) }))
   const order = displayOrder(p.display, p.manualOrder)
@@ -285,32 +326,7 @@ export function listGroups(p: GroupInput): ListGroup[] {
 /** Cross-project and date views: flat, each matching task once, with its parent named. */
 function flatGroups(p: GroupInput): ListGroup[] {
   const row = (task: Task) => flatRow(task, task.parent_id ? breadcrumbOf(task, p.taskMap) : null)
-  if (p.view === 'today') {
-    // Blocked tasks wait in their own group at the end (task-dependencies D7);
-    // This Evening below the day's tasks (someday-and-evening).
-    // With day parts on, Morning and Afternoon between them (day-parts D3); their headings take drops (D4).
-    const parts = !!p.dayParts
-    // Tasks waiting for a slot leave the day's groups (today-closed-list D1); the slots keep Today's order and groups.
-    const slotWaiting = p.closedList?.waiting ?? []
-    const out = slotWaiting.length ? new Set(slotWaiting.map((x) => x.id)) : null
-    const listed = out ? p.tasks.filter((x) => !out.has(x.id)) : p.tasks
-    const { overdue: earlier, day, morning, afternoon, evening, blocked: waiting } = groupToday(listed, p.today, p.blocked, parts)
-    const g: ListGroup[] = []
-    const drop = (part: DayPart | 'none') => (parts ? { dropPart: part } : {})
-    // Earlier and Blocked imply nothing: how late a task is stays visible on its row (calm-rows D3, page-rhythm D5).
-    if (earlier.length) g.push({ key: 'earlier', heading: t('Earlier'), rows: earlier.map(row) })
-    const others = earlier.length || morning.length || afternoon.length || evening.length
-    // With day parts on an empty Today group is left out, unless the list would be empty without it.
-    if (!parts || day.length || !others) g.push({ key: 'today', heading: others ? t('Today') : null, rows: withImplied(day.map(row), { date: p.today }), ...drop('none') })
-    if (morning.length) g.push({ key: 'morning', heading: t('Morning'), rows: withImplied(morning.map(row), { date: p.today, part: 'morning' }), ...drop('morning') })
-    if (afternoon.length) g.push({ key: 'afternoon', heading: t('Afternoon'), rows: withImplied(afternoon.map(row), { date: p.today, part: 'afternoon' }), ...drop('afternoon') })
-    if (evening.length) g.push({ key: 'evening', heading: t('This Evening'), rows: withImplied(evening.map(row), { date: p.today, evening: true }), ...drop('evening') })
-    if (waiting.length) {
-      const folded = !p.collapsed.has(BLOCKED_OPEN_KEY)
-      g.push({ key: 'blocked', heading: t('Blocked'), count: waiting.length, folded, openKey: BLOCKED_OPEN_KEY, rows: folded ? [] : waiting.map(row) })
-    }
-    return [...g, ...closedListGroups(p, row)]
-  }
+  if (p.view === 'today') return todayGroups(p, row)
   if (p.logbook) {
     // Completed as a logbook: one group per local completion day, newest first.
     return p.logbook.groups.map((g) => ({
@@ -318,7 +334,11 @@ function flatGroups(p: GroupInput): ListGroup[] {
     }))
   }
   if (p.view === 'upcoming') {
-    return groupUpcoming(p.tasks, p.today).map(({ date, tasks: list }) => ({ key: date, heading: formatDateHeading(date, p.today, p.resolved), rows: withImplied(list.map(row), { date }) }))
+    // Start with Today (upcoming-start-with-today D2): Today's own groups, then Tomorrow onwards.
+    const lead = p.upcomingToday ? p.tasks.filter((x) => inToday(x, p.today)) : []
+    const ahead = lead.length ? p.tasks.filter((x) => !inToday(x, p.today)) : p.tasks
+    const days = groupUpcoming(ahead, p.today).map(({ date, tasks: list }): ListGroup => ({ key: date, heading: formatDateHeading(date, p.today, p.resolved), rows: withImplied(list.map(row), { date }) }))
+    return p.upcomingToday ? [...todayGroups({ ...p, tasks: lead, doneToday: undefined }, row, true), ...days] : days
   }
   if (p.view === 'label' && p.display && p.display.groupBy !== 'project') {
     // A label page with its own grouping (list-display-options D3): in its order, each task once.
@@ -341,15 +361,52 @@ function flatGroups(p: GroupInput): ListGroup[] {
   return [{ key: 'all', heading: null, rows: p.tasks.map(row) }]
 }
 
+/**
+ * Today's groups in order: Earlier, Today, the parts of the day, This Evening, Blocked,
+ * then the closed list's Waiting for a slot and Done today. Upcoming's Start with Today
+ * (upcoming-start-with-today D2) calls it with Today's tasks, so both lists agree.
+ */
+function todayGroups(p: GroupInput, row: (task: Task) => ListRow, inUpcoming = false): ListGroup[] {
+  // Blocked tasks wait in their own group at the end (task-dependencies D7);
+  // This Evening below the day's tasks (someday-and-evening).
+  // With day parts on, Morning and Afternoon between them (day-parts D3); their headings take drops (D4).
+  const parts = !!p.dayParts
+  // Tasks waiting for a slot leave the day's groups (today-closed-list D1); the slots keep Today's order and groups.
+  const slotWaiting = p.closedList?.waiting ?? []
+  const out = slotWaiting.length ? new Set(slotWaiting.map((x) => x.id)) : null
+  const listed = out ? p.tasks.filter((x) => !out.has(x.id)) : p.tasks
+  const { overdue: earlier, day, morning, afternoon, evening, blocked: waiting } = groupToday(listed, p.today, p.blocked, parts)
+  const g: ListGroup[] = []
+  // In Upcoming the part headings take no drops: a drop there would change the part and leave the date (D3).
+  const drop = (part: DayPart | 'none') => (parts && !inUpcoming ? { dropPart: part } : {})
+  // Earlier and Blocked imply nothing: how late a task is stays visible on its row (calm-rows D3, page-rhythm D5).
+  if (earlier.length) g.push({ key: 'earlier', heading: t('Earlier'), rows: earlier.map(row) })
+  const others = earlier.length || morning.length || afternoon.length || evening.length
+  // With day parts on an empty Today group is left out, unless the list would be empty without it.
+  // In Upcoming the group is named, since Tomorrow follows, and left out when empty (D2).
+  if (inUpcoming ? day.length : !parts || day.length || !others) g.push({ key: 'today', heading: others || inUpcoming ? t('Today') : null, rows: withImplied(day.map(row), { date: p.today }), ...drop('none') })
+  if (morning.length) g.push({ key: 'morning', heading: t('Morning'), rows: withImplied(morning.map(row), { date: p.today, part: 'morning' }), ...drop('morning') })
+  if (afternoon.length) g.push({ key: 'afternoon', heading: t('Afternoon'), rows: withImplied(afternoon.map(row), { date: p.today, part: 'afternoon' }), ...drop('afternoon') })
+  if (evening.length) g.push({ key: 'evening', heading: t('This Evening'), rows: withImplied(evening.map(row), { date: p.today, evening: true }), ...drop('evening') })
+  if (waiting.length) {
+    const folded = !p.collapsed.has(BLOCKED_OPEN_KEY)
+    g.push({ key: 'blocked', heading: t('Blocked'), count: waiting.length, folded, openKey: BLOCKED_OPEN_KEY, rows: folded ? [] : waiting.map(row) })
+  }
+  return [...g, ...closedListGroups(p, row)]
+}
+
 /** Today's Waiting for a slot and Done today groups (today-closed-list D1, D6): folded unless opened on this device. */
 function closedListGroups(p: GroupInput, row: (task: Task) => ListRow): ListGroup[] {
   const g: ListGroup[] = []
   const waiting = p.closedList?.waiting ?? []
   if (p.closedList && waiting.length) {
     const folded = !p.collapsed.has(WAITING_OPEN_KEY)
+    // Folded, the waiting tasks with a time today stay in sight (today-waiting-time-sensitive D2); opened, the group is as before.
+    const soon = folded ? waitingTimeSensitive(waiting, p.today, p.closedList.now) : []
     g.push({
       key: 'waiting', heading: t('Waiting for a slot'), count: waiting.length, folded, openKey: WAITING_OPEN_KEY, rows: folded ? [] : waiting.map(row),
       hint: t('Today holds {n}. The next one comes in when you finish one.', { n: p.closedList.limit }),
+      ...(soon.length ? { soon, detail: nextDetail(soon, p.resolved) } : {}),
     })
   }
   if (p.doneToday) {
@@ -357,6 +414,20 @@ function closedListGroups(p: GroupInput, row: (task: Task) => ListRow): ListGrou
     g.push({ key: 'done', heading: t('Done today'), count: p.doneToday.length, folded, openKey: DONE_OPEN_KEY, rows: folded ? [] : p.doneToday.map(row) })
   }
   return g
+}
+
+/**
+ * The folded Waiting heading's words (today-waiting-time-sensitive D2, today-waiting-time-passed D2):
+ * "next: Send the form, 4:00 PM" for the first whose time has not passed (a deadline today
+ * without a time: "next: File the taxes, deadline today"); when every time has passed,
+ * "time passed: Call the school, 9:00 AM" for one and "2 past their time" for more.
+ */
+export function nextDetail(soon: readonly WaitingSoon[], resolved?: ResolvedDateTime): string {
+  const title = (s: WaitingSoon) => (s.task._e2ee?.raw?.title || !s.task.title ? t('Untitled') : s.task.title)
+  const next = nextWaiting(soon)
+  if (next) return next.time ? t('next: {title}, {time}', { title: title(next), time: formatTime(next.time, resolved) }) : t('next: {title}, deadline today', { title: title(next) })
+  if (soon.length === 1) return t('time passed: {title}, {time}', { title: title(soon[0]), time: formatTime(soon[0].time ?? '', resolved) })
+  return t('{n, plural, one {# past its time} other {# past their time}}', { n: soon.length })
 }
 
 /**

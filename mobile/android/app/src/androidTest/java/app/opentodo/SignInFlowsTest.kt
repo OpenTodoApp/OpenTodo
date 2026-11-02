@@ -142,7 +142,12 @@ class SignInFlowsTest {
     @Test fun theSiteBarLeadsBackToTheServer() {
         server = WalledServer(idp, wall = false)
         val (scenario, web) = openApp()
-        web.waitForJs("document.readyState", "\"complete\"")
+        // Wait for the server's page itself: until it commits, the new web view's initial blank
+        // document already reports readyState "complete", the click below then finds no link,
+        // and the web view stays on the server (three main runs failed so, waiting for the
+        // provider's origin).
+        web.waitForJs("location.origin", "\"${server.origin}\"")
+        web.waitForJs("document.getElementById('sso') !== null", "true")
         web.js("document.getElementById('sso').click(); 0")
         web.waitForJs("location.origin", "\"${idp.origin}\"")
         waitUntil("the site bar") { siteBar(scenario) != null }

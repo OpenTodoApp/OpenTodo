@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/recurrence"
+	"github.com/OpenTodoApp/opentodo/internal/sector"
 )
 
 // dateCtx mirrors DateContext in web/src/lib/nlp/dates.ts.
@@ -257,6 +258,23 @@ func wordsAt(tokens []token, i int, ctx *dateCtx, pick func(*Vocab) []string) in
 		best = max(best, phraseAt(tokens, i, pick(v)))
 	}
 	return best
+}
+
+// sectorPhraseAt is the longest time sector phrase at token i in any active
+// language and the sector word it means (time-sectors D8), or 0.
+func sectorPhraseAt(tokens []token, i int, ctx *dateCtx) (int, string) {
+	if tok(tokens, i) == nil {
+		return 0, ""
+	}
+	best, word := 0, ""
+	for _, v := range ctx.vocabs {
+		for _, w := range sector.Words {
+			if n := phraseAt(tokens, i, v.SectorPhrases[w]); n > best {
+				best, word = n, w
+			}
+		}
+	}
+	return best, word
 }
 
 func matchDeadlineAt(tokens []token, i int, ctx *dateCtx) *dateMatch {

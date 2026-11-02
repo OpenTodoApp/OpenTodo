@@ -36,7 +36,8 @@ type runOpts struct {
 func (e *Engine) runRoutine(ctx context.Context, w *world, r *rule, o runOpts) (Result, error) {
 	var claimID int64
 	if !o.dry {
-		id, fresh, err := e.Store.Claim(ctx, w.uid, Run{RuleID: r.ID, OccurrenceKey: o.key, TaskID: o.taskID, Depth: o.depth, RunID: o.runID, Source: o.source, Test: o.test})
+		id, fresh, err := e.Store.Claim(ctx, w.uid, Run{RuleID: r.ID, OccurrenceKey: o.key, TaskID: o.taskID, Depth: o.depth, RunID: o.runID, Source: o.source, Test: o.test,
+			ProjectID: w.project})
 		if err != nil {
 			return Result{}, err
 		}
@@ -99,6 +100,11 @@ func (e *Engine) runRoutine(ctx context.Context, w *world, r *rule, o runOpts) (
 			return finish(routineFinish{Outcome: OutcomeSkipped, Reason: limit, FailedStep: -1})
 		}
 	}
+	if w.project != "" && sharedEncrypted(r) {
+		// A shared routine is plaintext; an older client's encrypted text
+		// cannot run (routines-shared D10).
+		return finish(routineFinish{Outcome: OutcomeFailed, Reason: "this routine's text is encrypted: open it and save it again", FailedStep: -1})
+	}
 	if w.encrypted && r.needsDevice() {
 		// Content or AI on an encrypted account runs on one of the user's
 		// devices (routines-ai-step D7); without one opted in it is skipped.
@@ -121,6 +127,9 @@ func (e *Engine) runRoutine(ctx context.Context, w *world, r *rule, o runOpts) (
 	outcome := OutcomeApplied
 	if errors.Is(err, errEnded) {
 		outcome = OutcomeEnded
+	}
+	if where := st.outsideProject(); where != "" {
+		return finish(routineFinish{Outcome: OutcomeFailed, Reason: "a shared routine acts only in its project " + st.projectName() + " (a " + where + " outside it)", FailedStep: -1})
 	}
 	planned := st.writesPlanned()
 	if st.test {

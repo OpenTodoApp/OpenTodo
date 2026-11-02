@@ -3,6 +3,7 @@ package httpapi
 import (
 	"strings"
 	"testing"
+	"time"
 )
 
 // routines-engine 3.1: the routine routes.
@@ -134,6 +135,11 @@ func TestRoutineRoutes(t *testing.T) {
 // "Rate": a 61st run within one minute is refused and not queued.
 func TestRoutineRunRate(t *testing.T) {
 	e := rulesEnv(t, nil)
+	// The limit counts runs per clock minute; the 61 runs happen within one,
+	// 30 seconds before its end, however long they take on a busy runner (a
+	// real clock crossed a minute on CI and let the 61st run through).
+	base, start := time.Now().Truncate(time.Minute).Add(30*time.Second), time.Now()
+	e.server.rules.SetClock(func() time.Time { return base.Add(time.Since(start)) })
 	id := e.create("/api/v1/rules", map[string]any{"name": "Tick", "trigger": map[string]any{"kind": "manual"}, "steps": []any{
 		map[string]any{"id": "a", "kind": "create_tasks", "in": map[string]any{"title": map[string]any{"literal": "x"}}}}})
 	for i := range 60 {

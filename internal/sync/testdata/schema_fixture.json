@@ -140,6 +140,7 @@
       "enabled",
       "name",
       "position",
+      "project_id",
       "steps",
       "trigger"
     ],
@@ -192,6 +193,7 @@
       "recurrence",
       "sample",
       "section_id",
+      "sector",
       "series_id",
       "skipped",
       "span",
@@ -263,9 +265,11 @@
       "theme_light",
       "theme_mode",
       "time_format",
+      "time_sectors",
       "today_done",
       "today_events",
       "today_limit",
+      "upcoming_today",
       "week_start",
       "welcome"
     ],

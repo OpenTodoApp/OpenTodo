@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 // The Inbox as list | detail (OpenSpec change inbox-split): from 1024 px the task under
-// the cursor shows beside the list, "No task selected" stands in while there is none,
+// the cursor shows beside the list, from 1440 px "No task selected" stands in while there
+// is none (task-list-width D4),
 // Enter opens the task's page, P processes the Inbox, and each row says where its task
 // came from. Narrower, the Inbox is a plain list and a task opens as its page.
 import 'fake-indexeddb/auto'
@@ -15,7 +16,7 @@ import { PanelHost } from './PanelHost'
 import { TaskListView } from './TaskListView'
 
 const original = window.matchMedia
-let width = 1280
+let width = 1440
 function viewport(px: number) {
   width = px
   window.matchMedia = ((q: string) => ({
@@ -33,7 +34,7 @@ beforeEach(async () => {
   resetPanel()
   localStorage.clear()
   history.replaceState(null, '', '/')
-  viewport(1280)
+  viewport(1440)
 })
 afterEach(() => {
   window.matchMedia = original
@@ -120,6 +121,21 @@ describe('Inbox split', () => {
     expect(row('Look into a standing desk').querySelector('[data-row-source="app"]')!.textContent).toMatch(/^Added · /)
     // The source line stands for the origin chip.
     expect(row('Re: offer for the attic').querySelector('[data-row-trailing] a')).toBeNull()
+    await r.unmount()
+  })
+
+  it('between 1024 and 1440 px the pane is there only while a task is under the cursor', async () => {
+    viewport(1280)
+    const { a, b, r } = await inbox()
+    expect(pane()).toBeNull()
+    expect(docked()).toBeNull()
+    await key(document.body, 'j')
+    await waitFor(() => docked() !== null, 'a docked task')
+    expect([a, b]).toContain(docked())
+    await key(document.activeElement ?? document.body, 'Escape')
+    await waitFor(() => docked() === null, 'the docked task gone')
+    expect(pane()).toBeNull()
+    expect(document.querySelector('li[aria-current="true"]')).toBeNull()
     await r.unmount()
   })
 

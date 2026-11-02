@@ -121,6 +121,12 @@ export function setPanelWidth(px: number | null, persist = true): void {
 }
 
 export const SPLIT_QUERY = '(min-width: 64rem)'
+/**
+ * Where the Inbox's own split keeps its empty pane (task-list-width D4): from 90 rem, the
+ * step where the docked panel widens (`--panel-w`), a list keeps a comfortable width
+ * beside "No task selected". Between 64 and 90 rem the pane appears only with a task.
+ */
+export const SPLIT_EMPTY_QUERY = '(min-width: 90rem)'
 function docks(): boolean {
   return split && typeof matchMedia !== 'undefined' && matchMedia(SPLIT_QUERY).matches
 }

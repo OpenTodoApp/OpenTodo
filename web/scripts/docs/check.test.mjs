@@ -47,6 +47,14 @@ describe('docs check', () => {
     expect(help.version).toBe('1.2.3')
   })
 
+  it('serves a linked file under docs/ beside the pages', async () => {
+    write('docs/themes/format.schema.json', '{"type":"object"}')
+    write('docs/boards.md', read('docs/boards.md') + '\nThe [schema](themes/format.schema.json).\n')
+    const { files } = await buildAll(root)
+    expect(files.get(`${OUT_SITE}/themes/format.schema.json`)?.toString()).toBe('{"type":"object"}')
+    expect(files.get(`${OUT_SITE}/boards/index.html`)).toContain('href="/docs/themes/format.schema.json"')
+  })
+
   it('names a page without front matter', async () => {
     write('docs/notes.md', '# Notes\n')
     expect(await runChecks(root)).toContainEqual(expect.stringMatching(/^docs\/notes\.md: missing front matter/))

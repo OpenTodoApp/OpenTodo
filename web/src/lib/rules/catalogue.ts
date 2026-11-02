@@ -66,6 +66,8 @@ const REASON: Record<string, string> = {
   focus_off: msg('today’s focus is turned off'),
   time_tracking_off: msg('time tracking is turned off'),
   not_shared: msg('the routine does not belong to a shared project'),
+  not_in_shared: msg('Not available in a shared routine'),
+  not_yet: msg('not available yet'),
   demo: msg('not offered on a demo instance'),
   ai_not_configured: msg('the assistant is not set up for you on this server'),
   ai_no_consent: msg('accept the assistant’s updated terms for routines'),

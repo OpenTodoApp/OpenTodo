@@ -30,6 +30,12 @@ export const pt: Vocabulary = {
   before: ['na', 'no', 'até', 'para'],
   deadlineWords: ['prazo'],
   somedayWords: ['algum dia'],
+  // Time sectors (time-sectors D8), read only while the switch is on; "next week" alone stays a date.
+  sectorPhrases: {
+    'this-week': ['esta semana', 'nesta semana', 'em algum momento desta semana'], 'next-week': ['em algum momento da próxima semana'],
+    'this-month': ['este mês', 'neste mês', 'em algum momento deste mês'], 'next-month': ['em algum momento do próximo mês'],
+    'this-quarter': ['este trimestre', 'neste trimestre', 'em algum momento deste trimestre'], 'next-quarter': ['no próximo trimestre', 'em algum momento do próximo trimestre'],
+  },
   eveningWords: ['hoje à noite'],
   morningWords: ['esta manhã', 'hoje de manhã'],
   afternoonWords: ['esta tarde', 'hoje à tarde'],
