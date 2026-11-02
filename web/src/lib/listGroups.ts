@@ -3,7 +3,7 @@
 // headings (dates, projects, sections, Later, Blocked, the logbook's days), and the
 // tree positions assistive technology announces. TaskListView only wires these to
 // the live data; tests call them directly.
-import { waitingTimeSensitive } from './closedList'
+import { nextWaiting, waitingTimeSensitive } from './closedList'
 import { formatDateHeading, formatTime, type ResolvedDateTime } from './dates'
 import type { Projection } from './occurrences'
 import { inboxTasks } from './inbox'
@@ -95,10 +95,11 @@ export interface ListGroup {
   projectedNote?: string
 }
 
-/** A waiting task with a time today: its due time in the user's zone, null for a deadline today without one. */
+/** A waiting task with a time today: its due time in the user's zone, null for a deadline today without one; `passed` once that time is before now (today-waiting-time-passed). */
 export interface WaitingSoon {
   task: Task
   time: string | null
+  passed: boolean
 }
 
 /** A board column: a section ('' = "No section") and its top-level cards. */
@@ -250,7 +251,7 @@ export interface GroupInput {
    * Today with a limit (today-closed-list D1, D2): the limit, and the tasks waiting for
    * a slot in fill order (left out of the day's groups, listed in a folded group).
    */
-  closedList?: { limit: number; waiting: readonly Task[] }
+  closedList?: { limit: number; waiting: readonly Task[]; now?: string }
   /** Today's Done today group (today-closed-list D6): the tasks completed today, newest first; absent when hidden. */
   doneToday?: readonly Task[]
   /** Upcoming starts with Today's own groups, then Tomorrow onwards (upcoming-start-with-today D2). */
@@ -401,11 +402,11 @@ function closedListGroups(p: GroupInput, row: (task: Task) => ListRow): ListGrou
   if (p.closedList && waiting.length) {
     const folded = !p.collapsed.has(WAITING_OPEN_KEY)
     // Folded, the waiting tasks with a time today stay in sight (today-waiting-time-sensitive D2); opened, the group is as before.
-    const soon = folded ? waitingTimeSensitive(waiting, p.today) : []
+    const soon = folded ? waitingTimeSensitive(waiting, p.today, p.closedList.now) : []
     g.push({
       key: 'waiting', heading: t('Waiting for a slot'), count: waiting.length, folded, openKey: WAITING_OPEN_KEY, rows: folded ? [] : waiting.map(row),
       hint: t('Today holds {n}. The next one comes in when you finish one.', { n: p.closedList.limit }),
-      ...(soon.length ? { soon, detail: nextDetail(soon[0], p.resolved) } : {}),
+      ...(soon.length ? { soon, detail: nextDetail(soon, p.resolved) } : {}),
     })
   }
   if (p.doneToday) {
@@ -415,10 +416,18 @@ function closedListGroups(p: GroupInput, row: (task: Task) => ListRow): ListGrou
   return g
 }
 
-/** The folded Waiting heading's "next: Send the form, 4:00 PM" (a deadline today without a time: "next: File the taxes, deadline today"). */
-export function nextDetail(next: WaitingSoon, resolved?: ResolvedDateTime): string {
-  const title = next.task._e2ee?.raw?.title || !next.task.title ? t('Untitled') : next.task.title
-  return next.time ? t('next: {title}, {time}', { title, time: formatTime(next.time, resolved) }) : t('next: {title}, deadline today', { title })
+/**
+ * The folded Waiting heading's words (today-waiting-time-sensitive D2, today-waiting-time-passed D2):
+ * "next: Send the form, 4:00 PM" for the first whose time has not passed (a deadline today
+ * without a time: "next: File the taxes, deadline today"); when every time has passed,
+ * "time passed: Call the school, 9:00 AM" for one and "2 past their time" for more.
+ */
+export function nextDetail(soon: readonly WaitingSoon[], resolved?: ResolvedDateTime): string {
+  const title = (s: WaitingSoon) => (s.task._e2ee?.raw?.title || !s.task.title ? t('Untitled') : s.task.title)
+  const next = nextWaiting(soon)
+  if (next) return next.time ? t('next: {title}, {time}', { title: title(next), time: formatTime(next.time, resolved) }) : t('next: {title}, deadline today', { title: title(next) })
+  if (soon.length === 1) return t('time passed: {title}, {time}', { title: title(soon[0]), time: formatTime(soon[0].time ?? '', resolved) })
+  return t('{n, plural, one {# past its time} other {# past their time}}', { n: soon.length })
 }
 
 /**

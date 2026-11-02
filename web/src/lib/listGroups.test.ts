@@ -134,6 +134,25 @@ describe('listGroups', () => {
     expect(listGroups(input({ view: 'today', tasks: [a, plain], closedList: { limit: 1, waiting: [plain] } })).find((x) => x.key === 'waiting')!.detail).toBeUndefined()
   })
 
+  it('a time that has passed is marked and never named next (today-waiting-time-passed D2)', () => {
+    const a = task({ title: 'A', due: { date: TODAY } })
+    const call = task({ title: 'Call the school', due: { date: TODAY, time: '09:00' } })
+    const form = task({ title: 'Send the form', due: { date: TODAY, time: '16:00' } })
+    const taxes = task({ title: 'File the taxes', deadline: TODAY })
+    const resolved = { ...currentDateTime(), time: '12h' as const }
+    const waiting = (list: Task[], now: string) => listGroups(input({ view: 'today', tasks: [a, ...list], resolved, closedList: { limit: 1, waiting: list, now } })).find((x) => x.key === 'waiting')!
+    const some = waiting([form, call, taxes], '12:00')
+    expect(some.soon!.map((s) => [s.task.title, s.passed])).toEqual([['Call the school', true], ['Send the form', false], ['File the taxes', false]])
+    expect(some.detail).toBe('next: Send the form, 4:00 PM')
+    // Only a deadline left to come: it is next.
+    expect(waiting([call, taxes], '12:00').detail).toBe('next: File the taxes, deadline today')
+    // Every time passed: one by name, more by count.
+    expect(waiting([call], '12:00').detail).toBe('time passed: Call the school, 9:00 AM')
+    expect(waiting([form, call], '16:01').detail).toBe('2 past their time')
+    // At the minute itself the time has not passed yet.
+    expect(waiting([form], '16:00').detail).toBe('next: Send the form, 4:00 PM')
+  })
+
   it('Today ends with a folded Done today group, newest first (today-closed-list D6)', () => {
     const open = task({ title: 'Open', due: { date: TODAY } })
     const done1 = task({ title: 'Done 1', completed_at: 5 })
