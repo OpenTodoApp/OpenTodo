@@ -3,6 +3,7 @@
 ## Context
 
 - `performance-10k` (design D8) found: opening the 2,000-task project spends about 1.5 s in style and layout of every row (a passive effect that reads `scrollLeft` forces it before the first frame, but the browser would do it anyway); one completion or pulled edit re-reads the 10,000 tasks of the shared snapshot and re-renders much of the list (about 1.5 s of React work with style and layout); the cursor near the top looked for pinned headers among every element (fixed there).
+- A first try of D1 on the development machine (`.row-pad` with `content-visibility: auto`, one desktop run): opening the project 1,520 → 834 ms, a cursor move 230 → 57 ms (p95), a completion 3.1 → 2.6 s; the writes need D2 and D3.
 - Trying Dexie's live-query cache (a plain `toArray()` instead of a `filter()` cursor, so Dexie can update the cached result in memory) cut a completion from 4.8 s to 1.5 s, but eleven unit tests saw stale lists after the database was deleted and opened again; it was left out of `performance-10k`.
 
 ## Decisions
