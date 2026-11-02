@@ -4,7 +4,7 @@ With a Today limit on and Today full, capturing "send the form today by 4" puts 
 
 ## What Changes
 
-- While the Waiting for a slot group is folded, the waiting tasks due today with a time, or with a deadline today, are listed under its heading, soonest first, each with its time (or "Deadline") and **Take a slot** right there. At most three are listed; "n more with a time" opens the group.
+- While the Waiting for a slot group is folded (in Today, and in Upcoming when it starts with Today), the waiting tasks due today with a time, or with a deadline today, are listed under its heading, soonest first, each with its time (or "Deadline") and **Take a slot** right there. At most three are listed; "n more with a time" opens the group.
 - The folded heading names the next one: "Waiting for a slot · 4 — next: Send the form, 4:00 PM" (a deadline without a time: "next: File the taxes, deadline today"), as part of the toggle's accessible name.
 - Opened, the group is as before: every waiting task in fill order, with the hint.
 - The fill order is unchanged (first come, first served; nothing moves automatically). Take a slot keeps its rules: refused with the usual message while every slot holds a focus or taken task, and Give back the slot undoes it.

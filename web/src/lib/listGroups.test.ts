@@ -125,6 +125,11 @@ describe('listGroups', () => {
     // Only a deadline: named as such.
     const deadline = listGroups(input({ view: 'today', tasks: [a, taxes], closedList: { limit: 1, waiting: [taxes] } })).find((x) => x.key === 'waiting')!
     expect(deadline.detail).toBe('next: File the taxes, deadline today')
+    // Upcoming's Start with Today draws the same folded group (upcoming-start-with-today D2).
+    const tomorrow = task({ title: 'Tomorrow', due: { date: '2026-10-15' } })
+    const upcoming = listGroups({ ...base, view: 'upcoming', tasks: [a, form, plain, taxes, tomorrow], upcomingToday: true }).find((x) => x.key === 'waiting')!
+    expect(upcoming.soon!.map((s) => s.task.title)).toEqual(['Send the form', 'File the taxes'])
+    expect(upcoming.detail).toBe('next: Send the form, 4:00 PM')
     // No time today: a plain heading.
     expect(listGroups(input({ view: 'today', tasks: [a, plain], closedList: { limit: 1, waiting: [plain] } })).find((x) => x.key === 'waiting')!.detail).toBeUndefined()
   })

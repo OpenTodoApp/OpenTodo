@@ -34,7 +34,7 @@ A task captured on a full day waits instead of pushing out a planned one; a prio
 
 ## Tasks with a time today
 
-So a time is never hidden, the folded Waiting heading names the next waiting task due today with a time or a deadline (**Waiting for a slot · 4 — next: Send the form, 4:00 PM**) and lists up to three of them under it, soonest first, each with **Take a slot**. They keep their place in the order; a time that has passed leaves the list at the end of the day.
+So no time is hidden, the folded heading names the next waiting task due today with a time or a deadline (**Waiting for a slot · 4 — next: Send the form, 4:00 PM**) and lists up to three of them under it, soonest first, each with **Take a slot**, in Upcoming too when it starts with Today. They keep their place; a passed time leaves the list at the end of the day.
 
 ## Take a slot
 
