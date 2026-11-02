@@ -115,6 +115,9 @@ export function canManage(actor: ProjectRole, target: ProjectRole): boolean {
  * Returns the ids of purged projects.
  */
 export async function storeMemberships(list: Membership[]): Promise<string[]> {
+  // Every sync response carries the list, nearly always unchanged: then nothing
+  // is written, so nothing on screen re-reads it (performance-10k).
+  if (sameMemberships(await db.memberships.toArray(), list)) return []
   const purged: string[] = []
   await db.transaction('rw', [db.memberships, db.projects, db.tasks, db.sections, db.outbox, db.comments, db.activity], async () => {
     const keep = new Set(list.map((m) => m.projectId))
@@ -139,6 +142,12 @@ export async function storeMemberships(list: Membership[]): Promise<string[]> {
     if (list.length > 0) await db.memberships.bulkPut(list)
   })
   return purged
+}
+
+function sameMemberships(stored: Membership[], list: Membership[]): boolean {
+  if (stored.length !== list.length) return false
+  const key = (ms: Membership[]) => JSON.stringify([...ms].sort((a, b) => (a.projectId < b.projectId ? -1 : a.projectId > b.projectId ? 1 : 0)))
+  return key(stored) === key(list)
 }
 
 /** What the user is told after the server refused some of their changes. */
