@@ -11,6 +11,10 @@ import { settled } from './measure.mjs'
 export const closes = (overlay) => overlay.waitFor({ state: 'hidden', timeout: 2000 }).then(() => true, () => false)
 
 // `overlays` names openers from OVERLAYS below; each runs on the screen it is listed for.
+// Settings pages checked for crowded controls (themes-layout-template): no two controls
+// overlap and none touches a row divider. The theme rows and Branding's server themes.
+const CROWDED = new Set(['appearance/theme', 'server/branding'])
+
 export function screens(ids, base) {
   const row = (title) => (p) => p.locator('[data-task-id]').filter({ hasText: title }).first().waitFor()
   const heading = (name) => (p) => p.getByRole('heading', { name, level: 1 }).first().waitFor()
@@ -94,8 +98,8 @@ export function screens(ids, base) {
       ['account/profile', 'Profile', START_GUIDE_OVERLAYS], ['account/security', 'Security'], ['appearance/theme', 'Theme and density'], ['general/focus', 'Focus timer'],
       ['language/date-time', 'Date and time'], ['capture/voice', 'Voice capture', ['voice-consent']],
       ['integrations/webhooks', 'Webhooks'], ['integrations/mcp', 'AI assistants (MCP)'],
-      ['people/users', 'Users and invitations', ['delete-user']], ['server/backups', 'Backups'], ['server/audit', 'Audit log'],
-    ].map(([id, title, overlays]) => ({ name: `settings-${id.replace('/', '-')}`, path: `/settings/${id}`, ready: heading(title), ...(overlays ? { overlays } : {}) })),
+      ['people/users', 'Users and invitations', ['delete-user']], ['server/backups', 'Backups'], ['server/audit', 'Audit log'], ['server/branding', 'Branding'],
+    ].map(([id, title, overlays]) => ({ name: `settings-${id.replace('/', '-')}`, path: `/settings/${id}`, ready: heading(title), ...(overlays ? { overlays } : {}), ...(CROWDED.has(id) ? { crowded: true } : {}) })),
     // A legacy address opens the page that holds its content (settings-navigation "Legacy settings addresses").
     { name: 'settings-legacy', path: '/settings/security', ready: heading('Security') },
     { name: 'import', path: '/settings/import', ready: heading(/Import/) },

@@ -8,8 +8,9 @@
 // written in the theme document grammar (`#rrggbb` from a swatch or the hex
 // field, `oklch(L C H)` from a slider). A field may be optional: empty reads as
 // "Derived" and shows the derived colour, with Reset when it is set.
-import { useId, useRef, useState, type KeyboardEvent } from 'react'
-import { Button } from './Button'
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
+import { Button, IconButton } from './Button'
+import { Icon } from './Icon'
 import { Field, Input } from './Field'
 import { Popover } from './overlay'
 import { ACCENT_SWATCHES } from './tokens/accentSwatches'
@@ -28,6 +29,8 @@ export interface ColourFieldProps {
   /** Optional colours offer Reset, which makes them derived again. */
   onReset?: () => void
   description?: string
+  /** A contrast warning shown under the name ("2 pairs below AA"). */
+  warning?: string
   /** Show only the swatch button (in a token row, whose text names the colour). */
   compact?: boolean
   /** Test and script hooks. */
@@ -66,6 +69,15 @@ export function sliderStep(key: string, n: number, max: number): number | null {
   }
 }
 
+/** A typed hex colour: `#rrggbb`, null when empty or unchanged, false when it is not a colour. */
+export function parseHex(text: string, current: string | null): string | null | false {
+  const s = text.trim().toLowerCase()
+  if (!s || s === current) return null
+  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/.exec(s)
+  if (!m) return false
+  return '#' + (m[1].length === 3 ? [...m[1]].map((c) => c + c).join('') : m[1])
+}
+
 /** The picker's content: swatches, hex, sliders, the gamut note and Reset. */
 export function ColourPicker({ label, value, derived, onChange, onReset }: Pick<ColourFieldProps, 'label' | 'value' | 'derived' | 'onChange' | 'onReset'>) {
   const shown = value ?? derived ?? '#808080' // token-lint-allow: a neutral colour to start the picker from, data not styling
@@ -86,11 +98,9 @@ export function ColourPicker({ label, value, derived, onChange, onReset }: Pick<
     onChange(v, `${label}:${axis}`)
   }
   const commitHex = () => {
-    const s = text.trim().toLowerCase()
-    if (!s || s === hex) { setError(null); return }
-    const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/.exec(s)
-    if (!m) { setError(t('Enter a colour as #rrggbb or #rgb.')); return }
-    const full = '#' + (m[1].length === 3 ? [...m[1]].map((c) => c + c).join('') : m[1])
+    const full = parseHex(text, hex)
+    if (full === null) { setError(null); return }
+    if (full === false) { setError(t('Enter a colour as #rrggbb or #rgb.')); return }
     setError(null)
     setClamped(false)
     setText(full)
@@ -140,33 +150,63 @@ export function ColourPicker({ label, value, derived, onChange, onReset }: Pick<
   )
 }
 
-/** A colour swatch as a button that opens the picker; with its label and value unless compact. */
-export function ColourField({ label, value, derived, onChange, onReset, description, compact = false, ...hooks }: ColourFieldProps) {
+/**
+ * A colour as one compact row (themes-layout-template): the swatch, which opens the
+ * picker; the name with Derived or Set and any contrast warning under it; the hex
+ * field, which writes on Enter or when focus leaves it; and Reset for an optional
+ * colour that is set. Compact: the
+ * swatch alone, for a token row whose text names the colour.
+ */
+export function ColourField({ label, value, derived, onChange, onReset, description, warning, compact = false, ...hooks }: ColourFieldProps) {
   const [open, setOpen] = useState(false)
   const anchor = useRef<HTMLButtonElement>(null)
   const shown = value ?? derived
   const hex = colourToHex(shown) ?? ''
   const state = value === undefined ? t('Derived') : t('Set', { context: 'token' })
+  const [text, setText] = useState(hex)
+  const [hexError, setHexError] = useState<string | null>(null)
+  // The hex field follows the colour when it changes elsewhere (the picker, Undo, Fix).
+  useEffect(() => { setText(hex); setHexError(null) }, [hex])
+  const commit = () => {
+    const full = parseHex(text, hex)
+    if (full === null) { setText(hex); return }
+    if (full === false) { setHexError(t('Enter a colour as #rrggbb or #rgb.')); return }
+    setText(full)
+    onChange(full, `${label}:hex`)
+  }
   const swatch = (
     <button ref={anchor} type="button" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-expanded={open}
       aria-label={t('Change {name}, {value}, {state}', { name: label, value: hex, state })}
       className="h-8 w-8 shrink-0 rounded-control border border-strong outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus"
       style={{ backgroundColor: shown }} data-colour-swatch />
   )
+  const popover = (
+    <Popover open={open} onClose={() => setOpen(false)} anchor={anchor} label={label} width="sm:w-80" className="p-3">
+      <ColourPicker label={label} value={value} derived={derived} onChange={onChange} onReset={onReset ? () => { onReset(); setOpen(false) } : undefined} />
+    </Popover>
+  )
+  if (compact) {
+    return <div {...hooks} className="contents">{swatch}{popover}</div>
+  }
+  const note = hexError ?? warning
   return (
-    <div {...hooks} className={compact ? 'contents' : 'flex items-center gap-3 py-1.5'}>
+    <div {...hooks} className="flex min-w-0 items-center gap-2 py-1" data-colour-row>
       {swatch}
-      {!compact && (
-        <span className="min-w-0 flex-1">
-          <span className="block text-body text-default">{label}</span>
-          <span className="block text-meta text-muted">
-            <span className="font-mono">{hex}</span>{' · '}{state}{description ? ` · ${description}` : ''}
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-body text-default">{label}</span>
+        <span className="block truncate text-meta text-muted">{state}{description ? ` · ${description}` : ''}</span>
+        {note && (
+          <span className="flex items-start gap-1 text-meta text-danger" data-colour-warning role={hexError ? 'alert' : undefined}>
+            <Icon name="circle-alert" size="xs" className="mt-0.5 shrink-0" />{note}
           </span>
-        </span>
-      )}
-      <Popover open={open} onClose={() => setOpen(false)} anchor={anchor} label={label} width="sm:w-80" className="p-3">
-        <ColourPicker label={label} value={value} derived={derived} onChange={onChange} onReset={onReset ? () => { onReset(); setOpen(false) } : undefined} />
-      </Popover>
+        )}
+      </span>
+      <Input value={text} aria-label={t('{name}, hex value', { name: label })} aria-invalid={hexError ? true : undefined} placeholder="#rrggbb"
+        spellCheck={false} autoComplete="off" autoCapitalize="off" maxLength={7} className="w-[5.75rem] shrink-0 font-mono" data-colour-row-hex
+        onChange={(e) => { setText(e.target.value); if (hexError) setHexError(null) }}
+        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); commit() } }} onBlur={commit} />
+      {onReset && value !== undefined && <IconButton icon="rotate-ccw" size="sm" label={t('Reset {name} to derived', { name: label })} onClick={onReset} data-colour-row-reset />}
+      {popover}
     </div>
   )
 }
