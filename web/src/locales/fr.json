@@ -1635,6 +1635,7 @@
   "Every {m} minutes": "Toutes les {m} minutes",
   "Every {weekday} at {time}": "Chaque {weekday} à {time}",
   "Everyone": "Tout le monde",
+  "Everyone in the project takes turns.": "Tout le monde dans le projet se relaie.",
   "Everyone in the workspace is in this group.": "Tout l’espace de travail est dans ce groupe.",
   "Everyone in {project} sees this routine; it runs as whoever turns it on.": "Tout le monde dans {project} voit cette routine ; elle s’exécute au nom de la personne qui l’active.",
   "Everyone in {workspace} is on this project": "Tout le monde dans {workspace} est sur ce projet",

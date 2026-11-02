@@ -93,7 +93,8 @@ export default function RotationEditor({ task, userId, onBack }: { task: Task; u
     setDraft(null)
     setDragging(null)
   }
-  const toggle = (p: Person) => save(list.includes(p.id) ? list.filter((x) => x !== p.id) : addToRotation(list, [p.id]))
+  // The members not taking turns yet: the people picker offers them.
+  const rest = people.filter((p) => !list.includes(p.id))
 
   return (
     <div className="space-y-3" data-rotation-editor>
@@ -124,9 +125,11 @@ export default function RotationEditor({ task, userId, onBack }: { task: Task; u
         </ol>
       )}
       <span role="status" aria-live="polite" className="sr-only">{announce}</span>
-      <ComboboxPanel<Person> label={t('Add person')} placeholder={t('Add person…')} source={people} multiple selected={list}
-        getKey={(p) => p.id} getLabel={(p) => p.name} getSecondary={(p) => p.email || undefined} rankContext={`assignee:${task.project_id ?? 'personal'}`}
-        emptyText={t('No member matches.')} renderLeading={(p) => <PersonAvatar id={p.id} name={p.name} size="sm" />} onPick={toggle} />
+      {rest.length > 0 && list.length < MAX_ROTATION ? (
+        <ComboboxPanel<Person> label={t('Add person')} placeholder={t('Add person…')} source={rest}
+          getKey={(p) => p.id} getLabel={(p) => p.name} getSecondary={(p) => p.email || undefined} rankContext={`assignee:${task.project_id ?? 'personal'}`}
+          emptyText={t('No member matches.')} renderLeading={(p) => <PersonAvatar id={p.id} name={p.name} size="sm" />} onPick={(p) => save(addToRotation(list, [p.id]))} />
+      ) : rest.length === 0 && <p className="text-meta text-muted">{t('Everyone in the project takes turns.')}</p>}
       {list.length >= MAX_ROTATION && <p className="text-meta text-muted">{t('At most {n} people take turns.', { n: MAX_ROTATION })}</p>}
       {projectGroups.length > 0 && (
         <div className="flex flex-col items-start gap-1">

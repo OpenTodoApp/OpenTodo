@@ -9,7 +9,7 @@ import type { Task } from '../../lib/types'
 import { Icon } from '../../ui'
 import { t } from '../../lib/i18n'
 
-export function RotationLine({ task, userId }: { task: Task; userId?: string }) {
+export function RotationLine({ task, userId, as: Tag = 'p', className = '' }: { task: Task; userId?: string; as?: 'p' | 'li' | 'div'; className?: string }) {
   const memberships = useMembershipMap()
   const m = task.project_id ? memberships.get(task.project_id) : undefined
   const list = activeRotation(task, memberSet(m))
@@ -20,7 +20,7 @@ export function RotationLine({ task, userId }: { task: Task; userId?: string }) 
     return p ? { text: p.name || p.email, gone: false } : { text: t('left the project'), gone: true }
   }
   return (
-    <p className="flex min-w-0 items-start gap-2 text-meta text-muted" data-rotation-line>
+    <Tag className={`flex min-w-0 items-start gap-2 text-meta text-muted ${className}`} data-rotation-line>
       <span className="flex h-5 w-5 shrink-0 items-center justify-center text-faint" aria-hidden="true"><Icon name="rotate-ccw" size="xs" /></span>
       <span className="min-w-0 flex-1">
         {t('Takes turns:')}{' '}
@@ -36,6 +36,6 @@ export function RotationLine({ task, userId }: { task: Task; userId?: string }) 
           )
         })}
       </span>
-    </p>
+    </Tag>
   )
 }
