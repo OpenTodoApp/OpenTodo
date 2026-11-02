@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { lazy, Suspense, type ReactNode } from 'react'
 import { BrandMark, Skeleton } from '../../ui'
 import type { AssistantSkill } from '../../lib/assistantSkills'
 import { AssistantWelcome } from './AssistantWelcome'
@@ -13,6 +13,9 @@ import { AssistantConsent } from './AssistantConsent'
 import { ChangeSetReview, type ReviewResult } from './ChangeSetReview'
 import { DeviceLocked, DeviceSetupForm } from './AssistantDevice'
 import type { DeviceMode } from './useDeviceAssistant'
+
+// Shown once to few people (assistant-disclosure-notice), so it loads only when due.
+const DisclosureNotice = lazy(() => import('./DisclosureNotice').then((m) => ({ default: m.DisclosureNotice })))
 
 export const ENCRYPTED_MESSAGE = msg('The assistant can’t read end-to-end encrypted tasks. Your tasks never leave your devices unencrypted.')
 
@@ -61,6 +64,8 @@ export interface PanelViewProps {
   layout?: 'page' | 'sheet'
   /** The on-device assistant of an encrypted account (assistant-on-device). */
   device?: DeviceMode
+  /** The status after the disclosure notice's Got it or Turn off (assistant-disclosure-notice). */
+  onStatus?: (s: AssistantStatus) => void
 }
 
 /** The panel's content without state (rendered to markup in tests). */
@@ -109,6 +114,7 @@ export function AssistantPanelBody(p: PanelViewProps) {
           device={dev?.setup ? { setup: dev.setup, onChange: () => dev.edit(true) } : undefined} />
       ) : (
         <>
+          {s.disclosure_notice && <Suspense fallback={null}><DisclosureNotice status={s} connected={p.connected} onStatus={p.onStatus} /></Suspense>}
           {p.messages.length === 0 && !p.streaming && !p.threads ? (
             <AssistantWelcome name={p.name ?? ''} skills={p.skills ?? []} onStarter={(s) => p.onStarter?.(s)} composer={p.composer} layout={p.layout ?? 'sheet'} />
           ) : (
