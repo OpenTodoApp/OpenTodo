@@ -47,6 +47,7 @@ Only organization admins can create `v*` tags: a ruleset protects them. A tag wi
 The tag runs the full CI matrix (`.github/workflows/ci.yml`: every binary, the WebKit, German and French layouts, Android, the image). Only when every gate passes:
 
 - the image is pushed to `ghcr.io/opentodoapp/opentodo` as `0.15.0`, `0.15` and `stable`, signed with its SBOM and provenance;
+- before the GitHub release is published, the release job checks that the new tag can be pulled without signing in (an anonymous ghcr.io token, then the manifest; `scripts/release/check-public-image.sh`). If the package was left private, it fails with a message naming the package's visibility setting;
 - the **GitHub release** gets the binaries, the extension and skill zips, the Android APK and AAB, the site bundle and `SHA256SUMS` (only these, by exact name: `scripts/release/collect-assets.sh`) with attestations, and its notes from the `CHANGELOG.md` section (`scripts/release-notes.sh`; a tag without a section fails);
 - the Helm chart is published (`.github/workflows/helm.yml`) and the Claude plugin is pushed to `OpenTodoApp/opentodo-claude`;
 - the release also carries the signed Android APK and AAB (`opentodo-android-<version>.apk`, `.aab`), after the Android job proved the build reproducible (a second build in a fresh checkout, compared by `scripts/android-repro.sh`; a mismatch fails the release) and checked the certificate against the documented one;
