@@ -3,7 +3,7 @@
 // end, each project keeping its newest entries, and the screen's shared live
 // data is read every few seconds instead of after every page.
 import 'fake-indexeddb/auto'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { forgetActivity, LONG_PULL_OPS, markLongPull, withDeferredActivity } from './activity'
 import { db, useDatabase } from './db'
 import { holdLiveSnapshots, HELD_REFRESH_MS, liveSnapshot } from './liveSnapshot'
@@ -63,27 +63,21 @@ describe('activity during a sync exchange', () => {
 })
 
 describe('shared live data during a long pull', () => {
-  it('is held until released, then follows writes again', async () => {
-    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
-    try {
-      const names = liveSnapshot('long pull projects', async () => (await db.projects.toArray()).map((p) => p.name).sort())
-      const stop = names.subscribe(() => undefined)
-      await waitFor(() => names.read() !== undefined, 'the first read')
-      const release = holdLiveSnapshots()
-      await createProject({ name: 'During' })
-      await new Promise((r) => setTimeout(r, 50)) // eslint-disable-line test-hygiene/no-fixed-wait -- a window in which nothing may change
-      expect(names.read()).toEqual([])
-      // Read again every HELD_REFRESH_MS while held.
-      vi.advanceTimersByTime(HELD_REFRESH_MS)
-      await waitFor(() => names.read()?.length === 1, 'the periodic read')
-      await createProject({ name: 'Later' })
-      release()
-      await waitFor(() => names.read()?.length === 2, 'the release')
-      await createProject({ name: 'After' })
-      await waitFor(() => names.read()?.length === 3, 'live again')
-      stop()
-    } finally {
-      vi.useRealTimers()
-    }
-  })
+  it('is held until released, read again meanwhile, then follows writes again', async () => {
+    const names = liveSnapshot('long pull projects', async () => (await db.projects.toArray()).map((p) => p.name).sort())
+    const stop = names.subscribe(() => undefined)
+    await waitFor(() => names.read() !== undefined, 'the first read')
+    const release = holdLiveSnapshots()
+    const held = Date.now()
+    await createProject({ name: 'During' })
+    // The write shows only with the read HELD_REFRESH_MS after the hold.
+    await waitFor(() => names.read()?.length === 1, 'the read while held', HELD_REFRESH_MS + 5_000)
+    expect(Date.now() - held).toBeGreaterThanOrEqual(HELD_REFRESH_MS - 50)
+    await createProject({ name: 'Later' })
+    release()
+    await waitFor(() => names.read()?.length === 2, 'the release')
+    await createProject({ name: 'After' })
+    await waitFor(() => names.read()?.length === 3, 'live again')
+    stop()
+  }, 15_000)
 })

@@ -96,8 +96,18 @@ export function useCombobox<T>(cfg: ComboboxConfig<T>) {
 
   const fullItems = isAsync(cfg.source) ? asyncItems : cfg.source
   const items = !query.trim() && cfg.emptySource ? cfg.emptySource : fullItems
-  // Fold each option's text once per source, not on every keystroke.
-  const prepared = useMemo(() => items.map((i) => prepare(cfg.getLabel(i), [cfg.getSecondary?.(i), cfg.getKeywords?.(i)].filter(Boolean).join(' '))),
+  // Fold each option's text once per item, not on every keystroke: a source
+  // rebuilt around the same item objects (the command bar's 10,000 tasks behind
+  // a few commands that follow the text) folds only the new ones (performance-10k).
+  const folded = useRef(new WeakMap<object, ReturnType<typeof prepare>>())
+  const prepared = useMemo(() => items.map((i) => {
+    const key = typeof i === 'object' && i !== null ? i : null
+    const known = key && folded.current.get(key)
+    if (known) return known
+    const p = prepare(cfg.getLabel(i), [cfg.getSecondary?.(i), cfg.getKeywords?.(i)].filter(Boolean).join(' '))
+    if (key) folded.current.set(key, p)
+    return p
+  }),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- getLabel/getSecondary/getKeywords are inline callbacks; the folded text changes only with the items
     [items])
 

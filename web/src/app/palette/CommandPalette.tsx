@@ -141,8 +141,11 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
       return ws === here ? undefined : names.get(ws)
     }
   }, [workspaceState, everyProject, everyTask])
-  const source = useMemo(() => [...commandEntries(ctx), ...buildEntries({ tasks: everyTask, projects: everyProject.length ? everyProject : projects, labels, views, user, today, elsewhere })],
-    [ctx, everyTask, everyProject, projects, labels, views, user, today, elsewhere])
+  // The entities do not follow the text typed (ctx does): built once per data change,
+  // so the combobox folds their text once (performance-10k).
+  const entities = useMemo(() => buildEntries({ tasks: everyTask, projects: everyProject.length ? everyProject : projects, labels, views, user, today, elsewhere }),
+    [everyTask, everyProject, projects, labels, views, user, today, elsewhere])
+  const source = useMemo(() => [...commandEntries(ctx), ...entities], [ctx, entities])
   const emptySource = useMemo(() => {
     const context = contextEntries(ctx)
     const seen = new Set(context.map((e) => e.key))

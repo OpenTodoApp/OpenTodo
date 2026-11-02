@@ -42,16 +42,19 @@ resettable('liveSnapshot', () => {
   }
 })
 
-/** How often a held snapshot is read again. */
+/** When a held snapshot is first read again; each later read waits twice as long, up to HELD_REFRESH_MAX_MS. */
 export const HELD_REFRESH_MS = 2_000
+export const HELD_REFRESH_MAX_MS = 16_000
 
 /**
  * Holds every shared snapshot until the returned function is called
  * (performance-10k, design D6): a first sync commits a page of a thousand ops
  * every few hundred milliseconds, and each commit made every snapshot read its
  * table again (all 10,000 tasks) and the screen render again, which also kept
- * the next page's write waiting. While held, a snapshot is read every
- * HELD_REFRESH_MS instead, so the screen still fills in as the pull goes.
+ * the next page's write waiting. While held, a snapshot is read again after
+ * HELD_REFRESH_MS, then after twice as long each time (a 2,000-row list takes
+ * a while to draw, and drawing it every two seconds starved the pull), so the
+ * screen still fills in as the pull goes.
  */
 export function holdLiveSnapshots(): () => void {
   if (holds++ === 0) for (const s of snapshots) s.hold()
@@ -70,7 +73,7 @@ export function liveSnapshot<T>(name: string, query: () => Promise<T>): LiveSnap
   /** The database the live query reads; tests swap it with useDatabase. */
   let source: unknown = null
   const listeners = new Set<() => void>()
-  let timer: ReturnType<typeof setInterval> | null = null
+  let timer: ReturnType<typeof setTimeout> | null = null
 
   function set(value: T) {
     snapshot = import.meta.env.MODE === 'test' ? deepFreeze(value) : value
@@ -98,10 +101,16 @@ export function liveSnapshot<T>(name: string, query: () => Promise<T>): LiveSnap
     hold() {
       sub?.unsubscribe()
       sub = null
-      timer = setInterval(() => { if (listeners.size > 0) refresh() }, HELD_REFRESH_MS)
+      const later = (wait: number) => {
+        timer = setTimeout(() => {
+          if (listeners.size > 0) refresh()
+          later(Math.min(wait * 2, HELD_REFRESH_MAX_MS))
+        }, wait)
+      }
+      later(HELD_REFRESH_MS)
     },
     release() {
-      if (timer) clearInterval(timer)
+      if (timer) clearTimeout(timer)
       timer = null
       if (listeners.size > 0) start()
     },
