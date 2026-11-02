@@ -131,6 +131,15 @@ type Row struct {
 	// Links are attachment references the file only gives as URLs; they become
 	// link attachments of the task (OpenSpec change attachments, design D12).
 	Links []Link
+	// TimeEntries are tracked time per day (Super Productivity, OpenSpec change
+	// migration-everywhere D4); the planner writes them as time entries of the
+	// importing account.
+	TimeEntries []TimeEntry
+	// Files are attachment files the export carries with their bytes (a
+	// Vikunja ZIP); they become file attachments of the task.
+	Files []FileAttachment
+	// Archived marks a project row archived in the source app.
+	Archived bool
 	// AssignSelf assigns the task to the importing account (a Linear issue
 	// assigned to the importer's own email address).
 	AssignSelf bool
@@ -176,6 +185,19 @@ func (r *Row) fail(format string, args ...any) {
 
 // Link is a link attachment read from a file.
 type Link struct{ Name, URL string }
+
+// FileAttachment is a file an export carries with its bytes.
+type FileAttachment struct {
+	Name, Mime string
+	Data       []byte
+}
+
+// TimeEntry is time tracked on one day, as a file gives it: a day
+// ("YYYY-MM-DD") and the minutes spent that day, with no clock times.
+type TimeEntry struct {
+	Day     string
+	Minutes int
+}
 
 // Custom field value types a profile may produce (more-importers D3).
 const (
@@ -269,7 +291,7 @@ type Profile interface {
 // named app's JSON shape by its structural signature (more-importers D2), then the
 // generic JSON shapes, then the named CSV exports and generic CSV.
 var Profiles = []Profile{opentodoProfile{}, thingsDBProfile{},
-	googleTasksProfile{}, trelloProfile{}, msTodoProfile{}, appleRemindersProfile{}, anydoProfile{},
+	vikunjaProfile{}, googleTasksProfile{}, trelloProfile{}, msTodoProfile{}, appleRemindersProfile{}, anydoProfile{},
 	itemsProfile{}, listsProfile{}, genericProfile{},
 	todoistProfile{}, tickTickProfile{}, linearProfile{}, asanaProfile{}, csvProfile{}}
 
@@ -406,6 +428,9 @@ type Options struct {
 	entryName     string    // archive entry being read
 	fileName      string    // the uploaded file's name (an Asana CSV names its project)
 	thingsWAL     []byte    // a Things database's WAL from the same archive
+	// vikunjaFiles are a Vikunja export's files/<file id> entries; nil when only
+	// data.json was uploaded.
+	vikunjaFiles map[string][]byte
 	// ownFiles are the attachment files of an own ZIP export, by attachment id.
 	ownFiles map[string][]byte
 }

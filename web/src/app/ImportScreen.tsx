@@ -39,6 +39,7 @@ const FORMAT_LABELS = translatedMap<ImportFormat>({
   'microsoft-todo-json': msg('Microsoft To Do (JSON from the PowerShell script)'),
   'apple-reminders-json': msg('Apple Reminders (JSON from the Shortcut)'),
   'anydo-json': msg('Any.do (JSON from a data request)'),
+  'vikunja-export': msg('Vikunja (export ZIP)'),
   'json-items': msg('JSON: projects / sections / items'),
   'json-lists': msg('JSON: lists of tasks'),
   'json-generic': msg('JSON: task list'),

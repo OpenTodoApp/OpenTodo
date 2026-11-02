@@ -135,6 +135,14 @@ func parseArchive(data []byte, opts Options) (*Parsed, error) {
 			return parseOne(thingsDBProfile{}, e.data, opts)
 		}
 	}
+	// A Vikunja export: data.json, with the attachment files beside it.
+	if data, ok := isVikunjaArchive(entries); ok {
+		if opts.Format != "" && opts.Format != vikunjaFormat {
+			return nil, &FileError{fmt.Sprintf("format %s does not match the archive (a Vikunja export)", opts.Format)}
+		}
+		opts.vikunjaFiles = vikunjaFiles(entries)
+		return parseOne(vikunjaProfile{}, data, opts)
+	}
 	var prof Profile
 	for _, e := range entries {
 		p, err := Detect(e.data, formatProfile(opts.Format))

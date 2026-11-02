@@ -4,7 +4,7 @@ Each of groups 2–6 can land as its own pull request; group 7 lands last.
 
 ## 1. Shared
 
-- [ ] 1.1 `Row.TimeEntries` (importer-internal) and the planner writing `time_entry` ops validated by `internal/timetrack`, with the 24-hour cap; verify `go test ./internal/importer -run TimeEntries`
+- [x] 1.1 `Row.TimeEntries` (importer-internal) and the planner writing `time_entry` ops validated by `internal/timetrack`, with the 24-hour cap; verify `go test ./internal/importer -run TimeEntries`
 - [ ] 1.2 `internal/importer/sanitize`: modes for the five new formats (CSV, ZIP with JSON, ZIP with CSV and Markdown, JSON, SQLite); verify `go test ./internal/importer/sanitize/...`
 - [ ] 1.3 Detection regression: every existing fixture keeps its format after each new profile is added to `Profiles`, and a bare CSV with `Name`/`Status` is not `notion-csv`; verify `go test ./internal/importer -run Detect`
 
@@ -16,9 +16,9 @@ Each of groups 2–6 can land as its own pull request; group 7 lands last.
 
 ## 3. Vikunja (`vikunja-export`)
 
-- [ ] 3.1 `profile_vikunja.go`: ZIP detection, projects and sub-projects, buckets of the first Kanban view as sections, priority, repeat, reminders, relations, attachments through the ZIP attachment path with the ownership checks; verify `go test ./internal/importer -run Vikunja`
-- [ ] 3.2 Real exports from a local Vikunja (current release and 0.22), sanitised, with goldens
-- [ ] 3.3 `docs/switch/vikunja.md` and the `docs/import.md` row; verify `make docs-check`
+- [x] 3.1 `profile_vikunja.go`: ZIP detection, projects and sub-projects, buckets of the first Kanban view as sections, priority, repeat, reminders, relations, attachments through the ZIP attachment path with the ownership checks; verify `go test ./internal/importer -run Vikunja`
+- [x] 3.2 Real exports from a local Vikunja (current release and 0.22), sanitised, with goldens
+- [x] 3.3 `docs/switch/vikunja.md` and the `docs/import.md` row; verify `make docs-check`
 
 ## 4. Notion (`notion-csv`)
 

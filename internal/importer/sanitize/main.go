@@ -7,8 +7,9 @@
 //	go run ./internal/importer/sanitize <in> <out>
 //
 // <in> is a CSV (Todoist, TickTick, Linear, Asana), a ZIP of CSVs (Todoist
-// backup), a Things main.sqlite or a JSON export (Google Tasks, Trello, Microsoft
-// To Do, Apple Reminders, Any.do; see json.go). Nothing
+// backup), a Vikunja export ZIP (data.json, filters.json and files/), a Things
+// main.sqlite or a JSON export (Google Tasks, Trello, Microsoft To Do, Apple
+// Reminders, Any.do; see json.go). Nothing
 // imports this package, so it is never part of the server binary. Review every
 // output before committing it.
 package main
@@ -376,6 +377,16 @@ func (s *scrubber) zip(data []byte) ([]byte, error) {
 			return nil, err
 		}
 		name := f.Name
+		switch dir, base := path.Split(name); {
+		case strings.HasSuffix(strings.ToLower(name), ".json"):
+			// A Vikunja export's data.json and filters.json.
+			if b, err = s.jsonFile(b); err != nil {
+				return nil, fmt.Errorf("%s: %w", name, err)
+			}
+		case dir == "files/":
+			// A Vikunja attachment: the bytes become a placeholder of the same kind.
+			b = []byte(s.text("File content", base) + "\n")
+		}
 		if strings.HasSuffix(strings.ToLower(name), ".csv") {
 			if b, err = s.csvFile(b); err != nil {
 				return nil, fmt.Errorf("%s: %w", name, err)
