@@ -4126,6 +4126,7 @@
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/TaskFacts.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/app/task-list/WaitingSoon.tsx",
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/facets.ts",
     "web/src/lib/rules/proposal.ts"
@@ -15221,10 +15222,12 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Take a slot": [
+    "web/src/app/task-list/WaitingSoon.tsx",
     "web/src/app/task-list/slotActions.ts"
   ],
   "Take a slot for {title}": [
-    "web/src/app/palette/registry.ts"
+    "web/src/app/palette/registry.ts",
+    "web/src/app/task-list/WaitingSoon.tsx"
   ],
   "Take {title} out of the slot": [
     "web/src/app/calendar/SlotDetails.tsx"
@@ -18107,9 +18110,11 @@
     "web/src/app/task-detail/TaskPageView.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/task-list/ListChrome.tsx",
+    "web/src/app/task-list/WaitingSoon.tsx",
     "web/src/lib/dependencies.ts",
     "web/src/lib/dnd.ts",
     "web/src/lib/facets.ts",
+    "web/src/lib/listGroups.ts",
     "web/src/lib/localData.ts",
     "web/src/lib/pickerSources.ts",
     "web/src/lib/subtasks.ts",
@@ -18498,6 +18503,9 @@
   ],
   "Waiting on another task": [
     "web/src/app/filter/conditionText.ts"
+  ],
+  "Waiting tasks with a time today": [
+    "web/src/app/task-list/WaitingSoon.tsx"
   ],
   "Waiting|method": [
     "web/src/app/PreferencesPanels.tsx",
@@ -20301,6 +20309,12 @@
   "next week": [
     "web/src/app/filter/conditionText.ts"
   ],
+  "next: {title}, deadline today": [
+    "web/src/lib/listGroups.ts"
+  ],
+  "next: {title}, {time}": [
+    "web/src/lib/listGroups.ts"
+  ],
   "no": [
     "web/src/app/filter/conditionText.ts",
     "web/src/app/routines/wordPicker.tsx",
@@ -21875,6 +21889,9 @@
   ],
   "{n, plural, one {# more routine} other {# more routines}}": [
     "web/src/app/routines/RoutinesInboxCard.tsx"
+  ],
+  "{n, plural, one {# more with a time} other {# more with a time}}": [
+    "web/src/app/task-list/WaitingSoon.tsx"
   ],
   "{n, plural, one {# new field} other {# new fields}}": [
     "web/src/app/ImportScreen.tsx"

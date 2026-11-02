@@ -23,6 +23,7 @@ import { isGhost, listCommitted, markGhost, registerList, useDepartures, withGho
 import type { RowMotion } from '../TaskRow'
 import type { FlowView } from '../../lib/useFlow'
 import { TaskListRow, SubtaskInput, type RowActions } from './TaskListRow'
+import { WaitingSoonList } from './WaitingSoon'
 import type { ListRoute } from './useListModel'
 
 export interface RowContext {
@@ -274,7 +275,7 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
   return (
     <section className="mb-4" data-group={g.key}>
       {g.folded !== undefined ? (
-        <ListGroupHeader title={g.heading ?? ''} count={g.count} collapsed={g.folded} onToggle={() => toggleCollapsed(g.openKey ?? BLOCKED_OPEN_KEY)}
+        <ListGroupHeader title={g.heading ?? ''} count={g.count} detail={g.folded ? g.detail : undefined} collapsed={g.folded} onToggle={() => toggleCollapsed(g.openKey ?? BLOCKED_OPEN_KEY)}
           actions={view === 'today' && g.key === 'done' ? <LogWinAction /> : undefined}
           actionsAlwaysVisible={g.key === 'done'} />
       ) : g.heading && partDrop(g.dropPart, (
@@ -283,6 +284,7 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
           actions={earlier ? earlierActions?.(g.rows.filter((r) => !isGhost(r.task)).map((r) => r.task.id)) : undefined} actionsAlwaysVisible={earlier} />
       ))}
       {g.hint && g.folded === false && <p className="mb-1 px-1 text-meta text-muted" data-group-hint>{g.hint}</p>}
+      {g.folded && g.soon?.length ? <WaitingSoonList soon={g.soon} onOpenGroup={() => toggleCollapsed(g.openKey ?? BLOCKED_OPEN_KEY)} /> : null}
       {!(g.heading && g.folded === undefined && collapsed) && rowList(g.rows.map((r) => renderRow(r)))}
       {/* Upcoming's projected occurrences after the day's tasks, outside its count (series-occurrences D4). */}
       {!(g.heading && collapsed) && (g.projected?.length || g.projectedNote) ? <Suspense fallback={null}><ProjectedGroupRows g={g} projects={projects} /></Suspense> : null}

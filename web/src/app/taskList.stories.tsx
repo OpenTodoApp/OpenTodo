@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ReactNode } from 'react'
 import { createTask } from '../lib/ops'
+import { setTodayLimit } from '../lib/closedListPrefs'
 import { seedBase, seeded, seedProjectWithSections, seedToday, storyUser, TODAY, withSeed } from './stories/fixtures'
 import { db } from '../lib/db'
 import { setTaskOpen } from '../lib/userPrefs'
@@ -47,6 +48,22 @@ export const TodayEarlierOpen: StoryObj = {
 /** Earlier folded by default above five tasks: its label, "8" and both actions, no rows. */
 export const TodayEarlierCollapsed: StoryObj = {
   ...withSeed(() => seedEarlier(8)),
+  render: () => <Column><TaskListView route={{ view: 'today' }} userId={storyUser.id} userRole={storyUser.role} /></Column>,
+}
+
+/**
+ * Today with a limit of three and a full day (today-waiting-time-sensitive): the folded
+ * Waiting for a slot heading names the next task with a time today, and the waiting
+ * tasks due today with a time or a deadline today are listed under it, soonest first,
+ * each with Take a slot.
+ */
+export const TodayWaitingWithTimes: StoryObj = {
+  ...withSeed(async () => {
+    await seedToday()
+    await createTask({ title: 'Send the form to the school', due: { date: TODAY, time: '16:00' } })
+    await createTask({ title: 'File the expense report', deadline: TODAY })
+    await setTodayLimit(3)
+  }),
   render: () => <Column><TaskListView route={{ view: 'today' }} userId={storyUser.id} userRole={storyUser.role} /></Column>,
 }
 

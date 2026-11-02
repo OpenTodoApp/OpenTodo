@@ -406,7 +406,7 @@
     {
       "name": "today_summary",
       "kind": "read",
-      "description": "One-call overview of the user's day: overdue tasks, tasks due today, and open task counts for the Inbox (tasks without a project that are not scheduled) and each project. today_limit is the user's Today limit (null when off); each listed task has waiting_for_slot, true when that limit keeps it waiting.",
+      "description": "One-call overview of the user's day: overdue tasks, tasks due today, and open task counts for the Inbox (tasks without a project that are not scheduled) and each project. today_limit is the user's Today limit (null when off); each listed task has waiting_for_slot, true when that limit keeps it waiting; a waiting task also has time_sensitive, true when it is due today with a time or its deadline is today, and waiting_time_sensitive lists those ids soonest first (the slots stay first come, first served).",
       "input_schema": {
         "additionalProperties": false,
         "properties": {
