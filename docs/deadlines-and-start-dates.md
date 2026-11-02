@@ -31,10 +31,10 @@ Not every task is for now. **Start**, in the panel's **When** editor, says when 
 - **A start date** defers the task until that day: it disappears from Today, Upcoming, Anytime and the counts, and its project lists it at the end under **Later**, with a **Starts 21 Oct** chip. Subtasks go with it. A deferred task without a project leaves the Inbox; without a due date it is listed in Upcoming on its start day ([where planned tasks go](today-and-upcoming.md#where-planned-tasks-go)). On its start day it appears in Today with a **Started** chip and stays there until you deal with it. The start date can't be after the due date.
 - **Someday** parks the task: it moves to the [Someday view](views.md#park-ideas-in-someday) and its project's Later group, and its due date is cleared (a repeating task stops repeating). Giving it a due date or a start date brings it back.
 
-A due date or a deadline that has come always shows the task in Today, even if it is deferred or parked.
+A due date or a deadline that has come always shows the task in Today, even if it is deferred or parked. See also [time sectors](time-sectors.md).
 
 With **Multi-day** on, a task is drawn across the days from its start date to its due date: see [Tasks that span days](tasks-that-span-days.md).
 
-**This Evening** (the **Evening** switch in the same editor, or **Add › This Evening**) moves a task due today into its own group below the day's tasks in Today, and shows a moon on its row elsewhere. It says nothing about the time of day. With [day parts](day-parts.md) on, the switch becomes **Any time**, **Morning**, **Afternoon** and **Evening**, and Today groups the day by them.
+**This Evening** (the **Evening** switch in the same editor, or **Add › This Evening**) moves a task due today into its own group below the day's tasks in Today, and shows a moon on its row elsewhere. With [day parts](day-parts.md) on, the switch becomes **Any time**, **Morning**, **Afternoon** and **Evening**, and Today groups the day by them.
 
 From the list: <kbd>n</kbd> parks a task or brings it back, <kbd>Shift</kbd>+<kbd>N</kbd> asks for its start date, and <kbd>Shift</kbd>+<kbd>E</kbd> toggles This Evening.

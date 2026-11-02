@@ -33,6 +33,8 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | &nbsp;&nbsp;↳ [All projects](all-projects.md) | Every project in a table with its health, progress, open tasks, next due date, people and last change; how health is worked out, sorting, the keyboard and the Archived tab. |
 | &nbsp;&nbsp;↳ [Project notes](project-notes.md) | The note at the top of a project: what it is for, who can edit it, Shift+P, folding long notes, and how the API and history see it. |
 | &nbsp;&nbsp;↳ [Completed tasks in a project](completed-in-projects.md) | Keep a project's completed tasks at the end of its list in a Completed group, for lists you tick off and reuse such as groceries. |
+| &nbsp;&nbsp;↳ [Reusable lists](reusable-lists.md) | Make a project a reusable list for groceries or packing, so adding an item that is already there brings it back and ticked items stay in a Got it group. |
+| &nbsp;&nbsp;↳ [Sort a list into aisles](reusable-list-aisles.md) | Let new items of a reusable list go to aisle sections such as Produce or Dairy and eggs, and reuse items from the API, the command line and AI assistants. |
 | [Views](views.md) | Inbox, Today, Upcoming, Assigned to me, Completed and the calendar, plus views you save yourself, dashboards and the view each device opens on. |
 | &nbsp;&nbsp;↳ [The built-in views](built-in-views.md) | What Inbox, Today, Upcoming, Anytime, Someday, Assigned to me, Calendar, Completed, Filter, Trash and Updates show, their shortcuts, and the duration filter. |
 | &nbsp;&nbsp;↳ [Weekly review](review-and-statistics.md) | A guided weekly review with live data in seven steps, from the Inbox through every project, one card at a time, to Someday. |

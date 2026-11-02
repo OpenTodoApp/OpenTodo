@@ -2,7 +2,8 @@
 // Time-sensitive tasks waiting for a slot (OpenSpec change today-waiting-time-sensitive,
 // tasks 2.1-2.3): under the folded Waiting for a slot heading, the waiting tasks due
 // today with a time or with a deadline today, soonest first, with their time and Take a
-// slot; the heading names the next one; opened, the group is as before.
+// slot; the heading names the next one; opened, the group is as before. A time that has
+// passed (the clock reads 12:00) is marked and never named next (today-waiting-time-passed).
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, useDatabase } from '../lib/db'
@@ -62,16 +63,34 @@ async function openToday() {
 }
 
 describe('time-sensitive tasks waiting for a slot', () => {
-  it('folded: lists them soonest first with their time, and the heading names the next one', async () => {
-    await seed()
+  it('folded: lists them soonest first with their time, and the heading names the next one still to come', async () => {
+    const ids = await seed()
     await setTodayLimit(2)
     await openToday()
     await waitFor(() => soonRows().length === 3)
     expect(soonRows()).toEqual(['09:00 Call the school', '16:00 Send the form', 'Deadline File the taxes'])
-    // The toggle's name carries the count and the next task (Label in Name).
+    // The toggle's name carries the count and the next task (Label in Name); 09:00 has passed.
     expect(toggle().textContent).toContain('Waiting for a slot')
-    expect(group()!.querySelector('[data-group-detail]')!.textContent).toBe('— next: Call the school, 09:00')
+    expect(group()!.querySelector('[data-group-detail]')!.textContent).toBe('— next: Send the form, 16:00')
     expect(toggle().getAttribute('aria-expanded')).toBe('false')
+    // The passed one says so, in the danger tone of overdue dates; the others do not.
+    const row = (id: string) => group()!.querySelector<HTMLElement>(`[data-waiting-soon-task="${id}"]`)!
+    expect(row(ids.call).querySelector('[data-soon-passed]')!.textContent).toBe('Time passed')
+    expect(row(ids.call).querySelector('[data-soon-time]')!.className).toContain('text-danger')
+    expect(row(ids.form).querySelector('[data-soon-passed]')).toBeNull()
+    expect(row(ids.form).querySelector('[data-soon-time]')!.className).not.toContain('text-danger')
+    expect(row(ids.taxes).querySelector('[data-soon-passed]')).toBeNull()
+  })
+
+  it('every time passed: the heading says so instead of naming a next one', async () => {
+    await createTask({ title: 'A', due: { date: TODAY } })
+    vi.setSystemTime(new Date(Date.now() + 1))
+    await createTask({ title: 'Call the school', due: { date: TODAY, time: '09:00' } })
+    await setTodayLimit(1)
+    await openToday()
+    await waitFor(() => soonRows().length === 1)
+    expect(group()!.querySelector('[data-group-detail]')!.textContent).toBe('— time passed: Call the school, 09:00')
+    expect(group()!.querySelector('[data-soon-passed]')!.textContent).toBe('Time passed')
   })
 
   it('Upcoming with Start with Today shows the same list, and Take a slot works there', async () => {
@@ -82,7 +101,7 @@ describe('time-sensitive tasks waiting for a slot', () => {
     mounted.push(r)
     await waitFor(() => soonRows().length === 3)
     expect(soonRows()).toEqual(['09:00 Call the school', '16:00 Send the form', 'Deadline File the taxes'])
-    expect(group()!.querySelector('[data-group-detail]')!.textContent).toBe('— next: Call the school, 09:00')
+    expect(group()!.querySelector('[data-group-detail]')!.textContent).toBe('— next: Send the form, 16:00')
     await click(group()!.querySelector<HTMLElement>(`[data-take-slot="${ids.call}"]`)!)
     await waitFor(() => soonRows().length === 2)
     expect((await queued()).map((o) => [o.field, o.value])).toEqual(expect.arrayContaining([['slots', ids.call]]))
