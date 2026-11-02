@@ -27,6 +27,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -38,6 +39,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Call the plumber"
@@ -85,6 +87,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -96,6 +99,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": ""
@@ -128,6 +132,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -140,6 +145,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Paid rent"
@@ -172,6 +178,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -183,6 +190,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Paid rent"
@@ -215,6 +223,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -226,6 +235,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Nested twice"
@@ -258,6 +268,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -269,6 +280,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Nested by tab"
@@ -301,6 +313,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -312,6 +325,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Renew passport"
@@ -344,6 +358,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -355,6 +370,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Renew passport"
@@ -387,6 +403,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -397,6 +414,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Renew passport"
@@ -432,6 +450,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -443,6 +462,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Odd soon"
@@ -475,6 +495,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -486,6 +507,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "2026-11-01",
         "title": "Plan trip"
@@ -518,6 +540,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -529,6 +552,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "title": "Plan trip"
       },
@@ -563,6 +587,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -574,6 +599,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "someday",
         "title": "Learn Rust"
@@ -606,6 +632,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -617,6 +644,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Water plants"
@@ -649,6 +677,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -660,6 +689,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "1",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Fire drill"
@@ -694,6 +724,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -705,6 +736,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "2",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Renew passport"
@@ -737,6 +769,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -748,6 +781,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "3",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Tidy desk"
@@ -780,6 +814,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -791,6 +826,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Sort photos"
@@ -823,6 +859,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -834,6 +871,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Sort socks"
@@ -870,6 +908,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -881,6 +920,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Buy milk"
@@ -913,6 +953,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -924,6 +965,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Review PR #42"
@@ -956,6 +998,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -967,6 +1010,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Ask about C#sharp"
@@ -999,6 +1043,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -1010,6 +1055,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Dentist"
@@ -1042,6 +1088,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -1052,6 +1099,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Dentist"
@@ -1087,6 +1135,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -1097,6 +1146,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Dentist"
@@ -1132,6 +1182,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -1143,6 +1194,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Call Tokyo"
@@ -1175,6 +1227,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -1185,6 +1238,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Call Tokyo"
@@ -1220,6 +1274,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -1231,6 +1286,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Tax return"
@@ -1263,6 +1319,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -1273,6 +1330,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Tax return"
@@ -1308,6 +1366,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -1319,6 +1378,7 @@
         "estimate": "45",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Write report"
@@ -1351,6 +1411,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -1362,6 +1423,7 @@
         "estimate": "90",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Write report"
@@ -1394,6 +1456,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -1404,6 +1467,7 @@
         "energy": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Write report"
@@ -1439,6 +1503,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -1449,6 +1514,7 @@
         "energy": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Write report"
@@ -1484,6 +1550,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -1495,6 +1562,7 @@
         "estimate": "",
         "evening": "true",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Read"
@@ -1527,6 +1595,7 @@
         "span": "",
         "dayPart": "morning",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -1538,6 +1607,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Run"
@@ -1570,6 +1640,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -1581,6 +1652,7 @@
         "estimate": "",
         "evening": "true",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Call"
@@ -1613,6 +1685,7 @@
         "span": "",
         "dayPart": "noon",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -1623,6 +1696,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Run"
@@ -1658,6 +1732,7 @@
         "span": "true",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -1669,6 +1744,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "true",
         "start": "2026-11-10",
         "title": "Conference"
@@ -1701,6 +1777,7 @@
         "span": "maybe",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -1712,6 +1789,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "start": "",
         "title": "Conference"
       },
@@ -1746,6 +1824,7 @@
         "span": "",
         "dayPart": "",
         "energy": "Deep",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -1757,11 +1836,104 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Draft essay"
       },
       "printed": "- [ ] Draft essay [energy:: Deep]"
+    },
+    {
+      "name": "sector",
+      "line": "- [ ] Plan the offsite [sector:: 2026-w46] 🆔 t1",
+      "task": true,
+      "parse": {
+        "indent": "",
+        "done": false,
+        "title": "Plan the offsite",
+        "trailing": "",
+        "due": "",
+        "start": "",
+        "doneDate": "",
+        "created": "",
+        "recur": "",
+        "priority": 0,
+        "id": "t1",
+        "blocked": [],
+        "tags": [],
+        "time": "",
+        "tz": "",
+        "deadline": "",
+        "estimate": "",
+        "evening": false,
+        "span": "",
+        "dayPart": "",
+        "energy": "",
+        "sector": "2026-w46",
+        "readOnly": {}
+      },
+      "fields": {
+        "daypart": "",
+        "deadline": "",
+        "done": "false",
+        "due": "",
+        "energy": "",
+        "estimate": "",
+        "evening": "false",
+        "priority": "4",
+        "sector": "2026-W46",
+        "span": "false",
+        "start": "",
+        "title": "Plan the offsite"
+      },
+      "printed": "- [ ] Plan the offsite [sector:: 2026-w46] 🆔 t1"
+    },
+    {
+      "name": "sector refused",
+      "line": "- [ ] Plan the offsite [sector:: 2026-Q7]",
+      "task": true,
+      "parse": {
+        "indent": "",
+        "done": false,
+        "title": "Plan the offsite",
+        "trailing": "",
+        "due": "",
+        "start": "",
+        "doneDate": "",
+        "created": "",
+        "recur": "",
+        "priority": 0,
+        "id": "",
+        "blocked": [],
+        "tags": [],
+        "time": "",
+        "tz": "",
+        "deadline": "",
+        "estimate": "",
+        "evening": false,
+        "span": "",
+        "dayPart": "",
+        "energy": "",
+        "sector": "2026-Q7",
+        "readOnly": {}
+      },
+      "fields": {
+        "daypart": "",
+        "deadline": "",
+        "done": "false",
+        "due": "",
+        "energy": "",
+        "estimate": "",
+        "evening": "false",
+        "priority": "4",
+        "span": "false",
+        "start": "",
+        "title": "Plan the offsite"
+      },
+      "problems": [
+        "sector 2026-Q7 is not a period such as 2026-W44, 2026-11 or 2026-Q4"
+      ],
+      "printed": "- [ ] Plan the offsite [sector:: 2026-Q7]"
     },
     {
       "name": "energy refused",
@@ -1789,6 +1961,7 @@
         "span": "",
         "dayPart": "",
         "energy": "huge",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -1799,6 +1972,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Draft essay"
@@ -1834,6 +2008,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -1845,6 +2020,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Water plants"
@@ -1877,6 +2053,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -1888,6 +2065,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Already synced"
@@ -1923,6 +2101,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -1934,6 +2113,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Ship"
@@ -1966,6 +2146,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -1977,6 +2158,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Pay bill"
@@ -2009,6 +2191,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -2020,6 +2203,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Prepare"
@@ -2052,6 +2236,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -2063,6 +2248,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Call Bob"
@@ -2095,6 +2281,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {
           "origin": "https://mail.example.com/1"
         }
@@ -2108,6 +2295,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "From mail"
@@ -2140,6 +2328,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {
           "field:Stage": "Beta"
         }
@@ -2153,6 +2342,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Stage it"
@@ -2185,6 +2375,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -2196,6 +2387,7 @@
         "estimate": "",
         "evening": "false",
         "priority": "4",
+        "sector": "",
         "span": "false",
         "start": "",
         "title": "Use #hashtag literally"
@@ -2230,6 +2422,7 @@
         "span": "",
         "dayPart": "",
         "energy": "",
+        "sector": "",
         "readOnly": {}
       },
       "fields": {
@@ -2241,6 +2434,7 @@
         "estimate": "120",
         "evening": "false",
         "priority": "2",
+        "sector": "",
         "span": "false",
         "start": "2026-11-01",
         "title": "Big one"

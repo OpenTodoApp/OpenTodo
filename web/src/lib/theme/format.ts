@@ -67,7 +67,7 @@ const SEEDS_REQUIRED = ['canvas', 'surface', 'text', 'accent'] as const
 /** How far outside 0..1 a channel may land and still count as inside the sRGB gamut (rounding of written values). */
 export const GAMUT_TOLERANCE = 0.001
 
-const KNOWN_KEYS = new Set(['opentodoTheme', 'id', 'name', 'author', 'licence', 'source', 'kind', 'seeds', 'tokens', 'bar', 'notes', 'shape', 'type'])
+const KNOWN_KEYS = new Set(['$schema', 'opentodoTheme', 'id', 'name', 'author', 'licence', 'source', 'kind', 'seeds', 'tokens', 'bar', 'notes', 'shape', 'type'])
 
 class Refused extends Error {
   constructor(readonly code: ThemeError, readonly at: string) {
@@ -185,6 +185,8 @@ export function validateTheme(value: unknown): ThemeResult {
     text(d.name, 'name', 60, 'name', 1)
     text(d.author, 'author', 120)
     text(d.licence, 'licence', 120)
+    // `$schema` names the JSON Schema for an editor (a theme template carries it); text only, never fetched.
+    if ('$schema' in d) text(d.$schema, '$schema', 300, 'key')
     if ('source' in d) text(d.source, 'source', 300)
     if (d.kind !== 'light' && d.kind !== 'dark') fail('kind', 'kind')
     checkSeeds(d.seeds)

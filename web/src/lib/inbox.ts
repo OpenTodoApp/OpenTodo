@@ -2,13 +2,13 @@
 // is in the Inbox while it is open, live, not placed, and none of its parents is
 // placed either: a subtask is part of its parent's plan, so it follows the parent
 // out of the Inbox. Placed means a project or a schedule (a do-on date, a start
-// date, past or future, or Someday); a deadline, a reminder or a label alone does
+// date, past or future, Someday, or a time sector, OpenSpec time-sectors); a deadline, a reminder or a label alone does
 // not place a task. Derived from synced fields only, so it needs no clock and
 // converges with them. internal/inbox is the Go twin; both read
 // web/src/lib/inbox.vectors.json.
 import type { Task } from './types'
 
-export type InboxFields = Pick<Task, 'project_id' | 'due' | 'completed_at' | 'deleted_at'> & { start?: string | null; parent_id?: string | null }
+export type InboxFields = Pick<Task, 'project_id' | 'due' | 'completed_at' | 'deleted_at'> & { start?: string | null; parent_id?: string | null; sector?: string }
 
 /** Finds a task by id, to walk a subtask's parents; undefined when it is not known here. */
 export type InboxParentOf = (id: string) => InboxFields | undefined
@@ -16,13 +16,13 @@ export type InboxParentOf = (id: string) => InboxFields | undefined
 /** Parents deeper than this are not walked (a guard against a cycle in synced data). */
 const MAX_DEPTH = 64
 
-/** A do-on date, a start date or Someday. */
-export function isScheduled(task: Pick<Task, 'due'> & { start?: string | null }): boolean {
-  return !!task.due || !!(task.start ?? null)
+/** A do-on date, a start date, Someday or a time sector. */
+export function isScheduled(task: Pick<Task, 'due'> & { start?: string | null; sector?: string }): boolean {
+  return !!task.due || !!(task.start ?? null) || !!task.sector
 }
 
 /** A project or a schedule: the task has a place outside the Inbox. */
-export function isPlaced(task: Pick<InboxFields, 'project_id' | 'due' | 'start'>): boolean {
+export function isPlaced(task: Pick<InboxFields, 'project_id' | 'due' | 'start' | 'sector'>): boolean {
   return task.project_id !== null || isScheduled(task)
 }
 

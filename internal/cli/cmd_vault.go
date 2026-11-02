@@ -479,6 +479,19 @@ func (a *App) watchLoop(ctx context.Context, g *globalFlags, dir string, takeOve
 			a.printVaultReport(rep)
 		}
 	}
+	// Editors save in steps (an empty file first, then its text): settled
+	// waits watchStable and reports whether the files held still meanwhile.
+	settled := func(cur map[string]string) bool {
+		select {
+		case <-ctx.Done():
+			return false
+		case <-time.After(watchStable):
+		}
+		return sameSnapshot(cur, snapshot(dir))
+	}
+	// pending is a wake put off because a file was being saved; the next
+	// tick syncs it.
+	pending := false
 	run()
 	tick := time.NewTicker(watchPoll)
 	defer tick.Stop()
@@ -493,10 +506,19 @@ func (a *App) watchLoop(ctx context.Context, g *globalFlags, dir string, takeOve
 		case u := <-streamUp:
 			up = u
 		case <-wake:
-			if retryAt.IsZero() {
-				run()
-				lastFull = time.Now()
+			if !retryAt.IsZero() {
+				continue
 			}
+			// A wake never reads a file half saved: with files changed since
+			// the last sync it waits for them to hold still, like a change the
+			// poll finds. Reading the empty first step of a save trashed the
+			// file's tasks and wrote over the save (TestVaultWatchHalfSavedFile).
+			if cur := snapshot(dir); !sameSnapshot(cur, last) && !settled(cur) {
+				pending = true
+				continue
+			}
+			run()
+			pending, lastFull = false, time.Now()
 		case <-tick.C:
 			now := time.Now()
 			if !retryAt.IsZero() {
@@ -508,21 +530,15 @@ func (a *App) watchLoop(ctx context.Context, g *globalFlags, dir string, takeOve
 			}
 			cur := snapshot(dir)
 			if !sameSnapshot(cur, last) {
-				// Editors save in steps: wait until the files hold still.
-				select {
-				case <-ctx.Done():
-					return nil
-				case <-time.After(watchStable):
-				}
-				if sameSnapshot(cur, snapshot(dir)) {
+				if settled(cur) {
 					run()
-					lastFull = now
+					pending, lastFull = false, now
 				}
 				continue
 			}
-			if !up && now.Sub(lastFull) >= watchFallback {
+			if pending || !up && now.Sub(lastFull) >= watchFallback {
 				run()
-				lastFull = now
+				pending, lastFull = false, now
 			}
 		}
 	}
