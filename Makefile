@@ -11,7 +11,7 @@ WEB_EXT := web-ext@10.7.0
 SKILL_ZIP := dist/opentodo-agent-skill.zip
 MCP_SKILL_ZIP := dist/opentodo-mcp-skill.zip
 
-.PHONY: brand-icons site-bundle all web server cli cli-release cli-smoke skill extension obsidian obsidian-e2e obsidian-review test-obsidian android build run dev test test-go test-web test-extension check lint staticcheck gosec gosec-sarif clean docker openspec-validate layout-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check release-prepare storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check bundle-budget fmt-check ci-checks e2e
+.PHONY: brand-icons site-bundle all web server cli cli-release cli-smoke skill extension obsidian obsidian-e2e obsidian-review test-obsidian android build run dev test test-go test-web test-extension check lint staticcheck gosec gosec-sarif clean docker openspec-validate layout-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check release-prepare perf storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check bundle-budget fmt-check ci-checks e2e
 
 all: build
 
@@ -297,7 +297,15 @@ release-prepare:
 ## the Go/TypeScript contract index (docs/contracts.md);
 ## the brand rasters rendered from the current brand.svg (sidebar-v2 D3).
 repo-check:
-	node --test scripts/repo-checks.test.mjs scripts/brand-icons.test.mjs scripts/contracts.test.mjs scripts/bundle-budget.test.mjs scripts/release/play-upload.test.mjs scripts/release/collect-assets.test.mjs scripts/release/check-public-image.test.mjs
+	node --test scripts/repo-checks.test.mjs scripts/brand-icons.test.mjs scripts/contracts.test.mjs scripts/bundle-budget.test.mjs scripts/release/play-upload.test.mjs scripts/release/collect-assets.test.mjs scripts/release/check-public-image.test.mjs scripts/perf/budgets.test.mjs
+
+## The time benchmark of the performance budgets (docs/performance.md): builds the app,
+## the server and the 10,000-task account, then measures every server, desktop and
+## phone-profile budget PERF_RUNS times (default 5) and fails when a median is over
+## (scripts/perf/run.sh). Reports in perf-report/. Needs Playwright with Chromium, and
+## Linux for the server's memory.
+perf: web server
+	scripts/perf/run.sh
 
 ## The web app's first load (entry chunk and its static imports, gzip) against web/bundle-budget.json;
 ## expects `make web`. CI runs it in the Web build job.
