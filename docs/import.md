@@ -41,6 +41,7 @@ The format is detected from the content, in this order; the preview shows what w
 | `todoist-backup` | a ZIP of `todoist-csv` files | Todoist's backup of every project |
 | `ticktick-csv` | a preamble starting with `Date:`, then a `Folder Name, List Name, Title, Kind` header | TickTick's CSV backup, see [TickTick](#ticktick-ticktick-csv) |
 | `linear-csv` | a header with `ID`, `Team`, `Title`, `Status`, `Priority` and `UUID` | Linear's workspace export, see [Linear](#linear-linear-csv) |
+| `omnifocus-csv` | a header starting `Task ID`, `Type`, `Name`, `Status`, `Project` with a `Context` or `Tags` column (UTF-8 or UTF-16) | OmniFocus's CSV export, see [OmniFocus](#omnifocus-omnifocus-csv) |
 | `asana-csv` | a header with `Task ID`, `Created At`, `Completed At`, `Last Modified`, `Name`, `Section/Column`, `Assignee`, `Due Date` and `Parent task` | one Asana project, see [Asana](#asana-asana-csv) |
 | `csv` | a header row with a `title` column | the documented columns below |
 
@@ -189,6 +190,28 @@ Trello exports one board as JSON from the board menu (**Print, export and share 
 | members | the card stays assigned when one member is you (by name or username); others are dropped with a warning |
 | custom fields (number, text, checkbox, date, list) | [custom fields](#custom-fields) of the same type, list as a choice |
 | `id`, `shortUrl` | the task's origin, with a link to the card |
+
+### OmniFocus (`omnifocus-csv`)
+
+OmniFocus exports the items its window shows as CSV (**File → Export → Comma Separated Values**, or **CSV UTF-16**, on a Mac; **Settings → Database → Export to CSV** on iPhone and iPad; see the [OmniFocus guide](switch/omnifocus.md)). Columns are found by name, so the OmniFocus 2 layout (`Context`), the OmniFocus 3 and 4 layout (`Tags`) and OmniFocus 4.7's `Planned Date` are all read. Dates in the file are UTC and become floating dates in the import's time zone. Verified against an OmniFocus 2 export and the OmniFocus 3 and 4.7 layouts.
+
+| OmniFocus | Becomes |
+| --- | --- |
+| `Type` `Project` | a project; `Status` `done` or `dropped`: archived, with a warning; `inactive` (on hold): active, with a warning |
+| `Type` `Action` (or `Inbox`) | a task |
+| `Task ID` (`2`, `2.1`, `2.1.1`) | the place in the outline: the nearest project is the task's project, the nearest action its parent (action groups become tasks with subtasks); an action outside a project goes to the target project |
+| `Name`, `Notes` | the title, the description (a project's notes become its notes) |
+| `Tags` (comma-separated) and `Context` | labels |
+| `Due Date` | the due date and time (no time when it is midnight) |
+| `Planned Date` (4.7) | the due date and time; the `Due Date` becomes the deadline |
+| `Start Date` (the defer date) | the start date |
+| `Completion Date` | completed at that time |
+| `Status` `dropped` on an action | completed, with a warning |
+| `Duration` (`30m`, `1h30m`) | the estimate |
+| `Flagged` `1` | priority 1 |
+| the item's path of names | the task's origin, `{kind: "import", provider: "omnifocus", id: <digest>}`: Task IDs are positions, so a digest of the project and parent names identifies the item across exports |
+
+OmniFocus's CSV has no repeat rules, folders, attachments or review data; the preview says so once.
 
 ### Asana (`asana-csv`)
 

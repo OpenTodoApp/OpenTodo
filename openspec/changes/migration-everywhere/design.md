@@ -27,17 +27,19 @@ Alternative considered: importing over each app's API with a token. Rejected for
 **D2. Mapping per app.** Only what the model can hold is mapped. Anything else is dropped with a per-row warning (`data-import` "Field mapping").
 
 *OmniFocus CSV*
-- Folders become parent projects.
-- `Project` rows become projects, and the `Task ID` dotted path (`3.2.1`) gives the action hierarchy as subtasks.
-- Action groups become a task with subtasks.
-- `Context` or `Tags`, split on `, `, become labels.
-- `Start Date` becomes `start`, `Due Date` the due date (and time), `Completion Date` sets `completed_at`.
+- Columns are read by name: OmniFocus 2 writes `Context`, 3 and 4 add `Tags`, 4.7 inserts `Planned Date`. "CSV UTF-16" is decoded. Dates are UTC (`2026-11-03 17:00:00 +0000`) and become floating in the import's time zone.
+- `Project` rows become projects. Folders are not exported (only what the window shows is), so they cannot become parent projects; the guide says so.
+- The `Task ID` dotted path (`3.2.1`) gives the action hierarchy: the nearest project row is the project, the nearest action the parent. Action groups become a task with subtasks.
+- Task IDs are positions, not ids, so the source id is a digest of the item's type and path of names; a newer export of the same database then skips what was imported.
+- `Context` and `Tags`, split on `, `, become labels.
+- `Start Date` becomes `start`, `Due Date` the due date (and time), `Completion Date` sets `completed_at`. With a `Planned Date`, the planned date is the due date and the due date becomes the deadline.
 - `Duration` (`30m`, `1h30m`) becomes the estimate.
 - `Flagged` becomes priority 1.
 - `Notes` becomes the description.
-- `Status` `Dropped` is imported as completed, with a warning "dropped in OmniFocus".
-- Project type (sequential or parallel) is kept as a warning until `project-flow-modes` lands; after that it maps to the project's flow mode.
+- Project `Status` `done` or `dropped` is imported archived with a warning, `inactive` (on hold) active with a warning; an action whose status is `dropped` is completed with a warning.
+- Project type (sequential or parallel) is not in the CSV either.
 - Repeat rules are not in the CSV: a file-level note says so.
+- Fixtures: OmniFocus 2's real export as published (MIT) by juev/lists, sanitised, and a hand-written file in the 4.7 layout until a real OmniFocus 4 export is available.
 
 *Vikunja export*
 - Projects (with `parent_project_id`) become projects and sub-projects. Archived projects are archived.
