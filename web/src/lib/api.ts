@@ -669,6 +669,8 @@ export const api = {
   /** Built-in assistant skills (assistant-skills); empty when the assistant is not available to you. */
   assistantSkills: () => request<{ skills: AssistantSkill[] }>('GET', '/api/v1/assistant/skills'),
   setMyAssistant: (input: MyAssistantInput) => request<AssistantStatus>('PUT', '/api/v1/me/assistant', input),
+  /** Got it on the notice that the disclosure is now complete (assistant-disclosure-notice). */
+  assistantDisclosureSeen: () => request<AssistantStatus>('POST', '/api/v1/me/assistant/disclosure-seen'),
   /** Your own provider's "Test connection" (assistant-member-provider; sessions only, rate limited). */
   testMyAssistant: (draft: MyAssistantTestDraft = {}) => request<AssistantTestResult>('POST', '/api/v1/me/assistant/test', draft),
   assistantUsage: () => request<AssistantUsage>('GET', '/api/v1/me/assistant/usage'),

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import vectors from './closedList.vectors.json'
-import { fillSlots, giveBackSlotList, notBlocked, readTodayLimit, takeSlotList, takenSlots, type SlotTask } from './closedList'
+import { fillSlots, giveBackSlotList, notBlocked, readTodayLimit, takeSlotList, takenSlots, timeSensitive, type SlotTask, type TimeSensitive } from './closedList'
 
 type VTask = SlotTask & { available?: boolean }
 type Vector = {
@@ -11,6 +11,7 @@ type Vector = {
   tasks: VTask[]
   expect: { limit: number; slots: string[]; waiting: string[]; chosen: number }
   take?: { id: string; taken: string[] | 'full' }
+  time_sensitive?: TimeSensitive[]
 }
 
 const review = (r: Vector['review']) => ({ focus_date: '', focus: '', slots_date: '', slots: '', ...r })
@@ -25,6 +26,8 @@ describe('closed list fill (shared vectors with internal/closedlist)', () => {
       const available = v.predicate === 'flow' ? (t: SlotTask) => (t as VTask).available !== false : notBlocked
       const fill = fillSlots({ tasks: v.tasks, limit: v.limit, today: vectors.today, review: review(v.review) }, available)
       expect(fill).toEqual(v.expect)
+      const byId = new Map(v.tasks.map((t) => [t.id, t]))
+      expect(timeSensitive(fill.waiting.map((id) => byId.get(id)!), vectors.today)).toEqual(v.time_sensitive ?? [])
       if (v.take) expect(takeSlotList(fill, takenSlots(review(v.review), vectors.today), v.take.id)).toEqual(v.take.taken)
     })
   }

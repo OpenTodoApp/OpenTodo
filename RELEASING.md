@@ -47,7 +47,7 @@ Only organization admins can create `v*` tags: a ruleset protects them. A tag wi
 The tag runs the full CI matrix (`.github/workflows/ci.yml`: every binary, the WebKit, German and French layouts, Android, the image). Only when every gate passes:
 
 - the image is pushed to `ghcr.io/opentodoapp/opentodo` as `0.15.0`, `0.15` and `stable`, signed with its SBOM and provenance;
-- the **GitHub release** gets the binaries, the extension and skill zips, the site bundle and `SHA256SUMS` with attestations, and its notes from the `CHANGELOG.md` section (`scripts/release-notes.sh`; a tag without a section fails);
+- the **GitHub release** gets the binaries, the extension and skill zips, the Android APK and AAB, the site bundle and `SHA256SUMS` (only these, by exact name: `scripts/release/collect-assets.sh`) with attestations, and its notes from the `CHANGELOG.md` section (`scripts/release-notes.sh`; a tag without a section fails);
 - the Helm chart is published (`.github/workflows/helm.yml`) and the Claude plugin is pushed to `OpenTodoApp/opentodo-claude`;
 - the release also carries the signed Android APK and AAB (`opentodo-android-<version>.apk`, `.aab`), after the Android job proved the build reproducible (a second build in a fresh checkout, compared by `scripts/android-repro.sh`; a mismatch fails the release) and checked the certificate against the documented one;
 - for a final tag, the `play` job puts the AAB on Google Play's **internal** testing track with the CHANGELOG notes (`scripts/release/play-upload.mjs`, secrets in the `release` environment; without them it warns and succeeds). It never touches production.

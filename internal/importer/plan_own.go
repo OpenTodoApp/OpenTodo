@@ -168,8 +168,9 @@ func (pl *planner) ownTask(fields []field, res *RowResult) []field {
 					f.value = raw(c)
 				}
 			}
-		case "energy":
-			// The export writes null for none, as the REST shape does (task-energy D7).
+		case "energy", "sector":
+			// The export writes null for none, as the REST shape does (task-energy D7,
+			// time-sectors D9); the field stores "" for none.
 			if opsync.IsNull(f.value) {
 				f.value = raw("")
 			}

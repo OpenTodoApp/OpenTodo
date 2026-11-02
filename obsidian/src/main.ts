@@ -62,23 +62,23 @@ export default class OpenTodoPlugin extends Plugin {
     }, currentLanguage)
     this.vault = new VaultSync({
       store: this.store, keys: this.keys, client: () => this.client(), account: () => this.account(), server: () => this.server(),
-      files: (folder) => new ObsidianFiles(this.app.vault, folder), owner: () => this.owner(),
+      files: (folder) => new ObsidianFiles(this.app.vault, folder, this.app.fileManager), owner: () => this.owner(),
       visible: () => document.visibilityState !== 'hidden', changed: () => this.changed(),
     })
 
     this.addCommand({
-      id: 'send-line', name: tr('Send line to OpenTodo'), icon: 'send',
+      id: 'send-line', name: tr('Send line as a task'), icon: 'send',
       editorCallback: (editor, view) => void this.sendFrom(editor, view.file ?? null),
     })
-    this.addCommand({ id: 'send-pending', name: tr('Send pending to OpenTodo'), icon: 'upload-cloud', callback: () => void this.pushNow(true) })
+    this.addCommand({ id: 'send-pending', name: tr('Send pending tasks'), icon: 'upload-cloud', callback: () => void this.pushNow(true) })
     this.addCommand({
-      id: 'fix-links', name: tr('Fix OpenTodo links in this note'), icon: 'link',
+      id: 'fix-links', name: tr('Fix task links in this note'), icon: 'link',
       editorCallback: (editor, view) => {
         if (view.file) void this.sender.relink(view.file.path, editor.getValue())
       },
     })
-    this.addCommand({ id: 'unlock', name: tr('Unlock OpenTodo'), icon: 'lock-open', callback: () => this.unlock() })
-    this.addCommand({ id: 'sync-vault', name: tr('Sync vault with OpenTodo now'), icon: 'refresh-cw', callback: () => void this.syncVaultNow() })
+    this.addCommand({ id: 'unlock', name: tr('Unlock encrypted account'), icon: 'lock-open', callback: () => this.unlock() })
+    this.addCommand({ id: 'sync-vault', name: tr('Sync folder now'), icon: 'refresh-cw', callback: () => void this.syncVaultNow() })
     this.registerEvent(this.app.workspace.on('editor-menu', (menu, editor, view) => {
       menu.addItem((item) => item.setTitle(tr('Send line to OpenTodo')).setIcon('send').onClick(() => void this.sendFrom(editor, view.file ?? null)))
     }))
@@ -116,7 +116,7 @@ export default class OpenTodoPlugin extends Plugin {
 
   /** This installation as the owner of a synced folder (obsidian-vault-sync D4). */
   owner(): Owner {
-    return { kind: 'obsidian', install: installId(this.store), label: deviceLabel(Platform as never) }
+    return { kind: 'obsidian', install: installId(this.store), label: deviceLabel(Platform) }
   }
 
   server(): string | null {
@@ -269,7 +269,7 @@ export default class OpenTodoPlugin extends Plugin {
     return res
   }
 
-  /** "Sync vault with OpenTodo now": runs a sync and says how it went. */
+  /** "Sync folder now": runs a sync and says how it went. */
   async syncVaultNow(): Promise<VaultStatus> {
     if (this.vault.folder() === null) {
       this.notify(tr('Vault sync is off. Turn it on in the plugin settings.'), [{ label: tr('Open settings'), run: () => this.openSettings() }])
@@ -284,21 +284,14 @@ export default class OpenTodoPlugin extends Plugin {
   }
 
   notify(message: string, actions: Action[] = [], ms = 5000): void {
-    const frag = document.createDocumentFragment()
-    const span = document.createElement('span')
-    span.textContent = message
-    frag.append(span)
-    const notice = new Notice(frag, ms)
+    const notice = new Notice(message, ms)
     for (const a of actions) {
-      const b = document.createElement('button')
-      b.className = 'opentodo-notice-action'
-      b.textContent = a.label
+      const b = notice.messageEl.createEl('button', { cls: 'opentodo-notice-action', text: a.label })
       b.addEventListener('click', (e) => {
         e.stopPropagation()
         notice.hide()
         a.run()
       })
-      notice.noticeEl.append(b)
     }
   }
 }

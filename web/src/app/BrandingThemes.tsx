@@ -13,12 +13,14 @@ import { messageOf } from '../lib/errorText'
 import { useAction } from '../lib/useAction'
 import type { Side } from '../lib/theme/choice'
 import type { ContrastFailure } from '../lib/theme/check'
-import { useCustomThemeList, type LiveTheme } from '../lib/theme/custom'
-import { fileErrorText, readThemeFile, THEME_FILE_SUFFIX } from '../lib/theme/files'
+import { newDocument, useCustomThemeList, type LiveTheme } from '../lib/theme/custom'
+import { builtinDocument } from '../lib/theme/load'
+import { downloadThemeTemplate } from './themes/downloadTemplate'
+import { fileErrorText, readThemeFile, THEME_FILE_SUFFIX, withoutFileKeys } from '../lib/theme/files'
 import type { ThemeDocument } from '../lib/theme/format'
 import { setInstanceThemes, useInstanceThemes, type InstanceThemeEntry, type InstanceThemes } from '../lib/theme/choice'
 import { createResolver } from '../lib/theme/resolver'
-import { Button, ConfirmDialog, Icon, LazyContrastBadge as ContrastBadge, Menu, MenuItem, SettingRow, ThemeList, ThemeSwatches, type ThemeCardData } from '../ui'
+import { Button, ConfirmDialog, Icon, LazyContrastBadge as ContrastBadge, Menu, MenuItem, ThemeList, ThemeSwatches, type ThemeCardData } from '../ui'
 import { DEFAULT_THEME } from '../lib/theme/choice'
 import { themeCards } from './ThemeRow'
 import { docSwatches, lowContrastBadge } from './themes/YourThemes'
@@ -43,6 +45,8 @@ export interface BrandingThemesViewProps {
   onDefault: (side: Side, choice: string) => void
   onAdd: (doc: ThemeDocument) => void
   onRemove: (theme: InstanceThemeEntry) => void
+  /** Download a template, made from OpenTodo Light (themes-layout-template). */
+  onTemplate?: () => void | Promise<void>
 }
 
 /** The card id of a stored default: OpenTodo's theme for "", the palette id, or `instance:<id>`. */
@@ -64,7 +68,7 @@ function Pairs({ failures }: { failures: readonly ContrastFailure[] }) {
   )
 }
 
-export function BrandingThemesView({ value, online, busy, error, catalogue, warnings, own, onDefault, onAdd, onRemove }: BrandingThemesViewProps) {
+export function BrandingThemesView({ value, online, busy, error, catalogue, warnings, own, onDefault, onAdd, onRemove, onTemplate }: BrandingThemesViewProps) {
   const [fileError, setFileError] = useState<string | null>(null)
   const [confirm, setConfirm] = useState<{ side: Side; choice: string; name: string; failures: readonly ContrastFailure[] } | null>(null)
   const disabled = !online || busy || !value
@@ -90,7 +94,7 @@ export function BrandingThemesView({ value, online, busy, error, catalogue, warn
     if (!file) return
     const r = readThemeFile(await file.text(), file.size)
     setFileError(r.ok ? null : fileErrorText(r))
-    if (r.ok) onAdd(r.doc)
+    if (r.ok) onAdd(withoutFileKeys(r.doc))
   }
   return (
     <>
@@ -104,36 +108,45 @@ export function BrandingThemesView({ value, online, busy, error, catalogue, warn
           ))}
         </div>
       </div>
-      <SettingRow id="branding-server-themes" {...rowCopy('branding', 'serverThemes')}
-        control={<>
-          <label className={`ui-btn ui-btn--secondary ui-btn--sm focus-within:ring-2 focus-within:ring-focus ${disabled || full ? 'pointer-events-none text-faint' : 'cursor-pointer'}`} aria-disabled={disabled || full || undefined}>
-            <Icon name="upload" size="sm" />{t('Add from file')}
-            <input type="file" accept={`${THEME_FILE_SUFFIX},.json,application/json`} className="sr-only" disabled={disabled || full} onChange={(e) => void pick(e)} data-branding-theme-file />
-          </label>
-          <Menu label={t('Offer one of my themes')} kind="menu" triggerClassName="ui-btn ui-btn--secondary ui-btn--sm" trigger={<>{t('Offer one of my themes')}<Icon name="chevron-down" size="sm" /></>}
-            triggerProps={{ disabled: disabled || full || !own.length, 'data-branding-offer': true }}>
-            {own.map((x) => <MenuItem key={x.id} icon="palette" label={x.doc.name} onSelect={() => onAdd(x.doc)} data-branding-offer-theme={x.id} />)}
-          </Menu>
-        </>} />
-      {full && <p className="pb-2 text-meta text-muted" role="note">{t('The server has {n} themes; remove one to add another.', { n: MAX_INSTANCE_THEMES })}</p>}
-      {themes.length > 0 && (
-        <ul className="grid grid-cols-1 gap-2 pb-3 sm:grid-cols-2" aria-label={t('Server themes')} data-branding-themes>
-          {themes.map((x) => (
-            <li key={x.id} className="flex flex-col gap-2 rounded-card border border-default bg-surface p-2" data-branding-theme={x.id}>
-              <ThemeSwatches swatches={docSwatches(x.doc)} />
-              <div className="flex items-start gap-2">
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-meta font-medium text-default">{x.doc.name}</span>
-                  <span className="block truncate text-hint text-muted">{x.kind === 'light' ? t('Light') : t('Dark')} · {t('by {name}', { name: x.doc.author })}</span>
-                  {!!warnings[x.id]?.length && <span className="mt-0.5 block truncate text-hint font-medium text-warning">{lowContrastBadge(warnings[x.id].length)}</span>}
-                </span>
-                <Button variant="ghost" size="sm" disabled={disabled} onClick={() => onRemove(x)} aria-label={t('Remove {name}', { name: x.doc.name })} data-branding-theme-remove={x.id}>{t('Remove')}</Button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-      {(fileError || error) && <p className="pb-2 text-meta text-danger" role="alert">{fileError ?? error}</p>}
+      {/* One row: its title, actions and list share the row's padding, so the list never touches a divider (themes-layout-template). */}
+      <div className="flex flex-col gap-3 py-3 outline-none" id="branding-server-themes" tabIndex={-1} data-setting-row="branding-server-themes">
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-6">
+          <div className="min-w-0">
+            <p className="text-body font-medium text-default">{rowCopy('branding', 'serverThemes').label}</p>
+            <p className="mt-0.5 text-meta text-muted">{rowCopy('branding', 'serverThemes').description}</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 sm:justify-end" data-setting-control>
+            <label className={`ui-btn ui-btn--secondary ui-btn--sm focus-within:ring-2 focus-within:ring-focus ${disabled || full ? 'pointer-events-none text-faint' : 'cursor-pointer'}`} aria-disabled={disabled || full || undefined}>
+              <Icon name="upload" size="sm" />{t('Add from file')}
+              <input type="file" accept={`${THEME_FILE_SUFFIX},.json,.jsonc,application/json`} className="sr-only" disabled={disabled || full} onChange={(e) => void pick(e)} data-branding-theme-file data-touch-exempt />
+            </label>
+            <Menu label={t('Offer one of my themes')} kind="menu" triggerClassName="ui-btn ui-btn--secondary ui-btn--sm" trigger={<>{t('Offer one of my themes')}<Icon name="chevron-down" size="sm" /></>}
+              triggerProps={{ disabled: disabled || full || !own.length, 'data-branding-offer': true }}>
+              {own.map((x) => <MenuItem key={x.id} icon="palette" label={x.doc.name} onSelect={() => onAdd(x.doc)} data-branding-offer-theme={x.id} />)}
+            </Menu>
+            {onTemplate && <Button variant="secondary" size="sm" icon="download" onClick={onTemplate} data-branding-template>{t('Download a template')}</Button>}
+          </div>
+        </div>
+        {full && <p className="text-meta text-muted" role="note">{t('The server has {n} themes; remove one to add another.', { n: MAX_INSTANCE_THEMES })}</p>}
+        {themes.length > 0 && (
+          <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2" aria-label={t('Server themes')} data-branding-themes>
+            {themes.map((x) => (
+              <li key={x.id} className="flex flex-col gap-2 rounded-card border border-default bg-surface p-2" data-branding-theme={x.id}>
+                <ThemeSwatches swatches={docSwatches(x.doc)} />
+                <div className="flex items-start gap-2">
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-meta font-medium text-default">{x.doc.name}</span>
+                    <span className="block truncate text-hint text-muted">{x.kind === 'light' ? t('Light') : t('Dark')} · {t('by {name}', { name: x.doc.author })}</span>
+                    {!!warnings[x.id]?.length && <span className="mt-0.5 block truncate text-hint font-medium text-warning">{lowContrastBadge(warnings[x.id].length)}</span>}
+                  </span>
+                  <Button variant="ghost" size="sm" disabled={disabled} onClick={() => onRemove(x)} aria-label={t('Remove {name}', { name: x.doc.name })} data-branding-theme-remove={x.id}>{t('Remove')}</Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+        {(fileError || error) && <p className="text-meta text-danger" role="alert">{fileError ?? error}</p>}
+      </div>
       {confirm && (
         <ConfirmDialog tone="default" title={t('Make {name} the default?', { name: confirm.name })}
           consequence={<>
@@ -191,6 +204,10 @@ export default function BrandingThemes({ online }: { online: boolean }) {
         write(() => api.putThemeDefault(d))
       }}
       onAdd={(doc) => write(() => api.putInstanceTheme('new', doc))}
-      onRemove={(x) => write(() => api.deleteInstanceTheme(x.id))} />
+      onRemove={(x) => write(() => api.deleteInstanceTheme(x.id))}
+      onTemplate={async () => {
+        const base = await builtinDocument(DEFAULT_THEME.light)
+        if (base) await downloadThemeTemplate(newDocument(base, '', t('Server theme')), t('OpenTodo Light'))
+      }} />
   )
 }

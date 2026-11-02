@@ -1,0 +1,2835 @@
+{
+ "comment": "Time sectors (OpenSpec change time-sectors): validity, the viewer's current periods, relative names, carry-over and planning list groups. Read by web/src/lib/sectors.test.ts and internal/sector/sector_test.go; week_start is 0 (Sunday) to 6 (Saturday).",
+ "valid": [
+  {
+   "value": "2026-W53",
+   "valid": true
+  },
+  {
+   "value": "2026-W54",
+   "valid": false
+  },
+  {
+   "value": "2027-W53",
+   "valid": false
+  },
+  {
+   "value": "2020-W53",
+   "valid": true
+  },
+  {
+   "value": "2021-W53",
+   "valid": false
+  },
+  {
+   "value": "2026-W00",
+   "valid": false
+  },
+  {
+   "value": "2026-W01",
+   "valid": true
+  },
+  {
+   "value": "2026-01",
+   "valid": true
+  },
+  {
+   "value": "2026-12",
+   "valid": true
+  },
+  {
+   "value": "2026-13",
+   "valid": false
+  },
+  {
+   "value": "2026-00",
+   "valid": false
+  },
+  {
+   "value": "2026-Q1",
+   "valid": true
+  },
+  {
+   "value": "2026-Q4",
+   "valid": true
+  },
+  {
+   "value": "2026-Q5",
+   "valid": false
+  },
+  {
+   "value": "2026-Q0",
+   "valid": false
+  },
+  {
+   "value": "2000-01",
+   "valid": true
+  },
+  {
+   "value": "2999-Q4",
+   "valid": true
+  },
+  {
+   "value": "1999-Q1",
+   "valid": false
+  },
+  {
+   "value": "3000-W01",
+   "valid": false
+  },
+  {
+   "value": "this week",
+   "valid": false
+  },
+  {
+   "value": "2026-11-01",
+   "valid": false
+  },
+  {
+   "value": "2026-W5",
+   "valid": false
+  },
+  {
+   "value": "2026-1",
+   "valid": false
+  },
+  {
+   "value": "",
+   "valid": false
+  },
+  {
+   "value": " 2026-11",
+   "valid": false
+  },
+  {
+   "value": "2026-w44",
+   "valid": false
+  },
+  {
+   "value": "2026-q4",
+   "valid": false
+  }
+ ],
+ "cases": [
+  {
+   "today": "2026-10-28",
+   "week_start": 1,
+   "current": {
+    "this-week": "2026-W44",
+    "next-week": "2026-W45",
+    "this-month": "2026-10",
+    "next-month": "2026-11",
+    "this-quarter": "2026-Q4",
+    "next-quarter": "2027-Q1"
+   },
+   "sectors": [
+    {
+     "sector": "2026-W39",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W43",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W44",
+     "name": "this-week",
+     "carried": false,
+     "group": "this-week"
+    },
+    {
+     "sector": "2026-W45",
+     "name": "next-week",
+     "carried": false,
+     "group": "next-week"
+    },
+    {
+     "sector": "2026-W46",
+     "name": null,
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2026-W47",
+     "name": null,
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2026-W49",
+     "name": null,
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2026-W53",
+     "name": null,
+     "carried": false,
+     "group": "this-quarter"
+    },
+    {
+     "sector": "2027-W01",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-W02",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2026-09",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-10",
+     "name": "this-month",
+     "carried": false,
+     "group": "this-month"
+    },
+    {
+     "sector": "2026-11",
+     "name": "next-month",
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2026-12",
+     "name": null,
+     "carried": false,
+     "group": "this-quarter"
+    },
+    {
+     "sector": "2027-01",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-02",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-04",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-Q3",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-Q4",
+     "name": "this-quarter",
+     "carried": false,
+     "group": "this-quarter"
+    },
+    {
+     "sector": "2027-Q1",
+     "name": "next-quarter",
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-Q2",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2028-Q1",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2020-W53",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2021-W01",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "",
+     "name": null,
+     "carried": false,
+     "group": null
+    },
+    {
+     "sector": "soon",
+     "name": null,
+     "carried": false,
+     "group": null
+    }
+   ]
+  },
+  {
+   "today": "2026-10-28",
+   "week_start": 0,
+   "current": {
+    "this-week": "2026-W44",
+    "next-week": "2026-W45",
+    "this-month": "2026-10",
+    "next-month": "2026-11",
+    "this-quarter": "2026-Q4",
+    "next-quarter": "2027-Q1"
+   },
+   "sectors": [
+    {
+     "sector": "2026-W39",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W43",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W44",
+     "name": "this-week",
+     "carried": false,
+     "group": "this-week"
+    },
+    {
+     "sector": "2026-W45",
+     "name": "next-week",
+     "carried": false,
+     "group": "next-week"
+    },
+    {
+     "sector": "2026-W46",
+     "name": null,
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2026-W47",
+     "name": null,
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2026-W49",
+     "name": null,
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2026-W53",
+     "name": null,
+     "carried": false,
+     "group": "this-quarter"
+    },
+    {
+     "sector": "2027-W01",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-W02",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2026-09",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-10",
+     "name": "this-month",
+     "carried": false,
+     "group": "this-month"
+    },
+    {
+     "sector": "2026-11",
+     "name": "next-month",
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2026-12",
+     "name": null,
+     "carried": false,
+     "group": "this-quarter"
+    },
+    {
+     "sector": "2027-01",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-02",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-04",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-Q3",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-Q4",
+     "name": "this-quarter",
+     "carried": false,
+     "group": "this-quarter"
+    },
+    {
+     "sector": "2027-Q1",
+     "name": "next-quarter",
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-Q2",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2028-Q1",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2020-W53",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2021-W01",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "",
+     "name": null,
+     "carried": false,
+     "group": null
+    },
+    {
+     "sector": "soon",
+     "name": null,
+     "carried": false,
+     "group": null
+    }
+   ]
+  },
+  {
+   "today": "2026-11-01",
+   "week_start": 0,
+   "current": {
+    "this-week": "2026-W45",
+    "next-week": "2026-W46",
+    "this-month": "2026-11",
+    "next-month": "2026-12",
+    "this-quarter": "2026-Q4",
+    "next-quarter": "2027-Q1"
+   },
+   "sectors": [
+    {
+     "sector": "2026-W39",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W43",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W44",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W45",
+     "name": "this-week",
+     "carried": false,
+     "group": "this-week"
+    },
+    {
+     "sector": "2026-W46",
+     "name": "next-week",
+     "carried": false,
+     "group": "next-week"
+    },
+    {
+     "sector": "2026-W47",
+     "name": null,
+     "carried": false,
+     "group": "this-month"
+    },
+    {
+     "sector": "2026-W49",
+     "name": null,
+     "carried": false,
+     "group": "this-month"
+    },
+    {
+     "sector": "2026-W53",
+     "name": null,
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2027-W01",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-W02",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2026-09",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-10",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-11",
+     "name": "this-month",
+     "carried": false,
+     "group": "this-month"
+    },
+    {
+     "sector": "2026-12",
+     "name": "next-month",
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2027-01",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-02",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-04",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-Q3",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-Q4",
+     "name": "this-quarter",
+     "carried": false,
+     "group": "this-quarter"
+    },
+    {
+     "sector": "2027-Q1",
+     "name": "next-quarter",
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-Q2",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2028-Q1",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2020-W53",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2021-W01",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "",
+     "name": null,
+     "carried": false,
+     "group": null
+    },
+    {
+     "sector": "soon",
+     "name": null,
+     "carried": false,
+     "group": null
+    }
+   ]
+  },
+  {
+   "today": "2026-11-01",
+   "week_start": 1,
+   "current": {
+    "this-week": "2026-W44",
+    "next-week": "2026-W45",
+    "this-month": "2026-11",
+    "next-month": "2026-12",
+    "this-quarter": "2026-Q4",
+    "next-quarter": "2027-Q1"
+   },
+   "sectors": [
+    {
+     "sector": "2026-W39",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W43",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W44",
+     "name": "this-week",
+     "carried": false,
+     "group": "this-week"
+    },
+    {
+     "sector": "2026-W45",
+     "name": "next-week",
+     "carried": false,
+     "group": "next-week"
+    },
+    {
+     "sector": "2026-W46",
+     "name": null,
+     "carried": false,
+     "group": "this-month"
+    },
+    {
+     "sector": "2026-W47",
+     "name": null,
+     "carried": false,
+     "group": "this-month"
+    },
+    {
+     "sector": "2026-W49",
+     "name": null,
+     "carried": false,
+     "group": "this-month"
+    },
+    {
+     "sector": "2026-W53",
+     "name": null,
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2027-W01",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-W02",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2026-09",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-10",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-11",
+     "name": "this-month",
+     "carried": false,
+     "group": "this-month"
+    },
+    {
+     "sector": "2026-12",
+     "name": "next-month",
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2027-01",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-02",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-04",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-Q3",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-Q4",
+     "name": "this-quarter",
+     "carried": false,
+     "group": "this-quarter"
+    },
+    {
+     "sector": "2027-Q1",
+     "name": "next-quarter",
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-Q2",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2028-Q1",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2020-W53",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2021-W01",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "",
+     "name": null,
+     "carried": false,
+     "group": null
+    },
+    {
+     "sector": "soon",
+     "name": null,
+     "carried": false,
+     "group": null
+    }
+   ]
+  },
+  {
+   "today": "2026-11-02",
+   "week_start": 1,
+   "current": {
+    "this-week": "2026-W45",
+    "next-week": "2026-W46",
+    "this-month": "2026-11",
+    "next-month": "2026-12",
+    "this-quarter": "2026-Q4",
+    "next-quarter": "2027-Q1"
+   },
+   "sectors": [
+    {
+     "sector": "2026-W39",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W43",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W44",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W45",
+     "name": "this-week",
+     "carried": false,
+     "group": "this-week"
+    },
+    {
+     "sector": "2026-W46",
+     "name": "next-week",
+     "carried": false,
+     "group": "next-week"
+    },
+    {
+     "sector": "2026-W47",
+     "name": null,
+     "carried": false,
+     "group": "this-month"
+    },
+    {
+     "sector": "2026-W49",
+     "name": null,
+     "carried": false,
+     "group": "this-month"
+    },
+    {
+     "sector": "2026-W53",
+     "name": null,
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2027-W01",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-W02",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2026-09",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-10",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-11",
+     "name": "this-month",
+     "carried": false,
+     "group": "this-month"
+    },
+    {
+     "sector": "2026-12",
+     "name": "next-month",
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2027-01",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-02",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-04",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-Q3",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-Q4",
+     "name": "this-quarter",
+     "carried": false,
+     "group": "this-quarter"
+    },
+    {
+     "sector": "2027-Q1",
+     "name": "next-quarter",
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-Q2",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2028-Q1",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2020-W53",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2021-W01",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "",
+     "name": null,
+     "carried": false,
+     "group": null
+    },
+    {
+     "sector": "soon",
+     "name": null,
+     "carried": false,
+     "group": null
+    }
+   ]
+  },
+  {
+   "today": "2026-10-31",
+   "week_start": 6,
+   "current": {
+    "this-week": "2026-W45",
+    "next-week": "2026-W46",
+    "this-month": "2026-10",
+    "next-month": "2026-11",
+    "this-quarter": "2026-Q4",
+    "next-quarter": "2027-Q1"
+   },
+   "sectors": [
+    {
+     "sector": "2026-W39",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W43",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W44",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W45",
+     "name": "this-week",
+     "carried": false,
+     "group": "this-week"
+    },
+    {
+     "sector": "2026-W46",
+     "name": "next-week",
+     "carried": false,
+     "group": "next-week"
+    },
+    {
+     "sector": "2026-W47",
+     "name": null,
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2026-W49",
+     "name": null,
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2026-W53",
+     "name": null,
+     "carried": false,
+     "group": "this-quarter"
+    },
+    {
+     "sector": "2027-W01",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-W02",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2026-09",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-10",
+     "name": "this-month",
+     "carried": false,
+     "group": "this-month"
+    },
+    {
+     "sector": "2026-11",
+     "name": "next-month",
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2026-12",
+     "name": null,
+     "carried": false,
+     "group": "this-quarter"
+    },
+    {
+     "sector": "2027-01",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-02",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-04",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-Q3",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-Q4",
+     "name": "this-quarter",
+     "carried": false,
+     "group": "this-quarter"
+    },
+    {
+     "sector": "2027-Q1",
+     "name": "next-quarter",
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-Q2",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2028-Q1",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2020-W53",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2021-W01",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "",
+     "name": null,
+     "carried": false,
+     "group": null
+    },
+    {
+     "sector": "soon",
+     "name": null,
+     "carried": false,
+     "group": null
+    }
+   ]
+  },
+  {
+   "today": "2026-10-30",
+   "week_start": 6,
+   "current": {
+    "this-week": "2026-W44",
+    "next-week": "2026-W45",
+    "this-month": "2026-10",
+    "next-month": "2026-11",
+    "this-quarter": "2026-Q4",
+    "next-quarter": "2027-Q1"
+   },
+   "sectors": [
+    {
+     "sector": "2026-W39",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W43",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W44",
+     "name": "this-week",
+     "carried": false,
+     "group": "this-week"
+    },
+    {
+     "sector": "2026-W45",
+     "name": "next-week",
+     "carried": false,
+     "group": "next-week"
+    },
+    {
+     "sector": "2026-W46",
+     "name": null,
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2026-W47",
+     "name": null,
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2026-W49",
+     "name": null,
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2026-W53",
+     "name": null,
+     "carried": false,
+     "group": "this-quarter"
+    },
+    {
+     "sector": "2027-W01",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-W02",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2026-09",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-10",
+     "name": "this-month",
+     "carried": false,
+     "group": "this-month"
+    },
+    {
+     "sector": "2026-11",
+     "name": "next-month",
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2026-12",
+     "name": null,
+     "carried": false,
+     "group": "this-quarter"
+    },
+    {
+     "sector": "2027-01",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-02",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-04",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-Q3",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-Q4",
+     "name": "this-quarter",
+     "carried": false,
+     "group": "this-quarter"
+    },
+    {
+     "sector": "2027-Q1",
+     "name": "next-quarter",
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-Q2",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2028-Q1",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2020-W53",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2021-W01",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "",
+     "name": null,
+     "carried": false,
+     "group": null
+    },
+    {
+     "sector": "soon",
+     "name": null,
+     "carried": false,
+     "group": null
+    }
+   ]
+  },
+  {
+   "today": "2026-12-31",
+   "week_start": 1,
+   "current": {
+    "this-week": "2026-W53",
+    "next-week": "2027-W01",
+    "this-month": "2026-12",
+    "next-month": "2027-01",
+    "this-quarter": "2026-Q4",
+    "next-quarter": "2027-Q1"
+   },
+   "sectors": [
+    {
+     "sector": "2026-W39",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W43",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W44",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W45",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W46",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W47",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W49",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W53",
+     "name": "this-week",
+     "carried": false,
+     "group": "this-week"
+    },
+    {
+     "sector": "2027-W01",
+     "name": "next-week",
+     "carried": false,
+     "group": "next-week"
+    },
+    {
+     "sector": "2027-W02",
+     "name": null,
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2026-09",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-10",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-11",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-12",
+     "name": "this-month",
+     "carried": false,
+     "group": "this-month"
+    },
+    {
+     "sector": "2027-01",
+     "name": "next-month",
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2027-02",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-04",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-Q3",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-Q4",
+     "name": "this-quarter",
+     "carried": false,
+     "group": "this-quarter"
+    },
+    {
+     "sector": "2027-Q1",
+     "name": "next-quarter",
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-Q2",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2028-Q1",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2020-W53",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2021-W01",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "",
+     "name": null,
+     "carried": false,
+     "group": null
+    },
+    {
+     "sector": "soon",
+     "name": null,
+     "carried": false,
+     "group": null
+    }
+   ]
+  },
+  {
+   "today": "2027-01-01",
+   "week_start": 1,
+   "current": {
+    "this-week": "2026-W53",
+    "next-week": "2027-W01",
+    "this-month": "2027-01",
+    "next-month": "2027-02",
+    "this-quarter": "2027-Q1",
+    "next-quarter": "2027-Q2"
+   },
+   "sectors": [
+    {
+     "sector": "2026-W39",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W43",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W44",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W45",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W46",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W47",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W49",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W53",
+     "name": "this-week",
+     "carried": false,
+     "group": "this-week"
+    },
+    {
+     "sector": "2027-W01",
+     "name": "next-week",
+     "carried": false,
+     "group": "next-week"
+    },
+    {
+     "sector": "2027-W02",
+     "name": null,
+     "carried": false,
+     "group": "this-month"
+    },
+    {
+     "sector": "2026-09",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-10",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-11",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-12",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2027-01",
+     "name": "this-month",
+     "carried": false,
+     "group": "this-month"
+    },
+    {
+     "sector": "2027-02",
+     "name": "next-month",
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2027-04",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2026-Q3",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-Q4",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2027-Q1",
+     "name": "this-quarter",
+     "carried": false,
+     "group": "this-quarter"
+    },
+    {
+     "sector": "2027-Q2",
+     "name": "next-quarter",
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2028-Q1",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2020-W53",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2021-W01",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "",
+     "name": null,
+     "carried": false,
+     "group": null
+    },
+    {
+     "sector": "soon",
+     "name": null,
+     "carried": false,
+     "group": null
+    }
+   ]
+  },
+  {
+   "today": "2027-01-03",
+   "week_start": 0,
+   "current": {
+    "this-week": "2027-W01",
+    "next-week": "2027-W02",
+    "this-month": "2027-01",
+    "next-month": "2027-02",
+    "this-quarter": "2027-Q1",
+    "next-quarter": "2027-Q2"
+   },
+   "sectors": [
+    {
+     "sector": "2026-W39",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W43",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W44",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W45",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W46",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W47",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W49",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W53",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2027-W01",
+     "name": "this-week",
+     "carried": false,
+     "group": "this-week"
+    },
+    {
+     "sector": "2027-W02",
+     "name": "next-week",
+     "carried": false,
+     "group": "next-week"
+    },
+    {
+     "sector": "2026-09",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-10",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-11",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-12",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2027-01",
+     "name": "this-month",
+     "carried": false,
+     "group": "this-month"
+    },
+    {
+     "sector": "2027-02",
+     "name": "next-month",
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2027-04",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2026-Q3",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-Q4",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2027-Q1",
+     "name": "this-quarter",
+     "carried": false,
+     "group": "this-quarter"
+    },
+    {
+     "sector": "2027-Q2",
+     "name": "next-quarter",
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2028-Q1",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2020-W53",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2021-W01",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "",
+     "name": null,
+     "carried": false,
+     "group": null
+    },
+    {
+     "sector": "soon",
+     "name": null,
+     "carried": false,
+     "group": null
+    }
+   ]
+  },
+  {
+   "today": "2027-01-04",
+   "week_start": 1,
+   "current": {
+    "this-week": "2027-W01",
+    "next-week": "2027-W02",
+    "this-month": "2027-01",
+    "next-month": "2027-02",
+    "this-quarter": "2027-Q1",
+    "next-quarter": "2027-Q2"
+   },
+   "sectors": [
+    {
+     "sector": "2026-W39",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W43",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W44",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W45",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W46",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W47",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W49",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W53",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2027-W01",
+     "name": "this-week",
+     "carried": false,
+     "group": "this-week"
+    },
+    {
+     "sector": "2027-W02",
+     "name": "next-week",
+     "carried": false,
+     "group": "next-week"
+    },
+    {
+     "sector": "2026-09",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-10",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-11",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-12",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2027-01",
+     "name": "this-month",
+     "carried": false,
+     "group": "this-month"
+    },
+    {
+     "sector": "2027-02",
+     "name": "next-month",
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2027-04",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2026-Q3",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-Q4",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2027-Q1",
+     "name": "this-quarter",
+     "carried": false,
+     "group": "this-quarter"
+    },
+    {
+     "sector": "2027-Q2",
+     "name": "next-quarter",
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2028-Q1",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2020-W53",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2021-W01",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "",
+     "name": null,
+     "carried": false,
+     "group": null
+    },
+    {
+     "sector": "soon",
+     "name": null,
+     "carried": false,
+     "group": null
+    }
+   ]
+  },
+  {
+   "today": "2020-12-31",
+   "week_start": 1,
+   "current": {
+    "this-week": "2020-W53",
+    "next-week": "2021-W01",
+    "this-month": "2020-12",
+    "next-month": "2021-01",
+    "this-quarter": "2020-Q4",
+    "next-quarter": "2021-Q1"
+   },
+   "sectors": [
+    {
+     "sector": "2026-W39",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-W43",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-W44",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-W45",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-W46",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-W47",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-W49",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-W53",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2027-W01",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2027-W02",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-09",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-10",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-11",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-12",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2027-01",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2027-02",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2027-04",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-Q3",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-Q4",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2027-Q1",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2027-Q2",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2028-Q1",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2020-W53",
+     "name": "this-week",
+     "carried": false,
+     "group": "this-week"
+    },
+    {
+     "sector": "2021-W01",
+     "name": "next-week",
+     "carried": false,
+     "group": "next-week"
+    },
+    {
+     "sector": "",
+     "name": null,
+     "carried": false,
+     "group": null
+    },
+    {
+     "sector": "soon",
+     "name": null,
+     "carried": false,
+     "group": null
+    }
+   ]
+  },
+  {
+   "today": "2021-01-03",
+   "week_start": 0,
+   "current": {
+    "this-week": "2021-W01",
+    "next-week": "2021-W02",
+    "this-month": "2021-01",
+    "next-month": "2021-02",
+    "this-quarter": "2021-Q1",
+    "next-quarter": "2021-Q2"
+   },
+   "sectors": [
+    {
+     "sector": "2026-W39",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-W43",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-W44",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-W45",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-W46",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-W47",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-W49",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-W53",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2027-W01",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2027-W02",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-09",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-10",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-11",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-12",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2027-01",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2027-02",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2027-04",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-Q3",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-Q4",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2027-Q1",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2027-Q2",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2028-Q1",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2020-W53",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2021-W01",
+     "name": "this-week",
+     "carried": false,
+     "group": "this-week"
+    },
+    {
+     "sector": "",
+     "name": null,
+     "carried": false,
+     "group": null
+    },
+    {
+     "sector": "soon",
+     "name": null,
+     "carried": false,
+     "group": null
+    }
+   ]
+  },
+  {
+   "today": "2026-09-30",
+   "week_start": 1,
+   "current": {
+    "this-week": "2026-W40",
+    "next-week": "2026-W41",
+    "this-month": "2026-09",
+    "next-month": "2026-10",
+    "this-quarter": "2026-Q3",
+    "next-quarter": "2026-Q4"
+   },
+   "sectors": [
+    {
+     "sector": "2026-W39",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W43",
+     "name": null,
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2026-W44",
+     "name": null,
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2026-W45",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2026-W46",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2026-W47",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2026-W49",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2026-W53",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-W01",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2027-W02",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-09",
+     "name": "this-month",
+     "carried": false,
+     "group": "this-month"
+    },
+    {
+     "sector": "2026-10",
+     "name": "next-month",
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2026-11",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2026-12",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-01",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2027-02",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2027-04",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-Q3",
+     "name": "this-quarter",
+     "carried": false,
+     "group": "this-quarter"
+    },
+    {
+     "sector": "2026-Q4",
+     "name": "next-quarter",
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-Q1",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2027-Q2",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2028-Q1",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2020-W53",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2021-W01",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "",
+     "name": null,
+     "carried": false,
+     "group": null
+    },
+    {
+     "sector": "soon",
+     "name": null,
+     "carried": false,
+     "group": null
+    }
+   ]
+  },
+  {
+   "today": "2026-10-01",
+   "week_start": 1,
+   "current": {
+    "this-week": "2026-W40",
+    "next-week": "2026-W41",
+    "this-month": "2026-10",
+    "next-month": "2026-11",
+    "this-quarter": "2026-Q4",
+    "next-quarter": "2027-Q1"
+   },
+   "sectors": [
+    {
+     "sector": "2026-W39",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W43",
+     "name": null,
+     "carried": false,
+     "group": "this-month"
+    },
+    {
+     "sector": "2026-W44",
+     "name": null,
+     "carried": false,
+     "group": "this-month"
+    },
+    {
+     "sector": "2026-W45",
+     "name": null,
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2026-W46",
+     "name": null,
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2026-W47",
+     "name": null,
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2026-W49",
+     "name": null,
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2026-W53",
+     "name": null,
+     "carried": false,
+     "group": "this-quarter"
+    },
+    {
+     "sector": "2027-W01",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-W02",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2026-09",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-10",
+     "name": "this-month",
+     "carried": false,
+     "group": "this-month"
+    },
+    {
+     "sector": "2026-11",
+     "name": "next-month",
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2026-12",
+     "name": null,
+     "carried": false,
+     "group": "this-quarter"
+    },
+    {
+     "sector": "2027-01",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-02",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-04",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-Q3",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-Q4",
+     "name": "this-quarter",
+     "carried": false,
+     "group": "this-quarter"
+    },
+    {
+     "sector": "2027-Q1",
+     "name": "next-quarter",
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-Q2",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2028-Q1",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2020-W53",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2021-W01",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "",
+     "name": null,
+     "carried": false,
+     "group": null
+    },
+    {
+     "sector": "soon",
+     "name": null,
+     "carried": false,
+     "group": null
+    }
+   ]
+  },
+  {
+   "today": "2026-12-15",
+   "week_start": 1,
+   "current": {
+    "this-week": "2026-W51",
+    "next-week": "2026-W52",
+    "this-month": "2026-12",
+    "next-month": "2027-01",
+    "this-quarter": "2026-Q4",
+    "next-quarter": "2027-Q1"
+   },
+   "sectors": [
+    {
+     "sector": "2026-W39",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W43",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W44",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W45",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W46",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W47",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W49",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-W53",
+     "name": null,
+     "carried": false,
+     "group": "this-month"
+    },
+    {
+     "sector": "2027-W01",
+     "name": null,
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2027-W02",
+     "name": null,
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2026-09",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-10",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-11",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-12",
+     "name": "this-month",
+     "carried": false,
+     "group": "this-month"
+    },
+    {
+     "sector": "2027-01",
+     "name": "next-month",
+     "carried": false,
+     "group": "next-month"
+    },
+    {
+     "sector": "2027-02",
+     "name": null,
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-04",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2026-Q3",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2026-Q4",
+     "name": "this-quarter",
+     "carried": false,
+     "group": "this-quarter"
+    },
+    {
+     "sector": "2027-Q1",
+     "name": "next-quarter",
+     "carried": false,
+     "group": "next-quarter"
+    },
+    {
+     "sector": "2027-Q2",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2028-Q1",
+     "name": null,
+     "carried": false,
+     "group": "later"
+    },
+    {
+     "sector": "2020-W53",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "2021-W01",
+     "name": null,
+     "carried": true,
+     "group": "carried"
+    },
+    {
+     "sector": "",
+     "name": null,
+     "carried": false,
+     "group": null
+    },
+    {
+     "sector": "soon",
+     "name": null,
+     "carried": false,
+     "group": null
+    }
+   ]
+  }
+ ]
+}

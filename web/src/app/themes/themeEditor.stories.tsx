@@ -60,7 +60,17 @@ export const YourThemesList: StoryObj = {
   render: () => (
     <div className="max-w-3xl bg-surface p-4">
       <YourThemes themes={[live('a', DRAFT), live('b', { ...(nord as unknown as ThemeDocument), name: 'Nord (custom)' }), live('c', { ...DRAFT, name: 'Evening paper', kind: 'dark', seeds: { ...DRAFT.seeds, canvas: '#1f1d1a', surface: '#292621', text: '#ece6da' } })]}
-        lowContrast={{ a: 2 }} takenNames={[]} onNew={() => {}}
+        lowContrast={{ a: 2 }} takenNames={[]} onNew={() => {}} onTemplate={() => {}}
+        actions={{ onUse: () => {}, onDuplicate: () => {}, onExport: () => {}, onDelete: () => {} }} />
+    </div>
+  ),
+}
+
+/** Your themes with none yet: the empty state and the actions, Download a template among them. */
+export const YourThemesEmpty: StoryObj = {
+  render: () => (
+    <div className="max-w-3xl bg-surface p-4">
+      <YourThemes themes={[]} lowContrast={{}} takenNames={[]} onNew={() => {}} onTemplate={() => {}}
         actions={{ onUse: () => {}, onDuplicate: () => {}, onExport: () => {}, onDelete: () => {} }} />
     </div>
   ),

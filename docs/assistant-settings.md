@@ -15,6 +15,10 @@ order: 79
 
 Your consent also covers the [AI steps of routines](routines.md#ai-steps), which send what they read to the same provider on a schedule, while you may not be looking. If you accepted before routines had AI steps, **Accept for routines** asks again; your chats keep working meanwhile. The usage counts the month's routine calls separately too.
 
+## The complete list notice
+
+The [list of what may be sent](assistant-privacy.md#before-your-first-message) once named less than the assistant sent, such as notes and tracked time. Nothing new is sent, so an earlier consent still counts. The assistant panel, and **Routines** when your consent covers AI steps, tell you once: **Review the list** shows it, **Turn off the assistant** withdraws your consent, **Got it** closes the notice on every device (it needs a connection). Nothing pauses meanwhile; the same goes for the [on-device assistant](assistant-encrypted.md).
+
 ## Use your own provider and key
 
 When the server owner turns on **Let members bring their own key**, **Settings → Integrations → Assistant** shows **Which assistant you use**:

@@ -39,6 +39,8 @@ export async function applyBatch(changes: ProposedChange[], opts: BatchOptions):
     for (const f of Object.keys(c.patch)) patch[f] = norm((local ? readField(local, f) : undefined) ?? c.base?.[f])
     // A task stored before task.energy has none: its undo writes '' (none), never null, which the field refuses.
     if (c.entity === 'task' && 'energy' in patch && patch.energy === null) patch.energy = ''
+    // Likewise task.sector (time-sectors): a task stored before it has none, which is ''.
+    if (c.entity === 'task' && 'sector' in patch && patch.sector === null) patch.sector = ''
     inverse.push({ entity: c.entity, entityId: c.entityId, patch })
   }
   const batch: Change[] = changes.map((c) => ({ entity: c.entity, entityId: c.entityId, patch: { ...c.patch } }))
