@@ -2698,6 +2698,7 @@
     "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/DigestCard.tsx",
     "web/src/app/assistant/AssistantDevice.tsx",
+    "web/src/app/import/SwitchFromPicker.tsx",
     "web/src/app/task-detail/ZoneControl.tsx",
     "web/src/page/TaskPageScreen.tsx"
   ],
@@ -3028,6 +3029,9 @@
   "Choose one of the offered Anthropic models.": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
+  "Choose the app you use now": [
+    "web/src/app/import/SwitchFromPicker.tsx"
+  ],
   "Choose the calendar to write tasks into.": [
     "web/src/app/CalendarSyncPanel.tsx"
   ],
@@ -3091,6 +3095,9 @@
   ],
   "Clear filters": [
     "web/src/app/notes/NoteFilters.tsx"
+  ],
+  "Clear the app": [
+    "web/src/app/import/SwitchFromPicker.tsx"
   ],
   "Clear the dashboard selection": [
     "web/src/lib/shortcuts.ts"
@@ -5858,6 +5865,9 @@
     "web/src/app/themes/YourThemes.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
+  "Export from {app}": [
+    "web/src/app/import/SwitchFromPicker.tsx"
+  ],
   "Export time entries": [
     "web/src/app/review/StatsView.tsx"
   ],
@@ -6509,6 +6519,9 @@
   "Full date": [
     "web/src/app/DateTimeSettings.tsx"
   ],
+  "Full guide": [
+    "web/src/app/import/SwitchFromPicker.tsx"
+  ],
   "Full quick add syntax": [
     "web/src/app/ShortcutHelp.tsx"
   ],
@@ -7003,6 +7016,9 @@
   ],
   "Hide sidebar": [
     "web/src/ui/patterns/PageHeader.tsx"
+  ],
+  "Hide steps": [
+    "web/src/app/import/SwitchFromPicker.tsx"
   ],
   "Hide successful runs": [
     "web/src/app/routines/RoutineRunsSection.tsx",
@@ -8564,6 +8580,9 @@
   ],
   "Loading the starters": [
     "web/src/app/routines/Starters.tsx"
+  ],
+  "Loading the steps…": [
+    "web/src/app/import/SwitchFromPicker.tsx"
   ],
   "Loading the theme…": [
     "web/src/app/themes/ThemeEditor.tsx"
@@ -12733,6 +12752,9 @@
   "Read": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
+  "Read it as {format}": [
+    "web/src/app/ImportScreen.tsx"
+  ],
   "Read only": [
     "web/src/app/AssistantsPanel.tsx",
     "web/src/app/TokensSection.tsx"
@@ -14672,6 +14694,9 @@
   "Show sidebar": [
     "web/src/ui/patterns/PageHeader.tsx"
   ],
+  "Show steps": [
+    "web/src/app/import/SwitchFromPicker.tsx"
+  ],
   "Show successful runs": [
     "web/src/app/routines/RoutinesInboxCard.tsx"
   ],
@@ -15640,6 +15665,9 @@
   ],
   "Switched to {name}": [
     "web/src/app/workspaceNav.ts"
+  ],
+  "Switching from…": [
+    "web/src/app/import/SwitchFromPicker.tsx"
   ],
   "Sync": [
     "web/src/lib/settingsCopy.ts"
@@ -17295,6 +17323,9 @@
   ],
   "This file is still uploading.": [
     "web/src/app/task-detail/AttachmentsRow.tsx"
+  ],
+  "This file looks like {format}, not the format you chose.": [
+    "web/src/app/ImportScreen.tsx"
   ],
   "This holds {count} tasks; a copy can make at most {max}. Load larger files with Settings → Data → Import.": [
     "web/src/lib/templates.ts"
@@ -19759,6 +19790,9 @@
   ],
   "Your account is end-to-end encrypted, so the server cannot read your tasks. This device can: it sends what a question needs directly to the provider you choose, with your own key. The OpenTodo server sees none of it.": [
     "web/src/app/assistant/AssistantDevice.tsx"
+  ],
+  "Your account is end-to-end encrypted. Imported text is written in plaintext until one of your unlocked devices re-encrypts it, and duplicates cannot be found by encrypted project or label names.": [
+    "web/src/app/import/SwitchFromPicker.tsx"
   ],
   "Your account is end-to-end encrypted: while the request runs, the phrase and its text are readable by this server and the speech service.": [
     "web/src/app/VoiceSettings.tsx"

@@ -24,7 +24,7 @@ function render(p: Partial<ImportViewProps> = {}) {
   const props: ImportViewProps = {
     offline: false, fileName: null, format: '', options: { ...DEFAULT_OPTIONS, targetProject: '' },
     projects: [work, client], workspaces: [], workspace: '', onWorkspace: noop, zones: ['Europe/Rome'], preview: null, busy: false, error: null,
-    job: null, jobs: [], onPickFile: noop, onFormat: noop, onOption: noop, onPreview: noop, onColumn: noop, onStart: noop, onUndo: noop,
+    job: null, jobs: [], onPickFile: noop, onFormat: noop, onOption: noop, onPreview: noop, switchFrom: null, onSwitchFrom: noop, encrypted: false, onColumn: noop, onStart: noop, onUndo: noop,
     ...p,
   }
   return renderToStaticMarkup(<ImportView {...props} />)

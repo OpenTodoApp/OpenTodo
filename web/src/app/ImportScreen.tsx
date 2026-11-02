@@ -19,6 +19,9 @@ import { navigate } from './router'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t, msg, translatedMap } from '../lib/i18n'
 import { readJSON, writeJSON } from '../lib/deviceStorage'
+import { useEncryption } from '../lib/e2ee'
+import { SWITCH_APPS, type SwitchApp } from '../lib/switchApps'
+import { SwitchFromPicker } from './import/SwitchFromPicker'
 
 /** Last fetched job list, kept per device so past summaries stay readable offline. */
 const JOBS_CACHE_KEY = 'opentodo.importJobs'
@@ -120,6 +123,11 @@ export interface ImportViewProps {
   onFormat: (format: ImportFormat | '') => void
   onOption: <K extends keyof ImportViewProps['options']>(key: K, value: ImportViewProps['options'][K]) => void
   onPreview: () => void
+  /** The app chosen under "Switching from…" (its guide id), or null (migration-everywhere D5). */
+  switchFrom: string | null
+  onSwitchFrom: (app: SwitchApp | null) => void
+  /** The account encrypts its content (the picker says what an import means then). */
+  encrypted: boolean
   /** A Notion export's column for a role changed: null for "not imported" (re-runs the preview). */
   onColumn: (role: NotionRole, column: string | null) => void
   onStart: () => void
@@ -178,6 +186,8 @@ export function ImportView(p: ImportViewProps) {
           {t('You are offline. Import needs a connection to your server; the file picker is disabled until you are back online.')}
         </p>
       )}
+
+      <SwitchFromPicker value={p.switchFrom} onChange={p.onSwitchFrom} disabled={p.offline} encrypted={p.encrypted} />
 
       <section className="space-y-3">
         <label className="block text-body font-medium" htmlFor="import-file">{t('File')}</label>
@@ -275,6 +285,14 @@ export function ImportView(p: ImportViewProps) {
           <h2 className="font-semibold">
             {t('Preview · {format}', { format: FORMAT_LABELS[p.preview.format] })}{p.preview.version ? ` v${p.preview.version}` : ''}
           </h2>
+          {p.preview.detected && p.preview.detected !== p.preview.format && (
+            <p role="status" className="text-body text-warning" data-import-detected>
+              {t('This file looks like {format}, not the format you chose.', { format: FORMAT_LABELS[p.preview.detected] ?? p.preview.detected })}{' '}
+              <button type="button" className="text-accent underline" disabled={disabled} onClick={() => p.onFormat(p.preview!.detected!)}>
+                {t('Read it as {format}', { format: FORMAT_LABELS[p.preview.detected] ?? p.preview.detected })}
+              </button>
+            </p>
+          )}
           <Totals t={p.preview.totals} />
           {into && <p className="text-body" data-import-into>{into}</p>}
           {p.preview.template && (
@@ -357,6 +375,11 @@ export function ImportView(p: ImportViewProps) {
   )
 }
 
+/** The format of the app chosen under "Switching from…". */
+function switchFormat(guide: string | null): ImportFormat | '' {
+  return SWITCH_APPS.find((a) => a.guide === guide)?.format ?? ''
+}
+
 function describe(err: unknown): string {
   return errorText(err, { capitalise: false, offline: t('The server could not be reached. Import needs a connection.') })
 }
@@ -370,6 +393,8 @@ export function ImportScreen() {
   const wsState = useWorkspaceState()
   const [file, setFile] = useState<File | null>(null)
   const [format, setFormat] = useState<ImportFormat | ''>('')
+  const [switchFrom, setSwitchFrom] = useState<string | null>(null)
+  const { enabled: encrypted } = useEncryption()
   // null until the user picks: the current workspace, or "As in the export" for an own export.
   const [workspaceChoice, setWorkspaceChoice] = useState<string | null>(null)
   const [detected, setDetected] = useState<ImportFormat | null>(null)
@@ -404,28 +429,28 @@ export function ImportScreen() {
   }, [offline, loadJobs])
   useEffect(() => () => { if (pollRef.current) clearTimeout(pollRef.current) }, [])
 
-  function requestOptions(ws: string = workspace, cols: NonNullable<ImportOptions['columns']> = columns): ImportOptions {
+  function requestOptions(ws: string = workspace, cols: NonNullable<ImportOptions['columns']> = columns, fmt: ImportFormat | '' = format): ImportOptions {
     const out: ImportOptions = {
       timeZone: options.timeZone, sections: options.sections, duplicates: options.duplicates, errors: options.errors, existing: options.existing,
     }
-    if (format) out.format = format
+    if (fmt) out.format = fmt
     if (options.targetProject && projects.some((p) => p.id === options.targetProject)) out.targetProject = options.targetProject
     if (ws && wsState.list.length > 1) out.workspace = ws
     if (Object.keys(cols).length > 0) out.columns = cols
     return out
   }
 
-  async function runPreview(f: File | null = file, cols: NonNullable<ImportOptions['columns']> = columns) {
+  async function runPreview(f: File | null = file, cols: NonNullable<ImportOptions['columns']> = columns, fmt: ImportFormat | '' = format) {
     if (!f) return
     // A new file's format is not known yet: the user's choice, else the
     // current workspace unless the format was set to an own export.
-    const ws = workspaceChoice ?? (format === 'opentodo' ? '' : wsState.current)
+    const ws = workspaceChoice ?? (fmt === 'opentodo' ? '' : wsState.current)
     await run(async () => {
       try {
-        let res = await api.previewImport(f, f.name, requestOptions(ws, cols))
+        let res = await api.previewImport(f, f.name, requestOptions(ws, cols, fmt))
         if (res.format === 'opentodo' && workspaceChoice === null && ws) {
           // An own export detected on the way: its default is "As in the export".
-          res = await api.previewImport(f, f.name, requestOptions('', cols))
+          res = await api.previewImport(f, f.name, requestOptions('', cols, fmt))
         }
         setDetected(res.format)
         setPreview(res)
@@ -503,7 +528,20 @@ export function ImportScreen() {
         setJob(null)
         if (f) void runPreview(f, {})
       }}
-      onFormat={(f) => { setFormat(f); setPreview(null) }}
+      switchFrom={switchFrom}
+      encrypted={encrypted}
+      onSwitchFrom={(app) => {
+        setSwitchFrom(app?.guide ?? null)
+        setFormat(app?.format ?? '')
+        setPreview(null)
+        if (file) void runPreview(file, columns, app?.format ?? '')
+      }}
+      onFormat={(f) => {
+        setFormat(f)
+        setPreview(null)
+        if (f !== switchFormat(switchFrom)) setSwitchFrom(null)
+        if (file && f) void runPreview(file, columns, f)
+      }}
       onOption={(key, value) => { setOptions((cur) => ({ ...cur, [key]: value })); setPreview(null) }}
       onPreview={() => void runPreview()}
       onColumn={(role, column) => {

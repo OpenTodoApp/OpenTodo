@@ -20,7 +20,7 @@ function props(p: Partial<ImportViewProps>): ImportViewProps {
   return {
     offline: false, fileName: 'Export.zip', format: '', options: { ...DEFAULT_OPTIONS, targetProject: '' },
     projects: [], workspaces: [], workspace: '', onWorkspace: noop, zones: [], preview, busy: false, error: null,
-    job: null, jobs: [], onPickFile: noop, onFormat: noop, onOption: noop, onPreview: noop, onColumn: noop, onStart: noop, onUndo: noop,
+    job: null, jobs: [], onPickFile: noop, onFormat: noop, onOption: noop, onPreview: noop, switchFrom: null, onSwitchFrom: noop, encrypted: false, onColumn: noop, onStart: noop, onUndo: noop,
     ...p,
   }
 }
