@@ -32,7 +32,7 @@ export function FacetEditor({ anchor, icon, title, onClose, onClear, header, wid
         <div className="min-w-0 p-3">{children}</div>
         <div className="flex items-center justify-between gap-2 border-t border-default px-3 py-2">
           {onClear ? <Button variant="ghost" size="sm" onClick={() => { onClear(); onClose() }} data-facet-clear>{t('Clear')}</Button> : <span />}
-          <Button size="sm" onClick={onClose} data-facet-done>{t('Done')}</Button>
+          <Button size="sm" onClick={onClose} data-facet-close>{t('Close')}</Button>
         </div>
       </div>
     </Popover>

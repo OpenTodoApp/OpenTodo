@@ -299,7 +299,7 @@ export function WhenControl({ task, readOnly = false, focus = 'due', segment, on
 
       {onDone && (
         <div className="flex justify-end border-t border-default pt-2">
-          <Button size="sm" onClick={onDone}>{t('Done')}</Button>
+          <Button size="sm" onClick={onDone} data-when-close>{t('Close')}</Button>
         </div>
       )}
     </div>
