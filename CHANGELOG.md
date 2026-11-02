@@ -11,6 +11,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 ### Fixed
 
 - **`ot vault sync` and `watch` no longer overwrite a file saved while a sync runs.** Each sync reads a project file or task note again right before writing or removing it; a file saved meanwhile is left as saved, and the next sync merges it with what changed in the app in between. New lines in it still get their `🆔`, so no task is created twice.
+- **Labels that were cut with room to spare.** A repeating task's **This occurrence / All occurrences** switch read "This occurren…" even on a wide screen: its options split the row evenly, so the longer label lost. The options of every two- or three-way switch are now as wide as the longest label and only shorten when the row itself is out of room. In the Week calendar beside the planning list, a narrow day header put the load next to the day's name and cut the name to "T…"; a narrow header now puts the load under the name. The layout check fails when a switch option or a calendar day name is cut.
 
 ## [0.21.0] - 2026-11-02
 
