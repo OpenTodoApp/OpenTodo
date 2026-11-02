@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Fixed
+
+- **Subtasks go to Later with their parent.** Deferring a task with subtasks (giving it a start date in the future, or parking it in Someday) moved the task to its project's **Later** group but left its subtasks behind in the old group, at the top level with only the parent's name, so they looked cut off (#755). A project's list now keeps each subtree together: the subtasks of a deferred or parked task are listed under it in Later, each with its own dates, and a deferred subtask of an active task stays under its parent with its **Starts** chip. Display mode's project page does the same. Nothing is written; it is how the list is drawn, offline included.
+
 ## [0.20.0] - 2026-11-02
 
 OpenTodo 0.20.0 is about **routines** and **themes**. Automation rules become routines: a routine has a trigger and steps that find tasks, change them, create tasks or projects and comment, built on a page with a plain sentence for each step, started from a starter or **described in one sentence**, tried against your data before it runs, with a run history and "Routines since your last visit". A routine can **ask AI** to judge or summarise, and shows you the proposal before anything changes; a shared project can have its own routines, and encrypted accounts run theirs on one of their devices. The look of the app becomes **themes**: OpenTodo Light and Dark plus fourteen editor palettes, your own made in an editor, from a file or from a VS Code theme, and a server default for everyone. Also new: **Outlook and Microsoft 365** in calendar sync, an **Obsidian plugin** that sends a line as a task and syncs a folder of task files on a phone too, **Upcoming that starts with Today**, Today's count on the app icon, and tasks with a time that stay in sight while they wait for a Today slot. The server turns **Multipath TCP off** (CVE-2026-98432); update the host's kernel too (see Security).
