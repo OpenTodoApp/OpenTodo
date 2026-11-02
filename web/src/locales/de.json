@@ -5191,7 +5191,7 @@
   "Thumbs up": "Daumen hoch",
   "Thursday": "Donnerstag",
   "Tick every task in the list": "Alle Aufgaben der Liste anhaken",
-  "Tick it and show every checkbox; Select tasks in the page menu does the same, Done hides them": "Markiert sie und zeigt alle Kästchen; „Aufgaben auswählen“ im Seitenmenü tut dasselbe, „Fertig“ blendet sie aus",
+  "Tick it and show every checkbox; Select tasks in the page menu does the same, Close hides them": "Markiert sie und zeigt alle Kästchen; „Aufgaben auswählen“ im Seitenmenü tut dasselbe, „Schließen“ blendet sie aus",
   "Tick me off when you have read this": "Hak mich ab, wenn du das gelesen hast",
   "Tick the selected task for a bulk action (Space with Vim keybindings on)": "Ausgewählte Aufgabe für eine Sammelaktion anhaken (Leertaste bei aktiven Vim-Tastenbelegungen)",
   "Tick {title}": "{title} anhaken",

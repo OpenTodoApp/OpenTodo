@@ -5191,7 +5191,7 @@
   "Thumbs up": "Pouce levé",
   "Thursday": "Jeudi",
   "Tick every task in the list": "Cocher toutes les tâches de la liste",
-  "Tick it and show every checkbox; Select tasks in the page menu does the same, Done hides them": "La coche et affiche toutes les cases ; « Sélectionner des tâches » dans le menu de la page fait de même, « Terminé » les masque",
+  "Tick it and show every checkbox; Select tasks in the page menu does the same, Close hides them": "La coche et affiche toutes les cases ; « Sélectionner des tâches » dans le menu de la page fait de même, « Fermer » les masque",
   "Tick me off when you have read this": "Cochez-moi quand vous avez lu ceci",
   "Tick the selected task for a bulk action (Space with Vim keybindings on)": "Cocher la tâche sélectionnée pour une action groupée (Espace avec les raccourcis Vim activés)",
   "Tick {title}": "Cocher {title}",

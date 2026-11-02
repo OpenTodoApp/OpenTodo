@@ -333,7 +333,7 @@ export function SelectionBar({ ids, onClear, menuOpen, onMenuOpenChange, startPi
           <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body" onClick={onClear}><Icon name="x" />{t('Clear')}</button>
         </Tooltip>
       )}
-      {onDone && <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1 text-body font-medium" onClick={onDone} data-select-done>{t('Done')}</button>}
+      {onDone && <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1 text-body font-medium" onClick={onDone} data-select-done>{t('Close')}</button>}
     </div>
   )
 }

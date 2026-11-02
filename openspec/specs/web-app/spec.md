@@ -608,7 +608,7 @@ The panel SHALL group the task's properties into four facet lines, each with a l
 - **THEN** the facet lines render as text, no part opens an editor, and the Add menu is absent
 
 ### Requirement: Facet editors are popovers
-Activating a part SHALL open its editor as a popover anchored to the part from 640 px and as a bottom sheet below, with the facet's name and icon as its title and a footer offering Clear (when the part has a value) and Done. The panel's content SHALL not move while a popover is open. Done, Escape or a committed single-value edit SHALL close the popover and return focus to the part; Clear SHALL remove the value and close it.
+Activating a part SHALL open its editor as a popover anchored to the part from 640 px and as a bottom sheet below, with the facet's name and icon as its title and a footer offering Clear (when the part has a value) and Close. The panel's content SHALL not move while a popover is open. Close, Escape or a committed single-value edit SHALL close the popover and return focus to the part; Clear SHALL remove the value and close it.
 
 #### Scenario: Clear from the footer
 - **WHEN** the user opens the deadline part and chooses Clear
@@ -620,7 +620,7 @@ Activating a part SHALL open its editor as a popover anchored to the part from 6
 
 #### Scenario: Phone sheet
 - **WHEN** the user taps the labels part on a 390 px wide screen
-- **THEN** the labels editor opens as a bottom sheet with the facet's title and Done, and closing it returns to the panel scrolled where it was
+- **THEN** the labels editor opens as a bottom sheet with the facet's title and Close, and closing it returns to the panel scrolled where it was
 
 ### Requirement: When popover shows one segment
 The When popover SHALL offer the segments Do on, Start, Deadline, Repeat and Reminders in a segmented control and show one at a time, starting on the segment of the part that opened it (Do on when opened from the Add menu or a shortcut that names no part). The Do on segment SHALL hold the date, the time, the Evening toggle and the zone control.
