@@ -34,6 +34,7 @@ import { useToday, useViewerZone } from '../useViews'
 import { readJSON, writeJSON } from '../../lib/deviceStorage'
 import { useResetOnChange } from '../../lib/useResetOnChange'
 import { useUpcomingGroups } from './upcomingProjections'
+import { isReusable } from '../../lib/reusable'
 
 export type ListRoute = Extract<Route, ListScope>
 
@@ -229,7 +230,9 @@ export function useListModel(route: ListRoute, userId?: string) {
   // With "Show completed tasks" on (project-completed-section), the list layout
   // keeps them in one Completed group at the end, newest first, closed by default.
   const showCompletedPref = useShowCompletedPref(projectId)
-  const showCompleted = !!projectId && showCompletedPref && !board && !layout.timeline
+  // A reusable list always ends with its ticked items, "Got it", on every device (reusable-lists D7).
+  const reusable = !!projectId && isReusable(projectMap.get(projectId))
+  const showCompleted = !!projectId && (showCompletedPref || reusable) && !board && !layout.timeline
   const completedTasks = useMemo(() => (showCompleted ? completedNewestFirst(doneBySection) : NO_TASKS), [showCompleted, doneBySection])
   const completedOpen = !!projectId && collapsed.has(completedOpenKey(projectId))
 
@@ -248,7 +251,7 @@ export function useListModel(route: ListRoute, userId?: string) {
     projectEditable: !!projectId && canEditTasks(roleOf(projectId, memberMap)),
     allTasks, taskMap, progress, blocked, flow, habits, ...filter, logbook, logbookLimit, setLogbookLimit,
     collapsed, toggleCollapsed, ...layout, tree, columns, groups: projectedGroups, rows, ownRows, siblingPos, timeColumn, doneBySection,
-    showCompleted, completedTasks, completedOpen, display, displayScope, listDisplay, dayParts, closed, upcomingToday,
+    showCompleted, reusable, completedTasks, completedOpen, display, displayScope, listDisplay, dayParts, closed, upcomingToday,
     queryFilter: route.view === 'upcoming' ? upcoming : null,
   }
 }

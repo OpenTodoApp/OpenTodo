@@ -13,6 +13,8 @@
     "position": {"type": "number"},
     "created_at": {"type": "number"},
     "deleted_at": {"type": ["number", "null"]},
+    "reusable": {"type": "boolean", "description": "a reusable list: adding an item already there reopens it"},
+    "aisles": {"type": "boolean", "description": "a reusable list that sorts new items into aisle sections"},
     "role": {"type": "string", "description": "your role in a shared project"},
     "owner_id": {"type": "string"}
   }

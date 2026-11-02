@@ -1,0 +1,250 @@
+{
+  "_comment": "Shared vectors of OpenSpec reusable-lists (design D2, D4): web/src/lib/reusable.test.ts and internal/reuse/reuse_test.go read this file, so the web client and the server normalize titles, choose matches and choose duplicate losers the same way. Task rows carry only the fields the rules read; a missing field has its row default.",
+  "normalize": [
+    { "in": "Milk", "out": "milk" },
+    { "in": "  milk  ", "out": "milk" },
+    { "in": "Oat   milk", "out": "oat milk" },
+    { "in": "Oat\tmilk\n", "out": "oat milk" },
+    { "in": "Oat\u00a0milk", "out": "oat milk" },
+    { "in": "Oat\u3000milk", "out": "oat milk" },
+    { "in": "Oat\ufeffmilk", "out": "oat milk" },
+    { "in": "Oat\u0085milk", "out": "oat milk" },
+    { "in": "Café", "out": "cafe" },
+    { "in": "CAFE", "out": "cafe" },
+    { "in": "Cafe\u0301", "out": "cafe" },
+    { "in": "Crème fraîche", "out": "creme fraiche" },
+    { "in": "Jalapeño", "out": "jalapeno" },
+    { "in": "Straße", "out": "straße", "_note": "no full case folding: ß stays ß and does not match ss" },
+    { "in": "STRASSE", "out": "strasse" },
+    { "in": "İzmir", "out": "izmir", "_note": "root locale: the dotted capital I decomposes to I plus a dot that is dropped" },
+    { "in": "IŞIK", "out": "isik", "_note": "root locale: I lower-cases to i, never to the Turkish dotless ı" },
+    { "in": "ışık", "out": "ısık", "_note": "the dotless ı stays dotless; the cedilla is dropped" },
+    { "in": "ΣΟΦΟΣ", "out": "σοφοσ", "_note": "final sigma is written σ on both sides" },
+    { "in": "Bread.", "out": "bread" },
+    { "in": "Bread..", "out": "bread." },
+    { "in": "Bread .", "out": "bread" },
+    { "in": "...", "out": ".." },
+    { "in": ".", "out": "" },
+    { "in": "   ", "out": "" },
+    { "in": "🥛 Milk", "out": "🥛 milk" },
+    { "in": "ﬁsh", "out": "fish", "_note": "compatibility decomposition of the fi ligature" },
+    { "in": "Ｍｉｌｋ", "out": "milk", "_note": "fullwidth forms" }
+  ],
+  "match": [
+    {
+      "name": "completed match is reopened",
+      "project": "p1", "title": "milk ",
+      "tasks": [
+        { "id": "t1", "title": "Milk", "project_id": "p1", "completed_at": 100 },
+        { "id": "t2", "title": "Bread", "project_id": "p1" }
+      ],
+      "want": { "id": "t1", "state": "completed" }
+    },
+    {
+      "name": "open match is left alone",
+      "project": "p1", "title": "Bread",
+      "tasks": [{ "id": "t2", "title": "Bread", "project_id": "p1" }],
+      "want": { "id": "t2", "state": "open" }
+    },
+    {
+      "name": "accents and case",
+      "project": "p1", "title": "CAFE",
+      "tasks": [{ "id": "t1", "title": "Café", "project_id": "p1", "completed_at": 5 }],
+      "want": { "id": "t1", "state": "completed" }
+    },
+    {
+      "name": "open beats completed",
+      "project": "p1", "title": "eggs",
+      "tasks": [
+        { "id": "a", "title": "Eggs", "project_id": "p1", "completed_at": 900 },
+        { "id": "b", "title": "Eggs", "project_id": "p1" }
+      ],
+      "want": { "id": "b", "state": "open" }
+    },
+    {
+      "name": "several open matches: the smallest id",
+      "project": "p1", "title": "eggs",
+      "tasks": [
+        { "id": "c", "title": "Eggs", "project_id": "p1" },
+        { "id": "b", "title": "eggs", "project_id": "p1" }
+      ],
+      "want": { "id": "b", "state": "open" }
+    },
+    {
+      "name": "several completed matches: the most recently completed",
+      "project": "p1", "title": "Eggs",
+      "tasks": [
+        { "id": "a", "title": "Eggs", "project_id": "p1", "completed_at": 100 },
+        { "id": "b", "title": "Eggs", "project_id": "p1", "completed_at": 300 },
+        { "id": "c", "title": "Eggs", "project_id": "p1", "completed_at": 200 }
+      ],
+      "want": { "id": "b", "state": "completed" }
+    },
+    {
+      "name": "completed at the same moment: the smallest id",
+      "project": "p1", "title": "Eggs",
+      "tasks": [
+        { "id": "c", "title": "Eggs", "project_id": "p1", "completed_at": 300 },
+        { "id": "b", "title": "Eggs", "project_id": "p1", "completed_at": 300 }
+      ],
+      "want": { "id": "b", "state": "completed" }
+    },
+    {
+      "name": "subtasks never match",
+      "project": "p1", "title": "Milk",
+      "tasks": [
+        { "id": "parent", "title": "Breakfast", "project_id": "p1" },
+        { "id": "sub", "title": "Milk", "project_id": "p1", "parent_id": "parent", "completed_at": 10 }
+      ],
+      "want": null
+    },
+    {
+      "name": "deleted tasks never match",
+      "project": "p1", "title": "Milk",
+      "tasks": [{ "id": "t1", "title": "Milk", "project_id": "p1", "completed_at": 10, "deleted_at": 20 }],
+      "want": null
+    },
+    {
+      "name": "other projects never match",
+      "project": "p1", "title": "Milk",
+      "tasks": [{ "id": "t1", "title": "Milk", "project_id": "p2", "completed_at": 10 }],
+      "want": null
+    },
+    {
+      "name": "occurrence records and skips never match",
+      "project": "p1", "title": "Water plants",
+      "tasks": [
+        { "id": "r1", "title": "Water plants", "project_id": "p1", "completed_at": 10, "series_id": "s" },
+        { "id": "r2", "title": "Water plants", "project_id": "p1", "completed_at": 20, "skipped": true }
+      ],
+      "want": null
+    },
+    {
+      "name": "a recurring task matches like any other",
+      "project": "p1", "title": "water plants",
+      "tasks": [{ "id": "s", "title": "Water plants", "project_id": "p1", "recurrence": "every week" }],
+      "want": { "id": "s", "state": "open" }
+    },
+    {
+      "name": "an empty title never matches",
+      "project": "p1", "title": " . ",
+      "tasks": [{ "id": "t1", "title": ".", "project_id": "p1", "completed_at": 10 }],
+      "want": null
+    },
+    {
+      "name": "emoji titles match exactly",
+      "project": "p1", "title": "🥛  milk",
+      "tasks": [
+        { "id": "t1", "title": "Milk", "project_id": "p1", "completed_at": 10 },
+        { "id": "t2", "title": "🥛 Milk", "project_id": "p1", "completed_at": 5 }
+      ],
+      "want": { "id": "t2", "state": "completed" }
+    },
+    {
+      "name": "no fuzzy matching",
+      "project": "p1", "title": "Mlik",
+      "tasks": [{ "id": "t1", "title": "Milk", "project_id": "p1", "completed_at": 10 }],
+      "want": null
+    }
+  ],
+  "duplicates": [
+    {
+      "name": "two plain duplicates: the smallest id survives",
+      "project": "p1",
+      "tasks": [
+        { "id": "b2", "title": "Eggs", "project_id": "p1" },
+        { "id": "a1", "title": "eggs ", "project_id": "p1" },
+        { "id": "c3", "title": "Milk", "project_id": "p1" }
+      ],
+      "losers": ["b2"]
+    },
+    {
+      "name": "three duplicates",
+      "project": "p1",
+      "tasks": [
+        { "id": "c", "title": "Eggs", "project_id": "p1" },
+        { "id": "a", "title": "Eggs", "project_id": "p1" },
+        { "id": "b", "title": "EGGS", "project_id": "p1" }
+      ],
+      "losers": ["b", "c"]
+    },
+    {
+      "name": "a duplicate with a note keeps both",
+      "project": "p1",
+      "tasks": [
+        { "id": "a", "title": "Eggs", "project_id": "p1" },
+        { "id": "b", "title": "Eggs", "project_id": "p1", "description": "free range" }
+      ],
+      "losers": []
+    },
+    {
+      "name": "a duplicate with a reminder, a comment, an attachment or tracked time keeps both",
+      "project": "p1",
+      "tasks": [
+        { "id": "a", "title": "Eggs", "project_id": "p1" },
+        { "id": "b", "title": "Eggs", "project_id": "p1" }
+      ],
+      "attached": ["a"],
+      "losers": []
+    },
+    {
+      "name": "a duplicate with a subtask keeps both",
+      "project": "p1",
+      "tasks": [
+        { "id": "a", "title": "Eggs", "project_id": "p1" },
+        { "id": "b", "title": "Eggs", "project_id": "p1" },
+        { "id": "s", "title": "Twelve", "project_id": "p1", "parent_id": "b" }
+      ],
+      "losers": []
+    },
+    {
+      "name": "a deleted subtask does not count",
+      "project": "p1",
+      "tasks": [
+        { "id": "a", "title": "Eggs", "project_id": "p1" },
+        { "id": "b", "title": "Eggs", "project_id": "p1" },
+        { "id": "s", "title": "Twelve", "project_id": "p1", "parent_id": "b", "deleted_at": 5 }
+      ],
+      "losers": ["b"]
+    },
+    {
+      "name": "a recurring duplicate keeps both",
+      "project": "p1",
+      "tasks": [
+        { "id": "a", "title": "Eggs", "project_id": "p1" },
+        { "id": "b", "title": "Eggs", "project_id": "p1", "recurrence": "every week" }
+      ],
+      "losers": []
+    },
+    {
+      "name": "completed, deleted and subtask items are not duplicates",
+      "project": "p1",
+      "tasks": [
+        { "id": "a", "title": "Eggs", "project_id": "p1" },
+        { "id": "b", "title": "Eggs", "project_id": "p1", "completed_at": 4 },
+        { "id": "c", "title": "Eggs", "project_id": "p1", "deleted_at": 4 },
+        { "id": "p", "title": "Breakfast", "project_id": "p1" },
+        { "id": "d", "title": "Eggs", "project_id": "p1", "parent_id": "p" }
+      ],
+      "losers": []
+    },
+    {
+      "name": "other projects are left alone",
+      "project": "p1",
+      "tasks": [
+        { "id": "a", "title": "Eggs", "project_id": "p2" },
+        { "id": "b", "title": "Eggs", "project_id": "p2" }
+      ],
+      "losers": []
+    },
+    {
+      "name": "empty titles are never duplicates",
+      "project": "p1",
+      "tasks": [
+        { "id": "a", "title": "", "project_id": "p1" },
+        { "id": "b", "title": " ", "project_id": "p1" }
+      ],
+      "losers": []
+    }
+  ]
+}
