@@ -1,8 +1,14 @@
 import { Icon, Menu } from '../ui'
-import { useMemo, useState } from 'react'
+import { lazy, Suspense, useMemo, useState } from 'react'
 import { useReminderRows } from '../lib/localData'
 import { addDaysISO, localDueOf, todayISO } from '../lib/dates'
-import { addReminder, deleteReminder, dismissReminder, snoozeReminder, sortReminders, updateReminder, type ReminderInput } from '../lib/reminders'
+import { addReminder, deleteReminder, dismissReminder, rearmReminder, snoozeReminder, sortReminders, updateReminder, type ReminderInput } from '../lib/reminders'
+import { isLocationKind, radiusOf, reminderPoint, useGeofencesHere, type LocationKind } from '../lib/geofences'
+import { locationLabel, shownLocation, usePlaceRows } from '../lib/locations'
+import { FiresOnPhone, LocationMenuGroup, locationReminderName, radiusText } from './LocationReminders'
+
+// The radius form loads with its first use (location-reminders: keep the first load small).
+const LocationReminderEditor = lazy(() => import('./LocationReminderEditor'))
 import { DEADLINE_PRESETS, deadlineOffsetLabel, DEFAULT_REMINDER_TIME, isDelivered, isDismissed, offsetLabel, RELATIVE_PRESETS } from '../lib/reminderTime'
 import type { Reminder, Task } from '../lib/types'
 import { MenuGroup, MenuItem, MenuSeparator } from '../ui'
@@ -44,10 +50,17 @@ function defaultMoment(task: Task): { date: string; time: string } {
  * date and time editors are the date-time-preferences fields. Once the task has
  * a deadline the menu also offers deadline reminders (OpenSpec change `deadlines`).
  */
-export function RemindersField({ task }: { task: Task }) {
+export function RemindersField({ task, onAddLocation }: { task: Task; onAddLocation?: () => void }) {
   const rows = useReminderRows(task.id)
   const reminders = useMemo(() => sortReminders(rows.filter((r) => !r.deleted_at)), [rows])
-  const [adding, setAdding] = useState<'custom' | 'deadline' | 'absolute' | null>(null)
+  const [adding, setAdding] = useState<'custom' | 'deadline' | 'absolute' | LocationKind | null>(null)
+  // Location reminders (location-reminders D5): the task's point and the place's name.
+  const placeRows = usePlaceRows()
+  const places = useMemo(() => new Map(placeRows.map((p) => [p.id, p])), [placeRows])
+  const point = reminderPoint(task, places)
+  const shown = shownLocation(task, places)
+  const place = shown && !shown.encrypted ? locationLabel(shown) : ''
+  const firesHere = useGeofencesHere()
   const [editing, setEditing] = useState<string | null>(null)
   const { formatInstant } = useDateTimeFormat()
   const { error, run: attempt } = useAction({ describe: messageOf })
@@ -63,6 +76,42 @@ export function RemindersField({ task }: { task: Task }) {
     <div className="space-y-2">
       <ul className="flex flex-wrap gap-1.5 empty:hidden" aria-label={t('Reminders')}>
         {reminders.map((r) => {
+          if (isLocationKind(r.kind)) {
+            const name = locationReminderName(r.kind, place)
+            const dismissed = r.dismissed_at != null
+            if (editing === r.id) {
+              return (
+                <li key={r.id} className="w-full" data-reminder-id={r.id}>
+                  <Suspense fallback={null}><LocationReminderEditor kind={r.kind} place={place} point={point} initial={r} onCancel={() => setEditing(null)}
+                    onSave={(input) => void run(() => updateReminder(r.id, input))} /></Suspense>
+                </li>
+              )
+            }
+            return (
+              <li key={r.id} data-reminder-id={r.id} data-location-chip
+                className={`inline-flex max-w-full items-center gap-1 rounded-full border border-default py-0.5 pl-2.5 pr-0.5 text-body ${dismissed ? 'text-faint' : 'text-default'}`}>
+                <Icon name={r.kind === 'arrive' ? 'map-pin' : 'log-out'} className="shrink-0 text-faint" />
+                <span className="min-w-0">
+                  <span className="flex min-w-0 items-center gap-1">
+                    <span className="truncate">{name}</span>
+                    <span className="shrink-0 text-meta text-muted tabular-nums">· {radiusText(radiusOf(r))}</span>
+                    {dismissed && <span className="shrink-0 text-meta text-muted">· {t('dismissed')}</span>}
+                    {!point && <span className="shrink-0 text-meta text-muted">· {t('no point on the map')}</span>}
+                    {!firesHere && <FiresOnPhone part="icon" />}
+                  </span>
+                  {!firesHere && <FiresOnPhone part="line" />}
+                </span>
+                <Menu kind="menu" label={t('Actions for reminder {name}', { name })} trigger={<Icon name="ellipsis" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm rounded-full px-1.5 py-1" width="sm:w-56">
+                  <MenuItem label={t('Edit')} icon="pencil" onSelect={() => setEditing(r.id)} />
+                  {dismissed
+                    ? <MenuItem label={t('Arm again')} icon="bell" onSelect={() => void run(() => rearmReminder(r.id))} />
+                    : <MenuItem label={t('Dismiss')} icon="check" onSelect={() => void run(() => dismissReminder(r.id))} />}
+                  <MenuSeparator />
+                  <MenuItem label={t('Delete reminder')} icon="trash-2" danger onSelect={() => void run(() => deleteReminder(r.id))} />
+                </Menu>
+              </li>
+            )
+          }
           const fired = r.fire_at !== null && r.fire_at <= now
           const state = r.fire_at === null ? (r.kind === 'deadline' ? t('no deadline') : t('no due date')) : isDismissed(r) ? t('dismissed') : fired ? (isDelivered(r) ? t('sent') : t('fired')) : ''
           const when = r.fire_at !== null ? formatInstant(r.fire_at, 'long') : t('Not scheduled')
@@ -117,7 +166,12 @@ export function RemindersField({ task }: { task: Task }) {
           <MenuSeparator />
           <MenuItem label={t('Custom…')} icon="pencil" onSelect={() => setAdding('custom')} />
           <MenuItem label={t('At a time…')} icon="calendar-days" onSelect={() => setAdding('absolute')} />
+          <MenuSeparator />
+          <LocationMenuGroup place={place} hasPoint={!!point} onPick={setAdding} onAddLocation={onAddLocation} />
         </Menu>
+      ) : adding === 'arrive' || adding === 'leave' ? (
+        <Suspense fallback={null}><LocationReminderEditor kind={adding} place={place} point={point} onCancel={() => setAdding(null)}
+          onSave={(input) => void run(() => addReminder(task.id, input))} /></Suspense>
       ) : (
         <ReminderEditor
           task={task}
@@ -141,14 +195,17 @@ export function RemindersField({ task }: { task: Task }) {
   )
 }
 
+/** The kinds the time editor sets. */
+type TimeKind = 'relative' | 'absolute' | 'deadline'
+
 function ReminderEditor({ task, initial, mode, onSave, onCancel }: {
   task: Task
   initial: Reminder | null
-  mode?: Reminder['kind']
+  mode?: TimeKind
   onSave: (input: ReminderInput) => void
   onCancel: () => void
 }) {
-  const [kind, setKind] = useState<Reminder['kind']>(initial?.kind ?? mode ?? 'relative')
+  const [kind, setKind] = useState<TimeKind>((initial && !isLocationKind(initial.kind) ? initial.kind : undefined) ?? mode ?? 'relative')
   const startOffset = initial?.offset_minutes ?? -30
   const [amount, setAmount] = useState(String(Math.abs(startOffset)))
   const [unit, setUnit] = useState<'1' | '60' | '1440'>(Math.abs(startOffset) % 1440 === 0 && startOffset !== 0 ? '1440' : Math.abs(startOffset) % 60 === 0 && startOffset !== 0 ? '60' : '1')
@@ -176,7 +233,7 @@ function ReminderEditor({ task, initial, mode, onSave, onCancel }: {
       onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onCancel() } }}
     >
       {initial && (
-        <select className="ui-input w-auto py-1" aria-label={t('Reminder kind')} value={kind} onChange={(e) => setKind(e.target.value as Reminder['kind'])}>
+        <select className="ui-input w-auto py-1" aria-label={t('Reminder kind')} value={kind} onChange={(e) => setKind(e.target.value as TimeKind)}>
           <option value="relative">{t('Relative')}</option>
           {(task.deadline || initial.kind === 'deadline') && <option value="deadline">{t('Before the deadline')}</option>}
           <option value="absolute">{t('At a time')}</option>

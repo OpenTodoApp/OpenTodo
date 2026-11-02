@@ -9,7 +9,7 @@ import { projectFlowOf } from './flow'
 import { todayList } from './dayLists'
 import { addDaysISO, currentDayStart, daysBetweenISO, logicalDay } from './dates'
 import { mutate, type Change } from './ops'
-import { canEditProject, canEditTasks, roleOf } from './sharing'
+import { canEditProject, canEditTasks, membershipMap, roleOf } from './sharing'
 import { compute, countedTasks, overdueOf, sharedIds, type StatsInput } from './stats'
 import { applyBatch } from './undo'
 import { db, type AssistantUndo } from './db'
@@ -349,13 +349,16 @@ export type CarryDecision = { kind: 'tomorrow' } | { kind: 'day'; date: string }
  * the bulk complete (a series rolls, subtasks complete; `all` is every task, for
  * them); Keep writes nothing. Read-only tasks write nothing whatever their decision.
  */
-export function planCarryOver(decisions: ReadonlyMap<string, CarryDecision>, tasks: readonly CarryTask[], today: string, all: Task[] = tasks.map((x) => x.task), now = Date.now()): Change[] {
+export function planCarryOver(
+  decisions: ReadonlyMap<string, CarryDecision>, tasks: readonly CarryTask[], today: string, all: Task[] = tasks.map((x) => x.task), now = Date.now(),
+  memberships?: Map<string, Membership>,
+): Change[] {
   const out: Change[] = []
   for (const { task, editable } of tasks) {
     const d = decisions.get(task.id) ?? { kind: 'tomorrow' }
     if (!editable || d.kind === 'keep') continue
     if (d.kind === 'done') {
-      out.push(...planComplete([task], all, now, today))
+      out.push(...planComplete([task], all, now, today, memberships))
       continue
     }
     if (d.kind === 'someday') {
@@ -413,7 +416,7 @@ export function carryOverOf(review: Pick<Review, 'carry_over'> | null | undefine
  * changed by both batches keeps its value before the first and after the latest.
  */
 export async function applyCarryOver(decisions: ReadonlyMap<string, CarryDecision>, tasks: readonly CarryTask[], today: string, all?: Task[]): Promise<{ entry: AssistantUndo | null; label: string; count: number }> {
-  const changes = planCarryOver(decisions, tasks, today, all)
+  const changes = planCarryOver(decisions, tasks, today, all, Date.now(), await membershipMap())
   const applied = tasks.filter((x) => changes.some((c) => c.entityId === x.task.id)).map((x) => decisions.get(x.task.id) ?? { kind: 'tomorrow' as const })
   const label = carryOverLabel(applied)
   const proposed = await toProposed(changes)

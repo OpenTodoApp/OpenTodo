@@ -1,0 +1,10 @@
+{
+  "description": "Sign-out (and lock of an encrypted account, and the switch turned off): every region is removed.",
+  "method": "scheduleGeofences",
+  "payload": "{\"version\":1,\"regions\":[]}",
+  "now": 1792670400000,
+  "expect": {
+    "ask": false,
+    "regions": []
+  }
+}

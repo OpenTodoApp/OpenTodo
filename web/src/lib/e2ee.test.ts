@@ -823,6 +823,35 @@ describe('locations and places (task-locations 1.4, "Encrypted locations and pla
   })
 })
 
+describe('objectives (plan-objectives 1.3, "Encrypted objectives")', () => {
+  it("an objective's title is ciphertext; its period and done time are not", async () => {
+    await enableOnA()
+    const mark = server.calls.length
+    await mutate('objective', 'ob1', { title: 'Finish the grant', period: '2026-W44', position: 1024, done_at: 0, created_at: 1, deleted_at: null })
+    await syncNow()
+    const sent = sentAfter(mark).filter((o) => o.entity === 'objective')
+    expect(isEnvelope(sent.find((o) => o.field === 'title')!.value)).toBe(true)
+    expect(sent.find((o) => o.field === 'period')!.value).toBe('2026-W44')
+    expect(JSON.stringify(server.log)).not.toMatch(/Finish the grant/)
+    await on('B')
+    await unlock(PASS, 'passphrase')
+    await syncNow()
+    expect(await db.objectives.get('ob1')).toMatchObject({ title: 'Finish the grant', period: '2026-W44' })
+  })
+
+  it('enabling re-writes existing objective titles', async () => {
+    await on('A')
+    await mutate('objective', 'ob2', { title: 'Ship 1.0', period: '2026-Q4', position: 1, done_at: 0, created_at: 1, deleted_at: null })
+    await syncNow()
+    await enableEncryption(PASS, FAST)
+    await startMigration('encrypt')
+    await syncNow()
+    expect(isEnvelope(current('objective', 'ob2', 'title'))).toBe(true)
+    expect(current('objective', 'ob2', 'period')).toBe('2026-Q4')
+    expect((await db.objectives.get('ob2'))!.title).toBe('Ship 1.0')
+  })
+})
+
 // Biometric unlock in a native shell (OpenSpec change native-shells, design D7).
 describe('biometric unlock through the shell', () => {
   const g = globalThis as unknown as { window?: { opentodoShell?: unknown } }

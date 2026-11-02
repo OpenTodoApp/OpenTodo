@@ -71,7 +71,7 @@ export function TimerCard({ session, mode, prefs, now, actions }: { session: Foc
             {session?.phase === 'break' ? t('End the break') : t('Take a break')} <span className="ui-kbd ml-1">{keysOf('focus.break')}</span>
           </Button>
         )}
-        {working && session?.mode === 'flowtime' && <Button size="sm" variant="secondary" onClick={actions.onStop} data-focus-stop>{t('Done')}</Button>}
+        {working && session?.mode === 'flowtime' && <Button size="sm" variant="secondary" onClick={actions.onStop} data-focus-stop>{t('Stop the timer')}</Button>}
         <Button size="sm" variant="ghost" onClick={actions.onNext} aria-keyshortcuts="n" data-focus-next>
           {t('Next task')} <span className="ui-kbd ml-1">{keysOf('focus.next')}</span>
         </Button>

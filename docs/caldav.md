@@ -138,7 +138,9 @@ OpenTodo reminders are served as display alarms, one `VALARM` per reminder, with
 
 A display alarm a calendar app adds becomes a reminder: a relative trigger counts from the due date (from the deadline on a task that has one), a date-time trigger fires at that instant. Changing an alarm in the app changes the same reminder; removing it deletes the reminder, but only when the app had seen the task's alarms (it sent one back, or echoed the `X-OPENTODO-ALARMS` count the server adds), so an app that never shows alarms cannot delete reminders by accident. Reminders written by a calendar app follow every reminder rule: they move with the due date, are dismissed when the task is completed and show "a calendar app (CalDAV)" in the history.
 
-Kept as client data, never a reminder: sound, email and procedure alarms, `REPEAT`/`DURATION` snooze patterns, a `RELATED=START` alarm on a task with no start, an offset beyond one year, and any alarm past the 20th. Delivered and dismissed state is not exchanged: dismissing a reminder in OpenTodo leaves the calendar app's alarm as it is.
+Kept as client data, never a reminder: sound, email and procedure alarms, `REPEAT`/`DURATION` snooze patterns, a `RELATED=START` alarm on a task with no start, an offset beyond one year, any alarm past the 20th, and location alarms (`PROXIMITY:ARRIVE` or `DEPART`, such as Apple Reminders' "When I arrive", whatever their placeholder trigger).
+
+[Location reminders](location-reminders.md) are not served as alarms, so a calendar app never sees them and saving the task there never deletes them. Delivered and dismissed state is not exchanged: dismissing a reminder in OpenTodo leaves the calendar app's alarm as it is.
 
 Upgrading from a server without this mapping: alarms set earlier in a calendar app stay client data until the app saves the task again; from then on they are reminders.
 

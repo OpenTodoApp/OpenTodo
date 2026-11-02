@@ -39,7 +39,7 @@ The task panel's reminder menu SHALL offer "When I arrive" and "When I leave" fo
 - **THEN** both items are disabled with the explanation and a link that opens the location editor
 
 ### Requirement: Location reminders through the API
-`POST /api/v1/reminders` and `PATCH /api/v1/reminders/{id}` SHALL accept the kinds `arrive` and `leave` with `radius_m`, under the existing authentication and role rules. A missing or out-of-range radius, a firing time or offset on a location kind, or a radius on another kind SHALL be refused with 400 `invalid_operation`. Reads and the export SHALL include location reminders like any reminder, and the command-line client SHALL list them in a task's details.
+`POST /api/v1/reminders` and `PATCH /api/v1/reminders/{id}` SHALL accept the kinds `arrive` and `leave` with `radius_m`, under the existing authentication and role rules. A missing or out-of-range radius, a firing time or offset on a location kind, or a radius on another kind SHALL be refused with 400 `invalid_input`. Reads and the export SHALL include location reminders like any reminder, and the command-line client SHALL list them in a task's details.
 
 #### Scenario: Create through the API
 - **WHEN** a client with a full token posts `{"task_id": "<id>", "kind": "arrive", "radius_m": 200}`
@@ -51,7 +51,7 @@ The task panel's reminder menu SHALL offer "When I arrive" and "When I leave" fo
 
 #### Scenario: Radius out of range
 - **WHEN** a client posts an `arrive` reminder with `radius_m: 20000`
-- **THEN** the response is 400 `invalid_operation` and no reminder exists
+- **THEN** the response is 400 `invalid_input` and no reminder exists
 
 ## MODIFIED Requirements
 

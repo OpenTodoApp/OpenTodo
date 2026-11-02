@@ -582,6 +582,7 @@ func TestDryRunSendsNoWrites(t *testing.T) {
 	h.seedFrame()
 	h.seedSlot()
 	h.put("note", "meet0001", map[string]any{"title": "Meeting", "description": "- agenda", "labels": []string{}, "project_id": nil, "deleted_at": nil})
+	h.put("objective", "obj00001", map[string]any{"title": "Ship", "period": "2026-Q4", "position": 1, "done_at": 0})
 	cfgBefore, _ := os.ReadFile(h.configPath)
 	schemas := loadSchemas(t)
 	cases := [][]string{
@@ -619,6 +620,11 @@ func TestDryRunSendsNoWrites(t *testing.T) {
 		{"slots", "add", "Dry slot", "--date", "2026-11-05"},
 		{"slots", "put", "Errands", "plum"},
 		{"slots", "rm", "Errands"},
+		{"objectives", "add", "Dry objective", "--week"},
+		{"objectives", "done", "obj0"},
+		{"objectives", "undone", "obj0"},
+		{"objectives", "edit", "obj0", "--title", "Renamed"},
+		{"objectives", "delete", "obj0"},
 		{"import", writeTemp(t, "dry.csv", "title\nDry import\n")},
 		{"notes", "add", "Dry note", "--body", "- item"},
 		{"notes", "edit", "Meeting", "--body", "replaced"},

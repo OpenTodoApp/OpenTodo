@@ -73,6 +73,14 @@
       "title",
       "workspace_id"
     ],
+    "objective": [
+      "created_at",
+      "deleted_at",
+      "done_at",
+      "period",
+      "position",
+      "title"
+    ],
     "place": [
       "address",
       "created_at",
@@ -116,6 +124,7 @@
       "fire_at",
       "kind",
       "offset_minutes",
+      "radius_m",
       "task_id"
     ],
     "review": [
@@ -194,6 +203,7 @@
       "priority",
       "project_id",
       "recurrence",
+      "rotation",
       "sample",
       "section_id",
       "sector",
@@ -251,6 +261,7 @@
       "language",
       "maps",
       "method_mode",
+      "objectives",
       "reminder_default_dated",
       "reminder_default_timed",
       "routines_hide_successes",
@@ -335,6 +346,9 @@
     "note": [
       "description",
       "notes_doc",
+      "title"
+    ],
+    "objective": [
       "title"
     ],
     "place": [

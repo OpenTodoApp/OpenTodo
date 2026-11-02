@@ -7,6 +7,7 @@
 import type { ProposedChange } from './assistantTypes'
 import { completeUndoable, type UndoableResult } from './undoActions'
 import { db } from './db'
+import { memberSet } from './rotation'
 import { lineageRows } from './lineageRows'
 import { dueFromView, logicalToday } from './dates'
 import { getDeviceId, mutateMany, type Change } from './ops'
@@ -34,7 +35,8 @@ async function plan(seriesId: string, date: string | null, action: OccurrenceAct
   if (!series) return null
   const records = await lineageRows(seriesId)
   const reminders = await db.reminders.where('task_id').equals(seriesId).toArray()
-  const p = planActOn(series, date, action, records, now, today, reminders)
+  const members = series.project_id ? memberSet(await db.memberships.get(series.project_id)) : undefined
+  const p = planActOn(series, date, action, records, now, today, reminders, members)
   return p ? { series, p } : null
 }
 

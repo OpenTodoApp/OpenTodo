@@ -85,6 +85,7 @@ Measured on iOS 27 in the simulator (design D2): without a matching app-bound do
 | `MainActivity` | the full-screen `WebView` on the configured origin; other origins open in the browser; file chooser; back; shares; "Change server" (long-press the app icon) |
 | `Bridge` | the bridge, injected with `WebViewCompat.addWebMessageListener` and `addDocumentStartJavaScript`, both restricted to the configured origin |
 | `ReminderSchedule`, `Reminders.kt` | the handed-over schedule, exact alarms (inexact when refused), notifications with Snooze 10 min and Dismiss, re-arming after a reboot |
+| `GeofenceSchedule`, `Geofences.kt` | location reminders: the handed-over regions, at most 19 registered as platform proximity alerts (`LocationManager`, no Play services), the nearest to the last known position, re-ranked on leaving a 1 km region around it; a notification with Done and Dismiss on a crossing in the reminder's direction, at most once an hour per reminder; registered again after a reboot or an update |
 | `HiddenRun` | the hourly refresh and notification actions: the web app in a hidden `WebView` for at most 30 seconds |
 | `WidgetModel`, `Widgets.kt` | the Today and quick-add widgets (`RemoteViews`), drawn from the last publication only |
 | `BiometricKeyStore` | the account key under a Keystore AES-GCM key that needs a strong biometric for every use and is invalidated by an enrolment change |
@@ -119,8 +120,9 @@ The iOS shell reports `platform: "ios"` and the same members; `scheduleReminders
 | `bridge` | | `1` | changes only when a method's shape changes |
 | `platform` | | `"android"` | |
 | `app` | | `"0.10.0"` | the shell's version; Settings → About warns below the web app's `MIN_SHELL_APP` |
-| `capabilities` | | `string[]` | `reminders`, `widgets`, and in the visible app `share`, `links`, `obsidian-links`, `biometric` (when a strong biometric is enrolled) |
+| `capabilities` | | `string[]` | `reminders`, `widgets`, `geofences` (Android), and in the visible app `share`, `links`, `obsidian-links`, `biometric` (when a strong biometric is enrolled) |
 | `scheduleReminders(json)` | `reminders` | `→ Promise<"granted" \| "denied" \| "exact-denied">` | `[{id, taskId, fireAt, title?}]`, the next 7 days; replaces the stored schedule; asks for the notification permission once, opens the exact-alarm setting once |
+| `scheduleGeofences(json)` | `geofences` | `→ Promise<"granted" \| "foreground-only" \| "denied" \| "unavailable">` | `{version: 1, ask?, regions: [{id, taskId, lat, lon, radius, on: "arrive"\|"leave", title?}]}`, at most 100; replaces the stored regions, registered only with background location; asks for fine, then background location only with `ask` in the visible app; the position never reaches the web view |
 | `testNotification()` | `reminders` | `→ Promise<boolean>` | shows a notification now |
 | `publishWidget(json)` | `widgets` | `void` | `{updatedAt, locked, count, overdue, tasks: [{id, title?, time?, priority, overdue}]}`, at most 50 tasks; `locked` means counts only |
 | `biometricStore(keyB64)` | `biometric` | `→ Promise<boolean>` | 32-byte raw account key; shows the biometric prompt |
@@ -130,7 +132,7 @@ The iOS shell reports `platform: "ios"` and the same members; `scheduleReminders
 
 The iOS shell reports `platform: "ios"` and the same members; `scheduleReminders` answers `"granted"` or `"denied"` (iOS has no exact-alarm permission, so never `"exact-denied"`), `widgets`, `share`, `links` and — with Face ID or Touch ID enrolled — `biometric`.
 
-Addresses the shell opens in the web app: `/?task=<id>` (a notification tap or the widget's row), `/?reminder=<id>&action=snooze|dismiss` (a notification action), `/?add=<text>`, `/today` and `/share?title=…&text=…&url=…[&files=1]` (shares; files follow as the `opentodo-files` message, the same one the browser extension posts — the extension's own per-file check is `ShareMap`, at most 10 files, 20 MB each, 25 MB in all). The same addresses arrive as links: `opentodo://task/<id>`, `opentodo://reminder/<id>?action=snooze|dismiss`, `opentodo://add?text=…` and `opentodo://share`. Every value is percent-encoded when it goes into the path, and only `snooze` and `dismiss` survive as actions.
+Addresses the shell opens in the web app: `/?task=<id>` (a notification tap or the widget's row), `/?reminder=<id>&action=snooze|dismiss` (a notification action; `done|dismiss` for a location reminder), `/?add=<text>`, `/today` and `/share?title=…&text=…&url=…[&files=1]` (shares; files follow as the `opentodo-files` message, the same one the browser extension posts — the extension's own per-file check is `ShareMap`, at most 10 files, 20 MB each, 25 MB in all). The same addresses arrive as links: `opentodo://task/<id>`, `opentodo://reminder/<id>?action=snooze|dismiss`, `opentodo://add?text=…` and `opentodo://share`. Every value is percent-encoded when it goes into the path, and only `snooze` and `dismiss` survive as actions (and, from an Android location reminder's notification, `done`).
 
 ## Testing
 
@@ -182,7 +184,7 @@ Record each run here: date, device, Android version, server version.
 
 ## Release signing
 
-Release builds are signed only in CI, on a `v*` tag, from four repository secrets: `ANDROID_KEYSTORE_BASE64` (the keystore file, base64), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. The job writes `keystore.properties` and the keystore to the runner's temporary directory, builds `opentodo-android-<version>.apk` and `.aab`, deletes both files, and the release job attaches the two files with build provenance. Without the secrets the tag build skips signing with a warning. Never commit a keystore or `keystore.properties` (both are ignored).
+Release builds are signed only in CI, on a `v*` tag, from four repository secrets: `ANDROID_KEYSTORE_BASE64` (the keystore file, base64), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. The job writes `keystore.properties` and the keystore to the runner's temporary directory, builds `opentodo-android-<version>.apk` and `.aab` (the AAB with `-Popentodo.play=true`, the Google Play build without location permissions until Play approves background location; `scripts/android-store-check.sh` checks both on every CI run), deletes both files, and the release job attaches the two files with build provenance. Without the secrets the tag build skips signing with a warning. Never commit a keystore or `keystore.properties` (both are ignored).
 
 **One certificate everywhere** (`play-production` D1). The release key signs the GitHub APK, F-Droid publishes that same signed APK (`AllowedAPKSigningKeys` in the F-Droid metadata), and Google Play signs with the same key through Play App Signing ("use my own key"). Its certificate's SHA-256 is
 
