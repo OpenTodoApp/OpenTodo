@@ -711,3 +711,43 @@ describe('the row\'s empty area (row-and-cursor D1)', () => {
     await r.unmount()
   })
 })
+
+// The title takes the row's width (OpenSpec change task-list-width, GitHub issue 650):
+// two lines, then an ellipsis, with the whole title in a tip only while it is cut, and
+// no room kept for the revealed actions, which float over the row's end.
+describe('title width (task-list-width)', () => {
+  const long = 'Start organizing and listing Facebook items for sale before the move, starting with the furniture in the garage'
+  const mountRow = () => render(<ul><TaskRow task={task({ title: long })} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} onMore={() => {}} /></ul>)
+
+  it('wraps to two lines and keeps no room for the actions', async () => {
+    const r = await mountRow()
+    const title = r.container.querySelector<HTMLElement>('[data-row-title]')!
+    expect(title.className).toContain('line-clamp-2')
+    expect(title.className).not.toContain('truncate')
+    const trailing = r.container.querySelector<HTMLElement>('[data-row-trailing]')
+    if (trailing) expect(trailing.className).not.toMatch(/min-w-(36|8)\b/)
+    expect(r.container.querySelector('[data-row-actions]')).not.toBeNull()
+    await r.unmount()
+  })
+
+  it('names the whole title in a tip only while it is cut', async () => {
+    const fits = await mountRow()
+    expect(fits.container.querySelector('[data-row-title]')!.hasAttribute('data-tip')).toBe(false)
+    await fits.unmount()
+    const proto = HTMLElement.prototype
+    const sh = Object.getOwnPropertyDescriptor(proto, 'scrollHeight')
+    const ch = Object.getOwnPropertyDescriptor(proto, 'clientHeight')
+    const titleOr = (el: HTMLElement, cut: number) => el.hasAttribute('data-row-title') ? cut : 0
+    Object.defineProperty(proto, 'scrollHeight', { configurable: true, get() { return titleOr(this as HTMLElement, 60) } })
+    Object.defineProperty(proto, 'clientHeight', { configurable: true, get() { return titleOr(this as HTMLElement, 40) } })
+    try {
+      const cut = await mountRow()
+      await waitFor(() => cut.container.querySelector('[data-row-title]')!.getAttribute('data-tip') === long, 'the tip on the cut title')
+      await cut.unmount()
+    } finally {
+      const own = proto as unknown as Record<string, unknown>
+      if (sh) Object.defineProperty(proto, 'scrollHeight', sh); else delete own.scrollHeight
+      if (ch) Object.defineProperty(proto, 'clientHeight', ch); else delete own.clientHeight
+    }
+  })
+})

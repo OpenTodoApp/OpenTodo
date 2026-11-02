@@ -23,7 +23,7 @@
 // The row is its own size container (`@container/row`), so every host gets the layout
 // its width allows; the rules are in index.css, "The property column".
 import { isSample } from '../lib/sampleTasks'
-import { hueFor, Icon, LabelChips, ReadAs, ToneText, Tooltip, TruncatedText, type HueName, type IconName, type Tone } from '../ui'
+import { hueFor, Icon, LabelChips, ReadAs, ToneText, Tooltip, TruncatedText, useOverflowing, type HueName, type IconName, type Tone } from '../ui'
 import { slotName, useSlotOf } from '../lib/slots'
 import { lazy, memo, type ReactNode, Suspense, useLayoutEffect, useRef } from 'react'
 import type { RowImplied } from '../lib/listGroups'
@@ -624,6 +624,29 @@ function startWords(start: string, span: Span | null, p: ResolvedDateTime): stri
 }
 
 /**
+ * A list row's title (task-list-width D1, D3): two lines, then an ellipsis. The whole
+ * title is the open control's name, and its tooltip while it is cut; its own component,
+ * so a change of "cut" re-renders the title only.
+ */
+function RowTitle({ title, tone, waiting, undecryptable, unencrypted, measure }: { title: string; tone: string; waiting: boolean; undecryptable: boolean; unencrypted: boolean; measure: boolean }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const cut = useOverflowing(ref, title, measure && !undecryptable)
+  return (
+    <Tooltip label={title} disabled={!cut}>
+      <div ref={ref} className={`user-text min-w-0 text-body line-clamp-2 break-words ${tone}`} data-row-title data-waiting={waiting ? '' : undefined}>
+        {undecryptable ? <span className="italic text-faint"><ReadAs label={t('This title could not be decrypted with this device\'s key')}>{title}</ReadAs></span>
+          : title || <span className="italic text-faint">{t('Untitled')}</span>}
+        {unencrypted && (
+          <span className="ml-2 rounded-chip bg-warning-soft px-1.5 py-0.5 align-middle text-hint text-on-warning-soft">
+            <ReadAs label={t('The server still holds this text unencrypted; it is encrypted after the next sync of an unlocked device.')}>{t('not yet encrypted')}</ReadAs>
+          </span>
+        )}
+      </div>
+    </Tooltip>
+  )
+}
+
+/**
  * Memoized (large-list-performance D1): a list re-renders a row only when one of its
  * props changes, so callers pass stable handlers and per-row values (`selected` is a
  * boolean, not the list's selected id).
@@ -738,8 +761,8 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   // card at the top right, as before rows-v2 (a link nested in a button is invalid).
   const trailing = card ? originChip && <span data-row-trailing="" className="ml-auto flex shrink-0 items-start">{originChip}</span>
     : (originChip || revealed) && (
-    // While a two-line row can reveal its actions the group keeps their width (7 rem), so they never cover the open control (ux-fixes-phone, audit M11) and revealing them moves nothing; a one-line row lets them float over its column (index.css).
-    <span data-row-trailing="" className={`ml-auto mt-0.5 flex h-5 min-w-0 items-center justify-end gap-2 transition-opacity duration-(--duration-ui) ${revealed ? `${readOnly ? 'md:pointer-fine:min-w-8' : 'md:pointer-fine:min-w-36'} ${forceActions ? 'md:pointer-fine:opacity-0' : 'md:pointer-fine:group-hover:opacity-0 md:pointer-fine:group-focus-within:opacity-0'}` : ''}`}>
+    // The revealed actions float over the row's end at every width (task-list-width D2): the row keeps no room for them, so the title has the whole width and revealing them moves nothing.
+    <span data-row-trailing="" className={`ml-auto mt-0.5 flex h-5 min-w-0 items-center justify-end gap-2 transition-opacity duration-(--duration-ui) ${revealed ? (forceActions ? 'md:pointer-fine:opacity-0' : 'md:pointer-fine:group-hover:opacity-0 md:pointer-fine:group-focus-within:opacity-0') : ''}`}>
       {originChip && <span className="flex shrink-0">{originChip}</span>}
     </span>
   )
@@ -837,16 +860,9 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
           if (onTick && !readOnly && (e.shiftKey || e.ctrlKey || e.metaKey)) { e.preventDefault(); onTick(e.shiftKey); return }
           onOpen(e)
         }}>
-        <div className={card ? '' : 'flex min-w-0 items-center gap-2'} data-row-head>
-        <div className={`user-text text-body ${card || detailed ? 'line-clamp-2' : 'min-w-0 truncate'} ${checked ? 'text-faint line-through' : blockedBy > 0 || (waitsFor && !done) ? 'text-muted' : ''}`} data-row-title data-waiting={waitsFor && !done ? '' : undefined}>
-          {undecryptable ? <span className="italic text-faint"><ReadAs label={t('This title could not be decrypted with this device\'s key')}>{task.title}</ReadAs></span>
-            : task.title || <span className="italic text-faint">{t('Untitled')}</span>}
-          {unencrypted && (
-            <span className="ml-2 rounded-chip bg-warning-soft px-1.5 py-0.5 align-middle text-hint text-on-warning-soft">
-              <ReadAs label={t('The server still holds this text unencrypted; it is encrypted after the next sync of an unlocked device.')}>{t('not yet encrypted')}</ReadAs>
-            </span>
-          )}
-        </div>
+        <div className={card ? '' : 'flex min-w-0 items-start gap-2'} data-row-head>
+        <RowTitle title={task.title} tone={checked ? 'text-faint line-through' : blockedBy > 0 || (waitsFor && !done) ? 'text-muted' : ''} waiting={!!waitsFor && !done}
+          undecryptable={undecryptable} unencrypted={unencrypted} measure={!inline && !departing} />
         {!card && !detailed && priority && <PriorityMark priority={priority} />}
         {!card && m.repeat && <ToneText tone="faint" icon="repeat" data-repeat="" data-recurring={m.recurring ? '' : undefined} label={m.repeatLabel ?? m.repeat} className="shrink-0">{null}</ToneText>}
         {!card && headCounts.length > 0 && <RowCounts counts={headCounts} />}
