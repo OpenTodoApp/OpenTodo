@@ -183,6 +183,11 @@ type resolver struct {
 	batchSeries map[string]bool
 	// batchRule marks the tasks this batch gives a rule (split_check.go).
 	batchRule map[string]bool
+	// batchReminder holds the batch's winning kind, fire_at, offset_minutes
+	// and radius_m ops per reminder (reminder_check.go).
+	batchReminder map[string]map[string]Op
+	// reminderShapeOK caches the shape answer per reminder for the batch.
+	reminderShapeOK map[string]bool
 	// detail names the id behind the last refusal, when there is one (dependencies.go).
 	detail string
 	// graphs caches each scope's dependency graph for the batch (dependencies.go).
@@ -208,6 +213,7 @@ func newResolver(ctx context.Context, tx querier, acc *access, ops []Op) *resolv
 		r.noteTimeEntry(op)
 		r.noteSeries(op)
 		r.noteRule(op)
+		r.noteReminder(op)
 		if op.Entity == "task" {
 			r.batchTasks[op.EntityID] = true
 		}
@@ -351,6 +357,11 @@ func (r *resolver) resolve(op Op) (scope, reason string, err error) {
 				return "", ReasonForbidden, err
 			}
 		}
+		if op.Entity == "reminder" {
+			if reason, err := r.checkReminderShape(op, r.acc.personal); err != nil || reason != "" {
+				return "", reason, err
+			}
+		}
 		return r.acc.personal, "", nil
 	}
 	if !CanWrite(r.acc.roleIn(scope), op.Entity, op.Field) {
@@ -392,6 +403,19 @@ func (r *resolver) resolve(op Op) (scope, reason string, err error) {
 				return "", "", err
 			}
 			if !ok {
+				return "", ReasonNotAMember, nil
+			}
+		}
+	}
+	if op.Entity == "task" && op.Field == "rotation" {
+		// Every person who takes turns must be assignable (chore-rotation D1).
+		for _, id := range idList(op.Value) {
+			ok, err := r.canBeAssigned(scope, id)
+			if err != nil {
+				return "", "", err
+			}
+			if !ok {
+				r.detail = id
 				return "", ReasonNotAMember, nil
 			}
 		}

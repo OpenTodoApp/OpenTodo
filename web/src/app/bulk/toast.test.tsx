@@ -6,6 +6,7 @@ import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from '../../ui/test-utils'
 import { ACTION_TOAST_MS, hideBulkToast, showBulkToast, showUndoToast } from './toastStore'
+import { TRASH_TOAST_MS } from './BulkActions'
 import { TOAST_MS, UndoToast } from './UndoToast'
 
 beforeEach(() => { vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] }) })
@@ -69,6 +70,21 @@ describe('the toast primitive', () => {
     // Two actions, Undo first, then the close button (issue 348).
     expect(controls).toEqual(['Undo', 'Open', 'Dismiss'])
     expect(toastEl()!.querySelector('[role="status"]')).not.toBeNull()
+    await r.unmount()
+  })
+
+  it('a destructive window: the bulk Trash offer stays 15 s with Show Trash, an ordinary offer 5 s', async () => {
+    expect(TRASH_TOAST_MS).toBe(15_000)
+    const r = await render(<UndoToast />)
+    act(() => showBulkToast('3 tasks moved to the Trash', 'u1', { ttl: TRASH_TOAST_MS, action: { label: 'Show Trash', run: () => {} } }))
+    advance(5_100)
+    expect(toastEl()).not.toBeNull()
+    expect(toastEl()!.querySelector('[data-toast-action]')!.textContent).toBe('Show Trash')
+    advance(TRASH_TOAST_MS - 5_100)
+    expect(toastEl()).toBeNull()
+    act(() => showUndoToast('Completed', 'u1'))
+    advance(5_100)
+    expect(toastEl()).toBeNull()
     await r.unmount()
   })
 

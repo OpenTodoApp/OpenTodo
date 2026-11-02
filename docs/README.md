@@ -25,6 +25,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | &nbsp;&nbsp;↳ [The task panel](task-panel.md) | Everything in a task's panel: the title and its menu, the notes, the property chips and the Add menu, what a viewer can do, and how to close it. |
 | &nbsp;&nbsp;↳ [Dates and times](dates-and-times.md) | How due dates and times work, every way to type or pick them, and fixing a time to a time zone for something that happens at one moment worldwide. |
 | &nbsp;&nbsp;↳ [Time sectors](time-sectors.md) | Plan a task for this week, next week or this month without a fake date: the stored week, month or quarter, carry-over, and how the API, CLI, CalDAV and the vault carry it. |
+| &nbsp;&nbsp;↳ [Objectives](objectives.md) | Pin up to five quarterly and five weekly objectives in the Plan and the weekly review: the limit, carry-over, encryption, and the API, CLI and MCP. |
 | &nbsp;&nbsp;↳ [Deadlines and start dates](deadlines-and-start-dates.md) | A deadline is the day a task must be done by; a start date defers it until it matters. Countdowns, Someday, This Evening and the keys for each. |
 | &nbsp;&nbsp;↳ [Notes, subtasks and dependencies](notes-and-subtasks.md) | Write formatted notes, break a task into subtasks and nest them, and make a task wait for another one with Blocked by. |
 | &nbsp;&nbsp;↳ [Work from the list](work-from-the-list.md) | Add, complete and delete tasks, change them with one key, undo, and put them in the order you want, all without opening a task. |
@@ -55,6 +56,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | [Recurring tasks and reminders](recurring-and-reminders.md) | Make a task repeat every week, month or weekday, skip an occurrence, and get reminded at the right moment. |
 | &nbsp;&nbsp;↳ [Repeat rules](repeat-rules.md) | Every rule you can type into Repeat, the after-completion and end options, and what completing, skipping or splitting off one occurrence does. |
 | &nbsp;&nbsp;↳ [Task reminders](task-reminders.md) | Every kind of reminder you can add to a task, how reminders follow the due date, the deadline and a repeat rule, and what happens when one goes off. |
+| &nbsp;&nbsp;↳ [Location reminders](location-reminders.md) | Reminders that fire when you arrive at a place or leave it, how to set one up, why they fire only in the phone app, and what happens to your position. |
 | &nbsp;&nbsp;↳ [Default reminders](default-reminders.md) | A reminder added to every task that gets a date or a time, set once for all your devices, and when it is or isn't added. |
 | [Time blocking](time-blocking.md) | Estimate how long tasks take, then place them on the Day or Week calendar to see whether your plan fits the day. |
 | &nbsp;&nbsp;↳ [Day, Week and Month](calendar-views.md) | Open the calendar, read the Day and Week grids, and use the Month overview to see six weeks at once and move tasks between days. |
@@ -142,6 +144,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | [Running with Podman](self-hosting/podman.md) | A Quadlet systemd service, rootful or rootless, `podman auto-update`, the data volume and backups |
 | [Running on Render](self-hosting/render.md) | Deploy to Render Blueprint, the paid instance and disk it needs, the setup token, custom domains, updates and backups |
 | [Running on Synology](self-hosting/synology.md) | Container Manager project, the data folder and its owner, https with DSM's reverse proxy and Let's Encrypt, updates and backups |
+| [Running on Caliber Node](self-hosting/caliber-node.md) | A "Bring your own app" with the released image, the https address, updates by pulling `stable` again, backups |
 | [Public demo instance](self-hosting/demo.md) | `OPENTODO_DEMO=true`: a private sandbox per visitor, limits, expiry and the nightly reset, what is switched off, Docker and Coolify |
 | [Outgoing email](self-hosting/outgoing-email.md) | Optional SMTP for password resets, verified sign-up and invitations; Settings or `OPENTODO_SMTP_*`, providers, troubleshooting |
 | [Speech to text](self-hosting/speech-to-text.md) | Dictation on your own network with Speaches or whisper.cpp; Settings or `OPENTODO_STT_*`, what passes through the server |

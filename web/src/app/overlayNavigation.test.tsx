@@ -63,7 +63,8 @@ describe('navigating with an overlay open', () => {
     }
     // A browser traverses in a later task; happy-dom lands at once, so the traversal is delayed here.
     const realGo = history.go.bind(history)
-    vi.spyOn(history, 'go').mockImplementation((delta) => { setTimeout(() => realGo(delta), 20) })
+    let landed = false
+    vi.spyOn(history, 'go').mockImplementation((delta) => { setTimeout(() => { realGo(delta); landed = true }, 20) })
     const r = await render(<Nav />)
     await waitFor(() => dialogs() === 1, 'the dialog')
     // Closing releases the marker in a microtask (history.go(-1), which lands in a later task);
@@ -71,8 +72,8 @@ describe('navigating with an overlay open', () => {
     await click(buttonNamed('Close'))
     await waitFor(() => dialogs() === 0, 'closed')
     navigate({ view: 'upcoming' })
-    await act(async () => { await new Promise((res) => setTimeout(res, 80)) }) // the delayed traversal lands
-    expect(location.pathname).toBe('/upcoming')
+    // The delayed traversal lands, then the navigation held back for it goes ahead.
+    await waitFor(() => landed && location.pathname === '/upcoming', 'the delayed Back landed and the held navigation ran')
     expect(marker()).toBeUndefined()
     await act(async () => history.back())
     await waitFor(() => location.pathname === '/today', 'Back returns to the page the overlay was opened from')

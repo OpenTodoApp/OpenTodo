@@ -325,6 +325,10 @@ func (r *Registry) planUpdateReminders(ctx context.Context, c Caller, a args, ov
 		kind := rawStr(rem, "kind")
 		patch := map[string]json.RawMessage{}
 		switch {
+		case opsync.IsLocationKind(kind):
+			// location-reminders: no firing time; the agent tools do not edit
+			// them yet (agent-tools-complete).
+			return Plan{}, argErr(p + "a location reminder fires on the user's phone at the task's location and has no time to change")
 		case kind == "absolute" && hasOffset, kind != "absolute" && hasAt:
 			return Plan{}, argErr(p + "a reminder keeps its kind: give at for an absolute reminder, offset_minutes otherwise; to change the kind remove it and add another")
 		case !hasOffset && !hasAt:

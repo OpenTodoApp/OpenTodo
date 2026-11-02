@@ -20,7 +20,7 @@
   - In a browser, on the desktop and on a shell without the capability, location reminders can be created and edited. They never fire there, and the chip carries "Fires on your phone". There's no in-app firing and no push.
   - For an account with end-to-end encryption, coordinates are handed over only while the device is unlocked, and the regions are removed on lock, sign-out and server change.
 - **API.**
-  - `POST`/`PATCH /api/v1/reminders` accept `kind: "arrive" | "leave"` and `radius_m`. Values out of range get 400 `invalid_operation`, under the existing authentication rules.
+  - `POST`/`PATCH /api/v1/reminders` accept `kind: "arrive" | "leave"` and `radius_m`. Values out of range get 400 `invalid_input`, under the existing authentication rules.
   - The CLI shows location reminders in `ot task show`.
   - CalDAV doesn't serve them as alarms and never deletes them on a client's PUT.
 

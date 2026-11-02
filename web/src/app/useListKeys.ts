@@ -2,14 +2,15 @@
 // handlers for j / k, Enter, c, 1–4, Shift+L, Delete, e, d, n, Shift+N, Shift+E, → / ←
 // and Esc (the shortcut registry names them; the shell's dispatcher resolves the keys).
 import { useEffect, useRef } from 'react'
-import { deleteTask, parkTask, setTaskCompleted, unparkTask, updateTask } from '../lib/ops'
+import { parkTask, setTaskCompleted, unparkTask, updateTask } from '../lib/ops'
 import type { Priority, Task } from '../lib/types'
 import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus } from './signals'
 import { isActivationTarget, isTypingTarget, type ShortcutHandler, useShortcutScope } from './shortcuts'
 import { registerListState } from './listActions'
 import type { BulkList } from './bulk/useBulkList'
-import { runBulk } from './bulk/BulkActions'
+import { runBulk, trashTicked } from './bulk/BulkActions'
 import { act } from './actionError'
+import { deleteWithUndo } from './undoable'
 import { toggleTracking } from '../lib/timeEntries'
 import { panelTaskId, sidePanelDocks } from './panel'
 import { closeSidePanelFrom, useSidePanel } from './sidePanel'
@@ -130,13 +131,13 @@ export function useListKeys(opts: ListKeys): void {
       else o.setOpenId(row.id)
     },
     'list.complete': () => {
-      if (b?.ticked.length) { void runBulk(b.ticked, { kind: 'complete' }); return }
+      if (b?.ticked.length) { act(runBulk(b.ticked, { kind: 'complete' })); return }
       if (!row) return false
       act(setTaskCompleted(row.id, !row.completed_at))
     },
     'list.priority': (e) => {
       const priority = Number(e.key) as Priority
-      if (b?.ticked.length) { void runBulk(b.ticked, { kind: 'priority', priority }); return }
+      if (b?.ticked.length) { act(runBulk(b.ticked, { kind: 'priority', priority })); return }
       if (!row) return false
       act(updateTask(row.id, { priority }))
     },
@@ -146,9 +147,9 @@ export function useListKeys(opts: ListKeys): void {
       o.setPickerFor(row.id)
     },
     'list.delete': () => {
-      if (b?.ticked.length) { void runBulk(b.ticked, { kind: 'trash' }); return }
+      if (b?.ticked.length) { act(trashTicked(b.ticked)); return }
       if (!row) return false
-      act(deleteTask(row.id))
+      act(deleteWithUndo(row.id))
       o.setSelected(o.rows[idx + 1]?.key ?? o.rows[idx - 1]?.key ?? null)
     },
     'list.estimate': openWith(estimateFocus),
@@ -158,7 +159,7 @@ export function useListKeys(opts: ListKeys): void {
     'list.defer': openWith(deferFocus),
     'list.blocked-by': openWith(blockedByFocus),
     // Park or un-park (someday-and-evening D5).
-    'list.park': () => { if (!row) return false; void (row.start === 'someday' ? unparkTask(row.id) : parkTask(row.id)) },
+    'list.park': () => { if (!row) return false; act(row.start === 'someday' ? unparkTask(row.id) : parkTask(row.id)) },
     'list.evening': () => { if (!row) return false; act(updateTask(row.id, dayPartFields(row.evening ? null : 'evening'))) },
     ...o.extra,
   }, { paused: o.paused })

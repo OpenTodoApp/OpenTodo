@@ -413,11 +413,16 @@ type taskFlags struct {
 	done bool
 	// fresh is --new (reusable-lists D6): never reopen an item of a reusable list.
 	fresh bool
+	// edit only (chore-rotation D6): the people who take turns, or none.
+	rotate   string
+	noRotate bool
 }
 
 func (f *taskFlags) bind(fs *flag.FlagSet, edit bool) {
 	if edit {
 		fs.StringVar(&f.title, "title", "", "new title")
+		fs.StringVar(&f.rotate, "rotate", "", "people who take turns on a recurring task in a shared project, in order: names or emails, comma-separated")
+		fs.BoolVar(&f.noRotate, "no-rotate", false, "stop taking turns")
 	}
 	fs.StringVar(&f.project, "project", "", "project name or id (edit: `none` moves to Inbox)")
 	fs.StringVar(&f.dueWord, "due", "", "YYYY-MM-DD, today, tomorrow or a weekday (edit: `none` clears)")
@@ -762,8 +767,11 @@ func cmdEdit(a *App, ctx context.Context, g *globalFlags, args []string) error {
 			return err
 		}
 	}
-	if !set["title"] && !set["priority"] && !set["label"] && !set["note"] && !set["due"] && !set["time"] && !set["project"] && !set["repeat"] && !set["origin-url"] && !f.plan.any(set) {
-		return usageErr("nothing to change; pass at least one of --title, --project, --due, --time, --priority, --label, --note, --repeat, --origin-url, --deadline, --start, --evening, --span, --no-span, --part, --energy, --sector, --blocked-by, --location")
+	if set["rotate"] && set["no-rotate"] {
+		return usageErr("pass --rotate or --no-rotate, not both")
+	}
+	if !set["title"] && !set["priority"] && !set["label"] && !set["note"] && !set["due"] && !set["time"] && !set["project"] && !set["repeat"] && !set["origin-url"] && !set["rotate"] && !set["no-rotate"] && !f.plan.any(set) {
+		return usageErr("nothing to change; pass at least one of --title, --project, --due, --time, --priority, --label, --note, --repeat, --origin-url, --deadline, --start, --evening, --span, --no-span, --part, --energy, --sector, --blocked-by, --location, --rotate, --no-rotate")
 	}
 	c, _, err := a.connect(g)
 	if err != nil {
@@ -798,6 +806,9 @@ func cmdEdit(a *App, ctx context.Context, g *globalFlags, args []string) error {
 			return err
 		}
 		patch["labels"] = ids
+	}
+	if err := a.fillRotation(ctx, c, t, set, f.rotate, patch); err != nil {
+		return err
 	}
 	if err := f.plan.fill(ctx, a, c, set, patch, func() ([]task, error) { return all, nil }); err != nil {
 		return err
@@ -850,6 +861,9 @@ func cmdEdit(a *App, ctx context.Context, g *globalFlags, args []string) error {
 		verb = "parked"
 	}
 	fmt.Fprintf(a.Stdout, "%s  %s  %s\n", verb, shortID(updated.ID), updated.Title)
+	if set["rotate"] {
+		a.printTurns(ctx, c, a.Stdout, raw)
+	}
 	return nil
 }
 

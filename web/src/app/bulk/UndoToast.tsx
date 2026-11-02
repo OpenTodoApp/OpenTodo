@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Icon, Tooltip, ToastRegion, useToastClearance } from '../../ui'
 import { undoBatch, undoTaskCount } from '../../lib/undo'
 import { cancelDepartures, emphasisMs, noMotion, withListTransition } from '../motion'
-import { ACTION_TOAST_MS, hideBulkToast, updateBulkToast, useBulkToast, type BulkToast } from './toastStore'
+import { ACTION_TOAST_MS, hideBulkToast, updateBulkToast, useBulkToast, useToastTimer, type BulkToast } from './toastStore'
 import { useShortcutScope } from '../shortcuts'
 import { t } from '../../lib/i18n'
 import { useResetOnChange } from '../../lib/useResetOnChange'
@@ -24,21 +24,6 @@ export async function undoToast(undoId: string): Promise<void> {
   const r = await withListTransition(await undoTaskCount(undoId), () => undoBatch(undoId))
   const base = r.restored === 1 && r.skipped.length === 0 ? t('Undone.') : t('Undone: {n} restored.', { n: r.restored })
   updateBulkToast({ undoId: null, result: r.skipped.length ? `${base} ${t('Kept because they were changed again since: {items}.', { items: r.skipped.join(', ') })}` : base })
-}
-
-/**
- * The toast's timer: `ttl` ms of being shown, not counting the time it is held (hover or
- * focus). A new message in the same toast (the result after Undo) starts it again.
- */
-function useToastTimer(key: number | undefined, message: string | undefined, ttl: number, held: boolean) {
-  const left = useRef(ttl)
-  useEffect(() => { left.current = ttl }, [key, message, ttl])
-  useEffect(() => {
-    if (key === undefined || held) return
-    const started = Date.now()
-    const timer = setTimeout(() => hideBulkToast(key), left.current)
-    return () => { clearTimeout(timer); left.current = Math.max(0, left.current - (Date.now() - started)) }
-  }, [key, message, held])
 }
 
 const TOAST_CLASS = 'ui-toast pointer-events-auto flex items-center gap-3 rounded-control border border-default bg-surface px-3 py-2 text-body shadow-2'

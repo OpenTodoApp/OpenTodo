@@ -90,7 +90,10 @@ func decodeAlarm(c *Component) Alarm {
 			if v := strings.ToUpper(strings.TrimSpace(p.Value)); v != "DISPLAY" {
 				mappable = false
 			}
-		case "REPEAT", "DURATION":
+		case "REPEAT", "DURATION", "PROXIMITY":
+			// A PROXIMITY alarm (RFC 9074, Apple's location alarms with their
+			// 1976 placeholder trigger) stays client data: it is never a time
+			// reminder (OpenSpec change location-reminders, design D6).
 			mappable = false
 		case "TRIGGER":
 			triggers++
