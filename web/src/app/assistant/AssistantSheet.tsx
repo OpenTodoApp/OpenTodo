@@ -10,7 +10,7 @@ import { isolate, trapTab, useOverlay } from '../../ui'
  * Tab trapped, the page behind locked. A right-hand sheet from 640 px up and a
  * full-screen sheet below, above the on-screen keyboard.
  */
-export function AssistantSheet({ title, onClose, onEscape, children, footer, headerExtra }: {
+export function AssistantSheet({ title, onClose, onEscape, children, footer, headerExtra, keepFocus = false }: {
   title: ReactNode
   onClose: () => void
   /** Escape: discards a focused proposal before it closes the panel. */
@@ -18,10 +18,12 @@ export function AssistantSheet({ title, onClose, onEscape, children, footer, hea
   children: ReactNode
   footer?: ReactNode
   headerExtra?: ReactNode
+  /** Opened by a suggestion while the person types elsewhere: focus stays where it is. */
+  keepFocus?: boolean
 }) {
   const panel = useRef<HTMLDivElement>(null)
   const titleId = useId()
-  useOverlay({ panel, onClose: onEscape ?? onClose })
+  useOverlay({ panel, onClose: onEscape ?? onClose, takeFocus: !keepFocus })
   const tree = (
     <div className="fixed inset-x-0 top-0 z-50 flex justify-end bg-scrim" data-overlay-root {...isolate}
       style={{ bottom: 'var(--vv-bottom, 0px)' }}

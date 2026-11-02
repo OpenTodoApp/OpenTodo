@@ -14,11 +14,11 @@ The turn runs with the person's session (`POST /api/v1/assistant/turn` accepts s
 
 ### D2. One helper, `createTaskThenSuggest`
 
-`lib/assistantSuggest.ts` wraps `createTask` for the three paths: the task is written first, then `suggestAfterAdd(id, title)` runs without being awaited. It checks the device switch and the account status (`enabled`, `available`, `consented`) and does nothing otherwise. Every failure is caught: the task exists, a suggestion is a bonus. The wrapper keeps `TaskListView` under its line limit and leaves pasted batches (`addTasksUndoable`) untouched, so one paste does not send one turn per line.
+`lib/assistantSuggest.ts` wraps `createTask` for the three paths: the task is written first, then `suggestAfterAdd(id)` runs without being awaited. It checks the device switch and the account status (`enabled`, `available`, `consented`) and does nothing otherwise. Every failure is caught: the task exists, a suggestion is a bonus. The wrapper keeps `TaskListView` under its line limit and leaves pasted batches (`addTasksUndoable`) untouched, so one paste does not send one turn per line.
 
-### D3. The prompt is not translated
+### D3. The prompt is a translated-nowhere constant
 
-It is an instruction to the model, not text a person reads, and the model is told to answer in the task's language. Translating it would add five catalogue entries that can drift from the English one. The switch's own label and description are translated.
+It is an instruction to the model, not text a person reads, and the model is told to answer in the task's language. It is one constant (`SUGGESTION_PROMPT`, "Improve the selected task: …"): the task is named by the turn's `selected`, never by text spliced into the instruction, so a title with quotation marks cannot end a quote early or add instructions. Translating it would add five catalogue entries that can drift from the English one. The switch's own label and description are translated.
 
 ### D4. Off by default
 
@@ -27,6 +27,12 @@ Each add that asks costs one assistant turn and opens the panel. The switch is p
 ### D5. The turn's step budget is 12 model calls
 
 A turn that keeps planning ("then break each of these down") needs more rounds than the live spec's 8. The loop is bounded by model calls, not tool-use rounds: every call to the provider counts, including the one that answers `end_turn`. The 12th call may still end the turn with a change set; only a tool-use answer on the 12th call is refused the next round and stops the turn with `round_limit`. The change's spec delta carries the MODIFIED requirements, the docs' `round_limit` line names the same number, and the system rules ask for few steps so a normal request does not need the whole budget.
+
+### D6. A suggestion is never applied by itself, never replaces what is on screen, and does not take the cursor
+
+The question is a normal turn, and a device that applies small changes without review would apply a priority or a label the model also proposed, on a turn the person did not type. The prefill therefore carries `review: true`: the conversation shows the change set for review whatever that setting says (as for a capture), for that send only. The prefill also carries `keepFocus: true`: the sheet does not move focus into the panel (`useOverlay` `takeFocus`), so the person can go on typing in the quick-add line.
+
+A second add in a row (three tasks from the add bar is a common capture flow) is skipped, not queued, while the assistant is busy: the panel is open (a turn runs, a proposal waits for review, or the person is typing in it), a request waits for the panel, or a turn runs on the Assistant page. Replacing the prefill would put the second question in the draft while the first streams and, once the first turn ended, send it, which clears the first proposal before it could be applied. A queue would pop the panel open again later, over whatever the person moved on to, with a proposal about a task they have stopped looking at; a suggestion is a bonus, so a skipped one costs little, and closing the panel (or applying or discarding the proposal) makes the next add suggest again.
 
 ## Interface budget
 
@@ -38,6 +44,6 @@ No op field, entity or API route changes. The switch is one device-local `meta` 
 
 ## Risks
 
-- A fast series of adds sends one turn each; the server already allows one answer at a time per person, so the later ones are refused with the usual "busy" notice and the person can ask again from the panel.
+- A fast series of adds suggests for the first only (D6); the others are added without a suggestion and the person can ask from the task's menu.
 - The model may over-edit a title. The review is the barrier: nothing is written before Apply, and Undo restores it.
 - Twelve calls cost more than eight on a long turn. The monthly usage limit and the one-turn-per-person rule still apply, and the system rules ask the model to work in few steps.

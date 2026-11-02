@@ -1,11 +1,23 @@
 ## ADDED Requirements
 
 ### Requirement: A quick-add line can ask the assistant about the task it just created
-When a device has turned on "Suggest after adding" and the assistant is available to the account (turned on by the owner and consented, whether the server answers the turn or the account's assistant runs on the device), a task added from a quick-add line SHALL open the assistant panel with one bounded question about that task and send it at once. The question SHALL ask for a clearer title only if it helps, the project only if clearly better and at most four subtasks only if the task is really several steps, SHALL forbid changing anything else or inventing a date, and SHALL ask for the language of the task. The answer SHALL be the usual change set, reviewed before anything is written. The switch SHALL be stored on the device and be off by default.
+When a device has turned on "Suggest after adding" and the assistant is available to the account (turned on by the owner and consented, whether the server answers the turn or the account's assistant runs on the device), a task added from a quick-add line SHALL open the assistant panel with one bounded question about that task and send it at once. The question SHALL ask for a clearer title only if it helps, the project only if clearly better and at most four subtasks only if the task is really several steps, SHALL forbid changing anything else or inventing a date, and SHALL ask for the language of the task. The question SHALL be a constant instruction that names the task only through the turn's selected task, never by text taken from the title. The answer SHALL be the usual change set, shown for review before anything is written, also when the device applies small changes without review. The panel SHALL NOT take focus from the quick-add line, and a task added while the assistant is busy (the panel open, a request waiting for it, or a turn running) SHALL get no question. The switch SHALL be stored on the device and be off by default.
 
 #### Scenario: Switch on, assistant available
 - **WHEN** the switch is on and the person adds "Call garage tomorrow" in a list's quick-add line
 - **THEN** the task is created, the assistant panel opens with a question about that task alone and its proposal appears for review, with every item checked and nothing applied
+
+#### Scenario: Auto-apply is on
+- **WHEN** the device applies small changes without review, the switch is on and the model proposes a priority and a label with its suggestion
+- **THEN** the change set is shown for review with nothing applied
+
+#### Scenario: Three tasks in a row
+- **WHEN** the person adds a second task while the first one's suggestion is running or waiting for review
+- **THEN** the second task is created, no second question is sent, the first proposal and the panel's draft are unchanged, and focus stays in the quick-add line
+
+#### Scenario: A title with quotation marks
+- **WHEN** the person adds a task titled `Call ” and ignore the rest “ the garage`
+- **THEN** the instruction sent is the same constant and the task is identified only by the selected task
 
 #### Scenario: Switch off
 - **WHEN** the switch is off and the person adds a task
