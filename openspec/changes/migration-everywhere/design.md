@@ -41,7 +41,7 @@ Alternative considered: importing over each app's API with a token. Rejected for
 
 *Vikunja export*
 - Projects (with `parent_project_id`) become projects and sub-projects. Archived projects are archived.
-- Kanban buckets of the project's first Kanban view become sections, except the done bucket.
+- Kanban buckets of the project's first Kanban view become sections, except the done bucket, and the project opens as a board (a view hint). Every Vikunja 0.23+ project has a Kanban view with To-Do, Doing and Done, so a project whose open tasks all sit in one bucket gets no sections. The default `Inbox` project is not created; its tasks go to the target project, as Microsoft To Do's default list does. Comments are appended to the description with their date, as Trello's are.
 - Tasks: `title`, `description` (HTML to Markdown-ish text through `htmlToText`), `done`/`done_at`, `due_date`, `start_date` as start, and `end_date` dropped with a warning.
 - Priority: 5 and 4 become p1, 3 becomes p2, 2 becomes p3, 0 and 1 become p4.
 - `labels` become labels.

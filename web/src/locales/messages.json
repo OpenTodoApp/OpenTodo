@@ -19006,6 +19006,9 @@
   "Views and boards": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Vikunja (export ZIP)": [
+    "web/src/app/ImportScreen.tsx"
+  ],
   "Vim command line": [
     "web/src/app/vim/help.ts"
   ],
