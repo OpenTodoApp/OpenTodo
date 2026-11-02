@@ -41,6 +41,7 @@ const FORMAT_LABELS = translatedMap<ImportFormat>({
   'anydo-json': msg('Any.do (JSON from a data request)'),
   'vikunja-export': msg('Vikunja (export ZIP)'),
   'tududi-db': msg('Tududi (database)'),
+  'super-productivity-json': msg('Super Productivity (backup JSON)'),
   'json-items': msg('JSON: projects / sections / items'),
   'json-lists': msg('JSON: lists of tasks'),
   'json-generic': msg('JSON: task list'),
