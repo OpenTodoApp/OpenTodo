@@ -140,10 +140,23 @@ export async function applyOps(
   await db.transaction('rw', entityTables(), async () => {
     const recorded: RecordInput[] = []
     const rows = new Map<string, Record<string, unknown>>()
+    // One read and one write per table, not one per row (performance-10k): a
+    // pulled page of 1,000 ops touches about a hundred rows.
+    const stored = new Map<string, unknown>()
+    const byTable = new Map<Entity, string[]>()
+    for (const [, list] of grouped) {
+      const ids = byTable.get(list[0].entity)
+      if (ids) ids.push(list[0].entityId)
+      else byTable.set(list[0].entity, [list[0].entityId])
+    }
+    for (const [entity, ids] of byTable) {
+      const found = await tableOf(entity).bulkGet(ids)
+      ids.forEach((id, i) => { if (found[i]) stored.set(`${entity}:${id}`, found[i]) })
+    }
+    const writes = new Map<Entity, EntityRow[]>()
     for (const [, list] of grouped) {
       const { entity, entityId } = list[0]
-      const table = tableOf(entity)
-      const existing = (await table.get(entityId)) as (Project | Task | Label | View | Reminder | Section | Comment | ProjectPrefs) | undefined
+      const existing = stored.get(`${entity}:${entityId}`) as (Project | Task | Label | View | Reminder | Section | Comment | ProjectPrefs) | undefined
       const row: Record<string, unknown> = existing ? { ...existing } : { ...DEFAULTS[entity], id: entityId, _clock: {} }
       const clock: Clock = { ...(row._clock as Clock) }
       let changed = !existing
@@ -189,7 +202,9 @@ export async function applyOps(
       rows.set(`${entity}:${entityId}`, row)
       if (changed) {
         row._clock = clock
-        await table.put(row as EntityRow)
+        const w = writes.get(entity)
+        if (w) w.push(row as EntityRow)
+        else writes.set(entity, [row as EntityRow])
       }
       if (rt && NOTE_ENTITIES.has(entity) && (merged !== undefined || list.some((o) => appendId(o.field)))) {
         let patch: Record<string, unknown> | null = merged !== undefined ? reconcileNote(rt, row as unknown as Task, merged) : null
@@ -204,6 +219,7 @@ export async function applyOps(
         }
       }
     }
+    for (const [entity, list] of writes) await tableOf(entity).bulkPut(list)
     // Place each recorded op in its task and project once every row is written.
     for (const r of recorded) {
       if (r.op.entity === 'task') r.taskId = r.op.entityId

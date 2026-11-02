@@ -581,6 +581,10 @@ The owner of a project, or an admin of a shared one, can keep it and its sub-pro
 | `completed_by` | string or null | account id of whoever completed the task; null when open or unknown (completions made before this field, imports, public links). A write that sets `completed_at` without it records you; one that clears `completed_at` clears it |
 | `created_at` | unix ms | set by the server on create if missing |
 
+### One project's items
+
+`GET /api/v1/tasks?project_id=<id>` lists only the tasks of that project, in the order of the whole list; `include_deleted=true` works as without it. The server reads only that project's rows, so this is the fast way to list one project of a large account (about 150 ms for a 2,000-task project of a 10,000-task account, see [Performance budgets](performance.md)). Every collection whose items have a project takes it (`sections`, `fields`, `notes`, …). An empty value, or `project_id` on a collection whose items have no project (`labels`, `projects`), answers `400 invalid_input`; a project you cannot see lists nothing.
+
 ### Tasks completed in a range
 
 `GET /api/v1/tasks` takes `completed_after` and `completed_before` to list only tasks completed at or after the first and before the second. Each is a date `YYYY-MM-DD` (midnight at the start of that day in the zone named by `timezone`, UTC by default), an RFC 3339 time, or Unix milliseconds; either may be left out. With either one, open tasks are left out. An unparseable value, an unknown `timezone`, or the parameters on another collection answer `400 invalid_input` naming the parameter.

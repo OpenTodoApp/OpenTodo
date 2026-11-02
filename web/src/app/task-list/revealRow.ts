@@ -25,7 +25,9 @@ export function scrollParent(el: HTMLElement): HTMLElement | null {
 export function pinnedBottom(scroller: HTMLElement, row: HTMLElement): number {
   let bottom = scroller.getBoundingClientRect().top
   const pinned: DOMRect[] = []
-  for (const s of scroller.querySelectorAll<HTMLElement>('*')) {
+  // Only what can be sticky (the app pins with Tailwind's sticky classes): reading
+  // the style of every element cost 80 ms a key in a 2,000-row list (performance-10k).
+  for (const s of scroller.querySelectorAll<HTMLElement>('[class*="sticky"], [style*="sticky"]')) {
     if (s.contains(row) || getComputedStyle(s).position !== 'sticky') continue
     const r = s.getBoundingClientRect()
     if (r.height > 0) pinned.push(r)
@@ -51,8 +53,17 @@ export function revealRow(row: HTMLElement, opts: { first?: boolean } = {}): voi
     return
   }
   const r = row.getBoundingClientRect()
+  const box = scroller.getBoundingClientRect()
+  const visibleBottom = box.bottom - GAP
+  // What is pinned at the top never reaches past the scroller's middle: a row
+  // below it needs no look at the pinned headers, which reads the style of
+  // every element of the list (performance-10k: 80 ms a key at 2,000 rows).
+  const middle = box.top + box.height / 2
+  if (r.top >= middle) {
+    if (r.bottom > visibleBottom) scroller.scrollTop += Math.min(r.bottom - visibleBottom, r.top - middle)
+    return
+  }
   const visibleTop = pinnedBottom(scroller, row) + GAP
-  const visibleBottom = scroller.getBoundingClientRect().bottom - GAP
   if (r.top < visibleTop) scroller.scrollTop -= visibleTop - r.top
   else if (r.bottom > visibleBottom) scroller.scrollTop += Math.min(r.bottom - visibleBottom, r.top - visibleTop)
 }

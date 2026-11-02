@@ -130,17 +130,19 @@ export async function followSharedDueChanges(ops: Op[]): Promise<number> {
   const taskIds = new Set(ops.filter((o) => o.entity === 'task' && (o.field === 'due' || o.field === 'deadline')).map((o) => o.entityId))
   if (taskIds.size === 0) return 0
   const changes: Change[] = []
-  for (const id of taskIds) {
-    const task = await db.tasks.get(id)
-    if (!task || !task.project_id || task.deleted_at) continue
-    if (!(await db.memberships.get(task.project_id))) continue
-    const reminders = await db.reminders.where('task_id').equals(id).toArray()
-    for (const r of reminders) {
-      if (r.deleted_at || (r.kind !== 'relative' && r.kind !== 'deadline')) continue
-      const fireAt = offsetFireAt(r.kind, task, r.offset_minutes ?? 0)
-      if (fireAt === r.fire_at) continue
-      changes.push({ entity: 'reminder', entityId: r.id, patch: { fire_at: fireAt, delivered_at: null, dismissed_at: null } })
-    }
+  // Read in bulk (performance-10k): a first sync's page dates hundreds of tasks.
+  const tasks = (await db.tasks.bulkGet([...taskIds])).filter((t): t is Task => !!t && !!t.project_id && !t.deleted_at)
+  const projects = [...new Set(tasks.map((t) => t.project_id as string))]
+  const shared = new Set((await db.memberships.bulkGet(projects)).filter((m) => !!m).map((m) => m.projectId))
+  const sharedTasks = new Map(tasks.filter((t) => shared.has(t.project_id as string)).map((t) => [t.id, t]))
+  if (sharedTasks.size === 0) return 0
+  const reminders = await db.reminders.where('task_id').anyOf([...sharedTasks.keys()]).toArray()
+  for (const r of reminders) {
+    const task = sharedTasks.get(r.task_id)
+    if (!task || r.deleted_at || (r.kind !== 'relative' && r.kind !== 'deadline')) continue
+    const fireAt = offsetFireAt(r.kind, task, r.offset_minutes ?? 0)
+    if (fireAt === r.fire_at) continue
+    changes.push({ entity: 'reminder', entityId: r.id, patch: { fire_at: fireAt, delivered_at: null, dismissed_at: null } })
   }
   if (changes.length) await mutateMany(changes)
   return changes.length

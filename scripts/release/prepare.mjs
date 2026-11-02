@@ -23,6 +23,7 @@ import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { compareVersions, imageFor, latestRelease, loadFacts, ROOT } from '../deploy/common.mjs'
 import { COPIES, mirror } from '../deploy/mirror.mjs'
+import { checkDeviceRecord } from './deviceRecord.mjs'
 
 const VERSION = /^(\d+)\.(\d+)\.(\d+)$/
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
@@ -128,6 +129,8 @@ export function prepare(to, { root = ROOT, date = new Date().toISOString().slice
   if (compareVersions(to, from) <= 0) throw new Error(`${to} is not newer than the latest release, ${from}`)
   const [, maj, min] = VERSION.exec(to)
   const newMinor = maj !== r.major || min !== r.minor
+  // A minor release carries its reference-device record (performance-10k D5).
+  checkDeviceRecord(root, to, from)
 
   const changed = new Set()
   const edit = (rel, fn) => {

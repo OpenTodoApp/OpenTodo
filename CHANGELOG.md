@@ -4,9 +4,15 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- **`GET /api/v1/tasks?project_id=<id>` lists one project's tasks.** The parameter used to be ignored, so the call listed every task of the account. It now lists only that project's items, on every collection whose items have a project, and reads only that project's rows: about 150 ms for a 2,000-task project in a 10,000-task account. An empty value or a collection without projects answers `400 invalid_input` ([API](docs/api.md#one-projects-items)).
+- **Performance budgets for a 10,000-task account.** [Performance budgets](docs/performance.md) lists how fast OpenTodo is held to be on a computer, in a phone profile and on a small server, with a test account built by `go run ./cmd/perfseed` and a benchmark you can run with `make perf` (#590).
+
 ### Changed
 
 - **Getting a chore's turn because someone left now tells you.** When the person whose turn it is leaves a shared project, is removed or deletes their account, the next person in the rotation now gets the same **It's your turn** notification as after a completion, in the app, by push and on their notification channels. Before, the task moved to them silently ([Take turns](docs/take-turns.md)).
+- **A new device's first sync of a large account is about ten times faster.** Signing in to a 10,000-task account took over two minutes before everything was on the device; it now takes about 12 seconds on a laptop. The device keeps the newest 100 changes of each project in its local history after such a sync; the Activity tab and Updates load older history from the server, as before.
 
 ### Fixed
 

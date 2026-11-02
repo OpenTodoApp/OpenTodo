@@ -60,6 +60,7 @@ import { addTasksUndoable } from '../lib/pasteTasks'
 import { useListBindings } from './task-list/useListBindings'
 import { useListDrag } from './task-list/useListDrag'
 import { useListModel, type ListRoute } from './task-list/useListModel'
+import { LIST_READY, perfMark } from '../lib/perfMarks'
 import { useListShortcuts, type ListUi } from './task-list/useListShortcuts'
 import { noteTodayOpened } from '../lib/firstDay'
 import { InboxMenu } from './SampleNotice'
@@ -139,7 +140,15 @@ const NO_DONE: Map<string, Task[]> = new Map()
  */
 function useListReady(route: ListRoute, loaded: boolean, hasProject: boolean): boolean {
   const membership = useMembership(route.view === 'project' ? route.id : '')
-  return loaded && (route.view !== 'project' || (hasProject && membership !== undefined))
+  const ready = loaded && (route.view !== 'project' || (hasProject && membership !== undefined))
+  useListReadyMark(ready, route)
+  return ready
+}
+
+/** LIST_READY once per list opened, after the rows' first commit (performance-10k D4). */
+function useListReadyMark(ready: boolean, route: ListRoute) {
+  const key = 'id' in route ? `${route.view}:${route.id}` : route.view
+  useEffect(() => { if (ready) perfMark(LIST_READY, { view: route.view }) }, [ready, key]) // eslint-disable-line react-hooks/exhaustive-deps -- the key names the route
 }
 
 /**
