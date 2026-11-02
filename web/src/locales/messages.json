@@ -17478,6 +17478,9 @@
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
   ],
+  "Time passed": [
+    "web/src/app/task-list/WaitingSoon.tsx"
+  ],
   "Time sector": [
     "web/src/app/ParseChips.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
@@ -21409,6 +21412,9 @@
   "through the task page": [
     "web/src/app/task-detail/CommentsTab.tsx"
   ],
+  "time passed: {title}, {time}": [
+    "web/src/lib/listGroups.ts"
+  ],
   "time sector": [
     "web/src/lib/history.ts"
   ],
@@ -22225,6 +22231,9 @@
   ],
   "{n, plural, one {# past its deadline} other {# past their deadline}}": [
     "web/src/app/ProjectsTable.tsx"
+  ],
+  "{n, plural, one {# past its time} other {# past their time}}": [
+    "web/src/lib/listGroups.ts"
   ],
   "{n, plural, one {# person uses their own provider and key.} other {# people use their own provider and key.}}": [
     "web/src/app/assistant/AssistantSettings.tsx"
