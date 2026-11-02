@@ -146,6 +146,8 @@ ot add "Install shelves" --blocked-by 91f0 --location Home
 ot edit 8c2a --evening=false --blocked-by none --location none
 ot edit 8c2a --start 2026-11-03 --due 2026-11-05 --span   # a trip from 3 to 5 November
 ot add --done "Fixed the printer"                    # log a win: created already completed
+ot edit bins --rotate "alice,Bob,carol@example.com"  # take turns, in this order
+ot edit bins --no-rotate                             # stop taking turns
 ```
 
 | Flag | Meaning |
@@ -157,6 +159,8 @@ ot add --done "Fixed the printer"                    # log a win: created alread
 | `--label <l>` | Repeatable; a label name (case-insensitive) or id. Unknown names create the label. With `ot edit` the given labels replace the list |
 | `--note <text>` | Description; `--note ""` clears it |
 | `--title <text>` | New title (`ot edit` only) |
+| `--rotate <people>` | `ot edit` only: the people who [take turns](take-turns.md) on a recurring task of a shared project, comma-separated, in order. Each is a member's email, name or account id (any case), or a unique prefix of a name or email; an unknown or ambiguous person exits 2 listing the members, before any write. Completing the task then assigns the next of them. The command prints `Takes turns: Alice* → Bob → Carol`, the current assignee marked with `*` |
+| `--no-rotate` | `ot edit` only: stop taking turns (the assignee stays) |
 | `--repeat <rule>` | Recurrence rule in any spelling of the [rule grammar](recurrence.md) (`"Every Week"`, `"every mon, wed"`), checked locally and sent in canonical form; `none` (edit) clears the rule and keeps the date |
 | `--origin-url <url>` | Where the task comes from: an `http` or `https` URL, sent as the task's [origin](capture.md#where-a-task-came-from). A GitHub, GitLab, Jira or Linear issue link becomes `{kind: "issue", provider, id}` (`o/r#7`, `ENG-123`), derived on your machine with the same table as the web app; any other link is a `url` origin. `ot` never requests the URL. Another scheme (`ftp:`, `file:`) exits 2 before any request; `none` (edit) clears the origin |
 | `--deadline <when>` | The day the task must be finished by, separate from the due date; same words as `--due`; `none` (edit) clears it |
@@ -191,6 +195,15 @@ ot rm 8c2a --yes           # required off a terminal and with --json
 A `<ref>` is a full task id or an id prefix that matches exactly one non-deleted task. An ambiguous prefix changes nothing, exits with code 2 and lists the candidates; with several references all are resolved before anything is changed. Scripts should use full ids from `--json`. `ot rm` is a soft delete: the task becomes a tombstone that still appears in the export.
 
 A task that is already in the requested state (`ot done` on a completed task, `ot reopen` on an open one) is reported as `unchanged`, keeps its completion time and nothing is sent; the command still exits 0. `ot edit` with values equal to the current ones sends nothing either.
+
+### One task's details
+
+```bash
+ot task show 8c2a          # title, due date, deadline, location and reminders
+ot task show 8c2a --json   # {"task": {…}, "reminders": [{…}]}
+```
+
+`ot task show <ref>` prints a task with its due date, deadline, location and your reminders, one per line: "30 minutes before the due time", "At 2026-10-13 09:00", and [location reminders](location-reminders.md) as "When I arrive at Post office (150 m)" or "When I leave Home (300 m)". It only reads, so a `read` token will do. Location reminders are created in the app or through [`POST /api/v1/reminders`](api.md#reminders-and-push), not with `ot`.
 
 ### Repeating tasks ahead
 
@@ -329,6 +342,21 @@ ot slots rm 7f3a [--yes]                                      # its tasks stay o
 ```
 
 `--date` takes `YYYY-MM-DD`, `today`, `tomorrow` or a weekday name (default today); `--for` a length from 15 minutes to 8 hours in 15-minute steps (default `30m`). `put` adds the tasks at the end of the slot and, in the same batch, sets each one's date to the slot's day without a time and takes it out of your other slots of that day; a slot holds at most 20 tasks, and a task you may not edit (a viewer of its project) is refused with `forbidden` and nothing changes. `add`, `put` and `rm` write, so `--dry-run`, `--read-only` and token scope apply (a `read` or `agent` token exits 5). `--json` prints the [`slot`](#machine-readable-help-ot-schema) objects; an encrypted account's titles are ciphertext and the table shows `(encrypted)`.
+
+## Objectives
+
+Your quarterly and weekly [objectives](objectives.md), a few short lines per period:
+
+```bash
+ot objectives [--quarter|--week] [--period 2026-W45]          # this quarter's and this week's by default
+ot objectives add "Draft the talk" --week [--next]             # --quarter or --week; --next for next quarter or week
+ot objectives done 3fa1                                        # an id or id prefix
+ot objectives undone 3fa1
+ot objectives edit 3fa1 --title "Give the talk"
+ot objectives delete 3fa1 [--yes]
+```
+
+Weeks are ISO weeks starting on Monday, taken from this machine's date. A period holds at most 5 open objectives: a sixth exits 1 with `too_many_objectives`. `add`, `done`, `undone`, `edit` and `delete` write, so `--dry-run`, `--read-only` and token scope apply (a `read` or `agent` token exits 5). `--json` prints the [`objective`](#machine-readable-help-ot-schema) objects. On an encrypted account titles are decrypted after `ot encryption unlock` and print as `[encrypted]` otherwise; adding or editing a title needs the key (exit 5 `encryption_enabled` without it).
 
 ## Issue connections
 

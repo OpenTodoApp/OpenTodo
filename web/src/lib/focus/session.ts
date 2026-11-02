@@ -5,6 +5,7 @@
 // never are: starting or resuming work starts an entry, pausing, finishing,
 // taking a break, completing or leaving stops it.
 import { focusLogger } from './index'
+import { reportEntryFailure } from './failures'
 import type { FocusPrefs } from './prefs'
 import { readFocus, transitionFocus, writeFocus } from './state'
 import { complete, continuousWork, finish, idleState, inRun, isDue, isRunning, pause, plannedEnd, resume, start, stopWork, takeBreak, type FocusState } from './timer'
@@ -16,6 +17,7 @@ async function stopEntry(entryId: string | null, at: number): Promise<void> {
     await focusLogger().stop(entryId, at)
   } catch (err) {
     console.warn('focus: stopping the time entry failed', err)
+    reportEntryFailure('stop', err)
   }
 }
 
@@ -41,6 +43,7 @@ async function attachEntry(s: FocusState, at: number): Promise<void> {
     id = await focusLogger().start(s.taskId, at, focus)
   } catch (err) {
     console.warn('focus: starting the time entry failed', err)
+    reportEntryFailure('start', err)
   }
   if (!id) return
   const entry = id

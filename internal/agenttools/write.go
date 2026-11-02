@@ -90,10 +90,11 @@ func init() {
 		props["title"] = titleProp
 		props["description"] = descProp
 		addPlanningProps(props)
-		desc := fmt.Sprintf("Change the title, description, priority, labels, estimate, recurrence, deadline, start (a date or someday), evening, span, day part, energy, time sector, blockers, location or custom field values of up to %d tasks", PerCall)
+		props["rotation"] = rotationProp
+		desc := fmt.Sprintf("Change the title, description, priority, labels, estimate, recurrence, deadline, start (a date or someday), evening, span, day part, energy, time sector, blockers, location, the people who take turns or custom field values of up to %d tasks", PerCall)
 		if !c.Encrypted {
 			props["origin_url"] = originURLClearProp
-			desc = fmt.Sprintf("Change the title, description, priority, labels, estimate, recurrence, deadline, start (a date or someday), evening, span, day part, energy, time sector, blockers, location, origin or custom field values of up to %d tasks", PerCall)
+			desc = fmt.Sprintf("Change the title, description, priority, labels, estimate, recurrence, deadline, start (a date or someday), evening, span, day part, energy, time sector, blockers, location, the people who take turns, origin or custom field values of up to %d tasks", PerCall)
 		}
 		desc += ". Every field is written as sent: parking with start someday keeps the due date. Use schedule_tasks for due dates, move_tasks for projects and complete_tasks to complete."
 		return writeDef("update_tasks", "Update tasks", desc,

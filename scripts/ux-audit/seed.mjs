@@ -87,6 +87,10 @@ export async function seed({ base, pw, lang = '', now = Date.now() }) {
   await T({ title: 'Plan the team offsite', project_id: work.id, due: { date: today, time: '14:00' }, estimate_minutes: 90 })
   await T({ title: 'Submit expense report', project_id: work.id, completed_at: now - 3600e3 })
   // A slot holding two small tasks (calendar-slots): the block and checklist in Day and Week, the agenda row on a phone.
+  // Date-only tasks of today beyond the lane's few (GitHub issue 775): the phone's Day folds its lane.
+  for (const title of ['Water the plants', 'Call the dentist about the appointment']) await T({ title, due: { date: today } })
+  // A repeating task (truncated-labels): its task page shows the This occurrence / All occurrences toggle.
+  const repeating = await T({ title: 'Pay the rent', due: { date: today.slice(0, 8) + '28' }, recurrence: 'every 28th' })
   const small = [(await T({ title: 'Reply to the landlord', estimate_minutes: 5 })).id, (await T({ title: 'Pay the electricity bill', estimate_minutes: 10 })).id]
   await A('POST', '/api/v1/slots', { title: 'Admin', date: today, start: '16:00', minutes: 45, task_ids: small, move_tasks: true })
   // Five custom fields on Work (custom-fields): the columns layout at 768 px.
@@ -153,5 +157,5 @@ export async function seed({ base, pw, lang = '', now = Date.now() }) {
   // One session for every browser context: logging in per context trips the rate limit.
   const storageState = await ctx.storageState()
   await browser.close()
-  return { storageState, projectInvite: projectLink.split('/invite/p/')[1], publicLink: publicLink.split('/public/')[1], pageSecret, home: home.id, work: work.id, view: v1.id, dashboard: dash.id, label: L.errand, quotes: quotes.id, routine: routine.id, llm }
+  return { storageState, projectInvite: projectLink.split('/invite/p/')[1], publicLink: publicLink.split('/public/')[1], pageSecret, home: home.id, work: work.id, view: v1.id, dashboard: dash.id, label: L.errand, quotes: quotes.id, routine: routine.id, repeating: repeating.id, llm }
 }

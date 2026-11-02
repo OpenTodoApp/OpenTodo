@@ -23,7 +23,7 @@ import { refreshEvents } from './calendarFeeds'
 import { ENTITIES, type Clock, type Op, type RowEncryption, type SyncResponse, type SyncState } from './types'
 import { isEnabled, loadEncryptionState, refreshFromServer, syncBlocked } from './e2ee'
 import { HELD_RETRY_MS, heldCount, holdOps, limitMessage, requeueHeld, splitRejected } from './limits'
-import { decryptIncoming, LockedError, markSent, normalizeOnSight, prepareOutgoing, reconcileMode, runMigration } from './e2eeSync'
+import { catchUpEncryption, decryptIncoming, LockedError, markSent, normalizeOnSight, prepareOutgoing, reconcileMode, runMigration } from './e2eeSync'
 import { t } from './i18n'
 import { uuid } from './ids'
 import { onTestTeardown } from './testTeardown'
@@ -363,6 +363,11 @@ async function exchange(alive: () => void, signal: AbortSignal): Promise<void> {
       publish({ pending: left })
       if (!res.hasMore && left === 0) break
     }
+    // Everything is pulled and the outbox is empty: content an older re-write
+    // job left in the wrong form is converted now (encryption-rewrite-coverage)
+    // and uploads in the next exchange.
+    if (await catchUpEncryption()) requestSync(0)
+    alive()
     if (received) {
       needNotifications = false
       await refreshNotifications()

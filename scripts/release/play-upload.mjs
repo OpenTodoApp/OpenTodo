@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // Uploads the Android App Bundle of a final release to Google Play's internal testing track
-// (OpenSpec change play-production D2). A person promotes it to production in the Play Console
+// (OpenSpec change play-production D2). The bundle is the Play build (-Popentodo.play=true, change
+// play-location-later): no location permissions until Play approves background location; the
+// Android job checks that with scripts/android-store-check.sh before the release. A person promotes it to production in the Play Console
 // (RELEASING.md); this script never touches the production track.
 //
 //   PLAY_SERVICE_ACCOUNT_JSON='{…}' node scripts/release/play-upload.mjs v0.20.0 app.aab

@@ -32,7 +32,9 @@ function onPop() {
   // the other popstate listeners (the router's) have seen it.
   if (landing) setTimeout(settle, 0)
   const cur = markOf()
-  // A marker nobody owns (left under a route that replaced the one above it): step over it.
+  // A marker nobody owns (left under a route that replaced the one above it, or reached with Forward after
+  // Back closed its overlay): step over it. Forward then seems to do nothing, on purpose: there is no overlay
+  // left to reopen, and landing on a dead entry would take one more Back to leave.
   if (cur > 0 && ![...open].some((o) => o.mark === cur)) { depth = Math.min(depth, cur - 1); history.back(); return }
   if (cur >= depth) return
   depth = cur

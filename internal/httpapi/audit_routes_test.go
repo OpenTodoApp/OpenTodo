@@ -351,6 +351,8 @@ func TestUserExportExcludesAudit(t *testing.T) {
 			"slots",
 			// custom themes (theme-editor).
 			"themes",
+			// quarterly and weekly objectives (plan-objectives).
+			"objectives",
 			// the caller's workspaces (workspaces).
 			"workspaces":
 		default:

@@ -56,6 +56,7 @@ const PATCH_RELEASE_FILES = [
   'deploy/umbrel/umbrel-app.yml',
   'deploy/umbrel/upstream/opentodo/docker-compose.yml',
   'deploy/umbrel/upstream/opentodo/umbrel-app.yml',
+  'docs/self-hosting/caliber-node.md',
   'docs/self-hosting/caprover.md',
   'docs/self-hosting/casaos.md',
   'docs/self-hosting/docker.md',

@@ -22,7 +22,9 @@ export interface TaskTrail {
   scroll: number
   /** The opener was a task list, which selects a row it is handed on return. */
   list: boolean
-  /** `history.length` right after the page was pushed: Esc can go back instead of forward. */
+  /** `history.length` right after the page was pushed: Esc can go back instead of forward. The page's own
+   *  history entry is stamped with it too (`taskTrail` in its state), for when an overlay's marker entries
+   *  (useBackToClose) have left forward entries behind and `history.length` no longer matches. */
   depth: number
 }
 
@@ -86,6 +88,8 @@ export function openTaskPage(id: string, origin?: { from: string; label?: string
     trail = { from: here, label: pageLabel(), ids, scroll: content()?.scrollTop ?? 0, list, depth: 0 }
     navigate({ view: 'task', id })
     trail.depth = typeof history === 'undefined' ? 0 : history.length
+    // Only once the page's entry is the current one (a navigation can wait for an overlay's Back to land).
+    if (trail.depth > 0 && TASK_PATH.test(location.pathname)) history.replaceState({ ...(history.state ?? {}), taskTrail: trail.depth }, '')
   }
   emit()
 }
@@ -124,8 +128,11 @@ export function leaveTaskPage(id: string, fallback: () => void): void {
   if (t.list) selectTask.set(id)
   trail = null
   emit()
-  // The page was pushed over the list and only replaced since: going back is the list's own entry.
-  if (typeof history !== 'undefined' && t.depth > 0 && history.length === t.depth) history.back()
+  // The page was pushed over the list and only replaced since, or we are on its stamped entry with only an
+  // overlay's released markers above it: going back is the list's own entry.
+  const onPage = typeof history !== 'undefined' && t.depth > 0 &&
+    (history.length === t.depth || (history.state as { taskTrail?: number } | null)?.taskTrail === t.depth)
+  if (onPage) history.back()
   else navigate(parseRoute(t.from))
 }
 

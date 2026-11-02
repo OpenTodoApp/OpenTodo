@@ -33,6 +33,7 @@ import type { Progress } from '../lib/subtasks'
 import { streakLabel, type HabitStats } from '../lib/habits'
 import type { Label, Project, RowProperty, Task } from '../lib/types'
 import { AssigneeChip } from './AssigneePicker'
+import { rowTakesTurns } from '../lib/rotation'
 import { useAttachmentCount, useCommentCount, useSharedProject } from './useCommentCounts'
 import { notYetEncrypted, useEncryption } from '../lib/e2ee'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
@@ -733,7 +734,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
     startText, someday: start === 'someday',
     estimate, energy: hides('energy') ? null : energyOf(task), blockedBy: done ? 0 : blockedBy, waitsFor: done ? null : waitsFor, streak: habit && !done ? habit : null,
     badges: hideFieldBadges ? [] : fieldBadges(task, fieldDefs, dt.resolved, fieldsOf),
-    assignee: assignee && task.assignee_id && !hides('assignee') ? <AssigneeChip id={task.assignee_id} name={assignee} me={assignedToMe} /> : null,
+    assignee: assignee && task.assignee_id && !hides('assignee') ? <AssigneeChip id={task.assignee_id} name={assignee} me={assignedToMe} turns={rowTakesTurns(task)} /> : null,
     origin: null,
     labels: <LabelChips labels={labels} omit={omitLabel} />,
     counts: null,
