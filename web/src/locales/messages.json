@@ -31,6 +31,9 @@
   "(model <code>{model}</code>)": [
     "web/src/app/assistant/AssistantConsent.tsx"
   ],
+  "(now)": [
+    "web/src/app/task-detail/RotationEditor.tsx"
+  ],
   "(pending)": [
     "web/src/app/FeedView.tsx",
     "web/src/app/ProjectActivity.tsx"
@@ -1048,6 +1051,9 @@
   "Add details, or send as it is…": [
     "web/src/app/assistant/AssistantComposer.tsx"
   ],
+  "Add everyone in {group}": [
+    "web/src/app/task-detail/RotationEditor.tsx"
+  ],
   "Add field": [
     "web/src/app/FieldsDialog.tsx"
   ],
@@ -1101,6 +1107,12 @@
   ],
   "Add passkey": [
     "web/src/app/SecurityPanel.tsx"
+  ],
+  "Add person": [
+    "web/src/app/task-detail/RotationEditor.tsx"
+  ],
+  "Add person…": [
+    "web/src/app/task-detail/RotationEditor.tsx"
   ],
   "Add photo": [
     "web/src/app/assistant/ComposerCapture.tsx"
@@ -1955,13 +1967,18 @@
   "Assigned to {name}": [
     "web/src/app/AssigneePicker.tsx"
   ],
+  "Assigned to {name}, taking turns": [
+    "web/src/app/AssigneePicker.tsx"
+  ],
   "Assigned to {name}.": [
     "web/src/lib/triage.ts"
   ],
   "Assignee": [
     "web/src/app/AssigneePicker.tsx",
     "web/src/app/rules/RuleFields.tsx",
+    "web/src/app/task-detail/AssigneeEditor.tsx",
     "web/src/app/task-detail/Facets.tsx",
+    "web/src/app/task-detail/RotationEditor.tsx",
     "web/src/app/task-detail/TaskFacts.tsx",
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/rules/proposal.ts"
@@ -2033,6 +2050,9 @@
   ],
   "At most {n} options.": [
     "web/src/lib/fields.ts"
+  ],
+  "At most {n} people take turns.": [
+    "web/src/app/task-detail/RotationEditor.tsx"
   ],
   "At sign-in the server fetches the picture the provider names and makes it the profile picture. A picture someone uploaded themselves is never replaced.": [
     "web/src/app/SsoPanel.tsx"
@@ -2696,6 +2716,9 @@
   ],
   "Change who recognises speech?": [
     "web/src/app/VoiceSettings.tsx"
+  ],
+  "Change who takes turns…": [
+    "web/src/app/task-detail/AssigneeEditor.tsx"
   ],
   "Change your password": [
     "web/src/app/settingsIndex.ts"
@@ -3423,6 +3446,9 @@
   ],
   "Completed: {title}.": [
     "web/src/app/TriageView.tsx"
+  ],
+  "Completing the task assigns it to the next person in this order.": [
+    "web/src/app/task-detail/RotationEditor.tsx"
   ],
   "Completions": [
     "web/src/app/vim/VimLayer.tsx"
@@ -5624,6 +5650,9 @@
     "web/src/app/FeedView.tsx",
     "web/src/app/ProjectActivity.tsx"
   ],
+  "Everyone in the project takes turns.": [
+    "web/src/app/task-detail/RotationEditor.tsx"
+  ],
   "Everyone in the workspace is in this group.": [
     "web/src/app/WorkspaceGroups.tsx"
   ],
@@ -7742,6 +7771,9 @@
   "Its tokens are removed from the server and nothing more is sent to it.": [
     "web/src/app/NotificationChannels.tsx"
   ],
+  "It’s your turn: <b>{task}</b>": [
+    "web/src/app/NotificationBell.tsx"
+  ],
   "JSON: lists of tasks": [
     "web/src/app/ImportScreen.tsx"
   ],
@@ -9140,7 +9172,8 @@
   ],
   "Move {name} (Alt+Up or Alt+Down)": [
     "web/src/app/AppearanceSection.tsx",
-    "web/src/app/FieldsDialog.tsx"
+    "web/src/app/FieldsDialog.tsx",
+    "web/src/app/task-detail/RotationEditor.tsx"
   ],
   "Move {name} down": [
     "web/src/app/FieldsDialog.tsx"
@@ -9804,7 +9837,8 @@
   ],
   "No member matches.": [
     "web/src/app/AssigneePicker.tsx",
-    "web/src/app/WorkspaceGroups.tsx"
+    "web/src/app/WorkspaceGroups.tsx",
+    "web/src/app/task-detail/RotationEditor.tsx"
   ],
   "No members": [
     "web/src/app/WorkspaceGroups.tsx"
@@ -10912,6 +10946,9 @@
   ],
   "Only": [
     "web/src/lib/rules/sentence.ts"
+  ],
+  "Only a recurring task in a project shared with others can take turns, with up to 20 different people.": [
+    "web/src/lib/i18n/errors.ts"
   ],
   "Only a signed-in device can run a routine itself.": [
     "web/src/lib/i18n/errors.ts"
@@ -12829,7 +12866,8 @@
     "web/src/app/ShareDialog.tsx",
     "web/src/app/WorkspaceMembers.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx",
-    "web/src/app/task-detail/Composer.tsx"
+    "web/src/app/task-detail/Composer.tsx",
+    "web/src/app/task-detail/RotationEditor.tsx"
   ],
   "Remove {name} from {group}": [
     "web/src/app/WorkspaceGroups.tsx"
@@ -14393,6 +14431,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Show in Assigned to me": [
+    "web/src/app/task-detail/AssigneeEditor.tsx",
     "web/src/app/task-detail/Facets.tsx"
   ],
   "Show it across the days from its start to its do-on date": [
@@ -15241,6 +15280,9 @@
   "Stop sorting into aisles": [
     "web/src/app/menus/listMenu.tsx"
   ],
+  "Stop taking turns": [
+    "web/src/app/task-detail/RotationEditor.tsx"
+  ],
   "Stop the routine": [
     "web/src/lib/rules/sentence.ts"
   ],
@@ -15485,6 +15527,12 @@
     "web/src/app/palette/registry.ts",
     "web/src/app/task-list/WaitingSoon.tsx"
   ],
+  "Take turns": [
+    "web/src/app/task-detail/AssigneeEditor.tsx"
+  ],
+  "Take turns…": [
+    "web/src/app/task-detail/AssigneeEditor.tsx"
+  ],
   "Take {title} out of the slot": [
     "web/src/app/calendar/SlotDetails.tsx"
   ],
@@ -15496,6 +15544,9 @@
   ],
   "Taken out of {slot}": [
     "web/src/lib/slots.ts"
+  ],
+  "Takes turns:": [
+    "web/src/app/task-detail/RotationLine.tsx"
   ],
   "Target URL": [
     "web/src/app/WebhooksPanel.tsx"
@@ -18055,6 +18106,9 @@
   "Turn on voice capture?": [
     "web/src/app/VoiceSettings.tsx"
   ],
+  "Turn order": [
+    "web/src/app/task-detail/RotationEditor.tsx"
+  ],
   "Turn this into tasks": [
     "web/src/app/assistant/useAssistantConversation.ts"
   ],
@@ -19291,6 +19345,8 @@
     "web/src/app/task-detail/ActivityTab.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
+    "web/src/app/task-detail/RotationEditor.tsx",
+    "web/src/app/task-detail/RotationLine.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
     "web/src/app/task-detail/usePropertiesModel.ts",
     "web/src/app/task-list/ListGroups.tsx"
@@ -20546,6 +20602,10 @@
   "last weekly review {ago}": [
     "web/src/app/Sidebar.tsx"
   ],
+  "left the project": [
+    "web/src/app/task-detail/RotationEditor.tsx",
+    "web/src/app/task-detail/RotationLine.tsx"
+  ],
   "less than": [
     "web/src/app/filter/ConditionEditor.tsx"
   ],
@@ -21205,6 +21265,9 @@
   ],
   "summary, summarize, digest, recap, ai": [
     "web/src/lib/rules/sentence.ts"
+  ],
+  "takes turns": [
+    "web/src/app/AssigneePicker.tsx"
   ],
   "task": [
     "web/src/app/calendar/CalendarStatus.tsx"
@@ -22788,7 +22851,8 @@
   ],
   "{name} moved to position {n} of {count}": [
     "web/src/app/AppearanceSection.tsx",
-    "web/src/app/LabelsView.tsx"
+    "web/src/app/LabelsView.tsx",
+    "web/src/app/task-detail/RotationEditor.tsx"
   ],
   "{name} no longer exists": [
     "web/src/lib/rules/fixes.ts"

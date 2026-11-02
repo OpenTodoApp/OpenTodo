@@ -107,13 +107,6 @@ type apiError struct {
 	Raw     []byte
 }
 
-func (e *apiError) Error() string {
-	if e.Message != "" {
-		return e.Message
-	}
-	return fmt.Sprintf("server returned HTTP %d", e.Status)
-}
-
 const defaultTimeout = 15 * time.Second
 
 // client is a thin bearer-token HTTP client for /api/v1.

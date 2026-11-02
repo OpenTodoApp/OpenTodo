@@ -27,6 +27,9 @@ type Assigned struct {
 	ProjectID   string `json:"projectId,omitempty"`
 	ProjectName string `json:"projectName,omitempty"`
 	At          int64  `json:"at"` // Unix ms, server time of the batch
+	// Turn: the assignment passed the turn of a rotating recurring task, in the
+	// batch that completed it (chore-rotation D5): "It's your turn".
+	Turn bool `json:"turn,omitempty"`
 }
 
 // Sink receives events. Implementations must be quick (insert a row, enqueue a

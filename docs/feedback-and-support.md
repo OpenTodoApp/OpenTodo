@@ -19,7 +19,7 @@ If you found a security problem, do not open a public issue: follow `SECURITY.md
 
 ## Talk to other people
 
-[Join the OpenTodo server on Discord](https://discord.gg/Jmj7WuRQ) to ask a question, show how you use the app or see what other people build. It is the place for conversation; a bug report is still best as an issue, so it is not lost in the chat. Nothing in the app talks to Discord: the link opens it in a new tab only when you choose to.
+[Join the OpenTodo server on Discord](https://discord.gg/mmSsuCRduD) to ask a question, show how you use the app or see what other people build. It is the place for conversation; a bug report is still best as an issue, so it is not lost in the chat. Nothing in the app talks to Discord: the link opens it in a new tab only when you choose to.
 
 ## Follow the news
 

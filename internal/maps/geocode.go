@@ -11,6 +11,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/OpenTodoApp/opentodo/internal/location"
+	"github.com/OpenTodoApp/opentodo/internal/textutil"
 )
 
 // Result is one address found by search or reverse search, the shape the
@@ -98,9 +99,9 @@ func (s *Service) photon(ctx context.Context, u string) ([]Result, error) {
 			continue
 		}
 		r := Result{Lat: location.Round6(lat), Lon: location.Round6(lon), Address: address(f.Properties)}
-		r.Name = truncate(prop(f.Properties, "name"), location.MaxName)
+		r.Name = textutil.TruncateRunes(prop(f.Properties, "name"), location.MaxName, "")
 		if r.Name == "" {
-			r.Name = truncate(firstLine(r.Address), location.MaxName)
+			r.Name = textutil.TruncateRunes(firstLine(r.Address), location.MaxName, "")
 		}
 		if r.Name == "" && r.Address == "" {
 			continue
@@ -132,18 +133,10 @@ func address(p map[string]any) string {
 	if c := prop(p, "country"); c != "" {
 		parts = append(parts, c)
 	}
-	return truncate(strings.Join(parts, ", "), location.MaxAddress)
+	return textutil.TruncateRunes(strings.Join(parts, ", "), location.MaxAddress, "")
 }
 
 func firstLine(s string) string {
 	first, _, _ := strings.Cut(s, ",")
 	return strings.TrimSpace(first)
-}
-
-func truncate(s string, n int) string {
-	if utf8.RuneCountInString(s) <= n {
-		return s
-	}
-	r := []rune(s)
-	return string(r[:n])
 }
