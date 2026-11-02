@@ -7,9 +7,10 @@ import (
 )
 
 // TestTodaySummaryTimeSensitive (OpenSpec change today-waiting-time-sensitive,
-// task 3.1): a waiting task due today with a time, or with a deadline today, is
-// marked time_sensitive and listed in waiting_time_sensitive soonest first; the
-// slots are unchanged.
+// task 3.1, and today-waiting-time-passed): a waiting task due today with a
+// time, or with a deadline today, is marked time_sensitive and listed in
+// waiting_time_sensitive soonest first, with time_passed once its time is
+// before now (the fixture's clock reads 10:00 UTC); the slots are unchanged.
 func TestTodaySummaryTimeSensitive(t *testing.T) {
 	f := newFixture(t)
 	c := agent("u1")
@@ -28,6 +29,7 @@ func TestTodaySummaryTimeSensitive(t *testing.T) {
 			ID            string `json:"id"`
 			Waiting       *bool  `json:"waiting_for_slot"`
 			TimeSensitive *bool  `json:"time_sensitive"`
+			TimePassed    *bool  `json:"time_passed"`
 		} `json:"due_today"`
 		Soon []string `json:"waiting_time_sensitive"`
 	}
@@ -50,6 +52,13 @@ func TestTodaySummaryTimeSensitive(t *testing.T) {
 		}
 		if got != want[x.ID] {
 			t.Fatalf("%s: %s, want %s", x.ID, got, want[x.ID])
+		}
+		passed := "nil"
+		if x.TimePassed != nil {
+			passed = fmt.Sprint(*x.TimePassed)
+		}
+		if wantPassed := map[string]string{"form": "false", "taxes": "false", "call": "true"}[x.ID]; passed != wantPassed && (wantPassed != "" || passed != "nil") {
+			t.Fatalf("%s: time_passed %s, want %s", x.ID, passed, wantPassed)
 		}
 	}
 }

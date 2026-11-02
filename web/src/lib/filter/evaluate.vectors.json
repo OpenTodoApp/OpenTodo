@@ -21,9 +21,9 @@
     {"id": "t4", "title": "Old task", "project_id": "p_home", "completed_at": 1793613600000},
     {"id": "t5", "title": "Someday idea", "start": "someday", "origin": {"kind": "url", "url": "https://example.com/a"}},
     {"id": "t6", "title": "Evening walk", "evening": true, "habit": true},
-    {"id": "t7", "title": "Blocked thing", "project_id": "p_work", "blocked_by": ["t2"], "fields.f_cost": 150},
-    {"id": "t8", "title": "Morning run", "project_id": "p_work", "day_part": "morning", "energy": "low", "fields.f_cost": 50},
-    {"id": "t9", "title": "Pick brand", "project_id": "p_home", "parent_id": "t1", "origin": {"kind": "issue", "provider": "github", "url": "https://github.com/o/r/issues/1"}},
+    {"id": "t7", "title": "Blocked thing", "project_id": "p_work", "blocked_by": ["t2"], "fields.f_cost": 150, "sector": "2026-W45"},
+    {"id": "t8", "title": "Morning run", "project_id": "p_work", "day_part": "morning", "energy": "low", "fields.f_cost": 50, "sector": "2026-W43"},
+    {"id": "t9", "title": "Pick brand", "project_id": "p_home", "parent_id": "t1", "origin": {"kind": "issue", "provider": "github", "url": "https://github.com/o/r/issues/1"}, "sector": "2026-11"},
     {"id": "t10", "title": "Gone", "deleted_at": 5}
   ],
   "cases": [
@@ -81,6 +81,14 @@
     {"query": "!(#Home | no project)", "ids": ["t2", "t3", "t7", "t8"]},
     {"query": "start <= next week", "ids": ["t3"]},
     {"query": "(@errand | @call) & p1", "ids": ["t1"]},
-    {"query": "", "ids": []}
+    {"query": "", "ids": []},
+    {"query": "sector", "ids": ["t7", "t8", "t9"]},
+    {"query": "carried", "ids": ["t8"]},
+    {"query": "sector: this week", "ids": ["t7"]},
+    {"query": "#Work & sector: this week", "ids": ["t7"]},
+    {"query": "carried | sector: this week", "ids": ["t7", "t8"]},
+    {"query": "sector: 2026-11", "ids": ["t9"]},
+    {"query": "sector: this month", "ids": ["t9"]},
+    {"query": "sector:next-week", "ids": []}
   ]
 }

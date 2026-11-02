@@ -126,7 +126,7 @@ ID        P   DUE                 PROJECT  TITLE
 3f1d7a22  P1  2026-10-10 09:00             Call the plumber
 ```
 
-With a [Today limit](today-limit.md) on, `ot today` prints the tasks in the slots, then a **Waiting for a slot** heading and the waiting tasks in fill order (the first comes in next), with the app's rule: today's focus, the tasks you let in, Earlier oldest first, then the rest by when they were created. `--all` prints every task in one table, and `--json` adds `waiting_for_slot` to each task while the limit is on. When waiting tasks are due today with a time or have a deadline today, the heading names the next one (`Waiting for a slot · 4 — next: Send the form, 16:00`) and lists them first, soonest first, with their time (`deadline` for a deadline without one), before the waiting tasks in fill order; `--json` marks them with `time_sensitive: true` (`false` on the other waiting tasks).
+With a [Today limit](today-limit.md) on, `ot today` prints the tasks in the slots, then a **Waiting for a slot** heading and the waiting tasks in fill order (the first comes in next), with the app's rule: today's focus, the tasks you let in, Earlier oldest first, then the rest by when they were created. `--all` prints every task in one table, and `--json` adds `waiting_for_slot` to each task while the limit is on. When waiting tasks are due today with a time or have a deadline today, the heading names the next one (`Waiting for a slot · 4 — next: Send the form, 16:00`) and lists them first, soonest first, with their time (`deadline` for a deadline without one), before the waiting tasks in fill order. A time that has passed is marked `(time passed)` and never named next; when every time has passed the heading says so (`— time passed: Call the school, 09:00`, or `— 2 past their time`). `--json` marks them with `time_sensitive: true` (`false` on the other waiting tasks) and `time_passed`.
 
 ### Add and edit
 
@@ -215,10 +215,13 @@ ot task split 8c2a --from 2026-10-14 --time 19:00       # 19:00 from Wednesday o
 ot project list [--all]                 # --all includes archived projects
 ot project add "Garden" [--color "#22c55e"] [--idempotency-key <key>]
 ot project rename Garden "Back garden"
+ot project edit Groceries --reusable --aisles  # a reusable list; --no-reusable, --no-aisles turn it off
 ot project move Garden --workspace Family  # only the project's owner
 ot project archive Garden [--undo]
 ot project rm Garden [--yes]
 ```
+
+In a [reusable list](reusable-lists.md), `ot add Milk --project Groceries` reopens a ticked-off Milk instead of adding a second one, or finds it already open; it prints the item's id and says "reopened" or "already on the list" on stderr. `--new` always adds a new task.
 
 Projects are referenced by name (case-insensitive), full id or unique id prefix. `ot project list` shows every workspace's projects with a WORKSPACE column and each project's FLOW (`parallel`, `sequential` or `area`, see [Sequential projects and areas](project-flows.md)), and STATUS `archived` or `maintenance` ([Review intervals and maintenance](review-intervals.md)); `--workspace` narrows it to one.
 

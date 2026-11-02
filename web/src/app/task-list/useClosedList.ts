@@ -1,9 +1,10 @@
 // Today's closed list on screen (OpenSpec change today-closed-list): the slots and the
 // waiting tasks derived from local rows every time Today renders (D1), and the Done
 // today group (D6). No write; Take a slot is the only one, in lib/closedListPrefs.
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { publishClosedList } from './slotActions'
-import { takenSlots, type SlotFill } from '../../lib/closedList'
+import { takenSlots, waitingNow, type SlotFill } from '../../lib/closedList'
+import { logicalToday, todayISO } from '../../lib/dates'
 import { doneTodayShown, todaySlots } from '../../lib/closedListPrefs'
 import { completedOn } from '../../lib/dayLists'
 import { t } from '../../lib/i18n'
@@ -55,4 +56,22 @@ export function useClosedList(on: boolean, todayTasks: readonly Task[], allTasks
     return () => publishClosedList(null)
   }, [on, fill.limit, list, today])
   return list
+}
+
+/**
+ * Now for the waiting tasks' passed times (today-waiting-time-passed D3): the wall time
+ * of the logical today, refreshed on each minute boundary while `active` (tasks wait).
+ */
+export function useWaitingNow(active: boolean): string | undefined {
+  const read = () => { const d = new Date(); return waitingNow(d, logicalToday(undefined, d.getTime()), todayISO(d)) }
+  const [now, setNow] = useState(read)
+  useEffect(() => {
+    if (!active) return
+    setNow(read())
+    let timer: ReturnType<typeof setTimeout>
+    const tick = () => { timer = setTimeout(() => { setNow(read()); tick() }, 60_000 - (Date.now() % 60_000) + 5) }
+    tick()
+    return () => clearTimeout(timer)
+  }, [active])
+  return active ? now : undefined
 }

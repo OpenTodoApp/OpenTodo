@@ -150,6 +150,23 @@ export const Energy: StoryObj = {
   ),
 }
 
+/**
+ * A time sector in the date slot of an undated task (time-sectors D4): named on the
+ * frozen Wednesday 14 October 2026, a later week by its number, a month by name, and
+ * a week that has ended carried over in the faint tone, never the overdue colour.
+ */
+export const Sector: StoryObj = {
+  render: () => (
+    <List>
+      <TaskRow {...base} task={task({ id: 't1', title: 'Draft the budget', sector: '2026-W42', deadline: '2026-10-16' })} />
+      <TaskRow {...base} task={task({ id: 't2', title: 'Book the venue', sector: '2026-W43' })} />
+      <TaskRow {...base} task={task({ id: 't3', title: 'Plan the offsite', sector: '2026-W46', estimate_minutes: 60 })} />
+      <TaskRow {...base} task={task({ id: 't4', title: 'Renew the insurance', sector: '2026-11' })} />
+      <TaskRow {...base} task={task({ id: 't5', title: 'Sort the photos', sector: '2026-W40' })} />
+    </List>
+  ),
+}
+
 /** Blocked by open tasks: the title is muted and a lock item counts the blockers. */
 export const Blocked: StoryObj = {
   render: () => (
