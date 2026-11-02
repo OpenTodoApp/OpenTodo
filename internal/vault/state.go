@@ -43,6 +43,10 @@ type State struct {
 	Shared []string `json:"shared,omitempty"`
 	// Store is the base: the account as of the last sync.
 	Store Store `json:"store"`
+	// Held are rows as they were printed into a file saved while the last
+	// sync ran (OpenSpec change vault-write-check): the next sync merges that
+	// file against them instead of the Store's newer rows.
+	Held Store `json:"held,omitempty"`
 	// Files maps a file's path (slash-separated, relative) to what was written.
 	Files map[string]FileState `json:"files"`
 	// Printed maps a task id to the file its line was written in.
