@@ -2,7 +2,7 @@
 // web-component-structure): what TaskListView renders, tested without a DOM.
 import { describe, expect, it } from 'vitest'
 import { currentDateTime } from './dates'
-import { BLOCKED_OPEN_KEY, DONE_OPEN_KEY, WAITING_OPEN_KEY, EARLIER_KEY, EARLIER_OPEN_KEY, earlierCollapsed, boardColumns, completedBySection, flatRow, listGroups, sectionBuckets, sectionOfRows, siblingPositions, tasksForView, type GroupInput } from './listGroups'
+import { BLOCKED_OPEN_KEY, DONE_OPEN_KEY, WAITING_OPEN_KEY, EARLIER_KEY, EARLIER_OPEN_KEY, earlierCollapsed, boardColumns, completedBySection, flatRow, listGroups, sectionBuckets, sectionOfRows, siblingPositions, splitLater, tasksForView, type GroupInput } from './listGroups'
 import { buildTaskTree } from './subtasks'
 import type { Project, Section, Task } from './types'
 
@@ -181,6 +181,41 @@ describe('listGroups', () => {
     const closed = listGroups(input({ tree, collapsed: new Set([parent.id]) }))
     expect(titles(closed[0])).toEqual(['Parent'])
     expect(closed[0].rows[0].collapsed).toBe(true)
+  })
+
+  // GitHub issue #755: a parent deferred to Later left its subtasks behind in its old group.
+  it('a deferred parent takes its subtasks into Later, nested, with their own dates (subtasks-follow-later)', () => {
+    const parent = task({ title: 'Paint fence', project_id: 'p', start: '2026-11-20' })
+    const plain = task({ title: 'Buy paint', project_id: 'p', parent_id: parent.id })
+    const dated = task({ title: 'Book sprayer', project_id: 'p', parent_id: parent.id, due: { date: TODAY } })
+    const grandchild = task({ title: 'Compare prices', project_id: 'p', parent_id: plain.id })
+    const other = task({ title: 'Water plants', project_id: 'p', due: { date: TODAY } })
+    const all = [parent, plain, dated, grandchild, other]
+    const { active, later } = splitLater(all, TODAY)
+    expect(active.map((x) => x.title)).toEqual(['Water plants'])
+    expect(later.map((x) => x.title)).toEqual(['Paint fence', 'Buy paint', 'Book sprayer', 'Compare prices'])
+    const g = listGroups(input({ view: 'project', tasks: all, tree: buildTaskTree(active), laterTasks: later, taskMap: new Map(all.map((x) => [x.id, x])) }))
+    expect(g.map((x) => x.key)).toEqual(['all', 'later'])
+    expect(titles(g[0])).toEqual(['Water plants'])
+    expect(g[1].rows.map((r) => [r.task.title, r.depth, r.parent, r.breadcrumb])).toEqual([
+      ['Paint fence', 0, null, null], ['Buy paint', 1, parent.id, null], ['Compare prices', 2, plain.id, null], ['Book sprayer', 1, parent.id, null],
+    ])
+    // Folding the parent in Later hides its subtasks like anywhere else in the tree.
+    const folded = listGroups(input({ view: 'project', tree: buildTaskTree(active), laterTasks: later, collapsed: new Set([parent.id]) }))
+    expect(titles(folded[1])).toEqual(['Paint fence'])
+  })
+
+  it('a deferred or parked subtask of an active parent stays under it; grouping by date keeps the subtree together', () => {
+    const parent = task({ title: 'Plan trip', project_id: 'p', due: { date: TODAY } })
+    const deferred = task({ title: 'Renew passport', project_id: 'p', parent_id: parent.id, start: '2026-12-01' })
+    const parked = task({ title: 'Upgrade seats', project_id: 'p', parent_id: parent.id, start: 'someday' })
+    const { active, later } = splitLater([parent, deferred, parked], TODAY)
+    expect(later).toEqual([])
+    const display = { groupBy: 'due', sortBy: 'position', sortDir: 'asc', rowLayout: 'line' } as GroupInput['display']
+    const g = listGroups(input({ view: 'project', tasks: active, tree: buildTaskTree(active), laterTasks: later, display }))
+    const today = g.find((x) => x.rows.some((r) => r.task.id === parent.id))!
+    expect(titles(today)).toEqual(['Plan trip', 'Renew passport', 'Upgrade seats'])
+    expect(g.some((x) => x.key === 'later')).toBe(false)
   })
 
   it('a sectioned project lists "No section" first, then sections by position; a folded section keeps its count', () => {

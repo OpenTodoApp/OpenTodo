@@ -8,7 +8,7 @@ import { useFlowView } from '../../lib/useFlow'
 import { durationPredicate, loadDurationFilter, saveDurationFilter, type DurationFilter } from '../../lib/filters'
 import { UPCOMING_FILTER_KEY, useQueryFilter } from '../calendar/queryFilter'
 import { habitStatsMap } from '../../lib/habits'
-import { boardColumns, completedBySection, completedNewestFirst, completedOpenKey, listGroups, sectionBuckets, siblingPositions, tasksForView, type ListGroup, type ListScope } from '../../lib/listGroups'
+import { boardColumns, completedBySection, completedNewestFirst, completedOpenKey, listGroups, sectionBuckets, siblingPositions, splitLater, tasksForView, type ListGroup, type ListScope } from '../../lib/listGroups'
 import { useAllLabels, useCollapsedSections, useListColumnsPref, useLiveProjects, useMemberships, useProjectPrefsRow, useProjectSectionRows, useProjectViewMode, useShowCompletedPref } from '../../lib/liveData'
 import { listDisplayOf, type DisplayScope } from '../../lib/listDisplay'
 import { useListDisplay } from './useListDisplay'
@@ -23,7 +23,7 @@ import { LOGBOOK_PAGE, logbookGroups } from '../../lib/logbook'
 import { canEditTasks, roleOf } from '../../lib/sharing'
 import { buildTaskTree, progressMap } from '../../lib/subtasks'
 import type { Task } from '../../lib/types'
-import { inLater, inToday } from '../../lib/views'
+import { inToday } from '../../lib/views'
 import { DESKTOP_HEADER_QUERY, useMediaQuery } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { hasTimeColumn } from '../../lib/rowTime'
@@ -171,9 +171,11 @@ export function useListModel(route: ListRoute, userId?: string) {
   const { board, sections, liveSections, collapsedSections } = layout
 
   // Project lists keep deferred and parked tasks in a Later group at the
-  // end (someday-and-evening D2); the board keeps every card in its column.
-  const laterTasks = useMemo(() => (treeView && !board ? tasks.filter((task) => inLater(task, today)) : []), [treeView, board, tasks, today])
-  const treeTasks = useMemo(() => (laterTasks.length ? tasks.filter((task) => !inLater(task, today)) : tasks), [laterTasks, tasks, today])
+  // end (someday-and-evening D2), each with its subtasks (subtasks-follow-later);
+  // the board keeps every card in its column.
+  const split = useMemo(() => (treeView && !board ? splitLater(tasks, today) : null), [treeView, board, tasks, today])
+  const laterTasks = split?.later ?? NO_TASKS
+  const treeTasks = split?.later.length ? split.active : tasks
   const tree = useMemo(() => (treeView ? buildTaskTree(treeTasks) : null), [treeView, treeTasks])
   const buckets = useMemo(() => sectionBuckets(projectId, tree, sections), [projectId, tree, sections])
   const columns = useMemo(() => boardColumns(buckets, collapsedSections), [buckets, collapsedSections])
