@@ -773,15 +773,42 @@ type Entity map[string]json.RawMessage
 // plus shared projects), including soft-deleted ones when includeDeleted is set.
 // Results are ordered by position, then created_at.
 func (s *Service) List(ctx context.Context, userID, entity string, includeDeleted bool) ([]Entity, error) {
-	if _, ok := Schema[entity]; !ok {
+	return s.ListWhere(ctx, userID, entity, includeDeleted, nil)
+}
+
+// Match narrows ListWhere to the entities whose field holds one value (the
+// stored JSON text, such as a quoted id).
+type Match struct {
+	Field string
+	Value json.RawMessage
+}
+
+// ListWhere is List narrowed by m (nil: every entity). The database finds the
+// matching entities first, so listing one project of a large account reads
+// that project's rows only (performance-10k).
+func (s *Service) ListWhere(ctx context.Context, userID, entity string, includeDeleted bool, m *Match) ([]Entity, error) {
+	fields, ok := Schema[entity]
+	if !ok {
 		return nil, fmt.Errorf("%w: unknown entity %q", ErrInvalidOp, entity)
+	}
+	if m != nil {
+		if _, ok := fields[m.Field]; !ok {
+			return nil, fmt.Errorf("%w: %s has no field %q", ErrInvalidOp, entity, m.Field)
+		}
 	}
 	acc, err := loadAccess(ctx, s.reader(), userID)
 	if err != nil {
 		return nil, err
 	}
 	scopes := acc.scopes()
-	rows, err := s.reader().QueryContext(ctx, listQuery(len(scopes)), append(anys(scopes), entity)...)
+	query, args := listQuery(len(scopes)), append(anys(scopes), entity)
+	if m != nil {
+		// The field name is a schema field (checked above), written as a
+		// literal so a partial index on it (scope_fields_project) applies.
+		query += ` AND entity_id IN (SELECT entity_id FROM scope_fields WHERE scope_id IN (` + placeholders(len(scopes)) + `) AND entity = ? AND field = '` + m.Field + `' AND value = ?)`
+		args = append(append(args, anys(scopes)...), entity, string(m.Value))
+	}
+	rows, err := s.reader().QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -797,7 +824,8 @@ func (s *Service) List(ctx context.Context, userID, entity string, includeDelete
 		}
 		e, ok := byID[id]
 		if !ok {
-			e = Entity{"id": json.RawMessage(QuoteJSON(id))}
+			e = make(Entity, 16)
+			e["id"] = json.RawMessage(QuoteJSON(id))
 			byID[id] = e
 			scopeOf[id] = scope
 			order = append(order, id)
@@ -837,16 +865,39 @@ func (s *Service) List(ctx context.Context, userID, entity string, includeDelete
 		if !includeDeleted && e.deleted() {
 			continue
 		}
+		// The match was found in some scope; the record kept for an id held
+		// in two scopes must match too.
+		if m != nil && len(dups[id]) > 0 && !bytes.Equal(e[m.Field], m.Value) {
+			continue
+		}
 		out = append(out, e)
 	}
-	sort.SliceStable(out, func(i, j int) bool {
-		pi, pj := out[i].number("position"), out[j].number("position")
-		if pi != pj {
-			return pi < pj
-		}
-		return out[i].number("created_at") < out[j].number("created_at")
-	})
+	sortByPosition(out)
 	return out, nil
+}
+
+// sortByPosition orders entities by position, then creation time, keeping the
+// id order of ties. The keys are decoded once per entity, not once per
+// comparison: a 10,000-task list decoded them about 280,000 times
+// (performance-10k).
+func sortByPosition(out []Entity) {
+	type keyed struct {
+		e            Entity
+		pos, created float64
+	}
+	ks := make([]keyed, len(out))
+	for i, e := range out {
+		ks[i] = keyed{e, e.number("position"), e.number("created_at")}
+	}
+	sort.SliceStable(ks, func(i, j int) bool {
+		if ks[i].pos != ks[j].pos {
+			return ks[i].pos < ks[j].pos
+		}
+		return ks[i].created < ks[j].created
+	})
+	for i := range ks {
+		out[i] = ks[i].e
+	}
 }
 
 // listQuery reads one entity kind's fields in n scopes. It has no ORDER BY:

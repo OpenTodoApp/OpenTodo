@@ -10,7 +10,7 @@
 import { db } from './db'
 import { isEnabled } from './e2ee'
 import { logicalToday } from './dates'
-import { lineageRows } from './lineageRows'
+import { lineageRows, lineageScan } from './lineageRows'
 import { mutateMany, type Change } from './ops'
 import { isOccurrenceRecord } from './recurring'
 import { planRepair } from './seriesPlan'
@@ -49,9 +49,10 @@ export async function seriesUpkeep(ops: readonly Op[], opts: { today?: string; n
   const encrypted = opts.encrypted ?? (await isEnabled())
   const out: Change[] = []
   const done = new Set<string>()
+  const scanned = await lineageScan(touched.map((t) => t.id))
   for (const t of touched) {
     if (done.has(t.id)) continue
-    const rows = await lineageRows(t.id)
+    const rows = await lineageRows(t.id, scanned)
     // Every open piece of the lineage (the touched series alone when it was never split).
     const pieces = rows.filter((r) => openSeries(r))
     if (openSeries(t) && !pieces.some((p) => p.id === t.id)) pieces.push(t)

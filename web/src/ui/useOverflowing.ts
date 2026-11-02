@@ -12,7 +12,27 @@ export function isOverflowing(el: HTMLElement): boolean {
 
 const watchers = new Map<Element, () => void>()
 let observer: ResizeObserver | null = null
-resettable('overflowing', () => { observer?.disconnect(); observer = null; watchers.clear() })
+resettable('overflowing', () => { observer?.disconnect(); observer = null; watchers.clear(); queued.clear(); frame = 0 })
+
+/** Elements waiting for their first measurement, and the frame that takes it. */
+const queued = new Map<HTMLElement, (cut: boolean) => void>()
+let frame = 0
+
+function measureSoon(el: HTMLElement, set: (cut: boolean) => void): () => void {
+  if (typeof requestAnimationFrame !== 'function') {
+    set(isOverflowing(el))
+    return () => {}
+  }
+  queued.set(el, set)
+  frame ||= requestAnimationFrame(() => {
+    frame = 0
+    const batch = [...queued]
+    queued.clear()
+    const cut = batch.map(([e]) => isOverflowing(e))
+    batch.forEach(([, s], i) => s(cut[i]))
+  })
+  return () => { queued.delete(el) }
+}
 
 function watch(el: Element, update: () => void): () => void {
   if (typeof ResizeObserver === 'undefined') return () => {}
@@ -35,8 +55,15 @@ export function useOverflowing(ref: RefObject<HTMLElement | null>, text: string,
     const el = ref.current
     if (!on || !el) { setCut(false); return }
     const update = () => setCut(isOverflowing(el))
-    update()
-    return watch(el, update)
+    // Measured with every other element in one frame, all reads before any
+    // state is set: measuring here forced a layout per row while a list mounted
+    // (performance-10k: 3 s for 2,000 rows).
+    const cancel = measureSoon(el, setCut)
+    const unwatch = watch(el, update)
+    return () => {
+      cancel()
+      unwatch()
+    }
   }, [ref, text, on])
   return cut
 }
