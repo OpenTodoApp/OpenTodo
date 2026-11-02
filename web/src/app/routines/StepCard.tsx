@@ -3,7 +3,7 @@
 // inputs are word buttons, with its output line, its live preview, its error and
 // one-tap fix, "Not available" with a link, a menu (move, duplicate, delete, add
 // an input), and If / Repeat blocks indented under it.
-import { useRef, useState, type FocusEvent, type KeyboardEvent, type ReactNode } from 'react'
+import { Fragment, useLayoutEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type ReactNode, type RefObject } from 'react'
 import { t } from '../../lib/i18n'
 import type { Catalogue } from '../../lib/rules/catalogue'
 import { isAvailable, reasonText, settingPath } from '../../lib/rules/catalogue'
@@ -14,14 +14,14 @@ import { previewLines, type Preview } from '../../lib/rules/preview'
 import { addableInputs, countText, extraInputs, inputLabel, PICK_MENU, PICK_WORD, sentenceParts, stepName } from '../../lib/rules/sentence'
 import { conditionParts, triggerText } from '../../lib/rules/summary'
 import { stepKind } from '../../lib/rules/steps'
-import type { RoutineArg, RoutineStep, RuleCondition, RuleTrigger } from '../../lib/types'
-import { Badge, Button, DataChip, Icon, Popover, WordButton } from '../../ui'
+import { RULE_TRIGGERS, type RoutineArg, type RoutineStep, type RuleCondition, type RuleTrigger, type RuleTriggerKind } from '../../lib/types'
+import { Badge, Button, DataChip, Icon, WordButton } from '../../ui'
 import { ActionMenu, type ActionGroup } from '../menus/ActionMenu'
-import { ConditionFields, TriggerFields } from '../rules/RuleFields'
+import { ConditionFields, TRIGGER_LABEL, TriggerDetails, triggerHasDetails, triggerOf } from '../rules/RuleFields'
 import { useMatchCount } from './data'
 import { inputDefs, wordValue, type WordContext } from './words'
 import { InputWord } from './wordPicker'
-import { ChoicePopover, type Choice } from './pickers'
+import { ChoicePopover, Inspector, type Choice } from './pickers'
 
 export interface CardEvents {
   set: (id: string, input: string, arg: RoutineArg | undefined) => void
@@ -34,6 +34,9 @@ export interface CardEvents {
   fix: (f: Fix) => void
 }
 
+/** A place in a list of steps: under a parent's block ('' for the top), before `index` (-1 for the end). */
+export interface ListPlace { parent: string; block: string; index: number }
+
 export interface CardState {
   ctx: WordContext
   catalogue: Catalogue | null
@@ -45,6 +48,42 @@ export interface CardState {
   openers: Map<string, () => void>
   /** Focus left a step's card: its "needs a value here" error may show from now on. */
   leave: (stepId: string) => void
+  /** Where the step catalogue is open, if anywhere (routines-editor-no-modals). */
+  adding: ListPlace | null
+  /** The open step catalogue, rendered at that place. */
+  addPanel: ReactNode
+}
+
+/** The id of the open step catalogue, for its opener's aria-controls. */
+export const ADD_PANEL_ID = 'routine-add-step'
+
+const isAddingAt = (state: CardState, parent: string, block: string, index: number) =>
+  !!state.adding && state.adding.parent === parent && state.adding.block === block && state.adding.index === index
+
+/** A list's cards, with the step catalogue between two of them when "Add step below" opened it there. */
+function Cards({ steps, parent, block, state, events, depth }: { steps: RoutineStep[]; parent: string; block: string; state: CardState; events: CardEvents; depth: number }) {
+  return (
+    <>
+      {steps.map((s, i) => (
+        <Fragment key={s.id}>
+          <StepCard step={s} index={i} total={steps.length} state={state} events={events} depth={depth} />
+          {isAddingAt(state, parent, block, i + 1) && state.addPanel}
+        </Fragment>
+      ))}
+    </>
+  )
+}
+
+/** "+ Add step" at the end of a list: the catalogue expands right under it. */
+function AddButton({ parent, block, state, onClick, top }: { parent: string; block: string; state: CardState; onClick: () => void; top?: boolean }) {
+  const open = isAddingAt(state, parent, block, -1)
+  return (
+    <>
+      <Button size={top ? 'md' : 'sm'} variant={top ? 'secondary' : 'ghost'} icon="plus" onClick={onClick} aria-expanded={open} aria-controls={open ? ADD_PANEL_ID : undefined}
+        data-add-step={top ? '' : undefined} data-add-in={top ? undefined : `${parent}.${block}`}>{t('Add step')}</Button>
+      {open && state.addPanel}
+    </>
+  )
 }
 
 /** The plain sentence of a step, for its group's name and its announcement. */
@@ -170,21 +209,21 @@ function Lane({ title, steps, parent, block, state, events, depth }: {
   return (
     <div className="ml-3 space-y-2 border-l-2 border-default pl-3" data-lane={block} role="group" aria-label={title}>
       <p className="text-meta font-medium text-muted">{title}</p>
-      {steps.map((s, i) => <StepCard key={s.id} step={s} index={i} total={steps.length} state={state} events={events} depth={depth + 1} />)}
-      <Button size="sm" variant="ghost" icon="plus" onClick={() => events.addIn(parent, block)}>{t('Add step')}</Button>
+      <Cards steps={steps} parent={parent} block={block} state={state} events={events} depth={depth + 1} />
+      <AddButton parent={parent} block={block} state={state} onClick={() => events.addIn(parent, block)} />
     </div>
   )
 }
 
-/** Keys of a focused card (D13): Alt+↑/↓ move it, Delete asks to delete it, `a` adds a step below. */
-function cardKeys(e: KeyboardEvent<HTMLElement>, step: RoutineStep, events: CardEvents, askDelete: () => void) {
+/** Keys of a focused card (D13): Alt+↑/↓ move it, Delete deletes it (with Undo), `a` adds a step below. */
+function cardKeys(e: KeyboardEvent<HTMLElement>, step: RoutineStep, events: CardEvents) {
   if (e.target !== e.currentTarget) return
   if (e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
     e.preventDefault()
     events.move(step.id, e.key === 'ArrowUp' ? -1 : 1)
   } else if (e.key === 'Delete' || e.key === 'Backspace') {
     e.preventDefault()
-    askDelete()
+    events.remove(step.id)
   } else if (e.key === 'a' && !e.ctrlKey && !e.metaKey && !e.altKey) {
     e.preventDefault()
     events.addBelow(step.id)
@@ -194,7 +233,6 @@ function cardKeys(e: KeyboardEvent<HTMLElement>, step: RoutineStep, events: Card
 export function StepCard({ step, index, total, state, events, depth = 0 }: {
   step: RoutineStep; index: number; total: number; state: CardState; events: CardEvents; depth?: number
 }) {
-  const [confirm, setConfirm] = useState(false)
   const [adding, setAdding] = useState<string[]>([])
   const k = stepKind(step.kind)
   const cat = state.catalogue?.[step.kind]
@@ -226,12 +264,12 @@ export function StepCard({ step, index, total, state, events, depth = 0 }: {
         setTimeout(() => state.openers.get(`${step.id}.${name}`)?.(), 0)
       },
     })) }] : []),
-    { items: [{ kind: 'action', id: 'delete', label: t('Delete step'), icon: 'trash-2', tone: 'danger', onSelect: () => setConfirm(true) }] },
+    { items: [{ kind: 'action', id: 'delete', label: t('Delete step'), icon: 'trash-2', tone: 'danger', onSelect: () => events.remove(step.id) }] },
   ]
   return (
     <section className={`surface-card space-y-1 p-3 outline-none focus-visible:ring-2 focus-visible:ring-accent ${err ? 'border-danger' : ''}`} tabIndex={0}
       role="group" aria-label={sentence} data-step-card={step.id} data-step-kind={step.kind} data-word-group
-      onKeyDown={(e) => cardKeys(e, step, events, () => setConfirm(true))} onBlur={onLeave}>
+      onKeyDown={(e) => cardKeys(e, step, events)} onBlur={onLeave}>
       <div className="flex items-start gap-2">
         <p className="min-w-0 flex-1 leading-8 text-body text-default">
           <StepWords step={step} state={state} events={events} adding={adding} errorAt={err?.input ?? null} onTyping={onTyping} />
@@ -258,9 +296,6 @@ export function StepCard({ step, index, total, state, events, depth = 0 }: {
       {k?.blocks?.includes('then') && <Lane title={t('Then')} steps={step.then ?? []} parent={step.id} block="then" state={state} events={events} depth={depth} />}
       {k?.blocks?.includes('otherwise') && <Lane title={t('Otherwise')} steps={step.otherwise ?? []} parent={step.id} block="otherwise" state={state} events={events} depth={depth} />}
       {k?.blocks?.includes('do') && <Lane title={t('For each item')} steps={step.do ?? []} parent={step.id} block="do" state={state} events={events} depth={depth} />}
-      {confirm && (
-        <ConfirmInline text={t('Delete “{name}”?', { name: stepName(step.kind) })} onCancel={() => setConfirm(false)} onConfirm={() => { setConfirm(false); events.remove(step.id) }} />
-      )}
     </section>
   )
 }
@@ -278,22 +313,16 @@ function defaultArg(step: RoutineStep, name: string): RoutineArg | undefined {
   return undefined
 }
 
-function ConfirmInline({ text, onCancel, onConfirm }: { text: string; onCancel: () => void; onConfirm: () => void }) {
-  return (
-    <div className="flex flex-wrap items-center gap-2 rounded-control bg-sunken p-2 text-meta" role="alertdialog" aria-label={text}>
-      <span className="flex-1">{text}</span>
-      <Button size="sm" variant="ghost" onClick={onCancel} autoFocus>{t('Cancel')}</Button>
-      <Button size="sm" variant="danger" onClick={onConfirm}>{t('Delete step')}</Button>
-    </div>
-  )
-}
-
 /** The When card: the trigger and its conditions as words (D2), edited with the rule dialog's controls. */
 export function WhenCard({ trigger, condition, ctx, me, onTrigger, onCondition }: {
   trigger: RuleTrigger; condition: RuleCondition | null; ctx: WordContext; me: string
   onTrigger: (t: RuleTrigger) => void; onCondition: (c: RuleCondition | null) => void
 }) {
-  const [open, setOpen] = useState<'' | 'trigger' | 'condition'>('')
+  // The trigger's kinds open as the word pickers' anchored list, at the word's start edge; a
+  // kind's details (a time and days, a label, a project) and the condition rows open inside
+  // the card, never as a dialog (routines-editor-no-modals).
+  const [open, setOpen] = useState<'' | 'trigger' | 'details' | 'condition'>('')
+  const toDetails = useRef(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const condRef = useRef<HTMLButtonElement>(null)
   const names = ctx.names
@@ -301,28 +330,64 @@ export function WhenCard({ trigger, condition, ctx, me, onTrigger, onCondition }
   const cond = conditionParts(condition, names).join(', ')
   const count = useMatchCount(condition, me)
   const shared = new Set<string>()
+  const back = (to: RefObject<HTMLButtonElement | null>) => { setOpen(''); requestAnimationFrame(() => to.current?.focus()) }
+  const choose = (kind: RuleTriggerKind) => {
+    if (kind !== trigger.kind) onTrigger(triggerOf(kind))
+    toDetails.current = triggerHasDetails(kind)
+  }
+  const choices: Choice[] = RULE_TRIGGERS.map((k) => ({
+    key: k, label: TRIGGER_LABEL[k], selected: k === trigger.kind, run: () => choose(k),
+    secondary: k === trigger.kind && triggerHasDetails(k) ? t('Change the details') : undefined,
+  }))
+  // A pick closes the list once (the list and its combobox may both report it).
+  const listOpen = useRef(false)
+  const openList = () => { listOpen.current = true; setOpen('trigger') }
+  const closeList = () => {
+    if (!listOpen.current) return
+    listOpen.current = false
+    if (toDetails.current) { toDetails.current = false; setOpen('details'); return }
+    back(triggerRef)
+  }
   return (
     <section className="surface-card space-y-1 p-3" role="group" aria-label={`${phrase}${cond ? ` · ${cond}` : ''}`} data-when-card data-word-group>
       <p className="leading-8 text-body text-default">
-        <WordButton ref={triggerRef} label={t('When')} value={phrase.charAt(0).toLocaleUpperCase() + phrase.slice(1)} placeholder={t('choose when')} action={t('change')} onClick={() => setOpen('trigger')} />
+        <WordButton ref={triggerRef} label={t('When')} value={phrase.charAt(0).toLocaleUpperCase() + phrase.slice(1)} placeholder={t('choose when')} action={t('change')}
+          haspopup="listbox" expanded={open === 'trigger'} onClick={openList} />
         {trigger.kind !== 'manual' && (
           <>
             <span> {t('if')} </span>
-            <WordButton ref={condRef} label={t('Condition')} value={cond} placeholder={t('any task')} action={t('change')} onClick={() => setOpen('condition')} />
+            <WordButton ref={condRef} label={t('Condition')} value={cond} placeholder={t('any task')} action={t('change')}
+              haspopup="dialog" expanded={open === 'condition'} onClick={() => setOpen('condition')} />
           </>
         )}
       </p>
       {trigger.kind !== 'manual' && (
         <p className="text-meta text-muted" data-rule-count>{t('{n, plural, one {# open task matches now} other {# open tasks match now}}', { n: count })}</p>
       )}
-      <Popover open={open === 'trigger'} onClose={() => setOpen('')} anchor={triggerRef} label={t('When')} width="sm:w-96" className="p-3">
-        <TriggerFields value={trigger} onChange={onTrigger} names={names} sharedProjects={shared} />
-        <div className="mt-2 flex justify-end"><Button size="sm" variant="primary" onClick={() => setOpen('')}>{t('Done')}</Button></div>
-      </Popover>
-      <Popover open={open === 'condition'} onClose={() => setOpen('')} anchor={condRef} label={t('Condition')} width="sm:w-96" className="max-h-[70dvh] overflow-y-auto p-3">
+      <ChoicePopover open={open === 'trigger'} onClose={closeList} anchor={triggerRef} label={t('When')} choices={choices} />
+      {open === 'details' && triggerHasDetails(trigger.kind) && (
+        <TriggerDetailsPanel trigger={trigger} names={names} shared={shared} onTrigger={onTrigger} onDone={() => back(triggerRef)} />
+      )}
+      {/* The condition rows: inside this card from 1024 px, a bottom sheet below, as on a step's card. */}
+      <div data-card-inspector="when" />
+      <Inspector open={open === 'condition'} onClose={() => back(condRef)} stepId="when" title={t('Condition')}>
         <ConditionFields value={condition ?? {}} onChange={(c) => onCondition(Object.keys(c).length ? c : null)} names={names} />
-        <div className="mt-2 flex justify-end"><Button size="sm" variant="primary" onClick={() => setOpen('')}>{t('Done')}</Button></div>
-      </Popover>
+      </Inspector>
+    </section>
+  )
+}
+
+/** A trigger's details inside the When card: focus moves to its first control, Escape and Done put it back on the word. */
+function TriggerDetailsPanel({ trigger, names, shared, onTrigger, onDone }: {
+  trigger: RuleTrigger; names: WordContext['names']; shared: Set<string>; onTrigger: (t: RuleTrigger) => void; onDone: () => void
+}) {
+  const panel = useRef<HTMLElement>(null)
+  useLayoutEffect(() => { panel.current?.querySelector<HTMLElement>('input, select, button')?.focus() }, [])
+  return (
+    <section ref={panel} className="mt-2 space-y-2 rounded-control border border-default bg-sunken p-3" aria-label={t('{when}: details', { when: TRIGGER_LABEL[trigger.kind] })}
+      data-trigger-details data-overlay="inline" onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onDone() } }}>
+      <TriggerDetails value={trigger} onChange={onTrigger} names={names} sharedProjects={shared} />
+      <div className="flex justify-end"><Button size="sm" variant="primary" onClick={onDone}>{t('Done')}</Button></div>
     </section>
   )
 }
@@ -332,8 +397,8 @@ export function CardColumn({ steps, state, events, onAdd, children }: { steps: R
   return (
     <div className="space-y-2" data-card-column>
       {children}
-      {steps.map((s, i) => <StepCard key={s.id} step={s} index={i} total={steps.length} state={state} events={events} />)}
-      <Button variant="secondary" icon="plus" onClick={onAdd} data-add-step>{t('Add step')}</Button>
+      <Cards steps={steps} parent="" block="" state={state} events={events} depth={0} />
+      <AddButton parent="" block="" state={state} onClick={onAdd} top />
     </div>
   )
 }
