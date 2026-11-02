@@ -28,7 +28,8 @@ vi.mock('../lib/sync', async (importOriginal) => {
   }
 })
 const { SyncStatus } = await import('./SyncStatus')
-const { UndoToast: Toast } = await import('./bulk/UndoToast')
+const { ToastActionHost: Toast } = await import('./ToastActionHost')
+const { bulkToast, hideActionToast, hideBulkToast, showBulkToast } = await import('./bulk/toastStore')
 
 function setState(patch: Partial<typeof status>): void {
   status = { ...status, ...patch }
@@ -36,6 +37,8 @@ function setState(patch: Partial<typeof status>): void {
 }
 
 beforeEach(() => {
+  hideBulkToast()
+  hideActionToast()
   listeners = []
   status = { state: 'idle', pending: 0, lastSyncedAt: null, error: null, live: false, rejected: null }
 })
@@ -73,6 +76,19 @@ describe('SyncStatus in error state', () => {
     expect(pill.getAttribute('aria-label')).toContain('bad cursor')
     pill.click()
     await waitFor(() => document.body.textContent!.split(message).length > 2, 'the toast with the full sentence')
+    await r.unmount()
+  })
+
+  it('a tap in the icon rail keeps an Undo offer that is showing', async () => {
+    const r = await render(<><SyncStatus compact /><Toast /></>)
+    showBulkToast('Moved 1 task to the Trash', 'undo-1')
+    setState({ state: 'error', error: message })
+    await waitFor(() => document.querySelector('[role="alert"]') !== null, 'the error')
+    document.querySelector<HTMLButtonElement>('[data-sync-status="error"]')!.click()
+    // The detail waits behind the offer (ToastActionHost) instead of replacing it.
+    expect(bulkToast()?.undoId).toBe('undo-1')
+    hideBulkToast()
+    await waitFor(() => document.body.textContent!.split(message).length > 2, 'the detail once the offer is gone')
     await r.unmount()
   })
 

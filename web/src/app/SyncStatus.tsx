@@ -3,7 +3,7 @@ import { requestSync, useSyncStatus } from '../lib/sync'
 import { useDemo } from '../lib/demo'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
-import { showBulkToast } from './bulk/toastStore'
+import { showActionToast } from './bulk/toastStore'
 
 /** Fired to show the two-factor enrolment wizard (App listens; OpenSpec `mfa-totp`). */
 export const ENROLMENT_EVENT = 'opentodo:mfa-enrolment-required'
@@ -47,8 +47,9 @@ export function SyncStatus({ compact = false }: { compact?: boolean } = {}) {
       type="button"
       onClick={() => {
         if (s.state === 'restricted') return window.dispatchEvent(new Event(ENROLMENT_EVENT))
-        // The rail has no room for the sentence and touch has no hover: a tap shows it in full.
-        if (compact && failed) showBulkToast(s.error!, null)
+        // The rail has no room for the sentence and touch has no hover: a tap shows it in full, as a
+        // failure toast, which waits behind an Undo offer instead of replacing it.
+        if (compact && failed) showActionToast(s.error!)
         requestSync(0)
       }}
       aria-label={quiet ? name : `${name}. ${detail}`}
