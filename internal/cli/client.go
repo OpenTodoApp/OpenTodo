@@ -308,7 +308,9 @@ type task struct {
 	// DayPart is "morning", "afternoon" or null (day-parts); Evening stays the flag.
 	DayPart *string `json:"day_part"`
 	// Energy is "deep", "medium", "low", or "" or absent for none (task-energy).
-	Energy      string          `json:"energy,omitempty"`
+	Energy string `json:"energy,omitempty"`
+	// Sector is the time sector, "" or absent for none (time-sectors).
+	Sector      string          `json:"sector,omitempty"`
 	BlockedBy   []string        `json:"blocked_by"`
 	Location    json.RawMessage `json:"location"`
 	Labels      []string        `json:"labels"`

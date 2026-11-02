@@ -1,5 +1,5 @@
 {
-  "_comment": "Today's closed list (OpenSpec change today-closed-list): the slot fill rule shared by web/src/lib/closedList.ts and internal/closedlist. A task's `available` is the injected availability predicate's answer (project-flow-modes) when the case's predicate is \"flow\"; with predicate \"none\" the fallback rule (not blocked) applies. `take` checks Take a slot on the case's fill.",
+  "_comment": "Today's closed list (OpenSpec change today-closed-list): the slot fill rule shared by web/src/lib/closedList.ts and internal/closedlist. A task's `available` is the injected availability predicate's answer (project-flow-modes) when the case's predicate is \"flow\"; with predicate \"none\" the fallback rule (not blocked) applies. `take` checks Take a slot on the case's fill. `time_sensitive` (an empty list when left out) is the waiting tasks due today with a `time`, or with a `deadline` today, soonest first (today-waiting-time-sensitive); a task's `due` is its due date, else its deadline, and `time` its due time.",
   "today": "2026-10-30",
   "cases": [
     {
@@ -163,6 +163,39 @@
         { "id": "c", "created_at": 3 }
       ],
       "expect": { "limit": 0, "slots": ["a", "b", "c"], "waiting": [], "chosen": 0 }
+    },
+    {
+      "name": "time-sensitive waiting tasks, soonest first, the fill order unchanged",
+      "limit": 2,
+      "tasks": [
+        { "id": "a", "created_at": 1 },
+        { "id": "b", "created_at": 2, "due": "2026-10-30", "time": "09:00" },
+        { "id": "c", "created_at": 3, "due": "2026-10-30" },
+        { "id": "d", "created_at": 4, "due": "2026-10-30", "time": "16:00" },
+        { "id": "e", "created_at": 5, "due": "2026-10-30", "deadline": "2026-10-30" },
+        { "id": "f", "created_at": 6, "due": "2026-10-30", "time": "11:30", "deadline": "2026-10-30" },
+        { "id": "g", "created_at": 7, "earlier": true, "due": "2026-10-29", "time": "08:00" }
+      ],
+      "expect": { "limit": 2, "slots": ["g", "a"], "waiting": ["b", "c", "d", "e", "f"], "chosen": 0 },
+      "time_sensitive": [{ "id": "b", "time": "09:00" }, { "id": "f", "time": "11:30" }, { "id": "d", "time": "16:00" }, { "id": "e", "time": null }],
+      "take": { "id": "d", "taken": ["d"] }
+    },
+    {
+      "name": "time-sensitive: ties in fill order, a deadline today with a later due date, a past day left out",
+      "limit": 1,
+      "review": { "focus_date": "2026-10-30", "focus": "a" },
+      "tasks": [
+        { "id": "a", "created_at": 1 },
+        { "id": "y", "created_at": 2, "earlier": true, "due": "2026-10-29", "time": "08:00" },
+        { "id": "z", "created_at": 3, "due": "2026-10-31", "time": "10:00", "deadline": "2026-10-30" },
+        { "id": "w0", "created_at": 4, "due": "2026-10-30", "deadline": "2026-10-30" },
+        { "id": "w1", "created_at": 5, "due": "2026-10-30", "deadline": "2026-10-30" },
+        { "id": "v", "created_at": 6, "due": "2026-10-30", "time": "14:00" },
+        { "id": "u", "created_at": 7, "due": "2026-10-30", "time": "14:00" }
+      ],
+      "expect": { "limit": 1, "slots": ["a"], "waiting": ["y", "z", "w0", "w1", "v", "u"], "chosen": 1 },
+      "time_sensitive": [{ "id": "v", "time": "14:00" }, { "id": "u", "time": "14:00" }, { "id": "z", "time": null }, { "id": "w0", "time": null }, { "id": "w1", "time": null }],
+      "take": { "id": "v", "taken": "full" }
     }
   ],
   "limits": [[0, 0], [1, 1], [20, 20], [21, 0], [-3, 0], [2.5, 0], ["5", 0], [null, 0]]

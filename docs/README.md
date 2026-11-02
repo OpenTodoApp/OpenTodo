@@ -24,6 +24,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | [Tasks and projects](tasks-and-projects.md) | Add and edit tasks, write notes, break work into subtasks, set priorities and organise everything into projects and sub-projects. |
 | &nbsp;&nbsp;↳ [The task panel](task-panel.md) | Everything in a task's panel: the title and its menu, the notes, the property chips and the Add menu, what a viewer can do, and how to close it. |
 | &nbsp;&nbsp;↳ [Dates and times](dates-and-times.md) | How due dates and times work, every way to type or pick them, and fixing a time to a time zone for something that happens at one moment worldwide. |
+| &nbsp;&nbsp;↳ [Time sectors](time-sectors.md) | Plan a task for this week, next week or this month without a fake date: the stored week, month or quarter, carry-over, and how the API, CLI, CalDAV and the vault carry it. |
 | &nbsp;&nbsp;↳ [Deadlines and start dates](deadlines-and-start-dates.md) | A deadline is the day a task must be done by; a start date defers it until it matters. Countdowns, Someday, This Evening and the keys for each. |
 | &nbsp;&nbsp;↳ [Notes, subtasks and dependencies](notes-and-subtasks.md) | Write formatted notes, break a task into subtasks and nest them, and make a task wait for another one with Blocked by. |
 | &nbsp;&nbsp;↳ [Work from the list](work-from-the-list.md) | Add, complete and delete tasks, change them with one key, undo, and put them in the order you want, all without opening a task. |
@@ -112,7 +113,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | [Recurring task rules](recurrence.md) | Rule grammar, how next dates are computed, completing, skipping and detaching |
 | [Reminders reference](reminders.md) | Relative and absolute reminders, snooze, web push and its privacy |
 | [Capturing pages](capture.md) | Share sheet, bookmarklet and browser extension |
-| [Obsidian plugin](obsidian.md) | Send a line or a selection from any note to OpenTodo, with a link back to the note: connect, send, offline, encrypted accounts |
+| [Obsidian plugin](obsidian.md) | Send lines from any note to OpenTodo with a link back to the note, and sync a folder of task files: connect, send, offline, encrypted accounts |
 | [Import formats](import.md) | Own export, CSV and other apps' JSON exports; duplicates and undo |
 | [End-to-end encryption](e2ee.md) | What is encrypted, the threat model, devices, recovery and limits |
 | [Feedback and support](feedback-and-support.md) | Where to report a problem or suggest an idea, where to talk to other people who use OpenTodo, how to star it on GitHub, and how to buy the maintainer a coffee. |

@@ -23,6 +23,7 @@ import { isGhost, listCommitted, markGhost, registerList, useDepartures, withGho
 import type { RowMotion } from '../TaskRow'
 import type { FlowView } from '../../lib/useFlow'
 import { TaskListRow, SubtaskInput, type RowActions } from './TaskListRow'
+import { WaitingSoonList } from './WaitingSoon'
 import type { ListRoute } from './useListModel'
 
 export interface RowContext {
@@ -265,8 +266,9 @@ function SectionGroup({ g, first, last, rowList, project, ...p }: GroupedListPro
 /** A date, project, Later or Blocked group; collapsible per device. */
 function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, renderRow, earlierActions, projects }: GroupedListProps & { g: ListGroup; rowList: RowList }) {
   if (g.rows.length === 0 && g.folded === undefined && !g.projected?.length) return null
-  // Today's Earlier group (page-rhythm D5): folded above five tasks until this device chooses.
-  const earlier = view === 'today' && g.key === 'earlier'
+  // Today's Earlier group (page-rhythm D5): folded above five tasks until this device chooses;
+  // Upcoming's Start with Today shares the choice (upcoming-start-with-today D2).
+  const earlier = (view === 'today' || view === 'upcoming') && g.key === 'earlier'
   const collapsed = earlier ? earlierCollapsed(collapsedGroups, g.rows.length) : collapsedGroups.has(groupKey(view, g.key))
   const toggle = () => {
     if (!earlier) return setGroupCollapsed(view, g.key, !collapsed)
@@ -276,7 +278,7 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
   return (
     <section className="mb-4" data-group={g.key}>
       {g.folded !== undefined ? (
-        <ListGroupHeader title={g.heading ?? ''} count={g.count} collapsed={g.folded} onToggle={() => toggleCollapsed(g.openKey ?? BLOCKED_OPEN_KEY)}
+        <ListGroupHeader title={g.heading ?? ''} count={g.count} detail={g.folded ? g.detail : undefined} collapsed={g.folded} onToggle={() => toggleCollapsed(g.openKey ?? BLOCKED_OPEN_KEY)}
           actions={view === 'today' && g.key === 'done' ? <LogWinAction /> : undefined}
           actionsAlwaysVisible={g.key === 'done'} />
       ) : g.heading && partDrop(g.dropPart, (
@@ -285,6 +287,7 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
           actions={earlier ? earlierActions?.(g.rows.filter((r) => !isGhost(r.task)).map((r) => r.task.id)) : undefined} actionsAlwaysVisible={earlier} />
       ))}
       {g.hint && g.folded === false && <p className="mb-1 px-1 text-meta text-muted" data-group-hint>{g.hint}</p>}
+      {g.folded && g.soon?.length ? <WaitingSoonList soon={g.soon} onOpenGroup={() => toggleCollapsed(g.openKey ?? BLOCKED_OPEN_KEY)} /> : null}
       {!(g.heading && g.folded === undefined && collapsed) && rowList(g.rows.map((r) => renderRow(r)))}
       {/* Upcoming's projected occurrences after the day's tasks, outside its count (series-occurrences D4). */}
       {!(g.heading && collapsed) && (g.projected?.length || g.projectedNote) ? <Suspense fallback={null}><ProjectedGroupRows g={g} projects={projects} /></Suspense> : null}

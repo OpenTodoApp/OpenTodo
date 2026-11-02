@@ -118,8 +118,11 @@ describe('Describe it on the Routines page', () => {
     const r = await render(<RoutinesView route={{ view: 'rules' }} />)
     await waitFor(() => !!describeButton(), 'Describe it offered')
     await click(describeButton()!)
-    await waitFor(() => !!document.querySelector('[data-describe-text]'), 'the sheet')
-    expect(document.querySelector('[data-testid="describe-routine"]')?.getAttribute('data-placement')).toBe('sheet')
+    await waitFor(() => !!document.querySelector('[data-describe-text]'), 'the panel')
+    // In place on the page, never a dialog (routines-editor-no-modals).
+    expect(document.querySelector('[data-describe-panel]')).toBeTruthy()
+    expect(document.querySelector('[role="dialog"]')).toBeNull()
+    expect(describeButton()!.getAttribute('aria-expanded')).toBe('true')
     await typeInto(document.querySelector('[data-describe-text]')!, 'every Friday at five, make tasks in Errands from my Groceries note')
     await click(document.querySelector('[data-describe-submit]')!)
     await waitFor(() => location.pathname === '/routines/new', 'the editor opens')

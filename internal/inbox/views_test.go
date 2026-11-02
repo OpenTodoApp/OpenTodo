@@ -19,6 +19,7 @@ func TestViewVectors(t *testing.T) {
 			Deadline    *string         `json:"deadline"`
 			Start       *string         `json:"start"`
 			CompletedAt *int64          `json:"completed_at"`
+			Sector      string          `json:"sector"`
 		} `json:"task"`
 		Someday bool `json:"someday"`
 		Anytime bool `json:"anytime"`
@@ -30,7 +31,7 @@ func TestViewVectors(t *testing.T) {
 		t.Fatalf("only %d vectors", len(vs))
 	}
 	for _, v := range vs {
-		p := Planned{HasDue: len(v.Task.Due) > 0 && string(v.Task.Due) != "null", HasDeadline: v.Task.Deadline != nil, Completed: v.Task.CompletedAt != nil}
+		p := Planned{HasDue: len(v.Task.Due) > 0 && string(v.Task.Due) != "null", HasDeadline: v.Task.Deadline != nil, Completed: v.Task.CompletedAt != nil, Sector: v.Task.Sector}
 		if v.Task.Start != nil {
 			p.Start = *v.Task.Start
 		}

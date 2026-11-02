@@ -11,6 +11,8 @@
 //   - a control on the touch screen is smaller than 44 × 44 px or only appears on hover,
 //   - a text field (input, textarea, select, editable area) has text under 16 px on the
 //     touch screen, which makes Safari on iOS zoom in on focus (issue #724),
+//   - on the settings pages that ask for it, two controls overlap or a control touches a
+//     row divider (themes-layout-template),
 //   - any screen or overlay has a serious or critical axe-core issue (colour contrast,
 //     names, labels, roles), in light and dark (release 0.2.0; first added for the
 //     Help view by user-documentation),
@@ -42,7 +44,7 @@ const pw = await import('playwright').catch(async () => {
   return createRequire(execSync('npm root -g').toString().trim() + '/')('playwright')
 })
 import { mkdirSync, writeFileSync } from 'node:fs'
-import { MAX_SCROLLERS, addButtonCovers, axeProblems, overlayContentFit, pageOverflow, rowCheckReach, rowMisalignment, settled, smallFields, smallTargets, tabRowOverflow, verticalScrollers } from './ux-audit/measure.mjs'
+import { MAX_SCROLLERS, addButtonCovers, axeProblems, crowdedControls, overlayContentFit, pageOverflow, rowCheckReach, rowMisalignment, settled, smallFields, smallTargets, tabRowOverflow, verticalScrollers } from './ux-audit/measure.mjs'
 import { calendarEvents, seed as seedAccount } from './ux-audit/seed.mjs'
 import { ANY_LANG_OVERLAYS, OVERLAYS, chooseLayout, closes, screens } from './ux-audit/layout-screens.mjs'
 
@@ -229,6 +231,8 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
       for (const m of await p.evaluate(rowMisalignment)) await fail(p, s.name, null, m)
       for (const m of await p.evaluate(rowCheckReach)) await fail(p, s.name, null, m)
       for (const m of await p.evaluate(addButtonCovers)) await fail(p, s.name, null, m)
+      // Crowded controls on the settings pages that ask for it (themes-layout-template).
+      if (s.crowded) for (const m of await p.evaluate(crowdedControls, ['main', 4])) await fail(p, s.name, null, `crowded: ${m}`)
       // Accessibility of the whole screen (axe-core, serious and critical issues).
       for (const m of await axeProblems(p)) await fail(p, s.name, null, m)
       if (s.offline && engine === 'chromium' && !OTHER_LANG) {

@@ -8,8 +8,11 @@
 //
 //   node esbuild.config.mjs            build dist/main.js (+ manifest.json, styles.css)
 //   node esbuild.config.mjs --watch    rebuild on change, for development in a test vault
+//   node esbuild.config.mjs --outdir . build into another folder (the release repository's
+//                                      `npm run build`, scripts/mirror.mjs)
 import { builtinModules } from 'node:module'
 import { copyFileSync, mkdirSync, readFileSync, statSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import esbuild from 'esbuild'
 
@@ -65,10 +68,11 @@ export async function build({ watch = false, outdir = here('./dist') } = {}) {
   const bad = FORBIDDEN.filter((re) => re.test(js))
   if (bad.length) throw new Error(`main.js uses a module Obsidian mobile does not have: ${bad.join(', ')}`)
   if (size > BUDGET_BYTES) throw new Error(`main.js is ${(size / 1024).toFixed(1)} KB, over the ${BUDGET_BYTES / 1024} KB budget`)
-  console.log(`obsidian: dist/main.js ${(size / 1024).toFixed(1)} KB of ${BUDGET_BYTES / 1024} KB`)
+  console.log(`obsidian: ${outdir}/main.js ${(size / 1024).toFixed(1)} KB of ${BUDGET_BYTES / 1024} KB`)
   return size
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  await build({ watch: process.argv.includes('--watch') })
+  const at = process.argv.indexOf('--outdir')
+  await build({ watch: process.argv.includes('--watch'), ...(at > 0 && process.argv[at + 1] ? { outdir: resolve(process.argv[at + 1]) } : {}) })
 }
