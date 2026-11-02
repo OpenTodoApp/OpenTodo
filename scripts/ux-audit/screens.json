@@ -56,8 +56,7 @@
   "seed": "layout-check",
   "frequency": "daily",
   "core": true,
-  "layoutCheck": null,
-  "layoutCheckReason": "the task route opens the list with the panel; the layout check reaches the panel as the task-detail overlay",
+  "layoutCheck": "task-repeating",
   "story": "Task/Panel",
   "path": "/task/{quotes}",
   "ready": "[data-detail-for]"
