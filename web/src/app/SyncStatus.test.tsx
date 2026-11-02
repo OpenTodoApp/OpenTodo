@@ -1,5 +1,6 @@
 // A sync error is visible without hover (audit fix 3): the pill keeps its label in
-// compact mode and the detail shows beside it; other states keep the quiet pill.
+// compact mode; the detail wraps beside it when expanded and, in the icon rail, is
+// announced and shown in a toast on tap; other states keep the quiet pill.
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useSyncExternalStore } from 'react'
@@ -27,6 +28,7 @@ vi.mock('../lib/sync', async (importOriginal) => {
   }
 })
 const { SyncStatus } = await import('./SyncStatus')
+const { UndoToast: Toast } = await import('./bulk/UndoToast')
 
 function setState(patch: Partial<typeof status>): void {
   status = { ...status, ...patch }
@@ -39,14 +41,38 @@ beforeEach(() => {
 })
 
 describe('SyncStatus in error state', () => {
-  it('shows the error text beside the pill, also in compact mode', async () => {
-    const r = await render(<SyncStatus compact />)
-    setState({ state: 'error', error: 'The server refused the exchange: bad cursor' })
+  const message = 'The server refused the exchange: bad cursor'
+
+  it('announces the failure once and keeps the detail readable beside the pill when expanded', async () => {
+    const r = await render(<SyncStatus />)
+    setState({ state: 'error', error: message })
     await waitFor(() => document.querySelector('[role="alert"]') !== null, 'the visible error')
     const alert = document.querySelector('[role="alert"]')!
-    expect(alert.textContent).toContain('bad cursor')
+    // The live region holds a fixed sentence, so a changed detail is not announced again.
+    expect(alert.textContent).toBe('Sync error')
+    const detail = [...document.querySelectorAll('p')].find((p) => p.textContent === message)!
+    expect(detail.className).toContain('line-clamp-2')
+    expect(detail.className).toContain('break-words')
+    expect(detail.className).not.toContain('truncate')
+    expect(detail.className).not.toContain('sr-only')
+    setState({ error: 'The server refused the exchange: other' })
+    await waitFor(() => document.body.textContent!.includes(': other'), 'the new detail')
+    expect(document.querySelector('[role="alert"]')!.textContent).toBe('Sync error')
     const pill = document.querySelector('[data-sync-status="error"]')!
     expect(pill.textContent).toContain('Sync error')
+    await r.unmount()
+  })
+
+  it('in the icon rail keeps the detail for assistive technology and shows it in a toast on tap', async () => {
+    const r = await render(<><SyncStatus compact /><Toast /></>)
+    setState({ state: 'error', error: message })
+    await waitFor(() => document.querySelector('[role="alert"]') !== null, 'the error')
+    const detail = [...document.querySelectorAll('p')].find((p) => p.textContent === message)!
+    expect(detail.className).toContain('sr-only')
+    const pill = document.querySelector<HTMLButtonElement>('[data-sync-status="error"]')!
+    expect(pill.getAttribute('aria-label')).toContain('bad cursor')
+    pill.click()
+    await waitFor(() => document.body.textContent!.split(message).length > 2, 'the toast with the full sentence')
     await r.unmount()
   })
 

@@ -24,6 +24,7 @@ import { lineageRows } from './lineageRows'
 import { keepProjectWorkspace, keepWorkspaceFor, workspaceFields, type KeepWorkspace } from './workspaces'
 import { resettable } from './moduleState'
 import type { AppendRow } from './noteAppends'
+import { LOCAL_ERRORS } from './localErrors'
 
 let devicePromise: Promise<string> | null = null
 /** The local data epoch the memoised id was read in; a sign-out starts a new one. */
@@ -659,13 +660,13 @@ export async function createProject(input: { name: string; color?: string; paren
  */
 export async function moveProject(id: string, parentId: string | null): Promise<void> {
   const project = await db.projects.get(id)
-  if (!project || project.deleted_at) throw new Error('project not found')
+  if (!project || project.deleted_at) throw new Error(LOCAL_ERRORS.projectNotFound)
   if (parentId === project.parent_id) return
   const all = await liveProjects()
   if (parentId !== null) {
     if (parentId === id) throw new Error(t('a project cannot be its own parent'))
     const parent = all.find((p) => p.id === parentId)
-    if (!parent || parent.archived) throw new Error('parent project not found')
+    if (!parent || parent.archived) throw new Error(LOCAL_ERRORS.parentProjectNotFound)
     if (isDescendant(parentId, id, all)) throw new Error(t('parent cannot be a descendant of the project'))
   }
   // It stays in the workspace it is in when it becomes a top-level project (issue 544).
@@ -885,7 +886,7 @@ function remember(position: number): number {
 /** A new subtask lives in its parent's project, with default priority and no due date. */
 export async function createSubtask(parentId: string, title: string): Promise<string> {
   const parent = await db.tasks.get(parentId)
-  if (!parent || parent.deleted_at) throw new Error('parent task not found')
+  if (!parent || parent.deleted_at) throw new Error(LOCAL_ERRORS.parentTaskNotFound)
   return createTask({ title, project_id: parent.project_id, parent_id: parentId })
 }
 
@@ -901,13 +902,13 @@ async function liveTasks(): Promise<Task[]> {
  */
 export async function setTaskParent(id: string, parentId: string | null): Promise<void> {
   const task = await db.tasks.get(id)
-  if (!task || task.deleted_at) throw new Error('task not found')
+  if (!task || task.deleted_at) throw new Error(LOCAL_ERRORS.taskNotFound)
   if (parentId === task.parent_id) return
   const all = await liveTasks()
   if (parentId !== null) {
     if (parentId === id) throw new Error(t('a task cannot be its own parent'))
     const parent = all.find((tk) => tk.id === parentId)
-    if (!parent) throw new Error('parent task not found')
+    if (!parent) throw new Error(LOCAL_ERRORS.parentTaskNotFound)
     if (parent.project_id !== task.project_id) throw new Error(t('parent must be in the same project'))
     if (isDescendant(parentId, id, all)) throw new Error(t('parent cannot be a descendant of the task'))
   }
@@ -978,7 +979,7 @@ function copyTasks(
  */
 export async function moveTaskAcrossScopes(id: string, patch: Partial<Omit<Task, 'id' | '_clock'>>, opts?: MutateOptions): Promise<string> {
   const task = await db.tasks.get(id)
-  if (!task || task.deleted_at) throw new Error('task not found')
+  if (!task || task.deleted_at) throw new Error(LOCAL_ERRORS.taskNotFound)
   const assignable = assignableIn(patch.project_id ?? null, await membershipMap(), await currentUserId())
   const plan = planProjectChange(task, await liveTasks(), patch, { assignable }, Date.now(), await keepWorkspaceFor())
   await mutateMany(plan.changes, opts)
@@ -1368,7 +1369,7 @@ export function copyNoteChange(note: Note, projectId: string | null, workspaceId
  */
 export async function restoreTask(id: string): Promise<string> {
   const task = await db.tasks.get(id)
-  if (!task) throw new Error('task not found')
+  if (!task) throw new Error(LOCAL_ERRORS.taskNotFound)
   if (!task.deleted_at) return id
   const all = await db.tasks.toArray()
   const subtree = [task, ...[...descendants(id, all)].map((d) => all.find((tk) => tk.id === d)).filter((item): item is Task => !!item && item.deleted_at === task.deleted_at)]
@@ -1398,7 +1399,7 @@ export async function restoreTask(id: string): Promise<string> {
  */
 export async function restoreProject(id: string): Promise<void> {
   const project = await db.projects.get(id)
-  if (!project) throw new Error('project not found')
+  if (!project) throw new Error(LOCAL_ERRORS.projectNotFound)
   if (!project.deleted_at) return
   const memberships = await membershipMap()
   if (memberships.has(id) && roleOf(id, memberships) !== 'owner') throw new Error(t('only the owner can restore a shared project'))

@@ -4,22 +4,24 @@
 // refusal is an ApiError translated by code; a local refusal such as "a task
 // cannot be its own subtask" is thrown with t()).
 import { t, msg } from '../lib/i18n'
+import { LOCAL_ERRORS } from '../lib/localErrors'
 import { showBulkToast } from './bulk/toastStore'
 
 /**
  * Local refusals keep a small catalogue like the server's codes have (lib/i18n/errors):
- * the lib throws plain English sentences; the ones a user can cause are translated
- * here. An unknown message is shown as sent (a newer client on an older catalog).
+ * the lib throws plain English sentences (the constants of lib/localErrors, shared
+ * by the throws and this map); the ones a user can cause are translated here.
+ * An unknown message is shown as sent (a newer client on an older catalog).
  */
 const LOCAL_ERROR_MESSAGES: Record<string, string> = {
-  'project not found': msg('That project is not available any more.'),
-  'parent project not found': msg('The parent project is not available any more.'),
-  'task not found': msg('That task is not available any more.'),
-  'parent task not found': msg('The parent task is not available any more.'),
-  'not signed in': msg('Sign in to continue.'),
-  'time entry not found': msg('That time entry is not available any more.'),
-  'reminder time is required': msg('Set a time for the reminder first.'),
-  'offset must be a whole number of minutes': msg('The reminder offset must be whole minutes.'),
+  [LOCAL_ERRORS.projectNotFound]: msg('That project is not available any more.'),
+  [LOCAL_ERRORS.parentProjectNotFound]: msg('The parent project is not available any more.'),
+  [LOCAL_ERRORS.taskNotFound]: msg('That task is not available any more.'),
+  [LOCAL_ERRORS.parentTaskNotFound]: msg('The parent task is not available any more.'),
+  [LOCAL_ERRORS.notSignedIn]: msg('Sign in to continue.'),
+  [LOCAL_ERRORS.timeEntryNotFound]: msg('That time entry is not available any more.'),
+  [LOCAL_ERRORS.reminderTimeRequired]: msg('Set a time for the reminder first.'),
+  [LOCAL_ERRORS.offsetNotWhole]: msg('The reminder offset must be whole minutes.'),
 }
 
 /** The sentence a failed action shows. */
