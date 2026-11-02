@@ -88,7 +88,7 @@ json = {"version":1,"regions":[{"id","taskId","lat","lon","radius","on":"arrive"
 
 **D6. Server, API, CalDAV, export.**
 
-- **REST:** `POST /api/v1/reminders` and `PATCH /api/v1/reminders/{id}` accept the kinds and `radius_m`, under the existing authentication (401 without credentials; a `read` token is refused on writes; viewers can't write reminders on shared tasks, as today). These are refused with 400 `invalid_operation`:
+- **REST:** `POST /api/v1/reminders` and `PATCH /api/v1/reminders/{id}` accept the kinds and `radius_m`, under the existing authentication (401 without credentials; a `read` token is refused on writes; reminders stay personal, so a viewer of a shared project keeps their own, as today). These are refused with 400 `invalid_input`:
   - a missing or out-of-range radius;
   - a `fire_at` or offset on a location kind;
   - `radius_m` on another kind.

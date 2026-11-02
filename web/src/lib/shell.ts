@@ -5,13 +5,45 @@
 // list in `capabilities` is never called, so an older shell keeps working for the
 // capabilities both sides know.
 
+
 /** The bridge version this web app speaks. */
 export const BRIDGE_VERSION = 1
 
 /** The oldest shell app version this web app expects (bumped when a shell bug needs a forced update). */
 export const MIN_SHELL_APP = '0.10.0'
 
-export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars'
+export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'geofences'
+
+/**
+ * One location reminder handed to the shell (location-reminders D3): the circle
+ * to watch and the direction. The title only under the include-titles rule and
+ * never for an encrypted account.
+ */
+export interface ShellGeofence {
+  id: string
+  taskId: string
+  lat: number
+  lon: number
+  /** Metres, 100 to 5,000. */
+  radius: number
+  on: 'arrive' | 'leave'
+  title?: string
+}
+
+/** The argument of `scheduleGeofences`: every armed location reminder, at most 100, sorted by id. */
+export interface ShellGeofencePayload {
+  version: 1
+  /**
+   * Set only when the user turns "Location reminders on this phone" on: a shell
+   * with a screen asks for the missing location permission (fine, then
+   * background) even when `regions` is empty. Without it the shell never asks.
+   */
+  ask?: true
+  regions: ShellGeofence[]
+}
+
+/** The answer of `scheduleGeofences`: whether the shell may watch the regions in the background. */
+export type ShellLocationPermission = 'granted' | 'foreground-only' | 'denied' | 'unavailable'
 
 /** One reminder handed to the shell: the next 7 days, title only when allowed. */
 export interface ShellReminder {
@@ -48,6 +80,13 @@ export interface OpenTodoShell {
   openExternal?(url: string): void
   /** theme-engine D8: the status and navigation bar colour, `{"color":"#rrggbb","dark":bool}` (dark: light icons). */
   setSystemBars?(json: string): void
+  /**
+   * location-reminders D3: replaces the watched regions with a `ShellGeofencePayload`
+   * and answers the background location state. It asks for the permission only
+   * when the payload says `ask` and the shell has a screen; without background
+   * permission it registers nothing.
+   */
+  scheduleGeofences?(json: string): Promise<ShellLocationPermission> | ShellLocationPermission | void
 }
 
 declare global {
@@ -91,6 +130,27 @@ export async function scheduleReminders(list: ShellReminder[]): Promise<ShellPer
   return out === 'denied' || out === 'exact-denied' ? out : 'granted'
 }
 
+/** The payload that clears every region (sign-out, lock, the switch turned off). */
+export const NO_GEOFENCES: ShellGeofencePayload = { version: 1, regions: [] }
+
+/** Hands the armed location reminders to the shell; null when the shell has no `geofences`. */
+export async function scheduleGeofences(payload: ShellGeofencePayload, fresh = false): Promise<ShellLocationPermission | null> {
+  const s = shell()
+  if (!s || !has('geofences') || !s.scheduleGeofences) return null
+  // The publisher runs on every local change: an unchanged set is not handed over
+  // again unless the caller needs a fresh answer (`fresh`, or asking).
+  const key = JSON.stringify(payload.regions)
+  if (!payload.ask && !fresh && sent.last?.key === key) return sent.last.answer
+  const out = await s.scheduleGeofences(JSON.stringify(payload))
+  const answer: ShellLocationPermission = out === 'foreground-only' || out === 'denied' || out === 'granted' ? out : 'unavailable'
+  sent.last = { key, answer }
+  return answer
+}
+
+/** The last regions handed to the shell and its answer (reset when the shell data is forgotten). */
+const sent: { last: { key: string; answer: ShellLocationPermission } | null } = { last: null }
+
+
 /** Shows a test notification through the shell; null when the shell cannot. */
 export async function testNotification(): Promise<boolean | null> {
   const s = shell()
@@ -132,6 +192,10 @@ export function forgetShellData(): void {
   const s = shell()
   if (!s) return
   if (has('reminders')) void Promise.resolve(s.scheduleReminders?.('[]')).catch(() => undefined)
+  if (has('geofences')) {
+    sent.last = null
+    void Promise.resolve(s.scheduleGeofences?.(JSON.stringify(NO_GEOFENCES))).catch(() => undefined)
+  }
   if (has('widgets')) s.publishWidget?.(JSON.stringify({ updatedAt: Date.now(), locked: true, count: 0, overdue: 0, tasks: [] }))
   if (has('biometric')) s.biometricForget?.()
 }

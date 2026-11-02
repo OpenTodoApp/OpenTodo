@@ -759,8 +759,12 @@ export interface RoutineStep {
   do?: RoutineStep[]
 }
 
-/** 'deadline' (OpenSpec change `deadlines`): offset from 09:00 local on the task's deadline. */
-export type ReminderKind = 'relative' | 'absolute' | 'deadline'
+/**
+ * 'deadline' (OpenSpec change `deadlines`): offset from 09:00 local on the task's deadline.
+ * 'arrive' and 'leave' (OpenSpec change `location-reminders`): fire on a phone that
+ * enters or leaves the circle of `radius_m` around the task's location; never a `fire_at`.
+ */
+export type ReminderKind = 'relative' | 'absolute' | 'deadline' | 'arrive' | 'leave'
 
 /**
  * A reminder on a task (OpenSpec change `reminders`). `fire_at` is always the
@@ -780,6 +784,8 @@ export interface Reminder extends ReminderFields {
   dismissed_at: number | null
   created_at: number
   deleted_at: number | null
+  /** Metres, 100–5,000, only on the location kinds (absent on rows from older clients). */
+  radius_m?: number | null
   _clock: Clock
 }
 

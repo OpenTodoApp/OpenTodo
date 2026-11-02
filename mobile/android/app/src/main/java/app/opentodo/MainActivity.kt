@@ -67,6 +67,16 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         permissionDone?.invoke(granted && NotificationManagerCompat.from(this).areNotificationsEnabled())
         permissionDone = null
     }
+    private var locationDone: ((Boolean) -> Unit)? = null
+    private val locationPermission = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
+        locationDone?.invoke(results.values.any { it })
+        locationDone = null
+    }
+    private var backgroundDone: ((Boolean) -> Unit)? = null
+    private val backgroundPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        backgroundDone?.invoke(granted)
+        backgroundDone = null
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -325,7 +335,7 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
             .show()
     }
 
-    /** "Change server": the old server's storage, schedule, widget data and stored key go. */
+    /** "Change server": the old server's storage, schedule, location reminders, widget data and stored key go. */
     private fun forgetServer() {
         web.loadUrl("about:blank")
         WebStorage.getInstance().deleteAllData()
@@ -333,6 +343,7 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         web.clearCache(true)
         web.clearHistory()
         Scheduler.clear(this)
+        Geofences.clear(this)
         NotificationManagerCompat.from(this).cancelAll()
         WidgetStore.clear(this)
         BiometricKeyStore.forget(this)
@@ -352,6 +363,20 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         }
         permissionDone = done
         notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+
+    /** Fine and coarse together (Android 12 lets the user choose approximate). */
+    override fun requestLocationPermission(done: (Boolean) -> Unit) {
+        if (Geofences.foreground(this)) return done(true)
+        locationDone = done
+        locationPermission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+    }
+
+    /** A request of its own after the foreground one, as Android 11+ requires; before Android 10 fine location covers it. */
+    override fun requestBackgroundLocation(done: (Boolean) -> Unit) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q || Geofences.background(this)) return done(Geofences.background(this))
+        backgroundDone = done
+        backgroundPermission.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
     }
 
     override fun requestExactAlarms() {

@@ -272,7 +272,11 @@ type dueReminder struct {
 // checked afterwards through sync.Get, which sees personal and shared scopes;
 // a reminder whose task is completed is then recorded as dismissed, so it
 // leaves this query for good (reliable-background-jobs). One on a deleted task
-// stays until the task is restored or purged from the Trash.
+// stays until the task is restored or purged from the Trash. A location
+// reminder ("arrive", "leave", OpenSpec change location-reminders) has no
+// firing time and fires only on a phone; the kind check also keeps out one
+// whose fire_at a concurrent edit merged in, so the server never pushes,
+// dismisses or counts it.
 const dueQuery = `
 SELECT f.scope_id, f.entity_id, CAST(f.value AS REAL), COALESCE(json_extract(tid.value, '$'), '')
 FROM scope_fields f
@@ -280,6 +284,8 @@ JOIN scope_fields tid ON tid.scope_id = f.scope_id AND tid.entity = 'reminder' A
 WHERE f.entity = 'reminder' AND f.field = 'fire_at' AND f.scope_id LIKE 'user:%' AND f.value <> 'null' AND CAST(f.value AS REAL) <= ?
   AND NOT EXISTS (SELECT 1 FROM scope_fields x WHERE x.scope_id = f.scope_id AND x.entity = 'reminder' AND x.entity_id = f.entity_id
       AND x.field = 'deleted_at' AND x.value <> 'null')
+  AND NOT EXISTS (SELECT 1 FROM scope_fields x WHERE x.scope_id = f.scope_id AND x.entity = 'reminder' AND x.entity_id = f.entity_id
+      AND x.field = 'kind' AND x.value IN ('"arrive"', '"leave"'))
   AND NOT EXISTS (SELECT 1 FROM scope_fields x WHERE x.scope_id = f.scope_id AND x.entity = 'reminder' AND x.entity_id = f.entity_id
       AND x.field IN ('delivered_at', 'dismissed_at') AND x.value <> 'null' AND CAST(x.value AS REAL) >= CAST(f.value AS REAL))`
 

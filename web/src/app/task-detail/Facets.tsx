@@ -194,7 +194,7 @@ export function PartEditor({ id, props, m, anchor, segment, onSegment, onClose }
       repeat: task.recurrence ? () => act(setRecurrence(task.id, null)) : undefined,
       sector: task.sector ? () => act(setSectorWithUndo(task.id, '')) : undefined,
     }
-    return frame('calendar-days', t('When'), <WhenControl task={task} readOnly={readOnly} segment={segment} onOpen={onOpen} onClose={onClose} />, clear[segment],
+    return frame('calendar-days', t('When'), <WhenControl task={task} readOnly={readOnly} segment={segment} onOpen={onOpen} onClose={onClose} onAddLocation={() => m.editing.reveal('location')} />, clear[segment],
       { header: <WhenSegmentPicker value={segment} onChange={onSegment} sector={sectorSegment} />, width: 'sm:w-[28rem]' })
   }
 
