@@ -142,17 +142,10 @@ type Payload struct {
 func BuildPayload(reminderID, taskID string, fireAt int64, title string, includeContent bool) []byte {
 	p := Payload{Type: "reminder", ReminderID: reminderID, TaskID: taskID, FireAt: fireAt}
 	if includeContent {
-		p.Title = truncate(title, 200)
+		p.Title = textutil.TruncateEllipsis(title, 200)
 	}
 	b, _ := json.Marshal(p)
 	return b
-}
-
-func truncate(s string, n int) string {
-	if len(s) <= n {
-		return s
-	}
-	return textutil.Truncate(s, n) + "…"
 }
 
 // SendResult classifies one send.

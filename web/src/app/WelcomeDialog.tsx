@@ -19,7 +19,7 @@ export const ISSUES_URL = 'https://github.com/OpenTodoApp/OpenTodo/issues'
 export const REPO_URL = 'https://github.com/OpenTodoApp/OpenTodo'
 export const COFFEE_URL = 'https://buymeacoffee.com/pixari'
 /** The OpenTodo Discord server (OpenSpec change discord-community): a plain link, nothing is loaded from Discord. */
-export const DISCORD_URL = 'https://discord.gg/Jmj7WuRQ'
+export const DISCORD_URL = 'https://discord.gg/mmSsuCRduD'
 // The project's account on X (x-account-link): releases and work in progress in short form.
 export const X_URL = 'https://x.com/opentodoapp'
 

@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"embed"
-	"fmt"
 	"sort"
 	"strings"
 
@@ -468,6 +467,3 @@ func (a *App) profileCandidates() []compItem {
 	}
 	return out
 }
-
-// String makes compItem readable in test failures.
-func (it compItem) String() string { return fmt.Sprintf("%s\t%s", it.value, it.desc) }

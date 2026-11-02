@@ -663,56 +663,37 @@ func (s *Service) RemoveMember(ctx context.Context, actorID, projectID, targetID
 
 // unassignDeparted writes, inside the membership transaction, an
 // `assignee_id = null` op with device "server" for every task of the project
-// currently assigned to the departed user (task-assignment design D3). The ops
-// are ordinary log entries authored by the actor, so every member's devices
-// receive them on their next pull and converge without client logic. Each op is
-// stamped with server time, or just after the value it replaces when that value
-// carries a (clamped) future timestamp, so the unassignment always wins on the
-// server; assignments to the departed user that arrive later are refused by
-// Apply with reason not_a_member.
+// currently assigned to the departed user (task-assignment design D3). A
+// rotating recurring task they held is handed to the next person of its
+// rotation instead, and the departed user is removed from every rotation in
+// the project (chore-rotation D4). The ops are ordinary log entries authored
+// by the actor, so every member's devices receive them on their next pull and
+// converge without client logic. Each op is stamped with server time, or just
+// after the value it replaces when that value carries a (clamped) future
+// timestamp, so the repair always wins on the server; assignments to the
+// departed user that arrive later are refused by Apply with reason
+// not_a_member. It returns the tasks the departed user held.
 func (s *Service) unassignDeparted(ctx context.Context, tx *sql.Tx, actorID, projectID, departed string) ([]string, []Change, error) {
 	scope := ProjectScope(projectID)
-	want, err := json.Marshal(departed)
+	remaining, err := projectMemberSet(ctx, tx, projectID)
 	if err != nil {
 		return nil, nil, err
 	}
-	rows, err := tx.QueryContext(ctx, `SELECT entity_id, ts FROM scope_fields
-		WHERE scope_id = ? AND entity = 'task' AND field = 'assignee_id' AND value = ? ORDER BY entity_id`, scope, string(want))
-	if err != nil {
+	delete(remaining, departed)
+	writes, held, err := departureRepairs(ctx, tx, scope, departed, remaining)
+	if err != nil || len(writes) == 0 {
 		return nil, nil, err
-	}
-	type hit struct {
-		id string
-		ts int64
-	}
-	var hits []hit
-	for rows.Next() {
-		var h hit
-		if err := rows.Scan(&h.id, &h.ts); err != nil {
-			rows.Close()
-			return nil, nil, err
-		}
-		hits = append(hits, h)
-	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
-		return nil, nil, err
-	}
-	if len(hits) == 0 {
-		return nil, nil, nil
 	}
 	nowMs := s.now().UnixMilli()
 	tracker := newChangeTracker(actorID)
-	out := make([]string, 0, len(hits))
-	for _, h := range hits {
-		op := Op{ID: ids.New(), Entity: "task", EntityID: h.id, Field: "assignee_id", Value: json.RawMessage("null"),
-			TS: s.ServerTSAt(max(nowMs, h.ts+1)), Device: ServerDevice}
+	for _, w := range writes {
+		op := Op{ID: ids.New(), Entity: "task", EntityID: w.task, Field: w.field, Value: w.value,
+			TS: s.ServerTSAt(max(nowMs, w.ts+1)), Device: ServerDevice}
 		if _, err := writeOp(ctx, tx, actorID, op, scope, nowMs, tracker); err != nil {
 			return nil, nil, err
 		}
-		out = append(out, h.id)
 	}
-	return out, tracker.changes(), nil
+	return held, tracker.changes(), nil
 }
 
 // TransferOwnership makes an existing member the owner; the previous owner

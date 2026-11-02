@@ -72,7 +72,9 @@ func JSONOf(v any) json.RawMessage {
 // completion never lands on an exception (M5). It returns ok=false when the
 // write is an ordinary one (no completion, no valid rule, already completed, or
 // the end condition is reached, in which case the series completes like a
-// plain task). today is the caller's calendar date (YYYY-MM-DD). It only reads.
+// plain task). A rotating series also gets body.assignee_id, the next person
+// (OpenSpec change chore-rotation). today is the caller's calendar date
+// (YYYY-MM-DD). It only reads.
 func (s *Service) RecurringCompletion(ctx context.Context, uid, id string, body map[string]json.RawMessage, existing Entity, today string) (recordID string, record map[string]json.RawMessage, ok bool, err error) {
 	completedAt, completing := body["completed_at"]
 	if !completing || IsNull(completedAt) || !IsNull(existing["completed_at"]) || existing.Deleted() {
@@ -121,6 +123,11 @@ func (s *Service) RecurringCompletion(ctx context.Context, uid, id string, body 
 	// (OpenSpec changes deadlines D8, someday-and-evening D8).
 	for k, v := range movedDates(at, date, next) {
 		body[k] = v
+	}
+	// A rotating series passes the turn; the record keeps who held it
+	// (chore-rotation D2).
+	if err := s.rotateOnCompletion(ctx, at, body); err != nil {
+		return "", nil, false, err
 	}
 	return OccurrenceID(id, date), record, true, nil
 }
