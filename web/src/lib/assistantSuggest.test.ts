@@ -34,8 +34,8 @@ describe('suggest after adding', () => {
     await setSuggestAfterAdd(true)
     await suggestAfterAdd('task-1')
     expect(open).toHaveBeenCalledTimes(1)
-    // Always reviewed, and the cursor stays in the quick-add line.
-    expect(open).toHaveBeenCalledWith({ text: SUGGESTION_PROMPT, selected: ['task-1'], send: true, review: true, keepFocus: true })
+    // Always reviewed.
+    expect(open).toHaveBeenCalledWith({ text: SUGGESTION_PROMPT, selected: ['task-1'], send: true, review: true })
   })
 
   it('bounds the request: at most 4 subtasks, nothing else touched, no invented date', () => {

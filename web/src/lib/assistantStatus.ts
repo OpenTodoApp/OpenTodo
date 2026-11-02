@@ -159,8 +159,6 @@ export interface AssistantPrefill {
    * person did not type themselves (suggest after adding), where nothing may land before Apply.
    */
   review?: boolean
-  /** Do not move focus into the panel: the person is typing elsewhere (the quick-add line the suggestion came from). */
-  keepFocus?: boolean
 }
 
 let prefill: AssistantPrefill | null = null

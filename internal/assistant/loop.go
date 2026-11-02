@@ -337,7 +337,10 @@ var notInApp = map[string]bool{"update_project": true, "set_favourite": true, "c
 	"archive_projects": true, "update_labels": true, "add_reminders": true, "update_reminders": true, "remove_reminders": true,
 	"start_timer": true, "stop_timer": true, "log_time": true, "update_time_entries": true,
 	// Routines are made and run from the Routines page, the CLI or MCP (routines-engine).
-	"run_routine": true, "set_routine_enabled": true, "create_routine": true, "update_routine": true, "trash_routine": true}
+	"run_routine": true, "set_routine_enabled": true, "create_routine": true, "update_routine": true, "trash_routine": true,
+	// Objectives are read by external agents only (plan-objectives D7): the
+	// in-app assistant's disclosure does not name them.
+	"list_objectives": true}
 
 // runTool runs one call: read tools return their result with the untrusted
 // notice; write tools plan into the draft and never apply. Anything else (an

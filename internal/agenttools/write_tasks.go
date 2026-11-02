@@ -186,7 +186,7 @@ func (r *Registry) planUpdateTasks(ctx context.Context, c Caller, a args, overla
 	for i, it := range list {
 		p := fmt.Sprintf("updates[%d].", i)
 		if err := it.only(p, "id", "title", "description", "priority", "labels", "estimate_minutes", "recurrence", "fields", "origin_url", "origin",
-			"deadline", "start", "evening", "span", "day_part", "energy", "sector", "blocked_by", "location"); err != nil {
+			"deadline", "start", "evening", "span", "day_part", "energy", "sector", "blocked_by", "location", "rotation"); err != nil {
 			return Plan{}, err
 		}
 		id, err := it.str("id")
@@ -237,7 +237,8 @@ func (r *Registry) planUpdateTasks(ctx context.Context, c Caller, a args, overla
 		if err := snap.planningPatch(p, it, c, patch); err != nil {
 			return Plan{}, err
 		}
-		if len(patch) == 0 && !it.present("fields") {
+		rotation, hasRotation := it["rotation"]
+		if len(patch) == 0 && !it.present("fields") && !hasRotation {
 			return Plan{}, argErr(p + "nothing to change: give at least one field besides id")
 		}
 		if err := checkPatch(p, "task", id, patch); err != nil {
@@ -247,6 +248,12 @@ func (r *Registry) planUpdateTasks(ctx context.Context, c Caller, a args, overla
 		if t == nil {
 			missing = append(missing, id)
 			continue
+		}
+		// The people who take turns (chore-rotation D6), checked against the task.
+		if hasRotation {
+			if err := snap.rotationPatch(p, rotation, t, patch); err != nil {
+				return Plan{}, err
+			}
 		}
 		// Custom field values (custom-fields D6): checked against the task's project.
 		if it.present("fields") {

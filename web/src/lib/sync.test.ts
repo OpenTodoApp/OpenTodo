@@ -16,6 +16,8 @@ vi.mock('./api', async (orig) => ({
   api: {
     sync: (...args: unknown[]) => syncCalls(...(args as [])),
     calendarEvents: () => calendarEvents(),
+    calendarFeedsSwitch: { get: async () => ({ enabled: true }) },
+    calendarSyncSwitch: { get: async () => ({ enabled: false }) },
     listNotifications: () => listNotifications(),
     readNotification: (id: string) => readNotification(id),
   },

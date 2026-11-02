@@ -8,6 +8,7 @@ import { isKnownZone } from '../dates'
 import { uuid } from '../ids'
 import type { ProposedChange } from '../assistantTypes'
 import type { Task } from '../types'
+import { memberSet } from '../rotation'
 import { ArgError, ToolError, calendarDate, forbidden, idList, items, notFound, only, present, str, text, zone, type Args } from './args'
 import { canWriteTask, isOpen, list, roleIn, scopeKey, str as field, type Row, type Snapshot } from './data'
 import { todayIn } from './read'
@@ -317,7 +318,9 @@ export function completeTasks(ctx: PlanContext, a: Args): Plan {
     const id = field(t, 'id')
     if (!isOpen(t)) { out.push({ id, status: 'already_completed' }); continue }
     const rule = seriesRule(t as unknown as Task)
-    const plan = rule ? planCompletion(t as unknown as Task, rule, snap.tasks as unknown as Task[], now, today) : null
+    const pid = field(t, 'project_id')
+    const members = pid ? memberSet(snap.memberships.get(pid)) : undefined
+    const plan = rule ? planCompletion(t as unknown as Task, rule, snap.tasks as unknown as Task[], now, today, members) : null
     if (plan && plan.kind === 'roll') {
       // A recurring task records the occurrence and moves to its next date, as in the app (recurring-tasks D5).
       const [record, series] = plan.changes

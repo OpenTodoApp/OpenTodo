@@ -87,6 +87,23 @@ export function tabRowOverflow() {
   return out
 }
 
+// Cut labels (polish 2026-11-02): an option of a segmented control and the day's name
+// in a Day or Week header are never cut. The scope toggle split its row evenly and cut
+// "This occurrence" with room to spare; the Week header beside the planning list cut
+// "Tue 3" to "T…". Their full text is in the accessible name, so the truncation rule
+// of the audit (M10) does not see them.
+export function cutLabels() {
+  const out = []
+  const cut = (el) => el.clientWidth > 0 && el.scrollWidth > el.clientWidth + 1
+  for (const el of document.querySelectorAll('[role="radiogroup"] > [role="radio"]')) {
+    if (cut(el)) out.push(`option "${el.textContent.trim()}" of "${el.parentElement.getAttribute('aria-label') ?? ''}" is cut (${el.scrollWidth}px in ${el.clientWidth}px)`)
+  }
+  for (const el of document.querySelectorAll('[data-day-header] [data-day-name]')) {
+    if (cut(el)) out.push(`day name "${el.textContent.trim()}" in the calendar header is cut (${el.scrollWidth}px in ${el.clientWidth}px)`)
+  }
+  return out
+}
+
 // Vertical scroll regions (OpenSpec ux-overhaul, app-shell "Three columns, three
 // scrollers"): at most the sidebar, the content column and the panel may scroll
 // vertically; everything else scrolls inside them. Designated regions
@@ -339,5 +356,33 @@ export async function addButtonCovers() {
     if (a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom) out.push(`the add button covers the last row "${last.textContent.trim().slice(0, 30)}" at the end of the list`)
   }
   content.scrollTop = 0
+  return out
+}
+
+// The Day and Week grid (GitHub issue 775): the sticky header (day names, all-day
+// strips, unscheduled lanes) leaves at least half of the calendar to the hour grid,
+// and the now line, scrolled under the header, is painted below it, never over a lane.
+export function calendarGridRoom() {
+  const sc = document.querySelector('[data-calendar-scroller]')
+  const head = sc?.querySelector('.sticky')
+  if (!sc || !head || !sc.clientHeight) return []
+  const out = []
+  const h = head.getBoundingClientRect().height
+  if (h > sc.clientHeight / 2) out.push(`the calendar header takes ${Math.round(h)} px of ${sc.clientHeight} px`)
+  const line = sc.querySelector('[data-now-line]')
+  if (line) {
+    const before = sc.scrollTop
+    const hr = head.getBoundingClientRect()
+    sc.scrollTop += line.getBoundingClientRect().top - (hr.top + hr.height / 2)
+    const lr = line.getBoundingClientRect()
+    if (lr.top > hr.top && lr.top < hr.bottom) {
+      // The line ignores the pointer; hit-test it for a moment to see what is painted on top.
+      line.style.pointerEvents = 'auto'
+      const at = document.elementFromPoint(lr.left + lr.width / 2, lr.top + 1)
+      line.style.pointerEvents = ''
+      if (at?.closest('[data-now-line]')) out.push('the now line paints over the calendar header')
+    }
+    sc.scrollTop = before
+  }
   return out
 }

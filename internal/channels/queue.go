@@ -37,7 +37,11 @@ var table = deliveryq.Table{Items: "notification_deliveries", Targets: "notifica
 
 // Assigned implements notify.Sink.
 func (s *Service) Assigned(ctx context.Context, e notify.Assigned) {
-	s.emit(ctx, e.AssigneeID, fmt.Sprintf("assigned:%s:%d", e.TaskID, e.At), event{kind: EventAssigned, key: txtAssigned, withKey: txtAssignedBy,
+	key, with := txtAssigned, txtAssignedBy
+	if e.Turn {
+		key, with = txtTurn, txtTurnWith
+	}
+	s.emit(ctx, e.AssigneeID, fmt.Sprintf("assigned:%s:%d", e.TaskID, e.At), event{kind: EventAssigned, key: key, withKey: with,
 		taskID: e.TaskID, taskTitle: e.TaskTitle, actorName: e.ActorName, at: e.At})
 }
 

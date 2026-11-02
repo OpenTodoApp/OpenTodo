@@ -1,7 +1,7 @@
 import { Icon, ToastRegion } from '../../ui'
 import { useEffect, useState } from 'react'
 import { undoChanges } from '../../lib/assistant'
-import { closeAssistant, useAssistantOpen, useAssistantPrefill } from '../../lib/assistantStatus'
+import { closeAssistant, useAssistantOpen } from '../../lib/assistantStatus'
 import { AssistantPanel } from './AssistantPanel'
 import { t } from '../../lib/i18n'
 
@@ -13,13 +13,11 @@ import { t } from '../../lib/i18n'
  */
 export default function AssistantRoot({ context, name = '', onPage = false }: { context: () => { view?: string; selected?: string[]; projectId?: string }; name?: string; onPage?: boolean }) {
   const requested = useAssistantOpen()
-  // A suggestion after adding a task leaves the cursor in the quick-add line it came from.
-  const keepFocus = !!useAssistantPrefill()?.keepFocus
   useEffect(() => {
     if (!requested || !onPage) return
     closeAssistant()
-    if (!keepFocus) document.querySelector<HTMLTextAreaElement>('[data-assistant-composer]')?.focus()
-  }, [requested, onPage, keepFocus])
+    document.querySelector<HTMLTextAreaElement>('[data-assistant-composer]')?.focus()
+  }, [requested, onPage])
   const open = requested && !onPage
   const [toast, setToast] = useState<{ text: string; undoId: string | null } | null>(null)
   useEffect(() => {

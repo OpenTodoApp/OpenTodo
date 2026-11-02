@@ -75,6 +75,7 @@ export function isActionable(series: Task, rule: Rule, date: string, tasks: Iter
  */
 export function planActOn(
   series: Task, date: string | null, action: OccurrenceAction, tasks: Iterable<Task>, now: number, today: string, reminders: readonly Reminder[] = [],
+  members?: ReadonlySet<string>,
 ): ActPlan | null {
   const rule = seriesRule(series)
   if (!rule) return null
@@ -93,7 +94,7 @@ export function planActOn(
     return { recordId, existed: true, base, changes: [{ entity: 'task', entityId: recordId, patch: state }] }
   }
   if (on === current && (action.kind === 'complete' || action.kind === 'skip')) {
-    const changes = action.kind === 'complete' ? planCompletion(series, rule, list, now, today) : null
+    const changes = action.kind === 'complete' ? planCompletion(series, rule, list, now, today, members) : null
     if (changes) return changes.kind === 'roll' ? { recordId, existed: false, base, changes: changes.changes } : { recordId, existed: false, base, changes: [], end: true }
     const skip = planSkip(series, rule, now, today, list)
     return skip ? { recordId, existed: false, base, changes: skip } : null

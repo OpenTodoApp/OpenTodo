@@ -163,7 +163,7 @@ describe('the swipes\' twins and touch selection', () => {
     await waitFor(async () => (await db.tasks.get(id))!.completed_at !== null, 'the completion written')
   })
 
-  it('Select tasks in the bar\'s menu shows every checkbox without a tick; Done hides them and keeps the ticks', async () => {
+  it('Select tasks in the bar\'s menu shows every checkbox without a tick; Close hides them and keeps the ticks', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
     await createTask({ title: 'One' })
     await createTask({ title: 'Two' })

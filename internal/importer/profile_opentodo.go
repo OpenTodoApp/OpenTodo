@@ -58,6 +58,9 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 		// Themes are the exporting account's custom themes (theme-editor D1),
 		// chosen in user_prefs as "user:<id>"; ids are kept, so the choices hold.
 		Themes []map[string]json.RawMessage `json:"themes"`
+		// Objectives are the account's quarterly and weekly objectives
+		// (plan-objectives D7), tombstones included.
+		Objectives []map[string]json.RawMessage `json:"objectives"`
 		// UserID is the exporting account.
 		UserID string `json:"userId"`
 		// UserPrefs is the exporting account's date and time preferences row
@@ -151,6 +154,7 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 	add(KindView, "name", doc.Views)
 	add(KindRule, "name", doc.Rules)
 	add(KindTheme, "", doc.Themes)
+	add(KindObjective, "title", doc.Objectives)
 	add(KindUserPrefs, "", doc.UserPrefs)
 	add(KindReview, "", doc.Review)
 	add(KindProjectPrefs, "", doc.ProjectPrefs)

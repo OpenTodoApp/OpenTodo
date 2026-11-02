@@ -23,6 +23,9 @@
     <string name="reminder_text">Promemoria attività</string>
     <string name="action_snooze">Posticipa di 10 min</string>
     <string name="action_dismiss">Ignora</string>
+    <string name="action_done">Fatto</string>
+    <string name="location_arrived">Hai raggiunto il luogo di questo promemoria</string>
+    <string name="location_left">Hai lasciato il luogo di questo promemoria</string>
     <string name="test_title">Le notifiche funzionano</string>
     <string name="test_text">I promemoria appariranno così.</string>
     <string name="biometric_enable_title">Sblocca con impronta o volto</string>

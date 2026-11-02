@@ -46,7 +46,7 @@ describe('WhenControl', () => {
     const { container, seg, onDone, unmount } = await mount(id, 'deadline')
     expect([...container.querySelectorAll('[data-when-segment]')].map((s) => s.getAttribute('data-when-segment'))).toEqual(['due', 'start', 'deadline', 'evening', 'repeat', 'reminders'])
     expect(seg('deadline').contains(document.activeElement)).toBe(true)
-    await click([...container.querySelectorAll('button')].find((b) => b.textContent === 'Done')!)
+    await click(container.querySelector<HTMLButtonElement>('[data-when-close]')!)
     expect(onDone).toHaveBeenCalled()
     await unmount()
   })

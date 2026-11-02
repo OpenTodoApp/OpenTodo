@@ -170,7 +170,7 @@ func TestDescriptionCutsAtTheValueLimit(t *testing.T) {
 	// Multi-byte runes: the encrypted-size limit binds.
 	d := description(strings.Repeat("äbc € 😀 defghij\n", 12000), atts)
 	checkCut(t, d)
-	if !strings.HasSuffix(d, "- photo.jpg (300.0 KB)") {
+	if !strings.HasSuffix(d, "- photo.jpg (300.0 KiB)") {
 		t.Fatalf("the attachment list is missing: ...%q", d[len(d)-120:])
 	}
 	// Characters JSON escapes into six bytes: the JSON limit binds.

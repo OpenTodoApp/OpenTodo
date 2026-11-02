@@ -19,7 +19,7 @@ ot vault watch ~/Notes/Tasks    # keep syncing until Ctrl+C
 ot vault tasknotes <folder>     # also sync a TaskNotes folder (see below)
 ```
 
-`watch` syncs when the app changes (over the live channel) and when a file is saved. A file that changed since the last sync is read only once it has held still for a second, also when the app's change arrives meanwhile, so a save in progress is never read half written.
+`watch` syncs when the app changes (over the live channel) and when a file is saved. A file that changed since the last sync is read only once it has held still for a second, also when the app's change arrives meanwhile, so a save in progress is never read half written. Every sync reads a file again right before writing or removing it: a file saved while the sync ran is left as saved (the output says "skipped … it was saved while the sync ran"), and the next sync merges that save with what changed in the app meanwhile. A new line in it still gets its `🆔`, so its task isn't created twice.
 
 It needs a `full` token, and it is the one part of `ot` that keeps data locally: the files and `.opentodo/state.json`.
 

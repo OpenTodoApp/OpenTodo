@@ -9,7 +9,7 @@
 - [x] 2.1 `lib/assistantSuggest.ts`: the device switch (`getSuggestAfterAdd`, `setSuggestAfterAdd`), the bounded prompt, `suggestAfterAdd` (does nothing unless the switch is on and the assistant is enabled, available and consented; never throws) and `createTaskThenSuggest`; `assistantSuggest.test.ts`
 - [x] 2.2 `TaskListView.onAdd`, `addFromBar` and `QuickAddSheet` create the task through `createTaskThenSuggest`
 
-- [x] 2.3 Review follow-up (D3, D6): a constant prompt naming the task only through `selected`; `review` and `keepFocus` in the prefill (`useAssistantConversation`, `AssistantSheet`/`useOverlay` `takeFocus`, `AssistantRoot`); skip while `assistantBusy()`; `assistantSuggest.test.ts`, `assistantSuggest.test.tsx`
+- [x] 2.3 Review follow-up (D3, D6): a constant prompt naming the task only through `selected`; `review` in the prefill (`useAssistantConversation`; a `keepFocus` that left the cursor behind the modal was dropped in review); skip while `assistantBusy()`; `assistantSuggest.test.ts`, `assistantSuggest.test.tsx`
 
 ## 3. Setting
 

@@ -15,8 +15,9 @@ import { openOrigin, originLink, originOf } from '../../lib/taskOrigin'
 import { copyText } from '../../lib/clipboard'
 import type { Label, Priority, Project, Task } from '../../lib/types'
 import { isZoned, zoneCity } from '../../lib/dates'
-import { ComboboxPanel, Icon, type IconName, Menu, MenuGroup, MenuItem, MenuSeparator, Switch } from '../../ui'
-import { AssigneePicker } from '../AssigneePicker'
+import { ComboboxPanel, Icon, type IconName, Menu, MenuGroup, MenuItem, MenuSeparator } from '../../ui'
+import { AssigneeEditor } from './AssigneeEditor'
+import { RotationLine } from './RotationLine'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { EstimateField } from '../EstimateField'
 import { LabelChip, LabelPicker } from '../LabelPicker'
@@ -159,6 +160,7 @@ export function Facets(props: PropertiesProps) {
       {line('when', 'calendar-days', t('When'), facets.when)}
       {line('how', 'flag', t('How'), facets.how)}
       {facets.who.length > 0 && line('who', 'users', t('Who'), facets.who)}
+      <RotationLine task={task} userId={userId} />
       <LocationPreview shown={shownLocation} />
       {!readOnly && <AddMenu task={task} userId={userId} m={m} />}
       {!readOnly && pe.open && (
@@ -192,7 +194,7 @@ export function PartEditor({ id, props, m, anchor, segment, onSegment, onClose }
       repeat: task.recurrence ? () => act(setRecurrence(task.id, null)) : undefined,
       sector: task.sector ? () => act(setSectorWithUndo(task.id, '')) : undefined,
     }
-    return frame('calendar-days', t('When'), <WhenControl task={task} readOnly={readOnly} segment={segment} onOpen={onOpen} onClose={onClose} />, clear[segment],
+    return frame('calendar-days', t('When'), <WhenControl task={task} readOnly={readOnly} segment={segment} onOpen={onOpen} onClose={onClose} onAddLocation={() => m.editing.reveal('location')} />, clear[segment],
       { header: <WhenSegmentPicker value={segment} onChange={onSegment} sector={sectorSegment} />, width: 'sm:w-[28rem]' })
   }
 
@@ -253,10 +255,7 @@ export function PartEditor({ id, props, m, anchor, segment, onSegment, onClose }
         </div>
       ))
     case 'assignee':
-      return frame('user-check', t('Assignee'), m.solo && userId
-        ? <Switch label={t('Show in Assigned to me')} checked={task.assignee_id === userId} disabled={readOnly} onChange={(on) => act(updateTask(task.id, { assignee_id: on ? userId : null }))} />
-        : <AssigneePicker taskId={task.id} userId={userId ?? ''} onClose={onClose} />,
-      task.assignee_id ? () => act(updateTask(task.id, { assignee_id: null })) : undefined)
+      return <AssigneeEditor task={task} userId={userId} solo={m.solo} readOnly={readOnly} anchor={anchor} onClose={onClose} />
     case 'blocked-by':
       return frame('lock', t('Blocked by'), (
         <div className="space-y-2">

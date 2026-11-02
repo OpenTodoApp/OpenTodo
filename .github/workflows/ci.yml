@@ -536,6 +536,8 @@ jobs:
   # AndroidX-only dependency check, translations and store metadata, a debug APK.
   # On tags, a release APK and AAB signed with the keystore from secrets (skipped
   # with a warning while the secrets are not set); the release job attaches them.
+  # The AAB is the Google Play build, without location permissions (play-location-later),
+  # checked by scripts/android-store-check.sh on every run.
   # Tags also prove the build reproducible (play-production D5): a second build in a
   # fresh checkout, compared with the first by scripts/android-repro.sh. The JDK is
   # pinned to the exact Temurin release named in mobile/README.md (D4).
@@ -556,6 +558,17 @@ jobs:
           packages: "platforms;android-37.0 build-tools;36.0.0"
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
       - run: make android
+      # The two release builds (play-location-later): the AAB for Google Play is built with
+      # -Popentodo.play=true and must not declare background (or any) location until Play
+      # approves the declaration; the APK for GitHub and F-Droid keeps it. Both unsigned here;
+      # tags check the signed ones again below.
+      - name: Play AAB without location, APK with it
+        run: |
+          cd mobile/android
+          ./gradlew --no-daemon -Popentodo.play=true :app:bundleRelease
+          ./gradlew --no-daemon :app:assembleRelease
+          cd ../..
+          scripts/android-store-check.sh mobile/android/app/build/outputs/bundle/release/app-release.aab mobile/android/app/build/outputs/apk/release/app-release-unsigned.apk
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: opentodo-android-debug
@@ -635,11 +648,16 @@ jobs:
           cd mobile/android
           printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
           printf 'storeFile=%s\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' "$RUNNER_TEMP/release.jks" "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > keystore.properties
-          OPENTODO_VERSION="$version" ./gradlew --no-daemon :app:assembleRelease :app:bundleRelease
+          # The AAB is the Google Play build (play-location-later: no location permission until
+          # Play approves background location); the APK for GitHub and F-Droid is the plain build,
+          # the one F-Droid and the reproducible-build step below rebuild.
+          OPENTODO_VERSION="$version" ./gradlew --no-daemon -Popentodo.play=true :app:bundleRelease
+          OPENTODO_VERSION="$version" ./gradlew --no-daemon :app:assembleRelease
           rm -f keystore.properties "$RUNNER_TEMP/release.jks"
           mkdir -p ../../dist
           cp app/build/outputs/apk/release/app-release.apk "../../dist/opentodo-android-$version.apk"
           cp app/build/outputs/bundle/release/app-release.aab "../../dist/opentodo-android-$version.aab"
+          ../../scripts/android-store-check.sh "../../dist/opentodo-android-$version.aab" "../../dist/opentodo-android-$version.apk"
           # The release certificate (play-production D1): the one documented in docs/android-app.md
           # and allowed in the F-Droid metadata, so Play, F-Droid and GitHub share one signature.
           cert=$("$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "../../dist/opentodo-android-$version.apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
@@ -883,6 +901,11 @@ jobs:
       attestations: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: The image can be pulled without signing in
+        # Every install pulls the image anonymously; a package left private on ghcr.io
+        # (the Home Assistant add-on's image after the move to OpenTodoApp) answers 401
+        # to all of them. Fails the release before it is published, naming the setting.
+        run: scripts/release/check-public-image.sh "${GITHUB_REPOSITORY}" "${GITHUB_REF_NAME#v}"
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           path: artifacts
