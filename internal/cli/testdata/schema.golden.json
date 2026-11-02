@@ -393,6 +393,16 @@
           "name": "no-default-reminder",
           "type": "bool",
           "description": "add no default reminder when the task gets a due date (--remind also leaves it out)"
+        },
+        {
+          "name": "rotate",
+          "type": "string",
+          "description": "people who take turns on a recurring task in a shared project, in order: member names or emails, comma-separated; completing the task assigns the next of them"
+        },
+        {
+          "name": "no-rotate",
+          "type": "bool",
+          "description": "stop taking turns (the assignee stays)"
         }
       ],
       "writes": true,
@@ -4460,6 +4470,13 @@
             "string",
             "null"
           ]
+        },
+        "rotation": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "account ids of the people who take turns on a recurring task, in order; completing it assigns the next of them"
         },
         "deadline": {
           "type": [

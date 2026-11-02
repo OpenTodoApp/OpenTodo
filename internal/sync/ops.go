@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"slices"
 	"strings"
 )
 
@@ -376,6 +375,9 @@ var Schema = map[string]map[string]Field{
 		// editor-everywhere, design D7): written with notes_doc, filtered to
 		// current members of the task's shared project at receipt, plaintext.
 		"note_mentions": {Kind: kIDList, Default: `[]`},
+		// Who takes turns on a recurring task, in order (OpenSpec change chore-rotation; see rotation.go):
+		// plaintext member ids like assignee_id, not content; inert without a rule or a second member.
+		"rotation": {Kind: kIDList, Default: `[]`},
 		// Recurrence rule and the series an occurrence record belongs to
 		// (OpenSpec change recurring-tasks); additive. See docs/recurrence.md.
 		"recurrence": {Kind: kRecurrence, Default: `null`},
@@ -1058,8 +1060,8 @@ func Validate(op Op) error {
 	if err := checkKind(k, op.Value); err != nil {
 		return fmt.Errorf("%w: %s.%s %v", ErrInvalidOp, op.Entity, op.Field, err)
 	}
-	if k == kIDList && slices.Contains(idList(op.Value), op.EntityID) {
-		return fmt.Errorf("%w: %s.%s cannot name the task itself", ErrInvalidOp, op.Entity, op.Field)
+	if err := checkIDListOp(op, k); err != nil {
+		return err
 	}
 	if op.Entity == "attachment" {
 		if err := checkAttachment(op.Field, op.Value); err != nil {

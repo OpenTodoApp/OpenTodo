@@ -37,8 +37,8 @@ export function screens(ids, base) {
     { name: 'triage', path: '/triage', ready: (p) => p.locator('[data-triage-card]').waitFor(), overlays: ['schedule-sheet'] },
     { name: 'upcoming', path: '/upcoming', ready: heading('Upcoming') },
     { name: 'assigned', path: '/assigned', ready: row('Pick paint colours') },
-    { name: 'day', path: '/day', ready: (p) => p.locator('[data-now-line], main').first().waitFor() },
-    { name: 'week', path: '/week', ready: (p) => p.locator('main').first().waitFor() },
+    { name: 'day', path: '/day', gridRoom: true, ready: (p) => p.locator('[data-now-line], main').first().waitFor() },
+    { name: 'week', path: '/week', gridRoom: true, ready: (p) => p.locator('main').first().waitFor() },
     { name: 'month', path: '/month', ready: (p) => p.locator('[data-month-grid]').waitFor() },
     // September, a long month name in several languages, at the tablet width (the check's own date is in November).
     ...(ids.date ? [{ name: 'month-september', path: `/month/${ids.date.slice(0, 4)}-09-30`, widths: [768], ready: (p) => p.locator('[data-month-grid]').waitFor() }] : []),

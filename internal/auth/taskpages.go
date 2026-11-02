@@ -360,12 +360,3 @@ func (s *Service) DeleteTaskPageReply(ctx context.Context, pageID, replyID strin
 	}
 	return nil
 }
-
-// TaskPageOfDevice returns the page id of a page: device, or "".
-func TaskPageOfDevice(device string) string {
-	id, ok := strings.CutPrefix(device, "page:")
-	if !ok {
-		return ""
-	}
-	return id
-}

@@ -2,7 +2,7 @@
 
 ## Why
 
-OpenTodo now has a Discord server (https://discord.gg/Jmj7WuRQ) where people can ask questions, share how they use the app and talk to the maintainer without opening a GitHub issue. Today the only ways to reach the project named in the app, the README and the docs are the issue tracker, the repository and Buy Me a Coffee; nobody can find the server from there.
+OpenTodo now has a Discord server (https://discord.gg/mmSsuCRduD) where people can ask questions, share how they use the app and talk to the maintainer without opening a GitHub issue. Today the only ways to reach the project named in the app, the README and the docs are the issue tracker, the repository and Buy Me a Coffee; nobody can find the server from there.
 
 ## What Changes
 
