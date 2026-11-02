@@ -235,7 +235,7 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 	// Today's closed list (today-closed-list D7): the slots first, then the waiting tasks.
 	var split *todaySplit
 	if view == "today" && planning == "" && !o.ranged() {
-		if split, err = a.todayClosedList(ctx, c, all, projects, tasks, today); err != nil {
+		if split, err = a.todayClosedList(ctx, c, all, projects, tasks, today, a.Now().Format("15:04")); err != nil {
 			return err
 		}
 		tasks = split.ordered(tasks)
@@ -411,6 +411,8 @@ type taskFlags struct {
 	lang    string
 	// done is --done (today-closed-list D6): log a win, created already completed.
 	done bool
+	// fresh is --new (reusable-lists D6): never reopen an item of a reusable list.
+	fresh bool
 }
 
 func (f *taskFlags) bind(fs *flag.FlagSet, edit bool) {
@@ -432,6 +434,7 @@ func (f *taskFlags) bind(fs *flag.FlagSet, edit bool) {
 		fs.BoolVar(&f.natural, "natural", false, "parse the title like the app's quick add (dates, #project, @label, p1, every …, remind me …)")
 		fs.StringVar(&f.lang, "lang", "", "languages for --natural and --remind, e.g. de,en (default: the locale, English always)")
 		fs.BoolVar(&f.done, "done", false, "log a win: create the task already completed now (refuses --repeat and --remind)")
+		fs.BoolVar(&f.fresh, "new", false, "in a reusable list, create a new task even when an item with the same title is there")
 	}
 }
 
@@ -626,6 +629,9 @@ func cmdAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 		phrases = nil
 		body["completed_at"] = a.Now().UnixMilli()
 	}
+	if err := markReuse(ctx, c, body, f.fresh || f.done); err != nil {
+		return err
+	}
 	raw, _, err := c.do(ctx, "POST", "/tasks"+defaultReminderQuery(body, f.noDefault || len(phrases) > 0 || f.done), body, headers)
 	if err != nil {
 		return err
@@ -643,6 +649,7 @@ func cmdAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 		return a.printJSON(json.RawMessage(raw))
 	}
 	fmt.Fprintln(a.Stdout, created.ID)
+	a.reportReused(raw)
 	if waiting > 0 {
 		fmt.Fprintf(a.Stderr, "%d reminder(s) will fire once the task has a due date\n", waiting)
 	}

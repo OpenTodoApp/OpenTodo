@@ -43,7 +43,8 @@ class BridgeTest {
     }
 
     @After fun tearDown() {
-        server.shutdown()
+        // A failed setUp leaves no server; the report then shows setUp's error, not this one.
+        if (::server.isInitialized) server.shutdown()
         others.forEach { it.shutdown() }
         resetApp()
     }
@@ -53,6 +54,11 @@ class BridgeTest {
         lateinit var web: WebView
         scenario.onActivity { web = it.findViewById(R.id.web) }
         server.waitForPath("/")
+        // The server's page itself: until it commits, the new web view's initial blank document
+        // already reports readyState "complete". A test that loaded another page then cancelled
+        // the first one before it reached the history, and back left the app
+        // (backGoesBackInTheWebView: "Pressed back and killed the app" on two main runs).
+        web.waitForJs("location.origin + location.pathname", "\"${server.origin}/\"")
         web.waitForJs("document.readyState", "\"complete\"")
         return scenario to web
     }

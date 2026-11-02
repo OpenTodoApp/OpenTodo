@@ -5,7 +5,7 @@ import vectors from './quickadd.vectors.json'
 interface Case {
   name: string
   line: string
-  ctx: { today: string; now: string; languages: string[]; projects: { id: string; name: string }[]; dayParts?: boolean; energy?: boolean }
+  ctx: { today: string; now: string; languages: string[]; projects: { id: string; name: string }[]; dayParts?: boolean; energy?: boolean; sectors?: boolean; weekStart?: number }
   expect: Record<string, unknown>
 }
 
@@ -17,9 +17,11 @@ describe('shared quick-add vectors (quick-add-recurrence)', () => {
       const parts = 'dayPart' in c.expect ? { dayPart: r.dayPart, evening: r.evening } : {}
       // And the energy (task-energy), '' for none as the Go result has it.
       const energy = 'energy' in c.expect ? { energy: r.energy ?? '' } : {}
+      // And the time sector (time-sectors), '' for none as the Go result has it.
+      const sector = 'sector' in c.expect ? { sector: r.sector ?? '' } : {}
       expect({
         title: r.title, due: r.due, projectId: r.projectId, labels: r.labels, priority: r.priority,
-        estimateMinutes: r.estimateMinutes, spentMinutes: r.spentMinutes, recurrence: r.recurrence, reminders: r.reminders, ...parts, ...energy,
+        estimateMinutes: r.estimateMinutes, spentMinutes: r.spentMinutes, recurrence: r.recurrence, reminders: r.reminders, ...parts, ...energy, ...sector,
       }).toEqual(c.expect)
     })
   }

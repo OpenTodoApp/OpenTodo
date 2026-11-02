@@ -20,8 +20,8 @@
 
 - They are declared once in `internal/sync/ops.go` `Schema`, which generates `web/src/generated/opSchema.ts`.
 - They are flags and fixed keys, not user text, so they are not content fields. The section's name stays the encrypted, user-visible text.
-- On a shared project, editors and above can write them, like other project fields (`CanWrite`). Viewers see the mode but can't change it.
-- Alternative: a single `list_mode` string. Rejected: two booleans read more clearly in the API and the Edit dialog, and per-field LWW lets one member turn aisles on while another renames the project, with no conflict.
+- On a shared project, editors and above can write them: `CanWrite` lets editors write these two project fields besides the note, since they shape how editors add items. Viewers see the mode but can't change it.
+- Alternative: a single `list_mode` string. Rejected: two booleans read more clearly in the API and the List step, and per-field LWW lets one member turn aisles on while another renames the project, with no conflict.
 - Alternative: keep "Show completed tasks" per device and add a separate synced copy. Rejected: the reusable mode is what households mean; the device preference stays for ordinary projects.
 
 **D2. Normalized-equal matching, in Go and TypeScript, pinned by shared vectors.**
@@ -34,7 +34,9 @@
 5. Collapse runs of white space to one space.
 6. Strip one trailing `.`.
 
-A title matches an item when both normalize to the same non-empty string. The candidates are the project's live tasks with no `parent_id` (subtasks never match), recurring or not.
+A title matches an item when both normalize to the same non-empty string. The candidates are the project's live tasks with no `parent_id` (subtasks never match), recurring or not; occurrence records (`series_id`) and skips are history, not items, and never match.
+
+The Go side folds with `internal/notesearch`'s decomposition table (no new dependency on `golang.org/x/text`), which covers Latin, Greek, Cyrillic, punctuation, ligatures and fullwidth forms; outside those blocks the server only lower-cases, while the web client uses full NFKD. Both treat U+0085 and U+FEFF as white space.
 
 - A completed match wins over an open match only when no open match exists.
 - Among several completed matches, the most recently completed wins; ties go to the smaller id.
@@ -80,10 +82,10 @@ It writes `deleted_at` on every such task except the one with the smallest id. I
 
 **D5. Aisle sections and vocabulary.**
 
-- Turning on "Sort into aisles" in the Edit dialog asks once: "Add aisle sections?". Create adds the nine sections that are missing (by `aisle` key), named in the app's language, in store order after the existing sections, each with its catalogue icon. Not now leaves the sections alone.
+- Turning on "Sort into aisles" in the List step asks once, inside the step: "Add aisle sections?". Create adds the nine sections that are missing (by `aisle` key), named in the app's language, in store order after the existing sections, each with its catalogue icon. Not now leaves the sections alone.
 - A new item is sorted as follows:
   1. Quick add tokenizes the normalized title into words.
-  2. It looks up each word, then each two-word sequence, in `web/src/lib/aisles/<lang>.json` (word → aisle key) for the app language, and falls back to English.
+  2. It looks up each sequence of up to four words (phrases such as "pain au chocolat"), in `web/src/lib/aisles/<lang>.json` (word → aisle key) for the app language, and falls back to English.
   3. The longest match wins; ties go to the first word.
   4. The item is placed in the first live section of the project with that key (by position). With no section of that key, or no match, the item goes where quick add would put it (the current section, or "No section").
   5. A `/section` token or an explicit section always wins.
@@ -109,8 +111,8 @@ It writes `deleted_at` on every such task except the one with the smallest id. I
 
 **D7. Progressive disclosure and the interface budget.**
 
-- **Where:** the project's Edit dialog gains a "List" group with two switches: Reusable list, with the hint "Adding an item that's already here brings it back instead of duplicating it", and Sort into aisles, shown only while Reusable list is on. Nothing is added to the sidebar, the page header or quick add.
-- **What Simple-list users see:** nothing new until they open a project's Edit dialog. Projects default to off.
+- **Where:** the project has no Edit dialog, so the Project menu gains a "List…" item whose step (anchored to the menu like the Icon and Move steps, never a modal) holds two switches: Reusable list, with the hint "Adding an item that's already here brings it back instead of duplicating it", and Sort into aisles, shown only while Reusable list is on. Nothing is added to the sidebar, the page header or quick add.
+- **What Simple-list users see:** one "List…" item in the Project menu, and nothing else until they open it. Projects default to off.
 - **Inside a reusable list:** the header is unchanged. The list ends with the "Got it n" group (closed by default, state remembered per device), which replaces the "n completed tasks hidden" line. The Project menu's "Show completed tasks" item is hidden there, since the group always shows.
 - **Budget:**
   - rows above the first item: unchanged (header, quick add);
