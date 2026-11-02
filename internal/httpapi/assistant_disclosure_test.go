@@ -39,6 +39,8 @@ func TestDisclosureCoversEveryReadTool(t *testing.T) {
 		"list_routine_runs": "your routines and calendar frames", "get_routine_run": "your routines and calendar frames",
 		"list_frames": "your routines and calendar frames", "list_workspaces": "names of members and groups of shared projects and workspaces",
 		"list_time_entries": "tracked time and its notes",
+		// Not offered in the app (assistant notInApp, plan-objectives D7).
+		"list_objectives": "",
 	}
 	reg := agenttools.New(nil, agenttools.Options{})
 	reads := 0

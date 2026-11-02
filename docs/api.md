@@ -140,8 +140,9 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | GET/POST/GET/PATCH/DELETE | `/api/v1/reminders…` | yes | same shape for reminders, see [Reminders and push](#reminders-and-push) |
 | GET/POST/GET/PATCH/DELETE | `/api/v1/notes…` | yes | same shape for [standalone notes](#standalone-notes): `{title, description, project_id, labels}`; a read carries `body_version` and `appends` |
 | POST | `/api/v1/notes/{id}/append`, `/api/v1/tasks/{id}/note/append` | yes | `{id?, text}` adds Markdown at the end of the note without replacing it → 201 `{entity, entity_id, append_id, body_version}`; see [Appending to a note](#appending-to-a-note); 409 `too_many_appends` past 100 waiting; `read` and `agent` tokens get 403 `insufficient_scope` |
+| GET/POST/GET/PATCH/DELETE | `/api/v1/objectives…` | yes | same shape for your quarterly and weekly [objectives](#objectives): `{title, period, position, done_at}`; the list takes `?period=<YYYY-Qn or YYYY-Www>` and `?open=true`; 409 `too_many_objectives` past 5 open in a period |
 | POST | `/api/v1/notes/{id}/to-task` | yes | turn the note into a task in one batch (the note goes to the Trash) → 201 task; on an encrypted account the body carries `{task_id, title, description, notes_doc?}` sealed for that id, else 409 `encryption_enabled` |
-| GET/POST | `/api/v1/{collection}` | yes | the shape the rows above share, for `tasks`, `projects`, `sections`, `fields`, `labels`, `views`, `reminders`, `notes` and `rules` ([Automation rules](#automation-rules)): list, create; any other name is 404 `not_found` |
+| GET/POST | `/api/v1/{collection}` | yes | the shape the rows above share, for `tasks`, `projects`, `sections`, `fields`, `labels`, `views`, `reminders`, `notes`, `objectives` ([Objectives](#objectives)) and `rules` ([Automation rules](#automation-rules)): list, create; any other name is 404 `not_found` |
 | GET/PATCH/DELETE | `/api/v1/{collection}/{id}` | yes | read, partial update, soft delete one item of those collections |
 | GET | `/api/v1/tasks/{id}/history`, `/api/v1/projects/{id}/history`, `/api/v1/notes/{id}/history` | yes | change sets from the operation log, oldest first; `?before=<ts>&limit=<1-200>` pages backwards; see [Trash and history](#trash-and-history) |
 | DELETE | `/api/v1/tasks/{id}/purge`, `/api/v1/projects/{id}/purge`, `/api/v1/notes/{id}/purge` | yes | permanently delete an item that is in the Trash → `{purged:{tasks,projects,notes,reminders,sections,comments}}`; 409 `not_deleted` otherwise |
@@ -199,7 +200,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/api/v1/time-entries/stop` | yes (not `read`; `agent` through the [agent routes](#agent-tokens)) | stop your running entry → the entry; 404 when none runs |
 | PATCH | `/api/v1/time-entries/{id}` | yes (not `read`; `agent` only its own entries), author only | `{startedAt?, endedAt?, note?}` → the entry |
 | DELETE | `/api/v1/time-entries/{id}` | yes (not `read`, not `agent`) | tombstone an entry (author, project admin or owner) → 204 |
-| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`, `reminders`, `sections`, `comments`, `time_entries`, `places`, `themes` (your custom themes, [Themes](themes.md)), `user_prefs`, `workspaces` (each with your role; for those you own, the members' ids and roles and the groups), `encryption`, and `userId`, the exporting account), every task with its `origin` (`null` when unset), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events or push subscriptions; reminders are personal, so only your own |
+| GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`, `reminders`, `sections`, `comments`, `time_entries`, `places`, `themes` (your custom themes, [Themes](themes.md)), `objectives` (your quarterly and weekly [objectives](objectives.md), deleted ones included), `user_prefs`, `workspaces` (each with your role; for those you own, the members' ids and roles and the groups), `encryption`, and `userId`, the exporting account), every task with its `origin` (`null` when unset), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events or push subscriptions; reminders are personal, so only your own |
 | POST | `/api/v1/import/preview` | yes | multipart `file` + options → dry run `{format, totals, rows, …}`, see [Import](#import) |
 | POST | `/api/v1/import` | yes | multipart `file` + options → 202 `{job}`; the import runs in the background |
 | GET | `/api/v1/import/jobs` | yes | `{jobs:[…]}`, newest first (last 50) |
@@ -771,6 +772,20 @@ curl -sS -X PATCH "$OT/api/v1/notes/<note>" -H "Authorization: Bearer $TOKEN" -H
 `POST /api/v1/notes/{id}/to-task` turns a note into a task in one change: a new task with the note's title, text, project and labels, and the note in the Trash (201 with the task). The apps' Undo works on it like on any edit.
 
 On an [end-to-end encrypted](e2ee.md) account the server holds no key: text must arrive encrypted (409 `encryption_enabled` for plaintext appends), and `to-task` needs the task id and the title and text sealed for it in the body (`{task_id, title, description, notes_doc?}`); `ot notes` does this for you after `ot encryption unlock`.
+
+### Objectives
+
+An objective is one short line you pin to a quarter or a week while planning (OpenSpec change `plan-objectives`, see [Objectives](objectives.md)). It has `title` (one line of 1 to 140 characters), `period` (a quarter `YYYY-Qn` or an ISO week `YYYY-Www`; months are refused), `position` (order within its period), `done_at` (Unix ms, `0` while open), `created_at` and `deleted_at`. Objectives are personal: they never reach another member, and another account's id answers 404. A create needs `title` and `period`; anything invalid is 400 `invalid_input` naming the field. A period holds at most 5 open objectives: a sixth create, or a `PATCH` of `period` into a full period, is refused with 409 `too_many_objectives` and nothing is written (devices that were offline together can still end up with more; every device shows them all). `DELETE` is a tombstone. `read` tokens may list and get; `read` and `agent` tokens get 403 `insufficient_scope` on writes. On an [end-to-end encrypted](e2ee.md) account `title` is ciphertext.
+
+```sh
+curl -sS -X POST "$OT/api/v1/objectives" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"title":"Ship 1.0","period":"2026-Q4"}'
+# 201 {"id":"<objective>","title":"Ship 1.0","period":"2026-Q4","position":1761638400000,"done_at":0,"created_at":1761638400000}
+curl -sS "$OT/api/v1/objectives?period=2026-W44&open=true" -H "Authorization: Bearer $TOKEN"
+# {"objectives":[…]}
+curl -sS -X PATCH "$OT/api/v1/objectives/<objective>" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"done_at":1761900000000}'
+```
 
 ### Sections
 

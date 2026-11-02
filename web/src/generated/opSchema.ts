@@ -2,7 +2,7 @@
 // Declare a field in internal/sync/ops.go, then run
 // UPDATE_OP_SCHEMA=1 go test ./internal/sync -run TestGeneratedOpSchema
 import type {
-  Attachment, Comment, CustomTheme, Due, Entity, FieldDef, Frame, Geo, Label, Note, OnDropRule, Origin, Place, Priority, Project, ProjectPrefs, Reminder, ReminderKind, Review, RoutineStep, Rule, RuleActions, RuleCondition, RuleTrigger, Section, Slot, SplitFrom, Task, TaskLocation, ThemeDocument, TimeEntry, UserPrefs, View,
+  Attachment, Comment, CustomTheme, Due, Entity, FieldDef, Frame, Geo, Label, Note, Objective, OnDropRule, Origin, Place, Priority, Project, ProjectPrefs, Reminder, ReminderKind, Review, RoutineStep, Rule, RuleActions, RuleCondition, RuleTrigger, Section, Slot, SplitFrom, Task, TaskLocation, ThemeDocument, TimeEntry, UserPrefs, View,
 } from '../lib/types'
 
 /**
@@ -952,6 +952,37 @@ export interface UserPrefsFields {
    * and keep the stored value. Settings, never content.
    */
   upcoming_today?: string
+  /**
+   * Objectives (OpenSpec change plan-objectives, design D8): "on" shows the
+   * Plan's objectives strip and the weekly review's Objectives section;
+   * clients read an empty or unknown value as off and keep the stored
+   * value. Objectives stay in the export, REST, the CLI and MCP either way.
+   */
+  objectives?: string
+}
+
+/**
+ * objective: one quarterly or weekly objective (OpenSpec change
+ * plan-objectives, design D1). Personal like place: it resolves to the
+ * author's personal scope, syncs to that user's devices only and derives no
+ * activity event. At most 5 open objectives per period: REST refuses a
+ * sixth, sync cannot refuse convergently and devices show all of them.
+ * A row written before a field existed lacks it, so every field is optional here; the entity type may require it.
+ */
+export interface ObjectiveFields {
+  /**
+   * The objective, one line of 1 to 140 characters (ciphertext for an
+   * encrypted account).
+   */
+  title?: string
+  /** The quarter "YYYY-Qn" or ISO week "YYYY-Www" it is for; never a month. */
+  period?: string
+  /** Order within its period. */
+  position?: number
+  /** When it was marked done, Unix ms; 0 = open. */
+  done_at?: number
+  created_at?: number
+  deleted_at?: number | null
 }
 
 /**
@@ -1065,8 +1096,11 @@ export const OP_DEFAULTS = {
     feed_seen_at: 0, reviewed_at: 0, group_by: '', sort_by: '', sort_dir: '', row_layout: '', review_every: '', card_notes: false,
   } satisfies Omit<ProjectPrefs, 'id' | '_clock'>,
   user_prefs: {
-    date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', theme_accent_custom: '', theme_light: '', theme_dark: '', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', time_sectors: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '', today_events: '', add_position: '', reminder_default_timed: '', reminder_default_dated: '', sidebar_counts: '', sidebar_order: '', focus_presets: '', focus_noise: '', day_parts: '', today_limit: 0, today_done: '', focus_style: '', energy: '', bento_order: '', formatting_toggle: '', routines_seen_at: 0, routines_hide_successes: '', upcoming_today: '',
+    date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', theme_accent_custom: '', theme_light: '', theme_dark: '', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', time_sectors: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '', today_events: '', add_position: '', reminder_default_timed: '', reminder_default_dated: '', sidebar_counts: '', sidebar_order: '', focus_presets: '', focus_noise: '', day_parts: '', today_limit: 0, today_done: '', focus_style: '', energy: '', bento_order: '', formatting_toggle: '', routines_seen_at: 0, routines_hide_successes: '', upcoming_today: '', objectives: '',
   } satisfies Omit<UserPrefs, 'id' | '_clock'>,
+  objective: {
+    title: '', period: '', position: 0, done_at: 0, created_at: 0, deleted_at: null,
+  } satisfies Omit<Objective, 'id' | '_clock'>,
   review: {
     completed_at: 0, daily_at: 0, monthly_at: 0, focus_date: '', focus: '', closed_at: 0, tomorrow_note: '', closed_day: '', carry_over: '', slots_date: '', slots: '', focus_slots: '',
   } satisfies Omit<Review, 'id' | '_clock'>,
@@ -1088,5 +1122,6 @@ export const OP_CONTENT_FIELDS: Partial<Record<Entity, readonly string[]>> = {
   frame: ['title'],
   slot: ['title'],
   place: ['name', 'address', 'geo'],
+  objective: ['title'],
   review: ['tomorrow_note'],
 }

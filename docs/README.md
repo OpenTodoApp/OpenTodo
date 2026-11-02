@@ -25,6 +25,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | &nbsp;&nbsp;↳ [The task panel](task-panel.md) | Everything in a task's panel: the title and its menu, the notes, the property chips and the Add menu, what a viewer can do, and how to close it. |
 | &nbsp;&nbsp;↳ [Dates and times](dates-and-times.md) | How due dates and times work, every way to type or pick them, and fixing a time to a time zone for something that happens at one moment worldwide. |
 | &nbsp;&nbsp;↳ [Time sectors](time-sectors.md) | Plan a task for this week, next week or this month without a fake date: the stored week, month or quarter, carry-over, and how the API, CLI, CalDAV and the vault carry it. |
+| &nbsp;&nbsp;↳ [Objectives](objectives.md) | Pin up to five quarterly and five weekly objectives in the Plan and the weekly review: the limit, carry-over, encryption, and the API, CLI and MCP. |
 | &nbsp;&nbsp;↳ [Deadlines and start dates](deadlines-and-start-dates.md) | A deadline is the day a task must be done by; a start date defers it until it matters. Countdowns, Someday, This Evening and the keys for each. |
 | &nbsp;&nbsp;↳ [Notes, subtasks and dependencies](notes-and-subtasks.md) | Write formatted notes, break a task into subtasks and nest them, and make a task wait for another one with Blocked by. |
 | &nbsp;&nbsp;↳ [Work from the list](work-from-the-list.md) | Add, complete and delete tasks, change them with one key, undo, and put them in the order you want, all without opening a task. |

@@ -73,6 +73,14 @@
       "title",
       "workspace_id"
     ],
+    "objective": [
+      "created_at",
+      "deleted_at",
+      "done_at",
+      "period",
+      "position",
+      "title"
+    ],
     "place": [
       "address",
       "created_at",
@@ -252,6 +260,7 @@
       "language",
       "maps",
       "method_mode",
+      "objectives",
       "reminder_default_dated",
       "reminder_default_timed",
       "routines_hide_successes",
@@ -336,6 +345,9 @@
     "note": [
       "description",
       "notes_doc",
+      "title"
+    ],
+    "objective": [
       "title"
     ],
     "place": [
