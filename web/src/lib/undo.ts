@@ -7,6 +7,7 @@
 import { db, tableOf, type AssistantUndo } from './db'
 import { mutateMany, readField, unfoldFieldPatches, type Change } from './ops'
 import { defaultReminderChanges } from './defaultReminder'
+import { withSectorClears } from './sectorWrites'
 import type { ProposedChange } from './assistantTypes'
 import type { Entity } from './types'
 import { uuid } from './ids'
@@ -28,6 +29,8 @@ export async function applyBatch(changes: ProposedChange[], opts: BatchOptions):
   if (changes.length === 0) return null
   // A `fields` map becomes one `fields.<id>` entry per value, each with its own clock (custom-fields).
   changes = unfoldFieldPatches(changes as Change[]).map((u, i) => ({ ...changes[i], patch: u.patch }))
+  // Dating a sectored task clears its sector here, so one Undo restores it (time-sectors D2).
+  changes = await withSectorClears(changes)
   const inverse: AssistantUndo['inverse'] = []
   for (const c of changes) {
     if (c.create) {

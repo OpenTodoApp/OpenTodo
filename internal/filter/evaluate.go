@@ -8,6 +8,7 @@ import (
 
 	"github.com/OpenTodoApp/opentodo/internal/daypart"
 	"github.com/OpenTodoApp/opentodo/internal/flow"
+	"github.com/OpenTodoApp/opentodo/internal/sector"
 )
 
 // The filter evaluator on the server (OpenSpec change routines-engine,
@@ -29,6 +30,7 @@ const (
 	KindNotes     = "notes"
 	KindOrigin    = "origin"
 	KindEnergy    = "energy"
+	KindSector    = "sector"
 	KindWorkspace = "workspace"
 	KindField     = "field"
 	KindNoField   = "nofield"
@@ -350,6 +352,13 @@ func (k *compiler) build(n *Node) (Pred, error) {
 	case KindEnergy:
 		want := n.Text
 		return func(t Row) bool { return energyOf(t) == want }, nil
+	case KindSector:
+		// A relative word means the viewer's period of that name (time-sectors).
+		want := n.Text
+		if p := sector.Resolve(want, k.c.Today, k.c.WeekStart); p != "" {
+			want = p
+		}
+		return func(t Row) bool { return str(t, "sector") == want }, nil
 	case KindWorkspace:
 		k.warn(`No workspace named "` + n.Name + `"`)
 		return never, nil
@@ -752,6 +761,12 @@ func (k *compiler) keyword(w string) Pred {
 		return func(t Row) bool { ok, _ := originOf(t); return ok }
 	case "no origin":
 		return func(t Row) bool { ok, _ := originOf(t); return !ok }
+	case "sector":
+		return func(t Row) bool { return sector.Valid(str(t, "sector")) }
+	case "no sector":
+		return func(t Row) bool { return !sector.Valid(str(t, "sector")) }
+	case "carried":
+		return func(t Row) bool { return sector.Carried(str(t, "sector"), c.Today, c.WeekStart) }
 	case "energy":
 		return func(t Row) bool { return energyOf(t) != "" }
 	case "no energy":
