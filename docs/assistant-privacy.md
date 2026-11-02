@@ -21,7 +21,7 @@ The panel first shows what will be sent and to whom:
 - what may be sent: tasks (title, description, dates, repeats, priority, estimate, completion, custom fields, location, the link a task came from), comments, attachment names, types and links (never the files), notes, tracked time, your routines and calendar frames; workspace, project, section and label names and project descriptions; names of members and groups you share with; saved view names and webhook hosts when you [describe a routine](routines.md#describe-it); your display name, date and time zone, your messages and [photos you add](assistant-capture.md#what-is-kept),
 - for a routine's **Ask AI** or **Summarise** step: its instruction and what it reads, on a schedule or after an event, while you may not be looking.
 
-In a shared project that includes text other members wrote. Select **Accept and continue** to start. Nothing is sent to any provider before you accept. If the provider changes later (also to [your own](assistant-settings.md#use-your-own-provider-and-key)), the assistant asks you again. You can withdraw consent in **Settings → Integrations → Assistant**.
+In a shared project that includes text other members wrote. Select **Accept and continue** to start. If the provider changes later (also to [your own](assistant-settings.md#use-your-own-provider-and-key)), the assistant asks you again. You can withdraw consent in **Settings → Integrations → Assistant**. If you agreed to the earlier, shorter list, a [notice](assistant-settings.md#the-complete-list-notice) tells you once.
 
 ## Conversations stay on this device
 

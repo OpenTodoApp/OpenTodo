@@ -147,7 +147,7 @@ function useConsent(status: AssistantStatus | null, setStatus: (s: AssistantStat
       setConsentBusy(false)
     }
   }
-  return { consentBusy, consentError, accept }
+  return { consentBusy, consentError, accept, update: setStatus }
 }
 
 /** The review of a proposed change set: apply the checked items, discard, undo. */

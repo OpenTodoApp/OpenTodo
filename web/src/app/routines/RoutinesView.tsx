@@ -34,6 +34,8 @@ import { StarterGallery, StartersPage } from './Starters'
 import { DescribeSheet, useDescribeMode } from './DescribeIt'
 import { pausedText, runsAsText } from './SharedRoutine'
 import { sentenceText } from './StepCard'
+import { useAssistantStatus } from '../../lib/assistantStatus'
+import { DisclosureNotice } from '../assistant/DisclosureNotice'
 
 const PAUSE_REASON = translatedMap<string>({ runaway: msg('Paused: it ran too often') })
 
@@ -167,6 +169,9 @@ function RoutinesList({ route }: { route?: Extract<Route, { view: 'rules' }> }) 
   const rules = useMemo(() => (project ? allRules.filter((r) => r.project_id === project) : allRules), [allRules, project])
   const catalogue = useCatalogue()
   const [status, setStatus] = useRulesStatus(rules)
+  // The notice that the assistant's list is now complete, for a consent that covers AI steps (assistant-disclosure-notice D4).
+  const assistant = useAssistantStatus()
+  const online = useOnline()
   // A run of a deleted routine: its detail in a dialog (a live routine's run opens on its page).
   const [run, setRun] = useState<{ ruleId: string; runId: string } | null>(null)
   const tab = route?.tab === 'runs' ? 'runs' : 'routines'
@@ -206,6 +211,7 @@ function RoutinesList({ route }: { route?: Extract<Route, { view: 'rules' }> }) 
           <NewRoutineButton names={names} project={project} />
           {overflowGroups.length > 0 && <ActionMenu label={t('More')} groups={overflowGroups} />}
         </>} />
+      {assistant?.routines_consented && assistant.disclosure_notice && <div className="mb-3"><DisclosureNotice status={assistant} connected={online} /></div>}
       {status && !status.enabled && <div className="mb-3"><Notice tone="warning">{t('Automations are off on this server.')}</Notice></div>}
       {status?.enabled && status.paused && (
         <div className="mb-3"><Notice tone="info" action={<Button size="sm" variant="ghost" onClick={() => pause(false)}>{t('Resume')}</Button>}>{t('Your routines are paused.')}</Notice></div>

@@ -6831,5 +6831,13 @@
   "names of members and groups of shared projects and workspaces": "nomes de membros e grupos de projetos e espaços de trabalho compartilhados",
   "your display name, today's date and your time zone": "seu nome de exibição, a data de hoje e seu fuso horário",
   "the messages you type": "as mensagens que você digita",
-  "photos you add": "as fotos que você adiciona"
+  "photos you add": "as fotos que você adiciona",
+  "The list of what the assistant sends is now complete": "A lista do que o assistente envia agora está completa",
+  "It now names everything the assistant could already read and send to the model provider, such as notes, tracked time, routines, calendar frames and attachment names. Nothing new is sent, and your consent still counts.": "Agora ela nomeia tudo o que o assistente já podia ler e enviar ao provedor do modelo, como notas, tempo registrado, rotinas, faixas do calendário e nomes de anexos. Nada de novo é enviado, e o seu consentimento continua válido.",
+  "In shared projects this includes text other members wrote.": "Em projetos compartilhados, isso inclui texto escrito por outros membros.",
+  "Review the list": "Rever a lista",
+  "Hide the list": "Ocultar a lista",
+  "Turn off the assistant": "Desligar o assistente",
+  "Got it": "Entendi",
+  "Closing this notice needs a connection.": "Fechar este aviso precisa de conexão."
 }

@@ -52,6 +52,7 @@ func (s *Server) registerAssistantRoutes(mux *routes) {
 	mux.handle("POST /api/v1/settings/assistant/test", ownerOnly("manage the assistant settings").DemoDenied(), s.handleTestAssistant)
 	mux.handle("GET /api/v1/me/assistant", signedIn.DemoDenied(), s.handleGetMyAssistant)
 	mux.handle("PUT /api/v1/me/assistant", signedIn.FullTokens().DemoDenied(), s.handlePutMyAssistant)
+	mux.handle("POST /api/v1/me/assistant/disclosure-seen", signedIn.FullTokens().DemoDenied(), s.handleDisclosureSeen)
 	mux.handle("GET /api/v1/me/assistant/usage", signedIn.DemoDenied(), s.handleMyAssistantUsage)
 	mux.handle("POST /api/v1/me/assistant/test", signedIn.SessionOnly().DemoDenied(), s.handleTestMyAssistant)
 	mux.handle("POST /api/v1/assistant/turn", signedIn.SessionOnly().DemoDenied(), s.handleAssistantTurn)
@@ -310,7 +311,9 @@ func (s *Server) myAssistant(ctx context.Context, u *auth.User) (map[string]any,
 		"consented": consent.Valid(route.Provider), "disclosure_version": assistant.DisclosureVersion, "fields": fields,
 		// routines_consented: the consent covers routines' AI steps (routines-ai-step D10).
 		"routines_consented": consent.RoutinesValid(route.Provider),
-		"allow_member_keys":  set.AllowMemberKeys, "own_key_set": sec.Has(assistant.UserKey(u.ID, route.Provider)),
+		// disclosure_notice: tell once that the list is now complete (assistant-disclosure-notice D2).
+		"disclosure_notice": consent.NeedsNotice(),
+		"allow_member_keys": set.AllowMemberKeys, "own_key_set": sec.Has(assistant.UserKey(u.ID, route.Provider)),
 		"server_own_key_set": sec.Has(assistant.UserKey(u.ID, set.DefaultProvider)),
 		"operator_key_set":   sec.Has(assistant.OperatorKey(set.DefaultProvider)) || set.DefaultProvider == assistant.Compatible,
 		"cap_member_keys":    set.CapMemberKeys, "own_provider": nil,
@@ -339,6 +342,22 @@ func (s *Server) handleGetMyAssistant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, v)
+}
+
+// handleDisclosureSeen records Got it on the notice of the completed
+// disclosure (assistant-disclosure-notice D3), for the server's and the
+// on-device consent alike, and answers with the status.
+func (s *Server) handleDisclosureSeen(w http.ResponseWriter, r *http.Request) {
+	ok, err := s.assistant.Store.MarkDisclosureSeen(r.Context(), userFrom(r.Context()).ID)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	if !ok {
+		writeError(w, http.StatusConflict, "consent_required", "there is no consent to the assistant's disclosure on record")
+		return
+	}
+	s.handleGetMyAssistant(w, r)
 }
 
 func (s *Server) handlePutMyAssistant(w http.ResponseWriter, r *http.Request) {

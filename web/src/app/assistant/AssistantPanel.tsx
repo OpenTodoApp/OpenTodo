@@ -123,7 +123,7 @@ export function AssistantPanel({ onClose, context, onApplied, name = '' }: Assis
         consentBusy={c.consent.consentBusy} consentError={c.consent.consentError} threads={c.threads} reviewRef={rv.reviewRef}
         onToggle={rv.toggle} onApply={() => void rv.apply()} onDiscard={() => void rv.discard()} onUndo={() => void rv.undo()} onDraft={composer.setDraft} onSend={() => void c.send()}
         onStop={c.stop} onAccept={(k) => void c.consent.accept(k)} onPickThread={c.pickThread}
-        name={name} skills={composer.skills} onStarter={(s) => { composer.chooseSkill(s); focusComposer() }} layout="sheet" device={c.device} />
+        name={name} skills={composer.skills} onStarter={(s) => { composer.chooseSkill(s); focusComposer() }} layout="sheet" device={c.device} onStatus={c.consent.update} />
     </AssistantSheet>
   )
 }
