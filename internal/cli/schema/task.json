@@ -25,6 +25,7 @@
     "position": {"type": "number"},
     "created_at": {"type": "number", "description": "Unix milliseconds"},
     "completed_at": {"type": ["number", "null"]},
+    "reused": {"type": "string", "enum": ["reopened", "open", "unavailable"], "description": "only on ot add in a reusable list: the item was reopened, was already open, or the server could not match an encrypted title"},
     "completed_by": {"type": ["string", "null"], "description": "account id of whoever completed the task, when known"},
     "deleted_at": {"type": ["number", "null"]},
     "estimate_minutes": {"type": ["integer", "null"]},

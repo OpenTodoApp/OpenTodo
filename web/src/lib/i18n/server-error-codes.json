@@ -53,6 +53,7 @@
   "insufficient_storage",
   "integrity",
   "internal",
+  "invalid_aisle",
   "invalid_credentials",
   "invalid_energy",
   "invalid_file",

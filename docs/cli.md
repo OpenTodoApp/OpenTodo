@@ -215,10 +215,13 @@ ot task split 8c2a --from 2026-10-14 --time 19:00       # 19:00 from Wednesday o
 ot project list [--all]                 # --all includes archived projects
 ot project add "Garden" [--color "#22c55e"] [--idempotency-key <key>]
 ot project rename Garden "Back garden"
+ot project edit Groceries --reusable --aisles  # a reusable list; --no-reusable, --no-aisles turn it off
 ot project move Garden --workspace Family  # only the project's owner
 ot project archive Garden [--undo]
 ot project rm Garden [--yes]
 ```
+
+In a [reusable list](reusable-lists.md), `ot add Milk --project Groceries` reopens a ticked-off Milk instead of adding a second one, or finds it already open; it prints the item's id and says "reopened" or "already on the list" on stderr. `--new` always adds a new task.
 
 Projects are referenced by name (case-insensitive), full id or unique id prefix. `ot project list` shows every workspace's projects with a WORKSPACE column and each project's FLOW (`parallel`, `sequential` or `area`, see [Sequential projects and areas](project-flows.md)), and STATUS `archived` or `maintenance` ([Review intervals and maintenance](review-intervals.md)); `--workspace` narrows it to one.
 

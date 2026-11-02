@@ -237,6 +237,7 @@ func TestOutputsMatchSchemas(t *testing.T) {
 	var proj map[string]any
 	_ = json.Unmarshal([]byte(check("project add", "project", "add", "Garden")), &proj)
 	check("project rename", "project", "rename", "Garden", "Garden 2")
+	check("project edit", "project", "edit", "Garden 2", "--reusable")
 	check("project archive", "project", "archive", "Garden 2")
 	check("project rm", "project", "rm", proj["id"].(string), "--yes")
 	check("token create", "token", "create", "schema-token", "--scope", "read")
@@ -591,6 +592,7 @@ func TestDryRunSendsNoWrites(t *testing.T) {
 		{"rm", "book"},
 		{"project", "add", "Dry project"},
 		{"project", "rename", "Home", "Elsewhere"},
+		{"project", "edit", "Home", "--reusable", "--aisles"},
 		{"project", "move", "Home", "--workspace", "Personal"},
 		{"project", "archive", "Home"},
 		{"project", "rm", "Home"},
