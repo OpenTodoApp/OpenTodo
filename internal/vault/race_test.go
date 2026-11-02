@@ -42,7 +42,9 @@ func TestSaveDuringSyncIsNotOverwritten(t *testing.T) {
 	}
 	// The next sync merges both: the save reaches the app, the app's title
 	// reaches the file, and nothing is reverted.
-	rep = v.sync(t)
+	if rep := v.sync(t); rep.Updated != 1 {
+		t.Errorf("second sync: %+v", rep)
+	}
 	text = v.read(t, "Home.md")
 	if !strings.Contains(text, "Pay the rent") || !strings.Contains(lineOf(t, text, "Call mum"), "📅 2026-11-05") {
 		t.Errorf("merged file:\n%s", text)
