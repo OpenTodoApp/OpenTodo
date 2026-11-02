@@ -186,3 +186,16 @@ test('overlay content fit (issue #731): a wrapped notice passes, a squeezed or s
   assert.equal(out.length, 1, out.join('; '))
   assert.match(out[0], /^span .* sticks out of the overlay/)
 })
+
+test('cut labels: whole options and day names pass, a cut option or day name fails', { skip }, async () => {
+  const { cutLabels } = await import('./measure.mjs')
+  const opt = (w, text) => `<button role="radio" style="width:${w}px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding:0;border:0">${text}</button>`
+  const day = (w) => `<div data-day-header><span data-day-name style="display:block;width:${w}px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">Tue 3</span></div>`
+  await fixture(`<div role="radiogroup" aria-label="Edit scope">${opt(200, 'This occurrence')}${opt(200, 'All occurrences')}</div>${day(120)}`)
+  assert.deepEqual(await page.evaluate(cutLabels), [])
+  await fixture(`<div role="radiogroup" aria-label="Edit scope">${opt(60, 'This occurrence')}${opt(200, 'All occurrences')}</div>${day(12)}`)
+  const r = await page.evaluate(cutLabels)
+  assert.equal(r.length, 2, r.join('; '))
+  assert.match(r[0], /^option "This occurrence" of "Edit scope" is cut/)
+  assert.match(r[1], /^day name "Tue 3" in the calendar header is cut/)
+})

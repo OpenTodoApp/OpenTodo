@@ -1,0 +1,29 @@
+{
+  "description": "An end-to-end encrypted account (unlocked): coordinates but no titles reach the shell.",
+  "method": "scheduleGeofences",
+  "payload": "{\"version\":1,\"regions\":[{\"id\":\"g-arrive\",\"taskId\":\"stamps\",\"lat\":45.4642,\"lon\":9.19,\"radius\":150,\"on\":\"arrive\"},{\"id\":\"g-leave\",\"taskId\":\"parcel\",\"lat\":45.4781,\"lon\":9.2272,\"radius\":300,\"on\":\"leave\"}]}",
+  "now": 1792670400000,
+  "expect": {
+    "ask": false,
+    "regions": [
+      {
+        "id": "g-arrive",
+        "taskId": "stamps",
+        "lat": 45.4642,
+        "lon": 9.19,
+        "radius": 150,
+        "on": "arrive",
+        "title": null
+      },
+      {
+        "id": "g-leave",
+        "taskId": "parcel",
+        "lat": 45.4781,
+        "lon": 9.2272,
+        "radius": 300,
+        "on": "leave",
+        "title": null
+      }
+    ]
+  }
+}

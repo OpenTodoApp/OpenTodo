@@ -1,0 +1,10 @@
+{
+  "description": "Turning on \"Location reminders on this phone\" with nothing armed yet: ask is set, so a shell with a screen asks for fine then background location even though there are no regions.",
+  "method": "scheduleGeofences",
+  "payload": "{\"version\":1,\"regions\":[],\"ask\":true}",
+  "now": 1792670400000,
+  "expect": {
+    "ask": true,
+    "regions": []
+  }
+}

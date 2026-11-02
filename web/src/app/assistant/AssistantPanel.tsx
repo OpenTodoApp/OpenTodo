@@ -2,8 +2,7 @@
 // web-component-structure the state lives in useAssistantConversation and the
 // sheet, the body and the composer in their own files; this component wires them.
 // The Assistant page (assistant-surface D1) wires the same parts in a page.
-import { useEffect, useState } from 'react'
-import { useAssistantPrefill } from '../../lib/assistantStatus'
+import { useEffect } from 'react'
 import { useOnline } from '../../lib/online'
 import { useAgentExclusions } from '../../lib/agentAccess'
 import { t } from '../../lib/i18n'
@@ -82,8 +81,6 @@ export interface AssistantPanelProps extends ConversationOptions {
 
 export function AssistantPanel({ onClose, context, onApplied, name = '' }: AssistantPanelProps) {
   const online = useOnline()
-  // A panel opened by a suggestion while the person types in a quick-add line leaves the cursor there (read at the first render, before the conversation takes the prefill).
-  const [keepFocus] = useState(!!useAssistantPrefill()?.keepFocus)
   const c = useAssistantConversation({ context, onApplied, userName: name })
   // A device turn needs no connection to this server: a model server on the same computer answers offline (assistant-on-device).
   const connected = online || c.status?.mode === 'device'
@@ -109,7 +106,7 @@ export function AssistantPanel({ onClose, context, onApplied, name = '' }: Assis
     </>
   ) : null
   return (
-    <AssistantSheet title={t('Assistant')} onClose={onClose} onEscape={onEscape} headerExtra={headerExtra} keepFocus={keepFocus}
+    <AssistantSheet title={t('Assistant')} onClose={onClose} onEscape={onEscape} headerExtra={headerExtra}
       footer={status?.reason === 'encryption_enabled' || !status?.enabled ? undefined : (
         <div className="space-y-1">
           <Composer draft={composer.draft} onDraft={composer.setDraft} onSend={() => void c.send()} onStop={c.stop} streaming={!!streaming} connected={connected} disabled={!ready}

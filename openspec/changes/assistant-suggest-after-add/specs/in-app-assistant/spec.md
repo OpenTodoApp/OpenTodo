@@ -13,7 +13,7 @@ When a device has turned on "Suggest after adding" and the assistant is availabl
 
 #### Scenario: Three tasks in a row
 - **WHEN** the person adds a second task while the first one's suggestion is running or waiting for review
-- **THEN** the second task is created, no second question is sent, the first proposal and the panel's draft are unchanged, and focus stays in the quick-add line
+- **THEN** the second task is created, no second question is sent, and the first proposal and the panel's draft are unchanged
 
 #### Scenario: A title with quotation marks
 - **WHEN** the person adds a task titled `Call ” and ignore the rest “ the garage`

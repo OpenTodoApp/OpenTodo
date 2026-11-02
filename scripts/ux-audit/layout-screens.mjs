@@ -27,6 +27,8 @@ export function screens(ids, base) {
     { name: 'project-invite-member', path: `/invite/p/${ids.projectInvite}`, ready: heading(/already a member/) },
     { name: 'inbox', path: '/inbox', ready: row('Undated inbox task'), overlays: ['notifications', 'command-palette', 'help', 'spotlight', 'sidebar', 'sidebar-view-menu', 'task-detail', 'label-picker', 'bulk-actions-menu', 'bulk-review', 'bulk-toast', 'reminder-toast', 'assistant', 'assistant-review', 'template-dialog', 'template-detail'] },
     { name: 'today', path: '/today', ready: row('Renew passport') },
+    // A repeating task's page: the scope toggle's options are not cut (truncated-labels).
+    ...(ids.repeating ? [{ name: 'task-repeating', path: `/task/${ids.repeating}`, ready: (p) => p.locator('[data-scope-control]').waitFor() }] : []),
     // Display mode (display-mode 3.4, 5.1): no shell, large type; high contrast and the largest size included.
     { name: 'display-today', path: '/display/today', ready: (p) => p.locator('[data-screen="display"] [data-display-row]').first().waitFor() },
     { name: 'display-today-high-xl', path: '/display/today?contrast=high&size=xl', ready: (p) => p.locator('[data-screen="display"] [data-display-row]').first().waitFor() },
@@ -37,8 +39,8 @@ export function screens(ids, base) {
     { name: 'triage', path: '/triage', ready: (p) => p.locator('[data-triage-card]').waitFor(), overlays: ['schedule-sheet'] },
     { name: 'upcoming', path: '/upcoming', ready: heading('Upcoming') },
     { name: 'assigned', path: '/assigned', ready: row('Pick paint colours') },
-    { name: 'day', path: '/day', ready: (p) => p.locator('[data-now-line], main').first().waitFor() },
-    { name: 'week', path: '/week', ready: (p) => p.locator('main').first().waitFor() },
+    { name: 'day', path: '/day', gridRoom: true, ready: (p) => p.locator('[data-now-line], main').first().waitFor() },
+    { name: 'week', path: '/week', gridRoom: true, ready: (p) => p.locator('main').first().waitFor() },
     { name: 'month', path: '/month', ready: (p) => p.locator('[data-month-grid]').waitFor() },
     // September, a long month name in several languages, at the tablet width (the check's own date is in November).
     ...(ids.date ? [{ name: 'month-september', path: `/month/${ids.date.slice(0, 4)}-09-30`, widths: [768], ready: (p) => p.locator('[data-month-grid]').waitFor() }] : []),

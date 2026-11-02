@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -250,6 +251,37 @@ func (s *Server) reminderOpsForTaskAs(ctx context.Context, uid, taskID string, p
 	return ops, nil
 }
 
+// locationReminderBody checks a REST reminder write against the location kinds
+// (OpenSpec change location-reminders, design D6): an arrive or leave reminder
+// needs a radius of 100 to 5,000 metres and takes no firing time or offset;
+// another kind takes no radius. Changing the kind clears the fields the new
+// kind does not have. It returns the user-facing refusal, or "".
+func locationReminderBody(body, merged map[string]json.RawMessage) string {
+	_, kindSent := body["kind"]
+	if !opsync.IsLocationKind(idOf(merged["kind"])) {
+		if !isNullish(body["radius_m"]) {
+			return "reminder.radius_m is only for the kinds arrive and leave"
+		}
+		if kindSent && !isNullish(merged["radius_m"]) {
+			body["radius_m"] = json.RawMessage("null")
+		}
+		return ""
+	}
+	for _, f := range []string{"fire_at", "offset_minutes"} {
+		if !isNullish(body[f]) {
+			return "reminder." + f + " is not set on an arrive or leave reminder: it fires on your phone at the task's location"
+		}
+		if kindSent && !isNullish(merged[f]) {
+			body[f] = json.RawMessage("null")
+		}
+	}
+	var radius int64
+	if r := merged["radius_m"]; isNullish(r) || json.Unmarshal(r, &radius) != nil || radius < opsync.MinReminderRadius || radius > opsync.MaxReminderRadius {
+		return fmt.Sprintf("reminder.radius_m must be a whole number of metres from %d to %d", opsync.MinReminderRadius, opsync.MaxReminderRadius)
+	}
+	return ""
+}
+
 // completeReminderBody fills in a REST reminder write: defaults on create, and
 // fire_at for a relative reminder computed from its task's due date when the
 // caller did not send one. It returns a user-facing message when the body is
@@ -275,6 +307,9 @@ func (s *Server) completeReminderBody(ctx context.Context, uid string, body map[
 		if _, has := body["task_id"]; !has {
 			return "reminder.task_id is required", nil
 		}
+	}
+	if msg := locationReminderBody(body, merged); msg != "" {
+		return msg, nil
 	}
 	taskID := idOf(merged["task_id"])
 	if _, has := body["task_id"]; has {

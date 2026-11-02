@@ -139,7 +139,7 @@ The detail panel SHALL set the start inside the When popover: a Start segment of
 
 #### Scenario: Start from the When control
 - **WHEN** the user opens the Do on part of a task, switches to Start and picks a date next week
-- **THEN** the popover closes on Done, the When line reads the due date and "from" with the start date, and no separate Start line exists in the panel
+- **THEN** the popover closes on Close, the When line reads the due date and "from" with the start date, and no separate Start line exists in the panel
 
 #### Scenario: Start in the past
 - **WHEN** a task's start was two days ago

@@ -35,9 +35,10 @@ export const SUGGESTION_PROMPT = 'Improve the selected task: propose a clearer t
  * Never throws: adding a task must not depend on the assistant.
  *
  * The turn is a proposal only: `review` makes the change set wait for Apply even when this device applies small
- * changes without review, and `keepFocus` leaves the cursor in the quick-add line. While the assistant is busy (a
- * turn running, a proposal waiting, the panel open) the suggestion is skipped, not queued: a second add in a row
- * would replace the first one's draft, and sending would discard the proposal still waiting for review.
+ * changes without review. The panel is a modal and takes focus as any modal does: its backdrop covers the quick-add
+ * line, so leaving the cursor there would have the person type into a field they cannot see. While the assistant is
+ * busy (a turn running, a proposal waiting, the panel open) the suggestion is skipped, not queued: a second add in a
+ * row would replace the first one's draft, and sending would discard the proposal still waiting for review.
  */
 export async function suggestAfterAdd(taskId: string): Promise<void> {
   try {
@@ -51,7 +52,7 @@ export async function suggestAfterAdd(taskId: string): Promise<void> {
     } else if (!s.consented) return
     if (!(await getSuggestAfterAdd())) return
     if (assistantBusy()) return
-    openAssistantWith({ text: SUGGESTION_PROMPT, selected: [taskId], send: true, review: true, keepFocus: true })
+    openAssistantWith({ text: SUGGESTION_PROMPT, selected: [taskId], send: true, review: true })
   } catch {
     // The task is already created; a suggestion is a bonus.
   }

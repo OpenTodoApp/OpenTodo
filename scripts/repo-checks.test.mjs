@@ -552,6 +552,23 @@ test('release tags prove the Android build reproducible, and anyone can run it o
   assert.match(read('scripts/android-repro.sh'), /apksigcopier compare "\$apk" --unsigned "\$first"/)
 })
 
+test('the Play AAB is the build without location, checked on every Android run (play-location-later)', () => {
+  const android = jobsOf(read('.github/workflows/ci.yml')).android
+  const steps = android.split(/\n(?= {6}- )/)
+  const check = steps.find((s) => s.includes('Play AAB without location'))
+  assert.ok(check, 'a step checks the two builds')
+  assert.doesNotMatch(check, /^ {8}if:/m, 'on every run, not only tags')
+  assert.match(check, /-Popentodo\.play=true :app:bundleRelease\n/)
+  assert.match(check, /scripts\/android-store-check\.sh /)
+  const signed = steps.find((s) => s.includes('Signed release APK and AAB'))
+  assert.match(signed, /OPENTODO_VERSION="\$version" \.\/gradlew --no-daemon -Popentodo\.play=true :app:bundleRelease\n/, 'the release AAB is the Play build')
+  assert.match(signed, /OPENTODO_VERSION="\$version" \.\/gradlew --no-daemon :app:assembleRelease\n/, 'the release APK is the plain build')
+  assert.match(signed, /android-store-check\.sh "\.\.\/\.\.\/dist\/opentodo-android-\$version\.aab"/, 'the signed files are checked too')
+  assert.doesNotMatch(read('scripts/android-repro.sh'), /opentodo\.play/, 'the reproducible APK never uses the Play property')
+  assert.doesNotMatch(read('mobile/android/store/fdroid/app.opentodo.yml'), /opentodo\.play/)
+  assert.match(read('mobile/android/app/src/play/AndroidManifest.xml'), /ACCESS_BACKGROUND_LOCATION" tools:node="remove"/)
+})
+
 test('the Play upload runs only for final tags, after the release, with its secrets in the release environment', () => {
   const play = jobsOf(read('.github/workflows/ci.yml')).play
   assert.match(play, /^ {4}if: startsWith\(github\.ref, 'refs\/tags\/v'\) && !contains\(github\.ref_name, '-'\)$/m, 'final tags only')

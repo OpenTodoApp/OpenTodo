@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 // Suggest after adding, in the panel (OpenSpec change assistant-suggest-after-add): the proposal of a turn the person
-// did not type is always reviewed, a second add in a row does not replace the first suggestion, and the cursor stays in
-// the quick-add line.
+// did not type is always reviewed, a second add in a row does not replace the first suggestion, and the panel takes
+// focus like any modal (the backdrop covers the quick-add line, so focus cannot usefully stay there).
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { setAutoApply } from '../lib/assistant'
@@ -113,12 +113,13 @@ describe('focus', () => {
     return input
   }
 
-  it('stays in the quick-add line when a suggestion opens the panel', async () => {
+  it('moves into the panel when a suggestion opens it, as for any modal', async () => {
     const input = quickAdd()
-    openAssistantWith({ text: SUGGESTION_PROMPT, selected: [taskId], send: true, review: true, keepFocus: true })
+    openAssistantWith({ text: SUGGESTION_PROMPT, selected: [taskId], send: true, review: true })
     const r = await panel()
     await waitFor(reviewShown, 'the change set for review')
-    expect(document.activeElement).toBe(input)
+    await waitFor(() => document.activeElement !== input, 'focus moved into the panel')
+    expect(document.querySelector('[data-assistant-panel]')?.contains(document.activeElement)).toBe(true)
     await r.unmount()
   })
 
