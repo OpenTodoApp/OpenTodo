@@ -159,6 +159,20 @@ test('text fields under 16 px (issue #724): 16 px fields pass, smaller fields an
   assert.match(r[2], /"Notes" \(div > p\) has 15px/)
 })
 
+test('crowded controls (themes-layout-template): padded rows pass; touching a divider or overlapping fails', { skip }, async () => {
+  const { crowdedControls } = await import('./measure.mjs')
+  const row = (pad, inner) => `<div style="padding:${pad}px 0;border-top:1px solid #ccc">${inner}</div>`
+  await fixture(`<main style="width:300px">${row(12, '<button style="height:32px">New theme</button>')}${row(12, '<button style="height:32px">Accent</button>')}</main>`)
+  assert.deepEqual(await page.evaluate(crowdedControls, ['main', 4]), [])
+  // The owner's case: the buttons end on the next row's divider.
+  await fixture(`<main style="width:300px">${row(0, '<button style="height:32px">New theme</button>')}${row(12, '<button style="height:32px">Accent</button>')}</main>`)
+  const touching = await page.evaluate(crowdedControls, ['main', 4])
+  assert.equal(touching.length, 1)
+  assert.match(touching[0], /"New theme" is [01] px from a row divider/)
+  await fixture('<main style="width:300px"><button style="width:120px;height:32px">One</button><button style="width:120px;height:32px;margin-left:-40px">Two</button></main>')
+  assert.match((await page.evaluate(crowdedControls, ['main', 4]))[0], /"One" and "Two" overlap/)
+})
+
 test('overlay content fit (issue #731): a wrapped notice passes, a squeezed or sticking-out one fails', { skip }, async () => {
   const { overlayContentFit } = await import('./measure.mjs')
   const sentence = 'Open on the Loop home on this device? It shows what needs your attention today.'

@@ -93,7 +93,7 @@ func (s *Server) splitChangesOK(w http.ResponseWriter, r *http.Request, body map
 	}
 	stripAnnotations("task", body)
 	pairDayPart(body)
-	if !energyOK(w, body) {
+	if !taskBodyOK(w, body) {
 		return false
 	}
 	msg, err := s.checkReferences(r.Context(), userFrom(r.Context()).ID, "task", body)

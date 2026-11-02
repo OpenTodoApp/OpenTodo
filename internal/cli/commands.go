@@ -81,6 +81,7 @@ var (
 		{Name: "no-span", Type: "bool", Description: "draw the task on its due date only; the start date stays"},
 		{Name: "part", Type: "string", Enum: []string{"morning", "afternoon", "evening", "none"}, Description: "the part of the day; sets This Evening too (evening) or clears it"},
 		{Name: "energy", Type: "string", Enum: []string{"deep", "medium", "low", "none"}, Description: "the energy the task asks for (edit: none clears)"},
+		{Name: "sector", Type: "string", Description: "the time sector: this-week, next-week, this-month, next-month, this-quarter, next-quarter (weeks from Monday) or a period such as 2026-W45, 2026-11 or 2026-Q4; written as sent, the due date is kept (edit: none clears)"},
 		{Name: "blocked-by", Type: "string_list", Description: "a task this one waits for: id or unique id prefix, repeatable (edit replaces the list; none clears)"},
 		{Name: "location", Type: "string", Description: "a saved location's name or id, or lat,lon (edit: none clears)"},
 		{Name: "no-default-reminder", Type: "bool", Description: "add no default reminder when the task gets a due date (--remind also leaves it out)"},
@@ -119,6 +120,7 @@ var cmdSpecs = []cmdSpec{
 		{Name: "available", Type: "bool", Description: "open tasks that can be done now: not blocked, not waiting for an earlier step, neither in Someday nor starting later (combines with --project)"},
 		{Name: "completed-after", Type: "string", Description: "only tasks completed at or after: YYYY-MM-DD (local), an RFC 3339 time or Unix ms"},
 		{Name: "completed-before", Type: "string", Description: "only tasks completed before: YYYY-MM-DD (local), an RFC 3339 time or Unix ms"},
+		{Name: "sector", Type: "string", Description: "only tasks with this time sector: this-week, next-week, this-month, next-month, this-quarter, next-quarter, a period such as 2026-W45, or carried for periods that have ended"},
 		limitFlag,
 	}, Output: arrayOf("task")},
 	{Name: "today", Summary: "alias for `ot list --today`; with a Today limit, the tasks waiting for a slot follow under their own heading", Flags: []flagSpec{

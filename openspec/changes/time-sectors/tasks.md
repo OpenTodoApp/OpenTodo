@@ -2,16 +2,16 @@
 
 ## 1. Rules module and shared vectors
 
-- [ ] 1.1 `web/src/lib/sectors.ts` with `parseSector`, `currentPeriods`, `relativeName`, `isCarried` and `resolvePhrase`, and `web/src/lib/sectors.vectors.json`. The vectors cover validity (W53 in 2026 and not in 2027, months, quarters, years 2000–2999), Monday, Sunday and Saturday week starts, year and quarter boundaries, and carry-over. Verify with `sectors.test.ts` (`npm test`).
-- [ ] 1.2 Go twin `internal/sector` running the same vectors. Verify with `go test ./internal/sector/...`.
+- [x] 1.1 `web/src/lib/sectors.ts` with `parseSector`, `currentPeriods`, `relativeName`, `isCarried` and `resolvePhrase`, and `web/src/lib/sectors.vectors.json`. The vectors cover validity (W53 in 2026 and not in 2027, months, quarters, years 2000–2999), Monday, Sunday and Saturday week starts, year and quarter boundaries, and carry-over. Verify with `sectors.test.ts` (`npm test`).
+- [x] 1.2 Go twin `internal/sector` running the same vectors. Verify with `go test ./internal/sector/...`.
 - [ ] 1.3 Shared availability predicate `isAvailable(task, ctx)` in `web/src/lib`: open, not deleted, not deferred, not blocked, plus the Sequential rule from `project-flow-modes` once it has landed. Reuse that change's predicate if it exists instead of adding a second one. Verify with a unit test that Next and the planning list agree on the same fixture.
 
 ## 2. Data model
 
-- [ ] 2.1 Add `task.sector` (kString, default `""`, validated with `internal/sector`) and `user_prefs.time_sectors` (kString, default `""`) to `internal/sync/ops.go` `Schema`, `web/src/lib/types.ts` and the defaults in `web/src/lib/ops.ts`. Neither is a content field. Verify with `go test ./internal/sync/...` (an invalid sector is refused, an older op without the field still applies, LWW on concurrent writes) and `npm test` (`ops.test.ts`).
-- [ ] 2.2 REST: `sector` in task representations and PATCH/POST, with a REST `null` stored as `""` and `400 invalid_input` for a bad period. Verify with `go test ./internal/httpapi/...` (create, patch, invalid, export includes the field).
-- [ ] 2.3 Inbox rule: a non-empty sector makes a task scheduled in `web/src/lib/inbox.ts`, `internal/inbox` and `inbox.vectors.json`. Verify with `npm test` and `go test ./internal/inbox/...` running the new vector.
-- [ ] 2.4 Activity: a sector change is shown like a start change in `internal/activity` and `web/src/lib/activity.ts`, with a case in `internal/activity/testdata/activity_fixture.json`. Verify with `go test ./internal/activity/...` and `npm test`.
+- [x] 2.1 Add `task.sector` (kString, default `""`, validated with `internal/sector`) and `user_prefs.time_sectors` (kString, default `""`) to `internal/sync/ops.go` `Schema`, `web/src/lib/types.ts` and the defaults in `web/src/lib/ops.ts`. Neither is a content field. Verify with `go test ./internal/sync/...` (an invalid sector is refused, an older op without the field still applies, LWW on concurrent writes) and `npm test` (`ops.test.ts`).
+- [x] 2.2 REST: `sector` in task representations and PATCH/POST, with a REST `null` stored as `""` and `400 invalid_input` for a bad period. Verify with `go test ./internal/httpapi/...` (create, patch, invalid, export includes the field).
+- [x] 2.3 Inbox rule: a non-empty sector makes a task scheduled in `web/src/lib/inbox.ts`, `internal/inbox` and `inbox.vectors.json`. Verify with `npm test` and `go test ./internal/inbox/...` running the new vector.
+- [x] 2.4 Activity: a sector change is shown like a start change in `internal/activity` and `web/src/lib/activity.ts`, with a case in `internal/activity/testdata/activity_fixture.json`. Verify with `go test ./internal/activity/...` and `npm test`.
 
 ## 3. Client: placement, setting and planning
 
@@ -51,15 +51,15 @@
 
 ## 5. Interop
 
-- [ ] 5.1 CalDAV `X-OPENTODO-SECTOR` in `internal/caldav` mapping (serve, set, invalid kept in `ical_extra`, absent leaves the field unchanged). Verify with `go test ./internal/caldav/... ./internal/httpapi/...`.
-- [ ] 5.2 Vault `[sector:: …]` in `internal/vault` line grammar, the fixture vault and the `docs/vault.md` vectors. Verify with `go test ./internal/vault/...`.
-- [ ] 5.3 MCP and agent tools:
+- [x] 5.1 CalDAV `X-OPENTODO-SECTOR` in `internal/caldav` mapping (serve, set, invalid kept in `ical_extra`, absent leaves the field unchanged). Verify with `go test ./internal/caldav/... ./internal/httpapi/...`.
+- [x] 5.2 Vault `[sector:: …]` in `internal/vault` line grammar, the fixture vault and the `docs/vault.md` vectors. Verify with `go test ./internal/vault/...`.
+- [x] 5.3 MCP and agent tools:
   - `sector` in `create_tasks` and `update_tasks` (absolute only);
   - in results and resources;
   - the `list_tasks` `sector` filter.
 
   Do this in `internal/agenttools` and `internal/mcp`. Verify with `go test ./internal/agenttools/... ./internal/mcp/...` (relative word refused with `-32602`).
-- [ ] 5.4 CLI `--sector` on `add`, `edit` and `list`, the DUE cell, `--json`, `ot schema` and the `ot skill` text. Verify with `go test ./internal/cli/...`.
+- [x] 5.4 CLI `--sector` on `add`, `edit` and `list`, the DUE cell, `--json`, `ot schema` and the `ot skill` text. Verify with `go test ./internal/cli/...`.
 
 ## 6. Documentation
 

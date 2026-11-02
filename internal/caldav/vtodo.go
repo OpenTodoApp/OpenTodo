@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/recurrence"
+	"github.com/OpenTodoApp/opentodo/internal/sector"
 	"github.com/OpenTodoApp/opentodo/internal/zoned"
 )
 
@@ -56,7 +57,10 @@ type Task struct {
 	DayPart string
 	// Energy is "deep", "medium" or "low" (OpenSpec change task-energy),
 	// served as X-OPENTODO-ENERGY; empty serves nothing.
-	Energy     string
+	Energy string
+	// Sector is the time sector (OpenSpec change time-sectors), served as
+	// X-OPENTODO-SECTOR; empty serves nothing.
+	Sector     string
 	Categories []string
 	ParentUID  string
 	// DependsOn are the UIDs of the task's blockers in the same calendar
@@ -133,6 +137,10 @@ type Inbound struct {
 	// which leaves the field alone.
 	Start   *string
 	Evening *bool
+	// Sector comes from X-OPENTODO-SECTOR (time-sectors): a valid period, else
+	// nil, which leaves the sector alone (a client without the property never
+	// clears it).
+	Sector *string
 	// Span comes from X-OPENTODO-SPAN (multi-day-tasks D7): TRUE or FALSE;
 	// nil when the client did not send a known value.
 	Span *bool
@@ -305,6 +313,9 @@ func Encode(t Task) []byte {
 	}
 	if t.Span {
 		add("X-OPENTODO-SPAN", "TRUE")
+	}
+	if sector.Valid(t.Sector) {
+		add("X-OPENTODO-SECTOR", t.Sector)
 	}
 	if t.Evening {
 		add("X-OPENTODO-EVENING", "TRUE")

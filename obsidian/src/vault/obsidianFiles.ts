@@ -4,8 +4,10 @@
 // open editor see every change. A file is written through vault.process, and
 // only when it still holds what the sync read: an edit made while the sync ran
 // is never overwritten (the next sync merges it). The state file is written as
-// state.json.tmp, then renamed over state.json.
-import { TFile, TFolder, type Vault } from 'obsidian'
+// state.json.tmp, then renamed over state.json. A file or folder the sync removes goes
+// through FileManager.trashFile, so it lands where the user's "Deleted files"
+// setting says (system trash, the vault's .trash or gone).
+import { normalizePath, TFile, TFolder, type FileManager, type Vault } from 'obsidian'
 import type { FileAdapter } from './types'
 
 /** A path inside the folder that Obsidian does not index: a hidden file or folder. */
@@ -15,8 +17,9 @@ export class ObsidianFiles implements FileAdapter {
   /** The folder, vault-relative, without a trailing slash ("" for the vault's root). */
   readonly root: string
 
-  constructor(private vault: Vault, root: string) {
-    this.root = root.replace(/^\/+|\/+$/g, '')
+  constructor(private vault: Vault, root: string, private fileManager: Pick<FileManager, 'trashFile'>) {
+    const trimmed = root.replace(/^\/+|\/+$/g, '')
+    this.root = trimmed === '' ? '' : normalizePath(trimmed)
   }
 
   full(p: string): string {
@@ -107,7 +110,7 @@ export class ObsidianFiles implements FileAdapter {
   async remove(p: string): Promise<void> {
     const full = this.full(p)
     const f = this.vault.getAbstractFileByPath(full)
-    if (f instanceof TFile) await this.vault.delete(f)
+    if (f instanceof TFile) await this.fileManager.trashFile(f)
     else if (await this.vault.adapter.exists(full)) await this.vault.adapter.remove(full)
   }
 
@@ -118,7 +121,7 @@ export class ObsidianFiles implements FileAdapter {
     const l = await a.list(full)
     if (l.files.length > 0 || l.folders.length > 0) return
     const f = this.vault.getAbstractFileByPath(full)
-    if (f instanceof TFolder) await this.vault.delete(f)
+    if (f instanceof TFolder) await this.fileManager.trashFile(f)
     else await a.rmdir(full, false)
   }
 
