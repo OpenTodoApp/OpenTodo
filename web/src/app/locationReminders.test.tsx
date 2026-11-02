@@ -14,7 +14,7 @@ import { createTask, resetDeviceId } from '../lib/ops'
 import { addReminder } from '../lib/reminders'
 import { forgetShellData, type OpenTodoShell, type ShellLocationPermission } from '../lib/shell'
 import { click, render, waitFor } from '../ui/test-utils'
-import { LocationRemindersView } from './LocationRemindersSettings'
+import { LocationRemindersSection, LocationRemindersView } from './LocationRemindersSettings'
 import { RemindersField } from './RemindersField'
 
 let n = 0
@@ -138,6 +138,20 @@ describe('Settings → Notifications → Location reminders', () => {
     const html = view({ mode: 'browser' })
     expect(html).toContain('Location reminders fire only in the Android or iPhone app')
     expect(html).not.toContain('role="switch"')
+  })
+
+  it('the Google Play app says location reminders come later, with no switch', () => {
+    const html = view({ mode: 'play' })
+    expect(html).toContain('Location reminders come to the Google Play version later')
+    expect(html).toContain('GitHub/F-Droid app has them')
+    expect(html).not.toContain('role="switch"')
+  })
+
+  it('picks the Google Play line when the shell says store: play (play-location-later)', () => {
+    window.opentodoShell = { bridge: 1, platform: 'android', app: '0.21.0', capabilities: ['reminders', 'widgets'], store: 'play' }
+    expect(renderToStaticMarkup(<LocationRemindersSection />)).toContain('data-location-reminders-play')
+    window.opentodoShell = { bridge: 1, platform: 'android', app: '0.20.0', capabilities: ['reminders', 'widgets'] }
+    expect(renderToStaticMarkup(<LocationRemindersSection />)).toContain('Update the OpenTodo app')
   })
 
   it('an older app without the capability shows no switch', () => {

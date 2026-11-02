@@ -21,7 +21,7 @@ Then, under **+ Add reminder**, **At a place** offers **When I arrive** and **Wh
 
 ## Where they fire
 
-Location reminders fire only in the [Android app](android-app.md#location-reminders) (the iPhone app follows), after you turn on **Settings → Notifications → Location reminders → On this phone** there. In a browser or on a computer you can add and change them, and the reminder says **Fires on your phone**. Nothing fires in the browser and nothing is pushed.
+Location reminders fire only in the [Android app](android-app.md#location-reminders) installed from GitHub or F-Droid (the Google Play version gets them once Google has approved the background-location use, and the iPhone app follows), after you turn on **Settings → Notifications → Location reminders → On this phone** there. In a browser or on a computer you can add and change them, and the reminder says **Fires on your phone**. Nothing fires in the browser and nothing is pushed.
 
 Turning it on first explains what the location is used for, then asks for location access. Choose **Allow all the time**: with only "While using the app" nothing is watched, and the setting tells you how to change it.
 

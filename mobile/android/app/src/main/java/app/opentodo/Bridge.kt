@@ -35,9 +35,15 @@ class Bridge(private val context: Context, private val origin: String, private v
 
     private val main = Handler(Looper.getMainLooper())
 
-    fun capabilities(): List<String> {
-        // geofences also in the hidden run, which hands the regions over hourly (it never asks).
-        val caps = mutableListOf("reminders", "widgets", "geofences")
+    fun capabilities(): List<String> = capabilities(BuildConfig.PLAY_BUILD)
+
+    /**
+     * geofences also in the hidden run, which hands the regions over hourly (it never asks);
+     * never in the Google Play build, which has no location permission (play-location-later).
+     */
+    fun capabilities(play: Boolean): List<String> {
+        val caps = mutableListOf("reminders", "widgets")
+        if (!play) caps += "geofences"
         if (host != null) {
             caps += listOf("share", "links", "obsidian-links", "system-bars")
             if (BiometricKeyStore.available(context)) caps += "biometric"
@@ -53,7 +59,7 @@ class Bridge(private val context: Context, private val origin: String, private v
         WebViewCompat.addWebMessageListener(webView, "opentodoNative", rules) { _, message, sourceOrigin, isMainFrame, reply ->
             if (isMainFrame && originOf(sourceOrigin) == origin) handle(message.data ?: return@addWebMessageListener, reply)
         }
-        WebViewCompat.addDocumentStartJavaScript(webView, script(BuildConfig.VERSION_NAME, capabilities()), rules)
+        WebViewCompat.addDocumentStartJavaScript(webView, script(BuildConfig.VERSION_NAME, capabilities(), BuildConfig.PLAY_BUILD), rules)
         return true
     }
 
@@ -107,7 +113,8 @@ class Bridge(private val context: Context, private val origin: String, private v
         val payload = GeofenceSchedule.parse(json)
         val finish: () -> Unit = { answer(Geofences.replace(context, payload.regions)) }
         val h: Host = host ?: return finish()
-        if (!payload.ask || !Geofences.available(context)) return finish()
+        // The Play build declares no location permission (play-location-later): it never asks.
+        if (BuildConfig.PLAY_BUILD || !payload.ask || !Geofences.available(context)) return finish()
         val askBackground: () -> Unit = {
             if (Geofences.background(context)) finish() else h.requestBackgroundLocation { finish() }
         }
@@ -141,7 +148,7 @@ class Bridge(private val context: Context, private val origin: String, private v
         fun externalLink(url: String): Boolean = safeExternal(url) || ObsidianLink.valid(url)
 
         /** The page side: `window.opentodoShell`, promise-returning methods over the message channel. */
-        fun script(app: String, caps: List<String>): String = """
+        fun script(app: String, caps: List<String>, play: Boolean = false): String = """
             (function () {
               if (window.opentodoShell || !window.opentodoNative) return;
               var nat = window.opentodoNative, seq = 0, waiting = {};
@@ -154,7 +161,7 @@ class Bridge(private val context: Context, private val origin: String, private v
               }
               function send(method, args) { nat.postMessage(JSON.stringify({ method: method, args: args })) }
               window.opentodoShell = Object.freeze({
-                bridge: $VERSION, platform: 'android', app: ${JSONObject.quote(app)},
+                bridge: $VERSION, platform: 'android', app: ${JSONObject.quote(app)},${if (play) " store: 'play'," else ""}
                 capabilities: Object.freeze(${JSONArray(caps)}),
                 scheduleReminders: function (json) { return call('scheduleReminders', [String(json)]) },
                 scheduleGeofences: function (json) { return call('scheduleGeofences', [String(json)]) },
