@@ -429,6 +429,32 @@
         "idempotentHint": true,
         "openWorldHint": false,
         "readOnlyHint": true,
+        "title": "List objectives"
+      },
+      "description": "List the user's quarterly and weekly objectives: a few short lines the user pins to a quarter (2026-Q4) or an ISO week (2026-W44) while planning, open and done. Default: the current quarter's and the current week's in timezone, weeks from Monday. An objective has no tasks, progress or owner; it is context for planning.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "period": {
+            "description": "Only this period: a quarter YYYY-Qn or an ISO week YYYY-Www (months are not objective periods).",
+            "type": "string"
+          },
+          "timezone": {
+            "description": "IANA time zone used to decide what is today, overdue or upcoming, e.g. \"Europe/Rome\". Default: UTC. Due dates are floating, so pass the user's zone.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "name": "list_objectives",
+      "title": "List objectives"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true,
         "title": "List routines"
       },
       "description": "List the user's routines (automations of one or more steps) and their shared projects' routines: id, name as untrusted text, trigger kind, on or off, the server's pause, number of steps, last run, the project (project_id, null for a personal routine) and for a shared routine the person it runs as.",
