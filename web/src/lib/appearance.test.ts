@@ -1,13 +1,16 @@
 // @vitest-environment happy-dom
 // Appearance preference (OpenSpec change theming, tasks 3.1 and 3.3).
 import 'fake-indexeddb/auto'
+import { readFileSync } from 'node:fs'
+import { fileURLToPath, URL as NodeURL } from 'node:url'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { BUILTIN_THEMES, readThemeChoices, setDefaultThemeChoice, setInstanceThemeChoice, setThemeChoice } from './theme/choice'
 import { NO_INSTANCE_THEMES, parseInstanceThemes, type InstanceThemes } from './theme/choice'
 import type { AppliedTheme } from './theme/apply'
-import { applyAppearance, setAppearanceThemes, CACHE_KEY, cachedCustom, deriveCustom, setCustomAccent, destinationOrder, moveDestination, orderDestinations, readAppearance, readSidebarCounts, setAppearance, setSidebarCounts } from './appearance'
+import { applyAppearance, setAppearanceThemes, CACHE_KEY, cachedCustom, deriveCustom, setCustomAccent, destinationOrder, lightBar, moveDestination, orderDestinations, readAppearance, readSidebarCounts, setAppearance, setSidebarCounts } from './appearance'
 import { db } from './db'
 import { applyOps, resetDeviceId } from './ops'
+import { DARK_BAR, DEFAULT_ACCENT } from '../ui/tokens/accents'
 
 beforeEach(async () => {
   await db.delete()
@@ -313,5 +316,23 @@ describe('applyAppearance with a theme (theme-engine D4, D8)', () => {
     expect(document.getElementById('ot-theme')).toBeNull()
     expect(metas()).toEqual([['#c2410c', '']])
     expect(localStorage.getItem('ot.theme')).toBeNull()
+  })
+})
+
+describe('static startup colours', () => {
+  // Before appearance.js or the app runs (no cache yet), the static bars and the
+  // splash match the default appearance, so the Android status bar does not change
+  // colour after the first load.
+  it('index.html, appearance.js and the manifest use the default bars and the dark splash', () => {
+    const light = lightBar(DEFAULT_ACCENT)
+    // Resolved from this file, not the working directory, so the test runs from anywhere.
+    // (NodeURL: happy-dom's global URL resolves against http://localhost:3000.)
+    const web = (file: string) => readFileSync(fileURLToPath(new NodeURL(`../../${file}`, import.meta.url)), 'utf8')
+    expect(web('index.html')).toContain(`<meta name="theme-color" content="${light}" media="(prefers-color-scheme: light)" />`)
+    expect(web('index.html')).toContain(`<meta name="theme-color" content="${DARK_BAR}" media="(prefers-color-scheme: dark)" />`)
+    expect(web('index.html')).toContain('<meta name="mobile-web-app-capable" content="yes" />')
+    expect(web('public/appearance.js')).toContain(`add(lightBar || '${light}')`)
+    expect(web('vite.config.ts')).toContain(`theme_color: '${light}'`)
+    expect(web('vite.config.ts')).toContain(`background_color: '${DARK_BAR}'`)
   })
 })
