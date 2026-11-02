@@ -65,6 +65,10 @@ async function personalResolver(batch: Op[]): Promise<(entity: Entity, id: strin
       case 'field': return projectPersonal(await ref('field', id, 'project_id'))
       // A routine of a shared project is the project's: plaintext (routines-shared D10).
       case 'rule': return projectPersonal(await ref('rule', id, 'project_id'))
+      // A note with a project follows its project (notes-overview).
+      case 'note': return projectPersonal(await ref('note', id, 'project_id'))
+      // Time entries follow their task's scope (time-tracking D1), like comments.
+      case 'time_entry':
       case 'comment':
       case 'attachment': {
         const taskId = await ref(entity, id, 'task_id')
@@ -254,8 +258,22 @@ export async function normalizeOnSight(inc: Incoming): Promise<number> {
 // ---- migration job (design D7) ----
 
 const K_MIGRATION = 'e2ee.migration'
-// New kinds go at the end: a stored job's `entity` is an index into this list.
-const MIGRATION_ORDER: Entity[] = ['project', 'label', 'section', 'view', 'field', 'task', 'comment', 'attachment', 'objective']
+/** The running job per database (runMigration). */
+const runs = new Map<string, Promise<boolean>>()
+/**
+ * Every entity kind with content fields, in the order the job re-writes them.
+ * New kinds go at the end: a stored job's `entity` is an index into this list.
+ * e2eeCoverage.test.ts fails when a kind of CONTENT_FIELDS or CONTENT_PREFIXES
+ * is missing, and a device that ran the job with an older list runs it once more
+ * (catchUpEncryption), so a kind added here is converted on accounts that
+ * already encrypt.
+ */
+export const MIGRATION_ORDER: readonly Entity[] = [
+  'project', 'label', 'section', 'view', 'field', 'task', 'comment', 'attachment', 'objective',
+  'note', 'time_entry', 'rule', 'frame', 'slot', 'place', 'review',
+]
+/** The kinds the last complete run of the job on this device covered (catchUpEncryption). */
+const K_COVERED = 'e2ee.covered'
 /** The content fields a link attachment carries; the server fixes url and mime at creation. */
 const LINK_FIELDS = ['task_id', 'author_id', 'comment_id', 'name', 'mime', 'size', 'sha256', 'url', 'encrypted', 'created_at']
 /** Entities re-written per batch (one mutateMany each). */
@@ -285,8 +303,9 @@ async function pending(entity: Entity, mode: MigrationState['mode'], after: stri
   const personal = await personalResolver([])
   const out: { id: string; patch: Record<string, unknown> }[] = []
   const consider = async (row: EntityRow): Promise<void> => {
-    // Only the author may write a comment.
+    // Only the author may write a comment or a time entry.
     if (entity === 'comment' && row.author_id !== me) return
+    if (entity === 'time_entry' && row.user_id !== me) return
     if (entity === 'attachment') {
       // Links only: files are re-uploaded by the file phase (attachments D8). The
       // server fixes a link's url and mime at creation, so it moves to the other
@@ -298,6 +317,10 @@ async function pending(entity: Entity, mode: MigrationState['mode'], after: stri
       return
     }
     const patch: Record<string, unknown> = {}
+    // Ciphertext in a shared project: never right (shared projects stay plaintext),
+    // left by clients that encrypted notes and time entries there before
+    // encryption-rewrite-coverage. The encrypt job writes it back as plaintext.
+    const misplaced: Record<string, unknown> = {}
     // A task's custom field values are content too (custom-fields D4): one entry each.
     // So are pending appends (notes-overview D13).
     const keys = entity === 'task' ? [...fields, ...Object.keys((row.fields ?? {}) as object).map((id) => FIELD_VALUE_PREFIX + id)] : [...fields]
@@ -305,10 +328,17 @@ async function pending(entity: Entity, mode: MigrationState['mode'], after: stri
     for (const f of keys) {
       const v = readField(row, f)
       if (!contentToString(entity, f, v) || row._e2ee?.raw?.[f]) continue
-      if (row._e2ee?.wire?.[f] === target) continue
+      if (row._e2ee?.wire?.[f] === target) {
+        if (mode === 'encrypt') misplaced[f] = v
+        continue
+      }
       patch[f] = v
     }
-    if (Object.keys(patch).length && (await personal(entity, row.id as string))) out.push({ id: row.id as string, patch })
+    const hasPatch = Object.keys(patch).length > 0
+    if (!hasPatch && Object.keys(misplaced).length === 0) return
+    const mine = await personal(entity, row.id as string)
+    if (mine && hasPatch) out.push({ id: row.id as string, patch })
+    else if (!mine && Object.keys(misplaced).length) out.push({ id: row.id as string, patch: misplaced })
   }
   const page = Number.isFinite(limit) ? Math.max(1, limit) : SCAN_PAGE
   let cursor = after
@@ -351,6 +381,9 @@ async function replaceLinks(list: { id: string; patch: Record<string, unknown> }
 
 /** Start the re-write job (enable: 'encrypt'; disable: 'decrypt') and run it to the end. */
 export async function startMigration(mode: MigrationState['mode'], opts: { failAfterBatches?: number } = {}): Promise<void> {
+  // A run already going (a resume, or a catch-up that started while encryption
+  // was being turned on or off) ends first; this job then runs in full.
+  await runs.get(db.name)?.catch(() => undefined)
   const me = (await getMeta<string>('userId', '')) ?? ''
   const state: MigrationState = { mode, entity: 0, lastId: '', done: 0, total: await countPending(mode, me) }
   await setMeta(K_MIGRATION, state)
@@ -362,7 +395,18 @@ export async function startMigration(mode: MigrationState['mode'], opts: { failA
  * in the same transaction as each batch, so an interrupted run continues where
  * it stopped. `failAfterBatches` simulates an interruption in tests.
  */
-export async function runMigration(opts: { failAfterBatches?: number } = {}): Promise<boolean> {
+export function runMigration(opts: { failAfterBatches?: number } = {}): Promise<boolean> {
+  // One run at a time per database: a resume at start and a catch-up after an
+  // exchange must not re-write the same rows twice.
+  const name = db.name
+  const running = runs.get(name)
+  if (running) return running
+  const run = migrate(opts).finally(() => runs.delete(name))
+  runs.set(name, run)
+  return run
+}
+
+async function migrate(opts: { failAfterBatches?: number }): Promise<boolean> {
   let state = await getMeta<MigrationState | null>(K_MIGRATION, null)
   if (!state) return false
   const me = (await getMeta<string>('userId', '')) ?? ''
@@ -388,7 +432,43 @@ export async function runMigration(opts: { failAfterBatches?: number } = {}): Pr
     batches++
     publishEncryption({ migration: { mode: state.mode, done: state.done, total: Math.max(state.total, state.done) } })
   }
-  await db.meta.delete(K_MIGRATION)
+  await db.transaction('rw', db.meta, async () => {
+    await db.meta.delete(K_MIGRATION)
+    await db.meta.put({ key: K_COVERED, value: [...MIGRATION_ORDER] })
+  })
   publishEncryption({ migration: null })
   return true
+}
+
+/**
+ * Run the re-write job once more when this device last ran it with fewer entity
+ * kinds than MIGRATION_ORDER has now, or never ran it at all on an account that
+ * encrypts (encryption-rewrite-coverage). Before 0.21 the job missed notes, time
+ * entries, routines, calendar frames and slots, saved places and the review's
+ * line for tomorrow, so an account that turned encryption on kept their existing
+ * text in plaintext on the server; this converts it after the update.
+ *
+ * Called after an exchange that pulled everything and emptied the outbox, so the
+ * values re-written are the server's current ones. Idempotent: the job skips
+ * every value the server already holds in the account's form (the wire marks of
+ * markSent and decryptIncoming), and once a run completes the covered list
+ * matches and nothing runs again. Returns whether changes were queued.
+ */
+export async function catchUpEncryption(): Promise<boolean> {
+  const covered = await getMeta<string[] | null>(K_COVERED, null)
+  if (covered && MIGRATION_ORDER.every((e) => covered.includes(e))) return false
+  if (await getMeta<MigrationState | null>(K_MIGRATION, null)) return false
+  if (!(await currentKey())) return false
+  let mode: MigrationState['mode']
+  if (await isEnabled()) {
+    if (await isRecordMissing()) return false
+    mode = 'encrypt'
+  } else {
+    // Encryption was turned off here with an older job: what it left as
+    // ciphertext goes back to plaintext while this device still has the key.
+    mode = 'decrypt'
+  }
+  const before = await db.outbox.count()
+  await startMigration(mode)
+  return (await db.outbox.count()) > before
 }
