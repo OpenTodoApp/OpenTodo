@@ -42,14 +42,15 @@ The scope resolver puts any entity without a project or task parent into the aut
 - Cards are one line: a checkbox, the title (ellipsis, with the full text in its accessible name and tooltip) and an edit-on-Enter behaviour. Each group ends with "+ Add" while under the limit.
 - Reordering is done by drag or with Alt+Up/Down on a focused card, writing `position`.
 - Collapsed or expanded is remembered per device, never synced. It's expanded the first time.
-- **Phone** (<640 px): one line, "Q4: 3 · This week: 2", that opens a sheet with the same groups.
+- **Phone** (<640 px): one line, "Q4: 3 · This week: 2", that opens the same groups in place below it. Not a sheet: the owner's rule is no modal pickers or editors, and the cards are edited inline.
+- **Delete** asks in place: the card turns into "Drop “…”?" with Drop and Keep, no dialog; the drop has Undo.
 - **Keyboard:** Tab reaches the strip before the columns. Enter edits, Space toggles done and Delete asks before dropping. Escape leaves editing.
 - Alternative: a page of its own. Rejected. A separate place is exactly the detached database.
 
 **D4. The weekly review section.**
 - In Look ahead, above the next seven days:
   1. This quarter's objectives, read-only, for reference.
-  2. "Objectives for this week" or "Objectives for next week", with Add and edit. The review plans next week when it's opened Friday to Sunday in the viewer's local week, and this week otherwise. A "Plan this week instead" toggle flips it.
+  2. "Objectives for this week" or "Objectives for next week", with Add and edit. The review plans next week when it's opened on the last three days of the viewer's week (Friday to Sunday with Monday weeks; Thursday to Saturday with Sunday weeks), and this week otherwise. A "Plan this week instead" toggle flips it.
   3. Last week's open weekly objectives (when the planned week is this week) or this week's (when it's next week). Each offers **Carry** (writes `period` to the planned week), **Done** and **Drop** (tombstone).
 - In the first review whose date falls in a new quarter, last quarter's open quarterly objectives get the same actions, carrying to the current quarter.
 - Every action is one undoable batch, applied locally first. The section never changes whether the step is done, so the seven steps and their counts stay as they are.
@@ -75,6 +76,7 @@ The scope resolver puts any entity without a project or task parent into the aut
   - `ot objectives [--quarter|--week] [--period <p>] [--json]` lists.
   - `ot objectives add "<title>" --quarter|--week [--next]` adds to the current or next period, resolved with Monday weeks.
   - `ot objectives done|undone|edit|delete <id>`.
+- **In-app assistant:** `list_objectives` is not offered there (its disclosure does not name objectives); it is for external agents.
 - **MCP:** a read tool `list_objectives` (`period` optional, current quarter and week by default, in the user's time zone) and the resource `opentodo://objectives`. Titles are inside the untrusted-text marking. No write tool.
 - **Export:** an `objectives` array, tombstones included. The own-export importer restores them through ops with device `import`.
 - **Activity:** none. Objectives are personal and derive no activity event, like `review`.
@@ -86,7 +88,7 @@ The scope resolver puts any entity without a project or task parent into the aut
 
 **D9. Interface budget** (`docs/interface-guide.md`).
 - **Chrome:** the strip is inside the Plan's content scroller, not chrome, so the Plan keeps at most 2 chrome rows above its first column.
-- **Scroll regions:** none added. The strip scrolls with the content, and the phone sheet replaces the page while open.
+- **Scroll regions:** none added. The strip scrolls with the content, also when the phone's summary line is opened.
 - **Task properties:** unchanged.
 - **Sidebar:** no new destination.
 - **Shortcuts:** none added. Alt+Up/Down and Enter/Space follow the existing list conventions inside the strip, with no conflict in the registry.
@@ -104,7 +106,7 @@ The scope resolver puts any entity without a project or task parent into the aut
 | objective | `deleted_at` | nullable number | `null` | no |
 | user_prefs | `objectives` | string | `""` | no |
 
-There's one migration for the materialized `objectives` table (`internal/store/migrations/NNNN_objectives.sql`), and nothing is renamed. An older server refuses the unknown entity's ops while devices keep their local rows (existing behaviour for unknown entities).
+No migration: like every entity, objectives materialize into the generic `fields` table, so nothing is added to `internal/store/migrations` and nothing is renamed. The device adds Dexie version 29 with an `objectives` table indexed by period. An older server refuses the unknown entity's ops while devices keep their local rows (existing behaviour for unknown entities).
 
 ## Risks and trade-offs
 
