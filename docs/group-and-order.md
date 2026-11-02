@@ -24,7 +24,7 @@ Due date groups read *Earlier*, *Today*, *Tomorrow*, then each later date and *N
 
 **Manual order** (the default, the order you drag tasks into), **Priority**, **Due date**, **Created**, **Deadline** or **Title**. **More options** holds the direction; for priority, *descending* puts priority 1 first. Tasks without a date or deadline come last either way.
 
-Subtasks stay under their parent in the order you gave them, and a project's **Later** and **Completed** groups stay at the end.
+Subtasks stay under their parent in the order you gave them, also in **Later**: when a task is deferred or parked, its subtasks move there with it. A project's **Later** and **Completed** groups stay at the end.
 
 A new task goes at the end of the manual order, or at the top if you chose **Add new tasks: At the top of the list** in Settings → Capture → Quick add (see [Where new tasks go](quick-add.md#where-new-tasks-go)). In any other order the task appears where that order puts it; the setting only decides which of two equal tasks comes first.
 

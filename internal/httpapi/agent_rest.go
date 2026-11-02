@@ -133,7 +133,7 @@ func (s *Server) handleAgentWrite(w http.ResponseWriter, r *http.Request, u *aut
 		}
 	}
 	// The same answer as a full token's write (task-energy D7).
-	if (route == agentCreateTask || route == agentPatchTask) && !energyOK(w, body) {
+	if (route == agentCreateTask || route == agentPatchTask) && !taskBodyOK(w, body) {
 		return
 	}
 	id := r.PathValue("id")
@@ -375,6 +375,8 @@ var taskCreateFields = map[string]bool{"title": true, "description": true, "proj
 	"deadline": true, "start": true, "evening": true, "span": true, "day_part": true, "blocked_by": true, "location": true,
 	// The task's energy (OpenSpec change task-energy).
 	"energy": true,
+	// The task's time sector (OpenSpec change time-sectors).
+	"sector": true,
 	// Custom field values keyed by field id (agent-tools-complete D7).
 	"fields": true}
 
@@ -407,7 +409,7 @@ func agentPatchTaskCalls(id string, body map[string]json.RawMessage, existing op
 	for k, v := range body {
 		switch k {
 		case "title", "description", "priority", "labels", "estimate_minutes", "recurrence", "origin",
-			"deadline", "start", "evening", "span", "day_part", "blocked_by", "location", "energy", "fields":
+			"deadline", "start", "evening", "span", "day_part", "blocked_by", "location", "energy", "sector", "fields":
 			update[k] = v
 		case "project_id", "section_id":
 			if move == nil {

@@ -178,6 +178,39 @@ func TestConsentValidity(t *testing.T) {
 	}
 }
 
+// assistant-disclosure-notice D2: an older consent needs the notice until Got
+// it; a current one never does; Got it without a consent stores nothing.
+func TestDisclosureNotice(t *testing.T) {
+	st := newTestStore(t)
+	ctx := context.Background()
+	if ok, err := st.MarkDisclosureSeen(ctx, "u1"); ok || err != nil {
+		t.Fatalf("seen without consent: %v %v", ok, err)
+	}
+	_ = st.SetConsent(ctx, "u1", Anthropic, true)
+	c, _ := st.Consent(ctx, "u1")
+	if c.NeedsNotice() {
+		t.Fatal("a consent at the current version needs no notice")
+	}
+	if _, err := st.db.ExecContext(ctx, `UPDATE assistant_consent SET disclosure_version = 2 WHERE user_id = 'u1'`); err != nil {
+		t.Fatal(err)
+	}
+	c, _ = st.Consent(ctx, "u1")
+	if !c.NeedsNotice() || !c.Valid(Anthropic) {
+		t.Fatalf("older consent: %+v", c)
+	}
+	if ok, err := st.MarkDisclosureSeen(ctx, "u1"); !ok || err != nil {
+		t.Fatalf("seen: %v %v", ok, err)
+	}
+	c, _ = st.Consent(ctx, "u1")
+	if c.NeedsNotice() || c.SeenVersion != DisclosureVersion || c.DisclosureVersion != 2 {
+		t.Fatalf("after Got it: %+v", c)
+	}
+	var none *Consent
+	if none.NeedsNotice() {
+		t.Fatal("no consent needs no notice")
+	}
+}
+
 func TestUsageRecordedPerTurn(t *testing.T) {
 	st := newTestStore(t)
 	ctx := context.Background()

@@ -15,6 +15,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/daypart"
 	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 	"github.com/OpenTodoApp/opentodo/internal/recurrence"
+	"github.com/OpenTodoApp/opentodo/internal/sector"
 	"github.com/OpenTodoApp/opentodo/internal/timetrack"
 )
 
@@ -244,6 +245,9 @@ func (v *view) line(id string, labels map[string]string, extra string) Line {
 	}
 	if e := r.Str("energy"); validEnergy(e) {
 		l.Energy = e
+	}
+	if s := r.Str("sector"); sector.Valid(s) {
+		l.Sector = s
 	}
 	if r.Bool("span") {
 		l.Span = "true"
