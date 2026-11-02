@@ -3,7 +3,7 @@ title: Time sectors
 summary: Plan a task for this week, next week or this month without a fake date. What a sector stores, how it is named, carry-over, and how the API, CLI, CalDAV and the vault carry it.
 audience: user
 section: Guides
-specs: []
+specs: [time-sectors]
 screens: []
 order: 14
 ---
