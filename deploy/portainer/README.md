@@ -10,7 +10,7 @@ https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/deploy/portainer/por
 
 `node scripts/deploy-check.mjs` (part of `make check`) parses it and checks the stable tag, the port, the volume, the variables, the note and the `sources.csv` row (`scripts/deploy/portainer.mjs`; tests in `scripts/deploy/portainer.test.mjs`).
 
-**Status: Submitted** to the community list: [Lissy93/portainer-templates#160](https://github.com/lissy93/portainer-templates/pull/160).
+**Status: Listed** in the community list: [portainer-templates.as93.net/opentodo](https://portainer-templates.as93.net/opentodo) ([Lissy93/portainer-templates#160](https://github.com/lissy93/portainer-templates/pull/160)).
 
 ## Install it now
 
