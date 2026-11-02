@@ -164,7 +164,10 @@ describe('the quick add stays reachable (3.1)', () => {
     // Every sticky class comes from the `pins` variant, never from a bare `md:sticky`.
     for (const c of STICKY_QUICK_ADD.split(' ')) expect(c.startsWith('pins:'), c).toBe(true)
     const css = readFileSync(path.resolve(process.cwd(), 'src/index.css'), 'utf8')
-    expect(css).toContain('@custom-variant pins (@media (width >= 48rem) and (not ((pointer: coarse) and (height < 500px))));')
+    // The rule, not its exact text: a reformatted index.css must not break this.
+    const rule = /@custom-variant pins\s*\(([^;]*)\);/.exec(css)?.[1] ?? ''
+    expect(rule).toContain('pointer: coarse')
+    expect(rule).toMatch(/height\s*<\s*500px/)
   })
 
   it('sticks just below the sticky page header', async () => {

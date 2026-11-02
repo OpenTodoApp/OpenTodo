@@ -111,7 +111,8 @@ function usePhoneDrawer(sidebarOpen: boolean) {
 
 export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) {
   const route = useRoute()
-  const [sidebarOpen, setSidebarOpen] = useState(false), drawer = usePhoneDrawer(sidebarOpen)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const drawer = usePhoneDrawer(sidebarOpen)
   useSidebarRequests(setSidebarOpen)
   const [notice, setNotice] = useState<string | null>(null)
   // Changes the server refused after a role change (project-sharing).
@@ -237,6 +238,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       <SkipLink frame={frame} content={content} />
       {/* The sidebar column: a drawer below 768 px, a column from there, resizable and collapsible from 1024 px (app-shell); its colour, shared by the sticky group headers, is --sidebar-bg: the surface in the drawer, the canvas as a column (precision-tokens D1), where it sits beside the inset content surface without an edge (precision-shell D1). */}
       {drawer.open && <DrawerOverlay panel={drawer.drawer} onClose={() => setSidebarOpen(false)} />}
+      {/* aria-hidden next to inert on purpose: assistive technology without inert support still skips the closed drawer. */}
       <aside ref={drawer.drawer} data-sidebar data-sidebar-width={sidebar.collapsed ? 'collapsed' : sidebar.width} inert={drawer.closed || undefined} aria-hidden={drawer.closed || undefined}
         onKeyDown={(e) => { if (drawer.open) trapTab(e, e.currentTarget) }}
         style={{ '--sidebar-w': `${sidebar.collapsed ? SIDEBAR_COLLAPSED_REM : sidebar.width}rem` } as React.CSSProperties}

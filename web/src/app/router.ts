@@ -4,6 +4,7 @@ import { useMemo, useSyncExternalStore } from 'react'
 import { readCalendarMode } from '../lib/calendarMode'
 import { resettable } from '../lib/moduleState'
 import { displayTargetPath, parseDisplayOptions, parseDisplayTarget, serializeDisplayOptions, type DisplayOptions, type DisplayTarget } from './display/displayOptions'
+import { afterOverlayPops } from '../ui'
 
 export type Route =
   | { view: 'inbox' }
@@ -400,11 +401,14 @@ if (typeof window !== 'undefined') {
 
 /** Go to a route; `replace` swaps the current history entry (the start view on launch, leaving the capture screen). */
 export function navigate(r: Route, opts: { replace?: boolean } = {}): void {
+  // A closed overlay's history.go() is still on its way: it would step back over the new entry.
+  if (afterOverlayPops(() => navigate(r, opts))) return
   const path = routePath(r)
   if (path === current) return
   if (leaveGuard && leaveGuard(() => { leaveGuard = null; navigate(r, opts) })) return
   // An open overlay owns the top history entry (useBackToClose): the new route takes its place,
-  // so Back returns to the page the overlay was opened from, not to a stale marker.
+  // so Back returns to the page the overlay was opened from, not to a stale marker. (A marker
+  // kept across a reload sits over the page's own entry: replacing it leaves Back on that page.)
   const onMarker = ((history.state as { overlay?: number } | null)?.overlay ?? 0) > 0
   if (opts.replace || onMarker) history.replaceState(null, '', path)
   else history.pushState(null, '', path)
