@@ -254,7 +254,7 @@ function placeTasks(e: Engine, m: MergeRun): void {
       taken.add(id)
     })
     demote(d, unknown)
-    let walkErr: Error | null = null
+    const walkErrs: Error[] = []
     walk(d, (b, parent, n) => {
       const sec = b.heading ? sectionOf(e, m, pid, b.section) : ''
       const pl: Place = { path: p, project: pid, parent: '', section: sec, node: n }
@@ -263,8 +263,8 @@ function placeTasks(e: Engine, m: MergeRun): void {
         pl.parent = parent.line.id
         key = `${p}\x00child\x00${parent.line.id}`
       }
-      if (utf8(noteText(n)).length > MAX_NOTE_BYTES && walkErr === null) {
-        walkErr = new LimitError(`${p}: the note of ${goQuote(n.line.title)} is larger than 64 KB, the limit for a note`)
+      if (utf8(noteText(n)).length > MAX_NOTE_BYTES && walkErrs.length === 0) {
+        walkErrs.push(new LimitError(`${p}: the note of ${goQuote(n.line.title)} is larger than 64 KB, the limit for a note`))
       }
       m.placed.set(n.line.id, pl)
       if (!m.groups.has(key)) {
@@ -273,7 +273,7 @@ function placeTasks(e: Engine, m: MergeRun): void {
       }
       m.groups.get(key)!.push(n.line.id)
     })
-    if (walkErr) throw walkErr
+    if (walkErrs.length > 0) throw walkErrs[0]
   }
 }
 

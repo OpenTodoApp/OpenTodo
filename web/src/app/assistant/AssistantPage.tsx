@@ -55,7 +55,7 @@ export default function AssistantPage({ name }: { name: string }) {
           consentBusy={c.consent.consentBusy} consentError={c.consent.consentError} threads={c.threads} reviewRef={rv.reviewRef}
           onToggle={rv.toggle} onApply={() => void rv.apply()} onDiscard={() => void rv.discard()} onUndo={() => void rv.undo()} onDraft={composer.setDraft} onSend={() => void c.send()}
           onStop={c.stop} onAccept={(k) => void c.consent.accept(k)} onPickThread={c.pickThread}
-          name={name} skills={composer.skills} onStarter={(s) => { composer.chooseSkill(s); focusComposer() }} composer={composerFor(true)} layout="page" device={c.device} />
+          name={name} skills={composer.skills} onStarter={(s) => { composer.chooseSkill(s); focusComposer() }} composer={composerFor(true)} layout="page" device={c.device} onStatus={c.consent.update} />
       </div>
       {usable && !empty && (
         <div className="sticky bottom-0 mx-auto w-full max-w-[46rem] space-y-1 bg-surface pb-4 pt-2" data-assistant-foot>

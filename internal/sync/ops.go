@@ -206,6 +206,10 @@ const (
 	// that passes internal/themes.Validate (format 1: seeds, explicit tokens,
 	// shape and type; colours only as #rrggbb or in-gamut oklch, never CSS).
 	kThemeDoc
+	// kSector is "" (none) or a time sector: an ISO week "YYYY-Www", a month
+	// "YYYY-MM" or a quarter "YYYY-Qn" with a year from 2000 to 2999, checked by
+	// internal/sector (task.sector, OpenSpec change time-sectors, design D1).
+	kSector
 )
 
 // MaxFocusSession is the largest time_entry.focus_session (focus-session-readable D2).
@@ -349,6 +353,14 @@ var Schema = map[string]map[string]Field{
 		// D1): "" (none), "deep", "medium" or "low". Chosen from a menu, never
 		// written text, so not content (D2); additive.
 		"energy": {Kind: kEnergy, Default: `""`},
+		// The period the task is planned for without a date (OpenSpec change
+		// time-sectors, design D1): "" (none), an ISO week "2026-W44", a month
+		// "2026-11" or a quarter "2026-Q4". A sector with no do-on date schedules
+		// the task (it leaves the Inbox and Anytime) and is never overdue; clients
+		// name it relative to the viewer's date and derive carry-over, never
+		// writing it. A scheduling field like start: plaintext, not content;
+		// additive.
+		"sector": {Kind: kSector, Default: `""`},
 		// The tasks this one waits for, in its own sharing scope (OpenSpec change
 		// task-dependencies): one whole-list register; the resolver refuses ids of
 		// other scopes and lists that close a cycle.
@@ -812,6 +824,11 @@ var Schema = map[string]map[string]Field{
 		// "companion" or "first"; clients read an unknown or empty value as
 		// "lists", so new modes stay additive.
 		"method_mode": {Kind: kString, Default: `""`},
+		// Time sectors (OpenSpec change time-sectors, design D7): "on" shows the
+		// Sector segment, the planning list's Time sectors source, the quick-add
+		// sector phrases and the review's sector section; empty or any other value
+		// reads as off and is kept. Sectors on tasks keep working either way.
+		"time_sectors": {Kind: kString, Default: `""`},
 		// The first-day checklist (OpenSpec change moments-and-onboarding, design
 		// D5): "hidden" once its sidebar entry was hidden on any device; clients
 		// read an empty or unknown value as shown.
@@ -936,6 +953,12 @@ var Schema = map[string]map[string]Field{
 		// of the Inbox card (failures and proposals stay); clients and the
 		// server read an empty or unknown value as off and keep it.
 		"routines_hide_successes": {Kind: kString, Default: `""`},
+		// Upcoming starts with Today (OpenSpec change upcoming-start-with-today,
+		// design D1): "on" opens Upcoming with Today's own groups (Earlier,
+		// Today, the parts of the day, This Evening, Blocked and Waiting for a
+		// slot) before Tomorrow; clients read an empty or unknown value as off
+		// and keep the stored value. Settings, never content.
+		"upcoming_today": {Kind: kString, Default: `""`},
 	},
 	// review: when the user last finished a weekly review (OpenSpec change
 	// `stats-and-review`, design D4). One row with the entityId "me"; like
@@ -1045,36 +1068,6 @@ func checkKind(k kind, raw json.RawMessage) error {
 		return nil
 	}
 	return check(raw)
-}
-
-func isDate(s string) bool {
-	if len(s) != 10 || s[4] != '-' || s[7] != '-' {
-		return false
-	}
-	for i, c := range s {
-		if i == 4 || i == 7 {
-			continue
-		}
-		if c < '0' || c > '9' {
-			return false
-		}
-	}
-	return true
-}
-
-func isClock(s string) bool {
-	if len(s) != 5 || s[2] != ':' {
-		return false
-	}
-	for i, c := range s {
-		if i == 2 {
-			continue
-		}
-		if c < '0' || c > '9' {
-			return false
-		}
-	}
-	return true
 }
 
 // Wins reports whether (ts, device) beats the existing (ets, edevice).

@@ -20,6 +20,9 @@ export interface UpcomingInput {
   resolved: ResolvedDateTime
 }
 
+/** A day group's key (YYYY-MM-DD); Today's own groups have names (earlier, today, evening, …). */
+const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/
+
 /**
  * Each day's projections join its group, a day with projections only gets its own
  * heading, and the last such day carries the note naming the date they are shown up to.
@@ -29,9 +32,12 @@ export function withProjectedDays(groups: readonly ListGroup[], projections: rea
   if (projections.length === 0) return groups as ListGroup[]
   const byDate = new Map<string, Projection[]>()
   for (const pr of projections) byDate.set(pr.date, [...(byDate.get(pr.date) ?? []), pr])
-  const out = groups.map((g) => (byDate.has(g.key) ? { ...g, projected: byDate.get(g.key) } : g))
+  // Today's own groups (Start with Today, upcoming-start-with-today D2) lead and keep their order; projections start tomorrow.
+  const lead = groups.filter((g) => !DATE_KEY.test(g.key))
+  const out = groups.filter((g) => DATE_KEY.test(g.key)).map((g) => (byDate.has(g.key) ? { ...g, projected: byDate.get(g.key) } : g))
   for (const [date, list] of byDate) if (!groups.some((g) => g.key === date)) out.push({ key: date, heading: heading(date), rows: [], projected: list })
   out.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
+  out.unshift(...lead)
   const last = [...byDate.keys()].sort().at(-1)!
   return out.map((g) => (g.key === last ? { ...g, projectedNote: t('Repeating tasks shown up to {date}', { date: until }) } : g))
 }
