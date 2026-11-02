@@ -1728,6 +1728,8 @@ Uploads are `multipart/form-data` with a `file` part. Options go either in one `
 }
 ```
 
+For a Notion export (`notion-csv`), `columns` also holds `roles`, the column chosen for each of `status`, `due`, `labels`, `priority`, `project` and `notes` (`null`: not imported), and `available`, every column the roles can use. Send `columns` in the `options` JSON part to change the choice, for example `{"format": "notion-csv", "columns": {"due": "Do date", "status": null}}`; a role left out keeps the guess, a column the file does not have answers `400 invalid_input` naming it, and the import takes the same `columns`. When `format` was chosen and the file looks like another format, `detected` names that format (for example `todoist-backup`) so a client can offer to switch.
+
 `kind` is `project`, `task`, `label`, `section`, `field`, `reminder` or `view`. `outcome` is `create`, `update`, `skip` (reason `exists`, `unchanged`, `deleted`, `already_imported`, `possible_duplicate` or `no_project`) or `error` (with `reason`). `newSections`, `fields` (custom field definitions), `recurring` (tasks with a recurrence rule) and `reminders` count what the import adds; `notes` holds file-level remarks, such as the number of comments in an own export that are not imported. `row` is the line in a CSV file or the position in a JSON array; `version` is set for an own export. At most 5,000 rows are listed, those needing attention first (`truncated: true`); `totals` always counts every row.
 
 **Start** — `POST /api/v1/import` takes the same upload, re-checks it and returns 202:

@@ -1,0 +1,95 @@
+{
+  "format": "notion-csv",
+  "notes": [
+    "columns not imported: Assignee"
+  ],
+  "totals": {
+    "rows": 6,
+    "create": 6,
+    "update": 0,
+    "skip": 0,
+    "error": 0,
+    "possibleDuplicates": 0,
+    "warnings": 0,
+    "newProjects": 1,
+    "newLabels": 3,
+    "newSections": 0,
+    "recurring": 0,
+    "reminders": 0,
+    "deadlines": 0,
+    "attachments": 0,
+    "fields": 0,
+    "timeEntries": 0,
+    "places": 0,
+    "notes": 0,
+    "entities": 9,
+    "written": 0,
+    "ops": 0
+  },
+  "viewHints": null,
+  "rows": [
+    {
+      "row": 1,
+      "sourceId": "notion:db:29d4c1a8e2f380a1b6c4d2e0f1a2b3c4",
+      "kind": "project",
+      "title": "Tasks",
+      "outcome": "create"
+    },
+    {
+      "row": 2,
+      "file": "Tasks",
+      "sourceId": "notion:29d4c1a8e2f3801f9a0b1c2d3e4f5a6b",
+      "kind": "task",
+      "title": "Plan the garden",
+      "project": "Tasks",
+      "outcome": "create"
+    },
+    {
+      "row": 3,
+      "file": "Tasks",
+      "sourceId": "notion:29d4c1a8e2f3802a8b7c6d5e4f3a2b1c",
+      "kind": "task",
+      "title": "Book the venue",
+      "project": "Tasks",
+      "outcome": "create"
+    },
+    {
+      "row": 4,
+      "file": "Tasks",
+      "sourceId": "notion:29d4c1a8e2f380339c8d7e6f5a4b3c2d",
+      "kind": "task",
+      "title": "Write the newsletter",
+      "project": "Tasks",
+      "outcome": "create"
+    },
+    {
+      "row": 5,
+      "file": "Tasks",
+      "sourceId": "notion:29d4c1a8e2f3804ead0f1e2d3c4b5a69",
+      "kind": "task",
+      "title": "Renew passport",
+      "project": "Tasks",
+      "outcome": "create"
+    },
+    {
+      "row": 6,
+      "file": "Tasks",
+      "sourceId": "notion:29d4c1a8e2f380a1b6c4d2e0f1a2b3c4:line:6",
+      "kind": "task",
+      "title": "Call the bank",
+      "project": "Tasks",
+      "outcome": "create"
+    }
+  ],
+  "fields": [
+    "label id-0003: name=\"Home\" created_at=1791979200000",
+    "label id-0004: name=\"Outdoor\" created_at=1791979200000",
+    "label id-0006: name=\"Work\" created_at=1791979200000",
+    "project id-0001: name=\"Tasks\" archived=false created_at=1791979200000",
+    "task id-0002: title=\"Plan the garden\" description=\"Tulips along the fence, herbs by the door.\\n\\nAsk the neighbours about the hedge first.\\n\\n- [ ]  Buy bulbs\\n- [x]  Measure the beds\\n\\n![Sketch](Plan%20the%20garden/sketch.png)\" priority=1 created_at=1791979200000 project_id=\"id-0001\" due={\"date\":\"2026-10-29\"} origin={\"kind\":\"import\",\"provider\":\"notion\",\"id\":\"29d4c1a8e2f3801f9a0b1c2d3e4f5a6b\"} labels=[\"id-0003\",\"id-0004\"]",
+    "task id-0005: title=\"Book the venue\" description=\"\" priority=2 created_at=1791979200000 project_id=\"id-0001\" due={\"date\":\"2026-11-06\"} start=\"2026-11-02\" origin={\"kind\":\"import\",\"provider\":\"notion\",\"id\":\"29d4c1a8e2f3802a8b7c6d5e4f3a2b1c\"} labels=[\"id-0006\"]",
+    "task id-0007: title=\"Write the newsletter\" description=\"Topics: the move, the garden.\" priority=3 created_at=1791979200000 project_id=\"id-0001\" due={\"date\":\"2026-11-10\",\"time\":\"15:00\"} origin={\"kind\":\"import\",\"provider\":\"notion\",\"id\":\"29d4c1a8e2f380339c8d7e6f5a4b3c2d\"} labels=[]",
+    "task id-0008: title=\"Renew passport\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" due={\"date\":\"2026-10-01\"} origin={\"kind\":\"import\",\"provider\":\"notion\",\"id\":\"29d4c1a8e2f3804ead0f1e2d3c4b5a69\"} completed_at=1791979200000 labels=[\"id-0003\"]",
+    "task id-0009: title=\"Call the bank\" description=\"\" priority=1 created_at=1791979200000 project_id=\"id-0001\" labels=[]"
+  ]
+}

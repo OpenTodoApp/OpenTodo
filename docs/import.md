@@ -41,11 +41,12 @@ The format is detected from the content, in this order; the preview shows what w
 | `todoist-backup` | a ZIP of `todoist-csv` files | Todoist's backup of every project |
 | `ticktick-csv` | a preamble starting with `Date:`, then a `Folder Name, List Name, Title, Kind` header | TickTick's CSV backup, see [TickTick](#ticktick-ticktick-csv) |
 | `linear-csv` | a header with `ID`, `Team`, `Title`, `Status`, `Priority` and `UUID` | Linear's workspace export, see [Linear](#linear-linear-csv) |
+| `notion-csv` | a ZIP whose CSV files are named `<database> <32 hex>.csv` (or `…_all.csv`); never a bare CSV, which can still be imported by choosing the format | Notion's Markdown & CSV export, see [Notion](#notion-notion-csv) |
 | `omnifocus-csv` | a header starting `Task ID`, `Type`, `Name`, `Status`, `Project` with a `Context` or `Tags` column (UTF-8 or UTF-16) | OmniFocus's CSV export, see [OmniFocus](#omnifocus-omnifocus-csv) |
 | `asana-csv` | a header with `Task ID`, `Created At`, `Completed At`, `Last Modified`, `Name`, `Section/Column`, `Assignee`, `Due Date` and `Parent task` | one Asana project, see [Asana](#asana-asana-csv) |
 | `csv` | a header row with a `title` column | the documented columns below |
 
-**ZIP files.** A ZIP whose files are all of one format is imported as one job, one preview and one undo; each preview row shows the file it came from. Folders, `__MACOSX/` and hidden files are skipped. An archive with more than 1,000 files, mixed formats, an unsafe file name, or more than ten times the upload limit when unpacked is refused with `400 invalid_file` before anything is written. A zipped `Things Database.thingsdatabase` folder is read as a [Things database](#things-database-things-db). A Vikunja export ZIP is read as one [Vikunja export](#vikunja-vikunja-export), with its attachment files. A ZIP holding a Tududi database is read as a [Tududi database](#tududi-tududi-db).
+**ZIP files.** A ZIP whose files are all of one format is imported as one job, one preview and one undo; each preview row shows the file it came from. Folders, `__MACOSX/` and hidden files are skipped. An archive with more than 1,000 files, mixed formats, an unsafe file name, or more than ten times the upload limit when unpacked is refused with `400 invalid_file` before anything is written. A zipped `Things Database.thingsdatabase` folder is read as a [Things database](#things-database-things-db). A Vikunja export ZIP is read as one [Vikunja export](#vikunja-vikunja-export), with its attachment files. A ZIP holding a Tududi database is read as a [Tududi database](#tududi-tududi-db). A ZIP with Notion's database CSVs is read as a [Notion export](#notion-notion-csv).
 
 A file matching none of these is refused with `400 unsupported_format`, naming the supported formats. If a JSON export from another app is not recognised, convert it to the CSV columns below; every field the data model holds can be expressed there.
 
@@ -190,6 +191,31 @@ Trello exports one board as JSON from the board menu (**Print, export and share 
 | members | the card stays assigned when one member is you (by name or username); others are dropped with a warning |
 | custom fields (number, text, checkbox, date, list) | [custom fields](#custom-fields) of the same type, list as a choice |
 | `id`, `shortUrl` | the task's origin, with a link to the card |
+
+### Notion (`notion-csv`)
+
+Notion exports a page with its databases as a ZIP from **••• → Export → Markdown & CSV** (see the [Notion guide](switch/notion.md)). Each database is a CSV named `<database> <32 hex id>.csv`; newer exports add `<database> <id>_all.csv` with every row and column, which is read instead. Each row's page is `<title> <id>.md` in a folder named after the database. A ZIP of `…-Part-N.zip` files is unpacked one level. A CSV uploaded alone is never detected as Notion's (it looks like any spreadsheet); choose `notion-csv` to read it as one database named after the file, without pages.
+
+Notion's columns are the database's own properties, so the preview proposes one column per role and returns the choice in `columns.roles` (see [API](api.md#import)); the `columns` option changes it. The first column is always the title.
+
+| Role | Guessed from the column name (any case, emoji ignored) | Then from the values | Becomes |
+| --- | --- | --- | --- |
+| `status` | Status, Done, Completed, State, Erledigt, Fait, Statut, Fatto, Stato, Hecho, Estado, Feito … | a column of only `Yes`/`No` | completed when the value is Done, Complete, Completed, Archived, Closed or `Yes` (and their translations) |
+| `due` | Due, Due date, Deadline, Fällig, Échéance, Scadenza, Vencimiento, Prazo, then Date, Datum, Data, Fecha | a column of only dates (not created or edited times) | the due date, with its time; a range `A → B` gives the start date A and the due date B; `16/12/2026`-style columns are read day first |
+| `labels` | Tags, Labels, Etiketten, Étiquettes, Etichette, Etiquetas | | one label per comma-separated value |
+| `priority` | Priority, Priorität, Priorité, Priorità, Prioridad, Prioridade | | High, Urgent, Critical, P0, P1 → 1; Medium, P2 → 2; Low, P3 → 3 (and their translations) |
+| `project` | Project, Projekt, Projet, Progetto, Proyecto, Projeto | | the task's project by name (a relation `Name (link)` gives the name) instead of the database's |
+| `notes` | Notes, Description, Notizen, Beschreibung, Descrizione, Notas … | | added to the top of the description |
+
+| Notion | Becomes |
+| --- | --- |
+| a database | a project named after it |
+| a row | a task; its page's body (without the title and property lines) is the description, with checklists, links and image links as written |
+| `Parent item` | the parent task, by the page id in its link or by name; a parent outside the database is dropped with a warning |
+| `Sub-item` | nothing more (the mirror of `Parent item`) |
+| the page id | the task's origin, `{kind: "import", provider: "notion", id}`; a row without a page has no origin |
+
+Columns with no role are not imported and are named once in a file-level note.
 
 ### OmniFocus (`omnifocus-csv`)
 
@@ -523,6 +549,7 @@ Checked in this order:
 | `errors` | `skip_rows`, `abort` | `skip_rows` |
 | `existing` | `skip`, `overwrite` (own export only) | `skip` |
 | `workspace` | id of one of your workspaces | the default workspace; for an own export, the export's own workspaces |
+| `columns` | for `notion-csv`: `{role: column or null}`, roles `status`, `due`, `labels`, `priority`, `project`, `notes` | the preview's guesses |
 
 With `skip_rows`, bad rows are reported and everything else is imported; a bad row never leaves a partial task. With `abort`, any row in error fails the job before anything is written and names the first bad row.
 

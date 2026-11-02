@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -258,6 +259,10 @@ type Parsed struct {
 	// Template is set for an own export that declares itself a template
 	// (OpenSpec change project-templates, design D7).
 	Template *TemplateInfo
+	// Roles and Available are a Notion export's column mapping and every
+	// column it could use (migration-everywhere D3).
+	Roles     map[string]*string
+	Available []string
 	// Workspaces are an own export's workspaces (OpenSpec change workspaces),
 	// mapped onto the importing account's by Service.mapWorkspaces.
 	Workspaces []ExportedWorkspace
@@ -293,7 +298,7 @@ type Profile interface {
 var Profiles = []Profile{opentodoProfile{}, tududiProfile{}, thingsDBProfile{},
 	vikunjaProfile{}, superProductivityProfile{}, googleTasksProfile{}, trelloProfile{}, msTodoProfile{}, appleRemindersProfile{}, anydoProfile{},
 	itemsProfile{}, listsProfile{}, genericProfile{},
-	todoistProfile{}, tickTickProfile{}, linearProfile{}, omnifocusProfile{}, asanaProfile{}, csvProfile{}}
+	todoistProfile{}, tickTickProfile{}, linearProfile{}, omnifocusProfile{}, asanaProfile{}, csvProfile{}, notionProfile{}}
 
 // formatAliases are format names that select a profile for a container: a
 // Todoist backup is a ZIP of todoist-csv files.
@@ -417,6 +422,10 @@ type Options struct {
 	// import-workspace). Empty: the default workspace, or an own export's own
 	// mapping.
 	Workspace string `json:"workspace,omitempty"`
+	// Columns maps a Notion database's roles (status, due, labels, priority,
+	// project, notes) to a column name, or to null for "not imported"; a role
+	// left out keeps the preview's guess (migration-everywhere D3).
+	Columns map[string]*string `json:"columns,omitempty"`
 
 	loc *time.Location
 	// Set by the Service for one preview or job, never by the client:
@@ -480,6 +489,11 @@ func (o *Options) Normalize() error {
 	}
 	o.TargetProject = strings.TrimSpace(o.TargetProject)
 	o.Workspace = strings.TrimSpace(o.Workspace)
+	for role := range o.Columns {
+		if !slices.Contains(NotionRoles, role) {
+			return &OptionError{fmt.Sprintf("columns: unknown role %q (roles: %s)", role, strings.Join(NotionRoles, ", "))}
+		}
+	}
 	return nil
 }
 

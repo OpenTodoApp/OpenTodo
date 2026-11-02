@@ -94,7 +94,7 @@ Every row gets `origin {kind:"import", provider:"<app>", id}` with the source id
 | project | Project, Projekt, Projet, Progetto, Proyecto, Projeto | relation values `Name (https://www.notion.so/…)` take the name |
 | notes | Notes, Description, Beschreibung, … | text |
 
-- The preview response carries `columns: {role: columnName|null}`. The client shows one select per role, listing the CSV's columns and "Not imported", and re-runs the preview when a choice changes.
+- The preview response carries `columns.roles: {role: columnName|null}` beside the existing `recognised` and `ignored` (the mapped and the dropped columns) and `columns.available` (every column the roles can use). The client shows one select per role, listing those columns and "Not imported", and re-runs the preview when a choice changes. When a format was chosen and detection would pick another, the preview names it as `detected`.
 - `POST /api/v1/import` accepts the same `columns`. An unknown column name is a 400 `invalid_input`.
 - Columns mapped to no role are dropped. One file-level note names them; there is no warning per row.
 - Alternative: create a custom field for every unmapped column. Rejected as a default: Notion databases often carry a dozen formula and rollup columns, which would clutter the project. A later change can offer it as an option.
