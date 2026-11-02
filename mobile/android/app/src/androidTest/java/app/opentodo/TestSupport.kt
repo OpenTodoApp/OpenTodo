@@ -102,18 +102,30 @@ fun shell(command: String): String {
  * Exact alarms on for the app; turning them off is avoided in-process (Android stops the app).
  * Waits until AlarmManager reports the grant: right after `appops set` it can still answer
  * false, which made the bridge answer "exact-denied" on some CI runs.
+ *
+ * The first call of a run comes seconds after Gradle installed the app on a just-booted
+ * emulator. AlarmManager only counts an app's appop once the app is among its exact alarm
+ * candidates, a set it refreshes when it handles the package's install broadcast, and that
+ * broadcast can wait in the busy boot queue for more than ten seconds: the appop read
+ * "allow" while canScheduleExactAlarms() stayed false (BridgeTest's first test failed so on
+ * three main runs). So the wait allows for that, and a timeout shows the candidate set.
  */
 fun allowExactAlarms() {
     if (Build.VERSION.SDK_INT < 31) return
     val pkg = context.packageName
     var out = shell("appops set $pkg SCHEDULE_EXACT_ALARM allow")
-    val deadline = System.currentTimeMillis() + 10_000
+    val start = System.currentTimeMillis()
+    val deadline = start + 60_000
     var retried = false
     while (!Scheduler.canExact(context)) {
         if (System.currentTimeMillis() > deadline) {
-            throw AssertionError("exact alarms still denied after appops set: $out / ${shell("appops get $pkg SCHEDULE_EXACT_ALARM")}")
+            val candidates = shell("dumpsys alarm").lines().filter { it.contains("SCHEDULE_EXACT_ALARM") }.joinToString(" | ") { it.trim() }
+            throw AssertionError(
+                "exact alarms still denied after appops set: $out / ${shell("appops get $pkg SCHEDULE_EXACT_ALARM")}" +
+                    " / app id ${android.os.Process.myUid() % 100_000}; dumpsys alarm: $candidates",
+            )
         }
-        if (!retried && System.currentTimeMillis() > deadline - 7_000) {
+        if (!retried && System.currentTimeMillis() > start + 3_000) {
             retried = true
             out += shell("appops set --uid $pkg SCHEDULE_EXACT_ALARM allow") + shell("appops set $pkg SCHEDULE_EXACT_ALARM allow")
         }
