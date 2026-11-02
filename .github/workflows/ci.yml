@@ -901,6 +901,11 @@ jobs:
       attestations: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: The image can be pulled without signing in
+        # Every install pulls the image anonymously; a package left private on ghcr.io
+        # (the Home Assistant add-on's image after the move to OpenTodoApp) answers 401
+        # to all of them. Fails the release before it is published, naming the setting.
+        run: scripts/release/check-public-image.sh "${GITHUB_REPOSITORY}" "${GITHUB_REF_NAME#v}"
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           path: artifacts
