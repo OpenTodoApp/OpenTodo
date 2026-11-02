@@ -1,0 +1,18 @@
+{
+  "opentodoTheme": 1,
+  "id": "example-light",
+  "name": "Example Light",
+  "author": "",
+  "licence": "",
+  "kind": "light",
+  "seeds": {
+    "canvas": "oklch(0.97 0.01 90)",
+    "surface": "#ffffff",
+    "text": "oklch(0.25 0.02 260)",
+    "accent": "#f2d45c"
+  },
+  "type": {
+    "family": "system",
+    "list": 14
+  }
+}

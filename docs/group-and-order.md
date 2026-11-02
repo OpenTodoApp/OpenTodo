@@ -26,7 +26,7 @@ Due date groups read *Earlier*, *Today*, *Tomorrow*, later dates and *No date*. 
 
 Number and Date fields also appear in **Order by**. Same-named fields match across a label's projects without regard to case. When types differ, numbers precede dates and text in either direction; direction reverses values within each type and missing values stay last. Text fields from other projects take part too. The setting stores the definition ID, so renames follow it and encrypted names never sync.
 
-Subtasks stay under their parent in the order you gave them, and a project's **Later** and **Completed** groups stay at the end.
+Subtasks stay under their parent in the order you gave them, also in **Later**: when a task is deferred or parked, its subtasks move there with it. A project's **Later** and **Completed** groups stay at the end.
 
 A new task goes at the end of manual order, or at the top if **Add new tasks: At the top of the list** is set in Settings → Capture → Quick add (see [Where new tasks go](quick-add.md#where-new-tasks-go)). Other orders place it by their value; the setting breaks ties.
 

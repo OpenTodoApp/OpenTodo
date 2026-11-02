@@ -1,0 +1,7 @@
+# Erledigt-Journal: German text for templates/routines/done-journal/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-0c19b22827ea
+title: "Erledigt-Journal"
+summary: "Wenn du eine Aufgabe erledigst, kommt eine Zeile mit ihrem Titel in die Notiz deines Journal-Projekts."
+description: "Eine Liste dessen, was du geschafft hast, hilft bei Wochenrückblicken, Stand-ups und schlechten Tagen. Jedes Mal, wenn du eine Aufgabe erledigst, fügt diese Routine \"Erledigt:\" und den Titel der Aufgabe zur Notiz eines Projekts deiner Wahl hinzu, und die Notiz wird zum Protokoll deiner Arbeit.\n\nFüge auf der Wann-Karte eine Bedingung hinzu, um nur die Aufgaben eines Projekts festzuhalten."
+ask.journal.suggest: "Journal"
+steps.0.in.text: "Erledigt: {trigger}"

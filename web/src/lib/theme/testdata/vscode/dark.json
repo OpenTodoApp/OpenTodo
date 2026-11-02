@@ -1,0 +1,38 @@
+{
+  "name": "Harbour Night",
+  "author": "OpenTodo contributors",
+  "type": "dark",
+  "colors": {
+    "editor.background": "#1b2230",
+    "editor.foreground": "#d6dde8",
+    "sideBar.background": "#151b26",
+    "activityBar.background": "#121722",
+    "button.background": "#3d7bd9",
+    "button.foreground": "#ffffff",
+    "focusBorder": "#5b93e6",
+    "textLink.foreground": "#7fb0f2",
+    "descriptionForeground": "#9aa6b8",
+    "list.hoverBackground": "#232c3d",
+    "list.activeSelectionBackground": "#2b3750",
+    "editorWidget.background": "#202838",
+    "input.background": "#161c28",
+    "input.border": "#3a465c",
+    "panel.border": "#2a3344",
+    "errorForeground": "#f07178",
+    "editorWarning.foreground": "#e6b450",
+    "editorInfo.foreground": "#59c2ff",
+    "widget.shadow": "#00000080",
+    "titleBar.activeBackground": "#121722",
+    "terminal.ansiRed": "#f07178",
+    "terminal.ansiYellow": "#e6b450",
+    "terminal.ansiGreen": "#aad94c",
+    "terminal.ansiCyan": "#95e6cb",
+    "terminal.ansiBlue": "#59c2ff",
+    "terminal.ansiMagenta": "#d2a6ff",
+    "terminal.ansiBlack": "#1b2230",
+    "statusBar.background": "#121722"
+  },
+  "tokenColors": [
+    { "scope": "comment", "settings": { "foreground": "#5c6773" } }
+  ]
+}

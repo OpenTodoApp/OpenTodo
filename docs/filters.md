@@ -33,6 +33,7 @@ term     := "@" name                       label
           | "notes:" text                               text in the task's note
           | "origin:" text                              where the task came from
           | "energy:" ("deep" | "medium" | "low")        the energy a task asks for
+          | "sector:" (sectorword | period)              the task's time sector
           | "workspace:" name                           the task's workspace
           | "tracked" ("<" | "<=" | "=" | ">=" | ">") duration   tracked time
           | field ("<" | "<=" | "=" | ">=" | ">") value   custom field
@@ -49,6 +50,9 @@ keyword  := "overdue" | "today" | "tomorrow" | "no date" | "no project"
           | "no labels" | "no time" | "no deadline" | "no start" | "completed" | "open" | "subtask"
           | "someday" | "deferred" | "evening" | "morning" | "afternoon" | "blocked" | "unblocked" | "available" | "habit"
           | "origin" | "no origin" | "tracked" | "energy" | "no energy" | "notes" | "no notes"
+          | "sector" | "no sector" | "carried"
+sectorword := ("this" | "next") ("week" | "month" | "quarter"), with a space or a hyphen
+period   := YYYY "-W" WW | YYYY "-" MM | YYYY "-Q" N              a week, a month or a quarter
 duration := INT ("m" | "min" | "mins" | "minutes")? | NUM "h" (INT ("m" | "min")?)?
 name     := word | '"' chars '"'
 text     := word | '"' chars '"'
@@ -104,12 +108,16 @@ text     := word | '"' chars '"'
 | `notes` | tasks with a note: anything but blank space in the task's notes |
 | `no notes` | tasks without a note |
 | `notes: text` | tasks whose note contains the text, ignoring case; the title is not searched (use `search:` for both). Quote several words: `notes: "permit office"`. On an [encrypted account](e2ee.md) the note is read on your device, decrypted |
-| `origin` | tasks that know where they came from: a captured page, an email, an issue or an import (see [Where a task came from](capture.md#where-a-task-came-from)) |
+| `origin` | tasks that know where they came from: a captured page, an email, an issue, an import or an Obsidian note (see [Where a task came from](capture.md#where-a-task-came-from)) |
 | `no origin` | tasks without an origin |
-| `origin: value` | tasks whose origin's provider is the value, ignoring case (`origin: github`, `origin: linear`, `origin: todoist`), or, for an origin without a provider, whose kind is (`origin: url` for captured pages, `origin: email` for mail); quotes allowed |
+| `origin: value` | tasks whose origin's provider is the value, ignoring case (`origin: github`, `origin: linear`, `origin: todoist`), or, for an origin without a provider, whose kind is (`origin: url` for captured pages, `origin: email` for mail, `origin: obsidian` for tasks from an Obsidian note); quotes allowed |
 | `energy` | tasks with an [energy](method/set-up.md#energy-levels) set (Deep, Medium or Low) |
 | `no energy` | tasks without one |
 | `energy: value` | tasks whose energy is `deep`, `medium` or `low`, ignoring case; quotes allowed. Any other value is an error. The terms work whether or not **Energy levels** is on |
+| `sector` | tasks with a [time sector](time-sectors.md): a week, month or quarter they are planned for |
+| `no sector` | tasks without one |
+| `carried` | tasks whose sector's period has ended before your current week, month or quarter (carried over) |
+| `sector: value` | tasks whose sector is `this week`, `next week`, `this month`, `next month`, `this quarter` or `next quarter` (named on your date and first day of the week, so `sector: this week` follows you into the next week without editing the view), or exactly a period: `sector: 2026-W44`, `sector: 2026-11`, `sector: 2026-Q4`. Any other value is an error that names it. The terms work whether or not **Time sectors** is on |
 | `workspace: name` | tasks of the [workspace](workspaces.md) of that name, ignoring case (`workspace: Home`, `workspace: "Side projects"`); see [Workspaces](#workspaces) |
 | `tracked` | tasks with at least one minute of [tracked time](time-tracking.md), every member's entries counted and a running entry up to now |
 | `tracked <cmp> duration` | tasks whose tracked time compares as asked: `tracked > 1h`, `tracked <= 30m`, `tracked >= 1h30`, `tracked < 1.5h`, `tracked = 0`; a bare number is minutes |
@@ -131,7 +139,7 @@ A [custom field](custom-fields.md) is named like a project or label, ignoring ca
 
 ### Open, completed and deleted tasks
 
-A query matches **open tasks only**, unless `completed` or `open` appears somewhere in it, or it compares the completion date (`completed >= this week`). `completed` on its own lists only completed tasks, `p1 & completed` the completed priority-1 tasks, and `completed | open` both. Deleted tasks never match, and neither does the record a skipped day of a habit leaves (it is neither completed nor open). Parked and deferred tasks match like any other unless you exclude them: `!someday`, `!deferred`. Like the other cross-project views, the New view page leaves out tasks of archived projects.
+A query matches **open tasks only**, unless `completed` or `open` appears somewhere in it, or it compares the completion date (`completed >= this week`). `completed` on its own lists only completed tasks, `p1 & completed` the completed priority-1 tasks, and `completed | open` both. Deleted tasks never match, and neither does the record a skipped day of a habit leaves (it is neither completed nor open). Parked and deferred tasks match like any other unless you exclude them: `!someday`, `!deferred`. Like the other cross-project views, the New view page leaves out tasks of archived projects, and so does a [routine](routines.md#which-tasks-a-routine-finds) that finds tasks with a query or a saved view, unless its Find tasks step has **Archived projects** on. The filter language has no term for archived projects.
 
 ### Dates
 
@@ -188,6 +196,7 @@ A query that does not follow the grammar shows a message under the input, and th
 | `tracked > soon` | `Expected a duration such as 30m or 1h30 after ">" at position 11` |
 | `workspace: & p1` | `Expected a workspace name after "workspace:" at position 1` |
 | `energy: high` | `Energy must be deep, medium or low at position 1` |
+| `sector: 2026-W60` | `Unknown time sector "2026-W60" at position 1; use this week, next week, this month, next month, this quarter, next quarter or a period such as 2026-W44` |
 | `notes: & p1` | `Expected text after "notes:" at position 1` |
 
 An empty query shows a short usage hint and no results.
@@ -208,7 +217,7 @@ You can also type a query straight into the [search box](search.md) (<kbd>Ctrl</
 
 In the filter panel, above the query input, the **builder** shows the same query as conditions you can read: *Label is errand*, *Due on or before tomorrow*, *Priority is P1*, *No project*.
 
-- **Conditions.** **+ Condition** opens a small dialog: choose what to filter on (label, project, priority, one of the five dates, a state such as *Due earlier* or *Waiting on another task*, text in the title or notes, origin, workspace (with more than one), tracked time, energy or a custom field), then its value. Labels and projects are picked from a searchable list. Click a condition to change it.
+- **Conditions.** **+ Condition** opens a small dialog: choose what to filter on (label, project, priority, one of the five dates, a state such as *Due earlier* or *Waiting on another task*, text in the title or notes, origin, workspace (with more than one), tracked time, energy, time sector or a custom field), then its value. Labels and projects are picked from a searchable list. Click a condition to change it.
 - **Groups.** A group is a block headed **All of these** (every condition must match, `&`) or **Any of these** (one is enough, `|`). **+ Group** adds one inside, up to three levels deep. Change the heading to switch between the two.
 - **Not.** The **Not** switch in a condition's dialog, or the **Not** button on a group, matches the tasks it would otherwise leave out (`!`).
 - **Keyboard.** Tab reaches every control. Inside a group, the arrow keys move between conditions, and Delete or Backspace removes the focused one.

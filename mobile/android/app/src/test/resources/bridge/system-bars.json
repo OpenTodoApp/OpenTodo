@@ -1,0 +1,38 @@
+{
+  "description": "System bars (theme-engine D8, native-shells \"System bars follow the app's theme\"): what setSystemBars hands a shell that lists system-bars, with the colour and icon appearance the shell must apply (dark: true means light icons), and payloads the shell must ignore, keeping its bars and logging nothing of them.",
+  "method": "setSystemBars",
+  "handed": [
+    {
+      "payload": "{\"color\":\"#047857\",\"dark\":true}",
+      "color": "#047857",
+      "lightIcons": true
+    },
+    {
+      "payload": "{\"color\":\"#0d0e10\",\"dark\":true}",
+      "color": "#0d0e10",
+      "lightIcons": true
+    },
+    {
+      "payload": "{\"color\":\"#fdf6e3\",\"dark\":false}",
+      "color": "#fdf6e3",
+      "lightIcons": false
+    },
+    {
+      "payload": "{\"color\":\"#88c0d0\",\"dark\":false}",
+      "color": "#88c0d0",
+      "lightIcons": false
+    }
+  ],
+  "refused": [
+    "{\"color\":\"red\",\"dark\":true}",
+    "{\"color\":\"#2e3440\"}",
+    "{\"dark\":true}",
+    "{\"color\":\"#2E3440\",\"dark\":true}",
+    "{\"color\":\"#2e344\",\"dark\":false}",
+    "{\"color\":\"#2e3440\",\"dark\":\"yes\"}",
+    "{\"color\":\"url(x)\",\"dark\":true}",
+    "null",
+    "[]",
+    "not json"
+  ]
+}

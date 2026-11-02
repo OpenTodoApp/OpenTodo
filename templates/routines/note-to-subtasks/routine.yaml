@@ -1,0 +1,48 @@
+title: Note to subtasks
+summary: Run it on a task to turn each line of its note into a subtask.
+description: |
+  Write the parts of a bigger task in its note, one per line, then run this routine on the task from the command palette or the task's menu. Each line becomes a subtask, in the task's project.
+
+  List markers and checkboxes are removed from each line. The note stays as it is.
+category: personal
+icon: list-checks
+author: OpenTodo
+reviewed: 2026-11-01
+trigger:
+  kind: manual
+steps:
+  - id: a
+    kind: note_text
+    in:
+      of:
+        ref: trigger
+  - id: b
+    kind: split_lines
+    in:
+      text:
+        ref: a
+  - id: c
+    kind: create_tasks
+    in:
+      text:
+        ref: b
+      parent:
+        ref: trigger
+test:
+  run_on: mv
+  projects:
+    - id: home
+      name: Home
+  tasks:
+    - id: mv
+      title: Move house
+      project_id: home
+      description: "pack\nbook van"
+  expect:
+    created:
+      - title: book van
+        project_id: home
+        parent_id: mv
+      - title: pack
+        project_id: home
+        parent_id: mv

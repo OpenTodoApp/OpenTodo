@@ -34,6 +34,9 @@ type Service struct {
 	attachmentLimit func() int64
 	// attachmentQuota is the per-account attachment quota in bytes (attachment_quota.go).
 	attachmentQuota func() int64
+	// holds is the ledger of attachment bytes held against the quota by
+	// uploads in progress and uncommitted restores (attachment_quota.go).
+	holds *QuotaHolds
 	// blobs removes attachment files after purges (attachments D13); nil in tests without files.
 	blobs BlobStore
 	// pullBudget overrides MaxPullBytes in tests; 0 means MaxPullBytes.
@@ -156,7 +159,7 @@ func (s *Service) SetAttachmentLimit(limit func() int64) { s.attachmentLimit = l
 
 // NewService wires a Service.
 func NewService(db *sql.DB) *Service {
-	s := &Service{db: db, now: time.Now, notifier: NewNotifier()}
+	s := &Service{db: db, now: time.Now, notifier: NewNotifier(), holds: &QuotaHolds{}}
 	s.SetCommentRateLimit(CommentRateLimit, CommentRateWindow)
 	s.seedClock()
 	return s
@@ -852,6 +855,34 @@ func (s *Service) List(ctx context.Context, userID, entity string, includeDelete
 // (scope_id, entity, ...) reads only the visible scopes, and List sorts the ids.
 func listQuery(n int) string {
 	return `SELECT scope_id,entity_id,field,value FROM scope_fields WHERE scope_id IN (` + placeholders(n) + `) AND entity = ?`
+}
+
+// LastChanged is, per entity id the user can see, the timestamp (Unix ms) of
+// its newest winning field value over every visible scope: when anything of it
+// last changed (the routines condition `unchanged`, OpenSpec change
+// routines-dynamic-data D5). Plaintext metadata on every account.
+func (s *Service) LastChanged(ctx context.Context, userID, entity string) (map[string]int64, error) {
+	acc, err := loadAccess(ctx, s.reader(), userID)
+	if err != nil {
+		return nil, err
+	}
+	scopes := acc.scopes()
+	rows, err := s.reader().QueryContext(ctx, `SELECT entity_id, MAX(ts) FROM scope_fields WHERE scope_id IN (`+placeholders(len(scopes))+`) AND entity = ? GROUP BY entity_id`,
+		append(anys(scopes), entity)...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[string]int64{}
+	for rows.Next() {
+		var id string
+		var ts int64
+		if err := rows.Scan(&id, &ts); err != nil {
+			return nil, err
+		}
+		out[id] = ts
+	}
+	return out, rows.Err()
 }
 
 // FieldTS is the timestamp of the winning op of one field of an entity the user

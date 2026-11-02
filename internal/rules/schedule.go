@@ -82,7 +82,9 @@ func (e *Engine) tickUser(ctx context.Context, uid string) (int, error) {
 					return 0, err
 				}
 			}
-			events = append(events, Occurrences(r.ID, r.Trigger, w, st.Watermark, now)...)
+			if rw := w.worldFor(r); rw != nil {
+				events = append(events, Occurrences(r.ID, r.Trigger, rw, st.Watermark, now)...)
+			}
 		}
 		st.Watermark = now
 		if err := e.Store.SaveState(ctx, r.ID, uid, st); err != nil {
@@ -164,16 +166,16 @@ func dueInstant(d *dueValue, zone *time.Location) time.Time {
 }
 
 // lastScheduled is the latest scheduled minute in (from, to], looking back at
-// most eight days.
+// most eight days for weekdays and 32 for days of the month.
 func lastScheduled(tr ruleval.Trigger, zone *time.Location, from, to int64) (time.Time, bool) {
 	end := time.UnixMilli(to).In(zone)
-	for i := 0; i <= 8; i++ {
+	back := 8
+	if len(tr.MonthDays) > 0 {
+		back = 32
+	}
+	for i := 0; i <= back; i++ {
 		day := end.AddDate(0, 0, -i)
-		wd := int(day.Weekday())
-		if wd == 0 {
-			wd = 7
-		}
-		if !slices.Contains(tr.Weekdays, wd) {
+		if !tr.FiresOn(day) {
 			continue
 		}
 		at, err := time.ParseInLocation("2006-01-02 15:04", day.Format("2006-01-02")+" "+tr.At, zone)
@@ -211,10 +213,22 @@ func (e *Engine) NextDue(ctx context.Context) (time.Time, bool, error) {
 	e.mu.Lock()
 	changed := e.changed
 	e.mu.Unlock()
+	// A run waiting for a device is missed after WaitLimit (routines-ai-step D9).
+	miss, waiting, err := e.nextMiss(ctx)
+	if err != nil {
+		return time.Time{}, false, err
+	}
 	if timed == 0 && !changed {
+		if waiting {
+			return miss, true, nil
+		}
 		return time.Time{}, false, nil
 	}
-	return now.Truncate(TickInterval).Add(TickInterval), true, nil
+	next := now.Truncate(TickInterval).Add(TickInterval)
+	if waiting && miss.Before(next) {
+		next = miss
+	}
+	return next, true, nil
 }
 
 // RunOnce is one run of the tenant's "rules" job: the time triggers, then
@@ -225,4 +239,7 @@ func (e *Engine) RunOnce(ctx context.Context) {
 	e.mu.Unlock()
 	e.Tick(ctx)
 	e.Drain(ctx)
+	if err := e.missWaiting(ctx); err != nil {
+		e.Log.Warn("routines: missed device runs", "err", err)
+	}
 }

@@ -1,6 +1,6 @@
 // The native shell bridge (OpenSpec change native-shells, "The bridge is optional and versioned").
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { biometricRead, biometricStore, has, olderThan, openExternal, publishWidget, scheduleReminders, shell, shellOutdated, testNotification, type OpenTodoShell } from './shell'
+import { biometricRead, biometricStore, has, needsLightIcons, olderThan, openExternal, publishWidget, scheduleReminders, setSystemBars, shell, shellOutdated, testNotification, type OpenTodoShell } from './shell'
 
 const g = globalThis as unknown as { window?: { opentodoShell?: OpenTodoShell } }
 
@@ -60,5 +60,27 @@ describe('shell bridge', () => {
     expect(olderThan('0.9.9', '0.10.0')).toBe(true)
     expect(olderThan('0.10.0', '0.10.0')).toBe(false)
     expect(olderThan('v1.0.0-rc.1', '0.10.0')).toBe(false)
+  })
+})
+
+// theme-engine D8, task 6.1: the system bars follow the theme, only on a shell that lists them.
+describe('system bars', () => {
+  it('hands the colour over only when the shell lists system-bars', () => {
+    const calls: string[] = []
+    install({ bridge: 1, platform: 'android', app: '0.20.0', capabilities: ['reminders'], setSystemBars: (j) => void calls.push(j) })
+    expect(setSystemBars('#2e3440')).toBe(false)
+    expect(calls).toEqual([])
+    install({ bridge: 1, platform: 'android', app: '0.20.0', capabilities: ['system-bars'], setSystemBars: (j) => void calls.push(j) })
+    expect(setSystemBars('#2e3440')).toBe(true)
+    expect(setSystemBars('#fdf6e3')).toBe(true)
+    expect(calls).toEqual(['{"color":"#2e3440","dark":true}', '{"color":"#fdf6e3","dark":false}'])
+    expect(setSystemBars('red')).toBe(false)
+  })
+
+  it('chooses light icons where white reads better than black', () => {
+    expect(needsLightIcons('#047857')).toBe(true)
+    expect(needsLightIcons('#0d0e10')).toBe(true)
+    expect(needsLightIcons('#ffffff')).toBe(false)
+    expect(needsLightIcons('#88c0d0')).toBe(false)
   })
 })

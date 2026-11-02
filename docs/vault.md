@@ -13,13 +13,17 @@ order: 25
 
 ```bash
 ot vault init ~/Notes/Tasks     # new or empty folder; --adopt accepts .md files
-ot vault sync ~/Notes/Tasks     # --dry-run plans; --read-only pushes nothing
+ot vault sync ~/Notes/Tasks     # --dry-run plans; --read-only pushes nothing; --take-over (below)
 ot vault status ~/Notes/Tasks   # changed and conflict files, offline
 ot vault watch ~/Notes/Tasks    # keep syncing until Ctrl+C
 ot vault tasknotes <folder>     # also sync a TaskNotes folder (see below)
 ```
 
+`watch` syncs when the app changes (over the live channel) and when a file is saved. A file that changed since the last sync is read only once it has held still for a second, also when the app's change arrives meanwhile, so a save in progress is never read half written.
+
 It needs a `full` token, and it is the one part of `ot` that keeps data locally: the files and `.opentodo/state.json`.
+
+The [Obsidian plugin](obsidian.md#sync-a-folder) syncs a folder with the same rules and files, on a phone too, so a folder can move between it and `ot vault`. It also sends single lines from daily and meeting notes, with the same grammar, linking each task back to its note.
 
 ## The files
 
@@ -55,6 +59,7 @@ Things for the flat. The task lines sync with OpenTodo; this paragraph stays her
 - [ ] Clean the windows [someday:: true] [evening:: true] [energy:: low] 🆔 t-home6
 - [ ] Stretch 📅 2026-10-25 [daypart:: morning] 🆔 t-home7
 - [ ] Lisbon trip 📅 2026-11-05 🛫 2026-11-03 [span:: true] 🆔 t-home8
+- [ ] Sort the photos [sector:: 2026-11] 🆔 t-home9
 ```
 
 | Field | Meaning |
@@ -65,10 +70,11 @@ Things for the flat. The task lines sync with OpenTodo; this paragraph stays her
 | `[span:: true]` | a multi-day task, drawn from its `🛫` date to its `📅` date; written after `[evening:: true]`, read anywhere on the line. `[span:: false]` or removing it clears it. Another value is reported and changes nothing |
 | `[daypart:: morning]` `[daypart:: afternoon]` | the part of the day; never beside `[evening:: true]`, which wins when both are there. Another value is reported and changes nothing |
 | `[energy:: deep]` `[energy:: medium]` `[energy:: low]` | the energy the task asks for, read in any letter case and written in lower case; removing it clears the energy. Another value is reported and changes nothing |
+| `[sector:: 2026-W44]` `[sector:: 2026-11]` `[sector:: 2026-Q4]` | the [time sector](time-sectors.md): the week, month or quarter the task is planned for without a date; written after `[evening:: true]`, read anywhere on the line, letters in any case. Removing it clears the sector. A value that is not a period is reported for the file and line and changes nothing |
 | `🔺` `⏫` `🔼` | priority 1–3 (`🔽` `⏬` read as 4) |
 | `🔁` | repeat rule (`when done`: after completion) |
 | `#tag` `⛔` `✅` `🆔` | label, blocked by, done date, id |
-| `[origin:: ]` `[location:: ]` `[tracked:: ]` `[field:Name:: ]` | read-only |
+| `[origin:: ]` `[location:: ]` `[tracked:: ]` `[field:Name:: ]` | read-only; a task from an Obsidian note carries its `obsidian://open?…` link as `[origin:: ]`, which Obsidian shows as a link back to that note |
 
 A line without `🆔` creates a task. Indented lines are subtasks, other indented text the note. A `##` heading over task lines is a section. Unknown text (`⏳`, `[[links]]`) and prose stay.
 
@@ -95,6 +101,12 @@ TASK FROM "Tasks" WHERE !completed AND deadline <= date(today) + dur(7 days)
 | Line removed, task unchanged | task trashed |
 | Line removed, task changed | line written back |
 | Project archived | file removed, or renamed `.conflict.md` if edited |
+
+## One syncing device
+
+A folder has one syncing device at a time. `.opentodo/state.json` names the installation that syncs it (`owner`: `ot` on a machine, by host name, or the Obsidian plugin on a device) and until when (`lease_until`, five minutes after its last sync; `watch` renews it on every cycle). When Obsidian Sync, iCloud or git copies the folder to other machines, only the owner talks to the server; elsewhere `ot vault sync` and `watch` stop before any request with exit code 2 and the error `vault_owned`, naming the owner. Edits made there reach the server through the copy and the owner's next sync.
+
+When the owner is gone for good, `ot vault sync --take-over` (or `watch --take-over`) makes this machine the owner: a new vault device and a first sync that compares every line with the server. A line that differs keeps the server's values and goes to `<file>.conflict.md`, a line without an id becomes a task, nothing is trashed or created twice. A state file written before this rule has no owner; the first machine that syncs it becomes the owner.
 
 ## TaskNotes
 
@@ -174,6 +186,8 @@ The vault doesn't write new notes for tasks created elsewhere: those go to proje
 ## Limits
 
 1 MB and 5,000 task lines per file, 20,000 tasks, 64 KB per note. A task note counts as one task. Over a limit, nothing is written or sent.
+
+A file that iCloud Drive has not downloaded yet (only a `.<name>.icloud` placeholder is there) is skipped, and its tasks are left alone until it arrives.
 
 ## Encrypted accounts
 

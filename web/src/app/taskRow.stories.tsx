@@ -150,6 +150,23 @@ export const Energy: StoryObj = {
   ),
 }
 
+/**
+ * A time sector in the date slot of an undated task (time-sectors D4): named on the
+ * frozen Wednesday 14 October 2026, a later week by its number, a month by name, and
+ * a week that has ended carried over in the faint tone, never the overdue colour.
+ */
+export const Sector: StoryObj = {
+  render: () => (
+    <List>
+      <TaskRow {...base} task={task({ id: 't1', title: 'Draft the budget', sector: '2026-W42', deadline: '2026-10-16' })} />
+      <TaskRow {...base} task={task({ id: 't2', title: 'Book the venue', sector: '2026-W43' })} />
+      <TaskRow {...base} task={task({ id: 't3', title: 'Plan the offsite', sector: '2026-W46', estimate_minutes: 60 })} />
+      <TaskRow {...base} task={task({ id: 't4', title: 'Renew the insurance', sector: '2026-11' })} />
+      <TaskRow {...base} task={task({ id: 't5', title: 'Sort the photos', sector: '2026-W40' })} />
+    </List>
+  ),
+}
+
 /** Blocked by open tasks: the title is muted and a lock item counts the blockers. */
 export const Blocked: StoryObj = {
   render: () => (
@@ -276,7 +293,7 @@ export const ActionsRevealed: StoryObj = {
   render: () => <TodayRows forceActions />,
 }
 
-/** Long titles truncate beside the column and the trailing group, at every width. */
+/** Long titles wrap to two lines beside the column, then end with an ellipsis (task-list-width D1); a phone row keeps one line. */
 export const LongTitle: StoryObj = {
   render: () => (
     <List>
@@ -284,7 +301,27 @@ export const LongTitle: StoryObj = {
         task={task({ id: 't1', title: 'Collect testimonials from the first three customers, pick two quotes and send them to the designer before Friday', project_id: work.id, due: { date: TODAY, time: '09:30' }, estimate_minutes: 45, labels: [errand.id, call.id] })} />
       <TaskRow {...base} timeColumn showProject project={home}
         task={task({ id: 't2', title: 'Compare the three quotes for the kitchen renovation and call the one with the earliest start date', project_id: home.id, deadline: '2026-10-17' })} />
+      <TaskRow {...base} timeColumn showProject project={home}
+        task={task({ id: 't3', title: 'Email the cutting board company about the warped board, the replacement they promised in September, the refund for the shipping and why the second board never arrived either', project_id: home.id })} />
     </List>
+  ),
+}
+
+/**
+ * A narrow list (under 40 rem, the Inbox beside a medium window; GitHub issue 650): the
+ * titles take the row's whole width and two lines, the revealed actions float over the
+ * row's end instead of keeping room, and the row's height does not change on hover.
+ */
+export const LongTitleNarrow: StoryObj = {
+  render: () => (
+    <div className="max-w-md">
+      <List>
+        <TaskRow {...base} onMore={noop} task={task({ id: 't1', title: 'Find hottub details from invoice' })} />
+        <TaskRow {...base} onMore={noop} forceActions
+          task={task({ id: 't2', title: 'Email cutting board company (Babylonian Woodworks) about the warped board and the replacement they promised' })} />
+        <TaskRow {...base} onMore={noop} task={task({ id: 't3', title: 'Start organizing and listing Facebook items for sale before the move, starting with the furniture in the garage and the old bikes', estimate_minutes: 90 })} />
+      </List>
+    </div>
   ),
 }
 
@@ -329,6 +366,20 @@ export const WithOrigins: StoryObj = {
           <TaskCard {...base} task={task({ id: 'c-page', title: 'Summarise the offline sync article', origin: page })} labels={[deepWork]} />
         </ul>
       </div>
+    )
+  },
+}
+
+/** A task from an Obsidian note (obsidian-origin): the note's name with a note icon; one titled, one read from its path. */
+export const WithObsidianOrigin: StoryObj = {
+  render: () => {
+    const daily = { kind: 'obsidian' as const, id: 'Daily/2026-10-29.md', url: 'obsidian://open?vault=Notes&file=Daily%2F2026-10-29', title: 'Thursday standup' }
+    const meeting = { kind: 'obsidian' as const, id: 'Meetings/Kick-off.md', url: 'obsidian://open?vault=Work%20notes&file=Meetings%2FKick-off' }
+    return (
+      <List>
+        <TaskRow {...base} task={task({ id: 'ob-d', title: 'Send the standup notes to Jo', due: { date: TODAY }, origin: daily })} />
+        <TaskRow {...base} task={task({ id: 'ob-m', title: 'Book the kick-off room', priority: 2, origin: meeting })} />
+      </List>
     )
   },
 }

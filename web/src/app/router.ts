@@ -2,6 +2,7 @@
 // every extra kilobyte matters on a low-end phone.
 import { useMemo, useSyncExternalStore } from 'react'
 import { readCalendarMode } from '../lib/calendarMode'
+import { resettable } from '../lib/moduleState'
 import { displayTargetPath, parseDisplayOptions, parseDisplayTarget, serializeDisplayOptions, type DisplayOptions, type DisplayTarget } from './display/displayOptions'
 
 export type Route =
@@ -26,8 +27,14 @@ export type Route =
   // Saved locations (task-locations, the `place` entity): /locations, and /location/<id> lists the open tasks linked to one.
   | { view: 'places' }
   | { view: 'place'; id: string }
-  // Automation rules (automation-rules): /rules, and /rules#new opens the editor.
-  | { view: 'rules'; create?: boolean }
+  // Routines (routines-editor; automation-rules before): /routines, /routines/runs
+  // the Runs tab; the editor page (routines-editor-page D1) at /routines/new
+  // (/routines#new before) and /routines/<id>, ?run=<run> one run on it; /rules is
+  // the old address. The starters (routines-starters D5): /routines/starters and
+  // /routines/starters/<slug>.
+  | { view: 'rules'; create?: boolean; tab?: 'runs'; id?: string; run?: string; starters?: boolean; starter?: string; describe?: boolean
+    /** The routines of one project (routines-shared D12): the list filtered, or a new routine of it. */
+    project?: string }
   // All projects (sidebar-favourites D6): /projects, and /projects#archived with the archived projects open.
   | { view: 'projects'; archived?: boolean }
   | { view: 'filter'; q?: string }
@@ -35,6 +42,8 @@ export type Route =
   | { view: 'view'; id: string }
   // A settings section, or one of its sub-pages at /settings/<section>/<page> (settings-subpages).
   | { view: 'settings'; section?: SettingsSectionId; page?: string; anchor?: string }
+  // The theme editor (theme-editor D3): /settings/appearance/themes/<id>, a Settings sub-page.
+  | { view: 'theme-editor'; id: string }
   | { view: 'import' }
   | { view: 'invite'; token: string }
   | { view: 'project-invite'; token: string }
@@ -132,13 +141,27 @@ export function parseRoute(pathname: string): Route {
       if (parts[1] && parts[1] in LEGACY_SETTINGS_IDS) { const l = LEGACY_SETTINGS_IDS[parts[1]]; return { view: 'settings', section: l.section, ...(l.page ? { page: l.page } : {}), ...(l.anchor ? { anchor: l.anchor } : {}) } }
       // A sub-page id is checked against the section table by the Settings screen (settings-subpages).
       if (!isSettingsSection(parts[1])) return { view: 'settings' }
+      if (parts[1] === 'appearance' && parts[2] === 'themes' && parts[3] && /^[a-z0-9-]{1,64}$/.test(parts[3])) return { view: 'theme-editor', id: parts[3] }
       return parts[2] && /^[a-z][a-z-]*$/.test(parts[2]) ? { view: 'settings', section: parts[1], page: parts[2] } : { view: 'settings', section: parts[1] }
     case 'labels':
       return { view: 'labels' }
     case 'locations':
       return { view: 'places' }
     case 'rules':
-      return hash === 'new' ? { view: 'rules', create: true } : { view: 'rules' }
+    case 'routines':
+    {
+      // ?project=<id>: the routines of one project, or a new one of it (routines-shared D12).
+      const project = new URLSearchParams(query).get('project')
+      const inProject = project && /^[\w-]{1,64}$/.test(project) ? { project } : {}
+      if (hash === 'new' || parts[1] === 'new') return { view: 'rules', create: true, ...inProject }
+      // /routines/describe: the Routines page with Describe it open (routines-describe-it).
+      if (parts[1] === 'describe') return { view: 'rules', describe: true }
+      if (parts[1] === 'starters') return parts[2] && /^[a-z0-9-]{1,64}$/.test(parts[2]) ? { view: 'rules', starters: true, starter: parts[2] } : { view: 'rules', starters: true }
+      // ?run=<id>: a run opened from a notification, a channel message or an email.
+      const run = new URLSearchParams(query).get('run')
+      const base: Route = parts[1] === 'runs' ? { view: 'rules', tab: 'runs' } : parts[1] && /^[\w-]{1,64}$/.test(parts[1]) ? { view: 'rules', id: parts[1] } : { view: 'rules', ...inProject }
+      return run && /^[\w-]{1,64}$/.test(run) ? { ...base, run } as Route : base
+    }
     case 'location':
       return parts[1] ? { view: 'place', id: parts[1] } : { view: 'places' }
     case 'projects':
@@ -236,7 +259,7 @@ export function parseRoute(pathname: string): Route {
 export function canonicalPath(pathname: string): string | null {
   const [path] = pathname.split('?')
   const parts = path.split('/').filter(Boolean)
-  if (parts[0] === 'activity' || parts[0] === 'calendar') return routePath(parseRoute(path))
+  if (parts[0] === 'activity' || parts[0] === 'calendar' || parts[0] === 'rules') return routePath(parseRoute(path))
   // /filter and /view/<id> before views-and-display (D1); the caller keeps the query (?q=).
   if (parts[0] === 'filter') return '/views/new'
   if (parts[0] === 'view') return routePath(parseRoute(path))
@@ -265,7 +288,10 @@ export function routePath(r: Route): string {
     case 'places':
       return '/locations'
     case 'rules':
-      return r.create ? '/rules#new' : '/rules'
+      if (r.describe) return '/routines/describe'
+      if (r.starters) return r.starter ? `/routines/starters/${encodeURIComponent(r.starter)}` : '/routines/starters'
+      return (r.create ? '/routines/new' : r.tab === 'runs' ? '/routines/runs' : r.id ? `/routines/${encodeURIComponent(r.id)}` : '/routines') + (r.run ? `?run=${encodeURIComponent(r.run)}` : '')
+        + (r.project && !r.id && r.tab !== 'runs' ? `?project=${encodeURIComponent(r.project)}` : '')
     case 'invite':
     case 'reset':
     case 'confirm-email':
@@ -290,6 +316,8 @@ export function routePath(r: Route): string {
       return '/'
     case 'settings':
       return r.section ? `/settings/${r.section}${r.page ? `/${r.page}` : ''}` : '/settings'
+    case 'theme-editor':
+      return `/settings/appearance/themes/${encodeURIComponent(r.id)}`
     case 'import':
       return '/settings/import'
     case 'projects':
@@ -322,8 +350,23 @@ export function routePath(r: Route): string {
  * whose presentation options live there (display-mode D2).
  */
 export function addressOf(loc: Pick<Location, 'pathname' | 'search'>): string {
-  return loc.pathname === '/display' || loc.pathname.startsWith('/display/') ? `${loc.pathname}${loc.search}` : loc.pathname
+  // A routine's page keeps ?run=<run> (routines-editor-page D1), so a reload shows the run.
+  return loc.pathname === '/display' || loc.pathname.startsWith('/display/') || loc.pathname.startsWith('/routines/') ? `${loc.pathname}${loc.search}` : loc.pathname
 }
+
+/**
+ * A page with unsaved changes (the routine editor, routines-editor-page D4): asked
+ * before every navigation; it returns true when it took over (it asks first and
+ * calls `go` to continue), false to let the navigation happen.
+ */
+export type LeaveGuard = (go: () => void) => boolean
+let leaveGuard: LeaveGuard | null = null
+
+/** Install or remove the page's leave guard. */
+export function setLeaveGuard(guard: LeaveGuard | null): void {
+  leaveGuard = guard
+}
+resettable('leaveGuard', () => { leaveGuard = null })
 
 const listeners = new Set<() => void>()
 let current = typeof location !== 'undefined' ? addressOf(location) : '/'
@@ -342,6 +385,12 @@ export function routeBeforeFocus(): Route {
 
 if (typeof window !== 'undefined') {
   window.addEventListener('popstate', () => {
+    // The browser's Back already left the page: put its address back and ask (D4).
+    if (leaveGuard) {
+      history.pushState(null, '', current)
+      leaveGuard(() => { leaveGuard = null; history.back() })
+      return
+    }
     track(addressOf(location))
     listeners.forEach((fn) => fn())
   })
@@ -351,6 +400,7 @@ if (typeof window !== 'undefined') {
 export function navigate(r: Route, opts: { replace?: boolean } = {}): void {
   const path = routePath(r)
   if (path === current) return
+  if (leaveGuard && leaveGuard(() => { leaveGuard = null; navigate(r, opts) })) return
   if (opts.replace) history.replaceState(null, '', path)
   else history.pushState(null, '', path)
   track(path)

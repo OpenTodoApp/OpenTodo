@@ -5,6 +5,8 @@
 //   - a translation has the same placeholders, tags and plural/select arguments as
 //     its source, and only plural categories its language has,
 //   - "Settings → …" paths use the translated section names.
+// Also the iOS shell's String Catalog (scripts/i18n/shell.mjs) and the Obsidian
+// plugin's catalogues (scripts/i18n/obsidian.mjs).
 // A catalog that index.ts does not list is work in progress: it gets a summary line
 // ("pl: 412 of 1480") and never fails the check.
 //
@@ -15,6 +17,7 @@ import { fileURLToPath } from 'node:url'
 import { existsSync } from 'node:fs'
 import { extract } from './i18n/extract.mjs'
 import { checkShellCatalog, readShellCatalog, shellCatalogPath } from './i18n/shell.mjs'
+import { checkObsidianCatalogs, obsidianDir, obsidianMessages, readObsidianCatalogs } from './i18n/obsidian.mjs'
 import { repo, ts } from './i18n/source.mjs'
 
 /** The shipped language codes, read from web/src/locales/index.ts. */
@@ -98,6 +101,10 @@ export async function check(root = repo) {
   // The iOS shell's own screens (ios-shell): a String Catalog, not a web catalog.
   if (existsSync(shellCatalogPath(root))) {
     problems.push(...checkShellCatalog(readShellCatalog(root), shipped.filter((c) => c !== 'en')))
+  }
+  // The Obsidian plugin's own strings (obsidian-plugin task 6.1): obsidian/locales/.
+  if (existsSync(join(obsidianDir(root), 'src'))) {
+    problems.push(...checkObsidianCatalogs(obsidianMessages(root), readObsidianCatalogs(root), fmt))
   }
   return { problems, summary, count: messages.length }
 }

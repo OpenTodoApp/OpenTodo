@@ -581,7 +581,7 @@ describe('parse: energy (task-energy D4)', () => {
 describe('parse: precedence and passthrough', () => {
   it('no match passes the line through, whitespace collapsed', () => {
     const r = parse('  Buy   oat milk  ', ctx())
-    expect(r).toEqual({ title: 'Buy oat milk', due: null, deadline: null, start: null, evening: false, dayPart: null, projectId: null, labels: [], priority: null, energy: null, estimateMinutes: null, spentMinutes: null, recurrence: null, reminders: [], chips: [], unmatched: [] })
+    expect(r).toEqual({ title: 'Buy oat milk', due: null, deadline: null, start: null, sector: null, evening: false, dayPart: null, projectId: null, labels: [], priority: null, energy: null, estimateMinutes: null, spentMinutes: null, recurrence: null, reminders: [], chips: [], unmatched: [] })
   })
 
   it('first match of each attribute wins; later ones stay in the title', () => {

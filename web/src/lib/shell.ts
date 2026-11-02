@@ -11,7 +11,7 @@ export const BRIDGE_VERSION = 1
 /** The oldest shell app version this web app expects (bumped when a shell bug needs a forced update). */
 export const MIN_SHELL_APP = '0.10.0'
 
-export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links'
+export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars'
 
 /** One reminder handed to the shell: the next 7 days, title only when allowed. */
 export interface ShellReminder {
@@ -46,6 +46,8 @@ export interface OpenTodoShell {
   biometricRead?(): Promise<string | null> | string | null
   biometricForget?(): void
   openExternal?(url: string): void
+  /** theme-engine D8: the status and navigation bar colour, `{"color":"#rrggbb","dark":bool}` (dark: light icons). */
+  setSystemBars?(json: string): void
 }
 
 declare global {
@@ -139,6 +141,51 @@ export function openExternal(url: string): boolean {
   const s = shell()
   if (!s || !has('links') || !s.openExternal) return false
   s.openExternal(url)
+  return true
+}
+
+/**
+ * Hands an Obsidian note link to the shell (obsidian-origin D4) when it lists
+ * `obsidian-links`; the shell checks the link's shape again and opens nothing
+ * else. False when the shell cannot: the caller then offers Copy link.
+ */
+export function openObsidian(url: string): boolean {
+  const s = shell()
+  if (!s || !has('obsidian-links') || !s.openExternal) return false
+  s.openExternal(url)
+  return true
+}
+
+/** The payload of `setSystemBars` (theme-engine D8): the bar colour and whether its icons must be light. */
+export interface ShellSystemBars {
+  color: string
+  dark: boolean
+}
+
+/** Whether light icons read better than dark ones on a `#rrggbb` colour (WCAG contrast of white and black on it). */
+export function needsLightIcons(hex: string): boolean {
+  const lin = (i: number) => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+  }
+  const L = 0.2126 * lin(1) + 0.7152 * lin(3) + 0.0722 * lin(5)
+  return 1.05 / (L + 0.05) >= (L + 0.05) / 0.05
+}
+
+/** The payload for a bar colour. */
+export function systemBarsPayload(color: string): ShellSystemBars {
+  return { color, dark: needsLightIcons(color) }
+}
+
+/**
+ * Hands the bar colour to the shell when it lists `system-bars` (theme-engine D8);
+ * false when the shell cannot colour its bars. The caller sends a colour only when it
+ * changed (lib/appearance.ts).
+ */
+export function setSystemBars(color: string): boolean {
+  const s = shell()
+  if (!s || !has('system-bars') || !s.setSystemBars || !/^#[0-9a-f]{6}$/.test(color)) return false
+  s.setSystemBars(JSON.stringify(systemBarsPayload(color)))
   return true
 }
 

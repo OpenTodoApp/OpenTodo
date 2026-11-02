@@ -19,6 +19,11 @@ class Prefs(context: Context) {
         get() = p.getString("widget", null)
         set(v) = p.edit().putString("widget", v).apply()
 
+    /** The last system bars the web app asked for (theme-engine D8), applied at the next launch before the page draws. */
+    var systemBars: String?
+        get() = p.getString("systemBars", null)
+        set(v) = p.edit().putString("systemBars", v).apply()
+
     var exactAlarmAsked: Boolean
         get() = p.getBoolean("exactAlarmAsked", false)
         set(v) = p.edit().putBoolean("exactAlarmAsked", v).apply()

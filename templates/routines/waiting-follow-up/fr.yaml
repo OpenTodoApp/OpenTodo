@@ -1,0 +1,7 @@
+# Relance en attente: French text for templates/routines/waiting-follow-up/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-bdd3ab2f2d6d
+title: "Relance en attente"
+summary: "Quand une tâche reçoit ton étiquette d'attente, note la date et la ramène dans trois jours."
+description: "Attendre quelqu'un s'oublie facilement. Quand tu ajoutes ton étiquette d'attente à une tâche, cette routine commente « En attente depuis le » avec la date du jour et la rend due dans trois jours, pour qu'elle te revienne au moment de relancer.\n\nChange le nombre de jours sur la dernière carte selon la rapidité habituelle des réponses."
+ask.waiting.suggest: "en attente"
+steps.1.in.text: "En attente depuis le {a}"

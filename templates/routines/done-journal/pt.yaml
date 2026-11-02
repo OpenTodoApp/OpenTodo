@@ -1,0 +1,7 @@
+# Diário do que fiz: Portuguese text for templates/routines/done-journal/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-0c19b22827ea
+title: "Diário do que fiz"
+summary: "Quando concluis uma tarefa, acrescenta uma linha com o título à nota do teu projeto diário."
+description: "Uma lista do que terminaste ajuda nas revisões semanais, nas reuniões diárias e nos dias maus. Sempre que concluis uma tarefa, esta rotina acrescenta \"Feito:\" e o título da tarefa à nota de um projeto que escolhes, e a nota torna-se um registo do teu trabalho.\n\nAcrescenta uma condição no cartão Quando para registar só as tarefas de um projeto."
+ask.journal.suggest: "Diário"
+steps.0.in.text: "Feito: {trigger}"

@@ -8,7 +8,7 @@
 // the same keys in one scope, or in a scope and an ancestor scope, without an
 // explicit `overrides`.
 
-export type ShortcutSection = 'everywhere' | 'go' | 'tasks' | 'board' | 'calendar' | 'filter' | 'trash' | 'triage' | 'focus' | 'notes' | 'review' | 'display' | 'comments' | 'settings' | 'vim'
+export type ShortcutSection = 'everywhere' | 'go' | 'tasks' | 'board' | 'calendar' | 'filter' | 'trash' | 'triage' | 'focus' | 'notes' | 'routines' | 'review' | 'display' | 'comments' | 'settings' | 'vim'
 
 /**
  * Where a shortcut applies. The dispatcher runs the innermost active scope first:
@@ -69,6 +69,7 @@ export const SHORTCUT_SECTIONS: { id: ShortcutSection; title: string }[] = [
   { id: 'triage', title: 'Process the Inbox' },
   { id: 'focus', title: 'Focus' },
   { id: 'notes', title: 'Notes' },
+  { id: 'routines', title: 'Routine editor' },
   { id: 'review', title: 'Reviews' },
   { id: 'display', title: 'Display mode' },
   { id: 'comments', title: 'Comments and notes' },
@@ -99,6 +100,10 @@ export const VIEW_SCOPES: Record<string, ShortcutScope[]> = {
   focus: [],
   // Notes (notes-overview D7): the page's own list of notes, not a task list; `q` and `/` are its `view` entries.
   notes: [],
+  // Routines (routines-editor D13): the page's list and the editor's cards, no task list; the editor's keys are local.
+  rules: [],
+  // The theme editor (theme-editor D3): controls and an inert preview, no task list.
+  'theme-editor': [],
 }
 
 /** The scopes an entry in `scope` shadows when it binds the same keys (`vim` shadows every scope). */
@@ -126,7 +131,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'palette.add-open', keys: ['Shift+Enter'], description: 'In the command bar\'s Add mode: add the task and open it', section: 'everywhere', scope: 'global', local: true },
   { id: 'palette.fields', keys: ['↓', '↑'], description: 'In the command bar\'s Add mode: move over the fields; Tab edits the highlighted one', section: 'everywhere', scope: 'global', local: true },
   { id: 'global.assistant', keys: ['Shift+I'], description: 'Open the assistant (when the server owner has turned it on): ask about your tasks, review proposed changes; Enter sends, Esc closes', section: 'everywhere', scope: 'global' },
-  { id: 'assistant.review', keys: ['Enter', 'Esc'], description: 'Apply the checked changes / discard the proposal; Space toggles an item', section: 'everywhere', scope: 'global', local: true, when: 'proposed changes', overrides: ['list.open', 'list.escape', 'calendar.escape', 'month.open', 'month.escape', 'plan.open', 'plan.escape', 'feed.open', 'dashboard.open', 'trash.confirm', 'trash.escape', 'dashboard.escape', 'share.escape', 'panel.escape', 'task.escape', 'list.archive-offer'] },
+  { id: 'assistant.review', keys: ['Enter', 'Esc'], description: 'Apply the checked changes / discard the proposal; Space toggles an item', section: 'everywhere', scope: 'global', local: true, when: 'proposed changes', overrides: ['list.open', 'list.escape', 'calendar.escape', 'month.open', 'month.escape', 'plan.open', 'plan.escape', 'feed.open', 'dashboard.open', 'trash.confirm', 'trash.escape', 'dashboard.escape', 'share.escape', 'panel.escape', 'task.escape', 'routines.escape', 'list.archive-offer'] },
   { id: 'list.dictate', keys: ['Shift+V'], description: 'Dictate into quick add (turn voice capture on in Settings first); Esc or a pause stops, Enter saves', section: 'everywhere', scope: 'list' },
   { id: 'list.dictate-stop', keys: ['Esc'], description: 'Stop dictating', section: 'everywhere', scope: 'list', hidden: true, typing: true, overrides: ['list.escape', 'panel.escape'] },
   { id: 'global.row-menu', keys: ['.', 'Shift+F10', 'Menu'], description: 'Open the menu of the focused row: a label, view, section heading or project', section: 'everywhere', scope: 'global', local: true },
@@ -349,6 +354,15 @@ export const SHORTCUTS: Shortcut[] = [
   // ---- Notes (notes-overview D7): `q` overrides the global quick add as the calendar's does; `/` focuses the search as in Settings.
   { id: 'notes.new', keys: ['q'], description: 'On the Notes page: start a new note', section: 'notes', scope: 'view', views: ['notes'], overrides: ['list.quick-add'] },
   { id: 'notes.search', keys: ['/'], description: 'On the Notes page: focus the search field, which finds notes by every word', section: 'notes', scope: 'view', views: ['notes'] },
+  // The routine editor (routines-editor D13): handled by the editor itself, only while it is open.
+  { id: 'routines.move-up', keys: ['Alt+↑'], description: 'In the routine editor: move the focused step up (Alt+↓ moves it down)', section: 'routines', scope: 'view', views: ['rules'], local: true, when: 'focused step' },
+  { id: 'routines.move-down', keys: ['Alt+↓'], description: 'In the routine editor: move the focused step down', section: 'routines', scope: 'view', views: ['rules'], local: true, when: 'focused step', hidden: true },
+  { id: 'routines.add-step', keys: ['a'], description: 'In the routine editor: add a step below the focused step; Delete asks to delete it', section: 'routines', scope: 'view', views: ['rules'], local: true, when: 'focused step' },
+  { id: 'routines.save', keys: ['Ctrl+S', '⌘+S', 'Ctrl+Enter', '⌘+Enter'], description: 'In the routine editor: save the routine', section: 'routines', scope: 'view', views: ['rules'], local: true, typing: true },
+  { id: 'routines.test', keys: ['Ctrl+Shift+Enter', '⌘+Shift+Enter'], description: 'In the routine editor: test the routine (writes nothing)', section: 'routines', scope: 'view', views: ['rules'], local: true, typing: true },
+  { id: 'routines.review', keys: ['Enter', 'Esc'], description: 'In a routine’s proposal: apply the ticked changes / close the review; Space toggles an item', section: 'routines', scope: 'global', local: true, dialog: true, when: 'routine proposal', overrides: ['assistant.review', 'list.open', 'list.escape', 'calendar.escape', 'month.open', 'month.escape', 'plan.open', 'plan.escape', 'feed.open', 'dashboard.open', 'trash.confirm', 'trash.escape', 'dashboard.escape', 'share.escape', 'panel.escape', 'task.escape', 'routines.escape', 'list.archive-offer'] },
+  { id: 'routines.escape', keys: ['Esc'], description: 'On a routine\'s page: back to Routines, asking first about unsaved changes; on a starter\'s page: back to the starters', section: 'routines', scope: 'view', views: ['rules'], hidden: true },
+  { id: 'routines.words', keys: ['←', '→'], description: 'In the routine editor: move between the words of a step; Esc closes a picker, then goes back to Routines', section: 'routines', scope: 'view', views: ['rules'], local: true },
 
   // ---- Process the Inbox (inbox-triage): one Inbox task at a time, a key per decision; every decision but Labels moves on to the next task.
   { id: 'triage.today', keys: ['t'], description: 'Due today, then the next task', section: 'triage', scope: 'view', views: ['triage'] },
@@ -402,6 +416,10 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'settings.user-actions', keys: ['d', 'r', 'Delete'], description: 'Settings → People → Users: deactivate or reactivate, create a reset link, delete the focused user (each confirms)', section: 'settings', scope: 'view', views: ['settings'], local: true, when: 'focused user' },
   { id: 'settings.audit-export', keys: ['e'], description: 'Settings → Server → Audit log: export with the current filters while the table has focus', section: 'settings', scope: 'view', views: ['settings'], local: true, when: 'focused table' },
   { id: 'settings.passkeys', keys: ['Tab'], description: 'Settings → Account → Security → Passkeys: add, rename (Enter saves, Esc cancels) or remove passkeys', section: 'settings', scope: 'view', views: ['settings'], local: true },
+  // The theme editor (theme-editor D3): only while the editor is open; text fields keep their own undo.
+  { id: 'themes.undo', keys: ['Ctrl+Z', '⌘+Z'], description: 'Theme editor: undo the last change', section: 'settings', scope: 'view', views: ['theme-editor'], overrides: ['global.undo-bulk'] },
+  { id: 'themes.redo', keys: ['Ctrl+Shift+Z', '⌘+Shift+Z'], description: 'Theme editor: redo the change undone last', section: 'settings', scope: 'view', views: ['theme-editor'] },
+  { id: 'themes.save', keys: ['Ctrl+S', '⌘+S'], description: 'Theme editor: save the theme', section: 'settings', scope: 'view', views: ['theme-editor'], typing: true },
 
   // ---- comments and notes
   { id: 'panel.comment', keys: ['Shift+C'], description: 'Comment on the open task: switch to the Comments tab and focus the composer (markdown; @ completes members, ↑ / ↓ and Enter pick)', section: 'comments', scope: 'panel' },
@@ -428,7 +446,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'vim.open-below', keys: ['o'], description: 'Quick add; in project lists and the Inbox the new task lands after the selection', section: 'vim', scope: 'vim', overrides: ['dashboard.open-view'] },
   { id: 'vim.insert', keys: ['i'], description: 'Open the selected task and edit its title (Insert mode)', section: 'vim', scope: 'vim' },
   { id: 'vim.priority', keys: ['1', '2', '3', '4'], description: 'Priority, applied after 1 s or at the next key (a digit followed by a motion is a count)', section: 'vim', scope: 'vim', overrides: ['list.priority', 'panel.priority'] },
-  { id: 'vim.leave-field', keys: ['Esc'], description: 'In a field: leave it and return to Normal mode; the text is kept, the panel stays open. In Normal mode Esc closes the panel and clears the selection as usual', section: 'vim', scope: 'vim', typing: true, overrides: ['list.escape', 'list.dictate-stop', 'calendar.escape', 'month.escape', 'plan.escape', 'year.escape', 'panel.escape', 'trash.escape', 'dashboard.escape', 'share.escape', 'triage.escape', 'focus.escape', 'task.escape', 'display.exit'] },
+  { id: 'vim.leave-field', keys: ['Esc'], description: 'In a field: leave it and return to Normal mode; the text is kept, the panel stays open. In Normal mode Esc closes the panel and clears the selection as usual', section: 'vim', scope: 'vim', typing: true, overrides: ['list.escape', 'list.dictate-stop', 'calendar.escape', 'month.escape', 'plan.escape', 'year.escape', 'panel.escape', 'trash.escape', 'dashboard.escape', 'share.escape', 'triage.escape', 'focus.escape', 'task.escape', 'routines.escape', 'display.exit'] },
   { id: 'vim.command', keys: [':'], description: 'Open the command line (Tab completes, Enter runs, Esc cancels)', section: 'vim', scope: 'vim' },
 ]
 

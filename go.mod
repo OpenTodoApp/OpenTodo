@@ -4,11 +4,17 @@ go 1.26.0
 
 toolchain go1.27.3
 
+// Multipath TCP stays off on every listener and dialer (Go turns it on for
+// Linux listeners by default): OpenTodo gains nothing from it, and it widens
+// the kernel code reachable from the network (CVE-2026-98432).
+godebug multipathtcp=0
+
 require (
 	github.com/anthropics/anthropic-sdk-go v1.84.0
 	github.com/fxamacker/cbor/v2 v2.9.6
 	go.opentelemetry.io/otel v1.47.0
 	go.opentelemetry.io/otel/trace v1.47.0
+	go.yaml.in/yaml/v3 v3.0.5
 	golang.org/x/crypto v0.58.0
 	modernc.org/sqlite v1.61.0
 )

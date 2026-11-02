@@ -29,6 +29,9 @@ type Service struct {
 	// Backoff between retries of the Chat Completions adapter (tests: 1 ms).
 	Backoff time.Duration
 
+	// stub replaces every provider (package tests only).
+	stub Provider
+
 	mu       sync.Mutex
 	running  map[string]bool
 	inFlight int
@@ -85,6 +88,9 @@ var ErrNoKey = errors.New("no_key")
 func (s *Service) ProviderFor(r Route, set Settings) (Provider, error) {
 	if r.Member && !IsMemberProvider(r.Provider) {
 		return nil, errors.New("members cannot use this provider")
+	}
+	if s.stub != nil {
+		return s.stub, nil
 	}
 	return s.provider(r.Provider, r.base, r.key, set.AllowPrivateEndpoint)
 }
@@ -144,6 +150,8 @@ type Draft struct {
 	BaseURL              *string
 	Key                  *string
 	AllowPrivateEndpoint *bool
+	// Images is the compatible endpoint's "This model reads images" mark.
+	Images *bool
 }
 
 // TestConnection sends a minimal request with one tool to the named provider
@@ -166,6 +174,9 @@ func (s *Service) TestConnection(ctx context.Context, name string, set Settings,
 	if name == Compatible {
 		// The same trim as a save, so the test checks what will be saved.
 		p.BaseURL = TrimBaseURL(p.BaseURL)
+		if d.Images != nil {
+			p.Images = *d.Images
+		}
 	}
 	allowPrivate := set.AllowPrivateEndpoint
 	if d.AllowPrivateEndpoint != nil {
@@ -201,7 +212,33 @@ func (s *Service) TestConnection(ctx context.Context, name string, set Settings,
 	if err != nil {
 		return TestResult{Code: "internal", Message: err.Error()}
 	}
-	return s.test(ctx, prov)
+	res := s.test(ctx, prov)
+	if res.OK && name == Compatible && p.Images {
+		// A model marked as reading images is also sent the built-in image (voice-ramble D5).
+		res = s.testImage(ctx, prov)
+	}
+	return res
+}
+
+// testImage sends the built-in 64×32 image of the word "milk". The request
+// passes when it is accepted; the answer's content is not judged.
+func (s *Service) testImage(ctx context.Context, prov Provider) TestResult {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+	conv := prov.Start(Request{System: "Connection test. Reply with the word in the image.", MaxTokens: 64,
+		Messages: []Message{{Role: "user", Text: "Which word is in this image?", Images: []Image{testImage}}}})
+	_, err := conv.Next(ctx, func(string) {})
+	if err == nil {
+		return TestResult{OK: true, Message: "Connected. The endpoint accepts tool definitions and images."}
+	}
+	pe, ok := AsProviderError(err)
+	if !ok {
+		return TestResult{Code: CodeProviderError, Message: "the provider could not be reached"}
+	}
+	if pe.Code == CodeImagesUnsupported || (pe.Code == CodeProviderError && pe.Status >= 400 && pe.Status < 500) {
+		return TestResult{Code: CodeImagesUnsupported, Status: pe.Status, Message: "the endpoint accepts text but refused the image: this model does not read images; untick \"This model reads images\""}
+	}
+	return TestResult{Code: pe.Code, Status: pe.Status, Message: pe.Msg}
 }
 
 // TestMember is a member's "Test connection" of their own provider, model and

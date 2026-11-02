@@ -13,6 +13,8 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/origin"
 	"github.com/OpenTodoApp/opentodo/internal/recurrence"
 	"github.com/OpenTodoApp/opentodo/internal/ruleval"
+	"github.com/OpenTodoApp/opentodo/internal/sector"
+	"github.com/OpenTodoApp/opentodo/internal/themes"
 	"github.com/OpenTodoApp/opentodo/internal/zoned"
 )
 
@@ -45,7 +47,8 @@ var kindChecks = map[kind]func(raw json.RawMessage) error{
 	kGeo:            location.CheckGeo,
 	kRuleTrigger:    ruleval.CheckTrigger,
 	kRuleCondition:  orNull(ruleval.CheckCondition),
-	kRuleActions:    ruleval.CheckActions,
+	kRuleActions:    orNull(ruleval.CheckActions),
+	kRoutineSteps:   orNull(ruleval.CheckSteps),
 	kReactions:      checkReactions,
 	kDayPart:        orNull(checkDayPart),
 	kClock:          checkClock,
@@ -54,6 +57,30 @@ var kindChecks = map[kind]func(raw json.RawMessage) error{
 	kOrderList:      checkOrderList,
 	kSplit:          orNull(checkSplit),
 	kFocusSession:   checkFocusSession,
+	kThemeDoc:       orNull(checkThemeDoc),
+	kSector:         checkSector,
+}
+
+// checkSector accepts "" or a valid time sector (time-sectors D1); null is refused.
+func checkSector(raw json.RawMessage) error {
+	var v string
+	if err := json.Unmarshal(raw, &v); err != nil || isNullValue(raw) || sector.Check(v) != nil {
+		return errors.New(`must be "" or a time sector "YYYY-Www", "YYYY-MM" or "YYYY-Qn"`)
+	}
+	return nil
+}
+
+// checkThemeDoc accepts a JSON object that is a valid theme document of at most
+// themes.MaxBytes bytes (theme-editor D1). A document of a newer format is
+// refused like any other invalid one: the server and its web app ship together.
+func checkThemeDoc(raw json.RawMessage) error {
+	if len(raw) == 0 || raw[0] != '{' {
+		return errors.New("must be a theme document object")
+	}
+	if err := themes.Validate(raw); err != nil {
+		return fmt.Errorf("is not a valid theme document (%s)", themes.Code(err))
+	}
+	return nil
 }
 
 func isNullValue(raw json.RawMessage) bool { return string(raw) == "null" }
@@ -375,4 +402,35 @@ func checkInstant(raw json.RawMessage) error {
 		return errors.New("must be null or a positive unix millisecond timestamp")
 	}
 	return nil
+}
+
+// isDate and isClock check the shape of "YYYY-MM-DD" and "HH:MM" (digits and separators).
+func isDate(s string) bool {
+	if len(s) != 10 || s[4] != '-' || s[7] != '-' {
+		return false
+	}
+	for i, c := range s {
+		if i == 4 || i == 7 {
+			continue
+		}
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+func isClock(s string) bool {
+	if len(s) != 5 || s[2] != ':' {
+		return false
+	}
+	for i, c := range s {
+		if i == 2 {
+			continue
+		}
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
 }

@@ -25,6 +25,8 @@ class Bridge(private val context: Context, private val origin: String, private v
         fun biometricStore(key: ByteArray, done: (Boolean) -> Unit)
         fun biometricRead(done: (ByteArray?) -> Unit)
         fun openExternal(url: String)
+        /** theme-engine D8: colour the status and navigation bars (main thread). */
+        fun setSystemBars(bars: SystemBars) {}
     }
 
     private val main = Handler(Looper.getMainLooper())
@@ -32,7 +34,7 @@ class Bridge(private val context: Context, private val origin: String, private v
     fun capabilities(): List<String> {
         val caps = mutableListOf("reminders", "widgets")
         if (host != null) {
-            caps += listOf("share", "links")
+            caps += listOf("share", "links", "obsidian-links", "system-bars")
             if (BiometricKeyStore.available(context)) caps += "biometric"
         }
         return caps
@@ -68,7 +70,12 @@ class Bridge(private val context: Context, private val origin: String, private v
                 answer(key?.let { android.util.Base64.encodeToString(it, android.util.Base64.NO_WRAP).also { _ -> it.fill(0) } })
             }
             "biometricForget" -> BiometricKeyStore.forget(context)
-            "openExternal" -> args.optString(0).takeIf { safeExternal(it) }?.let { host?.openExternal(it) }
+            "openExternal" -> args.optString(0).takeIf { externalLink(it) }?.let { host?.openExternal(it) }
+            "setSystemBars" -> if (host != null) {
+                // A malformed payload keeps the bars, and nothing of it is logged.
+                val json = args.optString(0)
+                SystemBars.parse(json)?.let { bars -> Prefs(context).systemBars = json; main.post { host.setSystemBars(bars) } }
+            }
         }
     }
 
@@ -104,6 +111,13 @@ class Bridge(private val context: Context, private val origin: String, private v
             return scheme == "https" || scheme == "http" || scheme == "mailto" || scheme == "tel"
         }
 
+        /**
+         * What the bridge's openExternal hands to the system: [safeExternal], or an Obsidian
+         * note link of the one accepted shape (obsidian-origin, capability `obsidian-links`).
+         * Navigation of the web view never opens an Obsidian link: only this method does.
+         */
+        fun externalLink(url: String): Boolean = safeExternal(url) || ObsidianLink.valid(url)
+
         /** The page side: `window.opentodoShell`, promise-returning methods over the message channel. */
         fun script(app: String, caps: List<String>): String = """
             (function () {
@@ -126,7 +140,8 @@ class Bridge(private val context: Context, private val origin: String, private v
                 biometricStore: function (key) { return call('biometricStore', [String(key)]) },
                 biometricRead: function () { return call('biometricRead', []) },
                 biometricForget: function () { send('biometricForget', []) },
-                openExternal: function (url) { send('openExternal', [String(url)]) }
+                openExternal: function (url) { send('openExternal', [String(url)]) },
+                setSystemBars: function (json) { send('setSystemBars', [String(json)]) }
               });
             })();
         """.trimIndent()

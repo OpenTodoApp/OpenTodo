@@ -87,6 +87,51 @@ func (n *InApp) RuleFired(ctx context.Context, e RuleEvent) {
 	n.insert(ctx, e.UserID, KindRuleFired, e)
 }
 
+// RoutineNotice stores a routine notification (a Notify me step) for the
+// routine's user.
+func (n *InApp) RoutineNotice(ctx context.Context, e RoutineNotice) {
+	n.insert(ctx, e.UserID, KindRoutine, e)
+}
+
+// RoutineFailed stores a routine_failed notification, one per routine and
+// day: a later failure of the same day counts up, points at its run and makes
+// the notification unread again (routines-editor D11).
+func (n *InApp) RoutineFailed(ctx context.Context, a RoutineAlert) {
+	var id, payload string
+	err := n.db.QueryRowContext(ctx, `SELECT id, payload FROM notifications WHERE user_id = ? AND kind = ?
+		AND json_extract(payload, '$.ruleId') = ? AND json_extract(payload, '$.day') = ? ORDER BY created_at DESC LIMIT 1`,
+		a.UserID, KindRoutineFailed, a.RuleID, a.Day).Scan(&id, &payload)
+	if errors.Is(err, sql.ErrNoRows) {
+		a.Count = 1
+		n.insert(ctx, a.UserID, KindRoutineFailed, a)
+		return
+	}
+	if err == nil {
+		var old RoutineAlert
+		_ = json.Unmarshal([]byte(payload), &old)
+		a.Count = max(old.Count, 1) + 1
+		var b []byte
+		if b, err = json.Marshal(a); err == nil {
+			_, err = n.db.ExecContext(ctx, `UPDATE notifications SET payload = ?, created_at = ?, read_at = NULL WHERE id = ?`, string(b), n.now().UnixMilli(), id)
+		}
+	}
+	if err != nil {
+		n.log.Error("store notification", "kind", KindRoutineFailed, "err", err)
+	}
+}
+
+// RoutineProposal stores a routine_proposal notification: a routine's AI step
+// left a proposal waiting (routines-ai-step D2). Count is the proposal's items.
+func (n *InApp) RoutineProposal(ctx context.Context, a RoutineAlert) {
+	n.insert(ctx, a.UserID, KindRoutineProposal, a)
+}
+
+// RoutinePausedShared stores a routine_paused_shared notification for one
+// member of the routine's project (routines-shared D9).
+func (n *InApp) RoutinePausedShared(ctx context.Context, e RoutinePausedShared) {
+	n.insert(ctx, e.UserID, KindRoutinePausedShared, e)
+}
+
 // RulePaused stores a rule_paused notification for the rule's author.
 func (n *InApp) RulePaused(ctx context.Context, e RuleEvent) {
 	n.insert(ctx, e.UserID, KindRulePaused, e)

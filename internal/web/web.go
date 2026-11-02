@@ -72,6 +72,10 @@ func handlerFor(sub fs.FS, o Options) http.Handler {
 					} else {
 						w.Header().Set("Cache-Control", "no-cache")
 					}
+					// The theme credits (theme-catalogue D4) are shown as text, never offered as a download.
+					if strings.HasSuffix(p, ".md") {
+						w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+					}
 					fileServer.ServeHTTP(w, r)
 					return
 				}

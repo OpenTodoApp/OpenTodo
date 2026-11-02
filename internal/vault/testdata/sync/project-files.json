@@ -1,0 +1,2286 @@
+{
+  "name": "project-files",
+  "description": "a renamed file renames its project, a new file becomes a project, a deleted file is written back, a file moved into a folder nests its project",
+  "loc": "UTC",
+  "user": "user-1",
+  "steps": [
+    {
+      "name": "init",
+      "now": 1793610060000,
+      "init": true,
+      "server": [
+        {
+          "id": "app-p-home-archived-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "archived",
+          "value": false,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-color-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "color",
+          "value": "#22c55e",
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-created_at-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "created_at",
+          "value": 1793602800000,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-deleted_at-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-name-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "name",
+          "value": "Home",
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-parent_id-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "parent_id",
+          "value": null,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-home-position-1793606400001",
+          "entity": "project",
+          "entityId": "p-home",
+          "field": "position",
+          "value": 1000,
+          "ts": 1793606400001,
+          "device": "app"
+        },
+        {
+          "id": "app-p-work-archived-1793606400002",
+          "entity": "project",
+          "entityId": "p-work",
+          "field": "archived",
+          "value": false,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-p-work-color-1793606400002",
+          "entity": "project",
+          "entityId": "p-work",
+          "field": "color",
+          "value": "#22c55e",
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-p-work-created_at-1793606400002",
+          "entity": "project",
+          "entityId": "p-work",
+          "field": "created_at",
+          "value": 1793602800000,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-p-work-deleted_at-1793606400002",
+          "entity": "project",
+          "entityId": "p-work",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-p-work-name-1793606400002",
+          "entity": "project",
+          "entityId": "p-work",
+          "field": "name",
+          "value": "Work",
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-p-work-parent_id-1793606400002",
+          "entity": "project",
+          "entityId": "p-work",
+          "field": "parent_id",
+          "value": null,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-p-work-position-1793606400002",
+          "entity": "project",
+          "entityId": "p-work",
+          "field": "position",
+          "value": 2000,
+          "ts": 1793606400002,
+          "device": "app"
+        },
+        {
+          "id": "app-p-launch-archived-1793606400003",
+          "entity": "project",
+          "entityId": "p-launch",
+          "field": "archived",
+          "value": false,
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-p-launch-color-1793606400003",
+          "entity": "project",
+          "entityId": "p-launch",
+          "field": "color",
+          "value": "#22c55e",
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-p-launch-created_at-1793606400003",
+          "entity": "project",
+          "entityId": "p-launch",
+          "field": "created_at",
+          "value": 1793602800000,
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-p-launch-deleted_at-1793606400003",
+          "entity": "project",
+          "entityId": "p-launch",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-p-launch-name-1793606400003",
+          "entity": "project",
+          "entityId": "p-launch",
+          "field": "name",
+          "value": "Launch",
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-p-launch-parent_id-1793606400003",
+          "entity": "project",
+          "entityId": "p-launch",
+          "field": "parent_id",
+          "value": "p-work",
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-p-launch-position-1793606400003",
+          "entity": "project",
+          "entityId": "p-launch",
+          "field": "position",
+          "value": 1000,
+          "ts": 1793606400003,
+          "device": "app"
+        },
+        {
+          "id": "app-t-ship-completed_at-1793606400004",
+          "entity": "task",
+          "entityId": "t-ship",
+          "field": "completed_at",
+          "value": null,
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-t-ship-created_at-1793606400004",
+          "entity": "task",
+          "entityId": "t-ship",
+          "field": "created_at",
+          "value": 1793602800000,
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-t-ship-deleted_at-1793606400004",
+          "entity": "task",
+          "entityId": "t-ship",
+          "field": "deleted_at",
+          "value": null,
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-t-ship-labels-1793606400004",
+          "entity": "task",
+          "entityId": "t-ship",
+          "field": "labels",
+          "value": [],
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-t-ship-position-1793606400004",
+          "entity": "task",
+          "entityId": "t-ship",
+          "field": "position",
+          "value": 1000,
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-t-ship-priority-1793606400004",
+          "entity": "task",
+          "entityId": "t-ship",
+          "field": "priority",
+          "value": 4,
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-t-ship-project_id-1793606400004",
+          "entity": "task",
+          "entityId": "t-ship",
+          "field": "project_id",
+          "value": "p-launch",
+          "ts": 1793606400004,
+          "device": "app"
+        },
+        {
+          "id": "app-t-ship-title-1793606400004",
+          "entity": "task",
+          "entityId": "t-ship",
+          "field": "title",
+          "value": "Ship",
+          "ts": 1793606400004,
+          "device": "app"
+        }
+      ],
+      "device": "vault:vectors",
+      "want": {
+        "pushed": [],
+        "files": {
+          "Home.md": "---\nopentodo-id: p-home\nopentodo-color: \"#22c55e\"\n---\n",
+          "Inbox.md": "",
+          "Work/Launch.md": "---\nopentodo-id: p-launch\nopentodo-color: \"#22c55e\"\n---\n\n- [ ] Ship 🆔 t-ship\n",
+          "Work/Work.md": "---\nopentodo-id: p-work\nopentodo-color: \"#22c55e\"\n---\n"
+        },
+        "report": {
+          "written": 4,
+          "created": 0,
+          "updated": 0,
+          "trashed": 0,
+          "conflicts": 0,
+          "warnings": [],
+          "cursor": 29,
+          "events": [
+            {
+              "kind": "written",
+              "file": "Inbox.md",
+              "text": "wrote Inbox.md"
+            },
+            {
+              "kind": "written",
+              "file": "Home.md",
+              "text": "wrote Home.md"
+            },
+            {
+              "kind": "written",
+              "file": "Work/Launch.md",
+              "text": "wrote Work/Launch.md"
+            },
+            {
+              "kind": "written",
+              "file": "Work/Work.md",
+              "text": "wrote Work/Work.md"
+            }
+          ],
+          "projects": 3,
+          "tasks": 1
+        },
+        "state": {
+          "version": 2,
+          "device": "vault:vectors",
+          "profile": "default",
+          "server": "https://todo.example.com",
+          "cursor": 29,
+          "clock": 1793606400004,
+          "offset": 0,
+          "store": {
+            "project": {
+              "p-home": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Home",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400001,
+                  "d": "app"
+                }
+              },
+              "p-launch": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Launch",
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": "p-work",
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400003,
+                  "d": "app"
+                }
+              },
+              "p-work": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Work",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793606400002,
+                  "d": "app"
+                }
+              }
+            },
+            "task": {
+              "t-ship": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-launch",
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Ship",
+                  "t": 1793606400004,
+                  "d": "app"
+                }
+              }
+            }
+          },
+          "files": {
+            "Home.md": {
+              "project": "p-home",
+              "hash": "1087a64bb47ccca8aa8979cb9e2faeaa3ab17c00581e3d32b50ea100bfb3e60a"
+            },
+            "Inbox.md": {
+              "project": "",
+              "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "Work/Launch.md": {
+              "project": "p-launch",
+              "hash": "34ce119a85cf4b59985a5e234bc7d6cf020c647e9bccff960aee1b1e80e41ebf"
+            },
+            "Work/Work.md": {
+              "project": "p-work",
+              "hash": "a26864372fa7f1aea1263c0834eebba73d75b88b693593f4dbe21f9ed146fc2e"
+            }
+          },
+          "printed": {
+            "t-ship": "Work/Launch.md"
+          },
+          "initialized": true
+        }
+      }
+    },
+    {
+      "name": "rename, new, deleted",
+      "now": 1793610120000,
+      "files": {
+        "Garden.md": "- [ ] Dig\n- [ ] Plant\n- [ ] Water\n",
+        "Home.md": null,
+        "Household.md": "---\nopentodo-id: p-home\nopentodo-color: \"#22c55e\"\n---\n",
+        "Work/Launch.md": null
+      },
+      "want": {
+        "pushed": [
+          {
+            "id": "v-db5094612e9a908e5912cbfeceb3348635ce14db",
+            "entity": "project",
+            "entityId": "p-home",
+            "field": "name",
+            "value": "Household",
+            "ts": 1793610120000,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-5990709702be0e0e8fe87136d4fad0f7a717ba8f",
+            "entity": "project",
+            "entityId": "8c815dd0-bdbf-8dc4-901d-0f3377dec2ff",
+            "field": "archived",
+            "value": false,
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-77d005a3e30aa3b51bfa4971daf2f6b1bac33929",
+            "entity": "project",
+            "entityId": "8c815dd0-bdbf-8dc4-901d-0f3377dec2ff",
+            "field": "color",
+            "value": "#14b8a6",
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-5006801caf4960452fa603129b39fdf48cb88dba",
+            "entity": "project",
+            "entityId": "8c815dd0-bdbf-8dc4-901d-0f3377dec2ff",
+            "field": "created_at",
+            "value": 1793610120000,
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-57797a81d1f419cfc07f5db79fe638d13c7fb38f",
+            "entity": "project",
+            "entityId": "8c815dd0-bdbf-8dc4-901d-0f3377dec2ff",
+            "field": "deleted_at",
+            "value": null,
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-cd2c31886c12472af6e8a886bb0ea0ccdc4298f9",
+            "entity": "project",
+            "entityId": "8c815dd0-bdbf-8dc4-901d-0f3377dec2ff",
+            "field": "icon",
+            "value": null,
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-9f3afa2dc23950a99cc31e4b0924479c4251079f",
+            "entity": "project",
+            "entityId": "8c815dd0-bdbf-8dc4-901d-0f3377dec2ff",
+            "field": "name",
+            "value": "Garden",
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-71a86ddd47a891e5ba70a24c58409772b9210791",
+            "entity": "project",
+            "entityId": "8c815dd0-bdbf-8dc4-901d-0f3377dec2ff",
+            "field": "parent_id",
+            "value": null,
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-c9e984739b7f2569aa1da1cfcfeca14cbfc1f93b",
+            "entity": "project",
+            "entityId": "8c815dd0-bdbf-8dc4-901d-0f3377dec2ff",
+            "field": "position",
+            "value": 3000,
+            "ts": 1793610120001,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-cb61a0d6f1f612229c34ca8fc02d0db741c750ef",
+            "entity": "task",
+            "entityId": "10b125cc-8491-8f98-b297-4275f0a1bfc4",
+            "field": "blocked_by",
+            "value": [],
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-10e1dfa75db2e6b18c0b1b7515d03999f0c45a75",
+            "entity": "task",
+            "entityId": "10b125cc-8491-8f98-b297-4275f0a1bfc4",
+            "field": "completed_at",
+            "value": null,
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-8fca7ba21ac1477077e13c3858691011ea36e7aa",
+            "entity": "task",
+            "entityId": "10b125cc-8491-8f98-b297-4275f0a1bfc4",
+            "field": "completed_by",
+            "value": null,
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-0d93020d41c8a9e32e75fa1f83df3addc4ecb679",
+            "entity": "task",
+            "entityId": "10b125cc-8491-8f98-b297-4275f0a1bfc4",
+            "field": "created_at",
+            "value": 1793610120000,
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-8e9de856126cc5c756bc78e7f018b63ec0a492d0",
+            "entity": "task",
+            "entityId": "10b125cc-8491-8f98-b297-4275f0a1bfc4",
+            "field": "deadline",
+            "value": null,
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-bcfad62f2bed9017a5e3810dff1657f9b63f8a3f",
+            "entity": "task",
+            "entityId": "10b125cc-8491-8f98-b297-4275f0a1bfc4",
+            "field": "deleted_at",
+            "value": null,
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-75bec2309afedbe132b2b7cb0ad188bafe6b9e4d",
+            "entity": "task",
+            "entityId": "10b125cc-8491-8f98-b297-4275f0a1bfc4",
+            "field": "description",
+            "value": "",
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-e30f4fbd343d6aa52f5f13680424266b3f73732d",
+            "entity": "task",
+            "entityId": "10b125cc-8491-8f98-b297-4275f0a1bfc4",
+            "field": "due",
+            "value": null,
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-962ca72877fd764465f114ef356e353416848511",
+            "entity": "task",
+            "entityId": "10b125cc-8491-8f98-b297-4275f0a1bfc4",
+            "field": "estimate_minutes",
+            "value": null,
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-766e61a6ad81ea9953083e06436969eea1b1f06b",
+            "entity": "task",
+            "entityId": "10b125cc-8491-8f98-b297-4275f0a1bfc4",
+            "field": "evening",
+            "value": false,
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-c0c2156ed3a738dfb0f4e74a929a12fe22d821ba",
+            "entity": "task",
+            "entityId": "10b125cc-8491-8f98-b297-4275f0a1bfc4",
+            "field": "labels",
+            "value": [],
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-2975ab307aabc849eadacbb2b6f47867216ca553",
+            "entity": "task",
+            "entityId": "10b125cc-8491-8f98-b297-4275f0a1bfc4",
+            "field": "parent_id",
+            "value": null,
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-a83859061ff780d22714582136361c92294c8cab",
+            "entity": "task",
+            "entityId": "10b125cc-8491-8f98-b297-4275f0a1bfc4",
+            "field": "position",
+            "value": 2000,
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-495b36781fc9004dd49ab4194c1687631a8d75c7",
+            "entity": "task",
+            "entityId": "10b125cc-8491-8f98-b297-4275f0a1bfc4",
+            "field": "priority",
+            "value": 4,
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-dd6fa4105cc87465e0e5059c0eaa0d9092c1e032",
+            "entity": "task",
+            "entityId": "10b125cc-8491-8f98-b297-4275f0a1bfc4",
+            "field": "project_id",
+            "value": "8c815dd0-bdbf-8dc4-901d-0f3377dec2ff",
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-c2213bc62eceb61d9f79aef26cfdd2eaa79c3562",
+            "entity": "task",
+            "entityId": "10b125cc-8491-8f98-b297-4275f0a1bfc4",
+            "field": "recurrence",
+            "value": null,
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-34b17d99cdd325ffab83eb15ce22984082c9c7d1",
+            "entity": "task",
+            "entityId": "10b125cc-8491-8f98-b297-4275f0a1bfc4",
+            "field": "section_id",
+            "value": null,
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-7ff87d0c80de9be7fdedbe6d761e50cc1fec4d73",
+            "entity": "task",
+            "entityId": "10b125cc-8491-8f98-b297-4275f0a1bfc4",
+            "field": "start",
+            "value": null,
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-d8ad285e700b784ff5d767607f6969c25ffc0c3f",
+            "entity": "task",
+            "entityId": "10b125cc-8491-8f98-b297-4275f0a1bfc4",
+            "field": "title",
+            "value": "Plant",
+            "ts": 1793610120002,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-c8f175ad95676625f0a07783b9606507c2715095",
+            "entity": "task",
+            "entityId": "69bb1080-7023-845d-b628-fd98ab2cac67",
+            "field": "blocked_by",
+            "value": [],
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-710030ed2e83ce0ba3c993a1be68aeb89f5546a4",
+            "entity": "task",
+            "entityId": "69bb1080-7023-845d-b628-fd98ab2cac67",
+            "field": "completed_at",
+            "value": null,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-f388e1c3d19d7f3a690057bb09b654de5e74db24",
+            "entity": "task",
+            "entityId": "69bb1080-7023-845d-b628-fd98ab2cac67",
+            "field": "completed_by",
+            "value": null,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-28599b679ae5e3676b8a703ee7d351709fc10ba8",
+            "entity": "task",
+            "entityId": "69bb1080-7023-845d-b628-fd98ab2cac67",
+            "field": "created_at",
+            "value": 1793610120000,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-eecd9abf5684083314b32c81f0f2f382116e0743",
+            "entity": "task",
+            "entityId": "69bb1080-7023-845d-b628-fd98ab2cac67",
+            "field": "deadline",
+            "value": null,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-d54aae6f6c0b425566f64066ad6d7cfa997ccc82",
+            "entity": "task",
+            "entityId": "69bb1080-7023-845d-b628-fd98ab2cac67",
+            "field": "deleted_at",
+            "value": null,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-d3da905ecb58e037ed2b174241a9f9d2d809692d",
+            "entity": "task",
+            "entityId": "69bb1080-7023-845d-b628-fd98ab2cac67",
+            "field": "description",
+            "value": "",
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-38e34e37e98c10e535d06df3d73c185f3b5793e6",
+            "entity": "task",
+            "entityId": "69bb1080-7023-845d-b628-fd98ab2cac67",
+            "field": "due",
+            "value": null,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-e1beeb1abb6af10ecefd0f32db150c06205a57d2",
+            "entity": "task",
+            "entityId": "69bb1080-7023-845d-b628-fd98ab2cac67",
+            "field": "estimate_minutes",
+            "value": null,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-a09eeb414c36d5cea5a28e085a8814b82b69d22f",
+            "entity": "task",
+            "entityId": "69bb1080-7023-845d-b628-fd98ab2cac67",
+            "field": "evening",
+            "value": false,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-ae58ebfa6763cb76b2fa8d02e7da3f904015850a",
+            "entity": "task",
+            "entityId": "69bb1080-7023-845d-b628-fd98ab2cac67",
+            "field": "labels",
+            "value": [],
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-fda9ca0acf06ef30838187663ebf3e2595859b31",
+            "entity": "task",
+            "entityId": "69bb1080-7023-845d-b628-fd98ab2cac67",
+            "field": "parent_id",
+            "value": null,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-d6a1de3b37d532010ab69a8353f8ffd215249e21",
+            "entity": "task",
+            "entityId": "69bb1080-7023-845d-b628-fd98ab2cac67",
+            "field": "position",
+            "value": 1000,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-25c4649205cde0068f81cbc3757d533ea78d9d6b",
+            "entity": "task",
+            "entityId": "69bb1080-7023-845d-b628-fd98ab2cac67",
+            "field": "priority",
+            "value": 4,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-9028d44096e1a70aa3eae88a064fd700f933eb1a",
+            "entity": "task",
+            "entityId": "69bb1080-7023-845d-b628-fd98ab2cac67",
+            "field": "project_id",
+            "value": "8c815dd0-bdbf-8dc4-901d-0f3377dec2ff",
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-b5c77afceb68e6153c396b501d145229ba43e35c",
+            "entity": "task",
+            "entityId": "69bb1080-7023-845d-b628-fd98ab2cac67",
+            "field": "recurrence",
+            "value": null,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-c808d69546f25dd7f118725d6d5e5f8e5d6e4cfc",
+            "entity": "task",
+            "entityId": "69bb1080-7023-845d-b628-fd98ab2cac67",
+            "field": "section_id",
+            "value": null,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-f219b3af9c430e166cb106c1b3a5f4621436107a",
+            "entity": "task",
+            "entityId": "69bb1080-7023-845d-b628-fd98ab2cac67",
+            "field": "start",
+            "value": null,
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-a15f81ab0fe48bffd5144e1b6790d1d2a9961eda",
+            "entity": "task",
+            "entityId": "69bb1080-7023-845d-b628-fd98ab2cac67",
+            "field": "title",
+            "value": "Dig",
+            "ts": 1793610120003,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-841ef29c18b8df8fdd67fa9bed3944dd57690dc7",
+            "entity": "task",
+            "entityId": "dc8d9e21-d4d5-8c21-a05f-1a3967ee6223",
+            "field": "blocked_by",
+            "value": [],
+            "ts": 1793610120004,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-aad1409abcb3e5c915ed121fedf1358029e4fbf2",
+            "entity": "task",
+            "entityId": "dc8d9e21-d4d5-8c21-a05f-1a3967ee6223",
+            "field": "completed_at",
+            "value": null,
+            "ts": 1793610120004,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-4c467de34ef70d71c82a1bd06073c6f929403454",
+            "entity": "task",
+            "entityId": "dc8d9e21-d4d5-8c21-a05f-1a3967ee6223",
+            "field": "completed_by",
+            "value": null,
+            "ts": 1793610120004,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-6d898745dce3acef40da95cfc0125e36477efacc",
+            "entity": "task",
+            "entityId": "dc8d9e21-d4d5-8c21-a05f-1a3967ee6223",
+            "field": "created_at",
+            "value": 1793610120000,
+            "ts": 1793610120004,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-9ddd85922e1ddea1d8c1837f730c553b8a39132f",
+            "entity": "task",
+            "entityId": "dc8d9e21-d4d5-8c21-a05f-1a3967ee6223",
+            "field": "deadline",
+            "value": null,
+            "ts": 1793610120004,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-31a17c2c728223a61bb1e52e1d703fb9491eb6aa",
+            "entity": "task",
+            "entityId": "dc8d9e21-d4d5-8c21-a05f-1a3967ee6223",
+            "field": "deleted_at",
+            "value": null,
+            "ts": 1793610120004,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-3b8ad0f7f84cdf7b34bd62675fcb5db50f300038",
+            "entity": "task",
+            "entityId": "dc8d9e21-d4d5-8c21-a05f-1a3967ee6223",
+            "field": "description",
+            "value": "",
+            "ts": 1793610120004,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-5364391bc8b3c4d8ff78c0aa891023bd1ae90e3f",
+            "entity": "task",
+            "entityId": "dc8d9e21-d4d5-8c21-a05f-1a3967ee6223",
+            "field": "due",
+            "value": null,
+            "ts": 1793610120004,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-973d1a4c130e8dc717a74ba9668f11c1c00ac7af",
+            "entity": "task",
+            "entityId": "dc8d9e21-d4d5-8c21-a05f-1a3967ee6223",
+            "field": "estimate_minutes",
+            "value": null,
+            "ts": 1793610120004,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-ed044fc08ea03b3dadf9da49cd4451a8a2443df7",
+            "entity": "task",
+            "entityId": "dc8d9e21-d4d5-8c21-a05f-1a3967ee6223",
+            "field": "evening",
+            "value": false,
+            "ts": 1793610120004,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-192222fdc38ff2c371d026408d5d40454ef69754",
+            "entity": "task",
+            "entityId": "dc8d9e21-d4d5-8c21-a05f-1a3967ee6223",
+            "field": "labels",
+            "value": [],
+            "ts": 1793610120004,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-ae14400573f73c68af3f8b6fb387bac5f58341a1",
+            "entity": "task",
+            "entityId": "dc8d9e21-d4d5-8c21-a05f-1a3967ee6223",
+            "field": "parent_id",
+            "value": null,
+            "ts": 1793610120004,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-b68ac70e168a79e87269f5c97113e841663246a1",
+            "entity": "task",
+            "entityId": "dc8d9e21-d4d5-8c21-a05f-1a3967ee6223",
+            "field": "position",
+            "value": 3000,
+            "ts": 1793610120004,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-c3ee9499e124bb423613606ada2240168f6478b4",
+            "entity": "task",
+            "entityId": "dc8d9e21-d4d5-8c21-a05f-1a3967ee6223",
+            "field": "priority",
+            "value": 4,
+            "ts": 1793610120004,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-45761c6591fb488f45dfa2f139487033cc252aeb",
+            "entity": "task",
+            "entityId": "dc8d9e21-d4d5-8c21-a05f-1a3967ee6223",
+            "field": "project_id",
+            "value": "8c815dd0-bdbf-8dc4-901d-0f3377dec2ff",
+            "ts": 1793610120004,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-d094e181f52e98e59ddea40733d11782773c46f9",
+            "entity": "task",
+            "entityId": "dc8d9e21-d4d5-8c21-a05f-1a3967ee6223",
+            "field": "recurrence",
+            "value": null,
+            "ts": 1793610120004,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-85ec8ef0a6a96b6bab5927edaf2e9701b763cbbe",
+            "entity": "task",
+            "entityId": "dc8d9e21-d4d5-8c21-a05f-1a3967ee6223",
+            "field": "section_id",
+            "value": null,
+            "ts": 1793610120004,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-3b75fb2d332e17b3faa87f764c10aa1d86140e8b",
+            "entity": "task",
+            "entityId": "dc8d9e21-d4d5-8c21-a05f-1a3967ee6223",
+            "field": "start",
+            "value": null,
+            "ts": 1793610120004,
+            "device": "vault:vectors"
+          },
+          {
+            "id": "v-a07337860d16b9f429a5d790d99a52d157127f05",
+            "entity": "task",
+            "entityId": "dc8d9e21-d4d5-8c21-a05f-1a3967ee6223",
+            "field": "title",
+            "value": "Water",
+            "ts": 1793610120004,
+            "device": "vault:vectors"
+          }
+        ],
+        "files": {
+          "Garden.md": "---\nopentodo-id: 8c815dd0-bdbf-8dc4-901d-0f3377dec2ff\nopentodo-color: \"#14b8a6\"\n---\n\n- [ ] Dig 🆔 69bb1080-7023-845d-b628-fd98ab2cac67\n- [ ] Plant 🆔 10b125cc-8491-8f98-b297-4275f0a1bfc4\n- [ ] Water 🆔 dc8d9e21-d4d5-8c21-a05f-1a3967ee6223\n",
+          "Household.md": "---\nopentodo-id: p-home\nopentodo-color: \"#22c55e\"\n---\n",
+          "Inbox.md": "",
+          "Work/Launch.md": "---\nopentodo-id: p-launch\nopentodo-color: \"#22c55e\"\n---\n\n- [ ] Ship 🆔 t-ship\n",
+          "Work/Work.md": "---\nopentodo-id: p-work\nopentodo-color: \"#22c55e\"\n---\n"
+        },
+        "report": {
+          "written": 2,
+          "created": 3,
+          "updated": 0,
+          "trashed": 0,
+          "conflicts": 0,
+          "warnings": [],
+          "cursor": 95,
+          "events": [
+            {
+              "kind": "project",
+              "file": "Household.md",
+              "text": "renamed project \"Home\" to \"Household\""
+            },
+            {
+              "kind": "project",
+              "file": "Garden.md",
+              "text": "created project \"Garden\""
+            },
+            {
+              "kind": "created",
+              "file": "Garden.md",
+              "task": "10b125cc-8491-8f98-b297-4275f0a1bfc4",
+              "text": "created \"Plant\" in Garden.md"
+            },
+            {
+              "kind": "created",
+              "file": "Garden.md",
+              "task": "69bb1080-7023-845d-b628-fd98ab2cac67",
+              "text": "created \"Dig\" in Garden.md"
+            },
+            {
+              "kind": "created",
+              "file": "Garden.md",
+              "task": "dc8d9e21-d4d5-8c21-a05f-1a3967ee6223",
+              "text": "created \"Water\" in Garden.md"
+            },
+            {
+              "kind": "written",
+              "file": "Garden.md",
+              "text": "wrote Garden.md"
+            },
+            {
+              "kind": "restored",
+              "file": "Work/Launch.md",
+              "text": "restored Work/Launch.md from the app"
+            }
+          ],
+          "projects": 4,
+          "tasks": 4
+        },
+        "state": {
+          "version": 2,
+          "device": "vault:vectors",
+          "profile": "default",
+          "server": "https://todo.example.com",
+          "cursor": 95,
+          "clock": 1793610120004,
+          "offset": 0,
+          "store": {
+            "project": {
+              "8c815dd0-bdbf-8dc4-901d-0f3377dec2ff": {
+                "archived": {
+                  "v": false,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "color": {
+                  "v": "#14b8a6",
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "created_at": {
+                  "v": 1793610120000,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "icon": {
+                  "v": null,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "name": {
+                  "v": "Garden",
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "position": {
+                  "v": 3000,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                }
+              },
+              "p-home": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Household",
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400001,
+                  "d": "app"
+                }
+              },
+              "p-launch": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Launch",
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": "p-work",
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400003,
+                  "d": "app"
+                }
+              },
+              "p-work": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Work",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793606400002,
+                  "d": "app"
+                }
+              }
+            },
+            "task": {
+              "10b125cc-8491-8f98-b297-4275f0a1bfc4": {
+                "blocked_by": {
+                  "v": [],
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "completed_at": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "completed_by": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "created_at": {
+                  "v": 1793610120000,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "deadline": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "description": {
+                  "v": "",
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "due": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "estimate_minutes": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "evening": {
+                  "v": false,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "project_id": {
+                  "v": "8c815dd0-bdbf-8dc4-901d-0f3377dec2ff",
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "recurrence": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "section_id": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "start": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "title": {
+                  "v": "Plant",
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                }
+              },
+              "69bb1080-7023-845d-b628-fd98ab2cac67": {
+                "blocked_by": {
+                  "v": [],
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "completed_at": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "completed_by": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "created_at": {
+                  "v": 1793610120000,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "deadline": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "description": {
+                  "v": "",
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "due": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "estimate_minutes": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "evening": {
+                  "v": false,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "project_id": {
+                  "v": "8c815dd0-bdbf-8dc4-901d-0f3377dec2ff",
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "recurrence": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "section_id": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "start": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "title": {
+                  "v": "Dig",
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                }
+              },
+              "dc8d9e21-d4d5-8c21-a05f-1a3967ee6223": {
+                "blocked_by": {
+                  "v": [],
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "completed_at": {
+                  "v": null,
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "completed_by": {
+                  "v": null,
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "created_at": {
+                  "v": 1793610120000,
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "deadline": {
+                  "v": null,
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "description": {
+                  "v": "",
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "due": {
+                  "v": null,
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "estimate_minutes": {
+                  "v": null,
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "evening": {
+                  "v": false,
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "position": {
+                  "v": 3000,
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "project_id": {
+                  "v": "8c815dd0-bdbf-8dc4-901d-0f3377dec2ff",
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "recurrence": {
+                  "v": null,
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "section_id": {
+                  "v": null,
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "start": {
+                  "v": null,
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "title": {
+                  "v": "Water",
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                }
+              },
+              "t-ship": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-launch",
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Ship",
+                  "t": 1793606400004,
+                  "d": "app"
+                }
+              }
+            }
+          },
+          "files": {
+            "Garden.md": {
+              "project": "8c815dd0-bdbf-8dc4-901d-0f3377dec2ff",
+              "hash": "e47b7d07a061fbcfe5a809e3f3a244a3884b3bca50424b7f54b6add72bb7d5c8"
+            },
+            "Household.md": {
+              "project": "p-home",
+              "hash": "1087a64bb47ccca8aa8979cb9e2faeaa3ab17c00581e3d32b50ea100bfb3e60a"
+            },
+            "Inbox.md": {
+              "project": "",
+              "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "Work/Launch.md": {
+              "project": "p-launch",
+              "hash": "34ce119a85cf4b59985a5e234bc7d6cf020c647e9bccff960aee1b1e80e41ebf"
+            },
+            "Work/Work.md": {
+              "project": "p-work",
+              "hash": "a26864372fa7f1aea1263c0834eebba73d75b88b693593f4dbe21f9ed146fc2e"
+            }
+          },
+          "printed": {
+            "10b125cc-8491-8f98-b297-4275f0a1bfc4": "Garden.md",
+            "69bb1080-7023-845d-b628-fd98ab2cac67": "Garden.md",
+            "dc8d9e21-d4d5-8c21-a05f-1a3967ee6223": "Garden.md",
+            "t-ship": "Work/Launch.md"
+          },
+          "initialized": true
+        }
+      }
+    },
+    {
+      "name": "moved into a folder",
+      "now": 1793610180000,
+      "files": {
+        "Garden.md": null,
+        "Household/Garden.md": "---\nopentodo-id: 8c815dd0-bdbf-8dc4-901d-0f3377dec2ff\nopentodo-color: \"#14b8a6\"\n---\n\n- [ ] Dig 🆔 69bb1080-7023-845d-b628-fd98ab2cac67\n- [ ] Plant 🆔 10b125cc-8491-8f98-b297-4275f0a1bfc4\n- [ ] Water 🆔 dc8d9e21-d4d5-8c21-a05f-1a3967ee6223\n"
+      },
+      "want": {
+        "pushed": [
+          {
+            "id": "v-44738d037ab830569bb8017a0a977eb87fda99e3",
+            "entity": "project",
+            "entityId": "8c815dd0-bdbf-8dc4-901d-0f3377dec2ff",
+            "field": "parent_id",
+            "value": "p-home",
+            "ts": 1793610180000,
+            "device": "vault:vectors"
+          }
+        ],
+        "files": {
+          "Household/Garden.md": "---\nopentodo-id: 8c815dd0-bdbf-8dc4-901d-0f3377dec2ff\nopentodo-color: \"#14b8a6\"\n---\n\n- [ ] Dig 🆔 69bb1080-7023-845d-b628-fd98ab2cac67\n- [ ] Plant 🆔 10b125cc-8491-8f98-b297-4275f0a1bfc4\n- [ ] Water 🆔 dc8d9e21-d4d5-8c21-a05f-1a3967ee6223\n",
+          "Household/Household.md": "---\nopentodo-id: p-home\nopentodo-color: \"#22c55e\"\n---\n",
+          "Inbox.md": "",
+          "Work/Launch.md": "---\nopentodo-id: p-launch\nopentodo-color: \"#22c55e\"\n---\n\n- [ ] Ship 🆔 t-ship\n",
+          "Work/Work.md": "---\nopentodo-id: p-work\nopentodo-color: \"#22c55e\"\n---\n"
+        },
+        "report": {
+          "written": 1,
+          "created": 0,
+          "updated": 0,
+          "trashed": 0,
+          "conflicts": 0,
+          "warnings": [],
+          "cursor": 96,
+          "events": [
+            {
+              "kind": "project",
+              "file": "Household/Garden.md",
+              "text": "moved project \"Garden\""
+            },
+            {
+              "kind": "written",
+              "file": "Household/Household.md",
+              "text": "wrote Household/Household.md"
+            }
+          ],
+          "projects": 4,
+          "tasks": 4
+        },
+        "state": {
+          "version": 2,
+          "device": "vault:vectors",
+          "profile": "default",
+          "server": "https://todo.example.com",
+          "cursor": 96,
+          "clock": 1793610180000,
+          "offset": 0,
+          "store": {
+            "project": {
+              "8c815dd0-bdbf-8dc4-901d-0f3377dec2ff": {
+                "archived": {
+                  "v": false,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "color": {
+                  "v": "#14b8a6",
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "created_at": {
+                  "v": 1793610120000,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "icon": {
+                  "v": null,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "name": {
+                  "v": "Garden",
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                },
+                "parent_id": {
+                  "v": "p-home",
+                  "t": 1793610180000,
+                  "d": "vault:vectors"
+                },
+                "position": {
+                  "v": 3000,
+                  "t": 1793610120001,
+                  "d": "vault:vectors"
+                }
+              },
+              "p-home": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Household",
+                  "t": 1793610120000,
+                  "d": "vault:vectors"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400001,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400001,
+                  "d": "app"
+                }
+              },
+              "p-launch": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Launch",
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": "p-work",
+                  "t": 1793606400003,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400003,
+                  "d": "app"
+                }
+              },
+              "p-work": {
+                "archived": {
+                  "v": false,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "color": {
+                  "v": "#22c55e",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "name": {
+                  "v": "Work",
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793606400002,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793606400002,
+                  "d": "app"
+                }
+              }
+            },
+            "task": {
+              "10b125cc-8491-8f98-b297-4275f0a1bfc4": {
+                "blocked_by": {
+                  "v": [],
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "completed_at": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "completed_by": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "created_at": {
+                  "v": 1793610120000,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "deadline": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "description": {
+                  "v": "",
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "due": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "estimate_minutes": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "evening": {
+                  "v": false,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "position": {
+                  "v": 2000,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "project_id": {
+                  "v": "8c815dd0-bdbf-8dc4-901d-0f3377dec2ff",
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "recurrence": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "section_id": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "start": {
+                  "v": null,
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                },
+                "title": {
+                  "v": "Plant",
+                  "t": 1793610120002,
+                  "d": "vault:vectors"
+                }
+              },
+              "69bb1080-7023-845d-b628-fd98ab2cac67": {
+                "blocked_by": {
+                  "v": [],
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "completed_at": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "completed_by": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "created_at": {
+                  "v": 1793610120000,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "deadline": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "description": {
+                  "v": "",
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "due": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "estimate_minutes": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "evening": {
+                  "v": false,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "project_id": {
+                  "v": "8c815dd0-bdbf-8dc4-901d-0f3377dec2ff",
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "recurrence": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "section_id": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "start": {
+                  "v": null,
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                },
+                "title": {
+                  "v": "Dig",
+                  "t": 1793610120003,
+                  "d": "vault:vectors"
+                }
+              },
+              "dc8d9e21-d4d5-8c21-a05f-1a3967ee6223": {
+                "blocked_by": {
+                  "v": [],
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "completed_at": {
+                  "v": null,
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "completed_by": {
+                  "v": null,
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "created_at": {
+                  "v": 1793610120000,
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "deadline": {
+                  "v": null,
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "description": {
+                  "v": "",
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "due": {
+                  "v": null,
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "estimate_minutes": {
+                  "v": null,
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "evening": {
+                  "v": false,
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "parent_id": {
+                  "v": null,
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "position": {
+                  "v": 3000,
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "project_id": {
+                  "v": "8c815dd0-bdbf-8dc4-901d-0f3377dec2ff",
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "recurrence": {
+                  "v": null,
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "section_id": {
+                  "v": null,
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "start": {
+                  "v": null,
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                },
+                "title": {
+                  "v": "Water",
+                  "t": 1793610120004,
+                  "d": "vault:vectors"
+                }
+              },
+              "t-ship": {
+                "completed_at": {
+                  "v": null,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "created_at": {
+                  "v": 1793602800000,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "deleted_at": {
+                  "v": null,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "labels": {
+                  "v": [],
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "position": {
+                  "v": 1000,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "priority": {
+                  "v": 4,
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "project_id": {
+                  "v": "p-launch",
+                  "t": 1793606400004,
+                  "d": "app"
+                },
+                "title": {
+                  "v": "Ship",
+                  "t": 1793606400004,
+                  "d": "app"
+                }
+              }
+            }
+          },
+          "files": {
+            "Household/Garden.md": {
+              "project": "8c815dd0-bdbf-8dc4-901d-0f3377dec2ff",
+              "hash": "e47b7d07a061fbcfe5a809e3f3a244a3884b3bca50424b7f54b6add72bb7d5c8"
+            },
+            "Household/Household.md": {
+              "project": "p-home",
+              "hash": "1087a64bb47ccca8aa8979cb9e2faeaa3ab17c00581e3d32b50ea100bfb3e60a"
+            },
+            "Inbox.md": {
+              "project": "",
+              "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            },
+            "Work/Launch.md": {
+              "project": "p-launch",
+              "hash": "34ce119a85cf4b59985a5e234bc7d6cf020c647e9bccff960aee1b1e80e41ebf"
+            },
+            "Work/Work.md": {
+              "project": "p-work",
+              "hash": "a26864372fa7f1aea1263c0834eebba73d75b88b693593f4dbe21f9ed146fc2e"
+            }
+          },
+          "printed": {
+            "10b125cc-8491-8f98-b297-4275f0a1bfc4": "Household/Garden.md",
+            "69bb1080-7023-845d-b628-fd98ab2cac67": "Household/Garden.md",
+            "dc8d9e21-d4d5-8c21-a05f-1a3967ee6223": "Household/Garden.md",
+            "t-ship": "Work/Launch.md"
+          },
+          "initialized": true
+        }
+      }
+    }
+  ]
+}

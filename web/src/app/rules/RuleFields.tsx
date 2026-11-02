@@ -1,7 +1,7 @@
 // The parts of the rule editor (OpenSpec change automation-rules, design D11):
 // the trigger, the condition and the actions. Each part edits one whole value;
 // the dialog saves them through createRule/updateRule.
-import { RULE_DUE, RULE_START, RULE_STATE, RULE_TRIGGERS, type Label, type Priority, type Project, type RuleActions, type RuleCondition, type RuleTrigger, type RuleTriggerKind, type Section, type Webhook } from '../../lib/types'
+import { RULE_DUE, RULE_START, RULE_STATE, type Label, type Priority, type Project, type RuleActions, type RuleCondition, type RuleTrigger, type RuleTriggerKind, type Section, type Webhook } from '../../lib/types'
 import { t, msg, translatedMap } from '../../lib/i18n'
 import { Field, Input, Switch } from '../../ui'
 import { Choice, LabelsField } from '../RuleEditor'
@@ -18,11 +18,13 @@ export const TRIGGER_LABEL = translatedMap<RuleTriggerKind>({
   'due.reached': msg('A task is due'),
   overdue: msg('A task’s date passes'),
   schedule: msg('On a schedule'),
+  manual: msg('Only when I run it'),
 })
 const DUE_LABEL = translatedMap({ today: msg('Today'), tomorrow: msg('Tomorrow'), 'next-week': msg('Next week'), clear: msg('No date') })
 const START_LABEL = translatedMap({ someday: msg('Someday'), clear: msg('Clear the start') })
 const STATE_LABEL = translatedMap({ complete: msg('Complete'), reopen: msg('Reopen') })
 const WEEKDAYS = [1, 2, 3, 4, 5, 6, 7] as const
+const MONTH_DAYS = Array.from({ length: 31 }, (_, i) => i + 1)
 const WEEKDAY_SHORT = translatedMap<string>({ 1: msg('Mon'), 2: msg('Tue'), 3: msg('Wed'), 4: msg('Thu'), 5: msg('Fri'), 6: msg('Sat'), 7: msg('Sun') })
 
 const row = 'flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-body'
@@ -54,22 +56,20 @@ function LabelSelect({ value, labels, onChange }: { value: string | undefined; l
   )
 }
 
-/** The trigger: its kind and the members that kind takes. */
-export function TriggerFields({ value, onChange, names, sharedProjects }: { value: RuleTrigger; onChange: (v: RuleTrigger) => void; names: Names; sharedProjects: Set<string> }) {
-  const setKind = (kind: RuleTriggerKind) => {
-    if (kind === 'schedule') onChange({ kind, at: '18:00', weekdays: [7] })
-    else onChange({ kind })
-  }
+/** A trigger of this kind, as it starts when chosen (a schedule: Sundays at 18:00). */
+export const triggerOf = (kind: RuleTriggerKind): RuleTrigger => (kind === 'schedule' ? { kind, at: '18:00', weekdays: [7] } : { kind })
+
+/** Whether a trigger kind takes members beyond its kind (a time and days, a label, a project). */
+export const triggerHasDetails = (kind: RuleTriggerKind): boolean =>
+  kind === 'schedule' || kind === 'label.added' || kind === 'label.removed' || kind === 'task.moved'
+
+/** The members a trigger's kind takes: a schedule's time and days, a label, a project and section. */
+export function TriggerDetails({ value, onChange, names, sharedProjects }: { value: RuleTrigger; onChange: (v: RuleTrigger) => void; names: Names; sharedProjects: Set<string> }) {
   const days = value.weekdays ?? []
+  const monthDays = value.month_days ?? []
+  const monthly = monthDays.length > 0
   return (
-    <fieldset className="space-y-2" data-rule-trigger>
-      <legend className="text-meta font-medium text-muted">{t('When')}</legend>
-      <label className={row}>
-        <span>{t('Trigger')}</span>
-        <select className="ui-input w-56 max-w-full" value={value.kind} onChange={(e) => setKind(e.target.value as RuleTriggerKind)}>
-          {RULE_TRIGGERS.map((k) => <option key={k} value={k}>{TRIGGER_LABEL[k]}</option>)}
-        </select>
-      </label>
+    <>
       {(value.kind === 'label.added' || value.kind === 'label.removed') && (
         <LabelSelect value={value.label_id} labels={names.labels} onChange={(id) => onChange({ kind: value.kind, label_id: id })} />
       )}
@@ -89,16 +89,36 @@ export function TriggerFields({ value, onChange, names, sharedProjects }: { valu
           <Field label={t('Time')}>
             <Input type="time" value={value.at ?? ''} onChange={(e) => onChange({ ...value, at: e.target.value })} />
           </Field>
-          <div className="flex flex-wrap gap-1" role="group" aria-label={t('Days')}>
-            {WEEKDAYS.map((d) => (
-              <button key={d} type="button" aria-pressed={days.includes(d)}
-                className={`ui-btn ui-btn--sm ${days.includes(d) ? 'ui-btn--primary' : 'ui-btn--ghost'}`}
-                onClick={() => onChange({ ...value, weekdays: days.includes(d) ? days.filter((x) => x !== d) : [...days, d].sort() })}>{WEEKDAY_SHORT[d]}</button>
-            ))}
+          <div className="flex flex-wrap gap-1" role="group" aria-label={t('Repeats')}>
+            <button type="button" aria-pressed={!monthly} className={`ui-btn ui-btn--sm ${!monthly ? 'ui-btn--primary' : 'ui-btn--ghost'}`}
+              onClick={() => onChange({ kind: 'schedule', at: value.at, weekdays: [7] })}>{t('Every week')}</button>
+            <button type="button" aria-pressed={monthly} className={`ui-btn ui-btn--sm ${monthly ? 'ui-btn--primary' : 'ui-btn--ghost'}`}
+              onClick={() => onChange({ kind: 'schedule', at: value.at, month_days: [1] })}>{t('Every month')}</button>
           </div>
+          {monthly ? (
+            // Days of the month (routines-dynamic-data D5): 31 does not fire in April; "Last" does.
+            <div className="flex flex-wrap gap-1" role="group" aria-label={t('Days of the month')} data-month-days>
+              {[...MONTH_DAYS, 'last' as const].map((d) => {
+                const on = monthDays.includes(d)
+                const next = on ? monthDays.filter((x) => x !== d) : [...monthDays, d]
+                return (
+                  <button key={d} type="button" aria-pressed={on} className={`ui-btn ui-btn--sm ${on ? 'ui-btn--primary' : 'ui-btn--ghost'}`}
+                    onClick={() => next.length && onChange({ ...value, month_days: next })}>{d === 'last' ? t('Last day') : d}</button>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-1" role="group" aria-label={t('Days')}>
+              {WEEKDAYS.map((d) => (
+                <button key={d} type="button" aria-pressed={days.includes(d)}
+                  className={`ui-btn ui-btn--sm ${days.includes(d) ? 'ui-btn--primary' : 'ui-btn--ghost'}`}
+                  onClick={() => onChange({ ...value, weekdays: days.includes(d) ? days.filter((x) => x !== d) : [...days, d].sort() })}>{WEEKDAY_SHORT[d]}</button>
+              ))}
+            </div>
+          )}
         </>
       )}
-    </fieldset>
+    </>
   )
 }
 
@@ -108,23 +128,31 @@ const DATE_PRED_LABEL = translatedMap<string>({ '': msg('Any'), none: msg('No da
 function DatePredicate({ label, value, overdue, onChange }: { label: string; value: RuleCondition['due']; overdue: boolean; onChange: (v: RuleCondition['due']) => void }) {
   const kind = value === undefined ? '' : typeof value === 'object' ? 'within' : value
   return (
-    <div className={row}>
-      <span>{label}</span>
-      <span className="flex items-center gap-2">
-        {kind === 'within' && typeof value === 'object' && (
-          <Input aria-label={t('Days')} className="w-16" type="number" min={0} max={365} value={value.within_days}
-            onChange={(e) => onChange({ within_days: Math.max(0, Math.min(365, Number(e.target.value) || 0)) })} />
-        )}
-        <select className="ui-input w-36" aria-label={label} value={kind} onChange={(e) => {
+    <>
+      <span className={cellLabel} aria-hidden="true">{label}</span>
+      <span className="flex min-w-0 items-center gap-2">
+        <select className="ui-input min-w-0 flex-1" aria-label={label} value={kind} onChange={(e) => {
           const k = e.target.value
           onChange(k === '' ? undefined : k === 'within' ? { within_days: 3 } : (k as 'none'))
         }}>
           {DATE_PRED.filter((k) => overdue || (k !== 'today' && k !== 'overdue')).map((k) => <option key={k} value={k}>{DATE_PRED_LABEL[k]}</option>)}
         </select>
+        {kind === 'within' && typeof value === 'object' && (
+          <Input aria-label={t('Days')} className="w-20 shrink-0" type="number" min={0} max={365} value={value.within_days}
+            onChange={(e) => onChange({ within_days: Math.max(0, Math.min(365, Number(e.target.value) || 0)) })} />
+        )}
       </span>
-    </div>
+    </>
   )
 }
+
+/**
+ * The condition rows as one grid (routines-editor-polish): every name in the
+ * first column in the same plain style, every control the full width of the
+ * second, so the selects line up whatever their content.
+ */
+const conditionGrid = 'grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] items-center gap-x-3 gap-y-2'
+const cellLabel = 'min-w-0 text-body text-default'
 
 /** Sets or clears one predicate of a condition. */
 function withPredicate<K extends keyof RuleCondition>(c: RuleCondition, key: K, value: RuleCondition[K] | undefined): RuleCondition {
@@ -140,45 +168,53 @@ export function ConditionFields({ value, onChange, names }: { value: RuleConditi
   const project = value.project && value.project !== 'none' ? value.project : null
   const pick = (v: string, map: Record<string, RuleCondition[keyof RuleCondition] | undefined>) => map[v]
   return (
-    <fieldset className="space-y-2" data-rule-condition>
-      <legend className="text-meta font-medium text-muted">{t('Only for tasks that')}</legend>
-      <div className={row}>
-        <span>{t('Project')}</span>
+    <fieldset className="min-w-0" data-rule-condition>
+      <legend className="mb-2 text-meta font-medium text-muted">{t('Only for tasks that')}</legend>
+      <div className={conditionGrid}>
+        <span className={cellLabel} aria-hidden="true">{t('Project')}</span>
         <ProjectPickerField label={t('Project')} projects={names.projects} value={project?.in[0] ?? null} inbox={false} noneLabel={t('Any')} rankContext="rule.project"
-          className="w-44" onChange={(id) => set('project', id ? { in: [id], descendants: true } : undefined)} />
+          className="w-full" onChange={(id) => set('project', id ? { in: [id], descendants: true } : undefined)} />
+        <span className={`${cellLabel} self-start pt-2`} aria-hidden="true">{t('Have every label')}</span>
+        <LabelsField title={t('Have every label')} titleHidden ids={value.labels?.all ?? []} labels={names.labels}
+          onChange={(ids) => set('labels', ids.length || value.labels?.none?.length ? { ...value.labels, all: ids } : undefined)} />
+        <span className={`${cellLabel} self-start pt-2`} aria-hidden="true">{t('Have none of the labels')}</span>
+        <LabelsField title={t('Have none of the labels')} titleHidden ids={value.labels?.none ?? []} labels={names.labels}
+          onChange={(ids) => set('labels', ids.length || value.labels?.all?.length ? { ...value.labels, none: ids } : undefined)} />
+        <label className="contents">
+          <span className={cellLabel}>{t('Priority')}</span>
+          <select className="ui-input" value={value.priority?.in.join(',') ?? ''} onChange={(e) => set('priority', e.target.value ? { in: e.target.value.split(',').map(Number) } : undefined)}>
+            <option value="">{t('Any')}</option>
+            {[1, 2, 3, 4].map((p) => <option key={p} value={p}>{t('Priority {p}', { p })}</option>)}
+            <option value="1,2">{t('Priority 1 or 2')}</option>
+          </select>
+        </label>
+        <DatePredicate label={t('Date')} value={value.due} overdue onChange={(v) => set('due', v)} />
+        <DatePredicate label={t('Deadline')} value={value.deadline} overdue={false} onChange={(v) => set('deadline', v as RuleCondition['deadline'])} />
+        <label className="contents">
+          <span className={cellLabel}>{t('Assignee')}</span>
+          <select className="ui-input" value={value.assignee ?? ''} onChange={(e) => set('assignee', (e.target.value || undefined) as RuleCondition['assignee'])}>
+            <option value="">{t('Any')}</option>
+            <option value="me">{t('Assigned to me')}</option>
+            <option value="none">{t('Unassigned')}</option>
+            <option value="anyone">{t('Assigned to someone')}</option>
+          </select>
+        </label>
+        <label className="contents">
+          <span className={cellLabel}>{t('Blocked')}</span>
+          <select className="ui-input" value={value.blocked === undefined ? '' : String(value.blocked)}
+            onChange={(e) => set('blocked', pick(e.target.value, { true: true, false: false }) as boolean | undefined)}>
+            <option value="">{t('Any')}</option>
+            <option value="true">{t('Blocked')}</option>
+            <option value="false">{t('Not blocked')}</option>
+          </select>
+        </label>
+        {/* Stale tasks: no field changed in N days (routines-dynamic-data D5); empty for any. */}
+        <label className="contents">
+          <span className={cellLabel}>{t('Not changed for days')}</span>
+          <Input type="number" min={1} max={365} placeholder={t('Any')} value={value.unchanged?.days ?? ''} data-rule-unchanged
+            onChange={(e) => { const n = Math.round(Number(e.target.value)); set('unchanged', e.target.value && n >= 1 ? { days: Math.min(365, n) } : undefined) }} />
+        </label>
       </div>
-      <LabelsField title={t('Have every label')} ids={value.labels?.all ?? []} labels={names.labels}
-        onChange={(ids) => set('labels', ids.length || value.labels?.none?.length ? { ...value.labels, all: ids } : undefined)} />
-      <LabelsField title={t('Have none of the labels')} ids={value.labels?.none ?? []} labels={names.labels}
-        onChange={(ids) => set('labels', ids.length || value.labels?.all?.length ? { ...value.labels, none: ids } : undefined)} />
-      <label className={row}>
-        <span>{t('Priority')}</span>
-        <select className="ui-input w-44" value={value.priority?.in.join(',') ?? ''} onChange={(e) => set('priority', e.target.value ? { in: e.target.value.split(',').map(Number) } : undefined)}>
-          <option value="">{t('Any')}</option>
-          {[1, 2, 3, 4].map((p) => <option key={p} value={p}>{t('Priority {p}', { p })}</option>)}
-          <option value="1,2">{t('Priority 1 or 2')}</option>
-        </select>
-      </label>
-      <DatePredicate label={t('Date')} value={value.due} overdue onChange={(v) => set('due', v)} />
-      <DatePredicate label={t('Deadline')} value={value.deadline} overdue={false} onChange={(v) => set('deadline', v as RuleCondition['deadline'])} />
-      <label className={row}>
-        <span>{t('Assignee')}</span>
-        <select className="ui-input w-44" value={value.assignee ?? ''} onChange={(e) => set('assignee', (e.target.value || undefined) as RuleCondition['assignee'])}>
-          <option value="">{t('Any')}</option>
-          <option value="me">{t('Assigned to me')}</option>
-          <option value="none">{t('Unassigned')}</option>
-          <option value="anyone">{t('Assigned to someone')}</option>
-        </select>
-      </label>
-      <label className={row}>
-        <span>{t('Blocked')}</span>
-        <select className="ui-input w-44" value={value.blocked === undefined ? '' : String(value.blocked)}
-          onChange={(e) => set('blocked', pick(e.target.value, { true: true, false: false }) as boolean | undefined)}>
-          <option value="">{t('Any')}</option>
-          <option value="true">{t('Blocked')}</option>
-          <option value="false">{t('Not blocked')}</option>
-        </select>
-      </label>
     </fieldset>
   )
 }

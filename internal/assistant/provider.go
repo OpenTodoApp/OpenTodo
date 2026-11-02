@@ -25,11 +25,13 @@ type Conversation interface {
 // Message is one message of the device-local conversation: user or assistant text.
 // Untrusted marks text the user pasted (assistant-skills D3): the loop wraps it
 // as untrusted data and folds it into the user's next message before any
-// provider sees it.
+// provider sees it. Images are the photos of the last user message
+// (voice-ramble D4), sent with that one turn only.
 type Message struct {
-	Role      string `json:"role"`
-	Text      string `json:"text"`
-	Untrusted bool   `json:"untrusted,omitempty"`
+	Role      string  `json:"role"`
+	Text      string  `json:"text"`
+	Untrusted bool    `json:"untrusted,omitempty"`
+	Images    []Image `json:"images,omitempty"`
 }
 
 // ToolDef is a tool offered to the model (from the registry).

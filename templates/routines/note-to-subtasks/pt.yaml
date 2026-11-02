@@ -1,0 +1,5 @@
+# Da nota a subtarefas: Portuguese text for templates/routines/note-to-subtasks/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-3d6498714c4e
+title: "Da nota a subtarefas"
+summary: "Executa-a numa tarefa para transformar cada linha da sua nota numa subtarefa."
+description: "Escreve as partes de uma tarefa maior na sua nota, uma por linha, e executa esta rotina na tarefa a partir da paleta de comandos ou do menu da tarefa. Cada linha torna-se uma subtarefa, no projeto da tarefa.\n\nOs marcadores de lista e as caixas de seleção são retirados de cada linha. A nota fica como está."

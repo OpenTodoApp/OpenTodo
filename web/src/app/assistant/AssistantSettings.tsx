@@ -1,3 +1,5 @@
+import { refreshCapabilities } from '../../lib/relay'
+import { RoutinesDisclosure } from './RoutinesDisclosure'
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { keysOf } from '../../lib/shortcuts'
 import { Kbd } from '../shortcuts/Kbd'
@@ -33,7 +35,8 @@ const MODEL_HINT = translatedMap<ProviderName>({ anthropic: 'claude-opus-5-5', o
 export interface OwnerDraft {
   enabled: boolean
   default_provider: ProviderName
-  providers: Record<ProviderName, { enabled: boolean; model: string; base_url: string }>
+  /** images: the compatible endpoint's "This model reads images" (voice-ramble D5). */
+  providers: Record<ProviderName, { enabled: boolean; model: string; base_url: string; images?: boolean }>
   keys: Partial<Record<ProviderName, string>>
   allow_member_keys: boolean
   allow_private_endpoint: boolean
@@ -45,7 +48,7 @@ export interface OwnerDraft {
 
 export function draftFrom(s: AssistantOwnerSettings): OwnerDraft {
   const providers = {} as OwnerDraft['providers']
-  for (const p of PROVIDERS) providers[p] = { enabled: s.providers[p]?.enabled ?? false, model: s.providers[p]?.model ?? '', base_url: s.providers[p]?.base_url ?? '' }
+  for (const p of PROVIDERS) providers[p] = { enabled: s.providers[p]?.enabled ?? false, model: s.providers[p]?.model ?? '', base_url: s.providers[p]?.base_url ?? '', ...(p === 'compatible' ? { images: !!s.providers[p]?.images } : {}) }
   return { enabled: s.enabled, default_provider: s.default_provider, providers, keys: {}, allow_member_keys: s.allow_member_keys,
     allow_private_endpoint: s.allow_private_endpoint, monthly_token_cap_per_user: s.monthly_token_cap_per_user, cap_member_keys: !!s.cap_member_keys,
     device: deviceDraftFrom(s.device) }
@@ -55,7 +58,7 @@ export function inputFrom(d: OwnerDraft): AssistantSettingsInput {
   const providers: AssistantSettingsInput['providers'] = {}
   for (const p of PROVIDERS) {
     const v = d.providers[p]
-    providers[p] = p === 'compatible' ? { enabled: v.enabled, model: v.model.trim(), base_url: v.base_url.trim() } : { enabled: v.enabled, model: v.model.trim() }
+    providers[p] = p === 'compatible' ? { enabled: v.enabled, model: v.model.trim(), base_url: v.base_url.trim(), images: !!v.images } : { enabled: v.enabled, model: v.model.trim() }
   }
   const keys: AssistantSettingsInput['keys'] = {}
   for (const [k, v] of Object.entries(d.keys)) if (v !== undefined) keys[k as ProviderName] = v
@@ -68,7 +71,10 @@ export function inputFrom(d: OwnerDraft): AssistantSettingsInput {
 export function testDraft(d: OwnerDraft, n: ProviderName): AssistantTestDraft {
   const v = d.providers[n]
   const out: AssistantTestDraft = { model: v.model.trim(), allow_private_endpoint: d.allow_private_endpoint }
-  if (n === 'compatible') out.base_url = v.base_url.trim()
+  if (n === 'compatible') {
+    out.base_url = v.base_url.trim()
+    out.images = !!v.images
+  }
   if (d.keys[n] !== undefined) out.key = d.keys[n]
   return out
 }
@@ -78,6 +84,7 @@ export function testIsUnsaved(item: AssistantTestDraft, saved: AssistantOwnerSet
   const sp = saved.providers[n]
   return item.key !== undefined || item.model !== (sp?.model ?? '') || (n === 'compatible' && item.base_url !== (sp?.base_url ?? ''))
     || (n === 'compatible' && item.allow_private_endpoint !== saved.allow_private_endpoint)
+    || (n === 'compatible' && !!item.images !== !!sp?.images)
 }
 
 export const SAVE_TO_USE = msg('Connection works. Save to use these settings.')
@@ -189,6 +196,10 @@ export function OwnerAssistantSettings(p: OwnerViewProps & { onCancel?: () => vo
                 <Input value={v.base_url} disabled={off} placeholder={t('http://192.168.1.20:11434/v1')} inputMode="url" spellCheck={false}
                   onChange={(e) => setProv(n, { base_url: e.target.value })} />
               </Field>
+            )}
+            {n === 'compatible' && (
+              <Checkbox checked={!!v.images} disabled={off} onChange={(e) => setProv(n, { images: e.target.checked })} label={t('This model reads images')}
+                description={t('Lets people add photos to a message. Test connection then also sends a small image.')} />
             )}
             <Field label={(n === 'compatible' ? t('API key (if the endpoint needs one)') : t('API key'))}
               description={t('Stored in the server’s secrets file, never shown again, never in backups or exports.')}>
@@ -330,6 +341,8 @@ export interface UserViewProps {
   busy: boolean
   error: string | null
   onWithdraw: () => void
+  /** Accepts the terms for routines' AI steps (routines-ai-step D10). */
+  onAcceptRoutines?: () => void
   onOwnKey: (key: string) => void
   onAutoApply: (on: boolean) => void
   onClear: () => void
@@ -504,6 +517,13 @@ export function UserAssistantSettings(p: UserViewProps) {
           </span>
         )}
         control={s.consented ? <Button size="sm" disabled={!p.connected} onClick={p.onWithdraw}>{t('Withdraw consent')}</Button> : undefined} />
+      {s.consented && s.routines_consented === false && p.onAcceptRoutines && (
+        <div className="space-y-2 py-3" data-assistant-routines-consent>
+          <p className="text-body font-medium text-default">{t('Routines with AI steps')}</p>
+          <RoutinesDisclosure />
+          <Button size="sm" disabled={!p.connected} onClick={p.onAcceptRoutines} data-assistant-accept-routines>{t('Accept for routines')}</Button>
+        </div>
+      )}
       {p.usage && <SettingRow {...rowCopy('assistant-settings', 'usage')} status={<UsageMeter u={p.usage} />} />}
       {s.allow_member_keys && (ownSupported ? <OwnProviderForm key={`${s.own_provider?.provider ?? ''}:${s.own_provider?.model ?? ''}`} {...p} status={s} /> : <LegacyOwnKey {...p} status={s} />)}
       {keptChoice && (
@@ -641,6 +661,7 @@ export default function AssistantSettingsSection({ isOwner }: { isOwner: boolean
       <CardGroup title={t('For you')} id="assistant-you">
         <UserAssistantSettings status={status} usage={usage} autoApply={autoApply} connected={connected} busy={ownBusy} error={userError} cleared={cleared}
           onWithdraw={() => void updateMine({ consent: false })} onOwnKey={(k) => void updateMine({ own_key: k })}
+          onAcceptRoutines={() => void updateMine({ consent: true, routines: true }).then(refreshCapabilities)}
           onSaveOwn={saveOwn} onTestOwn={(v) => void testOwn(v)} ownTest={ownTest} ownMessage={ownMessage}
           onAutoApply={(on) => { setAuto(on); void setAutoApply(on) }} onClear={() => setClearing(true)} />
       </CardGroup>

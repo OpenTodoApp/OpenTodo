@@ -30,10 +30,13 @@ const (
 	KindEmail  = "email"
 	KindIssue  = "issue"
 	KindImport = "import"
+	// KindObsidian is a note in an Obsidian vault (obsidian-origin): its id is
+	// the note's vault-relative path, its url the Obsidian link to that note.
+	KindObsidian = "obsidian"
 )
 
 // Kinds lists every accepted kind.
-var Kinds = []string{KindURL, KindEmail, KindIssue, KindImport}
+var Kinds = []string{KindURL, KindEmail, KindIssue, KindImport, KindObsidian}
 
 // Limits on the members (design D1). MaxURL counts bytes, MaxID and MaxTitle
 // characters; MaxTitle is the capture screen's title limit.
@@ -85,7 +88,11 @@ func (o Origin) Validate() error {
 	if utf8.RuneCountInString(o.ID) > MaxID {
 		return fmt.Errorf("origin id must be at most %d characters", MaxID)
 	}
-	if o.URL != "" && !ValidURL(o.URL) {
+	if o.Kind == KindObsidian {
+		if err := o.validateObsidian(); err != nil {
+			return err
+		}
+	} else if o.URL != "" && !ValidURL(o.URL) {
 		return fmt.Errorf("origin url must be an http or https URL of at most %d bytes", MaxURL)
 	}
 	if utf8.RuneCountInString(o.Title) > MaxTitle {
@@ -96,6 +103,21 @@ func (o Origin) Validate() error {
 	}
 	if o.Kind != KindURL && o.ID == "" {
 		return fmt.Errorf("origin of kind %q needs an id", o.Kind)
+	}
+	return nil
+}
+
+// validateObsidian applies the obsidian kind's own rules (obsidian-origin D1,
+// D2): an id and a url that is an Obsidian note link to that id, no provider.
+func (o Origin) validateObsidian() error {
+	if o.Provider != "" {
+		return errors.New(`origin of kind "obsidian" has no provider`)
+	}
+	if o.ID == "" || o.URL == "" {
+		return errors.New(`origin of kind "obsidian" needs an id and a url`)
+	}
+	if !ValidObsidianURL(o.URL, o.ID) {
+		return errors.New(`origin of kind "obsidian" needs a url of the form obsidian://open?vault=<vault>&file=<note> that opens the note its id names`)
 	}
 	return nil
 }
@@ -178,12 +200,33 @@ func (o Origin) Host() string {
 	return strings.TrimPrefix(strings.ToLower(u.Hostname()), "www.")
 }
 
-// Label is the short text people see for the origin: a message open in a web
-// mail client (an email origin with a URL and a provider) reads as the provider,
+// ObsidianTip is the tooltip of an Obsidian origin, "Open in Obsidian: <vault> ›
+// <path>" (obsidian-origin D5), or "" for any other origin or a link that does
+// not parse.
+func (o Origin) ObsidianTip() string {
+	if o.Kind != KindObsidian {
+		return ""
+	}
+	l, ok := ParseObsidianURL(o.URL)
+	if !ok {
+		return ""
+	}
+	return "Open in Obsidian: " + l.Vault + " › " + o.ID
+}
+
+// Label is the short text people see for the origin: an Obsidian note reads as
+// its title, else its name (obsidian-origin D5); a message open in a web mail
+// client (an email origin with a URL and a provider) reads as the provider,
 // "Gmail" or "Outlook" (extension-v2); else the external id, else the URL's
 // host. Readers that show an email origin without a link as a word (the row
 // chip) decide that themselves.
 func (o Origin) Label() string {
+	if o.Kind == KindObsidian {
+		if o.Title != "" {
+			return o.Title
+		}
+		return NoteName(o.ID)
+	}
 	if o.Kind == KindEmail && o.URL != "" && o.Provider != "" {
 		return strings.ToUpper(o.Provider[:1]) + o.Provider[1:]
 	}

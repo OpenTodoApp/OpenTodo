@@ -7,12 +7,14 @@ import { db } from '../db'
 import { t } from '../i18n'
 import { uuid } from '../ids'
 import { mutate, mutateMany } from '../ops'
-import { RULE_TRIGGERS, type Rule, type RuleActions, type RuleCondition, type RuleTrigger } from '../types'
+import { membershipMap } from '../sharing'
+import { RULE_TRIGGERS, type Rule, type RuleActions, type RuleCondition, type RuleTrigger, type RoutineStep } from '../types'
+import { parseSteps } from './steps'
 
 /** At most this many live rules per account (spec "Limits"). */
 export const MAX_RULES = 50
 
-const CONDITION_KEYS = ['project', 'section', 'labels', 'priority', 'due', 'deadline', 'start', 'evening', 'blocked', 'assignee', 'origin', 'habit', 'estimate', 'tracked']
+const CONDITION_KEYS = ['project', 'section', 'labels', 'priority', 'due', 'deadline', 'start', 'evening', 'blocked', 'assignee', 'origin', 'habit', 'estimate', 'tracked', 'unchanged']
 const ACTION_KEYS = ['add_labels', 'remove_labels', 'priority', 'due', 'start', 'state', 'section', 'deadline', 'assignee', 'comment', 'notify', 'webhook']
 
 const keysOf = (v: unknown): string[] => (v && typeof v === 'object' && !Array.isArray(v) ? Object.keys(v) : [])
@@ -23,10 +25,19 @@ const keysOf = (v: unknown): string[] => (v && typeof v === 'object' && !Array.i
  * keys stay because the trigger, condition and actions are only ever written whole
  * from an editor that understood them.
  */
-export function isKnownRule(r: Pick<Rule, 'trigger' | 'condition' | 'actions'>): boolean {
+export function isKnownRule(r: Pick<Rule, 'trigger' | 'condition' | 'actions' | 'steps'>): boolean {
   const kind = (r.trigger as { kind?: unknown } | null)?.kind
   if (!RULE_TRIGGERS.includes(kind as RuleTrigger['kind'])) return false
   if (!keysOf(r.condition).every((k) => CONDITION_KEYS.includes(k))) return false
+  // A routine (routines-editor): every step of a kind this build knows.
+  if (r.steps !== null && r.steps !== undefined) {
+    try {
+      parseSteps(r.steps)
+      return true
+    } catch {
+      return false
+    }
+  }
   const actions = keysOf(r.actions)
   return actions.length > 0 && actions.every((k) => ACTION_KEYS.includes(k))
 }
@@ -40,25 +51,46 @@ async function liveRules(): Promise<Rule[]> {
   return activeRules(await db.rules.toArray())
 }
 
+/** The live rules (routines) in list order, read once (the palette's Run routine…). */
+export const listRules = liveRules
+
 export interface NewRule {
   name: string
   trigger: RuleTrigger
   condition?: RuleCondition | null
-  actions: RuleActions
+  /** Null for a routine with steps (routines-engine D2). */
+  actions: RuleActions | null
+  /** A routine's steps; null or absent keeps the rule form. */
+  steps?: RoutineStep[] | null
   enabled?: boolean
+  /** Apply without asking and the daily AI budget (routines-ai-step). */
+  ai_apply?: string
+  ai_budget?: number
+  /** The project the routine belongs to (routines-shared D1); absent or null for a personal routine. */
+  project_id?: string | null
 }
 
-function checkParts(name: string, actions: RuleActions | undefined): void {
+function checkParts(name: string, actions: RuleActions | null | undefined, steps?: RoutineStep[] | null): void {
   if (!name) throw new Error(t('A rule needs a name'))
+  if (steps) {
+    parseSteps(steps)
+    return
+  }
   if (actions !== undefined && keysOf(actions).length === 0) throw new Error(t('A rule needs at least one action'))
 }
 
 /** Create a rule, last in the list and on unless told otherwise. Refuses the 51st. */
 export async function createRule(input: NewRule): Promise<string> {
   const name = input.name.trim()
-  checkParts(name, input.actions)
+  checkParts(name, input.actions, input.steps)
   const live = await liveRules()
-  if (live.length >= MAX_RULES) throw new Error(t('You can have at most {n} rules', { n: MAX_RULES }))
+  // 50 personal routines per account, 50 per shared project (routines-shared D2).
+  const shared = await membershipMap()
+  const home = (pid: string | null | undefined) => (pid && shared.has(pid) ? pid : null)
+  const mine = home(input.project_id)
+  if (live.filter((r) => home(r.project_id) === mine).length >= MAX_RULES) {
+    throw new Error(mine ? t('A shared project can have at most {n} routines', { n: MAX_RULES }) : t('You can have at most {n} rules', { n: MAX_RULES }))
+  }
   const id = uuid()
   const now = Date.now()
   let position = now
@@ -68,7 +100,11 @@ export async function createRule(input: NewRule): Promise<string> {
     enabled: input.enabled ?? true,
     trigger: input.trigger,
     condition: input.condition ?? null,
-    actions: input.actions,
+    actions: input.steps ? null : input.actions,
+    ...(input.steps ? { steps: input.steps } : {}),
+    ...(input.ai_apply ? { ai_apply: input.ai_apply } : {}),
+    ...(input.ai_budget ? { ai_budget: input.ai_budget } : {}),
+    ...(input.project_id ? { project_id: input.project_id } : {}),
     position,
     created_at: now,
     deleted_at: null,
@@ -76,7 +112,19 @@ export async function createRule(input: NewRule): Promise<string> {
   return id
 }
 
-export type RulePatch = Partial<Pick<Rule, 'name' | 'enabled' | 'trigger' | 'condition' | 'actions'>>
+export type RulePatch = Partial<Pick<Rule, 'name' | 'enabled' | 'trigger' | 'condition' | 'actions' | 'steps' | 'ai_budget'>>
+
+/**
+ * Turns Apply without asking on or off (routines-ai-step D4, D5): always one
+ * new op, so turning it on again after the server fell back to proposals is
+ * newer than the fallback and resumes auto mode. Only the person does this, in
+ * the app; agent paths refuse it.
+ */
+export async function setApplyWithoutAsking(id: string, on: boolean): Promise<void> {
+  const rule = await db.rules.get(id)
+  if (!rule || rule.deleted_at) throw new Error(t('Rule not found'))
+  await mutate('rule', id, { ai_apply: on ? 'auto' : '' })
+}
 
 /** Edit a rule: one op per changed field, each part written whole. */
 export async function updateRule(id: string, patch: RulePatch): Promise<void> {
@@ -86,7 +134,8 @@ export async function updateRule(id: string, patch: RulePatch): Promise<void> {
   const row = rule as unknown as Record<string, unknown>
   for (const [k, v] of Object.entries(patch)) if (JSON.stringify(row[k] ?? null) !== JSON.stringify(v ?? null)) next[k] = v
   if (typeof next.name === 'string') next.name = next.name.trim()
-  checkParts(typeof next.name === 'string' ? next.name : rule.name, next.actions as RuleActions | undefined)
+  const steps = 'steps' in next ? (next.steps as RoutineStep[] | null) : rule.steps ?? null
+  checkParts(typeof next.name === 'string' ? next.name : rule.name, steps ? undefined : (next.actions as RuleActions | undefined), steps)
   if (Object.keys(next).length === 0) return
   await mutate('rule', id, next)
 }
@@ -102,8 +151,11 @@ export async function duplicateRule(id: string): Promise<string> {
     name: t('{name} (copy)', { name: rule.name }),
     trigger: rule.trigger as RuleTrigger,
     condition: rule.condition as RuleCondition | null,
-    actions: rule.actions as RuleActions,
+    actions: rule.actions as RuleActions | null,
+    steps: rule.steps ?? null,
     enabled: false,
+    // A copy stays in the routine's project (routines-shared).
+    project_id: rule.project_id ?? null,
   })
   return copy
 }
@@ -133,6 +185,15 @@ const NO_TITLES = new Map<string, string>()
 /** The live rules of this device, in order (the Rules page). */
 export function useRules(): Rule[] {
   return useLiveQuery(async () => activeRules(await db.rules.toArray()), [], NO_RULES)
+}
+
+/** One live rule: undefined while loading, null when it does not exist or was deleted (the editor page). */
+export function useRule(id: string | undefined): Rule | null | undefined {
+  return useLiveQuery(async () => {
+    if (!id) return null
+    const r = await db.rules.get(id)
+    return r && !r.deleted_at ? r : null
+  }, [id], undefined)
 }
 
 /** Titles of the live tasks among ids (a rule's history): a deleted task has none. */

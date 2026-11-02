@@ -474,7 +474,7 @@ func TestAssistantUsageRoute(t *testing.T) {
 func TestDemoRefusesAssistant(t *testing.T) {
 	d := newDemoServer(t)
 	v, _ := d.visitor()
-	for _, r := range [][2]string{{"POST", "/api/v1/assistant/turn"}, {"PUT", "/api/v1/me/assistant"}, {"GET", "/api/v1/me/assistant"}, {"GET", "/api/v1/me/assistant/usage"}, {"PUT", "/api/v1/settings/assistant"}, {"POST", "/api/v1/settings/assistant/test"}} {
+	for _, r := range [][2]string{{"POST", "/api/v1/assistant/turn"}, {"POST", "/api/v1/assistant/routine-draft"}, {"PUT", "/api/v1/me/assistant"}, {"GET", "/api/v1/me/assistant"}, {"GET", "/api/v1/me/assistant/usage"}, {"PUT", "/api/v1/settings/assistant"}, {"POST", "/api/v1/settings/assistant/test"}} {
 		resp, out := v.do(r[0], r[1], map[string]any{"consent": true}, "Origin", v.srv.URL)
 		if resp.StatusCode != 403 || errCode(out) != "demo_restricted" {
 			t.Fatalf("%s %s: %d %v", r[0], r[1], resp.StatusCode, out)

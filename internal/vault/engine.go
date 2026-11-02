@@ -44,6 +44,14 @@ type Options struct {
 	DryRun bool
 	// State is used instead of the folder's state file (ot vault init).
 	State *State
+	// Owner is the installation running the sync (design D4): a folder another
+	// installation owns is refused with an OwnedError before any request, and
+	// a successful sync makes Owner the owner with a fresh lease. nil skips the
+	// check (tests of the engine alone).
+	Owner *Owner
+	// TakeOver makes a folder another installation owns this one's: a new
+	// device id and a first sync that keeps the server's values (design D5).
+	TakeOver bool
 }
 
 // Event is one line of the sync's output.
@@ -109,6 +117,12 @@ type engine struct {
 	tn      *notesState // the linked TaskNotes folder, nil when none
 	// retouch are projects whose file is printed again whatever changed.
 	retouch map[string]bool
+	// takeOver is a first sync after taking the folder over: a line that
+	// differs from the server goes to the conflict file (design D5).
+	takeOver bool
+	// pending are files iCloud has not downloaded yet: only a `.<name>.icloud`
+	// placeholder is on disk. They are neither read nor written.
+	pending map[string]bool
 }
 
 // Sync runs one sync of the vault in o.Dir.
@@ -126,7 +140,15 @@ func Sync(ctx context.Context, o Options) (*Report, error) {
 			return nil, err
 		}
 	}
-	e := &engine{o: o, st: st, t: o.Transport, rep: &Report{Warnings: []string{}, Events: []Event{}},
+	takeOver := false
+	if err := st.CheckOwner(o.Owner, o.Now().In(o.Loc)); err != nil {
+		if !o.TakeOver {
+			return nil, err
+		}
+		st.takeOver()
+		takeOver = true
+	}
+	e := &engine{o: o, st: st, takeOver: takeOver, t: o.Transport, rep: &Report{Warnings: []string{}, Events: []Event{}},
 		base: st.Store, app: st.Store.Clone(), startCursor: st.Cursor,
 		refused: map[string]bool{}, stamped: map[string]int64{}, conf: map[string][]string{},
 		bodies: map[string]map[string]map[string]any{}, fresh: map[string]bool{}, retouch: map[string]bool{}}
@@ -190,6 +212,10 @@ func Sync(ctx context.Context, o Options) (*Report, error) {
 	}
 	e.saveBase()
 	st.Initialized = true
+	if o.Owner != nil {
+		owner := *o.Owner
+		st.Owner, st.LeaseUntil = &owner, o.Now().Add(Lease).UnixMilli()
+	}
 	if err := st.Save(o.Dir); err != nil {
 		return nil, err
 	}
@@ -273,6 +299,16 @@ func (e *engine) scan() error {
 		return err
 	}
 	e.disk = disk
+	e.pending = map[string]bool{}
+	for _, p := range sortedKeys(e.st.Files) {
+		if _, ok := disk[p]; ok {
+			continue
+		}
+		if _, err := os.Stat(filepath.Join(e.o.Dir, filepath.FromSlash(icloudPlaceholder(p)))); err == nil {
+			e.pending[p] = true
+			e.rep.event("skipped", p, "", "skipped %s: it is not downloaded to this device yet", p)
+		}
+	}
 	e.changed = map[string]bool{}
 	paths := make([]string, 0, len(disk))
 	for p := range disk {
@@ -306,34 +342,39 @@ func (e *engine) scan() error {
 // base so the next run still sees the file's edits.
 func (e *engine) saveBase() {
 	next := e.app.Clone()
+	// Files not downloaded yet keep their base too: once they arrive, their
+	// edits merge against what they were printed from.
+	pendingFile := map[string]bool{}
+	for p := range e.pending {
+		pendingFile[p] = true
+	}
 	if e.o.ReadOnly {
-		pendingFile := map[string]bool{}
 		for p := range e.changed {
 			pendingFile[p] = true
 		}
-		keep := func(entity, id string) {
-			if row, ok := e.base[entity][id]; ok {
-				if next[entity] == nil {
-					next[entity] = map[string]Row{}
-				}
-				next[entity][id] = row
+	}
+	keep := func(entity, id string) {
+		if row, ok := e.base[entity][id]; ok {
+			if next[entity] == nil {
+				next[entity] = map[string]Row{}
 			}
+			next[entity][id] = row
 		}
-		for id, p := range e.st.Printed {
-			if pendingFile[p] {
+	}
+	for id, p := range e.st.Printed {
+		if pendingFile[p] {
+			keep("task", id)
+		}
+	}
+	for p := range pendingFile {
+		if fs, ok := e.st.Files[p]; ok && fs.Project != "" {
+			keep("project", fs.Project)
+		}
+	}
+	if e.o.ReadOnly && e.tn != nil {
+		for p := range e.tn.changed {
+			if id := e.tn.taskOf[p]; id != "" {
 				keep("task", id)
-			}
-		}
-		for p := range e.changed {
-			if fs, ok := e.st.Files[p]; ok && fs.Project != "" {
-				keep("project", fs.Project)
-			}
-		}
-		if e.tn != nil {
-			for p := range e.tn.changed {
-				if id := e.tn.taskOf[p]; id != "" {
-					keep("task", id)
-				}
 			}
 		}
 	}
@@ -482,6 +523,12 @@ func CheckInit(dir string, adopt bool) error {
 		return ErrHasNotes
 	}
 	return nil
+}
+
+// icloudPlaceholder is the file iCloud Drive leaves in place of a file it has
+// not downloaded yet: `.<name>.icloud` beside it (design, Risks).
+func icloudPlaceholder(p string) string {
+	return path.Join(path.Dir(p), "."+path.Base(p)+".icloud")
 }
 
 // stem is a file's name without `.md`.

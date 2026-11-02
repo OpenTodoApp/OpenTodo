@@ -1,0 +1,58 @@
+title: Waiting follow-up
+summary: When a task gets your waiting label, note the date and bring it back in three days.
+description: |
+  Waiting for someone is easy to forget. When you add your waiting label to a task, this routine comments "Waiting since" with today's date and makes the task due in three days, so it comes back to you to follow up.
+
+  Change the number of days on the last card to suit how quickly people usually answer.
+category: work
+icon: hourglass
+author: OpenTodo
+reviewed: 2026-11-01
+ask:
+  waiting:
+    type: label
+    suggest: waiting
+trigger:
+  kind: label.added
+  label_id:
+    ask: waiting
+steps:
+  - id: a
+    kind: date
+    in:
+      date:
+        literal: today
+  - id: b
+    kind: add_comment
+    in:
+      task:
+        ref: trigger
+      text:
+        literal:
+          format: "Waiting since {a}"
+  - id: c
+    kind: change_tasks
+    in:
+      tasks:
+        ref: trigger
+      set:
+        literal:
+          due:
+            in_days: 3
+test:
+  fill:
+    waiting: lw
+  run_on: w0
+  labels:
+    - id: lw
+      name: waiting
+  tasks:
+    - id: w0
+      labels: [lw]
+  expect:
+    comments:
+      w0:
+        - Waiting since 2026-10-21
+    changed:
+      w0:
+        due: 2026-10-24

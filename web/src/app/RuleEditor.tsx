@@ -3,7 +3,7 @@
 // dialog's first focus does not open the label list). Saving writes the whole rule
 // as one view op (setOnDrop); "No rule" clears it. A label the rule names that was
 // deleted since is shown as removed and can be taken out.
-import { lazy, Suspense, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { activeLabels } from '../lib/labels'
 import { describeRule, knownRule } from '../lib/rules'
 import { RULE_DUE, RULE_START, RULE_STATE, type Label, type OnDropRule, type Priority, type Project, type Section, type View } from '../lib/types'
@@ -11,12 +11,10 @@ import { setOnDrop } from '../lib/views'
 import { Button, Combobox, Dialog, LabelChip } from '../ui'
 import { ProjectPickerField } from './ProjectPickerField'
 import { ruleDraftFromView } from './rules/convertDraft'
-import { useMe } from '../lib/timeEntries'
+import { openRoutineDraft } from './routines/routineNav'
 import { t, translatedMap, msg } from '../lib/i18n'
 import { messageOf } from '../lib/errorText'
 
-// The rule editor is its own chunk with the Rules page (automation-rules D11).
-const RuleDialog = lazy(() => import('./rules/RuleDialog').then((m) => ({ default: m.RuleDialog })))
 
 const DUE_LABEL = translatedMap({ today: msg('Today'), tomorrow: msg('Tomorrow'), 'next-week': msg('Next week'), clear: msg('No date') })
 const START_LABEL = translatedMap({ someday: msg('Someday'), clear: msg('Clear the start') })
@@ -32,13 +30,17 @@ export interface RuleEditorProps {
 
 type LabelKey = 'add_labels' | 'remove_labels'
 
-export function LabelsField({ title, ids, labels, onChange }: { title: string; ids: string[]; labels: readonly Label[]; onChange: (ids: string[]) => void }) {
+export function LabelsField({ title, ids, labels, onChange, titleHidden }: {
+  title: string; ids: string[]; labels: readonly Label[]; onChange: (ids: string[]) => void
+  /** The title is shown beside the field by its form (a grid of rows), and only named to assistive technology here. */
+  titleHidden?: boolean
+}) {
   const live = useMemo(() => activeLabels([...labels]), [labels])
   const byId = new Map(labels.filter((l) => !l.deleted_at).map((l) => [l.id, l]))
   const toggle = (id: string) => onChange(ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id])
   return (
-    <fieldset className="space-y-1">
-      <legend className="text-meta font-medium text-muted">{title}</legend>
+    <fieldset className="min-w-0 space-y-1">
+      <legend className={titleHidden ? 'sr-only' : 'text-meta font-medium text-muted'}>{title}</legend>
       {ids.length > 0 && (
         <ul className="flex flex-wrap gap-1" aria-label={title}>
           {ids.map((id) => {
@@ -81,8 +83,6 @@ function withKey<K extends keyof OnDropRule>(rule: OnDropRule, key: K, value: On
 
 export function RuleEditor({ view, labels, projects, sections, onClose }: RuleEditorProps) {
   const [draft, setDraft] = useState<OnDropRule>(() => knownRule(view.on_drop) ?? {})
-  const [automation, setAutomation] = useState(false)
-  const me = useMe() ?? ''
   const [error, setError] = useState<string | null>(null)
   const set = <K extends keyof OnDropRule>(key: K, value: OnDropRule[K] | undefined) => setDraft((d) => withKey(d, key, value))
   const save = (rule: OnDropRule | null) => {
@@ -128,13 +128,12 @@ export function RuleEditor({ view, labels, projects, sections, onClose }: RuleEd
         <p className="text-meta text-muted" aria-live="polite" data-rule-summary>{summary || t('No changes: this column is not a drop target.')}</p>
         {error && <p role="alert" className="text-meta text-danger">{error}</p>}
         <div className="flex flex-wrap justify-end gap-2">
-          <Button type="button" variant="ghost" icon="zap" onClick={() => setAutomation(true)}>{t('Make an automation rule')}</Button>
+          <Button type="button" variant="ghost" icon="zap" onClick={() => { onClose(); openRoutineDraft(ruleDraftFromView({ ...view, on_drop: draft }, { labels, projects })) }}>{t('Make an automation rule')}</Button>
           <Button type="button" variant="ghost" onClick={() => save(null)}>{t('No rule')}</Button>
           <Button type="button" variant="ghost" onClick={onClose}>{t('Cancel')}</Button>
           <Button type="submit" variant="primary">{t('Save')}</Button>
         </div>
       </form>
-      {automation && <Suspense fallback={null}><RuleDialog draft={ruleDraftFromView({ ...view, on_drop: draft }, { labels, projects })} me={me} onClose={() => setAutomation(false)} /></Suspense>}
     </Dialog>
   )
 }

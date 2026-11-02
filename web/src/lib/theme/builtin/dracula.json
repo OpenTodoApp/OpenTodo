@@ -1,0 +1,47 @@
+{
+  "opentodoTheme": 1,
+  "id": "dracula",
+  "name": "Dracula",
+  "author": "Dracula Theme",
+  "licence": "MIT",
+  "source": "https://github.com/dracula/dracula-theme",
+  "kind": "dark",
+  "seeds": {
+    "canvas": "#282a36",
+    "surface": "#282a36",
+    "text": "#f8f8f2",
+    "accent": "#bd93f9",
+    "success": "#50fa7b",
+    "warning": "#ffb86c",
+    "danger": "oklch(0.7522 0.1494 24.43)",
+    "info": "#8be9fd"
+  },
+  "tokens": {
+    "faint": "oklch(0.7423 0.0803 270.09)",
+    "selected": "#44475a",
+    "accent-text": "oklch(0.747 0.1485 301.88)",
+    "hue-red": "oklch(0.7022 0.1895 24.43)",
+    "hue-orange": "#ffb86c",
+    "hue-yellow": "#f1fa8c",
+    "hue-lime": "oklch(0.8174 0.2163 128.85)",
+    "hue-green": "#50fa7b",
+    "hue-teal": "oklch(0.8174 0.1465 181.91)",
+    "hue-cyan": "#8be9fd",
+    "hue-blue": "oklch(0.8174 0.0934 254.62)",
+    "hue-indigo": "oklch(0.8174 0.0924 276.93)",
+    "hue-violet": "#bd93f9",
+    "hue-pink": "#ff79c6",
+    "hue-slate": "oklch(0.6698 0.0803 270.09)"
+  },
+  "bar": "#282a36",
+  "notes": {
+    "adapted": {
+      "danger": "#ff5555",
+      "faint": "#6272a4",
+      "accent-text": "#bd93f9",
+      "hue-red": "#ff5555",
+      "hue-slate": "#6272a4"
+    },
+    "text": "Dracula by Dracula Theme, mapped onto OpenTodo's tokens by web/src/lib/theme/builtin/MAPPING.md. Label colours not in the palette (lime, teal, blue, indigo) use OpenTodo's hue at the palette's lightness and chroma. Some colours were adapted for contrast: their published values are under adapted."
+  }
+}

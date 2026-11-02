@@ -9,13 +9,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/url"
 	"regexp"
 	"slices"
 	"strings"
-	"unicode/utf8"
-
-	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 )
 
 // Op is one field assignment.
@@ -166,6 +162,13 @@ const (
 	kRuleTrigger
 	kRuleCondition
 	kRuleActions
+	// kRoutineSteps is null or a routine's steps (OpenSpec change
+	// routines-engine, design D3): one whole value, an ordered list of at most
+	// 20 steps checked by internal/ruleval (known kinds, unique ids, inputs of
+	// the declared names and literal shapes, references only to visible
+	// outputs, at most 3 block levels, 32 KB encoded). Sync checks the shape
+	// only; REST also type-checks and resolves the ids.
+	kRoutineSteps
 	// kReactions is one account's reactions on a comment (OpenSpec change
 	// editor-everywhere, design D8): a list of distinct names from ReactionNames.
 	kReactions
@@ -198,6 +201,15 @@ const (
 	// entries that are no Focus session (time_entry.focus_session, OpenSpec
 	// change focus-session-readable, design D2).
 	kFocusSession
+	// kThemeDoc is null or one whole custom theme document (OpenSpec change
+	// theme-editor, design D1): a JSON object of at most themes.MaxBytes bytes
+	// that passes internal/themes.Validate (format 1: seeds, explicit tokens,
+	// shape and type; colours only as #rrggbb or in-gamut oklch, never CSS).
+	kThemeDoc
+	// kSector is "" (none) or a time sector: an ISO week "YYYY-Www", a month
+	// "YYYY-MM" or a quarter "YYYY-Qn" with a year from 2000 to 2999, checked by
+	// internal/sector (task.sector, OpenSpec change time-sectors, design D1).
+	kSector
 )
 
 // MaxFocusSession is the largest time_entry.focus_session (focus-session-readable D2).
@@ -341,6 +353,14 @@ var Schema = map[string]map[string]Field{
 		// D1): "" (none), "deep", "medium" or "low". Chosen from a menu, never
 		// written text, so not content (D2); additive.
 		"energy": {Kind: kEnergy, Default: `""`},
+		// The period the task is planned for without a date (OpenSpec change
+		// time-sectors, design D1): "" (none), an ISO week "2026-W44", a month
+		// "2026-11" or a quarter "2026-Q4". A sector with no do-on date schedules
+		// the task (it leaves the Inbox and Anytime) and is never overdue; clients
+		// name it relative to the viewer's date and derive carry-over, never
+		// writing it. A scheduling field like start: plaintext, not content;
+		// additive.
+		"sector": {Kind: kSector, Default: `""`},
 		// The tasks this one waits for, in its own sharing scope (OpenSpec change
 		// task-dependencies): one whole-list register; the resolver refuses ids of
 		// other scopes and lists that close a cycle.
@@ -624,12 +644,32 @@ var Schema = map[string]map[string]Field{
 	// a label it is personal: it resolves to the author's personal scope. trigger,
 	// condition and actions are each one whole value; name is a content field.
 	// The server engine (internal/rules) runs enabled rules for their author.
+	// The interface calls a rule a routine (routines-engine D1).
 	"rule": {
-		"name":       {Kind: kString, Default: `""`, Content: true},
-		"enabled":    {Kind: kBool, Default: `false`},
-		"trigger":    {Kind: kRuleTrigger, Default: `null`},
-		"condition":  {Kind: kRuleCondition, Default: `null`},
-		"actions":    {Kind: kRuleActions, Default: `null`},
+		"name":      {Kind: kString, Default: `""`, Content: true},
+		"enabled":   {Kind: kBool, Default: `false`},
+		"trigger":   {Kind: kRuleTrigger, Default: `null`},
+		"condition": {Kind: kRuleCondition, Default: `null`},
+		"actions":   {Kind: kRuleActions, Default: `null`},
+		// A routine's steps (routines-engine D2, D3): null reads the rule as one
+		// Change tasks step over the trigger's output with its actions; a list is
+		// the routine, and actions is then null or ignored. Not a content field:
+		// an encrypted account's text literals inside are ciphertext envelopes.
+		"steps": {Kind: kRoutineSteps, Default: `null`},
+		// "Apply without asking" for a routine with AI steps (routines-ai-step
+		// D4): "auto" turns it on, anything else reads as off (proposals). Set
+		// only by the person in the app: agent paths refuse it, and the server
+		// ignores a value an agent or assistant device wrote (D6). The server
+		// compares its winning op's time with its own fallback state (D5).
+		"ai_apply": {Kind: kString, Default: `""`},
+		// The routine's AI tokens per UTC day (routines-ai-step D11): 0 reads as
+		// 20,000; the routes accept 1,000 to 200,000.
+		"ai_budget": {Kind: kNumber, Default: `0`},
+		// The project a routine belongs to (routines-shared D1): null for a
+		// personal routine. A routine of a shared project lives in the
+		// project's scope like a task, its editors write it, and it runs as
+		// whoever last turned it on, only inside that project.
+		"project_id": {Kind: kNullableString, Default: `null`},
 		"position":   {Kind: kNumber, Default: `0`},
 		"created_at": {Kind: kNumber, Default: `0`},
 		"deleted_at": {Kind: kNullableNumber, Default: `null`},
@@ -672,6 +712,20 @@ var Schema = map[string]map[string]Field{
 		// Ordered task ids, at most MaxSlotTasks, one whole-list value like task.blocked_by; ids of tasks not shown are kept.
 		"task_ids":   {Kind: kIDList, Default: `[]`},
 		"color":      {Kind: kString, Default: `"#64748b"`},
+		"created_at": {Kind: kNumber, Default: `0`},
+		"deleted_at": {Kind: kNullableNumber, Default: `null`},
+	},
+	// theme: a custom theme (OpenSpec change theme-editor, design D1). Personal
+	// like a rule, with ids unique on the server; chosen for a side as
+	// user_prefs.theme_light or theme_dark "user:<id>". doc is one whole theme
+	// document (theme-engine D1, validated by internal/themes, at most 16 KB), so
+	// two devices saving the same theme converge on the later save. Themes are
+	// appearance, not user content: no field is a content field, and an
+	// encrypted account stores them in plain text (docs/themes.md says so).
+	// Devices keep at most 20 live themes per user; the server does not count.
+	"theme": {
+		"doc":        {Kind: kThemeDoc, Default: `null`},
+		"position":   {Kind: kNumber, Default: `0`},
 		"created_at": {Kind: kNumber, Default: `0`},
 		"deleted_at": {Kind: kNullableNumber, Default: `null`},
 	},
@@ -742,6 +796,8 @@ var Schema = map[string]map[string]Field{
 		// "custom". Clients derive the accent from it on the device and read the
 		// theme "custom" with an empty or malformed colour as the default theme.
 		"theme_accent_custom": {Kind: kString, Default: `""`},
+		// Theme while light, while dark (theme-engine D6): "" (OpenTodo's), "builtin:<id>", "user:<id>" or "instance:<id>"; clients read what they cannot apply as "" and keep it.
+		"theme_light": {Kind: kString, Default: `""`}, "theme_dark": {Kind: kString, Default: `""`},
 		// Promoted sidebar destinations (OpenSpec change ux-overhaul, design D8): a
 		// comma-separated list of view ids shown among the primary items; unknown
 		// entries are ignored by clients.
@@ -768,6 +824,11 @@ var Schema = map[string]map[string]Field{
 		// "companion" or "first"; clients read an unknown or empty value as
 		// "lists", so new modes stay additive.
 		"method_mode": {Kind: kString, Default: `""`},
+		// Time sectors (OpenSpec change time-sectors, design D7): "on" shows the
+		// Sector segment, the planning list's Time sectors source, the quick-add
+		// sector phrases and the review's sector section; empty or any other value
+		// reads as off and is kept. Sectors on tasks keep working either way.
+		"time_sectors": {Kind: kString, Default: `""`},
 		// The first-day checklist (OpenSpec change moments-and-onboarding, design
 		// D5): "hidden" once its sidebar entry was hidden on any device; clients
 		// read an empty or unknown value as shown.
@@ -882,6 +943,22 @@ var Schema = map[string]map[string]Field{
 		// shows it, and clients keep the stored value. Whether the row is open
 		// is device storage and never synced. Settings, never content.
 		"formatting_toggle": {Kind: kString, Default: `""`},
+		// Routines seen marker (OpenSpec change routines-editor, design D10):
+		// the server time (a run's at, Unix ms) up to which the user has seen
+		// routine runs in the Inbox card. Clients never write a smaller value
+		// than the one they hold, so last-writer-wins keeps the later mark; the
+		// server's run-log retention reads it. Never content.
+		"routines_seen_at": {Kind: kNumber, Default: `0`},
+		// Hide successful runs (routines-editor D10): "on" leaves successes out
+		// of the Inbox card (failures and proposals stay); clients and the
+		// server read an empty or unknown value as off and keep it.
+		"routines_hide_successes": {Kind: kString, Default: `""`},
+		// Upcoming starts with Today (OpenSpec change upcoming-start-with-today,
+		// design D1): "on" opens Upcoming with Today's own groups (Earlier,
+		// Today, the parts of the day, This Evening, Blocked and Waiting for a
+		// slot) before Tomorrow; clients read an empty or unknown value as off
+		// and keep the stored value. Settings, never content.
+		"upcoming_today": {Kind: kString, Default: `""`},
 	},
 	// review: when the user last finished a weekly review (OpenSpec change
 	// `stats-and-review`, design D4). One row with the entityId "me"; like
@@ -983,67 +1060,6 @@ func Validate(op Op) error {
 	return nil
 }
 
-// MaxSlotTasks caps the tasks one slot lists (calendar-slots D1).
-const MaxSlotTasks = 20
-
-// MaxSlotMinutes is the longest slot the server accepts (calendar-slots D1:
-// clients offer 15 to 480 minutes; the server checks the kind and one day).
-const MaxSlotMinutes = 1440
-
-// checkSlot adds the slot rules to the kinds: at most MaxSlotTasks task ids
-// and a length that is set and at most one day.
-func checkSlot(field string, raw json.RawMessage) error {
-	switch field {
-	case "task_ids":
-		if len(idList(raw)) > MaxSlotTasks {
-			return fmt.Errorf("may hold at most %d tasks", MaxSlotTasks)
-		}
-	case "minutes":
-		var n int64
-		if json.Unmarshal(raw, &n) != nil || n < 1 || n > MaxSlotMinutes {
-			return fmt.Errorf("must be an integer from 1 to %d", MaxSlotMinutes)
-		}
-	}
-	return nil
-}
-
-// MaxAttachmentName is the longest attachment name (characters).
-const MaxAttachmentName = 255
-
-// checkAttachment adds the attachment rules (design D1): a name of 1–255
-// characters without path separators, a link only over http or https, a size
-// that is a non-negative whole number. Ciphertext (encrypted accounts) is
-// opaque and only length-checked by the value limit.
-func checkAttachment(field string, raw json.RawMessage) error {
-	switch field {
-	case "name":
-		var s string
-		_ = json.Unmarshal(raw, &s)
-		if e2ee.IsCiphertext(s) {
-			return nil
-		}
-		if n := utf8.RuneCountInString(s); n < 1 || n > MaxAttachmentName || strings.ContainsAny(s, "/\\\x00") {
-			return errors.New("must be 1–255 characters without / or \\")
-		}
-	case "url":
-		var s string
-		if string(raw) == "null" || json.Unmarshal(raw, &s) != nil || e2ee.IsCiphertext(s) {
-			return nil
-		}
-		u, err := url.Parse(s)
-		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
-			return errors.New("must be an http or https URL")
-		}
-	case "size":
-		var n float64
-		_ = json.Unmarshal(raw, &n)
-		if n < 0 || n != float64(int64(n)) {
-			return errors.New("must be a whole number of bytes")
-		}
-	}
-	return nil
-}
-
 // checkKind checks an op value against its field's kind; the per-kind checks
 // are in kinds.go. A kind without a check accepts any value.
 func checkKind(k kind, raw json.RawMessage) error {
@@ -1052,36 +1068,6 @@ func checkKind(k kind, raw json.RawMessage) error {
 		return nil
 	}
 	return check(raw)
-}
-
-func isDate(s string) bool {
-	if len(s) != 10 || s[4] != '-' || s[7] != '-' {
-		return false
-	}
-	for i, c := range s {
-		if i == 4 || i == 7 {
-			continue
-		}
-		if c < '0' || c > '9' {
-			return false
-		}
-	}
-	return true
-}
-
-func isClock(s string) bool {
-	if len(s) != 5 || s[2] != ':' {
-		return false
-	}
-	for i, c := range s {
-		if i == 2 {
-			continue
-		}
-		if c < '0' || c > '9' {
-			return false
-		}
-	}
-	return true
 }
 
 // Wins reports whether (ts, device) beats the existing (ets, edevice).

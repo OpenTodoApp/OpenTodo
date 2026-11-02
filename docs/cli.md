@@ -13,7 +13,7 @@ order: 20
 
 It is an **online** client: it keeps no local copy of your tasks and makes no change when the server cannot be reached. The one exception is [`ot vault`](vault.md), which keeps a folder of Markdown files and its own sync state. Every write goes through the REST API, which records it in the operation log, so changes made with `ot` reach your phone and browser on their next sync and converge under the same per-field last-writer-wins rule as any other edit.
 
-`ot rules list` lists your [automation rules](automations.md); `ot rules enable <id>` and `ot rules disable <id>` turn one on or off (an id prefix or the exact name works; `--dry-run` prints the request); `ot rules runs <id>` prints its run log. Rules are built in the app. A read token lists but cannot switch (exit 5).
+`ot rules list` lists your [automation rules](automations.md); `ot rules enable <id>` and `ot rules disable <id>` turn one on or off (an id prefix or the exact name works; `--dry-run` prints the request); `ot rules runs <id>` prints its run log. A read token lists but cannot switch (exit 5). [Routines](routines.md) have their own command, `ot routine` (below).
 
 ## Install
 
@@ -115,9 +115,10 @@ ot list --someday              # parked in Someday
 ot list --anytime              # no due date, deadline or start
 ot list --blocked --project Home   # waiting for an open task
 ot list --available                # what can be done now: not blocked, not waiting for an earlier step
+ot list --sector this-week         # planned for this week without a date; carried: periods that ended
 ```
 
-Human output is a compact table: an id prefix, priority, due date and time (overdue dates are marked and shown in red on a terminal), project and title, plus an `ORIGIN` column (the issue id or the page's host) when a listed task has an [origin](capture.md#where-a-task-came-from) and a `BY` column with the deadline when one has a deadline (a passed deadline is marked overdue), and an `ENERGY` column when a listed task has an energy; `--json` always carries `energy` (null for none). The due cell adds `(someday)`, `starts <date>` (for a multi-day task its days instead: `3–5 Nov`, `30 Oct – 2 Nov`, or with the years when they differ), `evening` (or `morning`, `afternoon`) and `waiting` when they apply. Dates are evaluated in your local time zone. A task fixed to a time zone (see [sync.md](sync.md#zoned-due-values)) is shown converted to your zone with the original as a hint, e.g. `2026-10-11 00:00 (09:00 Berlin)`; `ot edit --due/--time` on it takes the date and time as shown and keeps the zone, and `--time ""` releases it to a floating date. Tasks of archived projects stay out of the cross-project views, as in the web app.
+Human output is a compact table: an id prefix, priority, due date and time (overdue dates are marked and shown in red on a terminal), project and title, plus an `ORIGIN` column (the issue id or the page's host) when a listed task has an [origin](capture.md#where-a-task-came-from) and a `BY` column with the deadline when one has a deadline (a passed deadline is marked overdue), and an `ENERGY` column when a listed task has an energy; `--json` always carries `energy` (null for none). The due cell adds `(someday)`, `starts <date>` (for a multi-day task its days instead: `3–5 Nov`, `30 Oct – 2 Nov`, or with the years when they differ), the [time sector](time-sectors.md) of a task without a due date (`this week`, `next month`, the period such as `2026-W47`, or `from 2026-W43` when its period has ended; `--json` always carries `sector`, null for none), `evening` (or `morning`, `afternoon`) and `waiting` when they apply. Dates are evaluated in your local time zone. A task fixed to a time zone (see [sync.md](sync.md#zoned-due-values)) is shown converted to your zone with the original as a hint, e.g. `2026-10-11 00:00 (09:00 Berlin)`; `ot edit --due/--time` on it takes the date and time as shown and keeps the zone, and `--time ""` releases it to a floating date. Tasks of archived projects stay out of the cross-project views, as in the web app.
 
 Custom-field sorting is available in the web app and saved views; `ot list` has no sort flag for it (see [Group and order](group-and-order.md)).
 
@@ -127,7 +128,7 @@ ID        P   DUE                 PROJECT  TITLE
 3f1d7a22  P1  2026-10-10 09:00             Call the plumber
 ```
 
-With a [Today limit](today-limit.md) on, `ot today` prints the tasks in the slots, then a **Waiting for a slot** heading and the waiting tasks in fill order (the first comes in next), with the app's rule: today's focus, the tasks you let in, Earlier oldest first, then the rest by when they were created. `--all` prints every task in one table, and `--json` adds `waiting_for_slot` to each task while the limit is on.
+With a [Today limit](today-limit.md) on, `ot today` prints the tasks in the slots, then a **Waiting for a slot** heading and the waiting tasks in fill order (the first comes in next), with the app's rule: today's focus, the tasks you let in, Earlier oldest first, then the rest by when they were created. `--all` prints every task in one table, and `--json` adds `waiting_for_slot` to each task while the limit is on. When waiting tasks are due today with a time or have a deadline today, the heading names the next one (`Waiting for a slot · 4 — next: Send the form, 16:00`) and lists them first, soonest first, with their time (`deadline` for a deadline without one), before the waiting tasks in fill order; `--json` marks them with `time_sensitive: true` (`false` on the other waiting tasks).
 
 ### Add and edit
 
@@ -166,6 +167,7 @@ ot add --done "Fixed the printer"                    # log a win: created alread
 | `--span`, `--no-span` | Draw the task across the days from its start date to its due date, both included (a trip, a conference); a span needs `--start` and `--due` with the start before the due date, otherwise it shows on its due date as before. `--no-span` takes it back to one day and keeps the start date. Both together exit 2 before any request |
 | `--part <part>` | The [part of the day](day-parts.md): `morning`, `afternoon`, `evening` (This Evening) or `none`; written with the evening flag, so `--part afternoon` takes an evening task out of This Evening. Another word exits 2 before any request. It wins over `--evening` |
 | `--energy <level>` | The task's energy: `deep`, `medium` or `low` (any case); `none` clears it. Another word exits 2 before any request |
+| `--sector <when>` | The [time sector](time-sectors.md): `this-week`, `next-week`, `this-month`, `next-month`, `this-quarter` or `next-quarter` (weeks start on Monday), or a period such as `2026-W45`, `2026-11` or `2026-Q4`; `none` (edit) clears it. Written as sent: the due date is kept. Another word exits 2 naming it, before any request. `ot list --sector` takes the same words or `carried` |
 | `--blocked-by <ref>` | Repeatable: a task this one waits for, by id or unique id prefix (an ambiguous prefix exits 1 listing the candidates, before any write). With `ot edit` the list is replaced; `none` clears it |
 | `--location <where>` | A saved location's name (case-insensitive) or id, sent with its current name, address and coordinates; or `lat,lon`; `none` (edit) clears it. An unknown name exits 1 before any write |
 | `--remind <phrase>` | `ot add` only, repeatable: a reminder without the reminder word, either an offset (`"30 min before"`, `"1 day before"`, `"2 hours after"`) or a moment (`"at 9"`, `"tomorrow at 9"`, `"20 Oct at 9"`). It is resolved like a quick-add reminder: relative to the task's due time (09:00 for a date-only due), or absolute in your local time zone when the task has no due date. An offset on an undated task waits for a due date, and the command says so |
@@ -271,6 +273,37 @@ A duration is `45m`, `1h30`, `1.5h` or `90` (minutes); anything else exits 2 bef
 0 18 * * 5  ot time export --from monday --to today -o "$HOME/time/week-$(date +\%F).csv"
 ```
 
+## Routines
+
+`ot routine` (or `ot routines`) works with [routines](routines.md); a routine is named by its id, an id prefix or its exact name.
+
+```sh
+ot routine list
+ot routine show Groceries                 # trigger, condition and steps as numbered sentences
+ot routine run Groceries --test           # plan every step, write nothing
+ot routine run "Waiting follow-up" --task 3f2a…
+ot routine runs Groceries --failed --limit 10
+ot routine create --file groceries.yaml
+ot routine create --project Household --file chores.yaml   # a routine of a (shared) project
+ot routine edit Groceries --file changes.json   # replaces the parts the file gives
+ot routine enable Groceries               # or disable
+ot routine undo Groceries <run-id>
+ot routine rm Groceries --yes
+```
+
+A routine file is JSON or YAML with `name`, `trigger`, an optional `condition`, `steps` (or `actions`), `enabled` and an optional `project` (the project it belongs to, by name or id; `--project` does the same), in the shapes of the [API](api.md#routines). Projects, sections, labels, saved views and webhooks may be written by name (`project: Errands`); the CLI resolves them before sending and fails naming one that matches nothing (`project Erands not found`), sending nothing.
+
+```yaml
+name: Groceries
+trigger: {kind: schedule, at: "17:00", weekdays: [5]}
+steps:
+  - {id: a, kind: note_text, in: {of: {literal: {project: Groceries}}}}
+  - {id: b, kind: split_lines, in: {text: {ref: a}}}
+  - {id: c, kind: create_tasks, in: {text: {ref: b}, project: {literal: {project: Errands}}}}
+```
+
+`ot routine list` shows each routine's PROJECT and, for a routine of a [shared project](routines.md#routines-of-a-shared-project), RUNS AS (the person who last turned it on, `-` before anyone did); `ot routine show` prints both. `ot routine run` prints each step's status, items and time, and exits 6 when the run failed (with `--json`, the run record is printed and says at which step). A read token can list, show and read runs but is refused on every other subcommand (exit 5). Saving a routine with a step that is not available prints a warning naming the step and the reason.
+
 ## Calendar frames
 
 Your [frames](frames.md), the recurring background windows of the Day and Week calendar:
@@ -362,13 +395,13 @@ The note tools work through the bridge too: `create_note`, `update_note` and `ap
 
 ## Markdown vault
 
-`ot vault` keeps a folder of Markdown files, one per project, in two-way sync with the account; it is the one command group that keeps local state (the files and `<dir>/.opentodo/`). It is a sync device of its own and needs a `full` token; with `--read-only` it pulls and writes the files but sends nothing. See [Markdown vault](vault.md).
+`ot vault` keeps a folder of Markdown files, one per project, in two-way sync with the account; it is the one command group that keeps local state (the files and `<dir>/.opentodo/`). It is a sync device of its own and needs a `full` token; with `--read-only` it pulls and writes the files but sends nothing. A folder another device syncs (another machine, or the Obsidian plugin on a phone) is refused before any request with `vault_owned`, exit 2; `--take-over` makes this machine its syncing device. See [Markdown vault](vault.md#one-syncing-device).
 
 ```bash
 ot vault init ~/Notes/Tasks [--adopt]
-ot vault sync [<dir>] [--dry-run] [--read-only] [--json]
+ot vault sync [<dir>] [--dry-run] [--read-only] [--take-over] [--json]
 ot vault status [<dir>] [--json]
-ot vault watch [<dir>]
+ot vault watch [<dir>] [--take-over]
 ```
 
 ## Scripting: JSON output and exit codes
@@ -408,6 +441,7 @@ Exit codes:
 | 3 | Authentication or configuration error (wrong password, revoked token, unreadable config file) | sign in again |
 | 4 | The server could not be reached within the timeout (15 s) | retry later |
 | 5 | Not permitted: `insufficient_scope`, `forbidden`, `not_permitted`, `writes_disabled_by_owner`, `writes_disabled_by_user`, `encryption_enabled` or `read_only` | do not retry; change the token, the switch or the role |
+| 6 | `ot routine run` ran the routine and the run failed | read the failed step's error in the run record; fix the routine or what it needs |
 
 ### Machine-readable help: `ot schema`
 

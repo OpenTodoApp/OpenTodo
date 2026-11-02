@@ -2,7 +2,7 @@
 // D11): "When label waiting is added · in Work → section Waiting of Work". The
 // action half reuses the column rule's wording (describeRule).
 import { weekday } from '../dates'
-import { t } from '../i18n'
+import { formatList, t } from '../i18n'
 import type { OnDropRule, Rule, RuleActions, RuleCondition, RuleTrigger } from '../types'
 import { ruleParts, type RuleNames } from '.'
 import { addDays } from './match'
@@ -27,7 +27,13 @@ export function triggerText(tr: RuleTrigger | null | undefined, names: RuleNames
       : t('when a task is moved to {project}', { project: nameOf(names.projects, tr.project_id) })
     case 'due.reached': return t('when a task is due')
     case 'overdue': return t('when a task’s date passes')
+    case 'manual': return t('only when I run it')
     case 'schedule': {
+      if (tr.month_days?.length) {
+        const nums = tr.month_days.filter((d): d is number => typeof d === 'number').sort((a, b) => a - b).map(String)
+        const list = formatList([...nums, ...(tr.month_days.includes('last') ? [t('the last day')] : [])])
+        return t('every month on {days} at {time}', { days: list, time: tr.at ?? '' })
+      }
       const days = (tr.weekdays ?? []).slice().sort()
       const every = days.length === 7 ? t('every day') : days.map(dayName).join(', ')
       return t('{days} at {time}', { days: every, time: tr.at ?? '' })
@@ -36,12 +42,23 @@ export function triggerText(tr: RuleTrigger | null | undefined, names: RuleNames
   }
 }
 
-function dateText(p: RuleCondition['due']): string {
+// A date test as one phrase that names its field once ("due earlier", "due within 3 days";
+// not "due: due earlier", routines-editor-polish).
+function dueText(p: RuleCondition['due']): string {
   if (p === 'none') return t('no date')
   if (p === 'set') return t('has a date')
-  if (p === 'today') return t('today')
+  if (p === 'today') return t('due today')
   if (p === 'overdue') return t('due earlier')
-  if (p && typeof p === 'object') return t('{n, plural, one {within # day} other {within # days}}', { n: p.within_days })
+  if (p && typeof p === 'object') return t('{n, plural, one {due within # day} other {due within # days}}', { n: p.within_days })
+  return ''
+}
+
+function deadlineText(p: RuleCondition['due']): string {
+  if (p === 'none') return t('no deadline')
+  if (p === 'set') return t('has a deadline')
+  if (p === 'today') return t('deadline today')
+  if (p === 'overdue') return t('past the deadline')
+  if (p && typeof p === 'object') return t('{n, plural, one {deadline within # day} other {deadline within # days}}', { n: p.within_days })
   return ''
 }
 
@@ -58,8 +75,8 @@ export function conditionParts(c: RuleCondition | null | undefined, names: RuleN
   if (c.labels?.all?.length) parts.push(t('label {labels}', { labels: labels(c.labels.all) }))
   if (c.labels?.none?.length) parts.push(t('without {labels}', { labels: labels(c.labels.none) }))
   if (c.priority) parts.push(t('priority {p}', { p: c.priority.in.join(', ') }))
-  if (c.due !== undefined) parts.push(t('due: {when}', { when: dateText(c.due) }))
-  if (c.deadline !== undefined) parts.push(t('deadline: {when}', { when: dateText(c.deadline) }))
+  if (c.due !== undefined) parts.push(dueText(c.due))
+  if (c.deadline !== undefined) parts.push(deadlineText(c.deadline))
   if (c.start === 'someday') parts.push(t('someday'))
   else if (c.start === 'deferred') parts.push(t('deferred'))
   else if (c.start === 'none') parts.push(t('no start'))
@@ -76,6 +93,7 @@ export function conditionParts(c: RuleCondition | null | undefined, names: RuleN
   else if (c.estimate) parts.push(t('estimate at most {n} min', { n: c.estimate.max_minutes }))
   if (c.tracked === 'none') parts.push(t('nothing tracked'))
   else if (c.tracked) parts.push(t('tracked at least {n} min', { n: c.tracked.min_minutes }))
+  if (c.unchanged) parts.push(t('{n, plural, one {not changed for # day} other {not changed for # days}}', { n: c.unchanged.days }))
   return parts
 }
 

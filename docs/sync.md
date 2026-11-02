@@ -66,7 +66,7 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | task | `notes_doc` | document: `""` or an envelope `"<format>:v<n>:<base64>"` of at most 256 KB (262,144 characters); the note as a mergeable rich-text document, see [Mergeable documents](#mergeable-documents) |
 | task | `habit` | boolean, default false: the series is tracked as a habit, with streaks and a month history derived on the device (habits, see [Habits](recurrence.md#habits)). Not content, so never encrypted |
 | task | `skipped` | boolean, default false: on an occurrence record, the occurrence was skipped rather than done; such a record is not a completion (habits, series-exceptions) |
-| task | `origin` | null or `{"kind":"url"\|"email"\|"issue"\|"import","provider"?,"id"?,"url"?,"title"?}`: where the task came from (task-origin). `url` kind needs `url`, the others `id`; `provider` 1–32 of `a-z0-9-`; `url` `http(s)` with a host, at most 2,048 bytes; `id` at most 512, `title` at most 500 characters; unknown members refused. One last-writer-wins value like `due`, so concurrent origins never mix. A content field: an encrypted account sends one ciphertext string instead of the object |
+| task | `origin` | null or `{"kind":"url"\|"email"\|"issue"\|"import"\|"obsidian","provider"?,"id"?,"url"?,"title"?}`: where the task came from (task-origin). `url` kind needs `url`, the others `id`; `obsidian` needs both, no `provider`, and its `url` is an Obsidian note link `obsidian://open?vault=…&file=…` naming the note in `id` (obsidian-origin), the only `url` that is not `http(s)`; `provider` 1–32 of `a-z0-9-`; `url` `http(s)` with a host, at most 2,048 bytes; `id` at most 512, `title` at most 500 characters; unknown members refused. One last-writer-wins value like `due`, so concurrent origins never mix. A content field: an encrypted account sends one ciphertext string instead of the object |
 | task | `note_mentions` | array of strings (account ids of members the note mentions, and `group:<group id>` for a workspace group; written with `notes_doc`, filtered at receipt, empty on a personal task) |
 | task | `fields.<id>` | a custom field value: null, a string, a finite number or a boolean; objects and arrays are refused. `<id>` is a field definition id of 1–64 characters `[A-Za-z0-9_-]`. One op per field, so values converge key by key; see [Custom fields](#custom-fields) |
 | section | `name` | string |
@@ -100,6 +100,8 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | view | `icon` | null or a name from the icon catalogue (not content; any string is accepted so a newer catalogue stays additive, and a name a client does not know shows the default icon) |
 | view | `position`, `created_at` | number |
 | view | `deleted_at` | number or null |
+| rule | `trigger`, `condition`, `actions` | an [automation rule's](automations.md) whole values: the trigger object (a kind from a closed set, `manual` included), null or a condition object, null or an actions object; checked for shape by `internal/ruleval` |
+| rule | `steps` | null or a [routine's](routines.md) list of at most 20 steps (`{id, kind, in, then?, otherwise?, do?}`, at most 3 block levels, 32 KB), one whole value converging by last-writer-wins; null reads the rule as one Change tasks step with its `actions`. Sync checks known kinds, unique ids, declared inputs and literal shapes and references to earlier steps; REST also checks types and ids. Not content: an encrypted account's text literals inside are envelopes |
 | reminder | `task_id` | string (task id, required) |
 | reminder | `kind` | `"relative"`, `"absolute"` or `"deadline"` (fires at 09:00 local on the task's deadline plus the offset) |
 | reminder | `offset_minutes` | integer −525600…525600 (minutes from the due time, or from 09:00 on the deadline for `deadline`; negative = before) or null |
@@ -147,6 +149,8 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | user_prefs | `row_layout` | string: `"line"` or `"detailed"`, the row layout of every list without its own (unknown or empty reads as `"line"`) |
 | user_prefs | `method_mode` | string: `"lists"`, `"companion"` or `"first"` (How you work; unknown or empty reads as `"lists"`) |
 | user_prefs | `sidebar_counts` | string: `"all"` shows the open-task count of every project, label and view row in the sidebar at rest; `""` or unknown keeps them on Inbox and Today only |
+| user_prefs | `routines_seen_at` | number (Unix ms: the server time of the newest routine run the Inbox card "Routines since your last visit" displayed; a client never writes a smaller value than it holds, LWW keeps the later mark; run-log retention reads it) |
+| user_prefs | `routines_hide_successes` | string: `"on"` leaves successful runs out of the Inbox card (failures stay); `""` or unknown reads as off |
 | user_prefs | `sidebar_order` | string: a comma-separated order of the primary sidebar destinations (`inbox`, `today`, `upcoming`, `calendar` and promotable ids); missing ids follow in the default order, unknown ids are ignored and kept |
 | user_prefs | `focus_presets` | string: up to four comma-separated whole minutes (5-180), the Countdown presets; empty or unreadable reads as `10,20,40`, entries out of range are ignored and the value is kept |
 | user_prefs | `focus_noise` | string: `"off"`, `"white"`, `"pink"` or `"brown"`, background noise during work sessions (empty or unknown reads as off and is kept); the volume is device storage, never synced |
@@ -367,6 +371,8 @@ Server-side writers (REST, assistant tools, CalDAV, public links, push delivery 
 ```
 
 `features` (optional, additive) names the protocol additions the device handles: `clock_skew` (see [Clocks](#clocks)) and `backfill_ack` (see "Catch-up for a new member" under [Sharing scopes](#sharing-scopes)). `backfillAck` echoes the `backfillSeq` of the last replay page the device applied.
+
+A device that only writes, such as the [Obsidian plugin](obsidian.md), sends the feature `push_only`. The server applies its ops exactly as in an ordinary exchange (validation, refusals, duplicates, waking the other devices) and skips the pull: the answer carries the `applied` and `duplicates` counts, `rejected`, `cursor` set to the head of the caller's log, `serverTime`, `hasMore: false`, and empty `ops`, `memberships`, `workspaces` and `purged` lists. The server's values of refused fields are not sent back, because such a device keeps no rows. A server older than the feature ignores it and answers with an ordinary page, which a push-only device discards.
 
 Response:
 

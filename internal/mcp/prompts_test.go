@@ -10,7 +10,7 @@ func TestPrompts(t *testing.T) {
 	f := newFixture(t)
 	r := f.call("u1", "prompts/list", nil)
 	list := r["result"].(map[string]any)["prompts"].([]any)
-	if len(list) != 5 {
+	if len(list) != 6 || list[5].(map[string]any)["name"] != "capture" {
 		t.Fatalf("prompts = %v", list)
 	}
 	first := list[0].(map[string]any)
@@ -40,6 +40,11 @@ func TestPrompts(t *testing.T) {
 	got = text(f.call("u1", "prompts/get", map[string]any{"name": "plan-week", "arguments": map[string]any{"startHour": "9", "endHour": "17", "dayLength": "420"}}))
 	if !strings.Contains(got, "from 09:00 to 17:00, at most 420 minutes") {
 		t.Fatalf("plan-week workday = %q", got)
+	}
+	// capture (voice-ramble 1.3): text only; an MCP client brings its own images.
+	got = text(f.call("u1", "prompts/get", map[string]any{"name": "capture", "arguments": map[string]any{"text": "buy paper, call Marta on Friday"}}))
+	if !strings.Contains(got, "one task per action") || !strings.HasSuffix(got, "call Marta on Friday") {
+		t.Fatalf("capture = %q", got)
 	}
 	for _, bad := range []map[string]any{{"name": "delete-all"}, {}} {
 		if r := f.call("u1", "prompts/get", bad); errCode(r) != CodeInvalidParams {

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -25,6 +26,8 @@ func (s *Server) registerRelayRoutes(mux *routes) {
 	mux.handle("GET /api/v1/relay/devices", signedIn.SessionOnly().DemoDenied(), s.handleListRelayDevices)
 	mux.handle("PUT /api/v1/relay/devices/{device}", signedIn.SessionOnly().Recent().DemoDenied(), s.handlePutRelayDevice)
 	mux.handle("DELETE /api/v1/relay/devices/{device}", signedIn.SessionOnly().DemoDenied(), s.handleDeleteRelayDevice)
+	mux.handle("PUT /api/v1/relay/devices/{device}/routines", signedIn.SessionOnly().Recent().DemoDenied(), s.handlePutRoutinesDevice)
+	mux.handle("DELETE /api/v1/relay/devices/{device}/routines", signedIn.SessionOnly().DemoDenied(), s.handleDeleteRoutinesDevice)
 	mux.handle("GET /api/v1/relay/events", signedIn.SessionOnly().DemoDenied(), s.handleRelayEvents)
 	mux.handle("POST /api/v1/relay/answers/{id}", signedIn.SessionOnly().DemoDenied(), s.handleRelayAnswer)
 }
@@ -59,6 +62,12 @@ type relayDeviceJSON struct {
 	Online    bool   `json:"online"`
 	// ThisSession is true for the device opted in by the calling session.
 	ThisSession bool `json:"thisSession"`
+	// MCP and Routines are the device's opt-ins; Connected that its own
+	// stream is open; Capabilities what it announced (routines-ai-step D7).
+	MCP          bool     `json:"mcp"`
+	Routines     bool     `json:"routines"`
+	Connected    bool     `json:"connected"`
+	Capabilities []string `json:"capabilities"`
 }
 
 func (s *Server) handleListRelayDevices(w http.ResponseWriter, r *http.Request) {
@@ -74,7 +83,8 @@ func (s *Server) handleListRelayDevices(w http.ResponseWriter, r *http.Request) 
 	out := make([]relayDeviceJSON, 0, len(list))
 	for _, d := range list {
 		out = append(out, relayDeviceJSON{DeviceID: d.DeviceID, Label: d.Label, EnabledAt: d.EnabledAt,
-			Online: online, ThisSession: sess != nil && d.SessionHash == sess.TokenHash})
+			Online: online, ThisSession: sess != nil && d.SessionHash == sess.TokenHash,
+			MCP: d.MCP, Routines: d.Routines, Connected: s.relayHub.DeviceOnline(uid, d.DeviceID), Capabilities: d.Capabilities})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"devices": out})
 }
@@ -182,14 +192,19 @@ func (s *Server) relayEndAccount(ctx context.Context, uid string) {
 
 // relayAllowed reports whether this session's device may hold a relay stream.
 func (s *Server) relayAllowed(ctx context.Context, uid, device, sessionHash string) (bool, error) {
-	if !s.mcpSettings.Enabled(ctx) {
-		return false, nil
-	}
+	roles, err := s.relayRoles(ctx, uid, device, sessionHash)
+	return roles.MCP || roles.Routines, err
+}
+
+// relayRoles is what this session's device may hold a relay stream for: AI
+// connectors' calls while the owner allows MCP, and the account's routines
+// (routines-ai-step D7), each by its own opt-in.
+func (s *Server) relayRoles(ctx context.Context, uid, device, sessionHash string) (relay.Roles, error) {
 	d, err := s.relayStore.Get(ctx, uid, device)
-	if err != nil || d == nil {
-		return false, err
+	if err != nil || d == nil || d.SessionHash != sessionHash {
+		return relay.Roles{}, err
 	}
-	return d.SessionHash == sessionHash, nil
+	return relay.Roles{MCP: d.MCP && s.mcpSettings.Enabled(ctx), Routines: d.Routines && s.rules != nil}, nil
 }
 
 // handleRelayEvents serves GET /api/v1/relay/events?device=&key=: the opted-in
@@ -204,14 +219,23 @@ func (s *Server) handleRelayEvents(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid_input", "device and key are required")
 		return
 	}
-	ok, err := s.relayAllowed(ctx, uid, device, sess.TokenHash)
+	roles, err := s.relayRoles(ctx, uid, device, sess.TokenHash)
 	if err != nil {
 		s.internal(w, err)
 		return
 	}
-	if !ok {
-		writeError(w, http.StatusForbidden, "not_opted_in", "this device is not opted in to answer AI connectors from this session")
+	if !roles.MCP && !roles.Routines {
+		writeError(w, http.StatusForbidden, "not_opted_in", "this device is not opted in to answer AI connectors or run routines from this session")
 		return
+	}
+	if roles.Routines {
+		// What the device can do (routines-ai-step D7): routines, and ai when
+		// the on-device assistant is set up and consented on it.
+		roles.Caps = relay.KnownCaps(strings.Split(r.URL.Query().Get("caps"), ","))
+		if err := s.relayStore.SetCapabilities(ctx, uid, device, roles.Caps); err != nil {
+			s.internal(w, err)
+			return
+		}
 	}
 	ip := clientIP(r)
 	if !s.streams.acquire(ip) {
@@ -220,7 +244,7 @@ func (s *Server) handleRelayEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer s.streams.release(ip)
-	st, err := s.relayHub.Open(uid, device, sess.TokenHash, pub)
+	st, err := s.relayHub.OpenWith(uid, device, sess.TokenHash, pub, roles)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_input", "key: not a P-256 public key")
 		return
@@ -241,6 +265,10 @@ func (s *Server) handleRelayEvents(w http.ResponseWriter, r *http.Request) {
 	}
 	if rc.Flush() != nil {
 		return
+	}
+	if roles.Routines && slices.Contains(roles.Caps, relay.CapRoutines) {
+		// The runs that waited for a device go to this one (D9).
+		go s.rules.DispatchWaiting(context.WithoutCancel(ctx), uid, device)
 	}
 	ticker := time.NewTicker(heartbeatInterval)
 	defer ticker.Stop()

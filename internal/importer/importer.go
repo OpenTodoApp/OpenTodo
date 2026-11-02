@@ -70,6 +70,9 @@ const (
 	// KindNote is a standalone note (OpenSpec change notes-overview, D9),
 	// restored verbatim from an own export; other importers never create one.
 	KindNote = "note"
+	// KindTheme is a custom theme (OpenSpec change theme-editor, D1), restored
+	// verbatim from an own export with its id, like a rule.
+	KindTheme = "theme"
 )
 
 // Due is a floating due date with an optional wall-clock time.

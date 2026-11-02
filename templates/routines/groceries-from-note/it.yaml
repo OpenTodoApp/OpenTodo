@@ -1,0 +1,7 @@
+# Spesa da una nota: Italian text for templates/routines/groceries-from-note/routine.yaml (templates/README.md, "Routine templates").
+sourceHash: sha-877ea84023de
+title: "Spesa da una nota"
+summary: "Ogni venerdì alle 17:00, trasforma le righe della tua nota della spesa in attività."
+description: "Tieni un progetto la cui nota elenca quello che ti serve, una voce per riga. Ogni venerdì alle 17:00 questa routine legge la nota e crea un'attività per riga nel tuo progetto delle commissioni, pronta per la spesa del fine settimana.\n\nI segni di elenco e le caselle vengono tolti da ogni riga. Svuota la nota quando torni, oppure tienila come lista fissa."
+ask.list.suggest: "Spesa"
+ask.into.suggest: "Commissioni"

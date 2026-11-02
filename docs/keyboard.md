@@ -280,6 +280,17 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>q</kbd> | On the Notes page: start a new note |
 | <kbd>/</kbd> | On the Notes page: focus the search field, which finds notes by every word |
 
+### Routine editor
+
+| Keys | What it does |
+| --- | --- |
+| <kbd>Alt+↑</kbd> | Focused step: in the routine editor: move the focused step up (Alt+↓ moves it down) |
+| <kbd>a</kbd> | Focused step: in the routine editor: add a step below the focused step; Delete asks to delete it |
+| <kbd>Ctrl+S</kbd> / <kbd>⌘+S</kbd> / <kbd>Ctrl+Enter</kbd> / <kbd>⌘+Enter</kbd> | In the routine editor: save the routine |
+| <kbd>Ctrl+Shift+Enter</kbd> / <kbd>⌘+Shift+Enter</kbd> | In the routine editor: test the routine (writes nothing) |
+| <kbd>Enter</kbd> / <kbd>Esc</kbd> | Routine proposal: in a routine’s proposal: apply the ticked changes / close the review; Space toggles an item |
+| <kbd>←</kbd> / <kbd>→</kbd> | In the routine editor: move between the words of a step; Esc closes a picker, then goes back to Routines |
+
 ### Reviews
 
 | Keys | What it does |
@@ -341,6 +352,9 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>d</kbd> / <kbd>r</kbd> / <kbd>Delete</kbd> | Focused user: Settings → People → Users: deactivate or reactivate, create a reset link, delete the focused user (each confirms) |
 | <kbd>e</kbd> | Focused table: Settings → Server → Audit log: export with the current filters while the table has focus |
 | <kbd>Tab</kbd> | Settings → Account → Security → Passkeys: add, rename (Enter saves, Esc cancels) or remove passkeys |
+| <kbd>Ctrl+Z</kbd> / <kbd>⌘+Z</kbd> | Theme editor: undo the last change |
+| <kbd>Ctrl+Shift+Z</kbd> / <kbd>⌘+Shift+Z</kbd> | Theme editor: redo the change undone last |
+| <kbd>Ctrl+S</kbd> / <kbd>⌘+S</kbd> | Theme editor: save the theme |
 
 ### Vim keybindings
 

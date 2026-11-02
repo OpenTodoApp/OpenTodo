@@ -103,12 +103,18 @@ func openRules(cfg config.Config, o Options, db *sql.DB, syncSvc *opsync.Service
 	}
 	engine.Enabled = sw.On
 	engine.Notify = inbox
+	engine.Routine = inbox
 	engine.Webhook = func(ctx context.Context, userID, webhookID string, f rules.Fired) error {
 		err := hooks.QueueRuleFired(ctx, userID, webhookID, webhook.RuleRef{ID: f.RuleID, Name: f.RuleName}, f.TaskID, f.Changes)
 		if errors.Is(err, webhook.ErrNoWebhook) {
 			return rules.ErrWebhookMissing
 		}
 		return err
+	}
+	// A routine's Send a webhook step (routines-engine "Routine webhook step").
+	engine.RoutineHook = func(ctx context.Context, userID, webhookID string, d rules.RoutineDelivery) error {
+		return hooks.QueueRoutine(ctx, userID, webhookID, webhook.RuleRef{ID: d.RuleID, Name: d.RuleName},
+			webhook.RoutineRef{RunID: d.RunID, StepID: d.StepID, Text: d.Text, TaskIDs: d.TaskIDs})
 	}
 	return engine, sw
 }

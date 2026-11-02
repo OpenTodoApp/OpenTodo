@@ -575,7 +575,8 @@ func expandPurge(ctx context.Context, tx *sql.Tx, targets []purgeTarget) ([]purg
 		// The project's sections (board-view), custom field definitions
 		// (custom-fields; the values are task fields and go with the tasks) and
 		// standalone notes (notes-overview D10), live or deleted, go with it.
-		for _, child := range []string{"section", "field", "note"} {
+		// Routines of the project (routines-shared) go too.
+		for _, child := range []string{"section", "field", "note", "rule"} {
 			cids, err := childIDsWhere(ctx, tx, t.scope, child, "project_id", t.id, false)
 			if err != nil {
 				return nil, err

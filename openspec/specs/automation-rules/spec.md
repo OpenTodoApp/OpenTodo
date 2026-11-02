@@ -6,7 +6,7 @@ Lets a user keep rules that act on their tasks without a device open: when somet
 ## Requirements
 
 ### Requirement: Rule entity
-A rule SHALL be an entity of the user's personal scope with a `name`, an `enabled` flag, one `trigger`, an optional `condition`, a non-empty `actions` set, a `position`, a creation time and an optional deletion time (a tombstone). It SHALL be created, edited, reordered and deleted as field-level operations applied locally first, so the editor works offline, and SHALL converge by per-field last-writer-wins; `trigger`, `condition` and `actions` are each one whole value that converges as a whole. A user SHALL have at most 50 live rules. A rule a device does not fully understand (a trigger kind, predicate or action key from a newer version) SHALL be kept in its data, shown as "Made with a newer version" and left unchanged by that device's edits of other fields.
+A rule SHALL be an entity of the user's personal scope with a `name`, an `enabled` flag, one `trigger`, an optional `condition`, a non-empty `actions` set or, for a routine of more than one step, a `steps` list (`routines` "Routine steps"), a `position`, a creation time and an optional deletion time (a tombstone). It SHALL be created, edited, reordered and deleted as field-level operations applied locally first, so the editor works offline, and SHALL converge by per-field last-writer-wins; `trigger`, `condition`, `actions` and `steps` are each one whole value that converges as a whole. The interface SHALL call a rule a routine. A user SHALL have at most 50 live rules, routines of any number of steps included. A rule a device does not fully understand (a trigger kind, predicate, action key or step kind from a newer version, or a `steps` value on a device without routines) SHALL be kept in its data, shown as "Made with a newer version" and left unchanged by that device's edits of other fields.
 
 #### Scenario: Saved offline, runs after sync
 - **WHEN** the device is offline and the user saves the rule "Label waiting → move to Waiting" and then, still offline, adds the label waiting to a task
@@ -28,8 +28,12 @@ A rule SHALL be an entity of the user's personal scope with a `name`, an `enable
 - **WHEN** a device without this version's action keys syncs a rule carrying one
 - **THEN** it lists the rule as "Made with a newer version", offers only its switch and deletion, and a rename from that device does not remove the unknown action
 
+#### Scenario: A routine on an older device
+- **WHEN** a device without routines syncs a rule carrying `steps`
+- **THEN** it lists the rule as "Made with a newer version", offers only its switch and deletion, and a rename from that device leaves `steps` unchanged
+
 ### Requirement: Rule validation
-The sync and API write paths SHALL accept a `trigger` only when it is an object with a `kind` from the closed set `task.created`, `task.completed`, `task.reopened`, `label.added`, `label.removed`, `assigned.to_me`, `task.moved`, `due.reached`, `overdue`, `schedule`, with exactly the members that kind takes: `label.added` and `label.removed` a `label_id`; `task.moved` a `project_id` and an optional `section_id`; `schedule` an `at` (`HH:MM`, whole minutes) and `weekdays` (a non-empty list of 1 to 7, Monday first); every other kind no further member. A `condition` SHALL be `null` or an object of at most one predicate per key from the closed set in "Conditions", each with values of the stated shape. `actions` SHALL be an object with at least one key from the closed set in "Actions" and no other key, with enumerations and bounds as stated there. The sync path checks shape only; the API additionally resolves every id (labels and projects exist and are not deleted, a section belongs to its project, a webhook belongs to the user, the project of a project action is not shared). Anything else SHALL be refused as invalid and change nothing.
+The sync and API write paths SHALL accept a `trigger` only when it is an object with a `kind` from the closed set `task.created`, `task.completed`, `task.reopened`, `label.added`, `label.removed`, `assigned.to_me`, `task.moved`, `due.reached`, `overdue`, `schedule`, `manual`, with exactly the members that kind takes: `label.added` and `label.removed` a `label_id`; `task.moved` a `project_id` and an optional `section_id`; `schedule` an `at` (`HH:MM`, whole minutes) and exactly one of `weekdays` (a non-empty list of 1 to 7, Monday first) or `month_days` (a non-empty list of distinct days from 1 to 31 and `"last"`); every other kind, `manual` included, no further member. A `condition` SHALL be `null` or an object of at most one predicate per key from the closed set in "Conditions", each with values of the stated shape. `actions` SHALL be an object with at least one key from the closed set in "Actions" and no other key, with enumerations and bounds as stated there, or `null` when `steps` is a list. `steps` SHALL be `null` or a list valid by `routines` "Routine steps" and "Step types": known kinds, unique ids, references only to visible outputs, accepted types, at most 20 steps and 32 KB. The sync path checks shape only; the API additionally resolves every id (labels and projects exist and are not deleted, a section belongs to its project, a webhook belongs to the user, the project of a project action is not shared), the same for every id inside `steps`, and reports unavailable steps as warnings (`routines` "Step availability"). Anything else SHALL be refused as invalid and change nothing.
 
 #### Scenario: Unknown trigger kind
 - **WHEN** a client submits `trigger: {kind: "task.starred"}`
@@ -43,6 +47,10 @@ The sync and API write paths SHALL accept a `trigger` only when it is an object 
 - **WHEN** a client submits `actions: {}` or `actions: {colour: "red"}`
 - **THEN** the write is rejected as invalid
 
+#### Scenario: Days of the month
+- **WHEN** a client submits `trigger: {kind: "schedule", at: "09:00", month_days: [1, 15]}` or `month_days: ["last"]`
+- **THEN** the rule is saved; and `month_days: [0]`, `month_days: []`, `month_days: [1, 1]` or both `weekdays` and `month_days` are rejected as invalid
+
 #### Scenario: Unknown label through the API
 - **WHEN** a script PATCHes `actions: {add_labels: ["<deleted label id>"]}` on `/api/v1/rules/{id}`
 - **THEN** the response is 400 `invalid_input` naming the id and nothing is written
@@ -51,8 +59,16 @@ The sync and API write paths SHALL accept a `trigger` only when it is an object 
 - **WHEN** a script POSTs a rule whose actions move tasks into a project shared with other accounts
 - **THEN** the response is 400 `invalid_input` saying rules act only on personal projects, and nothing is written
 
+#### Scenario: Manual trigger
+- **WHEN** a client submits `trigger: {kind: "manual"}`
+- **THEN** the rule is saved and fires only when run by hand
+
+#### Scenario: Neither actions nor steps
+- **WHEN** a client submits a rule with `actions: null` and `steps: null`
+- **THEN** the write is rejected as invalid
+
 ### Requirement: Conditions
-A condition SHALL be a set of predicates, all of which must hold: `project` (`{in: [ids], descendants?: bool}` or `"none"`), `section` (`{in: [ids]}` or `"none"`), `labels` (`{any?: [ids], all?: [ids], none?: [ids]}`), `priority` (`{in: [1..4]}`), `due` (`"none"`, `"set"`, `"today"`, `"overdue"`, `{within_days: 0..365}`), `deadline` (`"none"`, `"set"`, `{within_days: 0..365}`), `start` (`"someday"`, `"deferred"`, `"none"`), `evening` (bool), `blocked` (bool: has at least one open blocker), `assignee` (`"me"`, `"none"`, `"anyone"`), `origin` (`{kind: ...}` from the origin kinds or `"none"`), `habit` (bool), `estimate` (`"none"`, `{min_minutes}`, `{max_minutes}`), `tracked` (`"none"`, `{min_minutes}`). Lists SHALL hold at most 32 ids. Predicates SHALL read only fields the server stores in plaintext for every account, so a condition evaluates the same for an encrypted account. "Today", "overdue", "within N days" and "deferred" SHALL use the user's time zone and day start. The device and the server SHALL evaluate a condition identically, pinned by shared test vectors, and the editor SHALL show how many open tasks match now, computed on the device.
+A condition SHALL be a set of predicates, all of which must hold: `project` (`{in: [ids], descendants?: bool}` or `"none"`), `section` (`{in: [ids]}` or `"none"`), `labels` (`{any?: [ids], all?: [ids], none?: [ids]}`), `priority` (`{in: [1..4]}`), `due` (`"none"`, `"set"`, `"today"`, `"overdue"`, `{within_days: 0..365}`), `deadline` (`"none"`, `"set"`, `{within_days: 0..365}`), `start` (`"someday"`, `"deferred"`, `"none"`), `evening` (bool), `blocked` (bool: has at least one open blocker), `assignee` (`"me"`, `"none"`, `"anyone"`), `origin` (`{kind: ...}` from the origin kinds or `"none"`), `habit` (bool), `estimate` (`"none"`, `{min_minutes}`, `{max_minutes}`), `tracked` (`"none"`, `{min_minutes}`), `unchanged` (`{days: 1..365}`: none of the task's own fields changed in the last N days, read from the time of its newest winning field value; comments, time entries and attachments do not count). Lists SHALL hold at most 32 ids. Predicates SHALL read only fields and field times the server stores in plaintext for every account, so a condition evaluates the same for an encrypted account. "Today", "overdue", "within N days" and "deferred" SHALL use the user's time zone and day start. The device and the server SHALL evaluate a condition identically, pinned by shared test vectors, and the editor SHALL show how many open tasks match now, computed on the device.
 
 #### Scenario: Project with sub-projects
 - **WHEN** a condition is `project: {in: ["<Work>"], descendants: true}` and a task sits in "Client A" under "Work"
@@ -69,6 +85,14 @@ A condition SHALL be a set of predicates, all of which must hold: `project` (`{i
 #### Scenario: Live count in the editor
 - **WHEN** the user builds the condition "label errand, due within 3 days" in the editor on a device with eleven such open tasks
 - **THEN** the editor reads "11 open tasks match now", from local data, offline as well
+
+#### Scenario: Not changed for 30 days
+- **WHEN** today is 2026-11-01, task A's newest field change was on 2026-09-20 and it got a comment on 2026-10-31, task B's newest field change was on 2026-10-25, and a condition is `unchanged: {days: 30}`
+- **THEN** A matches and B does not, on the device and on the server, for an encrypted account as well
+
+#### Scenario: A change resets it
+- **WHEN** the user renames task A offline on 2026-11-01 and the device syncs
+- **THEN** A no longer matches `unchanged: {days: 30}` on any device or on the server
 
 ### Requirement: Actions
 `actions` SHALL carry at most one choice per key: `add_labels` and `remove_labels` (label ids), `priority` (1 to 4), `due` (`today`, `tomorrow`, `next-week`, `{in_days: 0..365}`, `clear`), `start` (`someday`, `clear`), `section` (`{project_id, section_id | null}`), `state` (`complete`, `reopen`), `deadline` (`{in_days: 0..365}`, `clear`), `assignee` (`me`, `clear`), `comment` (`{text}`, at most 2,000 characters), `notify` (`true`), `webhook` (`{webhook_id}`). Applying actions to a task SHALL plan the same field changes a user's own action plans (a completion of a recurring task rolls the series forward and completes the subtree; a date on a parked task un-parks it; `due: clear` ends a recurrence; a project change clears the section unless the chosen section belongs to the new project; labels are written whole from the current list; a reminder follows a moved due or deadline), written as one batch per task. A change the task already has SHALL not be written; a batch with nothing left SHALL be recorded as "already matched". Order: labels removed then added, priority, due, start, deadline, assignee, state, then project and section, then the comment, the notification and the webhook.
@@ -113,7 +137,7 @@ After a batch commits, the server SHALL derive rule events from the winning chan
 - **THEN** Alice's rule does not fire, because rules fire for their author's own batches only
 
 ### Requirement: Time triggers
-The server SHALL fire `due.reached` at a task's due time (09:00 in the user's time zone for a date-only due; a zoned due at its instant), `overdue` at the user's day start on the day after the due date, and `schedule` at the rule's time on its weekdays in the user's time zone, each against a per-rule watermark kept on the server so that a restart, a slow pass or a missed minute fires each occurrence exactly once and never again. The user's time zone SHALL be the offset the user's devices last reported, UTC until then. A scheduled rule SHALL act on every open, live task matching its condition at that moment, at most 500 per firing; more SHALL be recorded as a partial run and the rest left for the next firing. A due or overdue trigger whose task is completed, deleted or re-dated before the time SHALL not fire for the old date.
+The server SHALL fire `due.reached` at a task's due time (09:00 in the user's time zone for a date-only due; a zoned due at its instant), `overdue` at the user's day start on the day after the due date, and `schedule` at the rule's time on its weekdays, or on its days of the month, in the user's time zone, each against a per-rule watermark kept on the server so that a restart, a slow pass or a missed minute fires each occurrence exactly once and never again. The user's time zone SHALL be the offset the user's devices last reported, UTC until then. A scheduled rule SHALL act on every open, live task matching its condition at that moment, at most 500 per firing; more SHALL be recorded as a partial run and the rest left for the next firing. A day of the month past the end of a month SHALL not fire in that month, `last` SHALL fire on the month's last day, and a schedule SHALL fire at most once a day. A due or overdue trigger whose task is completed, deleted or re-dated before the time SHALL not fire for the old date.
 
 #### Scenario: Sunday evening sweep
 - **WHEN** a rule is scheduled on Sunday at 18:00 with the condition "overdue" and the actions "due tomorrow", and at 18:00 on Sunday in the user's zone eleven open tasks are overdue
@@ -134,6 +158,14 @@ The server SHALL fire `due.reached` at a task's due time (09:00 in the user's ti
 #### Scenario: Large sweep is partial
 - **WHEN** a scheduled rule matches 700 tasks
 - **THEN** 500 are changed in that firing, the run is marked partial with the count, and the remaining 200 are handled by the next firing if they still match
+
+#### Scenario: First and last of the month
+- **WHEN** a scheduled rule has `month_days: [1, "last"]` at 09:00 and runs through February 2027
+- **THEN** it fires on 1 February and 28 February at 09:00 in the user's zone, once each
+
+#### Scenario: A day the month lacks
+- **WHEN** a scheduled rule has `month_days: [31]`
+- **THEN** it fires on 31 March and 31 May and not in April
 
 ### Requirement: Idempotent runs
 Every run SHALL be keyed by (rule, task, occurrence): the committed batch for an event trigger, the due instant for `due.reached`, the due date for `overdue`, the scheduled minute for `schedule`. A key SHALL be recorded before the run's batch is written and SHALL make any later attempt with the same key a no-op, so a replayed event, a retried pass or two passes overlapping never apply a rule twice.
@@ -157,14 +189,14 @@ An account SHALL run at most 60 rule runs per minute and 2,000 per day (UTC), co
 - **THEN** after its third refusal within the hour the rule is shown paused with "Paused: it ran too often", one notification tells the user, and turning the switch back on resumes it
 
 ### Requirement: Attribution and undo
-A rule's batch SHALL carry device `rule:<rule-id>` and the author's account as its author; the task's history SHALL label it "Rule (<name>)", the activity log SHALL show it as its own event by the rule, and a value changed by a rule SHALL be restorable from the task's history like any other change, as an ordinary operation by the restoring device. A comment written by a rule SHALL have the user as its author and carry the rule's device. Rules SHALL never purge, never delete a task permanently and never change membership.
+A rule's batch SHALL carry device `rule:<rule-id>` and the author's account as its author; the task's history SHALL label it "Routine (<name>)", the activity log SHALL show it as its own event by the rule, and a value changed by a rule SHALL be restorable from the task's history like any other change, as an ordinary operation by the restoring device. A comment written by a rule SHALL have the user as its author and carry the rule's device. A whole run SHALL also be undoable at once (`routines` "Undo a run"). Rules SHALL never purge, never delete a task permanently and never change membership.
 
 #### Scenario: Restore after a rule
 - **WHEN** a rule moved a task's due date and the user opens the task's history
-- **THEN** the version reads "Rule (Sunday sweep)" with the old and new dates, and "Restore this value" puts the old date back on every device after sync
+- **THEN** the version reads "Routine (Sunday sweep)" with the old and new dates, and "Restore this value" puts the old date back on every device after sync
 
 ### Requirement: Run log
-The server SHALL keep, per rule, its most recent 100 runs for 30 days: the time, the trigger occurrence, the task, the outcome (`applied` with the field changes, `already_matched`, `skipped` with a reason, `stopped`, `failed` with the refusal reason, `partial` with counts), and the chain depth. `GET /api/v1/rules/{id}/runs` SHALL list them newest first; the Rules page SHALL show them in the rule's history and the rule's row SHALL show its last run time and its run count for the last 7 days. Task titles in the log SHALL be resolved on the device from local data, never stored in the log.
+The server SHALL keep, per rule, its most recent 100 runs for 30 days: the time, the trigger occurrence, the task, the outcome (`applied` with the field changes, `already_matched`, `skipped` with a reason, `stopped`, `failed` with the refusal reason, `partial` with counts), and the chain depth, and for routines the per-step records of `routines` "Run records per step"; runs that failed SHALL be kept for 90 days. `GET /api/v1/rules/{id}/runs` SHALL list them newest first; the Rules page SHALL show them in the rule's history and the rule's row SHALL show its last run time and its run count for the last 7 days. Task titles in the log SHALL be resolved on the device from local data, never stored in the log.
 
 #### Scenario: History of a rule
 - **WHEN** the user opens the history of "Sunday sweep" after two firings
@@ -202,11 +234,11 @@ The owner SHALL be able to turn automations off for the server in Settings → S
 - **THEN** the response is 403 `demo_restricted` and no engine runs for the sandbox
 
 ### Requirement: Rules routes
-`GET|POST /api/v1/rules`, `GET|PATCH|DELETE /api/v1/rules/{id}` SHALL follow the collection conventions (authentication required, soft delete, write-through to the operation log, unknown fields rejected, `read` tokens on reads only, `agent` tokens refused on writes). `POST /api/v1/rules/{id}/test` with `{task_id}` SHALL evaluate the rule's condition against that task and return the planned changes without writing anything. Every rule representation SHALL carry `trigger`, `condition` (`null` when unset), `actions` and `paused_reason` (`null`, or `runaway`). The export SHALL include a `rules` array with deleted rules, and the own-format import SHALL restore rules with their ids re-mapped.
+`GET|POST /api/v1/rules`, `GET|PATCH|DELETE /api/v1/rules/{id}` SHALL follow the collection conventions (authentication required, soft delete, write-through to the operation log, unknown fields rejected, `read` tokens on reads only, `agent` tokens refused on writes). `POST /api/v1/rules/{id}/test` with `{task_id}` SHALL evaluate the rule's condition against that task and return the planned changes without writing anything. `POST /api/v1/rules/test`, `POST /api/v1/rules/{id}/run`, `GET /api/v1/rules/{id}/runs/{run}`, `POST /api/v1/rules/{id}/runs/{run}/undo`, `GET /api/v1/me/rules/runs` and `GET /api/v1/me/rules/catalogue` SHALL be added as `routines` states, with the same authentication, `read` and `agent` token rules and demo refusal. Every rule representation SHALL carry `trigger`, `condition` (`null` when unset), `actions`, `steps` (`null` when unset) and `paused_reason` (`null`, or `runaway`). The export SHALL include a `rules` array with deleted rules, and the own-format import SHALL restore rules with their ids re-mapped.
 
 #### Scenario: Create a rule through the API
 - **WHEN** a script POSTs `{"name":"Waiting","trigger":{"kind":"label.added","label_id":"<waiting>"},"actions":{"section":{"project_id":"<Work>","section_id":"<Waiting>"}}}` with a `full` bearer token
-- **THEN** the response is 201 with the rule, `enabled: true`, `condition: null` and `paused_reason: null`, and devices list it after their next sync
+- **THEN** the response is 201 with the rule, `enabled: true`, `condition: null`, `steps: null` and `paused_reason: null`, and devices list it after their next sync
 
 #### Scenario: Unauthenticated request
 - **WHEN** a request without credentials lists or creates rules
@@ -224,8 +256,12 @@ The owner SHALL be able to turn automations off for the server in Settings → S
 - **WHEN** a user exports, deletes a rule, and imports the export
 - **THEN** the rule is back with its trigger, condition and actions pointing at the re-mapped labels, projects and sections
 
+#### Scenario: Create a routine through the API
+- **WHEN** a script POSTs a rule with `trigger: {kind: "manual"}`, `actions: null` and three valid steps with a `full` bearer token
+- **THEN** the response is 201 with the routine and its `steps`, and devices list it after their next sync
+
 ### Requirement: Rules page
-The app SHALL have a Rules page at `/rules`, listed in the sidebar's More group in every "How you work" mode and reachable through the command palette ("Go to Rules", "New rule"), using the page template (title "Rules", actions New rule and Help, an overflow menu with Pause all rules). It SHALL list the user's rules by position with a switch, a one-line summary of trigger, condition and actions, the last run time and the 7-day run count, a paused reason when set, and a menu with Edit, Duplicate, History, Move up, Move down and Delete (confirmed in a dialog). It SHALL render from local data offline; the run history and the live counts need the server and SHALL say so when offline. The page SHALL work with the keyboard throughout.
+The app SHALL have a Routines page at `/routines` (`/rules` redirecting to it), listed in the sidebar's More group in every "How you work" mode and reachable through the command palette ("Go to Routines", "New routine", "Run routine…"), using the page template (title "Routines", actions New routine and Help, an overflow menu with Pause all routines) and a Runs tab with all runs (`routines` "Routine history and all runs"). It SHALL list the user's routines by position with a switch, a one-line summary of trigger, condition and actions or steps, the last run time and the 7-day run count, a paused reason when set, the number of steps not available, a Run now button, and a menu with Edit, Duplicate, Run now, Test, History, Move up, Move down and Delete (confirmed in a dialog). It SHALL render from local data offline; the run history and the live counts need the server and SHALL say so when offline. The page SHALL work with the keyboard throughout.
 
 #### Scenario: Reading the list
 - **WHEN** a user with three rules opens Rules
@@ -235,8 +271,16 @@ The app SHALL have a Rules page at `/rules`, listed in the sidebar's More group 
 - **WHEN** the page is opened without a connection
 - **THEN** the rules are listed and editable, the history and counts show "Needs a connection", and a saved edit syncs later
 
+#### Scenario: A routine's row
+- **WHEN** a user's routine "Groceries" has three steps
+- **THEN** its row reads "Every Friday at 17:00 → get the note of Groceries, split into lines, create tasks in Errands · last ran Friday · 1 run this week" with Run now and its switch
+
+#### Scenario: Old address
+- **WHEN** the user opens `/rules` from a bookmark
+- **THEN** the Routines page opens at `/routines`
+
 ### Requirement: Rule editor
-The editor SHALL be one dialog with: a name; a trigger chooser with the fields its kind needs (a label picker, a project and section picker, a time and weekday picker); condition rows added from a menu, one per predicate, each with the picker its kind needs; the action controls of the board rule editor extended with deadline, assignee, comment, notification and webhook; a live "n open tasks match now" line computed on the device; and Save. Unavailable choices SHALL be disabled with a reason (the comment action for an encrypted account, shared projects in the project action, the webhook action without a webhook). Save SHALL write the rule as operations and work offline.
+The editor of a routine SHALL be the sentence-card editor of `routines` "Sentence-card editor"; its When card and its Change tasks card SHALL hold the controls of the former rule dialog: a name; a trigger chooser with the fields its kind needs (a label picker, a project and section picker, a time and weekday picker); condition rows added from a menu, one per predicate, each with the picker its kind needs; the action controls of the board rule editor extended with deadline, assignee, comment, notification and webhook; a live "n open tasks match now" line computed on the device; and Save in the editor's header. Unavailable choices SHALL be disabled with a reason (the comment action for an encrypted account, shared projects in the project action, the webhook action without a webhook). Save SHALL write the rule as operations and work offline.
 
 #### Scenario: Build a rule
 - **WHEN** the user chooses "a task gets the label" waiting, adds the condition "in project Work (with sub-projects)", sets the action "section Waiting of Work", and saves
@@ -247,21 +291,21 @@ The editor SHALL be one dialog with: a name; a trigger chooser with the fields i
 - **THEN** "Add a comment" is disabled with "Not available for encrypted accounts", and the other actions work
 
 ### Requirement: Rule notifications
-The server SHALL deliver two in-app notifications: "rule fired" when a rule with the `notify` action applies changes (naming the rule and the task), and "rule paused" when the server pauses a rule. They SHALL be listed and marked read through the notification routes like other kinds, and SHALL not contact any external service.
+The server SHALL deliver in-app notifications: "rule fired" when a rule with the `notify` action applies changes (naming the rule and the task), "rule paused" when the server pauses a rule, and the routine kinds `routine_failed` and `routine_proposal` of `routine-inbox` "Routine notifications in the bell". They SHALL be listed and marked read through the notification routes like other kinds, and SHALL not contact any external service.
 
 #### Scenario: Notification arrives
 - **WHEN** a rule with `notify` fires on "Call the plumber"
 - **THEN** the user sees an unread notification "Sunday sweep changed Call the plumber" that opens the task
 
 ### Requirement: CLI commands
-`ot rules list` SHALL list the user's rules with their switch and summary, `ot rules enable|disable <id>` SHALL flip the switch through `PATCH /api/v1/rules/{id}`, and `ot rules runs <id>` SHALL list the run log, each with `--json` output described by `ot schema`. A `read` token SHALL be refused on `enable` and `disable` with exit code 5.
+`ot rules list` SHALL list the user's rules with their switch and summary, `ot rules enable|disable <id>` SHALL flip the switch through `PATCH /api/v1/rules/{id}`, and `ot rules runs <id>` SHALL list the run log, each with `--json` output described by `ot schema`; these SHALL stay as aliases of `ot routine` (`routines` "Routine CLI"). A `read` token SHALL be refused on `enable` and `disable` with exit code 5.
 
 #### Scenario: List rules
 - **WHEN** the user runs `ot rules list --json`
 - **THEN** the output is the versioned rule list with `trigger`, `condition`, `actions`, `enabled` and `paused_reason`
 
 ### Requirement: Rules contact nothing new
-Rules SHALL make no outbound request of their own: a `webhook` action queues a delivery to one of the user's existing webhooks under the webhook rules, and no other action leaves the server.
+Rules SHALL make no outbound request of their own: a `webhook` action or Send a webhook step queues a delivery to one of the user's existing webhooks under the webhook rules, a Notify me step reaches the user's own delivery channels under their rules, an email step sends through the owner's configured SMTP server to the account's own verified address or a shared project's members under the mail rules, and nothing else leaves the server.
 
 #### Scenario: Network audit
 - **WHEN** a user's rules run for a day on a server with no webhook configured

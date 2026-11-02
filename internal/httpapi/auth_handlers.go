@@ -71,6 +71,8 @@ func (s *Server) handleAuthStatus(w http.ResponseWriter, r *http.Request) {
 		// The web app reads its profile here (OpenSpec `e2ee`, design D5/D9).
 		out["encryption"] = s.encryptionStatus(r.Context(), u.ID)
 		out["minClientVersion"] = MinClientVersion
+		// The instance themes' version (theme-instance-default D3): devices read them again when it grows.
+		out["themes"] = map[string]int64{"version": s.themesVersion(r)}
 	}
 	writeJSON(w, http.StatusOK, out)
 }
@@ -347,6 +349,8 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 		out["day_parts"] = idOf(prefs["day_parts"]) == "on"
 		// And Energy levels (task-energy D3), for the CLI's `~deep` tokens.
 		out["energy_levels"] = idOf(prefs["energy"]) == "on"
+		// And Time sectors (time-sectors D8), for the CLI's sector phrases.
+		out["time_sectors"] = idOf(prefs["time_sectors"]) == "on"
 	}
 	// Today's closed list (today-closed-list D7): the limit and today's chosen
 	// tasks, so the CLI fills Today's slots as the app does.

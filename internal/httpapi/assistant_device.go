@@ -71,7 +71,7 @@ func deviceView(set assistant.Settings, consent *assistant.Consent) map[string]a
 		}
 	}
 	consented := ""
-	if consent != nil && consent.DisclosureVersion == assistant.DisclosureVersion && strings.HasPrefix(consent.Provider, assistant.DeviceConsentPrefix) {
+	if consent.Current() && strings.HasPrefix(consent.Provider, assistant.DeviceConsentPrefix) {
 		consented = strings.TrimPrefix(consent.Provider, assistant.DeviceConsentPrefix)
 	}
 	return map[string]any{

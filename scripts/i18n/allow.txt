@@ -26,5 +26,6 @@ web/src/app/assistant/AssistantDevice.tsx: http://localhost:11434
 web/src/app/calendar/QueryFilterDialog.tsx: ##Work & p1
 # The custom accent picker (accent-colour D5): the hex field's format as its placeholder, a code.
 web/src/ui/AccentPicker.tsx: #rrggbb
+web/src/ui/ColourField.tsx: #rrggbb
 # The Microsoft client's tenant (outlook-calendar-sync D2): Microsoft's tenant name as its placeholder, a code.
 web/src/app/CalendarSyncDialogs.tsx: common

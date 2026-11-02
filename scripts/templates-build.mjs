@@ -1,7 +1,8 @@
 // Compiles the template library (OpenSpec change template-library, design D1, D4): every
 // templates/<slug>/ folder, checked by scripts/templates-check.mjs, becomes one entry of
 // web/src/generated/templates.json, the module the app's template dialog loads lazily and
-// the site bundle publishes. Text is a map per language ({en, it, ...}; a missing language
+// the site bundle publishes, and its copy internal/templatelib/library.json, embedded in
+// the server for a routine's Create a project from a template step (routines-engine). Text is a map per language ({en, it, ...}; a missing language
 // falls back to English), labels are referenced by index, offsets stay relative, no ids.
 //
 //   node scripts/templates-build.mjs           writes web/src/generated/templates.json
@@ -11,9 +12,14 @@ import { gzipSync } from 'node:zlib'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { checkLibrary, repoRoot } from './templates-check.mjs'
+import { compileRoutines } from './routine-templates.mjs'
 
 export const SCHEMA = 1
 export const OUT = 'web/src/generated/templates.json'
+export const SERVER_OUT = 'internal/templatelib/library.json'
+/** The routine starters (routines-starters D2, D3): the app's lazy module, and the Go test's copy with each starter's test. */
+export const ROUTINES_OUT = 'web/src/generated/routineStarters.json'
+export const ROUTINES_TEST_OUT = 'internal/rules/testdata/starters.json'
 /** The compiled library is a lazy chunk; this keeps it from growing unnoticed (design Risks). */
 export const BUDGET_GZIP_BYTES = 100 * 1024
 
@@ -98,23 +104,29 @@ export const serialise = (library) => JSON.stringify(library, null, 1) + '\n'
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { library, problems, warnings } = compileLibrary()
+  const routines = compileRoutines()
+  problems.push(...routines.problems)
+  warnings.push(...routines.warnings)
   for (const w of warnings) console.warn(`warning: ${w}`)
-  if (!library) {
+  if (!library || problems.length) {
     console.error(`templates: ${problems.length} problem(s)\n${problems.map((p) => `  - ${p}`).join('\n')}`)
     process.exit(1)
   }
   const text = serialise(library)
-  const path = join(repoRoot, OUT)
+  const outputs = [[OUT, text], [SERVER_OUT, text], [ROUTINES_OUT, serialise(routines.app)], [ROUTINES_TEST_OUT, serialise(routines.server)]]
+  const summary = `${library.templates.length} templates, ${routines.app.starters.length} routine starters`
   if (process.argv.includes('--check')) {
-    let current = ''
-    try { current = readFileSync(path, 'utf8') } catch { /* missing */ }
-    if (current !== text) {
-      console.error(`templates: ${OUT} is out of date; run \`make templates\``)
-      process.exit(1)
+    for (const [out, want] of outputs) {
+      let current = ''
+      try { current = readFileSync(join(repoRoot, out), 'utf8') } catch { /* missing */ }
+      if (current !== want) {
+        console.error(`templates: ${out} is out of date; run \`make templates\``)
+        process.exit(1)
+      }
     }
-    console.log(`templates: ${OUT} is current (${library.templates.length} templates)`)
+    console.log(`templates: ${outputs.map(([o]) => o).join(', ')} are current (${summary})`)
   } else {
-    writeFileSync(path, text)
-    console.log(`templates: wrote ${OUT} (${library.templates.length} templates, ${gzipSync(text).length} bytes gzipped)`)
+    for (const [out, data] of outputs) writeFileSync(join(repoRoot, out), data)
+    console.log(`templates: wrote ${outputs.map(([o]) => o).join(', ')} (${summary}, ${gzipSync(text).length} and ${gzipSync(outputs[2][1]).length} bytes gzipped)`)
   }
 }

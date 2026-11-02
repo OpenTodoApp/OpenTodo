@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ReactNode } from 'react'
 import YearView from '../YearView'
-import { seedCalendarYear, withSeed } from '../stories/fixtures'
+import { seedCalendarEvents, seedCalendarYear, withSeed } from '../stories/fixtures'
 
 // Core screen: Year (`/year`, OpenSpec change year-view), twelve compact months with a
 // density mark per day and the over-capacity dot, four, three or two months a row by the
@@ -15,5 +15,11 @@ function Column({ children }: { children: ReactNode }) {
 
 /** 2026 from the frozen Wednesday 14 October: a busy launch week in March, a holiday in August, the weekly report from October on. */
 export const Year2026: StoryObj = {
+  render: () => <Column><YearView /></Column>,
+}
+
+/** A subscribed calendar (calendar-events-all-views): a hollow ring at the top start of each day with events, apart from the density bar. */
+export const WithEvents: StoryObj = {
+  ...withSeed(seedCalendarEvents(seedCalendarYear())),
   render: () => <Column><YearView /></Column>,
 }

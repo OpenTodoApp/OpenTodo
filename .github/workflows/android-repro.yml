@@ -1,0 +1,45 @@
+name: Android reproducible build
+
+# The reproducibility check of the release tags (OpenSpec change play-production D5), on
+# demand for any tag or commit: scripts/android-repro.sh builds the release APK twice, in two
+# checkouts under different paths with different SOURCE_DATE_EPOCH values and the second
+# without a Gradle cache, and fails when the two differ. Tags run the same check in ci.yml.
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Tag (v0.20.0) or commit to build twice and compare
+        required: true
+        default: main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.ref }}
+  cancel-in-progress: false
+
+jobs:
+  repro:
+    name: Build twice and compare
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: 17.0.21+9
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          packages: "platforms;android-37.0 build-tools;36.0.0"
+      - name: Build twice and compare
+        env:
+          REF: ${{ inputs.ref }}
+        run: |
+          # A tag keeps its name (the version comes from it); anything else is the checked-out commit.
+          if git rev-parse --verify --quiet "refs/tags/$REF" > /dev/null; then target=$REF; else target=HEAD; fi
+          scripts/android-repro.sh "$target"
