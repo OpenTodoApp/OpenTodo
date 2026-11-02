@@ -18,7 +18,9 @@ export interface AssistantStatus {
   provider_label: string
   model: string
   consented: boolean
-  consent?: { accepted_at: number; disclosure_version: number; provider: string; routines_version?: number }
+  consent?: { accepted_at: number; disclosure_version: number; provider: string; routines_version?: number; seen_version?: number }
+  /** assistant-disclosure-notice: tell once that the list is now complete (absent on older servers). */
+  disclosure_notice?: boolean
   /** routines-ai-step D10: the consent covers routines' AI steps (absent on older servers). */
   routines_consented?: boolean
   disclosure_version: number

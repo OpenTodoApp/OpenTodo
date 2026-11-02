@@ -3104,6 +3104,9 @@
   "Close the task panel, else clear the selection; in triage, leave it": [
     "web/src/app/vim/commands.ts"
   ],
+  "Closing this notice needs a connection.": [
+    "web/src/app/assistant/DisclosureNotice.tsx"
+  ],
   "Code": [
     "web/src/app/AuthScreen.tsx"
   ],
@@ -6615,6 +6618,9 @@
   "Google did not grant lasting access. Remove OpenTodo at myaccount.google.com/permissions and connect again.": [
     "web/src/app/CalendarSyncPanel.tsx"
   ],
+  "Got it": [
+    "web/src/app/assistant/DisclosureNotice.tsx"
+  ],
   "Graphite": [
     "web/src/lib/colourNames.ts"
   ],
@@ -6833,6 +6839,9 @@
   ],
   "Hide the filter": [
     "web/src/app/views/ViewToolbar.tsx"
+  ],
+  "Hide the list": [
+    "web/src/app/assistant/DisclosureNotice.tsx"
   ],
   "Hide the planning list": [
     "web/src/app/CalendarView.tsx",
@@ -7260,6 +7269,9 @@
     "web/src/app/ProjectHeader.tsx",
     "web/src/app/review/ProjectWalk.tsx"
   ],
+  "In shared projects this includes text other members wrote.": [
+    "web/src/app/assistant/DisclosureNotice.tsx"
+  ],
   "In shared projects this includes text other members wrote. Changes are only proposed: nothing in your tasks changes until you review and apply them, and you can undo them. Conversations stay on this device. You can withdraw consent in Settings → Integrations → Assistant.": [
     "web/src/app/assistant/AssistantConsent.tsx"
   ],
@@ -7595,6 +7607,9 @@
   ],
   "It names your tasks and projects and goes to your account’s email address.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "It now names everything the assistant could already read and send to the model provider, such as notes, tracked time, routines, calendar frames and attachment names. Nothing new is sent, and your consent still counts.": [
+    "web/src/app/assistant/DisclosureNotice.tsx"
   ],
   "It will no longer sign you in. Your password and other passkeys keep working.": [
     "web/src/app/SecurityPanel.tsx"
@@ -13028,6 +13043,9 @@
   "Review the budget": [
     "web/src/app/themes/previewData.ts"
   ],
+  "Review the list": [
+    "web/src/app/assistant/DisclosureNotice.tsx"
+  ],
   "Review them too": [
     "web/src/app/review/ProjectWalk.tsx"
   ],
@@ -15905,6 +15923,9 @@
   "The link was sent to {sentTo}.": [
     "web/src/app/InviteLinksSection.tsx"
   ],
+  "The list of what the assistant sends is now complete": [
+    "web/src/app/assistant/DisclosureNotice.tsx"
+  ],
   "The logo must be at most 2 MB.": [
     "web/src/app/BrandingPanel.tsx"
   ],
@@ -17695,6 +17716,9 @@
   ],
   "Turn off for {device}": [
     "web/src/app/routines/RoutinesDevice.tsx"
+  ],
+  "Turn off the assistant": [
+    "web/src/app/assistant/DisclosureNotice.tsx"
   ],
   "Turn off two-factor authentication?": [
     "web/src/app/TwoFactorPanel.tsx"
