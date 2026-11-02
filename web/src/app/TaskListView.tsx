@@ -242,8 +242,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     return inputs.map(({ labels: typed, ...rest }) => {
       // In Assigned to me a new task is yours (Inbox unless a #project was typed).
       const { labels: viewLabels, ...defaults } = taskDefaults(route, today, userId)
-      // In Someday a line with a date is scheduled, not parked (someday-and-evening).
-      if (rest.due || rest.deadline) delete defaults.start
+      // In Someday a line with a date is scheduled, not parked (someday-and-evening); a typed time sector also takes the view's date (time-sectors D2).
+      if (rest.due || rest.deadline || rest.sector) { delete defaults.start; if (rest.sector) defaults.due = null }
       return {
         ...defaults,
         ...rest,

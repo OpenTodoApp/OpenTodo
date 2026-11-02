@@ -54,6 +54,7 @@ import { useAccountRowLayout, type RowLayout } from '../lib/rowLayout'
 import { DRAG_THRESHOLD, finePointer, swallowNextClick, trackHold } from '../lib/dnd'
 import { dayPartName, dayPartOf, dayPartWord, type DayPart } from '../lib/dayParts'
 import { energyChipLabel, energyName, energyOf, type Energy } from '../lib/energy'
+import { sectorLabel } from '../lib/sectorNames'
 import { formatSpan, spanOf, type Span } from '../lib/span'
 
 /** The details of an expanded row (row-expand D3), loaded on the first expand. */
@@ -149,6 +150,8 @@ interface MetaValues {
   breadcrumb?: string | null
   date: string | null
   dateTone: Tone
+  /** The date slot holds the time sector of a task without a do-on date (time-sectors D4): its read-out name. */
+  sectorLabel?: string | null
   hint: string | null
   zone: string
   repeat: string | null
@@ -198,6 +201,12 @@ function BlockMark({ m, rowItem = false }: { m: MetaValues; rowItem?: boolean })
   )
 }
 
+/** The date slot: the do-on date, or a time sector in the same place (time-sectors D4), carried over in the faint tone. */
+function DateText({ m }: { m: MetaValues }) {
+  if (m.sectorLabel) return <ToneText tone={m.dateTone} icon="calendar-range" data-date="" data-sector="" label={m.sectorLabel}>{m.date}</ToneText>
+  return <ToneText tone={m.dateTone} icon="calendar-days" data-date="">{m.date}</ToneText>
+}
+
 /** The energy as one muted word, read as "Deep energy" (task-energy D6). */
 function EnergyWord({ energy, rowItem = false }: { energy: Energy; rowItem?: boolean }) {
   return <ToneText data-energy={energy} data-row-item={rowItem ? '' : undefined} label={energyChipLabel(energy)}>{energyName(energy)}</ToneText>
@@ -218,7 +227,7 @@ function CardMeta({ m }: { m: MetaValues }) {
   const more = m.badges.slice(MAX_FIELD_BADGES)
   return (
     <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1" data-row-meta="card">
-      {m.date && <ToneText tone={m.dateTone} icon="calendar-days" data-date="">{m.date}</ToneText>}
+      {m.date && <DateText m={m} />}
       {m.estimate && <ToneText icon="clock" data-estimate="" data-tracked={m.estimate.tracked ? '' : undefined} label={m.estimate.label}>{m.estimate.text}</ToneText>}
       {m.progress && <ToneText icon="circle-check-big" data-progress="" label={m.progress.label}>{m.progress.text}</ToneText>}
       {m.energy && <EnergyWord energy={m.energy} />}
@@ -275,7 +284,7 @@ function DetailedMeta({ m, priority, projectColor, labels }: { m: MetaValues; pr
   const facts = [
     (m.date || m.hint) && (
       <span key="date" data-row-cell="date" className="inline-flex min-w-0 items-center gap-1">
-        {m.date && <ToneText tone={m.dateTone} icon="calendar-days" data-date="">{m.date}</ToneText>}
+        {m.date && <DateText m={m} />}
         {m.hint && <ToneText tone="faint" data-zone-hint="" label={t('fixed to {zone}', { zone: m.zone })}>{m.hint}</ToneText>}
       </span>
     ),
@@ -352,7 +361,7 @@ function RowLine({ m, extra, progress, projectColor, projectColumn }: { m: MetaV
       <span className="contents" data-row-props={projectColumn ? 'project' : ''}>
         {(m.date || m.hint) && (
           <span data-row-cell="date" data-row-item="" {...keep('date')} className="inline-flex min-w-0 items-center gap-1">
-            {m.date && <ToneText tone={m.dateTone} icon="calendar-days" data-date="">{m.date}</ToneText>}
+            {m.date && <DateText m={m} />}
             {m.hint && <ToneText tone="faint" data-zone-hint="" label={t('fixed to {zone}', { zone: m.zone })}>{m.hint}</ToneText>}
           </span>
         )}
@@ -708,11 +717,14 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   const originChip = origin ? <OriginChip origin={origin} quiet /> : null
   const projectName = showProject && project && !hides('project') ? project.name : null
   const hint = zoneHint(task.due)
+  // A task without a do-on date shows its time sector in the date slot (time-sectors D4); a dated task never does.
+  const sector = !task.due && !hides('date') ? sectorLabel(task.sector, logicalToday(), dt.resolved) : null
   const m: MetaValues = {
     sample: isSample(task),
     breadcrumb,
-    date: hides('date') ? null : span ? formatSpan(span) : rowDateText(due, dueDay, done ? null : dayPartOf(task), implied, timeInColumn),
-    dateTone: dueDay ? ladderTone(dueDay, logicalToday()) : 'muted',
+    date: hides('date') ? null : sector ? sector.text : span ? formatSpan(span) : rowDateText(due, dueDay, done ? null : dayPartOf(task), implied, timeInColumn),
+    dateTone: dueDay ? ladderTone(dueDay, logicalToday()) : sector?.carried ? 'faint' : 'muted',
+    sectorLabel: sector?.label ?? null,
     hint, zone: task.due?.tz ?? '', repeatLabel: repeatLabelOf(task),
     repeat: task.recurrence ? t('repeats') : task.series_id ? t('occurrence') : null, recurring: !!task.recurrence,
     deadline: deadlineInColumn ? null : deadline, deadlineLabel,

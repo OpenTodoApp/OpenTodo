@@ -83,3 +83,50 @@ func TestCaldavSector(t *testing.T) {
 		t.Fatalf("without the property: %v", task)
 	}
 }
+
+// TestViewSectorQuery (task 4.3): a saved view's sector terms are validated;
+// an invalid period is refused with 400 invalid_input naming it.
+func TestViewSectorQuery(t *testing.T) {
+	e := ownerEnv(t)
+	resp, out := e.do("POST", "/api/v1/views", map[string]any{"name": "This week", "query": "#Work & sector: this week | carried"})
+	e.mustStatus(resp, 201, out)
+	resp, out = e.do("POST", "/api/v1/views", map[string]any{"name": "Bad", "query": "sector: 2026-W60"})
+	e.mustStatus(resp, 400, out)
+	if errCode(out) != "invalid_input" || !strings.Contains(out["error"].(map[string]any)["message"].(string), "2026-W60") {
+		t.Fatalf("invalid period: %v", out)
+	}
+}
+
+// TestQuickAddParseSector (task 4.2): the parse route reads sector phrases only
+// with the account's Time sectors switch on, returns the sector in its fields and
+// names it in a chip in the account's language.
+func TestQuickAddParseSector(t *testing.T) {
+	e := ownerEnv(t)
+	c := e.bearerClient()
+	h := bearer(e.token("full"))
+	resp, out := c.do("POST", parsePath, parseBody("Draft the budget this week"), h...)
+	c.mustStatus(resp, 200, out)
+	if out["title"] != "Draft the budget this week" || out["fields"].(map[string]any)["sector"] != nil {
+		t.Fatalf("switch off: %v", out)
+	}
+	e.syncOps("devA", rop("p1", "user_prefs", "me", "time_sectors", "on", 1))
+	resp, out = c.do("POST", parsePath, parseBody("Draft the budget this week"), h...)
+	c.mustStatus(resp, 200, out)
+	if out["title"] != "Draft the budget" || out["fields"].(map[string]any)["sector"] != "2026-W43" {
+		t.Fatalf("switch on: %v", out)
+	}
+	var chips []string
+	for _, x := range out["chips"].([]any) {
+		ch := x.(map[string]any)
+		chips = append(chips, ch["kind"].(string)+":"+ch["text"].(string))
+	}
+	if strings.Join(chips, ",") != "sector:This week" {
+		t.Fatalf("chips %v", chips)
+	}
+	// Next week alone keeps its date meaning.
+	resp, out = c.do("POST", parsePath, parseBody("Call Ana next week"), h...)
+	c.mustStatus(resp, 200, out)
+	if f := out["fields"].(map[string]any); f["sector"] != nil || f["due"] == nil {
+		t.Fatalf("next week: %v", out)
+	}
+}

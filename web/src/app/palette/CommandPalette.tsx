@@ -14,6 +14,7 @@ import { useFieldDefs } from '../useFields'
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type SetStateAction } from 'react'
 import { useLabels, useProjects, useProjectsOfEveryWorkspace, useSectionPlace, useUserPrefsRow, useWorkspaceState, useMembershipMapOrLoading, useReviewEvery } from '../../lib/localData'
 import { dayPartsOn } from '../../lib/dayParts'
+import { timeSectorsOn } from '../../lib/sectorNames'
 import { isFavourite } from '../../lib/favourites'
 import { earlierIds } from '../../lib/dayLists'
 import { usePickScores } from '../../lib/pickRank'
@@ -119,6 +120,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
       section: sectionInfo && task && list && !list.readOnly(task) ? sectionInfo : undefined,
       earlier: earlierIds(tasks, projects, today),
       dayParts: dayPartsOn(prefs),
+      timeSectors: timeSectorsOn(prefs),
       slot: task ? slotStateOf(task.id) : null,
       missedBlocks,
     }
