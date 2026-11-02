@@ -1635,6 +1635,7 @@
   "Every {m} minutes": "A cada {m} minutos",
   "Every {weekday} at {time}": "Semanalmente, {weekday}, às {time}",
   "Everyone": "Todos",
+  "Everyone in the project takes turns.": "Todos no projeto se revezam.",
   "Everyone in the workspace is in this group.": "Todos no espaço de trabalho estão neste grupo.",
   "Everyone in {project} sees this routine; it runs as whoever turns it on.": "Todos em {project} veem esta rotina; é executada como quem a ativar.",
   "Everyone in {workspace} is on this project": "Todos em {workspace} estão neste projeto",

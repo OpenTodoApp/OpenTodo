@@ -5650,6 +5650,9 @@
     "web/src/app/FeedView.tsx",
     "web/src/app/ProjectActivity.tsx"
   ],
+  "Everyone in the project takes turns.": [
+    "web/src/app/task-detail/RotationEditor.tsx"
+  ],
   "Everyone in the workspace is in this group.": [
     "web/src/app/WorkspaceGroups.tsx"
   ],

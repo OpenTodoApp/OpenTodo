@@ -20,13 +20,9 @@ export function AssigneeChip({ id, name, me, turns = false }: { id: string; name
   return (
     <Tooltip label={turns ? t('Assigned to {name}, taking turns', { name }) : t('Assigned to {name}', { name })}>
       <span className="inline-flex items-center gap-1 text-muted" data-assignee data-turns={turns || undefined}>
-        <span className="relative inline-flex shrink-0">
+        <span className="inline-flex shrink-0 items-center gap-0.5">
           <PersonAvatar id={id} name={name} size="xs" />
-          {turns && (
-            <span className="absolute -right-1 -bottom-1 inline-flex rounded-full bg-surface text-muted">
-              <Icon name="rotate-ccw" size={10} />
-            </span>
-          )}
+          {turns && <Icon name="rotate-ccw" size={10} className="text-faint" />}
         </span>
         <span className="max-w-24 truncate">{shown}{turns && <span className="sr-only">{`, ${t('takes turns')}`}</span>}</span>
       </span>
