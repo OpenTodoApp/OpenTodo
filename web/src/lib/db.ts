@@ -400,8 +400,7 @@ class OpenTodoDB extends Dexie {
       calendarEvents: 'id, subscriptionId, start.date',
       calendarSubscriptions: 'id',
     })
-    // v19 (stats-and-review): the synced personal `review` row (when the last
-    // weekly review was finished). Additive; every store is redeclared.
+    // v19 (stats-and-review): the synced personal `review` row (the last weekly review); every store is redeclared.
     this.version(19).stores({
       projects: 'id, position',
       tasks: 'id, project_id, parent_id, completed_at, position, assignee_id, section_id',
