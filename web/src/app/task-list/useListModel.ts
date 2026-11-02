@@ -17,7 +17,7 @@ import { useAccountRowLayout } from '../../lib/rowLayout'
 import { useUserPrefsRow } from '../../lib/localData'
 import { upcomingStartsWithToday } from '../../lib/userPrefs'
 import { dayPartsOn } from '../../lib/dayParts'
-import { useClosedList } from './useClosedList'
+import { useClosedList, useWaitingNow } from './useClosedList'
 import { NO_TASKS, useLiveTasks } from '../../lib/liveTasks'
 import { LOGBOOK_PAGE, logbookGroups } from '../../lib/logbook'
 import { canEditTasks, roleOf } from '../../lib/sharing'
@@ -199,11 +199,13 @@ export function useListModel(route: ListRoute, userId?: string) {
   // Upcoming's Start with Today fills them from the same Today tasks (upcoming-start-with-today D3).
   const todayTasks = useMemo(() => (upcomingToday ? viewTasks.filter((x) => inToday(x, today)) : viewTasks), [upcomingToday, viewTasks, today])
   const closed = useClosedList(route.view === 'today' || upcomingToday, todayTasks, allTasks, today, flow, blocked)
+  // The waiting tasks' times are read against the minute (today-waiting-time-passed D3).
+  const waitingNow = useWaitingNow(closed.fill.waiting.length > 0)
   const closedList = useMemo(() => {
     if (!closed.fill.limit) return undefined
     const shown = new Set(tasks.map((x) => x.id))
-    return { limit: closed.fill.limit, waiting: closed.fill.waiting.filter((id) => shown.has(id)).map((id) => taskMap.get(id)!).filter(Boolean) }
-  }, [closed.fill, tasks, taskMap])
+    return { limit: closed.fill.limit, waiting: closed.fill.waiting.filter((id) => shown.has(id)).map((id) => taskMap.get(id)!).filter(Boolean), now: waitingNow }
+  }, [closed.fill, tasks, taskMap, waitingNow])
   // Done today stays Today's own: Upcoming looks ahead (upcoming-start-with-today D3).
   const doneToday = route.view === 'today' ? closed.doneToday ?? undefined : undefined
   const groups = useMemo<ListGroup[]>(() => listGroups({

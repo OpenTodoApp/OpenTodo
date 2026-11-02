@@ -30,7 +30,8 @@ import { FacetEditor } from './FacetEditor'
 import { FacetLine } from './FacetLine'
 import { usePropertiesModel, type PropertiesModel } from './usePropertiesModel'
 import type { Optional } from './usePropertyEditing'
-import { WhenControl, WhenSegmentPicker } from './WhenControl'
+import { useSectorSegment, WhenControl, WhenSegmentPicker } from './WhenControl'
+import { setSectorWithUndo } from './SectorChoice'
 import { t } from '../../lib/i18n'
 import { act, reportActionError } from '../actionError'
 import { dayPartFields } from '../../lib/dayParts'
@@ -69,7 +70,7 @@ const itemMeta = (i: PickerItem) => i.meta
 /** The parts that are optional (revealed by Add, removed when left empty); the rest are fixed. */
 export const OPTIONAL = new Set<string>(['deadline', 'when', 'evening', 'reminders', 'estimate', 'repeat', 'labels', 'assignee', 'blocked-by', 'parent', 'section', 'location', 'energy'])
 /** The When segment a part opens on. */
-const SEGMENT_OF: Record<string, WhenSegmentId> = { due: 'due', evening: 'due', repeat: 'repeat', deadline: 'deadline', when: 'start', reminders: 'reminders' }
+const SEGMENT_OF: Record<string, WhenSegmentId> = { due: 'due', evening: 'due', repeat: 'repeat', deadline: 'deadline', when: 'start', sector: 'sector', reminders: 'reminders' }
 
 function Dot({ color }: { color?: string }) {
   return <span aria-hidden="true" className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: color ?? 'var(--ot-faint)' }} />
@@ -178,6 +179,7 @@ export function PartEditor({ id, props, m, anchor, segment, onSegment, onClose }
   onClose: () => void
 }) {
   const { task, readOnly, userId, childCount, onOpen } = props
+  const sectorSegment = useSectorSegment(task)
   const frame = (icon: IconName, title: string, body: ReactNode, onClear?: () => void, extra: { header?: ReactNode; width?: string } = {}) => (
     <FacetEditor anchor={anchor} icon={icon} title={title} onClose={onClose} onClear={onClear} {...extra}>{body}</FacetEditor>
   )
@@ -188,9 +190,10 @@ export function PartEditor({ id, props, m, anchor, segment, onSegment, onClose }
       start: task.start ? () => void unparkTask(task.id) : undefined,
       deadline: task.deadline ? () => act(updateTask(task.id, { deadline: null })) : undefined,
       repeat: task.recurrence ? () => act(setRecurrence(task.id, null)) : undefined,
+      sector: task.sector ? () => act(setSectorWithUndo(task.id, '')) : undefined,
     }
-    return frame('calendar-days', t('When'), <WhenControl task={task} readOnly={readOnly} segment={segment} onOpen={onOpen} />, clear[segment],
-      { header: <WhenSegmentPicker value={segment} onChange={onSegment} />, width: 'sm:w-[28rem]' })
+    return frame('calendar-days', t('When'), <WhenControl task={task} readOnly={readOnly} segment={segment} onOpen={onOpen} onClose={onClose} />, clear[segment],
+      { header: <WhenSegmentPicker value={segment} onChange={onSegment} sector={sectorSegment} />, width: 'sm:w-[28rem]' })
   }
 
   switch (id) {
