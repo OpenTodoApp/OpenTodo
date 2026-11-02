@@ -15,6 +15,8 @@ export interface MonthVocab {
   abbr: string[]
 }
 
+import type { SectorWord } from '../../sectors'
+
 export interface Vocabulary {
   /** BCP 47 primary language subtag. */
   code: string
@@ -32,6 +34,13 @@ export interface Vocabulary {
   deadlineWords: string[]
   /** Words that park a task when the line has no date (someday-and-evening D6). */
   somedayWords: string[]
+  /**
+   * Time sector phrases by the sector they mean (OpenSpec change time-sectors, D8),
+   * read only while the account's switch is on and only on a line without a date:
+   * "this week", "sometime next month". "next week" and "next month" alone keep
+   * their date meaning, so they are only here with their "sometime" word.
+   */
+  sectorPhrases: Record<SectorWord, string[]>
   /** Words that make a task due today and for This Evening ("tonight"). */
   eveningWords: string[]
   /**

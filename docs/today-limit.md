@@ -11,7 +11,7 @@ order: 24
 
 <picture><source srcset="images/today-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/today-light.webp" alt="The Today view with its title, the date and the list of the day's tasks."></picture>
 
-A busy [Today](today-and-upcoming.md) can hold twenty tasks that will never all get done. A **Today limit** turns it into a closed list: a fixed number of slots, and the rest wait their turn. **Done today** shows what you actually finished, unplanned wins included.
+A busy [Today](today-and-upcoming.md) can hold twenty tasks. A **Today limit** turns it into a closed list: a fixed number of slots, and the rest wait their turn. **Done today** shows what you actually finished, unplanned wins included.
 
 ## Set a limit
 
@@ -34,7 +34,7 @@ A task captured on a full day waits instead of pushing out a planned one; a prio
 
 ## Tasks with a time today
 
-So no time is hidden, the folded heading names the next waiting task due today with a time or a deadline (**Waiting for a slot · 4 — next: Send the form, 4:00 PM**) and lists up to three of them under it, soonest first, each with **Take a slot**, in Upcoming too when it starts with Today. They keep their place; a passed time leaves the list at the end of the day.
+So no time is hidden, the folded heading names the next waiting task due today with a time or a deadline (**Waiting for a slot · 4 — next: Send the form, 4:00 PM**) and lists up to three of them under it, soonest first, each with **Take a slot**, in Upcoming too when it starts with Today. They keep their place. A passed time shows in red with **Time passed** and is never named next; if all have passed, the heading says so.
 
 ## Take a slot
 
@@ -46,4 +46,4 @@ To let a waiting task in, choose **Take a slot** on its row, in its **Actions** 
 
 ## Log a win
 
-Some work was never a task. **Log a win** on the Done today heading, or in the command palette, opens quick add with **Log as done** on: the task is created already completed now and counts like any completion in your [statistics](statistics.md). A win does not repeat or remind, so those words stay in the title. In the terminal, `ot add --done "Fixed the printer"` does the same ([CLI](cli.md)).
+**Log a win** on the Done today heading, or in the command palette, opens quick add with **Log as done** on: the task is created already completed now and counts like any completion in your [statistics](statistics.md). A win does not repeat or remind, so those words stay in the title. In the terminal, `ot add --done "Fixed the printer"` does the same ([CLI](cli.md)).

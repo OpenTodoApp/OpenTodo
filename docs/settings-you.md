@@ -29,7 +29,7 @@ The **You** group of [Settings](settings.md) holds your account and how the app 
 
 ## How you work
 
-**How you work** chooses how much the app shows [Open Loops](method/overview.md), its method for everything on your mind: **Simple lists**, **Lists with method hints** or **Full Open Loops method** (the Loop home first). It syncs and never changes a task; see [Set up in ten minutes](method/set-up.md). **Daily focus** is **Three tasks** or a [Bento](method/rhythms.md#bento), with its **Order** while Bento is on. **Energy levels** adds [task energy](method/set-up.md#energy-levels), **Formatting button** [the formatting row](formatting-row.md).
+**How you work** chooses how much the app shows [Open Loops](method/overview.md): **Simple lists**, **Lists with method hints** or **Full Open Loops method** (the Loop home first). It never changes a task; see [Set up in ten minutes](method/set-up.md). **Daily focus** is **Three tasks** or a [Bento](method/rhythms.md#bento), with its **Order** while Bento is on. **Time sectors** plans tasks [for a week or month](time-sectors.md), **Energy levels** adds [task energy](method/set-up.md#energy-levels), **Formatting button** [the formatting row](formatting-row.md).
 
 ## Appearance
 

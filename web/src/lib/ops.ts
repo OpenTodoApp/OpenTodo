@@ -8,6 +8,7 @@ import { CLOCK_OFFSET_META, HLC_META, hlcLast, hlcNow, hlcReceive, hlcSeed, hlcS
 import { firstOccurrence, parseRule } from './recurrence'
 import { deadlineFireAt, relativeFireAt } from './reminderTime'
 import { defaultReminderChanges } from './defaultReminder'
+import { withSectorClears } from './sectorWrites'
 import { planCompletion, planSkip, seriesRule, skipsInstead } from './recurring'
 import { assignableIn, currentUserId, membershipMap, roleOf, scopeOf } from './sharing'
 import { descendants, isDescendant } from './tree'
@@ -397,6 +398,8 @@ export async function mutateMany(changes: Change[], opts: MutateOptions = {}): P
   changes = unfoldFieldPatches(changes)
   checkEncryptedSize(changes)
   const device = await deviceFor(opts)
+  // Dating a task that holds a time sector clears it in the same batch (time-sectors D2).
+  if (!opts.restore) changes = await withSectorClears(changes)
   // A task that gets a due date gets the person's default reminder (default-reminders D3).
   if (!opts.restore) changes = [...changes, ...(await defaultReminderChanges(changes))]
   changes = [...changes, ...(await reminderFollowUps(changes))]
@@ -700,6 +703,8 @@ export type NewTaskInput = {
   day_part?: 'morning' | 'afternoon' | null
   /** Deep, Medium or Low (task-energy); only sent when set. */
   energy?: 'deep' | 'medium' | 'low' | null
+  /** A time sector such as "2026-W45" (time-sectors); only sent when set. */
+  sector?: string | null
   /** A recurrence rule (any spelling the grammar accepts; stored canonical). Throws when invalid. */
   recurrence?: string | null
   /** Assignee account id (task-assignment); only sent when set. */
@@ -757,6 +762,8 @@ export async function planTask(input: NewTaskInput, position?: number): Promise<
   else if (input.day_part) extra.day_part = input.day_part
   // Only tasks created with an energy carry the field (task-energy).
   if (input.energy) extra.energy = input.energy
+  // Only tasks created with a time sector carry the field (time-sectors).
+  if (input.sector) extra.sector = input.sector
   // Only captured, mailed or imported tasks carry the field (task-origin).
   if (input.origin) extra.origin = input.origin
   if (input.location) extra.location = input.location

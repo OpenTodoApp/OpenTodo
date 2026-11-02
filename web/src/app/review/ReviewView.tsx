@@ -29,6 +29,8 @@ import { act } from '../actionError'
 import { ProjectWalk } from './ProjectWalk'
 import { ReviewProgress } from './ReviewProgress'
 import { StepCard } from './StepCard'
+import { SectorReview, sectorReviewTasks } from './SectorReview'
+import { useTimeSectors } from '../../lib/sectorPrefs'
 import { useShortcutScope } from '../shortcuts'
 import { useResetOnChange } from '../../lib/useResetOnChange'
 
@@ -78,7 +80,10 @@ export function ReviewView({ step: routeStep }: { userId?: string; step?: string
   const taskRows = useMemo(() => (steps ? stepTasks(steps, current) : []), [steps, current])
   // The time column (rows-v2 D2): one fact of the step's list.
   const timeColumn = useMemo(() => hasTimeColumn(taskRows), [taskRows])
-  const keyRows = useMemo(() => taskRows.map((tk) => ({ key: tk.id, task: tk })), [taskRows])
+  // Time sectors in Look ahead (time-sectors): carried over and Next week, part of the step's key list.
+  const sectorsOn = useTimeSectors()
+  const sectorRows = useMemo(() => (input ? sectorReviewTasks(input.tasks, input.today, weekStart, sectorsOn) : { carried: [], next: [] }), [input, weekStart, sectorsOn])
+  const keyRows = useMemo(() => [...taskRows, ...(current === 'ahead' ? [...sectorRows.carried, ...sectorRows.next] : [])].map((tk) => ({ key: tk.id, task: tk })), [taskRows, current, sectorRows])
   useListKeys({
     rows: keyRows, selected, setSelected, openId, setOpenId: setPanelTaskId, pickerFor, setPickerFor,
     paused: !LIST_STEPS.includes(current) || !!addTo,
@@ -87,6 +92,12 @@ export function ReviewView({ step: routeStep }: { userId?: string; step?: string
 
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
+  const row = (item: Task) => (
+    <TaskRow key={item.id} task={item} project={item.project_id ? projectMap.get(item.project_id) : undefined} labels={resolveLabels(item.labels, labelMap)}
+      showProject={step !== 'clear'} selected={item.id === selected} timeColumn={timeColumn}
+      onToggle={() => act(setTaskCompleted(item.id, !item.completed_at))}
+      onOpen={() => { setSelected(item.id); setPanelTaskId(item.id) }} />
+  )
   const allDone = !!steps && STEP_IDS.every((s) => steps.done[s])
   const last = finished ?? (review?.completed_at || null)
   const methodMeta = useWithMethod('review')
@@ -141,13 +152,12 @@ export function ReviewView({ step: routeStep }: { userId?: string; step?: string
               <MindSweep projects={projects} labels={labels} />
             ) : taskRows.length > 0 && (
               <ul className="-mx-2" data-testid={`review-${step}`}>
-                {taskRows.map((item) => (
-                  <TaskRow key={item.id} task={item} project={item.project_id ? projectMap.get(item.project_id) : undefined} labels={resolveLabels(item.labels, labelMap)}
-                    showProject={step !== 'clear'} selected={item.id === selected} timeColumn={timeColumn}
-                    onToggle={() => act(setTaskCompleted(item.id, !item.completed_at))}
-                    onOpen={() => { setSelected(item.id); setPanelTaskId(item.id) }} />
-                ))}
+                {taskRows.map(row)}
               </ul>
+            )}
+            {step === 'ahead' && input && (
+              <SectorReview carried={sectorRows.carried} next={sectorRows.next} today={input.today} weekStart={weekStart} row={row}
+                onDate={(item) => { setSelected(item.id); setPanelTaskId(item.id) }} />
             )}
           </StepCard>
         </>
