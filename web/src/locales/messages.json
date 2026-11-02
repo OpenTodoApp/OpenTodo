@@ -2612,6 +2612,10 @@
   "Cards, rows and dialogs.": [
     "web/src/app/themes/templateText.ts"
   ],
+  "Carried over": [
+    "web/src/app/filter/conditionText.ts",
+    "web/src/lib/sectorNames.ts"
+  ],
   "Carry over": [
     "web/src/lib/review.ts"
   ],
@@ -6376,6 +6380,9 @@
   "From {name}": [
     "web/src/app/FieldsDialog.tsx"
   ],
+  "From {period}": [
+    "web/src/lib/sectorNames.ts"
+  ],
   "From {site}": [
     "web/src/lib/taskSource.ts"
   ],
@@ -6776,6 +6783,9 @@
     "web/src/lib/method/vocabulary.json"
   ],
   "Has a note": [
+    "web/src/app/filter/conditionText.ts"
+  ],
+  "Has a time sector": [
     "web/src/app/filter/conditionText.ts"
   ],
   "Has an energy": [
@@ -8083,13 +8093,17 @@
   "Later": [
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/themes/previewData.ts",
-    "web/src/lib/listGroups.ts"
+    "web/src/lib/listGroups.ts",
+    "web/src/lib/sectorNames.ts"
   ],
   "Later dates of this task follow its completions, so they cannot be changed one by one.": [
     "web/src/app/task-detail/OccurrenceScope.tsx"
   ],
   "Later|method": [
     "web/src/lib/method/vocabulary.json"
+  ],
+  "Later…": [
+    "web/src/app/task-detail/SectorChoice.tsx"
   ],
   "Layout": [
     "web/src/app/task-list/ListChrome.tsx",
@@ -8875,6 +8889,7 @@
   "Month": [
     "web/src/app/CalendarRange.tsx",
     "web/src/app/review/StatsView.tsx",
+    "web/src/app/task-detail/SectorChoice.tsx",
     "web/src/lib/shortcuts.ts"
   ],
   "Month-day": [
@@ -9467,7 +9482,11 @@
     "web/src/app/HabitHistory.tsx",
     "web/src/app/MonthView.tsx",
     "web/src/app/datetime/DateField.tsx",
-    "web/src/app/filter/ConditionEditor.tsx"
+    "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/lib/sectorNames.ts"
+  ],
+  "Next quarter": [
+    "web/src/lib/sectorNames.ts"
   ],
   "Next run:": [
     "web/src/app/BackupsPanel.tsx"
@@ -9494,7 +9513,8 @@
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-list/EarlierActions.tsx",
     "web/src/app/task-list/RowSwipe.tsx",
-    "web/src/lib/dates.ts"
+    "web/src/lib/dates.ts",
+    "web/src/lib/sectorNames.ts"
   ],
   "Next year": [
     "web/src/app/YearView.tsx"
@@ -9968,6 +9988,11 @@
   ],
   "No time of day": [
     "web/src/app/filter/conditionText.ts"
+  ],
+  "No time sector": [
+    "web/src/app/filter/conditionText.ts",
+    "web/src/app/palette/registry.ts",
+    "web/src/app/task-detail/SectorChoice.tsx"
   ],
   "No time tracked and nothing completed in this period.": [
     "web/src/app/review/StatsView.tsx"
@@ -11658,6 +11683,9 @@
   "Pick a template file: one you saved, or a download from open-todo.app. It becomes a new project with fresh ids; nothing in the file is changed.": [
     "web/src/app/TemplateDialogs.tsx"
   ],
+  "Pick a time sector…": [
+    "web/src/app/palette/registry.ts"
+  ],
   "Pick on the map": [
     "web/src/app/locations/LocationEditor.tsx"
   ],
@@ -11747,6 +11775,9 @@
   ],
   "Plan from this frame": [
     "web/src/app/calendar/FrameBand.tsx"
+  ],
+  "Plan tasks into this week, next week or this month without a fake date.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Plan today": [
     "web/src/app/FirstDay.tsx"
@@ -12329,6 +12360,9 @@
   "QR code to scan with your authenticator app": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
+  "Quarter": [
+    "web/src/app/task-detail/SectorChoice.tsx"
+  ],
   "Query": [
     "web/src/app/calendar/QueryFilterDialog.tsx"
   ],
@@ -12379,6 +12413,9 @@
   ],
   "Quote\nOrdered\nDone": [
     "web/src/app/FieldsDialog.tsx"
+  ],
+  "Q{n} {year}": [
+    "web/src/lib/sectorNames.ts"
   ],
   "Raised surface": [
     "web/src/app/themes/tokenNames.ts"
@@ -12855,6 +12892,9 @@
   ],
   "Repeating occurrences": [
     "web/src/app/task-list/ProjectedGroupRows.tsx"
+  ],
+  "Repeating tasks keep a date": [
+    "web/src/app/task-detail/SectorChoice.tsx"
   ],
   "Repeating tasks shown up to {date}": [
     "web/src/app/task-list/upcomingCompute.ts"
@@ -13763,6 +13803,13 @@
   "Sections in a project, one per line": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "Sector": [
+    "web/src/app/task-detail/WhenControl.tsx"
+  ],
+  "Sector: {name} (ignored while dated)": [
+    "web/src/app/task-detail/SectorChoice.tsx",
+    "web/src/lib/facets.ts"
+  ],
   "Security": [
     "web/src/app/OutgoingEmailPanel.tsx",
     "web/src/app/settingsSections.ts"
@@ -13990,6 +14037,9 @@
   "Set a start": [
     "web/src/app/task-detail/TaskFacts.tsx"
   ],
+  "Set a time sector": [
+    "web/src/app/task-detail/TaskFacts.tsx"
+  ],
   "Set a time to fix this due to a time zone": [
     "web/src/app/task-detail/ZoneControl.tsx"
   ],
@@ -14046,6 +14096,15 @@
   ],
   "Set the priority of the selected task, or of the ticked tasks": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Set time sector for {tasks}…": [
+    "web/src/app/palette/registry.ts"
+  ],
+  "Set time sector for {title}…": [
+    "web/src/app/palette/registry.ts"
+  ],
+  "Set time sector…": [
+    "web/src/app/palette/registry.ts"
   ],
   "Set today’s focus": [
     "web/src/lib/rules/sentence.ts"
@@ -17031,6 +17090,7 @@
   ],
   "This month": [
     "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/lib/sectorNames.ts",
     "web/src/lib/stats.ts"
   ],
   "This month’s assistant allowance is used. Describe it works again when it resets.": [
@@ -17136,6 +17196,7 @@
     "web/src/lib/i18n/errors.ts"
   ],
   "This quarter": [
+    "web/src/lib/sectorNames.ts",
     "web/src/lib/stats.ts"
   ],
   "This query uses more nesting than the builder shows. Edit it as text below.": [
@@ -17326,6 +17387,7 @@
     "web/src/app/DateTimeSettings.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/themes/previewData.ts",
+    "web/src/lib/sectorNames.ts",
     "web/src/lib/stats.ts"
   ],
   "This weekend": [
@@ -17395,6 +17457,29 @@
   ],
   "Time format": [
     "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Time sector": [
+    "web/src/app/ParseChips.tsx",
+    "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/task-detail/SectorChoice.tsx",
+    "web/src/app/task-detail/TaskFacts.tsx",
+    "web/src/app/task-detail/WhenControl.tsx"
+  ],
+  "Time sector cleared": [
+    "web/src/lib/undoActions.ts"
+  ],
+  "Time sector is {name}": [
+    "web/src/app/filter/conditionText.ts"
+  ],
+  "Time sector: {name} ({dates})": [
+    "web/src/lib/sectorNames.ts"
+  ],
+  "Time sector: {name} ({dates}), carried over": [
+    "web/src/lib/sectorNames.ts"
+  ],
+  "Time sectors": [
+    "web/src/app/method/HowYouWorkSection.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
   "Time spent": [
@@ -18107,6 +18192,9 @@
   "Unknown term \"{term}\" at position {pos}": [
     "web/src/lib/filter/parse.ts"
   ],
+  "Unknown time sector \"{value}\" at position {pos}; use this week, next week, this month, next month, this quarter, next quarter or a period such as 2026-W44": [
+    "web/src/lib/filter/parse.ts"
+  ],
   "Unlimited": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
@@ -18714,6 +18802,7 @@
   ],
   "Week": [
     "web/src/app/CalendarRange.tsx",
+    "web/src/app/task-detail/SectorChoice.tsx",
     "web/src/app/themes/ThemePreview.tsx",
     "web/src/lib/shortcuts.ts"
   ],
@@ -18725,6 +18814,12 @@
   ],
   "Week starts on": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Week {n}": [
+    "web/src/lib/sectorNames.ts"
+  ],
+  "Week {n}, {year}": [
+    "web/src/lib/sectorNames.ts"
   ],
   "Weekly": [
     "web/src/app/BackupsPanel.tsx"
@@ -19761,6 +19856,9 @@
   ],
   "cannot decrypt this value": [
     "web/src/lib/crypto.ts"
+  ],
+  "carried over": [
+    "web/src/app/task-detail/SectorChoice.tsx"
   ],
   "change": [
     "web/src/app/routines/Starters.tsx",
@@ -21494,6 +21592,7 @@
     "web/src/app/settingsSections.ts"
   ],
   "week {n}": [
+    "web/src/lib/sectorNames.ts",
     "web/src/lib/templateLibrary.ts"
   ],
   "weekday ordinal must be 1st to 4th or last": [
@@ -22134,6 +22233,9 @@
   "{n, plural, one {# reminder} other {# reminders}}": [
     "web/src/app/ImportScreen.tsx"
   ],
+  "{n, plural, one {# repeating task skipped} other {# repeating tasks skipped}}": [
+    "web/src/app/palette/registry.ts"
+  ],
   "{n, plural, one {# reply is} other {# replies are}} waiting": [
     "web/src/app/Briefing.tsx"
   ],
@@ -22389,6 +22491,9 @@
   ],
   "{n, plural, one {Permanently delete # item? This cannot be undone.} other {Permanently delete all # items? This cannot be undone.}}": [
     "web/src/app/TrashView.tsx"
+  ],
+  "{n, plural, one {Planned for {name}} other {# tasks planned for {name}}}": [
+    "web/src/lib/undoActions.ts"
   ],
   "{n, plural, one {Priority {p} set on # task} other {Priority {p} set on # tasks}}": [
     "web/src/lib/bulk.ts"
