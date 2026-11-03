@@ -32,6 +32,7 @@ import { BoardView } from './BoardView'
 import { BriefingText, useBriefing } from './Briefing'
 import { BulkActionsMenu, SelectionBar } from './bulk/BulkActions'
 import { useRowMenu } from './bulk/useRowMenu'
+import { useActionsOpen } from './bulk/useBulkList'
 import { useCollapsedGroups } from './collapsedGroups'
 import { EarlierActions } from './task-list/EarlierActions'
 import { taskDefaults } from './listActions'
@@ -85,8 +86,7 @@ const HELP_SCREENS: Partial<Record<Route['view'], string>> = {
 
 /** Transient UI of the list: pickers, prompts, quick adds and the actions menu. */
 function useListUi(ticked: ReadonlySet<string>, order: readonly string[]) {
-  const [actionsOpen, setActionsOpen] = useState(false)
-  const [actionsPicker, setActionsPicker] = useState<string | null>(null)
+  const actions = useActionsOpen(order.length)
   const [selectMode, setSelectMode] = useState(false)
   const [addingUnder, setAddingUnder] = useState<string | null>(null)
   /** Parent whose last open subtask was just completed; Enter completes it too. */
@@ -101,13 +101,13 @@ function useListUi(ticked: ReadonlySet<string>, order: readonly string[]) {
   const actionsFrom = useRef<HTMLElement | null>(null)
   /** The one row whose details are shown under it (row-expand D4): this list's state only, never stored. */
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  const openActions = useCallback((picker: string | null = null, from: HTMLElement | null = null) => { actionsFrom.current = from; setActionsPicker(picker); setActionsOpen(true) }, [])
-  const onActionsOpen = useCallback((v: boolean) => { setActionsOpen(v); if (!v) setActionsPicker(null) }, [])
+  const { open: openActionsMenu } = actions
+  const openActions = useCallback((picker: string | null = null, from: HTMLElement | null = null) => { actionsFrom.current = from; openActionsMenu(picker) }, [openActionsMenu])
   // The row's menu at the pointer (task-row-context-menu): one state, one selection
   // rule and one focus restore, shared with the filter, saved-view and method lists.
   const rowMenu = useRowMenu(ticked, order)
   const ui: ListUi = { pickerFor, setPickerFor, assignFor, setAssignFor, prompt, setPrompt, addingUnder, setAddingUnder, setAddingTo, openActions }
-  return { ui, actionsOpen, actionsPicker, onActionsOpen, actionsFrom, selectMode, setSelectMode, addingTo, expandedId, setExpandedId, rowMenu }
+  return { ui, actions, actionsFrom, selectMode, setSelectMode, addingTo, expandedId, setExpandedId, rowMenu }
 }
 
 /**
@@ -186,7 +186,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const collapsedGroups = useCollapsedGroups()
   // Bulk selection (bulk-edit D1): ticked rows, separate from the cursor row.
   const { tickRows, selection, ticked } = useTickedRows(rows, taskMap, isReadOnly)
-  const { ui, actionsOpen, actionsPicker, onActionsOpen, actionsFrom, selectMode, setSelectMode, addingTo, expandedId, setExpandedId, rowMenu } = useListUi(selection.ticked, ticked)
+  const { ui, actions, actionsFrom, selectMode, setSelectMode, addingTo, expandedId, setExpandedId, rowMenu } = useListUi(selection.ticked, ticked)
   // The open task lives in the shell's panel slot (app-shell D1); the Inbox (inbox-split D1), and every list with the
   // side panel (task-side-panel D2, D7), keep it there beside the list, set up before the bindings' route reset.
   const openId = usePanelTaskId()
@@ -375,10 +375,10 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           )}
           {agenda.toggle && <TodayAgenda cal={agenda.cal} zone={m.zone} />}
 
-          <SelectionBar ids={ticked} onClear={selection.clear} menuOpen={actionsOpen && ticked.length > 0}
-            onMenuOpenChange={onActionsOpen} startPicker={actionsPicker} onDone={selectMode ? () => setSelectMode(false) : undefined} />
-          {actionsOpen && ticked.length === 0 && selectedId && ( // `.` with nothing ticked: the same menu for the cursor task.
-            <BulkActionsMenu ids={[selectedId]} open onOpenChange={onActionsOpen} startPicker={actionsPicker} anchor={actionsFrom}
+          <SelectionBar ids={ticked} onClear={selection.clear} menuOpen={actions.forTicked}
+            onMenuOpenChange={actions.onOpenChange} startPicker={actions.picker} onDone={selectMode ? () => setSelectMode(false) : undefined} />
+          {actions.forCursor && selectedId && ( // `.` with nothing ticked: the same menu for the cursor task.
+            <BulkActionsMenu ids={[selectedId]} open onOpenChange={actions.onOpenChange} startPicker={actions.picker} anchor={actionsFrom}
               trigger={<span className="sr-only">{t('Actions')}</span>} triggerClassName="sr-only" />
           )}
           {rowMenu.element}{queryHost}

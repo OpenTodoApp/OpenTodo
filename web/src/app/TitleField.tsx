@@ -29,7 +29,7 @@ export interface TitleFieldProps {
   projects: readonly ProjectRef[]
   labels: readonly LabelRef[]
   readOnly?: boolean
-  /** A two-line textarea (the panel header) or a one-line input (the inline editor). */
+  /** A growing textarea (the panel and the page) or a one-line input (the inline editor). */
   multiline?: boolean
   className?: string
   placeholder?: string

@@ -17,6 +17,7 @@ A task can say where it happens: the post office, a client's address, the parcel
 
 Open a task and choose its location on the **Where** line, or **Add → Location**. In the field you can:
 
+- type any name, such as *Garage* or *Mum's*, and choose **Use “Garage”** (Enter does this). It is kept even when it is not an address and the map search finds nothing, with no pin;
 - type an address and pick a result (when maps are on);
 - type coordinates such as `45.4642, 9.19` and choose **Use 45.4642, 9.19**;
 - pick one of your saved locations.

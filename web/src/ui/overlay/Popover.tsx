@@ -24,6 +24,11 @@ export interface PopoverProps {
   modal?: boolean
   /** Width of the anchored panel from 640 px up (Tailwind class). */
   width?: string
+  /**
+   * Stay a panel next to the trigger below 640 px too, instead of becoming a
+   * sheet. For a menu that must not cover the page (a breadcrumb's folded parents).
+   */
+  anchored?: boolean
   /** Extra classes for the content (padding). */
   className?: string
   children: ReactNode
@@ -46,16 +51,17 @@ export function Popover(p: PopoverProps) {
   return <PopoverPanel {...p} />
 }
 
-function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', role = 'dialog', modal = true, width = 'sm:w-56', className = '', children }: PopoverProps) {
+function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', role = 'dialog', modal = true, width = 'sm:w-56', className = '', anchored = false, children }: PopoverProps) {
   const wide = useWide()
+  const docked = wide || anchored
   const panel = useRef<HTMLDivElement>(null)
   // Below 640 px a popover is a bottom sheet over the page: the page behind it is inert.
-  useOverlay({ panel, onClose, modal, trigger: anchor, blocking: !wide })
+  useOverlay({ panel, onClose, modal, trigger: anchor, blocking: !docked })
   const [pos, setPos] = useState<{ top: number; left: number; maxHeight?: number; maxWidth?: number } | null>(null)
 
   const measure = useCallback(() => {
     const a = anchor.current, el = panel.current
-    if (!wide || !a || !el) return
+    if (!docked || !a || !el) return
     const r = a.getBoundingClientRect()
     const vw = document.documentElement.clientWidth, vh = window.innerHeight
     // Measure the natural size: drop a previous height cap first.
@@ -65,10 +71,10 @@ function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', 
     el.style.maxHeight = prevMax
     const next = place(r, size, { width: vw, height: vh }, { side, align })
     setPos((cur) => (cur && cur.top === next.top && cur.left === next.left && cur.maxHeight === next.maxHeight && cur.maxWidth === next.maxWidth ? cur : next))
-  }, [anchor, wide, side, align])
+  }, [anchor, docked, side, align])
 
   useLayoutEffect(() => {
-    if (!wide) return
+    if (!docked) return
     measure()
     // Scrolling inside the panel itself does not move its anchor: only outer scrolls re-place it
     // (re-placing on its own scroll kept a tall panel from ever holding still).
@@ -92,7 +98,7 @@ function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', 
       ro?.disconnect()
       document.removeEventListener('pointerdown', onDown, true)
     }
-  }, [wide, measure, anchor])
+  }, [docked, measure, anchor])
   const onCloseRef = useRef(onClose)
   useLayoutEffect(() => { onCloseRef.current = onClose })
 
@@ -103,7 +109,7 @@ function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', 
   const ariaRole = role && modal ? role : undefined
 
   if (typeof document === 'undefined') return null
-  if (!wide) {
+  if (!docked) {
     return createPortal(
       <div className="fixed inset-0 z-50" data-overlay-root {...isolate} onKeyDown={onKeyDown} style={modal ? undefined : { pointerEvents: 'none' }}>
         {modal && <div className="absolute inset-0 bg-scrim" aria-hidden="true" onClick={onClose} data-overlay-backdrop />}

@@ -190,6 +190,15 @@ export function originLabel(origin: Origin): string {
   return origin.id || originHost(origin)
 }
 
+/**
+ * The origin a row or a card shows (row-title-first-on-phones, GitHub issue 844): an
+ * imported origin's id is the source app's own key, not something to read, so an
+ * import shows there only when it has a link, as its icon; the task's details keep it.
+ */
+export function rowOrigin(origin: Origin | null): Origin | null {
+  return origin?.kind === 'import' && !origin.url ? null : origin
+}
+
 /** Where a valid Obsidian note lives, for its tooltip "Open in Obsidian: <vault> › <path>"; null for any other origin. */
 export function obsidianPlace(origin: Origin): { vault: string; path: string } | null {
   const link = origin.kind === 'obsidian' ? obsidianURL(origin.url, origin.id) : null

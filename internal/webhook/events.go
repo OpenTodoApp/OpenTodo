@@ -23,6 +23,7 @@ const EventPing = "ping"
 // Events lists every event a webhook may subscribe to, in display order.
 var Events = []string{
 	"task.created", "task.updated", "task.completed", "task.reopened", "task.deleted",
+	"comment.created", "comment.updated", "comment.deleted",
 	"project.created", "project.updated", "project.archived", "project.deleted",
 	importer.EventCompleted, importer.EventUndone, EventRuleFired,
 }
@@ -92,31 +93,16 @@ type Payload struct {
 
 // BuildPayload assembles the body for one event. entity is the current
 // materialized record (may be nil if it vanished); changes are the fields that
-// changed with their previous values (null when unknown).
-func BuildPayload(deliveryID, webhookID, event string, timeMs int64, origin, entityKind string, entity opsync.Entity, changes map[string]opsync.FieldChange) ([]byte, error) {
+// changed with their previous values (null when unknown). related, when given,
+// adds further records to data (a comment event also carries the task).
+func BuildPayload(deliveryID, webhookID, event string, timeMs int64, origin, entityKind string, entity opsync.Entity, changes map[string]opsync.FieldChange, related ...map[string]opsync.Entity) ([]byte, error) {
 	data := map[string]any{}
 	if entityKind != "" {
-		if entity == nil {
-			data[entityKind] = nil
-		} else {
-			e := withoutDocValues(entityKind, entity)
-			if entityKind == "task" {
-				// Custom field values as one object, like the REST API (custom-fields D3);
-				// a change names the value it touched as `fields.<id>`.
-				e = opsync.FoldFieldValues(e)
-				// origin travels like every field, null when unset (task-origin).
-				if _, has := e["origin"]; !has {
-					e["origin"] = json.RawMessage("null")
-				}
-			}
-			// workspace_id travels on projects and tasks, null for the default
-			// workspace (OpenSpec change workspaces); a task with a project
-			// belongs to its project's workspace.
-			if _, has := e["workspace_id"]; (entityKind == "task" || entityKind == "project") && !has {
-				e = maps.Clone(e) // never the caller's record
-				e["workspace_id"] = json.RawMessage("null")
-			}
-			data[entityKind] = e
+		data[entityKind] = presentEntity(entityKind, entity)
+	}
+	if len(related) > 0 {
+		for kind, ent := range related[0] {
+			data[kind] = presentEntity(kind, ent)
 		}
 	}
 	rawData, err := json.Marshal(data)
@@ -179,6 +165,32 @@ func WithDeliveryID(body []byte, id string) ([]byte, error) {
 	}
 	p.ID = id
 	return json.Marshal(p)
+}
+
+// presentEntity is one record as a delivery shows it: no opaque documents, a
+// task's custom fields folded, origin and workspace_id present (null when unset).
+func presentEntity(kind string, entity opsync.Entity) any {
+	if entity == nil {
+		return nil
+	}
+	e := withoutDocValues(kind, entity)
+	if kind == "task" {
+		// Custom field values as one object, like the REST API (custom-fields D3);
+		// a change names the value it touched as `fields.<id>`.
+		e = opsync.FoldFieldValues(e)
+		// origin travels like every field, null when unset (task-origin).
+		if _, has := e["origin"]; !has {
+			e["origin"] = json.RawMessage("null")
+		}
+	}
+	// workspace_id travels on projects and tasks, null for the default
+	// workspace (OpenSpec change workspaces); a task with a project
+	// belongs to its project's workspace.
+	if _, has := e["workspace_id"]; (kind == "task" || kind == "project") && !has {
+		e = maps.Clone(e) // never the caller's record
+		e["workspace_id"] = json.RawMessage("null")
+	}
+	return e
 }
 
 func isTrue(v json.RawMessage) bool {
