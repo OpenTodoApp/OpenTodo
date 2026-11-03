@@ -900,7 +900,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
       )}
       {revealed && <RowActionCluster task={task} onMore={onMore} force={forceActions} editable={!readOnly}
         details={canExpand ? { expanded: showDetails, controls: detailsId, onToggle: onExpand! } : undefined} />}
-      {onGripDown && onGripClick && onTick && !readOnly && !inline && !departing && <RowGrip name={name} ticked={ticked} onDown={onGripDown} onClick={onGripClick} />}
+      {onGripDown && onGripClick && onTick && !readOnly && !inline && !departing && <RowGrip name={name} ticked={ticked} showCheckbox={showCheckbox} onDown={onGripDown} onClick={onGripClick} />}
       {showDetails && (
         // Indented under the title column: past the leading slot, the checkbox and the time column (row-expand D3).
         // The id lives here, so `aria-controls` names an element while the lazy details still load.
@@ -938,16 +938,22 @@ function RowTick({ name, ticked, showCheckbox, onTick }: { name: string; ticked:
  * (hidden before it renders): a fine pointer drags the row anywhere and ticks through
  * the same box as before.
  */
-function RowGrip({ name, ticked, onDown, onClick }: { name: string; ticked: boolean; onDown: (e: React.PointerEvent<HTMLElement>) => void; onClick: () => void }) {
+function RowGrip({ name, ticked, showCheckbox, onDown, onClick }: { name: string; ticked: boolean; showCheckbox?: boolean; onDown: (e: React.PointerEvent<HTMLElement>) => void; onClick: () => void }) {
+  // While Select mode shows the checkboxes the tick box is the row's one announced
+  // control: the grip leaves the tree and the tab order, so TalkBack and VoiceOver do
+  // not stop on two controls with the same name (bulk-actions on touch).
+  const quiet = !!(showCheckbox || ticked)
   return (
     <span data-row-grip="" className="mt-0.5 hidden h-5 w-5 shrink-0 items-center justify-center self-start pointer-coarse:flex">
       <button
         type="button"
         aria-label={t('Select {title}', { title: name })}
         aria-pressed={ticked}
+        aria-hidden={quiet || undefined}
+        tabIndex={quiet ? -1 : undefined}
         onPointerDown={(e) => { e.stopPropagation(); onDown(e) }}
         onClick={onClick}
-        className="touch-target pointer-coarse:-m-3 flex select-none items-center justify-center rounded-chip text-faint touch-action-none hover:text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+        className="touch-target pointer-coarse:-m-3 flex select-none items-center justify-center rounded-chip text-faint touch-none hover:text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
       >
         <Icon name="grip-vertical" size="sm" />
       </button>

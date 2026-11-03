@@ -80,22 +80,13 @@ describe('touch: hold, swipe and drag', () => {
   it('a held release opens the row menu on any pointer, a coarse (phone) one included', () => {
     // The grip took selection, so the row body's hold is only ever the menu's — on a
     // phone as on a desktop (task-row-context-menu, revised by the touch rework).
-    const original = window.matchMedia
-    window.matchMedia = ((q: string) => ({
-      matches: false, media: q, onchange: null,
-      addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
-    })) as typeof window.matchMedia
-    try {
-      const release = vi.fn()
-      beginDrag(press, { label: 'Task', onDrop: vi.fn(), onEnd: vi.fn(), onHoldRelease: release })
-      vi.advanceTimersByTime(TOUCH_HOLD_MS + 10)
-      up(50, 50)
-      expect(release).toHaveBeenCalledWith(50, 50)
-      // The held press swallowed its click — consume it so a later test keeps its own.
-      window.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
-    } finally {
-      window.matchMedia = original
-    }
+    const release = vi.fn()
+    beginDrag(press, { label: 'Task', onDrop: vi.fn(), onEnd: vi.fn(), onHoldRelease: release })
+    vi.advanceTimersByTime(TOUCH_HOLD_MS + 10)
+    up(50, 50)
+    expect(release).toHaveBeenCalledWith(50, 50)
+    // The held press swallowed its click — consume it so a later test keeps its own.
+    window.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
   })
 })
 

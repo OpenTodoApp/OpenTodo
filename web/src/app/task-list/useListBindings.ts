@@ -13,6 +13,7 @@ import { openTaskPage } from '../taskTrail'
 import type { useSelection } from '../selection'
 import { openTask, selectTask } from '../signals'
 import { isTypingTarget } from '../shortcuts'
+import { gripSelect } from './RowSwipe'
 import type { RowActions } from './TaskListRow'
 import type { ListRoute } from './useListModel'
 import type { ListUi } from './useListShortcuts'
@@ -216,11 +217,9 @@ export function useListBindings(c: BindingContext): RowActions {
     drag: (e, task) => live.current.startDrag(e, task),
     grip: (e, task) => live.current.startDrag(e, task, true),
     gripTap: (task) => {
-      // A tap on the grip is a plain tick with the long press's feedback (bulk-actions on touch).
-      live.current.selection.toggle(task.id)
+      // A tap on the grip ticks or unticks with the hold's feedback (bulk-actions on touch).
+      gripSelect(task.id, live.current.selection, live.current.setSelectMode)
       setSelectedId(task.id)
-      live.current.setSelectMode(true)
-      navigator.vibrate?.(10)
     },
     // The revealed More action (rows-v2 D7): the row menu for this row, as `.` opens it.
     more: (id, from) => {

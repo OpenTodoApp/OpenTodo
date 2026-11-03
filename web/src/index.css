@@ -1037,7 +1037,7 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
   flex-shrink: 0;
   cursor: pointer;
   border: 2px solid var(--ot-border-input);
-  border-radius: 4px;
+  border-radius: var(--radius-chip);
   background: transparent;
 }
 .row-tick:checked {
@@ -1331,6 +1331,10 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
      follow-up): a long press on a phone must not select words under the finger.
      Editing controls keep text selection — the inline editor still selects its text. */
   li[data-task-id] { -webkit-user-select: none; user-select: none; }
+  /* The expanded row's notes and its detailed facts line are reading text, not part of
+     the gesture: the whole `li` is unselectable on a phone so a hold cannot hand words to
+     the browser, but `RowDetails` and that facts line must stay selectable and copyable. */
+  li[data-task-id] [data-row-details] { -webkit-user-select: text; user-select: text; }
   li[data-task-id] :is(input, textarea, [contenteditable="true"]) { -webkit-user-select: text; user-select: text; }
   :where(button, [role="button"], summary, select, a.ui-btn) { min-height: 44px; min-width: 44px; }
   :where(input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="range"], [type="color"]), textarea) { min-height: 44px; }
