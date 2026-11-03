@@ -44,6 +44,8 @@ import { PanelBoundary } from './PanelBoundary'
 import { TemplateDialogHost } from './TemplateDialogs'
 import { setCurrentUserId } from '../lib/sharing'
 import { type HelpSection, ShortcutHelp } from './ShortcutHelp'
+import { FeedbackHost } from './FeedbackHost'
+import { openFeedback } from '../lib/feedbackRequest'
 import { Spotlight } from './shortcuts/Spotlight'
 import { useVimEnabled } from './vim/prefs'
 import { closeHelp, useHelpRequest } from '../lib/helpRequest'
@@ -236,7 +238,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         className={`fixed inset-y-0 left-0 z-[45] flex w-80 max-w-[85vw] max-md:[&_[data-sidebar-item]]:min-h-12 transform max-md:border-r max-md:border-default bg-(--sidebar-bg) [--sidebar-bg:var(--color-surface)] md:[--sidebar-bg:var(--color-canvas)] md:pointer-fine:[--sidebar-bg:var(--color-sidebar)] pl-[env(safe-area-inset-left)] transition-transform md:static md:w-(--sidebar-w) md:max-w-none md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="min-w-0 flex-1">
-          <Sidebar route={route} user={user} onSearch={openPalette} onShortcuts={() => setShowHelp(true)} onSignOut={onLogout} onAssistant={showLauncher(assistant) ? openAssistant : undefined} collapsed={sidebar.collapsed} onToggleCollapse={toggleSidebarCollapsed} />
+          <Sidebar route={route} user={user} onSearch={openPalette} onShortcuts={() => setShowHelp(true)} onFeedback={() => { setSidebarOpen(false); openFeedback() }} onSignOut={onLogout} onAssistant={showLauncher(assistant) ? openAssistant : undefined} collapsed={sidebar.collapsed} onToggleCollapse={toggleSidebarCollapsed} />
         </div>
         {!sidebar.collapsed && <SidebarResizer width={sidebar.width} />}
       </aside>
@@ -337,7 +339,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       {assistantLoaded && <PanelBoundary><Suspense fallback={null}><AssistantRoot name={user.name} onPage={route.view === 'ask'} context={() => ({ view: route.view, projectId: route.view === 'project' ? route.id : undefined })} /></Suspense></PanelBoundary>}
       {palette.loaded && palette.open && <PanelBoundary resetKey={palette.open}><Suspense fallback={null}><CommandPalette user={user} initialMode={palette.mode} logWin={palette.win} onClose={palette.close} showShortcuts={() => setShowHelp(true)} /></Suspense></PanelBoundary>}
       {/* The owner's one-time thank-you on a new server (welcome-note). */}
-      <WelcomeDialog user={user} />
+      <WelcomeDialog user={user} /><FeedbackHost />
       {/* The start guide after it (first-run "Three-step first run"); never a row of the list. */}
       <PanelBoundary><Suspense fallback={null}><FirstRunGuide user={user} /></Suspense></PanelBoundary>
       {/* The g … spotlight (shortcut-spotlight): shown after a hesitation, never focused. */}
