@@ -6,7 +6,7 @@
 import { lazy, Suspense, useCallback, useMemo } from 'react'
 import { compile, parse, type FilterContext } from '../../lib/filter'
 import { t } from '../../lib/i18n'
-import { useAllLabels, useAllProjects, useMeta } from '../../lib/localData'
+import { useAllLabels, useAllProjects, useMetaRead } from '../../lib/localData'
 import { CALENDAR_FILTER_KEY, saveQueryFilter, UPCOMING_FILTER_KEY } from '../../lib/deviceFilters'
 import type { Task } from '../../lib/types'
 import { Icon } from '../../ui'
@@ -43,14 +43,19 @@ export interface QueryFilter {
 }
 
 /** The filter stored under `key`, compiled against the live labels and projects; `tasks` answer `blocked` and friends. */
+/** While the stored query is not read yet the view shows no task, rather than every task for a moment. */
+const NONE = () => false
+
 export function useQueryFilter(key: string, tasks: readonly Task[]): QueryFilter {
-  const stored = useMeta<unknown>(key, '')
+  const stored = useMetaRead<unknown>(key, '')
+  const loading = stored === undefined
   const query = typeof stored === 'string' ? stored : ''
   const labels = useAllLabels()
   const projects = useAllProjects()
   const today = useToday()
   const ctx = useMemo<FilterContext>(() => ({ today, labels, projects, tasks }), [today, labels, projects, tasks])
   const test = useMemo(() => {
+    if (loading) return NONE
     if (!query.trim()) return null
     try {
       const ast = parse(query)
@@ -59,7 +64,7 @@ export function useQueryFilter(key: string, tasks: readonly Task[]): QueryFilter
       // A query that no longer compiles (a field removed since) filters nothing out.
       return null
     }
-  }, [query, ctx])
+  }, [query, ctx, loading])
   const setQuery = useCallback((q: string) => act(saveQueryFilter(key, q)), [key])
   return { query, test, ctx, setQuery }
 }

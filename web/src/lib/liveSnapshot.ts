@@ -35,6 +35,16 @@ function deepFreeze<T>(value: T): T {
 const snapshots = new Set<{ hold(): void; release(): void }>()
 let holds = 0
 
+/** Registers a shared snapshot of its own kind (taskSnapshot) with the holds. */
+export function onHold(handle: { hold(): void; release(): void }): void {
+  snapshots.add(handle)
+}
+
+/** Whether a long pull holds the shared snapshots now. */
+export function isHeld(): boolean {
+  return holds > 0
+}
+
 resettable('liveSnapshot', () => {
   if (holds > 0) {
     holds = 0
