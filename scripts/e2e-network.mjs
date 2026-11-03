@@ -124,7 +124,10 @@ async function audit(name, env, mapsOn) {
   await editor.waitFor()
   if (mapsOn) {
     await editor.locator('input').first().fill('Piazza del Duomo Milano')
-    await page.getByRole('option', { name: /Piazza del Duomo/ }).first().waitFor({ timeout: 10000 })
+    // The typed-name choice ("Use …") appears at once and contains the query.
+    // The address from the geocoder is the row that starts with the place name,
+    // and it is what has to reach the provider.
+    await page.getByRole('option', { name: /^Piazza del Duomo/ }).first().waitFor({ timeout: 10000 })
   } else {
     assert(await page.locator('[data-privacy-line]').count() === 0, `${name}: no search notice with maps off`)
   }
