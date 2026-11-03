@@ -21,15 +21,19 @@ struct SetupView: View {
                         .autocorrectionDisabled()
                         .onSubmit { Task { await connect() } }
                 } header: {
+                    // The system's grey header and footer are small text below 4.5:1 (the
+                    // accessibility audit in FirstRunTests); both are in the full text colour.
                     Text("Server address")
+                        .foregroundStyle(.primary)
                 } footer: {
                     Text("OpenTodo runs on your own server. Enter the address you use in the browser.")
+                        .foregroundStyle(.primary)
                 }
 
                 if let message {
                     Section {
                         Label(message, systemImage: "exclamationmark.triangle")
-                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                         if let suggestion {
                             Button("Use \(suggestion)") { address = suggestion; self.suggestion = nil }
                         }

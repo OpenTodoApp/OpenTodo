@@ -297,7 +297,7 @@ release-prepare:
 ## the Go/TypeScript contract index (docs/contracts.md);
 ## the brand rasters rendered from the current brand.svg (sidebar-v2 D3).
 repo-check:
-	node --test scripts/repo-checks.test.mjs scripts/brand-icons.test.mjs scripts/contracts.test.mjs scripts/bundle-budget.test.mjs scripts/release/play-upload.test.mjs scripts/release/collect-assets.test.mjs scripts/release/check-public-image.test.mjs scripts/perf/budgets.test.mjs
+	node --test scripts/repo-checks.test.mjs scripts/brand-icons.test.mjs scripts/contracts.test.mjs scripts/bundle-budget.test.mjs scripts/release/play-upload.test.mjs scripts/release/collect-assets.test.mjs scripts/release/check-public-image.test.mjs scripts/perf/budgets.test.mjs scripts/android-a11y.test.mjs
 
 ## The time benchmark of the performance budgets (docs/performance.md): builds the app,
 ## the server and the 10,000-task account, then measures every server, desktop and

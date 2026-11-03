@@ -8349,6 +8349,9 @@
   "Letters a-z, digits and hyphens. Importing gives the theme a new id.": [
     "web/src/app/themes/templateText.ts"
   ],
+  "Letters and symbols alone run commands. Turn off for speech input. This device only.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Licence": [
     "web/src/app/ThemeAbout.tsx",
     "web/src/app/themes/EditorSections.tsx"
@@ -14985,6 +14988,12 @@
   ],
   "Single sign-on is off on this server; your links are kept.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Single-key shortcuts": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Single-key shortcuts (this device)": [
+    "web/src/app/PreferencesPanels.tsx"
   ],
   "Site visit": [
     "web/src/app/themes/previewData.ts"

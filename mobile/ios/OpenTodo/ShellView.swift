@@ -201,7 +201,7 @@ struct FailureView: View {
     var body: some View {
         VStack(spacing: 12) {
             Text(message.title).font(.headline)
-            Text(message.body).font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+            Text(message.body).font(.subheadline).multilineTextAlignment(.center)
             Button("Try again", action: retry).buttonStyle(.borderedProminent).padding(.top, 4)
         }
         .padding(32)
