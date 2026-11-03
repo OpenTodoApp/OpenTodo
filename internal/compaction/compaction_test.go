@@ -304,3 +304,70 @@ func TestUnknownFreeSpaceSkipsConversion(t *testing.T) {
 		t.Fatalf("no warning: %s", f.logs.String())
 	}
 }
+
+// TestRunCheckpointsFromTheReader (notes-compaction-at-scale 1.3): with the
+// reader pool a run turns the writer's automatic checkpoint off, copies the
+// write-ahead log back from the reader, and puts the writer's settings back.
+func TestRunCheckpointsFromTheReader(t *testing.T) {
+	f := newFixture(t, false)
+	reader, err := store.OpenReader(f.dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { reader.Close() })
+	f.sync.SetReader(reader)
+	o := f.svc.o
+	o.Reader = reader
+	f.svc = New(o)
+	f.notes("t1", 60, 6000)
+	f.notes("t2", 60, 6000)
+	pragma := func(name string) int64 {
+		var v int64
+		if err := f.db.QueryRow(`PRAGMA ` + name).Scan(&v); err != nil {
+			t.Fatal(err)
+		}
+		return v
+	}
+	cache, auto := pragma("cache_size"), pragma("wal_autocheckpoint")
+	f.now = f.now.Add(31 * day)
+	f.svc.Run(f.ctx)
+	if f.count() != 4 {
+		t.Fatalf("ops left %d, want the four winners", f.count())
+	}
+	st := f.status()
+	if st.Last == nil || st.Last.OpsRemoved != 236 || st.FreeBytes != 0 {
+		t.Fatalf("after the run: %+v, report %+v", st, st.Last)
+	}
+	if pragma("cache_size") != cache || pragma("wal_autocheckpoint") != auto {
+		t.Fatalf("writer settings not restored: cache %d (was %d), autocheckpoint %d (was %d)", pragma("cache_size"), cache, pragma("wal_autocheckpoint"), auto)
+	}
+	// Everything the run wrote is back in the database file.
+	var busy, logFrames, done int
+	if err := reader.QueryRow(`PRAGMA wal_checkpoint(PASSIVE)`).Scan(&busy, &logFrames, &done); err != nil {
+		t.Fatal(err)
+	}
+	if logFrames != done {
+		t.Fatalf("write-ahead log %d frames, %d checkpointed", logFrames, done)
+	}
+}
+
+// TestNextStep: incremental vacuum steps follow the last step's duration, at
+// most halved or grown by half, within their bounds.
+func TestNextStep(t *testing.T) {
+	for _, c := range []struct {
+		step int
+		took time.Duration
+		want int
+	}{
+		{64, VacuumHold, 64},
+		{64, VacuumHold / 10, 96},
+		{64, 10 * VacuumHold, 32},
+		{64, 0, 64},
+		{20, 10 * VacuumHold, vacuumMin},
+		{120, time.Microsecond, vacuumMax},
+	} {
+		if got := nextStep(c.step, c.took); got != c.want {
+			t.Errorf("nextStep(%d, %s) = %d, want %d", c.step, c.took, got, c.want)
+		}
+	}
+}
