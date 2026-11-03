@@ -11,7 +11,7 @@ import { encryptionSnapshot, onEncryptionChange } from '../../lib/e2ee'
 import { currentLanguage } from '../../lib/i18n/catalog'
 import { useLabels, useMembershipMap, useProjects } from '../../lib/localData'
 import { useLiveTasks, NO_TASKS } from '../../lib/liveTasks'
-import { filterEntries, NO_NOTE_FILTERS, NOTES_PAGE, NoteIndex, noteEntries, type NoteEntry, type NoteFilters } from '../../lib/noteList'
+import { filterEntries, NO_NOTE_FILTERS, NOTES_PAGE, NoteIndex, noteEntries, sameEntries, type NoteEntry, type NoteFilters } from '../../lib/noteList'
 import { createNote } from '../../lib/noteOps'
 import { useNoteRows } from '../../lib/noteRows'
 import type { SnippetSegment } from '../../lib/noteSearch'
@@ -80,7 +80,14 @@ interface Row { entry: NoteEntry; snippet?: SnippetSegment[] }
 function warmSoon(step: () => boolean): () => void {
   let handle = 0
   let stopped = false
-  const run = () => { if (!stopped && step()) handle = schedule() }
+  // As many steps as the idle period allows (notes-compaction-at-scale: the index
+  // is ready sooner after the page opens).
+  const run = (deadline?: IdleDeadline) => {
+    if (stopped) return
+    let more = step()
+    while (more && deadline && !deadline.didTimeout && deadline.timeRemaining() > 4) more = step()
+    if (more) handle = schedule()
+  }
   const schedule = () => (typeof requestIdleCallback === 'function' ? requestIdleCallback(run, { timeout: 500 }) : window.setTimeout(run, 50))
   handle = schedule()
   return () => {
@@ -88,6 +95,13 @@ function warmSoon(step: () => boolean): () => void {
     if (typeof cancelIdleCallback === 'function') cancelIdleCallback(handle)
     clearTimeout(handle)
   }
+}
+
+/** The entries, kept as the same array while they show the same notes (sameEntries). */
+function useStableEntries(next: NoteEntry[]): NoteEntry[] {
+  const kept = useRef(next)
+  if (!sameEntries(kept.current, next)) kept.current = next
+  return kept.current
 }
 
 /** The page's measurement points (performance-10k D4): the list on screen, and the results of each search keystroke. */
@@ -116,7 +130,7 @@ export function NotesPage({ id }: { id?: string }) {
   const phonePage = !!id && !docks
   useDockedNote(id && docks ? id : null)
 
-  const entries = useMemo(() => noteEntries(tasks, projects, notes), [tasks, projects, notes])
+  const entries = useStableEntries(useMemo(() => noteEntries(tasks, projects, notes), [tasks, projects, notes]))
   const filtered = useMemo(() => filterEntries(entries, filters), [entries, filters])
   // The search index is built in idle moments once the page is open (or on the first
   // search, if that comes first) and forgets notes no longer listed.

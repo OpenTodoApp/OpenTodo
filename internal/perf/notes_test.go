@@ -77,11 +77,6 @@ func TestNotesBudgets(t *testing.T) {
 	job := compaction.New(compaction.Options{DB: db, Reader: reader, Sync: svc, Settings: settings.New(db), DataDir: out, Log: slog.New(slog.DiscardHandler),
 		FreeSpace: func(string) (uint64, bool, error) { return 1 << 40, true, nil }})
 
-	opsync.DebugHold = func(kind string, d time.Duration, n int) {
-		if d > 100*time.Millisecond && kind != "deletephase" && kind != "reclaimphase" {
-			t.Logf("TEMP slow %s %s n=%d ended %s", kind, d, n, time.Now().Format("15:04:05.000"))
-		}
-	}
 	// A device keeps writing while compaction runs: the longest wait of one push.
 	stop := make(chan struct{})
 	var wg sync.WaitGroup
@@ -103,9 +98,6 @@ func TestNotesBudgets(t *testing.T) {
 				return
 			}
 			longest = max(longest, time.Since(start))
-			if time.Since(start) > 100*time.Millisecond {
-				t.Logf("TEMP slow push %s at %s", time.Since(start), start.Format("15:04:05.000"))
-			}
 		}
 	}()
 	start := time.Now()

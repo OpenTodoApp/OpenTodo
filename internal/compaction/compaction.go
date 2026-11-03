@@ -104,12 +104,12 @@ type record struct {
 
 // Options configure New.
 type Options struct {
-	DB       *sql.DB // the writer
+	DB *sql.DB // the writer
 	// Reader is the query-only pool (store.OpenReader). With it a run copies
 	// the write-ahead log back into the database from there, so a write never
 	// waits for that copy (notes-compaction-at-scale D2); nil leaves it to
 	// SQLite's automatic checkpoints on the writer.
-	Reader *sql.DB
+	Reader   *sql.DB
 	Sync     *opsync.Service
 	Settings *settings.Store
 	// DataDir holds the database (for the write-ahead log's size and the free
@@ -221,11 +221,7 @@ func (s *Service) Run(ctx context.Context) {
 	// Delete for a slice, then reclaim what it freed, until the pass ends or
 	// the budget does (notes-compaction-at-scale D2).
 	for {
-		cns := time.Now()
 		res, err := s.o.Sync.CompactNotes(ctx, now, rec.Mark, min(time.Until(deadline), Slice))
-		if opsync.DebugHold != nil {
-			opsync.DebugHold("deletephase", time.Since(cns), 0)
-		}
 		if err != nil {
 			if ctx.Err() == nil {
 				log.Error("notes compaction failed", "err", err)
@@ -236,11 +232,7 @@ func (s *Service) Run(ctx context.Context) {
 		run.ValueBytesRemoved += res.ValueBytesRemoved
 		run.More = res.More
 		rec.Mark, rec.InPass, rec.Cursor = res.Next, res.More, 0
-		rcs := time.Now()
 		bytes, converted := s.reclaim(ctx, &rec, now, res.OpsRemoved > 0, deadline)
-		if opsync.DebugHold != nil {
-			opsync.DebugHold("reclaimphase", time.Since(rcs), 0)
-		}
 		run.FileBytesReclaimed += bytes
 		run.Converted = run.Converted || converted
 		if !res.More || converted || !time.Now().Before(deadline) || ctx.Err() != nil {
@@ -290,9 +282,6 @@ func (s *Service) reclaim(ctx context.Context, rec *record, now time.Time, remov
 		if free, err = store.IncrementalVacuum(ctx, s.o.DB, s.step); err != nil {
 			s.o.Log.Warn("notes compaction: incremental vacuum", "err", err)
 			break
-		}
-		if opsync.DebugHold != nil {
-			opsync.DebugHold("vacuum", time.Since(started), s.step)
 		}
 		s.step = nextStep(s.step, time.Since(started))
 		if !time.Now().Before(deadline) || ctx.Err() != nil {
@@ -363,11 +352,7 @@ func (s *Service) tune(ctx context.Context) func() {
 				case <-ctx.Done():
 					return
 				case <-tick.C:
-					cs := time.Now()
 					s.checkpoint(ctx)
-					if opsync.DebugHold != nil {
-						opsync.DebugHold("tickcheckpoint", time.Since(cs), 0)
-					}
 				}
 			}
 		}()
@@ -378,11 +363,7 @@ func (s *Service) tune(ctx context.Context) func() {
 		ctx := context.WithoutCancel(ctx)
 		// The run's last pages first, so the next write's commit does not copy them.
 		if s.o.Reader != nil {
-			cs := time.Now()
 			s.checkpoint(ctx)
-			if opsync.DebugHold != nil {
-				opsync.DebugHold("finalcheckpoint", time.Since(cs), 0)
-			}
 		}
 		_, _ = s.o.DB.ExecContext(ctx, fmt.Sprintf(`PRAGMA cache_size = %d`, cache))
 		_, _ = s.o.DB.ExecContext(ctx, fmt.Sprintf(`PRAGMA wal_autocheckpoint = %d`, auto))

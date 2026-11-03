@@ -86,3 +86,26 @@ describe('snippets of ASCII text (list-rendering-at-scale)', () => {
     }
   })
 })
+
+describe('fast paths for ASCII notes (notes-compaction-at-scale)', () => {
+  let seed = 7
+  const rand = (n: number) => Math.floor(((seed = (seed * 1103515245 + 12345) % 2 ** 31) / 2 ** 31) * n)
+  const pieces = ['word', 'Kitchen', ' ', '  ', '\t', '*', '**', '_', '~~', '~', '`', '``', '[', ']', '(', ')', '](x)', '!', '|', '\\', '\\*', '#', '- ', '1. ', '> ', '[ ] ', 'a_b', 'x*y', '---']
+
+  it('strip a line the same way as the per-character path', () => {
+    for (let round = 0; round < 3000; round++) {
+      // Starting with a word: block markers stay out of it, the inline pass is what differs.
+      const line = `word ${Array.from({ length: 1 + rand(10) }, () => pieces[rand(pieces.length)]).join('')}`
+      // "—" (no letter, digit or marker) at the end sends the line through the code-point path and adds only itself.
+      const ascii = stripMarkdown(line)
+      const other = stripMarkdown(`${line}—`)
+      expect(other.endsWith('—') ? other.slice(0, -1).trimEnd() : other).toBe(ascii)
+    }
+  })
+
+  it('normalize ASCII text as NFKD would, in every language', () => {
+    const slow = (s: string, lang?: string) => (lang ? s.normalize('NFKD').toLocaleLowerCase(lang) : s.normalize('NFKD').toLowerCase()).replace(/\p{M}/gu, '').replace(/ς/g, 'σ')
+    for (const lang of [undefined, 'en', 'tr', 'az', 'lt', 'de'])
+      for (const s of ['Kitchen IKEA', 'I i İ', 'ISTANBUL', 'Ii Jj', 'x'.repeat(50)]) expect(normalizeText(s, lang)).toBe(slow(s, lang))
+  })
+})

@@ -130,11 +130,7 @@ func (s *Service) CompactNotes(ctx context.Context, now time.Time, after string,
 			return res, err
 		}
 		for _, g := range groups {
-			pls := time.Now()
 			cands, err := compactPlan(ctx, s.reader(), g, cutoff)
-			if DebugHold != nil {
-				DebugHold("plan", time.Since(pls), len(cands))
-			}
 			if err != nil {
 				return res, err
 			}
@@ -398,14 +394,8 @@ func (s *Service) compactTx(ctx context.Context, g compactGroup, cands []compact
 	if err := tx.Commit(); err != nil {
 		return 0, 0, 0, err
 	}
-	if DebugHold != nil {
-		DebugHold("tx", time.Since(began), n)
-	}
 	return n, bytes, done, nil
 }
-
-// DebugHold TEMP.
-var DebugHold func(kind string, d time.Duration, n int)
 
 // QuotaRemover is implemented by a Quota that counts stored ops (a host's
 // tenant limits): compaction tells it how many ops it removed, so the count

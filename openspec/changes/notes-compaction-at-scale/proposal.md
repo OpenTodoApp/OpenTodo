@@ -24,6 +24,7 @@ Profiling on a development machine found three causes:
 - **The writer is held for about 20 ms at a time.** Each deletion transaction plans its field again (so a new winner or a new last revision of the day is never deleted), deletes in slices and commits after about 20 ms, so waiting writes go first. The pass resumes from the last field it finished, also across runs and restarts.
 - **Freed pages go back while the free list is short.** A run deletes for about two seconds, then returns what it freed with incremental vacuum steps sized to hold the writer about 20 ms each, and repeats; the free list never grows to gigabytes.
 - **A new device copies only the latest note documents (`latest_docs`).** A device that pulls the account for the first time sends the sync feature `latest_docs`; the server then leaves out each note document that a later document of the same device supersedes, and every projection (`description`) or append that is not its field's winner. A device's note document only grows (it merges what it has before every save), so the latest document of each device holds everything that device wrote: the new device ends with the same note as with the whole history. Older clients do not send the feature and get the whole log as before.
+- **Note search keeps up.** The Notes page's search no longer strips every shown note's Markdown on each keystroke, prepares long ASCII notes about four times faster, and keeps its list while the notes are unchanged (the search keystroke was the last notes budget over its limit once the first sync was fast).
 - **Benchmarks.** The notes perf job joins the nightly run; the notes budgets hold.
 
 No op schema change, no migration, no new environment variable. **Not breaking**: the sync request and response formats are unchanged; `latest_docs` is an additive feature name, and the server's answer to a client that does not send it is unchanged.
@@ -33,7 +34,7 @@ No op schema change, no migration, no new environment variable. **Not breaking**
 ### Modified Capabilities
 
 - `op-log-compaction`: "Compaction runs in the background in small steps" states the writer hold, linear work and resuming per field; "Freed space returns to the file system" states that reclaiming runs alongside deleting in short steps.
-- `offline-first-sync`: new requirement "A first copy leaves out note history".
+- `offline-first-sync`: new requirement "A first copy leaves out superseded note history".
 
 ## Out of scope
 
@@ -44,7 +45,7 @@ No op schema change, no migration, no new environment variable. **Not breaking**
 ## Impact
 
 - Server: `internal/sync/compaction.go`, a new `internal/sync/latestdocs.go`, `internal/compaction` (the run loop and vacuum steps), the sync handler's feature list.
-- Web app: `lib/sync.ts` and `lib/api.ts` send `latest_docs` during the first copy.
+- Web app: `lib/sync.ts` and `lib/api.ts` send `latest_docs` during the first copy; `lib/noteSearch.ts`, `lib/noteList.ts` and the Notes page's data hooks for the search keystroke.
 - Docs: `docs/sync.md` (Exchange, Compaction), `docs/performance.md`, `docs/backups.md` if it describes the pace.
 - CI: `.github/workflows/perf.yml` runs the notes job from the nightly workflow.
 - Roadmap: advances `performance-10k` (1.0 "Trust", issue #590), tasks 3.3 and 4.1.
