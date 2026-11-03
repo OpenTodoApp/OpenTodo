@@ -7,6 +7,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 ### Added
 
 - **A subtask shows where it sits.** The task page and the docked panel name the whole path, **Work › Draft the budget › Gather numbers › Ask finance**. Each part opens that task. When the path is long, the parents in the middle sit in a **…** menu that stays next to the header on a phone. Press **u** to open the parent. ([#862](https://github.com/OpenTodoApp/OpenTodo/issues/862))
+- **Webhooks can subscribe to comments.** A comment now fires `comment.created`, `comment.updated` or `comment.deleted`, with the comment and the task it is on in the payload, the same signature, project filter, retries and delivery log as other events. A comment an assistant wrote carries the device id `agent:<token>`, so a receiver can ignore its own writes. See [Webhooks](docs/webhooks.md) (#863).
 - **Every screen is checked for accessibility on every change.** Each pull request now opens every screen and overlay of the app at phone and computer widths, light and dark, and fails on any serious WCAG 2.2 AA problem axe-core finds, a focused control without a visible ring or hidden under a bar, a target smaller than 24 px with no space around it, sideways scrolling at 320 px (400% zoom), text cut off with wider spacing, or a password field that refuses a paste. Every night the same runs in English and German with large browser text. The 2,000-task list is checked as a screen reader gets it.
 
 ### Fixed
