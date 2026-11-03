@@ -236,11 +236,13 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'panel.priority', keys: ['1', '2', '3', '4'], description: 'Set the priority of the open task while the panel has focus', section: 'tasks', scope: 'panel', hidden: true, overrides: ['list.priority'] },
   { id: 'panel.track', keys: ['y'], description: 'Start or stop tracking time on the open task while the panel has focus', section: 'tasks', scope: 'panel', hidden: true, overrides: ['list.track'] },
   { id: 'panel.skip', keys: ['Shift+K'], description: 'Skip the current occurrence of the open recurring task', section: 'tasks', scope: 'panel', hidden: true, overrides: ['list.skip'] },
+  { id: 'panel.parent', keys: ['u'], description: 'Open the parent of the task in the panel', section: 'tasks', scope: 'panel', when: 'task panel open', overrides: ['task.parent', 'calendar.unschedule'] },
   { id: 'panel.escape', keys: ['Esc'], description: 'Close the panel', section: 'tasks', scope: 'panel', hidden: true, overrides: ['list.escape', 'calendar.escape', 'task.escape'] },
   // The task page (task-full-page): step through the list it was opened from, and back to it.
   { id: 'task.next', keys: ['j'], description: 'On a task page: open the next task of the list it was opened from', section: 'tasks', scope: 'view', views: ['task'] },
   { id: 'task.prev', keys: ['k'], description: 'On a task page: open the previous task of that list', section: 'tasks', scope: 'view', views: ['task'] },
   { id: 'task.escape', keys: ['Esc'], description: 'On a task page: back to the list, with the task selected where it was', section: 'tasks', scope: 'view', views: ['task'] },
+  { id: 'task.parent', keys: ['u'], description: 'On a task page: open the parent task', section: 'tasks', scope: 'view', views: ['task'] },
   { id: 'list.archive-offer', keys: ['Enter'], description: 'Archive the project after completing its last task; any other key dismisses the offer', section: 'trash', scope: 'list', when: 'archive offered', overrides: ['list.open'] },
 
   // ---- board

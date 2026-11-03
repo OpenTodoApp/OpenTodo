@@ -7579,6 +7579,7 @@
     "web/src/app/task-detail/ActivityTab.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
+    "web/src/app/task-detail/TaskDetail.tsx",
     "web/src/app/task-detail/TaskPageView.tsx",
     "web/src/app/task-detail/usePropertiesModel.ts",
     "web/src/app/task-list/InlineEditor.tsx",
@@ -10992,6 +10993,9 @@
   "On a task page: open the next task of the list it was opened from": [
     "web/src/lib/shortcuts.ts"
   ],
+  "On a task page: open the parent task": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "On a task page: open the previous task of that list": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -11346,6 +11350,9 @@
   ],
   "Open the monthly look": [
     "web/src/app/method/LoopHome.tsx"
+  ],
+  "Open the parent of the task in the panel": [
+    "web/src/lib/shortcuts.ts"
   ],
   "Open the recurring task": [
     "web/src/app/task-detail/TaskHead.tsx"
@@ -15842,6 +15849,9 @@
   "Task page…": [
     "web/src/app/task-detail/TaskActionsMenu.tsx"
   ],
+  "Task path": [
+    "web/src/app/task-detail/TaskPath.tsx"
+  ],
   "Task properties": [
     "web/src/app/task-list/InlineEditor.tsx"
   ],
@@ -18766,9 +18776,11 @@
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/OccurrenceScope.tsx",
     "web/src/app/task-detail/Subtasks.tsx",
+    "web/src/app/task-detail/TaskDetail.tsx",
     "web/src/app/task-detail/TaskFacts.tsx",
     "web/src/app/task-detail/TaskHead.tsx",
     "web/src/app/task-detail/TaskPageView.tsx",
+    "web/src/app/task-detail/TaskPath.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/task-list/ListChrome.tsx",
     "web/src/app/task-list/WaitingSoon.tsx",
@@ -22701,6 +22713,9 @@
   ],
   "{n, plural, one {# panel} other {# panels}}": [
     "web/src/app/ViewsView.tsx"
+  ],
+  "{n, plural, one {# parent in between} other {# parents in between}}": [
+    "web/src/app/task-detail/TaskPath.tsx"
   ],
   "{n, plural, one {# past its deadline} other {# past their deadline}}": [
     "web/src/app/ProjectsTable.tsx"
