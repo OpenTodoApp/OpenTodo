@@ -209,7 +209,13 @@ func (s *Service) prepare(ctx context.Context, uid string, data []byte, opts Opt
 	if err := s.targetWorkspace(ctx, uid, opts, st); err != nil {
 		return nil, err
 	}
-	return BuildPlan(parsed, opts, st, s.now(), s.newID), nil
+	plan := BuildPlan(parsed, opts, st, s.now(), s.newID)
+	if opts.Format != "" && !write {
+		if d := DetectedFormat(data, opts.maxBytesOrDefault()); d != "" && d != plan.Format {
+			plan.Detected = d
+		}
+	}
+	return plan, nil
 }
 
 func (s *Service) loadState(ctx context.Context, uid, profile string) (*State, error) {

@@ -221,7 +221,9 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
     window.removeEventListener('keydown', key, true)
     window.removeEventListener('touchmove', blockScroll)
     ghost?.remove()
-    markActive(null)
+    // Only a lifted drag marks drop targets; a click (the completion circle) skips
+    // looking for marks in the whole page, a 2,000-row list's (list-rendering-at-scale).
+    if (lifted) markActive(null)
     document.body.style.userSelect = ''
   }
   const move = (ev: PointerEvent) => {

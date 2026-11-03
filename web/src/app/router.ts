@@ -75,6 +75,30 @@ export type Route =
   // Notes (notes-overview D7): every note, /notes/<id> one standalone note; `create` (/notes?new=1) starts a new note.
   | { view: 'notes'; id?: string; create?: boolean }
 
+/**
+ * Whether a view offers quick add, which decides the floating add button on a
+ * phone. Screens with nothing to add a task to (Settings and its sub-pages, the
+ * theme editor, Import, Help, the feeds, statistics, sign-in links) leave the
+ * button out: there it would only cover the ends of rows and form fields. Every
+ * view is listed, so a new one has to decide.
+ */
+export const VIEW_QUICK_ADD: Readonly<Record<Route['view'], boolean>> = {
+  inbox: true, today: true, upcoming: true, someday: true, anytime: true,
+  day: true, week: true, month: true, plan: true, year: true,
+  completed: true, assigned: true, project: true, task: true, label: true, labels: true,
+  places: true, place: true, projects: true, filter: true, views: true, view: true,
+  triage: true, review: true, next: true, waiting: true, loop: true, focus: true, notes: true,
+  rules: false, settings: false, 'theme-editor': false, import: false, help: false,
+  invite: false, 'project-invite': false, 'workspace-invite': false, reset: false,
+  'confirm-email': false, forgot: false, verify: false, public: false, share: false,
+  trash: false, feed: false, ask: false, display: false, stats: false,
+}
+
+/** Whether the route's view offers quick add (VIEW_QUICK_ADD). */
+export function offersQuickAdd(r: Route): boolean {
+  return VIEW_QUICK_ADD[r.view]
+}
+
 /** Settings sections, each at /settings/<id> (settings-navigation), in list order (workspaces added Workspaces, settings-subpages Language and region). */
 export const SETTINGS_SECTION_IDS = [
   'account', 'workspaces', 'appearance',

@@ -44,6 +44,7 @@ import { useColorBy } from './calendar/colorByControls'
 import { useFoldedGroups, ViewResults } from './views/ViewResults'
 import type { ViewDisplay } from './views/DisplayPanel'
 import { rowLayoutOf, useAccountRowLayout } from '../lib/rowLayout'
+import { LIST_READY, perfMark } from '../lib/perfMarks'
 
 function parseError(src: string): string | null {
   if (!src.trim()) return t('The query must not be empty')
@@ -87,6 +88,8 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   const boardColor = useColorBy(BOARD_COLOR_BY_KEY)
   const display: ViewDisplay = { layout: shown.layout, groupBy: opts.groupBy, sortBy: opts.sortBy, sortDir: opts.sortDir, showCompleted: shown.showCompleted, hidden: shown.hidden, rowLayout: rowLayoutOf(view.row_layout, account), cardNotes: shown.cardNotes }
   const result = useMemo(() => runView(view, ctx), [view, ctx])
+  // The view's rows are on screen (performance-10k D4): once per view opened.
+  useEffect(() => { perfMark(LIST_READY, { view: 'view' }) }, [view.id])
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
   const taskMap = useMemo(() => new Map(tasks.map((tk) => [tk.id, tk])), [tasks])

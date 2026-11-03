@@ -472,20 +472,22 @@ func TestProjectFiles(t *testing.T) {
 	}
 }
 
+// Dates are years ahead: an overdue series catches up to today, so a date
+// that has passed would change the next occurrence.
 func TestRecurringCompletionFromTheFile(t *testing.T) {
 	s := newServer(t)
-	id := s.create("tasks", map[string]any{"title": "Bins", "due": map[string]any{"date": "2026-10-26"}, "recurrence": "every week"})
+	id := s.create("tasks", map[string]any{"title": "Bins", "due": map[string]any{"date": "2036-10-13"}, "recurrence": "every week"})
 	v := s.vault(t)
 	v.edit(t, "Inbox.md", "- [ ] Bins", "- [x] Bins")
 	v.sync(t)
 	text := v.read(t, "Inbox.md")
-	if l := lineOf(t, text, "Bins"); !strings.HasPrefix(l, "- [ ] Bins 📅 2026-11-02 🔁 every week") {
+	if l := lineOf(t, text, "Bins"); !strings.HasPrefix(l, "- [ ] Bins 📅 2036-10-20 🔁 every week") {
 		t.Errorf("line = %q", l)
 	}
 	if strings.Count(text, "Bins") != 1 {
 		t.Errorf("done occurrence printed:\n%s", text)
 	}
-	rec := s.get("tasks", occurrenceID(id, "2026-10-26"))
+	rec := s.get("tasks", occurrenceID(id, "2036-10-13"))
 	if rec["completed_at"] == nil || rec["series_id"] != id {
 		t.Errorf("occurrence record = %v", rec)
 	}

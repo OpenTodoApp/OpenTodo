@@ -6,9 +6,10 @@
 //
 //	go run ./internal/importer/sanitize <in> <out>
 //
-// <in> is a CSV (Todoist, TickTick, Linear, Asana), a ZIP of CSVs (Todoist
-// backup), a Things main.sqlite or a JSON export (Google Tasks, Trello, Microsoft
-// To Do, Apple Reminders, Any.do; see json.go). Nothing
+// <in> is a CSV (Todoist, TickTick, Linear, Asana, OmniFocus), a ZIP of CSVs (Todoist
+// backup), a Notion Markdown & CSV export ZIP (see notion.go), a Vikunja export ZIP (data.json, filters.json and files/), a Things
+// main.sqlite, a Tududi database (see tududi.go) or a JSON export (Google
+// Tasks, Trello, Microsoft To Do, Apple Reminders, Any.do; see json.go). Nothing
 // imports this package, so it is never part of the server binary. Review every
 // output before committing it.
 package main
@@ -188,7 +189,7 @@ func (s *scrubber) csvFile(data []byte) ([]byte, error) {
 	}
 	hi := headerIndex(recs)
 	if hi < 0 {
-		return nil, fmt.Errorf("no known header (Todoist, TickTick, Linear or Asana)")
+		return nil, fmt.Errorf("no known header (Todoist, TickTick, Linear, Asana or OmniFocus)")
 	}
 	header := recs[hi]
 	col := map[string]int{}
@@ -257,7 +258,20 @@ func rulesFor(header []string) fieldRule {
 			"taskId":      func(s *scrubber, v string) string { return s.id("t", v) },
 			"parentId":    func(s *scrubber, v string) string { return s.id("t", v) },
 		}
-	case "Task ID": // Asana; custom columns are left as they are, review them by hand
+	case "Task ID":
+		if len(header) > 1 && strings.TrimSpace(header[1]) == "Type" {
+			// OmniFocus: a project's name and the Project column of its actions
+			// must stay equal, so both are scrubbed as one kind.
+			name := func(s *scrubber, v string) string { return s.text("Item", v) }
+			return fieldRule{
+				"Name":    name,
+				"Project": name,
+				"Context": func(s *scrubber, v string) string { return s.labelList(v, ", ") },
+				"Tags":    func(s *scrubber, v string) string { return s.labelList(v, ", ") },
+				"Notes":   func(s *scrubber, v string) string { return s.prose("Notes", v) },
+			}
+		}
+		// Asana; custom columns are left as they are, review them by hand.
 		task := func(s *scrubber, v string) string { return s.text("Task", v) }
 		people := func(s *scrubber, v string) string {
 			if strings.TrimSpace(v) == "" {
@@ -363,6 +377,13 @@ func (s *scrubber) zip(data []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	var names []string
+	for _, f := range zr.File {
+		names = append(names, f.Name)
+	}
+	if isNotionZip(names) || allZips(names) {
+		return s.notionZip(zr)
+	}
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
 	for _, f := range zr.File {
@@ -376,6 +397,16 @@ func (s *scrubber) zip(data []byte) ([]byte, error) {
 			return nil, err
 		}
 		name := f.Name
+		switch dir, base := path.Split(name); {
+		case strings.HasSuffix(strings.ToLower(name), ".json"):
+			// A Vikunja export's data.json and filters.json.
+			if b, err = s.jsonFile(b); err != nil {
+				return nil, fmt.Errorf("%s: %w", name, err)
+			}
+		case dir == "files/":
+			// A Vikunja attachment: the bytes become a placeholder of the same kind.
+			b = []byte(s.text("File content", base) + "\n")
+		}
 		if strings.HasSuffix(strings.ToLower(name), ".csv") {
 			if b, err = s.csvFile(b); err != nil {
 				return nil, fmt.Errorf("%s: %w", name, err)
@@ -417,6 +448,12 @@ func (s *scrubber) sqlite(in, out string) error {
 		return err
 	}
 	defer db.Close()
+	if isTududi(db) {
+		if err := s.tududi(db); err != nil {
+			return err
+		}
+		return vacuum(db)
+	}
 	type col struct{ table, column, kind string }
 	cols := []col{
 		{"TMTask", "title", "Item"}, {"TMTask", "notes", "Notes"},
@@ -443,10 +480,15 @@ func (s *scrubber) sqlite(in, out string) error {
 			return fmt.Errorf("%s: %w", q, err)
 		}
 	}
+	return vacuum(db)
+}
+
+// vacuum leaves one self-contained file with no freed pages holding old text.
+func vacuum(db *sql.DB) error {
 	if _, err := db.Exec("PRAGMA journal_mode=DELETE"); err != nil {
 		return err
 	}
-	_, err = db.Exec("VACUUM")
+	_, err := db.Exec("VACUUM")
 	return err
 }
 
