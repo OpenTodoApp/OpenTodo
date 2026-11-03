@@ -462,7 +462,7 @@ export function fieldSortId(value: unknown): string | null {
 }
 
 export function fieldSortBy(id: string): FieldSortBy {
-  return `${FIELD_SORT_PREFIX}${id}` as FieldSortBy
+  return `${FIELD_SORT_PREFIX}${id}`
 }
 
 /** Whether a stored or selected sort value names a custom field by its definition id. */

@@ -7,6 +7,7 @@ import { currentDateTime, logicalToday } from '../../lib/dates'
 import { loadQuickAddSettings, parse, resolveDayMonthOrder, resolveLanguages, toTaskInput, type LabelRef, type ProjectRef } from '../../lib/nlp'
 import { getProject, getTask } from '../../lib/localData'
 import { preferredLanguages, t } from '../../lib/i18n'
+import { createTaskThenSuggest } from '../../lib/assistantSuggest'
 import { createTask } from '../../lib/ops'
 import { addTasksUndoable } from '../../lib/pasteTasks'
 import { preferredPlacement } from '../../lib/userPrefs'
@@ -46,7 +47,7 @@ export async function addFromBar(input: QuickAddInput, route: Route, userId?: st
   // A reusable list reopens or points at an item it has, with its own toast (reusable-lists D3).
   let created = false
   const planned = { ...barInput(input, route, today, userId), placement: await preferredPlacement() }
-  const id = await addToList(planned, (x) => { created = true; return createTask(x) })
+  const id = await addToList(planned, (x) => { created = true; return createTaskThenSuggest(x) })
   if (!created) {
     if (open && planned.project_id) openAt(id, { view: 'project', id: planned.project_id })
     return id

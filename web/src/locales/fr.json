@@ -7071,5 +7071,8 @@
   "Show steps": "Afficher les étapes",
   "Switching from…": "Je viens de…",
   "This file looks like {format}, not the format you chose.": "Ce fichier ressemble à {format}, pas au format choisi.",
-  "Your account is end-to-end encrypted. Imported text is written in plaintext until one of your unlocked devices re-encrypts it, and duplicates cannot be found by encrypted project or label names.": "Votre compte est chiffré de bout en bout. Le texte importé est écrit en clair jusqu’à ce qu’un de vos appareils déverrouillés le chiffre à nouveau, et les doublons ne peuvent pas être trouvés par les noms chiffrés de projets ou d’étiquettes."
+  "Your account is end-to-end encrypted. Imported text is written in plaintext until one of your unlocked devices re-encrypts it, and duplicates cannot be found by encrypted project or label names.": "Votre compte est chiffré de bout en bout. Le texte importé est écrit en clair jusqu’à ce qu’un de vos appareils déverrouillés le chiffre à nouveau, et les doublons ne peuvent pas être trouvés par les noms chiffrés de projets ou d’étiquettes.",
+  "Suggest after adding": "Suggérer après l’ajout",
+  "This device: after an add, the assistant proposes a title, project, subtasks. You review.": "Cet appareil : après un ajout, l’assistant propose titre, projet, sous-tâches. Vous relisez.",
+  "Suggest after adding (this device)": "Suggérer après l’ajout (cet appareil)"
 }
