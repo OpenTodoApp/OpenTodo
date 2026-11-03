@@ -1,0 +1,75 @@
+{
+  "version": "0.6.1",
+  "source": {
+    "ref": "v0.6.1",
+    "commit": "62cc132a1fa75fb732897aa5a172b172db9208d3",
+    "built_with": "go1.26.9",
+    "how": "scripts/release/upgrade-fixture.sh"
+  },
+  "created_at": 1793670361571,
+  "owner": {
+    "email": "owner@example.com",
+    "name": "Owner",
+    "password": "upgrade fixture password one"
+  },
+  "member": {
+    "email": "member@example.com",
+    "name": "Member",
+    "password": "upgrade fixture password two"
+  },
+  "token": "ot_RPuAlFOsjJJdAZFQgnMZhs_kJuCCxNklairShYI0bWs",
+  "ids": {
+    "labels": [
+      "f39fb398-c5b8-4cc5-9ea6-87667f13ee26",
+      "dba30049-3d2d-4a5c-b69c-7f54596c5a31"
+    ],
+    "projects": [
+      "7a497163-7848-43b7-bc2c-12f68280b87c",
+      "ae49dcd6-5400-408e-86fd-858b90700c27"
+    ],
+    "sections": [
+      "169fdbee-93d4-4514-bacf-d398b03231de",
+      "e08fe583-a00b-4c59-a89a-a78b4f3dd2f7"
+    ],
+    "shared": "ae49dcd6-5400-408e-86fd-858b90700c27",
+    "tasks": [
+      "2deabb68-64c3-49c4-812b-103adebb0d73",
+      "b2c706f1-2c1b-4602-ace4-23166a7f555e",
+      "3d759344-c19b-46c0-a2f1-00cea460e308",
+      "5dbe6865-0529-48f9-8268-bcac77655c6b",
+      "d4834518-11c2-442b-85d7-35828f0dd235",
+      "816e3727-62b6-4a62-bb27-8ce344666694",
+      "47c816b2-146a-4afb-a276-857465679e0a"
+    ],
+    "attachment": "43661b9c-f284-4b9d-8f4d-c61eaa4ec35c"
+  },
+  "attachment": {
+    "id": "43661b9c-f284-4b9d-8f4d-c61eaa4ec35c",
+    "sha256": "65bd291e71718822959a61fbd34349420e84e0bb586ed2a551bf9142a229e928",
+    "size": 46
+  },
+  "member_encryption": true,
+  "phone_cursor": 78,
+  "counts": {
+    "projects": 2,
+    "sections": 2,
+    "labels": 2,
+    "tasks": 6,
+    "tasks_with_deleted": 7,
+    "reminders": 1,
+    "time_entries": null,
+    "members": 2,
+    "comments": 2,
+    "attachments": 1
+  },
+  "ops": 107,
+  "ops_after_phone_cursor": 29,
+  "export": {
+    "format": "opentodo-export",
+    "version": 1,
+    "tasks": 7
+  },
+  "skipped": [
+    "time entry (404)"
+  ]
+}

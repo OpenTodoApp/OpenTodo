@@ -1,6 +1,6 @@
 // node --test scripts/release/prepare.test.mjs  (make release-prepare; RELEASING.md)
 import assert from 'node:assert/strict'
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
@@ -8,6 +8,7 @@ import { run as deployCheck } from '../deploy-check.mjs'
 import { laterRelease, loadFacts, readText, releaseVersion, ROOT } from '../deploy/common.mjs'
 import { staleCopies } from '../deploy/mirror.mjs'
 import { bumpLine, bumpText, casaosText, changelogText, easypanelText, haChangelogText, prepare, truenasText } from './prepare.mjs'
+import { checkUpgradeFixture, fixtureDir, isNewMinor } from './upgradeFixture.mjs'
 
 const facts = loadFacts()
 const CURRENT = releaseVersion(readText('CHANGELOG.md'))
@@ -140,6 +141,13 @@ test('release-prepare: a new minor also moves the release line in the docs', () 
     const nextLine = next.replace(/\.\d+$/, '')
     const before = ['docker', 'podman', 'render', 'synology', 'coolify'].map((p) => `docs/self-hosting/${p}.md`)
     for (const rel of before) assert.match(readFileSync(join(ROOT, rel), 'utf8'), new RegExp(`(opentodo|\`):${line.replace('.', '\\.')}\``), `${rel} names the release line`)
+    assert.throws(() => prepare(next, { root: dir, date: '2030-01-02' }), /needs its upgrade fixture internal\/store\/testdata\/upgrade\/[\d.]+\/: build it with `scripts\/release\/upgrade-fixture\.sh/)
+    const fixture = join(dir, fixtureDir(next))
+    mkdirSync(fixture, { recursive: true })
+    writeFileSync(join(fixture, 'manifest.json'), JSON.stringify({ version: '9.9.0' }))
+    writeFileSync(join(fixture, 'data.tar.gz'), '')
+    assert.throws(() => prepare(next, { root: dir, date: '2030-01-02' }), /is for 9\.9\.0/)
+    writeFileSync(join(fixture, 'manifest.json'), JSON.stringify({ version: next }))
     const { changed } = prepare(next, { root: dir, date: '2030-01-02' })
     assert.ok(changed.includes('docs/self-hosting/coolify.md'))
     for (const rel of before) {
@@ -210,4 +218,18 @@ test('release-prepare: refuses a version that is not x.y.z or not newer, before 
   assert.throws(() => prepare('1.2', { root: ROOT }), /must be x\.y\.z/)
   assert.throws(() => prepare(CURRENT, { root: ROOT }), /is not newer than the latest release/)
   assert.throws(() => prepare(NEXT_PATCH, { root: ROOT, date: '2. Januar' }), /YYYY-MM-DD/)
+})
+
+test('release-prepare: a new minor needs its upgrade fixture, a patch does not (stability-contract)', () => {
+  assert.equal(fixtureDir('1.2.0'), 'internal/store/testdata/upgrade/1.2')
+  assert.ok(isNewMinor('1.2.0', '1.1.3'))
+  assert.ok(isNewMinor('2.0.0', '1.9.1'))
+  assert.ok(!isNewMinor('1.2.1', '1.2.0'))
+  const dir = mkdtempSync(join(tmpdir(), 'upgrade-fixture-'))
+  try {
+    assert.throws(() => checkUpgradeFixture(dir, '1.2.0', '1.1.3'), /upgrade\/1\.2\/: build it with `scripts\/release\/upgrade-fixture\.sh 1\.2\.0 HEAD`/)
+    assert.doesNotThrow(() => checkUpgradeFixture(dir, '1.2.1', '1.2.0'))
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
 })

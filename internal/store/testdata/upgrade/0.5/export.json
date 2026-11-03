@@ -1,0 +1,194 @@
+{
+  "attachments": [
+    {
+      "author_id": "77e3e1ed-1ed2-4a22-a14e-25e04bd0fe17",
+      "comment_id": null,
+      "created_at": 1793670360294,
+      "deleted_at": null,
+      "encrypted": false,
+      "id": "223878e1-9b8d-44d5-b719-f6505bb2f738",
+      "mime": "text/plain",
+      "name": "notes.txt",
+      "sha256": "65bd291e71718822959a61fbd34349420e84e0bb586ed2a551bf9142a229e928",
+      "size": 46,
+      "task_id": "5faf27e4-bfed-4518-ada3-9d46cf19933e",
+      "uploaded_at": 1793670360294,
+      "url": null
+    }
+  ],
+  "comments": [
+    {
+      "author_id": "77e3e1ed-1ed2-4a22-a14e-25e04bd0fe17",
+      "body": "Use the **sharp** shears.",
+      "created_at": 1793670360289,
+      "deleted_at": null,
+      "edited_at": null,
+      "id": "aec50566-c60f-4ebe-ae27-f220c74521e1",
+      "mentions": [],
+      "parent_id": null,
+      "task_id": "5faf27e4-bfed-4518-ada3-9d46cf19933e"
+    },
+    {
+      "author_id": "77e3e1ed-1ed2-4a22-a14e-25e04bd0fe17",
+      "body": "Train or car?",
+      "created_at": 1793670360291,
+      "deleted_at": null,
+      "edited_at": null,
+      "id": "9036778c-7578-4a78-a04c-87e7aae0a763",
+      "mentions": [],
+      "parent_id": null,
+      "task_id": "af8b8173-eccb-4837-91e5-9c927dc7aac8"
+    }
+  ],
+  "encryption": null,
+  "exportedAt": "2026-11-03T01:46:00Z",
+  "format": "opentodo-export",
+  "labels": [
+    {
+      "color": "#16a34a",
+      "created_at": 1793670360247,
+      "id": "cd67bc3b-1fd7-4d0d-af94-2bc5ab845870",
+      "name": "Home",
+      "position": 1793670360247
+    },
+    {
+      "color": "#2563eb",
+      "created_at": 1793670360250,
+      "id": "5da4c047-a831-4dd7-b60e-ec063a00d632",
+      "name": "Work",
+      "position": 1793670360250
+    }
+  ],
+  "projects": [
+    {
+      "color": "#65a30d",
+      "created_at": 1793670360252,
+      "id": "a2f377a4-f569-4125-ad8f-4b4ea304648f",
+      "name": "Garden",
+      "position": 1793670360252
+    },
+    {
+      "color": "#9333ea",
+      "created_at": 1793670360255,
+      "id": "7b1cecb3-ad8b-4a05-93c5-dbf52fd3f121",
+      "name": "Shared plans",
+      "owner_id": "77e3e1ed-1ed2-4a22-a14e-25e04bd0fe17",
+      "position": 1793670360255,
+      "role": "owner"
+    }
+  ],
+  "reminders": [
+    {
+      "created_at": 1793670360281,
+      "deleted_at": null,
+      "delivered_at": null,
+      "dismissed_at": null,
+      "fire_at": 1795255200000,
+      "id": "974cde2b-9324-4d84-974c-fbb766a2c3b8",
+      "kind": "relative",
+      "offset_minutes": 30,
+      "task_id": "17e2dc84-d957-40aa-9f86-dc0b39cc690e"
+    }
+  ],
+  "sections": [
+    {
+      "created_at": 1793670360257,
+      "id": "1c06e6c0-54f2-49eb-bda5-50c040548dba",
+      "name": "To do",
+      "position": 1793670360257,
+      "project_id": "a2f377a4-f569-4125-ad8f-4b4ea304648f"
+    },
+    {
+      "created_at": 1793670360260,
+      "id": "341f5e55-df12-4e6d-b3d2-ae1724e39cff",
+      "name": "Doing",
+      "position": 1793670360260,
+      "project_id": "a2f377a4-f569-4125-ad8f-4b4ea304648f"
+    }
+  ],
+  "tasks": [
+    {
+      "created_at": 1793670360263,
+      "description": "Before the frost.\n\n- gloves\n- shears",
+      "due": {
+        "date": "2026-11-20"
+      },
+      "id": "5faf27e4-bfed-4518-ada3-9d46cf19933e",
+      "labels": [
+        "cd67bc3b-1fd7-4d0d-af94-2bc5ab845870"
+      ],
+      "position": 1793670360263,
+      "priority": 1,
+      "project_id": "a2f377a4-f569-4125-ad8f-4b4ea304648f",
+      "section_id": "1c06e6c0-54f2-49eb-bda5-50c040548dba",
+      "title": "Prune the roses"
+    },
+    {
+      "created_at": 1793670360266,
+      "due": {
+        "date": "2026-11-21",
+        "time": "09:30"
+      },
+      "id": "17e2dc84-d957-40aa-9f86-dc0b39cc690e",
+      "labels": [
+        "cd67bc3b-1fd7-4d0d-af94-2bc5ab845870",
+        "5da4c047-a831-4dd7-b60e-ec063a00d632"
+      ],
+      "position": 1793670360266,
+      "priority": 2,
+      "project_id": "a2f377a4-f569-4125-ad8f-4b4ea304648f",
+      "section_id": "341f5e55-df12-4e6d-b3d2-ae1724e39cff",
+      "title": "Water the raised beds"
+    },
+    {
+      "created_at": 1793670360268,
+      "id": "f80c7471-f81f-445e-8760-42fd554fb805",
+      "parent_id": "5faf27e4-bfed-4518-ada3-9d46cf19933e",
+      "position": 1793670360268,
+      "priority": 4,
+      "project_id": "a2f377a4-f569-4125-ad8f-4b4ea304648f",
+      "title": "Buy gloves"
+    },
+    {
+      "created_at": 1793670360271,
+      "due": {
+        "date": "2026-11-10"
+      },
+      "id": "f745092d-bca9-42ea-a133-5273b2aa484c",
+      "position": 1793670360271,
+      "priority": 3,
+      "recurrence": "every day",
+      "title": "Check the greenhouse"
+    },
+    {
+      "completed_at": 1762000000000,
+      "created_at": 1793670360273,
+      "id": "e2983e78-a63a-4267-a91f-6e7e7fb51cec",
+      "position": 1793670360273,
+      "priority": 4,
+      "title": "Order seeds"
+    },
+    {
+      "created_at": 1793670360275,
+      "deleted_at": 1793670360280,
+      "id": "2ba8ed80-2d8d-4a49-984e-871b59e64198",
+      "position": 1793670360275,
+      "priority": 4,
+      "title": "Old idea"
+    },
+    {
+      "created_at": 1793670360276,
+      "due": {
+        "date": "2026-12-01"
+      },
+      "id": "af8b8173-eccb-4837-91e5-9c927dc7aac8",
+      "position": 1793670360276,
+      "priority": 2,
+      "project_id": "7b1cecb3-ad8b-4a05-93c5-dbf52fd3f121",
+      "title": "Plan the trip"
+    }
+  ],
+  "user_prefs": [],
+  "version": 1,
+  "views": []
+}
