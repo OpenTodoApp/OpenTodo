@@ -434,3 +434,22 @@ A device that copies an account for the first time (its pull starts from the beg
 #### Scenario: Interrupted first copy
 - **WHEN** the first copy stops halfway (the app is closed or the network drops) and resumes later
 - **THEN** the device keeps asking for the latest documents until the server reports nothing more, and asks no more after that
+
+### Requirement: Sync error visible in compact layouts
+
+When sync fails with an error, the status control SHALL keep its text label in compact mode and SHALL show the error detail as an alert beside or below the control, not only in a tooltip. The alert SHALL be announced as an alert. When sync is idle with nothing pending, compact mode MAY keep the dot-only control.
+
+#### Scenario: Error in the icon rail
+
+- **WHEN** sync fails while the sidebar is in compact mode
+- **THEN** the pill keeps its label and the error text is visible as an alert without hovering
+
+#### Scenario: Healthy compact mode stays quiet
+
+- **WHEN** sync is idle with nothing pending in compact mode
+- **THEN** the control shows only its dot and no alert
+
+#### Scenario: Error clears
+
+- **WHEN** a later sync succeeds
+- **THEN** the alert disappears and the control returns to its normal presentation
