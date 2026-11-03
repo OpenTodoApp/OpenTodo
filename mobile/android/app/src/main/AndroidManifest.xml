@@ -9,6 +9,9 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- A phone without a microphone can still install the app; dictation is then unavailable. -->
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
     <!-- Location reminders (location-reminders D4): platform proximity alerts only; the position stays on the phone. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
