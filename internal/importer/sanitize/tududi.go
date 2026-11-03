@@ -45,7 +45,11 @@ func (s *scrubber) tududi(db *sql.DB) error {
 		}
 		tables = append(tables, n)
 	}
+	err = rows.Err()
 	rows.Close()
+	if err != nil {
+		return err
+	}
 	for _, t := range tables {
 		if !tududiKeep[t] {
 			if _, err := db.Exec(fmt.Sprintf(`DELETE FROM "%s"`, t)); err != nil {
@@ -97,7 +101,11 @@ func (s *scrubber) tududiUsers(db *sql.DB) error {
 			sets = append(sets, fmt.Sprintf(`"%s" = NULL`, name))
 		}
 	}
+	err = rows.Err()
 	rows.Close()
+	if err != nil {
+		return err
+	}
 	if len(sets) == 0 {
 		return nil
 	}
