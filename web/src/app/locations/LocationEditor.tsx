@@ -35,7 +35,7 @@ type Item =
   | { kind: 'coords'; key: string; label: string; secondary: string; geo: Geo }
   | { kind: 'text'; key: string; label: string; secondary: string; name: string }
 
-/** The typed text as a location name (issue #817). Null for a blank or for coordinates, which are their own choice. */
+/** The typed text as a location name. Null for a blank or for coordinates, which are their own choice. */
 function nameItem(q: string): Item | null {
   const name = q.trim().slice(0, MAX_NAME)
   if (!name || parseCoordinates(q)) return null
