@@ -87,6 +87,29 @@ export function lockScroll(el: Lockable | null = typeof document === 'undefined'
   }
 }
 
+// ------------------------------------------------------------------ inert page
+
+let inertCount = 0
+
+/**
+ * While a modal dialog or sheet is open, the app behind it is inert (accessibility-aa):
+ * Tab, a screen reader's reading cursor and a pointer reach only the dialog, which is
+ * portaled to the body outside `#root`. Reference-counted for stacked dialogs; a no-op
+ * when the panel sits inside the app root or there is no root (tests).
+ */
+export function inertBehind(panel: Element | null): () => void {
+  const app = typeof document === 'undefined' ? null : document.getElementById('root')
+  if (!app || !panel || app.contains(panel)) return () => {}
+  inertCount++
+  app.inert = true
+  let released = false
+  return () => {
+    if (released) return
+    released = true
+    if (--inertCount === 0) app.inert = false
+  }
+}
+
 // ------------------------------------------------------------------ focus
 
 interface Focusable { focus(opts?: FocusOptions): void; isConnected?: boolean }

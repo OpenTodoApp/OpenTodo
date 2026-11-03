@@ -208,7 +208,11 @@ describe('WhenControl', () => {
     expect(await queuedFields(id, from)).toEqual({ due: { date: '2026-10-15', time: '09:00' } })
     await waitFor(() => !!seg('due').querySelector('[data-zone-line]'), 'the zone line')
     expect(seg('due').querySelector('[data-zone-line]')!.textContent).toContain('Floating time')
-    expect(seg('due').querySelector('button[aria-label^="Time zone:"]')!.textContent).toBe('Change')
+    // Named by its visible word and described by the line (WCAG 2.5.3 Label in Name).
+    const change = seg('due').querySelector<HTMLButtonElement>('[data-zone-line] button[aria-haspopup="dialog"]')!
+    expect(change.textContent).toBe('Change')
+    expect(change.hasAttribute('aria-label')).toBe(false)
+    expect(document.getElementById(change.getAttribute('aria-describedby')!)!.textContent).toBe('Floating time')
     expect(seg('due').querySelector('button[aria-label="Clear due date"]')).toBeNull()
     await unmount()
   })

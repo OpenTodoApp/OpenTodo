@@ -21,10 +21,18 @@ export const RULES = {
   M13: { name: 'First interaction from the local copy', severity: 0 },
   M14: { name: 'Story coverage of core screens', severity: 3 },
   M15: { name: 'Movement under reduced motion', severity: 2 },
+  // The accessibility gate (accessibility-aa D2).
+  M17: { name: 'Focus obscured (WCAG 2.4.11)', severity: 3 },
+  M18: { name: 'Reflow at 320 CSS px (WCAG 1.4.10)', severity: 3 },
+  M19: { name: 'Text clipped under text spacing (WCAG 1.4.12)', severity: 3 },
+  M20: { name: 'Credential field: autocomplete and paste (WCAG 3.3.8)', severity: 3 },
+  M21: { name: 'Target size (WCAG 2.5.8, 24 px)', severity: 3 },
   NAV: { name: 'Screen did not open', severity: 4 },
 }
 /** Rules strict mode fails on (D6): deterministic DOM measurements, and M15 since motion-polish emptied it. */
 export const STRICT_RULES = ['M2', 'M3', 'M4', 'M5', 'M6', 'M14', 'M15']
+/** Rules the accessibility gate (A11Y_ONLY, A11Y_STRICT) fails on; M7 stays the 44 px design rule. */
+export const A11Y_RULES = ['M1', 'M8', 'M9', 'M17', 'M18', 'M19', 'M20', 'M21', 'NAV']
 const FREQUENCY = { daily: 3, weekly: 2, rare: 1 }
 
 /** Severity of the rule times the frequency of the screen (S × F, D4). */
