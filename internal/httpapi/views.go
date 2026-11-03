@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
 	"slices"
 	"strings"
 
@@ -30,7 +31,7 @@ var (
 	viewLayouts = []string{"list", "board"}
 	// viewRowLayouts: one line or detailed rows; "" follows the account's choice (row-layouts D1).
 	viewRowLayouts = []string{"", "line", "detailed"}
-	viewEnumSets   = map[string][]string{"kind": viewKinds, "group_by": viewGroupBy, "sort_by": viewSortBy, "sort_dir": viewSortDir, "layout": viewLayouts, "row_layout": viewRowLayouts}
+	viewEnumSets   = map[string][]string{"kind": viewKinds, "group_by": viewGroupBy, "sort_dir": viewSortDir, "layout": viewLayouts, "row_layout": viewRowLayouts}
 	// viewRowProps are the row properties a view can hide (views-and-display D3).
 	viewRowProps = []string{"date", "project", "labels", "estimate", "assignee", "deadline", "start", "origin", "energy"}
 	// viewDefaults are written on create for every field the caller leaves out.
@@ -104,6 +105,9 @@ func (s *Server) checkView(ctx context.Context, uid, id string, body map[string]
 	}
 	if name, ok := str("name"); ok && strings.TrimSpace(name) == "" {
 		return invalidView("view.name must not be empty")
+	}
+	if sortBy, ok := str("sort_by"); ok && !slices.Contains(viewSortBy, sortBy) && !validViewSortBy(sortBy) {
+		return invalidView("view.sort_by must be one of %s or field:<id>", strings.Join(viewSortBy, ", "))
 	}
 	for field, allowed := range viewEnumSets {
 		if v, ok := str(field); ok && !slices.Contains(allowed, v) {
@@ -181,6 +185,13 @@ func (s *Server) checkView(ctx context.Context, uid, id string, body map[string]
 	}
 	return nil
 }
+
+// fieldSortID is a field sort's definition id: a canonical UUID (versions 1 to 8, the RFC 9562 variant), so
+// sort_by never carries a field's name, which is encrypted content on an encrypted account.
+var fieldSortID = regexp.MustCompile(`^field:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$`)
+
+// validViewSortBy accepts a field sort by definition id, beside the built-in sort options.
+func validViewSortBy(value string) bool { return fieldSortID.MatchString(value) }
 
 // checkOnDrop validates a view's on-drop rule against current state (OpenSpec
 // change rule-boards, design D2): list views only, the shape of the op kind, label
