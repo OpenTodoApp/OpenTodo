@@ -6,7 +6,7 @@ import { resolveStartView } from '../lib/views'
 import { describeRejected } from '../lib/sharing'
 import { keysOf } from '../lib/shortcuts'
 import { dismissRejected, useSyncStatus } from '../lib/sync'
-import { canonicalPath, navigate, parseRoute, useRoute } from './router'
+import { canonicalPath, navigate, offersQuickAdd, parseRoute, useRoute } from './router'
 import { SIDEBAR_COLLAPSED_REM, SIDEBAR_MAX_REM, SIDEBAR_MIN_REM, setSidebarCollapsed, setSidebarWidth, toggleSidebarCollapsed, useSidebarLayout } from './sidebarLayout'
 import { FilterView } from './FilterView'
 import { LabelsView } from './LabelsView'
@@ -334,7 +334,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       </main>
       <PanelBoundary><PanelHost user={user} /></PanelBoundary>
       {phoneChrome && <TabBar route={route} onSearch={openPalette} minimised={minimised} />}
-      {((phoneChrome && route.view !== 'settings') || addOpen) && <AddButton ref={addButton} open={addOpen} away={minimised && !addOpen} onClick={() => setAddOpen((v) => !v)} />}
+      {((phoneChrome && offersQuickAdd(route)) || addOpen) && <AddButton ref={addButton} open={addOpen} away={minimised && !addOpen} onClick={() => setAddOpen((v) => !v)} />}
       <QuickAddSheet open={addOpen} onClose={() => setAddOpen(false)} anchor={addButton} route={route} userId={user.id} />
       {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} vim={vim} extraSections={vim && vimHelp ? [vimHelp] : []}
         context={{ view: route.view, board: hasScope('board') || hasScope('timeline'), panelOpen: hasScope('panel') || !!panelTaskId() }} />}
