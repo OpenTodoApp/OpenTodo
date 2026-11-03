@@ -49,4 +49,4 @@ Each of groups 2–6 can land as its own pull request; group 7 lands last.
 - [x] 7.5 The matrix records the last real-export check of each of the ten existing formats (their fixtures of 2026-10-14 and 2026-10-21); re-exporting them from the current app versions needs the owner's accounts (QUESTIONS.md), and `make release-prepare` for 1.0 refuses any row older than 120 days, so the re-check cannot be skipped before the release
 - [x] 7.6 `ot import --format` help lists the new ids; verify `go test ./internal/cli -run Import`
 - [x] 7.7 `docs/import.md` sections per new format, `docs/api.md` (`columns` option), the CHANGELOG entry under Unreleased; verify `make docs-check`
-- [ ] 7.8 `go test ./...`, `cd web && npm test && npm run build`, and `make check` (TZ=UTC) pass
+- [x] 7.8 `go test ./...`, `cd web && npm test && npm run build`, and `make check` (TZ=UTC) pass

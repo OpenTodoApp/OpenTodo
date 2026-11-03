@@ -48,7 +48,7 @@ export function SwitchFromPicker({ value, onChange, disabled, encrypted, loadSte
               <ComboboxField state={state} label={label} placeholder={t('Choose the app you use now')} inputRef={input}
                 expanded={open} onFocus={() => setOpen(true)} />
               {open && (
-                <div className="max-h-72 overflow-auto rounded-control border border-default bg-surface p-1 shadow-sm" data-switch-from-list>
+                <div className="max-h-72 overflow-auto rounded-control border border-default bg-surface p-1" data-switch-from-list>
                   <ComboboxList state={state} label={label} renderLeading={(a) => <Icon name={a.icon} className="text-muted" />} />
                 </div>
               )}
