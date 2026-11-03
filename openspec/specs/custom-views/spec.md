@@ -300,7 +300,7 @@ After a drop a toast SHALL name the column and the changes with an Undo control 
 - **THEN** the other device shows the task only where its filters match it
 
 ### Requirement: New board chooser
-The **New board** action on Filters → Boards SHALL offer a choice between an empty board and the built-in board templates, each with a one-line description, before asking for a name. Creating from a template SHALL write its saved filters and the board as ordinary view operations in one batch, applied locally first and working offline, so every part can be renamed, edited, unpinned or deleted afterwards.
+The **New board** action on Filters → Boards SHALL offer a choice between an empty board and the built-in board templates, each with a one-line description, before asking for a name. Creating from a template SHALL write its saved filters and the board as ordinary view operations in one batch, in the current workspace (the same stamp a view saved there gets; none in the default workspace), applied locally first and working offline, so every part can be renamed, edited, unpinned or deleted afterwards.
 
 #### Scenario: Empty board as before
 - **WHEN** the user chooses New board, then "Empty board", and names it "Morning"
@@ -309,6 +309,10 @@ The **New board** action on Filters → Boards SHALL offer a choice between an e
 #### Scenario: Template offline
 - **WHEN** the device is offline and the user creates a board from a template
 - **THEN** the board and its filters are usable at once on this device and appear on the user's other devices after the network returns
+
+#### Scenario: Created in the current workspace
+- **WHEN** the current workspace is Work and the user creates a board from a template
+- **THEN** the board and its filters are saved in Work, and none of them is in the default workspace
 
 ### Requirement: Eisenhower matrix template
 The Eisenhower matrix template SHALL create four unpinned saved filters over priority and date, each with its rule, and one pinned board of the four in matrix order: Urgent and important, Important, not urgent, Urgent, not important, Neither. Important SHALL mean priority 1 or 2 and urgent a due date or deadline by tomorrow; the two not-urgent quadrants SHALL leave out parked tasks. Each query SHALL parse under the published grammar on the client and the server.

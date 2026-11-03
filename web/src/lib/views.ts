@@ -358,7 +358,7 @@ export async function setOnDrop(viewId: string, rule: OnDropRule | null): Promis
 /**
  * Create a board from a template (D8): its saved filters, unpinned and each with
  * its rule, and one pinned board of them in order, after the last view, in one
- * batch. Like a new saved filter (sidebar-favourites), the board is a favourite by
+ * batch and in the current workspace. Like a new saved filter (sidebar-favourites), the board is a favourite by
  * its pinned flag and lists after the ordered entries until the user moves it.
  * Returns the board's id.
  */
@@ -369,7 +369,7 @@ export async function createBoardFromTemplate(template: BoardTemplate, name: str
   const now = Date.now()
   let position = now
   for (const v of await liveViews()) if (v.position >= position) position = v.position + 1
-  const base = { group_by: VIEW_DEFAULTS.group_by, sort_by: VIEW_DEFAULTS.sort_by, sort_dir: VIEW_DEFAULTS.sort_dir, created_at: now, deleted_at: null }
+  const base = { group_by: VIEW_DEFAULTS.group_by, sort_by: VIEW_DEFAULTS.sort_by, sort_dir: VIEW_DEFAULTS.sort_dir, created_at: now, deleted_at: null, ...(await workspaceFields()) }
   const changes: Change[] = []
   const panels: string[] = []
   for (const c of template.columns) {
