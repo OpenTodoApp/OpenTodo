@@ -3,6 +3,7 @@
 // with the breadcrumb and its place in the list, j and k step through that list,
 // Esc returns to it with the task selected, and a reload or a link renders the page.
 import 'fake-indexeddb/auto'
+import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
@@ -81,6 +82,25 @@ describe('the task page', () => {
     await key(document.body, 'Escape')
     await waitFor(() => location.pathname === `/project/${project}` && !page())
     await waitFor(() => document.querySelector('[data-task-id][aria-current]')?.getAttribute('data-task-id') === ids[1])
+    await r.unmount()
+  })
+
+  it('Esc goes back to the list after an overlay on the page left a released marker entry above it', async () => {
+    const { project, ids } = await projectOfThree()
+    navigate({ view: 'project', id: project })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => r.container.textContent!.includes('Fix the gate'))
+    await click(rowOpen('Fix the gate'))
+    await waitFor(() => location.pathname === `/task/${ids[1]}` && !!page())
+    // An overlay opened and closed on the page (useBackToClose): its marker stays behind as a forward entry.
+    history.pushState({ overlay: 1 }, '')
+    await act(async () => history.back())
+    await waitFor(() => (history.state as { overlay?: number } | null)?.overlay === undefined, 'back on the page entry')
+    await key(document.body, 'Escape')
+    await waitFor(() => location.pathname === `/project/${project}` && !page())
+    // Esc went back to the list's own entry rather than pushing a new one: Back leaves the list, not to the task.
+    await act(async () => history.back())
+    await waitFor(() => location.pathname === '/', 'Back goes to the page before the list')
     await r.unmount()
   })
 
