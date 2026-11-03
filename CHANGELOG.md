@@ -4,6 +4,16 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.22.0] - 2026-11-03
+
+OpenTodo 0.22.0 is about **speed at scale and switching in**. Big accounts are much faster: in a 2,000-task project completing a task went from about 4 seconds to a tenth of one, a new device's first sync of a 10,000-task account is about ten times faster, and a year of note history is compacted in minutes while a new device downloads only the latest notes. You can now **switch from OmniFocus, Vikunja, Notion, Super Productivity and Tududi**, chosen from a new **Switching from…** list on the Import screen. And there is a written **stability promise** for 1.0, checked on every change: the v1 API and data formats only grow, and upgrades from every earlier release are tested.
+
+### Upgrade notes
+
+- **Replace the image or the binary and restart; upgrade the server before the devices.** One migration runs at start (`0055`, an index for listing a project's tasks); there are no down-migrations, so back up first. No new variable and no new synced field.
+- **Sync gains an optional `latest_docs` feature** that upgraded apps use for a first sync; older apps keep getting the full history and keep working.
+- **The first notes compaction after upgrading** may run for a minute or two on a large, old database, in short steps that never hold writes for more than about 20 ms.
+
 ### Added
 
 - **A written stability promise for 1.0, checked on every change.** [Stability and compatibility](docs/stability.md) says what every 1.x release keeps: the `/api/v1/` routes with their fields, statuses and error codes, the sync protocol and op schema, the export format, the MCP tools and the `ot` commands, flags, exit codes and `--json` output. Within 1.x these only grow; a route that will be replaced is deprecated for at least 12 months and two minor releases first and answers with `Deprecation` and `Sunset` headers. Any release from 0.1.0 on upgrades directly to the latest, and every 1.x server works with every 1.x client and imports every export an earlier version wrote. Tests enforce it: a snapshot of the whole surface that may only grow, an upgrade of a data directory written by every released version from 0.1 to 0.21, the recorded calls of the web app, `ot` and the extension replayed against the current server, and every released version's export imported. From 1.0 on the image also gets a `1` tag that follows the 1.x line (#587).
@@ -1260,7 +1270,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.21.0...HEAD
+[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.22.0...HEAD
+[0.22.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.21.0...v0.22.0
 [0.21.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.20.0...v0.21.0
 [0.20.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.19.0...v0.20.0
 [0.19.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.18.1...v0.19.0
