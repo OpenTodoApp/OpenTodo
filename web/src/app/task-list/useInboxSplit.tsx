@@ -33,14 +33,17 @@ export function useInboxSplit({ inbox, on, rows, selectedId, setSelectedId, open
   }, [on, count])
 
   // The detail follows the cursor (D1): a new cursor row docks its task, no cursor empties the
-  // pane. While rows are ticked it stays empty, and the cursor's task comes back once they clear.
+  // pane. While rows are ticked it stays empty, and the cursor's task comes back once they clear,
+  // unless a bulk action took its row out of the list (issue 841).
   const lastSelected = useRef<string | null>(null)
+  const live = useRef(rows)
+  live.current = rows
   useEffect(() => {
     const was = lastSelected.current
     lastSelected.current = selectedId
     if (!on || !taskSplitDocks()) return
     if (ticking) { if (panelTaskId()) setPanelTaskId(null); return }
-    if (selectedId && selectedId !== panelTaskId()) setPanelTaskId(selectedId)
+    if (selectedId && selectedId !== panelTaskId()) { if (live.current.some((r) => r.task.id === selectedId)) setPanelTaskId(selectedId) }
     else if (!selectedId && was && panelTaskId() === was) setPanelTaskId(null)
   }, [on, selectedId, ticking])
 
@@ -71,6 +74,9 @@ export function useListSplit({ inbox, rows, ownRows, selectedId, setSelectedId, 
 }): { meta: string | undefined } {
   const side = useSidePanelChosen()
   const split = useInboxSplit({ inbox, on: inbox && !side, rows: ownRows, selectedId, setSelectedId, openId, ticking })
-  useSidePanel({ on: true, selectedTaskId: selectedId, ticking, hasRows: rows.length > 0, inboxCount: inbox ? split.count : undefined })
+  // The panel follows the cursor only while its row is in the list: a bulk action that took
+  // every ticked row out leaves the cursor on a task no longer listed, which must not open (issue 841).
+  const listed = useMemo(() => (selectedId && rows.some((r) => r.task.id === selectedId) ? selectedId : null), [rows, selectedId])
+  useSidePanel({ on: true, selectedTaskId: listed, ticking, hasRows: rows.length > 0, inboxCount: inbox ? split.count : undefined })
   return { meta: split.meta }
 }
