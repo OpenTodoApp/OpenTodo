@@ -32,7 +32,9 @@ Two places had relied on the old snapshot arriving late, and are fixed so that t
 - The command bar folds its 10,000 tasks for matching while it waits for the first keystroke, sorts only the matches it shows, and scrolls its list to the top for the first option instead of laying out the whole page behind it.
 - The cursor's scroll looks for sticky headers without walking into rows, and the tab title keeps the heading it found instead of looking it up on every frame.
 - Completing a plain task read every task to find its subtree (the Undo plan and the plain completion); it now reads the subtree through the parent_id index, and only a series, whose roll looks at its occurrence records, reads them all. Ten quick ticks had queued about 5 s of these reads (CPU slowed 2x) in front of the next sync.
+- A press on a row (the completion circle) cleared drag-and-drop marks by searching the whole page on release; only a drag that lifted marks anything, so only that one clears.
 - Quick add re-read its field's scroll after every render, a layout of the whole page; it now does so when its text changes.
+- The benchmark opened the saved view straight from the 2,000-row project, which timed taking those rows down (about 130 ms on a computer); it now starts from Today, as opening the project does. Leaving a very long list stays a cost of its own.
 - The benchmark's remote edit compared the page's monotonic clock with the sender's wall clock, 0.9 s apart by then; both are wall-clock times now.
 
 ## Risks
