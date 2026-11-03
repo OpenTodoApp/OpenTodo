@@ -67,6 +67,14 @@ func TestServerBudgets(t *testing.T) {
 	}
 	budgets := loadBudgets(t, filepath.Join(root, "scripts", "perf", "budgets.json"))
 	rep := report(budgets, "server", samples)
+	// The notes fixture's server metrics are TestNotesBudgets'.
+	plain := rep.Metrics[:0]
+	for _, m := range rep.Metrics {
+		if !isNotesMetric(m.ID) {
+			plain = append(plain, m)
+		}
+	}
+	rep.Metrics = plain
 	writeJSON(t, env("PERF_REPORT", filepath.Join(root, "perf-report", "server.json")), rep)
 	for _, m := range rep.Metrics {
 		t.Logf("%-22s median %8.1f %-2s budget %6g  runs %v", m.ID, m.Median, m.Unit, m.Limit, m.Runs)

@@ -51,8 +51,8 @@ test('docs/performance.md shows every budget of budgets.json', () => {
 
 test('a raised budget without the page fails naming the metric', () => {
   const raised = structuredClone(budgets)
-  raised.metrics.find((m) => m.id === 'search-keystroke').limits.desktop = 80
-  assert.deepEqual(differences(raised, page), ['search-keystroke, desktop: 50 on the page, 80 in budgets.json'])
+  raised.metrics.find((m) => m.id === 'search-keystroke').limits.desktop = 120
+  assert.deepEqual(differences(raised, page), ['search-keystroke, desktop: 100 on the page, 120 in budgets.json'])
 })
 
 test('every metric has a unit, a name and limits in known settings', () => {

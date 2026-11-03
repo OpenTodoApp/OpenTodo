@@ -25,6 +25,8 @@ type Budgets struct {
 type Report struct {
 	Setting string   `json:"setting"`
 	Metrics []Metric `json:"metrics"`
+	// Reported are figures measured and shown, never held to a budget.
+	Reported map[string]float64 `json:"reported,omitempty"`
 }
 
 // Metric is one measured metric: every run, the median and the verdict.

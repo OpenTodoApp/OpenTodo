@@ -3,7 +3,7 @@
 // log, and writes its summary as JSON. It is a development tool and never part
 // of the server.
 //
-//	go run ./cmd/perfseed -data /tmp/perf10k [-encrypted] [-seed 10000] [-scale 1] [-summary out.json]
+//	go run ./cmd/perfseed -data /tmp/perf10k [-encrypted] [-seed 10000] [-scale 1] [-notes docs.jsonl] [-summary out.json]
 package main
 
 import (
@@ -24,6 +24,7 @@ func main() {
 	encrypted := flag.Bool("encrypted", false, "turn on end-to-end encryption for the account")
 	scale := flag.Int("scale", 1, "multiply the task-shaped counts (5 is the 50,000-task run)")
 	summary := flag.String("summary", "", "where to write the summary JSON (default <data>/perfseed.json)")
+	notes := flag.String("notes", "", "add the notes fixture from this documents file (scripts/perf/notes-seed.mjs writes it)")
 	flag.Parse()
 	if *data == "" {
 		flag.Usage()
@@ -36,6 +37,13 @@ func main() {
 	s, err := perfseed.Run(context.Background(), *data, perfseed.Options{Seed: *seed, Encrypted: *encrypted, Scale: *scale})
 	if err != nil {
 		fail(err)
+	}
+	if *notes != "" {
+		ns, err := perfseed.SeedNotes(context.Background(), *data, *notes, s.OwnerID, perfseed.Options{Seed: *seed})
+		if err != nil {
+			fail(err)
+		}
+		s.Notes = &ns
 	}
 	if *summary == "" {
 		*summary = filepath.Join(*data, "perfseed.json")
