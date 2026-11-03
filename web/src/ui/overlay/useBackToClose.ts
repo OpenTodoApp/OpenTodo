@@ -17,7 +17,11 @@ let landing = false
 let waiting: Array<() => void> = []
 
 const markOf = (): number => (history.state as { overlay?: number } | null)?.overlay ?? 0
-const touch = () => typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches
+/** Not in WebKit (Safari and every iOS browser): the feature is for Android's Back, and WebKit
+ *  hung, then crashed, loading the page again after a marker was popped and another pushed
+ *  (release 0.22.0 layout check). */
+const webkit = () => typeof navigator !== 'undefined' && navigator.vendor === 'Apple Computer, Inc.'
+const touch = () => typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches && !webkit()
 const top = () => Math.max(0, ...[...open].map((o) => o.mark))
 
 function settle() {
@@ -59,7 +63,20 @@ function flush() {
   }
 }
 
-if (typeof window !== 'undefined') window.addEventListener('popstate', onPop)
+/** A load that lands on a marker entry (a reload, or the same address loaded again, which
+ *  keeps the entry and its state) has no overlay open: the entry becomes a plain one again.
+ *  Left as a marker, the first overlay closed after it stepped Back over it into the page
+ *  before, and WebKit crashed on that traversal (release 0.22.0 layout check). */
+export function releaseStaleMarker() {
+  if (markOf() === 0 || open.size > 0) return
+  const { overlay: _, ...rest } = history.state as Record<string, unknown>
+  history.replaceState(Object.keys(rest).length ? rest : null, '')
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('popstate', onPop)
+  releaseStaleMarker()
+}
 resettable('backToClose', () => { open.clear(); depth = 0; flushing = false; landing = false; waiting = [] })
 
 /** While a traversal started by a closed overlay is still on its way, a navigation would be undone

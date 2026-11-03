@@ -344,7 +344,8 @@ export const OVERLAYS = {
     // The task opens as its page (task-full-page), which scrolls like any page: its head
     // (checkbox and title; the notes follow the facts below 1024 px) is checked in place,
     // not as an overlay that must fit.
-    return { overlay: p.locator('[data-task-page] [data-task-content]'), kind: 'inline' }
+    // From 1280 px with a fine pointer it opens docked beside the list (the side panel).
+    return { overlay: p.locator('[data-task-page] [data-task-content], aside[data-detail-variant="panel"]').first(), kind: 'inline' }
   },
   // Process the Inbox's scheduling sheet (inbox-means-unplaced): a bottom sheet on phones.
   async 'schedule-sheet'(p) {
@@ -354,10 +355,14 @@ export const OVERLAYS = {
   },
   async 'label-picker'(p) {
     await p.locator('[data-task-id]').filter({ hasText: /Renew passport|Undated inbox task/ }).first().locator('[data-row-open]').press('Enter')
-    // The task's page opens; Esc returns to the list with it selected (task-full-page).
-    await p.locator('[data-task-page]').waitFor()
-    await p.keyboard.press('Escape')
-    await p.locator('[data-task-id][aria-current]').first().waitFor()
+    // The task's page (or, docked from 1280 px, its panel) opens; Esc returns to the list with it selected (task-full-page).
+    const docked = p.locator('aside[data-detail-variant="panel"]')
+    await p.locator('[data-detail-for]').first().waitFor()
+    // Docked beside the list (1280 px), the panel takes L for its own task; a page returns to the list first.
+    if (!(await docked.count())) {
+      await p.keyboard.press('Escape')
+      await p.locator('[data-task-id][aria-current]').first().waitFor()
+    }
     await p.keyboard.press('L')
     return { overlay: p.getByRole('dialog', { name: 'Labels for task' }), kind: 'dialog' }
   },
@@ -513,7 +518,8 @@ export const OVERLAYS = {
     await p.locator('[data-task-id]').filter({ hasText: 'Get three quotes' }).first().locator('[data-row-open]').press('Enter')
     // The zone lives inside the Do on segment of the When popover (task-panel-facets D3).
     await openProperty(p, 'due', 'Do on')
-    const trigger = p.locator('[data-facet-editor]').getByRole('button', { name: /^Time zone:/ }).first()
+    // The line's Change (named by its word, described by the zone, accessibility-aa) or the chip.
+    const trigger = p.locator('[data-facet-editor]').locator('[data-zone-line] button[aria-haspopup="dialog"]').or(p.locator('[data-facet-editor]').getByRole('button', { name: /^Time zone:/ })).first()
     await trigger.scrollIntoViewIfNeeded()
     await trigger.click()
     return { overlay: p.getByRole('dialog', { name: 'Time zone' }), trigger, kind: 'popover' }
@@ -538,8 +544,8 @@ export const OVERLAYS = {
   },
   async 'assignee-picker'(p) {
     await p.locator('[data-task-id]').filter({ hasText: 'Pick paint colours' }).first().locator('[data-row-open]').press('Enter')
-    // The task's page opens; Esc returns to the list with it selected (task-full-page).
-    await p.locator('[data-task-page]').waitFor()
+    // The task's page (or, docked from 1280 px, its panel) opens; Esc returns to the list with it selected (task-full-page).
+    await p.locator('[data-detail-for]').first().waitFor()
     await p.keyboard.press('Escape')
     await p.locator('[data-task-id][aria-current]').first().waitFor()
     await p.keyboard.press('A')

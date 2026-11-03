@@ -120,10 +120,11 @@ export function ConversationTabs({ task, userId, readOnly, onOpen, composerHost,
 
   return (
     <section ref={section} className="border-t border-default px-4 pb-4 pt-1" aria-label={t('Comments, activity, history and time')} data-conversation>
-      {/* The tab bar pins under the panel header while the thread scrolls (web-app "Conversation tabs stay reachable"). */}
+      {/* The tab bar pins under the panel header while the thread scrolls (web-app "Conversation tabs stay reachable").
+          It spans the panel's padding, which the row inside keeps, so a long translation scrolls to the panel's edge. */}
       <Tabs label={t('Task conversation')} value={tab} onChange={(id) => setTab(id as TaskTab)}
         rowRef={(el) => { bar.current = el }} panelStyle={minHeight ? { minHeight, overflowAnchor: 'none' } : { overflowAnchor: 'none' }}
-        rowClassName={`sticky z-[5] -mx-4 px-4 ${page ? 'top-[var(--panel-header-h,0px)] bg-canvas' : 'top-0 bg-surface'}`}
+        rowClassName={`sticky z-[5] -mx-4 [&>[role=tablist]]:px-4 ${page ? 'top-[var(--panel-header-h,0px)] bg-canvas' : 'top-0 bg-surface'}`}
         tabs={[{ id: 'comments', label: t('Comments'), count }, { id: 'activity', label: t('Activity') }, { id: 'history', label: t('History') },
           { id: 'time', label: hasEntries ? t('Time · {duration}', { duration: formatMinutes(tracked) }) : t('Time', { context: 'tracking' }) }]}>
         {tab === 'comments' && <CommentsTab ref={composerRef} task={task} userId={userId} focusComment={focusComment} composerHost={composerHost} expand={focusComposer} />}
