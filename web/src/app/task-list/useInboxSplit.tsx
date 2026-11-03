@@ -35,17 +35,19 @@ export function useInboxSplit({ inbox, on, rows, selectedId, setSelectedId, open
   // The detail follows the cursor (D1): a new cursor row docks its task, no cursor empties the
   // pane. While rows are ticked it stays empty, and the cursor's task comes back once they clear,
   // unless a bulk action took its row out of the list (issue 841).
+  // `listed` is a dependency, not read from a ref: the cursor is often set before the rows
+  // load, and the task must dock once its row arrives (not on every later change of the rows,
+  // so a pane closed by hand stays closed).
   const lastSelected = useRef<string | null>(null)
-  const live = useRef(rows)
-  live.current = rows
+  const listed = !!selectedId && rows.some((r) => r.task.id === selectedId)
   useEffect(() => {
     const was = lastSelected.current
     lastSelected.current = selectedId
     if (!on || !taskSplitDocks()) return
     if (ticking) { if (panelTaskId()) setPanelTaskId(null); return }
-    if (selectedId && selectedId !== panelTaskId()) { if (live.current.some((r) => r.task.id === selectedId)) setPanelTaskId(selectedId) }
+    if (selectedId && selectedId !== panelTaskId()) { if (listed) setPanelTaskId(selectedId) }
     else if (!selectedId && was && panelTaskId() === was) setPanelTaskId(null)
-  }, [on, selectedId, ticking])
+  }, [on, selectedId, ticking, listed])
 
   // Closing the docked task (its Close, Esc inside it) clears the cursor too, so the pane and the list agree.
   const lastOpen = useRef<string | null>(null)
