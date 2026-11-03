@@ -11,6 +11,7 @@ import type { Label, Project, Task } from '../lib/types'
 import { render, mockFetch, noPublicLinks, spokenText, visibleText, waitFor } from '../ui/test-utils'
 import { TaskListView } from './TaskListView'
 import { TaskRow, type TaskRowProps } from './TaskRow'
+import css from '../index.css?raw'
 
 // The project header asks the server for its public links.
 beforeEach(() => mockFetch(noPublicLinks))
@@ -624,6 +625,66 @@ describe('origin chip', () => {
     const r = await row({ origin: '[Cannot decrypt]' })
     expect(r.container.querySelector('[data-origin]')).toBeNull()
     await r.unmount()
+  })
+})
+
+// The title comes first on a phone (row-title-first-on-phones, GitHub issue 844): an
+// imported task's id never takes the row, and nothing at the row's end or beside the
+// title squeezes it. happy-dom does not lay out container queries, so the phone rules
+// are read from index.css; the story Screens/Task row ImportedOrigins shows them at 375 px.
+describe('a narrow row keeps its title (issue 844)', () => {
+  const title = 'Küche aufräumen und den Kühlschrank abtauen, bevor die Familie kommt'
+  const todoist = { kind: 'import' as const, provider: 'todoist', id: 'dfc92cb10aed05a4:1' }
+  const row = (over: Partial<Task>, extra: Partial<TaskRowProps> = {}) =>
+    render(<ul><TaskRow task={task({ title, ...over })} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} onExpand={() => {}} {...extra} /></ul>)
+  /** The rules of the phone's one-line row: under 48 rem of screen and 40 rem of row. */
+  const phoneRules = () => {
+    const start = css.indexOf('@media (width < 48rem) {\n  .row-pad')
+    const block = css.slice(start, css.indexOf('\n}\n', start))
+    return block.slice(block.indexOf('@container row (width < 40rem)'))
+  }
+
+  it('an imported origin without a link shows nothing in the row: the whole title, no raw id', async () => {
+    const r = await row({ origin: todoist, due: { date: '2026-11-04' }, recurrence: 'every week' })
+    const li = r.container.querySelector('[data-task-id]')!
+    expect(li.querySelector('[data-row-title]')!.textContent).toBe(title)
+    expect(li.querySelector('[data-origin]')).toBeNull()
+    expect(li.textContent).not.toContain('dfc92cb10aed05a4')
+    await r.unmount()
+    // A card neither.
+    const card = await row({ origin: todoist }, { shape: 'card' })
+    expect(card.container.querySelector('[data-origin]')).toBeNull()
+    expect(card.container.textContent).not.toContain('dfc92cb10aed05a4')
+    await card.unmount()
+  })
+
+  it('an imported origin with a link is its icon only; the id stays in the link\'s name', async () => {
+    const trello = { kind: 'import' as const, provider: 'trello', id: '5f3a9c1e2b7d4a00', url: 'https://trello.com/c/AbCd1234' }
+    const r = await row({ origin: trello })
+    const chip = r.container.querySelector<HTMLAnchorElement>('li > [data-row-trailing] a[data-origin="import"]')!
+    expect(chip.getAttribute('href')).toBe(trello.url)
+    expect(visibleText(chip)).toBe('')
+    expect(chip.getAttribute('aria-label')).toBe('Opens the source 5f3a9c1e2b7d4a00')
+    await r.unmount()
+  })
+
+  it('the Inbox\'s import line names the app, never the id, under the title', async () => {
+    const r = await row({ origin: todoist, created_at: Date.now() - 19 * 3600_000 }, { source: true })
+    const li = r.container.querySelector('[data-task-id]')!
+    const line = li.querySelector('[data-row-source="import"]')!
+    expect(line.textContent).toMatch(/^Imported from todoist · /)
+    expect(li.querySelector('[data-row-title]')!.textContent).toBe(title)
+    expect(li.textContent).not.toContain('dfc92cb10aed05a4')
+    // In the open control, after the title's line: the phone rules give it the second grid row.
+    expect(line.closest('[data-row-open]')).toBeTruthy()
+    expect(phoneRules()).toMatch(/\[data-row-source\] \{ grid-area: 2 \/ 1 \/ 3 \/ 3; \}/)
+    await r.unmount()
+  })
+
+  it('on a phone the row\'s trailing origin gives way; under 30 rem of row any origin is its icon', () => {
+    expect(phoneRules()).toMatch(/\[data-row-trailing\] \{ display: none; \}/)
+    const narrow = css.slice(css.indexOf('@container row (width < 30rem) {'))
+    expect(narrow.slice(0, narrow.indexOf('\n}\n'))).toMatch(/\[data-row-trailing\] \[data-origin-text\] \{ position: absolute; width: 1px;/)
   })
 })
 
