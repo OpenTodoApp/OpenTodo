@@ -11,10 +11,10 @@ export async function addToList<T extends NewTaskInput>(input: T, create: (input
   return (await import('./reuseList')).addToList(input, create)
 }
 
-/** addToList with createTask, for a screen that follows a new task: its id, or null when the list reused an item. */
-export async function createUnlessReused(input: NewTaskInput): Promise<string | null> {
+/** addToList with createTask (or another create), for a screen that follows a new task: its id, or null when the list reused an item. */
+export async function createUnlessReused(input: NewTaskInput, create: (input: NewTaskInput) => Promise<string> = createTask): Promise<string | null> {
   let created = false
-  const id = await addToList(input, (x) => { created = true; return createTask(x) })
+  const id = await addToList(input, (x) => { created = true; return create(x) })
   return created ? id : null
 }
 

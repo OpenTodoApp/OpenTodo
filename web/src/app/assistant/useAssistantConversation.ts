@@ -9,7 +9,7 @@ import {
   refreshReview, reviewChangeSet, saveThread, streamTurn, turnMessages, undoChanges, type AssistantMessage, type AssistantThread, type Review, type TurnRequest,
 } from '../../lib/assistant'
 import { imagesUnsupportedMessage, isImagesUnsupported, releasePhoto, wireImages, type PreparedPhoto } from '../../lib/assistantImages'
-import { assistantStatus, refreshAssistantStatus, setAssistantStatus, takeAssistantPrefill, useAssistantPrefill, type AssistantPrefill, type AssistantStatus } from '../../lib/assistantStatus'
+import { assistantStatus, refreshAssistantStatus, setAssistantStatus, setAssistantTurnBusy, takeAssistantPrefill, useAssistantPrefill, type AssistantPrefill, type AssistantStatus } from '../../lib/assistantStatus'
 import { useAssistantSkills, workday, type AssistantSkill } from '../../lib/assistantSkills'
 import type { ProposedChange, TurnEvent } from '../../lib/assistantTypes'
 import { t } from '../../lib/i18n'
@@ -100,6 +100,8 @@ function useComposerState() {
   // The same selection as state, for the tray's context chip (assistant-surface D3).
   const [selection, setSelection] = useState<string[] | null>(null)
   const [autoSend, setAutoSend] = useState(false)
+  // The next send shows its change set for review whatever the auto-apply setting says (a turn the person did not type).
+  const reviewNext = useRef(false)
   // Opened from the composer, the Ask screen or a task's menu (assistant-skills D4).
   const pendingPrefill = useAssistantPrefill()
   const applyPrefill = useCallback((p: AssistantPrefill | null) => {
@@ -110,6 +112,7 @@ function useComposerState() {
     selectedFor.current = p.selected ?? null
     setSelection(p.selected ?? null)
     setAutoSend(!!p.send)
+    reviewNext.current = !!p.review
     if (p.listen) setListenRequest((n) => n + 1)
   }, [])
   useEffect(() => { applyPrefill(takeAssistantPrefill()) }, [applyPrefill, pendingPrefill])
@@ -120,7 +123,7 @@ function useComposerState() {
   }, [pickedSkillId, skills])
   const chooseSkill = (sk: AssistantSkill | null) => { setPickedSkillId(sk?.id ?? null); setSkill(sk) }
   const clearSelection = () => { selectedFor.current = null; setSelection(null) }
-  return { draft, setDraft, skills, skill, setSkill, pickedSkillId, chooseSkill, pasted, setPasted, photos, setPhotos, listenRequest, selectedFor, selection, clearSelection, autoSend, setAutoSend }
+  return { draft, setDraft, skills, skill, setSkill, pickedSkillId, chooseSkill, pasted, setPasted, photos, setPhotos, listenRequest, selectedFor, selection, clearSelection, autoSend, setAutoSend, reviewNext }
 }
 
 /** Accepting the provider's terms (in-app-assistant consent), with an optional own key. */
@@ -220,6 +223,13 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
   const abort = useRef<AbortController | null>(null)
   const consent = useConsent(status, setStatus)
 
+  // Tells the suggest-after-add trigger that a turn is running (it skips instead of replacing the draft).
+  const running = !!streaming
+  useEffect(() => {
+    setAssistantTurnBusy(running)
+    return () => setAssistantTurnBusy(false)
+  }, [running])
+
   useEffect(() => {
     void refreshAssistantStatus().then(setStatus)
     void listThreads().then((all) => setThread((cur) => cur ?? all[0] ?? newThread('')))
@@ -240,7 +250,8 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
 
   /**
    * Auto-apply a small, fully fresh change set when the person turned that on; otherwise offer it for review.
-   * A capture (a ramble or photos) is always reviewed: its proposal is never applied automatically (voice-ramble).
+   * A capture (a ramble or photos) is always reviewed: its proposal is never applied automatically (voice-ramble),
+   * and so is a suggestion after adding a task (`review` in the prefill): the person did not type that turn.
    */
   const offer = async (entry: AssistantThread, items: ProposedChange[], review = false) => {
     const r = await reviewChangeSet(items)
@@ -264,6 +275,8 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
     if (!question || streaming) return
     const material = pasted
     const selection = composer.selectedFor.current
+    const mustReview = composer.reviewNext.current
+    composer.reviewNext.current = false
     // The latest thread may still be loading from the device: start a new one then.
     const current = thread ?? newThread(status?.provider ?? '')
     composer.setDraft('')
@@ -339,7 +352,7 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
       usage: { input: entry.usage.input + (answer.usage?.input ?? 0), output: entry.usage.output + (answer.usage?.output ?? 0) } }
     await persist(entry)
     const items = answer.stop === 'end_turn' ? streamed.proposal : null
-    if (items && items.length) await offer(entry, items, chosen?.id === 'capture' || photos.length > 0)
+    if (items && items.length) await offer(entry, items, mustReview || chosen?.id === 'capture' || photos.length > 0)
   }
 
   const startNew = () => {
