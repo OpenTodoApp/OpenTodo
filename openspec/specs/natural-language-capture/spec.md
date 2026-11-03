@@ -639,7 +639,15 @@ While the user's time sectors switch is on (OpenSpec `time-sectors`), the parser
 - **THEN** the task is due Friday, titled `Review this week plan`, with no sector
 
 ### Requirement: A long panel title shows its start after editing
-The panel title field is a two-line textarea that scrolls inside itself while a title longer than two lines is edited. When it loses focus and commits the edit, the field SHALL scroll back to the start of the title, so the beginning is visible instead of the end where the caret was. The one-line inline title editor SHALL keep its current behaviour.
+The title field on the task page and in the docked panel SHALL grow with its text so the whole title is visible, up to eight lines, and SHALL scroll inside itself only past that. Widening the panel SHALL reflow the title onto fewer lines. When the field loses focus and commits the edit, it SHALL scroll back to the start of the title, so the beginning is visible instead of the line the caret was on. The one-line inline title editor SHALL keep its current behaviour.
+
+#### Scenario: A title of three lines
+- **WHEN** the user opens a task whose title wraps to three lines in the panel
+- **THEN** the field shows all three lines and the title remains editable in place
+
+#### Scenario: More than eight lines
+- **WHEN** a title is longer than eight lines
+- **THEN** the field shows eight lines and scrolls inside itself while it is edited
 
 #### Scenario: Leaving a long panel title
 - **WHEN** the user edits a panel title long enough to scroll the field and then leaves it by clicking elsewhere or pressing Enter
