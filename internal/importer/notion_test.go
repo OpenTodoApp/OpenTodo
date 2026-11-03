@@ -85,3 +85,15 @@ func TestNotionDates(t *testing.T) {
 		t.Errorf("priority = %d", p)
 	}
 }
+
+// A ZIP of several CSVs read as Notion names the dropped columns once.
+func TestNotionForcedOnArchiveNotesOnce(t *testing.T) {
+	z := zipOf(t, map[string]string{"a.csv": "Name,Owner\nx,y\n", "b.csv": "Name,Owner\nz,w\n"})
+	p, err := parseWith(t, z, func(o *Options) { o.Format = notionFormat })
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.Notes) != 1 {
+		t.Fatalf("notes = %v", p.Notes)
+	}
+}
