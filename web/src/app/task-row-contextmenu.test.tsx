@@ -78,6 +78,8 @@ async function rightClickUntilMenu(row: () => Element | null, container: HTMLEle
   // One more, on a settled row: this dispatch goes through the real handler.
   e = rightClick(row()!, x, y)
   expect(e.defaultPrevented).toBe(true)
+  // The panel shows once the reads its items depend on have landed (issue 840).
+  await waitFor(() => !!document.querySelector('[data-overlay-root]'), 'the menu panel')
   return e
 }
 
@@ -362,6 +364,7 @@ describe('touch hold', () => {
     expect(trigger.style.position).toBe('fixed')
     expect(trigger.style.left).toBe('120px')
     expect(trigger.style.top).toBe('200px')
+    await waitFor(() => !!document.querySelector('[data-overlay-root]'), 'the menu panel')
     escape()
     await waitFor(() => !menuButton(r.container), 'the menu to close')
     await r.unmount()
@@ -405,5 +408,29 @@ describe('touch hold', () => {
     } finally {
       restore()
     }
+  })
+})
+
+describe('the menu opens complete (issue 840)', () => {
+  it('its first painted panel already holds every item, so it is placed once', async () => {
+    await createTask({ title: 'Call mum' })
+    const r = await render(<TaskListView route={{ view: 'inbox' }} />)
+    await waitFor(() => r.container.textContent!.includes('Call mum'))
+    // Every committed state of the panel's item list, from the first one on.
+    const seen: string[] = []
+    const items = () => [...document.querySelectorAll('[data-overlay-root] [data-action]')].map((el) => el.getAttribute('data-action')).join(',')
+    const observer = new MutationObserver(() => {
+      const now = items()
+      if (now && now !== seen[seen.length - 1]) seen.push(now)
+    })
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true })
+    await rightClickUntilMenu(() => r.container.querySelector('[data-task-id]'), r.container, 120, 200)
+    // The one task's own items (read after the menu mounted) are there in the end…
+    await waitFor(() => items().includes('track'), 'the one task’s Start tracking')
+    observer.disconnect()
+    // …and were there from the first paint: the list never grew under the pointer.
+    expect(seen).toEqual([items()])
+    escape()
+    await r.unmount()
   })
 })
