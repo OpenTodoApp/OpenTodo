@@ -126,13 +126,14 @@ function useViewCounts(views: View[], today: string, labels: Label[], projects: 
   return useMemo(() => evaluateViews(views, { today, labels, projects, tasks, sections, tracked, ...ws }, 0), [views, today, labels, projects, tasks, sections, tracked, ws])
 }
 
-export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSignOut, collapsed = false, onToggleCollapse }: {
+export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssistant, onSignOut, collapsed = false, onToggleCollapse }: {
   route: Route
   user: User
   /** Opens the search and command palette (the footer's Search item). */
   onSearch?: () => void
   /** Opens the keyboard cheat sheet (`?`). */
   onShortcuts?: () => void
+  onFeedback?: () => void
   /** Opens the assistant panel (Shift+I); absent when the assistant is not available. */
   onAssistant?: () => void
   /** Signs out of this device (the account menu, after its confirmation). */
@@ -561,7 +562,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
       </div>
       {/* The day's schedule (sidebar-schedule, issue 536): pinned above the footer, outside the scroller; not in the rail or the phone drawer. */}
       {!collapsed && !drawer && <SidebarSchedule />}
-      <SidebarFooter route={route} user={user} collapsed={collapsed} onSearch={onSearch} onShortcuts={onShortcuts} onAssistant={onAssistant} onToggleCollapse={onToggleCollapse} onSignOut={onSignOut} />
+      <SidebarFooter route={route} user={user} collapsed={collapsed} onSearch={onSearch} onShortcuts={onShortcuts} onFeedback={onFeedback} onAssistant={onAssistant} onToggleCollapse={onToggleCollapse} onSignOut={onSignOut} />
     </div>
   )
 }

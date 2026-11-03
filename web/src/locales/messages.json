@@ -2534,6 +2534,7 @@
     "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/app/DigestCard.tsx",
     "web/src/app/EncryptionPanel.tsx",
+    "web/src/app/FeedbackDialog.tsx",
     "web/src/app/FieldsDialog.tsx",
     "web/src/app/IssueEditor.tsx",
     "web/src/app/LinkDialog.tsx",
@@ -5816,6 +5817,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Feedback and problems": [
+    "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Fetching more…": [
@@ -10953,9 +10955,6 @@
   "Open an authenticator app on your phone (any app that supports time-based codes).": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
-  "Open an issue": [
-    "web/src/app/AboutSection.tsx"
-  ],
   "Open an issue on GitHub. Every report is read.": [
     "web/src/app/WelcomeDialog.tsx",
     "web/src/app/settingsIndex.ts",
@@ -13856,6 +13855,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Send by email": [
+    "web/src/app/FeedbackDialog.tsx",
     "web/src/app/InviteLinksSection.tsx",
     "web/src/app/MembersPanel.tsx",
     "web/src/app/WorkspaceInvites.tsx"
@@ -23066,5 +23066,29 @@
   "What's new": [
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Open on GitHub": [
+    "web/src/app/FeedbackDialog.tsx"
+  ],
+  "Something isn't working": [
+    "web/src/app/AboutSection.tsx",
+    "web/src/app/FeedbackDialog.tsx",
+    "web/src/app/SidebarFooter.tsx"
+  ],
+  "Tell us what went wrong. A hello is welcome too.": [
+    "web/src/app/FeedbackDialog.tsx"
+  ],
+  "The text is too long for a link. It is copied: paste it into the message.": [
+    "web/src/app/FeedbackDialog.tsx"
+  ],
+  "The text is too long for a link. It is selected: copy it and paste it into the message.": [
+    "web/src/app/FeedbackDialog.tsx"
+  ],
+  "Write it here. It opens as a GitHub issue or an email.": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Your message": [
+    "web/src/app/FeedbackDialog.tsx"
   ]
 }

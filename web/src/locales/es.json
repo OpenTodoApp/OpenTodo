@@ -3216,7 +3216,6 @@
   "Open Today": "Abrir Hoy",
   "Open Upcoming": "Abrir Próximo",
   "Open an authenticator app on your phone (any app that supports time-based codes).": "Abre una app de autenticación en tu móvil (cualquier app que admita códigos basados en el tiempo).",
-  "Open an issue": "Abrir una incidencia",
   "Open an issue on GitHub. Every report is read.": "Abre una incidencia en GitHub. Se leen todos los informes.",
   "Open as a new view: {query}": "Abrir como vista nueva: {query}",
   "Open calendar": "Abrir calendario",
@@ -6897,5 +6896,12 @@
   "These notes are in English.": "Estas notas están en inglés.",
   "Nothing new in this version yet.": "Todavía no hay nada nuevo en esta versión.",
   "Earlier versions": "Versiones anteriores",
-  "Release notes on GitHub": "Notas de la versión en GitHub"
+  "Release notes on GitHub": "Notas de la versión en GitHub",
+  "Something isn't working": "Algo no funciona",
+  "Tell us what went wrong. A hello is welcome too.": "Cuéntanos qué salió mal. Un saludo también es bienvenido.",
+  "Your message": "Tu mensaje",
+  "Open on GitHub": "Abrir en GitHub",
+  "The text is too long for a link. It is copied: paste it into the message.": "El texto es demasiado largo para un enlace. Se ha copiado: pégalo en el mensaje.",
+  "The text is too long for a link. It is selected: copy it and paste it into the message.": "El texto es demasiado largo para un enlace. Está seleccionado: cópialo y pégalo en el mensaje.",
+  "Write it here. It opens as a GitHub issue or an email.": "Escríbelo aquí. Se abre como una incidencia de GitHub o como un correo."
 }

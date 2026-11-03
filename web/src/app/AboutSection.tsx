@@ -9,7 +9,8 @@ import { Badge, Icon, Notice, SettingRow, SettingsSection } from '../ui'
 import { t } from '../lib/i18n'
 import type { User } from '../lib/types'
 import { navigate } from './router'
-import { CoffeeButton, DISCORD_URL, ISSUES_URL, REPO_URL, WelcomeNote, X_URL } from './WelcomeDialog'
+import { CoffeeButton, DISCORD_URL, REPO_URL, WelcomeNote, X_URL } from './WelcomeDialog'
+import { openFeedback } from '../lib/feedbackRequest'
 import { cardCopy, rowCopy } from '../lib/settingsCopy'
 import { shell, shellOutdated, type OpenTodoShell } from '../lib/shell'
 import { useServerVersion } from '../lib/serverVersion'
@@ -58,7 +59,7 @@ export function AboutSection({ user }: { user: User }) {
         <SettingRow id="about-website" {...rowCopy('about', 'website')}
           control={<ExternalLink href={WEBSITE_URL} label="open-todo.app" testId="website" />} />
         <SettingRow id="about-feedback" {...rowCopy('about', 'feedback')}
-          control={<ExternalLink href={ISSUES_URL} label={t('Open an issue')} testId="issues" />} />
+          control={<button type="button" className="ui-btn ui-btn--secondary ui-btn--sm" onClick={openFeedback} data-about-feedback>{t("Something isn't working")}</button>} />
         <SettingRow id="about-community" {...rowCopy('about', 'community')}
           control={<ExternalLink href={DISCORD_URL} label={t('Join on Discord')} testId="discord" />} />
         <SettingRow id="about-x" {...rowCopy('about', 'x')}
