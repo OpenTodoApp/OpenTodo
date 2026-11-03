@@ -319,7 +319,7 @@ const (
 	// relocating pages touches index pages all over the file.
 	runCacheKiB = 32 * 1024
 	// checkpointEvery spaces the checkpoints during a run.
-	checkpointEvery = time.Second
+	checkpointEvery = 250 * time.Millisecond
 )
 
 // tune sets the writer up for a run and returns what puts it back: a larger

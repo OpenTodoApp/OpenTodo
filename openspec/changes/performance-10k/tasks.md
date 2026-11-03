@@ -18,11 +18,11 @@
 
 - [ ] 3.1 Profile every budget the first run exceeds and fix in order of D6 (indexes, first-sync batching, search index, decrypt on demand); each fix with a count test; verify `make perf` medians within budget, `npm test`, `npm run build`, `make bundle-budget`, `go test ./...`
 - [x] 3.2 If list budgets need windowing, stop and propose a separate OpenSpec change; verify the decision is noted in this change's PR
-- [ ] 3.3 If the notes fixture's phone first-sync or IndexedDB budgets fail after compaction, propose `notes-on-demand` as its own OpenSpec change (DECISIONS.md "Notes storage safety" item 4) instead of raising them; verify the decision and the issue link are in the results record
+- [x] 3.3 If the notes fixture's phone first-sync or IndexedDB budgets fail after compaction, propose `notes-on-demand` as its own OpenSpec change (DECISIONS.md "Notes storage safety" item 4) instead of raising them; verify the decision and the issue link are in the results record. Decision (2026-11-03, `notes-compaction-at-scale`, #590): not needed. With compaction finishing and the first copy leaving out superseded note history, the CI runner measured first sync 21 s desktop and 46 s phone (limits 45 and 110) and 17 MB of IndexedDB (120); recorded in docs/performance.md
 
 ## 4. CI, devices and docs
 
-- [ ] 4.1 Nightly `perf` workflow (build, perfseed, `make perf`, upload report, `nightly-alert.sh` on failure) plus a reported-only 50,000-task run and the notes fixture run (`make perf NOTES=1`, its disk need checked first); verify a manual `workflow_dispatch` run
+- [x] 4.1 Nightly `perf` workflow (build, perfseed, `make perf`, upload report, `nightly-alert.sh` on failure) plus a reported-only 50,000-task run and the notes fixture run (`make perf NOTES=1`, its disk need checked first); verify a manual `workflow_dispatch` run
 - [ ] 4.2 `scripts/perf/device.md` and the debug page in the shells that runs the scripted session; first record `docs/performance/results-1.0.0.md` on the reference phones and a Raspberry Pi 4; verify the record lists device, OS, version and each value
 - [x] 4.3 `scripts/release/prepare.mjs` refuses a minor release without the device record or with an over-budget value lacking an issue; verify `node --test scripts/release/prepare.test.mjs`
 - [x] 4.4 `docs/performance.md` (budgets, fixture, how to run, latest results) with a repo check against `budgets.json`; links from `docs/self-hosting` and README; CHANGELOG entry under Unreleased; verify `make repo-check`, `make docs-check`, `make check`
