@@ -38,16 +38,17 @@ The server SHALL import the app's own JSON export (`opentodo-export` version 1 a
 ## ADDED Requirements
 
 ### Requirement: OmniFocus structure and attributes
-An OmniFocus CSV export SHALL be recognised by its header, which starts with `Task ID,Type,Name,Status,Project`, followed by `Context` or `Tags`. Folders SHALL become parent projects and projects SHALL become projects. Each action's dotted `Task ID` SHALL give its parent, so action groups become tasks with subtasks. These columns SHALL be mapped:
+An OmniFocus CSV export SHALL be recognised by its header, which starts with `Task ID,Type,Name,Status,Project`, followed by `Context` or `Tags`, in UTF-8 or UTF-16. Columns SHALL be found by name, so OmniFocus 4.7's `Planned Date` is read too. Projects SHALL become projects; folders are not in the file. Each action's dotted `Task ID` SHALL give its place: the nearest project row is its project and the nearest action its parent, so action groups become tasks with subtasks. Because a Task ID is a position, the source id SHALL be derived from the item's path of names, so a later export of the same database skips what was imported. These columns SHALL be mapped:
 - `Context` or `Tags`, split on commas, to labels;
 - `Start Date` to the start date;
-- `Due Date` to the due date and time;
+- `Due Date` to the due date and time, in the import's time zone;
+- `Planned Date` to the due date and time, the `Due Date` then becoming the deadline;
 - `Completion Date` to `completed_at`;
 - `Duration` to the estimate;
 - `Flagged` to priority 1;
 - `Notes` to the description.
 
-A `Dropped` action SHALL be imported completed with a warning. Repeat rules are not in the file, and the preview SHALL say so once as a file-level note.
+A done or dropped project SHALL be imported archived with a warning. A `Dropped` action SHALL be imported completed with a warning. Repeat rules are not in the file, and the preview SHALL say so once as a file-level note.
 
 #### Scenario: Hierarchy from task ids
 - **WHEN** a file has project `2` "Move house", action `2.1` "Pack" and action `2.1.1` "Buy boxes"
