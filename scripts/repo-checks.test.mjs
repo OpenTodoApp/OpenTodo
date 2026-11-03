@@ -681,6 +681,20 @@ test('the surface freeze names an entry deleted by hand after v1.0.0', () => {
   }
 })
 
+test('the recorded client calls carry no session, token or password (stability-contract D5)', () => {
+  const dir = 'internal/sync/testdata/v1_clients'
+  const files = readdirSync(path.join(root, dir)).filter((f) => f.endsWith('.json'))
+  assert.ok(files.length >= 3, `${dir} holds the web, ot and extension recordings`)
+  for (const f of files) {
+    const text = read(`${dir}/${f}`)
+    assert.doesNotMatch(text, /\bot_[A-Za-z0-9_-]{16,}/, `${dir}/${f} holds an API token`)
+    assert.doesNotMatch(text, /opentodo_session=|"(?:cookie|authorization|set-cookie)"\s*:/i, `${dir}/${f} holds a session cookie or credential header`)
+    for (const m of text.matchAll(/"(?:password|newPassword|currentPassword)"\s*:\s*"([^"]*)"/g)) {
+      assert.equal(m[1], '<password>', `${dir}/${f} holds a password`)
+    }
+  }
+})
+
 test('surfaceProblems ignores the about text and additions', () => {
   assert.deepEqual(surfaceProblems({ about: 'a', ops: { task: { title: 'string' } } }, { about: 'b', ops: { task: { title: 'string', new: 'bool' } } }), [])
 })
