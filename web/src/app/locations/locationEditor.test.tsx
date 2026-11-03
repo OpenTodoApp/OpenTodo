@@ -5,7 +5,7 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { setMeta, useDatabase } from '../../lib/db'
 import { createTask, resetDeviceId } from '../../lib/ops'
-import { click, flush, mockFetch, render, type, waitFor } from '../../ui/test-utils'
+import { click, flush, key, mockFetch, render, type, waitFor } from '../../ui/test-utils'
 import { LocationEditor } from './LocationEditor'
 import { LocationPreview } from './LocationPreview'
 
@@ -44,12 +44,30 @@ describe('LocationEditor', () => {
     await waitFor(() => !!document.querySelector('[data-privacy-line]'), 'maps on')
     expect(document.querySelector('[data-privacy-line]')!.textContent).toMatch(/map provider/)
     await type(field(), 'Piazza del Duomo Milano')
-    await waitFor(() => !!document.querySelector('[role="option"]'), 'a result')
-    const option = [...document.querySelectorAll('[role="option"]')].find((o) => o.textContent?.includes('Piazza del Duomo'))!
+    await waitFor(() => [...document.querySelectorAll('[role="option"]')].some((o) => o.textContent?.includes('20122 Milano')), 'the address result')
+    const option = [...document.querySelectorAll('[role="option"]')].find((o) => o.textContent?.includes('20122 Milano'))!
     await click(option)
     await waitFor(async () => !!(await db.tasks.get(id))?.location, 'the location')
     expect((await db.tasks.get(id))!.location).toEqual({ name: 'Piazza del Duomo', address: 'Piazza del Duomo, 20122 Milano, Italia', lat: 45.4641, lon: 9.1916 })
     expect(requests.some((p) => p.includes('/api/v1/maps/search'))).toBe(true)
+  })
+
+  it('keeps a typed name that search does not have to find, and Enter chooses it over an address result', async () => {
+    await setMeta('mapsAvailable', true)
+    const { id, db } = await editorFor('Put the tools away')
+    await waitFor(() => !!document.querySelector('[data-privacy-line]'), 'maps on')
+    await type(field(), 'Garage')
+    await waitFor(() => !!document.body.textContent?.includes('Use “Garage”'), 'the name choice')
+    await waitFor(() => !!document.body.textContent?.includes('Piazza del Duomo'), 'a search result under it')
+    const options = [...document.querySelectorAll('[role="option"]')].map((o) => o.textContent ?? '')
+    expect(options[0]).toContain('Use “Garage”')
+    expect(options.some((o) => o.includes('Piazza del Duomo'))).toBe(true)
+    await key(field(), 'Enter')
+    await waitFor(async () => {
+      const loc = (await db.tasks.get(id))?.location
+      return !!loc && typeof loc !== 'string' && loc.name === 'Garage'
+    }, 'the name')
+    expect((await db.tasks.get(id))!.location).toEqual({ name: 'Garage' })
   })
 
   it('says so when the browser refuses the position, and writes nothing', async () => {
@@ -72,6 +90,19 @@ describe('LocationEditor', () => {
     expect((await db.tasks.get(id))!.location).toEqual({ lat: 45.4642, lon: 9.19 })
     // eslint-disable-next-line test-hygiene/no-fixed-wait -- asserts that no map request follows
     await flush(50)
+    expect(requests.filter((p) => p.includes('/api/v1/maps/'))).toEqual([])
+  })
+
+  it('with maps off, Enter keeps a typed name and asks the map for nothing', async () => {
+    const { id, db } = await editorFor('The dock')
+    await type(field(), 'Dock')
+    await waitFor(() => !!document.body.textContent?.includes('Use “Dock”'), 'the name choice')
+    await key(field(), 'Enter')
+    await waitFor(async () => {
+      const loc = (await db.tasks.get(id))?.location
+      return !!loc && typeof loc !== 'string' && loc.name === 'Dock'
+    }, 'the name')
+    expect((await db.tasks.get(id))!.location).toEqual({ name: 'Dock' })
     expect(requests.filter((p) => p.includes('/api/v1/maps/'))).toEqual([])
   })
 })
