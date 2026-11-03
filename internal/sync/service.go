@@ -805,6 +805,12 @@ type Match struct {
 // matching entities first, so listing one project of a large account reads
 // that project's rows only (performance-10k).
 func (s *Service) ListWhere(ctx context.Context, userID, entity string, includeDeleted bool, m *Match) ([]Entity, error) {
+	return s.listEntities(ctx, userID, entity, includeDeleted, m, nil)
+}
+
+// listEntities is ListWhere, further narrowed to the given ids when ids is
+// not nil (ListIDs).
+func (s *Service) listEntities(ctx context.Context, userID, entity string, includeDeleted bool, m *Match, ids []string) ([]Entity, error) {
 	fields, ok := Schema[entity]
 	if !ok {
 		return nil, fmt.Errorf("%w: unknown entity %q", ErrInvalidOp, entity)
@@ -825,6 +831,10 @@ func (s *Service) ListWhere(ctx context.Context, userID, entity string, includeD
 		// literal so a partial index on it (scope_fields_project) applies.
 		query += ` AND entity_id IN (SELECT entity_id FROM scope_fields WHERE scope_id IN (` + placeholders(len(scopes)) + `) AND entity = ? AND field = '` + m.Field + `' AND value = ?)`
 		args = append(append(args, anys(scopes)...), entity, string(m.Value))
+	}
+	if ids != nil {
+		query += ` AND entity_id IN (` + placeholders(len(ids)) + `)`
+		args = append(args, anys(ids)...)
 	}
 	rows, err := s.reader().QueryContext(ctx, query, args...)
 	if err != nil {
