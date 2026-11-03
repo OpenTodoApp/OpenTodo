@@ -7,7 +7,7 @@
 //	go run ./internal/importer/sanitize <in> <out>
 //
 // <in> is a CSV (Todoist, TickTick, Linear, Asana, OmniFocus), a ZIP of CSVs (Todoist
-// backup), a Vikunja export ZIP (data.json, filters.json and files/), a Things
+// backup), a Notion Markdown & CSV export ZIP (see notion.go), a Vikunja export ZIP (data.json, filters.json and files/), a Things
 // main.sqlite, a Tududi database (see tududi.go) or a JSON export (Google
 // Tasks, Trello, Microsoft To Do, Apple Reminders, Any.do; see json.go). Nothing
 // imports this package, so it is never part of the server binary. Review every
@@ -376,6 +376,13 @@ func (s *scrubber) zip(data []byte) ([]byte, error) {
 	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
 		return nil, err
+	}
+	var names []string
+	for _, f := range zr.File {
+		names = append(names, f.Name)
+	}
+	if isNotionZip(names) || allZips(names) {
+		return s.notionZip(zr)
 	}
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
