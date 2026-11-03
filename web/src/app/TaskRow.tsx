@@ -43,7 +43,7 @@ import { dragFeedback } from './listDrop'
 import { fieldBadges } from '../lib/fields'
 import { useApplicableFields, useFieldDefs } from './useFields'
 import { t } from '../lib/i18n'
-import { originOf } from '../lib/taskOrigin'
+import { originOf, rowOrigin } from '../lib/taskOrigin'
 import { taskSource, type SourceKind } from '../lib/taskSource'
 import { relativeLabel } from './task-detail/RelativeTime'
 import { trackedLabel, trackedText } from '../lib/time'
@@ -717,9 +717,9 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
     ? { text: trackedText(tracked, task.estimate_minutes ?? null), label: trackedLabel(tracked, task.estimate_minutes ?? null), tracked: true }
     : task.estimate_minutes ? { text: formatMinutes(task.estimate_minutes), label: t('Estimate {minutes}', { minutes: formatMinutes(task.estimate_minutes) }), tracked: false } : null
   // Where the task came from (task-origin D7): quiet text, in the trailing group of a row and the line of a card.
-  // The Inbox's source line names it instead (inbox-split D4).
-  const origin = hides('origin') || (source && !card) ? null : originOf(task)
-  const originChip = origin ? <OriginChip origin={origin} quiet /> : null
+  // The Inbox's source line names it instead (inbox-split D4). An import's id is never shown (row-title-first-on-phones).
+  const origin = hides('origin') || (source && !card) ? null : rowOrigin(originOf(task))
+  const originChip = origin ? <OriginChip origin={origin} quiet iconOnly={origin.kind === 'import'} /> : null
   const projectName = showProject && project && !hides('project') ? project.name : null
   const hint = zoneHint(task.due)
   // A task without a do-on date shows its time sector in the date slot (time-sectors D4); a dated task never does.

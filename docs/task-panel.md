@@ -15,11 +15,11 @@ Select a task with <kbd>j</kbd> / <kbd>k</kbd> and press <kbd>Enter</kbd> to ope
 
 ## Moving around
 
-The top of the page names the list you came from (click it to go back), the task's project and parent, and its place in that list, such as **2 / 5**. Press <kbd>j</kbd> or <kbd>k</kbd> (or the ↓ and ↑ buttons) for the next or previous task of that list, and <kbd>Esc</kbd> or **×** to go back to the list, with the task selected where it was. On a phone, **Back** in the bar does the same. Opened from a reminder or the search bar, it goes back to the task's own list. From 1024 px wide, the Inbox and **Process the Inbox** keep the task beside the list or the card instead: in the Inbox, <kbd>Enter</kbd> then opens its page.
+The top of the page names the list you came from (click it to go back), the task's project and every parent, and its place in that list. Extra parents are under **…**. The panel too. Press <kbd>u</kbd> for the parent, <kbd>j</kbd> or <kbd>k</kbd> for the next or previous task of that list, and <kbd>Esc</kbd> or **×** to go back to the list, with the task selected where it was. On a phone, **Back** in the bar does the same. Opened from a reminder or the search bar, it goes back to the task's own list. From 1024 px wide, the Inbox and **Process the Inbox** keep the task beside the list or the card instead: in the Inbox, <kbd>Enter</kbd> then opens its page.
 
 ## The top of the page
 
-The **⋯** menu holds **Copy link**, **Attach**, **Delete** and the less frequent actions. Under the breadcrumb are the task's **checkbox** and its **title** (edit it in place), then **Notes**: one quiet line until you click it, then an editor (see [Write notes](notes-and-subtasks.md#write-notes)).
+The **⋯** menu holds **Copy link**, **Attach** and **Delete**. Under the breadcrumb are the task's **checkbox** and its **title** (edit it in place; a long title grows), then **Notes**: one quiet line until you click it, then an editor (see [Write notes](notes-and-subtasks.md#write-notes)).
 
 ## The facts
 

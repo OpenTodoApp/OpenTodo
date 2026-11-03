@@ -44,14 +44,19 @@ const LINK = 'inline-flex max-w-40 min-w-0 rounded-chip outline-none hover:text-
 // Activating the chip acts on the source only: the row neither opens nor starts a drag.
 const stop = (e: SyntheticEvent) => e.stopPropagation()
 
-export function OriginChip({ origin, quiet = false }: { origin: Origin; quiet?: boolean }) {
+/**
+ * `iconOnly` shows the kind's icon without the text (an imported origin in a row, whose id
+ * is not for reading); the text stays in the chip's accessible name. A row under 30 rem
+ * shows every quiet chip so (row-title-first-on-phones, index.css "The property column").
+ */
+export function OriginChip({ origin, quiet = false, iconOnly = false }: { origin: Origin; quiet?: boolean; iconOnly?: boolean }) {
   const text = originText(origin)
   const icon = originIcon(origin)
   // The stored page title or the Obsidian note's place, as a tooltip (never a second line).
   const tip = originTip(origin)
   const withTip = (el: ReactElement<Record<string, unknown>>) => (tip ? <Tooltip label={tip}>{el}</Tooltip> : el)
   const face = quiet
-    ? <span className={QUIET}><Icon name={icon} size="xs" /><span className="truncate">{text}</span></span>
+    ? <span className={QUIET}><Icon name={icon} size="xs" /><span className={iconOnly ? 'sr-only' : 'truncate'} data-origin-text>{text}</span></span>
     : <NeutralChip icon={icon}>{text}</NeutralChip>
   const label = t('Opens the source {text}', { text })
   const link = originLink(origin)

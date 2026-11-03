@@ -397,6 +397,12 @@
   "A name has at most {n} characters.": [
     "web/src/lib/fields.ts"
   ],
+  "A name, a saved location or coordinates": [
+    "web/src/app/locations/LocationEditor.tsx"
+  ],
+  "A name, an address, a saved location or coordinates": [
+    "web/src/app/locations/LocationEditor.tsx"
+  ],
   "A new app-specific password for {user}.": [
     "web/src/app/CalendarSyncDialogs.tsx"
   ],
@@ -3322,8 +3328,12 @@
   "Comment by {author}": [
     "web/src/app/task-detail/CommentsTab.tsx"
   ],
+  "Comment created": [
+    "web/src/lib/webhooks.ts"
+  ],
   "Comment deleted": [
-    "web/src/app/task-detail/CommentsTab.tsx"
+    "web/src/app/task-detail/CommentsTab.tsx",
+    "web/src/lib/webhooks.ts"
   ],
   "Comment on the open task: switch to the Comments tab and focus the composer (markdown; @ completes members, ↑ / ↓ and Enter pick)": [
     "web/src/lib/shortcuts.ts"
@@ -3339,6 +3349,9 @@
   ],
   "Comment time": [
     "web/src/app/DateTimeSettings.tsx"
+  ],
+  "Comment updated": [
+    "web/src/lib/webhooks.ts"
   ],
   "Commented": [
     "web/src/lib/feed.ts"
@@ -6095,9 +6108,6 @@
   "Find a routine…": [
     "web/src/app/palette/routineCommand.ts"
   ],
-  "Find a saved location or type coordinates": [
-    "web/src/app/locations/LocationEditor.tsx"
-  ],
   "Find a section…": [
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/routines/words.tsx",
@@ -7576,6 +7586,7 @@
     "web/src/app/task-detail/ActivityTab.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
+    "web/src/app/task-detail/TaskDetail.tsx",
     "web/src/app/task-detail/TaskPageView.tsx",
     "web/src/app/task-detail/usePropertiesModel.ts",
     "web/src/app/task-list/InlineEditor.tsx",
@@ -10103,9 +10114,6 @@
   "No runs yet.": [
     "web/src/app/routines/RunHistory.tsx"
   ],
-  "No saved location matches. Type coordinates such as 45.4642, 9.19.": [
-    "web/src/app/locations/LocationEditor.tsx"
-  ],
   "No saved locations yet": [
     "web/src/app/locations/PlacesView.tsx"
   ],
@@ -10273,6 +10281,9 @@
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/filter/FilterBuilder.tsx",
     "web/src/app/views/FilterChips.tsx"
+  ],
+  "Not a place on the map": [
+    "web/src/app/locations/LocationEditor.tsx"
   ],
   "Not a rule I understand: {error}. The previous rule is kept.": [
     "web/src/app/RecurrenceField.tsx"
@@ -10992,6 +11003,9 @@
   "On a task page: open the next task of the list it was opened from": [
     "web/src/lib/shortcuts.ts"
   ],
+  "On a task page: open the parent task": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "On a task page: open the previous task of that list": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -11346,6 +11360,9 @@
   ],
   "Open the monthly look": [
     "web/src/app/method/LoopHome.tsx"
+  ],
+  "Open the parent of the task in the panel": [
+    "web/src/lib/shortcuts.ts"
   ],
   "Open the recurring task": [
     "web/src/app/task-detail/TaskHead.tsx"
@@ -14002,9 +14019,6 @@
   "Search a city or zone": [
     "web/src/app/task-detail/ZoneControl.tsx"
   ],
-  "Search an address, a saved location or coordinates": [
-    "web/src/app/locations/LocationEditor.tsx"
-  ],
   "Search and commands": [
     "web/src/app/Sidebar.tsx",
     "web/src/app/SidebarFooter.tsx",
@@ -15850,6 +15864,9 @@
   ],
   "Task page…": [
     "web/src/app/task-detail/TaskActionsMenu.tsx"
+  ],
+  "Task path": [
+    "web/src/app/task-detail/TaskPath.tsx"
   ],
   "Task properties": [
     "web/src/app/task-list/InlineEditor.tsx"
@@ -18488,15 +18505,18 @@
   "Type a line here and press Enter; it goes to your Inbox. Try <em>Call the dentist tomorrow at 3pm</em>: the date and time become part of the task.": [
     "web/src/app/FirstRun.tsx"
   ],
+  "Type a name, a saved location or coordinates such as 45.4642, 9.19.": [
+    "web/src/app/locations/LocationEditor.tsx"
+  ],
+  "Type a name, an address, a saved location or coordinates such as 45.4642, 9.19.": [
+    "web/src/app/locations/LocationEditor.tsx"
+  ],
   "Type a query to list matching tasks. Enter jumps to the results, Esc comes back, ↑ / ↓ recall recent queries.": [
     "web/src/app/FilterView.tsx"
   ],
   "Type a title": [
     "web/src/app/QuickAdd.tsx",
     "web/src/app/quickadd/FieldRows.tsx"
-  ],
-  "Type an address, a saved location or coordinates such as 45.4642, 9.19.": [
-    "web/src/app/locations/LocationEditor.tsx"
   ],
   "Type any interval or pattern, such as {examples}.": [
     "web/src/app/RecurrenceField.tsx"
@@ -18772,9 +18792,11 @@
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/OccurrenceScope.tsx",
     "web/src/app/task-detail/Subtasks.tsx",
+    "web/src/app/task-detail/TaskDetail.tsx",
     "web/src/app/task-detail/TaskFacts.tsx",
     "web/src/app/task-detail/TaskHead.tsx",
     "web/src/app/task-detail/TaskPageView.tsx",
+    "web/src/app/task-detail/TaskPath.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/task-list/ListChrome.tsx",
     "web/src/app/task-list/WaitingSoon.tsx",
@@ -19003,6 +19025,9 @@
   ],
   "Use {name}": [
     "web/src/lib/rules/fixes.ts"
+  ],
+  "Use “{name}”": [
+    "web/src/app/locations/LocationEditor.tsx"
   ],
   "Used only on devices that have this font installed; others show the system font. It is never downloaded.": [
     "web/src/app/themes/EditorSections.tsx"
@@ -22704,6 +22729,9 @@
   ],
   "{n, plural, one {# panel} other {# panels}}": [
     "web/src/app/ViewsView.tsx"
+  ],
+  "{n, plural, one {# parent in between} other {# parents in between}}": [
+    "web/src/app/task-detail/TaskPath.tsx"
   ],
   "{n, plural, one {# past its deadline} other {# past their deadline}}": [
     "web/src/app/ProjectsTable.tsx"
