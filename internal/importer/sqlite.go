@@ -38,7 +38,15 @@ type sqliteCopy struct {
 // directory and opens it read-only on one pinned connection. close removes the
 // copy.
 func openSQLiteCopy(data, wal []byte, opts Options, app string) (*sqliteCopy, error) {
-	dir, err := os.MkdirTemp(opts.tempDir, app+"-import-")
+	// The parent is the server's configured temporary directory, never a
+	// request's value; refuse anything that could climb out of it.
+	parent := filepath.Clean(opts.tempDir)
+	if opts.tempDir == "" {
+		parent = ""
+	} else if strings.Contains(parent, "..") {
+		return nil, fmt.Errorf("%s: temporary directory %q is not a clean path", app, opts.tempDir)
+	}
+	dir, err := os.MkdirTemp(parent, "sqlite-import-")
 	if err != nil {
 		return nil, fmt.Errorf("%s: temporary directory: %w", app, err)
 	}
