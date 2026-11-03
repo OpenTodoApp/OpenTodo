@@ -31,6 +31,7 @@ import { NotePage, NotePanel } from './NoteEditor'
 import { deleteNote, turnNoteIntoTask } from './noteActions'
 import { NoteMenu, NoteRow } from './NoteRow'
 import { openNote } from './openNote'
+import { LIST_READY, perfMark, SEARCH_RESULTS } from '../../lib/perfMarks'
 
 /** The page's filters on this device (never synced). */
 export const NOTE_FILTERS_KEY = 'opentodo.notes.filters'
@@ -75,6 +76,26 @@ export function NotesEmpty({ onNew }: { onNew: () => void }) {
 
 interface Row { entry: NoteEntry; snippet?: SnippetSegment[] }
 
+/** Runs `step` in idle moments while it returns true; returns the cancel. */
+function warmSoon(step: () => boolean): () => void {
+  let handle = 0
+  let stopped = false
+  const run = () => { if (!stopped && step()) handle = schedule() }
+  const schedule = () => (typeof requestIdleCallback === 'function' ? requestIdleCallback(run, { timeout: 500 }) : window.setTimeout(run, 50))
+  handle = schedule()
+  return () => {
+    stopped = true
+    if (typeof cancelIdleCallback === 'function') cancelIdleCallback(handle)
+    clearTimeout(handle)
+  }
+}
+
+/** The page's measurement points (performance-10k D4): the list on screen, and the results of each search keystroke. */
+function useNotesMarks(listed: boolean, query: string, rows: unknown) {
+  useEffect(() => { if (listed) perfMark(LIST_READY, { view: 'notes' }) }, [listed])
+  useEffect(() => { if (query.trim()) perfMark(SEARCH_RESULTS, { view: 'notes' }) }, [query, rows])
+}
+
 export function NotesPage({ id }: { id?: string }) {
   const tasks = useLiveTasks() ?? NO_TASKS
   const projects = useProjects()
@@ -97,16 +118,20 @@ export function NotesPage({ id }: { id?: string }) {
 
   const entries = useMemo(() => noteEntries(tasks, projects, notes), [tasks, projects, notes])
   const filtered = useMemo(() => filterEntries(entries, filters), [entries, filters])
-  // The search index is built on the first search and forgets notes no longer listed.
+  // The search index is built in idle moments once the page is open (or on the first
+  // search, if that comes first) and forgets notes no longer listed.
   useEffect(() => { index.current?.prune(entries) }, [entries])
+  useEffect(() => warmSoon(() => (index.current ??= new NoteIndex(currentLanguage())).warm(entries)), [entries])
   // Dropped when the account locks (D4).
   useEffect(() => onEncryptionChange(() => { const s = encryptionSnapshot(); if (s.enabled && !s.unlocked) index.current?.clear() }), [])
   const rows = useMemo<Row[]>(() => {
     if (!query.trim()) return filtered.map((entry) => ({ entry }))
     index.current ??= new NoteIndex(currentLanguage())
-    return index.current.search(filtered, query).map((r) => ({ entry: r.note, snippet: r.snippet }))
-  }, [filtered, query])
+    // Snippets for the rows shown (list-rendering-at-scale: one per hit took most of a keystroke).
+    return index.current.search(filtered, query, undefined, limit).map((r) => ({ entry: r.note, snippet: r.snippet }))
+  }, [filtered, query, limit])
   const shown = rows.slice(0, limit)
+  useNotesMarks(entries.length > 0, query, rows)
 
   const changeFilters = (next: NoteFilters) => {
     setFilters(next)

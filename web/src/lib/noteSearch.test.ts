@@ -70,3 +70,19 @@ describe('the Go fold table', () => {
     for (const [c, d] of want) expect([c.toString(16), table.get(c)]).toEqual([c.toString(16), d])
   })
 })
+
+describe('snippets of ASCII text (list-rendering-at-scale)', () => {
+  it('match the per-character path: a non-ASCII character past the window takes that path', () => {
+    let seed = 11
+    const rand = (n: number) => Math.floor(((seed = (seed * 1103515245 + 12345) % 2 ** 31) / 2 ** 31) * n)
+    const words = ['Kitchen', 'kitchen', 'aa', 'a', 'Oven', 'IKEA', 'shelf', 'in', 'the', 'I']
+    for (let round = 0; round < 200; round++) {
+      const head = Array.from({ length: 12 }, () => words[rand(words.length)]).join(' ')
+      const text = `${head} ${'filler '.repeat(60)}`
+      const terms = [...new Set([words[rand(words.length)], words[rand(words.length)]].map((w) => normalizeText(w)))]
+      for (const lang of [undefined, 'en', 'tr']) {
+        expect(snippetPlain(text, terms, 140, lang)).toEqual(snippetPlain(`${text}é`, terms, 140, lang))
+      }
+    }
+  })
+})
