@@ -9,10 +9,20 @@ import (
 
 // Every kind has a check: a kind missing from kindChecks would accept any value.
 func TestKindChecksCoverEveryKind(t *testing.T) {
-	for k := kString; k <= kObjectivePeriod; k++ {
+	for k := kString; k <= kRadius; k++ {
 		if _, ok := kindChecks[k]; !ok {
 			t.Errorf("kind %d has no entry in kindChecks", k)
 		}
+		if kindNames[k] == "" {
+			t.Errorf("kind %d has no name in kindNames (kindnames.go)", k)
+		}
+	}
+	seen := map[string]bool{}
+	for _, n := range kindNames {
+		if seen[n] {
+			t.Errorf("kind name %q is used twice", n)
+		}
+		seen[n] = true
 	}
 }
 

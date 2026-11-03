@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { cpSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
+import { checkSurfaceFreeze, surfaceProblems, SURFACE_FILE } from './release/surfaceFreeze.mjs'
 import { MATRIX_APPS, matrixProblems, parseMatrix, staleRows, checkMatrixFreshness } from './release/switchMatrix.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -638,4 +639,48 @@ test('release preparation for 1.0 and later refuses a row checked more than 120 
   } finally {
     rmSync(tmp, { recursive: true, force: true })
   }
+})
+
+// ---- The v1 surface freeze (OpenSpec change stability-contract) ----------------------------------
+
+test('the v1 surface keeps every entry of the snapshot at v1.0.0', (t) => {
+  const problems = checkSurfaceFreeze(root)
+  if (problems === null) {
+    t.skip('v1.0.0 is not tagged yet')
+    return
+  }
+  assert.deepEqual(problems, [], 'the v1 surface only grows within 1.x (docs/stability.md)')
+})
+
+test('the surface freeze names an entry deleted by hand after v1.0.0', () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'surface-freeze-'))
+  try {
+    const g = (...args) => execFileSync('git', args, { cwd: dir, stdio: 'ignore' })
+    g('init', '-q')
+    g('config', 'user.email', 'test@example.com')
+    g('config', 'user.name', 'test')
+    mkdirSync(path.join(dir, path.dirname(SURFACE_FILE)), { recursive: true })
+    const surface = { about: 'x', errors: { bad_request: ['400', 'listed'] }, routes: { 'GET /api/v1/me': { policy: 'signed-in' } } }
+    writeFileSync(path.join(dir, SURFACE_FILE), JSON.stringify(surface))
+    g('add', '.')
+    g('commit', '-q', '-m', 'one')
+    assert.equal(checkSurfaceFreeze(dir), null, 'no tag: skipped')
+    g('tag', 'v1.0.0')
+    assert.deepEqual(checkSurfaceFreeze(dir), [])
+    delete surface.errors.bad_request
+    surface.routes['GET /api/v1/me'].policy = 'owner-only'
+    surface.routes['GET /api/v1/new'] = { policy: 'signed-in' }
+    writeFileSync(path.join(dir, SURFACE_FILE), JSON.stringify(surface))
+    assert.deepEqual(checkSurfaceFreeze(dir), [
+      'errors › bad_request › 400: present at v1.0.0, missing now',
+      'errors › bad_request › listed: present at v1.0.0, missing now',
+      'routes › GET /api/v1/me › policy: was "signed-in" at v1.0.0, now "owner-only"',
+    ])
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('surfaceProblems ignores the about text and additions', () => {
+  assert.deepEqual(surfaceProblems({ about: 'a', ops: { task: { title: 'string' } } }, { about: 'b', ops: { task: { title: 'string', new: 'bool' } } }), [])
 })

@@ -15,6 +15,8 @@ It is an **online** client: it keeps no local copy of your tasks and makes no ch
 
 `ot rules list` lists your [automation rules](automations.md); `ot rules enable <id>` and `ot rules disable <id>` turn one on or off (an id prefix or the exact name works; `--dry-run` prints the request); `ot rules runs <id>` prints its run log. A read token lists but cannot switch (exit 5). [Routines](routines.md) have their own command, `ot routine` (below).
 
+Command names, flags, exit codes and the `--json` output are part of the v1 surface: within 1.x they only grow ([stability and compatibility](stability.md)).
+
 ## Install
 
 Release assets are published for linux, macOS and Windows on amd64 and arm64 (`ot-<os>-<arch>`, with `SHA256SUMS`); download one, make it executable and put it on your `PATH`. Or build from source (Go 1.26+, no other dependency):
