@@ -34,8 +34,18 @@ function stickyCandidates(scroller: HTMLElement): HTMLElement[] {
   if (stickyCache?.scroller === scroller && now - stickyCache.at < STICKY_TTL_MS) return stickyCache.list.filter((el) => el.isConnected)
   // Only what can be sticky (the app pins with Tailwind's sticky classes): reading
   // the style of every element cost 80 ms a key in a 2,000-row list (performance-10k),
-  // and finding them again on every key of a run of j presses most of the rest.
-  const list = [...scroller.querySelectorAll<HTMLElement>('[class*="sticky"], [style*="sticky"]')]
+  // and finding them again on every key of a run of j presses most of the rest. A
+  // task row holds nothing sticky, so the walk skips each row's subtree: matching
+  // the selectors against every element of 2,000 rows took 8 ms a key
+  // (list-rendering-at-scale).
+  const list: HTMLElement[] = []
+  const walker = document.createTreeWalker(scroller, NodeFilter.SHOW_ELEMENT, {
+    acceptNode: (n) => ((n as HTMLElement).dataset?.taskId !== undefined ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT),
+  })
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    const el = n as HTMLElement
+    if (el.className?.toString().includes('sticky') || el.getAttribute('style')?.includes('sticky')) list.push(el)
+  }
   stickyCache = { scroller, at: now, list }
   return list
 }

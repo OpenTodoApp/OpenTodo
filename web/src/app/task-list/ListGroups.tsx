@@ -186,6 +186,45 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
   return (r) => (c.fieldColumns ? <FieldColumnsRow key={r.task.id} task={r.task} defs={c.projectFieldDefs} row={line(r)} /> : line(r))
 }
 
+/** The context fields that name one row; each row compares its own answer instead. */
+const ROW_FIELDS = new Set<keyof RowContext>(['selectedId', 'inlineId', 'expandedId', 'dropAt', 'draggingId', 'ticked', 'addingUnder', 'onCloseSubtask', 'departures'])
+
+/** What a row reads from the ROW_FIELDS: the same answers give the same element. */
+const rowSignature = (c: RowContext, r: Row): string => {
+  const id = r.task.id
+  return `${rowMotion(r.task, c.departures) ?? '-'}${+(c.selectedId === id)}${+(c.inlineId === id)}${+(c.expandedId === id)}${c.dropAt?.id === id ? c.dropAt.zone : '-'}${+(c.draggingId === id)}${+!!c.draggingId}${+c.ticked.has(id)}${+(c.addingUnder === id)}`
+}
+
+const sameContext = (a: RowContext, b: RowContext): boolean => {
+  for (const k of Object.keys(b) as (keyof RowContext)[]) if (!ROW_FIELDS.has(k) && a[k] !== b[k]) return false
+  return Object.keys(a).length === Object.keys(b).length
+}
+
+/**
+ * rowRenderer with each row's element kept while nothing it shows changed
+ * (list-rendering-at-scale): a cursor move, a tick or an expanded row gives the
+ * same element to every other row, which React passes over without comparing
+ * its props. A list draws up to 2,000 rows, and making their elements again took
+ * most of a cursor move. Rows are new objects whenever their task or place
+ * changes; anything else that changes clears the cache.
+ */
+export function useRowRenderer(c: RowContext): (r: Row) => ReactNode {
+  const cache = useRef<{ c: RowContext | null; rows: WeakMap<Row, { sig: string; el: ReactNode }> }>({ c: null, rows: new WeakMap() })
+  const held = cache.current
+  if (!held.c || !sameContext(held.c, c)) held.rows = new WeakMap()
+  held.c = c
+  const rows = held.rows
+  const render = rowRenderer(c)
+  return (r) => {
+    const sig = rowSignature(c, r)
+    const hit = rows.get(r)
+    if (hit?.sig === sig) return hit.el
+    const el = render(r)
+    rows.set(r, { sig, el })
+    return el
+  }
+}
+
 export interface GroupedListProps {
   groups: ListGroup[]
   view: ListRoute['view']

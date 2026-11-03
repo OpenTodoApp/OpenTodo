@@ -51,7 +51,7 @@ import { SubProjects } from './SubProjects'
 import { TimelineView } from './TimelineView'
 import { completeWithUndo } from './undoable'
 import { CompleteParentPrompt, EmptyState, FilteredEmpty, HiddenNote, LayoutSwitch, ListPageActions, MissingTarget, type PhoneItem, PhoneMenuItems, phoneGroups, placeholderFor, ReadOnlyQuickAdd, usePhoneListActions, RowPickerDialogs } from './task-list/ListChrome'
-import { GroupedList, LogbookMore, rowRenderer, useListMotion } from './task-list/ListGroups'
+import { GroupedList, LogbookMore, useListMotion, useRowRenderer } from './task-list/ListGroups'
 import { ProjectionsMenuItem } from './calendar/projectionSwitches'
 import { useListSplit } from './task-list/useInboxSplit'
 import { STICKY_QUICK_ADD, useStickyQuickAdd } from './task-list/stickyQuickAdd'
@@ -309,7 +309,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const rowActions = useListBindings({ ...shared, manual: projectManual, setSelectMode, startDrag: drag.startDrag, insertAfter, listRoot, projectReadOnly: m.projectReadOnly, startInline, setExpandedId, openRowMenu: rowMenu.open, draggingId: drag.draggingId })
 
   const { edgeOf, boardGroups, queryControl: queryFilter, queryHost, cardNotes } = useListExtras(board, m.queryFilter, projectId ? { mode: viewMode, onChoose: chooseViewMode } : null, projectId) // Colour by on boards, Upcoming's query filter (calendar-clarity)
-  const renderRow = rowRenderer({
+  const renderRow = useRowRenderer({
     view: route.view, labelId: route.view === 'label' ? route.id : undefined, userId, projectMap: m.projectMap, labelMap: m.labelMap, memberMap: m.memberMap, selectedId, progress: m.progress, blocked: m.blocked, flow: m.flow,
     habits: m.habits, isReadOnly, board, manual, ownOrder: !!ownOrder, treeView: m.treeView, dropAt: drag.dropAt, draggingId: drag.draggingId, ticked: selection.ticked,
     showCheckbox: selectMode || (fine && selection.ticked.size > 0), fieldColumns: m.fieldColumns, projectFieldDefs: m.projectFieldDefs, siblingPos: m.siblingPos,

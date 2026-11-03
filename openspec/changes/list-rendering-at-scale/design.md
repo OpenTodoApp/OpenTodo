@@ -24,6 +24,14 @@ Two places had relied on the old snapshot arriving late, and are fixed so that t
 
 **D4. Windowing as a last resort**, in a later change, only if D1–D3 leave the list budgets unmet on the CI runner.
 
+**D5. Nothing outside a write's own rows moves.** Measured after D1–D3, a cursor move, a tick and a remote edit still made all 2,000 rows again, and each sync derived the 10,000 tasks again:
+
+- The list keeps each row's element while nothing that row shows changed (`useRowRenderer`): the list-wide inputs are compared once, and each row compares its own answers (cursor, tick, editing, expanded, drop line, departure). React passes the kept elements over without comparing their props.
+- Every exchange stored the workspace directory again, which woke every live read of the workspace state: the task snapshot derived its sets again and projects and labels came back as new objects, so every row's project and labels changed. The directory is now written only when it differs, the snapshot derives its sets only when a project's place, its Trash state or the workspaces change, and the project, label, view and membership snapshots keep unchanged rows as the same objects (`keepRows`).
+- The sidebar's saved-view and workspace counts are computed after the write's own frame (`useDeferredValue`).
+- The cursor's scroll looks for sticky headers without walking into rows, and the tab title keeps the heading it found instead of looking it up on every frame.
+- The benchmark's remote edit compared the page's monotonic clock with the sender's wall clock, 0.9 s apart by then; both are wall-clock times now.
+
 ## Risks
 
 - Paint containment clips what a row draws outside itself: checked on every row control and the drop line (`ui-check` visual regression covers the row stories).
