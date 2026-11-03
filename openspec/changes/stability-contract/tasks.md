@@ -14,10 +14,10 @@
 
 ## 3. Upgrade fixtures
 
-- [ ] 3.1 `scripts/release/upgrade-fixture.sh <version>` driving the fixed scenario against the released image, skipping steps the version refuses, writing `opentodo.db.gz` and `manifest.json`; verify it runs for 0.16.0 locally and the manifest counts match a manual `sqlite3` count
-- [ ] 3.2 Fixtures for every released minor 0.1 … 0.16 under `internal/store/testdata/upgrade/`; verify the directory has 16 entries and each manifest names its source image digest
-- [ ] 3.3 `TestUpgradeFromEveryRelease` (migrate, counts, pull from cursor 0, export validates, password sign-in, token auth, attachment readable, cursor continuation for a device that synced before); verify `go test ./internal/store/... ./internal/tenant/...` and a deliberately broken migration fails it
-- [ ] 3.4 `scripts/release/prepare.mjs` refuses a new minor without its fixture; verify `node --test scripts/release/prepare.test.mjs`
+- [x] 3.1 `scripts/release/upgrade-fixture.sh <version>` building the tag in a temporary checkout and driving the fixed scenario against it, skipping steps the version refuses, writing `data.tar.gz` and `manifest.json`; verify it runs for 0.16.0 locally and the manifest counts match a manual count of the database
+- [x] 3.2 Fixtures for every released minor 0.1 … 0.21 under `internal/store/testdata/upgrade/`; verify the directory has 21 entries and each manifest names its source commit
+- [x] 3.3 `TestUpgradeFromEveryRelease` (migrate, counts, pull from cursor 0, export validates, password sign-in, token auth, attachment readable, cursor continuation for a device that synced before); verify `go test ./internal/tenant -run TestUpgradeFromEveryRelease` and a deliberately broken migration fails it
+- [x] 3.4 `scripts/release/prepare.mjs` refuses a new minor without its fixture; verify `node --test scripts/release/prepare.test.mjs`
 
 ## 4. Client and export compatibility
 
