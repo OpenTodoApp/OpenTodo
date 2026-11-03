@@ -46,6 +46,12 @@ The limits live in [`scripts/perf/budgets.json`](../scripts/perf/budgets.json);
 these tables show the same values, and a repository check fails when the two
 differ. A limit is raised only in a change that says why.
 
+An interaction is timed from the input to the frame after its change, so even one
+that does nothing measures about a frame. The interaction limits follow common
+response-time guidance: on a computer the cursor within three frames (50 ms) and a
+completion or keystroke within 100 ms; in the phone profile 150 ms for the cursor and
+200 ms for a completion or keystroke.
+
 The settings:
 
 - **Desktop**: Chromium on the CI runner.
@@ -62,10 +68,10 @@ The settings:
 | --- | --- | --- | --- | --- | --- |
 | `cold-start` Cold start with the data on the device, to the Today list | ms | 1,200 | 3,000 | 3,000 | 3,000 |
 | `open-project` Open the 2,000-task project, to the list | ms | 400 | 1,200 | 1,200 | 1,200 |
-| `search-keystroke` A keystroke in search, to the updated results (95th percentile) | ms | 50 | 150 | 150 | 150 |
+| `search-keystroke` A keystroke in search, to the updated results (95th percentile) | ms | 100 | 200 | 150 | 150 |
 | `saved-view` A saved view of eight clauses, to the list | ms | 100 | 300 | — | — |
-| `complete-task` Completing a task in the 2,000-row list, to the next frame (95th percentile) | ms | 50 | 150 | 150 | 150 |
-| `cursor-move` Moving the cursor with j or k, to the next frame (95th percentile) | ms | 16 | 50 | — | — |
+| `complete-task` Completing a task in the 2,000-row list, to the next frame (95th percentile) | ms | 100 | 200 | 150 | 150 |
+| `cursor-move` Moving the cursor with j or k, to the next frame (95th percentile) | ms | 50 | 150 | — | — |
 | `first-sync` First sync of a new device, sign-in to all 10,000 tasks on it | s | 30 | 75 | 90 | 90 |
 | `first-sync-long-task` Longest main-thread task during that sync | ms | 200 | — | — | — |
 | `remote-edit` An edit on another device, painted here | ms | 1,000 | — | — | — |
