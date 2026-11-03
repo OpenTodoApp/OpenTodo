@@ -9,7 +9,7 @@ import { useMembershipMap, useWorkspaceGroups } from '../../lib/localData'
 import { updateTask } from '../../lib/ops'
 import { addToRotation, MAX_ROTATION, moveInRotation } from '../../lib/rotation'
 import type { Task } from '../../lib/types'
-import { Button, ComboboxPanel, Icon, IconButton } from '../../ui'
+import { Button, ComboboxPanel, IconButton, MoveHandle } from '../../ui'
 import { PersonAvatar } from '../PersonAvatar'
 import { act } from '../actionError'
 import { t } from '../../lib/i18n'
@@ -108,11 +108,10 @@ export default function RotationEditor({ task, userId, onBack }: { task: Task; u
             return (
               <li key={id} ref={(el) => { rows.current[i] = el }} data-rotation-row={id}
                 className={`flex min-h-11 items-center gap-2 px-1.5 py-1 ${dragging === id ? 'bg-sunken dark:bg-raised' : ''}`}>
-                <button type="button" data-rotation-handle aria-label={t('Move {name} (Alt+Up or Alt+Down)', { name })}
-                  onKeyDown={(e) => onKey(e, id)} onPointerDown={(e) => onDown(e, id)}
-                  className="ui-btn ui-btn--ghost ui-btn--sm ui-btn--icon shrink-0 cursor-grab touch-none">
-                  <Icon name="grip-vertical" />
-                </button>
+                {/* Drag it, or click it for Move up and Move down (accessibility-aa D3, WCAG 2.5.7). */}
+                <MoveHandle data-rotation-handle data-drag-id="rotation-member" label={t('Move {name} (Alt+Up or Alt+Down)', { name })}
+                  first={i === 0} last={i === list.length - 1} onMove={(delta) => move(id, delta)}
+                  onKeyDown={(e) => onKey(e, id)} onPointerDown={(e) => onDown(e, id)} />
                 <span className="w-4 shrink-0 text-right text-meta text-faint tabular-nums" aria-hidden="true">{i + 1}</span>
                 <PersonAvatar id={id} name={name} size="xs" />
                 <span className={`min-w-0 flex-1 truncate text-body ${gone ? 'italic text-faint' : 'text-default'} ${now ? 'font-semibold' : ''}`}>

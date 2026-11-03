@@ -151,7 +151,7 @@ export function DayHeader({ day, today, tasks, meetings, prefs, showName, select
           </button>
         )}
         {open && day.lane.map((task) => (
-          <button
+          <button data-drag-id="calendar-lane-task"
             key={task.id}
             type="button"
             data-cal-id={task.id}
@@ -167,7 +167,7 @@ export function DayHeader({ day, today, tasks, meetings, prefs, showName, select
             {task.deadline === day.date && !task.completed_at && <><DeadlineDiamond past={day.date < today} /><span className="sr-only">, {deadlineMark(task, day.date)}</span></>}
             {task.estimate_minutes ? <span className="ml-auto shrink-0 text-hint tabular-nums">{formatMinutes(task.estimate_minutes)}</span> : null}
             {/* The trailing end: drag it onto a later day to make the task a span (multi-day-tasks D2). */}
-            {onExtend && !task.completed_at && !task.due?.time && <span aria-hidden data-span-handle="extend" onPointerDown={(e) => onExtend(e, task)} className="absolute inset-y-0 end-0 w-2 cursor-ew-resize touch-none" />}
+            {onExtend && !task.completed_at && !task.due?.time && <span data-drag-id="calendar-lane-extend" aria-hidden data-span-handle="extend" onPointerDown={(e) => onExtend(e, task)} className="absolute inset-y-0 end-0 w-2 cursor-ew-resize touch-none" />}
           </button>
         ))}
         {open && day.laneProjected.map((p) => <ProjectedItem key={p.id} p={p} hue={projectionHue?.(p)} variant="row" className="truncate" onDrag={(e) => onPointerDown(e, p.id)} />)}
@@ -334,7 +334,7 @@ function TaskBlock({ b, block, task, date, past, hue, selected, dragging, movesT
   const height = Math.max(MIN_BLOCK_MINUTES * PX_PER_MIN, (b.end - b.start) * PX_PER_MIN)
   const ghost = dragging ? 'opacity-40' : '' // tone-lint-allow: the dragged block's ghost
   return (
-    <div
+    <div data-drag-id="calendar-block"
       data-cal-id={b.id}
       data-block={b.id}
       data-overlap={b.overlap || undefined}
@@ -443,7 +443,7 @@ function OverflowStack({ o, day, taskMap, selectedId, expanded, setExpanded, onS
             const blk = day.blocks.get(id)
             return (
               <li key={id}>
-                <button
+                <button data-drag-id="calendar-overflow-task"
                   type="button"
                   data-cal-id={id}
                   onPointerDown={tk?.completed_at ? undefined : (e) => onDragStart(e, { taskId: id, kind: 'move' })}

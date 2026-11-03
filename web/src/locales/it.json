@@ -7141,5 +7141,9 @@
   "Has an assignee": "Ha un assegnatario",
   "Hide tasks assigned to others": "Nascondi le attività assegnate ad altri",
   "No member named \"{name}\"": "Nessun membro chiamato «{name}»",
-  "Show tasks assigned to others": "Mostra le attività assegnate ad altri"
+  "Show tasks assigned to others": "Mostra le attività assegnate ad altri",
+  "Reorder": "Riordina",
+  "Move to top": "Sposta in cima",
+  "Move to bottom": "Sposta in fondo",
+  "Move {name}": "Sposta {name}"
 }

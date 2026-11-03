@@ -233,6 +233,8 @@ Five surface styles, each a class in `@layer components` built from tokens (`Fou
 | Block | `ui-block` (`--row`, `--dashed`, `--past`, `--late`) | calendar blocks, Month and Plan rows, timeline bars |
 | Event | `ui-block--event`, `ui-block-dot` | events from other calendars |
 
+Every drag needs a way without dragging (WCAG 2.2 2.5.7): an element that starts a drag, a resize or a swipe carries `data-drag-id`, and `scripts/ux-audit/drag-alternatives.json` names its alternative, a menu item or a control (`web/src/lib/a11y/dragAlternatives.test.ts` fails otherwise). A short ordered list without a row menu drags by `MoveHandle` (`web/src/ui/MoveHandle.tsx`): pressed and moved it drags, clicked it opens Move up and Move down.
+
 Text cut with an ellipsis outside a control uses `TruncatedText` (`web/src/ui/TruncatedText.tsx`): while it is cut it takes keyboard focus and shows its whole text in the Tooltip on hover and focus; while it fits it is plain text. A control named by its content (a button, a link) cuts its own text instead.
 
 A block reads `data-hue`: the soft hue as fill, a 3 px solid edge, `text-strong`. `--past` mixes the fill toward the surface and uses `text-faint` (measured per hue in the contrast pairs); `--late` takes the danger pair whatever the hue.

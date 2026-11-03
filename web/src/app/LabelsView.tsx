@@ -322,7 +322,7 @@ export function LabelRow({ label, labels, count, duplicate, route, drop, onDragS
       {drop?.id === label.id && <span aria-hidden="true" className={`pointer-events-none absolute inset-x-1 h-0.5 rounded-control bg-accent ${drop.zone === 'before' ? '-top-px' : '-bottom-px'}`} />}
       <div className="flex items-center gap-1 pr-1">
         {onDragStart && (
-          <span className="hover-reveal flex cursor-grab touch-none items-center pl-1 text-faint" aria-hidden="true"
+          <span data-drag-id="label" className="hover-reveal flex cursor-grab touch-none items-center pl-1 text-faint" aria-hidden="true"
             onPointerDown={(e) => onDragStart(e, label)} data-label-handle>
             <Icon name="grip-vertical" size="xs" />
           </span>

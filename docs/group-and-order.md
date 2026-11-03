@@ -32,7 +32,7 @@ A new task goes at the end of manual order, or at the top if **Add new tasks: At
 
 ## Kept for each project and label
 
-The choice is kept for each project and each label, follows you to your other devices and stays after a restart. In a shared project it is yours only: other members keep their own.
+The choice is kept per project and label, follows you to your other devices and stays after a restart. In a shared project it is yours only: other members keep their own.
 
 ## Drag while another order is shown
 
@@ -40,11 +40,12 @@ Dragging a task between others in a project or on a label's page, or moving it w
 
 ## Your own order on a label page or saved view
 
-A label page and a [saved view](saved-views.md) keep their **own** manual order. Moving *Post office* above *Pharmacy* on the *errand* label does not move either task in its project. You can order tasks from a shared read-only project on your label pages and views.
+A label page and a [saved view](saved-views.md) keep their **own** manual order. Moving *Post office* above *Pharmacy* on the *errand* label does not move either task in its project. You can order tasks from a shared read-only project there too.
 
-- Drag a task above or below another one in the same group (on a phone, press and hold, then move), or select it and press <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd>, or <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd> for the top or bottom of its group. With Vim keys on, <kbd>Shift</kbd>+<kbd>J</kbd> / <kbd>K</kbd> work too.
+- Drag a task above or below another in its group (on a phone, press and hold, then move), or select it and press <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd>, or <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd> for the top or bottom of its group. With Vim keys on, <kbd>Shift</kbd>+<kbd>J</kbd> / <kbd>K</kbd> work too.
+- Without dragging: **Reorder** in the task's menu.
 - Each move shows **Order changed** with **Undo**.
-- Tasks you never moved follow the ones you placed, in their project order, so a new task appears after them.
+- Tasks you never moved follow the ones you placed, in project order, so a new task appears after them.
 - The order is kept for up to 500 tasks per page, follows you to your other devices and works offline. If you reorder a page on two devices offline, the last device to sync wins.
 
 Today, Upcoming, Anytime, Someday, Assigned to me, Completed and places have fixed orders. **New view** offers Manual order after the view is saved.

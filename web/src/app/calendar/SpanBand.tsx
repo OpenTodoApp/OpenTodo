@@ -102,7 +102,7 @@ function SpanBar({ piece, today, variant, selected, hue, canMove, canEdit, dragg
   const until = last && task.due?.time ? t('until {time}', { time: formatTime(task.due.time) }) : null
   return (
     <div data-span-piece={task.id} className="relative min-w-0 px-0.5" style={pieceStyle(piece)}>
-      <button type="button" data-span-bar={task.id} data-cal-id={task.id} data-hue={hue} aria-pressed={selected}
+      <button data-drag-id="span-band" type="button" data-span-bar={task.id} data-cal-id={task.id} data-hue={hue} aria-pressed={selected}
         data-span-first={span.first} data-span-last={span.last}
         onPointerDown={canMove ? drag('move', (e) => grabDay(e, piece.first, piece.cols)) : undefined}
         onClick={(e) => { e.stopPropagation(); onSelect(task.id) }}
@@ -117,10 +117,10 @@ function SpanBar({ piece, today, variant, selected, hue, canMove, canEdit, dragg
         {piece.endsAfter && <Icon name="chevron-right" size="xs" className="relative shrink-0" />}
       </button>
       {canMove && !piece.startsBefore && variant !== 'day' && (
-        <span aria-hidden data-span-handle="first" onPointerDown={drag('first', () => span.first)} className="absolute inset-y-0 start-0 w-2 cursor-ew-resize touch-none" />
+        <span data-drag-id="span-band-start" aria-hidden data-span-handle="first" onPointerDown={drag('first', () => span.first)} className="absolute inset-y-0 start-0 w-2 cursor-ew-resize touch-none" />
       )}
       {canMove && !piece.endsAfter && variant !== 'day' && (
-        <span aria-hidden data-span-handle="last" onPointerDown={drag('last', () => span.last)} className="absolute inset-y-0 end-0 w-2 cursor-ew-resize touch-none" />
+        <span data-drag-id="span-band-end" aria-hidden data-span-handle="last" onPointerDown={drag('last', () => span.last)} className="absolute inset-y-0 end-0 w-2 cursor-ew-resize touch-none" />
       )}
     </div>
   )
