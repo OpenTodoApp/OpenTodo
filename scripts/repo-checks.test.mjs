@@ -88,7 +88,12 @@ const tiers = [
   [['docs/api.md'], { code: 'false', docs: 'true', ui: 'false', layout: 'false', extension: 'false', skill: 'false' }],
   [['openspec/changes/x/proposal.md'], { code: 'false', docs: 'true', ui: 'false', layout: 'false' }],
   [['web/src/generated/help.json'], { code: 'false', ui: 'false', layout: 'false' }],
-  [['.github/workflows/ci.yml'], { ui: 'true', layout: 'true', extension: 'true', obsidian: 'true', skill: 'true', mobile: 'true', ios: 'true' }],
+  [['.github/workflows/ci.yml'], { ui: 'true', layout: 'true', a11y: 'true', extension: 'true', obsidian: 'true', skill: 'true', mobile: 'true', ios: 'true' }],
+  // The accessibility gate on real screens (accessibility-aa D1): the web app and the audit scripts only.
+  [['web/src/app/Shell.tsx'], { a11y: 'true' }],
+  [['scripts/ux-audit/tour.mjs'], { a11y: 'true', ui: 'false' }],
+  [['internal/sync/ops.go'], { a11y: 'false' }],
+  [['web/src/generated/help.json'], { a11y: 'false' }],
 ]
 
 const pick = (o, keys) => Object.fromEntries(keys.map((k) => [k, o[k]]))

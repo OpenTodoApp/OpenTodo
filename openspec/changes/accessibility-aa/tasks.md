@@ -2,13 +2,13 @@
 
 ## 1. Screen gate
 
-- [ ] 1.1 `A11Y_ONLY=1` and `A11Y_STRICT=1` in `scripts/ux-audit/tour.mjs` (axe serious/critical blocking, no screenshots in `A11Y_ONLY`); verify `node --test scripts/ux-audit/ux-audit.test.mjs` and a local run `A11Y_ONLY=1 WIDTHS=360,1280 LANGS=en make ux-audit` exits non-zero on a story with a nameless button
-- [ ] 1.2 New measures in `audit-measures.mjs`: focus not obscured, reflow at 320×256 with `reflow-exempt.json`, text spacing; target size and focus walk made blocking under `A11Y_STRICT`; verify unit tests in `measure.test.mjs` for each measure with a pass and a fail fixture page
-- [ ] 1.3 CI job `a11y-screens` (2 shards, 360 and 1280, light and dark, English) behind the web path filter, listed in the publish jobs' `needs`; nightly Interface audit sets `A11Y_STRICT=1`; verify the CI path filter test (`scripts/ci-changes.sh` cases) and a green run on the PR
+- [x] 1.1 `A11Y_ONLY=1` and `A11Y_STRICT=1` in `scripts/ux-audit/tour.mjs` (axe serious/critical blocking, no screenshots in `A11Y_ONLY`); verify `node --test scripts/ux-audit/ux-audit.test.mjs` and a local run `A11Y_ONLY=1 WIDTHS=360,1280 LANGS=en make ux-audit` exits non-zero on a story with a nameless button
+- [x] 1.2 New measures in `audit-measures.mjs`: focus not obscured, reflow at 320×256 with `reflow-exempt.json`, text spacing; target size and focus walk made blocking under `A11Y_STRICT`; verify unit tests in `measure.test.mjs` for each measure with a pass and a fail fixture page
+- [x] 1.3 CI job `a11y-screens` (2 shards, 360 and 1280, light and dark, English) behind the web path filter, listed in the publish jobs' `needs`; nightly Interface audit sets `A11Y_STRICT=1`; verify the CI path filter test (`scripts/ci-changes.sh` cases) and a green run on the PR
 
 ## 2. Fixes from the automated gate
 
-- [ ] 2.1 Run the gate on all 99 entries, fix every serious and critical violation and every measure failure (names, roles, landmarks, live regions, focus order, obscured focus, reflow, clipping); verify the gate passes, `npm test`, `npm run build`, `make ui-check`
+- [x] 2.1 Run the gate on all 99 entries, fix every serious and critical violation and every measure failure (names, roles, landmarks, live regions, focus order, obscured focus, reflow, clipping); verify the gate passes, `npm test`, `npm run build`, `make ui-check`
 
 ## 3. Dragging and authentication
 

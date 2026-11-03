@@ -99,6 +99,15 @@ No new rows of chrome, properties, sidebar destinations, scroll regions or short
 
 Nothing new to configure. Simple-list users see only the added menu items, which every user gets.
 
+## Implementation notes
+
+- **Target size is WCAG's own rule (M21), not M7.** M7 stays the design rule (44 px on touch, 24 px or 24 px of clear space with a mouse). The gate measures 2.5.8 as written: 24 × 24 px, or a 24 px circle centred on the target that meets no other target and no other undersized target's circle. Targets covered by an open menu or sheet are not targets at that moment, and targets of different layers are not compared (as M11).
+- **The focus walk runs at every width,** on overlays too, from the focus the overlay moved in (a person never starts from the page behind an open dialog). Transitions are off during the walk and it waits two frames after each Tab, so what the app does after a focus move (scrolling an element clear of a bar) is what is measured.
+- **The nightly full matrix is its own job in `nightly.yml`** (four shards, `A11Y_ONLY=1`, `TEXT_SIZE=20`), so a failure reaches the ci-nightly issue like the other nightly jobs; `A11Y_STRICT=1` remains for a local full tour.
+- **A screen that does not open (NAV) fails the gate.** Combinations share one account, so captures on the same project take turns (a project's layout is synced), which removed the flakes this caused.
+- **What the gate found and the fixes** (all core screens): menu items showed focus only as a background (now also the token ring); the page behind a modal dialog or bottom sheet stayed reachable by Tab and a screen reader (now inert, `useOverlay({ blocking })`); the phone drawer had the same problem, fixed at the same time by phone-interaction (#754, the drawer as an overlay, inert when closed); a reminder, break or daily-check toast covered the focused row (every toast now keeps clear, on a phone by moving to the top); the desktop sidebar painted over a toast on the left; a sticky bar (the filter's Save bar, a page header) covered a focused control (now scrolled clear, `lib/focusClearance.ts`); the weekly review's stepper scrolled sideways at 320 px; the time zone line's Change button's name did not contain its visible word; three undersized targets (the task page's breadcrumbs, the feed's project link, Change).
+- **The 2,000-row list** (`scripts/perf/a11y-list.mjs`, nightly with the performance budgets): with a screen reader running Chromium renders the rows `content-visibility: auto` skips, so all 2,000 rows are in the accessibility tree with their controls, in one list per section; each section's list is now named by its heading. Without an assistive technology Chromium leaves the skipped rows' contents out of the tree, which is why the check runs with full accessibility on.
+
 ## Open questions for the owner
 
 - An ACR/VPAT document for public-sector buyers, generated from the statement later?

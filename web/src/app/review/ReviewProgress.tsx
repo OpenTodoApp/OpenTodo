@@ -3,7 +3,8 @@
 // A done step shows a check, the current one is filled with a soft halo, an open
 // one shows what is left in a small bubble. Every circle opens its step. Phase
 // groups share the width in proportion to their steps but never shrink below their
-// name, so the stepper fits a 375 px screen without scrolling. Close the day
+// name, so the stepper fits a 375 px screen without scrolling (and, tighter, a 320 px one:
+// accessibility-aa). Close the day
 // (close-the-day D2) passes its own steps and its one phase.
 import { t } from '../../lib/i18n'
 import { PHASE_OF as WEEKLY_PHASE_OF, PHASE_TITLES as WEEKLY_PHASE_TITLES, STEP_IDS as WEEKLY_IDS, STEP_TITLES as WEEKLY_STEP_TITLES, type PhaseId, type StepId } from '../../lib/review'
@@ -37,10 +38,14 @@ export function ReviewProgress<S extends string = StepId, P extends string = Pha
   return (
     <nav aria-label={props.label ?? t('Review progress')} className="mb-5" data-review-progress>
       <p className="sr-only">{t('Step {n} of {total} · {phase}', { n: at + 1, total: STEP_IDS.length, phase: PHASE_TITLES[PHASE_OF[step]] })}</p>
-      <ol className="grid" style={{ gridTemplateColumns: columns }}>
+      {/* Below 360 px (a 320 px screen, 400% zoom, large text) the phases wrap onto more lines instead of scrolling sideways (WCAG 1.4.10). */}
+      <ol className="grid max-[359px]:flex max-[359px]:flex-wrap max-[359px]:gap-y-2" style={{ gridTemplateColumns: columns }}>
         {PHASES.map((phase) => (
-          <li key={phase} className="min-w-0" data-phase={phase}>
-            <p className={`mb-2 whitespace-nowrap pr-3 text-hint font-semibold uppercase tracking-wide ${PHASE_OF[step] === phase ? 'text-accent' : 'text-faint'}`}>{PHASE_TITLES[phase]}</p>
+          // In the narrow flex layout a phase grows with its number of steps, as its grid column does.
+          <li key={phase} className="min-w-0" style={{ flexGrow: STEP_IDS.filter((s) => PHASE_OF[s] === phase).length }} data-phase={phase}>
+            {/* Below 360 px (a 320 px screen, or 400% zoom) the names lose their letter spacing and the
+                joins narrow, so the stepper still fits without scrolling sideways (WCAG 1.4.10). */}
+            <p className={`mb-2 whitespace-nowrap ${phase === PHASES[PHASES.length - 1] ? '' : 'pr-3 max-[359px]:pr-2'} text-hint font-semibold uppercase tracking-wide max-[359px]:tracking-normal ${PHASE_OF[step] === phase ? 'text-accent' : 'text-faint'}`}>{PHASE_TITLES[phase]}</p>
             <ol className="flex">
               {STEP_IDS.filter((s) => PHASE_OF[s] === phase).map((s) => {
                 const i = STEP_IDS.indexOf(s)
@@ -66,7 +71,7 @@ export function ReviewProgress<S extends string = StepId, P extends string = Pha
                           <span className="sr-only">{`${PHASE_TITLES[phase]}: ${STEP_TITLES[s]}, ${status(s)}`}</span>
                         </button>
                       </div>
-                      {!last && <span aria-hidden="true" className={`mx-1 h-0.5 flex-1 rounded-full ${i < at || (done && steps.done[STEP_IDS[i + 1]]) ? 'bg-accent' : 'bg-faint/30'}`} />}
+                      {!last && <span aria-hidden="true" className={`mx-1 max-[359px]:mx-0.5 h-0.5 flex-1 rounded-full ${i < at || (done && steps.done[STEP_IDS[i + 1]]) ? 'bg-accent' : 'bg-faint/30'}`} />}
                     </div>
                     <span aria-hidden="true" className={`mt-2 hidden truncate pr-2 text-hint sm:block ${current ? 'font-semibold text-strong' : done ? 'text-muted' : 'text-faint'}`}>{STEP_TITLES[s]}</span>
                   </li>
