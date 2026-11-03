@@ -7,7 +7,7 @@ import { useShortcutHints } from './shortcuts/hints'
 const GO_KEYS: Record<string, string> = Object.fromEntries(SHORTCUTS.filter((s) => s.id.startsWith('go.')).map((s) => [s.id.slice(3), s.keys[0]]))
 import { requestTemplateDialog } from './TemplateDialogs'
 import { ProjectPickerField } from './ProjectPickerField'
-import { type FormEvent, Fragment, type KeyboardEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
+import { type FormEvent, Fragment, type KeyboardEvent, type ReactNode, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { orderDestinations, readAppearance, readSidebarCounts, type DestinationId, type Promotable } from '../lib/appearance'
 import { useAssistantStatus } from '../lib/assistantStatus'
 import { readCalendarMode } from '../lib/calendarMode'
@@ -123,7 +123,10 @@ function useViewCounts(views: View[], today: string, labels: Label[], projects: 
   // A view that names a workspace counts every workspace's tasks (group-mentions D6).
   const ws = useWorkspaceFilter()
   const sections = useLiveSections()
-  return useMemo(() => evaluateViews(views, { today, labels, projects, tasks, sections, tracked, ...ws }, 0), [views, today, labels, projects, tasks, sections, tracked, ws])
+  // Counted after the write's own frame (list-rendering-at-scale): evaluating every
+  // saved view over 10,000 tasks ran in the frame that completed a task.
+  const counted = useDeferredValue(tasks)
+  return useMemo(() => evaluateViews(views, { today, labels, projects, tasks: counted, sections, tracked, ...ws }, 0), [views, today, labels, projects, counted, sections, tracked, ws])
 }
 
 export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSignOut, collapsed = false, onToggleCollapse }: {

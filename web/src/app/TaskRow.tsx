@@ -57,6 +57,7 @@ import { dayPartName, dayPartOf, dayPartWord, type DayPart } from '../lib/dayPar
 import { energyChipLabel, energyName, energyOf, type Energy } from '../lib/energy'
 import { sectorLabel } from '../lib/sectorNames'
 import { formatSpan, spanOf, type Span } from '../lib/span'
+import { usePendingDone } from '../lib/pendingDone'
 
 /** The details of an expanded row (row-expand D3), loaded on the first expand. */
 const RowDetails = lazy(() => import('./task-list/RowDetails'))
@@ -442,12 +443,13 @@ export interface TaskRowProps {
   /** The columns layout shows field values in cells, so the row leaves out their values (custom-fields). */
   hideFieldBadges?: boolean
   /**
-   * Position among the visible rows with the same parent (assistive-tech-semantics):
-   * with `depth`, the row's aria-level, aria-posinset and aria-setsize, so the
-   * subtask hierarchy is announced and not only indented.
+   * A row of a tree list (assistive-tech-semantics): with `depth`, the row's
+   * aria-level, so the subtask hierarchy is announced and not only indented. Its
+   * aria-posinset and aria-setsize, which change for every row when one leaves,
+   * are written by the list (SiblingAria), so that does not draw every row again
+   * (list-rendering-at-scale).
    */
-  posInSet?: number
-  setSize?: number
+  treeItem?: boolean
   /** What the view or the group heading already says (calm-rows D3); the row leaves it out. */
   implied?: RowImplied
   /** The label whose view is open: the row leaves out its chip. */
@@ -665,7 +667,7 @@ export const TaskRow = memo(function TaskRow(props: TaskRowProps | CompactRowPro
   return props.shape === 'compact' ? <CompactRow {...props} /> : <FullRow {...props} />
 })
 
-function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout, edge, notes = false }: TaskRowProps) {
+function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, treeItem = false, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout, edge, notes = false }: TaskRowProps) {
   const card = shape === 'card'
   // The row's layout (row-layouts D1): the list's own choice, else the account's; a card keeps its shape.
   const accountLayout = useAccountRowLayout()
@@ -764,7 +766,8 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
 
   // A departing row is the last picture of a task that was completed: done, and out of reach.
   const departing = motion === 'leave'
-  const checked = done || departing
+  // The tick the user just gave shows before the write comes back (list-rendering-at-scale D3).
+  const checked = usePendingDone(task) || departing
   const rowRef = useRowHeight(departing)
   // Swipe right completes, left schedules, on touch rows the user may edit (phone-v2 D3).
   const swiping = useRowSwipe({ task, enabled: swipe && !card && !readOnly && !inline && !departing, onComplete: onToggle, force: forceSwipe, rowEl: rowRef })
@@ -800,9 +803,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
       data-ticked={ticked || undefined}
       data-dragging={dragging || undefined}
       aria-current={selected || undefined}
-      aria-level={card || setSize === undefined ? undefined : depth + 1}
-      aria-posinset={card ? undefined : posInSet}
-      aria-setsize={card ? undefined : setSize}
+      aria-level={card || !treeItem ? undefined : depth + 1}
       onPointerDown={handlePointerDown}
       // The row's empty area opens the task under either "Click a task to" choice (row-and-cursor
       // D1): a pointer shortcut; the open button stays the keyboard path. Drags and swipes
@@ -817,7 +818,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
       style={depth ? { paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 0.5}rem` } : undefined}
       data-expanded={showDetails || undefined}
       data-row-layout={detailed ? 'detailed' : undefined} {...(card && edge ? { 'data-hue': edge, 'data-card-edge': '' } : {})}
-      className={`group relative flex items-start gap-2 rounded-control px-2 ${showDetails ? 'flex-wrap' : ''} ${card ? '' : '@container/row'} ${card && edge ? 'border-s-3 border-s-hue-solid' : ''} ${swipe ? 'touch-pan-y' : ''} transition-[opacity,transform] duration-(--duration-emphasis) ease-calm ${card ? 'py-2.5 border border-default bg-surface shadow-1 dark:bg-raised' : 'row-pad'} ${dropIndicator === 'inside' ? feedback.inside : ''} ${ticked ? 'bg-accent-soft' : selected ? (card ? 'ring-1 ring-accent/50' : 'row-selected') : card ? '' : 'row-hover'} ${lift}`}
+      className={`group relative flex items-start gap-2 rounded-control px-2 ${showDetails ? 'flex-wrap' : ''} ${card ? '' : '@container/row'} ${card && edge ? 'border-s-3 border-s-hue-solid' : ''} ${swipe ? 'touch-pan-y' : ''} transition-[opacity,transform] duration-(--duration-emphasis) ease-calm ${card ? 'py-2.5 border border-default bg-surface shadow-1 dark:bg-raised' : 'row-pad'} ${card || selected || dragging || dropIndicator || inline || showDetails ? '' : 'row-offscreen'} ${dropIndicator === 'inside' ? feedback.inside : ''} ${ticked ? 'bg-accent-soft' : selected ? (card ? 'ring-1 ring-accent/50' : 'row-selected') : card ? '' : 'row-hover'} ${lift}`}
     >
       {(dropIndicator === 'before' || dropIndicator === 'after') && (
         // The drop position: a line with a dot at its start (task-list-presentation "Drag feedback").

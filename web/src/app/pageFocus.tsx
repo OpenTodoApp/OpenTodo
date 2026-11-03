@@ -63,9 +63,20 @@ export function usePageFocus(routeKey: unknown, frame: RefObject<HTMLElement | n
     const root = frame.current
     if (!root) return
     let raf = 0
+    // The heading found is kept while it is in the page: looking it up again after
+    // every change scanned a 2,000-row list each frame where the header names the
+    // page differently (list-rendering-at-scale). One that is not the header's own
+    // title is looked up again now and then, so the header's wins when it comes.
+    let heading: HTMLElement | null = null
+    let found = 0
     const update = () => {
       raf = 0
-      const next = pageTitle(headingText(pageHeading(root)))
+      const now = performance.now()
+      if (!heading?.isConnected || (!heading.hasAttribute('data-page-title') && now - found > 1000)) {
+        heading = pageHeading(root)
+        found = now
+      }
+      const next = pageTitle(headingText(heading))
       if (document.title !== next) document.title = next
     }
     update()
