@@ -14,6 +14,7 @@ import { click, flush, key, mockFetch, noPublicLinks, render, waitFor, minWidthP
 import { resetPanel } from './panel'
 import { PanelHost } from './PanelHost'
 import { TaskListView } from './TaskListView'
+import { selectTask } from './signals'
 
 const original = window.matchMedia
 let width = 1440
@@ -80,6 +81,16 @@ describe('Inbox split', () => {
     await key(document.activeElement ?? document.body, 'Escape')
     await waitFor(() => !!pane(), 'the empty pane again')
     expect(document.querySelector('li[aria-current="true"]')).toBeNull()
+    await r.unmount()
+  })
+
+  it('a task selected before the list has loaded docks once its row arrives', async () => {
+    // The cursor is often set before the rows load (a return from the task page, a notification).
+    await createTask({ title: 'Look into a standing desk' })
+    const dentist = await createTask({ title: 'Book the dentist' })
+    selectTask.set(dentist)
+    const r = await render(<><TaskListView route={{ view: 'inbox' }} /><PanelHost user={{ id: 'me' }} /></>)
+    await waitFor(() => docked() === dentist, 'the selected task beside the list')
     await r.unmount()
   })
 
