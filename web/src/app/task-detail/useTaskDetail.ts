@@ -5,6 +5,7 @@
 import { type RefObject, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { openAssistantWith, useAssistantStatus } from '../../lib/assistantStatus'
 import { useSubtasks, useTask, useMembershipMapOrLoading } from '../../lib/localData'
+import { useParentChain } from '../../lib/taskPath'
 import { markTaskNotificationsRead } from '../../lib/notifications'
 import { skipOccurrence, updateTask } from '../../lib/ops'
 import { roleOf } from '../../lib/sharing'
@@ -49,6 +50,7 @@ export function useTaskDetail({ taskId, initial, readOnly, projects, labelMap, o
   const [copied, setCopied] = useState(false)
   const children = useSubtasks(taskId)
   const parent = useTask(task?.parent_id)
+  const parents = useParentChain(task)
   const series = useTask(task?.series_id)
   const progress = useMemo(() => progressOf({ id: taskId }, children), [taskId, children])
   const memberships = useMembershipMapOrLoading()
@@ -103,6 +105,10 @@ export function useTaskDetail({ taskId, initial, readOnly, projects, labelMap, o
       if (!task || readOnly || !task.recurrence) return false
       act(skipOccurrence(task.id))
     },
+    'panel.parent': () => {
+      if (!parent || parent.deleted_at || !onOpen) return false
+      onOpen(parent.id)
+    },
   }, { within: () => scope.current })
 
   // A committed title (smart-title-tokens D5): a plain rename as before; what the edit typed
@@ -124,7 +130,7 @@ export function useTaskDetail({ taskId, initial, readOnly, projects, labelMap, o
 
   return {
     task, title, setTitle, titleField, labelList, commitTitle, toggle, remove, copyLink, copied, breakDown,
-    children, parent, series, progress, memberships, canPublish, pageStatus, pageDialog, setPageDialog, online,
+    children, parent, parents, series, progress, memberships, canPublish, pageStatus, pageDialog, setPageDialog, online,
     assistantAvailable: !!assistant?.available,
   }
 }
