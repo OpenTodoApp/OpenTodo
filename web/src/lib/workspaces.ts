@@ -133,13 +133,28 @@ export function sortWorkspaces(list: readonly Workspace[]): Workspace[] {
  * Replaces the cached directory with a sync response's `workspaces` (design D8)
  * and returns the ids of the workspaces that are gone from it.
  */
+/** The same rows by id, field for field (stored rows come back in key order). */
+function sameRows<T extends { id: string }>(stored: readonly T[], next: readonly T[]): boolean {
+  if (stored.length !== next.length) return false
+  const byId = new Map(stored.map((r) => [r.id, r]))
+  return next.every((r) => {
+    const s = byId.get(r.id)
+    return !!s && JSON.stringify(s, Object.keys(s).sort()) === JSON.stringify(r, Object.keys(r).sort())
+  })
+}
+
 export async function storeWorkspaces(entries: readonly WorkspaceEntry[]): Promise<string[]> {
   const workspaces: Workspace[] = entries.map(({ id, name, icon, color, default: isDefault, role, ownerId }) => ({ id, name, icon: icon ?? '', color: color ?? '', default: !!isDefault, role, ownerId }))
   const members: WorkspaceMember[] = entries.flatMap((w) => (w.members ?? []).map((m) => ({ id: `${w.id}\u0000${m.userId}`, workspaceId: w.id, userId: m.userId, name: m.name, role: m.role })))
   const groups: WorkspaceGroup[] = entries.flatMap((w) => (w.groups ?? []).map((g) => ({ id: g.id, workspaceId: w.id, name: g.name, members: g.members ?? [] })))
   let gone: string[] = []
   await db.transaction('rw', db.workspaces, db.workspaceMembers, db.groups, async () => {
-    const before = await db.workspaces.toCollection().primaryKeys()
+    // Every exchange brings the directory, nearly always unchanged: rewriting it woke
+    // every live read of the workspace state, which derived the 10,000 visible
+    // tasks again after each sync (list-rendering-at-scale).
+    const [was, wasMembers, wasGroups] = await Promise.all([db.workspaces.toArray(), db.workspaceMembers.toArray(), db.groups.toArray()])
+    if (sameRows(was, workspaces) && sameRows(wasMembers, members) && sameRows(wasGroups, groups)) return
+    const before = was.map((w) => w.id)
     const now = new Set(workspaces.map((w) => w.id))
     gone = before.filter((id) => !now.has(id))
     await Promise.all([db.workspaces.clear(), db.workspaceMembers.clear(), db.groups.clear()])

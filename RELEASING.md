@@ -20,6 +20,10 @@ It makes every edit a release needs, in one go:
 - A `## 0.15.0` entry in the Home Assistant add-on's `CHANGELOG.md`.
 - The `upstream/` copies, regenerated from their templates (`node scripts/deploy/mirror.mjs`; `--check` only lists stale copies, and `make deploy-check` runs it).
 
+From 1.0.0 on, a minor release (x.y.0) needs its reference-device record first: `docs/performance/results-x.y.0.md`, measured on the reference phones and a Raspberry Pi 4 as [scripts/perf/device.md](scripts/perf/device.md) describes. `make release-prepare` refuses the release without it, or when a value is over its budget of `scripts/perf/budgets.json` without a link to the issue that tracks it (`scripts/release/deviceRecord.mjs`, see [Performance budgets](docs/performance.md)).
+
+Every minor release (x.y.0) also needs its upgrade fixture: `scripts/release/upgrade-fixture.sh x.y.0 HEAD` builds the server from the commit being released, drives the fixed scenario through its API and stores the data directory and a manifest under `internal/store/testdata/upgrade/x.y/`; commit them with the release. `make release-prepare` refuses a minor without it (`scripts/release/upgradeFixture.mjs`), and `go test ./internal/tenant -run TestUpgradeFromEveryRelease` upgrades every fixture to the current server from then on ([Stability and compatibility](docs/stability.md#upgrades)). After tagging, the fixture can be rebuilt from the tag (`scripts/release/upgrade-fixture.sh x.y.0`).
+
 It changes the release only where the text names the project's version (an image tag, a `version`/`tag`/`placeholder` key, `ARG OPENTODO_VERSION`, a version in backticks), never a bare number: the lockfile has dependencies whose version can equal a release. `scripts/release/prepare.test.mjs` runs it on a copy of the tree for the next patch and the next minor, and checks the result against the files a hand-made release changed and against `make deploy-check`.
 
 Then, by hand:
@@ -47,9 +51,11 @@ Only organization admins can create `v*` tags: a ruleset protects them. A tag wi
 The tag runs the full CI matrix (`.github/workflows/ci.yml`: every binary, the WebKit, German and French layouts, Android, the image). Only when every gate passes:
 
 - the image is pushed to `ghcr.io/opentodoapp/opentodo` as `0.15.0`, `0.15` and `stable`, signed with its SBOM and provenance;
+- before the GitHub release is published, the release job checks that the new tag can be pulled without signing in (an anonymous ghcr.io token, then the manifest; `scripts/release/check-public-image.sh`). If the package was left private, it fails with a message naming the package's visibility setting;
 - the **GitHub release** gets the binaries, the extension and skill zips, the Android APK and AAB, the site bundle and `SHA256SUMS` (only these, by exact name: `scripts/release/collect-assets.sh`) with attestations, and its notes from the `CHANGELOG.md` section (`scripts/release-notes.sh`; a tag without a section fails);
 - the Helm chart is published (`.github/workflows/helm.yml`) and the Claude plugin is pushed to `OpenTodoApp/opentodo-claude`;
 - the release also carries the signed Android APK and AAB (`opentodo-android-<version>.apk`, `.aab`), after the Android job proved the build reproducible (a second build in a fresh checkout, compared by `scripts/android-repro.sh`; a mismatch fails the release) and checked the certificate against the documented one;
+- the AAB is the Google Play build, without location permissions until Play approves background location (`-Popentodo.play=true`; the Android job fails when it declares one or the APK lost one, `scripts/android-store-check.sh`);
 - for a final tag, the `play` job puts the AAB on Google Play's **internal** testing track with the CHANGELOG notes (`scripts/release/play-upload.mjs`, secrets in the `release` environment; without them it warns and succeeds). It never touches production.
 
 **Legacy image name.** Through the 0.16.x releases (`legacy.publishedThrough` in `deploy/deploy.json`), the image and the chart are also pushed to the old names `ghcr.io/pixari/opentodo` and `oci://ghcr.io/pixari/charts/opentodo` by `scripts/legacy-image.sh`, with the repository secret `GHCR_LEGACY_TOKEN` (a classic token of the user `pixari` with `write:packages`). A refused push is a warning in the run, not a failure: check the run's warnings, and renew the token if it expired. See [the move to OpenTodoApp](docs/self-hosting/docker.md#the-move-to-opentodoapp). From 0.17.0 nothing is pushed there; then remove the legacy steps.

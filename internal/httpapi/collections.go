@@ -35,7 +35,18 @@ func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid_input", msg)
 		return
 	}
-	list, err := s.sync.List(r.Context(), userFrom(r.Context()).ID, entity, r.URL.Query().Get("include_deleted") == "true")
+	// project_id lists one project's items (performance-10k): the database
+	// reads that project's rows, not the whole account's.
+	var match *opsync.Match
+	if q := r.URL.Query(); q.Has("project_id") {
+		_, has := opsync.Schema[entity]["project_id"]
+		if !has || q.Get("project_id") == "" {
+			writeError(w, http.StatusBadRequest, "invalid_input", "project_id: give a project id, on a collection whose items have a project")
+			return
+		}
+		match = &opsync.Match{Field: "project_id", Value: json.RawMessage(opsync.QuoteJSON(q.Get("project_id")))}
+	}
+	list, err := s.sync.ListWhere(r.Context(), userFrom(r.Context()).ID, entity, r.URL.Query().Get("include_deleted") == "true", match)
 	if err != nil {
 		s.internal(w, err)
 		return

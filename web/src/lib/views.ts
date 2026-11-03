@@ -519,6 +519,7 @@ export function compareTasks(sortBy: SortBy, dir: SortDir, context?: FieldSortCo
         return sign * compareDue(a.due, b.due) || fallback(a, b)
       }
     case 'priority':
+      // Priority 1 is the highest: ascending lists p4 first, descending p1 first.
       return (a, b) => sign * (b.priority - a.priority) || fallback(a, b)
     case 'position':
       return (a, b) => sign * (a.position - b.position) || fallback(a, b)
@@ -527,6 +528,7 @@ export function compareTasks(sortBy: SortBy, dir: SortDir, context?: FieldSortCo
     case 'title':
       return (a, b) => sign * byTitle(a, b) || fallback(a, b)
     case 'deadline':
+      // Like the due date: tasks without a deadline come last in either direction.
       return (a, b) => {
         if (!a.deadline || !b.deadline) return (a.deadline ? -1 : b.deadline ? 1 : 0) || fallback(a, b)
         return sign * (a.deadline < b.deadline ? -1 : a.deadline > b.deadline ? 1 : 0) || fallback(a, b)
@@ -535,6 +537,7 @@ export function compareTasks(sortBy: SortBy, dir: SortDir, context?: FieldSortCo
       return compareTasks('due', 'asc')
   }
 }
+
 /**
  * A saved view's comparator (OpenSpec change view-manual-order): its sort, where
  * Manual order is the view's own stored order, then the other tasks by position;

@@ -124,6 +124,7 @@
       "fire_at",
       "kind",
       "offset_minutes",
+      "radius_m",
       "task_id"
     ],
     "review": [

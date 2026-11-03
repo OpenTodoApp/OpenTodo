@@ -40,8 +40,9 @@ const (
 	kRecurrence
 	// kID is a non-empty id string of at most MaxIDLen characters (reminder.task_id).
 	kID
-	// kReminderKind is "relative", "absolute" (OpenSpec change reminders) or
-	// "deadline" (OpenSpec change deadlines).
+	// kReminderKind is "relative", "absolute" (OpenSpec change reminders),
+	// "deadline" (OpenSpec change deadlines) or the location kinds "arrive" and
+	// "leave" (OpenSpec change location-reminders, design D1).
 	kReminderKind
 	// kOffsetMinutes is null or an integer within ±MaxReminderOffset minutes.
 	kOffsetMinutes
@@ -153,6 +154,10 @@ const (
 	// week "YYYY-Www" checked by internal/sector. Months and "" are refused
 	// (plan-objectives D1).
 	kObjectivePeriod
+	// kRadius is null or a whole number of metres from MinReminderRadius to
+	// MaxReminderRadius (reminder.radius_m, OpenSpec change location-reminders,
+	// design D1).
+	kRadius
 )
 
 // MaxObjectiveTitle is the longest objective title in characters (plan-objectives D2).
@@ -201,6 +206,17 @@ var kindChecks = map[kind]func(raw json.RawMessage) error{
 	kSector:          checkSector,
 	kObjectiveTitle:  checkObjectiveTitle,
 	kObjectivePeriod: checkObjectivePeriod,
+	kRadius:          orNull(checkRadius),
+}
+
+// checkRadius accepts a whole number of metres from MinReminderRadius to
+// MaxReminderRadius (location-reminders D1).
+func checkRadius(raw json.RawMessage) error {
+	var n int64
+	if err := json.Unmarshal(raw, &n); err != nil || n < MinReminderRadius || n > MaxReminderRadius {
+		return fmt.Errorf("must be null or a whole number of metres from %d to %d", MinReminderRadius, MaxReminderRadius)
+	}
+	return nil
 }
 
 // checkObjectiveTitle accepts a one-line title of 1 to MaxObjectiveTitle
@@ -519,8 +535,8 @@ func checkID(raw json.RawMessage) error {
 
 func checkReminderKind(raw json.RawMessage) error {
 	var s string
-	if err := json.Unmarshal(raw, &s); err != nil || (s != "relative" && s != "absolute" && s != "deadline") {
-		return errors.New(`must be "relative", "absolute" or "deadline"`)
+	if err := json.Unmarshal(raw, &s); err != nil || (s != "relative" && s != "absolute" && s != "deadline" && !IsLocationKind(s)) {
+		return errors.New(`must be "relative", "absolute", "deadline", "arrive" or "leave"`)
 	}
 	return nil
 }
@@ -603,4 +619,21 @@ func isClock(s string) bool {
 		}
 	}
 	return true
+}
+
+// checkKind checks an op value against its field's kind; the per-kind checks
+// are in kinds.go. A kind without a check accepts any value.
+func checkKind(k kind, raw json.RawMessage) error {
+	check, ok := kindChecks[k]
+	if !ok {
+		return nil
+	}
+	return check(raw)
+}
+
+// idList reads a kIDList value (nil when it is not one).
+func idList(raw json.RawMessage) []string {
+	var l []string
+	_ = json.Unmarshal(raw, &l)
+	return l
 }

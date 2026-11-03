@@ -21,6 +21,8 @@ Open **Settings → Data**, select **Import data** (or press <kbd>g</kbd> then <
 - a **CSV file**, from a spreadsheet or a script, with a `title` column and optional columns for project, due date, priority, labels and more,
 - **JSON exports from other task apps**, in the common shapes those apps use.
 
+Moving from another app? Choose it under **Switching from…**: its export steps appear and the format is set ([switch guides](switch/README.md)).
+
 Nothing is written straight away. OpenTodo first shows a preview:
 
 1. **Check the format** it detected. You can change it if it guessed wrong.
@@ -48,7 +50,6 @@ Every import appears under **Past imports**, with a summary. **Undo** removes ev
 - Attachments in a file from another app come across as links when they're web addresses. Anything else, like a file on someone's computer, is listed as a warning.
 - Attached files count towards your attachments total, like files you add yourself. A file over the limit is skipped and listed under the import's errors.
 - In a CSV file, write dates as `2026-10-15` and put a time like `09:30` in a `due_time` column. The [import reference](import.md#csv-csv) lists every column, with an example file.
-- If a JSON export from another app isn't recognised, convert it to CSV. Every field OpenTodo stores can be written as a CSV column.
 - A template file is better started with **From a template…** than imported; see [Project templates](templates.md#from-a-template-or-import).
 
 The [import formats reference](import.md) has the details: each format, how fields are mapped, recurring rules and reminders.

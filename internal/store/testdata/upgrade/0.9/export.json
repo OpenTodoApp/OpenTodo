@@ -1,0 +1,226 @@
+{
+  "attachments": [
+    {
+      "author_id": "d0171e1f-f46a-4b20-a9f9-76668ab357c8",
+      "comment_id": null,
+      "created_at": 1793670369118,
+      "deleted_at": null,
+      "encrypted": false,
+      "id": "91c0cb3a-40bd-43f6-bef8-71445714ec8e",
+      "mime": "text/plain",
+      "name": "notes.txt",
+      "sha256": "65bd291e71718822959a61fbd34349420e84e0bb586ed2a551bf9142a229e928",
+      "size": 46,
+      "task_id": "d5652f71-3f2f-4155-be62-3a4681f7efc5",
+      "uploaded_at": 1793670369118,
+      "url": null
+    }
+  ],
+  "comments": [
+    {
+      "author_id": "d0171e1f-f46a-4b20-a9f9-76668ab357c8",
+      "body": "Use the **sharp** shears.",
+      "created_at": 1793670369111,
+      "deleted_at": null,
+      "edited_at": null,
+      "id": "7792b41d-7cfd-46a7-a97e-0fcc6dca4008",
+      "mentions": [],
+      "parent_id": null,
+      "task_id": "d5652f71-3f2f-4155-be62-3a4681f7efc5"
+    },
+    {
+      "author_id": "d0171e1f-f46a-4b20-a9f9-76668ab357c8",
+      "body": "Train or car?",
+      "created_at": 1793670369113,
+      "deleted_at": null,
+      "edited_at": null,
+      "id": "c6277356-4a7a-4bb2-9d57-9b7101f0cec8",
+      "mentions": [],
+      "parent_id": null,
+      "task_id": "a2926c93-c6c7-4861-bef5-b1e4e9f642ff"
+    }
+  ],
+  "encryption": null,
+  "exportedAt": "2026-11-03T01:46:09Z",
+  "fields": [],
+  "format": "opentodo-export",
+  "labels": [
+    {
+      "color": "#16a34a",
+      "created_at": 1793670369068,
+      "id": "5e245d20-b014-4fcb-a332-902469d0d69c",
+      "name": "Home",
+      "position": 1793670369068
+    },
+    {
+      "color": "#2563eb",
+      "created_at": 1793670369071,
+      "id": "6b4e37be-5889-40c3-9996-115fc5b7bf25",
+      "name": "Work",
+      "position": 1793670369071
+    }
+  ],
+  "project_prefs": [],
+  "projects": [
+    {
+      "color": "#65a30d",
+      "created_at": 1793670369073,
+      "id": "b21fa778-4d66-4ac7-8692-f97f60621f2c",
+      "name": "Garden",
+      "position": 1793670369073
+    },
+    {
+      "color": "#9333ea",
+      "created_at": 1793670369076,
+      "id": "88aacb12-61c2-4ab7-b28e-3f7588e90a4d",
+      "name": "Shared plans",
+      "owner_id": "d0171e1f-f46a-4b20-a9f9-76668ab357c8",
+      "position": 1793670369076,
+      "role": "owner"
+    }
+  ],
+  "reminders": [
+    {
+      "created_at": 1793670369104,
+      "deleted_at": null,
+      "delivered_at": null,
+      "dismissed_at": null,
+      "fire_at": 1795255200000,
+      "id": "8934c9dd-5d52-44ad-bb21-46dd6bab24ee",
+      "kind": "relative",
+      "offset_minutes": 30,
+      "task_id": "8b55cd00-0046-44d9-8a40-70e64c30d787"
+    }
+  ],
+  "review": [],
+  "sections": [
+    {
+      "created_at": 1793670369078,
+      "id": "21c9c5dc-b6c2-4ca7-b668-260ef0344411",
+      "name": "To do",
+      "position": 1793670369078,
+      "project_id": "b21fa778-4d66-4ac7-8692-f97f60621f2c"
+    },
+    {
+      "created_at": 1793670369080,
+      "id": "3e38bdb7-1fec-4ba2-ac43-ebd38acdda3a",
+      "name": "Doing",
+      "position": 1793670369080,
+      "project_id": "b21fa778-4d66-4ac7-8692-f97f60621f2c"
+    }
+  ],
+  "tasks": [
+    {
+      "created_at": 1793670369084,
+      "description": "Before the frost.\n\n- gloves\n- shears",
+      "due": {
+        "date": "2026-11-20"
+      },
+      "fields": {},
+      "id": "d5652f71-3f2f-4155-be62-3a4681f7efc5",
+      "labels": [
+        "5e245d20-b014-4fcb-a332-902469d0d69c"
+      ],
+      "origin": null,
+      "position": 1793670369084,
+      "priority": 1,
+      "project_id": "b21fa778-4d66-4ac7-8692-f97f60621f2c",
+      "section_id": "21c9c5dc-b6c2-4ca7-b668-260ef0344411",
+      "title": "Prune the roses"
+    },
+    {
+      "created_at": 1793670369087,
+      "due": {
+        "date": "2026-11-21",
+        "time": "09:30"
+      },
+      "fields": {},
+      "id": "8b55cd00-0046-44d9-8a40-70e64c30d787",
+      "labels": [
+        "5e245d20-b014-4fcb-a332-902469d0d69c",
+        "6b4e37be-5889-40c3-9996-115fc5b7bf25"
+      ],
+      "origin": null,
+      "position": 1793670369087,
+      "priority": 2,
+      "project_id": "b21fa778-4d66-4ac7-8692-f97f60621f2c",
+      "section_id": "3e38bdb7-1fec-4ba2-ac43-ebd38acdda3a",
+      "title": "Water the raised beds"
+    },
+    {
+      "created_at": 1793670369090,
+      "fields": {},
+      "id": "733a01ca-6ac5-477a-aca9-ad40bce806a1",
+      "origin": null,
+      "parent_id": "d5652f71-3f2f-4155-be62-3a4681f7efc5",
+      "position": 1793670369090,
+      "priority": 4,
+      "project_id": "b21fa778-4d66-4ac7-8692-f97f60621f2c",
+      "title": "Buy gloves"
+    },
+    {
+      "created_at": 1793670369092,
+      "due": {
+        "date": "2026-11-10"
+      },
+      "fields": {},
+      "id": "061a0ce3-1fab-4937-a299-ef9c5f672b82",
+      "origin": null,
+      "position": 1793670369092,
+      "priority": 3,
+      "recurrence": "every day",
+      "title": "Check the greenhouse"
+    },
+    {
+      "completed_at": 1762000000000,
+      "completed_by": "d0171e1f-f46a-4b20-a9f9-76668ab357c8",
+      "created_at": 1793670369094,
+      "fields": {},
+      "id": "7dad3b2d-cff4-472a-a1e7-4654be4d2260",
+      "origin": null,
+      "position": 1793670369094,
+      "priority": 4,
+      "title": "Order seeds"
+    },
+    {
+      "created_at": 1793670369096,
+      "deleted_at": 1793670369103,
+      "fields": {},
+      "id": "39415ee5-70ce-4ef9-bbd3-360f0c0a6fdd",
+      "origin": null,
+      "position": 1793670369096,
+      "priority": 4,
+      "title": "Old idea"
+    },
+    {
+      "created_at": 1793670369099,
+      "due": {
+        "date": "2026-12-01"
+      },
+      "fields": {},
+      "id": "a2926c93-c6c7-4861-bef5-b1e4e9f642ff",
+      "origin": null,
+      "position": 1793670369099,
+      "priority": 2,
+      "project_id": "88aacb12-61c2-4ab7-b28e-3f7588e90a4d",
+      "title": "Plan the trip"
+    }
+  ],
+  "time_entries": [
+    {
+      "created_at": 1793670369142,
+      "deleted_at": null,
+      "device_id": "server:f4b5ff30",
+      "ended_at": 1762001800000,
+      "id": "a874bde2-8ad1-442f-8448-a9a9b1ddee24",
+      "note": "",
+      "started_at": 1762000000000,
+      "task_id": "8b55cd00-0046-44d9-8a40-70e64c30d787",
+      "user_id": "d0171e1f-f46a-4b20-a9f9-76668ab357c8"
+    }
+  ],
+  "userId": "d0171e1f-f46a-4b20-a9f9-76668ab357c8",
+  "user_prefs": [],
+  "version": 1,
+  "views": []
+}

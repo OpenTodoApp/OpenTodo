@@ -1,0 +1,264 @@
+{
+  "format": "tududi-db",
+  "notes": [
+    "1 note without a project is not imported; copy it into a project's notes or a note of your own"
+  ],
+  "totals": {
+    "rows": 25,
+    "create": 25,
+    "update": 0,
+    "skip": 0,
+    "error": 0,
+    "possibleDuplicates": 0,
+    "warnings": 3,
+    "newProjects": 5,
+    "newLabels": 3,
+    "newSections": 0,
+    "recurring": 6,
+    "reminders": 0,
+    "deadlines": 0,
+    "attachments": 0,
+    "fields": 0,
+    "timeEntries": 0,
+    "places": 0,
+    "notes": 0,
+    "entities": 28,
+    "written": 0,
+    "ops": 0
+  },
+  "viewHints": null,
+  "rows": [
+    {
+      "row": 1,
+      "sourceId": "tududi:area:1",
+      "kind": "project",
+      "title": "Area 1",
+      "outcome": "create"
+    },
+    {
+      "row": 2,
+      "sourceId": "tududi:area:2",
+      "kind": "project",
+      "title": "Area 2",
+      "outcome": "create"
+    },
+    {
+      "row": 3,
+      "sourceId": "tududi:project:1",
+      "kind": "project",
+      "title": "Project 1",
+      "outcome": "create",
+      "warnings": [
+        "project tags dropped (projects have no labels; the tasks keep theirs)"
+      ]
+    },
+    {
+      "row": 4,
+      "sourceId": "tududi:project:2",
+      "kind": "project",
+      "title": "Project 2",
+      "outcome": "create"
+    },
+    {
+      "row": 5,
+      "sourceId": "tududi:project:3",
+      "kind": "project",
+      "title": "Project 3",
+      "outcome": "create"
+    },
+    {
+      "row": 6,
+      "sourceId": "tududi:s30q801uwx6ae57",
+      "kind": "task",
+      "title": "Task 1",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 7,
+      "sourceId": "tududi:iyxj5ebqmjh1n0j",
+      "kind": "task",
+      "title": "Task 3",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 8,
+      "sourceId": "tududi:6e43cf64zr6crxk",
+      "kind": "task",
+      "title": "Task 4",
+      "project": "Project 1",
+      "outcome": "create",
+      "warnings": [
+        "on Tududi's Today list; imported due on the import date"
+      ]
+    },
+    {
+      "row": 9,
+      "sourceId": "tududi:5ygtcnvb6uib944",
+      "kind": "task",
+      "title": "Task 5",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 10,
+      "sourceId": "tududi:vi2yttzxjcd1prf",
+      "kind": "task",
+      "title": "Task 6",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 11,
+      "sourceId": "tududi:cp7jsbz5dtane0p",
+      "kind": "task",
+      "title": "Task 7",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 12,
+      "sourceId": "tududi:z558misj586huds",
+      "kind": "task",
+      "title": "Task 8",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 13,
+      "sourceId": "tududi:9teutmd2bvyj2r8",
+      "kind": "task",
+      "title": "Task 9",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 14,
+      "sourceId": "tududi:p2h0r4imhc4dzn1",
+      "kind": "task",
+      "title": "Task 10",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 15,
+      "sourceId": "tududi:bwq8v5w9usu9n4t",
+      "kind": "task",
+      "title": "Task 11",
+      "project": "Project 1",
+      "outcome": "create",
+      "warnings": [
+        "repeat on monday, thursday every 2 weeks imported as \"every 2 weeks\""
+      ]
+    },
+    {
+      "row": 16,
+      "sourceId": "tududi:pjhsnpkc5tg2ay9",
+      "kind": "task",
+      "title": "Task 12",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 17,
+      "sourceId": "tududi:kc273vgnxdjbhaz",
+      "kind": "task",
+      "title": "Task 13",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 18,
+      "sourceId": "tududi:r1gp7i1nnymg5aw",
+      "kind": "task",
+      "title": "Task 14",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 19,
+      "sourceId": "tududi:cy1uyh6g4sbgmq3",
+      "kind": "task",
+      "title": "Task 15",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 20,
+      "sourceId": "tududi:a87yn77kq9fvbue",
+      "kind": "task",
+      "title": "Task 16",
+      "project": "Project 2",
+      "outcome": "create"
+    },
+    {
+      "row": 21,
+      "sourceId": "tududi:8gh4q6492s62aw8",
+      "kind": "task",
+      "title": "Task 17",
+      "project": "Area 2",
+      "outcome": "create"
+    },
+    {
+      "row": 22,
+      "sourceId": "tududi:i898p0nnu3zykq6",
+      "kind": "task",
+      "title": "Task 18",
+      "outcome": "create"
+    },
+    {
+      "row": 23,
+      "sourceId": "tududi:5399q1mrp8nfbrx",
+      "kind": "task",
+      "title": "Task 19",
+      "project": "Project 3",
+      "outcome": "create"
+    },
+    {
+      "row": 24,
+      "sourceId": "tududi:k7v2w2eeem4aqvi",
+      "kind": "task",
+      "title": "Task 2",
+      "project": "Project 1",
+      "outcome": "create"
+    },
+    {
+      "row": 25,
+      "sourceId": "tududi:inbox:wmmabqa91jr7suw",
+      "kind": "task",
+      "title": "Inbox 1",
+      "outcome": "create"
+    }
+  ],
+  "fields": [
+    "label id-0007: name=\"Tag 1\" created_at=1791979200000",
+    "label id-0008: name=\"Tag 2\" created_at=1791979200000",
+    "label id-0023: name=\"Tag 3\" created_at=1791979200000",
+    "project id-0001: name=\"Area 1\" archived=false created_at=1791979200000 description=\"Notes 1\"",
+    "project id-0002: name=\"Area 2\" archived=false created_at=1791979200000",
+    "project id-0003: name=\"Project 1\" archived=false created_at=1791979200000 description=\"Notes 2\\n\\n## Note 1\\n\\nNotes 4\" parent_id=\"id-0001\"",
+    "project id-0004: name=\"Project 2\" archived=false created_at=1791979200000 description=\"## Note 2\\n\\nNotes 5\" parent_id=\"id-0002\"",
+    "project id-0005: name=\"Project 3\" archived=false created_at=1791979200000",
+    "task id-0006: title=\"Task 1\" description=\"Notes 3\" priority=1 created_at=1793661063184 project_id=\"id-0003\" due={\"date\":\"2026-11-20\"} origin={\"kind\":\"import\",\"provider\":\"tududi\",\"id\":\"s30q801uwx6ae57\"} labels=[\"id-0007\",\"id-0008\"]",
+    "task id-0009: title=\"Task 3\" description=\"\" priority=2 created_at=1793661063309 project_id=\"id-0003\" due={\"date\":\"2026-11-05\",\"time\":\"09:30\"} origin={\"kind\":\"import\",\"provider\":\"tududi\",\"id\":\"iyxj5ebqmjh1n0j\"} labels=[]",
+    "task id-0010: title=\"Task 4\" description=\"\" priority=3 created_at=1793661063364 project_id=\"id-0003\" due={\"date\":\"2026-09-19\"} origin={\"kind\":\"import\",\"provider\":\"tududi\",\"id\":\"6e43cf64zr6crxk\"} labels=[]",
+    "task id-0011: title=\"Task 5\" description=\"\" priority=4 created_at=1793661063451 project_id=\"id-0003\" origin={\"kind\":\"import\",\"provider\":\"tududi\",\"id\":\"5ygtcnvb6uib944\"} labels=[]",
+    "task id-0012: title=\"Task 6\" description=\"\" priority=3 created_at=1793661063482 project_id=\"id-0003\" due={\"date\":\"2026-11-01\"} origin={\"kind\":\"import\",\"provider\":\"tududi\",\"id\":\"vi2yttzxjcd1prf\"} completed_at=1793661063526 labels=[]",
+    "task id-0013: title=\"Task 7\" description=\"\" priority=4 created_at=1793661063571 project_id=\"id-0003\" origin={\"kind\":\"import\",\"provider\":\"tududi\",\"id\":\"cp7jsbz5dtane0p\"} completed_at=1793661063614 labels=[]",
+    "task id-0014: title=\"Task 8\" description=\"\" priority=1 created_at=1793661063653 project_id=\"id-0003\" origin={\"kind\":\"import\",\"provider\":\"tududi\",\"id\":\"z558misj586huds\"} labels=[\"id-0008\"]",
+    "task id-0015: title=\"Task 9\" description=\"\" priority=4 created_at=1793661063703 project_id=\"id-0003\" origin={\"kind\":\"import\",\"provider\":\"tududi\",\"id\":\"9teutmd2bvyj2r8\"} labels=[]",
+    "task id-0016: title=\"Task 10\" description=\"\" priority=4 created_at=1793661063737 project_id=\"id-0003\" due={\"date\":\"2026-11-04\"} recurrence=\"every day\" origin={\"kind\":\"import\",\"provider\":\"tududi\",\"id\":\"p2h0r4imhc4dzn1\"} labels=[]",
+    "task id-0017: title=\"Task 11\" description=\"\" priority=4 created_at=1793661063772 project_id=\"id-0003\" due={\"date\":\"2026-11-05\"} recurrence=\"every 2 weeks\" origin={\"kind\":\"import\",\"provider\":\"tududi\",\"id\":\"bwq8v5w9usu9n4t\"} labels=[]",
+    "task id-0018: title=\"Task 12\" description=\"\" priority=4 created_at=1793661063802 project_id=\"id-0003\" due={\"date\":\"2026-11-15\"} recurrence=\"every 15th\" origin={\"kind\":\"import\",\"provider\":\"tududi\",\"id\":\"pjhsnpkc5tg2ay9\"} labels=[]",
+    "task id-0019: title=\"Task 13\" description=\"\" priority=4 created_at=1793661063849 project_id=\"id-0003\" due={\"date\":\"2026-11-10\"} recurrence=\"every 2nd tuesday\" origin={\"kind\":\"import\",\"provider\":\"tududi\",\"id\":\"kc273vgnxdjbhaz\"} labels=[]",
+    "task id-0020: title=\"Task 14\" description=\"\" priority=4 created_at=1793661063879 project_id=\"id-0003\" due={\"date\":\"2026-11-30\"} recurrence=\"every last day until 2027-06-30\" origin={\"kind\":\"import\",\"provider\":\"tududi\",\"id\":\"r1gp7i1nnymg5aw\"} labels=[]",
+    "task id-0021: title=\"Task 15\" description=\"\" priority=4 created_at=1793661063916 project_id=\"id-0003\" due={\"date\":\"2026-11-08\"} recurrence=\"every 10 days after completion\" origin={\"kind\":\"import\",\"provider\":\"tududi\",\"id\":\"cy1uyh6g4sbgmq3\"} labels=[]",
+    "task id-0022: title=\"Task 16\" description=\"\" priority=1 created_at=1793661063953 project_id=\"id-0004\" due={\"date\":\"2026-11-12\"} origin={\"kind\":\"import\",\"provider\":\"tududi\",\"id\":\"a87yn77kq9fvbue\"} labels=[\"id-0023\"]",
+    "task id-0024: title=\"Task 17\" description=\"\" priority=4 created_at=1793661064013 project_id=\"id-0002\" origin={\"kind\":\"import\",\"provider\":\"tududi\",\"id\":\"8gh4q6492s62aw8\"} labels=[]",
+    "task id-0025: title=\"Task 18\" description=\"\" priority=4 created_at=1793661064043 origin={\"kind\":\"import\",\"provider\":\"tududi\",\"id\":\"i898p0nnu3zykq6\"} labels=[]",
+    "task id-0026: title=\"Task 19\" description=\"\" priority=3 created_at=1793661064076 project_id=\"id-0005\" origin={\"kind\":\"import\",\"provider\":\"tududi\",\"id\":\"5399q1mrp8nfbrx\"} labels=[]",
+    "task id-0027: title=\"Task 2\" description=\"\" priority=2 created_at=1793661063269 project_id=\"id-0003\" parent_id=\"id-0006\" due={\"date\":\"2026-11-10\"} origin={\"kind\":\"import\",\"provider\":\"tududi\",\"id\":\"k7v2w2eeem4aqvi\"} labels=[]",
+    "task id-0028: title=\"Inbox 1\" description=\"\" priority=4 created_at=1791979200000 origin={\"kind\":\"import\",\"provider\":\"tududi\",\"id\":\"inbox:wmmabqa91jr7suw\"} labels=[]"
+  ]
+}

@@ -101,6 +101,18 @@ describe('the tab bar', () => {
     await r.unmount()
   })
 
+  it('leaves the add button out of Import, whose form fields it would cover', async () => {
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => !!document.querySelector('[data-add-button]'), 'the add button')
+    await act(async () => { navigate({ view: 'import' }) })
+    await waitFor(() => !document.querySelector('[data-add-button]'), 'the add button gone')
+    await act(async () => { navigate({ view: 'settings', section: 'data' }) })
+    expect(document.querySelector('[data-add-button]')).toBeNull()
+    await act(async () => { navigate({ view: 'today' }) })
+    await waitFor(() => !!document.querySelector('[data-add-button]'), 'the add button back')
+    await r.unmount()
+  })
+
   it('is not rendered from 768 px', async () => {
     width = 1024
     const r = await render(<Shell user={user} onLogout={() => {}} />)

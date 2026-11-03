@@ -30,6 +30,7 @@ import { isRunning, ownMinutesOnDay, repairs, running, startBatch, totalsByTask,
 import { useLiveTasks } from './liveTasks'
 import { uuid } from './ids'
 import type { Task, TimeEntry } from './types'
+import { LOCAL_ERRORS } from './localErrors'
 
 /** An end before the start (the form and the actions refuse it). */
 export class TimeRangeError extends Error {
@@ -69,7 +70,7 @@ export function planEntry(id: string, taskId: string, me: string, device: string
 
 async function signedIn(): Promise<string> {
   const me = await currentUserId()
-  if (!me) throw new Error('not signed in')
+  if (!me) throw new Error(LOCAL_ERRORS.notSignedIn)
   return me
 }
 
@@ -138,7 +139,7 @@ export async function logTime(taskId: string, startedAt: number, endedAt: number
  */
 export async function updateTimeEntry(id: string, patch: Partial<Pick<TimeEntry, 'started_at' | 'ended_at' | 'note'>>): Promise<void> {
   const row = await db.timeEntries.get(id)
-  if (!row) throw new Error('time entry not found')
+  if (!row) throw new Error(LOCAL_ERRORS.timeEntryNotFound)
   const start = patch.started_at ?? row.started_at
   const end = patch.ended_at !== undefined ? patch.ended_at : row.ended_at
   if (end !== null && end < start) throw new TimeRangeError()

@@ -34,17 +34,46 @@ export type { AttachmentBlob }
 
 // ---- shared snapshots ----
 
+/**
+ * A query whose rows keep the objects of its last answer while they are the same,
+ * and whose answer is the last array when nothing changed (list-rendering-at-scale):
+ * a live read runs again on any write to the tables it read, mostly unchanged.
+ */
+export function keepRows<T extends object>(query: () => Promise<T[]>, keyOf: (row: T) => string = (row) => (row as { id: string }).id): () => Promise<T[]> {
+  let last: T[] = []
+  let seen = new Map<string, { row: T; json: string }>()
+  return async () => {
+    const rows = await query()
+    const next = new Map<string, { row: T; json: string }>()
+    let same = rows.length === last.length
+    const out = rows.map((row, i) => {
+      const json = JSON.stringify(row)
+      const was = seen.get(keyOf(row))
+      const kept = was?.json === json ? was.row : row
+      next.set(keyOf(row), { row: kept, json })
+      if (kept !== last[i]) same = false
+      return kept
+    })
+    seen = next
+    if (same) return last
+    last = out
+    return out
+  }
+}
+
 // Projects, labels and views are those of the device's current workspace
 // (OpenSpec change workspaces, design D5): the partition happens here, once,
 // so every list, count and picker built on these snapshots follows it.
-const projectRows = liveSnapshot('projects', async () => projectsIn(await readWorkspaceState(), await db.projects.toArray()))
-const labelRows = liveSnapshot('labels', async () => ownIn(await readWorkspaceState(), await db.labels.toArray()))
-const membershipRows = liveSnapshot('memberships', () => db.memberships.toArray())
-const viewRows = liveSnapshot('views', async () => ownIn(await readWorkspaceState(), await db.views.toArray()))
+// They keep their row objects while a row is unchanged (keepRows): a list row shows
+// its project and labels, and fresh objects after every sync drew every row again.
+const projectRows = liveSnapshot('projects', keepRows(async () => projectsIn(await readWorkspaceState(), await db.projects.toArray())))
+const labelRows = liveSnapshot('labels', keepRows(async () => ownIn(await readWorkspaceState(), await db.labels.toArray())))
+const membershipRows = liveSnapshot('memberships', keepRows(() => db.memberships.toArray(), (m) => m.projectId))
+const viewRows = liveSnapshot('views', keepRows(async () => ownIn(await readWorkspaceState(), await db.views.toArray())))
 // Every workspace's rows, for what crosses workspaces: the palette, the project
 // picker grouped by workspace, moving between workspaces.
-const everyProjectRow = liveSnapshot('projects of every workspace', () => db.projects.toArray())
-const everyLabelRow = liveSnapshot('labels of every workspace', () => db.labels.toArray())
+const everyProjectRow = liveSnapshot('projects of every workspace', keepRows(() => db.projects.toArray()))
+const everyLabelRow = liveSnapshot('labels of every workspace', keepRows(() => db.labels.toArray()))
 const workspaceState = liveSnapshot('workspaces', readWorkspaceState)
 const workspaceMemberRows = liveSnapshot('workspace members', () => db.workspaceMembers.toArray())
 const groupRows = liveSnapshot('groups', () => db.groups.toArray())
@@ -471,6 +500,11 @@ export function cacheIssueConnections(list: IssueConnection[]): Promise<void> {
 /** A device-local setting from the meta table, live; `fallback` while loading or unset. */
 export function useMeta<T>(key: string, fallback: T): T {
   return useLiveQuery(() => getMeta<T>(key, fallback), [key], fallback)
+}
+
+/** useMeta, but undefined until the stored value has been read. */
+export function useMetaRead<T>(key: string, fallback: T): T | undefined {
+  return useLiveQuery(() => getMeta<T>(key, fallback), [key])
 }
 
 // ---- names for history ----

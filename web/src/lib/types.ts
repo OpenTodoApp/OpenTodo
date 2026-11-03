@@ -786,8 +786,12 @@ export interface RoutineStep {
   do?: RoutineStep[]
 }
 
-/** 'deadline' (OpenSpec change `deadlines`): offset from 09:00 local on the task's deadline. */
-export type ReminderKind = 'relative' | 'absolute' | 'deadline'
+/**
+ * 'deadline' (OpenSpec change `deadlines`): offset from 09:00 local on the task's deadline.
+ * 'arrive' and 'leave' (OpenSpec change `location-reminders`): fire on a phone that
+ * enters or leaves the circle of `radius_m` around the task's location; never a `fire_at`.
+ */
+export type ReminderKind = 'relative' | 'absolute' | 'deadline' | 'arrive' | 'leave'
 
 /**
  * A reminder on a task (OpenSpec change `reminders`). `fire_at` is always the
@@ -807,6 +811,8 @@ export interface Reminder extends ReminderFields {
   dismissed_at: number | null
   created_at: number
   deleted_at: number | null
+  /** Metres, 100–5,000, only on the location kinds (absent on rows from older clients). */
+  radius_m?: number | null
   _clock: Clock
 }
 
@@ -1949,9 +1955,19 @@ export type ImportFormat =
   | 'opentodo' | 'things-db' | 'json-items' | 'json-lists' | 'json-generic'
   | 'todoist-csv' | 'todoist-backup' | 'ticktick-csv' | 'linear-csv' | 'csv'
   | 'google-tasks-json' | 'trello-json' | 'asana-csv' | 'microsoft-todo-json' | 'apple-reminders-json' | 'anydo-json'
+  | 'notion-csv'
+  | 'omnifocus-csv'
+  | 'super-productivity-json'
+  | 'tududi-db'
+  | 'vikunja-export'
 export const IMPORT_FORMATS: readonly ImportFormat[] = [
   'opentodo', 'todoist-backup', 'todoist-csv', 'things-db', 'ticktick-csv', 'linear-csv',
   'google-tasks-json', 'trello-json', 'asana-csv', 'microsoft-todo-json', 'apple-reminders-json', 'anydo-json',
+  'vikunja-export',
+  'tududi-db',
+  'super-productivity-json',
+  'omnifocus-csv',
+  'notion-csv',
   'json-items', 'json-lists', 'json-generic', 'csv',
 ]
 
@@ -1968,7 +1984,16 @@ export interface ImportOptions {
   existing?: 'skip' | 'overwrite'
   /** Workspace id that receives what the import creates (import-workspace); omitted = default, or an own export's own mapping. */
   workspace?: string
+  /**
+   * A Notion export's column per role (migration-everywhere D3): a column name,
+   * or null for "not imported"; a role left out keeps the preview's guess.
+   */
+  columns?: Partial<Record<NotionRole, string | null>>
 }
+
+/** The roles a Notion database's columns can take, in the order the preview shows them. */
+export const NOTION_ROLES = ['status', 'due', 'labels', 'priority', 'project', 'notes'] as const
+export type NotionRole = typeof NOTION_ROLES[number]
 
 export interface ImportTotals {
   rows: number
@@ -2013,7 +2038,10 @@ export interface ImportRow {
 export interface ImportPreview {
   format: ImportFormat
   version?: number
-  columns?: { recognised: string[]; ignored: string[] }
+  /** CSV columns used and ignored; for a Notion export also the column of each role and every column it can use. */
+  columns?: { recognised: string[]; ignored: string[]; roles?: Partial<Record<NotionRole, string | null>>; available?: string[] }
+  /** The format the file looks like when another one was chosen (migration-everywhere). */
+  detected?: ImportFormat
   options: ImportOptions
   totals: ImportTotals
   rows: ImportRow[]

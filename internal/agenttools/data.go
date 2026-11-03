@@ -91,6 +91,17 @@ func (r *Registry) keptAway(ctx context.Context, projects []opsync.Entity) (map[
 }
 
 func (r *Registry) load(ctx context.Context, userID string) (*snapshot, error) {
+	return r.loadWith(ctx, userID, nil)
+}
+
+// taskReader reads a snapshot's tasks in place of every live task (live:
+// not deleted); ok false reads them all after all.
+type taskReader func(ctx context.Context) (tasks []opsync.Entity, ok bool, err error)
+
+// loadWith is load with the tasks read by tasks when it is not nil: a tool
+// whose answer depends on a few tasks reads only those (searchTasks). Every
+// other part of the snapshot is the same.
+func (r *Registry) loadWith(ctx context.Context, userID string, tasks taskReader) (*snapshot, error) {
 	snap := &snapshot{projects: map[string]opsync.Entity{}, labels: map[string]string{}, sections: map[string]string{}, people: map[string]string{}, members: map[string]map[string]bool{}, sectionProject: map[string]string{}, fieldDefs: map[string][]opsync.Entity{}}
 	var err error
 	if snap.projList, err = r.list(ctx, userID, "project", false); err != nil {
@@ -141,8 +152,16 @@ func (r *Registry) load(ctx context.Context, userID string) (*snapshot, error) {
 		}
 		snap.allFieldDefs = append(snap.allFieldDefs, d)
 	}
-	if snap.tasks, err = r.list(ctx, userID, "task", false); err != nil {
-		return nil, err
+	narrowed := false
+	if tasks != nil {
+		if snap.tasks, narrowed, err = tasks(ctx); err != nil {
+			return nil, err
+		}
+	}
+	if !narrowed {
+		if snap.tasks, err = r.list(ctx, userID, "task", false); err != nil {
+			return nil, err
+		}
 	}
 	hidden := map[string]bool{}
 	if len(snap.keptAway) > 0 {

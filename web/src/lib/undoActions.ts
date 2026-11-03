@@ -7,7 +7,8 @@
 import { planComplete, planLabels, planMove, planReopen, planTrash, readTicked, toProposed } from './bulk'
 import { db, type AssistantUndo } from './db'
 import { logicalToday } from './dates'
-import { getDeviceId, planReminders, type Change } from './ops'
+import { seriesRule } from './recurring'
+import { getDeviceId, liveSubtree, planReminders, type Change } from './ops'
 import type { ReminderPhrase } from './nlp'
 import { currentUserId, membershipMap } from './sharing'
 import type { FilterContext } from './filter'
@@ -39,7 +40,13 @@ async function apply(changes: Change[], label: string): Promise<UndoableResult> 
 
 /** Complete (subtree, or a series rolling forward) or reopen one task. */
 export async function completeUndoable(id: string, completed: boolean, opts: { now?: number; today?: string } = {}): Promise<UndoableResult> {
-  const { tasks, all } = await readTicked([id])
+  // A plain task needs only its subtree; a series plans its roll over every task
+  // (its occurrence records). Reading all 10,000 tasks of a large account for every
+  // tick queued the next writes behind it (list-rendering-at-scale).
+  const own = await db.tasks.get(id)
+  const { tasks, all } = own && !own.deleted_at && !seriesRule(own)
+    ? await liveSubtree(id).then((rows) => ({ tasks: [own], all: rows }))
+    : await readTicked([id])
   const task = tasks[0]
   if (!task) return { entry: null, label: '' }
   const changes = completed ? planComplete([task], all, opts.now ?? Date.now(), opts.today ?? logicalToday(), await membershipMap()) : planReopen([task])

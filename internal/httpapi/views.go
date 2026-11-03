@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
 	"slices"
 	"strings"
 
@@ -185,31 +186,12 @@ func (s *Server) checkView(ctx context.Context, uid, id string, body map[string]
 	return nil
 }
 
-// validViewSortBy accepts a canonical UUID field definition id after the built-in sort options.
-func validViewSortBy(value string) bool {
-	id, ok := strings.CutPrefix(value, "field:")
-	if !ok || len(id) != 36 {
-		return false
-	}
-	for i, ch := range id {
-		if i == 14 && (ch < '1' || ch > '8') {
-			return false
-		}
-		if i == 19 && ch != '8' && ch != '9' && ch != 'a' && ch != 'b' {
-			return false
-		}
-		if i == 8 || i == 13 || i == 18 || i == 23 {
-			if ch != '-' {
-				return false
-			}
-			continue
-		}
-		if !((ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f')) {
-			return false
-		}
-	}
-	return true
-}
+// fieldSortID is a field sort's definition id: a canonical UUID (versions 1 to 8, the RFC 9562 variant), so
+// sort_by never carries a field's name, which is encrypted content on an encrypted account.
+var fieldSortID = regexp.MustCompile(`^field:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$`)
+
+// validViewSortBy accepts a field sort by definition id, beside the built-in sort options.
+func validViewSortBy(value string) bool { return fieldSortID.MatchString(value) }
 
 // checkOnDrop validates a view's on-drop rule against current state (OpenSpec
 // change rule-boards, design D2): list views only, the shape of the op kind, label

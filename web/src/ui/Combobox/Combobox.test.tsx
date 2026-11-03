@@ -30,6 +30,21 @@ describe('ComboboxPanel', () => {
     await unmount()
   })
 
+  it('typing on narrows to the same options as typing the whole text at once (list-rendering-at-scale D6)', async () => {
+    useDatabase(`cb-${Date.now()}-n`)
+    const many: Item[] = [...PEOPLE, { id: 'u6', name: 'Ward roster', email: 'wo@x.org' }, { id: 'u7', name: 'Two words' }, { id: 'u8', name: 'Owl watch' }, { id: 'u9', name: 'W o r k' }]
+    const stepwise = await render(<ComboboxPanel {...base} source={many} onPick={() => {}} />)
+    const steps = ['w', 'wo', 'wor', 'work', 'wor', 'wo', 'wo r', 'wo rk', 'wrk', 'wrkx', 'wrk']
+    for (const text of steps) {
+      await type(input(stepwise.container), text)
+      const once = await render(<ComboboxPanel {...base} source={many} onPick={() => {}} />)
+      await type(input(once.container), text)
+      expect(labels(stepwise.container), text).toEqual(labels(once.container))
+      await once.unmount()
+    }
+    await stepwise.unmount()
+  })
+
   it('a multiple picker clears the query and stays open', async () => {
     useDatabase(`cb-${Date.now()}-2`)
     const onPick = vi.fn(), onClose = vi.fn()

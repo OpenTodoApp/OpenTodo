@@ -62,6 +62,8 @@ import { demoFeatures, joinList, type SettingsPage, type SettingsSection } from 
 // Settings → Integrations → Assistant (in-app-assistant): part of the lazy assistant code.
 const AssistantSettingsSection = lazy(() => import('./assistant/AssistantSettings'))
 // Settings → Server → Backups → Database storage (op-log-compaction): owner only, loaded with the page.
+// Settings → Notifications → Location reminders (location-reminders D4): loaded with the page.
+const LocationRemindersSection = lazy(() => import('./LocationRemindersSettings').then((m) => ({ default: m.LocationRemindersSection })))
 const DatabaseStoragePanel = lazy(() => import('./DatabaseStoragePanel').then((m) => ({ default: m.DatabaseStoragePanel })))
 
 interface PageProps { user: User; demo: boolean; hosted: boolean; onLogout: () => void }
@@ -96,7 +98,7 @@ const PAGES: Record<string, (p: PageProps) => ReactNode> = {
   'appearance/sidebar': () => <SidebarSection />,
   'appearance/task-details': () => <TaskDetailsSection />,
   // Default reminders touch no server feature, so they stay usable on the demo (default-reminders D8).
-  'notifications/push': ({ demo }) => <><DefaultRemindersSection /><DemoDisabled on={demo}><NotificationsSettings /></DemoDisabled><AppBadgeSection /><RoutineRunsSection /></>,
+  'notifications/push': ({ demo }) => <><DefaultRemindersSection /><DemoDisabled on={demo}><NotificationsSettings /></DemoDisabled><Suspense fallback={null}><LocationRemindersSection /></Suspense><AppBadgeSection /><RoutineRunsSection /></>,
   'notifications/channels': ({ user, demo }) => <DemoDisabled on={demo}><NotificationChannelsCard isOwner={user.role === 'owner'} /></DemoDisabled>,
   'notifications/digest': ({ demo }) => <DemoDisabled on={demo}><DigestCard /></DemoDisabled>,
   'capture/quick-add': () => <><QuickAddSettingsSection /><AddPositionSection /></>,

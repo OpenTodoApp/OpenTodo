@@ -695,6 +695,9 @@
   "About OpenTodo": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "About location access": [
+    "web/src/app/LocationRemindersSettings.tsx"
+  ],
   "About this demo": [
     "web/src/app/DemoBanner.tsx"
   ],
@@ -879,6 +882,12 @@
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/TaskActionsMenu.tsx"
+  ],
+  "Add a location with a point on the map first": [
+    "web/src/app/LocationReminders.tsx"
+  ],
+  "Add a location…": [
+    "web/src/app/LocationReminders.tsx"
   ],
   "Add a member…": [
     "web/src/app/WorkspaceGroups.tsx"
@@ -1829,6 +1838,9 @@
   "Area|method": [
     "web/src/lib/method/vocabulary.json"
   ],
+  "Arm again": [
+    "web/src/app/RemindersField.tsx"
+  ],
   "Arrange": [
     "web/src/app/DashboardView.tsx"
   ],
@@ -1838,6 +1850,9 @@
   "Arrived after a newer change and was never applied": [
     "web/src/app/HistoryPanel.tsx",
     "web/src/app/task-detail/HistoryTab.tsx"
+  ],
+  "Arriving at {place}": [
+    "web/src/app/LocationReminders.tsx"
   ],
   "Arrows move by day and week, Page Up and Page Down by month.": [
     "web/src/app/datetime/DateField.tsx"
@@ -2015,6 +2030,9 @@
   ],
   "At (minutes count)": [
     "web/src/app/BackupsPanel.tsx"
+  ],
+  "At a place": [
+    "web/src/app/LocationReminders.tsx"
   ],
   "At a time": [
     "web/src/app/RemindersField.tsx"
@@ -2573,6 +2591,7 @@
     "web/src/app/FieldsDialog.tsx",
     "web/src/app/IssueEditor.tsx",
     "web/src/app/LinkDialog.tsx",
+    "web/src/app/LocationReminderEditor.tsx",
     "web/src/app/MembersPanel.tsx",
     "web/src/app/NamePrompt.tsx",
     "web/src/app/NewBoardDialog.tsx",
@@ -2679,6 +2698,7 @@
     "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/DigestCard.tsx",
     "web/src/app/assistant/AssistantDevice.tsx",
+    "web/src/app/import/SwitchFromPicker.tsx",
     "web/src/app/task-detail/ZoneControl.tsx",
     "web/src/page/TaskPageScreen.tsx"
   ],
@@ -2859,6 +2879,7 @@
   "Checking…": [
     "web/src/app/DigestCard.tsx",
     "web/src/app/EncryptionPanel.tsx",
+    "web/src/app/LocationRemindersSettings.tsx",
     "web/src/app/NotificationsSettings.tsx",
     "web/src/app/ReauthDialog.tsx",
     "web/src/app/ShellNotifications.tsx",
@@ -3008,6 +3029,9 @@
   "Choose one of the offered Anthropic models.": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
+  "Choose the app you use now": [
+    "web/src/app/import/SwitchFromPicker.tsx"
+  ],
   "Choose the calendar to write tasks into.": [
     "web/src/app/CalendarSyncPanel.tsx"
   ],
@@ -3072,6 +3096,9 @@
   "Clear filters": [
     "web/src/app/notes/NoteFilters.tsx"
   ],
+  "Clear the app": [
+    "web/src/app/import/SwitchFromPicker.tsx"
+  ],
   "Clear the dashboard selection": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -3126,13 +3153,18 @@
     "web/src/app/SsoPanel.tsx",
     "web/src/app/ThemeAbout.tsx",
     "web/src/app/assistant/AssistantSheet.tsx",
+    "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/help/HelpPanel.tsx",
     "web/src/app/palette/CommandPalette.tsx",
     "web/src/app/routines/AddStep.tsx",
     "web/src/app/routines/DescribeIt.tsx",
     "web/src/app/sidePanel.tsx",
+    "web/src/app/task-detail/FacetEditor.tsx",
     "web/src/app/task-detail/TaskDetail.tsx",
+    "web/src/app/task-detail/TaskPageDialog.tsx",
     "web/src/app/task-detail/TaskPageView.tsx",
+    "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/app/task-list/ListChrome.tsx",
     "web/src/ui/overlay/Dialog.tsx",
     "web/src/ui/overlay/Popover.tsx"
   ],
@@ -3583,6 +3615,7 @@
   ],
   "Continue": [
     "web/src/app/FirstRun.tsx",
+    "web/src/app/LocationRemindersSettings.tsx",
     "web/src/app/ReauthDialog.tsx",
     "web/src/app/SecurityPanel.tsx",
     "web/src/app/TwoFactorPanel.tsx",
@@ -4775,9 +4808,7 @@
     "web/src/app/TwoFactorPanel.tsx",
     "web/src/app/UsersPanel.tsx",
     "web/src/app/WebhooksPanel.tsx",
-    "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/calendar/QueryFilterDialog.tsx",
-    "web/src/app/focus/FocusParts.tsx",
     "web/src/app/objectives/ReviewObjectives.tsx",
     "web/src/app/review/ReviewView.tsx",
     "web/src/app/review/StatsView.tsx",
@@ -4785,10 +4816,6 @@
     "web/src/app/routines/RunHistory.tsx",
     "web/src/app/routines/StepCard.tsx",
     "web/src/app/routines/pickers.tsx",
-    "web/src/app/task-detail/FacetEditor.tsx",
-    "web/src/app/task-detail/TaskPageDialog.tsx",
-    "web/src/app/task-detail/WhenControl.tsx",
-    "web/src/app/task-list/ListChrome.tsx",
     "web/src/app/themes/previewData.ts",
     "web/src/page/TaskPageScreen.tsx",
     "web/src/ui/AccentPicker.tsx"
@@ -4801,6 +4828,9 @@
   ],
   "Done for today": [
     "web/src/app/review/DailyCheck.tsx"
+  ],
+  "Done or status": [
+    "web/src/app/ImportScreen.tsx"
   ],
   "Done this week": [
     "web/src/app/method/LoopHome.tsx"
@@ -4909,6 +4939,7 @@
   "Due date": [
     "web/src/app/DateTimeSettings.tsx",
     "web/src/app/DueField.tsx",
+    "web/src/app/ImportScreen.tsx",
     "web/src/app/ScheduleSheet.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
@@ -5835,6 +5866,9 @@
     "web/src/app/themes/YourThemes.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
+  "Export from {app}": [
+    "web/src/app/import/SwitchFromPicker.tsx"
+  ],
   "Export time entries": [
     "web/src/app/review/StatsView.tsx"
   ],
@@ -6139,6 +6173,9 @@
   ],
   "Finished": [
     "web/src/app/method/HowYouWorkSection.tsx"
+  ],
+  "Fires on your phone": [
+    "web/src/app/LocationReminders.tsx"
   ],
   "Fires once the task has a due date": [
     "web/src/app/RemindersField.tsx"
@@ -6482,6 +6519,9 @@
   ],
   "Full date": [
     "web/src/app/DateTimeSettings.tsx"
+  ],
+  "Full guide": [
+    "web/src/app/import/SwitchFromPicker.tsx"
   ],
   "Full quick add syntax": [
     "web/src/app/ShortcutHelp.tsx"
@@ -6977,6 +7017,9 @@
   ],
   "Hide sidebar": [
     "web/src/ui/patterns/PageHeader.tsx"
+  ],
+  "Hide steps": [
+    "web/src/app/import/SwitchFromPicker.tsx"
   ],
   "Hide successful runs": [
     "web/src/app/routines/RoutineRunsSection.tsx",
@@ -8022,6 +8065,7 @@
   ],
   "Labels": [
     "web/src/app/FilterView.tsx",
+    "web/src/app/ImportScreen.tsx",
     "web/src/app/LabelsView.tsx",
     "web/src/app/SavedViewView.tsx",
     "web/src/app/Sidebar.tsx",
@@ -8259,6 +8303,9 @@
   ],
   "Leave “{project}”?": [
     "web/src/app/ShareDialog.tsx"
+  ],
+  "Leaving {place}": [
+    "web/src/app/LocationReminders.tsx"
   ],
   "Left {title}": [
     "web/src/app/focus/startFocus.ts"
@@ -8535,6 +8582,9 @@
   "Loading the starters": [
     "web/src/app/routines/Starters.tsx"
   ],
+  "Loading the steps…": [
+    "web/src/app/import/SwitchFromPicker.tsx"
+  ],
   "Loading the theme…": [
     "web/src/app/themes/ThemeEditor.tsx"
   ],
@@ -8566,6 +8616,28 @@
     "web/src/app/task-detail/TaskFacts.tsx",
     "web/src/lib/facets.ts",
     "web/src/page/TaskPageScreen.tsx"
+  ],
+  "Location access is off for OpenTodo. Allow it in the phone's settings to use location reminders.": [
+    "web/src/app/LocationRemindersSettings.tsx"
+  ],
+  "Location reminders": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Location reminders come to the Google Play version later; the GitHub/F-Droid app has them.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Location reminders fire only in the Android or iPhone app, with Location reminders on.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Location reminders need Allow all the time. Choose it for OpenTodo in Android settings; nothing is watched until then.": [
+    "web/src/app/LocationRemindersSettings.tsx"
+  ],
+  "Location reminders need Always. Choose Always for OpenTodo in the iPhone settings; nothing is watched until then.": [
+    "web/src/app/LocationRemindersSettings.tsx"
+  ],
+  "Location reminders on this phone": [
+    "web/src/app/LocationRemindersSettings.tsx"
   ],
   "Location removed": [
     "web/src/lib/assistant.ts"
@@ -9638,6 +9710,12 @@
   "Next {n} days": [
     "web/src/app/PlanView.tsx"
   ],
+  "Next, Android asks for your location: allow it, then choose Allow all the time.": [
+    "web/src/app/LocationRemindersSettings.tsx"
+  ],
+  "Next, iOS asks for your location: allow it, then choose Always.": [
+    "web/src/app/LocationRemindersSettings.tsx"
+  ],
   "Next: {instant}": [
     "web/src/app/DigestCard.tsx"
   ],
@@ -9991,8 +10069,10 @@
   "No project “{name}” · stays in the title": [
     "web/src/app/ParseChips.tsx"
   ],
+  "No projects yet": [
+    "web/src/app/ProjectsView.tsx"
+  ],
   "No projects yet.": [
-    "web/src/app/ProjectsView.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/routines/words.tsx"
   ],
@@ -10288,11 +10368,15 @@
   "Not found. It may have been deleted.": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "Not imported": [
+    "web/src/app/ImportScreen.tsx"
+  ],
   "Not matching": [
     "web/src/app/DashboardView.tsx"
   ],
   "Not now": [
     "web/src/app/ArchivePrompt.tsx",
+    "web/src/app/LocationRemindersSettings.tsx",
     "web/src/app/ProjectInviteScreen.tsx",
     "web/src/app/WorkspaceInviteScreen.tsx",
     "web/src/app/focus/BreakReminder.tsx",
@@ -10388,6 +10472,7 @@
   ],
   "Notes": [
     "web/src/app/AppearanceSection.tsx",
+    "web/src/app/ImportScreen.tsx",
     "web/src/app/NotesEditor.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/notes/NoteEditor.tsx",
@@ -10608,6 +10693,9 @@
     "web/src/lib/rules/proposal.ts",
     "web/src/lib/rules/sentence.ts"
   ],
+  "Notion (Markdown and CSV export)": [
+    "web/src/app/ImportScreen.tsx"
+  ],
   "Now": [
     "web/src/app/calendar/SidebarSchedule.tsx"
   ],
@@ -10702,6 +10790,7 @@
     "web/src/app/EmailInboxPanel.tsx",
     "web/src/app/EncryptionPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
+    "web/src/app/LocationRemindersSettings.tsx",
     "web/src/app/NotificationChannels.tsx",
     "web/src/app/NotificationsSettings.tsx",
     "web/src/app/ShellNotifications.tsx",
@@ -10848,6 +10937,9 @@
   "Oldest in Inbox": [
     "web/src/app/method/LoopHome.tsx"
   ],
+  "OmniFocus (CSV)": [
+    "web/src/app/ImportScreen.tsx"
+  ],
   "On": [
     "web/src/app/CaldavPanel.tsx",
     "web/src/app/CalendarFeedsPanel.tsx",
@@ -10855,6 +10947,7 @@
     "web/src/app/EmailInboxPanel.tsx",
     "web/src/app/EncryptionPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
+    "web/src/app/LocationRemindersSettings.tsx",
     "web/src/app/NotificationChannels.tsx",
     "web/src/app/NotificationsSettings.tsx",
     "web/src/app/ShellNotifications.tsx",
@@ -10938,6 +11031,9 @@
   ],
   "On this page": [
     "web/src/app/help/HelpView.tsx"
+  ],
+  "On this phone": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "On this server": [
     "web/src/app/AssistantsPanel.tsx",
@@ -11209,6 +11305,9 @@
   "Open recurring task": [
     "web/src/app/task-detail/TaskActionsMenu.tsx"
   ],
+  "Open settings": [
+    "web/src/app/LocationRemindersSettings.tsx"
+  ],
   "Open since {date}": [
     "web/src/app/review/CarryOver.tsx"
   ],
@@ -11310,6 +11409,9 @@
   ],
   "OpenTodo can't reach the server.": [
     "web/src/app/App.tsx"
+  ],
+  "OpenTodo checks your location only to notice when you arrive at or leave the places of your location reminders. Your location stays on this phone and is never sent to your server.": [
+    "web/src/app/LocationRemindersSettings.tsx"
   ],
   "OpenTodo contributors": [
     "web/src/app/ThemeRow.tsx"
@@ -12124,6 +12226,7 @@
     "web/src/app/themes/tokenNames.ts"
   ],
   "Priority": [
+    "web/src/app/ImportScreen.tsx",
     "web/src/app/ParseChips.tsx",
     "web/src/app/RuleEditor.tsx",
     "web/src/app/bulk/BulkActions.tsx",
@@ -12392,6 +12495,9 @@
     "web/src/lib/rules/sentence.ts",
     "web/src/lib/settingsCopy.ts"
   ],
+  "Projects hold tasks; labels describe them. Create a project to group work in the sidebar.": [
+    "web/src/app/ProjectsView.tsx"
+  ],
   "Projects in this workspace can be shared with these people and their groups only.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -12604,6 +12710,12 @@
   "Q{n} {year}": [
     "web/src/lib/sectorNames.ts"
   ],
+  "Radius": [
+    "web/src/app/LocationReminderEditor.tsx"
+  ],
+  "Radius presets": [
+    "web/src/app/LocationReminderEditor.tsx"
+  ],
   "Raised surface": [
     "web/src/app/themes/tokenNames.ts"
   ],
@@ -12645,6 +12757,9 @@
   ],
   "Read": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
+  "Read it as {format}": [
+    "web/src/app/ImportScreen.tsx"
   ],
   "Read only": [
     "web/src/app/AssistantsPanel.tsx",
@@ -12811,6 +12926,9 @@
   "Remembered browsers": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
+  "Remind me": [
+    "web/src/app/LocationReminderEditor.tsx"
+  ],
   "Remind me after": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -12851,6 +12969,10 @@
   ],
   "Reminders delivered to this device, and a test": [
     "web/src/app/settingsIndex.ts"
+  ],
+  "Reminders when you arrive at or leave a place. Your position stays on the phone.": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Remove": [
     "web/src/app/BrandingThemes.tsx",
@@ -13670,6 +13792,7 @@
     "web/src/app/FieldsDialog.tsx",
     "web/src/app/IssueEditor.tsx",
     "web/src/app/LinkDialog.tsx",
+    "web/src/app/LocationReminderEditor.tsx",
     "web/src/app/NamePrompt.tsx",
     "web/src/app/NotificationChannelEditor.tsx",
     "web/src/app/OutgoingEmailPanel.tsx",
@@ -14232,6 +14355,9 @@
   "Set a start": [
     "web/src/app/task-detail/TaskFacts.tsx"
   ],
+  "Set a time for the reminder first.": [
+    "web/src/app/actionError.ts"
+  ],
   "Set a time sector": [
     "web/src/app/task-detail/TaskFacts.tsx"
   ],
@@ -14577,6 +14703,9 @@
   "Show sidebar": [
     "web/src/ui/patterns/PageHeader.tsx"
   ],
+  "Show steps": [
+    "web/src/app/import/SwitchFromPicker.tsx"
+  ],
   "Show successful runs": [
     "web/src/app/routines/RoutinesInboxCard.tsx"
   ],
@@ -14696,6 +14825,7 @@
     "web/src/app/task-detail/CommentsTab.tsx"
   ],
   "Sign in to continue.": [
+    "web/src/app/actionError.ts",
     "web/src/lib/i18n/errors.ts"
   ],
   "Sign in to join “{name}”. You come back to this link afterwards.": [
@@ -15386,6 +15516,7 @@
     "web/src/lib/rules/sentence.ts"
   ],
   "Stop the timer": [
+    "web/src/app/focus/FocusParts.tsx",
     "web/src/lib/rules/sentence.ts"
   ],
   "Stop tracking": [
@@ -15508,6 +15639,9 @@
   "Sunken surface": [
     "web/src/app/themes/tokenNames.ts"
   ],
+  "Super Productivity (backup JSON)": [
+    "web/src/app/ImportScreen.tsx"
+  ],
   "Support OpenTodo": [
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
@@ -15541,6 +15675,9 @@
   ],
   "Switched to {name}": [
     "web/src/app/workspaceNav.ts"
+  ],
+  "Switching from…": [
+    "web/src/app/import/SwitchFromPicker.tsx"
   ],
   "Sync": [
     "web/src/lib/settingsCopy.ts"
@@ -15946,6 +16083,9 @@
   "That password is not correct.": [
     "web/src/app/ReauthDialog.tsx"
   ],
+  "That project is not available any more.": [
+    "web/src/app/actionError.ts"
+  ],
   "That setup code is not right. Copy it from the server log and try again.": [
     "web/src/app/AuthScreen.tsx",
     "web/src/lib/i18n/errors.ts"
@@ -15962,8 +16102,14 @@
   "That task is not available any more, so today’s focus is shown.": [
     "web/src/app/focus/FocusView.tsx"
   ],
+  "That task is not available any more.": [
+    "web/src/app/actionError.ts"
+  ],
   "That task left the Inbox on another device, so the next one is shown.": [
     "web/src/app/TriageView.tsx"
+  ],
+  "That time entry is not available any more.": [
+    "web/src/app/actionError.ts"
   ],
   "That took too long. Please try again.": [
     "web/src/app/AuthScreen.tsx",
@@ -16402,6 +16548,12 @@
   "The page behind the cards.": [
     "web/src/app/themes/templateText.ts"
   ],
+  "The parent project is not available any more.": [
+    "web/src/app/actionError.ts"
+  ],
+  "The parent task is not available any more.": [
+    "web/src/app/actionError.ts"
+  ],
   "The passkey request expired or was already used. Try again.": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -16486,6 +16638,9 @@
   ],
   "The quick brown fox jumps over the lazy dog": [
     "web/src/app/themes/EditorSections.tsx"
+  ],
+  "The reminder offset must be whole minutes.": [
+    "web/src/app/actionError.ts"
   ],
   "The request was rejected because it came from another site.": [
     "web/src/lib/i18n/errors.ts"
@@ -17197,6 +17352,9 @@
   "This file is still uploading.": [
     "web/src/app/task-detail/AttachmentsRow.tsx"
   ],
+  "This file looks like {format}, not the format you chose.": [
+    "web/src/app/ImportScreen.tsx"
+  ],
   "This holds {count} tasks; a copy can make at most {max}. Load larger files with Settings → Data → Import.": [
     "web/src/lib/templates.ts"
   ],
@@ -17398,6 +17556,9 @@
   ],
   "This person is not a member of the workspace. Ask the workspace owner to add them first.": [
     "web/src/lib/i18n/errors.ts"
+  ],
+  "This phone cannot watch places for OpenTodo.": [
+    "web/src/app/LocationRemindersSettings.tsx"
   ],
   "This photo is still larger than 3.75 MB after scaling. Try a smaller one.": [
     "web/src/lib/assistantImages.ts"
@@ -17658,7 +17819,7 @@
   "Tick every task in the list": [
     "web/src/lib/shortcuts.ts"
   ],
-  "Tick it and show every checkbox; Select tasks in the page menu does the same, Done hides them": [
+  "Tick it and show every checkbox; Select tasks in the page menu does the same, Close hides them": [
     "web/src/lib/shortcuts.ts"
   ],
   "Tick me off when you have read this": [
@@ -18120,6 +18281,9 @@
   ],
   "Try the demo": [
     "web/src/app/AuthScreen.tsx"
+  ],
+  "Tududi (database)": [
+    "web/src/app/ImportScreen.tsx"
   ],
   "Tue": [
     "web/src/app/rules/RuleFields.tsx"
@@ -18677,6 +18841,9 @@
   "Update a project": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "Update the OpenTodo app on this phone to use location reminders here.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Update the project {project}": [
     "web/src/lib/rules/sentence.ts"
   ],
@@ -18923,6 +19090,9 @@
   "Views and boards": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Vikunja (export ZIP)": [
+    "web/src/app/ImportScreen.tsx"
+  ],
   "Vim command line": [
     "web/src/app/vim/help.ts"
   ],
@@ -19029,6 +19199,9 @@
   ],
   "Warnings and due soon.": [
     "web/src/app/themes/templateText.ts"
+  ],
+  "Watches the places of your location reminders, even with the app closed.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "We send a link to the new address; the change happens when you open it.": [
     "web/src/app/profile/ProfileSection.tsx"
@@ -19182,6 +19355,14 @@
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/app/task-list/RowDetails.tsx"
   ],
+  "When I arrive": [
+    "web/src/app/LocationReminderEditor.tsx",
+    "web/src/app/LocationReminders.tsx"
+  ],
+  "When I leave": [
+    "web/src/app/LocationReminderEditor.tsx",
+    "web/src/app/LocationReminders.tsx"
+  ],
   "When do I get things done?": [
     "web/src/app/review/StatsView.tsx"
   ],
@@ -19223,6 +19404,9 @@
   ],
   "Which assistant you use": [
     "web/src/app/assistant/AssistantSettings.tsx"
+  ],
+  "Which column holds what": [
+    "web/src/app/ImportScreen.tsx"
   ],
   "Which issues": [
     "web/src/app/IssueEditor.tsx"
@@ -19637,6 +19821,9 @@
   ],
   "Your account is end-to-end encrypted, so the server cannot read your tasks. This device can: it sends what a question needs directly to the provider you choose, with your own key. The OpenTodo server sees none of it.": [
     "web/src/app/assistant/AssistantDevice.tsx"
+  ],
+  "Your account is end-to-end encrypted. Imported text is written in plaintext until one of your unlocked devices re-encrypts it, and duplicates cannot be found by encrypted project or label names.": [
+    "web/src/app/import/SwitchFromPicker.tsx"
   ],
   "Your account is end-to-end encrypted: while the request runs, the phrase and its text are readable by this server and the speech service.": [
     "web/src/app/VoiceSettings.tsx"
@@ -20881,6 +21068,9 @@
   "no output": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "no point on the map": [
+    "web/src/app/RemindersField.tsx"
+  ],
   "no project": [
     "web/src/lib/rules/preview.ts",
     "web/src/lib/rules/sentence.ts",
@@ -21602,6 +21792,10 @@
   "the tasks": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "the task’s location": [
+    "web/src/app/LocationReminderEditor.tsx",
+    "web/src/app/LocationReminders.tsx"
+  ],
   "the task’s project": [
     "web/src/lib/rules/sentence.ts"
   ],
@@ -22199,6 +22393,9 @@
   "{kind} to {email}": [
     "web/src/app/auditFormat.ts"
   ],
+  "{km} km": [
+    "web/src/app/LocationReminders.tsx"
+  ],
   "{label} backup, {instant}, {kind}": [
     "web/src/app/BackupsPanel.tsx"
   ],
@@ -22233,6 +22430,9 @@
   ],
   "{moved} of {n, plural, one {# task rescheduled} other {# tasks rescheduled}}": [
     "web/src/lib/bulk.ts"
+  ],
+  "{m} m": [
+    "web/src/app/LocationReminders.tsx"
   ],
   "{m} min ago": [
     "web/src/app/ProjectsTable.tsx",

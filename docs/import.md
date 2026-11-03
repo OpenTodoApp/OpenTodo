@@ -25,12 +25,15 @@ The format is detected from the content, in this order; the preview shows what w
 | Format id | Recognised by | Notes |
 | --- | --- | --- |
 | `opentodo` | a top-level `"format": "opentodo-export"` | Exact round trip, see below |
+| `tududi-db` | a SQLite database with Tududi's `tasks`, `projects`, `areas`, `tags` and `tasks_tags` tables | a copy of Tududi's `production.sqlite3`, see [Tududi](#tududi-tududi-db) |
 | `things-db` | a SQLite database with Things 3's tables | a copy of Things' `main.sqlite`, see [Things](#things-database-things-db) |
 | `google-tasks-json` | `"kind": "tasks#taskLists"`, or `items` of kind `tasks#taskList` | Google Takeout's `Tasks.json`, see [Google Tasks](#google-tasks-google-tasks-json) |
 | `trello-json` | top-level `id`, `name` and `lists`, `cards`, `checklists` arrays | one Trello board, see [Trello](#trello-trello-json) |
 | `microsoft-todo-json` | lists with `wellknownListName`, or with `tasks` that have `importance` and `dueDateTime` or `isReminderOn` | written by a PowerShell script, see [Microsoft To Do](#microsoft-to-do-microsoft-todo-json) |
 | `apple-reminders-json` | an array whose every element has `identifier` and `isCompleted` | written by a Shortcut, see [Apple Reminders](#apple-reminders-apple-reminders-json) |
 | `anydo-json` | `categories` and `tasks` arrays, tasks with `categoryId` and `status` | Any.do's data request, see [Any.do](#anydo-anydo-json) |
+| `super-productivity-json` | top-level (or `data`-level) `task` and `project` objects, each with `ids` and `entities` | Super Productivity's backup, see [Super Productivity](#super-productivity-super-productivity-json) |
+| `vikunja-export` | a ZIP with `VERSION` and a `data.json` array of projects with `id`, `title`, `tasks` and `hex_color` (or that `data.json` alone) | Vikunja's data export, see [Vikunja](#vikunja-vikunja-export) |
 | `json-items` | top-level `items` and `projects` arrays | "projects / sections / items" backups |
 | `json-lists` | a top-level `lists` array | lists of tasks; each list becomes a project |
 | `json-generic` | a top-level array of objects, or a `tasks` array | a generic task list |
@@ -38,10 +41,12 @@ The format is detected from the content, in this order; the preview shows what w
 | `todoist-backup` | a ZIP of `todoist-csv` files | Todoist's backup of every project |
 | `ticktick-csv` | a preamble starting with `Date:`, then a `Folder Name, List Name, Title, Kind` header | TickTick's CSV backup, see [TickTick](#ticktick-ticktick-csv) |
 | `linear-csv` | a header with `ID`, `Team`, `Title`, `Status`, `Priority` and `UUID` | Linear's workspace export, see [Linear](#linear-linear-csv) |
+| `notion-csv` | a ZIP whose CSV files are named `<database> <32 hex>.csv` (or `…_all.csv`); never a bare CSV, which can still be imported by choosing the format | Notion's Markdown & CSV export, see [Notion](#notion-notion-csv) |
+| `omnifocus-csv` | a header starting `Task ID`, `Type`, `Name`, `Status`, `Project` with a `Context` or `Tags` column (UTF-8 or UTF-16) | OmniFocus's CSV export, see [OmniFocus](#omnifocus-omnifocus-csv) |
 | `asana-csv` | a header with `Task ID`, `Created At`, `Completed At`, `Last Modified`, `Name`, `Section/Column`, `Assignee`, `Due Date` and `Parent task` | one Asana project, see [Asana](#asana-asana-csv) |
 | `csv` | a header row with a `title` column | the documented columns below |
 
-**ZIP files.** A ZIP whose files are all of one format is imported as one job, one preview and one undo; each preview row shows the file it came from. Folders, `__MACOSX/` and hidden files are skipped. An archive with more than 1,000 files, mixed formats, an unsafe file name, or more than ten times the upload limit when unpacked is refused with `400 invalid_file` before anything is written. A zipped `Things Database.thingsdatabase` folder is read as a [Things database](#things-database-things-db).
+**ZIP files.** A ZIP whose files are all of one format is imported as one job, one preview and one undo; each preview row shows the file it came from. Folders, `__MACOSX/` and hidden files are skipped. An archive with more than 1,000 files, mixed formats, an unsafe file name, or more than ten times the upload limit when unpacked is refused with `400 invalid_file` before anything is written. A zipped `Things Database.thingsdatabase` folder is read as a [Things database](#things-database-things-db). A Vikunja export ZIP is read as one [Vikunja export](#vikunja-vikunja-export), with its attachment files. A ZIP holding a Tududi database is read as a [Tududi database](#tududi-tududi-db). A ZIP with Notion's database CSVs is read as a [Notion export](#notion-notion-csv).
 
 A file matching none of these is refused with `400 unsupported_format`, naming the supported formats. If a JSON export from another app is not recognised, convert it to the CSV columns below; every field the data model holds can be expressed there.
 
@@ -187,6 +192,53 @@ Trello exports one board as JSON from the board menu (**Print, export and share 
 | custom fields (number, text, checkbox, date, list) | [custom fields](#custom-fields) of the same type, list as a choice |
 | `id`, `shortUrl` | the task's origin, with a link to the card |
 
+### Notion (`notion-csv`)
+
+Notion exports a page with its databases as a ZIP from **••• → Export → Markdown & CSV** (see the [Notion guide](switch/notion.md)). Each database is a CSV named `<database> <32 hex id>.csv`; newer exports add `<database> <id>_all.csv` with every row and column, which is read instead. Each row's page is `<title> <id>.md` in a folder named after the database. A ZIP of `…-Part-N.zip` files is unpacked one level. A CSV uploaded alone is never detected as Notion's (it looks like any spreadsheet); choose `notion-csv` to read it as one database named after the file, without pages.
+
+Notion's columns are the database's own properties, so the preview proposes one column per role and returns the choice in `columns.roles` (see [API](api.md#import)); the `columns` option changes it. The first column is always the title.
+
+| Role | Guessed from the column name (any case, emoji ignored) | Then from the values | Becomes |
+| --- | --- | --- | --- |
+| `status` | Status, Done, Completed, State, Erledigt, Fait, Statut, Fatto, Stato, Hecho, Estado, Feito … | a column of only `Yes`/`No` | completed when the value is Done, Complete, Completed, Archived, Closed or `Yes` (and their translations) |
+| `due` | Due, Due date, Deadline, Fällig, Échéance, Scadenza, Vencimiento, Prazo, then Date, Datum, Data, Fecha | a column of only dates (not created or edited times) | the due date, with its time; a range `A → B` gives the start date A and the due date B; `16/12/2026`-style columns are read day first |
+| `labels` | Tags, Labels, Etiketten, Étiquettes, Etichette, Etiquetas | | one label per comma-separated value |
+| `priority` | Priority, Priorität, Priorité, Priorità, Prioridad, Prioridade | | High, Urgent, Critical, P0, P1 → 1; Medium, P2 → 2; Low, P3 → 3 (and their translations) |
+| `project` | Project, Projekt, Projet, Progetto, Proyecto, Projeto | | the task's project by name (a relation `Name (link)` gives the name) instead of the database's |
+| `notes` | Notes, Description, Notizen, Beschreibung, Descrizione, Notas … | | added to the top of the description |
+
+| Notion | Becomes |
+| --- | --- |
+| a database | a project named after it |
+| a row | a task; its page's body (without the title and property lines) is the description, with checklists, links and image links as written |
+| `Parent item` | the parent task, by the page id in its link or by name; a parent outside the database is dropped with a warning |
+| `Sub-item` | nothing more (the mirror of `Parent item`) |
+| the page id | the task's origin, `{kind: "import", provider: "notion", id}`; a row without a page has no origin |
+
+Columns with no role are not imported and are named once in a file-level note.
+
+### OmniFocus (`omnifocus-csv`)
+
+OmniFocus exports the items its window shows as CSV (**File → Export → Comma Separated Values**, or **CSV UTF-16**, on a Mac; **Settings → Database → Export to CSV** on iPhone and iPad; see the [OmniFocus guide](switch/omnifocus.md)). Columns are found by name, so the OmniFocus 2 layout (`Context`), the OmniFocus 3 and 4 layout (`Tags`) and OmniFocus 4.7's `Planned Date` are all read. Dates in the file are UTC and become floating dates in the import's time zone. Verified against an OmniFocus 2 export and the OmniFocus 3 and 4.7 layouts.
+
+| OmniFocus | Becomes |
+| --- | --- |
+| `Type` `Project` | a project; `Status` `done` or `dropped`: archived, with a warning; `inactive` (on hold): active, with a warning |
+| `Type` `Action` (or `Inbox`) | a task |
+| `Task ID` (`2`, `2.1`, `2.1.1`) | the place in the outline: the nearest project is the task's project, the nearest action its parent (action groups become tasks with subtasks); an action outside a project goes to the target project |
+| `Name`, `Notes` | the title, the description (a project's notes become its notes) |
+| `Tags` (comma-separated) and `Context` | labels |
+| `Due Date` | the due date and time (no time when it is midnight) |
+| `Planned Date` (4.7) | the due date and time; the `Due Date` becomes the deadline |
+| `Start Date` (the defer date) | the start date |
+| `Completion Date` | completed at that time |
+| `Status` `dropped` on an action | completed, with a warning |
+| `Duration` (`30m`, `1h30m`) | the estimate |
+| `Flagged` `1` | priority 1 |
+| the item's path of names | the task's origin, `{kind: "import", provider: "omnifocus", id: <digest>}`: Task IDs are positions, so a digest of the project and parent names identifies the item across exports |
+
+OmniFocus's CSV has no repeat rules, folders, attachments or review data; the preview says so once.
+
 ### Asana (`asana-csv`)
 
 Asana exports one project as CSV from the project menu (**Export → CSV**). The project is named after the file (or its name in a ZIP); a ZIP of several project files imports them in one job.
@@ -259,6 +311,84 @@ Any.do sends your data as JSON when you ask for it (see the [Any.do guide](switc
 | `alert` | a reminder at that moment |
 | shared members, attachments, the daily plan | dropped with a warning |
 | `globalTaskId` | the task's origin, `{kind: "import", provider: "anydo", id: <globalTaskId>}` |
+
+### Super Productivity (`super-productivity-json`)
+
+Super Productivity saves all its data as one JSON file from **Settings → Sync & Backup → Export data** (see the [Super Productivity guide](switch/super-productivity.md)). Backups from version 14 on hold the data under `data`; older ones at the top level. Verified against backups of Super Productivity 19.3.1.
+
+| Super Productivity | Becomes |
+| --- | --- |
+| `project` entities | projects; `isArchived` (or `isDone`, with a warning) arrives archived |
+| the `INBOX_PROJECT` project | none: its tasks go to the target project (the Inbox unless you choose one) |
+| `note` entities of a project | the project's notes |
+| `tag` entities | labels, except the built-in `TODAY` tag |
+| `TODAY` in a task's `tagIds` (backups before 14), with no date | due on the import date, with a warning |
+| tasks in `task`, `archiveYoung.task`, `archiveOld.task` (or `taskArchive`) | tasks; archived ones completed |
+| `title`, `notes`, `parentId` | the title, the description, the parent task |
+| `isDone`, `doneOn` | completed at `doneOn` (or `modified`) |
+| `dueDay`; `dueWithTime` (or `plannedAt`) | the due date; the due date and time in the import's time zone |
+| `remindAt`, `deadlineDay` | an absolute reminder, the deadline |
+| `timeEstimate` (ms) | the estimate in minutes, rounded up |
+| `timeSpentOnDay` (`{"YYYY-MM-DD": ms}`) | one time entry per day, from 09:00 on that day (in the import's time zone) for that day's minutes, capped at 24 hours with a warning |
+| `repeatCfgId` → `taskRepeatCfg` (`repeatCycle`, `repeatEvery`, weekday flags, `repeatFromCompletionDate`) | `every N days`, `every monday, thursday` (weekdays every 2+ weeks: `every N weeks` with a warning), `every N months`, `every N years`, `after completion`; a paused repeat is dropped with a warning |
+| `issueType` `GITHUB` with the provider's `repo` and `issueId` | the task's origin, the GitHub issue; other trackers keep the address when the backup has one, otherwise a warning |
+| link `attachments` | link attachments |
+| `id` | the task's origin, `{kind: "import", provider: "super-productivity", id}` |
+
+Boards, metrics, simple counters, `timeTracking` work sessions, plugins and `globalConfig` (including any sync settings) are not imported.
+
+### Tududi (`tududi-db`)
+
+Tududi keeps its data in one SQLite file (`production.sqlite3`); upload a copy of it, or a ZIP holding it (see the [Tududi guide](switch/tududi.md)). Like a [Things database](#things-database-things-db) it is read on the server from a private temporary copy, read-only, with fixed queries over plain tables, and the copy is deleted after the preview or import. A database whose tables lack a column the mapping reads is refused with `400 unsupported_format`, naming the Tududi version the mapping was verified against (1.14). With several accounts in the file, the first account's data is imported and a note says so. Dates are read in the time zone of the Tududi account.
+
+| Tududi | Becomes |
+| --- | --- |
+| area | a parent project |
+| project (`area_id`) | a project inside its area's project; status `done` or `cancelled`: archived, with a warning |
+| project `description` and the project's `notes` (title and Markdown) | the project's notes, the notes after the description |
+| notes without a project | not imported; a note counts them |
+| task `name`, `note` | the title, the description |
+| `project_id`, `area_id`, neither | the project, the area's project, the target project (the Inbox unless you choose one) |
+| `parent_task_id` | the parent task |
+| `priority` 2 (high), 1 (medium), 0 (low), none | priority 1, 2, 3, 4 |
+| `due_date` with `due_has_time` | the due date, with its time when it has one |
+| `start_date`, `estimated_minutes`, `reminder_at` | the start date, the estimate, an absolute reminder |
+| `status` 2 (done), 3 (archived), 5 (cancelled, with a warning) | completed at `completed_at` (or `updated_at`) |
+| tags (`tasks_tags`) | labels; the built-in `someday` tag parks the task in Someday |
+| on the latest Today plan (`daily_plan_items`), without a due date | due on the import date, with a warning |
+| `recurrence_type` `daily`, `weekly` (`recurrence_weekdays`), `monthly` (`recurrence_month_day`), `monthly_weekday`, `monthly_last_day`, with `recurrence_interval`, `completion_based` and `recurrence_end_date` | `every N days`, `every monday, thursday` or `every N weeks` (weekdays every 2+ weeks: with a warning), `every 15th`, `every 2nd tuesday`, `every last day`, `after completion`, `until YYYY-MM-DD`; what the grammar cannot say is dropped with a warning |
+| `comments` | appended to the description with their date |
+| `inbox_items` with status `added` | tasks without a project |
+| `uid` | the task's origin, `{kind: "import", provider: "tududi", id: <uid>}` |
+
+Tags on projects are dropped with a warning; attachments (not in the database) and task relations are counted in a note; onboarding example tasks (`example_of`) are skipped.
+
+### Vikunja (`vikunja-export`)
+
+Vikunja (0.22 and later) exports all of an account's data as a ZIP from **Settings → Export your data** (see the [Vikunja guide](switch/vikunja.md)). Upload the ZIP as it is: `data.json` holds the projects and tasks, `files/` the attached files. A `data.json` uploaded alone imports everything except the files. Verified against exports of Vikunja 0.22.1 and 2.7.1.
+
+| Vikunja | Becomes |
+| --- | --- |
+| project, `parent_project_id` | a project, a sub-project; `is_archived` projects arrive archived |
+| the default project `Inbox` | none: its tasks go to the target project (the Inbox unless you choose one), with a note |
+| the buckets of the project's first Kanban view (on the view from 0.23, on the project in 0.22) | sections of open tasks, and the project opens as a board; not the done bucket, and none when every open task is in one bucket |
+| `title`, `description` (HTML) | the title, the description as Markdown text (paragraphs, lists, links, bold and italic) |
+| `done`, `done_at` | completed at `done_at`, or at `updated` when Vikunja left `done_at` unset |
+| `due_date`, `start_date` | the due date (with its time unless midnight) and the start date, in the import's time zone |
+| `end_date` | dropped with a warning |
+| `priority` 5 and 4, 3, 2, 1 and 0 | priority 1, 2, 3, 4 |
+| `labels` | labels |
+| `repeat_after` (seconds) with `repeat_mode` 0 | `every N days` when it is a whole number of days; other intervals are dropped with a warning |
+| `repeat_mode` 1, 2 | `every month`; the interval `after completion` |
+| `reminders` absolute, or `relative_to` `due_date` | absolute reminders, reminders relative to the due time |
+| `reminders` relative to `start_date`, to `end_date` | an absolute reminder at the time Vikunja computed; dropped with a warning |
+| `related_tasks` `parenttask`, `blocked` | the parent task, [Blocked by](#mapping-rules); other relation kinds are dropped with a warning |
+| `attachments` with their file in `files/<file id>` | file attachments, stored under the attachment limits like an [own export's files](#own-export-opentodo) |
+| `comments` | appended to the description with their date |
+| `assignees` | dropped with a warning |
+| `id` | the task's origin, `{kind: "import", provider: "vikunja", id}` |
+
+Colours, `percent_done`, favourites, `filters.json`, backgrounds and the List, Gantt and Table views are not imported.
 
 ### CSV (`csv`)
 
@@ -419,6 +549,7 @@ Checked in this order:
 | `errors` | `skip_rows`, `abort` | `skip_rows` |
 | `existing` | `skip`, `overwrite` (own export only) | `skip` |
 | `workspace` | id of one of your workspaces | the default workspace; for an own export, the export's own workspaces |
+| `columns` | for `notion-csv`: `{role: column or null}`, roles `status`, `due`, `labels`, `priority`, `project`, `notes` | the preview's guesses |
 
 With `skip_rows`, bad rows are reported and everything else is imported; a bad row never leaves a partial task. With `abort`, any row in error fails the job before anything is written and names the first bad row.
 

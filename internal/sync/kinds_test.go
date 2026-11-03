@@ -9,10 +9,20 @@ import (
 
 // Every kind has a check: a kind missing from kindChecks would accept any value.
 func TestKindChecksCoverEveryKind(t *testing.T) {
-	for k := kString; k <= kObjectivePeriod; k++ {
+	for k := kString; k <= kRadius; k++ {
 		if _, ok := kindChecks[k]; !ok {
 			t.Errorf("kind %d has no entry in kindChecks", k)
 		}
+		if kindNames[k] == "" {
+			t.Errorf("kind %d has no name in kindNames (kindnames.go)", k)
+		}
+	}
+	seen := map[string]bool{}
+	for _, n := range kindNames {
+		if seen[n] {
+			t.Errorf("kind name %q is used twice", n)
+		}
+		seen[n] = true
 	}
 }
 
@@ -121,7 +131,13 @@ func TestCheckKindTable(t *testing.T) {
 		{"id", kID, `"t1"`, ""},
 		{"id empty", kID, `""`, "must be an id string"},
 		{"reminder kind", kReminderKind, `"deadline"`, ""},
-		{"reminder kind other", kReminderKind, `"soon"`, `must be "relative", "absolute" or "deadline"`},
+		{"reminder kind other", kReminderKind, `"soon"`, `must be "relative", "absolute", "deadline", "arrive" or "leave"`},
+		{"reminder kind arrive", kReminderKind, `"arrive"`, ""},
+		{"reminder kind leave", kReminderKind, `"leave"`, ""},
+		{"radius", kRadius, `150`, ""},
+		{"radius null", kRadius, `null`, ""},
+		{"radius small", kRadius, `50`, "from 100 to 5000"},
+		{"radius large", kRadius, `5001`, "from 100 to 5000"},
 		{"offset", kOffsetMinutes, `-30`, ""},
 		{"offset null", kOffsetMinutes, `null`, ""},
 		{"offset too far", kOffsetMinutes, `99999999`, "must be null or an integer from -"},

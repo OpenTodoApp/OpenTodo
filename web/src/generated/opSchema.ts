@@ -421,6 +421,15 @@ export interface ReminderFields {
   dismissed_at?: number | null
   created_at?: number
   deleted_at?: number | null
+  /**
+   * A location reminder's radius in metres, 100 to 5,000 (OpenSpec change
+   * location-reminders, design D1): set only on the kinds "arrive" and
+   * "leave", which fire on a phone that enters or leaves the circle
+   * around the task's location and never have a fire_at or an offset
+   * (reminder_check.go refuses the mixes). Not content: the place is in
+   * the task's encrypted location.
+   */
+  radius_m?: number | null
 }
 
 /**
@@ -1066,7 +1075,7 @@ export const OP_DEFAULTS = {
     name: '', query: '', kind: 'list', group_by: 'project', sort_by: 'due', sort_dir: 'asc', pinned: false, position: 0, color: '#64748b', panels: [], on_drop: null, layout: 'list', show_completed: false, hidden_props: [], row_layout: '', card_notes: false, created_at: 0, deleted_at: null, workspace_id: null, icon: null, manual_order: [],
   } satisfies Omit<View, 'id' | '_clock'>,
   reminder: {
-    task_id: '', kind: 'relative', offset_minutes: null, fire_at: null, delivered_at: null, dismissed_at: null, created_at: 0, deleted_at: null,
+    task_id: '', kind: 'relative', offset_minutes: null, fire_at: null, delivered_at: null, dismissed_at: null, created_at: 0, deleted_at: null, radius_m: null,
   } satisfies Omit<Reminder, 'id' | '_clock'>,
   comment: {
     task_id: '', parent_id: null, body: '', author_id: '', mentions: [], created_at: 0, edited_at: null, deleted_at: null, guest_name: null, page_id: null, reactions: {},
