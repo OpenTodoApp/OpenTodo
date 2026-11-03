@@ -67,6 +67,8 @@ Op fields are never removed: the operation log is append-only and old operations
 - Downgrades are not supported. A backup is taken before migrations run; restoring it is the way back ([backups](backups.md)).
 - Devices that synced before the upgrade continue from where they were, without downloading everything again.
 
+This is tested. For every released minor version there is a fixture: the data directory that version wrote while a fixed scenario ran against it (an owner and a second member, projects with sections, labels, tasks with due dates, subtasks, a repeating task, a completed and a deleted one, a reminder, a shared project, comments, an attachment, a time entry, an API token, and a second account with end-to-end encryption, each where the version had it). On every change, CI opens each fixture with the current server and checks that the migrations finish, that the server reports the same projects, sections, labels, tasks, reminders, time entries, members, comments and attachments as the old version did, that a sync from the start returns every operation, that a device continues from its cursor, that the export is valid, that the owner signs in with the password, that the API token still works and that the attachment is readable. A new minor release is not prepared without its fixture.
+
 ## Clients across versions
 
 A 1.x server accepts sync and REST requests from every 1.x client: a web app still cached on a phone, the Android and iOS apps, `ot`, the browser extension and the Obsidian plugin, of any 1.x version.
