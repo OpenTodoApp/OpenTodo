@@ -3,6 +3,8 @@
 // 2.2), the quick add that sticks from 768 px (3.1) and the toast for a task added out
 // of sight (3.2).
 import 'fake-indexeddb/auto'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 import { act, useRef } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../lib/db'
@@ -156,6 +158,16 @@ describe('the quick add stays reachable (3.1)', () => {
     // Only from md: below 768 px it scrolls with the list.
     expect(row.classList.contains('sticky')).toBe(false)
     await r.unmount()
+  })
+
+  it('a phone held in landscape leaves the row unpinned: the `pins` variant and its rule', () => {
+    // Every sticky class comes from the `pins` variant, never from a bare `md:sticky`.
+    for (const c of STICKY_QUICK_ADD.split(' ')) expect(c.startsWith('pins:'), c).toBe(true)
+    const css = readFileSync(path.resolve(process.cwd(), 'src/index.css'), 'utf8')
+    // The rule, not its exact text: a reformatted index.css must not break this.
+    const rule = /@custom-variant pins\s*\(([^;]*)\);/.exec(css)?.[1] ?? ''
+    expect(rule).toContain('pointer: coarse')
+    expect(rule).toMatch(/height\s*<\s*500px/)
   })
 
   it('sticks just below the sticky page header', async () => {
