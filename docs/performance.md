@@ -148,7 +148,10 @@ timing it, so a slow runner cannot make them fail:
   same rows;
 - a sync page runs as many database statements with 60 projects as with one,
   a push runs a bounded number per operation (`internal/perfseed`), and the
-  export allocates a bounded amount per task (`internal/httpapi`).
+  export allocates a bounded amount per task (`internal/httpapi`);
+- the MCP `search_tasks` tool reads the full records of the tasks that match
+  and of what they show (their blockers and their series' records), not every
+  task (`internal/agenttools`).
 
 **Every night** the benchmark times every desktop, phone-profile and server
 metric five times and fails when a median is over its limit; the nightly alert
