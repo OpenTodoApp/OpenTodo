@@ -196,7 +196,7 @@ func TestCompactionLowersOperationTotal(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	res, err := tn.Sync.CompactNotes(context.Background(), time.Now().Add(31*24*time.Hour), 0, time.Hour)
+	res, err := tn.Sync.CompactNotes(context.Background(), time.Now().Add(31*24*time.Hour), "", time.Hour)
 	release()
 	if err != nil || res.OpsRemoved != 3 {
 		t.Fatalf("compaction: %+v, %v", res, err)

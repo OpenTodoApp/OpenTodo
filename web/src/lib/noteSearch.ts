@@ -48,6 +48,10 @@ const isSpace = (c: string) => c === ' ' || c === '\t' || c === '\n' || c === '\
 const isWordChar = (c: string | undefined) => c !== undefined && /[\p{L}\p{N}]/u.test(c)
 const QUOTES = new Set(['"', '“', '”', '„'])
 const ASCII_PUNCT = new Set('!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~')
+/** The characters stripInline acts on; a line without them passes unchanged. */
+const INLINE_MARKERS = /[\\`![*_~|]/
+const INLINE_MARKER_SET = new Set('\\`![*_~|')
+const INLINE_NEXT = /[\\`![*_~|]/g
 
 function lower(s: string, lang?: string): string {
   return lang ? s.toLocaleLowerCase(lang) : s.toLowerCase()
@@ -55,7 +59,12 @@ function lower(s: string, lang?: string): string {
 
 /** Text for comparison: NFKD, lower-cased, combining marks removed, "ς" as "σ". */
 export function normalizeText(s: string, lang?: string): string {
-  if (!lang && ASCII.test(s)) return s.toLowerCase()
+  if (ASCII.test(s)) {
+    // NFKD leaves ASCII as it is: only lower-case it, unless the language's rules
+    // made something else of it (notes-compaction-at-scale: 10 KB notes).
+    const l = lower(s, lang)
+    if (ASCII.test(l)) return l
+  }
   return lower(s.normalize('NFKD'), lang).replace(MARKS, '').replace(/ς/g, 'σ')
 }
 
@@ -87,8 +96,13 @@ function dropLine(line: string): boolean {
   return s !== '' && /^[-*_|:= \t]+$/.test(s)
 }
 
+/** The code points of a line: the line itself when it is ASCII (one code unit each), else an array. */
+type CodePoints = string | string[]
+
+const part = (cs: CodePoints, a: number, b: number) => (typeof cs === 'string' ? cs.slice(a, b) : cs.slice(a, b).join(''))
+
 /** The inline pass over one line's code points. */
-function stripInline(cs: string[]): string {
+function stripInline(cs: CodePoints): string {
   let out = ''
   let skipFrom = -1
   let skipTo = -1
@@ -100,6 +114,16 @@ function stripInline(cs: string[]): string {
       continue
     }
     const c = cs[i]
+    if (typeof cs === 'string' && !INLINE_MARKER_SET.has(c)) {
+      // A run without markers is copied at once, up to the next marker or the
+      // link target to skip (notes-compaction-at-scale: 10 KB notes).
+      INLINE_NEXT.lastIndex = i
+      let end = INLINE_NEXT.exec(cs)?.index ?? cs.length
+      if (skipFrom > i) end = Math.min(end, skipFrom)
+      out += cs.slice(i, end)
+      i = end - 1
+      continue
+    }
     if (c === '\\' && i + 1 < cs.length && ASCII_PUNCT.has(cs[i + 1])) {
       out += cs[++i]
       continue
@@ -109,7 +133,7 @@ function stripInline(cs: string[]): string {
       while (cs[i + n] === '`') n++
       const close = findRun(cs, '`', n, i + n)
       if (close >= 0) {
-        out += cs.slice(i + n, close).join('')
+        out += part(cs, i + n, close)
         i = close + n - 1
       } else i += n - 1
       continue
@@ -146,7 +170,7 @@ function stripInline(cs: string[]): string {
 }
 
 /** The index of the next run of exactly n copies of ch at or after from, or -1. */
-function findRun(cs: string[], ch: string, n: number, from: number): number {
+function findRun(cs: CodePoints, ch: string, n: number, from: number): number {
   for (let i = from; i < cs.length; i++) {
     if (cs[i] !== ch) continue
     let m = 1
@@ -158,7 +182,7 @@ function findRun(cs: string[], ch: string, n: number, from: number): number {
 }
 
 /** For a "[" at open: [index of "](", index after ")"] of a link, or null. */
-function linkEnd(cs: string[], open: number): [number, number] | null {
+function linkEnd(cs: CodePoints, open: number): [number, number] | null {
   for (let j = open + 1; j + 1 < cs.length; j++) {
     if (cs[j] === '[') return null
     if (cs[j] === ']') {
@@ -170,20 +194,11 @@ function linkEnd(cs: string[], open: number): [number, number] | null {
   return null
 }
 
-/** Collapses whitespace runs to one space and trims. */
+/** Collapses whitespace runs (isSpace) to one space and trims them. */
 function collapse(s: string): string {
-  let out = ''
-  let space = false
-  for (const c of s) {
-    if (isSpace(c)) {
-      space = out !== ''
-      continue
-    }
-    if (space) out += ' '
-    space = false
-    out += c
-  }
-  return out
+  // Only runs that are not already one space are replaced: a 10 KB note has
+  // thousands of single spaces and few other runs.
+  return s.replace(/[\t\n\r\f\v][ \t\n\r\f\v]*| [ \t\n\r\f\v]+/g, ' ').replace(/^ | $/g, '')
 }
 
 /**
@@ -195,8 +210,13 @@ function collapse(s: string): string {
 export function stripMarkdown(md: string): string {
   const lines: string[] = []
   for (const raw of md.replace(/\r\n?/g, '\n').split('\n')) {
-    if (dropLine(raw)) continue
-    lines.push(stripInline([...stripLinePrefix(raw)]))
+    // A line starting with an ASCII letter has no block marker and is no rule or fence.
+    const c = raw.charCodeAt(0) | 0x20
+    const plainStart = c >= 0x61 && c <= 0x7a
+    if (!plainStart && dropLine(raw)) continue
+    const line = plainStart ? raw : stripLinePrefix(raw)
+    // The inline pass copies a line without any of its markers as it is.
+    lines.push(!INLINE_MARKERS.test(line) ? line : stripInline(ASCII.test(line) ? line : [...line]))
   }
   return collapse(lines.join(' '))
 }
@@ -283,8 +303,7 @@ export function snippet(text: string, terms: string[], max = 140, lang?: string)
  * the original characters. Without a match in the text: its start, unmarked.
  */
 export function snippetPlain(plain: string, terms: string[], max = 140, lang?: string): SnippetSegment[] {
-  const P = [...plain]
-  if (P.length === 0) return []
+  if (plain === '') return []
   const ranges: Array<[number, number]> = []
   if (ASCII.test(plain)) {
     // ASCII text lowers one character for one (normalizeChar of an ASCII character
@@ -296,8 +315,11 @@ export function snippetPlain(plain: string, terms: string[], max = 140, lang?: s
       if (t === '') continue
       for (let i = low.indexOf(t); i >= 0; i = low.indexOf(t, i + t.length)) ranges.push([i, i + t.length])
     }
-    return snippetSegments(P, ranges, max)
+    // One code unit per code point: the string itself serves as P, without
+    // splitting 10 KB into characters for every row shown (notes-compaction-at-scale).
+    return snippetSegments(plain, ranges, max)
   }
+  const P = [...plain]
   const norm: string[] = []
   const orig: number[] = []
   P.forEach((c, i) => {
@@ -323,8 +345,12 @@ export function snippetPlain(plain: string, terms: string[], max = 140, lang?: s
   return snippetSegments(P, ranges, max)
 }
 
-/** The snippet of the code points P around the first of the matched ranges (snippetPlain). */
-function snippetSegments(P: string[], ranges: Array<[number, number]>, max: number): SnippetSegment[] {
+/**
+ * The snippet of the code points P around the first of the matched ranges (snippetPlain).
+ * P is an array of code points, or a string whose code units are its code points (ASCII).
+ */
+function snippetSegments(P: string | string[], ranges: Array<[number, number]>, max: number): SnippetSegment[] {
+  const part = (a: number, b: number) => (typeof P === 'string' ? P.slice(a, b) : P.slice(a, b).join(''))
   ranges.sort((a, b) => a[0] - b[0] || b[1] - a[1])
   const [start, end] = ranges.length ? windowAround(P, ranges[0], max) : windowAround(P, [0, 0], max)
   const out: SnippetSegment[] = []
@@ -341,18 +367,18 @@ function snippetSegments(P: string[], ranges: Array<[number, number]>, max: numb
     const a = Math.max(a0, start, markEnd)
     const b = Math.min(b0, end)
     if (a >= b) continue
-    emit(P.slice(at, a).join(''), false)
-    emit(P.slice(a, b).join(''), true)
+    emit(part(at, a), false)
+    emit(part(a, b), true)
     at = b
     markEnd = b
   }
-  emit(P.slice(at, end).join(''), false)
+  emit(part(at, end), false)
   if (end < P.length) emit('…', false)
   return out
 }
 
 /** The [start, end) window of about max code points around the match m, cut at spaces. */
-function windowAround(P: string[], m: [number, number], max: number): [number, number] {
+function windowAround(P: string | string[], m: [number, number], max: number): [number, number] {
   const n = P.length
   let start = 0
   let end = n

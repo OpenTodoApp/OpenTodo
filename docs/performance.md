@@ -99,13 +99,19 @@ The settings:
 
 The notes fixture adds 500 notes of about 10 KB each to the account, half
 standalone notes and half task notes, each saved about 300 times over twelve
-months (about 2 GB of history before the server's
-[compaction](backups.md) runs). It is built and measured on demand (a manual run of the Performance workflow); it joins the nightly run once compaction meets its budgets: the first full run (2026-11-03) finished no compaction pass in 20 minutes, and a write waited 4.4 s behind it.
+months (about 2.6 GB of history before the server's
+[compaction](backups.md) runs). It is built and measured every night with the
+other budgets, in its own job.
+
+What the notes keep after compaction is set by its rules: one revision per day
+of each note's text, every save of the last 30 days, and the current note,
+which the database holds twice (the operation and the stored value). That is
+116 MB on this fixture, hence the 130 MB limit.
 
 | Metric | Unit | Server | Desktop | Phone profile | Android | iPhone | Raspberry Pi 4 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `notes-db-size` The database file after compaction | MB | 250 | — | — | — | — | 250 |
-| `notes-share` What the notes take of it | MB | 100 | — | — | — | — | — |
+| `notes-share` What the notes take of it | MB | 130 | — | — | — | — | — |
 | `notes-compaction` A full compaction of the fixture | s | 120 | — | — | — | — | 480 |
 | `notes-push-wait` The longest a write waits behind compaction | ms | 100 | — | — | — | — | — |
 | `notes-first-sync` First sync of a new device, tasks and notes | s | — | 45 | 110 | 120 | 120 | — |
@@ -115,9 +121,16 @@ months (about 2 GB of history before the server's
 | `notes-js-heap` JavaScript heap after the notes session | MB | — | 170 | 170 | — | — | — |
 
 The report also gives, without a limit, the database size before compaction,
-the operations and bytes compaction removed, and the bytes a new device pulls.
+the operations and bytes compaction removed, and the bytes a new device pulls,
+both as the app does it (its first copy leaves out superseded note history, see
+[Sync](sync.md#exchange)) and as an older client does (the whole log).
 If a phone misses its first-sync or storage budget after compaction, the answer
-is loading note bodies on demand, not a higher budget.
+is loading note bodies on demand, not a higher budget. The first complete run
+(2026-11-03, [#590](https://github.com/OpenTodoApp/OpenTodo/issues/590)) did not
+need it: a new device's first sync took 21 s on the computer and 46 s in the
+phone profile and left 17 MB on the device, after compaction (2.65 GB to 238 MB
+in 50 s, no write waiting more than 35 ms) and with the first copy downloading
+43 MB instead of 2 GB.
 
 `NOTES=1 make perf` runs it (`NOTES_SEED_FLAGS="--notes 50"` for a quick look).
 

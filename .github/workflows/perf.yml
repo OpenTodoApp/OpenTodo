@@ -78,14 +78,13 @@ jobs:
           retention-days: 30
 
   # The notes fixture (design D7): about 2 GB of note history on the 10,000-task
-  # account, compacted by the server's job, then the notes budgets. Not on pull
-  # requests: it takes about half an hour and several GB of disk.
+  # account, compacted by the server's job, then the notes budgets. Nightly and on
+  # demand, not on pull requests: it takes about half an hour and several GB of disk.
+  # (On demand only from 2026-11-03 until notes-compaction-at-scale made compaction
+  # meet its budgets.)
   perf-notes:
     name: Notes budgets (notes fixture)
-    # On demand only for now: the first full run (2026-11-03) found compaction far from
-    # its budgets (no pass finished in 20 minutes, a push waited 4.4 s); it joins the
-    # nightly run once compaction is fixed, instead of failing every night meanwhile.
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     container: mcr.microsoft.com/playwright:v1.56.1-noble@sha256:f1e7e01021efd65dd1a2c56064be399f3e4de00fd021ac561325f2bfbb2b837a

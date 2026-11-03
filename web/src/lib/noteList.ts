@@ -2,7 +2,7 @@
 // on-device search index (D4). Pure functions over the rows the app already
 // holds; nothing here reads IndexedDB or the network, so the page and the
 // palette work offline and on an encrypted account's decrypted copy.
-import { compareHits, matchPrepared, parseQuery, prepareNote, snippet, type NoteHit, type PreparedNote, type SnippetSegment } from './noteSearch'
+import { compareHits, matchPrepared, normalizeText, parseQuery, snippetPlain, stripMarkdown, type NoteHit, type PreparedNote, type SnippetSegment } from './noteSearch'
 import { pendingAppends } from './noteAppends'
 import type { Clock, Note, Project, Task } from './types'
 
@@ -82,6 +82,23 @@ export function noteEntries(tasks: readonly Task[], projects: readonly Project[]
   return out.sort(byRecency)
 }
 
+/**
+ * Whether two lists of entries show the same notes the same way: then the page
+ * keeps the list it has, and a write elsewhere (a task's due date, a sync page)
+ * does not filter and search the notes again.
+ */
+export function sameEntries(a: readonly NoteEntry[], b: readonly NoteEntry[]): boolean {
+  if (a === b) return true
+  if (a.length !== b.length) return false
+  for (let i = 0; i < a.length; i++) {
+    const x = a[i]
+    const y = b[i]
+    if (x.key !== y.key || x.title !== y.title || x.text !== y.text || x.updated !== y.updated || x.marker !== y.marker
+      || x.projectId !== y.projectId || x.labels.length !== y.labels.length || x.labels.some((l, j) => l !== y.labels[j])) return false
+  }
+  return true
+}
+
 function byRecency(a: NoteEntry, b: NoteEntry): number {
   return b.updated - a.updated || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0)
 }
@@ -114,17 +131,28 @@ export interface NoteResult extends NoteHit<NoteEntry> {
  * account locks.
  */
 export class NoteIndex {
-  private prepared = new Map<string, { title: string; text: string; p: PreparedNote }>()
+  private prepared = new Map<string, { title: string; text: string; p: PreparedNote; plain: string }>()
 
   constructor(private lang?: string) {}
 
-  /** The prepared form of an entry, recomputed only when its title or text changed. */
-  private prepare(e: NoteEntry): PreparedNote {
+  /**
+   * The prepared form of an entry and its plain text (the Markdown stripped, kept
+   * for snippets), recomputed only when its title or text changed.
+   */
+  private entry(e: NoteEntry): { p: PreparedNote; plain: string } {
     const cur = this.prepared.get(e.key)
-    if (cur && cur.title === e.title && cur.text === e.text) return cur.p
-    const p = prepareNote({ title: e.title, text: e.text }, this.lang)
-    this.prepared.set(e.key, { title: e.title, text: e.text, p })
-    return p
+    if (cur && cur.title === e.title && cur.text === e.text) return cur
+    // prepareNote's two steps, keeping the stripped text: a snippet used to strip
+    // the whole note again for every row shown (notes-compaction-at-scale: 50 rows
+    // of 10 KB notes took about 18 ms of a 20 ms keystroke).
+    const plain = stripMarkdown(e.text)
+    const next = { title: e.title, text: e.text, p: { title: normalizeText(e.title, this.lang), body: normalizeText(plain, this.lang) }, plain }
+    this.prepared.set(e.key, next)
+    return next
+  }
+
+  private prepare(e: NoteEntry): PreparedNote {
+    return this.entry(e).p
   }
 
   /**
@@ -141,7 +169,7 @@ export class NoteIndex {
       if (m.matched) hits.push({ note: e, ...m })
     }
     hits.sort(compareHits)
-    return hits.map((h, i) => ({ ...h, snippet: i < snippets ? snippet(h.note.text, terms, snippetLength, this.lang) : [] }))
+    return hits.map((h, i) => ({ ...h, snippet: i < snippets ? snippetPlain(this.entry(h.note).plain, terms, snippetLength, this.lang) : [] }))
   }
 
   /**
