@@ -8,6 +8,7 @@
 // is ever asked of the server.
 import { useEffect, useMemo, useState } from 'react'
 import { currentLanguage, t } from '../../lib/i18n'
+import { resettable } from '../../lib/moduleState'
 import { useNoteRows } from '../../lib/noteRows'
 import type { SnippetSegment } from '../../lib/noteSearch'
 import type { Project, RowEncryption, Task } from '../../lib/types'
@@ -42,6 +43,23 @@ const cancelIdle = (h: number) => {
   clearTimeout(h)
 }
 
+/**
+ * One index for the page's life, per language: the command bar prepares it before
+ * it first opens (PaletteWarmer) and every opening finds it ready, refreshed only
+ * for notes whose text changed (list-rendering-at-scale D6). It holds the same text
+ * the device keeps in its local database.
+ */
+let shared: { lang: string; index: InstanceType<NoteListModule['NoteIndex']> } | null = null
+resettable('paletteNotes', () => { shared = null })
+export function sharedNoteIndex(mod: NoteListModule, lang = currentLanguage()): InstanceType<NoteListModule['NoteIndex']> {
+  if (shared?.lang !== lang) shared = { lang, index: new mod.NoteIndex(lang) }
+  return shared.index
+}
+
+/** The notes the palette searches: those of the readable tasks, projects and notes. */
+export const paletteNoteEntries = (mod: NoteListModule, tasks: readonly Task[], projects: readonly Project[], notes: Parameters<NoteListModule['noteEntries']>[2]) =>
+  mod.noteEntries(readable(tasks), readable(projects), readable(notes))
+
 /** The Notes section for `query`; empty until the index module has loaded. */
 export function usePaletteNotes(query: string, tasks: readonly Task[], projects: readonly Project[]): PaletteNotes {
   const [mod, setMod] = useState<NoteListModule | null>(null)
@@ -53,8 +71,8 @@ export function usePaletteNotes(query: string, tasks: readonly Task[], projects:
     return () => { live = false }
   }, [mod])
   const notes = useNoteRows()
-  const index = useMemo(() => (mod ? new mod.NoteIndex(currentLanguage()) : null), [mod])
-  const all = useMemo(() => (mod ? mod.noteEntries(readable(tasks), readable(projects), readable(notes)) : []), [mod, tasks, projects, notes])
+  const index = useMemo(() => (mod ? sharedNoteIndex(mod) : null), [mod])
+  const all = useMemo(() => (mod ? paletteNoteEntries(mod, tasks, projects, notes) : []), [mod, tasks, projects, notes])
   useEffect(() => {
     if (!index) return
     let handle = 0

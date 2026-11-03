@@ -20,24 +20,26 @@ export interface FlowView {
 const NO_TASKS: Task[] = []
 
 /** The flow view over the given live tasks (every task, so steps outside the view still hold). */
-export function flowView(tasks: readonly Task[], state: FlowState, sections: readonly Section[]): FlowView {
-  const byId = new Map(tasks.map((x) => [x.id, x]))
-  const sectionById = new Map(sections.map((s) => [s.id, s]))
+export function flowView(tasks: readonly Task[], state: FlowState, sections: readonly Section[], known?: ReadonlyMap<string, Task>): FlowView {
+  // Built when first asked: a list asks only for the steps its rows wait for (list-rendering-at-scale D6).
+  let byId: ReadonlyMap<string, Task> | null = known ?? null
+  let sectionById: Map<string, Section> | null = null
   return {
     state, sections,
     waitsFor(id) {
       const held = state.get(id).heldBy
       if (!held) return null
-      if (held.kind === 'section') return sectionById.get(held.id)?.name || t('Untitled')
-      return byId.get(held.id)?.title || t('Untitled')
+      if (held.kind === 'section') return (sectionById ??= new Map(sections.map((s) => [s.id, s]))).get(held.id)?.name || t('Untitled')
+      return (byId ??= new Map(tasks.map((x) => [x.id, x]))).get(held.id)?.title || t('Untitled')
     },
     held: (blocked) => ({ has: (id) => blocked.has(id) || state.waits(id) }),
   }
 }
 
-export function useFlowView(tasks: readonly Task[] | undefined, today: string): FlowView {
+/** `byId`: the same tasks by id, when the caller has that map already. */
+export function useFlowView(tasks: readonly Task[] | undefined, today: string, byId?: ReadonlyMap<string, Task>): FlowView {
   const projects = useAllProjects()
   const sections = useLiveSections()
   const list = tasks ?? NO_TASKS
-  return useMemo(() => flowView(list, availability({ tasks: list, projects, sections, today }), sections), [list, projects, sections, today])
+  return useMemo(() => flowView(list, availability({ tasks: list, projects, sections, today, byId }), sections, byId), [list, projects, sections, today, byId])
 }
