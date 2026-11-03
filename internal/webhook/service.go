@@ -572,6 +572,7 @@ func (s *Service) enqueue(ctx context.Context, changes []opsync.Change) error {
 			}
 			var entity opsync.Entity
 			loaded := false
+			var related map[string]opsync.Entity
 			for _, sub := range subs {
 				if !slices.Contains(sub.events, event) || !s.matchesProject(ctx, userID, sub.projectID, c, &entity, &loaded) {
 					continue
@@ -583,8 +584,15 @@ func (s *Service) enqueue(ctx context.Context, changes []opsync.Change) error {
 					}
 					loaded = true
 				}
+				if c.Entity == "comment" && related == nil {
+					task, err := s.commentTask(ctx, userID, entity)
+					if err != nil {
+						return err
+					}
+					related = map[string]opsync.Entity{"task": task}
+				}
 				id := ids.New()
-				body, err := BuildPayload(id, sub.id, event, now, c.Origin, c.Entity, entity, c.Fields)
+				body, err := BuildPayload(id, sub.id, event, now, c.Origin, c.Entity, entity, c.Fields, related)
 				if err != nil {
 					return err
 				}
@@ -707,6 +715,9 @@ func (s *Service) matchesProject(ctx context.Context, userID, filter string, c o
 	if c.Entity == "project" {
 		return c.EntityID == filter
 	}
+	if c.Entity == "comment" {
+		return s.commentInProject(ctx, userID, filter, c, entity, loaded)
+	}
 	if fc, ok := c.Fields["project_id"]; ok && (idValue(fc.From) == filter || idValue(fc.To) == filter) {
 		return true
 	}
@@ -719,6 +730,36 @@ func (s *Service) matchesProject(ctx context.Context, userID, filter string, c o
 		*entity, *loaded = e, true
 	}
 	return *entity != nil && idValue((*entity)["project_id"]) == filter
+}
+
+// commentInProject matches a project filter against the comment's task.
+func (s *Service) commentInProject(ctx context.Context, userID, filter string, c opsync.Change, entity *opsync.Entity, loaded *bool) bool {
+	if !*loaded {
+		e, err := s.sync.Get(ctx, userID, c.Entity, c.EntityID)
+		if err != nil {
+			s.log.Error("webhooks: load entity", "err", err)
+			return false
+		}
+		*entity, *loaded = e, true
+	}
+	task, err := s.commentTask(ctx, userID, *entity)
+	if err != nil {
+		s.log.Error("webhooks: load comment task", "err", err)
+		return false
+	}
+	return task != nil && idValue(task["project_id"]) == filter
+}
+
+// commentTask is the task a comment belongs to, or nil when it cannot be read.
+func (s *Service) commentTask(ctx context.Context, userID string, comment opsync.Entity) (opsync.Entity, error) {
+	if comment == nil {
+		return nil, nil
+	}
+	tid := idValue(comment["task_id"])
+	if tid == "" {
+		return nil, nil
+	}
+	return s.sync.Get(ctx, userID, "task", tid)
 }
 
 func idValue(raw json.RawMessage) string {

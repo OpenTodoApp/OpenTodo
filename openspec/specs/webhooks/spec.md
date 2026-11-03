@@ -25,7 +25,7 @@ A signed-in user SHALL create, list, update, enable or disable and delete their 
 - **THEN** the response is a 404 `not_found` error
 
 ### Requirement: Events derived from operations
-The server SHALL derive events from operations as they are applied, except those written by an import or its undo, coalescing one entity's operations within a batch into one event named `task.created|updated|completed|reopened|deleted` or `project.created|updated|archived|deleted`. Operations that lose under last-writer-wins SHALL produce no event. Edits made offline SHALL produce events when the device syncs them.
+The server SHALL derive events from operations as they are applied, except those written by an import or its undo, coalescing one entity's operations within a batch into one event named `task.created|updated|completed|reopened|deleted`, `comment.created|updated|deleted` or `project.created|updated|archived|deleted`. Operations that lose under last-writer-wins SHALL produce no event. Edits made offline SHALL produce events when the device syncs them.
 
 #### Scenario: Completion from an offline device
 - **WHEN** a user completes a task on a device without network and the device syncs an hour later
@@ -42,6 +42,29 @@ The server SHALL derive events from operations as they are applied, except those
 #### Scenario: Import writes produce no per-task events
 - **WHEN** an import creates 500 tasks for a user whose webhook subscribes to `task.created`
 - **THEN** no `task.created` delivery is queued for those tasks
+
+### Requirement: Comment events
+A comment SHALL produce `comment.created`, `comment.updated` or `comment.deleted` by the same precedence as other entities (created, then deleted, otherwise updated). The delivery SHALL include `data.comment` (the comment's current state) and `data.task` (the task's current state, shaped as in a task event). `changes` SHALL list the comment fields that changed, including `body` with `from` and `to` on an edit. `source` and `device` SHALL be the same as for other events. A project filter SHALL match when the comment's task is in that project. Delivery, signature, retries and the delivery log SHALL be as for other events.
+
+#### Scenario: A comment is created
+- **WHEN** a comment is added to a task and a webhook subscribes to `comment.created`
+- **THEN** one delivery is queued whose `data.comment` has the comment's id, task, author and body and whose `data.task` is that task's current state
+
+#### Scenario: A comment is edited
+- **WHEN** a comment's body changes
+- **THEN** one `comment.updated` delivery is queued and `changes.body` has the previous and new text
+
+#### Scenario: A comment is deleted
+- **WHEN** a comment gets a tombstone
+- **THEN** one `comment.deleted` delivery is queued
+
+#### Scenario: Project filter follows the task
+- **WHEN** a webhook is limited to project P and a comment is added to a task in project Q
+- **THEN** no delivery is queued for that webhook
+
+#### Scenario: A receiver recognizes its own agent write
+- **WHEN** a comment is written by a device whose id starts with `agent:`
+- **THEN** the delivery's `source` is `device` and its `device` is that id
 
 ### Requirement: Payload and signature
 Each delivery SHALL be an HTTPS or HTTP POST with a JSON body containing a unique delivery id, the event name, the event time, the entity's current state and the list of changed fields with their previous values when known, and SHALL carry headers for the event name, the delivery id, the webhook id, a timestamp and a signature `v1=<hex HMAC-SHA256 of "<timestamp>.<body>">` computed with the webhook's secret. The payload format SHALL be versioned and documented. A task's `origin` SHALL travel in the entity state and in `changes` like every other field, as the ciphertext string for an encrypted account.
