@@ -783,6 +783,9 @@
   "Access token": [
     "web/src/app/NotificationChannelEditor.tsx"
   ],
+  "Accessibility": [
+    "web/src/app/help/HelpView.tsx"
+  ],
   "Account": [
     "web/src/app/AuditPanel.tsx",
     "web/src/app/settingsSections.ts"
