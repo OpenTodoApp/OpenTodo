@@ -1,5 +1,6 @@
 import { type RefObject, type SyntheticEvent, useEffect, useLayoutEffect, useRef } from 'react'
 import { captureFocus, focusInto, lockScroll, pushOverlay } from './stack'
+import { useBackToClose } from './useBackToClose'
 
 /**
  * Behaviour every overlay shares (design D1): Escape through the overlay stack,
@@ -14,6 +15,7 @@ export function useOverlay({ panel, onClose, modal = true, trigger }: {
 }) {
   const close = useRef(onClose)
   useLayoutEffect(() => { close.current = onClose })
+  useBackToClose(modal, onClose)
   useEffect(() => {
     const { pop } = pushOverlay(() => close.current())
     const unlock = modal ? lockScroll() : () => {}

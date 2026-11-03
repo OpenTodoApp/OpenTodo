@@ -52,6 +52,8 @@ export interface RowContext {
   draggingId: string | null
   ticked: ReadonlySet<string>
   showCheckbox: boolean
+  /** Touch Select mode is on: a plain tap on a row ticks it. */
+  selectMode?: boolean
   fieldColumns: boolean
   projectFieldDefs: FieldDef[]
   siblingPos: Map<string, { pos: number; size: number }>
@@ -167,6 +169,7 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           dragging={!ghost && c.draggingId === r.task.id}
           ticked={!ghost && c.ticked.has(r.task.id)}
           showCheckbox={c.showCheckbox}
+          selectMode={c.selectMode}
           hideFieldBadges={c.fieldColumns}
           treeItem={tree}
           handlers={c.actions}
