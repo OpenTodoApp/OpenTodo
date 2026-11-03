@@ -28,7 +28,7 @@ export function TaskHead({ m, readOnly, completeLocked = readOnly, projects, siz
           {done && <Icon name="check" size="xs" />}
         </span>
       </button>
-      {/* The title wraps (to two lines in the panel, task-panel-facets D4); Enter commits. */}
+      {/* The title grows with its text, up to eight lines (issue 859); Enter commits. */}
       <TitleField multiline title={task.title} value={m.title} onChange={m.setTitle} onCommit={m.commitTitle}
         projects={projects} labels={m.labelList} readOnly={readOnly} fieldRef={m.titleField}
         className={`block w-full resize-none overflow-hidden rounded-control bg-transparent font-semibold leading-snug text-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-focus/30 ${page ? 'text-h1' : 'text-h3'} ${done ? 'text-faint line-through' : ''}`}
