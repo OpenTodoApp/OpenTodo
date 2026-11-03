@@ -30,9 +30,9 @@ Each of groups 2–6 can land as its own pull request; group 7 lands last.
 
 ## 5. Super Productivity (`super-productivity-json`)
 
-- [ ] 5.1 `profile_superproductivity.go`: detection, projects, tags, the `TODAY` tag, tasks and archived tasks, dates, estimates, `timeSpentOnDay` as time entries, and repeat configurations; verify `go test ./internal/importer -run SuperProductivity`
-- [ ] 5.2 Real backups from the current release, sanitised, with goldens
-- [ ] 5.3 `docs/switch/super-productivity.md` and the `docs/import.md` row; verify `make docs-check`
+- [x] 5.1 `profile_superproductivity.go`: detection, projects, tags, the `TODAY` tag, tasks and archived tasks, dates, estimates, `timeSpentOnDay` as time entries, and repeat configurations; verify `go test ./internal/importer -run SuperProductivity`
+- [x] 5.2 Real backups from the current release, sanitised, with goldens
+- [x] 5.3 `docs/switch/super-productivity.md` and the `docs/import.md` row; verify `make docs-check`
 
 ## 6. Tududi (`tududi-db`)
 

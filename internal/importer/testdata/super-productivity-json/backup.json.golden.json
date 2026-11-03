@@ -1,0 +1,67 @@
+{
+  "format": "super-productivity-json",
+  "notes": [],
+  "totals": {
+    "rows": 4,
+    "create": 4,
+    "update": 0,
+    "skip": 0,
+    "error": 0,
+    "possibleDuplicates": 0,
+    "warnings": 0,
+    "newProjects": 1,
+    "newLabels": 0,
+    "newSections": 0,
+    "recurring": 0,
+    "reminders": 0,
+    "deadlines": 0,
+    "attachments": 0,
+    "fields": 0,
+    "timeEntries": 0,
+    "places": 0,
+    "notes": 0,
+    "entities": 4,
+    "written": 0,
+    "ops": 0
+  },
+  "viewHints": null,
+  "rows": [
+    {
+      "row": 1,
+      "sourceId": "super-productivity:project:_SRrzMICqpf4NQnVtO6YK",
+      "kind": "project",
+      "title": "Title 4",
+      "outcome": "create"
+    },
+    {
+      "row": 2,
+      "sourceId": "super-productivity:xqwWBDUgSWuMaIAisyczJ",
+      "kind": "task",
+      "title": "Title 1",
+      "project": "Title 4",
+      "outcome": "create"
+    },
+    {
+      "row": 3,
+      "sourceId": "super-productivity:ti7avY7Z8FxH8rFUbgL91",
+      "kind": "task",
+      "title": "Title 2",
+      "project": "Title 4",
+      "outcome": "create"
+    },
+    {
+      "row": 4,
+      "sourceId": "super-productivity:WmZVZc_guPPTUSDUOwC11",
+      "kind": "task",
+      "title": "Title 3",
+      "project": "Title 4",
+      "outcome": "create"
+    }
+  ],
+  "fields": [
+    "project id-0001: name=\"Title 4\" archived=false created_at=1791979200000",
+    "task id-0002: title=\"Title 1\" description=\"\" priority=4 created_at=1793661047896 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"super-productivity\",\"id\":\"xqwWBDUgSWuMaIAisyczJ\"} labels=[]",
+    "task id-0003: title=\"Title 2\" description=\"\" priority=4 created_at=1793661048979 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"super-productivity\",\"id\":\"ti7avY7Z8FxH8rFUbgL91\"} labels=[]",
+    "task id-0004: title=\"Title 3\" description=\"\" priority=4 created_at=1793661050040 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"super-productivity\",\"id\":\"WmZVZc_guPPTUSDUOwC11\"} labels=[]"
+  ]
+}
