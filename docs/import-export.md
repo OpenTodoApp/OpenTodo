@@ -20,7 +20,7 @@ The export includes your [automation rules](automations.md) (`rules`), and impor
 
 Open **Settings → Data** and select **Download export (JSON)** in the **Export** row. You get one file with all your projects, sections, tasks and subtasks, labels, reminders, saved views, [saved locations](locations-and-places.md), [time entries](time-tracking.md) and which [workspace](workspaces.md) each belongs to, including completed tasks and items in the Trash. Shared projects you're a member of are included too.
 
-The file is plain JSON, so you can open it in any text editor, keep it as a backup, or load it into another OpenTodo server.
+The file is plain JSON, so you can open it in any text editor, keep it as a backup, or load it into another OpenTodo server. Every 1.x server imports a file written by any earlier version ([stability and compatibility](stability.md)).
 
 The JSON file lists your [attachments](attachments.md) but doesn't contain the files. To take the files with you, select **Download export with files (ZIP)** instead: you get the same JSON file plus every attached file, in one ZIP. Importing the JSON file alone brings back links and the names of files, but not the files themselves.
 

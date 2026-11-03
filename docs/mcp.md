@@ -24,6 +24,8 @@ OpenTodo can let an AI assistant read your projects and tasks through the [Model
 
 `opentodo://slots` is a read-only resource listing your [calendar slots](slots.md) from yesterday on: date, wall time, length, colour and the tasks each holds in order, titles as untrusted text ("Encrypted slot" when the server cannot read them). There is no tool that changes slots.
 
+Tool names, their arguments and the fields of their results are part of the v1 surface: within 1.x tools and optional arguments are only added ([stability and compatibility](stability.md)).
+
 ## 1. Enable it (owner)
 
 **Settings → Integrations → AI assistants → Allow AI assistants**. The change applies at once, without a restart, and is recorded in the audit log as `settings.changed` (`mcp.enabled`).

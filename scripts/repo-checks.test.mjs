@@ -10,9 +10,13 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import { cpSync, mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { checkSurfaceFreeze, surfaceProblems, SURFACE_FILE } from './release/surfaceFreeze.mjs'
+import { MATRIX_APPS, matrixProblems, parseMatrix, staleRows, checkMatrixFreshness } from './release/switchMatrix.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const read = (p) => readFileSync(path.join(root, p), 'utf8')
@@ -231,6 +235,9 @@ test('every workflow has a concurrency group and every job a timeout', () => {
     const text = read(f)
     assert.match(text, /^concurrency:\n {2}group: /m, `${f}: concurrency group`)
     for (const [id, block] of Object.entries(jobsOf(text))) {
+      // A job that calls a workflow of this repository takes no timeout of its own
+      // (GitHub refuses one): the called workflow's jobs carry theirs, checked here too.
+      if (/^ {4}uses: \.\/\.github\/workflows\/[\w-]+\.yml$/m.test(block)) continue
       assert.match(block, /^ {4}timeout-minutes: \d+$/m, `${f}: job ${id} needs timeout-minutes`)
     }
   }
@@ -591,4 +598,106 @@ test('the F-Droid metadata allows the release certificate that docs/android-app.
   assert.match(fdroid, /^Binaries: https:\/\/github\.com\/OpenTodoApp\/OpenTodo\/releases\/download\/v%v\/opentodo-android-%v\.apk$/m)
   assert.match(fdroid, /^UpdateCheckMode: Tags \^v\[0-9\.\]\+\$$/m, 'release candidates are skipped')
   assert.match(fdroid, /^AutoUpdateMode: Version$/m, "F-Droid's bot adds each final tag")
+})
+
+// The migration matrix (migration-everywhere D6): every listed competitor has a
+// row, an importer format, a guide with export steps and a real-export fixture
+// with a golden; the Import screen's picker lists the same apps and formats.
+test('every competitor in the migration matrix has a verified path', () => {
+  assert.deepEqual(matrixProblems(root), [])
+  const rows = parseMatrix(read('docs/switch/README.md'))
+  assert.deepEqual(rows.map((r) => r.guide).sort(), [...MATRIX_APPS].sort())
+  const picker = [...read('web/src/lib/switchApps.ts').matchAll(/\{ guide: '([a-z0-9-]+)', name: '[^']+', format: '([a-z0-9-]+)'/g)].map((m) => `${m[1]} ${m[2]}`)
+  assert.deepEqual(picker.sort(), rows.map((r) => `${r.guide} ${r.format}`).sort())
+})
+
+test('the matrix check fails on a missing fixture, guide section or row', () => {
+  const tmp = mkdtempSync(path.join(tmpdir(), 'matrix-'))
+  try {
+    for (const p of ['docs/switch', 'internal/importer']) cpSync(path.join(root, p), path.join(tmp, p), { recursive: true, filter: (src) => !src.includes('sanitize') })
+    rmSync(path.join(tmp, 'internal/importer/testdata/tududi-db'), { recursive: true })
+    assert.deepEqual(matrixProblems(tmp), ['Tududi: no fixture with a golden preview in internal/importer/testdata/tududi-db/'])
+    const guide = path.join(tmp, 'docs/switch/vikunja.md')
+    writeFileSync(guide, readFileSync(guide, 'utf8').replace('## Export from Vikunja', '## Getting the file'))
+    const readme = path.join(tmp, 'docs/switch/README.md')
+    writeFileSync(readme, readFileSync(readme, 'utf8').split('\n').filter((l) => !l.startsWith('| [Linear]')).join('\n'))
+    const problems = matrixProblems(tmp)
+    assert.ok(problems.includes('Vikunja: docs/switch/vikunja.md has no "## Export from …" section'), problems.join('\n'))
+    assert.ok(problems.includes('linear: no row in docs/switch/README.md'), problems.join('\n'))
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+})
+
+test('release preparation for 1.0 and later refuses a row checked more than 120 days before', () => {
+  const text = '| [OmniFocus](omnifocus.md) | `omnifocus-csv` | a | b | 2026-04-01, OmniFocus 4 |\n| [Tududi](tududi.md) | `tududi-db` | a | b | 2026-11-03, Tududi 1.14 |\n'
+  assert.deepEqual(staleRows(text, '2026-10-18').map((r) => r.name), ['OmniFocus'])
+  assert.deepEqual(staleRows(text, '2026-07-29').map((r) => r.name), [])
+  const tmp = mkdtempSync(path.join(tmpdir(), 'matrix-'))
+  try {
+    mkdirSync(path.join(tmp, 'docs/switch'), { recursive: true })
+    writeFileSync(path.join(tmp, 'docs/switch/README.md'), text)
+    assert.throws(() => checkMatrixFreshness(tmp, '1.0.0', '2026-10-18'), /OmniFocus \(2026-04-01\)/)
+    assert.doesNotThrow(() => checkMatrixFreshness(tmp, '0.22.0', '2026-10-18'))
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+})
+
+// ---- The v1 surface freeze (OpenSpec change stability-contract) ----------------------------------
+
+test('the v1 surface keeps every entry of the snapshot at v1.0.0', (t) => {
+  const problems = checkSurfaceFreeze(root)
+  if (problems === null) {
+    t.skip('v1.0.0 is not tagged yet')
+    return
+  }
+  assert.deepEqual(problems, [], 'the v1 surface only grows within 1.x (docs/stability.md)')
+})
+
+test('the surface freeze names an entry deleted by hand after v1.0.0', () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'surface-freeze-'))
+  try {
+    const g = (...args) => execFileSync('git', args, { cwd: dir, stdio: 'ignore' })
+    g('init', '-q')
+    g('config', 'user.email', 'test@example.com')
+    g('config', 'user.name', 'test')
+    mkdirSync(path.join(dir, path.dirname(SURFACE_FILE)), { recursive: true })
+    const surface = { about: 'x', errors: { bad_request: ['400', 'listed'] }, routes: { 'GET /api/v1/me': { policy: 'signed-in' } } }
+    writeFileSync(path.join(dir, SURFACE_FILE), JSON.stringify(surface))
+    g('add', '.')
+    g('commit', '-q', '-m', 'one')
+    assert.equal(checkSurfaceFreeze(dir), null, 'no tag: skipped')
+    g('tag', 'v1.0.0')
+    assert.deepEqual(checkSurfaceFreeze(dir), [])
+    delete surface.errors.bad_request
+    surface.routes['GET /api/v1/me'].policy = 'owner-only'
+    surface.routes['GET /api/v1/new'] = { policy: 'signed-in' }
+    writeFileSync(path.join(dir, SURFACE_FILE), JSON.stringify(surface))
+    assert.deepEqual(checkSurfaceFreeze(dir), [
+      'errors › bad_request › 400: present at v1.0.0, missing now',
+      'errors › bad_request › listed: present at v1.0.0, missing now',
+      'routes › GET /api/v1/me › policy: was "signed-in" at v1.0.0, now "owner-only"',
+    ])
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('the recorded client calls carry no session, token or password (stability-contract D5)', () => {
+  const dir = 'internal/sync/testdata/v1_clients'
+  const files = readdirSync(path.join(root, dir)).filter((f) => f.endsWith('.json'))
+  assert.ok(files.length >= 3, `${dir} holds the web, ot and extension recordings`)
+  for (const f of files) {
+    const text = read(`${dir}/${f}`)
+    assert.doesNotMatch(text, /\bot_[A-Za-z0-9_-]{16,}/, `${dir}/${f} holds an API token`)
+    assert.doesNotMatch(text, /opentodo_session=|"(?:cookie|authorization|set-cookie)"\s*:/i, `${dir}/${f} holds a session cookie or credential header`)
+    for (const m of text.matchAll(/"(?:password|newPassword|currentPassword)"\s*:\s*"([^"]*)"/g)) {
+      assert.equal(m[1], '<password>', `${dir}/${f} holds a password`)
+    }
+  }
+})
+
+test('surfaceProblems ignores the about text and additions', () => {
+  assert.deepEqual(surfaceProblems({ about: 'a', ops: { task: { title: 'string' } } }, { about: 'b', ops: { task: { title: 'string', new: 'bool' } } }), [])
 })

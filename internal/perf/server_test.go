@@ -67,6 +67,14 @@ func TestServerBudgets(t *testing.T) {
 	}
 	budgets := loadBudgets(t, filepath.Join(root, "scripts", "perf", "budgets.json"))
 	rep := report(budgets, "server", samples)
+	// The notes fixture's server metrics are TestNotesBudgets'.
+	plain := rep.Metrics[:0]
+	for _, m := range rep.Metrics {
+		if !isNotesMetric(m.ID) {
+			plain = append(plain, m)
+		}
+	}
+	rep.Metrics = plain
 	writeJSON(t, env("PERF_REPORT", filepath.Join(root, "perf-report", "server.json")), rep)
 	for _, m := range rep.Metrics {
 		t.Logf("%-22s median %8.1f %-2s budget %6g  runs %v", m.ID, m.Median, m.Unit, m.Limit, m.Runs)
@@ -328,14 +336,28 @@ func mkdir(t *testing.T, dir string) string {
 	return dir
 }
 
+// copyFile copies a fixture's database and waits until the system has written
+// it (and every other pending write) to disk: the notes fixture is 2.6 GB, and
+// the kernel writing it back during the measurement held the first seconds of
+// compaction's commits and checkpoints behind the disk (a push waited over
+// 200 ms on the CI runner for a copy no server makes).
 func copyFile(t *testing.T, from, to string) {
-	b, err := os.ReadFile(from)
+	src, err := os.Open(from)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(to, b, 0o600); err != nil {
+	defer src.Close()
+	dst, err := os.OpenFile(to, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600)
+	if err != nil {
 		t.Fatal(err)
 	}
+	if _, err := io.Copy(dst, src); err != nil {
+		t.Fatal(err)
+	}
+	if err := dst.Close(); err != nil {
+		t.Fatal(err)
+	}
+	syscall.Sync()
 }
 
 func readJSON(t *testing.T, path string, v any) {

@@ -9,7 +9,7 @@ order: 10
 ---
 # HTTP API
 
-Base path: `/api/v1`. All requests and responses are JSON. Errors look like:
+Base path: `/api/v1`. All requests and responses are JSON. Within 1.x the API only grows: routes, fields and error codes are added, never removed or changed ([stability and compatibility](stability.md)); ignore fields you do not know. Errors look like:
 
 ```json
 { "error": { "code": "invalid_input", "message": "task.priority must be an integer from 1 (highest) to 4 (lowest)" } }
@@ -55,7 +55,7 @@ If the account has two-factor authentication, step 1 answers `{"mfaRequired":tru
 
 ### Endpoints
 
-Auth column: **none** = public; **yes** = any session or token (a `read` token only on `GET`); **owner**, **admin** = that account role; **member** = a member of the project; **fresh** = a step-up route for sessions (see [Two-factor authentication](#two-factor-authentication)); **credential** = a session or an `admin` token, never a `full` one (see [token scopes](#token-scopes)); **cookie** = a browser session. Every route's policy is declared where it is registered (`internal/httpapi/policy.go`) and checked by a test. Every `/api/v1` route not listed as public requires authentication.
+Auth column: **none** = public; **yes** = any session or token (a `read` token only on `GET`); **owner**, **admin** = that account role; **member** = a member of the project; **fresh** = a step-up route for sessions (see [Two-factor authentication](#two-factor-authentication)); **credential** = a session or an `admin` token, never a `full` one (see [token scopes](#token-scopes)); **cookie** = a browser session; **deprecated** = still served, answers with the `Deprecation` and `Sunset` headers, and the row names its replacement ([deprecation](stability.md#deprecation); no route is deprecated in 1.0). Every route's policy is declared where it is registered (`internal/httpapi/policy.go`) and checked by a test. Every `/api/v1` route not listed as public requires authentication.
 
 #### Health and authentication
 
@@ -1727,6 +1727,8 @@ Uploads are `multipart/form-data` with a `file` part. Options go either in one `
   "notes": []
 }
 ```
+
+For a Notion export (`notion-csv`), `columns` also holds `roles`, the column chosen for each of `status`, `due`, `labels`, `priority`, `project` and `notes` (`null`: not imported), and `available`, every column the roles can use. Send `columns` in the `options` JSON part to change the choice, for example `{"format": "notion-csv", "columns": {"due": "Do date", "status": null}}`; a role left out keeps the guess, a column the file does not have answers `400 invalid_input` naming it, and the import takes the same `columns`. When `format` was chosen and the file looks like another format, `detected` names that format (for example `todoist-backup`) so a client can offer to switch.
 
 `kind` is `project`, `task`, `label`, `section`, `field`, `reminder` or `view`. `outcome` is `create`, `update`, `skip` (reason `exists`, `unchanged`, `deleted`, `already_imported`, `possible_duplicate` or `no_project`) or `error` (with `reason`). `newSections`, `fields` (custom field definitions), `recurring` (tasks with a recurrence rule) and `reminders` count what the import adds; `notes` holds file-level remarks, such as the number of comments in an own export that are not imported. `row` is the line in a CSV file or the position in a JSON array; `version` is set for an own export. At most 5,000 rows are listed, those needing attention first (`truncated: true`); `totals` always counts every row.
 

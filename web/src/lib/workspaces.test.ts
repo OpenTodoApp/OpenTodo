@@ -60,6 +60,27 @@ describe('directory cache', () => {
     expect(await currentWorkspaceId()).toBe('w-p')
   })
 
+  it('writes nothing when every exchange brings the same directory (list-rendering-at-scale)', async () => {
+    useDatabase(`ws-${Math.random()}`)
+    const entry = (id: string, isDefault = false): WorkspaceEntry => ({
+      ...ws(id, { default: isDefault }), members: [{ userId: 'me', name: 'Me', role: 'owner' }],
+      groups: [{ id: `${id}-g`, name: 'Adults', members: ['me'] }],
+    })
+    await storeWorkspaces([entry('w-p', true), entry('w-fam')])
+    let writes = 0
+    const count = () => { writes++ }
+    Dexie.on('storagemutated', count)
+    try {
+      expect(await storeWorkspaces([entry('w-fam'), entry('w-p', true)])).toEqual([])
+      expect(writes).toBe(0)
+      await storeWorkspaces([entry('w-p', true), { ...entry('w-fam'), name: 'Family' }])
+      expect(writes).toBeGreaterThan(0)
+      expect((await db.workspaces.get('w-fam'))?.name).toBe('Family')
+    } finally {
+      Dexie.on('storagemutated').unsubscribe(count)
+    }
+  })
+
   it('upgrades a v23 database without touching its rows', async () => {
     const name = `ws-upgrade-${Math.random()}`
     const old = new Dexie(name)

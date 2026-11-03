@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
 )
 
-// ---- JSON (Google Tasks, Trello, Microsoft To Do, Apple Reminders, Any.do) ----
+// ---- JSON (Google Tasks, Trello, Microsoft To Do, Apple Reminders, Any.do,
+// Super Productivity, Vikunja's data.json) ----
 
 // jsonKinds names the keys whose string values are personal text, with the
 // placeholder kind each becomes (OpenSpec change more-importers, design D9). The
@@ -19,17 +21,26 @@ var jsonKinds = map[string]string{
 	"desc": "Notes", "notes": "Notes", "note": "Notes", "content": "Notes", "description": "Notes",
 	"text": "Text", "filename": "File",
 	"fullname": "Person", "username": "Person", "initials": "Person",
+	"comment": "Comment", // Vikunja
 }
 
 // jsonLabelKeys hold tag names (strings in an array), scrubbed like labels.
 var jsonLabelKeys = map[string]bool{"tags": true, "categories": true}
+
+// jsonSecretKeys hold credentials (Super Productivity's sync and issue
+// provider settings): their values are blanked.
+var jsonSecretKeys = map[string]bool{"password": true, "token": true, "accesstoken": true, "refreshtoken": true,
+	"apikey": true, "encryptkey": true, "authcode": true, "clientsecret": true}
 
 // jsonURLKeys hold addresses: the scheme and host stay, the rest is replaced.
 var jsonURLKeys = map[string]bool{"url": true, "link": true, "weburl": true, "weblink": true, "shorturl": true}
 
 // jsonKeep are the default list names the profiles recognise; they carry no
 // personal data and must survive so the fixture keeps its default list.
-var jsonKeep = map[string]bool{"My Tasks": true, "Tasks": true, "Reminders": true, "Personal": true, "Flagged Emails": true}
+var jsonKeep = map[string]bool{"My Tasks": true, "Tasks": true, "Reminders": true, "Personal": true, "Flagged Emails": true,
+	"Inbox": true, // Vikunja's default project
+	// Vikunja's view titles and kinds.
+	"List": true, "Gantt": true, "Table": true, "Kanban": true}
 
 // jsonFile rewrites a JSON document token by token, so key order, nesting,
 // numbers, booleans, ids, dates and statuses come out exactly as they went in.
@@ -121,6 +132,8 @@ func (s *scrubber) jsonString(key, v string) string {
 	}
 	k := strings.ToLower(key)
 	switch {
+	case jsonSecretKeys[k]:
+		return ""
 	case jsonLabelKeys[k]:
 		return s.labelName(v)
 	case jsonURLKeys[k]:
@@ -129,6 +142,9 @@ func (s *scrubber) jsonString(key, v string) string {
 		return s.email(v)
 	}
 	if kind, ok := jsonKinds[k]; ok {
+		if t := strings.TrimSpace(v); strings.HasPrefix(t, "<") && strings.HasSuffix(t, ">") {
+			return s.htmlProse(kind, v)
+		}
 		return s.prose(kind, v)
 	}
 	return v
@@ -147,3 +163,25 @@ func (s *scrubber) url(v string) string {
 	}
 	return u.Scheme + "://" + u.Host + "/" + p
 }
+
+// htmlText is a run of text between two tags.
+var htmlText = regexp.MustCompile(`>([^<]+)<`)
+
+// htmlProse replaces the text of an HTML value (Vikunja descriptions and
+// comments) and keeps its tags, so the fixture still pins how paragraphs,
+// lists and links are read. Attribute values other than the tag names go too.
+func (s *scrubber) htmlProse(kind, v string) string {
+	v = htmlHref.ReplaceAllStringFunc(v, func(m string) string {
+		u := htmlHref.FindStringSubmatch(m)[1]
+		return `href="` + s.url(u) + `"`
+	})
+	return htmlText.ReplaceAllStringFunc(v, func(m string) string {
+		t := m[1 : len(m)-1]
+		if strings.TrimSpace(t) == "" {
+			return m
+		}
+		return ">" + s.text(kind, t) + "<"
+	})
+}
+
+var htmlHref = regexp.MustCompile(`href="([^"]*)"`)

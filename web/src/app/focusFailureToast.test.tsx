@@ -40,7 +40,8 @@ describe('a failed focus time entry reaches the toast', () => {
     expect(s.phase).toBe('work')
     expect((await readFocus())?.entryId).toBeNull()
     await waitFor(() => message() !== null, 'the failure toast')
-    expect(message()).toBe('The time entry could not be started; this session is not being tracked. (time entry not found)')
+    // The detail is the refusal as the person reads it: a known local refusal is translated (actionError).
+    expect(message()).toBe('The time entry could not be started; this session is not being tracked. (That time entry is not available any more.)')
     await r.unmount()
   })
 

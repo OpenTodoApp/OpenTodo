@@ -6,7 +6,8 @@
 //
 //   node scripts/perf/run.mjs          (make perf runs it after the fixture and the server)
 //
-// Env: PERF_BIN (default bin/opentodo), PERF_FIXTURE (a perfseed data directory, required),
+// Env: PERF_BIN (default bin/opentodo), PERF_FIXTURE (a perfseed data directory, required;
+// with PERF_NOTES=1 the compacted notes fixture TestNotesBudgets leaves),
 // PERF_RUNS (default 5), PERF_PROFILES (default "desktop,phone"), PERF_REPORT (default
 // perf-report/web.json), CHROMIUM_PATH.
 //
@@ -26,6 +27,8 @@ import { dirname, join } from 'node:path'
 import { evaluate, loadBudgets } from './budgets.mjs'
 
 const BIN = process.env.PERF_BIN ?? 'bin/opentodo'
+// PERF_NOTES=1: the notes fixture's session (the compacted copy TestNotesBudgets leaves) instead of the 10k one.
+const NOTES = !!process.env.PERF_NOTES
 const FIXTURE = process.env.PERF_FIXTURE
 if (!FIXTURE) throw new Error('PERF_FIXTURE: give a perfseed data directory (make perf makes one)')
 const RUNS = Number(process.env.PERF_RUNS ?? 5)
@@ -154,6 +157,17 @@ async function session(browser, profileName) {
     let t0 = await go(page, `/project/${summary.bigProject}`)
     out['open-project'] = (await markAfter(page, 'ot:list-ready', t0)) - t0
     await page.locator('[data-task-id]').nth(50).waitFor()
+    // A long list draws its rows a step at a time after the first frame: the
+    // interactions below run once all of them are in the document.
+    // Ten checks in a row with the same count: a step that held the page for a
+    // second (the phone profile) looked like a second without a step, and the cursor
+    // and the completions then ran while rows were still being drawn (list-rendering-at-scale).
+    await page.waitForFunction(() => {
+      const n = document.querySelectorAll('[data-task-id]').length
+      const w = window.__perf
+      if (n !== w.rowCount) { w.rowCount = n; w.rowChecks = 0; return false }
+      return ++w.rowChecks >= 10
+    }, null, { polling: 100, timeout: 60_000 })
 
     debug('Cursor moves in that list')
     // Cursor moves in that list.
@@ -183,18 +197,22 @@ async function session(browser, profileName) {
     out['complete-task'] = p95(completes)
 
     debug('A remote edit')
-    // A remote edit (another device, through the API) painted here over the live channel.
+    // A remote edit (another device, through the API) painted here over the live channel,
+    // once the completions above are synced.
+    await page.waitForTimeout(3000)
     const remote = []
     for (let i = 0; i < 3; i++) {
       const id = await page.locator('li[data-task-id]').nth(5 + i).getAttribute('data-task-id')
       const title = `Remote edit ${i} ${Date.now()}`
-      // The page notes the wall-clock time of the frame after the new title shows.
+      // The page notes the wall-clock time of the frame after the new title shows:
+      // Date.now(), as the sender's is. performance.timeOrigin + performance.now() is
+      // a monotonic clock and ran 0.9 s ahead of the wall clock by then (list-rendering-at-scale).
       await page.evaluate((tt) => {
         window.__perf.remote = new Promise((resolve) => {
           const mo = new MutationObserver(() => {
             if (!document.body.textContent.includes(tt)) return
             mo.disconnect()
-            requestAnimationFrame(() => setTimeout(() => resolve(performance.timeOrigin + performance.now()), 0))
+            requestAnimationFrame(() => setTimeout(() => resolve(Date.now()), 0))
           })
           mo.observe(document.body, { subtree: true, childList: true, characterData: true })
         })
@@ -206,10 +224,14 @@ async function session(browser, profileName) {
       if (painted === null) throw new Error('remote edit: never painted')
       remote.push(painted - sent)
     }
+    debug(`remote edits: ${remote.map(Math.round).join(', ')}`)
     out['remote-edit'] = Math.max(...remote)
 
     debug('Saved view of eight clauses')
-    // Saved view of eight clauses.
+    // Saved view of eight clauses, from Today as the project above: leaving the
+    // 2,000-row project first timed taking its rows down, not the view (list-rendering-at-scale).
+    t0 = await go(page, '/today')
+    await markAfter(page, 'ot:list-ready', t0)
     t0 = await go(page, `/view/${summary.view}`)
     out['saved-view'] = (await markAfter(page, 'ot:list-ready', t0)) - t0
 
@@ -246,7 +268,60 @@ async function session(browser, profileName) {
   }
 }
 
+/**
+ * The notes fixture's session (design D7): a new device's first sync of the
+ * compacted account, the storage it takes, the Notes page and a note search.
+ */
+async function notesSession(browser, profileName) {
+  const prof = profiles[profileName]
+  const server = await startServer()
+  const out = {}
+  const ctx = await browser.newContext({ viewport: prof.viewport, isMobile: prof.isMobile, hasTouch: prof.hasTouch, deviceScaleFactor: prof.deviceScaleFactor, serviceWorkers: 'block' })
+  try {
+    await ctx.addInitScript(instrument)
+    const login = await ctx.request.post(`${server.base}/api/v1/auth/login`, { data: { email: summary.ownerEmail, password: summary.password } })
+    if (!login.ok()) throw new Error(`login: ${login.status()}`)
+    const page = await ctx.newPage()
+    current = page
+    const cdp = await ctx.newCDPSession(page)
+    if (prof.throttle > 1) await cdp.send('Emulation.setCPUThrottlingRate', { rate: prof.throttle })
+    await page.goto(`${server.base}/today`)
+    out['notes-first-sync'] = (await markAfter(page, 'ot:sync-idle', 0, 600_000)) / 1000
+    const notes = await page.evaluate(() => new Promise((ok) => {
+      const req = indexedDB.open('opentodo')
+      req.onsuccess = () => { const c = req.result.transaction('notes').objectStore('notes').count(); c.onsuccess = () => { ok(c.result); req.result.close() } }
+    }))
+    if (notes < summary.notes.standalone) throw new Error(`notes: ${notes} local, the fixture has ${summary.notes.standalone}`)
+    out['notes-indexeddb'] = await page.evaluate(async () => (await navigator.storage.estimate()).usage / 2 ** 20)
+    await page.waitForTimeout(1000)
+    const t0 = await go(page, '/notes')
+    out['notes-page'] = (await markAfter(page, 'ot:list-ready', t0)) - t0
+    const field = page.locator('[data-note-search]')
+    await field.click()
+    const keys = []
+    for (const ch of 'kitchen') {
+      const before = await page.evaluate(() => performance.now())
+      await page.keyboard.press(ch)
+      const at = await markAfter(page, 'ot:search-results', before, 30_000).catch(() => null)
+      const input = await page.evaluate(() => window.__perf.lastInput)
+      if (at !== null) keys.push(at - input)
+    }
+    out['notes-search'] = p95(keys)
+    await cdp.send('HeapProfiler.collectGarbage')
+    out['notes-js-heap'] = (await cdp.send('Runtime.getHeapUsage')).usedSize / 2 ** 20
+    return out
+  } catch (err) {
+    mkdirSync(dirname(REPORT), { recursive: true })
+    await current?.screenshot({ path: join(dirname(REPORT), `${profileName}-notes-failure.png`) }).catch(() => {})
+    throw err
+  } finally {
+    await ctx.close()
+    await server.stop()
+  }
+}
+
 const budgets = loadBudgets()
+const isNotes = (id) => id.startsWith('notes-')
 const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {})
 const reports = []
 let failed = false
@@ -254,11 +329,12 @@ try {
   for (const name of PROFILES) {
     const samples = {}
     for (let i = 0; i < RUNS; i++) {
-      const s = await session(browser, name)
+      const s = await (NOTES ? notesSession : session)(browser, name)
       for (const [k, v] of Object.entries(s)) (samples[k] ??= []).push(Math.round(v * 10) / 10)
       log(`${name} run ${i + 1}/${RUNS}: ${Object.entries(s).map(([k, v]) => `${k} ${Math.round(v * 10) / 10}`).join(', ')}`)
     }
-    const rep = evaluate(budgets, name, samples)
+    const rep = evaluate(budgets, name, samples, (id) => isNotes(id) === NOTES)
+    if (NOTES) rep.setting = `${name} (notes)`
     reports.push(rep)
     for (const m of rep.metrics) {
       console.log(`${m.ok ? 'ok  ' : 'FAIL'} ${name.padEnd(8)} ${m.id.padEnd(22)} median ${String(m.median).padStart(8)} ${m.unit.padEnd(2)} budget ${m.limit}`)

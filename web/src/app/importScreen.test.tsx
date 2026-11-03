@@ -24,7 +24,7 @@ function render(p: Partial<ImportViewProps> = {}) {
   const props: ImportViewProps = {
     offline: false, fileName: null, format: '', options: { ...DEFAULT_OPTIONS, targetProject: '' },
     projects: [work, client], workspaces: [], workspace: '', onWorkspace: noop, zones: ['Europe/Rome'], preview: null, busy: false, error: null,
-    job: null, jobs: [], onPickFile: noop, onFormat: noop, onOption: noop, onPreview: noop, onStart: noop, onUndo: noop,
+    job: null, jobs: [], onPickFile: noop, onFormat: noop, onOption: noop, onPreview: noop, switchFrom: null, onSwitchFrom: noop, encrypted: false, onColumn: noop, onStart: noop, onUndo: noop,
     ...p,
   }
   return renderToStaticMarkup(<ImportView {...props} />)
@@ -114,7 +114,7 @@ describe('import route', () => {
     const html = render()
     for (const label of ['Todoist backup (ZIP)', 'Todoist project (CSV)', 'Things 3 database', 'TickTick backup (CSV)', 'Linear export (CSV)',
       'Google Tasks (Takeout JSON)', 'Trello board (JSON)', 'Asana project (CSV)', 'Microsoft To Do (JSON from the PowerShell script)',
-      'Apple Reminders (JSON from the Shortcut)', 'Any.do (JSON from a data request)']) {
+      'Apple Reminders (JSON from the Shortcut)', 'Any.do (JSON from a data request)', 'Notion (Markdown and CSV export)', 'OmniFocus (CSV)', 'Super Productivity (backup JSON)', 'Tududi (database)', 'Vikunja (export ZIP)']) {
       expect(html).toContain(label)
     }
     const preview: ImportPreview = {

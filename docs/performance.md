@@ -46,6 +46,12 @@ The limits live in [`scripts/perf/budgets.json`](../scripts/perf/budgets.json);
 these tables show the same values, and a repository check fails when the two
 differ. A limit is raised only in a change that says why.
 
+An interaction is timed from the input to the frame after its change, so even one
+that does nothing measures about a frame. The interaction limits follow common
+response-time guidance: on a computer the cursor within three frames (50 ms) and a
+completion or keystroke within 100 ms; in the phone profile 150 ms for the cursor and
+200 ms for a completion or keystroke.
+
 The settings:
 
 - **Desktop**: Chromium on the CI runner.
@@ -62,10 +68,10 @@ The settings:
 | --- | --- | --- | --- | --- | --- |
 | `cold-start` Cold start with the data on the device, to the Today list | ms | 1,200 | 3,000 | 3,000 | 3,000 |
 | `open-project` Open the 2,000-task project, to the list | ms | 400 | 1,200 | 1,200 | 1,200 |
-| `search-keystroke` A keystroke in search, to the updated results (95th percentile) | ms | 50 | 150 | 150 | 150 |
+| `search-keystroke` A keystroke in search, to the updated results (95th percentile) | ms | 100 | 200 | 150 | 150 |
 | `saved-view` A saved view of eight clauses, to the list | ms | 100 | 300 | — | — |
-| `complete-task` Completing a task in the 2,000-row list, to the next frame (95th percentile) | ms | 50 | 150 | 150 | 150 |
-| `cursor-move` Moving the cursor with j or k, to the next frame (95th percentile) | ms | 16 | 50 | — | — |
+| `complete-task` Completing a task in the 2,000-row list, to the next frame (95th percentile) | ms | 100 | 200 | 150 | 150 |
+| `cursor-move` Moving the cursor with j or k, to the next frame (95th percentile) | ms | 50 | 150 | — | — |
 | `first-sync` First sync of a new device, sign-in to all 10,000 tasks on it | s | 30 | 75 | 90 | 90 |
 | `first-sync-long-task` Longest main-thread task during that sync | ms | 200 | — | — | — |
 | `remote-edit` An edit on another device, painted here | ms | 1,000 | — | — | — |
@@ -89,6 +95,45 @@ The settings:
 | `server-mcp-search` The MCP `search_tasks` tool (95th percentile) | ms | 200 | 800 |
 | `server-db-size` The database file | MB | 150 | 150 |
 
+### With a year of note history
+
+The notes fixture adds 500 notes of about 10 KB each to the account, half
+standalone notes and half task notes, each saved about 300 times over twelve
+months (about 2.6 GB of history before the server's
+[compaction](backups.md) runs). It is built and measured every night with the
+other budgets, in its own job.
+
+What the notes keep after compaction is set by its rules: one revision per day
+of each note's text, every save of the last 30 days, and the current note,
+which the database holds twice (the operation and the stored value). That is
+116 MB on this fixture, hence the 130 MB limit.
+
+| Metric | Unit | Server | Desktop | Phone profile | Android | iPhone | Raspberry Pi 4 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `notes-db-size` The database file after compaction | MB | 250 | — | — | — | — | 250 |
+| `notes-share` What the notes take of it | MB | 130 | — | — | — | — | — |
+| `notes-compaction` A full compaction of the fixture | s | 120 | — | — | — | — | 480 |
+| `notes-push-wait` The longest a write waits behind compaction | ms | 100 | — | — | — | — | — |
+| `notes-first-sync` First sync of a new device, tasks and notes | s | — | 45 | 110 | 120 | 120 | — |
+| `notes-indexeddb` Storage on the device after that sync | MB | — | 120 | — | — | — | — |
+| `notes-page` Open the Notes page | ms | — | 400 | 1,200 | 1,200 | 1,200 | — |
+| `notes-search` A keystroke in the note search (95th percentile) | ms | — | 50 | 150 | 150 | 150 | — |
+| `notes-js-heap` JavaScript heap after the notes session | MB | — | 170 | 170 | — | — | — |
+
+The report also gives, without a limit, the database size before compaction,
+the operations and bytes compaction removed, and the bytes a new device pulls,
+both as the app does it (its first copy leaves out superseded note history, see
+[Sync](sync.md#exchange)) and as an older client does (the whole log).
+If a phone misses its first-sync or storage budget after compaction, the answer
+is loading note bodies on demand, not a higher budget. The first complete run
+(2026-11-03, [#590](https://github.com/OpenTodoApp/OpenTodo/issues/590)) did not
+need it: a new device's first sync took 21 s on the computer and 46 s in the
+phone profile and left 17 MB on the device, after compaction (2.65 GB to 238 MB
+in 50 s, no write waiting more than 35 ms) and with the first copy downloading
+43 MB instead of 2 GB.
+
+`NOTES=1 make perf` runs it (`NOTES_SEED_FLAGS="--notes 50"` for a quick look).
+
 ## How the budgets are checked
 
 **On every pull request**, tests count work at 10,000 tasks instead of
@@ -103,7 +148,10 @@ timing it, so a slow runner cannot make them fail:
   same rows;
 - a sync page runs as many database statements with 60 projects as with one,
   a push runs a bounded number per operation (`internal/perfseed`), and the
-  export allocates a bounded amount per task (`internal/httpapi`).
+  export allocates a bounded amount per task (`internal/httpapi`);
+- the MCP `search_tasks` tool reads the full records of the tasks that match
+  and of what they show (their blockers and their series' records), not every
+  task (`internal/agenttools`).
 
 **Every night** the benchmark times every desktop, phone-profile and server
 metric five times and fails when a median is over its limit; the nightly alert

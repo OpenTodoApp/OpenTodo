@@ -41,7 +41,8 @@ type Service struct {
 	blobs BlobStore
 	// pullBudget overrides MaxPullBytes in tests; 0 means MaxPullBytes.
 	pullBudget int
-	// compactChunk overrides compaction's chunk size in tests; 0 means 1,000.
+	// compactChunk, in tests, bounds the ops one compaction transaction deletes
+	// and the fields one listing reads (SetCompactChunk); 0 means the defaults.
 	compactChunk int
 	// guard bounds writes on a demo instance (demo-sandboxes D3); nil elsewhere.
 	guard WriteGuard
@@ -524,6 +525,10 @@ type PullOptions struct {
 	ConfirmBackfill bool
 	// BackfillAck is the BackfillSeq of the last page the device applied (0: none).
 	BackfillAck int64
+	// LatestDocs leaves out of the regular pull the note history a device
+	// copying the account for the first time never needs (OpenSpec change
+	// notes-compaction-at-scale D3): see pullLatestDocs.
+	LatestDocs bool
 }
 
 // PullAll is Pull plus purge markers. Markers share the ops sequence, so the
@@ -560,37 +565,13 @@ func (s *Service) PullWith(ctx context.Context, userID string, cursor int64, dev
 		return res, err
 	}
 	scopes := acc.scopes()
-	rows, err := tx.QueryContext(ctx, pullQuery(len(scopes)), pullArgs(scopes, cursor, limit+1)...)
+	var next int64
+	if opt.LatestDocs {
+		res.Ops, next, res.More, err = s.pullLatestDocs(ctx, tx, scopes, cursor, device, limit)
+	} else {
+		res.Ops, next, res.More, err = s.pullPage(ctx, tx, scopes, cursor, device, limit)
+	}
 	if err != nil {
-		return res, err
-	}
-	next := cursor
-	n, size := 0, 0
-	for rows.Next() {
-		if n == limit {
-			res.More = true
-			break
-		}
-		op, err := scanOp(rows)
-		if err != nil {
-			rows.Close()
-			return res, err
-		}
-		if op.Device != device && len(res.Ops) > 0 && size+len(op.Value) > s.pullBytes() {
-			// Byte budget reached: this op opens the next page.
-			res.More = true
-			break
-		}
-		next = op.Seq
-		n++
-		if op.Device == device {
-			continue
-		}
-		size += len(op.Value)
-		res.Ops = append(res.Ops, op)
-	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
 		return res, err
 	}
 	// With more ops pending, only markers up to the page's end; otherwise all.
@@ -605,6 +586,43 @@ func (s *Service) PullWith(ctx context.Context, userID string, cursor int64, dev
 	res.Purged = purged
 	res.Cursor = max(next, top)
 	return res, nil
+}
+
+// pullPage reads the next page of ops after cursor from scopes: at most limit
+// ops and about pullBytes of values, ops of device skipped (but passed by the
+// returned cursor).
+func (s *Service) pullPage(ctx context.Context, tx *sql.Tx, scopes []string, cursor int64, device string, limit int) ([]Op, int64, bool, error) {
+	rows, err := tx.QueryContext(ctx, pullQuery(len(scopes)), pullArgs(scopes, cursor, limit+1)...)
+	if err != nil {
+		return nil, cursor, false, err
+	}
+	defer rows.Close()
+	ops := []Op{}
+	next, more := cursor, false
+	n, size := 0, 0
+	for rows.Next() {
+		if n == limit {
+			more = true
+			break
+		}
+		op, err := scanOp(rows)
+		if err != nil {
+			return nil, cursor, false, err
+		}
+		if op.Device != device && len(ops) > 0 && size+len(op.Value) > s.pullBytes() {
+			// Byte budget reached: this op opens the next page.
+			more = true
+			break
+		}
+		next = op.Seq
+		n++
+		if op.Device == device {
+			continue
+		}
+		size += len(op.Value)
+		ops = append(ops, op)
+	}
+	return ops, next, more, rows.Err()
 }
 
 // pullQuery reads the next ops of n scopes in seq order. Each scope's ops after
@@ -787,6 +805,12 @@ type Match struct {
 // matching entities first, so listing one project of a large account reads
 // that project's rows only (performance-10k).
 func (s *Service) ListWhere(ctx context.Context, userID, entity string, includeDeleted bool, m *Match) ([]Entity, error) {
+	return s.listEntities(ctx, userID, entity, includeDeleted, m, nil)
+}
+
+// listEntities is ListWhere, further narrowed to the given ids when ids is
+// not nil (ListIDs).
+func (s *Service) listEntities(ctx context.Context, userID, entity string, includeDeleted bool, m *Match, ids []string) ([]Entity, error) {
 	fields, ok := Schema[entity]
 	if !ok {
 		return nil, fmt.Errorf("%w: unknown entity %q", ErrInvalidOp, entity)
@@ -807,6 +831,10 @@ func (s *Service) ListWhere(ctx context.Context, userID, entity string, includeD
 		// literal so a partial index on it (scope_fields_project) applies.
 		query += ` AND entity_id IN (SELECT entity_id FROM scope_fields WHERE scope_id IN (` + placeholders(len(scopes)) + `) AND entity = ? AND field = '` + m.Field + `' AND value = ?)`
 		args = append(append(args, anys(scopes)...), entity, string(m.Value))
+	}
+	if ids != nil {
+		query += ` AND entity_id IN (` + placeholders(len(ids)) + `)`
+		args = append(args, anys(ids)...)
 	}
 	rows, err := s.reader().QueryContext(ctx, query, args...)
 	if err != nil {

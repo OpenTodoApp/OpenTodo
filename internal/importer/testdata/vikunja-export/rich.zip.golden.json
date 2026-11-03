@@ -1,0 +1,201 @@
+{
+  "format": "vikunja-export",
+  "notes": [],
+  "totals": {
+    "rows": 17,
+    "create": 17,
+    "update": 0,
+    "skip": 0,
+    "error": 0,
+    "possibleDuplicates": 0,
+    "warnings": 1,
+    "newProjects": 4,
+    "newLabels": 3,
+    "newSections": 2,
+    "recurring": 3,
+    "reminders": 4,
+    "deadlines": 0,
+    "attachments": 2,
+    "fields": 0,
+    "timeEntries": 0,
+    "places": 0,
+    "notes": 0,
+    "entities": 28,
+    "written": 0,
+    "ops": 0
+  },
+  "viewHints": [
+    {
+      "projectId": "id-0004",
+      "view": "board"
+    }
+  ],
+  "rows": [
+    {
+      "row": 2,
+      "sourceId": "vikunja:project:4",
+      "kind": "project",
+      "title": "Title 4",
+      "outcome": "create"
+    },
+    {
+      "row": 3,
+      "sourceId": "vikunja:15",
+      "kind": "task",
+      "title": "Title 8",
+      "project": "Title 4",
+      "outcome": "create"
+    },
+    {
+      "row": 4,
+      "sourceId": "vikunja:14",
+      "kind": "task",
+      "title": "Title 7",
+      "project": "Title 4",
+      "outcome": "create"
+    },
+    {
+      "row": 5,
+      "sourceId": "vikunja:13",
+      "kind": "task",
+      "title": "Title 6",
+      "project": "Title 4",
+      "outcome": "create"
+    },
+    {
+      "row": 6,
+      "sourceId": "vikunja:12",
+      "kind": "task",
+      "title": "Title 5",
+      "project": "Title 4",
+      "outcome": "create"
+    },
+    {
+      "row": 7,
+      "sourceId": "vikunja:project:5",
+      "kind": "project",
+      "title": "Title 10",
+      "outcome": "create"
+    },
+    {
+      "row": 8,
+      "sourceId": "vikunja:16",
+      "kind": "task",
+      "title": "Title 11",
+      "project": "Title 10",
+      "outcome": "create"
+    },
+    {
+      "row": 9,
+      "sourceId": "vikunja:project:6",
+      "kind": "project",
+      "title": "Title 12",
+      "outcome": "create"
+    },
+    {
+      "row": 10,
+      "sourceId": "vikunja:4",
+      "kind": "task",
+      "title": "Title 13",
+      "project": "Title 12",
+      "outcome": "create"
+    },
+    {
+      "row": 11,
+      "sourceId": "vikunja:project:7",
+      "kind": "project",
+      "title": "Title 14",
+      "outcome": "create"
+    },
+    {
+      "row": 12,
+      "sourceId": "vikunja:11",
+      "kind": "task",
+      "title": "Title 23",
+      "project": "Title 14",
+      "outcome": "create"
+    },
+    {
+      "row": 13,
+      "sourceId": "vikunja:10",
+      "kind": "task",
+      "title": "Title 22",
+      "project": "Title 14",
+      "outcome": "create"
+    },
+    {
+      "row": 14,
+      "sourceId": "vikunja:9",
+      "kind": "task",
+      "title": "Title 21",
+      "project": "Title 14",
+      "outcome": "create"
+    },
+    {
+      "row": 15,
+      "sourceId": "vikunja:8",
+      "kind": "task",
+      "title": "Title 19",
+      "project": "Title 14",
+      "outcome": "create"
+    },
+    {
+      "row": 16,
+      "sourceId": "vikunja:7",
+      "kind": "task",
+      "title": "Title 18",
+      "project": "Title 14",
+      "outcome": "create"
+    },
+    {
+      "row": 17,
+      "sourceId": "vikunja:6",
+      "kind": "task",
+      "title": "Title 17",
+      "project": "Title 14",
+      "outcome": "create"
+    },
+    {
+      "row": 18,
+      "sourceId": "vikunja:5",
+      "kind": "task",
+      "title": "Title 15",
+      "project": "Title 14",
+      "outcome": "create",
+      "warnings": [
+        "end date dropped (OpenTodo has a due date and a start date)",
+        "reminder relative to the end date dropped"
+      ]
+    }
+  ],
+  "fields": [
+    "label id-0006: name=\"Title 9\" created_at=1791979200000",
+    "label id-0018: name=\"Title 20\" created_at=1791979200000",
+    "label id-0022: name=\"Title 16\" created_at=1791979200000",
+    "project id-0001: name=\"Title 4\" archived=false created_at=1791979200000 description=\"Notes 1\"",
+    "project id-0002: name=\"Title 10\" archived=false created_at=1791979200000 parent_id=\"id-0001\"",
+    "project id-0003: name=\"Title 12\" archived=true created_at=1791979200000",
+    "project id-0004: name=\"Title 14\" archived=false created_at=1791979200000",
+    "section id-0014: name=\"Title 24\" project_id=\"id-0004\" created_at=1791979200000",
+    "section id-0020: name=\"Title 2\" project_id=\"id-0004\" created_at=1791979200000",
+    "task id-0005: title=\"Title 8\" description=\"\" priority=4 created_at=1793661087000 project_id=\"id-0001\" due={\"date\":\"2026-11-01\",\"time\":\"12:00\"} origin={\"kind\":\"import\",\"provider\":\"vikunja\",\"id\":\"15\"} completed_at=1793661087000 labels=[\"id-0006\"]",
+    "task id-0007: title=\"Title 7\" description=\"\" priority=4 created_at=1793661087000 project_id=\"id-0001\" due={\"date\":\"2026-11-07\",\"time\":\"10:00\"} recurrence=\"every 3 days after completion\" origin={\"kind\":\"import\",\"provider\":\"vikunja\",\"id\":\"14\"} labels=[]",
+    "task id-0009: title=\"Title 6\" description=\"\" priority=4 created_at=1793661087000 project_id=\"id-0001\" due={\"date\":\"2026-12-01\",\"time\":\"09:00\"} recurrence=\"every month\" origin={\"kind\":\"import\",\"provider\":\"vikunja\",\"id\":\"13\"} labels=[]",
+    "task id-0010: title=\"Title 5\" description=\"\" priority=3 created_at=1793661087000 project_id=\"id-0001\" due={\"date\":\"2026-11-05\",\"time\":\"08:00\"} recurrence=\"every 7 days\" origin={\"kind\":\"import\",\"provider\":\"vikunja\",\"id\":\"12\"} labels=[]",
+    "task id-0011: title=\"Title 11\" description=\"Notes 2\" priority=4 created_at=1793661087000 project_id=\"id-0002\" start=\"2026-11-08\" origin={\"kind\":\"import\",\"provider\":\"vikunja\",\"id\":\"16\"} labels=[]",
+    "task id-0012: title=\"Title 13\" description=\"\" priority=4 created_at=1793661087000 project_id=\"id-0003\" origin={\"kind\":\"import\",\"provider\":\"vikunja\",\"id\":\"4\"} labels=[]",
+    "task id-0013: title=\"Title 23\" description=\"\" priority=4 created_at=1793661087000 project_id=\"id-0004\" origin={\"kind\":\"import\",\"provider\":\"vikunja\",\"id\":\"11\"} labels=[] section_id=\"id-0014\"",
+    "task id-0015: title=\"Title 22\" description=\"\" priority=4 created_at=1793661087000 project_id=\"id-0004\" origin={\"kind\":\"import\",\"provider\":\"vikunja\",\"id\":\"10\"} completed_at=1793661087000 labels=[]",
+    "task id-0016: title=\"Title 21\" description=\"\" priority=1 created_at=1793661087000 project_id=\"id-0004\" origin={\"kind\":\"import\",\"provider\":\"vikunja\",\"id\":\"9\"} completed_at=1793661087000 labels=[]",
+    "task id-0017: title=\"Title 19\" description=\"\" priority=4 created_at=1793661087000 project_id=\"id-0004\" origin={\"kind\":\"import\",\"provider\":\"vikunja\",\"id\":\"8\"} labels=[\"id-0018\"] section_id=\"id-0014\" blocked_by=[\"id-0019\"]",
+    "task id-0019: title=\"Title 18\" description=\"\" priority=3 created_at=1793661087000 project_id=\"id-0004\" origin={\"kind\":\"import\",\"provider\":\"vikunja\",\"id\":\"7\"} labels=[] section_id=\"id-0020\"",
+    "task id-0028: title=\"Title 17\" description=\"\" priority=2 created_at=1793661087000 project_id=\"id-0004\" parent_id=\"id-0021\" origin={\"kind\":\"import\",\"provider\":\"vikunja\",\"id\":\"6\"} labels=[] section_id=\"id-0020\"",
+    "task id-0021: title=\"Title 15\" description=\"Notes 3\\n\\nNotes 4\\n\\n- Notes 5\\n- Notes 6\\n\\n---\\n\\nComment, 2026-11-02 23:11:\\nComment 1\" priority=1 created_at=1793661087000 project_id=\"id-0004\" due={\"date\":\"2026-11-20\",\"time\":\"17:00\"} start=\"2026-11-16\" origin={\"kind\":\"import\",\"provider\":\"vikunja\",\"id\":\"5\"} labels=[\"id-0022\"] section_id=\"id-0014\"",
+    "reminder id-0008: task_id=\"id-0007\" kind=\"relative\" offset_minutes=-1440 fire_at=1793959200000 created_at=1791979200000 delivered_at=null dismissed_at=null",
+    "reminder id-0023: task_id=\"id-0021\" kind=\"absolute\" offset_minutes=null fire_at=1794819600000 created_at=1791979200000 delivered_at=null dismissed_at=null",
+    "reminder id-0024: task_id=\"id-0021\" kind=\"absolute\" offset_minutes=null fire_at=1795075200000 created_at=1791979200000 delivered_at=null dismissed_at=null",
+    "reminder id-0025: task_id=\"id-0021\" kind=\"relative\" offset_minutes=-60 fire_at=1795190400000 created_at=1791979200000 delivered_at=null dismissed_at=null",
+    "attachment id-0026: task_id=\"id-0021\" author_id=\"user-1\" comment_id=null name=\"Name 1\" mime=\"text/plain\" size=15 sha256=\"6cbeb91338dd5e14bb5b25bfad74d6d1bbdc42c936dcb58576eb24ed5dd0147f\" url=null encrypted=false created_at=1791979200000 deleted_at=null",
+    "attachment id-0027: task_id=\"id-0021\" author_id=\"user-1\" comment_id=null name=\"Name 2\" mime=\"image/png\" size=15 sha256=\"192f44ecf68e0a98697909829e86c485a6ab81102c24b6117a4b18358d878ef7\" url=null encrypted=false created_at=1791979200000 deleted_at=null"
+  ]
+}
