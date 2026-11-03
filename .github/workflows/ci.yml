@@ -41,6 +41,7 @@ jobs:
       mobile: ${{ steps.filter.outputs.mobile }}
       ui: ${{ steps.filter.outputs.ui }}
       layout: ${{ steps.filter.outputs.layout }}
+      a11y: ${{ steps.filter.outputs.a11y }}
       extension: ${{ steps.filter.outputs.extension }}
       obsidian: ${{ steps.filter.outputs.obsidian }}
       skill: ${{ steps.filter.outputs.skill }}
@@ -61,7 +62,7 @@ jobs:
           BASE: ${{ github.event.pull_request.base.sha }}
         run: |
           if [ "$EVENT" != "pull_request" ]; then
-            for k in code docs mobile ui layout extension obsidian skill ios; do echo "$k=true" >> "$GITHUB_OUTPUT"; done
+            for k in code docs mobile ui layout a11y extension obsidian skill ios; do echo "$k=true" >> "$GITHUB_OUTPUT"; done
             exit 0
           fi
           git diff --name-only "$BASE"...HEAD > changed.txt
@@ -278,6 +279,62 @@ jobs:
   # The interface audit (OpenSpec web-app "Interface audit tour") runs in its own
   # workflow, .github/workflows/ux-audit.yml: on pull requests and nightly, off the
   # push critical path (ci-speed).
+
+  # The accessibility gate on real screens (OpenSpec accessibility "Accessibility gate on
+  # real screens", change accessibility-aa D1): every entry of the screen inventory against
+  # a seeded server at 360 and 1280 px, light and dark, English; fails on any serious or
+  # critical axe violation and on the measured criteria (focus visible and not obscured,
+  # WCAG target size, reflow at 320 px, text spacing, credential fields). Two shards of the
+  # inventory side by side; the nightly Interface audit runs the full matrix.
+  a11y-screens:
+    name: Accessibility (screens ${{ matrix.shard }}/2)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    needs: [changes, web-build]
+    if: needs.changes.outputs.a11y == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    container: mcr.microsoft.com/playwright:v1.56.1-noble@sha256:f1e7e01021efd65dd1a2c56064be399f3e4de00fd021ac561325f2bfbb2b837a
+    env:
+      GOFLAGS: -buildvcs=false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: web-dist
+          path: internal/web/dist
+      - run: CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/opentodo ./cmd/opentodo
+      # axe-core (web devDependency).
+      - run: npm ci --no-audit --no-fund
+        working-directory: web
+      - run: npm i -g --no-audit --no-fund playwright@1.56.1
+      - name: Measurement tests (fixtures in Chromium)
+        if: matrix.shard == 1
+        run: node --test scripts/ux-audit/measure.test.mjs
+      - name: Accessibility gate (every screen, 360 and 1280 px, light and dark)
+        env:
+          A11Y_ONLY: "1"
+          WIDTHS: 360,1280
+          LANGS: en
+          SHARD: ${{ matrix.shard }}/2
+          CONCURRENCY: 2
+          OUT_DIR: a11y-report
+        run: node scripts/ux-audit/tour.mjs
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: a11y-report-${{ matrix.shard }}
+          path: a11y-report
 
   # The docs website (user-documentation): no sideways scrolling at 360/390/1280 px,
   # axe-core without serious or critical issues, search, and pages without JavaScript.
@@ -815,7 +872,7 @@ jobs:
     if: ${{ !cancelled() && !failure() && github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    needs: [changes, web-build, web, web-scale, server, layout, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, obsidian, android, ios, skill, checks, image]
+    needs: [changes, web-build, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, obsidian, android, ios, skill, checks, image]
     permissions:
       contents: read
       packages: write
@@ -897,7 +954,7 @@ jobs:
     if: ${{ !cancelled() && !failure() && startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [changes, web-build, web, web-scale, server, layout, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, obsidian, android, ios, skill, checks, image, docker]
+    needs: [changes, web-build, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, obsidian, android, ios, skill, checks, image, docker]
     permissions:
       contents: write
       id-token: write # build provenance (Sigstore)

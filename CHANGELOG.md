@@ -4,6 +4,14 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- **Every screen is checked for accessibility on every change.** Each pull request now opens every screen and overlay of the app at phone and computer widths, light and dark, and fails on any serious WCAG 2.2 AA problem axe-core finds, a focused control without a visible ring or hidden under a bar, a target smaller than 24 px with no space around it, sideways scrolling at 320 px (400% zoom), text cut off with wider spacing, or a password field that refuses a paste. Every night the same runs in English and German with large browser text. The 2,000-task list is checked as a screen reader gets it.
+
+### Fixed
+
+- **Keyboard and screen reader fixes across the app.** While a dialog or a phone sheet is open, the page behind it can no longer be reached with Tab or a screen reader. A focused menu item shows the focus ring. A reminder, a break reminder or the daily check no longer covers the row you tabbed to (on a phone it moves to the top), the sidebar no longer hides a toast on the left, and a header or the filter's Save bar no longer covers the control you tabbed to. Inside dialogs and sheets too (the help panel, the task page), the focused control is scrolled out from under their sticky headers. A row's actions no longer cover the cut project name you tabbed to, and with large text the sidebar's account button and sync status fit, the Help page's tasks and a date picker's month no longer push the page sideways. Each section of a project list is announced with its name. The weekly review's steps fit a 320 px screen (they wrap at 400% zoom with large text), and the task page's breadcrumbs, the feed's project links, the board's column dots and the time zone's **Change** are easier to hit.
+
 ## [0.22.0] - 2026-11-03
 
 OpenTodo 0.22.0 is about **speed at scale and switching in**. Big accounts are much faster: in a 2,000-task project completing a task went from about 4 seconds to a tenth of one, a new device's first sync of a 10,000-task account is about ten times faster, and a year of note history is compacted in minutes while a new device downloads only the latest notes. Lists, label pages and saved views can now **sort by custom fields**, and on Android **Back closes what is open**. You can now **switch from OmniFocus, Vikunja, Notion, Super Productivity and Tududi**, chosen from a new **Switching from…** list on the Import screen. And there is a written **stability promise** for 1.0, checked on every change: the v1 API and data formats only grow, and upgrades from every earlier release are tested.
