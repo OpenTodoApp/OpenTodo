@@ -10,6 +10,7 @@ package compaction
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log/slog"
 	gosync "sync"
 	"time"
@@ -31,10 +32,18 @@ const (
 	Retry = time.Minute
 	// Budget bounds the work of one run.
 	Budget = 20 * time.Second
-	// VacuumStep is how many free pages one incremental vacuum step returns
-	// (about 2 MB with 4 KB pages; a step of 2,000 pages held writes back for
-	// over 100 ms on the notes fixture, performance-10k D7).
-	VacuumStep = 500
+	// Slice is how long a run deletes before it returns the pages it freed to
+	// the file system, so the free list stays short and each incremental
+	// vacuum step cheap (notes-compaction-at-scale D2: with gigabytes on the
+	// free list a step of 500 pages held writes back for a second).
+	Slice = 2 * time.Second
+	// VacuumStep is how many free pages the first incremental vacuum step of
+	// a run returns; later steps grow or shrink so that one holds the writer
+	// for about VacuumHold.
+	VacuumStep = 64
+	VacuumHold = 20 * time.Millisecond
+	vacuumMin  = 16
+	vacuumMax  = 128
 	// QuietFor is how long no op may have arrived before the one-time
 	// conversion runs; after ConvertAnyway without such a moment it runs at the
 	// next run anyway.
@@ -77,9 +86,14 @@ func (r *Report) add(o Report) {
 type record struct {
 	// Last is the last complete pass.
 	Last *Report `json:"last,omitempty"`
-	// Pass sums the runs of the pass in progress; Cursor is where it resumes.
+	// Pass sums the runs of the pass in progress; InPass says one is in
+	// progress and Mark is the field it resumes after ("" for the start).
 	Pass   Report `json:"pass"`
-	Cursor int64  `json:"cursor"`
+	InPass bool   `json:"in_pass,omitempty"`
+	Mark   string `json:"mark,omitempty"`
+	// Cursor is the sequence number an earlier version resumed from; a pass
+	// it left unfinished starts again from the first field.
+	Cursor int64 `json:"cursor,omitempty"`
 	// VacuumPending: free pages left after the last run's budget ran out.
 	VacuumPending bool   `json:"vacuum_pending,omitempty"`
 	Conversion    string `json:"conversion"`
@@ -91,6 +105,11 @@ type record struct {
 // Options configure New.
 type Options struct {
 	DB       *sql.DB // the writer
+	// Reader is the query-only pool (store.OpenReader). With it a run copies
+	// the write-ahead log back into the database from there, so a write never
+	// waits for that copy (notes-compaction-at-scale D2); nil leaves it to
+	// SQLite's automatic checkpoints on the writer.
+	Reader *sql.DB
 	Sync     *opsync.Service
 	Settings *settings.Store
 	// DataDir holds the database (for the write-ahead log's size and the free
@@ -118,6 +137,9 @@ type Service struct {
 	pending bool
 	// lastDone is when the last complete pass ended (Unix ms; 0 for never).
 	lastDone int64
+	// step is the size of the next incremental vacuum step (pages); only Run
+	// uses it.
+	step int
 }
 
 // New builds the job; its first pass is due FirstDelay after now, once
@@ -171,7 +193,7 @@ func (s *Service) Next(ctx context.Context) (time.Time, bool, error) {
 
 // remember keeps what Next needs from the stored record; callers hold mu.
 func (s *Service) remember(rec record) {
-	s.loaded, s.pending = true, rec.Cursor != 0
+	s.loaded, s.pending = true, rec.InPass || rec.Cursor != 0
 	if rec.Last != nil {
 		s.lastDone = rec.Last.At
 	}
@@ -193,18 +215,40 @@ func (s *Service) Run(ctx context.Context) {
 		return
 	}
 	deadline := time.Now().Add(s.o.Budget)
-	res, err := s.o.Sync.CompactNotes(ctx, now, rec.Cursor, s.o.Budget)
-	if err != nil {
-		if ctx.Err() == nil {
-			log.Error("notes compaction failed", "err", err)
+	run := Report{At: now.UnixMilli()}
+	s.step = VacuumStep
+	defer s.tune(ctx)()
+	// Delete for a slice, then reclaim what it freed, until the pass ends or
+	// the budget does (notes-compaction-at-scale D2).
+	for {
+		cns := time.Now()
+		res, err := s.o.Sync.CompactNotes(ctx, now, rec.Mark, min(time.Until(deadline), Slice))
+		if opsync.DebugHold != nil {
+			opsync.DebugHold("deletephase", time.Since(cns), 0)
 		}
-		return
+		if err != nil {
+			if ctx.Err() == nil {
+				log.Error("notes compaction failed", "err", err)
+			}
+			return
+		}
+		run.OpsRemoved += res.OpsRemoved
+		run.ValueBytesRemoved += res.ValueBytesRemoved
+		run.More = res.More
+		rec.Mark, rec.InPass, rec.Cursor = res.Next, res.More, 0
+		rcs := time.Now()
+		bytes, converted := s.reclaim(ctx, &rec, now, res.OpsRemoved > 0, deadline)
+		if opsync.DebugHold != nil {
+			opsync.DebugHold("reclaimphase", time.Since(rcs), 0)
+		}
+		run.FileBytesReclaimed += bytes
+		run.Converted = run.Converted || converted
+		if !res.More || converted || !time.Now().Before(deadline) || ctx.Err() != nil {
+			break
+		}
 	}
-	run := Report{At: now.UnixMilli(), OpsRemoved: res.OpsRemoved, ValueBytesRemoved: res.ValueBytesRemoved, More: res.More}
-	rec.Cursor = res.Next
-	run.FileBytesReclaimed, run.Converted = s.reclaim(ctx, &rec, now, res.OpsRemoved > 0, deadline)
 	rec.Pass.add(run)
-	if !res.More {
+	if !run.More {
 		last := rec.Pass
 		last.At = now.UnixMilli()
 		rec.Last, rec.Pass = &last, Report{}
@@ -242,23 +286,115 @@ func (s *Service) reclaim(ctx context.Context, rec *record, now time.Time, remov
 	}
 	free := st.FreePages
 	for free > 0 {
-		if free, err = store.IncrementalVacuum(ctx, s.o.DB, VacuumStep); err != nil {
+		started := time.Now()
+		if free, err = store.IncrementalVacuum(ctx, s.o.DB, s.step); err != nil {
 			s.o.Log.Warn("notes compaction: incremental vacuum", "err", err)
 			break
 		}
+		if opsync.DebugHold != nil {
+			opsync.DebugHold("vacuum", time.Since(started), s.step)
+		}
+		s.step = nextStep(s.step, time.Since(started))
 		if !time.Now().Before(deadline) || ctx.Err() != nil {
 			break
 		}
 	}
 	rec.VacuumPending = free > 0
-	if err := store.Checkpoint(ctx, s.o.DB); err != nil {
-		s.o.Log.Warn("notes compaction: checkpoint", "err", err)
+	if s.o.Reader == nil {
+		if err := store.Checkpoint(ctx, s.o.DB); err != nil {
+			s.o.Log.Warn("notes compaction: checkpoint", "err", err)
+		}
 	}
 	after, err := store.Stats(ctx, s.o.DB, "")
 	if err != nil {
 		return 0, false
 	}
 	return max(0, st.Bytes()-after.Bytes()), false
+}
+
+// nextStep sizes the next incremental vacuum step from how long the last one
+// held the writer, so a step takes about VacuumHold however costly a page is:
+// in proportion, at most halved or grown by half at a time.
+func nextStep(step int, took time.Duration) int {
+	next := step
+	if took > 0 {
+		next = int(int64(step) * int64(VacuumHold) / int64(took))
+	}
+	next = min(max(next, step/2), step+step/2)
+	return min(max(next, vacuumMin), vacuumMax)
+}
+
+// Writer settings during a run (notes-compaction-at-scale D2).
+const (
+	// runCacheKiB is the writer's page cache during a run: deleting and
+	// relocating pages touches index pages all over the file.
+	runCacheKiB = 32 * 1024
+	// checkpointEvery spaces the checkpoints during a run.
+	checkpointEvery = time.Second
+)
+
+// tune sets the writer up for a run and returns what puts it back: a larger
+// page cache and, when the run has the reader pool, no automatic checkpoint in
+// the writer's commits (a push would otherwise wait while its commit copies the
+// run's pages back into the database). A goroutine checkpoints from the reader
+// pool instead, alongside the run and the writes (WAL mode allows both).
+func (s *Service) tune(ctx context.Context) func() {
+	var cache, auto int64
+	if err := s.o.DB.QueryRowContext(ctx, `PRAGMA cache_size`).Scan(&cache); err != nil {
+		return func() {}
+	}
+	if err := s.o.DB.QueryRowContext(ctx, `PRAGMA wal_autocheckpoint`).Scan(&auto); err != nil {
+		return func() {}
+	}
+	_, _ = s.o.DB.ExecContext(ctx, fmt.Sprintf(`PRAGMA cache_size = -%d`, runCacheKiB))
+	stop := make(chan struct{})
+	var wg gosync.WaitGroup
+	if s.o.Reader != nil {
+		_, _ = s.o.DB.ExecContext(ctx, `PRAGMA wal_autocheckpoint = 0`)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			tick := time.NewTicker(checkpointEvery)
+			defer tick.Stop()
+			for {
+				select {
+				case <-stop:
+					return
+				case <-ctx.Done():
+					return
+				case <-tick.C:
+					cs := time.Now()
+					s.checkpoint(ctx)
+					if opsync.DebugHold != nil {
+						opsync.DebugHold("tickcheckpoint", time.Since(cs), 0)
+					}
+				}
+			}
+		}()
+	}
+	return func() {
+		close(stop)
+		wg.Wait()
+		ctx := context.WithoutCancel(ctx)
+		// The run's last pages first, so the next write's commit does not copy them.
+		if s.o.Reader != nil {
+			cs := time.Now()
+			s.checkpoint(ctx)
+			if opsync.DebugHold != nil {
+				opsync.DebugHold("finalcheckpoint", time.Since(cs), 0)
+			}
+		}
+		_, _ = s.o.DB.ExecContext(ctx, fmt.Sprintf(`PRAGMA cache_size = %d`, cache))
+		_, _ = s.o.DB.ExecContext(ctx, fmt.Sprintf(`PRAGMA wal_autocheckpoint = %d`, auto))
+	}
+}
+
+// checkpoint copies the write-ahead log back into the database from the
+// reader pool.
+func (s *Service) checkpoint(ctx context.Context) {
+	if err := store.Checkpoint(ctx, s.o.Reader); err != nil && ctx.Err() == nil {
+		s.o.Log.Warn("notes compaction: checkpoint", "err", err)
+	}
 }
 
 // convert runs the one-time VACUUM of an older database when it has been

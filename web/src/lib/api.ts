@@ -110,6 +110,12 @@ interface RequestOptions { signal?: AbortSignal }
 
 /** Sync protocol additions this client supports (POST /api/v1/sync `features`). */
 export const SYNC_FEATURES = ['clock_skew', 'backfill_ack']
+/**
+ * Sent while the device copies the account for the first time (cursor 0 until
+ * the last page): the server leaves out note history the copy never needs
+ * (OpenSpec change notes-compaction-at-scale D3).
+ */
+export const FIRST_COPY_FEATURE = 'latest_docs'
 
 export async function request<T>(method: string, path: string, body?: unknown, retried = false, opts: RequestOptions = {}): Promise<T> {
   try {
@@ -306,10 +312,10 @@ export const api = {
   /** `tzOffset` (minutes east of UTC) lets REST writes recompute relative reminders in this zone. */
   // `features` tells the server which protocol additions this client handles
   // (sync-convergence): `clock_skew` refusals and confirmed backfill pages.
-  sync: (device: string, cursor: number, ops: Op[], tzOffset?: number, backfillAck = 0, signal?: AbortSignal) =>
+  sync: (device: string, cursor: number, ops: Op[], tzOffset?: number, backfillAck = 0, signal?: AbortSignal, firstCopy = false) =>
     request<SyncResponse>('POST', '/api/v1/sync', {
       device, cursor, ops, ...(tzOffset === undefined ? {} : { tzOffset }),
-      features: SYNC_FEATURES, ...(backfillAck > 0 ? { backfillAck } : {}),
+      features: firstCopy ? [...SYNC_FEATURES, FIRST_COPY_FEATURE] : SYNC_FEATURES, ...(backfillAck > 0 ? { backfillAck } : {}),
     }, false, { signal }),
   // Project sharing: membership is server-side authorization data, changed only through these routes.
   // Keep a project away from AI assistants (agent-planning-fields D9).
