@@ -1506,7 +1506,9 @@
     "web/src/app/LabelsView.tsx",
     "web/src/app/ProjectRowMenu.tsx",
     "web/src/app/Sections.tsx",
-    "web/src/app/ViewsView.tsx"
+    "web/src/app/ViewsView.tsx",
+    "web/src/app/bulk/BulkActions.tsx",
+    "web/src/ui/MoveHandle.tsx"
   ],
   "Already has {label}": [
     "web/src/lib/undoActions.ts"
@@ -1522,7 +1524,9 @@
     "web/src/app/LabelsView.tsx",
     "web/src/app/ProjectRowMenu.tsx",
     "web/src/app/Sections.tsx",
-    "web/src/app/ViewsView.tsx"
+    "web/src/app/ViewsView.tsx",
+    "web/src/app/bulk/BulkActions.tsx",
+    "web/src/ui/MoveHandle.tsx"
   ],
   "Also past ones": [
     "web/src/app/task-detail/OccurrenceScope.tsx"
@@ -9242,7 +9246,8 @@
   ],
   "Move": [
     "web/src/app/TriageView.tsx",
-    "web/src/app/calendar/occurrenceMenu.tsx"
+    "web/src/app/calendar/occurrenceMenu.tsx",
+    "web/src/ui/MoveHandle.tsx"
   ],
   "Move all to today": [
     "web/src/app/task-list/EarlierActions.tsx"
@@ -9253,9 +9258,11 @@
     "web/src/app/ProjectRowMenu.tsx",
     "web/src/app/Sections.tsx",
     "web/src/app/ViewsView.tsx",
+    "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/locations/PlacesView.tsx",
     "web/src/app/routines/RoutinesView.tsx",
-    "web/src/app/routines/StepCard.tsx"
+    "web/src/app/routines/StepCard.tsx",
+    "web/src/ui/MoveHandle.tsx"
   ],
   "Move earlier tasks to today": [
     "web/src/app/palette/registry.ts"
@@ -9341,6 +9348,9 @@
   "Move to a project, then the next task": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Move to bottom": [
+    "web/src/app/bulk/BulkActions.tsx"
+  ],
   "Move to project": [
     "web/src/app/bulk/BulkActions.tsx"
   ],
@@ -9355,6 +9365,9 @@
   ],
   "Move to tomorrow": [
     "web/src/app/calendar/ReplanPreview.tsx"
+  ],
+  "Move to top": [
+    "web/src/app/bulk/BulkActions.tsx"
   ],
   "Move to workspace": [
     "web/src/app/ProjectHeader.tsx"
@@ -9375,15 +9388,21 @@
     "web/src/app/ProjectRowMenu.tsx",
     "web/src/app/Sections.tsx",
     "web/src/app/ViewsView.tsx",
+    "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/locations/PlacesView.tsx",
     "web/src/app/routines/RoutinesView.tsx",
-    "web/src/app/routines/StepCard.tsx"
+    "web/src/app/routines/StepCard.tsx",
+    "web/src/ui/MoveHandle.tsx"
   ],
   "Move {nameOf} earlier": [
     "web/src/app/DashboardView.tsx"
   ],
   "Move {nameOf} later": [
     "web/src/app/DashboardView.tsx"
+  ],
+  "Move {name}": [
+    "web/src/app/calendar/FramesDialog.tsx",
+    "web/src/app/objectives/ObjectiveCards.tsx"
   ],
   "Move {name} (Alt+Up or Alt+Down)": [
     "web/src/app/AppearanceSection.tsx",
@@ -13316,6 +13335,9 @@
   ],
   "Reopened on the list": [
     "web/src/lib/reuseAdd.ts"
+  ],
+  "Reorder": [
+    "web/src/app/bulk/BulkActions.tsx"
   ],
   "Reorder tasks in project lists, boards and the Inbox, and projects in the sidebar; drop on the middle of a row to nest it; Esc cancels": [
     "web/src/lib/shortcuts.ts"

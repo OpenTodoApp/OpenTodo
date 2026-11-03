@@ -44,6 +44,6 @@ To keep tasks beside the list, choose **In a side panel** under **Settings → A
 
 - A click on a task, or moving to it with <kbd>j</kbd> / <kbd>k</kbd>, shows it there; <kbd>Enter</kbd> on the task shown opens its page.
 - The panel never closes by itself. Only its **×**, or <kbd>Esc</kbd> inside it, closes it, and it stays closed until you click a task or press <kbd>Enter</kbd> on one.
-- Drag its left edge to resize it (or focus the edge and press ← or →; a double click resets it). Each device keeps its own width.
+- Resize it by its left edge: drag it, click it (widest, then back), or focus it and press ← or →. Each device keeps its own width.
 
 Phones and narrow windows keep the page.

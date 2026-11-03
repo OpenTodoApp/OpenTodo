@@ -35,6 +35,7 @@ import { useViewData, type ViewData } from './useViews'
 import { t } from '../lib/i18n'
 import { keysOf } from '../lib/shortcuts'
 import { act } from './actionError'
+import { ListReorderContext, type ListReorder } from './bulk/BulkActions'
 import { FilterBuilder } from './filter/FilterBuilder'
 import { useBuilderOpen } from './filter/builderToggle'
 import { ViewsCrumb } from './views/ViewsCrumb'
@@ -165,6 +166,29 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
     const group = groups.find((g) => g.key === groupOfKey(r.key))
     return stepInView(host, bulkTasks, group?.tasks ?? [], r.task.id, step)
   }
+  // The row menu's Reorder items (accessibility-aa D3): the same step as Alt+arrows, from a pointer.
+  const latestRows = useRef({ rows, groups, selected })
+  latestRows.current = { rows, groups, selected }
+  const listReorder = useMemo<ListReorder>(() => {
+    const rowOf = (id: string) => {
+      const { rows: rs, selected: sel } = latestRows.current
+      return rs.find((r) => r.key === sel && r.task.id === id) ?? rs.find((r) => r.task.id === id)
+    }
+    const groupOf = (r: KeyRow) => latestRows.current.groups.find((g) => g.key === groupOfKey(r.key))
+    return {
+      move: (id, step) => {
+        const r = rowOf(id)
+        const group = r && groupOf(r)
+        if (r) act(stepInView(host, latestRows.current.rows.map((x) => x.task), group?.tasks ?? [], id, step))
+      },
+      edges: async (id) => {
+        const r = rowOf(id)
+        const tasks = (r && groupOf(r)?.tasks) ?? []
+        const i = tasks.findIndex((tk) => tk.id === id)
+        return i < 0 ? null : { first: i === 0, last: i === tasks.length - 1 }
+      },
+    }
+  }, [host])
   const drag = useViewOrderDrag(host, rows, { ticked: bulk.ticked, openRowMenu: (tk, x, y, el) => bulk.rowProps(tk).onRowMenu(x, y, el), onDropped: setSelected })
 
   useListKeys({
@@ -193,6 +217,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   const count = result.ok ? result.tasks.length : null
 
   return (
+    <ListReorderContext.Provider value={listReorder}>
     <PageBody width="list">
           <PageHeader title={<ViewsCrumb name={view.name} />} meta={count !== null ? count : undefined} help="saved-filter"
             leading={view.icon ? <span className="flex h-5 w-5 shrink-0 items-center justify-center text-muted" aria-hidden="true"><ViewMark view={view} /></span> : undefined}
@@ -274,5 +299,6 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
         </Dialog>
       )}
     </PageBody>
+    </ListReorderContext.Provider>
   )
 }

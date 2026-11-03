@@ -186,7 +186,7 @@ export function TimelineView({ groups, today, zone, editable, selectedId, onSele
         className={`flex border-b border-default ${selected ? 'bg-selected-row' : ''}`} style={{ height: ROW_PX }}>
         <div role="rowheader" className={`sticky left-0 z-10 flex w-[40vw] max-w-64 shrink-0 items-center gap-1 border-r border-default px-2 sm:w-64 ${selected ? 'bg-selected-row' : 'bg-surface'}`}
           style={{ paddingLeft: 8 + l.depth * 14 }}>
-          <button type="button" tabIndex={-1} className={`min-w-0 flex-1 truncate text-left text-body ${blocked ? 'text-muted' : 'text-default'}`}
+          <button data-drag-id="timeline-unscheduled" type="button" tabIndex={-1} className={`min-w-0 flex-1 truncate text-left text-body ${blocked ? 'text-muted' : 'text-default'}`}
             aria-label={blockers.length ? t('{title}, waits for {blockers}', { title: l.task.title || t('Untitled'), blockers: blockers.join(', ') }) : l.task.title || t('Untitled')}
             onClick={() => onSelect(l.task.id)} onDoubleClick={() => onOpen(l.task.id)}
             onPointerDown={!l.span ? (e) => startDrag(e, l.task, 'place') : undefined}>
@@ -353,7 +353,7 @@ function TimelineBar({ task, s, selected, from, totalDays, px, today, hue, edita
     : null
   return (
     <>
-    <div data-bar={task.id} data-late={s.late || undefined} data-hue={hue}
+    <div data-drag-id="timeline-bar" data-bar={task.id} data-late={s.late || undefined} data-hue={hue}
       onPointerDown={(e) => onDrag(e, task, 'move')}
       onClick={() => onSelect(task.id)} onDoubleClick={() => onOpen(task.id)}
       className={`ui-block ui-block--row absolute top-1.5 flex h-6 items-center ${s.late ? 'ui-block--late' : ''} ${allPast ? 'ui-block--past' : ''} ${selected ? 'ring-2 ring-accent' : ''} ${editable ? 'cursor-grab touch-manipulation' : ''} ${dragging ? 'pointer-events-none' : ''}`}
@@ -361,7 +361,7 @@ function TimelineBar({ task, s, selected, from, totalDays, px, today, hue, edita
       {pastDays > 0 && <span data-bar-past aria-hidden className="ui-block ui-block--row ui-block--past pointer-events-none absolute inset-y-0 rounded-e-none" style={{ insetInlineStart: -3, width: pastDays * px }} />}
       {clippedLeft && <Icon name="chevron-left" size="xs" className="relative text-muted" />}
       {titled && <span data-bar-title aria-hidden className="user-text pointer-events-none relative min-w-0 flex-1 truncate px-1.5 text-meta font-medium">{task.title || t('Untitled')}</span>}
-      {editable && !clippedLeft && <span data-bar-edge="start" className="absolute inset-y-0 left-0 w-1.5 cursor-ew-resize" onPointerDown={(e) => onDrag(e, task, 'start')} />}
+      {editable && !clippedLeft && <span data-drag-id="timeline-bar-start" data-bar-edge="start" className="absolute inset-y-0 left-0 w-1.5 cursor-ew-resize" onPointerDown={(e) => onDrag(e, task, 'start')} />}
       {s.dueAt && s.dueAt !== s.from && s.dueAt !== s.to && dayOffset(from, s.dueAt) >= 0 && (
         <span data-due-marker className="absolute top-1.5 h-3 w-0.5 rounded-full bg-accent" style={{ left: (dayOffset(from, s.dueAt) - first + 0.5) * px }} aria-hidden />
       )}
@@ -370,7 +370,7 @@ function TimelineBar({ task, s, selected, from, totalDays, px, today, hue, edita
         <span data-deadline-marker className={`absolute top-1/2 size-2.5 -translate-y-1/2 rotate-45 rounded-[2px] ${s.late ? 'bg-danger' : 'bg-warning'}`} style={{ left: (dayOffset(from, s.deadlineAt!) - first + 0.5) * px - 5 }} aria-hidden />
       )}
       {clippedRight && <Icon name="chevron-right" size="xs" className="relative ml-auto text-muted" />}
-      {editable && !clippedRight && <span data-bar-edge="end" className="absolute inset-y-0 right-0 w-1.5 cursor-ew-resize" onPointerDown={(e) => onDrag(e, task, 'end')} />}
+      {editable && !clippedRight && <span data-drag-id="timeline-bar-end" data-bar-edge="end" className="absolute inset-y-0 right-0 w-1.5 cursor-ew-resize" onPointerDown={(e) => onDrag(e, task, 'end')} />}
     </div>
     {after && !clippedRight && (
       <span data-bar-after className={`pointer-events-none absolute top-1.5 flex h-6 items-center whitespace-nowrap text-meta tabular-nums ${after.tone}`} style={{ left: notePlacement(first * px, first * px + barPx, noteWidth(after.text), todayIn ? (dayOffset(from, today) + 0.5) * px : null, totalDays * px) }}>{after.text}</span>

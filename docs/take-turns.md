@@ -13,7 +13,7 @@ order: 73
 A chore that repeats can pass from person to person: the bins on Monday, the bathroom on Saturday. In a shared project with at least two members, open a repeating task, choose its assignee and then **Take turns…**. List the people who take turns:
 
 - Pick people from the project's members, or choose **Add everyone in *group*** to add the current members of a workspace group that shares the project. Later changes to the group don't change the list.
-- Drag a person by their handle to change the order, or focus the handle and press <kbd>Alt</kbd>+<kbd>↑</kbd> or <kbd>Alt</kbd>+<kbd>↓</kbd>.
+- Drag a person by their handle to change the order, click the handle and choose **Move up** or **Move down**, or focus the handle and press <kbd>Alt</kbd>+<kbd>↑</kbd> or <kbd>Alt</kbd>+<kbd>↓</kbd>.
 - **Stop taking turns** clears the list; the current assignee stays.
 
 When someone completes the task, the next occurrence is assigned to the next person in the list, after the current assignee, starting again from the top after the last one. If the current assignee isn't in the list, the first person gets it. The completed occurrence keeps the person who held it, so **Completed** shows who did it. The new assignee gets the usual assignment notification, worded **It's your turn**.

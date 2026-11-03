@@ -7141,5 +7141,9 @@
   "Has an assignee": "已指派",
   "Hide tasks assigned to others": "隐藏指派给其他人的任务",
   "No member named \"{name}\"": "没有名为“{name}”的成员",
-  "Show tasks assigned to others": "显示指派给其他人的任务"
+  "Show tasks assigned to others": "显示指派给其他人的任务",
+  "Reorder": "调整顺序",
+  "Move to top": "移到顶部",
+  "Move to bottom": "移到底部",
+  "Move {name}": "移动“{name}”"
 }
