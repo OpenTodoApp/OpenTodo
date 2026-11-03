@@ -36,9 +36,9 @@ Each of groups 2–6 can land as its own pull request; group 7 lands last.
 
 ## 6. Tududi (`tududi-db`)
 
-- [ ] 6.1 `profile_tududi.go`: SQLite detection and schema check, read-only private copy deleted afterwards, areas, projects, tasks, subtasks, tags, priority, status, notes and recurrence; verify `go test ./internal/importer -run Tududi` including the unknown-schema refusal
-- [ ] 6.2 A real database from a local Tududi (current 1.x), sanitised, with a golden
-- [ ] 6.3 `docs/switch/tududi.md` and the `docs/import.md` row; verify `make docs-check`
+- [x] 6.1 `profile_tududi.go`: SQLite detection and schema check, read-only private copy deleted afterwards, areas, projects, tasks, subtasks, tags, priority, status, notes and recurrence; verify `go test ./internal/importer -run Tududi` including the unknown-schema refusal
+- [x] 6.2 A real database from a local Tududi (current 1.x), sanitised, with a golden
+- [x] 6.3 `docs/switch/tududi.md` and the `docs/import.md` row; verify `make docs-check`
 
 ## 7. The picker and the matrix
 

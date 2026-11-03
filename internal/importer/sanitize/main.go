@@ -8,8 +8,8 @@
 //
 // <in> is a CSV (Todoist, TickTick, Linear, Asana), a ZIP of CSVs (Todoist
 // backup), a Vikunja export ZIP (data.json, filters.json and files/), a Things
-// main.sqlite or a JSON export (Google Tasks, Trello, Microsoft To Do, Apple
-// Reminders, Any.do; see json.go). Nothing
+// main.sqlite, a Tududi database (see tududi.go) or a JSON export (Google
+// Tasks, Trello, Microsoft To Do, Apple Reminders, Any.do; see json.go). Nothing
 // imports this package, so it is never part of the server binary. Review every
 // output before committing it.
 package main
@@ -428,6 +428,12 @@ func (s *scrubber) sqlite(in, out string) error {
 		return err
 	}
 	defer db.Close()
+	if isTududi(db) {
+		if err := s.tududi(db); err != nil {
+			return err
+		}
+		return vacuum(db)
+	}
 	type col struct{ table, column, kind string }
 	cols := []col{
 		{"TMTask", "title", "Item"}, {"TMTask", "notes", "Notes"},
@@ -454,10 +460,15 @@ func (s *scrubber) sqlite(in, out string) error {
 			return fmt.Errorf("%s: %w", q, err)
 		}
 	}
+	return vacuum(db)
+}
+
+// vacuum leaves one self-contained file with no freed pages holding old text.
+func vacuum(db *sql.DB) error {
 	if _, err := db.Exec("PRAGMA journal_mode=DELETE"); err != nil {
 		return err
 	}
-	_, err = db.Exec("VACUUM")
+	_, err := db.Exec("VACUUM")
 	return err
 }
 

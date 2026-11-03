@@ -333,13 +333,14 @@ func TestTaskNotesMergeCases(t *testing.T) {
 	}
 }
 
+// Dates are years ahead, as in TestRecurringCompletionFromTheFile.
 func TestTaskNotesRecurrence(t *testing.T) {
 	s := newServer(t)
 	v := s.vault(t)
 	n := v.linkNotes(t, "default.json")
-	n.put(t, "Bins.md", "---\ntitle: Bins\nstatus: open\nscheduled: 2026-10-26\nrecurrence: DTSTART:20261026;FREQ=WEEKLY\ntags:\n  - task\n---\n")
-	n.put(t, "Hourly.md", "---\ntitle: Stretch\nstatus: open\nrecurrence: DTSTART:20261026T090000Z;FREQ=HOURLY\ntags:\n  - task\n---\n")
-	n.put(t, "Water.md", "---\ntitle: Water the plants\nstatus: open\nscheduled: 2026-10-26\nrecurrence: DTSTART:20261026;FREQ=DAILY;INTERVAL=3\nrecurrence_anchor: completion\ntags:\n  - task\n---\n")
+	n.put(t, "Bins.md", "---\ntitle: Bins\nstatus: open\nscheduled: 2036-10-13\nrecurrence: DTSTART:20361013;FREQ=WEEKLY\ntags:\n  - task\n---\n")
+	n.put(t, "Hourly.md", "---\ntitle: Stretch\nstatus: open\nrecurrence: DTSTART:20361013T090000Z;FREQ=HOURLY\ntags:\n  - task\n---\n")
+	n.put(t, "Water.md", "---\ntitle: Water the plants\nstatus: open\nscheduled: 2036-10-13\nrecurrence: DTSTART:20361013;FREQ=DAILY;INTERVAL=3\nrecurrence_anchor: completion\ntags:\n  - task\n---\n")
 	rep := v.sync(t)
 	bins := n.idOf(t, "Bins.md")
 	if got := s.get("tasks", bins)["recurrence"]; got != "every week" {
@@ -355,24 +356,24 @@ func TestTaskNotesRecurrence(t *testing.T) {
 		t.Errorf("no warning for the hourly rule: %v", rep.Warnings)
 	}
 	// The current occurrence completed in the note.
-	n.change(t, "Bins.md", "tags:", "complete_instances:\n  - 2026-10-26\ntags:")
+	n.change(t, "Bins.md", "tags:", "complete_instances:\n  - 2036-10-13\ntags:")
 	v.sync(t)
-	rec := s.get("tasks", occurrenceID(bins, "2026-10-26"))
+	rec := s.get("tasks", occurrenceID(bins, "2036-10-13"))
 	if rec["completed_at"] == nil || rec["series_id"] != bins {
 		t.Errorf("occurrence = %v", rec)
 	}
 	text := n.note(t, "Bins.md")
-	if !strings.Contains(text, "scheduled: 2026-11-02\n") || !strings.Contains(text, "  - 2026-10-26\n") || !strings.Contains(text, "status: open\n") {
+	if !strings.Contains(text, "scheduled: 2036-10-20\n") || !strings.Contains(text, "  - 2036-10-13\n") || !strings.Contains(text, "status: open\n") {
 		t.Errorf("after the instance:\n%s", text)
 	}
 	// Completion from the app appends the date and moves scheduled.
 	s.do("PATCH", "/api/v1/tasks/"+bins, map[string]any{"completed_at": time.Now().UnixMilli()})
 	v.sync(t)
 	text = n.note(t, "Bins.md")
-	if !strings.Contains(text, "  - 2026-10-26\n  - 2026-11-02\n") || !strings.Contains(text, "scheduled: 2026-11-09\n") {
+	if !strings.Contains(text, "  - 2036-10-13\n  - 2036-10-20\n") || !strings.Contains(text, "scheduled: 2036-10-27\n") {
 		t.Errorf("after the app's completion:\n%s", text)
 	}
-	if !strings.Contains(text, "recurrence: DTSTART:20261026;FREQ=WEEKLY\n") {
+	if !strings.Contains(text, "recurrence: DTSTART:20361013;FREQ=WEEKLY\n") {
 		t.Errorf("the rule's text changed:\n%s", text)
 	}
 }

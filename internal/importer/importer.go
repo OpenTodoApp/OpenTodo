@@ -290,7 +290,7 @@ type Profile interface {
 // Profiles lists every format in detection order: the own export first, then each
 // named app's JSON shape by its structural signature (more-importers D2), then the
 // generic JSON shapes, then the named CSV exports and generic CSV.
-var Profiles = []Profile{opentodoProfile{}, thingsDBProfile{},
+var Profiles = []Profile{opentodoProfile{}, tududiProfile{}, thingsDBProfile{},
 	vikunjaProfile{}, googleTasksProfile{}, trelloProfile{}, msTodoProfile{}, appleRemindersProfile{}, anydoProfile{},
 	itemsProfile{}, listsProfile{}, genericProfile{},
 	todoistProfile{}, tickTickProfile{}, linearProfile{}, asanaProfile{}, csvProfile{}}
