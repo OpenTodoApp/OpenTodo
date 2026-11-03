@@ -19,7 +19,7 @@ The top of the page names the list you came from (click it to go back), the task
 
 ## The top of the page
 
-The **⋯** menu holds **Copy link**, **Attach**, **Delete** and the less frequent actions. Under the breadcrumb are the task's **checkbox** and its **title** (edit it in place), then **Notes**: one quiet line until you click it, then an editor (see [Write notes](notes-and-subtasks.md#write-notes)).
+The **⋯** menu holds **Copy link**, **Attach** and **Delete**. Under the breadcrumb are the task's **checkbox** and its **title** (edit it in place; a long title grows), then **Notes**: one quiet line until you click it, then an editor (see [Write notes](notes-and-subtasks.md#write-notes)).
 
 ## The facts
 
