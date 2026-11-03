@@ -1,9 +1,12 @@
+// @vitest-environment happy-dom
 import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import type { ComponentProps } from 'react'
 import type { AssistantStatus } from '../lib/assistantStatus'
 import type { AssistantOwnerSettings } from '../lib/assistantTypes'
 import { assistantStatusLine, draftFrom, inputFrom, ownDraftFrom, SAVE_TO_USE, testDraft, testIsUnsaved, ownInputFrom, OwnerAssistantSettings, OwnerAssistantSummary, UserAssistantSettings } from './assistant/AssistantSettings'
 import { formatDate } from '../lib/dates'
+import { click, render } from '../ui/test-utils'
 
 const noop = () => {}
 const saved: AssistantOwnerSettings = {
@@ -115,7 +118,7 @@ describe('OwnerAssistantSummary (settings-redesign)', () => {
 describe('UserAssistantSettings', () => {
   const render = (over: Partial<Parameters<typeof UserAssistantSettings>[0]> = {}) => renderToStaticMarkup(
     <UserAssistantSettings status={status} usage={{ month: '2026-10', input_tokens: 80000, output_tokens: 10000, total_tokens: 90000, turns: 12, cap: 500000, resets_at: '2026-11-01' }}
-      autoApply={false} connected busy={false} error={null} cleared={false} onWithdraw={noop} onOwnKey={noop} onAutoApply={noop} onClear={noop} {...over} />)
+      autoApply={false} suggestAfterAdd={false} onSuggestAfterAdd={noop} connected busy={false} error={null} cleared={false} onWithdraw={noop} onOwnKey={noop} onAutoApply={noop} onClear={noop} {...over} />)
   it('shows consent, usage, own key, auto-apply (off) and clearing conversations', () => {
     const html = render()
     expect(html).toContain('Withdraw consent')
@@ -131,6 +134,36 @@ describe('UserAssistantSettings', () => {
   })
   it('explains an encrypted account', () => {
     expect(render({ status: { ...status, reason: 'encryption_enabled', available: false } })).toContain('end-to-end encrypted')
+  })
+})
+
+describe('UserAssistantSettings suggest-after-add row (assistant-suggest-after-add)', () => {
+  const props = (suggestAfterAdd: boolean, onSuggestAfterAdd: (on: boolean) => void): ComponentProps<typeof UserAssistantSettings> => ({
+    status, usage: null, autoApply: false, suggestAfterAdd, onSuggestAfterAdd, connected: true, busy: false, error: null, cleared: false,
+    onWithdraw: noop, onOwnKey: noop, onAutoApply: noop, onClear: noop,
+  })
+
+  it('shows the Suggest after adding row with its description, and the switch reflects the value', async () => {
+    const off = await render(<UserAssistantSettings {...props(false, noop)} />)
+    expect(off.container.textContent).toContain('Suggest after adding')
+    expect(off.container.textContent).toContain('This device: after an add, the assistant proposes a title, project, subtasks. You review.')
+    expect(off.container.querySelector('[role="switch"][aria-checked="false"]')).toBeTruthy()
+    await off.unmount()
+    const on = await render(<UserAssistantSettings {...props(true, noop)} />)
+    expect(on.container.querySelector('[role="switch"][aria-checked="true"]')).toBeTruthy()
+    await on.unmount()
+  })
+
+  // The Switch's label is visually hidden, so its row is found by the SettingRow's text.
+  const suggestSwitch = (container: HTMLElement) =>
+    [...container.querySelectorAll('[role="switch"]')].find((el) => el.closest('div.grid')?.textContent?.includes('Suggest after adding'))!
+
+  it('toggling the row calls onSuggestAfterAdd with the opposite value', async () => {
+    const onSuggestAfterAdd = vi.fn()
+    const view = await render(<UserAssistantSettings {...props(false, onSuggestAfterAdd)} />)
+    await click(suggestSwitch(view.container))
+    expect(onSuggestAfterAdd).toHaveBeenCalledWith(true)
+    await view.unmount()
   })
 })
 
@@ -161,7 +194,7 @@ describe('Owner: member keys and the cap', () => {
 
 describe('Which assistant you use', () => {
   const render = (s: AssistantStatus, over: Partial<Parameters<typeof UserAssistantSettings>[0]> = {}) => renderToStaticMarkup(
-    <UserAssistantSettings status={s} usage={null} autoApply={false} connected busy={false} error={null} cleared={false} onWithdraw={noop} onOwnKey={noop}
+    <UserAssistantSettings status={s} usage={null} autoApply={false} suggestAfterAdd={false} onSuggestAfterAdd={noop} connected busy={false} error={null} cleared={false} onWithdraw={noop} onOwnKey={noop}
       onAutoApply={noop} onClear={noop} onSaveOwn={async () => true} onTestOwn={noop} {...over} />)
   it('starts on the server’s assistant, naming the owner’s provider', () => {
     const html = render(serverStatus)
@@ -236,7 +269,7 @@ describe('Assistant card structure (settings-refresh D9; in-app-assistant "Assis
     expect(assistantStatusLine({ ...status, source: 'own' })).toBe('On, using your own key')
     const html = renderToStaticMarkup(
       <UserAssistantSettings status={status} usage={{ month: '2026-10', input_tokens: 1, output_tokens: 1, total_tokens: 90000, turns: 12, cap: 500000, resets_at: '2026-11-01' }}
-        autoApply={false} connected busy={false} error={null} cleared={false} onWithdraw={noop} onOwnKey={noop} onAutoApply={noop} onClear={noop} />)
+        autoApply={false} suggestAfterAdd={false} onSuggestAfterAdd={noop} connected busy={false} error={null} cleared={false} onWithdraw={noop} onOwnKey={noop} onAutoApply={noop} onClear={noop} />)
     expect(html).toContain('Withdraw consent')
     expect(html).toContain('data-usage-meter')
     expect(html).toContain('aria-valuenow="18"')

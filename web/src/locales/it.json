@@ -7070,5 +7070,8 @@
   "Show steps": "Mostra i passaggi",
   "Switching from…": "Arrivo da…",
   "This file looks like {format}, not the format you chose.": "Questo file sembra {format}, non il formato che hai scelto.",
-  "Your account is end-to-end encrypted. Imported text is written in plaintext until one of your unlocked devices re-encrypts it, and duplicates cannot be found by encrypted project or label names.": "Il tuo account è cifrato end-to-end. Il testo importato viene scritto in chiaro finché uno dei tuoi dispositivi sbloccati non lo cifra di nuovo, e i duplicati non si trovano tramite i nomi cifrati di progetti o etichette."
+  "Your account is end-to-end encrypted. Imported text is written in plaintext until one of your unlocked devices re-encrypts it, and duplicates cannot be found by encrypted project or label names.": "Il tuo account è cifrato end-to-end. Il testo importato viene scritto in chiaro finché uno dei tuoi dispositivi sbloccati non lo cifra di nuovo, e i duplicati non si trovano tramite i nomi cifrati di progetti o etichette.",
+  "Suggest after adding": "Suggerisci dopo l’aggiunta",
+  "This device: after an add, the assistant proposes a title, project, subtasks. You review.": "Questo dispositivo: dopo l’aggiunta, l’assistente propone titolo, progetto, sotto-attività. Controlli tu.",
+  "Suggest after adding (this device)": "Suggerisci dopo l’aggiunta (questo dispositivo)"
 }

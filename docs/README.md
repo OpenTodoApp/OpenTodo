@@ -80,6 +80,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | &nbsp;&nbsp;↳ [Ask, review and undo](assistant-ask.md) | Open the assistant, ask a question, review the changes it proposes, apply the ones you want and undo them in one step. |
 | &nbsp;&nbsp;↳ [Skills, pasted notes and safety](assistant-skills.md) | The assistant's ready-made jobs, how pasted text is kept apart from instructions, and what the assistant can never do on its own. |
 | &nbsp;&nbsp;↳ [Assistant settings](assistant-settings.md) | Your part of Settings → Integrations → Assistant, using your own Anthropic, OpenAI or Gemini key instead of the server's, and letting small changes skip the review. |
+| &nbsp;&nbsp;↳ [Suggest after adding](assistant-suggest-after-add.md) | Have the assistant propose a clearer title, a project and subtasks right after you add a task, always for your review. |
 | &nbsp;&nbsp;↳ [What the assistant sends and keeps](assistant-privacy.md) | What is sent to the model provider and when you agree to it, where conversations live, how tokens are counted, and why encrypted accounts have no assistant. |
 | &nbsp;&nbsp;↳ [Set up the assistant](assistant-setup.md) | For the server owner, allow one or more model providers, enter models and keys, test the connection and turn the assistant on for everyone. |
 | &nbsp;&nbsp;↳ [Assistant owner options](assistant-owner-options.md) | Running the assistant on a local model, letting members bring their own key, counting their keys toward the limit, and the monthly token allowance. |
