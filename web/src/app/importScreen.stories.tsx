@@ -22,7 +22,7 @@ const base: ImportViewProps = {
   projects: [project({ id: 'p1', name: 'Home', color: HEX.green }), project({ id: 'p2', name: 'Work', color: HEX.blue })],
   workspaces: [], workspace: '', onWorkspace: noop,
   zones: ['UTC', 'Europe/Berlin', 'America/New_York'], preview: null, busy: false, error: null, job: null, jobs: [job],
-  onPickFile: noop, onFormat: noop, onOption: noop, onPreview: noop, onStart: noop, onUndo: noop,
+  onPickFile: noop, onFormat: noop, onOption: noop, onPreview: noop, onColumn: noop, onStart: noop, onUndo: noop,
 }
 const preview: ImportPreview = {
   format: 'todoist-csv', options: {}, truncated: false,

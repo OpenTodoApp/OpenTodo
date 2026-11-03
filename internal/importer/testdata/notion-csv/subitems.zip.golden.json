@@ -1,0 +1,89 @@
+{
+  "format": "notion-csv",
+  "notes": [
+    "columns not imported: Points"
+  ],
+  "totals": {
+    "rows": 5,
+    "create": 5,
+    "update": 0,
+    "skip": 0,
+    "error": 0,
+    "possibleDuplicates": 0,
+    "warnings": 2,
+    "newProjects": 2,
+    "newLabels": 0,
+    "newSections": 0,
+    "recurring": 0,
+    "reminders": 0,
+    "deadlines": 0,
+    "attachments": 0,
+    "fields": 0,
+    "timeEntries": 0,
+    "places": 0,
+    "notes": 0,
+    "entities": 6,
+    "written": 0,
+    "ops": 0
+  },
+  "viewHints": null,
+  "rows": [
+    {
+      "row": 1,
+      "sourceId": "notion:db:8bad96ddb7dd4cf9bf2ec82891d98b77",
+      "kind": "project",
+      "title": "Projects To-do",
+      "outcome": "create"
+    },
+    {
+      "row": 2,
+      "file": "Projects To-do",
+      "sourceId": "notion:a3759449b76c4d29bcd16e2f99eb56c9",
+      "kind": "task",
+      "title": "Move house",
+      "project": "Home",
+      "outcome": "create"
+    },
+    {
+      "row": 3,
+      "file": "Projects To-do",
+      "sourceId": "notion:734a0916d21b4798a14f79db76e04c7d",
+      "kind": "task",
+      "title": "Pack the kitchen",
+      "project": "Home",
+      "outcome": "create"
+    },
+    {
+      "row": 4,
+      "file": "Projects To-do",
+      "sourceId": "notion:8bad96ddb7dd4cf9bf2ec82891d98b77:line:4",
+      "kind": "task",
+      "title": "Order boxes",
+      "project": "Home",
+      "outcome": "create",
+      "warnings": [
+        "moved to its parent's project"
+      ]
+    },
+    {
+      "row": 5,
+      "file": "Projects To-do",
+      "sourceId": "notion:8bad96ddb7dd4cf9bf2ec82891d98b77:line:5",
+      "kind": "task",
+      "title": "Cancel the gym",
+      "project": "Projects To-do",
+      "outcome": "create",
+      "warnings": [
+        "parent item \"Untitled\" is not in this database; imported as a top-level task"
+      ]
+    }
+  ],
+  "fields": [
+    "project id-0001: name=\"Projects To-do\" archived=false created_at=1791979200000",
+    "project id-0002: name=\"Home\" archived=false created_at=1791979200000",
+    "task id-0003: title=\"Move house\" description=\"Everything for the move.\\n\\n\\u003caside\\u003e\\n💡 Keep the receipts.\\n\\n\\u003c/aside\\u003e\" priority=4 created_at=1791979200000 project_id=\"id-0002\" due={\"date\":\"2026-12-16\"} origin={\"kind\":\"import\",\"provider\":\"notion\",\"id\":\"a3759449b76c4d29bcd16e2f99eb56c9\"} labels=[]",
+    "task id-0004: title=\"Pack the kitchen\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0002\" parent_id=\"id-0003\" due={\"date\":\"2026-01-12\"} origin={\"kind\":\"import\",\"provider\":\"notion\",\"id\":\"734a0916d21b4798a14f79db76e04c7d\"} labels=[]",
+    "task id-0005: title=\"Order boxes\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0002\" parent_id=\"id-0004\" completed_at=1791979200000 labels=[]",
+    "task id-0006: title=\"Cancel the gym\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" labels=[]"
+  ]
+}

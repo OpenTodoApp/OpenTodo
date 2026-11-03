@@ -133,10 +133,14 @@ type Totals struct {
 	Refused int `json:"refused,omitempty"`
 }
 
-// Columns lists the recognised and ignored CSV columns.
+// Columns lists the recognised and ignored CSV columns. For a Notion export
+// it also carries the column chosen for each role (null: not imported) and
+// every column the roles can use (migration-everywhere D3).
 type Columns struct {
-	Recognised []string `json:"recognised"`
-	Ignored    []string `json:"ignored"`
+	Recognised []string           `json:"recognised"`
+	Ignored    []string           `json:"ignored"`
+	Roles      map[string]*string `json:"roles,omitempty"`
+	Available  []string           `json:"available,omitempty"`
 }
 
 // Plan is a dry run: what each row would do and the entity changes to write.
@@ -153,6 +157,10 @@ type Plan struct {
 	// ViewHints are projects this import creates that were boards in the source
 	// app; the web app opens them as boards on the importing device.
 	ViewHints []PlanViewHint `json:"viewHints,omitempty"`
+	// Detected is the format the file is read as without a chosen format, set
+	// only when the chosen format differs (migration-everywhere, "Switching
+	// from another app"): the web app offers to switch to it.
+	Detected string `json:"detected,omitempty"`
 	// Template is set when the file is a template (project-templates D7): the web
 	// app suggests "From a template" for a fresh copy.
 	Template *TemplateInfo `json:"template,omitempty"`
@@ -334,6 +342,13 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 	p := &Plan{Format: parsed.Format, Version: parsed.Version, Options: opts, Notes: nonNil(parsed.Notes), Template: parsed.Template}
 	if parsed.Format == "csv" {
 		p.Columns = &Columns{Recognised: nonNil(parsed.Recognised), Ignored: nonNil(parsed.Ignored)}
+	}
+	if parsed.Format == notionFormat {
+		roles := map[string]*string{}
+		for _, r := range NotionRoles {
+			roles[r] = parsed.Roles[r]
+		}
+		p.Columns = &Columns{Recognised: nonNil(parsed.Recognised), Ignored: nonNil(parsed.Ignored), Roles: roles, Available: nonNil(parsed.Available)}
 	}
 	pl.results = make([]RowResult, len(parsed.Rows))
 	for i, r := range parsed.Rows {
