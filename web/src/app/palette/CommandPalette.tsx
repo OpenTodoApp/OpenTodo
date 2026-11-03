@@ -96,6 +96,9 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
   const agentExclusions = useAgentExclusions()
   const reviewEvery = useReviewEvery()
   const missedBlocks = useMissedBlocks().length
+  // Today's earlier tasks, once per data change: ctx follows the text typed, and this
+  // read every task on each keystroke (list-rendering-at-scale D6).
+  const earlier = useMemo(() => earlierIds(tasks, projects, today), [tasks, projects, today])
   const ctx = useMemo<PaletteContext>(() => {
     const projectId = route.view === 'project' ? route.id : null
     const project = projectId ? projects.find((p) => p.id === projectId) : undefined
@@ -118,13 +121,13 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
       view: view ? { row: view, peers: sorted, isStart: startView === `view:${view.id}` } : undefined,
       label: label ? { row: label, labels: [...labels].sort((a, b) => a.position - b.position), pinned: isFavourite(prefs, 'label', label.id) } : undefined,
       section: sectionInfo && task && list && !list.readOnly(task) ? sectionInfo : undefined,
-      earlier: earlierIds(tasks, projects, today),
+      earlier,
       dayParts: dayPartsOn(prefs),
       timeSectors: timeSectorsOn(prefs),
       slot: task ? slotStateOf(task.id) : null,
       missedBlocks,
     }
-  }, [route, user, today, list, task, query, vimEnabled, showShortcuts, projects, memberships, views, labels, tasks, startView, sectionInfo, prefs, agentExclusions, reviewEvery, workspaceState, missedBlocks])
+  }, [route, user, today, list, task, query, vimEnabled, showShortcuts, projects, memberships, views, labels, tasks, startView, sectionInfo, prefs, agentExclusions, reviewEvery, workspaceState, missedBlocks, earlier])
 
   const taskEntry = useMemo(() => makeTaskEntry(projects, today), [projects, today])
   const entities = usePaletteEntities(user, today, projects, labels, views, tasks)

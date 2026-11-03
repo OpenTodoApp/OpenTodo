@@ -31,13 +31,6 @@ export function sortedHead<X>(xs: X[], head: number | undefined, order: (a: X, b
   return [...top, ...rest]
 }
 
-/** Items folded at a time while the palette waits for its first keystroke: as many steps as an idle period holds. */
-const FOLD_STEP = 250
-const idle = (fn: (deadline?: IdleDeadline) => void): number => (typeof requestIdleCallback === 'function' ? requestIdleCallback(fn, { timeout: 500 }) : window.setTimeout(fn, 20))
-const cancelIdle = (h: number) => {
-  if (typeof cancelIdleCallback === 'function') cancelIdleCallback(h)
-  clearTimeout(h)
-}
 
 export type AsyncSource<T> = (query: string, signal: AbortSignal) => Promise<{ items: T[]; hasMore?: boolean }>
 
@@ -141,25 +134,15 @@ export function useCombobox<T>(cfg: ComboboxConfig<T>) {
     if (key) folded.current.set(key, p)
     return p
   }
+  // The full source is folded with the list it belongs to, also while the empty list
+  // shows its own items, so the first keystroke only compares (list-rendering-at-scale):
+  // folding in idle moments after opening lost the race against a quick first key, and
+  // with the text cache the command bar fills before it opens (PaletteWarmer) the
+  // folds are mostly lookups.
   // eslint-disable-next-line react-hooks/exhaustive-deps -- getLabel/getSecondary/getKeywords are inline callbacks; the folded text changes only with the items
-  const prepared = useMemo(() => items.map(fold), [items])
-  // While the empty list shows its own items, the full source is folded in idle
-  // moments, so the first keystroke does not fold 10,000 tasks (list-rendering-at-scale).
-  const warm = items !== fullItems ? fullItems : null
-  useEffect(() => {
-    if (!warm?.length) return
-    let at = 0
-    let handle = 0
-    const step = (deadline?: IdleDeadline) => {
-      do {
-        for (const end = Math.min(at + FOLD_STEP, warm.length); at < end; at++) fold(warm[at])
-      } while (at < warm.length && deadline && !deadline.didTimeout && deadline.timeRemaining() > 2)
-      if (at < warm.length) handle = idle(step)
-    }
-    handle = idle(step)
-    return () => cancelIdle(handle)
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- folding depends on the items only, as `prepared`
-  }, [warm])
+  const preparedFull = useMemo(() => fullItems.map(fold), [fullItems])
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- as preparedFull
+  const prepared = useMemo(() => (items === fullItems ? preparedFull : items.map(fold)), [items, fullItems, preparedFull])
 
   const narrowed = useRef<{ items: readonly T[]; q: string; compact: number; hits: number[] } | null>(null)
   const allOptions = useMemo<ComboOption<T>[]>(() => {
