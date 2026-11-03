@@ -341,22 +341,34 @@ export async function settled(overlay) {
 }
 
 // The phone's add button never covers a row (phone-v2 D2): at the end of the list the
-// last row sits above the button's footprint. Scrolls the content column to its end.
+// last row sits above the button's footprint. Nor does it cover a form field where the
+// page rests, at its top or its end (a Settings sub-page or Import, where quick add has
+// no purpose and the button is left out). Scrolls the content column to its end.
 export async function addButtonCovers() {
   const button = document.querySelector('[data-add-button]:not([data-away])')
   const content = document.querySelector('#content')
   if (!button || !content || !button.getClientRects().length) return []
-  content.scrollTop = content.scrollHeight
-  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
-  const rows = [...document.querySelectorAll('[data-task-id]')].filter((r) => r.getClientRects().length)
-  const last = rows[rows.length - 1]
+  const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+  const hits = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom
   const out = []
-  if (last) {
-    const a = last.getBoundingClientRect(), b = button.getBoundingClientRect()
-    if (a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom) out.push(`the add button covers the last row "${last.textContent.trim().slice(0, 30)}" at the end of the list`)
+  const fieldsUnder = (where) => {
+    const b = button.getBoundingClientRect()
+    for (const f of content.querySelectorAll('input:not([type=hidden]), select, textarea, [role=combobox], [contenteditable=true]')) {
+      if (!f.getClientRects().length || f.closest('[data-add-button]')) continue
+      if (hits(f.getBoundingClientRect(), b)) out.push(`the add button covers the field "${(f.getAttribute('aria-label') || f.labels?.[0]?.textContent || f.getAttribute('name') || f.tagName).trim().slice(0, 40)}" at the ${where} of the page`)
+    }
   }
   content.scrollTop = 0
-  return out
+  await frame()
+  fieldsUnder('top')
+  content.scrollTop = content.scrollHeight
+  await frame()
+  fieldsUnder('end')
+  const rows = [...document.querySelectorAll('[data-task-id]')].filter((r) => r.getClientRects().length)
+  const last = rows[rows.length - 1]
+  if (last && hits(last.getBoundingClientRect(), button.getBoundingClientRect())) out.push(`the add button covers the last row "${last.textContent.trim().slice(0, 30)}" at the end of the list`)
+  content.scrollTop = 0
+  return [...new Set(out)]
 }
 
 // The Day and Week grid (GitHub issue 775): the sticky header (day names, all-day
