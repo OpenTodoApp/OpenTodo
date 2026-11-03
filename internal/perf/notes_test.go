@@ -30,8 +30,9 @@ import (
 // design D7) on the server: the database before and after the compaction job has
 // run to completion, how long that took, the longest a write waited behind it,
 // the notes' share of what is left, and a new device's first pull of the
-// compacted account (time and bytes). It leaves the compacted data directory for
-// the browser half (PERF_NOTES_COMPACTED).
+// compacted account (time and bytes), as the app makes it (the first copy,
+// "latest_docs") and as an older client does (the whole log). It leaves the
+// compacted data directory for the browser half (PERF_NOTES_COMPACTED).
 //
 //	PERF_NOTES_FIXTURE   a perfseed data directory built with -notes (required; skipped without)
 //	PERF_NOTES_COMPACTED where to leave the compacted copy (default perf-report/notes-compacted)
@@ -73,9 +74,14 @@ func TestNotesBudgets(t *testing.T) {
 	}
 	defer reader.Close()
 	svc.SetReader(reader)
-	job := compaction.New(compaction.Options{DB: db, Sync: svc, Settings: settings.New(db), DataDir: out, Log: slog.New(slog.DiscardHandler),
+	job := compaction.New(compaction.Options{DB: db, Reader: reader, Sync: svc, Settings: settings.New(db), DataDir: out, Log: slog.New(slog.DiscardHandler),
 		FreeSpace: func(string) (uint64, bool, error) { return 1 << 40, true, nil }})
 
+	opsync.DebugHold = func(kind string, d time.Duration, n int) {
+		if d > 100*time.Millisecond && kind != "deletephase" && kind != "reclaimphase" {
+			t.Logf("TEMP slow %s %s n=%d ended %s", kind, d, n, time.Now().Format("15:04:05.000"))
+		}
+	}
 	// A device keeps writing while compaction runs: the longest wait of one push.
 	stop := make(chan struct{})
 	var wg sync.WaitGroup
@@ -97,6 +103,9 @@ func TestNotesBudgets(t *testing.T) {
 				return
 			}
 			longest = max(longest, time.Since(start))
+			if time.Since(start) > 100*time.Millisecond {
+				t.Logf("TEMP slow push %s at %s", time.Since(start), start.Format("15:04:05.000"))
+			}
 		}
 	}()
 	start := time.Now()
@@ -162,36 +171,42 @@ func TestNotesBudgets(t *testing.T) {
 		}
 		time.Sleep(50 * time.Millisecond)
 	}
-	pullStart := time.Now()
-	var pulled int64
-	cursor := int64(0)
 	client := &http.Client{Timeout: 5 * time.Minute}
-	for {
-		body, _ := json.Marshal(map[string]any{"device": "perf-notes", "cursor": cursor, "ops": []any{}})
-		req, _ := http.NewRequest("POST", base+"/api/v1/sync", bytes.NewReader(body))
-		req.Header.Set("Authorization", "Bearer "+sum.Token)
-		req.Header.Set("Content-Type", "application/json")
-		resp, err := client.Do(req)
-		if err != nil {
-			t.Fatal(err)
-		}
-		raw, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
-		pulled += int64(len(raw))
-		var page struct {
-			Cursor  int64 `json:"cursor"`
-			HasMore bool  `json:"hasMore"`
-		}
-		if err := json.Unmarshal(raw, &page); err != nil {
-			t.Fatalf("pull: %v: %.200s", err, raw)
-		}
-		cursor = page.Cursor
-		if !page.HasMore {
-			break
+	pull := func(features []string) (time.Duration, int64) {
+		start := time.Now()
+		var pulled int64
+		cursor := int64(0)
+		for {
+			body, _ := json.Marshal(map[string]any{"device": "perf-notes", "cursor": cursor, "ops": []any{}, "features": features})
+			req, _ := http.NewRequest("POST", base+"/api/v1/sync", bytes.NewReader(body))
+			req.Header.Set("Authorization", "Bearer "+sum.Token)
+			req.Header.Set("Content-Type", "application/json")
+			resp, err := client.Do(req)
+			if err != nil {
+				t.Fatal(err)
+			}
+			raw, _ := io.ReadAll(resp.Body)
+			resp.Body.Close()
+			pulled += int64(len(raw))
+			var page struct {
+				Cursor  int64 `json:"cursor"`
+				HasMore bool  `json:"hasMore"`
+			}
+			if err := json.Unmarshal(raw, &page); err != nil {
+				t.Fatalf("pull: %v: %.200s", err, raw)
+			}
+			cursor = page.Cursor
+			if !page.HasMore {
+				return time.Since(start), pulled
+			}
 		}
 	}
-	reported["notes-pull-seconds"] = time.Since(pullStart).Seconds()
+	took, pulled := pull([]string{"clock_skew", "backfill_ack", "latest_docs"})
+	reported["notes-pull-seconds"] = took.Seconds()
 	reported["notes-pull-mb"] = mb(pulled)
+	took, pulled = pull(nil)
+	reported["notes-pull-full-seconds"] = took.Seconds()
+	reported["notes-pull-full-mb"] = mb(pulled)
 
 	budgets := loadBudgets(t, filepath.Join(root, "scripts", "perf", "budgets.json"))
 	rep := report(budgets, "server", samples)
