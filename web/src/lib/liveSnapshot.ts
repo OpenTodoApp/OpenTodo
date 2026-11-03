@@ -9,6 +9,7 @@
 import { liveQuery, type Subscription } from 'dexie'
 import { useSyncExternalStore } from 'react'
 import { db } from './db'
+import { resettable } from './moduleState'
 
 export interface LiveSnapshot<T> {
   /** The current value, live; undefined until the first read arrives. */
@@ -30,6 +31,51 @@ function deepFreeze<T>(value: T): T {
   return value
 }
 
+/** Every snapshot, so a long pull can hold them all (holdLiveSnapshots). */
+const snapshots = new Set<{ hold(): void; release(): void }>()
+let holds = 0
+
+/** Registers a shared snapshot of its own kind (taskSnapshot) with the holds. */
+export function onHold(handle: { hold(): void; release(): void }): void {
+  snapshots.add(handle)
+}
+
+/** Whether a long pull holds the shared snapshots now. */
+export function isHeld(): boolean {
+  return holds > 0
+}
+
+resettable('liveSnapshot', () => {
+  if (holds > 0) {
+    holds = 0
+    for (const s of snapshots) s.release()
+  }
+})
+
+/** When a held snapshot is first read again; each later read waits twice as long, up to HELD_REFRESH_MAX_MS. */
+export const HELD_REFRESH_MS = 2_000
+export const HELD_REFRESH_MAX_MS = 16_000
+
+/**
+ * Holds every shared snapshot until the returned function is called
+ * (performance-10k, design D6): a first sync commits a page of a thousand ops
+ * every few hundred milliseconds, and each commit made every snapshot read its
+ * table again (all 10,000 tasks) and the screen render again, which also kept
+ * the next page's write waiting. While held, a snapshot is read again after
+ * HELD_REFRESH_MS, then after twice as long each time (a 2,000-row list takes
+ * a while to draw, and drawing it every two seconds starved the pull), so the
+ * screen still fills in as the pull goes.
+ */
+export function holdLiveSnapshots(): () => void {
+  if (holds++ === 0) for (const s of snapshots) s.hold()
+  let released = false
+  return () => {
+    if (released) return
+    released = true
+    if (--holds === 0) for (const s of snapshots) s.release()
+  }
+}
+
 /** A live query shared by every subscriber; restarts when tests swap the database. */
 export function liveSnapshot<T>(name: string, query: () => Promise<T>): LiveSnapshot<T> {
   let snapshot: T | undefined
@@ -37,28 +83,62 @@ export function liveSnapshot<T>(name: string, query: () => Promise<T>): LiveSnap
   /** The database the live query reads; tests swap it with useDatabase. */
   let source: unknown = null
   const listeners = new Set<() => void>()
+  let timer: ReturnType<typeof setTimeout> | null = null
+
+  function set(value: T) {
+    snapshot = import.meta.env.MODE === 'test' ? deepFreeze(value) : value
+    for (const l of listeners) l()
+  }
+
+  // A failed read keeps the last snapshot; the next write retries it.
+  const failed = (err: unknown) => console.warn(`live ${name}:`, err)
 
   function start() {
     sub?.unsubscribe()
+    // A restart after a hold keeps showing the last value until the new one arrives.
+    if (source !== db) snapshot = undefined
     source = db
-    snapshot = undefined
-    sub = liveQuery(query).subscribe({
-      next: (value) => {
-        snapshot = import.meta.env.MODE === 'test' ? deepFreeze(value) : value
-        for (const l of listeners) l()
-      },
-      // A failed read keeps the last snapshot; the next write retries it.
-      error: (err) => console.warn(`live ${name}:`, err),
-    })
+    sub = liveQuery(query).subscribe({ next: set, error: failed })
   }
+
+  /** One read while held. */
+  function refresh() {
+    const from = db
+    query().then((v) => { if (holds > 0 && listeners.size > 0 && from === db) set(v) }, failed)
+  }
+
+  const handle = {
+    hold() {
+      sub?.unsubscribe()
+      sub = null
+      const later = (wait: number) => {
+        timer = setTimeout(() => {
+          if (listeners.size > 0) refresh()
+          later(Math.min(wait * 2, HELD_REFRESH_MAX_MS))
+        }, wait)
+      }
+      later(HELD_REFRESH_MS)
+    },
+    release() {
+      if (timer) clearTimeout(timer)
+      timer = null
+      if (listeners.size > 0) start()
+    },
+  }
+  snapshots.add(handle)
 
   function subscribe(fn: () => void): () => void {
     listeners.add(fn)
-    if (!sub || source !== db) start()
+    if (holds > 0) {
+      if (snapshot === undefined || source !== db) {
+        source = db
+        refresh()
+      }
+    } else if (!sub || source !== db) start()
     return () => {
       listeners.delete(fn)
-      if (listeners.size === 0 && sub) {
-        sub.unsubscribe()
+      if (listeners.size === 0) {
+        sub?.unsubscribe()
         sub = null
         snapshot = undefined
       }

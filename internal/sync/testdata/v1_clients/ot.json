@@ -1,0 +1,970 @@
+{
+ "about": "Requests and responses of the ot client, recorded by the client compatibility recorder (OpenSpec change stability-contract, design D5). internal/tenant TestV1ClientsReplay replays them in order against the current server: every recorded response field must still be there with the same type. Recorded once per major version; never regenerated within it (new files may be added).",
+ "client": "ot",
+ "pairs": [
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/auth/register",
+    "auth": "none",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "email": "ot-1793670761501@example.com",
+     "name": "ot",
+     "password": "<password>"
+    }
+   },
+   "response": {
+    "status": 201,
+    "session": "session:16",
+    "body": {
+     "user": {
+      "id": "78f65195-ad69-4205-be27-ab3012decc66",
+      "email": "ot-1793670761501@example.com",
+      "name": "ot",
+      "role": "member",
+      "createdAt": 1793670761524
+     }
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/tokens",
+    "auth": "session:16",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "name": "ot"
+    }
+   },
+   "response": {
+    "status": 201,
+    "body": {
+     "secret": "<token:1>",
+     "token": {
+      "id": "d54272a2-4dc8-4300-8a04-5d3900913c88",
+      "name": "ot",
+      "scope": "full",
+      "createdAt": 1793670761532,
+      "lastUsedAt": null
+     }
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/me",
+    "auth": "token:1"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "agent_excluded_projects": [],
+     "attachments": {
+      "enabled": true,
+      "max_file_bytes": 26214400,
+      "quota_bytes": 1073741824,
+      "used_bytes": 0
+     },
+     "auth": {
+      "method": "token",
+      "scope": "full",
+      "token_id": "d54272a2-4dc8-4300-8a04-5d3900913c88",
+      "token_name": "ot"
+     },
+     "automations": {
+      "enabled": true,
+      "paused": false
+     },
+     "closed_list": {
+      "focus": "",
+      "focus_date": "",
+      "limit": 0,
+      "slots": "",
+      "slots_date": ""
+     },
+     "day_parts": false,
+     "encryption": {
+      "enabled": false,
+      "keyVersion": 0
+     },
+     "energy_levels": false,
+     "maps": true,
+     "mfa": {
+      "enrolled": false,
+      "recoveryCodesRemaining": 0,
+      "policy": "none",
+      "required": false,
+      "restricted": false
+     },
+     "minClientVersion": 1,
+     "speech": {
+      "connected": false
+     },
+     "time_sectors": false,
+     "user": {
+      "id": "78f65195-ad69-4205-be27-ab3012decc66",
+      "email": "ot-1793670761501@example.com",
+      "name": "ot",
+      "role": "member",
+      "createdAt": 1793670761524
+     }
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/projects",
+    "auth": "token:1",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "archived": false,
+     "color": "#14b8a6",
+     "name": "Garden"
+    }
+   },
+   "response": {
+    "status": 201,
+    "body": {
+     "aisles": false,
+     "archived": false,
+     "body_version": "0",
+     "color": "#14b8a6",
+     "created_at": 1793670761568,
+     "flow_mode": "",
+     "id": "cae452b8-7538-4956-befc-66b9dd908044",
+     "name": "Garden",
+     "position": 1793670761568,
+     "reusable": false,
+     "status": "active"
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/projects",
+    "auth": "token:1"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "projects": [
+      {
+       "aisles": false,
+       "archived": false,
+       "body_version": "0",
+       "color": "#14b8a6",
+       "created_at": 1793670761568,
+       "flow_mode": "",
+       "id": "cae452b8-7538-4956-befc-66b9dd908044",
+       "name": "Garden",
+       "position": 1793670761568,
+       "reusable": false,
+       "status": "active"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/labels",
+    "auth": "token:1"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "labels": []
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/me",
+    "auth": "token:1"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "agent_excluded_projects": [],
+     "attachments": {
+      "enabled": true,
+      "max_file_bytes": 26214400,
+      "quota_bytes": 1073741824,
+      "used_bytes": 0
+     },
+     "auth": {
+      "method": "token",
+      "scope": "full",
+      "token_id": "d54272a2-4dc8-4300-8a04-5d3900913c88",
+      "token_name": "ot"
+     },
+     "automations": {
+      "enabled": true,
+      "paused": false
+     },
+     "closed_list": {
+      "focus": "",
+      "focus_date": "",
+      "limit": 0,
+      "slots": "",
+      "slots_date": ""
+     },
+     "day_parts": false,
+     "encryption": {
+      "enabled": false,
+      "keyVersion": 0
+     },
+     "energy_levels": false,
+     "maps": true,
+     "mfa": {
+      "enrolled": false,
+      "recoveryCodesRemaining": 0,
+      "policy": "none",
+      "required": false,
+      "restricted": false
+     },
+     "minClientVersion": 1,
+     "speech": {
+      "connected": false
+     },
+     "time_sectors": false,
+     "user": {
+      "id": "78f65195-ad69-4205-be27-ab3012decc66",
+      "email": "ot-1793670761501@example.com",
+      "name": "ot",
+      "role": "member",
+      "createdAt": 1793670761524
+     }
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/labels",
+    "auth": "token:1",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "name": "home"
+    }
+   },
+   "response": {
+    "status": 201,
+    "body": {
+     "color": "#ef4444",
+     "created_at": 1793670761608,
+     "id": "e69a6239-e318-4f7b-bfb8-9fb55d6d008c",
+     "name": "home",
+     "position": 1793670761608
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/projects/cae452b8-7538-4956-befc-66b9dd908044",
+    "auth": "token:1"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "aisles": false,
+     "archived": false,
+     "body_version": "0",
+     "color": "#14b8a6",
+     "created_at": 1793670761568,
+     "flow_mode": "",
+     "id": "cae452b8-7538-4956-befc-66b9dd908044",
+     "name": "Garden",
+     "position": 1793670761568,
+     "reusable": false,
+     "status": "active"
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/tasks?default_reminder=true",
+    "auth": "token:1",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "due": {
+      "date": "2026-12-01"
+     },
+     "labels": [
+      "e69a6239-e318-4f7b-bfb8-9fb55d6d008c"
+     ],
+     "priority": 2,
+     "project_id": "cae452b8-7538-4956-befc-66b9dd908044",
+     "title": "Call the plumber"
+    }
+   },
+   "response": {
+    "status": 201,
+    "body": {
+     "appends": [],
+     "body_version": "0",
+     "created_at": 1793670761613,
+     "due": {
+      "date": "2026-12-01"
+     },
+     "energy": null,
+     "fields": {},
+     "id": "97a9cbaa-9168-4710-bdbd-2578c6abbdde",
+     "labels": [
+      "e69a6239-e318-4f7b-bfb8-9fb55d6d008c"
+     ],
+     "origin": null,
+     "position": 1793670761613,
+     "priority": 2,
+     "project_id": "cae452b8-7538-4956-befc-66b9dd908044",
+     "rotation": [],
+     "sector": null,
+     "title": "Call the plumber"
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/projects",
+    "auth": "token:1"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "projects": [
+      {
+       "aisles": false,
+       "archived": false,
+       "body_version": "0",
+       "color": "#14b8a6",
+       "created_at": 1793670761568,
+       "flow_mode": "",
+       "id": "cae452b8-7538-4956-befc-66b9dd908044",
+       "name": "Garden",
+       "position": 1793670761568,
+       "reusable": false,
+       "status": "active"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/workspaces",
+    "auth": "token:1"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "workspaces": [
+      {
+       "id": "d83b132b-5a8f-8ea7-96e4-247527e7f705",
+       "name": "Personal",
+       "icon": "",
+       "color": "",
+       "default": true,
+       "role": "owner",
+       "ownerId": "78f65195-ad69-4205-be27-ab3012decc66",
+       "members": [
+        {
+         "userId": "78f65195-ad69-4205-be27-ab3012decc66",
+         "name": "ot",
+         "role": "owner"
+        }
+       ],
+       "groups": []
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/tasks",
+    "auth": "token:1"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "tasks": [
+      {
+       "appends": [],
+       "body_version": "0",
+       "created_at": 1793670761613,
+       "due": {
+        "date": "2026-12-01"
+       },
+       "energy": null,
+       "fields": {},
+       "id": "97a9cbaa-9168-4710-bdbd-2578c6abbdde",
+       "labels": [
+        "e69a6239-e318-4f7b-bfb8-9fb55d6d008c"
+       ],
+       "origin": null,
+       "position": 1793670761613,
+       "priority": 2,
+       "project_id": "cae452b8-7538-4956-befc-66b9dd908044",
+       "rotation": [],
+       "sector": null,
+       "title": "Call the plumber"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/projects",
+    "auth": "token:1"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "projects": [
+      {
+       "aisles": false,
+       "archived": false,
+       "body_version": "0",
+       "color": "#14b8a6",
+       "created_at": 1793670761568,
+       "flow_mode": "",
+       "id": "cae452b8-7538-4956-befc-66b9dd908044",
+       "name": "Garden",
+       "position": 1793670761568,
+       "reusable": false,
+       "status": "active"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/workspaces",
+    "auth": "token:1"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "workspaces": [
+      {
+       "id": "d83b132b-5a8f-8ea7-96e4-247527e7f705",
+       "name": "Personal",
+       "icon": "",
+       "color": "",
+       "default": true,
+       "role": "owner",
+       "ownerId": "78f65195-ad69-4205-be27-ab3012decc66",
+       "members": [
+        {
+         "userId": "78f65195-ad69-4205-be27-ab3012decc66",
+         "name": "ot",
+         "role": "owner"
+        }
+       ],
+       "groups": []
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/tasks",
+    "auth": "token:1"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "tasks": [
+      {
+       "appends": [],
+       "body_version": "0",
+       "created_at": 1793670761613,
+       "due": {
+        "date": "2026-12-01"
+       },
+       "energy": null,
+       "fields": {},
+       "id": "97a9cbaa-9168-4710-bdbd-2578c6abbdde",
+       "labels": [
+        "e69a6239-e318-4f7b-bfb8-9fb55d6d008c"
+       ],
+       "origin": null,
+       "position": 1793670761613,
+       "priority": 2,
+       "project_id": "cae452b8-7538-4956-befc-66b9dd908044",
+       "rotation": [],
+       "sector": null,
+       "title": "Call the plumber"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/me",
+    "auth": "token:1"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "agent_excluded_projects": [],
+     "attachments": {
+      "enabled": true,
+      "max_file_bytes": 26214400,
+      "quota_bytes": 1073741824,
+      "used_bytes": 0
+     },
+     "auth": {
+      "method": "token",
+      "scope": "full",
+      "token_id": "d54272a2-4dc8-4300-8a04-5d3900913c88",
+      "token_name": "ot"
+     },
+     "automations": {
+      "enabled": true,
+      "paused": false
+     },
+     "closed_list": {
+      "focus": "",
+      "focus_date": "",
+      "limit": 0,
+      "slots": "",
+      "slots_date": ""
+     },
+     "day_parts": false,
+     "encryption": {
+      "enabled": false,
+      "keyVersion": 0
+     },
+     "energy_levels": false,
+     "maps": true,
+     "mfa": {
+      "enrolled": false,
+      "recoveryCodesRemaining": 0,
+      "policy": "none",
+      "required": false,
+      "restricted": false
+     },
+     "minClientVersion": 1,
+     "speech": {
+      "connected": false
+     },
+     "time_sectors": false,
+     "user": {
+      "id": "78f65195-ad69-4205-be27-ab3012decc66",
+      "email": "ot-1793670761501@example.com",
+      "name": "ot",
+      "role": "member",
+      "createdAt": 1793670761524
+     }
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/tasks",
+    "auth": "token:1"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "tasks": [
+      {
+       "appends": [],
+       "body_version": "0",
+       "created_at": 1793670761613,
+       "due": {
+        "date": "2026-12-01"
+       },
+       "energy": null,
+       "fields": {},
+       "id": "97a9cbaa-9168-4710-bdbd-2578c6abbdde",
+       "labels": [
+        "e69a6239-e318-4f7b-bfb8-9fb55d6d008c"
+       ],
+       "origin": null,
+       "position": 1793670761613,
+       "priority": 2,
+       "project_id": "cae452b8-7538-4956-befc-66b9dd908044",
+       "rotation": [],
+       "sector": null,
+       "title": "Call the plumber"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/reminders",
+    "auth": "token:1"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "reminders": []
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/tasks",
+    "auth": "token:1"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "tasks": [
+      {
+       "appends": [],
+       "body_version": "0",
+       "created_at": 1793670761613,
+       "due": {
+        "date": "2026-12-01"
+       },
+       "energy": null,
+       "fields": {},
+       "id": "97a9cbaa-9168-4710-bdbd-2578c6abbdde",
+       "labels": [
+        "e69a6239-e318-4f7b-bfb8-9fb55d6d008c"
+       ],
+       "origin": null,
+       "position": 1793670761613,
+       "priority": 2,
+       "project_id": "cae452b8-7538-4956-befc-66b9dd908044",
+       "rotation": [],
+       "sector": null,
+       "title": "Call the plumber"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/me",
+    "auth": "token:1"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "agent_excluded_projects": [],
+     "attachments": {
+      "enabled": true,
+      "max_file_bytes": 26214400,
+      "quota_bytes": 1073741824,
+      "used_bytes": 0
+     },
+     "auth": {
+      "method": "token",
+      "scope": "full",
+      "token_id": "d54272a2-4dc8-4300-8a04-5d3900913c88",
+      "token_name": "ot"
+     },
+     "automations": {
+      "enabled": true,
+      "paused": false
+     },
+     "closed_list": {
+      "focus": "",
+      "focus_date": "",
+      "limit": 0,
+      "slots": "",
+      "slots_date": ""
+     },
+     "day_parts": false,
+     "encryption": {
+      "enabled": false,
+      "keyVersion": 0
+     },
+     "energy_levels": false,
+     "maps": true,
+     "mfa": {
+      "enrolled": false,
+      "recoveryCodesRemaining": 0,
+      "policy": "none",
+      "required": false,
+      "restricted": false
+     },
+     "minClientVersion": 1,
+     "speech": {
+      "connected": false
+     },
+     "time_sectors": false,
+     "user": {
+      "id": "78f65195-ad69-4205-be27-ab3012decc66",
+      "email": "ot-1793670761501@example.com",
+      "name": "ot",
+      "role": "member",
+      "createdAt": 1793670761524
+     }
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "PATCH",
+    "path": "/api/v1/tasks/97a9cbaa-9168-4710-bdbd-2578c6abbdde",
+    "auth": "token:1",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "priority": 1
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "appends": [],
+     "body_version": "0",
+     "created_at": 1793670761613,
+     "due": {
+      "date": "2026-12-01"
+     },
+     "energy": null,
+     "fields": {},
+     "id": "97a9cbaa-9168-4710-bdbd-2578c6abbdde",
+     "labels": [
+      "e69a6239-e318-4f7b-bfb8-9fb55d6d008c"
+     ],
+     "origin": null,
+     "position": 1793670761613,
+     "priority": 1,
+     "project_id": "cae452b8-7538-4956-befc-66b9dd908044",
+     "rotation": [],
+     "sector": null,
+     "title": "Call the plumber"
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/tasks",
+    "auth": "token:1"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "tasks": [
+      {
+       "appends": [],
+       "body_version": "0",
+       "created_at": 1793670761613,
+       "due": {
+        "date": "2026-12-01"
+       },
+       "energy": null,
+       "fields": {},
+       "id": "97a9cbaa-9168-4710-bdbd-2578c6abbdde",
+       "labels": [
+        "e69a6239-e318-4f7b-bfb8-9fb55d6d008c"
+       ],
+       "origin": null,
+       "position": 1793670761613,
+       "priority": 1,
+       "project_id": "cae452b8-7538-4956-befc-66b9dd908044",
+       "rotation": [],
+       "sector": null,
+       "title": "Call the plumber"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/me",
+    "auth": "token:1"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "agent_excluded_projects": [],
+     "attachments": {
+      "enabled": true,
+      "max_file_bytes": 26214400,
+      "quota_bytes": 1073741824,
+      "used_bytes": 0
+     },
+     "auth": {
+      "method": "token",
+      "scope": "full",
+      "token_id": "d54272a2-4dc8-4300-8a04-5d3900913c88",
+      "token_name": "ot"
+     },
+     "automations": {
+      "enabled": true,
+      "paused": false
+     },
+     "closed_list": {
+      "focus": "",
+      "focus_date": "",
+      "limit": 0,
+      "slots": "",
+      "slots_date": ""
+     },
+     "day_parts": false,
+     "encryption": {
+      "enabled": false,
+      "keyVersion": 0
+     },
+     "energy_levels": false,
+     "maps": true,
+     "mfa": {
+      "enrolled": false,
+      "recoveryCodesRemaining": 0,
+      "policy": "none",
+      "required": false,
+      "restricted": false
+     },
+     "minClientVersion": 1,
+     "speech": {
+      "connected": false
+     },
+     "time_sectors": false,
+     "user": {
+      "id": "78f65195-ad69-4205-be27-ab3012decc66",
+      "email": "ot-1793670761501@example.com",
+      "name": "ot",
+      "role": "member",
+      "createdAt": 1793670761524
+     }
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "PATCH",
+    "path": "/api/v1/tasks/97a9cbaa-9168-4710-bdbd-2578c6abbdde",
+    "auth": "token:1",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "completed_at": 1793670761697
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "appends": [],
+     "body_version": "0",
+     "completed_at": 1793670761697,
+     "completed_by": "78f65195-ad69-4205-be27-ab3012decc66",
+     "created_at": 1793670761613,
+     "due": {
+      "date": "2026-12-01"
+     },
+     "energy": null,
+     "fields": {},
+     "id": "97a9cbaa-9168-4710-bdbd-2578c6abbdde",
+     "labels": [
+      "e69a6239-e318-4f7b-bfb8-9fb55d6d008c"
+     ],
+     "origin": null,
+     "position": 1793670761613,
+     "priority": 1,
+     "project_id": "cae452b8-7538-4956-befc-66b9dd908044",
+     "rotation": [],
+     "sector": null,
+     "title": "Call the plumber"
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/projects",
+    "auth": "token:1"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "projects": [
+      {
+       "aisles": false,
+       "archived": false,
+       "body_version": "0",
+       "color": "#14b8a6",
+       "created_at": 1793670761568,
+       "flow_mode": "",
+       "id": "cae452b8-7538-4956-befc-66b9dd908044",
+       "name": "Garden",
+       "position": 1793670761568,
+       "reusable": false,
+       "status": "active"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/workspaces",
+    "auth": "token:1"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "workspaces": [
+      {
+       "id": "d83b132b-5a8f-8ea7-96e4-247527e7f705",
+       "name": "Personal",
+       "icon": "",
+       "color": "",
+       "default": true,
+       "role": "owner",
+       "ownerId": "78f65195-ad69-4205-be27-ab3012decc66",
+       "members": [
+        {
+         "userId": "78f65195-ad69-4205-be27-ab3012decc66",
+         "name": "ot",
+         "role": "owner"
+        }
+       ],
+       "groups": []
+      }
+     ]
+    }
+   }
+  }
+ ]
+}

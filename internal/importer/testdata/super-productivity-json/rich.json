@@ -1,0 +1,1412 @@
+{
+  "timestamp": 1793661869130,
+  "lastUpdate": 1793661869130,
+  "crossModelVersion": 4.5,
+  "data": {
+    "task": {
+      "ids": [
+        "xqwWBDUgSWuMaIAisyczJ",
+        "ti7avY7Z8FxH8rFUbgL91",
+        "2NH49KZP8iTxjiBLjooTg",
+        "PT0BmLSq9xEIBwz_NTb5h",
+        "hjRARvwptbbL0aMzOUJBi",
+        "zBTP620eHTcCmZocMA73r",
+        "reszDEPELUyx14O0C8aqo",
+        "K7CJEbpCscgy7hU1NcaUR",
+        "M7Q4UaDENTrJT1m2ZEnjh",
+        "1x5gCtkWgdr65YcwcE1GW",
+        "V_vKP3uhC3GHt10bfihdW",
+        "8EYxnzCWiiQB30DoWzyP-",
+        "J7oSVbMJXNSgH7FPzSqu6",
+        "VPntATY3GUYKHt8aCubGK",
+        "mHJT3a1Ion3Uxr4p3ns6X",
+        "nJ1pgFdxNV2eIupk37pyc",
+        "quM7W4z9M6qrsF9Fwe38f"
+      ],
+      "entities": {
+        "xqwWBDUgSWuMaIAisyczJ": {
+          "id": "xqwWBDUgSWuMaIAisyczJ",
+          "subTaskIds": [
+            "VPntATY3GUYKHt8aCubGK",
+            "mHJT3a1Ion3Uxr4p3ns6X"
+          ],
+          "timeSpentOnDay": {},
+          "timeSpent": 0,
+          "timeEstimate": 0,
+          "isDone": false,
+          "title": "Title 1",
+          "tagIds": [],
+          "created": 1793661047896,
+          "attachments": [],
+          "projectId": "_SRrzMICqpf4NQnVtO6YK"
+        },
+        "ti7avY7Z8FxH8rFUbgL91": {
+          "id": "ti7avY7Z8FxH8rFUbgL91",
+          "subTaskIds": [],
+          "timeSpentOnDay": {},
+          "timeSpent": 0,
+          "timeEstimate": 0,
+          "isDone": false,
+          "title": "Title 2",
+          "tagIds": [],
+          "created": 1793661048979,
+          "attachments": [],
+          "projectId": "_SRrzMICqpf4NQnVtO6YK",
+          "dueDay": "2026-11-03"
+        },
+        "2NH49KZP8iTxjiBLjooTg": {
+          "id": "2NH49KZP8iTxjiBLjooTg",
+          "subTaskIds": [],
+          "timeSpentOnDay": {
+            "2026-11-03": 1500000,
+            "2026-11-02": 5400000
+          },
+          "timeSpent": 6900000,
+          "timeEstimate": 3600000,
+          "isDone": true,
+          "title": "Title 3",
+          "tagIds": [],
+          "created": 1793661181128,
+          "attachments": [],
+          "projectId": "NMXM1f4fArETKm_TUoCf9",
+          "modified": 1793661716223,
+          "doneOn": 1793661716223
+        },
+        "PT0BmLSq9xEIBwz_NTb5h": {
+          "id": "PT0BmLSq9xEIBwz_NTb5h",
+          "subTaskIds": [],
+          "timeSpentOnDay": {},
+          "timeSpent": 0,
+          "timeEstimate": 1800000,
+          "isDone": false,
+          "title": "Title 4",
+          "tagIds": [
+            "Bzy_iKEbofquutkOkdxUJ"
+          ],
+          "created": 1793661223929,
+          "attachments": [],
+          "projectId": "NMXM1f4fArETKm_TUoCf9",
+          "dueWithTime": 1793797200000,
+          "hasPlannedTime": true,
+          "remindAt": 1793797200000,
+          "modified": 1793661658810
+        },
+        "hjRARvwptbbL0aMzOUJBi": {
+          "id": "hjRARvwptbbL0aMzOUJBi",
+          "subTaskIds": [],
+          "timeSpentOnDay": {},
+          "timeSpent": 0,
+          "timeEstimate": 0,
+          "isDone": false,
+          "title": "Title 5",
+          "tagIds": [
+            "VcniRWSr45imajrQu6YYZ"
+          ],
+          "created": 1793661248758,
+          "attachments": [],
+          "projectId": "NMXM1f4fArETKm_TUoCf9",
+          "deadlineDay": "2026-11-20"
+        },
+        "zBTP620eHTcCmZocMA73r": {
+          "id": "zBTP620eHTcCmZocMA73r",
+          "subTaskIds": [],
+          "timeSpentOnDay": {},
+          "timeSpent": 0,
+          "timeEstimate": 0,
+          "isDone": false,
+          "title": "Title 6",
+          "tagIds": [],
+          "created": 1793661256211,
+          "attachments": [],
+          "projectId": "NMXM1f4fArETKm_TUoCf9",
+          "dueDay": "2026-11-03",
+          "repeatCfgId": "klIQaQqOXr99BtPnMUBKq",
+          "modified": 1793661432576,
+          "priority": null
+        },
+        "reszDEPELUyx14O0C8aqo": {
+          "id": "reszDEPELUyx14O0C8aqo",
+          "subTaskIds": [],
+          "timeSpentOnDay": {},
+          "timeSpent": 0,
+          "timeEstimate": 0,
+          "isDone": false,
+          "title": "Title 7",
+          "tagIds": [],
+          "created": 1793876400000,
+          "attachments": [],
+          "projectId": "NMXM1f4fArETKm_TUoCf9",
+          "dueDay": "2026-11-05",
+          "repeatCfgId": "UPXTx4nYJUHZUX2sop-wK",
+          "modified": 1793661531409,
+          "priority": null
+        },
+        "K7CJEbpCscgy7hU1NcaUR": {
+          "id": "K7CJEbpCscgy7hU1NcaUR",
+          "subTaskIds": [],
+          "timeSpentOnDay": {},
+          "timeSpent": 0,
+          "timeEstimate": 0,
+          "isDone": false,
+          "title": "Title 8",
+          "tagIds": [],
+          "created": 1794308400000,
+          "attachments": [],
+          "projectId": "NMXM1f4fArETKm_TUoCf9",
+          "dueDay": "2026-11-10",
+          "repeatCfgId": "tYk9G5Ru0T3lzH3CHVbKL",
+          "modified": 1793661552794,
+          "priority": null
+        },
+        "M7Q4UaDENTrJT1m2ZEnjh": {
+          "id": "M7Q4UaDENTrJT1m2ZEnjh",
+          "subTaskIds": [],
+          "timeSpentOnDay": {},
+          "timeSpent": 0,
+          "timeEstimate": 0,
+          "isDone": false,
+          "title": "Title 9",
+          "tagIds": [],
+          "created": 1796036400000,
+          "attachments": [],
+          "projectId": "NMXM1f4fArETKm_TUoCf9",
+          "dueDay": "2026-11-30",
+          "repeatCfgId": "HGWrTdftAKXu5eKvUkgB9",
+          "modified": 1793661563315,
+          "priority": null
+        },
+        "1x5gCtkWgdr65YcwcE1GW": {
+          "id": "1x5gCtkWgdr65YcwcE1GW",
+          "subTaskIds": [],
+          "timeSpentOnDay": {},
+          "timeSpent": 0,
+          "timeEstimate": 0,
+          "isDone": false,
+          "title": "Title 10",
+          "tagIds": [],
+          "created": 1793790000000,
+          "attachments": [],
+          "projectId": "NMXM1f4fArETKm_TUoCf9",
+          "dueDay": "2026-11-04",
+          "repeatCfgId": "C59y7eCV80BekPf1m0Spu",
+          "modified": 1793661598732,
+          "priority": null
+        },
+        "V_vKP3uhC3GHt10bfihdW": {
+          "id": "V_vKP3uhC3GHt10bfihdW",
+          "subTaskIds": [],
+          "timeSpentOnDay": {},
+          "timeSpent": 0,
+          "timeEstimate": 0,
+          "isDone": false,
+          "title": "Title 11",
+          "tagIds": [],
+          "created": 1793661278579,
+          "attachments": [],
+          "projectId": "_SRrzMICqpf4NQnVtO6YK",
+          "dueDay": "2026-11-06"
+        },
+        "8EYxnzCWiiQB30DoWzyP-": {
+          "id": "8EYxnzCWiiQB30DoWzyP-",
+          "subTaskIds": [],
+          "timeSpentOnDay": {},
+          "timeSpent": 0,
+          "timeEstimate": 2700000,
+          "isDone": false,
+          "title": "Title 12",
+          "tagIds": [
+            "xovpCrfuu1AuawGu_wqqT"
+          ],
+          "created": 1793661283743,
+          "attachments": [],
+          "projectId": "_SRrzMICqpf4NQnVtO6YK",
+          "dueDay": "2026-11-06"
+        },
+        "J7oSVbMJXNSgH7FPzSqu6": {
+          "id": "J7oSVbMJXNSgH7FPzSqu6",
+          "subTaskIds": [],
+          "timeSpentOnDay": {},
+          "timeSpent": 0,
+          "timeEstimate": 2700000,
+          "isDone": false,
+          "title": "Title 13",
+          "tagIds": [
+            "xovpCrfuu1AuawGu_wqqT"
+          ],
+          "created": 1793661285913,
+          "attachments": [],
+          "projectId": "_SRrzMICqpf4NQnVtO6YK",
+          "dueDay": "2026-11-03"
+        },
+        "VPntATY3GUYKHt8aCubGK": {
+          "id": "VPntATY3GUYKHt8aCubGK",
+          "subTaskIds": [],
+          "timeSpentOnDay": {},
+          "timeSpent": 0,
+          "timeEstimate": 0,
+          "isDone": true,
+          "title": "Title 14",
+          "tagIds": [],
+          "created": 1793661296501,
+          "attachments": [],
+          "projectId": "_SRrzMICqpf4NQnVtO6YK",
+          "parentId": "xqwWBDUgSWuMaIAisyczJ",
+          "doneOn": 1793661694967,
+          "modified": 1793661694967
+        },
+        "mHJT3a1Ion3Uxr4p3ns6X": {
+          "id": "mHJT3a1Ion3Uxr4p3ns6X",
+          "subTaskIds": [],
+          "timeSpentOnDay": {},
+          "timeSpent": 0,
+          "timeEstimate": 0,
+          "isDone": false,
+          "title": "Title 15",
+          "tagIds": [],
+          "created": 1793661302762,
+          "attachments": [],
+          "projectId": "_SRrzMICqpf4NQnVtO6YK",
+          "parentId": "xqwWBDUgSWuMaIAisyczJ"
+        },
+        "nJ1pgFdxNV2eIupk37pyc": {
+          "id": "nJ1pgFdxNV2eIupk37pyc",
+          "subTaskIds": [],
+          "timeSpentOnDay": {},
+          "timeSpent": 0,
+          "timeEstimate": 0,
+          "isDone": false,
+          "title": "Title 16",
+          "tagIds": [],
+          "created": 1793661839425,
+          "attachments": [],
+          "projectId": "NMXM1f4fArETKm_TUoCf9",
+          "issueType": "GITHUB",
+          "issueProviderId": "qxahkR-n9ts5K0ZImUTiH",
+          "issueId": "4988",
+          "issueWasUpdated": false,
+          "issueLastUpdated": 0,
+          "dueDay": "2026-11-03",
+          "issueAttachmentNr": 0,
+          "issueLastSyncedValues": {
+            "title": "Title 16"
+          }
+        },
+        "quM7W4z9M6qrsF9Fwe38f": {
+          "id": "quM7W4z9M6qrsF9Fwe38f",
+          "subTaskIds": [],
+          "timeSpentOnDay": {},
+          "timeSpent": 0,
+          "timeEstimate": 0,
+          "isDone": false,
+          "title": "Title 17",
+          "tagIds": [],
+          "created": 1793661859581,
+          "attachments": [],
+          "projectId": "INBOX_PROJECT"
+        }
+      },
+      "currentTaskId": null,
+      "selectedTaskId": null,
+      "taskDetailTargetPanel": null,
+      "lastCurrentTaskId": null,
+      "isDataLoaded": true,
+      "dismissedCalendarAutoImportEventIdsByProvider": {}
+    },
+    "project": {
+      "ids": [
+        "INBOX_PROJECT",
+        "_SRrzMICqpf4NQnVtO6YK",
+        "NMXM1f4fArETKm_TUoCf9"
+      ],
+      "entities": {
+        "INBOX_PROJECT": {
+          "isHiddenFromMenu": false,
+          "isArchived": false,
+          "isDone": false,
+          "doneOn": null,
+          "isEnableBacklog": false,
+          "backlogTaskIds": [],
+          "noteIds": [],
+          "advancedCfg": {
+            "worklogExportSettings": {
+              "cols": [
+                "DATE",
+                "START",
+                "END",
+                "TIME_CLOCK",
+                "TITLES_INCLUDING_SUB"
+              ],
+              "roundWorkTimeTo": null,
+              "roundStartTimeTo": null,
+              "roundEndTimeTo": null,
+              "separateTasksBy": " | ",
+              "groupBy": "DATE"
+            }
+          },
+          "theme": {
+            "isAutoContrast": true,
+            "isDisableBackgroundTint": false,
+            "primary": "rgb(144, 187, 165)",
+            "huePrimary": "500",
+            "accent": "#ff4081",
+            "hueAccent": "500",
+            "warn": "#e11826",
+            "hueWarn": "500",
+            "backgroundImageDark": "",
+            "backgroundImageLight": null,
+            "backgroundOverlayOpacity": 20,
+            "backgroundImageBlur": 0
+          },
+          "taskIds": [
+            "quM7W4z9M6qrsF9Fwe38f"
+          ],
+          "icon": "inbox",
+          "id": "INBOX_PROJECT",
+          "title": "Inbox"
+        },
+        "_SRrzMICqpf4NQnVtO6YK": {
+          "isHiddenFromMenu": false,
+          "isArchived": false,
+          "isDone": false,
+          "doneOn": null,
+          "isEnableBacklog": false,
+          "backlogTaskIds": [],
+          "noteIds": [],
+          "advancedCfg": {
+            "worklogExportSettings": {
+              "cols": [
+                "DATE",
+                "START",
+                "END",
+                "TIME_CLOCK",
+                "TITLES_INCLUDING_SUB"
+              ],
+              "roundWorkTimeTo": null,
+              "roundStartTimeTo": null,
+              "roundEndTimeTo": null,
+              "separateTasksBy": " | ",
+              "groupBy": "DATE"
+            }
+          },
+          "theme": {
+            "isAutoContrast": true,
+            "isDisableBackgroundTint": false,
+            "primary": "#ff7043",
+            "huePrimary": "500",
+            "accent": "#ff4081",
+            "hueAccent": "500",
+            "warn": "#e11826",
+            "hueWarn": "500",
+            "backgroundImageDark": null,
+            "backgroundImageLight": null,
+            "backgroundOverlayOpacity": 20,
+            "backgroundImageBlur": 0
+          },
+          "taskIds": [
+            "J7oSVbMJXNSgH7FPzSqu6",
+            "8EYxnzCWiiQB30DoWzyP-",
+            "V_vKP3uhC3GHt10bfihdW",
+            "ti7avY7Z8FxH8rFUbgL91",
+            "xqwWBDUgSWuMaIAisyczJ"
+          ],
+          "icon": null,
+          "id": "_SRrzMICqpf4NQnVtO6YK",
+          "title": "Title 18"
+        },
+        "NMXM1f4fArETKm_TUoCf9": {
+          "isHiddenFromMenu": false,
+          "isArchived": false,
+          "isDone": false,
+          "doneOn": null,
+          "isEnableBacklog": false,
+          "backlogTaskIds": [],
+          "noteIds": [],
+          "advancedCfg": {
+            "worklogExportSettings": {
+              "cols": [
+                "DATE",
+                "START",
+                "END",
+                "TIME_CLOCK",
+                "TITLES_INCLUDING_SUB"
+              ],
+              "roundWorkTimeTo": null,
+              "roundStartTimeTo": null,
+              "roundEndTimeTo": null,
+              "separateTasksBy": " | ",
+              "groupBy": "DATE"
+            }
+          },
+          "theme": {
+            "isAutoContrast": true,
+            "isDisableBackgroundTint": false,
+            "primary": "#29b6f6",
+            "huePrimary": "500",
+            "accent": "#ff4081",
+            "hueAccent": "500",
+            "warn": "#e11826",
+            "hueWarn": "500",
+            "backgroundImageDark": null,
+            "backgroundImageLight": null,
+            "backgroundOverlayOpacity": 20,
+            "backgroundImageBlur": 0
+          },
+          "taskIds": [
+            "nJ1pgFdxNV2eIupk37pyc",
+            "1x5gCtkWgdr65YcwcE1GW",
+            "M7Q4UaDENTrJT1m2ZEnjh",
+            "K7CJEbpCscgy7hU1NcaUR",
+            "reszDEPELUyx14O0C8aqo",
+            "zBTP620eHTcCmZocMA73r",
+            "hjRARvwptbbL0aMzOUJBi",
+            "PT0BmLSq9xEIBwz_NTb5h",
+            "2NH49KZP8iTxjiBLjooTg"
+          ],
+          "icon": null,
+          "id": "NMXM1f4fArETKm_TUoCf9",
+          "title": "Title 19"
+        }
+      }
+    },
+    "tag": {
+      "ids": [
+        "TODAY",
+        "VcniRWSr45imajrQu6YYZ",
+        "xovpCrfuu1AuawGu_wqqT",
+        "Bzy_iKEbofquutkOkdxUJ"
+      ],
+      "entities": {
+        "TODAY": {
+          "color": null,
+          "created": 1793660990475,
+          "advancedCfg": {
+            "worklogExportSettings": {
+              "cols": [
+                "DATE",
+                "START",
+                "END",
+                "TIME_CLOCK",
+                "TITLES_INCLUDING_SUB"
+              ],
+              "roundWorkTimeTo": null,
+              "roundStartTimeTo": null,
+              "roundEndTimeTo": null,
+              "separateTasksBy": " | ",
+              "groupBy": "DATE"
+            }
+          },
+          "theme": {
+            "isAutoContrast": true,
+            "isDisableBackgroundTint": true,
+            "primary": "#6495ED",
+            "huePrimary": "400",
+            "accent": "#ff4081",
+            "hueAccent": "500",
+            "warn": "#e11826",
+            "hueWarn": "500",
+            "backgroundImageDark": "",
+            "backgroundImageLight": null,
+            "backgroundOverlayOpacity": 20,
+            "backgroundImageBlur": 0
+          },
+          "taskIds": [
+            "nJ1pgFdxNV2eIupk37pyc",
+            "ti7avY7Z8FxH8rFUbgL91",
+            "J7oSVbMJXNSgH7FPzSqu6",
+            "zBTP620eHTcCmZocMA73r"
+          ],
+          "icon": "wb_sunny",
+          "id": "TODAY",
+          "title": "Title 20"
+        },
+        "VcniRWSr45imajrQu6YYZ": {
+          "color": "#ef5350",
+          "created": 1793661248756,
+          "advancedCfg": {
+            "worklogExportSettings": {
+              "cols": [
+                "DATE",
+                "START",
+                "END",
+                "TIME_CLOCK",
+                "TITLES_INCLUDING_SUB"
+              ],
+              "roundWorkTimeTo": null,
+              "roundStartTimeTo": null,
+              "roundEndTimeTo": null,
+              "separateTasksBy": " | ",
+              "groupBy": "DATE"
+            }
+          },
+          "theme": {
+            "isAutoContrast": true,
+            "isDisableBackgroundTint": false,
+            "primary": "#a05db1",
+            "huePrimary": "500",
+            "accent": "#ff4081",
+            "hueAccent": "500",
+            "warn": "#e11826",
+            "hueWarn": "500",
+            "backgroundImageDark": null,
+            "backgroundImageLight": null,
+            "backgroundOverlayOpacity": 20,
+            "backgroundImageBlur": 0
+          },
+          "taskIds": [
+            "hjRARvwptbbL0aMzOUJBi"
+          ],
+          "icon": null,
+          "id": "VcniRWSr45imajrQu6YYZ",
+          "title": "Title 21"
+        },
+        "xovpCrfuu1AuawGu_wqqT": {
+          "color": "#ff7043",
+          "created": 1793661283741,
+          "advancedCfg": {
+            "worklogExportSettings": {
+              "cols": [
+                "DATE",
+                "START",
+                "END",
+                "TIME_CLOCK",
+                "TITLES_INCLUDING_SUB"
+              ],
+              "roundWorkTimeTo": null,
+              "roundStartTimeTo": null,
+              "roundEndTimeTo": null,
+              "separateTasksBy": " | ",
+              "groupBy": "DATE"
+            }
+          },
+          "theme": {
+            "isAutoContrast": true,
+            "isDisableBackgroundTint": false,
+            "primary": "#a05db1",
+            "huePrimary": "500",
+            "accent": "#ff4081",
+            "hueAccent": "500",
+            "warn": "#e11826",
+            "hueWarn": "500",
+            "backgroundImageDark": null,
+            "backgroundImageLight": null,
+            "backgroundOverlayOpacity": 20,
+            "backgroundImageBlur": 0
+          },
+          "taskIds": [
+            "J7oSVbMJXNSgH7FPzSqu6",
+            "8EYxnzCWiiQB30DoWzyP-"
+          ],
+          "icon": null,
+          "id": "xovpCrfuu1AuawGu_wqqT",
+          "title": "Title 22"
+        },
+        "Bzy_iKEbofquutkOkdxUJ": {
+          "color": "#d4e157",
+          "created": 1793661658807,
+          "advancedCfg": {
+            "worklogExportSettings": {
+              "cols": [
+                "DATE",
+                "START",
+                "END",
+                "TIME_CLOCK",
+                "TITLES_INCLUDING_SUB"
+              ],
+              "roundWorkTimeTo": null,
+              "roundStartTimeTo": null,
+              "roundEndTimeTo": null,
+              "separateTasksBy": " | ",
+              "groupBy": "DATE"
+            }
+          },
+          "theme": {
+            "isAutoContrast": true,
+            "isDisableBackgroundTint": false,
+            "primary": "#a05db1",
+            "huePrimary": "500",
+            "accent": "#ff4081",
+            "hueAccent": "500",
+            "warn": "#e11826",
+            "hueWarn": "500",
+            "backgroundImageDark": null,
+            "backgroundImageLight": null,
+            "backgroundOverlayOpacity": 20,
+            "backgroundImageBlur": 0
+          },
+          "taskIds": [
+            "PT0BmLSq9xEIBwz_NTb5h"
+          ],
+          "icon": null,
+          "id": "Bzy_iKEbofquutkOkdxUJ",
+          "title": "Title 23"
+        }
+      }
+    },
+    "globalConfig": {
+      "appFeatures": {
+        "isTimeTrackingEnabled": true,
+        "isFocusModeEnabled": false,
+        "isSchedulerEnabled": false,
+        "isPlannerEnabled": true,
+        "isBoardsEnabled": false,
+        "isScheduleDayPanelEnabled": false,
+        "isIssuesPanelEnabled": true,
+        "isProjectNotesEnabled": true,
+        "isSyncIconEnabled": true,
+        "isSearchEnabled": true,
+        "isDonatePageEnabled": true,
+        "isHabitsEnabled": false,
+        "isFinishDayEnabled": false
+      },
+      "localization": {},
+      "tasks": {
+        "isConfirmBeforeDelete": true,
+        "isAutoAddWorkedOnToToday": true,
+        "isAutoMarkParentAsDone": false,
+        "isTrayShowCurrent": true,
+        "defaultProjectId": "INBOX_PROJECT",
+        "isMarkdownFormattingInNotesEnabled": true,
+        "notesTemplate": "**How can I best achieve it now?**\n\n**What do I want?**\n\n**Why do I want it?**\n",
+        "priorityIconPreset": "chevrons"
+      },
+      "misc": {
+        "isConfirmBeforeExit": false,
+        "isConfirmBeforeExitWithoutFinishDay": true,
+        "isMinimizeToTray": false,
+        "isShowDueTaskBadge": false,
+        "isCheckForUpdates": true,
+        "isTrayShowCurrentCountdown": true,
+        "startOfNextDay": 0,
+        "startOfNextDayTime": "00:00",
+        "isDisableAnimations": false,
+        "isVerticalActionBar": false,
+        "isDisableCelebration": true,
+        "isShowProductivityTipLonger": false,
+        "customTheme": "default",
+        "defaultStartPage": 0,
+        "backgroundImageDark": null,
+        "backgroundImageLight": null
+      },
+      "shortSyntax": {
+        "isEnableProject": true,
+        "isEnableDue": true,
+        "isEnableDeadline": false,
+        "isEnablePriority": true,
+        "isEnableTag": true,
+        "urlBehavior": "keep"
+      },
+      "evaluation": {
+        "isHideEvaluationSheet": false
+      },
+      "idle": {
+        "isOnlyOpenIdleWhenCurrentTask": false,
+        "isSuppressIdleDuringFocusMode": true,
+        "isEnableIdleTimeTracking": true,
+        "minIdleTime": 300000
+      },
+      "takeABreak": {
+        "isTakeABreakEnabled": true,
+        "isLockScreen": false,
+        "isTimedFullScreenBlocker": false,
+        "timedFullScreenBlockerDuration": 8000,
+        "isFocusWindow": false,
+        "takeABreakMessage": "You have been working for ${duration} without one. Go away from the computer! Take a short walk! Makes you more productive in the long run!",
+        "takeABreakMinWorkingTime": 3600000,
+        "takeABreakSnoozeTime": 900000,
+        "motivationalImgs": []
+      },
+      "dominaMode": {
+        "isEnabled": false,
+        "interval": 300000,
+        "volume": 75,
+        "text": "Text 1",
+        "voice": ""
+      },
+      "focusMode": {
+        "isSkipPreparation": false,
+        "isShowPreparation": false,
+        "isPlayTick": false,
+        "focusModeSound": "off",
+        "focusModeSoundVolume": 40,
+        "isPauseTrackingDuringBreak": true,
+        "autoStartFocusOnPlay": false,
+        "isManualBreakStart": false
+      },
+      "flowtime": {
+        "isBreakEnabled": false,
+        "breakMode": "ratio",
+        "breakPercentage": 20,
+        "breakRules": []
+      },
+      "clipboardImages": {
+        "imagePath": null
+      },
+      "pomodoro": {
+        "duration": 1500000,
+        "breakDuration": 300000,
+        "longerBreakDuration": 900000,
+        "cyclesBeforeLongerBreak": 4
+      },
+      "keyboard": {
+        "globalShowHide": "Ctrl+Shift+X",
+        "globalToggleTaskStart": null,
+        "globalAddNote": null,
+        "globalAddTask": null,
+        "globalToggleTaskWidget": null,
+        "addNewTask": "Shift+A",
+        "addNewProject": "Shift+P",
+        "addNewNote": "Alt+N",
+        "openProjectNotes": "Shift+N",
+        "toggleTaskViewCustomizerPanel": "C",
+        "toggleIssuePanel": "P",
+        "focusSideNav": "Shift+D",
+        "toggleSideNavMode": "Ctrl+B",
+        "showHelp": "?",
+        "showSearchBar": "Shift+F",
+        "toggleBacklog": "B",
+        "goToFocusMode": "F",
+        "goToWorkView": "W",
+        "goToScheduledView": "Shift+S",
+        "goToPlanner": "Shift+L",
+        "goToTimeline": "Shift+T",
+        "goToSettings": null,
+        "zoomIn": "Ctrl++",
+        "zoomOut": "Ctrl+-",
+        "zoomDefault": "Ctrl+0",
+        "triggerSync": "Ctrl+S",
+        "taskEditTitle": null,
+        "taskToggleDetailPanelOpen": "I",
+        "taskOpenNotesPanel": "N",
+        "taskOpenNotesFullscreen": null,
+        "taskOpenEstimationDialog": "T",
+        "taskSchedule": "S",
+        "taskScheduleToday": "Shift+T",
+        "taskScheduleTomorrow": null,
+        "taskScheduleNextWeek": null,
+        "taskScheduleNextMonth": null,
+        "taskScheduleDeadline": "Shift+S",
+        "taskUnschedule": "U",
+        "taskToggleDone": "D",
+        "taskAddSubTask": "A",
+        "taskDuplicate": "Ctrl+D",
+        "taskAddAttachment": "L",
+        "taskDelete": "Backspace",
+        "taskMoveToProject": "E",
+        "taskOpenContextMenu": "Q",
+        "selectPreviousTask": "K",
+        "selectNextTask": "J",
+        "moveTaskUp": "Ctrl+Shift+ArrowUp",
+        "moveTaskDown": "Ctrl+Shift+ArrowDown",
+        "moveTaskToTop": "Ctrl+Alt+ArrowUp",
+        "moveTaskToBottom": "Ctrl+Alt+ArrowDown",
+        "moveToBacklog": "Shift+B",
+        "expandSubTasks": null,
+        "collapseSubTasks": null,
+        "togglePlay": "Y",
+        "taskEditTags": "G",
+        "taskToggleSelect": "X"
+      },
+      "localBackup": {
+        "isEnabled": true,
+        "maxBackupFiles": 51
+      },
+      "sound": {
+        "volume": 75,
+        "isIncreaseDoneSoundPitch": true,
+        "doneSound": "ding-small-bell.mp3",
+        "breakReminderSound": null,
+        "trackTimeSound": null
+      },
+      "timeTracking": {
+        "defaultEstimate": 0,
+        "defaultEstimateSubTasks": 0,
+        "isNotifyWhenTimeEstimateExceeded": true,
+        "isAutoStartNextTask": false,
+        "isTrackingReminderEnabled": false,
+        "isTrackingReminderShowOnMobile": false,
+        "trackingReminderMinTime": 300000,
+        "isTrackingReminderNotify": false,
+        "isTrackingReminderFocusWindow": false
+      },
+      "reminder": {
+        "isCountdownBannerEnabled": true,
+        "countdownDuration": 600000,
+        "defaultTaskRemindOption": "AtStart",
+        "isFocusWindow": false,
+        "useAlarmStyleReminders": false,
+        "notifyOnDueDate": true,
+        "dueDateNotificationHour": 9
+      },
+      "schedule": {
+        "isWorkStartEndEnabled": true,
+        "workStart": "9:00",
+        "workEnd": "17:00",
+        "isLunchBreakEnabled": false,
+        "lunchBreakStart": "13:00",
+        "lunchBreakEnd": "14:00"
+      },
+      "sync": {
+        "isEnabled": false,
+        "isCompressionEnabled": false,
+        "isEncryptionEnabled": false,
+        "encryptKey": null,
+        "syncProvider": null,
+        "syncInterval": 60000,
+        "isManualSyncOnly": false,
+        "webDav": {
+          "baseUrl": null,
+          "userName": null,
+          "password": null,
+          "syncFolderPath": "super-productivity"
+        },
+        "superSync": {
+          "baseUrl": "https://sync.super-productivity.com",
+          "userName": null,
+          "password": null,
+          "accessToken": null,
+          "syncFolderPath": null
+        },
+        "localFileSync": {
+          "syncFolderPath": ""
+        },
+        "nextcloud": {
+          "serverUrl": null,
+          "loginName": null,
+          "userName": null,
+          "password": null,
+          "syncFolderPath": "super-productivity"
+        },
+        "oneDrive": {
+          "useCustomApp": true,
+          "clientId": null,
+          "tenantId": "common",
+          "syncFolderPath": "Super Productivity"
+        }
+      }
+    },
+    "note": {
+      "ids": [],
+      "entities": {},
+      "todayOrder": []
+    },
+    "issueProvider": {
+      "ids": [
+        "qxahkR-n9ts5K0ZImUTiH"
+      ],
+      "entities": {
+        "qxahkR-n9ts5K0ZImUTiH": {
+          "isAutoPoll": true,
+          "isAutoAddToBacklog": false,
+          "isIntegratedAddTaskBar": false,
+          "defaultProjectId": null,
+          "pinnedSearch": null,
+          "pollingMode": "whenProjectOpen",
+          "defaultTagIds": [],
+          "defaultNote": null,
+          "pluginId": "github-issue-provider",
+          "pluginConfig": {
+            "twoWaySync": {
+              "isDone": "pullOnly",
+              "title": "Title 24",
+              "notes": "Notes 1"
+            },
+            "repo": "super-productivity/super-productivity"
+          },
+          "id": "qxahkR-n9ts5K0ZImUTiH",
+          "isEnabled": true,
+          "issueProviderKey": "GITHUB"
+        }
+      }
+    },
+    "planner": {
+      "days": {
+        "2026-11-06": [
+          "8EYxnzCWiiQB30DoWzyP-",
+          "Ei0E83ccNlfSkeO9VMnOW",
+          "V_vKP3uhC3GHt10bfihdW"
+        ],
+        "2026-11-05": [
+          "reszDEPELUyx14O0C8aqo"
+        ],
+        "2026-11-10": [
+          "K7CJEbpCscgy7hU1NcaUR"
+        ],
+        "2026-11-30": [
+          "M7Q4UaDENTrJT1m2ZEnjh"
+        ],
+        "2026-11-04": [
+          "1x5gCtkWgdr65YcwcE1GW"
+        ]
+      }
+    },
+    "boards": {
+      "boardCfgs": [
+        {
+          "id": "EISENHOWER_MATRIX",
+          "title": "Title 25",
+          "cols": 2,
+          "panels": [
+            {
+              "id": "URGENT_AND_IMPORTANT",
+              "title": "Title 26",
+              "includedTagIds": [
+                "EM_IMPORTANT",
+                "EM_URGENT"
+              ],
+              "excludedTagIds": [],
+              "taskIds": [],
+              "taskDoneState": 1,
+              "scheduledState": 1,
+              "backlogState": 1,
+              "isParentTasksOnly": true,
+              "projectIds": [
+                ""
+              ]
+            },
+            {
+              "id": "NOT_URGENT_AND_IMPORTANT",
+              "title": "Title 27",
+              "includedTagIds": [
+                "EM_IMPORTANT"
+              ],
+              "excludedTagIds": [
+                "EM_URGENT"
+              ],
+              "taskIds": [],
+              "taskDoneState": 1,
+              "scheduledState": 1,
+              "backlogState": 1,
+              "isParentTasksOnly": true,
+              "projectIds": [
+                ""
+              ]
+            },
+            {
+              "id": "URGENT_AND_NOT_IMPORTANT",
+              "title": "Title 28",
+              "includedTagIds": [
+                "EM_URGENT"
+              ],
+              "excludedTagIds": [
+                "EM_IMPORTANT"
+              ],
+              "taskIds": [],
+              "taskDoneState": 1,
+              "scheduledState": 1,
+              "backlogState": 1,
+              "isParentTasksOnly": true,
+              "projectIds": [
+                ""
+              ]
+            },
+            {
+              "id": "NOT_URGENT_AND_NOT_IMPORTANT",
+              "title": "Title 29",
+              "includedTagIds": [],
+              "excludedTagIds": [
+                "EM_IMPORTANT",
+                "EM_URGENT"
+              ],
+              "taskIds": [],
+              "taskDoneState": 1,
+              "scheduledState": 1,
+              "backlogState": 1,
+              "isParentTasksOnly": true,
+              "projectIds": [
+                ""
+              ]
+            }
+          ]
+        },
+        {
+          "id": "KANBAN_DEFAULT",
+          "title": "Title 30",
+          "cols": 3,
+          "panels": [
+            {
+              "id": "TODO",
+              "title": "Title 31",
+              "taskDoneState": 3,
+              "includedTagIds": [],
+              "excludedTagIds": [
+                "KANBAN_IN_PROGRESS"
+              ],
+              "taskIds": [],
+              "scheduledState": 1,
+              "backlogState": 2,
+              "isParentTasksOnly": false,
+              "projectIds": [
+                ""
+              ]
+            },
+            {
+              "id": "IN_PROGRESS",
+              "title": "Title 32",
+              "taskDoneState": 3,
+              "includedTagIds": [
+                "KANBAN_IN_PROGRESS"
+              ],
+              "excludedTagIds": [],
+              "taskIds": [],
+              "scheduledState": 1,
+              "backlogState": 2,
+              "isParentTasksOnly": false,
+              "projectIds": [
+                ""
+              ]
+            },
+            {
+              "id": "DONE",
+              "title": "Title 33",
+              "taskDoneState": 2,
+              "includedTagIds": [],
+              "excludedTagIds": [],
+              "taskIds": [],
+              "scheduledState": 1,
+              "backlogState": 2,
+              "isParentTasksOnly": false,
+              "projectIds": [
+                ""
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "metric": {
+      "ids": [],
+      "entities": {}
+    },
+    "simpleCounter": {
+      "ids": [
+        "STANDING_DESK_ID",
+        "COFFEE_COUNTER",
+        "STRETCHING_COUNTER"
+      ],
+      "entities": {
+        "STANDING_DESK_ID": {
+          "id": "STANDING_DESK_ID",
+          "title": "Title 34",
+          "isEnabled": false,
+          "icon": "directions_walk",
+          "type": "StopWatch",
+          "countOnDay": {},
+          "isOn": false,
+          "isTrackStreaks": true,
+          "streakMinValue": 1800000,
+          "streakMode": "specific-days",
+          "streakWeekDays": {
+            "0": false,
+            "1": true,
+            "2": true,
+            "3": true,
+            "4": true,
+            "5": true,
+            "6": false
+          }
+        },
+        "COFFEE_COUNTER": {
+          "id": "COFFEE_COUNTER",
+          "title": "Title 35",
+          "isEnabled": false,
+          "icon": "free_breakfast",
+          "type": "ClickCounter",
+          "countOnDay": {},
+          "isOn": false,
+          "isTrackStreaks": false,
+          "streakMinValue": 2,
+          "streakMode": "specific-days",
+          "streakWeekDays": {
+            "0": false,
+            "1": true,
+            "2": true,
+            "3": true,
+            "4": true,
+            "5": true,
+            "6": false
+          }
+        },
+        "STRETCHING_COUNTER": {
+          "id": "STRETCHING_COUNTER",
+          "title": "Title 36",
+          "isEnabled": false,
+          "icon": "fitness_center",
+          "type": "RepeatedCountdownReminder",
+          "countOnDay": {},
+          "isOn": false,
+          "isTrackStreaks": true,
+          "streakMinValue": 8,
+          "streakMode": "specific-days",
+          "streakWeekDays": {
+            "0": false,
+            "1": true,
+            "2": true,
+            "3": true,
+            "4": true,
+            "5": true,
+            "6": false
+          },
+          "countdownDuration": 1800000
+        }
+      }
+    },
+    "taskRepeatCfg": {
+      "ids": [
+        "klIQaQqOXr99BtPnMUBKq",
+        "UPXTx4nYJUHZUX2sop-wK",
+        "tYk9G5Ru0T3lzH3CHVbKL",
+        "HGWrTdftAKXu5eKvUkgB9",
+        "C59y7eCV80BekPf1m0Spu"
+      ],
+      "entities": {
+        "klIQaQqOXr99BtPnMUBKq": {
+          "lastTaskCreation": 1793703600000,
+          "lastTaskCreationDay": "2026-11-03",
+          "title": "Title 6",
+          "defaultEstimate": 0,
+          "projectId": "NMXM1f4fArETKm_TUoCf9",
+          "startDate": "2026-11-03",
+          "repeatEvery": 1,
+          "isPaused": false,
+          "quickSetting": "DAILY",
+          "repeatCycle": "DAILY",
+          "repeatFromCompletionDate": false,
+          "waitForCompletion": false,
+          "monday": true,
+          "tuesday": true,
+          "wednesday": true,
+          "thursday": true,
+          "friday": true,
+          "saturday": false,
+          "sunday": false,
+          "tagIds": [],
+          "order": 0,
+          "shouldInheritSubtasks": false,
+          "disableAutoUpdateSubtasks": false,
+          "skipOverdue": true,
+          "priority": null,
+          "id": "klIQaQqOXr99BtPnMUBKq",
+          "subTaskTemplates": []
+        },
+        "UPXTx4nYJUHZUX2sop-wK": {
+          "lastTaskCreation": 1793876400000,
+          "lastTaskCreationDay": "2026-11-05",
+          "title": "Title 7",
+          "defaultEstimate": 0,
+          "projectId": "NMXM1f4fArETKm_TUoCf9",
+          "startDate": "2026-11-05",
+          "repeatEvery": 1,
+          "isPaused": false,
+          "quickSetting": "CUSTOM",
+          "repeatCycle": "WEEKLY",
+          "repeatFromCompletionDate": false,
+          "waitForCompletion": false,
+          "monday": true,
+          "tuesday": false,
+          "wednesday": false,
+          "thursday": true,
+          "friday": false,
+          "saturday": false,
+          "sunday": false,
+          "tagIds": [],
+          "order": 0,
+          "shouldInheritSubtasks": false,
+          "disableAutoUpdateSubtasks": false,
+          "skipOverdue": false,
+          "priority": null,
+          "monthlyWeekday": 1,
+          "id": "UPXTx4nYJUHZUX2sop-wK",
+          "subTaskTemplates": []
+        },
+        "tYk9G5Ru0T3lzH3CHVbKL": {
+          "lastTaskCreation": 1794308400000,
+          "lastTaskCreationDay": "2026-11-10",
+          "title": "Title 8",
+          "defaultEstimate": 0,
+          "projectId": "NMXM1f4fArETKm_TUoCf9",
+          "startDate": "2026-11-10",
+          "repeatEvery": 1,
+          "isPaused": false,
+          "quickSetting": "MONTHLY_CURRENT_DATE",
+          "repeatCycle": "MONTHLY",
+          "repeatFromCompletionDate": false,
+          "waitForCompletion": false,
+          "monday": true,
+          "tuesday": true,
+          "wednesday": true,
+          "thursday": true,
+          "friday": true,
+          "saturday": false,
+          "sunday": false,
+          "tagIds": [],
+          "order": 0,
+          "shouldInheritSubtasks": false,
+          "disableAutoUpdateSubtasks": false,
+          "skipOverdue": false,
+          "priority": null,
+          "id": "tYk9G5Ru0T3lzH3CHVbKL",
+          "subTaskTemplates": []
+        },
+        "HGWrTdftAKXu5eKvUkgB9": {
+          "lastTaskCreation": 1796036400000,
+          "lastTaskCreationDay": "2026-11-30",
+          "title": "Title 9",
+          "defaultEstimate": 0,
+          "projectId": "NMXM1f4fArETKm_TUoCf9",
+          "startDate": "2026-11-30",
+          "repeatEvery": 1,
+          "isPaused": false,
+          "quickSetting": "YEARLY_CURRENT_DATE",
+          "repeatCycle": "YEARLY",
+          "repeatFromCompletionDate": false,
+          "waitForCompletion": false,
+          "monday": true,
+          "tuesday": true,
+          "wednesday": true,
+          "thursday": true,
+          "friday": true,
+          "saturday": false,
+          "sunday": false,
+          "tagIds": [],
+          "order": 0,
+          "shouldInheritSubtasks": false,
+          "disableAutoUpdateSubtasks": false,
+          "skipOverdue": false,
+          "priority": null,
+          "monthlyWeekday": 1,
+          "id": "HGWrTdftAKXu5eKvUkgB9",
+          "subTaskTemplates": []
+        },
+        "C59y7eCV80BekPf1m0Spu": {
+          "lastTaskCreation": 1793790000000,
+          "lastTaskCreationDay": "2026-11-04",
+          "title": "Title 10",
+          "defaultEstimate": 0,
+          "projectId": "NMXM1f4fArETKm_TUoCf9",
+          "startDate": "2026-11-04",
+          "repeatEvery": 2,
+          "isPaused": false,
+          "quickSetting": "CUSTOM",
+          "repeatCycle": "DAILY",
+          "repeatFromCompletionDate": false,
+          "waitForCompletion": false,
+          "monday": true,
+          "tuesday": true,
+          "wednesday": true,
+          "thursday": true,
+          "friday": true,
+          "saturday": false,
+          "sunday": false,
+          "tagIds": [],
+          "order": 0,
+          "shouldInheritSubtasks": false,
+          "disableAutoUpdateSubtasks": false,
+          "skipOverdue": false,
+          "priority": null,
+          "monthlyWeekday": 1,
+          "id": "C59y7eCV80BekPf1m0Spu",
+          "subTaskTemplates": []
+        }
+      }
+    },
+    "menuTree": {
+      "projectTree": [
+        {
+          "k": "p",
+          "id": "_SRrzMICqpf4NQnVtO6YK",
+          "projectId": "_SRrzMICqpf4NQnVtO6YK"
+        }
+      ],
+      "tagTree": [
+        {
+          "k": "t",
+          "id": "VcniRWSr45imajrQu6YYZ"
+        },
+        {
+          "k": "t",
+          "id": "xovpCrfuu1AuawGu_wqqT"
+        },
+        {
+          "k": "t",
+          "id": "Bzy_iKEbofquutkOkdxUJ"
+        }
+      ]
+    },
+    "timeTracking": {
+      "tag": {},
+      "project": {}
+    },
+    "pluginUserData": [],
+    "pluginMetadata": [
+      {
+        "id": "github-issue-provider",
+        "isEnabled": true
+      }
+    ],
+    "reminders": [],
+    "section": {
+      "ids": [],
+      "entities": {}
+    },
+    "archiveYoung": {
+      "task": {
+        "ids": [
+          "Ei0E83ccNlfSkeO9VMnOW",
+          "WmZVZc_guPPTUSDUOwC11"
+        ],
+        "entities": {
+          "WmZVZc_guPPTUSDUOwC11": {
+            "id": "WmZVZc_guPPTUSDUOwC11",
+            "subTaskIds": [],
+            "timeSpentOnDay": {},
+            "timeSpent": 0,
+            "timeEstimate": 0,
+            "isDone": true,
+            "title": "Title 37",
+            "tagIds": [],
+            "created": 1793661050040,
+            "attachments": [],
+            "projectId": "_SRrzMICqpf4NQnVtO6YK",
+            "notes": "Notes 2",
+            "modified": 1793661696823,
+            "doneOn": 1793661696823,
+            "subTasks": []
+          },
+          "Ei0E83ccNlfSkeO9VMnOW": {
+            "id": "Ei0E83ccNlfSkeO9VMnOW",
+            "subTaskIds": [],
+            "timeSpentOnDay": {},
+            "timeSpent": 0,
+            "timeEstimate": 2700000,
+            "isDone": true,
+            "title": "Title 38",
+            "tagIds": [],
+            "created": 1793661280613,
+            "attachments": [],
+            "projectId": "_SRrzMICqpf4NQnVtO6YK",
+            "doneOn": 1793661693080,
+            "modified": 1793661693080,
+            "subTasks": []
+          }
+        }
+      },
+      "timeTracking": {
+        "project": {},
+        "tag": {}
+      },
+      "lastTimeTrackingFlush": 1793661705632,
+      "lastFlush": 1793661705632
+    },
+    "archiveOld": {
+      "task": {
+        "ids": [],
+        "entities": {}
+      },
+      "timeTracking": {
+        "project": {},
+        "tag": {}
+      },
+      "lastTimeTrackingFlush": 1793661705632
+    }
+  }
+}

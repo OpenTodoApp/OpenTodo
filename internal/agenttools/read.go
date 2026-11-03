@@ -615,68 +615,6 @@ func (r *Registry) getTask(ctx context.Context, userID string, a args) (map[stri
 	return r.taskDetail(ctx, userID, id, loc)
 }
 
-// ---- search_tasks ----
-
-func (r *Registry) searchTasks(ctx context.Context, userID string, a args) (map[string]any, error) {
-	query, err := a.str("query")
-	if err != nil {
-		return nil, err
-	}
-	if query == "" {
-		return nil, argErr("query: must not be empty")
-	}
-	includeCompleted, err := a.boolean("include_completed")
-	if err != nil {
-		return nil, err
-	}
-	loc, err := a.location()
-	if err != nil {
-		return nil, err
-	}
-	limit, err := a.limit()
-	if err != nil {
-		return nil, err
-	}
-	cursor, err := a.str("cursor")
-	if err != nil {
-		return nil, err
-	}
-	wsArg, err := a.str("workspace")
-	if err != nil {
-		return nil, err
-	}
-	snap, err := r.load(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
-	ws, err := snap.resolveWorkspace("workspace", wsArg)
-	if err != nil {
-		return nil, err
-	}
-	today := r.today(loc)
-	needle := strings.ToLower(query)
-	items := []keyed[taskOut]{}
-	for _, t := range snap.tasks {
-		if !snap.visible(t, false) || (!includeCompleted && !isOpen(t)) {
-			continue
-		}
-		if ws != "" && snap.partition().Task(str(t, "id")) != ws {
-			continue
-		}
-		// Encrypted content (OpenSpec `e2ee`) cannot be searched server-side; the
-		// placeholder text must not match either.
-		if !strings.Contains(strings.ToLower(plainOrEmpty(t, "title")), needle) && !strings.Contains(strings.ToLower(plainOrEmpty(t, "description")), needle) {
-			continue
-		}
-		items = append(items, keyed[taskOut]{key: taskKey(t, loc), id: str(t, "id"), v: snap.render(t, loc, today, true)})
-	}
-	list, next, err := page(items, cursor, limit)
-	if err != nil {
-		return nil, err
-	}
-	return map[string]any{"tasks": list, "next_cursor": nullable(next), "timezone": loc.String(), "today": today, "server_time": r.serverTime()}, nil
-}
-
 // ---- today_summary ----
 
 type projectCount struct {

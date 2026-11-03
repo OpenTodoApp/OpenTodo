@@ -158,7 +158,10 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
   const inputRef = useRef<HTMLInputElement>(null)
   const tints = useRef<HTMLDivElement>(null)
   // The tint layer follows the field's horizontal scroll after every change of text or caret.
-  useEffect(() => { if (tints.current && inputRef.current) tints.current.scrollLeft = inputRef.current.scrollLeft })
+  // The tints mirror the text, so their scroll follows the field when the text changes (the field's
+  // onScroll does the rest). On every render it read the field's scroll, a layout of the whole page,
+  // after each write in a 2,000-row list (list-rendering-at-scale).
+  useEffect(() => { if (tints.current && inputRef.current) tints.current.scrollLeft = inputRef.current.scrollLeft }, [value])
   useImperativeHandle(ref, () => inputRef.current as HTMLInputElement, [])
   const [dismissed, setDismissed] = useState<Span[]>([])
   const [highlight, setHighlight] = useState<number | null>(null)

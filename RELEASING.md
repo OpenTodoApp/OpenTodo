@@ -20,6 +20,10 @@ It makes every edit a release needs, in one go:
 - A `## 0.15.0` entry in the Home Assistant add-on's `CHANGELOG.md`.
 - The `upstream/` copies, regenerated from their templates (`node scripts/deploy/mirror.mjs`; `--check` only lists stale copies, and `make deploy-check` runs it).
 
+From 1.0.0 on, a minor release (x.y.0) needs its reference-device record first: `docs/performance/results-x.y.0.md`, measured on the reference phones and a Raspberry Pi 4 as [scripts/perf/device.md](scripts/perf/device.md) describes. `make release-prepare` refuses the release without it, or when a value is over its budget of `scripts/perf/budgets.json` without a link to the issue that tracks it (`scripts/release/deviceRecord.mjs`, see [Performance budgets](docs/performance.md)).
+
+Every minor release (x.y.0) also needs its upgrade fixture: `scripts/release/upgrade-fixture.sh x.y.0 HEAD` builds the server from the commit being released, drives the fixed scenario through its API and stores the data directory and a manifest under `internal/store/testdata/upgrade/x.y/`; commit them with the release. `make release-prepare` refuses a minor without it (`scripts/release/upgradeFixture.mjs`), and `go test ./internal/tenant -run TestUpgradeFromEveryRelease` upgrades every fixture to the current server from then on ([Stability and compatibility](docs/stability.md#upgrades)). After tagging, the fixture can be rebuilt from the tag (`scripts/release/upgrade-fixture.sh x.y.0`).
+
 It changes the release only where the text names the project's version (an image tag, a `version`/`tag`/`placeholder` key, `ARG OPENTODO_VERSION`, a version in backticks), never a bare number: the lockfile has dependencies whose version can equal a release. `scripts/release/prepare.test.mjs` runs it on a copy of the tree for the next patch and the next minor, and checks the result against the files a hand-made release changed and against `make deploy-check`.
 
 Then, by hand:

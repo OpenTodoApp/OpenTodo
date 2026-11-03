@@ -14,6 +14,8 @@
 //   - an option of a segmented control or a day's name in a Day or Week header is cut,
 //   - in Day and Week, the calendar's sticky header takes more than half of the calendar
 //     or the now line paints over it (GitHub issue 775),
+//   - the floating add button covers the last task row or a form field (at the top or
+//     the end of a page),
 //   - on the settings pages that ask for it, two controls overlap or a control touches a
 //     row divider (themes-layout-template),
 //   - any screen or overlay has a serious or critical axe-core issue (colour contrast,

@@ -1,0 +1,224 @@
+{
+  "format": "super-productivity-json",
+  "notes": [],
+  "totals": {
+    "rows": 21,
+    "create": 21,
+    "update": 0,
+    "skip": 0,
+    "error": 0,
+    "possibleDuplicates": 0,
+    "warnings": 0,
+    "newProjects": 2,
+    "newLabels": 3,
+    "newSections": 0,
+    "recurring": 5,
+    "reminders": 1,
+    "deadlines": 1,
+    "attachments": 0,
+    "fields": 0,
+    "timeEntries": 2,
+    "places": 0,
+    "notes": 0,
+    "entities": 27,
+    "written": 0,
+    "ops": 0
+  },
+  "viewHints": null,
+  "rows": [
+    {
+      "row": 1,
+      "sourceId": "super-productivity:project:_SRrzMICqpf4NQnVtO6YK",
+      "kind": "project",
+      "title": "Title 18",
+      "outcome": "create"
+    },
+    {
+      "row": 2,
+      "sourceId": "super-productivity:project:NMXM1f4fArETKm_TUoCf9",
+      "kind": "project",
+      "title": "Title 19",
+      "outcome": "create"
+    },
+    {
+      "row": 3,
+      "sourceId": "super-productivity:xqwWBDUgSWuMaIAisyczJ",
+      "kind": "task",
+      "title": "Title 1",
+      "project": "Title 18",
+      "outcome": "create"
+    },
+    {
+      "row": 4,
+      "sourceId": "super-productivity:ti7avY7Z8FxH8rFUbgL91",
+      "kind": "task",
+      "title": "Title 2",
+      "project": "Title 18",
+      "outcome": "create"
+    },
+    {
+      "row": 5,
+      "sourceId": "super-productivity:2NH49KZP8iTxjiBLjooTg",
+      "kind": "task",
+      "title": "Title 3",
+      "project": "Title 19",
+      "outcome": "create"
+    },
+    {
+      "row": 6,
+      "sourceId": "super-productivity:PT0BmLSq9xEIBwz_NTb5h",
+      "kind": "task",
+      "title": "Title 4",
+      "project": "Title 19",
+      "outcome": "create"
+    },
+    {
+      "row": 7,
+      "sourceId": "super-productivity:hjRARvwptbbL0aMzOUJBi",
+      "kind": "task",
+      "title": "Title 5",
+      "project": "Title 19",
+      "outcome": "create"
+    },
+    {
+      "row": 8,
+      "sourceId": "super-productivity:zBTP620eHTcCmZocMA73r",
+      "kind": "task",
+      "title": "Title 6",
+      "project": "Title 19",
+      "outcome": "create"
+    },
+    {
+      "row": 9,
+      "sourceId": "super-productivity:reszDEPELUyx14O0C8aqo",
+      "kind": "task",
+      "title": "Title 7",
+      "project": "Title 19",
+      "outcome": "create"
+    },
+    {
+      "row": 10,
+      "sourceId": "super-productivity:K7CJEbpCscgy7hU1NcaUR",
+      "kind": "task",
+      "title": "Title 8",
+      "project": "Title 19",
+      "outcome": "create"
+    },
+    {
+      "row": 11,
+      "sourceId": "super-productivity:M7Q4UaDENTrJT1m2ZEnjh",
+      "kind": "task",
+      "title": "Title 9",
+      "project": "Title 19",
+      "outcome": "create"
+    },
+    {
+      "row": 12,
+      "sourceId": "super-productivity:1x5gCtkWgdr65YcwcE1GW",
+      "kind": "task",
+      "title": "Title 10",
+      "project": "Title 19",
+      "outcome": "create"
+    },
+    {
+      "row": 13,
+      "sourceId": "super-productivity:V_vKP3uhC3GHt10bfihdW",
+      "kind": "task",
+      "title": "Title 11",
+      "project": "Title 18",
+      "outcome": "create"
+    },
+    {
+      "row": 14,
+      "sourceId": "super-productivity:8EYxnzCWiiQB30DoWzyP-",
+      "kind": "task",
+      "title": "Title 12",
+      "project": "Title 18",
+      "outcome": "create"
+    },
+    {
+      "row": 15,
+      "sourceId": "super-productivity:J7oSVbMJXNSgH7FPzSqu6",
+      "kind": "task",
+      "title": "Title 13",
+      "project": "Title 18",
+      "outcome": "create"
+    },
+    {
+      "row": 16,
+      "sourceId": "super-productivity:VPntATY3GUYKHt8aCubGK",
+      "kind": "task",
+      "title": "Title 14",
+      "project": "Title 18",
+      "outcome": "create"
+    },
+    {
+      "row": 17,
+      "sourceId": "super-productivity:mHJT3a1Ion3Uxr4p3ns6X",
+      "kind": "task",
+      "title": "Title 15",
+      "project": "Title 18",
+      "outcome": "create"
+    },
+    {
+      "row": 18,
+      "sourceId": "super-productivity:nJ1pgFdxNV2eIupk37pyc",
+      "kind": "task",
+      "title": "Title 16",
+      "project": "Title 19",
+      "outcome": "create"
+    },
+    {
+      "row": 19,
+      "sourceId": "super-productivity:quM7W4z9M6qrsF9Fwe38f",
+      "kind": "task",
+      "title": "Title 17",
+      "outcome": "create"
+    },
+    {
+      "row": 20,
+      "sourceId": "super-productivity:Ei0E83ccNlfSkeO9VMnOW",
+      "kind": "task",
+      "title": "Title 38",
+      "project": "Title 18",
+      "outcome": "create"
+    },
+    {
+      "row": 21,
+      "sourceId": "super-productivity:WmZVZc_guPPTUSDUOwC11",
+      "kind": "task",
+      "title": "Title 37",
+      "project": "Title 18",
+      "outcome": "create"
+    }
+  ],
+  "fields": [
+    "label id-0009: name=\"Title 23\" created_at=1791979200000",
+    "label id-0012: name=\"Title 21\" created_at=1791979200000",
+    "label id-0020: name=\"Title 22\" created_at=1791979200000",
+    "project id-0001: name=\"Title 18\" archived=false created_at=1791979200000",
+    "project id-0002: name=\"Title 19\" archived=false created_at=1791979200000",
+    "task id-0003: title=\"Title 1\" description=\"\" priority=4 created_at=1793661047896 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"super-productivity\",\"id\":\"xqwWBDUgSWuMaIAisyczJ\"} labels=[]",
+    "task id-0004: title=\"Title 2\" description=\"\" priority=4 created_at=1793661048979 project_id=\"id-0001\" due={\"date\":\"2026-11-03\"} origin={\"kind\":\"import\",\"provider\":\"super-productivity\",\"id\":\"ti7avY7Z8FxH8rFUbgL91\"} labels=[]",
+    "task id-0005: title=\"Title 3\" description=\"\" priority=4 created_at=1793661181128 project_id=\"id-0002\" estimate_minutes=60 origin={\"kind\":\"import\",\"provider\":\"super-productivity\",\"id\":\"2NH49KZP8iTxjiBLjooTg\"} completed_at=1793661716223 labels=[]",
+    "task id-0008: title=\"Title 4\" description=\"\" priority=4 created_at=1793661223929 project_id=\"id-0002\" due={\"date\":\"2026-11-04\",\"time\":\"13:00\"} estimate_minutes=30 origin={\"kind\":\"import\",\"provider\":\"super-productivity\",\"id\":\"PT0BmLSq9xEIBwz_NTb5h\"} labels=[\"id-0009\"]",
+    "task id-0011: title=\"Title 5\" description=\"\" priority=4 created_at=1793661248758 project_id=\"id-0002\" deadline=\"2026-11-20\" origin={\"kind\":\"import\",\"provider\":\"super-productivity\",\"id\":\"hjRARvwptbbL0aMzOUJBi\"} labels=[\"id-0012\"]",
+    "task id-0013: title=\"Title 6\" description=\"\" priority=4 created_at=1793661256211 project_id=\"id-0002\" due={\"date\":\"2026-11-03\"} recurrence=\"every day\" origin={\"kind\":\"import\",\"provider\":\"super-productivity\",\"id\":\"zBTP620eHTcCmZocMA73r\"} labels=[]",
+    "task id-0014: title=\"Title 7\" description=\"\" priority=4 created_at=1793876400000 project_id=\"id-0002\" due={\"date\":\"2026-11-05\"} recurrence=\"every monday, thursday\" origin={\"kind\":\"import\",\"provider\":\"super-productivity\",\"id\":\"reszDEPELUyx14O0C8aqo\"} labels=[]",
+    "task id-0015: title=\"Title 8\" description=\"\" priority=4 created_at=1794308400000 project_id=\"id-0002\" due={\"date\":\"2026-11-10\"} recurrence=\"every month\" origin={\"kind\":\"import\",\"provider\":\"super-productivity\",\"id\":\"K7CJEbpCscgy7hU1NcaUR\"} labels=[]",
+    "task id-0016: title=\"Title 9\" description=\"\" priority=4 created_at=1796036400000 project_id=\"id-0002\" due={\"date\":\"2026-11-30\"} recurrence=\"every year\" origin={\"kind\":\"import\",\"provider\":\"super-productivity\",\"id\":\"M7Q4UaDENTrJT1m2ZEnjh\"} labels=[]",
+    "task id-0017: title=\"Title 10\" description=\"\" priority=4 created_at=1793790000000 project_id=\"id-0002\" due={\"date\":\"2026-11-04\"} recurrence=\"every 2 days\" origin={\"kind\":\"import\",\"provider\":\"super-productivity\",\"id\":\"1x5gCtkWgdr65YcwcE1GW\"} labels=[]",
+    "task id-0018: title=\"Title 11\" description=\"\" priority=4 created_at=1793661278579 project_id=\"id-0001\" due={\"date\":\"2026-11-06\"} origin={\"kind\":\"import\",\"provider\":\"super-productivity\",\"id\":\"V_vKP3uhC3GHt10bfihdW\"} labels=[]",
+    "task id-0019: title=\"Title 12\" description=\"\" priority=4 created_at=1793661283743 project_id=\"id-0001\" due={\"date\":\"2026-11-06\"} estimate_minutes=45 origin={\"kind\":\"import\",\"provider\":\"super-productivity\",\"id\":\"8EYxnzCWiiQB30DoWzyP-\"} labels=[\"id-0020\"]",
+    "task id-0021: title=\"Title 13\" description=\"\" priority=4 created_at=1793661285913 project_id=\"id-0001\" due={\"date\":\"2026-11-03\"} estimate_minutes=45 origin={\"kind\":\"import\",\"provider\":\"super-productivity\",\"id\":\"J7oSVbMJXNSgH7FPzSqu6\"} labels=[\"id-0020\"]",
+    "task id-0022: title=\"Title 14\" description=\"\" priority=4 created_at=1793661296501 project_id=\"id-0001\" parent_id=\"id-0003\" origin={\"kind\":\"import\",\"provider\":\"super-productivity\",\"id\":\"VPntATY3GUYKHt8aCubGK\"} completed_at=1793661694967 labels=[]",
+    "task id-0023: title=\"Title 15\" description=\"\" priority=4 created_at=1793661302762 project_id=\"id-0001\" parent_id=\"id-0003\" origin={\"kind\":\"import\",\"provider\":\"super-productivity\",\"id\":\"mHJT3a1Ion3Uxr4p3ns6X\"} labels=[]",
+    "task id-0024: title=\"Title 16\" description=\"\" priority=4 created_at=1793661839425 project_id=\"id-0002\" due={\"date\":\"2026-11-03\"} origin={\"kind\":\"issue\",\"provider\":\"github\",\"id\":\"super-productivity/super-productivity#4988\",\"url\":\"https://github.com/super-productivity/super-productivity/issues/4988\"} labels=[]",
+    "task id-0025: title=\"Title 17\" description=\"\" priority=4 created_at=1793661859581 origin={\"kind\":\"import\",\"provider\":\"super-productivity\",\"id\":\"quM7W4z9M6qrsF9Fwe38f\"} labels=[]",
+    "task id-0026: title=\"Title 38\" description=\"\" priority=4 created_at=1793661280613 project_id=\"id-0001\" estimate_minutes=45 origin={\"kind\":\"import\",\"provider\":\"super-productivity\",\"id\":\"Ei0E83ccNlfSkeO9VMnOW\"} completed_at=1793661693080 labels=[]",
+    "task id-0027: title=\"Title 37\" description=\"Notes 2\" priority=4 created_at=1793661050040 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"super-productivity\",\"id\":\"WmZVZc_guPPTUSDUOwC11\"} completed_at=1793661696823 labels=[]",
+    "time_entry id-0006: task_id=\"id-0005\" user_id=\"user-1\" started_at=1793610000000 ended_at=1793615400000 device_id=\"import\" note=\"\" created_at=1791979200000 deleted_at=null",
+    "time_entry id-0007: task_id=\"id-0005\" user_id=\"user-1\" started_at=1793696400000 ended_at=1793697900000 device_id=\"import\" note=\"\" created_at=1791979200000 deleted_at=null",
+    "reminder id-0010: task_id=\"id-0008\" kind=\"absolute\" offset_minutes=null fire_at=1793797200000 created_at=1791979200000 delivered_at=null dismissed_at=null"
+  ]
+}

@@ -3,6 +3,7 @@ import { requestSync, useSyncStatus } from '../lib/sync'
 import { useDemo } from '../lib/demo'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t } from '../lib/i18n'
+import { showActionToast } from './bulk/toastStore'
 
 /** Fired to show the two-factor enrolment wizard (App listens; OpenSpec `mfa-totp`). */
 export const ENROLMENT_EVENT = 'opentodo:mfa-enrolment-required'
@@ -36,19 +37,37 @@ export function SyncStatus({ compact = false }: { compact?: boolean } = {}) {
   // while something needs attention (offline, error, pending, locked…); when synced
   // the dot alone shows and the text lives in the tooltip and the accessible name.
   const quiet = s.state === 'idle' && s.pending === 0
+  // A sync error is not tooltip-only (compact mode and touch have no hover): the
+  // pill keeps its label in compact mode too, so the red dot is always named.
+  const failed = s.state === 'error' && !!s.error
   const detail = s.state === 'locked' ? t('This device is locked: unlock it with your encryption passphrase to sync.') : s.state === 'restricted' ? t('The server owner requires two-factor authentication for your account. Click to set it up; your changes upload afterwards.') : s.error ?? `${lastSynced} · ${liveTitle}`
   const name = `${map.text}${showLive ? ` · ${liveTitle}` : ''}`
   const button = (
     <button
       type="button"
-      onClick={() => (s.state === 'restricted' ? window.dispatchEvent(new Event(ENROLMENT_EVENT)) : requestSync(0))}
+      onClick={() => {
+        if (s.state === 'restricted') return window.dispatchEvent(new Event(ENROLMENT_EVENT))
+        // The rail has no room for the sentence and touch has no hover: a tap shows it in full, as a
+        // failure toast, which waits behind an Undo offer instead of replacing it.
+        if (compact && failed) showActionToast(s.error!)
+        requestSync(0)
+      }}
       aria-label={quiet ? name : `${name}. ${detail}`}
       data-sync-status={s.state}
       className={`flex min-h-9 items-center gap-2 rounded-control text-meta text-muted hover:bg-sunken dark:hover:bg-raised ${compact ? 'justify-center px-0' : 'px-2 py-1'}`}
     >
       <span className={`h-2 w-2 shrink-0 rounded-full ${map.dot}`} />
-      {!quiet && !compact && <span className="min-w-0 truncate">{map.text}</span>}
+      {(!quiet && !compact || failed) && <span className="min-w-0 truncate">{map.text}</span>}
     </button>
   )
-  return <Tooltip label={quiet ? name : detail} side={compact ? 'right' : 'top'}>{button}</Tooltip>
+  return (
+    <div className={failed ? 'flex min-w-0 flex-col' : undefined}>
+      <Tooltip label={quiet ? name : detail} side={compact ? 'right' : 'top'}>{button}</Tooltip>
+      {/* Announced once when the sync starts failing (a fixed sentence, so a changed detail does not repeat it); the
+          detail follows as plain text. In the expanded sidebar it wraps on two lines; the icon rail (about 2.5 rem)
+          cannot hold a sentence, so there it stays for assistive technology and a tap shows it in a toast. */}
+      {failed && <span role="alert" className="sr-only">{map.text}</span>}
+      {failed && <p className={compact ? 'sr-only' : 'line-clamp-2 max-w-full break-words px-2 pb-1 text-meta text-danger'}>{s.error}</p>}
+    </div>
+  )
 }

@@ -9,6 +9,7 @@ import { CatalogueIcon, hueFor, Icon, isCatalogueIcon, Menu, MenuItem, MenuSepar
 import { t } from '../lib/i18n'
 import { inboxParents, isInboxTask } from '../lib/inbox'
 import { useTasksOfEveryWorkspace } from '../lib/liveTasks'
+import { useSettledValue } from '../lib/useSettledValue'
 import { useProjectsOfEveryWorkspace, useWorkspaceState } from '../lib/localData'
 import { useUnreadCounts } from '../lib/feed'
 import type { Workspace } from '../lib/types'
@@ -36,7 +37,9 @@ type Counts = Map<string, { inbox: number; today: number; unread: number }>
 function useWorkspaceCounts(): Counts {
   const state = useWorkspaceState()
   const projects = useProjectsOfEveryWorkspace()
-  const tasks = useTasksOfEveryWorkspace()
+  // Counted once the writes stop, as the sidebar's view counts (list-rendering-at-scale D6).
+  const every = useTasksOfEveryWorkspace()
+  const tasks = useSettledValue(every)
   const today = useToday()
   const unread = useUnreadCounts()
   return useMemo(() => {

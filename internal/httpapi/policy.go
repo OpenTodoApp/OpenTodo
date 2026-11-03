@@ -51,6 +51,16 @@ func (rt *routes) handler(pattern string, p routePolicy, h http.Handler) {
 	case p.Role != httpx.AnyRole && p.What == "":
 		panic(fmt.Sprintf("route %q limited to a role without a refusal message", pattern))
 	}
+	if d := p.Deprecation; d != nil {
+		if err := d.Check(); err != nil {
+			panic(fmt.Sprintf("route %q: %v", pattern, err))
+		}
+		inner := h
+		h = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			d.Headers(w.Header())
+			inner.ServeHTTP(w, r)
+		})
+	}
 	rt.table = append(rt.table, routeEntry{pattern: pattern, policy: p})
 	if p.Kind == httpx.KindPublic {
 		rt.mux.Handle(pattern, h)

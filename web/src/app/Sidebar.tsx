@@ -34,6 +34,7 @@ import { useToday, useViewerZone, useViews } from './useViews'
 import { MAX_INDENT } from './TaskRow'
 import { navigate, type Route } from './router'
 import { useLiveTasks, useOpenTasks } from '../lib/liveTasks'
+import { useSettledValue } from '../lib/useSettledValue'
 import { beginDrag } from '../lib/dnd'
 import { moveProjectBy, moveProjectTo } from '../lib/move'
 import { canEditProject, canEditTasks, roleOf } from '../lib/sharing'
@@ -121,9 +122,13 @@ export const openTasksLabel = (n: number | undefined): string | undefined => (n 
 function useViewCounts(views: View[], today: string, labels: Label[], projects: Project[], tasks: Task[]) {
   const tracked = useTrackedTotals()
   // A view that names a workspace counts every workspace's tasks (group-mentions D6).
-  const ws = useWorkspaceFilter()
+  const live = useWorkspaceFilter()
   const sections = useLiveSections()
-  return useMemo(() => evaluateViews(views, { today, labels, projects, tasks, sections, tracked, ...ws }, 0), [views, today, labels, projects, tasks, sections, tracked, ws])
+  // Counted once the writes stop (list-rendering-at-scale D6): evaluating every saved
+  // view over 10,000 tasks ran after each completion, in front of the next one. The
+  // workspace context is made again with every write too (its partition reads the tasks).
+  const { counted, ws } = useSettledValue(useMemo(() => ({ counted: tasks, ws: live }), [tasks, live]))
+  return useMemo(() => evaluateViews(views, { today, labels, projects, tasks: counted, sections, tracked, ...ws }, 0), [views, today, labels, projects, counted, sections, tracked, ws])
 }
 
 export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSignOut, collapsed = false, onToggleCollapse }: {

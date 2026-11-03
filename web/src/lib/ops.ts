@@ -26,6 +26,7 @@ import { lineageRows } from './lineageRows'
 import { keepProjectWorkspace, keepWorkspaceFor, workspaceFields, type KeepWorkspace } from './workspaces'
 import { resettable } from './moduleState'
 import type { AppendRow } from './noteAppends'
+import { LOCAL_ERRORS } from './localErrors'
 
 let devicePromise: Promise<string> | null = null
 /** The local data epoch the memoised id was read in; a sign-out starts a new one. */
@@ -139,10 +140,23 @@ export async function applyOps(
   await db.transaction('rw', entityTables(), async () => {
     const recorded: RecordInput[] = []
     const rows = new Map<string, Record<string, unknown>>()
+    // One read and one write per table, not one per row (performance-10k): a
+    // pulled page of 1,000 ops touches about a hundred rows.
+    const stored = new Map<string, unknown>()
+    const byTable = new Map<Entity, string[]>()
+    for (const [, list] of grouped) {
+      const ids = byTable.get(list[0].entity)
+      if (ids) ids.push(list[0].entityId)
+      else byTable.set(list[0].entity, [list[0].entityId])
+    }
+    for (const [entity, ids] of byTable) {
+      const found = await tableOf(entity).bulkGet(ids)
+      ids.forEach((id, i) => { if (found[i]) stored.set(`${entity}:${id}`, found[i]) })
+    }
+    const writes = new Map<Entity, EntityRow[]>()
     for (const [, list] of grouped) {
       const { entity, entityId } = list[0]
-      const table = tableOf(entity)
-      const existing = (await table.get(entityId)) as (Project | Task | Label | View | Reminder | Section | Comment | ProjectPrefs) | undefined
+      const existing = stored.get(`${entity}:${entityId}`) as (Project | Task | Label | View | Reminder | Section | Comment | ProjectPrefs) | undefined
       const row: Record<string, unknown> = existing ? { ...existing } : { ...DEFAULTS[entity], id: entityId, _clock: {} }
       const clock: Clock = { ...(row._clock as Clock) }
       let changed = !existing
@@ -188,7 +202,9 @@ export async function applyOps(
       rows.set(`${entity}:${entityId}`, row)
       if (changed) {
         row._clock = clock
-        await table.put(row as EntityRow)
+        const w = writes.get(entity)
+        if (w) w.push(row as EntityRow)
+        else writes.set(entity, [row as EntityRow])
       }
       if (rt && NOTE_ENTITIES.has(entity) && (merged !== undefined || list.some((o) => appendId(o.field)))) {
         let patch: Record<string, unknown> | null = merged !== undefined ? reconcileNote(rt, row as unknown as Task, merged) : null
@@ -203,6 +219,7 @@ export async function applyOps(
         }
       }
     }
+    for (const [entity, list] of writes) await tableOf(entity).bulkPut(list)
     // Place each recorded op in its task and project once every row is written.
     for (const r of recorded) {
       if (r.op.entity === 'task') r.taskId = r.op.entityId
@@ -665,13 +682,13 @@ export async function createProject(input: { name: string; color?: string; paren
  */
 export async function moveProject(id: string, parentId: string | null): Promise<void> {
   const project = await db.projects.get(id)
-  if (!project || project.deleted_at) throw new Error('project not found')
+  if (!project || project.deleted_at) throw new Error(LOCAL_ERRORS.projectNotFound)
   if (parentId === project.parent_id) return
   const all = await liveProjects()
   if (parentId !== null) {
     if (parentId === id) throw new Error(t('a project cannot be its own parent'))
     const parent = all.find((p) => p.id === parentId)
-    if (!parent || parent.archived) throw new Error('parent project not found')
+    if (!parent || parent.archived) throw new Error(LOCAL_ERRORS.parentProjectNotFound)
     if (isDescendant(parentId, id, all)) throw new Error(t('parent cannot be a descendant of the project'))
   }
   // It stays in the workspace it is in when it becomes a top-level project (issue 544).
@@ -895,7 +912,7 @@ function remember(position: number): number {
 /** A new subtask lives in its parent's project, with default priority and no due date. */
 export async function createSubtask(parentId: string, title: string): Promise<string> {
   const parent = await db.tasks.get(parentId)
-  if (!parent || parent.deleted_at) throw new Error('parent task not found')
+  if (!parent || parent.deleted_at) throw new Error(LOCAL_ERRORS.parentTaskNotFound)
   return createTask({ title, project_id: parent.project_id, parent_id: parentId })
 }
 
@@ -911,13 +928,13 @@ async function liveTasks(): Promise<Task[]> {
  */
 export async function setTaskParent(id: string, parentId: string | null): Promise<void> {
   const task = await db.tasks.get(id)
-  if (!task || task.deleted_at) throw new Error('task not found')
+  if (!task || task.deleted_at) throw new Error(LOCAL_ERRORS.taskNotFound)
   if (parentId === task.parent_id) return
   const all = await liveTasks()
   if (parentId !== null) {
     if (parentId === id) throw new Error(t('a task cannot be its own parent'))
     const parent = all.find((tk) => tk.id === parentId)
-    if (!parent) throw new Error('parent task not found')
+    if (!parent) throw new Error(LOCAL_ERRORS.parentTaskNotFound)
     if (parent.project_id !== task.project_id) throw new Error(t('parent must be in the same project'))
     if (isDescendant(parentId, id, all)) throw new Error(t('parent cannot be a descendant of the task'))
   }
@@ -988,7 +1005,7 @@ function copyTasks(
  */
 export async function moveTaskAcrossScopes(id: string, patch: Partial<Omit<Task, 'id' | '_clock'>>, opts?: MutateOptions): Promise<string> {
   const task = await db.tasks.get(id)
-  if (!task || task.deleted_at) throw new Error('task not found')
+  if (!task || task.deleted_at) throw new Error(LOCAL_ERRORS.taskNotFound)
   const assignable = assignableIn(patch.project_id ?? null, await membershipMap(), await currentUserId())
   const plan = planProjectChange(task, await liveTasks(), patch, { assignable }, Date.now(), await keepWorkspaceFor())
   await mutateMany(plan.changes, opts)
@@ -1160,7 +1177,25 @@ export async function setTaskCompleted(id: string, completed: boolean): Promise<
 }
 
 async function completePlain(id: string, now: number, stops: Change[]): Promise<void> {
-  await mutateMany([...planCompletePlain(id, await liveTasks(), now), ...stops])
+  await mutateMany([...planCompletePlain(id, await liveSubtree(id), now), ...stops])
+}
+
+/**
+ * The task and its live descendants, read level by level through the parent_id
+ * index: the same set `descendants` finds in every live task, without reading the
+ * 10,000 tasks of a large account on each completion (list-rendering-at-scale).
+ */
+export async function liveSubtree(id: string): Promise<Task[]> {
+  const root = await db.tasks.get(id)
+  const out: Task[] = root && !root.deleted_at ? [root] : []
+  const seen = new Set([id])
+  for (let level = [id]; level.length > 0; ) {
+    const kids = (await db.tasks.where('parent_id').anyOf(level).toArray()).filter((tk) => !tk.deleted_at && !seen.has(tk.id))
+    for (const k of kids) seen.add(k.id)
+    out.push(...kids)
+    level = kids.map((k) => k.id)
+  }
+  return out
 }
 
 /**
@@ -1381,7 +1416,7 @@ export function copyNoteChange(note: Note, projectId: string | null, workspaceId
  */
 export async function restoreTask(id: string): Promise<string> {
   const task = await db.tasks.get(id)
-  if (!task) throw new Error('task not found')
+  if (!task) throw new Error(LOCAL_ERRORS.taskNotFound)
   if (!task.deleted_at) return id
   const all = await db.tasks.toArray()
   const subtree = [task, ...[...descendants(id, all)].map((d) => all.find((tk) => tk.id === d)).filter((item): item is Task => !!item && item.deleted_at === task.deleted_at)]
@@ -1411,7 +1446,7 @@ export async function restoreTask(id: string): Promise<string> {
  */
 export async function restoreProject(id: string): Promise<void> {
   const project = await db.projects.get(id)
-  if (!project) throw new Error('project not found')
+  if (!project) throw new Error(LOCAL_ERRORS.projectNotFound)
   if (!project.deleted_at) return
   const memberships = await membershipMap()
   if (memberships.has(id) && roleOf(id, memberships) !== 'owner') throw new Error(t('only the owner can restore a shared project'))

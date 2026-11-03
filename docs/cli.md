@@ -15,6 +15,8 @@ It is an **online** client: it keeps no local copy of your tasks and makes no ch
 
 `ot rules list` lists your [automation rules](automations.md); `ot rules enable <id>` and `ot rules disable <id>` turn one on or off (an id prefix or the exact name works; `--dry-run` prints the request); `ot rules runs <id>` prints its run log. A read token lists but cannot switch (exit 5). [Routines](routines.md) have their own command, `ot routine` (below).
 
+Command names, flags, exit codes and the `--json` output are part of the v1 surface: within 1.x they only grow ([stability and compatibility](stability.md)).
+
 ## Install
 
 Release assets are published for linux, macOS and Windows on amd64 and arm64 (`ot-<os>-<arch>`, with `SHA256SUMS`); download one, make it executable and put it on your `PATH`. Or build from source (Go 1.26+, no other dependency):
@@ -399,7 +401,7 @@ ot import tasks.csv --duplicates import --time-zone Europe/Rome
 ot import opentodo-export.json --existing overwrite       # restore, keeping the export's workspaces
 ```
 
-`--format` forces a format id instead of detection, `--existing skip|overwrite` applies to an OpenTodo export, `--duplicates skip|import` to possible duplicates, and `--time-zone` (default: this machine's zone) to date-times written with a zone. Imports need a `full` or `admin` token: `read` and `agent` tokens and read-only mode exit 5 before the file is sent. A failed job exits 1 with `import_failed`; undo an import in the app under **Past imports**.
+`--format` forces a format id instead of detection (`ot import --help` lists them; for example `notion-csv` for a single Notion CSV, which is never detected), `--existing skip|overwrite` applies to an OpenTodo export, `--duplicates skip|import` to possible duplicates, and `--time-zone` (default: this machine's zone) to date-times written with a zone. Imports need a `full` or `admin` token: `read` and `agent` tokens and read-only mode exit 5 before the file is sent. A failed job exits 1 with `import_failed`; undo an import in the app under **Past imports**.
 
 ## MCP bridge and encryption
 
