@@ -139,7 +139,7 @@ Moving ticked tasks to a project or section and assigning them SHALL first show 
 - **THEN** nothing is written and the selection is kept
 
 ### Requirement: Undo a bulk action in one step
-After a bulk action a toast SHALL name it ("12 tasks completed") with an Undo control for ten seconds; the control, or `Ctrl`/`⌘`+`Z` outside a text field while the toast shows, SHALL restore the previous values as one new batch, offline-capable and convergent. A field changed again since the action SHALL be skipped and the task named. Undo state SHALL be device-local (the last 20 batches), never synced or exported, and cleared at sign-out.
+After a bulk action a toast SHALL name it ("12 tasks completed") with an Undo control for ten seconds; trashing a batch SHALL hold the offer for fifteen seconds and offer a "Show Trash" control as its second. The control, or `Ctrl`/`⌘`+`Z` outside a text field while the toast shows, SHALL restore the previous values as one new batch, offline-capable and convergent. Trashing more than twenty ticked tasks SHALL first ask the shared confirmation dialog naming the count; smaller sets SHALL trash at once. A field changed again since the action SHALL be skipped and the task named. Undo state SHALL be device-local (the last 20 batches), never synced or exported, and cleared at sign-out.
 
 #### Scenario: Undo a cross-scope move
 - **WHEN** the user moved two personal tasks into a shared project and activates Undo
@@ -156,6 +156,14 @@ After a bulk action a toast SHALL name it ("12 tasks completed") with an Undo co
 #### Scenario: Toast is keyboard reachable
 - **WHEN** a bulk action's toast is shown and the user presses Tab
 - **THEN** the Undo control receives focus and Enter undoes
+
+#### Scenario: Large trash asks first
+- **WHEN** the user ticks 30 tasks and presses Delete
+- **THEN** the shared confirmation dialog names the count ("Move 30 tasks to the Trash?"), and the batch lands in the Trash only after confirming; ticking three tasks and pressing Delete trashes them at once
+
+#### Scenario: The Trash offer holds longer
+- **WHEN** the user trashes a batch of tasks
+- **THEN** the offer holds Undo for fifteen seconds (instead of ten) with "Show Trash" as its second control, and activating it opens the Trash view
 
 ### Requirement: Discoverability
 The `?` overlay and the keyboard guide SHALL list the selection keys and `.`, and the tasks guide SHALL explain selecting several tasks and undoing a bulk action.
@@ -204,3 +212,22 @@ On a touch screen, the long press that ticks a row SHALL give its haptic pulse o
 #### Scenario: Two ticked tasks
 - **WHEN** two rows are ticked on a phone and the user taps Actions
 - **THEN** the menu offers the batch actions only, without Start tracking or Start focus
+
+### Requirement: A tap ticks a row in Select mode
+While "Select tasks" is on, a tap anywhere on a row (its title, its facts or the empty part of the row) SHALL tick or untick that row through the same path as Shift and Ctrl/⌘ clicks, and SHALL NOT open the task. The checkbox SHALL keep ticking its row, the disclosure control SHALL keep showing the details, and a drag or swipe SHALL keep its own meaning. With Select mode off a tap SHALL open the task as before, and on a fine pointer Select mode is not offered. Selection stays device state and is never synced.
+
+#### Scenario: A tap on the title ticks it
+- **WHEN** a user on a phone turns on "Select tasks" and taps a row's title
+- **THEN** the row is ticked, the selection bar appears, and no task panel or page opens
+
+#### Scenario: A tap on the bare row ticks it
+- **WHEN** Select mode is on and the user taps the space beside a row's title, and taps the title of the same row again
+- **THEN** the first tap ticks the row and the second unticks it, with nothing opened
+
+#### Scenario: The checkbox and the details still work
+- **WHEN** Select mode is on and the user taps a row's checkbox or its disclosure control
+- **THEN** the checkbox ticks the row and the disclosure shows its details, as with Select mode off
+
+#### Scenario: Off, a tap opens the task
+- **WHEN** the user taps Done and then taps a row
+- **THEN** the task opens as before
