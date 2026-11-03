@@ -49,7 +49,8 @@ export function Popover(p: PopoverProps) {
 function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', role = 'dialog', modal = true, width = 'sm:w-56', className = '', children }: PopoverProps) {
   const wide = useWide()
   const panel = useRef<HTMLDivElement>(null)
-  useOverlay({ panel, onClose, modal, trigger: anchor })
+  // Below 640 px a popover is a bottom sheet over the page: the page behind it is inert.
+  useOverlay({ panel, onClose, modal, trigger: anchor, blocking: !wide })
   const [pos, setPos] = useState<{ top: number; left: number; maxHeight?: number; maxWidth?: number } | null>(null)
 
   const measure = useCallback(() => {

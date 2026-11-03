@@ -5,7 +5,9 @@ name: Interface audit
 # and dark, English and German, measured against the interface budget and the
 # audited rules; the report (index.html, report.json, screenshots) is uploaded as
 # ux-audit-report. Non-blocking: the tour only reports, unless the repository
-# variable UX_AUDIT_STRICT is 1; its measurement tests fail it.
+# variable UX_AUDIT_STRICT is 1; its measurement tests fail it. The accessibility rules
+# of the same tour are a gate of their own: on pull requests in ci.yml (a11y-screens)
+# and over the full matrix in nightly.yml (accessibility-aa).
 #
 # Its own workflow, off every critical path (tiered CI, ci-speed): nightly on main
 # and on demand (Actions → Interface audit → Run workflow, on any branch); neither a

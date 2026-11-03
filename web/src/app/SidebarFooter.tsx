@@ -47,7 +47,7 @@ export function SidebarFooter({ route, user, collapsed, onSearch, onShortcuts, o
         <Menu kind="menu" label={collapsed ? t('Account menu for {name}', { name }) : name} namedByContent={named} title={name}
           align="start" width="sm:w-64" tip={name} tipSide={collapsed ? 'right' : 'top'}
           triggerProps={{ 'aria-current': current ? 'page' : undefined, 'data-account-menu': true }}
-          triggerClassName={`flex min-h-9 items-center gap-2 rounded-control py-1 text-left text-body pointer-fine:min-h-8 ${TOUCH} ${collapsed ? 'w-full justify-center px-0' : named ? 'min-w-0 flex-1 px-1.5' : 'shrink-0 px-1.5'} ${current ? ACTIVE : IDLE}`}
+          triggerClassName={`flex min-h-9 items-center gap-2 rounded-control py-1 text-left text-body pointer-fine:min-h-8 ${TOUCH} ${collapsed ? 'w-full justify-center px-0' : named ? 'min-w-10 flex-1 px-1.5' : 'shrink-0 px-1.5'} ${current ? ACTIVE : IDLE}`}
           trigger={<>
             <PersonAvatar id={user.id} name={name} />
             {named && <span className="min-w-0 flex-1 truncate">{name}</span>}
@@ -63,7 +63,7 @@ export function SidebarFooter({ route, user, collapsed, onSearch, onShortcuts, o
         </Menu>
         {/* The running time entry (time-tracking D6): in the row, never a line of its own. */}
         {running && <RunningPill running={running} collapsed={collapsed} />}
-        {onAssistant && <IconButton icon="message-circle" label={t('Assistant')} shortcut={keysOf('global.assistant')} size="sm" className={TOUCH} onClick={onAssistant} aria-haspopup="dialog" data-assistant-launcher />}
+        {onAssistant && <IconButton icon="message-circle" label={t('Assistant')} shortcut={keysOf('global.assistant')} size="sm" className={`shrink-0 ${TOUCH}`} onClick={onAssistant} aria-haspopup="dialog" data-assistant-launcher />}
         <NotificationBell compact={collapsed} />
         <RelayIndicator />
         <SyncStatus compact={collapsed} />

@@ -12,7 +12,8 @@
 # a Makefile edit deliberately starts the other jobs but not that one — a broken
 # `make ios` shows up with the next mobile/ios change. Tiered CI (ci-speed): on a pull
 # request `ui` gates the workbench checks (Storybook a11y and visual), `layout` the
-# one browser layout and end-to-end job, `extension`, `obsidian` and `skill` their packages;
+# one browser layout and end-to-end job, `a11y` the accessibility gate on real screens,
+# `extension`, `obsidian` and `skill` their packages;
 # every one of them is true when the workflow or this filter changes.
 # Cases: scripts/repo-checks.test.mjs.
 set -eu
@@ -36,6 +37,8 @@ ci='\.github/workflows/ci\.yml$|scripts/ci-changes\.sh$'
 match() { printf '%s\n' "$code_files" | grep -qE "^($1|$ci)" && echo true || echo false; }
 ui=$(match 'web/src/|web/public/|web/\.storybook/|web/index\.html$|web/package(-lock)?\.json$|web/vite\.config\.ts$|scripts/ui-check/')
 layout=$(match 'web/|internal/|cmd/opentodo/|templates/|go\.(mod|sum)$|Makefile$|scripts/(e2e-|ux-audit/)')
+# The accessibility gate on real screens (accessibility-aa D1): the web app and the audit scripts.
+a11y=$(match 'web/|scripts/ux-audit/')
 extension=$(match 'extension/|Makefile$')
 # The Obsidian plugin (obsidian-plugin task 6.4): its folder and the shared code it bundles.
 obsidian=$(match 'obsidian/|web/src/lib/nlp/|web/src/lib/e2eeEnvelope\.ts$|web/src/lib/crypto\.ts$|web/src/lib/hlc\.ts$|web/src/lib/recurrence\.ts$|web/src/lib/i18n/format\.ts$|web/src/lib/taskOrigin\.ts$|web/src/lib/ids\.ts$|web/src/lib/moduleState\.ts$|web/src/lib/types\.ts$|web/src/lib/theme/|web/src/lib/colourMath\.ts$|web/src/generated/opSchema\.ts$|internal/vault/testdata/|internal/origin/testdata/|internal/httpapi/sync_handlers\.go$|Makefile$')
@@ -46,6 +49,7 @@ echo "docs=$docs"
 echo "mobile=$mobile"
 echo "ui=$ui"
 echo "layout=$layout"
+echo "a11y=$a11y"
 echo "extension=$extension"
 echo "obsidian=$obsidian"
 echo "skill=$skill"
