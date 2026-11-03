@@ -31,6 +31,8 @@ Two places had relied on the old snapshot arriving late, and are fixed so that t
 - The sidebar's saved-view and workspace counts are computed after the write's own frame (`useDeferredValue`).
 - The command bar folds its 10,000 tasks for matching while it waits for the first keystroke, sorts only the matches it shows, and scrolls its list to the top for the first option instead of laying out the whole page behind it.
 - The cursor's scroll looks for sticky headers without walking into rows, and the tab title keeps the heading it found instead of looking it up on every frame.
+- Completing a plain task read every task to find its subtree (the Undo plan and the plain completion); it now reads the subtree through the parent_id index, and only a series, whose roll looks at its occurrence records, reads them all. Ten quick ticks had queued about 5 s of these reads (CPU slowed 2x) in front of the next sync.
+- Quick add re-read its field's scroll after every render, a layout of the whole page; it now does so when its text changes.
 - The benchmark's remote edit compared the page's monotonic clock with the sender's wall clock, 0.9 s apart by then; both are wall-clock times now.
 
 ## Risks
