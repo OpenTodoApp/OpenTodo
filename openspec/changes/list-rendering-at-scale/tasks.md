@@ -11,6 +11,8 @@
 
 - [x] 2.3 Nothing outside a write's own rows moves (D5): kept row elements, the workspace directory written only when it changes, kept project and label rows, deferred sidebar counts, the command bar's folding and sorting, a tick that reads its subtree only; verify unit tests (an unchanged context publishes nothing, kept rows, no write for the same directory) and `make perf` cursor, complete-task and remote-edit
 
+- [x] 2.4 Incremental list updates (D6): kept rows and groups (`keepGroups`), each row compared on its own answers, sibling positions written only where they changed, counts over every task once the writes stop, the cursor row kept under `content-visibility`, cut titles measured only where drawn, the tab title's heading looked up only when one is added, the command bar's index prepared before it opens and narrowed while typing on, and the benchmark waiting until every row is drawn; verify unit tests (kept groups and rows, kept row elements, skipped titles not measured, narrowing equals a full match) and `make perf` complete-task, cursor-move and search-keystroke medians
+
 ## 3. Measure
 
 - [ ] 3.1 `make perf` on the CI runner: every list budget of `performance-10k` within its limit; if not, propose windowing (D4)

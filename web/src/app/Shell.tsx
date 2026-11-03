@@ -76,6 +76,8 @@ const HelpPanel = lazy(() => import('./help/HelpBundle').then((m) => ({ default:
 const AssistantRoot = lazy(() => import('./assistant/AssistantRoot'))
 // Command palette (search-and-command-palette D1): its own chunk, fetched on first open.
 const CommandPalette = lazy(() => import('./palette/CommandPalette'))
+// Its search index, prepared in idle moments before the first open (list-rendering-at-scale D6).
+const PaletteWarmer = lazy(() => import('./palette/PaletteWarmer'))
 // Weekly review and Statistics (stats-and-review D8): one chunk, fetched on first open.
 const ReviewView = lazy(() => import('./review/ReviewBundle').then((m) => ({ default: m.ReviewView })))
 const StatsView = lazy(() => import('./review/ReviewBundle').then((m) => ({ default: m.StatsView })))
@@ -105,6 +107,16 @@ function useSidebarRequests(setSidebarOpen: (open: boolean) => void) {
   useEffect(() => sidebarFind.subscribe((id) => { if (id === 'open') { setSidebarCollapsed(false); setSidebarOpen(true) } }), [setSidebarOpen])
   // The briefing's replies open the bell's list (briefing-links D2): on a phone it sits in the drawer.
   useEffect(() => notificationsOpen.subscribe(() => { if (!window.matchMedia?.('(min-width: 48rem)').matches) setSidebarOpen(true) }), [setSidebarOpen])
+}
+
+/** The command bar when open, and its search index prepared before (list-rendering-at-scale D6). */
+function CommandBar({ palette, user, showShortcuts }: { palette: ReturnType<typeof useCommandBar>; user: User; showShortcuts: () => void }) {
+  return (
+    <>
+      {palette.warm && <PanelBoundary><Suspense fallback={null}><PaletteWarmer user={user} onDone={palette.warmed} /></Suspense></PanelBoundary>}
+      {palette.loaded && palette.open && <PanelBoundary resetKey={palette.open}><Suspense fallback={null}><CommandPalette user={user} initialMode={palette.mode} logWin={palette.win} onClose={palette.close} showShortcuts={showShortcuts} /></Suspense></PanelBoundary>}
+    </>
+  )
 }
 
 export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) {
@@ -340,7 +352,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         context={{ view: route.view, board: hasScope('board') || hasScope('timeline'), panelOpen: hasScope('panel') || !!panelTaskId() }} />}
       {helpRequest && <PanelBoundary><Suspense fallback={null}><HelpPanel key={helpRequest.screen} screen={helpRequest.screen} trigger={helpRequest.trigger} onClose={closeHelp} /></Suspense></PanelBoundary>}
       {assistantLoaded && <PanelBoundary><Suspense fallback={null}><AssistantRoot name={user.name} onPage={route.view === 'ask'} context={() => ({ view: route.view, projectId: route.view === 'project' ? route.id : undefined })} /></Suspense></PanelBoundary>}
-      {palette.loaded && palette.open && <PanelBoundary resetKey={palette.open}><Suspense fallback={null}><CommandPalette user={user} initialMode={palette.mode} logWin={palette.win} onClose={palette.close} showShortcuts={() => setShowHelp(true)} /></Suspense></PanelBoundary>}
+      <CommandBar palette={palette} user={user} showShortcuts={() => setShowHelp(true)} />
       {/* The owner's one-time thank-you on a new server (welcome-note). */}
       <WelcomeDialog user={user} />
       {/* The start guide after it (first-run "Three-step first run"); never a row of the list. */}

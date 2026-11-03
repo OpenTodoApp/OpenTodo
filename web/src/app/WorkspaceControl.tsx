@@ -4,11 +4,12 @@
 // "Manage workspaces". It is not a destination and adds no row; with one
 // workspace it shows "OpenTodo" with "Personal" below it (sidebar-title-lines).
 // Switching is device state.
-import { useDeferredValue, useMemo } from 'react'
+import { useMemo } from 'react'
 import { CatalogueIcon, hueFor, Icon, isCatalogueIcon, Menu, MenuItem, MenuSeparator, StatusDot } from '../ui'
 import { t } from '../lib/i18n'
 import { inboxParents, isInboxTask } from '../lib/inbox'
 import { useTasksOfEveryWorkspace } from '../lib/liveTasks'
+import { useSettledValue } from '../lib/useSettledValue'
 import { useProjectsOfEveryWorkspace, useWorkspaceState } from '../lib/localData'
 import { useUnreadCounts } from '../lib/feed'
 import type { Workspace } from '../lib/types'
@@ -36,9 +37,9 @@ type Counts = Map<string, { inbox: number; today: number; unread: number }>
 function useWorkspaceCounts(): Counts {
   const state = useWorkspaceState()
   const projects = useProjectsOfEveryWorkspace()
-  // Counted after the write's own frame, as the sidebar's view counts (list-rendering-at-scale).
+  // Counted once the writes stop, as the sidebar's view counts (list-rendering-at-scale D6).
   const every = useTasksOfEveryWorkspace()
-  const tasks = useDeferredValue(every)
+  const tasks = useSettledValue(every)
   const today = useToday()
   const unread = useUnreadCounts()
   return useMemo(() => {
