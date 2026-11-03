@@ -8,6 +8,7 @@ import { resetDeviceId } from './ops'
 import type { Task } from './types'
 import { USER_PREFS_ID } from './userPrefs'
 import { createBoardFromTemplate, createView, evaluateViews } from './views'
+import { storeWorkspaces, switchTo } from './workspaces'
 
 let n = 0
 beforeEach(() => {
@@ -55,6 +56,26 @@ describe('Eisenhower matrix', () => {
     expect(favouritesOf(prefs, { projects: [], labels: [], views }).map((f) => f.id)).toEqual([before, board])
     const stamps = new Set((await db.outbox.toArray()).filter((o) => o.entityId !== before).map((o) => `${o.ts}|${o.device}`))
     expect(stamps.size).toBe(1)
+    // No workspace directory: nothing is stamped, so the op footprint stays.
+    expect([...filters, dash].every((v) => v.workspace_id == null)).toBe(true)
+  })
+
+  it('saves the board and its filters in the current workspace', async () => {
+    const entry = (id: string, isDefault = false) => ({ id, name: id, icon: '', color: '', default: isDefault, role: 'owner' as const, ownerId: 'me', members: [], groups: [] })
+    await storeWorkspaces([entry('personal', true), entry('w-work')])
+    await switchTo('w-work')
+    const board = await createBoardFromTemplate(EISENHOWER, 'Eisenhower')
+    const views = await db.views.toArray()
+    const dash = views.find((v) => v.id === board)!
+    const made = [dash, ...dash.panels.map((id) => views.find((v) => v.id === id)!)]
+    expect(made).toHaveLength(5)
+    expect(made.every((v) => v.workspace_id === 'w-work')).toBe(true)
+    await switchTo('personal')
+    const home = await createBoardFromTemplate(EISENHOWER, 'Home')
+    const again = await db.views.toArray()
+    const homeDash = again.find((v) => v.id === home)!
+    const homeMade = [homeDash, ...homeDash.panels.map((id) => again.find((v) => v.id === id)!)]
+    expect(homeMade.every((v) => v.workspace_id == null)).toBe(true)
   })
 
   it('quadrants are exclusive and leave parked tasks out (spec "Quadrants are exclusive")', async () => {
