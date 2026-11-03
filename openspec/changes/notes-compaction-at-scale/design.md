@@ -59,4 +59,4 @@ No dependency. Binary size unchanged within noise. During a run the writer's pag
 ## Risks
 
 - A device whose document did *not* contain its earlier saves (a client bug, a local store wiped while keeping the device id) would lose those saves for a new device's copy. Mitigation: device ids live in the same local store as the documents (wiping one wipes the other), and existing devices still pull every op; only first copies use the feature.
-- Disk-bound machines: checkpoints of a large write-ahead log compete with the writer for the disk. The checkpoint runs four times a second and before the run ends, so the log stays small.
+- Disk-bound moments: a commit waits for the disk when the system is busy writing other data back (the CI benchmark first copied the 2.6 GB fixture and measured while the kernel wrote the copy, and a commit took 200 ms; the benchmark now waits for that write-back first). The checkpoint runs four times a second and before the run ends, so the log stays small.
