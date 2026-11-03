@@ -1,8 +1,8 @@
 // The list body (OpenSpec change web-component-structure): rows, the grouped list
 // with its headers and section groups, and the logbook's "Show more". The board and
 // the timeline have their own bodies (BoardView, TimelineView).
-import { Fragment, lazy, Suspense, type ReactNode, useLayoutEffect, useMemo, useRef } from 'react'
-import { t } from '../../lib/i18n'
+import { Fragment, lazy, Suspense, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { t, useLanguageVersion } from '../../lib/i18n'
 import { BLOCKED_OPEN_KEY, earlierCollapsed, flatRow, type ListGroup, type ListRow as Row } from '../../lib/listGroups'
 import type { DropAt } from '../listDrop'
 import { memberName } from '../../lib/sharing'
@@ -168,8 +168,7 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           ticked={!ghost && c.ticked.has(r.task.id)}
           showCheckbox={c.showCheckbox}
           hideFieldBadges={c.fieldColumns}
-          posInSet={tree ? c.siblingPos.get(r.task.id)?.pos : undefined}
-          setSize={tree ? c.siblingPos.get(r.task.id)?.size : undefined}
+          treeItem={tree}
           handlers={c.actions}
           swipe={!!c.swipe && !ghost && !editing && !c.board}
           inline={editing ? c.renderInline?.(r.task) : undefined}
@@ -185,6 +184,48 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
     )
   }
   return (r) => (c.fieldColumns ? <FieldColumnsRow key={r.task.id} task={r.task} defs={c.projectFieldDefs} row={line(r)} /> : line(r))
+}
+
+/** The context fields that name one row; each row compares its own answer instead. */
+const ROW_FIELDS = new Set<keyof RowContext>(['selectedId', 'inlineId', 'expandedId', 'dropAt', 'draggingId', 'ticked', 'addingUnder', 'onCloseSubtask', 'departures'])
+
+/** What a row reads from the ROW_FIELDS: the same answers give the same element. */
+const rowSignature = (c: RowContext, r: Row): string => {
+  const id = r.task.id
+  return `${rowMotion(r.task, c.departures) ?? '-'}${+(c.selectedId === id)}${+(c.inlineId === id)}${+(c.expandedId === id)}${c.dropAt?.id === id ? c.dropAt.zone : '-'}${+(c.draggingId === id)}${+!!c.draggingId}${+c.ticked.has(id)}${+(c.addingUnder === id)}`
+}
+
+const sameContext = (a: RowContext, b: RowContext): boolean => {
+  for (const k of Object.keys(b) as (keyof RowContext)[]) if (!ROW_FIELDS.has(k) && a[k] !== b[k]) return false
+  return Object.keys(a).length === Object.keys(b).length
+}
+
+/**
+ * rowRenderer with each row's element kept while nothing it shows changed
+ * (list-rendering-at-scale): a cursor move, a tick or an expanded row gives the
+ * same element to every other row, which React passes over without comparing
+ * its props. A list draws up to 2,000 rows, and making their elements again took
+ * most of a cursor move. Rows are new objects whenever their task or place
+ * changes; anything else that changes clears the cache.
+ */
+export function useRowRenderer(c: RowContext): (r: Row) => ReactNode {
+  // A row's words ("You", "Former member") follow the language.
+  const language = useLanguageVersion()
+  const cache = useRef<{ c: RowContext | null; language: number; rows: WeakMap<Row, { sig: string; el: ReactNode }> }>({ c: null, language, rows: new WeakMap() })
+  const held = cache.current
+  if (!held.c || held.language !== language || !sameContext(held.c, c)) held.rows = new WeakMap()
+  held.c = c
+  held.language = language
+  const rows = held.rows
+  const render = rowRenderer(c)
+  return (r) => {
+    const sig = rowSignature(c, r)
+    const hit = rows.get(r)
+    if (hit?.sig === sig) return hit.el
+    const el = render(r)
+    rows.set(r, { sig, el })
+    return el
+  }
 }
 
 export interface GroupedListProps {
@@ -209,10 +250,54 @@ export interface GroupedListProps {
   completed?: { tasks: Task[]; open: boolean; onToggle: () => void; gotIt?: boolean }
   /** The always-visible actions of Today's Earlier group, for its task ids (page-rhythm D6). */
   earlierActions?: (ids: readonly string[]) => ReactNode
+  /** The row the cursor is on: drawn even before the rows above it (useRowLimit). */
+  reveal?: string | null
+  /** A tree list's positions among siblings, written as ARIA on its rows (SiblingAria). */
+  siblingPos?: ReadonlyMap<string, { pos: number; size: number }>
 }
+
+/** Rows drawn in the first frame of a list, and added in each later idle moment. */
+export const ROWS_PER_STEP = 150
+
+const idle = (fn: () => void): (() => void) => {
+  if (typeof requestIdleCallback === 'function') {
+    const h = requestIdleCallback(fn, { timeout: 100 })
+    return () => cancelIdleCallback(h)
+  }
+  const h = setTimeout(fn, 0)
+  return () => clearTimeout(h)
+}
+
+/**
+ * How many rows a list draws now (list-rendering-at-scale D1): a long list draws
+ * its first rows in the first frame and the rest a step at a time in idle
+ * moments, so opening a 2,000-task project shows its top at once; within a few
+ * frames every row is in the document (focus, find in page, drag and drop and
+ * screen readers reach all of them). A new list (`key`) starts again.
+ */
+function useRowLimit(key: string, total: number): number {
+  const [state, setState] = useState({ key, limit: ROWS_PER_STEP })
+  const limit = state.key === key ? state.limit : ROWS_PER_STEP
+  useEffect(() => {
+    if (state.key !== key) { setState({ key, limit: ROWS_PER_STEP }); return }
+    if (limit >= total) return
+    return idle(() => setState((s) => (s.key === key ? { key, limit: s.limit + ROWS_PER_STEP } : s)))
+  }, [key, limit, total, state.key])
+  return limit
+}
+
+const countRows = (groups: readonly ListGroup[]) => groups.reduce((n, g) => n + g.rows.length, 0)
 
 /** The list's groups: section groups of a project (headings are drop targets), or headed groups. */
 export function GroupedList(p: GroupedListProps) {
+  const total = countRows(p.groups)
+  const limit = useRowLimit(`${p.view}:${p.project?.id ?? ''}`, total)
+  if (limit < total) {
+    // Rows past the limit wait for a later step; the row the cursor is on is drawn at once.
+    let drawn = 0
+    const render = p.renderRow
+    p = { ...p, renderRow: (r) => (drawn++ < limit || r.task.id === p.reveal ? render(r) : null) }
+  }
   /** The rows of a group: a list, or a row group of the columns table (custom-fields). */
   const rowList = (children: ReactNode, extra?: Record<string, string>) => (p.fieldColumns
     ? <div role="rowgroup" {...extra}>{children}</div>
@@ -224,7 +309,34 @@ export function GroupedList(p: GroupedListProps) {
     ? <SectionGroup key={g.key} g={g} first={!g.section || g.key === sectionKeys[0]} last={!g.section || g.key === sectionKeys[sectionKeys.length - 1]} rowList={rowList} {...p} project={p.project} />
     : <HeadedGroup key={g.key} g={g} rowList={rowList} {...p} />)),
   p.completed && p.completed.tasks.length > 0 && <CompletedGroup key="completed" c={p.completed} rowList={rowList} renderRow={p.renderRow} fieldColumns={p.fieldColumns} />]
-  return p.fieldColumns ? <FieldColumnsTable defs={p.projectFieldDefs}>{body}</FieldColumnsTable> : <>{body}</>
+  const aria = p.siblingPos ? <SiblingAria key="aria" positions={p.siblingPos} drawn={Math.min(limit, total)} /> : null
+  return p.fieldColumns ? <FieldColumnsTable defs={p.projectFieldDefs}>{body}{aria}</FieldColumnsTable> : <>{body}{aria}</>
+}
+
+/**
+ * The tree list's aria-posinset and aria-setsize (assistive-tech-semantics), written
+ * on the rows when the positions change or more rows are drawn: when a row leaves, every sibling's
+ * position changes, and as React props that drew all 2,000 rows of a long list
+ * again (list-rendering-at-scale). Screen readers read the same attributes.
+ */
+function SiblingAria({ positions, drawn }: { positions: ReadonlyMap<string, { pos: number; size: number }>; drawn: number }) {
+  const marker = useRef<HTMLSpanElement>(null)
+  useLayoutEffect(() => {
+    const root = marker.current?.parentElement
+    if (!root) return
+    for (const li of root.querySelectorAll<HTMLElement>('li[data-task-id]')) {
+      const at = li.hasAttribute('aria-level') ? positions.get(li.dataset.taskId!) : undefined
+      if (at) {
+        if (li.getAttribute('aria-posinset') !== String(at.pos)) li.setAttribute('aria-posinset', String(at.pos))
+        if (li.getAttribute('aria-setsize') !== String(at.size)) li.setAttribute('aria-setsize', String(at.size))
+      } else {
+        li.removeAttribute('aria-posinset')
+        li.removeAttribute('aria-setsize')
+      }
+    }
+    // Again when the positions change or more rows are drawn; a cursor move changes neither.
+  }, [positions, drawn])
+  return <span ref={marker} hidden />
 }
 
 type RowList = (children: ReactNode, extra?: Record<string, string>) => ReactNode

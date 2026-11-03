@@ -1176,7 +1176,25 @@ export async function setTaskCompleted(id: string, completed: boolean): Promise<
 }
 
 async function completePlain(id: string, now: number, stops: Change[]): Promise<void> {
-  await mutateMany([...planCompletePlain(id, await liveTasks(), now), ...stops])
+  await mutateMany([...planCompletePlain(id, await liveSubtree(id), now), ...stops])
+}
+
+/**
+ * The task and its live descendants, read level by level through the parent_id
+ * index: the same set `descendants` finds in every live task, without reading the
+ * 10,000 tasks of a large account on each completion (list-rendering-at-scale).
+ */
+export async function liveSubtree(id: string): Promise<Task[]> {
+  const root = await db.tasks.get(id)
+  const out: Task[] = root && !root.deleted_at ? [root] : []
+  const seen = new Set([id])
+  for (let level = [id]; level.length > 0; ) {
+    const kids = (await db.tasks.where('parent_id').anyOf(level).toArray()).filter((tk) => !tk.deleted_at && !seen.has(tk.id))
+    for (const k of kids) seen.add(k.id)
+    out.push(...kids)
+    level = kids.map((k) => k.id)
+  }
+  return out
 }
 
 /**
