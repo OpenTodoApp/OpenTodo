@@ -804,7 +804,7 @@ The empty Today, the empty Upcoming, a project with no open task, Done for today
 - **THEN** `make ui-lint` fails naming the file
 
 ### Requirement: Toast primitive
-The client SHALL show at most one toast at a time, in the toast region (bottom centre on phones, bottom right from 640 px up, clear of the home indicator and the on-screen keyboard); a new toast SHALL replace the previous one. A toast SHALL hold one sentence naming what happened, written as the result ("3 tasks rescheduled", "Moved to Home"), at most two controls, Undo first when the action can be undone, and a close button that dismisses it. It SHALL stay five seconds after one task's action and ten after a batch; after Undo it SHALL show the result ("Undone.") for five seconds and then leave; the timer SHALL pause while the pointer is over the toast or focus is inside it and restart when both leave, and a control that disappears while it has focus SHALL not keep the toast paused. Tab SHALL reach its controls; focus SHALL never move into a toast on its own; `Ctrl`/`⌘`+`Z` outside a text field SHALL activate Undo while the toast shows; Escape with focus inside the toast SHALL dismiss it and return focus to where it was before. The toast SHALL be announced politely to assistive technology. A toast SHALL never cover the element that has focus: while a toast is shown, the content column SHALL keep the focused element above the toast's height, and from 640 px up, when the region would overlap the focused element, the toast SHALL move to the opposite corner. Under reduced motion a toast SHALL only fade. Toasts are device interface state and write nothing.
+The client SHALL show at most one toast at a time, in the toast region (bottom centre on phones, bottom right from 640 px up, clear of the home indicator and the on-screen keyboard); a new toast SHALL replace the previous one. A toast SHALL hold one sentence naming what happened, written as the result ("3 tasks rescheduled", "Moved to Home"), at most two controls, Undo first when the action can be undone, and a close button that dismisses it. It SHALL stay five seconds after one task's action and ten after a batch; a named destructive action's offer MAY hold a longer window specified by the capability that raises it (bulk-actions' Trash offer holds fifteen), and a background failure message that has nothing to undo SHALL hold the one-action window and SHALL NOT show while an undo offer is up: it waits and takes the region when the offer leaves, its window starting when it is first shown. After Undo the toast SHALL show the result ("Undone.") for five seconds and then leave; the timer SHALL pause while the pointer is over the toast or focus is inside it and restart when both leave, and a control that disappears while it has focus SHALL not keep the toast paused. Tab SHALL reach its controls; focus SHALL never move into a toast on its own; `Ctrl`/`⌘`+`Z` outside a text field SHALL activate Undo while the toast shows; Escape with focus inside the toast SHALL dismiss it and return focus to where it was before. The toast SHALL be announced politely to assistive technology, except a background failure message, which SHALL be announced assertively. A toast SHALL never cover the element that has focus: while a toast is shown, the content column SHALL keep the focused element above the toast's height, and from 640 px up, when the region would overlap the focused element, the toast SHALL move to the opposite corner. Under reduced motion a toast SHALL only fade. Toasts are device interface state and write nothing.
 
 #### Scenario: Pause on hover
 - **WHEN** a batch toast has shown for eight seconds and the user moves the pointer onto it and reads for ten seconds
@@ -833,6 +833,30 @@ The client SHALL show at most one toast at a time, in the toast region (bottom c
 #### Scenario: Dismiss
 - **WHEN** a toast is shown and the user activates its close button, or tabs into it and presses Escape
 - **THEN** the toast leaves at once, and after Escape focus is back on the element that had it before
+
+#### Scenario: A failure message waits for the undo offer
+- **WHEN** a focus session's time entry fails while a bulk Trash offer is showing
+- **THEN** the failure message does not render, and when the offer leaves (undo, dismiss or expiry) the message takes the toast region with its full five-second window
+
+#### Scenario: A failure message starts its window when shown
+- **WHEN** a failure message is raised while an undo offer shows, and the offer leaves four seconds later
+- **THEN** the message shows for its full five seconds from that moment
+
+#### Scenario: A failure message clears the focused element
+- **WHEN** the failure message appears while a text field has focus and the region would cover it
+- **THEN** the message moves to the opposite corner instead of covering the field
+
+#### Scenario: A failure message hold resets
+- **WHEN** the user dismisses the failure message while its close button has focus and a new failure message is raised
+- **THEN** the new message is not held by the previous focus and expires after five seconds
+
+#### Scenario: Escape dismisses a failure message
+- **WHEN** the failure message is shown and the user presses Escape with focus inside it
+- **THEN** the message leaves and focus returns to the element that had it before
+
+#### Scenario: A named destructive offer holds longer
+- **WHEN** the user trashes twelve tasks in one batch
+- **THEN** the offer names the action, holds Undo for fifteen seconds and offers "Show Trash" as its second control
 
 ### Requirement: Motion sequences in the workbench
 The workbench SHALL have a Foundations motion story set showing the completion sequence on a row and on a card, the repeating-task completion, a list reflow and each overlay entrance, each playable with a control, in both themes. An automated check in the interface check SHALL open these stories with reduced motion emulated and fail if any running animation changes `transform`, `height`, `width` or `translate`, and SHALL open them with the no-motion attribute and fail if any animation runs at all.

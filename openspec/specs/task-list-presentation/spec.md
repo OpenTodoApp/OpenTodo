@@ -261,11 +261,23 @@ Completing a task SHALL write the completion as an ordinary operation at once (a
 - **THEN** the card plays the completion sequence, collapses, and the cards below it in the column move up
 
 ### Requirement: Single-action undo
-Deleting a task, moving it to another project, changing its date or parking it SHALL offer the same Undo toast as bulk actions, replacing the previous offer.
+Deleting a task from any surface, moving it to another project, changing its date or parking it SHALL offer the same Undo toast as bulk actions, replacing the previous offer. Every delete path SHALL write through the same undoable trash, whether it comes from the row menu, the command palette, Vim's `dd`, the Filter view or a saved view, so all of them restore the task and its subtasks the same way.
 
 #### Scenario: Delete then undo
 - **WHEN** the user deletes a task from its row menu and activates Undo
 - **THEN** the task returns to its place with its subtasks and no tombstone remains after sync
+
+#### Scenario: Delete from the command palette
+- **WHEN** the user runs "Move Write the report to the Trash" in the command palette
+- **THEN** the task goes to the Trash and the toast offers Undo, exactly as its row menu does
+
+#### Scenario: Delete with Vim
+- **WHEN** the user selects one task and presses `dd` with Vim keybindings on
+- **THEN** the task goes to the Trash and the toast offers Undo
+
+#### Scenario: Delete from a Filter or saved view
+- **WHEN** the user presses Delete on a row of the Filter view or a saved view
+- **THEN** the task goes to the Trash and the toast offers Undo
 
 ### Requirement: Bulk selection does not shift rows
 The selection checkbox SHALL take the place of the task checkbox only while a selection is in progress (a row is ticked, or touch Select mode is on), so the row does not change width or alignment. Hover and keyboard focus SHALL NOT replace the task checkbox: clicking it always completes or reopens the task.
@@ -823,7 +835,7 @@ A task list row SHALL be able to show the task's details directly under it, insi
 - **THEN** the details appear at once without fading
 
 ### Requirement: Quick add stays reachable in long lists
-From 768 px wide, wherever the floating Add button is not shown, a list page's quick add SHALL stay visible directly under the page header while the list scrolls under it, on the page surface with its bottom border, so a new task can be added at any scroll position without scrolling back up. It SHALL be the same row as before, not an extra one, and SHALL never cover a focused row, the selection bar or a toast; focused rows SHALL scroll into view below it. Below 768 px the quick add SHALL scroll with the list as before, the floating Add button being the always reachable add control. Section add rows and board columns SHALL NOT stick. This is presentation only and behaves the same offline.
+From 768 px wide, except on a phone held in landscape (a coarse pointer under 500 px tall), wherever the floating Add button is not shown, a list page's quick add SHALL stay visible directly under the page header while the list scrolls under it, on the page surface with its bottom border, so a new task can be added at any scroll position without scrolling back up. It SHALL be the same row as before, not an extra one, and SHALL never cover a focused row, the selection bar or a toast; focused rows SHALL scroll into view below it, counting it only while it is pinned. Below 768 px, and on a landscape phone, the quick add SHALL scroll with the list as before, the floating Add button being the always reachable add control. Section add rows and board columns SHALL NOT stick. This is presentation only and behaves the same offline.
 
 #### Scenario: Add after scrolling down
 - **WHEN** on a 1280 × 800 window the user scrolls a project with 80 tasks to its end
@@ -836,6 +848,10 @@ From 768 px wide, wherever the floating Add button is not shown, a list page's q
 #### Scenario: Phone unchanged
 - **WHEN** the same project is scrolled on a 390 × 844 screen
 - **THEN** the quick add scrolls away with the list and the floating Add button stays visible
+
+#### Scenario: Landscape phone leaves it unpinned
+- **WHEN** the same project is scrolled on an 844 × 390 phone held in landscape
+- **THEN** the quick add scrolls with the list, the page header takes only its own height, and the floating Add button is the way to add a task
 
 ### Requirement: A new task out of sight is announced
 When a task added from a list page's quick add or a section's add row lands outside the visible part of the list, the app SHALL show a toast naming where it went ("Added to the bottom of {list}" or "Added to the top of {list}") with a Show action that scrolls the task into view and selects it. No toast SHALL be shown when the new row is visible, and the Inbox's note about a task that left the Inbox SHALL take precedence. This is presentation only and behaves the same offline.
