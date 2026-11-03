@@ -172,15 +172,21 @@ export const SidebarGroupAction = forwardRef<HTMLButtonElement, ButtonHTMLAttrib
 /**
  * Marks a scroller's edges for the fade masks of `.ui-scroller` (sidebar-compact-desktop):
  * `data-fade-top` while content is hidden above, `data-fade-bottom` while some is hidden
- * below, so a list that fits shows no fade at all.
+ * below, so a list that fits shows no fade at all. Sideways (`axis: 'x'`, a tab row):
+ * `data-fade-left` and `data-fade-right` the same way.
  */
-export function useScrollEdges(ref: RefObject<HTMLElement | null>): void {
+export function useScrollEdges(ref: RefObject<HTMLElement | null>, axis: 'x' | 'y' = 'y'): void {
   useEffect(() => {
     const el = ref.current
     if (!el) return
     let frame = 0
     const update = () => {
       frame = 0
+      if (axis === 'x') {
+        el.toggleAttribute('data-fade-left', el.scrollLeft > 1)
+        el.toggleAttribute('data-fade-right', el.scrollLeft + el.clientWidth < el.scrollWidth - 1)
+        return
+      }
       el.toggleAttribute('data-fade-top', el.scrollTop > 1)
       el.toggleAttribute('data-fade-bottom', el.scrollTop + el.clientHeight < el.scrollHeight - 1)
     }
@@ -190,6 +196,8 @@ export function useScrollEdges(ref: RefObject<HTMLElement | null>): void {
     // The scroller's own size (a resized window) and its content (a group opened or closed).
     const resize = typeof ResizeObserver === 'function' ? new ResizeObserver(later) : null
     resize?.observe(el)
+    // A tab's own width changes the row's (a web font arriving, a count growing).
+    if (axis === 'x') for (const child of el.children) resize?.observe(child)
     const content = typeof MutationObserver === 'function' ? new MutationObserver(later) : null
     content?.observe(el, { childList: true, subtree: true })
     return () => {
@@ -198,5 +206,5 @@ export function useScrollEdges(ref: RefObject<HTMLElement | null>): void {
       content?.disconnect()
       if (frame) cancelAnimationFrame(frame)
     }
-  }, [ref])
+  }, [ref, axis])
 }

@@ -53,13 +53,45 @@ describe('Tabs', () => {
     )
     const row = container.querySelector('[role="tablist"]')!
     const classes = row.className.split(/\s+/)
-    expect(classes).toEqual(expect.arrayContaining(['overflow-x-auto', 'overflow-y-hidden', 'ui-tab-row']))
-    // The baseline is the row's inset shadow (.ui-tab-row), not a border the tabs overlap.
-    expect(classes).not.toContain('border-b')
+    expect(classes).toEqual(expect.arrayContaining(['overflow-x-auto', 'overflow-y-hidden']))
+    // A designated sideways scroller: the layout check accepts it, the page never scrolls.
+    expect(row.hasAttribute('data-scroll-x')).toBe(true)
+    // The baseline is the bar's inset shadow (.ui-tab-row), not a border the tabs overlap.
+    const bar = row.parentElement!
+    expect(bar.className.split(/\s+/)).toContain('ui-tab-row')
+    expect([...classes, ...bar.className.split(/\s+/)]).not.toContain('border-b')
     for (const tab of container.querySelectorAll('[role="tab"]')) {
       expect(tab.className.split(/\s+/).some((c) => /^-mb-/.test(c))).toBe(false)
     }
     await unmount()
+  })
+
+  it('fades the edge where tabs are hidden, and nothing when the row fits', async () => {
+    const width = (el: HTMLElement) => (el.getAttribute('role') === 'tablist' ? (el.textContent!.length > 20 ? 400 : 200) : 0)
+    const sw = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollWidth')
+    const cw = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth')
+    Object.defineProperty(HTMLElement.prototype, 'scrollWidth', { configurable: true, get() { return width(this) } })
+    Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, get() { return this.getAttribute('role') === 'tablist' ? 300 : 0 } })
+    try {
+      const long = await render(
+        <Tabs label="Unterhaltung zur Aufgabe" value="a" onChange={() => {}} tabs={[{ id: 'a', label: 'Kommentare' }, { id: 'b', label: 'Aktivität' }, { id: 'c', label: 'Verlauf' }]}>
+          <p>panel</p>
+        </Tabs>,
+      )
+      const row = long.container.querySelector('[role="tablist"]')!
+      expect(row.hasAttribute('data-fade-right')).toBe(true)
+      expect(row.hasAttribute('data-fade-left')).toBe(false)
+      await long.unmount()
+      const short = await render(<Tabs label="Short" value="a" onChange={() => {}} tabs={[{ id: 'a', label: 'One' }]}><p>panel</p></Tabs>)
+      const fits = short.container.querySelector('[role="tablist"]')!
+      expect(fits.hasAttribute('data-fade-right') || fits.hasAttribute('data-fade-left')).toBe(false)
+      await short.unmount()
+    } finally {
+      if (sw) Object.defineProperty(HTMLElement.prototype, 'scrollWidth', sw)
+      else delete (HTMLElement.prototype as { scrollWidth?: number }).scrollWidth
+      if (cw) Object.defineProperty(HTMLElement.prototype, 'clientWidth', cw)
+      else delete (HTMLElement.prototype as { clientWidth?: number }).clientWidth
+    }
   })
 
   function Demo() {

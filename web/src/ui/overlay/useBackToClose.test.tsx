@@ -5,6 +5,7 @@ import { act, StrictMode, useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { click, render, waitFor } from '../test-utils'
 import { Dialog } from './Dialog'
+import { releaseStaleMarker } from './useBackToClose'
 
 const marker = () => (history.state as { overlay?: number } | null)?.overlay
 const dialogs = () => document.querySelectorAll('[data-overlay="dialog"]').length
@@ -94,6 +95,35 @@ describe('overlays and Back', () => {
     await waitFor(() => dialogs() === 0, 'closed by one Back')
     expect(location.pathname).toBe('/b')
     await r.unmount()
+  })
+
+  it('a load that lands on a marker makes it a plain entry, so the next close stays on the page', async () => {
+    // A reload with an overlay open keeps the entry's state; no overlay owns that marker now.
+    history.pushState({ overlay: 2, keep: 'x' }, '')
+    releaseStaleMarker()
+    expect(marker()).toBeUndefined()
+    expect(history.state).toEqual({ keep: 'x' })
+    history.pushState({ overlay: 1 }, '')
+    releaseStaleMarker()
+    expect(history.state).toBeNull()
+    const r = await render(<Single />)
+    await waitFor(() => dialogs() === 1, 'the dialog')
+    await click(document.querySelector('[data-overlay-close]')!)
+    await settled(0)
+    expect(location.pathname).toBe('/b')
+    await r.unmount()
+  })
+
+  it('does nothing in WebKit (Safari, every iOS browser)', async () => {
+    Object.defineProperty(navigator, 'vendor', { configurable: true, value: 'Apple Computer, Inc.' })
+    try {
+      const r = await render(<Single />)
+      await waitFor(() => dialogs() === 1, 'the dialog')
+      expect(marker()).toBeUndefined()
+      await r.unmount()
+    } finally {
+      delete (navigator as { vendor?: string }).vendor
+    }
   })
 
   it('does nothing with a mouse', async () => {
