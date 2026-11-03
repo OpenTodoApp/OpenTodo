@@ -7,6 +7,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 ### Added
 
 - **Import from Vikunja.** Upload the ZIP from Vikunja's **Settings → Export your data** and your projects, sub-projects, Kanban buckets (as sections), tasks, labels, repeats, reminders, subtasks, "blocked by" relations, comments and attached files come with you. Verified against exports of Vikunja 0.22.1 and 2.7.1; see [Switch from Vikunja](docs/switch/vikunja.md).
+- **Import from Tududi.** Upload a copy of Tududi's database file (`production.sqlite3`) and your areas, projects with their notes, tasks, subtasks, tags, priorities, dates and repeats come with you, read from a private read-only copy that is deleted afterwards. Verified against Tududi 1.14; see [Switch from Tududi](docs/switch/tududi.md).
 - **`GET /api/v1/tasks?project_id=<id>` lists one project's tasks.** The parameter used to be ignored, so the call listed every task of the account. It now lists only that project's items, on every collection whose items have a project, and reads only that project's rows: about 150 ms for a 2,000-task project in a 10,000-task account. An empty value or a collection without projects answers `400 invalid_input` ([API](docs/api.md#one-projects-items)).
 - **Performance budgets for a 10,000-task account.** [Performance budgets](docs/performance.md) lists how fast OpenTodo is held to be on a computer, in a phone profile and on a small server, with a test account built by `go run ./cmd/perfseed` and a benchmark you can run with `make perf` (#590).
 

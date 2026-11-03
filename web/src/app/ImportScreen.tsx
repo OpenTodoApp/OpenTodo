@@ -40,6 +40,7 @@ const FORMAT_LABELS = translatedMap<ImportFormat>({
   'apple-reminders-json': msg('Apple Reminders (JSON from the Shortcut)'),
   'anydo-json': msg('Any.do (JSON from a data request)'),
   'vikunja-export': msg('Vikunja (export ZIP)'),
+  'tududi-db': msg('Tududi (database)'),
   'json-items': msg('JSON: projects / sections / items'),
   'json-lists': msg('JSON: lists of tasks'),
   'json-generic': msg('JSON: task list'),
