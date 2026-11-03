@@ -292,3 +292,22 @@ The workbench checks stories; the audit checks the built app. `make ux-audit` st
 German captures cover every screen; overlays are opened in English, because their openers find controls by name. A finding seen only in German is marked so (M16). Each finding is scored by severity (4 blocks a task, 3 slows it, 2 breaks a guideline, 1 is cosmetic) times how often the screen is used (3 daily, 2 weekly, 1 rare), and the report lists the highest first.
 
 `ONLY` (inventory ids), `WIDTHS`, `THEMES`, `LANGS`, `CONCURRENCY` and `OUT_DIR` narrow a local run. With `UX_AUDIT_STRICT=1` the audit exits non-zero on budget, overflow, story-coverage and reduced-motion findings; in CI the repository variable `UX_AUDIT_STRICT` turns that on. The measurements have fixture tests in `scripts/ux-audit/measure.test.mjs` (one passing and one failing case each), and `scripts/ux-audit/ux-audit.test.mjs` keeps the inventory in step with the router and the layout check.
+
+### The accessibility gate on real screens
+
+The same tour is the accessibility gate (OpenSpec `accessibility`, change accessibility-aa). `A11Y_ONLY=1` takes no screenshots, skips the budget, motion and offline measures and fails on the accessibility rules only; `A11Y_STRICT=1` adds them to a full tour. Serious and critical axe findings cannot be exempted.
+
+| Id | WCAG 2.2 | Measures | Fails on |
+| --- | --- | --- | --- |
+| M1, M9 | A and AA rules | axe-core on the screen or the open overlay | any serious or critical issue |
+| M8 | 2.4.7 Focus visible | Tab through every entry at every width (an open overlay keeps its focus and is walked from there) | a stop without a ring (an outline or a shadow, on the element, its `::before`/`::after`, or the two nearest ancestors) |
+| M17 | 2.4.11 Focus not obscured | during the walk, the corners and centre of the focused element, two frames after the move | none of them hits the element (a sticky header, the tab bar, a toast or a sheet covers it) |
+| M18 | 1.4.10 Reflow | the screen at 320 × 256 CSS px (1280 × 1024 at 400%) | the page or any element scrolls sideways, outside a tab row and the two-dimensional regions in `scripts/ux-audit/reflow-exempt.json` (each with its reason) |
+| M19 | 1.4.12 Text spacing | the W3C text-spacing styles applied | text cut vertically by an element with hidden overflow |
+| M20 | 3.3.8 Accessible authentication | password, one-time code and recovery fields | no `autocomplete`, or a synthetic paste that the page cancels |
+| M21 | 2.5.8 Target size (minimum) | WCAG's own rule: 24 × 24 px, or a 24 px circle that meets no other target of the same layer | an undersized target too close to another |
+| NAV | | the entry opens | a screen or overlay that does not open |
+
+Every pull request that changes `web/` or `scripts/ux-audit/` runs it at 360 and 1280 px, light and dark, in English, in two shards (CI job "Accessibility (screens)"). The nightly workflow runs the full matrix (360, 768 and 1280 px, English and German, browser text size 20 px) in four shards, and a failure there opens the ci-nightly issue. Locally: `make build && A11Y_ONLY=1 WIDTHS=360,1280 LANGS=en node scripts/ux-audit/tour.mjs` (add `REFLOW_SHOTS=1` for a screenshot of each entry at 320 px). The failure lines name the screen, width, theme, language, rule and element.
+
+What the app does to pass, so new screens follow it: a modal dialog or bottom sheet makes the app behind it inert (`useOverlay({ blocking })`), and the phone drawer is an overlay that keeps Tab inside while open and is inert while closed; a toast moves out of the way of the focused element (`useToastClearance`, built into `ToastRegion`); a focused element under a sticky or fixed bar is scrolled clear of it (`lib/focusClearance.ts`); menu items draw the focus ring as well as the selected background.

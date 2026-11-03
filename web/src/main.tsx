@@ -4,6 +4,7 @@ import './index.css'
 import { App } from './app/App'
 import { ErrorBoundary } from './app/ErrorBoundary'
 import { watchVisualViewport } from './ui'
+import { watchFocusClearance } from './lib/focusClearance'
 import { bootLanguage } from './lib/i18n'
 import { logUnhandledRejections, watchAppUpdates } from './lib/appUpdate'
 import { installShellLinks } from './lib/shell'
@@ -11,6 +12,8 @@ import { startShellPublishers } from './lib/shellPublish'
 
 // Bottom sheets sit above the on-screen keyboard; the focused field stays visible.
 watchVisualViewport()
+// A focused element never stays under a sticky or fixed bar (accessibility-aa, WCAG 2.2 2.4.11).
+watchFocusClearance()
 
 // Open tabs recover after a server upgrade (client-sync-robustness): a missing
 // chunk reloads, a new service worker or database version asks to reload.

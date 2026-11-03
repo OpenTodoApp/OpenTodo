@@ -71,7 +71,9 @@ Advances ROADMAP-1.0 milestone 1.0 "Trust", item `accessibility-aa`.
 
 ### Modified Capabilities
 
-None. `design-system` keeps "Accessibility gate on stories" and "Focus visibility in the accessibility gate". `web-app` keeps "Interface audit tour" (it stays non-blocking for budget and overflow findings; the new capability makes its accessibility findings blocking through its own gate). `documentation` keeps "Accessible documentation".
+- `design-system`: "Toast primitive" keeps a toast clear of the focused element on phones too (it moves to the top of the screen when scrolling cannot clear it), found by the gate's focus-not-obscured measure.
+
+`design-system` otherwise keeps "Accessibility gate on stories" and "Focus visibility in the accessibility gate". `web-app` keeps "Interface audit tour" (it stays non-blocking for budget and overflow findings; the new capability makes its accessibility findings blocking through its own gate). `documentation` keeps "Accessible documentation".
 
 ## Impact
 

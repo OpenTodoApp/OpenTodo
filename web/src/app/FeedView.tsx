@@ -177,7 +177,7 @@ export function FeedView() {
                       {isPending(e, pending) && <Tooltip label={t('Not yet synced')}><span className="ml-1 rounded-chip text-meta italic text-warning" tabIndex={0}>{t('(pending)')}</span></Tooltip>}
                       <span className="mt-0.5 flex items-center gap-1 text-meta text-faint">
                         <span className="inline-block h-2 w-2 rounded-full bg-hue-solid" data-hue={hueFor(p?.color)} aria-hidden />
-                        <button type="button" className="min-w-0 truncate text-left hover:underline" onClick={() => e.projectId && navigate({ view: 'project', id: e.projectId })}>
+                        <button type="button" className="min-h-6 min-w-0 truncate text-left hover:underline" onClick={() => e.projectId && navigate({ view: 'project', id: e.projectId })}>
                           {projectName(e.projectId, e.projectName)}
                         </button>
                       </span>

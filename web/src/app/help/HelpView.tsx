@@ -137,7 +137,8 @@ export function HelpView({ page: slug, q }: { page?: string; q?: string }) {
         <div className="mt-6 space-y-8">
           {/* What people come to do, before the guide list (documentation "Help inside the app"). */}
           <section aria-label={t('Common tasks')} data-help-tasks>
-            <ul className="grid gap-2 sm:grid-cols-2">
+            {/* minmax(0, 1fr): a long task name is cut, it never widens the page (large text at 320 px, WCAG 1.4.10). */}
+            <ul className="grid grid-cols-[minmax(0,1fr)] gap-2 sm:grid-cols-2">
               {HELP_TASKS.map((entry) => {
                 const inApp = slugs.has(entry.page)
                 const href = inApp ? `/help/${entry.page}${entry.anchor ? `#${entry.anchor}` : ''}` : `${SITE}${entry.page}/`
@@ -158,7 +159,8 @@ export function HelpView({ page: slug, q }: { page?: string; q?: string }) {
           {helpSections(data.bundle).map((s) => (
             <section key={s.title} aria-labelledby={`help-sec-${s.title}`}>
               <h2 id={`help-sec-${s.title}`} className="mb-2 text-hint font-semibold uppercase tracking-wide text-muted">{s.title}</h2>
-              <ul className="grid gap-2 sm:grid-cols-2">
+              {/* minmax(0, 1fr): a long task name is cut, it never widens the page (large text at 320 px, WCAG 1.4.10). */}
+            <ul className="grid grid-cols-[minmax(0,1fr)] gap-2 sm:grid-cols-2">
                 {s.pages.map((p) => (
                   <li key={p.slug}>
                     <a href={`/help/${p.slug}`} className="block h-full rounded-card border border-default p-3 hover:border-accent"
