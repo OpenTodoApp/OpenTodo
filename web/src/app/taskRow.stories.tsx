@@ -370,6 +370,26 @@ export const WithOrigins: StoryObj = {
   },
 }
 
+/**
+ * Tasks imported from Todoist (row-title-first-on-phones, GitHub issue 844): the import's
+ * id is not shown in the row, so the title keeps the row's width; the Inbox's source line
+ * sits under the title. At 375 px each row is the phone's one line, the Inbox row two.
+ */
+export const ImportedOrigins: StoryObj = {
+  render: () => {
+    const todoist = (id: string) => ({ kind: 'import' as const, provider: 'todoist', id })
+    const trello = { kind: 'import' as const, provider: 'trello', id: '5f3a9c1e2b7d4a0012345678', url: 'https://trello.com/c/AbCd1234' }
+    return (
+      <List>
+        <TaskRow {...base} onExpand={noop} task={task({ id: 'im-1', title: 'Küche aufräumen und den Kühlschrank abtauen', due: { date: TOMORROW }, recurrence: 'every week', origin: todoist('dfc92cb10aed05a4:1') })} />
+        <TaskRow {...base} onExpand={noop} depth={2} task={task({ id: 'im-2', title: 'Geschenke für die Familie besorgen', origin: todoist('32dc159c4ebf721d:1') })} />
+        <TaskRow {...base} onExpand={noop} task={task({ id: 'im-3', title: 'Move the onboarding checklist into the new board', origin: trello })} />
+        <TaskRow {...base} onExpand={noop} source task={task({ id: 'im-4', title: 'Unterlagen für die Steuererklärung zusammensuchen', created_at: Date.now() - 19 * 3600_000, origin: todoist('b3e8862820356c2e:1') })} />
+      </List>
+    )
+  },
+}
+
 /** A task from an Obsidian note (obsidian-origin): the note's name with a note icon; one titled, one read from its path. */
 export const WithObsidianOrigin: StoryObj = {
   render: () => {

@@ -1134,6 +1134,11 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 @container row (width < 40rem) {
   [data-row-props] :is([data-date], [data-estimate], [data-progress]) > svg { display: none; }
 }
+/* The title keeps a very narrow row's width (row-title-first-on-phones): the origin at its
+   end is its icon, the words stay in the link's name and the task's details. */
+@container row (width < 30rem) {
+  [data-row-trailing] [data-origin-text] { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
 @container row (width >= 40rem) {
   /* align-content: on touch the open control is at least 44 px tall (the coarse-pointer
      button rule); the lines stay at its top, on the circle's line, not in its middle. */
@@ -1201,6 +1206,11 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
     [data-row-props] { grid-area: 1 / 2; display: flex; align-items: center; white-space: nowrap; }
     [data-row-props] > [data-row-cell]:not([data-row-phone]), [data-row-rest] { display: none; }
     [data-row-meta="row"] > [data-row-props] > [data-row-item]::before { content: none; }
+    /* The title comes first (row-title-first-on-phones): the origin is left to the row's
+       details and the task page, and the Inbox's source line is the second line, never a
+       second column beside the title. */
+    [data-row-trailing] { display: none; }
+    [data-row-source] { grid-area: 2 / 1 / 3 / 3; }
     /* The project as its dot, the assignee as the avatar; both names stay in the accessible text. */
     [data-row-cell="project"][data-dot] > :last-child,
     [data-row-cell="assignee"] [data-assignee] > :last-child { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
