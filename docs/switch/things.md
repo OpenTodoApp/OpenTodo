@@ -11,7 +11,7 @@ order: 20
 
 Things 3 has no export button, but OpenTodo can read a copy of its database directly. Your areas, projects, headings, to-dos, checklists, tags and notes come with you.
 
-## Copy the Things database
+## Export from Things
 
 On a Mac, as Cultured Code's support article "Accessing the Things database" describes:
 

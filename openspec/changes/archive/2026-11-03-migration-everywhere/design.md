@@ -107,10 +107,10 @@ Every row gets `origin {kind:"import", provider:"<app>", id}` with the source id
 - Alternative: drop tracked time. Rejected: tracked time is the reason many people use Super Productivity.
 
 **D5. The picker is client-side and reuses the switch guides.**
-- `ImportScreen.tsx` gains, above the file picker, a Combobox **Switching from…** with the 15 apps, each with its icon from the catalogue (no brand logos; a generic icon per kind).
+- `ImportScreen.tsx` gains, above the file picker, a **Switching from…** picker built from the shared Combobox field and list (opening in place under the field, never as a dialog or sheet: the owner's rule for pickers) with the 15 apps, each with its icon from the catalogue (no brand logos; a generic icon per kind).
 - Choosing an app does three things:
   1. It sets the format override to that app's format id. Detection still runs and warns if the file looks like another format.
-  2. It shows the "Export from <app>" section of `docs/switch/<app>.md` inline, from `help.json`. That section is marked in each guide with a fixed heading id `#export`.
+  2. It shows the "Export from <app>" section of `docs/switch/<app>.md` inline, from `help.json`. That section is the guide's "## Export from <app>" heading (id `export-from-<app>`), up to the next h2; the repository check requires it.
   3. It shows a "Full guide" link.
 - With no choice, the screen behaves as today.
 - The picker is hidden while offline, like the file picker.

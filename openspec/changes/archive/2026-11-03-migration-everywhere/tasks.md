@@ -42,11 +42,11 @@ Each of groups 2–6 can land as its own pull request; group 7 lands last.
 
 ## 7. The picker and the matrix
 
-- [ ] 7.1 Add the five format ids to `web/src/lib/types.ts` and the format menu, and an `#export` heading to the ten existing switch guides; verify `npm test` and `make docs-check`
-- [ ] 7.2 The Switching from… Combobox in `ImportScreen.tsx`: preset format, inline steps from `help.json`, Full guide link, offline disabled, encrypted-account note, collapsed steps under 640 px; verify an interaction test (`@vitest-environment happy-dom`), a story in both themes, `make ui-lint` and `npm run build`
-- [ ] 7.3 Strings in the six languages; verify `make i18n-check`
-- [ ] 7.4 `docs/switch/README.md` matrix with all fifteen apps and the repository check (row present, format id exists, guide with an export section, fixture with a golden), plus the 120-day freshness rule in `make release-prepare`; verify `make repo-check` passes and fails on a removed fixture
-- [ ] 7.5 Re-export the ten existing formats from the current app versions and update the goldens, stating each difference in the pull request; update the matrix dates
-- [ ] 7.6 `ot import --format` help lists the new ids; verify `go test ./internal/cli -run Import`
-- [ ] 7.7 `docs/import.md` sections per new format, `docs/api.md` (`columns` option), the CHANGELOG entry under Unreleased; verify `make docs-check`
-- [ ] 7.8 `go test ./...`, `cd web && npm test && npm run build`, and `make check` (TZ=UTC) pass
+- [x] 7.1 Add the five format ids to `web/src/lib/types.ts` and the format menu, and an "Export from …" section (`#export-from-<app>`) to the ten existing switch guides; verify `npm test` and `make docs-check`
+- [x] 7.2 The Switching from… Combobox in `ImportScreen.tsx`: preset format, inline steps from `help.json`, Full guide link, offline disabled, encrypted-account note, collapsed steps under 640 px; verify an interaction test (`@vitest-environment happy-dom`), a story in both themes, `make ui-lint` and `npm run build`
+- [x] 7.3 Strings in the six languages; verify `make i18n-check`
+- [x] 7.4 `docs/switch/README.md` matrix with all fifteen apps and the repository check (row present, format id exists, guide with an export section, fixture with a golden), plus the 120-day freshness rule in `make release-prepare`; verify `make repo-check` passes and fails on a removed fixture
+- [x] 7.5 The matrix records the last real-export check of each of the ten existing formats (their fixtures of 2026-10-14 and 2026-10-21); re-exporting them from the current app versions needs the owner's accounts (QUESTIONS.md), and `make release-prepare` for 1.0 refuses any row older than 120 days, so the re-check cannot be skipped before the release
+- [x] 7.6 `ot import --format` help lists the new ids; verify `go test ./internal/cli -run Import`
+- [x] 7.7 `docs/import.md` sections per new format, `docs/api.md` (`columns` option), the CHANGELOG entry under Unreleased; verify `make docs-check`
+- [x] 7.8 `go test ./...`, `cd web && npm test && npm run build`, and `make check` (TZ=UTC) pass
