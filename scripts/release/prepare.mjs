@@ -25,6 +25,7 @@ import { compareVersions, imageFor, latestRelease, loadFacts, ROOT } from '../de
 import { COPIES, mirror } from '../deploy/mirror.mjs'
 import { checkDeviceRecord } from './deviceRecord.mjs'
 import { checkMatrixFreshness } from './switchMatrix.mjs'
+import { checkUpgradeFixture } from './upgradeFixture.mjs'
 
 const VERSION = /^(\d+)\.(\d+)\.(\d+)$/
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
@@ -134,6 +135,8 @@ export function prepare(to, { root = ROOT, date = new Date().toISOString().slice
   checkDeviceRecord(root, to, from)
   // Every import of the migration matrix was checked against a real export lately (migration-everywhere D6).
   checkMatrixFreshness(root, to, date)
+  // Every minor leaves the data directory it writes, which later servers must upgrade (stability-contract D4).
+  checkUpgradeFixture(root, to, from)
 
   const changed = new Set()
   const edit = (rel, fn) => {
