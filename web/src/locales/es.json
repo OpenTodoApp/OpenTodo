@@ -2616,6 +2616,7 @@
   "Messages to answer": "Mensajes por responder",
   "Messages travel unencrypted to the mail server; use it only for a relay on your network.": "Los mensajes viajan sin cifrar al servidor de correo; úsalo solo con un relé de tu red.",
   "Method": "Método",
+  "Microphone access is blocked. Allow the microphone for OpenTodo in the phone’s settings, then try again.": "El acceso al micrófono está bloqueado. Permite el micrófono para OpenTodo en los ajustes del teléfono y vuelve a intentarlo.",
   "Microphone access is blocked. Allow the microphone for this site in your browser’s site settings (usually the icon next to the address), then try again.": "El acceso al micrófono está bloqueado. Permite el micrófono para este sitio en los ajustes del sitio de tu navegador (normalmente el icono junto a la dirección) y vuelve a intentarlo.",
   "Microsoft To Do (JSON from the PowerShell script)": "Microsoft To Do (JSON del script de PowerShell)",
   "Microsoft client": "Cliente de Microsoft",

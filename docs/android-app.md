@@ -123,6 +123,10 @@ Two home-screen widgets: **Today** shows your tasks for today with the time of t
 
 The phone's status and navigation bars take the colour of your [theme](themes.md) (the accent in light, the canvas in dark, or the theme's own bar colour), with light or dark icons so they stay readable, and they switch with it. The app remembers the colour, so the bars are right from the first frame of the next launch.
 
+## Voice input
+
+Dictate in quick add the same way as in a browser (**Settings → Capture → Voice capture**). The first time, Android asks for the microphone. Allow it; there is no address bar to look at. If you refused, allow **Microphone** for OpenTodo in the phone's app settings and try again. The app keeps no recording.
+
 ## Fingerprint unlock
 
 With [end-to-end encryption](e2ee.md#unlock-with-a-fingerprint), the unlock screen offers **Unlock with fingerprint or face next time**.

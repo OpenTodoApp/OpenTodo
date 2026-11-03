@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
 import android.net.http.SslError
@@ -14,6 +15,7 @@ import android.provider.Settings
 import android.util.Base64
 import android.view.View
 import android.webkit.CookieManager
+import android.webkit.PermissionRequest
 import android.webkit.SslErrorHandler
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
@@ -66,6 +68,14 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
     private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         permissionDone?.invoke(granted && NotificationManagerCompat.from(this).areNotificationsEnabled())
         permissionDone = null
+    }
+    private var micDone: ((Boolean) -> Unit)? = null
+    /** A web view request waiting for the Android prompt. The prompt pauses the activity, which can cancel it. */
+    private var webMic: PermissionRequest? = null
+    private val micPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        val done = micDone
+        micDone = null
+        done?.invoke(granted)
     }
     private var locationDone: ((Boolean) -> Unit)? = null
     private val locationPermission = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
@@ -129,6 +139,8 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
     }
 
     override fun onDestroy() {
+        webMic?.let { try { it.deny() } catch (e: IllegalStateException) { /* already answered */ } }
+        webMic = null
         io.shutdown()
         if (::web.isInitialized) web.destroy()
         super.onDestroy()
@@ -288,7 +300,48 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
             fileCallback = callback
             return try { chooser.launch(params.createIntent()); true } catch (e: ActivityNotFoundException) { fileCallback = null; false }
         }
+
+        override fun onPermissionRequest(request: PermissionRequest) {
+            val resources = WebMicrophone.grant(origin, request.origin?.let { Bridge.originOf(it) }, request.resources)
+            if (resources == null) { request.deny(); return }
+            if (micAllowed()) { grantQuietly(request, resources); return }
+            // The system dialog pauses the web view, which may cancel this request. Keep it, ask
+            // Android, and grant it when the answer arrives; a cancelled one is ignored.
+            webMic?.let { grantQuietly(it, null) }
+            webMic = request
+            askMicrophone { granted ->
+                val pending = webMic
+                webMic = null
+                if (pending == null) return@askMicrophone
+                if (granted) grantQuietly(pending, resources) else grantQuietly(pending, null)
+            }
+        }
+
+        override fun onPermissionRequestCanceled(request: PermissionRequest) {
+            if (webMic === request) webMic = null
+        }
     }
+
+    private fun micAllowed() =
+        ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+
+    /** Grant `resources`, or refuse when it is null. A request the web view already closed is ignored. */
+    private fun grantQuietly(request: PermissionRequest, resources: Array<String>?) {
+        try {
+            if (resources == null) request.deny() else request.grant(resources)
+        } catch (e: IllegalStateException) { /* already answered or cancelled */ }
+    }
+
+    /** Asks Android once. A prompt already on screen answers every waiter when it closes. */
+    private fun askMicrophone(done: (Boolean) -> Unit) {
+        if (micAllowed()) { done(true); return }
+        val waiting = micDone
+        micDone = { granted -> waiting?.invoke(granted); done(granted) }
+        if (waiting != null) return
+        micPermission.launch(Manifest.permission.RECORD_AUDIO)
+    }
+
+    override fun requestMicrophone(done: (Boolean) -> Unit) = askMicrophone(done)
 
     /** The site bar: the host of a page of another origin (a sign-in page), since the web view has no address bar. */
     private fun showSite(url: String) {

@@ -253,3 +253,18 @@ Until Google Play approves the app's background-location declaration, the Androi
 #### Scenario: The permission slips into the bundle
 - **WHEN** a change makes the AAB declare `ACCESS_BACKGROUND_LOCATION` again, or removes it from the APK
 - **THEN** the Android CI job fails and names the permission and the build
+
+### Requirement: Microphone for voice capture
+The Android shell SHALL declare `RECORD_AUDIO` and SHALL ask for it the first time the web app records, and not before. It SHALL grant audio capture only to a page of the configured server, and SHALL NOT grant the camera from that request. A page of another origin SHALL be refused without a prompt. The microphone feature SHALL NOT be required, so a device without one can still install the app. The web app SHALL ask the shell before it records when the shell lists the `microphone` capability, and SHALL keep today's behaviour when it does not.
+
+#### Scenario: First dictation
+- **WHEN** the person taps the microphone in the Android app and has not allowed it
+- **THEN** Android asks for the microphone, and allowing it lets the page record
+
+#### Scenario: Another origin
+- **WHEN** a page of another origin loaded in the shell asks for the microphone
+- **THEN** the shell refuses and Android does not ask
+
+#### Scenario: Already allowed
+- **WHEN** the person has already allowed the microphone and taps it again
+- **THEN** Android does not ask again and the page records
