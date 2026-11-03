@@ -20,6 +20,9 @@ OpenTodo can notify other systems when your tasks and projects change: switch on
 | `task.completed` | `completed_at` goes from empty to a time |
 | `task.reopened` | `completed_at` goes from a time back to empty |
 | `task.deleted` | the task gets a tombstone (`deleted_at` is set) |
+| `comment.created` | a comment appears on a task (`created_at` is set) |
+| `comment.updated` | any other field of a comment changes (its text, a reply's parent, mentions, an edit time) |
+| `comment.deleted` | the comment gets a tombstone (`deleted_at` is set) |
 | `project.created` | a project appears for the first time |
 | `project.updated` | any other field of a project changes, including un-archiving |
 | `project.archived` | `archived` goes from false to true |
@@ -34,7 +37,7 @@ Task and project events are derived on the server from the operation log, whatev
 - **One event per entity per batch.** A sync batch that creates a task and sets six fields produces one `task.created`, not seven events. When several rules apply the first wins, in this order: created, deleted, completed, reopened, archived, updated.
 - **Only real changes.** An edit that loses under last-writer-wins (an older offline change arriving after a newer one), a duplicate retry, or a write of the value the field already had produces no event.
 - **Offline edits fire when they sync.** A task completed on a phone in airplane mode fires `task.completed` when the phone reconnects. `time` in the payload is the time the server saw the change; the task's own `completed_at` is when you did it.
-- **Project filter.** A webhook can be limited to one project. Task events then fire only for tasks in that project (or moved into or out of it); project events only for that project.
+- **Project filter.** A webhook can be limited to one project. Task events then fire only for tasks in that project (or moved into or out of it); comment events only for comments on a task in that project; project events only for that project.
 - Webhooks only see your own data.
 
 ## Payload (version 1)
@@ -72,8 +75,10 @@ Every delivery is a `POST` with a JSON body:
 | `webhook_id` | the webhook that matched, also in `X-OpenTodo-Webhook` |
 | `source` | `device` (a syncing app), `server` (REST API / CLI), `import`, `caldav` or `rule` (an [automation rule](automations.md)). Lets a receiver ignore changes it caused itself |
 | `device` | the device id when `source` is `device` |
-| `data.task` / `data.project` | the entity's current state with the same fields as the [REST API](api.md#task-fields), except the opaque note document `notes_doc` (the note's text is `description`). `ping` carries `data: {}` |
+| `data.task` / `data.project` / `data.comment` | the entity's current state with the same fields as the [REST API](api.md#task-fields), except the opaque note document `notes_doc` (the note's text is `description`). A comment event carries both `data.comment` and `data.task`, the task as it is now. `ping` carries `data: {}` |
 | `changes` | the fields that changed in this batch with their previous (`from`) and new (`to`) values; `from` is `null` when the field had no value before. `notes_doc` is never listed, and a change that only touched it (a merged note republished with the same text) sends no event |
+
+A comment event looks like a task event with two records. `data.comment` is the comment (`id`, `task_id`, `parent_id`, `author_id`, `body`, `mentions`, `guest_name`, `page_id`, `created_at`, `edited_at`, `deleted_at`). `data.task` is that task's current state, the same shape as in a `task.*` event, so a receiver can read the title and project without a second request. An edit lists `body` in `changes` with `from` and `to`. `source` and `device` are the same as for every other event: a comment an assistant wrote through an agent token has `source` `device` and a `device` that starts with `agent:`, so a receiver ignores the comments it wrote itself by that prefix. Adding a comment does not also fire `task.updated`.
 
 A task's `origin` (where it came from, `null` when unset; see [Where a task came from](capture.md#where-a-task-came-from)) travels like every field: a task created from a shared GitHub issue page arrives as `task.created` with `"origin": {"kind": "issue", "provider": "github", "id": "o/r#7", "url": "https://github.com/o/r/issues/7", "title": "…"}` in `data.task` and `"origin": {"from": null, "to": {…}}` in `changes`, so a receiver can link the task back to the issue without a second request.
 
@@ -83,7 +88,7 @@ A task's [custom field](custom-fields.md) values are in `data.task.fields`, an o
 
 ### Encrypted accounts
 
-For an account with [end-to-end encryption](e2ee.md), content fields in payloads (`title`, `description`, `name`, a task's `origin`) carry the stored ciphertext (`"enc:v1:…"`); the server cannot decrypt them. Dates, priority and completion stay plaintext.
+For an account with [end-to-end encryption](e2ee.md), content fields in payloads (`title`, `description`, `name`, a task's `origin`, a comment's `body` and `guest_name`) carry the stored ciphertext (`"enc:v1:…"`); the server cannot decrypt them. Dates, priority and completion stay plaintext.
 
 ### Imports
 

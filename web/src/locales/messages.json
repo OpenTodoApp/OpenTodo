@@ -3328,8 +3328,12 @@
   "Comment by {author}": [
     "web/src/app/task-detail/CommentsTab.tsx"
   ],
+  "Comment created": [
+    "web/src/lib/webhooks.ts"
+  ],
   "Comment deleted": [
-    "web/src/app/task-detail/CommentsTab.tsx"
+    "web/src/app/task-detail/CommentsTab.tsx",
+    "web/src/lib/webhooks.ts"
   ],
   "Comment on the open task: switch to the Comments tab and focus the composer (markdown; @ completes members, ↑ / ↓ and Enter pick)": [
     "web/src/lib/shortcuts.ts"
@@ -3345,6 +3349,9 @@
   ],
   "Comment time": [
     "web/src/app/DateTimeSettings.tsx"
+  ],
+  "Comment updated": [
+    "web/src/lib/webhooks.ts"
   ],
   "Commented": [
     "web/src/lib/feed.ts"
