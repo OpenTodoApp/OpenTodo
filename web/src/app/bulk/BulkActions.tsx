@@ -278,7 +278,7 @@ function useBulkData(ids: readonly string[]): Data {
  * The Actions menu for `ids`. `startPicker` opens it straight into a picker
  * ("labels" for `L`, "assign" for Shift+A on a selection).
  */
-export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClassName, triggerProps, startPicker = null, onApplied, anchor }: {
+export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClassName, triggerProps, startPicker = null, anchor }: {
   ids: readonly string[]
   open?: boolean
   onOpenChange?: (open: boolean) => void
@@ -287,7 +287,6 @@ export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClass
   /** Extra attributes on the trigger button (the pointer position of a right-click menu). */
   triggerProps?: React.ComponentProps<typeof ActionMenu>['triggerProps']
   startPicker?: string | null
-  onApplied?: () => void
   /** Opened from a row's More button: placed there, without the groups the row's own buttons offer. */
   anchor?: RefObject<HTMLElement | null>
 }) {
@@ -295,27 +294,38 @@ export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClass
   // Held back only until the first full read: a later selection's read must not close an open menu.
   const [settled, setSettled] = useState(false)
   if (data.ready && !settled) setSettled(true)
-  const [review, setReview] = useState<{ title: string; plan: ReviewPlan } | null>(null)
-  const [dating, setDating] = useState(false)
   const besideRow = !!anchor?.current
   const touch = !useFinePointer()
-  const groups = useMemo(() => bulkMenuGroups(ids, data, {
-    review: (title, plan) => { void plan.then((p) => setReview({ title, plan: p })) },
-    pickDate: () => setDating(true),
-    schedule: touch && ids.length === 1 ? () => openRowSchedule(ids[0]) : undefined,
-  }, besideRow), [ids, data, besideRow, touch])
   const n = data.tasks.length || ids.length
+  const groups = useMemo(() => bulkMenuGroups(ids, data, {
+    review: (title, plan) => { void plan.then((p) => bulkDialog.set({ kind: 'review', title, plan: p })) },
+    pickDate: () => bulkDialog.set({ kind: 'date', ids, n }),
+    schedule: touch && ids.length === 1 ? () => openRowSchedule(ids[0]) : undefined,
+  }, besideRow), [ids, data, besideRow, touch, n])
   return (
-    <>
-      <ActionMenu label={t('Actions for {tasks}', { tasks: tasksWord(n) })} title={tasksWord(n)} groups={groups} open={open} pending={!settled && !data.ready} onOpenChange={onOpenChange}
-        trigger={trigger} triggerClassName={triggerClassName} triggerProps={triggerProps} startPicker={startPicker} width="sm:w-72" anchor={anchor} />
-      {review && <BulkReview title={review.title} plan={review.plan} onClose={() => setReview(null)} onApplied={onApplied} />}
-      {dating && (
-        <Dialog title={t('Date for {tasks}', { tasks: tasksWord(n) })} onClose={() => setDating(false)}>
-          <DateField label={t('Date')} autoFocus value={null} onChange={(iso) => { setDating(false); if (iso) void runBulk(ids, { kind: 'due', pick: iso }) }} />
-        </Dialog>
-      )}
-    </>
+    <ActionMenu label={t('Actions for {tasks}', { tasks: tasksWord(n) })} title={tasksWord(n)} groups={groups} open={open} pending={!settled && !data.ready} onOpenChange={onOpenChange}
+      trigger={trigger} triggerClassName={triggerClassName} triggerProps={triggerProps} startPicker={startPicker} width="sm:w-72" anchor={anchor} />
+  )
+}
+
+/**
+ * The step a menu item leads to once the menu has closed: the move or assign review,
+ * or the date for "Pick a date…". Held here and rendered by the Shell's host, not
+ * by the menu, because a row's menu unmounts as it closes (issue 839).
+ */
+type BulkDialog = { kind: 'review'; title: string; plan: ReviewPlan } | { kind: 'date'; ids: readonly string[]; n: number }
+const bulkDialog = createStore<BulkDialog | null>('bulkDialog', null)
+
+/** Renders the menu's follow-up dialog when one is asked. Mounted once by the Shell. */
+export function BulkDialogHost() {
+  const d = bulkDialog.use()
+  const close = () => bulkDialog.set(null)
+  if (!d) return null
+  if (d.kind === 'review') return <BulkReview title={d.title} plan={d.plan} onClose={close} />
+  return (
+    <Dialog title={t('Date for {tasks}', { tasks: tasksWord(d.n) })} onClose={close}>
+      <DateField label={t('Date')} autoFocus value={null} onChange={(iso) => { close(); if (iso) void runBulk(d.ids, { kind: 'due', pick: iso }) }} />
+    </Dialog>
   )
 }
 
