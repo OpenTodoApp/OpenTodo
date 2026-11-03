@@ -15,6 +15,9 @@ import { keysOf } from '../lib/shortcuts'
 import { followLink } from './settingsLinks'
 import { SettingsOverview } from './SettingsOverview'
 import { SectionDemoNote, SettingsPageContent } from './settingsPages'
+import { useServerVersion } from '../lib/serverVersion'
+import { useNewsDot } from '../lib/whatsNew'
+import { NewsDot } from './NewsDot'
 
 export { followLink }
 
@@ -204,6 +207,8 @@ function SettingsOverviewPage({ section, user }: { section: SettingsSection; use
  * beside a section page.
  */
 export function SettingsList({ user, current, page, inPage = false, compact = false }: { user: User; current?: SettingsSectionId; page?: string; inPage?: boolean; compact?: boolean }) {
+  // The About row's What's new dot (OpenSpec whats-new): one marker, read live.
+  const newsDot = useNewsDot(useServerVersion())
   return (
     <div className={compact ? 'space-y-4' : 'space-y-6'} data-settings-list>
       {/* The pane beside a page (precision-settings D2) keeps only search and the groups. */}
@@ -231,6 +236,7 @@ export function SettingsList({ user, current, page, inPage = false, compact = fa
                         <span className={`block font-medium ${compact ? 'truncate' : ''}`}>{s.label}</span>
                         {!compact && <span className="block text-meta text-muted">{s.description(user)}</span>}
                       </span>
+                      {s.id === 'about' && newsDot && <NewsDot />}
                       {!compact && <span className="text-faint"><Icon name="chevron-right" /></span>}
                     </a>
                     {compact && on && <PanePages user={user} section={s} page={page} />}

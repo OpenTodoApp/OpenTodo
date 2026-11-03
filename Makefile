@@ -11,7 +11,7 @@ WEB_EXT := web-ext@10.7.0
 SKILL_ZIP := dist/opentodo-agent-skill.zip
 MCP_SKILL_ZIP := dist/opentodo-mcp-skill.zip
 
-.PHONY: brand-icons site-bundle all web server cli cli-release cli-smoke skill extension obsidian obsidian-e2e obsidian-review test-obsidian android build run dev test test-go test-web test-extension check lint staticcheck gosec gosec-sarif clean docker openspec-validate layout-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check release-prepare storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check bundle-budget fmt-check ci-checks e2e
+.PHONY: news news-check brand-icons site-bundle all web server cli cli-release cli-smoke skill extension obsidian obsidian-e2e obsidian-review test-obsidian android build run dev test test-go test-web test-extension check lint staticcheck gosec gosec-sarif clean docker openspec-validate layout-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check release-prepare storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check bundle-budget fmt-check ci-checks e2e
 
 all: build
 
@@ -234,6 +234,15 @@ docs: templates
 templates:
 	node scripts/templates-build.mjs
 
+## What's new entries (news/README.md, OpenSpec whats-new): writes web/src/generated/news.json.
+news:
+	node scripts/news-build.mjs
+
+## The entries valid, the changelog rule kept, and the compiled files current.
+news-check:
+	node --test scripts/news-check.test.mjs
+	node scripts/news-build.mjs --check
+
 ## Every template valid (templates/README.md), its tests, and the compiled file current.
 templates-check:
 	node --test scripts/templates-check.test.mjs
@@ -308,11 +317,11 @@ bundle-budget:
 brand-icons:
 	node scripts/brand-icons.mjs
 
-check: lint web-lint staticcheck test fmt-check ui-lint i18n-check docs-check templates-check openspec-validate deploy-check repo-check
+check: lint web-lint staticcheck test fmt-check ui-lint i18n-check docs-check templates-check news-check openspec-validate deploy-check repo-check
 
 ## The parts of `make check` that CI runs in its Checks job (the others run in the web,
 ## server and extension jobs; scripts/repo-checks.test.mjs keeps the two lists whole).
-ci-checks: fmt-check ui-lint i18n-check templates-check openspec-validate deploy-check repo-check
+ci-checks: fmt-check ui-lint i18n-check templates-check news-check openspec-validate deploy-check repo-check
 
 ## gofmt gate: no Go file may need formatting.
 fmt-check:

@@ -23,6 +23,8 @@ If you found a security problem, do not open a public issue: follow `SECURITY.md
 
 ## Follow the news
 
+**Settings → About → What's new** shows, inside the app, a short note for each release: the newest in full, earlier ones behind *Earlier versions*. The notes ship with the version your server runs; the app never fetches them. The notes are in English. A dot appears next to About when your server runs a version whose notes you have not opened yet on this device; **Version notices** turns the dot off, and the notes stay.
+
 [OpenTodo on X](https://x.com/opentodoapp) posts each release and the work in progress in a few lines. Follow it if you want to know what changed without reading the changelog; the longer version is always on the [blog](https://open-todo.app/blog/). As with Discord, nothing in the app talks to X: the link opens it in a new tab only when you choose to.
 
 ## Help other people find it
@@ -35,7 +37,7 @@ If OpenTodo saves you a subscription, [a coffee](https://buymeacoffee.com/pixari
 
 ## Settings → About
 
-**Settings → About** has all of these in one place: the version your server runs, Help, the documentation and the website, the issue tracker, the Discord server, the X account under News and updates, the source code and the coffee button.
+**Settings → About** has all of these in one place: the version your server runs, Help, the documentation and the website, the issue tracker, the Discord server, the X account as Follow on X, and What's new, the source code and the coffee button.
 
 ## The welcome note
 

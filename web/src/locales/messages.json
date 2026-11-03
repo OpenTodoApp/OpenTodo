@@ -6175,7 +6175,9 @@
     "web/src/app/QuickAddSettings.tsx"
   ],
   "Follow on X": [
-    "web/src/app/AboutSection.tsx"
+    "web/src/app/AboutSection.tsx",
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Follow project ({flow})": [
     "web/src/app/menus/flowMenu.ts"
@@ -9433,10 +9435,6 @@
     "web/src/app/WorkspaceControl.tsx",
     "web/src/app/WorkspacesSettings.tsx",
     "web/src/app/palette/registry.ts"
-  ],
-  "News and updates": [
-    "web/src/app/settingsIndex.ts",
-    "web/src/lib/settingsCopy.ts"
   ],
   "News, guides, comparisons and what is new in each release.": [
     "web/src/lib/settingsCopy.ts"
@@ -23035,5 +23033,38 @@
   ],
   "⤼ Skip": [
     "web/src/app/RecurrenceField.tsx"
+  ],
+  "A dot shows when this version has notes you have not read yet.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Earlier versions": [
+    "web/src/app/WhatsNew.tsx"
+  ],
+  "New notes": [
+    "web/src/app/NewsDot.tsx"
+  ],
+  "New notes for this version": [
+    "web/src/app/WhatsNew.tsx"
+  ],
+  "Nothing new in this version yet.": [
+    "web/src/app/WhatsNew.tsx"
+  ],
+  "Release notes on GitHub": [
+    "web/src/app/WhatsNew.tsx"
+  ],
+  "These notes are in English.": [
+    "web/src/app/WhatsNew.tsx"
+  ],
+  "Version notices": [
+    "web/src/app/WhatsNew.tsx",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "What changed in each version, in English.": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "What's new": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ]
 }

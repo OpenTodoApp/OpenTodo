@@ -2770,7 +2770,6 @@
   "New view cleared": "Nuova vista cancellata",
   "New webhook": "Nuovo webhook",
   "New workspace": "Nuovo spazio di lavoro",
-  "News and updates": "Novità e aggiornamenti",
   "News, guides, comparisons and what is new in each release.": "Notizie, guide, confronti e le novità di ogni versione.",
   "Next": "Avanti",
   "Next action": "Prossima azione",
@@ -6888,5 +6887,15 @@
   "Hide the list": "Nascondi l’elenco",
   "Turn off the assistant": "Disattiva l’assistente",
   "Got it": "Ho capito",
-  "Closing this notice needs a connection.": "Per chiudere questo avviso serve una connessione."
+  "Closing this notice needs a connection.": "Per chiudere questo avviso serve una connessione.",
+  "What's new": "Novità",
+  "What changed in each version, in English.": "Cosa è cambiato in ogni versione, in inglese.",
+  "Version notices": "Avvisi di versione",
+  "A dot shows when this version has notes you have not read yet.": "Compare un puntino quando questa versione ha note che non hai ancora letto.",
+  "New notes": "Note nuove",
+  "New notes for this version": "Note nuove per questa versione",
+  "These notes are in English.": "Queste note sono in inglese.",
+  "Nothing new in this version yet.": "Non c'è ancora niente di nuovo in questa versione.",
+  "Earlier versions": "Versioni precedenti",
+  "Release notes on GitHub": "Note di rilascio su GitHub"
 }
