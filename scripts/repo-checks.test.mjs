@@ -10,9 +10,12 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import { cpSync, mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { MATRIX_APPS, matrixProblems, parseMatrix, staleRows, checkMatrixFreshness } from './release/switchMatrix.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const read = (p) => readFileSync(path.join(root, p), 'utf8')
@@ -591,4 +594,48 @@ test('the F-Droid metadata allows the release certificate that docs/android-app.
   assert.match(fdroid, /^Binaries: https:\/\/github\.com\/OpenTodoApp\/OpenTodo\/releases\/download\/v%v\/opentodo-android-%v\.apk$/m)
   assert.match(fdroid, /^UpdateCheckMode: Tags \^v\[0-9\.\]\+\$$/m, 'release candidates are skipped')
   assert.match(fdroid, /^AutoUpdateMode: Version$/m, "F-Droid's bot adds each final tag")
+})
+
+// The migration matrix (migration-everywhere D6): every listed competitor has a
+// row, an importer format, a guide with export steps and a real-export fixture
+// with a golden; the Import screen's picker lists the same apps and formats.
+test('every competitor in the migration matrix has a verified path', () => {
+  assert.deepEqual(matrixProblems(root), [])
+  const rows = parseMatrix(read('docs/switch/README.md'))
+  assert.deepEqual(rows.map((r) => r.guide).sort(), [...MATRIX_APPS].sort())
+  const picker = [...read('web/src/lib/switchApps.ts').matchAll(/\{ guide: '([a-z0-9-]+)', name: '[^']+', format: '([a-z0-9-]+)'/g)].map((m) => `${m[1]} ${m[2]}`)
+  assert.deepEqual(picker.sort(), rows.map((r) => `${r.guide} ${r.format}`).sort())
+})
+
+test('the matrix check fails on a missing fixture, guide section or row', () => {
+  const tmp = mkdtempSync(path.join(tmpdir(), 'matrix-'))
+  try {
+    for (const p of ['docs/switch', 'internal/importer']) cpSync(path.join(root, p), path.join(tmp, p), { recursive: true, filter: (src) => !src.includes('sanitize') })
+    rmSync(path.join(tmp, 'internal/importer/testdata/tududi-db'), { recursive: true })
+    assert.deepEqual(matrixProblems(tmp), ['Tududi: no fixture with a golden preview in internal/importer/testdata/tududi-db/'])
+    const guide = path.join(tmp, 'docs/switch/vikunja.md')
+    writeFileSync(guide, readFileSync(guide, 'utf8').replace('## Export from Vikunja', '## Getting the file'))
+    const readme = path.join(tmp, 'docs/switch/README.md')
+    writeFileSync(readme, readFileSync(readme, 'utf8').split('\n').filter((l) => !l.startsWith('| [Linear]')).join('\n'))
+    const problems = matrixProblems(tmp)
+    assert.ok(problems.includes('Vikunja: docs/switch/vikunja.md has no "## Export from …" section'), problems.join('\n'))
+    assert.ok(problems.includes('linear: no row in docs/switch/README.md'), problems.join('\n'))
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+})
+
+test('release preparation for 1.0 and later refuses a row checked more than 120 days before', () => {
+  const text = '| [OmniFocus](omnifocus.md) | `omnifocus-csv` | a | b | 2026-04-01, OmniFocus 4 |\n| [Tududi](tududi.md) | `tududi-db` | a | b | 2026-11-03, Tududi 1.14 |\n'
+  assert.deepEqual(staleRows(text, '2026-10-18').map((r) => r.name), ['OmniFocus'])
+  assert.deepEqual(staleRows(text, '2026-07-29').map((r) => r.name), [])
+  const tmp = mkdtempSync(path.join(tmpdir(), 'matrix-'))
+  try {
+    mkdirSync(path.join(tmp, 'docs/switch'), { recursive: true })
+    writeFileSync(path.join(tmp, 'docs/switch/README.md'), text)
+    assert.throws(() => checkMatrixFreshness(tmp, '1.0.0', '2026-10-18'), /OmniFocus \(2026-04-01\)/)
+    assert.doesNotThrow(() => checkMatrixFreshness(tmp, '0.22.0', '2026-10-18'))
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
 })

@@ -7050,5 +7050,16 @@
   "{m} m": "{m} m",
   "Done or status": "Fait ou statut",
   "Not imported": "Non importé",
-  "Which column holds what": "Quelle colonne contient quoi"
+  "Which column holds what": "Quelle colonne contient quoi",
+  "Choose the app you use now": "Choisissez l’app que vous utilisez",
+  "Clear the app": "Retirer l’app",
+  "Export from {app}": "Exporter depuis {app}",
+  "Full guide": "Guide complet",
+  "Hide steps": "Masquer les étapes",
+  "Loading the steps…": "Chargement des étapes…",
+  "Read it as {format}": "Le lire comme {format}",
+  "Show steps": "Afficher les étapes",
+  "Switching from…": "Je viens de…",
+  "This file looks like {format}, not the format you chose.": "Ce fichier ressemble à {format}, pas au format choisi.",
+  "Your account is end-to-end encrypted. Imported text is written in plaintext until one of your unlocked devices re-encrypts it, and duplicates cannot be found by encrypted project or label names.": "Votre compte est chiffré de bout en bout. Le texte importé est écrit en clair jusqu’à ce qu’un de vos appareils déverrouillés le chiffre à nouveau, et les doublons ne peuvent pas être trouvés par les noms chiffrés de projets ou d’étiquettes."
 }
