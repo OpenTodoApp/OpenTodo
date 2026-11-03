@@ -26,7 +26,7 @@ export interface DragOptions {
    * becoming a drag (false, from cleanup) — the pressed element's held feedback.
    */
   onHoldChange?: (held: boolean) => void
-  /** Touch only: a hold completed and the finger lifted without moving: open the row's menu here (task-row-context-menu). Fires for every pointer now — selection lives on the grip, so the row body's hold is only ever the menu. */
+  /** A touch hold completed and the finger lifted without moving: open the row's menu here, on a fine or a coarse primary pointer alike (task-row-context-menu; the grip owns selection, so the body's hold is only ever the menu). */
   onHoldRelease?: (x: number, y: number) => void
   /**
    * Also resolve `data-task-drop` targets (OpenSpec change ux-feedback-2, D4: a
@@ -54,15 +54,6 @@ export interface DragOptions {
 export const DRAG_THRESHOLD = 5
 /** Milliseconds a touch must rest before it becomes a drag. */
 export const TOUCH_HOLD_MS = 350
-
-/**
- * True when the primary pointer is a fine one (a mouse, a trackpad, a precise pen).
- * The row's hold menu is for a fine pointer only: a coarse one (a phone) keeps its
- * own long-press meaning — tick the row, or scroll (task-row-context-menu).
- */
-export function finePointer(): boolean {
-  return typeof window === 'undefined' || window.matchMedia?.('(pointer: fine)').matches !== false
-}
 
 /** The press a shared hold follows (task-row-context-menu). */
 export interface HoldPress {

@@ -576,7 +576,7 @@ describe('the touch grip', () => {
     expect(grip.className).toMatch(/\bhidden\b/)
     expect(grip.className).toMatch(/pointer-coarse:flex/)
     const button = grip.querySelector('button')!
-    expect(button.className).toMatch(/touch-action-none/)
+    expect(button.className).toMatch(/\btouch-none\b/)
     expect(button.className).toMatch(/select-none/)
     expect(button.className).toMatch(/touch-target/)
     expect(button.getAttribute('aria-label')).toBe('Select Task')

@@ -42,3 +42,18 @@ Each row SHALL show a selection checkbox whenever any row is ticked; it SHALL NO
 #### Scenario: The checkbox sits in the row's control slot on every device
 - **WHEN** a phone user enters Select mode and compares a row's selection box with where its completion circle sits
 - **THEN** the box is centred in the same 20 px slot, at the same size, with no platform-specific offset
+
+### Requirement: One ticked task on touch
+On a touch screen, the tap or hold on the row's grip that ticks a row SHALL give its haptic pulse only while the user's haptic feedback preference is on (`appearance-preferences` "Haptic feedback preference"). While exactly one task is ticked, the selection bar's Actions menu SHALL be that task's full actions menu: the items the row menu offers for one task, including Start tracking and Start focus where they apply. The row body's long press on a touch screen SHALL be the actions menu's gesture and SHALL NOT tick anything (action-menus). Selection stays device state and writes nothing.
+
+#### Scenario: Haptics off
+- **WHEN** the user turned haptic feedback off and taps a row's grip on an Android phone
+- **THEN** the row is ticked and the selection bar appears, and the device does not vibrate
+
+#### Scenario: Start focus from the phone bar
+- **WHEN** a user on a phone taps a row's grip on "Write the report" and taps Actions in the selection bar
+- **THEN** the menu lists Complete, Schedule…, Start tracking and Start focus at its top, and choosing Start focus opens the Focus screen on that task with a session running
+
+#### Scenario: Two ticked tasks
+- **WHEN** two rows are ticked on a phone and the user taps Actions
+- **THEN** the menu offers the batch actions only, without Start tracking or Start focus
