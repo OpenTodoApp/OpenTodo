@@ -285,6 +285,19 @@ export function snippet(text: string, terms: string[], max = 140, lang?: string)
 export function snippetPlain(plain: string, terms: string[], max = 140, lang?: string): SnippetSegment[] {
   const P = [...plain]
   if (P.length === 0) return []
+  const ranges: Array<[number, number]> = []
+  if (ASCII.test(plain)) {
+    // ASCII text lowers one character for one (normalizeChar of an ASCII character
+    // is its lower case), so the whole text is lowered at once and searched with
+    // indexOf: the same ranges as the loop below, without a call per character
+    // (list-rendering-at-scale: 10 KB notes took most of a note search keystroke).
+    const low = lower(plain, lang)
+    for (const t of terms) {
+      if (t === '') continue
+      for (let i = low.indexOf(t); i >= 0; i = low.indexOf(t, i + t.length)) ranges.push([i, i + t.length])
+    }
+    return snippetSegments(P, ranges, max)
+  }
   const norm: string[] = []
   const orig: number[] = []
   P.forEach((c, i) => {
@@ -293,7 +306,6 @@ export function snippetPlain(plain: string, terms: string[], max = 140, lang?: s
       orig.push(i)
     }
   })
-  const ranges: Array<[number, number]> = []
   for (const t of terms) {
     const T = [...t]
     if (T.length === 0) continue
@@ -308,6 +320,11 @@ export function snippetPlain(plain: string, terms: string[], max = 140, lang?: s
       i += T.length
     }
   }
+  return snippetSegments(P, ranges, max)
+}
+
+/** The snippet of the code points P around the first of the matched ranges (snippetPlain). */
+function snippetSegments(P: string[], ranges: Array<[number, number]>, max: number): SnippetSegment[] {
   ranges.sort((a, b) => a[0] - b[0] || b[1] - a[1])
   const [start, end] = ranges.length ? windowAround(P, ranges[0], max) : windowAround(P, [0, 0], max)
   const out: SnippetSegment[] = []

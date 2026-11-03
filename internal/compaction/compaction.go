@@ -32,8 +32,9 @@ const (
 	// Budget bounds the work of one run.
 	Budget = 20 * time.Second
 	// VacuumStep is how many free pages one incremental vacuum step returns
-	// (about 8 MB with 4 KB pages).
-	VacuumStep = 2000
+	// (about 2 MB with 4 KB pages; a step of 2,000 pages held writes back for
+	// over 100 ms on the notes fixture, performance-10k D7).
+	VacuumStep = 500
 	// QuietFor is how long no op may have arrived before the one-time
 	// conversion runs; after ConvertAnyway without such a moment it runs at the
 	// next run anyway.

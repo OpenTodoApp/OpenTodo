@@ -105,7 +105,9 @@ type Summary struct {
 	PlainTasks []string       `json:"plainTasks"`
 	TodayTasks int            `json:"todayTasks"`
 	Counts     map[string]int `json:"counts"`
-	Ops        int            `json:"ops"`
+	// Notes is the notes fixture's composition, when it was added (SeedNotes).
+	Notes *NotesSummary `json:"notes,omitempty"`
+	Ops   int           `json:"ops"`
 }
 
 // Run creates the account in dataDir, which must hold no account yet, and
