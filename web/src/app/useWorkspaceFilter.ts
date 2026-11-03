@@ -24,8 +24,10 @@ export function workspaceFilterContext(
   defaultId: string, list: readonly { id: string; name: string }[],
   projects: FilterContext['projects'], labels: FilterContext['labels'], tasks: readonly Task[],
 ): WorkspaceFilterContext {
-  const p = new Partition(defaultId, list.map((w) => w.id), projects, tasks)
-  const workspaceOf = (task: Task) => p.taskRow(task)
+  // Partitioned when first asked: most queries never name a workspace, and this
+  // context is made again after every write (list-rendering-at-scale D6).
+  let p: Partition | null = null
+  const workspaceOf = (task: Task) => (p ??= new Partition(defaultId, list.map((w) => w.id), projects, tasks)).taskRow(task)
   if (list.length <= 1) return { workspaces: list, workspaceOf }
   return { workspaces: list, workspaceOf, everyWorkspace: { tasks, projects, labels } }
 }

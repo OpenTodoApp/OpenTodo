@@ -122,11 +122,12 @@ export const openTasksLabel = (n: number | undefined): string | undefined => (n 
 function useViewCounts(views: View[], today: string, labels: Label[], projects: Project[], tasks: Task[]) {
   const tracked = useTrackedTotals()
   // A view that names a workspace counts every workspace's tasks (group-mentions D6).
-  const ws = useWorkspaceFilter()
+  const live = useWorkspaceFilter()
   const sections = useLiveSections()
   // Counted once the writes stop (list-rendering-at-scale D6): evaluating every saved
-  // view over 10,000 tasks ran after each completion, in front of the next one.
-  const counted = useSettledValue(tasks)
+  // view over 10,000 tasks ran after each completion, in front of the next one. The
+  // workspace context is made again with every write too (its partition reads the tasks).
+  const { counted, ws } = useSettledValue(useMemo(() => ({ counted: tasks, ws: live }), [tasks, live]))
   return useMemo(() => evaluateViews(views, { today, labels, projects, tasks: counted, sections, tracked, ...ws }, 0), [views, today, labels, projects, counted, sections, tracked, ws])
 }
 

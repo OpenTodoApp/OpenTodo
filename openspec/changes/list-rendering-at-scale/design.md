@@ -22,7 +22,7 @@ Two places had relied on the old snapshot arriving late, and are fixed so that t
 
 **D3. The tick before the round trip.** `lib/pendingDone.ts`: completing a task (a click or a key in the list) records the wanted state for that row; the row draws it at once and stops as soon as its stored data changes (its field clocks object is new) or after 10 s, so a failed write shows the stored state again and a series that moved on shows its next occurrence.
 
-**D4. Windowing as a last resort**, in a later change, only if D1–D3 leave the list budgets unmet on the CI runner.
+**D4. Windowing as a last resort**, in a later change, only if D1–D3 leave the list budgets unmet on the CI runner. After D6 the one list budget still over on the CI runner is completing a task (desktop 131–141 ms, phone profile 201–207 ms on runners about 1.4 times slower than the first measurements). What is left is the browser's own work in each frame around the click: with 2,000 rows under `content-visibility: auto`, every frame in which something moves (the hover that shows the row's actions, the press, the tick) recomputes the visibility of all 2,000 rows (about 4–7 ms a frame on a computer, 15–20 ms in the phone profile), and a completion spans two or three such frames. A measured alternative: grouping rows into blocks of 100 with `content-visibility` on the block cut that cost by about a quarter, but it splits the list element that screen readers announce. That is the windowing decision this design leaves to its own change.
 
 **D5. Nothing outside a write's own rows moves.** Measured after D1–D3, a cursor move, a tick and a remote edit still made all 2,000 rows again, and each sync derived the 10,000 tasks again:
 
