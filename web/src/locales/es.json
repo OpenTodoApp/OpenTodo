@@ -7074,5 +7074,8 @@
   "Your account is end-to-end encrypted. Imported text is written in plaintext until one of your unlocked devices re-encrypts it, and duplicates cannot be found by encrypted project or label names.": "Tu cuenta tiene cifrado de extremo a extremo. El texto importado se escribe en claro hasta que uno de tus dispositivos desbloqueados lo vuelva a cifrar, y no se pueden encontrar duplicados por nombres cifrados de proyectos o etiquetas.",
   "Suggest after adding": "Sugerir tras añadir",
   "This device: after an add, the assistant proposes a title, project, subtasks. You review.": "Este dispositivo: tras añadir, el asistente propone título, proyecto, subtareas. Tú revisas.",
-  "Suggest after adding (this device)": "Sugerir tras añadir (este dispositivo)"
+  "Suggest after adding (this device)": "Sugerir tras añadir (este dispositivo)",
+  "Single-key shortcuts": "Atajos de una sola tecla",
+  "Single-key shortcuts (this device)": "Atajos de una sola tecla (este dispositivo)",
+  "Letters and symbols alone run commands. Turn off for speech input. This device only.": "Las letras y los símbolos solos ejecutan órdenes. Desactívalo para la entrada por voz. Solo este dispositivo."
 }

@@ -48,4 +48,39 @@ final class FirstRunTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["That is not a usable address."].waitForExistence(timeout: 5))
         attach("first-run-unusable-address")
     }
+
+    /// The system's accessibility audit on the first-run screen (OpenSpec accessibility "Native
+    /// shell accessibility checks", change accessibility-aa D6): labels, contrast, hit regions,
+    /// Dynamic Type and traits, as Xcode's Accessibility Inspector checks them. The shell's
+    /// other native screens (settings, the widget configuration) need a connected server;
+    /// the manual VoiceOver pass in docs/accessibility/ covers them.
+    func testTheFirstRunScreenPassesTheAccessibilityAudit() throws {
+        guard #available(iOS 17.0, *) else { throw XCTSkip("performAccessibilityAudit needs iOS 17") }
+        let app = launch()
+        let field = app.textFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        // With an address typed and submitted with Return, as the screen is used: Connect is enabled
+        // (on the empty screen it is disabled, and an inactive control's text is exempt from the
+        // contrast minimum, WCAG 1.4.3), the error line shows, and the keyboard is down (with it up
+        // the audit ran out of time in CI).
+        field.tap()
+        field.typeText("not an address\n")
+        XCTAssertTrue(app.staticTexts["That is not a usable address."].waitForExistence(timeout: 5))
+        attach("first-run-accessibility-audit")
+        // Every issue is collected and printed with its element, so one CI run lists them all
+        // (the class stops at the first failure). One kind is set aside, with its reason: the audit
+        // reads a text's or the address field's frame at the default text size and warns it "may be
+        // clipped" at larger Dynamic Type sizes, but the rows of a SwiftUI Form size themselves to
+        // their content and grow with the text size; the manual VoiceOver pass at large text
+        // (docs/accessibility/audit-1.0.0.md) checks it on a device.
+        var found: [String] = []
+        try app.performAccessibilityAudit { issue in
+            let line = "\(issue.auditType) · \(issue.compactDescription) · \(issue.detailedDescription) · \(issue.element?.debugDescription ?? "no element")"
+            print("accessibility audit: \(line)")
+            if issue.auditType == .textClipped, let type = issue.element?.elementType, type == .textField || type == .staticText { return true }
+            found.append(line)
+            return true
+        }
+        XCTAssertTrue(found.isEmpty, "accessibility audit issues:\n" + found.joined(separator: "\n"))
+    }
 }

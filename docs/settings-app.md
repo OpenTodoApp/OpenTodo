@@ -17,7 +17,7 @@ The **App** group of [Settings](settings.md) is about how the app behaves. Setti
 ## General
 
 - **Start view and briefing**: the start view is the view this device opens on, including **Display: Today** and **Display: Upcoming** for a wall panel. See [Views](views.md#choose-where-the-app-opens) and [Display mode](display-mode.md). **Show the briefing**: the sentence under Today's title.
-- **Keyboard**: **Show shortcut hints** prints the keys in the app itself as well as in tooltips, and **Vim keybindings** turns the Vim layer on; both for this device. See [Keyboard shortcuts](keyboard.md#vim-keybindings).
+- **Keyboard** (this device): **Show shortcut hints** prints keys in the app; **Single-key shortcuts** off stops letters and symbols alone running commands (for speech input); **Vim keybindings**. See [Keyboard shortcuts](keyboard.md#vim-keybindings).
 - **Focus timer**: the [Focus](focus.md) timer, its lengths, breaks, sound, presets and noise, on all your devices (the noise volume is per device).
 - **Maps**: maps and address search on your devices, if the owner allows. See [Locations and places](locations-and-places.md).
 
@@ -31,7 +31,7 @@ All following your account:
 
 ### Date and time
 
-Four choices that follow your account to every device, also when you change them offline:
+Four choices that follow your account to every device:
 
 - **Date format**: **System** (the way this browser writes dates), **Day-month** (`14 Oct`, `14/10/2026`), **Month-day** (`Oct 14`, `10/14/2026`) or **ISO** (`2026-10-14`). Each option shows today's date in that format. Month and weekday names are written in the [interface language](language.md).
 - **Time format**: **System**, **12-hour** (`3:00 PM`) or **24-hour** (`15:00`).

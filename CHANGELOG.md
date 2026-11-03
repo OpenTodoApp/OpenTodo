@@ -7,10 +7,13 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 ### Added
 
 - **Every screen is checked for accessibility on every change.** Each pull request now opens every screen and overlay of the app at phone and computer widths, light and dark, and fails on any serious WCAG 2.2 AA problem axe-core finds, a focused control without a visible ring or hidden under a bar, a target smaller than 24 px with no space around it, sideways scrolling at 320 px (400% zoom), text cut off with wider spacing, or a password field that refuses a paste. Every night the same runs in English and German with large browser text. The 2,000-task list is checked as a screen reader gets it.
+- **Single-key shortcuts can be turned off.** If you use speech input or press keys by accident, turn off **Settings → General → Keyboard → Single-key shortcuts** on that device: a letter, number or symbol on its own (q, j, 1, ?, g then a key) then does nothing, while shortcuts with Ctrl, Alt or ⌘ and the arrow, Enter, Escape and Delete keys keep working.
 
 ### Fixed
 
 - **Keyboard and screen reader fixes across the app.** While a dialog or a phone sheet is open, the page behind it can no longer be reached with Tab or a screen reader. A focused menu item shows the focus ring. A reminder, a break reminder or the daily check no longer covers the row you tabbed to (on a phone it moves to the top), the sidebar no longer hides a toast on the left, and a header or the filter's Save bar no longer covers the control you tabbed to. Inside dialogs and sheets too (the help panel, the task page), the focused control is scrolled out from under their sticky headers. A row's actions no longer cover the cut project name you tabbed to, and with large text the sidebar's account button and sync status fit, the Help page's tasks and a date picker's month no longer push the page sideways. Each section of a project list is announced with its name. The weekly review's steps fit a 320 px screen (they wrap at 400% zoom with large text), and the task page's breadcrumbs, the feed's project links, the board's column dots and the time zone's **Change** are easier to hit.
+- **Password managers fill the account form of a workspace invitation.** Its email, name and password fields now say what they hold, like every other sign-in form.
+- **Readable text on the iPhone app's first screen.** The "Server address" heading, the line under it and the error messages were light grey, a little under the contrast small text needs; they now use the full text colour.
 
 ## [0.22.0] - 2026-11-03
 

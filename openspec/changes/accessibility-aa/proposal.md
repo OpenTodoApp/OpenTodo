@@ -72,6 +72,7 @@ Advances ROADMAP-1.0 milestone 1.0 "Trust", item `accessibility-aa`.
 ### Modified Capabilities
 
 - `design-system`: "Toast primitive" keeps a toast clear of the focused element on phones too (it moves to the top of the screen when scrolling cannot clear it), found by the gate's focus-not-obscured measure.
+- `keyboard-shortcuts`: "Single-key shortcuts can be turned off" (WCAG 2.1.4, Level A), found while reviewing every criterion: the single-character shortcuts fired anywhere outside a field with no way to turn them off, so speech input could run commands. A per-device switch in Settings → General → Keyboard, on by default.
 
 `design-system` otherwise keeps "Accessibility gate on stories" and "Focus visibility in the accessibility gate". `web-app` keeps "Interface audit tour" (it stays non-blocking for budget and overflow findings; the new capability makes its accessibility findings blocking through its own gate). `documentation` keeps "Accessible documentation".
 
