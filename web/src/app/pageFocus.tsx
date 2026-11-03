@@ -65,22 +65,27 @@ export function usePageFocus(routeKey: unknown, frame: RefObject<HTMLElement | n
     let raf = 0
     // The heading found is kept while it is in the page: looking it up again after
     // every change scanned a 2,000-row list each frame where the header names the
-    // page differently (list-rendering-at-scale). One that is not the header's own
-    // title is looked up again now and then, so the header's wins when it comes.
+    // page differently (list-rendering-at-scale), and looking again once a second
+    // still scanned every row on a phone, whose bar names the page. One that is not
+    // the header's own title is looked up again when a heading arrives, so the
+    // header's wins when it comes.
     let heading: HTMLElement | null = null
-    let found = 0
+    let stale = true
     const update = () => {
       raf = 0
-      const now = performance.now()
-      if (!heading?.isConnected || (!heading.hasAttribute('data-page-title') && now - found > 1000)) {
+      if (stale || !heading?.isConnected) {
         heading = pageHeading(root)
-        found = now
+        stale = false
       }
       const next = pageTitle(headingText(heading))
       if (document.title !== next) document.title = next
     }
     update()
-    const obs = new MutationObserver(() => { if (!raf) raf = requestAnimationFrame(update) })
+    const addsHeading = (n: Node) => n instanceof Element && (n.tagName === 'H1' || !!n.querySelector('h1'))
+    const obs = new MutationObserver((records) => {
+      if (!stale && !heading?.hasAttribute('data-page-title')) stale = records.some((r) => Array.from(r.addedNodes).some(addsHeading))
+      if (!raf) raf = requestAnimationFrame(update)
+    })
     obs.observe(root, { childList: true, subtree: true, characterData: true })
     return () => {
       obs.disconnect()

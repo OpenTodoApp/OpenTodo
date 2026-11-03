@@ -430,6 +430,52 @@ export function nextDetail(soon: readonly WaitingSoon[], resolved?: ResolvedDate
   return t('{n, plural, one {# past its time} other {# past their time}}', { n: soon.length })
 }
 
+const sameImplied = (a: RowImplied | undefined, b: RowImplied | undefined): boolean =>
+  a === b || (!!a && !!b && a.date === b.date && a.evening === b.evening && a.part === b.part && a.someday === b.someday)
+
+/** Two rows show the same thing: the same task object in the same place. */
+export const sameRow = (a: ListRow, b: ListRow): boolean =>
+  a.task === b.task && a.depth === b.depth && a.parent === b.parent && a.hasChildren === b.hasChildren
+  && a.collapsed === b.collapsed && a.breadcrumb === b.breadcrumb && sameImplied(a.implied, b.implied)
+
+const sameValue = (a: unknown, b: unknown): boolean =>
+  Object.is(a, b) || (Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((v, i) => Object.is(v, b[i])))
+
+/**
+ * The groups of a new derivation with everything that did not change kept from the
+ * previous one (OpenSpec change list-rendering-at-scale, D6): a row equal to its
+ * previous row is that object, a group whose rows and heading did not change is
+ * that object, and when no group changed the previous list itself. One completion
+ * in a 2,000-row list then gives new objects to its own row's group only, so the
+ * list draws again only the rows that changed, and whatever is derived from the
+ * groups (rows, sibling positions, the time column) is kept when nothing moved.
+ */
+export function keepGroups(prev: readonly ListGroup[] | null, next: ListGroup[]): ListGroup[] {
+  if (!prev?.length) return next
+  const before = new Map(prev.map((g) => [g.key, g]))
+  let changed = prev.length !== next.length
+  const out = next.map((g, i) => {
+    const old = before.get(g.key)
+    if (!old) { changed = true; return g }
+    const oldRows = new Map(old.rows.map((r) => [r.task.id, r]))
+    let rowsChanged = old.rows.length !== g.rows.length
+    const rows = g.rows.map((r, j) => {
+      const was = oldRows.get(r.task.id)
+      const kept = was && sameRow(was, r) ? was : r
+      if (kept !== old.rows[j]) rowsChanged = true
+      return kept
+    })
+    const fieldsSame = (Object.keys(g) as (keyof ListGroup)[]).every((k) => k === 'rows' || sameValue(g[k], old[k])) && Object.keys(old).length === Object.keys(g).length
+    if (!rowsChanged && fieldsSame) {
+      if (prev[i] !== old) changed = true
+      return old
+    }
+    changed = true
+    return { ...g, rows: rowsChanged ? rows : old.rows }
+  })
+  return changed ? out : (prev as ListGroup[])
+}
+
 /**
  * Each row's place among its visible siblings (assistive-tech-semantics): the tree's
  * aria-posinset and aria-setsize, so a subtask is announced as one.

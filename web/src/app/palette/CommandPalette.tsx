@@ -12,7 +12,7 @@ import { useWorkspaceFilter } from '../useWorkspaceFilter'
 import { useAgentExclusions } from '../../lib/agentAccess'
 import { useFieldDefs } from '../useFields'
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type SetStateAction } from 'react'
-import { useLabels, useProjects, useProjectsOfEveryWorkspace, useSectionPlace, useUserPrefsRow, useWorkspaceState, useMembershipMapOrLoading, useReviewEvery } from '../../lib/localData'
+import { useLabels, useProjects, useSectionPlace, useUserPrefsRow, useWorkspaceState, useMembershipMapOrLoading, useReviewEvery } from '../../lib/localData'
 import { dayPartsOn } from '../../lib/dayParts'
 import { timeSectorsOn } from '../../lib/sectorNames'
 import { isFavourite } from '../../lib/favourites'
@@ -20,10 +20,8 @@ import { earlierIds } from '../../lib/dayLists'
 import { usePickScores } from '../../lib/pickRank'
 import { canEditProject, roleOf } from '../../lib/sharing'
 import { useViewMode } from '../../lib/sections'
-import { NO_TASKS, useLiveTasks, useTasksOfEveryWorkspace } from '../../lib/liveTasks'
-import { Partition } from '../../lib/workspaces'
-import { workspaceLabel } from '../workspaceNav'
-import type { Task, User } from '../../lib/types'
+import { NO_TASKS, useLiveTasks } from '../../lib/liveTasks'
+import type { User } from '../../lib/types'
 import { ComboboxField, ComboboxList, ComboboxPanel, Dialog } from '../../ui'
 import { useCombobox } from '../../ui'
 import { CatalogueIcon, Icon } from '../../ui'
@@ -36,7 +34,8 @@ import { useStartView, useToday, useViews } from '../useViews'
 import { useVimEnabled } from '../vim/prefs'
 import { groupOf, isStep, KIND_ICON, secondaryOf, type Entry, type Step } from './entries'
 import { filterEntries } from './filterEntries'
-import { buildEntries, makeTaskEntry } from './index'
+import { makeTaskEntry } from './index'
+import { usePaletteEntities } from './usePaletteEntities'
 import { commandEntries, contextEntries, trailingEntries, type PaletteContext } from './registry'
 import { t } from '../../lib/i18n'
 import { useAssistantStatus } from '../../lib/assistantStatus'
@@ -128,23 +127,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
   }, [route, user, today, list, task, query, vimEnabled, showShortcuts, projects, memberships, views, labels, tasks, startView, sectionInfo, prefs, agentExclusions, reviewEvery, workspaceState, missedBlocks])
 
   const taskEntry = useMemo(() => makeTaskEntry(projects, today), [projects, today])
-  // Tasks and projects of every workspace: picking one elsewhere switches the device (workspaces).
-  const everyTask = useTasksOfEveryWorkspace() ?? tasks
-  const everyProject = useProjectsOfEveryWorkspace()
-  const elsewhere = useMemo(() => {
-    if (workspaceState.list.length <= 1) return undefined
-    const p = new Partition(workspaceState.defaultId, workspaceState.list.map((w) => w.id), everyProject, everyTask)
-    const here = p.own(workspaceState.current)
-    const names = new Map(workspaceState.list.map((w) => [w.id, workspaceLabel(w.name, w.default)]))
-    return (kind: 'task' | 'project', row: { id: string }) => {
-      const ws = kind === 'task' ? p.taskRow(row as Task) : p.project(row.id)
-      return ws === here ? undefined : names.get(ws)
-    }
-  }, [workspaceState, everyProject, everyTask])
-  // The entities do not follow the text typed (ctx does): built once per data change,
-  // so the combobox folds their text once (performance-10k).
-  const entities = useMemo(() => buildEntries({ tasks: everyTask, projects: everyProject.length ? everyProject : projects, labels, views, user, today, elsewhere }),
-    [everyTask, everyProject, projects, labels, views, user, today, elsewhere])
+  const entities = usePaletteEntities(user, today, projects, labels, views, tasks)
   const source = useMemo(() => [...commandEntries(ctx), ...entities], [ctx, entities])
   const emptySource = useMemo(() => {
     const context = contextEntries(ctx)

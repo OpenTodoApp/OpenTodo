@@ -65,6 +65,25 @@ export function prepare(label: string, secondary = ''): Prepared {
   return { l, starts: wordStarts(l), s, sStarts: s ? wordStarts(s) : [] }
 }
 
+/** Above this many texts the cache of prepareCached starts again. */
+const PREPARED_MAX = 40_000
+const preparedTexts = new Map<string, Prepared>()
+
+/**
+ * prepare, remembered by text for the life of the page (list-rendering-at-scale): the
+ * command bar builds its 10,000 task options again after every write and on every
+ * opening, and folding them all again was most of the first keystroke on a phone.
+ */
+export function prepareCached(label: string, secondary = ''): Prepared {
+  const key = `${label}\u0000${secondary}`
+  const known = preparedTexts.get(key)
+  if (known) return known
+  if (preparedTexts.size >= PREPARED_MAX) preparedTexts.clear()
+  const p = prepare(label, secondary)
+  preparedTexts.set(key, p)
+  return p
+}
+
 function prefixRanges(text: string, starts: number[], words: string[]): Range[] | null {
   const ranges: Range[] = []
   for (const w of words) {

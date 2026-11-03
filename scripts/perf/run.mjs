@@ -159,11 +159,14 @@ async function session(browser, profileName) {
     await page.locator('[data-task-id]').nth(50).waitFor()
     // A long list draws its rows a step at a time after the first frame: the
     // interactions below run once all of them are in the document.
+    // Ten checks in a row with the same count: a step that held the page for a
+    // second (the phone profile) looked like a second without a step, and the cursor
+    // and the completions then ran while rows were still being drawn (list-rendering-at-scale).
     await page.waitForFunction(() => {
       const n = document.querySelectorAll('[data-task-id]').length
       const w = window.__perf
-      if (n !== w.rowCount) { w.rowCount = n; w.rowSince = performance.now(); return false }
-      return performance.now() - w.rowSince > 1000
+      if (n !== w.rowCount) { w.rowCount = n; w.rowChecks = 0; return false }
+      return ++w.rowChecks >= 10
     }, null, { polling: 100, timeout: 60_000 })
 
     debug('Cursor moves in that list')

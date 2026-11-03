@@ -186,13 +186,44 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
   return (r) => (c.fieldColumns ? <FieldColumnsRow key={r.task.id} task={r.task} defs={c.projectFieldDefs} row={line(r)} /> : line(r))
 }
 
-/** The context fields that name one row; each row compares its own answer instead. */
-const ROW_FIELDS = new Set<keyof RowContext>(['selectedId', 'inlineId', 'expandedId', 'dropAt', 'draggingId', 'ticked', 'addingUnder', 'onCloseSubtask', 'departures'])
+/**
+ * The context fields that a row reads only for itself (its cursor, its tick, its
+ * progress, its project…); each row compares its own answers instead. A write gives
+ * new maps of progress, blockers, flow and habits, and comparing them as a whole made
+ * every row of a 2,000-row list again after each completion (list-rendering-at-scale
+ * D6). `siblingPos` is written on the rows by SiblingAria, not drawn.
+ */
+const ROW_FIELDS = new Set<keyof RowContext>(['selectedId', 'inlineId', 'expandedId', 'dropAt', 'draggingId', 'ticked', 'addingUnder', 'onCloseSubtask', 'departures',
+  'progress', 'blocked', 'flow', 'habits', 'isReadOnly', 'projectMap', 'memberMap', 'siblingPos', 'renderInline'])
 
-/** What a row reads from the ROW_FIELDS: the same answers give the same element. */
-const rowSignature = (c: RowContext, r: Row): string => {
-  const id = r.task.id
-  return `${rowMotion(r.task, c.departures) ?? '-'}${+(c.selectedId === id)}${+(c.inlineId === id)}${+(c.expandedId === id)}${c.dropAt?.id === id ? c.dropAt.zone : '-'}${+(c.draggingId === id)}${+!!c.draggingId}${+c.ticked.has(id)}${+(c.addingUnder === id)}`
+const sameProgress = (a: Progress | undefined, b: Progress | undefined): boolean => a === b || (!!a && !!b && a.done === b.done && a.total === b.total)
+const sameHabit = (a: HabitStats | undefined, b: HabitStats | undefined): boolean =>
+  a === b || (!!a && !!b && a.current === b.current && a.best === b.best && a.pending === b.pending && a.atRisk === b.atRisk)
+
+/**
+ * Whether row `r` reads the same from the ROW_FIELDS of `a` (the context its element
+ * was made with) as of `b`. A field that is the same object is not looked into, so a
+ * cursor move compares two ids per row and a write looks up only the maps it renewed.
+ */
+function sameForRow(a: RowContext, b: RowContext, r: Row): boolean {
+  if (a === b) return true
+  const task = r.task
+  const id = task.id
+  const is = (x: unknown) => x === id
+  if (is(a.selectedId) !== is(b.selectedId) || is(a.inlineId) !== is(b.inlineId) || is(a.expandedId) !== is(b.expandedId)) return false
+  if (is(a.draggingId) !== is(b.draggingId) || !a.draggingId !== !b.draggingId || is(a.addingUnder) !== is(b.addingUnder)) return false
+  if ((is(a.dropAt?.id) ? a.dropAt!.zone : null) !== (is(b.dropAt?.id) ? b.dropAt!.zone : null)) return false
+  if (a.ticked !== b.ticked && a.ticked.has(id) !== b.ticked.has(id)) return false
+  if (a.departures !== b.departures && rowMotion(task, a.departures) !== rowMotion(task, b.departures)) return false
+  if (a.progress !== b.progress && !sameProgress(a.progress.get(id), b.progress.get(id))) return false
+  if (a.blocked !== b.blocked && a.blocked.get(id) !== b.blocked.get(id)) return false
+  if (a.flow !== b.flow && (a.flow?.waitsFor(id) ?? null) !== (b.flow?.waitsFor(id) ?? null)) return false
+  if (a.habits !== b.habits && !sameHabit(a.habits.get(id), b.habits.get(id))) return false
+  if (a.isReadOnly !== b.isReadOnly && a.isReadOnly(task) !== b.isReadOnly(task)) return false
+  const pid = task.project_id
+  if (pid && a.projectMap !== b.projectMap && a.projectMap.get(pid) !== b.projectMap.get(pid)) return false
+  if (pid && task.assignee_id && a.memberMap !== b.memberMap && a.memberMap.get(pid) !== b.memberMap.get(pid)) return false
+  return !(is(b.inlineId) && a.renderInline !== b.renderInline)
 }
 
 const sameContext = (a: RowContext, b: RowContext): boolean => {
@@ -211,7 +242,7 @@ const sameContext = (a: RowContext, b: RowContext): boolean => {
 export function useRowRenderer(c: RowContext): (r: Row) => ReactNode {
   // A row's words ("You", "Former member") follow the language.
   const language = useLanguageVersion()
-  const cache = useRef<{ c: RowContext | null; language: number; rows: WeakMap<Row, { sig: string; el: ReactNode }> }>({ c: null, language, rows: new WeakMap() })
+  const cache = useRef<{ c: RowContext | null; language: number; rows: WeakMap<Row, { c: RowContext; el: ReactNode }> }>({ c: null, language, rows: new WeakMap() })
   const held = cache.current
   if (!held.c || held.language !== language || !sameContext(held.c, c)) held.rows = new WeakMap()
   held.c = c
@@ -219,11 +250,10 @@ export function useRowRenderer(c: RowContext): (r: Row) => ReactNode {
   const rows = held.rows
   const render = rowRenderer(c)
   return (r) => {
-    const sig = rowSignature(c, r)
     const hit = rows.get(r)
-    if (hit?.sig === sig) return hit.el
+    if (hit && sameForRow(hit.c, c, r)) return hit.el
     const el = render(r)
-    rows.set(r, { sig, el })
+    rows.set(r, { c, el })
     return el
   }
 }
@@ -310,7 +340,35 @@ export function GroupedList(p: GroupedListProps) {
     : <HeadedGroup key={g.key} g={g} rowList={rowList} {...p} />)),
   p.completed && p.completed.tasks.length > 0 && <CompletedGroup key="completed" c={p.completed} rowList={rowList} renderRow={p.renderRow} fieldColumns={p.fieldColumns} />]
   const aria = p.siblingPos ? <SiblingAria key="aria" positions={p.siblingPos} drawn={Math.min(limit, total)} /> : null
-  return p.fieldColumns ? <FieldColumnsTable defs={p.projectFieldDefs}>{body}{aria}</FieldColumnsTable> : <>{body}{aria}</>
+  const estimate = total > ROWS_PER_STEP ? <RowEstimate key="estimate" list={`${p.view}:${p.project?.id ?? ''}`} /> : null
+  return p.fieldColumns ? <FieldColumnsTable defs={p.projectFieldDefs}>{body}{aria}{estimate}</FieldColumnsTable> : <>{body}{aria}{estimate}</>
+}
+
+/** Rows read to estimate the height of the rows not drawn yet. */
+const ESTIMATE_ROWS = 40
+
+/**
+ * The height a long list's rows not drawn yet stand at (list-rendering-at-scale D6):
+ * the average of the rows drawn first, set on the list as `--row-estimate` for
+ * `.row-offscreen`'s intrinsic size, so the scroll height (and where End or the
+ * scroll bar lands) is close before every row has been drawn once. Read after the
+ * first paint, from rows already laid out.
+ */
+function RowEstimate({ list }: { list: string }) {
+  const marker = useRef<HTMLSpanElement>(null)
+  useEffect(() => {
+    const root = marker.current?.parentElement
+    if (!root) return
+    const heights: number[] = []
+    for (const li of root.querySelectorAll<HTMLElement>('li[data-task-id]')) {
+      if (heights.length >= ESTIMATE_ROWS) break
+      if (typeof li.checkVisibility === 'function' && !li.checkVisibility({ contentVisibilityAuto: true })) continue
+      const h = li.offsetHeight
+      if (h > 0) heights.push(h)
+    }
+    if (heights.length) root.style.setProperty('--row-estimate', `${Math.round(heights.reduce((a, b) => a + b, 0) / heights.length)}px`)
+  }, [list])
+  return <span ref={marker} hidden />
 }
 
 /**
@@ -321,11 +379,19 @@ export function GroupedList(p: GroupedListProps) {
  */
 function SiblingAria({ positions, drawn }: { positions: ReadonlyMap<string, { pos: number; size: number }>; drawn: number }) {
   const marker = useRef<HTMLSpanElement>(null)
+  // What each row element carries, so a change writes only the rows whose position
+  // changed: reading both attributes of every row after each completion cost about
+  // 10 ms in the phone profile (list-rendering-at-scale D6).
+  const written = useRef(new WeakMap<HTMLElement, string>())
   useLayoutEffect(() => {
     const root = marker.current?.parentElement
     if (!root) return
+    const seen = written.current
     for (const li of root.querySelectorAll<HTMLElement>('li[data-task-id]')) {
       const at = li.hasAttribute('aria-level') ? positions.get(li.dataset.taskId!) : undefined
+      const want = at ? `${at.pos}/${at.size}` : ''
+      if (seen.get(li) === want) continue
+      seen.set(li, want)
       if (at) {
         if (li.getAttribute('aria-posinset') !== String(at.pos)) li.setAttribute('aria-posinset', String(at.pos))
         if (li.getAttribute('aria-setsize') !== String(at.size)) li.setAttribute('aria-setsize', String(at.size))

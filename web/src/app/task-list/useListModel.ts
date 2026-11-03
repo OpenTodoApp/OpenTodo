@@ -1,14 +1,14 @@
 // The task list's data (OpenSpec change web-component-structure): live reads from
 // lib/liveData and the shared task snapshot, turned into rows and groups by the
 // pure functions of lib/listGroups. One hook, so TaskListView only renders.
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePlace } from '../../lib/locations'
 import { blockedMap } from '../../lib/dependencies'
 import { useFlowView } from '../../lib/useFlow'
 import { durationPredicate, loadDurationFilter, saveDurationFilter, type DurationFilter } from '../../lib/filters'
 import { UPCOMING_FILTER_KEY, useQueryFilter } from '../calendar/queryFilter'
 import { habitStatsMap } from '../../lib/habits'
-import { boardColumns, completedBySection, completedNewestFirst, completedOpenKey, listGroups, sectionBuckets, siblingPositions, splitLater, tasksForView, type ListGroup, type ListScope } from '../../lib/listGroups'
+import { boardColumns, completedBySection, completedNewestFirst, completedOpenKey, keepGroups, listGroups, sectionBuckets, siblingPositions, splitLater, tasksForView, type ListGroup, type ListScope } from '../../lib/listGroups'
 import { useAllLabels, useCollapsedSections, useListColumnsPref, useLiveProjects, useMemberships, useProjectPrefsRow, useProjectSectionRows, useProjectViewMode, useShowCompletedPref } from '../../lib/liveData'
 import { listDisplayOf, type DisplayScope } from '../../lib/listDisplay'
 import { useListDisplay } from './useListDisplay'
@@ -142,7 +142,7 @@ export function useListModel(route: ListRoute, userId?: string) {
   const progress = useMemo(() => progressMap(allTasks), [allTasks])
   const blocked = useMemo(() => blockedMap(allTasks), [allTasks])
   // Steps waiting in sequence (project-flow-modes): dimmed rows, and Today folds them with the blocked ones.
-  const flow = useFlowView(allTasks, today)
+  const flow = useFlowView(allTasks, today, taskMap)
   const held = useMemo(() => flow.held(blocked), [flow, blocked])
   // Streaks of habits (OpenSpec habits D5): once per list, from the rows it holds.
   const habits = useMemo(() => habitStatsMap(allTasks, today), [allTasks, today])
@@ -209,11 +209,13 @@ export function useListModel(route: ListRoute, userId?: string) {
   }, [closed.fill, tasks, taskMap, waitingNow])
   // Done today stays Today's own: Upcoming looks ahead (upcoming-start-with-today D3).
   const doneToday = route.view === 'today' ? closed.doneToday ?? undefined : undefined
-  const groups = useMemo<ListGroup[]>(() => listGroups({
+  // A write keeps every group and row it did not change (list-rendering-at-scale D6).
+  const keptGroups = useRef<ListGroup[] | null>(null)
+  const groups = useMemo<ListGroup[]>(() => (keptGroups.current = keepGroups(keptGroups.current, listGroups({
     view: route.view, tasks, laterTasks, tree, today, resolved: dt.resolved, collapsed, blocked: held, taskMap,
     projects, projectMap, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday, upcomingToday,
     // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  }), [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, board, columns, buckets, liveSections, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday, upcomingToday])
+  }))), [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, board, columns, buckets, liveSections, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday, upcomingToday])
   // Upcoming's projected occurrences (series-occurrences D4): off by default, per device; never rows.
   const projectedGroups = useUpcomingGroups(route.view === 'upcoming', groups, { allTasks, projects, today, zone, duration: filterKey ? duration : null, queryTest, resolved: dt.resolved })
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])

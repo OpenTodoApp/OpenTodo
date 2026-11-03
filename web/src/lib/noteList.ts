@@ -179,15 +179,27 @@ export class NoteIndex {
    * that keystroke took most of a second on a phone).
    */
   warm(entries: readonly NoteEntry[], limit = 25): boolean {
+    // Each call goes on where the last one stopped in the same list: starting at the
+    // top again read every prepared note once per call, and a few notes a call over
+    // 2,000 notes did not finish before the first keystroke (list-rendering-at-scale).
+    let at = this.warming?.entries === entries ? this.warming.at : 0
     let done = 0
-    for (const e of entries) {
+    for (; at < entries.length; at++) {
+      const e = entries[at]
       const cur = this.prepared.get(e.key)
       if (cur && cur.title === e.title && cur.text === e.text) continue
-      if (done++ === limit) return true
+      if (done++ === limit) {
+        this.warming = { entries, at }
+        return true
+      }
       this.prepare(e)
     }
+    this.warming = { entries, at }
     return false
   }
+
+  /** Where warm stopped, in which list. */
+  private warming: { entries: readonly NoteEntry[]; at: number } | null = null
 
   /** Forget notes that are no longer listed (and their text). */
   prune(entries: readonly NoteEntry[]): void {

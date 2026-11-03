@@ -27,7 +27,9 @@ export function scrollParent(el: HTMLElement): HTMLElement | null {
 /** The elements that can be sticky in a scroller, found again at most every STICKY_TTL_MS. */
 const STICKY_TTL_MS = 1_000
 let stickyCache: { scroller: HTMLElement; at: number; list: HTMLElement[] } | null = null
-resettable('revealRow', () => { stickyCache = null })
+/** Calls of revealRow so far: the frames that check a reveal stop once there is a newer one. */
+let reveals = 0
+resettable('revealRow', () => { stickyCache = null; reveals = 0 })
 
 function stickyCandidates(scroller: HTMLElement): HTMLElement[] {
   const now = performance.now()
@@ -69,6 +71,25 @@ export function pinnedBottom(scroller: HTMLElement, row: HTMLElement): number {
  * show again. Without a scrolling ancestor it falls back to the browser.
  */
 export function revealRow(row: HTMLElement, opts: { first?: boolean } = {}): void {
+  // A row far from the viewport is skipped by the browser (content-visibility, the
+  // cursor row included, list-rendering-at-scale D6): it and its neighbours stand at
+  // their remembered or estimated height until they are drawn, so the scroll is
+  // checked again in the next frames, once they have their own height.
+  const skipped = typeof row.checkVisibility === 'function' && !row.checkVisibility({ contentVisibilityAuto: true })
+  revealOnce(row, opts)
+  const call = ++reveals
+  if (!skipped || typeof requestAnimationFrame !== 'function') return
+  let frames = 3
+  const check = () => {
+    // A later reveal (the cursor moved on) wins.
+    if (!row.isConnected || call !== reveals) return
+    revealOnce(row, opts)
+    if (--frames > 0) requestAnimationFrame(check)
+  }
+  requestAnimationFrame(check)
+}
+
+function revealOnce(row: HTMLElement, opts: { first?: boolean }): void {
   const scroller = scrollParent(row)
   if (!scroller) {
     row.scrollIntoView?.({ block: 'nearest' })
