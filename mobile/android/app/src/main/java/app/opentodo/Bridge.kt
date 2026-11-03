@@ -22,6 +22,8 @@ class Bridge(private val context: Context, private val origin: String, private v
     interface Host {
         fun requestNotificationPermission(done: (Boolean) -> Unit)
         fun requestExactAlarms()
+        /** The microphone for dictation. The default refuses, so a host without a screen never grants it. */
+        fun requestMicrophone(done: (Boolean) -> Unit) { done(false) }
         fun biometricStore(key: ByteArray, done: (Boolean) -> Unit)
         fun biometricRead(done: (ByteArray?) -> Unit)
         fun openExternal(url: String)
@@ -45,7 +47,7 @@ class Bridge(private val context: Context, private val origin: String, private v
         val caps = mutableListOf("reminders", "widgets")
         if (!play) caps += "geofences"
         if (host != null) {
-            caps += listOf("share", "links", "obsidian-links", "system-bars")
+            caps += listOf("share", "links", "obsidian-links", "system-bars", "microphone")
             if (BiometricKeyStore.available(context)) caps += "biometric"
         }
         return caps
@@ -83,6 +85,7 @@ class Bridge(private val context: Context, private val origin: String, private v
             }
             "biometricForget" -> BiometricKeyStore.forget(context)
             "openExternal" -> args.optString(0).takeIf { externalLink(it) }?.let { host?.openExternal(it) }
+            "requestMicrophone" -> if (host == null) answer(false) else host.requestMicrophone { answer(it) }
             "setSystemBars" -> if (host != null) {
                 // A malformed payload keeps the bars, and nothing of it is logged.
                 val json = args.optString(0)
@@ -171,7 +174,8 @@ class Bridge(private val context: Context, private val origin: String, private v
                 biometricRead: function () { return call('biometricRead', []) },
                 biometricForget: function () { send('biometricForget', []) },
                 openExternal: function (url) { send('openExternal', [String(url)]) },
-                setSystemBars: function (json) { send('setSystemBars', [String(json)]) }
+                setSystemBars: function (json) { send('setSystemBars', [String(json)]) },
+                requestMicrophone: function () { return call('requestMicrophone', []) }
               });
             })();
         """.trimIndent()

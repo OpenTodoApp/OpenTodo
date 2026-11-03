@@ -58,7 +58,7 @@ The copy never leaves the phone. It is deleted when you sign out, reset the pass
 
 ## Voice notes and photos
 
-The web app records voice notes and can attach a photo taken with the camera. iOS ends an app that asks for either without declaring it first, so the app declares both and the system's question comes from the app; as everywhere else, only your server is ever loaded, so no other page can ask. The Android app declares neither, so those two are iOS-only for now — nothing else in the shell depends on them.
+The web app records voice notes and can attach a photo taken with the camera. iOS ends an app that asks for either without declaring it first, so the app declares both and the system's question comes from the app; as everywhere else, only your server is ever loaded, so no other page can ask. The Android app declares the microphone and asks the first time you dictate. It does not declare the camera, so taking a photo from the page stays iOS-only.
 
 ## Building it
 

@@ -1,6 +1,6 @@
 // The native shell bridge (OpenSpec change native-shells, "The bridge is optional and versioned").
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { biometricRead, biometricStore, has, needsLightIcons, olderThan, openExternal, publishWidget, scheduleReminders, setSystemBars, shell, shellOutdated, testNotification, type OpenTodoShell } from './shell'
+import { allowMicrophone, biometricRead, biometricStore, has, needsLightIcons, olderThan, openExternal, publishWidget, scheduleReminders, setSystemBars, shell, shellOutdated, testNotification, type OpenTodoShell } from './shell'
 
 const g = globalThis as unknown as { window?: { opentodoShell?: OpenTodoShell } }
 
@@ -14,6 +14,7 @@ describe('shell bridge', () => {
   it('is absent in a browser: every helper is a no-op', async () => {
     install(undefined)
     expect(shell()).toBeNull()
+    expect(await allowMicrophone()).toBe(true)
     expect(has('reminders')).toBe(false)
     expect(await scheduleReminders([])).toBeNull()
     expect(await testNotification()).toBeNull()
@@ -26,6 +27,16 @@ describe('shell bridge', () => {
   it('ignores an object of the wrong shape', () => {
     install({ bridge: 'one' as unknown as number, capabilities: [] })
     expect(shell()).toBeNull()
+  })
+
+  it('asks a shell that lists the microphone, and does not ask one that does not', async () => {
+    const ask = vi.fn(async () => false)
+    install({ bridge: 1, platform: 'android', app: '0.22.0', capabilities: ['microphone'], requestMicrophone: ask })
+    expect(await allowMicrophone()).toBe(false)
+    expect(ask).toHaveBeenCalledOnce()
+    install({ bridge: 1, platform: 'android', app: '0.22.0', capabilities: ['reminders'], requestMicrophone: ask })
+    expect(await allowMicrophone()).toBe(true)
+    expect(ask).toHaveBeenCalledOnce()
   })
 
   it('never calls a method the shell does not list', async () => {

@@ -12,7 +12,7 @@ export const BRIDGE_VERSION = 1
 /** The oldest shell app version this web app expects (bumped when a shell bug needs a forced update). */
 export const MIN_SHELL_APP = '0.10.0'
 
-export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'geofences'
+export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'microphone' | 'geofences'
 
 /**
  * One location reminder handed to the shell (location-reminders D3): the circle
@@ -93,6 +93,8 @@ export interface OpenTodoShell {
    * permission it registers nothing.
    */
   scheduleGeofences?(json: string): Promise<ShellLocationPermission> | ShellLocationPermission | void
+  /** Ask the phone for the microphone before the page records. True once it is allowed. */
+  requestMicrophone?(): Promise<boolean> | boolean
 }
 
 declare global {
@@ -120,6 +122,17 @@ export function olderThan(version: string, min: string): boolean {
   const a = parse(version), b = parse(min)
   for (let i = 0; i < 3; i++) if ((a[i] ?? 0) !== (b[i] ?? 0)) return (a[i] ?? 0) < (b[i] ?? 0)
   return false
+}
+
+/**
+ * True when the page may use the microphone. A shell that asks the phone itself is
+ * asked first, so the prompt is the system's and not a refusal the page then has to
+ * explain. Without that capability (a browser, an older shell) the page asks as before.
+ */
+export async function allowMicrophone(): Promise<boolean> {
+  const s = shell()
+  if (!s || !has('microphone') || !s.requestMicrophone) return true
+  return (await s.requestMicrophone()) === true
 }
 
 /** Whether Settings should say the shell is older than this server expects. */
