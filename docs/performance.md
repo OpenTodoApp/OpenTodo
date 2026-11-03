@@ -100,7 +100,7 @@ The settings:
 The notes fixture adds 500 notes of about 10 KB each to the account, half
 standalone notes and half task notes, each saved about 300 times over twelve
 months (about 2 GB of history before the server's
-[compaction](backups.md) runs). It is built and measured at night only.
+[compaction](backups.md) runs). It is built and measured on demand (a manual run of the Performance workflow); it joins the nightly run once compaction meets its budgets: the first full run (2026-11-03) finished no compaction pass in 20 minutes, and a write waited 4.4 s behind it.
 
 | Metric | Unit | Server | Desktop | Phone profile | Android | iPhone | Raspberry Pi 4 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
