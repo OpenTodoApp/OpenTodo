@@ -98,25 +98,10 @@ func replayClient(t *testing.T, file string) {
 			t.Errorf("%s: status %d, recorded %d (%v)", where, status, p.Response.Status, body)
 			continue
 		}
-		if refusedForSkew(p.Response.Body) {
-			continue // the refusal depends on the wall clock at recording time; replayed now, the op applies
-		}
 		for _, problem := range shapeProblems(p.Response.Body, body) {
 			t.Errorf("%s: %s", where, problem)
 		}
 	}
-}
-
-// refusedForSkew: a recorded sync answer that refused an op for the device's clock.
-func refusedForSkew(body any) bool {
-	m, _ := body.(map[string]any)
-	list, _ := m["rejected"].([]any)
-	for _, r := range list {
-		if e, _ := r.(map[string]any); e["reason"] == "clock_skew" {
-			return true
-		}
-	}
-	return false
 }
 
 // send replays one request with the replay's own credentials and ids.
