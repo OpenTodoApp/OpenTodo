@@ -2,8 +2,10 @@
 // and project notes matching the query by the Notes page's rules (every word, ignoring
 // case and accents), from local rows only, with the snippet as their second line; a
 // task found by its notes keeps its place among the tasks and gains the snippet.
-// The index (lib/noteList.ts) is imported on the first typed query and refreshed from
-// the live rows; nothing is ever asked of the server.
+// The index (lib/noteList.ts) is imported when the palette opens, prepared in idle
+// moments before the first keystroke (performance-10k: preparing 2,000 task notes on
+// that keystroke took most of it on a phone) and refreshed from the live rows; nothing
+// is ever asked of the server.
 import { useEffect, useMemo, useState } from 'react'
 import { currentLanguage, t } from '../../lib/i18n'
 import { useNoteRows } from '../../lib/noteRows'
@@ -32,19 +34,42 @@ export interface PaletteNotes {
 
 const NONE: PaletteNotes = { entries: [], snippets: new Map() }
 
+// Idle periods only (no timeout), a few notes at a time while the period lasts: a long
+// step delayed the keystroke that came during it.
+const idle = (fn: (deadline?: IdleDeadline) => void): number => (typeof requestIdleCallback === 'function' ? requestIdleCallback(fn) : window.setTimeout(fn, 20))
+const cancelIdle = (h: number) => {
+  if (typeof cancelIdleCallback === 'function') cancelIdleCallback(h)
+  clearTimeout(h)
+}
+
 /** The Notes section for `query`; empty until the index module has loaded. */
 export function usePaletteNotes(query: string, tasks: readonly Task[], projects: readonly Project[]): PaletteNotes {
   const [mod, setMod] = useState<NoteListModule | null>(null)
   const q = query.trim()
   useEffect(() => {
-    if (!q || mod) return
+    if (mod) return
     let live = true
     void import('../../lib/noteList').then((m) => { if (live) setMod(m) })
     return () => { live = false }
-  }, [q, mod])
+  }, [mod])
   const notes = useNoteRows()
   const index = useMemo(() => (mod ? new mod.NoteIndex(currentLanguage()) : null), [mod])
   const all = useMemo(() => (mod ? mod.noteEntries(readable(tasks), readable(projects), readable(notes)) : []), [mod, tasks, projects, notes])
+  useEffect(() => {
+    if (!index) return
+    let handle = 0
+    let stopped = false
+    const run = (deadline?: IdleDeadline) => {
+      let more = !stopped
+      while (more) {
+        more = index.warm(all, 3)
+        if (!deadline || deadline.timeRemaining() < 4) break
+      }
+      if (more && !stopped) handle = idle(run)
+    }
+    handle = idle(run)
+    return () => { stopped = true; cancelIdle(handle) }
+  }, [index, all])
   return useMemo(() => {
     if (!q || !mod || !index) return NONE
     index.prune(all)
