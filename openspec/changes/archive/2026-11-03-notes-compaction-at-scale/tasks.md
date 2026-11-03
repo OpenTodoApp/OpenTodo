@@ -16,7 +16,7 @@
 ## 3. Measure and document
 
 - [x] 3.1 `internal/perf` notes test: the reader pool wired as the server does, the first copy's pull and an older client's full pull reported; verify `make perf NOTES=1` locally
-- [ ] 3.2 The notes perf job on the CI runner within every notes budget (`notes-share` raised to 130 MB with the reason of D5); verify a `workflow_dispatch` run of `perf.yml`
+- [x] 3.2 The notes perf job on the CI runner within every notes budget (`notes-share` raised to 130 MB with the reason of D5); verify a `workflow_dispatch` run of `perf.yml`
 - [x] 3.3 The notes job runs nightly again (`.github/workflows/perf.yml`); `performance-10k` tasks 3.3 and 4.1 updated; verify `make repo-check`
 - [x] 3.4 Note search keystroke (D6): plain text kept by the index, ASCII fast paths in `noteSearch.ts`, stable note list on the Notes page, deadline-based warm-up; verify `npx vitest run src/lib/noteSearch src/lib/noteList src/app/notes` (shared vectors, equivalence of the fast paths, `sameEntries`, one strip per note)
 - [x] 3.5 Docs: `docs/sync.md` (Exchange, Compaction), `docs/performance.md` (notes results), `docs/backups.md` where it describes the pace; CHANGELOG; verify `make docs-check`, `make openspec-validate`

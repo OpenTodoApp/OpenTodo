@@ -121,6 +121,7 @@ The release that makes OpenTodo the default choice.
 | [`external-security-review`](openspec/changes/external-security-review/) | A threat model and disclosure policy; an independent security review is optional, depending on funding |  |
 | [`accessibility-aa`](openspec/changes/accessibility-aa/) | WCAG 2.2 AA on every screen, with a conformance statement |  |
 | [`performance-10k`](openspec/changes/performance-10k/) | Budgets and tests for 10,000 tasks, on phones too |  |
+| [`notes-compaction-at-scale`](openspec/changes/archive/2026-11-03-notes-compaction-at-scale/) | **Shipped.** A year of note history compacted in a minute without holding writes back; a new device downloads only the latest notes | [#590](https://github.com/OpenTodoApp/OpenTodo/issues/590) |
 | [`migration-everywhere`](openspec/changes/archive/2026-11-03-migration-everywhere/) | **Shipped.** A switch guide and checked importer for every competitor | [#591](https://github.com/OpenTodoApp/OpenTodo/issues/591) |
 | [`caldav-verified`](openspec/changes/caldav-verified/) | CalDAV verified on real clients | [#9](https://github.com/OpenTodoApp/OpenTodo/issues/9) |
 | [`docs-1-0`](openspec/changes/docs-1-0/) | Complete user, self-host and API docs and a contributor guide |  |
