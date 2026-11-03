@@ -21,12 +21,12 @@
 
 ## 4. Client and export compatibility
 
-- [ ] 4.1 Recording mode for the contract tests (`npm run test:contract -- --record`) writing pairs to `internal/sync/testdata/v1_clients/` for sync, task CRUD, the shells' bridge calls, `ot` and the extension, secrets stripped; verify the files contain no session or token values (a repo-check grep)
-- [ ] 4.2 Go replay test asserting recorded fields and types are present (extra fields allowed); verify `go test ./internal/sync/...` and a removed response field fails it
-- [ ] 4.3 Export fixtures `export-v1-0.16.json` and `export-v1-1.0.json` with an import test that checks every entity arrives; verify `go test ./internal/importer/...`
+- [x] 4.1 Recording mode for the contract tests (`npm run test:contract:record`) writing pairs to `internal/sync/testdata/v1_clients/` for the web sync client (which the shells run), task CRUD, `ot` and the extension, secrets stripped; verify the files contain no session or token values (a repo-check grep)
+- [x] 4.2 Go replay test asserting recorded fields and types are present (extra fields allowed); verify `go test ./internal/tenant -run TestV1ClientsReplay` and a removed response field fails it
+- [x] 4.3 Export fixtures: each upgrade fixture keeps its version's export (0.1 … 0.21, 1.0 when prepared), with an import test that checks every entity arrives (comments reported, as data-import does); verify `go test ./internal/importer/...`
 
 ## 5. Documentation and release
 
-- [ ] 5.1 `docs/stability.md` (surface, additive rules, deprecation window, upgrade promise, client window, export promise, semantic versioning and image tags); links from `docs/api.md`, `docs/sync.md`, `docs/mcp.md`, `docs/cli.md`, `docs/import-export.md`, README; verify `make docs-check` including the new link check
-- [ ] 5.2 `docs/contracts.md` mentions the snapshot and the upgrade fixtures; `CONTRIBUTING.md` explains `-update` and when the snapshot may change; verify `make repo-check`
-- [ ] 5.3 CHANGELOG entry under Unreleased; verify `make check` passes
+- [x] 5.1 `docs/stability.md` (surface, additive rules, deprecation window, upgrade promise, client window, export promise, semantic versioning and image tags); links from `docs/api.md`, `docs/sync.md`, `docs/mcp.md`, `docs/cli.md`, `docs/import-export.md`, README; verify `make docs-check` including the new link check
+- [x] 5.2 `docs/contracts.md` mentions the snapshot and the upgrade fixtures; `CONTRIBUTING.md` explains `-update` and when the snapshot may change; verify `make repo-check`
+- [x] 5.3 CHANGELOG entry under Unreleased; verify `make check` passes

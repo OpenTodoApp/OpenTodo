@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { TestProject } from 'vitest/node'
+import { startRecorder, writeRecordings } from './recorder'
 
 declare module 'vitest' {
   export interface ProvidedContext {
@@ -37,8 +38,15 @@ export default async function setup(project: TestProject): Promise<() => Promise
     proc.kill('SIGKILL')
     throw new Error(`contract tests: the server did not start:\n${Buffer.concat(out).toString()}`)
   }
-  project.provide('serverUrl', url)
+  // RECORD_V1_CLIENTS=1 records the web client's calls for the client
+  // compatibility test (stability-contract D5; scripts/record-v1-clients.sh).
+  const recorder = process.env.RECORD_V1_CLIENTS === '1' ? await startRecorder(url) : null
+  project.provide('serverUrl', recorder?.url ?? url)
   return async () => {
+    if (recorder) {
+      await recorder.close()
+      writeRecordings(fileURLToPath(new URL('../../../internal/sync/testdata/v1_clients', import.meta.url)), recorder.pairs)
+    }
     proc.kill('SIGTERM')
     await exited
     rmSync(data, { recursive: true, force: true })

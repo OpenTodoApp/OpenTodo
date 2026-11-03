@@ -3,7 +3,7 @@ title: Stability and compatibility
 summary: What every 1.x release keeps: the v1 API, the sync protocol and op schema, the export format, MCP tools and the ot CLI; deprecation, upgrades and versioning.
 audience: developer
 section: Integrations
-specs: []
+specs: [api-stability]
 screens: []
 order: 5
 ---
@@ -73,9 +73,13 @@ This is tested. For every released minor version there is a fixture: the data di
 
 A 1.x server accepts sync and REST requests from every 1.x client: a web app still cached on a phone, the Android and iOS apps, `ot`, the browser extension and the Obsidian plugin, of any 1.x version.
 
+This is tested too. The calls the web app's sync client (which the phone apps run), `ot` and the extension make were recorded against the server, with every session, token and password replaced by a placeholder. CI replays them in order against the current server and fails when a response has another status, or lacks a field the recording had or has it with another type. Fields added since are fine. The recordings are made once per major version and are never regenerated within it.
+
 ## The export format
 
 Every 1.x server writes exports with `"format":"opentodo-export"` and `"version":1`, and imports every version 1 export written by any 0.x or 1.x release.
+
+Each upgrade fixture keeps the export its version wrote, and CI imports every one of them into an empty account: every project, section, label, task, reminder and time entry must arrive, and workspaces other than the default one are created. Comments are not imported, as for any import of an export: a comment keeps its author, an account of the server that wrote the file. The import names how many it left out.
 
 ## Versioning
 

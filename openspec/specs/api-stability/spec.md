@@ -1,4 +1,9 @@
-## ADDED Requirements
+# api-stability Specification
+
+## Purpose
+The compatibility contract of a major version: what the v1 surface is (the HTTP API, error codes, sync protocol and op schema, export format, MCP tools and `ot` CLI), that it only grows within 1.x, how a route is deprecated, and the tested guarantees behind it: upgrades from every released version, older clients against newer servers, and imports of every released export.
+
+## Requirements
 
 ### Requirement: Published compatibility policy
 The repository SHALL publish `docs/stability.md`, linked from `docs/api.md`, `docs/sync.md`, `docs/mcp.md`, `docs/cli.md`, `docs/import-export.md` and the README. It SHALL name the v1 surface (every route under `/api/v1/` with its request fields, response fields and documented statuses; the error codes; the sync protocol and op schema; the export format `opentodo-export` version 1; the MCP tool names, arguments and result fields; the `ot` commands, flags, exit codes and `--json` output), SHALL list the changes allowed within a major version (only additions: new routes, optional request fields, response fields, error codes for new conditions, op entities and fields, values of enums documented as open, MCP tools and optional arguments, CLI commands and flags, export keys) and the changes that need a new major version (removal, rename, type or unit change, a field becoming required, a documented condition changing status or code, narrowed accepted values, changed meaning), SHALL state that clients must ignore unknown fields and unknown values of open enums, and SHALL state semantic versioning for releases and image tags. The docs check SHALL fail when any of the linking pages lacks the link.
@@ -72,11 +77,11 @@ A 1.x server SHALL answer requests from any 1.x client (the web app, the Android
 - **THEN** the client replay test fails naming the recorded pair and the field
 
 ### Requirement: Export format guarantee
-Every 1.x server SHALL write exports with `"format":"opentodo-export"` and `"version":1`, and SHALL import every version 1 export written by any 0.x or 1.x release. CI SHALL import committed exports written by 0.16 and 1.0 and SHALL fail unless every project, section, label, task, comment, time entry and workspace of the file arrives through the operation log.
+Every 1.x server SHALL write exports with `"format":"opentodo-export"` and `"version":1`, and SHALL import every version 1 export written by any 0.x or 1.x release. CI SHALL import committed exports written by every released minor version (0.16 and 1.0 included) and SHALL fail unless every project, section, label, task, reminder, time entry and non-default workspace of the file arrives through the operation log, and the import reports the comments it leaves out (a comment keeps its author, an account of the exporting server).
 
 #### Scenario: Importing a 0.16 export into 1.x
 - **WHEN** the import test loads the 0.16 export fixture into an empty account
-- **THEN** every entity of the file is present after the import job and the counts match the file
+- **THEN** every project, section, label, task, reminder and time entry of the file is present after the import job, the counts match the file, and the comments are named in the import's notes
 
 #### Scenario: Export version changes by accident
 - **WHEN** a change writes `"version":2` without a new major release
