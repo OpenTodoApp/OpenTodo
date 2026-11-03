@@ -186,7 +186,7 @@ describe('the task page', () => {
     await waitFor(() => !!document.querySelector(`[role="menuitem"][data-parent-id="${budget}"]`))
     expect(document.querySelector('[data-overlay="sheet"]')).toBeNull()
     await click(document.querySelector<HTMLButtonElement>(`[role="menuitem"][data-parent-id="${budget}"]`)!)
-    await waitFor(() => location.pathname === `/task/${budget}`)
+    await waitFor(() => page()?.querySelector('[data-crumb="task"]')?.textContent === 'Draft the budget')
     expect(page()!.querySelector('[data-crumb="more"]')).toBeNull()
     expect(page()!.querySelector('[data-crumb="parent"]')).toBeNull()
     await r.unmount()
