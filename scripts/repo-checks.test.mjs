@@ -235,6 +235,9 @@ test('every workflow has a concurrency group and every job a timeout', () => {
     const text = read(f)
     assert.match(text, /^concurrency:\n {2}group: /m, `${f}: concurrency group`)
     for (const [id, block] of Object.entries(jobsOf(text))) {
+      // A job that calls a workflow of this repository takes no timeout of its own
+      // (GitHub refuses one): the called workflow's jobs carry theirs, checked here too.
+      if (/^ {4}uses: \.\/\.github\/workflows\/[\w-]+\.yml$/m.test(block)) continue
       assert.match(block, /^ {4}timeout-minutes: \d+$/m, `${f}: job ${id} needs timeout-minutes`)
     }
   }

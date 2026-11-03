@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -372,4 +373,59 @@ func counting(t *testing.T, path string) (*opsync.Service, *queryLog) {
 	db.SetMaxOpenConns(1)
 	t.Cleanup(func() { db.Close() })
 	return opsync.NewService(db), log
+}
+
+// The notes fixture (design D7): the same documents and seed give the same
+// summary, the counts follow the composition, and the window split holds: only
+// the recent notes' last saves were received in the last 30 days.
+func TestNotesFixture(t *testing.T) {
+	base, sum := build(t)
+	docs := filepath.Join(t.TempDir(), "notes.jsonl")
+	var lines bytes.Buffer
+	const notes, saves = 20, 40
+	for n := range notes {
+		for s := range saves {
+			line, _ := json.Marshal(map[string]any{"note": n, "save": s, "doc": "ydoc:v1:" + base64.StdEncoding.EncodeToString(fmt.Appendf(nil, "note %d save %d", n, s)), "text": fmt.Sprintf("Note %d, save %d", n, s)})
+			lines.Write(append(line, '\n'))
+		}
+	}
+	if err := os.WriteFile(docs, lines.Bytes(), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	seed := func() (string, NotesSummary) {
+		dir := t.TempDir()
+		b, err := os.ReadFile(filepath.Join(base, "opentodo.db"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "opentodo.db"), b, 0o600); err != nil {
+			t.Fatal(err)
+		}
+		ns, err := SeedNotes(context.Background(), dir, docs, sum.OwnerID, Options{Now: fixedNow})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return dir, ns
+	}
+	dir, first := seed()
+	if _, again := seed(); again != first {
+		t.Errorf("same seed, different summaries: %+v, %+v", first, again)
+	}
+	want := NotesSummary{Notes: notes, Standalone: notes / 2, TaskNotes: notes / 2, Saves: notes * saves, Recent: notes / RecentEvery, RecentSaves: notes / RecentEvery * RecentSaves, DocBytes: first.DocBytes}
+	if first != want {
+		t.Errorf("summary = %+v, want %+v", first, want)
+	}
+	db, err := store.Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	window := fixedNow.AddDate(0, 0, -30).UnixMilli()
+	var inside, after int
+	if err := db.QueryRow(`SELECT COUNT(*), COALESCE(SUM(received_at > ?), 0) FROM ops WHERE field = 'notes_doc' AND received_at >= ?`, fixedNow.UnixMilli(), window).Scan(&inside, &after); err != nil {
+		t.Fatal(err)
+	}
+	if inside != want.RecentSaves || after != 0 {
+		t.Errorf("saves received in the 30-day window = %d (after now %d), want %d", inside, after, want.RecentSaves)
+	}
 }

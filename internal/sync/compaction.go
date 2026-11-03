@@ -46,7 +46,10 @@ var CompactFields = []CompactField{
 const CompactGrace = 30 * 24 * time.Hour
 
 // compactChunk is how many ops one step selects and deletes (design D4).
-const compactChunk = 1000
+// 100: a step of 1,000 note ops (about 7 MB of history) held the writer for
+// over 100 ms on the notes fixture, so a push waited behind it (performance-10k
+// D7, "longest push wait"); 100 keeps a step at a few tens of milliseconds.
+const compactChunk = 100
 
 // compactWindow bounds the sequence numbers one candidate query examines, so a
 // log of mostly winners never makes one statement scan the whole table.

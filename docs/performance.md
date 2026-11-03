@@ -89,6 +89,32 @@ The settings:
 | `server-mcp-search` The MCP `search_tasks` tool (95th percentile) | ms | 200 | 800 |
 | `server-db-size` The database file | MB | 150 | 150 |
 
+### With a year of note history
+
+The notes fixture adds 500 notes of about 10 KB each to the account, half
+standalone notes and half task notes, each saved about 300 times over twelve
+months (about 2 GB of history before the server's
+[compaction](backups.md) runs). It is built and measured at night only.
+
+| Metric | Unit | Server | Desktop | Phone profile | Android | iPhone | Raspberry Pi 4 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `notes-db-size` The database file after compaction | MB | 250 | — | — | — | — | 250 |
+| `notes-share` What the notes take of it | MB | 100 | — | — | — | — | — |
+| `notes-compaction` A full compaction of the fixture | s | 120 | — | — | — | — | 480 |
+| `notes-push-wait` The longest a write waits behind compaction | ms | 100 | — | — | — | — | — |
+| `notes-first-sync` First sync of a new device, tasks and notes | s | — | 45 | 110 | 120 | 120 | — |
+| `notes-indexeddb` Storage on the device after that sync | MB | — | 120 | — | — | — | — |
+| `notes-page` Open the Notes page | ms | — | 400 | 1,200 | 1,200 | 1,200 | — |
+| `notes-search` A keystroke in the note search (95th percentile) | ms | — | 50 | 150 | 150 | 150 | — |
+| `notes-js-heap` JavaScript heap after the notes session | MB | — | 170 | 170 | — | — | — |
+
+The report also gives, without a limit, the database size before compaction,
+the operations and bytes compaction removed, and the bytes a new device pulls.
+If a phone misses its first-sync or storage budget after compaction, the answer
+is loading note bodies on demand, not a higher budget.
+
+`NOTES=1 make perf` runs it (`NOTES_SEED_FLAGS="--notes 50"` for a quick look).
+
 ## How the budgets are checked
 
 **On every pull request**, tests count work at 10,000 tasks instead of

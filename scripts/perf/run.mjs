@@ -6,7 +6,8 @@
 //
 //   node scripts/perf/run.mjs          (make perf runs it after the fixture and the server)
 //
-// Env: PERF_BIN (default bin/opentodo), PERF_FIXTURE (a perfseed data directory, required),
+// Env: PERF_BIN (default bin/opentodo), PERF_FIXTURE (a perfseed data directory, required;
+// with PERF_NOTES=1 the compacted notes fixture TestNotesBudgets leaves),
 // PERF_RUNS (default 5), PERF_PROFILES (default "desktop,phone"), PERF_REPORT (default
 // perf-report/web.json), CHROMIUM_PATH.
 //
@@ -26,6 +27,8 @@ import { dirname, join } from 'node:path'
 import { evaluate, loadBudgets } from './budgets.mjs'
 
 const BIN = process.env.PERF_BIN ?? 'bin/opentodo'
+// PERF_NOTES=1: the notes fixture's session (the compacted copy TestNotesBudgets leaves) instead of the 10k one.
+const NOTES = !!process.env.PERF_NOTES
 const FIXTURE = process.env.PERF_FIXTURE
 if (!FIXTURE) throw new Error('PERF_FIXTURE: give a perfseed data directory (make perf makes one)')
 const RUNS = Number(process.env.PERF_RUNS ?? 5)
@@ -262,7 +265,60 @@ async function session(browser, profileName) {
   }
 }
 
+/**
+ * The notes fixture's session (design D7): a new device's first sync of the
+ * compacted account, the storage it takes, the Notes page and a note search.
+ */
+async function notesSession(browser, profileName) {
+  const prof = profiles[profileName]
+  const server = await startServer()
+  const out = {}
+  const ctx = await browser.newContext({ viewport: prof.viewport, isMobile: prof.isMobile, hasTouch: prof.hasTouch, deviceScaleFactor: prof.deviceScaleFactor, serviceWorkers: 'block' })
+  try {
+    await ctx.addInitScript(instrument)
+    const login = await ctx.request.post(`${server.base}/api/v1/auth/login`, { data: { email: summary.ownerEmail, password: summary.password } })
+    if (!login.ok()) throw new Error(`login: ${login.status()}`)
+    const page = await ctx.newPage()
+    current = page
+    const cdp = await ctx.newCDPSession(page)
+    if (prof.throttle > 1) await cdp.send('Emulation.setCPUThrottlingRate', { rate: prof.throttle })
+    await page.goto(`${server.base}/today`)
+    out['notes-first-sync'] = (await markAfter(page, 'ot:sync-idle', 0, 600_000)) / 1000
+    const notes = await page.evaluate(() => new Promise((ok) => {
+      const req = indexedDB.open('opentodo')
+      req.onsuccess = () => { const c = req.result.transaction('notes').objectStore('notes').count(); c.onsuccess = () => { ok(c.result); req.result.close() } }
+    }))
+    if (notes < summary.notes.standalone) throw new Error(`notes: ${notes} local, the fixture has ${summary.notes.standalone}`)
+    out['notes-indexeddb'] = await page.evaluate(async () => (await navigator.storage.estimate()).usage / 2 ** 20)
+    await page.waitForTimeout(1000)
+    const t0 = await go(page, '/notes')
+    out['notes-page'] = (await markAfter(page, 'ot:list-ready', t0)) - t0
+    const field = page.locator('[data-note-search]')
+    await field.click()
+    const keys = []
+    for (const ch of 'kitchen') {
+      const before = await page.evaluate(() => performance.now())
+      await page.keyboard.press(ch)
+      const at = await markAfter(page, 'ot:search-results', before, 30_000).catch(() => null)
+      const input = await page.evaluate(() => window.__perf.lastInput)
+      if (at !== null) keys.push(at - input)
+    }
+    out['notes-search'] = p95(keys)
+    await cdp.send('HeapProfiler.collectGarbage')
+    out['notes-js-heap'] = (await cdp.send('Runtime.getHeapUsage')).usedSize / 2 ** 20
+    return out
+  } catch (err) {
+    mkdirSync(dirname(REPORT), { recursive: true })
+    await current?.screenshot({ path: join(dirname(REPORT), `${profileName}-notes-failure.png`) }).catch(() => {})
+    throw err
+  } finally {
+    await ctx.close()
+    await server.stop()
+  }
+}
+
 const budgets = loadBudgets()
+const isNotes = (id) => id.startsWith('notes-')
 const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {})
 const reports = []
 let failed = false
@@ -270,11 +326,12 @@ try {
   for (const name of PROFILES) {
     const samples = {}
     for (let i = 0; i < RUNS; i++) {
-      const s = await session(browser, name)
+      const s = await (NOTES ? notesSession : session)(browser, name)
       for (const [k, v] of Object.entries(s)) (samples[k] ??= []).push(Math.round(v * 10) / 10)
       log(`${name} run ${i + 1}/${RUNS}: ${Object.entries(s).map(([k, v]) => `${k} ${Math.round(v * 10) / 10}`).join(', ')}`)
     }
-    const rep = evaluate(budgets, name, samples)
+    const rep = evaluate(budgets, name, samples, (id) => isNotes(id) === NOTES)
+    if (NOTES) rep.setting = `${name} (notes)`
     reports.push(rep)
     for (const m of rep.metrics) {
       console.log(`${m.ok ? 'ok  ' : 'FAIL'} ${name.padEnd(8)} ${m.id.padEnd(22)} median ${String(m.median).padStart(8)} ${m.unit.padEnd(2)} budget ${m.limit}`)

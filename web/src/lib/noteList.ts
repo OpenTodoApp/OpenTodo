@@ -127,8 +127,12 @@ export class NoteIndex {
     return p
   }
 
-  /** The entries matching `query`, ranked: title matches first, then matched words, then recency. */
-  search(entries: readonly NoteEntry[], query: string, snippetLength = 140): NoteResult[] {
+  /**
+   * The entries matching `query`, ranked: title matches first, then matched words, then recency.
+   * Only the first `snippets` results get their snippet (a list shows a page of them;
+   * the rest have none until it shows more).
+   */
+  search(entries: readonly NoteEntry[], query: string, snippetLength = 140, snippets = Infinity): NoteResult[] {
     const terms = parseQuery(query, this.lang)
     if (terms.length === 0) return []
     const hits: NoteHit<NoteEntry & { key: string }>[] = []
@@ -137,7 +141,24 @@ export class NoteIndex {
       if (m.matched) hits.push({ note: e, ...m })
     }
     hits.sort(compareHits)
-    return hits.map((h) => ({ ...h, snippet: snippet(h.note.text, terms, snippetLength, this.lang) }))
+    return hits.map((h, i) => ({ ...h, snippet: i < snippets ? snippet(h.note.text, terms, snippetLength, this.lang) : [] }))
+  }
+
+  /**
+   * Prepares up to `limit` of the entries not prepared yet; true while some are
+   * left. The Notes page calls it in idle moments, so the first keystroke of a
+   * search finds the index ready (performance-10k: preparing 500 long notes on
+   * that keystroke took most of a second on a phone).
+   */
+  warm(entries: readonly NoteEntry[], limit = 25): boolean {
+    let done = 0
+    for (const e of entries) {
+      const cur = this.prepared.get(e.key)
+      if (cur && cur.title === e.title && cur.text === e.text) continue
+      if (done++ === limit) return true
+      this.prepare(e)
+    }
+    return false
   }
 
   /** Forget notes that are no longer listed (and their text). */

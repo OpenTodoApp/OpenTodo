@@ -282,4 +282,4 @@ Before an image is published, CI starts it the way Coolify does (health check, o
 
 ## Resource usage
 
-Idle memory is around 20 MB (18 MB measured on a fresh instance); the static binary is about 34 MB with the web app embedded, and the image adds only the distroless base (about 5 MB, most of it time-zone data); a pull downloads about 13 MB. A Raspberry Pi 3 or any 1 vCPU / 512 MB VPS is plenty.
+Idle memory is around 20 MB (18 MB measured on a fresh instance); the static binary is about 34 MB with the web app embedded, and the image adds only the distroless base (about 5 MB, most of it time-zone data); a pull downloads about 13 MB. A Raspberry Pi 3 or any 1 vCPU / 512 MB VPS is plenty. How the server, the app and phones are held to account with 10,000 tasks (memory during a first sync, an export, start-up time, a Raspberry Pi 4) is in [Performance budgets](../performance.md).

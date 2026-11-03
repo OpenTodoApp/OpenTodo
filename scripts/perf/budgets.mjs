@@ -22,9 +22,10 @@ const num = (x) => (x >= 100 ? Math.round(x) : Math.round(x * 10) / 10)
  * verdict. A metric with a limit and no sample fails (the benchmark lost it).
  * The failure reads like the nightly alert: "first sync, desktop, 41 s, budget 30 s".
  */
-export function evaluate(budgets, setting, samples) {
+export function evaluate(budgets, setting, samples, only = () => true) {
   const metrics = []
   for (const m of budgets.metrics) {
+    if (!only(m.id)) continue
     const limit = m.limits[setting]
     if (limit === undefined) continue
     const runs = samples[m.id] ?? []

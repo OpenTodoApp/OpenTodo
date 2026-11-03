@@ -37,6 +37,15 @@
     { "id": "server-get-task", "name": "REST read of one task, p95", "unit": "ms", "limits": { "server": 10, "pi4": 40 } },
     { "id": "server-export", "name": "full JSON export", "unit": "ms", "limits": { "server": 3000, "pi4": 12000 } },
     { "id": "server-mcp-search", "name": "MCP search_tasks, p95", "unit": "ms", "limits": { "server": 200, "pi4": 800 } },
-    { "id": "server-db-size", "name": "database file", "unit": "MB", "limits": { "server": 150, "pi4": 150 } }
+    { "id": "server-db-size", "name": "database file", "unit": "MB", "limits": { "server": 150, "pi4": 150 } },
+    { "id": "notes-db-size", "name": "database file after compaction (notes fixture)", "unit": "MB", "limits": { "server": 250, "pi4": 250 } },
+    { "id": "notes-share", "name": "notes' share of the database (notes fixture)", "unit": "MB", "limits": { "server": 100 } },
+    { "id": "notes-compaction", "name": "full compaction of the notes fixture", "unit": "s", "limits": { "server": 120, "pi4": 480 } },
+    { "id": "notes-push-wait", "name": "longest push wait behind compaction", "unit": "ms", "limits": { "server": 100 } },
+    { "id": "notes-first-sync", "name": "first sync with notes", "unit": "s", "limits": { "desktop": 45, "phone": 110, "device-android": 120, "device-ios": 120 } },
+    { "id": "notes-indexeddb", "name": "IndexedDB usage with notes", "unit": "MB", "limits": { "desktop": 120 } },
+    { "id": "notes-page", "name": "open the Notes page", "unit": "ms", "limits": { "desktop": 400, "phone": 1200, "device-android": 1200, "device-ios": 1200 } },
+    { "id": "notes-search", "name": "note search keystroke, p95", "unit": "ms", "limits": { "desktop": 50, "phone": 150, "device-android": 150, "device-ios": 150 } },
+    { "id": "notes-js-heap", "name": "JS heap after the notes session", "unit": "MB", "limits": { "desktop": 170, "phone": 170 } }
   ]
 }
