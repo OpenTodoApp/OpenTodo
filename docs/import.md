@@ -32,6 +32,7 @@ The format is detected from the content, in this order; the preview shows what w
 | `microsoft-todo-json` | lists with `wellknownListName`, or with `tasks` that have `importance` and `dueDateTime` or `isReminderOn` | written by a PowerShell script, see [Microsoft To Do](#microsoft-to-do-microsoft-todo-json) |
 | `apple-reminders-json` | an array whose every element has `identifier` and `isCompleted` | written by a Shortcut, see [Apple Reminders](#apple-reminders-apple-reminders-json) |
 | `anydo-json` | `categories` and `tasks` arrays, tasks with `categoryId` and `status` | Any.do's data request, see [Any.do](#anydo-anydo-json) |
+| `super-productivity-json` | top-level (or `data`-level) `task` and `project` objects, each with `ids` and `entities` | Super Productivity's backup, see [Super Productivity](#super-productivity-super-productivity-json) |
 | `vikunja-export` | a ZIP with `VERSION` and a `data.json` array of projects with `id`, `title`, `tasks` and `hex_color` (or that `data.json` alone) | Vikunja's data export, see [Vikunja](#vikunja-vikunja-export) |
 | `json-items` | top-level `items` and `projects` arrays | "projects / sections / items" backups |
 | `json-lists` | a top-level `lists` array | lists of tasks; each list becomes a project |
@@ -261,6 +262,31 @@ Any.do sends your data as JSON when you ask for it (see the [Any.do guide](switc
 | `alert` | a reminder at that moment |
 | shared members, attachments, the daily plan | dropped with a warning |
 | `globalTaskId` | the task's origin, `{kind: "import", provider: "anydo", id: <globalTaskId>}` |
+
+### Super Productivity (`super-productivity-json`)
+
+Super Productivity saves all its data as one JSON file from **Settings → Sync & Backup → Export data** (see the [Super Productivity guide](switch/super-productivity.md)). Backups from version 14 on hold the data under `data`; older ones at the top level. Verified against backups of Super Productivity 19.3.1.
+
+| Super Productivity | Becomes |
+| --- | --- |
+| `project` entities | projects; `isArchived` (or `isDone`, with a warning) arrives archived |
+| the `INBOX_PROJECT` project | none: its tasks go to the target project (the Inbox unless you choose one) |
+| `note` entities of a project | the project's notes |
+| `tag` entities | labels, except the built-in `TODAY` tag |
+| `TODAY` in a task's `tagIds` (backups before 14), with no date | due on the import date, with a warning |
+| tasks in `task`, `archiveYoung.task`, `archiveOld.task` (or `taskArchive`) | tasks; archived ones completed |
+| `title`, `notes`, `parentId` | the title, the description, the parent task |
+| `isDone`, `doneOn` | completed at `doneOn` (or `modified`) |
+| `dueDay`; `dueWithTime` (or `plannedAt`) | the due date; the due date and time in the import's time zone |
+| `remindAt`, `deadlineDay` | an absolute reminder, the deadline |
+| `timeEstimate` (ms) | the estimate in minutes, rounded up |
+| `timeSpentOnDay` (`{"YYYY-MM-DD": ms}`) | one time entry per day, from 09:00 on that day (in the import's time zone) for that day's minutes, capped at 24 hours with a warning |
+| `repeatCfgId` → `taskRepeatCfg` (`repeatCycle`, `repeatEvery`, weekday flags, `repeatFromCompletionDate`) | `every N days`, `every monday, thursday` (weekdays every 2+ weeks: `every N weeks` with a warning), `every N months`, `every N years`, `after completion`; a paused repeat is dropped with a warning |
+| `issueType` `GITHUB` with the provider's `repo` and `issueId` | the task's origin, the GitHub issue; other trackers keep the address when the backup has one, otherwise a warning |
+| link `attachments` | link attachments |
+| `id` | the task's origin, `{kind: "import", provider: "super-productivity", id}` |
+
+Boards, metrics, simple counters, `timeTracking` work sessions, plugins and `globalConfig` (including any sync settings) are not imported.
 
 ### Tududi (`tududi-db`)
 
