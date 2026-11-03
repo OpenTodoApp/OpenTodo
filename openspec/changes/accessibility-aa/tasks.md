@@ -14,12 +14,14 @@
 
 - [ ] 3.1 `data-drag-id` on every drag and swipe source, `scripts/ux-audit/drag-alternatives.json`, `web/src/lib/a11y/dragAlternatives.test.ts`; verify `npm test`
 - [ ] 3.2 Missing alternatives: Move up / Move down / Move to top in row, section and sidebar item menus, wired to the existing ordering ops; translations in the six languages; verify interaction tests for each menu item (happy-dom), offline reorder test, `node scripts/i18n-check.mjs`
-- [ ] 3.3 Auth screens: `autocomplete` values, no paste blocking, test with a synthetic paste on every credential field; verify `npm test`
+- [x] 3.3 Auth screens: `autocomplete` values, no paste blocking, test with a synthetic paste on every credential field; verify `npm test`
+
+- [x] 3.4 Single-key shortcuts can be turned off (WCAG 2.1.4, found reviewing the criteria): a per-device switch in Settings → General → Keyboard; the dispatcher skips chords that start with a character key while it is off; six languages, docs; verify dispatcher tests
 
 ## 4. Native shells
 
-- [ ] 4.1 Android lint accessibility checks as errors in `mobile/android`; fix findings; verify `make android`
-- [ ] 4.2 iOS UI test with `performAccessibilityAudit()` on sign-in, settings and widget configuration; fix findings; verify the iOS CI job
+- [x] 4.1 Android lint accessibility checks as errors in `mobile/android`; fix findings; verify `make android`
+- [x] 4.2 iOS UI test with `performAccessibilityAudit()` on sign-in, settings and widget configuration; fix findings; verify the iOS CI job
 
 ## 5. Manual audit and statement
 

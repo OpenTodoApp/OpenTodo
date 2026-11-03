@@ -9,6 +9,7 @@ import { installShortcutDispatcher, registerShortcutScope, type ScopeFrame, type
 export { activeScopes, armGPrefix, clearPrefix, dispatch, hasScope, holdPrefix, installShortcutDispatcher, isActivationTarget, isPrefixPending, isTypingTarget, pendingContinuations, pendingPrefix, registerShortcutScope, resetShortcutScopes, subscribePrefix } from './dispatch'
 export type { Continuation, ScopeFrame, ShortcutHandler } from './dispatch'
 export { setShortcutHints, useShortcutHints, shortcutHintsOn } from './hints'
+export { setSingleKeys, useSingleKeys, singleKeysOn } from './singleKeys'
 
 export interface ScopeOptions {
   /** The route view, for the `view` scope. */

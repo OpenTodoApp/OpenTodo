@@ -8,6 +8,7 @@
 import { type Chord, chordKey, chordsOf, matchesChord, SHORTCUTS, type Shortcut, type ShortcutScope } from '../../lib/shortcuts'
 import { resettable } from '../../lib/moduleState'
 import { createSignal } from '../../lib/store'
+import { isCharacterKey, singleKeysOn } from './singleKeys'
 
 export type ShortcutHandler = (e: KeyboardEvent, s: Shortcut) => boolean | void
 
@@ -163,12 +164,15 @@ interface Candidate { entry: Shortcut; frame: ScopeFrame; seq: Chord[] }
 
 /** Entries of a frame whose chord completes with this key, given the pending prefix. */
 function candidatesOf(frame: ScopeFrame, e: KeyboardEvent, pend: Chord[]): { done: Candidate[]; longer: boolean } {
+  const singleKeys = singleKeysOn()
   const done: Candidate[] = []
   let longer = false
   for (const entry of byScope.get(frame.scope) ?? []) {
     if (frame.scope === 'view' && entry.views && (!frame.view || !entry.views.includes(frame.view))) continue
     if (!frame.handlers[entry.id]) continue
     for (const seq of chordsOf(entry)) {
+      // Single-key shortcuts turned off (accessibility-aa, WCAG 2.1.4): a sequence that starts with a character key does nothing.
+      if (!singleKeys && isCharacterKey(seq[0])) continue
       if (!prefixMatches(seq, pend)) continue
       if (!matchesChord(seq[pend.length], e)) continue
       if (seq.length === pend.length + 1) done.push({ entry, frame, seq })
