@@ -102,13 +102,20 @@ func TestNotesBudgets(t *testing.T) {
 	start := time.Now()
 	var removedOps int
 	var removedBytes int64
-	for run := 0; run < 1000; run++ {
+	// Done once a pass has finished and the freed pages are back with the file system,
+	// up to a little the pusher's own writes keep free. At most 20 minutes: a slower
+	// compaction is reported as such (and fails its budget) instead of hanging the job.
+	const settled = 1 << 20
+	for run := 0; time.Since(start) < 20*time.Minute; run++ {
 		job.Run(ctx)
 		st, err := job.Status(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if st.Last != nil && st.Last.At >= start.UnixMilli() && st.FreeBytes == 0 {
+		if run%10 == 0 || st.Last != nil {
+			t.Logf("compaction run %d after %s: free %.1f MB, last pass %+v", run, time.Since(start).Round(time.Second), float64(st.FreeBytes)/(1<<20), st.Last)
+		}
+		if st.Last != nil && st.Last.At >= start.UnixMilli() && st.FreeBytes < settled {
 			removedOps, removedBytes = st.Last.OpsRemoved, st.Last.ValueBytesRemoved
 			break
 		}
