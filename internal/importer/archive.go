@@ -245,7 +245,7 @@ func parseArchive(data []byte, opts Options) (*Parsed, error) {
 			parsed.Rows[i].File = path.Base(e.name)
 		}
 		out.Rows = append(out.Rows, parsed.Rows...)
-		out.Notes = append(out.Notes, parsed.Notes...)
+		out.Notes = mergeNames(out.Notes, parsed.Notes) // one note per remark, not per file
 		out.Recognised = mergeNames(out.Recognised, parsed.Recognised)
 		out.Ignored = mergeNames(out.Ignored, parsed.Ignored)
 		out.ViewHints = append(out.ViewHints, parsed.ViewHints...)
