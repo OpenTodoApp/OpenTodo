@@ -3,7 +3,7 @@
 // explains both modes, fixes the due to the viewer's zone or releases it, and fixes
 // it to any IANA zone with a preview of how it reads in the viewer's zone. Every
 // change is one ordinary due edit through updateTask; `z` toggles as before.
-import { useMemo, useRef, useState } from 'react'
+import { useId, useMemo, useRef, useState } from 'react'
 import { dueToInstant, fixDueToZone, isKnownZone, localDueOf, releaseDue, setDueZone, zoneCity } from '../../lib/dates'
 import { updateTask } from '../../lib/ops'
 import type { Due, Task } from '../../lib/types'
@@ -122,14 +122,16 @@ export function ZoneControl({ task, readOnly = false, viewerZone, defaultOpen = 
   }
 
   // In the Do on segment (task-panel-polish D3): one quiet line, "Floating time · Change", shown only with a time.
+  // The button is named by its visible word and described by the line (WCAG 2.5.3), 24 px tall (2.5.8).
+  const lineId = useId()
   const line = variant === 'line' && (
     <span className="flex flex-wrap items-center gap-1 text-meta text-muted" data-zone-line>
       <Icon name="globe" size="xs" className="text-faint" />
-      <span>{zoned ? t('Fixed to {zoneCity}', { zoneCity: zoneCity(due!.tz!) }) : t('Floating time')}</span>
+      <span id={lineId}>{zoned ? t('Fixed to {zoneCity}', { zoneCity: zoneCity(due!.tz!) }) : t('Floating time')}</span>
       {!readOnly && <span aria-hidden="true" className="text-faint">·</span>}
       {!readOnly && (
-        <button ref={chip} type="button" className="rounded-control text-accent hover:underline focus-visible:outline-2 focus-visible:outline-focus"
-          aria-label={t('Time zone: {text}', { text })} aria-haspopup="dialog" aria-expanded={open} aria-keyshortcuts={ZONE_TOGGLE_KEY}
+        <button ref={chip} type="button" className="inline-flex min-h-6 items-center rounded-control px-1 text-accent hover:underline focus-visible:outline-2 focus-visible:outline-focus"
+          aria-describedby={lineId} aria-haspopup="dialog" aria-expanded={open} aria-keyshortcuts={ZONE_TOGGLE_KEY}
           onClick={() => setOpen(true)}>{t('Change')}</button>
       )}
     </span>

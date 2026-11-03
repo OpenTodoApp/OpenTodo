@@ -100,7 +100,7 @@ export function TaskPageView({ taskId, userId, readOnly: viewer, projects, label
   )
   // The first crumb leads back to the list the task was opened from (Today, a view, a
   // label), with the task selected there; the project follows when it is another page.
-  const crumbClass = 'rounded-control px-1 text-muted hover:bg-hover hover:text-default'
+  const crumbClass = 'min-h-6 rounded-control px-1 text-muted hover:bg-hover hover:text-default'
   const origin = nav.backLabel && !nav.fromProject
   const crumbs = (
     <Breadcrumb>
@@ -113,7 +113,7 @@ export function TaskPageView({ taskId, userId, readOnly: viewer, projects, label
           </button>
         : !origin && <button type="button" className={crumbClass} onClick={nav.onBack} data-crumb="project">{t('Inbox')}</button>}
       {m.parent && (
-        <button type="button" className="min-w-0 truncate rounded-control px-1 text-muted hover:bg-hover hover:text-default" onClick={() => onOpen(m.parent!.id)} data-crumb="parent">
+        <button type="button" className={`min-w-0 truncate ${crumbClass}`} onClick={() => onOpen(m.parent!.id)} data-crumb="parent">
           {m.parent.title || t('Untitled')}
         </button>
       )}

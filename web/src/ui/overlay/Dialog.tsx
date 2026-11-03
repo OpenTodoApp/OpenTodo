@@ -72,7 +72,7 @@ export function Dialog({ title, onClose, children, size = 'sm', dismissable = tr
   const panel = useRef<HTMLDivElement>(null)
   const root = useRef<HTMLDivElement>(null)
   const titleId = useId()
-  useOverlay({ panel, onClose: onEscape ?? onClose })
+  useOverlay({ panel, onClose: onEscape ?? onClose, blocking: true })
   // The exit (web-app "Overlay motion", motion-v2 D5) plays on a copy once this unmounts.
   useLayoutEffect(() => {
     clearExits()
