@@ -15,6 +15,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 )
 
 // Older clients keep working within the major version (OpenSpec change
@@ -97,25 +98,10 @@ func replayClient(t *testing.T, file string) {
 			t.Errorf("%s: status %d, recorded %d (%v)", where, status, p.Response.Status, body)
 			continue
 		}
-		if refusedForSkew(p.Response.Body) {
-			continue // the refusal depends on the wall clock at recording time; replayed now, the op applies
-		}
 		for _, problem := range shapeProblems(p.Response.Body, body) {
 			t.Errorf("%s: %s", where, problem)
 		}
 	}
-}
-
-// refusedForSkew: a recorded sync answer that refused an op for the device's clock.
-func refusedForSkew(body any) bool {
-	m, _ := body.(map[string]any)
-	list, _ := m["rejected"].([]any)
-	for _, r := range list {
-		if e, _ := r.(map[string]any); e["reason"] == "clock_skew" {
-			return true
-		}
-	}
-	return false
 }
 
 // send replays one request with the replay's own credentials and ids.
@@ -123,7 +109,9 @@ func (r *replayer) send(p recordedPair) (int, any) {
 	r.t.Helper()
 	var rd io.Reader
 	if p.Request.Body != nil {
-		raw, _ := json.Marshal(r.substitute(p.Request.Body))
+		body := r.substitute(p.Request.Body)
+		shiftOpTimes(body, p.Response.Body, time.Now().UnixMilli())
+		raw, _ := json.Marshal(body)
 		rd = bytes.NewReader(raw)
 	}
 	req, _ := http.NewRequest(p.Request.Method, r.base+r.substitutePath(p.Request.Path), rd)
@@ -157,6 +145,29 @@ func (r *replayer) send(p recordedPair) (int, any) {
 		body = fmt.Sprintf("<%d bytes>", len(raw))
 	}
 	return resp.StatusCode, body
+}
+
+// shiftOpTimes moves the timestamps of a sync push by as much time as passed
+// since the recording: an op keeps its distance from the server's clock (the
+// recorded response's serverTime), so a device clock that was ahead at
+// recording time is ahead by as much at replay time (clock_skew), and a correct
+// one is not suddenly in the past or the future.
+func shiftOpTimes(req, recordedResp any, now int64) {
+	resp, _ := recordedResp.(map[string]any)
+	at, ok := resp["serverTime"].(float64)
+	body, _ := req.(map[string]any)
+	ops, _ := body["ops"].([]any)
+	if !ok || len(ops) == 0 {
+		return
+	}
+	delta := float64(now) - at
+	for _, o := range ops {
+		if op, ok := o.(map[string]any); ok {
+			if ts, ok := op["ts"].(float64); ok {
+				op["ts"] = ts + delta
+			}
+		}
+	}
 }
 
 var (
@@ -320,5 +331,23 @@ func TestShapeProblems(t *testing.T) {
 	_ = json.Unmarshal([]byte(`{"ops":[{"seq":"2"}]}`), &live)
 	if got := shapeProblems(map[string]any{"ops": []any{map[string]any{"seq": 1.0}}}, live); len(got) != 1 || !strings.Contains(got[0], `".ops[].seq" is string, recorded as number`) {
 		t.Fatalf("type change: %v", got)
+	}
+}
+
+// TestShiftOpTimes: a replayed push keeps each op's distance from the server's
+// clock, so a recording replayed hours later is judged as it was recorded.
+func TestShiftOpTimes(t *testing.T) {
+	var req, resp any
+	_ = json.Unmarshal([]byte(`{"device":"d","ops":[{"id":"a","ts":1000},{"id":"b","ts":4600}]}`), &req)
+	_ = json.Unmarshal([]byte(`{"serverTime":1000}`), &resp)
+	shiftOpTimes(req, resp, 7201000)
+	ops := req.(map[string]any)["ops"].([]any)
+	if ops[0].(map[string]any)["ts"] != 7201000.0 || ops[1].(map[string]any)["ts"] != 7204600.0 {
+		t.Fatalf("shifted ops = %v", ops)
+	}
+	_ = json.Unmarshal([]byte(`{"ops":[{"ts":5}]}`), &req)
+	shiftOpTimes(req, map[string]any{}, 99)
+	if req.(map[string]any)["ops"].([]any)[0].(map[string]any)["ts"] != 5.0 {
+		t.Fatal("shifted without a recorded serverTime")
 	}
 }
