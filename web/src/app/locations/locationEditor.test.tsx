@@ -63,7 +63,10 @@ describe('LocationEditor', () => {
     expect(options[0]).toContain('Use “Garage”')
     expect(options.some((o) => o.includes('Piazza del Duomo'))).toBe(true)
     await key(field(), 'Enter')
-    await waitFor(async () => (await db.tasks.get(id))?.location?.name === 'Garage', 'the name')
+    await waitFor(async () => {
+      const loc = (await db.tasks.get(id))?.location
+      return !!loc && typeof loc !== 'string' && loc.name === 'Garage'
+    }, 'the name')
     expect((await db.tasks.get(id))!.location).toEqual({ name: 'Garage' })
   })
 
@@ -95,7 +98,10 @@ describe('LocationEditor', () => {
     await type(field(), 'Dock')
     await waitFor(() => !!document.body.textContent?.includes('Use “Dock”'), 'the name choice')
     await key(field(), 'Enter')
-    await waitFor(async () => (await db.tasks.get(id))?.location?.name === 'Dock', 'the name')
+    await waitFor(async () => {
+      const loc = (await db.tasks.get(id))?.location
+      return !!loc && typeof loc !== 'string' && loc.name === 'Dock'
+    }, 'the name')
     expect((await db.tasks.get(id))!.location).toEqual({ name: 'Dock' })
     expect(requests.filter((p) => p.includes('/api/v1/maps/'))).toEqual([])
   })

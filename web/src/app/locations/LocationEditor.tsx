@@ -91,7 +91,8 @@ export function LocationEditor({ task, onClose }: { task: Task; onClose: () => v
           if (signal.aborted) return { items: placeItems }
           const results = await searchAddress(q.trim())
           if (!signal.aborted) {
-            setPrefix([...head, ...results.map((r, i) => ({ kind: 'result', key: `result:${i}:${r.lat},${r.lon}`, label: r.name || r.address, secondary: r.name ? r.address : '', result: r }))])
+            const found: Item[] = results.map((r, i) => ({ kind: 'result', key: `result:${i}:${r.lat},${r.lon}`, label: r.name || r.address, secondary: r.name ? r.address : '', result: r }))
+            setPrefix([...head, ...found])
           }
         } catch (err) {
           if (!signal.aborted) setMessage(isNetworkError(err) ? t('Address search needs a connection.') : t('Address search is not available right now.'))
