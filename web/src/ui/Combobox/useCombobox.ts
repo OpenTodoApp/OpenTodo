@@ -31,9 +31,9 @@ export function sortedHead<X>(xs: X[], head: number | undefined, order: (a: X, b
   return [...top, ...rest]
 }
 
-/** Items folded in each idle moment while the palette waits for its first keystroke. */
-const FOLD_STEP = 500
-const idle = (fn: () => void): number => (typeof requestIdleCallback === 'function' ? requestIdleCallback(fn, { timeout: 500 }) : window.setTimeout(fn, 20))
+/** Items folded at a time while the palette waits for its first keystroke: as many steps as an idle period holds. */
+const FOLD_STEP = 250
+const idle = (fn: (deadline?: IdleDeadline) => void): number => (typeof requestIdleCallback === 'function' ? requestIdleCallback(fn, { timeout: 500 }) : window.setTimeout(fn, 20))
 const cancelIdle = (h: number) => {
   if (typeof cancelIdleCallback === 'function') cancelIdleCallback(h)
   clearTimeout(h)
@@ -150,8 +150,10 @@ export function useCombobox<T>(cfg: ComboboxConfig<T>) {
     if (!warm?.length) return
     let at = 0
     let handle = 0
-    const step = () => {
-      for (const end = Math.min(at + FOLD_STEP, warm.length); at < end; at++) fold(warm[at])
+    const step = (deadline?: IdleDeadline) => {
+      do {
+        for (const end = Math.min(at + FOLD_STEP, warm.length); at < end; at++) fold(warm[at])
+      } while (at < warm.length && deadline && !deadline.didTimeout && deadline.timeRemaining() > 2)
       if (at < warm.length) handle = idle(step)
     }
     handle = idle(step)

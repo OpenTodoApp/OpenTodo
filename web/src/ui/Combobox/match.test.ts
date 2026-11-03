@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fold, highlight, match } from './match'
+import { fold, highlight, match, prepare } from './match'
 
 const rank = (q: string, labels: string[]) =>
   labels.map((l) => ({ l, m: match(q, l) })).filter((x) => x.m.tier > 0)
@@ -36,5 +36,26 @@ describe('match', () => {
     expect(highlight('Grocery shopping', m.label)).toEqual([
       { text: 'Gro', hit: true }, { text: 'cery ', hit: false }, { text: 'sh', hit: true }, { text: 'opping', hit: false },
     ])
+  })
+})
+
+describe('folding by char code (list-rendering-at-scale)', () => {
+  // The per-character forms the char-code paths replace.
+  const foldRef = (s: string) => { let out = ''; for (const ch of s) out += ch.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().charAt(0) || ch; return out }
+  const startsRef = (text: string) => {
+    const isWord = (c: string) => /[\p{L}\p{N}]/u.test(c)
+    const starts: number[] = []
+    for (let i = 0; i < text.length; i++) if (isWord(text[i]) && (i === 0 || !isWord(text[i - 1]))) starts.push(i)
+    return starts
+  }
+  it('gives the same text and word starts as folding each character', () => {
+    let seed = 3
+    const rand = (n: number) => Math.floor(((seed = (seed * 1103515245 + 12345) % 2 ** 31) / 2 ** 31) * n)
+    const pieces = ['Big', 'backlog', ' · ', 'Nov 14', 'Éclair', 'straße', 'ÀB-c', '…', 'Ünïcode', '42', '_x', ' ', 'Ω', 'İstanbul']
+    for (let round = 0; round < 300; round++) {
+      const text = Array.from({ length: 1 + rand(6) }, () => pieces[rand(pieces.length)]).join('')
+      expect(fold(text)).toBe(foldRef(text))
+      expect(prepare(text).starts).toEqual(startsRef(foldRef(text)))
+    }
   })
 })
