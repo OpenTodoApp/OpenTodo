@@ -98,7 +98,7 @@ describe('a calm conversation', () => {
     const spy = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(() => {})
     const v = await render(<ConversationTabs task={a} userId="me" readOnly={false} />)
     await waitFor(() => !!v.container.querySelector('[data-conversation] [role="tablist"]'), 'the tabs')
-    const bar = v.container.querySelector('[data-conversation] [role="tablist"]')!
+    const bar = v.container.querySelector('[data-conversation] [data-tabs-bar]')!
     expect(bar.className).toContain('sticky')
     await click(tab(v.container, 'Activity'))
     await waitFor(() => !!selected(v.container)?.includes('Activity'), 'the Activity tab')
@@ -120,7 +120,7 @@ describe('a calm conversation', () => {
     scroller.append(v.container)
     await waitFor(() => !!v.container.querySelector('[data-conversation] [role="tablist"]'), 'the tabs')
     const section = v.container.querySelector<HTMLElement>('[data-conversation]')!
-    const bar = section.querySelector<HTMLElement>('[role="tablist"]')!
+    const bar = section.querySelector<HTMLElement>('[data-tabs-bar]')!
     section.getBoundingClientRect = () => ({ top: -500, left: 0, right: 400, bottom: 100, width: 400, height: 600, x: 0, y: -500, toJSON() {} })
     bar.getBoundingClientRect = () => ({ top: 0, left: 0, right: 400, bottom: 40, width: 400, height: 40, x: 0, y: 0, toJSON() {} })
     Object.defineProperty(bar, 'offsetHeight', { configurable: true, get: () => 40 })
