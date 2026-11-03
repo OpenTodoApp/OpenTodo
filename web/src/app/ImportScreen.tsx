@@ -42,6 +42,7 @@ const FORMAT_LABELS = translatedMap<ImportFormat>({
   'vikunja-export': msg('Vikunja (export ZIP)'),
   'tududi-db': msg('Tududi (database)'),
   'super-productivity-json': msg('Super Productivity (backup JSON)'),
+  'omnifocus-csv': msg('OmniFocus (CSV)'),
   'json-items': msg('JSON: projects / sections / items'),
   'json-lists': msg('JSON: lists of tasks'),
   'json-generic': msg('JSON: task list'),

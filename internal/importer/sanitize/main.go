@@ -6,7 +6,7 @@
 //
 //	go run ./internal/importer/sanitize <in> <out>
 //
-// <in> is a CSV (Todoist, TickTick, Linear, Asana), a ZIP of CSVs (Todoist
+// <in> is a CSV (Todoist, TickTick, Linear, Asana, OmniFocus), a ZIP of CSVs (Todoist
 // backup), a Vikunja export ZIP (data.json, filters.json and files/), a Things
 // main.sqlite, a Tududi database (see tududi.go) or a JSON export (Google
 // Tasks, Trello, Microsoft To Do, Apple Reminders, Any.do; see json.go). Nothing
@@ -189,7 +189,7 @@ func (s *scrubber) csvFile(data []byte) ([]byte, error) {
 	}
 	hi := headerIndex(recs)
 	if hi < 0 {
-		return nil, fmt.Errorf("no known header (Todoist, TickTick, Linear or Asana)")
+		return nil, fmt.Errorf("no known header (Todoist, TickTick, Linear, Asana or OmniFocus)")
 	}
 	header := recs[hi]
 	col := map[string]int{}
@@ -258,7 +258,20 @@ func rulesFor(header []string) fieldRule {
 			"taskId":      func(s *scrubber, v string) string { return s.id("t", v) },
 			"parentId":    func(s *scrubber, v string) string { return s.id("t", v) },
 		}
-	case "Task ID": // Asana; custom columns are left as they are, review them by hand
+	case "Task ID":
+		if len(header) > 1 && strings.TrimSpace(header[1]) == "Type" {
+			// OmniFocus: a project's name and the Project column of its actions
+			// must stay equal, so both are scrubbed as one kind.
+			name := func(s *scrubber, v string) string { return s.text("Item", v) }
+			return fieldRule{
+				"Name":    name,
+				"Project": name,
+				"Context": func(s *scrubber, v string) string { return s.labelList(v, ", ") },
+				"Tags":    func(s *scrubber, v string) string { return s.labelList(v, ", ") },
+				"Notes":   func(s *scrubber, v string) string { return s.prose("Notes", v) },
+			}
+		}
+		// Asana; custom columns are left as they are, review them by hand.
 		task := func(s *scrubber, v string) string { return s.text("Task", v) }
 		people := func(s *scrubber, v string) string {
 			if strings.TrimSpace(v) == "" {

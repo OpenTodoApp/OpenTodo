@@ -114,7 +114,7 @@ describe('import route', () => {
     const html = render()
     for (const label of ['Todoist backup (ZIP)', 'Todoist project (CSV)', 'Things 3 database', 'TickTick backup (CSV)', 'Linear export (CSV)',
       'Google Tasks (Takeout JSON)', 'Trello board (JSON)', 'Asana project (CSV)', 'Microsoft To Do (JSON from the PowerShell script)',
-      'Apple Reminders (JSON from the Shortcut)', 'Any.do (JSON from a data request)', 'Super Productivity (backup JSON)', 'Tududi (database)', 'Vikunja (export ZIP)']) {
+      'Apple Reminders (JSON from the Shortcut)', 'Any.do (JSON from a data request)', 'OmniFocus (CSV)', 'Super Productivity (backup JSON)', 'Tududi (database)', 'Vikunja (export ZIP)']) {
       expect(html).toContain(label)
     }
     const preview: ImportPreview = {
