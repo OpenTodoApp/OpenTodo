@@ -48,7 +48,11 @@ The sync and API write paths SHALL accept a location only when it has at least o
 - **THEN** the location is removed and the task's other fields are untouched
 
 ### Requirement: Setting a location
-The task panel SHALL show the location on its Where line and open an editor that offers: searching an address (as the user types, when maps are on), typing coordinates (`45.4642, 9.1900`), picking a point on a map (when maps are on), "Use my location" (the browser's position, after the browser's own permission prompt), choosing a saved place, "Save for reuse", and Clear. A chosen search result or map point SHALL fill the name and address from the provider's reverse search when maps are on. Every choice SHALL apply locally at once as one undoable edit. With a coordinate pair, the panel SHALL show a small map with a pin under the facet lines when maps are on, and an "Open in maps" link in every case.
+The task panel SHALL show the location on its Where line and open an editor that offers: keeping the text typed as a name (even when it is not an address and search finds nothing), searching an address (as the user types, when maps are on), typing coordinates (`45.4642, 9.1900`), picking a point on a map (when maps are on), "Use my location" (the browser's position, after the browser's own permission prompt), choosing a saved place, "Save for reuse", and Clear. The typed name SHALL be the first choice, so confirming it keeps that name and does not wait for search. A chosen search result or map point SHALL fill the name and address from the provider's reverse search when maps are on. Every choice SHALL apply locally at once as one undoable edit. With a coordinate pair, the panel SHALL show a small map with a pin under the facet lines when maps are on, and an "Open in maps" link in every case. A name with no coordinates SHALL show on the Where line with no map and no "Open in maps".
+
+#### Scenario: A name that is not on the map
+- **WHEN** the user opens the location editor, types "Garage" and chooses Use "Garage"
+- **THEN** the task's location is the name Garage with no address and no coordinates, the Where line shows Garage, and no map is shown
 
 #### Scenario: Search an address
 - **WHEN** the user opens the location editor, types "Piazza del Duomo Milano" and picks the first result
