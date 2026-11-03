@@ -2,8 +2,10 @@
 // focus and automatic activation (arrow keys, Home and End). Tabs may carry a
 // group (open-loops-method D6): a group's name is drawn before its first tab (from
 // 640 px; a divider on phones) and read with each of its tabs. The row scrolls sideways inside itself when it is
-// wider than the screen, keeping the selected tab in view.
+// wider than the screen, keeping the selected tab in view, and fades at an edge while tabs are hidden past it.
+// The bar (baseline, background, a sticky position) holds the scroller, so the fade never shows what is behind the bar.
 import { type CSSProperties, Fragment, useEffect, useId, useRef, type KeyboardEvent, type ReactNode } from 'react'
+import { useScrollEdges } from './patterns/Sidebar'
 
 export interface TabItem {
   id: string
@@ -20,9 +22,9 @@ export interface TabsProps {
   /** Accessible name of the tab list. */
   label: string
   children: ReactNode
-  /** Extra classes for the tab row (a sticky row needs its own background). */
+  /** Extra classes for the tab bar around the row (a sticky bar needs its own background). */
   rowClassName?: string
-  /** The tab row element, for callers that keep it in place (the task panel's conversation). */
+  /** The tab bar element, for callers that keep it in place (the task panel's conversation). */
   rowRef?: (el: HTMLDivElement | null) => void
   /** Extra props for the tab panel (a minimum height while switching). */
   panelStyle?: CSSProperties
@@ -46,6 +48,7 @@ export function Tabs({ tabs, value, onChange, label, children, rowClassName = ''
   // again from the start once a web font still loading has arrived, since it changes the tabs' widths.
   const group = tabs.find((t) => t.id === value)?.group
   const row = useRef<HTMLDivElement>(null)
+  useScrollEdges(row, 'x')
   useEffect(() => {
     let live = true
     // Sideways only: scrollIntoView would also scroll the page or panel the tabs sit in,
@@ -54,8 +57,10 @@ export function Tabs({ tabs, value, onChange, label, children, rowClassName = ''
       const r = row.current
       if (!el || !r) return
       const left = el.getBoundingClientRect().left - r.getBoundingClientRect().left + r.scrollLeft
-      if (left < r.scrollLeft) r.scrollLeft = left
-      else if (left + el.offsetWidth > r.scrollLeft + r.clientWidth) r.scrollLeft = left + el.offsetWidth - r.clientWidth
+      // Clear of the edge fade (24 px) where more tabs are hidden.
+      const fade = r.scrollWidth > r.clientWidth ? 24 : 0
+      if (left - fade < r.scrollLeft) r.scrollLeft = Math.max(0, left - fade)
+      else if (left + el.offsetWidth + fade > r.scrollLeft + r.clientWidth) r.scrollLeft = left + el.offsetWidth + fade - r.clientWidth
     }
     const reveal = () => {
       if (group) into(groupRefs.current[group])
@@ -69,7 +74,9 @@ export function Tabs({ tabs, value, onChange, label, children, rowClassName = ''
   }, [value, group])
   return (
     <div>
-      <div ref={(el) => { row.current = el; rowRef?.(el) }} role="tablist" aria-label={label} onKeyDown={move} className={`ui-scroller ui-tab-row flex gap-1 overflow-x-auto overflow-y-hidden overscroll-x-contain ${rowClassName}`.trim()} data-tabs-row>
+      <div ref={rowRef} className={`ui-tab-row ${rowClassName}`.trim()} data-tabs-bar>
+      {/* A designated sideways scroller (data-scroll-x): a long translation scrolls here, never the page. */}
+      <div ref={row} role="tablist" aria-label={label} onKeyDown={move} className="ui-scroller flex gap-1 overflow-x-auto overflow-y-hidden overscroll-x-contain" data-tabs-row data-scroll-x>
         {tabs.map((t, i) => {
           const selected = t.id === value
           const startsGroup = !!t.group && t.group !== tabs[i - 1]?.group
@@ -98,6 +105,7 @@ export function Tabs({ tabs, value, onChange, label, children, rowClassName = ''
             </Fragment>
           )
         })}
+      </div>
       </div>
       <div role="tabpanel" id={`${base}-panel`} aria-labelledby={`${base}-tab-${value}`} tabIndex={0} style={panelStyle} className="pt-3 focus-visible:outline-2 focus-visible:outline-focus">
         {children}
