@@ -80,11 +80,15 @@ The recognition language SHALL default to the first active quick-add language an
 - **THEN** subsequent dictation listens in Italian regardless of the browser language
 
 ### Requirement: Error handling without blocking capture
-Denied microphone permission SHALL show a non-blocking message explaining how to re-enable it in the browser; no detected speech SHALL stop listening quietly; recognition being unavailable (for example offline when the browser depends on a remote service) SHALL show "voice capture is unavailable right now" and leave typed capture fully working. Errors SHALL never clear text already in the input.
+Denied microphone permission SHALL show a non-blocking message explaining how to re-enable it in the browser, or in the phone's app settings when the page runs in a native shell; no detected speech SHALL stop listening quietly; recognition being unavailable (for example offline when the browser depends on a remote service) SHALL show "voice capture is unavailable right now" and leave typed capture fully working. Errors SHALL never clear text already in the input.
 
 #### Scenario: Permission denied
 - **WHEN** the user denies microphone access
 - **THEN** a message explains how to allow it, the microphone button stays available to retry, and typing works
+
+#### Scenario: Refused in the app
+- **WHEN** the person has refused the microphone in the Android app
+- **THEN** the message explains how to allow it in the phone's settings for OpenTodo, and typing works
 
 #### Scenario: Offline with remote recognition
 - **WHEN** the device is offline and the browser's recognition needs a network service

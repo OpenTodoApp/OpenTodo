@@ -9,6 +9,7 @@
 // composer's field. Loaded with the voice engine chunk.
 import { api, ApiError } from '../api'
 import { t } from '../i18n'
+import { allowMicrophone } from '../shell'
 import { MESSAGES } from './dictation'
 import { errorKind, join, localAvailable, type RecognitionCallbacks, type RecognitionSession, type SpeechRecognitionLike, type VoiceErrorKind } from './recognition'
 import { recordingType, transcribeError } from './serverRecognition'
@@ -334,15 +335,17 @@ export interface Ramble {
   dispose(): void
 }
 
-export function createRamble(host: RambleHost, recognize: LongRecognizer, clock: Clock = realClock): Ramble {
+export function createRamble(host: RambleHost, recognize: LongRecognizer, clock: Clock = realClock, allow: () => Promise<boolean> = allowMicrophone): Ramble {
   let view: RambleView = { status: 'idle', elapsedMs: 0, announcement: '', message: null }
   let session: RecognitionSession | null = null
   let disposed = false
+  let round = 0
   const set = (patch: Partial<RambleView>) => {
     view = { ...view, ...patch }
     if (!disposed) host.update(view)
   }
   function begin() {
+    const mine = ++round
     const before = host.getValue()
     const startedAt = clock.now()
     let lastActivity = startedAt
@@ -351,6 +354,15 @@ export function createRamble(host: RambleHost, recognize: LongRecognizer, clock:
     let error: { kind: VoiceErrorKind; raw: string } | null = null
     let text = ''
     set({ status: 'starting', elapsedMs: 0, message: null, announcement: '' })
+    void allow().then((ok) => {
+      if (disposed || mine !== round) return
+      if (!ok) {
+        set({ status: 'idle', message: MESSAGES.denied, announcement: MESSAGES.denied })
+        return
+      }
+      listen()
+    })
+    function listen() {
     const tick = clock.setInterval(() => {
       const now = clock.now()
       set({ elapsedMs: now - startedAt })
@@ -381,11 +393,17 @@ export function createRamble(host: RambleHost, recognize: LongRecognizer, clock:
         set({ status: 'idle', message, announcement: failure ?? 'Stopped' })
       },
     })
+    }
+  }
+  function stop() {
+    round++
+    if (session) session.stop()
+    else if (view.status === 'starting') set({ status: 'idle', announcement: 'Stopped' })
   }
   return {
-    start() { if (!session && !disposed) begin() },
-    stop() { session?.stop() },
-    toggle() { if (session) session.stop(); else if (!disposed) begin() },
+    start() { if (!session && !disposed && view.status !== 'starting') begin() },
+    stop,
+    toggle() { if (session || view.status === 'starting') stop(); else if (!disposed) begin() },
     get status() { return view.status },
     dispose() {
       disposed = true

@@ -212,7 +212,7 @@ Trigger words per language: *hashtag* (all), *project / Projekt / projet / proge
 
 The recognition language follows your first quick-add language, so the interface language when you picked one (with your browser's region, for example `en-GB`), and can be changed in Settings. If the browser cannot recognise that language, OpenTodo says so once and listens in the browser's default language.
 
-If the microphone is blocked, a message explains how to allow it in the browser's site settings and the button stays there to retry. When nothing is said, listening just stops. When recognition is unavailable (for example offline, in a browser that needs its vendor's service), quick add says "Voice capture is unavailable right now" and typing works as usual. Text already in the box is never cleared.
+If the microphone is blocked, a message explains how to allow it in the browser's site settings and the button stays there to retry. In the [Android app](android-app.md#voice-input) the phone asks the first time, and a refusal is changed in the app's settings. When nothing is said, listening just stops. When recognition is unavailable (for example offline, in a browser that needs its vendor's service), quick add says "Voice capture is unavailable right now" and typing works as usual. Text already in the box is never cleared.
 
 ### Privacy
 
