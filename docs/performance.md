@@ -125,7 +125,12 @@ the operations and bytes compaction removed, and the bytes a new device pulls,
 both as the app does it (its first copy leaves out superseded note history, see
 [Sync](sync.md#exchange)) and as an older client does (the whole log).
 If a phone misses its first-sync or storage budget after compaction, the answer
-is loading note bodies on demand, not a higher budget.
+is loading note bodies on demand, not a higher budget. The first complete run
+(2026-11-03, [#590](https://github.com/OpenTodoApp/OpenTodo/issues/590)) did not
+need it: a new device's first sync took 21 s on the computer and 46 s in the
+phone profile and left 17 MB on the device, after compaction (2.65 GB to 238 MB
+in 50 s, no write waiting more than 35 ms) and with the first copy downloading
+43 MB instead of 2 GB.
 
 `NOTES=1 make perf` runs it (`NOTES_SEED_FLAGS="--notes 50"` for a quick look).
 
