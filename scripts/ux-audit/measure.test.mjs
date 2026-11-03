@@ -5,8 +5,8 @@
 import { after, before, test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  chromeRows, focusWalk, horizontalOverflow, installHelpers, layoutShift, LAYOUT_SHIFT_INIT, motionSeen, movingAnimations,
-  overlaps, primaryDestinations, rowMetaItems, targetSize, truncation, watchMotion,
+  chromeRows, credentialFields, focusWalk, horizontalOverflow, installHelpers, layoutShift, LAYOUT_SHIFT_INIT, motionSeen, movingAnimations,
+  overlaps, primaryDestinations, reflow, rowMetaItems, targetSize, targetSizeWcag, TEXT_SPACING_CSS, textSpacingClip, truncation, watchMotion,
 } from './audit-measures.mjs'
 import { smallFields } from './measure.mjs'
 
@@ -198,4 +198,68 @@ test('cut labels: whole options and day names pass, a cut option or day name fai
   assert.equal(r.length, 2, r.join('; '))
   assert.match(r[0], /^option "This occurrence" of "Edit scope" is cut/)
   assert.match(r[1], /^day name "Tue 3" in the calendar header is cut/)
+})
+
+// The accessibility gate's measures (accessibility-aa D2): one passing and one failing page each.
+test('M17 focus not obscured: a button under a sticky bar fails, one in view passes', { skip }, async () => {
+  const ring = '<style>button:focus-visible{outline:2px solid #2563eb}</style>'
+  await fixture(`${ring}<button>ok</button>`)
+  assert.deepEqual(await focusWalk(page, 10, { obscured: true }), [])
+  await fixture(`${ring}<button style="position:absolute;top:600px;left:10px">hidden</button><div style="position:fixed;left:0;right:0;top:560px;height:80px;background:#eee">toast</div>`)
+  const r = await focusWalk(page, 10, { obscured: true })
+  assert.deepEqual(rules(r), ['M17'])
+  assert.match(r[0].value, /focus obscured by <div>/)
+})
+
+test('M17: a link wrapped over two lines shows when one of its lines does', { skip }, async () => {
+  const ring = '<style>a:focus-visible{outline:2px solid #2563eb}</style>'
+  // The bar covers the first line of the link; the second line is in view.
+  await fixture(`${ring}<p style="width:200px;margin-top:40px">Some words before <a href="#">a link that wraps onto the next line</a> and after.</p><div style="position:fixed;left:0;right:0;top:0;height:62px;background:#eee"></div>`)
+  assert.deepEqual(await focusWalk(page, 5, { obscured: true }), [])
+})
+
+test('M18 reflow: a wrapping page and a listed grid pass, a wide form row fails', { skip }, async () => {
+  await page.setViewportSize({ width: 320, height: 256 })
+  try {
+    await fixture('<p>Some text that wraps at any width.</p><div data-calendar-scroller style="overflow:auto"><div style="width:900px">week grid</div></div>')
+    assert.deepEqual(await page.evaluate(reflow, ['[data-calendar-scroller]']), [])
+    await fixture('<div style="overflow-x:auto"><div style="width:900px">settings row</div></div><div style="width:600px">wide</div>')
+    const r = await page.evaluate(reflow, ['[data-calendar-scroller]'])
+    assert.deepEqual(rules(r), ['M18', 'M18'])
+    assert.equal(r[0].element, 'document')
+  } finally {
+    await page.setViewportSize({ width: 360, height: 640 })
+  }
+})
+
+test('M19 text spacing: a growing box passes, a fixed-height label with hidden overflow fails', { skip }, async () => {
+  const label = (style) => `<style>${TEXT_SPACING_CSS}</style><div style="width:120px;${style}">A label that wraps onto two lines</div>`
+  await fixture(label(''))
+  assert.deepEqual(await page.evaluate(textSpacingClip), [])
+  await fixture(label('height:40px;overflow:hidden'))
+  assert.deepEqual(rules(await page.evaluate(textSpacingClip)), ['M19'])
+})
+
+test('M20 credential fields: autocomplete and paste pass; no autocomplete or a blocked paste fails', { skip }, async () => {
+  await fixture('<input type="password" autocomplete="current-password"><input inputmode="numeric" autocomplete="one-time-code">')
+  assert.deepEqual(await page.evaluate(credentialFields), [])
+  await fixture('<input type="password"><input data-credential autocomplete="one-time-code" onpaste="return false">')
+  const r = await page.evaluate(credentialFields)
+  assert.deepEqual(r.map((v) => v.value), ['autocomplete=""', 'paste cancelled'])
+})
+
+test('M21 target size per WCAG 2.5.8: 24 px, or a clear 24 px circle', { skip }, async () => {
+  let n = 0
+  const b = (style) => `<button style="position:absolute;padding:0;border:0;${style}">${++n}</button>`
+  // Two 20 px buttons 2 px apart: their circles overlap.
+  await fixture(b('left:10px;top:10px;width:20px;height:20px') + b('left:32px;top:10px;width:20px;height:20px'))
+  assert.deepEqual(rules(await page.evaluate(targetSizeWcag)), ['M21', 'M21'])
+  // 20 px buttons whose centres are 24 px apart pass; so does a 24 px one beside anything.
+  await fixture(b('left:10px;top:10px;width:20px;height:20px') + b('left:34px;top:10px;width:20px;height:20px'))
+  assert.deepEqual(await page.evaluate(targetSizeWcag), [])
+  await fixture(b('left:10px;top:10px;width:24px;height:24px') + b('left:34px;top:10px;width:24px;height:24px'))
+  assert.deepEqual(await page.evaluate(targetSizeWcag), [])
+  // A 16 px tall button 2 px under a full-size one: its circle reaches into it.
+  await fixture(b('left:10px;top:10px;width:120px;height:30px') + b('left:10px;top:42px;width:120px;height:16px'))
+  assert.deepEqual(rules(await page.evaluate(targetSizeWcag)), ['M21'])
 })

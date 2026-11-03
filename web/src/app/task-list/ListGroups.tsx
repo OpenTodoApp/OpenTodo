@@ -432,7 +432,8 @@ function SectionGroup({ g, first, last, rowList, project, ...p }: GroupedListPro
       {p.addingTo === key && p.editable && (
         <SectionQuickAdd project={project} sectionId={g.section?.id ?? null} sectionName={g.heading ?? t('No section')} projects={p.projects} labels={p.labels} onClose={() => p.setAddingTo(null)} />
       )}
-      {rowList(g.rows.map((r) => p.renderRow(r)))}
+      {/* Named by its section, so a screen reader says which list of how many tasks it entered (accessibility-aa). */}
+      {rowList(g.rows.map((r) => p.renderRow(r)), { 'aria-label': g.heading ?? t('No section') })}
       {g.count === 0 && p.revealed.has(g.key) && rowList(
         (p.doneBySection.get(key) ?? []).map((task) => p.renderRow(flatRow(task))),
         { 'data-revealed-completed': '' },
@@ -466,7 +467,7 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
       ))}
       {g.hint && g.folded === false && <p className="mb-1 px-1 text-meta text-muted" data-group-hint>{g.hint}</p>}
       {g.folded && g.soon?.length ? <WaitingSoonList soon={g.soon} onOpenGroup={() => toggleCollapsed(g.openKey ?? BLOCKED_OPEN_KEY)} /> : null}
-      {!(g.heading && g.folded === undefined && collapsed) && rowList(g.rows.map((r) => renderRow(r)))}
+      {!(g.heading && g.folded === undefined && collapsed) && rowList(g.rows.map((r) => renderRow(r)), g.heading ? { 'aria-label': g.heading } : undefined)}
       {/* Upcoming's projected occurrences after the day's tasks, outside its count (series-occurrences D4). */}
       {!(g.heading && collapsed) && (g.projected?.length || g.projectedNote) ? <Suspense fallback={null}><ProjectedGroupRows g={g} projects={projects} /></Suspense> : null}
     </section>
