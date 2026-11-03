@@ -62,10 +62,8 @@ export function noteEntries(tasks: readonly Task[], projects: readonly Project[]
   const deletedProjects = new Set(projects.filter((p) => p.deleted_at).map((p) => p.id))
   for (const t of tasks) {
     if (t.deleted_at || (t.project_id && deletedProjects.has(t.project_id))) continue
-    const text = noteText(t)
-    if (!text.trim()) continue
-    out.push({ key: `task:${t.id}`, source: 'task', id: t.id, title: t.title, text, projectId: t.project_id, labels: t.labels ?? [],
-      updated: updatedOf(t._clock, NOTE_FIELDS), ...(t.completed_at ? { marker: 'completed' as const } : {}) })
+    const e = taskNoteEntry(t)
+    if (e) out.push(e)
   }
   for (const p of projects) {
     if (p.deleted_at) continue
@@ -97,6 +95,24 @@ export function sameEntries(a: readonly NoteEntry[], b: readonly NoteEntry[]): b
       || x.projectId !== y.projectId || x.labels.length !== y.labels.length || x.labels.some((l, j) => l !== y.labels[j])) return false
   }
   return true
+}
+
+/**
+ * A task's note entry, kept per task row (list-rendering-at-scale D6): rows a write
+ * did not touch are the same objects, so the 10,000 tasks behind the command bar's
+ * notes are read again only where they changed.
+ */
+const taskEntries = new WeakMap<Task, NoteEntry | null>()
+function taskNoteEntry(t: Task): NoteEntry | null {
+  const known = taskEntries.get(t)
+  if (known !== undefined) return known
+  const text = noteText(t)
+  const e: NoteEntry | null = text.trim()
+    ? { key: `task:${t.id}`, source: 'task', id: t.id, title: t.title, text, projectId: t.project_id, labels: t.labels ?? [],
+      updated: updatedOf(t._clock, NOTE_FIELDS), ...(t.completed_at ? { marker: 'completed' as const } : {}) }
+    : null
+  taskEntries.set(t, e)
+  return e
 }
 
 function byRecency(a: NoteEntry, b: NoteEntry): number {
@@ -179,15 +195,27 @@ export class NoteIndex {
    * that keystroke took most of a second on a phone).
    */
   warm(entries: readonly NoteEntry[], limit = 25): boolean {
+    // Each call goes on where the last one stopped in the same list: starting at the
+    // top again read every prepared note once per call, and a few notes a call over
+    // 2,000 notes did not finish before the first keystroke (list-rendering-at-scale).
+    let at = this.warming?.entries === entries ? this.warming.at : 0
     let done = 0
-    for (const e of entries) {
+    for (; at < entries.length; at++) {
+      const e = entries[at]
       const cur = this.prepared.get(e.key)
       if (cur && cur.title === e.title && cur.text === e.text) continue
-      if (done++ === limit) return true
+      if (done++ === limit) {
+        this.warming = { entries, at }
+        return true
+      }
       this.prepare(e)
     }
+    this.warming = { entries, at }
     return false
   }
+
+  /** Where warm stopped, in which list. */
+  private warming: { entries: readonly NoteEntry[]; at: number } | null = null
 
   /** Forget notes that are no longer listed (and their text). */
   prune(entries: readonly NoteEntry[]): void {

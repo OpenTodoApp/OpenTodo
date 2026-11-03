@@ -2,7 +2,7 @@
 // matching, most-probable ordering, the active option, keys and announcements.
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { pickScores, rankBy, recordPick } from '../../lib/pickRank'
-import { matchPrepared, prepare, prepareQuery, type Match } from './match'
+import { matchPrepared, prepareCached, prepareQuery, type Match } from './match'
 import { t } from '../../lib/i18n'
 import { useResetOnChange } from '../../lib/useResetOnChange'
 
@@ -31,13 +31,6 @@ export function sortedHead<X>(xs: X[], head: number | undefined, order: (a: X, b
   return [...top, ...rest]
 }
 
-/** Items folded at a time while the palette waits for its first keystroke: as many steps as an idle period holds. */
-const FOLD_STEP = 250
-const idle = (fn: (deadline?: IdleDeadline) => void): number => (typeof requestIdleCallback === 'function' ? requestIdleCallback(fn, { timeout: 500 }) : window.setTimeout(fn, 20))
-const cancelIdle = (h: number) => {
-  if (typeof cancelIdleCallback === 'function') cancelIdleCallback(h)
-  clearTimeout(h)
-}
 
 export type AsyncSource<T> = (query: string, signal: AbortSignal) => Promise<{ items: T[]; hasMore?: boolean }>
 
@@ -132,35 +125,26 @@ export function useCombobox<T>(cfg: ComboboxConfig<T>) {
   // Fold each option's text once per item, not on every keystroke: a source
   // rebuilt around the same item objects (the command bar's 10,000 tasks behind
   // a few commands that follow the text) folds only the new ones (performance-10k).
-  const folded = useRef(new WeakMap<object, ReturnType<typeof prepare>>())
+  const folded = useRef(new WeakMap<object, ReturnType<typeof prepareCached>>())
   const fold = (i: T) => {
     const key = typeof i === 'object' && i !== null ? i : null
     const known = key && folded.current.get(key)
     if (known) return known
-    const p = prepare(cfg.getLabel(i), [cfg.getSecondary?.(i), cfg.getKeywords?.(i)].filter(Boolean).join(' '))
+    const p = prepareCached(cfg.getLabel(i), [cfg.getSecondary?.(i), cfg.getKeywords?.(i)].filter(Boolean).join(' '))
     if (key) folded.current.set(key, p)
     return p
   }
+  // The full source is folded with the list it belongs to, also while the empty list
+  // shows its own items, so the first keystroke only compares (list-rendering-at-scale):
+  // folding in idle moments after opening lost the race against a quick first key, and
+  // with the text cache the command bar fills before it opens (PaletteWarmer) the
+  // folds are mostly lookups.
   // eslint-disable-next-line react-hooks/exhaustive-deps -- getLabel/getSecondary/getKeywords are inline callbacks; the folded text changes only with the items
-  const prepared = useMemo(() => items.map(fold), [items])
-  // While the empty list shows its own items, the full source is folded in idle
-  // moments, so the first keystroke does not fold 10,000 tasks (list-rendering-at-scale).
-  const warm = items !== fullItems ? fullItems : null
-  useEffect(() => {
-    if (!warm?.length) return
-    let at = 0
-    let handle = 0
-    const step = (deadline?: IdleDeadline) => {
-      do {
-        for (const end = Math.min(at + FOLD_STEP, warm.length); at < end; at++) fold(warm[at])
-      } while (at < warm.length && deadline && !deadline.didTimeout && deadline.timeRemaining() > 2)
-      if (at < warm.length) handle = idle(step)
-    }
-    handle = idle(step)
-    return () => cancelIdle(handle)
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- folding depends on the items only, as `prepared`
-  }, [warm])
+  const preparedFull = useMemo(() => fullItems.map(fold), [fullItems])
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- as preparedFull
+  const prepared = useMemo(() => (items === fullItems ? preparedFull : items.map(fold)), [items, fullItems, preparedFull])
 
+  const narrowed = useRef<{ items: readonly T[]; q: string; compact: number; hits: number[] } | null>(null)
   const allOptions = useMemo<ComboOption<T>[]>(() => {
     const q = query.trim()
     const toOption = (item: T, m: Match, depthOverride?: number): ComboOption<T> => {
@@ -199,9 +183,19 @@ export function useCombobox<T>(cfg: ComboboxConfig<T>) {
       }
     } else {
       const pq = prepareQuery(q)
-      const matches = items
-        .map((item, i) => ({ item, i, m: matchPrepared(pq, prepared[i], cfg.getLabel(item).length) }))
-        .filter((x) => x.m.tier > 0)
+      // Typing on narrows: from two letters on, an option that missed the shorter text
+      // misses the longer one too (every word a word prefix, or the letters in order),
+      // so only the last matches are compared again (list-rendering-at-scale D6).
+      const last = narrowed.current
+      const from = last && last.items === items && last.compact >= 2 && pq.q.startsWith(last.q) ? last.hits : null
+      const matches: { item: T; i: number; m: Match }[] = []
+      const consider = (i: number) => {
+        const m = matchPrepared(pq, prepared[i], cfg.getLabel(items[i]).length)
+        if (m.tier > 0) matches.push({ item: items[i], i, m })
+      }
+      if (from) for (const i of from) consider(i)
+      else for (let i = 0; i < items.length; i++) consider(i)
+      narrowed.current = { items, q: pq.q, compact: pq.compact.length, hits: matches.map((x) => x.i) }
       type Hit = (typeof matches)[number]
       const order = (a: Hit, b: Hit) => b.m.tier - a.m.tier || a.m.gaps - b.m.gaps
         || (scores.get(cfg.getKey(b.item)) ?? 0) - (scores.get(cfg.getKey(a.item)) ?? 0) || a.i - b.i

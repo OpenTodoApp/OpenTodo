@@ -41,6 +41,8 @@ export interface FlowInput {
   sections: readonly Pick<Section, 'id' | 'project_id' | 'position' | 'deleted_at' | 'flow_mode'>[]
   /** The user's logical today, YYYY-MM-DD. */
   today: string
+  /** The same tasks by id, when the caller has that map already. */
+  byId?: ReadonlyMap<string, FlowTask>
 }
 
 /** What holds a waiting task: the open step it comes after (a task) or the section that is the current step. */
@@ -58,78 +60,112 @@ const open = (t: FlowTask) => !t.deleted_at && !t.completed_at
 const skipped = (t: FlowTask) => !!t.recurrence || !!t.habit || t.start === 'someday'
 const MAX_DEPTH = 64
 
-/** The flow state of every task in the input, by id. */
+/**
+ * The flow state of every task in the input, by id, worked out when asked
+ * (list-rendering-at-scale D6): a list asks for its own rows, so after a write in
+ * a 10,000-task account only the projects it shows are put in sequence, instead of
+ * every task of every project. The answers are the same as working out all of them.
+ */
 export class FlowState {
   private readonly out = new Map<string, TaskFlow>()
-  private readonly holds = new Map<string, HeldBy>()
+  private readonly holds = new Map<string, Map<string, HeldBy>>()
+  private byIdCache: ReadonlyMap<string, FlowTask> | null
+  private topByProject: Map<string, FlowTask[]> | null = null
+  private readonly input: FlowInput
 
   constructor(input: FlowInput) {
-    const byId = new Map(input.tasks.map((t) => [t.id, t]))
-    this.sequence(input)
-    for (const t of input.tasks) {
-      if (!open(t)) { this.out.set(t.id, NOT); continue }
-      // A subtask follows its top-level task's place in the sequence.
-      let top = t
-      for (let d = 0; top.parent_id && d < MAX_DEPTH; d++) {
-        const p = byId.get(top.parent_id)
-        if (!p) break
-        top = p
-      }
-      const heldBy = this.holds.get(top.id) ?? null
-      const blocked = (t.blocked_by ?? []).some((id) => { const b = byId.get(id); return !!b && open(b) })
-      const later = !!t.start && t.start !== 'someday' && t.start > input.today
-      this.out.set(t.id, { available: !heldBy && !blocked && t.start !== 'someday' && !later, waits: !!heldBy, heldBy })
-    }
+    this.input = input
+    this.byIdCache = input.byId ?? null
   }
 
-  /** Marks the open top-level tasks that wait in sequence, per project (spec "Waiting in sequence"). */
-  private sequence(input: FlowInput) {
-    const flows = new Map(input.projects.map((p) => [p.id, projectFlowOf(p)]))
+  private get byId(): ReadonlyMap<string, FlowTask> {
+    return (this.byIdCache ??= new Map(this.input.tasks.map((t) => [t.id, t])))
+  }
+
+  /** The open top-level tasks of a project, in input order. */
+  private tops(projectId: string): FlowTask[] {
+    if (!this.topByProject) {
+      const m = new Map<string, FlowTask[]>()
+      for (const t of this.input.tasks) {
+        if (!open(t) || t.parent_id || !t.project_id) continue
+        const list = m.get(t.project_id)
+        if (list) list.push(t)
+        else m.set(t.project_id, [t])
+      }
+      this.topByProject = m
+    }
+    return this.topByProject.get(projectId) ?? []
+  }
+
+  /** The open top-level tasks of the project that wait in sequence, and what holds each (spec "Waiting in sequence"). */
+  private holdsIn(projectId: string): Map<string, HeldBy> {
+    const known = this.holds.get(projectId)
+    if (known) return known
+    const holds = new Map<string, HeldBy>()
+    this.holds.set(projectId, holds)
+    const tasks = this.tops(projectId)
+    if (!tasks.length) return holds
+    const input = this.input
+    const flow = projectFlowOf(input.projects.find((p) => p.id === projectId))
     const sections = new Map(input.sections.map((s) => [s.id, s]))
-    const byProject = new Map<string, FlowTask[]>()
-    for (const t of input.tasks) {
-      if (!open(t) || t.parent_id || !t.project_id) continue
-      const list = byProject.get(t.project_id) ?? []
-      list.push(t)
-      byProject.set(t.project_id, list)
+    const live = input.sections.filter((s) => s.project_id === projectId && !s.deleted_at).sort(compareByPosition)
+    const sectionOf = (t: FlowTask) => {
+      const s = t.section_id ? sections.get(t.section_id) : undefined
+      return s && !s.deleted_at && s.project_id === projectId ? s.id : null
     }
-    for (const [projectId, tasks] of byProject) {
-      const flow = flows.get(projectId) ?? 'parallel'
-      const live = input.sections.filter((s) => s.project_id === projectId && !s.deleted_at).sort(compareByPosition)
-      const sectionOf = (t: FlowTask) => {
-        const s = t.section_id ? sections.get(t.section_id) : undefined
-        return s && !s.deleted_at && s.project_id === projectId ? s.id : null
-      }
-      const loose = tasks.filter((t) => !sectionOf(t)).sort(compareByPosition)
-      const inSection = (id: string) => tasks.filter((t) => sectionOf(t) === id).sort(compareByPosition)
-      // Inside one sequential group, the first candidate is offered and every later candidate waits on it.
-      const oneByOne = (list: FlowTask[]) => {
-        const cand = list.filter((t) => !skipped(t))
-        for (const t of cand.slice(1)) this.holds.set(t.id, { kind: 'task', id: cand[0].id })
-      }
-      if (flow !== 'sequential') {
-        for (const s of live) if (effectiveSectionFlow(s, flow) === 'sequential') oneByOne(inSection(s.id))
-        continue
-      }
-      // Sequential: loose tasks are one step each, then each section is one step.
-      const steps: { held: HeldBy; tasks: FlowTask[]; section?: Pick<Section, 'flow_mode'> }[] = [
-        ...loose.map((t) => ({ held: { kind: 'task', id: t.id } as HeldBy, tasks: [t] })),
-        ...live.map((s) => ({ held: { kind: 'section', id: s.id } as HeldBy, tasks: inSection(s.id), section: s })),
-      ]
-      let current: HeldBy | null = null
-      for (const step of steps) {
-        const cand = step.tasks.filter((t) => !skipped(t))
-        if (current) { for (const t of cand) this.holds.set(t.id, current); continue }
-        if (!cand.length) continue
-        // The current step: a section offers all its tasks (Parallel) or one by one.
-        if (step.section && effectiveSectionFlow(step.section, flow) === 'sequential') oneByOne(step.tasks)
-        current = step.held
-      }
+    const loose = tasks.filter((t) => !sectionOf(t)).sort(compareByPosition)
+    const inSection = (id: string) => tasks.filter((t) => sectionOf(t) === id).sort(compareByPosition)
+    // Inside one sequential group, the first candidate is offered and every later candidate waits on it.
+    const oneByOne = (list: FlowTask[]) => {
+      const cand = list.filter((t) => !skipped(t))
+      for (const t of cand.slice(1)) holds.set(t.id, { kind: 'task', id: cand[0].id })
     }
+    if (flow !== 'sequential') {
+      for (const s of live) if (effectiveSectionFlow(s, flow) === 'sequential') oneByOne(inSection(s.id))
+      return holds
+    }
+    // Sequential: loose tasks are one step each, then each section is one step.
+    const steps: { held: HeldBy; tasks: FlowTask[]; section?: Pick<Section, 'flow_mode'> }[] = [
+      ...loose.map((t) => ({ held: { kind: 'task', id: t.id } as HeldBy, tasks: [t] })),
+      ...live.map((s) => ({ held: { kind: 'section', id: s.id } as HeldBy, tasks: inSection(s.id), section: s })),
+    ]
+    let current: HeldBy | null = null
+    for (const step of steps) {
+      const cand = step.tasks.filter((t) => !skipped(t))
+      if (current) { for (const t of cand) holds.set(t.id, current); continue }
+      if (!cand.length) continue
+      // The current step: a section offers all its tasks (Parallel) or one by one.
+      if (step.section && effectiveSectionFlow(step.section, flow) === 'sequential') oneByOne(step.tasks)
+      current = step.held
+    }
+    return holds
+  }
+
+  private compute(id: string): TaskFlow {
+    const byId = this.byId
+    const t = byId.get(id)
+    if (!t || !open(t)) return NOT
+    // A subtask follows its top-level task's place in the sequence.
+    let top = t
+    for (let d = 0; top.parent_id && d < MAX_DEPTH; d++) {
+      const p = byId.get(top.parent_id)
+      if (!p) break
+      top = p
+    }
+    // Only open top-level tasks of a project are put in sequence.
+    const heldBy = (!top.parent_id && top.project_id && open(top) ? this.holdsIn(top.project_id).get(top.id) : undefined) ?? null
+    const blocked = (t.blocked_by ?? []).some((b) => { const x = byId.get(b); return !!x && open(x) })
+    const later = !!t.start && t.start !== 'someday' && t.start > this.input.today
+    return { available: !heldBy && !blocked && t.start !== 'someday' && !later, waits: !!heldBy, heldBy }
   }
 
   get(id: string): TaskFlow {
-    return this.out.get(id) ?? NOT
+    let f = this.out.get(id)
+    if (!f) {
+      f = this.compute(id)
+      this.out.set(id, f)
+    }
+    return f
   }
 
   /** Available (project-flow "Available tasks"): live, open, not blocked, not waiting, neither Someday nor deferred. */

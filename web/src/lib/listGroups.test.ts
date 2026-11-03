@@ -2,7 +2,7 @@
 // web-component-structure): what TaskListView renders, tested without a DOM.
 import { describe, expect, it } from 'vitest'
 import { currentDateTime } from './dates'
-import { BLOCKED_OPEN_KEY, DONE_OPEN_KEY, WAITING_OPEN_KEY, EARLIER_KEY, EARLIER_OPEN_KEY, earlierCollapsed, boardColumns, completedBySection, flatRow, listGroups, sectionBuckets, sectionOfRows, siblingPositions, splitLater, tasksForView, type GroupInput } from './listGroups'
+import { BLOCKED_OPEN_KEY, DONE_OPEN_KEY, WAITING_OPEN_KEY, EARLIER_KEY, EARLIER_OPEN_KEY, earlierCollapsed, boardColumns, completedBySection, flatRow, keepGroups, listGroups, sectionBuckets, sectionOfRows, siblingPositions, splitLater, tasksForView, type GroupInput } from './listGroups'
 import { buildTaskTree } from './subtasks'
 import type { Project, Section, Task } from './types'
 
@@ -387,5 +387,58 @@ describe('the Inbox list (inbox-only-inbox)', () => {
     const waiting = task({ title: 'Waiting', due: { date: TODAY } })
     const g = listGroups(input({ view: 'today', tasks: [waiting], blocked: new Set([waiting.id]) })).find((x) => x.key === 'blocked')!
     expect(g.openKey).toBe(BLOCKED_OPEN_KEY)
+  })
+})
+
+describe('keepGroups (list-rendering-at-scale D6)', () => {
+  // A project with two sections, as a write sees it: a new derivation each time.
+  const p = project('p', 1)
+  const sections = [section('s1', 'p', 1), section('s2', 'p', 2)]
+  const derive = (tasks: Task[]) => {
+    const tree = buildTaskTree(tasks)
+    return listGroups(input({ view: 'project', tasks, tree, buckets: sectionBuckets('p', tree, sections), sectionCount: 2, projects: [p], projectMap: new Map([['p', p]]) }))
+  }
+  const a = task({ title: 'A', project_id: 'p', section_id: 's1' })
+  const b = task({ title: 'B', project_id: 'p', section_id: 's1' })
+  const c = task({ title: 'C', project_id: 'p', section_id: 's2' })
+  const d = task({ title: 'D', project_id: 'p', section_id: 's2' })
+
+  it('keeps the whole list when nothing changed', () => {
+    const first = derive([a, b, c, d])
+    expect(keepGroups(first, derive([a, b, c, d]))).toBe(first)
+  })
+
+  it('gives new objects only to the changed row and its group', () => {
+    const first = derive([a, b, c, d])
+    const c2 = { ...c, title: 'C renamed' }
+    const next = keepGroups(first, derive([a, b, c2, d]))
+    expect(next).not.toBe(first)
+    const [s1, s2] = next.filter((g) => g.section)
+    const [o1, o2] = first.filter((g) => g.section)
+    expect(s1).toBe(o1)
+    expect(s2).not.toBe(o2)
+    expect(s2.rows[0]).not.toBe(o2.rows[0])
+    expect(s2.rows[0].task.title).toBe('C renamed')
+    expect(s2.rows[1]).toBe(o2.rows[1])
+  })
+
+  it('keeps the other rows of a group a task left', () => {
+    const first = derive([a, b, c, d])
+    const next = keepGroups(first, derive([b, c, d]))
+    const [s1] = next.filter((g) => g.section)
+    const [o1] = first.filter((g) => g.section)
+    expect(s1).not.toBe(o1)
+    expect(titles(s1)).toEqual(['B'])
+    expect(s1.rows[0]).toBe(o1.rows[1])
+    expect(s1.count).toBe(1)
+  })
+
+  it('takes the new row when its place changed', () => {
+    const first = derive([a, b, c, d])
+    const child = { ...b, parent_id: a.id }
+    const next = keepGroups(first, derive([a, child, c, d]))
+    const [s1] = next.filter((g) => g.section)
+    expect(s1.rows.map((r) => [r.task.title, r.depth])).toEqual([['A', 0], ['B', 1]])
+    expect(s1.rows[0].hasChildren).toBe(true)
   })
 })
