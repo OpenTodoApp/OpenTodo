@@ -159,6 +159,11 @@ export function useAllLabels(): Label[] {
   return labelRows.use() ?? NO_LABELS
 }
 
+/** Whether the first read of the labels has landed (a menu that waits for its final items). */
+export function useLabelsLoaded(): boolean {
+  return labelRows.use() !== undefined
+}
+
 /** The cached memberships of shared projects (project-sharing). */
 export function useMemberships(): Membership[] {
   return membershipRows.use() ?? NO_MEMBERSHIPS

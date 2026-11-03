@@ -7,7 +7,7 @@ import { Kbd } from '../shortcuts/Kbd'
 import { useMemo, useRef, useState, type RefObject } from 'react'
 import { useBelowStickyHeader } from './useBelowStickyHeader'
 import { allCompleted, applyBulk, commonSharedProject, readTicked, reviewAssign, reviewMove, type BulkAction, type ReviewPlan, useTickedTasks } from '../../lib/bulk'
-import { useAllLabels, useLiveSections, useProjects, useMembershipMap, useReviewRow, useUserPrefsRow } from '../../lib/localData'
+import { useAllLabels, useLabelsLoaded, useLiveSections, useProjects, useMembershipMapOrLoading, useReviewRow, useUserPrefsRow } from '../../lib/localData'
 import { DAY_PARTS, dayPartName, dayPartOf, dayPartsOn, type DayPart } from '../../lib/dayParts'
 import { dayPartUndoable, energyUndoable } from '../../lib/undoActions'
 import { ENERGY_LEVELS, energyLevelsOn, energyName, energyOf, type Energy } from '../../lib/energy'
@@ -86,6 +86,7 @@ export function clearBulkConfirm(): void {
   bulkConfirm.set(null)
 }
 
+const NO_MEMBER_MAP = new Map<string, Membership>()
 const tasksWord = (n: number) => t('{n, plural, one {# task} other {# tasks}}', { n })
 const itemKey = (i: PickerItem) => i.key
 const itemLabel = (i: PickerItem) => i.label
@@ -97,7 +98,9 @@ interface Data { tasks: Task[]; labels: Label[]; projects: Project[]; sections: 
   /** Today with a limit (today-closed-list D3): the one task's slot command. */
   slot?: SlotState
   /** Today's focus (phone-touch-focus D3): the one task's focus command. */
-  focus?: FocusMenuState }
+  focus?: FocusMenuState
+  /** Every read the items depend on has landed: until then the menu stays closed, so it opens complete (issue 840). */
+  ready?: boolean }
 
 /**
  * Start or Stop tracking for one task (time-tracking D5): Stop while its entry runs,
@@ -252,9 +255,11 @@ function useBulkData(ids: readonly string[]): Data {
   const read = useTickedTasks(ids, key)
   const tasks = useMemo(() => (read?.key === key ? read.tasks : []), [read, key])
   const labels = useAllLabels()
+  const labelsLoaded = useLabelsLoaded()
   const projects = useProjects()
   const sections = useLiveSections()
-  const memberships = useMembershipMap()
+  const memberMap = useMembershipMapOrLoading()
+  const memberships = memberMap ?? NO_MEMBER_MAP
   const runningTask = useRunningEntry()?.task_id ?? null
   const prefs = useUserPrefsRow()
   const dayParts = dayPartsOn(prefs)
@@ -263,7 +268,10 @@ function useBulkData(ids: readonly string[]): Data {
   const review = useReviewRow()
   const today = useToday()
   const focus = tasks.length === 1 ? focusMenuState(tasks[0], review, prefs, today) : null
-  return { tasks, labels, projects, sections, memberships, runningTask, dayParts, energy, slot, focus }
+  // The one task's items (focus, tracking, slot, Energy, Day part) and the Labels item's
+  // reason come from these reads: a menu shown before them grows under the pointer.
+  const ready = read?.key === key && labelsLoaded && memberMap !== undefined && prefs !== undefined && review !== undefined
+  return { tasks, labels, projects, sections, memberships, runningTask, dayParts, energy, slot, focus, ready }
 }
 
 /**
@@ -284,6 +292,9 @@ export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClass
   anchor?: RefObject<HTMLElement | null>
 }) {
   const data = useBulkData(ids)
+  // Held back only until the first full read: a later selection's read must not close an open menu.
+  const [settled, setSettled] = useState(false)
+  if (data.ready && !settled) setSettled(true)
   const [review, setReview] = useState<{ title: string; plan: ReviewPlan } | null>(null)
   const [dating, setDating] = useState(false)
   const besideRow = !!anchor?.current
@@ -296,7 +307,7 @@ export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClass
   const n = data.tasks.length || ids.length
   return (
     <>
-      <ActionMenu label={t('Actions for {tasks}', { tasks: tasksWord(n) })} title={tasksWord(n)} groups={groups} open={open} onOpenChange={onOpenChange}
+      <ActionMenu label={t('Actions for {tasks}', { tasks: tasksWord(n) })} title={tasksWord(n)} groups={groups} open={open} pending={!settled && !data.ready} onOpenChange={onOpenChange}
         trigger={trigger} triggerClassName={triggerClassName} triggerProps={triggerProps} startPicker={startPicker} width="sm:w-72" anchor={anchor} />
       {review && <BulkReview title={review.title} plan={review.plan} onClose={() => setReview(null)} onApplied={onApplied} />}
       {dating && (
