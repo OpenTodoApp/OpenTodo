@@ -9,7 +9,7 @@
 - [x] 2.1 The tasks snapshot patches changed rows from `storagemutated` (D2) with a full-read fallback; verify unit tests comparing the patched snapshot with a full read after create, edit, complete, delete, purge, sync pages and a cleared database
 - [x] 2.2 The row's tick paints in the frame of the click (D3); verify a unit test and `make perf` complete-task and remote-edit medians
 
-- [x] 2.3 Nothing outside a write's own rows moves (D5): kept row elements, the workspace directory written only when it changes, kept project and label rows, deferred sidebar counts; verify unit tests (an unchanged context publishes nothing, kept rows, no write for the same directory) and `make perf` cursor, complete-task and remote-edit
+- [x] 2.3 Nothing outside a write's own rows moves (D5): kept row elements, the workspace directory written only when it changes, kept project and label rows, deferred sidebar counts, the command bar's folding and sorting; verify unit tests (an unchanged context publishes nothing, kept rows, no write for the same directory) and `make perf` cursor, complete-task and remote-edit
 
 ## 3. Measure
 
