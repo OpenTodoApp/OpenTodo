@@ -139,7 +139,7 @@ Moving ticked tasks to a project or section and assigning them SHALL first show 
 - **THEN** nothing is written and the selection is kept
 
 ### Requirement: Undo a bulk action in one step
-After a bulk action a toast SHALL name it ("12 tasks completed") with an Undo control for ten seconds; the control, or `Ctrl`/`⌘`+`Z` outside a text field while the toast shows, SHALL restore the previous values as one new batch, offline-capable and convergent. A field changed again since the action SHALL be skipped and the task named. Undo state SHALL be device-local (the last 20 batches), never synced or exported, and cleared at sign-out.
+After a bulk action a toast SHALL name it ("12 tasks completed") with an Undo control for ten seconds; trashing a batch SHALL hold the offer for fifteen seconds and offer a "Show Trash" control as its second. The control, or `Ctrl`/`⌘`+`Z` outside a text field while the toast shows, SHALL restore the previous values as one new batch, offline-capable and convergent. Trashing more than twenty ticked tasks SHALL first ask the shared confirmation dialog naming the count; smaller sets SHALL trash at once. A field changed again since the action SHALL be skipped and the task named. Undo state SHALL be device-local (the last 20 batches), never synced or exported, and cleared at sign-out.
 
 #### Scenario: Undo a cross-scope move
 - **WHEN** the user moved two personal tasks into a shared project and activates Undo
@@ -156,6 +156,14 @@ After a bulk action a toast SHALL name it ("12 tasks completed") with an Undo co
 #### Scenario: Toast is keyboard reachable
 - **WHEN** a bulk action's toast is shown and the user presses Tab
 - **THEN** the Undo control receives focus and Enter undoes
+
+#### Scenario: Large trash asks first
+- **WHEN** the user ticks 30 tasks and presses Delete
+- **THEN** the shared confirmation dialog names the count ("Move 30 tasks to the Trash?"), and the batch lands in the Trash only after confirming; ticking three tasks and pressing Delete trashes them at once
+
+#### Scenario: The Trash offer holds longer
+- **WHEN** the user trashes a batch of tasks
+- **THEN** the offer holds Undo for fifteen seconds (instead of ten) with "Show Trash" as its second control, and activating it opens the Trash view
 
 ### Requirement: Discoverability
 The `?` overlay and the keyboard guide SHALL list the selection keys and `.`, and the tasks guide SHALL explain selecting several tasks and undoing a bulk action.
