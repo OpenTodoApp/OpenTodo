@@ -13,6 +13,7 @@ import { click, key, render, waitFor } from '../ui/test-utils'
 import { resetPanel } from './panel'
 import { navigate } from './router'
 import { Shell } from './Shell'
+import { TaskDetail } from './task-detail/TaskDetail'
 import { resetTaskTrail } from './taskTrail'
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
@@ -165,6 +166,49 @@ describe('the task page', () => {
     await r.unmount()
   })
 
+  it('shows the parent chain, folds the middle into a menu, and u opens the nearest parent', async () => {
+    const project = await createProject({ name: 'Work' })
+    const budget = await createTask({ title: 'Draft the budget', project_id: project })
+    const gather = await createTask({ title: 'Gather numbers', project_id: project, parent_id: budget })
+    const ask = await createTask({ title: 'Ask finance', project_id: project, parent_id: gather })
+    navigate({ view: 'task', id: ask })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => page()?.querySelector('[data-crumb="parent"]')?.textContent === 'Gather numbers')
+    const crumbs = page()!.querySelector('[data-breadcrumb]')!
+    expect(crumbs.tagName).toBe('NAV')
+    expect(crumbs.getAttribute('aria-label')).toBe('Task path')
+    expect(crumbs.querySelector('[data-crumb="project"]')!.textContent).toContain('Work')
+    expect(crumbs.querySelector('[data-crumb="parent"]')!.textContent).toBe('Gather numbers')
+    expect(crumbs.querySelector('[data-crumb="parent"]')!.getAttribute('data-parent-id')).toBe(gather)
+    expect(crumbs.querySelector('[data-crumb="task"]')!.getAttribute('aria-current')).toBe('page')
+    expect(crumbs.textContent).not.toContain('Draft the budget')
+    await click(crumbs.querySelector<HTMLButtonElement>('[data-crumb="more"]')!)
+    await waitFor(() => !!document.querySelector(`[role="menuitem"][data-parent-id="${budget}"]`))
+    expect(document.querySelector('[data-overlay="sheet"]')).toBeNull()
+    await click(document.querySelector<HTMLButtonElement>(`[role="menuitem"][data-parent-id="${budget}"]`)!)
+    await waitFor(() => page()?.querySelector('[data-crumb="task"]')?.textContent === 'Draft the budget')
+    expect(page()!.querySelector('[data-crumb="more"]')).toBeNull()
+    expect(page()!.querySelector('[data-crumb="parent"]')).toBeNull()
+    await r.unmount()
+  })
+
+  it('u on a task page opens the parent, and u in the title does not', async () => {
+    const project = await createProject({ name: 'Work' })
+    const budget = await createTask({ title: 'Draft the budget', project_id: project })
+    const gather = await createTask({ title: 'Gather numbers', project_id: project, parent_id: budget })
+    navigate({ view: 'task', id: gather })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => page()?.querySelector('[data-crumb="parent"]')?.textContent === 'Draft the budget')
+    expect(page()!.querySelector('[data-crumb="more"]')).toBeNull()
+    const title = page()!.querySelector<HTMLTextAreaElement>('[aria-label="Title"]')!
+    await act(async () => { title.focus() })
+    await key(title, 'u')
+    expect(location.pathname).toBe(`/task/${gather}`)
+    await key(document.body, 'u')
+    await waitFor(() => location.pathname === `/task/${budget}`)
+    await r.unmount()
+  })
+
   it('an older ?task= link opens the page over the page in the address, and Esc goes back there', async () => {
     const id = await createTask({ title: 'Renew the passport', due: { date: '2099-01-02' } })
     navigate({ view: 'upcoming' })
@@ -173,6 +217,37 @@ describe('the task page', () => {
     await waitFor(() => location.pathname === `/task/${id}` && !!page())
     await key(document.body, 'Escape')
     await waitFor(() => location.pathname === '/upcoming' && !page())
+    await r.unmount()
+  })
+})
+
+describe('the docked panel path', () => {
+  it('shows the same path and u opens the parent while focus is in the panel', async () => {
+    const project = await createProject({ name: 'Work' })
+    const budget = await createTask({ title: 'Draft the budget', project_id: project })
+    const gather = await createTask({ title: 'Gather numbers', project_id: project, parent_id: budget })
+    const ask = await createTask({ title: 'Ask finance', project_id: project, parent_id: gather })
+    const row = (await db.projects.get(project))!
+    const opened: string[] = []
+    const r = await render(<TaskDetail taskId={ask} projects={[row]} labelMap={new Map()} onClose={() => {}} onOpen={(id) => opened.push(id)} />)
+    const panel = () => document.querySelector('[data-detail-variant="panel"]')
+    await waitFor(() => panel()?.querySelector('[data-crumb="parent"]')?.textContent === 'Gather numbers')
+    const shown = panel()!
+    expect(shown.querySelector('[data-crumb="project"]')!.textContent).toContain('Work')
+    expect(shown.querySelector('[data-crumb="task"]')!.textContent).toBe('Ask finance')
+    expect(shown.querySelector('[data-breadcrumb]')!.getAttribute('aria-label')).toBe('Task path')
+    const parent = shown.querySelector<HTMLButtonElement>('[data-crumb="parent"]')!
+    parent.focus()
+    await key(parent, 'u')
+    expect(opened).toEqual([gather])
+    await r.unmount()
+  })
+
+  it('a task with no parent keeps the header it had', async () => {
+    const id = await createTask({ title: 'Call the bank' })
+    const r = await render(<TaskDetail taskId={id} projects={[]} labelMap={new Map()} onClose={() => {}} />)
+    await waitFor(() => !!document.querySelector('[aria-label="Title"]'))
+    expect(document.querySelector('[data-detail-variant="panel"] [data-breadcrumb]')).toBeNull()
     await r.unmount()
   })
 })

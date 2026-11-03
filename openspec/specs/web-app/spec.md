@@ -371,7 +371,7 @@ CI SHALL open every screen and every overlay at 360, 390 and 768 px wide, in lig
 - **THEN** the layout job fails for WebKit
 
 ### Requirement: Task panel layout
-The task page SHALL show, top to bottom: a compact header with the breadcrumb (the list the task was opened from as a link back to it, the task's project, its parent task when it has one, and the task), the task's place in the list it was opened from ("4 / 12") with the next and previous task, a menu holding Delete, Copy link, Attach and the less frequent actions, and Close; then the content column with the task's checkbox and editable title, the notes (never clamped), an Attach control, the project's custom fields, the subtasks as one bordered block with their count and progress, the attachments list only when there are attachments, and the tabbed area with Comments, Activity, History and Time, the comment composer pinned to the bottom; and the facts column beside the content from 1024 px, above the notes below that. The docked panel of a page that keeps a split SHALL keep the earlier panel layout: the sticky header with the checkbox, the title, the menu (with Expand) and Close, the facet lines with Add, the custom fields, the subtasks, the attachments, the notes in full and the tabs.
+The task page SHALL show, top to bottom: a compact header with the breadcrumb (the list the task was opened from as a link back to it, the task's project, its parent tasks as Subtask path requires, and the task), the task's place in the list it was opened from ("4 / 12") with the next and previous task, a menu holding Delete, Copy link, Attach and the less frequent actions, and Close; then the content column with the task's checkbox and editable title, the notes (never clamped), an Attach control, the project's custom fields, the subtasks as one bordered block with their count and progress, the attachments list only when there are attachments, and the tabbed area with Comments, Activity, History and Time, the comment composer pinned to the bottom; and the facts column beside the content from 1024 px, above the notes below that. The docked panel of a page that keeps a split SHALL keep the earlier panel layout: the sticky header with the subtask path as its first line when the task has a parent, then the checkbox, the title, the menu (with Expand) and Close, the facet lines with Add, the custom fields, the subtasks, the attachments, the notes in full and the tabs.
 
 #### Scenario: Delete from the header menu
 - **WHEN** the user opens the header menu on the task page and chooses Delete
@@ -404,6 +404,29 @@ The task page SHALL show, top to bottom: a compact header with the breadcrumb (t
 #### Scenario: Facts above the notes on a narrow task page
 - **WHEN** the user opens a task as a page at 768 px wide
 - **THEN** the facts card is shown between the title and the notes
+
+### Requirement: Subtask path
+The header of a subtask, on the task page and in the docked panel, SHALL show the path from its project through every parent to the task. Each part except the task itself SHALL open that part. The path SHALL be a navigation region named "Task path", and the task SHALL be its current item. A task with one parent SHALL show that parent as its own crumb. A task with more than one parent SHALL keep the project, the nearest parent and the task on one line and put every parent between them in one menu anchored to that line, including below 640 px, where the menu SHALL NOT become a sheet. The chain SHALL stop at a missing or deleted parent and SHALL still show a completed parent. Pressing `u` SHALL open the nearest parent from the task page, and from the docked panel while focus is inside it, and SHALL do nothing to the path while a text field has focus. A task with no parent SHALL keep the header it has without this path.
+
+#### Scenario: Three levels
+- **WHEN** the user opens the subtask "Ask finance", whose parent is "Gather numbers", whose parent is "Draft the budget", in the project "Work"
+- **THEN** the header reads Work, then a control for the parents in between, then Gather numbers, then Ask finance, and Draft the budget is not a crumb of its own
+
+#### Scenario: The parents in between
+- **WHEN** the user opens that control
+- **THEN** a menu anchored to it lists Draft the budget, choosing it opens that task, and the page behind is not covered by a sheet
+
+#### Scenario: One parent
+- **WHEN** the user opens a subtask whose only parent is "Draft the budget"
+- **THEN** the header reads the project, Draft the budget and the subtask, with no control for parents in between
+
+#### Scenario: Up to the parent
+- **WHEN** the user presses `u` on that subtask, outside a text field
+- **THEN** the parent task opens
+
+#### Scenario: The panel
+- **WHEN** the same subtask is open in the docked panel
+- **THEN** the path is the first line of the panel, and `u` while focus is inside the panel opens the nearest parent
 
 ### Requirement: Task panel tabs
 The tabbed area SHALL offer Comments (with the comment count), Activity, History and Time (with the tracked total when there is one) as tabs reachable with the keyboard (arrow keys between tabs, Tab into the content). Comments SHALL be the default tab; the last chosen tab SHALL be remembered on the device only. The task's created and completed times SHALL be the first entries of Activity. The Time tab SHALL hold the task's time entries as the time-tracking capability defines them.
