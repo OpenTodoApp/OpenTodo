@@ -10,7 +10,7 @@ import { formatDate, formatDueLong, logicalToday } from '../lib/dates'
 import { useAllLabels, useMemberships, useProjects, useReminderRows } from '../lib/localData'
 import { moveTaskAcrossScopes } from '../lib/ops'
 import { useMe } from '../lib/sharing'
-import { advance, advanceQueue, back, current, positionText, progress, startTriage, type TriageState } from '../lib/triage'
+import { advance, advanceQueue, back, claim, current, positionText, progress, startTriage, type TriageState } from '../lib/triage'
 import { useLiveTasks } from '../lib/liveTasks'
 import type { Membership, Project, Task } from '../lib/types'
 import { LabelPicker } from './LabelPicker'
@@ -98,8 +98,10 @@ export function TriageView() {
 
   // A position whose task is gone (trashed this session) is passed over in the direction of travel.
   const dir = useRef<1 | -1>(1)
+  // The task being decided: gone from the live tasks (trashed) before the decision moves on, it is not skipped twice.
+  const deciding = useRef<string | null>(null)
   useEffect(() => {
-    if (!state || !tasks || state.index >= state.ids.length || byId.has(state.ids[state.index])) return
+    if (!state || !tasks || state.index >= state.ids.length || byId.has(state.ids[state.index]) || state.ids[state.index] === deciding.current) return
     const step = dir.current
     setState((s) => {
       if (!s) return s
@@ -122,7 +124,14 @@ export function TriageView() {
     setNotice(null)
     setPicker(null)
     dir.current = 1
+    deciding.current = null
     setState((s) => (s ? advance(s) : s))
+  }, [])
+
+  // The task being decided stays in the queue while its write lands (lib/triage claim).
+  const hold = useCallback((id: string) => {
+    deciding.current = id
+    setState((s) => (s ? claim(s, id) : s))
   }, [])
 
   const leave = useCallback(() => {
@@ -135,6 +144,7 @@ export function TriageView() {
   const decide = useCallback(async (kind: 'today' | 'complete' | 'trash' | 'someday' | 'skip') => {
     const item = task
     if (!item) return
+    if (kind !== 'skip') hold(item.id)
     switch (kind) {
       case 'today': await setDueWithUndo(item.id, { ...(item.due ?? {}), date: logicalToday() }); next(t('Due today: {title}.', { title: item.title || t('Untitled') })); break
       case 'complete': await completeWithUndo(item.id, true); next(t('Completed: {title}.', { title: item.title || t('Untitled') })); break
@@ -142,27 +152,30 @@ export function TriageView() {
       case 'someday': if (HAS_SOMEDAY) { await parkWithUndo(item.id); next(t('Parked in Someday: {title}.', { title: item.title || t('Untitled') })) } break
       case 'skip': next(t('Skipped: {title}.', { title: item.title || t('Untitled') })); break
     }
-  }, [task, next])
+  }, [task, next, hold])
 
   const schedule = useCallback(async (iso: string | null) => {
     if (!task || !iso) return
+    hold(task.id)
     await setDueWithUndo(task.id, { ...(task.due ?? {}), date: iso })
     next(t('Scheduled for {date}: {title}.', { date: formatDate(iso, 'long'), title: task.title || t('Untitled') }))
-  }, [task, next])
+  }, [task, next, hold])
 
   const moveTo = useCallback(async (projectId: string | null) => {
     if (!task || projectId === null) return
+    hold(task.id)
     const name = projects.find((x) => x.id === projectId)?.name ?? t('the project')
     await moveWithUndo(task.id, projectId, name)
     next(t('Moved to {project}: {title}.', { project: name, title: task.title || t('Untitled') }))
-  }, [task, projects, next])
+  }, [task, projects, next, hold])
 
   const delegate = useCallback(async (d: DelegateEntry) => {
     if (!task) return
+    hold(task.id)
     // Into the project and assigned, in one operation set (a cross-scope move carries the assignee).
     await moveTaskAcrossScopes(task.id, { project_id: d.projectId, assignee_id: d.userId })
     next(t('Delegated to {name}: {title}.', { name: d.label, title: task.title || t('Untitled') }))
-  }, [task, next])
+  }, [task, next, hold])
 
   // The Vim layer acts through the list state (vim-keybindings): j / k move, x completes, dd trashes, :q leaves.
   useEffect(() => registerListState({
@@ -182,8 +195,8 @@ export function TriageView() {
     readOnly: () => false,
     manual: () => false,
     focusQuickAdd: () => false,
-    toggleComplete: async (id, completed) => { await completeWithUndo(id, completed); if (completed) next() },
-  }), [byId, openId, leave, next])
+    toggleComplete: async (id, completed) => { if (completed) hold(id); await completeWithUndo(id, completed); if (completed) next() },
+  }), [byId, openId, leave, next, hold])
 
   // Keys (design D3): the mode's `view` entries of the shortcut registry (keyboard-
   // shortcuts "One shortcut registry with scopes"). The dispatcher keeps them out of

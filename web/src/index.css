@@ -992,6 +992,12 @@ button.ui-column-add { @apply flex-row items-start justify-start px-3 py-2.5 hov
    preference", precision-tokens D5): comfortable rows are 36 px, compact 32 px. Touch
    targets keep 44 px on coarse pointers through the rules further down. */
 .row-pad { padding-block: 0.5rem; }
+/* A list row far from the viewport costs no layout or paint (list-rendering-at-scale
+   D1): the browser skips it while it stays in the document, so focus, find in page,
+   drag and drop and screen readers reach every row. Its last drawn height holds its
+   place. The row the cursor is on, a dragged or dropped-on row, a row edited in place
+   and an expanded row draw normally, so nothing they show is clipped to the row. */
+.row-offscreen { content-visibility: auto; contain-intrinsic-size: auto 2.25rem; overflow-clip-margin: 0.25rem; }
 /* The page (precision-shell D3, app-shell "Page template"): content uses the whole
    content surface, the header included, so every title, first row and last action
    share the surface's padding. Only a form page keeps its fields at 42 rem from the
@@ -1091,6 +1097,12 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 :root[data-density="compact"] [data-group-header] { min-height: 2rem; }
 @media (pointer: coarse) {
   :root[data-density="compact"] .row-pad { padding-block: 0.5rem; }
+/* A list row far from the viewport costs no layout or paint (list-rendering-at-scale
+   D1): the browser skips it while it stays in the document, so focus, find in page,
+   drag and drop and screen readers reach every row. Its last drawn height holds its
+   place. The row the cursor is on, a dragged or dropped-on row, a row edited in place
+   and an expanded row draw normally, so nothing they show is clipped to the row. */
+.row-offscreen { content-visibility: auto; contain-intrinsic-size: auto 2.25rem; overflow-clip-margin: 0.25rem; }
   :root[data-density="compact"] [data-sidebar-item] { min-height: 2.75rem; }
 }
 /* User-written text wraps instead of pushing the page sideways. */

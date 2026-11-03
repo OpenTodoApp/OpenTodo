@@ -6,6 +6,39 @@ import { matchPrepared, prepare, prepareQuery, type Match } from './match'
 import { t } from '../../lib/i18n'
 import { useResetOnChange } from '../../lib/useResetOnChange'
 
+/**
+ * `xs` with its first `head` items in `order` and the rest after them in no
+ * particular order: only the shown options need sorting, and sorting every match
+ * of a short query over 10,000 tasks took much of a keystroke (list-rendering-at-scale).
+ * `order` is total (it ends with the item's index), so the head is what a full sort gives.
+ */
+export function sortedHead<X>(xs: X[], head: number | undefined, order: (a: X, b: X) => number): X[] {
+  if (head === undefined || head <= 0 || xs.length <= head * 4) return xs.sort(order)
+  const top: X[] = []
+  const rest: X[] = []
+  for (const x of xs) {
+    if (top.length === head && order(x, top[head - 1]) >= 0) { rest.push(x); continue }
+    let lo = 0
+    let hi = top.length
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1
+      if (order(top[mid], x) <= 0) lo = mid + 1
+      else hi = mid
+    }
+    top.splice(lo, 0, x)
+    if (top.length > head) rest.push(top.pop()!)
+  }
+  return [...top, ...rest]
+}
+
+/** Items folded at a time while the palette waits for its first keystroke: as many steps as an idle period holds. */
+const FOLD_STEP = 250
+const idle = (fn: (deadline?: IdleDeadline) => void): number => (typeof requestIdleCallback === 'function' ? requestIdleCallback(fn, { timeout: 500 }) : window.setTimeout(fn, 20))
+const cancelIdle = (h: number) => {
+  if (typeof cancelIdleCallback === 'function') cancelIdleCallback(h)
+  clearTimeout(h)
+}
+
 export type AsyncSource<T> = (query: string, signal: AbortSignal) => Promise<{ items: T[]; hasMore?: boolean }>
 
 export interface ComboboxConfig<T> {
@@ -100,16 +133,33 @@ export function useCombobox<T>(cfg: ComboboxConfig<T>) {
   // rebuilt around the same item objects (the command bar's 10,000 tasks behind
   // a few commands that follow the text) folds only the new ones (performance-10k).
   const folded = useRef(new WeakMap<object, ReturnType<typeof prepare>>())
-  const prepared = useMemo(() => items.map((i) => {
+  const fold = (i: T) => {
     const key = typeof i === 'object' && i !== null ? i : null
     const known = key && folded.current.get(key)
     if (known) return known
     const p = prepare(cfg.getLabel(i), [cfg.getSecondary?.(i), cfg.getKeywords?.(i)].filter(Boolean).join(' '))
     if (key) folded.current.set(key, p)
     return p
-  }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- getLabel/getSecondary/getKeywords are inline callbacks; the folded text changes only with the items
-    [items])
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- getLabel/getSecondary/getKeywords are inline callbacks; the folded text changes only with the items
+  const prepared = useMemo(() => items.map(fold), [items])
+  // While the empty list shows its own items, the full source is folded in idle
+  // moments, so the first keystroke does not fold 10,000 tasks (list-rendering-at-scale).
+  const warm = items !== fullItems ? fullItems : null
+  useEffect(() => {
+    if (!warm?.length) return
+    let at = 0
+    let handle = 0
+    const step = (deadline?: IdleDeadline) => {
+      do {
+        for (const end = Math.min(at + FOLD_STEP, warm.length); at < end; at++) fold(warm[at])
+      } while (at < warm.length && deadline && !deadline.didTimeout && deadline.timeRemaining() > 2)
+      if (at < warm.length) handle = idle(step)
+    }
+    handle = idle(step)
+    return () => cancelIdle(handle)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- folding depends on the items only, as `prepared`
+  }, [warm])
 
   const allOptions = useMemo<ComboOption<T>[]>(() => {
     const q = query.trim()
@@ -149,12 +199,13 @@ export function useCombobox<T>(cfg: ComboboxConfig<T>) {
       }
     } else {
       const pq = prepareQuery(q)
-      out = items
+      const matches = items
         .map((item, i) => ({ item, i, m: matchPrepared(pq, prepared[i], cfg.getLabel(item).length) }))
         .filter((x) => x.m.tier > 0)
-        .sort((a, b) => b.m.tier - a.m.tier || a.m.gaps - b.m.gaps
-          || (scores.get(cfg.getKey(b.item)) ?? 0) - (scores.get(cfg.getKey(a.item)) ?? 0) || a.i - b.i)
-        .map((x) => toOption(x.item, x.m))
+      type Hit = (typeof matches)[number]
+      const order = (a: Hit, b: Hit) => b.m.tier - a.m.tier || a.m.gaps - b.m.gaps
+        || (scores.get(cfg.getKey(b.item)) ?? 0) - (scores.get(cfg.getKey(a.item)) ?? 0) || a.i - b.i
+      out = sortedHead(matches, cfg.limit, order).map((x) => toOption(x.item, x.m))
     }
     if (q && cfg.prefix?.length) {
       const keys = new Set(out.map((o) => o.key))

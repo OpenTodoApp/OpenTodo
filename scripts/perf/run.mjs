@@ -154,6 +154,14 @@ async function session(browser, profileName) {
     let t0 = await go(page, `/project/${summary.bigProject}`)
     out['open-project'] = (await markAfter(page, 'ot:list-ready', t0)) - t0
     await page.locator('[data-task-id]').nth(50).waitFor()
+    // A long list draws its rows a step at a time after the first frame: the
+    // interactions below run once all of them are in the document.
+    await page.waitForFunction(() => {
+      const n = document.querySelectorAll('[data-task-id]').length
+      const w = window.__perf
+      if (n !== w.rowCount) { w.rowCount = n; w.rowSince = performance.now(); return false }
+      return performance.now() - w.rowSince > 1000
+    }, null, { polling: 100, timeout: 60_000 })
 
     debug('Cursor moves in that list')
     // Cursor moves in that list.
@@ -183,18 +191,22 @@ async function session(browser, profileName) {
     out['complete-task'] = p95(completes)
 
     debug('A remote edit')
-    // A remote edit (another device, through the API) painted here over the live channel.
+    // A remote edit (another device, through the API) painted here over the live channel,
+    // once the completions above are synced.
+    await page.waitForTimeout(3000)
     const remote = []
     for (let i = 0; i < 3; i++) {
       const id = await page.locator('li[data-task-id]').nth(5 + i).getAttribute('data-task-id')
       const title = `Remote edit ${i} ${Date.now()}`
-      // The page notes the wall-clock time of the frame after the new title shows.
+      // The page notes the wall-clock time of the frame after the new title shows:
+      // Date.now(), as the sender's is. performance.timeOrigin + performance.now() is
+      // a monotonic clock and ran 0.9 s ahead of the wall clock by then (list-rendering-at-scale).
       await page.evaluate((tt) => {
         window.__perf.remote = new Promise((resolve) => {
           const mo = new MutationObserver(() => {
             if (!document.body.textContent.includes(tt)) return
             mo.disconnect()
-            requestAnimationFrame(() => setTimeout(() => resolve(performance.timeOrigin + performance.now()), 0))
+            requestAnimationFrame(() => setTimeout(() => resolve(Date.now()), 0))
           })
           mo.observe(document.body, { subtree: true, childList: true, characterData: true })
         })
@@ -206,10 +218,14 @@ async function session(browser, profileName) {
       if (painted === null) throw new Error('remote edit: never painted')
       remote.push(painted - sent)
     }
+    debug(`remote edits: ${remote.map(Math.round).join(', ')}`)
     out['remote-edit'] = Math.max(...remote)
 
     debug('Saved view of eight clauses')
-    // Saved view of eight clauses.
+    // Saved view of eight clauses, from Today as the project above: leaving the
+    // 2,000-row project first timed taking its rows down, not the view (list-rendering-at-scale).
+    t0 = await go(page, '/today')
+    await markAfter(page, 'ot:list-ready', t0)
     t0 = await go(page, `/view/${summary.view}`)
     out['saved-view'] = (await markAfter(page, 'ot:list-ready', t0)) - t0
 
