@@ -7,7 +7,7 @@
 - [x] 1.3 `scripts/perf/run.mjs` (Playwright desktop and phone profile, scripted session, 5 runs, medians, JSON report), `go test -tags perf ./internal/perf/...` (server metrics, RSS from `/proc`), `scripts/perf/budgets.json`, `make perf`; verify `make perf` runs locally and writes the report
 - [x] 1.4 Notes fixture: `scripts/perf/notes-seed.mjs` (real Yjs documents and projections from a fixed seed with the web app's `yjs`) and `perfseed -notes` writing them through `ApplyStrict` with a stepped service clock (the D7 composition, receipt times over twelve months, 50 notes inside the 30-day window); verify `go test ./internal/perfseed/...` (same seed → same summary; counts and the window split match) and a nightly dry run
 - [x] 1.5 Notes measurements in `scripts/perf/run.mjs` and `internal/perf`: database size before and after compaction, compaction time and the longest push wait, first sync with notes (desktop, phone profile), bytes pulled, IndexedDB usage, Notes page open and note search (skipped with a note until `notes-overview` lands), heap; budgets added to `budgets.json`; verify `make perf NOTES=1` writes the notes section of the report
-- [ ] 1.6 First measurement against the budgets; record the baseline in the PR and adjust any budget only with a reason; verify `budgets.json` committed with the reasons in its `$comment`
+- [x] 1.6 First measurement against the budgets; record the baseline in the PR and adjust any budget only with a reason; verify `budgets.json` committed with the reasons in its `$comment`
 
 ## 2. Count checks on every PR
 
