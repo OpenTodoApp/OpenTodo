@@ -62,10 +62,8 @@ export function noteEntries(tasks: readonly Task[], projects: readonly Project[]
   const deletedProjects = new Set(projects.filter((p) => p.deleted_at).map((p) => p.id))
   for (const t of tasks) {
     if (t.deleted_at || (t.project_id && deletedProjects.has(t.project_id))) continue
-    const text = noteText(t)
-    if (!text.trim()) continue
-    out.push({ key: `task:${t.id}`, source: 'task', id: t.id, title: t.title, text, projectId: t.project_id, labels: t.labels ?? [],
-      updated: updatedOf(t._clock, NOTE_FIELDS), ...(t.completed_at ? { marker: 'completed' as const } : {}) })
+    const e = taskNoteEntry(t)
+    if (e) out.push(e)
   }
   for (const p of projects) {
     if (p.deleted_at) continue
@@ -97,6 +95,24 @@ export function sameEntries(a: readonly NoteEntry[], b: readonly NoteEntry[]): b
       || x.projectId !== y.projectId || x.labels.length !== y.labels.length || x.labels.some((l, j) => l !== y.labels[j])) return false
   }
   return true
+}
+
+/**
+ * A task's note entry, kept per task row (list-rendering-at-scale D6): rows a write
+ * did not touch are the same objects, so the 10,000 tasks behind the command bar's
+ * notes are read again only where they changed.
+ */
+const taskEntries = new WeakMap<Task, NoteEntry | null>()
+function taskNoteEntry(t: Task): NoteEntry | null {
+  const known = taskEntries.get(t)
+  if (known !== undefined) return known
+  const text = noteText(t)
+  const e: NoteEntry | null = text.trim()
+    ? { key: `task:${t.id}`, source: 'task', id: t.id, title: t.title, text, projectId: t.project_id, labels: t.labels ?? [],
+      updated: updatedOf(t._clock, NOTE_FIELDS), ...(t.completed_at ? { marker: 'completed' as const } : {}) }
+    : null
+  taskEntries.set(t, e)
+  return e
 }
 
 function byRecency(a: NoteEntry, b: NoteEntry): number {
