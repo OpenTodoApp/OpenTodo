@@ -166,7 +166,7 @@ export function SettingsView({ user, onLogout, section, page: pageId, anchor }: 
       <div className="lg:-mt-2 lg:grid lg:grid-cols-[14.25rem_minmax(0,1fr)]">
         {twoColumn && (
           <aside className="hidden border-r border-soft lg:sticky lg:top-0 lg:block lg:max-h-[calc(100dvh-4.5rem)] lg:min-h-[calc(100dvh-4.5rem)] lg:self-start lg:overflow-y-auto lg:px-3 lg:py-3" aria-label={t('Settings')} data-settings-pane>
-            <SettingsList user={user} current={shown.id} inPage={!!sub} compact />
+            <SettingsList user={user} current={shown.id} page={sub?.id} inPage={!!sub} compact />
           </aside>
         )}
         {/* workspaces-settings-v2 D2: the Workspaces page's two panes need 56 rem; every other section keeps 45 (precision-settings D3). */}
@@ -203,7 +203,7 @@ function SettingsOverviewPage({ section, user }: { section: SettingsSection; use
  * the groups as labelled lists, the free-software footer. `compact` is the column
  * beside a section page.
  */
-export function SettingsList({ user, current, inPage = false, compact = false }: { user: User; current?: SettingsSectionId; inPage?: boolean; compact?: boolean }) {
+export function SettingsList({ user, current, page, inPage = false, compact = false }: { user: User; current?: SettingsSectionId; page?: string; inPage?: boolean; compact?: boolean }) {
   return (
     <div className={compact ? 'space-y-4' : 'space-y-6'} data-settings-list>
       {/* The pane beside a page (precision-settings D2) keeps only search and the groups. */}
@@ -228,11 +228,12 @@ export function SettingsList({ user, current, inPage = false, compact = false }:
                         ? <span className={on ? 'text-strong' : 'text-muted'}><Icon name={s.icon} /></span>
                         : <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-accent-soft text-on-accent-soft"><Icon name={s.icon} size="md" /></span>}
                       <span className="min-w-0 flex-1">
-                        <span className="block font-medium">{s.label}</span>
+                        <span className={`block font-medium ${compact ? 'truncate' : ''}`}>{s.label}</span>
                         {!compact && <span className="block text-meta text-muted">{s.description(user)}</span>}
                       </span>
                       {!compact && <span className="text-faint"><Icon name="chevron-right" /></span>}
                     </a>
+                    {compact && on && <PanePages user={user} section={s} page={page} />}
                   </li>
                 )
               })}
@@ -246,6 +247,33 @@ export function SettingsList({ user, current, inPage = false, compact = false }:
         </p>
       )}
     </div>
+  )
+}
+
+/**
+ * The open section's sub-pages under its row in the wide pane (OpenSpec settings-tree D1):
+ * indented rows linking to the same addresses as the overview. Nothing for a section
+ * without sub-pages, or one the viewer sees as a single page.
+ */
+function PanePages({ user, section, page }: { user: User; section: SettingsSection; page?: string }) {
+  const pages = visiblePages(user, section)
+  if (pages.length === 0) return null
+  return (
+    <ul className="mt-0.5 mb-1 space-y-0.5 pl-6" aria-label={section.label} data-settings-pane-pages={section.id}>
+      {pages.map((p) => {
+        const on = p.id === page
+        return (
+          <li key={p.id}>
+            <a href={routePath({ view: 'settings', section: section.id, page: p.id })} data-settings-pane-page={p.id} aria-current={on ? 'page' : undefined}
+              className={`touch-target flex min-h-[1.875rem] items-center gap-2 rounded-control px-2 text-body focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${on ? 'bg-selected font-medium text-strong' : 'text-default hover:bg-hover'}`}
+              onClick={(e) => followLink(e, { view: 'settings', section: section.id, page: p.id })}>
+              <span className={on ? 'text-strong' : 'text-muted'}><Icon name={p.icon} size="xs" /></span>
+              <TruncatedText text={p.label} className="min-w-0 flex-1" />
+            </a>
+          </li>
+        )
+      })}
+    </ul>
   )
 }
 
