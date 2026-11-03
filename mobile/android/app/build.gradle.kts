@@ -81,6 +81,9 @@ android {
         abortOnError = true
         // Translations are checked by checkTranslations (six languages, every key).
         disable += setOf("MissingTranslation", "GradleDependency", "OldTargetApi")
+        // Accessibility (accessibility-aa D6): a missing description or label, a touch handler
+        // without a click, a clickable view the keyboard cannot reach fail the build.
+        error += setOf("ContentDescription", "ClickableViewAccessibility", "LabelFor", "KeyboardInaccessibleWidget")
     }
     testOptions { unitTests.isReturnDefaultValues = true }
 }

@@ -306,6 +306,7 @@ export const SETTINGS_COPY = {
     learnMore: 'settings/keyboard',
     rows: {
       hints: { label: msg('Show shortcut hints'), description: msg('Print the keys in the app itself, not only in tooltips. This device only.') },
+      singleKeys: { label: msg('Single-key shortcuts'), description: msg('Letters and symbols alone run commands. Turn off for speech input. This device only.') },
       vim: { label: msg('Vim keybindings'), description: msg('Normal, Insert and Command modes with counts, {kbd}, {kbd2} and {kbd3}. This device only.') },
       rowClick: { label: msg('Click a task to'), description: msg('Edit its title in place, or open its details beside the list. This device only.') },
     },

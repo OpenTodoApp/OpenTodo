@@ -97,9 +97,10 @@ function RegisterForm({ token, preview, onDone }: { token: string; preview: Work
   return (
     <Card title={t('Create an account to join {name}', { name: preview.workspaceName })}>
       <form onSubmit={(e) => void submit(e)} className="space-y-3">
-        <Field label={t('Email')}><Input type="email" required value={email} readOnly={!!preview.email} onChange={(e) => setEmail(e.target.value)} /></Field>
-        <Field label={t('Name')}><Input value={name} onChange={(e) => setName(e.target.value)} /></Field>
-        <Field label={t('Password')} error={error ?? undefined}><Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} /></Field>
+        {/* Named for password managers and autofill (WCAG 1.3.5, 3.3.8). */}
+        <Field label={t('Email')}><Input type="email" autoComplete="username" required value={email} readOnly={!!preview.email} onChange={(e) => setEmail(e.target.value)} /></Field>
+        <Field label={t('Name')}><Input autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} /></Field>
+        <Field label={t('Password')} error={error ?? undefined}><Input type="password" autoComplete="new-password" required value={password} onChange={(e) => setPassword(e.target.value)} /></Field>
         <button className="ui-btn ui-btn--primary ui-btn--md w-full">{t('Create account and join')}</button>
       </form>
     </Card>

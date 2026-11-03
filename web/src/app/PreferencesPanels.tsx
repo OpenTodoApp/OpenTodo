@@ -14,6 +14,7 @@ import type { View } from '../lib/types'
 import { useStartView, useViews } from './useViews'
 import { setVimEnabled, useVimEnabled } from './vim/prefs'
 import { setShortcutHints, useShortcutHints } from './shortcuts/hints'
+import { setSingleKeys, useSingleKeys } from './shortcuts/singleKeys'
 import { type RowClick, setRowClick, useRowClick } from './rowClick'
 import { Kbd } from './shortcuts/Kbd'
 import { resolveLanguage, t } from '../lib/i18n'
@@ -129,16 +130,21 @@ export function DayPartsView({ on, onChange }: { on: boolean; onChange: (on: boo
   )
 }
 
-/** Keyboard switches: Vim keybindings (vim-keybindings) and "Show shortcut hints" (keyboard-shortcuts), both per device, applied at once. */
+/**
+ * Keyboard switches: Vim keybindings (vim-keybindings), "Show shortcut hints" (keyboard-shortcuts)
+ * and "Single-key shortcuts" (accessibility-aa, WCAG 2.1.4), all per device, applied at once.
+ */
 export function KeyboardSection() {
   const vim = useVimEnabled()
   const hints = useShortcutHints()
+  const singleKeys = useSingleKeys()
   const click = useRowClick()
-  return <KeyboardView vim={vim} onVim={setVimEnabled} hints={hints} onHints={setShortcutHints} click={click} onClick={setRowClick} />
+  return <KeyboardView vim={vim} onVim={setVimEnabled} hints={hints} onHints={setShortcutHints} singleKeys={singleKeys} onSingleKeys={setSingleKeys} click={click} onClick={setRowClick} />
 }
 
-export function KeyboardView({ vim, onVim, hints = false, onHints = () => {}, click = 'edit', onClick = () => {} }: {
+export function KeyboardView({ vim, onVim, hints = false, onHints = () => {}, singleKeys = true, onSingleKeys = () => {}, click = 'edit', onClick = () => {} }: {
   vim: boolean; onVim: (on: boolean) => void; hints?: boolean; onHints?: (on: boolean) => void
+  singleKeys?: boolean; onSingleKeys?: (on: boolean) => void
   /** "Click a task to" (inline-task-editing D6), this device only. */
   click?: RowClick; onClick?: (v: RowClick) => void
 }) {
@@ -153,6 +159,8 @@ export function KeyboardView({ vim, onVim, hints = false, onHints = () => {}, cl
         )} />
       <SettingRow {...rowCopy('keyboard', 'hints')} id="shortcut-hints"
         control={<span data-hints-switch><Switch checked={hints} onChange={onHints} label={t('Show shortcut hints (this device)')} hideLabel /></span>} />
+      <SettingRow {...rowCopy('keyboard', 'singleKeys')} id="single-keys"
+        control={<span data-single-keys-switch><Switch checked={singleKeys} onChange={onSingleKeys} label={t('Single-key shortcuts (this device)')} hideLabel /></span>} />
       <SettingRow label={rowCopy('keyboard', 'vim').label} description={
         <>{t.rich(SETTINGS_COPY.keyboard.rows.vim.description, { kbd: <Kbd k="gg" />, kbd2: <Kbd k="dd" />, kbd3: <Kbd k=":" /> })}</>
       } control={<span data-vim-switch><Switch checked={vim} onChange={onVim} label={t('Vim keybindings (this device)')} hideLabel /></span>} />

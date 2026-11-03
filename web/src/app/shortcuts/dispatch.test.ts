@@ -6,6 +6,7 @@
 // layer, text fields keep single keys, a handler can fall through.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { chordsOf, SHORTCUTS, type Shortcut, type ShortcutScope } from '../../lib/shortcuts'
+import { isCharacterKey, setSingleKeys } from './singleKeys'
 import { armGPrefix, clearPrefix, dispatch, holdPrefix, installShortcutDispatcher, isActivationTarget, isPrefixPending, pendingContinuations, pendingPrefix, registerShortcutScope, resetShortcutScopes, type ScopeFrame, subscribePrefix } from './dispatch'
 
 type Mods = Partial<{ ctrlKey: boolean; metaKey: boolean; altKey: boolean; shiftKey: boolean }>
@@ -300,5 +301,45 @@ describe('the pending prefix (shortcut-spotlight D1)', () => {
     registerShortcutScope({ scope: 'list', handlers: { 'list.down': () => { ran.push('down') } } })
     press('j')
     expect(ran).toEqual(['down'])
+  })
+})
+
+describe('single-key shortcuts turned off (accessibility-aa, WCAG 2.2 2.1.4)', () => {
+  afterEach(() => setSingleKeys(true))
+  const run = (ids: string[]) => {
+    const ran: string[] = []
+    registerShortcutScope({ scope: 'global', handlers: Object.fromEntries(ids.map((id) => [id, () => { ran.push(id) }])) })
+    return ran
+  }
+
+  it('a letter, a symbol or a g sequence does nothing; Ctrl+K still runs', () => {
+    setSingleKeys(false)
+    const ran = run(['list.quick-add', 'global.help', 'go.today', 'global.palette'])
+    expect(press('q').defaultPrevented).toBe(false)
+    press('?', { shiftKey: true })
+    press('g'); press('t')
+    expect(isPrefixPending()).toBe(false)
+    press('k', { ctrlKey: true })
+    expect(ran).toEqual(['global.palette'])
+  })
+
+  it('on again, the same keys run', () => {
+    setSingleKeys(false)
+    setSingleKeys(true)
+    const ran = run(['list.quick-add', 'go.today'])
+    press('q')
+    press('g'); press('t')
+    expect(ran).toEqual(['list.quick-add', 'go.today'])
+  })
+
+  it('a character key is one character without Ctrl, Alt or ⌘; named keys and Space are not', () => {
+    const c = (key: string, mods: Partial<{ ctrl: 'ctrl' | 'meta' | 'either' | false; alt: boolean }> = {}) => ({ key, ctrl: false as const, alt: false, shift: false, symbol: false, ...mods })
+    expect(isCharacterKey(c('q'))).toBe(true)
+    expect(isCharacterKey(c('1'))).toBe(true)
+    expect(isCharacterKey(c('?'))).toBe(true)
+    expect(isCharacterKey(c('k', { ctrl: 'either' }))).toBe(false)
+    expect(isCharacterKey(c('arrowup', { alt: true }))).toBe(false)
+    expect(isCharacterKey(c('escape'))).toBe(false)
+    expect(isCharacterKey(c(' '))).toBe(false)
   })
 })
