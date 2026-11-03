@@ -222,7 +222,10 @@ async function session(browser, profileName) {
     out['remote-edit'] = Math.max(...remote)
 
     debug('Saved view of eight clauses')
-    // Saved view of eight clauses.
+    // Saved view of eight clauses, from Today as the project above: leaving the
+    // 2,000-row project first timed taking its rows down, not the view (list-rendering-at-scale).
+    t0 = await go(page, '/today')
+    await markAfter(page, 'ot:list-ready', t0)
     t0 = await go(page, `/view/${summary.view}`)
     out['saved-view'] = (await markAfter(page, 'ot:list-ready', t0)) - t0
 
