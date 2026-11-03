@@ -2,7 +2,7 @@
 // with its headers and section groups, and the logbook's "Show more". The board and
 // the timeline have their own bodies (BoardView, TimelineView).
 import { Fragment, lazy, Suspense, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { t } from '../../lib/i18n'
+import { t, useLanguageVersion } from '../../lib/i18n'
 import { BLOCKED_OPEN_KEY, earlierCollapsed, flatRow, type ListGroup, type ListRow as Row } from '../../lib/listGroups'
 import type { DropAt } from '../listDrop'
 import { memberName } from '../../lib/sharing'
@@ -209,10 +209,13 @@ const sameContext = (a: RowContext, b: RowContext): boolean => {
  * changes; anything else that changes clears the cache.
  */
 export function useRowRenderer(c: RowContext): (r: Row) => ReactNode {
-  const cache = useRef<{ c: RowContext | null; rows: WeakMap<Row, { sig: string; el: ReactNode }> }>({ c: null, rows: new WeakMap() })
+  // A row's words ("You", "Former member") follow the language.
+  const language = useLanguageVersion()
+  const cache = useRef<{ c: RowContext | null; language: number; rows: WeakMap<Row, { sig: string; el: ReactNode }> }>({ c: null, language, rows: new WeakMap() })
   const held = cache.current
-  if (!held.c || !sameContext(held.c, c)) held.rows = new WeakMap()
+  if (!held.c || held.language !== language || !sameContext(held.c, c)) held.rows = new WeakMap()
   held.c = c
+  held.language = language
   const rows = held.rows
   const render = rowRenderer(c)
   return (r) => {
