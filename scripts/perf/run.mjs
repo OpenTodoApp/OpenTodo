@@ -198,13 +198,15 @@ async function session(browser, profileName) {
     for (let i = 0; i < 3; i++) {
       const id = await page.locator('li[data-task-id]').nth(5 + i).getAttribute('data-task-id')
       const title = `Remote edit ${i} ${Date.now()}`
-      // The page notes the wall-clock time of the frame after the new title shows.
+      // The page notes the wall-clock time of the frame after the new title shows:
+      // Date.now(), as the sender's is. performance.timeOrigin + performance.now() is
+      // a monotonic clock and ran 0.9 s ahead of the wall clock by then (list-rendering-at-scale).
       await page.evaluate((tt) => {
         window.__perf.remote = new Promise((resolve) => {
           const mo = new MutationObserver(() => {
             if (!document.body.textContent.includes(tt)) return
             mo.disconnect()
-            requestAnimationFrame(() => setTimeout(() => resolve(performance.timeOrigin + performance.now()), 0))
+            requestAnimationFrame(() => setTimeout(() => resolve(Date.now()), 0))
           })
           mo.observe(document.body, { subtree: true, childList: true, characterData: true })
         })
@@ -216,6 +218,7 @@ async function session(browser, profileName) {
       if (painted === null) throw new Error('remote edit: never painted')
       remote.push(painted - sent)
     }
+    debug(`remote edits: ${remote.map(Math.round).join(', ')}`)
     out['remote-edit'] = Math.max(...remote)
 
     debug('Saved view of eight clauses')

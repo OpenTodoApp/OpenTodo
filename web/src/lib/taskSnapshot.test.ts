@@ -5,8 +5,8 @@ import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from './db'
 import { changedTaskKeys, deriveSets, patchRows, taskSnapshot, type TaskSets } from './taskSnapshot'
-import { applyOps, createProject, createTask, deleteTask, resetDeviceId, setTaskCompleted, updateTask } from './ops'
-import { readWorkspaceState } from './workspaces'
+import { applyOps, createProject, createTask, deleteTask, resetDeviceId, setTaskCompleted, updateProject, updateTask } from './ops'
+import { readWorkspaceState, storeWorkspaces } from './workspaces'
 import type { Op, Task } from './types'
 import { waitFor } from '../ui/test-utils'
 
@@ -28,6 +28,26 @@ async function settles(snap: ReturnType<typeof taskSnapshot>, what: string) {
 }
 
 describe('the patched task snapshot', () => {
+  it('keeps its sets when only a project\'s name or the stored workspaces change', async () => {
+    const snap = taskSnapshot()
+    let published = 0
+    const stop = snap.subscribe(() => { published++ })
+    const p = await createProject({ name: 'Home' })
+    await createTask({ title: 'A', project_id: p })
+    await settles(snap, 'created')
+    const sets = snap.read()
+    const before = published
+    await updateProject(p, { name: 'House' })
+    await storeWorkspaces([])
+    await createTask({ title: 'B' })
+    await settles(snap, 'the next task')
+    // One publish for the new task; none for the rename or the directory.
+    expect(published - before).toBe(1)
+    const a = (x: TaskSets | undefined) => x!.every.find((t) => t.title === 'A')
+    expect(a(snap.read())).toBe(a(sets))
+    stop()
+  })
+
   it('equals a full read after every kind of write', async () => {
     const snap = taskSnapshot()
     const stop = snap.subscribe(() => undefined)

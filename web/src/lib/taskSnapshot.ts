@@ -79,6 +79,10 @@ export function deriveSets(rows: readonly Task[], projects: readonly Project[], 
   return { every, here: tasksIn(state, projects, every) }
 }
 
+/** What deriveSets reads of the context: the workspace state, and each project's place and Trash state. */
+export const contextKey = (c: { state: WorkspaceState; projects: readonly Project[] }): string =>
+  JSON.stringify([c.state.current, c.state.defaultId, c.state.list.map((w) => w.id), c.projects.map((p) => [p.id, p.deleted_at ?? null, p.workspace_id ?? null, p.parent_id ?? null])])
+
 function deepFreeze<T>(value: T): T {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
     Object.freeze(value)
@@ -94,6 +98,7 @@ export function taskSnapshot(): LiveSnapshot<TaskSets> {
   let snapshot: TaskSets | undefined
   const listeners = new Set<() => void>()
   let contextSub: Subscription | null = null
+  let lastKey = ''
   let chain: Promise<void> = Promise.resolve()
   /** Changes noted while held: their keys, or 'all'. */
   let noted: Set<string> | 'all' | null = null
@@ -154,7 +159,15 @@ export function taskSnapshot(): LiveSnapshot<TaskSets> {
     apply('all')
     if (isHeld()) holdTimer()
     contextSub = liveQuery(async () => ({ state: await readWorkspaceState(), projects: await db.projects.toArray() }))
-      .subscribe({ next: (v) => { context = v; publish() }, error: failed })
+      .subscribe({ next: (v) => {
+        // A project renamed or recoloured, or the workspace directory stored again,
+        // changes nothing the sets depend on: deriving them again re-read 10,000 tasks.
+        const key = contextKey(v)
+        if (context && key === lastKey) return
+        lastKey = key
+        context = v
+        publish()
+      }, error: failed })
   }
 
   function stop() {
