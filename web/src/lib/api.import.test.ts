@@ -36,6 +36,14 @@ describe('import API client', () => {
     expect(await sent.text()).toBe('title\nA\n')
   })
 
+  it('sends a Notion column mapping with the options, null for "not imported" (migration-everywhere D3)', async () => {
+    respond = () => json(200, { format: 'notion-csv', columns: { recognised: ['Do date'], ignored: [], roles: { due: 'Do date', status: null } }, totals: { rows: 1 }, rows: [], truncated: false, options: {} })
+    const res = await api.previewImport(new Blob(['PK']), 'Export.zip', { format: 'notion-csv', columns: { due: 'Do date', status: null } })
+    expect(res.columns?.roles?.due).toBe('Do date')
+    const form = calls[0].init.body as FormData
+    expect(JSON.parse(form.get('options') as string)).toEqual({ format: 'notion-csv', columns: { due: 'Do date', status: null } })
+  })
+
   it('starts a job, reads it and undoes it', async () => {
     respond = () => json(202, { job: { id: 'j1', status: 'running' } })
     const started = await api.startImport(new Blob(['x']), 'x.json', {})

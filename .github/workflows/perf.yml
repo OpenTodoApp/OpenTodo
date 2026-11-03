@@ -12,7 +12,7 @@ on:
     outputs:
       failures:
         description: The metrics over budget, one per line
-        value: ${{ jobs.perf.outputs.failures }}
+        value: ${{ format('{0}{1}', jobs.perf.outputs.failures, jobs.perf-notes.outputs.failures) }}
   workflow_dispatch:
   pull_request:
     paths:
@@ -64,12 +64,71 @@ jobs:
           {
             echo 'failures<<PERF_EOF'
             cat perf-report/failures.txt 2>/dev/null || echo "the benchmark did not finish"
+            echo # ends the list, so the workflow output joins the two jobs' lists line by line
             echo 'PERF_EOF'
           } >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: perf-report
+          path: |
+            perf-report/*.json
+            perf-report/*.txt
+            perf-report/*.png
+          retention-days: 30
+
+  # The notes fixture (design D7): about 2 GB of note history on the 10,000-task
+  # account, compacted by the server's job, then the notes budgets. Nightly and on
+  # demand, not on pull requests: it takes about half an hour and several GB of disk.
+  # (On demand only from 2026-11-03 until notes-compaction-at-scale made compaction
+  # meet its budgets.)
+  perf-notes:
+    name: Notes budgets (notes fixture)
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    container: mcr.microsoft.com/playwright:v1.56.1-noble@sha256:f1e7e01021efd65dd1a2c56064be399f3e4de00fd021ac561325f2bfbb2b837a
+    env:
+      GOFLAGS: -buildvcs=false
+    outputs:
+      failures: ${{ steps.report.outputs.failures }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Disk space for the fixture (about 5 GB with the documents and the copy)
+        run: |
+          df -h .
+          avail=$(df --output=avail -k . | tail -1)
+          [ "$avail" -gt 6000000 ] || { echo "only $((avail / 1024)) MB free; the notes fixture needs about 6 GB"; exit 1; }
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci --no-audit --no-fund && npm run build
+        working-directory: web
+      - run: CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/opentodo ./cmd/opentodo
+      - run: npm i -g --no-audit --no-fund playwright@1.56.1
+      - name: Measure the notes budgets
+        env:
+          NOTES: "1"
+        run: scripts/perf/run.sh
+      - name: Name what is over budget
+        id: report
+        if: always()
+        run: |
+          {
+            echo 'failures<<PERF_EOF'
+            cat perf-report/failures.txt 2>/dev/null || echo "the notes benchmark did not finish"
+            echo # ends the list, so the workflow output joins the two jobs' lists line by line
+            echo 'PERF_EOF'
+          } >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: perf-report-notes
           path: |
             perf-report/*.json
             perf-report/*.txt

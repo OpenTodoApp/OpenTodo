@@ -43,6 +43,8 @@ const RECONNECT_CAP_MS = 30_000
 /** No `open` within this window counts as a failed attempt (e.g. a buffering proxy). */
 const OPEN_TIMEOUT_MS = 10_000
 const EVENTS_PATH = '/api/v1/sync/events'
+/** Meta key: this device is making its first copy of the account (notes-compaction-at-scale D3). */
+export const FIRST_COPY_META = 'firstCopy'
 
 interface Snapshot {
   state: SyncState
@@ -270,8 +272,13 @@ async function exchange(alive: () => void, signal: AbortSignal): Promise<void> {
       // The only place ops leave the device: content is encrypted here.
       const wireOps = await prepareOutgoing(sent)
       const backfillAck = await getMeta<number>('backfillAck', 0)
+      // The first copy of the account (from cursor 0 to its last page, also
+      // after a restore's re-seed) leaves out note history it never needs
+      // (notes-compaction-at-scale D3); kept across reloads until it ends.
+      if (cursor === 0 && !(await getMeta<boolean>(FIRST_COPY_META, false))) await setMeta(FIRST_COPY_META, true)
+      const firstCopy = await getMeta<boolean>(FIRST_COPY_META, false)
       alive()
-      const res: unknown = await api.sync(device, cursor, wireOps, -new Date().getTimezoneOffset(), backfillAck, signal)
+      const res: unknown = await api.sync(device, cursor, wireOps, -new Date().getTimezoneOffset(), backfillAck, signal, firstCopy)
       alive()
       // A proxy or captive portal can answer 200 with a page of its own: nothing
       // was synced, so the outbox stays as it is (client-data-safety).
@@ -386,6 +393,7 @@ async function exchange(alive: () => void, signal: AbortSignal): Promise<void> {
       }
       alive()
       await setMeta('cursor', res.cursor)
+      if (firstCopy && !res.hasMore) await setMeta(FIRST_COPY_META, false)
       // Confirms a page of a joined project's history once it was applied (sync-convergence).
       await setMeta('backfillAck', res.backfillSeq ?? 0)
       const left = await db.outbox.count()

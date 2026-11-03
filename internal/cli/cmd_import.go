@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -55,9 +56,16 @@ type importPreview struct {
 	Notes  []string     `json:"notes"`
 }
 
+// importFormats are the server's import formats (internal/importer
+// ProfileNames; a test keeps the two equal), listed in --format's help.
+var importFormats = []string{"opentodo", "tududi-db", "things-db", "vikunja-export", "super-productivity-json",
+	"google-tasks-json", "trello-json", "microsoft-todo-json", "apple-reminders-json", "anydo-json",
+	"json-items", "json-lists", "json-generic", "todoist-csv", "todoist-backup", "ticktick-csv", "linear-csv",
+	"omnifocus-csv", "asana-csv", "csv", "notion-csv"}
+
 func cmdImport(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	fs := a.flagSet("import", g)
-	format := fs.String("format", "", "force a format instead of detecting it")
+	format := fs.String("format", "", "force a format instead of detecting it: "+strings.Join(importFormats, ", "))
 	existing := fs.String("existing", "", "own export: skip or overwrite items that already exist")
 	duplicates := fs.String("duplicates", "", "skip or import possible duplicates")
 	zone := fs.String("time-zone", "", "IANA time zone for date-times with a zone (default: this machine's)")

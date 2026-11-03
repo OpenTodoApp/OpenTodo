@@ -128,7 +128,7 @@ describe('sync with a fast clock', () => {
     expect(syncSnapshot().rejected).toBeNull()
     expect(await getMeta<number>('hlc', 0)).toBe(second[0].ts)
     // The request announces the protocol additions.
-    expect(syncCalls.mock.calls[0]).toHaveLength(6)
+    expect(syncCalls.mock.calls[0]).toHaveLength(7)
   })
 
   it('keeps the order of two edits refused in different batches (#651)', async () => {

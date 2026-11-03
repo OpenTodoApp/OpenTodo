@@ -2,12 +2,16 @@
 
 ## 1. Layout
 
-- [ ] 1.1 `content-visibility: auto` and `contain-intrinsic-size` on list rows (not cards), `overflow-clip-margin` for the drop line; verify `make ui-check`, the row stories, drag and drop and find in page by hand, and `make perf` open-project and cursor medians
+- [x] 1.1 `content-visibility: auto` and `contain-intrinsic-size` on list rows (not cards), `overflow-clip-margin` for the drop line; progressive mounting of long lists; sibling ARIA written by the list; verify `make ui-check`, the row stories, screenshots of every list surface at 360, 768 and 1280, and `make perf` open-project and cursor medians
 
 ## 2. Writes
 
-- [ ] 2.1 The tasks snapshot patches changed rows from `storagemutated` (D2) with a full-read fallback; verify unit tests comparing the patched snapshot with a full read after create, edit, complete, delete, purge, sync pages and a cleared database
-- [ ] 2.2 The row's tick paints in the frame of the click (D3); verify a unit test and `make perf` complete-task and remote-edit medians
+- [x] 2.1 The tasks snapshot patches changed rows from `storagemutated` (D2) with a full-read fallback; verify unit tests comparing the patched snapshot with a full read after create, edit, complete, delete, purge, sync pages and a cleared database
+- [x] 2.2 The row's tick paints in the frame of the click (D3); verify a unit test and `make perf` complete-task and remote-edit medians
+
+- [x] 2.3 Nothing outside a write's own rows moves (D5): kept row elements, the workspace directory written only when it changes, kept project and label rows, deferred sidebar counts, the command bar's folding and sorting, a tick that reads its subtree only; verify unit tests (an unchanged context publishes nothing, kept rows, no write for the same directory) and `make perf` cursor, complete-task and remote-edit
+
+- [x] 2.4 Incremental list updates (D6): kept rows and groups (`keepGroups`), each row compared on its own answers, sibling positions written only where they changed, counts over every task once the writes stop, the cursor row kept under `content-visibility`, cut titles measured only where drawn, the tab title's heading looked up only when one is added, the command bar's index prepared before it opens and narrowed while typing on, and the benchmark waiting until every row is drawn; verify unit tests (kept groups and rows, kept row elements, skipped titles not measured, narrowing equals a full match) and `make perf` complete-task, cursor-move and search-keystroke medians
 
 ## 3. Measure
 

@@ -8,6 +8,7 @@ import { mutate, mutateMany, type Change } from './ops'
 import { deadlineFireAt, relativeFireAt, snoozeUntil, type SnoozeChoice } from './reminderTime'
 import type { Op, Reminder, Task } from './types'
 import { uuid } from './ids'
+import { LOCAL_ERRORS } from './localErrors'
 
 export type ReminderInput =
   | { kind: 'relative'; offset_minutes: number }
@@ -29,10 +30,10 @@ function shapeOf(input: ReminderInput, task: Pick<Task, 'due' | 'deadline'> | un
     return { kind: input.kind, offset_minutes: null, fire_at: null, radius_m: input.radius_m }
   }
   if (input.kind === 'absolute') {
-    if (!(input.fire_at > 0)) throw new Error('reminder time is required')
+    if (!(input.fire_at > 0)) throw new Error(LOCAL_ERRORS.reminderTimeRequired)
     return { kind: 'absolute', offset_minutes: null, fire_at: input.fire_at, radius_m: null }
   }
-  if (!Number.isInteger(input.offset_minutes)) throw new Error('offset must be a whole number of minutes')
+  if (!Number.isInteger(input.offset_minutes)) throw new Error(LOCAL_ERRORS.offsetNotWhole)
   return { kind: input.kind, offset_minutes: input.offset_minutes, fire_at: offsetFireAt(input.kind, task, input.offset_minutes), radius_m: null }
 }
 
@@ -44,7 +45,7 @@ function offsetFireAt(kind: 'relative' | 'deadline', task: Pick<Task, 'due' | 'd
 /** Add a reminder to a task; returns its id. A relative reminder on an undated task has no firing time yet. */
 export async function addReminder(taskId: string, input: ReminderInput, now = Date.now()): Promise<string> {
   const task = await db.tasks.get(taskId)
-  if (!task || task.deleted_at) throw new Error('task not found')
+  if (!task || task.deleted_at) throw new Error(LOCAL_ERRORS.taskNotFound)
   const id = uuid()
   const { radius_m, ...shape } = shapeOf(input, task)
   await mutate('reminder', id, {

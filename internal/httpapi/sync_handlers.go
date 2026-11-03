@@ -22,7 +22,9 @@ type syncRequest struct {
 	// stamped too far ahead with reason clock_skew instead of clamping them)
 	// and "backfill_ack" (confirm member backfill pages with BackfillAck);
 	// "push_only" (OpenSpec change obsidian-plugin D4): apply, skip the pull
-	// and answer with the head cursor, for devices that only write.
+	// and answer with the head cursor, for devices that only write;
+	// "latest_docs" (OpenSpec change notes-compaction-at-scale D3): leave out
+	// note history a device copying the account never needs.
 	Features []string `json:"features,omitempty"`
 	// BackfillAck echoes the backfillSeq of the last backfill page applied.
 	BackfillAck int64 `json:"backfillAck,omitempty"`
@@ -83,7 +85,7 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	pull, err := s.sync.PullWith(r.Context(), uid, in.Cursor, in.Device, opsync.MaxOpsPerRequest,
-		opsync.PullOptions{ConfirmBackfill: in.supports("backfill_ack"), BackfillAck: in.BackfillAck})
+		opsync.PullOptions{ConfirmBackfill: in.supports("backfill_ack"), BackfillAck: in.BackfillAck, LatestDocs: in.supports("latest_docs")})
 	if err != nil {
 		s.internal(w, err)
 		return

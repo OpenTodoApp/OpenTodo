@@ -22,7 +22,7 @@ const base: ImportViewProps = {
   projects: [project({ id: 'p1', name: 'Home', color: HEX.green }), project({ id: 'p2', name: 'Work', color: HEX.blue })],
   workspaces: [], workspace: '', onWorkspace: noop,
   zones: ['UTC', 'Europe/Berlin', 'America/New_York'], preview: null, busy: false, error: null, job: null, jobs: [job],
-  onPickFile: noop, onFormat: noop, onOption: noop, onPreview: noop, onStart: noop, onUndo: noop,
+  onPickFile: noop, onFormat: noop, onOption: noop, onPreview: noop, switchFrom: null, onSwitchFrom: noop, encrypted: false, onColumn: noop, onStart: noop, onUndo: noop,
 }
 const preview: ImportPreview = {
   format: 'todoist-csv', options: {}, truncated: false,
@@ -52,3 +52,22 @@ export const IntoWorkspace: StoryObj = {
 
 /** A Todoist CSV previewed: totals, the rows and what happens to each. */
 export const Preview: StoryObj = { render: () => <ImportView {...base} fileName="Garden [Todoist].csv" format="todoist-csv" preview={preview} /> }
+
+/** Switching from Vikunja (migration-everywhere D5): the app is chosen, its export steps and the full guide link show above the file picker; on an encrypted account the note on plaintext. */
+export const SwitchingFrom: StoryObj = { render: () => <ImportView {...base} switchFrom="vikunja" format="vikunja-export" encrypted /> }
+
+const notionPreview: ImportPreview = {
+  format: 'notion-csv', options: {}, truncated: false, notes: ['columns not imported: Assignee'],
+  totals: totals({ rows: 4, create: 4, newProjects: 1, newLabels: 2 }),
+  columns: { recognised: ['Status', 'Due', 'Tags'], ignored: ['Assignee'], available: ['Assignee', 'Do date', 'Due', 'Priority', 'Status', 'Tags'],
+    roles: { status: 'Status', due: 'Due', labels: 'Tags', priority: 'Priority', project: null, notes: null } },
+  rows: [
+    { row: 1, kind: 'project', title: 'Tasks', outcome: 'create' },
+    { row: 2, file: 'Tasks', kind: 'task', title: 'Plan the garden', project: 'Tasks', outcome: 'create' },
+    { row: 3, file: 'Tasks', kind: 'task', title: 'Book the venue', project: 'Tasks', outcome: 'create' },
+    { row: 4, file: 'Tasks', kind: 'task', title: 'Renew passport', project: 'Tasks', outcome: 'create' },
+  ],
+}
+
+/** A Notion export previewed: one select per role, guessed from the column names (migration-everywhere D3). */
+export const NotionColumns: StoryObj = { render: () => <ImportView {...base} switchFrom="notion" fileName="Export.zip" format="notion-csv" preview={notionPreview} /> }

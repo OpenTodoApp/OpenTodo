@@ -61,6 +61,11 @@ export function ComboboxList<T>({ state, renderLeading, renderTrailing, renderSe
         if (listRef.current) listRef.current.scrollTop = next
         return next
       })
+    } else if (activeIndex <= 0) {
+      // The first option (the cursor after every keystroke) shows with the list at its
+      // top; scrollIntoView laid out the whole page behind the palette on each key,
+      // a 2,000-row list included (list-rendering-at-scale).
+      if (listRef.current) listRef.current.scrollTop = 0
     } else {
       document.getElementById(optionId(activeIndex))?.scrollIntoView?.({ block: 'nearest' })
     }

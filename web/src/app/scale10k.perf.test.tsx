@@ -128,7 +128,8 @@ describe(`${TASKS} tasks`, () => {
       await flush(300)
     })
     console.info(`[performance-10k] rows read to open Today with ${TASKS} tasks: ${JSON.stringify(reads)}`)
-    expect(reads.tasks ?? 0).toBeLessThanOrEqual(TASKS)
+    // One read of the table (every stored row), and the few rows writes on the way changed.
+    expect(reads.tasks ?? 0).toBeLessThanOrEqual(TASKS + 20)
     await r!.unmount()
   }, 180_000)
 
@@ -162,11 +163,17 @@ describe(`${TASKS} tasks`, () => {
     await flush(300)
     rowRenders.n = 0
     const button = r.container.querySelector('li[data-task-id="t00100"] button[aria-label^="Complete"]') as HTMLButtonElement
-    button.click()
-    await waitFor(async () => !!(await db.tasks.get('t00100'))?.completed_at, 'the completion stored', 30_000)
-    await flush(500)
-    console.info(`[performance-10k] row renders to complete one task in a ${BIG}-row list: ${rowRenders.n}`)
+    const reads = await readsDuring(async () => {
+      button.click()
+      await waitFor(async () => !!(await db.tasks.get('t00100'))?.completed_at, 'the completion stored', 30_000)
+      await flush(500)
+    })
+    console.info(`[performance-10k] row renders to complete one task in a ${BIG}-row list: ${rowRenders.n}; rows read: ${JSON.stringify(reads)}`)
     expect(rowRenders.n).toBeLessThanOrEqual(3)
+    // Not the table: the task's subtree and the changed rows (list-rendering-at-scale D5;
+    // reading every task here queued the next writes behind it). The rest of the reads
+    // vary with the timing of the window, a few hundred rows; the whole table is 10,000.
+    expect(reads.tasks ?? 0).toBeLessThan(TASKS / 4)
     await r.unmount()
   }, 180_000)
 

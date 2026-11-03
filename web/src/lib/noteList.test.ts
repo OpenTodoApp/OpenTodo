@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { filterEntries, NO_NOTE_FILTERS, NoteIndex, noteEntries, NOTES_PAGE, updatedOf } from './noteList'
+import { filterEntries, NO_NOTE_FILTERS, NoteIndex, noteEntries, NOTES_PAGE, sameEntries, updatedOf, type NoteEntry } from './noteList'
 import * as search from './noteSearch'
 import type { Note, Project, Task } from './types'
 
@@ -80,9 +80,9 @@ describe('searching notes (D4)', () => {
     expect(hit.snippet.map((s) => s.text).join('')).not.toContain('*')
   })
 
-  it('prepares each note once; a keystroke only matches', () => {
+  it('prepares each note once; a keystroke only matches (snippets included)', () => {
     const idx = new NoteIndex()
-    const spy = vi.spyOn(search, 'prepareNote')
+    const spy = vi.spyOn(search, 'stripMarkdown')
     idx.search(entries, 'f')
     idx.search(entries, 'fe')
     idx.search(entries, 'fer')
@@ -93,5 +93,19 @@ describe('searching notes (D4)', () => {
     idx.clear()
     expect(idx.size).toBe(0)
     spy.mockRestore()
+  })
+})
+
+describe('sameEntries (notes-compaction-at-scale)', () => {
+  const e = (over: Partial<NoteEntry> = {}): NoteEntry => ({ key: 'note:a', source: 'note', id: 'a', title: 'A', text: 'x', projectId: null, labels: ['l'], updated: 1, ...over })
+  it('holds for lists that show the same notes, new arrays included', () => {
+    expect(sameEntries([e()], [e()])).toBe(true)
+    expect(sameEntries([], [])).toBe(true)
+  })
+  it('fails on any shown difference', () => {
+    for (const over of [{ key: 'note:b' }, { title: 'B' }, { text: 'y' }, { updated: 2 }, { marker: 'completed' as const }, { projectId: 'p' }, { labels: ['m'] }, { labels: [] }]) {
+      expect(sameEntries([e()], [e(over)])).toBe(false)
+    }
+    expect(sameEntries([e()], [e(), e({ key: 'note:b' })])).toBe(false)
   })
 })

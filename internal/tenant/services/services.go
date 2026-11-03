@@ -205,7 +205,7 @@ func Build(ctx context.Context, cfg config.Config, db, reader *sql.DB, o Options
 	s.openAttachments(ctx)
 	s.openMaps()
 	s.STT = stt.New(s.Settings, cfg.DataDir, cfg.STT, s.Hooks.AllowPrivate)
-	s.Compaction = compaction.New(compaction.Options{DB: db, Sync: s.Sync, Settings: s.Settings, DataDir: cfg.DataDir,
+	s.Compaction = compaction.New(compaction.Options{DB: db, Reader: reader, Sync: s.Sync, Settings: s.Settings, DataDir: cfg.DataDir,
 		Signal: s.Signal, Now: o.Now, Log: log})
 	return s, nil
 }
