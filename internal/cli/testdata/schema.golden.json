@@ -2223,6 +2223,25 @@
       }
     },
     {
+      "name": "task show",
+      "summary": "print a task's details and its reminders, location reminders included (When I arrive at Post office (150 m)); read-only",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [],
+      "writes": false,
+      "destructive": false,
+      "dry_run": false,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/task_detail"
+      }
+    },
+    {
       "name": "task split",
       "summary": "change a recurring task from one of its later occurrences on (This and following): the series ends the day before and a new series continues it; prints the new series",
       "args": [
@@ -4815,6 +4834,76 @@
             },
             "title": {
               "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "task_detail": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "task_detail",
+      "description": "What ot task show prints with --json: the task and its live reminders as GET /api/v1/reminders returns them, location reminders (kind arrive or leave, radius_m in metres, no fire_at) included (OpenSpec location-reminders).",
+      "type": "object",
+      "required": [
+        "task",
+        "reminders"
+      ],
+      "properties": {
+        "task": {
+          "$ref": "#/schemas/task"
+        },
+        "reminders": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "task_id",
+              "kind"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "task_id": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "relative",
+                  "absolute",
+                  "deadline",
+                  "arrive",
+                  "leave"
+                ]
+              },
+              "offset_minutes": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "fire_at": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "Unix ms; always null for arrive and leave"
+              },
+              "radius_m": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "metres, 100 to 5000, only for arrive and leave"
+              },
+              "dismissed_at": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
             }
           }
         }

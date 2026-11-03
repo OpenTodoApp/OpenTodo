@@ -123,9 +123,19 @@ export function isActivationTarget(target: EventTarget | null): boolean {
   return !!t && typeof t.matches === 'function' && t.matches('button, a[href], summary, select, [role="button"], [role="link"], [role="tab"], [role="menuitem"], [role="option"], [role="checkbox"], [role="switch"], [role="treeitem"], input[type="checkbox"], input[type="radio"]')
 }
 
+const DIALOG = '[role="dialog"]:not([data-spotlight])'
+
 function dialogOpen(): boolean {
+  if (typeof document === 'undefined' || !document.body) return false
   // The sequence spotlight is a hint over the page, not a modal: it does not mute the scopes.
-  return typeof document !== 'undefined' && !!document.querySelector('[role="dialog"]:not([data-spotlight])')
+  // Dialogs and popovers are portalled to the body (ui/overlay): the app's own tree is not
+  // searched, which on a 2,000-row list cost a full scan of the page on every key
+  // (list-rendering-at-scale).
+  for (const el of document.body.children) {
+    if (el.id === 'root') continue
+    if (el.matches(DIALOG) || el.querySelector(DIALOG)) return true
+  }
+  return false
 }
 
 function focusInside(frame: ScopeFrame): boolean {

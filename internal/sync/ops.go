@@ -456,6 +456,13 @@ var Schema = map[string]map[string]Field{
 		"dismissed_at":   {Kind: kNullableNumber, Default: `null`},
 		"created_at":     {Kind: kNumber, Default: `0`},
 		"deleted_at":     {Kind: kNullableNumber, Default: `null`},
+		// A location reminder's radius in metres, 100 to 5,000 (OpenSpec change
+		// location-reminders, design D1): set only on the kinds "arrive" and
+		// "leave", which fire on a phone that enters or leaves the circle
+		// around the task's location and never have a fire_at or an offset
+		// (reminder_check.go refuses the mixes). Not content: the place is in
+		// the task's encrypted location.
+		"radius_m": {Kind: kRadius, Default: `null`},
 	},
 	// comment: a threaded markdown comment on a task (OpenSpec change
 	// `comments-and-activity`, design D1). It lives in its task's scope; Apply
@@ -973,25 +980,8 @@ func Validate(op Op) error {
 	return nil
 }
 
-// checkKind checks an op value against its field's kind; the per-kind checks
-// are in kinds.go. A kind without a check accepts any value.
-func checkKind(k kind, raw json.RawMessage) error {
-	check, ok := kindChecks[k]
-	if !ok {
-		return nil
-	}
-	return check(raw)
-}
-
 // Wins reports whether (ts, device) beats the existing (ets, edevice).
 // Ties on timestamp are broken by device id so every replica picks the same winner.
 func Wins(ts int64, device string, ets int64, edevice string) bool {
 	return ts > ets || (ts == ets && device > edevice)
-}
-
-// idList reads a kIDList value (nil when it is not one).
-func idList(raw json.RawMessage) []string {
-	var l []string
-	_ = json.Unmarshal(raw, &l)
-	return l
 }

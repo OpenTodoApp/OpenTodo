@@ -303,6 +303,7 @@ func (s *Service) membershipTx(ctx context.Context, actorID, projectID string, f
 		// Committed: tell observers even if the request was cancelled meanwhile.
 		s.observer(context.WithoutCancel(ctx), ch.changes)
 	}
+	s.EmitHandOffs(context.WithoutCancel(ctx), ch.changes)
 	return ch, nil
 }
 

@@ -15,6 +15,8 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 - **Idempotency**: applying an op twice changes nothing.
 - **Offline safety**: ops can be produced without the server and merged later.
 
+The protocol and the op schema are part of the v1 surface: within 1.x, entities and fields are only added, never removed or renamed ([stability and compatibility](stability.md)).
+
 ## Operation
 
 ```json
@@ -103,7 +105,8 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 | rule | `trigger`, `condition`, `actions` | an [automation rule's](automations.md) whole values: the trigger object (a kind from a closed set, `manual` included), null or a condition object, null or an actions object; checked for shape by `internal/ruleval` |
 | rule | `steps` | null or a [routine's](routines.md) list of at most 20 steps (`{id, kind, in, then?, otherwise?, do?}`, at most 3 block levels, 32 KB), one whole value converging by last-writer-wins; null reads the rule as one Change tasks step with its `actions`. Sync checks known kinds, unique ids, declared inputs and literal shapes and references to earlier steps; REST also checks types and ids. Not content: an encrypted account's text literals inside are envelopes |
 | reminder | `task_id` | string (task id, required) |
-| reminder | `kind` | `"relative"`, `"absolute"` or `"deadline"` (fires at 09:00 local on the task's deadline plus the offset) |
+| reminder | `kind` | `"relative"`, `"absolute"`, `"deadline"` (fires at 09:00 local on the task's deadline plus the offset), or `"arrive"` and `"leave"` (a location reminder, fired by a phone, never a `fire_at` or an offset) |
+| reminder | `radius_m` | integer 100…5000 (metres around the task's location, location kinds only) or null. A batch whose result would give a location kind a `fire_at` or `offset_minutes`, or another kind a `radius_m` (the batch's winning value of each of the four fields, else the stored one), has those four fields' ops of that reminder refused with reason `invalid_reminder`; the rest of the batch applies |
 | reminder | `offset_minutes` | integer −525600…525600 (minutes from the due time, or from 09:00 on the deadline for `deadline`; negative = before) or null |
 | reminder | `fire_at` | positive number (Unix ms, the resolved firing instant) or null |
 | reminder | `delivered_at`, `dismissed_at` | number or null |
@@ -370,9 +373,7 @@ Server-side writers (REST, assistant tools, CalDAV, public links, push delivery 
   "features": ["clock_skew", "backfill_ack"], "backfillAck": 0 }
 ```
 
-`features` (optional, additive) names the protocol additions the device handles: `clock_skew` (see [Clocks](#clocks)) and `backfill_ack` (see "Catch-up for a new member" under [Sharing scopes](#sharing-scopes)). `backfillAck` echoes the `backfillSeq` of the last replay page the device applied.
-
-A device that only writes, such as the [Obsidian plugin](obsidian.md), sends the feature `push_only`. The server applies its ops exactly as in an ordinary exchange (validation, refusals, duplicates, waking the other devices) and skips the pull: the answer carries the `applied` and `duplicates` counts, `rejected`, `cursor` set to the head of the caller's log, `serverTime`, `hasMore: false`, and empty `ops`, `memberships`, `workspaces` and `purged` lists. The server's values of refused fields are not sent back, because such a device keeps no rows. A server older than the feature ignores it and answers with an ordinary page, which a push-only device discards.
+`features` (optional, additive) names the protocol additions the device handles: `clock_skew` (see [Clocks](#clocks)), `backfill_ack` (see "Catch-up for a new member" under [Sharing scopes](#sharing-scopes)), `latest_docs` ([First copy](#first-copy)) and `push_only` ([Push-only devices](#push-only-devices)). `backfillAck` echoes the `backfillSeq` of the last replay page the device applied.
 
 Response:
 
@@ -409,6 +410,19 @@ Robustness (OpenSpec change `client-sync-robustness`):
 - **Sign-out.** `stopSync()` starts a new local data epoch and aborts the request in flight; the running exchange checks the epoch after every await and stops before its next write. Sign-out waits for it, tells the other tabs (they reload), and clears the local data while holding the lock.
 
 Server (`internal/sync.Apply`): validate the whole batch, then in one transaction resolve each op's scope, refuse the ones the author may not write (reported in `rejected`), `INSERT OR IGNORE` the others into `ops` (duplicate ids are counted, not re-applied) with their scope in `op_scopes`, and upsert `scope_fields` under the winner rule. `Pull` returns ops after the cursor from every scope the caller can see in `seq` order, skipping the caller's own device but still advancing the cursor past them.
+
+### First copy
+
+A device that copies the account for the first time sends the feature `latest_docs` (OpenSpec `notes-compaction-at-scale`): the web app sends it from cursor 0 until a page answers `hasMore: false`, and keeps doing so across reloads until then (a [restore's re-seed](#log-generation) starts a new first copy). The server then leaves out of the regular pull, for the note fields of `sync.CompactFields`, per scope:
+
+- a document (`notes_doc`) when the same device wrote a later document of the same field (greater `ts`, then `seq`): only each device's latest document travels;
+- a projection (`description`) or an append (`appends.<id>`) that is not the field's current winner.
+
+A device's document only grows: every save merges the stored document first and every received document is merged whether it wins or loses ([Mergeable documents](#mergeable-documents), rules 1 and 2). So each device's latest document contains its earlier ones, the union of the latest documents is the union of all of them, and the new device ends with the same notes and rows (and publishes the same union, if one is due) as a device that pulled every save. Projections and appends are plain registers for a device without local edits. Left-out ops are passed by `cursor` like the device's own, do not count against the page's byte budget, and a page may carry no ops with `hasMore: true`. The server decides from `(ts, device)` alone and never reads a value, so encrypted accounts behave the same. Everything else is served as usual; the [catch-up replay](#sharing-scopes) of a joined project is not filtered. A client that does not send the feature, and a server older than it, exchange the whole log as before.
+
+### Push-only devices
+
+A device that only writes, such as the [Obsidian plugin](obsidian.md), sends the feature `push_only`. The server applies its ops exactly as in an ordinary exchange (validation, refusals, duplicates, waking the other devices) and skips the pull: the answer carries the `applied` and `duplicates` counts, `rejected`, `cursor` set to the head of the caller's log, `serverTime`, `hasMore: false`, and empty `ops`, `memberships`, `workspaces` and `purged` lists. The server's values of refused fields are not sent back, because such a device keeps no rows. A server older than the feature ignores it and answers with an ordinary page, which a push-only device discards.
 
 ### Paging
 
@@ -497,7 +511,13 @@ Every save of a note writes a whole document (`notes_doc`, see [Mergeable docume
 - **Why it converges.** Under last-writer-wins a superseded op never wins again, and the winner stays in the log, so every replica that applies the remaining ops reaches the same winner, exactly as after the encryption purge. A superseded document can still hold text the winner lacks (two devices edited without seeing each other); that text reaches the winner when any device merges it and republishes the union (rule 1 of mergeable documents), which every device does in the first exchange that brings it the op. The 30-day window, counted from receipt, gives every device that is used at all that exchange: a device that edited offline for months gets the full 30 days from its push. Text is lost only if the device that pushed it and the one that superseded it both vanished and no other device synced for 30 days; if the author's device returns later, it still holds its document, merges the winner and republishes the union.
 - **Cursors.** Sequence numbers are never reused, so a cursor inside a removed range is still valid: the next pull returns the next remaining ops and moves past the hole. A device simply receives fewer ops. A member who joins later gets fewer ops in the catch-up replay, the winners among them.
 - **Re-sent ops.** An op re-sent by a device that missed the acknowledgement is stored again with a new `received_at`, loses to the winner as before, and a later run deletes it.
-- **Pace.** The job (`compaction` in `internal/tenant/jobs.go`) is due a day after its last complete pass and only after something changed; the first pass after start-up is due an hour after start. It selects candidates 1,000 at a time on the reader, deletes each chunk on the writer in a short transaction that repeats every condition (an op that became the winner meanwhile stays), stops after about 20 seconds and continues a minute later. Then it returns the freed pages to the file system with `PRAGMA incremental_vacuum` in steps of 2,000 pages. A database created before this version is first converted once to incremental vacuum by a full `VACUUM`, at a quiet moment and only with enough free disk; see [Backups](backups.md#database-size-and-compaction).
+- **Pace.** The job (`compaction` in `internal/tenant/jobs.go`) is due a day after its last complete pass and only after something changed; the first pass after start-up is due an hour after start. A run stops after about 20 seconds and the pass continues a minute later, from where it stopped (also after a restart). OpenSpec `notes-compaction-at-scale` sets how it works:
+  - *Planning.* The pass walks the log from its newest op back to the first, in windows of 8,192 sequence numbers. For each note field with an op in the window (one entity's `notes_doc`, `description` or `appends.<id>` in one scope) it reads all the field's ops on the reader without their values (`seq`, `ts`, `device`, `received_at`) and the winner, and decides in memory: linear work, however often a note was saved. Newest first, because the newest rows sit at the end of the file, which incremental vacuum returns first.
+  - *Deleting.* A writer transaction takes at most 64 planned ops of one field, checks the plan with index lookups (each op still in the field's scope and still not the winner, a thinned revision's later one of the same day still there; an op's `ts`, `device` and `received_at` never change), deletes in statements of 16 and commits after about 20 ms, so a waiting push goes next.
+  - *Reclaiming.* After about 2 seconds of deleting, the run returns the freed pages to the file system with `PRAGMA incremental_vacuum` in steps sized to about 20 ms each (16 to 128 pages), then deletes again: the free list stays short, which keeps each step cheap. During a run the writer's automatic checkpoint is off and its page cache is 32 MB; the write-ahead log is copied back from the reader pool four times a second, so a push never waits for that copy.
+  - A database created before incremental vacuum is first converted once by a full `VACUUM`, at a quiet moment and only with enough free disk; see [Backups](backups.md#database-size-and-compaction).
+  - On the notes fixture of the [performance budgets](performance.md) (500 notes saved 300 times over a year, 2.6 GB) a full pass removes about 287,000 ops and leaves a 238 MB file.
+- **New devices.** A device's [first copy](#first-copy) leaves out superseded note history even inside the 30-day window, so a new device downloads the latest documents whatever compaction has done so far.
 - **With the encryption purge.** Both remove only superseded ops, so they commute: on an encrypted account the encryption purge removes plaintext history at once, and compaction later removes superseded ciphertext. Neither decodes a value. Compaction is not erasure: it leaves `secure_delete` off, and earlier backups keep the history they had.
 - **Host mode.** The job runs per tenant under the host's scheduler; an idle tenant is never opened for it. The tenant's operation count goes down as ops are removed, and space freed counts at once toward its storage limit.
 

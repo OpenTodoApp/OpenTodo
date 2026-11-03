@@ -106,7 +106,7 @@ Longer horizons, and the household.
 | [`plan-objectives`](openspec/changes/archive/2026-11-02-plan-objectives/) | **Shipped.** Quarterly and weekly objectives as small cards in Plan and the weekly review | [#580](https://github.com/OpenTodoApp/OpenTodo/issues/580) |
 | [`reusable-lists`](openspec/changes/archive/2026-11-02-reusable-lists/) | **Shipped.** Grocery mode: adding an existing item reopens it | [#581](https://github.com/OpenTodoApp/OpenTodo/issues/581) |
 | [`chore-rotation`](openspec/changes/archive/2026-11-02-chore-rotation/) | **Shipped.** Recurring tasks that rotate between members of a group | [#582](https://github.com/OpenTodoApp/OpenTodo/issues/582) |
-| [`location-reminders`](openspec/changes/location-reminders/) | Reminders when you arrive at or leave a place |  |
+| [`location-reminders`](openspec/changes/location-reminders/) | **Shipped on Android; iOS follows.** Reminders when you arrive at or leave a place |  |
 | [`more-languages`](openspec/changes/more-languages/) | Dutch, and a kit for community languages |  |
 | [`priority-names`](openspec/changes/priority-names/) | Rename the four priorities |  |
 | [`telegram-channel`](openspec/changes/telegram-channel/) | Telegram as a notification channel |  |
@@ -117,11 +117,12 @@ The release that makes OpenTodo the default choice.
 
 | Change | What | Issues |
 | --- | --- | --- |
-| [`stability-contract`](openspec/changes/stability-contract/) | A frozen v1 API and op schema, upgrade paths from any 0.x, an export guarantee |  |
+| [`stability-contract`](openspec/changes/archive/2026-11-03-stability-contract/) | **Shipped.** A frozen v1 API and op schema, upgrade paths from any 0.x, an export guarantee | [#587](https://github.com/OpenTodoApp/OpenTodo/issues/587) |
 | [`external-security-review`](openspec/changes/external-security-review/) | A threat model and disclosure policy; an independent security review is optional, depending on funding |  |
 | [`accessibility-aa`](openspec/changes/accessibility-aa/) | WCAG 2.2 AA on every screen, with a conformance statement |  |
 | [`performance-10k`](openspec/changes/performance-10k/) | Budgets and tests for 10,000 tasks, on phones too |  |
-| [`migration-everywhere`](openspec/changes/migration-everywhere/) | A switch guide and checked importer for every competitor |  |
+| [`notes-compaction-at-scale`](openspec/changes/archive/2026-11-03-notes-compaction-at-scale/) | **Shipped.** A year of note history compacted in a minute without holding writes back; a new device downloads only the latest notes | [#590](https://github.com/OpenTodoApp/OpenTodo/issues/590) |
+| [`migration-everywhere`](openspec/changes/archive/2026-11-03-migration-everywhere/) | **Shipped.** A switch guide and checked importer for every competitor | [#591](https://github.com/OpenTodoApp/OpenTodo/issues/591) |
 | [`caldav-verified`](openspec/changes/caldav-verified/) | CalDAV verified on real clients | [#9](https://github.com/OpenTodoApp/OpenTodo/issues/9) |
 | [`docs-1-0`](openspec/changes/docs-1-0/) | Complete user, self-host and API docs and a contributor guide |  |
 

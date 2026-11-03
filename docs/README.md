@@ -56,6 +56,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | [Recurring tasks and reminders](recurring-and-reminders.md) | Make a task repeat every week, month or weekday, skip an occurrence, and get reminded at the right moment. |
 | &nbsp;&nbsp;↳ [Repeat rules](repeat-rules.md) | Every rule you can type into Repeat, the after-completion and end options, and what completing, skipping or splitting off one occurrence does. |
 | &nbsp;&nbsp;↳ [Task reminders](task-reminders.md) | Every kind of reminder you can add to a task, how reminders follow the due date, the deadline and a repeat rule, and what happens when one goes off. |
+| &nbsp;&nbsp;↳ [Location reminders](location-reminders.md) | Reminders that fire when you arrive at a place or leave it, how to set one up, why they fire only in the phone app, and what happens to your position. |
 | &nbsp;&nbsp;↳ [Default reminders](default-reminders.md) | A reminder added to every task that gets a date or a time, set once for all your devices, and when it is or isn't added. |
 | [Time blocking](time-blocking.md) | Estimate how long tasks take, then place them on the Day or Week calendar to see whether your plan fits the day. |
 | &nbsp;&nbsp;↳ [Day, Week and Month](calendar-views.md) | Open the calendar, read the Day and Week grids, and use the Month overview to see six weeks at once and move tasks between days. |
@@ -143,6 +144,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | [Running with Podman](self-hosting/podman.md) | A Quadlet systemd service, rootful or rootless, `podman auto-update`, the data volume and backups |
 | [Running on Render](self-hosting/render.md) | Deploy to Render Blueprint, the paid instance and disk it needs, the setup token, custom domains, updates and backups |
 | [Running on Synology](self-hosting/synology.md) | Container Manager project, the data folder and its owner, https with DSM's reverse proxy and Let's Encrypt, updates and backups |
+| [Running on Caliber Node](self-hosting/caliber-node.md) | A "Bring your own app" with the released image, the https address, updates by pulling `stable` again, backups |
 | [Public demo instance](self-hosting/demo.md) | `OPENTODO_DEMO=true`: a private sandbox per visitor, limits, expiry and the nightly reset, what is switched off, Docker and Coolify |
 | [Outgoing email](self-hosting/outgoing-email.md) | Optional SMTP for password resets, verified sign-up and invitations; Settings or `OPENTODO_SMTP_*`, providers, troubleshooting |
 | [Speech to text](self-hosting/speech-to-text.md) | Dictation on your own network with Speaches or whisper.cpp; Settings or `OPENTODO_STT_*`, what passes through the server |
@@ -177,6 +179,7 @@ The full list of environment variables is in the [README](../README.md#configura
 | [Architecture](architecture.md) | Data flow, server packages, tables, client modules, build |
 | [Sync protocol](sync.md) | Operations, schema, winner rule, exchange, sharing scopes, live updates, purge |
 | [Shared contracts](contracts.md) | The logic in both Go and TypeScript, its shared fixtures and the tests that read them |
+| [Performance budgets](performance.md) | How fast OpenTodo is held to be with 10,000 tasks on a computer, a phone and a small server, and how it is checked |
 | [Translating OpenTodo](translating.md) | How app text is written for translation, catalogs, checks, adding a language, glossary |
 
 ## Project

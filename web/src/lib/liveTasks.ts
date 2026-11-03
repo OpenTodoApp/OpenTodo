@@ -7,7 +7,7 @@
 //
 // The snapshot is shared: callers treat the array and its tasks as read-only (sort
 // a copy, never the array itself).
-import { liveSnapshot } from './liveSnapshot'
+import { taskSnapshot } from './taskSnapshot'
 import { visibleTaskSets } from './trash'
 import type { Task } from './types'
 
@@ -18,7 +18,8 @@ export const NO_TASKS: Task[] = []
 // workspace switcher's counts, the palette) and the current workspace's, the
 // list everything else shows (OpenSpec change workspaces). With one workspace
 // both are the same array.
-const both = liveSnapshot('tasks', visibleTaskSets)
+// Patched from the changed rows of each write, not read again (list-rendering-at-scale D2).
+const both = taskSnapshot()
 
 /** Every visible task of every workspace, live; undefined until loaded. */
 export function useTasksOfEveryWorkspace(): Task[] | undefined {

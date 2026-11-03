@@ -14,7 +14,7 @@ import { matchSidebar } from '../lib/sidebarFind'
 import { flattenTree } from '../lib/tree'
 import { useMinuteNow } from '../lib/timeEntries'
 import { t } from '../lib/i18n'
-import { Button, MenuItem, PageBody, PageHeader, Skeleton, Tabs } from '../ui'
+import { Button, EmptyState, MenuItem, PageBody, PageHeader, Skeleton, Tabs } from '../ui'
 import { ArchivedProjectsSection } from './ArchivedProjects'
 import { NamePrompt } from './NamePrompt'
 import { ProjectsTable, type ProjectsSort } from './ProjectsTable'
@@ -115,7 +115,11 @@ export function ProjectsView({ archived }: { archived?: boolean }) {
           {loaded && projects.length > 0 && <ProjectsTable rows={rows} summaries={summaries} memberships={memberMap} dimmed={dimmed}
             folded={folded} foldable={!found} onFold={fold} sort={sort} onSort={onSort} today={today} now={now}
             canMove={(n) => canEditProject(roleOf(n.id, memberMap))} edges={(n) => siblingEdges(tree, n)} />}
-          {loaded && projects.length === 0 && <p className="px-2 py-2 text-body text-faint">{t('No projects yet.')}</p>}
+          {loaded && projects.length === 0 && (
+            <EmptyState icon="folder" title={t('No projects yet')}
+              body={t('Projects hold tasks; labels describe them. Create a project to group work in the sidebar.')}
+              control={<Button size="sm" variant="primary" icon="plus" onClick={() => setCreating(true)}>{t('New project')}</Button>} />
+          )}
           {loaded && projects.length > 0 && <p className="px-2 pt-4 text-meta text-faint" data-health-note>
             {t('Health is worked out on your device from late tasks, deadlines and recent activity.')}
           </p>}

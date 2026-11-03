@@ -11,7 +11,7 @@ order: 80
 
 Microsoft To Do has no export button, but Microsoft Graph, the service behind it, lets you read your own lists. A short PowerShell script saves them to one file that OpenTodo imports.
 
-## Save your lists with PowerShell
+## Export from Microsoft To Do
 
 You need PowerShell 7 (Windows, macOS or Linux). Run these lines in it:
 

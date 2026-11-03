@@ -1,0 +1,3655 @@
+{
+ "about": "Requests and responses of the web client, recorded by the client compatibility recorder (OpenSpec change stability-contract, design D5). internal/tenant TestV1ClientsReplay replays them in order against the current server: every recorded response field must still be there with the same type. Recorded once per major version; never regenerated within it (new files may be added).",
+ "client": "web",
+ "pairs": [
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/auth/register",
+    "auth": "none",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "email": "contract-1793670760046-1@example.com",
+     "name": "Contract",
+     "password": "<password>"
+    }
+   },
+   "response": {
+    "status": 201,
+    "session": "session:1",
+    "body": {
+     "user": {
+      "id": "49ba0726-e072-43a1-a6d7-79c8e9c4f714",
+      "email": "contract-1793670760046-1@example.com",
+      "name": "Contract",
+      "role": "owner",
+      "createdAt": 1793670760116
+     }
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/auth/login",
+    "auth": "none",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "email": "contract-1793670760046-1@example.com",
+     "password": "<password>"
+    }
+   },
+   "response": {
+    "status": 200,
+    "session": "session:2",
+    "body": {
+     "user": {
+      "id": "49ba0726-e072-43a1-a6d7-79c8e9c4f714",
+      "email": "contract-1793670760046-1@example.com",
+      "name": "Contract",
+      "role": "owner",
+      "createdAt": 1793670760116
+     }
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/auth/login",
+    "auth": "none",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "email": "contract-1793670760046-1@example.com",
+     "password": "<password>"
+    }
+   },
+   "response": {
+    "status": 200,
+    "session": "session:3",
+    "body": {
+     "user": {
+      "id": "49ba0726-e072-43a1-a6d7-79c8e9c4f714",
+      "email": "contract-1793670760046-1@example.com",
+      "name": "Contract",
+      "role": "owner",
+      "createdAt": 1793670760116
+     }
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/sync",
+    "auth": "session:2",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc",
+     "cursor": 0,
+     "ops": [
+      {
+       "id": "3374da91-ff9f-4f1e-b007-6fed17dc7444",
+       "entity": "project",
+       "entityId": "36c654ec-8dab-4013-9057-65452771ff62",
+       "field": "name",
+       "value": "Contract",
+       "ts": 1793670760297,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc"
+      },
+      {
+       "id": "0cea280d-cbc4-4c17-ba63-8ff21921a65e",
+       "entity": "project",
+       "entityId": "36c654ec-8dab-4013-9057-65452771ff62",
+       "field": "color",
+       "value": "#3b82f6",
+       "ts": 1793670760297,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc"
+      },
+      {
+       "id": "f5b5494c-1018-43c8-80ba-b2cc0a4d9f31",
+       "entity": "project",
+       "entityId": "36c654ec-8dab-4013-9057-65452771ff62",
+       "field": "position",
+       "value": 1,
+       "ts": 1793670760297,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc"
+      },
+      {
+       "id": "59eabc01-dd9f-43ed-a871-6a6d25997b1f",
+       "entity": "project",
+       "entityId": "36c654ec-8dab-4013-9057-65452771ff62",
+       "field": "archived",
+       "value": false,
+       "ts": 1793670760297,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc"
+      },
+      {
+       "id": "c9c32d39-2392-497f-911e-49491ea6bf9f",
+       "entity": "project",
+       "entityId": "36c654ec-8dab-4013-9057-65452771ff62",
+       "field": "parent_id",
+       "value": null,
+       "ts": 1793670760297,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc"
+      },
+      {
+       "id": "9b2455f1-ebbf-45e0-880b-4b4891c80a77",
+       "entity": "project",
+       "entityId": "36c654ec-8dab-4013-9057-65452771ff62",
+       "field": "created_at",
+       "value": 1793670760284,
+       "ts": 1793670760297,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc"
+      },
+      {
+       "id": "139bdcfe-b847-4647-9ac5-872104c42696",
+       "entity": "project",
+       "entityId": "36c654ec-8dab-4013-9057-65452771ff62",
+       "field": "deleted_at",
+       "value": null,
+       "ts": 1793670760297,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc"
+      },
+      {
+       "id": "559ac05d-8e53-40d3-8bc1-a14c5937e215",
+       "entity": "task",
+       "entityId": "e60f2e69-c27a-41c6-b9e1-00b57620cdaa",
+       "field": "title",
+       "value": "Write the contract test",
+       "ts": 1793670760303,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc"
+      },
+      {
+       "id": "0f29106e-832f-4e87-9b62-bb8f630bc6b2",
+       "entity": "task",
+       "entityId": "e60f2e69-c27a-41c6-b9e1-00b57620cdaa",
+       "field": "description",
+       "value": "",
+       "ts": 1793670760303,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc"
+      },
+      {
+       "id": "213a4256-9b0e-4e70-b944-e79256f4b0f6",
+       "entity": "task",
+       "entityId": "e60f2e69-c27a-41c6-b9e1-00b57620cdaa",
+       "field": "project_id",
+       "value": "36c654ec-8dab-4013-9057-65452771ff62",
+       "ts": 1793670760303,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc"
+      },
+      {
+       "id": "480587be-c80e-46cf-aefa-b04ad164716f",
+       "entity": "task",
+       "entityId": "e60f2e69-c27a-41c6-b9e1-00b57620cdaa",
+       "field": "parent_id",
+       "value": null,
+       "ts": 1793670760303,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc"
+      },
+      {
+       "id": "94523510-ecca-4286-8599-95fc5e8a913b",
+       "entity": "task",
+       "entityId": "e60f2e69-c27a-41c6-b9e1-00b57620cdaa",
+       "field": "priority",
+       "value": 2,
+       "ts": 1793670760303,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc"
+      },
+      {
+       "id": "67d81b89-f778-439f-a251-8c1d74f6b062",
+       "entity": "task",
+       "entityId": "e60f2e69-c27a-41c6-b9e1-00b57620cdaa",
+       "field": "due",
+       "value": {
+        "date": "2026-11-02",
+        "time": "09:30"
+       },
+       "ts": 1793670760303,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc"
+      },
+      {
+       "id": "bfb5d5f3-0929-4a8f-bfb0-3b27ad5c293a",
+       "entity": "task",
+       "entityId": "e60f2e69-c27a-41c6-b9e1-00b57620cdaa",
+       "field": "labels",
+       "value": [],
+       "ts": 1793670760303,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc"
+      },
+      {
+       "id": "801d6d96-ccce-4416-be33-9c3387df9195",
+       "entity": "task",
+       "entityId": "e60f2e69-c27a-41c6-b9e1-00b57620cdaa",
+       "field": "position",
+       "value": 1,
+       "ts": 1793670760303,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc"
+      },
+      {
+       "id": "ecb0869c-4a4f-47f4-9517-9f7e562dc126",
+       "entity": "task",
+       "entityId": "e60f2e69-c27a-41c6-b9e1-00b57620cdaa",
+       "field": "created_at",
+       "value": 1793670760303,
+       "ts": 1793670760303,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc"
+      },
+      {
+       "id": "1c82fc46-f1b3-4d83-a09b-6fe2ff270b82",
+       "entity": "task",
+       "entityId": "e60f2e69-c27a-41c6-b9e1-00b57620cdaa",
+       "field": "completed_at",
+       "value": null,
+       "ts": 1793670760303,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc"
+      },
+      {
+       "id": "883eead5-2a80-40ea-ae7c-87ae14797fd0",
+       "entity": "task",
+       "entityId": "e60f2e69-c27a-41c6-b9e1-00b57620cdaa",
+       "field": "deleted_at",
+       "value": null,
+       "ts": 1793670760303,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc"
+      }
+     ],
+     "tzOffset": 0,
+     "features": [
+      "clock_skew",
+      "backfill_ack"
+     ]
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "applied": 18,
+     "cursor": 18,
+     "duplicates": 0,
+     "generation": "3a8237bd4211042d45ad53c06ae6e83a",
+     "hasMore": false,
+     "memberships": [],
+     "ops": [],
+     "purged": [],
+     "rejected": [],
+     "serverTime": 1793670760318,
+     "trashRetentionDays": 30,
+     "workspaces": [
+      {
+       "id": "a08851d5-170c-89fc-b0dd-68fd9f460e9a",
+       "name": "Personal",
+       "icon": "",
+       "color": "",
+       "default": true,
+       "role": "owner",
+       "ownerId": "49ba0726-e072-43a1-a6d7-79c8e9c4f714",
+       "members": [
+        {
+         "userId": "49ba0726-e072-43a1-a6d7-79c8e9c4f714",
+         "name": "Contract",
+         "role": "owner"
+        }
+       ],
+       "groups": []
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/notifications",
+    "auth": "session:2"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "notifications": [],
+     "unread": 0
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/sync",
+    "auth": "session:3",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "device": "39a00a3f-37de-4061-89cf-68bb0356ab0a",
+     "cursor": 0,
+     "ops": [],
+     "tzOffset": 0,
+     "features": [
+      "clock_skew",
+      "backfill_ack"
+     ]
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "applied": 0,
+     "cursor": 18,
+     "duplicates": 0,
+     "generation": "3a8237bd4211042d45ad53c06ae6e83a",
+     "hasMore": false,
+     "memberships": [],
+     "ops": [
+      {
+       "id": "3374da91-ff9f-4f1e-b007-6fed17dc7444",
+       "entity": "project",
+       "entityId": "36c654ec-8dab-4013-9057-65452771ff62",
+       "field": "name",
+       "value": "Contract",
+       "ts": 1793670760297,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc",
+       "seq": 1,
+       "actor": "49ba0726-e072-43a1-a6d7-79c8e9c4f714"
+      },
+      {
+       "id": "0cea280d-cbc4-4c17-ba63-8ff21921a65e",
+       "entity": "project",
+       "entityId": "36c654ec-8dab-4013-9057-65452771ff62",
+       "field": "color",
+       "value": "#3b82f6",
+       "ts": 1793670760297,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc",
+       "seq": 2,
+       "actor": "49ba0726-e072-43a1-a6d7-79c8e9c4f714"
+      },
+      {
+       "id": "f5b5494c-1018-43c8-80ba-b2cc0a4d9f31",
+       "entity": "project",
+       "entityId": "36c654ec-8dab-4013-9057-65452771ff62",
+       "field": "position",
+       "value": 1,
+       "ts": 1793670760297,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc",
+       "seq": 3,
+       "actor": "49ba0726-e072-43a1-a6d7-79c8e9c4f714"
+      },
+      {
+       "id": "59eabc01-dd9f-43ed-a871-6a6d25997b1f",
+       "entity": "project",
+       "entityId": "36c654ec-8dab-4013-9057-65452771ff62",
+       "field": "archived",
+       "value": false,
+       "ts": 1793670760297,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc",
+       "seq": 4,
+       "actor": "49ba0726-e072-43a1-a6d7-79c8e9c4f714"
+      },
+      {
+       "id": "c9c32d39-2392-497f-911e-49491ea6bf9f",
+       "entity": "project",
+       "entityId": "36c654ec-8dab-4013-9057-65452771ff62",
+       "field": "parent_id",
+       "value": null,
+       "ts": 1793670760297,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc",
+       "seq": 5,
+       "actor": "49ba0726-e072-43a1-a6d7-79c8e9c4f714"
+      },
+      {
+       "id": "9b2455f1-ebbf-45e0-880b-4b4891c80a77",
+       "entity": "project",
+       "entityId": "36c654ec-8dab-4013-9057-65452771ff62",
+       "field": "created_at",
+       "value": 1793670760284,
+       "ts": 1793670760297,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc",
+       "seq": 6,
+       "actor": "49ba0726-e072-43a1-a6d7-79c8e9c4f714"
+      },
+      {
+       "id": "139bdcfe-b847-4647-9ac5-872104c42696",
+       "entity": "project",
+       "entityId": "36c654ec-8dab-4013-9057-65452771ff62",
+       "field": "deleted_at",
+       "value": null,
+       "ts": 1793670760297,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc",
+       "seq": 7,
+       "actor": "49ba0726-e072-43a1-a6d7-79c8e9c4f714"
+      },
+      {
+       "id": "559ac05d-8e53-40d3-8bc1-a14c5937e215",
+       "entity": "task",
+       "entityId": "e60f2e69-c27a-41c6-b9e1-00b57620cdaa",
+       "field": "title",
+       "value": "Write the contract test",
+       "ts": 1793670760303,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc",
+       "seq": 8,
+       "actor": "49ba0726-e072-43a1-a6d7-79c8e9c4f714"
+      },
+      {
+       "id": "0f29106e-832f-4e87-9b62-bb8f630bc6b2",
+       "entity": "task",
+       "entityId": "e60f2e69-c27a-41c6-b9e1-00b57620cdaa",
+       "field": "description",
+       "value": "",
+       "ts": 1793670760303,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc",
+       "seq": 9,
+       "actor": "49ba0726-e072-43a1-a6d7-79c8e9c4f714"
+      },
+      {
+       "id": "213a4256-9b0e-4e70-b944-e79256f4b0f6",
+       "entity": "task",
+       "entityId": "e60f2e69-c27a-41c6-b9e1-00b57620cdaa",
+       "field": "project_id",
+       "value": "36c654ec-8dab-4013-9057-65452771ff62",
+       "ts": 1793670760303,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc",
+       "seq": 10,
+       "actor": "49ba0726-e072-43a1-a6d7-79c8e9c4f714"
+      },
+      {
+       "id": "480587be-c80e-46cf-aefa-b04ad164716f",
+       "entity": "task",
+       "entityId": "e60f2e69-c27a-41c6-b9e1-00b57620cdaa",
+       "field": "parent_id",
+       "value": null,
+       "ts": 1793670760303,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc",
+       "seq": 11,
+       "actor": "49ba0726-e072-43a1-a6d7-79c8e9c4f714"
+      },
+      {
+       "id": "94523510-ecca-4286-8599-95fc5e8a913b",
+       "entity": "task",
+       "entityId": "e60f2e69-c27a-41c6-b9e1-00b57620cdaa",
+       "field": "priority",
+       "value": 2,
+       "ts": 1793670760303,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc",
+       "seq": 12,
+       "actor": "49ba0726-e072-43a1-a6d7-79c8e9c4f714"
+      },
+      {
+       "id": "67d81b89-f778-439f-a251-8c1d74f6b062",
+       "entity": "task",
+       "entityId": "e60f2e69-c27a-41c6-b9e1-00b57620cdaa",
+       "field": "due",
+       "value": {
+        "date": "2026-11-02",
+        "time": "09:30"
+       },
+       "ts": 1793670760303,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc",
+       "seq": 13,
+       "actor": "49ba0726-e072-43a1-a6d7-79c8e9c4f714"
+      },
+      {
+       "id": "bfb5d5f3-0929-4a8f-bfb0-3b27ad5c293a",
+       "entity": "task",
+       "entityId": "e60f2e69-c27a-41c6-b9e1-00b57620cdaa",
+       "field": "labels",
+       "value": [],
+       "ts": 1793670760303,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc",
+       "seq": 14,
+       "actor": "49ba0726-e072-43a1-a6d7-79c8e9c4f714"
+      },
+      {
+       "id": "801d6d96-ccce-4416-be33-9c3387df9195",
+       "entity": "task",
+       "entityId": "e60f2e69-c27a-41c6-b9e1-00b57620cdaa",
+       "field": "position",
+       "value": 1,
+       "ts": 1793670760303,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc",
+       "seq": 15,
+       "actor": "49ba0726-e072-43a1-a6d7-79c8e9c4f714"
+      },
+      {
+       "id": "ecb0869c-4a4f-47f4-9517-9f7e562dc126",
+       "entity": "task",
+       "entityId": "e60f2e69-c27a-41c6-b9e1-00b57620cdaa",
+       "field": "created_at",
+       "value": 1793670760303,
+       "ts": 1793670760303,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc",
+       "seq": 16,
+       "actor": "49ba0726-e072-43a1-a6d7-79c8e9c4f714"
+      },
+      {
+       "id": "1c82fc46-f1b3-4d83-a09b-6fe2ff270b82",
+       "entity": "task",
+       "entityId": "e60f2e69-c27a-41c6-b9e1-00b57620cdaa",
+       "field": "completed_at",
+       "value": null,
+       "ts": 1793670760303,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc",
+       "seq": 17,
+       "actor": "49ba0726-e072-43a1-a6d7-79c8e9c4f714"
+      },
+      {
+       "id": "883eead5-2a80-40ea-ae7c-87ae14797fd0",
+       "entity": "task",
+       "entityId": "e60f2e69-c27a-41c6-b9e1-00b57620cdaa",
+       "field": "deleted_at",
+       "value": null,
+       "ts": 1793670760303,
+       "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc",
+       "seq": 18,
+       "actor": "49ba0726-e072-43a1-a6d7-79c8e9c4f714"
+      }
+     ],
+     "purged": [],
+     "rejected": [],
+     "serverTime": 1793670760384,
+     "trashRetentionDays": 30,
+     "workspaces": [
+      {
+       "id": "a08851d5-170c-89fc-b0dd-68fd9f460e9a",
+       "name": "Personal",
+       "icon": "",
+       "color": "",
+       "default": true,
+       "role": "owner",
+       "ownerId": "49ba0726-e072-43a1-a6d7-79c8e9c4f714",
+       "members": [
+        {
+         "userId": "49ba0726-e072-43a1-a6d7-79c8e9c4f714",
+         "name": "Contract",
+         "role": "owner"
+        }
+       ],
+       "groups": []
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/task-pages",
+    "auth": "session:3"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "pages": []
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/notifications",
+    "auth": "session:3"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "notifications": [],
+     "unread": 0
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/sync",
+    "auth": "session:3",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "device": "39a00a3f-37de-4061-89cf-68bb0356ab0a",
+     "cursor": 18,
+     "ops": [
+      {
+       "id": "b9008db3-d422-4bf1-aa7f-317786204d4d",
+       "entity": "task",
+       "entityId": "e60f2e69-c27a-41c6-b9e1-00b57620cdaa",
+       "field": "title",
+       "value": "Write the contract tests",
+       "ts": 1793670760405,
+       "device": "39a00a3f-37de-4061-89cf-68bb0356ab0a"
+      },
+      {
+       "id": "b43bfb1a-610a-4ccd-b4d0-2a456532bac8",
+       "entity": "task",
+       "entityId": "e60f2e69-c27a-41c6-b9e1-00b57620cdaa",
+       "field": "completed_at",
+       "value": 1800000000000,
+       "ts": 1793670760405,
+       "device": "39a00a3f-37de-4061-89cf-68bb0356ab0a"
+      },
+      {
+       "id": "98ffd499-93b9-4a28-865c-61a7e20ce791",
+       "entity": "task",
+       "entityId": "e60f2e69-c27a-41c6-b9e1-00b57620cdaa",
+       "field": "completed_by",
+       "value": null,
+       "ts": 1793670760405,
+       "device": "39a00a3f-37de-4061-89cf-68bb0356ab0a"
+      }
+     ],
+     "tzOffset": 0,
+     "features": [
+      "clock_skew",
+      "backfill_ack"
+     ]
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "applied": 3,
+     "cursor": 21,
+     "duplicates": 0,
+     "generation": "3a8237bd4211042d45ad53c06ae6e83a",
+     "hasMore": false,
+     "memberships": [],
+     "ops": [],
+     "purged": [],
+     "rejected": [],
+     "serverTime": 1793670760412,
+     "trashRetentionDays": 30,
+     "workspaces": [
+      {
+       "id": "a08851d5-170c-89fc-b0dd-68fd9f460e9a",
+       "name": "Personal",
+       "icon": "",
+       "color": "",
+       "default": true,
+       "role": "owner",
+       "ownerId": "49ba0726-e072-43a1-a6d7-79c8e9c4f714",
+       "members": [
+        {
+         "userId": "49ba0726-e072-43a1-a6d7-79c8e9c4f714",
+         "name": "Contract",
+         "role": "owner"
+        }
+       ],
+       "groups": []
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/sync",
+    "auth": "session:2",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "device": "985d5ec4-1146-410b-b39f-c6fcafaac3cc",
+     "cursor": 18,
+     "ops": [],
+     "tzOffset": 0,
+     "features": [
+      "clock_skew",
+      "backfill_ack"
+     ]
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "applied": 0,
+     "cursor": 21,
+     "duplicates": 0,
+     "generation": "3a8237bd4211042d45ad53c06ae6e83a",
+     "hasMore": false,
+     "memberships": [],
+     "ops": [
+      {
+       "id": "b9008db3-d422-4bf1-aa7f-317786204d4d",
+       "entity": "task",
+       "entityId": "e60f2e69-c27a-41c6-b9e1-00b57620cdaa",
+       "field": "title",
+       "value": "Write the contract tests",
+       "ts": 1793670760405,
+       "device": "39a00a3f-37de-4061-89cf-68bb0356ab0a",
+       "seq": 19,
+       "actor": "49ba0726-e072-43a1-a6d7-79c8e9c4f714"
+      },
+      {
+       "id": "b43bfb1a-610a-4ccd-b4d0-2a456532bac8",
+       "entity": "task",
+       "entityId": "e60f2e69-c27a-41c6-b9e1-00b57620cdaa",
+       "field": "completed_at",
+       "value": 1800000000000,
+       "ts": 1793670760405,
+       "device": "39a00a3f-37de-4061-89cf-68bb0356ab0a",
+       "seq": 20,
+       "actor": "49ba0726-e072-43a1-a6d7-79c8e9c4f714"
+      },
+      {
+       "id": "98ffd499-93b9-4a28-865c-61a7e20ce791",
+       "entity": "task",
+       "entityId": "e60f2e69-c27a-41c6-b9e1-00b57620cdaa",
+       "field": "completed_by",
+       "value": null,
+       "ts": 1793670760405,
+       "device": "39a00a3f-37de-4061-89cf-68bb0356ab0a",
+       "seq": 21,
+       "actor": "49ba0726-e072-43a1-a6d7-79c8e9c4f714"
+      }
+     ],
+     "purged": [],
+     "rejected": [],
+     "serverTime": 1793670760435,
+     "trashRetentionDays": 30,
+     "workspaces": [
+      {
+       "id": "a08851d5-170c-89fc-b0dd-68fd9f460e9a",
+       "name": "Personal",
+       "icon": "",
+       "color": "",
+       "default": true,
+       "role": "owner",
+       "ownerId": "49ba0726-e072-43a1-a6d7-79c8e9c4f714",
+       "members": [
+        {
+         "userId": "49ba0726-e072-43a1-a6d7-79c8e9c4f714",
+         "name": "Contract",
+         "role": "owner"
+        }
+       ],
+       "groups": []
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/notifications",
+    "auth": "session:2"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "notifications": [],
+     "unread": 0
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/export",
+    "auth": "session:2",
+    "headers": {
+     "content-type": "application/json"
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "attachments": [],
+     "comments": [],
+     "encryption": null,
+     "exportedAt": "2026-11-03T01:52:40Z",
+     "fields": [],
+     "format": "opentodo-export",
+     "frames": [],
+     "labels": [],
+     "notes": [],
+     "objectives": [],
+     "places": [],
+     "project_prefs": [],
+     "projects": [
+      {
+       "aisles": false,
+       "archived": false,
+       "color": "#3b82f6",
+       "created_at": 1793670760284,
+       "deleted_at": null,
+       "flow_mode": "",
+       "id": "36c654ec-8dab-4013-9057-65452771ff62",
+       "name": "Contract",
+       "parent_id": null,
+       "position": 1,
+       "reusable": false,
+       "status": "active"
+      }
+     ],
+     "reminders": [],
+     "review": [],
+     "rules": [],
+     "sections": [],
+     "slots": [],
+     "tasks": [
+      {
+       "appends": [],
+       "completed_at": 1800000000000,
+       "completed_by": null,
+       "created_at": 1793670760303,
+       "deleted_at": null,
+       "description": "",
+       "due": {
+        "date": "2026-11-02",
+        "time": "09:30"
+       },
+       "energy": null,
+       "fields": {},
+       "id": "e60f2e69-c27a-41c6-b9e1-00b57620cdaa",
+       "labels": [],
+       "origin": null,
+       "parent_id": null,
+       "position": 1,
+       "priority": 2,
+       "project_id": "36c654ec-8dab-4013-9057-65452771ff62",
+       "rotation": [],
+       "sector": null,
+       "title": "Write the contract tests"
+      }
+     ],
+     "themes": [],
+     "time_entries": [],
+     "userId": "49ba0726-e072-43a1-a6d7-79c8e9c4f714",
+     "user_prefs": [],
+     "version": 1,
+     "views": [],
+     "workspaces": [
+      {
+       "color": "",
+       "default": true,
+       "icon": "",
+       "id": "a08851d5-170c-89fc-b0dd-68fd9f460e9a",
+       "name": "Personal",
+       "role": "owner"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/auth/register",
+    "auth": "none",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "email": "contract-1793670760453-2@example.com",
+     "name": "Contract",
+     "password": "<password>"
+    }
+   },
+   "response": {
+    "status": 201,
+    "session": "session:4",
+    "body": {
+     "user": {
+      "id": "8f36fd79-55ef-405b-b44e-21cbc6c5986e",
+      "email": "contract-1793670760453-2@example.com",
+      "name": "Contract",
+      "role": "member",
+      "createdAt": 1793670760477
+     }
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/auth/login",
+    "auth": "none",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "email": "contract-1793670760453-2@example.com",
+     "password": "<password>"
+    }
+   },
+   "response": {
+    "status": 200,
+    "session": "session:5",
+    "body": {
+     "user": {
+      "id": "8f36fd79-55ef-405b-b44e-21cbc6c5986e",
+      "email": "contract-1793670760453-2@example.com",
+      "name": "Contract",
+      "role": "member",
+      "createdAt": 1793670760477
+     }
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/auth/login",
+    "auth": "none",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "email": "contract-1793670760453-2@example.com",
+     "password": "<password>"
+    }
+   },
+   "response": {
+    "status": 200,
+    "session": "session:6",
+    "body": {
+     "user": {
+      "id": "8f36fd79-55ef-405b-b44e-21cbc6c5986e",
+      "email": "contract-1793670760453-2@example.com",
+      "name": "Contract",
+      "role": "member",
+      "createdAt": 1793670760477
+     }
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/sync",
+    "auth": "session:5",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "device": "c7702f87-11ec-4a49-b6b4-e721c14a92b5",
+     "cursor": 0,
+     "ops": [
+      {
+       "id": "1b574664-eaad-4729-9ac1-b023d5522098",
+       "entity": "task",
+       "entityId": "398f6e0b-cefd-4d9f-a88c-f429307ceb1a",
+       "field": "title",
+       "value": "Original",
+       "ts": 1793670760565,
+       "device": "c7702f87-11ec-4a49-b6b4-e721c14a92b5"
+      },
+      {
+       "id": "3e96259f-f440-406d-9e54-0e66e82c56c0",
+       "entity": "task",
+       "entityId": "398f6e0b-cefd-4d9f-a88c-f429307ceb1a",
+       "field": "description",
+       "value": "",
+       "ts": 1793670760565,
+       "device": "c7702f87-11ec-4a49-b6b4-e721c14a92b5"
+      },
+      {
+       "id": "4a66c5d2-fe7b-4185-b5cc-a5bf3e292a24",
+       "entity": "task",
+       "entityId": "398f6e0b-cefd-4d9f-a88c-f429307ceb1a",
+       "field": "project_id",
+       "value": null,
+       "ts": 1793670760565,
+       "device": "c7702f87-11ec-4a49-b6b4-e721c14a92b5"
+      },
+      {
+       "id": "08ad5944-41d2-42f0-8be5-01cdf9561277",
+       "entity": "task",
+       "entityId": "398f6e0b-cefd-4d9f-a88c-f429307ceb1a",
+       "field": "parent_id",
+       "value": null,
+       "ts": 1793670760565,
+       "device": "c7702f87-11ec-4a49-b6b4-e721c14a92b5"
+      },
+      {
+       "id": "ce934619-da86-4505-953a-66224da8d47d",
+       "entity": "task",
+       "entityId": "398f6e0b-cefd-4d9f-a88c-f429307ceb1a",
+       "field": "priority",
+       "value": 4,
+       "ts": 1793670760565,
+       "device": "c7702f87-11ec-4a49-b6b4-e721c14a92b5"
+      },
+      {
+       "id": "e9d29a8d-a969-42ee-88b5-42a6e4441018",
+       "entity": "task",
+       "entityId": "398f6e0b-cefd-4d9f-a88c-f429307ceb1a",
+       "field": "due",
+       "value": null,
+       "ts": 1793670760565,
+       "device": "c7702f87-11ec-4a49-b6b4-e721c14a92b5"
+      },
+      {
+       "id": "6fd26cf7-3918-4836-a19f-3e1bc41abfd1",
+       "entity": "task",
+       "entityId": "398f6e0b-cefd-4d9f-a88c-f429307ceb1a",
+       "field": "labels",
+       "value": [],
+       "ts": 1793670760565,
+       "device": "c7702f87-11ec-4a49-b6b4-e721c14a92b5"
+      },
+      {
+       "id": "193be820-0a71-474a-8157-7238d7ab2b3c",
+       "entity": "task",
+       "entityId": "398f6e0b-cefd-4d9f-a88c-f429307ceb1a",
+       "field": "position",
+       "value": 1,
+       "ts": 1793670760565,
+       "device": "c7702f87-11ec-4a49-b6b4-e721c14a92b5"
+      },
+      {
+       "id": "9592a79b-9e80-43de-bd4e-900c8acd479e",
+       "entity": "task",
+       "entityId": "398f6e0b-cefd-4d9f-a88c-f429307ceb1a",
+       "field": "created_at",
+       "value": 1793670760562,
+       "ts": 1793670760565,
+       "device": "c7702f87-11ec-4a49-b6b4-e721c14a92b5"
+      },
+      {
+       "id": "eaaa2829-c66d-47e0-a4f1-09c7f46bbd42",
+       "entity": "task",
+       "entityId": "398f6e0b-cefd-4d9f-a88c-f429307ceb1a",
+       "field": "completed_at",
+       "value": null,
+       "ts": 1793670760565,
+       "device": "c7702f87-11ec-4a49-b6b4-e721c14a92b5"
+      },
+      {
+       "id": "9a15e882-e4e0-4d18-9380-dcdeea7f42e0",
+       "entity": "task",
+       "entityId": "398f6e0b-cefd-4d9f-a88c-f429307ceb1a",
+       "field": "deleted_at",
+       "value": null,
+       "ts": 1793670760565,
+       "device": "c7702f87-11ec-4a49-b6b4-e721c14a92b5"
+      }
+     ],
+     "tzOffset": 0,
+     "features": [
+      "clock_skew",
+      "backfill_ack"
+     ]
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "applied": 11,
+     "cursor": 32,
+     "duplicates": 0,
+     "generation": "3a8237bd4211042d45ad53c06ae6e83a",
+     "hasMore": false,
+     "memberships": [],
+     "ops": [],
+     "purged": [],
+     "rejected": [],
+     "serverTime": 1793670760571,
+     "trashRetentionDays": 30,
+     "workspaces": [
+      {
+       "id": "f93f51af-c638-819f-9d49-f372a66baecb",
+       "name": "Personal",
+       "icon": "",
+       "color": "",
+       "default": true,
+       "role": "owner",
+       "ownerId": "8f36fd79-55ef-405b-b44e-21cbc6c5986e",
+       "members": [
+        {
+         "userId": "8f36fd79-55ef-405b-b44e-21cbc6c5986e",
+         "name": "Contract",
+         "role": "owner"
+        }
+       ],
+       "groups": []
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/sync",
+    "auth": "session:6",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "device": "ca886e84-8999-4b67-b528-0e028f219dfb",
+     "cursor": 0,
+     "ops": [],
+     "tzOffset": 0,
+     "features": [
+      "clock_skew",
+      "backfill_ack"
+     ]
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "applied": 0,
+     "cursor": 32,
+     "duplicates": 0,
+     "generation": "3a8237bd4211042d45ad53c06ae6e83a",
+     "hasMore": false,
+     "memberships": [],
+     "ops": [
+      {
+       "id": "1b574664-eaad-4729-9ac1-b023d5522098",
+       "entity": "task",
+       "entityId": "398f6e0b-cefd-4d9f-a88c-f429307ceb1a",
+       "field": "title",
+       "value": "Original",
+       "ts": 1793670760565,
+       "device": "c7702f87-11ec-4a49-b6b4-e721c14a92b5",
+       "seq": 22,
+       "actor": "8f36fd79-55ef-405b-b44e-21cbc6c5986e"
+      },
+      {
+       "id": "3e96259f-f440-406d-9e54-0e66e82c56c0",
+       "entity": "task",
+       "entityId": "398f6e0b-cefd-4d9f-a88c-f429307ceb1a",
+       "field": "description",
+       "value": "",
+       "ts": 1793670760565,
+       "device": "c7702f87-11ec-4a49-b6b4-e721c14a92b5",
+       "seq": 23,
+       "actor": "8f36fd79-55ef-405b-b44e-21cbc6c5986e"
+      },
+      {
+       "id": "4a66c5d2-fe7b-4185-b5cc-a5bf3e292a24",
+       "entity": "task",
+       "entityId": "398f6e0b-cefd-4d9f-a88c-f429307ceb1a",
+       "field": "project_id",
+       "value": null,
+       "ts": 1793670760565,
+       "device": "c7702f87-11ec-4a49-b6b4-e721c14a92b5",
+       "seq": 24,
+       "actor": "8f36fd79-55ef-405b-b44e-21cbc6c5986e"
+      },
+      {
+       "id": "08ad5944-41d2-42f0-8be5-01cdf9561277",
+       "entity": "task",
+       "entityId": "398f6e0b-cefd-4d9f-a88c-f429307ceb1a",
+       "field": "parent_id",
+       "value": null,
+       "ts": 1793670760565,
+       "device": "c7702f87-11ec-4a49-b6b4-e721c14a92b5",
+       "seq": 25,
+       "actor": "8f36fd79-55ef-405b-b44e-21cbc6c5986e"
+      },
+      {
+       "id": "ce934619-da86-4505-953a-66224da8d47d",
+       "entity": "task",
+       "entityId": "398f6e0b-cefd-4d9f-a88c-f429307ceb1a",
+       "field": "priority",
+       "value": 4,
+       "ts": 1793670760565,
+       "device": "c7702f87-11ec-4a49-b6b4-e721c14a92b5",
+       "seq": 26,
+       "actor": "8f36fd79-55ef-405b-b44e-21cbc6c5986e"
+      },
+      {
+       "id": "e9d29a8d-a969-42ee-88b5-42a6e4441018",
+       "entity": "task",
+       "entityId": "398f6e0b-cefd-4d9f-a88c-f429307ceb1a",
+       "field": "due",
+       "value": null,
+       "ts": 1793670760565,
+       "device": "c7702f87-11ec-4a49-b6b4-e721c14a92b5",
+       "seq": 27,
+       "actor": "8f36fd79-55ef-405b-b44e-21cbc6c5986e"
+      },
+      {
+       "id": "6fd26cf7-3918-4836-a19f-3e1bc41abfd1",
+       "entity": "task",
+       "entityId": "398f6e0b-cefd-4d9f-a88c-f429307ceb1a",
+       "field": "labels",
+       "value": [],
+       "ts": 1793670760565,
+       "device": "c7702f87-11ec-4a49-b6b4-e721c14a92b5",
+       "seq": 28,
+       "actor": "8f36fd79-55ef-405b-b44e-21cbc6c5986e"
+      },
+      {
+       "id": "193be820-0a71-474a-8157-7238d7ab2b3c",
+       "entity": "task",
+       "entityId": "398f6e0b-cefd-4d9f-a88c-f429307ceb1a",
+       "field": "position",
+       "value": 1,
+       "ts": 1793670760565,
+       "device": "c7702f87-11ec-4a49-b6b4-e721c14a92b5",
+       "seq": 29,
+       "actor": "8f36fd79-55ef-405b-b44e-21cbc6c5986e"
+      },
+      {
+       "id": "9592a79b-9e80-43de-bd4e-900c8acd479e",
+       "entity": "task",
+       "entityId": "398f6e0b-cefd-4d9f-a88c-f429307ceb1a",
+       "field": "created_at",
+       "value": 1793670760562,
+       "ts": 1793670760565,
+       "device": "c7702f87-11ec-4a49-b6b4-e721c14a92b5",
+       "seq": 30,
+       "actor": "8f36fd79-55ef-405b-b44e-21cbc6c5986e"
+      },
+      {
+       "id": "eaaa2829-c66d-47e0-a4f1-09c7f46bbd42",
+       "entity": "task",
+       "entityId": "398f6e0b-cefd-4d9f-a88c-f429307ceb1a",
+       "field": "completed_at",
+       "value": null,
+       "ts": 1793670760565,
+       "device": "c7702f87-11ec-4a49-b6b4-e721c14a92b5",
+       "seq": 31,
+       "actor": "8f36fd79-55ef-405b-b44e-21cbc6c5986e"
+      },
+      {
+       "id": "9a15e882-e4e0-4d18-9380-dcdeea7f42e0",
+       "entity": "task",
+       "entityId": "398f6e0b-cefd-4d9f-a88c-f429307ceb1a",
+       "field": "deleted_at",
+       "value": null,
+       "ts": 1793670760565,
+       "device": "c7702f87-11ec-4a49-b6b4-e721c14a92b5",
+       "seq": 32,
+       "actor": "8f36fd79-55ef-405b-b44e-21cbc6c5986e"
+      }
+     ],
+     "purged": [],
+     "rejected": [],
+     "serverTime": 1793670760598,
+     "trashRetentionDays": 30,
+     "workspaces": [
+      {
+       "id": "f93f51af-c638-819f-9d49-f372a66baecb",
+       "name": "Personal",
+       "icon": "",
+       "color": "",
+       "default": true,
+       "role": "owner",
+       "ownerId": "8f36fd79-55ef-405b-b44e-21cbc6c5986e",
+       "members": [
+        {
+         "userId": "8f36fd79-55ef-405b-b44e-21cbc6c5986e",
+         "name": "Contract",
+         "role": "owner"
+        }
+       ],
+       "groups": []
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/notifications",
+    "auth": "session:6"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "notifications": [],
+     "unread": 0
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/sync",
+    "auth": "session:6",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "device": "ca886e84-8999-4b67-b528-0e028f219dfb",
+     "cursor": 32,
+     "ops": [
+      {
+       "id": "af562cd2-7c07-4d49-a6f3-b1df46e2e951",
+       "entity": "task",
+       "entityId": "398f6e0b-cefd-4d9f-a88c-f429307ceb1a",
+       "field": "title",
+       "value": "From B, later",
+       "ts": 1793670760639,
+       "device": "ca886e84-8999-4b67-b528-0e028f219dfb"
+      }
+     ],
+     "tzOffset": 0,
+     "features": [
+      "clock_skew",
+      "backfill_ack"
+     ]
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "applied": 1,
+     "cursor": 33,
+     "duplicates": 0,
+     "generation": "3a8237bd4211042d45ad53c06ae6e83a",
+     "hasMore": false,
+     "memberships": [],
+     "ops": [],
+     "purged": [],
+     "rejected": [],
+     "serverTime": 1793670760658,
+     "trashRetentionDays": 30,
+     "workspaces": [
+      {
+       "id": "f93f51af-c638-819f-9d49-f372a66baecb",
+       "name": "Personal",
+       "icon": "",
+       "color": "",
+       "default": true,
+       "role": "owner",
+       "ownerId": "8f36fd79-55ef-405b-b44e-21cbc6c5986e",
+       "members": [
+        {
+         "userId": "8f36fd79-55ef-405b-b44e-21cbc6c5986e",
+         "name": "Contract",
+         "role": "owner"
+        }
+       ],
+       "groups": []
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/sync",
+    "auth": "session:5",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "device": "c7702f87-11ec-4a49-b6b4-e721c14a92b5",
+     "cursor": 32,
+     "ops": [
+      {
+       "id": "424fc165-198f-40f4-91ec-204e2fe6cbb6",
+       "entity": "task",
+       "entityId": "398f6e0b-cefd-4d9f-a88c-f429307ceb1a",
+       "field": "title",
+       "value": "From A",
+       "ts": 1793670760623,
+       "device": "c7702f87-11ec-4a49-b6b4-e721c14a92b5"
+      }
+     ],
+     "tzOffset": 0,
+     "features": [
+      "clock_skew",
+      "backfill_ack"
+     ]
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "applied": 1,
+     "cursor": 34,
+     "duplicates": 0,
+     "generation": "3a8237bd4211042d45ad53c06ae6e83a",
+     "hasMore": false,
+     "memberships": [],
+     "ops": [
+      {
+       "id": "af562cd2-7c07-4d49-a6f3-b1df46e2e951",
+       "entity": "task",
+       "entityId": "398f6e0b-cefd-4d9f-a88c-f429307ceb1a",
+       "field": "title",
+       "value": "From B, later",
+       "ts": 1793670760639,
+       "device": "ca886e84-8999-4b67-b528-0e028f219dfb",
+       "seq": 33,
+       "actor": "8f36fd79-55ef-405b-b44e-21cbc6c5986e"
+      }
+     ],
+     "purged": [],
+     "rejected": [],
+     "serverTime": 1793670760682,
+     "trashRetentionDays": 30,
+     "workspaces": [
+      {
+       "id": "f93f51af-c638-819f-9d49-f372a66baecb",
+       "name": "Personal",
+       "icon": "",
+       "color": "",
+       "default": true,
+       "role": "owner",
+       "ownerId": "8f36fd79-55ef-405b-b44e-21cbc6c5986e",
+       "members": [
+        {
+         "userId": "8f36fd79-55ef-405b-b44e-21cbc6c5986e",
+         "name": "Contract",
+         "role": "owner"
+        }
+       ],
+       "groups": []
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/notifications",
+    "auth": "session:5"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "notifications": [],
+     "unread": 0
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/sync",
+    "auth": "session:6",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "device": "ca886e84-8999-4b67-b528-0e028f219dfb",
+     "cursor": 33,
+     "ops": [],
+     "tzOffset": 0,
+     "features": [
+      "clock_skew",
+      "backfill_ack"
+     ]
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "applied": 0,
+     "cursor": 34,
+     "duplicates": 0,
+     "generation": "3a8237bd4211042d45ad53c06ae6e83a",
+     "hasMore": false,
+     "memberships": [],
+     "ops": [
+      {
+       "id": "424fc165-198f-40f4-91ec-204e2fe6cbb6",
+       "entity": "task",
+       "entityId": "398f6e0b-cefd-4d9f-a88c-f429307ceb1a",
+       "field": "title",
+       "value": "From A",
+       "ts": 1793670760623,
+       "device": "c7702f87-11ec-4a49-b6b4-e721c14a92b5",
+       "seq": 34,
+       "actor": "8f36fd79-55ef-405b-b44e-21cbc6c5986e"
+      }
+     ],
+     "purged": [],
+     "rejected": [],
+     "serverTime": 1793670760715,
+     "trashRetentionDays": 30,
+     "workspaces": [
+      {
+       "id": "f93f51af-c638-819f-9d49-f372a66baecb",
+       "name": "Personal",
+       "icon": "",
+       "color": "",
+       "default": true,
+       "role": "owner",
+       "ownerId": "8f36fd79-55ef-405b-b44e-21cbc6c5986e",
+       "members": [
+        {
+         "userId": "8f36fd79-55ef-405b-b44e-21cbc6c5986e",
+         "name": "Contract",
+         "role": "owner"
+        }
+       ],
+       "groups": []
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/notifications",
+    "auth": "session:6"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "notifications": [],
+     "unread": 0
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/export",
+    "auth": "session:5",
+    "headers": {
+     "content-type": "application/json"
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "attachments": [],
+     "comments": [],
+     "encryption": null,
+     "exportedAt": "2026-11-03T01:52:40Z",
+     "fields": [],
+     "format": "opentodo-export",
+     "frames": [],
+     "labels": [],
+     "notes": [],
+     "objectives": [],
+     "places": [],
+     "project_prefs": [],
+     "projects": [],
+     "reminders": [],
+     "review": [],
+     "rules": [],
+     "sections": [],
+     "slots": [],
+     "tasks": [
+      {
+       "appends": [],
+       "completed_at": null,
+       "created_at": 1793670760562,
+       "deleted_at": null,
+       "description": "",
+       "due": null,
+       "energy": null,
+       "fields": {},
+       "id": "398f6e0b-cefd-4d9f-a88c-f429307ceb1a",
+       "labels": [],
+       "origin": null,
+       "parent_id": null,
+       "position": 1,
+       "priority": 4,
+       "project_id": null,
+       "rotation": [],
+       "sector": null,
+       "title": "From B, later"
+      }
+     ],
+     "themes": [],
+     "time_entries": [],
+     "userId": "8f36fd79-55ef-405b-b44e-21cbc6c5986e",
+     "user_prefs": [],
+     "version": 1,
+     "views": [],
+     "workspaces": [
+      {
+       "color": "",
+       "default": true,
+       "icon": "",
+       "id": "f93f51af-c638-819f-9d49-f372a66baecb",
+       "name": "Personal",
+       "role": "owner"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/auth/register",
+    "auth": "none",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "email": "contract-1793670760758-3@example.com",
+     "name": "Contract",
+     "password": "<password>"
+    }
+   },
+   "response": {
+    "status": 201,
+    "session": "session:7",
+    "body": {
+     "user": {
+      "id": "64ddc96f-bb59-4aa6-8926-8fb5ede4d691",
+      "email": "contract-1793670760758-3@example.com",
+      "name": "Contract",
+      "role": "member",
+      "createdAt": 1793670760779
+     }
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/auth/login",
+    "auth": "none",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "email": "contract-1793670760758-3@example.com",
+     "password": "<password>"
+    }
+   },
+   "response": {
+    "status": 200,
+    "session": "session:8",
+    "body": {
+     "user": {
+      "id": "64ddc96f-bb59-4aa6-8926-8fb5ede4d691",
+      "email": "contract-1793670760758-3@example.com",
+      "name": "Contract",
+      "role": "member",
+      "createdAt": 1793670760779
+     }
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/sync",
+    "auth": "session:8",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "device": "651a97e3-e11d-4459-a417-d054aedd0406",
+     "cursor": 0,
+     "ops": [
+      {
+       "id": "ef08c955-46f9-442c-b5c9-39a188834206",
+       "entity": "task",
+       "entityId": "d6ab00b3-7aa6-460a-8c50-300fe76eeefd",
+       "field": "title",
+       "value": "Stamped by a fast clock",
+       "ts": 1793674360841,
+       "device": "651a97e3-e11d-4459-a417-d054aedd0406"
+      },
+      {
+       "id": "f08d677d-a784-42e1-a5fb-3738b20de84d",
+       "entity": "task",
+       "entityId": "d6ab00b3-7aa6-460a-8c50-300fe76eeefd",
+       "field": "description",
+       "value": "",
+       "ts": 1793674360841,
+       "device": "651a97e3-e11d-4459-a417-d054aedd0406"
+      },
+      {
+       "id": "29bde39f-9e81-4eb9-8258-13d00611e2d8",
+       "entity": "task",
+       "entityId": "d6ab00b3-7aa6-460a-8c50-300fe76eeefd",
+       "field": "project_id",
+       "value": null,
+       "ts": 1793674360841,
+       "device": "651a97e3-e11d-4459-a417-d054aedd0406"
+      },
+      {
+       "id": "8962946b-d2c4-4548-9248-fdc94f16cab0",
+       "entity": "task",
+       "entityId": "d6ab00b3-7aa6-460a-8c50-300fe76eeefd",
+       "field": "parent_id",
+       "value": null,
+       "ts": 1793674360841,
+       "device": "651a97e3-e11d-4459-a417-d054aedd0406"
+      },
+      {
+       "id": "a81bf65d-1dbe-4db2-bf9f-020fe89c33ce",
+       "entity": "task",
+       "entityId": "d6ab00b3-7aa6-460a-8c50-300fe76eeefd",
+       "field": "priority",
+       "value": 4,
+       "ts": 1793674360841,
+       "device": "651a97e3-e11d-4459-a417-d054aedd0406"
+      },
+      {
+       "id": "3b522d07-d329-445d-b4dc-ba03b73f98fb",
+       "entity": "task",
+       "entityId": "d6ab00b3-7aa6-460a-8c50-300fe76eeefd",
+       "field": "due",
+       "value": null,
+       "ts": 1793674360841,
+       "device": "651a97e3-e11d-4459-a417-d054aedd0406"
+      },
+      {
+       "id": "a7291594-3dd7-4096-af70-f00c13359342",
+       "entity": "task",
+       "entityId": "d6ab00b3-7aa6-460a-8c50-300fe76eeefd",
+       "field": "labels",
+       "value": [],
+       "ts": 1793674360841,
+       "device": "651a97e3-e11d-4459-a417-d054aedd0406"
+      },
+      {
+       "id": "f5aa62ab-c957-4bf1-a21b-fab66a376077",
+       "entity": "task",
+       "entityId": "d6ab00b3-7aa6-460a-8c50-300fe76eeefd",
+       "field": "position",
+       "value": 1,
+       "ts": 1793674360841,
+       "device": "651a97e3-e11d-4459-a417-d054aedd0406"
+      },
+      {
+       "id": "ffc38cb0-4557-4383-b264-7910facee81a",
+       "entity": "task",
+       "entityId": "d6ab00b3-7aa6-460a-8c50-300fe76eeefd",
+       "field": "created_at",
+       "value": 1793670760840,
+       "ts": 1793674360841,
+       "device": "651a97e3-e11d-4459-a417-d054aedd0406"
+      },
+      {
+       "id": "d2ca1fb1-a42e-42a6-8adc-343d10b32df2",
+       "entity": "task",
+       "entityId": "d6ab00b3-7aa6-460a-8c50-300fe76eeefd",
+       "field": "completed_at",
+       "value": null,
+       "ts": 1793674360841,
+       "device": "651a97e3-e11d-4459-a417-d054aedd0406"
+      },
+      {
+       "id": "a3d28e6b-8648-40ad-92af-4425f9a08004",
+       "entity": "task",
+       "entityId": "d6ab00b3-7aa6-460a-8c50-300fe76eeefd",
+       "field": "deleted_at",
+       "value": null,
+       "ts": 1793674360841,
+       "device": "651a97e3-e11d-4459-a417-d054aedd0406"
+      }
+     ],
+     "tzOffset": 0,
+     "features": [
+      "clock_skew",
+      "backfill_ack"
+     ]
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "applied": 0,
+     "cursor": 0,
+     "duplicates": 0,
+     "generation": "3a8237bd4211042d45ad53c06ae6e83a",
+     "hasMore": false,
+     "memberships": [],
+     "ops": [],
+     "purged": [],
+     "rejected": [
+      {
+       "id": "ef08c955-46f9-442c-b5c9-39a188834206",
+       "reason": "clock_skew",
+       "serverTime": 1793670760855
+      },
+      {
+       "id": "f08d677d-a784-42e1-a5fb-3738b20de84d",
+       "reason": "clock_skew",
+       "serverTime": 1793670760855
+      },
+      {
+       "id": "29bde39f-9e81-4eb9-8258-13d00611e2d8",
+       "reason": "clock_skew",
+       "serverTime": 1793670760855
+      },
+      {
+       "id": "8962946b-d2c4-4548-9248-fdc94f16cab0",
+       "reason": "clock_skew",
+       "serverTime": 1793670760855
+      },
+      {
+       "id": "a81bf65d-1dbe-4db2-bf9f-020fe89c33ce",
+       "reason": "clock_skew",
+       "serverTime": 1793670760855
+      },
+      {
+       "id": "3b522d07-d329-445d-b4dc-ba03b73f98fb",
+       "reason": "clock_skew",
+       "serverTime": 1793670760855
+      },
+      {
+       "id": "a7291594-3dd7-4096-af70-f00c13359342",
+       "reason": "clock_skew",
+       "serverTime": 1793670760855
+      },
+      {
+       "id": "f5aa62ab-c957-4bf1-a21b-fab66a376077",
+       "reason": "clock_skew",
+       "serverTime": 1793670760855
+      },
+      {
+       "id": "ffc38cb0-4557-4383-b264-7910facee81a",
+       "reason": "clock_skew",
+       "serverTime": 1793670760855
+      },
+      {
+       "id": "d2ca1fb1-a42e-42a6-8adc-343d10b32df2",
+       "reason": "clock_skew",
+       "serverTime": 1793670760855
+      },
+      {
+       "id": "a3d28e6b-8648-40ad-92af-4425f9a08004",
+       "reason": "clock_skew",
+       "serverTime": 1793670760855
+      }
+     ],
+     "serverTime": 1793670760857,
+     "trashRetentionDays": 30,
+     "workspaces": [
+      {
+       "id": "310593cb-4ad1-8bc2-9852-b6c561782e9b",
+       "name": "Personal",
+       "icon": "",
+       "color": "",
+       "default": true,
+       "role": "owner",
+       "ownerId": "64ddc96f-bb59-4aa6-8926-8fb5ede4d691",
+       "members": [
+        {
+         "userId": "64ddc96f-bb59-4aa6-8926-8fb5ede4d691",
+         "name": "Contract",
+         "role": "owner"
+        }
+       ],
+       "groups": []
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/sync",
+    "auth": "session:8",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "device": "651a97e3-e11d-4459-a417-d054aedd0406",
+     "cursor": 0,
+     "ops": [
+      {
+       "id": "ef08c955-46f9-442c-b5c9-39a188834206",
+       "entity": "task",
+       "entityId": "d6ab00b3-7aa6-460a-8c50-300fe76eeefd",
+       "field": "title",
+       "value": "Stamped by a fast clock",
+       "ts": 1793670760860,
+       "device": "651a97e3-e11d-4459-a417-d054aedd0406"
+      },
+      {
+       "id": "f08d677d-a784-42e1-a5fb-3738b20de84d",
+       "entity": "task",
+       "entityId": "d6ab00b3-7aa6-460a-8c50-300fe76eeefd",
+       "field": "description",
+       "value": "",
+       "ts": 1793670760860,
+       "device": "651a97e3-e11d-4459-a417-d054aedd0406"
+      },
+      {
+       "id": "29bde39f-9e81-4eb9-8258-13d00611e2d8",
+       "entity": "task",
+       "entityId": "d6ab00b3-7aa6-460a-8c50-300fe76eeefd",
+       "field": "project_id",
+       "value": null,
+       "ts": 1793670760860,
+       "device": "651a97e3-e11d-4459-a417-d054aedd0406"
+      },
+      {
+       "id": "8962946b-d2c4-4548-9248-fdc94f16cab0",
+       "entity": "task",
+       "entityId": "d6ab00b3-7aa6-460a-8c50-300fe76eeefd",
+       "field": "parent_id",
+       "value": null,
+       "ts": 1793670760860,
+       "device": "651a97e3-e11d-4459-a417-d054aedd0406"
+      },
+      {
+       "id": "a81bf65d-1dbe-4db2-bf9f-020fe89c33ce",
+       "entity": "task",
+       "entityId": "d6ab00b3-7aa6-460a-8c50-300fe76eeefd",
+       "field": "priority",
+       "value": 4,
+       "ts": 1793670760860,
+       "device": "651a97e3-e11d-4459-a417-d054aedd0406"
+      },
+      {
+       "id": "3b522d07-d329-445d-b4dc-ba03b73f98fb",
+       "entity": "task",
+       "entityId": "d6ab00b3-7aa6-460a-8c50-300fe76eeefd",
+       "field": "due",
+       "value": null,
+       "ts": 1793670760860,
+       "device": "651a97e3-e11d-4459-a417-d054aedd0406"
+      },
+      {
+       "id": "a7291594-3dd7-4096-af70-f00c13359342",
+       "entity": "task",
+       "entityId": "d6ab00b3-7aa6-460a-8c50-300fe76eeefd",
+       "field": "labels",
+       "value": [],
+       "ts": 1793670760860,
+       "device": "651a97e3-e11d-4459-a417-d054aedd0406"
+      },
+      {
+       "id": "f5aa62ab-c957-4bf1-a21b-fab66a376077",
+       "entity": "task",
+       "entityId": "d6ab00b3-7aa6-460a-8c50-300fe76eeefd",
+       "field": "position",
+       "value": 1,
+       "ts": 1793670760860,
+       "device": "651a97e3-e11d-4459-a417-d054aedd0406"
+      },
+      {
+       "id": "ffc38cb0-4557-4383-b264-7910facee81a",
+       "entity": "task",
+       "entityId": "d6ab00b3-7aa6-460a-8c50-300fe76eeefd",
+       "field": "created_at",
+       "value": 1793670760840,
+       "ts": 1793670760860,
+       "device": "651a97e3-e11d-4459-a417-d054aedd0406"
+      },
+      {
+       "id": "d2ca1fb1-a42e-42a6-8adc-343d10b32df2",
+       "entity": "task",
+       "entityId": "d6ab00b3-7aa6-460a-8c50-300fe76eeefd",
+       "field": "completed_at",
+       "value": null,
+       "ts": 1793670760860,
+       "device": "651a97e3-e11d-4459-a417-d054aedd0406"
+      },
+      {
+       "id": "a3d28e6b-8648-40ad-92af-4425f9a08004",
+       "entity": "task",
+       "entityId": "d6ab00b3-7aa6-460a-8c50-300fe76eeefd",
+       "field": "deleted_at",
+       "value": null,
+       "ts": 1793670760860,
+       "device": "651a97e3-e11d-4459-a417-d054aedd0406"
+      }
+     ],
+     "tzOffset": 0,
+     "features": [
+      "clock_skew",
+      "backfill_ack"
+     ]
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "applied": 11,
+     "cursor": 45,
+     "duplicates": 0,
+     "generation": "3a8237bd4211042d45ad53c06ae6e83a",
+     "hasMore": false,
+     "memberships": [],
+     "ops": [],
+     "purged": [],
+     "rejected": [],
+     "serverTime": 1793670760867,
+     "trashRetentionDays": 30,
+     "workspaces": [
+      {
+       "id": "310593cb-4ad1-8bc2-9852-b6c561782e9b",
+       "name": "Personal",
+       "icon": "",
+       "color": "",
+       "default": true,
+       "role": "owner",
+       "ownerId": "64ddc96f-bb59-4aa6-8926-8fb5ede4d691",
+       "members": [
+        {
+         "userId": "64ddc96f-bb59-4aa6-8926-8fb5ede4d691",
+         "name": "Contract",
+         "role": "owner"
+        }
+       ],
+       "groups": []
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/export",
+    "auth": "session:8",
+    "headers": {
+     "content-type": "application/json"
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "attachments": [],
+     "comments": [],
+     "encryption": null,
+     "exportedAt": "2026-11-03T01:52:40Z",
+     "fields": [],
+     "format": "opentodo-export",
+     "frames": [],
+     "labels": [],
+     "notes": [],
+     "objectives": [],
+     "places": [],
+     "project_prefs": [],
+     "projects": [],
+     "reminders": [],
+     "review": [],
+     "rules": [],
+     "sections": [],
+     "slots": [],
+     "tasks": [
+      {
+       "appends": [],
+       "completed_at": null,
+       "created_at": 1793670760840,
+       "deleted_at": null,
+       "description": "",
+       "due": null,
+       "energy": null,
+       "fields": {},
+       "id": "d6ab00b3-7aa6-460a-8c50-300fe76eeefd",
+       "labels": [],
+       "origin": null,
+       "parent_id": null,
+       "position": 1,
+       "priority": 4,
+       "project_id": null,
+       "rotation": [],
+       "sector": null,
+       "title": "Stamped by a fast clock"
+      }
+     ],
+     "themes": [],
+     "time_entries": [],
+     "userId": "64ddc96f-bb59-4aa6-8926-8fb5ede4d691",
+     "user_prefs": [],
+     "version": 1,
+     "views": [],
+     "workspaces": [
+      {
+       "color": "",
+       "default": true,
+       "icon": "",
+       "id": "310593cb-4ad1-8bc2-9852-b6c561782e9b",
+       "name": "Personal",
+       "role": "owner"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/auth/register",
+    "auth": "none",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "email": "contract-1793670760876-4@example.com",
+     "name": "Owner",
+     "password": "<password>"
+    }
+   },
+   "response": {
+    "status": 201,
+    "session": "session:9",
+    "body": {
+     "user": {
+      "id": "c661a039-51ba-4e6a-9e08-a6d0b30053c8",
+      "email": "contract-1793670760876-4@example.com",
+      "name": "Owner",
+      "role": "member",
+      "createdAt": 1793670760896
+     }
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/auth/register",
+    "auth": "none",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "email": "contract-1793670760898-5@example.com",
+     "name": "Viewer",
+     "password": "<password>"
+    }
+   },
+   "response": {
+    "status": 201,
+    "session": "session:10",
+    "body": {
+     "user": {
+      "id": "62bcbb8f-696b-4f04-a17b-bdbea11f7eb9",
+      "email": "contract-1793670760898-5@example.com",
+      "name": "Viewer",
+      "role": "member",
+      "createdAt": 1793670760917
+     }
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/auth/login",
+    "auth": "none",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "email": "contract-1793670760876-4@example.com",
+     "password": "<password>"
+    }
+   },
+   "response": {
+    "status": 200,
+    "session": "session:11",
+    "body": {
+     "user": {
+      "id": "c661a039-51ba-4e6a-9e08-a6d0b30053c8",
+      "email": "contract-1793670760876-4@example.com",
+      "name": "Owner",
+      "role": "member",
+      "createdAt": 1793670760896
+     }
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/sync",
+    "auth": "session:11",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "device": "aae05148-3691-40a9-8030-7e0226b43a25",
+     "cursor": 0,
+     "ops": [
+      {
+       "id": "99eacf74-6bf8-452a-b402-ce61bcac678d",
+       "entity": "project",
+       "entityId": "03bd7dfa-3f05-45b0-acd8-59ac83eecd12",
+       "field": "name",
+       "value": "Shared",
+       "ts": 1793670760956,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25"
+      },
+      {
+       "id": "9e9541b3-2e43-4f09-83a9-06546bf1e191",
+       "entity": "project",
+       "entityId": "03bd7dfa-3f05-45b0-acd8-59ac83eecd12",
+       "field": "color",
+       "value": "#3b82f6",
+       "ts": 1793670760956,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25"
+      },
+      {
+       "id": "263753ee-c81a-4afb-b6c6-0a35fc959643",
+       "entity": "project",
+       "entityId": "03bd7dfa-3f05-45b0-acd8-59ac83eecd12",
+       "field": "position",
+       "value": 1,
+       "ts": 1793670760956,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25"
+      },
+      {
+       "id": "ebe1fe48-8260-4365-b1c1-a838bb3e2e57",
+       "entity": "project",
+       "entityId": "03bd7dfa-3f05-45b0-acd8-59ac83eecd12",
+       "field": "archived",
+       "value": false,
+       "ts": 1793670760956,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25"
+      },
+      {
+       "id": "63cc9633-4017-4bdc-9927-75cf59678a69",
+       "entity": "project",
+       "entityId": "03bd7dfa-3f05-45b0-acd8-59ac83eecd12",
+       "field": "parent_id",
+       "value": null,
+       "ts": 1793670760956,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25"
+      },
+      {
+       "id": "50353945-7570-48a0-8ae3-522dc3a43451",
+       "entity": "project",
+       "entityId": "03bd7dfa-3f05-45b0-acd8-59ac83eecd12",
+       "field": "created_at",
+       "value": 1793670760952,
+       "ts": 1793670760956,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25"
+      },
+      {
+       "id": "0d6802c7-60c1-44be-b3df-2e0dcca87257",
+       "entity": "project",
+       "entityId": "03bd7dfa-3f05-45b0-acd8-59ac83eecd12",
+       "field": "deleted_at",
+       "value": null,
+       "ts": 1793670760956,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25"
+      },
+      {
+       "id": "6f2c8f78-64c0-4f72-829d-3c9606f01ad2",
+       "entity": "task",
+       "entityId": "a79b8c83-d6b5-4c81-b50a-c9a1408dbd48",
+       "field": "title",
+       "value": "Owner wrote this",
+       "ts": 1793670760957,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25"
+      },
+      {
+       "id": "93d6d714-17dd-4a0f-b7b3-357e548e24c4",
+       "entity": "task",
+       "entityId": "a79b8c83-d6b5-4c81-b50a-c9a1408dbd48",
+       "field": "description",
+       "value": "",
+       "ts": 1793670760957,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25"
+      },
+      {
+       "id": "aeda0551-85b4-41e9-b788-9e1a65f439ea",
+       "entity": "task",
+       "entityId": "a79b8c83-d6b5-4c81-b50a-c9a1408dbd48",
+       "field": "project_id",
+       "value": "03bd7dfa-3f05-45b0-acd8-59ac83eecd12",
+       "ts": 1793670760957,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25"
+      },
+      {
+       "id": "61abe8b1-9137-4650-aa3d-853fac4b918f",
+       "entity": "task",
+       "entityId": "a79b8c83-d6b5-4c81-b50a-c9a1408dbd48",
+       "field": "parent_id",
+       "value": null,
+       "ts": 1793670760957,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25"
+      },
+      {
+       "id": "25e3622d-f814-42e1-8608-abc013d01081",
+       "entity": "task",
+       "entityId": "a79b8c83-d6b5-4c81-b50a-c9a1408dbd48",
+       "field": "priority",
+       "value": 4,
+       "ts": 1793670760957,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25"
+      },
+      {
+       "id": "9b6d6cfd-753f-45f7-aab3-1bc6c09d7b3e",
+       "entity": "task",
+       "entityId": "a79b8c83-d6b5-4c81-b50a-c9a1408dbd48",
+       "field": "due",
+       "value": null,
+       "ts": 1793670760957,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25"
+      },
+      {
+       "id": "bdeec6b9-e921-4edd-bbc0-af2a672dba1d",
+       "entity": "task",
+       "entityId": "a79b8c83-d6b5-4c81-b50a-c9a1408dbd48",
+       "field": "labels",
+       "value": [],
+       "ts": 1793670760957,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25"
+      },
+      {
+       "id": "06c46dd2-c2b5-428d-8170-88fb2b9bb67a",
+       "entity": "task",
+       "entityId": "a79b8c83-d6b5-4c81-b50a-c9a1408dbd48",
+       "field": "position",
+       "value": 1,
+       "ts": 1793670760957,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25"
+      },
+      {
+       "id": "2ae33502-c6f6-46f7-9aa0-15c5eae9b8b3",
+       "entity": "task",
+       "entityId": "a79b8c83-d6b5-4c81-b50a-c9a1408dbd48",
+       "field": "created_at",
+       "value": 1793670760957,
+       "ts": 1793670760957,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25"
+      },
+      {
+       "id": "461bb06f-42a7-4a23-8748-aff9015f87e4",
+       "entity": "task",
+       "entityId": "a79b8c83-d6b5-4c81-b50a-c9a1408dbd48",
+       "field": "completed_at",
+       "value": null,
+       "ts": 1793670760957,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25"
+      },
+      {
+       "id": "d9535904-c020-4222-9c8d-71f4a7048d78",
+       "entity": "task",
+       "entityId": "a79b8c83-d6b5-4c81-b50a-c9a1408dbd48",
+       "field": "deleted_at",
+       "value": null,
+       "ts": 1793670760957,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25"
+      }
+     ],
+     "tzOffset": 0,
+     "features": [
+      "clock_skew",
+      "backfill_ack"
+     ]
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "applied": 18,
+     "cursor": 63,
+     "duplicates": 0,
+     "generation": "3a8237bd4211042d45ad53c06ae6e83a",
+     "hasMore": false,
+     "memberships": [],
+     "ops": [],
+     "purged": [],
+     "rejected": [],
+     "serverTime": 1793670760964,
+     "trashRetentionDays": 30,
+     "workspaces": [
+      {
+       "id": "623c118f-aef3-8296-a655-7f2590483615",
+       "name": "Personal",
+       "icon": "",
+       "color": "",
+       "default": true,
+       "role": "owner",
+       "ownerId": "c661a039-51ba-4e6a-9e08-a6d0b30053c8",
+       "members": [
+        {
+         "userId": "c661a039-51ba-4e6a-9e08-a6d0b30053c8",
+         "name": "Owner",
+         "role": "owner"
+        }
+       ],
+       "groups": []
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/projects/03bd7dfa-3f05-45b0-acd8-59ac83eecd12/members",
+    "auth": "session:11",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "email": "contract-1793670760898-5@example.com",
+     "role": "viewer"
+    }
+   },
+   "response": {
+    "status": 202,
+    "body": {
+     "pending": true
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/auth/login",
+    "auth": "none",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "email": "contract-1793670760898-5@example.com",
+     "password": "<password>"
+    }
+   },
+   "response": {
+    "status": 200,
+    "session": "session:12",
+    "body": {
+     "user": {
+      "id": "62bcbb8f-696b-4f04-a17b-bdbea11f7eb9",
+      "email": "contract-1793670760898-5@example.com",
+      "name": "Viewer",
+      "role": "member",
+      "createdAt": 1793670760917
+     }
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/me/member-invitations",
+    "auth": "session:12",
+    "headers": {
+     "content-type": "application/json"
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "invitations": [
+      {
+       "createdAt": 1793670760971,
+       "expiresAt": 1794880360971,
+       "id": "bf69a663-563e-4001-ae1c-163d011174da",
+       "inviterId": "c661a039-51ba-4e6a-9e08-a6d0b30053c8",
+       "inviterName": "Owner",
+       "kind": "project",
+       "role": "viewer",
+       "targetId": "03bd7dfa-3f05-45b0-acd8-59ac83eecd12",
+       "targetName": "Shared"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/me/member-invitations/bf69a663-563e-4001-ae1c-163d011174da/accept",
+    "auth": "session:12",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {}
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "kind": "project",
+     "role": "viewer",
+     "targetId": "03bd7dfa-3f05-45b0-acd8-59ac83eecd12"
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/sync",
+    "auth": "session:12",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "device": "775869f2-f1ce-43ce-bcd2-6c10e7db17af",
+     "cursor": 0,
+     "ops": [],
+     "tzOffset": 0,
+     "features": [
+      "clock_skew",
+      "backfill_ack"
+     ]
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "applied": 0,
+     "cursor": 63,
+     "duplicates": 0,
+     "generation": "3a8237bd4211042d45ad53c06ae6e83a",
+     "hasMore": false,
+     "memberships": [
+      {
+       "projectId": "03bd7dfa-3f05-45b0-acd8-59ac83eecd12",
+       "role": "viewer",
+       "ownerId": "c661a039-51ba-4e6a-9e08-a6d0b30053c8",
+       "members": [
+        {
+         "userId": "c661a039-51ba-4e6a-9e08-a6d0b30053c8",
+         "name": "Owner",
+         "email": "contract-1793670760876-4@example.com",
+         "role": "owner",
+         "via": []
+        },
+        {
+         "userId": "62bcbb8f-696b-4f04-a17b-bdbea11f7eb9",
+         "name": "Viewer",
+         "email": "contract-1793670760898-5@example.com",
+         "role": "viewer",
+         "via": []
+        }
+       ]
+      }
+     ],
+     "ops": [
+      {
+       "id": "99eacf74-6bf8-452a-b402-ce61bcac678d",
+       "entity": "project",
+       "entityId": "03bd7dfa-3f05-45b0-acd8-59ac83eecd12",
+       "field": "name",
+       "value": "Shared",
+       "ts": 1793670760956,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25",
+       "seq": 46,
+       "actor": "c661a039-51ba-4e6a-9e08-a6d0b30053c8"
+      },
+      {
+       "id": "9e9541b3-2e43-4f09-83a9-06546bf1e191",
+       "entity": "project",
+       "entityId": "03bd7dfa-3f05-45b0-acd8-59ac83eecd12",
+       "field": "color",
+       "value": "#3b82f6",
+       "ts": 1793670760956,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25",
+       "seq": 47,
+       "actor": "c661a039-51ba-4e6a-9e08-a6d0b30053c8"
+      },
+      {
+       "id": "263753ee-c81a-4afb-b6c6-0a35fc959643",
+       "entity": "project",
+       "entityId": "03bd7dfa-3f05-45b0-acd8-59ac83eecd12",
+       "field": "position",
+       "value": 1,
+       "ts": 1793670760956,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25",
+       "seq": 48,
+       "actor": "c661a039-51ba-4e6a-9e08-a6d0b30053c8"
+      },
+      {
+       "id": "ebe1fe48-8260-4365-b1c1-a838bb3e2e57",
+       "entity": "project",
+       "entityId": "03bd7dfa-3f05-45b0-acd8-59ac83eecd12",
+       "field": "archived",
+       "value": false,
+       "ts": 1793670760956,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25",
+       "seq": 49,
+       "actor": "c661a039-51ba-4e6a-9e08-a6d0b30053c8"
+      },
+      {
+       "id": "63cc9633-4017-4bdc-9927-75cf59678a69",
+       "entity": "project",
+       "entityId": "03bd7dfa-3f05-45b0-acd8-59ac83eecd12",
+       "field": "parent_id",
+       "value": null,
+       "ts": 1793670760956,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25",
+       "seq": 50,
+       "actor": "c661a039-51ba-4e6a-9e08-a6d0b30053c8"
+      },
+      {
+       "id": "50353945-7570-48a0-8ae3-522dc3a43451",
+       "entity": "project",
+       "entityId": "03bd7dfa-3f05-45b0-acd8-59ac83eecd12",
+       "field": "created_at",
+       "value": 1793670760952,
+       "ts": 1793670760956,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25",
+       "seq": 51,
+       "actor": "c661a039-51ba-4e6a-9e08-a6d0b30053c8"
+      },
+      {
+       "id": "0d6802c7-60c1-44be-b3df-2e0dcca87257",
+       "entity": "project",
+       "entityId": "03bd7dfa-3f05-45b0-acd8-59ac83eecd12",
+       "field": "deleted_at",
+       "value": null,
+       "ts": 1793670760956,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25",
+       "seq": 52,
+       "actor": "c661a039-51ba-4e6a-9e08-a6d0b30053c8"
+      },
+      {
+       "id": "6f2c8f78-64c0-4f72-829d-3c9606f01ad2",
+       "entity": "task",
+       "entityId": "a79b8c83-d6b5-4c81-b50a-c9a1408dbd48",
+       "field": "title",
+       "value": "Owner wrote this",
+       "ts": 1793670760957,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25",
+       "seq": 53,
+       "actor": "c661a039-51ba-4e6a-9e08-a6d0b30053c8"
+      },
+      {
+       "id": "93d6d714-17dd-4a0f-b7b3-357e548e24c4",
+       "entity": "task",
+       "entityId": "a79b8c83-d6b5-4c81-b50a-c9a1408dbd48",
+       "field": "description",
+       "value": "",
+       "ts": 1793670760957,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25",
+       "seq": 54,
+       "actor": "c661a039-51ba-4e6a-9e08-a6d0b30053c8"
+      },
+      {
+       "id": "aeda0551-85b4-41e9-b788-9e1a65f439ea",
+       "entity": "task",
+       "entityId": "a79b8c83-d6b5-4c81-b50a-c9a1408dbd48",
+       "field": "project_id",
+       "value": "03bd7dfa-3f05-45b0-acd8-59ac83eecd12",
+       "ts": 1793670760957,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25",
+       "seq": 55,
+       "actor": "c661a039-51ba-4e6a-9e08-a6d0b30053c8"
+      },
+      {
+       "id": "61abe8b1-9137-4650-aa3d-853fac4b918f",
+       "entity": "task",
+       "entityId": "a79b8c83-d6b5-4c81-b50a-c9a1408dbd48",
+       "field": "parent_id",
+       "value": null,
+       "ts": 1793670760957,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25",
+       "seq": 56,
+       "actor": "c661a039-51ba-4e6a-9e08-a6d0b30053c8"
+      },
+      {
+       "id": "25e3622d-f814-42e1-8608-abc013d01081",
+       "entity": "task",
+       "entityId": "a79b8c83-d6b5-4c81-b50a-c9a1408dbd48",
+       "field": "priority",
+       "value": 4,
+       "ts": 1793670760957,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25",
+       "seq": 57,
+       "actor": "c661a039-51ba-4e6a-9e08-a6d0b30053c8"
+      },
+      {
+       "id": "9b6d6cfd-753f-45f7-aab3-1bc6c09d7b3e",
+       "entity": "task",
+       "entityId": "a79b8c83-d6b5-4c81-b50a-c9a1408dbd48",
+       "field": "due",
+       "value": null,
+       "ts": 1793670760957,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25",
+       "seq": 58,
+       "actor": "c661a039-51ba-4e6a-9e08-a6d0b30053c8"
+      },
+      {
+       "id": "bdeec6b9-e921-4edd-bbc0-af2a672dba1d",
+       "entity": "task",
+       "entityId": "a79b8c83-d6b5-4c81-b50a-c9a1408dbd48",
+       "field": "labels",
+       "value": [],
+       "ts": 1793670760957,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25",
+       "seq": 59,
+       "actor": "c661a039-51ba-4e6a-9e08-a6d0b30053c8"
+      },
+      {
+       "id": "06c46dd2-c2b5-428d-8170-88fb2b9bb67a",
+       "entity": "task",
+       "entityId": "a79b8c83-d6b5-4c81-b50a-c9a1408dbd48",
+       "field": "position",
+       "value": 1,
+       "ts": 1793670760957,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25",
+       "seq": 60,
+       "actor": "c661a039-51ba-4e6a-9e08-a6d0b30053c8"
+      },
+      {
+       "id": "2ae33502-c6f6-46f7-9aa0-15c5eae9b8b3",
+       "entity": "task",
+       "entityId": "a79b8c83-d6b5-4c81-b50a-c9a1408dbd48",
+       "field": "created_at",
+       "value": 1793670760957,
+       "ts": 1793670760957,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25",
+       "seq": 61,
+       "actor": "c661a039-51ba-4e6a-9e08-a6d0b30053c8"
+      },
+      {
+       "id": "461bb06f-42a7-4a23-8748-aff9015f87e4",
+       "entity": "task",
+       "entityId": "a79b8c83-d6b5-4c81-b50a-c9a1408dbd48",
+       "field": "completed_at",
+       "value": null,
+       "ts": 1793670760957,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25",
+       "seq": 62,
+       "actor": "c661a039-51ba-4e6a-9e08-a6d0b30053c8"
+      },
+      {
+       "id": "d9535904-c020-4222-9c8d-71f4a7048d78",
+       "entity": "task",
+       "entityId": "a79b8c83-d6b5-4c81-b50a-c9a1408dbd48",
+       "field": "deleted_at",
+       "value": null,
+       "ts": 1793670760957,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25",
+       "seq": 63,
+       "actor": "c661a039-51ba-4e6a-9e08-a6d0b30053c8"
+      }
+     ],
+     "purged": [],
+     "rejected": [],
+     "serverTime": 1793670761030,
+     "trashRetentionDays": 30,
+     "workspaces": [
+      {
+       "id": "7bf6ebbb-55b3-82ff-bdcf-be37e9c3f79c",
+       "name": "Personal",
+       "icon": "",
+       "color": "",
+       "default": true,
+       "role": "owner",
+       "ownerId": "62bcbb8f-696b-4f04-a17b-bdbea11f7eb9",
+       "members": [
+        {
+         "userId": "62bcbb8f-696b-4f04-a17b-bdbea11f7eb9",
+         "name": "Viewer",
+         "role": "owner"
+        }
+       ],
+       "groups": []
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/notifications",
+    "auth": "session:12"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "notifications": [
+      {
+       "id": "5d0b79e4-bb46-4106-8a83-fa90027c63b4",
+       "kind": "member_invitation",
+       "payload": {
+        "invitationId": "bf69a663-563e-4001-ae1c-163d011174da",
+        "target": "project",
+        "targetId": "03bd7dfa-3f05-45b0-acd8-59ac83eecd12",
+        "targetName": "Shared",
+        "inviterId": "c661a039-51ba-4e6a-9e08-a6d0b30053c8",
+        "inviterName": "Owner",
+        "role": "viewer",
+        "at": 1793670760971
+       },
+       "createdAt": 1793670760972,
+       "readAt": 1793670761023
+      }
+     ],
+     "unread": 0
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/sync",
+    "auth": "session:12",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "device": "775869f2-f1ce-43ce-bcd2-6c10e7db17af",
+     "cursor": 63,
+     "ops": [
+      {
+       "id": "7dc74779-bdc0-4b69-b957-fe87895c147d",
+       "entity": "task",
+       "entityId": "a79b8c83-d6b5-4c81-b50a-c9a1408dbd48",
+       "field": "title",
+       "value": "Viewer tried this",
+       "ts": 1793670761045,
+       "device": "775869f2-f1ce-43ce-bcd2-6c10e7db17af"
+      }
+     ],
+     "tzOffset": 0,
+     "features": [
+      "clock_skew",
+      "backfill_ack"
+     ]
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "applied": 0,
+     "cursor": 63,
+     "duplicates": 0,
+     "generation": "3a8237bd4211042d45ad53c06ae6e83a",
+     "hasMore": false,
+     "memberships": [
+      {
+       "projectId": "03bd7dfa-3f05-45b0-acd8-59ac83eecd12",
+       "role": "viewer",
+       "ownerId": "c661a039-51ba-4e6a-9e08-a6d0b30053c8",
+       "members": [
+        {
+         "userId": "c661a039-51ba-4e6a-9e08-a6d0b30053c8",
+         "name": "Owner",
+         "email": "contract-1793670760876-4@example.com",
+         "role": "owner",
+         "via": []
+        },
+        {
+         "userId": "62bcbb8f-696b-4f04-a17b-bdbea11f7eb9",
+         "name": "Viewer",
+         "email": "contract-1793670760898-5@example.com",
+         "role": "viewer",
+         "via": []
+        }
+       ]
+      }
+     ],
+     "ops": [
+      {
+       "id": "6f2c8f78-64c0-4f72-829d-3c9606f01ad2",
+       "entity": "task",
+       "entityId": "a79b8c83-d6b5-4c81-b50a-c9a1408dbd48",
+       "field": "title",
+       "value": "Owner wrote this",
+       "ts": 1793670760957,
+       "device": "aae05148-3691-40a9-8030-7e0226b43a25",
+       "seq": 53,
+       "actor": "c661a039-51ba-4e6a-9e08-a6d0b30053c8"
+      }
+     ],
+     "purged": [],
+     "rejected": [
+      {
+       "id": "7dc74779-bdc0-4b69-b957-fe87895c147d",
+       "reason": "forbidden"
+      }
+     ],
+     "serverTime": 1793670761048,
+     "trashRetentionDays": 30,
+     "workspaces": [
+      {
+       "id": "7bf6ebbb-55b3-82ff-bdcf-be37e9c3f79c",
+       "name": "Personal",
+       "icon": "",
+       "color": "",
+       "default": true,
+       "role": "owner",
+       "ownerId": "62bcbb8f-696b-4f04-a17b-bdbea11f7eb9",
+       "members": [
+        {
+         "userId": "62bcbb8f-696b-4f04-a17b-bdbea11f7eb9",
+         "name": "Viewer",
+         "role": "owner"
+        }
+       ],
+       "groups": []
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/notifications",
+    "auth": "session:12"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "notifications": [
+      {
+       "id": "5d0b79e4-bb46-4106-8a83-fa90027c63b4",
+       "kind": "member_invitation",
+       "payload": {
+        "invitationId": "bf69a663-563e-4001-ae1c-163d011174da",
+        "target": "project",
+        "targetId": "03bd7dfa-3f05-45b0-acd8-59ac83eecd12",
+        "targetName": "Shared",
+        "inviterId": "c661a039-51ba-4e6a-9e08-a6d0b30053c8",
+        "inviterName": "Owner",
+        "role": "viewer",
+        "at": 1793670760971
+       },
+       "createdAt": 1793670760972,
+       "readAt": 1793670761023
+      }
+     ],
+     "unread": 0
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/export",
+    "auth": "session:11",
+    "headers": {
+     "content-type": "application/json"
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "attachments": [],
+     "comments": [],
+     "encryption": null,
+     "exportedAt": "2026-11-03T01:52:41Z",
+     "fields": [],
+     "format": "opentodo-export",
+     "frames": [],
+     "labels": [],
+     "notes": [],
+     "objectives": [],
+     "places": [],
+     "project_prefs": [],
+     "projects": [
+      {
+       "aisles": false,
+       "archived": false,
+       "color": "#3b82f6",
+       "created_at": 1793670760952,
+       "deleted_at": null,
+       "flow_mode": "",
+       "id": "03bd7dfa-3f05-45b0-acd8-59ac83eecd12",
+       "name": "Shared",
+       "owner_id": "c661a039-51ba-4e6a-9e08-a6d0b30053c8",
+       "parent_id": null,
+       "position": 1,
+       "reusable": false,
+       "role": "owner",
+       "status": "active"
+      }
+     ],
+     "reminders": [],
+     "review": [],
+     "rules": [],
+     "sections": [],
+     "slots": [],
+     "tasks": [
+      {
+       "appends": [],
+       "completed_at": null,
+       "created_at": 1793670760957,
+       "deleted_at": null,
+       "description": "",
+       "due": null,
+       "energy": null,
+       "fields": {},
+       "id": "a79b8c83-d6b5-4c81-b50a-c9a1408dbd48",
+       "labels": [],
+       "origin": null,
+       "parent_id": null,
+       "position": 1,
+       "priority": 4,
+       "project_id": "03bd7dfa-3f05-45b0-acd8-59ac83eecd12",
+       "rotation": [],
+       "sector": null,
+       "title": "Owner wrote this"
+      }
+     ],
+     "themes": [],
+     "time_entries": [],
+     "userId": "c661a039-51ba-4e6a-9e08-a6d0b30053c8",
+     "user_prefs": [],
+     "version": 1,
+     "views": [],
+     "workspaces": [
+      {
+       "color": "",
+       "default": true,
+       "icon": "",
+       "id": "623c118f-aef3-8296-a655-7f2590483615",
+       "name": "Personal",
+       "role": "owner"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/auth/register",
+    "auth": "none",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "email": "contract-1793670761065-6@example.com",
+     "name": "Contract",
+     "password": "<password>"
+    }
+   },
+   "response": {
+    "status": 201,
+    "session": "session:13",
+    "body": {
+     "user": {
+      "id": "881756c8-3ac2-4e10-b827-6d2a77f32621",
+      "email": "contract-1793670761065-6@example.com",
+      "name": "Contract",
+      "role": "member",
+      "createdAt": 1793670761084
+     }
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/auth/login",
+    "auth": "none",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "email": "contract-1793670761065-6@example.com",
+     "password": "<password>"
+    }
+   },
+   "response": {
+    "status": 200,
+    "session": "session:14",
+    "body": {
+     "user": {
+      "id": "881756c8-3ac2-4e10-b827-6d2a77f32621",
+      "email": "contract-1793670761065-6@example.com",
+      "name": "Contract",
+      "role": "member",
+      "createdAt": 1793670761084
+     }
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/auth/login",
+    "auth": "none",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "email": "contract-1793670761065-6@example.com",
+     "password": "<password>"
+    }
+   },
+   "response": {
+    "status": 200,
+    "session": "session:15",
+    "body": {
+     "user": {
+      "id": "881756c8-3ac2-4e10-b827-6d2a77f32621",
+      "email": "contract-1793670761065-6@example.com",
+      "name": "Contract",
+      "role": "member",
+      "createdAt": 1793670761084
+     }
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/sync",
+    "auth": "session:14",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "device": "44e3a9ea-9f20-4ee5-bc1b-1bc513308802",
+     "cursor": 0,
+     "ops": [
+      {
+       "id": "37879a98-ef61-4daf-9c7f-1e9e5f6c3218",
+       "entity": "task",
+       "entityId": "1e0ac20a-f14f-4079-ae30-3d9785486b0b",
+       "field": "title",
+       "value": "Written while B was away",
+       "ts": 1793670761185,
+       "device": "44e3a9ea-9f20-4ee5-bc1b-1bc513308802"
+      },
+      {
+       "id": "57672a34-2ab1-4c47-b9eb-dd69bb4437f0",
+       "entity": "task",
+       "entityId": "1e0ac20a-f14f-4079-ae30-3d9785486b0b",
+       "field": "description",
+       "value": "",
+       "ts": 1793670761185,
+       "device": "44e3a9ea-9f20-4ee5-bc1b-1bc513308802"
+      },
+      {
+       "id": "a591d4c4-8a5d-41d2-b095-f1aaaecfd8c6",
+       "entity": "task",
+       "entityId": "1e0ac20a-f14f-4079-ae30-3d9785486b0b",
+       "field": "project_id",
+       "value": null,
+       "ts": 1793670761185,
+       "device": "44e3a9ea-9f20-4ee5-bc1b-1bc513308802"
+      },
+      {
+       "id": "03d72f7f-392f-4ac0-8190-585b02112d9b",
+       "entity": "task",
+       "entityId": "1e0ac20a-f14f-4079-ae30-3d9785486b0b",
+       "field": "parent_id",
+       "value": null,
+       "ts": 1793670761185,
+       "device": "44e3a9ea-9f20-4ee5-bc1b-1bc513308802"
+      },
+      {
+       "id": "7716037d-8df9-4099-a9eb-efefcf18294b",
+       "entity": "task",
+       "entityId": "1e0ac20a-f14f-4079-ae30-3d9785486b0b",
+       "field": "priority",
+       "value": 4,
+       "ts": 1793670761185,
+       "device": "44e3a9ea-9f20-4ee5-bc1b-1bc513308802"
+      },
+      {
+       "id": "cee57cc3-8f8e-43cf-9bc2-32354f2d5102",
+       "entity": "task",
+       "entityId": "1e0ac20a-f14f-4079-ae30-3d9785486b0b",
+       "field": "due",
+       "value": null,
+       "ts": 1793670761185,
+       "device": "44e3a9ea-9f20-4ee5-bc1b-1bc513308802"
+      },
+      {
+       "id": "33935884-a32b-4b46-badb-c34f66bb60c6",
+       "entity": "task",
+       "entityId": "1e0ac20a-f14f-4079-ae30-3d9785486b0b",
+       "field": "labels",
+       "value": [],
+       "ts": 1793670761185,
+       "device": "44e3a9ea-9f20-4ee5-bc1b-1bc513308802"
+      },
+      {
+       "id": "df2903d0-f77a-4c7e-ba26-280bad17a060",
+       "entity": "task",
+       "entityId": "1e0ac20a-f14f-4079-ae30-3d9785486b0b",
+       "field": "position",
+       "value": 1,
+       "ts": 1793670761185,
+       "device": "44e3a9ea-9f20-4ee5-bc1b-1bc513308802"
+      },
+      {
+       "id": "3503b62b-ada2-41c6-9f09-818ea1a16d0a",
+       "entity": "task",
+       "entityId": "1e0ac20a-f14f-4079-ae30-3d9785486b0b",
+       "field": "created_at",
+       "value": 1793670761180,
+       "ts": 1793670761185,
+       "device": "44e3a9ea-9f20-4ee5-bc1b-1bc513308802"
+      },
+      {
+       "id": "8eef55a7-d749-43d7-a99d-77badf3d579a",
+       "entity": "task",
+       "entityId": "1e0ac20a-f14f-4079-ae30-3d9785486b0b",
+       "field": "completed_at",
+       "value": null,
+       "ts": 1793670761185,
+       "device": "44e3a9ea-9f20-4ee5-bc1b-1bc513308802"
+      },
+      {
+       "id": "81f09d47-fadb-4605-a4d3-6304699706b3",
+       "entity": "task",
+       "entityId": "1e0ac20a-f14f-4079-ae30-3d9785486b0b",
+       "field": "deleted_at",
+       "value": null,
+       "ts": 1793670761185,
+       "device": "44e3a9ea-9f20-4ee5-bc1b-1bc513308802"
+      }
+     ],
+     "tzOffset": 0,
+     "features": [
+      "clock_skew",
+      "backfill_ack"
+     ]
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "applied": 11,
+     "cursor": 74,
+     "duplicates": 0,
+     "generation": "3a8237bd4211042d45ad53c06ae6e83a",
+     "hasMore": false,
+     "memberships": [],
+     "ops": [],
+     "purged": [],
+     "rejected": [],
+     "serverTime": 1793670761191,
+     "trashRetentionDays": 30,
+     "workspaces": [
+      {
+       "id": "527e873e-dbb1-805f-bebf-9a086727969f",
+       "name": "Personal",
+       "icon": "",
+       "color": "",
+       "default": true,
+       "role": "owner",
+       "ownerId": "881756c8-3ac2-4e10-b827-6d2a77f32621",
+       "members": [
+        {
+         "userId": "881756c8-3ac2-4e10-b827-6d2a77f32621",
+         "name": "Contract",
+         "role": "owner"
+        }
+       ],
+       "groups": []
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/sync",
+    "auth": "session:15",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "device": "777777ec-5213-42f7-b80b-26ec3bdd337e",
+     "cursor": 0,
+     "ops": [
+      {
+       "id": "993ecc70-b6c4-4f92-8de2-dacdfa05006b",
+       "entity": "task",
+       "entityId": "3b2fa3a6-f52c-4efa-bd6b-3cce83d1f907",
+       "field": "title",
+       "value": "Queued offline",
+       "ts": 1793670761167,
+       "device": "777777ec-5213-42f7-b80b-26ec3bdd337e"
+      },
+      {
+       "id": "7840a7cd-8f0e-41a9-87d5-1b49eb166a3b",
+       "entity": "task",
+       "entityId": "3b2fa3a6-f52c-4efa-bd6b-3cce83d1f907",
+       "field": "description",
+       "value": "",
+       "ts": 1793670761167,
+       "device": "777777ec-5213-42f7-b80b-26ec3bdd337e"
+      },
+      {
+       "id": "fe487a79-92c6-44bc-af94-e363094dfa0e",
+       "entity": "task",
+       "entityId": "3b2fa3a6-f52c-4efa-bd6b-3cce83d1f907",
+       "field": "project_id",
+       "value": null,
+       "ts": 1793670761167,
+       "device": "777777ec-5213-42f7-b80b-26ec3bdd337e"
+      },
+      {
+       "id": "d7335c67-a3f1-4c47-ab83-9950ec1cae28",
+       "entity": "task",
+       "entityId": "3b2fa3a6-f52c-4efa-bd6b-3cce83d1f907",
+       "field": "parent_id",
+       "value": null,
+       "ts": 1793670761167,
+       "device": "777777ec-5213-42f7-b80b-26ec3bdd337e"
+      },
+      {
+       "id": "8d9cac90-ca72-434d-b9ac-a4a2a8b78ae6",
+       "entity": "task",
+       "entityId": "3b2fa3a6-f52c-4efa-bd6b-3cce83d1f907",
+       "field": "priority",
+       "value": 4,
+       "ts": 1793670761167,
+       "device": "777777ec-5213-42f7-b80b-26ec3bdd337e"
+      },
+      {
+       "id": "433875fa-0ecd-4bf3-a3c8-890ff2935d3b",
+       "entity": "task",
+       "entityId": "3b2fa3a6-f52c-4efa-bd6b-3cce83d1f907",
+       "field": "due",
+       "value": null,
+       "ts": 1793670761167,
+       "device": "777777ec-5213-42f7-b80b-26ec3bdd337e"
+      },
+      {
+       "id": "75d6bc57-8492-4c3e-acf5-4ecf928045ee",
+       "entity": "task",
+       "entityId": "3b2fa3a6-f52c-4efa-bd6b-3cce83d1f907",
+       "field": "labels",
+       "value": [],
+       "ts": 1793670761167,
+       "device": "777777ec-5213-42f7-b80b-26ec3bdd337e"
+      },
+      {
+       "id": "af612f37-2779-462e-908b-9cbd17e56c0a",
+       "entity": "task",
+       "entityId": "3b2fa3a6-f52c-4efa-bd6b-3cce83d1f907",
+       "field": "position",
+       "value": 1,
+       "ts": 1793670761167,
+       "device": "777777ec-5213-42f7-b80b-26ec3bdd337e"
+      },
+      {
+       "id": "6b216565-fff9-4d6a-b1ef-d850de238266",
+       "entity": "task",
+       "entityId": "3b2fa3a6-f52c-4efa-bd6b-3cce83d1f907",
+       "field": "created_at",
+       "value": 1793670761165,
+       "ts": 1793670761167,
+       "device": "777777ec-5213-42f7-b80b-26ec3bdd337e"
+      },
+      {
+       "id": "73afb9d8-93ba-471e-a102-d80b0bc9862e",
+       "entity": "task",
+       "entityId": "3b2fa3a6-f52c-4efa-bd6b-3cce83d1f907",
+       "field": "completed_at",
+       "value": null,
+       "ts": 1793670761167,
+       "device": "777777ec-5213-42f7-b80b-26ec3bdd337e"
+      },
+      {
+       "id": "1cf85e55-45ad-4108-904d-3349fe068d2f",
+       "entity": "task",
+       "entityId": "3b2fa3a6-f52c-4efa-bd6b-3cce83d1f907",
+       "field": "deleted_at",
+       "value": null,
+       "ts": 1793670761167,
+       "device": "777777ec-5213-42f7-b80b-26ec3bdd337e"
+      }
+     ],
+     "tzOffset": 0,
+     "features": [
+      "clock_skew",
+      "backfill_ack"
+     ]
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "applied": 11,
+     "cursor": 85,
+     "duplicates": 0,
+     "generation": "3a8237bd4211042d45ad53c06ae6e83a",
+     "hasMore": false,
+     "memberships": [],
+     "ops": [
+      {
+       "id": "37879a98-ef61-4daf-9c7f-1e9e5f6c3218",
+       "entity": "task",
+       "entityId": "1e0ac20a-f14f-4079-ae30-3d9785486b0b",
+       "field": "title",
+       "value": "Written while B was away",
+       "ts": 1793670761185,
+       "device": "44e3a9ea-9f20-4ee5-bc1b-1bc513308802",
+       "seq": 64,
+       "actor": "881756c8-3ac2-4e10-b827-6d2a77f32621"
+      },
+      {
+       "id": "57672a34-2ab1-4c47-b9eb-dd69bb4437f0",
+       "entity": "task",
+       "entityId": "1e0ac20a-f14f-4079-ae30-3d9785486b0b",
+       "field": "description",
+       "value": "",
+       "ts": 1793670761185,
+       "device": "44e3a9ea-9f20-4ee5-bc1b-1bc513308802",
+       "seq": 65,
+       "actor": "881756c8-3ac2-4e10-b827-6d2a77f32621"
+      },
+      {
+       "id": "a591d4c4-8a5d-41d2-b095-f1aaaecfd8c6",
+       "entity": "task",
+       "entityId": "1e0ac20a-f14f-4079-ae30-3d9785486b0b",
+       "field": "project_id",
+       "value": null,
+       "ts": 1793670761185,
+       "device": "44e3a9ea-9f20-4ee5-bc1b-1bc513308802",
+       "seq": 66,
+       "actor": "881756c8-3ac2-4e10-b827-6d2a77f32621"
+      },
+      {
+       "id": "03d72f7f-392f-4ac0-8190-585b02112d9b",
+       "entity": "task",
+       "entityId": "1e0ac20a-f14f-4079-ae30-3d9785486b0b",
+       "field": "parent_id",
+       "value": null,
+       "ts": 1793670761185,
+       "device": "44e3a9ea-9f20-4ee5-bc1b-1bc513308802",
+       "seq": 67,
+       "actor": "881756c8-3ac2-4e10-b827-6d2a77f32621"
+      },
+      {
+       "id": "7716037d-8df9-4099-a9eb-efefcf18294b",
+       "entity": "task",
+       "entityId": "1e0ac20a-f14f-4079-ae30-3d9785486b0b",
+       "field": "priority",
+       "value": 4,
+       "ts": 1793670761185,
+       "device": "44e3a9ea-9f20-4ee5-bc1b-1bc513308802",
+       "seq": 68,
+       "actor": "881756c8-3ac2-4e10-b827-6d2a77f32621"
+      },
+      {
+       "id": "cee57cc3-8f8e-43cf-9bc2-32354f2d5102",
+       "entity": "task",
+       "entityId": "1e0ac20a-f14f-4079-ae30-3d9785486b0b",
+       "field": "due",
+       "value": null,
+       "ts": 1793670761185,
+       "device": "44e3a9ea-9f20-4ee5-bc1b-1bc513308802",
+       "seq": 69,
+       "actor": "881756c8-3ac2-4e10-b827-6d2a77f32621"
+      },
+      {
+       "id": "33935884-a32b-4b46-badb-c34f66bb60c6",
+       "entity": "task",
+       "entityId": "1e0ac20a-f14f-4079-ae30-3d9785486b0b",
+       "field": "labels",
+       "value": [],
+       "ts": 1793670761185,
+       "device": "44e3a9ea-9f20-4ee5-bc1b-1bc513308802",
+       "seq": 70,
+       "actor": "881756c8-3ac2-4e10-b827-6d2a77f32621"
+      },
+      {
+       "id": "df2903d0-f77a-4c7e-ba26-280bad17a060",
+       "entity": "task",
+       "entityId": "1e0ac20a-f14f-4079-ae30-3d9785486b0b",
+       "field": "position",
+       "value": 1,
+       "ts": 1793670761185,
+       "device": "44e3a9ea-9f20-4ee5-bc1b-1bc513308802",
+       "seq": 71,
+       "actor": "881756c8-3ac2-4e10-b827-6d2a77f32621"
+      },
+      {
+       "id": "3503b62b-ada2-41c6-9f09-818ea1a16d0a",
+       "entity": "task",
+       "entityId": "1e0ac20a-f14f-4079-ae30-3d9785486b0b",
+       "field": "created_at",
+       "value": 1793670761180,
+       "ts": 1793670761185,
+       "device": "44e3a9ea-9f20-4ee5-bc1b-1bc513308802",
+       "seq": 72,
+       "actor": "881756c8-3ac2-4e10-b827-6d2a77f32621"
+      },
+      {
+       "id": "8eef55a7-d749-43d7-a99d-77badf3d579a",
+       "entity": "task",
+       "entityId": "1e0ac20a-f14f-4079-ae30-3d9785486b0b",
+       "field": "completed_at",
+       "value": null,
+       "ts": 1793670761185,
+       "device": "44e3a9ea-9f20-4ee5-bc1b-1bc513308802",
+       "seq": 73,
+       "actor": "881756c8-3ac2-4e10-b827-6d2a77f32621"
+      },
+      {
+       "id": "81f09d47-fadb-4605-a4d3-6304699706b3",
+       "entity": "task",
+       "entityId": "1e0ac20a-f14f-4079-ae30-3d9785486b0b",
+       "field": "deleted_at",
+       "value": null,
+       "ts": 1793670761185,
+       "device": "44e3a9ea-9f20-4ee5-bc1b-1bc513308802",
+       "seq": 74,
+       "actor": "881756c8-3ac2-4e10-b827-6d2a77f32621"
+      }
+     ],
+     "purged": [],
+     "rejected": [],
+     "serverTime": 1793670761212,
+     "trashRetentionDays": 30,
+     "workspaces": [
+      {
+       "id": "527e873e-dbb1-805f-bebf-9a086727969f",
+       "name": "Personal",
+       "icon": "",
+       "color": "",
+       "default": true,
+       "role": "owner",
+       "ownerId": "881756c8-3ac2-4e10-b827-6d2a77f32621",
+       "members": [
+        {
+         "userId": "881756c8-3ac2-4e10-b827-6d2a77f32621",
+         "name": "Contract",
+         "role": "owner"
+        }
+       ],
+       "groups": []
+      }
+     ]
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/notifications",
+    "auth": "session:15"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "notifications": [],
+     "unread": 0
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/export",
+    "auth": "session:14",
+    "headers": {
+     "content-type": "application/json"
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "attachments": [],
+     "comments": [],
+     "encryption": null,
+     "exportedAt": "2026-11-03T01:52:41Z",
+     "fields": [],
+     "format": "opentodo-export",
+     "frames": [],
+     "labels": [],
+     "notes": [],
+     "objectives": [],
+     "places": [],
+     "project_prefs": [],
+     "projects": [],
+     "reminders": [],
+     "review": [],
+     "rules": [],
+     "sections": [],
+     "slots": [],
+     "tasks": [
+      {
+       "appends": [],
+       "completed_at": null,
+       "created_at": 1793670761165,
+       "deleted_at": null,
+       "description": "",
+       "due": null,
+       "energy": null,
+       "fields": {},
+       "id": "3b2fa3a6-f52c-4efa-bd6b-3cce83d1f907",
+       "labels": [],
+       "origin": null,
+       "parent_id": null,
+       "position": 1,
+       "priority": 4,
+       "project_id": null,
+       "rotation": [],
+       "sector": null,
+       "title": "Queued offline"
+      },
+      {
+       "appends": [],
+       "completed_at": null,
+       "created_at": 1793670761180,
+       "deleted_at": null,
+       "description": "",
+       "due": null,
+       "energy": null,
+       "fields": {},
+       "id": "1e0ac20a-f14f-4079-ae30-3d9785486b0b",
+       "labels": [],
+       "origin": null,
+       "parent_id": null,
+       "position": 1,
+       "priority": 4,
+       "project_id": null,
+       "rotation": [],
+       "sector": null,
+       "title": "Written while B was away"
+      }
+     ],
+     "themes": [],
+     "time_entries": [],
+     "userId": "881756c8-3ac2-4e10-b827-6d2a77f32621",
+     "user_prefs": [],
+     "version": 1,
+     "views": [],
+     "workspaces": [
+      {
+       "color": "",
+       "default": true,
+       "icon": "",
+       "id": "527e873e-dbb1-805f-bebf-9a086727969f",
+       "name": "Personal",
+       "role": "owner"
+      }
+     ]
+    }
+   }
+  }
+ ]
+}

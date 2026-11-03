@@ -1,0 +1,73 @@
+{
+  "version": "0.12.0",
+  "source": {
+    "ref": "v0.12.0",
+    "commit": "ebe8dcbb9f3d27fe8ef63acbff9ff78d60b68a02",
+    "built_with": "go1.27.3",
+    "how": "scripts/release/upgrade-fixture.sh"
+  },
+  "created_at": 1793670378292,
+  "owner": {
+    "email": "owner@example.com",
+    "name": "Owner",
+    "password": "upgrade fixture password one"
+  },
+  "member": {
+    "email": "member@example.com",
+    "name": "Member",
+    "password": "upgrade fixture password two"
+  },
+  "token": "ot_7w5GWNxBkcl2AJCUmkginacwWDlRn2wZAzolmHP5Bow",
+  "ids": {
+    "labels": [
+      "73652cf3-e351-47e6-8fff-d053e1272d7e",
+      "3dfef825-1ca3-46a0-8421-9efe98c19eef"
+    ],
+    "projects": [
+      "8c6ca513-f9d5-4b28-8f86-aa9e8a1ea1a8",
+      "83330fd4-2eb6-4b24-9a29-d546f3f6ba22"
+    ],
+    "sections": [
+      "d28cbbf8-726c-4010-a406-a636cc1d0d67",
+      "e5e040b4-aba9-4a00-95ce-038b493738e7"
+    ],
+    "shared": "83330fd4-2eb6-4b24-9a29-d546f3f6ba22",
+    "tasks": [
+      "f96d5c80-3344-4235-86aa-bb870e457035",
+      "e889d3db-7eaf-45bf-b4be-92a19f6cc177",
+      "45a2412c-80a6-4845-8f0a-197d49b97376",
+      "1466b731-c3bc-47a7-bbd2-5b437117ad46",
+      "7733cab3-612d-473c-9463-857556b8f444",
+      "65bceff1-ce77-48b4-9147-075b807c6365",
+      "3ead4769-1db2-43de-8fe0-fbb1201c9b2e"
+    ],
+    "attachment": "8f5c8085-204d-486b-98a8-584ac1477006"
+  },
+  "attachment": {
+    "id": "8f5c8085-204d-486b-98a8-584ac1477006",
+    "sha256": "65bd291e71718822959a61fbd34349420e84e0bb586ed2a551bf9142a229e928",
+    "size": 46
+  },
+  "member_encryption": true,
+  "phone_cursor": 78,
+  "counts": {
+    "projects": 2,
+    "sections": 2,
+    "labels": 2,
+    "tasks": 6,
+    "tasks_with_deleted": 7,
+    "reminders": 1,
+    "time_entries": 1,
+    "members": 2,
+    "comments": 2,
+    "attachments": 1
+  },
+  "ops": 115,
+  "ops_after_phone_cursor": 37,
+  "export": {
+    "format": "opentodo-export",
+    "version": 1,
+    "tasks": 7
+  },
+  "skipped": []
+}

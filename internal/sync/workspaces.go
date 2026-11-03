@@ -406,6 +406,7 @@ func (s *Service) directoryTx(ctx context.Context, actorID, wsID string, fn func
 	if s.observer != nil && len(ch.changes) > 0 {
 		s.observer(context.WithoutCancel(ctx), ch.changes)
 	}
+	s.EmitHandOffs(context.WithoutCancel(ctx), ch.changes)
 	return ch, nil
 }
 

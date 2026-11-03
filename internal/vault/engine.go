@@ -123,6 +123,14 @@ type engine struct {
 	// pending are files iCloud has not downloaded yet: only a `.<name>.icloud`
 	// placeholder is on disk. They are neither read nor written.
 	pending map[string]bool
+	// raced are vault files saved while the run went on, and racedTasks the
+	// tasks of task notes saved meanwhile: not written, and their values keep
+	// their base so the next run merges the save.
+	raced      map[string]bool
+	racedTasks map[string]bool
+	// freshLines are the ids given to new lines, by file and by the line's
+	// text and its occurrence: a file saved during the run gets them still.
+	freshLines map[string]map[string]string
 }
 
 // Sync runs one sync of the vault in o.Dir.
@@ -148,10 +156,26 @@ func Sync(ctx context.Context, o Options) (*Report, error) {
 		st.takeOver()
 		takeOver = true
 	}
+	base := st.Store
+	if len(st.Held) > 0 {
+		// Files saved during the last sync merge against what they were
+		// printed from; the app's newer values stay in the store.
+		base = st.Store.Clone()
+		for entity, rows := range st.Held {
+			if base[entity] == nil {
+				base[entity] = map[string]Row{}
+			}
+			for id, row := range rows {
+				base[entity][id] = row
+			}
+		}
+	}
+	st.Held = nil
 	e := &engine{o: o, st: st, takeOver: takeOver, t: o.Transport, rep: &Report{Warnings: []string{}, Events: []Event{}},
-		base: st.Store, app: st.Store.Clone(), startCursor: st.Cursor,
+		base: base, app: st.Store.Clone(), startCursor: st.Cursor,
 		refused: map[string]bool{}, stamped: map[string]int64{}, conf: map[string][]string{},
-		bodies: map[string]map[string]map[string]any{}, fresh: map[string]bool{}, retouch: map[string]bool{}}
+		bodies: map[string]map[string]map[string]any{}, fresh: map[string]bool{}, retouch: map[string]bool{},
+		raced: map[string]bool{}, racedTasks: map[string]bool{}, freshLines: map[string]map[string]string{}}
 	e.clk = clock{st: st, now: o.Now}
 	if err := e.loadNotes(); err != nil {
 		return nil, err
@@ -379,6 +403,38 @@ func (e *engine) saveBase() {
 		}
 	}
 	e.st.Store = next
+	e.holdRaced()
+}
+
+// holdRaced keeps, for the next sync, the rows a file or task note saved
+// during this run was printed from (State.Held); the store moves on.
+func (e *engine) holdRaced() {
+	hold := func(entity, id string) {
+		row, ok := e.base[entity][id]
+		if !ok {
+			return
+		}
+		if e.st.Held == nil {
+			e.st.Held = Store{}
+		}
+		if e.st.Held[entity] == nil {
+			e.st.Held[entity] = map[string]Row{}
+		}
+		e.st.Held[entity][id] = row
+	}
+	for id, p := range e.st.Printed {
+		if e.raced[p] {
+			hold("task", id)
+		}
+	}
+	for p := range e.raced {
+		if fs, ok := e.st.Files[p]; ok && fs.Project != "" {
+			hold("project", fs.Project)
+		}
+	}
+	for id := range e.racedTasks {
+		hold("task", id)
+	}
 }
 
 // Status is what `ot vault status` shows without the server.

@@ -29,6 +29,7 @@ let eisenhowerPath = null
 let completedCalendarFixture = null
 let repeatingCalendarFixture = null
 let spansCalendarFixture = null
+let locationReminderFixture = null
 const BIN = process.env.OPENTODO_BIN ?? 'bin/opentodo'
 const only = process.argv[2] ? new Set(process.argv[2].split(',')) : null
 const want = (name) => !only || only.has(name)
@@ -464,6 +465,24 @@ const shots = [
     await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation'); await openTask(p, 'Get three quotes for the kitchen')
     await detail(p).getByRole('button', { name: /^Reminder: / }).first().click(); const editor = p.getByRole('dialog', { name: 'When' }); await editor.waitFor()
     await editor.getByRole('tab', { name: /^Reminders/ }).click(); await settle(p, 400)
+    return clipOf(p, editor, 16)
+  }, async after(p) { await p.keyboard.press('Escape') } },
+  // Location reminders (location-reminders D5): "Arriving at Post office · 150 m" in a browser, where it fires on the phone.
+  { name: 'location-reminders', server: P, async run(p, { ctx }) {
+    if (!locationReminderFixture) {
+      const api = async (method, path, body) => {
+        const r = await ctx.request.fetch(plainBase + path, { method, headers: { Origin: plainBase, 'Content-Type': 'application/json' }, data: JSON.stringify(body) })
+        if (!r.ok()) throw new Error(`${method} ${path} → ${r.status()} ${await r.text()}`)
+        return r.json()
+      }
+      const task = await api('POST', '/api/v1/tasks', { title: 'Buy stamps', location: { name: 'Post office', lat: 45.4642, lon: 9.19 } })
+      await api('POST', '/api/v1/reminders', { task_id: task.id, kind: 'arrive', radius_m: 150 })
+      await api('POST', '/api/v1/reminders', { task_id: task.id, kind: 'leave', radius_m: 300 })
+      locationReminderFixture = task.id
+    }
+    await go(p, plainBase, '/inbox'); await openTask(p, 'Buy stamps')
+    await detail(p).getByRole('button', { name: /\d+ reminders?/ }).first().click(); const editor = p.getByRole('dialog', { name: 'When' }); await editor.waitFor()
+    await editor.getByRole('tab', { name: /^Reminders/ }).click(); await editor.locator('[data-location-chip]').first().waitFor(); await settle(p, 400)
     return clipOf(p, editor, 16)
   }, async after(p) { await p.keyboard.press('Escape') } },
   { name: 'week', server: D, card: true, async run(p) {

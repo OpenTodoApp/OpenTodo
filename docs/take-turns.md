@@ -22,6 +22,6 @@ Only completing passes the turn. Skipping an occurrence, changing **this occurre
 
 The task panel shows the order under the assignee, for example **Takes turns: Alice → Bob → Carol**, with the current assignee in bold, and the task's row marks the assignee's avatar with a small rotate sign. Viewers see the order but can't change it. Your Inbox, a project only you belong to, a task that doesn't repeat and a subtask don't offer **Take turns…**; a list kept on such a task does nothing until it qualifies again (for example when you add a rule back).
 
-When someone leaves the project, is removed or deletes their account, the server takes them out of every list in that project. If it was their turn, the task goes to the next person in the list who is still a member, or is unassigned when nobody is left. New members are never added to a list automatically.
+When someone leaves the project, is removed or deletes their account, the server takes them out of every list in that project. If it was their turn, the task goes to the next person in the list who is still a member, who gets the same **It's your turn** notification as after a completion (unless they removed the person themselves), or is unassigned when nobody is left. New members are never added to a list automatically.
 
 Every device that completes the task offline picks the same next person, so two people completing the same occurrence at the same time end up with one completion and one assignee.

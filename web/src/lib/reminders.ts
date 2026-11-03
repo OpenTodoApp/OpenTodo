@@ -8,12 +8,34 @@ import { mutate, mutateMany, type Change } from './ops'
 import { deadlineFireAt, relativeFireAt, snoozeUntil, type SnoozeChoice } from './reminderTime'
 import type { Op, Reminder, Task } from './types'
 import { uuid } from './ids'
+import { LOCAL_ERRORS } from './localErrors'
 
 export type ReminderInput =
   | { kind: 'relative'; offset_minutes: number }
   | { kind: 'absolute'; fire_at: number }
   /** Offset from 09:00 local on the task's deadline (OpenSpec change `deadlines`). */
   | { kind: 'deadline'; offset_minutes: number }
+  /** Fires on a phone that enters or leaves the circle around the task's location (location-reminders). */
+  | { kind: 'arrive' | 'leave'; radius_m: number }
+
+/** location-reminders D1: a whole number of metres from 100 to 5,000. */
+function checkRadius(m: number): void {
+  if (!Number.isInteger(m) || m < 100 || m > 5000) throw new Error('radius must be 100 to 5000 metres')
+}
+
+/** The kind-dependent fields of a reminder: a location kind never has a time or offset, other kinds no radius. */
+function shapeOf(input: ReminderInput, task: Pick<Task, 'due' | 'deadline'> | undefined): Pick<Reminder, 'kind' | 'offset_minutes' | 'fire_at' | 'radius_m'> {
+  if ('radius_m' in input) {
+    checkRadius(input.radius_m)
+    return { kind: input.kind, offset_minutes: null, fire_at: null, radius_m: input.radius_m }
+  }
+  if (input.kind === 'absolute') {
+    if (!(input.fire_at > 0)) throw new Error(LOCAL_ERRORS.reminderTimeRequired)
+    return { kind: 'absolute', offset_minutes: null, fire_at: input.fire_at, radius_m: null }
+  }
+  if (!Number.isInteger(input.offset_minutes)) throw new Error(LOCAL_ERRORS.offsetNotWhole)
+  return { kind: input.kind, offset_minutes: input.offset_minutes, fire_at: offsetFireAt(input.kind, task, input.offset_minutes), radius_m: null }
+}
 
 /** Firing time of an offset reminder: from the due time (relative) or the deadline day (deadline). */
 function offsetFireAt(kind: 'relative' | 'deadline', task: Pick<Task, 'due' | 'deadline'> | undefined, offset: number): number | null {
@@ -23,16 +45,14 @@ function offsetFireAt(kind: 'relative' | 'deadline', task: Pick<Task, 'due' | 'd
 /** Add a reminder to a task; returns its id. A relative reminder on an undated task has no firing time yet. */
 export async function addReminder(taskId: string, input: ReminderInput, now = Date.now()): Promise<string> {
   const task = await db.tasks.get(taskId)
-  if (!task || task.deleted_at) throw new Error('task not found')
+  if (!task || task.deleted_at) throw new Error(LOCAL_ERRORS.taskNotFound)
   const id = uuid()
-  const offset = input.kind === 'absolute' ? null : input.offset_minutes
-  if (input.kind !== 'absolute' && !Number.isInteger(offset)) throw new Error('offset must be a whole number of minutes')
-  if (input.kind === 'absolute' && !(input.fire_at > 0)) throw new Error('reminder time is required')
+  const { radius_m, ...shape } = shapeOf(input, task)
   await mutate('reminder', id, {
     task_id: taskId,
-    kind: input.kind,
-    offset_minutes: offset,
-    fire_at: input.kind === 'absolute' ? input.fire_at : offsetFireAt(input.kind, task, input.offset_minutes),
+    ...shape,
+    // Only a location reminder writes a radius; the others keep the field's default.
+    ...(radius_m != null ? { radius_m } : {}),
     delivered_at: null,
     dismissed_at: null,
     created_at: now,
@@ -49,17 +69,11 @@ export async function updateReminder(id: string, input: ReminderInput): Promise<
   const r = await db.reminders.get(id)
   if (!r || r.deleted_at) throw new Error('reminder not found')
   const task = await db.tasks.get(r.task_id)
-  const patch: Partial<Reminder> = { kind: input.kind }
-  if (input.kind !== 'absolute') {
-    if (!Number.isInteger(input.offset_minutes)) throw new Error('offset must be a whole number of minutes')
-    patch.offset_minutes = input.offset_minutes
-    patch.fire_at = offsetFireAt(input.kind, task, input.offset_minutes)
-  } else {
-    if (!(input.fire_at > 0)) throw new Error('reminder time is required')
-    patch.offset_minutes = null
-    patch.fire_at = input.fire_at
-  }
-  if (patch.fire_at !== r.fire_at) {
+  const shape = shapeOf(input, task)
+  const patch: Partial<Reminder> = { kind: shape.kind, offset_minutes: shape.offset_minutes, fire_at: shape.fire_at }
+  if (shape.radius_m != null || r.radius_m != null) patch.radius_m = shape.radius_m
+  // A moved firing time, or another place or circle, fires again.
+  if (patch.fire_at !== r.fire_at || shape.kind !== r.kind) {
     patch.delivered_at = null
     patch.dismissed_at = null
   }
@@ -81,6 +95,11 @@ export async function snoozeReminder(id: string, choice: SnoozeChoice | number, 
   const fireAt = typeof choice === 'number' ? choice : snoozeUntil(choice, now)
   await mutate('reminder', id, { fire_at: fireAt, delivered_at: null, dismissed_at: null })
   return fireAt
+}
+
+/** A dismissed location reminder watches its place again (location-reminders D2 "Arm again"). */
+export async function rearmReminder(id: string): Promise<void> {
+  await mutate('reminder', id, { dismissed_at: null })
 }
 
 /** Dismiss the current firing. */
@@ -111,17 +130,19 @@ export async function followSharedDueChanges(ops: Op[]): Promise<number> {
   const taskIds = new Set(ops.filter((o) => o.entity === 'task' && (o.field === 'due' || o.field === 'deadline')).map((o) => o.entityId))
   if (taskIds.size === 0) return 0
   const changes: Change[] = []
-  for (const id of taskIds) {
-    const task = await db.tasks.get(id)
-    if (!task || !task.project_id || task.deleted_at) continue
-    if (!(await db.memberships.get(task.project_id))) continue
-    const reminders = await db.reminders.where('task_id').equals(id).toArray()
-    for (const r of reminders) {
-      if (r.deleted_at || r.kind === 'absolute') continue
-      const fireAt = offsetFireAt(r.kind, task, r.offset_minutes ?? 0)
-      if (fireAt === r.fire_at) continue
-      changes.push({ entity: 'reminder', entityId: r.id, patch: { fire_at: fireAt, delivered_at: null, dismissed_at: null } })
-    }
+  // Read in bulk (performance-10k): a first sync's page dates hundreds of tasks.
+  const tasks = (await db.tasks.bulkGet([...taskIds])).filter((t): t is Task => !!t && !!t.project_id && !t.deleted_at)
+  const projects = [...new Set(tasks.map((t) => t.project_id as string))]
+  const shared = new Set((await db.memberships.bulkGet(projects)).filter((m) => !!m).map((m) => m.projectId))
+  const sharedTasks = new Map(tasks.filter((t) => shared.has(t.project_id as string)).map((t) => [t.id, t]))
+  if (sharedTasks.size === 0) return 0
+  const reminders = await db.reminders.where('task_id').anyOf([...sharedTasks.keys()]).toArray()
+  for (const r of reminders) {
+    const task = sharedTasks.get(r.task_id)
+    if (!task || r.deleted_at || (r.kind !== 'relative' && r.kind !== 'deadline')) continue
+    const fireAt = offsetFireAt(r.kind, task, r.offset_minutes ?? 0)
+    if (fireAt === r.fire_at) continue
+    changes.push({ entity: 'reminder', entityId: r.id, patch: { fire_at: fireAt, delivered_at: null, dismissed_at: null } })
   }
   if (changes.length) await mutateMany(changes)
   return changes.length

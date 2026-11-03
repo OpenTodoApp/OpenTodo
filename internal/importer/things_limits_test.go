@@ -58,7 +58,7 @@ func TestThingsRefusesSchemaThatComputes(t *testing.T) {
 	}
 }
 
-// No value longer than thingsMaxValue is read, stored or computed.
+// No value longer than sqliteMaxValue is read, stored or computed.
 func TestThingsRefusesOversizedValue(t *testing.T) {
 	data := thingsVariant(t, "UPDATE TMTask SET notes = printf('%.*c', 1100000, 'x') WHERE rowid = (SELECT MIN(rowid) FROM TMTask)")
 	_, err := parseWith(t, data, nil)
