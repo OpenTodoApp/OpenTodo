@@ -9,7 +9,7 @@ order: 10
 ---
 # HTTP API
 
-Base path: `/api/v1`. All requests and responses are JSON. Errors look like:
+Base path: `/api/v1`. All requests and responses are JSON. Within 1.x the API only grows: routes, fields and error codes are added, never removed or changed ([stability and compatibility](stability.md)); ignore fields you do not know. Errors look like:
 
 ```json
 { "error": { "code": "invalid_input", "message": "task.priority must be an integer from 1 (highest) to 4 (lowest)" } }
@@ -55,7 +55,7 @@ If the account has two-factor authentication, step 1 answers `{"mfaRequired":tru
 
 ### Endpoints
 
-Auth column: **none** = public; **yes** = any session or token (a `read` token only on `GET`); **owner**, **admin** = that account role; **member** = a member of the project; **fresh** = a step-up route for sessions (see [Two-factor authentication](#two-factor-authentication)); **credential** = a session or an `admin` token, never a `full` one (see [token scopes](#token-scopes)); **cookie** = a browser session. Every route's policy is declared where it is registered (`internal/httpapi/policy.go`) and checked by a test. Every `/api/v1` route not listed as public requires authentication.
+Auth column: **none** = public; **yes** = any session or token (a `read` token only on `GET`); **owner**, **admin** = that account role; **member** = a member of the project; **fresh** = a step-up route for sessions (see [Two-factor authentication](#two-factor-authentication)); **credential** = a session or an `admin` token, never a `full` one (see [token scopes](#token-scopes)); **cookie** = a browser session; **deprecated** = still served, answers with the `Deprecation` and `Sunset` headers, and the row names its replacement ([deprecation](stability.md#deprecation); no route is deprecated in 1.0). Every route's policy is declared where it is registered (`internal/httpapi/policy.go`) and checked by a test. Every `/api/v1` route not listed as public requires authentication.
 
 #### Health and authentication
 

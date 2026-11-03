@@ -105,6 +105,23 @@ export function quickAddLinkProblems(pages) {
   return out
 }
 
+/**
+ * The pages that describe a part of the v1 surface link the compatibility policy
+ * (OpenSpec change stability-contract): docs/stability.md.
+ */
+export const STABILITY_LINKERS = ['api.md', 'sync.md', 'mcp.md', 'cli.md', 'import-export.md']
+const STABILITY_LINK = /\]\((?:\.\/)?(?:docs\/)?stability\.md(?:#[^)]*)?\)/
+
+/** Problems: a page of STABILITY_LINKERS (when present) or the README (when given) that does not link stability.md. */
+export function stabilityLinkProblems(pages, readme = null) {
+  const out = []
+  for (const p of pages) {
+    if (STABILITY_LINKERS.includes(p.rel) && !STABILITY_LINK.test(p.body)) out.push(`docs/${p.rel}: does not link the compatibility policy (stability.md)`)
+  }
+  if (readme !== null && !STABILITY_LINK.test(readme)) out.push('README.md: does not link the compatibility policy (docs/stability.md)')
+  return out
+}
+
 /** Runs every check; returns a list of problems (empty when all is well). */
 export async function runChecks(repoRoot) {
   const { files, pages, rendered, problems } = await buildAll(repoRoot)
@@ -178,6 +195,8 @@ export async function runChecks(repoRoot) {
     if (!existsSync(join(repoRoot, img))) out.push(`docs/${p.rel}: card "${p.fm.card}" has no ${img}; mark the shot \`card: true\` in scripts/docs-screenshots.mjs and run it`)
   }
   out.push(...quickAddLinkProblems(pages))
+  const readmePath = join(repoRoot, 'README.md')
+  if (byRel.has('stability.md')) out.push(...stabilityLinkProblems(pages, existsSync(readmePath) ? readFileSync(readmePath, 'utf8') : null))
   const used = appScreenIds(repoRoot)
   for (const [id, file] of used) if (!screens.has(id)) out.push(`${file}: help screen "${id}" is not named by any page's "screens"`)
   // The reverse direction applies once the app has help links (task 4.2).

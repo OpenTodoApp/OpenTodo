@@ -15,6 +15,8 @@ OpenTodo syncs with a field-level, last-writer-wins operation log. It is a state
 - **Idempotency**: applying an op twice changes nothing.
 - **Offline safety**: ops can be produced without the server and merged later.
 
+The protocol and the op schema are part of the v1 surface: within 1.x, entities and fields are only added, never removed or renamed ([stability and compatibility](stability.md)).
+
 ## Operation
 
 ```json

@@ -31,6 +31,8 @@
 
 `-update` only adds entries; it never deletes. Deleting by hand is caught in review because the policy forbids it, and by a repo-check that compares the file with the one at the `v1.0.0` tag once it exists (entries in the tag must still be present).
 
+As built: request and response fields are read by type-checking the route packages (`go/types` over the build cache's export data, no new dependency) and following each handler through the functions of its package to its decodes and `writeJSON` answers; the generic collection routes are listed once per collection with their op fields as kind names; MCP arguments come from the generated tool definitions and read-tool results from calling each read tool without arguments; the CLI part from `internal/cli/testdata/schema.golden.json`. The policy name leaves out the demo deny flag (a demo-instance concern). The file is nested JSON; the test compares it flattened to paths (`routes › GET /api/v1/me › response › user.email`), lists being sets. `TestGeneratedOpSchema` also refuses to regenerate the op schema fixture without a field it had.
+
 Alternative: an OpenAPI document as the source of truth. Rejected: hand-written OpenAPI drifts, generating it needs a dependency, and it would not cover ops, MCP and the CLI. The snapshot can later feed an OpenAPI export.
 
 Alternative: per-route golden response files. Rejected for the freeze: too brittle for additive fields; the existing handler tests keep covering behaviour.
