@@ -39,12 +39,17 @@ The owner SHALL create clients through `GET`, `POST` and `DELETE /api/v1/setting
 
 ### Requirement: Dynamic registration only for Google
 
-`POST /oauth/register` SHALL implement RFC 7591 for redirect addresses on `oauth-redirect`, `oauth-redirect-sandbox` and `oauth-redirect-test` `.googleusercontent.com` under `/r/` and `/a/` only, SHALL issue a confidential client with scope `read`, and SHALL refuse every other address with 400 `invalid_redirect_uri`.
+`POST /oauth/register` SHALL implement RFC 7591 for redirect addresses on `oauth-redirect`, `oauth-redirect-sandbox` and `oauth-redirect-test` `.googleusercontent.com` under `/r/` and `/a/` only, SHALL issue a confidential client with scope `read`, and SHALL refuse every other address with 400 `invalid_redirect_uri`. Registration SHALL be limited to five a minute per client address, SHALL remove dynamic clients nobody authorized within a day, and SHALL refuse with 503 while 200 dynamic clients remain.
 
 #### Scenario: A foreign redirect is refused
 
 - **WHEN** an anonymous caller registers `https://evil.example/cb`
 - **THEN** the response is 400 `invalid_redirect_uri` and no client is created
+
+#### Scenario: Registration is rate limited
+
+- **WHEN** one address registers a sixth client within a minute
+- **THEN** the response is 429 `rate_limited` and no client is created
 
 #### Scenario: A Google connector registers
 
@@ -62,21 +67,40 @@ Client secrets, authorization codes and refresh tokens SHALL be stored only as S
 
 ### Requirement: Authorize requires a session
 
-`GET /oauth/authorize` SHALL require a signed-in browser session and SHALL refuse API tokens. A browser without a session SHALL be sent to the app with the authorize address to return to.
+`GET /oauth/authorize` SHALL require a signed-in browser session and SHALL refuse API tokens. A browser without a session SHALL be sent to the app with the authorize address to return to. A browser with a session SHALL be sent to the app's consent screen (`/?oauth_consent=<request>`) and SHALL NOT receive a code from the authorize address itself.
 
 #### Scenario: No session, no code
 
 - **WHEN** an anonymous browser opens the authorize address
 - **THEN** it is redirected to `/?oauth=<authorize address>` and no code is issued
 
+#### Scenario: A link alone grants nothing
+
+- **WHEN** a signed-in person opens a valid authorize address someone sent them
+- **THEN** the browser is sent to the consent screen and no code is issued
+
+### Requirement: Consent issues the code
+
+The consent screen SHALL name the client, the scope it would receive and the host of its redirect address, through `GET /api/v1/me/mcp-consent`. `POST /api/v1/me/mcp-consent` with `{query, allow}` SHALL accept only a browser session, never an API token, and SHALL validate the request again. Allow SHALL issue a single-use code and answer the registered address with `code` and the client's `state`; Deny SHALL answer it with `error=access_denied` and no code.
+
+#### Scenario: Allow returns a code
+
+- **WHEN** the signed-in person presses Allow for a valid request with `state=abc`
+- **THEN** the answer is the registered redirect with a `code` and `state=abc`
+
+#### Scenario: Deny returns no code
+
+- **WHEN** the person presses Cancel
+- **THEN** the answer is the registered redirect with `error=access_denied` and no `code`
+
+#### Scenario: A token cannot consent
+
+- **WHEN** a request to `POST /api/v1/me/mcp-consent` carries an API token instead of a session
+- **THEN** it is refused and no code is issued
+
 ### Requirement: Authorize validates and redirects
 
-The authorize step SHALL validate the client, the registered `redirect_uri`, `response_type=code` and `code_challenge_method=S256`, answering 400 without a `Location` when the client or address is wrong. On success it SHALL issue a single-use code and redirect to the registered address with `code` and the client's `state`. The code's scope SHALL be the client's own: the request neither widens nor narrows it.
-
-#### Scenario: A code comes back to the registered address
-
-- **WHEN** a signed-in person opens a valid authorize address with an S256 challenge and `state=abc`
-- **THEN** the response is a 302 to the registered redirect with a `code` and `state=abc`
+The authorize step and the consent calls SHALL validate the client, the registered `redirect_uri`, `response_type=code` and `code_challenge_method=S256`, answering 400 without a `Location` when the client or address is wrong. The code's scope SHALL be the client's own: the request neither widens nor narrows it.
 
 #### Scenario: An agent client stays writable
 
@@ -108,7 +132,17 @@ A code SHALL be stored as a hash with a 60-second expiry, SHALL be deleted in th
 
 ### Requirement: Refresh without rotation
 
-`grant_type=refresh_token` SHALL return the same refresh token with its expiry extended and a new access token, revoking the previous access token. A refresh token SHALL last 180 days and an access token one hour.
+`grant_type=refresh_token` SHALL return the same refresh token with its expiry extended and a new access token, revoking the previous access token. A refresh token SHALL last 180 days and an access token one hour; an access token SHALL stop authenticating once its hour is over, even if it was never refreshed or revoked. A new access token SHALL replace the grant's previous one only while the grant still holds it, so concurrent refreshes leave one access token per grant.
+
+#### Scenario: An access token expires
+
+- **WHEN** an access token is used more than an hour after it was issued
+- **THEN** `/mcp` answers 401 and the token no longer appears in the person's token list
+
+#### Scenario: Concurrent refreshes leave one token
+
+- **WHEN** a client sends several refreshes of the same grant at once
+- **THEN** afterwards the person holds exactly one access token for that grant
 
 #### Scenario: Refresh keeps the link
 
@@ -117,12 +151,22 @@ A code SHALL be stored as a hash with a 60-second expiry, SHALL be deleted in th
 
 ### Requirement: Revocation
 
-`POST /oauth/revoke` SHALL accept an access or refresh token, revoke what it identifies, and answer 200 for an unknown token. Deleting a client SHALL cut off every grant issued for it.
+`POST /oauth/revoke` SHALL authenticate the client as the token endpoint does, SHALL accept that client's refresh token or the access token one of its grants holds, revoke the grant and its access token, and answer 200 for any other token without changing it, including another client's tokens and ordinary API tokens. Deleting a client SHALL cut off every grant issued for it in one transaction.
 
 #### Scenario: Revoking a grant
 
 - **WHEN** the client posts its refresh token to `/oauth/revoke`
 - **THEN** that refresh token and its access token are refused afterwards
+
+#### Scenario: Revoke needs the client
+
+- **WHEN** a caller posts a token to `/oauth/revoke` without the client's id and secret
+- **THEN** the response is 401 `invalid_client` and nothing is revoked
+
+#### Scenario: Revoke leaves other tokens alone
+
+- **WHEN** a client posts a personal API token or another client's token to `/oauth/revoke`
+- **THEN** the response is 200 and that token keeps working
 
 #### Scenario: Deleting the client cuts the grant off
 
