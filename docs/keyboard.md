@@ -264,6 +264,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>j</kbd> / <kbd>Space</kbd> | Skip to the next task |
 | <kbd>k</kbd> | Back to the previous task |
 | <kbd>Enter</kbd> | Open the task’s panel to edit anything else |
+| <kbd>Tab</kbd> | Edit the title. Tab, Enter or a click away saves it and the decision keys work again. Esc restores it |
 | <kbd>Esc</kbd> | Close the panel, else back to the Inbox with this task selected |
 
 ### Focus
