@@ -233,6 +233,7 @@ The five changes land in this order. Routines never fetch URLs or feeds: outboun
 | Read-only MCP server for AI assistants, off by default | `mcp-server` |
 | AI assistants can make changes through MCP: `agent` tokens, owner and user switches, limits, audit, history labels | `mcp-write-tools` |
 | Assistants plan like the app (deadline, start, Someday, This Evening, waiting for, location) on every surface; projects can be kept away from assistants | `agent-planning-fields` |
+| OAuth for the MCP endpoint, so apps that refuse a pasted token (Google Gemini) can connect: discovery, Google-only dynamic registration, PKCE, a consent dialog, one-hour access tokens and a stable refresh token (#876) | `mcp-oauth` |
 | stdio bridge for assistants that only speak stdio (`ot mcp`), read-only by default | `mcp-stdio-bridge` |
 | `ot` for agent harnesses: versioned `--json` schemas, `ot schema`, `--dry-run`, idempotency keys, `--yes` off a terminal, exit code 5, read-only mode, `agent` tokens on REST content routes, the agent skill file | `agent-ready-cli` |
 

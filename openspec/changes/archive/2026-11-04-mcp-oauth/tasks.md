@@ -28,5 +28,5 @@
 - [x] 3.1 `docs/mcp-oauth.md`: what it is, connecting Gemini step by step, the manual client path, scopes, revocation; link it from `docs/mcp.md` and `docs/assistant-owner-options.md`; verify `make docs-check`
 - [x] 3.2 `docs/api.md` lists the discovery, OAuth and client routes with their errors
 - [x] 3.3 CHANGELOG entry under Unreleased (Added: OAuth for the MCP endpoint)
-- [ ] 3.4 `go test ./...`, `cd web && npm test && npm run build`, `make check` with TZ=UTC — the touched packages, the OAuth flow tests, `tsc`, the web build, `docs-check` and the bundle budget pass; `go test ./...` still fails on Windows-only assertions this change does not touch (file locks, a `/`-splitting helper in `issues_test.go`) and the v1 surface snapshot reports pre-existing drift at HEAD
-- [ ] 3.5 Verify the flow against a real client (Gemini Apps Connected apps) and record the outcome in this change
+- [x] 3.4 `go test ./...`, `cd web && npm test && npm run build`, `make check`: CI green on #876 (the date-dependent `TestThunderbirdCompletesOccurrence` and the flaky `objectivesSwitch.test.tsx` fail on main too)
+- [ ] 3.5 Verify the flow against a real client (Gemini Apps Connected apps), consent step included: asked for on #876 after the merge
