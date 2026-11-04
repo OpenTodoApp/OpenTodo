@@ -402,8 +402,10 @@ one. Nothing is sent anywhere. See docs/self-hosting/docker.md.
 	}
 	if base == "" {
 		port := "8080"
-		if _, p, err := net.SplitHostPort(os.Getenv("OPENTODO_ADDR")); err == nil && p != "" {
-			port = p
+		if addr, err := config.ListenAddress(); err == nil {
+			if _, p, err := net.SplitHostPort(addr); err == nil && p != "" {
+				port = p
+			}
 		}
 		base = "http://localhost:" + port
 	}
@@ -414,9 +416,10 @@ one. Nothing is sent anywhere. See docs/self-hosting/docker.md.
 }
 
 func healthcheck() int {
-	addr := os.Getenv("OPENTODO_ADDR")
-	if addr == "" {
-		addr = ":8080"
+	addr, err := config.ListenAddress()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "unhealthy:", err)
+		return 1
 	}
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {

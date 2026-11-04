@@ -1415,6 +1415,7 @@
   ],
   "Allow": [
     "web/src/app/AgentAccessRow.tsx",
+    "web/src/app/OAuthConsent.tsx",
     "web/src/app/palette/registry.ts"
   ],
   "Allow AI assistants": [
@@ -1769,6 +1770,9 @@
   ],
   "Apply without asking was turned off because an AI assistant changed this routine": [
     "web/src/lib/rules/ai.ts"
+  ],
+  "Apps that sign in with OAuth": [
+    "web/src/app/OAuthClients.tsx"
   ],
   "Archive": [
     "web/src/app/ArchivePrompt.tsx",
@@ -2579,7 +2583,8 @@
     "web/src/lib/review.ts"
   ],
   "Can make changes": [
-    "web/src/app/AssistantsPanel.tsx"
+    "web/src/app/AssistantsPanel.tsx",
+    "web/src/app/OAuthClients.tsx"
   ],
   "Can tick items": [
     "web/src/app/PublicLinksSection.tsx"
@@ -2603,6 +2608,7 @@
     "web/src/app/NewBoardDialog.tsx",
     "web/src/app/NewWorkspaceDialog.tsx",
     "web/src/app/NotificationChannelEditor.tsx",
+    "web/src/app/OAuthConsent.tsx",
     "web/src/app/OutgoingEmailPanel.tsx",
     "web/src/app/PasswordSection.tsx",
     "web/src/app/PendingInvitations.tsx",
@@ -3035,6 +3041,9 @@
   "Choose one of the offered Anthropic models.": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
+  "Choose read-only access or access that may make changes.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "Choose the app you use now": [
     "web/src/app/import/SwitchFromPicker.tsx"
   ],
@@ -3143,7 +3152,11 @@
   ],
   "Client ID": [
     "web/src/app/CalendarSyncDialogs.tsx",
-    "web/src/app/SsoPanel.tsx"
+    "web/src/app/SsoPanel.tsx",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Client name": [
+    "web/src/app/OAuthClients.tsx"
   ],
   "Client secret": [
     "web/src/app/CalendarSyncDialogs.tsx",
@@ -3154,6 +3167,7 @@
   ],
   "Close": [
     "web/src/app/BackupsPanel.tsx",
+    "web/src/app/OAuthConsent.tsx",
     "web/src/app/PanelFrame.tsx",
     "web/src/app/ShareDialog.tsx",
     "web/src/app/SsoPanel.tsx",
@@ -3603,6 +3617,9 @@
   "Connect to the internet to open this file.": [
     "web/src/app/task-detail/AttachmentsRow.tsx"
   ],
+  "Connect {client} to your account?": [
+    "web/src/app/OAuthConsent.tsx"
+  ],
   "Connecting…": [
     "web/src/app/RelaySettings.tsx",
     "web/src/app/routines/RoutinesDevice.tsx"
@@ -3664,6 +3681,7 @@
     "web/src/app/InviteLinksSection.tsx",
     "web/src/app/MembersPanel.tsx",
     "web/src/app/NotificationChannels.tsx",
+    "web/src/app/OAuthClients.tsx",
     "web/src/app/PublicLinksSection.tsx",
     "web/src/app/TokensSection.tsx",
     "web/src/app/TwoFactorPanel.tsx",
@@ -3677,6 +3695,7 @@
   ],
   "Copy": [
     "web/src/app/NotificationChannels.tsx",
+    "web/src/app/OAuthClients.tsx",
     "web/src/app/TokensSection.tsx",
     "web/src/app/WorkspaceInvites.tsx"
   ],
@@ -3755,7 +3774,8 @@
     "web/src/app/UsersPanel.tsx"
   ],
   "Could not access the clipboard; select the text and copy it manually.": [
-    "web/src/app/AssistantsPanel.tsx"
+    "web/src/app/AssistantsPanel.tsx",
+    "web/src/app/OAuthClients.tsx"
   ],
   "Could not add the file: {reason}": [
     "web/src/app/task-detail/AttachmentsRow.tsx"
@@ -3850,6 +3870,9 @@
   ],
   "Create app password": [
     "web/src/app/CaldavPanel.tsx"
+  ],
+  "Create client": [
+    "web/src/app/OAuthClients.tsx"
   ],
   "Create feed URL": [
     "web/src/app/CalendarFeedsPanel.tsx"
@@ -4385,6 +4408,9 @@
   "Delete account": [
     "web/src/app/UsersPanel.tsx"
   ],
+  "Delete client": [
+    "web/src/app/OAuthClients.tsx"
+  ],
   "Delete column": [
     "web/src/app/editorCommands.ts"
   ],
@@ -4816,6 +4842,7 @@
     "web/src/app/MarkdownView.tsx",
     "web/src/app/MembersPanel.tsx",
     "web/src/app/NotificationChannels.tsx",
+    "web/src/app/OAuthClients.tsx",
     "web/src/app/ProjectNote.tsx",
     "web/src/app/TokensSection.tsx",
     "web/src/app/TwoFactorPanel.tsx",
@@ -5147,6 +5174,9 @@
   "Edit the selected task's title in place, with its date, priority, labels and project under it; Enter saves, Esc cancels, Shift+Enter opens the details": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Edit the title. Tab, Enter or a click away saves it and the decision keys work again. Esc restores it": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Edit the view": [
     "web/src/app/SavedViewView.tsx"
   ],
@@ -5468,6 +5498,9 @@
   ],
   "Enter an address that starts with https://, http:// or mailto:.": [
     "web/src/app/LinkDialog.tsx"
+  ],
+  "Enter at least one valid redirect address.": [
+    "web/src/lib/i18n/errors.ts"
   ],
   "Enter common, organizations, consumers, a tenant ID or a domain name.": [
     "web/src/app/CalendarSyncDialogs.tsx"
@@ -7806,6 +7839,9 @@
   "It may have expired (links work for 24 hours), been replaced by a newer sign-up, or already been used.": [
     "web/src/app/EmailScreens.tsx"
   ],
+  "It may have expired or been changed. Start connecting again from the app.": [
+    "web/src/app/OAuthConsent.tsx"
+  ],
   "It may have expired, been replaced by a newer link, or already been used. Ask the server owner or an admin for a new one.": [
     "web/src/app/ResetScreen.tsx"
   ],
@@ -9763,6 +9799,9 @@
   "No API tokens yet": [
     "web/src/app/TokensSection.tsx"
   ],
+  "No OAuth clients yet.": [
+    "web/src/app/OAuthClients.tsx"
+  ],
   "No URL set": [
     "web/src/app/BackupsPanel.tsx"
   ],
@@ -11146,6 +11185,9 @@
   ],
   "Only accept mail from (optional)": [
     "web/src/app/EmailInboxPanel.tsx"
+  ],
+  "Only allow this if you started connecting {client} yourself just now.": [
+    "web/src/app/OAuthConsent.tsx"
   ],
   "Only an account with end-to-end encryption answers AI connectors from a device.": [
     "web/src/lib/i18n/errors.ts"
@@ -12786,6 +12828,7 @@
   ],
   "Read only": [
     "web/src/app/AssistantsPanel.tsx",
+    "web/src/app/OAuthClients.tsx",
     "web/src/app/TokensSection.tsx"
   ],
   "Read the docs": [
@@ -12920,6 +12963,9 @@
   ],
   "Register again": [
     "web/src/app/EmailScreens.tsx"
+  ],
+  "Registered by the app": [
+    "web/src/app/OAuthClients.tsx"
   ],
   "Relative": [
     "web/src/app/RemindersField.tsx"
@@ -15160,6 +15206,9 @@
   "Soft warning": [
     "web/src/app/themes/tokenNames.ts"
   ],
+  "Some apps, such as Google Gemini, cannot take a pasted token. They sign in with OAuth instead: create a client here and paste its client ID and secret into the app.": [
+    "web/src/app/OAuthClients.tsx"
+  ],
   "Some colours were adapted for contrast": [
     "web/src/app/ThemeAbout.tsx"
   ],
@@ -16722,6 +16771,9 @@
   "The screenshot could not be handed over. Allow the extension to reach your server in its options, then try again.": [
     "web/src/app/ShareCapture.tsx"
   ],
+  "The secret is shown only now, next to the client ID.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "The secret’s value, not its ID. Note when it expires.": [
     "web/src/app/CalendarSyncDialogs.tsx"
   ],
@@ -17209,6 +17261,9 @@
   "This app is older than this server expects. Update OpenTodo from your app store to keep everything working.": [
     "web/src/app/AboutSection.tsx"
   ],
+  "This app registered itself with your server. It receives the answer at {host}.": [
+    "web/src/app/OAuthConsent.tsx"
+  ],
   "This archive comes from a newer version of OpenTodo. Update this server first. ({detail})": [
     "web/src/lib/restore.ts"
   ],
@@ -17280,6 +17335,9 @@
   ],
   "This connection is stopped. Replace its token, edit its host or enable it again.": [
     "web/src/lib/i18n/errors.ts"
+  ],
+  "This connection request can’t be used": [
+    "web/src/app/OAuthConsent.tsx"
   ],
   "This conversation is too long. Start a new conversation.": [
     "web/src/lib/assistant.ts"
@@ -17995,6 +18053,7 @@
   "Title": [
     "web/src/app/ImportScreen.tsx",
     "web/src/app/RelayConfirm.tsx",
+    "web/src/app/TriageView.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/task-detail/TaskHead.tsx",
@@ -19370,7 +19429,8 @@
     "web/src/app/assistant/AssistantWelcome.tsx"
   ],
   "What the assistant may do": [
-    "web/src/app/AssistantsPanel.tsx"
+    "web/src/app/AssistantsPanel.tsx",
+    "web/src/app/OAuthClients.tsx"
   ],
   "What this device answered, without the text.": [
     "web/src/lib/settingsCopy.ts"
@@ -20042,6 +20102,9 @@
     "web/src/app/ReauthDialog.tsx",
     "web/src/app/ServerArchivePanel.tsx"
   ],
+  "Your server’s owner added this app. It receives the answer at {host}.": [
+    "web/src/app/OAuthConsent.tsx"
+  ],
   "Your sign-in provider manages it: {provider}.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -20418,6 +20481,9 @@
   ],
   "choose which tasks": [
     "web/src/app/routines/words.tsx"
+  ],
+  "client secret": [
+    "web/src/app/OAuthClients.tsx"
   ],
   "combine, merge, concatenate, text": [
     "web/src/lib/rules/sentence.ts"
@@ -22239,6 +22305,12 @@
   ],
   "{choice}, {date}": [
     "web/src/app/ScheduleSheet.tsx"
+  ],
+  "{client} will be able to read your tasks, projects and notes and, where you allow AI assistants to make changes, create and change them.": [
+    "web/src/app/OAuthConsent.tsx"
+  ],
+  "{client} will be able to read your tasks, projects and notes.": [
+    "web/src/app/OAuthConsent.tsx"
   ],
   "{colour} label": [
     "web/src/app/themes/tokenNames.ts"

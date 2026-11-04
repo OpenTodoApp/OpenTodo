@@ -1701,7 +1701,15 @@
       "400",
       "listed"
     ],
+    "invalid_redirect_uri": [
+      "400",
+      "listed"
+    ],
     "invalid_rotation": [
+      "400",
+      "listed"
+    ],
+    "invalid_scope": [
       "400",
       "listed"
     ],
@@ -3612,6 +3620,9 @@
         "200"
       ]
     },
+    "DELETE /api/v1/settings/mcp/clients/{id}": {
+      "policy": "owner-only"
+    },
     "DELETE /api/v1/settings/themes/instance/{id}": {
       "policy": "owner-only",
       "response": {
@@ -4715,6 +4726,22 @@
         "provider.displayName": "string",
         "provider.enabled": "boolean",
         "provider.ssoOnly": "boolean"
+      },
+      "statuses": [
+        "200"
+      ]
+    },
+    "GET /api/v1/me/mcp-consent": {
+      "policy": "signed-in.session-only",
+      "response": {
+        "client": "object",
+        "client.dynamic": "boolean",
+        "client.id": "string",
+        "client.name": "string",
+        "error": "string",
+        "error_description": "string",
+        "redirectHost": "string",
+        "scope": "string"
       },
       "statuses": [
         "200"
@@ -5867,6 +5894,30 @@
         "200"
       ]
     },
+    "GET /api/v1/settings/mcp/clients": {
+      "policy": "owner-only",
+      "response": {
+        "authorize_url": "string",
+        "clients": "array",
+        "clients[].created_at": "number",
+        "clients[].created_by": "string",
+        "clients[].dynamic": "boolean",
+        "clients[].id": "string",
+        "clients[].last_used_at": "number|null",
+        "clients[].name": "string",
+        "clients[].redirect_uris": "array",
+        "clients[].scope": "string",
+        "clients[].secret_set": "boolean",
+        "discovery_url": "string",
+        "metadata_url": "string",
+        "redirect_uris": "array",
+        "resource": "string",
+        "token_url": "string"
+      },
+      "statuses": [
+        "200"
+      ]
+    },
     "GET /api/v1/settings/mfa": {
       "policy": "owner-only",
       "response": {
@@ -6328,6 +6379,7 @@
       "response": {
         "tokens": "array",
         "tokens[].createdAt": "number",
+        "tokens[].expiresAt": "number|null",
         "tokens[].id": "string",
         "tokens[].lastUsedAt": "number|null",
         "tokens[].name": "string",
@@ -8409,6 +8461,21 @@
         "200"
       ]
     },
+    "POST /api/v1/me/mcp-consent": {
+      "policy": "signed-in.session-only",
+      "request": {
+        "allow": "boolean",
+        "query": "string"
+      },
+      "response": {
+        "error": "string",
+        "error_description": "string",
+        "redirect": "string"
+      },
+      "statuses": [
+        "200"
+      ]
+    },
     "POST /api/v1/me/member-invitations/{id}/accept": {
       "policy": "signed-in.full-tokens",
       "response": {
@@ -9676,6 +9743,30 @@
         "200"
       ]
     },
+    "POST /api/v1/settings/mcp/clients": {
+      "policy": "owner-only.credential",
+      "request": {
+        "name": "string",
+        "redirect_uris": "array",
+        "scope": "string"
+      },
+      "response": {
+        "client": "object",
+        "client.created_at": "number",
+        "client.created_by": "string",
+        "client.dynamic": "boolean",
+        "client.id": "string",
+        "client.last_used_at": "number|null",
+        "client.name": "string",
+        "client.redirect_uris": "array",
+        "client.scope": "string",
+        "client.secret_set": "boolean",
+        "secret": "string"
+      },
+      "statuses": [
+        "201"
+      ]
+    },
     "POST /api/v1/settings/oidc/test": {
       "policy": "owner-only",
       "request": {
@@ -10039,6 +10130,7 @@
         "secret": "string",
         "token": "object|null",
         "token.createdAt": "number",
+        "token.expiresAt": "number|null",
         "token.id": "string",
         "token.lastUsedAt": "number|null",
         "token.name": "string",

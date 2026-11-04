@@ -49,9 +49,10 @@ export async function click(el: Element) {
   await act(async () => (el as HTMLElement).click())
 }
 
-export async function type(input: HTMLInputElement, text: string) {
+export async function type(input: HTMLInputElement | HTMLTextAreaElement, text: string) {
   await act(async () => {
-    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!
+    const proto = input instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype
+    const setter = Object.getOwnPropertyDescriptor(proto, 'value')!.set!
     setter.call(input, text)
     input.dispatchEvent(new Event('input', { bubbles: true }))
   })

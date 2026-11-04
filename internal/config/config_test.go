@@ -45,6 +45,37 @@ func TestPasskeyAvailabilityByBaseURL(t *testing.T) {
 	}
 }
 
+func TestListenPort(t *testing.T) {
+	t.Setenv("OPENTODO_ADDR", ":8080")
+	t.Setenv("OPENTODO_PORT", "")
+	c, err := Load()
+	if err != nil || c.Addr != ":8080" {
+		t.Fatalf("unset port: %q %v", c.Addr, err)
+	}
+
+	t.Setenv("OPENTODO_PORT", " 7610 ")
+	if c, err = Load(); err != nil || c.Addr != ":7610" {
+		t.Fatalf("port replaces the image default: %q %v", c.Addr, err)
+	}
+
+	t.Setenv("OPENTODO_ADDR", "127.0.0.1:9000")
+	if c, err = Load(); err != nil || c.Addr != "127.0.0.1:7610" {
+		t.Fatalf("host kept: %q %v", c.Addr, err)
+	}
+
+	t.Setenv("OPENTODO_ADDR", "[::]:8080")
+	if c, err = Load(); err != nil || c.Addr != "[::]:7610" {
+		t.Fatalf("ipv6: %q %v", c.Addr, err)
+	}
+
+	for _, bad := range []string{"abc", "0", "65536", "-1"} {
+		t.Setenv("OPENTODO_PORT", bad)
+		if _, err = Load(); err == nil || !strings.Contains(err.Error(), "OPENTODO_PORT") {
+			t.Fatalf("%q: want an error naming OPENTODO_PORT, got %v", bad, err)
+		}
+	}
+}
+
 func TestLoadBaseURL(t *testing.T) {
 	t.Setenv("OPENTODO_BASE_URL", "https://todo.example.com")
 	c, err := Load()
