@@ -20,8 +20,9 @@ describe('built service worker', () => {
   it.skipIf(!sw)('precaches the build, keeps the deny list and push, and handles the share POST', () => {
     expect(sw).toMatch(/"revision":"[0-9a-f]+"/)
     expect(sw).not.toContain('self.__WB_MANIFEST')
-    // A task page (/t/) is its own document, never the app (task-pages D8).
-    expect(sw).toContain('denylist:[/^\\/api\\//,/^\\/healthz/,/^\\/t\\//]')
+    // A task page (/t/) is its own document, never the app (task-pages D8), and the
+    // OAuth endpoints and discovery documents reach the server too (mcp-oauth).
+    expect(sw).toContain('denylist:[/^\\/api\\//,/^\\/healthz/,/^\\/t\\//,/^\\/oauth\\//,/^\\/\\.well-known\\//,/^\\/mcp$/]')
     expect(sw).toContain('push-sw.js')
     expect(sw).toContain('/share?inbox=')
     expect(sw).toContain('opentodo-share')
