@@ -1484,6 +1484,7 @@
   "Edit the project note ({keys})": "Editar la nota del proyecto ({keys})",
   "Edit the query of a saved view; Enter saves it, Esc discards": "Editar la consulta de una vista guardada; Intro guarda, Esc descarta",
   "Edit the selected task's title in place, with its date, priority, labels and project under it; Enter saves, Esc cancels, Shift+Enter opens the details": "Editar en el sitio el título de la tarea seleccionada, con su fecha, prioridad, etiquetas y proyecto debajo; Intro guarda, Esc cancela, Mayús+Intro abre los detalles",
+  "Edit the title. Tab, Enter or a click away saves it and the decision keys work again. Esc restores it": "Editar el título. Tab, Intro o un clic fuera lo guarda, y las teclas de decisión vuelven a funcionar. Esc lo restaura",
   "Edit the view": "Editar la vista",
   "Edit this occurrence": "Editar esta repetición",
   "Edit this occurrence alone and move the series on": "Editar solo esta repetición y pasar la serie a la siguiente",

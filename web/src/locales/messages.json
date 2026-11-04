@@ -5174,6 +5174,9 @@
   "Edit the selected task's title in place, with its date, priority, labels and project under it; Enter saves, Esc cancels, Shift+Enter opens the details": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Edit the title. Tab, Enter or a click away saves it and the decision keys work again. Esc restores it": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Edit the view": [
     "web/src/app/SavedViewView.tsx"
   ],
@@ -18050,6 +18053,7 @@
   "Title": [
     "web/src/app/ImportScreen.tsx",
     "web/src/app/RelayConfirm.tsx",
+    "web/src/app/TriageView.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/task-detail/TaskHead.tsx",

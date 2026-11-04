@@ -36,7 +36,7 @@ afterEach(() => {
   resetPanel()
 })
 
-const cardTitle = () => document.querySelector('[data-triage-card] h2')?.textContent
+const cardTitle = () => document.querySelector<HTMLInputElement>('[data-triage-title]')?.value
 const progressText = () => document.querySelector('[data-triage-progress]')?.textContent
 async function inbox(...titles: string[]) {
   const ids: string[] = []
@@ -102,6 +102,32 @@ describe('the triage mode', () => {
     await key(document.body, 'Escape')
     expect(location.pathname).toBe('/')
     expect(selectTask.take()).not.toBeNull()
+    await r.unmount()
+  })
+
+  it('edits the title on the card, and the decision keys wait until the field is left', async () => {
+    const [a] = await inbox('Call teh plumber', 'Next')
+    const r = await render(<TriageView />)
+    await waitFor(() => cardTitle() === 'Call teh plumber')
+    const field = document.querySelector<HTMLInputElement>('[data-triage-title]')!
+    expect(field.closest('[data-triage-card]')!.querySelector('input, button, a, select, textarea')).toBe(field)
+    await act(async () => { field.focus() })
+    await key(field, 't')
+    expect(cardTitle()).toBe('Call teh plumber')
+    expect((await db.tasks.get(a))!.due ?? null).toBeNull()
+    await type(field, 'Call the plumber')
+    await act(async () => { field.blur() })
+    await waitFor(async () => (await db.tasks.get(a))!.title === 'Call the plumber')
+    expect(cardTitle()).toBe('Call the plumber')
+    expect(progressText()).toBe('1 of 2')
+    await act(async () => { field.focus() })
+    await type(field, 'Nope')
+    await key(field, 'Escape')
+    await flush()
+    expect((await db.tasks.get(a))!.title).toBe('Call the plumber')
+    expect(cardTitle()).toBe('Call the plumber')
+    await key(document.body, 'j')
+    await waitFor(() => cardTitle() === 'Next')
     await r.unmount()
   })
 
