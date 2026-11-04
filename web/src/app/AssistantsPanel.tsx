@@ -80,10 +80,10 @@ function OwnerSwitches({ p, disabled, guard }: { p: AssistantsViewProps; disable
   const ownerWrites = !!status.writes_enabled
   return (
     <div className="rounded-control border border-default px-3" role="group" aria-label={t('On this server')} data-mcp-owner>
-      <SettingRow {...rowCopy('assistants', 'endpoint', { variant: status.enabled ? 'on' : 'off' })}
+      <SettingRow {...rowCopy('assistants', 'endpoint', { variant: status.enabled ? 'on' : 'off' })} scope="server"
         control={<Switch checked={status.enabled} disabled={disabled} onChange={guard(p.onToggle)} label={t('Allow AI assistants (MCP endpoint)')} hideLabel />} />
       {status.enabled && (
-        <SettingRow {...rowCopy('assistants', 'writes', { variant: ownerWrites ? 'on' : 'off' })}
+        <SettingRow {...rowCopy('assistants', 'writes', { variant: ownerWrites ? 'on' : 'off' })} scope="server"
           control={<Switch checked={ownerWrites} disabled={disabled} onChange={guard(p.onToggleWrites)} label={t('AI assistants may make changes')} hideLabel />} />
       )}
     </div>

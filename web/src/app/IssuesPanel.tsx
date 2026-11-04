@@ -142,7 +142,7 @@ export function IssuesView(p: IssuesViewProps) {
     <SettingsSection {...cardCopy('issues')} testId="issues-panel">
       {!p.connected && <Notice>{noticeCopy('issues', 'offline')}</Notice>}
       {p.enabled !== null && (
-        <SettingRow label={rowCopy('issues', 'server', { variant: 'owner' }).label}
+        <SettingRow label={rowCopy('issues', 'server', { variant: 'owner' }).label} scope={p.isOwner ? 'server' : undefined}
           description={p.isOwner || !on ? rowCopy('issues', 'server', { variant: p.isOwner ? 'owner' : 'member' }).description : undefined}
           status={<StatusIndicator tone={toneForHue(on ? 'green' : 'slate')}>{on ? t('On') : t('Off')}</StatusIndicator>}
           control={p.isOwner && <Switch checked={on} disabled={disabled} onChange={p.onToggle} label={t('Allow issue connections on this server')} hideLabel />} />

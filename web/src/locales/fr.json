@@ -7106,5 +7106,21 @@
   "This connection request can’t be used": "Cette demande de connexion ne peut pas être utilisée",
   "It may have expired or been changed. Start connecting again from the app.": "Elle a peut-être expiré ou été modifiée. Recommencez la connexion depuis l’app.",
   "Enter at least one valid redirect address.": "Saisissez au moins une adresse de redirection valide.",
-  "Choose read-only access or access that may make changes.": "Choisissez un accès en lecture seule ou un accès autorisé à faire des modifications."
+  "Choose read-only access or access that may make changes.": "Choisissez un accès en lecture seule ou un accès autorisé à faire des modifications.",
+  "Applies to everyone on this server": "S’applique à tout le monde sur ce serveur",
+  "Between {min} and {max}": "Entre {min} et {max}",
+  "Between {min} and {max} {unit}": "Entre {min} et {max} {unit}",
+  "Copies of the whole server, where they go, and how to restore one.": "Les copies du serveur entier, leur destination et comment en restaurer une.",
+  "Fix the highlighted fields to save.": "Corrigez les champs signalés pour enregistrer.",
+  "How quick add reads what you type, and where new tasks go.": "Comment l’ajout rapide lit ce que vous tapez, et où vont les nouvelles tâches.",
+  "No limit": "Sans limite",
+  "Reminders on this device and how notifications reach it.": "Les rappels sur cet appareil et comment les notifications lui parviennent.",
+  "Rules for signing in and inviting people that apply to every account.": "Les règles de connexion et d’invitation qui s’appliquent à chaque compte.",
+  "The assistant inside OpenTodo: its provider, your consent and what it may do.": "L’assistant intégré à OpenTodo : son fournisseur, votre accord et ce qu’il peut faire.",
+  "This device only": "Cet appareil uniquement",
+  "This server": "Ce serveur",
+  "Where the app opens, the briefing, and how Today fills up.": "Où l’app s’ouvre, le point du jour et comment Aujourd’hui se remplit.",
+  "Who you are on this server, and how much of the method the app shows.": "Qui vous êtes sur ce serveur, et quelle part de la méthode l’app montre.",
+  "Your password, second factor and passkeys, and where you are signed in.": "Votre mot de passe, second facteur et clés d’accès, et où vous êtes connecté.",
+  "Accounts and pending invitations.": "Comptes et invitations en attente."
 }

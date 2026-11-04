@@ -64,7 +64,7 @@ The page head shows the scope as words, in a muted line with an icon:
 
 Account scope needs no line.
 
-Some personal pages also hold owner switches today (MCP, CalDAV, Delivery channels, Calendar feeds and sync, Issues, Webhooks' private-network policy, the Assistant). There, the switch's own section gets `scope="server"`, which renders a small "This server" badge after the section heading. Moving those switches is `settings-architecture`'s job. This only stops them looking personal in the meantime.
+Some personal pages also hold owner switches today (MCP, CalDAV, Delivery channels, Calendar feeds and sync, Issues, Webhooks' private-network policy). Those switches are rows inside the page's one personal section, not sections of their own. So the row gets `scope="server"` on `SettingRow`, which renders a small "This server" badge after its label for the owner. Moving those switches is `settings-architecture`'s job. This only stops them looking personal in the meantime. The Assistant page already heads its owner rows "For everyone on this server" and needs nothing more.
 
 ### D5 — Tones from a small rule, not per page
 A row's `status` keeps using `StatusIndicator`. The panels that compute a state choose its tone by one rule:
@@ -114,7 +114,7 @@ Settings pages are not list screens, so the 2-rows-of-chrome rule above a list d
 - one lead line, which phones did not have before;
 - one scope line, only on server or device pages.
 
-D6 removes more height than that adds on phones: the audit's phone pages with switches lose roughly a third of their height.
+On phones D6 roughly balances that: measured with `settings-heights.mjs` (owner, every feature on), the 53 pages total 1.3% less height at 390 px and 0.1% more at 1280 px. Pages with several switches are 80 to 206 px shorter on a phone (Profile, Focus timer, AI assistants, Assistant, Push), and pages with few switches grow by the new head (Security and Keyboard about 75 px). The earlier estimate of a third was wrong: a switch row only saves the line its stacked switch took.
 - No new scroll regions (the save bar is sticky inside the existing column).
 - No new sidebar destinations.
 - No new shortcuts.
@@ -124,7 +124,7 @@ D6 removes more height than that adds on phones: the audit's phone pages with sw
 
 - **Data:** no op, field, table, route or environment variable changes. Settings remain server or device state.
 - **Dependencies:** none.
-- **Bundle:** the two primitives, the save bar and the hook are about 2 KB gzip. They load with Settings, which is already a lazy chunk, so the first-load budget is unaffected. The `scope` and `lead` copy entries add a few hundred bytes to the settings copy table.
+- **Bundle:** the two primitives, the save bar and the hook load only with the pages that use them (Settings is a lazy chunk). `SettingsSection` and `SettingRow`, however, sit in the shared `ui` chunk the shell loads first, so the page context, the switch detection and the badge add about 0.5 KB to the first load (measured 680.6 → 681.1 KB); the budget rises to 682 KB with that reason. The page leads live in the lazy `SettingsView`, not in the copy table the shell loads.
 - **Image size and server memory:** unchanged.
 
 ## Risks / Trade-offs
