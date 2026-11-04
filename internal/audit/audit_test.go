@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"os"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -357,5 +359,34 @@ func TestWorkspaceEventsCarryIdsOnly(t *testing.T) {
 	named.details = map[string]string{"workspace": "w-1", "name": "Family"}
 	if err := Validate(named); err == nil {
 		t.Fatal("a name detail passed validation")
+	}
+}
+
+// The web app's audit filter and labels list every event of the catalogue
+// (web/src/lib/types.ts AUDIT_EVENT_NAMES); an event missing there shows its raw
+// name in the audit log and recent activity, and cannot be filtered.
+func TestWebAuditEventNamesMatchTheCatalogue(t *testing.T) {
+	src, err := os.ReadFile("../../web/src/lib/types.ts")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(src)
+	start := strings.Index(s, "export const AUDIT_EVENT_NAMES")
+	if start < 0 {
+		t.Fatal("AUDIT_EVENT_NAMES not found in web/src/lib/types.ts")
+	}
+	end := strings.Index(s[start:], "] as const")
+	web := map[string]bool{}
+	for _, m := range regexp.MustCompile(`'([a-z_.]+)'`).FindAllStringSubmatch(s[start:start+end], -1) {
+		web[m[1]] = true
+	}
+	for _, n := range Names {
+		if !web[string(n)] {
+			t.Errorf("audit event %q is missing from AUDIT_EVENT_NAMES in web/src/lib/types.ts (add it there and a label in web/src/app/auditFormat.ts)", n)
+		}
+		delete(web, string(n))
+	}
+	for n := range web {
+		t.Errorf("AUDIT_EVENT_NAMES lists %q, which the catalogue does not have", n)
 	}
 }
