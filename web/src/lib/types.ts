@@ -1919,6 +1919,10 @@ export const AUDIT_EVENT_NAMES = [
   'project.member_added', 'project.grant_added', 'project.grant_changed', 'project.grant_removed',
   'workspace_invite.created', 'workspace_invite.accepted', 'workspace_invite.revoked',
   'member_invitation.created', 'member_invitation.accepted', 'member_invitation.declined', 'member_invitation.cancelled',
+  'calendar_connection.created', 'calendar_connection.updated', 'calendar_connection.deleted',
+  'project.agent_access',
+  'task_page.published', 'task_page.revoked',
+  'mcp_oauth.client_created', 'mcp_oauth.client_deleted', 'mcp_oauth.granted', 'mcp_oauth.revoked',
 ] as const
 export type AuditEventName = (typeof AUDIT_EVENT_NAMES)[number]
 
