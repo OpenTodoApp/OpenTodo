@@ -36,6 +36,7 @@
     es: { reminder: 'Recordatorio', due: 'Vence {date}', generic: 'Tienes un recordatorio', snooze: 'Posponer 10 min', dismiss: 'Descartar', test: 'Notificación de prueba: las notificaciones push funcionan en este dispositivo.' },
     it: { reminder: 'Promemoria', due: 'Scadenza {date}', generic: 'Hai un promemoria', snooze: 'Posticipa di 10 min', dismiss: 'Ignora', test: 'Notifica di prova: le notifiche push funzionano su questo dispositivo.' },
     pt: { reminder: 'Lembrete', due: 'Vence {date}', generic: 'Você tem um lembrete', snooze: 'Adiar 10 min', dismiss: 'Dispensar', test: 'Notificação de teste: as notificações push funcionam neste dispositivo.' },
+    zh: { reminder: '提醒', due: '{date} 截止', generic: '你有一条提醒', snooze: '延后 10 分钟', dismiss: '忽略', test: '测试通知：推送在此设备上正常工作。' },
   }
   self.__opentodoText = TEXT
 

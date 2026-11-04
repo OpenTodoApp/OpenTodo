@@ -5,7 +5,7 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { normalize, VOCABULARIES } from './vocab'
+import { activeLanguages, normalize, VOCABULARIES } from './vocab'
 
 const target = fileURLToPath(new URL('../../../../internal/quickadd/vocab.json', import.meta.url))
 
@@ -32,6 +32,11 @@ export function exportVocab() {
 }
 
 describe('quick-add vocabulary shared with the Go port', () => {
+  it('has no Chinese vocabulary, so a zh preference still parses with English', () => {
+    expect(VOCABULARIES).not.toHaveProperty('zh')
+    expect(activeLanguages(['zh', 'zh-CN'])).toEqual(['en'])
+  })
+
   it('internal/quickadd/vocab.json matches the vocabularies', () => {
     const want = JSON.stringify(exportVocab(), null, 1) + '\n'
     if (process.env.UPDATE_QUICKADD_VOCAB) writeFileSync(target, want)
