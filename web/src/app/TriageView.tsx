@@ -65,8 +65,11 @@ function TriageTitle({ task, projects, labels, onLeave }: { task: Task; projects
   useEffect(() => { setDraft(task.title) }, [task.id, task.title])
   const projectName = (id: string) => projects.find((p) => p.id === id)?.name ?? t('the project')
   return (
-    <h2 className="user-text text-h2 font-semibold text-strong">
-      <TitleField title={task.title} value={draft} onChange={setDraft}
+    // The heading's own text keeps the card's size, including a title that wraps on a
+    // phone. The field sits on top of it and only shows while it has focus.
+    <h2 className="relative user-text text-h2 font-semibold text-strong focus-within:[&>span]:invisible [&_[data-title-field]]:absolute [&_[data-title-field]]:inset-0">
+      <span aria-hidden="true">{draft}</span>
+      <TitleField multiline title={task.title} value={draft} onChange={setDraft}
         onCommit={(plan) => {
           if (revert.current) { revert.current = false; setDraft(task.title); return }
           setDraft(typeof plan.patch.title === 'string' ? plan.patch.title : task.title)
@@ -74,7 +77,7 @@ function TriageTitle({ task, projects, labels, onLeave }: { task: Task; projects
         }}
         onCancel={() => { revert.current = true; setDraft(task.title); onLeave() }}
         projects={projects} labels={labels}
-        className="w-full appearance-none border-0 bg-transparent p-0 text-inherit shadow-none outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus"
+        className="h-full w-full resize-none appearance-none border-0 bg-surface p-0 text-inherit opacity-0 shadow-none outline-none focus:opacity-100 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus min-h-0"
         ariaLabel={t('Title')} placeholder={t('Untitled')} dataAttrs={{ 'data-triage-title': true }} />
     </h2>
   )
