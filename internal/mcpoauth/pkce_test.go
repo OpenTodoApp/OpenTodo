@@ -1,10 +1,14 @@
 package mcpoauth
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"strings"
 	"testing"
+	"unicode/utf8"
+
+	"github.com/OpenTodoApp/opentodo/internal/store"
 )
 
 func challengeOf(verifier string) string {
@@ -92,5 +96,21 @@ func TestGrantedScopeLivesInThePackage(t *testing.T) {
 	}
 	if !ValidScope(ScopeRead) || !ValidScope(ScopeAgent) {
 		t.Fatal("read and agent must be valid")
+	}
+}
+
+func TestClientNameIsCutOnACharacterBoundary(t *testing.T) {
+	db, err := store.Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { db.Close() })
+	s := New(db)
+	c, _, err := s.CreateClient(context.Background(), strings.Repeat("é", 80), GoogleRegistration(), ScopeRead, true, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !utf8.ValidString(c.Name) || len(c.Name) > 100 {
+		t.Fatalf("name = %q (%d bytes)", c.Name, len(c.Name))
 	}
 }

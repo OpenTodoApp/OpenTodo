@@ -220,6 +220,7 @@ var demoRules = []demoRule{
 	// OAuth clients and grants for the MCP endpoint (mcp-oauth): every method,
 	// because a sandbox must not hand out credentials. Discovery stays readable.
 	{"AI assistants (MCP)", false, prefix("/oauth")},
+	{"AI assistants (MCP)", false, exact("/api/v1/me/mcp-consent")},
 	{"AI assistants (MCP)", true, exact("/api/v1/me/agent-access")},
 	// Keeping a project away from assistants (agent-planning-fields D9).
 	{"AI assistants (MCP)", true, projectAgentAccessPath},

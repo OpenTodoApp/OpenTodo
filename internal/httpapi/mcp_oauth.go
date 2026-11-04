@@ -29,13 +29,13 @@ const (
 	mcpRegisterPath          = "/oauth/register"
 	mcpRevokePath            = "/oauth/revoke"
 	mcpClientsPath           = "/api/v1/settings/mcp/clients"
+	mcpConsentPath           = "/api/v1/me/mcp-consent"
 )
 
 // mcpOAuthMaxBody caps an OAuth request body: these are small form posts.
 const mcpOAuthMaxBody = 64 << 10
 
 func (s *Server) registerMCPOAuthRoutes(mux *routes) {
-	s.mcpOAuth = mcpoauth.New(s.sync.DB())
 	// Discovery (design D1): anonymous, because a client has to find the
 	// authorization server before it can authenticate to anything.
 	mux.handle("GET "+mcpProtectedResourcePath, public("MCP clients discover the authorization server before they hold a credential"), s.handleOAuthProtectedResource)
@@ -46,6 +46,10 @@ func (s *Server) registerMCPOAuthRoutes(mux *routes) {
 	mux.handle("POST "+mcpRegisterPath, public("dynamic client registration runs before the client has a credential").DemoDenied(), s.handleOAuthRegister)
 	mux.handle("GET "+mcpAuthorizePath, public("the authorize step is a browser flow that needs a session, checked in the handler").DemoDenied(), s.handleOAuthAuthorize)
 	mux.handle("POST "+mcpTokenPath, public("the token endpoint authenticates the client with its secret and PKCE").DemoDenied(), s.handleOAuthToken)
+	// The consent screen's two calls (D5): a session in this browser, never a
+	// token, and Allow is a same-origin POST, so a link alone grants nothing.
+	mux.handle("GET "+mcpConsentPath, signedIn.SessionOnly().DemoDenied(), s.handleOAuthConsentInfo)
+	mux.handle("POST "+mcpConsentPath, signedIn.SessionOnly().DemoDenied(), s.handleOAuthConsent)
 	mux.handle("POST "+mcpRevokePath, public("revocation authenticates the client with its secret").DemoDenied(), s.handleOAuthRevoke)
 	// The owner's client list (design D3).
 	mux.handle("GET "+mcpClientsPath, ownerOnly("manage the AI assistants (MCP) clients"), s.handleListMCPClients)
@@ -107,6 +111,13 @@ func (s *Server) handleOAuthRegister(w http.ResponseWriter, r *http.Request) {
 	if !s.mcpOAuthOn(w, r) {
 		return
 	}
+	// Registration is anonymous: each address may register a few clients a
+	// minute, and the table holds at most MaxDynamicClients at once, after
+	// clients nobody authorized within a day are removed.
+	if allowed, _ := s.oauthRegisterLimiter.hit(clientIP(r)); !allowed {
+		oauthError(w, http.StatusTooManyRequests, "rate_limited", "too many registrations, try again later")
+		return
+	}
 	r.Body = http.MaxBytesReader(w, r.Body, mcpOAuthMaxBody)
 	var in struct {
 		ClientName   string   `json:"client_name"`
@@ -132,7 +143,16 @@ func (s *Server) handleOAuthRegister(w http.ResponseWriter, r *http.Request) {
 	if strings.TrimSpace(name) == "" {
 		name = "Google"
 	}
-	c, secret, err := s.mcpOAuth.CreateClient(r.Context(), name, mcpoauth.GoogleRegistration(), mcpoauth.ScopeRead, true, "", true)
+	n, err := s.mcpOAuth.PruneDynamicClients(r.Context())
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	if n >= mcpoauth.MaxDynamicClients {
+		oauthError(w, http.StatusServiceUnavailable, "temporarily_unavailable", "this server holds as many registered clients as it accepts; an owner can register one in Settings")
+		return
+	}
+	c, secret, err := s.mcpOAuth.CreateClient(r.Context(), name, mcpoauth.GoogleRegistration(), mcpoauth.ScopeRead, true, "")
 	if err != nil {
 		s.internal(w, err)
 		return
@@ -155,31 +175,15 @@ func (s *Server) handleOAuthRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleOAuthAuthorize is the browser step: validate the client and the PKCE
-// challenge, require a session, and send the code back to the registered
-// address (design D4, D5).
+// challenge, require a session, and hand the request to the consent screen
+// (design D4, D5). It never issues a code itself: a code is only issued when
+// the person presses Allow, which is a same-origin POST a link cannot forge.
 func (s *Server) handleOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
 	if !s.mcpOAuthOn(w, r) {
 		return
 	}
-	q := r.URL.Query()
-	clientID := q.Get("client_id")
-	redirect := q.Get("redirect_uri")
-	c, err := s.mcpOAuth.Client(r.Context(), clientID)
-	if err != nil {
-		oauthError(w, http.StatusBadRequest, "invalid_client", "unknown client_id")
-		return
-	}
-	if !c.AllowsRedirect(redirect) {
-		// Never redirect to an address the client did not register.
-		oauthError(w, http.StatusBadRequest, "invalid_request", "redirect_uri is not registered for this client")
-		return
-	}
-	if q.Get("response_type") != "code" {
-		oauthRedirectError(w, r, redirect, q.Get("state"), "unsupported_response_type", "only response_type=code is supported")
-		return
-	}
-	if q.Get("code_challenge_method") != "S256" || q.Get("code_challenge") == "" {
-		oauthRedirectError(w, r, redirect, q.Get("state"), "invalid_request", "code_challenge with code_challenge_method=S256 is required")
+	req, ok := s.oauthAuthorizeRequest(w, r, r.URL.Query(), true)
+	if !ok {
 		return
 	}
 	// A session cookie, never a bearer token: this is a browser step and a
@@ -189,42 +193,141 @@ func (s *Server) handleOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
+	w.Header().Set("Cache-Control", "no-store")
 	if u == nil || sess == nil || !viaCookie {
 		// Send the browser to sign in, and back here afterwards (D5). Logged
 		// without the address or the challenge, so a failed connection can be
 		// told apart from one that never reached this handler.
-		s.log.Info("oauth authorize: no session in this browser, sending it to sign in", "client_id", c.ID)
+		s.log.Info("oauth authorize: no session in this browser, sending it to sign in", "client_id", req.client.ID)
 		next := s.publicOrigin(r) + r.URL.RequestURI()
 		http.Redirect(w, r, "/?oauth="+url.QueryEscape(next), http.StatusFound)
 		return
 	}
+	http.Redirect(w, r, "/?oauth_consent="+url.QueryEscape(r.URL.RawQuery), http.StatusFound)
+}
+
+// oauthRequest is a validated authorize request.
+type oauthRequest struct {
+	client   mcpoauth.Client
+	redirect string
+	scope    string
+	state    string
+	params   url.Values
+}
+
+// oauthAuthorizeRequest validates the parameters of an authorize request in
+// the order of design D4. An unknown client or an unregistered address is
+// answered 400 here, never redirected; once the address is known to be the
+// client's, the browser step (redirectErrors) reports to it as the spec asks,
+// while the consent API answers 400 and leaves the redirect to the screen.
+func (s *Server) oauthAuthorizeRequest(w http.ResponseWriter, r *http.Request, q url.Values, redirectErrors bool) (oauthRequest, bool) {
+	fail := func(redirect, code, description string) (oauthRequest, bool) {
+		if redirectErrors {
+			oauthRedirectError(w, r, redirect, q.Get("state"), code, description)
+		} else {
+			oauthError(w, http.StatusBadRequest, code, description)
+		}
+		return oauthRequest{}, false
+	}
+	redirect := q.Get("redirect_uri")
+	c, err := s.mcpOAuth.Client(r.Context(), q.Get("client_id"))
+	if err != nil {
+		oauthError(w, http.StatusBadRequest, "invalid_client", "unknown client_id")
+		return oauthRequest{}, false
+	}
+	if !c.AllowsRedirect(redirect) {
+		// Never redirect to an address the client did not register.
+		oauthError(w, http.StatusBadRequest, "invalid_request", "redirect_uri is not registered for this client")
+		return oauthRequest{}, false
+	}
+	if _, err := url.Parse(redirect); err != nil {
+		oauthError(w, http.StatusBadRequest, "invalid_request", "redirect_uri is not a valid address")
+		return oauthRequest{}, false
+	}
+	if q.Get("response_type") != "code" {
+		return fail(redirect, "unsupported_response_type", "only response_type=code is supported")
+	}
+	if q.Get("code_challenge_method") != "S256" || q.Get("code_challenge") == "" {
+		return fail(redirect, "invalid_request", "code_challenge with code_challenge_method=S256 is required")
+	}
 	scope := grantedScope(c.Scope, q.Get("scope"))
 	if scope == "" {
-		oauthRedirectError(w, r, redirect, q.Get("state"), "invalid_scope", "this client cannot be granted the requested scope")
+		return fail(redirect, "invalid_scope", "this client cannot be granted the requested scope")
+	}
+	return oauthRequest{client: c, redirect: redirect, scope: scope, state: q.Get("state"), params: q}, true
+}
+
+// handleOAuthConsentInfo describes a pending authorize request to the consent
+// screen: which client asks, for what, and where the answer goes.
+func (s *Server) handleOAuthConsentInfo(w http.ResponseWriter, r *http.Request) {
+	if !s.mcpOAuthOn(w, r) {
 		return
 	}
+	req, ok := s.oauthAuthorizeRequest(w, r, r.URL.Query(), false)
+	if !ok {
+		return
+	}
+	host := ""
+	if target, err := url.Parse(req.redirect); err == nil {
+		host = target.Host
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"client":       map[string]any{"id": req.client.ID, "name": req.client.Name, "dynamic": req.client.Dynamic},
+		"scope":        req.scope,
+		"redirectHost": host,
+	})
+}
+
+// handleOAuthConsent records the person's answer. Allow issues the code and
+// returns the client's address carrying it; Deny returns the same address
+// carrying access_denied. Either way the screen sends the browser there.
+func (s *Server) handleOAuthConsent(w http.ResponseWriter, r *http.Request) {
+	if !s.mcpOAuthOn(w, r) {
+		return
+	}
+	var in struct {
+		Query string `json:"query"`
+		Allow bool   `json:"allow"`
+	}
+	if err := readJSON(r, &in); err != nil {
+		badBody(w, err)
+		return
+	}
+	q, err := url.ParseQuery(in.Query)
+	if err != nil {
+		oauthError(w, http.StatusBadRequest, "invalid_request", "the authorize request is not a query string")
+		return
+	}
+	req, ok := s.oauthAuthorizeRequest(w, r, q, false)
+	if !ok {
+		return
+	}
+	target, _ := url.Parse(req.redirect)
+	tq := target.Query()
+	if req.state != "" {
+		tq.Set("state", req.state)
+	}
+	if !in.Allow {
+		tq.Set("error", "access_denied")
+		tq.Set("error_description", "the person declined the request")
+		target.RawQuery = tq.Encode()
+		writeJSON(w, http.StatusOK, map[string]any{"redirect": target.String()})
+		return
+	}
+	u := userFrom(r.Context())
 	code, err := s.mcpOAuth.CreateCode(r.Context(), mcpoauth.Code{
-		ClientID: c.ID, UserID: u.ID, RedirectURI: redirect, Scope: scope, Challenge: q.Get("code_challenge"),
+		ClientID: req.client.ID, UserID: u.ID, RedirectURI: req.redirect, Scope: req.scope, Challenge: q.Get("code_challenge"),
 	})
 	if err != nil {
 		s.internal(w, err)
 		return
 	}
-	s.mcpOAuth.TouchClient(r.Context(), c.ID)
-	s.audit.Record(r.Context(), audit.MCPOAuthGranted(u.ID, c.ID, scope))
-	target, err := url.Parse(redirect)
-	if err != nil {
-		oauthError(w, http.StatusBadRequest, "invalid_request", "redirect_uri is not a valid address")
-		return
-	}
-	tq := target.Query()
+	s.mcpOAuth.TouchClient(r.Context(), req.client.ID)
+	s.audit.Record(r.Context(), audit.MCPOAuthGranted(u.ID, req.client.ID, req.scope))
 	tq.Set("code", code)
-	if state := q.Get("state"); state != "" {
-		tq.Set("state", state)
-	}
 	target.RawQuery = tq.Encode()
 	w.Header().Set("Cache-Control", "no-store")
-	http.Redirect(w, r, target.String(), http.StatusFound)
+	writeJSON(w, http.StatusOK, map[string]any{"redirect": target.String()})
 }
 
 // handleOAuthToken exchanges a code or refreshes a grant (design D6).
@@ -271,13 +374,8 @@ func (s *Server) oauthExchangeCode(w http.ResponseWriter, r *http.Request, c mcp
 		s.internal(w, err)
 		return
 	}
-	access, tokenID, err := s.mintOAuthAccess(r, c, code.UserID, code.Scope, g.TokenID)
-	if err != nil {
-		s.internal(w, err)
-		return
-	}
-	if err := s.mcpOAuth.SetGrantToken(r.Context(), g.ID, tokenID); err != nil {
-		s.internal(w, err)
+	access, ok := s.issueOAuthAccess(w, r, c, g)
+	if !ok {
 		return
 	}
 	s.mcpOAuth.TouchClient(r.Context(), c.ID)
@@ -297,33 +395,61 @@ func (s *Server) oauthRefresh(w http.ResponseWriter, r *http.Request, c mcpoauth
 		oauthError(w, http.StatusBadRequest, "invalid_grant", "the grant was revoked or has expired; authorize again")
 		return
 	}
-	access, tokenID, err := s.mintOAuthAccess(r, c, g.UserID, g.Scope, g.TokenID)
-	if err != nil {
-		s.internal(w, err)
-		return
-	}
-	if err := s.mcpOAuth.SetGrantToken(r.Context(), g.ID, tokenID); err != nil {
-		s.internal(w, err)
+	access, ok := s.issueOAuthAccess(w, r, c, g)
+	if !ok {
 		return
 	}
 	writeOAuthTokens(w, access, plain, g.Scope)
 }
 
-// mintOAuthAccess mints an API token of the granted scope and retires the one
-// the grant held, so a person's token list carries one row per grant (D2).
-func (s *Server) mintOAuthAccess(r *http.Request, c mcpoauth.Client, userID, scope, previous string) (string, string, error) {
-	if previous != "" {
-		_ = s.auth.DeleteToken(r.Context(), userID, previous)
-	}
-	tok, plain, err := s.auth.CreateTokenScoped(r.Context(), userID, "MCP: "+c.Name, tokenScope(scope))
+// oauthSwapAttempts bounds how often issueOAuthAccess re-reads a grant that
+// another request changed between its read and its swap.
+const oauthSwapAttempts = 3
+
+// issueOAuthAccess mints an access token of the grant's scope that expires
+// after AccessTTL and swaps it onto the grant, then retires the token the
+// grant held, so a person's token list carries one row per grant (D2). The
+// swap only succeeds while the grant still holds the token this request read:
+// when a concurrent refresh got there first, the grant is read again and the
+// new token replaces that one instead; when the grant was revoked or its
+// client deleted, the minted token is dropped and the client is told to
+// authorize again. No minted token is ever left without a grant pointing to
+// it, and the expiry bounds one left by a crash between the two steps.
+func (s *Server) issueOAuthAccess(w http.ResponseWriter, r *http.Request, c mcpoauth.Client, g mcpoauth.Grant) (string, bool) {
+	ctx := r.Context()
+	tok, plain, err := s.auth.CreateTokenExpiring(ctx, g.UserID, "MCP: "+c.Name, tokenScope(g.Scope), s.now().Add(mcpoauth.AccessTTL))
 	if err != nil {
-		return "", "", err
+		s.internal(w, err)
+		return "", false
 	}
-	return plain, tok.ID, nil
+	for attempt := 0; attempt < oauthSwapAttempts; attempt++ {
+		swapped, err := s.mcpOAuth.SwapGrantToken(ctx, g.ID, g.TokenID, tok.ID)
+		if err != nil {
+			_ = s.auth.DeleteToken(ctx, g.UserID, tok.ID)
+			s.internal(w, err)
+			return "", false
+		}
+		if swapped {
+			if g.TokenID != "" {
+				_ = s.auth.DeleteToken(ctx, g.UserID, g.TokenID)
+			}
+			return plain, true
+		}
+		if g, err = s.mcpOAuth.GrantByID(ctx, g.ID); err != nil || s.mcpOAuth.Live(g) != nil {
+			break
+		}
+	}
+	_ = s.auth.DeleteToken(ctx, g.UserID, tok.ID)
+	oauthError(w, http.StatusBadRequest, "invalid_grant", "the grant was revoked or changed while this request ran; authorize again")
+	return "", false
 }
 
-// handleOAuthRevoke is RFC 7009. It accepts an access token or a refresh token
-// and revokes what it identifies; an unknown token is still 200 (design D8).
+// handleOAuthRevoke is RFC 7009. The client authenticates as at the token
+// endpoint, and only a token issued to that client is revoked: its refresh
+// token, or an access token one of its grants holds; either revokes the grant
+// and deletes its access token. Any other token, including an ordinary API
+// token, is left alone and answered 200 like an unknown one, as the RFC
+// requires (design D8).
 func (s *Server) handleOAuthRevoke(w http.ResponseWriter, r *http.Request) {
 	if !s.mcpOAuthOn(w, r) {
 		return
@@ -333,33 +459,49 @@ func (s *Server) handleOAuthRevoke(w http.ResponseWriter, r *http.Request) {
 		oauthError(w, http.StatusBadRequest, "invalid_request", "the request body is not a form")
 		return
 	}
+	c, ok := s.oauthClientCredentials(w, r)
+	if !ok {
+		return
+	}
 	plain := r.PostForm.Get("token")
-	if plain == "" {
+	g, err := s.mcpOAuth.GrantByRefresh(r.Context(), plain)
+	if errors.Is(err, mcpoauth.ErrNotFound) {
+		g, err = s.oauthGrantByAccess(r, plain)
+	}
+	if errors.Is(err, mcpoauth.ErrNotFound) || (err == nil && g.ClientID != c.ID) {
 		w.WriteHeader(http.StatusOK)
 		return
 	}
-	if g, err := s.mcpOAuth.GrantByRefresh(r.Context(), plain); err == nil {
-		if tokenID, err := s.mcpOAuth.RevokeGrant(r.Context(), g.ID); err == nil {
-			if tokenID != "" {
-				_ = s.auth.DeleteToken(r.Context(), g.UserID, tokenID)
-			}
-			s.audit.Record(r.Context(), audit.MCPOAuthRevoked(g.UserID, g.ClientID))
-		}
-		w.WriteHeader(http.StatusOK)
+	if err != nil {
+		s.internal(w, err)
 		return
 	}
-	// An access token: retire it, and the grant it came from.
-	if u, tok, err := s.auth.UserByTokenInfo(r.Context(), plain); err == nil && u != nil {
-		if g, err := s.mcpOAuth.GrantByToken(r.Context(), tok.ID); err == nil {
-			if tokenID, rerr := s.mcpOAuth.RevokeGrant(r.Context(), g.ID); rerr == nil && tokenID != "" {
-				_ = s.auth.DeleteToken(r.Context(), g.UserID, tokenID)
-			}
-			s.audit.Record(r.Context(), audit.MCPOAuthRevoked(g.UserID, g.ClientID))
-		} else {
-			_ = s.auth.DeleteToken(r.Context(), u.ID, tok.ID)
-		}
+	tokenID, err := s.mcpOAuth.RevokeGrant(r.Context(), g.ID)
+	if err != nil {
+		s.internal(w, err)
+		return
 	}
+	if tokenID != "" {
+		_ = s.auth.DeleteToken(r.Context(), g.UserID, tokenID)
+	}
+	s.audit.Record(r.Context(), audit.MCPOAuthRevoked(g.UserID, g.ClientID))
 	w.WriteHeader(http.StatusOK)
+}
+
+// oauthGrantByAccess resolves the grant whose current access token is plain,
+// or ErrNotFound for any token no grant holds.
+func (s *Server) oauthGrantByAccess(r *http.Request, plain string) (mcpoauth.Grant, error) {
+	if plain == "" {
+		return mcpoauth.Grant{}, mcpoauth.ErrNotFound
+	}
+	_, tok, err := s.auth.UserByTokenInfo(r.Context(), plain)
+	if errors.Is(err, auth.ErrNotFound) {
+		return mcpoauth.Grant{}, mcpoauth.ErrNotFound
+	}
+	if err != nil {
+		return mcpoauth.Grant{}, err
+	}
+	return s.mcpOAuth.GrantByToken(r.Context(), tok.ID)
 }
 
 // oauthClientCredentials authenticates the client of a token or revoke request:
@@ -380,12 +522,6 @@ func (s *Server) oauthClientCredentials(w http.ResponseWriter, r *http.Request) 
 	}
 	c, err := s.mcpOAuth.Authenticate(r.Context(), id, secret)
 	if err != nil {
-		// A public client (no secret) authenticates with PKCE alone; every
-		// client this server creates holds a secret, so this is only reached by
-		// a client whose registration failed halfway.
-		if reg, cerr := s.mcpOAuth.Client(r.Context(), id); cerr == nil && !reg.SecretSet {
-			return reg, true
-		}
 		oauthError(w, http.StatusUnauthorized, "invalid_client", "the client id or secret is wrong")
 		return mcpoauth.Client{}, false
 	}
@@ -435,7 +571,7 @@ func (s *Server) handleCreateMCPClient(w http.ResponseWriter, r *http.Request) {
 		redirects = mcpoauth.GoogleRegistration()
 	}
 	u := userFrom(r.Context())
-	c, secret, err := s.mcpOAuth.CreateClient(r.Context(), in.Name, redirects, in.Scope, false, u.ID, true)
+	c, secret, err := s.mcpOAuth.CreateClient(r.Context(), in.Name, redirects, in.Scope, false, u.ID)
 	if errors.Is(err, mcpoauth.ErrInvalidRedirect) {
 		writeError(w, http.StatusBadRequest, "invalid_redirect_uri", "at least one redirect address is required")
 		return

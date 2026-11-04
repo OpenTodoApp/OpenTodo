@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/textutil"
 )
 
 // Scopes a client may hold (design D7). They are the API token scopes the MCP
@@ -127,19 +128,15 @@ func HashSecret(plain string) string {
 	return hex.EncodeToString(sum[:])
 }
 
-// CreateClient registers a client. A non-empty secret is returned exactly once
-// and only its hash is stored; withSecret false registers a public client that
-// authenticates with PKCE alone.
-func (s *Store) CreateClient(ctx context.Context, name string, redirects []string, scope string, dynamic bool, createdBy string, withSecret bool) (Client, string, error) {
+// CreateClient registers a confidential client. Its secret is returned exactly
+// once and only its hash is stored.
+func (s *Store) CreateClient(ctx context.Context, name string, redirects []string, scope string, dynamic bool, createdBy string) (Client, string, error) {
 	if !ValidScope(scope) {
 		return Client{}, "", ErrInvalidScope
 	}
-	name = strings.TrimSpace(name)
+	name = textutil.Truncate(strings.TrimSpace(name), 100)
 	if name == "" {
 		name = "MCP client"
-	}
-	if len(name) > 100 {
-		name = name[:100]
 	}
 	redirects = cleanRedirects(redirects)
 	if len(redirects) == 0 {
@@ -158,12 +155,9 @@ func (s *Store) CreateClient(ctx context.Context, name string, redirects []strin
 		CreatedBy:    createdBy,
 		CreatedAt:    s.now().UnixMilli(),
 	}
-	plain := ""
-	if withSecret {
-		plain = ids.Secret(32)
-		c.secretHash = HashSecret(plain)
-		c.SecretSet = true
-	}
+	plain := ids.Secret(32)
+	c.secretHash = HashSecret(plain)
+	c.SecretSet = true
 	_, err = s.db.ExecContext(ctx, `INSERT INTO mcp_oauth_client(id,name,secret_hash,redirect_uris,scope,dynamic,created_by,created_at)
 		VALUES(?,?,?,?,?,?,?,?)`,
 		c.ID, c.Name, c.secretHash, string(encoded), c.Scope, boolInt(c.Dynamic), c.CreatedBy, c.CreatedAt)
@@ -180,9 +174,8 @@ func (s *Store) Client(ctx context.Context, id string) (Client, error) {
 	return scanClient(row)
 }
 
-// Authenticate checks a client's secret in constant time. A client stored
-// without a secret authenticates with PKCE alone: an empty secret then fails,
-// so a public client can never be used as a confidential one.
+// Authenticate checks a client's secret in constant time. Every client holds a
+// secret; a row without one, or an empty secret, never authenticates.
 func (s *Store) Authenticate(ctx context.Context, id, secret string) (Client, error) {
 	c, err := s.Client(ctx, id)
 	if err != nil {
@@ -223,40 +216,69 @@ type IssuedToken struct {
 	UserID  string
 }
 
-// DeleteClient removes a client and every grant issued for it, returning the
-// access tokens the caller has to revoke (design D8).
+// DeleteClient removes a client and every grant and code issued for it in one
+// transaction, returning the access tokens the caller has to revoke (design
+// D8). A refresh that races it cannot attach a new token to a grant that is
+// gone: SwapGrantToken finds no row and the caller drops what it minted.
 func (s *Store) DeleteClient(ctx context.Context, id string) ([]IssuedToken, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT token_id,user_id FROM mcp_oauth_grant WHERE client_id = ? AND token_id <> ''`, id)
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
-	var tokenIDs []IssuedToken
+	defer tx.Rollback()
+	rows, err := tx.QueryContext(ctx, `SELECT token_id,user_id FROM mcp_oauth_grant WHERE client_id = ? AND token_id <> ''`, id)
+	if err != nil {
+		return nil, err
+	}
+	var tokens []IssuedToken
 	for rows.Next() {
 		var t IssuedToken
 		if err := rows.Scan(&t.TokenID, &t.UserID); err != nil {
 			rows.Close()
 			return nil, err
 		}
-		tokenIDs = append(tokenIDs, t)
+		tokens = append(tokens, t)
 	}
 	rows.Close()
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	if _, err := s.db.ExecContext(ctx, `DELETE FROM mcp_oauth_grant WHERE client_id = ?`, id); err != nil {
-		return nil, err
+	for _, q := range []string{`DELETE FROM mcp_oauth_grant WHERE client_id = ?`, `DELETE FROM mcp_oauth_code WHERE client_id = ?`} {
+		if _, err := tx.ExecContext(ctx, q, id); err != nil {
+			return nil, err
+		}
 	}
-	if _, err := s.db.ExecContext(ctx, `DELETE FROM mcp_oauth_code WHERE client_id = ?`, id); err != nil {
-		return nil, err
-	}
-	res, err := s.db.ExecContext(ctx, `DELETE FROM mcp_oauth_client WHERE id = ?`, id)
+	res, err := tx.ExecContext(ctx, `DELETE FROM mcp_oauth_client WHERE id = ?`, id)
 	if err != nil {
 		return nil, err
 	}
 	if n, _ := res.RowsAffected(); n == 0 {
 		return nil, ErrNotFound
 	}
-	return tokenIDs, nil
+	return tokens, tx.Commit()
+}
+
+// MaxDynamicClients caps the clients dynamic registration may hold at once
+// (design D3): registration is anonymous, so the cap is what keeps a script
+// from growing the table and the owner's client list without bound.
+const MaxDynamicClients = 200
+
+// StaleDynamicClient is how long a dynamically registered client may sit with
+// no grant before registration removes it.
+const StaleDynamicClient = 24 * time.Hour
+
+// PruneDynamicClients removes dynamically registered clients that nobody has
+// authorized within StaleDynamicClient, and reports how many dynamic clients
+// remain.
+func (s *Store) PruneDynamicClients(ctx context.Context) (int, error) {
+	cutoff := s.now().Add(-StaleDynamicClient).UnixMilli()
+	if _, err := s.db.ExecContext(ctx, `DELETE FROM mcp_oauth_client WHERE dynamic = 1 AND created_at < ?
+		AND id NOT IN (SELECT client_id FROM mcp_oauth_grant)`, cutoff); err != nil {
+		return 0, err
+	}
+	var n int
+	err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM mcp_oauth_client WHERE dynamic = 1`).Scan(&n)
+	return n, err
 }
 
 // TouchClient records that a client authenticated, at most once a minute, so
@@ -288,22 +310,14 @@ func (s *Store) CreateCode(ctx context.Context, c Code) (string, error) {
 // ConsumeCode takes a pending authorization and deletes it in the same
 // statement, so a code cannot be replayed by a racing request.
 func (s *Store) ConsumeCode(ctx context.Context, plain string) (Code, error) {
-	hash := HashSecret(plain)
 	var c Code
-	row := s.db.QueryRowContext(ctx, `SELECT client_id,user_id,redirect_uri,scope,challenge,expires_at
-		FROM mcp_oauth_code WHERE code_hash = ?`, hash)
+	row := s.db.QueryRowContext(ctx, `DELETE FROM mcp_oauth_code WHERE code_hash = ?
+		RETURNING client_id,user_id,redirect_uri,scope,challenge,expires_at`, HashSecret(plain))
 	if err := row.Scan(&c.ClientID, &c.UserID, &c.RedirectURI, &c.Scope, &c.Challenge, &c.ExpiresAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return Code{}, ErrNotFound
 		}
 		return Code{}, err
-	}
-	res, err := s.db.ExecContext(ctx, `DELETE FROM mcp_oauth_code WHERE code_hash = ?`, hash)
-	if err != nil {
-		return Code{}, err
-	}
-	if n, _ := res.RowsAffected(); n == 0 {
-		return Code{}, ErrNotFound
 	}
 	if c.ExpiresAt < s.now().UnixMilli() {
 		return Code{}, ErrExpired
@@ -315,37 +329,23 @@ func (s *Store) ConsumeCode(ctx context.Context, plain string) (Code, error) {
 // token. A second authorization of the same client by the same person reuses
 // the grant row and replaces its refresh token, so the client always leaves the
 // exchange with a usable one; unlike a refresh, a re-authorization is a
-// deliberate act and may rotate (design D6).
+// deliberate act and may rotate (design D6). One statement, so two exchanges
+// racing for the same person and client cannot both insert.
 func (s *Store) UpsertGrant(ctx context.Context, clientID, userID, scope string) (Grant, string, error) {
 	if !ValidScope(scope) {
 		return Grant{}, "", ErrInvalidScope
 	}
 	now := s.now()
 	plain := ids.Secret(32)
-	if g, err := s.grantFor(ctx, clientID, userID); err == nil {
-		if _, err := s.db.ExecContext(ctx, `UPDATE mcp_oauth_grant SET scope = ?, revoked_at = 0, refresh_hash = ?,
-			refresh_expires_at = ? WHERE id = ?`,
-			scope, HashSecret(plain), now.Add(RefreshTTL).UnixMilli(), g.ID); err != nil {
-			return Grant{}, "", err
-		}
-		g.Scope = scope
-		g.RevokedAt = 0
-		g.RefreshExpiresAt = now.Add(RefreshTTL).UnixMilli()
-		return g, plain, nil
-	} else if !errors.Is(err, ErrNotFound) {
+	refreshAt := now.Add(RefreshTTL).UnixMilli()
+	if _, err := s.db.ExecContext(ctx, `INSERT INTO mcp_oauth_grant(id,client_id,user_id,scope,refresh_hash,access_expires_at,refresh_expires_at,created_at)
+		VALUES(?,?,?,?,?,0,?,?)
+		ON CONFLICT(client_id,user_id) DO UPDATE SET scope = excluded.scope, revoked_at = 0,
+			refresh_hash = excluded.refresh_hash, refresh_expires_at = excluded.refresh_expires_at`,
+		ids.New(), clientID, userID, scope, HashSecret(plain), refreshAt, now.UnixMilli()); err != nil {
 		return Grant{}, "", err
 	}
-	g := Grant{
-		ID:               ids.New(),
-		ClientID:         clientID,
-		UserID:           userID,
-		Scope:            scope,
-		RefreshExpiresAt: now.Add(RefreshTTL).UnixMilli(),
-		CreatedAt:        now.UnixMilli(),
-	}
-	_, err := s.db.ExecContext(ctx, `INSERT INTO mcp_oauth_grant(id,client_id,user_id,scope,refresh_hash,access_expires_at,refresh_expires_at,created_at)
-		VALUES(?,?,?,?,?,?,?,?)`,
-		g.ID, g.ClientID, g.UserID, g.Scope, HashSecret(plain), 0, g.RefreshExpiresAt, g.CreatedAt)
+	g, err := s.grantFor(ctx, clientID, userID)
 	if err != nil {
 		return Grant{}, "", err
 	}
@@ -376,27 +376,45 @@ func (s *Store) GrantByToken(ctx context.Context, tokenID string) (Grant, error)
 	return scanGrant(row)
 }
 
-// SetGrantToken records the access token an exchange minted and extends the
-// refresh token (design D6: the token itself never changes).
-func (s *Store) SetGrantToken(ctx context.Context, grantID, tokenID string) error {
+// SwapGrantToken records the access token an exchange or a refresh minted,
+// replacing previous, and extends the refresh token (design D6: the token
+// itself never changes). It only succeeds while the grant is live and still
+// holds previous: a request that lost a race with another refresh, a
+// revocation or the client's deletion gets false and must drop the token it
+// minted, so no access token is ever left without a grant pointing to it.
+func (s *Store) SwapGrantToken(ctx context.Context, grantID, previous, tokenID string) (bool, error) {
 	now := s.now()
-	_, err := s.db.ExecContext(ctx, `UPDATE mcp_oauth_grant SET token_id = ?, access_expires_at = ?, refresh_expires_at = ?
-		WHERE id = ?`, tokenID, now.Add(AccessTTL).UnixMilli(), now.Add(RefreshTTL).UnixMilli(), grantID)
-	return err
+	res, err := s.db.ExecContext(ctx, `UPDATE mcp_oauth_grant SET token_id = ?, access_expires_at = ?, refresh_expires_at = ?
+		WHERE id = ? AND token_id = ? AND revoked_at = 0`,
+		tokenID, now.Add(AccessTTL).UnixMilli(), now.Add(RefreshTTL).UnixMilli(), grantID, previous)
+	if err != nil {
+		return false, err
+	}
+	n, err := res.RowsAffected()
+	return n == 1, err
 }
 
-// RevokeGrant marks a grant revoked and clears its access token, returning the
-// api_tokens id the caller has to delete.
+// RevokeGrant marks a grant revoked and clears its access token in one
+// transaction, returning the api_tokens id the caller has to delete.
 func (s *Store) RevokeGrant(ctx context.Context, grantID string) (string, error) {
-	g, err := s.GrantByID(ctx, grantID)
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return "", err
 	}
-	if _, err := s.db.ExecContext(ctx, `UPDATE mcp_oauth_grant SET revoked_at = ?, token_id = '' WHERE id = ?`,
+	defer tx.Rollback()
+	var tokenID string
+	err = tx.QueryRowContext(ctx, `SELECT token_id FROM mcp_oauth_grant WHERE id = ?`, grantID).Scan(&tokenID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", ErrNotFound
+	}
+	if err != nil {
+		return "", err
+	}
+	if _, err := tx.ExecContext(ctx, `UPDATE mcp_oauth_grant SET revoked_at = ?, token_id = '' WHERE id = ?`,
 		s.now().UnixMilli(), grantID); err != nil {
 		return "", err
 	}
-	return g.TokenID, nil
+	return tokenID, tx.Commit()
 }
 
 // GrantByID reads one grant.
