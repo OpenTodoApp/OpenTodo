@@ -1640,10 +1640,6 @@
       "409",
       "listed"
     ],
-    "google_not_connected": [
-      "409",
-      "listed"
-    ],
     "group_exists": [
       "409",
       "listed"
@@ -2755,7 +2751,6 @@
         "tasks[].fields": "object",
         "tasks[].id": "string",
         "tasks[].label_ids": "array",
-        "tasks[].overdue": "boolean",
         "tasks[].priority": "number",
         "tasks[].project_id": "string",
         "tasks[].tracked_minutes": "number",
@@ -2936,21 +2931,6 @@
         "due_today[].untrusted_text": "object",
         "due_today[].waiting_for_slot": "boolean",
         "overdue": "array",
-        "overdue[].blocked": "boolean",
-        "overdue[].blocked_by": "array",
-        "overdue[].completed": "boolean",
-        "overdue[].created_at": "string",
-        "overdue[].due": "object",
-        "overdue[].evening": "boolean",
-        "overdue[].fields": "object",
-        "overdue[].id": "string",
-        "overdue[].label_ids": "array",
-        "overdue[].overdue": "boolean",
-        "overdue[].priority": "number",
-        "overdue[].project_id": "string",
-        "overdue[].tracked_minutes": "number",
-        "overdue[].untrusted_text": "object",
-        "overdue[].waiting_for_slot": "boolean",
         "server_time": "string",
         "timezone": "string",
         "today": "string",
@@ -3453,12 +3433,6 @@
     "DELETE /api/v1/labels/{id}": {
       "policy": "signed-in"
     },
-    "DELETE /api/v1/me/assistant/google": {
-      "policy": "signed-in",
-      "statuses": [
-        "200"
-      ]
-    },
     "DELETE /api/v1/me/avatar": {
       "policy": "signed-in.full-tokens",
       "response": {
@@ -3645,9 +3619,6 @@
       "statuses": [
         "200"
       ]
-    },
-    "DELETE /api/v1/settings/mcp/clients/{id}": {
-      "policy": "owner-only"
     },
     "DELETE /api/v1/settings/themes/instance/{id}": {
       "policy": "owner-only",
@@ -3872,9 +3843,6 @@
       "statuses": [
         "200"
       ]
-    },
-    "GET /api/v1/assistant/google/callback": {
-      "policy": "signed-in.session-only"
     },
     "GET /api/v1/assistant/skills": {
       "policy": "signed-in",
@@ -4700,12 +4668,6 @@
       ]
     },
     "GET /api/v1/me/assistant": {
-      "policy": "signed-in",
-      "statuses": [
-        "200"
-      ]
-    },
-    "GET /api/v1/me/assistant/google": {
       "policy": "signed-in",
       "statuses": [
         "200"
@@ -5815,19 +5777,6 @@
         "200"
       ]
     },
-    "GET /api/v1/settings/assistant/google": {
-      "policy": "owner-only",
-      "response": {
-        "client_id": "string",
-        "complete": "boolean",
-        "project": "string",
-        "redirect_uri": "string",
-        "secret_set": "boolean"
-      },
-      "statuses": [
-        "200"
-      ]
-    },
     "GET /api/v1/settings/attachments": {
       "policy": "signed-in",
       "response": {
@@ -5921,30 +5870,6 @@
         "enabled": "boolean",
         "endpoint": "string",
         "writes_enabled": "boolean"
-      },
-      "statuses": [
-        "200"
-      ]
-    },
-    "GET /api/v1/settings/mcp/clients": {
-      "policy": "owner-only",
-      "response": {
-        "authorize_url": "string",
-        "clients": "array",
-        "clients[].created_at": "number",
-        "clients[].created_by": "string",
-        "clients[].dynamic": "boolean",
-        "clients[].id": "string",
-        "clients[].last_used_at": "number|null",
-        "clients[].name": "string",
-        "clients[].redirect_uris": "array",
-        "clients[].scope": "string",
-        "clients[].secret_set": "boolean",
-        "discovery_url": "string",
-        "metadata_url": "string",
-        "redirect_uris": "array",
-        "resource": "string",
-        "token_url": "string"
       },
       "statuses": [
         "200"
@@ -8433,18 +8358,6 @@
         "200"
       ]
     },
-    "POST /api/v1/me/assistant/google/start": {
-      "policy": "signed-in.recent",
-      "request": {
-        "project": "string"
-      },
-      "response": {
-        "url": "string"
-      },
-      "statuses": [
-        "200"
-      ]
-    },
     "POST /api/v1/me/assistant/test": {
       "policy": "signed-in.session-only",
       "request": {
@@ -9771,30 +9684,6 @@
         "200"
       ]
     },
-    "POST /api/v1/settings/mcp/clients": {
-      "policy": "owner-only.credential",
-      "request": {
-        "name": "string",
-        "redirect_uris": "array",
-        "scope": "string"
-      },
-      "response": {
-        "client": "object",
-        "client.created_at": "number",
-        "client.created_by": "string",
-        "client.dynamic": "boolean",
-        "client.id": "string",
-        "client.last_used_at": "number|null",
-        "client.name": "string",
-        "client.redirect_uris": "array",
-        "client.scope": "string",
-        "client.secret_set": "boolean",
-        "secret": "string"
-      },
-      "statuses": [
-        "201"
-      ]
-    },
     "POST /api/v1/settings/oidc/test": {
       "policy": "owner-only",
       "request": {
@@ -10750,24 +10639,6 @@
         "keys": "object",
         "monthly_token_cap_per_user": "number",
         "providers": "object"
-      },
-      "statuses": [
-        "200"
-      ]
-    },
-    "PUT /api/v1/settings/assistant/google": {
-      "policy": "owner-only.credential",
-      "request": {
-        "client_id": "string|null?",
-        "client_secret": "string|null?",
-        "project": "string|null?"
-      },
-      "response": {
-        "client_id": "string",
-        "complete": "boolean",
-        "project": "string",
-        "redirect_uri": "string",
-        "secret_set": "boolean"
       },
       "statuses": [
         "200"
