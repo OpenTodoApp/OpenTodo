@@ -69,6 +69,32 @@ func (e *env) createOAuthClient(name, scope string) (string, string) {
 	return id, secret
 }
 
+// authorizeAndAllow runs the browser step as the signed-in env: the authorize
+// address hands the request to the consent screen without a code, and Allow
+// on that screen returns the client's address carrying one (design D5).
+func (e *env) authorizeAndAllow(authorize string) string {
+	e.t.Helper()
+	restore := e.noRedirect()
+	defer restore()
+	resp, err := e.client.Get(e.srv.URL + authorize)
+	if err != nil {
+		e.t.Fatal(err)
+	}
+	resp.Body.Close()
+	location := resp.Header.Get("Location")
+	if resp.StatusCode != 302 || !strings.HasPrefix(location, "/?oauth_consent=") {
+		e.t.Fatalf("authorize: %d %s", resp.StatusCode, location)
+	}
+	consent, err := url.Parse(location)
+	if err != nil {
+		e.t.Fatal(err)
+	}
+	r, out := e.do("POST", mcpConsentPath, map[string]any{"query": consent.Query().Get("oauth_consent"), "allow": true})
+	e.mustStatus(r, 200, out)
+	redirect, _ := out["redirect"].(string)
+	return redirect
+}
+
 const googleRedirect = "https://oauth-redirect.googleusercontent.com/r/user_bound_custom-mcp-1-2"
 
 func TestMCPOAuthDiscovery(t *testing.T) {
@@ -147,21 +173,15 @@ func TestMCPOAuthDynamicRegistrationIsGoogleOnly(t *testing.T) {
 	}
 	// The registered client can run the flow with the address Gemini names.
 	verifier, challenge := pkcePair(t)
-	restore := e.noRedirect()
-	defer restore()
 	authorize := mcpAuthorizePath + "?" + url.Values{
 		"response_type": {"code"}, "client_id": {id}, "redirect_uri": {googleRedirect},
 		"code_challenge": {challenge}, "code_challenge_method": {"S256"}, "state": {"st"},
 	}.Encode()
-	resp2, err := e.client.Get(e.srv.URL + authorize)
-	if err != nil {
-		t.Fatal(err)
+	location := e.authorizeAndAllow(authorize)
+	if !strings.HasPrefix(location, googleRedirect) {
+		t.Fatalf("authorize with a dynamic client: %s", location)
 	}
-	resp2.Body.Close()
-	if resp2.StatusCode != 302 || !strings.HasPrefix(resp2.Header.Get("Location"), googleRedirect) {
-		t.Fatalf("authorize with a dynamic client: %d %s", resp2.StatusCode, resp2.Header.Get("Location"))
-	}
-	code := mustCode(t, resp2.Header.Get("Location"))
+	code := mustCode(t, location)
 	status, tok := e.oauthForm(mcpTokenPath, url.Values{
 		"grant_type": {"authorization_code"}, "code": {code}, "redirect_uri": {googleRedirect},
 		"client_id": {id}, "client_secret": {secret}, "code_verifier": {verifier},
@@ -216,21 +236,13 @@ func TestMCPOAuthCodeFlow(t *testing.T) {
 		t.Fatalf("foreign redirect: %d %q", resp.StatusCode, resp.Header.Get("Location"))
 	}
 
-	// The signed-in person gets a code bound to the registered address.
+	// The signed-in person who allows it gets a code bound to the registered
+	// address.
 	authorize := mcpAuthorizePath + "?" + url.Values{
 		"response_type": {"code"}, "client_id": {id}, "redirect_uri": {googleRedirect},
 		"code_challenge": {challenge}, "code_challenge_method": {"S256"}, "scope": {"agent"}, "state": {"s1"},
 	}.Encode()
-	resp, err = e.client.Get(e.srv.URL + authorize)
-	if err != nil {
-		t.Fatal(err)
-	}
-	body, _ := io.ReadAll(resp.Body)
-	resp.Body.Close()
-	if resp.StatusCode != 302 {
-		t.Fatalf("authorize: %d %s %s", resp.StatusCode, resp.Header.Get("Location"), body)
-	}
-	location := resp.Header.Get("Location")
+	location := e.authorizeAndAllow(authorize)
 	if !strings.HasPrefix(location, googleRedirect) || !strings.Contains(location, "state=s1") {
 		t.Fatalf("authorize location: %s", location)
 	}
@@ -247,15 +259,7 @@ func TestMCPOAuthCodeFlow(t *testing.T) {
 	}
 
 	// The real exchange mints an access token and a refresh token.
-	authorizeCode := func() string {
-		resp, err := e.client.Get(e.srv.URL + authorize)
-		if err != nil {
-			e.t.Fatal(err)
-		}
-		resp.Body.Close()
-		return mustCode(t, resp.Header.Get("Location"))
-	}
-	code = authorizeCode()
+	code = mustCode(t, e.authorizeAndAllow(authorize))
 	status, out = e.oauthForm(mcpTokenPath, url.Values{
 		"grant_type": {"authorization_code"}, "code": {code}, "redirect_uri": {googleRedirect},
 		"client_id": {id}, "client_secret": {secret}, "code_verifier": {verifier},
@@ -344,21 +348,12 @@ func TestMCPOAuthClientRoutes(t *testing.T) {
 
 	// Deleting the client cuts off the grant it had (design D8).
 	verifier, challenge := pkcePair(t)
-	restore := e.noRedirect()
-	defer restore()
-	resp, err := e.client.Get(e.srv.URL + mcpAuthorizePath + "?" + url.Values{
+	location := e.authorizeAndAllow(mcpAuthorizePath + "?" + url.Values{
 		"response_type": {"code"}, "client_id": {id}, "redirect_uri": {googleRedirect},
 		"code_challenge": {challenge}, "code_challenge_method": {"S256"},
 	}.Encode())
-	if err != nil {
-		t.Fatal(err)
-	}
-	resp.Body.Close()
-	if resp.StatusCode != 302 {
-		t.Fatalf("authorize: %d", resp.StatusCode)
-	}
 	status, out := e.oauthForm(mcpTokenPath, url.Values{
-		"grant_type": {"authorization_code"}, "code": {mustCode(t, resp.Header.Get("Location"))}, "redirect_uri": {googleRedirect},
+		"grant_type": {"authorization_code"}, "code": {mustCode(t, location)}, "redirect_uri": {googleRedirect},
 		"client_id": {id}, "client_secret": {secret}, "code_verifier": {verifier},
 	})
 	if status != 200 {

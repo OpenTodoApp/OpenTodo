@@ -57,3 +57,12 @@ CREATE TABLE IF NOT EXISTS mcp_oauth_grant (
 );
 
 CREATE INDEX IF NOT EXISTS mcp_oauth_grant_refresh ON mcp_oauth_grant(refresh_hash);
+
+-- api_token_expiry gives an API token an end (design D6): the access tokens an
+-- exchange mints last an hour. A side table keyed by the token, like the scope
+-- markers, so a token without a row keeps never expiring and an older binary
+-- reads every token as it always did.
+CREATE TABLE IF NOT EXISTS api_token_expiry (
+  token_id   TEXT PRIMARY KEY REFERENCES api_tokens(id) ON DELETE CASCADE,
+  expires_at INTEGER NOT NULL
+);

@@ -77,6 +77,9 @@ type Server struct {
 	// requests without a valid token and passkeyLimiter passkey sign-ins.
 	limiter, registerLimiter, resetLimiter, invitePreviewLimiter *rateLimiter
 	publicLinkLimiter, mcpLimiter, passkeyLimiter                *rateLimiter
+	// oauthRegisterLimiter caps anonymous MCP OAuth client registrations per
+	// client address (mcp-oauth D3).
+	oauthRegisterLimiter *rateLimiter
 	// accountLimiter counts failed passwords, second-factor codes and
 	// re-authentications per account (accountFailures in 15 minutes), on top of
 	// the per-address limits.
@@ -272,7 +275,7 @@ func newServer(set *services.Set, web http.Handler) *Server {
 		limiter: newRateLimiter(10, time.Minute), inviteLimiter: newRateLimiter(20, time.Hour),
 		registerLimiter: newRateLimiter(10, time.Minute), resetLimiter: newRateLimiter(10, time.Minute),
 		invitePreviewLimiter: newRateLimiter(10, time.Minute), publicLinkLimiter: newRateLimiter(10, time.Minute),
-		mcpLimiter: newRateLimiter(10, time.Minute), passkeyLimiter: newRateLimiter(10, time.Minute),
+		mcpLimiter: newRateLimiter(10, time.Minute), oauthRegisterLimiter: newRateLimiter(5, time.Minute), passkeyLimiter: newRateLimiter(10, time.Minute),
 		accountLimiter: newRateLimiter(accountFailures, accountWindow),
 		passkeyOptions: newRateLimiter(10, time.Minute),
 		mfaLimiter:     newRateLimiter(10, time.Minute), reauthLimiter: newRateLimiter(10, time.Minute),
@@ -281,7 +284,7 @@ func newServer(set *services.Set, web http.Handler) *Server {
 		oidcLimiter: newRateLimiter(20, time.Minute), davLimiter: newRateLimiter(10, time.Minute),
 		emailLimiter: newRateLimiter(30, time.Hour), memberAddLimiter: newRateLimiter(memberAddsPerHour, time.Hour),
 		settings: set.Settings, importer: set.Importer, hooks: set.Hooks, inbox: set.Inbox, backups: set.Backups,
-		mcpSettings: set.MCP, push: set.Push, channels: set.Channels, email: set.Email, calWorker: set.Calendar,
+		mcpSettings: set.MCP, mcpOAuth: set.MCPOAuth, push: set.Push, channels: set.Channels, email: set.Email, calWorker: set.Calendar,
 		issueWorker: set.Issues, calsync: set.CalSync, mail: set.Mail, demo: set.Demo, rules: set.Rules,
 		ruleSwitch: set.RuleSwitch, oidc: set.OIDC, blobs: set.Blobs, maps: set.Maps, stt: set.STT, hosted: set.Hosted != nil,
 		caldavOn: set.CalDAV, calFeedsOn: set.CalendarFeeds, issuesOn: set.IssuesOn, calsyncOn: set.CalendarSync,
