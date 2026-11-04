@@ -698,6 +698,8 @@ html {
   font-synthesis: style;
   /* Inter's optical-size axis picks its Display cut at large sizes (tokens-v2 D7). */
   font-optical-sizing: auto;
+  /* Closing punctuation stays with the previous character (simplified-chinese D5). Latin wrapping is unchanged. */
+  line-break: strict;
 }
 
 body {

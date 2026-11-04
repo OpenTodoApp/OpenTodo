@@ -69,29 +69,29 @@ Details are in [scripts/README.md](../scripts/README.md#i18n-checkmjs-and-i18n).
 
 ## Glossary
 
-Use these terms consistently; they match the quick-add vocabulary and the server's email templates. German uses *du*, French *vous*, Spanish *tú*, Italian *tu* and Portuguese (Brazil) *você*.
+Use these terms consistently; they match the quick-add vocabulary and the server's email templates. German uses *du*, French *vous*, Spanish *tú*, Italian *tu*, Portuguese (Brazil) *você* and Simplified Chinese 你. peilf reviews the Simplified Chinese catalog.
 
-| English | Deutsch | Français | Español | Italiano | Português |
-| --- | --- | --- | --- | --- | --- |
-| Task | Aufgabe | tâche | tarea | attività | tarefa |
-| Subtask | Unteraufgabe | sous-tâche | subtarea | sottoattività | subtarefa |
-| Project | Projekt | projet | proyecto | progetto | projeto |
-| Section | Abschnitt | section | sección | sezione | seção |
-| Label | Label | étiquette | etiqueta | etichetta | etiqueta |
-| Inbox | Eingang | Boîte de réception | Bandeja de entrada | In arrivo | Caixa de entrada |
-| Today | Heute | Aujourd’hui | Hoy | Oggi | Hoje |
-| Upcoming | Demnächst | À venir | Próximo | In programma | Em breve |
-| Anytime | Jederzeit | N’importe quand | En cualquier momento | In qualsiasi momento | A qualquer hora |
-| Someday | Irgendwann | Un jour | Algún día | Un giorno | Algum dia |
-| This Evening | Heute Abend | Ce soir | Esta noche | Stasera | Hoje à noite |
-| Completed | Erledigt | Terminées | Completadas | Completate | Concluídas |
-| Trash | Papierkorb | Corbeille | Papelera | Cestino | Lixeira |
-| Due date | Fälligkeitsdatum | date d’échéance | fecha de vencimiento | data di scadenza | data de vencimento |
-| Deadline | Frist | date limite | fecha límite | termine | prazo |
-| Reminder | Erinnerung | rappel | recordatorio | promemoria | lembrete |
-| Quick add | Schnelleingabe | Ajout rapide | Añadido rápido | Aggiunta rapida | Adição rápida |
-| Settings | Einstellungen | Réglages | Ajustes | Impostazioni | Configurações |
-| Owner, admin, editor, viewer | Eigentümer, Admin, Bearbeiter, Betrachter | propriétaire, admin, éditeur, lecteur | propietario, admin, editor, lector | proprietario, admin, editor, visualizzatore | proprietário, admin, editor, leitor |
-| Passkey | Passkey | clé d’accès | llave de acceso | passkey | chave de acesso |
-| Two-factor authentication | Zwei-Faktor-Authentifizierung | authentification à deux facteurs | autenticación en dos pasos | autenticazione a due fattori | autenticação de dois fatores |
-| Weekly review | Wochenrückblick | revue hebdomadaire | revisión semanal | revisione settimanale | revisão semanal |
+| English | Deutsch | Français | Español | Italiano | Português | 简体中文 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Task | Aufgabe | tâche | tarea | attività | tarefa | 任务 |
+| Subtask | Unteraufgabe | sous-tâche | subtarea | sottoattività | subtarefa | 子任务 |
+| Project | Projekt | projet | proyecto | progetto | projeto | 项目 |
+| Section | Abschnitt | section | sección | sezione | seção | 分组 |
+| Label | Label | étiquette | etiqueta | etichetta | etiqueta | 标签 |
+| Inbox | Eingang | Boîte de réception | Bandeja de entrada | In arrivo | Caixa de entrada | 收件箱 |
+| Today | Heute | Aujourd’hui | Hoy | Oggi | Hoje | 今天 |
+| Upcoming | Demnächst | À venir | Próximo | In programma | Em breve | 即将到来 |
+| Anytime | Jederzeit | N’importe quand | En cualquier momento | In qualsiasi momento | A qualquer hora | 随时 |
+| Someday | Irgendwann | Un jour | Algún día | Un giorno | Algum dia | 将来某天 |
+| This Evening | Heute Abend | Ce soir | Esta noche | Stasera | Hoje à noite | 今晚 |
+| Completed | Erledigt | Terminées | Completadas | Completate | Concluídas | 已完成 |
+| Trash | Papierkorb | Corbeille | Papelera | Cestino | Lixeira | 废纸篓 |
+| Due date | Fälligkeitsdatum | date d’échéance | fecha de vencimiento | data di scadenza | data de vencimento | 截止日期 |
+| Deadline | Frist | date limite | fecha límite | termine | prazo | 最后期限 |
+| Reminder | Erinnerung | rappel | recordatorio | promemoria | lembrete | 提醒 |
+| Quick add | Schnelleingabe | Ajout rapide | Añadido rápido | Aggiunta rapida | Adição rápida | 快速添加 |
+| Settings | Einstellungen | Réglages | Ajustes | Impostazioni | Configurações | 设置 |
+| Owner, admin, editor, viewer | Eigentümer, Admin, Bearbeiter, Betrachter | propriétaire, admin, éditeur, lecteur | propietario, admin, editor, lector | proprietario, admin, editor, visualizzatore | proprietário, admin, editor, leitor | 所有者、管理员、编辑者、查看者 |
+| Passkey | Passkey | clé d’accès | llave de acceso | passkey | chave de acesso | 通行密钥 |
+| Two-factor authentication | Zwei-Faktor-Authentifizierung | authentification à deux facteurs | autenticación en dos pasos | autenticazione a due fattori | autenticação de dois fatores | 双重验证 |
+| Weekly review | Wochenrückblick | revue hebdomadaire | revisión semanal | revisione settimanale | revisão semanal | 每周回顾 |
