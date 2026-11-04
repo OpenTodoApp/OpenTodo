@@ -7107,5 +7107,18 @@
   "This connection request can’t be used": "Cette demande de connexion ne peut pas être utilisée",
   "It may have expired or been changed. Start connecting again from the app.": "Elle a peut-être expiré ou été modifiée. Recommencez la connexion depuis l’app.",
   "Enter at least one valid redirect address.": "Saisissez au moins une adresse de redirection valide.",
-  "Choose read-only access or access that may make changes.": "Choisissez un accès en lecture seule ou un accès autorisé à faire des modifications."
+  "Choose read-only access or access that may make changes.": "Choisissez un accès en lecture seule ou un accès autorisé à faire des modifications.",
+  "Calendar connected": "Calendrier connecté",
+  "Calendar connection changed": "Connexion au calendrier modifiée",
+  "Calendar disconnected": "Calendrier déconnecté",
+  "Project kept away from AI assistants changed": "Protection du projet contre les assistants IA modifiée",
+  "Task published as a page": "Tâche publiée comme page",
+  "Task page revoked": "Page de tâche révoquée",
+  "AI app sign-in client created": "Client de connexion d’app IA créé",
+  "AI app sign-in client deleted": "Client de connexion d’app IA supprimé",
+  "AI app connected": "App IA connectée",
+  "AI app disconnected": "App IA déconnectée",
+  "Require single sign-on?": "Exiger l’authentification unique ?",
+  "Require single sign-on": "Exiger l’authentification unique",
+  "Once you save, members can sign in only with {name}: their passwords and passkeys stop working. If the provider is down, they cannot sign in until you turn this off. You keep your password at {path}.": "Après l’enregistrement, les membres ne peuvent se connecter qu’avec {name} : leurs mots de passe et clés d’accès ne fonctionnent plus. Si le fournisseur est indisponible, ils ne peuvent pas se connecter tant que vous ne désactivez pas cette option. Votre mot de passe reste utilisable à l’adresse {path}."
 }

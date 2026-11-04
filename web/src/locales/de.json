@@ -7107,5 +7107,18 @@
   "This connection request can’t be used": "Diese Verbindungsanfrage kann nicht verwendet werden",
   "It may have expired or been changed. Start connecting again from the app.": "Sie ist vielleicht abgelaufen oder wurde verändert. Beginne die Verbindung in der App erneut.",
   "Enter at least one valid redirect address.": "Gib mindestens eine gültige Weiterleitungsadresse ein.",
-  "Choose read-only access or access that may make changes.": "Wähle Nur-Lese-Zugriff oder Zugriff, der Änderungen vornehmen darf."
+  "Choose read-only access or access that may make changes.": "Wähle Nur-Lese-Zugriff oder Zugriff, der Änderungen vornehmen darf.",
+  "Calendar connected": "Kalender verbunden",
+  "Calendar connection changed": "Kalenderverbindung geändert",
+  "Calendar disconnected": "Kalender getrennt",
+  "Project kept away from AI assistants changed": "Projektschutz vor KI-Assistenten geändert",
+  "Task published as a page": "Aufgabe als Seite veröffentlicht",
+  "Task page revoked": "Aufgabenseite widerrufen",
+  "AI app sign-in client created": "Anmelde-Client für KI-App erstellt",
+  "AI app sign-in client deleted": "Anmelde-Client für KI-App gelöscht",
+  "AI app connected": "KI-App verbunden",
+  "AI app disconnected": "KI-App getrennt",
+  "Require single sign-on?": "Single Sign-On verlangen?",
+  "Require single sign-on": "Single Sign-On verlangen",
+  "Once you save, members can sign in only with {name}: their passwords and passkeys stop working. If the provider is down, they cannot sign in until you turn this off. You keep your password at {path}.": "Nach dem Speichern können sich Mitglieder nur noch mit {name} anmelden: Ihre Passwörter und Passkeys funktionieren nicht mehr. Ist der Anbieter nicht erreichbar, können sie sich erst wieder anmelden, wenn du dies ausschaltest. Dein Passwort funktioniert weiter unter {path}."
 }

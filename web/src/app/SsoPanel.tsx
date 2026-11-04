@@ -136,6 +136,9 @@ function Lock() {
 export function SsoPanelView(p: SsoPanelViewProps & { configuring?: boolean }) {
   const { settings: s, form: f } = p
   const [open, setOpen] = useState(p.configuring ?? false)
+  // Turning on "SSO only" locks members out of passwords and passkeys, so it
+  // asks first; turning it off never does.
+  const [confirmSsoOnly, setConfirmSsoOnly] = useState(false)
   const opener = useRef<HTMLButtonElement>(null)
   const first = useRef<HTMLInputElement>(null)
   const wasOpen = useRef(open)
@@ -156,7 +159,10 @@ export function SsoPanelView(p: SsoPanelViewProps & { configuring?: boolean }) {
   )
   const toggle = (key: 'allowProvision' | 'ssoOnly' | 'providerLogout' | 'syncPictures', label: string, hint: string) => (
     <Checkbox checked={f[key]} disabled={disabled || locked(key)} label={<>{label}{locked(key) && <Lock />}</>} description={hint}
-      onChange={(e) => p.onChange({ [key]: e.target.checked } as Partial<SsoForm>)} />
+      onChange={(e) => {
+        if (key === 'ssoOnly' && e.target.checked && !f.ssoOnly) setConfirmSsoOnly(true)
+        else p.onChange({ [key]: e.target.checked } as Partial<SsoForm>)
+      }} />
   )
   return (
     <SettingsSection {...cardCopy('sso')} testId="sso-panel">
@@ -207,6 +213,11 @@ export function SsoPanelView(p: SsoPanelViewProps & { configuring?: boolean }) {
                 ? t('Provider reachable: sign-in at {authHost}, tokens from {tokenHost}, provider sign-out supported.', { authHost: p.test.authorizationHost, tokenHost: p.test.tokenHost })
                 : t('Provider reachable: sign-in at {authHost}, tokens from {tokenHost}, no provider sign-out endpoint.', { authHost: p.test.authorizationHost, tokenHost: p.test.tokenHost })}
             </Notice>
+          )}
+          {confirmSsoOnly && (
+            <ConfirmDialog title={t('Require single sign-on?')} confirmLabel={t('Require single sign-on')}
+              consequence={t('Once you save, members can sign in only with {name}: their passwords and passkeys stop working. If the provider is down, they cannot sign in until you turn this off. You keep your password at {path}.', { name, path: '/?owner=1' })}
+              onConfirm={() => { p.onChange({ ssoOnly: true }); setConfirmSsoOnly(false) }} onCancel={() => setConfirmSsoOnly(false)} />
           )}
           <div className="flex flex-wrap justify-end gap-2">
             <Button variant="ghost" onClick={() => setOpen(false)}>{t('Close')}</Button>
