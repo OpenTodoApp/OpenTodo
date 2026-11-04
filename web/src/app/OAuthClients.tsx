@@ -5,6 +5,7 @@ import { api, isNetworkError } from '../lib/api'
 import { describeAssistantsError, type McpOAuthClient } from '../lib/assistants'
 import { t } from '../lib/i18n'
 import { copyText } from '../lib/clipboard'
+import { rowCopy } from '../lib/settingsCopy'
 
 /**
  * OAuth clients for the MCP endpoint (OpenSpec change mcp-oauth): the way in for
@@ -97,7 +98,7 @@ export function OAuthClients({ disabled }: { disabled: boolean }) {
 
       {created && (
         <div className="space-y-2" data-oauth-created>
-          <SettingRow label={t('Client ID')} description={t('The secret is shown only now, next to the client ID.')}
+          <SettingRow {...rowCopy('assistants', 'oauthClient')}
             control={<div className="flex items-center gap-2">
               <code className="max-w-64 truncate rounded-control border border-default bg-sunken px-2 py-1 font-mono text-meta text-default">{created.client.id}</code>
               <Button size="sm" icon="copy" onClick={() => copy('id', created.client.id)}>{copied === 'id' ? t('Copied') : t('Copy')}</Button>
