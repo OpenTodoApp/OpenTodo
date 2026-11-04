@@ -2367,6 +2367,7 @@
         "today_done": "string",
         "today_events": "string",
         "today_limit": "number",
+        "upcoming_events": "string",
         "upcoming_today": "string",
         "week_start": "string",
         "welcome": "string"
@@ -3355,6 +3356,7 @@
       "today_done": "string",
       "today_events": "string",
       "today_limit": "number",
+      "upcoming_events": "string",
       "upcoming_today": "string",
       "week_start": "string",
       "welcome": "string"
