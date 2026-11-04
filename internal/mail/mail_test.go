@@ -232,7 +232,9 @@ func TestTransportStages(t *testing.T) {
 
 func TestLangFrom(t *testing.T) {
 	for h, want := range map[string]string{"de-CH, fr;q=0.8": "de", "ja": "en", "": "en", "ja, it;q=0.5": "it",
-		"fr;q=0.3, pt-BR;q=0.9": "pt", "es;q=0, en": "en", "EN-gb": "en"} {
+		"fr;q=0.3, pt-BR;q=0.9": "pt", "es;q=0, en": "en", "EN-gb": "en",
+		"zh-CN": "zh", "zh-Hans": "zh", "zh": "zh", "zh-SG": "zh",
+		"zh-TW": "en", "zh-HK": "en", "zh-Hant": "en", "zh-TW, zh-CN;q=0.8": "zh"} {
 		if got := LangFrom(h); got != want {
 			t.Errorf("LangFrom(%q) = %s, want %s", h, got, want)
 		}
@@ -274,6 +276,14 @@ func TestTemplatesEveryKindAndLanguage(t *testing.T) {
 	_, body, _ := Render(Message{Kind: KindPasswordReset, To: "a@b.c", Lang: LangFrom("de-CH, fr;q=0.8"), Vars: Vars{Link: link, Expiry: 24 * time.Hour}}, "https://todo.example.com")
 	if !strings.Contains(body, "Passwort") || !strings.Contains(body, link) || !strings.Contains(body, "24 Stunden") {
 		t.Fatalf("german reset: %q", body)
+	}
+	_, zhBody, _ := Render(Message{Kind: KindPasswordReset, To: "a@b.c", Lang: LangFrom("zh-CN"), Vars: Vars{Link: link, Expiry: 24 * time.Hour}}, "https://todo.example.com")
+	if !strings.Contains(zhBody, "密码") || !strings.Contains(zhBody, link) || strings.Contains(zhBody, "password") {
+		t.Fatalf("simplified chinese reset: %q", zhBody)
+	}
+	_, twBody, _ := Render(Message{Kind: KindPasswordReset, To: "a@b.c", Lang: LangFrom("zh-TW"), Vars: Vars{Link: link, Expiry: 24 * time.Hour}}, "https://todo.example.com")
+	if !strings.Contains(twBody, "password") || !strings.Contains(twBody, link) {
+		t.Fatalf("traditional chinese reset: %q", twBody)
 	}
 	if got := formatExpiry(7*24*time.Hour, "en"); got != "7 days" {
 		t.Fatalf("7 days = %q", got)
@@ -496,11 +506,13 @@ func TestDigestWordsForLateTasks(t *testing.T) {
 	heading := map[string]string{
 		"en": "Still open from earlier", "de": "Noch offen von früher", "fr": "Encore ouvertes d'avant",
 		"es": "Siguen abiertas de antes", "it": "Ancora aperte da prima", "pt": "Ainda abertas de antes",
+		"zh": "更早仍未完成",
 	}
 	// The old headings, matched as whole lines where the word also names a measurement.
 	old := map[string]*regexp.Regexp{
 		"en": regexp.MustCompile(`(?i)overdue`), "de": regexp.MustCompile(`(?i)überfällig`), "fr": regexp.MustCompile(`(?m)^En retard$`),
 		"es": regexp.MustCompile(`(?i)vencid`), "it": regexp.MustCompile(`(?m)^In ritardo$`), "pt": regexp.MustCompile(`(?m)^Atrasadas$`),
+		"zh": regexp.MustCompile(`逾期`),
 	}
 	for _, lang := range Languages {
 		m := Message{Kind: KindDigest, To: "ana@example.com", Lang: lang, Origin: "https://todo.example.com",

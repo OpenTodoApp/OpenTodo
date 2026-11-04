@@ -25,7 +25,7 @@ Tasks [waiting for another task](tasks-and-projects.md#wait-for-another-task) ga
 
 To push a task to later, open it and change **Due**, or press <kbd>s</kbd> to place it on the Day calendar.
 
-Your appointments can show here too: [Calendar events in Today](calendar-events-in-today.md). Too many tasks? Set a [Today limit](today-limit.md).
+Your appointments can show on Today and on each Upcoming day: [Calendar events in Today](calendar-events-in-today.md). Too many tasks? Set a [Today limit](today-limit.md).
 
 At the end of the list, **Close the day** moves what is left to tomorrow in one step ([Close the day](method/rhythms.md#close-the-day)); afterwards it reads **Day closed** with the time.
 

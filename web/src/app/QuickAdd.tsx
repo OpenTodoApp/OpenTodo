@@ -18,6 +18,7 @@ import { useDictation } from './useDictation'
 import { useTokenSuggest } from './TokenSuggest'
 import { ParseChips } from './ParseChips'
 import { QuickAddTint } from './QuickAddTint'
+import { composingEnter } from '../lib/composeKey'
 import { t, preferredLanguages } from '../lib/i18n'
 import { chipRange, type FieldKind, fieldRows, type FieldRow, startToken } from './quickadd/fields'
 import { FieldRows, QuickAddFooter } from './quickadd/FieldRows'
@@ -306,6 +307,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
           {...suggest.fieldProps}
           onPaste={paste.onPaste}
           onKeyDown={(e) => {
+            if (composingEnter(e)) { e.preventDefault(); return }
             if (suggest.onKeyDown(e)) return
             if (palette && fieldKeys(e)) return
             if (e.key === 'Escape') {

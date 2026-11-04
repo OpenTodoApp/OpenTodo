@@ -13,7 +13,7 @@ const en = read('en')
 const langs = readdirSync(dir)
 
 test('the six shipped languages are there', () => {
-  assert.deepEqual([...langs].sort(), ['de', 'en', 'es', 'fr', 'it', 'pt'])
+  assert.deepEqual([...langs].sort(), ['de', 'en', 'es', 'fr', 'it', 'pt', 'zh'])
 })
 
 for (const lang of langs) {
