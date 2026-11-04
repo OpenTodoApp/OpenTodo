@@ -13,6 +13,7 @@ import { openTaskPage } from '../taskTrail'
 import type { useSelection } from '../selection'
 import { openTask, selectTask } from '../signals'
 import { isTypingTarget } from '../shortcuts'
+import { gripSelect } from './RowSwipe'
 import type { RowActions } from './TaskListRow'
 import type { ListRoute } from './useListModel'
 import type { ListUi } from './useListShortcuts'
@@ -77,7 +78,7 @@ export interface BindingContext {
   setSelectMode: (on: boolean) => void
   toggleComplete: (id: string, completed: boolean) => Promise<void>
   toggleCollapsed: (id: string, force?: boolean) => void
-  startDrag: (e: React.PointerEvent, task: Task) => void
+  startDrag: (e: React.PointerEvent, task: Task, grip?: boolean) => void
   quickAddRef: RefObject<HTMLInputElement | null>
   /** Vim `o` (vim-keybindings): the task the next quick-add entry is placed after, if any. */
   insertAfter: RefObject<string | null>
@@ -214,6 +215,12 @@ export function useListBindings(c: BindingContext): RowActions {
       setSelectedId(id)
     },
     drag: (e, task) => live.current.startDrag(e, task),
+    grip: (e, task) => live.current.startDrag(e, task, true),
+    gripTap: (task) => {
+      // A tap on the grip ticks or unticks with the hold's feedback (bulk-actions on touch).
+      gripSelect(task.id, live.current.selection, live.current.setSelectMode)
+      setSelectedId(task.id)
+    },
     // The revealed More action (rows-v2 D7): the row menu for this row, as `.` opens it.
     more: (id, from) => {
       setSelectedId(id)
