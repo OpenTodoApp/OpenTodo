@@ -7106,5 +7106,9 @@
   "This connection request can’t be used": "Este pedido de ligação não pode ser usado",
   "It may have expired or been changed. Start connecting again from the app.": "Pode ter expirado ou sido alterado. Recomece a ligação a partir da app.",
   "Enter at least one valid redirect address.": "Introduza pelo menos um endereço de redirecionamento válido.",
-  "Choose read-only access or access that may make changes.": "Escolha acesso só de leitura ou acesso que pode fazer alterações."
+  "Choose read-only access or access that may make changes.": "Escolha acesso só de leitura ou acesso que pode fazer alterações.",
+  "Between {min} and {max}": "Entre {min} e {max}",
+  "Between {min} and {max} {unit}": "Entre {min} e {max} {unit}",
+  "No limit": "Sem limite",
+  "Fix the highlighted fields to save.": "Corrija os campos assinalados para guardar."
 }
