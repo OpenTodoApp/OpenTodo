@@ -128,6 +128,7 @@ var texts = map[string]map[string]string{
 		txtTestTitle: "Teste do OpenTodo", txtTestBody: "Este canal funciona.", txtGuest: "Um convidado",
 	},
 	"zh": {
+		txtTurn: "轮到你处理一项任务", txtTurnWith: "轮到你了",
 		txtRoutine:       "一个例程给你发来一条通知",
 		txtRoutineFailed: "一个例程失败了", txtRoutineFailedWith: "它没有完成。打开这次运行以查看原因。",
 		txtReminder: "有一条提醒到期", txtAssigned: "有一项任务分配给了你", txtMentioned: "有人提到了你",
