@@ -21,6 +21,10 @@ precacheAndRoute(self.__WB_MANIFEST)
 // Nothing under /api/ (in particular the live event stream) or /healthz is ever
 // answered by the app shell or stored in a cache.
 // A task page (/t/, task-pages D8) is its own document from the server, never the app.
+// The OAuth endpoints and the discovery documents must reach the server too
+// (mcp-oauth): answered with the app shell, an authorize navigation showed the
+// app and the connection stopped without a code ever being issued. /mcp itself
+// is never a navigation, but a GET of it is the server's 405, not the app.
 // The app shell is precached with the headers it had at install time, but the
 // server's Content-Security-Policy follows the owner's settings (the on-device
 // assistant's provider origins, assistant-on-device D4). Navigations get the
@@ -49,7 +53,7 @@ registerRoute(new NavigationRoute(async (opts) => {
   const headers = new Headers(res.headers)
   headers.set('Content-Security-Policy', policy)
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers })
-}, { denylist: [/^\/api\//, /^\/healthz/, /^\/t\//] }))
+}, { denylist: [/^\/api\//, /^\/healthz/, /^\/t\//, /^\/oauth\//, /^\/\.well-known\//, /^\/mcp$/] }))
 
 registerRoute(
   ({ url, request }) => url.pathname === '/share' && request.method === 'POST',
