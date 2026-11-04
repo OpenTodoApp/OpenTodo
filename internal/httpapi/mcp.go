@@ -61,6 +61,9 @@ func (s *Server) registerMCPRoutes(mux *routes) {
 	mux.handle("GET /api/v1/me/agent-access", signedIn.FullTokens(), s.handleGetAgentAccess)
 	mux.handle("PUT /api/v1/me/agent-access", signedIn.FullTokens().DemoDenied(), s.handlePutAgentAccess)
 	s.registerAgentExclusionRoutes(mux)
+	// OAuth 2.1 in front of the same endpoint (mcp-oauth), for clients that
+	// cannot be handed a pasted token.
+	s.registerMCPOAuthRoutes(mux)
 }
 
 func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
@@ -99,7 +102,9 @@ func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 	}
 	if u == nil {
 		s.mcpLimiter.hit(ip)
-		w.Header().Set("WWW-Authenticate", `Bearer realm="OpenTodo MCP"`)
+		// The challenge names the protected-resource document, which is how a
+		// client that only speaks OAuth discovers the flow (mcp-oauth D1).
+		w.Header().Set("WWW-Authenticate", `Bearer realm="OpenTodo MCP", resource_metadata="`+s.publicOrigin(r)+mcpProtectedResourcePath+`"`)
 		writeError(w, http.StatusUnauthorized, "unauthorized", "an API token is required: Authorization: Bearer <token>")
 		return
 	}

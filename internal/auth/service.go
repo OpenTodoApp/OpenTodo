@@ -34,6 +34,8 @@ type Token struct {
 	Scope      string `json:"scope"`
 	CreatedAt  int64  `json:"createdAt"`
 	LastUsedAt *int64 `json:"lastUsedAt"`
+	// ExpiresAt is set on a token that stops working at that time (mcp-oauth).
+	ExpiresAt *int64 `json:"expiresAt,omitempty"`
 }
 
 // Token scopes (OpenSpec changes `mcp-server` D2 and `mcp-write-tools` D2). A
@@ -483,6 +485,23 @@ func (s *Service) CreateToken(ctx context.Context, userID, name string) (*Token,
 // The plaintext is returned exactly once. The token row, its scope and its
 // token.created audit event are written in one transaction.
 func (s *Service) CreateTokenScoped(ctx context.Context, userID, name, scope string) (*Token, string, error) {
+	return s.createToken(ctx, userID, name, scope, time.Time{})
+}
+
+// CreateTokenExpiring issues a scoped API token that stops resolving at
+// expiresAt (OpenSpec change `mcp-oauth` D6: the access tokens an OAuth
+// exchange mints). The person's tokens that have already expired are removed
+// in the same transaction, so they do not pile up in the token list.
+func (s *Service) CreateTokenExpiring(ctx context.Context, userID, name, scope string, expiresAt time.Time) (*Token, string, error) {
+	if expiresAt.IsZero() {
+		return nil, "", errors.New("auth: an expiring token needs an expiry")
+	}
+	return s.createToken(ctx, userID, name, scope, expiresAt)
+}
+
+// createToken writes a token, its scope rows and its audit event in one
+// transaction; a non-zero expiresAt adds the expiry row.
+func (s *Service) createToken(ctx context.Context, userID, name, scope string, expiresAt time.Time) (*Token, string, error) {
 	if scope == "" {
 		scope = ScopeFull
 	}
@@ -521,6 +540,17 @@ func (s *Service) CreateTokenScoped(ctx context.Context, userID, name, scope str
 			return nil, "", err
 		}
 	}
+	if !expiresAt.IsZero() {
+		if _, err := tx.ExecContext(ctx, "DELETE FROM api_tokens WHERE user_id = ? AND id IN (SELECT token_id FROM api_token_expiry WHERE expires_at <= ?)",
+			userID, t.CreatedAt); err != nil {
+			return nil, "", err
+		}
+		at := expiresAt.UnixMilli()
+		if _, err := tx.ExecContext(ctx, "INSERT INTO api_token_expiry(token_id,expires_at) VALUES(?,?)", t.ID, at); err != nil {
+			return nil, "", err
+		}
+		t.ExpiresAt = &at
+	}
 	if s.afterTokenInsert != nil {
 		if err := s.afterTokenInsert(); err != nil {
 			return nil, "", err
@@ -549,14 +579,16 @@ func (s *Service) UserByTokenScope(ctx context.Context, plain string) (*User, st
 }
 
 // UserByTokenInfo resolves an API token to its user and the token's id, name
-// and scope, or ErrNotFound. Tokens of deactivated accounts never resolve.
+// and scope, or ErrNotFound. Tokens of deactivated accounts and tokens past
+// their expiry never resolve.
 func (s *Service) UserByTokenInfo(ctx context.Context, plain string) (*User, TokenInfo, error) {
 	var u User
 	var info TokenInfo
 	var lastUsed sql.NullInt64
 	err := s.db.QueryRowContext(ctx, `SELECT t.id,t.name,`+scopeExpr+`,t.last_used_at,u.id,u.email,u.name,u.role,u.created_at FROM api_tokens t
 		JOIN users u ON u.id = t.user_id`+scopeJoins+`WHERE t.token_hash = ?
-		AND u.id NOT IN (SELECT user_id FROM user_status WHERE deactivated_at IS NOT NULL)`, hashToken(plain)).
+		AND u.id NOT IN (SELECT user_id FROM user_status WHERE deactivated_at IS NOT NULL)
+		AND NOT EXISTS (SELECT 1 FROM api_token_expiry e WHERE e.token_id = t.id AND e.expires_at <= ?)`, hashToken(plain), s.clock().UnixMilli()).
 		Scan(&info.ID, &info.Name, &info.Scope, &lastUsed, &u.ID, &u.Email, &u.Name, &u.Role, &u.CreatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, TokenInfo{}, ErrNotFound
@@ -592,10 +624,12 @@ func (s *Service) TokenName(ctx context.Context, userID, tokenID string) (string
 	return name, err
 }
 
-// ListTokens returns a user's tokens with their scopes.
+// ListTokens returns a user's tokens with their scopes, leaving out the ones
+// that have expired.
 func (s *Service) ListTokens(ctx context.Context, userID string) ([]Token, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT t.id,t.name,`+scopeExpr+`,t.created_at,t.last_used_at FROM api_tokens t`+scopeJoins+`
-		WHERE t.user_id = ? ORDER BY t.created_at DESC`, userID)
+	rows, err := s.db.QueryContext(ctx, `SELECT t.id,t.name,`+scopeExpr+`,t.created_at,t.last_used_at,e.expires_at FROM api_tokens t`+scopeJoins+`
+		LEFT JOIN api_token_expiry e ON e.token_id = t.id
+		WHERE t.user_id = ? AND (e.expires_at IS NULL OR e.expires_at > ?) ORDER BY t.created_at DESC`, userID, s.clock().UnixMilli())
 	if err != nil {
 		return nil, err
 	}
@@ -603,7 +637,7 @@ func (s *Service) ListTokens(ctx context.Context, userID string) ([]Token, error
 	out := []Token{}
 	for rows.Next() {
 		var t Token
-		if err := rows.Scan(&t.ID, &t.Name, &t.Scope, &t.CreatedAt, &t.LastUsedAt); err != nil {
+		if err := rows.Scan(&t.ID, &t.Name, &t.Scope, &t.CreatedAt, &t.LastUsedAt, &t.ExpiresAt); err != nil {
 			return nil, err
 		}
 		out = append(out, t)

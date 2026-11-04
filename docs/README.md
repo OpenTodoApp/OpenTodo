@@ -172,6 +172,7 @@ The full list of environment variables is in the [README](../README.md#configura
 | [Calendar sync](calendar-sync.md) | Two-way sync with your own calendar: tasks as events in iCloud, Fastmail, Nextcloud, Google Calendar, Outlook and Microsoft 365 or any CalDAV calendar, and changes back; the Google and Microsoft client setup, conflicts, limits |
 | [Issue import](issue-import.md) | GitHub and GitLab issues assigned to you as tasks that follow the issue: tokens, filters, what follows, limits |
 | [AI assistants (MCP)](mcp.md) | Enabling the MCP endpoint, read-only and assistant tokens, read and write tools, limits, prompt-injection safety |
+| [OAuth clients for AI assistants](mcp-oauth.md) | Connecting an app that requires OAuth instead of a token (Google Gemini), scopes, refresh and revocation |
 
 ## Internals
 
