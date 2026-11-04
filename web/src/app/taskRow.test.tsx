@@ -868,4 +868,29 @@ describe('title width (task-list-width)', () => {
       if (ch) Object.defineProperty(proto, 'clientHeight', ch); else delete own.clientHeight
     }
   })
+
+  it('a Chinese title with no spaces still ends in an ellipsis and tips the whole title while cut', async () => {
+    const chinese = '整理车库里的家具并列出待售的物品从最大的柜子开始'
+    const r = await render(<ul><TaskRow task={task({ title: chinese })} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} onMore={() => {}} /></ul>)
+    const title = r.container.querySelector<HTMLElement>('[data-row-title]')!
+    expect(title.className).toContain('line-clamp-2')
+    expect(title.textContent).toBe(chinese)
+    expect(title.hasAttribute('data-tip')).toBe(false)
+    await r.unmount()
+    const proto = HTMLElement.prototype
+    const sh = Object.getOwnPropertyDescriptor(proto, 'scrollHeight')
+    const ch = Object.getOwnPropertyDescriptor(proto, 'clientHeight')
+    const titleOr = (el: HTMLElement, cut: number) => el.hasAttribute('data-row-title') ? cut : 0
+    Object.defineProperty(proto, 'scrollHeight', { configurable: true, get() { return titleOr(this as HTMLElement, 60) } })
+    Object.defineProperty(proto, 'clientHeight', { configurable: true, get() { return titleOr(this as HTMLElement, 40) } })
+    try {
+      const cut = await render(<ul><TaskRow task={task({ title: chinese })} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} onMore={() => {}} /></ul>)
+      await waitFor(() => cut.container.querySelector('[data-row-title]')!.getAttribute('data-tip') === chinese, 'the tip on the cut Chinese title')
+      await cut.unmount()
+    } finally {
+      const own = proto as unknown as Record<string, unknown>
+      if (sh) Object.defineProperty(proto, 'scrollHeight', sh); else delete own.scrollHeight
+      if (ch) Object.defineProperty(proto, 'clientHeight', ch); else delete own.clientHeight
+    }
+  })
 })
