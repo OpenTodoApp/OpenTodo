@@ -7124,5 +7124,17 @@
   "Between {min} and {max}": "介于 {min} 和 {max} 之间",
   "Between {min} and {max} {unit}": "介于 {min} 和 {max} {unit} 之间",
   "Fix the highlighted fields to save.": "请先修正标出的字段再保存。",
-  "No limit": "不限"
+  "No limit": "不限",
+  "Accounts and pending invitations.": "账户和待接受的邀请。",
+  "Applies to everyone on this server": "适用于此服务器上的所有人",
+  "Copies of the whole server, where they go, and how to restore one.": "整个服务器的备份、存放位置以及如何恢复。",
+  "How quick add reads what you type, and where new tasks go.": "快速添加如何理解你输入的内容，以及新任务放在哪里。",
+  "Reminders on this device and how notifications reach it.": "此设备上的提醒，以及通知如何送达。",
+  "Rules for signing in and inviting people that apply to every account.": "适用于所有账户的登录和邀请规则。",
+  "The assistant inside OpenTodo: its provider, your consent and what it may do.": "OpenTodo 内置助手：它的提供方、你的同意以及它可以做的事。",
+  "This device only": "仅此设备",
+  "This server": "此服务器",
+  "Where the app opens, the briefing, and how Today fills up.": "应用打开时的页面、简报，以及“今天”如何安排。",
+  "Who you are on this server, and how much of the method the app shows.": "你在此服务器上的身份，以及应用展示多少方法内容。",
+  "Your password, second factor and passkeys, and where you are signed in.": "你的密码、第二重验证和通行密钥，以及你在哪些地方登录。"
 }

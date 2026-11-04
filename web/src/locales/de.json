@@ -7124,5 +7124,17 @@
   "Between {min} and {max}": "Zwischen {min} und {max}",
   "Between {min} and {max} {unit}": "Zwischen {min} und {max} {unit}",
   "No limit": "Keine Grenze",
-  "Fix the highlighted fields to save.": "Korrigiere die markierten Felder, um zu speichern."
+  "Fix the highlighted fields to save.": "Korrigiere die markierten Felder, um zu speichern.",
+  "Applies to everyone on this server": "Gilt für alle auf diesem Server",
+  "Copies of the whole server, where they go, and how to restore one.": "Kopien des ganzen Servers, wohin sie gehen und wie du eine wiederherstellst.",
+  "How quick add reads what you type, and where new tasks go.": "Wie die Schnelleingabe liest, was du tippst, und wohin neue Aufgaben kommen.",
+  "Reminders on this device and how notifications reach it.": "Erinnerungen auf diesem Gerät und wie Benachrichtigungen es erreichen.",
+  "Rules for signing in and inviting people that apply to every account.": "Regeln für die Anmeldung und für Einladungen, die für jedes Konto gelten.",
+  "The assistant inside OpenTodo: its provider, your consent and what it may do.": "Der Assistent in OpenTodo: sein Anbieter, deine Zustimmung und was er tun darf.",
+  "This device only": "Nur dieses Gerät",
+  "This server": "Dieser Server",
+  "Where the app opens, the briefing, and how Today fills up.": "Wo die App startet, die Übersicht und wie sich Heute füllt.",
+  "Who you are on this server, and how much of the method the app shows.": "Wer du auf diesem Server bist und wie viel von der Methode die App zeigt.",
+  "Your password, second factor and passkeys, and where you are signed in.": "Dein Passwort, zweiter Faktor und Passkeys, und wo du angemeldet bist.",
+  "Accounts and pending invitations.": "Konten und offene Einladungen."
 }

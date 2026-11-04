@@ -44,6 +44,12 @@ describe('settings cards', () => {
     expect(offenders).toEqual([])
   })
 
+  it('mark the owner\'s switches on personal pages as applying to this server (settings-foundation D4)', () => {
+    const owned = ['AssistantsPanel', 'CaldavPanel', 'NotificationChannels', 'CalendarFeedsPanel', 'CalendarSyncPanel', 'IssuesPanel', 'WebhooksPanel']
+    const missing = owned.filter((name) => !/<SettingRow\b[^>]*\bscope=(?:"server"|\{p\.isOwner \? 'server' : undefined\})/s.test(sources[`./${name}.tsx`] ?? ''))
+    expect(missing).toEqual([])
+  })
+
   it('the primitive itself has no header slot for actions or help', () => {
     const primitive = import.meta.glob<string>('../ui/patterns/SettingsSection.tsx', { query: '?raw', import: 'default', eager: true })
     const src = Object.values(primitive)[0]
@@ -60,6 +66,27 @@ function cardOffenders(page: string, root: ParentNode): string[] {
     .map((c) => `${page}: "${c.querySelector('h2, h3')?.textContent ?? '?'}" is drawn as a card`)
 }
 
+/**
+ * The page head of a rendered page (settings-foundation D1, D2): a lead line, no
+ * visible section heading equal to the page's title, and every visible switch row on
+ * its label's line.
+ */
+function headOffenders(page: string, root: ParentNode): string[] {
+  const out: string[] = []
+  const title = root.querySelector('[data-settings-page-head] [aria-hidden="true"]')?.textContent?.trim()
+  // people/sso renders a stub here (SsoPanel is mocked above), so it has no section to lead with.
+  if (page !== 'people/sso' && !root.querySelector('[data-settings-page-head] [data-settings-lead]')?.textContent?.trim()) out.push(`${page}: no lead line`)
+  for (const h of root.querySelectorAll('[data-settings-card]:not([data-settings-bare]) > div > h2')) {
+    if (title && h.textContent?.trim() === title) out.push(`${page}: the section heading repeats the page title "${title}"`)
+  }
+  for (const row of root.querySelectorAll('[data-setting-row]:not([data-setting-inline])')) {
+    const control = row.querySelector('[data-setting-control]')
+    const onlySwitch = control && control.querySelectorAll('[role="switch"]').length === 1 && control.querySelectorAll('button:not([role="switch"]), input, select, a').length === 0
+    if (onlySwitch) out.push(`${page}: a switch row "${row.querySelector('label, div')?.textContent?.slice(0, 40)}" stacks on phones`)
+  }
+  return out
+}
+
 describe('flat settings pages (precision-settings D3)', () => {
   const owner: User = { id: 'u1', email: 'ada@example.com', name: 'Ada', role: 'owner', createdAt: 1 }
   beforeEach(() => {
@@ -71,7 +98,7 @@ describe('flat settings pages (precision-settings D3)', () => {
   })
   afterEach(() => { vi.unstubAllGlobals() })
 
-  it('a section is a label-size heading, its line and rows between hairlines, with no icon', async () => {
+  it('a section is a heading that outranks its rows (settings-foundation D3), its line and rows between hairlines, with no icon', async () => {
     const r = await render(
       <SettingsSection title="Backups" icon="archive" description="Snapshots of this server." learnMore="settings/server">
         <SettingRow label="Schedule" description="Every night." control={<button type="button">Change</button>} />
@@ -79,7 +106,8 @@ describe('flat settings pages (precision-settings D3)', () => {
     )
     const card = r.container.querySelector('[data-settings-card]')!
     expect(card.className).toBe('ui-settings-section')
-    expect(card.querySelector('h2')!.className).toContain('text-meta')
+    expect(card.querySelector('h2')!.className).toContain('text-body font-semibold text-strong')
+    expect(card.querySelector('h2')!.className).not.toContain('text-muted')
     expect(card.querySelector('svg')).toBeNull()
     expect(card.querySelector('[data-setting-control]')!.parentElement!.parentElement!.className).toContain('border-y')
     expect(card.querySelector('[data-setting-control]')).not.toBeNull()
@@ -105,7 +133,9 @@ describe('flat settings pages (precision-settings D3)', () => {
       const r = await render(<SettingsView user={owner} onLogout={() => {}} section={section} page={page} />)
       await waitFor(() => !!r.container.querySelector('[data-settings-section], [data-settings-page]'), `${page ? `${section}/${page}` : section} open`)
       await flush()
-      offenders.push(...cardOffenders(page ? `${section}/${page}` : section, r.container))
+      const name = page ? `${section}/${page}` : section
+      offenders.push(...cardOffenders(name, r.container))
+      offenders.push(...headOffenders(name, r.container))
       sections += r.container.querySelectorAll('[data-settings-card]').length
       await r.unmount()
     }
