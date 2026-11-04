@@ -190,7 +190,10 @@ func (s *Server) handleOAuthAuthorize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if u == nil || sess == nil || !viaCookie {
-		// Send the browser to sign in, and back here afterwards (D5).
+		// Send the browser to sign in, and back here afterwards (D5). Logged
+		// without the address or the challenge, so a failed connection can be
+		// told apart from one that never reached this handler.
+		s.log.Info("oauth authorize: no session in this browser, sending it to sign in", "client_id", c.ID)
 		next := s.publicOrigin(r) + r.URL.RequestURI()
 		http.Redirect(w, r, "/?oauth="+url.QueryEscape(next), http.StatusFound)
 		return

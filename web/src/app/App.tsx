@@ -109,6 +109,27 @@ export function App() {
     void refresh()
   }, [refresh])
 
+  // OAuth authorize (mcp-oauth D5): a client sends the browser to /oauth/authorize,
+  // which needs a session and therefore sends a signed-out browser here with the
+  // address to return to. Read once, before the router touches the URL; followed
+  // only when it is this server's own authorize address.
+  const [oauthNext] = useState(() => new URLSearchParams(window.location.search).get('oauth'))
+  useEffect(() => {
+    if (phase.kind !== 'ready' || !oauthNext) return
+    let authorize: URL
+    try {
+      authorize = new URL(oauthNext, window.location.origin)
+    } catch {
+      return
+    }
+    const here = new URL(window.location.href)
+    here.searchParams.delete('oauth')
+    window.history.replaceState({}, '', here.pathname + here.search + here.hash)
+    if (authorize.origin === window.location.origin && authorize.pathname === '/oauth/authorize') {
+      window.location.assign(authorize.toString())
+    }
+  }, [phase.kind, oauthNext])
+
   // A request refused with mfa_enrolment_required (policy changed while signed
   // in), or a click on the sync status, re-reads the status and shows the gate.
   useEffect(() => {
