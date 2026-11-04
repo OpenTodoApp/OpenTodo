@@ -7106,5 +7106,18 @@
   "This connection request can’t be used": "Questa richiesta di collegamento non può essere usata",
   "It may have expired or been changed. Start connecting again from the app.": "Potrebbe essere scaduta o essere stata modificata. Ricomincia il collegamento dall’app.",
   "Enter at least one valid redirect address.": "Inserisci almeno un indirizzo di reindirizzamento valido.",
-  "Choose read-only access or access that may make changes.": "Scegli l’accesso in sola lettura o un accesso che può apportare modifiche."
+  "Choose read-only access or access that may make changes.": "Scegli l’accesso in sola lettura o un accesso che può apportare modifiche.",
+  "Calendar connected": "Calendario collegato",
+  "Calendar connection changed": "Collegamento al calendario modificato",
+  "Calendar disconnected": "Calendario scollegato",
+  "Project kept away from AI assistants changed": "Esclusione del progetto dagli assistenti IA modificata",
+  "Task published as a page": "Attività pubblicata come pagina",
+  "Task page revoked": "Pagina dell’attività revocata",
+  "AI app sign-in client created": "Client di accesso per app IA creato",
+  "AI app sign-in client deleted": "Client di accesso per app IA eliminato",
+  "AI app connected": "App IA collegata",
+  "AI app disconnected": "App IA scollegata",
+  "Require single sign-on?": "Richiedere l’accesso unico?",
+  "Require single sign-on": "Richiedi l’accesso unico",
+  "Once you save, members can sign in only with {name}: their passwords and passkeys stop working. If the provider is down, they cannot sign in until you turn this off. You keep your password at {path}.": "Dopo il salvataggio, i membri possono accedere solo con {name}: le loro password e passkey smettono di funzionare. Se il provider non è raggiungibile, non possono accedere finché non disattivi questa opzione. La tua password resta valida su {path}."
 }

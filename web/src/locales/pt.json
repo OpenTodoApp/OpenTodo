@@ -7106,5 +7106,18 @@
   "This connection request can’t be used": "Este pedido de ligação não pode ser usado",
   "It may have expired or been changed. Start connecting again from the app.": "Pode ter expirado ou sido alterado. Recomece a ligação a partir da app.",
   "Enter at least one valid redirect address.": "Introduza pelo menos um endereço de redirecionamento válido.",
-  "Choose read-only access or access that may make changes.": "Escolha acesso só de leitura ou acesso que pode fazer alterações."
+  "Choose read-only access or access that may make changes.": "Escolha acesso só de leitura ou acesso que pode fazer alterações.",
+  "Calendar connected": "Calendário ligado",
+  "Calendar connection changed": "Ligação ao calendário alterada",
+  "Calendar disconnected": "Calendário desligado",
+  "Project kept away from AI assistants changed": "Exclusão do projeto dos assistentes de IA alterada",
+  "Task published as a page": "Tarefa publicada como página",
+  "Task page revoked": "Página da tarefa revogada",
+  "AI app sign-in client created": "Cliente de início de sessão de app de IA criado",
+  "AI app sign-in client deleted": "Cliente de início de sessão de app de IA eliminado",
+  "AI app connected": "App de IA ligada",
+  "AI app disconnected": "App de IA desligada",
+  "Require single sign-on?": "Exigir início de sessão único?",
+  "Require single sign-on": "Exigir início de sessão único",
+  "Once you save, members can sign in only with {name}: their passwords and passkeys stop working. If the provider is down, they cannot sign in until you turn this off. You keep your password at {path}.": "Depois de guardar, os membros só podem iniciar sessão com {name}: as suas palavras-passe e chaves de acesso deixam de funcionar. Se o fornecedor estiver em baixo, não conseguem iniciar sessão até desativar esta opção. A sua palavra-passe continua a funcionar em {path}."
 }

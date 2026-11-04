@@ -31,16 +31,18 @@ export function SignOutDialog({ onConfirm, onCancel }: { onConfirm: () => void; 
 /**
  * Sign out of this device, or of every device, after confirming what it clears
  * (web-app "Settings"). Signing out everywhere also revokes API tokens and app
- * passwords; this device then signs out like a regular sign-out.
+ * passwords; this device then signs out like a regular sign-out. Only the
+ * second is styled as dangerous: signing out here clears this device's copy but
+ * loses nothing, while signing out everywhere also ends every token.
  */
 export function SessionPanel({ onLogout, onSignOutEverywhere = signOutEverywhere }: { onLogout: () => void; onSignOutEverywhere?: () => Promise<void> }) {
   const [confirming, setConfirming] = useState<'device' | 'everywhere' | null>(null)
   return (
     <SettingsSection {...cardCopy('session')}>
       <SettingRow {...rowCopy('session', 'device')}
-        control={<Button variant="danger" icon="log-out" onClick={() => setConfirming('device')}>{t('Sign out')}</Button>} />
+        control={<Button variant="secondary" icon="log-out" onClick={() => setConfirming('device')}>{t('Sign out')}</Button>} />
       <SettingRow {...rowCopy('session', 'everywhere')}
-        control={<Button variant="secondary" icon="log-out" onClick={() => setConfirming('everywhere')}>{t('Sign out everywhere')}</Button>} />
+        control={<Button variant="danger" icon="log-out" onClick={() => setConfirming('everywhere')}>{t('Sign out everywhere')}</Button>} />
       {confirming === 'device' && <SignOutDialog onConfirm={onLogout} onCancel={() => setConfirming(null)} />}
       {confirming === 'everywhere' && (
         <ConfirmDialog title={t('Sign out everywhere?')} confirmLabel={t('Sign out everywhere')}

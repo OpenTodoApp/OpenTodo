@@ -644,6 +644,18 @@
   "AI": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "AI app connected": [
+    "web/src/app/auditFormat.ts"
+  ],
+  "AI app disconnected": [
+    "web/src/app/auditFormat.ts"
+  ],
+  "AI app sign-in client created": [
+    "web/src/app/auditFormat.ts"
+  ],
+  "AI app sign-in client deleted": [
+    "web/src/app/auditFormat.ts"
+  ],
   "AI assistant": [
     "web/src/lib/history.ts"
   ],
@@ -2516,6 +2528,15 @@
   ],
   "Calendar colour": [
     "web/src/app/CalendarFeedsPanel.tsx"
+  ],
+  "Calendar connected": [
+    "web/src/app/auditFormat.ts"
+  ],
+  "Calendar connection changed": [
+    "web/src/app/auditFormat.ts"
+  ],
+  "Calendar disconnected": [
+    "web/src/app/auditFormat.ts"
   ],
   "Calendar events today": [
     "web/src/app/calendar/TodayAgenda.tsx"
@@ -11122,6 +11143,9 @@
   "Once a day": [
     "web/src/app/IssueEditor.tsx"
   ],
+  "Once you save, members can sign in only with {name}: their passwords and passkeys stop working. If the provider is down, they cannot sign in until you turn this off. You keep your password at {path}.": [
+    "web/src/app/SsoPanel.tsx"
+  ],
   "One address per line. Leave empty to accept any sender. Sender addresses can be forged, so this filters mistakes and casual spam; the secret address is the real protection.": [
     "web/src/app/EmailInboxPanel.tsx"
   ],
@@ -12463,6 +12487,9 @@
   "Project is {name} or a sub-project": [
     "web/src/app/filter/conditionText.ts"
   ],
+  "Project kept away from AI assistants changed": [
+    "web/src/app/auditFormat.ts"
+  ],
   "Project layout": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
@@ -13328,7 +13355,13 @@
   "Requests go from this server to {provider} with your key. It is stored on the server, never shown again, never sent to your browser and never in backups or exports. A custom endpoint is not offered here, so no account can make the server connect to a host of its choosing.": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
+  "Require single sign-on": [
+    "web/src/app/SsoPanel.tsx"
+  ],
   "Require single sign-on (SSO only)": [
+    "web/src/app/SsoPanel.tsx"
+  ],
+  "Require single sign-on?": [
     "web/src/app/SsoPanel.tsx"
   ],
   "Require two-factor authentication?": [
@@ -15911,6 +15944,9 @@
   "Task page replies": [
     "web/src/app/NotificationChannelEditor.tsx"
   ],
+  "Task page revoked": [
+    "web/src/app/auditFormat.ts"
+  ],
   "Task pages need a connection": [
     "web/src/app/task-detail/TaskActionsMenu.tsx"
   ],
@@ -15922,6 +15958,9 @@
   ],
   "Task properties": [
     "web/src/app/task-list/InlineEditor.tsx"
+  ],
+  "Task published as a page": [
+    "web/src/app/auditFormat.ts"
   ],
   "Task reopened": [
     "web/src/lib/undoActions.ts",
@@ -17915,13 +17954,13 @@
   "Tick every task in the list": [
     "web/src/lib/shortcuts.ts"
   ],
-  "Tick the task and show every checkbox (a tap on the grip at the row's edge does the same); Select tasks in the page menu does the same, Close hides them": [
-    "web/src/lib/shortcuts.ts"
-  ],
   "Tick me off when you have read this": [
     "web/src/lib/sampleTasks.ts"
   ],
   "Tick the selected task for a bulk action (Space with Vim keybindings on)": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Tick the task and show every checkbox (a tap on the grip at the row's edge does the same); Select tasks in the page menu does the same, Close hides them": [
     "web/src/lib/shortcuts.ts"
   ],
   "Tick {title}": [
