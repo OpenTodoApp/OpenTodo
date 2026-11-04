@@ -41,6 +41,8 @@ export function OAuthClients({ disabled }: { disabled: boolean }) {
     try {
       const res = await api.createMcpOAuthClient(name.trim() || 'Gemini', scope)
       setCreated(res)
+      // A second client usually has another name; keeping "Gemini" invites a duplicate.
+      setName('')
       await load()
     } catch (err) {
       setError(describeAssistantsError(err))
