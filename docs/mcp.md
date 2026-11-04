@@ -38,6 +38,8 @@ In **Settings → Integrations → AI assistants**, choose **Create read-only to
 
 Full-access tokens also work with `/mcp`, but only with the read tools: they never get write tools, so a full token pasted into an assistant long ago does not gain write power when someone turns assistant changes on. There is no reason to give one to an assistant.
 
+An app that cannot take a pasted token — Google Gemini's Connected apps is one — signs in with OAuth instead. **Settings → Integrations → AI assistants → Apps that sign in with OAuth** registers a client and shows its id and secret once; see [OAuth clients](mcp-oauth.md).
+
 ## 3. Connect an assistant
 
 Use the endpoint URL shown in Settings (`https://todo.example.com/mcp`) as a **remote MCP server** with the **streamable HTTP** transport, and send the token as a header:
@@ -403,7 +405,7 @@ The server holds no key. For an account with [end-to-end encryption](e2ee.md), e
 
 ## Limits and security
 
-- **Authentication**: `Authorization: Bearer <API token>` only. The session cookie is ignored on `/mcp`, so a web page you visit cannot use your browser session to read your tasks. A missing, unknown or revoked token, or the token of a deactivated account, is 401 with `WWW-Authenticate: Bearer realm="OpenTodo MCP"`. Failed attempts count toward the per-address sign-in limit (10 per minute), after which requests get 429.
+- **Authentication**: `Authorization: Bearer <access or API token>`. The session cookie is ignored on `/mcp`, so a web page you visit cannot use your browser session to read your tasks. A missing, unknown or revoked token, or the token of a deactivated account, is 401 with a `WWW-Authenticate: Bearer` challenge that names the protected-resource document ([OAuth clients](mcp-oauth.md)). Failed attempts count toward the per-address sign-in limit (10 per minute), after which requests get 429.
 - **Origin**: a request that carries an `Origin` header other than this server's own (`OPENTODO_BASE_URL`, or the request's host) is refused with 403 `bad_origin`, as the MCP transport requires against DNS rebinding. Desktop and command-line clients send no `Origin`.
 - **Size**: request bodies over 1 MB are refused with 413; responses hold at most 200 items per list.
 - **Batches**: JSON-RPC batches are only part of protocol revision 2025-03-26 (requests without an `MCP-Protocol-Version` header count as that revision). Under 2025-06-18 or later a batch is refused with `-32600` (HTTP 400). Otherwise a batch holds at most 20 messages, and once its replies reach 4 MB the remaining requests are not run and get `-32603`; send them on their own.
