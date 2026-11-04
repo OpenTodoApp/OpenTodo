@@ -287,6 +287,9 @@ func TestContentPolicyAndLanguages(t *testing.T) {
 	if got := e.render("de", "", false).Body; got != "Eine Erinnerung ist fällig" {
 		t.Fatalf("German: %q", got)
 	}
+	if got := e.render("zh", "", false).Body; got != "有一条提醒到期" || strings.Contains(got, "A reminder is due") || strings.Contains(got, "Call the plumber") {
+		t.Fatalf("Chinese: %q", got)
+	}
 	if got := e.render("xx", "", false).Body; got != "A reminder is due" {
 		t.Fatalf("fallback: %q", got)
 	}

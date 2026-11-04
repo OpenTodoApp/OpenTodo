@@ -10,7 +10,7 @@ export {
   t, msg, formatNumber, formatList, translatedMap, translatedList, currentLanguage, currentLocale, currentPreference, languageVersion, onLanguageChange,
   mirroredPreference, SHIPPED, isShipped, type LanguageCode, type TFunction,
 } from './catalog'
-export { browserLanguages, intlLocale, preferredLanguages, resolveLanguage } from './locale'
+export { browserLanguages, intlLocale, isSimplifiedChineseTag, preferredLanguages, resolveLanguage } from './locale'
 export { errorMessage } from './errors'
 export { T, useLanguageVersion, useT } from './react'
 
