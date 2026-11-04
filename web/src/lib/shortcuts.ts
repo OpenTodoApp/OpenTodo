@@ -379,6 +379,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'triage.skip', keys: ['j', 'Space'], description: 'Skip to the next task', section: 'triage', scope: 'view', views: ['triage'] },
   { id: 'triage.back', keys: ['k'], description: 'Back to the previous task', section: 'triage', scope: 'view', views: ['triage'] },
   { id: 'triage.open', keys: ['Enter'], description: 'Open the task’s panel to edit anything else', section: 'triage', scope: 'view', views: ['triage'] },
+  { id: 'triage.title', keys: ['Tab'], description: 'Edit the title. Tab, Enter or a click away saves it and the decision keys work again. Esc restores it', section: 'triage', scope: 'view', views: ['triage'], local: true },
   { id: 'triage.escape', keys: ['Esc'], description: 'Close the panel, else back to the Inbox with this task selected', section: 'triage', scope: 'view', views: ['triage'] },
   // ---- the reviews (open-loops-method D6): the weekly review's project walk and the Daily check
   { id: 'review.prev-step', keys: ['['], description: 'Weekly review: the previous step', section: 'review', scope: 'view', views: ['review'], overrides: ['global.sidebar'] },

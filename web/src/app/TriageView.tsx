@@ -12,7 +12,7 @@ import { moveTaskAcrossScopes } from '../lib/ops'
 import { useMe } from '../lib/sharing'
 import { advance, advanceQueue, back, claim, current, positionText, progress, startTriage, type TriageState } from '../lib/triage'
 import { useLiveTasks } from '../lib/liveTasks'
-import type { Membership, Project, Task } from '../lib/types'
+import type { Label, Membership, Project, Task } from '../lib/types'
 import { LabelPicker } from './LabelPicker'
 import { registerListState } from './listActions'
 import { Markdown } from './Markdown'
@@ -27,6 +27,8 @@ import { completeWithUndo, deleteWithUndo, moveWithUndo, parkWithUndo, setDueWit
 import { t } from '../lib/i18n'
 import { keysOf } from '../lib/shortcuts'
 import { act } from './actionError'
+import { TitleField } from './TitleField'
+import { commitTitleEdit } from './titleEdit'
 
 /** Someday (`y`) needs the `start` field of someday-and-evening, which has landed. */
 export const HAS_SOMEDAY = true
@@ -53,6 +55,29 @@ export function delegateEntries(memberships: readonly Membership[], projects: re
     }
   }
   return out.sort((a, b) => a.label.localeCompare(b.label))
+}
+
+/** The title on the card. It is a field, so a voice-to-text line can be corrected
+ * without the decision keys eating the letters. Leaving it saves; Escape restores. */
+function TriageTitle({ task, projects, labels, onLeave }: { task: Task; projects: readonly Project[]; labels: readonly Label[]; onLeave: () => void }) {
+  const [draft, setDraft] = useState(task.title)
+  const revert = useRef(false)
+  useEffect(() => { setDraft(task.title) }, [task.id, task.title])
+  const projectName = (id: string) => projects.find((p) => p.id === id)?.name ?? t('the project')
+  return (
+    <h2 className="user-text text-h2 font-semibold text-strong">
+      <TitleField title={task.title} value={draft} onChange={setDraft}
+        onCommit={(plan) => {
+          if (revert.current) { revert.current = false; setDraft(task.title); return }
+          setDraft(typeof plan.patch.title === 'string' ? plan.patch.title : task.title)
+          void act(commitTitleEdit(task, plan, labels, projectName))
+        }}
+        onCancel={() => { revert.current = true; setDraft(task.title); onLeave() }}
+        projects={projects} labels={labels}
+        className="w-full appearance-none border-0 bg-transparent p-0 text-inherit shadow-none outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus"
+        ariaLabel={t('Title')} placeholder={t('Untitled')} dataAttrs={{ 'data-triage-title': true }} />
+    </h2>
+  )
 }
 
 export function TriageView() {
@@ -250,7 +275,7 @@ export function TriageView() {
         <>
           <section ref={card} tabIndex={-1} aria-label={t('Task {n} of {total}', { n: p.n, total: p.total })} data-triage-card={task.id}
             className="rounded-card border border-default bg-surface p-5 outline-none shadow-1 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus">
-            <h2 className="user-text text-h2 font-semibold text-strong">{task.title || t('Untitled')}</h2>
+            <TriageTitle task={task} projects={projects} labels={labels} onLeave={() => card.current?.focus()} />
             {(task.due || task.labels.length > 0 || reminders.some((r) => !r.deleted_at)) && (
               <p className="mt-2 flex flex-wrap gap-2 text-meta text-muted">
                 {task.due && <span>{t('Due {date}', { date: formatDueLong(task.due, zone) })}</span>}
