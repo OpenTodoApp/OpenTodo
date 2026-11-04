@@ -69,7 +69,7 @@ export function CaldavView(p: CaldavViewProps) {
       {p.setting === null ? (
         <Notice>{noticeCopy('caldav', 'offline')}</Notice>
       ) : (
-        <SettingRow label={rowCopy('caldav', 'server', { variant: 'owner' }).label}
+        <SettingRow label={rowCopy('caldav', 'server', { variant: 'owner' }).label} scope={p.isOwner ? 'server' : undefined}
           description={p.isOwner || !on ? rowCopy('caldav', 'server', { variant: p.isOwner ? 'owner' : 'member' }).description : undefined}
           status={<span className="flex items-center gap-2"><StatusIndicator tone={toneForHue(on ? 'green' : 'slate')}>{on ? t('On') : t('Off')}</StatusIndicator>{!p.isOwner && <span>{on ? t('CalDAV is on for this server.') : t('CalDAV is off.')}</span>}</span>}
           control={p.isOwner && <Switch checked={on} disabled={p.busy} onChange={p.onToggle} label={t('Allow calendar apps to sync with this server')} hideLabel />} />

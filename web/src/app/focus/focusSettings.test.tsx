@@ -75,7 +75,8 @@ describe('the Focus card', () => {
     const card = document.querySelector('[data-testid="focus-settings"]')!
     expect(card.textContent).toContain('Work session')
     expect(card.textContent).toContain('Break reminder')
-    await click(card.querySelector('[data-learn-more]')!)
+    // A one-section page hands its line and Learn more to the page head (settings-foundation D2).
+    await click(document.querySelector('[data-settings-page-head] [data-learn-more]')!)
     expect(document.querySelector('[data-help-probe]')?.textContent).toBe('settings/focus')
     closeHelp()
     expect(searchSettings('pomodoro', member)[0]).toMatchObject({ section: { id: 'general' } })

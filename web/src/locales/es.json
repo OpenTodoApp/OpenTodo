@@ -7106,5 +7106,21 @@
   "This connection request can’t be used": "Esta solicitud de conexión no se puede usar",
   "It may have expired or been changed. Start connecting again from the app.": "Puede que haya caducado o se haya modificado. Vuelve a empezar la conexión desde la app.",
   "Enter at least one valid redirect address.": "Introduce al menos una dirección de redirección válida.",
-  "Choose read-only access or access that may make changes.": "Elige acceso de solo lectura o acceso que pueda hacer cambios."
+  "Choose read-only access or access that may make changes.": "Elige acceso de solo lectura o acceso que pueda hacer cambios.",
+  "Applies to everyone on this server": "Se aplica a todos en este servidor",
+  "Between {min} and {max}": "Entre {min} y {max}",
+  "Between {min} and {max} {unit}": "Entre {min} y {max} {unit}",
+  "Copies of the whole server, where they go, and how to restore one.": "Copias de todo el servidor, adónde van y cómo restaurar una.",
+  "Fix the highlighted fields to save.": "Corrige los campos marcados para guardar.",
+  "How quick add reads what you type, and where new tasks go.": "Cómo lee el añadido rápido lo que escribes y adónde van las tareas nuevas.",
+  "No limit": "Sin límite",
+  "Reminders on this device and how notifications reach it.": "Los recordatorios en este dispositivo y cómo le llegan las notificaciones.",
+  "Rules for signing in and inviting people that apply to every account.": "Reglas de inicio de sesión e invitación que se aplican a todas las cuentas.",
+  "The assistant inside OpenTodo: its provider, your consent and what it may do.": "El asistente dentro de OpenTodo: su proveedor, tu consentimiento y lo que puede hacer.",
+  "This device only": "Solo este dispositivo",
+  "This server": "Este servidor",
+  "Where the app opens, the briefing, and how Today fills up.": "Dónde se abre la app, el resumen y cómo se llena Hoy.",
+  "Who you are on this server, and how much of the method the app shows.": "Quién eres en este servidor y cuánto del método muestra la app.",
+  "Your password, second factor and passkeys, and where you are signed in.": "Tu contraseña, segundo factor y llaves de acceso, y dónde has iniciado sesión.",
+  "Accounts and pending invitations.": "Cuentas e invitaciones pendientes."
 }

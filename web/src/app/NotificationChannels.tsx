@@ -108,7 +108,7 @@ export function ChannelsView(p: ChannelsViewProps) {
     <SettingsSection {...cardCopy('notification-channels')} testId="channels-panel">
       {!p.connected && <Notice>{noticeCopy('notification-channels', 'offline')}</Notice>}
       {p.enabled !== null && (p.isOwner || !on) && (
-        <SettingRow label={rowCopy('notification-channels', 'server', { variant: 'owner' }).label}
+        <SettingRow label={rowCopy('notification-channels', 'server', { variant: 'owner' }).label} scope={p.isOwner ? 'server' : undefined}
           description={rowCopy('notification-channels', 'server', { variant: p.isOwner ? 'owner' : 'member' }).description}
           status={<StatusIndicator tone={toneForHue(on ? 'green' : 'slate')}>{on ? t('On') : t('Off')}</StatusIndicator>}
           control={p.isOwner && <Switch checked={on} disabled={disabled} onChange={p.onToggle} label={t('Allow delivery channels on this server')} hideLabel />} />
