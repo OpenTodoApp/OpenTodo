@@ -7120,5 +7120,9 @@
   "AI app disconnected": "KI-App getrennt",
   "Require single sign-on?": "Single Sign-On verlangen?",
   "Require single sign-on": "Single Sign-On verlangen",
-  "Once you save, members can sign in only with {name}: their passwords and passkeys stop working. If the provider is down, they cannot sign in until you turn this off. You keep your password at {path}.": "Nach dem Speichern können sich Mitglieder nur noch mit {name} anmelden: Ihre Passwörter und Passkeys funktionieren nicht mehr. Ist der Anbieter nicht erreichbar, können sie sich erst wieder anmelden, wenn du dies ausschaltest. Dein Passwort funktioniert weiter unter {path}."
+  "Once you save, members can sign in only with {name}: their passwords and passkeys stop working. If the provider is down, they cannot sign in until you turn this off. You keep your password at {path}.": "Nach dem Speichern können sich Mitglieder nur noch mit {name} anmelden: Ihre Passwörter und Passkeys funktionieren nicht mehr. Ist der Anbieter nicht erreichbar, können sie sich erst wieder anmelden, wenn du dies ausschaltest. Dein Passwort funktioniert weiter unter {path}.",
+  "Between {min} and {max}": "Zwischen {min} und {max}",
+  "Between {min} and {max} {unit}": "Zwischen {min} und {max} {unit}",
+  "No limit": "Keine Grenze",
+  "Fix the highlighted fields to save.": "Korrigiere die markierten Felder, um zu speichern."
 }

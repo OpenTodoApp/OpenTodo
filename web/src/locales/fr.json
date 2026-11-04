@@ -7120,5 +7120,9 @@
   "AI app disconnected": "App IA déconnectée",
   "Require single sign-on?": "Exiger l’authentification unique ?",
   "Require single sign-on": "Exiger l’authentification unique",
-  "Once you save, members can sign in only with {name}: their passwords and passkeys stop working. If the provider is down, they cannot sign in until you turn this off. You keep your password at {path}.": "Après l’enregistrement, les membres ne peuvent se connecter qu’avec {name} : leurs mots de passe et clés d’accès ne fonctionnent plus. Si le fournisseur est indisponible, ils ne peuvent pas se connecter tant que vous ne désactivez pas cette option. Votre mot de passe reste utilisable à l’adresse {path}."
+  "Once you save, members can sign in only with {name}: their passwords and passkeys stop working. If the provider is down, they cannot sign in until you turn this off. You keep your password at {path}.": "Après l’enregistrement, les membres ne peuvent se connecter qu’avec {name} : leurs mots de passe et clés d’accès ne fonctionnent plus. Si le fournisseur est indisponible, ils ne peuvent pas se connecter tant que vous ne désactivez pas cette option. Votre mot de passe reste utilisable à l’adresse {path}.",
+  "Between {min} and {max}": "Entre {min} et {max}",
+  "Between {min} and {max} {unit}": "Entre {min} et {max} {unit}",
+  "No limit": "Sans limite",
+  "Fix the highlighted fields to save.": "Corrigez les champs signalés pour enregistrer."
 }

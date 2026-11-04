@@ -7120,5 +7120,9 @@
   "AI app disconnected": "App IA scollegata",
   "Require single sign-on?": "Richiedere l’accesso unico?",
   "Require single sign-on": "Richiedi l’accesso unico",
-  "Once you save, members can sign in only with {name}: their passwords and passkeys stop working. If the provider is down, they cannot sign in until you turn this off. You keep your password at {path}.": "Dopo il salvataggio, i membri possono accedere solo con {name}: le loro password e passkey smettono di funzionare. Se il provider non è raggiungibile, non possono accedere finché non disattivi questa opzione. La tua password resta valida su {path}."
+  "Once you save, members can sign in only with {name}: their passwords and passkeys stop working. If the provider is down, they cannot sign in until you turn this off. You keep your password at {path}.": "Dopo il salvataggio, i membri possono accedere solo con {name}: le loro password e passkey smettono di funzionare. Se il provider non è raggiungibile, non possono accedere finché non disattivi questa opzione. La tua password resta valida su {path}.",
+  "Between {min} and {max}": "Tra {min} e {max}",
+  "Between {min} and {max} {unit}": "Tra {min} e {max} {unit}",
+  "No limit": "Nessun limite",
+  "Fix the highlighted fields to save.": "Correggi i campi evidenziati per salvare."
 }
