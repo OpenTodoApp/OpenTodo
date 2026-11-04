@@ -28,7 +28,11 @@ async function edit(field: HTMLInputElement, text: string) {
   await act(async () => { field.setSelectionRange(text.length, text.length) })
   await flush()
 }
-const commit = (field: HTMLInputElement) => act(async () => { field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })) })
+const enter = (field: HTMLInputElement, init: KeyboardEventInit = {}) => {
+  const ev = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true, ...init })
+  return act(async () => { field.dispatchEvent(ev) })
+}
+const commit = (field: HTMLInputElement) => enter(field)
 
 describe('TitleField', () => {
   it('appending " tomorrow p1" shows chips, and Enter commits the date and priority with the title unchanged', async () => {
@@ -42,6 +46,23 @@ describe('TitleField', () => {
     await flush()
     expect(plans.at(-1)!.patch).toMatchObject({ due: { date: '2026-10-10' }, priority: 1 })
     expect(plans.at(-1)!.patch.title).toBeUndefined()
+    await r.unmount()
+  })
+
+  it('Enter while an input method is composing does not save the title', async () => {
+    const plans: EditPlan[] = []
+    const r = await render(<Harness title="开会" onCommit={(p) => plans.push(p)} />)
+    const field = r.container.querySelector('input')!
+    await edit(field, '开会明天')
+    await enter(field, { isComposing: true })
+    expect(plans).toEqual([])
+    const code = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })
+    Object.defineProperty(code, 'keyCode', { get: () => 229 })
+    await act(async () => { field.dispatchEvent(code) })
+    expect(plans).toEqual([])
+    await commit(field)
+    await flush()
+    expect(plans.at(-1)!.patch.title).toBe('开会明天')
     await r.unmount()
   })
 

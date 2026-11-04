@@ -325,3 +325,30 @@ describe('pastedInputs (paste-to-tasks 3.2)', () => {
     expect(await pastedInputs(['Call Anna tomorrow', 'p1'], null)).toEqual([{ title: 'Call Anna tomorrow' }, { title: 'p1' }])
   })
 })
+
+describe('input method', () => {
+  async function press(input: HTMLInputElement, init: KeyboardEventInit = {}, keyCode?: number) {
+    const ev = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true, ...init })
+    if (keyCode !== undefined) Object.defineProperty(ev, 'keyCode', { get: () => keyCode })
+    await act(async () => { input.dispatchEvent(ev) })
+    return ev
+  }
+
+  it('Enter while composing does not create a task, and Enter afterwards does, offline', async () => {
+    const added: Record<string, unknown>[] = []
+    const r = await render(<QuickAdd placeholder="Add a task" onAdd={async (input) => { added.push(input as never) }} />)
+    const input = r.container.querySelector('input')!
+    await type(input, '开会')
+    expect((await press(input, { isComposing: true })).defaultPrevented).toBe(true)
+    expect((await press(input, {}, 229)).defaultPrevented).toBe(true)
+    expect(added).toEqual([])
+    expect(input.value).toBe('开会')
+    // A later Enter is not cancelled, so the browser submits the form. happy-dom
+    // does not submit on Enter, so the test submits the form the key left alone.
+    expect((await press(input)).defaultPrevented).toBe(false)
+    await act(async () => { input.form!.requestSubmit() })
+    await waitFor(() => added.length === 1, 'the add')
+    expect(added[0]).toMatchObject({ title: '开会' })
+    await r.unmount()
+  })
+})
