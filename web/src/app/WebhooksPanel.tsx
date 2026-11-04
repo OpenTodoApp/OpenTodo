@@ -81,7 +81,7 @@ export function WebhooksView(p: WebhooksViewProps) {
         <Notice>{noticeCopy('webhooks', 'offline')}</Notice>
       )}
       {p.isOwner && (
-        <SettingRow {...rowCopy('webhooks', 'private')}
+        <SettingRow {...rowCopy('webhooks', 'private')} scope="server"
           control={<Switch checked={p.allowPrivate === true} disabled={disabled || p.allowPrivate === null} onChange={p.onPolicyChange} label={t('Allow private network targets')} hideLabel />} />
       )}
       {p.error && !draft && !p.secret && <Notice tone="danger">{p.error}</Notice>}

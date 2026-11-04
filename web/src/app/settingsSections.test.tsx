@@ -151,7 +151,7 @@ describe('the list', () => {
     expect(html).toMatch(/aria-current="page"[^>]*class="[^"]*bg-selected/)
     expect(html).toMatch(/<kbd[^>]*>\/<\/kbd>/)
     expect(html).toContain('data-settings-crumb')
-    expect(html).toMatch(/data-settings-page-head[^>]*><p class="text-h1[^"]*">General<\/p>/)
+    expect(html).toMatch(/data-settings-page-head[^>]*><p aria-hidden="true" class="text-h1[^"]*">General<\/p>/)
   })
 
   it('shows the groups as labelled sections, a search field and the footer; no Server group for a member', () => {
@@ -384,3 +384,4 @@ describe('demo instance', () => {
     expect(data).not.toContain('demo-restricted')
   })
 })
+

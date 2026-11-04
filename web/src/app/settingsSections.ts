@@ -33,7 +33,16 @@ export interface SettingsPage {
   help?: string
   /** Ids of earlier anchors inside the section that now open this page (legacy addresses and links). */
   anchors?: readonly string[]
+  /** Whom the page's settings apply to beyond the viewer's account (settings-foundation D4); the section's when absent. */
+  scope?: SettingsScope
 }
+
+/**
+ * Whom a page's settings apply to (OpenSpec change settings-foundation, design D4):
+ * everyone on this server, or this device only. Absent means the viewer's account,
+ * which needs no line.
+ */
+export type SettingsScope = 'server' | 'device'
 
 export interface SettingsSection {
   id: SettingsSectionId
@@ -48,6 +57,8 @@ export interface SettingsSection {
   demo?: (user: User) => string[]
   /** The sub-pages, in overview order; a section without them is one page. */
   pages?: readonly SettingsPage[]
+  /** Whom its pages apply to; the Server group's sections apply to everyone on the server. */
+  scope?: SettingsScope
 }
 
 const owner = (u: User) => u.role === 'owner'
@@ -88,7 +99,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = translatedList<Sett
     id: 'general', label: msg('General'), group: 'app', icon: 'settings', description: () => t('Start view, briefing, keyboard, focus timer and maps'),
     pages: pages([
       page({ id: 'start', label: msg('Start view and briefing'), icon: 'house', help: 'settings/start-view' }),
-      page({ id: 'keyboard', label: msg('Keyboard'), icon: 'keyboard', help: 'settings/keyboard' }),
+      page({ id: 'keyboard', label: msg('Keyboard'), icon: 'keyboard', help: 'settings/keyboard', scope: 'device' }),
       page({ id: 'focus', label: msg('Focus timer'), icon: 'timer', help: 'settings/focus' }),
       page({ id: 'maps', label: msg('Maps'), icon: 'map', help: 'settings/general' }),
     ]),
@@ -98,7 +109,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = translatedList<Sett
     pages: pages([
       page({ id: 'language', label: msg('Language'), icon: 'languages', help: 'settings/language' }),
       page({ id: 'date-time', label: msg('Date and time'), icon: 'clock', help: 'settings/date-time' }),
-      page({ id: 'calendar', label: msg('Calendar grid'), icon: 'calendar-days', help: 'settings/calendar' }),
+      page({ id: 'calendar', label: msg('Calendar grid'), icon: 'calendar-days', help: 'settings/calendar', scope: 'device' }),
     ]),
   },
   {
@@ -115,7 +126,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = translatedList<Sett
     description: () => t('Quick add, voice, the bookmarklet and extension, and email to task'),
     pages: pages([
       page({ id: 'quick-add', label: msg('Quick add'), icon: 'zap', help: 'settings/quick-add' }),
-      page({ id: 'voice', label: msg('Voice capture'), icon: 'mic', help: 'settings/voice' }),
+      page({ id: 'voice', label: msg('Voice capture'), icon: 'mic', help: 'settings/voice', scope: 'device' }),
       page({ id: 'browser', label: msg('Bookmarklet and extension'), icon: 'globe', help: 'settings/capture' }),
       page({ id: 'email', label: msg('Email to task'), icon: 'mail', help: 'settings/email', demo: [msg('email to task')] }),
     ]),
@@ -165,6 +176,11 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = translatedList<Sett
     ]),
   },
 ], 'label')
+
+/** Whom a section or one of its pages applies to (settings-foundation D4). */
+export function scopeOf(section: SettingsSection, page?: SettingsPage | null): SettingsScope | undefined {
+  return page?.scope ?? section.scope ?? (section.group === 'server' ? 'server' : undefined)
+}
 
 /** The sections this user may see, in list order. */
 export function visibleSections(user: User): SettingsSection[] {

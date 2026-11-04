@@ -1,13 +1,13 @@
 import { SettingsPendingGate } from './settingsPending'
 import { PersonAvatar } from './PersonAvatar'
-import { Badge, Icon, type IconName, Input, PageBody, PageHeader, TruncatedText, useMediaQuery } from '../ui'
+import { Badge, Icon, type IconName, Input, LearnMore, PageBody, PageHeader, SettingsPageProvider, TruncatedText, useMediaQuery, useSettingsPageLead } from '../ui'
 import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 import type { User } from '../lib/types'
 import { LEGACY_SETTINGS_IDS, navigate, routePath, type SettingsSectionId } from './router'
-import { firstSection, groupedSections, resolvePage, resolveSection, soleVisiblePage, visiblePages, type SettingsPage, type SettingsSection } from './settingsSections'
+import { firstSection, groupedSections, resolvePage, resolveSection, scopeOf, soleVisiblePage, visiblePages, type SettingsPage, type SettingsScope, type SettingsSection } from './settingsSections'
 import { anchorTarget, entryRoute, openSetting, requestSettingsFocus, searchSettings, takeSettingsFocus, type SettingsHit } from './settingsIndex'
 import { ConfigWarningsNotice } from './ConfigWarnings'
-import { t } from '../lib/i18n'
+import { msg, t } from '../lib/i18n'
 import { cardIcon } from '../lib/settingsCopy'
 import { ACCOUNT_ROLE_LABEL } from '../lib/roleNames'
 import { useShortcutScope } from './shortcuts'
@@ -171,19 +171,63 @@ export function SettingsView({ user, onLogout, section, page: pageId, anchor }: 
         )}
         {/* workspaces-settings-v2 D2: the Workspaces page's two panes need 56 rem; every other section keeps 45 (precision-settings D3). */}
         <div className={`min-w-0 space-y-8 px-4 pt-4 pb-10 md:px-8 lg:px-16 lg:pt-10 ${wide ? 'lg:max-w-[64rem]' : 'lg:max-w-[53rem]'}`} data-settings-width={wide ? 'wide' : 'form'}>
-          {twoColumn && (
-            <div aria-hidden="true" data-settings-page-head>
-              <p className="text-h1 text-strong">{title}</p>
-              {!sub && <p className="mt-2 max-w-[72ch] text-body text-muted">{shown.description(user)}</p>}
-            </div>
-          )}
-          <SettingsPendingGate key={`${shown.id}/${sub?.id ?? ''}`}>
-            {hasOverview && !sub
-              ? <SettingsOverviewPage section={shown} user={user} />
-              : <SettingsPageContent section={shown} page={sub} sole={sole} user={user} onLogout={onLogout} />}
-          </SettingsPendingGate>
+          <SettingsPageProvider key={`${shown.id}/${sub?.id ?? ''}`} title={title}>
+            <SettingsPageHead title={title} showTitle={twoColumn} scope={scopeOf(shown, sub ?? sole)}
+              lead={sub ? (PAGE_LEADS[`${shown.id}/${sub.id}`] ? t(PAGE_LEADS[`${shown.id}/${sub.id}`]) : undefined) : shown.description(user)} />
+            <SettingsPendingGate key={`${shown.id}/${sub?.id ?? ''}`}>
+              {hasOverview && !sub
+                ? <SettingsOverviewPage section={shown} user={user} />
+                : <SettingsPageContent section={shown} page={sub} sole={sole} user={user} onLogout={onLogout} />}
+            </SettingsPendingGate>
+          </SettingsPageProvider>
         </div>
       </div>
+    </div>
+  )
+}
+
+/**
+ * The lead line of a sub-page whose sections all keep their headings (OpenSpec
+ * change settings-foundation, design D1): one sentence saying what the page is for.
+ * Other pages lead with their sole section's line, or the section's description.
+ * Kept here, in the lazy Settings chunk, not in the copy table the shell loads.
+ */
+const PAGE_LEADS: Readonly<Record<string, string>> = {
+  'account/profile': msg('Who you are on this server, and how much of the method the app shows.'),
+  'account/security': msg('Your password, second factor and passkeys, and where you are signed in.'),
+  'general/start': msg('Where the app opens, the briefing, and how Today fills up.'),
+  'notifications/push': msg('Reminders on this device and how notifications reach it.'),
+  'capture/quick-add': msg('How quick add reads what you type, and where new tasks go.'),
+  'people/users': msg('Accounts and pending invitations.'),
+  'people/access-policies': msg('Rules for signing in and inviting people that apply to every account.'),
+  'integrations/assistant': msg('The assistant inside OpenTodo: its provider, your consent and what it may do.'),
+  'server/backups': msg('Copies of the whole server, where they go, and how to restore one.'),
+}
+
+/**
+ * The page head (settings-foundation D1, D4): the title from 1024 px (the header's h1
+ * names the page for assistive technology), then on every width the lead line, which
+ * is the page's own sentence or the line of the section that gave up its heading,
+ * and whom the page applies to when that is not the viewer's account alone.
+ */
+function SettingsPageHead({ title, showTitle, lead, scope }: { title: string; showTitle: boolean; lead?: string; scope?: SettingsScope }) {
+  const sectionLead = useSettingsPageLead()
+  const line = lead ?? sectionLead?.description
+  return (
+    <div data-settings-page-head>
+      {showTitle && <p aria-hidden="true" className="text-h1 text-strong">{title}</p>}
+      {(line || sectionLead?.learnMore) && (
+        <p className={`${showTitle ? 'mt-2 ' : ''}max-w-[72ch] text-body text-muted`} data-settings-lead>
+          {line}
+          {!lead && sectionLead?.learnMore && <>{line ? ' ' : ''}<LearnMore screen={sectionLead.learnMore} topic={title} className="text-body" /></>}
+        </p>
+      )}
+      {scope && (
+        <p className="mt-2 flex items-center gap-1.5 text-meta text-muted" data-settings-scope={scope}>
+          <Icon name={scope === 'server' ? 'users' : 'monitor'} size="xs" />
+          {scope === 'server' ? t('Applies to everyone on this server') : t('This device only')}
+        </p>
+      )}
     </div>
   )
 }
