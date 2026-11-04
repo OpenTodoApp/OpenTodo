@@ -23701,5 +23701,32 @@
   ],
   "⤼ Skip": [
     "web/src/app/RecurrenceField.tsx"
+  ],
+  "Apps that sign in with OAuth": [
+    "web/src/app/OAuthClients.tsx"
+  ],
+  "Client name": [
+    "web/src/app/OAuthClients.tsx"
+  ],
+  "Create client": [
+    "web/src/app/OAuthClients.tsx"
+  ],
+  "Delete client": [
+    "web/src/app/OAuthClients.tsx"
+  ],
+  "No OAuth clients yet.": [
+    "web/src/app/OAuthClients.tsx"
+  ],
+  "Registered by the app": [
+    "web/src/app/OAuthClients.tsx"
+  ],
+  "Some apps, such as Google Gemini, cannot take a pasted token. They sign in with OAuth instead: create a client here and paste its client ID and secret into the app.": [
+    "web/src/app/OAuthClients.tsx"
+  ],
+  "The secret is shown only now, next to the client ID.": [
+    "web/src/app/OAuthClients.tsx"
+  ],
+  "client secret": [
+    "web/src/app/OAuthClients.tsx"
   ]
 }

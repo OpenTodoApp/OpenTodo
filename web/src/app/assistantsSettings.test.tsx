@@ -54,6 +54,19 @@ describe('AssistantsView', () => {
     expect(button(html, 'Copy configuration')).toBeTruthy()
   })
 
+  it('offers the owner OAuth clients for apps that sign in instead of taking a token (mcp-oauth)', () => {
+    const html = render({ status: { enabled: true, endpoint } })
+    expect(html).toContain('data-mcp-oauth')
+    expect(html).toContain('Apps that sign in with OAuth')
+    expect(html).toContain('data-oauth-client-name')
+    expect(html).toContain('data-oauth-client-scope')
+    expect(html).toContain('Create client')
+    // A member sees the endpoint and the steps, never the client list.
+    expect(render({ isOwner: false, status: { enabled: true, endpoint } })).not.toContain('data-mcp-oauth')
+    // Nothing to manage while the endpoint is off.
+    expect(render()).not.toContain('data-mcp-oauth')
+  })
+
   it('tells an encrypted account what remote assistants can do and how ot mcp --decrypt works (mcp-projects)', () => {
     const html = render({ encrypted: true, status: { enabled: true, endpoint } })
     expect(html).toContain('data-assistants-encrypted')

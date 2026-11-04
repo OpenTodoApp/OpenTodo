@@ -227,6 +227,12 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/api/v1/email-inbox/rotate` | session or `full` token | new address; the old one stops working |
 | * | `/dav/`, `/.well-known/caldav` | HTTP Basic with an app password | CalDAV (WebDAV methods), 404 while disabled; see [caldav.md](caldav.md) |
 | POST | `/mcp` | bearer token only | Model Context Protocol endpoint, 404 while disabled; write tools only for `agent` tokens with both switches on; see [mcp.md](mcp.md) |
+| GET | `/.well-known/oauth-protected-resource`, `/.well-known/oauth-protected-resource/mcp` | anonymous | RFC 9728 document: `resource` = `<origin>/mcp`, this origin as the authorization server, scopes `read` and `agent`; 404 while MCP is off |
+| GET | `/.well-known/oauth-authorization-server` | anonymous | RFC 8414 metadata: authorize, token, registration and revocation endpoints, `authorization_code` + `refresh_token`, S256; 404 while MCP is off |
+| POST | `/oauth/register` | anonymous | RFC 7591 registration; accepted only for Google's `oauth-redirect{,-sandbox,-test}.googleusercontent.com/{r,a}/…` addresses, else 400 `invalid_redirect_uri` → 201 `{client_id, client_secret, …}` |
+| GET | `/oauth/authorize` | signed-in session | `response_type=code`, `code_challenge` with `code_challenge_method=S256`; 302 to the registered address with `code` and `state`; a browser without a session is sent to `/?oauth=<address>`; 400 without redirecting when the client, address or challenge is wrong |
+| POST | `/oauth/token` | client secret + PKCE | `authorization_code` (`code`, `redirect_uri`, `code_verifier`) or `refresh_token`; `client_secret_post` or Basic → `{access_token, token_type, expires_in, refresh_token, scope}`; the refresh token never rotates |
+| POST | `/oauth/revoke` | client secret | RFC 7009: revokes the access token or the grant a refresh token belongs to; 200 for an unknown token |
 
 #### Administration (owner and admins)
 
@@ -253,6 +259,9 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/api/v1/settings/oidc/test` | owner | `{issuer?}` → `{ok, issuer, authorizationHost, tokenHost, endSessionSupported}` |
 | GET | `/api/v1/settings/mcp` | yes | `{enabled, writes_enabled, endpoint}`: whether the [MCP endpoint](mcp.md) is on, whether assistants may make changes, and its URL |
 | PUT | `/api/v1/settings/mcp` | owner, credential | `{enabled?, writes_enabled?}` (at least one) → `{enabled, writes_enabled, endpoint}`; each change is recorded as `settings.changed` (`mcp.enabled`, `mcp.writes`) |
+| GET | `/api/v1/settings/mcp/clients` | owner | `{clients:[{id, name, scope, redirect_uris, dynamic, created_at, last_used_at, secret_set}], resource, discovery_url, metadata_url, authorize_url, token_url}`; never a secret |
+| POST | `/api/v1/settings/mcp/clients` | owner, credential | `{name?, scope? (read or agent), redirect_uris?}` (default: Google's six connector addresses) → 201 `{client, secret}`, the secret only here |
+| DELETE | `/api/v1/settings/mcp/clients/{id}` | owner | delete the client, its grants and their access tokens → 204 |
 | GET | `/api/v1/settings/caldav` | yes | `{enabled, url, secure, encryption}` |
 | PUT | `/api/v1/settings/caldav` | owner | `{enabled}` → the same shape |
 | GET | `/api/v1/settings/webhooks` | owner | `{allowPrivate}` |
@@ -1239,6 +1248,10 @@ The server records security-relevant events in its own database (never synced to
 | `project.grant_added`, `project.grant_changed`, `project.grant_removed` | success | actor = project owner or admin | `shared_project_id`, `group`, `project_role` or `from`, `to` |
 | `workspace_invite.created`, `workspace_invite.revoked` | success | actor = workspace owner or admin | `workspace_invite_id`, `workspace`, `workspace_role`, `invited_email` (bound email, if any) |
 | `workspace_invite.accepted` | success | actor = the account that joined, target = the link's creator | `workspace_invite_id`, `workspace`, `workspace_role` |
+| `mcp_oauth.client_created` | success | actor = owner, or none for a dynamic registration | `oauth_client_id`, `token_scope`, `method` (`manual` or `dynamic`); never the secret |
+| `mcp_oauth.client_deleted` | success | actor = owner | `oauth_client_id`; its grants and access tokens are gone with it |
+| `mcp_oauth.granted` | success | actor = the user | `oauth_client_id`, `token_scope`; one per authorization, never a code or token |
+| `mcp_oauth.revoked` | success | actor = the user | `oauth_client_id`; the grant was ended through `/oauth/revoke` |
 | `settings.changed` | success | actor = owner (the user for `encryption*`) | `setting` (`audit.retention_days`, `audit.log_ip`, `webhooks_allow_private`, `mfa.required`, `mcp.enabled`, `mcp.writes`, `agent.writes` (actor = the user), `caldav.enabled`, `integrations.issues`, `project_invites.members_create_accounts`, `oidc.*`, `smtp.*` (`smtp.password` only as `set` or empty), `encryption`, `encryption.keys`), `from`, `to` |
 | `export.requested` | success | actor = user | `format` (`json`) |
 | `audit.exported` | success | actor = owner | `format` (`ndjson`), `count` |

@@ -7086,5 +7086,14 @@
   "Suggest after adding (this device)": "Suggérer après l’ajout (cet appareil)",
   "Single-key shortcuts": "Raccourcis à une touche",
   "Single-key shortcuts (this device)": "Raccourcis à une touche (cet appareil)",
-  "Letters and symbols alone run commands. Turn off for speech input. This device only.": "Lettres et symboles seuls lancent des commandes. À désactiver pour la saisie vocale. Cet appareil uniquement."
+  "Letters and symbols alone run commands. Turn off for speech input. This device only.": "Lettres et symboles seuls lancent des commandes. À désactiver pour la saisie vocale. Cet appareil uniquement.",
+  "Apps that sign in with OAuth": "Applications qui se connectent avec OAuth",
+  "Client name": "Nom du client",
+  "Create client": "Créer un client",
+  "Delete client": "Supprimer le client",
+  "No OAuth clients yet.": "Aucun client OAuth pour l'instant.",
+  "Registered by the app": "Enregistré par l'application",
+  "Some apps, such as Google Gemini, cannot take a pasted token. They sign in with OAuth instead: create a client here and paste its client ID and secret into the app.": "Certaines applications, comme Google Gemini, n'acceptent pas de jeton collé. Elles se connectent avec OAuth : créez un client ici, puis collez son ID client et son secret dans l'application.",
+  "The secret is shown only now, next to the client ID.": "Le secret n'est affiché que maintenant, à côté de l'ID client.",
+  "client secret": "secret du client"
 }

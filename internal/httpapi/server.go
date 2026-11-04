@@ -30,6 +30,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/mail"
 	"github.com/OpenTodoApp/opentodo/internal/maps"
 	"github.com/OpenTodoApp/opentodo/internal/mcp"
+	"github.com/OpenTodoApp/opentodo/internal/mcpoauth"
 	"github.com/OpenTodoApp/opentodo/internal/notify"
 	"github.com/OpenTodoApp/opentodo/internal/oidc"
 	"github.com/OpenTodoApp/opentodo/internal/push"
@@ -192,6 +193,9 @@ type Server struct {
 	// mcpSettings is the owner's AI assistants toggle and mcp the read-only MCP
 	// server behind /mcp (OpenSpec `mcp-server`); see mcp.go.
 	mcpSettings *mcp.Settings
+	// mcpOAuth is the OAuth 2.1 state in front of /mcp (OpenSpec change
+	// mcp-oauth): registered clients, pending codes and grants; see mcp_oauth.go.
+	mcpOAuth *mcpoauth.Store
 	// rules is the automation rules engine and ruleSwitch its owner switch
 	// (automation-rules); rules is nil on a demo instance.
 	rules      *rules.Engine
