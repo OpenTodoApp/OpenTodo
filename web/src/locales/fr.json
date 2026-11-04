@@ -759,6 +759,7 @@
   "Calendar apps refresh subscriptions on their own schedule, from every few minutes to once a day.": "Les applications de calendrier actualisent les abonnements à leur propre rythme, de quelques minutes à une fois par jour.",
   "Calendar apps using this app password stop syncing at once. Other devices keep working.": "Les applications de calendrier utilisant ce mot de passe d’application cessent immédiatement de se synchroniser. Les autres appareils continuent de fonctionner.",
   "Calendar colour": "Couleur du calendrier",
+  "Calendar events": "Événements du calendrier",
   "Calendar events today": "Événements du calendrier aujourd’hui",
   "Calendar feed URL created": "URL du flux de calendrier créée",
   "Calendar feed URL replaced": "URL du flux de calendrier remplacée",

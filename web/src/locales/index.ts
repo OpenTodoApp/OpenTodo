@@ -9,6 +9,7 @@ export const SHIPPED = [
   { code: 'es', name: 'Español' },
   { code: 'it', name: 'Italiano' },
   { code: 'pt', name: 'Português' },
+  { code: 'zh', name: '简体中文' },
 ] as const
 
 export type LanguageCode = (typeof SHIPPED)[number]['code']

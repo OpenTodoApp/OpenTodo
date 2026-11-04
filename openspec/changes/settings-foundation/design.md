@@ -124,7 +124,7 @@ On phones D6 roughly balances that: measured with `settings-heights.mjs` (owner,
 
 - **Data:** no op, field, table, route or environment variable changes. Settings remain server or device state.
 - **Dependencies:** none.
-- **Bundle:** the two primitives, the save bar and the hook load only with the pages that use them (Settings is a lazy chunk). `SettingsSection` and `SettingRow`, however, sit in the shared `ui` chunk the shell loads first, so the page context, the switch detection and the badge add about 0.5 KB to the first load (measured 680.6 → 681.1 KB); the budget rises to 682 KB with that reason. The page leads live in the lazy `SettingsView`, not in the copy table the shell loads.
+- **Bundle:** the two primitives, the save bar and the hook load only with the pages that use them (Settings is a lazy chunk). `SettingsSection` and `SettingRow`, however, sit in the shared `ui` chunk the shell loads first, so the page context, the switch detection and the badge add about 0.5 KB to the first load (measured 680.6 → 681.1 KB on the branch, 682.0 → 682.5 KB after main's own growth); that fits main's 683 KB budget, so the budget is unchanged. The page leads live in the lazy `SettingsView`, not in the copy table the shell loads.
 - **Image size and server memory:** unchanged.
 
 ## Risks / Trade-offs

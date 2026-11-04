@@ -2530,6 +2530,9 @@
   "Calendar colour": [
     "web/src/app/CalendarFeedsPanel.tsx"
   ],
+  "Calendar events": [
+    "web/src/app/calendar/UpcomingAgenda.tsx"
+  ],
   "Calendar events today": [
     "web/src/app/calendar/TodayAgenda.tsx"
   ],

@@ -108,6 +108,7 @@ Longer horizons, and the household.
 | [`chore-rotation`](openspec/changes/archive/2026-11-02-chore-rotation/) | **Shipped.** Recurring tasks that rotate between members of a group | [#582](https://github.com/OpenTodoApp/OpenTodo/issues/582) |
 | [`location-reminders`](openspec/changes/location-reminders/) | **Shipped on Android; iOS follows.** Reminders when you arrive at or leave a place |  |
 | [`more-languages`](openspec/changes/more-languages/) | Dutch, and a kit for community languages |  |
+| [`simplified-chinese`](openspec/changes/simplified-chinese/) | Simplified Chinese (简体中文) | [#883](https://github.com/OpenTodoApp/OpenTodo/issues/883) |
 | [`priority-names`](openspec/changes/priority-names/) | Rename the four priorities |  |
 | [`telegram-channel`](openspec/changes/telegram-channel/) | Telegram as a notification channel |  |
 
