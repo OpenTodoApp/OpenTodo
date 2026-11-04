@@ -6,6 +6,7 @@ import { SettingRow, SettingsSection } from '../ui'
 import { Switch } from '../ui'
 import { SecretReveal } from './TokensSection'
 import { RelaySettings } from './RelaySettings'
+import { OAuthClients } from './OAuthClients'
 import { api, isNetworkError } from '../lib/api'
 import { useAction } from '../lib/useAction'
 import {
@@ -187,6 +188,9 @@ export function AssistantsView(p: AssistantsViewProps) {
       {p.status && (p.status.enabled
         ? <ConnectSteps p={p} disabled={disabled} />
         : p.isOwner && <p className="py-3 text-meta text-muted" data-mcp-why>{t('Turn on the endpoint above to connect an assistant.')}</p>)}
+
+      {/* Apps that sign in instead of taking a token (mcp-oauth). */}
+      {p.status?.enabled && p.isOwner && <OAuthClients disabled={disabled} />}
 
       {p.error && <Notice tone="danger">{p.error}</Notice>}
 

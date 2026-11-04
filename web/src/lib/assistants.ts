@@ -32,6 +32,33 @@ export interface McpStatus {
   endpoint: string
 }
 
+/**
+ * One OAuth client for the MCP endpoint (mcp-oauth): an app that signs in
+ * instead of taking a pasted token. `secret_set` never carries the value.
+ */
+export interface McpOAuthClient {
+  id: string
+  name: string
+  redirect_uris: string[]
+  scope: 'read' | 'agent'
+  dynamic: boolean
+  created_by: string
+  created_at: number
+  last_used_at: number | null
+  secret_set: boolean
+}
+
+/** GET /api/v1/settings/mcp/clients: the clients plus the addresses to paste. */
+export interface McpOAuthClients {
+  clients: McpOAuthClient[]
+  redirect_uris: string[]
+  authorize_url: string
+  token_url: string
+  discovery_url: string
+  metadata_url: string
+  resource: string
+}
+
 /** The user's own switch, GET/PUT /api/v1/me/agent-access. */
 export interface AgentAccess {
   allow_writes: boolean
