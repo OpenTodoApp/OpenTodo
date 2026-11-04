@@ -66,6 +66,18 @@ In the mode, `t` SHALL set the task's due date to today, `c` SHALL complete it, 
 - **WHEN** the user presses Enter, edits the title in the panel and presses Escape
 - **THEN** the card shows the new title and the progress is unchanged
 
+#### Scenario: Correct the title on the card
+- **WHEN** the user clicks the title or presses Tab, corrects the text and leaves the field with Tab, Enter or a click
+- **THEN** the task keeps the corrected title, the same task stays on the card and the progress is unchanged
+
+#### Scenario: Decision keys wait while the title is edited
+- **WHEN** the title field has focus and the user presses `t`
+- **THEN** the letter is typed into the title and the task is not set due today
+
+#### Scenario: Escape restores the title
+- **WHEN** the user changes the title and presses Escape
+- **THEN** the title is as it was and the decision keys work again
+
 ### Requirement: Schedule, move and delegate with a picker
 `s` SHALL open the scheduling sheet (see "Scheduling sheet in triage"); `m` SHALL open the project picker; `a` SHALL open a delegate picker of every person assignable in a project the user shares, each entry naming person and project. Confirming SHALL apply the change and advance; Escape SHALL cancel and stay. Delegating SHALL move the task into that project and assign it in one operation set. Decision keys SHALL not fire while a picker or field has focus.
 

@@ -11,7 +11,7 @@ order: 22
 
 <picture><source srcset="images/triage-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/triage-light.webp" alt="Process the Inbox: one task card, Renew passport, with buttons for Today, Schedule, Move, Delegate, Labels, Someday, Complete, Trash, Skip and Back, each with its key."></picture>
 
-Capture first, decide later. When the Inbox has piled up, select **Process** in its header (or press <kbd>P</kbd> there, <kbd>g</kbd> <kbd>p</kbd> anywhere) and decide each task in turn, keyboard only if you like. One task is shown at a time with its notes, date and labels, and "4 of 17" tells you how far you are.
+When the Inbox has piled up, select **Process** in its header (or press <kbd>P</kbd> there, <kbd>g</kbd> <kbd>p</kbd> anywhere) and decide each task in turn. One task is shown at a time with its notes, date and labels, and "4 of 17" tells you how far you are.
 
 ## The Inbox beside its tasks
 
@@ -32,8 +32,9 @@ On a screen at least 1024 px wide the Inbox keeps the selected task beside the l
 | <kbd>j</kbd> or <kbd>Space</kbd> | Skip it for now |
 | <kbd>k</kbd> | Back to the previous task |
 | <kbd>Enter</kbd> | Open the task's panel to edit anything else; <kbd>Esc</kbd> comes back |
+| <kbd>Tab</kbd> | Edit the title. The decision keys wait; <kbd>Tab</kbd>, <kbd>Enter</kbd> or a click away saves, and <kbd>Esc</kbd> puts the old title back |
 
-Every decision moves on to the next task and shows **Undo** for a few seconds. The buttons under the card do the same by mouse or touch. Delegating needs a project you share with someone; until you have one, the button says so. A task you date, move or park has a place, so it leaves the Inbox ([where planned tasks go](today-and-upcoming.md#where-planned-tasks-go)).
+Every decision moves on to the next task and shows **Undo**. The buttons do the same. Delegating needs a project you share with someone; until you have one, the button says so. A task you date, move or park has a place, so it leaves the Inbox ([where planned tasks go](today-and-upcoming.md#where-planned-tasks-go)).
 
 ## Schedule
 
