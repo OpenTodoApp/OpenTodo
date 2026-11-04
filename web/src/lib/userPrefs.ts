@@ -112,6 +112,16 @@ export function setTodayEventsShown(shown: boolean): Promise<void> {
   return mutate('user_prefs', USER_PREFS_ID, { today_events: shown ? 'shown' : 'hidden' })
 }
 
+/** Upcoming's calendar events (today-agenda): off unless the account chose "shown". */
+export function upcomingEventsShown(row: Partial<UserPrefs> | null | undefined): boolean {
+  return row?.upcoming_events === 'shown'
+}
+
+/** Shows or hides the calendar events on Upcoming; an ordinary op, so it works offline and syncs. */
+export function setUpcomingEventsShown(shown: boolean): Promise<void> {
+  return mutate('user_prefs', USER_PREFS_ID, { upcoming_events: shown ? 'shown' : 'hidden' })
+}
+
 /** Upcoming starts with Today's groups (OpenSpec change upcoming-start-with-today, D1): off unless the account chose "on". */
 export function upcomingStartsWithToday(row: Partial<UserPrefs> | null | undefined): boolean {
   return row?.upcoming_today === 'on'
