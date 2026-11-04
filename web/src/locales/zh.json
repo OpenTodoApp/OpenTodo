@@ -7107,5 +7107,9 @@
   "“{name}” would go over your {quota} of attachments.": "“{name}”将超出你的 {quota} 附件配额。",
   "“{title}” already waits for this task, so it cannot block it": "“{title}”已在等待此任务，因此不能阻塞此任务",
   "“{title}” is in a project shared differently; a task can only wait for tasks shared the same way": "“{title}”所在的项目共享方式不同；任务只能等待以相同方式共享的任务",
-  "⤼ Skip": "⤼ 跳过"
+  "⤼ Skip": "⤼ 跳过",
+  "Between {min} and {max}": "介于 {min} 和 {max} 之间",
+  "Between {min} and {max} {unit}": "介于 {min} 和 {max} {unit} 之间",
+  "Fix the highlighted fields to save.": "请先修正标出的字段再保存。",
+  "No limit": "不限"
 }
