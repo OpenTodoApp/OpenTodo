@@ -44,6 +44,8 @@ export interface AssistantsViewProps {
   onCreateToken: (scope: 'read' | 'agent') => void
   onCopy: (target: CopyTarget, text: string) => void
   onDismissSecret: () => void
+  /** The owner's OAuth clients (mcp-oauth), given by the panel so this view stays pure. */
+  oauthClients?: (disabled: boolean) => ReactNode
 }
 
 /** The clients the third step has instructions for (mcp-server "Settings screen for assistants"). */
@@ -190,7 +192,7 @@ export function AssistantsView(p: AssistantsViewProps) {
         : p.isOwner && <p className="py-3 text-meta text-muted" data-mcp-why>{t('Turn on the endpoint above to connect an assistant.')}</p>)}
 
       {/* Apps that sign in instead of taking a token (mcp-oauth). */}
-      {p.status?.enabled && p.isOwner && <OAuthClients disabled={disabled} />}
+      {p.status?.enabled && p.isOwner && p.oauthClients?.(disabled)}
 
       {p.error && <Notice tone="danger">{p.error}</Notice>}
 
@@ -248,6 +250,7 @@ export function AssistantsPanel({ isOwner, onTokenCreated }: { isOwner: boolean;
     <AssistantsView
       isOwner={isOwner} encrypted={encryption.enabled} connected={online && !unreachable} status={status} access={access} busy={busy} error={error}
       secret={secret} secretScope={secretScope} copied={copied}
+      oauthClients={(disabled) => <OAuthClients disabled={disabled} />}
       onToggle={(enabled) => void run(async () => {
         const s = await api.setMcpSettings(enabled)
         setStatus(s)
