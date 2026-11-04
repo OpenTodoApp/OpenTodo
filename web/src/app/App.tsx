@@ -1,5 +1,4 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
-import { clearOwnAvatar } from '../lib/avatars'
 import { Skeleton } from '../ui'
 import { AppearanceProvider } from './AppearanceProvider'
 import { DateTimePrefsProvider } from './DateTimePrefsProvider'
@@ -7,13 +6,10 @@ import { LanguageProvider } from './LanguageProvider'
 import { useLanguageVersion, t } from '../lib/i18n'
 import { api, onEnrolmentRequired } from '../lib/api'
 import { consumeRestored, RESTORED_NOTICE } from '../lib/restore'
-import { clearLocalData, requestPersistentStorage } from '../lib/db'
-import { clearBadge } from '../lib/appBadge'
-import { adoptProfile, forgetMemoryKeys, loadEncryptionState, useEncryption } from '../lib/e2ee'
-import { clearInbox } from '../lib/shareInbox'
+import { requestPersistentStorage } from '../lib/db'
+import { adoptProfile, loadEncryptionState, useEncryption } from '../lib/e2ee'
 import { RecordMissingScreen, UnlockScreen } from './UnlockScreen'
-import { unsubscribeOnSignOut } from '../lib/push'
-import { announceSignOut, onSignOutElsewhere, startSync, stopSync, stopSyncAndWait, syncNow, useSyncStatus, withSyncLock } from '../lib/sync'
+import { onSignOutElsewhere, startSync, stopSync, useSyncStatus } from '../lib/sync'
 import { startRelay } from '../lib/relay'
 import { RelayConfirm } from './RelayConfirm'
 import { AppBadgeSync } from './AppBadge'
@@ -33,14 +29,15 @@ import { cacheMfa, EnrolmentGate } from './TwoFactorPanel'
 import { navigate, useRoute } from './router'
 import { ShareCapture } from './ShareCapture'
 import { Shell } from './Shell'
-import { clearVimPref } from './vim/prefs'
 import { DEMO_LIMIT_NOTICE, expireSandboxIfGone, sandboxErrorMessage, setDemo, startSandbox, useDemo } from '../lib/demo'
 import { setHosted } from '../lib/hosted'
 import { setBranding } from '../lib/branding'
 import { PanelBoundary } from './PanelBoundary'
 import { UpdateBanner } from './UpdateBanner'
 import { DemoBanner } from './DemoBanner'
-import { forgetNoiseVolume } from '../lib/focus/prefs'
+import { useOauthAuthorizeReturn } from './oauthReturn'
+import { OAuthConsentHost } from './OAuthConsentHost'
+import { clearDeviceData, useSignOut } from './signOut'
 
 export { DemoBanner }
 
@@ -109,6 +106,10 @@ export function App() {
     void refresh()
   }, [refresh])
 
+  // A signed-out visit to a client's /oauth/authorize comes back here with the
+  // address to return to (mcp-oauth D5).
+  useOauthAuthorizeReturn(phase.kind === 'ready')
+
   // A request refused with mfa_enrolment_required (policy changed while signed
   // in), or a click on the sync status, re-reads the status and shows the gate.
   useEffect(() => {
@@ -158,24 +159,7 @@ export function App() {
     if (token) navigate(token.startsWith('otw_') ? { view: 'workspace-invite', token } : { view: 'project-invite', token }, { replace: true })
   }, [phase.kind, route.view])
 
-  const logout = useCallback(async () => {
-    let redirect: string | undefined
-    try {
-      // Unsynced changes are uploaded first when online (as Settings promises),
-      // for at most ten seconds; the exchange is then stopped before the clear.
-      if (navigator.onLine !== false) await Promise.race([syncNow().catch(() => undefined), new Promise((r) => setTimeout(r, 10_000))])
-      // Remove this device's push subscription first (the server also drops it with the session).
-      await unsubscribeOnSignOut()
-      redirect = (await api.logout())?.redirect
-    } finally {
-      await clearDeviceData()
-      clearVimPref()
-      // Provider sign-out (OpenSpec `oidc-login`): the local session and data are
-      // gone; the provider's end-session page sends the browser back to sign-in.
-      if (redirect && /^https:\/\//.test(redirect)) window.location.assign(redirect)
-      else await refresh()
-    }
-  }, [refresh])
+  const logout = useSignOut(refresh)
 
   // ReauthHost answers `reauth_required` on any screen (OpenSpec `mfa-totp`).
   return (
@@ -320,31 +304,10 @@ export function App() {
         ) : (
           <Shell user={phase.user} onLogout={() => void logout()} />
         )}
-        <RelayConfirm /><AppBadgeSync />
+        <RelayConfirm /><OAuthConsentHost /><AppBadgeSync />
       </>
     )
   }
-}
-
-/** Clears everything this device holds for the signed-in account (sign-out and an expired demo sandbox). */
-async function clearDeviceData() {
-  // Other tabs stop syncing and reload; the exchange running here stops and is
-  // awaited, and the data is cleared while no tab can sync (client-sync-robustness).
-  announceSignOut()
-  await stopSyncAndWait()
-  await withSyncLock(() => clearLocalData())
-  // Files shared to the app and not saved yet (OpenSpec attachments D9).
-  await clearInbox().catch(() => undefined)
-  forgetMemoryKeys()
-  // The badge on the app icon belongs to the account (app-icon-badge).
-  await clearBadge().catch(() => undefined)
-  localStorage.removeItem('opentodo.user')
-  // The profile's last loaded values and picture version (settings-refresh D10).
-  localStorage.removeItem('opentodo.profile')
-  clearOwnAvatar()
-  cacheMfa(null)
-  // The background noise volume is per device (focus-everywhere D6).
-  forgetNoiseVolume()
 }
 
 /** The sandbox of this browser was deleted; the local copy is already gone (OpenSpec `demo-sandboxes`). */
