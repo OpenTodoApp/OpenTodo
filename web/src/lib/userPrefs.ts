@@ -48,7 +48,7 @@ export function readDayStart(row: Partial<UserPrefs> | null | undefined): number
 }
 
 /** Interface language values (app-localization D1): 'system' and the shipped language codes. */
-export const LANGUAGES: readonly LanguagePref[] = ['system', 'en', 'de', 'fr', 'es', 'it', 'pt']
+export const LANGUAGES: readonly LanguagePref[] = ['system', 'en', 'de', 'fr', 'es', 'it', 'pt', 'zh']
 
 /** The stored interface language; a missing row or a code this build does not ship reads as 'system', without rewriting the row. */
 export function readLanguage(row: Partial<UserPrefs> | null | undefined): LanguagePref {

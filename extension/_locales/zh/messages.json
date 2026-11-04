@@ -1,0 +1,276 @@
+{
+  "extName": {
+    "message": "OpenTodo Capture",
+    "description": "The extension name in the browser’s extension list."
+  },
+  "extDescription": {
+    "message": "把页面、链接、图片、邮件或选中的文字添加到你自己的 OpenTodo 服务器。它只与你填写的服务器通信。",
+    "description": "The description in the browser’s extension list."
+  },
+  "actionTitle": {
+    "message": "添加到 OpenTodo",
+    "description": "Toolbar button tooltip and the page context-menu entry."
+  },
+  "commandDescription": {
+    "message": "把当前页面添加到 OpenTodo",
+    "description": "Keyboard shortcut description in the browser’s shortcut settings."
+  },
+  "menuScreenshot": {
+    "message": "把截图添加到 OpenTodo",
+    "description": "Context-menu entry that captures a screenshot."
+  },
+  "optionsTitle": {
+    "message": "OpenTodo Capture 设置",
+    "description": "Options page title."
+  },
+  "optionsIntro": {
+    "message": "输入你的 OpenTodo 服务器地址。扩展只保存这个地址，以及在快速保存模式下你粘贴在下面的令牌；它不与任何其他地址通信。",
+    "description": "Options page introduction."
+  },
+  "pendingNote": {
+    "message": "先设置服务器，才能继续添加“$TITLE$”。",
+    "description": "Shown on first run; $TITLE$ is the page being captured.",
+    "placeholders": {
+      "title": {
+        "content": "$1",
+        "example": "Example page"
+      }
+    }
+  },
+  "thisPage": {
+    "message": "此页面",
+    "description": "Fallback for a page without title or address."
+  },
+  "serverLabel": {
+    "message": "服务器 URL",
+    "description": "Label of the server address field."
+  },
+  "save": {
+    "message": "保存",
+    "description": "Save button."
+  },
+  "screenshotsHeading": {
+    "message": "截图",
+    "description": "Heading of the screenshots part."
+  },
+  "screenshotsIntro": {
+    "message": "“把截图添加到 OpenTodo”会截取页面的可见部分，并把图片交给你服务器上的收集窗口；在你按下保存之前，什么都不会被保存。交接只需要访问你的服务器地址，而且只访问那个地址；保存时浏览器会询问。",
+    "description": "Explains screenshot capture."
+  },
+  "screenshotsAllowed": {
+    "message": "截图：已允许 $ORIGIN$。",
+    "description": "$ORIGIN$ is the server address.",
+    "placeholders": {
+      "origin": {
+        "content": "$1",
+        "example": "https://todo.example.com"
+      }
+    }
+  },
+  "screenshotsNotAllowed": {
+    "message": "截图：尚未允许。扩展只需要访问你的服务器，以便把截图交给收集窗口。",
+    "description": "Screenshot access not granted yet."
+  },
+  "allowScreenshots": {
+    "message": "允许截图",
+    "description": "Button that asks for access to the server address."
+  },
+  "invalidAddress": {
+    "message": "请输入 http:// 或 https:// 地址，例如 https://todo.example.com",
+    "description": "Error for an address that is not http(s)."
+  },
+  "saved": {
+    "message": "已保存。收集内容会发往 $ORIGIN$。",
+    "description": "$ORIGIN$ is the server address.",
+    "placeholders": {
+      "origin": {
+        "content": "$1",
+        "example": "https://todo.example.com"
+      }
+    }
+  },
+  "popupLine": {
+    "message": "任务",
+    "description": "Label of the quick-add line in the popup."
+  },
+  "popupProject": {
+    "message": "项目",
+    "description": "Label of the project picker."
+  },
+  "popupInbox": {
+    "message": "收件箱",
+    "description": "The project picker’s choice for no project."
+  },
+  "popupLabels": {
+    "message": "标签",
+    "description": "Label of the label picker."
+  },
+  "popupAddLabel": {
+    "message": "添加标签",
+    "description": "First entry of the label picker."
+  },
+  "popupRemoveLabel": {
+    "message": "移除标签 $NAME$",
+    "description": "Accessible name of the button that removes a label; $NAME$ is the label.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "call"
+      }
+    }
+  },
+  "popupOrigin": {
+    "message": "来自",
+    "description": "Label of the task’s origin (the page it comes from)."
+  },
+  "popupRemoveOrigin": {
+    "message": "移除链接",
+    "description": "Accessible name of the button that removes the page link."
+  },
+  "popupOptions": {
+    "message": "设置",
+    "description": "Link from the popup to the options page."
+  },
+  "popupOpenCapture": {
+    "message": "打开收集画面",
+    "description": "Button that opens the server’s capture screen instead."
+  },
+  "popupSaving": {
+    "message": "正在保存…",
+    "description": "Status while the task is being saved."
+  },
+  "popupSaved": {
+    "message": "已保存",
+    "description": "Status once the task was saved."
+  },
+  "popupOpenTask": {
+    "message": "打开任务",
+    "description": "Link to the saved task."
+  },
+  "popupUnreachable": {
+    "message": "无法连接到服务器。你的文字还在这里。",
+    "description": "The server did not answer a save."
+  },
+  "popupTokenRefused": {
+    "message": "令牌已失效。请到设置中检查。",
+    "description": "The token was refused by the server."
+  },
+  "popupEncrypted": {
+    "message": "此账户已开启端到端加密：请从收集画面保存，加密在你的设备上完成。",
+    "description": "Quick save on an end-to-end encrypted account."
+  },
+  "popupRateLimited": {
+    "message": "请求过多。请一分钟后再试。",
+    "description": "Too many requests."
+  },
+  "popupFailed": {
+    "message": "任务未能保存：$MESSAGE$",
+    "description": "A save failed; $MESSAGE$ is the server’s reason.",
+    "placeholders": {
+      "message": {
+        "content": "$1",
+        "example": "title: required"
+      }
+    }
+  },
+  "popupNoServer": {
+    "message": "请先在设置中填写服务器地址；保存会带你过去。",
+    "description": "The popup before a server address is set."
+  },
+  "modeHeading": {
+    "message": "保存如何工作",
+    "description": "Options page heading of the save modes."
+  },
+  "modeCapture": {
+    "message": "收集画面",
+    "description": "The Capture screen mode."
+  },
+  "modeCaptureHelp": {
+    "message": "保存会打开你服务器上的收集画面，你可以在那里检查任务并保存。扩展不持有令牌，也不会自己发送任何内容。",
+    "description": "What the Capture screen mode does."
+  },
+  "modeQuick": {
+    "message": "快速保存",
+    "description": "The Quick save mode."
+  },
+  "modeQuickHelp": {
+    "message": "保存会用下面的令牌，通过你服务器的 API 立刻创建任务。扩展把这一行、选中的文字和页面地址发给你的服务器，不发给其他任何人。",
+    "description": "What the Quick save mode does."
+  },
+  "modeNeedsToken": {
+    "message": "快速保存需要一个完全访问令牌：在此之前，保存会打开收集画面。",
+    "description": "Quick save chosen without a token that can save."
+  },
+  "tokenLabel": {
+    "message": "API 令牌",
+    "description": "Label of the token field."
+  },
+  "tokenHelp": {
+    "message": "在 OpenTodo 的设置 → 集成 → API 令牌中创建一个完全访问令牌，并用这个浏览器的名字命名，以便单独撤销。它只留在这台设备上：浏览器不会同步它。",
+    "description": "Help under the token field."
+  },
+  "tokenSave": {
+    "message": "检查并保存令牌",
+    "description": "Button that checks and saves the token."
+  },
+  "tokenForget": {
+    "message": "忘记令牌",
+    "description": "Button that removes the token."
+  },
+  "tokenForgotten": {
+    "message": "令牌已从这台浏览器中移除。",
+    "description": "Status after the token was removed."
+  },
+  "tokenChecking": {
+    "message": "正在检查令牌…",
+    "description": "Status while the token is checked."
+  },
+  "tokenOk": {
+    "message": "$NAME$ 的令牌（$SCOPE$）：快速保存已就绪。",
+    "description": "The token works; $NAME$ is the account, $SCOPE$ its scope.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Alex"
+      },
+      "scope": {
+        "content": "$2",
+        "example": "full"
+      }
+    }
+  },
+  "tokenRead": {
+    "message": "这个只读令牌可以预览一行，但不能保存：保存仍会打开收集画面。",
+    "description": "A read token was given."
+  },
+  "tokenAgent": {
+    "message": "这个令牌用于 AI 助手，不能在这里保存；请改用完全访问令牌。",
+    "description": "An AI assistant token was given."
+  },
+  "tokenRejected": {
+    "message": "服务器拒绝了令牌：$MESSAGE$",
+    "description": "The server refused the token; $MESSAGE$ is its reason.",
+    "placeholders": {
+      "message": {
+        "content": "$1",
+        "example": "authentication required"
+      }
+    }
+  },
+  "tokenUnreachable": {
+    "message": "无法连接到服务器。",
+    "description": "The server did not answer the token check."
+  },
+  "tokenNoServer": {
+    "message": "请先保存服务器地址。",
+    "description": "A token was given before a server address."
+  },
+  "tokenHttp": {
+    "message": "令牌只通过 https 传输。请使用 https 地址（或 localhost）；收集画面仍然可用。",
+    "description": "A token for a plain http address."
+  },
+  "tokenAccess": {
+    "message": "快速保存需要访问你的服务器地址；浏览器没有授予权限。",
+    "description": "The browser did not grant access to the server address."
+  }
+}

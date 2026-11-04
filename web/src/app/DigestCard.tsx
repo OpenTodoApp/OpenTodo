@@ -11,17 +11,19 @@ import { formatDate, formatHour, formatInstant, weekdayName as nameOfWeekday } f
 import { useDemo } from '../lib/demo'
 import type { EmailDigest, EmailDigestInput } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
-import { t, currentLocale, preferredLanguages } from '../lib/i18n'
+import { isSimplifiedChineseTag, t, currentLocale, preferredLanguages } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 import { useSettingsPending } from './settingsPending'
 
 /** The digest's languages, as the server's message templates (internal/mail). */
-export const DIGEST_LANGUAGES: Record<string, string> = { en: 'English', de: 'Deutsch', fr: 'Français', es: 'Español', it: 'Italiano', pt: 'Português' }
+export const DIGEST_LANGUAGES: Record<string, string> = { en: 'English', de: 'Deutsch', fr: 'Français', es: 'Español', it: 'Italiano', pt: 'Português', zh: '简体中文' }
 
 /** The browser's first supported language (primary subtag), else English (design D7). */
 export function browserDigestLanguage(languages: readonly string[] = preferredLanguages()): string {
   for (const l of languages) {
+    if (isSimplifiedChineseTag(l)) return 'zh'
     const primary = l.toLowerCase().split('-')[0]
+    if (primary === 'zh') continue
     if (primary in DIGEST_LANGUAGES) return primary
   }
   return 'en'
