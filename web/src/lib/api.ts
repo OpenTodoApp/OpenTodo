@@ -3,7 +3,7 @@ import { t } from './i18n/catalog'
 import { fetchWithTimeout, NetworkError, RequestTimeoutError, timeouts } from './http'
 import type { Branding } from './branding'
 import type { AssistantSkill } from './assistantSkills'
-import type { AgentAccess, ApiToken, McpStatus, TokenScope } from './assistants'
+import type { AgentAccess, ApiToken, McpConsentInfo, McpOAuthClient, McpOAuthClients, McpStatus, TokenScope } from './assistants'
 import type { AssistantStatus } from './assistantStatus'
 import type { AssistantOwnerSettings, AssistantMemberSettings, AssistantSettingsInput, AssistantTestDraft, AssistantTestResult, MyAssistantTestDraft, AssistantUsage, MyAssistantInput } from './assistantTypes'
 import type { KeyRecord } from './crypto'
@@ -375,6 +375,15 @@ export const api = {
   setMcpSettings: (enabled: boolean) => request<McpStatus>('PUT', '/api/v1/settings/mcp', { enabled }),
   /** Owner only: "AI assistants may make changes" (mcp-write-tools). */
   setMcpWrites: (writesEnabled: boolean) => request<McpStatus>('PUT', '/api/v1/settings/mcp', { writes_enabled: writesEnabled }),
+  // OAuth clients for the MCP endpoint (mcp-oauth): an app that cannot take a
+  // pasted token signs in instead. The secret comes back once, on creation.
+  getMcpOAuthClients: () => request<McpOAuthClients>('GET', '/api/v1/settings/mcp/clients'),
+  createMcpOAuthClient: (name: string, scope: 'read' | 'agent') =>
+    request<{ client: McpOAuthClient; secret: string }>('POST', '/api/v1/settings/mcp/clients', { name, scope }),
+  deleteMcpOAuthClient: (id: string) => request<void>('DELETE', `/api/v1/settings/mcp/clients/${encodeURIComponent(id)}`),
+  /** The consent screen of an app connecting through OAuth: `query` is its authorize request. */
+  getMcpConsent: (query: string) => request<McpConsentInfo>('GET', `/api/v1/me/mcp-consent?${query}`),
+  answerMcpConsent: (query: string, allow: boolean) => request<{ redirect: string }>('POST', '/api/v1/me/mcp-consent', { query, allow }),
   /** The user's own "Allow AI assistants to make changes" switch. */
   getAgentAccess: () => request<AgentAccess>('GET', '/api/v1/me/agent-access'),
   setAgentAccess: (allowWrites: boolean) => request<AgentAccess>('PUT', '/api/v1/me/agent-access', { allow_writes: allowWrites }),
