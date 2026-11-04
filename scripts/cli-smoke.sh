@@ -77,7 +77,10 @@ OPENTODO_TOKEN=ot_wrong "$OT" list >/dev/null 2>&1; [ $? -eq 3 ] || fail "bad to
 "$OT" rm "$ID" >/dev/null 2>&1; [ $? -eq 2 ] || fail "rm without --yes off a terminal should exit 2"
 "$OT" add "nope" --read-only >/dev/null 2>&1; [ $? -eq 5 ] || fail "--read-only write should exit 5"
 set -e
-OPENTODO_URL= OPENTODO_CONFIG=/nonexistent/config.json "$OT" schema | grep -q '"output_version": 1' || fail "ot schema offline"
+# Read the whole schema before searching it: with pipefail, grep -q stopping at the
+# match (near the end of ~140 KB) could break the pipe while ot is still writing.
+SCHEMA=$(OPENTODO_URL= OPENTODO_CONFIG=/nonexistent/config.json "$OT" schema) || fail "ot schema offline"
+grep -q '"output_version": 1' <<<"$SCHEMA" || fail "ot schema offline"
 
 # 7. Markdown vault: a line added to a file becomes a task, a completion in the
 #    app becomes `- [x]` in the file.
