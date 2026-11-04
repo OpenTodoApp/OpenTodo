@@ -36,6 +36,7 @@ import { PanelBoundary } from './PanelBoundary'
 import { UpdateBanner } from './UpdateBanner'
 import { DemoBanner } from './DemoBanner'
 import { useOauthAuthorizeReturn } from './oauthReturn'
+import { OAuthConsentHost } from './OAuthConsentHost'
 import { clearDeviceData, useSignOut } from './signOut'
 
 export { DemoBanner }
@@ -303,7 +304,7 @@ export function App() {
         ) : (
           <Shell user={phase.user} onLogout={() => void logout()} />
         )}
-        <RelayConfirm /><AppBadgeSync />
+        <RelayConfirm /><OAuthConsentHost /><AppBadgeSync />
       </>
     )
   }

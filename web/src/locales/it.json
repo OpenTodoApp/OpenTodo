@@ -7095,5 +7095,15 @@
   "Registered by the app": "Registrato dall'app",
   "Some apps, such as Google Gemini, cannot take a pasted token. They sign in with OAuth instead: create a client here and paste its client ID and secret into the app.": "Alcune app, come Google Gemini, non accettano un token incollato. Accedono invece con OAuth: crea qui un client e incolla il suo ID client e il suo secret nell'app.",
   "The secret is shown only now, next to the client ID.": "Il secret viene mostrato solo ora, accanto all'ID client.",
-  "client secret": "secret del client"
+  "client secret": "secret del client",
+  "Connect {client} to your account?": "Collegare {client} al tuo account?",
+  "{client} will be able to read your tasks, projects and notes and, where you allow AI assistants to make changes, create and change them.": "{client} potrà leggere le tue attività, i progetti e le note e, dove consenti agli assistenti IA di apportare modifiche, crearli e modificarli.",
+  "{client} will be able to read your tasks, projects and notes.": "{client} potrà leggere le tue attività, i progetti e le note.",
+  "This app registered itself with your server. It receives the answer at {host}.": "Questa app si è registrata da sola sul tuo server. Riceve la risposta su {host}.",
+  "Your server’s owner added this app. It receives the answer at {host}.": "Il proprietario del tuo server ha aggiunto questa app. Riceve la risposta su {host}.",
+  "Only allow this if you started connecting {client} yourself just now.": "Consenti solo se hai appena iniziato tu stesso a collegare {client}.",
+  "This connection request can’t be used": "Questa richiesta di collegamento non può essere usata",
+  "It may have expired or been changed. Start connecting again from the app.": "Potrebbe essere scaduta o essere stata modificata. Ricomincia il collegamento dall’app.",
+  "Enter at least one valid redirect address.": "Inserisci almeno un indirizzo di reindirizzamento valido.",
+  "Choose read-only access or access that may make changes.": "Scegli l’accesso in sola lettura o un accesso che può apportare modifiche."
 }
