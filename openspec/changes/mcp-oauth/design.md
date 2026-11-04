@@ -57,7 +57,7 @@ Dynamic clients are confidential (`token_endpoint_auth_method: client_secret_pos
 
 `GET /oauth/authorize?response_type=code&client_id=…&redirect_uri=…&code_challenge=…&code_challenge_method=S256&scope=…&state=…`
 
-Validation order, each failure answered with a plain `400` (never redirected to an unvalidated address): client exists, `redirect_uri` is registered for it, `code_challenge_method` is `S256` (the only method accepted; `plain` is refused), `response_type` is `code`. The scope granted is the intersection of what the client asked for and what the client holds, defaulting to the client's scope.
+Validation order, each failure answered with a plain `400` (never redirected to an unvalidated address): client exists, `redirect_uri` is registered for it, `code_challenge_method` is `S256` (the only method accepted; `plain` is refused), `response_type` is `code`. The scope granted is the client's own, set by whoever created it in OpenTodo; the request can neither widen it nor narrow it. Narrowing was the first implementation and it broke the connection: Gemini asks for the first scope the metadata lists (`read`), so an `agent` client produced a read-only token.
 
 `mcp_oauth_code` stores the SHA-256 of the code, the client, the person, the redirect address, the granted scope, the challenge and a 60-second expiry. Consumption deletes the row in the same transaction that reads it, so a code cannot be replayed even under a race.
 
@@ -77,7 +77,7 @@ Access token: one hour, `ot_`-prefixed, hashed in `api_tokens` as usual. Refresh
 
 ### D7 — Scopes and the two switches
 
-`read` mints a `read` token: the MCP tools that only read work, the write tools answer their existing "read-only token" refusal. `agent` mints an `agent` token: write tools additionally need the owner's MCP setting and the person's own agent-access switch, unchanged from `mcp-write-tools` D3. Nothing about the switches is duplicated in the OAuth layer; a grant is a credential, not a permission.
+`read` mints a `read` token: the MCP tools that only read work, the write tools answer their existing "read-only token" refusal. `agent` mints an `agent` token: write tools additionally need the owner's MCP setting and the person's own agent-access switch, unchanged from `mcp-write-tools` D3. The person's choice when creating the client is the permission; the OAuth `scope` parameter only records it. Nothing about the switches is duplicated in the OAuth layer; a grant is a credential, not a permission.
 
 ### D8 — Revocation
 
