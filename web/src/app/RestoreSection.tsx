@@ -84,7 +84,7 @@ export function RestoreSectionView(p: RestoreSectionViewProps) {
         <div data-testid="restore-archives">
           {p.archivesError && <Notice tone="danger">{t('{archivesError} You can still upload an archive.', { archivesError: p.archivesError })}</Notice>}
           {!p.archivesError && p.archives === null && <p className="text-meta text-faint">{p.offline ? t('Not available offline.') : t('Loading archives…')}</p>}
-          {p.archives && p.archives.archives.length === 0 && <p className="text-meta text-faint">{t.rich('No archives in <span>{destination}</span> yet.', { destination: p.archives.destination, span: (chunks) => <span className="user-text">{chunks}</span> })}</p>}
+          {p.archives && p.archives.archives.length === 0 && <p className="text-meta text-faint">{t.rich('No archives in <span>{destination}</span> yet.', { destination: p.archives.destination, span: (chunks) => <span className="user-text break-all">{chunks}</span> })}</p>}
           {p.archives && p.archives.archives.length > 0 && (
             <ul className="-mx-3" aria-label={t('Archives in the destination')}>
               {p.archives.archives.map((a) => (
