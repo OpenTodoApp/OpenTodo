@@ -283,6 +283,8 @@ export interface GroupedListProps {
   completed?: { tasks: Task[]; open: boolean; onToggle: () => void; gotIt?: boolean }
   /** The always-visible actions of Today's Earlier group, for its task ids (page-rhythm D6). */
   earlierActions?: (ids: readonly string[]) => ReactNode
+  /** Upcoming's calendar events for a day, drawn above its tasks and outside the count. */
+  eventsFor?: (key: string) => ReactNode
   /** The row the cursor is on: drawn even before the rows above it (useRowLimit). */
   reveal?: string | null
   /** A tree list's positions among siblings, written as ARIA on its rows (SiblingAria). */
@@ -443,8 +445,9 @@ function SectionGroup({ g, first, last, rowList, project, ...p }: GroupedListPro
 }
 
 /** A date, project, Later or Blocked group; collapsible per device. */
-function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, renderRow, earlierActions, projects }: GroupedListProps & { g: ListGroup; rowList: RowList }) {
-  if (g.rows.length === 0 && g.folded === undefined && !g.projected?.length) return null
+function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, renderRow, earlierActions, projects, eventsFor }: GroupedListProps & { g: ListGroup; rowList: RowList }) {
+  const events = view === 'upcoming' ? eventsFor?.(g.key) ?? null : null
+  if (g.rows.length === 0 && g.folded === undefined && !g.projected?.length && !events) return null
   // Today's Earlier group (page-rhythm D5): folded above five tasks until this device chooses;
   // Upcoming's Start with Today shares the choice (upcoming-start-with-today D2).
   const earlier = (view === 'today' || view === 'upcoming') && g.key === 'earlier'
@@ -461,12 +464,13 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
           actions={view === 'today' && g.key === 'done' ? <LogWinAction /> : undefined}
           actionsAlwaysVisible={g.key === 'done'} />
       ) : g.heading && partDrop(g.dropPart, (
-        <ListGroupHeader title={g.heading} count={g.note ? undefined : liveRows(g.rows)} note={g.note} kind={g.named ? 'named' : 'generated'}
+        <ListGroupHeader title={g.heading} count={g.note || (events && liveRows(g.rows) === 0) ? undefined : liveRows(g.rows)} note={g.note} kind={g.named ? 'named' : 'generated'}
           collapsed={collapsed} onToggle={toggle}
           actions={earlier ? earlierActions?.(g.rows.filter((r) => !isGhost(r.task)).map((r) => r.task.id)) : undefined} actionsAlwaysVisible={earlier} />
       ))}
       {g.hint && g.folded === false && <p className="mb-1 px-1 text-meta text-muted" data-group-hint>{g.hint}</p>}
       {g.folded && g.soon?.length ? <WaitingSoonList soon={g.soon} onOpenGroup={() => toggleCollapsed(g.openKey ?? BLOCKED_OPEN_KEY)} /> : null}
+      {!(g.heading && g.folded === undefined && collapsed) && events}
       {!(g.heading && g.folded === undefined && collapsed) && rowList(g.rows.map((r) => renderRow(r)), g.heading ? { 'aria-label': g.heading } : undefined)}
       {/* Upcoming's projected occurrences after the day's tasks, outside its count (series-occurrences D4). */}
       {!(g.heading && collapsed) && (g.projected?.length || g.projectedNote) ? <Suspense fallback={null}><ProjectedGroupRows g={g} projects={projects} /></Suspense> : null}
