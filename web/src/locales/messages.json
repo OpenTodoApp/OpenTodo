@@ -2325,6 +2325,12 @@
   "Between 7 and 3650 days. Older events are deleted.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Between {min} and {max}": [
+    "web/src/ui/NumberInput.tsx"
+  ],
+  "Between {min} and {max} {unit}": [
+    "web/src/ui/NumberInput.tsx"
+  ],
   "Bind the link to one address.": [
     "web/src/app/WorkspaceInvites.tsx"
   ],
@@ -4780,7 +4786,8 @@
   "Discard": [
     "web/src/app/assistant/ChangeSetReview.tsx",
     "web/src/app/routines/RoutineEditor.tsx",
-    "web/src/app/themes/ThemeEditor.tsx"
+    "web/src/app/themes/ThemeEditor.tsx",
+    "web/src/ui/patterns/SaveBar.tsx"
   ],
   "Discard your changes?": [
     "web/src/app/routines/RoutineEditor.tsx"
@@ -6275,6 +6282,9 @@
   ],
   "Fix step {n} first": [
     "web/src/app/routines/RoutineEditor.tsx"
+  ],
+  "Fix the highlighted fields to save.": [
+    "web/src/ui/patterns/SaveBar.tsx"
   ],
   "Fix to another time zone": [
     "web/src/app/task-detail/ZoneControl.tsx"
@@ -10012,6 +10022,9 @@
   ],
   "No lightness of these colours reaches AA at their hue.": [
     "web/src/app/themes/ContrastPanel.tsx"
+  ],
+  "No limit": [
+    "web/src/ui/NumberInput.tsx"
   ],
   "No longer a subtask": [
     "web/src/lib/assistant.ts"
@@ -13918,7 +13931,8 @@
     "web/src/app/task-detail/CommentsTab.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
     "web/src/app/themes/ThemeEditor.tsx",
-    "web/src/app/themes/ThemePreview.tsx"
+    "web/src/app/themes/ThemePreview.tsx",
+    "web/src/ui/patterns/SaveBar.tsx"
   ],
   "Save as template": [
     "web/src/app/TemplateDialogs.tsx"
@@ -18840,7 +18854,8 @@
     "web/src/app/ViewsView.tsx"
   ],
   "Unsaved changes": [
-    "web/src/app/routines/RoutineEditor.tsx"
+    "web/src/app/routines/RoutineEditor.tsx",
+    "web/src/ui/patterns/SaveBar.tsx"
   ],
   "Unschedule the selected task (keep the date)": [
     "web/src/lib/shortcuts.ts"

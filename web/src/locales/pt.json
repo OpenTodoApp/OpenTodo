@@ -7120,5 +7120,9 @@
   "AI app disconnected": "App de IA desligada",
   "Require single sign-on?": "Exigir início de sessão único?",
   "Require single sign-on": "Exigir início de sessão único",
-  "Once you save, members can sign in only with {name}: their passwords and passkeys stop working. If the provider is down, they cannot sign in until you turn this off. You keep your password at {path}.": "Depois de guardar, os membros só podem iniciar sessão com {name}: as suas palavras-passe e chaves de acesso deixam de funcionar. Se o fornecedor estiver em baixo, não conseguem iniciar sessão até desativar esta opção. A sua palavra-passe continua a funcionar em {path}."
+  "Once you save, members can sign in only with {name}: their passwords and passkeys stop working. If the provider is down, they cannot sign in until you turn this off. You keep your password at {path}.": "Depois de guardar, os membros só podem iniciar sessão com {name}: as suas palavras-passe e chaves de acesso deixam de funcionar. Se o fornecedor estiver em baixo, não conseguem iniciar sessão até desativar esta opção. A sua palavra-passe continua a funcionar em {path}.",
+  "Between {min} and {max}": "Entre {min} e {max}",
+  "Between {min} and {max} {unit}": "Entre {min} e {max} {unit}",
+  "No limit": "Sem limite",
+  "Fix the highlighted fields to save.": "Corrija os campos assinalados para guardar."
 }
