@@ -775,6 +775,11 @@ var Schema = map[string]map[string]Field{
 		// design D1): "shown" or "hidden"; clients read an empty or unknown
 		// value as hidden and keep the stored value.
 		"today_events": {Kind: kString, Default: `""`},
+		// Upcoming's calendar events, one agenda per day (OpenSpec
+		// today-agenda): "shown" or "hidden"; clients read an empty or
+		// unknown value as hidden and keep the stored value. Settings,
+		// never content.
+		"upcoming_events": {Kind: kString, Default: `""`},
 		// Where new tasks are added from a list's quick add (OpenSpec change
 		// add-position, design D1): "bottom" or "top"; clients read an empty
 		// or unknown value as "bottom" and keep the stored value.
