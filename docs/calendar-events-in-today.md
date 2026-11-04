@@ -34,6 +34,12 @@ Click an event, or Tab to it and press Enter, to see its time, location and cale
 
 On a day without events, nothing is shown. Events of a calendar you disabled under **Settings → Integrations → Calendar feeds** never show. The **Calendars** button of Day and Week, which hides events on one device, doesn't change Today.
 
+## In Upcoming
+
+Upcoming has the same choice, in its own **More actions** menu, next to **Show repeating occurrences**. It is off until you turn it on, saved with your account, and separate from Today's choice.
+
+Each day then lists that day's events above its tasks: all-day events as chips, then timed events with the time, title, colour and location. They stay read-only, and they are not part of the day's task count. A day that only has events still gets its heading, through the last day Upcoming lists (up to 92 days ahead). Upcoming's filter does not hide them. Hiding calendars with the **Calendars** button hides them here too. Offline, the list ends with **Calendars as of** and the time of the last refresh.
+
 ## Offline
 
 Today uses the events your device keeps for Day and Week, so the agenda shows offline too, as of the last refresh. It then ends with **Calendars as of** and the time of that refresh. Online, Today refreshes the events when they are more than ten minutes old.

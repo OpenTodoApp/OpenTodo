@@ -118,20 +118,20 @@ function shape(free: boolean, past: boolean): string {
   return `ui-block ui-block--row ui-block--event${past ? ' ui-event-past' : ''}`
 }
 
-/**
- * The agenda block (D6): all-day chips, then timed rows in start order, then the
- * freshness line (D7). Nothing at all on a day without events.
- */
-export function TodayAgenda({ cal, zone, online }: { cal: TodayCalendar; zone?: string; online?: boolean }) {
+/** All-day chips, then timed rows in start order (today-agenda). Shared by Today and Upcoming. */
+export function AgendaEvents({ allDay, timed, subMap, zone }: {
+  allDay: CalendarEvent[]
+  timed: EventBlock[]
+  subMap: Map<string, CalendarSubscription>
+  zone?: string
+}) {
   const now = useNowMinutes()
-  const deviceOnline = useOnline()
-  if (cal.allDay.length === 0 && cal.timed.length === 0) return null
   return (
-    <section aria-label={t('Calendar events today')} className="mb-3 space-y-1.5" data-today-agenda>
-      {cal.allDay.length > 0 && (
+    <>
+      {allDay.length > 0 && (
         <ul className="flex flex-wrap gap-1.5" data-agenda-all-day>
-          {cal.allDay.map((ev) => {
-            const sub = cal.subMap.get(ev.subscriptionId)
+          {allDay.map((ev) => {
+            const sub = subMap.get(ev.subscriptionId)
             return (
               <li key={ev.id} className="min-w-0 max-w-full">
                 <AgendaEvent ev={ev} sub={sub} zone={zone} data={{ 'data-agenda-event': ev.id, 'data-free': ev.free || undefined }}
@@ -145,11 +145,11 @@ export function TodayAgenda({ cal, zone, online }: { cal: TodayCalendar; zone?: 
           })}
         </ul>
       )}
-      {cal.timed.length > 0 && (
+      {timed.length > 0 && (
         <ul className="space-y-1" data-agenda-timed>
-          {cal.timed.map((b) => {
+          {timed.map((b) => {
             const ev = b.event
-            const sub = cal.subMap.get(ev.subscriptionId)
+            const sub = subMap.get(ev.subscriptionId)
             const past = b.end <= now
             return (
               <li key={b.id}>
@@ -166,6 +166,20 @@ export function TodayAgenda({ cal, zone, online }: { cal: TodayCalendar; zone?: 
           })}
         </ul>
       )}
+    </>
+  )
+}
+
+/**
+ * The agenda block (D6): all-day chips, then timed rows in start order, then the
+ * freshness line (D7). Nothing at all on a day without events.
+ */
+export function TodayAgenda({ cal, zone, online }: { cal: TodayCalendar; zone?: string; online?: boolean }) {
+  const deviceOnline = useOnline()
+  if (cal.allDay.length === 0 && cal.timed.length === 0) return null
+  return (
+    <section aria-label={t('Calendar events today')} className="mb-3 space-y-1.5" data-today-agenda>
+      <AgendaEvents allDay={cal.allDay} timed={cal.timed} subMap={cal.subMap} zone={zone} />
       <div className="empty:hidden"><CalendarStatus status={cal.status} online={online ?? deviceOnline} fetchedAt={cal.fetchedAt} /></div>
     </section>
   )
