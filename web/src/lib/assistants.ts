@@ -48,6 +48,13 @@ export interface McpOAuthClient {
   secret_set: boolean
 }
 
+/** GET /api/v1/me/mcp-consent: who asks to connect, for what, and where the answer goes. */
+export interface McpConsentInfo {
+  client: { id: string; name: string; dynamic: boolean }
+  scope: 'read' | 'agent'
+  redirectHost: string
+}
+
 /** GET /api/v1/settings/mcp/clients: the clients plus the addresses to paste. */
 export interface McpOAuthClients {
   clients: McpOAuthClient[]

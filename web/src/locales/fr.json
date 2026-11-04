@@ -7095,5 +7095,15 @@
   "Registered by the app": "Enregistré par l'application",
   "Some apps, such as Google Gemini, cannot take a pasted token. They sign in with OAuth instead: create a client here and paste its client ID and secret into the app.": "Certaines applications, comme Google Gemini, n'acceptent pas de jeton collé. Elles se connectent avec OAuth : créez un client ici, puis collez son ID client et son secret dans l'application.",
   "The secret is shown only now, next to the client ID.": "Le secret n'est affiché que maintenant, à côté de l'ID client.",
-  "client secret": "secret du client"
+  "client secret": "secret du client",
+  "Connect {client} to your account?": "Connecter {client} à votre compte ?",
+  "{client} will be able to read your tasks, projects and notes and, where you allow AI assistants to make changes, create and change them.": "{client} pourra lire vos tâches, projets et notes et, là où vous autorisez les assistants IA à faire des modifications, les créer et les modifier.",
+  "{client} will be able to read your tasks, projects and notes.": "{client} pourra lire vos tâches, projets et notes.",
+  "This app registered itself with your server. It receives the answer at {host}.": "Cette app s’est enregistrée elle-même auprès de votre serveur. Elle reçoit la réponse à l’adresse {host}.",
+  "Your server’s owner added this app. It receives the answer at {host}.": "Le propriétaire de votre serveur a ajouté cette app. Elle reçoit la réponse à l’adresse {host}.",
+  "Only allow this if you started connecting {client} yourself just now.": "N’autorisez ceci que si vous venez vous-même de commencer à connecter {client}.",
+  "This connection request can’t be used": "Cette demande de connexion ne peut pas être utilisée",
+  "It may have expired or been changed. Start connecting again from the app.": "Elle a peut-être expiré ou été modifiée. Recommencez la connexion depuis l’app.",
+  "Enter at least one valid redirect address.": "Saisissez au moins une adresse de redirection valide.",
+  "Choose read-only access or access that may make changes.": "Choisissez un accès en lecture seule ou un accès autorisé à faire des modifications."
 }
