@@ -709,6 +709,8 @@ export const SETTINGS_COPY = {
       relayConfirm: { label: msg('Confirm changes first'), description: msg('Each change an AI connector asks for shows here before it is written.') },
       relayDevices: { label: msg('Devices that answer') },
       relayRecent: { label: msg('Recent requests'), description: msg('What this device answered, without the text.') },
+      // OAuth clients (mcp-oauth): the one row that shows a new client's credentials.
+      oauthClient: { label: msg('Client ID'), description: msg('The secret is shown only now, next to the client ID.') },
     },
     notices: { offline: msg('Offline: these settings live on the server; this is the last state fetched.') },
   },
