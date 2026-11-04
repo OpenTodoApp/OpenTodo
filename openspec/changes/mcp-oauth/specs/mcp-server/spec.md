@@ -71,12 +71,17 @@ Client secrets, authorization codes and refresh tokens SHALL be stored only as S
 
 ### Requirement: Authorize validates and redirects
 
-The authorize step SHALL validate the client, the registered `redirect_uri`, `response_type=code` and `code_challenge_method=S256`, answering 400 without a `Location` when the client or address is wrong. On success it SHALL issue a single-use code and redirect to the registered address with `code` and the client's `state`.
+The authorize step SHALL validate the client, the registered `redirect_uri`, `response_type=code` and `code_challenge_method=S256`, answering 400 without a `Location` when the client or address is wrong. On success it SHALL issue a single-use code and redirect to the registered address with `code` and the client's `state`. The code's scope SHALL be the client's own: the request neither widens nor narrows it.
 
 #### Scenario: A code comes back to the registered address
 
 - **WHEN** a signed-in person opens a valid authorize address with an S256 challenge and `state=abc`
 - **THEN** the response is a 302 to the registered redirect with a `code` and `state=abc`
+
+#### Scenario: An agent client stays writable
+
+- **WHEN** an `agent` client authorizes with `scope=read` because that is the first scope the metadata lists
+- **THEN** the code carries `agent` and the token response reports `agent`
 
 #### Scenario: An unknown redirect is not redirected to
 

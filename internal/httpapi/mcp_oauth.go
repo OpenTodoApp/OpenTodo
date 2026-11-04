@@ -468,20 +468,20 @@ func (s *Server) handleDeleteMCPClient(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// grantedScope is what a client may actually be given: its own scope, narrowed
-// by what it asked for (design D7).
+// grantedScope is the scope a grant gets: the client's own, which the person set
+// when creating it in OpenTodo (design D7). The request may not widen it, and it
+// does not narrow it either: Gemini asks for the first scope the metadata lists
+// (`read`), so honouring that turned an `agent` client into a read-only
+// connection. A request naming a scope this server does not know is refused.
 func grantedScope(clientScope, requested string) string {
-	requested = strings.TrimSpace(requested)
-	if requested == "" {
+	if clientScope == mcpoauth.ScopeAgent {
+		return mcpoauth.ScopeAgent
+	}
+	if strings.TrimSpace(requested) == "" {
 		return clientScope
 	}
 	for _, want := range strings.Fields(requested) {
-		if want == mcpoauth.ScopeAgent {
-			if clientScope == mcpoauth.ScopeAgent {
-				return mcpoauth.ScopeAgent
-			}
-		}
-		if want == mcpoauth.ScopeRead {
+		if want == mcpoauth.ScopeRead || want == mcpoauth.ScopeAgent {
 			return mcpoauth.ScopeRead
 		}
 	}

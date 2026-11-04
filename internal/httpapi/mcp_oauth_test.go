@@ -9,6 +9,8 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+
+	"github.com/OpenTodoApp/opentodo/internal/mcpoauth"
 )
 
 // pkcePair is a verifier and its S256 challenge, the only method the server
@@ -374,6 +376,26 @@ func TestMCPOAuthClientRoutes(t *testing.T) {
 	}
 	if r2, _ := bc.mcpPost(access, string(ping)); r2.StatusCode != 401 {
 		t.Fatalf("after deleting the client: %d", r2.StatusCode)
+	}
+}
+
+func TestGrantedScopeFollowsTheClient(t *testing.T) {
+	// An `agent` client stays agent even when the request asks for read: Gemini
+	// asks for the first scope the metadata lists, which is read.
+	for _, requested := range []string{"", "read", "agent", "read agent", "openid read"} {
+		if got := grantedScope(mcpoauth.ScopeAgent, requested); got != mcpoauth.ScopeAgent {
+			t.Fatalf("agent client, requested %q: %q", requested, got)
+		}
+	}
+	if got := grantedScope(mcpoauth.ScopeRead, ""); got != mcpoauth.ScopeRead {
+		t.Fatalf("read client without a request: %q", got)
+	}
+	// A read client cannot be widened by asking.
+	if got := grantedScope(mcpoauth.ScopeRead, "agent"); got != mcpoauth.ScopeRead {
+		t.Fatalf("read client asking for agent: %q", got)
+	}
+	if got := grantedScope(mcpoauth.ScopeRead, "todos"); got != "" {
+		t.Fatalf("unknown scope: %q", got)
 	}
 }
 
