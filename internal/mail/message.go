@@ -60,7 +60,7 @@ type RoutineVars struct {
 }
 
 // Languages are the supported message languages, English first.
-var Languages = []string{"en", "de", "fr", "es", "it", "pt"}
+var Languages = []string{"en", "de", "fr", "es", "it", "pt", "zh"}
 
 // Vars are the only values a template sees: the server origin, the link and its
 // expiry, the recipient address, the inviter's display name and a project
@@ -166,6 +166,7 @@ var units = map[string][2][2]string{ // lang → {hours {one, many}, days {one, 
 	"es": {{"hora", "horas"}, {"día", "días"}},
 	"it": {{"ora", "ore"}, {"giorno", "giorni"}},
 	"pt": {{"hora", "horas"}, {"dia", "dias"}},
+	"zh": {{"小时", "小时"}, {"天", "天"}},
 }
 
 // formatExpiry writes a duration in hours up to two days and in whole days beyond.
@@ -195,10 +196,37 @@ var roleNames = map[string]map[string]string{
 	"es": {"admin": "administrador", "editor": "editor", "viewer": "lector", "member": "miembro"},
 	"it": {"admin": "amministratore", "editor": "editor", "viewer": "lettore", "member": "membro"},
 	"pt": {"admin": "administrador", "editor": "editor", "viewer": "leitor", "member": "membro"},
+	"zh": {"admin": "管理员", "editor": "编辑者", "viewer": "查看者", "member": "成员"},
 }
 
 // someone stands in for an inviter without a display name (the address is never shown).
-var someone = map[string]string{"en": "Someone", "de": "Jemand", "fr": "Quelqu'un", "es": "Alguien", "it": "Qualcuno", "pt": "Alguém"}
+var someone = map[string]string{"en": "Someone", "de": "Jemand", "fr": "Quelqu'un", "es": "Alguien", "it": "Qualcuno", "pt": "Alguém", "zh": "有人"}
+
+// langTag is the shipped language of one Accept-Language tag. Simplified Chinese
+// (zh, zh-Hans, zh-CN, zh-SG) is zh. Traditional Chinese and any other zh tag
+// match nothing, so the next preference or English is used.
+func langTag(tag string) string {
+	if strings.HasPrefix(tag, "zh") {
+		if strings.Contains(tag, "hant") {
+			return ""
+		}
+		parts := strings.Split(tag, "-")
+		if len(parts) > 1 && (parts[1] == "tw" || parts[1] == "hk" || parts[1] == "mo") {
+			return ""
+		}
+		if len(parts) == 1 || parts[1] == "hans" || parts[1] == "cn" || parts[1] == "sg" {
+			return "zh"
+		}
+		for _, p := range parts[1:] {
+			if p == "hans" || p == "cn" || p == "sg" {
+				return "zh"
+			}
+		}
+		return ""
+	}
+	primary, _, _ := strings.Cut(tag, "-")
+	return primary
+}
 
 // LangFrom picks the first supported language of an Accept-Language header,
 // honouring q values; English when none matches.
@@ -224,8 +252,7 @@ func LangFrom(header string) string {
 				}
 			}
 		}
-		primary, _, _ := strings.Cut(tag, "-")
-		prefs = append(prefs, pref{primary, q, i})
+		prefs = append(prefs, pref{langTag(tag), q, i})
 	}
 	sort.SliceStable(prefs, func(a, b int) bool { return prefs[a].q > prefs[b].q })
 	for _, p := range prefs {

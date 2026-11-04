@@ -140,7 +140,7 @@ describe('settings copy in the sources', () => {
 
 describe('settings copy in the catalogs', () => {
   it('checks every shipped catalog', () => {
-    expect(Object.keys(shipped).sort()).toEqual(['de', 'es', 'fr', 'it', 'pt'])
+    expect(Object.keys(shipped).sort()).toEqual(['de', 'es', 'fr', 'it', 'pt', 'zh'])
   })
 
   it('keeps each translation of a line within 120 characters', () => {

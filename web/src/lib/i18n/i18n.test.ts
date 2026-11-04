@@ -5,15 +5,15 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { createElement } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import messages from '../../locales/messages.json'
-import { SHIPPED } from '../../locales'
+import { isShipped, SHIPPED, type LanguageCode } from '../../locales'
 import { formatDate, formatTime, setDateLocale, setDateTime } from '../dates'
 import { DEFAULT_QUICK_ADD_SETTINGS, resolveLanguages } from '../nlp/settings'
 import { recognitionLanguage, recognitionTag } from '../voice/settings'
 import {
   applyLanguagePreference, currentLanguage, currentLocale, errorMessage, formatList, intlLocale, mirroredPreference,
-  preferredLanguages, resolveLanguage, t,
+  isSimplifiedChineseTag, preferredLanguages, resolveLanguage, t,
 } from '.'
-import { fetchCatalog } from './catalog'
+import { applyCatalog, fetchCatalog } from './catalog'
 import { ERROR_MESSAGES } from './errors'
 import serverCodes from './server-error-codes.json'
 
@@ -83,6 +83,31 @@ describe('locale resolution (D4)', () => {
   it('a browser language without a catalog falls back to English', () => {
     expect(resolveLanguage('system', ['ja'])).toBe('en')
     expect(resolveLanguage('xx', ['ja'])).toBe('en')
+  })
+
+  it('classifies simplified Chinese and leaves traditional Chinese on English', () => {
+    for (const tag of ['zh', 'zh-Hans', 'zh-CN', 'zh-SG', 'zh-Hans-CN']) expect(isSimplifiedChineseTag(tag), tag).toBe(true)
+    for (const tag of ['zh-Hant', 'zh-TW', 'zh-HK', 'zh-MO', 'zh-Hant-TW', 'zh-MY', 'ja']) expect(isSimplifiedChineseTag(tag), tag).toBe(false)
+    const simplified = isShipped('zh') ? 'zh' : 'en'
+    expect(resolveLanguage('system', ['zh-CN'])).toBe(simplified)
+    expect(resolveLanguage('system', ['zh-TW'])).toBe('en')
+    expect(resolveLanguage('system', ['zh-TW', 'zh-CN'])).toBe(simplified)
+    expect(resolveLanguage('xx', ['zh-CN'])).toBe(simplified)
+    if (isShipped('zh')) {
+      expect(intlLocale('zh', ['zh-CN', 'en-US'])).toBe('zh-CN')
+      expect(intlLocale('zh', ['en-US'])).toBe('zh')
+    }
+  })
+
+  it('simplified Chinese sets lang to zh and does not change direction', () => {
+    document.documentElement.removeAttribute('dir')
+    applyCatalog('zh' as LanguageCode, 'zh', {})
+    expect(document.documentElement.lang).toBe('zh')
+    expect(document.documentElement.hasAttribute('dir')).toBe(false)
+    document.documentElement.dir = 'ltr'
+    applyCatalog('zh' as LanguageCode, 'zh-CN', {})
+    expect(document.documentElement.lang).toBe('zh')
+    expect(document.documentElement.dir).toBe('ltr')
   })
 })
 
