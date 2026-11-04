@@ -232,7 +232,8 @@ Every setting is an optional environment variable with a safe default; an invali
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `OPENTODO_ADDR` | `:8080` | Listen address |
+| `OPENTODO_ADDR` | `:8080` | Listen address. The image sets this to `:8080` |
+| `OPENTODO_PORT` | unset | When set in the container, the port the process listens on (1–65535), in place of the port in `OPENTODO_ADDR`. The health check probes it. In `.env` next to `docker-compose.yml` the same name only changes the published host port and is not passed into the container |
 | `OPENTODO_DATA_DIR` | `./data` (binary), `/data` (image) | Directory for the SQLite database, secrets, the VAPID key and local backups |
 | `OPENTODO_BASE_URL` | unset (inferred from requests) | Public URL. With https: `Secure` cookies, `Strict-Transport-Security`, passkeys and web push; also used for strict origin checks (the request must be addressed to its host) and in invitation, reset and CalDAV links |
 | `OPENTODO_SETUP_TOKEN` | unset | When set (16+ characters), creating the first account requires this token from every address, so a fresh public server cannot be claimed by a stranger. No effect once the owner exists. The Coolify template generates one |
@@ -262,7 +263,7 @@ Every setting is an optional environment variable with a safe default; an invali
 | `OPENTODO_BACKUP_*` | unset | Optional presets for [scheduled backups](docs/backups.md#environment-presets) (`DESTINATION`, `SCHEDULE`, `TIME`, `WEEKDAY`, `KEEP`, `MAX_AGE_DAYS`, `COMPRESS`, `LOCAL_DIR`, `S3_*`, `WEBDAV_*`, `PASSPHRASE`/`PASSPHRASE_FILE`), applied once; Settings → Backups wins afterwards |
 | `OPENTODO_HOST_URL`, `_TOKEN`, `_OPERATOR_ADDR`, `_IDLE_MINUTES`, `_MAX_OPEN`, `_LIMITS` | unset (off) | [Host mode](docs/self-hosting/host-mode.md) for operators of a hosted service: many tenants in one process, chosen by host name. Not needed to self-host |
 
-`OPENTODO_PORT` and `OPENTODO_BIND` in `.env` only change the host port and address published by `docker-compose.yml` (default `0.0.0.0:8080`, every interface; behind a reverse proxy on the same machine, `OPENTODO_BIND=127.0.0.1` is the safer choice). The `ot` client reads its own variables (`OPENTODO_URL`, `OPENTODO_TOKEN`, `OPENTODO_PROFILE`, `OPENTODO_CONFIG`), see [docs/cli.md](docs/cli.md).
+`OPENTODO_BIND` in `.env` changes the host address published by `docker-compose.yml` (default `0.0.0.0`, every interface; behind a reverse proxy on the same machine, `OPENTODO_BIND=127.0.0.1` is the safer choice). `OPENTODO_PORT` in that `.env` changes only the published host port (`7610:8080`) and is not passed into the container, so the process stays on 8080. Set `OPENTODO_PORT` on the container itself, and publish that container port (`7610:7610`), when the process should listen somewhere else. The `ot` client reads its own variables (`OPENTODO_URL`, `OPENTODO_TOKEN`, `OPENTODO_PROFILE`, `OPENTODO_CONFIG`), see [docs/cli.md](docs/cli.md).
 
 ## Adding people
 

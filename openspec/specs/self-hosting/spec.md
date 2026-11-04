@@ -12,6 +12,14 @@ The server SHALL ship as one container image containing one statically linked bi
 - **WHEN** the container starts with no configuration
 - **THEN** it listens on port 8080 and serves the app and API on the same origin
 
+#### Scenario: Listen port from the environment
+- **WHEN** the container is started with `OPENTODO_PORT=7610`
+- **THEN** it listens on port 7610, keeping the host from `OPENTODO_ADDR`, and the health check probes port 7610
+
+#### Scenario: Invalid listen port
+- **WHEN** `OPENTODO_PORT` is not a port from 1 to 65535
+- **THEN** the process exits non-zero with a message naming `OPENTODO_PORT`
+
 ### Requirement: One data directory
 All persistent state SHALL live under the configured data directory (`/data` in the image). Backing up that directory SHALL be sufficient to restore everything.
 
