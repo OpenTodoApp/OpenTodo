@@ -5283,6 +5283,367 @@
     "reminders": [],
     "sector": ""
    }
+  },
+  {
+   "name": "ordinal generic weekday en",
+   "line": "Pay rent every first weekday",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Pay rent",
+    "due": {
+     "date": "2026-11-02"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 1st weekday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "ordinal generic weekday en numeric workday",
+   "line": "Payroll every 2nd workday of the month",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Payroll",
+    "due": {
+     "date": "2026-11-03"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2nd weekday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "ordinal generic weekday with a time",
+   "line": "Invoices every 1st weekday at 15:00",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Invoices",
+    "due": {
+     "date": "2026-11-02",
+     "time": "15:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 1st weekday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "ordinal generic weekday de",
+   "line": "Miete jeden ersten Werktag",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Miete",
+    "due": {
+     "date": "2026-11-02"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 1st weekday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "ordinal generic weekday fr",
+   "line": "Loyer chaque premier jour ouvré",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "fr"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Loyer",
+    "due": {
+     "date": "2026-11-02"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 1st weekday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "ordinal generic weekday it",
+   "line": "Affitto ogni primo giorno feriale",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "it"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Affitto",
+    "due": {
+     "date": "2026-11-02"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 1st weekday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "ordinal generic weekday es",
+   "line": "Alquiler cada primer día laborable",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "es"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Alquiler",
+    "due": {
+     "date": "2026-11-02"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 1st weekday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "ordinal generic weekday pt",
+   "line": "Aluguel todo primeiro dia útil",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pt"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Aluguel",
+    "due": {
+     "date": "2026-11-02"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 1st weekday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "last generic weekday it",
+   "line": "Report ogni ultimo giorno feriale",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "it"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Report",
+    "due": {
+     "date": "2026-10-30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every last weekday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "last generic weekday es",
+   "line": "Informe cada último día laborable",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "es"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Informe",
+    "due": {
+     "date": "2026-10-30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every last weekday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "last generic weekday pt",
+   "line": "Relatório todo último dia útil",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pt"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Relatório",
+    "due": {
+     "date": "2026-10-30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every last weekday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "last day it stays the last day",
+   "line": "Report ogni ultimo giorno",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "it"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Report",
+    "due": {
+     "date": "2026-10-31"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every last day",
+    "reminders": []
+   }
   }
  ]
 }
