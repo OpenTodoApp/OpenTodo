@@ -41,6 +41,7 @@ var fixture struct {
 
 func build(t *testing.T) (string, Summary) {
 	t.Helper()
+	skipUnderRace(t)
 	fixture.once.Do(func() {
 		dir, err := os.MkdirTemp("", "perfseed-")
 		if err != nil {
@@ -56,6 +57,19 @@ func build(t *testing.T) (string, Summary) {
 		t.Fatal(fixture.err)
 	}
 	return fixture.dir, fixture.sum
+}
+
+// skipUnderRace skips a test that builds the 105,000-op fixture when the race
+// detector is on. The builder applies its ops one batch after another, so the
+// detector has nothing to watch, and instrumented it took 13 minutes per build
+// (three builds, 35 minutes of a four-core runner) while the other packages'
+// tests ran beside it: the nightly race job ran out of time (issue #854). Every
+// pull request's go test runs these tests without the detector.
+func skipUnderRace(t *testing.T) {
+	t.Helper()
+	if raceDetector {
+		t.Skip("builds the 10,000-task fixture: sequential, and too slow under the race detector")
+	}
 }
 
 func TestMain(m *testing.M) {
@@ -113,6 +127,7 @@ func TestFixtureIsDeterministic(t *testing.T) {
 // TestEncryptedVariant: the encrypted account seals its personal content with
 // the key its record unwraps with Passphrase, and keeps shared projects plain.
 func TestEncryptedVariant(t *testing.T) {
+	skipUnderRace(t)
 	if testing.Short() {
 		t.Skip("builds the fixture a second time")
 	}
