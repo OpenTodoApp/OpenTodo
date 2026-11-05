@@ -1,6 +1,8 @@
 // Component tests for Settings → Two-factor authentication, the enrolment
 // wizard, the recovery codes and the re-authentication dialog (OpenSpec
-// `mfa-totp`). Static markup only, as in the other panel tests.
+// `mfa-totp`). Static markup only, as in the other panel tests. The enrolment QR's
+// encoder loads lazily (mfa-enrolment-qr), so it is the one part that needs a DOM:
+// enrolmentQr.dom.test.tsx renders the wizard and waits for the image.
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
@@ -101,12 +103,11 @@ describe('EnrolmentStepView', () => {
     uri: 'otpauth://totp/OpenTodo:a%40example.com?secret=JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP&issuer=OpenTodo',
     expiresAt: now + 600_000,
   }
-  it('shows a locally rendered QR code, the manual key and a code field', () => {
+  it('shows the manual key and a code field, with the QR still loading', () => {
     const html = renderToStaticMarkup(createElement(EnrolmentStepView, {
       enrollment, code: '', busy: false, disabled: false, error: null, onCode: noop, onConfirm: noop, onCancel: noop,
     }))
-    expect(html).toMatch(/<svg[^>]*role="img"[^>]*aria-label="QR code/)
-    expect(html).toMatch(/<path d="M\d/)
+    expect(html).toContain('aria-hidden') // the QR's square, until its encoder loads
     expect(html).not.toContain('<img') // no image request carrying the secret
     expect(html).toContain('JBSW Y3DP EHPK 3PXP JBSW Y3DP EHPK 3PXP')
     expect(html).toContain('Code from the app')

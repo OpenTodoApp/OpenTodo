@@ -6,11 +6,11 @@ import { ConfirmDialog } from '../ui'
 import { ListRow } from '../ui'
 import { Notice } from '../ui'
 import { navigate } from './router'
-import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
+import { type FormEvent, Suspense, useCallback, useEffect, useState } from 'react'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { useAction } from '../lib/useAction'
 import { useOnline } from '../lib/online'
-import { qrMatrix, qrPath } from '../lib/qr'
+import { LazyQrCode } from './qrCodeLazy'
 import type { MfaPolicy, MfaStatus, TrustedDevice, User } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t, msg, translatedMap, currentLanguage } from '../lib/i18n'
@@ -41,23 +41,9 @@ export function groupKey(secret: string): string {
   return secret.replace(/(.{4})/g, '$1 ').trim()
 }
 
-/** A QR code rendered as SVG from the provisioning URI, entirely in the browser. */
-export function QrCode({ text, size = 192 }: { text: string; size?: number }) {
-  const { n, d } = useMemo(() => {
-    const m = qrMatrix(text)
-    return { n: m.length, d: qrPath(m) }
-  }, [text])
-  const quiet = 4
-  return (
-    <svg
-      role="img" aria-label={t('QR code to scan with your authenticator app')} width={size} height={size}
-      viewBox={`${-quiet} ${-quiet} ${n + 2 * quiet} ${n + 2 * quiet}`} shapeRendering="crispEdges" className="rounded-control"
-    >
-      {/* A QR code stays black on white in every theme so authenticator apps can scan it. */}
-      <rect x={-quiet} y={-quiet} width={n + 2 * quiet} height={n + 2 * quiet} fill="#fff" /> {/* token-lint-allow */}
-      <path d={d} fill="#000" /> {/* token-lint-allow */}
-    </svg>
-  )
+/** The QR's place while its encoder loads: the same square, so the wizard does not shift. */
+function QrPlaceholder({ size = 192 }: { size?: number }) {
+  return <div aria-hidden className="animate-pulse rounded-control bg-sunken motion-reduce:animate-none" style={{ width: size, height: size }} />
 }
 
 export function mfaMessage(err: unknown): string {
@@ -160,7 +146,7 @@ export function EnrolmentStepView(p: EnrolmentStepViewProps) {
         <li>{t('Type the six-digit code the app shows.')}</li>
       </ol>
       <div className="flex flex-wrap items-center gap-4">
-        <QrCode text={p.enrollment.uri} />
+        <Suspense fallback={<QrPlaceholder />}><LazyQrCode text={p.enrollment.uri} /></Suspense>
         <div className="text-body">
           <p className="text-muted">{t('Key for manual entry (time-based, 6 digits, 30 s):')}</p>
           <code className="mt-1 block select-all break-all font-mono text-body" data-testid="manual-key">{groupKey(p.enrollment.secret)}</code>
