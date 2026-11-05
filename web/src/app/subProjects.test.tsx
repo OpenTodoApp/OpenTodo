@@ -5,6 +5,7 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
+import { saveViewMode } from '../lib/sections'
 import { click, render, mockFetch, noPublicLinks, visibleText, waitFor } from '../ui/test-utils'
 import { SubProjects } from './SubProjects'
 import { TaskListView } from './TaskListView'
@@ -68,5 +69,18 @@ describe('sub-projects group', () => {
     await parent.unmount()
     expect(leaf.container.innerHTML).toBe('')
     await leaf.unmount()
+  })
+
+  it('stays on a project shown as a board, above the columns (section-rule-and-sub-projects D4)', async () => {
+    const home = await createProject({ name: 'Home' })
+    await createProject({ name: 'Garden', parent_id: home })
+    await createTask({ title: 'Paint', project_id: home })
+    await saveViewMode(home, 'board')
+    const r = await render(<TaskListView route={{ view: 'project', id: home }} />)
+    await waitFor(() => r.container.querySelector('[data-board]') !== null && r.container.querySelector('[data-sub-projects]') !== null, 'the board and the group')
+    expect([...r.container.querySelectorAll('[data-sub-project]')].map((b) => visibleText(b))).toEqual(['Garden0'])
+    const order = [...r.container.querySelectorAll('[data-sub-projects], [data-board]')]
+    expect(order[0].hasAttribute('data-sub-projects')).toBe(true)
+    await r.unmount()
   })
 })

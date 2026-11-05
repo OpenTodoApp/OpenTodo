@@ -3,13 +3,14 @@
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db } from '../lib/db'
+import { setAutomationsOn } from '../lib/rules/automationsOn'
 import type { View } from '../lib/types'
 import { click, render, waitFor } from '../ui/test-utils'
 import { ViewMenu } from './ViewsView'
 
 const view = { id: 'v1', name: 'Deep work', kind: 'list', query: 'p1', panels: [], pinned: true, position: 1, created_at: 0, deleted_at: null, _clock: {} } as unknown as View
 
-beforeEach(async () => { await db.delete(); await db.open(); await db.views.put(view) })
+beforeEach(async () => { await db.delete(); await db.open(); await db.views.put(view); setAutomationsOn(true) })
 
 async function itemsFrom(ui: React.ReactNode): Promise<string[]> {
   const r = await render(ui)
@@ -34,5 +35,12 @@ describe('ViewMenu call sites', () => {
     const header = await itemsFrom(<header><ViewMenu view={view} /></header>)
     const favourites = await itemsFrom(<nav><ViewMenu view={view} within="favourites" className="hover-reveal" /></nav>)
     expect(favourites).toEqual(header)
+  })
+
+  it('offers no automation rule while the server runs none (section-rule-and-sub-projects D2)', async () => {
+    setAutomationsOn(false)
+    const items = await itemsFrom(<header><ViewMenu view={view} /></header>)
+    expect(items).toContain('Display mode')
+    expect(items).not.toContain('Make an automation rule')
   })
 })

@@ -11,6 +11,7 @@ import { setOnDrop } from '../lib/views'
 import { Button, Combobox, Dialog, LabelChip } from '../ui'
 import { ProjectPickerField } from './ProjectPickerField'
 import { ruleDraftFromView } from './rules/convertDraft'
+import { useAutomationsOn } from '../lib/rules/automationsOn'
 import { openRoutineDraft } from './routines/routineNav'
 import { t, translatedMap, msg } from '../lib/i18n'
 import { messageOf } from '../lib/errorText'
@@ -83,6 +84,7 @@ function withKey<K extends keyof OnDropRule>(rule: OnDropRule, key: K, value: On
 
 export function RuleEditor({ view, labels, projects, sections, onClose }: RuleEditorProps) {
   const [draft, setDraft] = useState<OnDropRule>(() => knownRule(view.on_drop) ?? {})
+  const automations = useAutomationsOn()
   const [error, setError] = useState<string | null>(null)
   const set = <K extends keyof OnDropRule>(key: K, value: OnDropRule[K] | undefined) => setDraft((d) => withKey(d, key, value))
   const save = (rule: OnDropRule | null) => {
@@ -128,7 +130,7 @@ export function RuleEditor({ view, labels, projects, sections, onClose }: RuleEd
         <p className="text-meta text-muted" aria-live="polite" data-rule-summary>{summary || t('No changes: this column is not a drop target.')}</p>
         {error && <p role="alert" className="text-meta text-danger">{error}</p>}
         <div className="flex flex-wrap justify-end gap-2">
-          <Button type="button" variant="ghost" icon="zap" onClick={() => { onClose(); openRoutineDraft(ruleDraftFromView({ ...view, on_drop: draft }, { labels, projects })) }}>{t('Make an automation rule')}</Button>
+          {automations && <Button type="button" variant="ghost" icon="zap" onClick={() => { onClose(); openRoutineDraft(ruleDraftFromView({ ...view, on_drop: draft }, { labels, projects })) }}>{t('Make an automation rule')}</Button>}
           <Button type="button" variant="ghost" onClick={() => save(null)}>{t('No rule')}</Button>
           <Button type="button" variant="ghost" onClick={onClose}>{t('Cancel')}</Button>
           <Button type="submit" variant="primary">{t('Save')}</Button>

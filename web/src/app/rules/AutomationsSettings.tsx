@@ -9,6 +9,7 @@ import type { AutomationsSetting } from '../../lib/types'
 import { Notice, SettingsSection, Switch } from '../../ui'
 import { act } from '../actionError'
 import { messageOf } from '../../lib/errorText'
+import { refreshAutomationsOn } from '../../lib/rules/automationsOn'
 
 export function AutomationsServerPanel() {
   const [s, setS] = useState<AutomationsSetting | null>(null)
@@ -17,7 +18,7 @@ export function AutomationsServerPanel() {
     api.automationsSwitch.get().then(setS, (err: unknown) =>
       setError(isNetworkError(err) ? t('Connect to change this setting.') : messageOf(err)))
   }, [])
-  const save = (enabled: boolean) => act(api.automationsSwitch.put(enabled).then(setS))
+  const save = (enabled: boolean) => act(api.automationsSwitch.put(enabled).then((next) => { setS(next); void refreshAutomationsOn() }))
   return (
     <SettingsSection {...cardCopy('automations-server')} id="automations">
       {s && (

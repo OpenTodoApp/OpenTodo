@@ -8863,6 +8863,7 @@
   ],
   "Make an automation rule": [
     "web/src/app/RuleEditor.tsx",
+    "web/src/app/Sections.tsx",
     "web/src/app/ViewsView.tsx"
   ],
   "Make another member the owner; you become an admin.": [
@@ -9715,6 +9716,9 @@
   ],
   "New slot here…": [
     "web/src/app/calendar/addHere.tsx"
+  ],
+  "New sub-project…": [
+    "web/src/app/ProjectHeader.tsx"
   ],
   "New task in {project}: {title}": [
     "web/src/lib/assistant.ts"

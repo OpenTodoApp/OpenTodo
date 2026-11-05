@@ -4,6 +4,8 @@
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db } from '../lib/db'
+import { setAutomationsOn } from '../lib/rules/automationsOn'
+import { clearHandover, pendingDraft } from './routines/routineNav'
 import { createSection, setSectionStyle } from '../lib/sections'
 import { loadCatalogue } from '../ui'
 import { click, key, render, type, waitFor } from '../ui/test-utils'
@@ -96,6 +98,43 @@ describe('section style', () => {
     const r = await render(<SectionHeader section={(await db.sections.get(id))!} count={0} layout="list" editable={false} first last />)
     expect(r.container.querySelector('[data-section-mark="icon"] svg[data-icon="hourglass"]')).not.toBeNull()
     expect(r.container.querySelector('button[aria-label="Section menu for Waiting"]')).toBeNull()
+    await r.unmount()
+  })
+})
+
+// "Make an automation rule" in a section's menu (section-rule-and-sub-projects D1, D2).
+describe('section rule', () => {
+  const menuLabels = () => [...document.querySelectorAll('[data-menu-label]')].map((e) => e.getAttribute('data-menu-label'))
+  async function renderDoing(editable: boolean) {
+    const id = await createSection('p1', 'Doing')
+    const r = await render(<SectionHeader section={(await db.sections.get(id))!} count={0} layout="board" editable={editable} first last={false} onFold={() => {}} />)
+    await click(r.container.querySelector('button[aria-label="Section menu for Doing"]')!)
+    await waitFor(() => menuLabels().length > 0, 'the section menu')
+    return { id, r }
+  }
+
+  it('opens the rule editor with "a task is moved into this project and section"', async () => {
+    setAutomationsOn(true)
+    const { id, r } = await renderDoing(true)
+    await waitFor(() => menuLabels().includes('Make an automation rule'), 'the rule item')
+    await click(document.querySelector('[data-menu-label="Make an automation rule"]') as HTMLElement)
+    expect(pendingDraft()).toEqual({ name: 'Doing', trigger: { kind: 'task.moved', project_id: 'p1', section_id: id }, condition: null, actions: {} })
+    clearHandover()
+    await r.unmount()
+  })
+
+  it('is absent while the server runs no rules', async () => {
+    setAutomationsOn(false)
+    const { r } = await renderDoing(true)
+    expect(menuLabels()).toContain('Rename')
+    expect(menuLabels()).not.toContain('Make an automation rule')
+    await r.unmount()
+  })
+
+  it('is absent for a viewer, whose column menu only folds', async () => {
+    setAutomationsOn(true)
+    const { r } = await renderDoing(false)
+    expect(menuLabels()).toEqual(['Fold column'])
     await r.unmount()
   })
 })

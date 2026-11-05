@@ -33,6 +33,7 @@ Use the **⋯** menu on a section heading (or press <kbd>.</kbd> with the headin
 - **Rename** (<kbd>F2</kbd>)
 - **Colour…** and **Icon…** mark the section before its name.
 - **Flow…**: one at a time or together ([flows](project-flows.md)).
+- **Make an automation rule**: a [rule](automations.md) for tasks moved into it.
 - **Move** it up or down (left or right on the board).
 - **Delete section…** asks first and says how many open tasks move to **No section**. The tasks aren't deleted.
 
@@ -43,15 +44,15 @@ Fold a section with the small arrow next to its name. Folding is remembered on t
 At the top of the project, choose **Board** (or press <kbd>v</kbd>). Each section becomes a column, with **No section** first. <kbd>v</kbd> cycles through **List**, **Board**, **Timeline** and [**Calendar**](calendar-filter.md#a-project-as-a-calendar).
 
 
-The choice is remembered per project on each device. On a phone the board shows one column at a time: swipe sideways or tap a dot above the columns; "No section" is a column only while it has open tasks.
+The choice is remembered per project on each device. [Sub-projects](projects.md#sub-projects) stay above the columns. On a phone the board shows one column at a time: swipe sideways or tap a dot above the columns; "No section" is a column only while it has open tasks.
 
 ## Move cards between columns
 
-- **Drag** a card to another column, or to a place within a column. On a touch screen, press and hold the card first.
+- **Drag** a card to another column or place. On a touch screen, press and hold it first.
 - **Keyboard:** select a card and press <kbd>Shift</kbd>+<kbd>→</kbd> or <kbd>Shift</kbd>+<kbd>←</kbd>.
 - **Panel:** open the task and pick another **Section**.
 
-Moving with the keyboard or the panel puts the card at the bottom of the new column.
+The keyboard and the panel put the card at the bottom.
 
 Cards show up to three [custom field](custom-fields.md) values as badges, such as **Cost 1,200**, and **+2** for the rest. To fold a column or show notes on cards, see [Fold columns](fold-columns.md).
 
@@ -72,10 +73,10 @@ Choose **Timeline** at the top of the project (or press <kbd>v</kbd> until it sh
 ## Good to know
 
 - Moving a task to another project removes it from its section, because sections belong to one project.
-- If a section is deleted while another device moves a task into it, the task ends up under **No section**. Nothing is lost.
+- If a section is deleted while another device moves a task into it, the task lands under **No section**.
 - Sections are exported and come back on import.
 
 ## Ideas for sections
 
 - A simple flow: **To do**, **Doing**, **Done**.
-- By week: **This week**, **Next week**, **Later** for a launch plan.
+- By week: **This week**, **Next week**, **Later**.

@@ -18,6 +18,7 @@ import { flushPendingPurges, removeLocally, RETENTION_KEY } from './trash'
 import { onUploadRequest, refreshLimits, resumeFileMigration, runUploader } from './attachments'
 import { refreshMapsAvailable } from './locations'
 import { refreshAgentExclusions } from './agentAccess'
+import { refreshAutomationsOn } from './rules/automationsOn'
 import { sweepInbox } from './shareInbox'
 import { refreshEvents } from './calendarFeeds'
 import { ENTITIES, type Clock, type Op, type RowEncryption, type SyncResponse, type SyncState } from './types'
@@ -693,6 +694,8 @@ export function startSync(): void {
   void refreshMapsAvailable()
   // Projects kept away from AI assistants (agent-planning-fields D9).
   void refreshAgentExclusions()
+  // Whether rules run on this server, for the menus that offer making one.
+  void refreshAutomationsOn()
   // Shares abandoned on the capture screen leave the hand-over store (attachments D9).
   void sweepInbox().catch(() => undefined)
   const offMutation = onLocalMutation(({ push }) => {

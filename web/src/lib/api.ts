@@ -288,7 +288,7 @@ export const api = {
   reauth: (input: { password: string } | { code: string }) =>
     request<{ reauthAt: number; validForMs: number }>('POST', '/api/v1/auth/reauth', input, true),
   /** `config_warnings` is present for the owner's session only (trusted-proxies-lenient). */
-  me: () => request<{ user: User; mfa: MfaStatus; config_warnings?: ConfigWarning[]; attachments?: AttachmentLimits; maps?: boolean; agent_excluded_projects?: string[]; speech?: SpeechService }>('GET', '/api/v1/me'),
+  me: () => request<{ user: User; mfa: MfaStatus; config_warnings?: ConfigWarning[]; attachments?: AttachmentLimits; maps?: boolean; agent_excluded_projects?: string[]; speech?: SpeechService; automations?: { enabled: boolean; paused: boolean } }>('GET', '/api/v1/me'),
   mfaStatus: () => request<{ mfa: MfaStatus }>('GET', '/api/v1/mfa'),
   enrollTotp: () => request<{ secret: string; uri: string; expiresAt: number }>('POST', '/api/v1/mfa/totp/enroll', {}),
   confirmTotp: (code: string) => request<{ recoveryCodes: string[]; mfa: MfaStatus }>('POST', '/api/v1/mfa/totp/confirm', { code }),

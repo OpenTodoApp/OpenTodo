@@ -7141,5 +7141,6 @@
   "Has an assignee": "A une personne assignée",
   "Hide tasks assigned to others": "Masquer les tâches assignées aux autres",
   "No member named \"{name}\"": "Aucun membre nommé « {name} »",
-  "Show tasks assigned to others": "Afficher les tâches assignées aux autres"
+  "Show tasks assigned to others": "Afficher les tâches assignées aux autres",
+  "New sub-project…": "Nouveau sous-projet…"
 }

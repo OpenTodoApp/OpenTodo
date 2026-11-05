@@ -21,6 +21,7 @@ The **Project** menu at the top right of a project lets you:
 
 - pick a **colour**,
 - **Pin to sidebar**, which adds it to **Favourites** (see below),
+- **New sub-project…** opens the new-project form with this project as the parent,
 - **Move to…** another project, or back to the top level; <kbd>m</kbd> opens the menu straight at this step.
 - **Rename** it,
 - pick an **Icon…**: type to search, or **No icon** for the dot,
@@ -45,14 +46,14 @@ Inside a project you can also group tasks into sections and show them as a board
 
 ## Sub-projects
 
-Sub-projects work like folders: "Work" can hold "Q4 launch", which can hold more. A project's page lists its sub-projects at the bottom with their counts. Fold a project in the sidebar with its small arrow or <kbd>←</kbd> / <kbd>→</kbd>; each device remembers its own folding and starts with the top level only. **Collapse all** and **Expand all** are in the **+** menu next to **Projects**, and the magnifier there (<kbd>g</kbd> then <kbd>/</kbd>) finds a project.
+Sub-projects work like folders: "Work" can hold "Q4 launch", which can hold more. A project's page lists its sub-projects under its title with their counts, as a list or a board. Fold a project in the sidebar with its small arrow or <kbd>←</kbd> / <kbd>→</kbd>; each device remembers its own folding and starts with the top level only. **Collapse all** and **Expand all** are in the **+** menu next to **Projects**, and the magnifier there (<kbd>g</kbd> then <kbd>/</kbd>) finds a project.
 
 ## Duplicate a project or task
 
 **Duplicate…** in a project's menu makes a copy with the same sections, sub-projects and open tasks. Choose a parent and, optionally, a **Start on** day to shift every due date so the earliest lands on it. Completed tasks, comments, reminders and assignees aren't copied. You can duplicate any project you see; the copy is yours.
 
-To duplicate one task with its open subtasks, select it and press <kbd>Shift</kbd>+<kbd>D</kbd>, or choose **Duplicate** in the task panel's **⋯** menu. The copy appears right below the original and is selected. A copy works offline and syncs to your other devices. To reuse a project later, save it as a [template](import-export.md#templates).
+To duplicate one task with its open subtasks, select it and press <kbd>Shift</kbd>+<kbd>D</kbd>, or choose **Duplicate** in the task panel's **⋯** menu. The copy appears right below the original, selected. To reuse a project later, save it as a [template](import-export.md#templates).
 
 ## When a project is done
 
-When you complete the last open task of a project, OpenTodo offers to archive it; press <kbd>Enter</kbd> to accept or any other key to keep it. Projects that have had no open tasks for 30 days are archived automatically, with a notice you can undo. You can turn that off in **Settings → Data** (each device has its own setting). To bring one back, select **Restore** next to it in the **Archived** tab of the Projects page; see [Archived projects](archived-projects.md).
+When you complete a project's last open task, OpenTodo offers to archive it; <kbd>Enter</kbd> accepts. Projects that have had no open tasks for 30 days are archived automatically, with a notice you can undo. Turn that off in **Settings → Data** (per device). To bring one back, select **Restore** next to it in the **Archived** tab of the Projects page; see [Archived projects](archived-projects.md).

@@ -19,7 +19,7 @@ import { setMethodMode } from '../lib/method/mode'
 import { REVIEW_DEFAULTS } from '../lib/ops'
 import { resetPanel } from './panel'
 import { navigate } from './router'
-import { sidebarFind } from './signals'
+import { newSubProject, sidebarFind } from './signals'
 import { Shell } from './Shell'
 import { Sidebar } from './Sidebar'
 import budget from './budget.json'
@@ -622,6 +622,35 @@ describe('find in the sidebar (sidebar-groups 3.2)', () => {
       await waitFor(() => document.querySelector('input[aria-label="Find in the sidebar"]') !== null)
       expect(document.querySelector('aside[data-sidebar]')?.getAttribute('data-sidebar-width')).toBe('16')
       await waitFor(() => document.activeElement === document.querySelector('input[aria-label="Find in the sidebar"]'))
+      await r.unmount()
+    } finally {
+      window.matchMedia = original
+    }
+  })
+})
+
+// "New sub-project…" in a project's menu (section-rule-and-sub-projects D3).
+describe('new sub-project', () => {
+  it('opens the new-project form with the parent chosen, expanding the icon rail, and creates the child there', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
+    const original = window.matchMedia
+    window.matchMedia = ((q: string) => ({ matches: /64rem/.test(q), media: q, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false })) as typeof window.matchMedia
+    try {
+      const home = await createProject({ name: 'Home' })
+      await createProject({ name: 'Work' })
+      navigate({ view: 'inbox' })
+      toggleSidebarCollapsed()
+      const r = await render(<Shell user={user} onLogout={() => {}} />)
+      await waitFor(() => !!document.querySelector('[data-list-page]'), 'the Inbox page')
+      newSubProject.request(home)
+      const name = () => document.querySelector<HTMLInputElement>('aside[data-sidebar] input[placeholder="Project name"]')
+      await waitFor(() => name() !== null, 'the new-project form')
+      expect(document.querySelector('aside[data-sidebar]')?.getAttribute('data-sidebar-width')).toBe('16')
+      expect(name()!.closest('form')!.textContent).toContain('Home')
+      await type(name()!, 'Garden')
+      await click([...name()!.closest('form')!.querySelectorAll('button')].find((b) => b.textContent === 'Create')!)
+      await waitFor(async () => (await db.projects.toArray()).some((p) => p.name === 'Garden'), 'the sub-project')
+      expect((await db.projects.toArray()).find((p) => p.name === 'Garden')?.parent_id).toBe(home)
       await r.unmount()
     } finally {
       window.matchMedia = original

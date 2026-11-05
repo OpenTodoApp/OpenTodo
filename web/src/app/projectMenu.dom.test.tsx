@@ -7,6 +7,7 @@ import { db } from '../lib/db'
 import type { Project } from '../lib/types'
 import { click, key, render, mockFetch, noPublicLinks, waitFor } from '../ui/test-utils'
 import { ProjectHeader, projectMenuGroups } from './ProjectHeader'
+import { newSubProject } from './signals'
 
 // The project header asks the server for its public links.
 beforeEach(() => mockFetch(noPublicLinks))
@@ -55,5 +56,23 @@ describe('project menu', () => {
     const item = groups.flatMap((g) => g.items).find((i) => i.id === 'delete')
     if (!item || item.kind !== 'confirm' || typeof item.confirm.body !== 'function') throw new Error('the delete confirmation reads its count on open')
     expect(await item.confirm.body()).toContain('1 open task')
+  })
+
+  it('"New sub-project…" asks the sidebar for its form with this parent, for the owner and admins only (section-rule-and-sub-projects D3)', async () => {
+    const asked: string[] = []
+    const off = newSubProject.subscribe((id) => { asked.push(id) })
+    const r = await render(<ProjectHeader project={p('home', 'Home')} />)
+    await click(r.container.querySelector('button[aria-label="Project menu"]')!)
+    await waitFor(() => !!document.querySelector('[data-menu-label="New sub-project…"]'), 'the item')
+    await click(document.querySelector('[data-menu-label="New sub-project…"]') as HTMLElement)
+    expect(asked).toEqual(['home'])
+    newSubProject.take()
+    off()
+    await r.unmount()
+    const ids = (role: 'admin' | 'editor' | 'viewer') => projectMenuGroups(p('home', 'Home'), { role, shared: true, targets: [], subCount: 0, openTasks: 0 }, { rename: () => {}, subProject: () => {} })
+      .flatMap((g) => g.items).map((i) => i.id)
+    expect(ids('admin')).toContain('sub-project')
+    expect(ids('editor')).not.toContain('sub-project')
+    expect(ids('viewer')).not.toContain('sub-project')
   })
 })

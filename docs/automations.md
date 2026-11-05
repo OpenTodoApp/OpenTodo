@@ -11,7 +11,7 @@ order: 46
 
 <picture><source srcset="images/rules-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/rules-light.webp" alt="The Routines page with three routines, each with its switch, a one-line summary such as When label waiting is added → priority 3, and Run now."></picture>
 
-A rule says **when** something happens, **which tasks** it is for, and **what** to change. *When the label waiting is added, move the task to the Waiting section of Work.* Rules run on your server, so they work while every device is closed. Open **More → [Routines](routines.md)**.
+A rule says **when** something happens, **which tasks** it is for, and **what** to change. *When the label waiting is added, move the task to Waiting.* Rules run on your server, even while every device is closed. Open **More → [Routines](routines.md)**.
 
 ## Make a rule
 
@@ -21,13 +21,13 @@ Choose **New routine**, name it, then fill its **When** card and one **Change ta
 - **Only for tasks that**: optional conditions, all of which must hold: project (with its sub-projects), labels, priority, date, deadline, assignee, blocked, not changed for N days. The editor shows how many open tasks match now.
 - **Then**: priority, date, start, deadline, assignee, labels to add or remove, project and section, complete or reopen, a comment, an in-app notification, or a [webhook](webhooks.md) delivery.
 
-A rule saved offline runs after the next sync. Times use your devices' time zone and your day start. Scheduled rules skip [archived projects](routines.md#which-tasks-a-routine-finds).
+A rule saved offline runs after the next sync. Times use your time zone and day start. Scheduled rules skip [archived projects](routines.md#which-tasks-a-routine-finds).
 
 ## What a rule changes
 
-A rule writes the same changes you would: completing a repeating task moves it to its next date, and a moved date carries its reminders along. A change the task already has is not written. Each change appears in the task's history as **Routine (name)**, and **Restore this value** undoes it like any edit.
+A rule writes the same changes you would: completing a repeating task moves it to its next date; reminders follow a moved date. A change the task already has is not written. Each change appears in the task's history as **Routine (name)**, and **Restore this value** undoes it like any edit.
 
-Rules fire only for your own edits, never for a teammate's change in a shared project or for an [import](import-export.md). A rule never moves tasks into or out of a shared project.
+Rules fire only for your own edits, never for a teammate's change or an [import](import-export.md). A rule never moves tasks into or out of a shared project.
 
 ## Limits and pauses
 
@@ -45,7 +45,9 @@ A rule is the simplest [routine](routines.md): one card that changes tasks. Rout
 
 ## Turn a filter into a rule
 
-A saved view's menu and a board column's **Rule** dialog offer **Make an automation rule**. The editor opens with the column's changes as actions and the filter's project, label, priority, date and similar terms as conditions; terms a rule cannot use, such as a text search, are named.
+A saved view's menu and a board column's **Rule** dialog offer **Make an automation rule**. The editor opens with the column's changes as actions and the filter's project, label, priority, date and similar terms as conditions; terms a rule cannot use are named.
+
+A section's **⋯** menu offers it too (while the server runs rules), starting with **When a task is moved into** that section.
 
 ## Encrypted accounts
 

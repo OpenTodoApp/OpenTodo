@@ -25,7 +25,7 @@ import { FramesHost } from './calendar/framesRequest'
 import { FocusPickerHost } from './focus/focusRequest'
 import { WelcomeDialog } from './WelcomeDialog'
 import { ArchivePrompt } from './ArchivePrompt'
-import { notificationsOpen, sidebarFind } from './signals'
+import { newSubProject, notificationsOpen, sidebarFind } from './signals'
 import { hasScope, useShortcutDispatcher, useShortcutScope } from './shortcuts'
 import { closePanelIfStale, panelTaskId, taskIdFromAddress, usePanel } from './panel'
 import { currentAddress, openTaskPage, settleTrail } from './taskTrail'
@@ -101,10 +101,12 @@ const ImportScreen = lazy(() => import('./ImportScreen').then((m) => ({ default:
 /** Shown while a screen's chunk is fetched: the page's rows, as the other screens do. */
 const SCREEN_LOADING = <div className="px-4 py-6"><Skeleton shape="row" count={4} /></div>
 
-/** Requests that need the sidebar on screen: the phone drawer opens, and for a find the icon rail expands. */
+/** Requests that need the sidebar on screen: the phone drawer opens, and for a find or a new sub-project the icon rail expands. */
 function useSidebarRequests(setSidebarOpen: (open: boolean) => void) {
   // A find request (the shortcut, the palette): the icon rail expands and the phone drawer opens.
   useEffect(() => sidebarFind.subscribe((id) => { if (id === 'open') { setSidebarCollapsed(false); setSidebarOpen(true) } }), [setSidebarOpen])
+  // "New sub-project…": the new-project form lives in the sidebar, so it comes on screen the same way.
+  useEffect(() => newSubProject.subscribe(() => { setSidebarCollapsed(false); setSidebarOpen(true) }), [setSidebarOpen])
   // The briefing's replies open the bell's list (briefing-links D2): on a phone it sits in the drawer.
   useEffect(() => notificationsOpen.subscribe(() => { if (!window.matchMedia?.('(min-width: 48rem)').matches) setSidebarOpen(true) }), [setSidebarOpen])
 }

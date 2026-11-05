@@ -44,7 +44,7 @@ import { dragFeedback, dropTarget, sameDrop, zoneUnder, type DropAt } from './li
 import { prefersReducedMotion } from './motion'
 import { formatUnread, useUnreadCounts } from '../lib/feed'
 import { matchSidebar } from '../lib/sidebarFind'
-import { sidebarFind } from './signals'
+import { newSubProject, sidebarFind } from './signals'
 import { t } from '../lib/i18n'
 import { act } from './actionError'
 import { countInbox } from '../lib/inbox'
@@ -296,11 +296,11 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
     else if (e.key === 'ArrowUp' && found) { e.preventDefault(); setActiveMatch((i) => Math.max(i - 1, 0)) }
   }
 
-  function startAdding() {
-    setParentId(route.view === 'project' && tree.nodes.has(route.id) ? route.id : '')
-    setGroupOpen('projects', true)
-    setAdding(true)
+  // The form, with the open project as the parent (or the one "New sub-project…" names).
+  const startAdding = (parent = route.view === 'project' && tree.nodes.has(route.id) ? route.id : '') => {
+    setParentId(parent); setGroupOpen('projects', true); setAdding(true)
   }
+  useSubProjectRequests(startAdding)
 
   async function submit(e: FormEvent) {
     e.preventDefault()
@@ -464,7 +464,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
         <SidebarGroupAction ref={findOpener} onClick={() => (finding ? closeFind() : openFind())} aria-label={t('Find in the sidebar')} aria-pressed={finding} active={finding}><Icon name="search" size="xs" /></SidebarGroupAction>
         <Menu kind="menu" label={t('Add or fold projects')} title={t('Projects')} trigger={<Icon name="plus" size="xs" />}
           triggerClassName={SIDEBAR_GROUP_ACTION} width="sm:w-56">
-          <MenuItem label={t('New project')} icon="plus" onSelect={startAdding} />
+          <MenuItem label={t('New project')} icon="plus" onSelect={() => startAdding()} />
           <MenuItem label={t('From a template…')} icon="copy" onSelect={requestTemplateDialog} />
           <MenuSeparator />
           <MenuItem label={t('Collapse all')} icon="chevrons-down-up" onSelect={() => void collapseAllProjects(projects)} />
@@ -572,6 +572,17 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
       <SidebarFooter route={route} user={user} collapsed={collapsed} onSearch={onSearch} onShortcuts={onShortcuts} onAssistant={onAssistant} onToggleCollapse={onToggleCollapse} onSignOut={onSignOut} />
     </div>
   )
+}
+
+/** "New sub-project…" in a project's menu (section-rule-and-sub-projects D3): the new-project form opens with that parent. */
+function useSubProjectRequests(start: (parent: string) => void) {
+  const latest = useRef(start)
+  latest.current = start
+  useEffect(() => {
+    const take = () => { const id = newSubProject.take(); if (id) latest.current(id) }
+    take()
+    return newSubProject.subscribe(take)
+  }, [])
 }
 
 /** A project's mark: its icon in its colour, or the colour dot (project-organization "Project icon"). */

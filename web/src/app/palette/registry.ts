@@ -26,7 +26,7 @@ import { reviewEveryPicker, setMaintenance } from '../menus/reviewMenu'
 import { inMaintenance } from '../../lib/reviewCadence'
 import { requestTemplateDialog } from '../TemplateDialogs'
 import { visibleSections } from '../settingsSections'
-import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, locationFocus, logWinRequest, openReplan, placeInDay, sidebarFind } from '../signals'
+import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, locationFocus, logWinRequest, newSubProject, openReplan, placeInDay, sidebarFind } from '../signals'
 import { setVimEnabled } from '../vim/prefs'
 import { requestNewWorkspace } from '../NewWorkspaceDialog'
 import { switchWorkspace, workspaceLabel } from '../workspaceNav'
@@ -271,6 +271,7 @@ export function commands(ctx: PaletteContext): Command[] {
     out.push(...fromMenu(t('Project “{name}”', { name }), projectMenuGroups(p.row, p, {
       rename: () => prompt(t('Rename project'), t('Project name'), name, (v) => updateProject(p.row.id, { name: v.trim() })),
       pin: () => setFavourite('project', p.row.id, !p.pinned),
+      subProject: () => newSubProject.request(p.row.id),
     }), 'project'))
     if (p.role !== 'viewer') {
       out.push(...HUES.map((h): Command => ({ id: `project:colour:${h.name}`, label: t('Project “{name}”: Colour {colour}', { name, colour: hueName(h.name) }), icon: 'palette', menuLabel: t('Colour {name}', { name: hueName(h.name) }), run: () => updateProject(p.row.id, { color: h.hex }) })))

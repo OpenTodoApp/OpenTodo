@@ -13,6 +13,7 @@ import { canDeleteProject, canEditProject, canEditTasks, canManageMembers } from
 import { flattenTree } from '../lib/tree'
 import type { Project, ProjectRole } from '../lib/types'
 import { navigate } from './router'
+import { newSubProject } from './signals'
 import { DEFAULT_DISPLAY_OPTIONS } from './display/displayOptions'
 import { ShareDialog } from './ShareDialog'
 import { DuplicateProjectDialog, SaveTemplateDialog } from './TemplateDialogs'
@@ -94,7 +95,7 @@ function ColourSwatches({ project }: { project: Project }) {
  * "Pin to sidebar" (sidebar-favourites) is offered to every role: it changes the
  * user's own preferences, never the project.
  */
-export function projectMenuGroups(project: Project, o: { role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks?: number; pinned?: boolean; workspaces?: { id: string; name: string }[]; mode?: MethodMode; reviewEvery?: string }, a: { rename: () => unknown; duplicate?: () => unknown; saveTemplate?: () => unknown; fields?: () => unknown; pin?: () => unknown }): ActionGroup[] {
+export function projectMenuGroups(project: Project, o: { role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks?: number; pinned?: boolean; workspaces?: { id: string; name: string }[]; mode?: MethodMode; reviewEvery?: string }, a: { rename: () => unknown; duplicate?: () => unknown; saveTemplate?: () => unknown; fields?: () => unknown; pin?: () => unknown; subProject?: () => unknown }): ActionGroup[] {
   const { role, targets, subCount, openTasks } = o
   // A consequence naming the open tasks: from the count the caller holds, or, while
   // that has not loaded yet, read when the confirmation opens (never "0 open tasks").
@@ -128,6 +129,8 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
     ...review,
     ...list,
     { items: [
+      // The sidebar's new-project form with this project as the parent (section-rule-and-sub-projects D3).
+      ...(a.subProject ? [{ kind: 'action' as const, id: 'sub-project', label: t('New sub-project…'), icon: 'plus' as const, onSelect: a.subProject }] : []),
       { kind: 'picker', id: 'move', label: t('Move to'), icon: 'folder-input', shortcut: keysOf('project.move'), picker: {
         title: t('Move to'), placeholder: t('Find a project…'), emptyText: t('No other project can hold this one'),
         source: targets, getKey: (item: MoveTarget) => item.id || '__top__', getLabel: (entry: MoveTarget) => entry.name, getPath: (x1: MoveTarget) => x1.path,
@@ -267,7 +270,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
   // Every role gets the copies (project-templates D6); editing items follow the role inside projectMenuGroups.
   const groups: ActionGroup[] = [
     ...projectMenuGroups(project, { role, shared: !!membership, targets, subCount, openTasks, pinned, workspaces: otherWorkspaces, mode, reviewEvery },
-      { rename: () => setEditing(true), duplicate: () => setDialog('duplicate'), saveTemplate: () => setDialog('template'), fields: () => setDialog('fields'), pin: () => setFavourite('project', project.id, !pinned) }),
+      { rename: () => setEditing(true), duplicate: () => setDialog('duplicate'), saveTemplate: () => setDialog('template'), fields: () => setDialog('fields'), pin: () => setFavourite('project', project.id, !pinned), subProject: () => newSubProject.request(project.id) }),
     ...(extraGroups ?? []),
     panels,
   ]

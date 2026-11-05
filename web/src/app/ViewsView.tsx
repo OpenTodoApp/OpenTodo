@@ -16,6 +16,7 @@ import { iconPickerSpec } from './menus/stylePickers'
 import { Tooltip } from '../ui'
 import { ActionMenu, type ActionGroup, type ActionItem } from './menus/ActionMenu'
 import { openRoutineDraft } from './routines/routineNav'
+import { useAutomationsOn } from '../lib/rules/automationsOn'
 import { useLabels, useProjects } from '../lib/localData'
 import { ruleDraftFromView } from './rules/convertDraft'
 import { pinItem } from './menus/pinItem'
@@ -111,6 +112,7 @@ export function ViewMenu({ view, align = 'end', className = '', within }: { view
   const labels = useLabels()
   const projects = useProjects()
   const inFavourites = within === 'favourites'
+  const automations = useAutomationsOn()
   const groups = viewMenuGroups(view, views, isStart, {
     rename: () => setRenaming(true),
     move: (d) => (inFavourites ? moveFavourite('view', view.id, d) : reorderView(view.id, d)),
@@ -118,7 +120,7 @@ export function ViewMenu({ view, align = 'end', className = '', within }: { view
     startView: () => setStartView(`view:${view.id}`),
     remove: () => deleteView(view.id),
     display: () => navigate({ view: 'display', target: { kind: 'view', id: view.id }, options: { ...DEFAULT_DISPLAY_OPTIONS } }),
-    rule: () => openRoutineDraft(ruleDraftFromView(view, { labels, projects })),
+    rule: automations ? () => openRoutineDraft(ruleDraftFromView(view, { labels, projects })) : undefined,
     icon: (icon) => updateView(view.id, { icon }),
   }, inFavourites ? favouriteEdges(favourites, 'view', view.id) : undefined)
   return (

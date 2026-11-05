@@ -20,10 +20,13 @@ import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import { t } from '../lib/i18n'
 import { act } from './actionError'
 import { addManyToList, createUnlessReused } from './reuseAdd'
+import { useAutomationsOn } from '../lib/rules/automationsOn'
+import { openRoutineDraft } from './routines/routineNav'
+import { ruleDraftFromSection } from './rules/convertDraft'
 
 /** The section menu as data (labels-and-menus 3.1). */
 export function sectionMenuGroups(title: string, o: { first: boolean; last: boolean; layout: 'list' | 'board'; count: number },
-  a: { rename: () => void; move: (delta: -1 | 1) => unknown; remove: () => unknown; section?: Section; flow?: ActionItem | null }): ActionGroup[] {
+  a: { rename: () => void; move: (delta: -1 | 1) => unknown; remove: () => unknown; section?: Section; flow?: ActionItem | null; rule?: () => void }): ActionGroup[] {
   const board = o.layout === 'board'
   const section = a.section
   // Colour and icon (icons-and-section-style): steps inside the same overlay.
@@ -45,6 +48,8 @@ export function sectionMenuGroups(title: string, o: { first: boolean; last: bool
   ] : []
   return [
     { items: [{ kind: 'action', id: 'rename', label: t('Rename'), icon: 'pencil', shortcut: 'F2', onSelect: a.rename }, ...style, ...(a.flow ? [a.flow] : [])] },
+    // A rule triggered by a move into this section (section-rule-and-sub-projects D1); absent where rules cannot be made.
+    ...(a.rule ? [{ items: [{ kind: 'action' as const, id: 'rule', label: t('Make an automation rule'), icon: 'zap' as const, onSelect: a.rule }] }] : []),
     { items: [
       { kind: 'action', id: 'before', label: board ? t('Move left') : t('Move up'), icon: 'arrow-up', disabled: o.first, reason: t('Already first'), onSelect: () => a.move(-1) },
       { kind: 'action', id: 'after', label: board ? t('Move right') : t('Move down'), icon: 'arrow-down', disabled: o.last, reason: t('Already last'), onSelect: () => a.move(1) },
@@ -129,6 +134,7 @@ export function SectionHeader({ section, count, layout, editable, first, last, c
   const startRename = () => { if (section) { setName(section.name); setRenaming(true) } }
   // "Flow…" (project-flow-modes D7): for whoever may rename the section.
   const mode = useMethodMode()
+  const automations = useAutomationsOn()
   const project = useProjects().find((p) => p.id === section?.project_id)
   const fold: ActionGroup[] = onFold ? [{ items: [{ kind: 'action', id: 'fold', label: t('Fold column'), icon: 'panel-left-close', shortcut: 'z', onSelect: onFold }] }] : []
   const groups = [...fold, ...(section && editable ? sectionMenuGroups(title, { first, last, layout, count }, {
@@ -137,6 +143,7 @@ export function SectionHeader({ section, count, layout, editable, first, last, c
     rename: startRename,
     move: (d) => reorderSection(section.id, d),
     remove: () => deleteSection(section.id),
+    rule: automations ? () => openRoutineDraft(ruleDraftFromSection(section)) : undefined,
   }) : [])]
   const onRowKey = useRowMenuShortcut({
     openMenu: () => setMenuOpen(true),

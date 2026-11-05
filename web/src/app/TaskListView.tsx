@@ -388,7 +388,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           {rowMenu.element}{queryHost}
 
           {route.view === 'inbox' && <RoutinesInboxSlot />}{route.view === 'project' && currentProject && <ProjectNote project={currentProject} phone={phone} />}
-          {route.view === 'project' && !board && <SubProjects projectId={route.id} />}
+          {route.view === 'project' && <SubProjects projectId={route.id} />}
           {m.offerColumns && <ColumnsToggle on={!!m.columnsPref} onToggle={() => projectId && saveListColumns(projectId, !m.columnsPref)} />}
           {own.length === 0 && !upcomingCal.hasEvents && !(board || m.liveSections.length > 0) && (m.duration || m.queryFilter?.query
             ? <FilteredEmpty onClear={() => { m.chooseDuration(null); m.queryFilter?.setQuery('') }} />

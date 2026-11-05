@@ -7141,5 +7141,6 @@
   "Has an assignee": "已指派",
   "Hide tasks assigned to others": "隐藏指派给其他人的任务",
   "No member named \"{name}\"": "没有名为“{name}”的成员",
-  "Show tasks assigned to others": "显示指派给其他人的任务"
+  "Show tasks assigned to others": "显示指派给其他人的任务",
+  "New sub-project…": "新建子项目…"
 }

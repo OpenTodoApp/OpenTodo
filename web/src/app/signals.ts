@@ -68,6 +68,9 @@ export const blockedByFocus = channel()
 /** `g /` and the palette: the sidebar opens its find field (sidebar-groups). Request id: `open`. */
 export const sidebarFind = channel()
 
+/** "New sub-project…" in a project's menu: the sidebar opens its new-project form with this parent (section-rule-and-sub-projects D3). Request id: the parent's id. */
+export const newSubProject = channel()
+
 /** `s` on a selected row: the Day view opens with that task in placement mode. */
 export const placement = channel()
 
