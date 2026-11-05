@@ -7141,5 +7141,7 @@
   "Has an assignee": "Ha un assegnatario",
   "Hide tasks assigned to others": "Nascondi le attività assegnate ad altri",
   "No member named \"{name}\"": "Nessun membro chiamato «{name}»",
-  "Show tasks assigned to others": "Mostra le attività assegnate ad altri"
+  "Show tasks assigned to others": "Mostra le attività assegnate ad altri",
+  "Drop a task on another day to move it there; it keeps its time": "Rilascia un'attività su un altro giorno per spostarla lì; mantiene l'orario",
+  "In Upcoming: move the selected task a day earlier / later; it keeps its time": "Nella vista In programma: sposta l'attività selezionata di un giorno prima / dopo; mantiene l'orario"
 }

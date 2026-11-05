@@ -9,7 +9,7 @@ import { Button, hueFor, MenuItem, MenuSeparator, PageBody, Skeleton, useWide } 
 import { allDayEvents, calendarTasks, deadlineMarkers, eventBlocks, nudgeDue } from '../lib/calendar'
 import { CalendarsToggle } from './calendar/CalendarsToggle'
 import { rememberCalendarMode } from '../lib/calendarMode'
-import { addDaysISO, daysBetweenISO, dueFromView, formatShort, viewedTask, formatDateParts } from '../lib/dates'
+import { addDaysISO, dueFromView, formatShort, viewedTask, formatDateParts } from '../lib/dates'
 import { beginDrag } from '../lib/dnd'
 import { getTask, saveGridPrefs, useMembershipMap } from '../lib/localData'
 import { useCalendarShowCompleted, useGridPrefs, useLiveProjects } from '../lib/liveData'
@@ -37,6 +37,7 @@ import { useShortcutScope } from './shortcuts'
 import { isProjectionTarget } from './calendar/projections'
 import { completeWithUndo, setDueWithUndo, spanWithUndo } from './undoable'
 import { moveSpanPatch, spanOf } from '../lib/span'
+import { dayMovePatch } from '../lib/dayMove'
 import { useToday, useViewerZone } from './useViews'
 
 const ARROWS: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }
@@ -102,10 +103,9 @@ export function PlanView({ date }: { date?: string }) {
   const objectivesOn = useObjectivesOn()
   useEffect(() => rememberCalendarMode('plan'), [])
 
-  const { zone, projects, rawTasks, viewed, feeds, days, chrome, loading } = usePlanDays(dates, today, prefs.dayLength, showCompleted)
+  const { zone, projects, rawTasks, feeds, days, chrome, loading } = usePlanDays(dates, today, prefs.dayLength, showCompleted)
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const memberMap = useMembershipMap()
-  const viewedMap = useMemo(() => new Map(viewed.map((task) => [task.id, task])), [viewed])
   const rawMap = useMemo(() => new Map(rawTasks.map((task) => [task.id, task])), [rawTasks])
   const canEdit = useCallback((task: Task) => canEditTasks(roleOf(task.project_id, memberMap)), [memberMap])
   const editable = useCallback((task: Task) => !task.completed_at && canEdit(task), [canEdit])
@@ -151,18 +151,14 @@ export function PlanView({ date }: { date?: string }) {
 
   /** Dropped on a day: same time and zone, new date (one due edit, with Undo); a span moves by the distance from the column it was taken from (multi-day-tasks D3). */
   const dropOn = useCallback((id: string, d: string, from?: string) => {
-    const task = viewedMap.get(id)
     const raw = rawMap.get(id)
-    if (task && raw && from && spanOf(task) && !task.completed_at) {
-      const patch = moveSpanPatch(raw, daysBetweenISO(from, d))
-      if (patch && from !== d) { act(spanWithUndo(id, patch)); setSelectedId(id); setFocused(d) }
-      return
-    }
-    if (!task || task.completed_at || task.due?.date === d) return
-    act(setDueWithUndo(id, dueFromView(rawMap.get(id)?.due, { date: d, ...(task.due?.time ? { time: task.due.time } : {}) })))
+    // The rule Upcoming's drops share (upcoming-drag-day D1): a span shown from `from` moves whole.
+    const patch = raw ? dayMovePatch(raw, d, { from, zone }) : null
+    if (!patch) return
+    act(patch.start !== undefined ? spanWithUndo(id, patch) : setDueWithUndo(id, patch.due ?? null))
     setSelectedId(id)
     setFocused(d)
-  }, [viewedMap, rawMap])
+  }, [rawMap, zone])
   const startDrag = useCallback((task: Task, e: React.PointerEvent, from?: string) => {
     if (e.button !== 0 || !editable(task)) return
     beginDrag(e, { label: task.title || t('Untitled'), onDrop: (key) => { if (key.startsWith('day:')) dropOn(task.id, key.slice(4), from) } })

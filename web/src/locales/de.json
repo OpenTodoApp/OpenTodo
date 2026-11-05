@@ -7141,5 +7141,7 @@
   "Has an assignee": "Hat eine zuständige Person",
   "Hide tasks assigned to others": "Aufgaben anderer ausblenden",
   "No member named \"{name}\"": "Kein Mitglied namens „{name}“",
-  "Show tasks assigned to others": "Aufgaben anderer anzeigen"
+  "Show tasks assigned to others": "Aufgaben anderer anzeigen",
+  "Drop a task on another day to move it there; it keeps its time": "Lege eine Aufgabe auf einem anderen Tag ab, um sie dorthin zu verschieben; die Uhrzeit bleibt",
+  "In Upcoming: move the selected task a day earlier / later; it keeps its time": "In Demnächst: die ausgewählte Aufgabe einen Tag früher / später legen; die Uhrzeit bleibt"
 }

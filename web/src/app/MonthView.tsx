@@ -10,6 +10,7 @@ import { MONTHS_SHOWN, monthsShown, rememberCalendarMode } from '../lib/calendar
 import { addDaysISO, dueFromView, viewedTask, formatDateParts, formatDateRange, monthName } from '../lib/dates'
 import { getTask, useMembershipMap, useProjects } from '../lib/localData'
 import { beginDrag } from '../lib/dnd'
+import { dayMovePatch } from '../lib/dayMove'
 import { formatMinutes } from '../lib/duration'
 import { addMonthsISO, stackedMonths, visibleRows } from '../lib/month'
 import { updateTask } from '../lib/ops'
@@ -194,12 +195,14 @@ export function MonthView({ date }: { date?: string }) {
 
   /** Dropped on a day: same time and zone, new date (one due edit, with Undo); a task from the planning list may have no date yet. */
   const dropOn = useCallback((id: string, d: string) => {
-    const task = viewedMap.get(id)
-    if (!task || task.completed_at || task.due?.date === d) return
-    act(setDueWithUndo(id, dueFromView(rawMap.get(id)?.due, { date: d, ...(task.due?.time ? { time: task.due.time } : {}) })))
+    const raw = rawMap.get(id)
+    // The rule Upcoming's drops share (upcoming-drag-day D1).
+    const patch = raw ? dayMovePatch(raw, d, { zone }) : null
+    if (!patch) return
+    act(setDueWithUndo(id, patch.due ?? null))
     setSelectedId(id)
     setFocused(d)
-  }, [viewedMap, rawMap])
+  }, [rawMap, zone])
 
   // The planning list in the panel slot, as in Day, Week and Plan: drag a task onto a day, or `s` puts it on the focused day.
   const planActions = useRef<PlanActions>({ onPointerDown: () => {}, onPlace: () => {}, onOpen: () => {} })

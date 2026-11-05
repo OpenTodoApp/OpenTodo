@@ -5011,6 +5011,9 @@
     "web/src/app/objectives/ObjectiveCards.tsx",
     "web/src/app/objectives/ReviewObjectives.tsx"
   ],
+  "Drop a task on another day to move it there; it keeps its time": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Drop files to attach them to this task": [
     "web/src/app/task-detail/AttachmentsRow.tsx"
   ],
@@ -7509,6 +7512,9 @@
   ],
   "In Today since its start date": [
     "web/src/app/review/CarryOver.tsx"
+  ],
+  "In Upcoming: move the selected task a day earlier / later; it keeps its time": [
+    "web/src/lib/shortcuts.ts"
   ],
   "In Updates: open the task of the selected change (Tab reaches the filters)": [
     "web/src/lib/shortcuts.ts"

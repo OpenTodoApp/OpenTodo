@@ -7,10 +7,11 @@
 import { planComplete, planLabels, planMove, planReopen, planTrash, readTicked, toProposed } from './bulk'
 import { db, type AssistantUndo } from './db'
 import { logicalToday } from './dates'
+import { upcomingMovePatch } from './dayMove'
 import { seriesRule } from './recurring'
 import { getDeviceId, liveSubtree, planReminders, type Change } from './ops'
 import type { ReminderPhrase } from './nlp'
-import { currentUserId, membershipMap } from './sharing'
+import { canEditTask, currentUserId, membershipMap } from './sharing'
 import type { FilterContext } from './filter'
 import { planRule, ruleParts, type RuleNames } from './rules'
 import type { Task, View } from './types'
@@ -120,7 +121,29 @@ export async function dropUndoable(target: string, ids: readonly string[]): Prom
     if (part === 'none') return dayPartUndoable(ids, null)
     return part === 'morning' || part === 'afternoon' || part === 'evening' ? dayPartUndoable(ids, part) : null
   }
+  // Upcoming's day groups (upcoming-drag-day).
+  if (target.startsWith('day:')) return upcomingDayUndoable(ids, target.slice('day:'.length))
   return null
+}
+
+/**
+ * Move tasks to another day in Upcoming (upcoming-drag-day D1): each task's own
+ * listing date moves (`upcomingMovePatch`), one batch with one Undo. A task already
+ * on that day writes nothing; when nothing changes there is no toast.
+ */
+export async function upcomingDayUndoable(ids: readonly string[], date: string, today = logicalToday()): Promise<UndoableResult> {
+  const { tasks } = await readTicked(ids)
+  const memberships = await membershipMap()
+  const changes: Change[] = []
+  for (const task of tasks) {
+    // A task in a project the user may only view stays where it is.
+    if (!canEditTask(task, memberships)) continue
+    const patch = upcomingMovePatch(task, date, today)
+    if (patch) changes.push({ entity: 'task', entityId: task.id, patch })
+  }
+  if (!changes.length) return { entry: null, label: '' }
+  const only = changes.length === 1 ? changes[0].patch : null
+  return apply(changes, only && Object.keys(only).length === 1 && 'due' in only ? t('Date changed') : t('Rescheduled'))
 }
 
 /** Set a project's or a section's flow (project-flow-modes): one op, with Undo. */

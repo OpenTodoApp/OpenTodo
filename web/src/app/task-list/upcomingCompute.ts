@@ -35,7 +35,7 @@ export function withProjectedDays(groups: readonly ListGroup[], projections: rea
   // Today's own groups (Start with Today, upcoming-start-with-today D2) lead and keep their order; projections start tomorrow.
   const lead = groups.filter((g) => !DATE_KEY.test(g.key))
   const out = groups.filter((g) => DATE_KEY.test(g.key)).map((g) => (byDate.has(g.key) ? { ...g, projected: byDate.get(g.key) } : g))
-  for (const [date, list] of byDate) if (!groups.some((g) => g.key === date)) out.push({ key: date, heading: heading(date), rows: [], projected: list })
+  for (const [date, list] of byDate) if (!groups.some((g) => g.key === date)) out.push({ key: date, heading: heading(date), rows: [], projected: list, dropDay: date })
   out.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
   out.unshift(...lead)
   const last = [...byDate.keys()].sort().at(-1)!

@@ -26,6 +26,9 @@ import type { ListRoute } from './useListModel'
 import { dayPartFields } from '../../lib/dayParts'
 import { t } from '../../lib/i18n'
 import { announceOnBoard } from '../BoardView'
+import { dropTasks } from '../taskDrop'
+import { upcomingStep } from '../../lib/dayMove'
+import { upcomingDate } from '../../lib/views'
 
 /** The list's transient UI state the keys open and close. */
 export interface ListUi {
@@ -150,6 +153,12 @@ export function useListShortcuts(c: ShortcutContext) {
     'project.view-mode': () => { if (!c.projectId) return false; c.toggleViewMode() },
     // P processes the Inbox one task at a time (inbox-split D3), as its primary action does.
     'inbox.process': () => { if (c.route.view !== 'inbox' || rows.length === 0) return false; navigate({ view: 'triage' }) },
+    // A day earlier or later in Upcoming (upcoming-drag-day D3): the drop's rule, never before today.
+    'upcoming.move-day': (e) => {
+      if (c.route.view !== 'upcoming' || !row || !writable) return false
+      const to = upcomingStep(upcomingDate(row.task, c.today), c.today, e.key === 'ArrowLeft' ? -1 : 1)
+      if (to) act(dropTasks(`day:${to}`, [row.task.id]))
+    },
   }, { view: c.route.view })
   useShortcutScope('list', {
     'list.escape': (e) => {

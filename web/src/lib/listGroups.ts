@@ -80,6 +80,8 @@ export interface ListGroup {
   named?: true
   /** Today with day parts on (day-parts D4): the part a task dropped on the heading gets ('none' = Any time). */
   dropPart?: DayPart | 'none'
+  /** Upcoming's day groups (upcoming-drag-day): the day a task dropped on the group moves to. */
+  dropDay?: string
   /** One line under an open folded group's heading (today-closed-list: the Waiting hint). */
   hint?: string
   /**
@@ -342,7 +344,7 @@ function flatGroups(p: GroupInput): ListGroup[] {
     // Start with Today (upcoming-start-with-today D2): Today's own groups, then Tomorrow onwards.
     const lead = p.upcomingToday ? p.tasks.filter((x) => inToday(x, p.today)) : []
     const ahead = lead.length ? p.tasks.filter((x) => !inToday(x, p.today)) : p.tasks
-    const days = groupUpcoming(ahead, p.today).map(({ date, tasks: list }): ListGroup => ({ key: date, heading: formatDateHeading(date, p.today, p.resolved), rows: withImplied(list.map(row), { date }) }))
+    const days = groupUpcoming(ahead, p.today).map(({ date, tasks: list }): ListGroup => ({ key: date, heading: formatDateHeading(date, p.today, p.resolved), rows: withImplied(list.map(row), { date }), dropDay: date }))
     return p.upcomingToday ? [...todayGroups({ ...p, tasks: lead, doneToday: undefined }, row, true), ...days] : days
   }
   if (p.view === 'label' && p.display && p.display.groupBy !== 'project') {
@@ -389,7 +391,7 @@ function todayGroups(p: GroupInput, row: (task: Task) => ListRow, inUpcoming = f
   const others = earlier.length || morning.length || afternoon.length || evening.length
   // With day parts on an empty Today group is left out, unless the list would be empty without it.
   // In Upcoming the group is named, since Tomorrow follows, and left out when empty (D2).
-  if (inUpcoming ? day.length : !parts || day.length || !others) g.push({ key: 'today', heading: others || inUpcoming ? t('Today') : null, rows: withImplied(day.map(row), { date: p.today }), ...drop('none') })
+  if (inUpcoming ? day.length : !parts || day.length || !others) g.push({ key: 'today', heading: others || inUpcoming ? t('Today') : null, rows: withImplied(day.map(row), { date: p.today }), ...drop('none'), ...(inUpcoming ? { dropDay: p.today } : {}) })
   if (morning.length) g.push({ key: 'morning', heading: t('Morning'), rows: withImplied(morning.map(row), { date: p.today, part: 'morning' }), ...drop('morning') })
   if (afternoon.length) g.push({ key: 'afternoon', heading: t('Afternoon'), rows: withImplied(afternoon.map(row), { date: p.today, part: 'afternoon' }), ...drop('afternoon') })
   if (evening.length) g.push({ key: 'evening', heading: t('This Evening'), rows: withImplied(evening.map(row), { date: p.today, evening: true }), ...drop('evening') })

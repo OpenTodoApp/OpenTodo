@@ -458,7 +458,8 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
     setGroupCollapsed('today', 'earlier:open', collapsed)
   }
   return (
-    <section className="mb-4" data-group={g.key}>
+    // An Upcoming day takes a dragged task anywhere on it, heading or rows (upcoming-drag-day D2).
+    <section className={g.dropDay ? 'mb-4 rounded-control data-drop-active:ring-2 data-drop-active:ring-accent' : 'mb-4'} data-group={g.key} data-task-drop={g.dropDay ? `day:${g.dropDay}` : undefined}>
       {g.folded !== undefined ? (
         <ListGroupHeader title={g.heading ?? ''} count={g.count} detail={g.folded ? g.detail : undefined} collapsed={g.folded} onToggle={() => toggleCollapsed(g.openKey ?? BLOCKED_OPEN_KEY)}
           actions={view === 'today' && g.key === 'done' ? <LogWinAction /> : undefined}
