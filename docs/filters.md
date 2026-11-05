@@ -33,6 +33,7 @@ term     := "@" name                       label
           | "notes:" text                               text in the task's note
           | "origin:" text                              where the task came from
           | "energy:" ("deep" | "medium" | "low")        the energy a task asks for
+          | "assigned:" name                               the assignee is you (`me`) or that member
           | "sector:" (sectorword | period)              the task's time sector
           | "workspace:" name                           the task's workspace
           | "tracked" ("<" | "<=" | "=" | ">=" | ">") duration   tracked time
@@ -50,7 +51,7 @@ keyword  := "overdue" | "today" | "tomorrow" | "no date" | "no project"
           | "no labels" | "no time" | "no deadline" | "no start" | "completed" | "open" | "subtask"
           | "someday" | "deferred" | "evening" | "morning" | "afternoon" | "blocked" | "unblocked" | "available" | "habit"
           | "origin" | "no origin" | "tracked" | "energy" | "no energy" | "notes" | "no notes"
-          | "sector" | "no sector" | "carried"
+          | "sector" | "no sector" | "carried" | "assigned" | "unassigned"
 sectorword := ("this" | "next") ("week" | "month" | "quarter"), with a space or a hyphen
 period   := YYYY "-W" WW | YYYY "-" MM | YYYY "-Q" N              a week, a month or a quarter
 duration := INT ("m" | "min" | "mins" | "minutes")? | NUM "h" (INT ("m" | "min")?)?
@@ -114,6 +115,10 @@ text     := word | '"' chars '"'
 | `energy` | tasks with an [energy](method/set-up.md#energy-levels) set (Deep, Medium or Low) |
 | `no energy` | tasks without one |
 | `energy: value` | tasks whose energy is `deep`, `medium` or `low`, ignoring case; quotes allowed. Any other value is an error. The terms work whether or not **Energy levels** is on |
+| `assigned` | tasks that have an assignee |
+| `unassigned` | tasks with no assignee. `!assigned` is the same |
+| `assigned: me` | tasks assigned to you |
+| `assigned: name` | tasks assigned to a member of that name or email, ignoring case; quote a name with a space (`assigned: "Sam Lee"`). Two members with the same name both match. An unknown name matches nothing and this device says so. `assigned:` with no name is an error. A custom field named "assigned" is reached only through its quoted name |
 | `sector` | tasks with a [time sector](time-sectors.md): a week, month or quarter they are planned for |
 | `no sector` | tasks without one |
 | `carried` | tasks whose sector's period has ended before your current week, month or quarter (carried over) |
@@ -126,7 +131,7 @@ text     := word | '"' chars '"'
 
 ### Custom fields
 
-A [custom field](custom-fields.md) is named like a project or label, ignoring case, in every project you see that defines a field of that name; quote names with spaces: `"Order date" <= friday`. The words the grammar already uses (`due`, `created`, `deadline`, `start`, `completed`, `no`, `origin`, `tracked`, `energy`, `notes`, the keywords and `p1` to `p4`) keep their meaning, so a field named "due" is reached only through its quoted name, `"due" <= tomorrow`. How a field compares depends on its type:
+A [custom field](custom-fields.md) is named like a project or label, ignoring case, in every project you see that defines a field of that name; quote names with spaces: `"Order date" <= friday`. The words the grammar already uses (`due`, `created`, `deadline`, `start`, `completed`, `no`, `origin`, `tracked`, `energy`, `notes`, `assigned`, the keywords and `p1` to `p4`) keep their meaning, so a field named "due" is reached only through its quoted name, `"due" <= tomorrow`. How a field compares depends on its type:
 
 | Type | Terms |
 | --- | --- |
@@ -420,4 +425,10 @@ notes & #Renovation
 
 ```filter
 no notes & p1
+```
+
+### 31. Mine, or nobody's yet
+
+```filter
+assigned: me | unassigned
 ```

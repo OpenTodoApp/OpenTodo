@@ -6,11 +6,12 @@
 // Outside a shell nothing here runs.
 import { liveQuery, type Subscription } from 'dexie'
 import { localDueOf, logicalToday } from './dates'
-import { todayList } from './dayLists'
+import { todayAssigneeFilter, todayList, type TodayAssigneeFilter } from './dayLists'
 import { db, getMeta, setMeta } from './db'
 import { encryptionSnapshot, onEncryptionChange } from './e2ee'
 import { publishGeofences } from './geofences'
 import { has, publishWidget, scheduleReminders, shell, type ShellPermission, type ShellReminder, type ShellWidgetData } from './shell'
+import { currentUserId } from './sharing'
 import type { Reminder, Task } from './types'
 
 /** The device's "notifications through the app" switch (Settings → Notifications in a shell). */
@@ -39,8 +40,8 @@ export function shellReminders(reminders: readonly Reminder[], tasks: readonly T
 }
 
 /** The widgets' Today list: titles only while the account is readable on this device, counts otherwise. */
-export function shellWidget(tasks: readonly Task[], today: string, now: number, locked: boolean): ShellWidgetData {
-  const list = todayList(tasks.filter((task) => !task.deleted_at && !task.completed_at), today)
+export function shellWidget(tasks: readonly Task[], today: string, now: number, locked: boolean, hide?: TodayAssigneeFilter | null): ShellWidgetData {
+  const list = todayList(tasks.filter((task) => !task.deleted_at && !task.completed_at), today, hide)
   const rows = list.slice(0, WIDGET_MAX).map((task) => {
     const due = localDueOf(task.due)
     const overdue = !!due && due.date < today
@@ -95,8 +96,9 @@ async function publishReminders(now = Date.now()): Promise<ShellPermission | nul
 /** Computes and hands over the widgets' Today list now. */
 async function publishToday(now = Date.now()): Promise<void> {
   const enc = encryptionSnapshot()
-  const tasks = await db.tasks.toArray()
-  publishWidget(shellWidget(tasks, logicalToday(undefined, now), now, enc.enabled && !enc.unlocked))
+  const [tasks, prefs, memberships, me] = await Promise.all([db.tasks.toArray(), db.userPrefs.get('me'), db.memberships.toArray(), currentUserId()])
+  const hide = todayAssigneeFilter(prefs, memberships, me)
+  publishWidget(shellWidget(tasks, logicalToday(undefined, now), now, enc.enabled && !enc.unlocked, hide))
 }
 
 let started = false

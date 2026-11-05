@@ -321,7 +321,45 @@ func (st *runState) filterContext() (filter.Context, error) {
 			*dst = append(*dst, r)
 		}
 	}
+	c.Me = st.w.uid
+	members, err := st.assigneeMembers()
+	if err != nil {
+		return c, err
+	}
+	c.Members = members
 	return c, nil
+}
+
+// assigneeMembers is who `assigned:` can name: the members of the viewer's
+// shared projects, or of the one project a shared routine runs in.
+func (st *runState) assigneeMembers() ([]filter.Member, error) {
+	if st.e.db == nil {
+		return nil, nil
+	}
+	q := `SELECT DISTINCT u.id, COALESCE(u.name, ''), COALESCE(u.email, '')
+		FROM project_members m JOIN users u ON u.id = m.user_id
+		WHERE m.project_id IN (SELECT project_id FROM project_members WHERE user_id = ?)`
+	args := []any{st.w.uid}
+	if st.w.project != "" {
+		q = `SELECT DISTINCT u.id, COALESCE(u.name, ''), COALESCE(u.email, '')
+			FROM project_members m JOIN users u ON u.id = m.user_id
+			WHERE m.project_id = ?`
+		args = []any{st.w.project}
+	}
+	rows, err := st.e.db.QueryContext(st.ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []filter.Member
+	for rows.Next() {
+		var m filter.Member
+		if err := rows.Scan(&m.UserID, &m.Name, &m.Email); err != nil {
+			return nil, err
+		}
+		out = append(out, m)
+	}
+	return out, rows.Err()
 }
 
 // clientID derives a create tool's client_request_id from the run, the step

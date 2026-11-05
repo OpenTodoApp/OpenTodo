@@ -775,6 +775,10 @@ var Schema = map[string]map[string]Field{
 		// design D1): "shown" or "hidden"; clients read an empty or unknown
 		// value as hidden and keep the stored value.
 		"today_events": {Kind: kString, Default: `""`},
+		// Today hides tasks assigned to others (OpenSpec change
+		// today-assigned-filter): "mine" omits them; clients read an empty or
+		// unknown value as off and keep the stored value. Settings, never content.
+		"today_assignees": {Kind: kString, Default: `""`},
 		// Upcoming's calendar events, one agenda per day (OpenSpec
 		// today-agenda): "shown" or "hidden"; clients read an empty or
 		// unknown value as hidden and keep the stored value. Settings,

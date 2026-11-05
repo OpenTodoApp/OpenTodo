@@ -28,6 +28,7 @@ const (
 	KindKeyword   = "keyword"
 	KindSearch    = "search"
 	KindNotes     = "notes"
+	KindAssigned  = "assigned"
 	KindOrigin    = "origin"
 	KindEnergy    = "energy"
 	KindSector    = "sector"
@@ -91,6 +92,16 @@ type Context struct {
 	Labels, Projects, Sections, Fields, Tasks []Row
 	// Tracked is the minutes tracked per task.
 	Tracked map[string]int
+	// Me is the viewer. Members name the people `assigned:` can match.
+	Me      string
+	Members []Member
+}
+
+// Member is one person an assignee term can name.
+type Member struct {
+	UserID string `json:"userId"`
+	Name   string `json:"name"`
+	Email  string `json:"email"`
 }
 
 func str(r Row, f string) string {
@@ -346,6 +357,8 @@ func (k *compiler) build(n *Node) (Pred, error) {
 	case KindNotes:
 		needle := lowerText(n.Text)
 		return func(t Row) bool { return strings.Contains(lowerText(str(t, "description")), needle) }, nil
+	case KindAssigned:
+		return k.assignedTo(n.Text), nil
 	case KindOrigin:
 		want := lowerText(n.Text)
 		return func(t Row) bool { ok, key := originOf(t); return ok && lowerText(key) == want }, nil
@@ -718,6 +731,28 @@ func (k *compiler) available(t Row) bool {
 	return k.flow.Available(str(t, "id"))
 }
 
+// assignedTo matches the viewer (`me`) or every member whose name or email equals name.
+func (k *compiler) assignedTo(name string) Pred {
+	if strings.EqualFold(name, "me") {
+		me := k.c.Me
+		if me == "" {
+			return never
+		}
+		return func(t Row) bool { return str(t, "assignee_id") == me }
+	}
+	set := map[string]bool{}
+	for _, m := range k.c.Members {
+		if strings.EqualFold(m.Name, name) || strings.EqualFold(m.Email, name) {
+			set[m.UserID] = true
+		}
+	}
+	if len(set) == 0 {
+		k.warn(`No member named "` + name + `"`)
+		return never
+	}
+	return func(t Row) bool { return set[str(t, "assignee_id")] }
+}
+
 func (k *compiler) keyword(w string) Pred {
 	today, c := k.c.Today, k.c
 	due := func(t Row) string { d, _ := dueOf(t, c.Zone); return d }
@@ -771,6 +806,10 @@ func (k *compiler) keyword(w string) Pred {
 		return func(t Row) bool { return energyOf(t) != "" }
 	case "no energy":
 		return func(t Row) bool { return energyOf(t) == "" }
+	case "assigned":
+		return func(t Row) bool { return str(t, "assignee_id") != "" }
+	case "unassigned":
+		return func(t Row) bool { return str(t, "assignee_id") == "" }
 	case "notes":
 		return func(t Row) bool { return desc(t) != "" }
 	case "no notes":

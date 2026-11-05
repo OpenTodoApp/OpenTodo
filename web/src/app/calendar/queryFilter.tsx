@@ -13,7 +13,7 @@ import { Icon } from '../../ui'
 import { act } from '../actionError'
 import { PanelBoundary } from '../PanelBoundary'
 import { queryChips } from '../views/FilterChips'
-import { useToday } from '../useViews'
+import { useAssigneeDirectory, useToday } from '../useViews'
 
 export { CALENDAR_FILTER_KEY, UPCOMING_FILTER_KEY }
 
@@ -53,7 +53,8 @@ export function useQueryFilter(key: string, tasks: readonly Task[]): QueryFilter
   const labels = useAllLabels()
   const projects = useAllProjects()
   const today = useToday()
-  const ctx = useMemo<FilterContext>(() => ({ today, labels, projects, tasks }), [today, labels, projects, tasks])
+  const directory = useAssigneeDirectory()
+  const ctx = useMemo<FilterContext>(() => ({ today, labels, projects, tasks, ...directory }), [today, labels, projects, tasks, directory])
   const test = useMemo(() => {
     if (loading) return NONE
     if (!query.trim()) return null

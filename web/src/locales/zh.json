@@ -7136,5 +7136,10 @@
   "This server": "此服务器",
   "Where the app opens, the briefing, and how Today fills up.": "应用打开时的页面、简报，以及“今天”如何安排。",
   "Who you are on this server, and how much of the method the app shows.": "你在此服务器上的身份，以及应用展示多少方法内容。",
-  "Your password, second factor and passkeys, and where you are signed in.": "你的密码、第二重验证和通行密钥，以及你在哪些地方登录。"
+  "Your password, second factor and passkeys, and where you are signed in.": "你的密码、第二重验证和通行密钥，以及你在哪些地方登录。",
+  "Expected a name after \"assigned:\" at position {pos}": "在位置 {pos} 的“assigned:”之后需要一个名字",
+  "Has an assignee": "已指派",
+  "Hide tasks assigned to others": "隐藏指派给其他人的任务",
+  "No member named \"{name}\"": "没有名为“{name}”的成员",
+  "Show tasks assigned to others": "显示指派给其他人的任务"
 }

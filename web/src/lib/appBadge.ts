@@ -13,6 +13,8 @@ import { addDaysISO } from './dates'
 import { db } from './db'
 import { createStoredValue } from './deviceStorage'
 import { resettable } from './moduleState'
+import type { TodayAssigneeFilter } from './dayLists'
+import { assignedToSomeoneElse } from './dayLists'
 import type { Task } from './types'
 import { inToday } from './views'
 
@@ -57,10 +59,10 @@ export function setBadgeEnabled(on: boolean): void {
   if (!on) void clearBadge()
 }
 
-/** Today's open tasks: what the sidebar's Today count shows. */
-export function todayCount(openTasks: readonly Task[], today: string): number {
+/** Today's open tasks: what the sidebar's Today count shows. `hide` is the same set Today lists. */
+export function todayCount(openTasks: readonly Task[], today: string, hide?: TodayAssigneeFilter | null): number {
   let n = 0
-  for (const task of openTasks) if (inToday(task, today)) n++
+  for (const task of openTasks) if (inToday(task, today) && !assignedToSomeoneElse(task, hide)) n++
   return n
 }
 
@@ -68,11 +70,11 @@ export function todayCount(openTasks: readonly Task[], today: string): number {
  * The Today count of each of the next `days` days as the local data stands now:
  * a task due today and still open counts as overdue tomorrow.
  */
-export function badgeCounts(openTasks: readonly Task[], today: string, days = BADGE_DAYS): Record<string, number> {
+export function badgeCounts(openTasks: readonly Task[], today: string, days = BADGE_DAYS, hide?: TodayAssigneeFilter | null): Record<string, number> {
   const counts: Record<string, number> = {}
   for (let i = 0; i < days; i++) {
     const day = addDaysISO(today, i)
-    counts[day] = todayCount(openTasks, day)
+    counts[day] = todayCount(openTasks, day, hide)
   }
   return counts
 }
@@ -109,13 +111,13 @@ async function storeCounts(row: BadgeRow): Promise<void> {
  * Keeps the badge on the app icon current while the signed-in app runs. `zone`
  * only re-runs it when the viewer's time zone changes (zoned dues move days).
  */
-export function useAppBadge(openTasks: readonly Task[], loaded: boolean, today: string, dayStart: number, zone: string): void {
+export function useAppBadge(openTasks: readonly Task[], loaded: boolean, today: string, dayStart: number, zone: string, hide?: TodayAssigneeFilter | null): void {
   const on = useBadgeEnabled()
   const supported = badgeSupported()
   useEffect(() => {
     if (!supported || !on || !loaded) return
-    const counts = badgeCounts(openTasks, today)
+    const counts = badgeCounts(openTasks, today, BADGE_DAYS, hide)
     void showBadge(counts[today] ?? 0)
     void storeCounts({ dayStart, counts })
-  }, [supported, on, loaded, openTasks, today, dayStart, zone])
+  }, [supported, on, loaded, openTasks, today, dayStart, zone, hide])
 }

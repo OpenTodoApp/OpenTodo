@@ -25,6 +25,8 @@ export interface FilterBuilderProps {
   fields: readonly FieldDef[]
   /** The cached workspaces, for the Workspace condition (group-mentions D6). */
   workspaces?: readonly { id: string; name: string }[]
+  /** People the Assignee condition can name (today-assigned-filter). */
+  members?: readonly { userId: string; name: string }[]
 }
 
 type Derived = { kind: 'ok'; tree: BGroup } | { kind: 'unsupported' } | { kind: 'invalid' }
@@ -50,7 +52,7 @@ function normalised(query: string): string | null {
 
 interface Editing { groupId: string; item: BCondition | null }
 
-export function FilterBuilder({ query, onChange, count, labels, projects, fields, workspaces }: FilterBuilderProps) {
+export function FilterBuilder({ query, onChange, count, labels, projects, fields, workspaces, members }: FilterBuilderProps) {
   const [tree, setTree] = useState<BGroup>(() => {
     const d = derive(query)
     return d.kind === 'ok' ? d.tree : (toBuilder(null) as BGroup)
@@ -98,7 +100,7 @@ export function FilterBuilder({ query, onChange, count, labels, projects, fields
         </p>
       )}
       {editing && (
-        <ConditionEditor leaf={editing.item?.leaf ?? null} not={editing.item?.not ?? false} labels={labels} projects={projects} fields={fields} workspaces={workspaces}
+        <ConditionEditor leaf={editing.item?.leaf ?? null} not={editing.item?.not ?? false} labels={labels} projects={projects} fields={fields} workspaces={workspaces} members={members}
           onSave={save}
           onRemove={editing.item ? () => { commit(removeItem(tree, editing.item!.id)); setEditing(null) } : undefined}
           onClose={() => setEditing(null)} />

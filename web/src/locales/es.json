@@ -7136,5 +7136,10 @@
   "Where the app opens, the briefing, and how Today fills up.": "Dónde se abre la app, el resumen y cómo se llena Hoy.",
   "Who you are on this server, and how much of the method the app shows.": "Quién eres en este servidor y cuánto del método muestra la app.",
   "Your password, second factor and passkeys, and where you are signed in.": "Tu contraseña, segundo factor y llaves de acceso, y dónde has iniciado sesión.",
-  "Accounts and pending invitations.": "Cuentas e invitaciones pendientes."
+  "Accounts and pending invitations.": "Cuentas e invitaciones pendientes.",
+  "Expected a name after \"assigned:\" at position {pos}": "Se esperaba un nombre después de «assigned:» en la posición {pos}",
+  "Has an assignee": "Tiene a alguien asignado",
+  "Hide tasks assigned to others": "Ocultar las tareas asignadas a otras personas",
+  "No member named \"{name}\"": "No hay ningún miembro llamado «{name}»",
+  "Show tasks assigned to others": "Mostrar las tareas asignadas a otras personas"
 }

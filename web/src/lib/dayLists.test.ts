@@ -1,7 +1,7 @@
 // The Today, Upcoming and project lists shared by the list screen and the display
 // (OpenSpec change display-mode, task 1.1): pure functions over task rows.
 import { describe, expect, it } from 'vitest'
-import { completedOn, groupToday, groupUpcoming, nextDays, projectOpenList, todayList, upcomingList, withoutArchived } from './dayLists'
+import { completedOn, groupToday, groupUpcoming, nextDays, projectOpenList, todayAssigneeFilter, todayList, upcomingList, upcomingWithToday, withoutArchived } from './dayLists'
 import type { Task } from './types'
 
 const TODAY = '2026-10-14'
@@ -83,6 +83,24 @@ describe('day lists', () => {
     expect(upcomingList([trip], during)).toEqual([])
     // A started task that is not a span keeps its place under its due date.
     expect(upcomingList([chore], during).map((t) => t.title)).toEqual(['Chore'])
+  })
+
+  it('hides a shared task assigned to someone else only when the account asked, and Upcoming keeps it', () => {
+    const shared = task({ title: 'Theirs', due: { date: TODAY }, project_id: 'p', assignee_id: 'other' })
+    const mine = task({ title: 'Mine', due: { date: TODAY }, project_id: 'p', assignee_id: 'me' })
+    const open = task({ title: 'Open', due: { date: TODAY }, project_id: 'p' })
+    const personal = task({ title: 'Personal', due: { date: TODAY }, project_id: 'home', assignee_id: 'other' })
+    const tomorrow = task({ title: 'Tomorrow', due: { date: '2026-10-15' }, project_id: 'p', assignee_id: 'other' })
+    const stale = task({ title: 'Stale', due: { date: TODAY }, project_id: 'gone', assignee_id: 'other' })
+    const tasks = [shared, mine, open, personal, tomorrow, stale]
+    expect(todayAssigneeFilter({ today_assignees: '' }, [{ projectId: 'p' }], 'me')).toBeNull()
+    expect(todayAssigneeFilter({ today_assignees: 'compact' }, [{ projectId: 'p' }], 'me')).toBeNull()
+    expect(todayList(tasks, TODAY).map((t) => t.title)).toEqual(['Theirs', 'Mine', 'Open', 'Personal', 'Stale'])
+    const on = todayAssigneeFilter({ today_assignees: 'mine' }, [{ projectId: 'p' }], 'me')
+    expect(todayList(tasks, TODAY, on).map((t) => t.title)).toEqual(['Mine', 'Open', 'Personal', 'Stale'])
+    expect(upcomingList(tasks, TODAY).map((t) => t.title)).toEqual(['Tomorrow'])
+    expect(upcomingWithToday(tasks, TODAY).map((t) => t.title)).toContain('Theirs')
+    expect(upcomingWithToday(tasks, TODAY).map((t) => t.title)).toContain('Tomorrow')
   })
 
   it('a flag without a valid range lists as a plain task', () => {

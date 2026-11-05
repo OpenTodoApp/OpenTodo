@@ -29,6 +29,7 @@ available & @phone
 energy: low & unblocked & today
 notes & #Renovation
 no notes & p1
+assigned: me | unassigned
 @work & due <= tomorrow & p1
 @errand | @call & p1
 (@errand | @call) & p1
@@ -104,6 +105,15 @@ no notes & p1
 "Notes" = 3
 no "Notes"
 notes: "a & b"
+assigned
+unassigned
+!assigned
+assigned: me
+assigned: me
+assigned: "Sam Lee"
+assigned: sam
+today & (assigned: me | unassigned)
+"assigned" = "x"
 "paid" = false
 "cost" >= -2.5
 "status" = "Ordered"
