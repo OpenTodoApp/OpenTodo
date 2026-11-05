@@ -183,7 +183,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const { rows, groups: taskGroups, columns: dataColumns, board, timeline, projectId, today, taskMap, isReadOnly, collapsedSections, viewMode, sectionMap } = m
   const upcomingCal = useUpcomingList(route.view === 'upcoming', taskGroups, today, m.upcomingThrough, m.zone, m.dt.resolved)
   // Completed rows stay on screen for their sequence (motion-v2); data stays as read.
-  const { groups, columns, departures } = useListMotion(upcomingCal.groups, dataColumns)
+  const { groups, columns } = useListMotion(upcomingCal.groups, dataColumns)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [currentColumn, setCurrentColumn] = useState<string | null>(null)
   const [revealed, setRevealed] = useState<Set<string>>(() => new Set())
@@ -319,7 +319,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     habits: m.habits, isReadOnly, board, manual, ownOrder: !!ownOrder, treeView: m.treeView, dropAt: drag.dropAt, draggingId: drag.draggingId, ticked: selection.ticked,
     showCheckbox: selectMode || (fine && selection.ticked.size > 0), selectMode, fieldColumns: m.fieldColumns, projectFieldDefs: m.projectFieldDefs, siblingPos: m.siblingPos,
     timeColumn: m.timeColumn, rowLayout: m.display?.rowLayout, actions: rowActions, addingUnder: ui.addingUnder, onCloseSubtask: () => ui.setAddingUnder(null), edgeOf, cardNotes,
-    inlineId: inline?.id ?? null, renderInline, departures, expandedId, swipe: useListSwipe(listRoot, !fine && selection.ticked.size === 0 && !selectMode && !board, rows.length),
+    inlineId: inline?.id ?? null, renderInline, expandedId, swipe: useListSwipe(listRoot, !fine && selection.ticked.size === 0 && !selectMode && !board, rows.length),
   })
 
   // The list's own rows: Today's Done today group is not part of them (today-closed-list D6).
