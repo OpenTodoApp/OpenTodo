@@ -4,7 +4,7 @@
 // the reduced-motion and no-motion guards, the departing rows of the completion
 // sequence, the bounded list transition and the haptic tick.
 import { flushSync } from 'react-dom'
-import { useSyncExternalStore } from 'react'
+import { useCallback, useSyncExternalStore } from 'react'
 import { readHapticsPref, watchHapticsPref } from '../lib/haptics'
 import { resettable } from '../lib/moduleState'
 import { createSignal } from '../lib/store'
@@ -46,17 +46,27 @@ export type Departure = 'leave' | 'restored'
 const RESTORE_MS = 120
 let departures: ReadonlyMap<string, Departure> = new Map()
 const timers = new Map<string, ReturnType<typeof setTimeout>>()
-const changes = createSignal()
+// A row's own departure (useDeparture): a completion draws its row in the frame of
+// the click without drawing the list (list-rendering-at-scale D7).
+const rowListeners = new Map<string, Set<() => void>>()
+// The departures a list draws as ghosts ended: the list drops them (useDepartureEnds).
+const ends = createSignal()
+let endsVersion = 0
 
 function setDeparture(id: string, kind: Departure | null, ms = 0): void {
   clearTimeout(timers.get(id))
   timers.delete(id)
+  const was = departures.get(id)
   const next = new Map(departures)
   if (kind) next.set(id, kind)
   else next.delete(id)
   departures = next
   if (kind) timers.set(id, setTimeout(() => setDeparture(id, null), ms))
-  changes.notify()
+  for (const l of [...(rowListeners.get(id) ?? [])]) l()
+  if (was === 'leave' && kind !== 'leave') {
+    endsVersion++
+    ends.notify()
+  }
 }
 
 /**
@@ -85,17 +95,45 @@ export function departures$(): ReadonlyMap<string, Departure> {
   return departures
 }
 
-/** The running departures, live. */
-export function useDepartures(): ReadonlyMap<string, Departure> {
-  return useSyncExternalStore(changes.subscribe, departures$, departures$)
+function subscribeRow(id: string, fn: () => void): () => void {
+  let set = rowListeners.get(id)
+  if (!set) rowListeners.set(id, (set = new Set()))
+  set.add(fn)
+  return () => {
+    set.delete(fn)
+    if (set.size === 0) rowListeners.delete(id)
+  }
+}
+
+/**
+ * One task's departure, live: only that task's rows draw again when it starts, ends
+ * or turns into a restore. A list of 2,000 rows drew all of them again (comparing
+ * each row's answers) in the frame of every click on a checkbox.
+ */
+export function useDeparture(id: string): Departure | undefined {
+  const sub = useCallback((fn: () => void) => subscribeRow(id, fn), [id])
+  const get = () => departures.get(id)
+  return useSyncExternalStore(sub, get, get)
+}
+
+/**
+ * A number that changes when a departure ends (or Undo turns it into a restore): what
+ * a list that draws ghost rows waits for to drop them. A departure that starts does
+ * not change it; the list puts the ghost in when the task leaves its data.
+ */
+export function useDepartureEnds(): number {
+  return useSyncExternalStore(ends.subscribe, () => endsVersion, () => endsVersion)
 }
 
 /** Tests: forget every departure at once. */
 export function resetDepartures(): void {
   for (const t of timers.values()) clearTimeout(t)
   timers.clear()
+  const had = [...departures.keys()]
   departures = new Map()
-  changes.notify()
+  for (const id of had) for (const l of [...(rowListeners.get(id) ?? [])]) l()
+  endsVersion++
+  ends.notify()
 }
 resettable('departures', resetDepartures)
 
@@ -108,39 +146,58 @@ const ghosts = new WeakSet<object>()
 export const markGhost = <T extends object>(o: T): T => { ghosts.add(o); return o }
 export const isGhost = (o: object): boolean => ghosts.has(o)
 
+/** Where a list's departing rows go back in: each ghost's list and the row it follows, and the lists last drawn. */
+export interface GhostMemory<T> {
+  ghosts: Map<string, { list: string; after: string | null; ghost: T }>
+  /** The lists as last drawn, ghosts included: where a row that just left sat. */
+  last: ReadonlyMap<string, readonly T[]> | null
+}
+
+export const ghostMemory = <T,>(): GhostMemory<T> => ({ ghosts: new Map(), last: null })
+
 /**
  * Keeps departing rows on screen: for every list (a group's rows, a column's cards),
  * a row that was shown in the last render and is now gone while its task departs is
- * shown once more at its old place, as a ghost copy, until the departure ends.
+ * shown once more at its old place, as a ghost copy, until the departure ends. The
+ * place is read from the lists last drawn when the row leaves, so a departure that
+ * starts does not need the list drawn (list-rendering-at-scale D7).
  */
 export function withGhosts<T extends object>(
   lists: { key: string; items: T[] }[],
   idOf: (item: T) => string,
   ghostOf: (item: T) => T,
   live: ReadonlyMap<string, Departure>,
-  memory: Map<string, { list: string; after: string | null; ghost: T }>,
+  memory: GhostMemory<T>,
 ): Map<string, T[]> {
+  const { ghosts, last } = memory
   const present = new Set<string>()
   for (const l of lists) for (const it of l.items) present.add(idOf(it))
   // Forget departures that ended, or whose task came back (Undo).
-  for (const id of [...memory.keys()]) if (live.get(id) !== 'leave' || present.has(id)) memory.delete(id)
+  for (const id of [...ghosts.keys()]) if (live.get(id) !== 'leave' || present.has(id)) ghosts.delete(id)
+  // A departing row that just left: its place in the lists last drawn.
+  if (last) {
+    for (const [id, kind] of live) {
+      if (kind !== 'leave' || present.has(id) || ghosts.has(id)) continue
+      for (const [key, items] of last) {
+        const i = items.findIndex((x) => idOf(x) === id)
+        if (i < 0) continue
+        ghosts.set(id, { list: key, after: i > 0 ? idOf(items[i - 1]) : null, ghost: isGhost(items[i]) ? items[i] : markGhost(ghostOf(items[i])) })
+        break
+      }
+    }
+  }
   const out = new Map<string, T[]>()
   for (const l of lists) {
-    const items = [...l.items]
-    for (const [id, g] of memory) {
+    let items = l.items
+    for (const [id, g] of ghosts) {
       if (g.list !== l.key || present.has(id)) continue
+      if (items === l.items) items = [...l.items]
       const after = g.after === null ? 0 : items.findIndex((x) => idOf(x) === g.after) + 1
       items.splice(g.after !== null && after === 0 ? items.length : after, 0, g.ghost)
     }
     out.set(l.key, items)
   }
-  // Remember where every departing row still sits, for the render in which it leaves.
-  for (const l of lists) {
-    l.items.forEach((it, i) => {
-      const id = idOf(it)
-      if (live.get(id) === 'leave') memory.set(id, { list: l.key, after: i > 0 ? idOf(l.items[i - 1]) : null, ghost: markGhost(ghostOf(it)) })
-    })
-  }
+  memory.last = out
   return out
 }
 

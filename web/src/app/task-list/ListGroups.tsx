@@ -19,8 +19,7 @@ import { sectionTarget, type BoardColumn } from '../BoardView'
 import { groupKey, setGroupCollapsed } from '../collapsedGroups'
 import { FieldColumnsRow, FieldColumnsTable } from '../FieldColumns'
 import { SectionHeader, SectionQuickAdd } from '../Sections'
-import { isGhost, listCommitted, markGhost, registerList, useDepartures, withGhosts, type Departure } from '../motion'
-import type { RowMotion } from '../TaskRow'
+import { departures$, ghostMemory, isGhost, listCommitted, markGhost, registerList, useDepartureEnds, withGhosts } from '../motion'
 import type { FlowView } from '../../lib/useFlow'
 import { TaskListRow, SubtaskInput, type RowActions } from './TaskListRow'
 import { WaitingSoonList } from './WaitingSoon'
@@ -67,8 +66,6 @@ export interface RowContext {
   /** The row being edited in place, and its editor (inline-task-editing). */
   inlineId?: string | null
   renderInline?: (task: Task) => ReactNode
-  /** Running completion sequences (motion-v2). */
-  departures?: ReadonlyMap<string, Departure>
   /** The one row whose details are shown under it (row-expand D4). */
   expandedId?: string | null
   /** A board card's leading edge under Colour by (calendar-clarity); absent with Colour by Project. */
@@ -77,47 +74,54 @@ export interface RowContext {
   cardNotes?: boolean
 }
 
-/** The sequence a row plays: a ghost departs, a completed row that stayed rolled forward, Undo restores. */
-function rowMotion(task: Task, departures: ReadonlyMap<string, Departure> | undefined): RowMotion | undefined {
-  if (isGhost(task)) return 'leave'
-  const d = departures?.get(task.id)
-  if (d === 'restored') return 'restored'
-  if (d === 'leave' && !task.completed_at) return 'rolled'
-  return undefined
-}
-
 /** A group's rows with its departing rows kept in place (motion-v2 D2); counts skip them. */
-export function useGhostGroups(groups: ListGroup[], departures: ReadonlyMap<string, Departure>): ListGroup[] {
-  const memory = useRef(new Map<string, { list: string; after: string | null; ghost: Row }>())
+export function useGhostGroups(groups: ListGroup[], ends: number): ListGroup[] {
+  const memory = useRef(ghostMemory<Row>())
   return useMemo(() => {
-    if (departures.size === 0 && memory.current.size === 0) return groups
-    const shown = withGhosts(groups.map((g) => ({ key: g.key, items: g.rows })), (r) => r.task.id, (r) => ({ ...r, task: markGhost({ ...r.task }) }), departures, memory.current)
+    // Read here, not subscribed: a departure that starts draws only its own row (useDeparture);
+    // the list draws again when its data changes (the task left) or a departure ends.
+    const departures = departures$()
+    const m = memory.current
+    if (departures.size === 0 && m.ghosts.size === 0) {
+      m.last = new Map(groups.map((g) => [g.key, g.rows]))
+      return groups
+    }
+    const shown = withGhosts(groups.map((g) => ({ key: g.key, items: g.rows })), (r) => r.task.id, (r) => ({ ...r, task: markGhost({ ...r.task }) }), departures, m)
     return groups.map((g) => (shown.get(g.key)!.length === g.rows.length ? g : { ...g, rows: shown.get(g.key)! }))
-  }, [groups, departures])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `ends` is the signal to read the departures again
+  }, [groups, ends])
 }
 
 /** A board's cards with their departing cards kept in place. */
-export function useGhostColumns(columns: BoardColumn[], departures: ReadonlyMap<string, Departure>): BoardColumn[] {
-  const memory = useRef(new Map<string, { list: string; after: string | null; ghost: Task }>())
+export function useGhostColumns(columns: BoardColumn[], ends: number): BoardColumn[] {
+  const memory = useRef(ghostMemory<Task>())
   return useMemo(() => {
-    if (departures.size === 0 && memory.current.size === 0) return columns
-    const shown = withGhosts(columns.map((c) => ({ key: c.key, items: c.cards })), (task) => task.id, (task) => ({ ...task }), departures, memory.current)
+    const departures = departures$()
+    const m = memory.current
+    if (departures.size === 0 && m.ghosts.size === 0) {
+      m.last = new Map(columns.map((c) => [c.key, c.cards]))
+      return columns
+    }
+    const shown = withGhosts(columns.map((c) => ({ key: c.key, items: c.cards })), (task) => task.id, (task) => ({ ...task }), departures, m)
     return columns.map((c) => (shown.get(c.key)!.length === c.cards.length ? c : { ...c, cards: shown.get(c.key)! }))
-  }, [columns, departures])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `ends` is the signal to read the departures again
+  }, [columns, ends])
 }
 
 /**
  * The list's motion (motion-v2): its groups and board columns with departing rows kept
  * in place (D2), and the hooks a list transition needs: the list is on screen, and it
- * says when it committed, so the new snapshot shows the write (D4).
+ * says when it committed, so the new snapshot shows the write (D4). A departure that
+ * starts does not draw the list: the clicked row draws its own sequence (useDeparture,
+ * list-rendering-at-scale D7).
  */
 export function useListMotion(groups: ListGroup[], columns: BoardColumn[]) {
-  const departures = useDepartures()
-  const shownGroups = useGhostGroups(groups, departures)
-  const shownColumns = useGhostColumns(columns, departures)
+  const ends = useDepartureEnds()
+  const shownGroups = useGhostGroups(groups, ends)
+  const shownColumns = useGhostColumns(columns, ends)
   useLayoutEffect(() => listCommitted())
   useLayoutEffect(() => registerList(), [])
-  return { groups: shownGroups, columns: shownColumns, departures }
+  return { groups: shownGroups, columns: shownColumns }
 }
 
 /** Rows that count: everything but the departing ones. */
@@ -129,13 +133,12 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
   const line = (r: Row) => {
     // The row being edited in place is not dragged: a press in its field selects text.
     const editing = !c.board && c.inlineId === r.task.id
-    const motion = rowMotion(r.task, c.departures)
-    // A departing row (motion-v2 D2) is a picture: no cursor, tick, drag or drop.
-    const ghost = motion === 'leave'
+    // A departing row (motion-v2 D2) is a picture: no cursor, tick, drag or drop. The row
+    // follows its own task's sequence (TaskListRow), so a completion draws only that row.
+    const ghost = isGhost(r.task)
     return (
       <Fragment key={r.task.id}>
         <TaskListRow
-          motion={motion}
           task={r.task}
           depth={r.depth}
           breadcrumb={r.breadcrumb}
@@ -196,7 +199,7 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
  * every row of a 2,000-row list again after each completion (list-rendering-at-scale
  * D6). `siblingPos` is written on the rows by SiblingAria, not drawn.
  */
-const ROW_FIELDS = new Set<keyof RowContext>(['selectedId', 'inlineId', 'expandedId', 'dropAt', 'draggingId', 'ticked', 'addingUnder', 'onCloseSubtask', 'departures',
+const ROW_FIELDS = new Set<keyof RowContext>(['selectedId', 'inlineId', 'expandedId', 'dropAt', 'draggingId', 'ticked', 'addingUnder', 'onCloseSubtask',
   'progress', 'blocked', 'flow', 'habits', 'isReadOnly', 'projectMap', 'memberMap', 'siblingPos', 'renderInline'])
 
 const sameProgress = (a: Progress | undefined, b: Progress | undefined): boolean => a === b || (!!a && !!b && a.done === b.done && a.total === b.total)
@@ -217,7 +220,6 @@ function sameForRow(a: RowContext, b: RowContext, r: Row): boolean {
   if (is(a.draggingId) !== is(b.draggingId) || !a.draggingId !== !b.draggingId || is(a.addingUnder) !== is(b.addingUnder)) return false
   if ((is(a.dropAt?.id) ? a.dropAt!.zone : null) !== (is(b.dropAt?.id) ? b.dropAt!.zone : null)) return false
   if (a.ticked !== b.ticked && a.ticked.has(id) !== b.ticked.has(id)) return false
-  if (a.departures !== b.departures && rowMotion(task, a.departures) !== rowMotion(task, b.departures)) return false
   if (a.progress !== b.progress && !sameProgress(a.progress.get(id), b.progress.get(id))) return false
   if (a.blocked !== b.blocked && a.blocked.get(id) !== b.blocked.get(id)) return false
   if (a.flow !== b.flow && (a.flow?.waitsFor(id) ?? null) !== (b.flow?.waitsFor(id) ?? null)) return false
