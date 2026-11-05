@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createSlugger, parseFrontMatter, renderPage, resolveLink, sanitizeHtml, validateFrontMatter } from './lib.mjs'
+import { ENTRIES, createSlugger, entryOf, entryTree, indexTree, navOrder, parseFrontMatter, renderPage, resolveLink, sanitizeHtml, validateFrontMatter } from './lib.mjs'
 import { keysHtml, loadShortcuts, shortcutsMarkdown, splitContext, START, END } from './shortcuts.mjs'
 import { QUICK_ADD_SYNTAX, SHORTCUTS, SHORTCUT_SECTIONS } from '../../src/lib/shortcuts.ts'
 import { normalize, prepare, search, snippet, stem } from './search-core.mjs'
@@ -136,5 +136,32 @@ describe('search', () => {
   })
   it('builds an escaped snippet with marks', () => {
     expect(snippet('Use <b>every</b> monday', ['monday'])).toBe('Use &lt;b&gt;every&lt;/b&gt; <mark>monday</mark>')
+  })
+})
+
+// docs-landing-restyle D1, D2: six entry points over the sidebar groups, depth from the index's ↳ rows.
+describe('entry points', () => {
+  const page = (slug, fm) => ({ slug, rel: `${slug}.md`, fm: { order: 1, title: slug, ...fm } })
+  it('maps every group to one entry point, with the two overrides', () => {
+    expect(entryOf(page('getting-started', { audience: 'user', section: 'Get started' }))).toBe('start')
+    expect(entryOf(page('switch/todoist', { audience: 'user', section: 'Switch from another app' }))).toBe('start')
+    expect(entryOf(page('method/catch', { audience: 'user', section: 'Open Loops' }))).toBe('use')
+    expect(entryOf(page('sharing', { audience: 'user' }))).toBe('use')
+    expect(entryOf(page('self-hosting/docker', { audience: 'admin' }))).toBe('self-host')
+    expect(entryOf(page('api', { audience: 'developer' }))).toBe('integrate')
+    expect(entryOf(page('keyboard', { audience: 'user' }))).toBe('reference')
+    expect(entryOf(page('stability', { audience: 'developer', section: 'Integrations' }))).toBe('internals')
+    expect(ENTRIES.map((e) => e.key)).toEqual(['start', 'use', 'self-host', 'integrate', 'reference', 'internals'])
+  })
+  it('reads the nesting of the docs index', () => {
+    const tree = indexTree('## Using\n\n| Guide | What |\n| --- | --- |\n| [Sharing](sharing.md) | x |\n| &nbsp;&nbsp;↳ [Invite](invite-people.md), [Roles](roles.md) | y |\n| [Views](views.md) | z |\n\n## Other\n\n| [Docker](self-hosting/docker.md) | d |\n')
+    expect([...tree]).toEqual([['sharing', ['invite-people', 'roles']]])
+  })
+  it('nests deeper pages under their topic and lists every page once, in sidebar order', () => {
+    const pages = [page('sharing', { audience: 'user' }), page('invite-people', { audience: 'user', order: 2 }), page('views', { audience: 'user', order: 3 }), page('api', { audience: 'developer' })]
+    const entries = entryTree(pages, new Map([['sharing', ['invite-people']]]))
+    const use = entries.find((e) => e.entry.key === 'use')
+    expect(use.items.map((i) => [i.page.slug, i.children.map((c) => c.slug)])).toEqual([['sharing', ['invite-people']], ['views', []]])
+    expect(navOrder(entries).map((p) => p.slug)).toEqual(['sharing', 'invite-people', 'views', 'api'])
   })
 })
