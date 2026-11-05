@@ -1,4 +1,4 @@
-// The OpenTodo mark and wordmark (OpenSpec change sidebar-v2, design D2 and D3).
+// The OpenTodo mark and wordmark (OpenSpec changes sidebar-v2 D3 and brand-mark-tray D1, D2).
 // brand.svg is the one source: this inlines its symbols, and
 // scripts/brand-icons.mjs renders every raster from the same file.
 import source from './brand.svg?raw'
@@ -17,7 +17,7 @@ const SYMBOLS = { mono: brandSymbol(source, 'mono'), colour: brandSymbol(source,
 
 export interface BrandMarkProps {
   size?: BrandSize
-  /** `mono` takes the text colour with the closing stroke in the accent; `colour` is the app icon. */
+  /** `mono` draws the tray in the text colour and the tick in the accent; `colour` is the app icon. */
   variant?: BrandVariant
   /** Accessible name; without it the mark is decorative and hidden from assistive technology. */
   title?: string
