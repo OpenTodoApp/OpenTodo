@@ -36,6 +36,8 @@ func TestSharedVectors(t *testing.T) {
 				Energy *string `json:"energy"`
 				// Sector is compared when a case states it (time-sectors).
 				Sector *string `json:"sector"`
+				// Deadline is compared when a case states it (quick-add-by-deadline).
+				Deadline *string `json:"deadline"`
 			} `json:"expect"`
 		} `json:"cases"`
 	}
@@ -60,7 +62,12 @@ func TestSharedVectors(t *testing.T) {
 			want := Result{Title: c.Expect.Title, Due: c.Expect.Due, ProjectID: deref(c.Expect.ProjectID), Labels: c.Expect.Labels,
 				Priority: num(c.Expect.Priority), EstimateMinutes: num(c.Expect.EstimateMinutes), SpentMinutes: num(c.Expect.SpentMinutes), Recurrence: deref(c.Expect.Recurrence),
 				Reminders: c.Expect.Reminders}
-			got.Deadline, got.Someday = "", false
+			got.Someday = false
+			if c.Expect.Deadline != nil {
+				want.Deadline = *c.Expect.Deadline
+			} else {
+				got.Deadline = ""
+			}
 			if c.Expect.Evening != nil {
 				want.Evening, want.DayPart = *c.Expect.Evening, deref(c.Expect.DayPart)
 			} else {

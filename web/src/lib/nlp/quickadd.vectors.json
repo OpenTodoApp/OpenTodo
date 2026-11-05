@@ -1,5 +1,5 @@
 {
- "comment": "Quick-add vectors shared by web/src/lib/nlp (nlp.test.ts) and internal/quickadd (vectors_test.go), OpenSpec changes quick-add-recurrence, quick-add-nth-weekday and time-tracking (spentMinutes) and day-parts (ctx.dayParts; dayPart and evening are compared when a case states them) and task-energy (ctx.energy; energy, \"\" for none, is compared when a case states it) and time-sectors (ctx.sectors and ctx.weekStart; sector, \"\" for none, is compared when a case states it) and quick-add-month-and-every-other (bare months, \"every other\"). Every scenario of its spec deltas is a case.",
+ "comment": "Quick-add vectors shared by web/src/lib/nlp (nlp.test.ts) and internal/quickadd (vectors_test.go), OpenSpec changes quick-add-recurrence, quick-add-nth-weekday and time-tracking (spentMinutes) and day-parts (ctx.dayParts; dayPart and evening are compared when a case states them) and task-energy (ctx.energy; energy, \"\" for none, is compared when a case states it) and time-sectors (ctx.sectors and ctx.weekStart; sector, \"\" for none, is compared when a case states it) and quick-add-month-and-every-other (bare months, \"every other\") and quick-add-by-deadline (\"by\" words; deadline, \"\" for none, is compared when a case states it). Every scenario of its spec deltas is a case.",
  "cases": [
   {
    "name": "Water plants every Monday",
@@ -5643,6 +5643,468 @@
     "spentMinutes": null,
     "recurrence": "every last day",
     "reminders": []
+   }
+  },
+  {
+   "name": "by before a date sets the deadline",
+   "line": "Install winter tires by March 31",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Install winter tires",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": "2027-03-31"
+   }
+  },
+  {
+   "name": "on before a date keeps setting the due date",
+   "line": "Install winter tires on March 31",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Install winter tires",
+    "due": {
+     "date": "2027-03-31"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": ""
+   }
+  },
+  {
+   "name": "due before a date keeps setting the due date",
+   "line": "Install winter tires due March 31",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Install winter tires",
+    "due": {
+     "date": "2027-03-31"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": ""
+   }
+  },
+  {
+   "name": "by before a bare time is a due time",
+   "line": "call back by 5pm",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "call back",
+    "due": {
+     "date": "2026-10-09",
+     "time": "17:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": ""
+   }
+  },
+  {
+   "name": "a due date and a by deadline",
+   "line": "Pay tax tomorrow by friday",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Pay tax",
+    "due": {
+     "date": "2026-10-10"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": "2026-10-16"
+   }
+  },
+  {
+   "name": "a due date and a deadline word",
+   "line": "Pay tax tomorrow deadline friday",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Pay tax",
+    "due": {
+     "date": "2026-10-10"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": "2026-10-16"
+   }
+  },
+  {
+   "name": "by before a date with a time is a due date and time",
+   "line": "Pay tax by friday 5pm",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Pay tax",
+    "due": {
+     "date": "2026-10-16",
+     "time": "17:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": ""
+   }
+  },
+  {
+   "name": "by before a date with at and a time is a due date and time",
+   "line": "Pay tax by friday at 5pm",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Pay tax",
+    "due": {
+     "date": "2026-10-16",
+     "time": "17:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": ""
+   }
+  },
+  {
+   "name": "by without a date stays in the title",
+   "line": "Book by Stephen King",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Book by Stephen King",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": ""
+   }
+  },
+  {
+   "name": "a rule keeps its due date and takes a by deadline",
+   "line": "Water plants every monday by friday",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Water plants",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every monday",
+    "reminders": [],
+    "deadline": "2026-10-16"
+   }
+  },
+  {
+   "name": "a rule alone sets no deadline",
+   "line": "Water plants every monday",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Water plants",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every monday",
+    "reminders": [],
+    "deadline": ""
+   }
+  },
+  {
+   "name": "Italian entro sets the deadline",
+   "line": "Cambiare gomme entro il 31 marzo",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "it"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Cambiare gomme",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": "2027-03-31"
+   }
+  },
+  {
+   "name": "German bis sets the deadline",
+   "line": "Reifen wechseln bis Freitag",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Reifen wechseln",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": "2026-10-16"
+   }
+  },
+  {
+   "name": "German bis before a time is a due time",
+   "line": "Reifen wechseln bis 17 Uhr",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Reifen wechseln",
+    "due": {
+     "date": "2026-10-09",
+     "time": "17:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": ""
+   }
+  },
+  {
+   "name": "German bis in a rule is its end",
+   "line": "Gießen jeden Montag bis Juni",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Gießen",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every monday until 2027-06-01",
+    "reminders": [],
+    "deadline": ""
+   }
+  },
+  {
+   "name": "Portuguese até sets the deadline",
+   "line": "Trocar pneus até sexta",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pt"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Trocar pneus",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": "2026-10-16"
+   }
+  },
+  {
+   "name": "French pour keeps setting the due date",
+   "line": "Rapport pour vendredi",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "fr"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Rapport",
+    "due": {
+     "date": "2026-10-16"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": ""
+   }
+  },
+  {
+   "name": "Spanish para keeps setting the due date",
+   "line": "Informe para viernes",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "es"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Informe",
+    "due": {
+     "date": "2026-10-16"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": ""
    }
   }
  ]
