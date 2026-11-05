@@ -6,6 +6,8 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.net.http.SslError
 import android.os.Build
@@ -21,6 +23,7 @@ import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebStorage
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -39,6 +42,8 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.ByteArrayInputStream
+import java.io.File
 import java.util.concurrent.Executors
 
 /** The app: the configured server in a full-screen web view, with the bridge on that origin only. */
@@ -52,6 +57,12 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
     private var cameFromSignIn = false
     private var origin: String? = null
     private var started = false
+    /** The phone's copy of the web app, served when the server can't be reached. */
+    @Volatile private var shell: ShellStore? = null
+    @Volatile private var serveOffline = false
+    private var offlineRetried = false
+    @Volatile private var shellRefreshStarted = false
+    private var mainFrameFailed = false
     private var pendingShare: Intent? = null
     private var pendingFilesScript: String? = null
     private var fileCallback: ValueCallback<Array<Uri>>? = null
@@ -94,7 +105,13 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         web = findViewById(R.id.web)
         errorView = findViewById(R.id.error)
         errorText = findViewById(R.id.error_text)
-        findViewById<Button>(R.id.retry).setOnClickListener { errorView.visibility = View.GONE; web.url?.let { flow?.started(it) }; web.reload() }
+        findViewById<Button>(R.id.retry).setOnClickListener {
+            errorView.visibility = View.GONE
+            offlineRetried = false
+            serveOffline = false
+            web.url?.let { flow?.started(it) }
+            web.reload()
+        }
         findViewById<Button>(R.id.sign_in).setOnClickListener { errorView.visibility = View.GONE; backToServer() }
         findViewById<Button>(R.id.change_server).setOnClickListener { confirmChangeServer() }
         siteBar = findViewById(R.id.site_bar)
@@ -154,6 +171,10 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         if (!started || origin != server) {
             origin = server
             started = true
+            shell = ShellStore.open(File(filesDir, "shell-cache"), server)
+            serveOffline = ShellCache.openFromCache(offline = !online(), hasShell = shell?.hasShell() == true)
+            offlineRetried = false
+            shellRefreshStarted = false
             flow = SignInFlow(server)
             WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
             web.settings.apply {
@@ -263,7 +284,20 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
             return true
         }
 
+        override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
+            if (!serveOffline) return null
+            val store = shell ?: return null
+            if (SignInFlow.originOf(request.url.toString()) != origin) return null
+            val path = request.url.path ?: return null
+            return when (ShellCache.serve(request.method, path, store.paths())) {
+                ShellCache.Serve.PASS -> null
+                ShellCache.Serve.SHELL -> cachedResponse("index.html", document = true)
+                ShellCache.Serve.FILE -> ShellCache.relative(path)?.let { cachedResponse(it, document = false) }
+            }
+        }
+
         override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
+            mainFrameFailed = false
             errorView.visibility = View.GONE
             if (url == null) return
             flow?.started(url)
@@ -276,6 +310,7 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
             // sign-in pages out of the back history.
             CookieManager.getInstance().flush()
             if (cameFromSignIn) { cameFromSignIn = false; view.clearHistory() }
+            if (!mainFrameFailed && !serveOffline) scheduleShellRefresh()
             val script = pendingFilesScript ?: return
             if (Uri.parse(url).path == "/share") {
                 pendingFilesScript = null
@@ -284,7 +319,26 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         }
 
         override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
-            if (request.isForMainFrame) showError(getString(R.string.error_offline))
+            if (!request.isForMainFrame) return
+            mainFrameFailed = true
+            val url = request.url?.toString() ?: return showError(getString(R.string.error_offline))
+            val store = shell
+            // One more try. With a saved copy, that try is served from the phone. On https (or
+            // localhost) the first failure is often the service worker not running yet, so the
+            // second navigation is the one it answers.
+            if (!offlineRetried && ShellCache.networkError(error.errorCode) && store != null && store.hasShell()) {
+                offlineRetried = true
+                serveOffline = true
+                view.post { if (!isDestroyed) view.loadUrl(url) }
+                return
+            }
+            val base = origin
+            if (!offlineRetried && ShellCache.networkError(error.errorCode) && base != null && ShellCache.serviceWorkerOrigin(base)) {
+                offlineRetried = true
+                view.post { if (!isDestroyed) view.loadUrl(url) }
+                return
+            }
+            showError(getString(R.string.error_offline))
         }
 
         override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: SslError) {
@@ -371,6 +425,35 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         load("$base/")
     }
 
+    /** A saved copy of one file. A document (the app shell) also gets the page's content security policy. */
+    private fun cachedResponse(path: String, document: Boolean): WebResourceResponse? {
+        val store = shell ?: return null
+        val bytes = store.read(path) ?: return null
+        val headers = HashMap<String, String>()
+        headers["Cache-Control"] = "no-store"
+        if (document) store.csp()?.replace("\n", " ")?.let { headers["Content-Security-Policy"] = it }
+        return WebResourceResponse(ShellCache.mime(path), ShellCache.charset(path), 200, "OK", headers, ByteArrayInputStream(bytes))
+    }
+
+    /** After a real page from the server: refresh the phone's copy, once, off the main thread. */
+    private fun scheduleShellRefresh() {
+        if (shellRefreshStarted) return
+        val base = origin ?: return
+        val store = shell ?: return
+        if (io.isShutdown) return
+        shellRefreshStarted = true
+        val cookies = CookieManager.getInstance().getCookie(base)
+        io.execute {
+            if (!ShellCache.refresh(base, cookies, store)) shellRefreshStarted = false
+        }
+    }
+
+    private fun online(): Boolean {
+        val cm = getSystemService(ConnectivityManager::class.java) ?: return true
+        val caps = cm.getNetworkCapabilities(cm.activeNetwork ?: return false) ?: return false
+        return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    }
+
     /** [signIn]: offer "Sign in here" (a fresh sign-in flow from the server's address) instead of "Try again". */
     private fun showError(message: String, signIn: Boolean = false) {
         errorText.text = message
@@ -401,6 +484,11 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         WidgetStore.clear(this)
         BiometricKeyStore.forget(this)
         HiddenRun.cancel(this)
+        shell?.clear()
+        ShellStore.clearAll(File(filesDir, "shell-cache"))
+        shell = null
+        serveOffline = false
+        shellRefreshStarted = false
         Prefs(this).clearServerData(keepServer = false)
         WidgetStore.redraw(this)
         started = false

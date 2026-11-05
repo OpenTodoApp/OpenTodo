@@ -44,10 +44,14 @@ On first start, and whenever no server is configured, a shell SHALL show a scree
 - **THEN** the shell forgets the old server's storage, scheduled reminders and widget data, and shows the first-run screen
 
 ### Requirement: Offline start
-Once the web app has been loaded once, a shell SHALL open offline and show the app from the service worker's precache with the local data, like the installed web app. The first start SHALL need the network and SHALL say so when it is missing.
+Once the web app has been loaded once, a shell SHALL open offline and show the app from the service worker's precache with the local data, like the installed web app. Where that origin cannot install a service worker (plain http other than localhost), the shell SHALL keep the same precache itself after a successful load and open from that copy. The first start SHALL need the network and SHALL say so when it is missing.
 
 #### Scenario: Opened in flight mode
 - **WHEN** the user has used the Android app before and opens it with no network
+- **THEN** the Today list shows the locally stored tasks, and the sync indicator reads offline
+
+#### Scenario: Server on the local network switched off
+- **WHEN** the user has opened the Android app on `http://192.168.1.20:8080` and opens it again with that server switched off
 - **THEN** the Today list shows the locally stored tasks, and the sync indicator reads offline
 
 #### Scenario: First start offline
