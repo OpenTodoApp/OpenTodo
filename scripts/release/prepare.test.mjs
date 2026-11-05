@@ -9,6 +9,7 @@ import { laterRelease, loadFacts, readText, releaseVersion, ROOT } from '../depl
 import { staleCopies } from '../deploy/mirror.mjs'
 import { bumpLine, bumpText, casaosText, changelogText, easypanelText, haChangelogText, prepare, truenasText } from './prepare.mjs'
 import { checkUpgradeFixture, fixtureDir, isNewMinor } from './upgradeFixture.mjs'
+import { checkSecurityReviews, monthsBetween } from './securityReview.mjs'
 
 const facts = loadFacts()
 const CURRENT = releaseVersion(readText('CHANGELOG.md'))
@@ -232,4 +233,45 @@ test('release-prepare: a new minor needs its upgrade fixture, a patch does not (
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
+})
+
+/** A data root with one review file delivered on `delivered` and these finding rows (external-security-review D4). */
+function reviewRoot(delivered, rows) {
+  const dir = mkdtempSync(join(tmpdir(), 'security-review-'))
+  mkdirSync(join(dir, 'docs/security/reviews'), { recursive: true })
+  writeFileSync(join(dir, 'docs/security/reviews', `${delivered.slice(0, 7)}-example.md`), [
+    '# Review', '', '## Record', '', '| Field | Value |', '|---|---|', '| Reviewer | Example |', `| Commit | \`${'b'.repeat(40)}\` |`,
+    `| Delivered | ${delivered} |`, '| Published | Not yet |', '| Scope | `host-mode-isolation` |', '', '## Findings', '',
+    '| ID | Title | Severity | Status | Fix | Regression test | Advisory |', '|---|---|---|---|---|---|---|',
+    ...rows.map((r) => `| ${r.join(' | ')} |`), '',
+  ].join('\n'))
+  return dir
+}
+
+test('release-prepare: the security review gate (external-security-review)', (t) => {
+  const roots = []
+  t.after(() => roots.forEach((d) => rmSync(d, { recursive: true, force: true })))
+  const root = (...a) => { const d = reviewRoot(...a); roots.push(d); return d }
+  const empty = mkdtempSync(join(tmpdir(), 'security-review-')); roots.push(empty)
+  // No review file: the review is optional for 1.0, the gate passes.
+  assert.doesNotThrow(() => checkSecurityReviews(empty, '1.0.0', '0.30.0', '2027-06-01', '2027-05-01'))
+  // Before 1.0 the gate never runs, whatever the files say.
+  assert.doesNotThrow(() => checkSecurityReviews(root('2027-03-01', [['OTD-01', 'x', 'High', 'Open', '', '', '']]), '0.31.0', '0.30.0', '2027-06-01'))
+  // An open (or merely fixed) High blocks 1.0 and is named.
+  assert.throws(() => checkSecurityReviews(root('2027-03-01', [['OTD-04', 'x', 'High', 'Fixed', '#1', '`internal/a/a_test.go`', '']]), '1.0.0', '0.30.0', '2027-06-01'),
+    /OTD-04 \(High\) is Fixed; it must be Fixed \(retested\)/)
+  // An accepted Medium within its target passes; past its target it blocks.
+  const medium = root('2027-03-01', [['OTD-05', 'x', 'Medium', 'Accepted', 'Needs a schema change; target 1.1.0', '', '']])
+  assert.doesNotThrow(() => checkSecurityReviews(medium, '1.0.0', '0.30.0', '2027-06-01'))
+  assert.doesNotThrow(() => checkSecurityReviews(medium, '1.1.0', '1.0.3', '2027-09-01'))
+  assert.throws(() => checkSecurityReviews(medium, '1.2.0', '1.1.0', '2027-12-01'), /OTD-05 \(Medium\) was accepted until 1\.1\.0/)
+  // A review older than 24 months: a new one is due.
+  const ok = root('2027-03-01', [['OTD-06', 'x', 'Low', 'Open', '#7', '', '']])
+  assert.doesNotThrow(() => checkSecurityReviews(ok, '1.8.0', '1.7.2', '2029-02-28'))
+  assert.throws(() => checkSecurityReviews(ok, '1.9.0', '1.8.0', '2029-04-01'), /more than 24 months ago: a new external review is due/)
+  // A new major needs a review delivered after the previous major's last release.
+  assert.throws(() => checkSecurityReviews(ok, '2.0.0', '1.8.4', '2028-06-01', '2028-05-01'), /2\.0\.0 is a new major version.*a new external review is due/)
+  assert.doesNotThrow(() => checkSecurityReviews(root('2028-05-20', []), '2.0.0', '1.8.4', '2028-06-01', '2028-05-01'))
+  assert.equal(monthsBetween('2027-03-01', '2029-02-28'), 23)
+  assert.equal(monthsBetween('2027-03-01', '2029-03-01'), 24)
 })

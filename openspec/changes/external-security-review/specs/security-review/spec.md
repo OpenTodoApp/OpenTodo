@@ -20,7 +20,7 @@ The external review is optional: OpenTodo MAY ship `v1.0.0` without one. When a 
 
 #### Scenario: Review record
 - **WHEN** a review is delivered
-- **THEN** `docs/security/reviews/<yyyy-mm>-<reviewer>.md` names the reviewer, the commit hash, every scope item and the delivery date in its front matter
+- **THEN** `docs/security/reviews/<yyyy-mm>-<reviewer>.md` names the reviewer, the commit hash, every scope item and the delivery date in its `## Record` table
 
 ### Requirement: Findings follow a severity-based fix rule
 Every finding SHALL be recorded in the review file's findings table with an id, title, severity (`Critical`, `High`, `Medium`, `Low`, `Info`), status, fix reference, regression test and advisory id when published. `Critical` and `High` findings SHALL be `Fixed (retested)` by the reviewer before a release at or above 1.0.0. `Medium` findings SHALL be fixed, or `Accepted` with a written reason and a target version no later than the next minor release. `Low` and `Info` findings SHALL each link an issue or be `Won't fix` with a reason. Every fixed `Critical`, `High` or `Medium` finding SHALL name a regression test whose file exists. A repo check SHALL fail on a malformed table or a missing regression test file.
