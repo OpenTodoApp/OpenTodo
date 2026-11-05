@@ -69,3 +69,18 @@ The full report and a plain-language summary SHALL be published in `docs/securit
 #### Scenario: Fix for the previous minor
 - **WHEN** a High vulnerability is fixed one month after 1.3.0 shipped
 - **THEN** the policy promises a patch release for 1.3 and for 1.2
+
+### Requirement: Instances serve security.txt
+Every server SHALL answer `GET /.well-known/security.txt` without authentication, as a route declared `public` with its reason, with an RFC 9116 document in `text/plain; charset=utf-8`. It SHALL name the OpenTodo project's reporting channels of `SECURITY.md` as `Contact` fields, an `Expires` date in the future and less than a year ahead, `Policy` linking `SECURITY.md`, `Preferred-Languages: en`, and `Canonical` with the server's own address when `OPENTODO_BASE_URL` is set. A comment SHALL say that the contacts reach the project, for vulnerabilities in the software, and that problems with how the particular server is run belong to its operator. A test SHALL fail when the file and `SECURITY.md` name different channels. It is served in demo mode and on every tenant of a host; it is not served for host names that name no tenant.
+
+#### Scenario: A researcher finds the reporting channel
+- **WHEN** someone requests `/.well-known/security.txt` from any OpenTodo server
+- **THEN** the answer is 200 with the project's private advisory link and email as `Contact`, `Expires` about 180 days ahead and `Policy` linking `SECURITY.md`
+
+#### Scenario: A self-hosted server with a base URL
+- **WHEN** `OPENTODO_BASE_URL` is `https://todo.example.org`
+- **THEN** the file includes `Canonical: https://todo.example.org/.well-known/security.txt`
+
+#### Scenario: The channels change
+- **WHEN** `SECURITY.md` changes its reporting email and the file does not
+- **THEN** `TestSecurityTxtMatchesSecurityPolicy` fails

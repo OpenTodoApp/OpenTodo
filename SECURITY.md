@@ -4,6 +4,8 @@
 
 Please do not open public issues for security problems. Report them privately through GitHub: **[Report a vulnerability](https://github.com/OpenTodoApp/OpenTodo/security/advisories/new)** (the repository's Security tab, private vulnerability reporting), with a description, reproduction steps and the version or commit you tested. If you cannot use GitHub, email **raffaele.pizzari@gmail.com** instead.
 
+Every OpenTodo server also answers `GET /.well-known/security.txt` ([RFC 9116](https://www.rfc-editor.org/rfc/rfc9116)) with these two channels and a link to this policy. They reach the OpenTodo project, which maintains the software. A problem with how a particular server is run (its domain, its proxy, its accounts) belongs to that server's operator.
+
 ## What to expect
 
 - **Acknowledgement within 3 business days** of your report.
