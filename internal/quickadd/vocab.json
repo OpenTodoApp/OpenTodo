@@ -147,6 +147,9 @@
   "deadlineWords": [
    "deadline"
   ],
+  "byWords": [
+   "by"
+  ],
   "somedayWords": [
    "someday",
    "some day"
@@ -494,6 +497,9 @@
   "deadlineWords": [
    "frist",
    "deadline"
+  ],
+  "byWords": [
+   "bis"
   ],
   "somedayWords": [
    "irgendwann"
@@ -847,6 +853,7 @@
    "echeance",
    "deadline"
   ],
+  "byWords": [],
   "somedayWords": [
    "un jour"
   ],
@@ -1187,6 +1194,9 @@
   ],
   "deadlineWords": [
    "scadenza"
+  ],
+  "byWords": [
+   "entro"
   ],
   "somedayWords": [
    "prima o poi"
@@ -1529,6 +1539,7 @@
    "fecha limite",
    "plazo"
   ],
+  "byWords": [],
   "somedayWords": [
    "algun dia"
   ],
@@ -1867,6 +1878,9 @@
   ],
   "deadlineWords": [
    "prazo"
+  ],
+  "byWords": [
+   "ate"
   ],
   "somedayWords": [
    "algum dia"

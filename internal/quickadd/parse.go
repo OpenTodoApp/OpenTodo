@@ -335,7 +335,9 @@ func (p *parser) phrase(i int) int {
 		}
 	}
 	if !p.timeV.set {
-		tm = matchTimeAt(tokens, i, dctx)
+		if tm = matchTimeAt(tokens, i, dctx); tm == nil {
+			tm = matchByTimeAt(tokens, i, dctx)
+		}
 	}
 	// After the first rule only a literal match still counts; a suffixed number
 	// above four before a weekday is one too (quick-add-nth-weekday D1, D3).

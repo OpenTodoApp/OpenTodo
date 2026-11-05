@@ -4,7 +4,7 @@
 import type { Due, Priority } from '../types'
 import { matchDuration, matchEnergy, matchLabel, matchPriority, matchProject, matchSpent, projectMiss, type ProjectRef } from './attributes'
 import { firstOccurrence } from '../recurrence'
-import { matchDateAt, matchDeadlineAt, matchTimeAt, ordinalOutOfRangeAt, partWordAt, sectorPhraseAt, wordsAt, type DateContext, type DateMatch, type TimeMatch } from './dates'
+import { matchByTimeAt, matchDateAt, matchDeadlineAt, matchTimeAt, ordinalOutOfRangeAt, partWordAt, sectorPhraseAt, wordsAt, type DateContext, type DateMatch, type TimeMatch } from './dates'
 import { resolvePhrase, type SectorWord } from '../sectors'
 import { matchRecurrenceAt, type RecurrenceMatch } from './recurrence'
 import { matchReminderAt, type ReminderMatch, type ReminderPhrase } from './reminders'
@@ -256,7 +256,7 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
     let dm: DateMatch | null = date && !date.bare ? null : matchDateAt(tokens, i, dctx)
     // After a bare month only a complete date phrase counts; another bare month stays text.
     if (date && dm?.bare) dm = null
-    let tm: TimeMatch | null = time ? null : matchTimeAt(tokens, i, dctx)
+    let tm: TimeMatch | null = time ? null : matchTimeAt(tokens, i, dctx) ?? matchByTimeAt(tokens, i, dctx)
     let rm: RecurrenceMatch | null = matchRecurrenceAt(tokens, i, dctx)
     // After the first rule only a literal match still counts (it keeps "cada 2 lunes" whole).
     if (recurrence && rm && !rm.literal) rm = null
