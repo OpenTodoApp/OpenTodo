@@ -18,7 +18,7 @@ This page says what an OpenTodo server protects, against whom, and how we know. 
 
 Where a control has no automated test, the page says so, and the gap is a follow-up task of the OpenSpec change `external-security-review`.
 
-The model describes the code on `main` at the time of writing. An external review works from a pinned commit (see [Independent review scope](review-scope.md)), and the model at that commit is the one that counts. [How we verify security](how-we-verify.md) describes the methods behind the tests named here. [SECURITY.md](../../SECURITY.md) is the user-facing summary and the disclosure policy.
+The model describes the code on `main` at the time of writing. An external review works from a pinned commit (see [Independent review scope](review-scope.md)), and the model at that commit is the one that counts. [How we verify security](how-we-verify.md) describes the methods behind the tests named here. [Security limits](limits.md) lists in one place what is not protected. [SECURITY.md](../../SECURITY.md) is the user-facing summary and the disclosure policy.
 
 ## Assets
 

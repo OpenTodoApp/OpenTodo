@@ -141,4 +141,4 @@ A fix for a supported older minor ships as a patch release of that minor (for ex
 
 ## Security reviews
 
-How the project verifies its security, the threat model and the scope prepared for an independent review are in [docs/security/](docs/security/README.md): [Threat model](docs/security/threat-model.md), [How we verify security](docs/security/how-we-verify.md) and [Independent review scope](docs/security/review-scope.md). Reports of external reviews are published there once their fixes ship.
+How the project verifies its security, the threat model and the scope prepared for an independent review are in [docs/security/](docs/security/README.md): [Threat model](docs/security/threat-model.md), [Security limits](docs/security/limits.md) (what is not protected), [How we verify security](docs/security/how-we-verify.md) and [Independent review scope](docs/security/review-scope.md). Reports of external reviews are published there once their fixes ship.
