@@ -19,11 +19,31 @@ describe('brand.svg', () => {
     expect(brandSymbol(source, 'colour').viewBox).toBe('0 0 64 64')
   })
 
-  it('draws the mono mark in the text colour with the closing stroke in the accent', () => {
+  // The tray mark (OpenSpec change brand-mark-tray, design D1 and D2).
+  const TRAY = 'M6 11.5 4.5 13v4.5a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V13L18 11.5'
+  const TICK = 'm8 8 4 4 7.5-7.5'
+  const paths = (id: 'mono' | 'colour') => {
+    const doc = new DOMParser().parseFromString(`<svg xmlns="http://www.w3.org/2000/svg">${brandSymbol(source, id).body}</svg>`, 'image/svg+xml')
+    return [...doc.querySelectorAll('path')]
+  }
+
+  it('draws the mono tray in the text colour and the tick in the accent', () => {
     const { body } = brandSymbol(source, 'mono')
-    expect(body).toContain('stroke="currentColor"')
-    expect(body).toContain('var(--ot-accent-text')
     expect(body).toContain('stroke-width="2"')
+    const [tray, tick] = paths('mono')
+    expect(tray.getAttribute('d')).toBe(TRAY)
+    expect(tray.getAttribute('stroke')).toBe('currentColor')
+    expect(tick.getAttribute('d')).toBe(TICK)
+    expect(tick.getAttribute('style')).toContain('var(--ot-accent-text')
+  })
+
+  it('draws the colour mark as a white tray and an emerald tick, centred on the slate square', () => {
+    const { body } = brandSymbol(source, 'colour')
+    expect(body).toContain('fill="#0f172a"')
+    expect(body).toContain('transform="translate(8 8) scale(2)"')
+    const [tray, tick] = paths('colour')
+    expect([tray.getAttribute('d'), tray.getAttribute('stroke')]).toEqual([TRAY, '#ffffff'])
+    expect([tick.getAttribute('d'), tick.getAttribute('stroke')]).toEqual([TICK, '#34d399'])
   })
 })
 

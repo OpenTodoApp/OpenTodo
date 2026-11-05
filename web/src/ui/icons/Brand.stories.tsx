@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { BrandMark, BrandWordmark, type BrandSize } from './Brand'
 
-// The brand mark (OpenSpec change sidebar-v2, design D2; design-system "Brand mark").
-// The 16 px row is the legibility gate: the loop and the tick must stay apart beside
+// The brand mark (OpenSpec changes sidebar-v2 and brand-mark-tray; design-system "Brand mark").
+// The 16 px row is the legibility gate: the tray's lips must stay clear of the tick beside
 // a row's checkbox in both themes. The mono mark takes the text tone and the accent
 // of its theme, so it is shown in emerald (the default) and violet.
 const meta: Meta = { title: 'Foundations/Brand' }
