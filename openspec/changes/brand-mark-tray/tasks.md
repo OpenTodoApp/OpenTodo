@@ -20,7 +20,7 @@
   Verify with `node --test scripts/brand-icons.test.mjs` after the next task.
 - [x] 2.3 Run `make brand-icons` (it needs Playwright's Chromium; `CHROMIUM_PATH` can point at one). It regenerates the favicon, the PWA and Apple icons, the extension icons, the deploy-template logos and upstream copies, the iOS icon, the five Android drawables and the stamp. Verify that `node --test scripts/brand-icons.test.mjs` passes, then open the 16, 48, 128 and 512 px PNGs and the iOS icon and check the lips are clear of the tick.
 - [x] 2.4 Raise the extension's version in `extension/manifest.src.json` (0.6.2 → 0.6.3), as `share-capture` "Extension icon" requires. Verify with `make test-extension`.
-- [ ] 2.5 Build the Android shell (`make android`, if a JDK and the Android SDK are available; otherwise CI's Android job). Verify that the adaptive icon resolves and lint reports no icon error.
+- [x] 2.5 Build the Android shell (`make android`, if a JDK and the Android SDK are available; otherwise CI's Android job). Verify that the adaptive icon resolves and lint reports no icon error.
 - [x] 2.6 Regenerate the site bundle's `brand/` folder, and update its README text in `scripts/site-bundle.mjs` (the mono mark: the tray in `currentColor`, the tick in the accent). Verify with `node --test scripts/site-bundle.test.mjs`.
 
 ## 3. Documentation
@@ -29,5 +29,5 @@
 
 ## 4. Baselines and integration
 
-- [ ] 4.1 After the branch is pushed (ask the owner first), run the `UI baselines` workflow. Download the baselines and commit the changed images under `web/src/ui/__screenshots__/` after inspecting each one: the Brand story, the sidebar header, the sign-in and setup cards, the assistant welcome. Verify that no illustration baseline changed (`git diff --stat -- web/src/ui/__screenshots__ | grep -i illustration` is empty) and that CI's UI check passes.
-- [ ] 4.2 Run `make check` and `make openspec-validate`. Verify both pass; report any known local-only failure as such, with its output.
+- [x] 4.1 After the branch is pushed (ask the owner first), run the `UI baselines` workflow. Download the baselines and commit the changed images under `web/src/ui/__screenshots__/` after inspecting each one: the Brand story, the sidebar header, the sign-in and setup cards, the assistant welcome. Verify that no illustration baseline changed (`git diff --stat -- web/src/ui/__screenshots__ | grep -i illustration` is empty) and that CI's UI check passes.
+- [x] 4.2 Run `make check` and `make openspec-validate`. Verify both pass; report any known local-only failure as such, with its output.
