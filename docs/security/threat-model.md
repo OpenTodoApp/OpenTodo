@@ -75,6 +75,7 @@ The model describes the code on `main` at the time of writing. An external revie
 - `TestEveryRouteDeclaresAPolicy`, `TestSecurityRoutePolicies` (`internal/httpapi/policy_test.go`).
 - `TestRouteMatrix` (`internal/httpapi/route_matrix_test.go`): every route, anonymous, with each token scope, as a member, as a viewer, cross-site and with a stale session.
 - `TestLoginRateLimit`, `TestCrossSiteCookieWritesAreRejected` (`server_test.go`).
+- `TestSecurityHeaders` (`security_headers_test.go`): no framing, no sniffing, scripts only from the server.
 - `TestAccountLockout`, `TestForwardedForOnlyFromTrustedPeers`, `TestOriginMustMatchBaseURL` (`client_identity_test.go`).
 - `TestClientAddressBehindTrustedProxies`, `TestInvalidTrustedProxyEntriesNeverWidenTrust` (`clientip_test.go`).
 
@@ -84,7 +85,6 @@ The model describes the code on `main` at the time of writing. An external revie
 - Rate limits live in memory, per process. A restart clears them.
 - Anyone who knows an email address can keep that account's password sign-in locked. Passkeys, single sign-on and open sessions keep working.
 - `TestRouteMatrix` skips public routes, which are tested by their own feature tests.
-- No test pins the page headers `X-Frame-Options`, CSP `frame-ancestors` and `script-src`, or `nosniff` on pages (follow-up).
 
 ### Signed-in member of a shared project
 
@@ -196,11 +196,11 @@ Tokens have one scope: `read`, `agent`, `full` or `admin`.
 - `TestAddingCredentialsNeedsRecentSignIn`, `TestConfirmingTOTPDoesNotGrantFreshness`, `TestOIDCLinkNeedsRecentSignIn` (`credential_freshness_test.go`).
 - `TestRouteMatrix` (stale session).
 - `TestRelayEndsWithEncryptionAndOnLock` (`internal/relay`).
+- `TestSecretsStoredOnlyAsHashes` (`internal/auth/secrets_at_rest_test.go`): session and API token secrets reach the database only as hashes.
 
 **Not defended.**
 - An unlocked device holds plaintext in IndexedDB. Anyone using it, malware or a browser extension with page access can read everything the account can.
 - A device that was never locked or signed out keeps its local copy after its sessions are revoked: it can no longer sync, but its data stays.
-- No test asserts that the stored session value is a hash rather than the plain secret; the code is the only evidence (follow-up).
 
 ### Malicious server for an encrypted account
 
@@ -285,7 +285,7 @@ The person turned on end-to-end encryption and does not trust the server, its op
 
 **Verified by.**
 - `TestDenyListTable`, `TestDialerPinsCheckedAddress`, `TestRedirectsNotFollowed`, `TestClientIgnoresEnvironmentProxy`, `TestAllowPrivateKeepsMetadataDenied` (`internal/outbound/outbound_test.go`).
-- `TestFollowRedirectsChecksEveryHop`.
+- `TestFollowRedirectsChecksEveryHop`; `FuzzAddressPolicy` and `FuzzValidateURL` (`internal/outbound/fuzz_test.go`).
 - `TestExpandWorkBudget`, `TestExpandDeadline`, `FuzzParseAndExpand` (`internal/calfeed`).
 - `TestRedirectRefusedWithoutSecondRequest`, `TestBodyTooLarge`, `TestPrivateHostRefusedUnlessAllowed` (`internal/issues`).
 - `TestRedirectToAnotherSiteIsRefused`, `TestGraphRefusesRedirectsAndOtherHosts`, `FuzzParseMultistatus` (`internal/calsync`).
@@ -374,7 +374,7 @@ The model behind an MCP client or the in-app assistant follows instructions hidd
 - The operator interface is on its own listener with a hashed bearer token.
 
 **Verified by.**
-- `TestRouting` (`internal/host/host_test.go`): another tenant's cookie gets 401.
+- `TestRouting` (`internal/host/host_test.go`): another tenant's cookie gets 401. `TestAPITokenStaysWithItsTenant`: so does another tenant's API token.
 - `TestTwoTenantsNeverCross` (`internal/tenant/tenant_test.go`): sessions, sync, notifications and push keys.
 - `TestOperatorSettingsStayWithTheHost`.
 - `TestMapProxyPrivateTargets`.
@@ -385,7 +385,6 @@ The model behind an MCP client or the in-app assistant follows instructions hidd
 **Not defended.**
 - Tenants share one process, so one tenant's load affects the others' latency. Limits bound this but do not isolate CPU or memory.
 - The assistant's concurrency limit (8 turns) is per tenant, so the operator's provider key can see 8 turns per open tenant.
-- No test uses one tenant's API token on another tenant's host name; only cookies are tested (follow-up).
 
 ### Demo visitor
 
@@ -424,7 +423,7 @@ Each item of the [review scope](review-scope.md) has a section here: where the c
 - **Further tests:**
   - TOTP: `TestTOTPReplayRefused`, `TestRecoveryCodesSingleUseAndRegenerate`.
   - Passkeys: `TestVerifyAssertionRejectsMismatches`, `TestCOSEKeyOffCurveRefused`, and the five `internal/webauthn` fuzz targets.
-  - Single sign-on: `TestVerifyIDTokenVectors`, which refuses `alg: none`, HS256 key confusion, the wrong issuer, audience, `azp`, expiry and nonce.
+  - Single sign-on: `TestVerifyIDTokenVectors`, which refuses `alg: none`, HS256 key confusion, the wrong issuer, audience, `azp`, expiry and nonce; `FuzzVerifyIDToken`.
 
 ### Token scopes
 
@@ -436,11 +435,11 @@ Each item of the [review scope](review-scope.md) has a section here: where the c
 - **Code:** `internal/httpapi/policy.go`, `internal/httpapi/httpx/policy.go`, `demo.go`, `hosted.go`.
 - **How it works:** a route without a policy panics at start-up.
 - **Tests:**
-  - `TestEveryRouteDeclaresAPolicy` parses every source file of `internal/httpapi` and fails on a direct `Handle` call.
+  - `TestEveryRouteDeclaresAPolicy` parses every source file of `internal/httpapi` and its route packages, and fails on a direct `Handle` call.
   - `TestSecurityRoutePolicies` pins the security-relevant policies.
   - `TestRouteMatrix` exercises every route.
   - `TestDemoDenyListMatchesPolicy` keeps the demo list in step.
-- **Gap:** the source scan covers only the `internal/httpapi` package itself, not the route packages `davroutes`, `maproutes` and `speech`. They receive an `httpx.Router` and cannot register without a policy through it, but nothing stops a direct mux call there (follow-up).
+- The source scan also covers the route packages `davroutes`, `maproutes` and `speech`, and any later package under `internal/httpapi/`. `httpx` is the exception, because it defines the router.
 
 ### Sync scopes and membership
 
@@ -524,9 +523,8 @@ Each item of the [review scope](review-scope.md) has a section here: where the c
   - The share target accepts only same-origin or share-sheet requests up to 100 MB (`shareRequestAllowed`, `web/src/lib/shareInbox.test.ts`).
   - Signing out empties the app's caches.
   - Strict CSP: `script-src 'self'` and `frame-ancestors 'none'` (`cspBase`), `X-Frame-Options: DENY`.
-- **Gaps:**
-  - The page headers have no test (see [Anonymous internet user](#anonymous-internet-user)).
-  - The share target also accepts a request without `Sec-Fetch-Site`, which older browsers do not send.
+- **Tests:** `TestSecurityHeaders` (`internal/httpapi/security_headers_test.go`) pins `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy` and the page policy's `default-src`, `script-src`, `frame-ancestors`, `base-uri` and `form-action`.
+- **Gap:** the share target also accepts a request without `Sec-Fetch-Site`, which older browsers do not send.
 
 ### Android and iOS bridges
 
