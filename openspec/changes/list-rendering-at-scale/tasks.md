@@ -13,6 +13,8 @@
 
 - [x] 2.4 Incremental list updates (D6): kept rows and groups (`keepGroups`), each row compared on its own answers, sibling positions written only where they changed, counts over every task once the writes stop, the cursor row kept under `content-visibility`, cut titles measured only where drawn, the tab title's heading looked up only when one is added, the command bar's index prepared before it opens and narrowed while typing on, and the benchmark waiting until every row is drawn; verify unit tests (kept groups and rows, kept row elements, skipped titles not measured, narrowing equals a full match) and `make perf` complete-task, cursor-move and search-keystroke medians
 
+- [x] 2.5 A completion draws its own row (D7): rows follow their task's departure, the list draws only when a departure ends, a departing row's place is read from the lists last drawn; verify unit tests (only that task's row draws, the list draws on the end and on Undo, ghosts in place without a draw at the start), the scale test (the click draws one row and not the list) and the nightly complete-task medians
+
 ## 3. Measure
 
 - [ ] 3.1 `make perf` on the CI runner: every list budget of `performance-10k` within its limit; if not, propose windowing (D4)
