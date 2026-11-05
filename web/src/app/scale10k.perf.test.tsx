@@ -9,6 +9,7 @@
 // listPerformance.perf.test.tsx.
 /* eslint-disable test-hygiene/no-fixed-wait -- measurement windows of the scale budgets */
 import 'fake-indexeddb/auto'
+import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, useDatabase } from '../lib/db'
 import { applyOps, resetDeviceId } from '../lib/ops'
@@ -25,6 +26,13 @@ const rowRenders = vi.hoisted(() => ({ n: 0 }))
 vi.mock('../lib/fields', async (orig) => {
   const m = await orig<typeof import('../lib/fields')>()
   return { ...m, fieldBadges: (...args: Parameters<typeof m.fieldBadges>) => { rowRenders.n++; return m.fieldBadges(...args) } }
+})
+
+// The list calls useListMotion once per render: counting the calls counts list renders.
+const listRenders = vi.hoisted(() => ({ n: 0 }))
+vi.mock('./task-list/ListGroups', async (orig) => {
+  const m = await orig<typeof import('./task-list/ListGroups')>()
+  return { ...m, useListMotion: (...args: Parameters<typeof m.useListMotion>) => { listRenders.n++; return m.useListMotion(...args) } }
 })
 
 // The sync loop talks to the server only through `api`: pages come from here.
@@ -162,14 +170,19 @@ describe(`${TASKS} tasks`, () => {
     await waitFor(() => r.container.querySelectorAll('li[data-task-id]').length === BIG, 'every row', 120_000)
     await flush(300)
     rowRenders.n = 0
+    listRenders.n = 0
     const button = r.container.querySelector('li[data-task-id="t00100"] button[aria-label^="Complete"]') as HTMLButtonElement
+    let click = { rows: 0, list: 0 }
     const reads = await readsDuring(async () => {
-      button.click()
+      // The frame of the click draws the clicked row and not the list (list-rendering-at-scale D7).
+      act(() => button.click())
+      click = { rows: rowRenders.n, list: listRenders.n }
       await waitFor(async () => !!(await db.tasks.get('t00100'))?.completed_at, 'the completion stored', 30_000)
       await flush(500)
     })
-    console.info(`[performance-10k] row renders to complete one task in a ${BIG}-row list: ${rowRenders.n}; rows read: ${JSON.stringify(reads)}`)
+    console.info(`[performance-10k] row renders to complete one task in a ${BIG}-row list: ${rowRenders.n} (in the click: ${click.rows} rows, ${click.list} list); rows read: ${JSON.stringify(reads)}`)
     expect(rowRenders.n).toBeLessThanOrEqual(3)
+    expect(click).toEqual({ rows: 1, list: 0 })
     // Not the table: the task's subtree and the changed rows (list-rendering-at-scale D5;
     // reading every task here queued the next writes behind it). The rest of the reads
     // vary with the timing of the window, a few hundred rows; the whole table is 10,000.
