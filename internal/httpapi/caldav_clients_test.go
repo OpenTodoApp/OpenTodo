@@ -81,6 +81,10 @@ func TestThunderbirdCompletesOccurrence(t *testing.T) {
 // date as EXDATE and without the override.
 func TestCompletedOverrideOfAnotherDay(t *testing.T) {
 	e, c := davSetup(t)
+	// The series starts on 2026-11-02. Freeze before that day, as the test above
+	// does: once real time passes the next occurrence, catch-up moves the series to
+	// the day after today and the series no longer keeps the date asserted below.
+	e.now.Freeze(time.Date(2026, 10, 22, 12, 0, 0, 0, time.UTC))
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "TB daily", "due": map[string]any{"date": "2026-11-02"}, "recurrence": "every day"})
 	e.mustStatus(resp, 201, out)
 	id := out["id"].(string)
