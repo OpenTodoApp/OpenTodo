@@ -13,6 +13,8 @@
 - [x] 2.2 Release gate in `scripts/release/prepare.mjs` for versions ≥ 1.0.0 (review age, Critical/High retested, Medium rule, Low/Info issue links), naming each blocking finding; verify `node --test scripts/release/prepare.test.mjs` cases: no review file passes, open High, accepted Medium in target, Medium past target, review older than 24 months, new major without a fresh review
 - [x] 2.3 `SECURITY.md` sections (what to expect, fix targets, coordinated disclosure, safe harbour, supported versions table, security reviews) and a repo check for their headings and numbers; verify `make repo-check`
 
+- [x] 2.4 `/.well-known/security.txt` (D8): the public route, `docs/api.md`, `SECURITY.md`, the policy pin in `TestSecurityRoutePolicies`; verify `go test ./internal/httpapi -run 'TestSecurityTxt|TestSecurityRoutePolicies|TestEveryRouteIsInTheAPIDoc'`
+
 ## 3. Review and fixes (optional: only when a review takes place)
 
 - [ ] 3.1 Pin the commit, build the two instances (demo mode, host mode) for the reviewer, give access; verify the commit hash is in the review file's `## Record` table

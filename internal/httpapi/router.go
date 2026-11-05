@@ -29,6 +29,7 @@ func (s *Server) registerRoutes(mux *routes, web http.Handler) {
 // sign-up, public links, the current user, API tokens and passkeys.
 func (s *Server) registerAccountRoutes(mux *routes) {
 	mux.handle("GET /healthz", public("health check for the container and load balancers"), s.handleHealth)
+	mux.handle("GET /.well-known/security.txt", public("RFC 9116: security researchers find where to report vulnerabilities in the software this server runs"), s.handleSecurityTxt)
 	mux.handle("GET /api/v1/auth/status", public("sign-in screen bootstrap: tells the app what the server offers"), s.handleAuthStatus)
 	mux.handle("POST /api/v1/auth/register", public("first-run owner setup and sign-up").DemoDenied(), s.handleRegister)
 	mux.handle("POST /api/v1/auth/login", public("password sign-in, rate limited per address"), s.handleLogin)

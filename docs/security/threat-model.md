@@ -42,7 +42,8 @@ The model describes the code on `main` at the time of writing. An external revie
    - CalDAV (`/dav/`, app passwords only);
    - MCP (`/mcp`, bearer tokens only) and its OAuth endpoints;
    - public links (`/api/v1/public/{token}`), task pages (`/api/v1/pages/{secret}`) and calendar feeds (`/feeds/{secret}/tasks.ics`);
-   - the embedded web app and its service worker.
+   - the embedded web app and its service worker;
+   - `/.well-known/security.txt`, which names where to report vulnerabilities in the software.
 2. **Server to the outside.** Outbound requests go only to targets the owner or a user configured: webhooks, notification channels, calendar feeds, issue hosts, calendar sync, assistant providers, speech to text, the map provider, the OIDC issuer, SMTP, IMAP, backup destinations and push services. User-typed addresses go through `internal/outbound`.
 3. **Server to device.** The server delivers the web app's code and the op log. For an end-to-end encrypted account, the server is outside the trust boundary for content, with the limits in [Malicious server for an encrypted account](#malicious-server-for-an-encrypted-account).
 4. **Device to native shell.** The Android and iOS apps expose a bridge (`window.opentodoShell`) to pages of the configured server's origin only.

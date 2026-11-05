@@ -141,6 +141,7 @@ func TestSecurityRoutePolicies(t *testing.T) {
 	want := map[string]string{
 		// Anonymous by design.
 		"GET /healthz":                         "public",
+		"GET /.well-known/security.txt":        "public",
 		"POST /api/v1/auth/login":              "public",
 		"POST /api/v1/auth/register":           "public demo",
 		"POST /api/v1/auth/mfa":                "public",
