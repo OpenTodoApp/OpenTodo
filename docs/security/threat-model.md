@@ -160,7 +160,7 @@ Tokens have one scope: `read`, `agent`, `full` or `admin`.
 - A token holder starting the assistant (session only).
 
 **Mechanism.**
-- `middleware.go` refuses writes for scopes without full access, and counts `/api/v1/sync` as a write even on `GET`.
+- `middleware.go` refuses writes for scopes without full access, and counts `/api/v1/sync` as a write whatever the method (the route itself is `POST` only).
 - `.credential()` routes accept only sessions and `admin` tokens.
 - `admin` tokens are created only from a recently confirmed session.
 - `agent` and `admin` are stored as a `read` scope plus a marker row. A server rolled back to an older version therefore treats them as read-only.
@@ -176,7 +176,6 @@ Tokens have one scope: `read`, `agent`, `full` or `admin`.
 **Not defended.**
 - A leaked `full` token reads and changes all of the account's data until revoked.
 - Bearer tokens are never asked for a second factor or step-up.
-- The refusal of a `read` token on `GET /api/v1/sync` follows from the code but has no direct test (follow-up).
 
 ### Stolen or unlocked device
 

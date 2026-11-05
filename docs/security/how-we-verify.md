@@ -320,7 +320,6 @@ These are known and tracked as follow-up tasks of the OpenSpec change `external-
 - **Coverage holes in the route tests.**
   - The source scan of the route policy test does not cover the route subpackages.
   - The route matrix skips public routes.
-  - A `read` token's `GET /api/v1/sync` refusal has no direct test.
 - **Host mode.** No test uses one tenant's API token on another tenant's host (only cookies). The assistant's concurrency limit is per tenant, not per host.
 - **Write paths are a convention.** Nothing mechanically enforces that REST handlers write with `ApplyStrict`, or that no package writes synced rows directly.
 - **Fuzzing.** Several parsers have no fuzz target (see [Fuzzing](#fuzzing)), and the TypeScript client has none.
