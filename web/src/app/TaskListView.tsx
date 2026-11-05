@@ -9,8 +9,10 @@ import { useWithMethod } from './help/MethodLink'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { ProjectCalendarLayout, useListExtras } from './task-list/listExtras'
 import { t } from '../lib/i18n'
-import { useMembership, useUserPrefsRow } from '../lib/localData'
-import { briefingHidden, preferredPlacement, setBriefingShown, setTodayEventsShown, setUpcomingEventsShown, setUpcomingStartsWithToday, upcomingStartsWithToday } from '../lib/userPrefs'
+import { sharedWithSomeoneElse } from '../lib/dayLists'
+import { useMemberships, useMembership, useUserPrefsRow } from '../lib/localData'
+import { briefingHidden, preferredPlacement, setBriefingShown, setTodayEventsShown, setTodayHidesOthers, setUpcomingEventsShown, setUpcomingStartsWithToday, todayHidesOthers, upcomingStartsWithToday } from '../lib/userPrefs'
+import { useMe } from '../lib/sharing'
 import { completedOpenKey, flatRow, sectionOfRows, type ListGroup, type ListRow } from '../lib/listGroups'
 import type { Step } from '../lib/move'
 import type { ViewPlacement } from '../lib/viewOrder'
@@ -488,6 +490,15 @@ function ListHeader({ route, title, label, meta, subtitle, actions, phone, agend
     <MenuItem icon="calendar-range" label={agenda ? t('Hide calendar events') : t('Show calendar events')} data-today-events-toggle
       onSelect={() => act(setTodayEventsShown(!agenda))} />
   )
+  // The same overflow the phone bar uses (today-assigned-filter): offered only while someone else shares a project.
+  const hidesOthers = todayHidesOthers(prefs)
+  const memberships = useMemberships()
+  const viewer = useMe()
+  const sharedOthers = sharedWithSomeoneElse(memberships, viewer)
+  const assigneesItem = route.view === 'today' && sharedOthers && (
+    <MenuItem icon="users" label={hidesOthers ? t('Show tasks assigned to others') : t('Hide tasks assigned to others')} data-today-assignees-toggle
+      onSelect={() => act(setTodayHidesOthers(!hidesOthers))} />
+  )
   const upcomingItem = upcomingEvents !== undefined && (
     <MenuItem icon="calendar-range" label={upcomingEvents ? t('Hide calendar events') : t('Show calendar events')} data-upcoming-events-toggle
       onSelect={() => act(setUpcomingEventsShown(!upcomingEvents))} />
@@ -495,7 +506,7 @@ function ListHeader({ route, title, label, meta, subtitle, actions, phone, agend
   const phoneItems = route.view !== 'inbox' && route.view !== 'label' && items.length > 0 ? <PhoneMenuItems items={items} /> : null
   return (
     <PageHeader title={title} help={HELP_SCREENS[route.view] ?? 'inbox'} actions={phone ? phone.slots : actions} barActions={!!phone}
-      overflow={phoneItems || toggle ? <>{phoneItems}{phoneItems && toggle && <MenuSeparator />}{toggle}{startItem}{route.view === 'upcoming' && <ProjectionsMenuItem surface="upcoming" />}{upcomingItem}{agendaItem}{partsItem}{closedItems}{route.view === 'today' && <ReplanTodayItem />}</> : undefined}
+      overflow={phoneItems || toggle ? <>{phoneItems}{phoneItems && toggle && <MenuSeparator />}{toggle}{startItem}{route.view === 'upcoming' && <ProjectionsMenuItem surface="upcoming" />}{upcomingItem}{agendaItem}{assigneesItem}{partsItem}{closedItems}{route.view === 'today' && <ReplanTodayItem />}</> : undefined}
       leading={label && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: label.color }} />}
       meta={meta} subtitle={subtitle} menu={menu} kind={route.view === 'today' || route.view === 'upcoming' ? 'day' : 'tool'}
       briefing={briefing && <BriefingText briefing={briefing} />} />

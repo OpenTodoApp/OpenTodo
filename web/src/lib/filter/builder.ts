@@ -66,6 +66,7 @@ export function formatLeaf(n: Node): string {
     case 'search': return `search: ${quoteText(n.text)}`
     case 'notes': return `notes: ${quoteText(n.text)}`
     case 'origin': return `origin: ${quoteText(n.value)}`
+    case 'assigned': return `assigned: ${quoteText(n.name)}`
     case 'energy': return `energy: ${n.value}`
     case 'sector': return `sector: ${/^\d/.test(n.value) ? n.value : n.value.replace('-', ' ')}`
     case 'workspace': return `workspace: ${quoteText(n.name)}`

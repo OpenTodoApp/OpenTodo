@@ -10,7 +10,9 @@ import { formatTime, weekday } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
 import { formatList, t, useLanguageVersion } from '../lib/i18n'
 import { useGridPrefs, useLiveProjects } from '../lib/liveData'
-import { useNotifications, useReviewRow } from '../lib/localData'
+import { todayAssigneeFilter } from '../lib/dayLists'
+import { useMemberships, useNotifications, useReviewRow, useUserPrefsRow } from '../lib/localData'
+import { useMe } from '../lib/sharing'
 import { useLiveTasks } from '../lib/liveTasks'
 import { dayClosed } from '../lib/review'
 import { openBriefingTask, openNotifications, openUpcomingDay, revealTasks } from './briefingLinks'
@@ -28,9 +30,13 @@ export function useBriefing(view: 'today' | 'upcoming' | null): Briefing | null 
   const review = useReviewRow()
   // The bell's list: the newest in-app notifications, cached on the device (design D4).
   const notifications = useNotifications()
+  const prefs = useUserPrefsRow()
+  const memberships = useMemberships()
+  const me = useMe()
+  const hide = useMemo(() => (view === 'today' ? todayAssigneeFilter(prefs, memberships, me) : null), [view, prefs, memberships, me])
   return useMemo(() => (view && tasks
-    ? briefingFacts({ view, today, tasks, projects, dayLength, notifications, closed: dayClosed(review, today), dayStart })
-    : null), [view, tasks, projects, today, dayLength, notifications, review, dayStart])
+    ? briefingFacts({ view, today, tasks, projects, dayLength, notifications, closed: dayClosed(review, today), dayStart, hide })
+    : null), [view, tasks, projects, today, dayLength, notifications, review, dayStart, hide])
 }
 
 /** A plain click (not one that opens a new tab) runs `go` instead of following the address. */

@@ -1,7 +1,11 @@
 // App icon badge (OpenSpec change `app-icon-badge`): the signed-in app keeps the badge
 // current, and Settings → Notifications has the per-device switch, shown only where
 // the browser can badge the installed app.
+import { useMemo } from 'react'
 import { badgeSupported, setBadgeEnabled, useAppBadge, useBadgeEnabled } from '../lib/appBadge'
+import { todayAssigneeFilter } from '../lib/dayLists'
+import { useMemberships, useUserPrefsRow } from '../lib/localData'
+import { useMe } from '../lib/sharing'
 import { t } from '../lib/i18n'
 import { useLiveTasks, useOpenTasks } from '../lib/liveTasks'
 import { useSettledValue } from '../lib/useSettledValue'
@@ -18,7 +22,11 @@ export function AppBadgeSync(): null {
   const today = useToday()
   const zone = useViewerZone()
   const { dayStart } = useDateTimeFormat()
-  useAppBadge(open, live !== undefined, today, dayStart, zone)
+  const prefs = useUserPrefsRow()
+  const memberships = useMemberships()
+  const me = useMe()
+  const hide = useMemo(() => todayAssigneeFilter(prefs, memberships, me), [prefs, memberships, me])
+  useAppBadge(open, live !== undefined, today, dayStart, zone, hide)
   return null
 }
 

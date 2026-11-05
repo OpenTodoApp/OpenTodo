@@ -24,7 +24,7 @@ import { setCurrentFilter } from './listActions'
 import { useBulkList } from './bulk/useBulkList'
 import { useListKeys } from './useListKeys'
 import { useShortcutScope } from './shortcuts'
-import { useToday, useViewerZone } from './useViews'
+import { useAssigneeDirectory, useToday, useViewerZone } from './useViews'
 import { setPanelTaskId, usePanelTaskId } from './panel'
 import { openFromRow } from './sidePanel'
 import { TaskRow } from './TaskRow'
@@ -137,9 +137,9 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
 
   useEffect(() => { setCurrentFilter(good.ast ? good.src : null); return () => setCurrentFilter(null) }, [good])
   // Custom field definitions and tracked minutes (time-tracking: `tracked > 1h` follows a running entry live).
-  const fieldDefs = useFieldDefs(), tracked = useTrackedTotals()
-  const ctx = useMemo(() => ({ today, labels, projects, tasks: allTasks, sections: flow.sections, weekStart, fields: fieldDefs, tracked, workspaces: ws.workspaces, workspaceOf: ws.workspaceOf }),
-    [today, labels, projects, allTasks, flow.sections, weekStart, fieldDefs, tracked, ws])
+  const fieldDefs = useFieldDefs(), tracked = useTrackedTotals(), directory = useAssigneeDirectory()
+  const ctx = useMemo(() => ({ today, labels, projects, tasks: allTasks, sections: flow.sections, weekStart, fields: fieldDefs, tracked, ...directory, workspaces: ws.workspaces, workspaceOf: ws.workspaceOf }),
+    [today, labels, projects, allTasks, flow.sections, weekStart, fieldDefs, tracked, directory, ws])
   const compiled = useMemo(() => {
     if (!good.ast) return null
     // "Completed tasks: Show" (views-and-display D4) reads the query as `(query) & (open | completed)`.
@@ -285,7 +285,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
         onAdd={() => document.querySelector<HTMLButtonElement>('[data-filter-panel] [data-add-condition]')?.click()} />
       {filterOpen && (
         <FilterPanel count={count} onClose={() => setFilterOpen(false)} inputRef={inputRef} onClear={() => { setHistIdx(-1); draftWs.clear(); focusQuery() }}
-          builder={<FilterBuilder query={query} onChange={(q) => { setQuery(q); setHistIdx(-1) }} labels={labels} projects={projects} fields={fieldDefs} workspaces={ws.workspaces} />}
+          builder={<FilterBuilder query={query} onChange={(q) => { setQuery(q); setHistIdx(-1) }} labels={labels} projects={projects} fields={fieldDefs} workspaces={ws.workspaces} members={directory.members} />}
           formula={(
             <input
               ref={inputRef}

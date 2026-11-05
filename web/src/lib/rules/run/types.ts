@@ -73,6 +73,8 @@ export interface RunWorld {
   prefs?: Row
   /** Each shared project's membership; a project absent here is personal. */
   memberships: Map<string, Membership>
+  /** Set for a shared routine: `assigned:` names only that project's members. */
+  project?: string
   /** Each task's logical date of its newest change, for the condition `unchanged`. */
   changed?: Record<string, string>
   encrypted: boolean

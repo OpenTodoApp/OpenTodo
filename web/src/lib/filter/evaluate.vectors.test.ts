@@ -30,6 +30,8 @@ describe('filter evaluation (shared vectors with internal/filter)', () => {
     fields: vectors.fields as unknown as FieldDef[],
     tasks,
     tracked: new Map(Object.entries(vectors.tracked)),
+    me: vectors.me,
+    members: vectors.members,
   }
   it('has the vectors', () => expect(vectors.cases.length).toBeGreaterThanOrEqual(50))
   for (const c of vectors.cases) {

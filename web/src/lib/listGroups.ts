@@ -7,7 +7,7 @@ import { nextWaiting, waitingTimeSensitive } from './closedList'
 import { formatDateHeading, formatTime, type ResolvedDateTime } from './dates'
 import type { Projection } from './occurrences'
 import { inboxTasks } from './inbox'
-import { groupToday, groupUpcoming, projectOpenList, todayList, upcomingList, upcomingWithToday, withoutArchived } from './dayLists'
+import { groupToday, groupUpcoming, projectOpenList, todayList, upcomingList, upcomingWithToday, withoutArchived, type TodayAssigneeFilter } from './dayLists'
 import { appendTo, groupBy } from './collections'
 import { t } from './i18n'
 import { logbookHeading, type LogbookGroup } from './logbook'
@@ -149,7 +149,7 @@ export function flatRow(task: Task, breadcrumb: string | null = null): ListRow {
  * The tasks a list view holds, in its order (archived projects stay out of cross-project views).
  * `upcomingToday`: Upcoming starts with Today's tasks (upcoming-start-with-today D2).
  */
-export function tasksForView(scope: ListScope, allTasks: readonly Task[], projects: readonly Project[], today: string, userId?: string, upcomingToday = false): Task[] {
+export function tasksForView(scope: ListScope, allTasks: readonly Task[], projects: readonly Project[], today: string, userId?: string, upcomingToday = false, hide?: TodayAssigneeFilter | null): Task[] {
   // Tasks of archived projects stay out of the cross-project views (lib/dayLists, shared with the display).
   const all = withoutArchived(allTasks as Task[], projects as Project[], scope.view === 'project' ? scope.id : undefined)
   switch (scope.view) {
@@ -157,7 +157,7 @@ export function tasksForView(scope: ListScope, allTasks: readonly Task[], projec
       // Not placed, and no placed parent (lib/inbox, inbox-means-unplaced).
       return inboxTasks(all, allTasks)
     case 'today':
-      return todayList(all, today)
+      return todayList(all, today, hide)
     case 'upcoming':
       return upcomingToday ? upcomingWithToday(all, today) : upcomingList(all, today)
     // Someday and Anytime (someday-and-evening D5), grouped by project in listGroups.
