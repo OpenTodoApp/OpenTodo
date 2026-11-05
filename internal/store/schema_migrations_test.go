@@ -82,6 +82,37 @@ func TestMigrateReportsSkippedMigration(t *testing.T) {
 	}
 }
 
+// TestMigrateAddsTokenExpiryToALegacyDatabase: 0057_mcp_oauth.sql first shipped
+// without api_token_expiry and the statement was added to it afterwards, so a
+// server that had applied the earlier body recorded 0057 as done and never got
+// the table — minting an OAuth access token then failed with "no such table:
+// api_token_expiry". 0058 creates it on upgrade (mcp-oauth).
+func TestMigrateAddsTokenExpiryToALegacyDatabase(t *testing.T) {
+	ctx := context.Background()
+	db, err := Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	// The database as the earlier body of 0057 left it: every table but this one,
+	// the file recorded, and the schema version at 57.
+	for _, q := range []string{
+		`DROP TABLE api_token_expiry`,
+		`DELETE FROM schema_migrations WHERE name = '0058_api_token_expiry.sql'`,
+		`PRAGMA user_version = 57`,
+	} {
+		if _, err := db.ExecContext(ctx, q); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := Migrate(ctx, db); err != nil {
+		t.Fatal(err)
+	}
+	if n := count(t, db, `SELECT COUNT(*) FROM sqlite_master WHERE name = 'api_token_expiry'`); n != 1 {
+		t.Fatalf("api_token_expiry tables = %d, want 1", n)
+	}
+}
+
 func captureLogs(t *testing.T) *bytes.Buffer {
 	t.Helper()
 	var buf bytes.Buffer
