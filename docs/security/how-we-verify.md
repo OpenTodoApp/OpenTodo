@@ -110,7 +110,7 @@ While the relay is on, the server is trusted with content within those caps; see
 - Route packages (`davroutes`, `maproutes`, `speech`) receive an `httpx.Router` that registers the same way.
 
 **Tests.**
-- `TestEveryRouteDeclaresAPolicy` parses the package's source and fails on any direct `ServeMux.Handle` or `HandleFunc` call.
+- `TestEveryRouteDeclaresAPolicy` parses the source of the package and of its route subpackages, and fails on any direct `ServeMux.Handle` or `HandleFunc` call.
 - `TestSecurityRoutePolicies` pins the policy of every security-relevant route.
 - `TestRouteMatrix` (`internal/httpapi/route_matrix_test.go`) calls every non-public route in each of these ways, and compares each answer with the declared policy:
   - anonymously;
@@ -121,9 +121,7 @@ While the relay is on, the server is trusted with content within those caps; see
   - with a stale session.
 - `TestDemoDenyListMatchesPolicy` keeps the demo's deny list and the `.demoDenied()` routes identical in both directions.
 
-**Limits.**
-- Public routes are skipped by the matrix and rely on their own tests.
-- The source scan does not cover the route subpackages.
+**Limits.** Public routes are skipped by the matrix and rely on their own tests. The source scan covers the package and its route subpackages; `httpx`, which defines the router, is the one exception.
 
 ## Token scopes
 
@@ -223,16 +221,15 @@ Go's native fuzzing covers the parsers that read untrusted bytes. `scripts/fuzz.
 | `internal/quickadd` | `FuzzParse` |
 | `internal/recurrence` | `FuzzParse` |
 | `internal/vault` | `FuzzParseLine`, `FuzzParseDoc`, `FuzzTaskNoteFront` |
+| `internal/oidc` | `FuzzVerifyIDToken` (seeded with valid tokens of every accepted algorithm) |
+| `internal/outbound` | `FuzzAddressPolicy` (invariants: always-denied implies denied; a mapped address is judged as its IPv4 form; a NAT64, IPv4-compatible or 6to4 wrapping never unlocks a refused address), `FuzzValidateURL` |
+| `internal/themes` | `FuzzValidate` |
+| `internal/ruleval` | `FuzzParseRuleValues` (every routine value parser and the step type checker) |
+| `internal/origin`, `internal/location` | `FuzzDecode` (whatever decodes passes the write check) |
 
-**Not fuzzed yet**, though they read untrusted input (follow-up):
-- OIDC ID-token and key parsing (`oidc.VerifyIDToken`);
-- the outbound address checks;
-- theme documents (`themes.Validate`);
-- automation rule values (`internal/ruleval`);
-- task origins and locations (`origin.Decode`, `location.Decode`);
-- the Microsoft Graph event parser.
+The last five rows were added with this retrospective.
 
-The TypeScript client has no fuzzing.
+**Not fuzzed yet:** the Microsoft Graph event parser, the import planner, and the TypeScript client.
 
 ## Other checks worth knowing
 
@@ -318,13 +315,10 @@ Every item below is in the CHANGELOG's Security section of its release. Most wer
 These are known and tracked as follow-up tasks of the OpenSpec change `external-security-review`.
 
 - **Key derivation bounds.** The client accepts key records from 100,000 PBKDF2 iterations, while the server stores only 600,000 or more.
-- **Untested security headers.** No test pins `X-Frame-Options`, the CSP's `frame-ancestors` and `script-src`, or `nosniff` on pages.
-- **Coverage holes in the route tests.**
-  - The source scan of the route policy test does not cover the route subpackages.
-  - The route matrix skips public routes.
-- **Host mode.** No test uses one tenant's API token on another tenant's host (only cookies). The assistant's concurrency limit is per tenant, not per host.
+- **Public routes in the route matrix.** The matrix skips public routes, which rely on their own tests.
+- **Host mode.** The assistant's concurrency limit is per tenant, not per host.
 - **Write paths are a convention.** Nothing mechanically enforces that REST handlers write with `ApplyStrict`, or that no package writes synced rows directly.
-- **Fuzzing.** Several parsers have no fuzz target (see [Fuzzing](#fuzzing)), and the TypeScript client has none.
+- **Fuzzing.** A few parsers still have no fuzz target (see [Fuzzing](#fuzzing)), and the TypeScript client has none.
 - **No independent review** of the design or the code yet.
 
 ## Independent review
