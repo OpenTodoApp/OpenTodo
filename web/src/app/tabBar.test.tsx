@@ -7,7 +7,7 @@ import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
-import { createTask, resetDeviceId } from '../lib/ops'
+import { applyOps, createTask, resetDeviceId } from '../lib/ops'
 import type { User } from '../lib/types'
 import { click, flush, key, render, minWidthPx, waitFor } from '../ui/test-utils'
 import { openTaskPanel, resetPanel } from './panel'
@@ -49,6 +49,14 @@ describe('the tab bar', () => {
     expect(bar()!.className).toContain('md:hidden')
     // The content column leaves room for the bar.
     expect(document.querySelector('main')!.getAttribute('data-phone-chrome')).toBe('true')
+    await r.unmount()
+  })
+
+  it('follows the sidebar destination order, with Search last', async () => {
+    await applyOps([{ id: 'o1', entity: 'user_prefs', entityId: 'me', field: 'sidebar_order', value: 'upcoming,today,inbox,calendar', ts: Date.now(), device: 'laptop' }] as never)
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => [...document.querySelectorAll('[data-tab]')].map((t) => t.getAttribute('data-tab')).join() === 'upcoming,today,inbox,search', 'the reordered tabs')
+    expect([...document.querySelectorAll('[data-tab]')].map((t) => t.textContent)).toEqual(['Upcoming', 'Today', 'Inbox', 'Search'])
     await r.unmount()
   })
 

@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { BUILTIN_THEMES, readThemeChoices, setDefaultThemeChoice, setInstanceThemeChoice, setThemeChoice } from './theme/choice'
 import { NO_INSTANCE_THEMES, parseInstanceThemes, type InstanceThemes } from './theme/choice'
 import type { AppliedTheme } from './theme/apply'
-import { applyAppearance, setAppearanceThemes, CACHE_KEY, cachedCustom, deriveCustom, setCustomAccent, destinationOrder, lightBar, moveDestination, orderDestinations, readAppearance, readSidebarCounts, setAppearance, setSidebarCounts } from './appearance'
+import { applyAppearance, setAppearanceThemes, CACHE_KEY, cachedCustom, deriveCustom, setCustomAccent, destinationOrder, lightBar, moveDestination, orderDestinations, readAppearance, readSidebarCounts, setAppearance, setSidebarCounts, tabBarDestinations } from './appearance'
 import { db } from './db'
 import { applyOps, resetDeviceId } from './ops'
 import { DARK_BAR, DEFAULT_ACCENT } from '../ui/tokens/accents'
@@ -86,6 +86,11 @@ describe('orderDestinations (sidebar-polish 3.1)', () => {
     const stored = (await db.userPrefs.get('me'))!.sidebar_order!.split(',')
     expect(stored.slice(0, 4)).toEqual(['calendar', 'today', 'inbox', 'upcoming'])
     expect(stored.at(-1)).toBe('hologram')
+  })
+  it('the phone tab bar keeps Inbox, Today and Upcoming in that order, and nothing else', () => {
+    expect(tabBarDestinations(null)).toEqual(['inbox', 'today', 'upcoming'])
+    expect(tabBarDestinations({ sidebar_order: 'today,inbox,someday,upcoming,calendar' })).toEqual(['today', 'inbox', 'upcoming'])
+    expect(tabBarDestinations({ sidebar_order: 'calendar,upcoming' })).toEqual(['upcoming', 'inbox', 'today'])
   })
 })
 
