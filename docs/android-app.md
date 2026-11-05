@@ -66,7 +66,7 @@ On first start the app asks for your server's address, the one you open in the b
 - **Certificate not trusted**: the phone doesn't trust the server's certificate. If your server uses its own certificate authority, install it in Android's security settings; the app trusts certificates you installed there.
 - **Address refused**: the app needs `https://`. Plain `http://` works only for addresses on your own network (such as `192.168.1.4:8080` or `nas.local`), after a warning.
 
-Then sign in as usual. After the first start the app also opens offline, with your local copy.
+Then sign in as usual. After that first successful open the app keeps a copy of itself on the phone and opens it offline, with the server switched off or the phone in flight mode. That includes a server at a plain http address on your own network.
 
 To use another server, long-press the app icon and choose **Change server**. This removes the current server's data from the phone (the offline copy, scheduled reminders, widget data and fingerprint unlock); changes not yet synced are lost.
 
