@@ -17,7 +17,7 @@ import (
 
 	"github.com/OpenTodoApp/opentodo/internal/config"
 	"github.com/OpenTodoApp/opentodo/internal/httpapi/httpx"
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 	"github.com/OpenTodoApp/opentodo/internal/tenant/services"
 )
 
@@ -50,7 +50,7 @@ func newMatrixEnv(t *testing.T) *matrixEnv {
 	// Like newEnv, plus what production always wires (the automations switch)
 	// and a clock that can make the owner's session stale.
 	dir := t.TempDir()
-	db, err := store.Open(dir)
+	db, err := storetest.OpenDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -6,14 +6,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 )
 
 // TestSetupCode (trusted-client-identity): a fresh server without a setup token
 // gets a code; a public first registration needs it, a local one does not, and
 // the code is discarded once the owner exists.
 func TestSetupCode(t *testing.T) {
-	db, err := store.Open(t.TempDir())
+	db, err := storetest.OpenDir(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,7 +48,7 @@ func TestSetupCode(t *testing.T) {
 	}
 
 	// Local clients need no code; a configured token means no code at all.
-	db2, _ := store.Open(t.TempDir())
+	db2, _ := storetest.OpenDir(t.TempDir())
 	t.Cleanup(func() { db2.Close() })
 	local := NewService(db2, time.Hour, false)
 	if _, err := local.PrepareSetupCode(t.Context()); err != nil {
@@ -57,7 +57,7 @@ func TestSetupCode(t *testing.T) {
 	if u, err := local.RegisterFrom(t.Context(), "o@example.com", "", "correct horse battery", "", "", true); err != nil || u.Role != "owner" {
 		t.Fatalf("local: %v %v", u, err)
 	}
-	db3, _ := store.Open(t.TempDir())
+	db3, _ := storetest.OpenDir(t.TempDir())
 	t.Cleanup(func() { db3.Close() })
 	tok := NewService(db3, time.Hour, false)
 	tok.SetSetupToken("0123456789abcdef-setup")
@@ -73,7 +73,7 @@ func TestSetupCode(t *testing.T) {
 // code is generated and a first registration from anywhere needs none; a
 // setup token is still required when set, whatever the code setting says.
 func TestSetupCodeOffByDefault(t *testing.T) {
-	db, err := store.Open(t.TempDir())
+	db, err := storetest.OpenDir(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
