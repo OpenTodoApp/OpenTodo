@@ -26,6 +26,7 @@ Open-source, self-hosted, local-first task manager that replaces subscription ta
 - `docs/` architecture, sync protocol, API, self-hosting. `ROADMAP.md` maps features to change names.
 
 ## Commands
+The human contributor guide is `CONTRIBUTING.md` and `docs/contributing/` (first contribution, architecture tour, OpenSpec workflow, tests and checks, adding a language, an importer or a shared contract).
 - `make dev` (API :8080 + Vite :5173), `make check` (what CI runs), `go test ./...`, `cd web && npm test && npm run build`.
 - Build the web app before `go build` or tests that import `internal/web` (`make web`); `internal/web/dist/.gitkeep` keeps the embed compiling on a fresh clone.
 - Manual smoke: `./bin/opentodo` then open http://localhost:8080; first visit creates the owner account.
