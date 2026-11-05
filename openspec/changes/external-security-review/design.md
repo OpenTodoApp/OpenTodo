@@ -26,7 +26,7 @@ Alternative: let the reviewer derive the model. Rejected: it costs paid reviewer
 
 Naming a firm in a spec would tie the spec to a contract. OSTIF is the recommended route because it handles scoping and funding for open-source projects. The alternatives are listed so the owner can pick.
 
-**D3. Findings table as the single record.** `docs/security/reviews/<yyyy-mm>-<reviewer>.md` starts with front matter (reviewer, commit, delivery date, publication date) and has one table:
+**D3. Findings table as the single record.** `docs/security/reviews/<yyyy-mm>-<reviewer>.md` keeps the docs site's front matter (the docs check allows only its own keys) and records the review in a `## Record` table (reviewer, commit, delivery date, publication date, scope item ids) followed by one `## Findings` table:
 
 | Column | Values |
 |---|---|
