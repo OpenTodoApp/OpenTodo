@@ -46,6 +46,8 @@ export const KEYWORD_NAME = translatedMap<Keyword>({
   'no energy': msg('No energy'),
   notes: msg('Has a note'),
   'no notes': msg('No note'),
+  assigned: msg('Has an assignee'),
+  unassigned: msg('Unassigned'),
 })
 
 const WEEKDAY = [msg('Sunday'), msg('Monday'), msg('Tuesday'), msg('Wednesday'), msg('Thursday'), msg('Friday'), msg('Saturday')]
@@ -114,6 +116,7 @@ export function conditionText(leaf: Leaf): string {
     case 'search': return t('Title or notes contain {text}', { text: leaf.text })
     case 'notes': return t('Note contains {text}', { text: leaf.text })
     case 'origin': return t('Origin is {value}', { value: leaf.value })
+    case 'assigned': return leaf.name.toLocaleLowerCase() === 'me' ? t('Assigned to me') : t('Assigned to {name}', { name: leaf.name })
     case 'energy': return t('Energy is {level}', { level: energyName(leaf.value) })
     case 'sector': return t('Time sector is {name}', { name: (SECTOR_WORDS as readonly string[]).includes(leaf.value) ? sectorWordName(leaf.value as SectorWord) : leaf.value })
     case 'workspace': return t('Workspace is {name}', { name: leaf.name })

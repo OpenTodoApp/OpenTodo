@@ -1993,6 +1993,8 @@
     "web/src/app/NotificationChannelEditor.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/TaskListView.tsx",
+    "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/filter/conditionText.ts",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/lib/shortcuts.ts"
   ],
@@ -2010,7 +2012,8 @@
     "web/src/app/IssueEditor.tsx"
   ],
   "Assigned to {name}": [
-    "web/src/app/AssigneePicker.tsx"
+    "web/src/app/AssigneePicker.tsx",
+    "web/src/app/filter/conditionText.ts"
   ],
   "Assigned to {name}, taking turns": [
     "web/src/app/AssigneePicker.tsx"
@@ -2020,6 +2023,7 @@
   ],
   "Assignee": [
     "web/src/app/AssigneePicker.tsx",
+    "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/AssigneeEditor.tsx",
     "web/src/app/task-detail/Facets.tsx",
@@ -5898,6 +5902,9 @@
   "Expected a label name after \"{after}\" at position {pos}": [
     "web/src/lib/filter/parse.ts"
   ],
+  "Expected a name after \"assigned:\" at position {pos}": [
+    "web/src/lib/filter/parse.ts"
+  ],
   "Expected a project name after \"{after}\" at position {pos}": [
     "web/src/lib/filter/parse.ts"
   ],
@@ -7000,6 +7007,9 @@
   "Has a time sector": [
     "web/src/app/filter/conditionText.ts"
   ],
+  "Has an assignee": [
+    "web/src/app/filter/conditionText.ts"
+  ],
   "Has an energy": [
     "web/src/app/filter/conditionText.ts"
   ],
@@ -7115,6 +7125,9 @@
   ],
   "Hide table": [
     "web/src/app/review/charts.tsx"
+  ],
+  "Hide tasks assigned to others": [
+    "web/src/app/TaskListView.tsx"
   ],
   "Hide text": [
     "web/src/app/task-detail/HistoryTab.tsx"
@@ -10059,6 +10072,9 @@
     "web/src/app/AssigneePicker.tsx",
     "web/src/app/WorkspaceGroups.tsx",
     "web/src/app/task-detail/RotationEditor.tsx"
+  ],
+  "No member named \"{name}\"": [
+    "web/src/lib/filter/evaluate.ts"
   ],
   "No members": [
     "web/src/app/WorkspaceGroups.tsx"
@@ -14844,6 +14860,9 @@
   "Show successful runs": [
     "web/src/app/routines/RoutinesInboxCard.tsx"
   ],
+  "Show tasks assigned to others": [
+    "web/src/app/TaskListView.tsx"
+  ],
   "Show text": [
     "web/src/app/task-detail/HistoryTab.tsx"
   ],
@@ -18697,6 +18716,8 @@
   "Unassigned": [
     "web/src/app/AssigneePicker.tsx",
     "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/filter/conditionText.ts",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
     "web/src/lib/facets.ts"

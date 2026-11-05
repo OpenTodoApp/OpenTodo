@@ -14,12 +14,12 @@ import { ENERGY_LEVELS, energyName, type Energy } from '../../lib/energy'
 import { SECTOR_WORDS } from '../../lib/sectors'
 import { sectorWordName } from '../../lib/sectorNames'
 
-export type ConditionKind = 'label' | 'project' | 'priority' | DateField | 'state' | 'search' | 'notes' | 'origin' | 'workspace' | 'tracked' | 'field' | 'nofield' | 'energy' | 'sector'
+export type ConditionKind = 'label' | 'project' | 'priority' | DateField | 'state' | 'assignee' | 'search' | 'notes' | 'origin' | 'workspace' | 'tracked' | 'field' | 'nofield' | 'energy' | 'sector'
 
 const KIND_NAME = translatedMap<ConditionKind>({
   label: msg('Label'), project: msg('Project'), priority: msg('Priority'),
   due: msg('Due date'), deadline: msg('Deadline'), start: msg('Start date'), created: msg('Created'), completed: msg('Completed date'),
-  state: msg('State'), search: msg('Title or notes'), notes: msg('Note'), origin: msg('Origin'), workspace: msg('Workspace'), tracked: msg('Tracked time'),
+  state: msg('State'), assignee: msg('Assignee'), search: msg('Title or notes'), notes: msg('Note'), origin: msg('Origin'), workspace: msg('Workspace'), tracked: msg('Tracked time'),
   field: msg('Custom field'), nofield: msg('Custom field is empty'), energy: msg('Energy'), sector: msg('Time sector'),
 })
 
@@ -55,6 +55,8 @@ export interface Draft {
   value: string
   /** `energy: value` (task-energy D5). */
   energy: Energy
+  /** `me`, `unassigned`, or a member's name (today-assigned-filter). */
+  assignee: string
 }
 
 const DATE_KINDS: readonly string[] = ['due', 'deadline', 'start', 'created', 'completed']
@@ -102,7 +104,7 @@ function dateOf(d: Draft): DateExpr | null {
 export function draftOf(leaf: Leaf | null): Draft {
   const d: Draft = {
     kind: 'label', name: '', descendants: false, priority: 1, op: '<=', when: 'today', n: '3', weekday: 1, iso: '',
-    keyword: 'overdue', text: '', duration: '', value: '', energy: 'deep',
+    keyword: 'overdue', text: '', duration: '', value: '', energy: 'deep', assignee: 'me',
   }
   if (!leaf) return d
   switch (leaf.kind) {
@@ -110,7 +112,8 @@ export function draftOf(leaf: Leaf | null): Draft {
     case 'project': return { ...d, kind: 'project', name: leaf.name, descendants: leaf.descendants }
     case 'priority': return { ...d, kind: 'priority', priority: leaf.value }
     case 'date': return { ...d, kind: leaf.field, op: leaf.op, ...whenOf(leaf.date) }
-    case 'keyword': return { ...d, kind: 'state', keyword: leaf.keyword }
+    case 'keyword': return leaf.keyword === 'unassigned' ? { ...d, kind: 'assignee', assignee: 'unassigned' } : { ...d, kind: 'state', keyword: leaf.keyword }
+    case 'assigned': return { ...d, kind: 'assignee', assignee: leaf.name.toLocaleLowerCase() === 'me' ? 'me' : leaf.name }
     case 'search': return { ...d, kind: 'search', text: leaf.text }
     case 'notes': return { ...d, kind: 'notes', text: leaf.text }
     case 'origin': return { ...d, kind: 'origin', text: leaf.value }
@@ -139,6 +142,9 @@ export function leafOf(d: Draft): Leaf | null {
     case 'project': return name ? { kind: 'project', name, descendants: d.descendants, pos: 0 } : null
     case 'priority': return { kind: 'priority', value: d.priority }
     case 'state': return { kind: 'keyword', keyword: d.keyword }
+    case 'assignee':
+      if (d.assignee === 'unassigned') return { kind: 'keyword', keyword: 'unassigned' }
+      return { kind: 'assigned', name: d.assignee.trim() || 'me' }
     case 'search': return d.text.trim() ? { kind: 'search', text: d.text.trim() } : null
     case 'notes': return d.text.trim() ? { kind: 'notes', text: d.text.trim() } : null
     case 'origin': return d.text.trim() ? { kind: 'origin', value: d.text.trim() } : null
@@ -179,6 +185,8 @@ export interface ConditionEditorProps {
   fields: readonly FieldDef[]
   /** The cached workspaces (group-mentions D6): the Workspace condition is offered with more than one. */
   workspaces?: readonly { id: string; name: string }[]
+  /** People the Assignee condition can name (today-assigned-filter). */
+  members?: readonly { userId: string; name: string }[]
   onSave: (leaf: Leaf, not: boolean) => void
   onRemove?: () => void
   onClose: () => void
@@ -186,13 +194,13 @@ export interface ConditionEditorProps {
 
 
 
-export function ConditionEditor({ leaf, not: initialNot, labels, projects, fields, workspaces = [], onSave, onRemove, onClose }: ConditionEditorProps) {
+export function ConditionEditor({ leaf, not: initialNot, labels, projects, fields, workspaces = [], members = [], onSave, onRemove, onClose }: ConditionEditorProps) {
   const [draft, setDraft] = useState<Draft>(() => draftOf(leaf))
   const [not, setNot] = useState(initialNot)
   const set = (patch: Partial<Draft>) => setDraft((d) => ({ ...d, ...patch }))
   const result = leafOf(draft)
   const fieldNames = useMemo(() => [...new Set(fields.filter((f) => !f.deleted_at).map((f) => f.name))].sort((a, b) => a.localeCompare(b)), [fields])
-  const kinds: ConditionKind[] = ['label', 'project', 'priority', 'due', 'deadline', 'start', 'created', 'completed', 'state', 'search', 'notes', 'origin', 'tracked', 'energy', 'sector']
+  const kinds: ConditionKind[] = ['label', 'project', 'priority', 'due', 'deadline', 'start', 'created', 'completed', 'state', 'assignee', 'search', 'notes', 'origin', 'tracked', 'energy', 'sector']
   if (workspaces.length > 1 || draft.kind === 'workspace') kinds.splice(kinds.indexOf('origin') + 1, 0, 'workspace')
   if (fieldNames.length || draft.kind === 'field' || draft.kind === 'nofield') kinds.push('field', 'nofield')
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
@@ -276,6 +284,16 @@ export function ConditionEditor({ leaf, not: initialNot, labels, projects, field
               </Field>
             )}
           </div>
+        )}
+
+        {draft.kind === 'assignee' && (
+          <Field label={t('Assignee')}>
+            <Select value={draft.assignee} onChange={(e) => set({ assignee: e.target.value })} data-assignee-select>
+              <option value="me">{t('Assigned to me')}</option>
+              <option value="unassigned">{t('Unassigned')}</option>
+              {[...new Set([...members.map((m) => m.name), draft.assignee !== 'me' && draft.assignee !== 'unassigned' ? draft.assignee : ''].filter(Boolean))].map((n) => <option key={n} value={n}>{n}</option>)}
+            </Select>
+          </Field>
         )}
 
         {draft.kind === 'state' && (

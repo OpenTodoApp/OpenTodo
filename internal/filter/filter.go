@@ -67,6 +67,8 @@ const (
 	tSector
 	// tNotes is `notes: text`, text in a task's note (OpenSpec change notes-overview, D5).
 	tNotes
+	// tAssigned is `assigned: me` or `assigned: name` (OpenSpec change today-assigned-filter).
+	tAssigned
 	tWord
 	tString
 )
@@ -91,16 +93,17 @@ func fail(offset int, format string, args ...any) error {
 }
 
 var (
-	searchPrefix = regexp.MustCompile(`(?i)^search:`)
-	originPrefix = regexp.MustCompile(`(?i)^origin:`)
-	wsPrefix     = regexp.MustCompile(`(?i)^workspace:`)
-	energyPrefix = regexp.MustCompile(`(?i)^energy:`)
-	sectorPrefix = regexp.MustCompile(`(?i)^sector:`)
-	notesPrefix  = regexp.MustCompile(`(?i)^notes:`)
-	priorityWord = regexp.MustCompile(`(?i)^p([1-4])$`)
-	anyPriority  = regexp.MustCompile(`^p\d+$`)
-	isoDate      = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
-	digits       = regexp.MustCompile(`^\d+$`)
+	searchPrefix   = regexp.MustCompile(`(?i)^search:`)
+	originPrefix   = regexp.MustCompile(`(?i)^origin:`)
+	wsPrefix       = regexp.MustCompile(`(?i)^workspace:`)
+	energyPrefix   = regexp.MustCompile(`(?i)^energy:`)
+	sectorPrefix   = regexp.MustCompile(`(?i)^sector:`)
+	notesPrefix    = regexp.MustCompile(`(?i)^notes:`)
+	assignedPrefix = regexp.MustCompile(`(?i)^assigned:`)
+	priorityWord   = regexp.MustCompile(`(?i)^p([1-4])$`)
+	anyPriority    = regexp.MustCompile(`^p\d+$`)
+	isoDate        = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
+	digits         = regexp.MustCompile(`^\d+$`)
 )
 
 func tokenize(src []rune) ([]token, error) {
@@ -291,6 +294,7 @@ var prefixedTerms = []prefixedTerm{
 	{energyPrefix, "energy:", tEnergy, energyText},
 	{sectorPrefix, "sector:", tSector, sectorText},
 	{notesPrefix, "notes:", tNotes, needText(`Expected text after "notes:" at position %d`)},
+	{assignedPrefix, "assigned:", tAssigned, needText(`Expected a name after "assigned:" at position %d`)},
 }
 
 func prefixedTermOf(word string) (prefixedTerm, bool) {
@@ -303,7 +307,7 @@ func prefixedTermOf(word string) (prefixedTerm, bool) {
 }
 
 var (
-	simpleKeywords = map[string]bool{"overdue": true, "today": true, "tomorrow": true, "completed": true, "open": true, "subtask": true, "someday": true, "deferred": true, "evening": true, "morning": true, "afternoon": true, "blocked": true, "unblocked": true, "available": true, "habit": true, "origin": true, "energy": true, "notes": true, "sector": true, "carried": true}
+	simpleKeywords = map[string]bool{"overdue": true, "today": true, "tomorrow": true, "completed": true, "open": true, "subtask": true, "someday": true, "deferred": true, "evening": true, "morning": true, "afternoon": true, "blocked": true, "unblocked": true, "available": true, "habit": true, "origin": true, "energy": true, "notes": true, "sector": true, "carried": true, "assigned": true, "unassigned": true}
 	noKeywords     = map[string]bool{"date": true, "project": true, "labels": true, "time": true, "deadline": true, "start": true, "origin": true, "energy": true, "notes": true, "sector": true}
 	weekdays       = map[string]bool{"sunday": true, "monday": true, "tuesday": true, "wednesday": true, "thursday": true, "friday": true, "saturday": true}
 )
@@ -460,6 +464,9 @@ func (p *parser) parseTerm(prev *token) (*Node, error) {
 	case tNotes:
 		p.i++
 		return &Node{Kind: KindNotes, Text: t.value}, nil
+	case tAssigned:
+		p.i++
+		return &Node{Kind: KindAssigned, Text: t.value}, nil
 	case tWord:
 		return p.parseWordTerm(t)
 	case tString:

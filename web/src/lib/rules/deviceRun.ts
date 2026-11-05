@@ -93,7 +93,7 @@ export async function runOnDevice(req: RoutineRunRequest, onStart: (name: string
   const withAI = hasAI(steps)
   const ai = withAI && (await deviceAIReady())
   const prefs = await db.userPrefs.get('me')
-  const world = await loadRunWorld({ steps, encrypted: true, env: { ai, aiConsent: ai, energy: (prefs as { energy?: string } | undefined)?.energy === 'on' } })
+  const world = await loadRunWorld({ steps, encrypted: true, project: rule.project_id || undefined, env: { ai, aiConsent: ai, energy: (prefs as { energy?: string } | undefined)?.energy === 'on' } })
   const plan = await planRoutine(world, { id: rule.id, name, steps, trigger: (rule.trigger ?? { kind: 'manual' }) as RunRoutineTrigger, condition: rule.condition ?? null, aiBudget: req.budget },
     { key: req.occurrence, runId: req.run, triggerTaskId: req.task, aiTokensToday: req.tokens,
       ai: async (c) => {

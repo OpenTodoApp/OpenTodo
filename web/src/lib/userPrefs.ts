@@ -102,6 +102,16 @@ export function setBriefingShown(shown: boolean): Promise<void> {
   return mutate('user_prefs', USER_PREFS_ID, { briefing: shown ? 'shown' : 'hidden' })
 }
 
+/** Today hides tasks assigned to others (today-assigned-filter): on only when the account chose "mine". */
+export function todayHidesOthers(row: Partial<UserPrefs> | null | undefined): boolean {
+  return row?.today_assignees === 'mine'
+}
+
+/** Hides or shows other people's tasks on Today; an ordinary op, so it works offline and syncs. */
+export function setTodayHidesOthers(on: boolean): Promise<void> {
+  return mutate('user_prefs', USER_PREFS_ID, { today_assignees: on ? 'mine' : '' })
+}
+
 /** Today's agenda of calendar events (OpenSpec change today-agenda, D1): off unless the account chose "shown". */
 export function todayEventsShown(row: Partial<UserPrefs> | null | undefined): boolean {
   return row?.today_events === 'shown'
