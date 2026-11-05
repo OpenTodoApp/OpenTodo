@@ -71,9 +71,9 @@ function header() {
 }
 
 const FOOTER_GROUPS = [
-  ['Product', [['Features', '/features/'], ['Get started', '/start/'], ['Install the app', '/install/'], ['Self-host', '/self-host/'], ['Templates', '/templates/']]],
-  ['Learn', [['Guides and how-tos', '/learn/'], ['Docs', '/docs/'], ['Developers', '/developers/'], ['Blog', '/blog/']]],
-  ['Project', [['About', '/about/'], ['Support OpenTodo', '/support/'], ['Security', `${REPO_URL}/blob/main/SECURITY.md`], ['Accessibility', '/accessibility/'], ['Privacy', '/privacy/']]],
+  ['Product', [['Features', '/features/'], ['Get started', '/start/'], ['Install the app', '/install/'], ['Self-host', '/self-host/'], ['Templates', '/templates/'], ['Changelog', '/changelog/']]],
+  ['Learn', [['Guides and how-tos', '/learn/'], ['Docs', '/docs/'], ['Under the hood', '/under-the-hood/'], ['Blog', '/blog/']]],
+  ['Project', [['About', '/about/'], ['Support OpenTodo', '/support/'], ['Security', '/security/'], ['Accessibility', '/accessibility/'], ['Privacy', '/privacy/']]],
 ]
 const COMMUNITY = [
   ['star', 'Star on GitHub', REPO_URL],
