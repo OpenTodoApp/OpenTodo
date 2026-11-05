@@ -55,7 +55,7 @@ If you prefer not to use compose:
 
 ## Environment variables
 
-None is required. With a Compose resource (the one-click template or Option A), a variable you add in Coolify's **Environment Variables** tab reaches the container **only if the compose file references it**; anything else is silently ignored. Both compose files reference the variables below (the template the most common ones, `docker-compose.yml` all of them); add a line with **Edit Compose file** for any other. The complete list is in the [README](../../README.md#configuration).
+None is required. With a Compose resource (the one-click template or Option A), a variable you add in Coolify's **Environment Variables** tab reaches the container **only if the compose file references it**; anything else is silently ignored. Both compose files reference the variables below (the template the most common ones, `docker-compose.yml` all of them); add a line with **Edit Compose file** for any other. The complete list is in the [README](configuration.md).
 
 | Variable | Default | Notes |
 | --- | --- | --- |

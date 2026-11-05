@@ -122,6 +122,20 @@ export function stabilityLinkProblems(pages, readme = null) {
   return out
 }
 
+/**
+ * Every page under docs/self-hosting/ is reachable from the self-hosting handbook
+ * (OpenSpec change docs-1-0, documentation "Self-hosting handbook"): a platform
+ * page from its install table, a feature page from its sections.
+ */
+export function selfHostingOrphans(pages) {
+  const handbook = pages.find((p) => p.rel === 'self-hosting/README.md')
+  if (!handbook) return []
+  const linked = new Set([...handbook.body.matchAll(/\]\((?:\.\/)?([a-z0-9-]+\.md)(?:#[^)]*)?\)/g)].map((m) => m[1]))
+  return pages
+    .filter((p) => p.rel.startsWith('self-hosting/') && p.rel !== handbook.rel && !linked.has(p.rel.slice('self-hosting/'.length)))
+    .map((p) => `docs/${p.rel}: not linked from the self-hosting handbook (docs/self-hosting/README.md); add it to the install table or a section`)
+}
+
 /** Runs every check; returns a list of problems (empty when all is well). */
 export async function runChecks(repoRoot) {
   const { files, pages, rendered, problems } = await buildAll(repoRoot)
@@ -195,6 +209,7 @@ export async function runChecks(repoRoot) {
     if (!existsSync(join(repoRoot, img))) out.push(`docs/${p.rel}: card "${p.fm.card}" has no ${img}; mark the shot \`card: true\` in scripts/docs-screenshots.mjs and run it`)
   }
   out.push(...quickAddLinkProblems(pages))
+  out.push(...selfHostingOrphans(pages))
   const readmePath = join(repoRoot, 'README.md')
   if (byRel.has('stability.md')) out.push(...stabilityLinkProblems(pages, existsSync(readmePath) ? readFileSync(readmePath, 'utf8') : null))
   const used = appScreenIds(repoRoot)

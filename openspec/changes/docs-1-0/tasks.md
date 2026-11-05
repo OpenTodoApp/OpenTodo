@@ -8,10 +8,10 @@
 
 ## 2. Self-hosting
 
-- [ ] 2.1 `docs/self-hosting/README.md`, the eight-section handbook, with the install table linking every platform page and a check for orphan platform pages; verify `make docs-check`
-- [ ] 2.2 Restore drill steps, tried once on a scratch Docker container and recorded with the date in the page; verify by running the drill
-- [ ] 2.3 `docs/self-hosting/configuration.md` and the `go/parser` test in `internal/config` (read but not listed, listed but not read); verify `go test ./internal/config/...` and that it fails on a temporary undocumented `os.Getenv("OPENTODO_X")`
-- [ ] 2.4 Sizing section with the numbers measured by `performance-10k`, and the upgrading section linking the `stability-contract` policy page; verify `make docs-check`
+- [x] 2.1 `docs/self-hosting/README.md`, the eight-section handbook, with the install table linking every platform page and a check for orphan platform pages; verify `make docs-check`
+- [x] 2.2 Restore drill steps, tried once on a scratch Docker container and recorded with the date in the page; verify by running the drill
+- [x] 2.3 `docs/self-hosting/configuration.md` and the `go/parser` test in `internal/config` (read but not listed, listed but not read); verify `go test ./internal/config/...` and that it fails on a temporary undocumented `os.Getenv("OPENTODO_X")`
+- [x] 2.4 Sizing section with the numbers measured by `performance-10k`, and the upgrading section linking the `stability-contract` policy page; verify `make docs-check`
 
 ## 3. API reference
 
