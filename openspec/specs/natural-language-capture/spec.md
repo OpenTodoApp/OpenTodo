@@ -213,7 +213,7 @@ The parser SHALL recognise `someday` and `tonight` / `this evening`, each with i
 - **THEN** the first task is parked and the second is due tomorrow and not parked
 
 ### Requirement: Recurrence phrases
-The parser SHALL recognise a recurrence phrase in the quick-add line and SHALL store it as the canonical English rule of the recurring-tasks grammar. Phrases SHALL cover every pattern of that grammar, including `after completion`, `until <date phrase>` and `for N times`, plus one-word forms (`daily`, `weekly`, `monthly`, `yearly`). After a monthly pattern (an ordinal weekday, a day of the month, `last day`, `last weekday`) the parser SHALL also swallow the bundled "of the month" phrase (`of the month`, `im Monat`, `du mois`, `del mese`, `del mes`, `do mês`), which changes nothing in the stored rule. An ordinal SHALL be an ordinal word or a number with an ordinal suffix; a bare number between the "every" word and a weekday SHALL be read as a count, which the grammar cannot express, so the whole phrase SHALL stay in the title and set neither a rule nor a date. The phrase SHALL be removed from the title; a phrase the grammar cannot express SHALL stay in it.
+The parser SHALL recognise a recurrence phrase in the quick-add line and SHALL store it as the canonical English rule of the recurring-tasks grammar. Phrases SHALL cover every pattern of that grammar, including `after completion`, `until <date phrase>` and `for N times`, plus one-word forms (`daily`, `weekly`, `monthly`, `yearly`). After a monthly pattern (an ordinal weekday, a day of the month, `last day`, an ordinal weekday of the month such as `first weekday` or `last weekday`) the parser SHALL also swallow the bundled "of the month" phrase (`of the month`, `im Monat`, `du mois`, `del mese`, `del mes`, `do mês`), which changes nothing in the stored rule. An ordinal SHALL be an ordinal word or a number with an ordinal suffix; a bare number between the "every" word and a weekday SHALL be read as a count, which the grammar cannot express, so the whole phrase SHALL stay in the title and set neither a rule nor a date. The phrase SHALL be removed from the title; a phrase the grammar cannot express SHALL stay in it.
 
 #### Scenario: Weekday rule
 - **WHEN** the user enters `Water plants every Monday`
@@ -254,6 +254,10 @@ The parser SHALL recognise a recurrence phrase in the quick-add line and SHALL s
 #### Scenario: Only the first rule counts
 - **WHEN** the user enters `Pay rent every month every 1st`
 - **THEN** the rule is `every month` and the title is `Pay rent every 1st`
+
+#### Scenario: Ordinal weekday of the month in each language
+- **WHEN** today is 2026-10-09 and the user enters, with that language active, `Pay rent every first weekday`, `Miete jeden ersten Werktag`, `Loyer chaque premier jour ouvré`, `Affitto ogni primo giorno feriale`, `Alquiler cada primer día laborable` or `Aluguel todo primeiro dia útil`
+- **THEN** the rule is `every 1st weekday`, nothing of the phrase remains in the title and the task is due `2026-11-02`
 
 ### Requirement: Recurrence sets the first occurrence
 When the line carries a rule and no date phrase, the task's due date SHALL be the rule's first occurrence on or after today, computed locally, and the recurrence chip SHALL show that date. When the line carries a date, that date SHALL be the due date and the rule applies from it; a time in the line SHALL be the series' due time. The rule and the due date SHALL be written in the same operation set as the task.

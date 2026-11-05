@@ -90,10 +90,16 @@ export function scheduled(rule: Rule, dueDate: string | null, date: string): boo
       return d === Math.min(rule.monthDay, monthLen(y, m))
     case 'lastDay':
       return d === monthLen(y, m)
-    case 'lastWeekday': {
-      let last = dayOf(`${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}-${String(monthLen(y, m)).padStart(2, '0')}`)
-      while (isoWeekday(last) > 5) last--
-      return z === last
+    case 'workday': {
+      if (isoWeekday(z) > 5) return false
+      if (rule.ordinal < 0) {
+        // No weekday follows z in its month.
+        for (let k = d + 1; k <= monthLen(y, m); k++) if (isoWeekday(z + k - d) <= 5) return false
+        return true
+      }
+      let n = 0
+      for (let k = 1; k <= d; k++) if (isoWeekday(z - d + k) <= 5) n++
+      return n === rule.ordinal
     }
     case 'nthWeekday': {
       if (isoWeekday(z) !== rule.weekday) return false
