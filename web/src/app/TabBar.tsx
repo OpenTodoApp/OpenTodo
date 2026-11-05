@@ -1,15 +1,18 @@
 // The phone navigation (OpenSpec change ux-overhaul, app-shell "Phone navigation"):
-// below 768 px a bottom tab bar with Inbox, Today, Upcoming and Search, and a floating
-// add button that opens quick add as a bottom sheet; the drawer opens from the top
-// bar's menu button (precision-phone D3). Both hide while a sheet is open and on the
-// task page; tabs are at least 48 px tall and sit above the bottom safe area. While the
-// list scrolls down the bar drops its labels to 40 px of icons and the button slides
-// out (phone-v2 D6). The current tab is marked in the strong text tone, not the accent,
-// as the sidebar marks its current page (precision-phone D3).
+// below 768 px a bottom tab bar with Inbox, Today and Upcoming in the user's
+// destination order, then Search, and a floating add button that opens quick add as a
+// bottom sheet; the drawer opens from the top bar's menu button (precision-phone D3).
+// Both hide while a sheet is open and on the task page; tabs are at least 48 px tall
+// and sit above the bottom safe area. While the list scrolls down the bar drops its
+// labels to 40 px of icons and the button slides out (phone-v2 D6). The current tab
+// is marked in the strong text tone, not the accent, as the sidebar marks its current
+// page (precision-phone D3).
 import { Icon, type IconName } from '../ui'
 import { forwardRef } from 'react'
-import { navigate, type Route } from './router'
+import { tabBarDestinations } from '../lib/appearance'
 import { t, msg, translatedList } from '../lib/i18n'
+import { useUserPrefsRow } from '../lib/localData'
+import { navigate, type Route } from './router'
 
 export const TAB_BAR_HEIGHT_REM = 3.5
 
@@ -19,12 +22,15 @@ const TABS: { id: string; label: string; icon: IconName; route?: Route }[] = tra
   { id: 'upcoming', label: msg('Upcoming'), icon: 'calendar-days', route: { view: 'upcoming' } },
   { id: 'search', label: msg('Search'), icon: 'search' },
 ], 'label')
+const TAB_BY_ID = Object.fromEntries(TABS.map((item) => [item.id, item]))
 
 export function TabBar({ route, onSearch, minimised = false }: { route: Route; onSearch: () => void; minimised?: boolean }) {
+  // Search is not a destination: it stays last, whatever order the three lists are in.
+  const tabs = [...tabBarDestinations(useUserPrefsRow()).map((id) => TAB_BY_ID[id]), TAB_BY_ID.search]
   return (
     <nav aria-label={t('Primary destinations')} data-tab-bar data-minimised={minimised || undefined}
       className="fixed inset-x-0 bottom-0 z-40 flex border-t border-soft bg-canvas pb-[env(safe-area-inset-bottom)] md:hidden">
-      {TABS.map((item) => {
+      {tabs.map((item) => {
         const active = !!item.route && route.view === item.route.view
         const onClick = item.route ? () => navigate(item.route!) : onSearch
         return (
