@@ -136,7 +136,7 @@ Addresses the shell opens in the web app: `/?task=<id>` (a notification tap or t
 
 ## Testing
 
-- JVM unit tests (`./gradlew :app:testDebugUnitTest`): address rules, the health check against a local socket, schedule parsing, the widget model, share mapping and limits.
+- JVM unit tests (`./gradlew :app:testDebugUnitTest`): address rules, the health check against a local socket, schedule parsing, the widget model, share mapping and limits, the offline copy of the web app.
 - The web side's tests run with `npm test` in `web/` (`shell.test.ts`, `shellPublish.test.ts`, `shellActions.test.ts`, `shellNotifications.test.tsx`, `aboutShell.test.tsx`, `e2ee.test.ts`).
 - Instrumented tests on an emulator (`app/src/androidTest`, `./gradlew :app:connectedDebugAndroidTest` with an emulator or a phone attached). CI's `android` job runs them on an API 34 Google APIs emulator with a cached AVD. A local stand-in server (MockWebServer, test-only) answers the health check and serves the pages:
 
