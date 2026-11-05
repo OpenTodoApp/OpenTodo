@@ -901,3 +901,20 @@ describe('available (project-flow-modes)', () => {
     expect(stripPos(parse(printQuery(ast))!)).toEqual(stripPos(ast))
   })
 })
+
+describe('assignee terms (today-assigned-filter)', () => {
+  it('accepts assigned, unassigned, assigned: me and a quoted name', () => {
+    expect(parse('assigned')).toEqual({ kind: 'keyword', keyword: 'assigned' })
+    expect(parse('unassigned')).toEqual({ kind: 'keyword', keyword: 'unassigned' })
+    expect(parse('!assigned')).toEqual({ kind: 'not', item: { kind: 'keyword', keyword: 'assigned' } })
+    expect(parse('assigned: me')).toEqual({ kind: 'assigned', name: 'me' })
+    expect(parse('assigned:"Sam Lee"')).toEqual({ kind: 'assigned', name: 'Sam Lee' })
+    expect(printQuery(parse('assigned: me & unassigned')!)).toBe('(assigned: me & unassigned)')
+  })
+  it('assigned: with no name is an error, and assigned is reserved', () => {
+    expect(errorOf('assigned:')).toMatchObject({ message: 'Expected a name after "assigned:" at position 1', position: 1 })
+    expect(errorOf('p1 & assigned: ')).toMatchObject({ message: 'Expected a name after "assigned:" at position 6' })
+    expect(() => parse('assigned = x')).toThrow(FilterSyntaxError)
+    expect(parse('"assigned" = x')).toMatchObject({ kind: 'field', name: 'assigned' })
+  })
+})

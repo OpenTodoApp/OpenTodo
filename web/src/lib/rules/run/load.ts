@@ -30,6 +30,8 @@ export interface LoadOptions {
   encrypted: boolean
   env?: RunEnv
   now?: number
+  /** A shared routine's project: assignee names stay inside it. */
+  project?: string
 }
 
 /** Reads this device's rows for a run. */
@@ -51,7 +53,7 @@ export async function loadRunWorld(o: LoadOptions): Promise<RunWorld> {
   return {
     userId: me ?? '', today: logicalDate(now, offset, dayStart), now, weekStart: WEEK_START[String(p.week_start)] ?? 1, offset, dayStart,
     tasks: rows(tasks), projects: rows(projects), labels: rows(labels), sections: rows(sections), views: rows(views), fields: rows(fields),
-    timeEntries: rows(timeEntries), prefs: p, memberships, changed: changedDates(rows(tasks), offset, dayStart), encrypted: o.encrypted,
+    timeEntries: rows(timeEntries), prefs: p, memberships, project: o.project || undefined, changed: changedDates(rows(tasks), offset, dayStart), encrypted: o.encrypted,
     env: o.env, templates,
   }
 }

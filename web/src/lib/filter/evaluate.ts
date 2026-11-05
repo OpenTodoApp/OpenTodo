@@ -51,6 +51,17 @@ export interface FilterContext {
    * is evaluated over these instead of the current workspace's (filterScope).
    */
   everyWorkspace?: { tasks: readonly Task[]; projects: readonly Project[]; labels: readonly Label[] }
+  /** The viewer, for `assigned: me`. */
+  me?: string | null
+  /** People `assigned: name` can match, from the local membership cache. */
+  members?: readonly { userId: string; name: string; email: string }[]
+}
+
+/** The people a membership cache knows, one row per account. */
+export function membersFrom(memberships: readonly { members: readonly { userId: string; name: string; email: string }[] }[]): { userId: string; name: string; email: string }[] {
+  const byId = new Map<string, { userId: string; name: string; email: string }>()
+  for (const m of memberships) for (const member of m.members ?? []) if (!byId.has(member.userId)) byId.set(member.userId, { userId: member.userId, name: member.name, email: member.email })
+  return [...byId.values()]
 }
 
 export interface CompiledFilter {
@@ -225,6 +236,23 @@ function fieldPred(def: FieldDef, n: Extract<Node, { kind: 'field' }>, today: st
 }
 
 /** Compile an AST into a predicate. Deleted tasks never match; open-only unless the query mentions state. */
+/** `assigned: me` is the viewer; any other name matches every member with that name or email. */
+function assignedTo(name: string, ctx: FilterContext, warn: (message: string) => void): Pred {
+  if (name.toLocaleLowerCase() === 'me') {
+    const me = ctx.me
+    if (!me) return NEVER
+    return (task) => task.assignee_id === me
+  }
+  const key = nameKey(name)
+  const ids = (ctx.members ?? []).filter((m) => nameKey(m.name) === key || nameKey(m.email) === key).map((m) => m.userId)
+  if (ids.length === 0) {
+    warn(t('No member named "{name}"', { name }))
+    return NEVER
+  }
+  const set = new Set(ids)
+  return (task) => task.assignee_id !== null && set.has(task.assignee_id)
+}
+
 export function compile(ast: Node, given: FilterContext): CompiledFilter {
   const ctx = filterScope(ast, given)
   const warnings: string[] = []
@@ -365,6 +393,8 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
         const needle = n.text.toLocaleLowerCase()
         return (task) => (task.description ?? '').toLocaleLowerCase().includes(needle)
       }
+      case 'assigned':
+        return assignedTo(n.name, ctx, warn)
       case 'origin':
         return (task) => originMatches(originOf(task), n.value)
       // A relative word is the viewer's period of that name, on this evaluation's day (time-sectors).
@@ -424,6 +454,8 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
           case 'no sector': return (task) => !isSector(task.sector)
           case 'carried': return (task) => isCarried(task.sector ?? '', today, weekStart)
           // A note of only whitespace is no note (notes-overview D5).
+          case 'assigned': return (task) => !!task.assignee_id
+          case 'unassigned': return (task) => !task.assignee_id
           case 'notes': return (task) => (task.description ?? '').trim() !== ''
           case 'no notes': return (task) => (task.description ?? '').trim() === ''
           // At least one minute of live tracked time (time-tracking D9).

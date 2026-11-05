@@ -37,6 +37,7 @@ export type Token =
   | { type: 'priority'; value: Priority; pos: number; raw: string }
   | { type: 'search'; text: string; pos: number; raw: string }
   | { type: 'origin'; value: string; pos: number; raw: string }
+  | { type: 'assigned'; name: string; pos: number; raw: string }
   | { type: 'energy'; value: 'deep' | 'medium' | 'low'; pos: number; raw: string }
   | { type: 'sector'; value: string; pos: number; raw: string }
   | { type: 'workspace'; name: string; pos: number; raw: string }
@@ -174,6 +175,13 @@ export function tokenize(src: string): Token[] {
       out.push({ type: 'origin', value, pos, raw: src.slice(pos, i) })
       continue
     }
+    // `assigned: me` or `assigned: name` (today-assigned-filter). `me` stays a word; the evaluator treats it as the viewer.
+    if (/^assigned:/i.test(word)) {
+      const name = readPrefixed('assigned:')
+      if (!name) throw new FilterSyntaxError(t('Expected a name after "assigned:" at position {pos}', { pos: pos + 1 }), pos, ['name'])
+      out.push({ type: 'assigned', name, pos, raw: src.slice(pos, i) })
+      continue
+    }
     // `energy: deep|medium|low`, case ignored, quotes allowed (task-energy D5).
     if (/^energy:/i.test(word)) {
       const value = readPrefixed('energy:').toLowerCase()
@@ -210,7 +218,7 @@ export function tokenize(src: string): Token[] {
 
 // ---- AST ----
 
-export type Keyword = 'overdue' | 'today' | 'tomorrow' | 'no date' | 'no project' | 'no labels' | 'no time' | 'no deadline' | 'no start' | 'someday' | 'deferred' | 'evening' | 'morning' | 'afternoon' | 'completed' | 'open' | 'subtask' | 'blocked' | 'unblocked' | 'available' | 'habit' | 'origin' | 'no origin' | 'tracked' | 'energy' | 'no energy' | 'notes' | 'no notes' | 'sector' | 'no sector' | 'carried'
+export type Keyword = 'overdue' | 'today' | 'tomorrow' | 'no date' | 'no project' | 'no labels' | 'no time' | 'no deadline' | 'no start' | 'someday' | 'deferred' | 'evening' | 'morning' | 'afternoon' | 'completed' | 'open' | 'subtask' | 'blocked' | 'unblocked' | 'available' | 'habit' | 'origin' | 'no origin' | 'tracked' | 'energy' | 'no energy' | 'notes' | 'no notes' | 'sector' | 'no sector' | 'carried' | 'assigned' | 'unassigned'
 
 /**
  * today = 0, tomorrow = 1, yesterday = -1, `N days` = N, `N days ago` = -N.
@@ -239,6 +247,8 @@ export type Node =
   | { kind: 'notes'; text: string }
   /** `origin: value`: the origin's provider, else its kind, equals value ignoring case (task-origin). */
   | { kind: 'origin'; value: string }
+  /** `assigned: name`: the assignee is the viewer (`me`) or has that name or email (today-assigned-filter). */
+  | { kind: 'assigned'; name: string }
   /** `energy: value`: the task's energy equals value (task-energy D5). */
   | { kind: 'energy'; value: 'deep' | 'medium' | 'low' }
   /** `sector: value`: the task's time sector is that period, or the viewer's period a relative word names (time-sectors). */
@@ -260,7 +270,7 @@ export type FieldValueExpr =
   | { type: 'date'; date: DateExpr }
 
 export const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const
-const SIMPLE_KEYWORDS = new Set<Keyword>(['overdue', 'today', 'tomorrow', 'completed', 'open', 'subtask', 'someday', 'deferred', 'evening', 'morning', 'afternoon', 'blocked', 'unblocked', 'available', 'habit', 'origin', 'energy', 'notes', 'sector', 'carried'])
+const SIMPLE_KEYWORDS = new Set<Keyword>(['overdue', 'today', 'tomorrow', 'completed', 'open', 'subtask', 'someday', 'deferred', 'evening', 'morning', 'afternoon', 'blocked', 'unblocked', 'available', 'habit', 'origin', 'energy', 'notes', 'sector', 'carried', 'assigned', 'unassigned'])
 const NO_KEYWORDS = ['date', 'project', 'labels', 'time', 'deadline', 'start', 'origin', 'energy', 'notes', 'sector'] as const
 /** Words that start a date expression in a field term's value; a number starts one only before a unit. */
 const DATE_STARTS = new Set(['today', 'tomorrow', 'yesterday', 'this', 'last', 'next'])
@@ -286,9 +296,8 @@ function codePoints(s: string): number {
 /** Parse a query. Returns null for an empty (whitespace-only) query; throws FilterSyntaxError otherwise. */
 export function parse(src: string): Node | null {
   // Code points, like the server: a UTF-16 length within the limit is always within it.
-  if (src.length > MAX_QUERY_LENGTH) {
-    const count = codePoints(src)
-    if (count > MAX_QUERY_LENGTH) throw new FilterSyntaxError(t('Query is too long: {count} characters, at most {max}', { count, max: MAX_QUERY_LENGTH }), MAX_QUERY_LENGTH, [])
+  if (src.length > MAX_QUERY_LENGTH && codePoints(src) > MAX_QUERY_LENGTH) {
+    throw new FilterSyntaxError(t('Query is too long: {count} characters, at most {max}', { count: codePoints(src), max: MAX_QUERY_LENGTH }), MAX_QUERY_LENGTH, [])
   }
   const tokens = tokenize(src)
   if (tokens.length === 0) return null
@@ -373,8 +382,9 @@ export function parse(src: string): Node | null {
         i++
         return { kind: tok.type, text: tok.text }
       case 'origin':
+      case 'assigned':
         i++
-        return { kind: 'origin', value: tok.value }
+        return tok.type === 'origin' ? { kind: 'origin', value: tok.value } : { kind: 'assigned', name: tok.name }
       case 'energy':
       case 'sector':
         i++
@@ -665,6 +675,8 @@ export function printQuery(n: Node): string {
       return `notes: ${quote(n.text)}`
     case 'origin':
       return `origin: ${quote(n.value)}`
+    case 'assigned':
+      return `assigned: ${quote(n.name)}`
     case 'energy':
       return `energy: ${n.value}`
     case 'sector':
