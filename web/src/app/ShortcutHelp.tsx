@@ -42,6 +42,8 @@ export function contextSections(ctx: HelpContext | undefined): ShortcutSection[]
   if (v === 'notes') out.push('notes')
   if (v === 'review') out.push('tasks', 'review')
   if (v === 'filter' || v === 'view' || v === 'views') out.push('filter')
+  // Group and order (display-keys): the lists with Display options.
+  if (v === 'label' || v === 'view' || (v === 'project' && !ctx.board)) out.push('arrange')
   if (v === 'trash' || v === 'feed') out.push('trash')
   if (v === 'settings' || v === 'import') out.push('settings')
   return out

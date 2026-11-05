@@ -7141,5 +7141,22 @@
   "Has an assignee": "Hat eine zuständige Person",
   "Hide tasks assigned to others": "Aufgaben anderer ausblenden",
   "No member named \"{name}\"": "Kein Mitglied namens „{name}“",
-  "Show tasks assigned to others": "Aufgaben anderer anzeigen"
+  "Show tasks assigned to others": "Aufgaben anderer anzeigen",
+  "Group and order": "Gruppieren und sortieren",
+  "Group by due date": "Nach Fälligkeitsdatum gruppieren",
+  "Group by label (in a project or a saved view)": "Nach Label gruppieren (in einem Projekt oder einer gespeicherten Ansicht)",
+  "Group by priority": "Nach Priorität gruppieren",
+  "Group by project (on a label page or in a saved view)": "Nach Projekt gruppieren (auf einer Label-Seite oder in einer gespeicherten Ansicht)",
+  "Group by section (in a project)": "Nach Abschnitt gruppieren (in einem Projekt)",
+  "Group by: {name}": "Gruppieren nach: {name}",
+  "No grouping": "Nicht gruppieren",
+  "Order by creation date": "Nach Erstellungsdatum sortieren",
+  "Order by deadline": "Nach Frist sortieren",
+  "Order by due date": "Nach Fälligkeitsdatum sortieren",
+  "Order by manual order": "Nach manueller Reihenfolge sortieren",
+  "Order by priority": "Nach Priorität sortieren",
+  "Order by title": "Nach Titel sortieren",
+  "Order by: {name} · {direction}": "Sortieren nach: {name} · {direction}",
+  "Reverse order": "Reihenfolge umkehren",
+  "Reverse the order: ascending or descending": "Reihenfolge umkehren: aufsteigend oder absteigend"
 }

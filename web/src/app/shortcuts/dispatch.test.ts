@@ -292,6 +292,39 @@ describe('the pending prefix (shortcut-spotlight D1)', () => {
     clearPrefix()
   })
 
+  it('a three-key sequence lists its named middle steps, then the choices (display-keys)', () => {
+    const ran: string[] = []
+    registerShortcutScope({ scope: 'list', handlers: { 'arrange.group-priority': () => { ran.push('group-priority') }, 'arrange.group-none': () => {}, 'arrange.order-title': () => {}, 'arrange.reverse': () => {} } })
+    press('r')
+    const first = pendingContinuations().map((c) => [c.next.key, c.entry.id])
+    expect(first.sort()).toEqual([['g', 'arrange.group'], ['o', 'arrange.order'], ['r', 'arrange.reverse']])
+    press('g')
+    expect(pendingContinuations().map((c) => c.entry.id).sort()).toEqual(['arrange.group-none', 'arrange.group-priority'])
+    // A choice the list does not offer is not listed and does nothing.
+    expect(pendingContinuations().some((c) => c.entry.id === 'arrange.group-section')).toBe(false)
+    press('p')
+    expect(ran).toEqual(['group-priority'])
+    expect(isPrefixPending()).toBe(false)
+    press('r'); press('g'); press('s')
+    expect(ran).toEqual(['group-priority'])
+    expect(isPrefixPending()).toBe(false)
+  })
+
+  it('r does nothing on a list without Display options, and keys typed in a field stay text', () => {
+    const ran: string[] = []
+    registerShortcutScope({ scope: 'list', handlers: { 'list.deadline': () => { ran.push('deadline') } } })
+    expect(press('r').defaultPrevented).toBe(false)
+    expect(isPrefixPending()).toBe(false)
+    registerShortcutScope({ scope: 'list', handlers: { 'arrange.reverse': () => { ran.push('reverse') } } })
+    const input = document.createElement('input')
+    document.body.append(input)
+    expect(press('r', {}, input).defaultPrevented).toBe(false)
+    press('r', {}, input)
+    expect(ran).toEqual([])
+    expect(isPrefixPending()).toBe(false)
+    input.remove()
+  })
+
   it('a dialog of its own does not mute the list behind the spotlight', () => {
     const ran: string[] = []
     const card = document.createElement('div')
