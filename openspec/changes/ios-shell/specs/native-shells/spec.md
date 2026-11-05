@@ -52,10 +52,14 @@ On first start, and whenever no server is configured, a shell SHALL show a scree
 - **THEN** the screen says the server is behind a login page and offers "Sign in here"; after signing in there, the check passes and the app opens the server
 
 ### Requirement: Offline start
-On Android, once the web app has been loaded once, the shell SHALL open offline and show the app from the service worker's precache with the local data, like the installed web app. On iOS the system gives a service worker to an app only for a host the app declares at build time, so the iOS shell SHALL offer two builds and say which one it is: a portable build for any server, which needs the network and SHALL show an offline screen naming the reason and offering a retry; and a one-server build, whose declared host gets the service worker, the precache and therefore the same offline start as Android. In both builds the first start SHALL need the network and SHALL say so when it is missing.
+On Android, once the web app has been loaded once, the shell SHALL open offline and show the app from the service worker's precache with the local data, like the installed web app. Where that origin cannot install a service worker (plain http other than localhost), the Android shell SHALL keep the same precache itself after a successful load and open from that copy. On iOS the system gives a service worker to an app only for a host the app declares at build time, so the iOS shell SHALL offer two builds and say which one it is: a portable build for any server, which needs the network and SHALL show an offline screen naming the reason and offering a retry; and a one-server build, whose declared host gets the service worker, the precache and therefore the same offline start as Android. In both builds the first start SHALL need the network and SHALL say so when it is missing.
 
 #### Scenario: Opened in flight mode
 - **WHEN** the user has used the Android app, or the iOS one-server build, before and opens it with no network
+- **THEN** the Today list shows the locally stored tasks, and the sync indicator reads offline
+
+#### Scenario: Server on the local network switched off
+- **WHEN** the user has opened the Android app on `http://192.168.1.20:8080` and opens it again with that server switched off
 - **THEN** the Today list shows the locally stored tasks, and the sync indicator reads offline
 
 #### Scenario: Opened offline in the portable iOS build
