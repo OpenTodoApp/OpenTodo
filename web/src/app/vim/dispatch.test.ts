@@ -21,7 +21,7 @@ function field(value = '', opts: { dialog?: boolean } = {}) {
  * prefix and the list's Escape, digits and j/k. A key reaches the defaults only
  * when the dispatcher did not stop it, exactly as with the capturing listener.
  */
-function setup(opts: { list?: boolean } = {}) {
+function setup(opts: { list?: boolean; other?: () => boolean } = {}) {
   const calls: string[] = []
   const defaults: string[] = []
   let g = false
@@ -44,6 +44,7 @@ function setup(opts: { list?: boolean } = {}) {
     actions: () => (opts.list === false ? null : actions),
     gPending: () => g,
     clearG: () => (g = false),
+    otherSequence: opts.other,
     commandOpen: () => cmd,
     openCommand: () => {
       cmd = true
@@ -81,6 +82,24 @@ afterEach(() => {
 })
 
 describe('vim dispatcher', () => {
+  it('leaves every key of another sequence to the shortcuts (r o d, r g g: display-keys)', () => {
+    let other = false
+    const { press, calls, defaults } = setup({ other: () => other })
+    press('r')
+    other = true
+    expect(press('o').stopped).toBe(false)
+    expect(press('d').stopped).toBe(false)
+    other = false
+    press('r')
+    other = true
+    press('g')
+    press('g')
+    other = false
+    vi.advanceTimersByTime(PENDING_TIMEOUT * 2)
+    expect(calls).toEqual([])
+    expect(defaults).toEqual(['r', 'o', 'd', 'r', 'g', 'g'])
+  })
+
   it('gg selects first', () => {
     const { press, calls } = setup()
     press('g')
