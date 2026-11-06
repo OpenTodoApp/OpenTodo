@@ -1913,10 +1913,12 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "Ascending": [
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/views/DisplayPanel.tsx",
+    "web/src/app/views/useDisplayKeys.ts"
   ],
   "Ascending (p4 first)": [
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/views/DisplayPanel.tsx",
+    "web/src/app/views/useDisplayKeys.ts"
   ],
   "Ask": [
     "web/src/app/assistant/AskEntry.tsx",
@@ -4042,7 +4044,8 @@
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/activity.ts",
     "web/src/lib/feed.ts",
-    "web/src/lib/historyVersions.ts"
+    "web/src/lib/historyVersions.ts",
+    "web/src/lib/shortcuts.ts"
   ],
   "Created by {name}": [
     "web/src/app/WorkspaceInvites.tsx"
@@ -4347,7 +4350,8 @@
     "web/src/app/task-list/WaitingSoon.tsx",
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/facets.ts",
-    "web/src/lib/rules/proposal.ts"
+    "web/src/lib/rules/proposal.ts",
+    "web/src/lib/shortcuts.ts"
   ],
   "Deadline reminders fire once the task has a deadline.": [
     "web/src/app/RemindersField.tsx"
@@ -4674,10 +4678,12 @@
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Descending": [
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/views/DisplayPanel.tsx",
+    "web/src/app/views/useDisplayKeys.ts"
   ],
   "Descending (p1 first)": [
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/views/DisplayPanel.tsx",
+    "web/src/app/views/useDisplayKeys.ts"
   ],
   "Describe a routine": [
     "web/src/app/palette/registry.ts",
@@ -4840,6 +4846,7 @@
   ],
   "Display options": [
     "web/src/app/display/DisplayScreen.tsx",
+    "web/src/app/shortcuts/Spotlight.tsx",
     "web/src/app/views/DisplayPanel.tsx"
   ],
   "Display pinned on this device": [
@@ -5037,7 +5044,8 @@
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/rules/proposal.ts",
-    "web/src/lib/rules/sentence.ts"
+    "web/src/lib/rules/sentence.ts",
+    "web/src/lib/shortcuts.ts"
   ],
   "Due date and time (6 languages)": [
     "web/src/lib/shortcuts.ts"
@@ -6939,14 +6947,37 @@
   "Group Today by part of the day": [
     "web/src/app/PreferencesPanels.tsx"
   ],
+  "Group and order": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Group by": [
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/shortcuts/Spotlight.tsx",
+    "web/src/app/views/DisplayPanel.tsx",
+    "web/src/lib/shortcuts.ts"
   ],
   "Group by day part": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Group by due date": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Group by label (in a project or a saved view)": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Group by part of the day": [
     "web/src/app/TaskListView.tsx"
+  ],
+  "Group by priority": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Group by project (on a label page or in a saved view)": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Group by section (in a project)": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Group by: {name}": [
+    "web/src/app/views/useDisplayKeys.ts"
   ],
   "Group chat": [
     "web/src/app/PublicLinksSection.tsx"
@@ -8155,7 +8186,8 @@
     "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/routines/Starters.tsx",
     "web/src/app/rules/RuleFields.tsx",
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/views/DisplayPanel.tsx",
+    "web/src/lib/shortcuts.ts"
   ],
   "Label (optional)": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
@@ -8927,7 +8959,8 @@
     "web/src/app/WorkspaceControl.tsx"
   ],
   "Manual order": [
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/views/DisplayPanel.tsx",
+    "web/src/lib/shortcuts.ts"
   ],
   "Map of your locations": [
     "web/src/app/locations/PlacesView.tsx"
@@ -10015,6 +10048,9 @@
   "No further occurrences: the next completion ends the series.": [
     "web/src/app/RecurrenceField.tsx"
   ],
+  "No grouping": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "No groups yet.": [
     "web/src/app/WorkspaceGroups.tsx"
   ],
@@ -10387,7 +10423,8 @@
     "web/src/app/review/ProjectWalk.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/settingsStatus.ts",
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/views/DisplayPanel.tsx",
+    "web/src/lib/shortcuts.ts"
   ],
   "None (plain)": [
     "web/src/app/OutgoingEmailPanel.tsx"
@@ -11678,7 +11715,30 @@
     "web/src/lib/rules/sentence.ts"
   ],
   "Order by": [
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/shortcuts/Spotlight.tsx",
+    "web/src/app/views/DisplayPanel.tsx",
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Order by creation date": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Order by deadline": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Order by due date": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Order by manual order": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Order by priority": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Order by title": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Order by: {name} · {direction}": [
+    "web/src/app/views/useDisplayKeys.ts"
   ],
   "Order changed": [
     "web/src/lib/viewOrderMove.ts"
@@ -12396,7 +12456,8 @@
     "web/src/app/task-list/RowActionCluster.tsx",
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/rules/proposal.ts",
-    "web/src/lib/rules/sentence.ts"
+    "web/src/lib/rules/sentence.ts",
+    "web/src/lib/shortcuts.ts"
   ],
   "Priority 1": [
     "web/src/app/themes/ThemePreview.tsx",
@@ -12521,6 +12582,7 @@
     "web/src/lib/listGroups.ts",
     "web/src/lib/rules/proposal.ts",
     "web/src/lib/rules/sentence.ts",
+    "web/src/lib/shortcuts.ts",
     "web/src/lib/stats.ts"
   ],
   "Project archived": [
@@ -12810,7 +12872,7 @@
     "web/src/lib/rules/proposal.ts"
   ],
   "QR code to scan with your authenticator app": [
-    "web/src/app/TwoFactorPanel.tsx"
+    "web/src/app/QrCode.tsx"
   ],
   "Quarter": [
     "web/src/app/task-detail/SectorChoice.tsx"
@@ -13619,6 +13681,12 @@
     "web/src/app/menus/ListModeStep.tsx",
     "web/src/app/menus/listMenu.tsx"
   ],
+  "Reverse order": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Reverse the order: ascending or descending": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Review": [
     "web/src/app/Sidebar.tsx",
     "web/src/app/routines/RunHistory.tsx",
@@ -14268,7 +14336,8 @@
     "web/src/app/task-detail/TaskFacts.tsx",
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/rules/proposal.ts",
-    "web/src/lib/rules/sentence.ts"
+    "web/src/lib/rules/sentence.ts",
+    "web/src/lib/shortcuts.ts"
   ],
   "Section flow changed": [
     "web/src/app/menus/flowMenu.ts"
@@ -18191,7 +18260,8 @@
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/rules/proposal.ts",
-    "web/src/lib/rules/sentence.ts"
+    "web/src/lib/rules/sentence.ts",
+    "web/src/lib/shortcuts.ts"
   ],
   "Title or notes": [
     "web/src/app/filter/ConditionEditor.tsx"
@@ -18751,7 +18821,8 @@
     "web/src/lib/facets.ts"
   ],
   "Unavailable custom field": [
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/views/DisplayPanel.tsx",
+    "web/src/app/views/useDisplayKeys.ts"
   ],
   "Unavailable offline": [
     "web/src/app/rules/RuleFields.tsx"
