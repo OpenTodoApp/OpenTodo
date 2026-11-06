@@ -21,13 +21,18 @@
     "deploy/caprover/upstream/public/v4/logos/opentodo.png": "e8646027caabce05f35f882a526221f9b63ca67fcb67879233cd5be3d7f3d790",
     "deploy/casaos/upstream/Apps/OpenTodo/icon.png": "0b2f6934c94432da2c59d488a35dc0659c64285dfeb811cb68f2f5c4ebeab779",
     "deploy/cosmos/upstream/servapps/OpenTodo/icon.png": "0b2f6934c94432da2c59d488a35dc0659c64285dfeb811cb68f2f5c4ebeab779",
+    "deploy/runtipi/metadata/logo.jpg": "ebf3d9fd7a24867fe5c48ef48a585bb8ddf402281e4ec312f84f9e783a1cca06",
+    "deploy/runtipi/upstream/apps/opentodo/metadata/logo.jpg": "ebf3d9fd7a24867fe5c48ef48a585bb8ddf402281e4ec312f84f9e783a1cca06",
+    "deploy/homeassistant/upstream/opentodo/icon.png": "2309d2c90c42662a46d00a3e4d4ec3f0063c98975aeab55a89424a1800da9409",
+    "deploy/homeassistant/upstream/opentodo/logo.png": "cf04430d455d79bb0a27f1c2b8f8a5cc08a130293694007dff2c5944fec29e78",
+    "deploy/claude-plugin/upstream/plugins/opentodo/.claude-plugin/icon.png": "24e0a62f96eac4d99b851387d0115285cdc5616705230b9fb68b798da4473c77",
     "mobile/ios/OpenTodo/Assets.xcassets/AppIcon.appiconset/AppIcon.png": "fb07a7869efb5fc77936e3b196fe22001a2ec8b25217b011f8fcd404a17b27d8",
     "mobile/android/app/src/main/res/drawable/ic_launcher.xml": "c6105dad82dabac7c1a892e7a5a6526ffe530bec0c58d517e88f1b6f9e2c81a1",
     "mobile/android/app/src/main/res/drawable/ic_launcher_background.xml": "c89f77725f4ceb13a8c6ccc72419ec3fe1672a50c3a77189de0aa1515fb61954",
     "mobile/android/app/src/main/res/drawable/ic_launcher_foreground.xml": "1e715b26d6be82a95cfc204fba6df7cba271b857a4b27c6db0446583ca3c4d9b",
     "mobile/android/app/src/main/res/drawable/ic_launcher_monochrome.xml": "802f7ba044632bca2cadfb2ca05b9779d287db00f715d25562579f7b0336462c",
     "mobile/android/app/src/main/res/drawable/ic_notification.xml": "dd2e6b36e80ed6c2a6f7a00f184e585a9e7e273bd804c7f319a7e355a3a25320",
-    "brand/README.md": "8f71159d7900b1696b81887c4635bee438074c14db147fec6d6efa3419666622",
+    "brand/README.md": "7fb19bd74528a56be54cbcd72ac1e04108bdaf5867b58469e722adfff5685a61",
     "brand/svg/mark-on-light.svg": "5e61b2fe631a73157e1fca92974512172b7a0a1af9bc51dd7ba0d675903b8223",
     "brand/svg/mark-on-dark.svg": "99f2b156ceada9f69944c1ccb0886fde1a0487f5589b2a0d8912409d8f12f9e9",
     "brand/svg/mark-black.svg": "b0c99e39062f89050e19833874d4cb976eb9dbc5be7bd167ba67bfb732571868",
@@ -63,7 +68,8 @@
     "brand/png/lockup-on-light-1704x384.png": "d81454aff16a0a9d69c209a434c1cb7c5da79abaa95366e4dc7cd5b0f56648b6",
     "brand/png/lockup-on-dark-852x192.png": "b2dd8b2616798c8fd623352787427246f02feb501c7a137fffd439442eea0bbc",
     "brand/png/lockup-on-dark-1704x384.png": "ab6dadb64dc58ee5ca37495256472abebe232f65b18397102b0fccc989aab4ef",
-    "brand/png/github-social-preview-1280x640.png": "357138f1e66c022490d1d6e4137e0f60e718dd14980d2f8a5c51bf8d13178125",
-    "brand/png/og-default-1200x630.png": "41a4c93eee40e5aed06657e304c01530395098546531299249b8c12644015624"
+    "brand/png/github-social-preview-1280x640.png": "353b646be57a8d2c42ed6ef9c5402223ee2a30f9de0b45b2e8635c91b1de9397",
+    "brand/png/og-default-1200x630.png": "e8ff3384d0fcef4ae6e8340da241e96e0eef37337cfa9d7203f0de43bf503d33",
+    "brand/png/play-feature-graphic-1024x500.png": "5391e30ee8eaac57d8f139abffac7134b024029f1f7bcbbc95b97557c697d383"
   }
 }

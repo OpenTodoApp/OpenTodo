@@ -222,6 +222,47 @@
       },
       "valid": false,
       "label": null
+    },
+    {
+      "name": "todoist import reads as the app, never its key",
+      "origin": {
+        "kind": "import",
+        "provider": "todoist",
+        "id": "dfc92cb10aed05a4:1"
+      },
+      "valid": true,
+      "label": "Todoist"
+    },
+    {
+      "name": "trello import with its card link",
+      "origin": {
+        "kind": "import",
+        "provider": "trello",
+        "id": "5f3a9c",
+        "url": "https://trello.com/c/AbCd1234"
+      },
+      "valid": true,
+      "label": "Trello"
+    },
+    {
+      "name": "import from a two-word app",
+      "origin": {
+        "kind": "import",
+        "provider": "microsoft-todo",
+        "id": "AQMkADAw"
+      },
+      "valid": true,
+      "label": "Microsoft To Do"
+    },
+    {
+      "name": "import from an unknown profile reads as its provider",
+      "origin": {
+        "kind": "import",
+        "provider": "someapp",
+        "id": "42"
+      },
+      "valid": true,
+      "label": "someapp"
     }
   ],
   "obsidian": [

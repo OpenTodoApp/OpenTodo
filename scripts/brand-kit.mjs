@@ -47,6 +47,18 @@ function lockupSvg(v, source, wordmark, h) {
 /** A standalone SVG as a page of exactly `w` × `h` pixels. */
 const asPage = (svg, w, h) => svg.replace('<svg ', `<svg width="${w}" height="${h}" `)
 
+/**
+ * A banner of `w` × `h`: the lockup on dark, centred on the slate rounded rectangle, for a
+ * store that shows a wide logo on light and dark pages alike (the Home Assistant add-on).
+ */
+export function bannerPage(w, h, source, wordmark, help) {
+  const lockH = Math.round(h * 0.4)
+  const lockW = Math.round((lockH * LOCKUP_W) / 24)
+  const lockup = asPage(lockupSvg('on-dark', source, wordmark, help), lockW, lockH)
+  return `<!doctype html><style>html,body{margin:0;width:${w}px;height:${h}px;background:transparent}
+div{width:${w}px;height:${h}px;border-radius:${Math.round(h * 0.18)}px;background:${SLATE};display:flex;align-items:center;justify-content:center}svg{display:block}</style><body><div>${lockup}</div></body>`
+}
+
 /** A social image: the colour icon, the outlined wordmark and the tagline in the bundled Inter. */
 function socialPage(w, h, light, source, wordmark, help, font) {
   const bg = light ? '#f8fafc' : SLATE
@@ -70,13 +82,14 @@ Colours: slate \`${SLATE}\`, emerald \`${EMERALD}\` (on dark) and \`${EMERALD_DA
 | File | Use |
 |---|---|
 | \`svg/mark-colour.svg\`, \`png/icon-*.png\` | The app icon: the mark on the slate rounded square, 16 to 1024 px |
-| \`svg/mark-colour-square.svg\`, \`png/avatar-512.png\` | The square without rounding, for avatars the platform crops itself (GitHub organisation, Discord, stores) |
+| \`svg/mark-colour-square.svg\`, \`png/avatar-512.png\` | The square without rounding, for avatars the platform crops itself (GitHub organisation, Discord, X, Buy Me a Coffee, the Google Play icon, stores) |
 | \`svg/mark-on-light.svg\`, \`png/mark-on-light-*.png\` | The mark alone on a light background: slate tray, dark emerald tick |
 | \`svg/mark-on-dark.svg\`, \`png/mark-on-dark-*.png\` | The mark alone on a dark background: white tray, emerald tick |
 | \`svg/mark-black.svg\`, \`svg/mark-white.svg\` and their PNGs | One colour, for print, stamps and embossing |
 | \`svg/lockup-on-light.svg\`, \`svg/lockup-on-dark.svg\` and their PNGs | The mark with "OpenTodo" beside it (headers, slides, a README) |
 | \`png/github-social-preview-1280x640.png\` | GitHub → Settings → Social preview |
 | \`png/og-default-1200x630.png\` | A default social card for link previews |
+| \`png/play-feature-graphic-1024x500.png\` | Google Play → Store listing → Feature graphic (opaque, no alpha) |
 
 Keep the tray and the tick in their two colours except in the one-colour files, never put the mark inside a checkbox or a closed square, and keep clear space of at least the tray's height around it.
 `
@@ -98,4 +111,6 @@ export const KIT_OUTPUTS = [
   })),
   { path: 'brand/png/github-social-preview-1280x640.png', width: 1280, height: 640, page: (s, w, h, f) => socialPage(1280, 640, false, s, w, h, f) },
   { path: 'brand/png/og-default-1200x630.png', width: 1200, height: 630, page: (s, w, h, f) => socialPage(1200, 630, true, s, w, h, f) },
+  // Google Play's feature graphic (brand-assets-everywhere): 1024 × 500, no alpha channel.
+  { path: 'brand/png/play-feature-graphic-1024x500.png', width: 1024, height: 500, opaque: true, page: (s, w, h, f) => socialPage(1024, 500, false, s, w, h, f) },
 ]
