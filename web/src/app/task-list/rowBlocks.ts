@@ -6,8 +6,12 @@
 // their rows from one drawing to the next, so a row that comes or goes moves no other
 // row to another block (which would draw those rows again).
 
-/** Rows of a new block; a block that grows past twice this is split. */
-export const BLOCK_ROWS = 50
+/**
+ * Rows of a new block; a block that grows past twice this is split. 25: the blocks near
+ * the viewport are drawn whole, and with 50 opening the 2,000-row project drew twice the
+ * rows in its first frame (phone profile 380 -> 465 ms).
+ */
+export const BLOCK_ROWS = 25
 /** A list draws blocks from this many rows; under half of it again, plain rows. */
 export const BLOCKS_FROM = 2 * BLOCK_ROWS
 

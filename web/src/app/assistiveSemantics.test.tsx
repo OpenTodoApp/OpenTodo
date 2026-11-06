@@ -60,7 +60,7 @@ describe('list semantics', () => {
     const r = await render(<TaskListView route={{ view: 'project', id: pid }} />)
     await waitFor(() => r.container.querySelectorAll('li[data-task-id]').length === 130, 'every row')
     const blocks = [...r.container.querySelectorAll<HTMLElement>('li.row-block')]
-    expect(blocks.length).toBe(3)
+    expect(blocks.length).toBe(6)
     for (const b of blocks) {
       expect(b.getAttribute('role')).toBe('none')
       expect(b.querySelector(':scope > ul')!.getAttribute('role')).toBe('none')
