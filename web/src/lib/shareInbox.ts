@@ -90,18 +90,29 @@ export function entryFromForm(form: FormData, id: string, now = Date.now()): Inb
 export const SHARE_MAX_BYTES = 100 * 1024 * 1024
 
 /**
- * Whether the service worker may take a POST /share at all, from its headers.
- * The share sheet's request is a top-level navigation the browser starts itself
- * (Sec-Fetch-Site `none`) or one from the app's own pages (`same-origin`); a
- * form on another site (`cross-site`, `same-site`) is refused. Browsers that
- * send no Sec-Fetch-Site are allowed. A declared Content-Length over the cap is
- * refused before the body is read.
+ * What the service worker does with a POST /share, from its headers alone
+ * (share-target-fetch-metadata). The share sheet's request is a top-level
+ * navigation the browser starts itself (Sec-Fetch-Site `none`) or one from the
+ * app's own pages (`same-origin`): `store`. A form on another site
+ * (`cross-site`, `same-site`) or a declared Content-Length over the cap is
+ * `refused` before the body is read. A request with no Sec-Fetch-Site cannot
+ * show where it came from, so it is not stored either: `unverified`, which the
+ * capture screen explains. Every browser that can deliver a share sheet's POST
+ * sends the header.
  */
-export function shareRequestAllowed(headers: Headers): boolean {
+export type ShareRequestVerdict = 'store' | 'refused' | 'unverified'
+
+export function shareRequestVerdict(headers: Headers): ShareRequestVerdict {
   const site = headers.get('sec-fetch-site')
-  if (site !== null && site !== 'none' && site !== 'same-origin') return false
+  if (site !== null && site !== 'none' && site !== 'same-origin') return 'refused'
   const length = Number(headers.get('content-length') ?? '')
-  return !(Number.isFinite(length) && length > SHARE_MAX_BYTES)
+  if (Number.isFinite(length) && length > SHARE_MAX_BYTES) return 'refused'
+  return site === null ? 'unverified' : 'store'
+}
+
+/** Whether the service worker may store a POST /share (shareRequestVerdict is `store`). */
+export function shareRequestAllowed(headers: Headers): boolean {
+  return shareRequestVerdict(headers) === 'store'
 }
 
 /** The stored size of an entry: its files and its text fields. */
