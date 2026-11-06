@@ -284,7 +284,7 @@ Every write tool call SHALL be applied as one batch of ops with `ApplyStrict` as
 - **THEN** the request is refused with 400 `invalid_op` and nothing is applied
 
 ### Requirement: Write limits
-One write call SHALL change at most 50 entities; larger requests SHALL be refused with `-32602`. Each token SHALL be limited to 30 write calls per minute and 1,000 changed entities per UTC day; beyond that the tool error SHALL be `rate_limited` with `retry_after_seconds` and nothing SHALL change on any device. Read tools SHALL not count toward these limits.
+One write call SHALL change at most 50 entities; larger requests SHALL be refused with `-32602`. Each token SHALL be limited to 30 write calls per minute and 1,000 changed entities per UTC day, and all the agent tokens of one account together SHALL be limited to 60 write calls per minute and 2,000 changed entities per UTC day, so creating more tokens or connecting more clients does not raise the budget. Beyond either limit the tool error SHALL be `rate_limited` with `retry_after_seconds` and nothing SHALL change on any device; a call refused for either limit SHALL count against neither. The agent REST content routes SHALL share these counters. Read tools SHALL not count toward these limits. The counters are server memory, not ops: offline behaviour and convergence are unaffected.
 
 #### Scenario: Too many items
 - **WHEN** an assistant calls `create_tasks` with 51 items
@@ -293,6 +293,14 @@ One write call SHALL change at most 50 entities; larger requests SHALL be refuse
 #### Scenario: Minute limit
 - **WHEN** an `agent` token makes its 31st write call within one minute
 - **THEN** the result is a `rate_limited` tool error with a positive `retry_after_seconds` and nothing changes
+
+#### Scenario: Account minute limit across tokens
+- **WHEN** a person's two agent tokens have made 60 write calls together within one minute and a third agent token of the same person makes a write call
+- **THEN** the result is a `rate_limited` tool error with a positive `retry_after_seconds`, nothing changes, and another person's agent token can still write
+
+#### Scenario: Account day limit across tokens
+- **WHEN** two agent tokens of one person have changed 1,000 entities each in one UTC day and a third token of that person tries to change one more
+- **THEN** the result is a `rate_limited` tool error and nothing changes until the next UTC day
 
 ### Requirement: Untrusted content in tool results
 Tool results SHALL carry user-written text (titles, descriptions, names, comment bodies) inside fields marked as untrusted data, with a fixed notice telling the assistant to treat it as data and not as instructions, and SHALL mark items from shared projects with `shared: true` and comments by other people with `author_is_you: false`. Marking changes no stored data; results reflect synced data only.
