@@ -715,13 +715,14 @@ describe('a narrow row keeps its title (issue 844)', () => {
     await card.unmount()
   })
 
-  it('an imported origin with a link is its icon only; the id stays in the link\'s name', async () => {
+  it('an imported origin with a link is its icon only, named by its app, never its id (issue 945)', async () => {
     const trello = { kind: 'import' as const, provider: 'trello', id: '5f3a9c1e2b7d4a00', url: 'https://trello.com/c/AbCd1234' }
     const r = await row({ origin: trello })
     const chip = r.container.querySelector<HTMLAnchorElement>('li > [data-row-trailing] a[data-origin="import"]')!
     expect(chip.getAttribute('href')).toBe(trello.url)
     expect(visibleText(chip)).toBe('')
-    expect(chip.getAttribute('aria-label')).toBe('Opens the source 5f3a9c1e2b7d4a00')
+    expect(chip.getAttribute('aria-label')).toBe('Imported from Trello')
+    expect(r.container.innerHTML).not.toContain('5f3a9c1e2b7d4a00')
     await r.unmount()
   })
 
@@ -729,7 +730,7 @@ describe('a narrow row keeps its title (issue 844)', () => {
     const r = await row({ origin: todoist, created_at: Date.now() - 19 * 3600_000 }, { source: true })
     const li = r.container.querySelector('[data-task-id]')!
     const line = li.querySelector('[data-row-source="import"]')!
-    expect(line.textContent).toMatch(/^Imported from todoist · /)
+    expect(line.textContent).toMatch(/^Imported from Todoist · /)
     expect(li.querySelector('[data-row-title]')!.textContent).toBe(title)
     expect(li.textContent).not.toContain('dfc92cb10aed05a4')
     // In the open control, after the title's line: the phone rules give it the second grid row.
@@ -742,6 +743,42 @@ describe('a narrow row keeps its title (issue 844)', () => {
     expect(phoneRules()).toMatch(/\[data-row-trailing\] \{ display: none; \}/)
     const narrow = css.slice(css.indexOf('@container row (width < 30rem) {'))
     expect(narrow.slice(0, narrow.indexOf('\n}\n'))).toMatch(/\[data-row-trailing\] \[data-origin-text\] \{ position: absolute; width: 1px;/)
+  })
+})
+
+// After a Todoist import (GitHub issue 945): no import id anywhere in a row, a card or
+// what a screen reader hears, and the row's end one width from 40 rem, so the date and
+// label cells line up whether a row has an origin or not. happy-dom does not lay out
+// container queries: the width rule is read from index.css, and scripts/ui-check/
+// alignment.spec.ts measures the story Screens/Task row ImportedAlignment at 1280, 768 and 390 px.
+describe('imported tasks in a list (issue 945)', () => {
+  const imports = [
+    { kind: 'import' as const, provider: 'todoist', id: 'dfc92cb10aed05a4:1' },
+    { kind: 'import' as const, provider: 'trello', id: '5f3a9c1e2b7d4a00', url: 'https://trello.com/c/AbCd1234' },
+    { kind: 'import' as const, provider: 'ticktick', id: '6f1a2b3c4d' },
+    { kind: 'import' as const, id: 'no-provider-key-77' },
+  ]
+  for (const origin of imports) {
+    for (const shape of ['row', 'card'] as const) {
+      it(`a ${shape} never shows or reads out the ${origin.provider ?? 'unnamed'} import id`, async () => {
+        const r = await render(<ul><TaskRow task={task({ title: 'Imported task', origin, due: { date: '2026-11-04' } })} shape={shape} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} onExpand={() => {}} /></ul>)
+        expect(r.container.innerHTML).not.toContain(origin.id)
+        expect(spokenText(r.container)).not.toContain(origin.id)
+        await r.unmount()
+      })
+    }
+  }
+
+  it('every list row has the trailing slot, with an origin or without, and from 40 rem it is one fixed width', async () => {
+    const issue = { kind: 'issue' as const, provider: 'github', id: 'o/r#7', url: 'https://github.com/o/r/issues/7' }
+    for (const origin of [null, imports[0], imports[1], issue]) {
+      const r = await render(<ul><TaskRow task={task({ title: 'A task', origin, due: { date: '2026-11-04' } })} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} /></ul>)
+      expect(r.container.querySelector('li > [data-row-trailing]')).toBeTruthy()
+      await r.unmount()
+    }
+    const start = css.indexOf('/* The row\'s end is one width from 40 rem')
+    const block = css.slice(css.indexOf('@container row (width >= 40rem) {', start), css.indexOf('\n}\n', start))
+    expect(block).toMatch(/\[data-row-trailing\] \{ flex: none; width: 6rem; \}/)
   })
 })
 
