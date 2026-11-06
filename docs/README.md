@@ -186,4 +186,4 @@ The full list of environment variables is in the [README](../README.md#configura
 
 ## Project
 
-[Changelog](../CHANGELOG.md) · [Roadmap](../ROADMAP.md) · [Security policy](../SECURITY.md) · [Contributing](../CONTRIBUTING.md)
+[Changelog](../CHANGELOG.md) · [Roadmap](../ROADMAP.md) · [Security policy](../SECURITY.md) · [Contributing](../CONTRIBUTING.md) · [Contributor guide](contributing/first-contribution.md)
