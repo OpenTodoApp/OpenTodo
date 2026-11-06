@@ -136,6 +136,10 @@ func (e *env) do(method, path string, body any, headers ...string) (*http.Respon
 		req.Header.Set("X-Forwarded-For", e.ip)
 	}
 	for i := 0; i+1 < len(headers); i += 2 {
+		if headers[i] == "Host" {
+			req.Host = headers[i+1] // the Host header is the request's own field
+			continue
+		}
 		req.Header.Set(headers[i], headers[i+1])
 	}
 	resp, err := e.client.Do(req)

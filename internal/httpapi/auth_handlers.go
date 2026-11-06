@@ -50,8 +50,12 @@ func (s *Server) handleAuthStatus(w http.ResponseWriter, r *http.Request) {
 		"branding": brandingJSON(s.branding(r)),
 	}
 	// Without a token, a client outside the local network needs the setup code
-	// from the server log (trusted-client-identity).
-	out["setupCodeRequired"] = count == 0 && s.auth.SetupCodeRequired() && !isLocalSetup(r)
+	// from the server log (trusted-client-identity), and so does a page under a
+	// domain name while no OPENTODO_BASE_URL is set (host-check-without-base-url);
+	// setupCodeForHost says it is the second reason, so the screen can say so.
+	from := setupFrom(r)
+	out["setupCodeRequired"] = count == 0 && s.auth.SetupCodeNeeded(from)
+	out["setupCodeForHost"] = count == 0 && from.UnverifiedHost && s.auth.SetupCodeOnlyForHosts()
 	if s.hosted {
 		// A hosted tenant (multi-tenant-host D4): the app hides the operator's panels.
 		out["hosted"] = true
@@ -141,12 +145,12 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 	// Without a setup token, a first registration from a public address needs
 	// the setup code from the server log (trusted-client-identity).
-	u, err := s.auth.RegisterFrom(r.Context(), c.Email, c.Name, c.Password, c.Invitation, c.SetupToken, isLocalSetup(r))
+	u, err := s.auth.RegisterFrom(r.Context(), c.Email, c.Name, c.Password, c.Invitation, c.SetupToken, setupFrom(r))
 	switch {
 	case errors.Is(err, auth.ErrSetupTokenInvalid):
 		writeError(w, http.StatusForbidden, "setup_token_invalid", err.Error())
 		return
-	case errors.Is(err, auth.ErrSetupCodeInvalid):
+	case errors.Is(err, auth.ErrSetupCodeInvalid), errors.Is(err, auth.ErrSetupHostUnverified):
 		writeError(w, http.StatusForbidden, "setup_code_invalid", err.Error())
 		return
 	case errors.Is(err, auth.ErrMemberLimit):
