@@ -430,7 +430,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
     // scrolls too, so opening it on a short phone screen never leaves the scroller
     // without room (sidebar-drawer-scroll).
     <div className="flex h-full flex-col" data-sidebar-collapsed={collapsed || undefined}>
-      <div className={`shrink-0 pt-[max(0.75rem,env(safe-area-inset-top))] ${collapsed ? 'px-1.5' : 'px-3'}`}>
+      <div className={`shrink-0 pt-[max(0.75rem,var(--safe-top))] ${collapsed ? 'px-1.5' : 'px-3'}`}>
         {/* The header row is the workspace control (sidebar-v2 D1, workspaces D6); search beside it, in the rail's footer when collapsed. */}
         <SidebarHeader left={<WorkspaceControl route={route} />} rail={<InstanceMark size={24} />} railLabel={instanceLabel}
           collapsed={collapsed} onSearch={onSearch} searchLabel={t('Search and commands')} searchShortcut={keysOf('global.palette')} />

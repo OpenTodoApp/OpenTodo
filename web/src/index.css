@@ -209,6 +209,19 @@
   --ot-hue-slate-solid: oklch(0.5544 0.0407 257.42); --ot-hue-slate-soft: color-mix(in oklab, var(--ot-hue-slate-solid) var(--ot-mix-hue-soft-light), var(--ot-surface)); --ot-hue-slate-text: color-mix(in oklch, var(--ot-hue-slate-solid) var(--ot-mix-hue-text-light), oklch(0 0 0));
 }
 :root {
+  /* Safe areas (GitHub issue 973): the strips of the screen the status bar, the notch
+     or Dynamic Island, the home indicator and the rounded sides take, read once here
+     (index.html sets viewport-fit=cover, so the page runs under them). Every surface
+     that touches an edge of the viewport pads by these, never by env() itself
+     (`make ui-lint`), and the safe-area check (scripts/e2e-safe-area.mjs) sets them on
+     an engine that cannot emulate the insets. Utilities: pt-safe, pb-safe, pl-safe,
+     pr-safe, px-safe. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+}
+:root {
   --duration-ui: 120ms;
   --duration-emphasis: 250ms;
   /* The moment (tokens-v2 D9, motion-v2 D1): the one longer duration, for the completion
@@ -1329,6 +1342,13 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
     min-height: 44px;
   }
 }
+/* Safe areas (GitHub issue 973): a surface that touches an edge pads by its inset.
+   With a minimum, write the token in an arbitrary value: pt-[max(0.5rem,var(--safe-top))]. */
+@utility pt-safe { padding-top: var(--safe-top); }
+@utility pb-safe { padding-bottom: var(--safe-bottom); }
+@utility pl-safe { padding-left: var(--safe-left); }
+@utility pr-safe { padding-right: var(--safe-right); }
+@utility px-safe { padding-left: var(--safe-left); padding-right: var(--safe-right); }
 @layer utilities {
 /* Controls revealed on hover stay visible where there is no hover. */
 @media (hover: hover) {
@@ -1390,7 +1410,7 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
    --display-scale (set per size on the display's root), so they follow the
    browser's font-size setting: body text is about 20, 24 and 32 px at m, l, xl.
    Day columns stack below 768 px and wrap instead of scrolling sideways. */
-.display-root { --display-scale: 1.6; @apply flex flex-col bg-canvas text-default; min-height: 100%; font-size: calc(var(--text-prose) * var(--display-scale)); line-height: 1.35; }
+.display-root { --display-scale: 1.6; @apply flex flex-col bg-canvas text-default; min-height: 100%; padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left); font-size: calc(var(--text-prose) * var(--display-scale)); line-height: 1.35; }
 .display-root[data-size="m"] { --display-scale: 1.35; }
 .display-root[data-size="xl"] { --display-scale: 2.15; }
 .display-clock { @apply font-semibold text-strong; font-size: min(calc(var(--text-display) * var(--display-scale) * 1.5), 16vw); line-height: 1.05; font-variant-numeric: tabular-nums; }

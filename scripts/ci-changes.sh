@@ -22,7 +22,7 @@ code_files=$files
 code=false
 docs=false
 mobile=false
-if printf '%s\n' "$code_files" | grep -qE '^(internal/|cmd/|web/|extension/|deploy/|skills/|go\.(mod|sum)$|Dockerfile|\.dockerignore$|docker-compose\.yml$|Makefile$|\.github/|templates/|scripts/(e2e-layout|e2e-smoke|e2e-views|e2e-offline|cli-smoke|ui-check|coolify|deploy|ci-changes|repo-checks|templates-|release/|bundle-budget))'; then
+if printf '%s\n' "$code_files" | grep -qE '^(internal/|cmd/|web/|extension/|deploy/|skills/|go\.(mod|sum)$|Dockerfile|\.dockerignore$|docker-compose\.yml$|Makefile$|\.github/|templates/|scripts/(e2e-layout|e2e-safe-area|e2e-smoke|e2e-views|e2e-offline|cli-smoke|ui-check|coolify|deploy|ci-changes|repo-checks|templates-|release/|bundle-budget))'; then
   code=true
 fi
 if printf '%s\n' "$files" | grep -qE '^(docs/|website/|CHANGELOG\.md$|changelog\.d/|README\.md$|openspec/|scripts/(site-bundle|e2e-docs|screenshots|docs-screenshots))'; then

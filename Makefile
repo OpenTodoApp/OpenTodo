@@ -11,7 +11,7 @@ WEB_EXT := web-ext@10.7.0
 SKILL_ZIP := dist/opentodo-agent-skill.zip
 MCP_SKILL_ZIP := dist/opentodo-mcp-skill.zip
 
-.PHONY: brand-icons site-bundle all web server cli cli-release cli-smoke skill extension obsidian obsidian-e2e obsidian-review test-obsidian android build run dev test test-go test-web test-extension check lint staticcheck gosec gosec-sarif clean docker openspec-validate layout-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check release-prepare perf storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check bundle-budget fmt-check ci-checks e2e
+.PHONY: brand-icons site-bundle all web server cli cli-release cli-smoke skill extension obsidian obsidian-e2e obsidian-review test-obsidian android build run dev test test-go test-web test-extension check lint staticcheck gosec gosec-sarif clean docker openspec-validate layout-check safe-area-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check release-prepare perf storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check bundle-budget fmt-check ci-checks e2e
 
 all: build
 
@@ -125,6 +125,15 @@ layout-check: build
 	@d=$$(mktemp -d); OPENTODO_DATA_DIR=$$d OPENTODO_ADDR=127.0.0.1:18080 ./bin/opentodo >$$d/server.log 2>&1 & pid=$$!; \
 	  for i in $$(seq 1 30); do curl -fsS 127.0.0.1:18080/healthz >/dev/null 2>&1 && break; sleep 0.3; done; \
 	  OPENTODO_URL=http://127.0.0.1:18080 node scripts/e2e-layout.mjs layout-report; s=$$?; kill $$pid; rm -rf $$d; exit $$s
+
+## Safe-area check (GitHub issue 973): every screen and overlay of the layout check as
+## the installed app on a phone with a Dynamic Island, portrait and landscape, with the
+## insets emulated; fails when a control sits under the island, the home indicator or a
+## rounded side. ENGINES=webkit sets the app's safe-area tokens instead.
+safe-area-check: build
+	@d=$$(mktemp -d); OPENTODO_DATA_DIR=$$d OPENTODO_ADDR=127.0.0.1:18080 ./bin/opentodo >$$d/server.log 2>&1 & pid=$$!; \
+	  for i in $$(seq 1 30); do curl -fsS 127.0.0.1:18080/healthz >/dev/null 2>&1 && break; sleep 0.3; done; \
+	  OPENTODO_URL=http://127.0.0.1:18080 node scripts/e2e-safe-area.mjs safe-area-report; s=$$?; kill $$pid; rm -rf $$d; exit $$s
 
 ## Interface audit (ux-audit-three-widths): every screen of scripts/ux-audit/screens.json
 ## at 360/768/1280 px, light and dark, English and German, against a throwaway server

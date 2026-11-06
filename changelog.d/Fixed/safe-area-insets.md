@@ -1,0 +1,1 @@
+- **No control sits under the Dynamic Island, the notch or the home indicator.** In the installed app on an iPhone, sheets, dialogs, side panels, menus, toasts, display mode and the tab bar keep clear of the screen's safe areas in portrait and landscape, also with the keyboard open, so a Close button can always be tapped (#973).
