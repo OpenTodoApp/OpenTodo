@@ -7,6 +7,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.text.format.DateFormat
 import android.view.View
 import android.widget.RemoteViews
@@ -40,6 +41,9 @@ class TodayWidget : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) = draw(context, manager, ids)
 
     companion object {
+        /** The colour resource a row sets over its layout colour, or null to keep the day/night widget_text. */
+        fun rowColor(overdue: Boolean): Int? = if (overdue) R.color.overdue else null
+
         private val ROW_IDS = intArrayOf(R.id.row0, R.id.row1, R.id.row2, R.id.row3, R.id.row4)
 
         fun draw(context: Context, manager: AppWidgetManager, ids: IntArray) {
@@ -61,7 +65,13 @@ class TodayWidget : AppWidgetProvider() {
                 if (row == null) { v.setViewVisibility(rowId, View.GONE); continue }
                 val title = row.title ?: context.getString(R.string.widget_untitled)
                 v.setTextViewText(rowId, if (row.time != null) "${row.time}  $title" else title)
-                v.setTextColor(rowId, context.getColor(if (row.overdue) R.color.overdue else R.color.widget_text))
+                // A plain row keeps its layout colour (WidgetRow: the day/night widget_text) so the
+                // launcher resolves it for the current theme; context.getColor here would bake in
+                // the colour of the moment the widget was drawn (#966).
+                rowColor(row.overdue)?.let { color ->
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) v.setColorStateList(rowId, "setTextColor", color)
+                    else v.setTextColor(rowId, context.getColor(color))
+                }
                 v.setViewVisibility(rowId, View.VISIBLE)
                 v.setOnClickPendingIntent(rowId, WidgetStore.open(context, ReminderSchedule.taskPath(row.id), 101 + i))
             }
