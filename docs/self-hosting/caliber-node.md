@@ -30,7 +30,7 @@ The `stable` tag moves with every release. To update, pull the image again (rede
 
 ## Data and backups
 
-Everything OpenTodo stores (the database, attachments and its own backups) is on the `/data` volume. For backups off Caliber Node, turn on scheduled backups in OpenTodo's **Settings → Server** with an S3 or WebDAV destination; backups written only to `backups/` stay on the same volume. See [Backups](../backups.md).
+Everything OpenTodo stores (the database, attachments and its own backups) is on the `/data` volume. For backups off Caliber Node, turn on scheduled backups in OpenTodo's **Settings → Server → Backups** with an S3 or WebDAV destination; backups written only to `backups/` stay on the same volume. See [Backups](../backups.md).
 
 ## Troubleshooting
 

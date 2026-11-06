@@ -27,7 +27,7 @@ As you type, each thing OpenTodo recognises shows up as a chip under the input a
 | --- | --- |
 | Keep a word literally ("may" is not May 1st) | Click the `×` on its chip, **or** press Backspace at the end of the line: the first press highlights the last chip, the second dismisses it. The text itself is not changed. |
 | Never parse some text | Put it in double quotes: `Watch "Next Friday" tomorrow` → title *Watch Next Friday*, due tomorrow. The quotes are removed from the title. |
-| Turn parsing off on this device | Settings → Capture → Quick add → *Parse natural language in quick add*. Quick add then saves the line exactly as typed. |
+| Turn parsing off on this device | Settings → Capture → Quick add → **Parse natural language**. Quick add then saves the line exactly as typed. |
 
 A dismissed chip stays dismissed while you keep typing; it comes back only if you edit that word. Backspace only highlights a chip when that chip's text ends the line; otherwise Backspace deletes text as usual.
 
@@ -101,7 +101,7 @@ Words like `on`, `by` and `due` in front of a date are removed with it (`Pay bil
 
 **Energy.** With **Energy levels** on ([Set up](method/set-up.md#energy-levels)), `~deep`, `~medium` and `~low`, or any start of them (`~d`, `~me`, `~L`), set the task's energy, in every language and in any letter case: `Draft the strategy #Work ~deep +2h` → *Draft the strategy*, in Work, 2 hours, Deep. The chip reads "Deep energy"; typing `~` suggests the three, and on a phone the lightning tool under the line starts one. The last one on the line wins. `~` followed by anything else stays in the title (`Dinner for ~6 people`), and with Energy levels off the token is not read.
 
-**Time sectors.** With **Time sectors** on (Settings → Account → How you work), a phrase for a period plans the task for that week, month or quarter instead of a date: `Draft the budget this week #Work` → *Draft the budget*, in Work, This week. `next week` and `next month` alone keep their date meaning; say `sometime next week` for the sector. A line that also has a date takes the date and keeps the phrase in the title (`Review this week plan friday` is due Friday), and with the switch off no phrase is read. A deadline stays beside the sector. See [Time sectors](time-sectors.md).
+**Time sectors.** With **Time sectors** on (Settings → Account → Profile → How you work), a phrase for a period plans the task for that week, month or quarter instead of a date: `Draft the budget this week #Work` → *Draft the budget*, in Work, This week. `next week` and `next month` alone keep their date meaning; say `sometime next week` for the sector. A line that also has a date takes the date and keeps the phrase in the title (`Review this week plan friday` is due Friday), and with the switch off no phrase is read. A deadline stays beside the sector. See [Time sectors](time-sectors.md).
 
 | Language | This week | Next week | This month | Next month | This quarter | Next quarter |
 | --- | --- | --- | --- | --- | --- | --- |
