@@ -6,6 +6,39 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 Changes since the last release are in [changelog.d/](changelog.d/README.md), one file per change; `make release-prepare` moves them here when a release is cut.
 
+## [0.24.0] - 2026-11-06
+
+OpenTodo 0.24.0 is a **security and fixes** release on the way to 1.0. **ChatGPT and Claude (claude.ai) can connect with OAuth again**; since 0.23.0 only Gemini could. The audit log is now **tamper-evident**, a device that answers AI connectors for an encrypted account **shows what it reads and can ask first**, and another site can no longer sign you out. In the installed iPhone app, no control sits under the Dynamic Island or the home indicator. Also new: an [accessibility statement](docs/accessibility.md) against WCAG 2.2 AA.
+
+### Upgrade notes
+
+- **Replace the image or the binary and restart.** One migration runs at start (`0060`: the audit log's hash chain); there are no down-migrations, so back up first. Events recorded before this release are not part of the chain. No new synced field and no new mandatory variable.
+- **An OAuth client you created for ChatGPT or Claude under 0.23.0 has Gemini's redirect addresses.** Delete it and create a new one for the right app, or let ChatGPT or Claude register themselves.
+- **On a host, the assistant's limit of 8 answers at a time is now shared by all tenants.**
+
+### Security
+
+- **The audit log is tamper-evident.** Each event now carries a hash of itself and of the event before it, so an event changed, removed or moved in the database outside OpenTodo shows up as a broken link; pruning by retention keeps the chain verifiable. The server checks the chain at startup and hourly while events are recorded and logs the first broken event; the owner can check it with `ot audit verify` or `GET /api/v1/audit/verify`. Every export ends with the chain head, to keep outside the server and compare with later exports. Events recorded before this release are not covered. See [Checking the log for tampering](docs/self-hosting/docker.md#checking-the-log-for-tampering). (OpenSpec `audit-hash-chain`)
+- **On a host, the assistant's limit of 8 answers at a time is shared by all tenants.** In host mode each tenant used to allow 8 running assistant answers of its own, so the operator's provider keys could see 8 for every open tenant. The 8 are now one limit for the whole host; beyond it a new answer gets the usual `503 assistant_busy` with `Retry-After`, in any tenant. A self-hosted server is unchanged. See [Host mode](docs/self-hosting/host-mode.md#limits). (OpenSpec `host-assistant-concurrency`)
+- **Another site can no longer sign you out.** A sign-out request that the browser marks as coming from another site (a foreign `Origin`, or `Sec-Fetch-Site` other than `same-origin`) is now refused with 403 `bad_origin` instead of ending the session and clearing its cookie. `SameSite=Lax` already kept unrelated sites out, but a page on a sibling subdomain counts as the same site and could do it. The app's own pages and `ot logout` sign out as before. Found by the route matrix, which now also checks every public route anonymously, with each token scope and from another site against what the route promises. (OpenSpec `external-security-review`)
+- **A device that answers AI connectors shows what it reads, and can ask first.** For an end-to-end encrypted account, each request the server sends an opted-in device now names the connector, the tool and the call's arguments. While the device answers, the key in the sidebar says which ("Answering Claude.ai: list_tasks"), and **Recent requests** lists reads as well as changes with the connector's name. The new **Confirm reads first** (Settings → Integrations → AI assistants, off by default) shows each read with the text it would send before anything leaves the device, with **Allow** and **Decline**; a declined read gives the assistant `declined_on_device`. A request that names no tool is refused. The names come from your server, so the device cannot prove an assistant asked; see [Cloud connectors through your device](docs/mcp.md#cloud-connectors-through-your-device). (OpenSpec `relay-request-transparency`)
+
+### Added
+
+- **An accessibility statement.** [Accessibility](docs/accessibility.md) says how far OpenTodo meets WCAG 2.2 Level AA, criterion by criterion and screen by screen, how each part is tested, and how to report a barrier (answered within 10 business days). It claims partial conformance for now: keyboard-only use and 200% zoom with large text pass on every core screen, while the passes with NVDA, VoiceOver and TalkBack are still to be done on real devices ([audit record](docs/accessibility/audit-1.0.0.md)). A release is refused when the audit is more than a year old, and 1.0.0 until those passes are recorded. Linked from Help.
+
+### Changed
+
+- **The task completion budget is measured like INP.** The performance benchmark times completing a task in a long list with the browser's own Event Timing, from the click to the paint that shows the tick, the way Core Web Vitals measure responsiveness; the earlier timer is still reported beside it (docs/performance.md).
+- **Release candidates can be prepared and stay with testers.** `make release-prepare VERSION=x.y.z-rc.N` writes only the candidate's `CHANGELOG.md` section and keeps the changelog fragments, so each candidate lists everything since the last release and 1.0.0 gets one complete section. The store templates, docs and Helm chart stay on the last release. A candidate tag no longer publishes the Claude or Obsidian plugin. The gates are those of 1.0.0, except that the reference-device record and the screen-reader passes, which need the owner's phones, only warn on a candidate ([RELEASING.md](RELEASING.md#release-candidates), OpenSpec `release-candidates`).
+
+### Fixed
+
+- **The docs pages show the current logo in the browser tab.** Their favicon and touch icon links now carry a hash of the mark (`/assets/favicon.svg?v=…`), as the rest of the website does, so a new logo is never served from an old cached copy.
+- **The browser extension's settings page: the Save button is readable.** White on the lighter green fell below the contrast minimum; it now uses the popup's colours (extension 0.6.4).
+- **ChatGPT and Claude (claude.ai) can connect to the MCP endpoint with OAuth.** Since 0.23.0 only Google Gemini's redirect addresses were accepted, so ChatGPT and claude.ai stopped at `redirect_uri is not registered for this client`. In **Settings → Integrations → AI assistants → Apps that sign in with OAuth**, choose the app (Gemini, ChatGPT or Claude) when you create a client, or **Other app** with its exact `https://` redirect address; ChatGPT and Claude can also register themselves. A client created earlier for ChatGPT or Claude has Gemini's addresses: delete it and create a new one. See [OAuth clients](docs/mcp-oauth.md).
+- **No control sits under the Dynamic Island, the notch or the home indicator.** In the installed app on an iPhone, sheets, dialogs, side panels, menus, toasts, display mode and the tab bar keep clear of the screen's safe areas in portrait and landscape, also with the keyboard open, so a Close button can always be tapped (#973).
+
 ## [0.23.0] - 2026-11-06
 
 OpenTodo 0.23.0 is about **trust**. It publishes a [threat model, a security retrospective and a disclosure policy](docs/security/), with documented limits, and ships the hardening they called for: OAuth refresh tokens rotate, AI agents get per-account limits and can no longer build or run routines that send data out, first-run setup under a domain asks for the setup code, cookie writes need Fetch Metadata, and imports, backups and single sign-on are stricter (see Security). The MCP endpoint now speaks **OAuth**, so apps such as ChatGPT, claude.ai and Gemini connect by URL. Also new: **Simplified Chinese**, a **new logo**, calendar events in Upcoming, a subtask's full path, comment webhooks, keyboard grouping and sorting, every drag with a one-click alternative, and the 1.0 docs (self-hosting handbook, configuration reference, contributor guide, roadmap). Many fixes come from your reports, including imported tasks no longer showing their import id.
@@ -1361,7 +1394,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.23.0...HEAD
+[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.24.0...HEAD
+[0.24.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.23.0...v0.24.0
 [0.23.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.22.0...v0.23.0
 [0.22.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.21.0...v0.22.0
 [0.21.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.20.0...v0.21.0
