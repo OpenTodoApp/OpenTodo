@@ -3143,6 +3143,7 @@
   "Nothing waiting for a free moment.": "没有等待空闲时间处理的事项。",
   "Nothing was planned for today and nothing was completed.": "今天没有计划任何任务，也没有完成任何任务。",
   "Nothing was planned today": "今天没有计划任何任务",
+  "Nothing from this share was kept: the browser did not say where it came from. Update the browser, then share again.": "此次分享的内容未被保留：浏览器没有说明其来源。请更新浏览器，然后重新分享。",
   "Nothing was shared. Type a task to add it anyway.": "未共享任何内容。输入任务即可照常添加。",
   "Notifications": "通知",
   "Notifications allowed": "通知已允许",
