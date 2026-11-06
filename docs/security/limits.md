@@ -82,8 +82,6 @@ In [host mode](../self-hosting/host-mode.md), tenants are isolated by data:
 
 They are **not** isolated by resources. All tenants share one process, its CPU, memory and file descriptors. The per-tenant limits bound storage, writes, requests per client address, imports and members, but not CPU time or memory, so a heavy tenant slows the others.
 
-The assistant's limit of 8 concurrent answers applies per tenant, so the operator's provider key can serve 8 answers per open tenant.
-
 The operator can read every tenant's data, as above.
 
 ## The public demo
