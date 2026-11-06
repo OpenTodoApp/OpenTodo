@@ -10,6 +10,7 @@ import {
   MfaPolicyPanelView,
   browserName, EnrolmentStepView, groupKey, RecoveryCodesView, TwoFactorPanelView, type TwoFactorPanelViewProps,
 } from './TwoFactorPanel'
+import { QrCode } from './QrCode'
 
 const noop = () => {}
 const now = Date.UTC(2026, 9, 10, 12)
@@ -105,8 +106,8 @@ describe('EnrolmentStepView', () => {
     const html = renderToStaticMarkup(createElement(EnrolmentStepView, {
       enrollment, code: '', busy: false, disabled: false, error: null, onCode: noop, onConfirm: noop, onCancel: noop,
     }))
-    expect(html).toMatch(/<svg[^>]*role="img"[^>]*aria-label="QR code/)
-    expect(html).toMatch(/<path d="M\d/)
+    // The QR code loads with its encoder (QrCode.tsx); a square of its size holds its place.
+    expect(html).toContain('data-testid="qr-placeholder"')
     expect(html).not.toContain('<img') // no image request carrying the secret
     expect(html).toContain('JBSW Y3DP EHPK 3PXP JBSW Y3DP EHPK 3PXP')
     expect(html).toContain('Code from the app')
@@ -119,6 +120,15 @@ describe('EnrolmentStepView', () => {
     }))
     expect(html).toContain('role="alert"')
     expect(html).toContain('That code does not match.')
+  })
+})
+
+describe('QrCode', () => {
+  it('draws the matrix as one SVG path, without an image request', () => {
+    const html = renderToStaticMarkup(createElement(QrCode, { text: 'otpauth://totp/OpenTodo:a?secret=JBSWY3DPEHPK3PXP' }))
+    expect(html).toMatch(/<svg[^>]*role="img"[^>]*aria-label="QR code/)
+    expect(html).toMatch(/<path d="M\d/)
+    expect(html).not.toContain('<img')
   })
 })
 

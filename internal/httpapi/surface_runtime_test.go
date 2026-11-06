@@ -219,7 +219,11 @@ func readToolResults(t *testing.T, tools map[string]any) map[string]map[string]a
 	uid := me["user"].(map[string]any)["id"].(string)
 	resp, p := e.do("POST", "/api/v1/projects", map[string]any{"name": "P"})
 	e.mustStatus(resp, 201, p)
-	resp, task := e.do("POST", "/api/v1/tasks", map[string]any{"title": "T", "project_id": p["id"], "due": map[string]any{"date": localToday(e.now.Now())}})
+	// Due today as the read tools see it: called without arguments they read the
+	// day in UTC (their timezone default), not the machine's local date, so the
+	// snapshot is the same on every machine (due_today, never overdue).
+	today := e.now.Now().UTC().Format("2006-01-02")
+	resp, task := e.do("POST", "/api/v1/tasks", map[string]any{"title": "T", "project_id": p["id"], "due": map[string]any{"date": today}})
 	e.mustStatus(resp, 201, task)
 	caller := agenttools.Caller{UserID: uid, Scope: "full"}
 	out := map[string]map[string]any{}
