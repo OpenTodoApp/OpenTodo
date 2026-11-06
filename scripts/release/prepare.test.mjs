@@ -10,6 +10,7 @@ import { staleCopies } from '../deploy/mirror.mjs'
 import { bumpLine, bumpText, casaosText, changelogText, easypanelText, haChangelogText, prepare, truenasText } from './prepare.mjs'
 import { checkUpgradeFixture, fixtureDir, isNewMinor } from './upgradeFixture.mjs'
 import { checkSecurityReviews, monthsBetween } from './securityReview.mjs'
+import { checkScreenshotFreshness } from './screenshotFreshness.mjs'
 
 const facts = loadFacts()
 const CURRENT = releaseVersion(readText('CHANGELOG.md'))
@@ -274,4 +275,14 @@ test('release-prepare: the security review gate (external-security-review)', (t)
   assert.doesNotThrow(() => checkSecurityReviews(root('2028-05-20', []), '2.0.0', '1.8.4', '2028-06-01', '2028-05-01'))
   assert.equal(monthsBetween('2027-03-01', '2029-02-28'), 23)
   assert.equal(monthsBetween('2027-03-01', '2029-03-01'), 24)
+})
+
+test('from 1.0.0, release preparation refuses screenshots older than the app (docs-1-0 D7)', () => {
+  const times = (shots, app) => (_root, path) => (path === 'web/src/app' ? app : shots)
+  const day = 86_400
+  assert.throws(() => checkScreenshotFreshness('.', '1.0.0', times(10 * day, 12 * day)), /run `make docs-screenshots`/)
+  assert.doesNotThrow(() => checkScreenshotFreshness('.', '1.0.0', times(12 * day, 12 * day)))
+  assert.doesNotThrow(() => checkScreenshotFreshness('.', '0.23.0', times(10 * day, 12 * day)))
+  // A dry run on this repository reads git: it passes, or names both dates.
+  try { checkScreenshotFreshness(ROOT, '1.0.0') } catch (e) { assert.match(e.message, /^docs\/images: the newest screenshot was committed \d{4}-\d{2}-\d{2}/) }
 })

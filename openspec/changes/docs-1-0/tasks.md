@@ -2,9 +2,9 @@
 
 ## 1. Screens and coverage
 
-- [ ] 1.1 `web/src/app/screens.ts` with `SCREEN_IDS` and a unit test that every router route and Settings section is listed; verify `npm test`
-- [ ] 1.2 The docs build writes `web/src/generated/screen-ids.json`, and `docs:check` fails for an undeclared id; add `screens:` front matter to the pages that lack it until the check passes; verify `make docs-check`
-- [ ] 1.3 An `#export` heading check for `docs/switch/*.md`; verify `make docs-check` fails on a guide without it
+- [x] 1.1 `web/src/app/screens.ts` with `SCREEN_IDS` and a unit test that every router route and Settings section is listed; verify `npm test`
+- [x] 1.2 The docs build writes `web/src/generated/screen-ids.json`, and `docs:check` fails for an undeclared id; add `screens:` front matter to the pages that lack it until the check passes; verify `make docs-check`
+- [x] 1.3 An `#export` heading check for `docs/switch/*.md`; verify `make docs-check` fails on a guide without it
 
 ## 2. Self-hosting
 
@@ -25,12 +25,12 @@
 
 ## 5. Roadmap page
 
-- [ ] 5.1 The docs build generates `docs/roadmap.md` content from ROADMAP.md tables, OpenSpec folders, task checkboxes and CHANGELOG.md; verify a unit test over a small fixture tree (archived, in progress, planned, missing folder)
-- [ ] 5.2 Help: an "About" group in the full guide list with Roadmap, strings in the six languages (seven once `more-languages` lands); verify `npm test`, `make i18n-check`, `npm run build`
-- [ ] 5.3 Staleness check in `docs:check`; verify it fails after checking a task box without rebuilding
+- [x] 5.1 The docs build generates `docs/roadmap.md` content from ROADMAP.md tables, OpenSpec folders, task checkboxes and CHANGELOG.md; verify a unit test over a small fixture tree (archived, in progress, planned, missing folder)
+- [x] 5.2 Help: an "About" group in the full guide list with Roadmap, strings in the six languages (seven once `more-languages` lands); verify `npm test`, `make i18n-check`, `npm run build`
+- [x] 5.3 Staleness check in `docs:check`; verify it fails after checking a task box without rebuilding
 
 ## 6. Release
 
-- [ ] 6.1 `make release-prepare` for 1.0.0 and later fails when the newest `docs/images/*.webp` predates the last commit touching `web/src/app`; verify with a dry run
+- [x] 6.1 `make release-prepare` for 1.0.0 and later fails when the newest `docs/images/*.webp` predates the last commit touching `web/src/app`; verify with a dry run
 - [ ] 6.2 Regenerate every screenshot with `make docs-screenshots` on the release candidate
-- [ ] 6.3 CHANGELOG entry under Unreleased; `make check` (TZ=UTC) passes
+- [x] 6.3 CHANGELOG entry under Unreleased; `make check` (TZ=UTC) passes

@@ -46,7 +46,7 @@ With Cosmos's certificates on (the default), OpenTodo is served over https and e
 
 The template uses the `stable` image, which every release moves, and turns on Cosmos's automatic updates for it: Cosmos installs each release by itself, and migrations run on start. There are no down-migrations, so keep backups (see below). To choose when to update, turn off **Auto-update** in the ServApp's settings and use **Update** when you are ready. To stay on one release line and take only its fixes, change the image to `ghcr.io/opentodoapp/opentodo:0.6` (or pin one version, `0.6.1`).
 
-Back up the `<service name>-data` volume with Cosmos's backups, or turn on scheduled backups in **Settings → Server** (they are written to `backups/` in the same volume, or to S3 or WebDAV). See [Backups](../backups.md).
+Back up the `<service name>-data` volume with Cosmos's backups, or turn on scheduled backups in **Settings → Server → Backups** (they are written to `backups/` in the same volume, or to S3 or WebDAV). See [Backups](../backups.md).
 
 ## Troubleshooting
 

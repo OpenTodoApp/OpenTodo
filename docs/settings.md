@@ -25,7 +25,7 @@ On a page, each group of settings leads with a heading and one sentence, then ro
 
 Some settings follow your account to every device; others belong to the device you're on, marked "this device", so your phone and laptop can differ. Each page's **Help** button opens its part of this guide beside it.
 
-The owner and admins also see **People**; the owner alone sees **Server**. On the public demo every section is listed, and the rows the demo refuses have their controls disabled, under a note at the top of the page naming them.
+The owner and admins also see **People**; the owner alone sees **Server**. On the public demo, rows the demo refuses are disabled under a note naming them.
 
 ## You
 
@@ -33,11 +33,15 @@ Your account and how the app looks for you: [Settings: You](settings-you.md).
 
 ### Account
 
-[Account](settings-you.md#account): **Profile**; **Security** with your password, two-factor authentication, passkeys, linked accounts and **Sign out here**; **Recent activity**; and **End-to-end encryption**.
+[Account](settings-you.md#account): **Profile**; **Security** with your password, two-factor authentication, passkeys, linked accounts and **Sign out here**; **Recent activity**; **Invitations** waiting for you; and **End-to-end encryption**.
 
 ### Appearance
 
-[Appearance](settings-you.md#appearance): **Theme and density** (System, Light or Dark, one of eight colour themes or your own colour, density) and **Sidebar** (which **More** destinations it shows), all following your account.
+[Appearance](settings-you.md#appearance): **Theme and density** (System, Light or Dark, a built-in or your own theme, accent, density), **Sidebar** (which **More** destinations it shows) and **Task details** (page or side panel), all following your account.
+
+### Workspaces
+
+[Workspaces](workspaces.md): members, groups and invite links.
 
 ## App
 
@@ -69,7 +73,7 @@ Connections to other tools, and your data: [Settings: Data](settings-data.md).
 
 ### Integrations
 
-[Integrations](settings-data.md#integrations): one page each for calendar apps (CalDAV), calendar feeds, issues, webhooks, API tokens, the in-app assistant and AI assistants over MCP.
+[Integrations](settings-data.md#integrations): one page each for calendar apps (CalDAV), calendar feeds, calendar sync, issues, webhooks, API tokens, the in-app assistant and AI assistants over MCP.
 
 ### Data
 

@@ -4,7 +4,7 @@ summary: Show Today, Upcoming, a project or a saved view full screen in large ty
 audience: user
 section: Guides
 specs: [display-mode]
-screens: []
+screens: [display]
 order: 21
 ---
 # Display mode

@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { buildAll, OUT_SITE, writeAll } from './build.mjs'
-import { quickAddLinkProblems, runChecks, selfHostingOrphans, stabilityLinkProblems } from './check.mjs'
+import { quickAddLinkProblems, runChecks, selfHostingOrphans, stabilityLinkProblems, switchExportProblems, undeclaredScreens } from './check.mjs'
 import { SCREENSHOTS, SHOTS_DIR } from '../../../scripts/site-bundle.mjs'
 
 // A 1×1 WebP (VP8L).
@@ -167,5 +167,24 @@ describe('docs check', () => {
     expect(selfHostingOrphans([handbook, pg('self-hosting/docker.md'), pg('self-hosting/nixos.md')]))
       .toEqual(['docs/self-hosting/nixos.md: not linked from the self-hosting handbook (docs/self-hosting/README.md); add it to the install table or a section'])
     expect(selfHostingOrphans([pg('self-hosting/nixos.md')])).toEqual([])
+  })
+
+  it('names a screen of the app that no page declares (docs-1-0 D1)', async () => {
+    write('web/src/app/screens.ts', "export const SCREEN_IDS: readonly string[] = ['board-view', 'settings/telegram']\n")
+    const problems = await runChecks(root)
+    expect(problems).toContain('web/src/app/screens.ts: screen "settings/telegram" has no guide; name it in the "screens" of the page that explains it')
+    expect(problems.some((p) => p.includes('"board-view" has no guide'))).toBe(false)
+    expect(undeclaredScreens(['a', 'b'], new Map([['a', 'x.md']]))).toEqual(['web/src/app/screens.ts: screen "b" has no guide; name it in the "screens" of the page that explains it'])
+  })
+
+  it('names a switch guide without its export section (docs-1-0 1.3)', () => {
+    const pg = (rel) => ({ rel })
+    const headings = new Map([
+      ['switch/README.md', []],
+      ['switch/todoist.md', [{ depth: 1, id: 'switch-from-todoist' }, { depth: 2, id: 'export-from-todoist' }]],
+      ['switch/linear.md', [{ depth: 1, id: 'switch-from-linear' }, { depth: 2, id: 'import' }]],
+    ])
+    expect(switchExportProblems([pg('switch/README.md'), pg('switch/todoist.md'), pg('switch/linear.md')], headings))
+      .toEqual(['docs/switch/linear.md: a switch guide needs an "## Export from …" section with the export steps'])
   })
 })
