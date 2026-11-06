@@ -65,7 +65,7 @@ chown -R 65532:65532 /path/on/the/server
 
 The version field picks one release, and CapRover never updates an installed app by itself. To update, open the app's **Deployment** tab and, under **Deploy via ImageName**, enter the new version, for example `ghcr.io/opentodoapp/opentodo:0.22.0`, then deploy. CapRover pulls the image you name each time you deploy, so entering `ghcr.io/opentodoapp/opentodo:stable` instead gets the current release whenever you deploy it again. Migrations run on start. There are no down-migrations, so back up first. Releases are listed on [GitHub](https://github.com/OpenTodoApp/OpenTodo/releases).
 
-Back up the volume folder above with your server's backups, or turn on scheduled backups in OpenTodo's **Settings → Server** (they are written to `backups/` in the same volume, or to S3 or WebDAV). See [Backups](../backups.md).
+Back up the volume folder above with your server's backups, or turn on scheduled backups in OpenTodo's **Settings → Server → Backups** (they are written to `backups/` in the same volume, or to S3 or WebDAV). See [Backups](../backups.md).
 
 ## Troubleshooting
 

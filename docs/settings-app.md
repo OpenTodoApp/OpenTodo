@@ -38,7 +38,7 @@ Four choices that follow your account to every device:
 - **Week starts on**: **System**, **Monday**, **Sunday** or **Saturday**. It decides where the Week view and the calendar of a date field start, and which days `this week` and `last week` cover in [filters](filters.md#periods).
 - **My day starts at**: **Midnight** (the default) or a time up to 06:00. If you work past midnight, set it to when your day really ends: until then the app still treats it as the previous day. See [When a day ends](dates-and-times.md#when-a-day-ends).
 
-The **Preview** shows which day is today, a due date, a date, a due time, a comment time and this week as they will appear. A change applies at once everywhere in the app, without a reload. With a numeric date order on **Automatic**, quick add reads dates like `3/11` in your date format too.
+The **Sample** shows which day is today, a due date, a date, a due time, a comment time and this week as they will appear. A change applies at once everywhere in the app, without a reload. With a numeric date order on **Automatic**, quick add reads dates like `3/11` in your date format too.
 
 ## Notifications
 

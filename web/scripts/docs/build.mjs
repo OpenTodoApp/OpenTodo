@@ -2,6 +2,7 @@
 //   dist/docs-site/**          the docs website (pages, search.json, docs.css, docs.js, images), not committed
 //   web/src/generated/help.json the user guide for the in-app Help view
 //   docs/keyboard.md           its shortcut tables, regenerated from the app
+//   docs/roadmap.md            its tables, from ROADMAP.md, openspec/ and CHANGELOG.md (docs-1-0 D6)
 //
 //   node scripts/docs/build.mjs [--site DIR]   (from web/; `make docs` from the root)
 //
@@ -12,9 +13,10 @@
 // The output is deterministic: running it twice changes nothing.
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { imageSize, loadPages, pageUrl, renderPage, repoRootFrom, sortPages, versionInfo } from './lib.mjs'
 import { loadShortcuts, shortcutsMarkdown, withShortcuts } from './shortcuts.mjs'
+import { roadmapMarkdown, withRoadmap } from './roadmap.mjs'
 import { landingHtml, pageHtml } from './site.mjs'
 
 const here = fileURLToPath(import.meta.url)
@@ -22,6 +24,8 @@ const ASSETS = join(dirname(here), 'assets')
 /** Where the docs website is written unless a caller says otherwise. */
 export const OUT_SITE = 'dist/docs-site'
 export const OUT_HELP = 'web/src/generated/help.json'
+/** The app's screen ids (docs-1-0 D1), written from web/src/app/screens.ts for the docs check. */
+export const OUT_SCREENS = 'web/src/generated/screen-ids.json'
 const TEXT_CAP = 1500
 
 /**
@@ -45,6 +49,19 @@ export async function buildAll(repoRoot, { site = OUT_SITE } = {}) {
     else {
       files.set('docs/keyboard.md', next)
       kb.body = withShortcuts(kb.body, block)
+    }
+  }
+
+  // The roadmap page's tables come from ROADMAP.md and the OpenSpec folders (docs-1-0 D6).
+  const rm = pages.find((p) => p.rel === 'roadmap.md')
+  if (rm) {
+    const src = readFileSync(join(repoRoot, 'docs/roadmap.md'), 'utf8')
+    const block = roadmapMarkdown(repoRoot)
+    const next = withRoadmap(src, block)
+    if (next === null) problems.push('docs/roadmap.md: the roadmap markers are missing')
+    else {
+      files.set('docs/roadmap.md', next)
+      rm.body = withRoadmap(rm.body, block)
     }
   }
 
@@ -113,8 +130,22 @@ export async function buildAll(repoRoot, { site = OUT_SITE } = {}) {
     for (const s of rendered.get(p.rel).app.sections) help.index.s.push([at, s.heading, s.id, s.text.slice(0, TEXT_CAP)])
   }
   files.set(OUT_HELP, JSON.stringify(help) + '\n')
+  const screenIds = await loadScreenIds(repoRoot)
+  if (screenIds) files.set(OUT_SCREENS, JSON.stringify(screenIds, null, 2) + '\n')
 
-  return { files, pages, sorted, rendered, problems }
+  return { files, pages, sorted, rendered, problems, screenIds }
+}
+
+/**
+ * The app's screen ids from web/src/app/screens.ts (imported directly; Node strips
+ * the types, and the module has no runtime imports), or null when the file is absent.
+ */
+export async function loadScreenIds(repoRoot) {
+  const file = join(repoRoot, 'web/src/app/screens.ts')
+  if (!existsSync(file)) return null
+  // The modification time in the URL defeats the module cache when the file changes (tests, watch).
+  const m = await import(`${pathToFileURL(file).href}?v=${Math.floor(statSync(file).mtimeMs)}`)
+  return [...m.SCREEN_IDS]
 }
 
 // The app ships the guide's text only: screenshots stay on the website, so the

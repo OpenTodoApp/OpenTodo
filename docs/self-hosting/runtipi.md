@@ -41,4 +41,4 @@ The app names one release (`ghcr.io/opentodoapp/opentodo:0.22.0`), not a moving 
 
 Everything OpenTodo stores (the database, attachments and its own backups) is in `app-data/<store name>/opentodo/data` inside the Runtipi folder. A small helper container gives that folder to the user OpenTodo runs as (65532) before each start, because Runtipi creates it owned by root.
 
-Back it up with Runtipi's app backup (the app's **Backups** tab), with your usual backup tool (stop the app first for a consistent copy), or turn on scheduled backups in OpenTodo's **Settings → Server** (written to `backups/` in the same folder, or to S3 or WebDAV). See [Backups](../backups.md).
+Back it up with Runtipi's app backup (the app's **Backups** tab), with your usual backup tool (stop the app first for a consistent copy), or turn on scheduled backups in OpenTodo's **Settings → Server → Backups** (written to `backups/` in the same folder, or to S3 or WebDAV). See [Backups](../backups.md).
