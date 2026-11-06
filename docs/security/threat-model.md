@@ -109,6 +109,7 @@ The model describes the code on `main` at the time of writing. An external revie
 - `TestProjectIdAcrossScopesIsRejected`, `TestPullIsScopedToMemberships`, `TestRemovedMemberReceivesNothing` (`sharing_test.go`).
 - `TestCommentForgedAuthorIsRejected`, `TestSplitFromOtherScopeIsRefused`, `TestAssignToNonMemberIsRejected`.
 - `TestConvergenceProperty` (`convergence_property_test.go`) shares a project part way through a random run and checks every replica.
+- `web/src/lib/convergence.test.ts` runs the client's own clock and `applyOps` on several devices in random orders and checks every replica against an LWW replay; `TestHLCVectors` (`hlc_vectors_test.go`) and `web/src/lib/hlc.test.ts` pin the Go model to `hlc.ts` with `web/src/lib/hlc.vectors.json`.
 
 **Not defended.**
 - A member can read and change everything in the shared project their role allows, including other members' text, and can delete within it (tombstones, undoable).

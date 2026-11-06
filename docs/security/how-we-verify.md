@@ -43,14 +43,21 @@ In short:
   Every replica must end equal to the server, and the server's tables must equal an LWW replay of its own log. A failing seed is printed and can be replayed with `OPENTODO_PROPERTY_SEED`.
 - **Fixed order, in Go.** `TestOrderIndependence` and `TestApplyIsIdempotentAndConverges` (`internal/sync/service_test.go`).
 - **Clock skew, in Go.** `TestClockSkewRefusedWithServerTime`, `TestFastClockDeviceConverges` and `TestServerTSStrictlyIncreasing` (`internal/sync/convergence_test.go`).
-- **The client.** `web/src/lib/ops.test.ts` ("converges to the same state regardless of delivery order", "stamps a local edit after a received op even when this device's clock runs behind") and `web/src/lib/hlc.test.ts`.
+- **Randomized, on the client.** `web/src/lib/convergence.test.ts` runs four devices, each its own copy of the client modules (its own IndexedDB and clock), with skewed clocks:
+  - they edit through the real `hlc.ts` and `applyOps`;
+  - a model server refuses ops more than five minutes ahead, and the device stamps them again through the real `restampSkewed`;
+  - pages arrive in random sizes and orders, with older ops delivered again.
+
+  Every replica, and two fresh ones fed the whole log in other orders, must end with the values and clocks of an LWW replay of the server's log; no edit may be lost, and the clock must move past every pulled op. A failing seed is in the test name and can be replayed with `OPENTODO_PROPERTY_SEED`.
+- **The client's clock against the Go model.** `web/src/lib/hlc.vectors.json` holds clock steps (stamps, received ops, server time, `clock_skew` refusals) and LWW comparisons. `web/src/lib/hlc.test.ts` runs them through `hlc.ts`; `TestHLCVectors` (`internal/sync/hlc_vectors_test.go`) runs them through the property test's `propDevice` and `Wins`.
+- **The client, fixed cases.** `web/src/lib/ops.test.ts` ("converges to the same state regardless of delivery order", "stamps a local edit after a received op even when this device's clock runs behind") and `web/src/lib/hlc.test.ts`.
 - **Against the built server.** `web/src/lib/sync.contract.test.ts` runs two devices against a real server binary: offline edits on two devices, a far-ahead clock, a viewer's refused edit.
 - **Schema.** `TestGeneratedOpSchema` fails while the generated files are stale, and refuses a removed or renamed field.
 
 **Limits of this evidence.**
-- The Go property test models the TypeScript client with a hand-written Go copy of its clock rules. A change to `hlc.ts` could drift from the model unnoticed.
-- The TypeScript side has no randomized test.
-- The property test's seeds come from the clock, so a CI failure must be replayed from the logged seed.
+- The Go property test models the TypeScript client with a hand-written Go copy of its clock rules. The shared vectors pin that copy to `hlc.ts` on the steps they list, not on every input.
+- The client's randomized test runs against a model server, not `internal/sync`; the run against the built server (`sync.contract.test.ts`) covers fixed scenarios only.
+- Both randomized tests take their seeds from the clock, so a CI failure must be replayed from the logged seed.
 
 ## End-to-end encryption
 
