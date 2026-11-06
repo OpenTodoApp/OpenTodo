@@ -215,11 +215,11 @@ Go's native fuzzing covers the parsers that read untrusted bytes. `scripts/fuzz.
 
 | Package | Targets |
 |---|---|
-| `internal/importer` | `FuzzParse` (every import profile), `FuzzReadArchive` |
+| `internal/importer` | `FuzzParse` (every import profile), `FuzzReadArchive`, `FuzzBuildPlan` (the import planner: every row counted, every planned field passes the op schema check) |
 | `internal/webauthn` | `FuzzParseClientData`, `FuzzParseAuthData`, `FuzzParseAttestationObject`, `FuzzParseCOSEKey`, `FuzzVerifyAssertion` |
 | `internal/caldav` | `FuzzParseXML`, `FuzzParseICal` |
 | `internal/calfeed` | `FuzzParseAndExpand` |
-| `internal/calsync` | `FuzzParseMultistatus` |
+| `internal/calsync` | `FuzzParseMultistatus`, `FuzzGraphPage` (the Microsoft Graph event parser: an event kept has a start, an end after it, and times read as UTC) |
 | `internal/email` | `FuzzParse`, `FuzzHTMLToMarkdown`, `FuzzRoute` |
 | `internal/filter` | `FuzzParse` |
 | `internal/quickadd` | `FuzzParse` |
@@ -233,7 +233,7 @@ Go's native fuzzing covers the parsers that read untrusted bytes. `scripts/fuzz.
 
 The last five rows were added with this retrospective.
 
-**Not fuzzed yet:** the Microsoft Graph event parser, the import planner, and the TypeScript client.
+**Not fuzzed yet:** the TypeScript client.
 
 ## Other checks worth knowing
 
@@ -321,7 +321,7 @@ These are known and tracked as follow-up tasks of the OpenSpec change `external-
 - **Public routes in the route matrix.** The matrix skips public routes, which rely on their own tests.
 - **Host mode.** The assistant's concurrency limit is per tenant, not per host.
 - **Write paths are checked in source only.** `internal/writepaths` reads the Go source, so a write reached through reflection or SQL assembled from pieces is not seen; a table named at run time is caught only as an allow-listed place.
-- **Fuzzing.** A few parsers still have no fuzz target (see [Fuzzing](#fuzzing)), and the TypeScript client has none.
+- **Fuzzing.** The TypeScript client has no fuzz target (see [Fuzzing](#fuzzing)).
 - **No independent review** of the design or the code yet.
 
 ## Independent review
