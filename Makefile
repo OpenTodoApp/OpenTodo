@@ -225,7 +225,8 @@ openspec-validate:
 
 ## Everything CI runs.
 ## Documentation (user-documentation): build the docs site into dist/docs-site, regenerate the in-app help
-## bundle web/src/generated/help.json and the keyboard guide's tables from docs/.
+## bundle web/src/generated/help.json (not committed; `npm run help` builds only that) and the keyboard
+## and roadmap guides' tables from docs/.
 docs: templates
 	cd web && npm run docs:build
 

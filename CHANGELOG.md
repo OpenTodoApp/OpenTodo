@@ -4,13 +4,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
-### Added
-
-- **An accessibility statement.** [Accessibility](docs/accessibility.md) says how far OpenTodo meets WCAG 2.2 Level AA, criterion by criterion and screen by screen, how each part is tested, and how to report a barrier (answered within 10 business days). It claims partial conformance for now: keyboard-only use and 200% zoom with large text pass on every core screen, while the passes with NVDA, VoiceOver and TalkBack are still to be done on real devices ([audit record](docs/accessibility/audit-1.0.0.md)). A release is refused when the audit is more than a year old, and 1.0.0 until those passes are recorded. Linked from Help.
-
-### Fixed
-
-- **The browser extension's settings page: the Save button is readable.** White on the lighter green fell below the contrast minimum; it now uses the popup's colours (extension 0.6.4).
+Changes since the last release are in [changelog.d/](changelog.d/README.md), one file per change; `make release-prepare` moves them here when a release is cut.
 
 ## [0.23.0] - 2026-11-06
 
@@ -69,7 +63,6 @@ OpenTodo 0.23.0 is about **trust**. It publishes a [threat model, a security ret
 
 ### Security
 
-- **On a host, the assistant's limit of 8 answers at a time is shared by all tenants.** In host mode each tenant used to allow 8 running assistant answers of its own, so the operator's provider keys could see 8 for every open tenant. The 8 are now one limit for the whole host; beyond it a new answer gets the usual `503 assistant_busy` with `Retry-After`, in any tenant. A self-hosted server is unchanged. See [Host mode](docs/self-hosting/host-mode.md#limits). (OpenSpec `host-assistant-concurrency`)
 - **`run_routine` now stays within an AI assistant's daily write limit.** A routine run started over MCP counted its writes toward the token's 1,000 items a day only after it ran, and it ran even when nothing was left. It now runs only within what is left: with none left it answers `rate_limited`, and a run that would write more than is left writes nothing and is logged as failed with the reason. Tests are not limited. See [Limits](docs/mcp.md#limits).
 - **An AI assistant can no longer create, change, turn on or run a routine that sends a webhook or an email.** Routines with **Send a webhook**, **Email me** or **Email project members** steps are now the person's alone. Over MCP and in the in-app assistant, `create_routine`, `update_routine`, `set_routine_enabled` (turning on) and `run_routine` answer `forbidden_for_agents` for them. An assistant can still read, test, turn off and trash them, and nothing changes in the app. This makes the [MCP guide](docs/mcp.md#prompt-injection)'s promise that no tool sends anything off the server hold for routines too.
 - **AI agent write limits also apply per account.** All of one person's agent tokens and connected OAuth apps together may now make at most 60 write calls a minute and change at most 2,000 items a UTC day, next to the existing 30 calls and 1,000 items for each token, so creating more tokens no longer raises the budget that contains a runaway or misled agent. Over a limit the call is refused with `rate_limited` and nothing changes. See [MCP](docs/mcp.md#limits) (OpenSpec `agent-limits-per-account`).
