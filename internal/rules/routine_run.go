@@ -153,18 +153,9 @@ func (e *Engine) runRoutine(ctx context.Context, w *world, r *rule, o runOpts) (
 		// A routine with AI steps writes only in effective auto mode, within
 		// its limits; otherwise (and on a fallback) the run is a proposal
 		// (routines-ai-step D2, D4, D5).
-		mode, err := e.AIMode(ctx, w.uid, r.ID)
-		if err != nil {
+		var err error
+		if auto, err = e.aiAuto(ctx, w.uid, r.ID, st); err != nil {
 			return Result{}, err
-		}
-		auto = mode.Auto
-		if auto {
-			if reason := st.autoCheck(); reason != "" {
-				if err := e.Store.setFallback(ctx, w.uid, r.ID, reason); err != nil {
-					return Result{}, err
-				}
-				auto = false
-			}
 		}
 		if !auto {
 			n, err := st.propose()
@@ -188,6 +179,20 @@ func (e *Engine) runRoutine(ctx context.Context, w *world, r *rule, o runOpts) (
 		outcome, reason = OutcomePartial, refusedReason(refused)
 	}
 	return finish(routineFinish{Outcome: outcome, Reason: reason, Writes: n, FailedStep: -1, Written: wrote, AIAuto: auto})
+}
+
+// aiAuto reports whether a routine with AI steps writes its run at once: in
+// effective auto mode and within the auto limits; a run outside them records
+// the fallback that turns the mode off (routines-ai-step D4, D5).
+func (e *Engine) aiAuto(ctx context.Context, uid, ruleID string, st *runState) (bool, error) {
+	mode, err := e.AIMode(ctx, uid, ruleID)
+	if err != nil || !mode.Auto {
+		return false, err
+	}
+	if reason := st.autoCheck(); reason != "" {
+		return false, e.Store.setFallback(ctx, uid, ruleID, reason)
+	}
+	return true, nil
 }
 
 // agentLimitReason is why a run an AI assistant started wrote nothing: it
