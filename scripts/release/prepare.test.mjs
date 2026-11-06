@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { run as deployCheck } from '../deploy-check.mjs'
-import { laterRelease, loadFacts, readText, releaseVersion, ROOT } from '../deploy/common.mjs'
+import { compareVersions, laterRelease, loadFacts, readText, releaseVersion, ROOT } from '../deploy/common.mjs'
 import { staleCopies } from '../deploy/mirror.mjs'
 import { bumpLine, bumpText, candidateChangelogText, candidates, casaosText, changelogText, easypanelText, haChangelogText, prepare, truenasText, withoutCandidates } from './prepare.mjs'
 import { checkUpgradeFixture, fixtureDir, isNewMinor } from './upgradeFixture.mjs'
@@ -18,6 +18,12 @@ const facts = loadFacts()
 const CURRENT = releaseVersion(readText('CHANGELOG.md'))
 const [maj, min, patch] = CURRENT.split('.').map(Number)
 const NEXT_PATCH = `${maj}.${min}.${patch + 1}`
+/** This tree's CHANGELOG.md without the sections of a release candidate it has open (newer than CURRENT). */
+const BASE_CHANGELOG = (() => {
+  const text = readText('CHANGELOG.md')
+  const open = new Set(candidates(text).filter((c) => compareVersions(c.base, CURRENT) > 0).map((c) => c.base))
+  return [...open].reduce(withoutCandidates, text)
+})()
 
 /**
  * The files a hand-made patch release changed ("Prepare 0.14.2", 3e5dfcb0), without the deploy
@@ -86,6 +92,9 @@ function copyRepo() {
   }
   // The changelog fragments of this tree are left out: each test writes the ones it needs.
   mkdirSync(join(dir, 'changelog.d'))
+  // So are the sections of a release candidate this tree has open (between 1.0.0-rc.1 and 1.0.0):
+  // the tests prepare the next patch, minor or candidate after the latest release.
+  writeFileSync(join(dir, 'CHANGELOG.md'), BASE_CHANGELOG)
   return dir
 }
 
@@ -450,7 +459,7 @@ test('release-prepare: a release candidate only adds its CHANGELOG.md section, k
     assert.ok(out.includes(`## [${NEXT_MAJOR}] - 2030-01-05\n\n### Added\n\n- **A feature.**\n\n### Fixed\n\n- **A fix.**\n- **Another fix.**\n\n## [${CURRENT}] - `))
     assert.match(out, new RegExp(`^\\[Unreleased\\]: (\\S+)/compare/v${reV(NEXT_MAJOR)}\\.\\.\\.HEAD\\n\\[${reV(NEXT_MAJOR)}\\]: \\1/compare/v${reV(CURRENT)}\\.\\.\\.v${reV(NEXT_MAJOR)}\\n\\[${reV(CURRENT)}\\]: `, 'm'))
     // A candidate of an earlier release (0.3.1-rc.1) is history and stays.
-    assert.equal(out.includes('## [0.3.1-rc.1]'), readFileSync(join(ROOT, 'CHANGELOG.md'), 'utf8').includes('## [0.3.1-rc.1]'))
+    assert.equal(out.includes('## [0.3.1-rc.1]'), BASE_CHANGELOG.includes('## [0.3.1-rc.1]'))
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
@@ -471,7 +480,7 @@ test('release-prepare: on a release candidate the other gates stay strict', () =
     // A version that is neither x.y.z nor x.y.z-rc.N, or a candidate of a release that is not newer.
     for (const v of [`${NEXT_MAJOR}-rc.0`, `${NEXT_MAJOR}-beta.1`, `${NEXT_MAJOR}-rc1`]) assert.throws(() => prepare(v, { root: dir }), /must be x\.y\.z or x\.y\.z-rc\.N/, v)
     assert.throws(() => prepare(`${CURRENT}-rc.1`, { root: dir }), /is not newer than the latest release/)
-    assert.equal(readFileSync(join(dir, 'CHANGELOG.md'), 'utf8'), readFileSync(join(ROOT, 'CHANGELOG.md'), 'utf8'))
+    assert.equal(readFileSync(join(dir, 'CHANGELOG.md'), 'utf8'), BASE_CHANGELOG)
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
