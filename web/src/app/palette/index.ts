@@ -4,7 +4,7 @@
 // dashboards and the Settings sections the user can see.
 import { describeDue } from '../../lib/dates'
 import { UNDECRYPTABLE } from '../../lib/e2ee'
-import { originOf } from '../../lib/taskOrigin'
+import { originOf, originText } from '../../lib/taskOrigin'
 import type { Label, Project, Task, User, View } from '../../lib/types'
 import { navigate } from '../router'
 import { SETTINGS_SECTIONS, visibleSections } from '../settingsSections'
@@ -47,7 +47,8 @@ export function makeTaskEntry(projects: readonly Project[], today?: string, else
       kind: 'task', key: `task:${tk.id}`,
       // Undecryptable rows are indexed by what the app shows, never by ciphertext.
       label: undecryptable ? t(UNDECRYPTABLE) : tk.title || t('Untitled'),
-      secondary: [project, due, origin?.id, origin?.title, undecryptable ? '' : tk.description.replace(/\s+/g, ' ').slice(0, 2000)].filter(Boolean).join(' · '),
+      // An import's id is the importer's key, never shown (GitHub issue 945): it reads as its app.
+      secondary: [project, due, origin && (origin.kind === 'import' ? originText(origin) : origin.id), origin?.title, undecryptable ? '' : tk.description.replace(/\s+/g, ' ').slice(0, 2000)].filter(Boolean).join(' · '),
       marker: [ws, tk.completed_at ? 'completed' : undefined].filter(Boolean).join(' · ') || undefined,
       run: () => openTaskInList(tk),
     }

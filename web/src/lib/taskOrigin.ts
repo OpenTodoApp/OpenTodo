@@ -6,6 +6,7 @@
 // URL captured on a phone, through the CLI or by an assistant yields the same
 // origin. Nothing here makes a request: only the URL's host and path are read.
 // (lib/origin.ts is unrelated: it explains a refusal for the page's own host.)
+import { t } from './i18n'
 import { has, openObsidian, shell } from './shell'
 import type { Origin, Task } from './types'
 
@@ -181,13 +182,56 @@ export function obsidianNoteName(id: string): string {
  * The short text a chip shows: an Obsidian note reads as its title, else its
  * name (obsidian-origin D5); a message open in a web mail client (an email
  * origin with a URL and a provider) reads as the provider, "Gmail" or "Outlook"
- * (extension-v2); else the external id, else the URL's host. An email origin
- * without a link has no readable label (its id is a Message-ID): callers show "Email".
+ * (extension-v2); an imported origin reads as the app it came from, "Todoist",
+ * never its id, the importer's duplicate-detection key (GitHub issue 945); else the
+ * external id, else the URL's host. An email origin without a link has no readable
+ * label (its id is a Message-ID): callers show "Email".
  */
 export function originLabel(origin: Origin): string {
+  if (origin.kind === 'import') return importApp(origin.provider)
   if (origin.kind === 'obsidian') return origin.title || obsidianNoteName(origin.id ?? '')
   if (origin.kind === 'email') return origin.url && origin.provider ? origin.provider.charAt(0).toUpperCase() + origin.provider.slice(1) : ''
   return origin.id || originHost(origin)
+}
+
+/**
+ * The apps an importer profile writes as an imported origin's provider; the twin of
+ * `importApps` in internal/origin/origin.go, pinned by the shared label vectors.
+ */
+const IMPORT_APPS: Readonly<Record<string, string>> = {
+  'anydo': 'Any.do',
+  'apple-reminders': 'Apple Reminders',
+  'asana': 'Asana',
+  'google-tasks': 'Google Tasks',
+  'microsoft-todo': 'Microsoft To Do',
+  'notion': 'Notion',
+  'omnifocus': 'OmniFocus',
+  'super-productivity': 'Super Productivity',
+  'things': 'Things',
+  'ticktick': 'TickTick',
+  'todoist': 'Todoist',
+  'trello': 'Trello',
+  'tududi': 'Tududi',
+  'vikunja': 'Vikunja',
+}
+
+/** The name of the app an imported origin's provider names, the provider itself when unknown, "" without one. */
+export function importApp(provider: string | undefined): string {
+  if (!provider) return ''
+  return Object.hasOwn(IMPORT_APPS, provider) ? IMPORT_APPS[provider] : provider
+}
+
+/**
+ * The words a person reads for an origin, in a chip, the task's details, its history:
+ * the label; "Imported from Todoist" (or "Imported") for an import, whose id is never
+ * shown; "Email" for a mail without a link (its Message-ID is not a label).
+ */
+export function originText(origin: Origin): string {
+  if (origin.kind === 'import') {
+    const app = importApp(origin.provider)
+    return app ? t('Imported from {app}', { app }) : t('Imported')
+  }
+  return originLabel(origin) || t('Email')
 }
 
 /**
