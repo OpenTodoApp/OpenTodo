@@ -4,11 +4,11 @@
 // browser code and the documented format agree byte for byte.
 import { describe, expect, it } from 'vitest'
 import {
-  ITERATION_LIMITS, KeyRecordParamsError,
+  ACCEPTED_ITERATIONS, ITERATION_LIMITS, KeyRecordParamsError,
   decryptFile, encryptFile,
   b64url, createKeyRecord, decryptValue, DecryptError, derivePassphraseKey, deriveRecoveryKey, encryptValue, formatRecoveryKey, fromB64url,
   isCiphertext, isEnvelope, parseRecoveryKey, RecoveryKeyFormatError, resetWithRecoveryKey, rewrapWithPassphrase, unlockWithPassphrase,
-  unlockWithRecoveryKey, unwrapAccountKey, wrapAccountKey, WrongSecretError, MAX_PLAINTEXT_BYTES, PREFIX_V1,
+  unlockWithRecoveryKey, unwrapAccountKey, wrapAccountKey, WrongSecretError, MAX_PLAINTEXT_BYTES, PBKDF2_ITERATIONS, PREFIX_V1,
 } from './crypto'
 import vectors from './e2ee.vectors.json'
 
@@ -106,16 +106,22 @@ describe('tamper detection and binding', () => {
 })
 
 describe('key record lifecycle', () => {
-  it('refuses iteration counts outside 100,000 to 10,000,000 from a key record (encryption-state-integrity)', async () => {
+  it('accepts the iteration range the server stores, with the count it writes as the floor (e2ee-iteration-floor)', () => {
+    expect(ACCEPTED_ITERATIONS).toEqual({ min: 600_000, max: 10_000_000 })
+    expect(ACCEPTED_ITERATIONS.min).toBe(PBKDF2_ITERATIONS)
+    expect(Object.isFrozen(ACCEPTED_ITERATIONS)).toBe(true)
+  })
+
+  it('refuses iteration counts outside 600,000 to 10,000,000 from a key record (encryption-state-integrity)', async () => {
     const { record } = await createKeyRecord('correct horse battery', FAST)
     const saved = ITERATION_LIMITS.min
-    ITERATION_LIMITS.min = 100_000
+    ITERATION_LIMITS.min = ACCEPTED_ITERATIONS.min
     try {
-      for (const iterations of [1, 99_999, 10_000_001, Number.NaN]) {
+      for (const iterations of [1, 99_999, 100_000, 599_999, 10_000_001, Number.NaN]) {
         await expect(unlockWithPassphrase({ ...record, iterations }, 'correct horse battery')).rejects.toBeInstanceOf(KeyRecordParamsError)
       }
       // In range, the count is used (here it is simply the wrong derivation).
-      await expect(unlockWithPassphrase({ ...record, iterations: 100_000 }, 'correct horse battery')).rejects.not.toBeInstanceOf(KeyRecordParamsError)
+      await expect(unlockWithPassphrase({ ...record, iterations: 600_000 }, 'correct horse battery')).rejects.not.toBeInstanceOf(KeyRecordParamsError)
     } finally {
       ITERATION_LIMITS.min = saved
     }
