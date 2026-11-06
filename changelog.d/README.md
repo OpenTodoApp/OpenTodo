@@ -16,6 +16,6 @@ For example, `changelog.d/Fixed/context-menu-move-project.md`:
 - **Move to project from a task's right-click menu works again.** Choosing a project in the menu moved the task to the Inbox instead.
 ```
 
-`make release-prepare VERSION=x.y.z` (`scripts/release/prepare.mjs`) assembles the fragments into the new release's section of `CHANGELOG.md`, the sections in the order Security, Added, Changed, Removed, Fixed and the entries in each by file name, and deletes them. The person cutting the release then writes its summary paragraph and reorders entries if one should come first ([RELEASING.md](../RELEASING.md)).
+`make release-prepare VERSION=x.y.z` (`scripts/release/prepare.mjs`) assembles the fragments into the new release's section of `CHANGELOG.md`, the sections in the order Security, Added, Changed, Removed, Fixed and the entries in each by file name, and deletes them. The person cutting the release then writes its summary paragraph and reorders entries if one should come first ([RELEASING.md](../RELEASING.md)). A release candidate (`VERSION=x.y.z-rc.N`) writes the same section under its own heading but keeps the fragments, so the final release still gets all of them ([Release candidates](../RELEASING.md#release-candidates)).
 
 `make repo-check` checks every path and file here, and that nothing is written under `## [Unreleased]` in `CHANGELOG.md` itself (`scripts/release/fragments.mjs`).
