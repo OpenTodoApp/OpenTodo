@@ -101,7 +101,7 @@ The model describes the code on `main` at the time of writing. An external revie
 - A `project_id` that crosses scopes is refused as `scope_change`.
 - An id belongs to one scope on the server (`claimable` in `internal/sync/idhome.go`), and sharing refuses a project id held in someone else's personal scope (`members.go`).
 - `checkWorkspace` (`grants.go`) checks workspace membership.
-- REST, CalDAV, MCP and rules write through `ApplyStrict`, which refuses the whole batch.
+- REST, CalDAV, MCP and rules write through `ApplyStrict`, which refuses the whole batch. The sync endpoint and import jobs use `Apply`, which keeps a batch's accepted ops; both check every op the same way.
 
 **Verified by.**
 - `TestSquattedTaskIDIsRefused`, `TestSquatRefusedForEveryEntity`, `TestPredictedIDCannotCaptureAWrite`, `TestProjectWorkspaceMustBeTheAuthors` (`internal/sync/id_ownership_test.go`).
@@ -109,11 +109,12 @@ The model describes the code on `main` at the time of writing. An external revie
 - `TestProjectIdAcrossScopesIsRejected`, `TestPullIsScopedToMemberships`, `TestRemovedMemberReceivesNothing` (`sharing_test.go`).
 - `TestCommentForgedAuthorIsRejected`, `TestSplitFromOtherScopeIsRefused`, `TestAssignToNonMemberIsRejected`.
 - `TestConvergenceProperty` (`convergence_property_test.go`) shares a project part way through a random run and checks every replica.
+- `TestWritesGoThroughApplyStrict` and `TestNoSyncedTableWritesOutsideSync` (`internal/writepaths`): outside `internal/sync`, a use of `Apply` or SQL that writes a synced table fails `go test` unless allow-listed with a reason; in `internal/httpapi` only the sync endpoint uses `Apply`.
 
 **Not defended.**
 - A member can read and change everything in the shared project their role allows, including other members' text, and can delete within it (tombstones, undoable).
 - Shared projects are never end-to-end encrypted.
-- Nothing mechanically enforces that REST handlers call `ApplyStrict` and not `Apply`, or that no package writes rows outside `internal/sync`. Both are conventions checked in review; a static check is a follow-up.
+- The write-path check reads Go source: a write through reflection or SQL assembled from pieces is not seen, and a table named at run time is caught only as an allow-listed place.
 - `CanWrite` is tested by sampled cases, not exhaustively over role × entity × field.
 
 ### Viewer of a shared project
