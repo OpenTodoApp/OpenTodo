@@ -463,7 +463,7 @@ The top of the sidebar SHALL be one header row holding the instance's mark and n
 
 #### Scenario: Header at rest
 - **WHEN** a user opens the app on a 1280×800 screen in light and in dark
-- **THEN** the sidebar starts with the brand mark at 24 px, the wordmark "OpenTodo" and the search button in one row of 40 px or less, the mark is drawn in the current text tone with the accent on its loop, and no tick-in-a-square image is anywhere in the sidebar
+- **THEN** the sidebar starts with the brand mark at 24 px, the wordmark "OpenTodo" and the search button in one row of 40 px or less, the mark's tray is drawn in the current text tone with the accent on its tick, and no tick-in-a-square image is anywhere in the sidebar
 
 #### Scenario: Icon rail
 - **WHEN** the user collapses the sidebar with `[`
