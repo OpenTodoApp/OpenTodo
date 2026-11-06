@@ -383,6 +383,12 @@ function RowEstimate({ list }: { list: string }) {
  * on the rows when the positions change or more rows are drawn: when a row leaves, every sibling's
  * position changes, and as React props that drew all 2,000 rows of a long list
  * again (list-rendering-at-scale). Screen readers read the same attributes.
+ *
+ * They are written after the change is on screen, a few milliseconds of rows at a
+ * time in idle moments (performance-10k). Written in the commit, they took about
+ * 40 ms of the phone profile after each completion in the 2,000-row project (the
+ * query over every row and a new position on each sibling below it), in the same
+ * block as the list's redraw, and a tap that came then waited for all of it.
  */
 function SiblingAria({ positions, drawn }: { positions: ReadonlyMap<string, { pos: number; size: number }>; drawn: number }) {
   const marker = useRef<HTMLSpanElement>(null)
@@ -390,14 +396,16 @@ function SiblingAria({ positions, drawn }: { positions: ReadonlyMap<string, { po
   // changed: reading both attributes of every row after each completion cost about
   // 10 ms in the phone profile (list-rendering-at-scale D6).
   const written = useRef(new WeakMap<HTMLElement, string>())
-  useLayoutEffect(() => {
+  useEffect(() => {
     const root = marker.current?.parentElement
     if (!root) return
     const seen = written.current
-    for (const li of root.querySelectorAll<HTMLElement>('li[data-task-id]')) {
+    let rows: HTMLElement[] | null = null
+    let i = 0
+    const write = (li: HTMLElement) => {
       const at = li.hasAttribute('aria-level') ? positions.get(li.dataset.taskId!) : undefined
       const want = at ? `${at.pos}/${at.size}` : ''
-      if (seen.get(li) === want) continue
+      if (seen.get(li) === want) return
       seen.set(li, want)
       if (at) {
         if (li.getAttribute('aria-posinset') !== String(at.pos)) li.setAttribute('aria-posinset', String(at.pos))
@@ -407,9 +415,41 @@ function SiblingAria({ positions, drawn }: { positions: ReadonlyMap<string, { po
         li.removeAttribute('aria-setsize')
       }
     }
+    return inIdleSlices(() => {
+      rows ??= [...root.querySelectorAll<HTMLElement>('li[data-task-id]')]
+      const li = rows[i++]
+      if (li?.isConnected) write(li)
+      return i < rows.length
+    })
     // Again when the positions change or more rows are drawn; a cursor move changes neither.
   }, [positions, drawn])
   return <span ref={marker} hidden />
+}
+
+/** Work in one idle moment, in ms: a tap that comes meanwhile waits about this long at most. */
+const IDLE_SLICE_MS = 4
+
+/** Runs `step` in idle moments (tasks where the browser has no idle callback) until it returns false; returns the cancel. */
+function inIdleSlices(step: () => boolean): () => void {
+  let stopped = false
+  let cancel = () => {}
+  const later = () => {
+    if (typeof requestIdleCallback === 'function') {
+      const h = requestIdleCallback(run, { timeout: 2000 })
+      cancel = () => cancelIdleCallback(h)
+    } else {
+      const h = setTimeout(run, 0)
+      cancel = () => clearTimeout(h)
+    }
+  }
+  function run() {
+    const end = performance.now() + IDLE_SLICE_MS
+    let more = true
+    while (more && !stopped && performance.now() < end) more = step()
+    if (more && !stopped) later()
+  }
+  later()
+  return () => { stopped = true; cancel() }
 }
 
 type RowList = (children: ReactNode, extra?: Record<string, string>) => ReactNode
