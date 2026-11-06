@@ -11,8 +11,8 @@ import (
 
 	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 	"github.com/OpenTodoApp/opentodo/internal/relay"
-	"github.com/OpenTodoApp/opentodo/internal/textutil"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/textutil"
 )
 
 // Content through an opted-in device (OpenSpec change mcp-device-relay, design
