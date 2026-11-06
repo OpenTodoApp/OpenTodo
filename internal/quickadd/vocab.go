@@ -33,7 +33,11 @@ type Vocab struct {
 	Months        []MonthVocab   `json:"months"`
 	Before        []string       `json:"before"`
 	DeadlineWords []string       `json:"deadlineWords"`
-	SomedayWords  []string       `json:"somedayWords"`
+	// ByWords ("by", "bis", "entro", "até") are also Before words: directly
+	// before a date with no time after it they make it the deadline, before a
+	// time they go with the due time (quick-add-by-deadline D1, D2).
+	ByWords      []string `json:"byWords"`
+	SomedayWords []string `json:"somedayWords"`
 	// SectorPhrases are the time sector phrases by the word they mean
 	// (time-sectors D8): "this-week" → ["this week", "sometime this week"].
 	SectorPhrases map[string][]string `json:"sectorPhrases"`
