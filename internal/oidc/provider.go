@@ -13,6 +13,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/OpenTodoApp/opentodo/internal/outbound"
 )
 
 // Outbound requests (design D1): only to the configured issuer's discovery
@@ -26,8 +28,14 @@ const ClientTimeout = 10 * time.Second
 const maxBody = 1 << 20
 
 // NewHTTPClient returns the client used for provider requests: 10-second
-// timeout, no redirects. base may be nil (http.DefaultTransport).
+// timeout, no redirects. base may be nil: the default transport without a
+// proxy from the environment (outbound.OperatorTransport), so the code
+// exchange and its client secret only ever go to the issuer the operator
+// configured (OpenSpec change `operator-clients-no-env-proxy`).
 func NewHTTPClient(base http.RoundTripper) *http.Client {
+	if base == nil {
+		base = outbound.OperatorTransport()
+	}
 	return &http.Client{
 		Timeout:   ClientTimeout,
 		Transport: base,
