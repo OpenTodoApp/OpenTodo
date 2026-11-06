@@ -32,8 +32,8 @@ func (r Rule) RRULE() string {
 		parts = append(parts, "FREQ=MONTHLY", "BYMONTHDAY="+strconv.Itoa(r.monthDay))
 	case kLastDay:
 		parts = append(parts, "FREQ=MONTHLY", "BYMONTHDAY=-1")
-	case kLastWeekday:
-		parts = append(parts, "FREQ=MONTHLY", "BYDAY=MO,TU,WE,TH,FR", "BYSETPOS=-1")
+	case kWorkday:
+		parts = append(parts, "FREQ=MONTHLY", "BYDAY=MO,TU,WE,TH,FR", "BYSETPOS="+strconv.Itoa(r.ordinal))
 	case kNthWeekday:
 		parts = append(parts, "FREQ=MONTHLY", "BYDAY="+strconv.Itoa(r.ordinal)+rruleDays[r.weekday])
 	}
@@ -151,7 +151,7 @@ func rruleParts(s string) (map[string]string, error) {
 // exactly. due is the task's due date ("YYYY-MM-DD" or ""), the series anchor: an
 // RRULE that only restates the anchor (FREQ=WEEKLY;INTERVAL=2;BYDAY=<due's
 // weekday>) is accepted as the plain interval. ok is false for anything else
-// (hourly rules, BYHOUR, several ordinals, BYSETPOS other than the last weekday…).
+// (hourly rules, BYHOUR, several ordinals, BYSETPOS other than the 1st to 4th or last weekday…).
 func FromRRULE(value, due string) (rule Rule, ok bool) {
 	p, err := rruleParts(value)
 	if err != nil {
@@ -262,10 +262,11 @@ func FromRRULE(value, due string) (rule Rule, ok bool) {
 			return r, true
 		case hasDay && !hasMonthDay && interval == 1:
 			if hasSetpos {
-				if setpos != "-1" || byday != "FR,MO,TH,TU,WE" {
+				pos, err := strconv.Atoi(strings.TrimPrefix(setpos, "+"))
+				if err != nil || !(pos == -1 || pos >= 1 && pos <= 4) || byday != "FR,MO,TH,TU,WE" {
 					return Rule{}, false
 				}
-				r.kind = kLastWeekday
+				r.kind, r.ordinal = kWorkday, pos
 				return r, true
 			}
 			if strings.Contains(byday, ",") {

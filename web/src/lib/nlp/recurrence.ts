@@ -110,11 +110,12 @@ function patternAt(tokens: readonly Token[], k: number, v: Vocabulary): Pattern 
     const j = k + ord.n
     const wd = weekdayPluralAt(tokens, j, v)
     if (wd >= 0 && ord.value <= 4) return { n: ord.n + 1, pattern: `${ORDINAL_EN[ord.value]} ${WEEKDAY_EN[wd]}`, monthly: true }
+    // "1st weekday" … "last weekday": the n-th Monday-to-Friday day of the month.
+    const wall = ord.value <= 4 ? phraseAt(tokens, j, v.weekdayAll, `${v.code}:wdall`) : 0
+    if (wall) return { n: ord.n + wall, pattern: `${ORDINAL_EN[ord.value]} weekday`, monthly: true }
     if (ord.value === -1) {
       const day = phraseAt(tokens, j, v.units.day, `${v.code}:unit:day`)
       if (day) return { n: ord.n + day, pattern: 'last day', monthly: true }
-      const wall = phraseAt(tokens, j, v.weekdayAll, `${v.code}:wdall`)
-      if (wall) return { n: ord.n + wall, pattern: 'last weekday', monthly: true }
       return null
     }
     // A bare day of the month ("every 15th"); ordinal words alone mean nothing.
