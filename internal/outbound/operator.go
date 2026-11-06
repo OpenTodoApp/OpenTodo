@@ -2,8 +2,10 @@ package outbound
 
 import (
 	"errors"
+	"net"
 	"net/http"
 	"strings"
+	"time"
 )
 
 // Operator targets (OpenSpec change `operator-clients-no-env-proxy`).
@@ -22,9 +24,22 @@ import (
 var ErrCrossHostRedirect = errors.New("cross_host_redirect")
 
 // OperatorTransport is http.DefaultTransport's configuration without a proxy
-// from the environment.
+// from the environment. When something has replaced http.DefaultTransport
+// with another RoundTripper (instrumentation, or a test's wrapper), it is the
+// standard library's defaults instead of a panic.
 func OperatorTransport() *http.Transport {
-	tr := http.DefaultTransport.(*http.Transport).Clone()
+	base, ok := http.DefaultTransport.(*http.Transport)
+	if !ok {
+		base = &http.Transport{
+			DialContext:           (&net.Dialer{Timeout: 30 * time.Second, KeepAlive: 30 * time.Second}).DialContext,
+			ForceAttemptHTTP2:     true,
+			MaxIdleConns:          100,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: time.Second,
+		}
+	}
+	tr := base.Clone()
 	tr.Proxy = nil
 	return tr
 }
