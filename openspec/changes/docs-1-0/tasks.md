@@ -20,8 +20,8 @@
 
 ## 4. Contributors
 
-- [ ] 4.1 `docs/contributing/` with the seven pages (design D5), linked from `CONTRIBUTING.md` and from `AGENTS.md`; verify `make docs-check`
-- [ ] 4.2 A repo check that every `make <target>` named in `docs/contributing/*.md` and `CONTRIBUTING.md` exists in the `Makefile`; verify `make repo-check`
+- [x] 4.1 `docs/contributing/` with the seven pages (design D5), linked from `CONTRIBUTING.md` and from `AGENTS.md`; verify `make docs-check`
+- [x] 4.2 A repo check that every `make <target>` named in `docs/contributing/*.md` and `CONTRIBUTING.md` exists in the `Makefile`; verify `make repo-check`
 
 ## 5. Roadmap page
 
