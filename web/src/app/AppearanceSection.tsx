@@ -257,7 +257,7 @@ export function SidebarView({ promoted, onPromote, arranged = false, counts = 't
             const promotable = (PROMOTABLE as readonly string[]).includes(id)
             const ghost = dragId === id ? 'opacity-50' : '' // tone-lint-allow: the dragged destination's ghost
             return (
-              <li key={id} id={promotable ? `sidebar-${id}` : undefined} data-setting-row={promotable ? `sidebar-${id}` : undefined} data-destination-row={id}
+              <li data-drag-id="nav-destination" key={id} id={promotable ? `sidebar-${id}` : undefined} data-setting-row={promotable ? `sidebar-${id}` : undefined} data-destination-row={id}
                 tabIndex={promotable ? -1 : undefined} draggable={!arranged && !!onMove} onDragStart={() => setDragId(id)} onDragOver={(e) => e.preventDefault()} onDrop={(e) => void onDrop(e, id)}
                 className={`flex items-center gap-2 px-2 py-1.5 outline-none focus-visible:ring-2 focus-visible:ring-focus ${ghost}`}>
                 {onMove && (

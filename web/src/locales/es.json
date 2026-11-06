@@ -7160,5 +7160,9 @@
   "Order by title": "Ordenar por título",
   "Order by: {name} · {direction}": "Ordenar por: {name} · {direction}",
   "Reverse order": "Invertir orden",
-  "Reverse the order: ascending or descending": "Invertir el orden: ascendente o descendente"
+  "Reverse the order: ascending or descending": "Invertir el orden: ascendente o descendente",
+  "Reorder": "Reordenar",
+  "Move to top": "Mover al principio",
+  "Move to bottom": "Mover al final",
+  "Move {name}": "Mover {name}"
 }
