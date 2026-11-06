@@ -2,6 +2,7 @@
 //   dist/docs-site/**          the docs website (pages, search.json, docs.css, docs.js, images), not committed
 //   web/src/generated/help.json the user guide for the in-app Help view
 //   docs/keyboard.md           its shortcut tables, regenerated from the app
+//   docs/roadmap.md            its tables, from ROADMAP.md, openspec/ and CHANGELOG.md (docs-1-0 D6)
 //
 //   node scripts/docs/build.mjs [--site DIR]   (from web/; `make docs` from the root)
 //
@@ -15,6 +16,7 @@ import { dirname, join, relative } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { imageSize, loadPages, pageUrl, renderPage, repoRootFrom, sortPages, versionInfo } from './lib.mjs'
 import { loadShortcuts, shortcutsMarkdown, withShortcuts } from './shortcuts.mjs'
+import { roadmapMarkdown, withRoadmap } from './roadmap.mjs'
 import { landingHtml, pageHtml } from './site.mjs'
 
 const here = fileURLToPath(import.meta.url)
@@ -47,6 +49,19 @@ export async function buildAll(repoRoot, { site = OUT_SITE } = {}) {
     else {
       files.set('docs/keyboard.md', next)
       kb.body = withShortcuts(kb.body, block)
+    }
+  }
+
+  // The roadmap page's tables come from ROADMAP.md and the OpenSpec folders (docs-1-0 D6).
+  const rm = pages.find((p) => p.rel === 'roadmap.md')
+  if (rm) {
+    const src = readFileSync(join(repoRoot, 'docs/roadmap.md'), 'utf8')
+    const block = roadmapMarkdown(repoRoot)
+    const next = withRoadmap(src, block)
+    if (next === null) problems.push('docs/roadmap.md: the roadmap markers are missing')
+    else {
+      files.set('docs/roadmap.md', next)
+      rm.body = withRoadmap(rm.body, block)
     }
   }
 
