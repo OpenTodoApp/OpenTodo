@@ -7,7 +7,7 @@ The row is a flex line: leading slot, checkbox, time column, the open control (`
 ## Decisions
 
 ### D1. An import reads as its app
-`originLabel` returns `importApp(provider)` for kind `import`: a fixed table of the importer profiles' names (`todoist` → "Todoist", `microsoft-todo` → "Microsoft To Do", …), the provider as stored when not in the table, "" without one. Go's `Label()` returns the same through `ImportApp`; the shared label vectors pin both. `originText` (moved from `OriginChip` to `lib/taskOrigin.ts`, so `history.ts` and the palette use it) makes it the words "Imported from Todoist", else "Imported", both existing catalogue strings. The chip's link and menu are named by that text itself rather than "Opens the source …", which would read "Opens the source Imported from Trello".
+`originLabel` returns `importApp(provider)` for kind `import`: a fixed table of the importer profiles' names (`todoist` → "Todoist", `microsoft-todo` → "Microsoft To Do", …), the provider as stored when not in the table, "" without one. Go's `Label()` returns the same through `ImportApp`; the shared label vectors pin both. `originText` (moved from `OriginChip` to `lib/originText.ts`, so `history.ts` and the palette use it; kept out of `lib/taskOrigin.ts`, which the entry chunk imports, so the translations stay out of it) makes it the words "Imported from Todoist", else "Imported", both existing catalogue strings. The chip's link and menu are named by that text itself rather than "Opens the source …", which would read "Opens the source Imported from Trello".
 
 Rejected: dropping the origin facet for imports. Where a task came from is still worth a line in the details; only the key is not.
 
@@ -26,4 +26,4 @@ No chrome, destination, scroll region or shortcut changes. A row from 40 rem giv
 
 ## Size
 
-A few lines of TypeScript, CSS and Go; no dependency, no bundle budget change.
+A few lines of TypeScript, CSS and Go; no dependency. The first load grows about 0.7 KB gzip (the app-name table and `lib/originText`); the budget goes from 678 to 679 KB (web/bundle-budget.json).

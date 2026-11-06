@@ -6,7 +6,6 @@
 // URL captured on a phone, through the CLI or by an assistant yields the same
 // origin. Nothing here makes a request: only the URL's host and path are read.
 // (lib/origin.ts is unrelated: it explains a refusal for the page's own host.)
-import { t } from './i18n'
 import { has, openObsidian, shell } from './shell'
 import type { Origin, Task } from './types'
 
@@ -219,19 +218,6 @@ const IMPORT_APPS: Readonly<Record<string, string>> = {
 export function importApp(provider: string | undefined): string {
   if (!provider) return ''
   return Object.hasOwn(IMPORT_APPS, provider) ? IMPORT_APPS[provider] : provider
-}
-
-/**
- * The words a person reads for an origin, in a chip, the task's details, its history:
- * the label; "Imported from Todoist" (or "Imported") for an import, whose id is never
- * shown; "Email" for a mail without a link (its Message-ID is not a label).
- */
-export function originText(origin: Origin): string {
-  if (origin.kind === 'import') {
-    const app = importApp(origin.provider)
-    return app ? t('Imported from {app}', { app }) : t('Imported')
-  }
-  return originLabel(origin) || t('Email')
 }
 
 /**

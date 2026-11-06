@@ -20,4 +20,4 @@ Out of scope: the importer's ids and duplicate detection, the origin vectors' re
 
 ## Impact
 
-`web/src/lib/taskOrigin.ts` (`originLabel`, new `importApp`, `originText`), `web/src/app/OriginChip.tsx`, `web/src/app/TaskRow.tsx`, `web/src/index.css`, `web/src/lib/history.ts`, `web/src/lib/taskSource.ts`, `web/src/app/palette/index.ts`, `internal/origin` (`Label`, `ImportApp`) and its shared label vectors, the story `Screens/Task row` ImportedAlignment, `scripts/ui-check/alignment.spec.ts`, the visual baselines of list rows at 1280 px. No data, op, API, dependency or setting changes; works offline as before.
+`web/src/lib/taskOrigin.ts` (`originLabel`, new `importApp`), `web/src/lib/originText.ts` (new), `web/src/app/OriginChip.tsx`, `web/src/app/TaskRow.tsx`, `web/src/index.css`, `web/src/lib/history.ts`, `web/src/lib/taskSource.ts`, `web/src/app/palette/index.ts`, `internal/origin` (`Label`, `ImportApp`) and its shared label vectors, the story `Screens/Task row` ImportedAlignment, `scripts/ui-check/alignment.spec.ts`, the visual baselines of list rows at 1280 px. No data, op, API, dependency or setting changes; works offline as before.

@@ -6,7 +6,8 @@
 // than when it was added. No request, no new field.
 import { t } from './i18n'
 import type { Task } from './types'
-import { originHost, originLabel, originOf, originText } from './taskOrigin'
+import { originText } from './originText'
+import { originHost, originLabel, originOf } from './taskOrigin'
 
 export type SourceKind = 'email' | 'web' | 'issue' | 'import' | 'calendar' | 'assistant' | 'api' | 'vault' | 'app'
 
