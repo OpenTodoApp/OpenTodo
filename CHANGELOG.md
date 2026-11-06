@@ -25,6 +25,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Changed
 
+- **The new logo reaches the last places.** The Home Assistant add-on's icon and logo (now 250 × 100, as Home Assistant asks), Runtipi's logo, the Claude plugin's icon, every screenshot in the docs, the README and the website, and the card shown when a docs page is shared now show the tray mark. The brand kit gains Google Play's feature graphic, and a check fails on any icon or logo that is not generated from the mark.
 - **`by` in quick add sets the deadline.** `Install winter tires by March 31` now gives *Install winter tires* with a deadline of 31 March and no scheduled date, instead of scheduling it for that day. `on` and `due` still set the date you plan to do it, and the two combine: `Pay tax tomorrow by friday` is planned for tomorrow with a deadline on Friday. A time keeps `by` a due time, since a deadline has no time: `Call back by 5pm` is today at 17:00 (the word no longer stays in the title), and `Pay tax by friday 5pm` is due Friday at 17:00. German `bis`, Italian `entro` and Portuguese `até` work the same way; French `pour` and Spanish `para` still set the due date. The app, `ot add --natural` and the Obsidian plugin read lines the same way. See [Deadlines](docs/quick-add.md). ([#890](https://github.com/OpenTodoApp/OpenTodo/issues/890))
 
 ### Fixed
