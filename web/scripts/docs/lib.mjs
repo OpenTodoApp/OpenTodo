@@ -2,9 +2,11 @@
 // `user-documentation`): front matter, page discovery, Markdown rendering with
 // heading ids, link and image rewriting, the inline-HTML allow-list, and the
 // section index used by search. Plain Node ESM with one dependency (`marked`).
+import { createHash } from 'node:crypto'
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { dirname, join, posix, relative, resolve } from 'node:path'
 import { Marked } from 'marked'
+import { SOURCE as BRAND_SOURCE, colourSvg } from '../../../scripts/brand-icons.mjs'
 
 export const REPO_URL = 'https://github.com/OpenTodoApp/OpenTodo'
 export const SITE_URL = 'https://open-todo.app'
@@ -475,6 +477,19 @@ export function versionInfo(repoRoot) {
   const release = /^## \[(\d+\.\d+\.\d+)\]/m.exec(log)?.[1] ?? 'dev'
   const unreleased = /^## \[Unreleased\]\s*\n([\s\S]*?)^## \[/m.exec(log)?.[1] ?? ''
   return { release, unreleased: /^\s*[-*] /m.test(unreleased) || hasFragments(join(repoRoot, 'changelog.d')) }
+}
+
+/**
+ * The URLs of the mark on the docs pages. The website serves /assets/favicon.svg and
+ * /assets/apple-touch-icon.png from the bundle's brand/mark-colour.svg and refers to them
+ * with `?v=` and the first 10 hex digits of that file's SHA-256 (website src/lib/brand.ts);
+ * the docs pages use the same URLs, so a new mark is a new URL for browsers and the CDN.
+ * Without the brand source (a fixture repository) the plain URLs stay.
+ */
+export function brandUrls(repoRoot) {
+  const file = join(repoRoot, BRAND_SOURCE)
+  const v = existsSync(file) ? `?v=${createHash('sha256').update(colourSvg(readFileSync(file, 'utf8'))).digest('hex').slice(0, 10)}` : ''
+  return { favicon: `/assets/favicon.svg${v}`, touchIcon: `/assets/apple-touch-icon.png${v}` }
 }
 
 /** Whether changelog.d/ holds a fragment (changelog.d/<Section>/<name>.md). */
