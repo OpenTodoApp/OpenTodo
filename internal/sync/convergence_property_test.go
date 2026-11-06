@@ -31,8 +31,9 @@ type propCell struct {
 
 // propDevice mirrors the web client's protocol: the clock of web/src/lib/hlc.ts
 // (offset towards server time, restart from server time after a clock_skew
-// refusal), last-writer-wins for local and pulled ops (applyOps), the restamp
-// of refused ops (restampSkewed in clockSkew.ts) and confirmed backfill pages.
+// refusal; pinned to hlc.ts by web/src/lib/hlc.vectors.json, TestHLCVectors),
+// last-writer-wins for local and pulled ops (applyOps), the restamp of refused
+// ops (restampSkewed in clockSkew.ts) and confirmed backfill pages.
 type propDevice struct {
 	id, user string
 	skew     int64 // how far its system clock runs ahead of the server's
@@ -68,8 +69,20 @@ func (d *propDevice) observeServerTime(now, serverTime int64) {
 	}
 }
 
+// clockRefused is hlcClockRefused: follow the server, and restart from its
+// time only when the clock is over half the accepted window ahead.
+func (d *propDevice) clockRefused(now, serverTime int64) {
+	d.observeServerTime(now, serverTime)
+	if d.last > serverTime+MaxFutureSkewMs/2 {
+		d.last = serverTime
+	}
+}
+
+// receive is hlcReceive: the clock moves past a received timestamp.
+func (d *propDevice) receive(ts int64) { d.last = max(d.last, ts) }
+
 func (d *propDevice) apply(o Op) {
-	d.last = max(d.last, o.TS) // hlcReceive in applyOps
+	d.receive(o.TS) // hlcReceive in applyOps
 	k := propKey(o.Entity, o.EntityID, o.Field)
 	c, ok := d.cells[k]
 	if !ok || Wins(o.TS, o.Device, c.ts, c.dev) {
@@ -167,10 +180,7 @@ func (w *propWorld) exchangeSplit(d *propDevice, cut int) {
 		// hlcClockRefused, then restampSkewed: one new timestamp per old one.
 		// The clock restarts only when it is over half the window ahead, so the
 		// stamps of the previous request's refusals stay behind the next ones.
-		d.observeServerTime(w.now, serverTime)
-		if d.last > serverTime+MaxFutureSkewMs/2 {
-			d.last = serverTime
-		}
+		d.clockRefused(w.now, serverTime)
 		slices.SortStableFunc(refused, func(a, b Op) int { return int(a.TS - b.TS) })
 		fresh := map[int64]int64{}
 		for _, o := range refused {
