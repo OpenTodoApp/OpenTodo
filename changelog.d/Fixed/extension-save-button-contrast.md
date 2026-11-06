@@ -1,0 +1,1 @@
+- **The browser extension's settings page: the Save button is readable.** White on the lighter green fell below the contrast minimum; it now uses the popup's colours (extension 0.6.4).

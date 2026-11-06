@@ -7165,5 +7165,6 @@
   "Reorder": "Reordenar",
   "Move to top": "Mover al principio",
   "Move to bottom": "Mover al final",
-  "Move {name}": "Mover {name}"
+  "Move {name}": "Mover {name}",
+  "Accessibility": "Accesibilidad"
 }

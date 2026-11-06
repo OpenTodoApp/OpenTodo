@@ -7165,5 +7165,6 @@
   "Reorder": "Reihenfolge",
   "Move to top": "Ganz nach oben",
   "Move to bottom": "Ganz nach unten",
-  "Move {name}": "{name} verschieben"
+  "Move {name}": "{name} verschieben",
+  "Accessibility": "Barrierefreiheit"
 }

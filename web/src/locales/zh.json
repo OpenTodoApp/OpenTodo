@@ -7165,5 +7165,6 @@
   "Reorder": "调整顺序",
   "Move to top": "移到顶部",
   "Move to bottom": "移到底部",
-  "Move {name}": "移动“{name}”"
+  "Move {name}": "移动“{name}”",
+  "Accessibility": "无障碍"
 }

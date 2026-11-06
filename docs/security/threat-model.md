@@ -101,7 +101,7 @@ The model describes the code on `main` at the time of writing. An external revie
 - A `project_id` that crosses scopes is refused as `scope_change`.
 - An id belongs to one scope on the server (`claimable` in `internal/sync/idhome.go`), and sharing refuses a project id held in someone else's personal scope (`members.go`).
 - `checkWorkspace` (`grants.go`) checks workspace membership.
-- REST, CalDAV, MCP and rules write through `ApplyStrict`, which refuses the whole batch.
+- REST, CalDAV, MCP and rules write through `ApplyStrict`, which refuses the whole batch. The sync endpoint and import jobs use `Apply`, which keeps a batch's accepted ops; both check every op the same way.
 
 **Verified by.**
 - `TestSquattedTaskIDIsRefused`, `TestSquatRefusedForEveryEntity`, `TestPredictedIDCannotCaptureAWrite`, `TestProjectWorkspaceMustBeTheAuthors` (`internal/sync/id_ownership_test.go`).
@@ -109,11 +109,13 @@ The model describes the code on `main` at the time of writing. An external revie
 - `TestProjectIdAcrossScopesIsRejected`, `TestPullIsScopedToMemberships`, `TestRemovedMemberReceivesNothing` (`sharing_test.go`).
 - `TestCommentForgedAuthorIsRejected`, `TestSplitFromOtherScopeIsRefused`, `TestAssignToNonMemberIsRejected`.
 - `TestConvergenceProperty` (`convergence_property_test.go`) shares a project part way through a random run and checks every replica.
+- `TestWritesGoThroughApplyStrict` and `TestNoSyncedTableWritesOutsideSync` (`internal/writepaths`): outside `internal/sync`, a use of `Apply` or SQL that writes a synced table fails `go test` unless allow-listed with a reason; in `internal/httpapi` only the sync endpoint uses `Apply`.
+- `web/src/lib/convergence.test.ts` runs the client's own clock and `applyOps` on several devices in random orders and checks every replica against an LWW replay; `TestHLCVectors` (`hlc_vectors_test.go`) and `web/src/lib/hlc.test.ts` pin the Go model to `hlc.ts` with `web/src/lib/hlc.vectors.json`.
 
 **Not defended.**
 - A member can read and change everything in the shared project their role allows, including other members' text, and can delete within it (tombstones, undoable).
 - Shared projects are never end-to-end encrypted.
-- Nothing mechanically enforces that REST handlers call `ApplyStrict` and not `Apply`, or that no package writes rows outside `internal/sync`. Both are conventions checked in review; a static check is a follow-up.
+- The write-path check reads Go source: a write through reflection or SQL assembled from pieces is not seen, and a table named at run time is caught only as an allow-listed place.
 - `CanWrite` is tested by sampled cases, not exhaustively over role × entity × field.
 
 ### Viewer of a shared project
@@ -262,11 +264,11 @@ The person turned on end-to-end encryption and does not trust the server, its op
 - `TestArchiveTooManyEntries`, `TestArchiveOversizedExpansion`, `TestArchiveUnsafeName`.
 - `TestThingsRefusesSchemaThatComputes`, `TestThingsRefusesOversizedValue`, `TestThingsOpenerRefusesOtherSQLite`.
 - `TestCSVFieldOverLimitRefused`, `TestCSVRecordOverLimitRefused`, `TestCSVTooManyFieldsRefused`, `TestEveryCSVProfileChecksFields`, `TestJSONNestingOverLimitRefused`, `TestJSONNestingInArchiveRefused` (`internal/importer/limits_test.go`); `TestImportShapeLimits413` (`internal/httpapi`).
-- `FuzzParse` (every import profile, seeded from `internal/importer/testdata`) and `FuzzReadArchive` (`internal/importer/fuzz_test.go`), run nightly by `scripts/fuzz.sh`.
+- `FuzzParse` (every import profile, seeded from `internal/importer/testdata`) and `FuzzReadArchive` (`internal/importer/fuzz_test.go`), and `FuzzBuildPlan` (the planner, `internal/importer/plan_fuzz_test.go`), run nightly by `scripts/fuzz.sh`.
 
 **Not defended.**
 - The CSV limits are checked once a record is read, so reading one record still costs memory up to its length, which the upload limit bounds. A file within every limit still costs memory up to the upload limit times a constant.
-- Fuzzing reaches nested ZIPs and the SQLite profiles only rarely (byte mutation of a database file covers little). The import planner (`plan*.go`) is not fuzzed.
+- Fuzzing reaches nested ZIPs and the SQLite profiles only rarely (byte mutation of a database file covers little).
 
 ### Malicious calendar, mail or issue server
 
@@ -290,7 +292,7 @@ The person turned on end-to-end encryption and does not trust the server, its op
 - `TestFollowRedirectsChecksEveryHop`; `FuzzAddressPolicy` and `FuzzValidateURL` (`internal/outbound/fuzz_test.go`).
 - `TestExpandWorkBudget`, `TestExpandDeadline`, `FuzzParseAndExpand` (`internal/calfeed`).
 - `TestRedirectRefusedWithoutSecondRequest`, `TestBodyTooLarge`, `TestPrivateHostRefusedUnlessAllowed` (`internal/issues`).
-- `TestRedirectToAnotherSiteIsRefused`, `TestGraphRefusesRedirectsAndOtherHosts`, `FuzzParseMultistatus` (`internal/calsync`).
+- `TestRedirectToAnotherSiteIsRefused`, `TestGraphRefusesRedirectsAndOtherHosts`, `FuzzParseMultistatus`, `FuzzGraphPage` (`internal/calsync`).
 - `TestParseRejectsHugeMessage`, `FuzzParse`, `FuzzHTMLToMarkdown` (`internal/email`).
 
 **Not defended.**
@@ -366,6 +368,7 @@ The model behind an MCP client or the in-app assistant follows instructions hidd
 - Reaching the operator's private network through webhooks, channels, calendar feeds, issue hosts, calendar sync, speech to text or the map proxy.
 - Changing operator-owned settings.
 - Exhausting another tenant's request, storage, operation or member limits.
+- Multiplying the assistant's load on the operator's provider keys by opening more tenants.
 
 **Mechanism.**
 - Each tenant is opened from its own data directory (`<root>/tenants/<name>`) with its own database, lock, services and HTTP server (`internal/host`, `internal/tenant`).
@@ -373,6 +376,7 @@ The model behind an MCP client or the in-app assistant follows instructions hidd
 - On a hosted tenant, the private-network switch is forced off, which also covers speech to text, channels, issues, calendar feeds and calendar sync. The map proxy is public-only.
 - `hostGuard` (`internal/httpapi/hosted.go`) refuses operator-owned settings: SMTP, OIDC, backups, MCP and assistant switches, webhook network policy and attachment limits. Email to task is off.
 - Limits are counted per tenant and per client address.
+- The assistant's limit of 8 running turns is one `assistant.Slots` that the host hands to every tenant (`services.Hosted.AssistantSlots`).
 - The operator interface is on its own listener with a hashed bearer token.
 
 **Verified by.**
@@ -383,10 +387,10 @@ The model behind an MCP client or the in-app assistant follows instructions hidd
 - `TestHostTurnsPrivateMarksFailed` (`internal/webhook/worker_test.go`).
 - `TestStorageLimit`, `TestRequestLimitPerClient`, `TestOperationLimits`, `TestMemberLimit` (`internal/host/limits_test.go`).
 - `TestOperatorNeedsToken`.
+- `TestAssistantConcurrencyIsHostWide` (`internal/host`), `TestSharedSlotsAcrossServices` (`internal/assistant`).
 
 **Not defended.**
 - Tenants share one process, so one tenant's load affects the others' latency. Limits bound this but do not isolate CPU or memory.
-- The assistant's concurrency limit (8 turns) is per tenant, so the operator's provider key can see 8 turns per open tenant.
 
 ### Demo visitor
 
@@ -406,13 +410,12 @@ The model behind an MCP client or the in-app assistant follows instructions hidd
 - The deny list (`internal/httpapi/demo.go`) runs before routing and matches every `.demoDenied()` route.
 
 **Verified by.**
-- `TestDemoDenyListMatchesPolicy` (`policy_test.go`).
+- `TestDemoDenyListMatchesPolicy` (`policy_test.go`), which probes method-less routes and rules with every HTTP and WebDAV method.
 - `TestSandboxTokenSingleUse`, `TestSandboxCreationLimits`, `TestSandboxLimitGroupsIPv6Sites`, `TestSandboxIsolation`, `TestSandboxWriteBudget`, `TestDemoRestrictedRoutes`, `TestDemoRefusesAgentAccess` (`internal/httpapi/demo_test.go`).
 - `TestCreationTokenRules`, `TestNightlyResetDeletesAllSandboxes` (`internal/demo/demo_test.go`).
 
 **Not defended.**
 - A demo is public, so anything typed into it may be seen by its operator until the reset.
-- The deny-list test probes each route with GET and POST only, for rules that have no method.
 
 ## Components in the review scope
 
@@ -535,8 +538,10 @@ Each item of the [review scope](review-scope.md) has a section here: where the c
   - The bridge is exposed to the configured server's origin only: Android's `addWebMessageListener` with that origin as its only rule and a main-frame check, and iOS's message handler checking the frame's security origin.
   - Navigation leaves the server only inside a sign-in flow.
   - The microphone is granted to that origin only.
-- **Tests:** `BridgeFixtureTest`, `SignInFlowTest`, `WebMicrophoneTest` (`mobile/android/app/src/test/java/app/opentodo/`).
-- **Gap:** the iOS bridge has no automated origin test in CI (follow-up).
+- **Tests:**
+  - Android: `BridgeFixtureTest`, `SignInFlowTest`, `WebMicrophoneTest` (`mobile/android/app/src/test/java/app/opentodo/`).
+  - iOS: `BridgeTests` (`mobile/ios/OpenTodoTests/ShellDataTests.swift`). `testMessagesAreAnsweredOnlyFromTheConfiguredOrigin` checks the message handler's origin decision (`Bridge.accepts`): the main frame of the configured origin only, by scheme, host and port. `testScriptIsGuardedByOriginAndAdvertisesTheContract` checks the page script's guard. These run in CI on every iOS change (the `iOS (build and test)` job, `make ios`).
+- **Gap:** the iOS test checks the origin decision on the parts WebKit reports, not a real `WKWebView` loading another origin.
 
 ### Container image
 
