@@ -44,4 +44,4 @@ operations:
   archive:
     guidance:
       - Confirm `openspec validate --all --strict` passes after archiving
-      - Add a CHANGELOG.md entry under Unreleased
+      - Add the changelog entry as changelog.d/<Section>/<change-name>.md (Added, Changed, Fixed, Security or Removed), never under Unreleased in CHANGELOG.md

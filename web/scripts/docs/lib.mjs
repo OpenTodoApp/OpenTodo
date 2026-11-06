@@ -371,12 +371,18 @@ function sectionsOf(tokens) {
 
 // --------------------------------------------------------------- misc
 
-/** Latest released version and whether CHANGELOG.md has unreleased entries. */
+/** Latest released version and whether there are unreleased entries (changelog fragments, or entries under Unreleased). */
 export function versionInfo(repoRoot) {
   const log = readFileSync(join(repoRoot, 'CHANGELOG.md'), 'utf8')
   const release = /^## \[(\d+\.\d+\.\d+)\]/m.exec(log)?.[1] ?? 'dev'
   const unreleased = /^## \[Unreleased\]\s*\n([\s\S]*?)^## \[/m.exec(log)?.[1] ?? ''
-  return { release, unreleased: /^\s*[-*] /m.test(unreleased) }
+  return { release, unreleased: /^\s*[-*] /m.test(unreleased) || hasFragments(join(repoRoot, 'changelog.d')) }
+}
+
+/** Whether changelog.d/ holds a fragment (changelog.d/<Section>/<name>.md). */
+function hasFragments(dir) {
+  if (!existsSync(dir)) return false
+  return readdirSync(dir).some((s) => statSync(join(dir, s)).isDirectory() && readdirSync(join(dir, s)).some((f) => f.endsWith('.md')))
 }
 
 /** Directory names under openspec/specs. */

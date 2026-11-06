@@ -22,11 +22,11 @@ order: 4
 | `make fmt-check` | `gofmt` |
 | `make ui-lint` | design-system rules: tokens, `<Icon>`, no untranslated English in JSX |
 | `make i18n-check` | every catalog complete, placeholders and plurals match |
-| `make docs-check` | front matter, links, anchors, images, spec coverage, help screens, generated help |
+| `make docs-check` | front matter, links, anchors, images, spec coverage, help screens, the generated roadmap and keyboard guides |
 | `make templates-check` | project templates |
 | `make openspec-validate` | every spec and change, strict |
 | `make deploy-check` | the platform templates under `deploy/` |
-| `make repo-check` | repository rules: the migration matrix, shared contracts, budgets, the make targets these pages name |
+| `make repo-check` | repository rules: the migration matrix, shared contracts, budgets, the make targets these pages name, the changelog fragments in `changelog.d/` |
 
 The Go tests that import the embedded web app need it built once: `make web`.
 

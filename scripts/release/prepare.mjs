@@ -6,12 +6,14 @@
 //
 // It moves the release from the latest one in CHANGELOG.md to <version>:
 //   - the release in every template under deploy/ and docs/self-hosting/, the bug report form,
-//     web/package.json, the root entries of web/package-lock.json and web/src/generated/help.json;
+//     web/package.json and the root entries of web/package-lock.json;
 //   - Runtipi's tipi_version + 1, and on a new minor the release line (`:0.15`) in the docs;
 //   - the store fields a version alone does not move: CasaOS's update_at (the date), an Easypanel
 //     changeLog entry, and TrueNAS's own app version (a patch bump, as their Renovate does);
 //   - a "## <version>" entry in the Home Assistant add-on's CHANGELOG;
-//   - "## [<version>] - <date>" under Unreleased in CHANGELOG.md, and its compare links;
+//   - "## [<version>] - <date>" under Unreleased in CHANGELOG.md with the changelog fragments
+//     (changelog.d/<Section>/<name>.md, scripts/release/fragments.mjs) as its entries, which it
+//     deletes, and the compare links;
 //   - then the upstream/ copies (scripts/deploy/mirror.mjs).
 // Only the project's own version contexts change (an image tag, a version/tag/placeholder key,
 // a version in backticks), never a bare number: web/package-lock.json, for one, has packages
@@ -24,6 +26,7 @@ import { pathToFileURL } from 'node:url'
 import { compareVersions, imageFor, latestRelease, loadFacts, ROOT } from '../deploy/common.mjs'
 import { COPIES, mirror } from '../deploy/mirror.mjs'
 import { checkDeviceRecord } from './deviceRecord.mjs'
+import { fragmentsMarkdown, readFragments, removeFragments, unreleasedProblems } from './fragments.mjs'
 import { checkMatrixFreshness } from './switchMatrix.mjs'
 import { checkUpgradeFixture } from './upgradeFixture.mjs'
 import { checkSecurityReviews } from './securityReview.mjs'
@@ -83,11 +86,21 @@ export function bumpLine(text, from, to) {
   return text.replace(new RegExp(`((?:opentodo|\`):)${v}(?!\\.?\\d)`, 'g'), `$1${to}`)
 }
 
-/** CHANGELOG.md: the release heading under Unreleased (whose entries become the release's) and the compare links. */
-export function changelogText(text, from, to, date) {
+/**
+ * CHANGELOG.md: the release's heading under Unreleased with `sections` (the fragments, assembled
+ * by fragmentsMarkdown) as its entries, and the compare links. Unreleased keeps its pointer to
+ * changelog.d/; an entry written there by hand is refused, since it would be left out.
+ */
+export function changelogText(text, from, to, date, sections = '') {
   if (new RegExp(`^## \\[${esc(to)}\\]`, 'm').test(text)) throw new Error(`CHANGELOG.md already has a ## [${to}] section`)
-  if (!/^## \[Unreleased\]\n/m.test(text)) throw new Error('CHANGELOG.md has no "## [Unreleased]" heading')
-  let out = text.replace(/^## \[Unreleased\]\n/m, `## [Unreleased]\n\n## [${to}] - ${date}\n`)
+  const problems = unreleasedProblems(text)
+  if (problems.length) throw new Error(problems[0])
+  const head = /^## \[Unreleased\][^\n]*\n/m.exec(text)
+  const rest = text.slice(head.index + head[0].length)
+  const next = rest.search(/^## |^\[[^\]]+\]: /m)
+  const at = head.index + head[0].length + (next < 0 ? rest.length : next)
+  const release = `## [${to}] - ${date}\n\n${sections ? `${sections}\n` : ''}`
+  let out = text.slice(0, at) + release + text.slice(at)
   const link = new RegExp(`^\\[Unreleased\\]: (\\S+)/compare/v${esc(from)}\\.\\.\\.HEAD$`, 'm')
   const m = link.exec(out)
   if (!m) throw new Error(`CHANGELOG.md: no "[Unreleased]: …/compare/v${from}...HEAD" link`)
@@ -150,6 +163,10 @@ export function prepare(to, { root = ROOT, date = new Date().toISOString().slice
   // From 1.0.0, the guide's screenshots are newer than the last change to the app (docs-1-0 D7).
   checkScreenshotFreshness(root, to)
 
+  // Nothing is edited when the changelog is not ready: a bad fragment or an entry under Unreleased.
+  const notReady = [...readFragments(root).problems, ...unreleasedProblems(changelog)]
+  if (notReady.length) throw new Error(notReady.join('; '))
+
   const changed = new Set()
   const edit = (rel, fn) => {
     const p = join(root, rel)
@@ -175,8 +192,11 @@ export function prepare(to, { root = ROOT, date = new Date().toISOString().slice
   edit('web/package.json', (t) => t.replace(new RegExp(`^(  "version": ")${esc(from)}"`, 'm'), `$1${to}"`))
   // Only the lockfile's own entries: the root and packages[""], each right after "name": "opentodo-web".
   edit('web/package-lock.json', (t) => t.replace(new RegExp(`("name": "opentodo-web",\\n\\s*"version": ")${esc(from)}"`, 'g'), `$1${to}"`))
-  edit('web/src/generated/help.json', (t) => t.replace(new RegExp(`^\\{"version":"${esc(from)}"`), `{"version":"${to}"`))
-  edit('CHANGELOG.md', (t) => changelogText(t, from, to, date))
+  // The release's entries are the changelog fragments (changelog.d/README.md), which it then deletes.
+  const { fragments } = readFragments(root)
+  edit('CHANGELOG.md', (t) => changelogText(t, from, to, date, fragmentsMarkdown(fragments)))
+  removeFragments(root, fragments)
+  for (const f of fragments) changed.add(f.rel)
   for (const [, dst] of mirror(root)) changed.add(dst)
   return { from, to, changed: [...changed].sort() }
 }
@@ -194,7 +214,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     const { from, changed } = prepare(to, date ? { date } : {})
     for (const f of changed) console.log(`  ${f}`)
     console.log(`release-prepare: ${from} → ${to}, ${changed.length} files changed.`)
-    console.log(`Next: write the release's summary paragraph under "## [${to}]" in CHANGELOG.md (and the add-on's entry if it needs more),`)
+    if (!changed.some((f) => f.startsWith('changelog.d/'))) console.log('No changelog fragments: the release has no entries yet (changelog.d/README.md).')
+    console.log(`Next: write the release's summary paragraph under "## [${to}]" in CHANGELOG.md, check the order of its entries (and the add-on's entry if it needs more),`)
     console.log('run make deploy-check docs-check, commit "Prepare ' + to + '" and open the pull request (RELEASING.md).')
   } catch (e) {
     console.error(`release-prepare: ${e.message}`)
