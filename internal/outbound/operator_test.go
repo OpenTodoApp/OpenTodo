@@ -13,7 +13,19 @@ func TestOperatorTransportIgnoresEnvironmentProxy(t *testing.T) {
 	if OperatorTransport().Proxy != nil {
 		t.Fatal("an operator client would send credentials through an environment proxy")
 	}
+	// A replaced http.DefaultTransport (instrumentation, a test's wrapper) is
+	// no reason to panic, and still no reason to use a proxy.
+	saved := http.DefaultTransport
+	t.Cleanup(func() { http.DefaultTransport = saved })
+	http.DefaultTransport = roundTripFunc(func(r *http.Request) (*http.Response, error) { return saved.RoundTrip(r) })
+	if tr := OperatorTransport(); tr == nil || tr.Proxy != nil || tr.DialContext == nil {
+		t.Fatalf("transport over a wrapped default: %+v", tr)
+	}
 }
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
 
 func TestSameHostRedirects(t *testing.T) {
 	check := SameHostRedirects(3)
