@@ -110,24 +110,16 @@ func (g Grant) Revoked() bool { return g.RevokedAt > 0 }
 
 // RotatesRefresh reports whether a refresh gives this client a new refresh token
 // and retires the one it sent (mcp-oauth-refresh-rotation). Every client
-// rotates except one registered only for Google's connector addresses:
-// Google's guide for connected apps requires the same refresh token back on a
-// refresh, and a rotation would unlink Gemini.
+// rotates except one registered only for addresses of a platform that keeps
+// its refresh token, which is Google's connector alone: Google's guide for
+// connected apps requires the same refresh token back on a refresh, and a
+// rotation would unlink Gemini (mcp-oauth-connector-redirects D5).
 func (c Client) RotatesRefresh() bool {
 	if len(c.RedirectURIs) == 0 {
 		return true
 	}
 	for _, r := range c.RedirectURIs {
-		if !isGooglePrefix(r) && !IsGoogleRedirect(r) {
-			return true
-		}
-	}
-	return false
-}
-
-func isGooglePrefix(uri string) bool {
-	for _, p := range GoogleRedirectPrefixes {
-		if uri == p {
+		if !keepsRefreshEntry(r) {
 			return true
 		}
 	}
@@ -567,18 +559,22 @@ func scanGrant(row interface{ Scan(...any) error }) (Grant, error) {
 }
 
 // AllowsRedirect reports whether uri is one of the client's registered
-// addresses. Dynamic clients registered with Google's prefix form hold that
-// prefix as their entry, so a per-connector suffix matches (design D3).
+// addresses. A stored entry that is a known platform's prefix matches the
+// prefix followed by one opaque segment, which is how a connector's
+// per-connection suffix is accepted; every other entry matches only itself
+// (mcp-oauth-connector-redirects D2).
 func (c Client) AllowsRedirect(uri string) bool {
-	uri = strings.TrimSpace(uri)
 	if uri == "" {
 		return false
 	}
 	for _, r := range c.RedirectURIs {
-		if r == uri {
-			return true
+		if platformPrefix(r) {
+			if strings.HasPrefix(uri, r) && opaqueSegment(uri[len(r):]) {
+				return true
+			}
+			continue
 		}
-		if strings.HasSuffix(r, "/") && strings.HasPrefix(uri, r) && !strings.Contains(uri[len(r):], "/") {
+		if r == uri {
 			return true
 		}
 	}

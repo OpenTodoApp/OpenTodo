@@ -105,9 +105,25 @@ func (s *Server) handleOAuthAuthorizationServer(w http.ResponseWriter, r *http.R
 	})
 }
 
-// handleOAuthRegister is RFC 7591 dynamic client registration, confined to
-// Google's connector redirect addresses (design D3) so that registering can
-// never be a way for an arbitrary site to collect a code.
+// registrationPlatform is the platform a dynamic registration is for: every
+// requested address must be one of a known connector platform's, all of the
+// same platform (mcp-oauth-connector-redirects D3).
+func registrationPlatform(uris []string) (mcpoauth.Platform, bool) {
+	var platform mcpoauth.Platform
+	for i, u := range uris {
+		p, ok := mcpoauth.PlatformOf(u)
+		if !ok || (i > 0 && p.ID != platform.ID) {
+			return mcpoauth.Platform{}, false
+		}
+		platform = p
+	}
+	return platform, len(uris) > 0
+}
+
+// handleOAuthRegister is RFC 7591 dynamic client registration, confined to the
+// redirect addresses of known AI connector platforms (Gemini, ChatGPT, Claude;
+// mcp-oauth-connector-redirects D3) so that registering can never be a way for
+// an arbitrary site to collect a code.
 func (s *Server) handleOAuthRegister(w http.ResponseWriter, r *http.Request) {
 	if !s.mcpOAuthOn(w, r) {
 		return
@@ -133,16 +149,15 @@ func (s *Server) handleOAuthRegister(w http.ResponseWriter, r *http.Request) {
 		oauthError(w, http.StatusBadRequest, "invalid_redirect_uri", "redirect_uris is required")
 		return
 	}
-	for _, u := range in.RedirectURIs {
-		if !mcpoauth.IsGoogleRedirect(u) {
-			oauthError(w, http.StatusBadRequest, "invalid_redirect_uri",
-				"this server registers only Google's oauth-redirect addresses automatically; an owner can register another address in Settings")
-			return
-		}
+	platform, ok := registrationPlatform(in.RedirectURIs)
+	if !ok {
+		oauthError(w, http.StatusBadRequest, "invalid_redirect_uri",
+			"this server registers only the redirect addresses of Gemini, ChatGPT and Claude automatically; an owner can create a client for another address in Settings")
+		return
 	}
 	name := in.ClientName
 	if strings.TrimSpace(name) == "" {
-		name = "Google"
+		name = platform.Name
 	}
 	n, err := s.mcpOAuth.PruneDynamicClients(r.Context())
 	if err != nil {
@@ -153,7 +168,7 @@ func (s *Server) handleOAuthRegister(w http.ResponseWriter, r *http.Request) {
 		oauthError(w, http.StatusServiceUnavailable, "temporarily_unavailable", "this server holds as many registered clients as it accepts; an owner can register one in Settings")
 		return
 	}
-	c, secret, err := s.mcpOAuth.CreateClient(r.Context(), name, mcpoauth.GoogleRegistration(), mcpoauth.ScopeRead, true, "")
+	c, secret, err := s.mcpOAuth.CreateClient(r.Context(), name, platform.Registration(), mcpoauth.ScopeRead, true, "")
 	if err != nil {
 		s.internal(w, err)
 		return
@@ -596,8 +611,13 @@ func (s *Server) handleListMCPClients(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
+	platforms := make([]map[string]any, 0, len(mcpoauth.Platforms))
+	for _, p := range mcpoauth.Platforms {
+		platforms = append(platforms, map[string]any{"id": p.ID, "name": p.Name, "redirect_uris": p.Registration()})
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"clients":       clients,
+		"platforms":     platforms,
 		"redirect_uris": mcpoauth.GoogleRegistration(),
 		"authorize_url": s.publicOrigin(r) + mcpAuthorizePath,
 		"token_url":     s.publicOrigin(r) + mcpTokenPath,
@@ -607,12 +627,47 @@ func (s *Server) handleListMCPClients(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// clientRedirects is the redirect list of a client the owner creates: a known
+// platform's addresses, or custom addresses that are each an exact https
+// address, or Google's preset when neither is given
+// (mcp-oauth-connector-redirects D4). It writes the error itself.
+func clientRedirects(w http.ResponseWriter, platform string, uris []string) ([]string, bool) {
+	if platform != "" && len(uris) > 0 {
+		writeError(w, http.StatusBadRequest, "bad_request", "give either a platform or redirect addresses, not both")
+		return nil, false
+	}
+	if platform != "" {
+		p, ok := mcpoauth.PlatformByID(platform)
+		if !ok {
+			writeError(w, http.StatusBadRequest, "bad_request", "platform must be google, openai or anthropic")
+			return nil, false
+		}
+		return p.Registration(), true
+	}
+	if len(uris) == 0 {
+		// The Google preset: the six connector addresses Gemini uses.
+		return mcpoauth.GoogleRegistration(), true
+	}
+	if len(uris) > mcpoauth.MaxCustomRedirects {
+		writeError(w, http.StatusBadRequest, "invalid_redirect_uri", "a client takes at most ten redirect addresses")
+		return nil, false
+	}
+	for _, u := range uris {
+		if err := mcpoauth.ValidCustomRedirect(strings.TrimSpace(u)); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid_redirect_uri", err.Error())
+			return nil, false
+		}
+	}
+	return uris, true
+}
+
 // handleCreateMCPClient registers a client by hand, for a person who has to
 // paste a client id and secret into an app (design D3).
 func (s *Server) handleCreateMCPClient(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		Name         string   `json:"name"`
 		Scope        string   `json:"scope"`
+		Platform     string   `json:"platform"`
 		RedirectURIs []string `json:"redirect_uris"`
 	}
 	if err := readJSON(r, &in); err != nil {
@@ -626,10 +681,9 @@ func (s *Server) handleCreateMCPClient(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid_scope", "scope must be read or agent")
 		return
 	}
-	redirects := in.RedirectURIs
-	if len(redirects) == 0 {
-		// The Google preset: the six connector addresses Gemini uses.
-		redirects = mcpoauth.GoogleRegistration()
+	redirects, ok := clientRedirects(w, in.Platform, in.RedirectURIs)
+	if !ok {
+		return
 	}
 	u := userFrom(r.Context())
 	c, secret, err := s.mcpOAuth.CreateClient(r.Context(), in.Name, redirects, in.Scope, false, u.ID)

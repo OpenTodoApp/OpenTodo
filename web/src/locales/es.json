@@ -7097,7 +7097,7 @@
   "Delete client": "Eliminar cliente",
   "No OAuth clients yet.": "Todavía no hay clientes OAuth.",
   "Registered by the app": "Registrado por la aplicación",
-  "Some apps, such as Google Gemini, cannot take a pasted token. They sign in with OAuth instead: create a client here and paste its client ID and secret into the app.": "Algunas aplicaciones, como Google Gemini, no aceptan un token pegado. En su lugar inician sesión con OAuth: crea aquí un cliente y pega su ID de cliente y su secreto en la aplicación.",
+  "Some apps, such as Gemini, ChatGPT and Claude, sign in with OAuth instead of taking a pasted token: create a client here for the app and paste its client ID and secret into it.": "Algunas aplicaciones, como Gemini, ChatGPT y Claude, inician sesión con OAuth en lugar de aceptar un token pegado: crea aquí un cliente para la aplicación y pega en ella su ID de cliente y su secreto.",
   "The secret is shown only now, next to the client ID.": "El secreto solo se muestra ahora, junto al ID de cliente.",
   "client secret": "secreto del cliente",
   "Connect {client} to your account?": "¿Conectar {client} a tu cuenta?",
@@ -7108,7 +7108,7 @@
   "Only allow this if you started connecting {client} yourself just now.": "Permítelo solo si acabas de empezar tú mismo a conectar {client}.",
   "This connection request can’t be used": "Esta solicitud de conexión no se puede usar",
   "It may have expired or been changed. Start connecting again from the app.": "Puede que haya caducado o se haya modificado. Vuelve a empezar la conexión desde la app.",
-  "Enter at least one valid redirect address.": "Introduce al menos una dirección de redirección válida.",
+  "Enter a valid redirect address: the exact address, starting with https://, without wildcards.": "Introduce una dirección de redirección válida: la dirección exacta, que empiece por https://, sin comodines.",
   "Choose read-only access or access that may make changes.": "Elige acceso de solo lectura o acceso que pueda hacer cambios.",
   "Calendar connected": "Calendario conectado",
   "Calendar connection changed": "Conexión de calendario cambiada",
@@ -7166,5 +7166,8 @@
   "Move to top": "Mover al principio",
   "Move to bottom": "Mover al final",
   "Move {name}": "Mover {name}",
-  "Accessibility": "Accesibilidad"
+  "Accessibility": "Accesibilidad",
+  "Other app": "Otra aplicación",
+  "The exact address the app returns to after you sign in, starting with https://. The app’s documentation names it.": "La dirección exacta a la que vuelve la aplicación después de iniciar sesión, que empieza por https://. La documentación de la aplicación la indica.",
+  "Enter the address the app returns to after you sign in.": "Introduce la dirección a la que vuelve la aplicación después de iniciar sesión."
 }

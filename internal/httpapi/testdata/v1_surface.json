@@ -5915,6 +5915,7 @@
         "clients[].secret_set": "boolean",
         "discovery_url": "string",
         "metadata_url": "string",
+        "platforms": "array",
         "redirect_uris": "array",
         "resource": "string",
         "token_url": "string"
@@ -9752,6 +9753,7 @@
       "policy": "owner-only.credential",
       "request": {
         "name": "string",
+        "platform": "string",
         "redirect_uris": "array",
         "scope": "string"
       },
