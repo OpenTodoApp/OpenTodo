@@ -139,7 +139,7 @@ describe('docs check', () => {
     expect(await runChecks(root)).toEqual([])
   })
 
-  it('builds the same help.json from docs/ alone (--help-only) as the full build', async () => {
+  it('builds the same help.json from docs/ alone (help.mjs) as the full build', async () => {
     const { files } = await buildAll(root)
     expect(buildHelp(root)).toBe(files.get(OUT_HELP))
     rmSync(join(root, 'web'), { recursive: true })
