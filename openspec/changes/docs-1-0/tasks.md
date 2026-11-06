@@ -15,8 +15,8 @@
 
 ## 3. API reference
 
-- [ ] 3.1 Error code table in `docs/api.md` and the both-ways test against `web/src/lib/i18n/server-error-codes.json` in `api_docs_test.go`; verify `go test ./internal/httpapi -run APIDocs`
-- [ ] 3.2 The `<!-- run -->` example runner with a seeded owner, task and project; at least one example per route group, plus a 401 and a 400 example; verify `go test ./internal/httpapi -run APIExamples` and that a wrong documented status fails
+- [x] 3.1 Error code table in `docs/api.md` and the both-ways test against `web/src/lib/i18n/server-error-codes.json` in `api_docs_test.go`; verify `go test ./internal/httpapi -run APIDocs`
+- [x] 3.2 The `<!-- run -->` example runner with a seeded owner, task and project; at least one example per route group, plus a 401 and a 400 example; verify `go test ./internal/httpapi -run APIExamples` and that a wrong documented status fails
 
 ## 4. Contributors
 
