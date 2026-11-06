@@ -284,27 +284,75 @@ func samplePath(path string) string {
 	return wildcard.ReplaceAllString(strings.TrimSuffix(path, "{$}"), "x")
 }
 
+// everyMethod is every request method the deny list could be asked about: the
+// standard ones and the WebDAV verbs CalDAV clients send.
+var everyMethod = []string{
+	"GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "TRACE", "CONNECT",
+	"PROPFIND", "PROPPATCH", "REPORT", "MKCOL", "MKCALENDAR", "COPY", "MOVE", "LOCK", "UNLOCK",
+}
+
 // TestDemoDenyListMatchesPolicy: the demo deny list (demoRules, applied before
 // routing) refuses exactly the routes whose policy says demoDenied, and every
 // route that changes credentials, administration or owner settings is among them.
+// A route registered without a method is probed with every method: a denied one
+// is refused on all of them, an allowed one stays readable.
 func TestDemoDenyListMatchesPolicy(t *testing.T) {
-	for _, e := range routeTableOf(t, true) {
+	table := routeTableOf(t, true)
+	for _, e := range table {
 		method, path, ok := strings.Cut(e.pattern, " ")
-		methods := []string{method}
 		if !ok {
-			path, methods = e.pattern, []string{"GET", "POST"}
-		}
-		denied := false
-		for _, m := range methods {
-			denied = denied || demoRestricted(m, samplePath(path)) != ""
-		}
-		if denied != e.policy.Demo {
+			for _, m := range everyMethod {
+				denied := demoRestricted(m, samplePath(e.pattern)) != ""
+				if e.policy.Demo && !denied {
+					t.Errorf("%s is demoDenied but %s passes the deny list", e.pattern, m)
+				}
+				if !e.policy.Demo && denied && (m == "GET" || m == "HEAD") {
+					t.Errorf("%s is allowed on a demo but %s is refused", e.pattern, m)
+				}
+			}
+		} else if denied := demoRestricted(method, samplePath(path)) != ""; denied != e.policy.Demo {
 			t.Errorf("%s: demo deny list says %v, policy says %v", e.pattern, denied, e.policy.Demo)
 		}
 		write := ok && method != "GET" && method != "HEAD"
 		privileged := e.policy.Role != httpx.AnyRole || e.policy.Tokens == httpx.TokensAdmin || e.policy.Tokens == httpx.TokensNone
 		if write && privileged && !e.policy.Demo {
 			t.Errorf("%s changes credentials, administration or settings but is allowed on a demo", e.pattern)
+		}
+	}
+	checkMethodlessDemoRules(t, table)
+}
+
+// checkMethodlessDemoRules: every rule that carries no method (writes false)
+// guards at least one registered route, and refuses each route it matches on
+// every method, so a route added under it later with any method stays covered.
+func checkMethodlessDemoRules(t *testing.T, table []routeEntry) {
+	t.Helper()
+	for i, r := range demoRules {
+		if r.writes {
+			continue
+		}
+		guarded := 0
+		for _, e := range table {
+			path := e.pattern
+			if _, p, ok := strings.Cut(e.pattern, " "); ok {
+				path = p
+			}
+			p := samplePath(path)
+			if !r.match(p) {
+				continue
+			}
+			guarded++
+			if !e.policy.Demo {
+				t.Errorf("rule %d (%s) refuses every method on %s, whose policy is not demoDenied", i, r.feature, e.pattern)
+			}
+			for _, m := range everyMethod {
+				if demoRestricted(m, p) == "" {
+					t.Errorf("rule %d (%s): %s %s passes the deny list", i, r.feature, m, p)
+				}
+			}
+		}
+		if guarded == 0 {
+			t.Errorf("rule %d (%s) carries no method but guards no registered route", i, r.feature)
 		}
 	}
 }

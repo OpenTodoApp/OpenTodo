@@ -31,6 +31,7 @@ import { checkMatrixFreshness } from './switchMatrix.mjs'
 import { checkUpgradeFixture } from './upgradeFixture.mjs'
 import { checkSecurityReviews } from './securityReview.mjs'
 import { checkScreenshotFreshness } from './screenshotFreshness.mjs'
+import { checkAccessibilityAudit } from './accessibilityAudit.mjs'
 
 const VERSION = /^(\d+)\.(\d+)\.(\d+)$/
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
@@ -162,6 +163,8 @@ export function prepare(to, { root = ROOT, date = new Date().toISOString().slice
   checkSecurityReviews(root, to, from, date, releaseDate(changelog, from))
   // From 1.0.0, the guide's screenshots are newer than the last change to the app (docs-1-0 D7).
   checkScreenshotFreshness(root, to)
+  // A manual accessibility audit at most 12 months old, every core pass done from 1.0.0 on (accessibility-aa D4).
+  checkAccessibilityAudit(root, to, date)
 
   // Nothing is edited when the changelog is not ready: a bad fragment or an entry under Unreleased.
   const notReady = [...readFragments(root).problems, ...unreleasedProblems(changelog)]

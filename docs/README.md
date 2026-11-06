@@ -121,6 +121,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | [Obsidian plugin](obsidian.md) | Send lines from any note to OpenTodo with a link back to the note, and sync a folder of task files: connect, send, offline, encrypted accounts |
 | [Import formats](import.md) | Own export, CSV and other apps' JSON exports; duplicates and undo |
 | [End-to-end encryption](e2ee.md) | What is encrypted, the threat model, devices, recovery and limits |
+| [Accessibility](accessibility.md) | The conformance statement: WCAG 2.2 AA, how every screen is tested, the result per criterion and screen, and how to report a barrier |
 | [Feedback and support](feedback-and-support.md) | Where to report a problem or suggest an idea, where to talk to other people who use OpenTodo, how to star it on GitHub, and how to buy the maintainer a coffee. |
 
 ## Self-hosting and operations
