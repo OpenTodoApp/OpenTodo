@@ -4,7 +4,8 @@ import { resolveLabels } from '../../lib/labels'
 import { createSubtask } from '../../lib/ops'
 import type { Label, Task } from '../../lib/types'
 import { act } from '../actionError'
-import { MAX_INDENT, TaskRow, type TaskRowProps } from '../TaskRow'
+import { isGhost, useDeparture } from '../motion'
+import { MAX_INDENT, TaskRow, type RowMotion, type TaskRowProps } from '../TaskRow'
 
 /** The list's row handlers, stable for the life of the list (large-list-performance D1). */
 export interface RowActions {
@@ -28,7 +29,7 @@ export interface RowActions {
   contextAt: (task: Task, x: number, y: number, row: HTMLElement) => void
 }
 
-type TaskListRowProps = Omit<TaskRowProps, 'labels' | 'onToggle' | 'onOpen' | 'onTick' | 'onToggleCollapse' | 'onPointerDown' | 'onGripDown' | 'onGripClick' | 'dropKey' | 'actions' | 'onMore' | 'onExpand'> & {
+type TaskListRowProps = Omit<TaskRowProps, 'motion' | 'labels' | 'onToggle' | 'onOpen' | 'onTick' | 'onToggleCollapse' | 'onPointerDown' | 'onGripDown' | 'onGripClick' | 'dropKey' | 'actions' | 'onMore' | 'onExpand'> & {
   labelMap: Map<string, Label>
   /** The row can be picked up (to a sidebar project or label, ux-feedback-2 D4). */
   draggable: boolean
@@ -42,15 +43,29 @@ type TaskListRowProps = Omit<TaskRowProps, 'labels' | 'onToggle' | 'onOpen' | 'o
 }
 
 /**
+ * The sequence a row plays: a ghost departs, a completed row that stayed rolled forward,
+ * Undo restores (motion-v2 D2, D3).
+ */
+export function rowMotion(task: Task, departure: ReturnType<typeof useDeparture>): RowMotion | undefined {
+  if (isGhost(task)) return 'leave'
+  if (departure === 'restored') return 'restored'
+  if (departure === 'leave' && !task.completed_at) return 'rolled'
+  return undefined
+}
+
+/**
  * One list row, memoized: every prop is a primitive, a stable object from the
  * list's maps, or the stable `handlers`, so moving the cursor re-renders only the
- * rows whose `selected` changed.
+ * rows whose `selected` changed. The row follows its own task's completion sequence,
+ * so a click on its checkbox draws this row only (list-rendering-at-scale D7).
  */
 export const TaskListRow = memo(function TaskListRow({ task, labelMap, draggable, reorderable, collapsible, expandable, handlers: actions, ...rest }: TaskListRowProps) {
   const labels = useMemo(() => resolveLabels(task.labels, labelMap), [task.labels, labelMap])
+  const motion = rowMotion(task, useDeparture(task.id))
   return (
     <TaskRow
       {...rest}
+      motion={motion}
       task={task}
       labels={labels}
       onPointerDown={draggable ? (e) => actions.drag(e, task) : undefined}

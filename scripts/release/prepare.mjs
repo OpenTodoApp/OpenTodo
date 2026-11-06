@@ -26,6 +26,7 @@ import { COPIES, mirror } from '../deploy/mirror.mjs'
 import { checkDeviceRecord } from './deviceRecord.mjs'
 import { checkMatrixFreshness } from './switchMatrix.mjs'
 import { checkUpgradeFixture } from './upgradeFixture.mjs'
+import { checkSecurityReviews } from './securityReview.mjs'
 
 const VERSION = /^(\d+)\.(\d+)\.(\d+)$/
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
@@ -121,6 +122,11 @@ export function truenasText(text) {
 }
 
 /** Runs the whole preparation in `root`; returns the files it changed, relative to root. */
+/** The date of release `version` in CHANGELOG.md (`## [x.y.z] - YYYY-MM-DD`), or ''. */
+export function releaseDate(changelog, version) {
+  return new RegExp(`^## \\[${esc(version)}\\] - (\\d{4}-\\d{2}-\\d{2})`, 'm').exec(changelog)?.[1] ?? ''
+}
+
 export function prepare(to, { root = ROOT, date = new Date().toISOString().slice(0, 10) } = {}) {
   if (!VERSION.test(to)) throw new Error(`the version must be x.y.z, got ${to}`)
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error(`the date must be YYYY-MM-DD, got ${date}`)
@@ -137,6 +143,9 @@ export function prepare(to, { root = ROOT, date = new Date().toISOString().slice
   checkMatrixFreshness(root, to, date)
   // Every minor leaves the data directory it writes, which later servers must upgrade (stability-contract D4).
   checkUpgradeFixture(root, to, from)
+  // From 1.0.0, an external review's findings follow the fix rule and a review is at most 24 months old
+  // (external-security-review D4). No review file passes: the review is optional.
+  checkSecurityReviews(root, to, from, date, releaseDate(changelog, from))
 
   const changed = new Set()
   const edit = (rel, fn) => {

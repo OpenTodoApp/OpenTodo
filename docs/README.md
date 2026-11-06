@@ -127,6 +127,8 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 
 | Guide | What it covers |
 | --- | --- |
+| [Self-hosting handbook](self-hosting/README.md) | Install, first run, TLS, backups with a restore drill, upgrades, monitoring, hardening and sizing, in order |
+| [Configuration reference](self-hosting/configuration.md) | Every `OPENTODO_*` variable with its default and example |
 | [Running with Docker](self-hosting/docker.md) | Compose, `docker run`, reverse proxies, push, bind mounts, recovery commands |
 | [Deploying on Coolify](self-hosting/coolify.md) | One-click deployment from the compose file, environment variables, troubleshooting |
 | [Running on Unraid](self-hosting/unraid.md) | Install from Community Applications, settings, appdata permissions, https, updates and backups |
@@ -156,7 +158,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | [Email to task](email.md) | Pointing OpenTodo at an IMAP mailbox, provider notes, protection |
 | [Calendar apps (CalDAV)](caldav.md) | Enabling CalDAV, app passwords, client setup, what maps to what |
 
-The full list of environment variables is in the [README](../README.md#configuration); security details are in [SECURITY.md](../SECURITY.md).
+The full list of environment variables is in the [configuration reference](self-hosting/configuration.md); security details are in [SECURITY.md](../SECURITY.md).
 
 ## Integrations
 
@@ -186,4 +188,4 @@ The full list of environment variables is in the [README](../README.md#configura
 
 ## Project
 
-[Changelog](../CHANGELOG.md) · [Roadmap](../ROADMAP.md) · [Security policy](../SECURITY.md) · [Contributing](../CONTRIBUTING.md)
+[Changelog](../CHANGELOG.md) · [Roadmap](../ROADMAP.md) · [Security policy](../SECURITY.md) · [Contributing](../CONTRIBUTING.md) · [Contributor guide](contributing/first-contribution.md)

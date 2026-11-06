@@ -14,7 +14,7 @@ import (
 
 	"github.com/OpenTodoApp/opentodo/internal/config"
 	"github.com/OpenTodoApp/opentodo/internal/settings"
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 )
 
 // fakeProvider stands in for OpenFreeMap and Photon: a style pointing to a
@@ -74,7 +74,7 @@ func newFake(t *testing.T) *fakeProvider {
 
 func newService(t *testing.T, f *fakeProvider, env config.MapsConfig, demo bool, cacheMax int64) *Service {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
+	db, err := storetest.OpenDir(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}

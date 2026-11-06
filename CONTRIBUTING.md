@@ -1,57 +1,75 @@
 # Contributing to OpenTodo
 
-Thanks for helping build a task manager people can own. This document covers how work flows through the repository.
+Thanks for helping build a task manager people can own. This page is the rules; the [contributor guide](docs/contributing/first-contribution.md) is the how-to.
+
+## Contributor guide
+
+| Page | For |
+| --- | --- |
+| [Your first contribution](docs/contributing/first-contribution.md) | Clone, `make dev`, a `good first issue`, a copy fix end to end in 30 minutes |
+| [Architecture tour](docs/contributing/architecture-tour.md) | One task edit from the click to the other device |
+| [The OpenSpec workflow](docs/contributing/openspec.md) | When a change needs a proposal, the three commands, what reviewers check |
+| [Tests and checks](docs/contributing/tests-and-checks.md) | What `make check` runs, one test, CI tiers, screens |
+| [Add a language](docs/contributing/add-a-language.md) | Every file a new interface language touches |
+| [Add an importer](docs/contributing/add-an-importer.md) | Profile, signature, sanitiser, fixtures and goldens, switch guide, matrix row |
+| [Add a shared contract](docs/contributing/add-a-shared-contract.md) | Logic that must match in Go and TypeScript |
+
+Reference: [Architecture](docs/architecture.md), [Sync protocol](docs/sync.md), [Design system](docs/design-system.md), [Translating](docs/translating.md), [Shared contracts](docs/contracts.md). `AGENTS.md` is the same ground in the dense form AI agents read.
 
 ## Ground rules
 
-- **Specs first.** OpenTodo is spec-driven with [OpenSpec](https://github.com/Fission-AI/OpenSpec). Any change that alters user-visible behavior, the API, the sync protocol or the data model starts as a change under `openspec/changes/<name>/` (proposal, delta specs, design, tasks). Bug fixes and refactors that keep behavior identical do not need a change.
-- **Never bypass the op log.** All writes to task and project data, from the UI, the REST API or future integrations, go through field-level ops. See `docs/sync.md`.
-- **Additive data model.** Adding fields is fine. Renaming or removing op fields is a breaking change and needs a migration plan in the design doc.
-- **Private by default.** No telemetry, no third-party scripts or fonts, no outbound calls the user did not ask for.
-- **Small footprint.** New dependencies must justify their size. The server stays a single static binary; the web bundle is measured in CI output.
+- **Specs first.** A change that alters user-visible behaviour, the API, the sync protocol or the data model starts as an OpenSpec change under `openspec/changes/<name>/`. Bug fixes and refactors that keep behaviour identical don't need one. See [the workflow](docs/contributing/openspec.md).
+- **Never bypass the op log.** Every write to task and project data goes through field-level ops, from the UI, the REST API or any integration ([sync protocol](docs/sync.md)).
+- **Additive data model.** Adding fields is fine. Renaming or removing an op field is a breaking change and needs a migration plan in the design.
+- **The v1 surface only grows.** Routes, fields, error codes, MCP tools and `ot` flags are kept within 1.x ([stability](docs/stability.md)).
+- **Private by default.** No telemetry, no third-party scripts or fonts, no outbound request the user did not configure.
+- **Small footprint.** A new dependency justifies its size. The server stays one static binary; the web app's first load has a budget.
 
 ## Workflow
 
 1. Open an issue or pick one up, so the scope is agreed.
-2. Plan the change: `openspec new change <kebab-name>` or, with Claude Code, `/opsx:propose "<idea>"`. Fill `proposal.md`, `specs/<capability>/spec.md`, `design.md` and `tasks.md`. Run `openspec validate <name> --strict`.
-3. Implement, ticking tasks as you go (`/opsx:apply` does this for you).
-4. Run `make check` (vet, staticcheck, typecheck, the React hooks lint, Go and web tests, OpenSpec validation). A new op field also goes into `internal/sync/testdata/schema_fixture.json`, which the Go and web tests both check.
-   A change that adds to the public surface (a route, a request or response field, an error code, an op field, an MCP tool or argument, an `ot` command or flag, an export member) also adds it to the v1 surface snapshot: run `go test ./internal/httpapi -run TestV1SurfaceIsAdditive -update` and commit `internal/httpapi/testdata/v1_surface.json`. `-update` only adds entries. The test fails when an entry is gone or changed (a removal, a rename, another type, status, policy or exit code, a field that became required): that is a breaking change, which [docs/stability.md](docs/stability.md) allows only in a new major version, so change the code back instead of the snapshot. Editing an entry by hand is only for a deliberate, reviewed exception named in the pull request.
-5. When touching sync or the UI, run the browser smoke test (see `scripts/README.md`). When touching layout or adding a screen or overlay, run the layout check (`make layout-check`, which includes the axe-core accessibility check), and add the new screen or overlay to `scripts/e2e-layout.mjs`.
-6. When touching `web/src/app`, capture the core screens before and after: `OUT_DIR=dist/screens-before make screens` on `main`, then `make screens` on your branch (both write PNGs of the seeded demo fixture, at 1280×800 and 390×844 in light and dark; `node scripts/screens.mjs inbox,task-panel` limits the run to some screens). Attach the before/after pairs of the screens your change affects to the pull request. The maintainer reviews them on the images, not the diff: alignment with the page template (header, spacing, chrome rows), both themes, and the phone width.
-7. Open a pull request. CI must be green. Link the change folder in the description.
-8. Update the documentation with the behaviour: user-visible changes go into the guides in `docs/` (front matter lists the capabilities a page covers in `specs` and the app screens it explains in `screens`). Run `make docs` and commit the regenerated `web/src/generated/help.json`; never edit it by hand. The docs website is built into `dist/docs-site` (not committed) and ships to the website repository in the site bundle (`make site-bundle`). After merging `main` into a branch, rerun `make docs` instead of resolving conflicts in generated files. `make check` runs `npm run docs:check`, which fails on broken links, missing alt text, uncovered capabilities or stale output. Screenshots are refreshed with `make docs-screenshots`; the docs site is checked in a browser with `make docs-site-check`.
-9. Text people read goes through the message layer (`t()` in `web/src/lib/i18n`) and into every catalog; `make check` runs the translation checks. See [Translating OpenTodo](docs/translating.md), also for adding a language.
-10. Project templates live in `templates/`, one folder per template; [`templates/README.md`](templates/README.md) is the format, the bar for the library and how to try one. `make templates` checks and compiles them; commit the regenerated `web/src/generated/templates.json` with the template.
-11. After merge, the change is archived with `openspec archive <name> -y`, which merges its deltas into `openspec/specs/`. Add a line to `CHANGELOG.md`.
+2. For a behaviour change, plan it as an OpenSpec change (`/opsx:propose "<idea>"` with Claude Code, or by hand).
+3. Implement it, ticking `tasks.md` as you go. Update the user docs in `docs/` with the behaviour, and run `make docs`; commit the regenerated `web/src/generated/help.json`, never edit it by hand.
+4. Text people read goes through `t()` and into every catalog ([Translating](docs/translating.md)).
+5. Run `make check` ([what it runs](docs/contributing/tests-and-checks.md)).
+6. Open the pull request. The change is archived in the pull request that finishes it, with a `CHANGELOG.md` line.
 
-## Development setup
+Project templates live in `templates/`; [`templates/README.md`](templates/README.md) has the format and the bar.
 
-Requirements: Go 1.26+, Node 22+, GNU make. Docker is optional.
+## Pull requests
 
-```bash
-make dev            # API on :8080 (go run) + Vite on :5173 with proxy and hot reload
-make test           # go test ./... and vitest
-make build          # production binary in bin/opentodo with the web app embedded
-```
+- **One change per pull request.** One OpenSpec change, one fix or one docs topic. A large change may be split into several pull requests by area; each one passes CI on its own.
+- **Green CI.** A pull request is merged only when every check passes.
+- **Link the issue** with `Fixes #123` when the pull request closes it, and the change folder when there is one.
+- **Screens:** a change to `web/src/app` attaches before and after screenshots of the screens it affects ([how](docs/contributing/tests-and-checks.md#screens)).
+- **Commits** are in the imperative mood, one logical change each, naming the OpenSpec change when there is one: `sync: clamp future timestamps (bootstrap-core-platform)`.
+- **Trailers** credit everyone who wrote the commit, people and AI tools alike:
 
-Tests live next to the code: `internal/**/*_test.go` and `web/src/**/*.test.ts`. Web tests never reach the network: `web/src/test-setup.ts` fails a test that calls `fetch` without mocking it (`mockFetch` in `web/src/ui/test-utils.tsx`, or `vi.stubGlobal('fetch', ...)`), module-level state (a clock, a cache, a store) is put back before every test by `resetModuleState()` from `web/src/lib/moduleState.ts`, so a module that keeps a top-level `let` registers its reset with `resettable()` (a guard test counts the files that do not, and that count may only go down), and interaction tests wait for what they assert with `waitFor` from the same file rather than a fixed sleep. `make web-lint` (in `make check`) runs ESLint with the Rules of Hooks and effect dependencies as errors; a suppression needs its reason after `--`. It also fails on a component, hook or helper longer than 250 lines (tests and stories excepted): split it into hooks, pure functions in `web/src/lib` and smaller bodies, as `web/src/app/task-list/` does for the task list; the few older long functions are listed in `web/eslint.config.js` with a ceiling that must not go up. The sync engine has order-independence and idempotency tests on both sides; keep them passing and extend them when touching merge logic. The client's sync code also runs against the real server: `web/src/**/*.contract.test.ts` (`npm run test:contract` in `web/`, after `make server`) starts `bin/opentodo` on a fresh data directory and drives `src/lib/sync.ts` with devices from `web/src/test/contract.ts`; extend it when changing the sync protocol.
+  ```text
+  Co-Authored-By: Name <email>
+  ```
 
-## CI tiers
+## How AI agents are used
 
-A pull request runs a fast tier picked by the paths it changes (`scripts/ci-changes.sh`): the checks always; for code the web, server and image jobs and one linux/amd64 binary; one Chromium layout and end-to-end job when the app, the server or their scripts change; the Storybook accessibility and visual checks when `web/src` or the workbench change; Android, extension and skill jobs only for their own directories; docs alone run the checks and the docs website. A push to `main` or a release tag runs every job and leg (WebKit, German and French layouts, all six binaries) before anything is published. A change to `web/` or `scripts/ux-audit/` also runs the accessibility gate on every real screen (CI job "Accessibility (screens)", two shards; see "The accessibility gate on real screens" in `docs/design-system.md`). The report-only interface audit runs nightly, or on demand from the Actions tab (`ux-audit.yml`); the race detector, the upgrade check and the accessibility gate's full matrix run nightly too (`nightly.yml`).
+Most of OpenTodo's code, specs and docs are written by AI coding agents (mostly Claude, through Claude Code) working for the maintainer, who sets the direction, decides what ships and owns the result. You can see it in the history: those commits carry a `Co-Authored-By: Claude …` trailer and a link to the session.
+
+What keeps that trustworthy is the same for every contributor, human or not:
+
+- Behaviour is specified before it is built, and the spec is reviewed.
+- Every pull request passes the same checks: tests, the shared Go and TypeScript fixtures, the accessibility gate, the v1 surface snapshot, the docs check.
+- An agent opens, reviews and merges the maintainer's own pull requests and dependency updates once CI is green. Pull requests from other contributors get a review, often drafted by an agent, and are merged by the maintainer, never by an agent.
+- Translations are never machine-made: a speaker of each language reviews its catalog.
+- Security reports go to a person ([SECURITY.md](SECURITY.md)).
+
+You may use AI tools for your contribution. Say so with a `Co-Authored-By` trailer, read and understand every line you submit, and expect the same review as any other pull request. `AGENTS.md` (read by Claude Code through `CLAUDE.md`, and by other agents directly) gives an agent the rules above.
 
 ## Code style
 
-- Go: `gofmt`, `go vet`, standard library first. Errors are wrapped with context. Handlers return the JSON error envelope `{ "error": { "code", "message" } }`.
-- TypeScript: strict mode, no `any` in non-test code, React function components, Tailwind utility classes. Keep components small; data access goes through `web/src/lib/`. Secondary text uses `text-muted` or `text-faint` (theme-aware tokens in `web/src/index.css` that meet WCAG AA in light and dark) rather than `text-slate-400`/`text-slate-500`; coloured text needs a `dark:` shade too. The layout check runs axe-core on every screen and overlay.
-- Overlays: every menu, popover, picker, dialog and toast uses the overlay module in `web/src/ui/overlay/` (exported by the `web/src/ui` barrel) (`Menu`/`Popover`, `Dialog`, `ToastRegion`), never a hand-positioned `absolute`/`fixed` panel or a `<details>` menu (`<details>` is fine for expand/collapse). It gives bottom sheets on phones, viewport-kept popovers above 640 px, full-screen dialogs when tall, Escape, focus return and safe areas.
-- Phone layout: nothing may scroll sideways at 360 px except regions marked `data-scroll-x` (board, week grid, wide tables, code); controls are at least 44 × 44 px on touch screens (a global rule covers buttons, inputs and selects; use `touch-target` for icon controls whose visual is smaller); use `hover-reveal` instead of `opacity-0 group-hover:opacity-100`; `user-text` on user-written text so long words wrap; `dvh`, never `vh`.
-- Specs: requirements use SHALL; every requirement has at least one `#### Scenario:` with WHEN / THEN.
-
-## Commit messages
-
-Imperative mood, one logical change per commit, reference the OpenSpec change name when applicable, e.g. `sync: clamp future timestamps (bootstrap-core-platform)`.
+- Go: `gofmt`, `go vet`, standard library first. Errors are wrapped with context. Handlers return the JSON error envelope `{ "error": { "code", "message" } }`. Functions stay under 150 lines and files under 1,100.
+- TypeScript: strict mode, no `any` outside tests, function components, Tailwind utility classes, data access only through `web/src/lib/`. Components, hooks and helpers stay under 250 lines. Colours, type, radius, elevation and motion come from the tokens in `web/src/index.css`.
+- Overlays: every menu, popover, picker, dialog and toast uses the overlay module in `web/src/ui/overlay/` (`Menu`/`Popover`, `Dialog`, `ToastRegion`), never a hand-positioned panel. It gives bottom sheets on phones, Escape, focus return and safe areas.
+- Phone layout: nothing scrolls sideways at 360 px except regions marked `data-scroll-x`; touch targets are at least 44 × 44 px; `dvh`, never `vh`; `user-text` on user-written text.
+- Specs: requirements use SHALL; every requirement has at least one `#### Scenario:` with WHEN and THEN.
 
 ## Releases
 

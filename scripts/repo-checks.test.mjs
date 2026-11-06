@@ -706,3 +706,40 @@ test('the recorded client calls carry no session, token or password (stability-c
 test('surfaceProblems ignores the about text and additions', () => {
   assert.deepEqual(surfaceProblems({ about: 'a', ops: { task: { title: 'string' } } }, { about: 'b', ops: { task: { title: 'string', new: 'bool' } } }), [])
 })
+
+// Contributor pages name only make targets that exist (OpenSpec change docs-1-0,
+// documentation "Contributor guide"). A target counts when it is named in code:
+// an inline `make x` or a line of a fenced block, so prose ("make the change") never does.
+function makeTargets(makefile) {
+  return new Set([...makefile.matchAll(/^([A-Za-z0-9][A-Za-z0-9_.-]*)\s*:(?!=)/gm)].map((m) => m[1]))
+}
+
+function makeTargetProblems(docs, targets) {
+  const out = new Set()
+  for (const [file, text] of Object.entries(docs)) {
+    const fence = /```[^\n]*\n([\s\S]*?)```/g
+    const code = [...text.matchAll(fence)].map((m) => m[1])
+    code.push(...[...text.replace(fence, '').matchAll(/`([^`\n]+)`/g)].map((m) => m[1]))
+    for (const snippet of code) {
+      for (const m of snippet.matchAll(/(?:^|[\s;&|(])make\s+([a-z][a-z0-9_-]*)/gm)) {
+        if (!targets.has(m[1])) out.add(`${file}: names \`make ${m[1]}\`, which is not a target of the Makefile`)
+      }
+    }
+  }
+  return [...out].sort()
+}
+
+test('contributor pages name only make targets that exist', () => {
+  const files = ['CONTRIBUTING.md', ...readdirSync(path.join(root, 'docs/contributing')).filter((f) => f.endsWith('.md')).map((f) => `docs/contributing/${f}`)]
+  assert.deepEqual(makeTargetProblems(Object.fromEntries(files.map((f) => [f, read(f)])), makeTargets(read('Makefile'))), [])
+})
+
+test('a renamed make target fails the contributor pages check, naming the page', () => {
+  const targets = makeTargets('check: lint\n\techo\ni18n-lint:\n\tnode x\nVERSION := 1\n')
+  assert.deepEqual([...targets].sort(), ['check', 'i18n-lint'])
+  const docs = { 'docs/contributing/x.md': 'First make the change.\n\nRun `make i18n-check`, then:\n\n```sh\nmake check\nOUT_DIR=x make screens\n```\n' }
+  assert.deepEqual(makeTargetProblems(docs, targets), [
+    'docs/contributing/x.md: names `make i18n-check`, which is not a target of the Makefile',
+    'docs/contributing/x.md: names `make screens`, which is not a target of the Makefile',
+  ])
+})

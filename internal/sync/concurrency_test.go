@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 )
 
 // List, Get and Pull read from the reader pool, so they answer while a slow
@@ -13,7 +14,7 @@ import (
 func TestReadsDoNotWaitForWrites(t *testing.T) {
 	ctx := context.Background()
 	dir := t.TempDir()
-	db, err := store.Open(dir)
+	db, err := storetest.OpenDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}

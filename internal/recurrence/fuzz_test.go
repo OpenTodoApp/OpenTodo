@@ -75,6 +75,9 @@ func FuzzParse(f *testing.F) {
 		if (r.kind == kWeekday || r.kind == kWeekdays) && r.days&(1<<isoWeekday(z)) == 0 {
 			t.Fatalf("Next of %q = %q falls on weekday %d", canon, next, isoWeekday(z))
 		}
+		if y, m, _ := civilFromDays(z); r.kind == kWorkday && workdayOf(y, m, r.ordinal) != z {
+			t.Fatalf("Next of %q = %q is not that weekday of its month", canon, next)
+		}
 		if r.kind == kNthWeekday && isoWeekday(z) != r.weekday {
 			t.Fatalf("Next of %q = %q falls on weekday %d", canon, next, isoWeekday(z))
 		}

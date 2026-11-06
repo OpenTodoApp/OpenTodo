@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { buildAll, OUT_SITE, writeAll } from './build.mjs'
-import { quickAddLinkProblems, runChecks, stabilityLinkProblems } from './check.mjs'
+import { quickAddLinkProblems, runChecks, selfHostingOrphans, stabilityLinkProblems } from './check.mjs'
 import { SCREENSHOTS, SHOTS_DIR } from '../../../scripts/site-bundle.mjs'
 
 // A 1×1 WebP (VP8L).
@@ -158,5 +158,14 @@ describe('docs check', () => {
     ]
     expect(stabilityLinkProblems(pages, '[policy](docs/stability.md)')).toEqual(['docs/mcp.md: does not link the compatibility policy (stability.md)'])
     expect(stabilityLinkProblems([], 'no link')).toEqual(['README.md: does not link the compatibility policy (docs/stability.md)'])
+  })
+
+  it('names a self-hosting page the handbook does not link (docs-1-0)', () => {
+    const pg = (rel, body = '') => ({ rel, body, fm: {} })
+    const handbook = pg('self-hosting/README.md', '| Docker | [Running with Docker](docker.md) |\n')
+    expect(selfHostingOrphans([handbook, pg('self-hosting/docker.md')])).toEqual([])
+    expect(selfHostingOrphans([handbook, pg('self-hosting/docker.md'), pg('self-hosting/nixos.md')]))
+      .toEqual(['docs/self-hosting/nixos.md: not linked from the self-hosting handbook (docs/self-hosting/README.md); add it to the install table or a section'])
+    expect(selfHostingOrphans([pg('self-hosting/nixos.md')])).toEqual([])
   })
 })
