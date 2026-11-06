@@ -175,8 +175,13 @@ type Plan struct {
 	Changes ChangeSet
 	Count   int
 	// exec carries out a call that is no ChangeSet (run_routine): Call runs it
-	// after the gate in place of Apply and counts the writes it reports.
-	exec func(ctx context.Context) (map[string]any, int, error)
+	// after the gate in place of Apply and counts the writes it reports. It
+	// writes at most maxWrites entities (0: no cap, for a call that writes
+	// nothing).
+	exec func(ctx context.Context, maxWrites int) (map[string]any, int, error)
+	// execWrites: exec may write, so it runs only within what is left of the
+	// token's daily items (a test of a routine writes nothing).
+	execWrites bool
 }
 
 // ExtraOps lets the transport add the ops a REST write of the same change
@@ -399,17 +404,7 @@ func (r *Registry) write(ctx context.Context, c Caller, name string, rawArgs jso
 		return nil, err
 	}
 	if p.exec != nil {
-		// A routine run (run_routine) writes as the routine; its writes count
-		// against this token's daily items once it ran.
-		out, n, err := p.exec(ctx)
-		if err != nil {
-			return nil, err
-		}
-		r.limits.Reserve(c.TokenID, n)
-		*count = n
-		out["server_time"] = r.serverTime()
-		out["_notice"] = Notice
-		return out, nil
+		return r.execute(ctx, c, p, count)
 	}
 	if c.relayed() {
 		if err := relayEncrypt(ctx, c, name, p.Changes); err != nil {
@@ -430,6 +425,31 @@ func (r *Registry) write(ctx context.Context, c Caller, name string, rawArgs jso
 	}
 	*count = p.Count
 	out := p.Result
+	out["server_time"] = r.serverTime()
+	out["_notice"] = Notice
+	return out, nil
+}
+
+// execute runs a call that is no ChangeSet (run_routine). A run writes as the
+// routine, and its writes count against this token's daily items: what is left
+// is held before it starts (none left refuses the call), the run writes
+// nothing when it planned more than that, and what it did not use goes back.
+func (r *Registry) execute(ctx context.Context, c Caller, p Plan, count *int) (map[string]any, error) {
+	held := 0
+	if p.execWrites {
+		var retry int
+		if held, retry = r.limits.Hold(c.TokenID); held == 0 {
+			return nil, rateLimited(retry, fmt.Sprintf("at most %d changed items per UTC day for each token", PerDay))
+		}
+	}
+	out, n, err := p.exec(ctx, held)
+	if p.execWrites {
+		r.limits.Settle(c.TokenID, held, n)
+	}
+	if err != nil {
+		return nil, err
+	}
+	*count = n
 	out["server_time"] = r.serverTime()
 	out["_notice"] = Notice
 	return out, nil

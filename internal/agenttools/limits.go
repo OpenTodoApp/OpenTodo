@@ -107,3 +107,34 @@ func (l *Limiter) Refund(token string, n int) {
 		u.entities = max(0, u.entities-n)
 	}
 }
+
+// Hold books whatever is left of today's budget for a call whose size is known
+// only once it ran (run_routine), and returns it; 0 with the seconds until the
+// next UTC day when nothing is left. The caller settles with Settle.
+func (l *Limiter) Hold(token string) (int, int) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	now := l.now()
+	u := l.get(token, now)
+	left := PerDay - u.entities
+	if left <= 0 {
+		y, m, d := now.UTC().Date()
+		next := time.Date(y, m, d+1, 0, 0, 0, 0, time.UTC)
+		return 0, max(1, int(math.Ceil(next.Sub(now).Seconds())))
+	}
+	u.entities = PerDay
+	return left, 0
+}
+
+// Settle ends a Hold of held entities of which used were written: the rest
+// goes back. A run that wrote more than it held (a device run, which the
+// server cannot cap) books the excess, so later calls are refused.
+func (l *Limiter) Settle(token string, held, used int) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	u, ok := l.tokens[token]
+	if !ok {
+		return
+	}
+	u.entities = max(0, u.entities-held+used)
+}

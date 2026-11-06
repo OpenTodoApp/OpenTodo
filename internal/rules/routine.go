@@ -142,6 +142,10 @@ type RunRequest struct {
 	// and is not sent over the relay. Session is the caller's session hash.
 	Device  string
 	Session string
+	// MaxWrites caps a run started by an AI assistant at what is left of its
+	// token's daily items (0: no cap): a run that planned more writes nothing
+	// and fails with ReasonAgentLimit.
+	MaxWrites int
 }
 
 // runState is one run in progress.

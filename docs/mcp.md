@@ -235,7 +235,7 @@ Every write tool is annotated `readOnlyHint: false`, `openWorldHint: false`; `up
 | `create_routine` | `name`, `trigger`, `condition`, `steps` or `actions` (each as JSON text, in the shapes of the [API](api.md#routines)), `enabled` (default false), `project` (id or exact name, optional) | A [routine](routines.md), validated as the app does (types, ids, the limit of 50; in a [shared project](routines.md#routines-of-a-shared-project) only that project, no labels, editors and above); steps that are not available now are allowed and listed in `unavailable`. Its history names the assistant. Steps read tasks from the trigger or earlier steps (a step that takes a task and gets a list runs once per task); a `{task: id}` literal is for rare fixed targets. |
 | `update_routine` | `routine` plus any of `name`, `trigger`, `condition`, `steps`, `actions` | Replaces the parts given, whole. A step of the wrong type is `invalid_argument` naming the step and the input. A routine with [AI steps](routines.md#ai-steps) runs them as proposals for the person to review: neither tool can turn on Apply without asking (`ai_apply` answers `forbidden_for_agents`), and after an assistant edits a routine that had it on, its runs are proposals until the person turns it on again in the app. |
 | `set_routine_enabled` | `routine`, `enabled` | Turning it on clears the server's pause for running too often. |
-| `run_routine` | `routine`, `task_id` (the task a manual routine is run on), `test` | Runs it now with its own limits (60 seconds, 500 items written), writing as the routine; `test: true` plans every step and writes nothing. The run counts its writes against the token's daily items and is logged with source `mcp`. |
+| `run_routine` | `routine`, `task_id` (the task a manual routine is run on), `test` | Runs it now with its own limits (60 seconds, 500 items written), writing as the routine; `test: true` plans every step and writes nothing. The run counts its writes against the token's daily items and is logged with source `mcp`. It runs only within what is left of them: with none left it answers `rate_limited` and does not run, and a run that would write more than is left writes nothing and is logged as failed with the reason. A test is not limited. |
 | `trash_routine` | `routine` | Moves it to the Trash; it stops running and can be restored. |
 
 No tool, and no routine step, turns on applying AI results without asking, and no routine step creates, changes or runs a routine.
@@ -284,7 +284,7 @@ Fixed in this version, the same for every token:
 - at most **30** write calls per minute per token,
 - at most **1,000** changed items per UTC day per token.
 
-The REST routes of an `agent` token share these counters: one REST write is one write call.
+The REST routes of an `agent` token share these counters: one REST write is one write call. `run_routine` is one write call too. The 50 items per call do not apply to it, because a routine has its own limit of 500 items a run, but its writes count toward the 1,000 a day, and it runs only within what is left of them.
 
 Over a limit the result is `rate_limited` with `retry_after_seconds`, and nothing changes. Read tools never count. Counters are kept in memory and reset when the server restarts; they are there to stop a runaway loop, not to bill anyone.
 
