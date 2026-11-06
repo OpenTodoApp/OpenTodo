@@ -1182,6 +1182,8 @@ export interface AuthStatus {
   /** Without a token, setup from outside the server's local network needs the
    * one-time code printed in the server log (trusted-client-identity); absent on older servers. */
   setupCodeRequired?: boolean
+  /** The code is asked for because the page was opened under a domain name while the server has no OPENTODO_BASE_URL (host-check-without-base-url). */
+  setupCodeForHost?: boolean
   signupAllowed: boolean
   authenticated: boolean
   user: User | null
