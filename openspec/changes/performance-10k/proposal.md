@@ -19,7 +19,7 @@ The people most likely to switch to OpenTodo are heavy users leaving Todoist, Ti
 - **Published budgets with numbers** in `docs/performance.md`, kept as data in `scripts/perf/budgets.json`. They're measured in three settings:
   - **desktop:** the CI runner in Chromium;
   - **phone profile:** the same runner with 4× CPU throttling and a 412×915 viewport;
-  - **reference devices:** a 2022 mid-range Android phone in the Android shell, an iPhone 12 in the iOS shell, and a Raspberry Pi 4 server.
+  - **reference devices:** a 2022 mid-range Android phone in the Android shell, an iPhone 12 in the iOS shell, and a Raspberry Pi 4 server. Not measured for 1.0: the owner has none of them (owner decision 2026-11-07), so 1.0's promise rests on the nightly CI budgets and real devices come after 1.0 (#990).
 
   The main client budgets (desktop / phone profile):
   - cold start to the Today list ≤ 1.2 s / 3 s;
@@ -44,7 +44,7 @@ The people most likely to switch to OpenTodo are heavy users leaving Todoist, Ti
 - **Two kinds of check:**
   - **Every PR:** deterministic **count** assertions at 10,000 tasks in the existing "Web scale tests" job and the Go scale tests. These count reads per write, renders per keystroke, queries per pull page and allocations per op, and they can't flake on a slow runner.
   - **Nightly:** a **time** benchmark (`make perf`) runs the browser and server budgets five times and fails when a median exceeds its budget. The failure is reported through the existing nightly alert.
-- **Reference-device record.** Before every minor release, the numbers on the reference devices go in `docs/performance/results-<version>.md`. `make release-prepare` refuses a minor release without that record, or with a budget exceeded and no issue linked.
+- **Reference-device record, after 1.0.** Once real devices are available, the numbers on the reference devices go in `docs/performance/results-<version>.md`. Until then no release requires the record and `docs/performance.md` says plainly that no real device was measured for 1.0 (owner decision 2026-11-07, #990). When a release has a record, `make release-prepare` refuses it while a budget is exceeded with no issue linked.
 - **Fixes** for whatever the first runs exceed, found by profiling. Windowing long lists stays out unless the budget can't be met without it (see design).
 
 No new environment variable for the server, no runtime dependency, no op schema change. Not **BREAKING**.
@@ -65,10 +65,11 @@ Advances ROADMAP-1.0 milestone 1.0 "Trust", item `performance-10k`. The notes fi
 
 ### New Capabilities
 
-- `performance-budgets`: the 10k fixture and the notes fixture, the numeric budgets and where they're published, the count checks on every PR, the nightly time benchmark, and the reference-device record with its release gate.
+- `performance-budgets`: the 10k fixture and the notes fixture, the numeric budgets and where they're published, the count checks on every PR, the nightly time benchmark, and the reference-device record (optional until real devices are measured, checked when present).
 
 ### Modified Capabilities
 
+- `self-hosting`: "Release candidates" no longer warns about a missing reference-device record; only a record that exists and is over budget without an issue warns (owner decision 2026-11-07).
 - `http-api`: `GET /api/v1/{collection}?project_id=` lists one project's items (it was ignored, so listing the 2,000-task project listed the whole account; found by the first measurement, design D8).
 
 `task-list-presentation` "Large lists stay responsive", `self-hosting` "Read cost bounded by the visible data" and `offline-first-sync` "Bounded pull pages" keep their requirements; the new capability measures them at 10,000 tasks.

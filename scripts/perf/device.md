@@ -1,6 +1,13 @@
 # Measuring the reference devices
 
-Before every minor release the device budgets of [docs/performance.md](../../docs/performance.md)
+**Not required for releases yet.** No release needs this record, 1.0 included:
+the project has none of the reference devices, so 1.0's budgets were measured in
+CI only and real devices come after 1.0 (owner decision 2026-11-07,
+[#990](https://github.com/OpenTodoApp/OpenTodo/issues/990)). The steps and the
+record's format stay here for then; a record that exists is still checked by
+`make release-prepare`.
+
+The device budgets of [docs/performance.md](../../docs/performance.md)
 are measured by hand and recorded in `docs/performance/results-<version>.md`
 (OpenSpec change performance-10k, design D5). The CI runner measures the desktop,
 phone-profile and server budgets every night; these steps cover what only real
