@@ -3,7 +3,7 @@ title: Performance budgets
 summary: How fast OpenTodo is with 10,000 tasks: the budgets for the app, phones and the server, the test account, how they are checked and the latest results.
 audience: developer
 section: Internals
-specs: []
+specs: [performance-budgets]
 screens: []
 order: 40
 ---
