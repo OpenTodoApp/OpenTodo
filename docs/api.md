@@ -70,7 +70,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/api/v1/auth/reauth` | cookie | `{password}` or `{code}` → `{reauthAt, validForMs}`; unlocks *fresh* routes for 10 minutes |
 | POST | `/api/v1/auth/passkey/options` | none | → `{publicKey}` sign-in options, see [Passkeys](#passkeys) |
 | POST | `/api/v1/auth/passkey` | none | `{credential}` → `{user}` + cookie |
-| POST | `/api/v1/auth/logout` | cookie | 204, or 200 `{redirect}` (provider sign-out, see [Single sign-on](#single-sign-on)) |
+| POST | `/api/v1/auth/logout` | cookie | 204, or 200 `{redirect}` (provider sign-out, see [Single sign-on](#single-sign-on)); 403 `bad_origin` when `Origin` is another site's or `Sec-Fetch-Site` is not `same-origin` (a request naming neither, such as `ot logout`, is accepted) |
 | POST | `/api/v1/demo/sandbox` | none | [demo instance](self-hosting/demo.md) only (absent otherwise): `{token}` from `auth/status` → 201 `{user}` + cookie for a new private sandbox. Requires a same-origin `Origin` header; 403 `demo_token` (missing, forged, expired or used token), 403 `bad_origin`, 429 `rate_limited` (5 per address per hour), 503 `demo_busy` |
 | GET | `/api/v1/auth/oidc/start` | none | browser navigation: 302 to the provider (links the identity instead when signed in; linking a new identity needs a fresh session) |
 | GET | `/api/v1/auth/oidc/callback` | none | provider return: 303 to `/` + cookie, or to `/?error=…` |

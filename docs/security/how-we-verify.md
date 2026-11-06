@@ -129,7 +129,18 @@ While the relay is on, the server is trusted with content within those caps; see
   - with a stale session.
 - `TestDemoDenyListMatchesPolicy` keeps the demo's deny list and the `.demoDenied()` routes identical in both directions. A route registered without a method, and every route under a rule that carries no method, is probed with every HTTP and WebDAV method.
 
-**Limits.** Public routes are skipped by the matrix and rely on their own tests. The source scan covers the package and its route subpackages; `httpx`, which defines the router, is the one exception.
+- The same test calls every public route anonymously, with the owner's and a member's session, with each token scope and cross-site (`route_matrix_public_test.go`). Each public route has one declared promise, and the answers are checked against it:
+  - **no account data**: everyone gets the same answer;
+  - **a secret in the address**: with a wrong secret, every caller is refused alike, and a valid public-list link shows the same list, and only that list, to everyone;
+  - **a sign-in step**: a write from another site gets 403 `bad_origin`, and a session or token changes nothing;
+  - **signing out**: another site cannot end a session or clear its cookie;
+  - **its own credential** (app password, OAuth client, bearer token for MCP): the session cookie never authenticates, and an API token only where it is the credential;
+  - **a browser step** (OAuth authorize, single sign-on): an API token never stands in for the session;
+  - **the sign-in bootstrap**: no account is named to an anonymous caller, and a signed-in caller sees only their own.
+
+  A public route without a declared promise fails the test.
+
+**Limits.** The matrix checks public routes with a wrong secret; what a valid secret unlocks is tested by each feature's own tests. The source scan covers the package and its route subpackages; `httpx`, which defines the router, is the one exception.
 
 ## Token scopes
 
@@ -327,7 +338,6 @@ Every item below is in the CHANGELOG's Security section of its release. Most wer
 
 These are known and tracked as follow-up tasks of the OpenSpec change `external-security-review`. [Security limits](limits.md) lists what is not protected by design.
 
-- **Public routes in the route matrix.** The matrix skips public routes, which rely on their own tests.
 - **Write paths are checked in source only.** `internal/writepaths` reads the Go source, so a write reached through reflection or SQL assembled from pieces is not seen; a table named at run time is caught only as an allow-listed place.
 - **Fuzzing.** The TypeScript client has no fuzz target (see [Fuzzing](#fuzzing)).
 - **No independent review** of the design or the code yet.
