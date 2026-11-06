@@ -12,7 +12,7 @@ Home Assistant OS and Supervised installations run add-ons (Home Assistant now c
 | `opentodo/run.sh` | Reads `/data/options.json` (written by the Supervisor before every start) and exports the matching `OPENTODO_*` variables, then runs OpenTodo |
 | `opentodo/translations/en.yaml` | The option names, with the catalogue's descriptions from `deploy/deploy.json` |
 | `opentodo/apparmor.txt` | OpenTodo runs in its own AppArmor profile: its binary, `/data`, the network and a few system files |
-| `opentodo/DOCS.md`, `README.md`, `CHANGELOG.md`, `icon.png` (128×128), `logo.png` | What Home Assistant shows on the add-on's tabs |
+| `opentodo/DOCS.md`, `README.md`, `CHANGELOG.md`, `icon.png` (128×128), `logo.png` (250×100) | What Home Assistant shows on the add-on's tabs; the icon and the logo are rendered from the brand mark by `make brand-icons` |
 | `.github/workflows/build.yaml` | Builds amd64 and aarch64 images with Home Assistant's builder actions and publishes `ghcr.io/opentodoapp/{amd64,aarch64}-opentodo-homeassistant` and the multi-arch `ghcr.io/opentodoapp/opentodo-homeassistant`; an existing tag is never rebuilt (`skip-existing`) |
 | `.github/workflows/test.yaml` | Home Assistant's add-on linter, ShellCheck, and a start of the image with an `options.json` that checks the options reach OpenTodo |
 | `.github/workflows/follow.yaml`, `scripts/bump.sh` | Follows OpenTodo's releases (below) |
