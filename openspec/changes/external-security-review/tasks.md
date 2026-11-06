@@ -3,7 +3,7 @@
 ## 1. Preparation
 
 - [x] 1.1 `docs/security/threat-model.md` with assets, entry points, attacker profiles, controls with their tests, accepted risks, one section per scope item; verify `make docs-check`
-- [ ] 1.1b Review of the threat model by a second maintainer, recorded in its PR (the project has one maintainer today; owner question in the roadmap notes)
+- [x] 1.1b Review of the threat model by a second maintainer, recorded in its PR (the project has one maintainer today; owner question in the roadmap notes). Settled by the owner on 2026-11-06 as "reviewed by the maintainer only" for 1.0: there is no second maintainer, and the independent review stays sought in #588
 - [x] 1.2 `docs/security/README.md` (index, scope list, how findings are recorded), `docs/security/review-scope.md` (the engagement brief: pinned commit, method, scope table, findings format) and `docs/security/how-we-verify.md` (the retrospective, known gaps and past issues, independent review); verify `make docs-check`
 - [ ] 1.3 (Optional, owner decision) Apply for funding (OSTIF first; Sovereign Tech Fund or NLnet NGI Zero as fallback), agree the scope and the 12-month independence rule in the engagement letter; verify the letter lists every scope item of the spec (checked by hand, noted in the PR that adds the review file)
 
