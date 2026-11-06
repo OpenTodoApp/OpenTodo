@@ -4,7 +4,8 @@
 // dashboards and the Settings sections the user can see.
 import { describeDue } from '../../lib/dates'
 import { UNDECRYPTABLE } from '../../lib/e2ee'
-import { originOf, originText } from '../../lib/taskOrigin'
+import { originText } from '../../lib/originText'
+import { originOf } from '../../lib/taskOrigin'
 import type { Label, Project, Task, User, View } from '../../lib/types'
 import { navigate } from '../router'
 import { SETTINGS_SECTIONS, visibleSections } from '../settingsSections'
