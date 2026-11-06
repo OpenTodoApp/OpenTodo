@@ -103,9 +103,9 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | Change | What | Status |
 | --- | --- | --- |
 | `stability-contract` | A frozen v1 API and op schema, upgrade paths from any 0.x, an export guarantee | Shipped in 0.22 |
-| `external-security-review` | A threat model and disclosure policy; an independent security review is optional, depending on funding | In progress (34 of 42) |
+| `external-security-review` | A threat model and disclosure policy; an independent security review is optional, depending on funding | In progress (35 of 42) |
 | `accessibility-aa` | WCAG 2.2 AA on every screen, with a conformance statement | Shipped in 0.22 |
-| `performance-10k` | Budgets and tests for 10,000 tasks, on phones too | In progress (14 of 16) |
+| `performance-10k` | Budgets and tests for 10,000 tasks, on phones too | In progress (15 of 16) |
 | `notes-compaction-at-scale` | A year of note history compacted in a minute without holding writes back; a new device downloads only the latest notes | Shipped in 0.22 |
 | `migration-everywhere` | A switch guide and checked importer for every competitor | Shipped in 0.22 |
 | `caldav-verified` | CalDAV verified on real clients | Planned |
