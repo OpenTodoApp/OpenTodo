@@ -29,6 +29,7 @@ export const de: Vocabulary = {
   ],
   before: ['am', 'bis'],
   deadlineWords: ['frist', 'deadline'],
+  byWords: ['bis'],
   somedayWords: ['irgendwann'],
   // Time sectors (time-sectors D8), read only while the switch is on; "next week" alone stays a date.
   sectorPhrases: {
