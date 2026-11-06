@@ -25,6 +25,8 @@ export interface DispatchDeps {
   /** Shell's `g` prefix (signals.ts): `g` then a letter stays Shell's, `g g` is ours. */
   gPending(): boolean
   clearG(): void
+  /** Another sequence of the dispatcher is under way (`r g p`): its keys are not Vim's. */
+  otherSequence?(): boolean
   commandOpen(): boolean
   openCommand(): void
   /** `i`: focus the title field of the panel just opened for this task. */
@@ -104,6 +106,10 @@ export function createDispatcher(deps: DispatchDeps, timeout = PENDING_TIMEOUT):
     }
     // Shift alone (for `G`, `J`, Shift+I after `g`) keeps the pending keys.
     if (e.key === 'Shift') return false
+    if (deps.otherSequence?.()) {
+      clear()
+      return false
+    }
     if (modified) {
       flushPriority()
       clear()
