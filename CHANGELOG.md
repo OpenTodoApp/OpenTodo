@@ -6,6 +6,13 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 Changes since the last release are in [changelog.d/](changelog.d/README.md), one file per change; `make release-prepare` moves them here when a release is cut.
 
+## [1.0.0-rc.1] - 2026-11-06
+
+The first release candidate of **OpenTodo 1.0**. Its code is the same as [0.24.0](https://github.com/OpenTodoApp/OpenTodo/releases/tag/v0.24.0): 1.0 adds no feature. It is the release where the [stability promise](docs/stability.md) starts, with the [threat model, how we verify it and the documented limits](docs/security/), the [accessibility statement](docs/accessibility.md), the performance budgets checked every night, and the 1.0 docs.
+
+**Please test the upgrade and your daily use, and report what breaks.** Back up first. Then run `ghcr.io/opentodoapp/opentodo:1.0.0-rc.1` on a copy of your data, sign in on your devices, and check sync, reminders, imports and the integrations you use. A candidate is a pre-release: it does not move `stable`, is not sent to app stores, and needs no store update.
+
+Still pending before 1.0.0: the screen-reader passes (NVDA, VoiceOver, TalkBack) and the reference-device performance record, both on real devices.
 ## [0.24.0] - 2026-11-06
 
 OpenTodo 0.24.0 is a **security and fixes** release on the way to 1.0. **ChatGPT and Claude (claude.ai) can connect with OAuth again**; since 0.23.0 only Gemini could. The audit log is now **tamper-evident**, a device that answers AI connectors for an encrypted account **shows what it reads and can ask first**, and another site can no longer sign you out. In the installed iPhone app, no control sits under the Dynamic Island or the home indicator. Also new: an [accessibility statement](docs/accessibility.md) against WCAG 2.2 AA.
@@ -1395,6 +1402,7 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
 [Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.24.0...HEAD
+[1.0.0-rc.1]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.24.0...v1.0.0-rc.1
 [0.24.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.23.0...v0.24.0
 [0.23.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.22.0...v0.23.0
 [0.22.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.21.0...v0.22.0
