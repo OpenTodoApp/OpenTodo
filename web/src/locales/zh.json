@@ -7111,6 +7111,7 @@
   "⤼ Skip": "⤼ 跳过",
   "AI app connected": "AI 应用已连接",
   "AI app disconnected": "AI 应用已断开连接",
+  "AI app disconnected: an old token was reused": "AI 应用已断开连接：旧令牌被重复使用",
   "AI app sign-in client created": "已创建 AI 应用登录客户端",
   "AI app sign-in client deleted": "已删除 AI 应用登录客户端",
   "Calendar connected": "日历已连接",

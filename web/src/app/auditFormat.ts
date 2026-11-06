@@ -97,6 +97,7 @@ export const AUDIT_LABELS = translatedMap<AuditEventName>({
   'mcp_oauth.client_deleted': msg('AI app sign-in client deleted'),
   'mcp_oauth.granted': msg('AI app connected'),
   'mcp_oauth.revoked': msg('AI app disconnected'),
+  'mcp_oauth.refresh_reused': msg('AI app disconnected: an old token was reused'),
 })
 
 const REASONS = translatedMap<string>({
