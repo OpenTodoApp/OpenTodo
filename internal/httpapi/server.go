@@ -240,6 +240,9 @@ type Server struct {
 	idemSalt string
 	// hosted is set for a tenant a host serves (multi-tenant-host); see hosted.go.
 	hosted bool
+	// assistantSlots is the host's shared cap on assistant turns; nil when
+	// self-hosted (host-assistant-concurrency).
+	assistantSlots *assistant.Slots
 	// routeTable records every registered route with its policy (policy.go).
 	routeTable []routeEntry
 	// streams counts open live-update streams per client address and in all
@@ -289,6 +292,9 @@ func newServer(set *services.Set, web http.Handler) *Server {
 		ruleSwitch: set.RuleSwitch, oidc: set.OIDC, blobs: set.Blobs, maps: set.Maps, stt: set.STT, hosted: set.Hosted != nil,
 		caldavOn: set.CalDAV, calFeedsOn: set.CalendarFeeds, issuesOn: set.IssuesOn, calsyncOn: set.CalendarSync,
 		membersInviteOn: set.MembersInvite}
+	if set.Hosted != nil {
+		s.assistantSlots = set.Hosted.AssistantSlots
+	}
 	return s
 }
 

@@ -366,6 +366,7 @@ The model behind an MCP client or the in-app assistant follows instructions hidd
 - Reaching the operator's private network through webhooks, channels, calendar feeds, issue hosts, calendar sync, speech to text or the map proxy.
 - Changing operator-owned settings.
 - Exhausting another tenant's request, storage, operation or member limits.
+- Multiplying the assistant's load on the operator's provider keys by opening more tenants.
 
 **Mechanism.**
 - Each tenant is opened from its own data directory (`<root>/tenants/<name>`) with its own database, lock, services and HTTP server (`internal/host`, `internal/tenant`).
@@ -373,6 +374,7 @@ The model behind an MCP client or the in-app assistant follows instructions hidd
 - On a hosted tenant, the private-network switch is forced off, which also covers speech to text, channels, issues, calendar feeds and calendar sync. The map proxy is public-only.
 - `hostGuard` (`internal/httpapi/hosted.go`) refuses operator-owned settings: SMTP, OIDC, backups, MCP and assistant switches, webhook network policy and attachment limits. Email to task is off.
 - Limits are counted per tenant and per client address.
+- The assistant's limit of 8 running turns is one `assistant.Slots` that the host hands to every tenant (`services.Hosted.AssistantSlots`).
 - The operator interface is on its own listener with a hashed bearer token.
 
 **Verified by.**
@@ -383,10 +385,10 @@ The model behind an MCP client or the in-app assistant follows instructions hidd
 - `TestHostTurnsPrivateMarksFailed` (`internal/webhook/worker_test.go`).
 - `TestStorageLimit`, `TestRequestLimitPerClient`, `TestOperationLimits`, `TestMemberLimit` (`internal/host/limits_test.go`).
 - `TestOperatorNeedsToken`.
+- `TestAssistantConcurrencyIsHostWide` (`internal/host`), `TestSharedSlotsAcrossServices` (`internal/assistant`).
 
 **Not defended.**
 - Tenants share one process, so one tenant's load affects the others' latency. Limits bound this but do not isolate CPU or memory.
-- The assistant's concurrency limit (8 turns) is per tenant, so the operator's provider key can see 8 turns per open tenant.
 
 ### Demo visitor
 
