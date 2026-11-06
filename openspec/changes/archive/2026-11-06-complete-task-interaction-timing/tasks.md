@@ -7,4 +7,4 @@
 
 ## 2. CI
 
-- [ ] 2.1 The Performance workflow on CI at least three times; record desktop and phone p95 beside the earlier timer in the design; if the desktop median of p95s is over 100 ms, set the desktop limit to 130 ms with the reason in `budgets.json` and `docs/performance.md`; verify the workflow passes
+- [x] 2.1 The Performance workflow on CI at least three times; record desktop and phone p95 beside the earlier timer in the design; if the desktop median of p95s is over 100 ms, set the desktop limit to 130 ms with the reason in `budgets.json` and `docs/performance.md`; verify the workflow passes
