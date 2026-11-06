@@ -52,6 +52,16 @@ test('brand/kit/ carries every file of the brand kit', async () => {
   for (const p of kit) assert.ok(files.get(`kit/${p.slice('brand/'.length)}`).equals(readFileSync(join(repoRoot, p))), p)
 })
 
+// brand-assets-everywhere: the website serves the bundle's brand/ at /brand/, so the docs
+// pages' social card is the brand kit's default card, a file this bundle ships.
+test("the docs pages' social image is the brand kit's default card, shipped in brand/", () => {
+  const src = readFileSync(join(repoRoot, 'web/scripts/docs/site.mjs'), 'utf8')
+  const m = /property="og:image" content="\$\{SITE_URL\}\/brand\/([^"]+)"/.exec(src)
+  assert.ok(m, 'og:image points under /brand/')
+  assert.equal(m[1], 'kit/png/og-default-1200x630.png')
+  assert.ok(brandFiles().has(m[1]), `the bundle ships brand/${m[1]}`)
+})
+
 // sidebar-v2 D3: brand/ is byte-identical to the app's assets, and fails when the rasters are stale.
 test('brand/ carries the source, both marks, the wordmark and the current 512 px icon, each with the licence note', () => {
   const files = brandFiles()
