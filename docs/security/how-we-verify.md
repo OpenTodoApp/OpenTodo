@@ -174,9 +174,11 @@ Tests: `TestReadTokenRefusedOnWrites`, `TestCredentialRoutesNeedAdminToken`, `Te
   - run with `query_only` and a 1 MiB value limit;
   - get 30 seconds;
   - are refused when their schema computes values.
+- CSV files: a field holds at most 1 MiB, a record 4 MiB and 1,000 fields.
+- JSON files are nested at most 256 levels deep.
 - An import stores its attachments itself and refuses ids owned elsewhere.
 
-**Tests.** `TestArchiveTooManyEntries`, `TestArchiveOversizedExpansion`, `TestArchiveUnsafeName`, `TestThingsRefusesSchemaThatComputes`, `TestThingsRefusesOversizedValue`, and the fuzz targets below.
+**Tests.** `TestArchiveTooManyEntries`, `TestArchiveOversizedExpansion`, `TestArchiveUnsafeName`, `TestThingsRefusesSchemaThatComputes`, `TestThingsRefusesOversizedValue`, `TestCSVFieldOverLimitRefused`, `TestEveryCSVProfileChecksFields`, `TestJSONNestingOverLimitRefused`, and the fuzz targets below.
 
 ## Stability contract and upgrade tests
 

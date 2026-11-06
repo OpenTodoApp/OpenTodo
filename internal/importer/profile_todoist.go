@@ -1,7 +1,6 @@
 package importer
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"encoding/csv"
 	"encoding/hex"
@@ -58,7 +57,7 @@ func (todoistProfile) Detect(data []byte) bool {
 
 // csvHeader reads the first record of a CSV file (BOM stripped, trimmed).
 func csvHeader(data []byte) []string {
-	r := csv.NewReader(bytes.NewReader(trimBOM(data)))
+	r := newCSVReader(trimBOM(data))
 	r.FieldsPerRecord = -1
 	r.LazyQuotes = true
 	rec, err := r.Read()
@@ -76,12 +75,12 @@ func (todoistProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 	if err != nil {
 		return nil, err
 	}
-	r := csv.NewReader(bytes.NewReader(data))
+	r := newCSVReader(data)
 	r.FieldsPerRecord = -1
 	r.LazyQuotes = true
 	header, err := r.Read()
 	if err != nil {
-		return nil, &FileError{fmt.Sprintf("cannot read the CSV header: %v", err)}
+		return nil, csvFailure(err, "header")
 	}
 	col := map[string]int{}
 	for i, h := range header {
@@ -114,7 +113,7 @@ func (todoistProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 				out.Rows = append(out.Rows, Row{Line: pe.StartLine, Kind: KindTask, Err: fmt.Sprintf("unreadable CSV record: %v", pe.Err)})
 				continue
 			}
-			return nil, &FileError{fmt.Sprintf("cannot read the CSV file: %v", err)}
+			return nil, csvFailure(err, "file")
 		}
 		line, _ := r.FieldPos(0)
 		get := func(c string) string {

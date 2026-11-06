@@ -255,15 +255,17 @@ The person turned on end-to-end encryption and does not trust the server, its op
 - Archives are read in memory: at most 1,000 entries, an unpacked total of 10× the upload limit checked against declared and actual sizes, unsafe names refused, and nested ZIPs one level deep.
 - SQLite imports go to a private temporary directory. They are opened read-only and immutable with `query_only`, a 1 MiB value limit, a 30-second context, and refusal of computing schemas.
 - Attachments are stored by the import itself, refusing ids already owned elsewhere.
+- CSV records are read one at a time: a field holds at most 1 MiB, a record 4 MiB and 1,000 fields. JSON is refused when nested deeper than 256 levels, checked by one scan before any profile decodes it (`limits.go`).
 - Imports write ops through the sync service with device `import`.
 
 **Verified by.**
 - `TestArchiveTooManyEntries`, `TestArchiveOversizedExpansion`, `TestArchiveUnsafeName`.
 - `TestThingsRefusesSchemaThatComputes`, `TestThingsRefusesOversizedValue`, `TestThingsOpenerRefusesOtherSQLite`.
+- `TestCSVFieldOverLimitRefused`, `TestCSVRecordOverLimitRefused`, `TestCSVTooManyFieldsRefused`, `TestEveryCSVProfileChecksFields`, `TestJSONNestingOverLimitRefused`, `TestJSONNestingInArchiveRefused` (`internal/importer/limits_test.go`); `TestImportShapeLimits413` (`internal/httpapi`).
 - `FuzzParse` (every import profile, seeded from `internal/importer/testdata`) and `FuzzReadArchive` (`internal/importer/fuzz_test.go`), run nightly by `scripts/fuzz.sh`.
 
 **Not defended.**
-- CSV and JSON have no per-field or nesting limits beyond the file size and `MaxRows` (50,000). A large valid file costs memory up to the upload limit times a constant.
+- The CSV limits are checked once a record is read, so reading one record still costs memory up to its length, which the upload limit bounds. A file within every limit still costs memory up to the upload limit times a constant.
 - Fuzzing reaches nested ZIPs and the SQLite profiles only rarely (byte mutation of a database file covers little). The import planner (`plan*.go`) is not fuzzed.
 
 ### Malicious calendar, mail or issue server
