@@ -10716,6 +10716,9 @@
     "web/src/app/MembersPanel.tsx",
     "web/src/app/WebhooksPanel.tsx"
   ],
+  "Nothing from this share was kept: the browser did not say where it came from. Update the browser, then share again.": [
+    "web/src/app/ShareCapture.tsx"
+  ],
   "Nothing is assigned to you.": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
