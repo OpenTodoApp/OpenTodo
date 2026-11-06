@@ -33,4 +33,4 @@
 
 - [x] 6.1 `make release-prepare` for 1.0.0 and later fails when the newest `docs/images/*.webp` predates the last commit touching `web/src/app`; verify with a dry run
 - [ ] 6.2 Regenerate every screenshot with `make docs-screenshots` on the release candidate
-- [ ] 6.3 CHANGELOG entry under Unreleased; `make check` (TZ=UTC) passes
+- [x] 6.3 CHANGELOG entry under Unreleased; `make check` (TZ=UTC) passes
