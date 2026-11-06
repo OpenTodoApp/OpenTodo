@@ -292,7 +292,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
   const size = layout === 'line' ? '' : 'text-prose'
   return (
     <form id={formId} onSubmit={submit} data-quick-add-layout={layout}>
-      <div className={`relative flex items-center ${palette ? 'gap-2.5 border-b border-default px-4 py-2.5 sm:pr-11' : layout === 'sheet' ? 'gap-2 px-3 pb-2' : 'gap-2'}`}>
+      <div className={`relative flex items-center ${palette ? 'gap-2.5 border-b border-default px-4 py-2.5 sm:pr-11' : layout === 'sheet' ? 'gap-2 px-3 pb-2' : 'quick-add-field gap-2'}`}>
         {palette ? <Icon name="plus" className="shrink-0 text-faint" /> : layout === 'line' && <span className="text-h2 leading-none text-accent">+</span>}
         {/* The recognised spans tinted behind the text (moments-and-onboarding D8, QuickAddTint). */}
         <span className="relative flex min-w-0 flex-1">
@@ -386,7 +386,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
       )}
       {layout === 'line' && <div id="quick-add-preview" role="status" aria-live="polite" className="empty:hidden">
         {(chips.length > 0 || misses.length > 0) && (
-          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-6 text-meta">
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-9 text-meta">
             <ParseChips chips={chips} misses={misses} projects={projects} labels={labels} highlight={highlight}
               line={lineInfo}
               onDismiss={dismiss} onMiss={(m) => suggest.openAt(m.span.end)} />
