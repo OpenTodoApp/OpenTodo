@@ -288,7 +288,9 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
               <input className="ui-input font-mono" required value={setupToken} onChange={(e) => setSetupToken(e.target.value)}
                 autoComplete="off" spellCheck={false} aria-describedby="setup-token-help" />
               <span id="setup-token-help" className="mt-1 block text-meta text-muted">
-                {needsSetupCode
+                {needsSetupCode && status.setupCodeForHost
+                  ? t.rich('This page was opened under a domain name and the server has no {variable} yet, so it asks for the one-time code it printed in its log. Run {command} on the server, or open the server by its IP address, or set {variable} to this address and restart it.', { command: <code>docker logs opentodo</code>, variable: <code>OPENTODO_BASE_URL</code> })
+                  : needsSetupCode
                   ? t.rich('You are setting up this server from another machine, so it asks for the one-time code it printed in its log. Run {command} on the server, or open the logs in your hosting panel.', { command: <code>docker logs opentodo</code> })
                   : status.hosted
                   ? t('Your provider sent this token with the address of your new server.')

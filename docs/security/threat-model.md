@@ -69,7 +69,7 @@ The model describes the code on `main` at the time of writing. An external revie
 - Rate limits per client address and per account, with account lockout after 10 failures in 15 minutes (`ratelimit.go`, `accountlock.go`).
 - Session cookies are `HttpOnly` and `SameSite=Lax`. Cookie writes must carry a matching `Origin` (`originAllowed` in `middleware.go`). With `OPENTODO_BASE_URL` set, the request must also be addressed to the base URL's host, which defends against DNS rebinding.
 - Forwarded addresses are believed only from trusted proxies (`clientip.go`).
-- First run: `OPENTODO_SETUP_TOKEN` or `OPENTODO_SETUP_CODE=required`.
+- First run: `OPENTODO_SETUP_TOKEN` or `OPENTODO_SETUP_CODE=required`. Without `OPENTODO_BASE_URL`, a first registration addressed to a domain name (not an IP address, a dotless name or a local-only suffix) needs the setup code from the log even with the code off, so a rebound name cannot create the owner (`setupHostVerified` in `setuphost.go`).
 
 **Verified by.**
 - `TestEveryRouteDeclaresAPolicy`, `TestSecurityRoutePolicies` (`internal/httpapi/policy_test.go`).
@@ -77,10 +77,11 @@ The model describes the code on `main` at the time of writing. An external revie
 - `TestLoginRateLimit`, `TestCrossSiteCookieWritesAreRejected` (`server_test.go`).
 - `TestSecurityHeaders` (`security_headers_test.go`): no framing, no sniffing, scripts only from the server.
 - `TestAccountLockout`, `TestForwardedForOnlyFromTrustedPeers`, `TestOriginMustMatchBaseURL` (`client_identity_test.go`).
+- `TestSetupHostVerified`, `TestSetupUnderDomainNameNeedsCode`, `TestNoHostCheckWithBaseURL` (`setuphost_test.go`); `TestSetupHostCheck` (`internal/auth/setupcode_test.go`).
 - `TestClientAddressBehindTrustedProxies`, `TestInvalidTrustedProxyEntriesNeverWidenTrust` (`clientip_test.go`).
 
 **Not defended.**
-- Without `OPENTODO_BASE_URL`, the origin check compares against the request's own `Host`, so DNS rebinding is not defended. The docs tell operators to set the base URL.
+- Without `OPENTODO_BASE_URL`, the origin check compares against the request's own `Host`, so after setup a rebound name passes it. The session cookie belongs to the server's real name, so such a page has no session; it can reach public routes and try passwords against the rate limits. The docs tell operators to set the base URL.
 - A write with no `Origin` header is accepted. It relies on `SameSite=Lax` keeping the cookie off cross-site subrequests.
 - Rate limits live in memory, per process. A restart clears them.
 - Anyone who knows an email address can keep that account's password sign-in locked. Passkeys, single sign-on and open sessions keep working.
