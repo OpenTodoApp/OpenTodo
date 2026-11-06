@@ -7119,6 +7119,7 @@
   "AI app sign-in client deleted": "Client de connexion d’app IA supprimé",
   "AI app connected": "App IA connectée",
   "AI app disconnected": "App IA déconnectée",
+  "AI app disconnected: an old token was reused": "App IA déconnectée : un ancien jeton a été réutilisé",
   "Require single sign-on?": "Exiger l’authentification unique ?",
   "Require single sign-on": "Exiger l’authentification unique",
   "Once you save, members can sign in only with {name}: their passwords and passkeys stop working. If the provider is down, they cannot sign in until you turn this off. You keep your password at {path}.": "Après l’enregistrement, les membres ne peuvent se connecter qu’avec {name} : leurs mots de passe et clés d’accès ne fonctionnent plus. Si le fournisseur est indisponible, ils ne peuvent pas se connecter tant que vous ne désactivez pas cette option. Votre mot de passe reste utilisable à l’adresse {path}.",
