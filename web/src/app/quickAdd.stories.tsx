@@ -30,19 +30,27 @@ export const Empty: StoryObj = {
   render: () => <Frame><QuickAdd placeholder="Add a task to Inbox" projects={projects} labels={labels} onAdd={noop} hideHint /></Frame>,
 }
 
-/** The filled field (quick-add-field-surface): the same line on the light and the dark surface, and the viewer's disabled one. */
-export const Surface: StoryObj = {
-  render: () => (
+/** The filled field (quick-add-field-surface) and the viewer's disabled one; the workbench shows each story in light and dark. */
+function SurfaceFrame() {
+  return (
     <div className="grid max-w-3xl gap-3">
-      {(['light', 'dark'] as const).map((mode) => (
-        <div key={mode} data-theme={mode} className="rounded-card bg-surface p-3">
-          <QuickAdd placeholder="Add a task to Inbox" projects={projects} labels={labels} onAdd={noop} hideHint />
-        </div>
-      ))}
-      <div data-theme="dark" className="rounded-card bg-surface p-3"><ReadOnlyQuickAdd /></div>
+      <Frame><QuickAdd placeholder="Add a task to Inbox" projects={projects} labels={labels} onAdd={noop} hideHint /></Frame>
+      <Frame><ReadOnlyQuickAdd /></Frame>
     </div>
-  ),
+  )
 }
+export const Surface: StoryObj = { render: () => <SurfaceFrame /> }
+
+/** The same under the high-contrast presentation, where the fill cannot differ from the page and a border carries the field. */
+function HighContrastSurface() {
+  useEffect(() => {
+    const root = document.documentElement
+    root.setAttribute('data-contrast', 'high')
+    return () => root.removeAttribute('data-contrast')
+  }, [])
+  return <SurfaceFrame />
+}
+export const SurfaceHighContrast: StoryObj = { render: () => <HighContrastSurface /> }
 
 /** A typed line with every attribute: the date, a nested project, a label, the priority and an estimate become chips. */
 export const WithChips: StoryObj = {
