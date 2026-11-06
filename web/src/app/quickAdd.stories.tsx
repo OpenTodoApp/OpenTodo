@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { type ReactNode, useEffect, useRef } from 'react'
 import { QuickAdd } from './QuickAdd'
+import { ReadOnlyQuickAdd } from './task-list/ListChrome'
 import { PasteOfferPanel } from './quickadd/PasteOffer'
 import { HEX, label, withClock } from './stories/fixtures'
 
@@ -27,6 +28,20 @@ function Frame({ children }: { children: ReactNode }) {
 /** Empty: the placeholder names the list; nothing under the field (lean-chrome D1). */
 export const Empty: StoryObj = {
   render: () => <Frame><QuickAdd placeholder="Add a task to Inbox" projects={projects} labels={labels} onAdd={noop} hideHint /></Frame>,
+}
+
+/** The filled field (quick-add-field-surface): the same line on the light and the dark surface, and the viewer's disabled one. */
+export const Surface: StoryObj = {
+  render: () => (
+    <div className="grid max-w-3xl gap-3">
+      {(['light', 'dark'] as const).map((mode) => (
+        <div key={mode} data-theme={mode} className="rounded-card bg-surface p-3">
+          <QuickAdd placeholder="Add a task to Inbox" projects={projects} labels={labels} onAdd={noop} hideHint />
+        </div>
+      ))}
+      <div data-theme="dark" className="rounded-card bg-surface p-3"><ReadOnlyQuickAdd /></div>
+    </div>
+  ),
 }
 
 /** A typed line with every attribute: the date, a nested project, a label, the priority and an estimate become chips. */
