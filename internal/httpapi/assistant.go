@@ -43,6 +43,9 @@ func WithAssistantSetup(f func(*assistant.Service)) Option {
 func (s *Server) registerAssistantRoutes(mux *routes) {
 	store := assistant.NewStore(s.sync.DB(), s.cfg.DataDir, nil)
 	s.assistant = assistant.NewService(store, &assistant.Loop{Tools: s.agentTools, Sync: s.sync, Log: s.log})
+	if s.assistantSlots != nil {
+		s.assistant.UseSlots(s.assistantSlots)
+	}
 	s.assistantTestLimiter = newRateLimiter(memberTestLimit, memberTestWindow)
 	if s.assistantSetup != nil {
 		s.assistantSetup(s.assistant)

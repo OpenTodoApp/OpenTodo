@@ -2101,7 +2101,7 @@ Choosing a provider or storing a key needs the owner's "Let members bring their 
 
 Photos (change `voice-ramble`): the last message may carry `"images": [{"media_type": "image/jpeg", "data": "<base64>"}]`, at most 4, each at most 3.75 MB after decoding, `media_type` one of `image/jpeg`, `image/png`, `image/webp` and `image/gif`, with bytes that match it. With photos the body may be up to 16 MB; the conversation's text keeps its 256 KB limit. The provider receives them with that message, marked as material, not instructions. The server holds them in memory for the turn only: never on disk, in the database, logs, the audit log or the usage record. An earlier message with `images` is refused, so photos are never resent.
 
-Checks, in order, before any provider request: 404 `not_found` while the assistant is off; 403 `session_required` for API tokens; 409 `encryption_enabled`; 403 `consent_required`; 413 `too_large` (also a photo over 3.75 MB, more than 4 photos or a body over 16 MB); 400 `invalid_input` (naming `images[i]` for a wrong type or data that is not that image, `messages[i]` for photos on an earlier message); 400 `unknown_skill`; 422 `images_unsupported` when the provider of the turn does not read photos (a compatible endpoint without `images`); 429 `assistant_quota` (with `resets_at`; not for a turn on your own key unless the owner turned on `cap_member_keys`); 409 `turn_in_progress` (one turn per person); 503 `assistant_busy` with `Retry-After` (8 turns server-wide); 409 `no_key`. Cookie requests from another origin get 403 `bad_origin`.
+Checks, in order, before any provider request: 404 `not_found` while the assistant is off; 403 `session_required` for API tokens; 409 `encryption_enabled`; 403 `consent_required`; 413 `too_large` (also a photo over 3.75 MB, more than 4 photos or a body over 16 MB); 400 `invalid_input` (naming `images[i]` for a wrong type or data that is not that image, `messages[i]` for photos on an earlier message); 400 `unknown_skill`; 422 `images_unsupported` when the provider of the turn does not read photos (a compatible endpoint without `images`); 429 `assistant_quota` (with `resets_at`; not for a turn on your own key unless the owner turned on `cap_member_keys`); 409 `turn_in_progress` (one turn per person); 503 `assistant_busy` with `Retry-After` (8 turns server-wide; on a host, 8 for all its tenants together); 409 `no_key`. Cookie requests from another origin get 403 `bad_origin`.
 
 The answer is a `text/event-stream`:
 
@@ -2671,7 +2671,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `provider_changed` | 409 | accepting a disclosure that named a provider no longer in effect |
 | `assistant_disabled` | 409 | accepting the disclosure while the assistant is off |
 | `assistant_quota` | 429 | an assistant turn at your monthly token allowance; `resets_at` names the reset date |
-| `assistant_busy` | 503 | 8 assistant turns already running on the server; retry after `Retry-After` |
+| `assistant_busy` | 503 | 8 assistant turns already running on the server (on a host: across all its tenants); retry after `Retry-After` |
 | `private_target` | 400 | the compatible endpoint's base URL resolves only to private addresses and private endpoints are not allowed |
 
 CalDAV (`/dav/`) answers with WebDAV status codes and precondition elements instead of this envelope; MCP tool errors are JSON-RPC errors (see [mcp.md](mcp.md#protocol-details)).

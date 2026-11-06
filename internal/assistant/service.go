@@ -11,9 +11,47 @@ import (
 
 // Concurrency limits (design D5).
 const (
-	// MaxConcurrentTurns is the server-wide cap on running turns.
+	// MaxConcurrentTurns is the server-wide cap on running turns: for a
+	// self-hosted server, and for all the tenants of a host together
+	// (host-assistant-concurrency).
 	MaxConcurrentTurns = 8
 )
+
+// Slots is the server-wide cap on running turns. A self-hosted server's
+// service has its own; a host gives every tenant's service the same one
+// (UseSlots), so the operator's provider keys see at most MaxConcurrentTurns
+// turns however many tenants are open.
+type Slots struct {
+	mu       sync.Mutex
+	inFlight int
+	max      int
+}
+
+// NewSlots returns a cap of n running turns.
+func NewSlots(n int) *Slots { return &Slots{max: n} }
+
+func (l *Slots) take() bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.inFlight >= l.max {
+		return false
+	}
+	l.inFlight++
+	return true
+}
+
+func (l *Slots) give() {
+	l.mu.Lock()
+	l.inFlight--
+	l.mu.Unlock()
+}
+
+// Max is the cap.
+func (l *Slots) Max() int {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.max
+}
 
 // Service ties the store, the providers and the turn limits together.
 type Service struct {
@@ -32,21 +70,30 @@ type Service struct {
 	// stub replaces every provider (package tests only).
 	stub Provider
 
-	mu       sync.Mutex
-	running  map[string]bool
-	inFlight int
-	max      int
+	mu      sync.Mutex
+	running map[string]bool
+	slots   *Slots
 }
 
 // NewService wires a service with the default limits.
 func NewService(store *Store, loop *Loop) *Service {
-	return &Service{Store: store, Loop: loop, running: map[string]bool{}, max: MaxConcurrentTurns}
+	return &Service{Store: store, Loop: loop, running: map[string]bool{}, slots: NewSlots(MaxConcurrentTurns)}
+}
+
+// UseSlots makes the service share a cap with other services (a host's
+// tenants); call it before the first turn.
+func (s *Service) UseSlots(l *Slots) {
+	s.mu.Lock()
+	s.slots = l
+	s.mu.Unlock()
 }
 
 // SetMaxConcurrent changes the server-wide cap (tests).
 func (s *Service) SetMaxConcurrent(n int) {
 	s.mu.Lock()
-	s.max = n
+	s.slots.mu.Lock()
+	s.slots.max = n
+	s.slots.mu.Unlock()
 	s.mu.Unlock()
 }
 
@@ -57,25 +104,25 @@ var (
 )
 
 // Acquire reserves the user's single turn slot and one of the server-wide
-// slots; release frees both.
+// slots (shared by a host's tenants); release frees both.
 func (s *Service) Acquire(userID string) (release func(), err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.running[userID] {
 		return nil, ErrTurnInProgress
 	}
-	if s.inFlight >= s.max {
+	slots := s.slots
+	if !slots.take() {
 		return nil, ErrBusy
 	}
 	s.running[userID] = true
-	s.inFlight++
 	var once sync.Once
 	return func() {
 		once.Do(func() {
 			s.mu.Lock()
 			delete(s.running, userID)
-			s.inFlight--
 			s.mu.Unlock()
+			slots.give()
 		})
 	}, nil
 }
