@@ -44,6 +44,7 @@ One image, `ghcr.io/opentodoapp/opentodo` (linux/amd64 and linux/arm64), or one 
 | Fly.io | [Running on Fly.io](fly.md) |
 | Render | [Running on Render](render.md) |
 | Caliber Node | [Running on Caliber Node](caliber-node.md) |
+| PikaPods (managed hosting) | [Running on PikaPods](pikapods.md) |
 
 The binary runs anywhere with `OPENTODO_DATA_DIR=/var/lib/opentodo ./opentodo`; see [Single binary](../../README.md#single-binary). Verify the image or the download before you run it: [Verifying the image and downloads](docker.md#verifying-the-image-and-downloads).
 

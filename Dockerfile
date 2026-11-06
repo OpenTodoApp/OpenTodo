@@ -25,6 +25,10 @@ COPY internal/origin/testdata/origin_vectors.json /src/internal/origin/testdata/
 COPY internal/sync/testdata/workspaces_fixture.json /src/internal/sync/testdata/workspaces_fixture.json
 COPY internal/filter/testdata/limits.json /src/internal/filter/testdata/limits.json
 COPY internal/notesearch/testdata/vectors.json /src/internal/notesearch/testdata/vectors.json
+# The in-app help is built from the guides (`npm run help`, run by `npm run build`): the
+# Markdown pages and CHANGELOG.md (the release they describe), without their images.
+COPY docs/ /src/docs/
+COPY CHANGELOG.md /src/CHANGELOG.md
 # vite writes to ../internal/web/dist (see web/vite.config.ts)
 RUN mkdir -p /src/internal/web && npm run build
 

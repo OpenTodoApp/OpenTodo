@@ -1,6 +1,7 @@
 // node --test scripts/release/prepare.test.mjs  (make release-prepare; RELEASING.md)
 import assert from 'node:assert/strict'
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
@@ -9,6 +10,7 @@ import { laterRelease, loadFacts, readText, releaseVersion, ROOT } from '../depl
 import { staleCopies } from '../deploy/mirror.mjs'
 import { bumpLine, bumpText, casaosText, changelogText, easypanelText, haChangelogText, prepare, truenasText } from './prepare.mjs'
 import { checkUpgradeFixture, fixtureDir, isNewMinor } from './upgradeFixture.mjs'
+import { fragmentsMarkdown, readFragments } from './fragments.mjs'
 import { checkSecurityReviews, monthsBetween } from './securityReview.mjs'
 import { checkScreenshotFreshness } from './screenshotFreshness.mjs'
 
@@ -72,18 +74,25 @@ const PATCH_RELEASE_FILES = [
   'docs/self-hosting/truenas.md',
   'web/package-lock.json',
   'web/package.json',
-  'web/src/generated/help.json',
 ]
 
 /** A copy of what prepare and the deploy checks read, in a temporary directory. */
 function copyRepo() {
   const dir = mkdtempSync(join(tmpdir(), 'release-prepare-'))
   for (const p of ['.github', 'deploy', 'docs/self-hosting', 'internal', 'scripts', 'skills', 'web/public', 'CHANGELOG.md', 'LICENSE', 'README.md',
-    'web/package.json', 'web/package-lock.json', 'web/src/generated/help.json']) {
+    'web/package.json', 'web/package-lock.json']) {
     mkdirSync(dirname(join(dir, p)), { recursive: true })
     cpSync(join(ROOT, p), join(dir, p), { recursive: true, filter: (src) => !src.includes('node_modules') })
   }
+  // The changelog fragments of this tree are left out: each test writes the ones it needs.
+  mkdirSync(join(dir, 'changelog.d'))
   return dir
+}
+
+/** Writes changelog.d/<rel> in `dir`. */
+function fragment(dir, rel, text) {
+  mkdirSync(dirname(join(dir, 'changelog.d', rel)), { recursive: true })
+  writeFileSync(join(dir, 'changelog.d', rel), text)
 }
 
 const lines = (text) => text.split('\n')
@@ -97,9 +106,14 @@ function changedLines(dir, rel) {
 test('release-prepare: a patch release on this tree makes the edits a hand release made, and passes the deploy checks', async () => {
   const dir = copyRepo()
   try {
+    fragment(dir, 'Fixed/b-fix.md', '- **The second fix.** By name, after a-fix.\n')
+    fragment(dir, 'Fixed/a-fix.md', '**The first fix.** Written without its bullet.\n')
+    fragment(dir, 'Security/a-hole.md', '- **A security fix.**\n')
     const { from, changed } = prepare(NEXT_PATCH, { root: dir, date: '2030-01-02' })
     assert.equal(from, CURRENT)
-    assert.deepEqual(changed, PATCH_RELEASE_FILES)
+    assert.deepEqual(changed, [...PATCH_RELEASE_FILES, 'changelog.d/Fixed/a-fix.md', 'changelog.d/Fixed/b-fix.md', 'changelog.d/Security/a-hole.md'].sort())
+    // The fragments became the release's entries and are gone.
+    assert.deepEqual(readdirSync(join(dir, 'changelog.d'), { recursive: true }).filter((f) => f.endsWith('.md')), [])
     // Every problem the checks find on the new release, none (Umbrel's digest is checked by shape until pin.mjs runs).
     const problems = (await deployCheck(dir)).flatMap((r) => r.errors.map((e) => `${r.name}: ${e}`))
     assert.deepEqual(problems, [])
@@ -129,7 +143,14 @@ test('release-prepare: a patch release on this tree makes the edits a hand relea
       assert.equal(appVersion(dir, rel), `${a}.${b}.${c + 1}`, rel)
     }
     const log = readFileSync(join(dir, 'CHANGELOG.md'), 'utf8')
-    assert.match(log, new RegExp(`^## \\[Unreleased\\]\\n\\n## \\[${NEXT_PATCH.replaceAll('.', '\\.')}\\] - 2030-01-02\\n`, 'm'))
+    const v = NEXT_PATCH.replaceAll('.', '\\.')
+    assert.match(log, new RegExp(`^## \\[Unreleased\\]\\n\\nChanges since the last release are in \\[changelog\\.d/\\][^\\n]*\\n\\n## \\[${v}\\] - 2030-01-02\\n\\n` +
+      '### Security\\n\\n- \\*\\*A security fix\\.\\*\\*\\n\\n### Fixed\\n\\n- \\*\\*The first fix\\.\\*\\* Written without its bullet\\.\\n- \\*\\*The second fix\\.\\*\\* By name, after a-fix\\.\\n\\n' +
+      `## \\[${CURRENT.replaceAll('.', '\\.')}\\] - `, 'm'))
+    // The release notes of the tag are those entries (scripts/release-notes.sh).
+    const notes = execFileSync('sh', [join(ROOT, 'scripts/release-notes.sh'), NEXT_PATCH, join(dir, 'CHANGELOG.md')], { encoding: 'utf8' })
+    assert.ok(notes.trimStart().startsWith('### Security\n\n- **A security fix.**\n\n### Fixed\n\n- **The first fix.**'), notes.slice(0, 200))
+    assert.ok(!notes.includes('changelog.d'), 'the Unreleased pointer is not part of the notes')
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
@@ -194,11 +215,15 @@ test('release-prepare: only the project version contexts change', () => {
 })
 
 test('release-prepare: CHANGELOG.md and the add-on changelog', () => {
-  const log = '# Changelog\n\n## [Unreleased]\n\n### Fixed\n\n- A fix.\n\n## [1.2.3] - 2030-01-01\n\n[Unreleased]: https://x/compare/v1.2.3...HEAD\n[1.2.3]: https://x/compare/v1.2.2...v1.2.3\n'
-  assert.equal(changelogText(log, '1.2.3', '1.2.4', '2030-02-02'),
-    '# Changelog\n\n## [Unreleased]\n\n## [1.2.4] - 2030-02-02\n\n### Fixed\n\n- A fix.\n\n## [1.2.3] - 2030-01-01\n\n' +
+  const log = '# Changelog\n\n## [Unreleased]\n\nSee changelog.d/.\n\n## [1.2.3] - 2030-01-01\n\n[Unreleased]: https://x/compare/v1.2.3...HEAD\n[1.2.3]: https://x/compare/v1.2.2...v1.2.3\n'
+  assert.equal(changelogText(log, '1.2.3', '1.2.4', '2030-02-02', '### Fixed\n\n- A fix.\n'),
+    '# Changelog\n\n## [Unreleased]\n\nSee changelog.d/.\n\n## [1.2.4] - 2030-02-02\n\n### Fixed\n\n- A fix.\n\n## [1.2.3] - 2030-01-01\n\n' +
     '[Unreleased]: https://x/compare/v1.2.4...HEAD\n[1.2.4]: https://x/compare/v1.2.3...v1.2.4\n[1.2.3]: https://x/compare/v1.2.2...v1.2.3\n')
+  // No fragments: the heading alone (the summary is written by hand); an empty Unreleased works too.
+  assert.ok(changelogText(log.replace('See changelog.d/.\n\n', ''), '1.2.3', '1.2.4', '2030-02-02').startsWith('# Changelog\n\n## [Unreleased]\n\n## [1.2.4] - 2030-02-02\n\n## [1.2.3]'))
   assert.throws(() => changelogText(log, '1.2.2', '1.2.3', '2030-02-02'), /already has/)
+  // An entry written under Unreleased by hand would be lost: refused.
+  assert.throws(() => changelogText(log.replace('See changelog.d/.', '### Fixed\n\n- A fix.'), '1.2.3', '1.2.4', '2030-02-02'), /under "## \[Unreleased\]".*changelog\.d/)
   const ha = '# Changelog\n\nIntro.\n\n## 1.2.3\n\n- OpenTodo 1.2.3.\n'
   const out = haChangelogText(ha, '1.2.4', 'https://github.com/o/r')
   assert.equal(out, '# Changelog\n\nIntro.\n\n## 1.2.4\n\n- OpenTodo [1.2.4](https://github.com/o/r/releases/tag/v1.2.4).\n\n## 1.2.3\n\n- OpenTodo 1.2.3.\n')
@@ -214,6 +239,58 @@ test('release-prepare: the CasaOS date, the Easypanel changeLog and the TrueNAS 
   assert.equal(easypanelText(epOut, '1.2.4', '2030-02-03'), epOut)
   assert.throws(() => easypanelText('name: x\n', '1.2.4', '2030-02-02'), /no changeLog/)
   assert.equal(truenasText('app_version: 1.2.4\nversion: 1.0.9\nlib_version: 2.3.17\n'), 'app_version: 1.2.4\nversion: 1.0.10\nlib_version: 2.3.17\n')
+})
+
+test('release-prepare: changelog fragments, assembled in a stable order', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'fragments-'))
+  try {
+    fragment(dir, 'Fixed/zeta.md', '- **Z.** Last by name.\n')
+    fragment(dir, 'Fixed/alpha.md', '- **A.** First by name.\n  Continued.\n')
+    fragment(dir, 'Added/two-bullets.md', '- **One.**\n- **Two.**\n')
+    fragment(dir, 'Removed/old-thing.md', 'The old thing.\nOn two lines.\n')
+    fragment(dir, 'Security/csp.md', '- **CSP.**\n')
+    fragment(dir, 'Changed/x.md', '- **X.**\n')
+    writeFileSync(join(dir, 'changelog.d/README.md'), '# About\n')
+    const { fragments, problems } = readFragments(dir)
+    assert.deepEqual(problems, [])
+    assert.deepEqual(fragments.map((f) => f.rel), ['Security/csp.md', 'Added/two-bullets.md', 'Changed/x.md', 'Removed/old-thing.md', 'Fixed/alpha.md', 'Fixed/zeta.md'].map((r) => `changelog.d/${r}`))
+    assert.equal(fragmentsMarkdown(fragments), '### Security\n\n- **CSP.**\n\n### Added\n\n- **One.**\n- **Two.**\n\n### Changed\n\n- **X.**\n\n' +
+      '### Removed\n\n- The old thing.\n  On two lines.\n\n### Fixed\n\n- **A.** First by name.\n  Continued.\n- **Z.** Last by name.\n')
+    assert.equal(fragmentsMarkdown([]), '')
+    assert.deepEqual(readFragments(join(dir, 'nowhere')), { fragments: [], problems: [] })
+    // Every misplaced or malformed file is named.
+    fragment(dir, 'Fixes/typo.md', '- x\n')
+    fragment(dir, 'Fixed/Upper Case.md', '- x\n')
+    fragment(dir, 'Fixed/empty.md', '\n')
+    fragment(dir, 'Fixed/heading.md', '### Fixed\n\n- x\n')
+    fragment(dir, 'Fixed/sub/deep.md', '- x\n')
+    fragment(dir, 'loose.md', '- x\n')
+    assert.deepEqual(readFragments(dir).problems, [
+      'changelog.d/Fixed/Upper Case.md: the name must be the change name or a slug (a-z, 0-9, -) ending in .md',
+      'changelog.d/Fixed/empty.md: is empty',
+      'changelog.d/Fixed/heading.md: has a heading; a fragment is only the entry, its section is its folder',
+      'changelog.d/Fixed/sub/: no folders inside a section',
+      'changelog.d/Fixes/: unknown section; use one of Security, Added, Changed, Removed, Fixed',
+      'changelog.d/loose.md: a fragment goes in a section folder, changelog.d/<Security|Added|Changed|Removed|Fixed>/<name>.md',
+    ])
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('release-prepare: refuses a bad fragment or an entry under Unreleased, before it writes anything', () => {
+  const dir = copyRepo()
+  try {
+    fragment(dir, 'Fixd/typo.md', '- **A fix.**\n')
+    assert.throws(() => prepare(NEXT_PATCH, { root: dir, date: '2030-01-02' }), /changelog\.d\/Fixd\/: unknown section/)
+    rmSync(join(dir, 'changelog.d/Fixd'), { recursive: true })
+    const log = readFileSync(join(dir, 'CHANGELOG.md'), 'utf8')
+    writeFileSync(join(dir, 'CHANGELOG.md'), log.replace('## [Unreleased]\n', '## [Unreleased]\n\n### Fixed\n\n- A fix written by hand.\n'))
+    assert.throws(() => prepare(NEXT_PATCH, { root: dir, date: '2030-01-02' }), /2 line\(s\) under "## \[Unreleased\]"/)
+    for (const rel of PATCH_RELEASE_FILES.filter((f) => f !== 'CHANGELOG.md')) assert.equal(readFileSync(join(dir, rel), 'utf8'), readFileSync(join(ROOT, rel), 'utf8'), rel)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
 })
 
 test('release-prepare: refuses a version that is not x.y.z or not newer, before it writes anything', () => {

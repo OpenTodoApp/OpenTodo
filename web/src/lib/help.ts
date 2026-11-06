@@ -1,5 +1,6 @@
 // The in-app Help (OpenSpec change `user-documentation`, design D5): the user guide
-// of this version, generated from docs/ by `make docs` into generated/help.json.
+// of this version, generated from docs/ into generated/help.json (not committed) by
+// `npm run help`, which `npm run build`, `dev`, `test` and `typecheck` run first.
 // It is part of the lazy Help chunk, loaded only when Help opens, and precached by
 // the service worker like every other chunk, so it works offline.
 import data from '../generated/help.json'
