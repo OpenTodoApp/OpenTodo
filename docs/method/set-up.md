@@ -10,7 +10,7 @@ order: 10
 
 ## 1. Choose how you work
 
-In **Settings → You → How you work** (or in the start guide on your first visit):
+In **Settings → Account → Profile → How you work** (or in the start guide on your first visit):
 
 - **Simple lists**: just your tasks and lists, nothing else.
 - **Lists with method hints**: your sidebar stays as it is, and each screen gets a short hint on its purpose in the method, with a link to this guide.

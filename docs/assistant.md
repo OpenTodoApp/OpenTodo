@@ -44,9 +44,9 @@ Type a question and press <kbd>Enter</kbd>. When you ask for changes, the answer
 
 After applying, **Undo** puts back every value the proposal changed and moves tasks it created to the Trash, in one step, also offline. See [Undo](assistant-ask.md#undo).
 
-## Apply small changes without review
+## Small changes without review
 
-A switch in **Settings → Integrations → Assistant**, off by default, applies a proposal that only changes completion, due dates, priority or labels of at most 3 existing tasks at once, with an Undo notice. See [Assistant settings](assistant-settings.md#apply-small-changes-without-review).
+A switch in **Settings → Integrations → Assistant**, off by default, applies a proposal that only changes completion, due dates, priority or labels of at most 3 existing tasks at once, with an Undo notice. See [Assistant settings](assistant-settings.md#small-changes-without-review).
 
 ## Conversations stay on this device
 

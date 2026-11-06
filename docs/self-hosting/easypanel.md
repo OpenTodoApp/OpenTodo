@@ -49,4 +49,4 @@ Every other `OPENTODO_*` variable from the [configuration table](https://github.
 
 The service names one release (`0.22.0`), never a moving tag, so it changes only when you change it: set the image to the new release under **Source** and **Deploy**. Migrations run on start and there are no down-migrations, so back up first.
 
-Everything OpenTodo stores is in the `data` volume. Turn on scheduled backups in **Settings → Server** (written to `backups/` in the same volume, or to S3 or WebDAV) to get copies off the server. See [Backups](../backups.md).
+Everything OpenTodo stores is in the `data` volume. Turn on scheduled backups in **Settings → Server → Backups** (written to `backups/` in the same volume, or to S3 or WebDAV) to get copies off the server. See [Backups](../backups.md).

@@ -99,4 +99,4 @@ To stay on one release line, use `ghcr.io/opentodoapp/opentodo:0.22` (or one ver
 
 ## Backups
 
-Everything OpenTodo stores (the database, attachments and its own backups) is in `/volume1/docker/opentodo/data`. Back up the `docker/opentodo` folder with **Hyper Backup**, or take snapshots of the `docker` shared folder with **Snapshot Replication** (Btrfs volumes). For a copy that is consistent while OpenTodo runs, turn on scheduled backups in OpenTodo's **Settings → Server**: they are written to `data/backups` (which Hyper Backup then picks up) or to S3 or WebDAV. See [Backups](../backups.md).
+Everything OpenTodo stores (the database, attachments and its own backups) is in `/volume1/docker/opentodo/data`. Back up the `docker/opentodo` folder with **Hyper Backup**, or take snapshots of the `docker` shared folder with **Snapshot Replication** (Btrfs volumes). For a copy that is consistent while OpenTodo runs, turn on scheduled backups in OpenTodo's **Settings → Server → Backups**: they are written to `data/backups` (which Hyper Backup then picks up) or to S3 or WebDAV. See [Backups](../backups.md).

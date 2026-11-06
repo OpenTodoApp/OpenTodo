@@ -1,7 +1,6 @@
 package importer
 
 import (
-	"bytes"
 	"encoding/csv"
 	"errors"
 	"fmt"
@@ -52,12 +51,12 @@ func (asanaProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 	if err != nil {
 		return nil, err
 	}
-	r := csv.NewReader(bytes.NewReader(data))
+	r := newCSVReader(data)
 	r.FieldsPerRecord = -1
 	r.LazyQuotes = true
 	header, err := r.Read()
 	if err != nil {
-		return nil, &FileError{fmt.Sprintf("cannot read the CSV header: %v", err)}
+		return nil, csvFailure(err, "header")
 	}
 	col := map[string]int{}
 	var custom []string
@@ -85,7 +84,7 @@ func (asanaProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 				errRows = append(errRows, Row{Line: pe.StartLine, Kind: KindTask, Err: fmt.Sprintf("unreadable CSV record: %v", pe.Err)})
 				continue
 			}
-			return nil, &FileError{fmt.Sprintf("cannot read the CSV file: %v", err)}
+			return nil, csvFailure(err, "file")
 		}
 		if allBlank(rec) {
 			continue
