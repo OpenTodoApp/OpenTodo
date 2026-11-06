@@ -46,3 +46,7 @@ gosec.sarif
 /tmp/
 # extension-v2: written from extension/manifest.src.json for loading the folder unpacked
 /extension/manifest.json
+# The in-app help, built from docs/ by the web app's scripts (`npm run help`) before
+# build, dev, test and typecheck: not committed, so docs edits in parallel pull
+# requests never conflict over it.
+/web/src/generated/help.json

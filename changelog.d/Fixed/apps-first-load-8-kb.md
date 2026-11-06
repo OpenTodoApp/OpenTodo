@@ -1,0 +1,1 @@
+- **The app's first load is about 8 KB smaller.** The QR code of the two-factor enrolment wizard and its encoder now load when the wizard opens instead of with every first visit; a square of the same size holds its place until it is drawn.

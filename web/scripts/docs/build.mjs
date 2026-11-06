@@ -1,14 +1,16 @@
 // Builds the documentation (OpenSpec change `user-documentation`) from docs/**:
 //   dist/docs-site/**          the docs website (pages, search.json, docs.css, docs.js, images), not committed
-//   web/src/generated/help.json the user guide for the in-app Help view
+//   web/src/generated/help.json the user guide for the in-app Help view, not committed
 //   docs/keyboard.md           its shortcut tables, regenerated from the app
 //   docs/roadmap.md            its tables, from ROADMAP.md, openspec/ and CHANGELOG.md (docs-1-0 D6)
 //
 //   node scripts/docs/build.mjs [--site DIR]   (from web/; `make docs` from the root)
+//   node scripts/docs/build.mjs --help-only    only help.json (`npm run help`; run before build, dev, test)
 //
 // DIR is the docs website's output, repository-relative (default dist/docs-site).
 // The site is not committed: the site bundle carries it to the website
-// repository (OpenSpec site-bundle D6). The in-app help and the keyboard guide are.
+// repository (OpenSpec site-bundle D6), and neither is the in-app help: the web
+// app's scripts build it first (`--help-only`). The keyboard and roadmap guides are.
 //
 // The output is deterministic: running it twice changes nothing.
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
@@ -110,15 +112,28 @@ export async function buildAll(repoRoot, { site = OUT_SITE } = {}) {
 
   // In-app help: user pages only, with the same index.
   const user = sorted.filter((p) => p.fm.audience === 'user')
+  const help = helpBundle(user, (p) => rendered.get(p.rel).app, version.release)
+  files.set(OUT_HELP, JSON.stringify(help) + '\n')
+  const screenIds = await loadScreenIds(repoRoot)
+  if (screenIds) files.set(OUT_SCREENS, JSON.stringify(screenIds, null, 2) + '\n')
+
+  return { files, pages, sorted, rendered, problems, screenIds }
+}
+
+/**
+ * The in-app help (web/src/generated/help.json): the user pages, rendered for the app, with
+ * their screen ids and the search index. `app(page)` is the page's app rendering.
+ */
+export function helpBundle(user, app, release) {
   const screens = {}
   for (const p of user) for (const s of p.fm.screens ?? []) {
     const [id, anchor = ''] = s.split('#')
     screens[id] = { page: p.slug, anchor }
   }
   const help = {
-    version: version.release,
+    version: release,
     pages: user.map((p) => {
-      const r = rendered.get(p.rel).app
+      const r = app(p)
       return { slug: p.slug, title: p.fm.title, summary: p.fm.summary, section: p.fm.section ?? 'Guides', order: p.fm.order,
         toc: r.headings.filter((h) => h.depth === 2).map((h) => ({ id: h.id, text: h.text })), html: withoutImages(r.html) }
     }),
@@ -127,13 +142,25 @@ export async function buildAll(repoRoot, { site = OUT_SITE } = {}) {
   }
   for (const p of user) {
     const at = help.index.pages.push({ t: p.fm.title, u: p.slug }) - 1
-    for (const s of rendered.get(p.rel).app.sections) help.index.s.push([at, s.heading, s.id, s.text.slice(0, TEXT_CAP)])
+    for (const s of app(p).sections) help.index.s.push([at, s.heading, s.id, s.text.slice(0, TEXT_CAP)])
   }
-  files.set(OUT_HELP, JSON.stringify(help) + '\n')
-  const screenIds = await loadScreenIds(repoRoot)
-  if (screenIds) files.set(OUT_SCREENS, JSON.stringify(screenIds, null, 2) + '\n')
+  return help
+}
 
-  return { files, pages, sorted, rendered, problems, screenIds }
+/**
+ * Only the in-app help, from docs/ and CHANGELOG.md alone: what `npm run build`, `npm test`,
+ * `npm run dev` and the image build run first, because help.json is not committed (it changed
+ * with every docs edit and made parallel pull requests conflict). The generated blocks of the
+ * keyboard and roadmap guides are read as committed; `make docs-check` keeps them current, so
+ * this is byte for byte the help.json of a full build.
+ */
+export function buildHelp(repoRoot) {
+  const pages = loadPages(join(repoRoot, 'docs'))
+  const sorted = sortPages(pages.filter((p) => !p.errors.length || p.fm.title))
+  const audienceOf = (rel) => pages.find((p) => p.rel === rel)?.fm.audience
+  const user = sorted.filter((p) => p.fm.audience === 'user')
+  const app = new Map(user.map((p) => [p.rel, renderPage(p.body, { rel: p.rel, repoRoot, audienceOf }, 'app')]))
+  return JSON.stringify(helpBundle(user, (p) => app.get(p.rel), versionInfo(repoRoot).release)) + '\n'
 }
 
 /**
@@ -209,7 +236,15 @@ export function siteArg(argv) {
   return i >= 0 && argv[i + 1] ? argv[i + 1].replace(/\/+$/, '') : OUT_SITE
 }
 
-if (process.argv[1] === here) {
+if (process.argv[1] === here && process.argv.includes('--help-only')) {
+  const repoRoot = repoRootFrom(here)
+  const out = join(repoRoot, OUT_HELP)
+  const text = buildHelp(repoRoot)
+  if (!existsSync(out) || readFileSync(out, 'utf8') !== text) {
+    mkdirSync(dirname(out), { recursive: true })
+    writeFileSync(out, text)
+  }
+} else if (process.argv[1] === here) {
   const repoRoot = repoRootFrom(here)
   const site = siteArg(process.argv)
   const { files, problems, sorted } = await buildAll(repoRoot, { site })

@@ -1,0 +1,1 @@
+- **Readable text on the iPhone app's first screen.** The "Server address" heading, the line under it and the error messages were light grey, a little under the contrast small text needs; they now use the full text colour.

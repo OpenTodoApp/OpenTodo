@@ -1,0 +1,1 @@
+- **Single-key shortcuts can be turned off.** If you use speech input or press keys by accident, turn off **Settings → General → Keyboard → Single-key shortcuts** on that device: a letter, number or symbol on its own (q, j, 1, ?, g then a key) then does nothing, while shortcuts with Ctrl, Alt or ⌘ and the arrow, Enter, Escape and Delete keys keep working.

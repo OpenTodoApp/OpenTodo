@@ -29,10 +29,10 @@ Reference: [Architecture](docs/architecture.md), [Sync protocol](docs/sync.md), 
 
 1. Open an issue or pick one up, so the scope is agreed.
 2. For a behaviour change, plan it as an OpenSpec change (`/opsx:propose "<idea>"` with Claude Code, or by hand).
-3. Implement it, ticking `tasks.md` as you go. Update the user docs in `docs/` with the behaviour, and run `make docs`; commit the regenerated `web/src/generated/help.json`, never edit it by hand.
+3. Implement it, ticking `tasks.md` as you go. Update the user docs in `docs/` with the behaviour, and run `make docs-check`. The in-app help (`web/src/generated/help.json`) is built from `docs/` by the web app's scripts and is not committed.
 4. Text people read goes through `t()` and into every catalog ([Translating](docs/translating.md)).
 5. Run `make check` ([what it runs](docs/contributing/tests-and-checks.md)).
-6. Open the pull request. The change is archived in the pull request that finishes it, with a `CHANGELOG.md` line.
+6. Open the pull request. The change is archived in the pull request that finishes it, with its changelog entry as a file of its own, `changelog.d/<Section>/<change-name>.md` ([changelog.d/README.md](changelog.d/README.md)); `CHANGELOG.md` itself is only edited when a release is cut.
 
 Project templates live in `templates/`; [`templates/README.md`](templates/README.md) has the format and the bar.
 
