@@ -72,10 +72,26 @@ func TestEveryRouteDeclaresAPolicy(t *testing.T) {
 		}
 	}
 	// Direct registrations bypass the policy: only policy.go may call
-	// ServeMux.Handle, and nothing calls HandleFunc.
+	// ServeMux.Handle, and nothing calls HandleFunc. The route packages under
+	// internal/httpapi (davroutes, maproutes, speech, and any later one)
+	// register through an httpx.Router, whose Handle takes a policy as well;
+	// a two-argument Handle there is a ServeMux call and bypasses it.
+	// httpx defines the policy and the router, so it is the one exception.
 	files, err := filepath.Glob("*.go")
 	if err != nil {
 		t.Fatal(err)
+	}
+	sub, err := filepath.Glob("*/*.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, f := range sub {
+		if dir := filepath.Dir(f); dir != "httpx" && dir != "testdata" {
+			files = append(files, f)
+		}
+	}
+	if len(sub) == 0 {
+		t.Fatal("no route packages found under internal/httpapi")
 	}
 	fset := gotoken.NewFileSet()
 	for _, f := range files {
