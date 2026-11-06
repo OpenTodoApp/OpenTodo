@@ -19,7 +19,8 @@ export type Rule =
   | Ends & { kind: 'weekdays'; days: number; afterCompletion: false }
   | Ends & { kind: 'monthDay'; monthDay: number; afterCompletion: false }
   | Ends & { kind: 'lastDay'; afterCompletion: false }
-  | Ends & { kind: 'lastWeekday'; afterCompletion: false }
+  /** The ordinal-th Monday-to-Friday day of the month (1–4, or -1 for the last). */
+  | Ends & { kind: 'workday'; ordinal: number; afterCompletion: false }
   | Ends & { kind: 'nthWeekday'; ordinal: number; weekday: number; afterCompletion: false }
 
 interface Ends {
@@ -101,7 +102,7 @@ function parseOrThrow(input: string): Rule {
     rule = { kind: 'interval', interval: n, unit: singular as Unit, afterCompletion: false, ...ends }
     i += 2
   } else if (tok === 'last' && (peek(1) === 'day' || peek(1) === 'weekday')) {
-    rule = peek(1) === 'day' ? { kind: 'lastDay', afterCompletion: false, ...ends } : { kind: 'lastWeekday', afterCompletion: false, ...ends }
+    rule = peek(1) === 'day' ? { kind: 'lastDay', afterCompletion: false, ...ends } : { kind: 'workday', ordinal: -1, afterCompletion: false, ...ends }
     i += 2
   } else if (has(WEEKDAY_ALIASES, tok)) {
     let days = 0
@@ -123,7 +124,12 @@ function parseOrThrow(input: string): Rule {
     const num = numericOrdinal(tok)
     if (word === null && num === null) throw new RuleError(t('unknown pattern "{word}"', { word: tok }))
     const next = peek(1)
-    if (has(WEEKDAY_ALIASES, next)) {
+    if (next === 'weekday') {
+      const ordinal = num ?? word ?? 0
+      if (ordinal > 4) throw new RuleError(t('weekday ordinal must be 1st to 4th or last'))
+      rule = { kind: 'workday', ordinal, afterCompletion: false, ...ends }
+      i += 2
+    } else if (has(WEEKDAY_ALIASES, next)) {
       // One of the two is set (checked above).
       const ordinal = num ?? word ?? 0
       if (ordinal > 4) throw new RuleError(t('weekday ordinal must be 1st to 4th or last'))
@@ -175,8 +181,8 @@ export function canonicalOf(r: Rule): string {
     case 'lastDay':
       s += 'last day'
       break
-    case 'lastWeekday':
-      s += 'last weekday'
+    case 'workday':
+      s += `${r.ordinal < 0 ? 'last' : `${r.ordinal}${ordinalSuffix(r.ordinal)}`} weekday`
       break
     case 'nthWeekday':
       s += `${r.ordinal < 0 ? 'last' : `${r.ordinal}${ordinalSuffix(r.ordinal)}`} ${WEEKDAY_NAMES[r.weekday]}`
@@ -259,9 +265,18 @@ function step(r: Rule & { kind: 'interval' }, anchor: number, k: number): number
   }
 }
 
-function lastWeekdayOf(y: number, m: number): number {
-  let z = daysFromCivil(y, m, monthLen(y, m))
-  while (isoWeekday(z) > 5) z--
+/** The `ordinal`-th Monday-to-Friday day of month m (1–4, or -1 for the last); weekends are not counted. */
+function workdayOf(y: number, m: number, ordinal: number): number {
+  if (ordinal < 0) {
+    let z = daysFromCivil(y, m, monthLen(y, m))
+    while (isoWeekday(z) > 5) z--
+    return z
+  }
+  let z = daysFromCivil(y, m, 1) - 1
+  for (let n = 0; n < ordinal; ) {
+    z++
+    if (isoWeekday(z) <= 5) n++
+  }
   return z
 }
 
@@ -288,7 +303,7 @@ function inMonth(r: Rule, y: number, m: number): number {
   switch (r.kind) {
     case 'monthDay': return daysFromCivil(y, m, Math.min(r.monthDay, monthLen(y, m)))
     case 'lastDay': return daysFromCivil(y, m, monthLen(y, m))
-    case 'lastWeekday': return lastWeekdayOf(y, m)
+    case 'workday': return workdayOf(y, m, r.ordinal)
     case 'nthWeekday': return nthWeekdayOf(y, m, r.ordinal, r.weekday)
     default: throw new Error('recurrence: not a month pattern')
   }
@@ -390,6 +405,6 @@ export function previewOccurrences(rule: Rule | string, due: string | null, toda
 /** Example rules offered as suggestions in the detail panel (all documented in docs/recurrence.md). */
 export const RULE_SUGGESTIONS = [
   'every day', 'every weekday', 'every week', 'every 2 weeks', 'every month', 'every 3 months', 'every year',
-  'every monday', 'every mon, wed, fri', 'every 15th', 'every last day', 'every last weekday',
+  'every monday', 'every mon, wed, fri', 'every 15th', 'every last day', 'every first weekday', 'every last weekday',
   'every 2nd tuesday', 'every last friday', 'every 3 days after completion', 'every week for 10 times',
 ]
