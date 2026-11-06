@@ -2,9 +2,9 @@
 
 ## 1. Screens and coverage
 
-- [ ] 1.1 `web/src/app/screens.ts` with `SCREEN_IDS` and a unit test that every router route and Settings section is listed; verify `npm test`
-- [ ] 1.2 The docs build writes `web/src/generated/screen-ids.json`, and `docs:check` fails for an undeclared id; add `screens:` front matter to the pages that lack it until the check passes; verify `make docs-check`
-- [ ] 1.3 An `#export` heading check for `docs/switch/*.md`; verify `make docs-check` fails on a guide without it
+- [x] 1.1 `web/src/app/screens.ts` with `SCREEN_IDS` and a unit test that every router route and Settings section is listed; verify `npm test`
+- [x] 1.2 The docs build writes `web/src/generated/screen-ids.json`, and `docs:check` fails for an undeclared id; add `screens:` front matter to the pages that lack it until the check passes; verify `make docs-check`
+- [x] 1.3 An `#export` heading check for `docs/switch/*.md`; verify `make docs-check` fails on a guide without it
 
 ## 2. Self-hosting
 
