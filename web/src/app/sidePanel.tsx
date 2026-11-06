@@ -113,7 +113,9 @@ const clampWidth = (px: number) => {
 
 /**
  * The handle on the docked panel's left edge (D3): drag to resize, or focus it and use
- * ← and → (Shift for larger steps); Home or a double click restores the default width.
+ * ← and → (Shift for larger steps); Home restores the default width. A click without
+ * dragging switches between the widest and the default width (accessibility-aa D3,
+ * WCAG 2.2 2.5.7: one pointer, no drag).
  */
 export function PanelResizeHandle() {
   const [width, setWidth] = useState<number | null>(null)
@@ -132,12 +134,18 @@ export function PanelResizeHandle() {
     const startX = e.clientX
     const startW = measure(el)
     el.setPointerCapture?.(e.pointerId)
-    const move = (ev: PointerEvent) => apply(startW + (startX - ev.clientX), el, false)
+    let moved = false
+    const move = (ev: PointerEvent) => {
+      if (!moved && Math.abs(startX - ev.clientX) < 4) return
+      moved = true
+      apply(startW + (startX - ev.clientX), el, false)
+    }
     const up = (ev: PointerEvent) => {
       el.removeEventListener('pointermove', move)
       el.removeEventListener('pointerup', up)
       el.removeEventListener('pointercancel', up)
-      apply(startW + (startX - ev.clientX), el)
+      if (moved) apply(startW + (startX - ev.clientX), el)
+      else if (ev.type === 'pointerup') apply(startW >= panelWidthBounds().max - 1 ? null : panelWidthBounds().max, el)
     }
     el.addEventListener('pointermove', move)
     el.addEventListener('pointerup', up)
@@ -160,7 +168,7 @@ export function PanelResizeHandle() {
     <div role="separator" aria-orientation="vertical" tabIndex={0} aria-label={t('Resize the task panel')}
       ref={self} aria-valuenow={width ?? Math.round(min)} aria-valuemin={Math.round(min)} aria-valuemax={Math.round(max)}
       aria-valuetext={t('{n} pixels wide', { n: width ?? Math.round(min) })}
-      onPointerDown={onPointerDown} onKeyDown={onKeyDown} onDoubleClick={(e) => apply(null, e.currentTarget)}
+      onPointerDown={onPointerDown} onKeyDown={onKeyDown} data-drag-id="panel-resizer"
       onFocus={(e) => setWidth(measure(e.currentTarget))}
       className="panel-resize absolute inset-y-0 left-0 z-10 hidden w-2 -translate-x-1/2 cursor-col-resize touch-none lg:block"
       data-panel-resize />

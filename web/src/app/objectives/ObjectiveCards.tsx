@@ -1,13 +1,14 @@
 // Objective cards (OpenSpec change plan-objectives, design D3 and D4): one line
 // each, a done checkbox and the title, edited in place. On a focused title Enter
 // edits, Space toggles done, Delete asks in place before dropping (with Undo),
-// Alt+Up/Down moves it; cards also reorder by drag. A group ends with Add while
+// Alt+Up/Down moves it; cards also reorder by drag, or with Move up and Move down
+// from the handle shown on hover or focus (accessibility-aa D3). A group ends with Add while
 // fewer than five are open. No dialog: every editor is inline.
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { t } from '../../lib/i18n'
 import { MAX_OBJECTIVE_TITLE, OBJECTIVE_COUNTDOWN } from '../../lib/objectives'
 import type { Objective } from '../../lib/types'
-import { Button, Tooltip } from '../../ui'
+import { Button, MoveHandle, Tooltip } from '../../ui'
 
 export interface ObjectiveActions {
   onToggle: (o: Objective, done: boolean) => void
@@ -59,10 +60,12 @@ export function ObjectiveInput({ initial = '', label, onCommit, onCancel }: {
   )
 }
 
-function ObjectiveCard({ o, index, readOnly, actions, dragging, onDragging, hintId }: {
+function ObjectiveCard({ o, index, count, readOnly, actions, dragging, onDragging, hintId }: {
   hintId?: string
   o: Objective
   index: number
+  /** Cards in the group: Move up and Move down know the ends. */
+  count: number
   readOnly?: boolean
   actions: ObjectiveActions
   dragging: string | null
@@ -88,7 +91,7 @@ function ObjectiveCard({ o, index, readOnly, actions, dragging, onDragging, hint
     if (e.key === 'Enter') e.stopPropagation()
   }
   return (
-    <li data-objective={o.id} data-objective-done={done || undefined}
+    <li data-objective={o.id} data-objective-done={done || undefined} data-drag-id="objective"
       className={`group flex min-h-9 items-center gap-2 rounded-control px-2 ${dragging === o.id ? 'bg-sunken' : ''} ${mode === 'view' ? 'hover:bg-sunken' : ''}`}
       draggable={!readOnly && mode === 'view'}
       onDragStart={(e) => { e.dataTransfer.setData(DRAG_TYPE, o.id); e.dataTransfer.effectAllowed = 'move'; onDragging(o.id) }}
@@ -113,6 +116,12 @@ function ObjectiveCard({ o, index, readOnly, actions, dragging, onDragging, hint
           aria-describedby={readOnly ? undefined : hintId}
           className={`min-w-0 flex-1 truncate rounded-chip text-left text-body focus-visible:outline-2 focus-visible:outline-focus ${done ? 'text-muted line-through' : 'text-default'} ${readOnly ? 'cursor-default' : ''}`}
           onClick={() => { if (!readOnly) setMode('edit') }} onKeyDown={onKey}>{title}</button></Tooltip>
+      )}
+      {/* The card drags; with one pointer and no drag, its handle offers Move up and Move down
+          (accessibility-aa D3, WCAG 2.5.7), shown on hover or focus like a row's actions. */}
+      {!readOnly && mode === 'view' && count > 1 && (
+        <MoveHandle label={t('Move {name}', { name: title })} first={index === 0} last={index === count - 1}
+          onMove={(by) => actions.onMove(o, by)} className="hover-reveal text-faint" />
       )}
     </li>
   )
@@ -145,7 +154,7 @@ export function ObjectiveGroup({ heading, dates, period, items, canAdd, readOnly
       </h3>
       {items.length > 0 && (
         <ul className="mt-1">
-          {items.map((o, i) => <ObjectiveCard key={o.id} o={o} index={i} readOnly={readOnly} actions={actions} dragging={dragging} onDragging={setDragging} hintId={hintId} />)}
+          {items.map((o, i) => <ObjectiveCard key={o.id} o={o} index={i} count={items.length} readOnly={readOnly} actions={actions} dragging={dragging} onDragging={setDragging} hintId={hintId} />)}
         </ul>
       )}
       {items.length === 0 && readOnly && <p className="mt-1 px-2 text-meta text-faint">{t('No objectives yet.')}</p>}

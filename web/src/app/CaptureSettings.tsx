@@ -47,7 +47,7 @@ export function CaptureView({ code, linkRef, copied, onCopy }: {
       } control={
         <>
           <Tooltip label={t('Drag to your bookmarks bar')}>
-            <a ref={linkRef} draggable className="ui-btn ui-btn--primary ui-btn--md cursor-grab" onClick={(e) => e.preventDefault()}>
+            <a data-drag-id="bookmarklet" ref={linkRef} draggable className="ui-btn ui-btn--primary ui-btn--md cursor-grab" onClick={(e) => e.preventDefault()}>
               <Icon name="plus" />{t('Add to OpenTodo')}
             </a>
           </Tooltip>
