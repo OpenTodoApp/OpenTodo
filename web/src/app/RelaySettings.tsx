@@ -7,7 +7,7 @@ import { api } from '../lib/api'
 import { formatInstant } from '../lib/dates'
 import { useEncryption } from '../lib/e2ee'
 import { formatNumber, t } from '../lib/i18n'
-import { DAY_CAP, HOUR_CAP, onRelayChange, optIn, optOut, relaySnapshot, setConfirmWrites, type RecentCall, type RelayDevice } from '../lib/relay'
+import { DAY_CAP, HOUR_CAP, onRelayChange, optIn, optOut, relaySnapshot, setConfirmReads, setConfirmWrites, type RecentCall, type RelayDevice } from '../lib/relay'
 import { rowCopy } from '../lib/settingsCopy'
 import { messageOf } from '../lib/errorText'
 
@@ -16,12 +16,14 @@ export interface RelayViewProps {
   optedIn: boolean
   connected: boolean
   confirmWrites: boolean
+  confirmReads?: boolean
   devices: RelayDevice[]
   recent: RecentCall[]
   busy: boolean
   error: string | null
   onToggle: (on: boolean) => void
   onConfirmWrites: (on: boolean) => void
+  onConfirmReads?: (on: boolean) => void
 }
 
 function outcomeLabel(o: RecentCall['outcome']): string {
@@ -55,6 +57,11 @@ export function RelayView(p: RelayViewProps) {
           description={<span id="relay-confirm-help">{rowCopy('assistants', 'relayConfirm').description}</span>}
           control={<Switch checked={p.confirmWrites} onChange={p.onConfirmWrites} label={rowCopy('assistants', 'relayConfirm').label} hideLabel describedBy="relay-confirm-help" />} />
       )}
+      {p.optedIn && (
+        <SettingRow label={rowCopy('assistants', 'relayConfirmReads').label}
+          description={<span id="relay-confirm-reads-help">{rowCopy('assistants', 'relayConfirmReads').description}</span>}
+          control={<Switch checked={!!p.confirmReads} onChange={(on) => p.onConfirmReads?.(on)} label={rowCopy('assistants', 'relayConfirmReads').label} hideLabel describedBy="relay-confirm-reads-help" />} />
+      )}
       {p.devices.length > 0 && (
         <SettingRow label={rowCopy('assistants', 'relayDevices').label} control={(
           <ul className="space-y-1 text-meta text-default" aria-label={rowCopy('assistants', 'relayDevices').label}>
@@ -74,7 +81,7 @@ export function RelayView(p: RelayViewProps) {
           <ul className="mt-2 space-y-1 text-meta">
             {p.recent.map((c, i) => (
               <li key={i} className="flex flex-wrap justify-between gap-2 text-default">
-                <span><code className="font-mono">{c.tool}</code> · {c.op === 'encrypt' ? t('{n, plural, one {# value written} other {# values written}}', { n: c.count }) : t('{n, plural, one {# value read} other {# values read}}', { n: c.count })}</span>
+                <span>{c.token && <>{c.token} · </>}<code className="font-mono">{c.tool}</code> · {c.op === 'encrypt' ? t('{n, plural, one {# value written} other {# values written}}', { n: c.count }) : t('{n, plural, one {# value read} other {# values read}}', { n: c.count })}</span>
                 <span className="text-muted">{outcomeLabel(c.outcome)} · {formatInstant(c.at, 'datetime')}</span>
               </li>
             ))}
@@ -89,9 +96,13 @@ export function RelayView(p: RelayViewProps) {
  * The footer mark while this device answers an AI connector (design D10: no
  * new row), or runs one of the account's routines (routines-ai-step D7).
  */
-export function RelayIndicatorView({ busy, running = null }: { busy: boolean; running?: string | null }) {
+export function RelayIndicatorView({ busy, running = null, answering = null }: { busy: boolean; running?: string | null; answering?: { tool: string; token?: string } | null }) {
   if (!busy && running === null) return null
-  const label = running !== null ? t('Running {name}…', { name: running || t('Untitled routine') }) : t('Answering an AI connector')
+  // The call being answered, as the server named it (relay-request-transparency D3).
+  const answeringLabel = answering
+    ? (answering.token ? t('Answering {token}: {tool}', { token: answering.token, tool: answering.tool }) : t('Answering an AI connector: {tool}', { tool: answering.tool }))
+    : t('Answering an AI connector')
+  const label = running !== null ? t('Running {name}…', { name: running || t('Untitled routine') }) : answeringLabel
   return (
     <Tooltip label={label} side="top">
       <span role="status" tabIndex={0} className="inline-flex size-8 items-center justify-center rounded-control text-accent" data-relay-indicator>
@@ -103,8 +114,8 @@ export function RelayIndicatorView({ busy, running = null }: { busy: boolean; ru
 }
 
 export function RelayIndicator() {
-  const { busy, running } = useSyncExternalStore(onRelayChange, relaySnapshot, relaySnapshot)
-  return <RelayIndicatorView busy={busy} running={running?.name ?? null} />
+  const { busy, running, answering } = useSyncExternalStore(onRelayChange, relaySnapshot, relaySnapshot)
+  return <RelayIndicatorView busy={busy} running={running?.name ?? null} answering={answering} />
 }
 
 /** The relay settings of this device, for an encrypted account. */
@@ -125,7 +136,8 @@ export function RelaySettings() {
     void (on ? optIn() : optOut()).then(refresh, (err: unknown) => setError(messageOf(err))).finally(() => setBusy(false))
   }
   return (
-    <RelayView unlocked={enc.unlocked} optedIn={relay.optedIn} connected={relay.connected} confirmWrites={relay.confirmWrites}
-      devices={devices} recent={relay.recent} busy={busy} error={error} onToggle={onToggle} onConfirmWrites={(on) => void setConfirmWrites(on)} />
+    <RelayView unlocked={enc.unlocked} optedIn={relay.optedIn} connected={relay.connected} confirmWrites={relay.confirmWrites} confirmReads={relay.confirmReads}
+      devices={devices} recent={relay.recent} busy={busy} error={error} onToggle={onToggle} onConfirmWrites={(on) => void setConfirmWrites(on)}
+      onConfirmReads={(on) => void setConfirmReads(on)} />
   )
 }

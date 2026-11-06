@@ -7166,5 +7166,14 @@
   "Move to top": "移到顶部",
   "Move to bottom": "移到底部",
   "Move {name}": "移动“{name}”",
-  "Accessibility": "无障碍"
+  "Accessibility": "无障碍",
+  "An AI connector wants to read your text": "AI 连接器想要读取你的文本",
+  "An assistant asks to read this with {tool}:": "助手请求使用 {tool} 读取以下内容：",
+  "{token} asks to read this with {tool}:": "{token} 请求使用 {tool} 读取以下内容：",
+  "Answering an AI connector: {tool}": "正在响应 AI 连接器：{tool}",
+  "Answering {token}: {tool}": "正在响应 {token}：{tool}",
+  "Confirm reads first": "先确认读取",
+  "Each request to read your text shows here before this device sends it.": "每个读取你文本的请求都会先在这里显示，然后此设备才会发送。",
+  "Text to send": "要发送的文本",
+  "{n, plural, one {and # more value} other {and # more values}}": "{n, plural, other {还有 # 个值}}"
 }
