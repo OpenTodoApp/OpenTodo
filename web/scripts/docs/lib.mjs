@@ -107,7 +107,7 @@ export const ENTRIES = [
   { key: 'self-host', title: 'Self-host', line: 'Run your own server: install, update, back up and connect.', groups: ['Self-hosting'], featured: ['self-hosting/docker', 'backups', 'self-hosting/sso', 'self-hosting/outgoing-email', 'caldav', 'self-hosting/unraid'] },
   { key: 'integrate', title: 'Integrate', line: 'The HTTP API, the ot command, MCP, webhooks and calendars.', groups: ['Integrations'], featured: ['api', 'cli', 'mcp', 'webhooks', 'calendar-sync', 'home-assistant'] },
   { key: 'reference', title: 'Reference', line: 'Quick add, filters, repeat rules, shortcuts and formats.', groups: ['Reference'], featured: ['quick-add', 'filters', 'recurrence', 'reminders', 'keyboard', 'import'] },
-  { key: 'internals', title: 'Under the hood', line: 'How OpenTodo is built, synced, tested and kept stable.', groups: ['Internals'], featured: ['architecture', 'sync', 'stability', 'performance', 'contracts', 'translating'] },
+  { key: 'internals', title: 'Under the hood', line: 'How OpenTodo is built, synced, tested and kept stable.', groups: ['Internals', 'Contributing', 'About'], featured: ['architecture', 'sync', 'stability', 'performance', 'roadmap', 'contracts'] },
 ]
 // Pages whose group is not their entry point: a reference table and a promise about the system.
 const ENTRY_OVERRIDES = { keyboard: 'reference', stability: 'internals' }

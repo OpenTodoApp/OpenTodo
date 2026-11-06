@@ -152,6 +152,7 @@ describe('entry points', () => {
     expect(entryOf(page('api', { audience: 'developer' }))).toBe('integrate')
     expect(entryOf(page('keyboard', { audience: 'user' }))).toBe('reference')
     expect(entryOf(page('stability', { audience: 'developer', section: 'Integrations' }))).toBe('internals')
+    expect(entryOf(page('roadmap', { audience: 'user', section: 'About' }))).toBe('internals')
     expect(ENTRIES.map((e) => e.key)).toEqual(['start', 'use', 'self-host', 'integrate', 'reference', 'internals'])
   })
   it('reads the nesting of the docs index', () => {
