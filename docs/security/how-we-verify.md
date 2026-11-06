@@ -239,6 +239,7 @@ The last five rows were added with this retrospective.
 - **Secrets never serialised.** `TestAssistantSecretsNeverSerialised` checks the assistant's key in JSON, `slog` and every `%v` form.
 - **Contracts between Go and TypeScript.** Logic that exists on both sides is pinned by shared fixtures ([Shared contracts](../contracts.md)). `scripts/contracts.test.mjs` checks the index of fixtures.
 - **Race detector.** The full Go suite runs nightly with `-race`.
+- **Native shell bridges.** On Android, `addWebMessageListener` takes the configured origin as its only rule, and the handler checks for the main frame. On iOS, `BridgeTests.testMessagesAreAnsweredOnlyFromTheConfiguredOrigin` (`mobile/ios/OpenTodoTests/ShellDataTests.swift`) pins the message handler's decision: other schemes, hosts, ports, subframes and pages without a host are refused. The iOS test runs in the macOS CI job on iOS changes. See [Android and iOS bridges](threat-model.md#android-and-ios-bridges).
 
 ## Disclosure policy
 

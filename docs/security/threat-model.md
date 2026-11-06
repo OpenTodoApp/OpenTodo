@@ -535,8 +535,10 @@ Each item of the [review scope](review-scope.md) has a section here: where the c
   - The bridge is exposed to the configured server's origin only: Android's `addWebMessageListener` with that origin as its only rule and a main-frame check, and iOS's message handler checking the frame's security origin.
   - Navigation leaves the server only inside a sign-in flow.
   - The microphone is granted to that origin only.
-- **Tests:** `BridgeFixtureTest`, `SignInFlowTest`, `WebMicrophoneTest` (`mobile/android/app/src/test/java/app/opentodo/`).
-- **Gap:** the iOS bridge has no automated origin test in CI (follow-up).
+- **Tests:**
+  - Android: `BridgeFixtureTest`, `SignInFlowTest`, `WebMicrophoneTest` (`mobile/android/app/src/test/java/app/opentodo/`).
+  - iOS: `BridgeTests` (`mobile/ios/OpenTodoTests/ShellDataTests.swift`). `testMessagesAreAnsweredOnlyFromTheConfiguredOrigin` checks the message handler's origin decision (`Bridge.accepts`): the main frame of the configured origin only, by scheme, host and port. `testScriptIsGuardedByOriginAndAdvertisesTheContract` checks the page script's guard. These run in CI on every iOS change (the `iOS (build and test)` job, `make ios`).
+- **Gap:** the iOS test checks the origin decision on the parts WebKit reports, not a real `WKWebView` loading another origin.
 
 ### Container image
 
