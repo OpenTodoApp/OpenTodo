@@ -49,7 +49,7 @@ The add-on's version is the OpenTodo release it runs, such as `0.12.0`. Within a
 
 ## Data and backups
 
-OpenTodo keeps its database, attachments and secrets in the add-on's own folder. Home Assistant backups include it when the OpenTodo add-on is selected: the add-on stops for a few seconds while it is copied, so the database in the backup is consistent. Restoring the backup, or only the add-on from it, brings back every account and task. Uninstalling the add-on deletes its folder, so take a backup first. OpenTodo's own scheduled backups and exports (**Settings → Server**) work too; see [Backups](../backups.md).
+OpenTodo keeps its database, attachments and secrets in the add-on's own folder. Home Assistant backups include it when the OpenTodo add-on is selected: the add-on stops for a few seconds while it is copied, so the database in the backup is consistent. Restoring the backup, or only the add-on from it, brings back every account and task. Uninstalling the add-on deletes its folder, so take a backup first. OpenTodo's own scheduled backups (**Settings → Server → Backups**) and exports (**Settings → Data**) work too; see [Backups](../backups.md).
 
 ## Forgot the owner password
 

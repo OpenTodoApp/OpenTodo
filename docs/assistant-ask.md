@@ -40,7 +40,7 @@ Applied changes are ordinary edits made on this device: they show at once, work 
 
 <picture><source srcset="images/assistant-phone-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/assistant-phone-light.webp" alt="On a phone the assistant fills the screen: the proposal with its checkboxes and buttons, and the message box at the bottom."></picture>
 
-Small proposals can skip the review when you turn on [Apply small changes without review](assistant-settings.md#apply-small-changes-without-review).
+Small proposals can skip the review when you turn on [Small changes without review](assistant-settings.md#small-changes-without-review).
 
 ## Undo
 

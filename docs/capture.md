@@ -14,7 +14,7 @@ Many tasks start as "deal with this page later". OpenTodo can receive a page fro
 | From | How | Works offline |
 | --- | --- | --- |
 | Phone or desktop share sheet | Install the app, then choose **OpenTodo** in the share menu | Yes, once the app has been opened online |
-| Any desktop browser | The bookmarklet from **Settings → Capture** | The popup opens from the app's offline cache once the app has been loaded in that browser |
+| Any desktop browser | The bookmarklet from **Settings → Capture → Bookmarklet and extension** | The popup opens from the app's offline cache once the app has been loaded in that browser |
 | Chromium and Firefox | The browser extension in [`extension/`](../extension/) | Same as the bookmarklet in Capture screen mode |
 
 The capture screen proposes:
@@ -75,7 +75,7 @@ The service worker only takes a share from the system share sheet or from the ap
 
 ## Bookmarklet
 
-**Settings → Capture** shows an **Add to OpenTodo** button generated for your server's address. Drag it to the bookmarks bar (or use **Copy bookmarklet** and paste the code as the address of a new bookmark). Clicking it on any page opens a small popup with the capture screen, prefilled with the page's address, title and the text you selected.
+**Settings → Capture → Bookmarklet and extension** shows an **Add to OpenTodo** button generated for your server's address. Drag it to the bookmarks bar (or use **Copy bookmarklet** and paste the code as the address of a new bookmark). Clicking it on any page opens a small popup with the capture screen, prefilled with the page's address, title and the text you selected.
 
 The bookmarklet contains no password or token. It only opens your server's `/share` page in a popup, where your normal sign-in applies. Its source, with your server's address in place of `https://todo.example.com`:
 
@@ -102,7 +102,7 @@ Right-click to start from something else with **Add to OpenTodo**: on a link, th
 - **Capture screen** (the default): Save opens your server's capture screen in a popup window with the line, the text and the address, where you check and save as above. The extension holds no token and sends nothing itself.
 - **Quick save**: paste a full-access [API token](api.md) (create one per browser, so you can revoke it alone). Save then creates the task at once and shows **Saved** with a link to it. While you type, the line is previewed as chips (date, project, labels, priority, reminders, the part of the day while your [day parts](day-parts.md) are on, and the energy while [Energy levels](method/set-up.md#energy-levels) is on) in your account's language; a `#name` that is no project shows a grey chip and stays in the title. A label that does not exist yet is created. If the server cannot be reached or refuses the token, the popup keeps your text and offers **Open capture screen**. On an account with [end-to-end encryption](e2ee.md), save from the capture screen, which encrypts on your device. A read-only token previews but does not save.
 
-The extension's own texts follow the browser's interface language in English, German, French, Spanish, Italian and Portuguese, and English otherwise; the chips and the capture screen follow your [interface language](language.md).
+The extension's own texts follow the browser's interface language in English, German, French, Spanish, Italian, Portuguese and Simplified Chinese, and English otherwise; the chips and the capture screen follow your [interface language](language.md).
 
 **Install** (it is not published in the browser stores yet): download `opentodo-browser-extension-chrome.zip` or `opentodo-browser-extension-firefox.zip` from a release (or run `make extension`) and unzip it.
 

@@ -74,7 +74,7 @@ systemctl --user enable --now podman-auto-update.timer      # rootless
 
 `podman auto-update --dry-run` shows what would change. Migrations run on start and there are no down-migrations, so keep backups. To stay on one release line, change the image to `ghcr.io/opentodoapp/opentodo:0.22` (its fixes only) or pin one version, `0.22.0`.
 
-Everything OpenTodo stores is in the volume `systemd-opentodo`; `podman volume inspect systemd-opentodo` shows where it is on disk. Turn on scheduled backups in OpenTodo's **Settings → Server** (written to `backups/` in the same volume, or to S3 or WebDAV), or stop the service and run `podman volume export systemd-opentodo --output opentodo-data.tar`. See [Backups](../backups.md).
+Everything OpenTodo stores is in the volume `systemd-opentodo`; `podman volume inspect systemd-opentodo` shows where it is on disk. Turn on scheduled backups in OpenTodo's **Settings → Server → Backups** (written to `backups/` in the same volume, or to S3 or WebDAV), or stop the service and run `podman volume export systemd-opentodo --output opentodo-data.tar`. See [Backups](../backups.md).
 
 ## Troubleshooting
 

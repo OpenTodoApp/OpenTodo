@@ -89,8 +89,106 @@ export function groupOf(fm) {
   if (fm.audience === 'admin') return fm.section || 'Self-hosting'
   return fm.section || 'Integrations'
 }
-export const GROUP_ORDER = ['Get started', 'Open Loops', 'Switch from another app', 'Guides', 'Reference', 'Self-hosting', 'Integrations', 'Internals', 'Contributing']
+export const GROUP_ORDER = ['Get started', 'Open Loops', 'Switch from another app', 'Guides', 'Reference', 'Self-hosting', 'Integrations', 'Internals', 'Contributing', 'About']
 export const AUDIENCE_LABEL = { user: 'Using OpenTodo', admin: 'Self-hosting', developer: 'Integrations and internals' }
+
+
+// ------------------------------------------------------------ entry points
+
+export const DEMO_URL = 'https://demo.open-todo.app'
+
+/**
+ * The six entry points of the docs website (OpenSpec change `docs-landing-restyle` D1):
+ * each gathers sidebar groups, has a section page at /docs/<key>/ and names its key pages.
+ */
+export const ENTRIES = [
+  { key: 'start', title: 'Get started', line: 'Try OpenTodo, install the app and bring your tasks over.', groups: ['Get started', 'Switch from another app'], featured: ['getting-started', 'your-first-task', 'install-app', 'install-phone', 'switch/README', 'import-export'] },
+  { key: 'use', title: 'Use OpenTodo', line: 'Tasks, projects, views, the calendar, sharing and reminders.', groups: ['Open Loops', 'Guides'], featured: ['tasks-and-projects', 'views', 'recurring-and-reminders', 'time-blocking', 'sharing', 'offline-and-sync'] },
+  { key: 'self-host', title: 'Self-host', line: 'Run your own server: install, update, back up and connect.', groups: ['Self-hosting'], featured: ['self-hosting/docker', 'backups', 'self-hosting/sso', 'self-hosting/outgoing-email', 'caldav', 'self-hosting/unraid'] },
+  { key: 'integrate', title: 'Integrate', line: 'The HTTP API, the ot command, MCP, webhooks and calendars.', groups: ['Integrations'], featured: ['api', 'cli', 'mcp', 'webhooks', 'calendar-sync', 'home-assistant'] },
+  { key: 'reference', title: 'Reference', line: 'Quick add, filters, repeat rules, shortcuts and formats.', groups: ['Reference'], featured: ['quick-add', 'filters', 'recurrence', 'reminders', 'keyboard', 'import'] },
+  { key: 'internals', title: 'Under the hood', line: 'How OpenTodo is built, synced, tested and kept stable.', groups: ['Internals', 'Contributing', 'About'], featured: ['architecture', 'sync', 'security/README', 'stability', 'performance', 'roadmap'] },
+]
+// Pages whose group is not their entry point: a reference table and a promise about the system.
+const ENTRY_OVERRIDES = { keyboard: 'reference', stability: 'internals' }
+
+/** The entry point key of a page. */
+export function entryOf(page) {
+  if (ENTRY_OVERRIDES[page.slug]) return ENTRY_OVERRIDES[page.slug]
+  const g = groupOf(page.fm)
+  return (ENTRIES.find((e) => e.groups.includes(g)) ?? ENTRIES[1]).key
+}
+export const entryUrl = (key) => `/docs/${key}/`
+
+/**
+ * The nesting the docs index writes with ↳ rows (D2): a table row linking one page is a
+ * topic; the ↳ rows after it link the pages that go deeper into that topic.
+ * Returns Map parentSlug -> [childSlug, …] in the index's order.
+ */
+export function indexTree(readmeBody) {
+  const tree = new Map()
+  let parent = null
+  for (const line of readmeBody.split('\n')) {
+    if (!line.startsWith('|')) { if (!line.trim()) continue; parent = null; continue }
+    const first = line.split('|')[1] ?? ''
+    const links = [...first.matchAll(/\]\(([^)#\s]+?)\.md\)/g)].map((m) => slugOf(posix.normalize(m[1]) + '.md'))
+    if (!links.length) continue
+    if (first.includes('↳')) { if (parent) tree.get(parent).push(...links) }
+    else { parent = links[0]; if (!tree.has(parent)) tree.set(parent, []) }
+  }
+  for (const [k, v] of tree) if (!v.length) tree.delete(k)
+  return tree
+}
+
+/**
+ * The pages of each entry point in navigation order: topics in sidebar order, each followed
+ * by its deeper pages in the index's order. Returns [{ entry, items: [{ page, children }] }].
+ */
+export function entryTree(sorted, tree) {
+  const bySlug = new Map(sorted.map((p) => [p.slug, p]))
+  const childOf = new Map()
+  for (const [parent, kids] of tree) for (const k of kids) if (bySlug.has(parent) && entryOf(bySlug.get(k) ?? { slug: k, fm: {} }) === entryOf(bySlug.get(parent))) childOf.set(k, parent)
+  return ENTRIES.map((entry) => {
+    const pages = sorted.filter((p) => entryOf(p) === entry.key)
+    // A page moved in by an override joins the entry point's first group, so it sits under a heading.
+    const groupIn = (p) => (entry.groups.includes(groupOf(p.fm)) ? groupOf(p.fm) : entry.groups[0])
+    const items = pages.filter((p) => !childOf.has(p.slug)).map((p) => ({
+      page: p,
+      group: groupIn(p),
+      children: (tree.get(p.slug) ?? []).filter((k) => childOf.get(k) === p.slug && bySlug.has(k)).map((k) => bySlug.get(k)),
+    }))
+    items.sort((a, b) => entry.groups.indexOf(a.group) - entry.groups.indexOf(b.group))
+    return { entry, items }
+  })
+}
+
+/** Every page in sidebar order, for previous and next. */
+export const navOrder = (entries) => entries.flatMap((e) => e.items.flatMap((i) => [i.page, ...i.children]))
+
+// ----------------------------------------------------------------- SEO
+
+/**
+ * A meta description of at most `max` characters: whole when it fits; otherwise cut at the
+ * last sentence end after 80 characters, else at the last word with "…".
+ */
+export function metaDescription(text, max = 160) {
+  const t = String(text ?? '').replace(/\s+/g, ' ').trim()
+  if (t.length <= max) return t
+  const head = t.slice(0, max)
+  const ends = [...head.matchAll(/[.!?](?=\s|$)/g)].map((m) => m.index + 1).filter((i) => i > 80)
+  if (ends.length) return head.slice(0, ends[ends.length - 1])
+  const cut = t.slice(0, max - 1)
+  const space = cut.lastIndexOf(' ')
+  return `${(space > 0 ? cut.slice(0, space) : cut).replace(/[\s,;:–—-]+$/, '')}…`
+}
+
+/** Structured data as an inline script: JSON with `<` escaped so no text closes the element. */
+export const jsonLdScript = (data) => `<script type="application/ld+json">${JSON.stringify(data).replace(/</g, '\\u003c')}</script>`
+
+/** BreadcrumbList from [name, path] pairs, absolute on the site. */
+export function breadcrumbLd(trail) {
+  return { '@type': 'BreadcrumbList', itemListElement: trail.map(([name, path], i) => ({ '@type': 'ListItem', position: i + 1, name, item: SITE_URL + path })) }
+}
 
 /**
  * Loads every page: { rel, slug, fm, body, errors }. The landing page (README.md)

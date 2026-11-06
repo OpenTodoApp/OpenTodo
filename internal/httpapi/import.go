@@ -148,6 +148,7 @@ func (s *Server) importError(w http.ResponseWriter, err error) {
 	var oe *importer.OptionError
 	var fe *importer.FileError
 	var ce *importer.ConflictError
+	var le *importer.LimitError
 	switch {
 	case errors.As(err, &oe):
 		writeError(w, http.StatusBadRequest, "invalid_input", oe.Error())
@@ -155,6 +156,8 @@ func (s *Server) importError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusBadRequest, "unsupported_format", "the file matches no supported format; "+strings.TrimPrefix(err.Error(), importer.ErrUnsupportedFormat.Error()+": "))
 	case errors.As(err, &fe):
 		writeError(w, http.StatusBadRequest, "invalid_file", fe.Error())
+	case errors.As(err, &le):
+		writeError(w, http.StatusRequestEntityTooLarge, "too_large", le.Error())
 	case errors.Is(err, importer.ErrTooManyRows):
 		writeError(w, http.StatusRequestEntityTooLarge, "too_large", err.Error()+"; split it into several files")
 	case errors.As(err, &ce):

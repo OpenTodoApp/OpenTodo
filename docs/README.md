@@ -188,4 +188,4 @@ The full list of environment variables is in the [configuration reference](self-
 
 ## Project
 
-[Changelog](../CHANGELOG.md) · [Roadmap](../ROADMAP.md) · [Security policy](../SECURITY.md) · [Contributing](../CONTRIBUTING.md) · [Contributor guide](contributing/first-contribution.md)
+[Changelog](../CHANGELOG.md) · [Roadmap](roadmap.md) · [Security policy](../SECURITY.md) · [Contributing](../CONTRIBUTING.md) · [Contributor guide](contributing/first-contribution.md)

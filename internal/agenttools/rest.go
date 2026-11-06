@@ -60,8 +60,8 @@ func (r *Registry) writeAll(ctx context.Context, c Caller, calls []ToolCall, cou
 	if denial := c.WriteDenial(); denial != "" {
 		return nil, toolErr(denial, denialMessage(denial))
 	}
-	if ok, retry := r.limits.AllowCall(c.TokenID); !ok {
-		return nil, rateLimited(retry, fmt.Sprintf("at most %d write calls per minute for each token", PerMinute))
+	if ok, retry := r.limits.AllowCallFor(c.UserID, c.TokenID); !ok {
+		return nil, rateLimited(retry, fmt.Sprintf("at most %d write calls per minute for each token and %d for each account", PerMinute, AccountPerMinute))
 	}
 	plans, err := r.PlanAll(ctx, c, calls)
 	if err != nil {
@@ -76,16 +76,16 @@ func (r *Registry) writeAll(ctx context.Context, c Caller, calls []ToolCall, cou
 	if total > PerCall {
 		return nil, argErr(fmt.Sprintf("at most %d items per call (got %d)", PerCall, total))
 	}
-	if ok, retry := r.limits.Reserve(c.TokenID, total); !ok {
-		return nil, rateLimited(retry, fmt.Sprintf("at most %d changed items per UTC day for each token", PerDay))
+	if ok, retry := r.limits.ReserveFor(c.UserID, c.TokenID, total); !ok {
+		return nil, rateLimited(retry, fmt.Sprintf("at most %d changed items per UTC day for each token and %d for each account", PerDay, AccountPerDay))
 	}
 	res, err := r.Apply(ctx, c, all)
 	if err != nil {
-		r.limits.Refund(c.TokenID, total)
+		r.limits.RefundFor(c.UserID, c.TokenID, total)
 		return nil, err
 	}
 	if res.Applied == 0 {
-		r.limits.Refund(c.TokenID, total)
+		r.limits.RefundFor(c.UserID, c.TokenID, total)
 	}
 	out := make([]map[string]any, len(plans))
 	for i, p := range plans {
