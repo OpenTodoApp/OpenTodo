@@ -255,6 +255,8 @@ The TypeScript client has no fuzzing.
 
 `scripts/security-review.test.mjs` fails if any of these numbers or sections disappears.
 
+Every server also answers `/.well-known/security.txt` ([RFC 9116](https://www.rfc-editor.org/rfc/rfc9116)) with the same channels and a link to the policy. A comment in the file says that a problem with how a particular server is run belongs to its operator. `TestSecurityTxt` checks the file, and `TestSecurityTxtMatchesSecurityPolicy` fails when it and SECURITY.md name different channels.
+
 ## Known gaps and past issues
 
 ### Issues found and fixed

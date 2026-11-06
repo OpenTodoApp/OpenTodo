@@ -38,6 +38,7 @@ OpenTodo asks people to put their whole working life on a server they run themse
   Every fixed Critical, High or Medium finding names a regression test.
 - **A release gate.** `make release-prepare` for any version ≥ 1.0.0 refuses to run when no review file exists, or when a finding breaks the rule above.
 - **A published report.** The reviewer's full report and a plain summary go in `docs/security/`. They're published when the fixes ship, and no later than 90 days after delivery.
+- **`/.well-known/security.txt` on every instance** (RFC 9116), pointing to the project's reporting channels and `SECURITY.md`.
 - **A disclosure policy in `SECURITY.md`:**
   - acknowledgement within 3 business days and an assessment within 10;
   - fix targets of 7 days (Critical), 30 (High), 90 (Medium) and the next minor (Low);
@@ -54,7 +55,7 @@ No new environment variable, no new dependency, no op schema change. Not **BREAK
 - Certification (SOC 2, ISO 27001): OpenTodo is software, not a service.
 - Operators' infrastructure, the public demo's hosting, and the website repository. The demo *mode* code is in scope; its host isn't.
 - Third-party services reached by configuration (calendar, mail, AI providers), beyond how OpenTodo talks to them.
-- A `security.txt` served by each instance. It would point self-hosters' visitors to the project instead of the operator; that's left for an owner decision.
+- An operator-configurable `security.txt`. Each instance serves one that names the project's channels, for vulnerabilities in the software, and says in a comment that problems with the particular server belong to its operator (decided 2026-11-05; see the `Instances serve security.txt` requirement). Letting an operator add their own contact is left for a later change.
 
 ## Roadmap
 
