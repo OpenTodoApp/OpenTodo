@@ -16,7 +16,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { ENTRIES, entryTree, indexTree, loadPages, pageUrl, renderPage, repoRootFrom, sortPages, versionInfo } from './lib.mjs'
+import { brandUrls, ENTRIES, entryTree, indexTree, loadPages, pageUrl, renderPage, repoRootFrom, sortPages, versionInfo } from './lib.mjs'
 import { loadShortcuts, shortcutsMarkdown, withShortcuts } from './shortcuts.mjs'
 import { roadmapMarkdown, withRoadmap } from './roadmap.mjs'
 import { landingHtml, pageHtml, sectionHtml } from './site.mjs'
@@ -72,7 +72,8 @@ export async function buildAll(repoRoot, { site = OUT_SITE } = {}) {
   const index = pages.find((p) => p.fm.layout === 'index')
   const sorted = sortPages(pages.filter((p) => !p.errors.length || p.fm.title))
   const audienceOf = (rel) => pages.find((p) => p.rel === rel)?.fm.audience
-  const version = versionInfo(repoRoot)
+  // The mark's URLs carry a hash of the mark, as on the rest of the website (lib.mjs brandUrls).
+  const version = { ...versionInfo(repoRoot), brand: brandUrls(repoRoot) }
   const rendered = new Map()
   for (const page of pages) {
     const ctx = { rel: page.rel, repoRoot, audienceOf }
