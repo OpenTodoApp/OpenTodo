@@ -107,7 +107,7 @@ export const ENTRIES = [
   { key: 'self-host', title: 'Self-host', line: 'Run your own server: install, update, back up and connect.', groups: ['Self-hosting'], featured: ['self-hosting/docker', 'backups', 'self-hosting/sso', 'self-hosting/outgoing-email', 'caldav', 'self-hosting/unraid'] },
   { key: 'integrate', title: 'Integrate', line: 'The HTTP API, the ot command, MCP, webhooks and calendars.', groups: ['Integrations'], featured: ['api', 'cli', 'mcp', 'webhooks', 'calendar-sync', 'home-assistant'] },
   { key: 'reference', title: 'Reference', line: 'Quick add, filters, repeat rules, shortcuts and formats.', groups: ['Reference'], featured: ['quick-add', 'filters', 'recurrence', 'reminders', 'keyboard', 'import'] },
-  { key: 'internals', title: 'Under the hood', line: 'How OpenTodo is built, synced, tested and kept stable.', groups: ['Internals', 'Contributing', 'About'], featured: ['architecture', 'sync', 'stability', 'performance', 'roadmap', 'contracts'] },
+  { key: 'internals', title: 'Under the hood', line: 'How OpenTodo is built, synced, tested and kept stable.', groups: ['Internals', 'Contributing', 'About'], featured: ['architecture', 'sync', 'security/README', 'stability', 'performance', 'roadmap'] },
 ]
 // Pages whose group is not their entry point: a reference table and a promise about the system.
 const ENTRY_OVERRIDES = { keyboard: 'reference', stability: 'internals' }
@@ -150,11 +150,14 @@ export function entryTree(sorted, tree) {
   for (const [parent, kids] of tree) for (const k of kids) if (bySlug.has(parent) && entryOf(bySlug.get(k) ?? { slug: k, fm: {} }) === entryOf(bySlug.get(parent))) childOf.set(k, parent)
   return ENTRIES.map((entry) => {
     const pages = sorted.filter((p) => entryOf(p) === entry.key)
+    // A page moved in by an override joins the entry point's first group, so it sits under a heading.
+    const groupIn = (p) => (entry.groups.includes(groupOf(p.fm)) ? groupOf(p.fm) : entry.groups[0])
     const items = pages.filter((p) => !childOf.has(p.slug)).map((p) => ({
       page: p,
-      group: groupOf(p.fm),
+      group: groupIn(p),
       children: (tree.get(p.slug) ?? []).filter((k) => childOf.get(k) === p.slug && bySlug.has(k)).map((k) => bySlug.get(k)),
     }))
+    items.sort((a, b) => entry.groups.indexOf(a.group) - entry.groups.indexOf(b.group))
     return { entry, items }
   })
 }
