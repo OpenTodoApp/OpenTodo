@@ -7,12 +7,13 @@ Colours: slate `#0f172a`, emerald `#34d399` (on dark) and `#047857` (on light), 
 | File | Use |
 |---|---|
 | `svg/mark-colour.svg`, `png/icon-*.png` | The app icon: the mark on the slate rounded square, 16 to 1024 px |
-| `svg/mark-colour-square.svg`, `png/avatar-512.png` | The square without rounding, for avatars the platform crops itself (GitHub organisation, Discord, stores) |
+| `svg/mark-colour-square.svg`, `png/avatar-512.png` | The square without rounding, for avatars the platform crops itself (GitHub organisation, Discord, X, Buy Me a Coffee, the Google Play icon, stores) |
 | `svg/mark-on-light.svg`, `png/mark-on-light-*.png` | The mark alone on a light background: slate tray, dark emerald tick |
 | `svg/mark-on-dark.svg`, `png/mark-on-dark-*.png` | The mark alone on a dark background: white tray, emerald tick |
 | `svg/mark-black.svg`, `svg/mark-white.svg` and their PNGs | One colour, for print, stamps and embossing |
 | `svg/lockup-on-light.svg`, `svg/lockup-on-dark.svg` and their PNGs | The mark with "OpenTodo" beside it (headers, slides, a README) |
 | `png/github-social-preview-1280x640.png` | GitHub → Settings → Social preview |
 | `png/og-default-1200x630.png` | A default social card for link previews |
+| `png/play-feature-graphic-1024x500.png` | Google Play → Store listing → Feature graphic (opaque, no alpha) |
 
 Keep the tray and the tick in their two colours except in the one-colour files, never put the mark inside a checkbox or a closed square, and keep clear space of at least the tray's height around it.

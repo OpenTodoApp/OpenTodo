@@ -39,7 +39,7 @@ test('the maskable icon fills its square', () => {
 })
 
 test('PNG outputs have the declared pixel size', () => {
-  for (const { path, size } of OUTPUTS.filter((o) => o.size)) {
+  for (const { path, size } of OUTPUTS.filter((o) => o.size && !o.jpeg)) {
     const png = read(path)
     assert.equal(png.toString('latin1', 1, 4), 'PNG', path)
     assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [size, size], path)
@@ -161,6 +161,7 @@ const KIT = [
   'brand/png/avatar-512.png',
   'brand/png/github-social-preview-1280x640.png',
   'brand/png/og-default-1200x630.png',
+  'brand/png/play-feature-graphic-1024x500.png',
 ]
 
 test('the brand kit is generated, and brand/ holds nothing else', () => {
@@ -198,4 +199,37 @@ test('kit PNGs are named after their pixel size', () => {
     const named = /-(\d+)x(\d+)\.png$/.exec(path) ?? /-(\d+)\.png$/.exec(path)
     assert.deepEqual([w, h], [Number(named[1]), Number(named[2] ?? named[1])], path)
   }
+})
+
+// The other stores' icons (OpenSpec change brand-assets-everywhere).
+test('the store icons outside the template folders are brand outputs, in the size and format each store asks', () => {
+  const out = (path) => OUTPUTS.find((o) => o.path === path)
+  for (const path of ['deploy/runtipi/metadata/logo.jpg', 'deploy/runtipi/upstream/apps/opentodo/metadata/logo.jpg']) {
+    assert.ok(out(path)?.jpeg, `${path} is a JPEG brand output`)
+    const jpg = read(path)
+    assert.deepEqual([...jpg.subarray(0, 3)], [0xff, 0xd8, 0xff], `${path} is a JPEG`)
+  }
+  const png = (path) => { const b = read(path); return [b.readUInt32BE(16), b.readUInt32BE(20), b[25]] }
+  assert.ok(out('deploy/homeassistant/upstream/opentodo/icon.png'))
+  assert.deepEqual(png('deploy/homeassistant/upstream/opentodo/icon.png').slice(0, 2), [128, 128], 'Home Assistant: a square 128 px icon')
+  assert.ok(out('deploy/homeassistant/upstream/opentodo/logo.png'))
+  assert.deepEqual(png('deploy/homeassistant/upstream/opentodo/logo.png').slice(0, 2), [250, 100], 'Home Assistant: a logo of about 250 × 100')
+  assert.deepEqual(png('deploy/claude-plugin/upstream/plugins/opentodo/.claude-plugin/icon.png').slice(0, 2), [192, 192])
+  assert.deepEqual(png('brand/png/play-feature-graphic-1024x500.png'), [1024, 500, 2], 'Google Play: a 1024 × 500 feature graphic without alpha')
+})
+
+test('every icon or logo file under the app and deploy folders is a brand output', () => {
+  const outputs = new Set(OUTPUTS.map((o) => o.path))
+  const skip = new Set(['node_modules', 'build', 'dist', '.gradle', '.git', 'screenshots'])
+  const strays = []
+  const walk = (dir) => {
+    if (!existsSync(join(ROOT, dir))) return
+    for (const e of readdirSync(join(ROOT, dir), { withFileTypes: true })) {
+      const rel = `${dir}/${e.name}`
+      if (e.isDirectory()) { if (!skip.has(e.name)) walk(rel); continue }
+      if (/(^|[-_/.])(icon|logo|favicon|apple-touch|pwa)[^/]*\.(png|jpe?g|svg|webp|ico)$/i.test(rel) && !outputs.has(rel)) strays.push(rel)
+    }
+  }
+  for (const dir of ['web/public', 'extension', 'obsidian', 'mobile', 'deploy', 'docs/screenshots']) walk(dir)
+  assert.deepEqual(strays, [], `icons and logos come from brand.svg: add them to OUTPUTS in scripts/brand-icons.mjs and ${regenerate}`)
 })
