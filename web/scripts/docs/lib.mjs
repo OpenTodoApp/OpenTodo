@@ -2,6 +2,7 @@
 // `user-documentation`): front matter, page discovery, Markdown rendering with
 // heading ids, link and image rewriting, the inline-HTML allow-list, and the
 // section index used by search. Plain Node ESM with one dependency (`marked`).
+import { createHash } from 'node:crypto'
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { dirname, join, posix, relative, resolve } from 'node:path'
 import { Marked } from 'marked'
@@ -469,12 +470,32 @@ function sectionsOf(tokens) {
 
 // --------------------------------------------------------------- misc
 
-/** Latest released version and whether CHANGELOG.md has unreleased entries. */
+/** Latest released version and whether there are unreleased entries (changelog fragments, or entries under Unreleased). */
 export function versionInfo(repoRoot) {
   const log = readFileSync(join(repoRoot, 'CHANGELOG.md'), 'utf8')
   const release = /^## \[(\d+\.\d+\.\d+)\]/m.exec(log)?.[1] ?? 'dev'
   const unreleased = /^## \[Unreleased\]\s*\n([\s\S]*?)^## \[/m.exec(log)?.[1] ?? ''
-  return { release, unreleased: /^\s*[-*] /m.test(unreleased) }
+  return { release, unreleased: /^\s*[-*] /m.test(unreleased) || hasFragments(join(repoRoot, 'changelog.d')) }
+}
+
+/**
+ * The URLs of the mark on the docs pages. The website serves /assets/favicon.svg and
+ * /assets/apple-touch-icon.png from the bundle's brand/mark-colour.svg and refers to them
+ * with `?v=` and the first 10 hex digits of that file's SHA-256 (website src/lib/brand.ts);
+ * the docs pages use the same URLs, so a new mark is a new URL for browsers and the CDN.
+ * The app's favicon is that file byte for byte (both are the colour mark scripts/brand-icons.mjs
+ * writes; lib.test.mjs compares them). Without it (a fixture repository) the plain URLs stay.
+ */
+export function brandUrls(repoRoot) {
+  const file = join(repoRoot, 'web/public/favicon.svg')
+  const v = existsSync(file) ? `?v=${createHash('sha256').update(readFileSync(file)).digest('hex').slice(0, 10)}` : ''
+  return { favicon: `/assets/favicon.svg${v}`, touchIcon: `/assets/apple-touch-icon.png${v}` }
+}
+
+/** Whether changelog.d/ holds a fragment (changelog.d/<Section>/<name>.md). */
+function hasFragments(dir) {
+  if (!existsSync(dir)) return false
+  return readdirSync(dir).some((s) => statSync(join(dir, s)).isDirectory() && readdirSync(join(dir, s)).some((f) => f.endsWith('.md')))
 }
 
 /** Directory names under openspec/specs. */

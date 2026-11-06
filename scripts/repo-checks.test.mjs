@@ -17,6 +17,7 @@ import { cpSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { checkSurfaceFreeze, surfaceProblems, SURFACE_FILE } from './release/surfaceFreeze.mjs'
 import { MATRIX_APPS, matrixProblems, parseMatrix, staleRows, checkMatrixFreshness } from './release/switchMatrix.mjs'
+import { readFragments, unreleasedProblems } from './release/fragments.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const read = (p) => readFileSync(path.join(root, p), 'utf8')
@@ -51,11 +52,11 @@ const table = [
   [['templates/trip-planning/template.yaml'], { code: 'true', docs: 'false', mobile: 'false' }],
   [['scripts/templates-check.mjs'], { code: 'true', docs: 'false', mobile: 'false' }],
   [['docs/self-hosting/docker.md'], { code: 'false', docs: 'true', mobile: 'false' }],
-  [['web/src/generated/help.json'], { code: 'false', docs: 'true', mobile: 'false' }],
+  [['changelog.d/Added/urgency-sort.md'], { code: 'false', docs: 'true', mobile: 'false' }],
   [['README.md'], { code: 'false', docs: 'true', mobile: 'false' }],
   [['CHANGELOG.md'], { code: 'false', docs: 'true', mobile: 'false' }],
   [['openspec/changes/x/proposal.md'], { code: 'false', docs: 'true', mobile: 'false' }],
-  [['docs/api.md', 'web/src/generated/help.json'], { code: 'false', docs: 'true', mobile: 'false' }],
+  [['docs/api.md', 'changelog.d/Added/urgency-sort.md'], { code: 'false', docs: 'true', mobile: 'false' }],
   [['docs/api.md', 'internal/httpapi/router.go'], { code: 'true', docs: 'true', mobile: 'false' }],
   [['skill/README.md'], { code: 'false', docs: 'false', mobile: 'false' }],
   [['LICENSE'], { code: 'false', docs: 'false', mobile: 'false' }],
@@ -87,13 +88,13 @@ const tiers = [
   [['skills/opentodo-cli/SKILL.md'], { ui: 'false', layout: 'false', extension: 'false', skill: 'true' }],
   [['docs/api.md'], { code: 'false', docs: 'true', ui: 'false', layout: 'false', extension: 'false', skill: 'false' }],
   [['openspec/changes/x/proposal.md'], { code: 'false', docs: 'true', ui: 'false', layout: 'false' }],
-  [['web/src/generated/help.json'], { code: 'false', ui: 'false', layout: 'false' }],
+  [['changelog.d/Fixed/x.md'], { code: 'false', docs: 'true', ui: 'false', layout: 'false' }],
   [['.github/workflows/ci.yml'], { ui: 'true', layout: 'true', a11y: 'true', extension: 'true', obsidian: 'true', skill: 'true', mobile: 'true', ios: 'true' }],
   // The accessibility gate on real screens (accessibility-aa D1): the web app and the audit scripts only.
   [['web/src/app/Shell.tsx'], { a11y: 'true' }],
   [['scripts/ux-audit/tour.mjs'], { a11y: 'true', ui: 'false' }],
   [['internal/sync/ops.go'], { a11y: 'false' }],
-  [['web/src/generated/help.json'], { a11y: 'false' }],
+  [['docs/api.md'], { a11y: 'false' }],
 ]
 
 const pick = (o, keys) => Object.fromEntries(keys.map((k) => [k, o[k]]))
@@ -459,6 +460,23 @@ test('.dockerignore leaves out what the image does not need and keeps what the D
   }
   // Files inside copied folders that the web build needs stay in.
   for (const p of ['web/src/main.tsx', 'web/package-lock.json', 'internal/web/web.go', 'go.sum']) assert.ok(!dockerIgnored(p), `${p} stays in the build context`)
+})
+
+// ---- changelog fragments (changelog.d/README.md) ----
+
+test('changelog: entries are fragments in changelog.d/<Section>/<name>.md, never written under Unreleased', () => {
+  // Pull requests in parallel all edited the top of "## [Unreleased]" and conflicted on every
+  // merge; each now adds its own file, which make release-prepare assembles.
+  assert.deepEqual(readFragments(root).problems, [])
+  assert.deepEqual(unreleasedProblems(read('CHANGELOG.md')), [])
+  assert.deepEqual(unreleasedProblems('## [Unreleased]\n\nSee changelog.d/.\n\n## [1.0.0] - 2030-01-01\n\n### Fixed\n\n- Old.\n'), [])
+  assert.match(unreleasedProblems('## [Unreleased]\n\n### Fixed\n\n- New.\n\n## [1.0.0] - 2030-01-01\n')[0], /2 line\(s\) under "## \[Unreleased\]".*changelog\.d\/<Section>\/<name>\.md/)
+  assert.match(unreleasedProblems('## [Unreleased]\n- New.\n\n[Unreleased]: https://x/compare/v1.0.0...HEAD\n')[0], /1 line\(s\)/)
+  // The in-app help is built, not committed: nothing may bring it back into the tree.
+  assert.ok(read('.gitignore').split('\n').includes('/web/src/generated/help.json'))
+  for (const s of ['build', 'dev', 'test', 'typecheck', 'storybook', 'build-storybook']) {
+    assert.equal(JSON.parse(read('web/package.json')).scripts[`pre${s}`], 'npm run --silent help', `web: npm run ${s} builds the in-app help first`)
+  }
 })
 
 // ---- contributor docs (OpenSpec change contributor-docs-and-template-checks) ----

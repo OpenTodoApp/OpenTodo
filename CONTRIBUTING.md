@@ -29,10 +29,10 @@ Reference: [Architecture](docs/architecture.md), [Sync protocol](docs/sync.md), 
 
 1. Open an issue or pick one up, so the scope is agreed.
 2. For a behaviour change, plan it as an OpenSpec change (`/opsx:propose "<idea>"` with Claude Code, or by hand).
-3. Implement it, ticking `tasks.md` as you go. Update the user docs in `docs/` with the behaviour, and run `make docs`; commit the regenerated `web/src/generated/help.json`, never edit it by hand.
+3. Implement it, ticking `tasks.md` as you go. Update the user docs in `docs/` with the behaviour, and run `make docs-check`. The in-app help (`web/src/generated/help.json`) is built from `docs/` by the web app's scripts and is not committed.
 4. Text people read goes through `t()` and into every catalog ([Translating](docs/translating.md)).
 5. Run `make check` ([what it runs](docs/contributing/tests-and-checks.md)).
-6. Open the pull request. The change is archived in the pull request that finishes it, with a `CHANGELOG.md` line.
+6. Open the pull request. The change is archived in the pull request that finishes it, with its changelog entry as a file of its own, `changelog.d/<Section>/<change-name>.md` ([changelog.d/README.md](changelog.d/README.md)); `CHANGELOG.md` itself is only edited when a release is cut.
 
 Project templates live in `templates/`; [`templates/README.md`](templates/README.md) has the format and the bar.
 
@@ -42,6 +42,7 @@ Project templates live in `templates/`; [`templates/README.md`](templates/README
 - **Green CI.** A pull request is merged only when every check passes.
 - **Link the issue** with `Fixes #123` when the pull request closes it, and the change folder when there is one.
 - **Screens:** a change to `web/src/app` attaches before and after screenshots of the screens it affects ([how](docs/contributing/tests-and-checks.md#screens)).
+- **Accessibility** ([statement](docs/accessibility.md)): a new screen or overlay goes into the screen inventory (`scripts/ux-audit/screens.json`), which the accessibility gate opens on every pull request (run it locally: `make build && A11Y_ONLY=1 WIDTHS=360,1280 LANGS=en node scripts/ux-audit/tour.mjs`), then `node scripts/accessibility-statement.mjs` adds it to the statement. A new drag, resize or swipe needs a way to do the same with one click or tap: a `data-drag-id` on its element and an entry in `scripts/ux-audit/drag-alternatives.json` naming the menu item or control that does it (`MoveHandle` for a short list without a menu); `web/src/lib/a11y/dragAlternatives.test.ts` fails until then.
 - **Commits** are in the imperative mood, one logical change each, naming the OpenSpec change when there is one: `sync: clamp future timestamps (bootstrap-core-platform)`.
 - **Trailers** credit everyone who wrote the commit, people and AI tools alike:
 

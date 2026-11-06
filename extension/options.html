@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title data-i18n="optionsTitle">OpenTodo Capture settings</title>
   <style>
-    :root { color-scheme: light dark; --fg: #0f172a; --muted: #64748b; --bg: #f8fafc; --card: #fff; --line: #cbd5e1; --accent: #059669; --err: #dc2626; }
-    @media (prefers-color-scheme: dark) { :root { --fg: #e2e8f0; --muted: #94a3b8; --bg: #020617; --card: #0f172a; --line: #334155; --err: #f87171; } }
+    :root { color-scheme: light dark; --fg: #0f172a; --muted: #64748b; --bg: #f8fafc; --card: #fff; --line: #cbd5e1; --accent: #047857; --on-accent: #fff; --err: #dc2626; }
+    @media (prefers-color-scheme: dark) { :root { --fg: #e2e8f0; --muted: #94a3b8; --bg: #020617; --card: #0f172a; --line: #334155; --accent: #34d399; --on-accent: #022c22; --err: #f87171; } }
     body { margin: 0; font: 14px/1.5 system-ui, sans-serif; color: var(--fg); background: var(--bg); }
     main { max-width: 32rem; margin: 3rem auto; padding: 1.5rem; background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
     h1 { font-size: 1.1rem; margin: 0 0 .5rem; }
@@ -15,7 +15,7 @@
     label { display: block; margin-top: 1rem; font-weight: 500; }
     input { box-sizing: border-box; width: 100%; margin-top: .25rem; padding: .5rem .75rem; font: inherit; color: inherit; background: transparent; border: 1px solid var(--line); border-radius: 6px; }
     input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
-    button { margin-top: 1rem; padding: .45rem .9rem; font: inherit; font-weight: 500; color: #fff; background: var(--accent); border: 0; border-radius: 6px; cursor: pointer; }
+    button { margin-top: 1rem; padding: .45rem .9rem; font: inherit; font-weight: 500; color: var(--on-accent); background: var(--accent); border: 0; border-radius: 6px; cursor: pointer; }
     #pending, #status { padding: .5rem .75rem; border-radius: 6px; border: 1px solid var(--line); }
     #status.error { color: var(--err); border-color: var(--err); }
     fieldset { border: 0; margin: .5rem 0 0; padding: 0; }

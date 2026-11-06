@@ -8,7 +8,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { buildAll, OUT_SITE, staleFiles } from './build.mjs'
+import { buildAll, OUT_HELP, OUT_SITE, staleFiles } from './build.mjs'
 import { headingsOf, parseFrontMatter, repoRootFrom, specNames } from './lib.mjs'
 import { END, START, loadShortcuts, shortcutsMarkdown } from './shortcuts.mjs'
 import { missingScreenshots } from '../../../scripts/site-bundle.mjs'
@@ -254,9 +254,10 @@ export async function runChecks(repoRoot) {
   for (const path of missingScreenshots(repoRoot)) out.push(`${path}: named by the site bundle but missing; run scripts/screenshots.mjs`)
 
   // Generated files are up to date.
-  // The docs website is built, not committed (site-bundle D6): only the in-app
-  // help is compared with a fresh build.
-  const committed = new Map([...files].filter(([path]) => !path.startsWith(OUT_SITE + '/')))
+  // The docs website is built, not committed (site-bundle D6), and neither is the
+  // in-app help (the web app's scripts build it): only the generated guides and the
+  // screen ids are compared with a fresh build.
+  const committed = new Map([...files].filter(([path]) => !path.startsWith(OUT_SITE + '/') && path !== OUT_HELP))
   const stale = staleFiles(repoRoot, committed, OUT_SITE).filter((f) => f !== 'docs/keyboard.md' && !f.startsWith(OUT_SITE + '/'))
   if (stale.length) out.push(`generated docs are out of date; run \`make docs\` (${stale.slice(0, 5).join(', ')}${stale.length > 5 ? `, and ${stale.length - 5} more` : ''})`)
   return out

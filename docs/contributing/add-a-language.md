@@ -45,4 +45,4 @@ Use the plural categories of your language (`one`/`other`, or only `other` for l
 ## In the pull request
 
 - Name the reviewer: a speaker of the language who reads every entry, now and for later catalog changes.
-- Add the language to `CHANGELOG.md` under Unreleased.
+- Add the language to the changelog: a file `changelog.d/Added/<language>.md` with its entry ([changelog.d/README.md](../../changelog.d/README.md)).
