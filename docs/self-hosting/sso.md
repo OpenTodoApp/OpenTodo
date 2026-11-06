@@ -82,7 +82,7 @@ The other switches (new accounts via SSO, provider sign-out, profile pictures, s
 
 **Use profile pictures from …** (off by default) makes the server fetch, at each sign-in or link through the provider, the picture the identity token names in its `picture` claim (sent with the `profile` scope) and store it as the person's profile picture: cropped to a square, scaled to 256×256 and re-encoded as JPEG, so nothing but the pixels is kept. The rules:
 
-- A picture someone uploaded themselves in **Settings → Account** is never replaced.
+- A picture someone uploaded themselves in **Settings → Account → Profile** is never replaced.
 - An address that was already synced is not fetched again; a picture the person removed is not fetched again from the same address. A new address at the provider is picked up at the next sign-in.
 - The fetch follows the server's outbound rules (http or https, no private network addresses unless **Settings → Integrations → Webhooks** allows them, 5 seconds, 2 MB, PNG, JPEG or GIF). A picture that cannot be fetched changes nothing; the sign-in completes either way.
 
@@ -93,7 +93,7 @@ Leave the switch off if the provider's picture addresses point to a host you do 
 - An identity is recognised by its issuer and subject (`sub`), never by email once linked. Changing your email at the provider keeps you on the same OpenTodo account, and a changed email cannot take over another account.
 - A first-time identity with a verified email that matches a member account whose address was confirmed is linked to it. The owner, admins, accounts with two-factor authentication or a passkey, and accounts whose address nobody confirmed (sign-up or email change without outgoing email) are refused (`oidc_link_required`) and link only from Settings while signed in, so the provider can never stand in for their own second factor. An unverified or missing email is refused (`oidc_email_unverified`) and nothing is created.
 - When nothing matches, a `member` account is created only if **Allow new accounts via SSO** is on or `OPENTODO_ALLOW_SIGNUP=true`. Otherwise the person sees "There is no account for this identity yet" and you can invite them.
-- Accounts created this way have no password. They can add a passkey in **Settings → Account**.
+- Accounts created this way have no password. They can add a passkey in **Settings → Account → Security**.
 - Everyone can link or unlink the provider in **Settings → Account → Security → Linked accounts**. Linking a new identity needs a sign-in in the last ten minutes; from an older session the app asks for your password or a code first, then sends you to the provider again. Unlinking is refused when it would leave the account with no way to sign in.
 - Going through the provider again with an identity that is already linked counts as confirming it's you, so accounts without a password can still make changes that ask for a recent sign-in (the dialog offers **Confirm with …**).
 - A provider sign-in counts as two-factor: someone with an authenticator app is not asked for a code, because the provider applies its own policy. If the owner requires two-factor for everyone (**Settings → People → Access policies → Two-factor policy**), accounts without an authenticator are still asked to enrol one.

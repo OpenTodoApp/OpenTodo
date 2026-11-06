@@ -32,7 +32,7 @@ The check opens with the same [briefing](../briefing.md) as Today: what is late,
 
 ### Bento
 
-Three tasks of any size can still be three two-hour tasks. **Bento** makes today's focus one **Large**, one **Medium** and one **Small** task instead. Choose it in the Daily check's **⋯** menu (**Daily focus**) or in **Settings › Account › How you work**; **Three tasks** is the default and works as before. Switching changes nothing about the focus itself: the tasks you picked move into slots by their estimates.
+Three tasks of any size can still be three two-hour tasks. **Bento** makes today's focus one **Large**, one **Medium** and one **Small** task instead. Choose it in the Daily check's **⋯** menu (**Daily focus**) or in **Settings › Account › Profile › How you work**; **Three tasks** is the default and works as before. Switching changes nothing about the focus itself: the tasks you picked move into slots by their estimates.
 
 The slots follow a task's [estimate](../time-blocking.md): **Small** up to 30 minutes, **Medium** 31 to 89, **Large** 90 or more. In Bento, the focus shows the three slots above the list; an empty one says what fits in it.
 

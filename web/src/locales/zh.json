@@ -4285,7 +4285,7 @@
   "Settings → Developer → Edit Config, then add this entry to claude_desktop_config.json and restart Claude Desktop.": "设置 → Developer → Edit Config，然后将此条目添加到 claude_desktop_config.json 并重启 Claude Desktop。",
   "Settings → People → Users and invitations: copy the invite link created in this session": "设置 → 成员 → 用户与邀请：复制在此会话中创建的邀请链接",
   "Settings → People → Users and invitations: revoke the focused pending invitation": "设置 → 成员 → 用户与邀请：撤销当前聚焦的待处理邀请",
-  "Settings → People → Users: deactivate or reactivate, create a reset link, delete the focused user (each confirms)": "设置 → 成员 → 用户：停用或重新启用、创建重置链接、删除当前聚焦的用户（每项均需确认）",
+  "Settings → People → Users and invitations: deactivate or reactivate, create a reset link, delete the focused user (each confirms)": "设置 → 成员 → 用户与邀请：停用或重新启用、创建重置链接、删除当前聚焦的用户（每项均需确认）",
   "Settings → Server → Audit log: export with the current filters while the table has focus": "设置 → 服务器 → 审计日志：当表格处于焦点时按当前筛选条件导出",
   "Settings: focus the search field, which finds sections and single settings by name": "设置：聚焦搜索框，可按名称查找分区和单项设置",
   "Settings: {section}": "设置：{section}",
