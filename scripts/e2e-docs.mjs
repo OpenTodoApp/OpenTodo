@@ -1,4 +1,5 @@
-// Browser check of the documentation website (OpenSpec change `user-documentation`,
+// Browser check of the documentation website (OpenSpec changes `user-documentation`
+// and `docs-landing-restyle`,
 // tasks 3.1, 3.2 and 5.1): builds the docs site into dist/docs-root/docs, serves it
 // on a local port and, for a sample of
 // docs pages at 360, 390 and 1280 px in light and dark,
@@ -32,7 +33,7 @@ const ROOT = 'dist/docs-root'
 execSync('node web/scripts/docs/build.mjs --site dist/docs-root/docs', { stdio: 'inherit' })
 mkdirSync(join(ROOT, 'assets'), { recursive: true })
 for (const f of ['favicon.svg', 'apple-touch-icon.png']) copyFileSync(join('web/public', f), join(ROOT, 'assets', f))
-const PAGES = (process.env.PAGES ?? '/docs/,/docs/getting-started/,/docs/sections-and-boards/,/docs/keyboard/,/docs/self-hosting/docker/,/docs/api/').split(',')
+const PAGES = (process.env.PAGES ?? '/docs/,/docs/use/,/docs/getting-started/,/docs/sections-and-boards/,/docs/keyboard/,/docs/self-hosting/docker/,/docs/api/').split(',')
 const WIDTHS = (process.env.WIDTHS ?? '360,390,1280').split(',').map(Number)
 const THEMES = ['light', 'dark']
 
@@ -120,8 +121,17 @@ for (const path of PAGES) {
   await np.goto(base + path)
   if (!(await np.locator('h1').first().isVisible())) await fail(np, where, 'no visible heading')
   if (await np.locator('form[data-search]:visible').count()) await fail(np, where, 'search form shown without JavaScript')
+  // The website's navigation (docs-landing-restyle D3): the header menu opens without scripts.
+  await np.locator('.nav-menu > summary').click()
+  for (const href of ['/features/', '/learn/', '/docs/', '/blog/']) if (!(await np.locator(`.nav-menu a[href="${href}"]`).isVisible())) await fail(np, where, `header menu lacks ${href}`)
+  await np.locator('.nav-menu > summary').click()
+  if (path === '/docs/') {
+    // The six entry points, each leading to its section page.
+    const sections = await np.locator('.entry-all').evaluateAll((as) => as.map((a) => a.getAttribute('href')))
+    if (sections.join() !== '/docs/start/,/docs/use/,/docs/self-host/,/docs/integrate/,/docs/reference/,/docs/internals/') await fail(np, where, `entry points: ${sections.join(', ')}`)
+  }
   if (path !== '/docs/') {
-    await np.locator('.docs-menu summary').click()
+    await np.locator('.docs-menu > summary').click()
     const links = await np.locator('.docs-menu nav a').count()
     if (links < 10) await fail(np, where, `menu shows only ${links} links`)
     const next = np.locator('a[rel="next"]')
