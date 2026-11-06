@@ -113,3 +113,29 @@ func TestLimiterHoldAndSettle(t *testing.T) {
 		t.Fatalf("excess not booked: %d left", held)
 	}
 }
+
+// A hold is the smaller of what is left to the token and to its account, and
+// settling gives the unused part back to both.
+func TestLimiterHoldForAccount(t *testing.T) {
+	l := NewLimiter(nil)
+	if ok, _ := l.ReserveFor("u", "a", PerDay); !ok {
+		t.Fatal("reserve a")
+	}
+	if ok, _ := l.ReserveFor("u", "b", PerDay-4); !ok {
+		t.Fatal("reserve b")
+	}
+	held, _ := l.HoldFor("u", "c")
+	if held != 4 {
+		t.Fatalf("held %d, want the account's 4 left", held)
+	}
+	if ok, _ := l.ReserveFor("u", "b", 1); ok {
+		t.Fatal("the account's held items were given to another token")
+	}
+	l.SettleFor("u", "c", held, 1)
+	if ok, _ := l.ReserveFor("u", "b", 3); !ok {
+		t.Fatal("the unused part did not go back to the account")
+	}
+	if held, retry := l.HoldFor("u", "c"); held != 0 || retry <= 0 {
+		t.Fatalf("hold with the account spent: %d %d", held, retry)
+	}
+}

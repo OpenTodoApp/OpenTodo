@@ -9,7 +9,7 @@ import { logicalToday } from '../../lib/dates'
 import { syncNow } from '../../lib/sync'
 import { navigate, useRoute } from '../router'
 import type { HelpSection } from '../ShortcutHelp'
-import { isGPending, setGPending } from '../signals'
+import { isGPending, isOtherSequencePending, setGPending } from '../signals'
 import { useShortcutScope } from '../shortcuts'
 import { Kbd } from '../shortcuts/Kbd'
 import { listActions } from './actions'
@@ -67,6 +67,7 @@ export default function VimLayer({ userId, onHelp, onHelpTopic, onHelpSection }:
   const [machine] = useState(() => createDispatcher({
     actions: listActions,
     gPending: isGPending,
+    otherSequence: isOtherSequencePending,
     clearG: () => setGPending(false),
     commandOpen: () => cmdRef.current,
     openCommand: () => openCommand(true),

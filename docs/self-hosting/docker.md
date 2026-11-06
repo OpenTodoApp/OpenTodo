@@ -33,6 +33,14 @@ level=WARN msg="No owner account exists yet. To create it from another machine, 
 
 Type it into the **Setup code** field (case and dashes do not matter). It works once: as soon as the owner exists it is discarded, and a restart without an owner prints a new one. Attempts count against the registration rate limit. On a platform without a terminal, open the container's logs in its panel.
 
+**Opened under a domain name before `OPENTODO_BASE_URL` is set.** Even with the code off, the setup screen asks for a setup code when the page's address is a domain name, such as `todo.example.com`, and the server has no `OPENTODO_BASE_URL`. Without the base URL, the server cannot tell its own name from another site's name that someone pointed at your server (DNS rebinding), which would let a web page you visit create the owner account through your browser. An IP address (`http://192.168.1.20:8080`), `localhost`, a name without a dot (`http://nas:8080`) and names under `.local`, `.lan`, `.home`, `.home.arpa`, `.internal`, `.corp`, `.localhost` or `.test` need no code. In this case the start-up warning about the first visitor carries the code:
+
+```text
+level=WARN msg="No owner account exists yet: the first person to open this server becomes its owner. Finish setup now, or set OPENTODO_SETUP_CODE=required to require the code printed in this log. Opened under a domain name while OPENTODO_BASE_URL is not set, setup asks for this setup code: ABCD-EFGH-IJKL-MNOP (…)" setup_code=ABCD-EFGH-IJKL-MNOP
+```
+
+Enter that code, open the server by its IP address once, or set `OPENTODO_BASE_URL` to the address people use and restart; with a base URL, the server only accepts browser requests addressed to that name and asks for no code.
+
 Instead of the code you can set `OPENTODO_SETUP_TOKEN` (16+ characters) in `.env`, a secret you choose: the setup screen then asks for it from every address, including your own network, and no code is printed, whatever `OPENTODO_SETUP_CODE` says. Neither has an effect once the owner exists. Any value of `OPENTODO_SETUP_CODE` other than `required`, `off` or empty stops the server at startup with a message naming the variable.
 
 To add more people, keep sign-up closed and create single-use invitation links in **Settings → People → Users and invitations** (see [Adding people](../../README.md#adding-people)). `OPENTODO_ALLOW_SIGNUP=true` opens registration to anyone who can reach the server and is rarely what you want on a public URL. If you do open it, configure [outgoing email](outgoing-email.md) too: new accounts are then created only after the person confirms their address through a mailed link.
@@ -167,7 +175,7 @@ docker run -v "$PWD/data:/data" ...
 
 ## Backup and restore
 
-Turn on scheduled backups in **Settings → Server** (owner only): consistent snapshots of the database, taken while the server runs, written to `/data/backups`, an S3-compatible bucket or a WebDAV share, with retention and optional encryption. Restore with the binary in the image while the container is stopped:
+Turn on scheduled backups in **Settings → Server → Backups** (owner only): consistent snapshots of the database, taken while the server runs, written to `/data/backups`, an S3-compatible bucket or a WebDAV share, with retention and optional encryption. Restore with the binary in the image while the container is stopped:
 
 ```bash
 docker compose stop opentodo
@@ -227,6 +235,8 @@ docker compose exec opentodo /opentodo reset-owner-password
 The command needs only the data volume: shell access to the host is the proof of ownership. It opens no port, needs no configuration and works while the server runs (or with `docker compose run --rm --no-deps opentodo reset-owner-password` while it is stopped). The link starts with `OPENTODO_BASE_URL`; pass `--base-url https://…` otherwise. It works once, any earlier owner link stops working, and using it signs the owner out everywhere. It is recorded as `password.reset_issued` in the audit log. If the owner also lost their second factor, run `mfa-reset` as described above.
 
 ## Host kernel
+
+What the server itself defends, and what it leaves to the host, is in the [threat model](../security/threat-model.md).
 
 A container shares the host's kernel, so kernel flaws reachable from the network affect OpenTodo however it is installed. OpenTodo turns Multipath TCP off on its listeners, which keeps the kernel's MPTCP code out of reach for [CVE-2026-98432](https://www.openwall.com/lists/oss-security/2026/10/30/1), a use-after-free in TCP connection handling. That is a mitigation, not the fix: update the host kernel through your distribution as soon as a patched one is available.
 

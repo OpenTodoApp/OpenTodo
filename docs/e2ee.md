@@ -47,6 +47,8 @@ Empty values (`""`) and `null` are not encrypted. The length of a ciphertext rev
 
 ## Threat model
 
+This is the encryption's part of the server's [threat model](security/threat-model.md).
+
 Protected against:
 
 - Someone who reads the server's disk, database file, backups (local, S3, WebDAV) or database dumps: they see ciphertext for the fields above.
@@ -135,7 +137,7 @@ In the [Android app](android-app.md), on a phone with a fingerprint or face unlo
 
 Workspace names, members and groups are server data in plaintext, like project members; with encryption on you can create [workspaces](workspaces.md) and move things between them, but not add members, groups or invite links yet.
 
-**Routines.** A [routine](routines.md#encrypted-accounts) with a step that reads or writes text, or an AI step, runs on one of your devices with **Run my routines on this device** turned on (Settings → Encryption): the server sends the run's ids over the device relay, the device plans it on its decrypted copy and commits ciphertext, and an AI result waits as a proposal encrypted on the device. Routines that only use ids, dates, numbers and conditions keep running on the server.
+**Routines.** A [routine](routines.md#encrypted-accounts) with a step that reads or writes text, or an AI step, runs on one of your devices with **Run my routines on this device** turned on (Settings → Account → End-to-end encryption → **Run my routines**): the server sends the run's ids over the device relay, the device plans it on its decrypted copy and commits ciphertext, and an AI result waits as a proposal encrypted on the device. Routines that only use ids, dates, numbers and conditions keep running on the server.
 
 The server cannot decrypt. Each feature that needs content degrades explicitly:
 

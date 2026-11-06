@@ -139,8 +139,8 @@ Each page SHALL name the commands it relies on, and each command SHALL be a targ
 
 ### Requirement: Public roadmap page
 The documentation SHALL include a roadmap page, generated at docs build from the milestone tables of `ROADMAP.md` and the OpenSpec state of each named change. Each change SHALL be shown with one of these statuses:
-- "Shipped in x.y" when archived, with the version from the changelog where it is named;
-- "Shipped" when archived and no changelog section names it;
+- "Shipped in x.y" when archived, with the oldest release of the changelog that names it, or else the last release on the first release date on or after the change's archive date;
+- "Shipped" when archived after the last release;
 - "In progress (n of m)" when its tasks are partly checked;
 - "Planned" otherwise.
 

@@ -153,6 +153,10 @@ func Build(ctx context.Context, cfg config.Config, db, reader *sql.DB, o Options
 	s.Auth = auth.NewService(db, cfg.SessionTTL, cfg.AllowSignup)
 	s.Auth.SetSetupToken(cfg.SetupToken)
 	s.Auth.SetSetupCodeRequired(cfg.SetupCodeRequired)
+	// Without a base URL nothing pins the host a page was opened under, so a
+	// first visit under a domain name needs the setup code
+	// (host-check-without-base-url).
+	s.Auth.SetSetupHostCheck(cfg.Origin() == "")
 	s.Sync = opsync.NewService(db)
 	if reader != nil {
 		s.Sync.SetReader(reader)

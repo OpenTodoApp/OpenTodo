@@ -69,7 +69,7 @@ The model describes the code on `main` at the time of writing. An external revie
 - Rate limits per client address and per account, with account lockout after 10 failures in 15 minutes (`ratelimit.go`, `accountlock.go`).
 - Session cookies are `HttpOnly` and `SameSite=Lax`. Cookie writes must carry a matching `Origin` (`originAllowed` in `middleware.go`). With `OPENTODO_BASE_URL` set, the request must also be addressed to the base URL's host, which defends against DNS rebinding.
 - Forwarded addresses are believed only from trusted proxies (`clientip.go`).
-- First run: `OPENTODO_SETUP_TOKEN` or `OPENTODO_SETUP_CODE=required`.
+- First run: `OPENTODO_SETUP_TOKEN` or `OPENTODO_SETUP_CODE=required`. Without `OPENTODO_BASE_URL`, a first registration addressed to a domain name (not an IP address, a dotless name or a local-only suffix) needs the setup code from the log even with the code off, so a rebound name cannot create the owner (`setupHostVerified` in `setuphost.go`).
 
 **Verified by.**
 - `TestEveryRouteDeclaresAPolicy`, `TestSecurityRoutePolicies` (`internal/httpapi/policy_test.go`).
@@ -77,10 +77,11 @@ The model describes the code on `main` at the time of writing. An external revie
 - `TestLoginRateLimit`, `TestCrossSiteCookieWritesAreRejected` (`server_test.go`).
 - `TestSecurityHeaders` (`security_headers_test.go`): no framing, no sniffing, scripts only from the server.
 - `TestAccountLockout`, `TestForwardedForOnlyFromTrustedPeers`, `TestOriginMustMatchBaseURL` (`client_identity_test.go`).
+- `TestSetupHostVerified`, `TestSetupUnderDomainNameNeedsCode`, `TestNoHostCheckWithBaseURL` (`setuphost_test.go`); `TestSetupHostCheck` (`internal/auth/setupcode_test.go`).
 - `TestClientAddressBehindTrustedProxies`, `TestInvalidTrustedProxyEntriesNeverWidenTrust` (`clientip_test.go`).
 
 **Not defended.**
-- Without `OPENTODO_BASE_URL`, the origin check compares against the request's own `Host`, so DNS rebinding is not defended. The docs tell operators to set the base URL.
+- Without `OPENTODO_BASE_URL`, the origin check compares against the request's own `Host`, so after setup a rebound name passes it. The session cookie belongs to the server's real name, so such a page has no session; it can reach public routes and try passwords against the rate limits. The docs tell operators to set the base URL.
 - A write with no `Origin` header is accepted. It relies on `SameSite=Lax` keeping the cookie off cross-site subrequests.
 - Rate limits live in memory, per process. A restart clears them.
 - Anyone who knows an email address can keep that account's password sign-in locked. Passkeys, single sign-on and open sessions keep working.
@@ -255,15 +256,17 @@ The person turned on end-to-end encryption and does not trust the server, its op
 - Archives are read in memory: at most 1,000 entries, an unpacked total of 10× the upload limit checked against declared and actual sizes, unsafe names refused, and nested ZIPs one level deep.
 - SQLite imports go to a private temporary directory. They are opened read-only and immutable with `query_only`, a 1 MiB value limit, a 30-second context, and refusal of computing schemas.
 - Attachments are stored by the import itself, refusing ids already owned elsewhere.
+- CSV records are read one at a time: a field holds at most 1 MiB, a record 4 MiB and 1,000 fields. JSON is refused when nested deeper than 256 levels, checked by one scan before any profile decodes it (`limits.go`).
 - Imports write ops through the sync service with device `import`.
 
 **Verified by.**
 - `TestArchiveTooManyEntries`, `TestArchiveOversizedExpansion`, `TestArchiveUnsafeName`.
 - `TestThingsRefusesSchemaThatComputes`, `TestThingsRefusesOversizedValue`, `TestThingsOpenerRefusesOtherSQLite`.
+- `TestCSVFieldOverLimitRefused`, `TestCSVRecordOverLimitRefused`, `TestCSVTooManyFieldsRefused`, `TestEveryCSVProfileChecksFields`, `TestJSONNestingOverLimitRefused`, `TestJSONNestingInArchiveRefused` (`internal/importer/limits_test.go`); `TestImportShapeLimits413` (`internal/httpapi`).
 - `FuzzParse` (every import profile, seeded from `internal/importer/testdata`) and `FuzzReadArchive` (`internal/importer/fuzz_test.go`), run nightly by `scripts/fuzz.sh`.
 
 **Not defended.**
-- CSV and JSON have no per-field or nesting limits beyond the file size and `MaxRows` (50,000). A large valid file costs memory up to the upload limit times a constant.
+- The CSV limits are checked once a record is read, so reading one record still costs memory up to its length, which the upload limit bounds. A file within every limit still costs memory up to the upload limit times a constant.
 - Fuzzing reaches nested ZIPs and the SQLite profiles only rarely (byte mutation of a database file covers little). The import planner (`plan*.go`) is not fuzzed.
 
 ### Malicious calendar, mail or issue server
@@ -294,7 +297,7 @@ The person turned on end-to-end encryption and does not trust the server, its op
 **Not defended.**
 - Content from these sources is untrusted text. It reaches tasks and, through them, AI agents (see the next profile).
 - A calendar server the user connected can change the events it serves.
-- The SMTP and IMAP connections, the OIDC issuer and backup destinations are configured by the operator and do not go through `internal/outbound`. The backup client uses Go's default HTTP client, which follows redirects and honours proxy environment variables. This is accepted: only the operator sets these targets, and host mode refuses backup settings to tenants.
+- The SMTP and IMAP connections, the OIDC issuer and backup destinations are configured by the operator and do not go through `internal/outbound`'s deny list, so they may be on the operator's own network. This is accepted: only the operator sets these targets, and host mode refuses backup settings to tenants. Their HTTP clients still take no proxy from the environment, the OIDC client follows no redirect, and the backup client follows at most 3, each to the destination's own scheme and host (`outbound.OperatorTransport`, `outbound.SameHostRedirects`; `TestOperatorTransportIgnoresEnvironmentProxy`, `TestSameHostRedirects`, `TestBackupClientIgnoresEnvironmentProxy`, `TestBackupDestinationRedirectsStayOnHost`, `TestProviderClientIgnoresEnvironmentProxy`, `TestProviderClientFollowsNoRedirect`).
 - The outbound dialer tries only the first allowed address of a name.
 
 ### Malicious AI agent or prompt injection
@@ -303,7 +306,7 @@ The model behind an MCP client or the in-app assistant follows instructions hidd
 
 **Defended.**
 - Writing without the owner's switch, the person's own switch and an `agent` token.
-- More than 50 items per call, 30 calls a minute and 1,000 items a day per token, for the item-writing tools.
+- More than 50 items per call, 30 calls a minute and 1,000 items a day per token, and 60 calls a minute and 2,000 items a day for all of one account's agent tokens together, for the item-writing tools.
 - Permanent deletion.
 - Trashing tasks the same token did not create.
 - Touching sharing, members, tokens, settings or credentials.
@@ -318,7 +321,7 @@ The model behind an MCP client or the in-app assistant follows instructions hidd
 - The assistant loop (`internal/assistant`) is capped at 12 model rounds and 50 entities per proposal. It runs only for signed-in sessions and is refused for encrypted accounts.
 
 **Verified by.**
-- `TestPermissionGate`, `TestToolsListByPermission` (golden tool lists), `TestToolSurfaceIsClosed`, `TestLimiterPerMinuteAndPerDay`, `TestWriteLimitPerCall`, `TestTrashOnlyOwnCreations`, `TestResultsMarkUntrustedText` (`internal/agenttools/agenttools_test.go`).
+- `TestPermissionGate`, `TestToolsListByPermission` (golden tool lists), `TestToolSurfaceIsClosed`, `TestLimiterPerMinuteAndPerDay`, `TestLimiterPerAccount`, `TestWriteRatePerAccount` (`limits_account_test.go`), `TestWriteLimitPerCall`, `TestTrashOnlyOwnCreations`, `TestResultsMarkUntrustedText` (`internal/agenttools/agenttools_test.go`).
 - `TestMcpCookieRejected401`, `TestMcpBadOrigin403`, `TestMcpBodyTooLarge413` (`internal/httpapi/mcp_test.go`).
 - `TestWriteLimitsOverHTTP`, `TestAgentWriteAudited` (`mcp_write_test.go`).
 - `TestInjectionCannotEscapeRegistry`, `TestLoopCapsChangeSetAt50`, `TestLoopRoundLimit` (`internal/assistant/loop_test.go`).
@@ -326,7 +329,7 @@ The model behind an MCP client or the in-app assistant follows instructions hidd
 
 **Not defended.**
 - Within those limits, an injected instruction can make an agent with write access change, complete, move or comment on the person's tasks. The changes are undoable and labelled in history.
-- Limits are per token: several agent tokens multiply them. They are kept in memory and reset on restart.
+- Limits are kept in memory and reset on restart.
 - The routine tools let an agent create, enable and run routines. A routine's runs are bounded by the routine engine's own limits and step availability ([Routines](../routines.md)), not by the agent limits above.
 - The in-app assistant sends what its read tools return to the model provider the person accepted (see the next profile).
 
@@ -469,8 +472,9 @@ Each item of the [review scope](review-scope.md) has a section here: where the c
 - **OAuth for MCP:**
   - Dynamic registration is allowed for Google's connector redirects only.
   - Consent is required, with PKCE S256 and single-use codes.
-  - Tests: `TestMCPOAuthAuthorizeNeedsConsent`, `TestMCPOAuthDynamicRegistrationIsGoogleOnly`, `TestMCPOAuthRevokeIsScopedToTheClient`.
-  - Refresh tokens last 180 days and do not rotate. Only deleting the client stops it.
+  - Refresh tokens rotate on every refresh. A refresh token that was already exchanged revokes the whole grant and records `mcp_oauth.refresh_reused` (OpenSpec `mcp-oauth-refresh-rotation`).
+  - Tests: `TestMCPOAuthAuthorizeNeedsConsent`, `TestMCPOAuthDynamicRegistrationIsGoogleOnly`, `TestMCPOAuthRevokeIsScopedToTheClient`, `TestMCPOAuthRefreshRotates`, `TestMCPOAuthRefreshReuseRevokesTheGrant`, `TestMCPOAuthRefreshReuseNeedsTheClient`, `TestMCPOAuthConcurrentRotatingRefreshRevokes`.
+  - **Not defended:** a client registered only for Google's connector addresses (the Gemini preset and every dynamic client) keeps one refresh token, because Google's guide for connected apps requires the same token back on a refresh. It lasts 180 days from the last refresh, and deleting the client or revoking the grant stops it (`TestMCPOAuthGoogleClientKeepsItsRefreshToken`).
 
 ### Assistant tool loop
 

@@ -80,14 +80,14 @@ OpenTodo is at **0.4**: every feature on the roadmap is in, covered by automated
 
 ## Features
 
-The highlights: the app in six languages, quick add in plain language, projects with sections and boards, recurring tasks, reminders with push, filters and saved views, time blocking, shared projects with comments, CalDAV, webhooks, a REST API and CLI, passkeys, two-factor and single sign-on, optional end-to-end encryption.
+The highlights: the app in seven languages, quick add in plain language, projects with sections and boards, recurring tasks, reminders with push, filters and saved views, time blocking, shared projects with comments, CalDAV, webhooks, a REST API and CLI, passkeys, two-factor and single sign-on, optional end-to-end encryption.
 
 <details>
 <summary><strong>Full feature list</strong></summary>
 
 ### Capture
 
-- **The app in your language**: English, German, French, Spanish, Italian or Portuguese, picked once and synced to every device; dates, notifications and quick add follow it. The guide stays in English. [Language](docs/language.md) · [Translating](docs/translating.md)
+- **The app in your language**: English, German, French, Spanish, Italian, Portuguese or Simplified Chinese, picked once and synced to every device; dates and notifications follow it, and quick add reads the first six. The guide stays in English. [Language](docs/language.md) · [Translating](docs/translating.md)
 - **Quick add from anywhere** (`q`), with the view's context as defaults: today in Today, the current project in a project.
 - **Natural language in six languages, offline**: `Call Sarah next Wed 3pm #work @call p1 +30m` sets the date, time, project, label, priority and estimate, with dismissible preview chips. English, German, French, Italian, Spanish and Portuguese. [Syntax](docs/quick-add.md)
 - **Voice capture** (opt-in per device): dictate into quick add with the microphone button or `Shift+V`; "hashtag home priority two" becomes `#home p2`. Uses the browser's own speech recognition, or a [speech-to-text service you run](docs/self-hosting/speech-to-text.md) (Speaches, whisper.cpp) so dictation stays on your network. [Voice](docs/quick-add.md#voice)
@@ -139,6 +139,8 @@ The highlights: the app in six languages, quick add in plain language, projects 
 - **Scheduled backups** of the whole server to a folder, S3-compatible storage or WebDAV, with retention, optional encryption and `opentodo restore`. [Backups](docs/backups.md)
 
 ### Security and privacy
+
+What the server defends, and what it does not, is in the [threat model](docs/security/threat-model.md).
 
 - **Closed sign-up by default** after the owner account is created; argon2id passwords, `HttpOnly` sessions, strict origin checks, CSP, rate limits.
 - **Passkeys** (WebAuthn) with browser autofill; needs an https `OPENTODO_BASE_URL`.
@@ -241,9 +243,9 @@ Every setting is an optional environment variable with a safe default; an invali
 
 ## Adding people
 
-Sign-up stays closed after the owner account exists. To add a partner or a colleague, open **Settings → Administration → Members**, optionally enter their email, pick an expiry (1 hour to 30 days, default 7 days) and create an invitation. Copy the link (it is shown once) and send it however you like; OpenTodo sends no email. The link creates exactly one `member` account and then stops working; you can revoke a pending link at any time. Admins can create invitations too.
+Sign-up stays closed after the owner account exists. To add a partner or a colleague, open **Settings → People → Users and invitations**, optionally enter their email, pick an expiry (1 hour to 30 days, default 7 days) and create an invitation. Copy the link (it is shown once) and send it however you like; OpenTodo sends no email. The link creates exactly one `member` account and then stops working; you can revoke a pending link at any time. Admins can create invitations too.
 
-Manage accounts afterwards in **Settings → Administration → Users**: promote admins, deactivate and reactivate, issue password reset links, delete accounts, transfer ownership ([docs/self-hosting/docker.md](docs/self-hosting/docker.md#managing-users)). If the owner forgets their password, `opentodo reset-owner-password` on the host prints a reset link. With single sign-on configured, people can also sign in through your identity provider. Set `OPENTODO_BASE_URL` so links point at your public URL. API details: [docs/api.md](docs/api.md#invitations).
+Manage accounts afterwards in **Settings → People → Users and invitations**: promote admins, deactivate and reactivate, issue password reset links, delete accounts, transfer ownership ([docs/self-hosting/docker.md](docs/self-hosting/docker.md#managing-users)). If the owner forgets their password, `opentodo reset-owner-password` on the host prints a reset link. With single sign-on configured, people can also sign in through your identity provider. Set `OPENTODO_BASE_URL` so links point at your public URL. API details: [docs/api.md](docs/api.md#invitations).
 
 ## How it works
 
@@ -276,7 +278,7 @@ Read the docs with screenshots and search at **[open-todo.app/docs](https://open
 - **AI**: [overview: which option to pick](docs/ai-and-agents.md) · [assistant in the app](docs/assistant.md) · [MCP](docs/mcp.md) · [`ot` for agents](docs/cli.md#using-ot-from-an-agent)
 - **Integrations**: [REST API](docs/api.md) · [stability and compatibility](docs/stability.md) · [CLI](docs/cli.md) · [webhooks](docs/webhooks.md) · [n8n](docs/n8n.md) · [AI assistant in the app](docs/assistant.md) · [AI assistants (MCP)](docs/mcp.md)
 - **Internals**: [architecture](docs/architecture.md) · [sync protocol](docs/sync.md)
-- **Project**: [changelog](CHANGELOG.md) · [roadmap](ROADMAP.md) · [security](SECURITY.md) · [contributing](CONTRIBUTING.md)
+- **Project**: [changelog](CHANGELOG.md) · [roadmap](ROADMAP.md) · [security policy](SECURITY.md) · [threat model and how security is verified](docs/security/README.md) · [contributing](CONTRIBUTING.md)
 
 ## Development
 

@@ -87,7 +87,7 @@ A demo instance (`OPENTODO_DEMO=true`) never sends email, whatever is configured
 
 ## Language
 
-Messages are written in the language of the browser that caused them (English, German, French, Spanish, Italian or Portuguese; English otherwise). An invitation uses the language of the person who sent it.
+Messages are written in the language of the browser that caused them (English, German, French, Spanish, Italian, Portuguese or Simplified Chinese; English otherwise). An invitation uses the language of the person who sent it.
 
 ## Weekly digest
 

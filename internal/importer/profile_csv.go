@@ -80,7 +80,7 @@ func (csvProfile) Detect(data []byte) bool {
 	if len(t) == 0 || t[0] == '{' || t[0] == '[' {
 		return false
 	}
-	r := csv.NewReader(bytes.NewReader(data))
+	r := newCSVReader(data)
 	r.Comma = sniffComma(data)
 	r.LazyQuotes = true
 	r.FieldsPerRecord = -1
@@ -101,14 +101,14 @@ func (csvProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 	if err != nil {
 		return nil, err
 	}
-	r := csv.NewReader(bytes.NewReader(data))
+	r := newCSVReader(data)
 	r.Comma = sniffComma(data)
 	r.LazyQuotes = true
 	r.FieldsPerRecord = -1
 	r.ReuseRecord = true
 	header, err := r.Read()
 	if err != nil {
-		return nil, &FileError{fmt.Sprintf("cannot read the CSV header: %v", err)}
+		return nil, csvFailure(err, "header")
 	}
 	out := &Parsed{}
 	col := map[string]int{}         // documented column → index
@@ -146,7 +146,7 @@ func (csvProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 				}
 				continue
 			}
-			return nil, &FileError{fmt.Sprintf("cannot read the CSV file: %v", err)}
+			return nil, csvFailure(err, "file")
 		}
 		line, _ := r.FieldPos(0)
 		get := func(c string) string {
