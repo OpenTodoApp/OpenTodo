@@ -13,7 +13,7 @@ import { resolveLabels } from '../lib/labels'
 import { hasTimeColumn } from '../lib/rowTime'
 import { setTaskCompleted } from '../lib/ops'
 import { breadcrumbOf, progressMap } from '../lib/subtasks'
-import type { View } from '../lib/types'
+import { GROUP_BY_OPTIONS, SORT_BY_OPTIONS, type View } from '../lib/types'
 import { displayOptions, runView, updateView, viewOptions, type ViewPatch } from '../lib/views'
 import { setFavourite } from '../lib/favourites'
 import { DashboardView } from './DashboardView'
@@ -43,6 +43,7 @@ import { BOARD_COLOR_BY_KEY } from '../lib/colorBy'
 import { useColorBy } from './calendar/colorByControls'
 import { useFoldedGroups, ViewResults } from './views/ViewResults'
 import type { ViewDisplay } from './views/DisplayPanel'
+import { useDisplayKeys } from './views/useDisplayKeys'
 import { rowLayoutOf, useAccountRowLayout } from '../lib/rowLayout'
 import { LIST_READY, perfMark } from '../lib/perfMarks'
 
@@ -180,6 +181,9 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
       'view.edit-query': () => focusQuery(),
     },
   })
+
+  // Group by, Order by and the direction from the keyboard (display-keys): the panel's write.
+  useDisplayKeys({ value: display, groupOptions: GROUP_BY_OPTIONS, sortOptions: SORT_BY_OPTIONS, sortFields: ctx.fields, set: (patch) => updateView(view.id, displayPatch(patch)) })
 
   useEffect(() => {
     if (!selected) return
