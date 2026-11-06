@@ -6,9 +6,9 @@
 
 ## Decisions
 
-1. **One component class, `.quick-add-field`, in `@layer components` of `index.css`**, applied to the row in `line` only: `rounded-control bg-raised px-3 py-1.5 transition-colors hover:bg-hover focus-within:bg-hover focus-within:ring-2 focus-within:ring-focus/30`. `focus-within` because the real input is nested and transparent. Tokens only, so the token lint passes and themes follow. Alternative rejected: styling the `<input>` itself, which would break the tint layer that mirrors its text.
-2. **Dark contrast.** If `raised` against `surface` is too faint in a theme, the fix is a `--color-field` token set per theme in `index.css`, not a per-screen colour. Decide while checking the stories; start with `raised`.
-3. **High-contrast and black themes** (surface, raised and sunken identical): the class adds `border border-default` under those themes' existing selectors.
+1. **One component class, `.quick-add-field`, in `@layer components` of `index.css`**, applied to the row in `line` only: `rounded-control border border-transparent bg-sunken px-3 py-1.5 focus-within:border-focus focus-within:ring-2 focus-within:ring-focus/30`. No hover or focus fill: the hover token is almost the raised one, so it would not read. The fill is sunken, not raised, so the field does not look like the raised group headers below it. The border pairs with the ring as `.ui-input` does, because a 30% ring alone is under 3:1 (WCAG 1.4.11). `focus-within` because the real input is nested and transparent. Tokens only, so the token lint passes and themes follow. Alternative rejected: styling the `<input>` itself, which would break the tint layer that mirrors its text.
+2. **Dark contrast.** If `sunken` against `surface` is too faint in a theme, the fix is a `--color-field` token set per theme in `index.css`, not a per-screen colour. Decide while checking the stories; start with `sunken`.
+3. **The high-contrast presentation** (surface, raised and sunken identical): the class's transparent border becomes `border-default` (until focus).
 4. **Divider removed** from the list row (`border-b border-default pb-2`); `mb-3` and the sticky classes stay, and the opaque `bg-surface` pseudo-element keeps rows from showing through.
 5. **Chips alignment:** the preview row's `pl-6` becomes the field's left padding plus the `+` width, so chips line up under the text.
 6. **Read-only:** `ReadOnlyQuickAdd` gets the same class with disabled, dimmed styling.
