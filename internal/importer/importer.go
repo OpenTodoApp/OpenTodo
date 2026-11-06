@@ -371,6 +371,9 @@ func Parse(data []byte, opts Options) (*Parsed, error) {
 	if isZip(data) {
 		return parseArchive(data, opts)
 	}
+	if err := checkShape(data); err != nil {
+		return nil, err
+	}
 	p, err := Detect(data, opts.Format)
 	if err != nil {
 		return nil, err
@@ -380,6 +383,9 @@ func Parse(data []byte, opts Options) (*Parsed, error) {
 
 // parseOne reads one file with a known profile.
 func parseOne(p Profile, data []byte, opts Options) (*Parsed, error) {
+	if err := checkShape(data); err != nil {
+		return nil, err
+	}
 	parsed, err := p.Read(bytes.NewReader(trimBOM(data)), opts)
 	if err != nil {
 		return nil, err

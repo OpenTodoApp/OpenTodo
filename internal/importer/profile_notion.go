@@ -1,8 +1,6 @@
 package importer
 
 import (
-	"bytes"
-	"encoding/csv"
 	"errors"
 	"fmt"
 	"io"
@@ -184,13 +182,13 @@ type notionReader struct {
 
 // notionCSV reads a database CSV into its header and records.
 func notionCSV(data []byte) ([]string, [][]string, error) {
-	r := csv.NewReader(bytes.NewReader(trimBOM(data)))
+	r := newCSVReader(trimBOM(data))
 	r.FieldsPerRecord = -1
 	r.LazyQuotes = true
 	var recs [][]string
 	header, err := r.Read()
 	if err != nil {
-		return nil, nil, &FileError{fmt.Sprintf("cannot read the CSV header: %v", err)}
+		return nil, nil, csvFailure(err, "header")
 	}
 	for i := range header {
 		header[i] = strings.TrimSpace(header[i])
@@ -201,7 +199,7 @@ func notionCSV(data []byte) ([]string, [][]string, error) {
 			break
 		}
 		if err != nil {
-			return nil, nil, &FileError{fmt.Sprintf("cannot read the CSV file: %v", err)}
+			return nil, nil, csvFailure(err, "file")
 		}
 		if !allBlank(rec) {
 			recs = append(recs, rec)
