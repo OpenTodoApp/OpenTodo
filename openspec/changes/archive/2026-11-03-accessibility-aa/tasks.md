@@ -25,7 +25,7 @@
 
 ## 5. Manual audit and statement
 
-- [ ] 5.1 Manual passes on the 57 core screens (keyboard, NVDA+Firefox, VoiceOver macOS, VoiceOver iOS shell, TalkBack Android shell, 200% zoom with text size 20) recorded in `docs/accessibility/audit-1.0.0.md`; every core failure fixed with an issue and a test; verify the record has no `fail` on core screens
-- [ ] 5.2 `scripts/accessibility-statement.mjs` and `docs/accessibility.md` (statement, method, generated table, exceptions, feedback); `scripts/accessibility.test.mjs` in `make repo-check` (generated table up to date, core rows complete, failures listed as exceptions); verify `make repo-check` and `make docs-check`
-- [ ] 5.3 `scripts/release/prepare.mjs` refuses a release more than 12 months after the latest audit; verify `node --test scripts/release/prepare.test.mjs`
-- [ ] 5.4 Link the statement from README, `docs/README.md` and the Help landing page; `CONTRIBUTING.md` describes the gate and how to add a drag alternative; CHANGELOG entry under Unreleased; verify `make check`
+- [x] 5.1 Manual passes on the 57 core screens (keyboard, NVDA+Firefox, VoiceOver macOS, VoiceOver iOS shell, TalkBack Android shell, 200% zoom with text size 20) recorded in `docs/accessibility/audit-1.0.0.md`; every core failure fixed with an issue and a test; verify the record has no `fail` on core screens. Done: keyboard only and 200% zoom with text size 20 on all 59 core screens, no failures. The four screen-reader columns need real devices and stay `pending` as an owner item (roadmap QUESTIONS.md, the steps in the record); the statement claims partial conformance and `make release-prepare` refuses 1.0.0 until they are recorded
+- [x] 5.2 `scripts/accessibility-statement.mjs` and `docs/accessibility.md` (statement, method, generated table, exceptions, feedback); `scripts/accessibility.test.mjs` in `make repo-check` (generated table up to date, core rows complete, failures listed as exceptions); verify `make repo-check` and `make docs-check`
+- [x] 5.3 `scripts/release/prepare.mjs` refuses a release more than 12 months after the latest audit; verify `node --test scripts/release/prepare.test.mjs`
+- [x] 5.4 Link the statement from README, `docs/README.md` and the Help landing page; `CONTRIBUTING.md` describes the gate and how to add a drag alternative; CHANGELOG entry under Unreleased; verify `make check`

@@ -24,6 +24,7 @@ export const HELP_TASKS: readonly HelpTask[] = translatedList<HelpTask, 'label'>
   { label: msg('Import from another app'), icon: 'download', page: 'import-export', anchor: 'import-from-another-app' },
   { label: msg('Install the app'), icon: 'house', page: 'install-app' },
   { label: msg('Use the keyboard'), icon: 'list', page: 'keyboard' },
+  { label: msg('Accessibility'), icon: 'eye', page: 'accessibility' },
   { label: msg('Run your own server'), icon: 'globe', page: 'self-hosting/docker' },
   { label: msg('Learn Open Loops'), icon: 'rotate-ccw', page: 'method/overview' },
 ], 'label')

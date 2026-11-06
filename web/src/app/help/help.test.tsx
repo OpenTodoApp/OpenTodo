@@ -79,16 +79,16 @@ describe('Help entry points', () => {
 })
 
 describe('Help landing (ux-overhaul)', () => {
-  it('opens on the search field with nine task entries before the guides', async () => {
+  it('opens on the search field with ten task entries before the guides', async () => {
     const { bundle } = await loadHelp()
     const slugs = new Set(bundle.pages.map((p) => p.slug))
-    expect(HELP_TASKS).toHaveLength(9)
+    expect(HELP_TASKS).toHaveLength(10)
     const r = await render(<HelpView />)
     await waitFor(() => r.container.querySelector('[data-help-tasks]') !== null)
     const search = r.container.querySelector<HTMLInputElement>('input#help-search')!
     expect(document.activeElement).toBe(search)
     const tasks = [...r.container.querySelectorAll<HTMLAnchorElement>('[data-help-task]')]
-    expect(tasks).toHaveLength(9)
+    expect(tasks).toHaveLength(10)
     for (const a of tasks) {
       const page = a.getAttribute('data-help-task')!
       if (slugs.has(page)) expect(a.getAttribute('target')).toBeNull()
