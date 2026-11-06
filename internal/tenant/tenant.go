@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"net/http"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/backup"
@@ -59,14 +60,17 @@ type Tenant struct {
 	Reader  *sql.DB // query-only pool for pure reads (store.OpenReader)
 	Handler http.Handler
 
-	log       *slog.Logger
-	now       func() time.Time
-	hosted    *Hosted
-	jobs      []jobs.Job
-	upkeep    *jobs.Upkeep
-	unlock    func()
-	closeOnce sync.Once
-	closeErr  error
+	log    *slog.Logger
+	now    func() time.Time
+	hosted *Hosted
+	jobs   []jobs.Job
+	upkeep *jobs.Upkeep
+	// auditChecked: the audit log's hash chain was verified once since the
+	// tenant opened (audit-hash-chain); later checks run with upkeep.
+	auditChecked atomic.Bool
+	unlock       func()
+	closeOnce    sync.Once
+	closeErr     error
 }
 
 // Open applies a pending web restore, takes the data directory's shared lock,

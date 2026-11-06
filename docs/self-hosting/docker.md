@@ -201,6 +201,29 @@ The owner sees an audit log of sign-ins, failed sign-ins, sign-outs, credentials
 - **Client addresses** are not recorded unless you turn on address logging in Settings. Behind a trusted reverse proxy the address is the nearest untrusted `X-Forwarded-For` hop (the one the proxy appended; see [Which proxies are believed](#behind-a-reverse-proxy)), so make sure the proxy sets that header (Caddy, Traefik and nginx with `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` do). Turning address logging off erases every stored address immediately.
 - **Disk use** is roughly 200 bytes per event: a household produces a few MB per year; a public server under credential stuffing records one `rate_limited` event per address per minute rather than one per attempt.
 - **Export** the log as newline-delimited JSON from the same panel to archive it beyond the retention window.
+- **Pruning** removes events from the start of the log, in order, and stops at the first one still within the retention.
+
+### Checking the log for tampering
+
+Each event carries a hash of itself and of the event before it, so the log is a chain. Changing an event, or removing or moving one from the middle, breaks the chain from that event on. Pruning does not: the server keeps the hash of the last event it pruned and checks from there.
+
+The server checks the chain when it starts and hourly while events are recorded, and writes `audit: hash chain broken` with the first broken event to its log; it keeps running and changes nothing. Check it yourself at any time:
+
+```bash
+ot audit verify
+```
+
+It prints the number of events checked and the newest one, or the first broken event, and exits with 1 when the chain is broken ([`ot audit verify`](../cli.md#audit-log), API: [`GET /api/v1/audit/verify`](../api.md#audit-log)).
+
+**Keep an anchor outside the server.** Someone who can write the database file can rewrite every hash, or remove the newest events, and the chain would still check. To notice that, keep the chain head somewhere the server cannot reach:
+
+1. Export the log. The last line of the file is the chain head, for example `{"chain":{"id":418,"hash":"9f2c…"}}`. Keep that line, or the whole file, in a password manager, on another machine or in a ticket.
+2. Later, export again and run `ot audit verify`. Find the event with the kept id in the new export:
+   - its `hash` is the kept hash: nothing up to that event changed since you kept it;
+   - its `hash` differs: events up to that one were rewritten;
+   - it is missing: it was pruned only if `checkpoint.id` in `ot audit verify --json` is at least the kept id, which happens once the event is older than the retention. Otherwise events were removed.
+
+Events recorded before your server had the chain have `"hash": null` and are not covered; they leave the log with the retention. The client address is not part of the hash, so erasing addresses keeps the chain intact.
 
 ## Two-factor authentication
 

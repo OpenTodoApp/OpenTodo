@@ -169,6 +169,11 @@ func (t *Tenant) housekeeping(ctx context.Context) {
 	} else if n > 0 {
 		log.Info("audit: pruned expired events", "count", n)
 	}
+	// The first pass after the tenant opens checks the audit chain; upkeep
+	// checks it again after changes.
+	if t.auditChecked.CompareAndSwap(false, true) {
+		t.verifyAudit(ctx)
+	}
 	if _, err := t.Auth.PruneSignups(ctx); err != nil {
 		log.Error("prune failed", "err", err)
 	}
@@ -195,8 +200,25 @@ func (t *Tenant) housekeeping(ctx context.Context) {
 	}
 }
 
+// verifyAudit checks the audit log's hash chain (OpenSpec change
+// audit-hash-chain) and logs the first broken link at error level. A broken
+// chain is evidence to keep, so nothing is repaired and nothing stops.
+func (t *Tenant) verifyAudit(ctx context.Context) {
+	v, err := t.Auth.Audit().Verify(ctx)
+	switch {
+	case err != nil:
+		if ctx.Err() == nil {
+			t.log.Error("audit: chain verification failed", "err", err)
+		}
+	case v.Break != nil:
+		t.log.Error("audit: hash chain broken: the log was changed outside OpenTodo",
+			"event_id", v.Break.ID, "reason", v.Break.Reason, "checked", v.Checked)
+	}
+}
+
 func (t *Tenant) runUpkeep(ctx context.Context) {
 	log := t.log
+	t.verifyAudit(ctx)
 	if t.Rules != nil {
 		if _, err := t.Rules.Store.Prune(ctx); err != nil {
 			log.Error("rules: prune runs", "err", err)
