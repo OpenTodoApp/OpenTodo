@@ -262,11 +262,11 @@ The person turned on end-to-end encryption and does not trust the server, its op
 - `TestArchiveTooManyEntries`, `TestArchiveOversizedExpansion`, `TestArchiveUnsafeName`.
 - `TestThingsRefusesSchemaThatComputes`, `TestThingsRefusesOversizedValue`, `TestThingsOpenerRefusesOtherSQLite`.
 - `TestCSVFieldOverLimitRefused`, `TestCSVRecordOverLimitRefused`, `TestCSVTooManyFieldsRefused`, `TestEveryCSVProfileChecksFields`, `TestJSONNestingOverLimitRefused`, `TestJSONNestingInArchiveRefused` (`internal/importer/limits_test.go`); `TestImportShapeLimits413` (`internal/httpapi`).
-- `FuzzParse` (every import profile, seeded from `internal/importer/testdata`) and `FuzzReadArchive` (`internal/importer/fuzz_test.go`), run nightly by `scripts/fuzz.sh`.
+- `FuzzParse` (every import profile, seeded from `internal/importer/testdata`) and `FuzzReadArchive` (`internal/importer/fuzz_test.go`), and `FuzzBuildPlan` (the planner, `internal/importer/plan_fuzz_test.go`), run nightly by `scripts/fuzz.sh`.
 
 **Not defended.**
 - The CSV limits are checked once a record is read, so reading one record still costs memory up to its length, which the upload limit bounds. A file within every limit still costs memory up to the upload limit times a constant.
-- Fuzzing reaches nested ZIPs and the SQLite profiles only rarely (byte mutation of a database file covers little). The import planner (`plan*.go`) is not fuzzed.
+- Fuzzing reaches nested ZIPs and the SQLite profiles only rarely (byte mutation of a database file covers little).
 
 ### Malicious calendar, mail or issue server
 
@@ -290,7 +290,7 @@ The person turned on end-to-end encryption and does not trust the server, its op
 - `TestFollowRedirectsChecksEveryHop`; `FuzzAddressPolicy` and `FuzzValidateURL` (`internal/outbound/fuzz_test.go`).
 - `TestExpandWorkBudget`, `TestExpandDeadline`, `FuzzParseAndExpand` (`internal/calfeed`).
 - `TestRedirectRefusedWithoutSecondRequest`, `TestBodyTooLarge`, `TestPrivateHostRefusedUnlessAllowed` (`internal/issues`).
-- `TestRedirectToAnotherSiteIsRefused`, `TestGraphRefusesRedirectsAndOtherHosts`, `FuzzParseMultistatus` (`internal/calsync`).
+- `TestRedirectToAnotherSiteIsRefused`, `TestGraphRefusesRedirectsAndOtherHosts`, `FuzzParseMultistatus`, `FuzzGraphPage` (`internal/calsync`).
 - `TestParseRejectsHugeMessage`, `FuzzParse`, `FuzzHTMLToMarkdown` (`internal/email`).
 
 **Not defended.**
