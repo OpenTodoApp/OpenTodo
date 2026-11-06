@@ -8,7 +8,7 @@
 //     tokens/tokens.css  the --ot-* colour tokens, light and dark, no Tailwind
 //     icons/icons.svg    SVG sprite of the bundled Lucide icons and the website-only ones
 //                        (web/src/ui/icons/site-icons.json), plus names.json and the licence
-//     brand/             the brand mark: source, mono, colour, wordmark, icon-512.png (sidebar-v2)
+//     brand/             the brand mark: source, mono, colour, wordmark, icon-512.png (sidebar-v2), kit/ (bundle-brand-kit)
 //     changelog.json     CHANGELOG.md as data
 //     method.json        the Open Loops vocabulary in every shipped language (open-loops-method D1)
 //     templates/         the template library: index.json and <slug>.json (template-library)
@@ -28,13 +28,14 @@ import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { compileLibrary } from './templates-build.mjs'
 import { compileRoutines } from './routine-templates.mjs'
-import { NOTICE, SOURCE as BRAND_SOURCE, symbolSvg } from './brand-icons.mjs'
+import { NOTICE, OUTPUTS as BRAND_OUTPUTS, SOURCE as BRAND_SOURCE, symbolSvg } from './brand-icons.mjs'
 
 const here = fileURLToPath(import.meta.url)
 export const repoRoot = resolve(dirname(here), '..')
 
-/** Bundle layout version; README.md states the stability rule. */
-export const LAYOUT = 1
+/** Bundle layout version: defined beside the tokens, which name it (scripts/tokens.mjs). */
+export { LAYOUT } from './tokens.mjs'
+import { LAYOUT } from './tokens.mjs'
 /** Manifest schema; fields are only ever added (spec "Feature manifest"). */
 export const MANIFEST_SCHEMA = 1
 
@@ -114,42 +115,9 @@ export function methodVocabulary(root = repoRoot) {
 
 // ---- tokens (D4) ----
 
-function block(css, selector) {
-  const at = css.indexOf(selector)
-  if (at < 0) throw new Error(`token block not found: ${selector}`)
-  const open = css.indexOf('{', at)
-  let depth = 0
-  for (let i = open; i < css.length; i++) {
-    if (css[i] === '{') depth++
-    else if (css[i] === '}' && --depth === 0) return css.slice(open + 1, i)
-  }
-  throw new Error(`unterminated block: ${selector}`)
-}
-
-const declarations = (body) => [...body.matchAll(/--ot-[\w-]+:\s*[^;]+;/g)].map((m) => m[0].replace(/\s+/g, ' '))
-
-/** The three --ot-* blocks of index.css (light, dark by preference, dark by attribute) as a standalone stylesheet. */
-export function tokensCss(indexCss, version) {
-  const light = declarations(block(indexCss, ':root, [data-theme="light"] {'))
-  const darkMedia = declarations(block(indexCss, '@media (prefers-color-scheme: dark) {\n  :root:not([data-theme="light"])'))
-  const darkAttr = declarations(block(indexCss, ':root[data-theme="dark"], [data-theme="dark"] {'))
-  const lines = (ds, indent) => ds.map((d) => `${indent}${d}`).join('\n')
-  return `/* OpenTodo colour tokens ${version}, generated from web/src/index.css (site bundle layout v${LAYOUT}).
-   Light by default; dark follows the system preference unless [data-theme="light"]
-   is set on an ancestor, and [data-theme="dark"] forces it. */
-:root, [data-theme="light"] {
-${lines(light, '  ')}
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-${lines(darkMedia, '    ')}
-  }
-}
-:root[data-theme="dark"], [data-theme="dark"] {
-${lines(darkAttr, '  ')}
-}
-`
-}
+// tokensCss lives in scripts/tokens.mjs, shared with the docs build without an import cycle.
+export { tokensCss } from './tokens.mjs'
+import { tokensCss } from './tokens.mjs'
 
 // ---- brand (sidebar-v2 D3) ----
 
@@ -167,6 +135,9 @@ export function brandFiles(root = repoRoot) {
     ['mark-colour.svg', Buffer.from(symbolSvg(source, 'colour'))],
     ['wordmark.svg', Buffer.from(wordmark)],
     ['icon-512.png', readFileSync(join(root, 'web/public/pwa-512.png'))],
+    // The brand kit (bundle-brand-kit): the repository's brand/ folder as kit/, byte for byte,
+    // listed from the brand script's outputs so nothing but generated files travels.
+    ...BRAND_OUTPUTS.filter((o) => o.path.startsWith('brand/')).map((o) => [`kit/${o.path.slice('brand/'.length)}`, readFileSync(join(root, o.path))]),
   ])
 }
 
@@ -304,7 +275,7 @@ tagged commit. Layout version ${LAYOUT}.
 | \`shots/\` | product screenshots, WebP; \`-dark\` names are the dark theme |
 | \`tokens/tokens.css\` | the \`--ot-*\` colour tokens for light and dark, standalone CSS |
 | \`icons/icons.svg\` | SVG sprite of the icon set (\`<use href="icons.svg#icon-inbox"/>\`), with \`names.json\` and \`LICENSE-lucide.txt\` (ISC) |
-| \`brand/\` | the brand mark: \`mark.svg\` (the source, two symbols), \`mark-mono.svg\` (the tray in \`currentColor\`, the tick in the accent), \`mark-colour.svg\` (the app icon), \`wordmark.svg\` and \`icon-512.png\`, byte-identical to the app's assets of this version; AGPL-3.0 like the rest of OpenTodo |
+| \`brand/\` | the brand mark: \`mark.svg\` (the source, two symbols), \`mark-mono.svg\` (the tray in \`currentColor\`, the tick in the accent), \`mark-colour.svg\` (the app icon), \`wordmark.svg\`, \`icon-512.png\`, and \`kit/\` (the repository's brand kit: \`README.md\`, \`svg/\`, \`png/\`, the logo files for download), byte-identical to the app's assets of this version; AGPL-3.0 like the rest of OpenTodo |
 | \`changelog.json\` | \`[{version, date, intro, sections: {Added: [markdown, ...]}}]\`, newest first |
 | \`templates/\` | schema ${TEMPLATES_SCHEMA}: \`index.json\` (\`{schema, templates: [{slug, category, icon, languages, title, summary}]}\`) and one \`<slug>.json\` per template (metadata, \`text\`, \`labels\`, \`projects\` with relative \`due\` offsets such as \`+2d\`, \`counts\`), and \`routines.json\` (\`{schema, starters: [...]}\`: the routine starters with \`slug\`, \`category\`, \`icon\`, \`text\`, \`ask\` (the choices), \`trigger\`, \`condition\`, \`steps\` and \`texts\` (the steps' translated texts by path)); every text is \`{en, <lang>: ...}\`, English where a language is missing; compiled from the repository's \`templates/\` folder |
 | \`method.json\` | schema ${METHOD_SCHEMA}: the Open Loops vocabulary, \`{name, languages, tagline, moves, principles, places, rhythms, horizons}\`, each term \`{id, name: {<lang>: text}, description: {<lang>: text}}\` (moves add \`route\` and \`keys\`), in the words the app of this version shows |
@@ -361,7 +332,10 @@ export async function buildBundle({ version, out = 'dist', bin, archive = true }
   writeFileSync(join(dir, 'icons/names.json'), JSON.stringify([...appNames, ...Object.keys(siteIcons).filter((n) => !appNames.includes(n))], null, 2) + '\n')
   copyFileSync(join(iconsDir, 'LICENSE-lucide.txt'), join(dir, 'icons/LICENSE-lucide.txt'))
   mkdirSync(join(dir, 'brand'))
-  for (const [name, bytes] of brandFiles()) writeFileSync(join(dir, 'brand', name), bytes)
+  for (const [name, bytes] of brandFiles()) {
+    mkdirSync(dirname(join(dir, 'brand', name)), { recursive: true })
+    writeFileSync(join(dir, 'brand', name), bytes)
+  }
 
   // changelog.json, manifest.json, README.md
   const changelog = parseChangelog(readFileSync(join(repoRoot, 'CHANGELOG.md'), 'utf8'))

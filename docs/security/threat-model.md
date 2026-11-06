@@ -67,14 +67,14 @@ The model describes the code on `main` at the time of writing. An external revie
 **Mechanism.**
 - The route policy wrapper (`internal/httpapi/policy.go`). A route is public only with a written reason, and every public route checks its own credential (a secret in the address, a bearer token or a single-use token).
 - Rate limits per client address and per account, with account lockout after 10 failures in 15 minutes (`ratelimit.go`, `accountlock.go`).
-- Session cookies are `HttpOnly` and `SameSite=Lax`. Cookie writes must carry a matching `Origin` (`originAllowed` in `middleware.go`). With `OPENTODO_BASE_URL` set, the request must also be addressed to the base URL's host, which defends against DNS rebinding.
+- Session cookies are `HttpOnly` and `SameSite=Lax`. Cookie writes must carry a matching `Origin` (`originAllowed` in `middleware.go`). Without `Origin`, a cookie write needs `Sec-Fetch-Site: same-origin` or, with no Fetch Metadata either, a JSON body, which a cross-site form or navigation cannot declare (`cookieWriteAllowed`). With `OPENTODO_BASE_URL` set, the request must also be addressed to the base URL's host, which defends against DNS rebinding.
 - Forwarded addresses are believed only from trusted proxies (`clientip.go`).
 - First run: `OPENTODO_SETUP_TOKEN` or `OPENTODO_SETUP_CODE=required`. Without `OPENTODO_BASE_URL`, a first registration addressed to a domain name (not an IP address, a dotless name or a local-only suffix) needs the setup code from the log even with the code off, so a rebound name cannot create the owner (`setupHostVerified` in `setuphost.go`).
 
 **Verified by.**
 - `TestEveryRouteDeclaresAPolicy`, `TestSecurityRoutePolicies` (`internal/httpapi/policy_test.go`).
 - `TestRouteMatrix` (`internal/httpapi/route_matrix_test.go`): every route, anonymous, with each token scope, as a member, as a viewer, cross-site and with a stale session.
-- `TestLoginRateLimit`, `TestCrossSiteCookieWritesAreRejected` (`server_test.go`).
+- `TestLoginRateLimit`, `TestCrossSiteCookieWritesAreRejected` (`server_test.go`), including writes without `Origin` or `Sec-Fetch-Site`; the route matrix's pass of a form post with neither header on every write route.
 - `TestSecurityHeaders` (`security_headers_test.go`): no framing, no sniffing, scripts only from the server.
 - `TestAccountLockout`, `TestForwardedForOnlyFromTrustedPeers`, `TestOriginMustMatchBaseURL` (`client_identity_test.go`).
 - `TestSetupHostVerified`, `TestSetupUnderDomainNameNeedsCode`, `TestNoHostCheckWithBaseURL` (`setuphost_test.go`); `TestSetupHostCheck` (`internal/auth/setupcode_test.go`).
@@ -82,7 +82,7 @@ The model describes the code on `main` at the time of writing. An external revie
 
 **Not defended.**
 - Without `OPENTODO_BASE_URL`, the origin check compares against the request's own `Host`, so after setup a rebound name passes it. The session cookie belongs to the server's real name, so such a page has no session; it can reach public routes and try passwords against the rate limits. The docs tell operators to set the base URL.
-- A write with no `Origin` header is accepted. It relies on `SameSite=Lax` keeping the cookie off cross-site subrequests.
+- A JSON write with neither `Origin` nor `Sec-Fetch-Site` is accepted, so that non-browser clients signed in with a password (`ot login`) keep working. From another site it would need a CORS preflight, which the server never grants.
 - Rate limits live in memory, per process. A restart clears them.
 - Anyone who knows an email address can keep that account's password sign-in locked. Passkeys, single sign-on and open sessions keep working.
 - `TestRouteMatrix` skips public routes, which are tested by their own feature tests.
@@ -211,11 +211,11 @@ The person turned on end-to-end encryption and does not trust the server, its op
 - The server reading encrypted content fields, the passphrase, the recovery key or the account key.
 - Moving a ciphertext to another field, item or entity: it fails authentication.
 - Turning encryption off on devices by "forgetting" the key record: devices pause sync instead of uploading plaintext.
-- Serving a key record with a derivation weaker than 100,000 PBKDF2 iterations, or one that would hang the device.
+- Serving a key record with a derivation weaker than the 600,000 PBKDF2 iterations the app writes, or one that would hang the device.
 
 **Mechanism.**
 - AES-256-GCM in the browser (`web/src/lib/crypto.ts`), with additional data binding each value to `entity\0id\0field`.
-- The account key is wrapped with AES-KW under a PBKDF2-SHA-256 passphrase key (600,000 iterations) and an HKDF-derived recovery key.
+- The account key is wrapped with AES-KW under a PBKDF2-SHA-256 passphrase key (600,000 iterations) and an HKDF-derived recovery key. Devices, `ot` and the server accept the same range, 600,000 to 10,000,000 (`ACCEPTED_ITERATIONS` in `web/src/lib/crypto.ts`, `crypt.MinIterations`, `e2ee.MinIterations`).
 - The content field list is generated from the op schema (`Content: true` in `internal/sync/ops.go`, `CONTENT_FIELDS`, `internal/e2ee/contentfields.go`).
 - Turning encryption on rewrites existing content of every kind (`web/src/lib/e2eeSync.ts`).
 - A missing key record locks devices instead (`web/src/lib/e2ee.ts`).
@@ -224,7 +224,7 @@ The person turned on end-to-end encryption and does not trust the server, its op
 **Verified by.**
 - Known-answer vectors shared by the web client, the server's checks and the CLI: `web/src/lib/e2ee.vectors.json`, read by `TestVectors` (`internal/e2ee/vectors_test.go`), `TestContentVectors` and `TestPassphraseAndRecoveryVectors` (`internal/e2ee/crypt/crypt_test.go`), and the "known-answer vectors" suite of `web/src/lib/crypto.test.ts`.
 - Rewrite coverage: `web/src/lib/e2eeCoverage.test.ts` ("lists every entity kind that has content fields or content prefixes") fails when a content kind is missing from the job. It was added with the fix in 0.21.0 (#806); see [Known gaps and past issues](how-we-verify.md#known-gaps-and-past-issues).
-- Key record handling: `web/src/lib/e2ee.test.ts` ("a 404 on refresh keeps encryption on and locks…", "refuses a key record with an iteration count outside the accepted range…").
+- Key record handling: `web/src/lib/e2ee.test.ts` ("a 404 on refresh keeps encryption on and locks…", "refuses a key record with an iteration count outside the accepted range…"); `web/src/lib/crypto.test.ts` ("accepts the iteration range the server stores…") and `TestPassphraseAndRecoveryVectors` keep the device's and `ot`'s range equal to the server's.
 - `TestGeneratedOpSchema` keeps the content list in step with the schema.
 - `TestSharingRefusedForEncryptedAccount`, `TestNotificationsNeverShowCiphertext`.
 - `TestServerDoesNotLinkCrypt`: the server binary never links the CLI's crypto.
@@ -238,7 +238,6 @@ The person turned on end-to-end encryption and does not trust the server, its op
   - It cannot tell a request for an assistant from one the server made up.
   - So, while the relay is on, the server operator is trusted with content, within those caps. [docs/mcp.md](../mcp.md) and the threat model in [docs/e2ee.md](../e2ee.md) say to opt a device in only on a server you run or trust.
 - **Weak passphrases.** PBKDF2 is not memory-hard, so the wrapped key can be attacked offline.
-- **The client's lower bound.** The client accepts a key record with 100,000 iterations or more, while the server stores only 600,000 to 10,000,000. A server cannot use this to unwrap anything, because a record it changes no longer unwraps the key, but the bounds differ (follow-up: align them).
 - **Plaintext from before.** Content written before encryption was turned on stays in older backups and in the op log until **Purge plaintext history**.
 
 ### Malicious import file
@@ -524,11 +523,10 @@ Each item of the [review scope](review-scope.md) has a section here: where the c
 - **Controls:**
   - Markdown is rendered by an in-house renderer to React elements. Raw HTML stays text, and only `http(s)` and `mailto` links are rendered (`web/src/lib/markdown.test.ts`).
   - Links from encrypted data open only `http(s)`.
-  - The share target accepts only same-origin or share-sheet requests up to 100 MB (`shareRequestAllowed`, `web/src/lib/shareInbox.test.ts`).
+  - The share target stores only same-origin or share-sheet requests up to 100 MB, identified by `Sec-Fetch-Site`. A request without the header is not stored, and the capture screen says why (`shareRequestVerdict`, `web/src/lib/shareInbox.test.ts`).
   - Signing out empties the app's caches.
   - Strict CSP: `script-src 'self'` and `frame-ancestors 'none'` (`cspBase`), `X-Frame-Options: DENY`.
 - **Tests:** `TestSecurityHeaders` (`internal/httpapi/security_headers_test.go`) pins `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy` and the page policy's `default-src`, `script-src`, `frame-ancestors`, `base-uri` and `form-action`.
-- **Gap:** the share target also accepts a request without `Sec-Fetch-Site`, which older browsers do not send.
 
 ### Android and iOS bridges
 

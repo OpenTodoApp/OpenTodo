@@ -3,10 +3,10 @@
 // written from today's brand.svg. Runs without a browser.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { deflateSync, inflateSync } from 'node:zlib'
-import { OUTPUTS, ROOT, SOURCE, STAMP, androidXml, colourSvg, pngToRgb, sha256, symbolPaths } from './brand-icons.mjs'
+import { OUTPUTS, ROOT, SOURCE, STAMP, androidXml, colourSvg, pngToRgb, sha256, symbolGroup, symbolPaths } from './brand-icons.mjs'
 
 const read = (p) => readFileSync(join(ROOT, p))
 const stamp = JSON.parse(read(STAMP))
@@ -14,6 +14,10 @@ const regenerate = 'run `node scripts/brand-icons.mjs` and commit the files'
 
 test('the stamp was written from the current brand.svg', () => {
   assert.equal(stamp.source, sha256(read(SOURCE)), `${SOURCE} changed: ${regenerate}`)
+})
+
+test('the stamp was written from the current wordmark.svg', () => {
+  assert.equal(stamp.wordmark, sha256(read('web/src/ui/icons/wordmark.svg')), `the wordmark changed: ${regenerate}`)
 })
 
 test('every output exists and matches the stamp', () => {
@@ -35,7 +39,7 @@ test('the maskable icon fills its square', () => {
 })
 
 test('PNG outputs have the declared pixel size', () => {
-  for (const { path, size } of OUTPUTS.filter((o) => o.size)) {
+  for (const { path, size } of OUTPUTS.filter((o) => o.size && !o.jpeg)) {
     const png = read(path)
     assert.equal(png.toString('latin1', 1, 4), 'PNG', path)
     assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [size, size], path)
@@ -133,4 +137,99 @@ test('an RGBA screenshot is re-encoded as RGB with the same pixels', () => {
 
 test('a PNG row with an unknown filter is refused, not zeroed', () => {
   assert.throws(() => pngToRgb(rgbaPng(1, 1, [[7, 1, 2, 3, 255]])), /row 0 has unknown filter 7/)
+})
+
+// The brand kit (OpenSpec change brand-kit).
+const WORDMARK = 'web/src/ui/icons/wordmark.svg'
+
+test('the wordmark source is "OpenTodo" as one outlined path', () => {
+  assert.ok(existsSync(join(ROOT, WORDMARK)), `${WORDMARK} is missing`)
+  const svg = read(WORDMARK).toString()
+  assert.match(svg, /viewBox="0 0 123 24"/)
+  assert.equal((svg.match(/<path /g) ?? []).length, 1)
+  assert.doesNotMatch(svg, /<text/)
+  assert.match(svg, /AGPL-3\.0/)
+  assert.match(svg, /SIL Open Font License/)
+})
+
+const KIT = [
+  'brand/README.md',
+  ...['mark-on-light', 'mark-on-dark', 'mark-black', 'mark-white', 'mark-colour', 'mark-colour-square', 'lockup-on-light', 'lockup-on-dark'].map((n) => `brand/svg/${n}.svg`),
+  ...[16, 32, 48, 64, 128, 180, 192, 256, 512, 1024].map((s) => `brand/png/icon-${s}.png`),
+  ...['on-light', 'on-dark', 'black', 'white'].flatMap((v) => [256, 512, 1024].map((s) => `brand/png/mark-${v}-${s}.png`)),
+  ...['on-light', 'on-dark'].flatMap((v) => [`brand/png/lockup-${v}-852x192.png`, `brand/png/lockup-${v}-1704x384.png`]),
+  'brand/png/avatar-512.png',
+  'brand/png/github-social-preview-1280x640.png',
+  'brand/png/og-default-1200x630.png',
+  'brand/png/play-feature-graphic-1024x500.png',
+]
+
+test('the brand kit is generated, and brand/ holds nothing else', () => {
+  const outputs = OUTPUTS.map((o) => o.path)
+  for (const path of KIT) assert.ok(outputs.includes(path), `${path} is not a brand output`)
+  const onDisk = []
+  const walk = (dir) => {
+    for (const e of readdirSync(join(ROOT, dir), { withFileTypes: true })) {
+      const rel = `${dir}/${e.name}`
+      if (e.name.startsWith('.')) continue // .DS_Store and other files git ignores
+      if (e.isDirectory()) walk(rel)
+      else onDisk.push(rel)
+    }
+  }
+  walk('brand')
+  assert.deepEqual(onDisk.sort(), outputs.filter((p) => p.startsWith('brand/')).sort(), `brand/ holds only generated files: ${regenerate}`)
+})
+
+test('the lockups draw the mark, with its stroke, and the outlined wordmark, not text', () => {
+  const source = read(SOURCE).toString()
+  const [tray, tick] = symbolPaths(source, 'mono')
+  const word = /<path d="([^"]+)"/.exec(read(WORDMARK).toString())[1]
+  for (const v of ['on-light', 'on-dark']) {
+    const svg = read(`brand/svg/lockup-${v}.svg`).toString()
+    for (const d of [tray, tick, word]) assert.ok(svg.includes(`d="${d}"`), `lockup-${v} draws ${d.slice(0, 20)}…`)
+    assert.ok(svg.includes(`<g ${symbolGroup(source, 'mono')}>`), `lockup-${v} uses the mono symbol's stroke`)
+    assert.doesNotMatch(svg, /<text/)
+  }
+})
+
+test('kit PNGs are named after their pixel size', () => {
+  for (const path of KIT.filter((p) => p.endsWith('.png'))) {
+    const png = read(path)
+    const [w, h] = [png.readUInt32BE(16), png.readUInt32BE(20)]
+    const named = /-(\d+)x(\d+)\.png$/.exec(path) ?? /-(\d+)\.png$/.exec(path)
+    assert.deepEqual([w, h], [Number(named[1]), Number(named[2] ?? named[1])], path)
+  }
+})
+
+// The other stores' icons (OpenSpec change brand-assets-everywhere).
+test('the store icons outside the template folders are brand outputs, in the size and format each store asks', () => {
+  const out = (path) => OUTPUTS.find((o) => o.path === path)
+  for (const path of ['deploy/runtipi/metadata/logo.jpg', 'deploy/runtipi/upstream/apps/opentodo/metadata/logo.jpg']) {
+    assert.ok(out(path)?.jpeg, `${path} is a JPEG brand output`)
+    const jpg = read(path)
+    assert.deepEqual([...jpg.subarray(0, 3)], [0xff, 0xd8, 0xff], `${path} is a JPEG`)
+  }
+  const png = (path) => { const b = read(path); return [b.readUInt32BE(16), b.readUInt32BE(20), b[25]] }
+  assert.ok(out('deploy/homeassistant/upstream/opentodo/icon.png'))
+  assert.deepEqual(png('deploy/homeassistant/upstream/opentodo/icon.png').slice(0, 2), [128, 128], 'Home Assistant: a square 128 px icon')
+  assert.ok(out('deploy/homeassistant/upstream/opentodo/logo.png'))
+  assert.deepEqual(png('deploy/homeassistant/upstream/opentodo/logo.png').slice(0, 2), [250, 100], 'Home Assistant: a logo of about 250 × 100')
+  assert.deepEqual(png('deploy/claude-plugin/upstream/plugins/opentodo/.claude-plugin/icon.png').slice(0, 2), [192, 192])
+  assert.deepEqual(png('brand/png/play-feature-graphic-1024x500.png'), [1024, 500, 2], 'Google Play: a 1024 × 500 feature graphic without alpha')
+})
+
+test('every icon or logo file under the app and deploy folders is a brand output', () => {
+  const outputs = new Set(OUTPUTS.map((o) => o.path))
+  const skip = new Set(['node_modules', 'build', 'dist', '.gradle', '.git', 'screenshots'])
+  const strays = []
+  const walk = (dir) => {
+    if (!existsSync(join(ROOT, dir))) return
+    for (const e of readdirSync(join(ROOT, dir), { withFileTypes: true })) {
+      const rel = `${dir}/${e.name}`
+      if (e.isDirectory()) { if (!skip.has(e.name)) walk(rel); continue }
+      if (/(^|[-_/.])(icon|logo|favicon|apple-touch|pwa)[^/]*\.(png|jpe?g|svg|webp|ico)$/i.test(rel) && !outputs.has(rel)) strays.push(rel)
+    }
+  }
+  for (const dir of ['web/public', 'extension', 'obsidian', 'mobile', 'deploy', 'docs/screenshots']) walk(dir)
+  assert.deepEqual(strays, [], `icons and logos come from brand.svg: add them to OUTPUTS in scripts/brand-icons.mjs and ${regenerate}`)
 })

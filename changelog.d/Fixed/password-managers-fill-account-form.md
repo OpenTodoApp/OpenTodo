@@ -1,1 +1,0 @@
-- **Password managers fill the account form of a workspace invitation.** Its email, name and password fields now say what they hold, like every other sign-in form.

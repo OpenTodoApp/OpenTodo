@@ -1,1 +1,0 @@
-- **A long title in the task panel shows in full.** The title stopped at two lines, so a longer one had to be edited inside a box that hid most of it. The title on the task page and in the docked panel now grows with the text, up to eight lines, and scrolls only past that. ([#859](https://github.com/OpenTodoApp/OpenTodo/issues/859))

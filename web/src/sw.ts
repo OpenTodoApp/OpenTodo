@@ -6,7 +6,7 @@
 import { clientsClaim } from 'workbox-core'
 import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching'
 import { NavigationRoute, registerRoute } from 'workbox-routing'
-import { entryFromForm, entrySize, putInboxEntry, SHARE_MAX_BYTES, shareRequestAllowed } from './lib/shareInbox'
+import { entryFromForm, entrySize, putInboxEntry, SHARE_MAX_BYTES, shareRequestVerdict } from './lib/shareInbox'
 
 declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: (string | { url: string; revision: string | null })[] }
 
@@ -59,8 +59,12 @@ registerRoute(
   ({ url, request }) => url.pathname === '/share' && request.method === 'POST',
   async ({ request }) => {
     // Only the share sheet or the app itself may hand over a share, and only up
-    // to a size cap; anything else opens the app without storing a thing.
-    if (!shareRequestAllowed(request.headers)) return Response.redirect('/', 303)
+    // to a size cap; anything else opens the app without storing a thing. A
+    // request that does not say where it came from opens the capture screen,
+    // which says why nothing arrived.
+    const verdict = shareRequestVerdict(request.headers)
+    if (verdict === 'unverified') return Response.redirect('/share?files=unverified', 303)
+    if (verdict !== 'store') return Response.redirect('/', 303)
     const id = crypto.randomUUID()
     const entry = entryFromForm(await request.formData(), id)
     if (entrySize(entry) > SHARE_MAX_BYTES) return Response.redirect('/', 303)

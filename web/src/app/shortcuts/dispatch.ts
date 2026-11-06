@@ -5,7 +5,7 @@
 // registry (`web/src/lib/shortcuts.ts`) in the innermost active scope first, and
 // runs once. No DOM beyond the event and `document.activeElement`, so tests drive
 // it with plain frames and synthetic events.
-import { type Chord, chordKey, chordsOf, matchesChord, SHORTCUTS, type Shortcut, type ShortcutScope } from '../../lib/shortcuts'
+import { type Chord, chordKey, chordsOf, matchesChord, SEQUENCE_STEPS, SHORTCUTS, type Shortcut, type ShortcutScope } from '../../lib/shortcuts'
 import { resettable } from '../../lib/moduleState'
 import { createSignal } from '../../lib/store'
 import { isCharacterKey, singleKeysOn } from './singleKeys'
@@ -267,15 +267,24 @@ export function pendingContinuations(): Continuation[] {
       if (frame.scope === 'view' && entry.views && (!frame.view || !entry.views.includes(frame.view))) continue
       if (!frame.handlers[entry.id]) continue
       for (const seq of chordsOf(entry)) {
-        if (seq.length !== pend.length + 1 || !prefixMatches(seq, pend)) continue
+        if (seq.length <= pend.length || !prefixMatches(seq, pend)) continue
+        // A longer sequence is listed by its middle step (`r` then "g Group by"), when it has one.
+        const step = seq.length === pend.length + 1 ? entry : stepOf(seq.slice(0, pend.length + 1))
         const k = chordKey([seq[pend.length]])
-        if (seen.has(k)) continue
+        if (!step || seen.has(k)) continue
         seen.add(k)
-        out.push({ entry, next: seq[pend.length] })
+        out.push({ entry: step, next: seq[pend.length] })
       }
     }
   }
   return out
+}
+
+const steps = new Map(SEQUENCE_STEPS.flatMap((s) => chordsOf(s).map((c) => [chordKey(c), s] as const)))
+
+/** The named middle step of a longer sequence, if the registry names it. */
+function stepOf(seq: Chord[]): Shortcut | undefined {
+  return steps.get(chordKey(seq))
 }
 
 function chordOf(e: KeyboardEvent): Chord {

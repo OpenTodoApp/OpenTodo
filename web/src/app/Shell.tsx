@@ -7,7 +7,7 @@ import { describeRejected } from '../lib/sharing'
 import { keysOf } from '../lib/shortcuts'
 import { dismissRejected, useSyncStatus } from '../lib/sync'
 import { canonicalPath, navigate, offersQuickAdd, parseRoute, useRoute } from './router'
-import { SIDEBAR_COLLAPSED_REM, SIDEBAR_MAX_REM, SIDEBAR_MIN_REM, setSidebarCollapsed, setSidebarWidth, toggleSidebarCollapsed, useSidebarLayout } from './sidebarLayout'
+import { SIDEBAR_COLLAPSED_REM, SIDEBAR_DEFAULT_REM, SIDEBAR_MAX_REM, SIDEBAR_MIN_REM, setSidebarCollapsed, setSidebarWidth, toggleSidebarCollapsed, useSidebarLayout } from './sidebarLayout'
 import { FilterView } from './FilterView'
 import { LabelsView } from './LabelsView'
 import { PlacesView } from './locations/PlacesView'
@@ -390,23 +390,33 @@ function DrawerOverlay({ panel, onClose }: { panel: React.RefObject<HTMLElement 
   return <div className="fixed inset-0 z-[45] touch-none bg-scrim md:hidden" onClick={onClose} />
 }
 
-/** The sidebar's drag edge (app-shell "Resizable sidebar"): 15 to 22.5 rem, per device; arrows resize it from the keyboard. */
+/**
+ * The sidebar's drag edge (app-shell "Resizable sidebar"): 15 to 22.5 rem, per device; arrows resize it
+ * from the keyboard, and a click without dragging switches between the widest and the default width
+ * (accessibility-aa D3, WCAG 2.2 2.5.7).
+ */
 function SidebarResizer({ width }: { width: number }) {
-  const dragging = useRef<{ startX: number; startWidth: number } | null>(null)
+  const dragging = useRef<{ startX: number; startWidth: number; moved: boolean } | null>(null)
   const rem = () => parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
   return (
     <div role="separator" aria-orientation="vertical" aria-label={t('Resize sidebar')} aria-valuemin={SIDEBAR_MIN_REM} aria-valuemax={SIDEBAR_MAX_REM} aria-valuenow={width}
-      tabIndex={0} data-sidebar-resizer
+      tabIndex={0} data-sidebar-resizer data-drag-id="sidebar-resizer"
       className="hidden w-1 shrink-0 cursor-col-resize self-stretch hover:bg-accent/40 focus-visible:bg-accent focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus lg:block"
       onPointerDown={(e) => {
-        dragging.current = { startX: e.clientX, startWidth: width }
+        dragging.current = { startX: e.clientX, startWidth: width, moved: false }
         e.currentTarget.setPointerCapture(e.pointerId)
       }}
       onPointerMove={(e) => {
         const d = dragging.current
-        if (d) setSidebarWidth(d.startWidth + (e.clientX - d.startX) / rem())
+        if (!d || (!d.moved && Math.abs(e.clientX - d.startX) < 4)) return
+        d.moved = true
+        setSidebarWidth(d.startWidth + (e.clientX - d.startX) / rem())
       }}
-      onPointerUp={() => { dragging.current = null }}
+      onPointerUp={() => {
+        const d = dragging.current
+        dragging.current = null
+        if (d && !d.moved) setSidebarWidth(width >= SIDEBAR_MAX_REM ? SIDEBAR_DEFAULT_REM : SIDEBAR_MAX_REM)
+      }}
       onKeyDown={(e) => {
         if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); setSidebarWidth(width + (e.key === 'ArrowRight' ? 0.5 : -0.5)) }
         if (e.key === 'Home') { e.preventDefault(); setSidebarWidth(SIDEBAR_MIN_REM) }

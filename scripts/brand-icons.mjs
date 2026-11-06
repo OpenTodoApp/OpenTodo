@@ -12,6 +12,7 @@ import { createHash } from 'node:crypto'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { deflateSync, inflateSync } from 'node:zlib'
+import { FONT, KIT_OUTPUTS, WORDMARK, bannerPage } from './brand-kit.mjs'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -21,7 +22,8 @@ export const STAMP = 'web/src/ui/icons/brand-icons.json'
 /**
  * Every generated file: `full` fills the square edge to edge (maskable and
  * Apple icons, which the platform crops to its own shape); the others keep
- * the rounded square with transparent corners.
+ * the rounded square with transparent corners. `opaque` drops the alpha channel,
+ * `jpeg` writes a JPEG (for a store that asks for one).
  */
 export const OUTPUTS = [
   { path: 'web/public/favicon.svg', svg: true },
@@ -43,6 +45,13 @@ export const OUTPUTS = [
   { path: 'deploy/caprover/upstream/public/v4/logos/opentodo.png', size: 512 },
   { path: 'deploy/casaos/upstream/Apps/OpenTodo/icon.png', size: 256 },
   { path: 'deploy/cosmos/upstream/servapps/OpenTodo/icon.png', size: 256 },
+  // The other stores' icons (brand-assets-everywhere): Runtipi's 512 px JPEG logo, the Home
+  // Assistant add-on's 128 px icon and its 250 × 100 logo (the lockup on the slate square), and
+  // the Claude plugin's 192 px icon.
+  ...['deploy/runtipi/metadata/logo.jpg', 'deploy/runtipi/upstream/apps/opentodo/metadata/logo.jpg'].map((path) => ({ path, size: 512, full: true, jpeg: true })),
+  { path: 'deploy/homeassistant/upstream/opentodo/icon.png', size: 128 },
+  { path: 'deploy/homeassistant/upstream/opentodo/logo.png', width: 250, height: 100, page: (s, w, h) => bannerPage(250, 100, s, w, h) },
+  { path: 'deploy/claude-plugin/upstream/plugins/opentodo/.claude-plugin/icon.png', size: 192 },
   // The native shells (brand-mark-tray D3, D4): the iOS app icon, opaque as the App Store
   // requires, and the Android adaptive launcher icon and notification icon as vector drawables.
   { path: 'mobile/ios/OpenTodo/Assets.xcassets/AppIcon.appiconset/AppIcon.png', size: 1024, full: true, opaque: true },
@@ -50,6 +59,8 @@ export const OUTPUTS = [
     path: `mobile/android/app/src/main/res/drawable/${android === 'notification' ? 'ic_notification' : android === 'launcher' ? 'ic_launcher' : `ic_launcher_${android}`}.xml`,
     android,
   })),
+  // The brand kit in brand/ (brand-kit): the logo files for use outside the code.
+  ...KIT_OUTPUTS,
 ]
 
 export const sha256 = (buf) => createHash('sha256').update(buf).digest('hex')
@@ -74,6 +85,13 @@ export function symbolSvg(source, id, { full = false, size, title = false } = {}
 export function symbolStrokes(source, id) {
   const { body } = symbolBody(source, id)
   return [...body.matchAll(/<path d="([^"]+)"([^>]*)>/g)].map(([, d, rest]) => ({ d, stroke: /stroke="(#[0-9a-f]{6})"/i.exec(rest)?.[1] }))
+}
+
+/** The stroke attributes of one symbol's group (width, caps, joins), as written in the source. */
+export function symbolGroup(source, id) {
+  const g = /<g ([^>]*)>/.exec(symbolBody(source, id).body)
+  if (!g) throw new Error(`${SOURCE}: symbol "${id}" has no group`)
+  return g[1]
 }
 
 /** The path data of one symbol: the tray, then the tick. */
@@ -191,8 +209,11 @@ async function main() {
     return createRequire(execSync('npm root -g').toString().trim() + '/')('playwright')
   })
   const source = readFileSync(join(ROOT, SOURCE), 'utf8')
+  const wordmark = readFileSync(join(ROOT, WORDMARK), 'utf8')
+  const font = readFileSync(join(ROOT, FONT))
+  const helpers = { symbolSvg, symbolPaths, symbolGroup }
   const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {})
-  const stamp = { source: sha256(source), outputs: {} }
+  const stamp = { source: sha256(source), wordmark: sha256(wordmark), outputs: {} }
   try {
     for (const out of OUTPUTS) {
       let bytes
@@ -200,10 +221,21 @@ async function main() {
         bytes = Buffer.from(colourSvg(source, { title: out.title }))
       } else if (out.android) {
         bytes = Buffer.from(androidXml(source, out.android))
+      } else if (out.text) {
+        bytes = Buffer.from(out.text(source, wordmark, helpers))
+      } else if (out.page) {
+        const page = await browser.newPage({ viewport: { width: out.width, height: out.height }, deviceScaleFactor: 1 })
+        const markup = out.page(source, wordmark, helpers, font)
+        await page.setContent(markup.startsWith('<!doctype') ? markup : `<!doctype html><body style="margin:0;background:transparent">${markup}</body>`)
+        await page.evaluate(() => document.fonts.ready)
+        bytes = await page.screenshot({ omitBackground: !out.opaque, clip: { x: 0, y: 0, width: out.width, height: out.height } })
+        if (out.opaque) bytes = pngToRgb(bytes)
+        await page.close()
       } else {
         const page = await browser.newPage({ viewport: { width: out.size, height: out.size }, deviceScaleFactor: 1 })
         await page.setContent(`<!doctype html><body style="margin:0;background:transparent">${colourSvg(source, { full: out.full, size: out.size })}</body>`)
-        bytes = await page.screenshot({ omitBackground: !out.opaque, clip: { x: 0, y: 0, width: out.size, height: out.size } })
+        const clip = { x: 0, y: 0, width: out.size, height: out.size }
+        bytes = await page.screenshot(out.jpeg ? { type: 'jpeg', quality: 92, clip } : { omitBackground: !out.opaque, clip })
         if (out.opaque) bytes = pngToRgb(bytes)
         await page.close()
       }

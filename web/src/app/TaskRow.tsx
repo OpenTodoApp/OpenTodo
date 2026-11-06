@@ -553,7 +553,7 @@ function CompactRow({ task, date, time, today, selected, readOnly = false, proje
   const priority = task.priority < 4 ? PRIORITY_RING[task.priority] : null
   const canDrag = !readOnly && onPointerDown !== undefined
   return (
-    <button type="button" tabIndex={large ? 0 : -1} {...attrs} data-row-shape="compact" data-hue={hue ?? hueFor(project?.color ?? null)} aria-pressed={selected}
+    <button data-drag-id="compact-row" type="button" tabIndex={large ? 0 : -1} {...attrs} data-row-shape="compact" data-hue={hue ?? hueFor(project?.color ?? null)} aria-pressed={selected}
       onPointerDown={canDrag ? onPointerDown : undefined}
       onClick={(e) => { e.stopPropagation(); if (selected && large) onOpen(); else onSelect() }}
       onDoubleClick={onOpen}
@@ -782,8 +782,9 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   // The origin is a link, so it never sits inside the open button: on a card it ends the
   // card at the top right, as before rows-v2 (a link nested in a button is invalid).
   const trailing = card ? originChip && <span data-row-trailing="" className="ml-auto flex shrink-0 items-start">{originChip}</span>
-    : (originChip || revealed) && (
+    : (originChip || !inline) && (
     // The revealed actions float over the row's end at every width (task-list-width D2): the row keeps no room for them, so the title has the whole width and revealing them moves nothing.
+    // Every list row has the slot, empty or not: from 40 rem it is one fixed width (index.css), so the property column ends at the same place on every row (GitHub issue 945).
     <span data-row-trailing="" className={`ml-auto mt-0.5 flex h-5 min-w-0 items-center justify-end gap-2 transition-opacity duration-(--duration-ui) ${revealed ? (forceActions ? 'md:pointer-fine:opacity-0' : 'md:pointer-fine:group-hover:opacity-0 md:pointer-fine:group-focus-within:opacity-0') : ''}`}>
       {originChip && <span className="flex shrink-0">{originChip}</span>}
     </span>
@@ -793,7 +794,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   const handlePointerDown = (e: React.PointerEvent<HTMLLIElement>) => { if (swipe) swiping.onPointerDown(e); holdForRow(e, onPointerDown, onRowMenu) }
 
   return (
-    <li
+    <li data-drag-id="task-row"
       ref={rowRef}
       // A departing row is not a row of the list: no id for the cursor, drops or tests.
       data-task-id={departing ? undefined : task.id}
@@ -951,6 +952,8 @@ function RowGrip({ name, ticked, showCheckbox, onDown, onClick }: { name: string
         aria-pressed={ticked}
         aria-hidden={quiet || undefined}
         tabIndex={quiet ? -1 : undefined}
+        // A hold then a move drags the row: the row's own alternatives (accessibility-aa D3).
+        data-drag-id="task-row"
         onPointerDown={(e) => { e.stopPropagation(); onDown(e) }}
         onClick={onClick}
         className="touch-target pointer-coarse:-m-3 flex select-none items-center justify-center rounded-chip text-faint touch-none hover:text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"

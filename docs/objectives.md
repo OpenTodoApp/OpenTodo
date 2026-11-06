@@ -25,7 +25,7 @@ A quarter (`2026-Q4`) and an ISO week (`2026-W44`) each hold at most **five open
 
 An **Objectives** strip sits above the Plan's columns: this quarter's objectives, this week's with its dates, and next week's when the Plan starts in next week.
 
-Click a title, or press <kbd>Enter</kbd> on it, to edit it in place. <kbd>Space</kbd> marks it done, <kbd>Delete</kbd> asks in place before dropping it, and <kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> or a drag changes the order. <kbd>Escape</kbd> leaves editing. Each change can be undone.
+Click a title, or press <kbd>Enter</kbd> on it, to edit it in place. <kbd>Space</kbd> marks it done, <kbd>Delete</kbd> asks in place before dropping it, and <kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd>, a drag, or the handle that shows when you point at a card (**Move up**, **Move down**) changes the order. <kbd>Escape</kbd> leaves editing. Each change can be undone.
 
 A done objective stays, struck through, until its week or quarter ends; past periods are not shown. The heading collapses the strip, remembered per device. On a phone the strip is one line, such as "Q4: 3 · This week: 2", that opens the cards in place.
 
