@@ -245,6 +245,7 @@ The last five rows were added with this retrospective.
 ## Other checks worth knowing
 
 - **Audit log allow-list.** `TestConstructorsNeverCarryEntityFields` (`internal/audit/audit_test.go`) fails if an audit event could carry a synced content field or a secret.
+- **Audit log hash chain.** `internal/audit/chain_test.go` edits, deletes, reorders and strips the hash of events in a real database and checks that verification names the first broken event; it also prunes across more than one batch and checks that the kept events still verify, and pins the hash format with a known-answer vector. `TestHousekeepingReportsABrokenAuditChain` checks the startup check logs a broken chain without stopping.
 - **Secrets never serialised.** `TestAssistantSecretsNeverSerialised` checks the assistant's key in JSON, `slog` and every `%v` form.
 - **Contracts between Go and TypeScript.** Logic that exists on both sides is pinned by shared fixtures ([Shared contracts](../contracts.md)). `scripts/contracts.test.mjs` checks the index of fixtures.
 - **Race detector.** The full Go suite runs nightly with `-race`.

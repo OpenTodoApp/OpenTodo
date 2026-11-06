@@ -52,6 +52,7 @@ func TestAuditRoutesRequireOwner(t *testing.T) {
 	routes := []struct{ method, path string }{
 		{"GET", "/api/v1/audit"},
 		{"GET", "/api/v1/audit/export"},
+		{"GET", "/api/v1/audit/verify"},
 		{"GET", "/api/v1/settings/audit"},
 		{"PUT", "/api/v1/settings/audit"},
 	}
@@ -206,19 +207,28 @@ func TestAuditExportRecordsItself(t *testing.T) {
 		t.Fatalf("content disposition %q", cd)
 	}
 	sc := bufio.NewScanner(resp.Body)
-	lines := 0
+	var lines []map[string]any
 	for sc.Scan() {
 		var ev map[string]any
 		if err := json.Unmarshal(sc.Bytes(), &ev); err != nil {
-			t.Fatalf("line %d is not JSON: %q", lines, sc.Text())
+			t.Fatalf("line %d is not JSON: %q", len(lines), sc.Text())
 		}
-		if ev["name"] != "login.failed" {
-			t.Fatalf("export ignored the filter: %v", ev)
-		}
-		lines++
+		lines = append(lines, ev)
 	}
-	if lines != 3 {
-		t.Fatalf("export has %d lines, want 3", lines)
+	if len(lines) != 4 {
+		t.Fatalf("export has %d lines, want 3 events and the chain head", len(lines))
+	}
+	for _, ev := range lines[:3] {
+		if ev["name"] != "login.failed" || len(ev["hash"].(string)) != 64 {
+			t.Fatalf("export ignored the filter or has no hash: %v", ev)
+		}
+	}
+	// The last line is the chain head (audit-hash-chain): the newest event of
+	// the whole log, which the filter does not narrow, and what verification
+	// reports as the head until the next event.
+	chain, ok := lines[3]["chain"].(map[string]any)
+	if !ok || chain["id"].(float64) < lines[0]["id"].(float64) || len(chain["hash"].(string)) != 64 {
+		t.Fatalf("chain head line = %v", lines[3])
 	}
 	ex := e.events(audit.AuditExportedName)
 	if len(ex) != 1 || ex[0].Details["count"] != "3" || ex[0].Details["format"] != "ndjson" {
@@ -243,8 +253,12 @@ func TestAuditSettingsBounds(t *testing.T) {
 			t.Fatalf("retention %v: %v", v, out)
 		}
 	}
-	// Old events exist; lowering retention prunes them right away and records the change.
-	if _, err := e.db.Exec("INSERT INTO audit_events(ts,name,outcome) VALUES(?, 'logout', 'success')", time.Now().Add(-45*24*time.Hour).UnixMilli()); err != nil {
+	// Old events exist; lowering retention prunes them right away and records
+	// the change. Pruning goes in id order, so every event so far is made old.
+	if _, err := e.db.Exec("INSERT INTO audit_events(ts,name,outcome) VALUES(0, 'logout', 'success')"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.db.Exec("UPDATE audit_events SET ts = ?", time.Now().Add(-45*24*time.Hour).UnixMilli()); err != nil {
 		t.Fatal(err)
 	}
 	resp, out = e.do("PUT", "/api/v1/settings/audit", map[string]any{"retentionDays": 30})
@@ -374,7 +388,7 @@ func TestAuditDocumentedShape(t *testing.T) {
 	resp, out := e.do("GET", "/api/v1/audit", nil)
 	e.mustStatus(resp, 200, out)
 	ev := eventsOf(t, out)[0]
-	want := []string{"id", "ts", "name", "outcome", "actorId", "actorEmail", "targetId", "targetEmail", "ip", "userAgent", "details"}
+	want := []string{"id", "ts", "name", "outcome", "actorId", "actorEmail", "targetId", "targetEmail", "ip", "userAgent", "details", "hash"}
 	if len(ev) != len(want) {
 		t.Fatalf("event keys = %v, want %v", ev, want)
 	}
@@ -391,5 +405,35 @@ func TestAuditDocumentedShape(t *testing.T) {
 		if !strings.Contains(string(doc), "`"+string(n)+"`") {
 			t.Errorf("docs/api.md does not list event %s", n)
 		}
+	}
+}
+
+// TestAuditVerifyRoute (audit-hash-chain): the owner checks the chain; an edit
+// made to the database outside OpenTodo is reported as the first broken link
+// with a 200, not an error.
+func TestAuditVerifyRoute(t *testing.T) {
+	e := ownerEnv(t)
+	bad := newClientAt(e, "10.3.0.8")
+	for i := 0; i < 3; i++ {
+		bad.do("POST", "/api/v1/auth/login", map[string]string{"email": "owner@example.com", "password": "wrong wrong wrong"})
+	}
+	resp, out := e.do("GET", "/api/v1/audit/verify", nil)
+	e.mustStatus(resp, 200, out)
+	head, _ := out["head"].(map[string]any)
+	if out["ok"] != true || out["break"] != nil || out["checked"].(float64) < 4 || head == nil || len(head["hash"].(string)) != 64 {
+		t.Fatalf("verify = %v", out)
+	}
+	failed := e.events(audit.LoginFailedName)
+	if len(failed) != 3 {
+		t.Fatalf("login.failed events = %d", len(failed))
+	}
+	if _, err := e.db.Exec(`UPDATE audit_events SET details = '{}' WHERE id = ?`, failed[1].ID); err != nil {
+		t.Fatal(err)
+	}
+	resp, out = e.do("GET", "/api/v1/audit/verify", nil)
+	e.mustStatus(resp, 200, out)
+	brk, _ := out["break"].(map[string]any)
+	if out["ok"] != false || brk == nil || int64(brk["id"].(float64)) != failed[1].ID || brk["reason"] != "mismatch" {
+		t.Fatalf("verify after an edit = %v", out)
 	}
 }

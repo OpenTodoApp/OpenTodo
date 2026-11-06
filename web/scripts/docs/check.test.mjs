@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { buildAll, OUT_SITE, writeAll } from './build.mjs'
+import { buildAll, buildHelp, OUT_HELP, OUT_SITE, writeAll } from './build.mjs'
 import { quickAddLinkProblems, runChecks, selfHostingOrphans, stabilityLinkProblems, switchExportProblems, undeclaredScreens } from './check.mjs'
 import { SCREENSHOTS, SHOTS_DIR } from '../../../scripts/site-bundle.mjs'
 
@@ -128,8 +128,22 @@ describe('docs check', () => {
   })
 
   it('reports stale generated files', async () => {
+    write('web/src/generated/screen-ids.json', '[]\n')
+    write('web/src/app/screens.ts', "export const SCREEN_IDS = ['board-view']\n")
+    expect(await runChecks(root)).toContainEqual(expect.stringMatching(/^generated docs are out of date; run `make docs` \(web\/src\/generated\/screen-ids\.json/))
+  })
+
+  it('does not compare the in-app help, which is built and not committed', async () => {
     write('docs/boards.md', read('docs/boards.md').replace('## Switch to a board', '## Switch to a board\n\nNew sentence.'))
-    expect(await runChecks(root)).toContainEqual(expect.stringMatching(/^generated docs are out of date; run `make docs` \(web\/src\/generated\/help\.json/))
+    rmSync(join(root, OUT_HELP))
+    expect(await runChecks(root)).toEqual([])
+  })
+
+  it('builds the same help.json from docs/ alone (help.mjs) as the full build', async () => {
+    const { files } = await buildAll(root)
+    expect(buildHelp(root)).toBe(files.get(OUT_HELP))
+    rmSync(join(root, 'web'), { recursive: true })
+    expect(buildHelp(root)).toBe(files.get(OUT_HELP))
   })
 
   it('ignores the built docs website, which is not committed (site-bundle D6)', async () => {

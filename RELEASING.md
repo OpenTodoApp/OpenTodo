@@ -12,8 +12,8 @@ make release-prepare VERSION=0.15.0          # or: node scripts/release/prepare.
 
 It makes every edit a release needs, in one go:
 
-- `CHANGELOG.md`: a `## [0.15.0] - <today>` heading right under `## [Unreleased]`, so the entries collected there become the release's, and the compare links (`[Unreleased]` from `v0.15.0`, a new `[0.15.0]` link).
-- The release in every pinned template in `deploy/` (CapRover, CasaOS, Dokploy, Easypanel, Helm, Runtipi, TrueNAS, Umbrel, the Home Assistant add-on, the Claude plugin) and in their READMEs, in `docs/self-hosting/`, in the bug report form (`.github/ISSUE_TEMPLATE/bug_report.yml`), in `web/package.json`, the two root entries of `web/package-lock.json` and `web/src/generated/help.json`.
+- `CHANGELOG.md`: a `## [0.15.0] - <today>` section right under `## [Unreleased]` with the changelog fragments as its entries (`changelog.d/<Section>/<name>.md`, assembled as Security, Added, Changed, Removed, Fixed and by file name within a section; [changelog.d/README.md](changelog.d/README.md)), which it then deletes, and the compare links (`[Unreleased]` from `v0.15.0`, a new `[0.15.0]` link). `## [Unreleased]` keeps only its pointer to `changelog.d/`; an entry written there by hand, or a fragment in the wrong place, makes it stop before it edits anything.
+- The release in every pinned template in `deploy/` (CapRover, CasaOS, Dokploy, Easypanel, Helm, Runtipi, TrueNAS, Umbrel, the Home Assistant add-on, the Claude plugin) and in their READMEs, in `docs/self-hosting/`, in the bug report form (`.github/ISSUE_TEMPLATE/bug_report.yml`), in `web/package.json` and the two root entries of `web/package-lock.json`. (The in-app help reads the release from `CHANGELOG.md` when it is built.)
 - Runtipi's `tipi_version` + 1 (Runtipi offers an update only when it changes).
 - The store fields the version alone does not move: CasaOS's `update_at` (the release date), a `changeLog` entry in Easypanel's `meta.yaml` (`Update to 0.15.0`) and a patch bump of TrueNAS's own app `version` in `app.yaml` (as truenas/apps' Renovate does).
 - On a new minor, the release line in the docs (`ghcr.io/opentodoapp/opentodo:0.15`, `:0.15`).
@@ -28,11 +28,27 @@ It changes the release only where the text names the project's version (an image
 
 Then, by hand:
 
-1. Write the release's summary paragraph under its heading in `CHANGELOG.md` (what a person upgrading should know first; for a security release, say so and ask people to upgrade), check the entries are in the right sections, and add **Upgrade notes** when there is a migration, a new setting or anything an operator must do. Add a word to the add-on's entry if the release needs one (for example "a security release").
+1. Write the release's summary paragraph under its heading in `CHANGELOG.md` (what a person upgrading should know first; for a security release, say so and ask people to upgrade), check the entries are in the right sections and in a sensible order (the most important first), and add **Upgrade notes** when there is a migration, a new setting or anything an operator must do. Add a word to the add-on's entry if the release needs one (for example "a security release").
 2. `make deploy-check docs-check` (the full `make check` runs in CI).
 3. Commit as `Prepare 0.15.0` and open the pull request. Merge it when the checks pass.
 
 Umbrel's image keeps the previous release's digest until step 4: the check only looks at its shape, because the new digest exists only once the image is published.
+
+### Release candidates
+
+A release candidate (`x.y.z-rc.N`, N from 1) is a tag for testers, prepared the same way:
+
+```bash
+make release-prepare VERSION=1.0.0-rc.1
+```
+
+- **Only `CHANGELOG.md` changes.** It gets a `## [1.0.0-rc.1] - <today>` section with the changelog fragments as its entries and a `[1.0.0-rc.1]` link comparing from the latest release. The fragments stay in `changelog.d/`. Templates, docs, store fields, the Helm chart, the bug report form, `web/package.json` and the `upstream/` copies stay on the latest release, because a candidate is published to none of them (section 2). `[Unreleased]` keeps comparing from the latest release.
+- **Each candidate lists everything since the latest release.** `1.0.0-rc.2` takes the fragments as they are then, including the ones added or changed since rc.1. Its number must be higher than the last candidate's.
+- **The final release replaces its candidates.** `make release-prepare VERSION=1.0.0` builds one `## [1.0.0]` section from the fragments and deletes them, as for any release, and removes the `1.0.0-rc.N` sections and links from `CHANGELOG.md`. The candidates' notes stay on their GitHub pre-release pages. Write the release's summary there afresh, since a summary under a candidate goes with it.
+- **One release at a time.** While `1.0.0-rc.N` sections are in `CHANGELOG.md`, preparing anything else (`0.23.1`, `1.1.0-rc.1`) is refused. To abandon a candidate, delete its section and link by hand.
+- **The gates are those of `x.y.z`, with two warnings.** On a candidate, a missing or over-budget reference-device record and pending screen-reader passes (NVDA, VoiceOver on macOS and in the iOS shell, TalkBack) in the accessibility audit are printed as `warning: …`, naming what is still pending. They need the owner's own devices, and the owner decided the 1.0 RC may ship with the passes pending (DECISIONS 2026-11-06). Every other gate refuses a candidate as it refuses the release: the upgrade fixture of a new minor, screenshots older than the app, the security review rule, the migration matrix dates, an audit more than 12 months old, and pending keyboard or zoom passes. For the final release every gate is strict.
+
+Then write a line under the candidate's heading saying what to test, commit as `Prepare 1.0.0-rc.1` and open the pull request.
 
 ## 2. Tag the release
 
@@ -44,7 +60,7 @@ git tag -a v0.15.0 -m "OpenTodo 0.15.0"
 git push origin v0.15.0
 ```
 
-Only organization admins can create `v*` tags: a ruleset protects them. A tag with a suffix (`v0.15.0-rc.1`) is a release candidate: it is published as a pre-release, moves neither `stable` nor the `0.15` tag, does not publish the Helm chart and is never submitted to a store.
+Only organization admins can create `v*` tags: a ruleset protects them. A tag with a suffix (`v0.15.0-rc.1`) is a release candidate: it is published as a pre-release, moves neither `stable` nor the `0.15` (or, from 1.0, the `1`) tag, publishes neither the Helm chart nor the Claude and Obsidian plugins, and is never submitted to a store (Google Play, F-Droid, the Home Assistant add-on). Its release notes are its `CHANGELOG.md` section ([Release candidates](#release-candidates)).
 
 ## 3. The release workflow
 
@@ -53,7 +69,7 @@ The tag runs the full CI matrix (`.github/workflows/ci.yml`: every binary, the W
 - the image is pushed to `ghcr.io/opentodoapp/opentodo` as `0.15.0`, `0.15` and `stable`, signed with its SBOM and provenance;
 - before the GitHub release is published, the release job checks that the new tag can be pulled without signing in (an anonymous ghcr.io token, then the manifest; `scripts/release/check-public-image.sh`). If the package was left private, it fails with a message naming the package's visibility setting;
 - the **GitHub release** gets the binaries, the extension and skill zips, the Android APK and AAB, the site bundle and `SHA256SUMS` (only these, by exact name: `scripts/release/collect-assets.sh`) with attestations, and its notes from the `CHANGELOG.md` section (`scripts/release-notes.sh`; a tag without a section fails);
-- the Helm chart is published (`.github/workflows/helm.yml`) and the Claude plugin is pushed to `OpenTodoApp/opentodo-claude`;
+- for a final tag, the Helm chart is published (`.github/workflows/helm.yml`), the Claude plugin is pushed to `OpenTodoApp/opentodo-claude` and the Obsidian plugin to `OpenTodoApp/obsidian-opentodo`;
 - the release also carries the signed Android APK and AAB (`opentodo-android-<version>.apk`, `.aab`), after the Android job proved the build reproducible (a second build in a fresh checkout, compared by `scripts/android-repro.sh`; a mismatch fails the release) and checked the certificate against the documented one;
 - the AAB is the Google Play build, without location permissions until Play approves background location (`-Popentodo.play=true`; the Android job fails when it declares one or the APK lost one, `scripts/android-store-check.sh`);
 - for a final tag, the `play` job puts the AAB on Google Play's **internal** testing track with the CHANGELOG notes (`scripts/release/play-upload.mjs`, secrets in the `release` environment; without them it warns and succeeds). It never touches production.

@@ -307,6 +307,11 @@ func TestNightlyResetDeletesAllSandboxes(t *testing.T) {
 	if n := count(t, db, `SELECT COUNT(*) FROM users`); n != 1 {
 		t.Errorf("users left = %d", n)
 	}
+	// The visitors' audit events left with them and the chain was rebuilt over
+	// the rest (audit-hash-chain).
+	if v, err := s.auth.Audit().Verify(ctx); err != nil || !v.OK {
+		t.Errorf("audit chain after the reset: %+v %v", v, err)
+	}
 	// VACUUM gave the space back: no free pages, fewer pages.
 	var pagesAfter, free int
 	_ = db.QueryRow(`PRAGMA page_count`).Scan(&pagesAfter)

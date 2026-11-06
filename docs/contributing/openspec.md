@@ -38,7 +38,7 @@ A change folder holds:
 
 The rules every artifact follows are in `openspec/config.yaml`. Check the whole tree with `make openspec-validate`.
 
-Archiving merges the delta into `openspec/specs/` and moves the folder to `openspec/changes/archive/<date>-<name>/`. It happens in the pull request that finishes the change, together with the `CHANGELOG.md` line and the **Shipped** mark in `ROADMAP.md`.
+Archiving merges the delta into `openspec/specs/` and moves the folder to `openspec/changes/archive/<date>-<name>/`. It happens in the pull request that finishes the change, together with the changelog entry (`changelog.d/<Section>/<change-name>.md`, see [changelog.d/README.md](../../changelog.d/README.md)) and the **Shipped** mark in `ROADMAP.md`.
 
 ## What reviewers check
 

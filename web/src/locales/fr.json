@@ -7166,6 +7166,7 @@
   "Move to top": "Placer en haut",
   "Move to bottom": "Placer en bas",
   "Move {name}": "Déplacer {name}",
+  "Accessibility": "Accessibilité",
   "An AI connector wants to read your text": "Un connecteur d’IA veut lire votre texte",
   "An assistant asks to read this with {tool}:": "Un assistant demande à lire ceci avec {tool} :",
   "{token} asks to read this with {tool}:": "{token} demande à lire ceci avec {tool} :",

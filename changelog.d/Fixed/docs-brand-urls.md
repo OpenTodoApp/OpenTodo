@@ -1,0 +1,1 @@
+- **The docs pages show the current logo in the browser tab.** Their favicon and touch icon links now carry a hash of the mark (`/assets/favicon.svg?v=…`), as the rest of the website does, so a new logo is never served from an old cached copy.
