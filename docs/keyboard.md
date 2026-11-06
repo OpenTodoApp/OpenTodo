@@ -234,6 +234,24 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>Shift+→</kbd> | On a board: move the selected card to the next panel that has a rule, applying it |
 | <kbd>↑</kbd> / <kbd>↓</kbd> | In the query of New view: recall recent queries on this device |
 
+### Group and order
+
+| Keys | What it does |
+| --- | --- |
+| <kbd>r</kbd> then <kbd>g</kbd> then <kbd>s</kbd> | Group by section (in a project) |
+| <kbd>r</kbd> then <kbd>g</kbd> then <kbd>j</kbd> | Group by project (on a label page or in a saved view) |
+| <kbd>r</kbd> then <kbd>g</kbd> then <kbd>n</kbd> | No grouping |
+| <kbd>r</kbd> then <kbd>g</kbd> then <kbd>d</kbd> | Group by due date |
+| <kbd>r</kbd> then <kbd>g</kbd> then <kbd>p</kbd> | Group by priority |
+| <kbd>r</kbd> then <kbd>g</kbd> then <kbd>l</kbd> | Group by label (in a project or a saved view) |
+| <kbd>r</kbd> then <kbd>o</kbd> then <kbd>m</kbd> | Order by manual order |
+| <kbd>r</kbd> then <kbd>o</kbd> then <kbd>p</kbd> | Order by priority |
+| <kbd>r</kbd> then <kbd>o</kbd> then <kbd>d</kbd> | Order by due date |
+| <kbd>r</kbd> then <kbd>o</kbd> then <kbd>c</kbd> | Order by creation date |
+| <kbd>r</kbd> then <kbd>o</kbd> then <kbd>l</kbd> | Order by deadline |
+| <kbd>r</kbd> then <kbd>o</kbd> then <kbd>t</kbd> | Order by title |
+| <kbd>r</kbd> then <kbd>r</kbd> | Reverse the order: ascending or descending |
+
 ### Trash and projects
 
 | Keys | What it does |
