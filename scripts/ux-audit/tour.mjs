@@ -195,6 +195,27 @@ async function sizeText(p) {
   return p
 }
 
+/** A layout other than the list, as drawn (not the switch's pressed button). */
+const OTHER_LAYOUT = '[data-board], [data-timeline], [data-project-calendar]'
+
+/**
+ * Puts the project on screen back in its list layout (issue 941). The layout is kept per
+ * device and read asynchronously, so the switch shows List as pressed until the stored
+ * layout has loaded: the layout is judged by what is drawn once the page has settled, and
+ * after the click the other layout must have gone, which also means the choice is stored
+ * before the next capture navigates away (a navigation right after the click could lose it).
+ */
+async function backToList(p) {
+  await p.locator(`main [data-task-id], ${OTHER_LAYOUT}`).first().waitFor({ timeout: 15000 }).catch(() => {})
+  for (let i = 0; i < 3; i++) {
+    await p.waitForTimeout(300)
+    const other = p.locator(OTHER_LAYOUT).first()
+    if (!(await other.isVisible().catch(() => false))) return
+    await chooseLayout(p, 'List').catch(() => {})
+    await other.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+  }
+}
+
 async function capture(ctx, anonCtx, page, e, combo, ids) {
   const host = hostOf(e, ids)
   const p = host.anon ? await sizeText(await anonCtx.newPage()) : page
@@ -205,9 +226,9 @@ async function capture(ctx, anonCtx, page, e, combo, ids) {
     // A later language: the screens' ready signals are English headings (as in the layout check).
     await (combo.lang === LANGS[0] || host.own ? host.ready(p) : p.locator('main :is(h1, [data-page-body], [data-task-id]), [data-screen], h1, form').first().waitFor({ timeout: 15000 }))
     if (host.layout) { await chooseLayout(p, host.layout); await p.waitForTimeout(300) }
-    // A project screen is captured in its list layout, whatever an earlier capture left (the layout is synced).
-    else if (host.path.startsWith('/project/') && await p.getByRole('group', { name: 'Project layout' }).getByRole('button', { name: 'List' }).isVisible().catch(() => false)) {
-      await chooseLayout(p, 'List').catch(() => {})
+    // A project screen is captured in its list layout, whatever an earlier capture left.
+    else if (host.path.startsWith('/project/')) {
+      await backToList(p)
       await host.ready(p)
     }
     await p.waitForTimeout(300)
@@ -228,7 +249,7 @@ async function capture(ctx, anonCtx, page, e, combo, ids) {
   }
   // Escape first: an open overlay would take the click that restores the layout.
   await p.keyboard.press('Escape').catch(() => {})
-  if (host.layout) await chooseLayout(p, 'List').catch(() => {})
+  if (host.layout) await backToList(p).catch(() => {})
   if (host.anon) await p.close()
   return out
 }
@@ -329,7 +350,7 @@ async function reducedMotion(ids) {
           out.push({ rule: 'NAV', id: m.id, width, element: m.id, value: err.message.split('\n')[0].slice(0, 200), limit: 'opens' })
         }
         await p.keyboard.press('Escape').catch(() => {})
-        if (m.screen === 'board') await chooseLayout(p, 'List').catch(() => {})
+        if (m.screen === 'board') await backToList(p).catch(() => {})
       }
     } finally {
       await browser.close()

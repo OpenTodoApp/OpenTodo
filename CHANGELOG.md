@@ -22,6 +22,7 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ### Fixed
 
+- **A layout chosen while a project is still opening is kept.** Until the project's own layout (Board, Timeline, Calendar) had loaded, the switch showed List as chosen and a click on List was ignored, so the project then opened in its previous layout anyway.
 - **The app's first load is about 8 KB smaller.** The QR code of the two-factor enrolment wizard and its encoder now load when the wizard opens instead of with every first visit; a square of the same size holds its place until it is drawn.
 - **Ticking a task in a long list is quicker.** A click on a task's circle drew the whole list again in that frame; in a 2,000-task project it now draws only that row, and the list catches up when the task leaves it. The completion stays the same to look at and to a screen reader. ([#854](https://github.com/OpenTodoApp/OpenTodo/issues/854))
 - **A saved view in display mode lists the same tasks as the view.** Display mode ran a saved view without your workspaces, the people you share with, custom fields, project flows and tracked time, so a view whose query uses `workspace:`, `assigned:`, a custom field, `available` or `tracked` showed no tasks there. It now uses the same information as the view's own screen. The sidebar's count of a view on a custom field counted nothing for the same reason and now matches the view. ([#901](https://github.com/OpenTodoApp/OpenTodo/issues/901))
