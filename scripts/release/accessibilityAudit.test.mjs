@@ -5,7 +5,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
-import { addMonths, auditProblems, checkAccessibilityAudit } from './accessibilityAudit.mjs'
+import { addMonths, auditProblems, checkAccessibilityAudit, SCREEN_READER_PASSES } from './accessibilityAudit.mjs'
 
 const ENTRIES = [{ id: 'inbox', core: true }, { id: 'settings-server', core: false }]
 
@@ -62,5 +62,24 @@ test('1.0.0 without any audit record is refused; a missing core row too', () => 
   } finally {
     rmSync(none, { recursive: true, force: true })
     rmSync(partial, { recursive: true, force: true })
+  }
+})
+
+test('a release candidate may carry pending screen-reader passes, as one warning; nothing else (release-candidates)', () => {
+  const root = tree({ '1.0.0': `Date: 2026-11-03\n\n${row(['pass', 'pending', 'pending', 'pending', 'pending', 'pass'])}` })
+  const keyboard = tree({ '1.0.0': `Date: 2026-11-03\n\n${row(['pending', 'pending', 'pass', 'pass', 'pass', 'pass'])}` })
+  try {
+    assert.deepEqual(SCREEN_READER_PASSES, ['NVDA + Firefox', 'VoiceOver + Safari (macOS)', 'VoiceOver (iOS shell)', 'TalkBack (Android shell)'])
+    assert.deepEqual(checkAccessibilityAudit(root, '1.0.0', '2026-11-10', { candidate: true }),
+      ['accessibility audit: 4 screen-reader passes pending on 1 core screens in docs/accessibility/audit-1.0.0.md (NVDA + Firefox, VoiceOver + Safari (macOS), VoiceOver (iOS shell), TalkBack (Android shell)), required for 1.0.0'])
+    assert.throws(() => checkAccessibilityAudit(root, '1.0.0', '2026-11-10'), /inbox, NVDA \+ Firefox is still pending/)
+    // The keyboard pass needs no owner device: pending refuses a candidate too, naming only it.
+    assert.throws(() => checkAccessibilityAudit(keyboard, '1.0.0', '2026-11-10', { candidate: true }), /^Error: accessibility audit:\n {2}docs\/accessibility\/audit-1\.0\.0\.md: inbox, Keyboard only is still pending$/)
+    // An audit that is due refuses a candidate as well.
+    assert.throws(() => checkAccessibilityAudit(root, '1.0.0', '2027-12-04', { candidate: true }), /a manual accessibility audit is due/)
+    assert.deepEqual(checkAccessibilityAudit(root, '0.21.0', '2026-11-10', { candidate: true }), [])
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+    rmSync(keyboard, { recursive: true, force: true })
   }
 })
