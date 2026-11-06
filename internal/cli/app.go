@@ -181,6 +181,7 @@ func init() {
 		{"mcp", "bridge stdio MCP clients to the configured server", "ot mcp [--allow-full-token] [--decrypt]", cmdMCP},
 		{"encryption", "end-to-end encryption on this machine: unlock, lock, status", "ot encryption unlock [--recovery] [--passphrase-file <path>]\not encryption lock\not encryption status", cmdEncryption},
 		{"vault", "Markdown vault: a folder of project files in two-way sync", "ot vault init <dir> [--adopt]\not vault sync [<dir>] [--take-over]\not vault status [<dir>]\not vault watch [<dir>] [--take-over]\not vault tasknotes <folder> [--vault <dir>] [--inside] | --off", cmdVault},
+		{"audit", "the audit log: verify its hash chain (owner)", "ot audit verify", cmdAudit},
 		{"issues", "issue connections: list, sync", "ot issues list\not issues sync [<id>]", cmdIssues},
 		{"rules", "automation rules: list, enable, disable, runs", "ot rules list\not rules enable <id>\not rules disable <id>\not rules runs <id>", cmdRules},
 		{"routine", "routines: list, show, runs, run, enable, disable, create, edit, rm, undo (also ot routines)", routineUsage, cmdRoutine},
