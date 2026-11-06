@@ -464,7 +464,7 @@ Each named app format SHALL be tested against at least one export file produced 
 - **THEN** the golden preview of the sanitised file produced by the guide's script fails until the golden is updated with the stated difference
 
 ### Requirement: Imported origins
-A task imported from a Todoist, Things, TickTick, Google Tasks, Trello, Asana, Microsoft To Do, Apple Reminders or Any.do export SHALL carry the origin `{kind: "import", provider: <profile name>, id: <source id>}`, the same source id the importer records for duplicate detection, without a URL, the provider being the profile's short name (`todoist`, `things`, `ticktick`, `google-tasks`, `trello`, `asana`, `microsoft-todo`, `apple-reminders`, `anydo`). A Trello card SHALL carry its `shortUrl` as the origin's URL, since the export provides one. A task from a generic CSV or JSON file SHALL carry none. An own export SHALL carry each task's `origin` and the import of an own export SHALL restore it unchanged, so the round trip is equivalent. Origins are written in the import's operations, like every other field.
+A task imported from a Todoist, Things, TickTick, Google Tasks, Trello, Asana, Microsoft To Do, Apple Reminders or Any.do export SHALL carry the origin `{kind: "import", provider: <profile name>, id: <source id>}`, the same source id the importer records for duplicate detection, without a URL, the provider being the profile's short name (`todoist`, `things`, `ticktick`, `google-tasks`, `trello`, `asana`, `microsoft-todo`, `apple-reminders`, `anydo`). A Trello card SHALL carry its `shortUrl` as the origin's URL, since the export provides one. A task from a generic CSV or JSON file SHALL carry none. An own export SHALL carry each task's `origin` and the import of an own export SHALL restore it unchanged, so the round trip is equivalent. Origins are written in the import's operations, like every other field. The source id is the importer's key, not something to read: wherever the app or the `ot` CLI shows an imported origin it SHALL read as the app it came from ("Todoist", "Imported from Todoist"), never as the id.
 
 #### Scenario: TickTick task keeps its id
 - **WHEN** a TickTick row with `taskId` `6f1a…` is imported
@@ -476,7 +476,7 @@ A task imported from a Todoist, Things, TickTick, Google Tasks, Trello, Asana, M
 
 #### Scenario: Trello card keeps its link
 - **WHEN** a Trello card with id `5f3a…` and `shortUrl` `https://trello.com/c/AbCd1234` is imported
-- **THEN** the task's origin is `{kind: "import", provider: "trello", id: "5f3a…", url: "https://trello.com/c/AbCd1234"}` and the origin chip opens the card
+- **THEN** the task's origin is `{kind: "import", provider: "trello", id: "5f3a…", url: "https://trello.com/c/AbCd1234"}` and the origin's icon in the row opens the card, named "Imported from Trello"
 
 #### Scenario: Google task keeps its id
 - **WHEN** a Google Tasks item with `id` `MTIz…` is imported twice
@@ -492,7 +492,11 @@ A task imported from a Todoist, Things, TickTick, Google Tasks, Trello, Asana, M
 
 #### Scenario: Offline device receives origins
 - **WHEN** the import finishes while a device is offline and the device later syncs
-- **THEN** the imported tasks arrive with their origins as ordinary operations and the chips show on that device
+- **THEN** the imported tasks arrive with their origins as ordinary operations and that device shows them in the tasks' details and panel
+
+#### Scenario: A Todoist import reads as Todoist
+- **WHEN** a task imported from Todoist has the origin `{kind: "import", provider: "todoist", id: "dfc92cb10aed05a4:1"}`
+- **THEN** its panel and history read "Imported from Todoist", the command palette's line for it reads "Imported from Todoist", `ot list` shows "Todoist" in its origin column, and "dfc92cb10aed05a4:1" appears in none of them
 
 ### Requirement: Imported custom fields
 A named format whose rows carry typed values beyond the task model (Linear estimates, Asana custom field columns, Trello custom field items) SHALL import them as custom field values of the task's project: for each named value the import SHALL reuse the project's live field definition of that name and type when it exists, or create one (number for numbers, text for text, choice for a single-select value with the options the file shows, checkbox for booleans, date for a date) as part of the same job, so that undoing the import removes the definitions it created and nothing else. A value whose type does not match an existing definition of that name SHALL be dropped with a row warning naming the field. The preview SHALL count the definitions to create under `fields`. A project at its limit of definitions SHALL get no new definition and the row a warning. Tasks that end in the Inbox or in an existing project of another member SHALL receive no field values (a warning names them), since fields belong to a project. Definitions and values are written as operations in the import, applied on the server and reaching every device by sync, like every other imported entity.
