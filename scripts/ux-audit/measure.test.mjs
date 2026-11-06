@@ -263,3 +263,21 @@ test('M21 target size per WCAG 2.5.8: 24 px, or a clear 24 px circle', { skip },
   await fixture(b('left:10px;top:10px;width:120px;height:30px') + b('left:10px;top:42px;width:120px;height:16px'))
   assert.deepEqual(rules(await page.evaluate(targetSizeWcag)), ['M21'])
 })
+
+test('safe areas (GitHub issue 973): a control under the island fails; one in a padded bar or a list that scrolls on passes', { skip }, async () => {
+  const { insetOverlaps } = await import('./measure.mjs')
+  const insets = { top: 59, right: 0, bottom: 34, left: 0 }
+  // The issue: a sheet's header with no top inset puts Close under the Dynamic Island.
+  await fixture('<div style="position:fixed;inset:0"><header style="display:flex;justify-content:flex-end"><button aria-label="Close" style="width:44px;height:44px">x</button></header></div>')
+  const r = await page.evaluate(insetOverlaps, [null, insets])
+  assert.equal(r.length, 1)
+  assert.match(r[0], /"Close" \(button\) is in the top safe area/)
+  // Padded by the inset, the bar's padding is what lies under the island.
+  await fixture('<div style="position:fixed;inset:0"><header style="padding-top:59px;display:flex;justify-content:flex-end;background:#fff"><button aria-label="Close" style="width:44px;height:44px">x</button></header></div>')
+  assert.deepEqual(await page.evaluate(insetOverlaps, [null, insets]), [])
+  // A fixed bar at the bottom without the inset fails; rows of a list that scrolls on pass.
+  await fixture('<div style="height:640px;overflow:auto"><div style="height:2000px"><button style="margin-top:600px;width:100px;height:44px">Row</button></div></div><nav style="position:fixed;bottom:0;left:0;right:0"><button style="width:100px;height:44px">Today</button></nav>')
+  const b = await page.evaluate(insetOverlaps, [null, insets])
+  assert.equal(b.length, 1)
+  assert.match(b[0], /"Today" \(button\) is in the bottom safe area/)
+})

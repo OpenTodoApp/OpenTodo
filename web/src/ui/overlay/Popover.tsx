@@ -2,6 +2,7 @@ import { Icon } from '../Icon'
 import { type ReactNode, type RefObject, useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { place } from './position'
+import { safeInsets } from './safeArea'
 import { trapTab, useWide } from './stack'
 import { isolate, useOverlay } from './useOverlay'
 import { t } from '../../lib/i18n'
@@ -69,7 +70,7 @@ function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', 
     el.style.maxHeight = ''
     const size = { width: el.offsetWidth, height: el.scrollHeight }
     el.style.maxHeight = prevMax
-    const next = place(r, size, { width: vw, height: vh }, { side, align })
+    const next = place(r, size, { width: vw, height: vh }, { side, align, insets: safeInsets() })
     setPos((cur) => (cur && cur.top === next.top && cur.left === next.left && cur.maxHeight === next.maxHeight && cur.maxWidth === next.maxWidth ? cur : next))
   }, [anchor, docked, side, align])
 
@@ -116,8 +117,8 @@ function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', 
         {/* A menu sheet is a dialog whose list carries the menu role: the title and the
             close button may not sit inside a menu. */}
         <div ref={panel} role={ariaRole === 'menu' ? 'dialog' : ariaRole} aria-label={label} aria-modal={ariaRole ? true : undefined} tabIndex={-1} data-overlay="sheet"
-          className="overlay-fade-in pointer-events-auto absolute inset-x-0 flex max-h-[90dvh] flex-col rounded-t-popover border-t border-strong bg-pop text-body shadow-3 outline-none"
-          style={{ bottom: 'var(--vv-bottom, 0px)' }}>
+          className="overlay-fade-in pointer-events-auto absolute inset-x-0 flex flex-col rounded-t-popover border-t border-strong bg-pop px-safe text-body shadow-3 outline-none"
+          style={{ bottom: 'var(--vv-bottom, 0px)', maxHeight: SHEET_MAX_HEIGHT }}>
           {/* The handle strip and the title row: a drag down of more than 80 px closes the sheet (phone-v2 D5). */}
           <div className="relative flex shrink-0 items-center gap-2 border-b border-default pl-4 pr-1 pt-2" {...dragToClose(onClose)}>
             <span aria-hidden="true" data-sheet-handle className="absolute left-1/2 top-1 h-1 w-10 -translate-x-1/2 rounded-full bg-faint" />
@@ -126,7 +127,7 @@ function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', 
               onMouseDown={modal ? undefined : (e) => e.preventDefault()} onClick={onClose}><Icon name="x" size="md" /></button>
           </div>
           <div role={ariaRole === 'menu' ? 'menu' : undefined} aria-label={ariaRole === 'menu' ? label : undefined}
-            className={`min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[max(0.5rem,env(safe-area-inset-bottom))] ${className}`}>{children}</div>
+            className={`min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[max(0.5rem,var(--safe-bottom))] ${className}`}>{children}</div>
         </div>
       </div>,
       document.body,
@@ -141,6 +142,13 @@ function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', 
     document.body,
   )
 }
+
+/**
+ * The phone sheet's height cap: 90 % of the screen, and never above the safe area at
+ * the top, also with the keyboard open (it lifts the sheet by --vv-bottom), so its title
+ * and Close button are never under the Dynamic Island (GitHub issue 973).
+ */
+const SHEET_MAX_HEIGHT = 'min(90dvh, calc(100dvh - var(--vv-bottom, 0px) - var(--safe-top) - 0.5rem))'
 
 /** A drag down on a sheet's top row closes it: more than 80 px, mostly vertical (phone-v2 D5). */
 function dragToClose(onClose: () => void) {
