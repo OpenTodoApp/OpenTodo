@@ -61,6 +61,9 @@ const (
 	MCPOAuthClientDeletedName Name = "mcp_oauth.client_deleted"
 	MCPOAuthGrantedName       Name = "mcp_oauth.granted"
 	MCPOAuthRevokedName       Name = "mcp_oauth.revoked"
+	// A refresh token that was already exchanged came back, and its grant was
+	// revoked (mcp-oauth-refresh-rotation).
+	MCPOAuthRefreshReusedName Name = "mcp_oauth.refresh_reused"
 	// Notification delivery channels (OpenSpec change notification-channels):
 	// created, deleted, and changed settings or secrets by name.
 	NotificationChannelCreatedName Name = "notification_channel.created"
@@ -162,7 +165,7 @@ var Names = []Name{
 	EmailInboxCreatedName, EmailInboxRotatedName, EmailInboxUpdatedName,
 	IssueConnectionCreatedName, IssueConnectionUpdatedName, IssueConnectionDeletedName,
 	CalendarConnectionCreatedName, CalendarConnectionUpdatedName, CalendarConnectionDeletedName,
-	MCPOAuthClientCreatedName, MCPOAuthClientDeletedName, MCPOAuthGrantedName, MCPOAuthRevokedName,
+	MCPOAuthClientCreatedName, MCPOAuthClientDeletedName, MCPOAuthGrantedName, MCPOAuthRevokedName, MCPOAuthRefreshReusedName,
 	NotificationChannelCreatedName, NotificationChannelUpdatedName, NotificationChannelDeletedName,
 	InvitationCreatedName, InvitationAcceptedName, InvitationRevokedName,
 	ProjectInviteCreatedName, ProjectInviteRevokedName, ProjectInviteAcceptedName,
@@ -542,6 +545,13 @@ func MCPOAuthGranted(userID, clientID, scope string) Event {
 // MCPOAuthRevoked records a grant ended through the revocation endpoint.
 func MCPOAuthRevoked(userID, clientID string) Event {
 	return ev(MCPOAuthRevokedName, Success, userID, "", "oauth_client_id", clientID)
+}
+
+// MCPOAuthRefreshReused records a grant revoked because a refresh token it had
+// already rotated was presented again: the person whose grant it was and the
+// client, never the token.
+func MCPOAuthRefreshReused(userID, clientID string) Event {
+	return ev(MCPOAuthRefreshReusedName, Failure, userID, "", "oauth_client_id", clientID)
 }
 
 // ---- notification channels ----
