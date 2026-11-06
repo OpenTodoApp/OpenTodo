@@ -75,18 +75,20 @@ Without the `+`, `45min` and `2h` also work, except that `2h` is left alone when
 | `at 3pm`, `3:30 pm`, `16:30`, `at 9`, `noon`, `midnight` | that time today, unless a date is also given. A time on its own always means today, even if it has passed. Without `am`/`pm`, hours are 24-hour (`at 3` is 03:00). |
 | `in 3 hours` | that clock time, rolling to tomorrow past midnight |
 
-Words like `on`, `by` and `due` in front of a date are removed with it (`Pay bill by Friday` → *Pay bill*). `last Friday` always means the last Friday of the month, never the one that has passed: in `Review notes from last Friday`, dismiss the chip (or quote the words) to keep them in the title. Bare numbers are never times (`Buy 3 apples` stays as typed): write `at 3`, `3pm` or `15:00`.
+Words like `on` and `due` in front of a date are removed with it (`Pay bill on Friday` → *Pay bill*); `by` in front of a date sets the deadline instead (see **Deadlines** below). `last Friday` always means the last Friday of the month, never the one that has passed: in `Review notes from last Friday`, dismiss the chip (or quote the words) to keep them in the title. Bare numbers are never times (`Buy 3 apples` stays as typed): write `at 3`, `3pm` or `15:00`.
 
-**Deadlines.** Put `deadline` right before a date to set the task's [deadline](tasks-and-projects.md#deadlines) instead of its due date: `Send report deadline friday` → *Send report*, no due date, deadline Friday, shown as its own chip with an hourglass. Combine both: `Send report tomorrow deadline friday` is planned for tomorrow and due by Friday. A deadline has no time, so a time right after it stays in the title. Without a date after it the word is just text (`Review deadline policy`). `on`, `by` and `due` still set the due date. Each language has its own word:
+**Deadlines.** Put `deadline` right before a date to set the task's [deadline](tasks-and-projects.md#deadlines) instead of its due date: `Send report deadline friday` → *Send report*, no due date, deadline Friday, shown as its own chip with an hourglass. Combine both: `Send report tomorrow deadline friday` is planned for tomorrow and due by Friday. A deadline has no time, so a time right after it stays in the title. Without a date after it the word is just text (`Review deadline policy`).
 
-| Language | Deadline word |
-| --- | --- |
-| English | `deadline` |
-| German | `Frist`, `Deadline` |
-| French | `échéance`, `deadline` |
-| Italian | `scadenza` |
-| Spanish | `fecha límite`, `plazo` |
-| Portuguese | `prazo` |
+`by` before a date sets the deadline too: `Install winter tires by March 31` → *Install winter tires*, no due date, deadline 31 March, and `Pay tax tomorrow by friday` is planned for tomorrow with a deadline on Friday. `on` and `due` still set the due date. `by` before a time is a due time (`Call back by 5pm` → today at 17:00), and so is `by` before a date with a time (`Pay tax by friday 5pm` is due Friday at 17:00), since a deadline has no time. A [repeating](recurrence.md) line keeps its rule (`Water plants every monday by friday` repeats every Monday, with a deadline on Friday). German, Italian and Portuguese have a `by` word as well; French and Spanish `pour` and `para` mean "for" and still set the due date. Each language has its own words:
+
+| Language | Deadline word | `by` word |
+| --- | --- | --- |
+| English | `deadline` | `by` |
+| German | `Frist`, `Deadline` | `bis` |
+| French | `échéance`, `deadline` | |
+| Italian | `scadenza` | `entro` |
+| Spanish | `fecha límite`, `plazo` | |
+| Portuguese | `prazo` | `até` |
 
 **Someday and tonight.** `someday` parks the task in [Someday](tasks-and-projects.md#when-a-task-starts): `Learn to sail someday @hobby` → *Learn to sail*, parked. If the line also has a date, the word stays in the title (`Plan someday trip friday` is due Friday). `tonight` and `this evening` make the task due today and mark it for **This Evening**, a group below the day's tasks in Today; a time still sets the due time (`Call Ana tonight at 8pm`). Before this, `tonight` only meant today; the date is the same, the task now also shows the moon. Each gets its own chip.
 

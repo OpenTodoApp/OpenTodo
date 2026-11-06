@@ -19,9 +19,11 @@ describe('shared quick-add vectors (quick-add-recurrence)', () => {
       const energy = 'energy' in c.expect ? { energy: r.energy ?? '' } : {}
       // And the time sector (time-sectors), '' for none as the Go result has it.
       const sector = 'sector' in c.expect ? { sector: r.sector ?? '' } : {}
+      // And the deadline (quick-add-by-deadline), '' for none as the Go result has it.
+      const deadline = 'deadline' in c.expect ? { deadline: r.deadline ?? '' } : {}
       expect({
         title: r.title, due: r.due, projectId: r.projectId, labels: r.labels, priority: r.priority,
-        estimateMinutes: r.estimateMinutes, spentMinutes: r.spentMinutes, recurrence: r.recurrence, reminders: r.reminders, ...parts, ...energy, ...sector,
+        estimateMinutes: r.estimateMinutes, spentMinutes: r.spentMinutes, recurrence: r.recurrence, reminders: r.reminders, ...parts, ...energy, ...sector, ...deadline,
       }).toEqual(c.expect)
     })
   }

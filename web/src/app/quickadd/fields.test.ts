@@ -1,7 +1,7 @@
 // The quick-add palette's field rows as a view of the parsed line (OpenSpec change
 // palette-quick-add, design D2).
 import { describe, expect, it } from 'vitest'
-import type { Chip } from '../../lib/nlp'
+import { parse, type Chip } from '../../lib/nlp'
 import { chipRange, fieldOf, fieldRows, startToken } from './fields'
 
 const chip = (kind: Chip['kind'], value: unknown, spans: [number, number, string][], key = `${kind}:${spans[0][0]}`): Chip =>
@@ -31,6 +31,13 @@ describe('fieldRows', () => {
   it('due, someday and evening are all When', () => {
     expect(['due', 'someday', 'evening'].map((k) => fieldOf(k as Chip['kind']))).toEqual(['when', 'when', 'when'])
     expect(fieldOf('deadline')).toBe('deadline')
+  })
+
+  it('a by date gives a Deadline row and leaves When unset (quick-add-by-deadline)', () => {
+    const rows = fieldRows(parse('Install winter tires by March 31', { today: '2026-10-09', languages: ['en'], projects: [] }).chips)
+    expect(rows.map((r) => [r.kind, !!r.chip])).toEqual([
+      ['when', false], ['project', false], ['label', false], ['priority', false], ['estimate', false], ['deadline', true],
+    ])
   })
 })
 
