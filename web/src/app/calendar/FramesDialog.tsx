@@ -14,7 +14,7 @@ import { FRAME_DEFAULTS } from '../../lib/ops'
 import { useLabels } from '../../lib/localData'
 import { useLiveProjects } from '../../lib/liveData'
 import type { Frame } from '../../lib/types'
-import { Button, ComboboxPanel, Dialog, EmptyState, Field, hueFor, Icon, Popover, Select } from '../../ui'
+import { Button, ComboboxPanel, Dialog, EmptyState, Field, hueFor, Icon, MoveHandle, Popover, Select } from '../../ui'
 import { actionErrorMessage } from '../actionError'
 import { showUndoToast } from '../bulk/toastStore'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
@@ -83,11 +83,13 @@ function FrameList({ frames, onAdd, onEdit }: { frames: Frame[]; onAdd: () => vo
         ? <EmptyState compact title={t('Frames shade the hours you keep for one kind of work.')} />
         : (
           <ul ref={list} className="divide-y divide-default" aria-label={t('Frames')}>
-            {frames.map((f) => (
-              <li key={f.id} data-frame-row={f.id} draggable onDragStart={() => setDragging(f.id)} onDragEnd={() => setDragging(null)}
+            {frames.map((f, i) => (
+              <li key={f.id} data-frame-row={f.id} data-drag-id="frame" draggable onDragStart={() => setDragging(f.id)} onDragEnd={() => setDragging(null)}
                 onDragOver={(e) => e.preventDefault()} onDrop={() => dropOn(f.id)}
                 className={`flex items-center gap-2 py-2 ${dragging === f.id ? 'opacity-60' : ''}`}> {/* tone-lint-allow: the dragged row */}
-                <Icon name="grip-vertical" size="xs" className="shrink-0 cursor-grab text-faint" />
+                {/* The row drags; the handle also opens Move up and Move down (accessibility-aa D3, WCAG 2.5.7). */}
+                <MoveHandle label={t('Move {name}', { name: f.title || t('Untitled') })} first={i === 0} last={i === frames.length - 1}
+                  onMove={(delta) => move(f.id, delta)} className="text-faint" />
                 <span aria-hidden data-hue={hueFor(f.color)} className="ui-block-dot" />
                 <button type="button" data-frame-edit className="min-w-0 flex-1 rounded-control text-left outline-none focus-visible:ring-2 focus-visible:ring-focus"
                   aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown" onClick={() => onEdit(f.id)}

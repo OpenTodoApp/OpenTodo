@@ -32,7 +32,7 @@ export function MonthRow({ task, v, compact, today, selected, hue, canMove, read
   const span = v ? spanOf(v) : null
   usePreloadSpanDrag(canMove && extend)
   return (
-    <button type="button" tabIndex={-1} data-month-task={task.id} data-hue={hue} aria-pressed={selected}
+    <button data-drag-id="month-task" type="button" tabIndex={-1} data-month-task={task.id} data-hue={hue} aria-pressed={selected}
       onPointerDown={canMove ? (e) => {
         if (e.button !== 0) return
         beginDrag(e, { label: task.title, onDrop: (key) => { if (key.startsWith('day:')) onDrop(task.id, key.slice(4)) } })

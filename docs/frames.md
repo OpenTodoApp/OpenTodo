@@ -21,7 +21,7 @@ A **frame** keeps hours for one kind of work, such as deep work every weekday mo
 5. Optionally pick a **Colour** and a **Plan from** source: a project, a label or a saved view.
 6. Under **More options**, set a first and a last day if it only applies for a while.
 
-You can keep up to 50 frames. In the **Frames** dialog, drag them or use **Alt+↑** and **Alt+↓** to reorder; choose one to edit it.
+You can keep up to 50 frames. In the **Frames** dialog, drag them, click a frame's handle and choose **Move up** or **Move down**, or use **Alt+↑** and **Alt+↓** to reorder; choose one to edit it.
 
 ## How frames look on the calendar
 

@@ -4,7 +4,8 @@
 // like every other object menu. Moves and assignments go through the review (D6).
 import { keysOf } from '../../lib/shortcuts'
 import { Kbd } from '../shortcuts/Kbd'
-import { useMemo, useRef, useState, type RefObject } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import type { Step } from '../../lib/move'
 import { useBelowStickyHeader } from './useBelowStickyHeader'
 import { allCompleted, applyBulk, commonSharedProject, readTicked, reviewAssign, reviewMove, type BulkAction, type ReviewPlan, useTickedTasks } from '../../lib/bulk'
 import { useAllLabels, useLabelsLoaded, useLiveSections, useProjects, useMembershipMapOrLoading, useReviewRow, useUserPrefsRow } from '../../lib/localData'
@@ -100,7 +101,9 @@ interface Data { tasks: Task[]; labels: Label[]; projects: Project[]; sections: 
   /** Today's focus (phone-touch-focus D3): the one task's focus command. */
   focus?: FocusMenuState
   /** Every read the items depend on has landed: until then the menu stays closed, so it opens complete (issue 840). */
-  ready?: boolean }
+  ready?: boolean
+  /** One task's place in a manually ordered list (accessibility-aa D3): the Reorder items. */
+  edges?: { first: boolean; last: boolean } | null }
 
 /**
  * Start or Stop tracking for one task (time-tracking D5): Stop while its entry runs,
@@ -176,8 +179,38 @@ export function energyItem(ids: readonly string[], d: Pick<Data, 'tasks' | 'memb
   })) }]
 }
 
+/**
+ * How the list the menu opened on reorders a task (accessibility-aa D3): set by a manually
+ * ordered list (a project, the Inbox, a label page's own order), absent everywhere else.
+ */
+export interface ListReorder {
+  /** The same write as the keyboard move (Alt+↑ and Alt+↓) and the drag: works offline. */
+  move: (id: string, step: Step) => void
+  /** First or last in its list (the items at that edge are disabled); null when the task cannot move. */
+  edges: (id: string) => Promise<{ first: boolean; last: boolean } | null>
+}
+export const ListReorderContext = createContext<ListReorder | null>(null)
+
+/**
+ * "Reorder" for one task in a manually ordered list (accessibility-aa D3, WCAG 2.2 2.5.7):
+ * Move up, Move down, Move to top and Move to bottom, the single-pointer alternative to
+ * dragging a row; nothing where the list has no manual order, the task cannot move or is alone.
+ */
+export function reorderItem(id: string | undefined, r: ListReorder | null | undefined, edges: { first: boolean; last: boolean } | null | undefined): ActionItem[] {
+  // Alone in its list, there is nowhere to move it.
+  if (!id || !r || !edges || (edges.first && edges.last)) return []
+  const first = { disabled: edges.first, reason: t('Already first') }
+  const last = { disabled: edges.last, reason: t('Already last') }
+  return [{ kind: 'submenu', id: 'reorder', label: t('Reorder'), icon: 'chevrons-up-down', items: [
+    { kind: 'action', id: 'move-up', label: t('Move up'), icon: 'arrow-up', shortcut: keysOf('list.move-up'), ...first, onSelect: () => r.move(id, -1) },
+    { kind: 'action', id: 'move-down', label: t('Move down'), icon: 'arrow-down', shortcut: keysOf('list.move-down'), ...last, onSelect: () => r.move(id, 1) },
+    { kind: 'action', id: 'move-top', label: t('Move to top'), icon: 'arrow-up', shortcut: keysOf('list.move-top'), ...first, onSelect: () => r.move(id, 'top') },
+    { kind: 'action', id: 'move-bottom', label: t('Move to bottom'), icon: 'arrow-down', shortcut: keysOf('list.move-bottom'), ...last, onSelect: () => r.move(id, 'bottom') },
+  ] }]
+}
+
 /** The menu's groups for the given tasks (exported for the palette and tests). */
-export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (title: string, plan: Promise<ReviewPlan>) => void; pickDate: () => void; schedule?: () => void }, besideRow = false): ActionGroup[] {
+export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (title: string, plan: Promise<ReviewPlan>) => void; pickDate: () => void; schedule?: () => void; reorder?: ListReorder | null }, besideRow = false): ActionGroup[] {
   const n = d.tasks.length
   const reopen = allCompleted(d.tasks)
   const live = d.labels.filter((l) => !l.deleted_at)
@@ -220,6 +253,7 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
       } },
     ] },
     { items: [
+      ...(n === 1 ? reorderItem(ids[0], a.reorder, d.edges) : []),
       { kind: 'picker', id: 'move', label: t('Move to project'), icon: 'folder-input', picker: {
         title: t('Move to project'), placeholder: t('Find a project…'), source: projectSource(d.projects, { memberships: d.memberships }),
         getKey: itemKey, getLabel: itemLabel, getPath: itemPath, getKeywords: itemKeywords, rankContext: 'project',
@@ -245,6 +279,18 @@ async function labelToggle(ids: readonly string[], labelId: string) {
   const { tasks } = await readTicked(ids)
   const all = tasks.length > 0 && tasks.every((task) => task.labels.includes(labelId))
   await runBulk(ids, { kind: 'label', labelId, add: !all })
+}
+
+/** A task's edges in its list while the menu is open, for the Reorder items; null outside a manual order. */
+function useReorderEdges(id: string, reorder: ListReorder | null) {
+  const [edges, setEdges] = useState<{ id: string; at: { first: boolean; last: boolean } | null } | null>(null)
+  useEffect(() => {
+    if (!id || !reorder) return
+    let live = true
+    void reorder.edges(id).then((at) => { if (live) setEdges({ id, at }) })
+    return () => { live = false }
+  }, [id, reorder])
+  return edges?.id === id && reorder ? edges.at : null
 }
 
 /** Live data the menu needs, read while it is mounted. */
@@ -290,7 +336,10 @@ export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClass
   /** Opened from a row's More button: placed there, without the groups the row's own buttons offer. */
   anchor?: RefObject<HTMLElement | null>
 }) {
-  const data = useBulkData(ids)
+  const reorder = useContext(ListReorderContext)
+  const edges = useReorderEdges(ids.length === 1 ? ids[0] : '', reorder)
+  const bulk = useBulkData(ids)
+  const data = useMemo(() => ({ ...bulk, edges }), [bulk, edges])
   // Held back only until the first full read: a later selection's read must not close an open menu.
   const [settled, setSettled] = useState(false)
   if (data.ready && !settled) setSettled(true)
@@ -301,7 +350,8 @@ export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClass
     review: (title, plan) => { void plan.then((p) => bulkDialog.set({ kind: 'review', title, plan: p })) },
     pickDate: () => bulkDialog.set({ kind: 'date', ids, n }),
     schedule: touch && ids.length === 1 ? () => openRowSchedule(ids[0]) : undefined,
-  }, besideRow), [ids, data, besideRow, touch, n])
+    reorder,
+  }, besideRow), [ids, data, besideRow, touch, n, reorder])
   return (
     <ActionMenu label={t('Actions for {tasks}', { tasks: tasksWord(n) })} title={tasksWord(n)} groups={groups} open={open} pending={!settled && !data.ready} onOpenChange={onOpenChange}
       trigger={trigger} triggerClassName={triggerClassName} triggerProps={triggerProps} startPicker={startPicker} width="sm:w-72" anchor={anchor} />

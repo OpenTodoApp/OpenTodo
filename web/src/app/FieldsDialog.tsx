@@ -146,7 +146,7 @@ function FieldItem({ def, first, last, dragging, tasks, clash, onMove, onHandleK
   }
   const ghost = dragging ? 'opacity-50' : '' // tone-lint-allow: the dragged field's ghost
   return (
-    <li data-field-def={def.id} className={`space-y-2 px-3 py-2 ${ghost}`}
+    <li data-drag-id="field-definition" data-field-def={def.id} className={`space-y-2 px-3 py-2 ${ghost}`}
       draggable={!renaming && !editingOptions} onDragStart={onDragStart} onDragOver={(e) => e.preventDefault()} onDrop={onDrop}>
       <div className="flex items-center gap-2">
         <button type="button" data-field-handle aria-label={t('Move {name} (Alt+Up or Alt+Down)', { name: def.name })} onKeyDown={onHandleKey}
