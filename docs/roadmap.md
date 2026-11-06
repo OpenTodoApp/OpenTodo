@@ -109,7 +109,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `notes-compaction-at-scale` | A year of note history compacted in a minute without holding writes back; a new device downloads only the latest notes | Shipped in 0.22 |
 | `migration-everywhere` | A switch guide and checked importer for every competitor | Shipped in 0.22 |
 | `caldav-verified` | CalDAV verified on real clients | Planned |
-| `docs-1-0` | Complete user, self-host and API docs and a contributor guide | In progress (16 of 17) |
+| `docs-1-0` | Complete user, self-host and API docs and a contributor guide | Shipped in 0.23 |
 
 ## 1.1 "Routines"
 
