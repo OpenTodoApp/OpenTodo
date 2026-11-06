@@ -67,14 +67,14 @@ The model describes the code on `main` at the time of writing. An external revie
 **Mechanism.**
 - The route policy wrapper (`internal/httpapi/policy.go`). A route is public only with a written reason, and every public route checks its own credential (a secret in the address, a bearer token or a single-use token).
 - Rate limits per client address and per account, with account lockout after 10 failures in 15 minutes (`ratelimit.go`, `accountlock.go`).
-- Session cookies are `HttpOnly` and `SameSite=Lax`. Cookie writes must carry a matching `Origin` (`originAllowed` in `middleware.go`). With `OPENTODO_BASE_URL` set, the request must also be addressed to the base URL's host, which defends against DNS rebinding.
+- Session cookies are `HttpOnly` and `SameSite=Lax`. Cookie writes must carry a matching `Origin` (`originAllowed` in `middleware.go`). Without `Origin`, a cookie write needs `Sec-Fetch-Site: same-origin` or, with no Fetch Metadata either, a JSON body, which a cross-site form or navigation cannot declare (`cookieWriteAllowed`). With `OPENTODO_BASE_URL` set, the request must also be addressed to the base URL's host, which defends against DNS rebinding.
 - Forwarded addresses are believed only from trusted proxies (`clientip.go`).
 - First run: `OPENTODO_SETUP_TOKEN` or `OPENTODO_SETUP_CODE=required`. Without `OPENTODO_BASE_URL`, a first registration addressed to a domain name (not an IP address, a dotless name or a local-only suffix) needs the setup code from the log even with the code off, so a rebound name cannot create the owner (`setupHostVerified` in `setuphost.go`).
 
 **Verified by.**
 - `TestEveryRouteDeclaresAPolicy`, `TestSecurityRoutePolicies` (`internal/httpapi/policy_test.go`).
 - `TestRouteMatrix` (`internal/httpapi/route_matrix_test.go`): every route, anonymous, with each token scope, as a member, as a viewer, cross-site and with a stale session.
-- `TestLoginRateLimit`, `TestCrossSiteCookieWritesAreRejected` (`server_test.go`).
+- `TestLoginRateLimit`, `TestCrossSiteCookieWritesAreRejected` (`server_test.go`), including writes without `Origin` or `Sec-Fetch-Site`; the route matrix's pass of a form post with neither header on every write route.
 - `TestSecurityHeaders` (`security_headers_test.go`): no framing, no sniffing, scripts only from the server.
 - `TestAccountLockout`, `TestForwardedForOnlyFromTrustedPeers`, `TestOriginMustMatchBaseURL` (`client_identity_test.go`).
 - `TestSetupHostVerified`, `TestSetupUnderDomainNameNeedsCode`, `TestNoHostCheckWithBaseURL` (`setuphost_test.go`); `TestSetupHostCheck` (`internal/auth/setupcode_test.go`).
@@ -82,7 +82,7 @@ The model describes the code on `main` at the time of writing. An external revie
 
 **Not defended.**
 - Without `OPENTODO_BASE_URL`, the origin check compares against the request's own `Host`, so after setup a rebound name passes it. The session cookie belongs to the server's real name, so such a page has no session; it can reach public routes and try passwords against the rate limits. The docs tell operators to set the base URL.
-- A write with no `Origin` header is accepted. It relies on `SameSite=Lax` keeping the cookie off cross-site subrequests.
+- A JSON write with neither `Origin` nor `Sec-Fetch-Site` is accepted, so that non-browser clients signed in with a password (`ot login`) keep working. From another site it would need a CORS preflight, which the server never grants.
 - Rate limits live in memory, per process. A restart clears them.
 - Anyone who knows an email address can keep that account's password sign-in locked. Passkeys, single sign-on and open sessions keep working.
 - `TestRouteMatrix` skips public routes, which are tested by their own feature tests.

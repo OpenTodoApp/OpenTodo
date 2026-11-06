@@ -23,9 +23,10 @@ import (
 
 // Route matrix (wave 2 of the 2026-10 audit, G4): every route of the router's
 // own table is called anonymously, with read, agent, full and admin tokens, as
-// a member, as a viewer of a shared project, cross-site, and with a stale
-// session, and the answer is checked against the route's declared policy. The
-// table drives the test, so a new route is covered without editing it.
+// a member, as a viewer of a shared project, cross-site, without Origin or
+// Sec-Fetch-Site, and with a stale session, and the answer is checked against
+// the route's declared policy. The table drives the test, so a new route is
+// covered without editing it.
 //
 // Writes are only sent where the policy must refuse them before the handler
 // runs; admission is checked on reads, where reaching the handler is harmless.
@@ -249,6 +250,11 @@ func TestRouteMatrix(t *testing.T) {
 			status, code := m.call(m.env, r.method, r.path, "Origin", "https://evil.example")
 			expect(r, "owner cross-site", status, code, "bad_origin")
 			checked["cross-site"]++
+			// cookie-writes-need-origin: a form post naming neither Origin nor
+			// Sec-Fetch-Site, as an old browser sends one from another site.
+			status, code = m.call(m.env, r.method, r.path, noFetchMetadata, "1", "Content-Type", "application/x-www-form-urlencoded")
+			expect(r, "owner without Origin or Sec-Fetch-Site", status, code, "bad_origin")
+			checked["no fetch metadata"]++
 		}
 	}
 
@@ -309,7 +315,7 @@ func TestRouteMatrix(t *testing.T) {
 		checked["stale session"]++
 	}
 	// Each pass must have had something to check.
-	for _, pass := range []string{"anonymous", "token refusals", "member refusals", "cross-site", "admitted reads", "viewer writes", "stale session"} {
+	for _, pass := range []string{"anonymous", "token refusals", "member refusals", "cross-site", "no fetch metadata", "admitted reads", "viewer writes", "stale session"} {
 		if checked[pass] < 5 {
 			t.Errorf("pass %q checked only %d routes", pass, checked[pass])
 		}
