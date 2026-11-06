@@ -472,8 +472,9 @@ Each item of the [review scope](review-scope.md) has a section here: where the c
 - **OAuth for MCP:**
   - Dynamic registration is allowed for Google's connector redirects only.
   - Consent is required, with PKCE S256 and single-use codes.
-  - Tests: `TestMCPOAuthAuthorizeNeedsConsent`, `TestMCPOAuthDynamicRegistrationIsGoogleOnly`, `TestMCPOAuthRevokeIsScopedToTheClient`.
-  - Refresh tokens last 180 days and do not rotate. Only deleting the client stops it.
+  - Refresh tokens rotate on every refresh. A refresh token that was already exchanged revokes the whole grant and records `mcp_oauth.refresh_reused` (OpenSpec `mcp-oauth-refresh-rotation`).
+  - Tests: `TestMCPOAuthAuthorizeNeedsConsent`, `TestMCPOAuthDynamicRegistrationIsGoogleOnly`, `TestMCPOAuthRevokeIsScopedToTheClient`, `TestMCPOAuthRefreshRotates`, `TestMCPOAuthRefreshReuseRevokesTheGrant`, `TestMCPOAuthRefreshReuseNeedsTheClient`, `TestMCPOAuthConcurrentRotatingRefreshRevokes`.
+  - **Not defended:** a client registered only for Google's connector addresses (the Gemini preset and every dynamic client) keeps one refresh token, because Google's guide for connected apps requires the same token back on a refresh. It lasts 180 days from the last refresh, and deleting the client or revoking the grant stops it (`TestMCPOAuthGoogleClientKeepsItsRefreshToken`).
 
 ### Assistant tool loop
 

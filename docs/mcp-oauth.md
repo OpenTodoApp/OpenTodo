@@ -53,14 +53,25 @@ client reads only.
 Every access token is an ordinary OpenTodo API token, so it appears in
 **Settings → Integrations → API tokens** as `MCP: <client name>`, is refused on
 everything except the MCP endpoint's tools, and dies with the account. Access
-tokens stop working after an hour; the refresh token lasts 180 days and **does not rotate**, so
-the connection stays linked instead of asking to reconnect.
+tokens stop working after an hour. The refresh token lasts 180 days from its last use.
+
+Each refresh gives the app a **new refresh token**, and the one it sent stops working. If an
+old refresh token is ever sent again, the server takes it as a sign that the token was copied:
+it ends the connection (the app's refresh token and access token stop working) and records
+`mcp_oauth.refresh_reused` in the audit log. Connect the app again to continue. An app has to
+keep the refresh token from each answer, as OAuth 2.1 expects.
+
+Gemini is the exception: a client whose redirect addresses are all Google's (the Google preset,
+and every client Gemini registers itself) gets the **same refresh token back**, because Google's
+guide for connected apps requires it and Gemini would otherwise unlink. Its refresh token works
+until the connection is revoked, the client is deleted, or 180 days pass without a refresh.
 
 A code is issued only when you press **Allow** in the consent dialog, so a link
 someone sends you can't connect an app to your account on its own: only allow a
 connection you started yourself. The audit log records
-`mcp_oauth.client_created`, `mcp_oauth.granted`, `mcp_oauth.revoked` and
-`mcp_oauth.client_deleted` with the client id, never a secret or token.
+`mcp_oauth.client_created`, `mcp_oauth.granted`, `mcp_oauth.revoked`,
+`mcp_oauth.refresh_reused` and `mcp_oauth.client_deleted` with the client id, never a secret
+or token.
 
 ## Ending access
 
