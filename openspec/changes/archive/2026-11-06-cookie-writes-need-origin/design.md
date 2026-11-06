@@ -35,7 +35,7 @@ The package's tests build many clients by hand, including uploads with multipart
 ## Risks / Trade-offs
 
 - A JSON write from a browser too old for Fetch Metadata and `Origin` is accepted, as before; reaching it from another site needs a CORS preflight that fails.
-- A script that posts form data with a session cookie and no `Origin` is now refused; API tokens are the documented way for scripts.
+- A script that posts form data, uploads a file or sends a bodiless `DELETE` with a session cookie and no `Origin` is now refused; API tokens are the documented way for scripts, and the repository's browser scripts send `Origin` (the one bodiless `DELETE` in `scripts/e2e-views.mjs` now does).
 
 ## Data model, size
 
