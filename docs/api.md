@@ -234,7 +234,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | GET | `/oauth/authorize` | signed-in session | `response_type=code`, `code_challenge` with `code_challenge_method=S256`; 302 to `/?oauth_consent=<query>` (the consent dialog), never a code; a browser without a session is sent to `/?oauth=<address>`; 400 without redirecting when the client or address is wrong |
 | GET | `/api/v1/me/mcp-consent` | session only | `?<authorize query>`: the consent dialog's request → `{client:{id, name, dynamic}, scope, redirectHost}`; 400 with the OAuth error shape when the request is invalid |
 | POST | `/api/v1/me/mcp-consent` | session only | `{query, allow}` → `{redirect}`: the registered address with `code` and `state` on allow, with `error=access_denied` otherwise |
-| POST | `/oauth/token` | client secret + PKCE | `authorization_code` (`code`, `redirect_uri`, `code_verifier`) or `refresh_token`; `client_secret_post` or Basic → `{access_token, token_type, expires_in, refresh_token, scope}`; the access token stops working after `expires_in` seconds (3600); the refresh token never rotates |
+| POST | `/oauth/token` | client secret + PKCE | `authorization_code` (`code`, `redirect_uri`, `code_verifier`) or `refresh_token`; `client_secret_post` or Basic → `{access_token, token_type, expires_in, refresh_token, scope}`; the access token stops working after `expires_in` seconds (3600); a refresh returns a new refresh token and retires the one sent, and an already-used refresh token revokes the grant (`400 invalid_grant`, audited as `mcp_oauth.refresh_reused`); a client registered only for Google's connector addresses gets the same refresh token back |
 | POST | `/oauth/revoke` | client secret | RFC 7009: the client's own refresh token, or the access token one of its grants holds, revokes that grant; any other token is left alone and answered 200; 401 `invalid_client` without the client's credentials |
 
 #### Administration (owner and admins)
@@ -1255,6 +1255,7 @@ The server records security-relevant events in its own database (never synced to
 | `mcp_oauth.client_deleted` | success | actor = owner | `oauth_client_id`; its grants and access tokens are gone with it |
 | `mcp_oauth.granted` | success | actor = the user | `oauth_client_id`, `token_scope`; one per authorization, never a code or token |
 | `mcp_oauth.revoked` | success | actor = the user | `oauth_client_id`; the grant was ended through `/oauth/revoke` |
+| `mcp_oauth.refresh_reused` | failure | actor = the user | `oauth_client_id`; a refresh token the grant had already exchanged was presented again, so the grant and its access token were revoked |
 | `settings.changed` | success | actor = owner (the user for `encryption*`) | `setting` (`audit.retention_days`, `audit.log_ip`, `webhooks_allow_private`, `mfa.required`, `mcp.enabled`, `mcp.writes`, `agent.writes` (actor = the user), `caldav.enabled`, `integrations.issues`, `project_invites.members_create_accounts`, `oidc.*`, `smtp.*` (`smtp.password` only as `set` or empty), `encryption`, `encryption.keys`), `from`, `to` |
 | `export.requested` | success | actor = user | `format` (`json`) |
 | `audit.exported` | success | actor = owner | `format` (`ndjson`), `count` |

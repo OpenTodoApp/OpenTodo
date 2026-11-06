@@ -8,7 +8,7 @@
 // the same keys in one scope, or in a scope and an ancestor scope, without an
 // explicit `overrides`.
 
-export type ShortcutSection = 'everywhere' | 'go' | 'tasks' | 'board' | 'calendar' | 'filter' | 'trash' | 'triage' | 'focus' | 'notes' | 'routines' | 'review' | 'display' | 'comments' | 'settings' | 'vim'
+export type ShortcutSection = 'everywhere' | 'go' | 'tasks' | 'board' | 'calendar' | 'filter' | 'arrange' | 'trash' | 'triage' | 'focus' | 'notes' | 'routines' | 'review' | 'display' | 'comments' | 'settings' | 'vim'
 
 /**
  * Where a shortcut applies. The dispatcher runs the innermost active scope first:
@@ -65,6 +65,7 @@ export const SHORTCUT_SECTIONS: { id: ShortcutSection; title: string }[] = [
   { id: 'board', title: 'Board and timeline' },
   { id: 'calendar', title: 'Day, Week, Month, Plan and Year calendar' },
   { id: 'filter', title: 'Views and boards' },
+  { id: 'arrange', title: 'Group and order' },
   { id: 'trash', title: 'Trash and projects' },
   { id: 'triage', title: 'Process the Inbox' },
   { id: 'focus', title: 'Focus' },
@@ -334,6 +335,22 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'dashboard.move-next', keys: ['Shift+→'], description: 'On a board: move the selected card to the next panel that has a rule, applying it', section: 'filter', scope: 'view', views: ['dashboard'] },
   { id: 'filter.history', keys: ['↑', '↓'], description: 'In the query of New view: recall recent queries on this device', section: 'filter', scope: 'view', views: ['filter'], local: true, typing: true },
 
+  // ---- group and order (display-keys): the Display options of a project's list, a label's page and a saved view,
+  // as `r` sequences; a list registers only the choices its panel offers.
+  { id: 'arrange.group-section', keys: ['r g s'], label: 'Section', description: 'Group by section (in a project)', section: 'arrange', scope: 'list' },
+  { id: 'arrange.group-project', keys: ['r g j'], label: 'Project', description: 'Group by project (on a label page or in a saved view)', section: 'arrange', scope: 'list' },
+  { id: 'arrange.group-none', keys: ['r g n'], label: 'None', description: 'No grouping', section: 'arrange', scope: 'list' },
+  { id: 'arrange.group-due', keys: ['r g d'], label: 'Due date', description: 'Group by due date', section: 'arrange', scope: 'list' },
+  { id: 'arrange.group-priority', keys: ['r g p'], label: 'Priority', description: 'Group by priority', section: 'arrange', scope: 'list' },
+  { id: 'arrange.group-label', keys: ['r g l'], label: 'Label', description: 'Group by label (in a project or a saved view)', section: 'arrange', scope: 'list' },
+  { id: 'arrange.order-manual', keys: ['r o m'], label: 'Manual order', description: 'Order by manual order', section: 'arrange', scope: 'list' },
+  { id: 'arrange.order-priority', keys: ['r o p'], label: 'Priority', description: 'Order by priority', section: 'arrange', scope: 'list' },
+  { id: 'arrange.order-due', keys: ['r o d'], label: 'Due date', description: 'Order by due date', section: 'arrange', scope: 'list' },
+  { id: 'arrange.order-created', keys: ['r o c'], label: 'Created', description: 'Order by creation date', section: 'arrange', scope: 'list' },
+  { id: 'arrange.order-deadline', keys: ['r o l'], label: 'Deadline', description: 'Order by deadline', section: 'arrange', scope: 'list' },
+  { id: 'arrange.order-title', keys: ['r o t'], label: 'Title', description: 'Order by title', section: 'arrange', scope: 'list' },
+  { id: 'arrange.reverse', keys: ['r r'], label: 'Reverse order', description: 'Reverse the order: ascending or descending', section: 'arrange', scope: 'list' },
+
   // ---- trash, projects and updates
   { id: 'trash.down', keys: ['j'], description: 'In the Trash: select the next item', section: 'trash', scope: 'view', views: ['trash'] },
   { id: 'trash.up', keys: ['k'], description: 'In the Trash: select the previous item', section: 'trash', scope: 'view', views: ['trash'] },
@@ -478,8 +495,17 @@ export function labelMessage(s: Pick<Shortcut, 'label' | 'description'>): { mess
   return bar < 0 ? { message: s.label } : { message: s.label.slice(0, bar), context: s.label.slice(bar + 1) }
 }
 
+/**
+ * The middle steps of three-key sequences (display-keys D2): never dispatched or listed,
+ * they name the step in the sequence spotlight (`r` then "g Group by", "o Order by").
+ */
+export const SEQUENCE_STEPS: Shortcut[] = [
+  { id: 'arrange.group', keys: ['r g'], label: 'Group by', description: 'Group by', section: 'arrange', scope: 'list' },
+  { id: 'arrange.order', keys: ['r o'], label: 'Order by', description: 'Order by', section: 'arrange', scope: 'list' },
+]
+
 /** Groups of the sequence spotlight (shortcut-spotlight D3), by id; the rest are Tools. */
-export type SpotlightGroup = 'views' | 'calendar' | 'method' | 'tools'
+export type SpotlightGroup = 'views' | 'calendar' | 'method' | 'arrange' | 'group' | 'order' | 'tools'
 const SPOTLIGHT_GROUPS: Record<string, SpotlightGroup> = {
   'go.inbox': 'views', 'go.today': 'views', 'go.upcoming': 'views', 'go.anytime': 'views', 'go.someday': 'views', 'go.assigned': 'views',
   'go.completed': 'views', 'go.labels': 'views', 'go.projects': 'views', 'go.filter': 'views', 'go.views': 'views', 'go.trash': 'views', 'go.feed': 'views',
@@ -488,6 +514,9 @@ const SPOTLIGHT_GROUPS: Record<string, SpotlightGroup> = {
   'go.close': 'method', 'go.focus': 'method', 'go.stats': 'method', 'go.notes': 'views',
 }
 export function spotlightGroup(id: string): SpotlightGroup {
+  if (id.startsWith('arrange.group-')) return 'group'
+  if (id.startsWith('arrange.order-')) return 'order'
+  if (id.startsWith('arrange.')) return 'arrange'
   return SPOTLIGHT_GROUPS[id] ?? 'tools'
 }
 
