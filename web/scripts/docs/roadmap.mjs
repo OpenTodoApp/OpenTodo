@@ -54,7 +54,7 @@ export function changeStatus(repoRoot, name, releases) {
   const archive = join(repoRoot, 'openspec/changes/archive')
   const archived = existsSync(archive) ? readdirSync(archive).find((d) => d.slice(11) === name && /^\d{4}-\d{2}-\d{2}-/.test(d)) : undefined
   if (archived) {
-    const word = new RegExp(`(^|[^a-z0-9-])${name.replace(/[-]/g, '\\-')}($|[^a-z0-9-])`)
+    const word = new RegExp(`(^|[^a-z0-9-])${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|[^a-z0-9-])`)
     const named = releases.find((r) => word.test(r.text))
     // Several releases can share a date: the last of them carried what was archived that day.
     const first = releases.find((r) => r.date >= archived.slice(0, 10))
@@ -80,7 +80,7 @@ export function roadmapMarkdown(repoRoot) {
   const lines = [START, '']
   for (const m of parseRoadmap(roadmap)) {
     lines.push(`## ${m.title}`, '', '| Change | What | Status |', '| --- | --- | --- |')
-    for (const c of m.changes) lines.push(`| \`${c.name}\` | ${c.what.replace(/\|/g, '\\|')} | ${changeStatus(repoRoot, c.name, releases)} |`)
+    for (const c of m.changes) lines.push(`| \`${c.name}\` | ${c.what.replace(/[\\|]/g, '\\$&')} | ${changeStatus(repoRoot, c.name, releases)} |`)
     lines.push('')
   }
   lines.push(END)
