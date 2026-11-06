@@ -1,7 +1,7 @@
 // The 2,000-row list as a screen reader gets it (OpenSpec change accessibility-aa). The
 // list keeps rows far from the viewport unrendered with `content-visibility: auto`
-// (list-rendering-at-scale D1), and its rejected D4 would have split the list into
-// blocks. Opens the perfseed account's 2,000-task project at 1280 px in Chromium with
+// (list-rendering-at-scale D1), on blocks of rows since incremental-list-updates D5; the
+// blocks are presentational, and must not split the list for assistive technology. Opens the perfseed account's 2,000-task project at 1280 px in Chromium with
 // full accessibility on (--force-renderer-accessibility, the mode Chromium switches to
 // when a screen reader is running) and reads the accessibility tree the platform API is
 // built from: every row must be a list item with its Complete button in the tree, the
@@ -65,9 +65,11 @@ try {
     rows.forEach((r, i) => r.setAttribute('data-a11y-row', String(i)))
     return {
       rows: rows.length,
-      lists: new Set(rows.map((r) => r.parentElement?.closest('ul, ol'))).size,
-      // With an assistive technology on, Chromium renders skipped rows for it, so count the rule, not the skipping.
-      autoRows: rows.filter((r) => getComputedStyle(r).contentVisibility === 'auto').length,
+      // The list elements a row belongs to: the blocks of a long list (incremental-list-updates D5) are presentational.
+      lists: new Set(rows.map((r) => { let l = r.parentElement?.closest('ul, ol'); while (l?.getAttribute('role') === 'none') l = l.parentElement?.closest('ul, ol'); return l })).size,
+      // With an assistive technology on, Chromium renders skipped rows for it, so count the rule, not the skipping:
+      // on the row, or on the block of rows that holds it.
+      autoRows: rows.filter((r) => getComputedStyle(r).contentVisibility === 'auto' || (r.closest('.row-block') && getComputedStyle(r.closest('.row-block')).contentVisibility === 'auto')).length,
       lastBelow: rows.length > 0 && rows[rows.length - 1].getBoundingClientRect().top > innerHeight,
     }
   })

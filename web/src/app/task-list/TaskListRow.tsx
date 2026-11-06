@@ -61,7 +61,12 @@ export function rowMotion(task: Task, departure: ReturnType<typeof useDeparture>
  */
 export const TaskListRow = memo(function TaskListRow({ task, labelMap, draggable, reorderable, collapsible, expandable, handlers: actions, ...rest }: TaskListRowProps) {
   const labels = useMemo(() => resolveLabels(task.labels, labelMap), [task.labels, labelMap])
-  const motion = rowMotion(task, useDeparture(task.id))
+  const departure = useDeparture(task.id)
+  // A departing row leaves by itself when its moment ends (or Undo turns it into a
+  // restore): the list does not draw again for it, so a completion draws the list
+  // once, when the task leaves its data (incremental-list-updates D4).
+  if (isGhost(task) && departure !== 'leave') return null
+  const motion = rowMotion(task, departure)
   return (
     <TaskRow
       {...rest}

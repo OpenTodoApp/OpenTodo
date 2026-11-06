@@ -1,7 +1,7 @@
 // The list body (OpenSpec change web-component-structure): rows, the grouped list
 // with its headers and section groups, and the logbook's "Show more". The board and
 // the timeline have their own bodies (BoardView, TimelineView).
-import { Fragment, lazy, Suspense, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { type CSSProperties, Fragment, isValidElement, lazy, Suspense, type ReactElement, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { t, useLanguageVersion } from '../../lib/i18n'
 import { BLOCKED_OPEN_KEY, earlierCollapsed, flatRow, type ListGroup, type ListRow as Row } from '../../lib/listGroups'
 import type { DropAt } from '../listDrop'
@@ -19,11 +19,13 @@ import { sectionTarget, type BoardColumn } from '../BoardView'
 import { groupKey, setGroupCollapsed } from '../collapsedGroups'
 import { FieldColumnsRow, FieldColumnsTable } from '../FieldColumns'
 import { SectionHeader, SectionQuickAdd } from '../Sections'
-import { departures$, ghostMemory, isGhost, listCommitted, markGhost, registerList, useDepartureEnds, withGhosts } from '../motion'
+import { departures$, ghostMemory, isGhost, listCommitted, markGhost, registerList, withGhosts } from '../motion'
 import type { FlowView } from '../../lib/useFlow'
 import { TaskListRow, SubtaskInput, type RowActions } from './TaskListRow'
 import { WaitingSoonList } from './WaitingSoon'
 import type { ListRoute } from './useListModel'
+import { BLOCK_ROWS, BLOCKS_FROM, blockOf, rowBlocks } from './rowBlocks'
+import { RowBlockContext } from './rowBlockContext'
 
 export interface RowContext {
   /** Touch rows follow a swipe (phone-v2 D3): coarse pointer, nothing ticked, not select mode. */
@@ -74,12 +76,15 @@ export interface RowContext {
   cardNotes?: boolean
 }
 
-/** A group's rows with its departing rows kept in place (motion-v2 D2); counts skip them. */
-export function useGhostGroups(groups: ListGroup[], ends: number): ListGroup[] {
+/**
+ * A group's rows with its departing rows kept in place (motion-v2 D2); counts skip them.
+ * Read here, not subscribed: a departure that starts draws only its own row (useDeparture),
+ * the list draws again when its data changes (the task left), and a ghost whose departure
+ * ended draws nothing (TaskListRow) until the list next draws and forgets it.
+ */
+export function useGhostGroups(groups: ListGroup[]): ListGroup[] {
   const memory = useRef(ghostMemory<Row>())
   return useMemo(() => {
-    // Read here, not subscribed: a departure that starts draws only its own row (useDeparture);
-    // the list draws again when its data changes (the task left) or a departure ends.
     const departures = departures$()
     const m = memory.current
     if (departures.size === 0 && m.ghosts.size === 0) {
@@ -88,12 +93,11 @@ export function useGhostGroups(groups: ListGroup[], ends: number): ListGroup[] {
     }
     const shown = withGhosts(groups.map((g) => ({ key: g.key, items: g.rows })), (r) => r.task.id, (r) => ({ ...r, task: markGhost({ ...r.task }) }), departures, m)
     return groups.map((g) => (shown.get(g.key)!.length === g.rows.length ? g : { ...g, rows: shown.get(g.key)! }))
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- `ends` is the signal to read the departures again
-  }, [groups, ends])
+  }, [groups])
 }
 
-/** A board's cards with their departing cards kept in place. */
-export function useGhostColumns(columns: BoardColumn[], ends: number): BoardColumn[] {
+/** A board's cards with their departing cards kept in place (as useGhostGroups). */
+export function useGhostColumns(columns: BoardColumn[]): BoardColumn[] {
   const memory = useRef(ghostMemory<Task>())
   return useMemo(() => {
     const departures = departures$()
@@ -104,8 +108,7 @@ export function useGhostColumns(columns: BoardColumn[], ends: number): BoardColu
     }
     const shown = withGhosts(columns.map((c) => ({ key: c.key, items: c.cards })), (task) => task.id, (task) => ({ ...task }), departures, m)
     return columns.map((c) => (shown.get(c.key)!.length === c.cards.length ? c : { ...c, cards: shown.get(c.key)! }))
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- `ends` is the signal to read the departures again
-  }, [columns, ends])
+  }, [columns])
 }
 
 /**
@@ -116,9 +119,8 @@ export function useGhostColumns(columns: BoardColumn[], ends: number): BoardColu
  * list-rendering-at-scale D7).
  */
 export function useListMotion(groups: ListGroup[], columns: BoardColumn[]) {
-  const ends = useDepartureEnds()
-  const shownGroups = useGhostGroups(groups, ends)
-  const shownColumns = useGhostColumns(columns, ends)
+  const shownGroups = useGhostGroups(groups)
+  const shownColumns = useGhostColumns(columns)
   useLayoutEffect(() => listCommitted())
   useLayoutEffect(() => registerList(), [])
   return { groups: shownGroups, columns: shownColumns }
@@ -336,9 +338,9 @@ export function GroupedList(p: GroupedListProps) {
     p = { ...p, renderRow: (r) => (drawn++ < limit || r.task.id === p.reveal ? render(r) : null) }
   }
   /** The rows of a group: a list, or a row group of the columns table (custom-fields). */
-  const rowList = (children: ReactNode, extra?: Record<string, string>) => (p.fieldColumns
+  const rowList = (children: ReactNode[], extra?: Record<string, string>) => (p.fieldColumns
     ? <div role="rowgroup" {...extra}>{children}</div>
-    : <ul {...extra}>{children}</ul>)
+    : <RowList extra={extra}>{children}</RowList>)
   // First and last among the real sections: "No section" is not always there (a project
   // whose every task has a section, as after an import), so its slot is not assumed (GitHub issue 359).
   const sectionKeys = p.groups.filter((g) => g.section).map((g) => g.key)
@@ -452,7 +454,38 @@ function inIdleSlices(step: () => boolean): () => void {
   return () => { stopped = true; cancel() }
 }
 
-type RowList = (children: ReactNode, extra?: Record<string, string>) => ReactNode
+type RowList = (children: ReactNode[], extra?: Record<string, string>) => ReactNode
+
+/**
+ * A list of rows, in blocks once it is long (incremental-list-updates D5): the browser
+ * skips the blocks far from the viewport instead of each row. A row keeps its block
+ * from one drawing to the next (rowBlocks), so a row that comes or goes draws no other
+ * row again. The blocks are presentational: the rows stay the items of this one list.
+ */
+function RowList({ children, extra }: { children: ReactNode[]; extra?: Record<string, string> }) {
+  const memory = useRef<{ of: Map<string, string>; on: boolean; next: number }>({ of: new Map(), on: false, next: 0 })
+  const m = memory.current
+  const shown = children.filter(isValidElement) as ReactElement[]
+  m.on = shown.length >= BLOCKS_FROM || (m.on && shown.length >= BLOCK_ROWS)
+  if (!m.on) {
+    m.of = new Map()
+    return <ul {...extra}>{children}</ul>
+  }
+  const byKey = new Map(shown.map((el) => [String(el.key), el]))
+  const blocks = rowBlocks([...byKey.keys()], m.of, () => `block-${m.next++}`)
+  m.of = blockOf(blocks)
+  return (
+    <ul {...extra}>
+      <RowBlockContext value>
+        {blocks.map((b) => (
+          <li key={b.key} role="none" className="row-block" style={{ '--block-rows': b.ids.length } as CSSProperties}>
+            <ul role="none">{b.ids.map((id) => byKey.get(id))}</ul>
+          </li>
+        ))}
+      </RowBlockContext>
+    </ul>
+  )
+}
 
 /** Project list grouped by section (board-view). */
 function SectionGroup({ g, first, last, rowList, project, ...p }: GroupedListProps & { g: ListGroup; first: boolean; last: boolean; rowList: RowList; project: Project }) {
