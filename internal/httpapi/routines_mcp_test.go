@@ -48,10 +48,10 @@ func TestRoutineMCPTools(t *testing.T) {
 		t.Fatalf("invalid steps %v", bad)
 	}
 	// "Unavailable step": created, with the reason.
-	mail := c.mustTool(secret, "create_routine", map[string]any{"name": "Mail", "trigger": `{"kind":"manual"}`,
-		"steps": `[{"id":"a","kind":"email_me","in":{"subject":{"literal":"Hi"},"text":{"literal":"Body"}}}]`})
-	if u := mail["unavailable"].([]any); len(u) != 1 || u[0].(map[string]any)["reason"] != "email_not_configured" {
-		t.Fatalf("unavailable %v", mail)
+	ai := c.mustTool(secret, "create_routine", map[string]any{"name": "Ask", "trigger": `{"kind":"manual"}`,
+		"steps": `[{"id":"a","kind":"ask_ai","in":{"instruction":{"literal":"Hi"}}}]`})
+	if u := ai["unavailable"].([]any); len(u) != 1 || u[0].(map[string]any)["reason"] != "ai_not_configured" {
+		t.Fatalf("unavailable %v", ai)
 	}
 	// Read tools, with a read token.
 	list := c.mustTool(reader, "list_routines", nil)
