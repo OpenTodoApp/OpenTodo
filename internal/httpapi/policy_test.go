@@ -200,6 +200,7 @@ func TestSecurityRoutePolicies(t *testing.T) {
 		"POST /api/v1/members/{id}/mfa/reset":        "auth owner admin-token fresh demo",
 		"GET /api/v1/audit":                          "auth owner",
 		"GET /api/v1/audit/export":                   "auth owner",
+		"GET /api/v1/audit/verify":                   "auth owner",
 		// Server settings that hold secrets, and the encryption key record.
 		"GET /api/v1/settings/oidc":        "auth owner",
 		"PUT /api/v1/settings/oidc":        "auth owner admin-token fresh demo",

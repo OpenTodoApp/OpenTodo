@@ -50,12 +50,18 @@ type Result struct {
 }
 
 // Call describes the tool call a request belongs to, for the device's
-// confirmation sheet and its list of recent calls. Never a value.
+// confirmation sheets, its footer mark and its list of recent calls
+// (relay-request-transparency). Args is the call's arguments as compact JSON
+// cut to MaxArgs bytes; it travels sealed and is never stored or logged.
 type Call struct {
 	Tool  string `json:"tool"`
 	Token string `json:"token,omitempty"`
+	Args  string `json:"args,omitempty"`
 	Write bool   `json:"write"`
 }
+
+// MaxArgs bounds Call.Args in bytes.
+const MaxArgs = 300
 
 // Error is a relayed call that could not be answered (mcp-server "Relay
 // errors"). Code is the tool error code.

@@ -7169,5 +7169,14 @@
   "Accessibility": "无障碍",
   "Other app": "其他应用",
   "The exact address the app returns to after you sign in, starting with https://. The app’s documentation names it.": "登录后应用返回的完整地址，以 https:// 开头。应用的文档中会注明。",
-  "Enter the address the app returns to after you sign in.": "请输入登录后应用返回的地址。"
+  "Enter the address the app returns to after you sign in.": "请输入登录后应用返回的地址。",
+  "An AI connector wants to read your text": "AI 连接器想要读取你的文本",
+  "An assistant asks to read this with {tool}:": "助手请求使用 {tool} 读取以下内容：",
+  "{token} asks to read this with {tool}:": "{token} 请求使用 {tool} 读取以下内容：",
+  "Answering an AI connector: {tool}": "正在响应 AI 连接器：{tool}",
+  "Answering {token}: {tool}": "正在响应 {token}：{tool}",
+  "Confirm reads first": "先确认读取",
+  "Each request to read your text shows here before this device sends it.": "每个读取你文本的请求都会先在这里显示，然后此设备才会发送。",
+  "Text to send": "要发送的文本",
+  "{n, plural, one {and # more value} other {and # more values}}": "{n, plural, other {还有 # 个值}}"
 }

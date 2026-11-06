@@ -707,6 +707,7 @@ export const SETTINGS_COPY = {
         description: msg('Lets connectors such as Claude.ai read and write your encrypted text through this device.'),
       },
       relayConfirm: { label: msg('Confirm changes first'), description: msg('Each change an AI connector asks for shows here before it is written.') },
+      relayConfirmReads: { label: msg('Confirm reads first'), description: msg('Each request to read your text shows here before this device sends it.') },
       relayDevices: { label: msg('Devices that answer') },
       relayRecent: { label: msg('Recent requests'), description: msg('What this device answered, without the text.') },
       // OAuth clients (mcp-oauth): the one row that shows a new client's credentials.

@@ -39,7 +39,8 @@ describe('a menu below 640 px', () => {
     const r = await render(<Harness />)
     await click(r.container.querySelector('button')!)
     const sheet = document.querySelector('[data-overlay="sheet"]')!
-    expect(sheet.className).toContain('max-h-[90dvh]')
+    // 90 dvh, and never above the top safe area with the keyboard open (GitHub issue 973).
+    expect(sheet.getAttribute('style')).toMatch(/max-height: min\(90dvh, calc\(100dvh - var\(--vv-bottom, 0px\) - var\(--safe-top\)/)
     const handle = sheet.querySelector('[data-sheet-handle]')!
     expect(handle).toBeTruthy()
     const top = handle.parentElement!
