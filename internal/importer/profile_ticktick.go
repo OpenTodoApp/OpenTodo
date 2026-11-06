@@ -25,8 +25,8 @@ func (tickTickProfile) Description() string { return "TickTick: the CSV backup f
 
 // tickTickRecords reads the CSV and returns the preamble records, the header and
 // a reader positioned at the first task record.
-func tickTickRecords(data []byte) (pre [][]string, header []string, r *csv.Reader, err error) {
-	r = csv.NewReader(bytes.NewReader(trimBOM(data)))
+func tickTickRecords(data []byte) (pre [][]string, header []string, r *csvReader, err error) {
+	r = newCSVReader(trimBOM(data))
 	r.FieldsPerRecord = -1
 	r.LazyQuotes = true
 	for i := 0; i < 20; i++ {
@@ -59,6 +59,10 @@ func (tickTickProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 		return nil, err
 	}
 	pre, header, r, err := tickTickRecords(data)
+	var le *LimitError
+	if errors.As(err, &le) {
+		return nil, le
+	}
 	if err != nil {
 		return nil, &FileError{"cannot find the TickTick header (Folder Name, List Name, Title, …)"}
 	}
@@ -86,7 +90,7 @@ func (tickTickProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 				out.Rows = append(out.Rows, Row{Line: pe.StartLine, Kind: KindTask, Err: fmt.Sprintf("unreadable CSV record: %v", pe.Err)})
 				continue
 			}
-			return nil, &FileError{fmt.Sprintf("cannot read the CSV file: %v", err)}
+			return nil, csvFailure(err, "file")
 		}
 		if allBlank(rec) {
 			continue
