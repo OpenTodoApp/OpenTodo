@@ -27,6 +27,9 @@ type runOpts struct {
 	callAI bool
 	// device and session bind a Run now to the device in hand (D7).
 	device, session string
+	// maxWrites: the most entities the run may write (0: no cap), the agent
+	// token's daily items left for a run_routine.
+	maxWrites int
 }
 
 // runRoutine runs one routine occurrence: claimed under its key (so a replay
@@ -172,6 +175,9 @@ func (e *Engine) runRoutine(ctx context.Context, w *world, r *rule, o runOpts) (
 			return finish(routineFinish{Outcome: OutcomeProposal, FailedStep: -1})
 		}
 	}
+	if o.maxWrites > 0 && planned > o.maxWrites {
+		return finish(routineFinish{Outcome: OutcomeFailed, Reason: agentLimitReason(planned, o.maxWrites), FailedStep: -1})
+	}
 	wrote, n, refused, err := st.commit(o.depth)
 	if err != nil {
 		return finish(routineFinish{Outcome: OutcomeFailed, Reason: err.Error(), FailedStep: -1, Written: wrote, Writes: n})
@@ -182,6 +188,12 @@ func (e *Engine) runRoutine(ctx context.Context, w *world, r *rule, o runOpts) (
 		outcome, reason = OutcomePartial, refusedReason(refused)
 	}
 	return finish(routineFinish{Outcome: outcome, Reason: reason, Writes: n, FailedStep: -1, Written: wrote, AIAuto: auto})
+}
+
+// agentLimitReason is why a run an AI assistant started wrote nothing: it
+// planned more than the assistant's daily items had left.
+func agentLimitReason(planned, left int) string {
+	return "the AI assistant's daily write limit has " + strconv.Itoa(left) + " items left and this run would write " + strconv.Itoa(planned)
 }
 
 func refusedReason(n int) string {

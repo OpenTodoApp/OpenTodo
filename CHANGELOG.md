@@ -4,6 +4,10 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Security
+
+- **`run_routine` now stays within an AI assistant's daily write limit.** A routine run started over MCP counted its writes toward the token's 1,000 items a day only after it ran, and it ran even when nothing was left. It now runs only within what is left: with none left it answers `rate_limited`, and a run that would write more than is left writes nothing and is logged as failed with the reason. Tests are not limited. See [Limits](docs/mcp.md#limits).
+
 ### Added
 
 - **Repeat on the first, second, third or fourth weekday of the month.** Next to `every last weekday`, a rule can now be `every first weekday`, `every 2nd weekday`, `every third weekday` or `every 4th weekday`: that Monday-to-Friday day of each month, with weekends not counted. In March 2026, which starts on a Sunday, `every first weekday` is Monday 2 March and `every 2nd weekday` is Tuesday 3 March. It is stored as `every 1st weekday`, works with `until` and `for N times` but not `after completion`, and CalDAV apps see it as `FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=1`. Quick add understands it in every language (`jeden ersten Werktag`, `chaque premier jour ouvré`, `ogni primo giorno feriale`, `cada primer día laborable`, `todo primeiro dia útil`), and a Todoist import keeps `every first workday`. Quick add also reads `ogni ultimo giorno feriale`, `cada último día laborable` and `todo último dia útil` as the last weekday; it took them for the last day and left the last word in the title. ([#834](https://github.com/OpenTodoApp/OpenTodo/issues/834))
