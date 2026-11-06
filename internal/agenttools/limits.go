@@ -175,3 +175,53 @@ func (l *Limiter) RefundFor(userID, token string, n int) {
 		}
 	}
 }
+
+// Hold holds what is left of today's budget for a token that belongs to no
+// account; see HoldFor.
+func (l *Limiter) Hold(token string) (int, int) { return l.HoldFor("", token) }
+
+// Settle ends a Hold for a token that belongs to no account; see SettleFor.
+func (l *Limiter) Settle(token string, held, used int) { l.SettleFor("", token, held, used) }
+
+// HoldFor books whatever is left of today's budget, the token's or the
+// account's of userID whichever is smaller, for a call whose size is known
+// only once it ran (run_routine), and returns it; 0 with the seconds until the
+// next UTC day when nothing is left. The caller settles with SettleFor.
+func (l *Limiter) HoldFor(userID, token string) (int, int) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	now := l.now()
+	tu := l.get(token, now)
+	left := PerDay - tu.entities
+	var au *usage
+	if userID != "" {
+		au = l.get(accountKey(userID), now)
+		left = min(left, AccountPerDay-au.entities)
+	}
+	if left <= 0 {
+		return 0, untilNextDay(now)
+	}
+	tu.entities += left
+	if au != nil {
+		au.entities += left
+	}
+	return left, 0
+}
+
+// SettleFor ends a HoldFor of held entities of which used were written: the
+// rest goes back to the token and the account. A run that wrote more than it
+// held (a device run, which the server cannot cap) books the excess, so later
+// calls are refused.
+func (l *Limiter) SettleFor(userID, token string, held, used int) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	keys := []string{token}
+	if userID != "" {
+		keys = append(keys, accountKey(userID))
+	}
+	for _, k := range keys {
+		if u, ok := l.tokens[k]; ok {
+			u.entities = max(0, u.entities-held+used)
+		}
+	}
+}

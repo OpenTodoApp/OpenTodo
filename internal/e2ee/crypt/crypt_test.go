@@ -154,7 +154,10 @@ func TestPassphraseAndRecoveryVectors(t *testing.T) {
 	}
 	// Bounds: devices refuse too few and too many iterations; so does ot.
 	MinIterations = old
-	for _, n := range []int{1000, 99_999, 10_000_001} {
+	if MinIterations != e2ee.MinIterations || MaxIterations != e2ee.MaxIterations {
+		t.Fatalf("ot accepts %d to %d iterations, the server stores %d to %d", MinIterations, MaxIterations, e2ee.MinIterations, e2ee.MaxIterations)
+	}
+	for _, n := range []int{1000, 99_999, 100_000, 599_999, 10_000_001} {
 		bad := rec
 		bad.Iterations = n
 		if _, err := UnlockWithPassphrase(bad, v.Passphrase.Passphrase); !errors.Is(err, ErrIterations) {

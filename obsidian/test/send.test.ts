@@ -3,7 +3,7 @@
 // note", "Sends work offline" and "The plugin on an encrypted account", through
 // the loaded plugin, the real sheet and a fake server.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createKeyRecord, ITERATION_LIMITS, isEnvelope } from '../../web/src/lib/crypto'
+import { ACCEPTED_ITERATIONS, createKeyRecord, ITERATION_LIMITS, isEnvelope } from '../../web/src/lib/crypto'
 import { openValue } from '../../web/src/lib/e2eeEnvelope'
 import { obsidianURL } from '../../web/src/lib/taskOrigin'
 import { connected, memoryEditor, until } from './harness'
@@ -239,7 +239,7 @@ describe('encrypted account', () => {
     ITERATION_LIMITS.min = 1000
   })
   afterEach(() => {
-    ITERATION_LIMITS.min = 100_000
+    ITERATION_LIMITS.min = ACCEPTED_ITERATIONS.min
   })
 
   it('Encrypted send: the server stores only ciphertext for the title and the origin', async () => {
