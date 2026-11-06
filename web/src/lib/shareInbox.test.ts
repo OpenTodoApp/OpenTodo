@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto'
 import { describe, expect, it } from 'vitest'
-import { clearInbox, deleteInboxEntry, entryFromForm, entrySize, getInboxEntry, INBOX_MAX_AGE_MS, putInboxEntry, SHARE_MAX_BYTES, shareRequestAllowed, sweepInbox } from './shareInbox'
+import { clearInbox, deleteInboxEntry, entryFromForm, entrySize, getInboxEntry, INBOX_MAX_AGE_MS, putInboxEntry, SHARE_MAX_BYTES, shareRequestAllowed, shareRequestVerdict, sweepInbox } from './shareInbox'
 
 describe('share inbox', () => {
   it('stores a share sheet POST, reads it back and deletes it', async () => {
@@ -30,12 +30,25 @@ describe('share inbox', () => {
     const h = (o: Record<string, string>) => new Headers(o)
     expect(shareRequestAllowed(h({ 'Sec-Fetch-Site': 'none' }))).toBe(true)
     expect(shareRequestAllowed(h({ 'Sec-Fetch-Site': 'same-origin' }))).toBe(true)
-    // Older browsers send no Sec-Fetch-Site.
-    expect(shareRequestAllowed(h({}))).toBe(true)
+    // A request without Sec-Fetch-Site is not stored (share-target-fetch-metadata).
+    expect(shareRequestAllowed(h({}))).toBe(false)
     expect(shareRequestAllowed(h({ 'Sec-Fetch-Site': 'cross-site' }))).toBe(false)
     expect(shareRequestAllowed(h({ 'Sec-Fetch-Site': 'same-site' }))).toBe(false)
     expect(shareRequestAllowed(h({ 'Sec-Fetch-Site': 'none', 'Content-Length': String(SHARE_MAX_BYTES + 1) }))).toBe(false)
     expect(shareRequestAllowed(h({ 'Sec-Fetch-Site': 'none', 'Content-Length': String(SHARE_MAX_BYTES) }))).toBe(true)
+  })
+
+  it('stores only a share that says where it came from, and explains one that does not (share-target-fetch-metadata)', () => {
+    const h = (o: Record<string, string>) => new Headers(o)
+    expect(shareRequestVerdict(h({ 'Sec-Fetch-Site': 'none' }))).toBe('store')
+    expect(shareRequestVerdict(h({ 'Sec-Fetch-Site': 'same-origin' }))).toBe('store')
+    expect(shareRequestVerdict(h({}))).toBe('unverified')
+    expect(shareRequestVerdict(h({ 'Content-Type': 'multipart/form-data; boundary=x', 'Content-Length': '10' }))).toBe('unverified')
+    expect(shareRequestVerdict(h({ 'Sec-Fetch-Site': 'cross-site' }))).toBe('refused')
+    expect(shareRequestVerdict(h({ 'Sec-Fetch-Site': 'same-site' }))).toBe('refused')
+    // An unknown value is not one of the two the share sheet and the app send.
+    expect(shareRequestVerdict(h({ 'Sec-Fetch-Site': 'something-else' }))).toBe('refused')
+    expect(shareRequestVerdict(h({ 'Content-Length': String(SHARE_MAX_BYTES + 1) }))).toBe('refused')
   })
 
   it('measures an entry by its files and text', () => {
