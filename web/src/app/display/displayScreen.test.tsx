@@ -11,6 +11,7 @@ import { setDateTime, setDayStart } from '../../lib/dates'
 import { createProject, createTask, resetDeviceId } from '../../lib/ops'
 import { createSection } from '../../lib/sections'
 import { createView } from '../../lib/views'
+import { storeWorkspaces } from '../../lib/workspaces'
 import { click, flush, key, render, waitFor } from '../../ui/test-utils'
 import { DEFAULT_DISPLAY_OPTIONS, type DisplayOptions, type DisplayTarget } from './displayOptions'
 import { DisplayScreen, lastSyncedLabel } from './DisplayScreen'
@@ -140,6 +141,19 @@ describe('display targets', () => {
     const earlier = r.container.querySelector('#display-group-overdue')!
     expect(earlier.className).toContain('display-heading')
     expect(earlier.hasAttribute('data-generated')).toBe(true)
+    await r.unmount()
+  })
+
+  it('a saved view that names a workspace lists its tasks, like the view itself (issue 901)', async () => {
+    await storeWorkspaces([
+      { id: 'w-home', name: 'Home', icon: '', color: '', default: true, role: 'owner', ownerId: 'u1', members: [], groups: [] },
+      { id: 'w-work', name: 'Work', icon: '', color: '', default: false, role: 'owner', ownerId: 'u1', members: [], groups: [] },
+    ])
+    await createTask({ title: 'Fix the gate', due: { date: '2026-10-14' } })
+    const v = await createView({ name: 'Home tasks', query: 'workspace: Home' })
+    const r = await show({ kind: 'view', id: v })
+    await waitFor(() => r.container.textContent!.includes('Fix the gate'))
+    expect(r.container.textContent).not.toContain('No task matches this view')
     await r.unmount()
   })
 

@@ -641,7 +641,8 @@ const shots = [
   { name: 'time-zone', server: D, async run(p) {
     await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation'); await openTask(p, 'Get three quotes for the kitchen')
     await detail(p).getByRole('button', { name: /^Do: / }).first().click(); await p.getByRole('dialog', { name: 'When' }).waitFor()
-    await p.getByRole('dialog', { name: 'When' }).getByRole('button', { name: /^Time zone/ }).first().click()
+    // The zone is a quiet "Floating time · Change" line under the due time (task-panel-polish D3).
+    await p.getByRole('dialog', { name: 'When' }).locator('[data-zone-line]').getByRole('button', { name: 'Change' }).click()
     const d = p.getByRole('dialog', { name: 'Time zone' }); await d.waitFor(); await settle(p, 400)
     return clipOf(p, d, 16)
   }, async after(p) { await p.keyboard.press('Escape') } },
@@ -759,7 +760,8 @@ const shots = [
   } },
   // All projects as a table with health (projects-table): the header, the tabs and the table.
   { name: 'all-projects', server: P, async run(p) {
-    await go(p, plainBase, '/projects', () => p.locator('[data-projects-table] [data-health]').first().waitFor())
+    // Each row carries its health twice (a hidden copy under the name for narrow tables): wait for the shown one.
+    await go(p, plainBase, '/projects', () => p.locator('[data-projects-table] [data-health]:visible').first().waitFor())
     await settle(p, 400)
     const main = await p.locator('main').boundingBox(); const table = await p.locator('[data-projects-table]').boundingBox()
     return { x: main.x, y: main.y, width: main.width, height: Math.min(table.y + table.height - main.y + 56, 640) }
@@ -790,8 +792,10 @@ const shots = [
     ['microsoft-todo', 'microsoft-todo-json/todo.json'], ['apple-reminders', 'apple-reminders-json/reminders.json'], ['anydo', 'anydo-json/data.json']].map(([app, fixture]) => (
     { name: `import-${app}`, server: P, async run(p) {
       await go(p, plainBase, '/settings/import', () => p.getByRole('heading', { level: 1 }).first().waitFor())
+      // Choosing a file starts the preview by itself and the button turns into "Refresh preview";
+      // clicking "Preview" raced that and timed out when the preview won (#924). Wait for the result.
+      await p.waitForFunction(() => document.querySelector('#import-file') && !document.querySelector('#import-file').disabled, null, { timeout: 20000 })
       await p.locator('#import-file').setInputFiles(`internal/importer/testdata/${fixture}`)
-      await p.getByRole('button', { name: 'Preview', exact: true }).click()
       const h = p.getByRole('heading', { level: 2, name: /^Preview · / }); await h.waitFor({ timeout: 20000 })
       await h.evaluate((el) => el.scrollIntoView({ block: 'start' })); await settle(p, 400)
       const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()

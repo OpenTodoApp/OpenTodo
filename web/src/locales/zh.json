@@ -5234,6 +5234,7 @@
   "This page is no longer available": "此页面已不可用",
   "This page is no longer available.": "此页面已不可用。",
   "This page reloads when the server is back, usually within a few seconds.": "服务器恢复后此页面会自动重新加载，通常只需几秒钟。",
+  "This page was opened under a domain name and the server has no {variable} yet, so it asks for the one-time code it printed in its log. Run {command} on the server, or open the server by its IP address, or set {variable} to this address and restart it.": "此页面是通过域名打开的，而服务器尚未设置 {variable}，因此需要输入服务器日志中打印的一次性验证码。请在服务器上运行 {command}，或通过 IP 地址打开服务器，或将 {variable} 设置为此地址后重启服务器。",
   "This part of the app could not be shown.": "应用的这一部分无法显示。",
   "This password reset link is not valid.": "此密码重置链接无效。",
   "This permanently deletes the account and all of its data on the server: tasks, projects (including projects it shared with others), sessions and tokens. It cannot be undone; only a backup can bring it back. Copies on their own devices are not wiped.": "这将永久删除服务器上的该账户及其所有数据：任务、项目（包括与他人共享的项目）、会话和令牌。此操作无法撤销，只有备份可以恢复。其个人设备上的本地副本不会被清除。",

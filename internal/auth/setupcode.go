@@ -17,6 +17,12 @@ import (
 // without the setup code printed in the server log.
 var ErrSetupCodeInvalid = errors.New("setting up this server from another machine needs the setup code printed in the server log")
 
+// ErrSetupHostUnverified refuses a first registration addressed to a domain
+// name while no OPENTODO_BASE_URL is set and the code was not given
+// (host-check-without-base-url). It answers with the same `setup_code_invalid`
+// code; the message says what to do.
+var ErrSetupHostUnverified = errors.New("this server was opened under a domain name and has no OPENTODO_BASE_URL: enter the setup code printed in the server log, or set OPENTODO_BASE_URL to this address and restart the server")
+
 // setupCode guards a first registration from a public address when no
 // OPENTODO_SETUP_TOKEN is configured (OpenSpec change trusted-client-identity):
 // the server generates it at startup while no account exists, prints it once
@@ -63,12 +69,13 @@ func (c *setupCode) discard() {
 	c.mu.Unlock()
 }
 
-// PrepareSetupCode generates the setup code when it is needed: no account
-// exists and no setup token is configured. It returns the code formatted for
+// PrepareSetupCode generates the setup code when it can be asked for: no
+// account exists, no setup token is configured, and either the code is on or
+// the host check is (no OPENTODO_BASE_URL). It returns the code formatted for
 // the log (XXXX-XXXX-XXXX-XXXX), or "" when none is needed. Calling it again
 // keeps the code already generated.
 func (s *Service) PrepareSetupCode(ctx context.Context) (string, error) {
-	if !s.SetupCodeRequired() {
+	if s.setupToken != "" || (!s.setupCodeOn && !s.setupHostCheck) {
 		return "", nil
 	}
 	n, err := s.UserCount(ctx)
@@ -96,3 +103,39 @@ func (s *Service) SetSetupCodeRequired(on bool) { s.setupCodeOn = on }
 // token is configured (a token always wins). It matters only while no account
 // exists.
 func (s *Service) SetupCodeRequired() bool { return s.setupCodeOn && s.setupToken == "" }
+
+// SetSetupHostCheck turns on the first-run host check (OpenSpec change
+// host-check-without-base-url): with no OPENTODO_BASE_URL, a first
+// registration addressed to a domain name that anyone could point at this
+// server needs the setup code, whatever OPENTODO_SETUP_CODE says.
+func (s *Service) SetSetupHostCheck(on bool) { s.setupHostCheck = on }
+
+// SetupFrom says where a first registration comes from, which decides whether
+// it needs the setup code.
+type SetupFrom struct {
+	// Local: a loopback connection carrying no forwarding header.
+	Local bool
+	// UnverifiedHost: the request is addressed to a domain name, not an IP
+	// address, localhost or a name that only a local network resolves, so a
+	// page under that name may be another site's that resolves here (DNS
+	// rebinding).
+	UnverifiedHost bool
+}
+
+// SetupCodeNeeded reports whether a first registration from `from` must carry
+// the setup code. A configured setup token always replaces the code. With the
+// code on, every registration but a local one needs it; with the host check
+// on, one addressed to an unverified host needs it too, even from this
+// machine, since a browser here may be showing another site's page.
+func (s *Service) SetupCodeNeeded(from SetupFrom) bool {
+	if s.setupToken != "" {
+		return false
+	}
+	return (s.setupCodeOn && !from.Local) || (s.setupHostCheck && from.UnverifiedHost)
+}
+
+// SetupCodeOnlyForHosts reports whether the setup code exists only for the
+// host check: the code itself is off and no token is configured.
+func (s *Service) SetupCodeOnlyForHosts() bool {
+	return s.setupToken == "" && !s.setupCodeOn && s.setupHostCheck
+}
