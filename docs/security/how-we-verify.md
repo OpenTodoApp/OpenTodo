@@ -126,7 +126,7 @@ While the relay is on, the server is trusted with content within those caps; see
   - as a viewer of a shared project;
   - cross-site;
   - with a stale session.
-- `TestDemoDenyListMatchesPolicy` keeps the demo's deny list and the `.demoDenied()` routes identical in both directions.
+- `TestDemoDenyListMatchesPolicy` keeps the demo's deny list and the `.demoDenied()` routes identical in both directions. A route registered without a method, and every route under a rule that carries no method, is probed with every HTTP and WebDAV method.
 
 **Limits.** Public routes are skipped by the matrix and rely on their own tests. The source scan covers the package and its route subpackages; `httpx`, which defines the router, is the one exception.
 
