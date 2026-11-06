@@ -5290,10 +5290,9 @@
   "Email": [
     "web/src/app/AuthScreen.tsx",
     "web/src/app/EmailScreens.tsx",
-    "web/src/app/OriginChip.tsx",
     "web/src/app/ShareDialog.tsx",
     "web/src/app/WorkspaceInviteScreen.tsx",
-    "web/src/lib/history.ts",
+    "web/src/lib/originText.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Email (optional)": [
@@ -7451,13 +7450,14 @@
     "web/src/lib/boardTemplates.ts"
   ],
   "Imported": [
+    "web/src/lib/originText.ts",
     "web/src/lib/taskSource.ts"
   ],
   "Imported from a VS Code colour theme. Check the theme's licence before you share this file.": [
     "web/src/lib/theme/vscode.ts"
   ],
   "Imported from {app}": [
-    "web/src/lib/taskSource.ts"
+    "web/src/lib/originText.ts"
   ],
   "Imported theme": [
     "web/src/lib/theme/vscode.ts"
