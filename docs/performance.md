@@ -52,6 +52,19 @@ response-time guidance: on a computer the cursor within three frames (50 ms) and
 completion or keystroke within 100 ms; in the phone profile 150 ms for the cursor and
 200 ms for a completion or keystroke.
 
+Completing a task is timed the way browsers measure responsiveness for
+[Interaction to Next Paint](https://web.dev/articles/inp) (INP), the Core Web Vital
+for how quickly a page answers a tap, click or key: the browser itself reports,
+through its Event Timing API, how long each event of the click took from the input
+to the next paint on screen after the app handled it. The benchmark takes the
+longest event of the click, as INP does, and checks that this paint already shows
+the tick. A click the browser handled in under 16 ms (the smallest time it reports)
+counts as 16 ms. Until November 2026 the benchmark used its own timer instead,
+which stopped at the first piece of work the page ran after the next frame: a point
+of the benchmark's choosing, which could wait behind other work after the tick was
+shown, rather than the paint itself. The nightly report still gives that number,
+without a limit (`complete-task-frame`), so the two can be compared.
+
 The settings:
 
 - **Desktop**: Chromium on the CI runner.
@@ -70,7 +83,7 @@ The settings:
 | `open-project` Open the 2,000-task project, to the list | ms | 400 | 1,200 | 1,200 | 1,200 |
 | `search-keystroke` A keystroke in search, to the updated results (95th percentile) | ms | 100 | 200 | 150 | 150 |
 | `saved-view` A saved view of eight clauses, to the list | ms | 100 | 300 | — | — |
-| `complete-task` Completing a task in the 2,000-row list, to the next frame (95th percentile) | ms | 100 | 200 | 150 | 150 |
+| `complete-task` Completing a task in the 2,000-row list, from the click to the paint that shows the tick, as INP measures it (95th percentile) | ms | 100 | 200 | 150 | 150 |
 | `cursor-move` Moving the cursor with j or k, to the next frame (95th percentile) | ms | 50 | 150 | — | — |
 | `first-sync` First sync of a new device, sign-in to all 10,000 tasks on it | s | 30 | 75 | 90 | 90 |
 | `first-sync-long-task` Longest main-thread task during that sync | ms | 200 | — | — | — |

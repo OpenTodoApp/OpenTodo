@@ -1,0 +1,1 @@
+- **The task completion budget is measured like INP.** The performance benchmark times completing a task in a long list with the browser's own Event Timing, from the click to the paint that shows the tick, the way Core Web Vitals measure responsiveness; the earlier timer is still reported beside it (docs/performance.md).

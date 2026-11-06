@@ -24,7 +24,7 @@ import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSy
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
-import { evaluate, loadBudgets } from './budgets.mjs'
+import { evaluate, loadBudgets, median } from './budgets.mjs'
 
 const BIN = process.env.PERF_BIN ?? 'bin/opentodo'
 // PERF_NOTES=1: the notes fixture's session (the compacted copy TestNotesBudgets leaves) instead of the 10k one.
@@ -65,13 +65,21 @@ async function startServer() {
   return { base, stop: async () => { proc.kill('SIGTERM'); await new Promise((r) => proc.once('exit', r)); rmSync(dir, { recursive: true, force: true }) } }
 }
 
-// Installed before the app loads: long tasks, and the time of each input event
+// Installed before the app loads: long tasks, the browser's Event Timing entries
+// of interactions (the INP measurement, below), and the time of each input event
 // (the start of a "to the next paint" measurement).
 function instrument() {
-  window.__perf = { longtasks: [], lastInput: 0 }
+  window.__perf = { longtasks: [], events: [], lastInput: 0 }
   try {
     new PerformanceObserver((l) => { for (const e of l.getEntries()) window.__perf.longtasks.push({ start: e.startTime, duration: e.duration }) }).observe({ type: 'longtask', buffered: true })
   } catch { /* no long task API */ }
+  // Every event of an interaction (pointerdown, pointerup, click; keydown, keyup) that took
+  // 16 ms or more, the smallest threshold the API allows; shorter ones are not reported.
+  try {
+    new PerformanceObserver((l) => {
+      for (const e of l.getEntries()) if (e.interactionId) window.__perf.events.push({ name: e.name, id: e.interactionId, start: e.startTime, duration: e.duration })
+    }).observe({ type: 'event', durationThreshold: 16, buffered: true })
+  } catch { /* no Event Timing: interaction() refuses to measure */ }
   for (const type of ['keydown', 'pointerdown', 'click']) addEventListener(type, (e) => { if (type !== 'click' || !window.__perf.lastInput) window.__perf.lastInput = e.timeStamp }, true)
 }
 
@@ -94,12 +102,50 @@ async function toNextPaint(page, trigger, { present, gone }) {
     window.__perf.wait = new Promise((resolve) => {
       const seen = () => (!!present && !!document.querySelector(present)) || (!!gone && !document.querySelector(gone))
       const done = () => requestAnimationFrame(() => setTimeout(() => resolve(performance.now() - window.__perf.lastInput), 0))
-      const mo = new MutationObserver(() => { if (window.__perf.lastInput && seen()) { mo.disconnect(); done() } })
+      const mo = new MutationObserver(() => { if (window.__perf.lastInput && seen()) { mo.disconnect(); window.__perf.seenAt = performance.now(); done() } })
       mo.observe(document.body, { subtree: true, childList: true, attributes: true, characterData: true })
     })
   }, [present ?? null, gone ?? null])
   await trigger()
   return page.evaluate(() => Promise.race([window.__perf.wait, new Promise((r) => setTimeout(() => r(null), 60_000))]))
+}
+
+/**
+ * Times an input as the web measures responsiveness (Interaction to Next Paint):
+ * the browser's Event Timing entries of the interaction the input starts, each
+ * running from the input to the next paint after its handlers ran (processing
+ * plus presentation), and the longest of them, as INP takes per interaction.
+ * An interaction with no entry took under the 16 ms threshold and counts as 16.
+ *
+ * Returns { ms, frame, ... }: `frame` is toNextPaint's timer of the same input (to
+ * the frame after the change, then a task), reported beside it for a release or two.
+ * When the change was not yet in the document at the interaction's paint (it came
+ * in a later frame), that paint did not show the result: `late` is set and `ms` is
+ * the timer's value instead.
+ */
+async function interaction(page, trigger, wait) {
+  const t0 = await page.evaluate(() => {
+    if (!PerformanceObserver.supportedEntryTypes?.includes('event')) throw new Error('this browser has no Event Timing (PerformanceObserver type "event")')
+    window.__perf.seenAt = 0
+    return performance.now()
+  })
+  const frame = await toNextPaint(page, trigger, wait)
+  if (frame === null) return null
+  // The entries are queued once the paint is presented, a frame or two after it.
+  return page.evaluate(([t0, frame]) => new Promise((resolve) => {
+    const until = performance.now() + 1000
+    const look = () => {
+      const mine = window.__perf.events.filter((e) => e.start >= t0)
+      if (!mine.length && performance.now() < until) return void setTimeout(look, 20)
+      const seen = window.__perf.seenAt
+      if (!mine.length) return resolve({ ms: 16, frame, seen: seen - t0 })
+      const top = mine.reduce((a, e) => (e.duration > a.duration ? e : a))
+      // The interaction's last paint; duration is rounded to 8 ms, so it ended within 8 ms of start + duration.
+      const late = seen > Math.max(...mine.map((e) => e.start + e.duration)) + 8
+      resolve({ ms: late ? frame : top.duration, frame, late, event: top.name, interactions: new Set(mine.map((e) => e.id)).size, seen: seen - top.start, paint: top.duration, entries: mine.map((e) => `${e.name}@${Math.round(e.start - t0)}+${e.duration}`).join(' ') })
+    }
+    look()
+  }), [t0, frame])
 }
 
 /** SPA navigation, as a link click does it; returns the page time it started. */
@@ -183,19 +229,24 @@ async function session(browser, profileName) {
     debug('Complete ten tasks in the list')
     // Complete ten tasks in the list.
     const completes = []
+    const completeFrames = []
     // Tasks without a series or subtasks, so one click completes them; on screen, past the top rows.
     const shown = await page.evaluate(() => [...document.querySelectorAll('li[data-task-id]')].map((li) => li.getAttribute('data-task-id')))
     const targets = shown.slice(10).filter((id) => summary.plainTasks.includes(id)).slice(0, 10)
     if (targets.length < 10) throw new Error(`complete: only ${targets.length} plain tasks on screen`)
     for (const id of targets) {
       const row = page.locator(`li[data-task-id="${id}"]`)
-      const ms = await toNextPaint(page, () => row.locator('button[aria-label^="Complete"]').first().click(), { present: `li[data-task-id="${id}"] [data-check-mark] svg`, gone: `li[data-task-id="${id}"]` })
-      if (ms === null) throw new Error('complete: the row did not change')
-      completes.push(ms)
+      const r = await interaction(page, () => row.locator('button[aria-label^="Complete"]').first().click(), { present: `li[data-task-id="${id}"] [data-check-mark] svg`, gone: `li[data-task-id="${id}"]` })
+      if (r === null) throw new Error('complete: the row did not change')
+      debug(`completion ${JSON.stringify(r)}`)
+      if (r.late) log(`${profileName} completion: the tick was not in the interaction's paint (in the document ${Math.round(r.seen)} ms after the input, paint at ${r.paint} ms); the timer's ${Math.round(r.frame)} ms counts`)
+      completes.push(r.ms)
+      completeFrames.push(r.frame)
     }
     // Every sample in order, in the log: the p95 of ten is their largest, and which one it is (the first, or one behind a sync) says where to look.
-    log(`${profileName} completions: ${completes.map(Math.round).join(', ')}; cursor moves: ${moves.map(Math.round).join(', ')}`)
+    log(`${profileName} completions, interaction: ${completes.map(Math.round).join(', ')}; timer: ${completeFrames.map(Math.round).join(', ')}; cursor moves: ${moves.map(Math.round).join(', ')}`)
     out['complete-task'] = p95(completes)
+    out['complete-task-frame'] = p95(completeFrames)
 
     debug('A remote edit')
     // A remote edit (another device, through the API) painted here over the live channel,
@@ -321,6 +372,15 @@ async function notesSession(browser, profileName) {
   }
 }
 
+// Measured and reported beside the budgets, never held to a limit.
+const REPORTED = {
+  // The completion's timer before it was measured as an interaction (2026-11-06): from the
+  // input to the frame after the row changed, then a task, so it also counts the browser's
+  // work after that paint. Kept for a release or two so the two can be compared.
+  'complete-task-frame': { name: 'complete a task, input to the frame after the change (the earlier timer), p95', unit: 'ms' },
+}
+const reported = (samples) => Object.entries(REPORTED).filter(([id]) => samples[id]?.length).map(([id, m]) => ({ id, ...m, runs: samples[id], median: Math.round(median(samples[id]) * 10) / 10 }))
+
 const budgets = loadBudgets()
 const isNotes = (id) => id.startsWith('notes-')
 const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {})
@@ -336,7 +396,9 @@ try {
     }
     const rep = evaluate(budgets, name, samples, (id) => isNotes(id) === NOTES)
     if (NOTES) rep.setting = `${name} (notes)`
+    rep.reported = reported(samples)
     reports.push(rep)
+    for (const m of rep.reported) console.log(`info ${name.padEnd(8)} ${m.id.padEnd(22)} median ${String(m.median).padStart(8)} ${m.unit.padEnd(2)} reported, no budget`)
     for (const m of rep.metrics) {
       console.log(`${m.ok ? 'ok  ' : 'FAIL'} ${name.padEnd(8)} ${m.id.padEnd(22)} median ${String(m.median).padStart(8)} ${m.unit.padEnd(2)} budget ${m.limit}`)
       if (!m.ok) failed = true
