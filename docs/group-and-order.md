@@ -11,7 +11,7 @@ order: 18
 
 <picture><source srcset="images/group-and-order-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/group-and-order-light.webp" alt="The Home renovation project grouped by priority, with the Display options panel open showing Group by Priority and Order by Manual order."></picture>
 
-Project lists and label pages have **Display options**, the sliders button at the right of the header. [Saved views](saved-views.md) use the same panel. Changes apply at once.
+Project lists and label pages have **Display options**, the sliders button at the right of the header. [Saved views](saved-views.md) use the same panel. Changes apply at once; <kbd>r</kbd> <kbd>g</kbd> or <kbd>r</kbd> <kbd>o</kbd> and a letter sets them [from the keyboard](keyboard.md#group-and-order).
 
 ## Group by
 
@@ -24,7 +24,7 @@ Due date groups read *Earlier*, *Today*, *Tomorrow*, later dates and *No date*. 
 
 **Manual order** (the default, the order you drag tasks into), **Priority**, **Due date**, **Created**, **Deadline** or **Title**. **More options** holds the direction; for priority, *descending* puts priority 1 first. Tasks without a date or deadline come last either way.
 
-Number and Date fields also appear in **Order by**. Same-named fields match across a label's projects without regard to case. When types differ, numbers precede dates and text in either direction; direction reverses values within each type and missing values stay last. Text fields from other projects take part too. The setting stores the definition ID, so renames follow it and encrypted names never sync.
+Number and Date fields also appear in **Order by**. Same-named fields match across a label's projects without regard to case. When types differ, numbers precede dates and text in either direction; direction reverses values within each type and missing values stay last. Text fields from other projects take part too.
 
 Subtasks stay under their parent in the order you gave them, also in **Later**: when a task is deferred or parked, its subtasks move there with it. A project's **Later** and **Completed** groups stay at the end.
 

@@ -19,6 +19,9 @@ const GROUPS: { id: SpotlightGroup; readonly title: string }[] = [
   { id: 'views', get title() { return t('Views') } },
   { id: 'calendar', get title() { return t('Calendar') } },
   { id: 'method', get title() { return t('Review and planning') } },
+  { id: 'arrange', get title() { return t('Display options') } },
+  { id: 'group', get title() { return t('Group by') } },
+  { id: 'order', get title() { return t('Order by') } },
   { id: 'tools', get title() { return t('Tools') } },
 ]
 

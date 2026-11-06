@@ -7,7 +7,7 @@ import { localDate } from '../lib/dates'
 import type { Task } from '../lib/types'
 import { navigate, routePath } from './router'
 import { openTaskPage } from './taskTrail'
-import { armGPrefix, clearPrefix, isPrefixPending } from './shortcuts/dispatch'
+import { armGPrefix, clearPrefix, isPrefixPending, pendingPrefix } from './shortcuts/dispatch'
 
 /** The `g` prefix now lives in the shortcut dispatcher (ux-overhaul D5); these stay for the Vim layer and tests. */
 export function setGPending(on: boolean): void {
@@ -16,7 +16,13 @@ export function setGPending(on: boolean): void {
 }
 
 export function isGPending(): boolean {
-  return isPrefixPending()
+  const p = pendingPrefix()
+  return p.length === 1 && p[0].key === 'g' && !p[0].shift && !p[0].ctrl && !p[0].alt
+}
+
+/** Another sequence is under way (`r g`, display-keys): the Vim layer leaves its keys to the dispatcher. */
+export function isOtherSequencePending(): boolean {
+  return isPrefixPending() && !isGPending()
 }
 
 type Listener = (id: string) => void
