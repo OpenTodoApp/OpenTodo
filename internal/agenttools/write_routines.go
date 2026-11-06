@@ -15,23 +15,23 @@ var (
 
 func init() {
 	register(tool{def: func(Caller) Definition {
-		return writeDef("run_routine", "Run a routine", "Run a routine now, or test it (test: true plans every step and writes nothing). It runs with the routine's own limits and writes as the routine; the answer lists each step's status and counts.",
+		return writeDef("run_routine", "Run a routine", "Run a routine now, or test it (test: true plans every step and writes nothing). It runs with the routine's own limits and writes as the routine; the answer lists each step's status and counts. A routine that sends a webhook or an email can only be tested: the person runs it in the app.",
 			object([]string{"routine"}, map[string]any{"routine": routineProp,
 				"task_id": map[string]any{"type": "string", "description": "The task a manual routine is run on (its steps read it as the trigger), for a routine that reads one."},
 				"test":    map[string]any{"type": "boolean", "default": false, "description": "Plan every step and log a test run; nothing is written."}}), false, false, nil, false)
 	}, plan: (*Registry).planRunRoutine})
 	register(tool{def: func(Caller) Definition {
-		return writeDef("set_routine_enabled", "Turn a routine on or off", "Turn a routine on or off. Turning it on clears the server's pause for running too often.",
+		return writeDef("set_routine_enabled", "Turn a routine on or off", "Turn a routine on or off. Turning it on clears the server's pause for running too often. A routine that sends a webhook or an email is turned on by the person in the app; it can be turned off here.",
 			object([]string{"routine", "enabled"}, map[string]any{"routine": routineProp, "enabled": map[string]any{"type": "boolean"}}), false, true, nil, false)
 	}, plan: (*Registry).planSetRoutineEnabled})
 	register(tool{def: func(Caller) Definition {
-		return writeDef("create_routine", "Create a routine", "Create a routine: a name, a trigger, an optional condition and steps (or actions for one Change tasks card), and optionally the project it belongs to. It starts off unless enabled is true. Steps that are not available now are allowed and listed in the result.",
+		return writeDef("create_routine", "Create a routine", "Create a routine: a name, a trigger, an optional condition and steps (or actions for one Change tasks card), and optionally the project it belongs to. It starts off unless enabled is true. Steps that are not available now are allowed and listed in the result. Steps that send a webhook or an email (webhook, email_me, email_members) are refused: the person adds them in the app.",
 			object([]string{"name", "trigger"}, map[string]any{"name": map[string]any{"type": "string", "minLength": 1, "maxLength": 200}, "trigger": triggerProp, "condition": conditionProp,
 				"steps": stepsProp, "actions": actionsProp, "enabled": map[string]any{"type": "boolean", "default": false},
 				"project": map[string]any{"type": "string", "description": "A project (id or exact name) the routine belongs to. In a shared project the routine is the project's: its editors change it, it acts only in that project, and it runs as whoever turns it on."}}), false, false, []string{"name"}, false)
 	}, plan: (*Registry).planCreateRoutine})
 	register(tool{def: func(Caller) Definition {
-		return writeDef("update_routine", "Change a routine", "Change a routine's name, or replace its whole trigger, condition, steps or actions.",
+		return writeDef("update_routine", "Change a routine", "Change a routine's name, or replace its whole trigger, condition, steps or actions. A routine that would still send a webhook or an email after the change is refused: the person changes it in the app.",
 			object([]string{"routine"}, map[string]any{"routine": routineProp, "name": map[string]any{"type": "string", "minLength": 1, "maxLength": 200}, "trigger": triggerProp,
 				"condition": conditionProp, "steps": stepsProp, "actions": actionsProp}), false, true, []string{"name"}, false)
 	}, plan: (*Registry).planUpdateRoutine})
