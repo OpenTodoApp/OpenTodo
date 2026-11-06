@@ -1437,6 +1437,7 @@
   "Allow": [
     "web/src/app/AgentAccessRow.tsx",
     "web/src/app/OAuthConsent.tsx",
+    "web/src/app/RelayConfirm.tsx",
     "web/src/app/palette/registry.ts"
   ],
   "Allow AI assistants": [
@@ -1573,6 +1574,9 @@
   "An AI connector wants to make a change": [
     "web/src/app/RelayConfirm.tsx"
   ],
+  "An AI connector wants to read your text": [
+    "web/src/app/RelayConfirm.tsx"
+  ],
   "An AI step that would use more today does not run. Default {n}.": [
     "web/src/app/routines/AISettings.tsx"
   ],
@@ -1599,6 +1603,9 @@
   ],
   "An archive made by OpenTodo ({name}, optionally {suffix}), for example from another server.": [
     "web/src/app/RestoreSection.tsx"
+  ],
+  "An assistant asks to read this with {tool}:": [
+    "web/src/app/RelayConfirm.tsx"
   ],
   "An assistant asks to run {tool} with this text:": [
     "web/src/app/RelayConfirm.tsx"
@@ -1661,11 +1668,17 @@
   "Answering an AI connector": [
     "web/src/app/RelaySettings.tsx"
   ],
+  "Answering an AI connector: {tool}": [
+    "web/src/app/RelaySettings.tsx"
+  ],
   "Answering an invitation needs a connection.": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Answering needs a connection to your server.": [
     "web/src/app/MemberInvitations.tsx"
+  ],
+  "Answering {token}: {tool}": [
+    "web/src/app/RelaySettings.tsx"
   ],
   "Answers on your key do not count toward the server’s monthly limit.": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -3609,6 +3622,9 @@
   "Confirm permanent deletion": [
     "web/src/app/TrashView.tsx"
   ],
+  "Confirm reads first": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Confirm with {provider} instead": [
     "web/src/app/ReauthDialog.tsx"
   ],
@@ -5136,6 +5152,9 @@
   "Each phrase is recorded in this browser while the microphone is on, then sent once to your OpenTodo server.": [
     "web/src/app/VoiceSettings.tsx"
   ],
+  "Each request to read your text shows here before this device sends it.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Each restore keeps the database it replaced. Delete old ones to free space.": [
     "web/src/app/RestoreSection.tsx"
   ],
@@ -5274,10 +5293,9 @@
   "Email": [
     "web/src/app/AuthScreen.tsx",
     "web/src/app/EmailScreens.tsx",
-    "web/src/app/OriginChip.tsx",
     "web/src/app/ShareDialog.tsx",
     "web/src/app/WorkspaceInviteScreen.tsx",
-    "web/src/lib/history.ts",
+    "web/src/lib/originText.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Email (optional)": [
@@ -7435,13 +7453,14 @@
     "web/src/lib/boardTemplates.ts"
   ],
   "Imported": [
+    "web/src/lib/originText.ts",
     "web/src/lib/taskSource.ts"
   ],
   "Imported from a VS Code colour theme. Check the theme's licence before you share this file.": [
     "web/src/lib/theme/vscode.ts"
   ],
   "Imported from {app}": [
-    "web/src/lib/taskSource.ts"
+    "web/src/lib/originText.ts"
   ],
   "Imported theme": [
     "web/src/lib/theme/vscode.ts"
@@ -16319,6 +16338,9 @@
   "Text on soft warning": [
     "web/src/app/themes/tokenNames.ts"
   ],
+  "Text to send": [
+    "web/src/app/RelayConfirm.tsx"
+  ],
   "Text to write": [
     "web/src/app/RelayConfirm.tsx"
   ],
@@ -23384,6 +23406,9 @@
   "{n, plural, one {You have worked # minute without a break.} other {You have worked # minutes without a break.}}": [
     "web/src/app/focus/BreakReminder.tsx"
   ],
+  "{n, plural, one {and # more value} other {and # more values}}": [
+    "web/src/app/RelayConfirm.tsx"
+  ],
   "{n, plural, one {and # more} other {and # more}}": [
     "web/src/app/quickadd/PasteOffer.tsx"
   ],
@@ -23909,6 +23934,9 @@
   ],
   "{title}, waits for {blockers}": [
     "web/src/app/TimelineView.tsx"
+  ],
+  "{token} asks to read this with {tool}:": [
+    "web/src/app/RelayConfirm.tsx"
   ],
   "{token} asks to run {tool} with this text:": [
     "web/src/app/RelayConfirm.tsx"

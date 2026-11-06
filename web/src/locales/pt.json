@@ -7166,5 +7166,14 @@
   "Move to top": "Mover para o topo",
   "Move to bottom": "Mover para o fim",
   "Move {name}": "Mover {name}",
-  "Accessibility": "Acessibilidade"
+  "Accessibility": "Acessibilidade",
+  "An AI connector wants to read your text": "Um conector de IA quer ler o seu texto",
+  "An assistant asks to read this with {tool}:": "Um assistente pede para ler isto com {tool}:",
+  "{token} asks to read this with {tool}:": "{token} pede para ler isto com {tool}:",
+  "Answering an AI connector: {tool}": "A responder a um conector de IA: {tool}",
+  "Answering {token}: {tool}": "A responder a {token}: {tool}",
+  "Confirm reads first": "Confirmar leituras antes",
+  "Each request to read your text shows here before this device sends it.": "Cada pedido para ler o seu texto aparece aqui antes de este dispositivo o enviar.",
+  "Text to send": "Texto a enviar",
+  "{n, plural, one {and # more value} other {and # more values}}": "{n, plural, one {e mais # valor} other {e mais # valores}}"
 }
