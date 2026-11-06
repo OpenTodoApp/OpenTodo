@@ -306,7 +306,7 @@ The model behind an MCP client or the in-app assistant follows instructions hidd
 
 **Defended.**
 - Writing without the owner's switch, the person's own switch and an `agent` token.
-- More than 50 items per call, 30 calls a minute and 1,000 items a day per token, for the item-writing tools.
+- More than 50 items per call, 30 calls a minute and 1,000 items a day per token, and 60 calls a minute and 2,000 items a day for all of one account's agent tokens together, for the item-writing tools.
 - Permanent deletion.
 - Trashing tasks the same token did not create.
 - Touching sharing, members, tokens, settings or credentials.
@@ -321,7 +321,7 @@ The model behind an MCP client or the in-app assistant follows instructions hidd
 - The assistant loop (`internal/assistant`) is capped at 12 model rounds and 50 entities per proposal. It runs only for signed-in sessions and is refused for encrypted accounts.
 
 **Verified by.**
-- `TestPermissionGate`, `TestToolsListByPermission` (golden tool lists), `TestToolSurfaceIsClosed`, `TestLimiterPerMinuteAndPerDay`, `TestWriteLimitPerCall`, `TestTrashOnlyOwnCreations`, `TestResultsMarkUntrustedText` (`internal/agenttools/agenttools_test.go`).
+- `TestPermissionGate`, `TestToolsListByPermission` (golden tool lists), `TestToolSurfaceIsClosed`, `TestLimiterPerMinuteAndPerDay`, `TestLimiterPerAccount`, `TestWriteRatePerAccount` (`limits_account_test.go`), `TestWriteLimitPerCall`, `TestTrashOnlyOwnCreations`, `TestResultsMarkUntrustedText` (`internal/agenttools/agenttools_test.go`).
 - `TestMcpCookieRejected401`, `TestMcpBadOrigin403`, `TestMcpBodyTooLarge413` (`internal/httpapi/mcp_test.go`).
 - `TestWriteLimitsOverHTTP`, `TestAgentWriteAudited` (`mcp_write_test.go`).
 - `TestInjectionCannotEscapeRegistry`, `TestLoopCapsChangeSetAt50`, `TestLoopRoundLimit` (`internal/assistant/loop_test.go`).
@@ -329,7 +329,7 @@ The model behind an MCP client or the in-app assistant follows instructions hidd
 
 **Not defended.**
 - Within those limits, an injected instruction can make an agent with write access change, complete, move or comment on the person's tasks. The changes are undoable and labelled in history.
-- Limits are per token: several agent tokens multiply them. They are kept in memory and reset on restart.
+- Limits are kept in memory and reset on restart.
 - The routine tools let an agent create, enable and run routines. A routine's runs are bounded by the routine engine's own limits and step availability ([Routines](../routines.md)), not by the agent limits above.
 - The in-app assistant sends what its read tools return to the model provider the person accepted (see the next profile).
 
