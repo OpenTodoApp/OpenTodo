@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/OpenTodoApp/opentodo/internal/assistant"
 	"github.com/OpenTodoApp/opentodo/internal/config"
 	"github.com/OpenTodoApp/opentodo/internal/httpapi"
 	"github.com/OpenTodoApp/opentodo/internal/store"
@@ -58,6 +59,9 @@ type Host struct {
 	dirty    map[string]bool
 	wake     chan struct{}
 	lastFull time.Time
+	// assistantSlots caps running assistant turns across all tenants
+	// (host-assistant-concurrency).
+	assistantSlots *assistant.Slots
 	// createMu serialises tenant creation (operator.go).
 	createMu sync.Mutex
 }
@@ -106,7 +110,8 @@ func Open(cfg config.Config, o Options) (*Host, error) {
 	}
 	h := &Host{cfg: cfg, hc: cfg.Host, root: root, reg: reg, reqs: newRequestLimiter(now), log: log, version: o.Version,
 		now: now, web: web.HandlerWith(web.Options{}), adjust: o.Tenant, unlock: unlock,
-		records: map[string]cachedRecord{}, dirty: map[string]bool{}, wake: make(chan struct{}, 1)}
+		records: map[string]cachedRecord{}, dirty: map[string]bool{}, wake: make(chan struct{}, 1),
+		assistantSlots: assistant.NewSlots(assistant.MaxConcurrentTurns)}
 	h.pool = newPool(cfg.Host.MaxOpen, cfg.Host.IdleTimeout, now)
 	h.pool.open = h.openTenant
 	h.pool.beforeClose = func(name string, t *tenant.Tenant) { h.refreshDue(context.Background(), name, t, nil) }
@@ -182,7 +187,7 @@ func (h *Host) openTenant(_ context.Context, name string) (*tenant.Tenant, error
 		// closing the tenant applies it on the next open.
 		Restart: func() { go h.pool.evict(name) },
 		Hosted: &tenant.Hosted{Name: name, PushSubject: h.hc.URL.Scheme + "://" + h.hc.URL.Host, Quota: q,
-			MaxMembers: lim.Members, Changed: func() { h.markDirty(name) },
+			MaxMembers: lim.Members, Changed: func() { h.markDirty(name) }, AssistantSlots: h.assistantSlots,
 			Workspaces: opsync.WorkspaceLimits{Workspaces: lim.Workspaces, Members: lim.WorkspaceMembers, Groups: lim.WorkspaceGroups, GroupMembers: lim.GroupMembers}}}
 	if h.adjust != nil {
 		h.adjust(name, &opts)
