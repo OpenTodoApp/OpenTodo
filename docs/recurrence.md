@@ -38,10 +38,14 @@ is stored as `every 2nd tuesday`.
 | weekday names | `every monday`, `every mon, wed, fri`, `every tuesday and thursday` | Any set of weekdays, full names or three-letter abbreviations, separated by commas or "and". |
 | day of month | `every 1st`, `every 15th`, `every 31st` | That day of each month; in shorter months the last day. |
 | last day | `every last day` | The last day of each month. |
-| last weekday | `every last weekday` | The last Monday–Friday of each month. |
+| ordinal weekday of the month | `every first weekday`, `every 2nd weekday`, `every last weekday` | 1st/first to 4th/fourth or last Monday–Friday of each month. |
 | ordinal weekday | `every 2nd tuesday`, `every first monday`, `every last friday` | 1st/first to 4th/fourth or last of that weekday in each month. |
 
-`every 2nd` is the 2nd day of each month; `every 2nd tuesday` is the second Tuesday.
+`every 2nd` is the 2nd day of each month; `every 2nd tuesday` is the second Tuesday;
+`every 2nd weekday` is the second Monday–Friday. Weekends are not counted: in
+March 2026, which starts on a Sunday, `every first weekday` is Monday 2 March and
+`every 2nd weekday` is Tuesday 3 March. `every first weekday` is stored as
+`every 1st weekday`.
 
 ### Completion-relative rules
 

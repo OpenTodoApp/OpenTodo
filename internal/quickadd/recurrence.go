@@ -161,12 +161,15 @@ func patternAt(tokens []token, k int, v *Vocab) *recPattern {
 		if wd := weekdayPluralAt(tokens, j, v); wd >= 0 && val <= 4 {
 			return &recPattern{on + 1, ordinalEN[val] + " " + weekdayEN[wd], true}
 		}
+		// "1st weekday" … "last weekday": the n-th Monday-to-Friday day of the month.
+		if val <= 4 {
+			if w := phraseAt(tokens, j, v.WeekdayAll); w > 0 {
+				return &recPattern{on + w, ordinalEN[val] + " weekday", true}
+			}
+		}
 		if val == -1 {
 			if d := phraseAt(tokens, j, v.Units.Day); d > 0 {
 				return &recPattern{on + d, "last day", true}
-			}
-			if w := phraseAt(tokens, j, v.WeekdayAll); w > 0 {
-				return &recPattern{on + w, "last weekday", true}
 			}
 			return nil
 		}

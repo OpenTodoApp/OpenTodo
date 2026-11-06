@@ -30,13 +30,13 @@ var ErrInvalid = errors.New("invalid recurrence rule")
 type kind int
 
 const (
-	kInterval    kind = iota // every [N] day(s)/week(s)/month(s)/year(s)
-	kWeekday                 // every weekday (Monday to Friday)
-	kWeekdays                // every monday, wednesday
-	kMonthDay                // every 15th
-	kLastDay                 // every last day
-	kLastWeekday             // every last weekday
-	kNthWeekday              // every 2nd tuesday, every last friday
+	kInterval   kind = iota // every [N] day(s)/week(s)/month(s)/year(s)
+	kWeekday                // every weekday (Monday to Friday)
+	kWeekdays               // every monday, wednesday
+	kMonthDay               // every 15th
+	kLastDay                // every last day
+	kWorkday                // every 1st weekday … every last weekday: the n-th Monday to Friday
+	kNthWeekday             // every 2nd tuesday, every last friday
 )
 
 type unit int
@@ -57,7 +57,7 @@ type Rule struct {
 	unit            unit
 	days            uint8 // bit (1<<isoWeekday) for kWeekdays / kWeekday
 	monthDay        int   // 1..31 for kMonthDay
-	ordinal         int   // 1..4, or -1 for last (kNthWeekday)
+	ordinal         int   // 1..4, or -1 for last (kNthWeekday, kWorkday)
 	weekday         int   // ISO 1 (Monday) .. 7 (Sunday) for kNthWeekday
 	afterCompletion bool
 	until           string // YYYY-MM-DD or ""
@@ -173,7 +173,7 @@ func Parse(input string) (Rule, error) {
 		if peek(1) == "day" {
 			r.kind = kLastDay
 		} else {
-			r.kind = kLastWeekday
+			r.kind, r.ordinal = kWorkday, -1
 		}
 		i += 2
 	default:
@@ -189,6 +189,17 @@ func Parse(input string) (Rule, error) {
 		num, isNum := numericOrdinal(tok)
 		if !isWord && !isNum {
 			return r, fail("unknown pattern %q", tok)
+		}
+		if peek(1) == "weekday" {
+			if isNum {
+				ord = num
+			}
+			if ord > 4 {
+				return r, fail("weekday ordinal must be 1st to 4th or last")
+			}
+			r.kind, r.ordinal = kWorkday, ord
+			i += 2
+			break
 		}
 		if wd, ok := weekdayAliases[peek(1)]; ok {
 			if isNum {
@@ -316,8 +327,12 @@ func (r Rule) Canonical() string {
 		fmt.Fprintf(&b, "%d%s", r.monthDay, ordinalSuffix(r.monthDay))
 	case kLastDay:
 		b.WriteString("last day")
-	case kLastWeekday:
-		b.WriteString("last weekday")
+	case kWorkday:
+		if r.ordinal < 0 {
+			b.WriteString("last weekday")
+		} else {
+			fmt.Fprintf(&b, "%d%s weekday", r.ordinal, ordinalSuffix(r.ordinal))
+		}
 	case kNthWeekday:
 		if r.ordinal < 0 {
 			b.WriteString("last")
@@ -464,10 +479,22 @@ func (r Rule) step(anchor, k int) int {
 	return anchor + r.interval*k
 }
 
-func lastWeekdayOf(y, m int) int {
-	z := daysFromCivil(y, m, monthLen(y, m))
-	for isoWeekday(z) > 5 {
-		z--
+// workdayOf is the ordinal-th Monday-to-Friday day of month m of year y
+// (1..4, or -1 for the last); Saturdays and Sundays are not counted.
+func workdayOf(y, m, ordinal int) int {
+	if ordinal < 0 {
+		z := daysFromCivil(y, m, monthLen(y, m))
+		for isoWeekday(z) > 5 {
+			z--
+		}
+		return z
+	}
+	z := daysFromCivil(y, m, 1) - 1
+	for n := 0; n < ordinal; {
+		z++
+		if isoWeekday(z) <= 5 {
+			n++
+		}
 	}
 	return z
 }
@@ -496,8 +523,8 @@ func (r Rule) inMonth(y, m int) int {
 		return daysFromCivil(y, m, min(r.monthDay, monthLen(y, m)))
 	case kLastDay:
 		return daysFromCivil(y, m, monthLen(y, m))
-	case kLastWeekday:
-		return lastWeekdayOf(y, m)
+	case kWorkday:
+		return workdayOf(y, m, r.ordinal)
 	default: // kNthWeekday
 		return nthWeekdayOf(y, m, r.ordinal, r.weekday)
 	}

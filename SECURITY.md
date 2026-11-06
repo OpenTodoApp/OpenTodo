@@ -2,7 +2,21 @@
 
 ## Reporting a vulnerability
 
-Please do not open public issues for security problems. Report them privately through GitHub: **[Report a vulnerability](https://github.com/OpenTodoApp/OpenTodo/security/advisories/new)** (the repository's Security tab, private vulnerability reporting), with a description, reproduction steps and the version or commit you tested. If you cannot use GitHub, email **raffaele.pizzari@gmail.com** instead. You will get an acknowledgement within a few days. Fixes are released as soon as they are ready and credited to the reporter unless you prefer otherwise.
+Please do not open public issues for security problems. Report them privately through GitHub: **[Report a vulnerability](https://github.com/OpenTodoApp/OpenTodo/security/advisories/new)** (the repository's Security tab, private vulnerability reporting), with a description, reproduction steps and the version or commit you tested. If you cannot use GitHub, email **raffaele.pizzari@gmail.com** instead.
+
+Every OpenTodo server also answers `GET /.well-known/security.txt` ([RFC 9116](https://www.rfc-editor.org/rfc/rfc9116)) with these two channels and a link to this policy. They reach the OpenTodo project, which maintains the software. A problem with how a particular server is run (its domain, its proxy, its accounts) belongs to that server's operator.
+
+## What to expect
+
+- **Acknowledgement within 3 business days** of your report.
+- **An assessment within 10 business days**: whether we can reproduce it, the affected versions and a severity (Critical, High, Medium, Low), shared with you in the private advisory.
+- **Fix targets** from the assessment: **7 days** for Critical, **30 days** for High, **90 days** for Medium, and **the next minor release** for Low. When a fix needs longer we tell you why and agree a new date with you.
+- **Coordinated disclosure within 90 days** of your report, or later only when you agree. We publish a GitHub security advisory with the fix and request a **CVE id** through GitHub for every vulnerability that affected a released version.
+- **Credit** in the advisory and the CHANGELOG, under the name you choose, unless you prefer to stay anonymous. There is no paid bounty.
+
+## Safe harbour
+
+We welcome good-faith security research on OpenTodo. If you test an instance you run yourself, stay within this policy and report what you find to us privately, we will not pursue or support legal action against you, and we will treat your research as authorised. Do not test instances you do not own or run, including the public demo, beyond normal use: no load testing, no automated scanning, no access to other people's data. If you are unsure whether something is in scope, ask first through the channels above.
 
 ## Scope
 
@@ -114,4 +128,17 @@ Changes that create or remove an access credential (API tokens, app passwords, p
 
 ## Supported versions
 
-Only the latest release receives security fixes.
+Before 1.0, only the latest release receives security fixes. From 1.0.0 on:
+
+| Version | Security fixes |
+|---|---|
+| The latest 1.x minor (for example 1.3) | All fixes |
+| The previous 1.x minor (for example 1.2) | Critical and High fixes for 3 months after the next minor ships |
+| The last 0.x release | Critical fixes for 3 months after 1.0.0 |
+| Anything older | None: update to a supported version |
+
+A fix for a supported older minor ships as a patch release of that minor (for example 1.2.4 next to 1.3.1).
+
+## Security reviews
+
+How the project verifies its security, the threat model and the scope prepared for an independent review are in [docs/security/](docs/security/README.md): [Threat model](docs/security/threat-model.md), [How we verify security](docs/security/how-we-verify.md) and [Independent review scope](docs/security/review-scope.md). Reports of external reviews are published there once their fixes ship.

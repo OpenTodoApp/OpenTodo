@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/config"
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 	"github.com/OpenTodoApp/opentodo/internal/tenant/services"
 	"github.com/OpenTodoApp/opentodo/internal/webhook"
@@ -50,7 +50,7 @@ func newEnv(t *testing.T, allowSignup bool) *env {
 func newEnvWith(t *testing.T, allowSignup bool, opts ...Option) *env {
 	t.Helper()
 	dir := t.TempDir()
-	db, err := store.Open(dir)
+	db, err := storetest.OpenDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}

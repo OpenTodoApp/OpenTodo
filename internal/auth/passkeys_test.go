@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/auth"
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 	"github.com/OpenTodoApp/opentodo/internal/webauthn"
 	"github.com/OpenTodoApp/opentodo/internal/webauthn/testauth"
 )
@@ -19,7 +19,7 @@ const (
 
 func newService(t *testing.T) (*auth.Service, *auth.User) {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
+	db, err := storetest.OpenDir(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -251,7 +251,7 @@ func TestDeletedPasskeyCannotLogin(t *testing.T) {
 }
 
 func TestPasskeysUnavailableWithoutRelyingParty(t *testing.T) {
-	db, err := store.Open(t.TempDir())
+	db, err := storetest.OpenDir(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}

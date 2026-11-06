@@ -12,7 +12,7 @@ import (
 
 	"github.com/OpenTodoApp/opentodo/internal/backup"
 	"github.com/OpenTodoApp/opentodo/internal/config"
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 	"github.com/OpenTodoApp/opentodo/internal/tenant/services"
 )
 
@@ -20,7 +20,7 @@ import (
 func backupEnv(t *testing.T) (*env, *backup.Service, string) {
 	t.Helper()
 	dir := t.TempDir()
-	db, err := store.Open(dir)
+	db, err := storetest.OpenDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}

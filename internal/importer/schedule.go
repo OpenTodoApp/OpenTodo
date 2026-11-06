@@ -44,6 +44,10 @@ var spellings = map[string]string{
 	"every hour": "", "hourly": "",
 }
 
+// ordinalWorkday matches Todoist's "every first workday" … "every last workday":
+// the n-th Monday-to-Friday day of the month, "weekday" in the grammar.
+var ordinalWorkday = regexp.MustCompile(`^(every (?:first|second|third|fourth|last|1st|2nd|3rd|4th)) (?:workday|work day|business day)\b`)
+
 var units = map[string]string{
 	"day": "day", "days": "day", "daily": "day",
 	"week": "week", "weeks": "week", "weekly": "week",
@@ -94,6 +98,7 @@ func parseRecurrence(text, dueDate string) (string, error) {
 		}
 		low = v
 	}
+	low = ordinalWorkday.ReplaceAllString(low, "$1 weekday")
 	if rest, ok := strings.CutPrefix(low, "every other "); ok {
 		if u, ok := units[rest]; ok {
 			low = "every 2 " + u + "s"

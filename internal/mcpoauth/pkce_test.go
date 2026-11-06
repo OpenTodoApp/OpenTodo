@@ -8,7 +8,7 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 )
 
 func challengeOf(verifier string) string {
@@ -100,7 +100,7 @@ func TestGrantedScopeLivesInThePackage(t *testing.T) {
 }
 
 func TestClientNameIsCutOnACharacterBoundary(t *testing.T) {
-	db, err := store.Open(t.TempDir())
+	db, err := storetest.OpenDir(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}

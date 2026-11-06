@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 )
 
 func TestInAppSweepKeepsUnreadAndRecent(t *testing.T) {
 	ctx := context.Background()
-	db, err := store.Open(t.TempDir())
+	db, err := storetest.OpenDir(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,7 +48,7 @@ func TestInAppSweepKeepsUnreadAndRecent(t *testing.T) {
 // task-dependencies (task 6.1): the unblocked event is stored for the assignee.
 func TestInAppStoresUnblocked(t *testing.T) {
 	ctx := context.Background()
-	db, err := store.Open(t.TempDir())
+	db, err := storetest.OpenDir(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,7 +70,7 @@ func TestInAppStoresUnblocked(t *testing.T) {
 // chore-rotation D5: a turn passing is an assigned notification marked as a turn.
 func TestInAppStoresTurn(t *testing.T) {
 	ctx := context.Background()
-	db, err := store.Open(t.TempDir())
+	db, err := storetest.OpenDir(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,7 +104,7 @@ func TestInAppStoresTurn(t *testing.T) {
 // job's deadline), not only when the server starts; every kind is stored by
 // one helper.
 func TestInAppSweepAtTheRetentionDeadline(t *testing.T) {
-	db, err := store.Open(t.TempDir())
+	db, err := storetest.OpenDir(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,7 +143,7 @@ func TestInAppSweepAtTheRetentionDeadline(t *testing.T) {
 // day; a later failure counts up, points at its run and is unread again.
 func TestInAppRoutineFailedOncePerDay(t *testing.T) {
 	ctx := context.Background()
-	db, err := store.Open(t.TempDir())
+	db, err := storetest.OpenDir(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}

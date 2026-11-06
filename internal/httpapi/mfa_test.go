@@ -13,7 +13,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/audit"
 	"github.com/OpenTodoApp/opentodo/internal/auth"
 	"github.com/OpenTodoApp/opentodo/internal/config"
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 	"github.com/OpenTodoApp/opentodo/internal/tenant/services"
 	"github.com/OpenTodoApp/opentodo/internal/webauthn"
 	"github.com/OpenTodoApp/opentodo/internal/webauthn/testauth"
@@ -42,7 +42,7 @@ type mfaEnv struct {
 // a controllable clock, and registers the owner.
 func newMFAEnv(t *testing.T) *mfaEnv {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
+	db, err := storetest.OpenDir(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}

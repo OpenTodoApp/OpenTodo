@@ -11,6 +11,7 @@ import (
 
 	"github.com/OpenTodoApp/opentodo/internal/config"
 	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 )
 
 // TestRouting (3.1): two tenants by host name, an unknown name and the bare
@@ -180,7 +181,7 @@ func TestFailingMigrationIsolated(t *testing.T) {
 // single-tenant data directory.
 func TestHostRefusesSelfHostedDirectory(t *testing.T) {
 	dir := t.TempDir()
-	db, err := store.Open(dir)
+	db, err := storetest.OpenDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
