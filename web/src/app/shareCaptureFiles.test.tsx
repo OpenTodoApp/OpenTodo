@@ -146,4 +146,12 @@ describe('extension screenshot hand-over', () => {
     mounted.push(r)
     expect(document.body.textContent).toContain('Allow the extension to reach your server')
   })
+
+  it('explains a share the service worker did not keep because it did not say where it came from (share-target-fetch-metadata)', async () => {
+    setPendingShare({ title: '', text: '', url: null }, { mode: 'unverified' })
+    const r = await render(<ShareCapture />)
+    mounted.push(r)
+    expect(document.body.textContent).toContain('the browser did not say where it came from')
+    expect(listedFiles()).toEqual([])
+  })
 })

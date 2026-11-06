@@ -522,11 +522,10 @@ Each item of the [review scope](review-scope.md) has a section here: where the c
 - **Controls:**
   - Markdown is rendered by an in-house renderer to React elements. Raw HTML stays text, and only `http(s)` and `mailto` links are rendered (`web/src/lib/markdown.test.ts`).
   - Links from encrypted data open only `http(s)`.
-  - The share target accepts only same-origin or share-sheet requests up to 100 MB (`shareRequestAllowed`, `web/src/lib/shareInbox.test.ts`).
+  - The share target stores only same-origin or share-sheet requests up to 100 MB, identified by `Sec-Fetch-Site`. A request without the header is not stored, and the capture screen says why (`shareRequestVerdict`, `web/src/lib/shareInbox.test.ts`).
   - Signing out empties the app's caches.
   - Strict CSP: `script-src 'self'` and `frame-ancestors 'none'` (`cspBase`), `X-Frame-Options: DENY`.
 - **Tests:** `TestSecurityHeaders` (`internal/httpapi/security_headers_test.go`) pins `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy` and the page policy's `default-src`, `script-src`, `frame-ancestors`, `base-uri` and `form-action`.
-- **Gap:** the share target also accepts a request without `Sec-Fetch-Site`, which older browsers do not send.
 
 ### Android and iOS bridges
 
