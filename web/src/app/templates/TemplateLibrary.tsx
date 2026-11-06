@@ -176,7 +176,7 @@ export function LibraryDetail({ tpl, projects, startDay, onStartDay, parentId, o
         </div>
       </div>
       {/* The action row stays in view while the description and preview scroll. */}
-      <div className="sticky bottom-0 -mx-4 flex justify-end border-t border-default bg-surface px-4 py-2">
+      <div className="sticky bottom-0 -mx-4 flex justify-end border-t border-default bg-surface px-4 pt-2 pb-[max(0.5rem,var(--safe-bottom))]">
         <Button ref={create} variant="primary" type="submit" busy={busy} data-template-create>{t('Create')}</Button>
       </div>
     </form>

@@ -190,7 +190,7 @@ export function Inspector({ open, onClose, stepId, title, children }: { open: bo
     return (
       <Dialog title={title} onClose={onClose} placement="bottom" testId="word-inspector" className="pb-0!">
         <div tabIndex={-1} data-autofocus className="outline-none">{children}</div>
-        <div className="sticky bottom-0 -mx-4 mt-3 flex justify-end border-t border-default bg-surface px-4 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]" data-inspector-footer>
+        <div className="sticky bottom-0 -mx-4 mt-3 flex justify-end border-t border-default bg-surface px-4 pt-2 pb-[max(0.5rem,var(--safe-bottom))]" data-inspector-footer>
           <Button size="sm" variant="primary" onClick={onClose}>{t('Done')}</Button>
         </div>
       </Dialog>

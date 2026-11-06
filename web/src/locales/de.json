@@ -7169,5 +7169,14 @@
   "Accessibility": "Barrierefreiheit",
   "Other app": "Andere App",
   "The exact address the app returns to after you sign in, starting with https://. The app’s documentation names it.": "Die genaue Adresse, zu der die App nach der Anmeldung zurückkehrt, beginnend mit https://. Die Dokumentation der App nennt sie.",
-  "Enter the address the app returns to after you sign in.": "Gib die Adresse ein, zu der die App nach der Anmeldung zurückkehrt."
+  "Enter the address the app returns to after you sign in.": "Gib die Adresse ein, zu der die App nach der Anmeldung zurückkehrt.",
+  "An AI connector wants to read your text": "Ein KI-Connector möchte deinen Text lesen",
+  "An assistant asks to read this with {tool}:": "Ein Assistent möchte dies mit {tool} lesen:",
+  "{token} asks to read this with {tool}:": "{token} möchte dies mit {tool} lesen:",
+  "Answering an AI connector: {tool}": "Antwortet einem KI-Connector: {tool}",
+  "Answering {token}: {tool}": "Antwortet {token}: {tool}",
+  "Confirm reads first": "Lesezugriffe erst bestätigen",
+  "Each request to read your text shows here before this device sends it.": "Jede Anfrage, deinen Text zu lesen, erscheint hier, bevor dieses Gerät ihn sendet.",
+  "Text to send": "Zu sendender Text",
+  "{n, plural, one {and # more value} other {and # more values}}": "{n, plural, one {und # weiterer Wert} other {und # weitere Werte}}"
 }

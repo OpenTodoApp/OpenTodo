@@ -17,4 +17,4 @@
 
 ## 3. Measure
 
-- [ ] 3.1 `make perf` on the CI runner: every list budget of `performance-10k` within its limit; if not, propose windowing (D4)
+- [x] 3.1 `make perf` on the CI runner: every list budget of `performance-10k` within its limit; if not, propose windowing (D4). Done 2026-11-06: nightly 42247406135 passes every budget (complete-task measured as an interaction, OpenSpec `complete-task-interaction-timing`, #964: desktop 72 ms, phone 184 ms; cursor 17 and 93 ms; open project, search, saved view within limits); windowing not needed

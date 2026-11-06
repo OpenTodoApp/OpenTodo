@@ -1,6 +1,7 @@
 package agenttools
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -11,6 +12,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 	"github.com/OpenTodoApp/opentodo/internal/relay"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/textutil"
 )
 
 // Content through an opted-in device (OpenSpec change mcp-device-relay, design
@@ -125,7 +127,20 @@ func (r *Registry) taskComments(ctx context.Context, userID, taskID string) ([]o
 func (c Caller) relayed() bool { return c.Encrypted && c.Relay != nil }
 
 func relayCall(c Caller, tool string, write bool) relay.Call {
-	return relay.Call{Tool: tool, Token: c.TokenName, Write: write}
+	return relay.Call{Tool: tool, Token: c.TokenName, Args: c.relayArgs, Write: write}
+}
+
+// relayArgs is a call's arguments as the device shows them: compact JSON cut
+// to relay.MaxArgs bytes on a character boundary (relay-request-transparency D2).
+func relayArgs(raw json.RawMessage) string {
+	if len(raw) == 0 || string(raw) == "null" {
+		return ""
+	}
+	var buf bytes.Buffer
+	if json.Compact(&buf, raw) != nil {
+		return ""
+	}
+	return textutil.Truncate(buf.String(), relay.MaxArgs)
 }
 
 // relayRead runs a read tool with markers and has the device decrypt exactly
@@ -257,7 +272,7 @@ func relayToolErr(err error) error {
 	case relay.CodeLimit:
 		return toolErr(re.Code, "the user's device has reached its own limit on how many values it decrypts or encrypts; try again later")
 	case relay.CodeDeclined:
-		return toolErr(re.Code, "the user declined this change on their device; nothing was changed")
+		return toolErr(re.Code, "the user declined this request on their device; nothing was read or changed")
 	case relay.CodeRateLimited:
 		return rateLimited(re.RetryAfter, "at most 60 calls a minute go through the user's device")
 	case relay.CodeTooLarge:

@@ -270,7 +270,8 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | GET | `/api/v1/settings/webhooks` | owner | `{allowPrivate}` |
 | PUT | `/api/v1/settings/webhooks` | owner, credential | `{allowPrivate}` → `{allowPrivate}` |
 | GET | `/api/v1/audit` | owner | `{events:[…], cursor}` newest first; filters `name`, `actor`, `target`, `outcome`, `from`, `to`, `cursor`, `limit≤200`, see [Audit log](#audit-log) |
-| GET | `/api/v1/audit/export` | owner | the filtered log as `application/x-ndjson` download; records `audit.exported` |
+| GET | `/api/v1/audit/export` | owner | the filtered log as `application/x-ndjson` download, ending with the chain head line; records `audit.exported` |
+| GET | `/api/v1/audit/verify` | owner | `{ok, checked, uncovered, checkpoint, head, break}`: the hash chain recomputed, see [Audit log](#audit-log) |
 | GET | `/api/v1/settings/audit` | owner | `{retentionDays, logIp}` |
 | PUT | `/api/v1/settings/audit` | owner, credential | `{retentionDays?: 7–3650, logIp?}` → settings; disabling `logIp` erases stored addresses |
 | GET | `/api/v1/backups` | owner | backup status, see [Backups](#backups) |
@@ -1198,7 +1199,7 @@ The owner's view of the database file and of the notes compaction job (see [sync
 
 ### Audit log
 
-The server records security-relevant events in its own database (never synced to devices, never part of `/api/v1/export`). The owner reads, filters and exports the log; every user reads their own access events. There is no route to modify or delete an event: `PATCH`/`DELETE /api/v1/audit/{id}` answer 404 `not_found`. Events are removed only by retention pruning (and addresses only by disabling address logging).
+The server records security-relevant events in its own database (never synced to devices, never part of `/api/v1/export`). The owner reads, filters and exports the log; every user reads their own access events. There is no route to modify or delete an event: `PATCH`/`DELETE /api/v1/audit/{id}` answer 404 `not_found`. Events are removed only by retention pruning (and addresses only by disabling address logging). The log is a hash chain, so a change made to the database outside OpenTodo shows up when it is verified (below).
 
 **Event shape** (list, export and activity):
 
@@ -1208,11 +1209,12 @@ The server records security-relevant events in its own database (never synced to
   "actorId": "<user id>", "actorEmail": "owner@example.com",
   "targetId": null, "targetEmail": null,
   "ip": null, "userAgent": "Mozilla/5.0 …",
-  "details": { "token_id": "…", "token_name": "laptop script" }
+  "details": { "token_id": "…", "token_name": "laptop script" },
+  "hash": "9f2c…"
 }
 ```
 
-`actorId` is the account that acted (null for a failed sign-in); `targetId` is the account acted upon when different. `actorEmail` / `targetEmail` come from the live account, or from the email snapshot in `details.email` when the account no longer exists. `ip` is null unless the owner enabled address logging. `userAgent` is truncated to 200 bytes. `details` only ever carries the keys below: never task or project content, passwords, token or invitation secrets, one-time or recovery codes.
+`actorId` is the account that acted (null for a failed sign-in); `targetId` is the account acted upon when different. `actorEmail` / `targetEmail` come from the live account, or from the email snapshot in `details.email` when the account no longer exists. `ip` is null unless the owner enabled address logging. `userAgent` is truncated to 200 bytes. `details` only ever carries the keys below: never task or project content, passwords, token or invitation secrets, one-time or recovery codes. `hash` is the event's link in the hash chain (64 hex characters), or null for an event recorded before the server had the chain.
 
 | Event | Outcome | Actor / target | `details` keys |
 | --- | --- | --- | --- |
@@ -1306,9 +1308,22 @@ curl -sS -H "Authorization: Bearer $TOKEN" \
   "$OT/api/v1/audit?name=login.failed&from=$(( ($(date +%s) - 86400) * 1000 ))"
 ```
 
-**Export** — `GET /api/v1/audit/export` (owner) with the same filters except `cursor` and `limit` → every matching event as newline-delimited JSON (`application/x-ndjson`, `Content-Disposition: attachment; filename="opentodo-audit-YYYYMMDD.ndjson"`), one event object per line, newest first. The export records an `audit.exported` event.
+**Export** — `GET /api/v1/audit/export` (owner) with the same filters except `cursor` and `limit` → every matching event as newline-delimited JSON (`application/x-ndjson`, `Content-Disposition: attachment; filename="opentodo-audit-YYYYMMDD.ndjson"`), one event object per line, newest first. The last line is not an event but the chain head, the newest event of the whole log whatever the filters: `{"chain": {"id": 418, "hash": "…"}}`. The export records an `audit.exported` event.
 
-**Settings** — `GET /api/v1/settings/audit` (owner) → `{"retentionDays": 90, "logIp": false}`. `PUT` the same object, both fields optional: `retentionDays` is an integer 7–3650 (otherwise 400 `invalid_input`), `logIp` turns client address logging on or off. Turning it off erases every stored address in the same transaction. Each changed value is recorded as `settings.changed`; lowering retention prunes expired events immediately, and the server also prunes at startup and whenever the oldest event passes the retention.
+**Verify** — `GET /api/v1/audit/verify` (owner) recomputes the hash chain and answers 200 whether or not it holds:
+
+```json
+{
+  "ok": false, "checked": 1203, "uncovered": 0,
+  "checkpoint": { "id": 7310, "hash": "…" },
+  "head": { "id": 8512, "hash": "…" },
+  "break": { "id": 8514, "reason": "mismatch" }
+}
+```
+
+Each event's `hash` is the SHA-256, in hex, of the previous event's hash, a newline and the JSON array `[1, id, ts, name, outcome, actorId, targetId, userAgent, details]` (`details` as the stored JSON text, `null` for a missing account id). The client address is left out, so erasing addresses does not break the chain. `checkpoint` is where checking starts: the last event pruned by retention (or the newest event from before the chain), whose hash the next event chains from. `checked` counts the events checked after it, `uncovered` the kept events from before the chain, and `head` is the newest checked event. `break` is null, or the first event whose hash does not follow: `missing_hash`, or `mismatch` when the event was changed or an event before it was removed or moved. The server also checks the chain at startup and hourly after changes, and logs a broken link at error level. Removing the newest events leaves a shorter chain that still verifies; compare with a chain head kept from an earlier export to see that ([Audit log](self-hosting/docker.md#checking-the-log-for-tampering)).
+
+**Settings** — `GET /api/v1/settings/audit` (owner) → `{"retentionDays": 90, "logIp": false}`. `PUT` the same object, both fields optional: `retentionDays` is an integer 7–3650 (otherwise 400 `invalid_input`), `logIp` turns client address logging on or off. Turning it off erases every stored address in the same transaction. Each changed value is recorded as `settings.changed`; lowering retention prunes expired events immediately, and the server also prunes at startup and whenever the oldest event passes the retention. Pruning removes events from the start of the log, in order, and stops at the first one still within the retention.
 
 **Personal activity** — `GET /api/v1/me/activity` (any signed-in user) → `{events: [...]}`: the caller's own sign-ins, failed sign-ins against their account, sign-outs and credential and token events from the last 90 days, at most 100, newest first. Events about other accounts never appear.
 
