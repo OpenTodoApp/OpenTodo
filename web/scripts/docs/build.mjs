@@ -5,12 +5,12 @@
 //   docs/roadmap.md            its tables, from ROADMAP.md, openspec/ and CHANGELOG.md (docs-1-0 D6)
 //
 //   node scripts/docs/build.mjs [--site DIR]   (from web/; `make docs` from the root)
-//   node scripts/docs/build.mjs --help-only    only help.json (`npm run help`; run before build, dev, test)
+//   node scripts/docs/help.mjs                 only help.json (`npm run help`; run before build, dev, test)
 //
 // DIR is the docs website's output, repository-relative (default dist/docs-site).
 // The site is not committed: the site bundle carries it to the website
 // repository (OpenSpec site-bundle D6), and neither is the in-app help: the web
-// app's scripts build it first (`--help-only`). The keyboard and roadmap guides are.
+// app's scripts build it first (help.mjs). The keyboard and roadmap guides are.
 //
 // The output is deterministic: running it twice changes nothing.
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
@@ -21,15 +21,16 @@ import { loadShortcuts, shortcutsMarkdown, withShortcuts } from './shortcuts.mjs
 import { roadmapMarkdown, withRoadmap } from './roadmap.mjs'
 import { landingHtml, pageHtml, sectionHtml } from './site.mjs'
 import { tokensCss } from '../../../scripts/tokens.mjs'
+import { helpBundle, OUT_HELP, TEXT_CAP } from './help.mjs'
+
+export { buildHelp, OUT_HELP, withoutImages } from './help.mjs'
 
 const here = fileURLToPath(import.meta.url)
 const ASSETS = join(dirname(here), 'assets')
 /** Where the docs website is written unless a caller says otherwise. */
 export const OUT_SITE = 'dist/docs-site'
-export const OUT_HELP = 'web/src/generated/help.json'
 /** The app's screen ids (docs-1-0 D1), written from web/src/app/screens.ts for the docs check. */
 export const OUT_SCREENS = 'web/src/generated/screen-ids.json'
-const TEXT_CAP = 1500
 
 /**
  * Builds everything in memory. Returns { files, pages, rendered, problems } where
@@ -122,49 +123,6 @@ export async function buildAll(repoRoot, { site = OUT_SITE } = {}) {
 }
 
 /**
- * The in-app help (web/src/generated/help.json): the user pages, rendered for the app, with
- * their screen ids and the search index. `app(page)` is the page's app rendering.
- */
-export function helpBundle(user, app, release) {
-  const screens = {}
-  for (const p of user) for (const s of p.fm.screens ?? []) {
-    const [id, anchor = ''] = s.split('#')
-    screens[id] = { page: p.slug, anchor }
-  }
-  const help = {
-    version: release,
-    pages: user.map((p) => {
-      const r = app(p)
-      return { slug: p.slug, title: p.fm.title, summary: p.fm.summary, section: p.fm.section ?? 'Guides', order: p.fm.order,
-        toc: r.headings.filter((h) => h.depth === 2).map((h) => ({ id: h.id, text: h.text })), html: withoutImages(r.html) }
-    }),
-    screens: Object.fromEntries(Object.entries(screens).sort(([a], [b]) => a.localeCompare(b))),
-    index: { pages: [], s: [] },
-  }
-  for (const p of user) {
-    const at = help.index.pages.push({ t: p.fm.title, u: p.slug }) - 1
-    for (const s of app(p).sections) help.index.s.push([at, s.heading, s.id, s.text.slice(0, TEXT_CAP)])
-  }
-  return help
-}
-
-/**
- * Only the in-app help, from docs/ and CHANGELOG.md alone: what `npm run build`, `npm test`,
- * `npm run dev` and the image build run first, because help.json is not committed (it changed
- * with every docs edit and made parallel pull requests conflict). The generated blocks of the
- * keyboard and roadmap guides are read as committed; `make docs-check` keeps them current, so
- * this is byte for byte the help.json of a full build.
- */
-export function buildHelp(repoRoot) {
-  const pages = loadPages(join(repoRoot, 'docs'))
-  const sorted = sortPages(pages.filter((p) => !p.errors.length || p.fm.title))
-  const audienceOf = (rel) => pages.find((p) => p.rel === rel)?.fm.audience
-  const user = sorted.filter((p) => p.fm.audience === 'user')
-  const app = new Map(user.map((p) => [p.rel, renderPage(p.body, { rel: p.rel, repoRoot, audienceOf }, 'app')]))
-  return JSON.stringify(helpBundle(user, (p) => app.get(p.rel), versionInfo(repoRoot).release)) + '\n'
-}
-
-/**
  * The app's screen ids from web/src/app/screens.ts (imported directly; Node strips
  * the types, and the module has no runtime imports), or null when the file is absent.
  */
@@ -185,12 +143,6 @@ function docsCss(repoRoot, release) {
   const indexCss = readFileSync(tokensFile, 'utf8')
   const mixes = [...new Set(indexCss.match(/--ot-mix-[\w-]+:\s*[^;]+;/g) ?? [])]
   return `${tokensCss(indexCss, release)}:root {\n${mixes.map((m) => `  ${m}`).join('\n')}\n}\n\n${readFileSync(join(ASSETS, 'docs.css'), 'utf8')}`
-}
-
-// The app ships the guide's text only: screenshots stay on the website, so the
-// binary and the precache grow by the text alone (about 2.4 MB of images saved).
-export function withoutImages(html) {
-  return html.replace(/<picture>[\s\S]*?<\/picture>/g, '').replace(/<img [^>]*>/g, '').replace(/<p>\s*<\/p>\n?/g, '')
 }
 
 /** Files currently under the generated website directory, repository-relative. */
@@ -248,15 +200,7 @@ export function siteArg(argv) {
   return i >= 0 && argv[i + 1] ? argv[i + 1].replace(/\/+$/, '') : OUT_SITE
 }
 
-if (process.argv[1] === here && process.argv.includes('--help-only')) {
-  const repoRoot = repoRootFrom(here)
-  const out = join(repoRoot, OUT_HELP)
-  const text = buildHelp(repoRoot)
-  if (!existsSync(out) || readFileSync(out, 'utf8') !== text) {
-    mkdirSync(dirname(out), { recursive: true })
-    writeFileSync(out, text)
-  }
-} else if (process.argv[1] === here) {
+if (process.argv[1] === here) {
   const repoRoot = repoRootFrom(here)
   const site = siteArg(process.argv)
   const { files, problems, sorted } = await buildAll(repoRoot, { site })

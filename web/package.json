@@ -23,7 +23,7 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.sw.json",
     "docs:build": "node scripts/docs/build.mjs",
     "docs:check": "node scripts/docs/check.mjs",
-    "help": "node scripts/docs/build.mjs --help-only",
+    "help": "node scripts/docs/help.mjs",
     "prestorybook": "npm run --silent help",
     "storybook": "storybook dev -p 6006 --no-open",
     "prebuild-storybook": "npm run --silent help",
