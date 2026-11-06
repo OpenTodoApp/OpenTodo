@@ -332,6 +332,12 @@ These are known and tracked as follow-up tasks of the OpenSpec change `external-
 - **Fuzzing.** The TypeScript client has no fuzz target (see [Fuzzing](#fuzzing)).
 - **No independent review** of the design or the code yet.
 
+## AI security review before each release
+
+Before every release tag, including patches and release candidates, the maintainer runs Claude Code's `/security-review` on the code changed since the previous release tag (`git diff <previous tag>..<release commit>`, without translations, test data and generated files). It looks for exploitable problems the release adds (authorization bypass, injection, unsafe redirects, data from one account reaching another, secrets in logs) and checks each candidate again before reporting it. It runs on the maintainer's machine: nothing is sent to an extra service and no key is kept in CI. A real finding is fixed in its own pull request with a regression test before the tag. The release pull request records the result.
+
+This is an extra layer, not an independent review. It is a tool the maintainer runs, it can miss problems a person would find, and it does not replace the checks above or the review described below.
+
 ## Independent review
 
 We are seeking an independent security review. The reviewer must have made no contribution to the repository in the 12 months before the engagement. They would work from a pinned commit, with source review and dynamic testing of a demo-mode instance and a host-mode instance.
