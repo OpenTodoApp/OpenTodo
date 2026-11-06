@@ -235,9 +235,11 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const insertAfter = useRef<string | null>(null)
 
   const toggleViewMode = useCallback(() => { if (projectId) void saveViewMode(projectId, nextViewMode(viewMode)) }, [projectId, viewMode])
+  // Saved even when it is the layout shown: until the stored layout has loaded the switch shows
+  // List, and a click on List then must not be lost when the stored Board or Timeline arrives (issue 941).
   const chooseViewMode = useCallback((mode: ProjectViewMode) => {
-    if (projectId && mode !== viewMode) void saveViewMode(projectId, mode)
-  }, [projectId, viewMode])
+    if (projectId) void saveViewMode(projectId, mode)
+  }, [projectId])
   const toggleSection = useCallback((key: string, force?: boolean) => {
     if (projectId) act(setSectionCollapsed(projectId, key, force ?? !collapsedSections.includes(key)))
   }, [projectId, collapsedSections])
