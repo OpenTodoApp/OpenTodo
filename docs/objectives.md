@@ -15,7 +15,7 @@ A daily list makes it easy to lose sight of what the quarter and the week are fo
 
 ## Turn them on
 
-Turn on **Objectives** in **Settings → Account → How you work**, whatever way of working you chose. It syncs to your devices. Off hides the strip and the review section and keeps every objective, still in your export, the API, the CLI and AI assistants' reads.
+Turn on **Objectives** in **Settings → Account → Profile → How you work**, whatever way of working you chose. It syncs to your devices. Off hides the strip and the review section and keeps every objective, still in your export, the API, the CLI and AI assistants' reads.
 
 ## Five per period
 

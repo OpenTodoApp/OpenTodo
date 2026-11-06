@@ -75,7 +75,7 @@ None is required. With a Compose resource (the one-click template or Option A), 
 | `OPENTODO_EMAIL_*` | unset | Optional [email to task](../email.md): `ADDRESS`, `IMAP_HOST`, `IMAP_USER` and `IMAP_PASSWORD` together (mark the password as a secret, or mount a file and set `IMAP_PASSWORD_FILE`). Partial settings stop the container at startup with the missing name in the log |
 | `OPENTODO_SMTP_*` | unset | Optional [outgoing email](outgoing-email.md) (`HOST`, `SECURITY`, `USER`, `PASSWORD` or `PASSWORD_FILE`, `FROM`; `HOST` and `FROM` together). Mark the password as a secret. Each one set locks its field in Settings → Server → Outgoing email |
 | `OPENTODO_OIDC_*` | unset | Optional [single sign-on](sso.md) settings (`ISSUER`, `CLIENT_ID`, `CLIENT_SECRET`, `DISPLAY_NAME`, `SSO_ONLY`) that override and lock the fields in Settings → People → Single sign-on |
-| `OPENTODO_BACKUP_*` | unset | Optional presets for [scheduled backups](../backups.md#environment-presets), applied once; Settings → Server wins afterwards |
+| `OPENTODO_BACKUP_*` | unset | Optional presets for [scheduled backups](../backups.md#environment-presets), applied once; Settings → Server → Backups wins afterwards |
 
 ## Passkeys
 
@@ -97,7 +97,7 @@ Leave `OPENTODO_ALLOW_SIGNUP` unset. In the app, open **Settings → People → 
 
 ## Backups
 
-Everything is in the `/data` volume (one file, `opentodo.db`, plus its WAL files while running, the web push keys and settings secrets). Turn on scheduled backups in **Settings → Server**: consistent snapshots to `/data/backups`, an S3-compatible bucket or a WebDAV share, with retention and optional encryption, restorable with `opentodo restore` (see [docs/backups.md](../backups.md#restore)). Coolify's scheduled volume backups archive the volume with `tar`; a copy taken while the server writes can catch the database mid-write, so set **Archive behavior** to *Stop containers during archive* there, or rely on the built-in backups. The in-app **Settings → Data → Download export** gives a portable JSON copy at any time.
+Everything is in the `/data` volume (one file, `opentodo.db`, plus its WAL files while running, the web push keys and settings secrets). Turn on scheduled backups in **Settings → Server → Backups**: consistent snapshots to `/data/backups`, an S3-compatible bucket or a WebDAV share, with retention and optional encryption, restorable with `opentodo restore` (see [docs/backups.md](../backups.md#restore)). Coolify's scheduled volume backups archive the volume with `tar`; a copy taken while the server writes can catch the database mid-write, so set **Archive behavior** to *Stop containers during archive* there, or rely on the built-in backups. The in-app **Settings → Data → Download export** gives a portable JSON copy at any time.
 
 ## Audit log
 

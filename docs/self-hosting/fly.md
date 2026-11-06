@@ -87,7 +87,7 @@ When `fly certs show todo.example.com` reports the certificate as issued, set `O
 
 `fly.toml` uses the `stable` image, which every release moves. Fly does not update a running app by itself: run `fly deploy` in the folder with `fly.toml`, and it fetches the release `stable` points at then. Migrations run on start. There are no down-migrations, so back up first. To stay on one release line, set `image = "ghcr.io/opentodoapp/opentodo:0.6"` under `[build]` (or pin one version, `0.6.1`).
 
-Fly takes daily snapshots of the volume and keeps them for a few days (`fly volumes snapshots list <volume id>`; `fly volumes list` shows the id). For backups you control, turn on scheduled backups in OpenTodo's **Settings → Server** and send them to S3 or WebDAV; the local `backups/` folder is in the same volume, so it does not protect against losing the volume. See [Backups](../backups.md).
+Fly takes daily snapshots of the volume and keeps them for a few days (`fly volumes snapshots list <volume id>`; `fly volumes list` shows the id). For backups you control, turn on scheduled backups in OpenTodo's **Settings → Server → Backups** and send them to S3 or WebDAV; the local `backups/` folder is in the same volume, so it does not protect against losing the volume. See [Backups](../backups.md).
 
 ## Troubleshooting
 
