@@ -157,7 +157,7 @@ Tests: `TestReadTokenRefusedOnWrites`, `TestCredentialRoutesNeedAdminToken`, `Te
 - `TestFollowRedirectsChecksEveryHop`.
 - Per-feature tests in each caller, such as `TestPrivateHostRefusedUnlessAllowed`, `TestGraphRefusesRedirectsAndOtherHosts` and `TestMapProxyPrivateTargets`.
 
-**Outside the policy, on purpose:** connections to targets only the operator sets. These are the OIDC issuer, SMTP, IMAP, backup destinations and the three built-in assistant hosts. [Threat model](threat-model.md#malicious-calendar-mail-or-issue-server) says what that means.
+**Outside the policy, on purpose:** connections to targets only the operator sets. These are the OIDC issuer, SMTP, IMAP, backup destinations and the three built-in assistant hosts. [Threat model](threat-model.md#malicious-calendar-mail-or-issue-server) says what that means. The OIDC and backup clients still use no proxy from the environment and follow no redirect to another host.
 
 ## Importer parsing limits
 
