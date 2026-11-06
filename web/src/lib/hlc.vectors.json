@@ -1,0 +1,423 @@
+{
+  "comment": "The hybrid logical clock of web/src/lib/hlc.ts and the last-writer-wins comparison, step by step. Read by web/src/lib/hlc.test.ts (the client) and internal/sync/hlc_vectors_test.go (the Go property test's model of the client, propDevice, and sync.Wins). 'at' is the server's time; the device's wall clock reads at + skew. A step with 'skew' changes the device's wall clock first. The want values are written by UPDATE_HLC_VECTORS=1 npx vitest run src/lib/hlc.test.ts (in web/) from the steps.",
+  "clocks": [
+    {
+      "name": "a steady clock moves past received stamps and never back",
+      "skew": 0,
+      "steps": [
+        {
+          "do": "stamp",
+          "at": 1800000000000,
+          "want": 1800000000000,
+          "want_last": 1800000000000,
+          "want_offset": 0
+        },
+        {
+          "do": "stamp",
+          "at": 1800000000000,
+          "want": 1800000000001,
+          "want_last": 1800000000001,
+          "want_offset": 0
+        },
+        {
+          "do": "stamp",
+          "at": 1799999995000,
+          "want": 1800000000002,
+          "want_last": 1800000000002,
+          "want_offset": 0
+        },
+        {
+          "do": "receive",
+          "ts": 1800000060000,
+          "want_last": 1800000060000,
+          "want_offset": 0
+        },
+        {
+          "do": "stamp",
+          "at": 1800000000010,
+          "want": 1800000060001,
+          "want_last": 1800000060001,
+          "want_offset": 0
+        },
+        {
+          "do": "receive",
+          "ts": 1800000000000,
+          "want_last": 1800000060001,
+          "want_offset": 0
+        },
+        {
+          "do": "stamp",
+          "at": 1800000000020,
+          "want": 1800000060002,
+          "want_last": 1800000060002,
+          "want_offset": 0
+        }
+      ]
+    },
+    {
+      "name": "a wall clock that jumps back keeps stamping forward",
+      "skew": 0,
+      "steps": [
+        {
+          "do": "stamp",
+          "at": 1800000000000,
+          "want": 1800000000000,
+          "want_last": 1800000000000,
+          "want_offset": 0
+        },
+        {
+          "do": "stamp",
+          "at": 1800000000000,
+          "skew": -3600000,
+          "want": 1800000000001,
+          "want_last": 1800000000001,
+          "want_offset": 0
+        },
+        {
+          "do": "stamp",
+          "at": 1800000005000,
+          "want": 1800000000002,
+          "want_last": 1800000000002,
+          "want_offset": 0
+        },
+        {
+          "do": "stamp",
+          "at": 1800000005000,
+          "skew": 0,
+          "want": 1800000005000,
+          "want_last": 1800000005000,
+          "want_offset": 0
+        }
+      ]
+    },
+    {
+      "name": "a clock an hour fast follows the server after a sync",
+      "skew": 3600000,
+      "steps": [
+        {
+          "do": "stamp",
+          "at": 1800000000000,
+          "want": 1800003600000,
+          "want_last": 1800003600000,
+          "want_offset": 0
+        },
+        {
+          "do": "observe",
+          "at": 1800000000000,
+          "server": 1800000000000,
+          "want_last": 1800000000000,
+          "want_offset": -3600000
+        },
+        {
+          "do": "stamp",
+          "at": 1800000001000,
+          "want": 1800000001000,
+          "want_last": 1800000001000,
+          "want_offset": -3600000
+        },
+        {
+          "do": "observe",
+          "at": 1800000001000,
+          "server": 1800000001500,
+          "want_last": 1800000001000,
+          "want_offset": -3599500
+        },
+        {
+          "do": "stamp",
+          "at": 1800000002000,
+          "want": 1800000002500,
+          "want_last": 1800000002500,
+          "want_offset": -3599500
+        }
+      ]
+    },
+    {
+      "name": "a skew within the tolerance is left alone",
+      "skew": 1500,
+      "steps": [
+        {
+          "do": "stamp",
+          "at": 1800000000000,
+          "want": 1800000001500,
+          "want_last": 1800000001500,
+          "want_offset": 0
+        },
+        {
+          "do": "observe",
+          "at": 1800000000000,
+          "server": 1800000000000,
+          "want_last": 1800000001500,
+          "want_offset": 0
+        },
+        {
+          "do": "stamp",
+          "at": 1800000000001,
+          "want": 1800000001501,
+          "want_last": 1800000001501,
+          "want_offset": 0
+        },
+        {
+          "do": "observe",
+          "at": 1800000000010,
+          "server": 1800000002010,
+          "want_last": 1800000001501,
+          "want_offset": 0
+        },
+        {
+          "do": "stamp",
+          "at": 1800000000020,
+          "want": 1800000001520,
+          "want_last": 1800000001520,
+          "want_offset": 0
+        }
+      ]
+    },
+    {
+      "name": "a slow clock catches up with the server",
+      "skew": -600000,
+      "steps": [
+        {
+          "do": "stamp",
+          "at": 1800000000000,
+          "want": 1799999400000,
+          "want_last": 1799999400000,
+          "want_offset": 0
+        },
+        {
+          "do": "observe",
+          "at": 1800000000000,
+          "server": 1800000000000,
+          "want_last": 1799999400000,
+          "want_offset": 600000
+        },
+        {
+          "do": "stamp",
+          "at": 1800000000000,
+          "want": 1800000000000,
+          "want_last": 1800000000000,
+          "want_offset": 600000
+        },
+        {
+          "do": "observe",
+          "at": 1800000001000,
+          "server": 1800000001000,
+          "want_last": 1800000000000,
+          "want_offset": 600000
+        },
+        {
+          "do": "stamp",
+          "at": 1800000001000,
+          "want": 1800000001000,
+          "want_last": 1800000001000,
+          "want_offset": 600000
+        }
+      ]
+    },
+    {
+      "name": "a refusal ten minutes ahead brings the clock back to server time",
+      "skew": 600000,
+      "steps": [
+        {
+          "do": "stamp",
+          "at": 1800000000000,
+          "want": 1800000600000,
+          "want_last": 1800000600000,
+          "want_offset": 0
+        },
+        {
+          "do": "refused",
+          "at": 1800000000000,
+          "server": 1800000000000,
+          "want_last": 1800000000000,
+          "want_offset": -600000
+        },
+        {
+          "do": "stamp",
+          "at": 1800000000010,
+          "want": 1800000000010,
+          "want_last": 1800000000010,
+          "want_offset": -600000
+        },
+        {
+          "do": "stamp",
+          "at": 1800000000010,
+          "want": 1800000000011,
+          "want_last": 1800000000011,
+          "want_offset": -600000
+        }
+      ]
+    },
+    {
+      "name": "a refusal over half the window ahead restarts the clock",
+      "skew": 200000,
+      "steps": [
+        {
+          "do": "stamp",
+          "at": 1800000000000,
+          "want": 1800000200000,
+          "want_last": 1800000200000,
+          "want_offset": 0
+        },
+        {
+          "do": "refused",
+          "at": 1800000000000,
+          "server": 1800000000000,
+          "want_last": 1800000000000,
+          "want_offset": -200000
+        },
+        {
+          "do": "stamp",
+          "at": 1800000000010,
+          "want": 1800000000010,
+          "want_last": 1800000000010,
+          "want_offset": -200000
+        }
+      ]
+    },
+    {
+      "name": "a refusal within half the window keeps the stamps it handed out",
+      "skew": 100000,
+      "steps": [
+        {
+          "do": "stamp",
+          "at": 1800000000000,
+          "want": 1800000100000,
+          "want_last": 1800000100000,
+          "want_offset": 0
+        },
+        {
+          "do": "refused",
+          "at": 1800000000000,
+          "server": 1800000000000,
+          "want_last": 1800000100000,
+          "want_offset": -100000
+        },
+        {
+          "do": "stamp",
+          "at": 1800000000000,
+          "want": 1800000100001,
+          "want_last": 1800000100001,
+          "want_offset": -100000
+        },
+        {
+          "do": "refused",
+          "at": 1800000000000,
+          "server": 1800000000000,
+          "want_last": 1800000100001,
+          "want_offset": -100000
+        },
+        {
+          "do": "stamp",
+          "at": 1800000000001,
+          "want": 1800000100002,
+          "want_last": 1800000100002,
+          "want_offset": -100000
+        }
+      ]
+    },
+    {
+      "name": "a received stamp far ahead is pulled back by the next sync",
+      "skew": 0,
+      "steps": [
+        {
+          "do": "receive",
+          "ts": 1800003600000,
+          "want_last": 1800003600000,
+          "want_offset": 0
+        },
+        {
+          "do": "stamp",
+          "at": 1800000000000,
+          "want": 1800003600001,
+          "want_last": 1800003600001,
+          "want_offset": 0
+        },
+        {
+          "do": "observe",
+          "at": 1800000000000,
+          "server": 1800000000000,
+          "want_last": 1800000000000,
+          "want_offset": 0
+        },
+        {
+          "do": "stamp",
+          "at": 1800000000000,
+          "want": 1800000000001,
+          "want_last": 1800000000001,
+          "want_offset": 0
+        }
+      ]
+    }
+  ],
+  "wins": [
+    {
+      "ts": 1,
+      "device": "a",
+      "existing": null,
+      "want": true
+    },
+    {
+      "ts": 2,
+      "device": "a",
+      "existing": {
+        "ts": 1,
+        "device": "z"
+      },
+      "want": true
+    },
+    {
+      "ts": 1,
+      "device": "z",
+      "existing": {
+        "ts": 2,
+        "device": "a"
+      },
+      "want": false
+    },
+    {
+      "ts": 5,
+      "device": "b",
+      "existing": {
+        "ts": 5,
+        "device": "a"
+      },
+      "want": true
+    },
+    {
+      "ts": 5,
+      "device": "a",
+      "existing": {
+        "ts": 5,
+        "device": "b"
+      },
+      "want": false
+    },
+    {
+      "ts": 5,
+      "device": "a",
+      "existing": {
+        "ts": 5,
+        "device": "a"
+      },
+      "want": false
+    },
+    {
+      "ts": 5,
+      "device": "B",
+      "existing": {
+        "ts": 5,
+        "device": "a"
+      },
+      "want": false
+    },
+    {
+      "ts": 5,
+      "device": "a1",
+      "existing": {
+        "ts": 5,
+        "device": "a"
+      },
+      "want": true
+    }
+  ]
+}
