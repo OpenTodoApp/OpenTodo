@@ -99,7 +99,7 @@ helm upgrade opentodo oci://ghcr.io/opentodoapp/charts/opentodo \
 
 The image tag follows the chart, so a pod only changes when you upgrade: nothing moves under you. Migrations run when the new pod starts. There are no down-migrations, so back up first. `helm rollback` returns to the previous chart, but not to the previous database.
 
-Everything OpenTodo stores is on the PersistentVolumeClaim (`opentodo` unless you set `existingClaim`). The image has no shell, so `kubectl exec` and `kubectl cp` do not work. Back up with scheduled backups in OpenTodo's **Settings → Server**, ideally to S3 or WebDAV, outside the cluster (see [Backups](../backups.md)), or with snapshots of the volume if your storage supports them.
+Everything OpenTodo stores is on the PersistentVolumeClaim (`opentodo` unless you set `existingClaim`). The image has no shell, so `kubectl exec` and `kubectl cp` do not work. Back up with scheduled backups in OpenTodo's **Settings → Server → Backups**, ideally to S3 or WebDAV, outside the cluster (see [Backups](../backups.md)), or with snapshots of the volume if your storage supports them.
 
 `helm uninstall` keeps the PersistentVolumeClaim and your data. Delete it with `kubectl --namespace opentodo delete pvc opentodo` when you mean it.
 
