@@ -4,6 +4,14 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- **An accessibility statement.** [Accessibility](docs/accessibility.md) says how far OpenTodo meets WCAG 2.2 Level AA, criterion by criterion and screen by screen, how each part is tested, and how to report a barrier (answered within 10 business days). It claims partial conformance for now: keyboard-only use and 200% zoom with large text pass on every core screen, while the passes with NVDA, VoiceOver and TalkBack are still to be done on real devices ([audit record](docs/accessibility/audit-1.0.0.md)). A release is refused when the audit is more than a year old, and 1.0.0 until those passes are recorded. Linked from Help.
+
+### Fixed
+
+- **The browser extension's settings page: the Save button is readable.** White on the lighter green fell below the contrast minimum; it now uses the popup's colours (extension 0.6.4).
+
 ## [0.23.0] - 2026-11-06
 
 OpenTodo 0.23.0 is about **trust**. It publishes a [threat model, a security retrospective and a disclosure policy](docs/security/), with documented limits, and ships the hardening they called for: OAuth refresh tokens rotate, AI agents get per-account limits and can no longer build or run routines that send data out, first-run setup under a domain asks for the setup code, cookie writes need Fetch Metadata, and imports, backups and single sign-on are stricter (see Security). The MCP endpoint now speaks **OAuth**, so apps such as ChatGPT, claude.ai and Gemini connect by URL. Also new: **Simplified Chinese**, a **new logo**, calendar events in Upcoming, a subtask's full path, comment webhooks, keyboard grouping and sorting, every drag with a one-click alternative, and the 1.0 docs (self-hosting handbook, configuration reference, contributor guide, roadmap). Many fixes come from your reports, including imported tasks no longer showing their import id.
