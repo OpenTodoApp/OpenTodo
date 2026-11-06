@@ -398,3 +398,67 @@ export function calendarGridRoom() {
   }
   return out
 }
+
+// Safe areas (GitHub issue 973): with `viewport-fit=cover` the page runs under the
+// status bar, the notch or Dynamic Island, the home indicator and, in landscape, the
+// rounded sides. No control that can be tapped may sit in those strips: a control is
+// reported when the topmost element at a point of it inside a strip is the control
+// itself (not a bar's padding drawn over it). Content that can still scroll away from
+// a strip is left alone: rows under the home indicator before the end of a list, a
+// strip of cards scrolled sideways. `insets` is { top, right, bottom, left } in px.
+export function insetOverlaps([rootSel, insets]) {
+  const root = rootSel ? document.querySelector(rootSel) : document.body
+  if (!root) return []
+  const vw = window.innerWidth, vh = window.innerHeight
+  const sel = 'a[href], button, [role="button"], input:not([type="hidden"]), select, textarea, summary, [role="option"], [role="menuitem"], [role="tab"], [role="checkbox"], [role="switch"], [contenteditable="true"]'
+  const scrollable = (a, axis) => {
+    const cs = getComputedStyle(a)
+    const ov = axis === 'y' ? cs.overflowY : cs.overflowX
+    if (a === document.scrollingElement) return axis === 'y' ? a.scrollHeight > a.clientHeight + 1 : a.scrollWidth > a.clientWidth + 1
+    return /(auto|scroll)/.test(ov) && (axis === 'y' ? a.scrollHeight > a.clientHeight + 1 : a.scrollWidth > a.clientWidth + 1)
+  }
+  // Whether scrolling can still move `el` out of the strip on `side`.
+  const canLeave = (el, side) => {
+    const axis = side === 'top' || side === 'bottom' ? 'y' : 'x'
+    for (let a = el.parentElement; a; a = a.parentElement) {
+      if (!scrollable(a, axis)) { if (getComputedStyle(a).position === 'fixed') return false; continue }
+      if (side === 'top') return a.scrollTop > 1
+      if (side === 'left') return a.scrollLeft > 1
+      if (side === 'bottom') return a.scrollTop + a.clientHeight < a.scrollHeight - 1
+      return a.scrollLeft + a.clientWidth < a.scrollWidth - 1
+    }
+    const d = document.scrollingElement
+    if (axis === 'y' && scrollable(d, 'y')) return side === 'top' ? d.scrollTop > 1 : d.scrollTop + d.clientHeight < d.scrollHeight - 1
+    return false
+  }
+  const strips = {
+    top: { x0: 0, x1: vw, y0: 0, y1: insets.top ?? 0 },
+    bottom: { x0: 0, x1: vw, y0: vh - (insets.bottom ?? 0), y1: vh },
+    left: { x0: 0, x1: insets.left ?? 0, y0: 0, y1: vh },
+    right: { x0: vw - (insets.right ?? 0), x1: vw, y0: 0, y1: vh },
+  }
+  const out = []
+  const seen = new Set()
+  for (const el of root.querySelectorAll(sel)) {
+    if (el.closest('[aria-hidden="true"], [inert], .sr-only')) continue
+    const cs = getComputedStyle(el)
+    if (cs.visibility === 'hidden' || cs.display === 'none' || cs.pointerEvents === 'none') continue
+    const r = el.getBoundingClientRect()
+    if (r.width < 1 || r.height < 1) continue
+    for (const [side, s] of Object.entries(strips)) {
+      if (s.x1 - s.x0 <= 0 || s.y1 - s.y0 <= 0) continue
+      // The part of the control inside the strip (a pixel of tolerance).
+      const x0 = Math.max(r.left, s.x0), x1 = Math.min(r.right, s.x1), y0 = Math.max(r.top, s.y0), y1 = Math.min(r.bottom, s.y1)
+      if (x1 - x0 < 2 || y1 - y0 < 2) continue
+      const hit = document.elementFromPoint((x0 + x1) / 2, (y0 + y1) / 2)
+      if (!hit || !(el === hit || el.contains(hit))) continue
+      if (canLeave(el, side)) continue
+      const name = (el.getAttribute('aria-label') || el.textContent || el.getAttribute('placeholder') || el.getAttribute('name') || el.tagName).trim().replace(/\s+/g, ' ').slice(0, 40)
+      const key = `${side}:${el.tagName}:${name}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      out.push(`"${name}" (${el.tagName.toLowerCase()}) is in the ${side} safe area (${Math.round(r.left)},${Math.round(r.top)} ${Math.round(r.width)}×${Math.round(r.height)}px; the strip is ${side === 'top' || side === 'bottom' ? Math.round(s.y1 - s.y0) : Math.round(s.x1 - s.x0)} px)`)
+    }
+  }
+  return out
+}

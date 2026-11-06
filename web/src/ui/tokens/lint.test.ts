@@ -13,7 +13,10 @@ const app = import.meta.glob<string>(['../../app/**/*.tsx', '!../../app/**/*.tes
   query: '?raw', import: 'default', eager: true,
 })
 
-const PALETTE = 'slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose'
+/** Every source file of the app (the safe-area rule). */
+const code = import.meta.glob<string>(['../../**/*.{ts,tsx}', '!../../**/*.test.{ts,tsx}'], { query: '?raw', import: 'default', eager: true })
+
+const PALETTE ='slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose'
 const UTILITY = 'bg|text|border|ring|fill|stroke|outline|divide|placeholder|decoration|shadow|accent|caret|from|via|to'
 const RAW_CLASS = new RegExp(`(?<![\\w-])(?:[\\w-]+:)*(?:${UTILITY})-(?:(?:${PALETTE})-\\d{2,3}|white|black)(?:\\/\\d+)?(?![\\w-])`, 'g')
 const HEX = /#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?(?:[0-9a-fA-F]{2})?\b/g
@@ -194,6 +197,18 @@ describe('token lint', () => {
 
   // Stories are examples (the foundations show the legacy classes on purpose); the rules below skip them.
   const uiCode = Object.entries(ui).filter(([path]) => !/\.stories\.tsx$/.test(path))
+
+  it('safe areas are read through the tokens only (GitHub issue 973)', () => {
+    // index.css reads env() once, into --safe-top/-right/-bottom/-left; everything else pads
+    // by the tokens, so the safe-area check can set them on an engine that cannot emulate insets.
+    const declared = css.split('\n').filter((l) => l.includes('env(safe-area-inset'))
+    expect(declared.map((l) => l.trim())).toEqual([
+      '--safe-top: env(safe-area-inset-top, 0px);', '--safe-right: env(safe-area-inset-right, 0px);',
+      '--safe-bottom: env(safe-area-inset-bottom, 0px);', '--safe-left: env(safe-area-inset-left, 0px);',
+    ])
+    const found = Object.entries(code).flatMap(([path, src]) => src.split('\n').flatMap((l, i) => l.includes('env(safe-area-inset') ? [`${path}:${i + 1}`] : []))
+    expect(found).toEqual([])
+  })
 
   it('shared UI uses no raw sizes, radii, shadows or legacy classes', () => {
     const found = uiCode.flatMap(([path, src]) => rawStyles(path.replace(/^\.\.\//, 'src/ui/'), src)).map(format)

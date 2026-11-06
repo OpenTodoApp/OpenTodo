@@ -241,6 +241,10 @@ Text cut with an ellipsis outside a control uses `TruncatedText` (`web/src/ui/Tr
 
 A block reads `data-hue`: the soft hue as fill, a 3 px solid edge, `text-strong`. `--past` mixes the fill toward the surface and uses `text-faint` (measured per hue in the contrast pairs); `--late` takes the danger pair whatever the hue.
 
+### Safe areas
+
+`index.html` sets `viewport-fit=cover`, so the app runs under the status bar, the notch or Dynamic Island, the home indicator and, in landscape, the rounded sides of the screen. `index.css` reads `env(safe-area-inset-*)` once, into the tokens `--safe-top`, `--safe-right`, `--safe-bottom` and `--safe-left`, with the utilities `pt-safe`, `pb-safe`, `pl-safe`, `pr-safe` and `px-safe`. Every surface that touches an edge of the viewport pads by them where it touches it: the phone bar and full-screen sheets at the top, the tab bar, bottom sheets, sticky footers and toasts at the bottom, the shell, side panels and dialog overlays at the sides. With a minimum, write the token in an arbitrary value (`pt-[max(0.5rem,var(--safe-top))]`). Code that places a panel itself reads the insets with `safeInsets()` (`web/src/ui/overlay/safeArea.ts`); `place()` keeps anchored popovers clear of them. Nothing else reads `env()` (the token lint fails on it), and `make safe-area-check` (`scripts/e2e-safe-area.mjs`) opens every screen and overlay as the installed app on a phone with a Dynamic Island, in portrait and landscape, and fails when a control sits in an inset.
+
 ## The workbench
 
 Storybook is a development tool only: it adds nothing to `internal/web/dist`, the Go binary or the container image, and a unit test fails if the production build contains Storybook code.
