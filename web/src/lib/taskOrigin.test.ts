@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import vectors from '../../../internal/origin/testdata/origin_vectors.json'
 import type { OpenTodoShell } from './shell'
-import { cutOriginTitle, obsidianLink, obsidianURL, openOrigin, originFromUrl, originIcon, originLabel, originLink, originMatches, originOf, obsidianPlace } from './taskOrigin'
+import { cutOriginTitle, importApp, originText, obsidianLink, obsidianURL, openOrigin, originFromUrl, originIcon, originLabel, originLink, originMatches, originOf, obsidianPlace } from './taskOrigin'
 import type { Origin } from './types'
 
 describe('originFromUrl (shared vectors with internal/origin)', () => {
@@ -25,6 +25,30 @@ describe('web mail origins (shared label vectors with internal/origin)', () => {
   }
   it('an email origin without a link still reads as nothing (callers show "Email")', () => {
     expect(originLabel({ kind: 'email', provider: 'gmail', id: '1' })).toBe('')
+  })
+})
+
+// GitHub issue 945: an import's id is the importer's duplicate-detection key, never a label.
+describe('imported origins read as their app', () => {
+  const providers = ['todoist', 'things', 'ticktick', 'google-tasks', 'trello', 'asana', 'microsoft-todo', 'apple-reminders', 'anydo', 'omnifocus', 'vikunja', 'notion', 'super-productivity', 'tududi']
+  it('never returns the import key, for every profile and without a provider', () => {
+    for (const provider of [...providers, 'someapp', undefined]) {
+      const o: Origin = { kind: 'import', provider, id: 'dfc92cb10aed05a4:1', url: provider === 'trello' ? 'https://trello.com/c/AbCd1234' : undefined }
+      expect(originLabel(o)).not.toContain('dfc92cb1')
+      expect(originText(o)).not.toContain('dfc92cb1')
+    }
+  })
+  it('names the app, "Imported from …" in words', () => {
+    expect(originLabel({ kind: 'import', provider: 'todoist', id: 'x:1' })).toBe('Todoist')
+    expect(originText({ kind: 'import', provider: 'todoist', id: 'x:1' })).toBe('Imported from Todoist')
+    expect(originText({ kind: 'import', provider: 'microsoft-todo', id: 'x' })).toBe('Imported from Microsoft To Do')
+    expect(originText({ kind: 'import', id: 'x' })).toBe('Imported')
+    expect(importApp('constructor')).toBe('constructor')
+  })
+  it('keeps the meaningful labels of the other kinds', () => {
+    expect(originText({ kind: 'issue', provider: 'github', id: 'o/r#7', url: 'https://github.com/o/r/issues/7' })).toBe('o/r#7')
+    expect(originText({ kind: 'url', url: 'https://www.example.org/post' })).toBe('example.org')
+    expect(originText({ kind: 'email', id: '<a1@mail.example>' })).toBe('Email')
   })
 })
 
