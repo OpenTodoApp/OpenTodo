@@ -162,6 +162,31 @@ export function entryTree(sorted, tree) {
 /** Every page in sidebar order, for previous and next. */
 export const navOrder = (entries) => entries.flatMap((e) => e.items.flatMap((i) => [i.page, ...i.children]))
 
+// ----------------------------------------------------------------- SEO
+
+/**
+ * A meta description of at most `max` characters: whole when it fits; otherwise cut at the
+ * last sentence end after 80 characters, else at the last word with "…".
+ */
+export function metaDescription(text, max = 160) {
+  const t = String(text ?? '').replace(/\s+/g, ' ').trim()
+  if (t.length <= max) return t
+  const head = t.slice(0, max)
+  const ends = [...head.matchAll(/[.!?](?=\s|$)/g)].map((m) => m.index + 1).filter((i) => i > 80)
+  if (ends.length) return head.slice(0, ends[ends.length - 1])
+  const cut = t.slice(0, max - 1)
+  const space = cut.lastIndexOf(' ')
+  return `${(space > 0 ? cut.slice(0, space) : cut).replace(/[\s,;:–—-]+$/, '')}…`
+}
+
+/** Structured data as an inline script: JSON with `<` escaped so no text closes the element. */
+export const jsonLdScript = (data) => `<script type="application/ld+json">${JSON.stringify(data).replace(/</g, '\\u003c')}</script>`
+
+/** BreadcrumbList from [name, path] pairs, absolute on the site. */
+export function breadcrumbLd(trail) {
+  return { '@type': 'BreadcrumbList', itemListElement: trail.map(([name, path], i) => ({ '@type': 'ListItem', position: i + 1, name, item: SITE_URL + path })) }
+}
+
 /**
  * Loads every page: { rel, slug, fm, body, errors }. The landing page (README.md)
  * is included with fm.layout === 'index'.
