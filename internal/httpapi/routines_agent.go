@@ -53,8 +53,8 @@ func (rt routineTools) Run(ctx context.Context, uid, ruleID, runID string) (any,
 	return run, err == nil, err
 }
 
-func (rt routineTools) RunNow(ctx context.Context, uid, ruleID, taskID string, test bool) (map[string]any, int, error) {
-	res, err := rt.s.rules.RunNow(ctx, uid, rules.RunRequest{RuleID: ruleID, RunID: ids.New(), TaskID: taskID, Test: test, Source: rules.SourceMCP})
+func (rt routineTools) RunNow(ctx context.Context, uid, ruleID, taskID string, test bool, maxWrites int) (map[string]any, int, error) {
+	res, err := rt.s.rules.RunNow(ctx, uid, rules.RunRequest{RuleID: ruleID, RunID: ids.New(), TaskID: taskID, Test: test, Source: rules.SourceMCP, MaxWrites: maxWrites})
 	if err != nil {
 		code := "run_refused"
 		switch {

@@ -316,7 +316,6 @@ Every item below is in the CHANGELOG's Security section of its release. Most wer
 
 These are known and tracked as follow-up tasks of the OpenSpec change `external-security-review`. [Security limits](limits.md) lists what is not protected by design.
 
-- **Key derivation bounds.** The client accepts key records from 100,000 PBKDF2 iterations, while the server stores only 600,000 or more.
 - **Public routes in the route matrix.** The matrix skips public routes, which rely on their own tests.
 - **Host mode.** The assistant's concurrency limit is per tenant, not per host.
 - **Write paths are a convention.** Nothing mechanically enforces that REST handlers write with `ApplyStrict`, or that no package writes synced rows directly.
