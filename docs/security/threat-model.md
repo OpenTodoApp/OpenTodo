@@ -474,10 +474,10 @@ Each item of the [review scope](review-scope.md) has a section here: where the c
 - **Code:** `internal/mcp`, `internal/agenttools`, `internal/httpapi/mcp.go`, `internal/mcpoauth`, `internal/httpapi/mcp_oauth.go`.
 - **Covered in:** [Malicious AI agent or prompt injection](#malicious-ai-agent-or-prompt-injection).
 - **OAuth for MCP:**
-  - Dynamic registration is allowed for Google's connector redirects only.
+  - Dynamic registration is allowed only for the redirect addresses of the known connector platforms (Gemini, ChatGPT, Claude; `mcpoauth.Platforms`), all of one platform, so only those providers' own hosts can receive a code. An owner can add a custom address only as an exact `https` address; a stored address matches more than itself only when it is a platform's own prefix, followed by exactly one segment (OpenSpec `mcp-oauth-connector-redirects`).
   - Consent is required, with PKCE S256 and single-use codes.
   - Refresh tokens rotate on every refresh. A refresh token that was already exchanged revokes the whole grant and records `mcp_oauth.refresh_reused` (OpenSpec `mcp-oauth-refresh-rotation`).
-  - Tests: `TestMCPOAuthAuthorizeNeedsConsent`, `TestMCPOAuthDynamicRegistrationIsGoogleOnly`, `TestMCPOAuthRevokeIsScopedToTheClient`, `TestMCPOAuthRefreshRotates`, `TestMCPOAuthRefreshReuseRevokesTheGrant`, `TestMCPOAuthRefreshReuseNeedsTheClient`, `TestMCPOAuthConcurrentRotatingRefreshRevokes`.
+  - Tests: `TestMCPOAuthAuthorizeNeedsConsent`, `TestMCPOAuthDynamicRegistrationIsGoogleOnly`, `TestMCPOAuthDynamicRegistrationPlatforms`, `TestMCPOAuthCustomRedirect`, `TestLookAlikeRedirectsAreRefused`, `TestMCPOAuthRevokeIsScopedToTheClient`, `TestMCPOAuthRefreshRotates`, `TestMCPOAuthRefreshReuseRevokesTheGrant`, `TestMCPOAuthRefreshReuseNeedsTheClient`, `TestMCPOAuthConcurrentRotatingRefreshRevokes`.
   - **Not defended:** a client registered only for Google's connector addresses (the Gemini preset and every dynamic client) keeps one refresh token, because Google's guide for connected apps requires the same token back on a refresh. It lasts 180 days from the last refresh, and deleting the client or revoking the grant stops it (`TestMCPOAuthGoogleClientKeepsItsRefreshToken`).
 
 ### Assistant tool loop
