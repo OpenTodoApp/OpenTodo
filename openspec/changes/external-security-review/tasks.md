@@ -35,7 +35,7 @@
 - [x] 5.4 Extend `TestEveryRouteDeclaresAPolicy`'s source scan to the route packages under `internal/httpapi/` (`davroutes`, `maproutes`, `speech`); verify `go test ./internal/httpapi`
 - [x] 5.5 Align the client's accepted PBKDF2 iteration range (100,000 minimum) with the server's (600,000); verify `npm test` (an OpenSpec change if a device could be locked out by it)
 - [ ] 5.6 A static check that REST handlers write through `ApplyStrict` and that no package outside `internal/sync` writes synced tables; verify `go test ./...`
-- [ ] 5.7 An automated origin test of the iOS bridge, like the Android `BridgeFixtureTest`
+- [x] 5.7 An automated origin test of the iOS bridge, like the Android `BridgeFixtureTest`
 - [x] 5.8 A randomized convergence test on the TypeScript client, or a shared trace that pins the Go property test's model of `hlc.ts`; verify `npm test`
 - [x] 5.9 A test that session and API token secrets are stored only as hashes (`TestSecretsStoredOnlyAsHashes`); verify `go test ./internal/auth`
 
