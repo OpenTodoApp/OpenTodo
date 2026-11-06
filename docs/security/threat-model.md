@@ -75,7 +75,7 @@ The model describes the code on `main` at the time of writing. An external revie
 
 **Verified by.**
 - `TestEveryRouteDeclaresAPolicy`, `TestSecurityRoutePolicies` (`internal/httpapi/policy_test.go`).
-- `TestRouteMatrix` (`internal/httpapi/route_matrix_test.go`): every route, anonymous, with each token scope, as a member, as a viewer, cross-site and with a stale session.
+- `TestRouteMatrix` (`internal/httpapi/route_matrix_test.go`): every route, anonymous, with each token scope, as a member, as a viewer, cross-site and with a stale session. Public routes are called anonymously, with the owner's and a member's session, with each token scope and cross-site, and each answer is checked against what the route's reason promises (`route_matrix_public_test.go`); a public route without a declared promise fails the test.
 - `TestLoginRateLimit`, `TestCrossSiteCookieWritesAreRejected` (`server_test.go`), including writes without `Origin` or `Sec-Fetch-Site`; the route matrix's pass of a form post with neither header on every write route.
 - `TestSecurityHeaders` (`security_headers_test.go`): no framing, no sniffing, scripts only from the server.
 - `TestAccountLockout`, `TestForwardedForOnlyFromTrustedPeers`, `TestOriginMustMatchBaseURL` (`client_identity_test.go`).
@@ -87,7 +87,8 @@ The model describes the code on `main` at the time of writing. An external revie
 - A JSON write with neither `Origin` nor `Sec-Fetch-Site` is accepted, so that non-browser clients signed in with a password (`ot login`) keep working. From another site it would need a CORS preflight, which the server never grants.
 - Rate limits live in memory, per process. A restart clears them.
 - Anyone who knows an email address can keep that account's password sign-in locked. Passkeys, single sign-on and open sessions keep working.
-- `TestRouteMatrix` skips public routes, which are tested by their own feature tests.
+- The route matrix checks a public route's answer against its declared promise with a wrong secret and with the credentials it holds; what a valid secret unlocks is tested by each feature's own tests.
+- A sign-out request naming neither `Origin` nor `Sec-Fetch-Site` is accepted, so `ot logout` keeps working; a browser too old to send either could be made to sign out from a same-site page.
 
 ### Signed-in member of a shared project
 
