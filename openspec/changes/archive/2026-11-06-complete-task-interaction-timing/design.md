@@ -28,4 +28,12 @@ No data model, op, sync, API or app change; no dependency; no bundle or binary c
 
 ## Results
 
-Recorded from the CI runs in the pull request (task 2.1).
+Three Performance workflow runs on CI (2026-11-06, pull request #964), each the median of five runs of the p95 of ten completions; the earlier timer measured the same completions:
+
+| Run (runner, desktop cold start) | Desktop, interaction | Desktop, earlier timer | Phone, interaction | Phone, earlier timer |
+| --- | --- | --- | --- | --- |
+| 1 (fast, 342 ms) | 80 ms | 119 ms | 152 ms | 174 ms |
+| 2 (slow, 468 ms) | 80 ms | 121 ms | 168 ms | 201 ms |
+| 3 (slow, 473 ms) | 80 ms | 121 ms | 160 ms | 174 ms |
+
+Every run is within the limits (100 and 200 ms), so the desktop limit stays at 100 ms and the owner's fallback (130 ms) is not used. Per completion, the interaction is close to the timer for the later samples and well below it for the first one or two of a run (for example 56 against 119 ms): those were the samples where the timer's `setTimeout` waited behind other work after the tick had been presented (#854). In the phone profile the two are within a few ms of each other. 149 of 150 completions passed the D2 check; the one flagged in run 3 had picked up an entry of an earlier input that started after the benchmark's start time, so the entries are now taken from the click's own input time on.

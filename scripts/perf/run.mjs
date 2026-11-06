@@ -135,7 +135,10 @@ async function interaction(page, trigger, wait) {
   return page.evaluate(([t0, frame]) => new Promise((resolve) => {
     const until = performance.now() + 1000
     const look = () => {
-      const mine = window.__perf.events.filter((e) => e.start >= t0)
+      // From the input that started the measurement on (an entry's start is its event's timeStamp):
+      // an earlier input after t0 (one run on CI logged one 255 ms before the click) is not this interaction.
+      const from = Math.max(t0, window.__perf.lastInput - 1)
+      const mine = window.__perf.events.filter((e) => e.start >= from)
       if (!mine.length && performance.now() < until) return void setTimeout(look, 20)
       const seen = window.__perf.seenAt
       if (!mine.length) return resolve({ ms: 16, frame, seen: seen - t0 })
