@@ -1,0 +1,108 @@
+{
+ "reason": "Every drag, resize and swipe of the web app and the way to do the same with one click or tap, without dragging (WCAG 2.2 2.5.7 Dragging movements, 2.5.1 Pointer gestures; OpenSpec change accessibility-aa D3). An element that starts one carries data-drag-id; web/src/lib/a11y/dragAlternatives.test.ts checks this map against the source. An alternative is a menu item (`item`: its id in that file's menu) or a control (`contains`: a text the file must hold). The task panel opens with a click on any task; its When control and facets set a task's dates, time, duration, section and parent.",
+ "sources": [
+  { "id": "task-row", "what": "A list or board row: reorder within its list, move to another section or board column, drop on a row to make it a subtask, drop on a sidebar project or label; on touch, swipe to complete or schedule.", "alternatives": [
+   { "file": "web/src/app/bulk/BulkActions.tsx", "item": "move-up" },
+   { "file": "web/src/app/bulk/BulkActions.tsx", "item": "move-down" },
+   { "file": "web/src/app/bulk/BulkActions.tsx", "item": "move-top" },
+   { "file": "web/src/app/bulk/BulkActions.tsx", "item": "section" },
+   { "file": "web/src/app/bulk/BulkActions.tsx", "item": "move" },
+   { "file": "web/src/app/bulk/BulkActions.tsx", "item": "labels" },
+   { "file": "web/src/app/bulk/BulkActions.tsx", "item": "complete" },
+   { "file": "web/src/app/bulk/BulkActions.tsx", "item": "schedule" },
+   { "file": "web/src/app/task-detail/Facets.tsx", "item": "parent" }
+  ] },
+  { "id": "compact-row", "what": "A task in the Plan, the month and the calendar's lanes: drag to another day or time.", "alternatives": [
+   { "file": "web/src/app/task-detail/WhenControl.tsx", "contains": "data-when-segment={id}" },
+   { "file": "web/src/app/bulk/BulkActions.tsx", "item": "pick-date" }
+  ] },
+  { "id": "calendar-block", "what": "A timed block in Day and Week: move it, or resize its start or end.", "alternatives": [
+   { "file": "web/src/app/task-detail/WhenControl.tsx", "contains": "data-when-segment={id}" },
+   { "file": "web/src/app/EstimateField.tsx", "contains": "aria-label={t('Estimate')}" }
+  ] },
+  { "id": "calendar-lane-task", "what": "An all-day task in the calendar's day lane: drag to another day or into the hours.", "alternatives": [
+   { "file": "web/src/app/task-detail/WhenControl.tsx", "contains": "data-when-segment={id}" }
+  ] },
+  { "id": "calendar-lane-extend", "what": "The end of an all-day task in the lane: drag to make it span days.", "alternatives": [
+   { "file": "web/src/app/task-detail/Facets.tsx", "item": "when" }
+  ] },
+  { "id": "calendar-overflow-task", "what": "A task in a day's +N more list: drag to another day or time.", "alternatives": [
+   { "file": "web/src/app/task-detail/WhenControl.tsx", "contains": "data-when-segment={id}" }
+  ] },
+  { "id": "calendar-slot", "what": "A time sector's slot in Day and Week: move it to another time.", "alternatives": [
+   { "file": "web/src/app/task-detail/WhenControl.tsx", "contains": "'sector'" }
+  ] },
+  { "id": "calendar-slot-task", "what": "A task inside a time sector's slot: drag it out to a time.", "alternatives": [
+   { "file": "web/src/app/task-detail/WhenControl.tsx", "contains": "data-when-segment={id}" }
+  ] },
+  { "id": "sector-task", "what": "A task in the Plan panel's time sector groups: drag onto a day or time.", "alternatives": [
+   { "file": "web/src/app/task-detail/WhenControl.tsx", "contains": "data-when-segment={id}" }
+  ] },
+  { "id": "month-task", "what": "A task in the month view: drag to another day.", "alternatives": [
+   { "file": "web/src/app/task-detail/WhenControl.tsx", "contains": "data-when-segment={id}" }
+  ] },
+  { "id": "span-band", "what": "A task that spans days in the month or week: drag to move the whole span.", "alternatives": [
+   { "file": "web/src/app/task-detail/Facets.tsx", "item": "when" },
+   { "file": "web/src/app/task-detail/WhenControl.tsx", "contains": "data-when-segment={id}" }
+  ] },
+  { "id": "span-band-start", "what": "The first day of a span: drag to change the start.", "alternatives": [
+   { "file": "web/src/app/task-detail/Facets.tsx", "item": "when" }
+  ] },
+  { "id": "span-band-end", "what": "The last day of a span: drag to change the end.", "alternatives": [
+   { "file": "web/src/app/task-detail/WhenControl.tsx", "contains": "data-when-segment={id}" }
+  ] },
+  { "id": "month-span-extend", "what": "The end of a task in the month: drag to make it span days.", "alternatives": [
+   { "file": "web/src/app/task-detail/Facets.tsx", "item": "when" }
+  ] },
+  { "id": "timeline-unscheduled", "what": "A task without dates beside the timeline: drag onto the timeline to give it dates.", "alternatives": [
+   { "file": "web/src/app/task-detail/WhenControl.tsx", "contains": "data-when-segment={id}" }
+  ] },
+  { "id": "timeline-bar", "what": "A task's bar on the timeline: drag to move its dates.", "alternatives": [
+   { "file": "web/src/app/task-detail/WhenControl.tsx", "contains": "data-when-segment={id}" }
+  ] },
+  { "id": "timeline-bar-start", "what": "A bar's start edge: drag to change the start date.", "alternatives": [
+   { "file": "web/src/app/task-detail/Facets.tsx", "item": "when" }
+  ] },
+  { "id": "timeline-bar-end", "what": "A bar's end edge: drag to change the due date.", "alternatives": [
+   { "file": "web/src/app/task-detail/WhenControl.tsx", "contains": "data-when-segment={id}" }
+  ] },
+  { "id": "sidebar-project", "what": "A project in the sidebar: reorder among its siblings, or drop on another to nest it.", "alternatives": [
+   { "file": "web/src/app/ProjectRowMenu.tsx", "item": "up" },
+   { "file": "web/src/app/ProjectRowMenu.tsx", "item": "down" },
+   { "file": "web/src/app/ProjectHeader.tsx", "item": "move" }
+  ] },
+  { "id": "label", "what": "A label's handle in the sidebar and on Labels: reorder.", "alternatives": [
+   { "file": "web/src/app/LabelsView.tsx", "item": "up" },
+   { "file": "web/src/app/LabelsView.tsx", "item": "down" }
+  ] },
+  { "id": "nav-destination", "what": "A sidebar destination in Settings → Appearance: reorder.", "alternatives": [
+   { "file": "web/src/app/AppearanceSection.tsx", "item": "up" },
+   { "file": "web/src/app/AppearanceSection.tsx", "item": "down" }
+  ] },
+  { "id": "field-definition", "what": "A custom field in the Fields dialog: reorder.", "alternatives": [
+   { "file": "web/src/app/FieldsDialog.tsx", "contains": "t('Move {name} up'" },
+   { "file": "web/src/app/FieldsDialog.tsx", "contains": "t('Move {name} down'" }
+  ] },
+  { "id": "frame", "what": "A frame in the Frames dialog: reorder.", "alternatives": [
+   { "file": "web/src/app/calendar/FramesDialog.tsx", "contains": "<MoveHandle" }
+  ] },
+  { "id": "objective", "what": "An objective card: reorder within its period.", "alternatives": [
+   { "file": "web/src/app/objectives/ObjectiveCards.tsx", "contains": "<MoveHandle" }
+  ] },
+  { "id": "rotation-member", "what": "A person in a task's turn order: reorder.", "alternatives": [
+   { "file": "web/src/app/task-detail/RotationEditor.tsx", "contains": "<MoveHandle" }
+  ] },
+  { "id": "sidebar-resizer", "what": "The sidebar's edge: drag to resize it.", "alternatives": [
+   { "file": "web/src/app/Shell.tsx", "contains": "SIDEBAR_MAX_REM ? SIDEBAR_DEFAULT_REM : SIDEBAR_MAX_REM" }
+  ] },
+  { "id": "panel-resizer", "what": "The task panel's edge: drag to resize it.", "alternatives": [
+   { "file": "web/src/app/sidePanel.tsx", "contains": "else if (ev.type === 'pointerup') apply(" }
+  ] },
+  { "id": "bookmarklet", "what": "The capture bookmarklet: drag it to the bookmarks bar.", "alternatives": [
+   { "file": "web/src/app/CaptureSettings.tsx", "contains": "t('Copy bookmarklet')" }
+  ] }
+ ],
+ "notDrags": [
+  { "file": "web/src/app/shortcuts/Spotlight.tsx", "contains": "if (e.target === e.currentTarget) { e.preventDefault(); cancel() }", "reason": "A press on the spotlight's backdrop closes it; nothing is dragged." }
+ ]
+}

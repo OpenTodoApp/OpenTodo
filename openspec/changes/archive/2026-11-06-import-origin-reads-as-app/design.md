@@ -26,4 +26,4 @@ No chrome, destination, scroll region or shortcut changes. A row from 40 rem giv
 
 ## Size
 
-A few lines of TypeScript, CSS and Go; no dependency. The first load grows about 0.7 KB gzip (the app-name table and `lib/originText`); the budget goes from 678 to 679 KB (web/bundle-budget.json).
+A few lines of TypeScript, CSS and Go; no dependency. The first load grows about 0.7 KB gzip (the app-name table and `lib/originText`); the budget goes up by 1 KB (to 680 KB after main's own raise to 679 KB) (web/bundle-budget.json).

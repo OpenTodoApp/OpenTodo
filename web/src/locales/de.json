@@ -7160,5 +7160,9 @@
   "Order by title": "Nach Titel sortieren",
   "Order by: {name} · {direction}": "Sortieren nach: {name} · {direction}",
   "Reverse order": "Reihenfolge umkehren",
-  "Reverse the order: ascending or descending": "Reihenfolge umkehren: aufsteigend oder absteigend"
+  "Reverse the order: ascending or descending": "Reihenfolge umkehren: aufsteigend oder absteigend",
+  "Reorder": "Reihenfolge",
+  "Move to top": "Ganz nach oben",
+  "Move to bottom": "Ganz nach unten",
+  "Move {name}": "{name} verschieben"
 }

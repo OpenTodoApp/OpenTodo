@@ -25,7 +25,7 @@ interface RowActions {
 /** One task of the planning list: drag it onto a time, or focus it and press s (or Enter). */
 export function PlanRow({ task, actions }: { task: Task; actions: () => RowActions | null }) {
   return (
-    <button
+    <button data-drag-id="sector-task"
       type="button"
       data-tray-task={task.id}
       onPointerDown={(e) => actions()?.onPointerDown(e, task.id)}

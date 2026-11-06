@@ -7,7 +7,7 @@
 // per-field last-writer-wins (design D3). No new fields, no new routes.
 import { db } from './db'
 import { mutateMany, type Change } from './ops'
-import { planMove, planStep, type Placement, type PositionChange } from './ordering'
+import { compareByPosition, planMove, planStep, type Placement, type PositionChange } from './ordering'
 import { buildProjectTree } from './projects'
 import { effectiveSection } from './sections'
 import { canEditProject, canEditTasks, membershipMap, roleOf } from './sharing'
@@ -118,6 +118,24 @@ export async function moveTaskBy(id: string, step: Step): Promise<boolean> {
   if (!plan) return false
   await mutateMany(toChanges('task', plan))
   return true
+}
+
+/**
+ * Where a task sits in its list for the row menu's Move items (accessibility-aa D3, the
+ * single-pointer alternative to dragging a row): first and last among its siblings, or
+ * null when moveTaskBy would refuse it (viewer, completed, not in a list).
+ */
+export async function taskStepEdges(id: string): Promise<{ first: boolean; last: boolean } | null> {
+  const task = await db.tasks.get(id)
+  if (!task || task.deleted_at || task.completed_at) return null
+  if (!(await canReorderTasks(task.project_id))) return null
+  const ctx = await taskContext(task.project_id)
+  const node = ctx.tree.nodes.get(id)
+  if (!node) return null
+  const section = node.parent === null ? effectiveSection(task, ctx.sections) : null
+  const sorted = [...taskSiblings(ctx, node.parent, section)].sort(compareByPosition)
+  const i = sorted.findIndex((s) => s.id === id)
+  return { first: i === 0, last: i === sorted.length - 1 }
 }
 
 interface ProjectContext {
