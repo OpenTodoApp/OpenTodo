@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url'
 import { ENTRIES, entryTree, indexTree, loadPages, pageUrl, renderPage, repoRootFrom, sortPages, versionInfo } from './lib.mjs'
 import { loadShortcuts, shortcutsMarkdown, withShortcuts } from './shortcuts.mjs'
 import { landingHtml, pageHtml, sectionHtml } from './site.mjs'
-import { tokensCss } from '../../../scripts/site-bundle.mjs'
+import { tokensCss } from '../../../scripts/tokens.mjs'
 
 const here = fileURLToPath(import.meta.url)
 const ASSETS = join(dirname(here), 'assets')
