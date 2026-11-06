@@ -26,12 +26,17 @@ export const KDF_PBKDF2_SHA256 = 1
 export const PBKDF2_ITERATIONS = 600_000
 export const MIN_PASSPHRASE_LENGTH = 12
 /**
- * PBKDF2 iteration counts this client accepts from a key record (encryption-state-integrity).
- * The server stores 600,000 and up; a record outside this range came from a broken
- * or hostile server (too few: cheap to brute-force; too many: the device hangs).
- * Mutable only so tests can derive keys quickly.
+ * PBKDF2 iteration counts a key record may carry (encryption-state-integrity,
+ * e2ee-iteration-floor): the same range the server stores, so the floor is the
+ * count this client writes. Every record a server ever accepted is in it.
  */
-export const ITERATION_LIMITS = { min: 100_000, max: 10_000_000 }
+export const ACCEPTED_ITERATIONS = Object.freeze({ min: PBKDF2_ITERATIONS, max: 10_000_000 })
+/**
+ * The range checkRecordParams applies: ACCEPTED_ITERATIONS. A record outside it
+ * came from a broken or hostile server (too few: cheap to brute-force; too
+ * many: the device hangs). Mutable only so tests can derive keys quickly.
+ */
+export const ITERATION_LIMITS: { min: number; max: number } = { ...ACCEPTED_ITERATIONS }
 /**
  * Largest plaintext (UTF-8 bytes) a content field may hold on an encrypted
  * account: its envelope is 64,047 bytes of JSON, under the
