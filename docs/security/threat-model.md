@@ -211,11 +211,11 @@ The person turned on end-to-end encryption and does not trust the server, its op
 - The server reading encrypted content fields, the passphrase, the recovery key or the account key.
 - Moving a ciphertext to another field, item or entity: it fails authentication.
 - Turning encryption off on devices by "forgetting" the key record: devices pause sync instead of uploading plaintext.
-- Serving a key record with a derivation weaker than 100,000 PBKDF2 iterations, or one that would hang the device.
+- Serving a key record with a derivation weaker than the 600,000 PBKDF2 iterations the app writes, or one that would hang the device.
 
 **Mechanism.**
 - AES-256-GCM in the browser (`web/src/lib/crypto.ts`), with additional data binding each value to `entity\0id\0field`.
-- The account key is wrapped with AES-KW under a PBKDF2-SHA-256 passphrase key (600,000 iterations) and an HKDF-derived recovery key.
+- The account key is wrapped with AES-KW under a PBKDF2-SHA-256 passphrase key (600,000 iterations) and an HKDF-derived recovery key. Devices, `ot` and the server accept the same range, 600,000 to 10,000,000 (`ACCEPTED_ITERATIONS` in `web/src/lib/crypto.ts`, `crypt.MinIterations`, `e2ee.MinIterations`).
 - The content field list is generated from the op schema (`Content: true` in `internal/sync/ops.go`, `CONTENT_FIELDS`, `internal/e2ee/contentfields.go`).
 - Turning encryption on rewrites existing content of every kind (`web/src/lib/e2eeSync.ts`).
 - A missing key record locks devices instead (`web/src/lib/e2ee.ts`).
@@ -224,7 +224,7 @@ The person turned on end-to-end encryption and does not trust the server, its op
 **Verified by.**
 - Known-answer vectors shared by the web client, the server's checks and the CLI: `web/src/lib/e2ee.vectors.json`, read by `TestVectors` (`internal/e2ee/vectors_test.go`), `TestContentVectors` and `TestPassphraseAndRecoveryVectors` (`internal/e2ee/crypt/crypt_test.go`), and the "known-answer vectors" suite of `web/src/lib/crypto.test.ts`.
 - Rewrite coverage: `web/src/lib/e2eeCoverage.test.ts` ("lists every entity kind that has content fields or content prefixes") fails when a content kind is missing from the job. It was added with the fix in 0.21.0 (#806); see [Known gaps and past issues](how-we-verify.md#known-gaps-and-past-issues).
-- Key record handling: `web/src/lib/e2ee.test.ts` ("a 404 on refresh keeps encryption on and locks…", "refuses a key record with an iteration count outside the accepted range…").
+- Key record handling: `web/src/lib/e2ee.test.ts` ("a 404 on refresh keeps encryption on and locks…", "refuses a key record with an iteration count outside the accepted range…"); `web/src/lib/crypto.test.ts` ("accepts the iteration range the server stores…") and `TestPassphraseAndRecoveryVectors` keep the device's and `ot`'s range equal to the server's.
 - `TestGeneratedOpSchema` keeps the content list in step with the schema.
 - `TestSharingRefusedForEncryptedAccount`, `TestNotificationsNeverShowCiphertext`.
 - `TestServerDoesNotLinkCrypt`: the server binary never links the CLI's crypto.
@@ -238,7 +238,6 @@ The person turned on end-to-end encryption and does not trust the server, its op
   - It cannot tell a request for an assistant from one the server made up.
   - So, while the relay is on, the server operator is trusted with content, within those caps. [docs/mcp.md](../mcp.md) and the threat model in [docs/e2ee.md](../e2ee.md) say to opt a device in only on a server you run or trust.
 - **Weak passphrases.** PBKDF2 is not memory-hard, so the wrapped key can be attacked offline.
-- **The client's lower bound.** The client accepts a key record with 100,000 iterations or more, while the server stores only 600,000 to 10,000,000. A server cannot use this to unwrap anything, because a record it changes no longer unwraps the key, but the bounds differ (follow-up: align them).
 - **Plaintext from before.** Content written before encryption was turned on stays in older backups and in the op log until **Purge plaintext history**.
 
 ### Malicious import file
