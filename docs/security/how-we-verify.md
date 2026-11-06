@@ -31,7 +31,7 @@ In short:
 **Design.**
 - Every change to tasks, projects and the other synced entities is an operation on one field, stamped with a hybrid logical clock, and the last writer wins per field ([docs/sync.md](../sync.md)).
 - The server's tables are materialized from the op log. Devices hold the same log in IndexedDB.
-- REST, CalDAV, MCP, rules, imports and email all write through the sync service (`ApplyStrict`), never through table writes. That makes one place where scope, role and validation are checked.
+- REST, CalDAV, MCP, rules and email write through the sync service's `ApplyStrict`, which refuses a whole batch for one refused op. The sync endpoint and import jobs use `Apply`, which keeps the accepted ops of a batch. Both validate and authorize every op, and nothing writes the synced tables directly. That makes one place where scope, role and validation are checked.
 - The op schema is declared once in `internal/sync/ops.go` and generated into TypeScript, the encryption field list and a shared fixture.
 
 **Convergence tests.**
@@ -46,6 +46,7 @@ In short:
 - **The client.** `web/src/lib/ops.test.ts` ("converges to the same state regardless of delivery order", "stamps a local edit after a received op even when this device's clock runs behind") and `web/src/lib/hlc.test.ts`.
 - **Against the built server.** `web/src/lib/sync.contract.test.ts` runs two devices against a real server binary: offline edits on two devices, a far-ahead clock, a viewer's refused edit.
 - **Schema.** `TestGeneratedOpSchema` fails while the generated files are stale, and refuses a removed or renamed field.
+- **Write paths.** `TestWritesGoThroughApplyStrict` and `TestNoSyncedTableWritesOutsideSync` (`internal/writepaths`, a test-only package) scan the Go source outside `internal/sync`. They fail on a reference to a method named `Apply`, and on SQL that writes `ops`, `op_scopes`, `scope_fields`, `purges` or `project_scopes` or a table named at run time, unless the place is allow-listed with its reason. In `internal/httpapi` only the sync endpoint may use `Apply`.
 
 **Limits of this evidence.**
 - The Go property test models the TypeScript client with a hand-written Go copy of its clock rules. A change to `hlc.ts` could drift from the model unnoticed.
@@ -202,6 +203,7 @@ Downgrades are not supported. A rollback to a binary from before a security fix 
 | gosec (pinned, `make gosec-sarif`) | Same workflow, uploaded to code scanning | Same as CodeQL. It runs with `-no-fail`, and rules G101 and G304 are excluded as false positives (Makefile) |
 | ESLint, including `test-hygiene/no-fixed-wait` | CI | Yes |
 | `internal/codesize` | `go test` | Yes. Size limits, plus `TestRowLoopsCheckErr`: every `rows.Next()` loop checks `rows.Err()`, so a partial read cannot look complete |
+| `internal/writepaths` | `go test` | Yes. Writes go through the op log: only allow-listed places use `Apply` instead of `ApplyStrict`, and no SQL outside `internal/sync` writes the synced tables |
 | The container image scan | The release job | Yes: a critical vulnerability with a fix stops the image |
 | Dependabot | Weekly, with a cooldown | Opens pull requests |
 
@@ -318,7 +320,7 @@ These are known and tracked as follow-up tasks of the OpenSpec change `external-
 
 - **Public routes in the route matrix.** The matrix skips public routes, which rely on their own tests.
 - **Host mode.** The assistant's concurrency limit is per tenant, not per host.
-- **Write paths are a convention.** Nothing mechanically enforces that REST handlers write with `ApplyStrict`, or that no package writes synced rows directly.
+- **Write paths are checked in source only.** `internal/writepaths` reads the Go source, so a write reached through reflection or SQL assembled from pieces is not seen; a table named at run time is caught only as an allow-listed place.
 - **Fuzzing.** A few parsers still have no fuzz target (see [Fuzzing](#fuzzing)), and the TypeScript client has none.
 - **No independent review** of the design or the code yet.
 
