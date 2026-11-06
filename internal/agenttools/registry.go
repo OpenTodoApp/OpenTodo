@@ -391,8 +391,8 @@ func (r *Registry) write(ctx context.Context, c Caller, name string, rawArgs jso
 	if denial := c.WriteDenial(); denial != "" {
 		return nil, toolErr(denial, denialMessage(denial))
 	}
-	if ok, retry := r.limits.AllowCall(c.TokenID); !ok {
-		return nil, rateLimited(retry, fmt.Sprintf("at most %d write calls per minute for each token", PerMinute))
+	if ok, retry := r.limits.AllowCallFor(c.UserID, c.TokenID); !ok {
+		return nil, rateLimited(retry, fmt.Sprintf("at most %d write calls per minute for each token and %d for each account", PerMinute, AccountPerMinute))
 	}
 	p, err := r.Plan(ctx, c, name, rawArgs, nil)
 	if err != nil {
@@ -405,7 +405,7 @@ func (r *Registry) write(ctx context.Context, c Caller, name string, rawArgs jso
 		if err != nil {
 			return nil, err
 		}
-		r.limits.Reserve(c.TokenID, n)
+		r.limits.ReserveFor(c.UserID, c.TokenID, n)
 		*count = n
 		out["server_time"] = r.serverTime()
 		out["_notice"] = Notice
@@ -416,17 +416,17 @@ func (r *Registry) write(ctx context.Context, c Caller, name string, rawArgs jso
 			return nil, err
 		}
 	}
-	if ok, retry := r.limits.Reserve(c.TokenID, p.Count); !ok {
-		return nil, rateLimited(retry, fmt.Sprintf("at most %d changed items per UTC day for each token", PerDay))
+	if ok, retry := r.limits.ReserveFor(c.UserID, c.TokenID, p.Count); !ok {
+		return nil, rateLimited(retry, fmt.Sprintf("at most %d changed items per UTC day for each token and %d for each account", PerDay, AccountPerDay))
 	}
 	res, err := r.Apply(ctx, c, p.Changes)
 	if err != nil {
-		r.limits.Refund(c.TokenID, p.Count)
+		r.limits.RefundFor(c.UserID, c.TokenID, p.Count)
 		return nil, err
 	}
 	if res.Applied == 0 {
 		// A retry of an earlier call (same client_request_id): nothing new.
-		r.limits.Refund(c.TokenID, p.Count)
+		r.limits.RefundFor(c.UserID, c.TokenID, p.Count)
 	}
 	*count = p.Count
 	out := p.Result

@@ -650,6 +650,9 @@
   "AI app disconnected": [
     "web/src/app/auditFormat.ts"
   ],
+  "AI app disconnected: an old token was reused": [
+    "web/src/app/auditFormat.ts"
+  ],
   "AI app sign-in client created": [
     "web/src/app/auditFormat.ts"
   ],
