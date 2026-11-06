@@ -1,0 +1,1 @@
+- **A Things 3 database can be imported from an iPhone.** The file picker on Settings → Import now offers ZIP archives and SQLite files, so the zipped `Things Database.thingsdatabase` folder is no longer greyed out on iOS. The Things guide explains the steps on iPhone and iPad.

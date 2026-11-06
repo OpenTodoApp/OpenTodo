@@ -20,7 +20,12 @@ On a Mac, as Cultured Code's support article "Accessing the Things database" des
 3. Open the `ThingsData-…` folder and **copy** (do not move) `Things Database.thingsdatabase` to your Desktop.
 4. Right-click the copy, choose **Show Package Contents**, and find `main.sqlite`. Alternatively, compress the whole folder into a ZIP.
 
-On iPhone or iPad, the same article lists a diagnostics code (Settings → General → Diagnostics → Enter Code) that sends `Things Database.aar`. Save it to Files, tap it to unpack it into `Things Database.thingsdatabase`, and use the `main.sqlite` inside.
+On iPhone or iPad, with no Mac:
+
+1. Get `Things Database.aar` with the diagnostics code the same article lists (Settings → General → Diagnostics → Enter Code), and save it to the Files app.
+2. In Files, tap `Things Database.aar`. It unpacks into `Things Database.thingsdatabase`.
+3. Long-press `Things Database.thingsdatabase` and choose **Compress**. Files makes a ZIP of it.
+4. Upload that ZIP on **Settings → Import**, as below.
 
 ## Import into OpenTodo
 
