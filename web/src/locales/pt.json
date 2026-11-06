@@ -5131,6 +5131,7 @@
   "This page is no longer available": "Esta página já não está disponível",
   "This page is no longer available.": "Esta página já não está disponível.",
   "This page reloads when the server is back, usually within a few seconds.": "Esta página recarrega quando o servidor voltar, geralmente em poucos segundos.",
+  "This page was opened under a domain name and the server has no {variable} yet, so it asks for the one-time code it printed in its log. Run {command} on the server, or open the server by its IP address, or set {variable} to this address and restart it.": "Esta página foi aberta por um nome de domínio e o servidor ainda não tem {variable}, por isso ele pede o código de uso único que escreveu no log. Execute {command} no servidor, abra o servidor pelo endereço IP ou defina {variable} com este endereço e reinicie-o.",
   "This part of the app could not be shown.": "Não foi possível mostrar esta parte da aplicação.",
   "This password reset link is not valid.": "Este link de redefinição de senha não é válido.",
   "This permanently deletes the account and all of its data on the server: tasks, projects (including projects it shared with others), sessions and tokens. It cannot be undone; only a backup can bring it back. Copies on their own devices are not wiped.": "Isto exclui permanentemente a conta e todos os dados dela no servidor: tarefas, projetos (inclusive os compartilhados com outras pessoas), sessões e tokens. Não pode ser desfeito; só um backup pode recuperá-la. As cópias nos dispositivos da pessoa não são apagadas.",
