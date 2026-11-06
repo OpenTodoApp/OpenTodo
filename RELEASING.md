@@ -30,7 +30,8 @@ Then, by hand:
 
 1. Write the release's summary paragraph under its heading in `CHANGELOG.md` (what a person upgrading should know first; for a security release, say so and ask people to upgrade), check the entries are in the right sections and in a sensible order (the most important first), and add **Upgrade notes** when there is a migration, a new setting or anything an operator must do. Add a word to the add-on's entry if the release needs one (for example "a security release").
 2. `make deploy-check docs-check` (the full `make check` runs in CI).
-3. Commit as `Prepare 0.15.0` and open the pull request. Merge it when the checks pass.
+3. Run the AI security review on the release's changes: in Claude Code, `/security-review` over `git diff v<previous>..HEAD` (the previous release tag, a release candidate included), leaving out translations, test data and generated files. Fix a real finding in its own pull request with a regression test and start again from step 1; otherwise note "Security review: no findings" with the range in the pull request ([How we verify security](docs/security/how-we-verify.md#ai-security-review-before-each-release)).
+4. Commit as `Prepare 0.15.0` and open the pull request. Merge it when the checks pass.
 
 Umbrel's image keeps the previous release's digest until step 4: the check only looks at its shape, because the new digest exists only once the image is published.
 
