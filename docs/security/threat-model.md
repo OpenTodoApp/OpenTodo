@@ -406,13 +406,12 @@ The model behind an MCP client or the in-app assistant follows instructions hidd
 - The deny list (`internal/httpapi/demo.go`) runs before routing and matches every `.demoDenied()` route.
 
 **Verified by.**
-- `TestDemoDenyListMatchesPolicy` (`policy_test.go`).
+- `TestDemoDenyListMatchesPolicy` (`policy_test.go`), which probes method-less routes and rules with every HTTP and WebDAV method.
 - `TestSandboxTokenSingleUse`, `TestSandboxCreationLimits`, `TestSandboxLimitGroupsIPv6Sites`, `TestSandboxIsolation`, `TestSandboxWriteBudget`, `TestDemoRestrictedRoutes`, `TestDemoRefusesAgentAccess` (`internal/httpapi/demo_test.go`).
 - `TestCreationTokenRules`, `TestNightlyResetDeletesAllSandboxes` (`internal/demo/demo_test.go`).
 
 **Not defended.**
 - A demo is public, so anything typed into it may be seen by its operator until the reset.
-- The deny-list test probes each route with GET and POST only, for rules that have no method.
 
 ## Components in the review scope
 
