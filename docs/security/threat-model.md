@@ -31,7 +31,7 @@ The model describes the code on `main` at the time of writing. An external revie
 | The op log's integrity | `ops` and the per-scope tables in `internal/sync` | Every device converges on it; a forged op becomes everyone's state |
 | Sharing structure | Memberships, roles, workspaces (`internal/sync/members.go`, `scope.go`) | Who can read and write what |
 | Capability links | Public list links, task pages, calendar feed URLs, invitation, reset and sign-up links | Each secret in an address is a credential |
-| The audit log | `audit_events` in the database | Evidence after an incident |
+| The audit log | `audit_events` in the database, a hash chain with its checkpoint in `audit_chain` | Evidence after an incident |
 | Availability | The single server process; in host mode, one process for many tenants | Everyone's tasks, reminders and syncs |
 
 ## Trust boundaries and entry points
@@ -232,9 +232,9 @@ The person turned on end-to-end encryption and does not trust the server, its op
 - `TestServerDoesNotLinkCrypt`: the server binary never links the CLI's crypto.
 
 **Not defended.**
-- **Tampered JavaScript.** The server delivers the web app. A malicious server can change it and capture the passphrase or key on the next load. This is inherent to web-delivered end-to-end encryption.
+- **Tampered JavaScript.** The server delivers the web app. A malicious server can change it and capture the passphrase or key on the next load. This is inherent to web-delivered end-to-end encryption. Checking release signatures in the service worker is planned after 1.0 ([#970](https://github.com/OpenTodoApp/OpenTodo/issues/970)).
 - **Metadata.** Dates, priorities, structure, labels on tasks, counts, timing, device ids and ciphertext lengths are plaintext ([docs/e2ee.md](../e2ee.md)).
-- **Rollback.** The server can serve an older ciphertext of the same field. The additional data has no version.
+- **Rollback.** The server can serve an older ciphertext of the same field. The additional data has no version. Planned after 1.0 ([#969](https://github.com/OpenTodoApp/OpenTodo/issues/969)).
 - **The device relay.** While a device is opted in to the relay and unlocked, the server can ask it to decrypt any content value it holds, or to encrypt text of its choosing for any content field. It needs only the entity, id and field, which it knows.
   - The device checks that each field is a content field and enforces its own caps: 5,000 values an hour and 20,000 a day. With **Confirm changes first** on, it shows every encryption request before answering.
   - It cannot tell a request for an assistant from one the server made up.
@@ -390,7 +390,7 @@ The model behind an MCP client or the in-app assistant follows instructions hidd
 - `TestAssistantConcurrencyIsHostWide` (`internal/host`), `TestSharedSlotsAcrossServices` (`internal/assistant`).
 
 **Not defended.**
-- Tenants share one process, so one tenant's load affects the others' latency. Limits bound this but do not isolate CPU or memory.
+- Tenants share one process, so one tenant's load affects the others' latency. Limits bound this but do not isolate CPU or memory. Isolation is planned after 1.0 ([#968](https://github.com/OpenTodoApp/OpenTodo/issues/968)).
 
 ### Demo visitor
 
@@ -553,10 +553,29 @@ Each item of the [review scope](review-scope.md) has a section here: where the c
   - Signed with cosign (keyless), with an SBOM and build provenance; release files carry provenance attestations.
 - **Checks in `scripts/repo-checks.test.mjs`:** "base and job images are pinned by digest", "the image under test is the one built in the run, scanned and smoke-tested", "published artefacts are signed and attested, with OIDC only where needed".
 
+### Audit log
+
+- **Code:** `internal/audit` (`chain.go`, `prune.go`), migration `0060_audit_chain.sql`, `GET /api/v1/audit/verify` and `ot audit verify`.
+- **Defended.** Changing an event, or removing or moving one from the middle of the log, after it was recorded, by anyone who can write the database file but does not rewrite every later hash. Detected, not prevented.
+- **Mechanism.**
+  - Each event stores `SHA-256(previous hash, "\n", canonical form)`. The canonical form is a JSON array of the format version, id, time, name, outcome, actor, target, user agent and the stored details. The client address is left out, because turning address logging off erases it.
+  - Each event is chained in the transaction that stores it, so a state change, its event and its hash commit together.
+  - Pruning removes events from the start of the log in id order and, in the same transaction, moves the checkpoint (`audit_chain`) to the hash of the last event it removed. The events kept still verify.
+  - The server verifies the chain at startup and hourly after changes, and logs the first broken link at error level without stopping. The owner verifies on demand through the route or `ot audit verify`.
+  - Each export ends with the chain head (`{"chain": {"id", "hash"}}`), which the owner keeps outside the server as an anchor ([Audit log](../self-hosting/docker.md#checking-the-log-for-tampering)).
+  - The public demo removes a visitor's events with their sandbox and rebuilds the chain over the rest (`audit.RechainTx`). A demo log is not evidence.
+- **Verified by.**
+  - `TestChainDetectsAnEditedEvent`, `TestChainDetectsADeletedEvent`, `TestChainDetectsReordering`, `TestChainDetectsAMissingHash`, `TestChainSurvivesPruning`, `TestPruneKeepsTheChainContiguous`, `TestChainFreshDatabase`, `TestChainStartsAtTheTail`, `TestChainIgnoresAddressScrubbing`, `TestChainHashVector` (`internal/audit/chain_test.go`).
+  - `TestMigrationAuditChainStartsAtTheTail` (`internal/store`), `TestAuditVerifyRoute` and `TestAuditExportRecordsItself` (`internal/httpapi`), `TestHousekeepingReportsABrokenAuditChain` (`internal/tenant`), `TestAuditVerify` (`internal/cli`).
+- **Not defended.**
+  - There is no key. Someone who can write the database can recompute every hash, or cut off the newest events, and the chain still verifies. Only a chain head kept outside the server reveals that.
+  - Moving the checkpoint forward hides the removal of the oldest events. It looks like pruning. Compare `checkpoint.id` with the retention and a kept anchor.
+  - Events recorded before the chain existed (before migration 0060) have no hash and are not covered.
+
 ## Accepted risks
 
 - **The operator.** Whoever runs the server can read the database and the secrets files. TOTP secrets are stored in plain form because the server computes codes from them. End-to-end encryption protects content only, and only while the operator does not change the served code.
-- **The audit log is not tamper-evident** against someone with write access to the database file.
+- **The audit log is tamper-evident, not tamper-proof.** Someone with write access to the database file can rewrite the whole hash chain or cut off its newest events. Only a chain head kept outside the server reveals that ([Audit log](#audit-log)).
 - **Rolling back** to a binary older than a security fix re-opens that issue. For example, deactivated accounts could sign in again on a server older than user administration. There are no down-migrations.
 - **Rate limits and agent limits live in memory** and reset when the server restarts.
 - **Availability** rests on one process. Host mode shares that process between tenants.

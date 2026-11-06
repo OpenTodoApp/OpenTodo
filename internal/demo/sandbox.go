@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/OpenTodoApp/opentodo/internal/audit"
 	"github.com/OpenTodoApp/opentodo/internal/auth"
 	"github.com/OpenTodoApp/opentodo/internal/ids"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
@@ -455,6 +456,11 @@ func (s *Service) deleteAccounts(ctx context.Context, userIDs []string, sandbox 
 	}
 	twice := append(append([]any{}, users...), users...)
 	if _, err := tx.ExecContext(ctx, `DELETE FROM audit_events WHERE actor_id IN (`+in(len(users))+`) OR target_id IN (`+in(len(users))+`)`, twice...); err != nil {
+		return err
+	}
+	// The removal is deliberate, so the hash chain is rebuilt over what is left
+	// (audit-hash-chain): a demo log is not evidence.
+	if err := audit.RechainTx(ctx, tx); err != nil {
 		return err
 	}
 	if _, err := tx.ExecContext(ctx, `DELETE FROM users WHERE id IN (`+in(len(users))+`)`, users...); err != nil {

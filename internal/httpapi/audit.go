@@ -131,6 +131,13 @@ func (s *Server) handleAuditExport(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
+	// The chain head is read after the first page, so it is at or after every
+	// exported event: the anchor an owner keeps (audit-hash-chain).
+	head, err := s.audit.Head(r.Context())
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
 	h := w.Header()
 	h.Set("Content-Type", "application/x-ndjson; charset=utf-8")
 	h.Set("Cache-Control", "no-store")
@@ -154,7 +161,23 @@ func (s *Server) handleAuditExport(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	// The last line is the chain head, not an event: {"chain":{"id","hash"}}.
+	if err := enc.Encode(map[string]audit.ChainHead{"chain": head}); err != nil {
+		return
+	}
 	s.audit.Record(r.Context(), audit.AuditExported(u.ID, count))
+}
+
+// handleAuditVerify recomputes the audit log's hash chain and reports the
+// first broken link (audit-hash-chain). A broken chain is a 200 with ok false:
+// the check worked, the log did not pass it.
+func (s *Server) handleAuditVerify(w http.ResponseWriter, r *http.Request) {
+	v, err := s.audit.Verify(r.Context())
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, v)
 }
 
 func (s *Server) handleGetAuditSettings(w http.ResponseWriter, r *http.Request) {

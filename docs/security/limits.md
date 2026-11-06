@@ -44,9 +44,9 @@ Encryption hides **content fields** from the server: titles, descriptions, notes
 - **The shape of activity:** how many items there are, when each was edited, from how many devices, and the approximate length of each text (ciphertext length follows plaintext length).
 - **Shared projects.** They are never encrypted.
 - **Plaintext from before encryption was turned on,** until **Purge plaintext history**, and in backups made before the purge.
-- **Older versions.** The server can serve an older ciphertext of the same field, and the app cannot tell.
+- **Older versions.** The server can serve an older ciphertext of the same field, and the app cannot tell. Planned after 1.0 ([#969](https://github.com/OpenTodoApp/OpenTodo/issues/969)).
 - **The device relay.** While a device is opted in to answer for AI assistants and is unlocked, the server can ask it to decrypt or encrypt values within its caps.
-- **The code.** A malicious server can serve tampered JavaScript that captures the passphrase.
+- **The code.** A malicious server can serve tampered JavaScript that captures the passphrase. Signed web app code is planned after 1.0 ([#970](https://github.com/OpenTodoApp/OpenTodo/issues/970)).
 
 ## What is not encrypted at rest
 
@@ -80,7 +80,7 @@ In [host mode](../self-hosting/host-mode.md), tenants are isolated by data:
 - tenants cannot reach the operator's private network;
 - tenants cannot change operator-owned settings.
 
-They are **not** isolated by resources. All tenants share one process, its CPU, memory and file descriptors. The per-tenant limits bound storage, writes, requests per client address, imports and members, but not CPU time or memory, so a heavy tenant slows the others.
+They are **not** isolated by resources. All tenants share one process, its CPU, memory and file descriptors. The per-tenant limits bound storage, writes, requests per client address, imports and members, but not CPU time or memory, so a heavy tenant slows the others. Isolation is planned after 1.0 ([#968](https://github.com/OpenTodoApp/OpenTodo/issues/968)).
 
 The operator can read every tenant's data, as above.
 
@@ -103,7 +103,7 @@ The server is one process with one SQLite writer, sized for a household, a team 
 
 ## Other limits
 
-- **The audit log is not tamper-evident** against someone who can write the database file.
+- **The audit log is tamper-evident, not tamper-proof.** Each event is chained to the one before by a hash, and the server checks the chain. Someone who can write the database file can still rewrite every hash, or remove the newest events, without the check noticing. Keep the chain head of an export outside the server to catch that ([Audit log](../self-hosting/docker.md#checking-the-log-for-tampering)). Events from before the chain existed are not covered.
 - **Rollback re-opens fixed issues.** Running a binary older than a security fix brings that issue back. There are no down-migrations.
 - **Capability links** (public lists, task pages, calendar feeds) give their access to anyone who holds them, until revoked or expired.
 - **Bearer tokens** are never asked for a second factor. A leaked `full` token can read and change the account's data until it is revoked.
