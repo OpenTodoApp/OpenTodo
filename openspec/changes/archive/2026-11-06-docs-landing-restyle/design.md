@@ -10,7 +10,7 @@ Pages keep their front matter; `entryOf(fm, slug)` maps the existing groups:
 | Self-host | `/docs/self-host/` | Self-hosting |
 | Integrate | `/docs/integrate/` | Integrations |
 | Reference | `/docs/reference/` | Reference, plus Keyboard shortcuts |
-| Under the hood | `/docs/internals/` | Internals, plus Stability and compatibility |
+| Under the hood | `/docs/internals/` | Internals, Contributing and About (the roadmap), plus Stability and compatibility |
 
 Switching from another app sits under Get started because it is something a person does once, on the way in, next to installing the app. Open Loops sits under Use: it is a way of using the app every day, not a first step. Keyboard shortcuts is a reference table, and Stability is a promise about the system, so two slug overrides move them. The URLs were checked against every page and folder under `docs/`; none collides.
 
