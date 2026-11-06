@@ -35,8 +35,8 @@
 - [x] 5.4 Extend `TestEveryRouteDeclaresAPolicy`'s source scan to the route packages under `internal/httpapi/` (`davroutes`, `maproutes`, `speech`); verify `go test ./internal/httpapi`
 - [x] 5.5 Align the client's accepted PBKDF2 iteration range (100,000 minimum) with the server's (600,000); verify `npm test` (an OpenSpec change if a device could be locked out by it)
 - [ ] 5.6 A static check that REST handlers write through `ApplyStrict` and that no package outside `internal/sync` writes synced tables; verify `go test ./...`
-- [ ] 5.7 An automated origin test of the iOS bridge, like the Android `BridgeFixtureTest`
-- [ ] 5.8 A randomized convergence test on the TypeScript client, or a shared trace that pins the Go property test's model of `hlc.ts`; verify `npm test`
+- [x] 5.7 An automated origin test of the iOS bridge, like the Android `BridgeFixtureTest`
+- [x] 5.8 A randomized convergence test on the TypeScript client, or a shared trace that pins the Go property test's model of `hlc.ts`; verify `npm test`
 - [x] 5.9 A test that session and API token secrets are stored only as hashes (`TestSecretsStoredOnlyAsHashes`); verify `go test ./internal/auth`
 
 ## 6. Hardening the threat model calls for (ranked by risk)
@@ -49,12 +49,12 @@ Behaviour changes get their own small OpenSpec change (suggested name in bracket
 - [x] 6.4 Cookie-authenticated writes with neither `Origin` nor `Sec-Fetch-Site`: refuse them (today they rely on `SameSite=Lax`) [`cookie-writes-need-origin`]; verify `TestCrossSiteCookieWritesAreRejected` extended and the route matrix. Done as: refused unless they declare a JSON body, which keeps `ot login` working (that change's design D2)
 - [x] 6.5 AI agent limits per account as well as per token, so several agent tokens or OAuth clients do not multiply the daily budget [`agent-limits-per-account`]; verify `go test ./internal/agenttools`
 - [x] 6.6 Backup destinations and the OIDC client: no proxy from the environment, and redirects only to the same host, like `internal/outbound`'s clients [`operator-clients-no-env-proxy`]; verify `go test ./internal/backup ./internal/oidc`
-- [ ] 6.7 Host mode: one assistant concurrency limit for the whole host (today 8 per tenant) [`host-assistant-concurrency`]; verify `go test ./internal/host ./internal/assistant`
+- [x] 6.7 Host mode: one assistant concurrency limit for the whole host (today 8 per tenant) [`host-assistant-concurrency`]; verify `go test ./internal/host ./internal/assistant`
 - [x] 6.8 Share target: refuse a POST without `Sec-Fetch-Site` unless it comes from the installed app's own navigation [`share-target-fetch-metadata`]; verify `npm test` (shareInbox.test.ts)
 - [x] 6.9 Importers: a per-field and per-row byte limit for CSV and a nesting depth limit for JSON, so a valid but hostile file stays bounded in memory [`importer-field-limits`]; verify `go test ./internal/importer` and `FuzzParse`
 - [ ] 6.10 Route matrix over public routes: anonymous, each token scope and cross-site, each compared with what the route's reason promises; verify `go test ./internal/httpapi -run TestRouteMatrix`
 - [x] 6.11 Demo deny list probed with every HTTP method for rules without one; verify `go test ./internal/httpapi -run TestDemoDenyListMatchesPolicy`
-- [ ] 6.12 Fuzz targets for the Microsoft Graph event parser and the import planner; verify `scripts/fuzz.sh 30s ./internal/calsync ./internal/importer`
+- [x] 6.12 Fuzz targets for the Microsoft Graph event parser and the import planner; verify `scripts/fuzz.sh 30s ./internal/calsync ./internal/importer`
 - [ ] 6.13 (Long term, design doc first) Accepted risks that would need new design: a tamper-evident audit log (hash chain), CPU and memory isolation between hosted tenants, a version or time in the encryption's authenticated data against rollback, and release-signature checks of the web app in the service worker
 - [x] 6.14 Agent paths refuse routines that send content off the server: creating, changing, turning on and running a routine with a Send a webhook, Email me or Email project members step answer `forbidden_for_agents`; reading, testing, turning off and trashing stay open [`agent-routine-sends`, #930]; verify `go test ./internal/agenttools -run TestSendsOut` and `go test ./internal/httpapi -run TestRoutineSendingStepsRefusedForAgents`
 - [x] 6.15 `run_routine` runs only within what is left of the agent's daily items (token and account), holding them before the run and settling after [`agent-run-routine-limits`, #934]; verify `go test ./internal/agenttools -run 'TestRunRoutineWithinDailyItems|TestLimiterHold'` and `go test ./internal/rules -run TestRoutineRunMaxWrites`

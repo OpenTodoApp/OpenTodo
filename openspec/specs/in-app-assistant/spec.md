@@ -115,7 +115,7 @@ The list of fields SHALL name everything the assistant may send for that user: f
 - **THEN** `consented` stays true and the composer is enabled
 
 ### Requirement: Assistant turn route
-`POST /api/v1/assistant/turn` SHALL require a session (bearer tokens get 403 `session_required`), accept a conversation of at most 40 messages and 256 KB, allow one turn per user at a time (409 `turn_in_progress`) and at most 8 server-wide (503 `assistant_busy`), and stream text, status, change-set, usage and done events. It writes nothing; it reads synced data only.
+`POST /api/v1/assistant/turn` SHALL require a session (bearer tokens get 403 `session_required`), accept a conversation of at most 40 messages and 256 KB, allow one turn per user at a time (409 `turn_in_progress`) and at most 8 server-wide (503 `assistant_busy`), and stream text, status, change-set, usage and done events. It writes nothing; it reads synced data only. In host mode the 8 SHALL be shared by all of the host's tenants, not counted per tenant, so the operator's provider keys see at most 8 turns however many tenants are open.
 
 #### Scenario: Streamed answer
 - **WHEN** a consented user asks "what is due today?"
@@ -136,6 +136,10 @@ The list of fields SHALL name everything the assistant may send for that user: f
 #### Scenario: Concurrent turn
 - **WHEN** a user starts a second turn while the first is streaming
 - **THEN** the second answers 409 `turn_in_progress`
+
+#### Scenario: Host-wide limit
+- **WHEN** a host serves two tenants, 8 assistant turns are running across them and a person in either tenant starts a turn
+- **THEN** the answer is 503 `assistant_busy` with `Retry-After` and no provider request is made; once one of the running turns ends, a turn in either tenant can start
 
 ### Requirement: Tools come from the shared registry and only propose
 The assistant SHALL use the agent tool registry shared with MCP: read tools run against the user's synced data, and write tools only plan changes that are returned as one proposed change set per turn of at most 50 entities. The server SHALL never apply in-app proposals. No tool SHALL make outbound requests or change sharing, members, settings, tokens, imports or exports. Planning reads synced data only and changes nothing on any device.
