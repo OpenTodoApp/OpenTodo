@@ -34,7 +34,9 @@ function head({ title, description: full, url, ld = [] }) {
   <meta property="og:site_name" content="OpenTodo">
   <meta property="og:title" content="${e(title)}">
   <meta property="og:description" content="${e(description)}">
-  <meta property="og:image" content="${SITE_URL}/assets/og.png">
+  <meta property="og:image" content="${SITE_URL}/brand/kit/png/og-default-1200x630.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
