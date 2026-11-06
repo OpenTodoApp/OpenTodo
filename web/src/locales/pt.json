@@ -7119,6 +7119,7 @@
   "AI app sign-in client deleted": "Cliente de início de sessão de app de IA eliminado",
   "AI app connected": "App de IA ligada",
   "AI app disconnected": "App de IA desligada",
+  "AI app disconnected: an old token was reused": "App de IA desligada: um token antigo foi reutilizado",
   "Require single sign-on?": "Exigir início de sessão único?",
   "Require single sign-on": "Exigir início de sessão único",
   "Once you save, members can sign in only with {name}: their passwords and passkeys stop working. If the provider is down, they cannot sign in until you turn this off. You keep your password at {path}.": "Depois de guardar, os membros só podem iniciar sessão com {name}: as suas palavras-passe e chaves de acesso deixam de funcionar. Se o fornecedor estiver em baixo, não conseguem iniciar sessão até desativar esta opção. A sua palavra-passe continua a funcionar em {path}.",

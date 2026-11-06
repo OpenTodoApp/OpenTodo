@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
@@ -382,11 +383,19 @@ func (s *Server) oauthExchangeCode(w http.ResponseWriter, r *http.Request, c mcp
 	writeOAuthTokens(w, access, refresh, code.Scope)
 }
 
-// oauthRefresh mints a new access token and returns the same refresh token, so
-// the client stays linked instead of having to be connected again (D6).
+// oauthRefresh mints a new access token. A rotating client gets a new refresh
+// token and the one it sent stops working; a refresh token that was already
+// exchanged revokes the whole grant, because two holders of one token family
+// mean one of them is not the client (mcp-oauth-refresh-rotation). A client
+// registered only for Google's connector gets the same refresh token back, as
+// Google's guide requires (D6).
 func (s *Server) oauthRefresh(w http.ResponseWriter, r *http.Request, c mcpoauth.Client) {
 	plain := r.PostForm.Get("refresh_token")
 	g, err := s.mcpOAuth.GrantByRefresh(r.Context(), plain)
+	if errors.Is(err, mcpoauth.ErrNotFound) {
+		s.oauthRefreshReused(w, r, c, plain)
+		return
+	}
 	if err != nil || g.ClientID != c.ID {
 		oauthError(w, http.StatusBadRequest, "invalid_grant", "the refresh token is unknown")
 		return
@@ -395,11 +404,63 @@ func (s *Server) oauthRefresh(w http.ResponseWriter, r *http.Request, c mcpoauth
 		oauthError(w, http.StatusBadRequest, "invalid_grant", "the grant was revoked or has expired; authorize again")
 		return
 	}
+	refresh := plain
+	if c.RotatesRefresh() {
+		refresh, err = s.mcpOAuth.RotateRefresh(r.Context(), g.ID, plain)
+		switch {
+		case errors.Is(err, mcpoauth.ErrReused):
+			// Another request exchanged this token between the read and the
+			// rotation: the same token was presented twice.
+			s.revokeReusedGrant(r, g)
+			oauthError(w, http.StatusBadRequest, "invalid_grant", "the refresh token was already used; authorize again")
+			return
+		case errors.Is(err, mcpoauth.ErrRevoked), errors.Is(err, mcpoauth.ErrNotFound):
+			oauthError(w, http.StatusBadRequest, "invalid_grant", "the grant was revoked or has expired; authorize again")
+			return
+		case err != nil:
+			s.internal(w, err)
+			return
+		}
+	}
 	access, ok := s.issueOAuthAccess(w, r, c, g)
 	if !ok {
 		return
 	}
-	writeOAuthTokens(w, access, plain, g.Scope)
+	writeOAuthTokens(w, access, refresh, g.Scope)
+}
+
+// oauthRefreshReused answers a refresh token no grant holds. When it is one a
+// grant of this client already exchanged, the grant and its access token are
+// revoked and the event is audited; either way the client is told the grant is
+// gone.
+func (s *Server) oauthRefreshReused(w http.ResponseWriter, r *http.Request, c mcpoauth.Client, plain string) {
+	g, err := s.mcpOAuth.GrantByUsedRefresh(r.Context(), plain)
+	switch {
+	case errors.Is(err, mcpoauth.ErrNotFound) || (err == nil && g.ClientID != c.ID):
+		oauthError(w, http.StatusBadRequest, "invalid_grant", "the refresh token is unknown")
+	case err != nil:
+		s.internal(w, err)
+	default:
+		if !g.Revoked() {
+			s.revokeReusedGrant(r, g)
+		}
+		oauthError(w, http.StatusBadRequest, "invalid_grant", "the refresh token was already used; authorize again")
+	}
+}
+
+// revokeReusedGrant ends a grant whose refresh token came back after it was
+// rotated: the grant, its current refresh token and its access token stop
+// working, and `mcp_oauth.refresh_reused` is recorded.
+func (s *Server) revokeReusedGrant(r *http.Request, g mcpoauth.Grant) {
+	tokenID, err := s.mcpOAuth.RevokeGrant(r.Context(), g.ID)
+	if err != nil {
+		slog.Error("mcp oauth: revoking a grant after refresh token reuse", "grant", g.ID, "err", err)
+		return
+	}
+	if tokenID != "" {
+		_ = s.auth.DeleteToken(r.Context(), g.UserID, tokenID)
+	}
+	s.audit.Record(r.Context(), audit.MCPOAuthRefreshReused(g.UserID, g.ClientID))
 }
 
 // oauthSwapAttempts bounds how often issueOAuthAccess re-reads a grant that
