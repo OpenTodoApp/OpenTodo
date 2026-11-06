@@ -1729,6 +1729,7 @@
     "web/src/lib/method/groups.ts"
   ],
   "App": [
+    "web/src/app/OAuthClients.tsx",
     "web/src/app/settingsSections.ts"
   ],
   "App icon badge": [
@@ -5274,10 +5275,9 @@
   "Email": [
     "web/src/app/AuthScreen.tsx",
     "web/src/app/EmailScreens.tsx",
-    "web/src/app/OriginChip.tsx",
     "web/src/app/ShareDialog.tsx",
     "web/src/app/WorkspaceInviteScreen.tsx",
-    "web/src/lib/history.ts",
+    "web/src/lib/originText.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Email (optional)": [
@@ -5552,6 +5552,9 @@
   "Enter a start and an end time": [
     "web/src/app/task-detail/TimeTab.tsx"
   ],
+  "Enter a valid redirect address: the exact address, starting with https://, without wildcards.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "Enter a whole number from {min} to {max}": [
     "web/src/app/routines/AISettings.tsx"
   ],
@@ -5561,9 +5564,6 @@
   ],
   "Enter an address that starts with https://, http:// or mailto:.": [
     "web/src/app/LinkDialog.tsx"
-  ],
-  "Enter at least one valid redirect address.": [
-    "web/src/lib/i18n/errors.ts"
   ],
   "Enter common, organizations, consumers, a tenant ID or a domain name.": [
     "web/src/app/CalendarSyncDialogs.tsx"
@@ -5579,6 +5579,9 @@
   ],
   "Enter the address of GitHub, GitLab or your own instance.": [
     "web/src/app/IssueEditor.tsx"
+  ],
+  "Enter the address the app returns to after you sign in.": [
+    "web/src/app/OAuthClients.tsx"
   ],
   "Enter the address.": [
     "web/src/app/NotificationChannelEditor.tsx"
@@ -7435,13 +7438,14 @@
     "web/src/lib/boardTemplates.ts"
   ],
   "Imported": [
+    "web/src/lib/originText.ts",
     "web/src/lib/taskSource.ts"
   ],
   "Imported from a VS Code colour theme. Check the theme's licence before you share this file.": [
     "web/src/lib/theme/vscode.ts"
   ],
   "Imported from {app}": [
-    "web/src/lib/taskSource.ts"
+    "web/src/lib/originText.ts"
   ],
   "Imported theme": [
     "web/src/lib/theme/vscode.ts"
@@ -11778,6 +11782,9 @@
   "Other MCP clients": [
     "web/src/app/AssistantsPanel.tsx"
   ],
+  "Other app": [
+    "web/src/app/OAuthClients.tsx"
+  ],
   "Other calendars": [
     "web/src/app/CalendarFeedsPanel.tsx"
   ],
@@ -13100,7 +13107,8 @@
     "web/src/app/SsoPanel.tsx"
   ],
   "Redirect address": [
-    "web/src/app/CalendarSyncDialogs.tsx"
+    "web/src/app/CalendarSyncDialogs.tsx",
+    "web/src/app/OAuthClients.tsx"
   ],
   "Redo": [
     "web/src/app/themes/ThemeEditor.tsx"
@@ -15394,7 +15402,7 @@
   "Soft warning": [
     "web/src/app/themes/tokenNames.ts"
   ],
-  "Some apps, such as Google Gemini, cannot take a pasted token. They sign in with OAuth instead: create a client here and paste its client ID and secret into the app.": [
+  "Some apps, such as Gemini, ChatGPT and Claude, sign in with OAuth instead of taking a pasted token: create a client here for the app and paste its client ID and secret into it.": [
     "web/src/app/OAuthClients.tsx"
   ],
   "Some colours were adapted for contrast": [
@@ -16613,6 +16621,9 @@
   ],
   "The energy must be deep, medium or low.": [
     "web/src/lib/i18n/errors.ts"
+  ],
+  "The exact address the app returns to after you sign in, starting with https://. The app’s documentation names it.": [
+    "web/src/app/OAuthClients.tsx"
   ],
   "The file could not be read: {detail}": [
     "web/src/lib/i18n/errors.ts"

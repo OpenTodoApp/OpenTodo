@@ -45,51 +45,6 @@ func TestVerifyS256(t *testing.T) {
 	}
 }
 
-func TestGoogleRedirects(t *testing.T) {
-	ok := []string{
-		"https://oauth-redirect.googleusercontent.com/r/user_bound_custom-mcp-1-2",
-		"https://oauth-redirect.googleusercontent.com/a/user_bound_custom-mcp-1-2",
-		"https://oauth-redirect-sandbox.googleusercontent.com/r/user_bound_custom-mcp-1-2",
-		"https://oauth-redirect-test.googleusercontent.com/a/user_bound_custom-mcp-1-2",
-	}
-	for _, u := range ok {
-		if !IsGoogleRedirect(u) {
-			t.Fatalf("%q was refused", u)
-		}
-	}
-	bad := []string{
-		"https://evil.example/cb",
-		"https://oauth-redirect.googleusercontent.com.evil.example/r/x",
-		"http://oauth-redirect.googleusercontent.com/r/x",
-		"https://oauth-redirect.googleusercontent.com/r/",
-		"https://oauth-redirect.googleusercontent.com/r/x/y",
-		"https://oauth-redirect.googleusercontent.com/r/x?y=1",
-		"https://oauth-redirect.googleusercontent.com/b/x",
-	}
-	for _, u := range bad {
-		if IsGoogleRedirect(u) {
-			t.Fatalf("%q was accepted", u)
-		}
-	}
-}
-
-func TestAllowsRedirect(t *testing.T) {
-	c := Client{RedirectURIs: GoogleRegistration()}
-	if !c.AllowsRedirect("https://oauth-redirect.googleusercontent.com/r/user_bound_custom-mcp-9-1") {
-		t.Fatal("a Google connector address was refused")
-	}
-	if c.AllowsRedirect("https://elsewhere.example/cb") {
-		t.Fatal("a foreign address was accepted")
-	}
-	exact := Client{RedirectURIs: []string{"https://app.example/callback"}}
-	if !exact.AllowsRedirect("https://app.example/callback") {
-		t.Fatal("an exactly registered address was refused")
-	}
-	if exact.AllowsRedirect("https://app.example/callback/extra") || exact.AllowsRedirect("") {
-		t.Fatal("a near-miss was accepted")
-	}
-}
-
 func TestGrantedScopeLivesInThePackage(t *testing.T) {
 	if ValidScope("full") || ValidScope("") {
 		t.Fatal("only read and agent are client scopes")

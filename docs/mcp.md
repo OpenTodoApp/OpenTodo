@@ -38,7 +38,7 @@ In **Settings → Integrations → AI assistants (MCP)**, step **Token**, keep *
 
 Full-access tokens also work with `/mcp`, but only with the read tools: they never get write tools, so a full token pasted into an assistant long ago does not gain write power when someone turns assistant changes on. There is no reason to give one to an assistant.
 
-An app that cannot take a pasted token — Google Gemini's Connected apps is one — signs in with OAuth instead. **Settings → Integrations → AI assistants → Apps that sign in with OAuth** registers a client and shows its id and secret once; see [OAuth clients](mcp-oauth.md).
+An app that signs in with OAuth instead of taking a pasted token — Google Gemini's Connected apps, ChatGPT and claude.ai are such apps — connects that way. **Settings → Integrations → AI assistants → Apps that sign in with OAuth** registers a client and shows its id and secret once; see [OAuth clients](mcp-oauth.md).
 
 ## 3. Connect an assistant
 
