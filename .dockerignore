@@ -6,14 +6,17 @@ web/node_modules
 web/dist
 internal/web/dist
 openspec
-docs
+# docs/ is in: the web build compiles the in-app help from its pages (not its images).
+docs/images
+docs/screenshots
 *.md
 !README.md
+!CHANGELOG.md
 .env
 .env.*
 # Not used by the image build (OpenSpec ci-release-gates): visual baselines, reports,
 # deploy templates, scripts, the extension and the agent skill. The Dockerfile copies
-# only web/, cmd/, internal/ and go.mod/go.sum (scripts/repo-checks.test.mjs checks it).
+# only web/, cmd/, internal/, go.mod/go.sum, docs/ and CHANGELOG.md (scripts/repo-checks.test.mjs checks it).
 web/src/ui/__screenshots__
 web/storybook-static
 web/test-results

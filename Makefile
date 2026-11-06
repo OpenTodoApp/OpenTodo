@@ -225,7 +225,8 @@ openspec-validate:
 
 ## Everything CI runs.
 ## Documentation (user-documentation): build the docs site into dist/docs-site, regenerate the in-app help
-## bundle web/src/generated/help.json and the keyboard guide's tables from docs/.
+## bundle web/src/generated/help.json (not committed; `npm run help` builds only that) and the keyboard
+## and roadmap guides' tables from docs/.
 docs: templates
 	cd web && npm run docs:build
 
@@ -297,7 +298,7 @@ release-prepare:
 ## the Go/TypeScript contract index (docs/contracts.md);
 ## the brand rasters rendered from the current brand.svg (sidebar-v2 D3).
 repo-check:
-	node --test scripts/repo-checks.test.mjs scripts/security-review.test.mjs scripts/brand-icons.test.mjs scripts/contracts.test.mjs scripts/bundle-budget.test.mjs scripts/release/play-upload.test.mjs scripts/release/collect-assets.test.mjs scripts/release/check-public-image.test.mjs scripts/perf/budgets.test.mjs scripts/android-a11y.test.mjs
+	node --test scripts/repo-checks.test.mjs scripts/security-review.test.mjs scripts/brand-icons.test.mjs scripts/contracts.test.mjs scripts/bundle-budget.test.mjs scripts/release/play-upload.test.mjs scripts/release/collect-assets.test.mjs scripts/release/check-public-image.test.mjs scripts/perf/budgets.test.mjs scripts/android-a11y.test.mjs scripts/accessibility.test.mjs scripts/release/accessibilityAudit.test.mjs
 
 ## The time benchmark of the performance budgets (docs/performance.md): builds the app,
 ## the server and the 10,000-task account, then measures every server, desktop and

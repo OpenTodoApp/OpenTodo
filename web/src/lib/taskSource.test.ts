@@ -11,7 +11,7 @@ describe('taskSource', () => {
     expect(taskSource(made('d1', { kind: 'email', id: 'x', url: 'https://mail.google.com/x', provider: 'gmail' })).text).toBe('From email (Gmail)')
     expect(taskSource(made('d1', { kind: 'url', url: 'https://www.example.org/a' }))).toEqual({ kind: 'web', text: 'From example.org' })
     expect(taskSource(made('issues:c1', { kind: 'issue', provider: 'github', id: 'acme/app#12', url: 'https://github.com/acme/app/issues/12' })).text).toBe('From acme/app#12')
-    expect(taskSource(made('import', { kind: 'import', provider: 'todoist', id: '9' })).text).toBe('Imported from todoist')
+    expect(taskSource(made('import', { kind: 'import', provider: 'todoist', id: '9' })).text).toBe('Imported from Todoist')
   })
 
   it('falls back to the device that created the task', () => {

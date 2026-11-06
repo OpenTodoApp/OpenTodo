@@ -52,6 +52,16 @@ test('brand/kit/ carries every file of the brand kit', async () => {
   for (const p of kit) assert.ok(files.get(`kit/${p.slice('brand/'.length)}`).equals(readFileSync(join(repoRoot, p))), p)
 })
 
+// brand-assets-everywhere: the website serves the bundle's brand/ at /brand/, so the docs
+// pages' social card is the brand kit's default card, a file this bundle ships.
+test("the docs pages' social image is the brand kit's default card, shipped in brand/", () => {
+  const src = readFileSync(join(repoRoot, 'web/scripts/docs/site.mjs'), 'utf8')
+  const m = /property="og:image" content="\$\{SITE_URL\}\/brand\/([^"]+)"/.exec(src)
+  assert.ok(m, 'og:image points under /brand/')
+  assert.equal(m[1], 'kit/png/og-default-1200x630.png')
+  assert.ok(brandFiles().has(m[1]), `the bundle ships brand/${m[1]}`)
+})
+
 // sidebar-v2 D3: brand/ is byte-identical to the app's assets, and fails when the rasters are stale.
 test('brand/ carries the source, both marks, the wordmark and the current 512 px icon, each with the licence note', () => {
   const files = brandFiles()
@@ -111,9 +121,9 @@ test('CI path filters: docs-only changes skip the code jobs (site-bundle D7)', a
   const { execFileSync } = await import('node:child_process')
   const run = (files) => Object.fromEntries(execFileSync(join(repoRoot, 'scripts/ci-changes.sh'), { input: files.join('\n') + '\n', encoding: 'utf8' })
     .trim().split('\n').map((l) => l.split('=')).filter(([k]) => ['code', 'docs', 'mobile'].includes(k)))
-  assert.deepEqual(run(['docs/backups.md', 'web/src/generated/help.json', 'website/docs/backups/index.html']), { code: 'false', docs: 'true', mobile: 'false' })
+  assert.deepEqual(run(['docs/backups.md', 'changelog.d/Fixed/backups.md', 'website/docs/backups/index.html']), { code: 'false', docs: 'true', mobile: 'false' })
   assert.deepEqual(run(['internal/backup/restore.go']), { code: 'true', docs: 'false', mobile: 'false' })
-  assert.deepEqual(run(['web/src/app/App.tsx', 'web/src/generated/help.json']), { code: 'true', docs: 'true', mobile: 'false' })
+  assert.deepEqual(run(['web/src/app/App.tsx', 'docs/backups.md']), { code: 'true', docs: 'true', mobile: 'false' })
   assert.deepEqual(run(['go.sum']), { code: 'true', docs: 'false', mobile: 'false' })
   assert.deepEqual(run(['.github/workflows/ci.yml']), { code: 'true', docs: 'false', mobile: 'true' })
 })

@@ -12,8 +12,8 @@ make release-prepare VERSION=0.15.0          # or: node scripts/release/prepare.
 
 It makes every edit a release needs, in one go:
 
-- `CHANGELOG.md`: a `## [0.15.0] - <today>` heading right under `## [Unreleased]`, so the entries collected there become the release's, and the compare links (`[Unreleased]` from `v0.15.0`, a new `[0.15.0]` link).
-- The release in every pinned template in `deploy/` (CapRover, CasaOS, Dokploy, Easypanel, Helm, Runtipi, TrueNAS, Umbrel, the Home Assistant add-on, the Claude plugin) and in their READMEs, in `docs/self-hosting/`, in the bug report form (`.github/ISSUE_TEMPLATE/bug_report.yml`), in `web/package.json`, the two root entries of `web/package-lock.json` and `web/src/generated/help.json`.
+- `CHANGELOG.md`: a `## [0.15.0] - <today>` section right under `## [Unreleased]` with the changelog fragments as its entries (`changelog.d/<Section>/<name>.md`, assembled as Security, Added, Changed, Removed, Fixed and by file name within a section; [changelog.d/README.md](changelog.d/README.md)), which it then deletes, and the compare links (`[Unreleased]` from `v0.15.0`, a new `[0.15.0]` link). `## [Unreleased]` keeps only its pointer to `changelog.d/`; an entry written there by hand, or a fragment in the wrong place, makes it stop before it edits anything.
+- The release in every pinned template in `deploy/` (CapRover, CasaOS, Dokploy, Easypanel, Helm, Runtipi, TrueNAS, Umbrel, the Home Assistant add-on, the Claude plugin) and in their READMEs, in `docs/self-hosting/`, in the bug report form (`.github/ISSUE_TEMPLATE/bug_report.yml`), in `web/package.json` and the two root entries of `web/package-lock.json`. (The in-app help reads the release from `CHANGELOG.md` when it is built.)
 - Runtipi's `tipi_version` + 1 (Runtipi offers an update only when it changes).
 - The store fields the version alone does not move: CasaOS's `update_at` (the release date), a `changeLog` entry in Easypanel's `meta.yaml` (`Update to 0.15.0`) and a patch bump of TrueNAS's own app `version` in `app.yaml` (as truenas/apps' Renovate does).
 - On a new minor, the release line in the docs (`ghcr.io/opentodoapp/opentodo:0.15`, `:0.15`).
@@ -28,7 +28,7 @@ It changes the release only where the text names the project's version (an image
 
 Then, by hand:
 
-1. Write the release's summary paragraph under its heading in `CHANGELOG.md` (what a person upgrading should know first; for a security release, say so and ask people to upgrade), check the entries are in the right sections, and add **Upgrade notes** when there is a migration, a new setting or anything an operator must do. Add a word to the add-on's entry if the release needs one (for example "a security release").
+1. Write the release's summary paragraph under its heading in `CHANGELOG.md` (what a person upgrading should know first; for a security release, say so and ask people to upgrade), check the entries are in the right sections and in a sensible order (the most important first), and add **Upgrade notes** when there is a migration, a new setting or anything an operator must do. Add a word to the add-on's entry if the release needs one (for example "a security release").
 2. `make deploy-check docs-check` (the full `make check` runs in CI).
 3. Commit as `Prepare 0.15.0` and open the pull request. Merge it when the checks pass.
 

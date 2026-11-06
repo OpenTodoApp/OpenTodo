@@ -278,7 +278,7 @@ Read the docs with screenshots and search at **[open-todo.app/docs](https://open
 - **AI**: [overview: which option to pick](docs/ai-and-agents.md) · [assistant in the app](docs/assistant.md) · [MCP](docs/mcp.md) · [`ot` for agents](docs/cli.md#using-ot-from-an-agent)
 - **Integrations**: [REST API](docs/api.md) · [stability and compatibility](docs/stability.md) · [CLI](docs/cli.md) · [webhooks](docs/webhooks.md) · [n8n](docs/n8n.md) · [AI assistant in the app](docs/assistant.md) · [AI assistants (MCP)](docs/mcp.md)
 - **Internals**: [architecture](docs/architecture.md) · [sync protocol](docs/sync.md)
-- **Project**: [changelog](CHANGELOG.md) · [roadmap](ROADMAP.md) · [security policy](SECURITY.md) · [threat model and how security is verified](docs/security/README.md) · [contributing](CONTRIBUTING.md)
+- **Project**: [changelog](CHANGELOG.md) · [roadmap](ROADMAP.md) · [accessibility](docs/accessibility.md) · [security policy](SECURITY.md) · [threat model and how security is verified](docs/security/README.md) · [contributing](CONTRIBUTING.md)
 
 ## Development
 

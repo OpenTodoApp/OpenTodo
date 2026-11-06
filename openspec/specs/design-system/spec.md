@@ -826,7 +826,7 @@ The empty Today, the empty Upcoming, a project with no open task, Done for today
 - **THEN** `make ui-lint` fails naming the file
 
 ### Requirement: Toast primitive
-The client SHALL show at most one toast at a time, in the toast region (bottom centre on phones, bottom right from 640 px up, clear of the home indicator and the on-screen keyboard); a new toast SHALL replace the previous one. A toast SHALL hold one sentence naming what happened, written as the result ("3 tasks rescheduled", "Moved to Home"), at most two controls, Undo first when the action can be undone, and a close button that dismisses it. It SHALL stay five seconds after one task's action and ten after a batch; a named destructive action's offer MAY hold a longer window specified by the capability that raises it (bulk-actions' Trash offer holds fifteen), and a background failure message that has nothing to undo SHALL hold the one-action window and SHALL NOT show while an undo offer is up: it waits and takes the region when the offer leaves, its window starting when it is first shown. After Undo the toast SHALL show the result ("Undone.") for five seconds and then leave; the timer SHALL pause while the pointer is over the toast or focus is inside it and restart when both leave, and a control that disappears while it has focus SHALL not keep the toast paused. Tab SHALL reach its controls; focus SHALL never move into a toast on its own; `Ctrl`/`⌘`+`Z` outside a text field SHALL activate Undo while the toast shows; Escape with focus inside the toast SHALL dismiss it and return focus to where it was before. The toast SHALL be announced politely to assistive technology, except a background failure message, which SHALL be announced assertively. A toast SHALL never cover the element that has focus: while a toast is shown, the content column SHALL keep the focused element above the toast's height, and from 640 px up, when the region would overlap the focused element, the toast SHALL move to the opposite corner. Under reduced motion a toast SHALL only fade. Toasts are device interface state and write nothing.
+The client SHALL show at most one toast at a time, in the toast region (bottom centre on phones, bottom right from 640 px up, clear of the home indicator and the on-screen keyboard); a new toast SHALL replace the previous one. A toast SHALL hold one sentence naming what happened, written as the result ("3 tasks rescheduled", "Moved to Home"), at most two controls, Undo first when the action can be undone, and a close button that dismisses it. It SHALL stay five seconds after one task's action and ten after a batch; a named destructive action's offer MAY hold a longer window specified by the capability that raises it (bulk-actions' Trash offer holds fifteen), and a background failure message that has nothing to undo SHALL hold the one-action window and SHALL NOT show while an undo offer is up: it waits and takes the region when the offer leaves, its window starting when it is first shown. After Undo the toast SHALL show the result ("Undone.") for five seconds and then leave; the timer SHALL pause while the pointer is over the toast or focus is inside it and restart when both leave, and a control that disappears while it has focus SHALL not keep the toast paused. Tab SHALL reach its controls; focus SHALL never move into a toast on its own; `Ctrl`/`⌘`+`Z` outside a text field SHALL activate Undo while the toast shows; Escape with focus inside the toast SHALL dismiss it and return focus to where it was before. The toast SHALL be announced politely to assistive technology, except a background failure message, which SHALL be announced assertively. A toast SHALL never cover the element that has focus, whatever shows it (an action's toast, a failure message, a reminder, a break or daily check prompt): while a toast is shown, the focused element SHALL be scrolled clear of it where its scroller can go further; from 640 px up, when the region still overlaps the focused element, the toast SHALL move to the opposite corner, and below 640 px it SHALL move to the top of the screen until the focus is clear of the bottom again (WCAG 2.2 2.4.11); a toast that moved SHALL go back to its own place when the person taps or clicks outside it or the focus leaves for nothing. Under reduced motion a toast SHALL only fade. Toasts are device interface state and write nothing.
 
 #### Scenario: Pause on hover
 - **WHEN** a batch toast has shown for eight seconds and the user moves the pointer onto it and reads for ten seconds
@@ -879,6 +879,14 @@ The client SHALL show at most one toast at a time, in the toast region (bottom c
 #### Scenario: A named destructive offer holds longer
 - **WHEN** the user trashes twelve tasks in one batch
 - **THEN** the offer names the action, holds Undo for fifteen seconds and offers "Show Trash" as its second control
+
+#### Scenario: A reminder over the focused row on a phone
+- **WHEN** a reminder toast is shown at the bottom of a 360 px screen and the user tabs to the last row of Today, which it covers
+- **THEN** the list scrolls the row clear of the toast, or, at the end of the list, the toast moves to the top of the screen until focus moves back up
+
+#### Scenario: A moved toast goes back on a tap
+- **WHEN** a reminder moved to the top of a phone for keyboard focus and the person then taps a section's menu under it
+- **THEN** the reminder returns to the bottom before the tap lands, and the menu opens
 
 ### Requirement: Motion sequences in the workbench
 The workbench SHALL have a Foundations motion story set showing the completion sequence on a row and on a card, the repeating-task completion, a list reflow and each overlay entrance, each playable with a control, in both themes. An automated check in the interface check SHALL open these stories with reduced motion emulated and fail if any running animation changes `transform`, `height`, `width` or `translate`, and SHALL open them with the no-motion attribute and fail if any animation runs at all.
@@ -1086,3 +1094,18 @@ On a touch screen every text input, text area, select and editable area, and the
 #### Scenario: A small field fails the check
 - **WHEN** a field with 13 px text is on a screen in the layout check's touch emulation
 - **THEN** the check fails naming the screen, the field and its size
+
+### Requirement: Brand assets outside the app
+Every file that shows the OpenTodo mark outside the running app SHALL be generated from the brand source by the brand script and recorded in its stamp, never made by hand: the deploy catalogues' icons and logos in every format a store asks for (including a JPEG logo and a wide logo of about 250 × 100 for the Home Assistant add-on), the AI assistant plugin's icon, and the brand kit's store images, including a 1024 × 500 Google Play feature graphic without an alpha channel. A test SHALL fail on an image named as an icon or a logo under the web app's public folder, the extension, the Obsidian plugin, the native shells, the deploy templates or the README screenshots that the script does not write. The docs pages' social image SHALL be the brand kit's default social card, a file the same site bundle ships.
+
+#### Scenario: A hand-made logo is added to a deploy template
+- **WHEN** someone adds `deploy/example/logo.png` without adding it to the brand script
+- **THEN** the brand test fails and names the file
+
+#### Scenario: The Home Assistant add-on's images
+- **WHEN** the brand script runs
+- **THEN** the add-on's `icon.png` is the colour icon at 128 × 128 and its `logo.png` is the lockup on the slate rounded rectangle at 250 × 100
+
+#### Scenario: A docs page is shared
+- **WHEN** a docs page from the site bundle is shared as a link
+- **THEN** its `og:image` names `/brand/kit/png/og-default-1200x630.png`, which the same bundle ships in `brand/kit/png/`

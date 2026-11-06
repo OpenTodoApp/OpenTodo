@@ -782,8 +782,9 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   // The origin is a link, so it never sits inside the open button: on a card it ends the
   // card at the top right, as before rows-v2 (a link nested in a button is invalid).
   const trailing = card ? originChip && <span data-row-trailing="" className="ml-auto flex shrink-0 items-start">{originChip}</span>
-    : (originChip || revealed) && (
+    : (originChip || !inline) && (
     // The revealed actions float over the row's end at every width (task-list-width D2): the row keeps no room for them, so the title has the whole width and revealing them moves nothing.
+    // Every list row has the slot, empty or not: from 40 rem it is one fixed width (index.css), so the property column ends at the same place on every row (GitHub issue 945).
     <span data-row-trailing="" className={`ml-auto mt-0.5 flex h-5 min-w-0 items-center justify-end gap-2 transition-opacity duration-(--duration-ui) ${revealed ? (forceActions ? 'md:pointer-fine:opacity-0' : 'md:pointer-fine:group-hover:opacity-0 md:pointer-fine:group-focus-within:opacity-0') : ''}`}>
       {originChip && <span className="flex shrink-0">{originChip}</span>}
     </span>

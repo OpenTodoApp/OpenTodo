@@ -121,6 +121,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | [Obsidian plugin](obsidian.md) | Send lines from any note to OpenTodo with a link back to the note, and sync a folder of task files: connect, send, offline, encrypted accounts |
 | [Import formats](import.md) | Own export, CSV and other apps' JSON exports; duplicates and undo |
 | [End-to-end encryption](e2ee.md) | What is encrypted, the threat model, devices, recovery and limits |
+| [Accessibility](accessibility.md) | The conformance statement: WCAG 2.2 AA, how every screen is tested, the result per criterion and screen, and how to report a barrier |
 | [Feedback and support](feedback-and-support.md) | Where to report a problem or suggest an idea, where to talk to other people who use OpenTodo, how to star it on GitHub, and how to buy the maintainer a coffee. |
 
 ## Self-hosting and operations
@@ -148,6 +149,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | [Running on Render](self-hosting/render.md) | Deploy to Render Blueprint, the paid instance and disk it needs, the setup token, custom domains, updates and backups |
 | [Running on Synology](self-hosting/synology.md) | Container Manager project, the data folder and its owner, https with DSM's reverse proxy and Let's Encrypt, updates and backups |
 | [Running on Caliber Node](self-hosting/caliber-node.md) | A "Bring your own app" with the released image, the https address, updates by pulling `stable` again, backups |
+| [Running on PikaPods](self-hosting/pikapods.md) | A managed pod: cost, the owner screen and setup code, invitations, keeping your own backups, moving to your own server |
 | [Public demo instance](self-hosting/demo.md) | `OPENTODO_DEMO=true`: a private sandbox per visitor, limits, expiry and the nightly reset, what is switched off, Docker and Coolify |
 | [Outgoing email](self-hosting/outgoing-email.md) | Optional SMTP for password resets, verified sign-up and invitations; Settings or `OPENTODO_SMTP_*`, providers, troubleshooting |
 | [Speech to text](self-hosting/speech-to-text.md) | Dictation on your own network with Speaches or whisper.cpp; Settings or `OPENTODO_STT_*`, what passes through the server |
