@@ -1,5 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { MAX_FUTURE_SKEW_MS, hlcClockRefused, hlcReceive, hlcLast, hlcNow, hlcObserveServerTime, hlcReset, hlcSeed, wins } from './hlc'
+import { readFileSync, writeFileSync } from 'node:fs'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { MAX_FUTURE_SKEW_MS, hlcClockRefused, hlcReceive, hlcLast, hlcNow, hlcObserveServerTime, hlcOffset, hlcReset, hlcSeed, wins } from './hlc'
 
 // Unit tests of the hybrid logical clock (test-integrity); the sync behaviour
 // around it (clock_skew refusals, restamping) is in clockSkew.test.ts.
@@ -116,4 +117,53 @@ describe('wins', () => {
     // The same op again changes nothing.
     expect(wins(2, 'a', { ts: 2, device: 'a' })).toBe(false)
   })
+})
+
+// The shared vectors (docs/contracts.md): the same steps drive the Go property
+// test's model of this clock (propDevice, internal/sync/hlc_vectors_test.go),
+// so a change here that the model does not follow fails one of the two tests.
+// UPDATE_HLC_VECTORS=1 writes the want values from this implementation.
+interface HLCStep { do: 'stamp' | 'receive' | 'observe' | 'refused'; at?: number; ts?: number; server?: number; skew?: number; want?: number; want_last?: number; want_offset?: number }
+interface HLCVectors {
+  clocks: { name: string; skew: number; steps: HLCStep[] }[]
+  wins: { ts: number; device: string; existing: { ts: number; device: string } | null; want: boolean }[]
+}
+const VECTORS = new URL('./hlc.vectors.json', import.meta.url)
+
+describe('hlc.vectors.json', () => {
+  const vectors = JSON.parse(readFileSync(VECTORS, 'utf8')) as HLCVectors
+  const update = !!process.env.UPDATE_HLC_VECTORS
+
+  for (const clock of vectors.clocks) {
+    it(clock.name, () => {
+      let skew = clock.skew
+      clock.steps.forEach((step, i) => {
+        if (step.skew !== undefined) skew = step.skew
+        if (step.at !== undefined) vi.setSystemTime(step.at + skew)
+        let stamped: number | undefined
+        if (step.do === 'stamp') stamped = hlcNow()
+        else if (step.do === 'receive') hlcReceive(step.ts!)
+        else if (step.do === 'observe') hlcObserveServerTime(step.server)
+        else hlcClockRefused(step.server!)
+        if (update) {
+          if (stamped !== undefined) step.want = stamped
+          step.want_last = hlcLast()
+          step.want_offset = hlcOffset()
+          return
+        }
+        const at = `step ${i} (${step.do})`
+        if (step.do === 'stamp') expect(stamped, at).toBe(step.want)
+        expect(hlcLast(), at).toBe(step.want_last)
+        expect(hlcOffset(), at).toBe(step.want_offset)
+      })
+    })
+  }
+
+  it('compares like the vectors', () => {
+    for (const c of vectors.wins) expect(wins(c.ts, c.device, c.existing ?? undefined), JSON.stringify(c)).toBe(c.want)
+  })
+
+  if (update) {
+    afterAll(() => writeFileSync(VECTORS, JSON.stringify(vectors, null, 2) + '\n'))
+  }
 })

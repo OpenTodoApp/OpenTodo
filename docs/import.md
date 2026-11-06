@@ -527,7 +527,7 @@ A relative reminder fires at the due time plus its offset, with a date-only due 
 
 ### Origins
 
-Tasks from Todoist, TickTick, Things, Linear, Google Tasks, Trello, Asana, Microsoft To Do, Apple Reminders and Any.do keep where they came from as their [origin](capture.md#where-a-task-came-from), written in the import's operations like every other field and shown as a chip on the row. Tasks from a generic CSV or JSON file get none, and the preview has no origin column. Duplicate detection still uses the importer's own memory (below), not the origin.
+Tasks from Todoist, TickTick, Things, Linear, Google Tasks, Trello, Asana, Microsoft To Do, Apple Reminders and Any.do keep where they came from as their [origin](capture.md#where-a-task-came-from), written in the import's operations like every other field. The task panel, its history and the command palette read it as **Imported from Todoist** (or the app it came from), and `ot list` as `Todoist`; the source id is the importer's key for duplicates and is never shown. A row shows no origin for an import, except a Trello card's link as its icon. Tasks from a generic CSV or JSON file get none, and the preview has no origin column. Duplicate detection still uses the importer's own memory (below), not the origin.
 
 ## Duplicates
 
