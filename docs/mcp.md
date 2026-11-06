@@ -282,7 +282,8 @@ Fixed in this version, the same for every token:
 
 - at most **50** items per call,
 - at most **30** write calls per minute per token,
-- at most **1,000** changed items per UTC day per token.
+- at most **1,000** changed items per UTC day per token,
+- at most **60** write calls per minute and **2,000** changed items per UTC day for all of one person's agent tokens together, so more tokens or more connected apps do not raise the budget.
 
 The REST routes of an `agent` token share these counters: one REST write is one write call.
 

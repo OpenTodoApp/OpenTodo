@@ -17,9 +17,9 @@ const (
 	PerDay = 1000
 )
 
-// Limiter keeps the per-token write counters in memory: a ring of the last
-// PerMinute call times and the entities changed today. A restart resets them;
-// they exist to contain runaway loops, not to bill anyone.
+// Limiter keeps the write counters of each token and each account in memory:
+// the call times of the last minute and the entities changed today. A restart
+// resets them; they exist to contain runaway loops, not to bill anyone.
 type Limiter struct {
 	mu     sync.Mutex
 	now    func() time.Time
@@ -27,7 +27,7 @@ type Limiter struct {
 }
 
 type usage struct {
-	calls    []time.Time // at most PerMinute, oldest first
+	calls    []time.Time // the last minute's, oldest first
 	day      string      // UTC date the entity count belongs to
 	entities int
 	last     time.Time
@@ -62,48 +62,116 @@ func (l *Limiter) get(token string, now time.Time) *usage {
 	return u
 }
 
-// AllowCall counts one write call; when the token made PerMinute calls in the
-// last minute it refuses and says how many seconds to wait.
-func (l *Limiter) AllowCall(token string) (bool, int) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	now := l.now()
-	u := l.get(token, now)
+// Account limits (OpenSpec change agent-limits-per-account). The token limits
+// above stop one runaway token; these stop several agent tokens or OAuth
+// clients of one person from multiplying them. They are twice a token's, so
+// two assistants working at once rarely meet them, and as fixed as the token
+// limits.
+const (
+	// AccountPerMinute is the most write calls the agent tokens of one account
+	// may make together in a rolling minute.
+	AccountPerMinute = 2 * PerMinute
+	// AccountPerDay is the most entities the agent tokens of one account may
+	// change together in a UTC day.
+	AccountPerDay = 2 * PerDay
+)
+
+// accountKey keeps an account's counters apart from token counters in the one
+// map: token ids are UUIDs and never carry this prefix.
+func accountKey(userID string) string { return "account:" + userID }
+
+// callWait drops the calls older than a minute and reports whether one more
+// fits under limit, or how many seconds until it does.
+func (u *usage) callWait(now time.Time, limit int) int {
 	cut := now.Add(-time.Minute)
 	i := 0
 	for i < len(u.calls) && !u.calls[i].After(cut) {
 		i++
 	}
 	u.calls = u.calls[i:]
-	if len(u.calls) >= PerMinute {
-		wait := u.calls[0].Add(time.Minute).Sub(now)
-		return false, max(1, int(math.Ceil(wait.Seconds())))
+	if len(u.calls) < limit {
+		return 0
 	}
-	u.calls = append(u.calls, now)
-	return true, 0
+	wait := u.calls[len(u.calls)-limit].Add(time.Minute).Sub(now)
+	return max(1, int(math.Ceil(wait.Seconds())))
 }
 
-// Reserve books n changed entities against today's budget, or refuses with the
-// seconds until the next UTC day.
-func (l *Limiter) Reserve(token string, n int) (bool, int) {
+// untilNextDay is the seconds until the next UTC day, at least one.
+func untilNextDay(now time.Time) int {
+	y, m, d := now.UTC().Date()
+	next := time.Date(y, m, d+1, 0, 0, 0, 0, time.UTC)
+	return max(1, int(math.Ceil(next.Sub(now).Seconds())))
+}
+
+// AllowCall counts one write call of a token that belongs to no account
+// (tests and callers without a person); see AllowCallFor.
+func (l *Limiter) AllowCall(token string) (bool, int) { return l.AllowCallFor("", token) }
+
+// Reserve books n entities for a token that belongs to no account; see
+// ReserveFor.
+func (l *Limiter) Reserve(token string, n int) (bool, int) { return l.ReserveFor("", token, n) }
+
+// Refund returns n entities to a token that belongs to no account.
+func (l *Limiter) Refund(token string, n int) { l.RefundFor("", token, n) }
+
+// AllowCallFor counts one write call against the token and against the
+// account of userID. When the token made PerMinute calls, or the account's
+// tokens AccountPerMinute calls, in the last minute it refuses, counts
+// nothing, and says how many seconds to wait. An empty userID counts the
+// token only.
+func (l *Limiter) AllowCallFor(userID, token string) (bool, int) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	now := l.now()
-	u := l.get(token, now)
-	if u.entities+n > PerDay {
-		y, m, d := now.UTC().Date()
-		next := time.Date(y, m, d+1, 0, 0, 0, 0, time.UTC)
-		return false, max(1, int(math.Ceil(next.Sub(now).Seconds())))
+	tu := l.get(token, now)
+	if wait := tu.callWait(now, PerMinute); wait > 0 {
+		return false, wait
 	}
-	u.entities += n
+	if userID != "" {
+		au := l.get(accountKey(userID), now)
+		if wait := au.callWait(now, AccountPerMinute); wait > 0 {
+			return false, wait
+		}
+		au.calls = append(au.calls, now)
+	}
+	tu.calls = append(tu.calls, now)
 	return true, 0
 }
 
-// Refund returns n entities reserved for a call that changed nothing.
-func (l *Limiter) Refund(token string, n int) {
+// ReserveFor books n changed entities against today's budget of the token and
+// of the account of userID, or refuses with the seconds until the next UTC
+// day when either would go over (PerDay, AccountPerDay).
+func (l *Limiter) ReserveFor(userID, token string, n int) (bool, int) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	if u, ok := l.tokens[token]; ok {
-		u.entities = max(0, u.entities-n)
+	now := l.now()
+	tu := l.get(token, now)
+	var au *usage
+	if userID != "" {
+		au = l.get(accountKey(userID), now)
+	}
+	if tu.entities+n > PerDay || (au != nil && au.entities+n > AccountPerDay) {
+		return false, untilNextDay(now)
+	}
+	tu.entities += n
+	if au != nil {
+		au.entities += n
+	}
+	return true, 0
+}
+
+// RefundFor returns n entities reserved by ReserveFor for a call that changed
+// nothing.
+func (l *Limiter) RefundFor(userID, token string, n int) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	keys := []string{token}
+	if userID != "" {
+		keys = append(keys, accountKey(userID))
+	}
+	for _, k := range keys {
+		if u, ok := l.tokens[k]; ok {
+			u.entities = max(0, u.entities-n)
+		}
 	}
 }
