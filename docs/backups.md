@@ -45,7 +45,11 @@ The same is available over the API ([docs/api.md](api.md#backups)).
 ## Destinations
 
 The server contacts a destination only for a test or a backup run, and only the
-destination the owner configured.
+destination the owner configured. It connects directly: the `HTTP_PROXY` and
+`HTTPS_PROXY` environment variables are not used for destinations. A
+destination may redirect up to three times within its own scheme and host (for
+example from `/dav` to `/dav/`); a redirect to another host, or from https to
+http, fails the run, so the password and the archives never go anywhere else.
 
 ### Folder on the server
 
