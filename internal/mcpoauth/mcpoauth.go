@@ -1,7 +1,9 @@
 // Package mcpoauth is the storage and the cryptography of the OAuth 2.1
 // authorization server in front of the MCP endpoint (OpenSpec change
 // `mcp-oauth`): registered clients, single-use authorization codes, grants with
-// a refresh token that never rotates, and the PKCE check.
+// a refresh token that rotates on every use (except for Google's connector,
+// whose guide requires the same token back), reuse detection, and the PKCE
+// check.
 //
 // It holds no HTTP and no policy: internal/httpapi owns the endpoints and mints
 // the access tokens through internal/auth, so an OAuth access token is an
@@ -38,8 +40,10 @@ const CodeTTL = 60 * time.Second
 // (design D6).
 const AccessTTL = time.Hour
 
-// RefreshTTL is the lifetime of a grant's refresh token. It is extended on
-// every refresh, and the token itself never changes (design D6).
+// RefreshTTL is the lifetime of a grant's refresh token. Every refresh starts
+// it again: a rotating client gets a new token with the full lifetime, and a
+// Google connector keeps its token with the expiry extended (design D6,
+// mcp-oauth-refresh-rotation).
 const RefreshTTL = 180 * 24 * time.Hour
 
 var (
@@ -55,6 +59,8 @@ var (
 	ErrInvalidScope = errors.New("scope must be read or agent")
 	// ErrInvalidRedirect is a redirect address this client may not use.
 	ErrInvalidRedirect = errors.New("the redirect address is not registered for this client")
+	// ErrReused is a refresh token that was already exchanged for a newer one.
+	ErrReused = errors.New("the refresh token was already used")
 )
 
 // ValidScope reports whether scope may be given to a client.
@@ -101,6 +107,32 @@ type Grant struct {
 
 // Revoked reports whether the grant was revoked.
 func (g Grant) Revoked() bool { return g.RevokedAt > 0 }
+
+// RotatesRefresh reports whether a refresh gives this client a new refresh token
+// and retires the one it sent (mcp-oauth-refresh-rotation). Every client
+// rotates except one registered only for Google's connector addresses:
+// Google's guide for connected apps requires the same refresh token back on a
+// refresh, and a rotation would unlink Gemini.
+func (c Client) RotatesRefresh() bool {
+	if len(c.RedirectURIs) == 0 {
+		return true
+	}
+	for _, r := range c.RedirectURIs {
+		if !isGooglePrefix(r) && !IsGoogleRedirect(r) {
+			return true
+		}
+	}
+	return false
+}
+
+func isGooglePrefix(uri string) bool {
+	for _, p := range GoogleRedirectPrefixes {
+		if uri == p {
+			return true
+		}
+	}
+	return false
+}
 
 // Store is the OAuth state in the database.
 type Store struct {
@@ -349,6 +381,11 @@ func (s *Store) UpsertGrant(ctx context.Context, clientID, userID, scope string)
 	if err != nil {
 		return Grant{}, "", err
 	}
+	// A deliberate authorization starts a new token family: the tokens the
+	// earlier one exchanged are forgotten rather than held against it.
+	if _, err := s.db.ExecContext(ctx, `DELETE FROM mcp_oauth_refresh_used WHERE grant_id = ?`, g.ID); err != nil {
+		return Grant{}, "", err
+	}
 	return g, plain, nil
 }
 
@@ -366,6 +403,66 @@ func (s *Store) GrantByRefresh(ctx context.Context, plain string) (Grant, error)
 	return scanGrant(row)
 }
 
+// GrantByUsedRefresh resolves a refresh token that a rotating grant already
+// exchanged for a newer one: the grant it belonged to, which is what reuse
+// detection revokes. ErrNotFound for any other token.
+func (s *Store) GrantByUsedRefresh(ctx context.Context, plain string) (Grant, error) {
+	if plain == "" {
+		return Grant{}, ErrNotFound
+	}
+	row := s.db.QueryRowContext(ctx, `SELECT g.id,g.client_id,g.user_id,g.scope,g.token_id,g.access_expires_at,g.refresh_expires_at,COALESCE(g.revoked_at,0),g.created_at
+		FROM mcp_oauth_refresh_used u JOIN mcp_oauth_grant g ON g.id = u.grant_id WHERE u.refresh_hash = ?`, HashSecret(plain))
+	return scanGrant(row)
+}
+
+// RotateRefresh replaces the grant's refresh token plain with a new one and
+// remembers plain as used, in one transaction (mcp-oauth-refresh-rotation). It
+// succeeds only while the grant is live and still holds plain: when another
+// request exchanged plain first it answers ErrReused, and when the grant was
+// revoked ErrRevoked, so two requests can never both rotate the same token.
+// The new token's lifetime is RefreshTTL from now.
+func (s *Store) RotateRefresh(ctx context.Context, grantID, plain string) (string, error) {
+	now := s.now()
+	next := ids.Secret(32)
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return "", err
+	}
+	defer tx.Rollback()
+	res, err := tx.ExecContext(ctx, `UPDATE mcp_oauth_grant SET refresh_hash = ?, refresh_expires_at = ?
+		WHERE id = ? AND refresh_hash = ? AND revoked_at = 0`,
+		HashSecret(next), now.Add(RefreshTTL).UnixMilli(), grantID, HashSecret(plain))
+	if err != nil {
+		return "", err
+	}
+	if n, err := res.RowsAffected(); err != nil {
+		return "", err
+	} else if n == 0 {
+		var revoked int64
+		err := tx.QueryRowContext(ctx, `SELECT revoked_at FROM mcp_oauth_grant WHERE id = ?`, grantID).Scan(&revoked)
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return "", ErrNotFound
+		case err != nil:
+			return "", err
+		case revoked > 0:
+			return "", ErrRevoked
+		}
+		return "", ErrReused
+	}
+	if _, err := tx.ExecContext(ctx, `INSERT INTO mcp_oauth_refresh_used(refresh_hash,grant_id,used_at) VALUES(?,?,?)
+		ON CONFLICT(refresh_hash) DO NOTHING`, HashSecret(plain), grantID, now.UnixMilli()); err != nil {
+		return "", err
+	}
+	// A used token older than RefreshTTL would have expired unrotated, so it
+	// no longer needs to be recognised.
+	if _, err := tx.ExecContext(ctx, `DELETE FROM mcp_oauth_refresh_used WHERE used_at < ?`,
+		now.Add(-RefreshTTL).UnixMilli()); err != nil {
+		return "", err
+	}
+	return next, tx.Commit()
+}
+
 // GrantByToken resolves the grant an access token was minted for, if any.
 func (s *Store) GrantByToken(ctx context.Context, tokenID string) (Grant, error) {
 	if tokenID == "" {
@@ -377,9 +474,9 @@ func (s *Store) GrantByToken(ctx context.Context, tokenID string) (Grant, error)
 }
 
 // SwapGrantToken records the access token an exchange or a refresh minted,
-// replacing previous, and extends the refresh token (design D6: the token
-// itself never changes). It only succeeds while the grant is live and still
-// holds previous: a request that lost a race with another refresh, a
+// replacing previous, and extends the refresh token's expiry (design D6; a
+// rotating client's token was already replaced by RotateRefresh). It only
+// succeeds while the grant is live and still holds previous: a request that lost a race with another refresh, a
 // revocation or the client's deletion gets false and must drop the token it
 // minted, so no access token is ever left without a grant pointing to it.
 func (s *Store) SwapGrantToken(ctx context.Context, grantID, previous, tokenID string) (bool, error) {

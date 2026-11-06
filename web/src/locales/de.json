@@ -7119,6 +7119,7 @@
   "AI app sign-in client deleted": "Anmelde-Client für KI-App gelöscht",
   "AI app connected": "KI-App verbunden",
   "AI app disconnected": "KI-App getrennt",
+  "AI app disconnected: an old token was reused": "KI-App getrennt: ein altes Token wurde erneut verwendet",
   "Require single sign-on?": "Single Sign-On verlangen?",
   "Require single sign-on": "Single Sign-On verlangen",
   "Once you save, members can sign in only with {name}: their passwords and passkeys stop working. If the provider is down, they cannot sign in until you turn this off. You keep your password at {path}.": "Nach dem Speichern können sich Mitglieder nur noch mit {name} anmelden: Ihre Passwörter und Passkeys funktionieren nicht mehr. Ist der Anbieter nicht erreichbar, können sie sich erst wieder anmelden, wenn du dies ausschaltest. Dein Passwort funktioniert weiter unter {path}.",
