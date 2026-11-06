@@ -149,6 +149,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | [Running on Render](self-hosting/render.md) | Deploy to Render Blueprint, the paid instance and disk it needs, the setup token, custom domains, updates and backups |
 | [Running on Synology](self-hosting/synology.md) | Container Manager project, the data folder and its owner, https with DSM's reverse proxy and Let's Encrypt, updates and backups |
 | [Running on Caliber Node](self-hosting/caliber-node.md) | A "Bring your own app" with the released image, the https address, updates by pulling `stable` again, backups |
+| [Running on PikaPods](self-hosting/pikapods.md) | A managed pod: cost, the owner screen and setup code, invitations, keeping your own backups, moving to your own server |
 | [Public demo instance](self-hosting/demo.md) | `OPENTODO_DEMO=true`: a private sandbox per visitor, limits, expiry and the nightly reset, what is switched off, Docker and Coolify |
 | [Outgoing email](self-hosting/outgoing-email.md) | Optional SMTP for password resets, verified sign-up and invitations; Settings or `OPENTODO_SMTP_*`, providers, troubleshooting |
 | [Speech to text](self-hosting/speech-to-text.md) | Dictation on your own network with Speaches or whisper.cpp; Settings or `OPENTODO_STT_*`, what passes through the server |
