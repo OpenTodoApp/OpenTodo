@@ -1,21 +1,24 @@
-// The reference-device record a minor release needs (OpenSpec change performance-10k,
+// The reference-device record of a minor release (OpenSpec change performance-10k,
 // design D5): docs/performance/results-<version>.md, with every value within its
 // budget of scripts/perf/budgets.json or linking the issue that tracks it. Read by
 // prepare.mjs (make release-prepare). The steps are in scripts/perf/device.md.
+//
+// The record is optional until real devices can be measured (owner decision 2026-11-07,
+// #990): a release without one passes, and a record that exists is checked.
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 /** The record's columns and the budget setting each one is held to. */
 export const COLUMNS = { Android: 'device-android', iPhone: 'device-ios', 'Raspberry Pi 4': 'pi4' }
 
-/** Minor releases from this major on need the record (the first is 1.0.0). */
+/** Minor releases from this major on are checked against their record (the first is 1.0.0). */
 export const FIRST_GATED_MAJOR = 1
 
 export function recordPath(version) {
   return `docs/performance/results-${version}.md`
 }
 
-/** Whether a release of `version` after `from` must carry the record. */
+/** Whether a release of `version` after `from` is a minor whose record, if any, is checked. */
 export function needsRecord(version, from) {
   const [maj, min, patch] = version.split('.').map(Number)
   const [fmaj, fmin] = from.split('.').map(Number)
@@ -54,11 +57,14 @@ export function recordProblems(text, budgets) {
   return out
 }
 
-/** Throws when a release of `version` after `from` lacks its record or has an over-budget value without an issue. */
+/**
+ * Throws when the record of a minor release `version` after `from` exists and has a value that
+ * is not a number or is over budget without an issue. A missing record passes (#990).
+ */
 export function checkDeviceRecord(root, version, from) {
   if (!needsRecord(version, from)) return
   const path = recordPath(version)
-  if (!existsSync(join(root, path))) throw new Error(`a minor release needs the reference-device record ${path} (scripts/perf/device.md)`)
+  if (!existsSync(join(root, path))) return
   const budgets = JSON.parse(readFileSync(join(root, 'scripts/perf/budgets.json'), 'utf8'))
   const problems = recordProblems(readFileSync(join(root, path), 'utf8'), budgets)
   if (problems.length) throw new Error(`${path}:\n  ${problems.join('\n  ')}`)

@@ -27,7 +27,8 @@
 // release, as the release workflow moves no `stable` or line tag, publishes no chart and submits
 // to no store for it. The final x.y.z then replaces its candidates' sections with one section
 // from the fragments, which it deletes. The release gates run for x.y.z; on a candidate the ones
-// that need the owner's devices (the reference-device record, the screen-reader passes) are warnings.
+// that need the owner's devices (an over-budget reference-device record, the screen-reader passes)
+// are warnings. The reference-device record itself is optional until real devices can be measured (#990).
 
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -208,17 +209,18 @@ export function truenasText(text) {
 /**
  * The release gates for `base` (x.y.z) after `from`: throws on the first that refuses it, and
  * returns the warnings. For a release candidate (`candidate`), what only the owner's devices can
- * provide, the reference-device record and the screen-reader passes of the accessibility audit,
- * is a warning that names what is still pending; everything else is as strict as for the release.
+ * provide, a reference-device record within budget and the screen-reader passes of the accessibility
+ * audit, is a warning that names what is still pending; everything else is as strict as for the release.
  */
 export function runGates(root, { base, from, date, candidate = false, fromDate = '' }) {
   const warnings = []
-  // A minor release carries its reference-device record (performance-10k D5).
+  // A minor release's reference-device record, when it has one, is within budget or links issues
+  // (performance-10k D5). No record passes: real devices are measured after 1.0 (#990).
   try {
     checkDeviceRecord(root, base, from)
   } catch (e) {
     if (!candidate) throw e
-    warnings.push(`reference-device record pending, required for ${base}: ${e.message}`)
+    warnings.push(`reference-device record to fix before ${base}: ${e.message}`)
   }
   // Every import of the migration matrix was checked against a real export lately (migration-everywhere D6).
   checkMatrixFreshness(root, base, date)

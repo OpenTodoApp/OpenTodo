@@ -14,6 +14,17 @@ thousands of open tasks and tens of thousands done. These pages give the
 numbers it is held to with a 10,000-task account, on a computer, in a phone
 profile and on a small server, and how they are checked.
 
+**1.0 was measured in CI only.** Every budget 1.0 promises is timed every night
+on a GitHub Actions runner: in desktop Chromium, in a phone profile that
+emulates a phone in that same Chromium, and on the server binary. No real phone,
+iPhone or Raspberry Pi was measured for 1.0, because the project has none of
+the reference devices. The phone profile slows the runner's CPU four times and
+uses a phone's screen and touch input; it talks to a server on the same machine,
+so it does not emulate a mobile network, a phone's memory limits or its
+WebView. The Android, iPhone and Raspberry Pi 4 columns below are the targets
+for real devices, measured after 1.0
+([#990](https://github.com/OpenTodoApp/OpenTodo/issues/990)).
+
 - [The test account](#the-test-account)
 - [Budgets](#budgets)
 - [How the budgets are checked](#how-the-budgets-are-checked)
@@ -71,9 +82,11 @@ The settings:
 - **Phone profile**: the same runner with the CPU slowed four times and a
   412 × 915 screen.
 - **Android, iPhone**: a 2022 mid-range Android phone in the Android app and an
-  iPhone 12 in the iOS app, measured by hand before each minor release.
+  iPhone 12 in the iOS app, to be measured by hand. Not measured yet: real
+  devices come after 1.0 ([#990](https://github.com/OpenTodoApp/OpenTodo/issues/990)).
 - **Server**: the server binary on the CI runner; **Raspberry Pi 4** (4 GB,
-  arm64 image) is measured by hand, with four times the server's limits.
+  arm64 image), with four times the server's limits, to be measured by hand
+  after 1.0 like the phones.
 
 ### The app
 
@@ -171,9 +184,12 @@ metric five times and fails when a median is over its limit; the nightly alert
 names the metric, the median and the limit ("first sync, desktop, 41 s,
 budget 30 s").
 
-**Before each minor release** the device budgets are measured on the reference
-phones and a Raspberry Pi 4 ([scripts/perf/device.md](../scripts/perf/device.md))
-and recorded in `docs/performance/results-<version>.md`.
+**On real devices, after 1.0.** The device budgets are to be measured on the
+reference phones and a Raspberry Pi 4 ([scripts/perf/device.md](../scripts/perf/device.md))
+and recorded in `docs/performance/results-<version>.md`. No release requires
+that record yet ([#990](https://github.com/OpenTodoApp/OpenTodo/issues/990));
+when a release has one, `make release-prepare` checks its values against the
+budgets.
 
 The app marks a few moments in the browser's own performance timeline
 (`ot:list-ready`, `ot:search-results`, `ot:sync-idle`, `ot:remote-applied`). The
@@ -192,5 +208,7 @@ and Linux for the server's memory figures. The report is written to
 
 ## Latest results
 
-Reference-device results are recorded per release in `docs/performance/`. No
-release has a record yet; the first is due before 1.0.
+Reference-device results are to be recorded per release in `docs/performance/`.
+No release has a record yet, 1.0 included: its budgets were measured in CI only,
+and the first real-device record comes after 1.0
+([#990](https://github.com/OpenTodoApp/OpenTodo/issues/990)).
