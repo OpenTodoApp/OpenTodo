@@ -234,8 +234,8 @@ The person turned on end-to-end encryption and does not trust the server, its op
 - **Metadata.** Dates, priorities, structure, labels on tasks, counts, timing, device ids and ciphertext lengths are plaintext ([docs/e2ee.md](../e2ee.md)).
 - **Rollback.** The server can serve an older ciphertext of the same field. The additional data has no version.
 - **The device relay.** While a device is opted in to the relay and unlocked, the server can ask it to decrypt any content value it holds, or to encrypt text of its choosing for any content field. It needs only the entity, id and field, which it knows.
-  - The device checks that each field is a content field and enforces its own caps: 5,000 values an hour and 20,000 a day. With **Confirm changes first** on, it shows every encryption request before answering.
-  - It cannot tell a request for an assistant from one the server made up.
+  - The device checks that each field is a content field and enforces its own caps: 5,000 values an hour and 20,000 a day. With **Confirm changes first** on, it shows every encryption request before answering; with **Confirm reads first** on, every decryption request, with the values it would send.
+  - Each request names the connector, the tool and the call's arguments, and the device shows them while it answers and in its recent requests (`relay-request-transparency`; `TestRelayRequestsNameTheCall`, `TestRequestCarriesTheCall`, `web/src/lib/relayCalls.test.ts`). That is the server's description: it makes a request the user did not cause visible, and refusable, but the device still cannot prove that an assistant made it.
   - So, while the relay is on, the server operator is trusted with content, within those caps. [docs/mcp.md](../mcp.md) and the threat model in [docs/e2ee.md](../e2ee.md) say to opt a device in only on a server you run or trust.
 - **Weak passphrases.** PBKDF2 is not memory-hard, so the wrapped key can be attacked offline.
 - **Plaintext from before.** Content written before encryption was turned on stays in older backups and in the op log until **Purge plaintext history**.

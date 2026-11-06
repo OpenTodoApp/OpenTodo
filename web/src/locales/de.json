@@ -7164,5 +7164,14 @@
   "Reorder": "Reihenfolge",
   "Move to top": "Ganz nach oben",
   "Move to bottom": "Ganz nach unten",
-  "Move {name}": "{name} verschieben"
+  "Move {name}": "{name} verschieben",
+  "An AI connector wants to read your text": "Ein KI-Connector möchte deinen Text lesen",
+  "An assistant asks to read this with {tool}:": "Ein Assistent möchte dies mit {tool} lesen:",
+  "{token} asks to read this with {tool}:": "{token} möchte dies mit {tool} lesen:",
+  "Answering an AI connector: {tool}": "Antwortet einem KI-Connector: {tool}",
+  "Answering {token}: {tool}": "Antwortet {token}: {tool}",
+  "Confirm reads first": "Lesezugriffe erst bestätigen",
+  "Each request to read your text shows here before this device sends it.": "Jede Anfrage, deinen Text zu lesen, erscheint hier, bevor dieses Gerät ihn sendet.",
+  "Text to send": "Zu sendender Text",
+  "{n, plural, one {and # more value} other {and # more values}}": "{n, plural, one {und # weiterer Wert} other {und # weitere Werte}}"
 }
