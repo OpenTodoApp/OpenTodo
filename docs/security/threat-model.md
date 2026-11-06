@@ -306,7 +306,7 @@ The model behind an MCP client or the in-app assistant follows instructions hidd
 
 **Defended.**
 - Writing without the owner's switch, the person's own switch and an `agent` token.
-- More than 50 items per call, 30 calls a minute and 1,000 items a day per token, for the item-writing tools.
+- More than 50 items per call, 30 calls a minute and 1,000 items a day per token, and 60 calls a minute and 2,000 items a day for all of one account's agent tokens together, for the item-writing tools.
 - Permanent deletion.
 - Trashing tasks the same token did not create.
 - Touching sharing, members, tokens, settings or credentials.
@@ -321,7 +321,7 @@ The model behind an MCP client or the in-app assistant follows instructions hidd
 - The assistant loop (`internal/assistant`) is capped at 12 model rounds and 50 entities per proposal. It runs only for signed-in sessions and is refused for encrypted accounts.
 
 **Verified by.**
-- `TestPermissionGate`, `TestToolsListByPermission` (golden tool lists), `TestToolSurfaceIsClosed`, `TestLimiterPerMinuteAndPerDay`, `TestWriteLimitPerCall`, `TestTrashOnlyOwnCreations`, `TestResultsMarkUntrustedText` (`internal/agenttools/agenttools_test.go`).
+- `TestPermissionGate`, `TestToolsListByPermission` (golden tool lists), `TestToolSurfaceIsClosed`, `TestLimiterPerMinuteAndPerDay`, `TestLimiterPerAccount`, `TestWriteRatePerAccount` (`limits_account_test.go`), `TestWriteLimitPerCall`, `TestTrashOnlyOwnCreations`, `TestResultsMarkUntrustedText` (`internal/agenttools/agenttools_test.go`).
 - `TestMcpCookieRejected401`, `TestMcpBadOrigin403`, `TestMcpBodyTooLarge413` (`internal/httpapi/mcp_test.go`).
 - `TestWriteLimitsOverHTTP`, `TestAgentWriteAudited` (`mcp_write_test.go`).
 - `TestInjectionCannotEscapeRegistry`, `TestLoopCapsChangeSetAt50`, `TestLoopRoundLimit` (`internal/assistant/loop_test.go`).
@@ -329,7 +329,7 @@ The model behind an MCP client or the in-app assistant follows instructions hidd
 
 **Not defended.**
 - Within those limits, an injected instruction can make an agent with write access change, complete, move or comment on the person's tasks. The changes are undoable and labelled in history.
-- Limits are per token: several agent tokens multiply them. They are kept in memory and reset on restart.
+- Limits are kept in memory and reset on restart.
 - The routine tools let an agent create, enable and run routines. A routine's runs are bounded by the routine engine's own limits and step availability ([Routines](../routines.md)), not by the agent limits above.
 - The in-app assistant sends what its read tools return to the model provider the person accepted (see the next profile).
 
@@ -472,8 +472,9 @@ Each item of the [review scope](review-scope.md) has a section here: where the c
 - **OAuth for MCP:**
   - Dynamic registration is allowed for Google's connector redirects only.
   - Consent is required, with PKCE S256 and single-use codes.
-  - Tests: `TestMCPOAuthAuthorizeNeedsConsent`, `TestMCPOAuthDynamicRegistrationIsGoogleOnly`, `TestMCPOAuthRevokeIsScopedToTheClient`.
-  - Refresh tokens last 180 days and do not rotate. Only deleting the client stops it.
+  - Refresh tokens rotate on every refresh. A refresh token that was already exchanged revokes the whole grant and records `mcp_oauth.refresh_reused` (OpenSpec `mcp-oauth-refresh-rotation`).
+  - Tests: `TestMCPOAuthAuthorizeNeedsConsent`, `TestMCPOAuthDynamicRegistrationIsGoogleOnly`, `TestMCPOAuthRevokeIsScopedToTheClient`, `TestMCPOAuthRefreshRotates`, `TestMCPOAuthRefreshReuseRevokesTheGrant`, `TestMCPOAuthRefreshReuseNeedsTheClient`, `TestMCPOAuthConcurrentRotatingRefreshRevokes`.
+  - **Not defended:** a client registered only for Google's connector addresses (the Gemini preset and every dynamic client) keeps one refresh token, because Google's guide for connected apps requires the same token back on a refresh. It lasts 180 days from the last refresh, and deleting the client or revoking the grant stops it (`TestMCPOAuthGoogleClientKeepsItsRefreshToken`).
 
 ### Assistant tool loop
 
