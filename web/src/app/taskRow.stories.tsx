@@ -390,6 +390,33 @@ export const ImportedOrigins: StoryObj = {
   },
 }
 
+/**
+ * A project after a Todoist import (GitHub issue 945): the import's id shows nowhere,
+ * and the date and label cells line up down the list whether a row ends with an
+ * origin (an issue, a page, a Trello card's icon) or with nothing. The list takes the
+ * whole width, so at 1280 and 768 px each row has the property column, at 390 px the
+ * phone's one line. scripts/ui-check/alignment.mjs measures it at the three widths.
+ */
+export const ImportedAlignment: StoryObj = {
+  render: () => {
+    const todoist = (id: string) => ({ kind: 'import' as const, provider: 'todoist', id })
+    const trello = { kind: 'import' as const, provider: 'trello', id: '5f3a9c1e2b7d4a0012345678', url: 'https://trello.com/c/AbCd1234' }
+    const issue = { kind: 'issue' as const, provider: 'github', id: 'o/r#7', url: 'https://github.com/o/r/issues/7' }
+    const page = { kind: 'url' as const, url: 'https://docs.example-company.org/handbook/onboarding', title: 'Onboarding handbook' }
+    const row = { ...base, onExpand: noop }
+    return (
+      <ul data-alignment-list="" className="w-full space-y-0.5 rounded-card border border-default bg-surface p-2 shadow-1">
+        <TaskRow {...row} task={task({ id: 'ia-1', title: 'Küche aufräumen', due: { date: TOMORROW }, labels: [errand.id], origin: todoist('dfc92cb10aed05a4:1') })} labels={[errand]} />
+        <TaskRow {...row} task={task({ id: 'ia-2', title: 'Fix the login timeout', due: { date: '2026-10-20' }, labels: [deepWork.id], origin: issue })} labels={[deepWork]} />
+        <TaskRow {...row} task={task({ id: 'ia-3', title: 'Geschenke für die Familie besorgen', due: { date: TODAY }, labels: [errand.id, deepWork.id], origin: todoist('32dc159c4ebf721d:1') })} labels={[errand, deepWork]} />
+        <TaskRow {...row} task={task({ id: 'ia-4', title: 'Read the onboarding handbook', due: { date: '2026-10-22' }, labels: [deepWork.id], origin: page })} labels={[deepWork]} />
+        <TaskRow {...row} task={task({ id: 'ia-5', title: 'Plan the autumn trip', due: { date: '2026-10-25' }, labels: [errand.id] })} labels={[errand]} />
+        <TaskRow {...row} task={task({ id: 'ia-6', title: 'Move the onboarding checklist into the new board', due: { date: TOMORROW }, labels: [errand.id], origin: trello })} labels={[errand]} />
+      </ul>
+    )
+  },
+}
+
 /** A task from an Obsidian note (obsidian-origin): the note's name with a note icon; one titled, one read from its path. */
 export const WithObsidianOrigin: StoryObj = {
   render: () => {
