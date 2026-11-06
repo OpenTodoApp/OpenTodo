@@ -1,0 +1,1 @@
+- **Simplified Chinese.** The app, reminder notifications, the browser extension, the Android and iPhone shells, emails and notification channels can use 简体中文. A browser set to `zh-CN`, `zh-Hans` or `zh-SG` follows it; `zh-TW`, `zh-HK`, `zh-MO` and Traditional Chinese stay in English. Dates use the browser's own Chinese locale. Quick add stays on its existing languages. (#883)
