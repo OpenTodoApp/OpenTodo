@@ -294,7 +294,7 @@ The person turned on end-to-end encryption and does not trust the server, its op
 **Not defended.**
 - Content from these sources is untrusted text. It reaches tasks and, through them, AI agents (see the next profile).
 - A calendar server the user connected can change the events it serves.
-- The SMTP and IMAP connections, the OIDC issuer and backup destinations are configured by the operator and do not go through `internal/outbound`. The backup client uses Go's default HTTP client, which follows redirects and honours proxy environment variables. This is accepted: only the operator sets these targets, and host mode refuses backup settings to tenants.
+- The SMTP and IMAP connections, the OIDC issuer and backup destinations are configured by the operator and do not go through `internal/outbound`'s deny list, so they may be on the operator's own network. This is accepted: only the operator sets these targets, and host mode refuses backup settings to tenants. Their HTTP clients still take no proxy from the environment, the OIDC client follows no redirect, and the backup client follows at most 3, each to the destination's own scheme and host (`outbound.OperatorTransport`, `outbound.SameHostRedirects`; `TestOperatorTransportIgnoresEnvironmentProxy`, `TestSameHostRedirects`, `TestBackupClientIgnoresEnvironmentProxy`, `TestBackupDestinationRedirectsStayOnHost`, `TestProviderClientIgnoresEnvironmentProxy`, `TestProviderClientFollowsNoRedirect`).
 - The outbound dialer tries only the first allowed address of a name.
 
 ### Malicious AI agent or prompt injection

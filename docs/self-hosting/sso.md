@@ -18,7 +18,7 @@ What it does:
 - Optionally requires single sign-on for everyone except the owner (**SSO only**).
 - Optionally signs people out of the provider when they sign out of OpenTodo.
 
-Network: when, and only when, a provider is configured, the server contacts the issuer's discovery document (`<issuer>/.well-known/openid-configuration`) and the token and key endpoints it lists. Requests time out after 10 seconds and do not follow redirects. Nothing else is contacted.
+Network: when, and only when, a provider is configured, the server contacts the issuer's discovery document (`<issuer>/.well-known/openid-configuration`) and the token and key endpoints it lists. Requests time out after 10 seconds, do not follow redirects and go directly to the issuer: the `HTTP_PROXY` and `HTTPS_PROXY` environment variables are not used. Nothing else is contacted.
 
 ## 1. Set the public URL
 
