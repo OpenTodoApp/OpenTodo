@@ -14,6 +14,7 @@ These pages are for anyone who wants to check OpenTodo's security before trustin
 | Page | What it covers |
 |---|---|
 | [Threat model](threat-model.md) | The assets, trust boundaries and attacker profiles. For each profile: what is defended, by which mechanism and test, and what is not. One section per review scope item, and the accepted risks |
+| [Security limits](limits.md) | What is not protected, in one place: what the operator sees with and without end-to-end encryption, what is unencrypted at rest, what backups contain, host mode and demo isolation, scale |
 | [How we verify security](how-we-verify.md) | A retrospective of the methods behind those claims: the op-log sync and its convergence tests, the encryption design and its shared vectors, the route policy test, token scopes, the SSRF policy, importer limits, upgrade tests, static analysis and fuzzing. Also the issues found so far and the gaps still open |
 | [Independent review scope](review-scope.md) | The brief for an external reviewer: the pinned commit, the method, the 17 scope items, and how findings are recorded and gated before a release |
 | [SECURITY.md](../../SECURITY.md) | How to report a vulnerability, response times and fix targets, safe harbour, supported versions and the security model in brief |
