@@ -193,7 +193,8 @@ async function session(browser, profileName) {
       if (ms === null) throw new Error('complete: the row did not change')
       completes.push(ms)
     }
-    debug(`completions: ${completes.map(Math.round).join(', ')}; cursor moves: ${moves.map(Math.round).join(', ')}`)
+    // Every sample in order, in the log: the p95 of ten is their largest, and which one it is (the first, or one behind a sync) says where to look.
+    log(`${profileName} completions: ${completes.map(Math.round).join(', ')}; cursor moves: ${moves.map(Math.round).join(', ')}`)
     out['complete-task'] = p95(completes)
 
     debug('A remote edit')
