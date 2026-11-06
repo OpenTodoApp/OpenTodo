@@ -110,6 +110,7 @@ The model describes the code on `main` at the time of writing. An external revie
 - `TestCommentForgedAuthorIsRejected`, `TestSplitFromOtherScopeIsRefused`, `TestAssignToNonMemberIsRejected`.
 - `TestConvergenceProperty` (`convergence_property_test.go`) shares a project part way through a random run and checks every replica.
 - `TestWritesGoThroughApplyStrict` and `TestNoSyncedTableWritesOutsideSync` (`internal/writepaths`): outside `internal/sync`, a use of `Apply` or SQL that writes a synced table fails `go test` unless allow-listed with a reason; in `internal/httpapi` only the sync endpoint uses `Apply`.
+- `web/src/lib/convergence.test.ts` runs the client's own clock and `applyOps` on several devices in random orders and checks every replica against an LWW replay; `TestHLCVectors` (`hlc_vectors_test.go`) and `web/src/lib/hlc.test.ts` pin the Go model to `hlc.ts` with `web/src/lib/hlc.vectors.json`.
 
 **Not defended.**
 - A member can read and change everything in the shared project their role allows, including other members' text, and can delete within it (tombstones, undoable).
@@ -367,6 +368,7 @@ The model behind an MCP client or the in-app assistant follows instructions hidd
 - Reaching the operator's private network through webhooks, channels, calendar feeds, issue hosts, calendar sync, speech to text or the map proxy.
 - Changing operator-owned settings.
 - Exhausting another tenant's request, storage, operation or member limits.
+- Multiplying the assistant's load on the operator's provider keys by opening more tenants.
 
 **Mechanism.**
 - Each tenant is opened from its own data directory (`<root>/tenants/<name>`) with its own database, lock, services and HTTP server (`internal/host`, `internal/tenant`).
@@ -374,6 +376,7 @@ The model behind an MCP client or the in-app assistant follows instructions hidd
 - On a hosted tenant, the private-network switch is forced off, which also covers speech to text, channels, issues, calendar feeds and calendar sync. The map proxy is public-only.
 - `hostGuard` (`internal/httpapi/hosted.go`) refuses operator-owned settings: SMTP, OIDC, backups, MCP and assistant switches, webhook network policy and attachment limits. Email to task is off.
 - Limits are counted per tenant and per client address.
+- The assistant's limit of 8 running turns is one `assistant.Slots` that the host hands to every tenant (`services.Hosted.AssistantSlots`).
 - The operator interface is on its own listener with a hashed bearer token.
 
 **Verified by.**
@@ -384,10 +387,10 @@ The model behind an MCP client or the in-app assistant follows instructions hidd
 - `TestHostTurnsPrivateMarksFailed` (`internal/webhook/worker_test.go`).
 - `TestStorageLimit`, `TestRequestLimitPerClient`, `TestOperationLimits`, `TestMemberLimit` (`internal/host/limits_test.go`).
 - `TestOperatorNeedsToken`.
+- `TestAssistantConcurrencyIsHostWide` (`internal/host`), `TestSharedSlotsAcrossServices` (`internal/assistant`).
 
 **Not defended.**
 - Tenants share one process, so one tenant's load affects the others' latency. Limits bound this but do not isolate CPU or memory.
-- The assistant's concurrency limit (8 turns) is per tenant, so the operator's provider key can see 8 turns per open tenant.
 
 ### Demo visitor
 
@@ -536,8 +539,10 @@ Each item of the [review scope](review-scope.md) has a section here: where the c
   - The bridge is exposed to the configured server's origin only: Android's `addWebMessageListener` with that origin as its only rule and a main-frame check, and iOS's message handler checking the frame's security origin.
   - Navigation leaves the server only inside a sign-in flow.
   - The microphone is granted to that origin only.
-- **Tests:** `BridgeFixtureTest`, `SignInFlowTest`, `WebMicrophoneTest` (`mobile/android/app/src/test/java/app/opentodo/`).
-- **Gap:** the iOS bridge has no automated origin test in CI (follow-up).
+- **Tests:**
+  - Android: `BridgeFixtureTest`, `SignInFlowTest`, `WebMicrophoneTest` (`mobile/android/app/src/test/java/app/opentodo/`).
+  - iOS: `BridgeTests` (`mobile/ios/OpenTodoTests/ShellDataTests.swift`). `testMessagesAreAnsweredOnlyFromTheConfiguredOrigin` checks the message handler's origin decision (`Bridge.accepts`): the main frame of the configured origin only, by scheme, host and port. `testScriptIsGuardedByOriginAndAdvertisesTheContract` checks the page script's guard. These run in CI on every iOS change (the `iOS (build and test)` job, `make ios`).
+- **Gap:** the iOS test checks the origin decision on the parts WebKit reports, not a real `WKWebView` loading another origin.
 
 ### Container image
 
