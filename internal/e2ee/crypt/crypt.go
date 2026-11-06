@@ -42,10 +42,11 @@ const (
 )
 
 // Iteration bounds accepted from a key record, as devices accept them
-// (ITERATION_LIMITS in web/src/lib/crypto.ts). Variables only so tests can use
-// the small iteration count of the shared vectors.
+// (ACCEPTED_ITERATIONS in web/src/lib/crypto.ts) and as the server stores them
+// (e2ee.MinIterations, e2ee.MaxIterations). Variables only so tests can use the
+// small iteration count of the shared vectors.
 var (
-	MinIterations = 100_000
+	MinIterations = 600_000
 	MaxIterations = 10_000_000
 )
 

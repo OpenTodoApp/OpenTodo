@@ -198,7 +198,7 @@ func (e *Engine) RunNow(ctx context.Context, uid string, req RunRequest) (Result
 		source = SourceTest
 	}
 	return e.runRoutine(ctx, w, r, runOpts{key: key, runID: req.RunID, source: source, depth: 2, test: req.Test,
-		trigger: e.triggerValue(ctx, w, r, req.TaskID), taskID: req.TaskID, callAI: req.CallAI, device: req.Device, session: req.Session})
+		trigger: e.triggerValue(ctx, w, r, req.TaskID), taskID: req.TaskID, callAI: req.CallAI, device: req.Device, session: req.Session, maxWrites: req.MaxWrites})
 }
 
 // Draft is an unsaved routine (POST /api/v1/rules/test).
