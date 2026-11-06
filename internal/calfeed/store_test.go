@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 )
 
 type clock struct{ t time.Time }
@@ -20,7 +20,7 @@ func (c *clock) now() time.Time { return c.t }
 
 func newStore(t *testing.T) (*Store, *clock) {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
+	db, err := storetest.OpenDir(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}

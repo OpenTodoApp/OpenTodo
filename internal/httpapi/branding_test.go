@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/config"
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 	"github.com/OpenTodoApp/opentodo/internal/tenant/services"
 )
 
@@ -35,7 +35,7 @@ var fakeWeb = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 func brandingEnv(t *testing.T) *env {
 	t.Helper()
 	dir := t.TempDir()
-	db, err := store.Open(dir)
+	db, err := storetest.OpenDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}

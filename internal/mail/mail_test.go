@@ -20,13 +20,13 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/config"
 	"github.com/OpenTodoApp/opentodo/internal/mail/smtptest"
 	"github.com/OpenTodoApp/opentodo/internal/settings"
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 )
 
 func newService(t *testing.T, env config.SMTPConfig, tr Sender) (*Service, *sql.DB, string) {
 	t.Helper()
 	dir := t.TempDir()
-	db, err := store.Open(dir)
+	db, err := storetest.OpenDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
