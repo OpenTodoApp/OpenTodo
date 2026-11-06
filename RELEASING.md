@@ -62,6 +62,8 @@ git push origin v0.15.0
 
 Only organization admins can create `v*` tags: a ruleset protects them. A tag with a suffix (`v0.15.0-rc.1`) is a release candidate: it is published as a pre-release, moves neither `stable` nor the `0.15` (or, from 1.0, the `1`) tag, publishes neither the Helm chart nor the Claude and Obsidian plugins, and is never submitted to a store (Google Play, F-Droid, the Home Assistant add-on). Its release notes are its `CHANGELOG.md` section ([Release candidates](#release-candidates)).
 
+A pushed tag never moves. If the tag's run fails before anything is published, fix the problem on `main` and release the next patch (or the next `-rc.N`) from the fixed commit. Do not delete the tag and push it again on another commit: mirrors, caches, F-Droid's bot and anyone who fetched the tag would keep the old commit under the same name.
+
 ## 3. The release workflow
 
 The tag runs the full CI matrix (`.github/workflows/ci.yml`: every binary, the WebKit, German and French layouts, Android, the image). Only when every gate passes:
