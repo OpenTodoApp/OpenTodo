@@ -260,7 +260,9 @@ await pageB.locator('section[aria-label="Errands"]').waitFor({ timeout: 15000 })
 
 step('Panel view deleted: placeholder with a remove action, other panels keep working')
 const errandsId = (await get('views')).views.find((v) => v.name === 'Errands').id
-await api.delete(`${base}/api/v1/views/${errandsId}`)
+// A bodiless cookie write names its origin, as the app's pages do (cookie-writes-need-origin).
+r = await api.delete(`${base}/api/v1/views/${errandsId}`, { headers: { Origin: base } })
+assert(r.ok(), `delete view ${r.status()}`)
 await pageA.getByText('View removed').waitFor({ timeout: 15000 })
 assert(await panelText('Waiting') === '2', 'other panels still work')
 await shot(pageA, 'views-panel-removed.png')
