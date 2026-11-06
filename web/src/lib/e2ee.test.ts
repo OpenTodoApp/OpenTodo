@@ -77,7 +77,7 @@ vi.mock('./api', () => ({
   },
 }))
 
-import { decryptValue, isEnvelope, ITERATION_LIMITS, KeyRecordParamsError, MAX_PLAINTEXT_BYTES } from './crypto'
+import { ACCEPTED_ITERATIONS, decryptValue, isEnvelope, ITERATION_LIMITS, KeyRecordParamsError, MAX_PLAINTEXT_BYTES } from './crypto'
 import { DocTooLargeError, MAX_DOC_CHARS_ENCRYPTED } from './docfields'
 import { db, getMeta, setMeta, useDatabase } from './db'
 import {
@@ -545,9 +545,9 @@ describe('a server without the key record (encryption-state-integrity)', () => {
     await on('B')
     const good = structuredClone(server.record!)
     const saved = ITERATION_LIMITS.min
-    ITERATION_LIMITS.min = 100_000
+    ITERATION_LIMITS.min = ACCEPTED_ITERATIONS.min
     try {
-      for (const iterations of [99_999, 10_000_001, 1.5]) {
+      for (const iterations of [99_999, 100_000, 599_999, 10_000_001, 1.5]) {
         server.record = { ...good, iterations }
         await expect(unlock(PASS, 'passphrase')).rejects.toBeInstanceOf(KeyRecordParamsError)
         expect(await currentKey()).toBeNull()
