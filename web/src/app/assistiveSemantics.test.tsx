@@ -43,6 +43,8 @@ describe('list semantics', () => {
       const li = rowOf(r.container, title)
       return [li.getAttribute('aria-level'), li.getAttribute('aria-posinset'), li.getAttribute('aria-setsize')]
     }
+    // The positions are written in idle moments after the rows are drawn (SiblingAria).
+    await waitFor(() => r.container.querySelectorAll('li[aria-posinset]').length === 4, 'sibling positions written')
     expect(attrs('Plan trip')).toEqual(['1', '1', '2'])
     expect(attrs('Book flights')).toEqual(['2', '1', '2'])
     expect(attrs('Pack')).toEqual(['2', '2', '2'])
