@@ -16,6 +16,13 @@ describe('context first', () => {
     expect(orderedSections(undefined).map((s) => s.id).slice(0, 2)).toEqual(['everywhere', 'go'])
   })
 
+  it('lists Group and order where the list has Display options (display-keys)', () => {
+    expect(contextSections({ view: 'project' })).toEqual(['tasks', 'arrange'])
+    expect(contextSections({ view: 'label' })).toEqual(['tasks', 'arrange'])
+    expect(contextSections({ view: 'view' })).toEqual(['filter', 'arrange'])
+    expect(contextSections({ view: 'today' })).toEqual(['tasks'])
+  })
+
   it('renders the context groups first and marks them', async () => {
     const r = await render(<ShortcutHelp onClose={() => {}} context={{ view: 'project', board: true }} />)
     await flush()

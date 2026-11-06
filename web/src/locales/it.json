@@ -7143,5 +7143,22 @@
   "Has an assignee": "Ha un assegnatario",
   "Hide tasks assigned to others": "Nascondi le attività assegnate ad altri",
   "No member named \"{name}\"": "Nessun membro chiamato «{name}»",
-  "Show tasks assigned to others": "Mostra le attività assegnate ad altri"
+  "Show tasks assigned to others": "Mostra le attività assegnate ad altri",
+  "Group and order": "Raggruppa e ordina",
+  "Group by due date": "Raggruppa per data di scadenza",
+  "Group by label (in a project or a saved view)": "Raggruppa per etichetta (in un progetto o in una vista salvata)",
+  "Group by priority": "Raggruppa per priorità",
+  "Group by project (on a label page or in a saved view)": "Raggruppa per progetto (nella pagina di un’etichetta o in una vista salvata)",
+  "Group by section (in a project)": "Raggruppa per sezione (in un progetto)",
+  "Group by: {name}": "Raggruppa per: {name}",
+  "No grouping": "Nessun raggruppamento",
+  "Order by creation date": "Ordina per data di creazione",
+  "Order by deadline": "Ordina per termine",
+  "Order by due date": "Ordina per data di scadenza",
+  "Order by manual order": "Ordina in ordine manuale",
+  "Order by priority": "Ordina per priorità",
+  "Order by title": "Ordina per titolo",
+  "Order by: {name} · {direction}": "Ordina per: {name} · {direction}",
+  "Reverse order": "Inverti ordine",
+  "Reverse the order: ascending or descending": "Inverti l’ordine: crescente o decrescente"
 }
