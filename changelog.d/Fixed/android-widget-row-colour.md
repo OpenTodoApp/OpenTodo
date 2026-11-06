@@ -1,0 +1,1 @@
+- **Android widget task rows follow light and dark mode.** The Today widget drew its task rows in the colour of the moment it was last drawn, so after a theme switch they could stay light grey on a light background. They now use the same day/night colour as the rest of the widget, and overdue rows a slightly darker red that stays readable in light mode.
