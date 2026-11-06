@@ -2,7 +2,7 @@
 // without JavaScript; docs.js adds search, copy buttons and the `/` shortcut.
 // The header and footer are the public website's (OpenSpec change `docs-landing-restyle` D3);
 // the landing, the section pages and the sidebar follow the six entry points (D1, D2).
-import { DEMO_URL, ENTRIES, REPO_URL, SITE_URL, entryOf, entryUrl, escapeHtml as e, groupOf, navOrder, pageUrl } from './lib.mjs'
+import { DEMO_URL, ENTRIES, REPO_URL, SITE_URL, breadcrumbLd, entryOf, entryUrl, escapeHtml as e, groupOf, jsonLdScript, metaDescription, navOrder, pageUrl } from './lib.mjs'
 
 // Lucide icons (ISC licence), the set the app and the website draw with.
 const ICON = {
@@ -17,7 +17,9 @@ const ICON = {
 }
 const icon = (name, size = 16) => `<svg class="icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${ICON[name]}</svg>`
 
-function head({ title, description, url }) {
+function head({ title, description: full, url, ld = [] }) {
+  // Search results show about 160 characters; the page keeps its whole summary (docs-landing-restyle D5).
+  const description = metaDescription(full)
   return `<!doctype html>
 <html lang="en" class="no-js">
 <head>
@@ -37,7 +39,7 @@ function head({ title, description, url }) {
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <link rel="preload" href="/fonts/InterVariable-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/docs/docs.css">
+  <link rel="stylesheet" href="/docs/docs.css">${ld.length ? `\n  ${jsonLdScript(ld.length === 1 ? { '@context': 'https://schema.org', ...ld[0] } : { '@context': 'https://schema.org', '@graph': ld })}` : ''}
   <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
   <!-- Analytics (Umami, self-hosted, no cookies), as on the rest of the website. Search counts use, never the words typed. -->
   <script defer data-cfasync="false" src="https://analytics.pixari.dev/script.js" data-website-id="c7bcfbcc-b1cc-4168-b49b-8a4bb5e47f92"></script>
@@ -198,7 +200,12 @@ ${withInlineToc(html, t)}
       ${prev ? `<a class="prev" rel="prev" href="${pageUrl(prev.slug)}"><span>Previous</span>${e(prev.fm.title)}</a>` : '<span></span>'}
       ${next ? `<a class="next" rel="next" href="${pageUrl(next.slug)}"><span>Next</span>${e(next.fm.title)}</a>` : '<span></span>'}
     </nav>`
-  return `${head({ title: `${page.fm.title} · OpenTodo docs`, description: page.fm.summary, url: pageUrl(page.slug) })}
+  const url = pageUrl(page.slug)
+  const ld = [
+    breadcrumbLd([['OpenTodo', '/'], ['Docs', '/docs/'], [entry.title, entryUrl(key)], [page.fm.title, url]]),
+    { '@type': 'TechArticle', headline: page.fm.title, description: metaDescription(page.fm.summary), url: SITE_URL + url, inLanguage: 'en' },
+  ]
+  return `${head({ title: `${page.fm.title} · OpenTodo docs`, description: page.fm.summary, url, ld })}
 <body class="docs">
 ${header()}
 ${shell({ entries, current: page.slug, currentEntry: key, body, tocHtml: t })}
@@ -222,7 +229,7 @@ export function sectionHtml({ key, entries, version }) {
       <p class="section-line">${e(entry.line)} ${count} pages.</p>
       ${groups.map(([g, list]) => `${g ? `<h2 id="${g.toLowerCase().replace(/[^a-z]+/g, '-')}">${e(g)}</h2>` : ''}<ul class="section-rows">${list.map(row).join('')}</ul>`).join('\n      ')}
     </article>`
-  return `${head({ title: `${entry.title} · OpenTodo docs`, description: `${entry.line} Every page, with what it covers.`, url: entryUrl(key) })}
+  return `${head({ title: `${entry.title} · OpenTodo docs`, description: `${entry.line} Every page, with what it covers.`, url: entryUrl(key), ld: [breadcrumbLd([['OpenTodo', '/'], ['Docs', '/docs/'], [entry.title, entryUrl(key)]])] })}
 <body class="docs">
 ${header()}
 ${shell({ entries, current: `@${key}`, currentEntry: key, body })}
@@ -244,7 +251,7 @@ export function landingHtml({ index, entries, version }) {
       <a class="entry-all" href="${entryUrl(entry.key)}">All ${all.length} pages${icon('arrow')}</a>
     </section>`
   }
-  return `${head({ title: 'OpenTodo docs', description: index.fm.summary ?? 'Guides for using OpenTodo, running your own server and building on it.', url: '/docs/' })}
+  return `${head({ title: 'OpenTodo docs', description: index.fm.summary ?? 'Guides for using OpenTodo, running your own server and building on it.', url: '/docs/', ld: [breadcrumbLd([['OpenTodo', '/'], ['Docs', '/docs/']])] })}
 <body class="docs docs-home">
 ${header()}
 <main id="content" tabindex="-1">

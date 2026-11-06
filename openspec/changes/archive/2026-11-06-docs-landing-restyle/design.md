@@ -23,5 +23,8 @@ Same markup and look as the website's `SiteHeader` and `SiteFooter` (without the
 ## D4. Tokens, not copies
 `build.mjs` writes the app's colour tokens (the same `tokensCss()` the site bundle uses, plus the `--ot-mix-*` ratios they reference) at the top of `docs.css`, so a new release's palette reaches the docs with no edit. Inter is loaded from `/fonts/InterVariable-latin.woff2`, the file the website already serves; where it is missing the system sans takes over.
 
+## D5. Search results
+Every docs page carries inline JSON-LD: a BreadcrumbList (OpenTodo, Docs, the entry point, the page) and a TechArticle (headline, description, url, language). Section pages and the landing carry the breadcrumb only. The meta and Open Graph descriptions are capped at 160 characters, cut at the last sentence end after 80 characters or else at a word with an ellipsis; the page itself keeps the full summary.
+
 ## Build and download size
 Six more pages; `docs.css` grows by the token block (about 18 KB, 3 KB gzipped); Google Fonts' stylesheet and three font files (about 200 KB) are no longer requested. Build time is unchanged.
