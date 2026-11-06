@@ -279,6 +279,16 @@ func (s *Server) issueSession(w http.ResponseWriter, r *http.Request, u *auth.Us
 }
 
 func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
+	// Signing out acts on the session cookie without requiring a valid one, so
+	// the policy layer's cross-site check does not run: a request a browser
+	// marks as coming from another site (a sibling subdomain is same-site, so
+	// SameSite=Lax still sends the cookie) must not end the session or clear
+	// the cookie. A request naming neither header comes from a non-browser
+	// client such as `ot logout` and keeps working (public route matrix).
+	if s.crossSiteDeclared(r) {
+		writeError(w, http.StatusForbidden, "bad_origin", "cross-site request rejected")
+		return
+	}
 	redirect := ""
 	if c, err := r.Cookie(sessionCookie); err == nil {
 		u, lookupErr := s.auth.UserBySession(r.Context(), c.Value)

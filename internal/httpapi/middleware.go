@@ -167,6 +167,17 @@ func (s *Server) cookieWriteAllowed(r *http.Request) bool {
 	return err == nil && mt == "application/json"
 }
 
+// crossSiteDeclared reports a request the browser says came from another
+// origin: an Origin originAllowed refuses, or a Sec-Fetch-Site other than
+// same-origin. A request with neither header is not declared cross-site.
+func (s *Server) crossSiteDeclared(r *http.Request) bool {
+	if r.Header.Get("Origin") != "" {
+		return !s.originAllowed(r)
+	}
+	site := r.Header.Get("Sec-Fetch-Site")
+	return site != "" && site != "same-origin"
+}
+
 // originAllowed defends cookie-authenticated writes against cross-site requests.
 // Browsers send Origin on every cross-site request and on same-site POSTs; a request
 // without it comes from a non-browser client or a same-origin GET-like navigation.

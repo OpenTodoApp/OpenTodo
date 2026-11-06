@@ -25,7 +25,8 @@ import (
 // own table is called anonymously, with read, agent, full and admin tokens, as
 // a member, as a viewer of a shared project, cross-site, without Origin or
 // Sec-Fetch-Site, and with a stale session, and the answer is checked against
-// the route's declared policy. The table drives the test, so a new route is
+// the route's declared policy. Public routes are checked against what their
+// reason promises (route_matrix_public_test.go). The table drives the test, so a new route is
 // covered without editing it.
 //
 // Writes are only sent where the policy must refuse them before the handler
@@ -61,7 +62,9 @@ func newMatrixEnv(t *testing.T) *matrixEnv {
 	authSvc.SetClock(func() time.Time { return time.Now().Add(time.Duration(m.clockOffset.Load())) })
 	// The matrix exercises the routes, not the automation engine.
 	set.Rules = nil
-	h := New(set, nil, func(s *Server) { m.srv = s })
+	// A stand-in for the web app, so its public routes are registered too.
+	web := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = io.WriteString(w, "app") })
+	h := New(set, web, func(s *Server) { m.srv = s })
 	ts := httptest.NewServer(h)
 	t.Cleanup(ts.Close)
 	t.Cleanup(syncSvc.Notifier().CloseAll)
@@ -86,6 +89,9 @@ func newMatrixEnv(t *testing.T) *matrixEnv {
 	// invitation the member accepts (member-add-consent).
 	addByEmail(e, m.member, "/api/v1/projects/"+m.sharedProject+"/members", "member@example.com", "viewer")
 	m.anon = newClientAt(e, "203.0.113.42")
+	// The MCP endpoint answers, so the public pass reaches its handler.
+	resp, out = e.do("PUT", "/api/v1/settings/mcp", map[string]any{"enabled": true})
+	e.mustStatus(resp, 200, out)
 	return m
 }
 
@@ -304,7 +310,11 @@ func TestRouteMatrix(t *testing.T) {
 		checked["viewer writes"]++
 	}
 
-	// 4. Recent sign-in: a stale owner session is asked to confirm.
+	// 4. Public routes: each answers as its reason promises (route_matrix_public_test.go).
+	m.publicPass(t, routes, checked)
+	m.publicEffects(t, checked)
+
+	// 5. Recent sign-in: a stale owner session is asked to confirm.
 	m.clockOffset.Store(int64(FreshWindow + time.Minute))
 	for _, r := range routes {
 		if r.p.Kind == httpx.KindPublic || !r.p.Fresh {
@@ -315,7 +325,7 @@ func TestRouteMatrix(t *testing.T) {
 		checked["stale session"]++
 	}
 	// Each pass must have had something to check.
-	for _, pass := range []string{"anonymous", "token refusals", "member refusals", "cross-site", "no fetch metadata", "admitted reads", "viewer writes", "stale session"} {
+	for _, pass := range []string{"anonymous", "token refusals", "member refusals", "cross-site", "no fetch metadata", "admitted reads", "viewer writes", "public routes", "public effects", "stale session"} {
 		if checked[pass] < 5 {
 			t.Errorf("pass %q checked only %d routes", pass, checked[pass])
 		}
