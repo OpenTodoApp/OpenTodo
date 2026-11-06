@@ -283,12 +283,42 @@ func matchDeadlineAt(tokens []token, i int, ctx *dateCtx) *dateMatch {
 	}
 	var best *dateMatch
 	for _, v := range ctx.vocabs {
-		n := phraseAt(tokens, i, v.DeadlineWords)
+		for _, by := range []bool{false, true} {
+			list := v.DeadlineWords
+			if by {
+				list = v.ByWords
+			}
+			n := phraseAt(tokens, i, list)
+			if n == 0 {
+				continue
+			}
+			dm := matchDateAt(tokens, i+n, ctx)
+			// "by friday 5pm" has a time a deadline cannot hold: it stays a due date.
+			if dm == nil || (by && matchTimeAt(tokens, dm.to, ctx) != nil) {
+				continue
+			}
+			if best == nil || dm.to > best.to {
+				best = &dateMatch{date: dm.date, from: i, to: dm.to}
+			}
+		}
+	}
+	return best
+}
+
+// matchByTimeAt is a "by" word followed by a time ("by 5pm"): a due time, the
+// word removed with it (quick-add-by-deadline D2).
+func matchByTimeAt(tokens []token, i int, ctx *dateCtx) *timeMatch {
+	if tok(tokens, i) == nil {
+		return nil
+	}
+	var best *timeMatch
+	for _, v := range ctx.vocabs {
+		n := phraseAt(tokens, i, v.ByWords)
 		if n == 0 {
 			continue
 		}
-		if dm := matchDateAt(tokens, i+n, ctx); dm != nil && (best == nil || dm.to > best.to) {
-			best = &dateMatch{date: dm.date, from: i, to: dm.to}
+		if tm := matchTimeAt(tokens, i+n, ctx); tm != nil && (best == nil || tm.to > best.to) {
+			best = &timeMatch{time: tm.time, date: tm.date, from: i, to: tm.to}
 		}
 	}
 	return best

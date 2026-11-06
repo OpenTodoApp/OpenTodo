@@ -32,6 +32,12 @@ export interface Vocabulary {
   before: string[]
   /** Words directly before a date phrase that make it the deadline (OpenSpec change deadlines, D7). */
   deadlineWords: string[]
+  /**
+   * "by" words, also in `before` (OpenSpec change quick-add-by-deadline): directly
+   * before a date phrase they make it the deadline, unless a time follows the date;
+   * before a time, or a date with a time, they are swallowed with the due date.
+   */
+  byWords: string[]
   /** Words that park a task when the line has no date (someday-and-evening D6). */
   somedayWords: string[]
   /**
