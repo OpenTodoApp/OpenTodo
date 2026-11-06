@@ -157,7 +157,7 @@ Last run of this drill by the maintainers: 2026-11-06, with 0.22.0 (`/healthz` o
 - **Docker Compose:** `docker compose pull && docker compose up -d`. Each platform page has its own one-line update.
 - **Binary:** replace it and restart.
 
-Migrations run at start, and a backup is taken before they do. There are no down-migrations. Any release from 0.1.0 upgrades directly to the latest; read the release's **Upgrade notes** in the [changelog](../../CHANGELOG.md) first. What every 1.x release keeps, and how upgrades are tested: [Stability and compatibility](../stability.md#upgrades). Image tags (`stable`, `1`, `0.22`, `0.22.0`, `latest`): [Updating](docker.md#updating).
+Migrations run at start, and a backup is taken before they do. There are no down-migrations. Any release from 0.1.0 upgrades directly to the latest; read the release's **Upgrade notes** in the [changelog](../../CHANGELOG.md) first. What every 1.x release keeps, and how upgrades are tested: [Stability and compatibility](../stability.md#upgrades). Which image tag follows what: [Updating](docker.md#updating).
 
 ## 6. Monitoring
 
