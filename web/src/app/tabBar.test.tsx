@@ -45,7 +45,7 @@ describe('the tab bar', () => {
     expect(tab('inbox').className).not.toContain('text-accent')
     expect(tab('today').getAttribute('aria-current')).toBeNull()
     for (const t of document.querySelectorAll('[data-tab]')) expect(t.className).toContain('min-h-14')
-    expect(bar()!.className).toContain('pb-[env(safe-area-inset-bottom)]')
+    expect(bar()!.className).toContain('pb-safe')
     expect(bar()!.className).toContain('md:hidden')
     // The content column leaves room for the bar.
     expect(document.querySelector('main')!.getAttribute('data-phone-chrome')).toBe('true')

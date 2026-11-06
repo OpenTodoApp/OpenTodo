@@ -222,11 +222,11 @@ jobs:
     if: needs.changes.outputs.layout == 'true'
     strategy:
       fail-fast: false
-      # A pull request runs one leg (Chromium at every width in English, then the
-      # end-to-end checks); pushes and tags run one leg per engine, width and the
+      # A pull request runs two legs (Chromium at every width in English, then the
+      # end-to-end checks; and the safe-area check); pushes and tags run one leg per engine, width and the
       # German and French catalogs, and the end-to-end checks beside them.
       matrix:
-        include: ${{ fromJSON(github.event_name == 'pull_request' && '[{"engine":"chromium","name":"Chromium, all widths, end-to-end","widths":"360,390,768","e2e":true}]' || '[{"engine":"chromium","name":"Chromium 360 px","widths":"360"},{"engine":"chromium","name":"Chromium 390 px","widths":"390"},{"engine":"chromium","name":"Chromium 768 px","widths":"768"},{"engine":"chromium","name":"End-to-end","e2e":true},{"engine":"webkit","name":"WebKit 360 px","widths":"360"},{"engine":"webkit","name":"WebKit 390 px","widths":"390"},{"engine":"webkit","name":"WebKit 768 px","widths":"768"},{"engine":"chromium","name":"Chromium 360 px German","widths":"360","lang":"de"},{"engine":"chromium","name":"Chromium 360 px French","widths":"360","lang":"fr"}]') }}
+        include: ${{ fromJSON(github.event_name == 'pull_request' && '[{"engine":"chromium","name":"Chromium, all widths, end-to-end","widths":"360,390,768","e2e":true},{"engine":"chromium","name":"Safe area","safearea":true}]' || '[{"engine":"chromium","name":"Chromium 360 px","widths":"360"},{"engine":"chromium","name":"Chromium 390 px","widths":"390"},{"engine":"chromium","name":"Chromium 768 px","widths":"768"},{"engine":"chromium","name":"End-to-end","e2e":true},{"engine":"chromium","name":"Safe area","safearea":true},{"engine":"webkit","name":"WebKit 360 px","widths":"360"},{"engine":"webkit","name":"WebKit 390 px","widths":"390"},{"engine":"webkit","name":"WebKit 768 px","widths":"768"},{"engine":"chromium","name":"Chromium 360 px German","widths":"360","lang":"de"},{"engine":"chromium","name":"Chromium 360 px French","widths":"360","lang":"fr"}]') }}
     # The pinned Playwright image (PLAYWRIGHT_IMAGE in the Makefile): Chromium, WebKit and
     # their system packages are in it. The server is a static Go build made in the job.
     container: mcr.microsoft.com/playwright:v1.56.1-noble@sha256:f1e7e01021efd65dd1a2c56064be399f3e4de00fd021ac561325f2bfbb2b837a
@@ -264,6 +264,14 @@ jobs:
           OPENTODO_DATA_DIR=$(mktemp -d) ./bin/opentodo &
           for i in $(seq 1 30); do curl -fsS localhost:8080/healthz >/dev/null && break; sleep 0.5; done
           node scripts/e2e-layout.mjs layout-report
+      # The safe-area check (GitHub issue 973): every screen and overlay as the installed app
+      # on a phone with a Dynamic Island, portrait and landscape, insets emulated.
+      - name: Safe-area check against a fresh server
+        if: ${{ matrix.safearea }}
+        run: |
+          OPENTODO_DATA_DIR=$(mktemp -d) ./bin/opentodo &
+          for i in $(seq 1 30); do curl -fsS localhost:8080/healthz >/dev/null && break; sleep 0.5; done
+          node scripts/e2e-safe-area.mjs layout-report
       # What `make e2e` runs (the image has no make).
       - name: End-to-end (two devices, offline sync, offline start, inbox triage, saved views)
         if: ${{ matrix.e2e }}
