@@ -58,7 +58,7 @@ func TestCSVTooManyFieldsRefused(t *testing.T) {
 func TestEveryCSVProfileChecksFields(t *testing.T) {
 	big := strings.Repeat("z", MaxCSVFieldBytes+1)
 	headers := map[string]string{
-		"csv":       "title,description",
+		"csv":           "title,description",
 		"todoist-csv":   "TYPE,CONTENT,DESCRIPTION,PRIORITY,INDENT,AUTHOR,RESPONSIBLE,DATE,DATE_LANG,TIMEZONE",
 		"ticktick-csv":  "Folder Name,List Name,Title,Kind,Tags,Content",
 		"asana-csv":     "Task ID,Created At,Completed At,Last Modified,Name,Section/Column,Assignee,Notes,Projects",
