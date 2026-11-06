@@ -40,12 +40,16 @@ The groups of a tree list are built from the view's own rows (its 2,000 tasks, n
 
 ## Measured
 
-| Phone profile (local, five runs) | main (after #989) | this change |
-| --- | --- | --- |
-| complete-task per run | 344, 208, 224, 216, 248 | (filled in by task 5.1) |
-| complete-task median (budget 200) | 224 | |
+Local, five runs each of `scripts/perf/run.mjs` on the same fixture and machine; medians (budget):
 
-A first try of D1 (the snapshot's sets), D4 and D5 alone measured 112 ms (three phone runs: 72, 112, 112) and cursor moves 78 ms.
+| | main (after #989) | D4, D5 |
+| --- | --- | --- |
+| phone complete-task (200) | 224 (344, 208, 224, 216, 248) | 88 (96, 120, 80, 88, 80) |
+| phone cursor-move (150) | 93.5 | 65.3 |
+| phone open-project (1200) | 380 | 383 |
+| phone search-keystroke, saved-view, cold-start | 106, 128, 1410 | 107, 121, 1401 |
+| desktop complete-task (100) | 96 | 56 |
+| desktop cursor-move, open-project, remote-edit | 22.4, 84.5, 142 | 15.3, 92.1, 145 |
 
 ## Bundle size
 
