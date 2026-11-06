@@ -191,7 +191,7 @@ What the server defends and what it does not: [Security](../security/README.md) 
 
 ## 8. Sizing
 
-Measured with a 10,000-task account ([Performance budgets](../performance.md#the-server)); the limits are checked every night.
+The budgets of a 10,000-task account ([Performance budgets](../performance.md#the-server)). The CI server's limits are checked every night; the Raspberry Pi 4 column is the target for a real Pi, which was not measured for 1.0 and will be after it ([#990](https://github.com/OpenTodoApp/OpenTodo/issues/990)).
 
 | | CI server | Raspberry Pi 4 (4 GB) |
 | --- | --- | --- |
