@@ -20,7 +20,7 @@ These settings need a connection to your server; offline they're read-only.
 
 A passkey lets you sign in with your fingerprint, face or device PIN instead of typing a password. It can't be phished or reused on another site, and your password keeps working as a fallback.
 
-1. Open **Settings → Account** and find the **Passkeys** card.
+1. Open **Settings → Account → Security** and find the **Passkeys** card.
 2. Select **Add passkey** and give it a name you'll recognise, like "Work laptop".
 3. Confirm with your fingerprint, face or PIN when your device asks.
 
@@ -46,7 +46,7 @@ Each recovery code works once, in place of a code from the app, if you lose your
 
 ## Change your password
 
-Open **Settings → Account**, select **Change password** in the **Password** card, enter your current password and a new one of at least 10 characters. Changing it signs you out everywhere else; the device you're on stays signed in and API tokens keep working.
+Open **Settings → Account → Security**, select **Change password** in the **Password** card, enter your current password and a new one of at least 10 characters. Changing it signs you out everywhere else; the device you're on stays signed in and API tokens keep working.
 
 Forgot it? If your server sends email, choose **Forgot password?** on the sign-in screen and enter your address: a reset link valid for 24 hours arrives by email, and the screen answers the same whether or not the address has an account. Otherwise ask the owner or an admin of your server for a reset link; an owner who can't receive mail: see [recovering owner access](self-hosting/docker.md#recovering-owner-access).
 
@@ -60,7 +60,7 @@ Adding a passkey, two-factor or a linked account, an API token and similar chang
 
 ## Sign out
 
-**Settings → Account → Security → Session → Sign out** ends your session on that device and removes your tasks from it. Unsent changes are uploaded first when you're online.
+**Settings → Account → Security → Session → Sign out here** ends your session on that device and removes your tasks from it. Unsent changes are uploaded first when you're online.
 
 ## More protection
 

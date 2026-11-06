@@ -14,7 +14,7 @@ optionally encrypt them with a passphrase, and restore them from the web app or
 with nothing but the `opentodo` binary.
 
 Nothing runs until the owner turns it on. Every setting is optional and managed
-from **Settings → Server** (owner only); operators who prefer environment
+from **Settings → Server → Backups** (owner only); operators who prefer environment
 variables can preset them (see [Environment presets](#environment-presets)).
 
 - [Quick start](#quick-start)
@@ -27,7 +27,7 @@ variables can preset them (see [Environment presets](#environment-presets)).
 
 ## Quick start
 
-1. Sign in as the owner and open **Settings → Server**. The top of the page
+1. Sign in as the owner and open **Settings → Server → Backups**. The top of the page
    shows the schedule, the next run and the last run with its outcome; below it
    are the destination, schedule, retention and encryption, then the recent runs.
 2. Select **Change settings** and pick a destination. **Folder on the server** writes to `<data>/backups`
@@ -45,7 +45,11 @@ The same is available over the API ([docs/api.md](api.md#backups)).
 ## Destinations
 
 The server contacts a destination only for a test or a backup run, and only the
-destination the owner configured.
+destination the owner configured. It connects directly: the `HTTP_PROXY` and
+`HTTPS_PROXY` environment variables are not used for destinations. A
+destination may redirect up to three times within its own scheme and host (for
+example from `/dav` to `/dav/`); a redirect to another host, or from https to
+http, fails the run, so the password and the archives never go anywhere else.
 
 ### Folder on the server
 
@@ -159,12 +163,12 @@ records that the archive is encrypted and the file name ends in `.enc`.
 
 Restoring replaces the whole database (every account, token, project, task and
 the operation log) with the one in an archive. There are two ways, with the
-same checks and the same result: from **Settings → Server** while the server
+same checks and the same result: from **Settings → Server → Backups** while the server
 runs, or with `opentodo restore` while it is stopped.
 
 ### Restore from the web app
 
-1. Open **Settings → Server** as the owner and scroll to **Restore from a
+1. Open **Settings → Server → Backups** as the owner and scroll to **Restore from a
    backup**.
 2. Choose the source:
    - **From the backup destination** lists the archives in the configured

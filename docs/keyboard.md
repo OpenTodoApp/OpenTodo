@@ -352,7 +352,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>Delete</kbd> | Focused invitation: Settings → People → Users and invitations: revoke the focused pending invitation |
 | <kbd>←</kbd> / <kbd>→</kbd> / <kbd>↑</kbd> / <kbd>↓</kbd> | In the picture dialog: Settings → Account → Profile, picture dialog: move the picture inside the circle |
 | <kbd>+</kbd> / <kbd>-</kbd> | In the picture dialog: Settings → Account → Profile, picture dialog: zoom in or out |
-| <kbd>d</kbd> / <kbd>r</kbd> / <kbd>Delete</kbd> | Focused user: Settings → People → Users: deactivate or reactivate, create a reset link, delete the focused user (each confirms) |
+| <kbd>d</kbd> / <kbd>r</kbd> / <kbd>Delete</kbd> | Focused user: Settings → People → Users and invitations: deactivate or reactivate, create a reset link, delete the focused user (each confirms) |
 | <kbd>e</kbd> | Focused table: Settings → Server → Audit log: export with the current filters while the table has focus |
 | <kbd>Tab</kbd> | Settings → Account → Security → Passkeys: add, rename (Enter saves, Esc cancels) or remove passkeys |
 | <kbd>Ctrl+Z</kbd> / <kbd>⌘+Z</kbd> | Theme editor: undo the last change |
