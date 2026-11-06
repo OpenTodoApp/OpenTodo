@@ -15,7 +15,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/oidc"
 	"github.com/OpenTodoApp/opentodo/internal/oidc/oidctest"
 	"github.com/OpenTodoApp/opentodo/internal/settings"
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 )
 
 func baseClaims(p *oidctest.Provider, now time.Time) map[string]any {
@@ -252,7 +252,7 @@ func TestJWKSRefreshOnUnknownKid(t *testing.T) {
 func newService(t *testing.T, env oidc.Env, p *oidctest.Provider) (*oidc.Service, string) {
 	t.Helper()
 	dir := t.TempDir()
-	db, err := store.Open(dir)
+	db, err := storetest.OpenDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}

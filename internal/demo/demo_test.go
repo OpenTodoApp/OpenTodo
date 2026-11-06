@@ -10,13 +10,13 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/auth"
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 func newDemo(t *testing.T) (*Service, *sql.DB) {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
+	db, err := storetest.OpenDir(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -155,7 +155,7 @@ func TestSandboxSeedThroughOps(t *testing.T) {
 
 func TestUpgradeDeletesSharedDemoAccount(t *testing.T) {
 	ctx := context.Background()
-	db, err := store.Open(t.TempDir())
+	db, err := storetest.OpenDir(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 )
 
 // routines-ai-step 3.2: routine.run requests over the relay and the routines
@@ -83,7 +83,7 @@ func TestSendRoutineToSuitableDevice(t *testing.T) {
 }
 
 func TestRoutinesOptIn(t *testing.T) {
-	db, err := store.Open(t.TempDir())
+	db, err := storetest.OpenDir(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
