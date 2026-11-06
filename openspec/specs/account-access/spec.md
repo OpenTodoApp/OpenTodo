@@ -226,7 +226,7 @@ A signed-in user SHALL be able to create named API tokens with a scope of `full`
 - **THEN** it is stored as a `read` scope row plus an admin marker row, so a server without the marker treats it as read-only
 
 ### Requirement: Cross-site request protection
-A state-changing request authenticated by a session cookie SHALL be refused when its `Origin` header is present and does not match the server's public origin. With `OPENTODO_BASE_URL` set, an `Origin` that is not the base URL's origin SHALL be accepted only when it names the request's host and that host is the base URL's host, so a page under another name that resolves to the server (DNS rebinding) is cross-site. The same check guards registration and sign-in. Requests authenticated by a bearer token are not subject to this check.
+A state-changing request authenticated by a session cookie SHALL be refused when its `Origin` header is present and does not match the server's public origin. With `OPENTODO_BASE_URL` set, an `Origin` that is not the base URL's origin SHALL be accepted only when it names the request's host and that host is the base URL's host, so a page under another name that resolves to the server (DNS rebinding) is cross-site. The same check guards registration and sign-in. A state-changing request authenticated by a session cookie that carries no `Origin` SHALL be refused with 403 `bad_origin` when its `Sec-Fetch-Site` header is present and is not `same-origin`, and, when it carries neither header, unless it declares `Content-Type: application/json` (any parameters allowed): a browser too old to send either header can send a cross-site write only as a form or a navigation, which cannot declare that type without a CORS preflight the server never grants, while non-browser clients such as earlier `ot` releases send JSON. The refusal's message SHALL say to use an API token for scripts or to update the browser. `GET` and `HEAD` requests are not subject to this check, and requests authenticated by a bearer token are not subject to it either. The check creates no ops, so offline behaviour and convergence are unaffected.
 
 #### Scenario: Cross-site POST with cookie
 - **WHEN** a browser on another origin sends a POST that carries the session cookie
@@ -239,6 +239,26 @@ A state-changing request authenticated by a session cookie SHALL be refused when
 #### Scenario: Rebound host name with a base URL
 - **WHEN** `OPENTODO_BASE_URL` is `https://todo.example.com` and a request carries `Host: rebind.example` and `Origin: http://rebind.example`
 - **THEN** it is refused with 403 `bad_origin`
+
+#### Scenario: Cookie form write with neither Origin nor Sec-Fetch-Site
+- **WHEN** a POST, PATCH, PUT or DELETE carries the session cookie, no `Origin`, no `Sec-Fetch-Site`, and a form, multipart, plain-text or no content type
+- **THEN** it is refused with 403 `bad_origin` naming API tokens, and nothing changes
+
+#### Scenario: Fetch Metadata from another site
+- **WHEN** a cookie write carries no `Origin` and `Sec-Fetch-Site` is `cross-site`, `same-site` or `none`
+- **THEN** it is refused with 403 `bad_origin`
+
+#### Scenario: The app's own pages without Origin
+- **WHEN** a cookie write carries no `Origin` and `Sec-Fetch-Site: same-origin`
+- **THEN** it is processed normally
+
+#### Scenario: A non-browser client with a session
+- **WHEN** a client signed in with a password sends `POST /api/v1/tokens` with the session cookie, `Content-Type: application/json` and neither header
+- **THEN** the token is created, as before
+
+#### Scenario: Bearer tokens are unaffected
+- **WHEN** a request authenticated by a bearer token carries neither `Origin` nor `Sec-Fetch-Site`
+- **THEN** it is processed normally
 
 ### Requirement: Agent content routes
 An `agent` token SHALL write only on `POST /api/v1/tasks|projects|labels|sections|reminders`, `POST /api/v1/tasks/{id}/comments`, `PATCH /api/v1/tasks/{id}` (not `assignee_id`, `parent_id`, `position` or a restore), `PATCH /api/v1/projects/{id}` (`name`, `color`, `icon`, `parent_id`, `description`, or `archived` alone), `PATCH /api/v1/sections/{id}` (`name`, `color`, `icon`, `position`), `PATCH /api/v1/labels/{id}` (`name`, `color`, `position`), `PATCH /api/v1/reminders/{id}` (`offset_minutes`, `fire_at` of an absolute reminder), `DELETE /api/v1/reminders/{id}`, `POST /api/v1/time-entries`, `POST /api/v1/time-entries/stop`, `PATCH /api/v1/time-entries/{id}` (entries the same token created) and `DELETE /api/v1/tasks/{id}` (own creations), while both assistant switches are on, through the agent tool registry with MCP's limits, audit, E2EE refusal and mention suppression. On the task routes the accepted fields SHALL be `title`, `description`, `project_id`, `section_id`, `parent_id` (create only), `priority`, `due`, `labels`, `estimate_minutes`, `recurrence`, `fields`, `origin`, `deadline`, `start`, `evening`, `blocked_by` and `location`, plus `completed_at` and `deleted_at` on PATCH, each validated by the registry exactly as the sync path validates it and answered with the registry's codes (400 `invalid_input` naming the field, 404 `not_found`, 403 `forbidden`, 409 `encryption_enabled`). A project PATCH carrying `archived` together with another field SHALL be 400 `invalid_input`. `POST /api/v1/time-entries` with `taskId` alone SHALL start a timer and SHALL answer 409 `timer_running` while another entry of the user runs, unless the body carries `stopRunning: true`. Other write routes and fields, including `DELETE` of sections, labels, projects and time entries, SHALL answer 403 `insufficient_scope`. A task in a project kept away from AI assistants (OpenSpec `agent-project-exclusion`) SHALL be `not_found` on these routes, as SHALL its sections, reminders and time entries, and a create into such a project SHALL be refused the same way.
