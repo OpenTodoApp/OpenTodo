@@ -3,6 +3,7 @@ package httpapi
 import (
 	"errors"
 	"log/slog"
+	"mime"
 	"net/http"
 	"strings"
 	"sync"
@@ -63,8 +64,12 @@ func (s *Server) requireAuth(next http.HandlerFunc) http.Handler {
 			writeError(w, http.StatusForbidden, "insufficient_scope", msg)
 			return
 		}
-		if viaCookie && r.Method != http.MethodGet && r.Method != http.MethodHead && !s.originAllowed(r) {
-			writeError(w, http.StatusForbidden, "bad_origin", "cross-site request rejected")
+		if viaCookie && r.Method != http.MethodGet && r.Method != http.MethodHead && !s.cookieWriteAllowed(r) {
+			msg := "cross-site request rejected"
+			if r.Header.Get("Origin") == "" {
+				msg = "a write with the session cookie and no Origin must come from this server's pages or send a JSON body: use an API token for scripts, or update the browser"
+			}
+			writeError(w, http.StatusForbidden, "bad_origin", msg)
 			return
 		}
 		// Owner policy (mfa-totp D7): a session whose account must have a second
@@ -134,6 +139,32 @@ func isWriteRequest(r *http.Request) bool {
 		return r.URL.Path == "/api/v1/sync"
 	}
 	return true
+}
+
+// cookieWriteAllowed is the cross-site check of a write authenticated by the
+// session cookie (OpenSpec change cookie-writes-need-origin). With an Origin,
+// originAllowed decides. Without one:
+//   - Sec-Fetch-Site must be same-origin when it is sent at all: a browser that
+//     says the request came from elsewhere is refused;
+//   - with neither header, the request must declare a JSON body. Every browser
+//     the app supports sends Origin on a write; one too old for that can only
+//     send a cross-site write as a form or a navigation, which cannot carry
+//     `Content-Type: application/json` (a page's script needs a CORS
+//     preflight for that, which this server never grants). Non-browser
+//     clients such as older `ot` releases send JSON and keep working, while
+//     a form, multipart or bodiless write naming neither header is refused
+//     instead of relying on SameSite=Lax alone.
+//
+// Bearer-token clients never reach this check.
+func (s *Server) cookieWriteAllowed(r *http.Request) bool {
+	if r.Header.Get("Origin") != "" {
+		return s.originAllowed(r)
+	}
+	if site := r.Header.Get("Sec-Fetch-Site"); site != "" {
+		return site == "same-origin"
+	}
+	mt, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	return err == nil && mt == "application/json"
 }
 
 // originAllowed defends cookie-authenticated writes against cross-site requests.

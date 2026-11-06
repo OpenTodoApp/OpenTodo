@@ -46,7 +46,7 @@ If you would rather not hand-write requests, the [`ot` command-line client](cli.
 Bearer tokens are minted by a signed-in user, so a client that only has an email and a password goes through a short session, which is what `ot login` does:
 
 1. `POST /api/v1/auth/login` with `{email, password}` → the `opentodo_session` cookie.
-2. `POST /api/v1/tokens` with that cookie and `{"name":"cli@<hostname>"}` → `{token, secret}`. Send **no `Origin` header**: cookie-authenticated writes are refused when `Origin` is present and does not match the server, and accepted without it (browsers always send one, non-browser clients normally do not).
+2. `POST /api/v1/tokens` with that cookie and `{"name":"cli@<hostname>"}` → `{token, secret}`. Send **no `Origin` header** and `Content-Type: application/json`: cookie-authenticated writes are refused when `Origin` is present and does not match the server. Without `Origin`, a cookie write is accepted only when its `Sec-Fetch-Site` is `same-origin` or, when it has no `Sec-Fetch-Site` either, when it declares a JSON body; a form, multipart or bodiless cookie write naming neither is refused with 403 `bad_origin`.
 3. `POST /api/v1/auth/logout` with the cookie, then keep only the `secret` and use it as a bearer token. Bearer requests are not subject to the Origin check.
 
 Login is rate limited (10 attempts per minute per address); a token created in Settings and passed to `ot auth set-token` skips the session entirely.
@@ -2511,7 +2511,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `unauthorized` | 401 | any protected route without a valid session or token |
 | `demo_expired` | 401 | demo instance: a session cookie that no longer resolves, because its sandbox was deleted (inactivity, maximum age or the nightly reset). Clients drop their local data and offer a new sandbox |
 | `forbidden` | 403 | an action your account role or project role does not allow: invitation management or user administration by a member, an admin acting on an admin or the owner, a role change or transfer by a non-owner; owner settings (backups, audit, webhook policy, two-factor policy, single sign-on, MCP, CalDAV) or a member reset by a non-owner; a write, purge or membership change your project role does not allow; editing someone else's comment |
-| `bad_origin` | 403 | cookie-authenticated write from another origin; any `/mcp` request whose `Origin` is not this server |
+| `bad_origin` | 403 | cookie-authenticated write from another origin, or one naming neither `Origin` nor `Sec-Fetch-Site: same-origin` that is not a JSON body; any `/mcp` request whose `Origin` is not this server |
 | `session_required` | 403 | `POST /api/v1/assistant/turn` with an API token: the assistant is used from the app while signed in; confirming a restore or deleting a safety copy with an API token |
 | `unknown_skill` | 400 | `POST /api/v1/assistant/turn` naming a skill id the server does not have |
 | `insufficient_scope` | 403 | a write route or `/api/v1/sync` called with a `read` API token, or with an `agent` token outside the [agent content routes](#agent-tokens); `/api/v1/me/agent-access` with either |
