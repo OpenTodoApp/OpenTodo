@@ -7160,5 +7160,9 @@
   "Order by title": "按标题排序",
   "Order by: {name} · {direction}": "排序方式：{name} · {direction}",
   "Reverse order": "反转顺序",
-  "Reverse the order: ascending or descending": "反转顺序：升序或降序"
+  "Reverse the order: ascending or descending": "反转顺序：升序或降序",
+  "Reorder": "调整顺序",
+  "Move to top": "移到顶部",
+  "Move to bottom": "移到底部",
+  "Move {name}": "移动“{name}”"
 }

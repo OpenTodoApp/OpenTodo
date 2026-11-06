@@ -207,14 +207,7 @@ async function capture(ctx, anonCtx, page, e, combo, ids) {
     if (host.layout) { await chooseLayout(p, host.layout); await p.waitForTimeout(300) }
     // A project screen is captured in its list layout, whatever an earlier capture left (the layout is synced).
     else if (host.path.startsWith('/project/') && await p.getByRole('group', { name: 'Project layout' }).getByRole('button', { name: 'List' }).isVisible().catch(() => false)) {
-      // A layout another combination chose can still arrive by sync after the click: List is
-      // chosen again until it holds for a moment (CI saw a Timeline land under the Share dialog).
-      const list = p.getByRole('group', { name: 'Project layout' }).getByRole('button', { name: 'List' })
-      for (let i = 0; i < 4; i++) {
-        if ((await list.getAttribute('aria-pressed').catch(() => null)) !== 'true') await chooseLayout(p, 'List').catch(() => {})
-        await p.waitForTimeout(400)
-        if ((await list.getAttribute('aria-pressed').catch(() => null)) === 'true') break
-      }
+      await chooseLayout(p, 'List').catch(() => {})
       await host.ready(p)
     }
     await p.waitForTimeout(300)
