@@ -9,10 +9,10 @@
 
 ## 2. Visual checks
 
-- [ ] 2.1 Update the quick add and list stories (`web/src/app/quickAdd.stories.tsx`, `taskList.stories.tsx`) to show the field in light, dark and high contrast; verify `make ui-check` (accessibility and contrast gate) and regenerate baselines with `make ui-baselines`
+- [x] 2.1 Update the quick add and list stories (`web/src/app/quickAdd.stories.tsx`, `taskList.stories.tsx`) to show the field in light, dark and high contrast; verify `make ui-check` (accessibility and contrast gate) and regenerate baselines with `make ui-baselines`
 - [ ] 2.2 If `raised` is too faint in dark, add a per-theme `--color-field` token and use it in the class; verify the contrast gate and the screenshots
 
 ## 3. Wrap up
 
-- [ ] 3.1 Add a "Quick add field surface" note to `docs/design-system.md` and a CHANGELOG.md Unreleased line; verify `make docs` leaves no diff
+- [x] 3.1 Add a "Quick add field surface" note to `docs/design-system.md` and a CHANGELOG.md Unreleased line; verify `make docs` leaves no diff
 - [ ] 3.2 Run `make openspec-validate`, `npm test` and `npm run build` in `web/`, `make bundle-budget`, then `make check`; verify all pass

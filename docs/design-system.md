@@ -142,6 +142,10 @@ Keep the `unicode-range` of the `@font-face` rule in `index.css` in step with `-
 
 Screens import shared UI from `web/src/ui/` (re-exported from `web/src/ui/index.ts`); they don't hand-build buttons, menus or pickers.
 
+### Quick add field
+
+The quick add's line field (list pages, the Inbox catch, first run, capture) is drawn on a filled surface with the `.quick-add-field` class in `web/src/index.css`: the raised token, the control radius, compact padding, the hover tint and the focus ring while the input has focus. The high-contrast presentation, where the surface tokens are one colour, gives it a border instead. The command bar and the phone sheet keep their own frames. The list page's sticky row has no divider under it.
+
 ### Icons
 
 One line-icon set, vendored from [Lucide](https://lucide.dev) (ISC licence in `web/src/ui/icons/LICENSE-lucide.txt`); there is no icon dependency at runtime. Use `<Icon name="bell" />`: it draws in the current text colour and is hidden from assistive technology. Give it a `label` only when the icon itself carries meaning; an icon-only control gets its name from the control (see `IconButton`).
