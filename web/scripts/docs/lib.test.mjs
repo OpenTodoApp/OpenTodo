@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { createSlugger, parseFrontMatter, renderPage, resolveLink, sanitizeHtml, validateFrontMatter } from './lib.mjs'
+import { ENTRIES, createSlugger, entryOf, entryTree, indexTree, metaDescription, navOrder, parseFrontMatter, renderPage, resolveLink, sanitizeHtml, validateFrontMatter } from './lib.mjs'
 import { keysHtml, loadShortcuts, shortcutsMarkdown, splitContext, START, END } from './shortcuts.mjs'
 import { QUICK_ADD_SYNTAX, SHORTCUTS, SHORTCUT_SECTIONS } from '../../src/lib/shortcuts.ts'
 import { normalize, prepare, search, snippet, stem } from './search-core.mjs'
+import { pageHtml } from './site.mjs'
 
 const ctx = { rel: 'guide.md', repoRoot: '/nonexistent', audienceOf: (rel) => (rel.startsWith('self-hosting/') || rel === 'api.md' ? 'admin' : 'user') }
 
@@ -136,5 +137,59 @@ describe('search', () => {
   })
   it('builds an escaped snippet with marks', () => {
     expect(snippet('Use <b>every</b> monday', ['monday'])).toBe('Use &lt;b&gt;every&lt;/b&gt; <mark>monday</mark>')
+  })
+})
+
+// docs-landing-restyle D1, D2: six entry points over the sidebar groups, depth from the index's ↳ rows.
+describe('entry points', () => {
+  const page = (slug, fm) => ({ slug, rel: `${slug}.md`, fm: { order: 1, title: slug, ...fm } })
+  it('maps every group to one entry point, with the two overrides', () => {
+    expect(entryOf(page('getting-started', { audience: 'user', section: 'Get started' }))).toBe('start')
+    expect(entryOf(page('switch/todoist', { audience: 'user', section: 'Switch from another app' }))).toBe('start')
+    expect(entryOf(page('method/catch', { audience: 'user', section: 'Open Loops' }))).toBe('use')
+    expect(entryOf(page('sharing', { audience: 'user' }))).toBe('use')
+    expect(entryOf(page('self-hosting/docker', { audience: 'admin' }))).toBe('self-host')
+    expect(entryOf(page('api', { audience: 'developer' }))).toBe('integrate')
+    expect(entryOf(page('keyboard', { audience: 'user' }))).toBe('reference')
+    expect(entryOf(page('stability', { audience: 'developer', section: 'Integrations' }))).toBe('internals')
+    expect(entryOf(page('roadmap', { audience: 'user', section: 'About' }))).toBe('internals')
+    expect(ENTRIES.map((e) => e.key)).toEqual(['start', 'use', 'self-host', 'integrate', 'reference', 'internals'])
+  })
+  it('reads the nesting of the docs index', () => {
+    const tree = indexTree('## Using\n\n| Guide | What |\n| --- | --- |\n| [Sharing](sharing.md) | x |\n| &nbsp;&nbsp;↳ [Invite](invite-people.md), [Roles](roles.md) | y |\n| [Views](views.md) | z |\n\n## Other\n\n| [Docker](self-hosting/docker.md) | d |\n')
+    expect([...tree]).toEqual([['sharing', ['invite-people', 'roles']]])
+  })
+  it('nests deeper pages under their topic and lists every page once, in sidebar order', () => {
+    const pages = [page('sharing', { audience: 'user' }), page('invite-people', { audience: 'user', order: 2 }), page('views', { audience: 'user', order: 3 }), page('api', { audience: 'developer' })]
+    const entries = entryTree(pages, new Map([['sharing', ['invite-people']]]))
+    const use = entries.find((e) => e.entry.key === 'use')
+    expect(use.items.map((i) => [i.page.slug, i.children.map((c) => c.slug)])).toEqual([['sharing', ['invite-people']], ['views', []]])
+    expect(navOrder(entries).map((p) => p.slug)).toEqual(['sharing', 'invite-people', 'views', 'api'])
+  })
+})
+
+// docs-landing-restyle D5: search snippets and structured data.
+describe('SEO', () => {
+  it('keeps a short description and cuts a long one at a sentence or a word', () => {
+    expect(metaDescription('Short and sweet.')).toBe('Short and sweet.')
+    const sentences = 'The first sentence is long enough to pass the eighty character mark on its own, really. The second sentence would push it well past the limit of one hundred and sixty characters.'
+    expect(metaDescription(sentences)).toBe('The first sentence is long enough to pass the eighty character mark on its own, really.')
+    const words = 'One very long sentence without any full stop that keeps going and going, with clauses and lists of things like dates, times, projects, labels and reminders, well beyond the limit'
+    const cut = metaDescription(words)
+    expect(cut.length).toBeLessThanOrEqual(160)
+    expect(cut.endsWith('…')).toBe(true)
+    expect(words.startsWith(cut.slice(0, -1))).toBe(true)
+  })
+  it('gives every page a breadcrumb and a TechArticle, and a capped description', () => {
+    const summary = 'x '.repeat(120).trim()
+    const page = { slug: 'api', rel: 'api.md', fm: { title: 'HTTP API', summary, audience: 'developer', order: 1 } }
+    const entries = entryTree([page], new Map())
+    const html = pageHtml({ page, html: '<h1>HTTP API</h1>', headings: [], entries, version: { release: '1.0.0' } })
+    const ld = JSON.parse(/<script type="application\/ld\+json">([^<]*)<\/script>/.exec(html)[1])
+    const [crumbs, article] = ld['@graph']
+    expect(crumbs.itemListElement.map((i) => [i.name, i.item])).toEqual([['OpenTodo', 'https://open-todo.app/'], ['Docs', 'https://open-todo.app/docs/'], ['Integrate', 'https://open-todo.app/docs/integrate/'], ['HTTP API', 'https://open-todo.app/docs/api/']])
+    expect(article).toMatchObject({ '@type': 'TechArticle', headline: 'HTTP API', url: 'https://open-todo.app/docs/api/', inLanguage: 'en' })
+    for (const m of html.matchAll(/<meta (?:name|property)="(?:description|og:description)" content="([^"]*)"/g)) expect(m[1].length).toBeLessThanOrEqual(160)
+    expect(html.match(/<h1[\s>]/g)).toHaveLength(1)
   })
 })

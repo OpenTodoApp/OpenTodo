@@ -924,6 +924,8 @@ While MCP is enabled, the read tools SHALL include `list_routines` (each routine
 ### Requirement: Routine write tools
 The write tools SHALL include `run_routine` (`routine` id or exact name, optional `task_id`, optional `test`), `set_routine_enabled`, `create_routine`, `update_routine` (the name, or whole `trigger`, `condition` or `steps` values) and `trash_routine` (a tombstone, restorable), offered only under the write permission gate (an `agent` token while the owner's `mcp.writes` and the user's "Allow AI assistants to make changes" are on). They SHALL validate exactly as the routines routes do (shape, ids, types, the limit of 50 routines, step availability as warnings), SHALL count against the write limits (a definition write counts one, a run counts the entities it wrote), SHALL be audited as `agent.write` with the routine id and counts, and SHALL write definitions through the operation log with device `agent:<token-id>`, so the routine's history names the assistant. A run started by `run_routine` SHALL write with device `rule:<rule-id>`, follow the routine's own limits and record source `mcp`. On an encrypted account a name or text literal SHALL be accepted only as a ciphertext envelope or through the device relay. No tool and no routine step SHALL let an agent turn on applying AI results without asking (`routines-ai-step`).
 
+A routine that sends content off the server SHALL be the person's to create, change, turn on and run. Such a routine has a `webhook`, `email_me` or `email_members` step anywhere in its steps, or the legacy `webhook` action. On every agent path, `create_routine` SHALL refuse a routine with such a step. `update_routine` SHALL refuse a change after which the routine still has one. `set_routine_enabled` SHALL refuse turning such a routine on. `run_routine` SHALL refuse running it unless `test` is true. Each refusal SHALL answer `forbidden_for_agents` and write nothing. Reading, testing, turning off and trashing such a routine SHALL stay allowed, and so SHALL an `update_routine` that takes every sending step out. The routines routes for the person's session or a `full` token SHALL be unchanged. The routine model is unchanged, so offline edits and convergence of routines are unaffected: the refusal happens before any op is written.
+
 #### Scenario: Create and test
 - **WHEN** an assistant with an `agent` token calls `create_routine` with a manual trigger and three valid steps, then `run_routine` with `test: true`
 - **THEN** the routine exists on every device after sync with history "Added by an AI assistant", and the test answer lists each step's planned output while nothing is written
@@ -937,8 +939,20 @@ The write tools SHALL include `run_routine` (`routine` id or exact name, optiona
 - **THEN** the tool returns `invalid_argument` naming the step and input, and the routine is unchanged
 
 #### Scenario: Unavailable step
-- **WHEN** an assistant creates a routine with Email me on a server without outgoing email
+- **WHEN** an assistant creates a routine with an Ask AI step on a server without an assistant provider
 - **THEN** the routine is created and the result warns that the step is not available, naming the reason
+
+#### Scenario: A sending step is refused
+- **WHEN** an assistant calls `create_routine` with an Email me step inside a Then branch, or `update_routine` adding a Send a webhook step
+- **THEN** the tool returns `forbidden_for_agents` and no routine op is written
+
+#### Scenario: The person's sending routine
+- **WHEN** the person built a routine with Email me and an assistant calls `set_routine_enabled` with `enabled: true`, `update_routine` with a new name, or `run_routine` without `test`
+- **THEN** each call returns `forbidden_for_agents`, the routine is unchanged and no run is recorded
+
+#### Scenario: Read, test, turn off and trash stay open
+- **WHEN** an assistant calls `get_routine`, `run_routine` with `test: true`, `set_routine_enabled` with `enabled: false` or `trash_routine` on the person's routine with Email me
+- **THEN** each call succeeds, and the test sends no email
 
 ### Requirement: Time sector in tools
 `create_tasks` items and `update_tasks` updates SHALL accept `sector`: an absolute period (`YYYY-Www`, `YYYY-MM` or `YYYY-Qn`, OpenSpec `time-sectors`) or null. It SHALL be written exactly as sent, as one operation through the operation log, converging with device edits by per-field last-writer-wins. Relative words SHALL be refused, because a tool call has no viewer date. Task results of the read tools, the write tools and the `opentodo://` resources SHALL carry `sector` (`null` when empty), in plain text for encrypted accounts too. `list_tasks` SHALL accept a `sector` filter with an absolute period or `carried`, evaluated in the user's time zone with Monday weeks. An invalid or relative value SHALL be a `-32602` error naming the item and the field, and SHALL change nothing.
@@ -1177,3 +1191,22 @@ An access token from the exchange SHALL authenticate `/mcp` by the existing bear
 
 - **WHEN** `/mcp` is called without a token while MCP is enabled
 - **THEN** the response is 401 with `WWW-Authenticate` carrying a `resource_metadata` parameter that resolves to the protected-resource document
+
+### Requirement: Routine runs within the agent write limits
+A `run_routine` call that may write (not a test) SHALL run only within what is left of the calling token's changed items for the UTC day and of its account's (`agent-limits-per-account`), whichever is smaller. Before the run, the server SHALL hold the rest of that budget. When nothing is left, it SHALL answer `rate_limited` with `retry_after_seconds` and SHALL NOT run the routine. A run that plans more writes than were held SHALL write nothing and SHALL be logged as failed with the reason. After the run, the items it did not write SHALL go back to the budget. A run on the person's device, which the server cannot cap before it writes, SHALL book what it wrote. A test SHALL NOT be limited by the daily items. The counters SHALL stay in server memory; runs write through the operation log as before, so offline devices converge on what a run wrote and a refused run writes nothing to sync.
+
+#### Scenario: Budget spent
+- **WHEN** an `agent` token has changed 1,000 items today and calls `run_routine` without `test`
+- **THEN** the answer is `rate_limited` with `retry_after_seconds`, the routine does not run and nothing is written
+
+#### Scenario: Run larger than what is left
+- **WHEN** an `agent` token has 2 items left today and calls `run_routine` on a routine that would create 3 tasks
+- **THEN** the run writes nothing, its log entry is failed with the reason naming the 2 items left, and the 2 items are still left
+
+#### Scenario: Unused items go back
+- **WHEN** an `agent` token has 5 items left and runs a routine that writes 3
+- **THEN** the run is applied and the token has 2 items left
+
+#### Scenario: Test past the limit
+- **WHEN** an `agent` token has no items left and calls `run_routine` with `test: true`
+- **THEN** the test runs and nothing is written or counted

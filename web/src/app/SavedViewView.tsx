@@ -13,7 +13,7 @@ import { resolveLabels } from '../lib/labels'
 import { hasTimeColumn } from '../lib/rowTime'
 import { setTaskCompleted } from '../lib/ops'
 import { breadcrumbOf, progressMap } from '../lib/subtasks'
-import type { View } from '../lib/types'
+import { GROUP_BY_OPTIONS, SORT_BY_OPTIONS, type View } from '../lib/types'
 import { displayOptions, runView, updateView, viewOptions, type ViewPatch } from '../lib/views'
 import { setFavourite } from '../lib/favourites'
 import { DashboardView } from './DashboardView'
@@ -35,6 +35,7 @@ import { useViewData, type ViewData } from './useViews'
 import { t } from '../lib/i18n'
 import { keysOf } from '../lib/shortcuts'
 import { act } from './actionError'
+import { ListReorderContext, type ListReorder } from './bulk/BulkActions'
 import { FilterBuilder } from './filter/FilterBuilder'
 import { useBuilderOpen } from './filter/builderToggle'
 import { ViewsCrumb } from './views/ViewsCrumb'
@@ -43,6 +44,7 @@ import { BOARD_COLOR_BY_KEY } from '../lib/colorBy'
 import { useColorBy } from './calendar/colorByControls'
 import { useFoldedGroups, ViewResults } from './views/ViewResults'
 import type { ViewDisplay } from './views/DisplayPanel'
+import { useDisplayKeys } from './views/useDisplayKeys'
 import { rowLayoutOf, useAccountRowLayout } from '../lib/rowLayout'
 import { LIST_READY, perfMark } from '../lib/perfMarks'
 
@@ -165,6 +167,29 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
     const group = groups.find((g) => g.key === groupOfKey(r.key))
     return stepInView(host, bulkTasks, group?.tasks ?? [], r.task.id, step)
   }
+  // The row menu's Reorder items (accessibility-aa D3): the same step as Alt+arrows, from a pointer.
+  const latestRows = useRef({ rows, groups, selected })
+  latestRows.current = { rows, groups, selected }
+  const listReorder = useMemo<ListReorder>(() => {
+    const rowOf = (id: string) => {
+      const { rows: rs, selected: sel } = latestRows.current
+      return rs.find((r) => r.key === sel && r.task.id === id) ?? rs.find((r) => r.task.id === id)
+    }
+    const groupOf = (r: KeyRow) => latestRows.current.groups.find((g) => g.key === groupOfKey(r.key))
+    return {
+      move: (id, step) => {
+        const r = rowOf(id)
+        const group = r && groupOf(r)
+        if (r) act(stepInView(host, latestRows.current.rows.map((x) => x.task), group?.tasks ?? [], id, step))
+      },
+      edges: async (id) => {
+        const r = rowOf(id)
+        const tasks = (r && groupOf(r)?.tasks) ?? []
+        const i = tasks.findIndex((tk) => tk.id === id)
+        return i < 0 ? null : { first: i === 0, last: i === tasks.length - 1 }
+      },
+    }
+  }, [host])
   const drag = useViewOrderDrag(host, rows, { ticked: bulk.ticked, openRowMenu: (tk, x, y, el) => bulk.rowProps(tk).onRowMenu(x, y, el), onDropped: setSelected })
 
   useListKeys({
@@ -181,6 +206,9 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
     },
   })
 
+  // Group by, Order by and the direction from the keyboard (display-keys): the panel's write.
+  useDisplayKeys({ value: display, groupOptions: GROUP_BY_OPTIONS, sortOptions: SORT_BY_OPTIONS, sortFields: ctx.fields, set: (patch) => updateView(view.id, displayPatch(patch)) })
+
   useEffect(() => {
     if (!selected) return
     const i = selected.lastIndexOf(':')
@@ -193,6 +221,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   const count = result.ok ? result.tasks.length : null
 
   return (
+    <ListReorderContext.Provider value={listReorder}>
     <PageBody width="list">
           <PageHeader title={<ViewsCrumb name={view.name} />} meta={count !== null ? count : undefined} help="saved-filter"
             leading={view.icon ? <span className="flex h-5 w-5 shrink-0 items-center justify-center text-muted" aria-hidden="true"><ViewMark view={view} /></span> : undefined}
@@ -274,5 +303,6 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
         </Dialog>
       )}
     </PageBody>
+    </ListReorderContext.Provider>
   )
 }

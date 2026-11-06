@@ -218,9 +218,14 @@ func (o Origin) ObsidianTip() string {
 // its title, else its name (obsidian-origin D5); a message open in a web mail
 // client (an email origin with a URL and a provider) reads as the provider,
 // "Gmail" or "Outlook" (extension-v2); else the external id, else the URL's
-// host. Readers that show an email origin without a link as a word (the row
-// chip) decide that themselves.
+// host. An imported origin (kind import) reads as the app it came from,
+// "Todoist" (GitHub issue 945): its id is the importer's duplicate-detection key,
+// never something to show. Readers that show an email origin without a link as a
+// word (the row chip) decide that themselves.
 func (o Origin) Label() string {
+	if o.Kind == KindImport {
+		return ImportApp(o.Provider)
+	}
 	if o.Kind == KindObsidian {
 		if o.Title != "" {
 			return o.Title
@@ -234,4 +239,33 @@ func (o Origin) Label() string {
 		return o.ID
 	}
 	return o.Host()
+}
+
+// importApps names the apps an importer profile writes as an imported origin's
+// provider (internal/importer importedOrigin). The twin of IMPORT_APPS in
+// web/src/lib/taskOrigin.ts; the shared label vectors pin both.
+var importApps = map[string]string{
+	"anydo":              "Any.do",
+	"apple-reminders":    "Apple Reminders",
+	"asana":              "Asana",
+	"google-tasks":       "Google Tasks",
+	"microsoft-todo":     "Microsoft To Do",
+	"notion":             "Notion",
+	"omnifocus":          "OmniFocus",
+	"super-productivity": "Super Productivity",
+	"things":             "Things",
+	"ticktick":           "TickTick",
+	"todoist":            "Todoist",
+	"trello":             "Trello",
+	"tududi":             "Tududi",
+	"vikunja":            "Vikunja",
+}
+
+// ImportApp is the name of the app an imported origin's provider names, the
+// provider itself when it is not a known profile, "" without one.
+func ImportApp(provider string) string {
+	if name, ok := importApps[provider]; ok {
+		return name
+	}
+	return provider
 }

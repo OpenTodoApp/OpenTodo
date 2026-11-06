@@ -30,7 +30,9 @@ type Routines interface {
 	// Run is one run with its steps; ok false for another user's or none.
 	Run(ctx context.Context, userID, ruleID, runID string) (any, bool, error)
 	// RunNow runs a routine (source mcp) and returns the answer and the writes.
-	RunNow(ctx context.Context, userID, ruleID, taskID string, test bool) (map[string]any, int, error)
+	// A run that planned more than maxWrites entities (0: no cap) writes
+	// nothing and fails with the agent's daily limit as its reason.
+	RunNow(ctx context.Context, userID, ruleID, taskID string, test bool, maxWrites int) (map[string]any, int, error)
 	// State is the server's pause and the last run time per routine.
 	State(ctx context.Context, userID string) (paused map[string]string, lastRun map[string]int64)
 	// RunAs names the person each shared routine runs as (routines-shared D4):
@@ -352,6 +354,58 @@ func refuseAIApply(a args) error {
 	return nil
 }
 
+// sendingKinds are the routine steps that send content off the server: a
+// webhook delivery, an email to the account's own address and an email to a
+// shared project's members (agent-routine-sends). The legacy actions' webhook
+// is the same delivery.
+var sendingKinds = map[string]bool{"webhook": true, "email_me": true, "email_members": true}
+
+// sendsOut reports whether a routine's steps or actions send content off the
+// server. It reads the JSON itself, not the step parser, so a definition the
+// parser would refuse is judged by what it says.
+func sendsOut(steps, actions json.RawMessage) bool {
+	var found bool
+	var walk func(any)
+	walk = func(x any) {
+		switch t := x.(type) {
+		case []any:
+			for _, el := range t {
+				walk(el)
+			}
+		case map[string]any:
+			if k, ok := t["kind"].(string); ok && sendingKinds[k] {
+				found = true
+			}
+			for _, v := range t {
+				walk(v)
+			}
+		}
+	}
+	var v any
+	if len(steps) > 0 && json.Unmarshal(steps, &v) == nil {
+		walk(v)
+	}
+	var acts map[string]json.RawMessage
+	if len(actions) > 0 && json.Unmarshal(actions, &acts) == nil {
+		if w, ok := acts["webhook"]; ok && string(w) != "null" {
+			found = true
+		}
+	}
+	return found
+}
+
+// refuseSending refuses a routine that sends a webhook or an email on every
+// agent path that would let it send (agent-routine-sends D1): creating or
+// changing one, turning it on and running it. Only the person builds, turns on
+// and runs such a routine, in the app; an assistant may still read it, turn it
+// off, test it (nothing is sent) and trash it.
+func refuseSending(steps, actions json.RawMessage, what string) error {
+	if sendsOut(steps, actions) {
+		return toolErr("forbidden_for_agents", "an AI assistant cannot "+what+" a routine that sends a webhook or an email (Send a webhook, Email me, Email project members): the person does that in the app")
+	}
+	return nil
+}
+
 func (r *Registry) planCreateRoutine(ctx context.Context, c Caller, a args, _ ChangeSet) (Plan, error) {
 	if r.routines == nil {
 		return Plan{}, routinesOff()
@@ -383,6 +437,9 @@ func (r *Registry) planCreateRoutine(ctx context.Context, c Caller, a args, _ Ch
 		if _, has := body[f]; !has {
 			body[f] = json.RawMessage(v)
 		}
+	}
+	if err := refuseSending(body["steps"], body["actions"], "create"); err != nil {
+		return Plan{}, err
 	}
 	warnings, err := r.routines.Check(ctx, c.UserID, body, nil)
 	if err != nil {
@@ -416,6 +473,19 @@ func (r *Registry) planUpdateRoutine(ctx context.Context, c Caller, a args, _ Ch
 	if len(body) == 0 {
 		return Plan{}, argErr("nothing to change: give name, trigger, condition, steps or actions")
 	}
+	// Judged as the routine would be after the change: one that would still
+	// send stays the person's to change, whichever part the assistant gives;
+	// taking the sending steps out is allowed, since what is left sends nothing.
+	steps, actions := row["steps"], row["actions"]
+	if v, ok := body["steps"]; ok {
+		steps = v
+	}
+	if v, ok := body["actions"]; ok {
+		actions = v
+	}
+	if err := refuseSending(steps, actions, "change"); err != nil {
+		return Plan{}, err
+	}
 	warnings, err := r.routines.Check(ctx, c.UserID, body, row)
 	if err != nil {
 		return Plan{}, checkError(err)
@@ -439,6 +509,11 @@ func (r *Registry) planSetRoutineEnabled(ctx context.Context, c Caller, a args, 
 	on, err := a.boolean("enabled")
 	if err != nil {
 		return Plan{}, err
+	}
+	if on {
+		if err := refuseSending(row["steps"], row["actions"], "turn on"); err != nil {
+			return Plan{}, err
+		}
 	}
 	id := str(row, "id")
 	if (string(row["enabled"]) == "true") == on {
@@ -486,9 +561,16 @@ func (r *Registry) planRunRoutine(ctx context.Context, c Caller, a args, _ Chang
 			return Plan{}, err
 		}
 	}
+	// A test plans every step and sends nothing, so it stays open to an
+	// assistant; a real run of a routine that sends is the person's.
+	if !test {
+		if err := refuseSending(row["steps"], row["actions"], "run"); err != nil {
+			return Plan{}, err
+		}
+	}
 	id := str(row, "id")
-	return Plan{Result: map[string]any{}, exec: func(ctx context.Context) (map[string]any, int, error) {
-		res, n, err := r.routines.RunNow(ctx, c.UserID, id, taskID, test)
+	return Plan{Result: map[string]any{}, execWrites: !test, exec: func(ctx context.Context, maxWrites int) (map[string]any, int, error) {
+		res, n, err := r.routines.RunNow(ctx, c.UserID, id, taskID, test, maxWrites)
 		if err != nil {
 			var te *ToolError
 			if errors.As(err, &te) {

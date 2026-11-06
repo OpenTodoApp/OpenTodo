@@ -42,10 +42,30 @@ test('the icon sprite has one symbol per bundled icon', () => {
   assert.equal((sprite.match(/<symbol /g) ?? []).length, names.length)
 })
 
+// bundle-brand-kit: brand/kit/ is the repository's brand kit, byte for byte, and nothing else.
+test('brand/kit/ carries every file of the brand kit', async () => {
+  const { OUTPUTS } = await import('./brand-icons.mjs')
+  const files = brandFiles()
+  const kit = OUTPUTS.map((o) => o.path).filter((p) => p.startsWith('brand/'))
+  assert.ok(kit.length > 30, 'the brand kit is in the brand outputs')
+  assert.deepEqual([...files.keys()].filter((k) => k.startsWith('kit/')).sort(), kit.map((p) => `kit/${p.slice('brand/'.length)}`).sort())
+  for (const p of kit) assert.ok(files.get(`kit/${p.slice('brand/'.length)}`).equals(readFileSync(join(repoRoot, p))), p)
+})
+
+// brand-assets-everywhere: the website serves the bundle's brand/ at /brand/, so the docs
+// pages' social card is the brand kit's default card, a file this bundle ships.
+test("the docs pages' social image is the brand kit's default card, shipped in brand/", () => {
+  const src = readFileSync(join(repoRoot, 'web/scripts/docs/site.mjs'), 'utf8')
+  const m = /property="og:image" content="\$\{SITE_URL\}\/brand\/([^"]+)"/.exec(src)
+  assert.ok(m, 'og:image points under /brand/')
+  assert.equal(m[1], 'kit/png/og-default-1200x630.png')
+  assert.ok(brandFiles().has(m[1]), `the bundle ships brand/${m[1]}`)
+})
+
 // sidebar-v2 D3: brand/ is byte-identical to the app's assets, and fails when the rasters are stale.
 test('brand/ carries the source, both marks, the wordmark and the current 512 px icon, each with the licence note', () => {
   const files = brandFiles()
-  assert.deepEqual([...files.keys()], ['mark.svg', 'mark-mono.svg', 'mark-colour.svg', 'wordmark.svg', 'icon-512.png'])
+  assert.deepEqual([...files.keys()].filter((k) => !k.startsWith('kit/')), ['mark.svg', 'mark-mono.svg', 'mark-colour.svg', 'wordmark.svg', 'icon-512.png'])
   assert.ok(files.get('mark.svg').equals(readFileSync(join(repoRoot, 'web/src/ui/icons/brand.svg'))))
   assert.ok(files.get('mark-colour.svg').equals(readFileSync(join(repoRoot, 'web/public/favicon.svg'))))
   assert.ok(files.get('icon-512.png').equals(readFileSync(join(repoRoot, 'web/public/pwa-512.png'))))

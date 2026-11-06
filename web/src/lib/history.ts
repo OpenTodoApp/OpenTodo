@@ -7,7 +7,7 @@ import { api } from './api'
 import { decryptChanges } from './e2ee'
 import { updateProject, updateTask } from './ops'
 import type { ChangeSet, HistoryPage, Membership, Origin, Project, Task } from './types'
-import { originLabel } from './taskOrigin'
+import { originText } from './originText'
 import { formatDate, formatInstant } from './dates'
 import { fieldValueLabel } from './fieldNames'
 import { t, msg, translatedMap } from './i18n'
@@ -106,7 +106,7 @@ export function formatValue(field: string, value: unknown, names?: (field: strin
   if (field === 'day_part' && (value === 'morning' || value === 'afternoon')) return dayPartName(value)
   if (field === 'priority') return `P${String(value)}`
   // A task's origin (task-origin D12): its id or host, "Email" for a mail.
-  if (field === 'origin' && typeof value === 'object') return originLabel(value as Origin) || t('Email')
+  if (field === 'origin' && typeof value === 'object') return originText(value as Origin)
   if (field === 'estimate_minutes' && typeof value === 'number') return t('{value} min', { value })
   if (field === 'blocked_by' && Array.isArray(value) && names) return value.length ? value.map((id) => names('parent_id', String(id)) ?? t('unknown')).join(', ') : '—'
   if (Array.isArray(value)) return value.length ? t('{n, plural, one {# item} other {# items}}', { n: value.length }) : '—'

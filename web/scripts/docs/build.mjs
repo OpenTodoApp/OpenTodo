@@ -16,10 +16,11 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { imageSize, loadPages, pageUrl, renderPage, repoRootFrom, sortPages, versionInfo } from './lib.mjs'
+import { ENTRIES, entryTree, indexTree, loadPages, pageUrl, renderPage, repoRootFrom, sortPages, versionInfo } from './lib.mjs'
 import { loadShortcuts, shortcutsMarkdown, withShortcuts } from './shortcuts.mjs'
 import { roadmapMarkdown, withRoadmap } from './roadmap.mjs'
-import { landingHtml, pageHtml } from './site.mjs'
+import { landingHtml, pageHtml, sectionHtml } from './site.mjs'
+import { tokensCss } from '../../../scripts/tokens.mjs'
 
 const here = fileURLToPath(import.meta.url)
 const ASSETS = join(dirname(here), 'assets')
@@ -77,14 +78,14 @@ export async function buildAll(repoRoot, { site = OUT_SITE } = {}) {
     rendered.set(page.rel, { site: renderPage(page.body, ctx, 'site'), app: page.fm.audience === 'user' ? renderPage(page.body, ctx, 'app') : null })
   }
 
-  // Pages
+  // Pages, grouped by entry point with the nesting of the docs index (docs-landing-restyle D1, D2).
+  const entries = entryTree(sorted, indexTree(index?.body ?? ''))
   for (const page of sorted) {
     const r = rendered.get(page.rel).site
-    files.set(`${OUT_SITE}/${page.slug}/index.html`, pageHtml({ page, html: r.html, headings: r.headings, sorted, version }))
+    files.set(`${OUT_SITE}/${page.slug}/index.html`, pageHtml({ page, html: r.html, headings: r.headings, entries, version }))
   }
-  const cardImage = sorted.find((p) => p.fm.card)?.fm.card
-  const cardSize = (cardImage && imageSize(join(repoRoot, `docs/images/card-${cardImage}-light.webp`))) || { width: 640, height: 400 }
-  if (index) files.set(`${OUT_SITE}/index.html`, landingHtml({ index, sorted, version, cardSize }))
+  for (const { key } of ENTRIES) files.set(`${OUT_SITE}/${key}/index.html`, sectionHtml({ key, entries, version }))
+  if (index) files.set(`${OUT_SITE}/index.html`, landingHtml({ index, entries, version }))
 
   // Search index: one entry per section (intro, h2, h3) with its text.
   const search = { pages: [], s: [] }
@@ -95,7 +96,7 @@ export async function buildAll(repoRoot, { site = OUT_SITE } = {}) {
   files.set(`${OUT_SITE}/search.json`, JSON.stringify(search))
 
   // Static assets: stylesheet, script (search core included) and images.
-  files.set(`${OUT_SITE}/docs.css`, readFileSync(join(ASSETS, 'docs.css'), 'utf8'))
+  files.set(`${OUT_SITE}/docs.css`, docsCss(repoRoot, version.release))
   const core = readFileSync(join(dirname(here), 'search-core.mjs'), 'utf8').replace(/^export /gm, '')
   files.set(`${OUT_SITE}/docs.js`, readFileSync(join(ASSETS, 'docs.js'), 'utf8').replace('/* @search-core */', core.trim()))
   const imgDir = join(repoRoot, 'docs/images')
@@ -173,6 +174,17 @@ export async function loadScreenIds(repoRoot) {
   // The modification time in the URL defeats the module cache when the file changes (tests, watch).
   const m = await import(`${pathToFileURL(file).href}?v=${Math.floor(statSync(file).mtimeMs)}`)
   return [...m.SCREEN_IDS]
+}
+
+// The stylesheet: the app's colour tokens and the ratios they mix by, generated from
+// web/src/index.css like the site bundle's tokens.css (docs-landing-restyle D4), then docs.css.
+function docsCss(repoRoot, release) {
+  const tokensFile = join(repoRoot, 'web/src/index.css')
+  // Test fixtures carry no app stylesheet: the docs stylesheet alone then.
+  if (!existsSync(tokensFile)) return readFileSync(join(ASSETS, 'docs.css'), 'utf8')
+  const indexCss = readFileSync(tokensFile, 'utf8')
+  const mixes = [...new Set(indexCss.match(/--ot-mix-[\w-]+:\s*[^;]+;/g) ?? [])]
+  return `${tokensCss(indexCss, release)}:root {\n${mixes.map((m) => `  ${m}`).join('\n')}\n}\n\n${readFileSync(join(ASSETS, 'docs.css'), 'utf8')}`
 }
 
 // The app ships the guide's text only: screenshots stay on the website, so the

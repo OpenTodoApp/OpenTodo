@@ -1,1 +1,0 @@
-- **Ticking a task in a long list is quicker.** A click on a task's circle drew the whole list again in that frame; in a 2,000-task project it now draws only that row, and the list catches up when the task leaves it. The completion stays the same to look at and to a screen reader. ([#854](https://github.com/OpenTodoApp/OpenTodo/issues/854))

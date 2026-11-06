@@ -11,7 +11,7 @@ order: 18
 
 <picture><source srcset="images/group-and-order-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/group-and-order-light.webp" alt="The Home renovation project grouped by priority, with the Display options panel open showing Group by Priority and Order by Manual order."></picture>
 
-Project lists and label pages have **Display options**, the sliders button at the right of the header. [Saved views](saved-views.md) use the same panel. Changes apply at once.
+Project lists and label pages have **Display options**, the sliders button at the right of the header. [Saved views](saved-views.md) use the same panel. Changes apply at once; <kbd>r</kbd> <kbd>g</kbd> or <kbd>r</kbd> <kbd>o</kbd> and a letter sets them [from the keyboard](keyboard.md#group-and-order).
 
 ## Group by
 
@@ -24,7 +24,7 @@ Due date groups read *Earlier*, *Today*, *Tomorrow*, later dates and *No date*. 
 
 **Manual order** (the default, the order you drag tasks into), **Priority**, **Due date**, **Created**, **Deadline** or **Title**. **More options** holds the direction; for priority, *descending* puts priority 1 first. Tasks without a date or deadline come last either way.
 
-Number and Date fields also appear in **Order by**. Same-named fields match across a label's projects without regard to case. When types differ, numbers precede dates and text in either direction; direction reverses values within each type and missing values stay last. Text fields from other projects take part too. The setting stores the definition ID, so renames follow it and encrypted names never sync.
+Number and Date fields also appear in **Order by**. Same-named fields match across a label's projects without regard to case. When types differ, numbers precede dates and text in either direction; direction reverses values within each type and missing values stay last. Text fields from other projects take part too.
 
 Subtasks stay under their parent in the order you gave them, also in **Later**: when a task is deferred or parked, its subtasks move there with it. A project's **Later** and **Completed** groups stay at the end.
 
@@ -32,7 +32,7 @@ A new task goes at the end of manual order, or at the top if **Add new tasks: At
 
 ## Kept for each project and label
 
-The choice is kept for each project and each label, follows you to your other devices and stays after a restart. In a shared project it is yours only: other members keep their own.
+The choice is kept per project and label, follows you to your other devices and stays after a restart. In a shared project it is yours only: other members keep their own.
 
 ## Drag while another order is shown
 
@@ -40,11 +40,12 @@ Dragging a task between others in a project or on a label's page, or moving it w
 
 ## Your own order on a label page or saved view
 
-A label page and a [saved view](saved-views.md) keep their **own** manual order. Moving *Post office* above *Pharmacy* on the *errand* label does not move either task in its project. You can order tasks from a shared read-only project on your label pages and views.
+A label page and a [saved view](saved-views.md) keep their **own** manual order. Moving *Post office* above *Pharmacy* on the *errand* label does not move either task in its project. You can order tasks from a shared read-only project there too.
 
-- Drag a task above or below another one in the same group (on a phone, press and hold, then move), or select it and press <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd>, or <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd> for the top or bottom of its group. With Vim keys on, <kbd>Shift</kbd>+<kbd>J</kbd> / <kbd>K</kbd> work too.
+- Drag a task above or below another in its group (on a phone, press and hold, then move), or select it and press <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd>, or <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd> for the top or bottom of its group. With Vim keys on, <kbd>Shift</kbd>+<kbd>J</kbd> / <kbd>K</kbd> work too.
+- Without dragging: **Reorder** in the task's menu.
 - Each move shows **Order changed** with **Undo**.
-- Tasks you never moved follow the ones you placed, in their project order, so a new task appears after them.
+- Tasks you never moved follow the ones you placed, in project order, so a new task appears after them.
 - The order is kept for up to 500 tasks per page, follows you to your other devices and works offline. If you reorder a page on two devices offline, the last device to sync wins.
 
 Today, Upcoming, Anytime, Someday, Assigned to me, Completed and places have fixed orders. **New view** offers Manual order after the view is saved.
