@@ -27,7 +27,7 @@ The stored value never changes by itself. "This week" is worked out on each devi
 
 ## Turn them on
 
-Time sectors are off until you turn on **Time sectors** in **Settings → Account → How you work**, whatever way of working you chose there. It syncs to your devices. Off hides the controls, never a sector: a task that has one keeps its chip and can be cleared.
+Time sectors are off until you turn on **Time sectors** in **Settings → Account → Profile → How you work**, whatever way of working you chose there. It syncs to your devices. Off hides the controls, never a sector: a task that has one keeps its chip and can be cleared.
 
 ## Plan a task for a period
 

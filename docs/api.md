@@ -9,7 +9,7 @@ order: 10
 ---
 # HTTP API
 
-Base path: `/api/v1`. All requests and responses are JSON. Within 1.x the API only grows: routes, fields and error codes are added, never removed or changed ([stability and compatibility](stability.md)); ignore fields you do not know. Errors look like:
+Base path: `/api/v1`. All requests and responses are JSON. Within 1.x the API only grows: routes, fields and error codes are added, never removed or changed ([stability and compatibility](stability.md)); ignore fields you do not know. How the routes are protected, and how that is tested, is in [How we verify security](security/how-we-verify.md). Errors look like:
 
 ```json
 { "error": { "code": "invalid_input", "message": "task.priority must be an integer from 1 (highest) to 4 (lowest)" } }
@@ -387,7 +387,7 @@ The identity is matched by issuer and subject first; a first-time identity whose
 | --- | --- |
 | `oidc_failed` | the provider refused, the code exchange failed or the identity token failed a check (details only in the server log) |
 | `oidc_email_unverified` | a first-time identity without an email marked verified |
-| `oidc_link_required` | a first-time identity whose email belongs to the owner, an admin or an account with a second factor or passkey: sign in locally and link it from Settings → Account first |
+| `oidc_link_required` | a first-time identity whose email belongs to the owner, an admin or an account with a second factor or passkey: sign in locally and link it from Settings → Account → Security → Linked accounts first |
 | `signup_closed` | no matching account and provisioning is not allowed |
 
 `start` while signed in **links** the provider identity to the current account instead (Settings → Account → Security → Linked accounts) and returns to `/settings/account/security?linked=1`. If that identity is already linked to the same account, the flow is a fresh proof of identity for the session (the *fresh* routes work for ten minutes) and returns to `/settings/account/security?reauthenticated=1`.

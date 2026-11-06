@@ -68,7 +68,7 @@ To stay on one release line, set the image to `ghcr.io/opentodoapp/opentodo:0.22
 
 ## Data and backups
 
-Everything OpenTodo stores (the database, attachments and its own backups) is on the disk mounted on `/data`. Render takes a snapshot of the disk every day and keeps it for at least seven days (**Disks** page of the service, [Persistent Disks](https://render.com/docs/disks#disk-snapshots)); restoring one replaces the whole disk. For backups off Render, turn on scheduled backups in OpenTodo's **Settings → Server** with an S3 or WebDAV destination. Backups written only to `backups/` stay on the same disk. The image has no shell, so Render's shell and SSH cannot open it. See [Backups](../backups.md).
+Everything OpenTodo stores (the database, attachments and its own backups) is on the disk mounted on `/data`. Render takes a snapshot of the disk every day and keeps it for at least seven days (**Disks** page of the service, [Persistent Disks](https://render.com/docs/disks#disk-snapshots)); restoring one replaces the whole disk. For backups off Render, turn on scheduled backups in OpenTodo's **Settings → Server → Backups** with an S3 or WebDAV destination. Backups written only to `backups/` stay on the same disk. The image has no shell, so Render's shell and SSH cannot open it. See [Backups](../backups.md).
 
 The service runs one instance: a service with a disk cannot be scaled out.
 

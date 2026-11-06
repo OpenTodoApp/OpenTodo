@@ -64,7 +64,7 @@
 
 **D6. The roadmap page is generated.**
 - The docs build reads ROADMAP.md's milestone tables (the `| Change | What | … |` rows with a backticked change name) and resolves each change:
-  - archived under `openspec/changes/archive/*-<name>/` is "Shipped in x.y", with the version read from the first CHANGELOG.md section that mentions the change name or, if none, "Shipped";
+  - archived under `openspec/changes/archive/*-<name>/` is "Shipped in x.y": the oldest CHANGELOG.md release that names the change, or else the last release on the first release date on or after the archive date (several releases can share a date); "Shipped" when it was archived after the last release;
   - under `openspec/changes/<name>/` with checked tasks is "In progress (n of m)";
   - with no checked task, or no folder at all, is "Planned".
 - The page shows the milestones in order, with the status as a Badge-like text label (no colour-only signal).

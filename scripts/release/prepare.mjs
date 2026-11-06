@@ -27,6 +27,7 @@ import { checkDeviceRecord } from './deviceRecord.mjs'
 import { checkMatrixFreshness } from './switchMatrix.mjs'
 import { checkUpgradeFixture } from './upgradeFixture.mjs'
 import { checkSecurityReviews } from './securityReview.mjs'
+import { checkScreenshotFreshness } from './screenshotFreshness.mjs'
 
 const VERSION = /^(\d+)\.(\d+)\.(\d+)$/
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
@@ -146,6 +147,8 @@ export function prepare(to, { root = ROOT, date = new Date().toISOString().slice
   // From 1.0.0, an external review's findings follow the fix rule and a review is at most 24 months old
   // (external-security-review D4). No review file passes: the review is optional.
   checkSecurityReviews(root, to, from, date, releaseDate(changelog, from))
+  // From 1.0.0, the guide's screenshots are newer than the last change to the app (docs-1-0 D7).
+  checkScreenshotFreshness(root, to)
 
   const changed = new Set()
   const edit = (rel, fn) => {

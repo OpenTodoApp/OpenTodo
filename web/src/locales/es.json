@@ -4200,7 +4200,7 @@
   "Settings → Developer → Edit Config, then add this entry to claude_desktop_config.json and restart Claude Desktop.": "Ajustes → Desarrollador → Editar configuración, añade esta entrada a claude_desktop_config.json y reinicia Claude Desktop.",
   "Settings → People → Users and invitations: copy the invite link created in this session": "Ajustes → Personas → Usuarios e invitaciones: copiar el enlace de invitación creado en esta sesión",
   "Settings → People → Users and invitations: revoke the focused pending invitation": "Ajustes → Personas → Usuarios e invitaciones: revocar la invitación pendiente enfocada",
-  "Settings → People → Users: deactivate or reactivate, create a reset link, delete the focused user (each confirms)": "Ajustes → Personas → Usuarios: desactivar o reactivar, crear un enlace de restablecimiento, eliminar el usuario enfocado (cada acción pide confirmación)",
+  "Settings → People → Users and invitations: deactivate or reactivate, create a reset link, delete the focused user (each confirms)": "Ajustes → Personas → Usuarios e invitaciones: desactivar o reactivar, crear un enlace de restablecimiento, eliminar el usuario enfocado (cada acción pide confirmación)",
   "Settings → Server → Audit log: export with the current filters while the table has focus": "Ajustes → Servidor → Registro de auditoría: exportar con los filtros actuales mientras la tabla tiene el foco",
   "Settings: focus the search field, which finds sections and single settings by name": "Ajustes: enfocar el campo de búsqueda, que encuentra secciones y ajustes concretos por su nombre",
   "Settings: {section}": "Ajustes: {section}",
