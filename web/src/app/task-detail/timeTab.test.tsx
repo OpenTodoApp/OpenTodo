@@ -7,7 +7,7 @@ import { completeTask, createProject, createTask, resetDeviceId, applyOps } from
 import { db, useDatabase } from '../../lib/db'
 import { setDateTime } from '../../lib/dates'
 import { setCurrentUserId } from '../../lib/sharing'
-import { logTime, useTaskTracked } from '../../lib/timeEntries'
+import { logTime, useTaskTracked, useTrackedTotals } from '../../lib/timeEntries'
 import type { HistoryPage, Task } from '../../lib/types'
 import { click, key, render, type, visibleText, waitFor } from '../../ui/test-utils'
 import { ConversationTabs } from './ConversationTabs'
@@ -36,6 +36,12 @@ afterEach(() => {
 /** The figure a row's chip reads (the shared totals). */
 function RowFigure({ id }: { id: string }) {
   return <span data-row-tracked>{useTaskTracked(id) ?? 'none'}</span>
+}
+
+/** The figures a saved view's filter reads: `tracked` (every entry, as in 1.0) and `tracked occurrence`. */
+function FilterFigures({ id }: { id: string }) {
+  const { tracked, trackedOccurrence } = useTrackedTotals()
+  return <span data-filter-tracked>{`${tracked.get(id) ?? 'none'}/${trackedOccurrence.get(id) ?? 'none'}`}</span>
 }
 
 const rows = (c: HTMLElement) => [...c.querySelectorAll<HTMLElement>('[data-time-entry]')]
@@ -97,6 +103,10 @@ describe('Time tab', () => {
     const row = await render(<RowFigure id={id} />)
     await waitFor(() => row.container.querySelector('[data-row-tracked]')?.textContent === '10', 'the row figure')
     await row.unmount()
+    // Filters and saved views keep the 1.0 meaning of `tracked` (tracked-time-api-compatible).
+    const filter = await render(<FilterFigures id={id} />)
+    await waitFor(() => filter.container.querySelector('[data-filter-tracked]')?.textContent === '50/10', 'the filter figures')
+    await filter.unmount()
   })
 
   it('End before start: the form shows the error and writes nothing', async () => {

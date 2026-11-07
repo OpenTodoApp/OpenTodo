@@ -46,8 +46,10 @@ type snapshot struct {
 	fieldDefs    map[string][]opsync.Entity
 	allFieldDefs []opsync.Entity
 	// tracked is every member's live tracked minutes per task, a running entry
-	// to the server time (time-tracking D11).
-	tracked map[string]int
+	// to the server time (time-tracking D11): every entry of the task, the 1.0
+	// meaning of tracked_minutes. trackedOccurrence counts a repeating task's
+	// current occurrence only (tracked-time-api-compatible).
+	tracked, trackedOccurrence map[string]int
 	// places are the user's live saved locations by id (task-locations), for
 	// writes that link a location by place_id and reads that show its current values.
 	places map[string]opsync.Entity
@@ -194,12 +196,12 @@ func (r *Registry) loadWith(ctx context.Context, userID string, tasks taskReader
 	for _, pl := range places {
 		snap.places[rawStr(pl, "id")] = pl
 	}
-	// A repeating task counts its current occurrence (fix-recurring-tracked-time).
 	occ := make([]timetrack.Occurrence, 0, len(snap.tasks))
 	for _, t := range snap.tasks {
 		occ = append(occ, timetrack.OccurrenceFromRow(t))
 	}
-	snap.tracked = timetrack.CurrentTotals(list, occ, r.now().UnixMilli())
+	snap.tracked = timetrack.TotalsByTask(list, r.now().UnixMilli(), nil)
+	snap.trackedOccurrence = timetrack.CurrentTotals(list, occ, r.now().UnixMilli())
 	if err := r.loadWorkspaces(ctx, userID, snap); err != nil {
 		return nil, err
 	}
@@ -511,10 +513,13 @@ type taskOut struct {
 	// (OpenSpec change task-origin); its title and URL are in untrusted_text.
 	Origin *originOut `json:"origin"`
 	// TrackedMinutes is the task's live tracked time, every member's entries
-	// and a running one to the server time (OpenSpec change time-tracking); for
-	// a repeating task, the entries of its current occurrence only (OpenSpec
-	// change fix-recurring-tracked-time).
+	// and a running one to the server time (OpenSpec change time-tracking):
+	// every entry of the task, a repeating task's earlier occurrences included.
 	TrackedMinutes int `json:"tracked_minutes"`
+	// TrackedMinutesOccurrence is set on a repeating task only: the minutes of
+	// its current occurrence, the entries since it was last completed or skipped
+	// (OpenSpec changes fix-recurring-tracked-time, tracked-time-api-compatible).
+	TrackedMinutesOccurrence *int `json:"tracked_minutes_occurrence,omitempty"`
 	// Planning fields (OpenSpec change agent-planning-fields, design D4):
 	// deadline and start as stored (start may be "someday"), evening, the ids
 	// the task waits for and blocked, true while any of them is open. Location
@@ -562,6 +567,10 @@ func (snap *snapshot) render(t opsync.Entity, loc *time.Location, today string, 
 	}
 	if out.Completed {
 		out.CompletedBy = strPtr(t, "completed_by")
+	}
+	if out.Recurrence != nil {
+		m := snap.trackedOccurrence[out.ID]
+		out.TrackedMinutesOccurrence = &m
 	}
 	// An occurrence record names its series and the date it stands for
 	// (OpenSpec change series-exceptions, design D11).

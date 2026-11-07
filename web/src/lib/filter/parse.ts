@@ -16,7 +16,7 @@ import { isSector, SECTOR_WORDS } from '../sectors'
 //            | "sector:" (relative word | period)     (time sectors, OpenSpec time-sectors)
 //            | "workspace:" name                      (workspaces, OpenSpec group-mentions)
 //            | "notes:" text                          (text in the note, OpenSpec notes-overview)
-//            | "tracked" cmp duration                 (tracked time, OpenSpec time-tracking)
+//            | "tracked" ["occurrence"] cmp duration  (tracked time, OpenSpec time-tracking)
 //            | field cmp value | "no" field          (custom fields, OpenSpec custom-fields)
 //   date    := day | period   (a day is a period of one day; see resolveRange)
 //   field   := a word that is not a reserved word | '"' chars '"'
@@ -218,7 +218,7 @@ export function tokenize(src: string): Token[] {
 
 // ---- AST ----
 
-export type Keyword = 'overdue' | 'today' | 'tomorrow' | 'no date' | 'no project' | 'no labels' | 'no time' | 'no deadline' | 'no start' | 'someday' | 'deferred' | 'evening' | 'morning' | 'afternoon' | 'completed' | 'open' | 'subtask' | 'blocked' | 'unblocked' | 'available' | 'habit' | 'origin' | 'no origin' | 'tracked' | 'energy' | 'no energy' | 'notes' | 'no notes' | 'sector' | 'no sector' | 'carried' | 'assigned' | 'unassigned'
+export type Keyword = 'overdue' | 'today' | 'tomorrow' | 'no date' | 'no project' | 'no labels' | 'no time' | 'no deadline' | 'no start' | 'someday' | 'deferred' | 'evening' | 'morning' | 'afternoon' | 'completed' | 'open' | 'subtask' | 'blocked' | 'unblocked' | 'available' | 'habit' | 'origin' | 'no origin' | 'tracked' | 'tracked occurrence' | 'energy' | 'no energy' | 'notes' | 'no notes' | 'sector' | 'no sector' | 'carried' | 'assigned' | 'unassigned'
 
 /**
  * today = 0, tomorrow = 1, yesterday = -1, `N days` = N, `N days ago` = -N.
@@ -259,8 +259,8 @@ export type Node =
   | { kind: 'field'; name: string; op: Cmp; value: FieldValueExpr; pos: number; opPos: number }
   /** `no name`: a project defining the field, no value. */
   | { kind: 'nofield'; name: string; pos: number }
-  /** `tracked cmp duration`: the task's tracked minutes (time-tracking D9). */
-  | { kind: 'tracked'; op: Cmp; minutes: number }
+  /** `tracked cmp duration`: the task's tracked minutes (time-tracking D9); `occurrence`: a repeating task's current occurrence only. */
+  | { kind: 'tracked'; op: Cmp; minutes: number; occurrence?: true }
 
 /** The right-hand side of a field term; the field's type decides how it compares. */
 export type FieldValueExpr =
@@ -421,11 +421,11 @@ export function parse(src: string): Node | null {
       i++
       return { kind: 'date', field: w, op, date: parseDate(c) }
     }
-    // Tracked time (time-tracking D9): the keyword, or `tracked cmp duration`. A
-    // reserved word: a field named "tracked" is reachable only quoted.
+    // `tracked` [occurrence] [cmp duration] (time-tracking D9, tracked-time-api-compatible); a field named "tracked" needs quotes.
     if (w === 'tracked') {
+      const occurrence = lower(peek()) === 'occurrence' && i++ >= 0
       const c = peek()
-      if (c?.type !== 'cmp') return { kind: 'keyword', keyword: 'tracked' }
+      if (c?.type !== 'cmp') return { kind: 'keyword', keyword: occurrence ? 'tracked occurrence' : 'tracked' }
       i++
       const v = peek()
       const message = (pos: number) => t('Expected a duration such as 30m or 1h30 after "{after}" at position {pos}', { after: c.raw, pos: pos + 1 })
@@ -433,7 +433,7 @@ export function parse(src: string): Node | null {
       const minutes = durationMinutes(v.value)
       if (minutes === null) return fail(message(v.pos), v.pos, ['duration'])
       i++
-      return { kind: 'tracked', op: c.op, minutes }
+      return occurrence ? { kind: 'tracked', op: c.op, minutes, occurrence } : { kind: 'tracked', op: c.op, minutes }
     }
     if (w === 'no') {
       const nt = peek()
@@ -689,6 +689,6 @@ export function printQuery(n: Node): string {
     case 'nofield':
       return `no ${quoteAlways(n.name)}`
     case 'tracked':
-      return `tracked ${n.op} ${n.minutes}`
+      return `tracked ${n.occurrence ? 'occurrence ' : ''}${n.op} ${n.minutes}`
   }
 }
