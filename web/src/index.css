@@ -1113,7 +1113,7 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 .row-check-pop, [data-departing] [data-check-mark], [data-rolled] [data-check-mark] {
   animation: row-check-pop var(--duration-emphasis) var(--ease-spring) backwards;
 }
-[data-departing] { overflow: hidden; animation: row-collapse calc(var(--duration-moment) - 200ms) var(--ease-spring) 200ms both; }
+[data-departing] { overflow: hidden; interpolate-size: allow-keywords; animation: row-collapse calc(var(--duration-moment) - 200ms) var(--ease-spring) 200ms both; }
 [data-departing] [data-row-open] { animation: row-text-fade 200ms var(--ease-calm) 60ms both; }
 [data-departing] [data-row-title] { position: relative; inline-size: fit-content; max-inline-size: 100%; text-decoration-line: none; }
 [data-departing] [data-row-title]::after {
@@ -1518,3 +1518,8 @@ html:root[data-contrast="high"] .quick-add-tint { background-color: transparent;
 /* The frame (precision-shell D3): the whole content surface, from its left edge, so the
    docked panel narrows it from the right and nothing moves. */
 .page-frame { margin-left: 0; margin-right: 0; }
+
+/* A long list's block of rows (.row-block, incremental-list-updates D5): its row count is not
+   inherited. It changes when a row comes or goes, and as an inherited property it restyled every
+   element of the block's rows (about 800, 55 ms in the phone profile). */
+@property --block-rows { syntax: '<number>'; inherits: false; initial-value: 25; }

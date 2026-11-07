@@ -8,7 +8,7 @@
 // next days in the `meta` row BADGE_META, and the service worker (public/push-sw.js)
 // sets the badge to the count of its day when a reminder push arrives. The row holds
 // numbers and dates only, never task content.
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { addDaysISO } from './dates'
 import { db } from './db'
 import { createStoredValue } from './deviceStorage'
@@ -16,6 +16,7 @@ import { resettable } from './moduleState'
 import type { TodayAssigneeFilter } from './dayLists'
 import { assignedToSomeoneElse } from './dayLists'
 import type { Task } from './types'
+import { Derived, type TaskChange } from './taskDelta'
 import { inToday } from './views'
 
 export const BADGE_KEY = 'opentodo.appBadge'
@@ -79,6 +80,19 @@ export function badgeCounts(openTasks: readonly Task[], today: string, days = BA
   return counts
 }
 
+/** badgeCounts after `changes` to the open tasks (incremental-list-updates D2): plus and minus per changed row and day. */
+export function patchBadgeCounts(prev: Record<string, number>, changes: readonly TaskChange[], _open: readonly Task[], today: string, days = BADGE_DAYS, hide?: TodayAssigneeFilter | null): Record<string, number> {
+  const counts = { ...prev }
+  for (let i = 0; i < days; i++) {
+    const day = addDaysISO(today, i)
+    for (const c of changes) {
+      if (c.before && inToday(c.before, day) && !assignedToSomeoneElse(c.before, hide)) counts[day]--
+      if (c.after && inToday(c.after, day) && !assignedToSomeoneElse(c.after, hide)) counts[day]++
+    }
+  }
+  return counts
+}
+
 /** Shows `count` on the icon, or clears it at zero. Never throws (no permission, not installed). */
 export async function showBadge(count: number, n: BadgeNavigator | null = nav()): Promise<void> {
   if (!badgeSupported(n)) return
@@ -114,10 +128,15 @@ async function storeCounts(row: BadgeRow): Promise<void> {
 export function useAppBadge(openTasks: readonly Task[], loaded: boolean, today: string, dayStart: number, zone: string, hide?: TodayAssigneeFilter | null): void {
   const on = useBadgeEnabled()
   const supported = badgeSupported()
+  // Counted from the rows each write changed (incremental-list-updates D2); a zone change counts again.
+  const countsOf = useRef(new Derived<Record<string, number>, [string, number, TodayAssigneeFilter | null, string]>(
+    (open, today, days, hide) => badgeCounts(open, today, days, hide),
+    (prev, changes, open, today, days, hide) => patchBadgeCounts(prev, changes, open, today, days, hide),
+  )).current
   useEffect(() => {
     if (!supported || !on || !loaded) return
-    const counts = badgeCounts(openTasks, today, BADGE_DAYS, hide)
+    const counts = countsOf.get(openTasks, today, BADGE_DAYS, hide ?? null, zone)
     void showBadge(counts[today] ?? 0)
     void storeCounts({ dayStart, counts })
-  }, [supported, on, loaded, openTasks, today, dayStart, zone, hide])
+  }, [supported, on, loaded, openTasks, today, dayStart, zone, hide, countsOf])
 }

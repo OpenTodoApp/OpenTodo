@@ -7,10 +7,12 @@ import { type FormEvent, type KeyboardEvent, type PointerEvent as ReactPointerEv
 import { useLabels, useProjects } from '../lib/localData'
 import { beginDrag } from '../lib/dnd'
 import {
-  LabelExistsError, countOpenByLabel, createLabel, deleteLabel, duplicateLabelIds, labelKey, labelUsage,
+  LabelExistsError, createLabel, deleteLabel, duplicateLabelIds, labelKey, labelUsage,
   mergeLabels, moveLabelTo, reorderLabel, updateLabel,
 } from '../lib/labels'
 import { useOpenTasks } from '../lib/liveTasks'
+import { labelCounts, patchLabelCounts } from '../lib/sidebarCounts'
+import { Derived } from '../lib/taskDelta'
 import type { Label } from '../lib/types'
 import { Badge, Button, PageBody, PageHeader, ReadAs, Popover } from '../ui'
 import { ComboboxPanel } from '../ui'
@@ -37,10 +39,10 @@ export function useLabelData() {
   // hidden. The tasks come from the shared snapshot (large-list-performance D2).
   const projects = useProjects()
   const openTasks = useOpenTasks()
-  const counts = useMemo(() => {
-    const skip = new Set(projects.filter((p) => p.archived).map((p) => p.id))
-    return countOpenByLabel(openTasks.filter((task) => !task.project_id || !skip.has(task.project_id)))
-  }, [projects, openTasks])
+  // Worked out from the rows each write changed (incremental-list-updates D2).
+  const archived = useMemo(() => new Set(projects.filter((p) => p.archived).map((p) => p.id)), [projects])
+  const countsOf = useRef(new Derived<Map<string, number>, [ReadonlySet<string>]>(labelCounts, patchLabelCounts)).current
+  const counts = countsOf.get(openTasks, archived)
   return { labels, counts, duplicates: duplicateLabelIds(labels) }
 }
 

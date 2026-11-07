@@ -44,7 +44,11 @@ export function isDescendant(candidate: string, ancestor: string, projects: Proj
  * tasks, then one bottom-up pass over the tree; linear in both.
  */
 export function openCountsByProject(tasks: Iterable<Task>, tree: ProjectTree, collapsed: Set<string>): Map<string, number> {
-  const own = ownOpenCounts(tasks)
+  return rollUpCounts(ownOpenCounts(tasks), tree, collapsed)
+}
+
+/** Each project's own counts rolled up the tree as the sidebar shows them (openCountsByProject). */
+export function rollUpCounts(own: ReadonlyMap<string, number>, tree: ProjectTree, collapsed: ReadonlySet<string>): Map<string, number> {
   const out = new Map<string, number>()
   const total = (n: ProjectNode): number => {
     let sum = own.get(n.id) ?? 0

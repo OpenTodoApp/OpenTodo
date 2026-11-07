@@ -5,6 +5,7 @@
 import { db } from './db'
 import { ancestors, buildTree, type Tree } from './tree'
 import type { Task } from './types'
+import { noteKeys, perList, type TaskChange } from './taskDelta'
 import { t } from './i18n'
 
 export interface Progress {
@@ -36,6 +37,38 @@ export function progressMap(tasks: Iterable<Task>): Map<string, Progress> {
   }
   return out
 }
+
+/**
+ * progressMap after `changes`, from the parents of the changed rows (OpenSpec change
+ * incremental-list-updates D2): the same entries, with the parents it touched noted.
+ */
+export function patchProgress(prev: Map<string, Progress>, changes: readonly TaskChange[]): Map<string, Progress> {
+  let next: Map<string, Progress> | null = null
+  const touched = new Set<string>()
+  const count = (task: Task | undefined, n: number) => {
+    if (!task?.parent_id || task.deleted_at) return
+    next ??= new Map(prev)
+    const p = next.get(task.parent_id)
+    const v = { done: (p?.done ?? 0) + (task.completed_at ? n : 0), total: (p?.total ?? 0) + n }
+    if (v.total > 0) next.set(task.parent_id, v)
+    else next.delete(task.parent_id)
+    touched.add(task.parent_id)
+  }
+  for (const c of changes) {
+    const a = c.before
+    const b = c.after
+    // Only the parent pointer and the done and deleted states count.
+    if (a && b && a.parent_id === b.parent_id && !a.completed_at === !b.completed_at && !a.deleted_at === !b.deleted_at) continue
+    count(a, -1)
+    count(b, 1)
+  }
+  if (!next) return prev
+  noteKeys(prev, next, touched)
+  return next
+}
+
+/** progressMap of a task snapshot, worked out from the rows each write changed. */
+export const liveProgress = perList<Map<string, Progress>>(progressMap, patchProgress)
 
 export type ParentState = 'nested' | 'missing' | 'deleted' | 'completed' | 'elsewhere' | 'none'
 

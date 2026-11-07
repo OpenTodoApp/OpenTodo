@@ -9,6 +9,10 @@
 // keep their objects, so memoised rows and derived lists see that nothing
 // changed. The projects and the workspace state (small tables) stay one live
 // query, as before.
+//
+// The sets are patched the same way while the projects and workspaces stay as they
+// were, and each new list notes the rows it changed (lib/taskDelta), so what is
+// derived from it follows those rows too (OpenSpec change incremental-list-updates, D1).
 import Dexie, { liveQuery, type IndexableType, type ObservabilitySet, type Subscription } from 'dexie'
 import { useSyncExternalStore } from 'react'
 import { db } from './db'
@@ -16,6 +20,7 @@ import { HELD_REFRESH_MAX_MS, HELD_REFRESH_MS, isHeld, onHold, type LiveSnapshot
 import { deletedProjectIds, isTaskVisible } from './trash'
 import type { Project, Task } from './types'
 import { readWorkspaceState, tasksIn, type WorkspaceState } from './workspaces'
+import { locateById, noteChanges, patchSorted, type TaskChange } from './taskDelta'
 
 export interface TaskSets { every: Task[]; here: Task[] }
 
@@ -47,29 +52,25 @@ export function changedTaskKeys(parts: ObservabilitySet, dbName: string): string
   return keys
 }
 
-/** Index of `id` in `rows` (sorted by id), or where it would go: [index, found]. */
-function locate(rows: readonly Task[], id: string): [number, boolean] {
-  let lo = 0
-  let hi = rows.length
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1
-    if (rows[mid].id < id) lo = mid + 1
-    else hi = mid
-  }
-  return [lo, lo < rows.length && rows[lo].id === id]
-}
-
 /** `rows` (sorted by id) with the read rows of `keys` swapped in, added, or removed when gone. */
 export function patchRows(rows: readonly Task[], keys: readonly string[], read: readonly (Task | undefined)[]): Task[] {
+  return patchRowsWith(rows, keys, read).rows
+}
+
+/** patchRows, with the changes it made (each key once: the row before and the row read). */
+export function patchRowsWith(rows: readonly Task[], keys: readonly string[], read: readonly (Task | undefined)[]): { rows: Task[]; changes: TaskChange[] } {
   const out = rows.slice()
+  const changes: TaskChange[] = []
   keys.forEach((id, i) => {
-    const [at, found] = locate(out, id)
+    const [at, found] = locateById(out, id)
     const row = read[i]
+    const before = found ? out[at] : undefined
     if (row && found) out[at] = row
     else if (row) out.splice(at, 0, row)
     else if (found) out.splice(at, 1)
+    if (before !== row) changes.push({ id, before, after: row })
   })
-  return out
+  return { rows: out, changes }
 }
 
 /** The visible tasks of every workspace and of the current one. */
@@ -77,6 +78,21 @@ export function deriveSets(rows: readonly Task[], projects: readonly Project[], 
   const gone = deletedProjectIds(projects)
   const every = rows.filter((task) => isTaskVisible(task, gone))
   return { every, here: tasksIn(state, projects, every) }
+}
+
+/**
+ * The sets after `changes` to the stored rows, worked out from those rows: the same as
+ * deriveSets of the new rows when the projects and workspaces are as for `prev`. Null
+ * when the account has more than one workspace (a task's workspace can follow its
+ * parent's, so a change can move others), and the sets are derived in full.
+ */
+export function patchSets(prev: TaskSets, changes: readonly TaskChange[], projects: readonly Project[], state: WorkspaceState): TaskSets | null {
+  if (prev.here !== prev.every || state.list.length > 1) return null
+  const gone = deletedProjectIds(projects)
+  const every = patchSorted(prev.every, changes, (task) => isTaskVisible(task, gone))
+  if (every.list === prev.every) return prev
+  noteChanges(prev.every, every.list, every.changes)
+  return { every: every.list, here: every.list }
 }
 
 /** What deriveSets reads of the context: the workspace state, and each project's place and Trash state. */
@@ -105,9 +121,15 @@ export function taskSnapshot(): LiveSnapshot<TaskSets> {
   let timer: ReturnType<typeof setTimeout> | null = null
   let running = false
 
-  function publish() {
+  /** The context the snapshot was derived with: a change of rows alone patches it. */
+  let derivedWith: { state: WorkspaceState; projects: Project[] } | null = null
+
+  function publish(changes?: readonly TaskChange[]) {
     if (!rows || !context) return
-    const value = deriveSets(rows, context.projects, context.state)
+    const patched = changes && snapshot && derivedWith === context ? patchSets(snapshot, changes, context.projects, context.state) : null
+    if (patched === snapshot) return
+    const value = patched ?? deriveSets(rows, context.projects, context.state)
+    derivedWith = context
     snapshot = import.meta.env.MODE === 'test' ? deepFreeze(value) : value
     for (const l of listeners) l()
   }
@@ -119,9 +141,11 @@ export function taskSnapshot(): LiveSnapshot<TaskSets> {
     const from = db
     chain = chain.then(async () => {
       if (!running || from !== db) return
-      if (change === 'all' || !rows) rows = (await from.tasks.toArray()) as Task[]
-      else if (change.length) rows = patchRows(rows, change, (await from.tasks.bulkGet(change)) as (Task | undefined)[])
-      if (running && from === db) publish()
+      // A full read is derived in full; a patch passes the rows it changed on.
+      let changes: TaskChange[] | undefined = []
+      if (change === 'all' || !rows) { rows = (await from.tasks.toArray()) as Task[]; changes = undefined }
+      else if (change.length) ({ rows, changes } = patchRowsWith(rows, change, (await from.tasks.bulkGet(change)) as (Task | undefined)[]))
+      if (running && from === db) publish(changes)
     }).catch(failed)
   }
 
