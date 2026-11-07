@@ -17,7 +17,7 @@ import (
 // is refused on a demo instance (outbound requests, secrets).
 
 func (s *Server) registerChannelRoutes(mux *routes) {
-	s.channelLimiter = newRateLimiter(channels.TestsPerHour, time.Hour)
+	s.channelLimiter = s.limit("channels.test", channels.TestsPerHour, time.Hour)
 	s.switchRoutes(mux, "/api/v1/settings/notification-channels", switchRoute{sw: s.set.ChannelsOn,
 		get: signedIn.DemoDenied(), put: ownerOnly("manage notification channels on this server").DemoDenied(),
 		after: func(_ context.Context, _, on bool) {

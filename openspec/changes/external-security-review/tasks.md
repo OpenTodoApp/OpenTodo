@@ -66,3 +66,4 @@ Behaviour changes get their own small OpenSpec change (suggested name in bracket
 ## 7. Second wave
 
 - [x] 7.1 A revoked device removes its local copy: sign out everywhere, deactivation and deletion leave a proof under each session's wipe key, which the device checks before clearing what sign-out clears [`revoked-device-wipe`]; verify `go test ./internal/httpapi -run 'TestRevokedDevice|TestPasswordChangeDoesNotWipe'`, `npm test -- revokedDevice revocation` and `scripts/e2e-revoked.mjs`
+- [x] 7.2 Rate limits and agent limits survive a restart: counted in memory as before, written behind to SQLite by the tenant's `limits` job and on close, keys hashed [`persistent-limits`]; verify `go test ./internal/tenant -run TestLimitsSurviveRestart` and `go test ./internal/ratelimit`
