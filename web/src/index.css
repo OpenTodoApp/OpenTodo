@@ -1271,6 +1271,19 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
   }
 }
 
+/* Full task titles (OpenSpec change full-task-titles, design D2): with the setting on,
+   <html> carries data-titles="full" and every row, card and Today title shows in full,
+   wrapped onto as many lines as it takes, instead of two lines (one on a phone) and an
+   ellipsis. Outside the layers and more specific than the phone row's one-line clamp, so
+   it wins at every width. On the phone row the cell at the end stays on the title's
+   first line rather than in the middle of a tall title. */
+:root[data-titles="full"] [data-row-title] { -webkit-line-clamp: none; line-clamp: none; }
+@media (width < 48rem) {
+  @container row (width < 40rem) {
+    :root[data-titles="full"] [data-row-props] { align-self: start; min-height: 1.25rem; }
+  }
+}
+
 /* Detailed rows (OpenSpec change row-layouts, design D2): the title, the parent and a
    details line, stacked at every width; the property column and the phone's one-line
    row are for one-line rows only. Outside the layers, after the column's rules, so

@@ -25,6 +25,7 @@ import { accentName } from '../lib/colourNames'
 import { act } from './actionError'
 import { cardCopy, rowCopy } from '../lib/settingsCopy'
 import { hapticsPrefOn, setHapticsPref } from '../lib/haptics'
+import { fullTitlesOn, setFullTitles } from '../lib/fullTitles'
 import { canVibrate } from './motion'
 import { readTaskOpen, setTaskOpen, type TaskOpenPref } from '../lib/userPrefs'
 import { accountRowLayout, ROW_LAYOUTS, setAccountRowLayout, type RowLayout } from '../lib/rowLayout'
@@ -57,6 +58,8 @@ export interface AppearanceViewProps {
   onDensity?: (d: Density) => void
   /** The account's task row layout (row-layouts D4): every list without its own choice. */
   rows?: { value: RowLayout; onChange: (r: RowLayout) => void }
+  /** Full task titles (full-task-titles D1): wrap titles instead of cutting them. */
+  titles?: { on: boolean; onChange: (on: boolean) => void }
   /** The haptics switch, only on a device that can vibrate (appearance-preferences "Haptic feedback preference"). */
   haptics?: { on: boolean; onChange: (on: boolean) => void }
   /** The theme of each side (theme-engine D14): the lists to show and writing a choice. */
@@ -113,7 +116,7 @@ function TilePreview() {
 
 const TILE = 'flex w-28 shrink-0 snap-start flex-col gap-2 rounded-card border bg-surface p-2 text-left outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus sm:w-auto'
 
-export function AppearanceView({ value, onMode, onAccent, custom, onDensity, rows, haptics, themes }: AppearanceViewProps) {
+export function AppearanceView({ value, onMode, onAccent, custom, onDensity, rows, titles, haptics, themes }: AppearanceViewProps) {
   const tileRefs = useRef<(HTMLButtonElement | null)[]>([])
   const [picking, setPicking] = useState(false)
   const customRef = useRef<HTMLButtonElement | null>(null)
@@ -179,6 +182,10 @@ export function AppearanceView({ value, onMode, onAccent, custom, onDensity, row
       {rows && (
         <SettingRow id="appearance-rows" {...rowCopy('appearance', 'rows')}
           control={<Segmented label={t('Task rows')} items={ROW_LAYOUTS} labels={ROW_LAYOUT_LABEL} value={rows.value} onChange={rows.onChange} testId="appearance-rows" />} />
+      )}
+      {titles && (
+        <SettingRow id="appearance-titles" {...rowCopy('appearance', 'titles')} htmlFor="appearance-titles-switch"
+          control={<Switch id="appearance-titles-switch" checked={titles.on} onChange={titles.onChange} label={t('Show full task titles')} hideLabel />} />
       )}
       {haptics && (
         <SettingRow id="appearance-haptics" {...rowCopy('appearance', 'haptics')} htmlFor="appearance-haptics-switch"
@@ -325,6 +332,7 @@ export function AppearanceSection({ author = '' }: { author?: string }) {
     custom={{ values, onPick: (hex) => act(setCustomAccent(hex)) }} themes={themes}
     onDensity={(d) => act(setAppearance('density', d))}
     rows={{ value: accountRowLayout(row), onChange: (r) => act(setAccountRowLayout(r)) }}
+    titles={{ on: fullTitlesOn(row), onChange: (on) => act(setFullTitles(on)) }}
     haptics={canVibrate() ? { on: hapticsPrefOn(row), onChange: (on) => act(setHapticsPref(on)) } : undefined} />
 }
 

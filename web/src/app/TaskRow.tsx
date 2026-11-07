@@ -52,6 +52,7 @@ import { useTaskTracked } from '../lib/timeEntries'
 import { OriginChip } from './OriginChip'
 import { DEADLINE_TONE, ladderTone, PRIORITY_RING } from './rowTone'
 import { RowActionCluster } from './task-list/RowActionCluster'
+import { useFullTitles } from '../lib/fullTitles'
 import { useAccountRowLayout, type RowLayout } from '../lib/rowLayout'
 import { DRAG_THRESHOLD, swallowNextClick, trackHold } from '../lib/dnd'
 import { dayPartName, dayPartOf, dayPartWord, type DayPart } from '../lib/dayParts'
@@ -645,11 +646,13 @@ function startWords(start: string, span: Span | null, p: ResolvedDateTime): stri
 /**
  * A list row's title (task-list-width D1, D3): two lines, then an ellipsis. The whole
  * title is the open control's name, and its tooltip while it is cut; its own component,
- * so a change of "cut" re-renders the title only.
+ * so a change of "cut" re-renders the title only. With full titles on (full-task-titles)
+ * the stylesheet lifts the clamp and nothing is cut, so the title is not measured.
  */
 function RowTitle({ title, tone, waiting, undecryptable, unencrypted, measure }: { title: string; tone: string; waiting: boolean; undecryptable: boolean; unencrypted: boolean; measure: boolean }) {
   const ref = useRef<HTMLDivElement>(null)
-  const cut = useOverflowing(ref, title, measure && !undecryptable)
+  const full = useFullTitles()
+  const cut = useOverflowing(ref, title, measure && !undecryptable && !full)
   return (
     <Tooltip label={title} disabled={!cut}>
       <div ref={ref} className={`user-text min-w-0 text-body line-clamp-2 break-words ${tone}`} data-row-title data-waiting={waiting ? '' : undefined}>
