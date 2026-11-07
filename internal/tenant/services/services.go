@@ -34,6 +34,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/notify"
 	"github.com/OpenTodoApp/opentodo/internal/oidc"
 	"github.com/OpenTodoApp/opentodo/internal/push"
+	"github.com/OpenTodoApp/opentodo/internal/ratelimit"
 	"github.com/OpenTodoApp/opentodo/internal/rules"
 	"github.com/OpenTodoApp/opentodo/internal/settings"
 	"github.com/OpenTodoApp/opentodo/internal/stt"
@@ -125,6 +126,8 @@ type Set struct {
 	STT      *stt.Service
 	// Compaction removes superseded note history (op-log-compaction).
 	Compaction *compaction.Service
+	// Limits keeps the rate limit and agent limit windows (persistent-limits).
+	Limits *ratelimit.Store
 
 	// The owner switches (settings.Switch).
 	RuleSwitch    *settings.Switch
@@ -167,6 +170,11 @@ func Build(ctx context.Context, cfg config.Config, db, reader *sql.DB, o Options
 		s.Sync.SetReader(reader)
 	}
 	var err error
+	// Rate limits and agent limits outlive a restart (persistent-limits): the
+	// limiters count in memory and the limits job writes what changed.
+	if s.Limits, err = ratelimit.Open(ctx, db, o.Now, func() { s.Signal.Wake(jobs.Limits) }); err != nil {
+		return nil, err
+	}
 	if s.Hooks, err = wireWebhooks(ctx, cfg, o, db, s.Auth, s.Sync, log); err != nil {
 		return nil, err
 	}
@@ -207,6 +215,9 @@ func Build(ctx context.Context, cfg config.Config, db, reader *sql.DB, o Options
 		s.Issues.SetClock(o.Now)
 	}
 	s.Mail, s.Digest = openMail(cfg, o, db, s.Auth, s.Sync, log)
+	if s.Mail != nil {
+		s.Mail.KeepLimits(s.Limits)
+	}
 	if s.Demo, err = startDemo(ctx, cfg, s.Auth, s.Sync, log); err != nil {
 		return nil, err
 	}

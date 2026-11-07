@@ -275,17 +275,6 @@ func New(set *services.Set, web http.Handler, opts ...Option) http.Handler {
 // run after it.
 func newServer(set *services.Set, web http.Handler) *Server {
 	s := &Server{clock: time.Now, set: set, cfg: set.Cfg, auth: set.Auth, audit: set.Auth.Audit(), sync: set.Sync, web: web, log: set.Log, version: set.Version,
-		limiter: newRateLimiter(10, time.Minute), inviteLimiter: newRateLimiter(20, time.Hour),
-		registerLimiter: newRateLimiter(10, time.Minute), resetLimiter: newRateLimiter(10, time.Minute),
-		invitePreviewLimiter: newRateLimiter(10, time.Minute), publicLinkLimiter: newRateLimiter(10, time.Minute),
-		mcpLimiter: newRateLimiter(10, time.Minute), oauthRegisterLimiter: newRateLimiter(5, time.Minute), passkeyLimiter: newRateLimiter(10, time.Minute),
-		accountLimiter: newRateLimiter(accountFailures, accountWindow),
-		passkeyOptions: newRateLimiter(10, time.Minute),
-		mfaLimiter:     newRateLimiter(10, time.Minute), reauthLimiter: newRateLimiter(10, time.Minute),
-		adminLimiter: newRateLimiter(60, time.Hour), passwordLimiter: newRateLimiter(10, time.Hour),
-		emailChangeLimiter: newRateLimiter(5, time.Hour), avatarLimiter: newRateLimiter(30, time.Hour),
-		oidcLimiter: newRateLimiter(20, time.Minute), davLimiter: newRateLimiter(10, time.Minute),
-		emailLimiter: newRateLimiter(30, time.Hour), memberAddLimiter: newRateLimiter(memberAddsPerHour, time.Hour),
 		settings: set.Settings, importer: set.Importer, hooks: set.Hooks, inbox: set.Inbox, backups: set.Backups,
 		mcpSettings: set.MCP, mcpOAuth: set.MCPOAuth, push: set.Push, channels: set.Channels, email: set.Email, calWorker: set.Calendar,
 		issueWorker: set.Issues, calsync: set.CalSync, mail: set.Mail, demo: set.Demo, rules: set.Rules,
@@ -295,7 +284,25 @@ func newServer(set *services.Set, web http.Handler) *Server {
 	if set.Hosted != nil {
 		s.assistantSlots = set.Hosted.AssistantSlots
 	}
+	s.initLimiters()
 	return s
+}
+
+// initLimiters creates the sign-in and account limiters, each kept by the
+// tenant's store under its own name so a restart does not reset them
+// (persistent-limits D2).
+func (s *Server) initLimiters() {
+	s.limiter, s.inviteLimiter = s.limit("login", 10, time.Minute), s.limit("invitation", 20, time.Hour)
+	s.registerLimiter, s.resetLimiter = s.limit("register", 10, time.Minute), s.limit("reset", 10, time.Minute)
+	s.invitePreviewLimiter, s.publicLinkLimiter = s.limit("invitation.preview", 10, time.Minute), s.limit("public.unknown", 10, time.Minute)
+	s.mcpLimiter, s.oauthRegisterLimiter = s.limit("mcp.auth", 10, time.Minute), s.limit("oauth.register", 5, time.Minute)
+	s.passkeyLimiter, s.passkeyOptions = s.limit("passkey", 10, time.Minute), s.limit("passkey.options", 10, time.Minute)
+	s.accountLimiter = s.limit("account", accountFailures, accountWindow)
+	s.mfaLimiter, s.reauthLimiter = s.limit("mfa", 10, time.Minute), s.limit("reauth", 10, time.Minute)
+	s.adminLimiter, s.passwordLimiter = s.limit("admin", 60, time.Hour), s.limit("password", 10, time.Hour)
+	s.emailChangeLimiter, s.avatarLimiter = s.limit("email.change", 5, time.Hour), s.limit("avatar", 30, time.Hour)
+	s.oidcLimiter, s.davLimiter = s.limit("oidc", 20, time.Minute), s.limit("dav.auth", 10, time.Minute)
+	s.emailLimiter, s.memberAddLimiter = s.limit("email", 30, time.Hour), s.limit("member.add", memberAddsPerHour, time.Hour)
 }
 
 // wireServices runs the HTTP layer's own start-up once the options have run:
@@ -317,11 +324,11 @@ func (s *Server) wireServices() {
 		ClientIP: clientIP, PublicOrigin: s.publicOrigin, AuthBlocked: davLimiter.blocked, AuthFailed: davLimiter.allow,
 		TZLocation: s.tzLocation, ReminderOps: s.reminderOpsForTaskAs, RecurringCompletion: s.recurringCompletion,
 		EncryptionEnabled: s.encryptionEnabled})
-	s.speech = &speech.Routes{STT: s.stt, Audit: s.audit, Log: s.log, Demo: s.cfg.Demo, Allow: newRateLimiter(30, time.Minute).allow}
+	s.speech = &speech.Routes{STT: s.stt, Audit: s.audit, Log: s.log, Demo: s.cfg.Demo, Allow: s.limit("speech", 30, time.Minute).allow}
 	s.mapRoutes = &maproutes.Routes{Maps: s.maps, Settings: s.settings, Audit: s.audit, Log: s.log, Demo: s.cfg.Demo,
-		Allow: newRateLimiter(maproutes.SearchesPerMinute, time.Minute).allow}
+		Allow: s.limit("maps.search", maproutes.SearchesPerMinute, time.Minute).allow}
 	if s.attachmentLimiter == nil {
-		s.attachmentLimiter = newRateLimiter(120, time.Hour)
+		s.attachmentLimiter = s.limit("attachment.upload", 120, time.Hour)
 	}
 }
 

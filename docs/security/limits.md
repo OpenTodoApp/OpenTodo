@@ -99,7 +99,7 @@ Routes that make outbound requests or touch credentials, settings, members or bu
 
 OpenTodo is held to [performance budgets](../performance.md) with a 10,000-task account, and a 50,000-task account is measured nightly without a budget. Beyond that, nothing is promised.
 
-The server is one process with one SQLite writer, sized for a household, a team or a small organisation, not for thousands of concurrent writers. Rate limits and AI agent limits live in memory: they are per process and reset when the server restarts.
+The server is one process with one SQLite writer, sized for a household, a team or a small organisation, not for thousands of concurrent writers. Rate limits and AI agent limits are counted in memory and written to the database within a second, so a restart keeps them and a crash forgets at most the last second. In host mode the host's per-client request limit stays in memory.
 
 ## Other limits
 
