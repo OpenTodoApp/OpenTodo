@@ -120,8 +120,10 @@ func (s *Server) handleDeactivate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Sessions and tokens are gone; end the open streams now so the devices
-	// learn it at once (their reconnect gets 401).
+	// learn it at once (their reconnect gets 401), and the relay opt-ins of
+	// those sessions (revoked-device-wipe D7).
 	s.sync.Notifier().CloseUser(u.ID)
+	s.relayEndRevoked(r.Context(), u.ID)
 	writeJSON(w, http.StatusOK, map[string]any{"user": u})
 }
 
@@ -172,6 +174,10 @@ func (s *Server) handleDeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 	s.sync.ObserveAccountDeletion(ctx, deletion)
 	s.sync.Notifier().CloseUser(id)
+	// Its relay opt-ins went with the account; their streams close too (revoked-device-wipe D7).
+	if s.relayHub != nil {
+		s.relayHub.CloseAccount(id)
+	}
 	// Their own assistant keys go with the account (in-app-assistant D4).
 	if s.assistant != nil {
 		if err := s.assistant.Store.RemoveUserKeys(id); err != nil {
@@ -307,6 +313,7 @@ func (s *Server) handleSignOutEverywhere(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	s.sync.Notifier().CloseUser(u.ID)
+	s.relayEndRevoked(r.Context(), u.ID)
 	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, Secure: s.cfg.SecureCookies(), SameSite: http.SameSiteLaxMode})
 	http.SetCookie(w, &http.Cookie{Name: trustCookie, Value: "", Path: "/api/v1/auth", MaxAge: -1, HttpOnly: true, Secure: s.cfg.SecureCookies(), SameSite: http.SameSiteLaxMode})
 	w.WriteHeader(http.StatusNoContent)

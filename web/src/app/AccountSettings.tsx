@@ -46,7 +46,7 @@ export function SessionPanel({ onLogout, onSignOutEverywhere = signOutEverywhere
       {confirming === 'device' && <SignOutDialog onConfirm={onLogout} onCancel={() => setConfirming(null)} />}
       {confirming === 'everywhere' && (
         <ConfirmDialog title={t('Sign out everywhere?')} confirmLabel={t('Sign out everywhere')}
-          consequence={t('Every device and browser signed in to your account is signed out, remembered browsers must enter a code again, and your API tokens and app passwords stop working at once. Scripts, calendar apps and assistants need new ones. Changes another device has not synced yet are lost. Your data stays on your server.')}
+          consequence={t('Every device and browser signed in to your account is signed out, remembered browsers must enter a code again, and your API tokens and app passwords stop working at once. Scripts, calendar apps and assistants need new ones. Other devices remove their copy of your data when they next connect, and changes they have not synced yet are lost. Your data stays on your server.')}
           onConfirm={async () => { await onSignOutEverywhere(); onLogout() }} onCancel={() => setConfirming(null)} />
       )}
     </SettingsSection>
