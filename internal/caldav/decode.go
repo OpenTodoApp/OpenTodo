@@ -444,6 +444,40 @@ func parseDue(p Prop) (*Due, error) {
 	return due, nil
 }
 
+// KeepZone reads the UTC times the client sent in the zone of the task's
+// current due (issue #1028): a zoned due is served in UTC (Encode), so the same
+// instant sent back is the current due exactly, and another instant is the
+// wall time it falls on in that zone. A task without a zoned due time, or one
+// fixed to UTC, keeps the UTC reading.
+func (in *Inbound) KeepZone(current *Due) {
+	in.Due = keepZone(in.Due, current)
+	in.SentDue = keepZone(in.SentDue, current)
+	for i := range in.Overrides {
+		in.Overrides[i].Due = keepZone(in.Overrides[i].Due, current)
+	}
+}
+
+func keepZone(d, current *Due) *Due {
+	if d == nil || !isUTC(d) || current == nil || current.Time == nil || current.TZ == nil || isUTC(current) {
+		return d
+	}
+	loc, err := zoned.Load(*current.TZ)
+	if err != nil {
+		return d
+	}
+	at, err := zoned.Instant(d.Date, *d.Time, time.UTC)
+	if err != nil {
+		return d
+	}
+	if cur, err := zoned.Instant(current.Date, *current.Time, loc); err == nil && cur.Equal(at) {
+		clock, tz := *current.Time, *current.TZ
+		return &Due{Date: current.Date, Time: &clock, TZ: &tz}
+	}
+	date, clock := zoned.Local(at, loc)
+	tz := *current.TZ
+	return &Due{Date: date, Time: &clock, TZ: &tz}
+}
+
 // ianaZone resolves a TZID to an IANA zone name, or "" when unknown.
 func ianaZone(tzid string) string {
 	tzid = strings.Trim(strings.TrimSpace(tzid), "/")
