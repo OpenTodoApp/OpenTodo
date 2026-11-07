@@ -18,7 +18,7 @@ export function addMonths(date, months) {
   return d.toISOString().slice(0, 10)
 }
 
-/** The passes that need a screen reader on the owner's devices; a release candidate may have them pending. */
+/** The passes that need a screen reader; any release may have them pending (screen-reader-passes-optional). */
 export const SCREEN_READER_PASSES = PASSES.filter((p) => /NVDA|VoiceOver|TalkBack/.test(p))
 
 /**
@@ -38,7 +38,11 @@ export function auditFindings(root, version, date) {
     for (const e of entries.filter((x) => x.core)) {
       const cells = rows.get(e.id)
       if (!cells) { out.push({ text: `${latest.file}: no row for the core screen ${e.id}` }); continue }
-      cells.forEach((c, i) => { if (cellKind(c).kind === 'pending') out.push({ text: `${latest.file}: ${e.id}, ${PASSES[i]} is still pending`, screen: e.id, pass: PASSES[i], file: latest.file }) })
+      cells.forEach((c, i) => {
+        const kind = cellKind(c).kind
+        if (kind === 'pending') out.push({ text: `${latest.file}: ${e.id}, ${PASSES[i]} is still pending`, screen: e.id, pass: PASSES[i], file: latest.file })
+        else if (kind === 'invalid') out.push({ text: `${latest.file}: ${e.id}, ${PASSES[i]} is "${c}", not pass, fail #<issue>, n/a <reason> or pending` })
+      })
     }
   }
   return out
@@ -50,18 +54,18 @@ export function auditProblems(root, version, date) {
 }
 
 /**
- * Throws when the release may not go; returns the warnings. For a release candidate
- * (`candidate`), pending screen-reader passes are one warning naming them (the 1.0 RC may ship
- * with them pending, DECISIONS 2026-11-06); every other problem still refuses it.
+ * Throws when the release may not go; returns the warnings. Pending screen-reader passes are one
+ * line naming how many are pending, for the release notes (screen-reader-passes-optional); every
+ * other problem refuses the release, a candidate or not.
  */
-export function checkAccessibilityAudit(root, version, date, { candidate = false } = {}) {
+export function checkAccessibilityAudit(root, version, date) {
   if (!existsSync(join(root, 'scripts/ux-audit/screens.json'))) return []
   const findings = auditFindings(root, version, date)
-  const waived = candidate ? findings.filter((f) => SCREEN_READER_PASSES.includes(f.pass)) : []
+  const waived = findings.filter((f) => SCREEN_READER_PASSES.includes(f.pass))
   const problems = findings.filter((f) => !waived.includes(f)).map((f) => f.text)
   if (problems.length) throw new Error(`accessibility audit:\n  ${problems.slice(0, 20).join('\n  ')}${problems.length > 20 ? `\n  … and ${problems.length - 20} more` : ''}`)
   if (!waived.length) return []
   const screens = new Set(waived.map((f) => f.screen))
   const passes = SCREEN_READER_PASSES.filter((p) => waived.some((f) => f.pass === p))
-  return [`accessibility audit: ${waived.length} screen-reader passes pending on ${screens.size} core screens in ${waived[0].file} (${passes.join(', ')}), required for ${version}`]
+  return [`accessibility audit: ${waived.length} screen-reader passes pending on ${screens.size} core screens in ${waived[0].file} (${passes.join(', ')}), recorded when someone runs them (#9)`]
 }

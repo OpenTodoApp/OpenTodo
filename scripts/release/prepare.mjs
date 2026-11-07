@@ -27,8 +27,9 @@
 // release, as the release workflow moves no `stable` or line tag, publishes no chart and submits
 // to no store for it. The final x.y.z then replaces its candidates' sections with one section
 // from the fragments, which it deletes. The release gates run for x.y.z; on a candidate the ones
-// that need the owner's devices (an over-budget reference-device record, the screen-reader passes)
-// are warnings. The reference-device record itself is optional until real devices can be measured (#990).
+// that need the owner's devices (an over-budget reference-device record) are warnings. The
+// reference-device record itself is optional until real devices can be measured (#990), and
+// pending screen-reader passes are a warning for any release (screen-reader-passes-optional).
 
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -208,9 +209,9 @@ export function truenasText(text) {
 
 /**
  * The release gates for `base` (x.y.z) after `from`: throws on the first that refuses it, and
- * returns the warnings. For a release candidate (`candidate`), what only the owner's devices can
- * provide, a reference-device record within budget and the screen-reader passes of the accessibility
- * audit, is a warning that names what is still pending; everything else is as strict as for the release.
+ * returns the warnings. For a release candidate (`candidate`), a reference-device record over budget
+ * is a warning that names it; pending screen-reader passes are a warning for any release; everything
+ * else is as strict as for the release.
  */
 export function runGates(root, { base, from, date, candidate = false, fromDate = '' }) {
   const warnings = []
@@ -231,9 +232,9 @@ export function runGates(root, { base, from, date, candidate = false, fromDate =
   checkSecurityReviews(root, base, from, date, fromDate)
   // From 1.0.0, the guide's screenshots are newer than the last change to the app (docs-1-0 D7).
   checkScreenshotFreshness(root, base)
-  // A manual accessibility audit at most 12 months old, every core pass done from 1.0.0 on (accessibility-aa D4);
-  // a candidate may still have screen-reader passes pending (DECISIONS 2026-11-06).
-  warnings.push(...checkAccessibilityAudit(root, base, date, { candidate }))
+  // A manual accessibility audit at most 12 months old, every core keyboard and zoom pass done from 1.0.0 on
+  // (accessibility-aa D4); screen-reader passes may be pending on any release (screen-reader-passes-optional).
+  warnings.push(...checkAccessibilityAudit(root, base, date))
   return warnings
 }
 

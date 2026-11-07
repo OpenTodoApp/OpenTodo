@@ -65,21 +65,22 @@ test('1.0.0 without any audit record is refused; a missing core row too', () => 
   }
 })
 
-test('a release candidate may carry pending screen-reader passes, as one warning; nothing else (release-candidates)', () => {
+test('any release may carry pending screen-reader passes, as one warning; nothing else (screen-reader-passes-optional)', () => {
   const root = tree({ '1.0.0': `Date: 2026-11-03\n\n${row(['pass', 'pending', 'pending', 'pending', 'pending', 'pass'])}` })
   const keyboard = tree({ '1.0.0': `Date: 2026-11-03\n\n${row(['pending', 'pending', 'pass', 'pass', 'pass', 'pass'])}` })
+  const unlinked = tree({ '1.0.0': `Date: 2026-11-03\n\n${row(['pass', 'fail', 'pending', 'pending', 'pending', 'pass'])}` })
   try {
     assert.deepEqual(SCREEN_READER_PASSES, ['NVDA + Firefox', 'VoiceOver + Safari (macOS)', 'VoiceOver (iOS shell)', 'TalkBack (Android shell)'])
-    assert.deepEqual(checkAccessibilityAudit(root, '1.0.0', '2026-11-10', { candidate: true }),
-      ['accessibility audit: 4 screen-reader passes pending on 1 core screens in docs/accessibility/audit-1.0.0.md (NVDA + Firefox, VoiceOver + Safari (macOS), VoiceOver (iOS shell), TalkBack (Android shell)), required for 1.0.0'])
-    assert.throws(() => checkAccessibilityAudit(root, '1.0.0', '2026-11-10'), /inbox, NVDA \+ Firefox is still pending/)
-    // The keyboard pass needs no owner device: pending refuses a candidate too, naming only it.
-    assert.throws(() => checkAccessibilityAudit(keyboard, '1.0.0', '2026-11-10', { candidate: true }), /^Error: accessibility audit:\n {2}docs\/accessibility\/audit-1\.0\.0\.md: inbox, Keyboard only is still pending$/)
-    // An audit that is due refuses a candidate as well.
-    assert.throws(() => checkAccessibilityAudit(root, '1.0.0', '2027-12-04', { candidate: true }), /a manual accessibility audit is due/)
-    assert.deepEqual(checkAccessibilityAudit(root, '0.21.0', '2026-11-10', { candidate: true }), [])
+    assert.deepEqual(checkAccessibilityAudit(root, '1.0.0', '2026-11-10'),
+      ['accessibility audit: 4 screen-reader passes pending on 1 core screens in docs/accessibility/audit-1.0.0.md (NVDA + Firefox, VoiceOver + Safari (macOS), VoiceOver (iOS shell), TalkBack (Android shell)), recorded when someone runs them (#9)'])
+    // The keyboard pass is done and must stay done: pending refuses the release, naming only it.
+    assert.throws(() => checkAccessibilityAudit(keyboard, '1.0.0', '2026-11-10'), /^Error: accessibility audit:\n {2}docs\/accessibility\/audit-1\.0\.0\.md: inbox, Keyboard only is still pending$/)
+    // A fail without its issue refuses, on a screen-reader pass too.
+    assert.throws(() => checkAccessibilityAudit(unlinked, '1.0.0', '2026-11-10'), /inbox, NVDA \+ Firefox is "fail"/)
+    // An audit that is due refuses as well.
+    assert.throws(() => checkAccessibilityAudit(root, '1.0.0', '2027-12-04'), /a manual accessibility audit is due/)
+    assert.deepEqual(checkAccessibilityAudit(root, '0.21.0', '2026-11-10'), [])
   } finally {
-    rmSync(root, { recursive: true, force: true })
-    rmSync(keyboard, { recursive: true, force: true })
+    for (const d of [root, keyboard, unlinked]) rmSync(d, { recursive: true, force: true })
   }
 })
