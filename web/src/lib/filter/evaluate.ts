@@ -40,6 +40,8 @@ export interface FilterContext {
    * (time-tracking D4), for `tracked` and `tracked cmp duration`; none tracked without it.
    */
   tracked?: ReadonlyMap<string, number>
+  /** A repeating task's current occurrence only (`tracked occurrence`, tracked-time-api-compatible); `tracked` without it. */
+  trackedOccurrence?: ReadonlyMap<string, number>
   /**
    * The cached workspaces and the workspace a task belongs to (OpenSpec change
    * group-mentions, D6), for `workspace: name`; without them the term matches nothing.
@@ -282,6 +284,8 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
   const today = ctx.today
   const weekStart = ctx.weekStart ?? currentDateTime().weekStart
   const tomorrow = shiftISO(today, 1)
+  // `tracked` reads every entry, as in 1.0; `tracked occurrence` a repeating task's current occurrence.
+  const trackedOf = (occurrence: boolean) => (occurrence ? ctx.trackedOccurrence ?? ctx.tracked : ctx.tracked)
   // Open blockers per task, built once when the query asks (task-dependencies D6).
   let blocked: Map<string, number> | null = null
   const blockedSet = () => {
@@ -419,8 +423,9 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
       case 'tracked': {
         const minutes = n.minutes
         const op = n.op
+        const of = trackedOf(!!n.occurrence)
         return (task) => {
-          const m = ctx.tracked?.get(task.id) ?? 0
+          const m = of?.get(task.id) ?? 0
           return op === '<' ? m < minutes : op === '<=' ? m <= minutes : op === '=' ? m === minutes : op === '>=' ? m >= minutes : m > minutes
         }
       }
@@ -459,7 +464,10 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
           case 'notes': return (task) => (task.description ?? '').trim() !== ''
           case 'no notes': return (task) => (task.description ?? '').trim() === ''
           // At least one minute of live tracked time (time-tracking D9).
-          case 'tracked': return (task) => (ctx.tracked?.get(task.id) ?? 0) >= 1
+          case 'tracked': case 'tracked occurrence': {
+            const of = trackedOf(n.keyword === 'tracked occurrence')
+            return (task) => (of?.get(task.id) ?? 0) >= 1
+          }
           case 'blocked': { const b = blockedSet(); return (task) => b.has(task.id) }
           case 'unblocked': { const b = blockedSet(); return (task) => !b.has(task.id) }
           // Available now (project-flow-modes): not blocked, not waiting in sequence, neither Someday nor deferred.

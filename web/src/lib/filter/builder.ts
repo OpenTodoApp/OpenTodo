@@ -73,7 +73,7 @@ export function formatLeaf(n: Node): string {
     // Field names are always quoted: a bare one could be a reserved word.
     case 'field': return `${quoteAlways(n.name)} ${n.op} ${formatFieldValue(n.value)}`
     case 'nofield': return `no ${quoteAlways(n.name)}`
-    case 'tracked': return `tracked ${n.op} ${formatMinutes(n.minutes)}`
+    case 'tracked': return `tracked ${n.occurrence ? 'occurrence ' : ''}${n.op} ${formatMinutes(n.minutes)}`
     case 'or': case 'and': case 'not': return formatQuery(n)
   }
 }
