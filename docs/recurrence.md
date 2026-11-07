@@ -150,6 +150,7 @@ update your devices.
   against the estimate counts the entries since the latest completion or skip
   among its records dated before its current occurrence; see
   [Tracked against estimated](time-tracking.md#tracked-against-estimated).
+  The `tracked` filter term and `tracked_minutes` still count every entry.
 
 In a shared project a repeating task can pass between people each time it is completed; see [Take turns](take-turns.md).
 

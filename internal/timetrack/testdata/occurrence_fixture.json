@@ -1,6 +1,65 @@
 {
- "about": "When a repeating task's current occurrence began and the tracked totals shown against its estimate (OpenSpec change fix-recurring-tracked-time), shared by internal/timetrack (occurrence_test.go) and web/src/lib/time.ts (time.test.ts). tasks are task rows; starts: occurrenceStarts per series (ms); totals: the current occurrence's minutes per task at now; all_totals: every entry's minutes (reports, the CSV export). Records that start no occurrence: a later or the current date, a trashed record (an undone completion), an open record, a task without the record's derived id, a record whose series is absent; a plain series' skip writes no record.",
+ "about": "When a repeating task's current occurrence began and the tracked totals shown against its estimate (OpenSpec change fix-recurring-tracked-time), shared by internal/timetrack (occurrence_test.go) and web/src/lib/time.ts (time.test.ts). tasks are task rows; starts: occurrenceStarts per series (ms); totals: the current occurrence's minutes per task at now; all_totals: every entry's minutes, the 1.0 meaning kept by tracked_minutes, the tracked filter terms and the tracked routine condition (tracked-time-api-compatible); totals is also tracked_minutes_occurrence and `tracked occurrence`. Records that start no occurrence: a later or the current date, a trashed record (an undone completion), an open record, a task without the record's derived id, a record whose series is absent; a plain series' skip writes no record.",
  "cases": [
+  {
+   "name": "30 minutes before a completion and 10 after: 40 in all, 10 for the current occurrence",
+   "now": 1793300000000,
+   "tasks": [
+    {
+     "id": "series-a",
+     "series_id": null,
+     "occurrence_date": null,
+     "due": {
+      "date": "2026-11-10"
+     },
+     "completed_at": null,
+     "deleted_at": null,
+     "skipped": false,
+     "recurrence": "every day"
+    },
+    {
+     "id": "cae2e923-d9ce-85ee-ab3b-5b36e025f618",
+     "series_id": "series-a",
+     "occurrence_date": "2026-11-03",
+     "due": {
+      "date": "2026-11-03"
+     },
+     "completed_at": 1793060000000,
+     "deleted_at": null,
+     "skipped": false,
+     "recurrence": null
+    }
+   ],
+   "entries": [
+    {
+     "id": "thirty-before",
+     "task_id": "series-a",
+     "user_id": "u1",
+     "started_at": 1793056400000,
+     "ended_at": 1793058200000,
+     "note": "",
+     "deleted_at": null
+    },
+    {
+     "id": "ten-after",
+     "task_id": "series-a",
+     "user_id": "u1",
+     "started_at": 1793060600000,
+     "ended_at": 1793061200000,
+     "note": "",
+     "deleted_at": null
+    }
+   ],
+   "starts": {
+    "series-a": 1793060000000
+   },
+   "totals": {
+    "series-a": 10
+   },
+   "all_totals": {
+    "series-a": 40
+   }
+  },
   {
    "name": "A completion and a habit's skip each start a new occurrence",
    "now": 1793300000000,

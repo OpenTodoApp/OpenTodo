@@ -136,7 +136,7 @@ function useViewCounts(views: View[], today: string, labels: Label[], projects: 
   // view over 10,000 tasks ran after each completion, in front of the next one. The
   // workspace context is made again with every write too (its partition reads the tasks).
   const { counted, ws } = useSettledValue(useMemo(() => ({ counted: tasks, ws: live }), [tasks, live]))
-  return useMemo(() => evaluateViews(views, { today, labels, projects, tasks: counted, sections, fields, tracked, ...directory, ...ws }, 0), [views, today, labels, projects, counted, sections, fields, tracked, directory, ws])
+  return useMemo(() => evaluateViews(views, { today, labels, projects, tasks: counted, sections, fields, ...tracked, ...directory, ...ws }, 0), [views, today, labels, projects, counted, sections, fields, tracked, directory, ws])
 }
 
 export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSignOut, collapsed = false, onToggleCollapse }: {

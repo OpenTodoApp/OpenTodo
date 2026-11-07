@@ -138,7 +138,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   useEffect(() => { setCurrentFilter(good.ast ? good.src : null); return () => setCurrentFilter(null) }, [good])
   // Custom field definitions and tracked minutes (time-tracking: `tracked > 1h` follows a running entry live).
   const fieldDefs = useFieldDefs(), tracked = useTrackedTotals(), directory = useAssigneeDirectory()
-  const ctx = useMemo(() => ({ today, labels, projects, tasks: allTasks, sections: flow.sections, weekStart, fields: fieldDefs, tracked, ...directory, workspaces: ws.workspaces, workspaceOf: ws.workspaceOf }),
+  const ctx = useMemo(() => ({ today, labels, projects, tasks: allTasks, sections: flow.sections, weekStart, fields: fieldDefs, ...tracked, ...directory, workspaces: ws.workspaces, workspaceOf: ws.workspaceOf }),
     [today, labels, projects, allTasks, flow.sections, weekStart, fieldDefs, tracked, directory, ws])
   const compiled = useMemo(() => {
     if (!good.ast) return null

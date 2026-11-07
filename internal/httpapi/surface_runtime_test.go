@@ -223,7 +223,9 @@ func readToolResults(t *testing.T, tools map[string]any) map[string]map[string]a
 	// day in UTC (their timezone default), not the machine's local date, so the
 	// snapshot is the same on every machine (due_today, never overdue).
 	today := e.now.Now().UTC().Format("2006-01-02")
-	resp, task := e.do("POST", "/api/v1/tasks", map[string]any{"title": "T", "project_id": p["id"], "due": map[string]any{"date": today}})
+	// A repeating task, so the members only a repeating task has are recorded
+	// too (tracked_minutes_occurrence, OpenSpec change tracked-time-api-compatible).
+	resp, task := e.do("POST", "/api/v1/tasks", map[string]any{"title": "T", "project_id": p["id"], "due": map[string]any{"date": today}, "recurrence": "every day"})
 	e.mustStatus(resp, 201, task)
 	caller := agenttools.Caller{UserID: uid, Scope: "full"}
 	out := map[string]map[string]any{}
