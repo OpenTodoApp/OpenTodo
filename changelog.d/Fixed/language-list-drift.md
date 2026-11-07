@@ -1,0 +1,2 @@
+- **The digest settings error lists every shipped language.** It named only six of the seven languages the server can send, leaving out Simplified Chinese; it now lists them all.
+- **A newly shipped language can no longer be ignored by Settings.** The language values and their type were separate hand-written lists, so adding a language to `SHIPPED` alone made Settings save the choice and read it back as `system`. Both now derive from the shipped list.
