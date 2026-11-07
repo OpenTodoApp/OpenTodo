@@ -38,6 +38,17 @@ export async function clearDeviceData(): Promise<void> {
   forgetNoiseVolume()
 }
 
+/**
+ * The server proved this device's session was revoked (revoked-device-wipe D4):
+ * everything a sign-out clears goes, unsynced changes included, then the
+ * sign-out request clears the cookie and the HTTP cache.
+ */
+export async function wipeRevokedDevice(): Promise<void> {
+  await clearDeviceData()
+  clearVimPref()
+  await api.logout().catch(() => undefined)
+}
+
 /** The sign-out the shell calls; `refresh` re-reads the status afterwards. */
 export function useSignOut(refresh: () => Promise<void>): () => Promise<void> {
   return useCallback(async () => {
