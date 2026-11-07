@@ -1024,8 +1024,15 @@ button.ui-column-add { @apply flex-row items-start justify-start px-3 py-2.5 hov
 /* Not in WebKit (only it supports hanging-punctuation): its layout check twice found rows
    on screen left skipped, the list drawn blank and a tap on the checkbox landing on the
    row (release 0.22.0). Safari draws every row, as before list-rendering-at-scale. */
+/* A long list skips whole blocks of rows instead (incremental-list-updates D5): with the
+   rule on each of 2,000 rows, every frame worked out which rows to skip and every hit
+   test walked all of them. A block far from the viewport is skipped; its rows are drawn
+   with it. A block holding a row that draws normally (above) draws normally too. Its
+   size until drawn: its rows at the row estimate. */
+.row-block { display: block; content-visibility: auto; contain-intrinsic-size: auto calc(var(--row-estimate, 2.375rem) * var(--block-rows, 50)); overflow-clip-margin: 0.25rem; }
+.row-block .row-offscreen, .row-block:has(> ul > li[data-task-id]:not(.row-offscreen)) { content-visibility: visible; }
 @supports (hanging-punctuation: first) {
-  .row-offscreen { content-visibility: visible; }
+  .row-offscreen, .row-block { content-visibility: visible; }
 }
 /* The page (precision-shell D3, app-shell "Page template"): content uses the whole
    content surface, the header included, so every title, first row and last action
@@ -1148,6 +1155,7 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 @media (pointer: coarse) {
   :root[data-density="compact"] .row-pad { padding-block: 0.5rem; }
   .row-offscreen { contain-intrinsic-size: auto var(--row-estimate, 2.625rem); }
+  .row-block { contain-intrinsic-size: auto calc(var(--row-estimate, 2.625rem) * var(--block-rows, 50)); }
   :root[data-density="compact"] [data-sidebar-item] { min-height: 2.75rem; }
 }
 /* User-written text wraps instead of pushing the page sideways. */

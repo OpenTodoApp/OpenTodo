@@ -5,6 +5,8 @@
 import { act } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { render } from '../ui/test-utils'
+import type { ListGroup } from '../lib/listGroups'
+import { useListMotion } from './task-list/ListGroups'
 import { cancelDeparture, departures$, ghostMemory, isGhost, markCompleted, resetDepartures, useDeparture, useDepartureEnds, withGhosts } from './motion'
 
 afterEach(() => { resetDepartures(); vi.useRealTimers() })
@@ -48,6 +50,25 @@ describe('departure subscriptions', () => {
     await act(async () => cancelDeparture('a'))
     expect(state).toBe('restored')
     expect(renders.list).toBe(before + 1)
+  })
+})
+
+describe('one list redraw per completion (incremental-list-updates D4)', () => {
+  it('a list that draws ghosts does not draw again when a departure ends', async () => {
+    vi.useFakeTimers()
+    let renders = 0
+    const groups: ListGroup[] = [{ key: 'all', heading: null, rows: [] }]
+    function List() {
+      renders++
+      useListMotion(groups, [])
+      return null
+    }
+    await render(<List />)
+    const before = renders
+    await act(async () => markCompleted('a'))
+    await act(async () => { vi.advanceTimersByTime(1000) })
+    expect(departures$().size).toBe(0)
+    expect(renders).toBe(before)
   })
 })
 
