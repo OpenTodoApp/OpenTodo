@@ -46,7 +46,8 @@ func TestFromRRULEClientSpellings(t *testing.T) {
 	// 2026-10-13 is a Tuesday.
 	ok := map[string]string{
 		"FREQ=WEEKLY;INTERVAL=1;WKST=MO":                "every week",
-		"freq=weekly;byday=TU;interval=2":               "every 2 weeks on tuesday",
+		"freq=weekly;byday=TU;interval=2":               "every 2 weeks",
+		"FREQ=WEEKLY;INTERVAL=2;BYDAY=SA":               "every 2 weeks on saturday",
 		"FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,WE":            "every 2 weeks on monday, wednesday",
 		"FREQ=MONTHLY;INTERVAL=3;BYMONTHDAY=13":         "every 3 months",
 		"FREQ=YEARLY;BYMONTH=10;BYMONTHDAY=13":          "every year",

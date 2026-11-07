@@ -457,8 +457,14 @@ func (p *parser) result(quotes []Span) Result {
 	add(p.rec.span, p.rec.set)
 	add(p.priority.span, p.priority.value > 0)
 	add(p.estimate.span, p.estimate.value > 0)
-	out := Result{Due: p.due(), Deadline: p.deadline.value, Someday: parked, Sector: map[bool]string{true: p.sector.value}[sectored], Evening: p.evening != nil, DayPart: p.dayPart.value, ProjectID: p.project.value,
-		Priority: p.priority.value, EstimateMinutes: p.estimate.value, SpentMinutes: p.spent, Recurrence: p.rec.value, Labels: []string{}, Reminders: []Reminder{}}
+	due := p.due()
+	rule := p.rec.value
+	if due != nil && rule != "" {
+		// The form a 1.0 client reads when one means the same thing (recurrence-1-0-compatible).
+		rule = recurrence.Compatible(rule, due.Date)
+	}
+	out := Result{Due: due, Deadline: p.deadline.value, Someday: parked, Sector: map[bool]string{true: p.sector.value}[sectored], Evening: p.evening != nil, DayPart: p.dayPart.value, ProjectID: p.project.value,
+		Priority: p.priority.value, EstimateMinutes: p.estimate.value, SpentMinutes: p.spent, Recurrence: rule, Labels: []string{}, Reminders: []Reminder{}}
 	for _, e := range p.energies {
 		remove = append(remove, e.span)
 		out.Energy = e.value

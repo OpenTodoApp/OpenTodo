@@ -8,7 +8,7 @@ import { addDaysISO } from './dates'
 import { pieceId } from './ids'
 import { nextFree } from './occurrences'
 import type { Change } from './ops'
-import { canonicalOf, firstOccurrence, parseRule, type Rule } from './recurrence'
+import { canonicalOf, compatibleRule, firstOccurrence, parseRule, type Rule } from './recurrence'
 import { currentOccurrence, recordFields, seriesBudget, seriesRule } from './recurring'
 import { actsOnFuture, copyReminders, isActionable, planCarry } from './seriesPlan'
 import type { Due, Reminder, Task } from './types'
@@ -75,7 +75,8 @@ export function planSplit(
   if (series.rotation?.length) fields.rotation = series.rotation
   const { due: _due, recurrence: _rule, ...rest } = patch
   Object.assign(fields, rest, {
-    due, recurrence: text, series_id: null, split_from: { series: series.id, date }, created_at: now, completed_at: null, deleted_at: null,
+    // The form a 1.0 client reads when one means the same thing (recurrence-1-0-compatible).
+    due, recurrence: compatibleRule(text, first), series_id: null, split_from: { series: series.id, date }, created_at: now, completed_at: null, deleted_at: null,
     ...(series.habit ? { habit: true } : {}),
   })
   return {
