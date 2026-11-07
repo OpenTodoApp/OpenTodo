@@ -43,6 +43,18 @@ object ReminderSchedule {
         return arr.toString()
     }
 
+    /**
+     * A time reminder's notification buttons, in order (reminder-done-action): Done first, then
+     * Snooze 10 min and Dismiss, like the web push notification.
+     */
+    val REMINDER_ACTIONS = listOf("done", "snooze", "dismiss")
+
+    /** A location reminder's buttons (location-reminders D2): nothing to snooze. */
+    val LOCATION_ACTIONS = listOf("done", "dismiss")
+
+    /** The actions the web app's address accepts (`shellActions.ts`); anything else is ignored. */
+    fun isAction(action: String?): Boolean = action == "done" || action == "snooze" || action == "dismiss"
+
     /** The address a notification action opens in the background (handled by the web app like push-sw.js). */
     fun actionPath(id: String, action: String): String =
         "/?reminder=" + java.net.URLEncoder.encode(id, "UTF-8") + "&action=" + action

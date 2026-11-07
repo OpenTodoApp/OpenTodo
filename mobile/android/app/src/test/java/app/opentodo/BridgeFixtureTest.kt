@@ -108,4 +108,14 @@ class BridgeFixtureTest {
         }
         assertEquals(f.getJSONObject("quickAdd").getString("path"), ReminderSchedule.QUICK_ADD_PATH)
     }
+
+    @Test fun notificationButtonsInTheFixturesOrder() {
+        val f = fixture("actions.json")
+        fun order(key: String, id: String): List<String> {
+            val arr = f.getJSONArray(key)
+            return (0 until arr.length()).map { arr.getJSONObject(it) }.filter { it.getString("id") == id }.map { it.getString("action") }
+        }
+        assertEquals(order("reminderActions", "abc"), ReminderSchedule.REMINDER_ACTIONS)
+        assertEquals(order("locationActions", "g-arrive"), ReminderSchedule.LOCATION_ACTIONS)
+    }
 }

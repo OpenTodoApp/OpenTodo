@@ -184,8 +184,9 @@ function fixtures(): Record<string, Fixture> {
 function actions() {
   return {
     description: 'Notification buttons and the quick-add widget: the address the shell opens, and the action the web app reads.',
+    // A time reminder's buttons in the shell's order (reminder-done-action): Done, Snooze 10 min, Dismiss.
     reminderActions: [
-      { id: 'abc', action: 'snooze' }, { id: 'abc', action: 'dismiss' }, { id: 'r 1/ü', action: 'snooze' },
+      { id: 'abc', action: 'done' }, { id: 'abc', action: 'snooze' }, { id: 'abc', action: 'dismiss' }, { id: 'r 1/ü', action: 'snooze' },
     ].map(({ id, action }) => ({ id, action, path: `/?reminder=${encodeURIComponent(id).replace(/%20/g, '+')}&action=${action}` })),
     taskPaths: ['t1', 't/1'].map((taskId) => ({ taskId, path: `/?task=${encodeURIComponent(taskId)}` })),
     // location-reminders D2: a crossing's notification offers Done (complete the task) and Dismiss.
