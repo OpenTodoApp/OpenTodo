@@ -968,15 +968,22 @@ function RowGrip({ name, ticked, showCheckbox, onDown, onClick }: { name: string
   )
 }
 
-/** Measures a departing row so its collapse starts from its own height (motion-v2 D3). */
+/**
+ * Measures a departing row so its collapse starts from its own height (motion-v2 D3),
+ * where the browser cannot animate from `auto` itself (`interpolate-size`): measuring
+ * laid out the list in the commit that drew the ghost (about 15 ms in the phone profile
+ * of the 2,000-row list, incremental-list-updates).
+ */
 function useRowHeight(departing: boolean) {
   const ref = useRef<HTMLLIElement>(null)
   useLayoutEffect(() => {
     const el = ref.current
-    if (departing && el) el.style.setProperty('--row-h', `${el.offsetHeight}px`)
+    if (departing && el && !animatesAuto()) el.style.setProperty('--row-h', `${el.offsetHeight}px`)
   }, [departing])
   return ref
 }
+
+const animatesAuto = (): boolean => typeof CSS !== 'undefined' && typeof CSS.supports === 'function' && CSS.supports('interpolate-size', 'allow-keywords')
 
 /** The board card: the same row data as a card (sections-and-boards "Card content"). */
 export function TaskCard(props: Omit<TaskRowProps, 'shape'>) {

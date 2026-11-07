@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
 import { useProjects } from '../lib/localData'
-import { buildProjectTree, subtreeOpenCounts } from '../lib/projects'
+import { buildProjectTree, rollUpCounts } from '../lib/projects'
 import { ListGroupHeader } from '../ui'
 import { navigate } from './router'
 import { ProjectMark } from './Sidebar'
-import { useOpenTasks } from '../lib/liveTasks'
+import { useLiveOwnOpenCounts } from '../lib/liveTasks'
 import { t } from '../lib/i18n'
 import { readJSON, writeJSON } from '../lib/deviceStorage'
 
@@ -25,10 +25,11 @@ function writeCollapsed(set: Set<string>): void {
  */
 export function SubProjects({ projectId }: { projectId: string }) {
   const projects = useProjects()
-  const open = useOpenTasks()
   const tree = useMemo(() => buildProjectTree(projects), [projects])
   const children = tree.nodes.get(projectId)?.children ?? []
-  const counts = useMemo(() => subtreeOpenCounts(open, tree), [open, tree])
+  // Each project's own open tasks, worked out from the rows each write changed (incremental-list-updates D2), then rolled up.
+  const own = useLiveOwnOpenCounts()
+  const counts = useMemo(() => rollUpCounts(own, tree, new Set(tree.nodes.keys())), [own, tree])
   const [collapsedSet, setCollapsedSet] = useState(readCollapsed)
   const collapsed = collapsedSet.has(projectId)
   const toggle = () => {

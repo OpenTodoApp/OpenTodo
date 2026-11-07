@@ -24,8 +24,9 @@ import type { FlowView } from '../../lib/useFlow'
 import { TaskListRow, SubtaskInput, type RowActions } from './TaskListRow'
 import { WaitingSoonList } from './WaitingSoon'
 import type { ListRoute } from './useListModel'
-import { BLOCK_ROWS, BLOCKS_FROM, blockOf, rowBlocks } from './rowBlocks'
+import { BLOCK_ROWS, BLOCKS_FROM, blockOf, rowBlocks, type RowBlock } from './rowBlocks'
 import { RowBlockContext } from './rowBlockContext'
+import { keysBetween } from '../../lib/taskDelta'
 
 export interface RowContext {
   /** Touch rows follow a swipe (phone-v2 D3): coarse pointer, nothing ticked, not select mode. */
@@ -209,6 +210,27 @@ const sameHabit = (a: HabitStats | undefined, b: HabitStats | undefined): boolea
   a === b || (!!a && !!b && a.current === b.current && a.best === b.best && a.pending === b.pending && a.atRisk === b.atRisk)
 
 /**
+ * The rows that may read differently from `b` than from `a` (incremental-list-updates D3),
+ * worked out once per pair of contexts: the rows the cursor, editing, expanded, adding and
+ * drop fields name in either, and the keys the patched maps noted. Null when it cannot
+ * say (a map worked out in full, a new tick set, a drag that starts or ends, new
+ * projects or memberships): every row is compared.
+ */
+function mayChange(a: RowContext, b: RowContext): ReadonlySet<string> | null {
+  if (a.ticked !== b.ticked || !a.draggingId !== !b.draggingId || a.isReadOnly !== b.isReadOnly || a.projectMap !== b.projectMap || a.memberMap !== b.memberMap) return null
+  const ids = new Set<string>()
+  for (const x of [a.selectedId, b.selectedId, a.inlineId, b.inlineId, a.expandedId, b.expandedId, a.draggingId, b.draggingId, a.addingUnder, b.addingUnder, a.dropAt?.id, b.dropAt?.id]) if (x) ids.add(x)
+  const maps: [object | undefined, object | undefined][] = [[a.progress, b.progress], [a.blocked, b.blocked], [a.flow, b.flow], [a.habits, b.habits]]
+  for (const [x, y] of maps) {
+    if (x === y) continue
+    const keys = x && y ? keysBetween(x, y) : null
+    if (!keys) return null
+    for (const k of keys) ids.add(k)
+  }
+  return ids
+}
+
+/**
  * Whether row `r` reads the same from the ROW_FIELDS of `a` (the context its element
  * was made with) as of `b`. A field that is the same object is not looked into, so a
  * cursor move compares two ids per row and a write looks up only the maps it renewed.
@@ -233,6 +255,8 @@ function sameForRow(a: RowContext, b: RowContext, r: Row): boolean {
   return !(is(b.inlineId) && a.renderInline !== b.renderInline)
 }
 
+const EMPTY_IDS: ReadonlySet<string> = new Set()
+
 const sameContext = (a: RowContext, b: RowContext): boolean => {
   for (const k of Object.keys(b) as (keyof RowContext)[]) if (!ROW_FIELDS.has(k) && a[k] !== b[k]) return false
   return Object.keys(a).length === Object.keys(b).length
@@ -256,9 +280,20 @@ export function useRowRenderer(c: RowContext): (r: Row) => ReactNode {
   held.language = language
   const rows = held.rows
   const render = rowRenderer(c)
+  // The rows that may read differently, worked out once per earlier context: a kept row
+  // moves its context forward, so nearly every row shares the last one, and a row outside
+  // them is kept without a look at its answers (incremental-list-updates D3).
+  const changed = new Map<RowContext, ReadonlySet<string> | null>()
   return (r) => {
     const hit = rows.get(r)
-    if (hit && sameForRow(hit.c, c, r)) return hit.el
+    if (hit) {
+      let ids = changed.get(hit.c)
+      if (ids === undefined) changed.set(hit.c, (ids = hit.c === c ? EMPTY_IDS : mayChange(hit.c, c)))
+      if ((ids && !ids.has(r.task.id)) || sameForRow(hit.c, c, r)) {
+        hit.c = c
+        return hit.el
+      }
+    }
     const el = render(r)
     rows.set(r, { c, el })
     return el
@@ -402,7 +437,9 @@ function SiblingAria({ positions, drawn }: { positions: ReadonlyMap<string, { po
     const root = marker.current?.parentElement
     if (!root) return
     const seen = written.current
-    let rows: HTMLElement[] | null = null
+    // The list's items as the browser keeps them (a live collection): a query over every
+    // row took about 15 ms of the phone profile in one piece (incremental-list-updates).
+    const rows = root.getElementsByTagName('li')
     let i = 0
     const write = (li: HTMLElement) => {
       const at = li.hasAttribute('aria-level') ? positions.get(li.dataset.taskId!) : undefined
@@ -418,9 +455,8 @@ function SiblingAria({ positions, drawn }: { positions: ReadonlyMap<string, { po
       }
     }
     return inIdleSlices(() => {
-      rows ??= [...root.querySelectorAll<HTMLElement>('li[data-task-id]')]
       const li = rows[i++]
-      if (li?.isConnected) write(li)
+      if (li?.dataset.taskId) write(li)
       return i < rows.length
     })
     // Again when the positions change or more rows are drawn; a cursor move changes neither.
@@ -463,23 +499,30 @@ type RowList = (children: ReactNode[], extra?: Record<string, string>) => ReactN
  * row again. The blocks are presentational: the rows stay the items of this one list.
  */
 function RowList({ children, extra }: { children: ReactNode[]; extra?: Record<string, string> }) {
-  const memory = useRef<{ of: Map<string, string>; on: boolean; next: number }>({ of: new Map(), on: false, next: 0 })
+  const memory = useRef<{ of: Map<string, string>; on: boolean; next: number; ids: string[]; blocks: RowBlock[] }>({ of: new Map(), on: false, next: 0, ids: [], blocks: [] })
   const m = memory.current
   const shown = children.filter(isValidElement) as ReactElement[]
   m.on = shown.length >= BLOCKS_FROM || (m.on && shown.length >= BLOCK_ROWS)
   if (!m.on) {
     m.of = new Map()
+    m.ids = []
     return <ul {...extra}>{children}</ul>
   }
-  const byKey = new Map(shown.map((el) => [String(el.key), el]))
-  const blocks = rowBlocks([...byKey.keys()], m.of, () => `block-${m.next++}`)
-  m.of = blockOf(blocks)
+  // The same rows in the same order (a write that changed none of this list's rows, or only their content): the same blocks.
+  const ids = shown.map((el) => String(el.key))
+  if (ids.length !== m.ids.length || ids.some((id, i) => id !== m.ids[i])) {
+    m.blocks = rowBlocks(ids, m.of, () => `block-${m.next++}`)
+    m.of = blockOf(m.blocks)
+    m.ids = ids
+  }
+  // Blocks hold consecutive rows, so each is a slice of the rows in order.
+  let at = 0
   return (
     <ul {...extra}>
       <RowBlockContext value>
-        {blocks.map((b) => (
+        {m.blocks.map((b) => (
           <li key={b.key} role="none" className="row-block" style={{ '--block-rows': b.ids.length } as CSSProperties}>
-            <ul role="none">{b.ids.map((id) => byKey.get(id))}</ul>
+            <ul role="none">{shown.slice(at, (at += b.ids.length))}</ul>
           </li>
         ))}
       </RowBlockContext>
