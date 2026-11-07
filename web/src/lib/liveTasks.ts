@@ -27,6 +27,9 @@ export function useTasksOfEveryWorkspace(): Task[] | undefined {
   return both.use()?.every
 }
 
+/** Every workspace's visible tasks outside React (the tracked totals' store), and its subscription. */
+export const everyTask = { read: (): Task[] | undefined => both.read()?.every, subscribe: (fn: () => void): (() => void) => both.subscribe(fn) }
+
 /** Every visible task (not deleted, project not in the Trash) of the current workspace, live; undefined until loaded. */
 export function useLiveTasks(): Task[] | undefined {
   return both.use()?.here

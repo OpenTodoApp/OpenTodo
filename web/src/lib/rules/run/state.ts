@@ -7,7 +7,7 @@ import { matchesCondition, type MatchContext, type MatchTask } from '../match'
 import { holds, formatTemplate, renderNumber, valueLen, type StepValue } from '../stepData'
 import { dateLiteral, placeholders, stepKind, textLiteral, type StepInput } from '../steps'
 import { zonedInstant } from '../../dates'
-import { totalsByTask, type EntryLike } from '../../time'
+import { currentTotals, type EntryLike, type OccurrenceTaskLike } from '../../time'
 import { unavailableReason } from './available'
 import { exec } from './kinds'
 import { isNull } from './actions'
@@ -366,7 +366,8 @@ export class RunState {
   // ---- matching ----
 
   tracked(): Map<string, number> {
-    if (!this.trackedCache) this.trackedCache = totalsByTask(this.w.timeEntries as unknown as EntryLike[], this.w.now)
+    // A repeating task's current occurrence (fix-recurring-tracked-time), as internal/rules.
+    if (!this.trackedCache) this.trackedCache = currentTotals(this.w.timeEntries as unknown as EntryLike[], this.w.tasks as unknown as OccurrenceTaskLike[], this.w.now)
     return this.trackedCache
   }
 
