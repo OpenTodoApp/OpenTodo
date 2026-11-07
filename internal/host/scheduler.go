@@ -40,10 +40,15 @@ func (h *Host) markDirty(name string) {
 	}
 }
 
-// computeDue asks an open tenant when each of its jobs is next due.
-func (h *Host) computeDue(ctx context.Context, t *tenant.Tenant) (map[string]time.Time, error) {
+// computeDue asks an open tenant when each of its jobs is next due. When it
+// is closing, jobs whose work closing does (jobs.Job.WhileOpen) are left out,
+// so the scheduler never opens a tenant again just for them.
+func (h *Host) computeDue(ctx context.Context, t *tenant.Tenant, closing bool) (map[string]time.Time, error) {
 	due := map[string]time.Time{}
 	for _, j := range t.Jobs() {
+		if closing && j.WhileOpen {
+			continue
+		}
 		at, ok, err := j.Next(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", j.Name, err)
@@ -59,7 +64,16 @@ func (h *Host) computeDue(ctx context.Context, t *tenant.Tenant) (map[string]tim
 // still due afterwards (a transient failure, an unreachable destination, a
 // backlog) waits its retry pause instead of running again at once.
 func (h *Host) refreshDue(ctx context.Context, name string, t *tenant.Tenant, ran []string) {
-	due, err := h.computeDue(ctx, t)
+	h.writeDue(ctx, name, t, ran, false)
+}
+
+// refreshDueOnClose rewrites a closing tenant's entries.
+func (h *Host) refreshDueOnClose(name string, t *tenant.Tenant) {
+	h.writeDue(context.Background(), name, t, nil, true)
+}
+
+func (h *Host) writeDue(ctx context.Context, name string, t *tenant.Tenant, ran []string, closing bool) {
+	due, err := h.computeDue(ctx, t, closing)
 	if err != nil {
 		h.log.Error("scheduler: next due", "tenant", name, "err", err)
 		return

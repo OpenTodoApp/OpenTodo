@@ -53,6 +53,9 @@ func (t *Tenant) buildJobs() []jobs.Job {
 	// Superseded note history (op-log-compaction): its own job, so a long pass
 	// never delays retention; registered on a demo too, where it finds nothing.
 	list = append(list, t.Compaction.Job())
+	// The write-ahead log, copied back from the reader pool so no commit pays
+	// for it (store.CheckpointWAL).
+	list = append(list, t.checkpointJob())
 	if p := t.Email.Poller(); p != nil {
 		list = append(list, jobs.Job{Name: jobs.Email, Run: p.Tick, Retry: p.Interval(),
 			Next: func(context.Context) (time.Time, bool, error) { return p.Next(), true, nil }})
