@@ -400,6 +400,11 @@ async function exchange(alive: () => void, signal: AbortSignal): Promise<void> {
       publish({ pending: left })
       if (!res.hasMore && left === 0) break
     }
+    // Everything is pulled: the screen shows it now, not after the chores below and
+    // the deferred activity log (which took seconds after a first sync, and the first
+    // things typed then waited for the whole screen to catch up at once).
+    liveHold?.()
+    liveHold = null
     // Everything is pulled and the outbox is empty: content an older re-write
     // job left in the wrong form is converted now (encryption-rewrite-coverage)
     // and uploads in the next exchange.

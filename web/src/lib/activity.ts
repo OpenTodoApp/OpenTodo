@@ -340,9 +340,16 @@ async function flushPending(): Promise<void> {
     for (const r of list) if (!dropped.has(r.id)) put.push(r)
     for (const e of stored) if (dropped.has(e.id)) drop.push(e.id)
   }
-  await db.activity.bulkPut(put)
+  // In slices: each one is written from the answer to the one before, so the page
+  // handles a keystroke between them. A first sync's entries in one call were one
+  // main-thread task of about half a second in the phone profile, and a search typed
+  // just after the sync waited for it (perf: notes-search). Still one transaction.
+  for (let i = 0; i < put.length; i += FLUSH_SLICE) await db.activity.bulkPut(put.slice(i, i + FLUSH_SLICE))
   if (drop.length) await db.activity.bulkDelete(drop)
 }
+
+/** How many entries flushPending writes per call. */
+const FLUSH_SLICE = 500
 
 /** Every recorded op of a project, oldest first. */
 function projectEntries(projectKey: string) {

@@ -167,6 +167,23 @@ phone profile and left 17 MB on the device, after compaction (2.65 GB to 238 MB
 in 50 s, no write waiting more than 35 ms) and with the first copy downloading
 43 MB instead of 2 GB.
 
+The note search is timed in the same session: the Notes page opens a second
+after the first sync ends, the search field is tapped and "kitchen" typed, one
+key at a time, each timed from the key to the updated results. Until November
+2026 one of those keys took 110 to 270 ms in the phone profile (the other keys
+20 to 50 ms), from work the first sync left for just after it: the activity log
+of the whole sync written in one go (half a second of the page's time), and the
+screen catching up with every list only after that; a key typed then waited
+for it, and for the search index the page had had no spare moment to build, so
+that key prepared most of 2,500 notes itself. Now every list catches up as soon
+as the last page is pulled, the activity log is written in slices of 500 entries
+the page can answer a key between, the index is built in slices of 8 ms right
+after the page opens instead of only in idle moments, preparing a note is about
+twice as fast (no pattern walks a 10 KB note to find nothing to do), and a row
+lays out a preview of at most 300 characters, not the whole note, and none while
+it shows a search snippet. On the same machine the phone profile's slowest key
+went from 233 ms (median of five runs) to 63 ms.
+
 `NOTES=1 make perf` runs it (`NOTES_SEED_FLAGS="--notes 50"` for a quick look).
 
 ## How the budgets are checked
