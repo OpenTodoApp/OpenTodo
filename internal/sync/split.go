@@ -85,7 +85,8 @@ func PlanSplit(id string, row Entity, date string, patch map[string]json.RawMess
 		}
 	}
 	piece["due"] = pieceDue(row["due"], patch["due"], first)
-	piece["recurrence"] = JSONOf(own.Canonical())
+	// The form a 1.0 client reads when one means the same thing (recurrence-1-0-compatible).
+	piece["recurrence"] = JSONOf(own.Compatible(first).Canonical())
 	piece["series_id"] = json.RawMessage("null")
 	piece["split_from"] = JSONOf(SplitFrom{Series: id, Date: date})
 	piece["created_at"], piece["completed_at"], piece["deleted_at"] = JSONOf(now), json.RawMessage("null"), json.RawMessage("null")

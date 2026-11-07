@@ -5,7 +5,7 @@ import { db, entityTables, getMeta, localEpoch, setMeta, tableOf, type EntityRow
 import { dueToInstant, logicalToday, todayISO } from './dates'
 import { resolveReminder, type ReminderPhrase } from './nlp/reminders'
 import { CLOCK_OFFSET_META, HLC_META, hlcLast, hlcNow, hlcReceive, hlcSeed, hlcSeedOffset, wins } from './hlc'
-import { firstOccurrence, parseRule } from './recurrence'
+import { compatibleRule, firstOccurrence, parseRule } from './recurrence'
 import { deadlineFireAt, relativeFireAt } from './reminderTime'
 import { defaultReminderChanges } from './defaultReminder'
 import { withSectorClears } from './sectorWrites'
@@ -765,8 +765,9 @@ export async function planTask(input: NewTaskInput, position?: number): Promise<
     // Only recurring tasks carry the field, so plain tasks keep their op footprint.
     const parsed = parseRule(input.recurrence)
     if (!parsed.ok) throw new Error(`invalid recurrence: ${parsed.error}`)
-    extra.recurrence = parsed.canonical
     if (!due) due = { date: firstOccurrence(parsed.rule, logicalToday()) }
+    // The form a 1.0 client reads when one means the same thing (recurrence-1-0-compatible).
+    extra.recurrence = compatibleRule(parsed.canonical, due.date)
   }
   if (input.assignee_id) extra.assignee_id = input.assignee_id
   // Only tasks created in a section carry the field (board-view).
@@ -1327,10 +1328,13 @@ export async function setRecurrence(
   const parsed = parseRule(input)
   if (!parsed.ok) return { ok: false, error: parsed.error }
   const patch: Record<string, unknown> = {}
-  if (parsed.canonical !== task.recurrence) patch.recurrence = parsed.canonical
-  if (!task.due) patch.due = { date: firstOccurrence(parsed.rule, opts.today ?? logicalToday()) }
+  const due = task.due?.date ?? firstOccurrence(parsed.rule, opts.today ?? logicalToday())
+  // The form a 1.0 client reads when one means the same thing (recurrence-1-0-compatible).
+  const rule = compatibleRule(parsed.canonical, due)
+  if (rule !== task.recurrence) patch.recurrence = rule
+  if (!task.due) patch.due = { date: due }
   if (Object.keys(patch).length) await commitEdit(task, patch, [{ entity: 'task', entityId: id, patch }])
-  return { ok: true, rule: parsed.canonical }
+  return { ok: true, rule }
 }
 
 /** Deleting a task tombstones its whole subtree, one op per task, in one batch. */
