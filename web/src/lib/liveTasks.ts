@@ -10,6 +10,7 @@
 import { taskSnapshot } from './taskSnapshot'
 import { visibleTaskSets } from './trash'
 import type { Task } from './types'
+import { LayeredMap, noteChanges, noteKeys, patchSorted, perList } from './taskDelta'
 
 /** Stable empty list for callers that render before the first snapshot arrives. */
 export const NO_TASKS: Task[] = []
@@ -31,18 +32,32 @@ export function useLiveTasks(): Task[] | undefined {
   return both.use()?.here
 }
 
-// Derived lists are computed once per snapshot and shared by every caller.
-const openCache = new WeakMap<Task[], Task[]>()
+// Derived lists are computed once per snapshot and shared by every caller; a
+// snapshot patched from a write works them out from the rows it changed
+// (incremental-list-updates D2), with a link of their own for what follows them.
 
-/** The open (not completed) subset of a snapshot, computed once per snapshot. */
-export function openTasksOf(tasks: Task[]): Task[] {
-  let open = openCache.get(tasks)
-  if (!open) {
-    open = tasks.filter((task) => !task.completed_at)
-    openCache.set(tasks, open)
-  }
-  return open
-}
+/** Every task of a snapshot by id. */
+export const taskIndexOf = perList<Map<string, Task>>(
+  (tasks) => new Map(tasks.map((task) => [task.id, task])),
+  (prev, changes) => {
+    // Layered on the last index: copying 10,000 entries after each write took about 5 ms in the phone profile.
+    const next = LayeredMap.patched(prev, changes.map((c) => [c.id, c.after] as const))
+    noteKeys(prev, next, new Set(changes.map((c) => c.id)))
+    return next
+  },
+)
+
+const isOpen = (task: Task) => !task.completed_at
+
+/** The open (not completed) subset of a snapshot, in its order (by id). */
+export const openTasksOf: (tasks: readonly Task[]) => Task[] = perList<Task[]>(
+  (tasks) => tasks.filter(isOpen),
+  (prev, changes) => {
+    const next = patchSorted(prev, changes, isOpen)
+    noteChanges(prev, next.list, next.changes)
+    return next.list
+  },
+)
 
 /** Every visible open task, live (empty until loaded). */
 export function useOpenTasks(): Task[] {
@@ -50,18 +65,36 @@ export function useOpenTasks(): Task[] {
   return all ? openTasksOf(all) : NO_TASKS
 }
 
-const countCache = new WeakMap<Task[], Map<string, number>>()
+const countOpen = perList<ReadonlyMap<string, number>>(
+  (open) => {
+    const counts = new Map<string, number>()
+    for (const task of open) if (task.project_id) counts.set(task.project_id, (counts.get(task.project_id) ?? 0) + 1)
+    return counts
+  },
+  (prev, changes) => {
+    const next = new Map(prev)
+    const add = (task: Task | undefined, n: number) => {
+      if (!task?.project_id) return
+      const v = (next.get(task.project_id) ?? 0) + n
+      if (v > 0) next.set(task.project_id, v)
+      else next.delete(task.project_id)
+    }
+    for (const c of changes) { add(c.before, -1); add(c.after, 1) }
+    return next
+  },
+)
 
 /** Open tasks per project id, computed once per snapshot. */
-export function openCountsByProject(tasks: Task[]): Map<string, number> {
-  let counts = countCache.get(tasks)
-  if (!counts) {
-    counts = new Map()
-    for (const task of openTasksOf(tasks)) if (task.project_id) counts.set(task.project_id, (counts.get(task.project_id) ?? 0) + 1)
-    countCache.set(tasks, counts)
-  }
-  return counts
+export function openCountsByProject(tasks: readonly Task[]): ReadonlyMap<string, number> {
+  return countOpen(openTasksOf(tasks))
 }
+
+/** Open tasks per project id, live (empty until loaded). */
+export function useLiveOwnOpenCounts(): ReadonlyMap<string, number> {
+  const all = useLiveTasks()
+  return all ? openCountsByProject(all) : NO_COUNTS
+}
+const NO_COUNTS: ReadonlyMap<string, number> = new Map()
 
 /** Number of open tasks in a project, live; undefined until the first snapshot arrives. */
 export function useOpenTaskCount(projectId: string): number | undefined {

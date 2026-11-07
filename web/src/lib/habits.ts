@@ -10,6 +10,7 @@ import { parseRule, type Rule } from './recurrence'
 import { lineageOf, pieceEnd } from './lineage'
 import { isRecordOf, recordDate } from './recurring'
 import type { Task } from './types'
+import type { TaskChange } from './taskDelta'
 import { t } from './i18n'
 
 export type DayState = 'blank' | 'done' | 'skipped' | 'missed' | 'pending' | 'upcoming'
@@ -274,6 +275,18 @@ export function habitStatsMap(tasks: readonly Task[], today: string): Map<string
     if (stats) out.set(tk.id, stats)
   }
   return out
+}
+
+/** A row a habit's streak reads: a habit, an occurrence record of a series, or part of a split lineage. */
+const habitRow = (t: Task | undefined) => !!t && (!!t.habit || !!t.series_id || !!t.split_from)
+
+/**
+ * habitStatsMap after `changes` (incremental-list-updates D2): the same map when no
+ * changed row is one a streak reads; null (worked out in full) otherwise.
+ */
+export function patchHabitStats(prev: Map<string, HabitStats>, changes: readonly TaskChange[]): Map<string, HabitStats> | null {
+  for (const c of changes) if (habitRow(c.before) || habitRow(c.after)) return null
+  return prev
 }
 
 /** The streak chip's accessible name: "12-day streak", with "at risk" when the day has passed. */

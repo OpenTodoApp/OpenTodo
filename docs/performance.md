@@ -76,6 +76,15 @@ of the benchmark's choosing, which could wait behind other work after the tick w
 shown, rather than the paint itself. The nightly report still gives that number,
 without a limit (`complete-task-frame`), so the two can be compared.
 
+What a slow completion waits for is the work left over from the one before it. Since
+November 2026 that work follows the rows a write changed (OpenSpec change
+`incremental-list-updates`): the lists, their groups, the row details, the sidebar's
+counts and the app badge are worked out from those rows instead of from all 10,000
+tasks, and checked against a full recomputation by a test that applies random
+writes; the list is drawn once per completion; and a long list lets the browser skip
+blocks of about 25 rows far from the screen instead of deciding for every row on
+every frame and every tap.
+
 The settings:
 
 - **Desktop**: Chromium on the CI runner.
