@@ -8859,6 +8859,9 @@
   "Long break after": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Long titles wrap in lists, boards and Today instead of ending with an ellipsis.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Look ahead": [
     "web/src/lib/review.ts"
   ],
@@ -14924,6 +14927,11 @@
     "web/src/app/task-list/ClosedListActions.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
+  "Show full task titles": [
+    "web/src/app/AppearanceSection.tsx",
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Show in Assigned to me": [
     "web/src/app/task-detail/AssigneeEditor.tsx",
     "web/src/app/task-detail/Facets.tsx"
@@ -19947,6 +19955,9 @@
   ],
   "Wrap in {step}": [
     "web/src/lib/rules/fixes.ts"
+  ],
+  "Wrap long task titles instead of cutting them off": [
+    "web/src/app/settingsIndex.ts"
   ],
   "Write a comment": [
     "web/src/app/task-detail/CommentsTab.tsx"

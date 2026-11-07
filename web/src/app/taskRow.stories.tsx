@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { InlineEditor } from './task-list/InlineEditor'
-import type { CSSProperties, ReactNode } from 'react'
+import { type CSSProperties, type ReactNode, useLayoutEffect } from 'react'
 import { setDateTime } from '../lib/dates'
+import { applyFullTitles } from '../lib/fullTitles'
 import type { HabitStats } from '../lib/habits'
 import { rowTimeWidth } from '../lib/rowTime'
 import { HEX, label, project, seedCounts, task, TODAY, TOMORROW, withClock, withSeed } from './stories/fixtures'
@@ -322,6 +323,39 @@ export const LongTitleNarrow: StoryObj = {
         <TaskRow {...base} onMore={noop} task={task({ id: 't3', title: 'Start organizing and listing Facebook items for sale before the move, starting with the furniture in the garage and the old bikes', estimate_minutes: 90 })} />
       </List>
     </div>
+  ),
+}
+
+/** Turns full task titles on while the story is shown, as the synced setting does on <html>. */
+function FullTitles({ children }: { children: ReactNode }) {
+  useLayoutEffect(() => {
+    applyFullTitles(true)
+    return () => applyFullTitles(false)
+  }, [])
+  return <>{children}</>
+}
+
+/**
+ * Show full task titles (full-task-titles, GitHub issue 998): the LongTitle rows and a
+ * long card with the setting on. Every title is whole, wrapped onto as many lines as it
+ * takes; the column (and on a phone the date) stays on the title's first line.
+ */
+export const LongTitleFull: StoryObj = {
+  render: () => (
+    <FullTitles>
+      <List>
+        <TaskRow {...base} timeColumn showProject project={work} labels={[errand, call]} progress={{ done: 2, total: 5 }}
+          task={task({ id: 't1', title: 'Collect testimonials from the first three customers, pick two quotes and send them to the designer before Friday', project_id: work.id, due: { date: TODAY, time: '09:30' }, estimate_minutes: 45, labels: [errand.id, call.id] })} />
+        <TaskRow {...base} timeColumn showProject project={home}
+          task={task({ id: 't2', title: 'Compare the three quotes for the kitchen renovation and call the one with the earliest start date', project_id: home.id, deadline: '2026-10-17', due: { date: TOMORROW } })} />
+        <TaskRow {...base} timeColumn showProject project={home}
+          task={task({ id: 't3', title: 'Email the cutting board company about the warped board, the replacement they promised in September, the refund for the shipping and why the second board never arrived either', project_id: home.id })} />
+        <TaskRow {...base} timeColumn task={task({ id: 't4', title: 'Renew passport' })} />
+      </List>
+      <ul className="mt-3 w-72 space-y-1.5 rounded-card bg-canvas p-1.5 dark:border dark:border-default dark:bg-sunken">
+        <TaskCard {...base} task={task({ id: 'c1', title: 'Email the cutting board company about the warped board, the replacement they promised in September and the refund for the shipping' })} labels={[errand]} />
+      </ul>
+    </FullTitles>
   ),
 }
 
