@@ -54,6 +54,9 @@ type Node struct {
 	Text    string
 	Value   FieldValue
 	Minutes int
+	// Occurrence is set on a `tracked occurrence` term: a repeating task's
+	// current occurrence instead of all its entries.
+	Occurrence bool
 }
 
 // DateExpr is a date of the grammar: iso, relative (days from today), weekday
@@ -90,11 +93,21 @@ type Context struct {
 	// Live labels, projects, sections and custom field definitions, and every
 	// task (for blocked and available).
 	Labels, Projects, Sections, Fields, Tasks []Row
-	// Tracked is the minutes tracked per task.
-	Tracked map[string]int
+	// Tracked is the minutes tracked per task, every entry (the `tracked` terms).
+	// TrackedOccurrence counts a repeating task's current occurrence only (the
+	// `tracked occurrence` terms); without it they read Tracked.
+	Tracked, TrackedOccurrence map[string]int
 	// Me is the viewer. Members name the people `assigned:` can match.
 	Me      string
 	Members []Member
+}
+
+// tracked is the map a tracked term reads.
+func (c Context) tracked(occurrence bool) map[string]int {
+	if occurrence && c.TrackedOccurrence != nil {
+		return c.TrackedOccurrence
+	}
+	return c.Tracked
 }
 
 // Member is one person an assignee term can name.
@@ -376,8 +389,8 @@ func (k *compiler) build(n *Node) (Pred, error) {
 		k.warn(`No workspace named "` + n.Name + `"`)
 		return never, nil
 	case KindTracked:
-		op, want := n.Op, n.Minutes
-		return func(t Row) bool { return cmpInt(k.c.Tracked[str(t, "id")], op, want) }, nil
+		op, want, m := n.Op, n.Minutes, k.c.tracked(n.Occurrence)
+		return func(t Row) bool { return cmpInt(m[str(t, "id")], op, want) }, nil
 	case KindKeyword:
 		return k.keyword(n.Keyword), nil
 	}
@@ -814,8 +827,9 @@ func (k *compiler) keyword(w string) Pred {
 		return func(t Row) bool { return desc(t) != "" }
 	case "no notes":
 		return func(t Row) bool { return desc(t) == "" }
-	case "tracked":
-		return func(t Row) bool { return c.Tracked[str(t, "id")] >= 1 }
+	case "tracked", "tracked occurrence":
+		m := c.tracked(w == "tracked occurrence")
+		return func(t Row) bool { return m[str(t, "id")] >= 1 }
 	case "blocked":
 		return k.isBlocked
 	case "unblocked":

@@ -258,6 +258,34 @@ describe('service worker due text (date-time-preferences D7)', () => {
   })
 })
 
+describe('service worker due dates in the chosen language (#1009)', () => {
+  // A browser in another language: the stored language decides, never the browser.
+  function formatterOn(languages: string[]): DueFormatter {
+    const self: { addEventListener: () => void; navigator: { languages: string[] }; __opentodoFormatDue?: DueFormatter } = { addEventListener: () => undefined, navigator: { languages } }
+    new Function('self', 'fetch', 'indexedDB', source)(self, undefined, undefined)
+    return self.__opentodoFormatDue!
+  }
+  const TODAY = '2026-10-14'
+  const DUE = { date: '2026-11-03', time: '15:00' }
+
+  it('English on a German browser writes English month names', () => {
+    expect(formatterOn(['de-DE', 'de'])(DUE, { language: 'en', time_format: '12h' } as never, TODAY)).toBe('Nov 3, 3:00 PM')
+  })
+
+  it('English takes the browser’s English region, like the app', () => {
+    expect(formatterOn(['de-DE', 'en-GB'])(DUE, { language: 'en', time_format: '24h' } as never, TODAY)).toBe('3 Nov, 15:00')
+  })
+
+  it('German on an English browser writes German month names', () => {
+    expect(formatterOn(['en-US'])(DUE, { language: 'de', time_format: '24h' } as never, TODAY)).toBe('3. Nov., 15:00')
+  })
+
+  it('an unknown stored language is the browser’s locale', () => {
+    const want = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(new Date(2026, 10, 3))
+    expect(formatterOn([])({ date: '2026-11-03' }, { language: 'xx' } as never, TODAY)).toBe(want)
+  })
+})
+
 describe('service worker texts in the stored language (app-localization D9)', () => {
   const KEYS = { reminder: 'Reminder', due: 'Due {date}', generic: 'You have a reminder', snooze: 'Snooze 10 min', dismiss: 'Dismiss', test: 'Test notification: push works on this device.' } as const
   function workerText(): Record<string, Record<keyof typeof KEYS, string>> {

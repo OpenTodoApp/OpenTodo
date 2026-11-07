@@ -27,7 +27,11 @@ func (r Rule) RRULE() string {
 			parts = append(parts, "INTERVAL="+strconv.Itoa(r.interval))
 		}
 	case kWeekday, kWeekdays:
-		parts = append(parts, "FREQ=WEEKLY", "BYDAY="+dayList(r.days))
+		parts = append(parts, "FREQ=WEEKLY")
+		if r.interval > 1 {
+			parts = append(parts, "INTERVAL="+strconv.Itoa(r.interval))
+		}
+		parts = append(parts, "BYDAY="+dayList(r.days))
 	case kMonthDay:
 		parts = append(parts, "FREQ=MONTHLY", "BYMONTHDAY="+strconv.Itoa(r.monthDay))
 	case kLastDay:
@@ -75,6 +79,10 @@ func (r Rule) RRULEEarlier(days int) (rrule string, ok bool) {
 			return "", false
 		}
 	case kWeekday, kWeekdays:
+		if r.interval > 1 {
+			// Days moved across a Monday change their week: not one RRULE.
+			return "", false
+		}
 		c.days = 0
 		for wd := 1; wd <= 7; wd++ {
 			if r.days&(1<<wd) != 0 {
@@ -149,8 +157,10 @@ func rruleParts(s string) (map[string]string, error) {
 
 // FromRRULE converts an RRULE value into a rule when the grammar expresses it
 // exactly. due is the task's due date ("YYYY-MM-DD" or ""), the series anchor: an
-// RRULE that only restates the anchor (FREQ=WEEKLY;INTERVAL=2;BYDAY=<due's
-// weekday>) is accepted as the plain interval. ok is false for anything else
+// RRULE that only restates the anchor (FREQ=MONTHLY;INTERVAL=2;BYMONTHDAY=<due's
+// day>) is accepted as the plain interval, and so is FREQ=WEEKLY;INTERVAL=2;BYDAY=SA
+// on a Saturday due date (Compatible); on another due date, or without one, it is
+// `every 2 weeks on saturday`. ok is false for anything else
 // (hourly rules, BYHOUR, several ordinals, BYSETPOS other than the 1st to 4th or last weekday…).
 func FromRRULE(value, due string) (rule Rule, ok bool) {
 	p, err := rruleParts(value)
@@ -220,12 +230,14 @@ func FromRRULE(value, due string) (rule Rule, ok bool) {
 		if !ok {
 			return Rule{}, false
 		}
-		if interval > 1 || mask == 0 {
-			// Only a restatement of the anchor's weekday is expressible.
-			if hasAnchor && mask == 1<<isoWeekday(anchor) {
-				return plain(uWeek)
-			}
+		if mask == 0 {
 			return Rule{}, false
+		}
+		if interval > 1 {
+			// A single weekday the due date falls on is the plain interval, which a
+			// 1.0 client reads (recurrence-1-0-compatible).
+			r.kind, r.days, r.interval = kWeekdays, mask, interval
+			return r.Compatible(due), true
 		}
 		if mask == 0b00111110 {
 			r.kind, r.days = kWeekday, mask

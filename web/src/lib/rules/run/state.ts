@@ -7,7 +7,7 @@ import { matchesCondition, type MatchContext, type MatchTask } from '../match'
 import { holds, formatTemplate, renderNumber, valueLen, type StepValue } from '../stepData'
 import { dateLiteral, placeholders, stepKind, textLiteral, type StepInput } from '../steps'
 import { zonedInstant } from '../../dates'
-import { currentTotals, type EntryLike, type OccurrenceTaskLike } from '../../time'
+import { currentTotals, totalsByTask, type EntryLike, type OccurrenceTaskLike } from '../../time'
 import { unavailableReason } from './available'
 import { exec } from './kinds'
 import { isNull } from './actions'
@@ -80,6 +80,7 @@ export class RunState {
   readonly runId: string
   readonly key: string
   private trackedCache: Map<string, number> | null = null
+  private trackedOccurrenceCache: Map<string, number> | null = null
 
   constructor(w: RunWorld, r: RunRoutine, o: RunOptions) {
     this.w = w
@@ -365,10 +366,16 @@ export class RunState {
 
   // ---- matching ----
 
+  /** Every entry of each task, as in 1.0: the tracked condition and `tracked` (tracked-time-api-compatible), as internal/rules. */
   tracked(): Map<string, number> {
-    // A repeating task's current occurrence (fix-recurring-tracked-time), as internal/rules.
-    if (!this.trackedCache) this.trackedCache = currentTotals(this.w.timeEntries as unknown as EntryLike[], this.w.tasks as unknown as OccurrenceTaskLike[], this.w.now)
+    if (!this.trackedCache) this.trackedCache = totalsByTask(this.w.timeEntries as unknown as EntryLike[], this.w.now)
     return this.trackedCache
+  }
+
+  /** A repeating task's current occurrence only (fix-recurring-tracked-time): `tracked occurrence`. */
+  trackedOccurrence(): Map<string, number> {
+    if (!this.trackedOccurrenceCache) this.trackedOccurrenceCache = currentTotals(this.w.timeEntries as unknown as EntryLike[], this.w.tasks as unknown as OccurrenceTaskLike[], this.w.now)
+    return this.trackedOccurrenceCache
   }
 
   matchContext(): MatchContext {

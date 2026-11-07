@@ -196,7 +196,7 @@ export function confirmCopy(a: NonNullable<PendingAction>, name: string): { titl
   switch (a.kind) {
     case 'deactivate':
       return { title: t('Deactivate {name}?', { name }), tone: 'danger', confirmLabel: t('Deactivate'),
-        consequence: t('They are signed out everywhere, their API tokens and pending invitations are revoked, and they cannot sign in until reactivated. Their data is kept.') }
+        consequence: t('They are signed out everywhere, their API tokens and pending invitations are revoked, and they cannot sign in until reactivated. Their devices remove their copy when they next connect, and changes not synced yet are lost. Their data on the server is kept.') }
     case 'reactivate':
       return { title: t('Reactivate {name}?', { name }), tone: 'default', confirmLabel: t('Reactivate'),
         consequence: t('They can sign in again with their existing password. Revoked tokens are not restored.') }

@@ -150,6 +150,7 @@ The protocol and the op schema are part of the v1 surface: within 1.x, entities 
 | user_prefs | `day_start` | string: `"HH:MM"` from `"00:00"` to `"06:00"`, when a new day begins for this person (empty, malformed or out of range reads as `"00:00"`, midnight, and is kept as stored) |
 | user_prefs | `language` | string: `"system"` or a shipped interface language (`"en"`, `"de"`, `"fr"`, `"es"`, `"it"`, `"pt"`) |
 | user_prefs | `row_layout` | string: `"line"` or `"detailed"`, the row layout of every list without its own (unknown or empty reads as `"line"`) |
+| user_prefs | `full_titles` | string: `"on"` shows task titles in full in list rows, on board cards and in Today, wrapped instead of cut with an ellipsis; `""` or unknown reads as off and is kept |
 | user_prefs | `method_mode` | string: `"lists"`, `"companion"` or `"first"` (How you work; unknown or empty reads as `"lists"`) |
 | user_prefs | `sidebar_counts` | string: `"all"` shows the open-task count of every project, label and view row in the sidebar at rest; `""` or unknown keeps them on Inbox and Today only |
 | user_prefs | `routines_seen_at` | number (Unix ms: the server time of the newest routine run the Inbox card "Routines since your last visit" displayed; a client never writes a smaller value than it holds, LWW keeps the later mark; run-log retention reads it) |

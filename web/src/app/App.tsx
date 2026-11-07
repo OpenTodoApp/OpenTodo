@@ -37,7 +37,8 @@ import { UpdateBanner } from './UpdateBanner'
 import { DemoBanner } from './DemoBanner'
 import { useOauthAuthorizeReturn } from './oauthReturn'
 import { OAuthConsentHost } from './OAuthConsentHost'
-import { clearDeviceData, useSignOut } from './signOut'
+import { clearDeviceData, useSignOut, wipeRevokedDevice } from './signOut'
+import { rememberWipeKey, REVOKED_NOTICE, wipeIfRevoked } from '../lib/revocation'
 
 export { DemoBanner }
 
@@ -75,6 +76,8 @@ export function App() {
       if (status.authenticated && status.user) {
         localStorage.setItem('opentodo.user', JSON.stringify(status.user))
         cacheMfa(status.mfa ?? null)
+        // The key a later revocation proof is checked with (revoked-device-wipe D3).
+        await rememberWipeKey(status).catch(() => undefined)
         // End-to-end encryption (OpenSpec e2ee): learn the account mode before the
         // first sync, so a new device unlocks before anything is pulled.
         await adoptProfile(status.encryption, status.minClientVersion).catch(() => undefined)
@@ -84,6 +87,9 @@ export function App() {
         void requestPersistentStorage()
         setPhase({ kind: status.mfa?.restricted ? 'restricted' : 'ready', user: status.user })
       } else {
+        // The session was revoked on purpose and the server proved it with this
+        // device's key: the local copy goes (revoked-device-wipe D4).
+        if (await wipeIfRevoked(status, wipeRevokedDevice)) setSignInNotice(t(REVOKED_NOTICE))
         const hadSession = localStorage.getItem('opentodo.user') !== null
         localStorage.removeItem('opentodo.user')
         cacheMfa(null)
@@ -129,9 +135,10 @@ export function App() {
     return () => window.removeEventListener(ACCOUNT_CHANGED_EVENT, again)
   }, [refresh])
 
-  // The server refused this device's session (deactivated, deleted, password
-  // reset elsewhere): show the signed-out screen. Local data is left alone, as
-  // on any expired session; signing out explicitly clears it.
+  // The server refused this device's session: show the signed-out screen. Local
+  // data is left alone, as on any expired session or password change, unless
+  // the status proves the session was revoked (revoked-device-wipe), and
+  // signing out explicitly clears it.
   useEffect(() => {
     if (sync.state === 'unauthenticated' && phase.kind === 'ready') void refresh()
   }, [sync.state, phase.kind, refresh])

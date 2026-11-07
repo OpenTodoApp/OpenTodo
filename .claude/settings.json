@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(make openspec-validate)",
+      "Bash(make docs-check)",
+      "Bash(make ci-checks)",
+      "Bash(make deploy-check)",
+      "Bash(make repo-check)",
+      "Bash(make i18n-check)",
+      "Bash(make ui-lint)",
+      "Bash(make bundle-budget)",
+      "Bash(git grep *)",
+      "Bash(go vet *)",
+      "Bash(gofmt -l *)"
+    ]
+  }
+}

@@ -251,6 +251,31 @@ func (s *Store) DisableSession(ctx context.Context, userID, sessionHash string) 
 	return out, nil
 }
 
+// DisableEnded opts out the account's devices whose session no longer exists
+// (revoked by Sign out everywhere or deactivation; OpenSpec change
+// revoked-device-wipe) and returns them.
+func (s *Store) DisableEnded(ctx context.Context, userID string) ([]Device, error) {
+	all, err := s.List(ctx, userID)
+	if err != nil || len(all) == 0 {
+		return nil, err
+	}
+	var out []Device
+	for _, d := range all {
+		var n int
+		if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM sessions WHERE token_hash = ?`, d.SessionHash).Scan(&n); err != nil {
+			return nil, fmt.Errorf("relay: session of device: %w", err)
+		}
+		if n > 0 {
+			continue
+		}
+		if _, err := s.db.ExecContext(ctx, `DELETE FROM relay_devices WHERE user_id = ? AND device_id = ?`, userID, d.DeviceID); err != nil {
+			return nil, fmt.Errorf("relay: opt out ended session: %w", err)
+		}
+		out = append(out, d)
+	}
+	return out, nil
+}
+
 // DisableAll opts out every device of the account (encryption turned off).
 func (s *Store) DisableAll(ctx context.Context, userID string) ([]Device, error) {
 	all, err := s.List(ctx, userID)

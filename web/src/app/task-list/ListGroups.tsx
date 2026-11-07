@@ -24,6 +24,7 @@ import type { FlowView } from '../../lib/useFlow'
 import { TaskListRow, SubtaskInput, type RowActions } from './TaskListRow'
 import { WaitingSoonList } from './WaitingSoon'
 import type { ListRoute } from './useListModel'
+import { useFullTitles } from '../../lib/fullTitles'
 import { BLOCK_ROWS, BLOCKS_FROM, blockOf, rowBlocks, type RowBlock } from './rowBlocks'
 import { RowBlockContext } from './rowBlockContext'
 import { keysBetween } from '../../lib/taskDelta'
@@ -400,18 +401,30 @@ const ESTIMATE_ROWS = 40
  */
 function RowEstimate({ list }: { list: string }) {
   const marker = useRef<HTMLSpanElement>(null)
+  // Full titles (full-task-titles D3) change how tall rows are: measured again when the
+  // setting changes, a frame later, once <html> carries it (the provider above this list
+  // sets the attribute in its own effect, after this one).
+  const full = useFullTitles()
+  const measured = useRef<boolean | null>(null)
   useEffect(() => {
-    const root = marker.current?.parentElement
-    if (!root) return
-    const heights: number[] = []
-    for (const li of root.querySelectorAll<HTMLElement>('li[data-task-id]')) {
-      if (heights.length >= ESTIMATE_ROWS) break
-      if (typeof li.checkVisibility === 'function' && !li.checkVisibility({ contentVisibilityAuto: true })) continue
-      const h = li.offsetHeight
-      if (h > 0) heights.push(h)
+    const measure = () => {
+      const root = marker.current?.parentElement
+      if (!root) return
+      const heights: number[] = []
+      for (const li of root.querySelectorAll<HTMLElement>('li[data-task-id]')) {
+        if (heights.length >= ESTIMATE_ROWS) break
+        if (typeof li.checkVisibility === 'function' && !li.checkVisibility({ contentVisibilityAuto: true })) continue
+        const h = li.offsetHeight
+        if (h > 0) heights.push(h)
+      }
+      if (heights.length) root.style.setProperty('--row-estimate', `${Math.round(heights.reduce((a, b) => a + b, 0) / heights.length)}px`)
     }
-    if (heights.length) root.style.setProperty('--row-estimate', `${Math.round(heights.reduce((a, b) => a + b, 0) / heights.length)}px`)
-  }, [list])
+    const toggled = measured.current !== null && measured.current !== full
+    measured.current = full
+    if (!toggled || typeof requestAnimationFrame !== 'function') return measure()
+    const raf = requestAnimationFrame(measure)
+    return () => cancelAnimationFrame(raf)
+  }, [list, full])
   return <span ref={marker} hidden />
 }
 
