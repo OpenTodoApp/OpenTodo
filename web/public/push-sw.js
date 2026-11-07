@@ -46,6 +46,31 @@
     return typeof l === 'string' && Object.prototype.hasOwnProperty.call(TEXT, l) ? l : 'en'
   }
 
+  /**
+   * The date locale for a stored language, like intlLocale in src/lib/i18n/locale.ts:
+   * the browser's tag of that language (en-GB for English on a British browser),
+   * else the code itself. A missing, "system" or unknown language is the browser's
+   * locale (undefined); English is never left to a browser in another language.
+   */
+  function localeOf(prefs) {
+    const l = prefs && prefs.language
+    if (typeof l !== 'string' || !Object.prototype.hasOwnProperty.call(TEXT, l)) return undefined
+    const nav = (self.navigator && self.navigator.languages) || []
+    for (const tag of nav) {
+      try {
+        const c = Intl.getCanonicalLocales(tag)[0]
+        if (!c) continue
+        const parts = c.toLowerCase().split('-')
+        // Chinese only from a Simplified tag, like isSimplifiedChineseTag.
+        const simplified = !parts.includes('hant') && (parts.includes('hans') || parts.length === 1 || parts[1] === 'cn' || parts[1] === 'sg')
+        if (parts[0] === l && (l !== 'zh' || simplified)) return c
+      } catch {
+        // An invalid tag is skipped.
+      }
+    }
+    return l
+  }
+
   function req(r) {
     return new Promise((resolve, reject) => {
       r.onsuccess = () => resolve(r.result)
@@ -211,10 +236,9 @@
   // row or an unknown value means "system": the locale's date and the stored HH:MM.
   function formatDue(dueValue, prefs, today) {
     const p = prefs || {}
-    // Month names and the day period in the stored language (app-localization D4);
-    // without one, the browser's locale as before.
-    const lang = languageOf(p)
-    const locale = lang === 'en' ? undefined : lang
+    // Month names and the day period in the stored language (app-localization D4),
+    // as lib/i18n intlLocale picks it; only without a stored language, the browser's.
+    const locale = localeOf(p)
     const pad = (n) => String(n).padStart(2, '0')
     const [y, m, d] = String(dueValue.date).split('-').map(Number)
     const dt = new Date(y, m - 1, d)
