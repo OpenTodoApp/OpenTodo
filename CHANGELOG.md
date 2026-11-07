@@ -6,13 +6,31 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 Changes since the last release are in [changelog.d/](changelog.d/README.md), one file per change; `make release-prepare` moves them here when a release is cut.
 
-## [1.0.0-rc.1] - 2026-11-06
+## [1.0.0] - 2026-11-07
 
-The first release candidate of **OpenTodo 1.0**. Its code is the same as [0.24.0](https://github.com/OpenTodoApp/OpenTodo/releases/tag/v0.24.0): 1.0 adds no feature. It is the release where the [stability promise](docs/stability.md) starts, with the [threat model, how we verify it and the documented limits](docs/security/), the [accessibility statement](docs/accessibility.md), the performance budgets checked every night, and the 1.0 docs.
+**OpenTodo 1.0.** From this release on, OpenTodo keeps the promises in [Stability and compatibility](docs/stability.md): the API, the sync protocol, the export format and the upgrade path stay compatible within 1.x, and every release upgrades from every earlier one. 1.0 adds no feature. It is the release where the trust work of the last months comes together: a published [threat model, how we verify it and the documented limits](docs/security/), with the hardening they called for (0.23.0 and 0.24.0); an [accessibility statement](docs/accessibility.md) against WCAG 2.2 AA (partial conformance: keyboard and 200% zoom are tested on every core screen, screen-reader passes are still to come); and [performance budgets](docs/performance.md) for a 10,000-task account that pass every night. Getting those budgets to pass made long lists much faster: completing a task in a 2,000-task project on a phone now takes about 100 ms instead of over 200, note search stays quick right after a first sync, and a sync no longer stalls while the database tidies its log.
 
-**Please test the upgrade and your daily use, and report what breaks.** Back up first. Then run `ghcr.io/opentodoapp/opentodo:1.0.0-rc.1` on a copy of your data, sign in on your devices, and check sync, reminders, imports and the integrations you use. A candidate is a pre-release: it does not move `stable`, is not sent to app stores, and needs no store update.
+### Upgrade notes
 
-Still pending before 1.0.0: the screen-reader passes (NVDA, VoiceOver, TalkBack) and the reference-device performance record, both on real devices.
+- **Replace the image or the binary and restart.** No migration and no new synced field since 0.24.0, and no new mandatory variable. Any release from 0.1.0 on upgrades directly to 1.0.0, with no version in between ([upgrades](docs/stability.md#upgrades)); back up first, read the upgrade notes of the releases you skip for settings that changed, and upgrade the server before the devices.
+- **The server checkpoints its database log in the background.** SQLite's write-ahead log (`opentodo.db-wal`) may now grow to about 16 MB during bursts of writes before it is copied back, and is trimmed when it passes 64 MB; nothing to configure.
+- **Release candidates:** 1.0.0-rc.1 testers can upgrade in place.
+
+### Changed
+
+- **Completing tasks in a long list is faster, above all on phones.** A long list now lets the browser skip whole blocks of about 25 rows far from the screen, instead of deciding for each of 2,000 rows on every frame and every tap; screen readers still find every row in its one list. A completed row now leaves the screen by itself when its animation ends, so the list is drawn once per completion instead of twice. In the 2,000-task project of a 10,000-task account on a slowed phone, completing a task now responds in about 100 ms instead of about 220 ms.
+- **Lists, counts and the app badge follow each change instead of starting over.** After completing, editing or syncing a task, the list, its groups, the progress and blocked marks, the flow of a project in sequence, Today's closed list, the sidebar's counts and the app badge are now worked out from the tasks that changed rather than from every task, and give exactly what working everything out again gives.
+- **Searching notes right after a first sync no longer stalls.** The first keys typed into the note search on a phone could wait a quarter of a second while the app finished writing the sync's activity and built its search index; both now run in short pieces between keystrokes, and preparing a note for search is about twice as fast.
+- **A sync no longer waits while the database tidies its log.** Each time SQLite's write-ahead log reached about 4 MB, the write that filled it also copied the log back into the database before it could answer, and took two to three times as long. A background job now does that copy about a second after changes, beside the writes, and truncates the log once it passes 64 MB. In the 10,000-task account, the slowest pushes of 100 changes dropped from about 47 ms to about 24 ms on a development machine. Durability is unchanged.
+- **Less work after completing a task in a long project.** After each completion the app no longer counts every task of the project to decide whether to offer archiving it; it stops at the first open task. A tree list's sibling positions for screen readers (`aria-posinset`, `aria-setsize`) are now written in idle moments, a few rows at a time, instead of in the same block as the list's redraw. In a 2,000-task project on a slowed phone, an edit from another device now shows in about 0.7 s instead of 2 to 3 s while tasks are being completed.
+- **Screen-reader passes no longer hold a release back.** OpenTodo 1.0 claims partial accessibility conformance: the keyboard-only and 200% zoom passes are done on every core screen, and no NVDA, VoiceOver or TalkBack pass is recorded yet. Those passes are recorded when someone runs them; to contribute one, follow the steps in `docs/accessibility/audit-1.0.0.md` and post the results on [#9](https://github.com/OpenTodoApp/OpenTodo/issues/9). `make release-prepare` names how many screen-reader passes are pending in one warning line. It still refuses a pending keyboard or zoom pass, a failure without an issue link, and an audit more than 12 months old.
+- **No real device was measured for 1.0, and the docs now say so.** The performance budgets 1.0 promises are checked every night in CI only: in desktop Chromium, in a phone profile (the CPU slowed four times and a phone's screen, against a local server) and on the server. The project has none of the reference devices (a 2022 mid-range Android phone, an iPhone 12, a Raspberry Pi 4), so measuring them moves to after 1.0 ([#990](https://github.com/OpenTodoApp/OpenTodo/issues/990)). `make release-prepare` no longer requires `docs/performance/results-x.y.0.md` for a minor release, and a release candidate no longer warns about it; a record that exists is still checked, and a value over its budget still needs an issue link.
+
+### Fixed
+
+- **Android widget task rows follow light and dark mode.** The Today widget drew its task rows in the colour of the moment it was last drawn, so after a theme switch they could stay light grey on a light background. They now use the same day/night colour as the rest of the widget, and overdue rows a slightly darker red that stays readable in light mode.
+- **A Things 3 database can be imported from an iPhone.** The file picker on Settings → Import now offers ZIP archives and SQLite files, so the zipped `Things Database.thingsdatabase` folder is no longer greyed out on iOS. The Things guide explains the steps on iPhone and iPad.
+
 ## [0.24.0] - 2026-11-06
 
 OpenTodo 0.24.0 is a **security and fixes** release on the way to 1.0. **ChatGPT and Claude (claude.ai) can connect with OAuth again**; since 0.23.0 only Gemini could. The audit log is now **tamper-evident**, a device that answers AI connectors for an encrypted account **shows what it reads and can ask first**, and another site can no longer sign you out. In the installed iPhone app, no control sits under the Dynamic Island or the home indicator. Also new: an [accessibility statement](docs/accessibility.md) against WCAG 2.2 AA.
@@ -1401,8 +1419,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.24.0...HEAD
-[1.0.0-rc.1]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.24.0...v1.0.0-rc.1
+[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.24.0...v1.0.0
 [0.24.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.23.0...v0.24.0
 [0.23.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.22.0...v0.23.0
 [0.22.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.21.0...v0.22.0
