@@ -772,9 +772,10 @@ body {
    and an overlay. Dark pairs a border with the elevation, which does not read on a
    dark canvas on its own. */
 .surface-row { @apply rounded-chip hover:bg-hover; }
-/* The quick add's line field (quick-add-field-surface): a filled input surface. The sunken and
-   surface tokens are one colour in the high-contrast presentation, so it gets a border there. */
-.quick-add-field { @apply rounded-control border border-transparent bg-sunken px-3 py-1.5 focus-within:border-focus focus-within:ring-2 focus-within:ring-focus/30; }
+/* The quick add's line field (quick-add-field-surface): a filled input surface with a resting
+   hairline, because the dark fill alone is about 1.03:1 on the surface. The sunken and surface
+   tokens are one colour in the high-contrast presentation, so it gets a stronger border there. */
+.quick-add-field { @apply rounded-control border border-soft bg-sunken px-3 py-1.5 focus-within:border-focus focus-within:ring-2 focus-within:ring-focus/30; }
 .quick-add-field:has(:disabled) { @apply opacity-60; }
 html:root[data-contrast="high"] .quick-add-field:not(:focus-within) { @apply border-default; }
 .surface-card { @apply rounded-card border border-default bg-surface; }

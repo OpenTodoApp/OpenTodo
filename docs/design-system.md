@@ -144,7 +144,7 @@ Screens import shared UI from `web/src/ui/` (re-exported from `web/src/ui/index.
 
 ### Quick add field
 
-The quick add's line field (list pages, the Inbox catch, first run, capture) is drawn on a filled surface with the `.quick-add-field` class in `web/src/index.css`: the sunken token, the control radius, compact padding and, while the input has focus, the focus border with its ring. The high-contrast presentation, where the surface tokens are one colour, gives it a border instead. The command bar and the phone sheet keep their own frames. The list page's sticky row has no divider under it.
+The quick add's line field (list pages, the Inbox catch, first run, capture) is drawn on a filled surface with the `.quick-add-field` class in `web/src/index.css`: the sunken token, a resting `border-soft` hairline (the dark fill alone is about 1.03:1 on the surface), the control radius, compact padding and, while the input has focus, the focus border with its ring. The high-contrast presentation, where the surface tokens are one colour, gives it the default border instead. The command bar and the phone sheet keep their own frames. The list page's sticky row has no divider under it.
 
 ### Icons
 
