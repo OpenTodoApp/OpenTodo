@@ -190,12 +190,15 @@ Tokens have one scope: `read`, `agent`, `full` or `admin`.
 - A stolen session cannot quietly mint long-lived credentials (step-up).
 - Signing out clears local data.
 - **Sign out everywhere** ends every session and revokes every token and app password.
+- A device whose session was revoked (sign out everywhere, the account deactivated or deleted) removes its local copy when it next contacts the server.
+- A forged "revoked" answer wipes nothing.
 - An encrypted account's locked device holds no key.
 
 **Mechanism.**
 - `.recent()` routes need a password or code within 10 minutes (`mfa.go`, `FreshWindow`): new tokens, app passwords, passkeys, TOTP, SSO links, invitations, user administration, the key record.
 - Sessions and remembered browsers are stored hashed and revocable.
 - The account key is a non-extractable `CryptoKey`, forgotten on **Lock this device**.
+- Revoked devices (`internal/auth/revoke.go`, `web/src/lib/revocation.ts`): `auth/status` gives each browser session a random wipe key, which the device keeps in its local database. Revoking a session keeps its hash and key for a year. `auth/status` answers that session's cookie with an HMAC-SHA256 under the key. The device wipes only when the HMAC matches the key it holds, with the same clear as signing out (the local database with the outbox and the stored key, the native shell's reminders, geofences, widget and biometric key, the HTTP cache). Device relay opt-ins of revoked sessions end and push subscriptions go with their session. A password change or reset only signs the other devices out.
 
 **Verified by.**
 - `TestReauthRequiredOnStaleSession` (`internal/httpapi/mfa_test.go`).
@@ -203,10 +206,14 @@ Tokens have one scope: `read`, `agent`, `full` or `admin`.
 - `TestRouteMatrix` (stale session).
 - `TestRelayEndsWithEncryptionAndOnLock` (`internal/relay`).
 - `TestSecretsStoredOnlyAsHashes` (`internal/auth/secrets_at_rest_test.go`): session and API token secrets reach the database only as hashes.
+- `TestRevokedDeviceGetsProof`, `TestRevokedDeviceOnDeactivation`, `TestPasswordChangeDoesNotWipe`, `TestRevokedDeviceEndsRelay` (`internal/httpapi/revoked_device_test.go`); `TestRevokedSessionsKeepTheirProof` (`internal/auth/revoke_test.go`).
+- `web/src/app/revokedDevice.test.tsx`: the app opens on a revoked device, clears its tasks and outbox and shows the notice; a proof made with another key clears nothing. `scripts/e2e-revoked.mjs`: the same in Chromium with a change queued offline. `web/src/lib/revocation.test.ts`: the proof check.
 
 **Not defended.**
 - An unlocked device holds plaintext in IndexedDB. Anyone using it, malware or a browser extension with page access can read everything the account can.
-- A device that was never locked or signed out keeps its local copy after its sessions are revoked: it can no longer sync, but its data stays.
+- A revoked device removes its copy only when it next contacts the server. One that never connects again, or only after a year, keeps its local copy, and so does one whose session was ended by a password change or reset.
+- Unsynced changes on a revoked device are lost.
+- API tokens carry no wipe: the CLI, the vault, the Obsidian plugin and the browser extension keep what they hold after their token is revoked.
 
 ### Malicious server for an encrypted account
 
@@ -530,7 +537,7 @@ Each item of the [review scope](review-scope.md) has a section here: where the c
   - Markdown is rendered by an in-house renderer to React elements. Raw HTML stays text, and only `http(s)` and `mailto` links are rendered (`web/src/lib/markdown.test.ts`).
   - Links from encrypted data open only `http(s)`.
   - The share target stores only same-origin or share-sheet requests up to 100 MB, identified by `Sec-Fetch-Site`. A request without the header is not stored, and the capture screen says why (`shareRequestVerdict`, `web/src/lib/shareInbox.test.ts`).
-  - Signing out empties the app's caches.
+  - Signing out empties the app's caches, and so does a revoked session once the server proves the revocation with the device's wipe key (`web/src/lib/revocation.ts`).
   - Strict CSP: `script-src 'self'` and `frame-ancestors 'none'` (`cspBase`), `X-Frame-Options: DENY`.
 - **Tests:** `TestSecurityHeaders` (`internal/httpapi/security_headers_test.go`) pins `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy` and the page policy's `default-src`, `script-src`, `frame-ancestors`, `base-uri` and `form-action`.
 

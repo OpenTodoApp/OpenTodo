@@ -153,7 +153,7 @@ func (t *Tenant) nextHousekeeping(ctx context.Context) (time.Time, bool, error) 
 		}
 		return t.Channels.NextPrune(ctx)
 	}
-	return jobs.Earliest(ctx, retention, t.Auth.Audit().NextPrune, t.Auth.NextSignupExpiry, t.Hooks.NextPrune, channels,
+	return jobs.Earliest(ctx, retention, t.Auth.Audit().NextPrune, t.Auth.NextSignupExpiry, t.Auth.NextRevokedExpiry, t.Hooks.NextPrune, channels,
 		t.Inbox.NextSweep, upkeep)
 }
 
@@ -179,6 +179,10 @@ func (t *Tenant) housekeeping(ctx context.Context) {
 	}
 	if _, err := t.Auth.PruneSignups(ctx); err != nil {
 		log.Error("prune failed", "err", err)
+	}
+	// Revoked sessions a year old (revoked-device-wipe D2).
+	if _, err := t.Auth.PruneRevokedSessions(ctx); err != nil {
+		log.Error("prune revoked sessions failed", "err", err)
 	}
 	// Expired membership invitations, declined ones included (member-add-consent).
 	if _, err := t.Auth.PruneMemberInvitations(ctx); err != nil {

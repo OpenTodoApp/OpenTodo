@@ -172,6 +172,25 @@ func (s *Server) relayEndSession(ctx context.Context, uid, sessionHash string) {
 	}
 }
 
+// relayEndRevoked opts out the devices whose session was revoked (Sign out
+// everywhere, deactivation; revoked-device-wipe D7) and closes their streams.
+func (s *Server) relayEndRevoked(ctx context.Context, uid string) {
+	if s.relayStore == nil {
+		return
+	}
+	ended, err := s.relayStore.DisableEnded(ctx, uid)
+	if err != nil {
+		s.log.Warn("relay: end revoked sessions", "err", err)
+		return
+	}
+	for _, d := range ended {
+		s.relayHub.CloseDevice(uid, d.DeviceID)
+		if s.audit != nil {
+			s.audit.Record(ctx, audit.RelayDisabled(uid, d.DeviceID, d.Label, "signed_out"))
+		}
+	}
+}
+
 // relayEndAccount opts out every device of an account (encryption turned off).
 func (s *Server) relayEndAccount(ctx context.Context, uid string) {
 	if s.relayStore == nil {
