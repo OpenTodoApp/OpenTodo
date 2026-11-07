@@ -11,7 +11,7 @@ import { formatDate, formatTime, logicalToday } from '../../lib/dates'
 import { keysOf } from '../../lib/shortcuts'
 import { memberName } from '../../lib/sharing'
 import { isRunning, minutesOf, entryDay } from '../../lib/time'
-import { deleteTimeEntry, logTime, TimeRangeError, toggleTracking, updateTimeEntry, useMe, useMinuteNow, useRunningEntry, useTaskEntries } from '../../lib/timeEntries'
+import { deleteTimeEntry, logTime, TimeRangeError, toggleTracking, updateTimeEntry, useMe, useMinuteNow, useOccurrenceStart, useRunningEntry, useTaskEntries } from '../../lib/timeEntries'
 import type { Task, TimeEntry } from '../../lib/types'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
@@ -37,11 +37,19 @@ export function TrackMenuItem({ task }: { task: Task }) {
   return <MenuItem label={stop ? t('Stop tracking') : t('Start tracking')} icon={stop ? 'square' : 'timer'} shortcut={keysOf('list.track')} onSelect={() => act(toggleTracking(task.id))} />
 }
 
-/** The total of a task's entries, ticking while one of them runs (the tab label). */
+/** The minutes of `entries`, those that started from `since` on when given. */
+const sumFrom = (entries: readonly TimeEntry[], now: number, since?: number) =>
+  entries.reduce((n, e) => (since !== undefined && e.started_at < since ? n : n + minutesOf(e, now)), 0)
+
+/**
+ * The total of a task's entries, ticking while one of them runs (the tab label):
+ * for a repeating task, its current occurrence's (fix-recurring-tracked-time).
+ */
 export function useTaskTotal(taskId: string): number {
   const entries = useTaskEntries(taskId)
+  const since = useOccurrenceStart(taskId)
   const now = useMinuteNow(entries.some(isRunning))
-  return useMemo(() => entries.reduce((n, e) => n + minutesOf(e, now), 0), [entries, now])
+  return useMemo(() => sumFrom(entries, now, since), [entries, now, since])
 }
 
 /** The "Add time" form: a duration ending now (or at 17:00 on another day), or a start and an end. */
@@ -173,7 +181,11 @@ export function TimeTab({ task, readOnly }: { task: Task; readOnly: boolean }) {
   const memberships = useMembershipMap()
   const shared = !!task.project_id && memberships.has(task.project_id)
   const now = useMinuteNow(entries.some(isRunning))
-  const total = useMemo(() => entries.reduce((n, e) => n + minutesOf(e, now), 0), [entries, now])
+  // A repeating task's total is its current occurrence's; the list keeps every
+  // occurrence's entries and the line below sums them (fix-recurring-tracked-time).
+  const since = useOccurrenceStart(task.id)
+  const total = useMemo(() => sumFrom(entries, now, since), [entries, now, since])
+  const all = useMemo(() => (since === undefined ? total : sumFrom(entries, now)), [entries, now, since, total])
   const [adding, setAdding] = useState(false)
   const [editing, setEditing] = useState<string | null>(null)
   const stop = running?.task_id === task.id
@@ -189,7 +201,10 @@ export function TimeTab({ task, readOnly }: { task: Task; readOnly: boolean }) {
           </Button>
         )}
         {!readOnly && !adding && <Button variant="ghost" size="sm" icon="plus" onClick={() => setAdding(true)} data-time-add-open>{t('Add time')}</Button>}
-        <span className="ml-auto text-meta tabular-nums text-muted" data-time-total>{t('Total {duration}', { duration: formatMinutes(total) })}</span>
+        <span className="ml-auto flex flex-col items-end text-meta tabular-nums text-muted">
+          <span data-time-total>{t('Total {duration}', { duration: formatMinutes(total) })}</span>
+          {all !== total && <span className="text-faint" data-time-total-all>{t('All occurrences {duration}', { duration: formatMinutes(all) })}</span>}
+        </span>
       </div>
       {adding && <AddTime taskId={task.id} onDone={() => setAdding(false)} />}
       {entries.length === 0 && !adding && <p className="py-2 text-meta text-muted">{t('No time tracked yet.')}</p>}

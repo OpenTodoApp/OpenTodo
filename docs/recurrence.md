@@ -120,6 +120,10 @@ in Someday clears its due date and so ends the repetition.
 - **Reopen** an occurrence record and it becomes an open occurrence of its date
   again; the series is not moved back. Reopening a series that ended keeps its rule,
   so its next completion continues the schedule.
+- **Tracked time** stays on the series, since the series is the task. Its total
+  against the estimate counts the entries since the latest completion or skip
+  among its records dated before its current occurrence; see
+  [Tracked against estimated](time-tracking.md#tracked-against-estimated).
 
 In a shared project a repeating task can pass between people each time it is completed; see [Take turns](take-turns.md).
 
