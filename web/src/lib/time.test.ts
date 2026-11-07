@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import ruleRaw from '../../../internal/timetrack/testdata/rule_fixture.json?raw'
 import csvRaw from '../../../internal/timetrack/testdata/csv_fixture.json?raw'
-import { csvCell, durationMinutes, entryDay, minutesOf, ownMinutesOnDay, repairs, running, startBatch, toCSV, totalsByTask, type EntryLike } from './time'
+import occurrenceRaw from '../../../internal/timetrack/testdata/occurrence_fixture.json?raw'
+import { csvCell, currentTotals, durationMinutes, entryDay, minutesOf, occurrenceStarts, ownMinutesOnDay, repairs, running, startBatch, toCSV, totalsByTask, type EntryLike, type OccurrenceTaskLike } from './time'
 
 // The shared fixtures of internal/timetrack (OpenSpec time-tracking, task 2.2):
 // both implementations agree on the running rule and byte for byte on the CSV.
@@ -34,6 +35,34 @@ describe('time: the shared rule fixture', () => {
       }
     })
   }
+})
+
+interface OccurrenceCase {
+  name: string
+  now: number
+  tasks: OccurrenceTaskLike[]
+  entries: EntryLike[]
+  starts: Record<string, number>
+  totals: Record<string, number>
+  all_totals: Record<string, number>
+}
+
+// A repeating task's tracked total is its current occurrence's (OpenSpec change
+// fix-recurring-tracked-time); internal/timetrack runs the same cases.
+describe('time: the shared occurrence fixture', () => {
+  const cases = (JSON.parse(occurrenceRaw) as { cases: OccurrenceCase[] }).cases
+  it('has the cases the Go test runs', () => expect(cases.length).toBeGreaterThanOrEqual(4))
+  for (const c of cases) {
+    it(c.name, () => {
+      expect(Object.fromEntries(occurrenceStarts(c.tasks))).toEqual(c.starts)
+      expect(Object.fromEntries(currentTotals(c.entries, c.tasks, c.now))).toEqual(c.totals)
+      expect(Object.fromEntries(totalsByTask(c.entries, c.now))).toEqual(c.all_totals)
+    })
+  }
+  it('limits the answer to the series asked for', () => {
+    const c = cases[0]
+    expect(occurrenceStarts(c.tasks, new Set(['elsewhere'])).size).toBe(0)
+  })
 })
 
 describe('time: the shared CSV fixture', () => {

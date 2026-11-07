@@ -1403,6 +1403,9 @@
   "All occurrences": [
     "web/src/app/task-detail/OccurrenceScope.tsx"
   ],
+  "All occurrences {duration}": [
+    "web/src/app/task-detail/TimeTab.tsx"
+  ],
   "All of these": [
     "web/src/app/filter/FilterBuilder.tsx"
   ],

@@ -8,6 +8,7 @@ import { addDaysISO, currentDayStart, logicalDay } from './dates'
 import { formatMinutes } from './duration'
 import { t } from './i18n'
 import { fieldChain } from './fieldTree'
+import { isRecordOf } from './recurring'
 import type { FieldDef, Label, Project, Task, TimeEntry } from './types'
 
 /** The part of an entry the rules read. */
@@ -74,11 +75,58 @@ export function entryDay(startedAt: number, zone?: string, dayStart = currentDay
   return dayStart > 0 && Number(parts.hour) * 60 + Number(parts.minute) < dayStart ? addDaysISO(iso, -1) : iso
 }
 
-/** Every member's live minutes per task, a running entry to `now` (rows, the filter, the panel). */
-export function totalsByTask(entries: readonly EntryLike[], now: number): Map<string, number> {
+/** The part of a task occurrenceStarts reads. */
+export type OccurrenceTaskLike = Pick<Task, 'id' | 'series_id' | 'occurrence_date' | 'due' | 'completed_at' | 'deleted_at'>
+
+/**
+ * When each repeating task's current occurrence began (OpenSpec change
+ * fix-recurring-tracked-time): the latest completion or skip among its live
+ * occurrence records dated before the series' due date. A repeating task is one
+ * row that moves to its next date, so its entries hang on the same id from one
+ * occurrence to the next; a task without such a record has no entry here. A plain
+ * series' skip writes no record (series-exceptions D3), so it does not start a new
+ * occurrence here. `only`, when given, limits the answer to those series.
+ * The twin of timetrack.OccurrenceStarts.
+ */
+export function occurrenceStarts(tasks: Iterable<OccurrenceTaskLike>, only?: ReadonlySet<string>): Map<string, number> {
+  const list = Array.isArray(tasks) ? (tasks as OccurrenceTaskLike[]) : [...tasks]
+  const due = new Map<string, string | null>()
+  for (const x of list) if (!only || only.has(x.id)) due.set(x.id, x.due?.date ?? null)
   const out = new Map<string, number>()
-  for (const e of entries) if (!e.deleted_at) out.set(e.task_id, (out.get(e.task_id) ?? 0) + minutesOf(e, now))
+  for (const x of list) {
+    const series = x.series_id
+    if (!series || !x.completed_at || x.deleted_at || !due.has(series)) continue
+    const cur = due.get(series)
+    const date = x.occurrence_date ?? x.due?.date ?? null
+    if (!date || (cur && date >= cur) || !isRecordOf(series, x as Task)) continue
+    if (x.completed_at > (out.get(series) ?? 0)) out.set(series, x.completed_at)
+  }
   return out
+}
+
+/**
+ * Every member's live minutes per task, a running entry to `now` (rows, the
+ * filter, the panel). With `since` (occurrenceStarts) a repeating task counts only
+ * the entries that started in its current occurrence; an entry belongs whole to
+ * the occurrence it started in.
+ */
+export function totalsByTask(entries: readonly EntryLike[], now: number, since?: ReadonlyMap<string, number>): Map<string, number> {
+  const out = new Map<string, number>()
+  for (const e of entries) {
+    if (e.deleted_at) continue
+    const from = since?.get(e.task_id)
+    if (from !== undefined && e.started_at < from) continue
+    out.set(e.task_id, (out.get(e.task_id) ?? 0) + minutesOf(e, now))
+  }
+  return out
+}
+
+/** The tracked minutes shown against the estimate: each task's current occurrence (occurrenceStarts), every task of `tasks` that has entries. */
+export function currentTotals(entries: readonly EntryLike[], tasks: Iterable<OccurrenceTaskLike>, now: number): Map<string, number> {
+  if (entries.length === 0) return new Map()
+  const ids = new Set<string>()
+  for (const e of entries) if (!e.deleted_at) ids.add(e.task_id)
+  return totalsByTask(entries, now, occurrenceStarts(tasks, ids))
 }
 
 /** The user's own live minutes that started on `day` (Today's header), on the tasks `liveTask` accepts. */

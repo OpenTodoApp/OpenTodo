@@ -124,7 +124,7 @@ text     := word | '"' chars '"'
 | `carried` | tasks whose sector's period has ended before your current week, month or quarter (carried over) |
 | `sector: value` | tasks whose sector is `this week`, `next week`, `this month`, `next month`, `this quarter` or `next quarter` (named on your date and first day of the week, so `sector: this week` follows you into the next week without editing the view), or exactly a period: `sector: 2026-W44`, `sector: 2026-11`, `sector: 2026-Q4`. Any other value is an error that names it. The terms work whether or not **Time sectors** is on |
 | `workspace: name` | tasks of the [workspace](workspaces.md) of that name, ignoring case (`workspace: Home`, `workspace: "Side projects"`); see [Workspaces](#workspaces) |
-| `tracked` | tasks with at least one minute of [tracked time](time-tracking.md), every member's entries counted and a running entry up to now |
+| `tracked` | tasks with at least one minute of [tracked time](time-tracking.md), every member's entries counted and a running entry up to now; a repeating task counts its [current occurrence](time-tracking.md#tracked-against-estimated) only |
 | `tracked <cmp> duration` | tasks whose tracked time compares as asked: `tracked > 1h`, `tracked <= 30m`, `tracked >= 1h30`, `tracked < 1.5h`, `tracked = 0`; a bare number is minutes |
 | `name <cmp> value` | tasks whose [custom field](custom-fields.md) of that name compares as asked (see [Custom fields](#custom-fields)) |
 | `no name` | tasks of a project that defines the field, with no value for it |
