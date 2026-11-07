@@ -15,7 +15,8 @@
 //   logTime(taskId, startedAt, endedAt, note)  a closed entry (manual entries)
 //   updateTimeEntry(id, { started_at?, ended_at?, note? }) / deleteTimeEntry(id)
 //   repairRunning()                            the one-running-entry repair (design D2)
-//   useRunningEntry(), useTaskEntries(id), useTaskTracked(id), useTrackedTotals(), useMinuteNow(active)
+//   useRunningEntry(), useTaskEntries(id), useTaskTracked(id), useTrackedTotals(), useMinuteNow(active),
+//   useOccurrenceStart(id)
 //
 // Every action is one mutateMany batch: applied locally at once, queued for the
 // server, offline-safe. A pause is a stop; resuming starts a new entry (each
@@ -26,8 +27,8 @@ import { db } from './db'
 import { derived, liveSnapshot } from './liveSnapshot'
 import { getDeviceId, mutateMany, mutationTables, type Change } from './ops'
 import { currentUserId, useMe } from './sharing'
-import { isRunning, ownMinutesOnDay, repairs, running, startBatch, totalsByTask, type Repair } from './time'
-import { useLiveTasks } from './liveTasks'
+import { currentTotals, isRunning, occurrenceStarts, ownMinutesOnDay, repairs, running, startBatch, type Repair } from './time'
+import { everyTask, useLiveTasks, useTasksOfEveryWorkspace } from './liveTasks'
 import { uuid } from './ids'
 import type { Task, TimeEntry } from './types'
 import { LOCAL_ERRORS } from './localErrors'
@@ -220,9 +221,10 @@ const NO_TOTALS: ReadonlyMap<string, number> = new Map()
 
 /**
  * Every member's tracked minutes per task, shared by every row (design D4): one
- * map recomputed when the entries change and, while an entry runs, on each
- * minute boundary by one timer for the whole app. A row reads its own number,
- * so a tick re-renders only the rows whose total changed.
+ * map recomputed when the entries or the tasks change and, while an entry runs, on
+ * each minute boundary by one timer for the whole app. A row reads its own number,
+ * so a tick re-renders only the rows whose total changed. A repeating task counts
+ * its current occurrence only (fix-recurring-tracked-time).
  */
 const totals = (() => {
   let value: ReadonlyMap<string, number> = NO_TOTALS
@@ -232,7 +234,7 @@ const totals = (() => {
   const recompute = () => {
     const all = entryRows.read()
     const live = all ? liveOf(all) : NO_ENTRIES
-    const next = live.length ? totalsByTask(live, Date.now()) : NO_TOTALS
+    const next = live.length ? currentTotals(live, everyTask.read() ?? [], Date.now()) : NO_TOTALS
     const same = next.size === value.size && [...next].every(([k, v]) => value.get(k) === v)
     if (!same) {
       value = next
@@ -245,7 +247,9 @@ const totals = (() => {
     subscribe(fn: () => void): () => void {
       listeners.add(fn)
       if (!stop) {
-        stop = entryRows.subscribe(recompute)
+        const offEntries = entryRows.subscribe(recompute)
+        const offTasks = everyTask.subscribe(recompute)
+        stop = () => { offEntries(); offTasks() }
         recompute()
       }
       return () => {
@@ -272,6 +276,16 @@ export function useTrackedTotals(): ReadonlyMap<string, number> {
 export function useTaskTracked(taskId: string): number | undefined {
   const read = useCallback(() => totals.read().get(taskId), [taskId])
   return useSyncExternalStore(totals.subscribe, read, read)
+}
+
+/**
+ * When a repeating task's current occurrence began (time.ts occurrenceStarts):
+ * the panel counts the entries from then against the estimate. Undefined for
+ * any other task, and for a series not yet completed or skipped.
+ */
+export function useOccurrenceStart(taskId: string): number | undefined {
+  const tasks = useTasksOfEveryWorkspace()
+  return useMemo(() => (tasks ? occurrenceStarts(tasks, new Set([taskId])).get(taskId) : undefined), [tasks, taskId])
 }
 
 /**

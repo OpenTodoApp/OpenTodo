@@ -194,7 +194,12 @@ func (r *Registry) loadWith(ctx context.Context, userID string, tasks taskReader
 	for _, pl := range places {
 		snap.places[rawStr(pl, "id")] = pl
 	}
-	snap.tracked = timetrack.TotalsByTask(list, r.now().UnixMilli())
+	// A repeating task counts its current occurrence (fix-recurring-tracked-time).
+	occ := make([]timetrack.Occurrence, 0, len(snap.tasks))
+	for _, t := range snap.tasks {
+		occ = append(occ, timetrack.OccurrenceFromRow(t))
+	}
+	snap.tracked = timetrack.CurrentTotals(list, occ, r.now().UnixMilli())
 	if err := r.loadWorkspaces(ctx, userID, snap); err != nil {
 		return nil, err
 	}
@@ -506,7 +511,9 @@ type taskOut struct {
 	// (OpenSpec change task-origin); its title and URL are in untrusted_text.
 	Origin *originOut `json:"origin"`
 	// TrackedMinutes is the task's live tracked time, every member's entries
-	// and a running one to the server time (OpenSpec change time-tracking).
+	// and a running one to the server time (OpenSpec change time-tracking); for
+	// a repeating task, the entries of its current occurrence only (OpenSpec
+	// change fix-recurring-tracked-time).
 	TrackedMinutes int `json:"tracked_minutes"`
 	// Planning fields (OpenSpec change agent-planning-fields, design D4):
 	// deadline and start as stored (start may be "someday"), evening, the ids

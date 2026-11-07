@@ -83,7 +83,7 @@ func TestTotalsByTask(t *testing.T) {
 		{ID: "b", TaskID: "t", StartedAt: 0, EndedAt: end(30 * 60000)},
 		{ID: "c", TaskID: "t", StartedAt: 0, EndedAt: end(30 * 60000), DeletedAt: &del},
 		{ID: "d", TaskID: "u", StartedAt: 0},
-	}, 5*60000)
+	}, 5*60000, nil)
 	if got["t"] != 50 || got["u"] != 5 {
 		t.Fatalf("totals = %v", got)
 	}
