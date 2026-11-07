@@ -46,7 +46,7 @@ func (s *Server) registerAssistantRoutes(mux *routes) {
 	if s.assistantSlots != nil {
 		s.assistant.UseSlots(s.assistantSlots)
 	}
-	s.assistantTestLimiter = newRateLimiter(memberTestLimit, memberTestWindow)
+	s.assistantTestLimiter = s.limit("assistant.test", memberTestLimit, memberTestWindow)
 	if s.assistantSetup != nil {
 		s.assistantSetup(s.assistant)
 	}
