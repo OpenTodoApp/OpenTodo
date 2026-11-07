@@ -1,1 +1,0 @@
-- **Shipping an interface language is one edit now.** The digest card, the server's message languages and the Obsidian plugin each kept their own list of codes; they now derive from the catalogue they actually ship, and `make i18n-check` reports a catalogue the plugin forgot to import.

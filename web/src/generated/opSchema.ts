@@ -789,9 +789,9 @@ export interface UserPrefsFields {
   start_checklist?: string
   /**
    * Interface language (OpenSpec change app-localization, design D1):
-   * "system" or a shipped language code (en, de, fr, es, it, pt). Not
-   * restricted here; clients read an unknown code as "system" and keep the
-   * stored value, so a catalog added later stays additive.
+   * "system" or a code from SHIPPED. Not restricted here; clients read an
+   * unknown code as "system" and keep the stored value, so a catalog added
+   * later stays additive.
    */
   language?: string
   /**

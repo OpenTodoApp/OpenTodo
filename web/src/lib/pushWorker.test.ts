@@ -231,7 +231,7 @@ describe('service worker due text (date-time-preferences D7)', () => {
     expect(fmt(due, prefs, TODAY)).toBe(want)
   })
 
-  it('a pushed reminder reads Due Nov 3, 3:00 PM with month-day and 12h stored on the device', async () => {
+  it('a pushed reminder reads the due date and 12h time as lib/dates formats them', async () => {
     const taskId = await createTask({ title: 'Pay rent', due: { date: `${new Date().getFullYear()}-11-03`, time: '15:00' } })
     const reminderId = await addReminder(taskId, { kind: 'absolute', fire_at: Date.now() - 1000 })
     await setUserPref('date_format', 'month-day')

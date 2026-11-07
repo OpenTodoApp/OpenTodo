@@ -86,6 +86,16 @@ export async function check(root = repo) {
     try { fmt.parseMessage(id.replace(/\|[\w-]+$/, '')) } catch (err) { problems.push(`source: malformed "${id}": ${err.message}`) }
   }
   const shipped = shippedCodes(root)
+  // The digest card offers SHIPPED, but the server validates the digest's
+  // language against mail.Languages. Keep the two lists equal across the
+  // web/Go boundary: a language shipped in the web app before its email
+  // templates would be offered in Settings and rejected by the digest PUT.
+  const mailPath = join(root, 'internal/mail/message.go')
+  if (existsSync(mailPath)) {
+    const mailText = readFileSync(mailPath, 'utf8')
+    const mail = [...(/var Languages = \[\]string\{([^}]*)\}/.exec(mailText)?.[1] ?? '').matchAll(/"([a-z-]+)"/g)].map((m) => m[1])
+    if (mail.join() !== shipped.join()) problems.push(`mail.Languages (${mail}) differs from SHIPPED (${shipped})`)
+  }
   const summary = []
   const dir = join(root, 'web/src/locales')
   for (const file of readdirSync(dir).filter((f) => /^[a-z]{2,3}\.json$/.test(f))) {
