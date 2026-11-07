@@ -36,9 +36,9 @@ func TestDeadlineEncode(t *testing.T) {
 	if !strings.Contains(out, "\r\nDUE;VALUE=DATE:20261011\r\n") || !strings.Contains(out, "\r\nDTSTART;VALUE=DATE:20261011\r\n") {
 		t.Fatalf("recurring anchor: %s", out)
 	}
-	// A zoned planned day keeps its VTIMEZONE next to the deadline.
+	// A zoned planned day is served as its instant in UTC next to the deadline.
 	out = enc(Task{Due: &Due{Date: "2026-10-13", Time: strp("09:30"), TZ: strp("Europe/Berlin")}, Deadline: "2026-10-17"})
-	if !strings.Contains(out, "DTSTART;TZID=Europe/Berlin:20261013T093000") || !strings.Contains(out, "BEGIN:VTIMEZONE") {
+	if !strings.Contains(out, "\r\nDTSTART:20261013T073000Z\r\n") || strings.Contains(out, "VTIMEZONE") {
 		t.Fatalf("zoned start: %s", out)
 	}
 	// A client DTSTART kept in the remainder is not served twice.
