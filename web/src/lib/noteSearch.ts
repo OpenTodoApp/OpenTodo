@@ -50,7 +50,8 @@ const QUOTES = new Set(['"', '“', '”', '„'])
 const ASCII_PUNCT = new Set('!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~')
 /** The characters stripInline acts on; a line without them passes unchanged. */
 const INLINE_MARKERS = /[\\`![*_~|]/
-const INLINE_MARKER_SET = new Set('\\`![*_~|')
+const INLINE_MARKER_LIST = [...'\\`![*_~|']
+const INLINE_MARKER_SET = new Set(INLINE_MARKER_LIST)
 const INLINE_NEXT = /[\\`![*_~|]/g
 
 function lower(s: string, lang?: string): string {
@@ -194,11 +195,21 @@ function linkEnd(cs: CodePoints, open: number): [number, number] | null {
   return null
 }
 
+/** The whitespace characters (isSpace) other than the space. */
+const OTHER_SPACES = ['\t', '\n', '\r', '\f', '\v']
+
 /** Collapses whitespace runs (isSpace) to one space and trims them. */
 function collapse(s: string): string {
   // Only runs that are not already one space are replaced: a 10 KB note has
   // thousands of single spaces and few other runs.
-  return s.replace(/[\t\n\r\f\v][ \t\n\r\f\v]*| [ \t\n\r\f\v]+/g, ' ').replace(/^ | $/g, '')
+  // Whether there is such a run is asked with indexOf, much faster than the pattern
+  // walking a 10 KB note character by character.
+  const runs = s.includes('  ') || OTHER_SPACES.some((c) => s.includes(c))
+  const one = runs ? s.replace(/[\t\n\r\f\v][ \t\n\r\f\v]*| [ \t\n\r\f\v]+/g, ' ') : s
+  // The one space a run left at either end goes (a pattern for the end was tried at every position).
+  const from = one.charCodeAt(0) === 0x20 ? 1 : 0
+  const to = one.length > from && one.charCodeAt(one.length - 1) === 0x20 ? one.length - 1 : one.length
+  return from === 0 && to === one.length ? one : one.slice(from, to)
 }
 
 /**
@@ -209,14 +220,19 @@ function collapse(s: string): string {
  */
 export function stripMarkdown(md: string): string {
   const lines: string[] = []
-  for (const raw of md.replace(/\r\n?/g, '\n').split('\n')) {
+  // A note without any inline marker has none on any line (asked with indexOf, as in collapse).
+  const inline = INLINE_MARKER_LIST.some((m) => md.includes(m))
+  for (const raw of (md.includes('\r') ? md.replace(/\r\n?/g, '\n') : md).split('\n')) {
+    // An empty line adds only a space, which collapse takes out again (most notes
+    // have one between every two paragraphs).
+    if (raw === '') continue
     // A line starting with an ASCII letter has no block marker and is no rule or fence.
     const c = raw.charCodeAt(0) | 0x20
     const plainStart = c >= 0x61 && c <= 0x7a
     if (!plainStart && dropLine(raw)) continue
     const line = plainStart ? raw : stripLinePrefix(raw)
     // The inline pass copies a line without any of its markers as it is.
-    lines.push(!INLINE_MARKERS.test(line) ? line : stripInline(ASCII.test(line) ? line : [...line]))
+    lines.push(!inline || !INLINE_MARKERS.test(line) ? line : stripInline(ASCII.test(line) ? line : [...line]))
   }
   return collapse(lines.join(' '))
 }
@@ -255,14 +271,18 @@ export function prepareNote(note: { title: string; text: string }, lang?: string
 
 /** matchNote over a prepared note. */
 export function matchPrepared(p: PreparedNote, terms: string[]): NoteMatch {
-  const all = p.title + ' ' + p.body
   let matched = terms.length > 0
   let titleMatch = false
   let bodyWords = 0
   for (const t of terms) {
-    if (!all.includes(t)) matched = false
-    if (p.title.includes(t)) titleMatch = true
-    if (p.body.includes(t)) bodyWords++
+    const inTitle = p.title.includes(t)
+    const inBody = p.body.includes(t)
+    if (inTitle) titleMatch = true
+    if (inBody) bodyWords++
+    // A term found in neither can still run from the title into the body, but only
+    // through the space that joins them: the joined text is built for such a phrase
+    // alone (joining it for every note on each keystroke copied every 10 KB note).
+    if (!inTitle && !inBody && !(t.includes(' ') && (p.title + ' ' + p.body).includes(t))) matched = false
   }
   return { matched, titleMatch, bodyWords }
 }
