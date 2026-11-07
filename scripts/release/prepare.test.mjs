@@ -412,11 +412,11 @@ test('release-prepare: a release candidate only adds its CHANGELOG.md section, k
     const { from, changed, warnings } = prepare(rcOf(1), { root: dir, date: '2030-01-02' })
     assert.equal(from, CURRENT)
     assert.deepEqual(changed, ['CHANGELOG.md'])
-    // The owner-dependent gate names what is pending; the release itself would refuse it. No
+    // The pending screen-reader passes are one line for the release notes, for any release. No
     // reference-device record is no warning: it is optional until real devices are measured (#990).
     assert.equal(warnings.length, 1, warnings.join('\n'))
     assert.equal(warnings[0], `accessibility audit: 4 screen-reader passes pending on 1 core screens in docs/accessibility/audit-${NEXT_MAJOR}.md ` +
-      `(NVDA + Firefox, VoiceOver + Safari (macOS), VoiceOver (iOS shell), TalkBack (Android shell)), required for ${NEXT_MAJOR}`)
+      `(NVDA + Firefox, VoiceOver + Safari (macOS), VoiceOver (iOS shell), TalkBack (Android shell)), recorded when someone runs them (#9)`)
     // No template, doc, store field or web app version moves to a candidate; the deploy checks still pass on the latest release.
     for (const rel of PATCH_RELEASE_FILES.filter((f) => f !== 'CHANGELOG.md')) assert.equal(readFileSync(join(dir, rel), 'utf8'), readFileSync(join(ROOT, rel), 'utf8'), rel)
     const problems = (await deployCheck(dir)).flatMap((r) => r.errors.map((e) => `${r.name}: ${e}`))
@@ -444,15 +444,14 @@ test('release-prepare: a release candidate only adds its CHANGELOG.md section, k
     assert.throws(() => prepare(`${maj + 1}.1.0-rc.1`, { root: dir, date: '2030-01-04' }), new RegExp(`release candidate sections for ${reV(NEXT_MAJOR)} \\(${reV(rcOf(3))}, ${reV(rcOf(1))}\\)`))
     assert.throws(() => prepare(NEXT_PATCH, { root: dir, date: '2030-01-04' }), /release candidate sections for/)
 
-    // The release is strict: every screen-reader pass first, and a device record, when there is one, within budget.
+    // The release is strict about a device record, when there is one, being within budget; screen-reader passes may stay pending.
     deviceRecord(dir, '9,000')
     assert.match(prepare(rcOf(4), { root: dir, date: '2030-01-04' }).warnings[0], new RegExp(`^reference-device record to fix before ${reV(NEXT_MAJOR)}: docs\\/performance\\/results-${reV(NEXT_MAJOR)}\\.md:\\n  cold-start, Android: 9000 ms`))
     assert.throws(() => prepare(NEXT_MAJOR, { root: dir, date: '2030-01-05' }), /results-[\d.]+\.md:\n {2}cold-start, Android: 9000 ms is over the budget of 3000 ms and links no issue/)
     deviceRecord(dir)
-    assert.throws(() => prepare(NEXT_MAJOR, { root: dir, date: '2030-01-05' }), /inbox, NVDA \+ Firefox is still pending/)
-    audit(dir, ['pass', 'pass', 'pass', 'pass', 'pass', 'pass'])
     const final = prepare(NEXT_MAJOR, { root: dir, date: '2030-01-05' })
-    assert.deepEqual(final.warnings, [])
+    assert.equal(final.warnings.length, 1, final.warnings.join('\n'))
+    assert.match(final.warnings[0], /^accessibility audit: 4 screen-reader passes pending on 1 core screens/)
     assert.ok(final.changed.includes('web/package.json') && final.changed.includes('deploy/helm/opentodo/Chart.yaml'))
     // One section with every fragment replaces the candidates' sections and links; the fragments are gone.
     assert.deepEqual(fragmentFiles(dir), [])
