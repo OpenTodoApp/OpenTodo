@@ -29,7 +29,7 @@ const GO_EDGES = [
   'today & (assigned: me | unassigned)', '"assigned" = x',
   'paid = false', 'cost >= -2.5', 'status = Ordered', 'due_by <= 3 days', '"due" = 2026-10-16', 'no idea', 'kitchen = this week',
   // Nesting the parser keeps (it flattens only a & b & c, not (a & b) & c).
-  '(a = 1 & p1) & p2', '(p1 | p2) | p3', '!(p1 & p2)', '!(p1 | p2) & !p3', 'tracked', 'tracked > 1h', 'tracked <= 90', 'tracked >= 1h30',
+  '(a = 1 & p1) & p2', '(p1 | p2) | p3', '!(p1 & p2)', '!(p1 | p2) & !p3', 'tracked', 'tracked > 1h', 'tracked <= 90', 'tracked >= 1h30', 'tracked occurrence', 'tracked occurrence > 1h', '!tracked occurrence & p1',
   '@"x|y" & #"a(b)" & search: "a & b"', 'search: \\', '@a\\b',
 ]
 

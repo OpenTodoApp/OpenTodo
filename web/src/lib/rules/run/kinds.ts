@@ -119,7 +119,7 @@ function queryMatcher(st: RunState, s: RoutineStep): (t: Row) => boolean {
     today: st.w.today, weekStart: st.w.weekStart, tasks: [...st.tasks.values()] as unknown as Task[],
     projects: [...st.projects.values()] as unknown as Project[], labels: st.labels as unknown as Label[],
     sections: [...st.sections.values()] as unknown as Section[], fields: (st.w.fields ?? []).filter((f) => isNull(f.deleted_at)) as unknown as FieldDef[],
-    tracked: st.tracked(), me: st.w.userId, members: membersFrom(known),
+    tracked: st.tracked(), trackedOccurrence: st.trackedOccurrence(), me: st.w.userId, members: membersFrom(known),
   }
   let test: (t: Task) => boolean
   try {
