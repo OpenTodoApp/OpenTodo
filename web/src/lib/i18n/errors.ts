@@ -93,7 +93,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
   invalid_file: msg('The file could not be read: {detail}'),
   invalid_input: msg('The server did not accept this: {detail}'),
   invalid_op: msg('The server refused a change: {detail}'),
-  invalid_redirect_uri: msg('Enter at least one valid redirect address.'),
+  invalid_redirect_uri: msg('Enter a valid redirect address: the exact address, starting with https://, without wildcards.'),
   invalid_rotation: msg('Only a recurring task in a project shared with others can take turns, with up to 20 different people.'),
   invalid_scope: msg('Choose read-only access or access that may make changes.'),
   invalid_token: msg('This link is not valid any more. Ask for a new one.'),

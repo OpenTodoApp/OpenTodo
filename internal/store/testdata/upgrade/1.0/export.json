@@ -1,0 +1,305 @@
+{
+  "attachments": [
+    {
+      "author_id": "f72bece2-96d8-41c7-b3f4-7ef1bbd53ed9",
+      "comment_id": null,
+      "created_at": 1794028707968,
+      "deleted_at": null,
+      "encrypted": false,
+      "id": "e7f59e9a-f3d3-403f-b924-0f582758043e",
+      "mime": "text/plain",
+      "name": "notes.txt",
+      "sha256": "65bd291e71718822959a61fbd34349420e84e0bb586ed2a551bf9142a229e928",
+      "size": 46,
+      "task_id": "c9c99f55-cd7c-4804-b651-43e4738a2e19",
+      "uploaded_at": 1794028707968,
+      "url": null
+    }
+  ],
+  "comments": [
+    {
+      "author_id": "f72bece2-96d8-41c7-b3f4-7ef1bbd53ed9",
+      "body": "Use the **sharp** shears.",
+      "created_at": 1794028707957,
+      "deleted_at": null,
+      "edited_at": null,
+      "id": "649dacaf-128e-49eb-9b6b-989867ca6597",
+      "mentions": [],
+      "my_reactions": [],
+      "parent_id": null,
+      "reactions": {
+        "check": [],
+        "eyes": [],
+        "heart": [],
+        "party": [],
+        "question": [],
+        "thumbs_up": []
+      },
+      "task_id": "c9c99f55-cd7c-4804-b651-43e4738a2e19"
+    },
+    {
+      "author_id": "f72bece2-96d8-41c7-b3f4-7ef1bbd53ed9",
+      "body": "Train or car?",
+      "created_at": 1794028707961,
+      "deleted_at": null,
+      "edited_at": null,
+      "id": "83b88211-a73c-4977-9b2d-8b3c0c3343fd",
+      "mentions": [],
+      "my_reactions": [],
+      "parent_id": null,
+      "reactions": {
+        "check": [],
+        "eyes": [],
+        "heart": [],
+        "party": [],
+        "question": [],
+        "thumbs_up": []
+      },
+      "task_id": "0a9fc3b5-3e42-4290-bec2-f423910628b4"
+    }
+  ],
+  "encryption": null,
+  "exportedAt": "2026-11-07T05:18:27Z",
+  "fields": [],
+  "format": "opentodo-export",
+  "frames": [],
+  "labels": [
+    {
+      "color": "#16a34a",
+      "created_at": 1794028707910,
+      "id": "725e37ee-5fcf-4063-902d-447d3c6b61cf",
+      "name": "Home",
+      "position": 1794028707910
+    },
+    {
+      "color": "#2563eb",
+      "created_at": 1794028707913,
+      "id": "42985cf4-42ff-4848-a122-82e886a24858",
+      "name": "Work",
+      "position": 1794028707913
+    }
+  ],
+  "notes": [],
+  "objectives": [],
+  "places": [],
+  "project_prefs": [],
+  "projects": [
+    {
+      "aisles": false,
+      "color": "#65a30d",
+      "created_at": 1794028707915,
+      "flow_mode": "",
+      "id": "6dac7224-345e-4865-a69d-23db792bf219",
+      "name": "Garden",
+      "position": 1794028707915,
+      "reusable": false,
+      "status": "active"
+    },
+    {
+      "aisles": false,
+      "color": "#9333ea",
+      "created_at": 1794028707918,
+      "flow_mode": "",
+      "id": "8293306f-9758-415a-8ed3-c0a8c999153d",
+      "name": "Shared plans",
+      "owner_id": "f72bece2-96d8-41c7-b3f4-7ef1bbd53ed9",
+      "position": 1794028707918,
+      "reusable": false,
+      "role": "owner",
+      "status": "active"
+    }
+  ],
+  "reminders": [
+    {
+      "created_at": 1794028707947,
+      "deleted_at": null,
+      "delivered_at": null,
+      "dismissed_at": null,
+      "fire_at": 1795255200000,
+      "id": "72ea00df-b392-4083-aec7-56c464e9316b",
+      "kind": "relative",
+      "offset_minutes": 30,
+      "task_id": "50206617-2546-43d2-ae5d-f1af53fdc7fb"
+    }
+  ],
+  "review": [],
+  "rules": [],
+  "sections": [
+    {
+      "aisle": null,
+      "color": null,
+      "created_at": 1794028707920,
+      "flow_mode": "",
+      "icon": null,
+      "id": "fcec1646-52b1-45e8-85fd-82ee33a56717",
+      "name": "To do",
+      "position": 1794028707920,
+      "project_id": "6dac7224-345e-4865-a69d-23db792bf219"
+    },
+    {
+      "aisle": null,
+      "color": null,
+      "created_at": 1794028707923,
+      "flow_mode": "",
+      "icon": null,
+      "id": "df49b263-3b32-4dc7-94ba-667f14b44cfa",
+      "name": "Doing",
+      "position": 1794028707923,
+      "project_id": "6dac7224-345e-4865-a69d-23db792bf219"
+    }
+  ],
+  "slots": [],
+  "tasks": [
+    {
+      "appends": [],
+      "created_at": 1794028707927,
+      "description": "Before the frost.\n\n- gloves\n- shears",
+      "due": {
+        "date": "2026-11-20"
+      },
+      "energy": null,
+      "fields": {},
+      "id": "c9c99f55-cd7c-4804-b651-43e4738a2e19",
+      "labels": [
+        "725e37ee-5fcf-4063-902d-447d3c6b61cf"
+      ],
+      "origin": null,
+      "position": 1794028707927,
+      "priority": 1,
+      "project_id": "6dac7224-345e-4865-a69d-23db792bf219",
+      "rotation": [],
+      "section_id": "fcec1646-52b1-45e8-85fd-82ee33a56717",
+      "sector": null,
+      "title": "Prune the roses"
+    },
+    {
+      "appends": [],
+      "created_at": 1794028707929,
+      "due": {
+        "date": "2026-11-21",
+        "time": "09:30"
+      },
+      "energy": null,
+      "fields": {},
+      "id": "50206617-2546-43d2-ae5d-f1af53fdc7fb",
+      "labels": [
+        "725e37ee-5fcf-4063-902d-447d3c6b61cf",
+        "42985cf4-42ff-4848-a122-82e886a24858"
+      ],
+      "origin": null,
+      "position": 1794028707929,
+      "priority": 2,
+      "project_id": "6dac7224-345e-4865-a69d-23db792bf219",
+      "rotation": [],
+      "section_id": "df49b263-3b32-4dc7-94ba-667f14b44cfa",
+      "sector": null,
+      "title": "Water the raised beds"
+    },
+    {
+      "appends": [],
+      "created_at": 1794028707932,
+      "energy": null,
+      "fields": {},
+      "id": "cf71f2bb-6e0b-4faf-b255-83fcc737ff29",
+      "origin": null,
+      "parent_id": "c9c99f55-cd7c-4804-b651-43e4738a2e19",
+      "position": 1794028707932,
+      "priority": 4,
+      "project_id": "6dac7224-345e-4865-a69d-23db792bf219",
+      "rotation": [],
+      "sector": null,
+      "title": "Buy gloves"
+    },
+    {
+      "appends": [],
+      "created_at": 1794028707934,
+      "due": {
+        "date": "2026-11-10"
+      },
+      "energy": null,
+      "fields": {},
+      "id": "fcf05e27-1a94-46d7-946d-a08283260f2f",
+      "origin": null,
+      "position": 1794028707934,
+      "priority": 3,
+      "recurrence": "every day",
+      "rotation": [],
+      "sector": null,
+      "title": "Check the greenhouse"
+    },
+    {
+      "appends": [],
+      "completed_at": 1762000000000,
+      "completed_by": "f72bece2-96d8-41c7-b3f4-7ef1bbd53ed9",
+      "created_at": 1794028707937,
+      "energy": null,
+      "fields": {},
+      "id": "eedc74e1-9d8e-4e78-86b6-378af98ee1cb",
+      "origin": null,
+      "position": 1794028707937,
+      "priority": 4,
+      "rotation": [],
+      "sector": null,
+      "title": "Order seeds"
+    },
+    {
+      "appends": [],
+      "created_at": 1794028707940,
+      "deleted_at": 1794028707945,
+      "energy": null,
+      "fields": {},
+      "id": "3cbccf15-f89a-4c2a-97c7-738d53075ce0",
+      "origin": null,
+      "position": 1794028707940,
+      "priority": 4,
+      "rotation": [],
+      "sector": null,
+      "title": "Old idea"
+    },
+    {
+      "appends": [],
+      "created_at": 1794028707942,
+      "due": {
+        "date": "2026-12-01"
+      },
+      "energy": null,
+      "fields": {},
+      "id": "0a9fc3b5-3e42-4290-bec2-f423910628b4",
+      "origin": null,
+      "position": 1794028707942,
+      "priority": 2,
+      "project_id": "8293306f-9758-415a-8ed3-c0a8c999153d",
+      "rotation": [],
+      "sector": null,
+      "title": "Plan the trip"
+    }
+  ],
+  "themes": [],
+  "time_entries": [
+    {
+      "created_at": 1794028707981,
+      "deleted_at": null,
+      "device_id": "server:f8ace242",
+      "ended_at": 1762001800000,
+      "id": "42432b7b-23d3-46b3-b2e8-3ed91024ab06",
+      "note": "",
+      "started_at": 1762000000000,
+      "task_id": "50206617-2546-43d2-ae5d-f1af53fdc7fb",
+      "user_id": "f72bece2-96d8-41c7-b3f4-7ef1bbd53ed9"
+    }
+  ],
+  "userId": "f72bece2-96d8-41c7-b3f4-7ef1bbd53ed9",
+  "user_prefs": [],
+  "version": 1,
+  "views": [],
+  "workspaces": [
+    {
+      "color": "",
+      "default": true,
+      "icon": "",
+      "id": "cda26221-3b6d-8e7f-a727-c420b68b1605",
+      "name": "Personal",
+      "role": "owner"
+    }
+  ]
+}

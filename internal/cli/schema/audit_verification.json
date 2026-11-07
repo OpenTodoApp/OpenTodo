@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "audit_verification",
+  "description": "The answer of GET /api/v1/audit/verify: the audit log's hash chain recomputed on the server (OpenSpec audit-hash-chain).",
+  "type": "object",
+  "required": ["ok", "checked", "uncovered", "checkpoint", "head", "break"],
+  "properties": {
+    "ok": {"type": "boolean", "description": "true when every event after the checkpoint follows from the one before"},
+    "checked": {"type": "integer", "description": "events whose hash was recomputed"},
+    "uncovered": {"type": "integer", "description": "kept events from before the chain started, not covered"},
+    "checkpoint": {
+      "type": "object", "description": "where checking starts: the last pruned event (or the newest from before the chain) and the hash the next event chains from",
+      "required": ["id", "hash"],
+      "properties": {"id": {"type": "integer"}, "hash": {"type": "string"}}
+    },
+    "head": {
+      "type": "object", "description": "the newest checked event, the anchor to keep outside the server",
+      "required": ["id", "hash"],
+      "properties": {"id": {"type": "integer"}, "hash": {"type": "string"}}
+    },
+    "break": {
+      "description": "the first event whose hash does not follow, or null",
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "required": ["id", "reason"],
+          "properties": {"id": {"type": "integer"}, "reason": {"enum": ["missing_hash", "mismatch"]}}
+        }
+      ]
+    }
+  }
+}

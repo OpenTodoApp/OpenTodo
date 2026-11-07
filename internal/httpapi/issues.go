@@ -36,7 +36,7 @@ func (s *Server) allowPrivate() func(context.Context) bool {
 }
 
 func (s *Server) registerIssueRoutes(mux *routes) {
-	s.issueLimiter = newRateLimiter(issueChecksPerHr, time.Hour)
+	s.issueLimiter = s.limit("issues.check", issueChecksPerHr, time.Hour)
 
 	s.switchRoutes(mux, "/api/v1/settings/issues", switchRoute{sw: s.issuesOn,
 		get: signedIn.DemoDenied(), put: ownerOnly("manage the issue connections setting").DemoDenied()})

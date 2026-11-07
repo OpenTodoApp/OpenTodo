@@ -1403,6 +1403,9 @@
   "All occurrences": [
     "web/src/app/task-detail/OccurrenceScope.tsx"
   ],
+  "All occurrences {duration}": [
+    "web/src/app/task-detail/TimeTab.tsx"
+  ],
   "All of these": [
     "web/src/app/filter/FilterBuilder.tsx"
   ],
@@ -1437,6 +1440,7 @@
   "Allow": [
     "web/src/app/AgentAccessRow.tsx",
     "web/src/app/OAuthConsent.tsx",
+    "web/src/app/RelayConfirm.tsx",
     "web/src/app/palette/registry.ts"
   ],
   "Allow AI assistants": [
@@ -1573,6 +1577,9 @@
   "An AI connector wants to make a change": [
     "web/src/app/RelayConfirm.tsx"
   ],
+  "An AI connector wants to read your text": [
+    "web/src/app/RelayConfirm.tsx"
+  ],
   "An AI step that would use more today does not run. Default {n}.": [
     "web/src/app/routines/AISettings.tsx"
   ],
@@ -1599,6 +1606,9 @@
   ],
   "An archive made by OpenTodo ({name}, optionally {suffix}), for example from another server.": [
     "web/src/app/RestoreSection.tsx"
+  ],
+  "An assistant asks to read this with {tool}:": [
+    "web/src/app/RelayConfirm.tsx"
   ],
   "An assistant asks to run {tool} with this text:": [
     "web/src/app/RelayConfirm.tsx"
@@ -1661,11 +1671,17 @@
   "Answering an AI connector": [
     "web/src/app/RelaySettings.tsx"
   ],
+  "Answering an AI connector: {tool}": [
+    "web/src/app/RelaySettings.tsx"
+  ],
   "Answering an invitation needs a connection.": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Answering needs a connection to your server.": [
     "web/src/app/MemberInvitations.tsx"
+  ],
+  "Answering {token}: {tool}": [
+    "web/src/app/RelaySettings.tsx"
   ],
   "Answers on your key do not count toward the server’s monthly limit.": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -1729,6 +1745,7 @@
     "web/src/lib/method/groups.ts"
   ],
   "App": [
+    "web/src/app/OAuthClients.tsx",
     "web/src/app/settingsSections.ts"
   ],
   "App icon badge": [
@@ -3609,6 +3626,9 @@
   "Confirm permanent deletion": [
     "web/src/app/TrashView.tsx"
   ],
+  "Confirm reads first": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Confirm with {provider} instead": [
     "web/src/app/ReauthDialog.tsx"
   ],
@@ -5136,6 +5156,9 @@
   "Each phrase is recorded in this browser while the microphone is on, then sent once to your OpenTodo server.": [
     "web/src/app/VoiceSettings.tsx"
   ],
+  "Each request to read your text shows here before this device sends it.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Each restore keeps the database it replaced. Delete old ones to free space.": [
     "web/src/app/RestoreSection.tsx"
   ],
@@ -5274,10 +5297,9 @@
   "Email": [
     "web/src/app/AuthScreen.tsx",
     "web/src/app/EmailScreens.tsx",
-    "web/src/app/OriginChip.tsx",
     "web/src/app/ShareDialog.tsx",
     "web/src/app/WorkspaceInviteScreen.tsx",
-    "web/src/lib/history.ts",
+    "web/src/lib/originText.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Email (optional)": [
@@ -5552,6 +5574,9 @@
   "Enter a start and an end time": [
     "web/src/app/task-detail/TimeTab.tsx"
   ],
+  "Enter a valid redirect address: the exact address, starting with https://, without wildcards.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "Enter a whole number from {min} to {max}": [
     "web/src/app/routines/AISettings.tsx"
   ],
@@ -5561,9 +5586,6 @@
   ],
   "Enter an address that starts with https://, http:// or mailto:.": [
     "web/src/app/LinkDialog.tsx"
-  ],
-  "Enter at least one valid redirect address.": [
-    "web/src/lib/i18n/errors.ts"
   ],
   "Enter common, organizations, consumers, a tenant ID or a domain name.": [
     "web/src/app/CalendarSyncDialogs.tsx"
@@ -5579,6 +5601,9 @@
   ],
   "Enter the address of GitHub, GitLab or your own instance.": [
     "web/src/app/IssueEditor.tsx"
+  ],
+  "Enter the address the app returns to after you sign in.": [
+    "web/src/app/OAuthClients.tsx"
   ],
   "Enter the address.": [
     "web/src/app/NotificationChannelEditor.tsx"
@@ -5703,7 +5728,7 @@
   "Every day still has room.": [
     "web/src/app/Briefing.tsx"
   ],
-  "Every device and browser signed in to your account is signed out, remembered browsers must enter a code again, and your API tokens and app passwords stop working at once. Scripts, calendar apps and assistants need new ones. Changes another device has not synced yet are lost. Your data stays on your server.": [
+  "Every device and browser signed in to your account is signed out, remembered browsers must enter a code again, and your API tokens and app passwords stop working at once. Scripts, calendar apps and assistants need new ones. Other devices remove their copy of your data when they next connect, and changes they have not synced yet are lost. Your data stays on your server.": [
     "web/src/app/AccountSettings.tsx"
   ],
   "Every device, plus your API tokens and app passwords.": [
@@ -7435,13 +7460,14 @@
     "web/src/lib/boardTemplates.ts"
   ],
   "Imported": [
+    "web/src/lib/originText.ts",
     "web/src/lib/taskSource.ts"
   ],
   "Imported from a VS Code colour theme. Check the theme's licence before you share this file.": [
     "web/src/lib/theme/vscode.ts"
   ],
   "Imported from {app}": [
-    "web/src/lib/taskSource.ts"
+    "web/src/lib/originText.ts"
   ],
   "Imported theme": [
     "web/src/lib/theme/vscode.ts"
@@ -8831,6 +8857,9 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Long break after": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Long titles wrap in lists, boards and Today instead of ending with an ellipsis.": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Look ahead": [
@@ -11778,6 +11807,9 @@
   "Other MCP clients": [
     "web/src/app/AssistantsPanel.tsx"
   ],
+  "Other app": [
+    "web/src/app/OAuthClients.tsx"
+  ],
   "Other calendars": [
     "web/src/app/CalendarFeedsPanel.tsx"
   ],
@@ -13100,7 +13132,8 @@
     "web/src/app/SsoPanel.tsx"
   ],
   "Redirect address": [
-    "web/src/app/CalendarSyncDialogs.tsx"
+    "web/src/app/CalendarSyncDialogs.tsx",
+    "web/src/app/OAuthClients.tsx"
   ],
   "Redo": [
     "web/src/app/themes/ThemeEditor.tsx"
@@ -14894,6 +14927,11 @@
     "web/src/app/task-list/ClosedListActions.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
+  "Show full task titles": [
+    "web/src/app/AppearanceSection.tsx",
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Show in Assigned to me": [
     "web/src/app/task-detail/AssigneeEditor.tsx",
     "web/src/app/task-detail/Facets.tsx"
@@ -15394,7 +15432,7 @@
   "Soft warning": [
     "web/src/app/themes/tokenNames.ts"
   ],
-  "Some apps, such as Google Gemini, cannot take a pasted token. They sign in with OAuth instead: create a client here and paste its client ID and secret into the app.": [
+  "Some apps, such as Gemini, ChatGPT and Claude, sign in with OAuth instead of taking a pasted token: create a client here for the app and paste its client ID and secret into it.": [
     "web/src/app/OAuthClients.tsx"
   ],
   "Some colours were adapted for contrast": [
@@ -16319,6 +16357,9 @@
   "Text on soft warning": [
     "web/src/app/themes/tokenNames.ts"
   ],
+  "Text to send": [
+    "web/src/app/RelayConfirm.tsx"
+  ],
   "Text to write": [
     "web/src/app/RelayConfirm.tsx"
   ],
@@ -16613,6 +16654,9 @@
   ],
   "The energy must be deep, medium or low.": [
     "web/src/lib/i18n/errors.ts"
+  ],
+  "The exact address the app returns to after you sign in, starting with https://. The app’s documentation names it.": [
+    "web/src/app/OAuthClients.tsx"
   ],
   "The file could not be read: {detail}": [
     "web/src/lib/i18n/errors.ts"
@@ -17382,7 +17426,7 @@
   "These tasks already have {label}": [
     "web/src/lib/undoActions.ts"
   ],
-  "They are signed out everywhere, their API tokens and pending invitations are revoked, and they cannot sign in until reactivated. Their data is kept.": [
+  "They are signed out everywhere, their API tokens and pending invitations are revoked, and they cannot sign in until reactivated. Their devices remove their copy when they next connect, and changes not synced yet are lost. Their data on the server is kept.": [
     "web/src/app/UsersPanel.tsx"
   ],
   "They can no longer invite people or manage members.": [
@@ -17609,6 +17653,9 @@
   ],
   "This device only. The count matches Today in the sidebar.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "This device was signed out and its data was removed.": [
+    "web/src/lib/revocation.ts"
   ],
   "This device: after an add, the assistant proposes a title, project, subtasks. You review.": [
     "web/src/lib/settingsCopy.ts"
@@ -19908,6 +19955,9 @@
   ],
   "Wrap in {step}": [
     "web/src/lib/rules/fixes.ts"
+  ],
+  "Wrap long task titles instead of cutting them off": [
+    "web/src/app/settingsIndex.ts"
   ],
   "Write a comment": [
     "web/src/app/task-detail/CommentsTab.tsx"
@@ -23384,6 +23434,9 @@
   "{n, plural, one {You have worked # minute without a break.} other {You have worked # minutes without a break.}}": [
     "web/src/app/focus/BreakReminder.tsx"
   ],
+  "{n, plural, one {and # more value} other {and # more values}}": [
+    "web/src/app/RelayConfirm.tsx"
+  ],
   "{n, plural, one {and # more} other {and # more}}": [
     "web/src/app/quickadd/PasteOffer.tsx"
   ],
@@ -23909,6 +23962,9 @@
   ],
   "{title}, waits for {blockers}": [
     "web/src/app/TimelineView.tsx"
+  ],
+  "{token} asks to read this with {tool}:": [
+    "web/src/app/RelayConfirm.tsx"
   ],
   "{token} asks to run {tool} with this text:": [
     "web/src/app/RelayConfirm.tsx"

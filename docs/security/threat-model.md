@@ -18,6 +18,8 @@ This page says what an OpenTodo server protects, against whom, and how we know. 
 
 Where a control has no automated test, the page says so, and the gap is a follow-up task of the OpenSpec change `external-security-review`.
 
+Reviewed by the project's single maintainer; an independent review is sought ([#588](https://github.com/OpenTodoApp/OpenTodo/issues/588)).
+
 The model describes the code on `main` at the time of writing. An external review works from a pinned commit (see [Independent review scope](review-scope.md)), and the model at that commit is the one that counts. [How we verify security](how-we-verify.md) describes the methods behind the tests named here. [Security limits](limits.md) lists in one place what is not protected. [SECURITY.md](../../SECURITY.md) is the user-facing summary and the disclosure policy.
 
 ## Assets
@@ -31,7 +33,7 @@ The model describes the code on `main` at the time of writing. An external revie
 | The op log's integrity | `ops` and the per-scope tables in `internal/sync` | Every device converges on it; a forged op becomes everyone's state |
 | Sharing structure | Memberships, roles, workspaces (`internal/sync/members.go`, `scope.go`) | Who can read and write what |
 | Capability links | Public list links, task pages, calendar feed URLs, invitation, reset and sign-up links | Each secret in an address is a credential |
-| The audit log | `audit_events` in the database | Evidence after an incident |
+| The audit log | `audit_events` in the database, a hash chain with its checkpoint in `audit_chain` | Evidence after an incident |
 | Availability | The single server process; in host mode, one process for many tenants | Everyone's tasks, reminders and syncs |
 
 ## Trust boundaries and entry points
@@ -59,33 +61,35 @@ The model describes the code on `main` at the time of writing. An external revie
 **Defended.**
 - Reaching any non-public route without a credential.
 - Creating an account after the owner exists, unless sign-up is open or they hold an invitation.
-- Guessing passwords at scale.
+- Guessing passwords at scale, including across a server restart.
 - Forging state-changing requests from another site with a victim's cookie.
 - Choosing the address that rate limits and the audit log see.
 - Reading another person's data through a public route.
 
 **Mechanism.**
 - The route policy wrapper (`internal/httpapi/policy.go`). A route is public only with a written reason, and every public route checks its own credential (a secret in the address, a bearer token or a single-use token).
-- Rate limits per client address and per account, with account lockout after 10 failures in 15 minutes (`ratelimit.go`, `accountlock.go`).
+- Rate limits per client address and per account, with account lockout after 10 failures in 15 minutes (`ratelimit.go`, `accountlock.go`). Their windows survive a restart: the tenant's `limits` job writes them to `limit_windows` with keys hashed under a per-database salt, and the tenant writes them once more when it closes (`internal/ratelimit`).
 - Session cookies are `HttpOnly` and `SameSite=Lax`. Cookie writes must carry a matching `Origin` (`originAllowed` in `middleware.go`). Without `Origin`, a cookie write needs `Sec-Fetch-Site: same-origin` or, with no Fetch Metadata either, a JSON body, which a cross-site form or navigation cannot declare (`cookieWriteAllowed`). With `OPENTODO_BASE_URL` set, the request must also be addressed to the base URL's host, which defends against DNS rebinding.
 - Forwarded addresses are believed only from trusted proxies (`clientip.go`).
 - First run: `OPENTODO_SETUP_TOKEN` or `OPENTODO_SETUP_CODE=required`. Without `OPENTODO_BASE_URL`, a first registration addressed to a domain name (not an IP address, a dotless name or a local-only suffix) needs the setup code from the log even with the code off, so a rebound name cannot create the owner (`setupHostVerified` in `setuphost.go`).
 
 **Verified by.**
 - `TestEveryRouteDeclaresAPolicy`, `TestSecurityRoutePolicies` (`internal/httpapi/policy_test.go`).
-- `TestRouteMatrix` (`internal/httpapi/route_matrix_test.go`): every route, anonymous, with each token scope, as a member, as a viewer, cross-site and with a stale session.
+- `TestRouteMatrix` (`internal/httpapi/route_matrix_test.go`): every route, anonymous, with each token scope, as a member, as a viewer, cross-site and with a stale session. Public routes are called anonymously, with the owner's and a member's session, with each token scope and cross-site, and each answer is checked against what the route's reason promises (`route_matrix_public_test.go`); a public route without a declared promise fails the test.
 - `TestLoginRateLimit`, `TestCrossSiteCookieWritesAreRejected` (`server_test.go`), including writes without `Origin` or `Sec-Fetch-Site`; the route matrix's pass of a form post with neither header on every write route.
 - `TestSecurityHeaders` (`security_headers_test.go`): no framing, no sniffing, scripts only from the server.
 - `TestAccountLockout`, `TestForwardedForOnlyFromTrustedPeers`, `TestOriginMustMatchBaseURL` (`client_identity_test.go`).
+- `TestLimitsSurviveRestart` (`internal/tenant/limits_test.go`): a sign-in window used up before the tenant closes still refuses after it opens again, and no stored key holds an address or email. `TestStoredLimiterRestores` (`internal/httpapi/ratelimit_bench_test.go`).
 - `TestSetupHostVerified`, `TestSetupUnderDomainNameNeedsCode`, `TestNoHostCheckWithBaseURL` (`setuphost_test.go`); `TestSetupHostCheck` (`internal/auth/setupcode_test.go`).
 - `TestClientAddressBehindTrustedProxies`, `TestInvalidTrustedProxyEntriesNeverWidenTrust` (`clientip_test.go`).
 
 **Not defended.**
 - Without `OPENTODO_BASE_URL`, the origin check compares against the request's own `Host`, so after setup a rebound name passes it. The session cookie belongs to the server's real name, so such a page has no session; it can reach public routes and try passwords against the rate limits. The docs tell operators to set the base URL.
 - A JSON write with neither `Origin` nor `Sec-Fetch-Site` is accepted, so that non-browser clients signed in with a password (`ot login`) keep working. From another site it would need a CORS preflight, which the server never grants.
-- Rate limits live in memory, per process. A restart clears them.
+- Rate limits count in memory and are written to the database within a second (`internal/ratelimit`), so a crash can forget the last second of attempts. A clean restart forgets nothing.
 - Anyone who knows an email address can keep that account's password sign-in locked. Passkeys, single sign-on and open sessions keep working.
-- `TestRouteMatrix` skips public routes, which are tested by their own feature tests.
+- The route matrix checks a public route's answer against its declared promise with a wrong secret and with the credentials it holds; what a valid secret unlocks is tested by each feature's own tests.
+- A sign-out request naming neither `Origin` nor `Sec-Fetch-Site` is accepted, so `ot logout` keeps working; a browser too old to send either could be made to sign out from a same-site page.
 
 ### Signed-in member of a shared project
 
@@ -187,12 +191,15 @@ Tokens have one scope: `read`, `agent`, `full` or `admin`.
 - A stolen session cannot quietly mint long-lived credentials (step-up).
 - Signing out clears local data.
 - **Sign out everywhere** ends every session and revokes every token and app password.
+- A device whose session was revoked (sign out everywhere, the account deactivated or deleted) removes its local copy when it next contacts the server.
+- A forged "revoked" answer wipes nothing.
 - An encrypted account's locked device holds no key.
 
 **Mechanism.**
 - `.recent()` routes need a password or code within 10 minutes (`mfa.go`, `FreshWindow`): new tokens, app passwords, passkeys, TOTP, SSO links, invitations, user administration, the key record.
 - Sessions and remembered browsers are stored hashed and revocable.
 - The account key is a non-extractable `CryptoKey`, forgotten on **Lock this device**.
+- Revoked devices (`internal/auth/revoke.go`, `web/src/lib/revocation.ts`): `auth/status` gives each browser session a random wipe key, which the device keeps in its local database. Revoking a session keeps its hash and key for a year. `auth/status` answers that session's cookie with an HMAC-SHA256 under the key. The device wipes only when the HMAC matches the key it holds, with the same clear as signing out (the local database with the outbox and the stored key, the native shell's reminders, geofences, widget and biometric key, the HTTP cache). Device relay opt-ins of revoked sessions end and push subscriptions go with their session. A password change or reset only signs the other devices out.
 
 **Verified by.**
 - `TestReauthRequiredOnStaleSession` (`internal/httpapi/mfa_test.go`).
@@ -200,10 +207,14 @@ Tokens have one scope: `read`, `agent`, `full` or `admin`.
 - `TestRouteMatrix` (stale session).
 - `TestRelayEndsWithEncryptionAndOnLock` (`internal/relay`).
 - `TestSecretsStoredOnlyAsHashes` (`internal/auth/secrets_at_rest_test.go`): session and API token secrets reach the database only as hashes.
+- `TestRevokedDeviceGetsProof`, `TestRevokedDeviceOnDeactivation`, `TestPasswordChangeDoesNotWipe`, `TestRevokedDeviceEndsRelay` (`internal/httpapi/revoked_device_test.go`); `TestRevokedSessionsKeepTheirProof` (`internal/auth/revoke_test.go`).
+- `web/src/app/revokedDevice.test.tsx`: the app opens on a revoked device, clears its tasks and outbox and shows the notice; a proof made with another key clears nothing. `scripts/e2e-revoked.mjs`: the same in Chromium with a change queued offline. `web/src/lib/revocation.test.ts`: the proof check.
 
 **Not defended.**
 - An unlocked device holds plaintext in IndexedDB. Anyone using it, malware or a browser extension with page access can read everything the account can.
-- A device that was never locked or signed out keeps its local copy after its sessions are revoked: it can no longer sync, but its data stays.
+- A revoked device removes its copy only when it next contacts the server. One that never connects again, or only after a year, keeps its local copy, and so does one whose session was ended by a password change or reset.
+- Unsynced changes on a revoked device are lost.
+- API tokens carry no wipe: the CLI, the vault, the Obsidian plugin and the browser extension keep what they hold after their token is revoked.
 
 ### Malicious server for an encrypted account
 
@@ -232,12 +243,12 @@ The person turned on end-to-end encryption and does not trust the server, its op
 - `TestServerDoesNotLinkCrypt`: the server binary never links the CLI's crypto.
 
 **Not defended.**
-- **Tampered JavaScript.** The server delivers the web app. A malicious server can change it and capture the passphrase or key on the next load. This is inherent to web-delivered end-to-end encryption.
+- **Tampered JavaScript.** The server delivers the web app. A malicious server can change it and capture the passphrase or key on the next load. This is inherent to web-delivered end-to-end encryption. Checking release signatures in the service worker is planned after 1.0 ([#970](https://github.com/OpenTodoApp/OpenTodo/issues/970)).
 - **Metadata.** Dates, priorities, structure, labels on tasks, counts, timing, device ids and ciphertext lengths are plaintext ([docs/e2ee.md](../e2ee.md)).
-- **Rollback.** The server can serve an older ciphertext of the same field. The additional data has no version.
+- **Rollback.** The server can serve an older ciphertext of the same field. The additional data has no version. Planned after 1.0 ([#969](https://github.com/OpenTodoApp/OpenTodo/issues/969)).
 - **The device relay.** While a device is opted in to the relay and unlocked, the server can ask it to decrypt any content value it holds, or to encrypt text of its choosing for any content field. It needs only the entity, id and field, which it knows.
-  - The device checks that each field is a content field and enforces its own caps: 5,000 values an hour and 20,000 a day. With **Confirm changes first** on, it shows every encryption request before answering.
-  - It cannot tell a request for an assistant from one the server made up.
+  - The device checks that each field is a content field and enforces its own caps: 5,000 values an hour and 20,000 a day. With **Confirm changes first** on, it shows every encryption request before answering; with **Confirm reads first** on, every decryption request, with the values it would send.
+  - Each request names the connector, the tool and the call's arguments, and the device shows them while it answers and in its recent requests (`relay-request-transparency`; `TestRelayRequestsNameTheCall`, `TestRequestCarriesTheCall`, `web/src/lib/relayCalls.test.ts`). That is the server's description: it makes a request the user did not cause visible, and refusable, but the device still cannot prove that an assistant made it.
   - So, while the relay is on, the server operator is trusted with content, within those caps. [docs/mcp.md](../mcp.md) and the threat model in [docs/e2ee.md](../e2ee.md) say to opt a device in only on a server you run or trust.
 - **Weak passphrases.** PBKDF2 is not memory-hard, so the wrapped key can be attacked offline.
 - **Plaintext from before.** Content written before encryption was turned on stays in older backups and in the op log until **Purge plaintext history**.
@@ -316,13 +327,13 @@ The model behind an MCP client or the in-app assistant follows instructions hidd
 
 **Mechanism.**
 - `internal/agenttools` is the one registry for MCP and the assistant. `Caller.WriteDenial` runs before any planning.
-- Limits are in `limits.go`. Text written by people is wrapped as `untrusted_text` with a notice.
+- Limits are in `limits.go`, kept across restarts by `internal/ratelimit` (`limits_store.go`). Text written by people is wrapped as `untrusted_text` with a notice.
 - An `agent.write` audit event is recorded for every call and refusal.
 - MCP accepts only bearer tokens, checks `Origin` when present and caps bodies at 1 MB.
 - The assistant loop (`internal/assistant`) is capped at 12 model rounds and 50 entities per proposal. It runs only for signed-in sessions and is refused for encrypted accounts.
 
 **Verified by.**
-- `TestPermissionGate`, `TestToolsListByPermission` (golden tool lists), `TestToolSurfaceIsClosed`, `TestLimiterPerMinuteAndPerDay`, `TestLimiterPerAccount`, `TestWriteRatePerAccount` (`limits_account_test.go`), `TestWriteLimitPerCall`, `TestTrashOnlyOwnCreations`, `TestResultsMarkUntrustedText` (`internal/agenttools/agenttools_test.go`).
+- `TestPermissionGate`, `TestToolsListByPermission` (golden tool lists), `TestToolSurfaceIsClosed`, `TestLimiterPerMinuteAndPerDay`, `TestLimiterPerAccount`, `TestAgentBudgetSurvivesARestart` (`internal/ratelimit`), `TestWriteRatePerAccount` (`limits_account_test.go`), `TestWriteLimitPerCall`, `TestTrashOnlyOwnCreations`, `TestResultsMarkUntrustedText` (`internal/agenttools/agenttools_test.go`).
 - `TestMcpCookieRejected401`, `TestMcpBadOrigin403`, `TestMcpBodyTooLarge413` (`internal/httpapi/mcp_test.go`).
 - `TestWriteLimitsOverHTTP`, `TestAgentWriteAudited` (`mcp_write_test.go`).
 - `TestInjectionCannotEscapeRegistry`, `TestLoopCapsChangeSetAt50`, `TestLoopRoundLimit` (`internal/assistant/loop_test.go`).
@@ -330,7 +341,7 @@ The model behind an MCP client or the in-app assistant follows instructions hidd
 
 **Not defended.**
 - Within those limits, an injected instruction can make an agent with write access change, complete, move or comment on the person's tasks. The changes are undoable and labelled in history.
-- Limits are kept in memory and reset on restart.
+- A crash can forget the last second of agent calls. The limits are written to the database within a second and when the server stops.
 - The routine tools let an agent create, enable and run routines. A routine's runs are bounded by the routine engine's own limits and step availability ([Routines](../routines.md)), not by the agent limits above.
 - The in-app assistant sends what its read tools return to the model provider the person accepted (see the next profile).
 
@@ -390,7 +401,8 @@ The model behind an MCP client or the in-app assistant follows instructions hidd
 - `TestAssistantConcurrencyIsHostWide` (`internal/host`), `TestSharedSlotsAcrossServices` (`internal/assistant`).
 
 **Not defended.**
-- Tenants share one process, so one tenant's load affects the others' latency. Limits bound this but do not isolate CPU or memory.
+- Tenants share one process, so one tenant's load affects the others' latency. Limits bound this but do not isolate CPU or memory. Isolation is planned after 1.0 ([#968](https://github.com/OpenTodoApp/OpenTodo/issues/968)).
+- The host's per-client request limit lives in the host's memory and starts again when the host restarts. Each tenant's own rate limits and agent limits are kept in its database.
 
 ### Demo visitor
 
@@ -472,10 +484,10 @@ Each item of the [review scope](review-scope.md) has a section here: where the c
 - **Code:** `internal/mcp`, `internal/agenttools`, `internal/httpapi/mcp.go`, `internal/mcpoauth`, `internal/httpapi/mcp_oauth.go`.
 - **Covered in:** [Malicious AI agent or prompt injection](#malicious-ai-agent-or-prompt-injection).
 - **OAuth for MCP:**
-  - Dynamic registration is allowed for Google's connector redirects only.
+  - Dynamic registration is allowed only for the redirect addresses of the known connector platforms (Gemini, ChatGPT, Claude; `mcpoauth.Platforms`), all of one platform, so only those providers' own hosts can receive a code. An owner can add a custom address only as an exact `https` address; a stored address matches more than itself only when it is a platform's own prefix, followed by exactly one segment (OpenSpec `mcp-oauth-connector-redirects`).
   - Consent is required, with PKCE S256 and single-use codes.
   - Refresh tokens rotate on every refresh. A refresh token that was already exchanged revokes the whole grant and records `mcp_oauth.refresh_reused` (OpenSpec `mcp-oauth-refresh-rotation`).
-  - Tests: `TestMCPOAuthAuthorizeNeedsConsent`, `TestMCPOAuthDynamicRegistrationIsGoogleOnly`, `TestMCPOAuthRevokeIsScopedToTheClient`, `TestMCPOAuthRefreshRotates`, `TestMCPOAuthRefreshReuseRevokesTheGrant`, `TestMCPOAuthRefreshReuseNeedsTheClient`, `TestMCPOAuthConcurrentRotatingRefreshRevokes`.
+  - Tests: `TestMCPOAuthAuthorizeNeedsConsent`, `TestMCPOAuthDynamicRegistrationIsGoogleOnly`, `TestMCPOAuthDynamicRegistrationPlatforms`, `TestMCPOAuthCustomRedirect`, `TestLookAlikeRedirectsAreRefused`, `TestMCPOAuthRevokeIsScopedToTheClient`, `TestMCPOAuthRefreshRotates`, `TestMCPOAuthRefreshReuseRevokesTheGrant`, `TestMCPOAuthRefreshReuseNeedsTheClient`, `TestMCPOAuthConcurrentRotatingRefreshRevokes`.
   - **Not defended:** a client registered only for Google's connector addresses (the Gemini preset and every dynamic client) keeps one refresh token, because Google's guide for connected apps requires the same token back on a refresh. It lasts 180 days from the last refresh, and deleting the client or revoking the grant stops it (`TestMCPOAuthGoogleClientKeepsItsRefreshToken`).
 
 ### Assistant tool loop
@@ -527,7 +539,7 @@ Each item of the [review scope](review-scope.md) has a section here: where the c
   - Markdown is rendered by an in-house renderer to React elements. Raw HTML stays text, and only `http(s)` and `mailto` links are rendered (`web/src/lib/markdown.test.ts`).
   - Links from encrypted data open only `http(s)`.
   - The share target stores only same-origin or share-sheet requests up to 100 MB, identified by `Sec-Fetch-Site`. A request without the header is not stored, and the capture screen says why (`shareRequestVerdict`, `web/src/lib/shareInbox.test.ts`).
-  - Signing out empties the app's caches.
+  - Signing out empties the app's caches, and so does a revoked session once the server proves the revocation with the device's wipe key (`web/src/lib/revocation.ts`).
   - Strict CSP: `script-src 'self'` and `frame-ancestors 'none'` (`cspBase`), `X-Frame-Options: DENY`.
 - **Tests:** `TestSecurityHeaders` (`internal/httpapi/security_headers_test.go`) pins `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy` and the page policy's `default-src`, `script-src`, `frame-ancestors`, `base-uri` and `form-action`.
 
@@ -553,12 +565,30 @@ Each item of the [review scope](review-scope.md) has a section here: where the c
   - Signed with cosign (keyless), with an SBOM and build provenance; release files carry provenance attestations.
 - **Checks in `scripts/repo-checks.test.mjs`:** "base and job images are pinned by digest", "the image under test is the one built in the run, scanned and smoke-tested", "published artefacts are signed and attested, with OIDC only where needed".
 
+### Audit log
+
+- **Code:** `internal/audit` (`chain.go`, `prune.go`), migration `0060_audit_chain.sql`, `GET /api/v1/audit/verify` and `ot audit verify`.
+- **Defended.** Changing an event, or removing or moving one from the middle of the log, after it was recorded, by anyone who can write the database file but does not rewrite every later hash. Detected, not prevented.
+- **Mechanism.**
+  - Each event stores `SHA-256(previous hash, "\n", canonical form)`. The canonical form is a JSON array of the format version, id, time, name, outcome, actor, target, user agent and the stored details. The client address is left out, because turning address logging off erases it.
+  - Each event is chained in the transaction that stores it, so a state change, its event and its hash commit together.
+  - Pruning removes events from the start of the log in id order and, in the same transaction, moves the checkpoint (`audit_chain`) to the hash of the last event it removed. The events kept still verify.
+  - The server verifies the chain at startup and hourly after changes, and logs the first broken link at error level without stopping. The owner verifies on demand through the route or `ot audit verify`.
+  - Each export ends with the chain head (`{"chain": {"id", "hash"}}`), which the owner keeps outside the server as an anchor ([Audit log](../self-hosting/docker.md#checking-the-log-for-tampering)).
+  - The public demo removes a visitor's events with their sandbox and rebuilds the chain over the rest (`audit.RechainTx`). A demo log is not evidence.
+- **Verified by.**
+  - `TestChainDetectsAnEditedEvent`, `TestChainDetectsADeletedEvent`, `TestChainDetectsReordering`, `TestChainDetectsAMissingHash`, `TestChainSurvivesPruning`, `TestPruneKeepsTheChainContiguous`, `TestChainFreshDatabase`, `TestChainStartsAtTheTail`, `TestChainIgnoresAddressScrubbing`, `TestChainHashVector` (`internal/audit/chain_test.go`).
+  - `TestMigrationAuditChainStartsAtTheTail` (`internal/store`), `TestAuditVerifyRoute` and `TestAuditExportRecordsItself` (`internal/httpapi`), `TestHousekeepingReportsABrokenAuditChain` (`internal/tenant`), `TestAuditVerify` (`internal/cli`).
+- **Not defended.**
+  - There is no key. Someone who can write the database can recompute every hash, or cut off the newest events, and the chain still verifies. Only a chain head kept outside the server reveals that.
+  - Moving the checkpoint forward hides the removal of the oldest events. It looks like pruning. Compare `checkpoint.id` with the retention and a kept anchor.
+  - Events recorded before the chain existed (before migration 0060) have no hash and are not covered.
+
 ## Accepted risks
 
 - **The operator.** Whoever runs the server can read the database and the secrets files. TOTP secrets are stored in plain form because the server computes codes from them. End-to-end encryption protects content only, and only while the operator does not change the served code.
-- **The audit log is not tamper-evident** against someone with write access to the database file.
+- **The audit log is tamper-evident, not tamper-proof.** Someone with write access to the database file can rewrite the whole hash chain or cut off its newest events. Only a chain head kept outside the server reveals that ([Audit log](#audit-log)).
 - **Rolling back** to a binary older than a security fix re-opens that issue. For example, deactivated accounts could sign in again on a server older than user administration. There are no down-migrations.
-- **Rate limits and agent limits live in memory** and reset when the server restarts.
 - **Availability** rests on one process. Host mode shares that process between tenants.
 - **Leaked capability links** (public lists, task pages, calendar feeds) give their access to anyone holding them until revoked.
 - **Backups made before a purge** still contain plaintext history and permanently deleted items.

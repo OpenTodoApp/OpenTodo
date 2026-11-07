@@ -29,7 +29,7 @@ export function TabBar({ route, onSearch, minimised = false }: { route: Route; o
   const tabs = [...tabBarDestinations(useUserPrefsRow()).map((id) => TAB_BY_ID[id]), TAB_BY_ID.search]
   return (
     <nav aria-label={t('Primary destinations')} data-tab-bar data-minimised={minimised || undefined}
-      className="fixed inset-x-0 bottom-0 z-40 flex border-t border-soft bg-canvas pb-[env(safe-area-inset-bottom)] md:hidden">
+      className="fixed inset-x-0 bottom-0 z-40 flex border-t border-soft bg-canvas px-safe pb-safe md:hidden">
       {tabs.map((item) => {
         const active = !!item.route && route.view === item.route.view
         const onClick = item.route ? () => navigate(item.route!) : onSearch
@@ -52,8 +52,8 @@ export const AddButton = forwardRef<HTMLButtonElement, { onClick: () => void; op
   return (
     <button ref={ref} type="button" onClick={onClick} aria-label={t('Add a task')} aria-haspopup="dialog" aria-expanded={open} data-add-button
       data-away={away || undefined} tabIndex={away ? -1 : undefined} aria-hidden={away || undefined}
-      className={`fixed right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-on-accent shadow-3 transition-transform duration-(--duration-ui) md:hidden ${away ? 'pointer-events-none translate-y-[calc(100%+6rem)]' : ''}`}
-      style={{ bottom: `calc(${TAB_BAR_HEIGHT_REM}rem + 0.75rem + env(safe-area-inset-bottom))` }}>
+      className={`fixed right-[calc(1rem+var(--safe-right))] z-40 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-on-accent shadow-3 transition-transform duration-(--duration-ui) md:hidden ${away ? 'pointer-events-none translate-y-[calc(100%+6rem)]' : ''}`}
+      style={{ bottom: `calc(${TAB_BAR_HEIGHT_REM}rem + 0.75rem + var(--safe-bottom))` }}>
       <Icon name="plus" size="lg" />
     </button>
   )

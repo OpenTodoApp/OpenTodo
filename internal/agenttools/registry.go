@@ -76,6 +76,9 @@ type Caller struct {
 	// Relay reaches the account's opted-in devices (mcp-device-relay); nil when
 	// the account has none or the transport does not relay.
 	Relay Relay
+	// relayArgs is the running call's arguments for its relay requests
+	// (relay-request-transparency D2); set by Call only.
+	relayArgs string
 }
 
 // ScopeAgent is the token scope that may call write tools (auth.ScopeAgent).
@@ -369,6 +372,9 @@ func (r *Registry) Call(ctx context.Context, c Caller, name string, rawArgs json
 	_, d, ok := lookup(name, c)
 	if !ok {
 		return nil, argErr("unknown tool: " + name)
+	}
+	if c.relayed() {
+		c.relayArgs = relayArgs(rawArgs)
 	}
 	if d.Kind == KindRead {
 		var p Plan

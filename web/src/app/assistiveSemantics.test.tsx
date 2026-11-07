@@ -43,10 +43,33 @@ describe('list semantics', () => {
       const li = rowOf(r.container, title)
       return [li.getAttribute('aria-level'), li.getAttribute('aria-posinset'), li.getAttribute('aria-setsize')]
     }
+    // The positions are written in idle moments after the rows are drawn (SiblingAria).
+    await waitFor(() => r.container.querySelectorAll('li[aria-posinset]').length === 4, 'sibling positions written')
     expect(attrs('Plan trip')).toEqual(['1', '1', '2'])
     expect(attrs('Book flights')).toEqual(['2', '1', '2'])
     expect(attrs('Pack')).toEqual(['2', '2', '2'])
     expect(attrs('Water plants')).toEqual(['1', '2', '2'])
+    await r.unmount()
+  })
+
+  it('a long list draws its rows in presentational blocks; each row stays an item of the one list', async () => {
+    const pid = await createProject({ name: 'Long' })
+    await db.transaction('rw', db.tables, async () => {
+      for (let i = 0; i < 130; i++) await createTask({ title: `Task ${i}`, project_id: pid })
+    })
+    const r = await render(<TaskListView route={{ view: 'project', id: pid }} />)
+    await waitFor(() => r.container.querySelectorAll('li[data-task-id]').length === 130, 'every row')
+    const blocks = [...r.container.querySelectorAll<HTMLElement>('li.row-block')]
+    expect(blocks.length).toBe(6)
+    for (const b of blocks) {
+      expect(b.getAttribute('role')).toBe('none')
+      expect(b.querySelector(':scope > ul')!.getAttribute('role')).toBe('none')
+    }
+    const rows = [...r.container.querySelectorAll<HTMLElement>('li[data-task-id]')]
+    expect(rows.every((li) => li.getAttribute('role') === 'listitem')).toBe(true)
+    // One list element that is not presentational holds them all.
+    const lists = new Set(rows.map((li) => { let ul = li.parentElement?.closest('ul'); while (ul && ul.getAttribute('role') === 'none') ul = ul.parentElement?.closest('ul') ?? null; return ul }))
+    expect(lists.size).toBe(1)
     await r.unmount()
   })
 

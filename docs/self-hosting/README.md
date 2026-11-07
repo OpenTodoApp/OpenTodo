@@ -171,7 +171,7 @@ Migrations run at start, and a backup is taken before they do. There are no down
 | Disk | the data directory: `opentodo.db`, `attachments/`, `backups/` (local destination), `cache/maps`; **Settings → Server → Backups → Database storage** shows the database and its compaction |
 | Security events | **Settings → Server → Audit log**, exportable as NDJSON ([Audit log](docker.md#audit-log)) |
 
-Point your uptime monitor at `/healthz`. It needs no credentials and reveals only the version.
+Point your uptime monitor at `/healthz`. It needs no credentials and reveals only the version. Behind a proxy that answers `/healthz` itself (Pomerium, Google Cloud Run), use `/api/v1/health`, which gives the same answer ([details](docker.md#proxies-that-answer-healthz-themselves-pomerium-cloud-run)).
 
 ## 7. Hardening
 
@@ -191,7 +191,7 @@ What the server defends and what it does not: [Security](../security/README.md) 
 
 ## 8. Sizing
 
-Measured with a 10,000-task account ([Performance budgets](../performance.md#the-server)); the limits are checked every night.
+The budgets of a 10,000-task account ([Performance budgets](../performance.md#the-server)). The CI server's limits are checked every night; the Raspberry Pi 4 column is the target for a real Pi, which was not measured for 1.0 and will be after it ([#990](https://github.com/OpenTodoApp/OpenTodo/issues/990)).
 
 | | CI server | Raspberry Pi 4 (4 GB) |
 | --- | --- | --- |

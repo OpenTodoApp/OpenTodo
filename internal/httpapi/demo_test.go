@@ -536,7 +536,7 @@ func TestDemoRobotsHeader(t *testing.T) {
 	d := newDemoServer(t)
 	e := d.anonymous()
 	for _, c := range []struct{ method, path string }{{"GET", "/"}, {"GET", "/inbox"}, {"GET", "/api/v1/auth/status"}, {"GET", "/api/v1/tasks"},
-		{"POST", "/api/v1/tokens"}, {"GET", "/api/v1/nope"}, {"GET", "/healthz"}} {
+		{"POST", "/api/v1/tokens"}, {"GET", "/api/v1/nope"}, {"GET", "/healthz"}, {"GET", "/api/v1/health"}} {
 		resp, _ := e.do(c.method, c.path, nil)
 		if got := resp.Header.Get("X-Robots-Tag"); got != "noindex, nofollow" {
 			t.Errorf("%s %s: X-Robots-Tag = %q", c.method, c.path, got)

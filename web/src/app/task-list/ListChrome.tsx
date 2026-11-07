@@ -371,7 +371,7 @@ export function ReadOnlyQuickAdd() {
 /** After the last open subtask: offer to complete the parent too (Enter) or keep it open (Esc). */
 export function CompleteParentPrompt({ parent, onAccept, onDismiss }: { parent: Task; onAccept: () => void; onDismiss: () => void }) {
   return (
-    <div role="status" className="fixed inset-x-0 z-40 flex justify-center px-4" style={{ bottom: 'calc(var(--vv-bottom, 0px) + max(1rem, env(safe-area-inset-bottom)))' }}>
+    <div role="status" className="fixed inset-x-0 z-40 flex justify-center px-4" style={{ bottom: 'calc(var(--vv-bottom, 0px) + max(1rem, var(--safe-bottom)))' }}>
       <div className="flex flex-wrap items-center gap-3 rounded-control border border-default bg-surface px-4 py-2 text-body shadow-2">
         <span className="user-text min-w-0">{t.rich('All subtasks done. Complete <b>{title}</b> too?', { title: parent.title || t('Untitled'), b: (chunks) => <strong>{chunks}</strong> })}</span>
         <button className="ui-btn ui-btn--primary ui-btn--sm text-meta" onClick={onAccept}>{t('Complete')} <Kbd k="Enter" only className="ml-1 border-on-accent/40 bg-accent-hover text-on-accent" /></button>

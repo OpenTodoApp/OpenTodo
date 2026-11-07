@@ -61,16 +61,17 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
-| GET | `/healthz` | none | `{"status":"ok","version":"…"}` |
+| GET | `/healthz` | none | `{"status":"ok","version":"…"}`; 503 `unhealthy` when the database is unreachable |
+| GET | `/api/v1/health` | none | The same answer as `/healthz`, under the API path, for reverse proxies and platforms that answer `/healthz` themselves (Pomerium, Google Cloud Run). The mobile apps check a server here first, then at `/healthz` |
 | GET | `/.well-known/security.txt` | none | [RFC 9116](https://www.rfc-editor.org/rfc/rfc9116) text: the OpenTodo project's reporting channels (`Contact`), `Expires` 180 days ahead, `Policy` (SECURITY.md), `Canonical` when `OPENTODO_BASE_URL` is set; see [Security](security/README.md) |
-| GET | `/api/v1/auth/status` | none | `{setupRequired, setupTokenRequired, setupCodeRequired, setupCodeForHost, signupAllowed, authenticated, user, version, passkeysAvailable, oidc, outgoingEmail, mfa?, encryption?, minClientVersion?, demo?}`; `outgoingEmail` is `{enabled}`, true when [outgoing email](#outgoing-email) is configured (never on a demo instance); `mfa`, `encryption` and `minClientVersion` only when signed in; `setupCodeRequired` is true while no account exists and no setup token is configured, when either `OPENTODO_SETUP_CODE=required` and the request does not come over a direct loopback connection without forwarding headers, or no `OPENTODO_BASE_URL` is set and the request is addressed to a domain name (not an IP address, a name without a dot or a local-only name such as `*.local`, `*.lan` or `*.home.arpa`); `setupCodeForHost` is true when the second reason alone asks for the code; `demo` (`{token, sandboxHours: {idle, max}, resetsAt}`: a fresh single-use sandbox-creation token valid for 10 minutes, the sandbox lifetimes in hours and the next nightly reset; no credentials) only on a [demo instance](self-hosting/demo.md) (see [Two-factor authentication](#two-factor-authentication), [Single sign-on](#single-sign-on), [End-to-end encryption](#end-to-end-encryption)) |
+| GET | `/api/v1/auth/status` | none | `{setupRequired, setupTokenRequired, setupCodeRequired, setupCodeForHost, signupAllowed, authenticated, user, version, passkeysAvailable, oidc, outgoingEmail, mfa?, encryption?, minClientVersion?, demo?}`; `outgoingEmail` is `{enabled}`, true when [outgoing email](#outgoing-email) is configured (never on a demo instance); `mfa`, `encryption` and `minClientVersion` only when signed in; `setupCodeRequired` is true while no account exists and no setup token is configured, when either `OPENTODO_SETUP_CODE=required` and the request does not come over a direct loopback connection without forwarding headers, or no `OPENTODO_BASE_URL` is set and the request is addressed to a domain name (not an IP address, a name without a dot or a local-only name such as `*.local`, `*.lan` or `*.home.arpa`); `setupCodeForHost` is true when the second reason alone asks for the code; `demo` (`{token, sandboxHours: {idle, max}, resetsAt}`: a fresh single-use sandbox-creation token valid for 10 minutes, the sandbox lifetimes in hours and the next nightly reset; no credentials) only on a [demo instance](self-hosting/demo.md); `wipeKey` for a signed-in browser session, and `revoked: {proof}` for the cookie of a session ended by sign out everywhere, deactivation or deletion, where `proof` is base64url(HMAC-SHA256(wipe key, `opentodo device revoked v1`)): the web app removes its local copy when it matches the key it stored (see [Two-factor authentication](#two-factor-authentication), [Single sign-on](#single-sign-on), [End-to-end encryption](#end-to-end-encryption)) |
 | POST | `/api/v1/auth/register` | none | `{email, name?, password, invitation?, projectInvite?, setupToken?}` → 201 `{user}` + cookie. The first account becomes owner; when `OPENTODO_SETUP_TOKEN` is set (`setupTokenRequired` in the status), it needs `setupToken` with that value, otherwise 403 `setup_token_invalid`; without a token, a client the status asks for the code (`setupCodeRequired`: from another machine with `OPENTODO_SETUP_CODE=required`, or under a domain name while no `OPENTODO_BASE_URL` is set) sends the one-time setup code from the server log as `setupToken` (case and dashes ignored), otherwise 403 `setup_code_invalid`; afterwards an `invitation` secret admits one member while sign-up is closed, and a `projectInvite` secret creates a member who joins that project (201 `{user, projectId, role}`, see [Project invite links](#project-invite-links)). With open sign-up and [outgoing email](#outgoing-email), a registration without an invitation answers 202 `{verificationRequired: true}` and mails a link instead of creating the account |
 | POST | `/api/v1/auth/login` | none | `{email, password}` → `{user}` + cookie, or `{mfaRequired:true, challenge, expiresAt}` and no cookie when the account has a second factor. A password over 1,024 bytes is refused with 401 `invalid_credentials` without being checked |
 | POST | `/api/v1/auth/mfa` | none | `{challenge, code}` or `{challenge, recoveryCode}`, optional `remember` → `{user}` + cookie (+ `ot_trust` cookie when `remember`) |
 | POST | `/api/v1/auth/reauth` | cookie | `{password}` or `{code}` → `{reauthAt, validForMs}`; unlocks *fresh* routes for 10 minutes |
 | POST | `/api/v1/auth/passkey/options` | none | → `{publicKey}` sign-in options, see [Passkeys](#passkeys) |
 | POST | `/api/v1/auth/passkey` | none | `{credential}` → `{user}` + cookie |
-| POST | `/api/v1/auth/logout` | cookie | 204, or 200 `{redirect}` (provider sign-out, see [Single sign-on](#single-sign-on)) |
+| POST | `/api/v1/auth/logout` | cookie | 204, or 200 `{redirect}` (provider sign-out, see [Single sign-on](#single-sign-on)); 403 `bad_origin` when `Origin` is another site's or `Sec-Fetch-Site` is not `same-origin` (a request naming neither, such as `ot logout`, is accepted) |
 | POST | `/api/v1/demo/sandbox` | none | [demo instance](self-hosting/demo.md) only (absent otherwise): `{token}` from `auth/status` → 201 `{user}` + cookie for a new private sandbox. Requires a same-origin `Origin` header; 403 `demo_token` (missing, forged, expired or used token), 403 `bad_origin`, 429 `rate_limited` (5 per address per hour), 503 `demo_busy` |
 | GET | `/api/v1/auth/oidc/start` | none | browser navigation: 302 to the provider (links the identity instead when signed in; linking a new identity needs a fresh session) |
 | GET | `/api/v1/auth/oidc/callback` | none | provider return: 303 to `/` + cookie, or to `/?error=…` |
@@ -98,7 +99,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | GET | `/api/v1/tokens` | yes | `{tokens:[{id,name,scope,createdAt,lastUsedAt}]}`; `lastUsedAt` is updated at most once a minute |
 | POST | `/api/v1/tokens` | credential, fresh | `{name, scope?}` (`full` default, `read`, `agent` or `admin`) → 201 `{token, secret}` (secret shown once); another scope → 400 `invalid_input`; `admin` only from a session (a token gets 403 `session_required`) |
 | DELETE | `/api/v1/tokens/{id}` | yes | 204 |
-| POST | `/api/v1/me/sign-out-everywhere` | cookie, fresh | → 204 and the session cookie cleared: ends every session of the account (this one too), forgets its remembered browsers and revokes its API tokens and app passwords; recorded as `sessions.revoked`; a token gets 403 `session_required` |
+| POST | `/api/v1/me/sign-out-everywhere` | cookie, fresh | → 204 and the session cookie cleared: ends every session of the account (this one too), forgets its remembered browsers and revokes its API tokens and app passwords; recorded as `sessions.revoked`; the other devices remove their local copy on their next `auth/status` (`revoked`); a token gets 403 `session_required` |
 | POST | `/api/v1/passkeys/register/options` | credential, fresh | → `{publicKey}` creation options |
 | POST | `/api/v1/passkeys/register` | credential, fresh | `{name, credential}` → 201 `{passkey}` |
 | GET | `/api/v1/passkeys` | yes | `{passkeys:[{id,name,createdAt,lastUsedAt,suspiciousAt,backedUp}]}` |
@@ -230,7 +231,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/mcp` | bearer token only | Model Context Protocol endpoint, 404 while disabled; write tools only for `agent` tokens with both switches on; see [mcp.md](mcp.md) |
 | GET | `/.well-known/oauth-protected-resource`, `/.well-known/oauth-protected-resource/mcp` | anonymous | RFC 9728 document: `resource` = `<origin>/mcp`, this origin as the authorization server, scopes `read` and `agent`; 404 while MCP is off |
 | GET | `/.well-known/oauth-authorization-server` | anonymous | RFC 8414 metadata: authorize, token, registration and revocation endpoints, `authorization_code` + `refresh_token`, S256; 404 while MCP is off |
-| POST | `/oauth/register` | anonymous | RFC 7591 registration; accepted only for Google's `oauth-redirect{,-sandbox,-test}.googleusercontent.com/{r,a}/…` addresses, else 400 `invalid_redirect_uri` → 201 `{client_id, client_secret, …}`; 429 `rate_limited` after five a minute from one address, 503 `temporarily_unavailable` while 200 self-registered clients exist (those never authorized are removed after a day) |
+| POST | `/oauth/register` | anonymous | RFC 7591 registration; accepted only when every `redirect_uris` entry is an address of one known connector platform (Gemini: `https://oauth-redirect{,-sandbox,-test}.googleusercontent.com/{r,a}/<segment>`; ChatGPT: `https://chatgpt.com/connector_platform_oauth_redirect` or `https://chatgpt.com/connector/oauth/<segment>`; Claude: `https://claude.ai/api/mcp/auth_callback` or `https://claude.com/api/mcp/auth_callback`), else 400 `invalid_redirect_uri`; the client stores that platform's addresses and gets scope `read` → 201 `{client_id, client_secret, …}`; 429 `rate_limited` after five a minute from one address, 503 `temporarily_unavailable` while 200 self-registered clients exist (those never authorized are removed after a day) |
 | GET | `/oauth/authorize` | signed-in session | `response_type=code`, `code_challenge` with `code_challenge_method=S256`; 302 to `/?oauth_consent=<query>` (the consent dialog), never a code; a browser without a session is sent to `/?oauth=<address>`; 400 without redirecting when the client or address is wrong |
 | GET | `/api/v1/me/mcp-consent` | session only | `?<authorize query>`: the consent dialog's request → `{client:{id, name, dynamic}, scope, redirectHost}`; 400 with the OAuth error shape when the request is invalid |
 | POST | `/api/v1/me/mcp-consent` | session only | `{query, allow}` → `{redirect}`: the registered address with `code` and `state` on allow, with `error=access_denied` otherwise |
@@ -262,15 +263,16 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/api/v1/settings/oidc/test` | owner | `{issuer?}` → `{ok, issuer, authorizationHost, tokenHost, endSessionSupported}` |
 | GET | `/api/v1/settings/mcp` | yes | `{enabled, writes_enabled, endpoint}`: whether the [MCP endpoint](mcp.md) is on, whether assistants may make changes, and its URL |
 | PUT | `/api/v1/settings/mcp` | owner, credential | `{enabled?, writes_enabled?}` (at least one) → `{enabled, writes_enabled, endpoint}`; each change is recorded as `settings.changed` (`mcp.enabled`, `mcp.writes`) |
-| GET | `/api/v1/settings/mcp/clients` | owner | `{clients:[{id, name, scope, redirect_uris, dynamic, created_at, last_used_at, secret_set}], resource, discovery_url, metadata_url, authorize_url, token_url}`; never a secret |
-| POST | `/api/v1/settings/mcp/clients` | owner, credential | `{name?, scope? (read or agent), redirect_uris?}` (default: Google's six connector addresses) → 201 `{client, secret}`, the secret only here |
+| GET | `/api/v1/settings/mcp/clients` | owner | `{clients:[{id, name, scope, redirect_uris, dynamic, created_at, last_used_at, secret_set}], platforms:[{id, name, redirect_uris}], resource, discovery_url, metadata_url, authorize_url, token_url}`; never a secret |
+| POST | `/api/v1/settings/mcp/clients` | owner, credential | `{name?, scope? (read or agent), platform? (google, openai or anthropic), redirect_uris?}`: a platform's addresses, or up to ten custom addresses, each an absolute `https` address without user information, fragment or `*`, matched exactly; neither: Google's six connector addresses → 201 `{client, secret}`, the secret only here; 400 `bad_request` for both or an unknown platform, 400 `invalid_redirect_uri` for an address that breaks a rule. A stored address is a prefix only when it is a platform's own prefix (`…/r/`, `https://chatgpt.com/connector/oauth/`), followed by exactly one segment |
 | DELETE | `/api/v1/settings/mcp/clients/{id}` | owner | delete the client, its grants and their access tokens → 204 |
 | GET | `/api/v1/settings/caldav` | yes | `{enabled, url, secure, encryption}` |
 | PUT | `/api/v1/settings/caldav` | owner | `{enabled}` → the same shape |
 | GET | `/api/v1/settings/webhooks` | owner | `{allowPrivate}` |
 | PUT | `/api/v1/settings/webhooks` | owner, credential | `{allowPrivate}` → `{allowPrivate}` |
 | GET | `/api/v1/audit` | owner | `{events:[…], cursor}` newest first; filters `name`, `actor`, `target`, `outcome`, `from`, `to`, `cursor`, `limit≤200`, see [Audit log](#audit-log) |
-| GET | `/api/v1/audit/export` | owner | the filtered log as `application/x-ndjson` download; records `audit.exported` |
+| GET | `/api/v1/audit/export` | owner | the filtered log as `application/x-ndjson` download, ending with the chain head line; records `audit.exported` |
+| GET | `/api/v1/audit/verify` | owner | `{ok, checked, uncovered, checkpoint, head, break}`: the hash chain recomputed, see [Audit log](#audit-log) |
 | GET | `/api/v1/settings/audit` | owner | `{retentionDays, logIp}` |
 | PUT | `/api/v1/settings/audit` | owner, credential | `{retentionDays?: 7–3650, logIp?}` → settings; disabling `logIp` erases stored addresses |
 | GET | `/api/v1/backups` | owner | backup status, see [Backups](#backups) |
@@ -1198,7 +1200,7 @@ The owner's view of the database file and of the notes compaction job (see [sync
 
 ### Audit log
 
-The server records security-relevant events in its own database (never synced to devices, never part of `/api/v1/export`). The owner reads, filters and exports the log; every user reads their own access events. There is no route to modify or delete an event: `PATCH`/`DELETE /api/v1/audit/{id}` answer 404 `not_found`. Events are removed only by retention pruning (and addresses only by disabling address logging).
+The server records security-relevant events in its own database (never synced to devices, never part of `/api/v1/export`). The owner reads, filters and exports the log; every user reads their own access events. There is no route to modify or delete an event: `PATCH`/`DELETE /api/v1/audit/{id}` answer 404 `not_found`. Events are removed only by retention pruning (and addresses only by disabling address logging). The log is a hash chain, so a change made to the database outside OpenTodo shows up when it is verified (below).
 
 **Event shape** (list, export and activity):
 
@@ -1208,11 +1210,12 @@ The server records security-relevant events in its own database (never synced to
   "actorId": "<user id>", "actorEmail": "owner@example.com",
   "targetId": null, "targetEmail": null,
   "ip": null, "userAgent": "Mozilla/5.0 …",
-  "details": { "token_id": "…", "token_name": "laptop script" }
+  "details": { "token_id": "…", "token_name": "laptop script" },
+  "hash": "9f2c…"
 }
 ```
 
-`actorId` is the account that acted (null for a failed sign-in); `targetId` is the account acted upon when different. `actorEmail` / `targetEmail` come from the live account, or from the email snapshot in `details.email` when the account no longer exists. `ip` is null unless the owner enabled address logging. `userAgent` is truncated to 200 bytes. `details` only ever carries the keys below: never task or project content, passwords, token or invitation secrets, one-time or recovery codes.
+`actorId` is the account that acted (null for a failed sign-in); `targetId` is the account acted upon when different. `actorEmail` / `targetEmail` come from the live account, or from the email snapshot in `details.email` when the account no longer exists. `ip` is null unless the owner enabled address logging. `userAgent` is truncated to 200 bytes. `details` only ever carries the keys below: never task or project content, passwords, token or invitation secrets, one-time or recovery codes. `hash` is the event's link in the hash chain (64 hex characters), or null for an event recorded before the server had the chain.
 
 | Event | Outcome | Actor / target | `details` keys |
 | --- | --- | --- | --- |
@@ -1306,9 +1309,22 @@ curl -sS -H "Authorization: Bearer $TOKEN" \
   "$OT/api/v1/audit?name=login.failed&from=$(( ($(date +%s) - 86400) * 1000 ))"
 ```
 
-**Export** — `GET /api/v1/audit/export` (owner) with the same filters except `cursor` and `limit` → every matching event as newline-delimited JSON (`application/x-ndjson`, `Content-Disposition: attachment; filename="opentodo-audit-YYYYMMDD.ndjson"`), one event object per line, newest first. The export records an `audit.exported` event.
+**Export** — `GET /api/v1/audit/export` (owner) with the same filters except `cursor` and `limit` → every matching event as newline-delimited JSON (`application/x-ndjson`, `Content-Disposition: attachment; filename="opentodo-audit-YYYYMMDD.ndjson"`), one event object per line, newest first. The last line is not an event but the chain head, the newest event of the whole log whatever the filters: `{"chain": {"id": 418, "hash": "…"}}`. The export records an `audit.exported` event.
 
-**Settings** — `GET /api/v1/settings/audit` (owner) → `{"retentionDays": 90, "logIp": false}`. `PUT` the same object, both fields optional: `retentionDays` is an integer 7–3650 (otherwise 400 `invalid_input`), `logIp` turns client address logging on or off. Turning it off erases every stored address in the same transaction. Each changed value is recorded as `settings.changed`; lowering retention prunes expired events immediately, and the server also prunes at startup and whenever the oldest event passes the retention.
+**Verify** — `GET /api/v1/audit/verify` (owner) recomputes the hash chain and answers 200 whether or not it holds:
+
+```json
+{
+  "ok": false, "checked": 1203, "uncovered": 0,
+  "checkpoint": { "id": 7310, "hash": "…" },
+  "head": { "id": 8512, "hash": "…" },
+  "break": { "id": 8514, "reason": "mismatch" }
+}
+```
+
+Each event's `hash` is the SHA-256, in hex, of the previous event's hash, a newline and the JSON array `[1, id, ts, name, outcome, actorId, targetId, userAgent, details]` (`details` as the stored JSON text, `null` for a missing account id). The client address is left out, so erasing addresses does not break the chain. `checkpoint` is where checking starts: the last event pruned by retention (or the newest event from before the chain), whose hash the next event chains from. `checked` counts the events checked after it, `uncovered` the kept events from before the chain, and `head` is the newest checked event. `break` is null, or the first event whose hash does not follow: `missing_hash`, or `mismatch` when the event was changed or an event before it was removed or moved. The server also checks the chain at startup and hourly after changes, and logs a broken link at error level. Removing the newest events leaves a shorter chain that still verifies; compare with a chain head kept from an earlier export to see that ([Audit log](self-hosting/docker.md#checking-the-log-for-tampering)).
+
+**Settings** — `GET /api/v1/settings/audit` (owner) → `{"retentionDays": 90, "logIp": false}`. `PUT` the same object, both fields optional: `retentionDays` is an integer 7–3650 (otherwise 400 `invalid_input`), `logIp` turns client address logging on or off. Turning it off erases every stored address in the same transaction. Each changed value is recorded as `settings.changed`; lowering retention prunes expired events immediately, and the server also prunes at startup and whenever the oldest event passes the retention. Pruning removes events from the start of the log, in order, and stops at the first one still within the retention.
 
 **Personal activity** — `GET /api/v1/me/activity` (any signed-in user) → `{events: [...]}`: the caller's own sign-ins, failed sign-ins against their account, sign-outs and credential and token events from the last 90 days, at most 100, newest first. Events about other accounts never appear.
 

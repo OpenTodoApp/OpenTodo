@@ -21,6 +21,7 @@ A repeat rule is typed into the **Repeat** field of a task, as described in [Rec
 | `every weekday` | Monday to Friday |
 | `every week`, `every 2 weeks` | weekly or fortnightly |
 | `every monday`, `every mon, wed, fri` | on those weekdays |
+| `every 2 weeks on saturday` | every other Saturday (stored as `every 2 weeks` when the task is due on a Saturday) |
 | `every month`, `every 15th` | monthly, on the same day or a fixed day |
 | `every last day`, `every last friday` | at the end of the month |
 | `every 2nd tuesday` | the second Tuesday of each month |

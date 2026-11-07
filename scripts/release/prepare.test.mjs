@@ -6,9 +6,9 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { run as deployCheck } from '../deploy-check.mjs'
-import { laterRelease, loadFacts, readText, releaseVersion, ROOT } from '../deploy/common.mjs'
+import { compareVersions, laterRelease, loadFacts, readText, releaseVersion, ROOT } from '../deploy/common.mjs'
 import { staleCopies } from '../deploy/mirror.mjs'
-import { bumpLine, bumpText, casaosText, changelogText, easypanelText, haChangelogText, prepare, truenasText } from './prepare.mjs'
+import { bumpLine, bumpText, candidateChangelogText, candidates, casaosText, changelogText, easypanelText, haChangelogText, prepare, truenasText, withoutCandidates } from './prepare.mjs'
 import { checkUpgradeFixture, fixtureDir, isNewMinor } from './upgradeFixture.mjs'
 import { fragmentsMarkdown, readFragments } from './fragments.mjs'
 import { checkSecurityReviews, monthsBetween } from './securityReview.mjs'
@@ -18,6 +18,12 @@ const facts = loadFacts()
 const CURRENT = releaseVersion(readText('CHANGELOG.md'))
 const [maj, min, patch] = CURRENT.split('.').map(Number)
 const NEXT_PATCH = `${maj}.${min}.${patch + 1}`
+/** This tree's CHANGELOG.md without the sections of a release candidate it has open (newer than CURRENT). */
+const BASE_CHANGELOG = (() => {
+  const text = readText('CHANGELOG.md')
+  const open = new Set(candidates(text).filter((c) => compareVersions(c.base, CURRENT) > 0).map((c) => c.base))
+  return [...open].reduce(withoutCandidates, text)
+})()
 
 /**
  * The files a hand-made patch release changed ("Prepare 0.14.2", 3e5dfcb0), without the deploy
@@ -79,13 +85,22 @@ const PATCH_RELEASE_FILES = [
 /** A copy of what prepare and the deploy checks read, in a temporary directory. */
 function copyRepo() {
   const dir = mkdtempSync(join(tmpdir(), 'release-prepare-'))
-  for (const p of ['.github', 'deploy', 'docs/self-hosting', 'internal', 'scripts', 'skills', 'web/public', 'CHANGELOG.md', 'LICENSE', 'README.md',
+  for (const p of ['.github', 'deploy', 'docs/self-hosting', 'docs/accessibility', 'internal', 'scripts', 'skills', 'web/public', 'CHANGELOG.md', 'LICENSE', 'README.md',
     'web/package.json', 'web/package-lock.json']) {
     mkdirSync(dirname(join(dir, p)), { recursive: true })
     cpSync(join(ROOT, p), join(dir, p), { recursive: true, filter: (src) => !src.includes('node_modules') })
   }
   // The changelog fragments of this tree are left out: each test writes the ones it needs.
   mkdirSync(join(dir, 'changelog.d'))
+  // So are the sections of a release candidate this tree has open (between 1.0.0-rc.1 and 1.0.0):
+  // the tests prepare the next patch, minor or candidate after the latest release.
+  writeFileSync(join(dir, 'CHANGELOG.md'), BASE_CHANGELOG)
+  // The tests release on dates in 2030: the audit this tree carries is dated just before them, so
+  // its age (tested on its own in accessibilityAudit.test.mjs) never decides a test here.
+  for (const f of readdirSync(join(dir, 'docs/accessibility')).filter((n) => /^audit-.*\.md$/.test(n))) {
+    const p = join(dir, 'docs/accessibility', f)
+    writeFileSync(p, readFileSync(p, 'utf8').replace(/^Date: \d{4}-\d{2}-\d{2}$/m, 'Date: 2030-01-01'))
+  }
   return dir
 }
 
@@ -362,4 +377,136 @@ test('from 1.0.0, release preparation refuses screenshots older than the app (do
   assert.doesNotThrow(() => checkScreenshotFreshness('.', '0.23.0', times(10 * day, 12 * day)))
   // A dry run on this repository reads git: it passes, or names both dates.
   try { checkScreenshotFreshness(ROOT, '1.0.0') } catch (e) { assert.match(e.message, /^docs\/images: the newest screenshot was committed \d{4}-\d{2}-\d{2}/) }
+})
+
+// ---- release candidates (OpenSpec change release-candidates) ----
+
+const NEXT_MAJOR = `${maj + 1}.0.0`
+const rcOf = (n) => `${NEXT_MAJOR}-rc.${n}`
+const reV = (v) => v.replaceAll('.', '\\.')
+
+/**
+ * A copy of the tree ready for NEXT_MAJOR but for what needs the owner's devices: its upgrade
+ * fixture, one core screen whose keyboard and zoom passes are done and whose screen-reader passes
+ * are pending, and no reference-device record (optional until real devices are measured, #990).
+ */
+function candidateRepo() {
+  const dir = copyRepo()
+  const fixture = join(dir, fixtureDir(NEXT_MAJOR))
+  mkdirSync(fixture, { recursive: true })
+  writeFileSync(join(fixture, 'manifest.json'), JSON.stringify({ version: NEXT_MAJOR }))
+  writeFileSync(join(fixture, 'data.tar.gz'), '')
+  writeFileSync(join(dir, 'scripts/ux-audit/screens.json'), JSON.stringify([{ id: 'inbox', core: true }]))
+  audit(dir, ['pass', 'pending', 'pending', 'pending', 'pending', 'pass'])
+  return dir
+}
+function audit(dir, cells) {
+  mkdirSync(join(dir, 'docs/accessibility'), { recursive: true })
+  writeFileSync(join(dir, `docs/accessibility/audit-${NEXT_MAJOR}.md`), `Date: 2030-01-01\n\n| \`inbox\` | ${cells.join(' | ')} |\n`)
+}
+function deviceRecord(dir, coldStart = '1,000') {
+  mkdirSync(join(dir, 'docs/performance'), { recursive: true })
+  writeFileSync(join(dir, `docs/performance/results-${NEXT_MAJOR}.md`), `| Metric | Android | iPhone | Raspberry Pi 4 |\n| --- | --- | --- | --- |\n| \`cold-start\` (ms) | ${coldStart} | 1,000 | — |\n`)
+}
+const fragmentFiles = (dir) => readdirSync(join(dir, 'changelog.d'), { recursive: true }).filter((f) => f.endsWith('.md')).sort()
+
+test('release-prepare: a release candidate only adds its CHANGELOG.md section, keeps the fragments and warns about what the owner has pending', async () => {
+  const dir = candidateRepo()
+  try {
+    fragment(dir, 'Added/a-feature.md', '- **A feature.**\n')
+    fragment(dir, 'Fixed/a-fix.md', '- **A fix.**\n')
+    const { from, changed, warnings } = prepare(rcOf(1), { root: dir, date: '2030-01-02' })
+    assert.equal(from, CURRENT)
+    assert.deepEqual(changed, ['CHANGELOG.md'])
+    // The pending screen-reader passes are one line for the release notes, for any release. No
+    // reference-device record is no warning: it is optional until real devices are measured (#990).
+    assert.equal(warnings.length, 1, warnings.join('\n'))
+    assert.equal(warnings[0], `accessibility audit: 4 screen-reader passes pending on 1 core screens in docs/accessibility/audit-${NEXT_MAJOR}.md ` +
+      `(NVDA + Firefox, VoiceOver + Safari (macOS), VoiceOver (iOS shell), TalkBack (Android shell)), recorded when someone runs them (#9)`)
+    // No template, doc, store field or web app version moves to a candidate; the deploy checks still pass on the latest release.
+    for (const rel of PATCH_RELEASE_FILES.filter((f) => f !== 'CHANGELOG.md')) assert.equal(readFileSync(join(dir, rel), 'utf8'), readFileSync(join(ROOT, rel), 'utf8'), rel)
+    const problems = (await deployCheck(dir)).flatMap((r) => r.errors.map((e) => `${r.name}: ${e}`))
+    assert.deepEqual(problems, [])
+    assert.equal(releaseVersion(readFileSync(join(dir, 'CHANGELOG.md'), 'utf8')), CURRENT)
+    // The fragments stay for the next candidate and the release.
+    assert.deepEqual(fragmentFiles(dir), ['Added/a-feature.md', 'Fixed/a-fix.md'])
+    const log = readFileSync(join(dir, 'CHANGELOG.md'), 'utf8')
+    assert.match(log, new RegExp(`^## \\[Unreleased\\]\\n\\nChanges since the last release are in [^\\n]*\\n\\n## \\[${reV(rcOf(1))}\\] - 2030-01-02\\n\\n` +
+      `### Added\\n\\n- \\*\\*A feature\\.\\*\\*\\n\\n### Fixed\\n\\n- \\*\\*A fix\\.\\*\\*\\n\\n## \\[${reV(CURRENT)}\\] - `, 'm'))
+    // Unreleased still compares from the latest release; the candidate has its own link.
+    assert.match(log, new RegExp(`^\\[Unreleased\\]: (\\S+)/compare/v${reV(CURRENT)}\\.\\.\\.HEAD\\n\\[${reV(rcOf(1))}\\]: \\1/compare/v${reV(CURRENT)}\\.\\.\\.v${reV(rcOf(1))}\\n\\[${reV(CURRENT)}\\]: `, 'm'))
+    // The tag's release notes are the candidate's section (scripts/release-notes.sh).
+    const notes = execFileSync('sh', [join(ROOT, 'scripts/release-notes.sh'), rcOf(1), join(dir, 'CHANGELOG.md')], { encoding: 'utf8' })
+    assert.ok(notes.trimStart().startsWith('### Added\n\n- **A feature.**\n\n### Fixed\n\n- **A fix.**\n'), notes.slice(0, 200))
+
+    // The next candidate lists everything since the latest release again; an older or repeated number is refused.
+    assert.throws(() => prepare(rcOf(1), { root: dir, date: '2030-01-03' }), /already has a ## \[/)
+    fragment(dir, 'Fixed/b-fix.md', '- **Another fix.**\n')
+    assert.deepEqual(prepare(rcOf(3), { root: dir, date: '2030-01-03' }).changed, ['CHANGELOG.md'])
+    assert.throws(() => prepare(rcOf(2), { root: dir, date: '2030-01-04' }), new RegExp(`${reV(rcOf(2))} is not newer than the last release candidate, ${reV(rcOf(3))}`))
+    const log3 = readFileSync(join(dir, 'CHANGELOG.md'), 'utf8')
+    assert.ok(log3.includes(`## [${rcOf(3)}] - 2030-01-03\n\n### Added\n\n- **A feature.**\n\n### Fixed\n\n- **A fix.**\n- **Another fix.**\n\n## [${rcOf(1)}] - 2030-01-02\n`))
+    // Another release cannot start while this one has candidates.
+    assert.throws(() => prepare(`${maj + 1}.1.0-rc.1`, { root: dir, date: '2030-01-04' }), new RegExp(`release candidate sections for ${reV(NEXT_MAJOR)} \\(${reV(rcOf(3))}, ${reV(rcOf(1))}\\)`))
+    assert.throws(() => prepare(NEXT_PATCH, { root: dir, date: '2030-01-04' }), /release candidate sections for/)
+
+    // The release is strict about a device record, when there is one, being within budget; screen-reader passes may stay pending.
+    deviceRecord(dir, '9,000')
+    assert.match(prepare(rcOf(4), { root: dir, date: '2030-01-04' }).warnings[0], new RegExp(`^reference-device record to fix before ${reV(NEXT_MAJOR)}: docs\\/performance\\/results-${reV(NEXT_MAJOR)}\\.md:\\n  cold-start, Android: 9000 ms`))
+    assert.throws(() => prepare(NEXT_MAJOR, { root: dir, date: '2030-01-05' }), /results-[\d.]+\.md:\n {2}cold-start, Android: 9000 ms is over the budget of 3000 ms and links no issue/)
+    deviceRecord(dir)
+    const final = prepare(NEXT_MAJOR, { root: dir, date: '2030-01-05' })
+    assert.equal(final.warnings.length, 1, final.warnings.join('\n'))
+    assert.match(final.warnings[0], /^accessibility audit: 4 screen-reader passes pending on 1 core screens/)
+    assert.ok(final.changed.includes('web/package.json') && final.changed.includes('deploy/helm/opentodo/Chart.yaml'))
+    // One section with every fragment replaces the candidates' sections and links; the fragments are gone.
+    assert.deepEqual(fragmentFiles(dir), [])
+    const out = readFileSync(join(dir, 'CHANGELOG.md'), 'utf8')
+    assert.doesNotMatch(out, new RegExp(`${reV(NEXT_MAJOR)}-rc`))
+    assert.ok(out.includes(`## [${NEXT_MAJOR}] - 2030-01-05\n\n### Added\n\n- **A feature.**\n\n### Fixed\n\n- **A fix.**\n- **Another fix.**\n\n## [${CURRENT}] - `))
+    assert.match(out, new RegExp(`^\\[Unreleased\\]: (\\S+)/compare/v${reV(NEXT_MAJOR)}\\.\\.\\.HEAD\\n\\[${reV(NEXT_MAJOR)}\\]: \\1/compare/v${reV(CURRENT)}\\.\\.\\.v${reV(NEXT_MAJOR)}\\n\\[${reV(CURRENT)}\\]: `, 'm'))
+    // A candidate of an earlier release (0.3.1-rc.1) is history and stays.
+    assert.equal(out.includes('## [0.3.1-rc.1]'), BASE_CHANGELOG.includes('## [0.3.1-rc.1]'))
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('release-prepare: on a release candidate the other gates stay strict', () => {
+  const dir = candidateRepo()
+  try {
+    // A keyboard pass is not a screen-reader pass: still pending, still refused.
+    audit(dir, ['pending', 'pending', 'pending', 'pending', 'pending', 'pass'])
+    assert.throws(() => prepare(rcOf(1), { root: dir, date: '2030-01-02' }), /accessibility audit:\n {2}[^\n]*inbox, Keyboard only is still pending$/)
+    audit(dir, ['pass', 'pending', 'pending', 'pending', 'pending', 'pass'])
+    // An audit more than 12 months old.
+    assert.throws(() => prepare(rcOf(1), { root: dir, date: '2031-02-01' }), /a manual accessibility audit is due/)
+    // The upgrade fixture of the release.
+    rmSync(join(dir, fixtureDir(NEXT_MAJOR)), { recursive: true })
+    assert.throws(() => prepare(rcOf(1), { root: dir, date: '2030-01-02' }), /needs its upgrade fixture/)
+    // A version that is neither x.y.z nor x.y.z-rc.N, or a candidate of a release that is not newer.
+    for (const v of [`${NEXT_MAJOR}-rc.0`, `${NEXT_MAJOR}-beta.1`, `${NEXT_MAJOR}-rc1`]) assert.throws(() => prepare(v, { root: dir }), /must be x\.y\.z or x\.y\.z-rc\.N/, v)
+    assert.throws(() => prepare(`${CURRENT}-rc.1`, { root: dir }), /is not newer than the latest release/)
+    assert.equal(readFileSync(join(dir, 'CHANGELOG.md'), 'utf8'), BASE_CHANGELOG)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('release-prepare: the changelog of a candidate and of the release after it', () => {
+  const log = '# Changelog\n\n## [Unreleased]\n\nSee changelog.d/.\n\n## [1.2.3] - 2030-01-01\n\n[Unreleased]: https://x/compare/v1.2.3...HEAD\n[1.2.3]: https://x/compare/v1.2.2...v1.2.3\n'
+  const rc1 = candidateChangelogText(log, '1.2.3', '1.3.0-rc.1', '2030-02-01', '### Fixed\n\n- A fix.\n')
+  assert.equal(rc1, '# Changelog\n\n## [Unreleased]\n\nSee changelog.d/.\n\n## [1.3.0-rc.1] - 2030-02-01\n\n### Fixed\n\n- A fix.\n\n## [1.2.3] - 2030-01-01\n\n' +
+    '[Unreleased]: https://x/compare/v1.2.3...HEAD\n[1.3.0-rc.1]: https://x/compare/v1.2.3...v1.3.0-rc.1\n[1.2.3]: https://x/compare/v1.2.2...v1.2.3\n')
+  assert.deepEqual(candidates(rc1), [{ version: '1.3.0-rc.1', base: '1.3.0', n: 1 }])
+  const rc2 = candidateChangelogText(rc1, '1.2.3', '1.3.0-rc.2', '2030-02-08', '### Fixed\n\n- A fix.\n- Another.\n')
+  assert.equal(withoutCandidates(rc2, '1.3.0'), log)
+  assert.equal(changelogText(rc2, '1.2.3', '1.3.0', '2030-02-15', '### Fixed\n\n- A fix.\n- Another.\n'),
+    '# Changelog\n\n## [Unreleased]\n\nSee changelog.d/.\n\n## [1.3.0] - 2030-02-15\n\n### Fixed\n\n- A fix.\n- Another.\n\n## [1.2.3] - 2030-01-01\n\n' +
+    '[Unreleased]: https://x/compare/v1.3.0...HEAD\n[1.3.0]: https://x/compare/v1.2.3...v1.3.0\n[1.2.3]: https://x/compare/v1.2.2...v1.2.3\n')
+  // A summary written under a candidate goes with it: the release gets its own.
+  assert.equal(withoutCandidates(rc1.replace('## [1.3.0-rc.1] - 2030-02-01\n\n', '## [1.3.0-rc.1] - 2030-02-01\n\nTest the new sync.\n\n'), '1.3.0'), log)
+  // A candidate of an older release is history: it neither blocks nor is removed.
+  const old = log.replace('## [1.2.3] - 2030-01-01\n\n', '## [1.2.3] - 2030-01-01\n\n## [1.2.3-rc.1] - 2029-12-01\n\nOld.\n\n')
+  assert.ok(changelogText(old, '1.2.3', '1.2.4', '2030-02-15').includes('## [1.2.3-rc.1] - 2029-12-01\n\nOld.\n'))
 })

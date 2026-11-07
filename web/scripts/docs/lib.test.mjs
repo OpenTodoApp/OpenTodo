@@ -1,9 +1,12 @@
+import { createHash } from 'node:crypto'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { ENTRIES, createSlugger, entryOf, entryTree, indexTree, metaDescription, navOrder, parseFrontMatter, renderPage, resolveLink, sanitizeHtml, validateFrontMatter } from './lib.mjs'
+import { ENTRIES, brandUrls, createSlugger, entryOf, entryTree, indexTree, metaDescription, navOrder, parseFrontMatter, renderPage, resolveLink, sanitizeHtml, validateFrontMatter } from './lib.mjs'
 import { keysHtml, loadShortcuts, shortcutsMarkdown, splitContext, START, END } from './shortcuts.mjs'
 import { QUICK_ADD_SYNTAX, SHORTCUTS, SHORTCUT_SECTIONS } from '../../src/lib/shortcuts.ts'
 import { normalize, prepare, search, snippet, stem } from './search-core.mjs'
-import { pageHtml } from './site.mjs'
+import { landingHtml, pageHtml, sectionHtml } from './site.mjs'
+import { brandFiles } from '../../../scripts/site-bundle.mjs'
 
 const ctx = { rel: 'guide.md', repoRoot: '/nonexistent', audienceOf: (rel) => (rel.startsWith('self-hosting/') || rel === 'api.md' ? 'admin' : 'user') }
 
@@ -191,5 +194,30 @@ describe('SEO', () => {
     expect(article).toMatchObject({ '@type': 'TechArticle', headline: 'HTTP API', url: 'https://open-todo.app/docs/api/', inLanguage: 'en' })
     for (const m of html.matchAll(/<meta (?:name|property)="(?:description|og:description)" content="([^"]*)"/g)) expect(m[1].length).toBeLessThanOrEqual(160)
     expect(html.match(/<h1[\s>]/g)).toHaveLength(1)
+  })
+})
+
+describe('brand URLs', () => {
+  const repoRoot = fileURLToPath(new URL('../../..', import.meta.url))
+  it('carry the hash of the mark the website serves at /assets/', () => {
+    // The website hashes the bundle's brand/mark-colour.svg (its src/lib/brand.ts); so do the docs pages.
+    const v = createHash('sha256').update(brandFiles(repoRoot).get('mark-colour.svg')).digest('hex').slice(0, 10)
+    expect(brandUrls(repoRoot)).toEqual({ favicon: `/assets/favicon.svg?v=${v}`, touchIcon: `/assets/apple-touch-icon.png?v=${v}` })
+    expect(brandUrls('/nonexistent')).toEqual({ favicon: '/assets/favicon.svg', touchIcon: '/assets/apple-touch-icon.png' })
+  })
+  it('are the only mark URLs of every kind of docs page', () => {
+    const brand = brandUrls(repoRoot)
+    const version = { release: '1.0.0', brand }
+    const page = { slug: 'api', rel: 'api.md', fm: { title: 'HTTP API', summary: 'S', audience: 'developer', order: 1 } }
+    const entries = entryTree([page], new Map())
+    const index = { fm: { summary: 'Docs' }, body: '' }
+    const pages = [pageHtml({ page, html: '<h1>HTTP API</h1>', headings: [], entries, version }), sectionHtml({ key: 'integrate', entries, version }), landingHtml({ index, entries, version })]
+    for (const html of pages) {
+      expect(html).toContain(`<link rel="icon" href="${brand.favicon}" type="image/svg+xml">`)
+      expect(html).toContain(`<link rel="apple-touch-icon" href="${brand.touchIcon}">`)
+      // The header's and the footer's mark too: no plain /assets/ URL is left.
+      expect(html.split(brand.favicon)).toHaveLength(4)
+      expect(html.match(/\/assets\/[a-z-]+\.(?:svg|png)[^"]*/g).every((u) => u === brand.favicon || u === brand.touchIcon)).toBe(true)
+    }
   })
 })

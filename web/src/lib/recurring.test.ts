@@ -6,6 +6,7 @@ import {
   applyOps, completeTask, createTask, deleteTask, detachOccurrence, getDeviceId, resetDeviceId, setRecurrence, setTaskCompleted, skipOccurrence, updateTask,
 } from './ops'
 import type { Op, Task } from './types'
+import { check10 } from './testdata/check10'
 
 let n = 0
 const run = () => `${Date.now()}-${n++}`
@@ -213,6 +214,22 @@ describe('setRecurrence', () => {
     expect(await db.tasks.get(id)).toMatchObject({ recurrence: 'every weekday', due: { date: '2026-10-12' } })
     await updateTask(id, { due: null })
     expect(await db.tasks.get(id)).toMatchObject({ recurrence: null, due: null })
+  })
+
+  it('stores every N weeks on <day> as every N weeks when the due date is on that day (recurrence-1-0-compatible)', async () => {
+    const sat = await createTask({ title: 'Bins', due: { date: '2026-11-07' } })
+    expect(await setRecurrence(sat, 'every 2 weeks on saturday')).toEqual({ ok: true, rule: 'every 2 weeks' })
+    const wed = await createTask({ title: 'Paper', due: { date: '2026-11-04' } })
+    expect(await setRecurrence(wed, 'every 2 weeks on sat')).toEqual({ ok: true, rule: 'every 2 weeks on saturday' })
+    const undated = await createTask({ title: 'Glass' })
+    await setRecurrence(undated, 'every 2 weeks on saturday', { today: '2026-11-04' })
+    expect(await db.tasks.get(undated)).toMatchObject({ recurrence: 'every 2 weeks', due: { date: '2026-11-07' } })
+    const created = await createTask({ title: 'Cans', due: { date: '2026-11-07' }, recurrence: 'every 2 weeks on saturday' })
+    expect((await db.tasks.get(created))?.recurrence).toBe('every 2 weeks')
+    for (const id of [sat, wed, undated, created]) {
+      const tk = await db.tasks.get(id)
+      expect(check10(tk?.recurrence ?? '', tk?.due?.date)).toBeNull()
+    }
   })
 
   it('createTask with a rule and no due date starts at the first occurrence', async () => {

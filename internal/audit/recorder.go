@@ -67,9 +67,26 @@ func (r *Recorder) Record(ctx context.Context, e Event) {
 	if r == nil {
 		return
 	}
-	if err := r.insert(ctx, r.db, e); err != nil {
+	if err := r.record(ctx, e); err != nil {
 		r.log.Error("audit: failed to record event", "event", string(e.Name), "err", err)
 	}
+}
+
+// record inserts e in a transaction of its own: reading the chain's tip and
+// appending to it must not interleave with another event.
+func (r *Recorder) record(ctx context.Context, e Event) error {
+	if err := Validate(e); err != nil {
+		return err
+	}
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if err := r.insert(ctx, tx, e); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 // RecordTx stores an event inside tx, the transaction of the state change it
@@ -117,14 +134,24 @@ func (r *Recorder) insert(ctx context.Context, q execer, e Event) error {
 			return err
 		}
 	}
-	_, err = q.ExecContext(ctx, `INSERT INTO audit_events(ts,name,outcome,actor_id,target_id,ip,user_agent,details)
+	prev, err := tip(ctx, q)
+	if err != nil {
+		return fmt.Errorf("audit: read chain: %w", err)
+	}
+	row := chainRow{ts: r.now().UnixMilli(), name: string(e.Name), outcome: e.Outcome,
+		actorID:   sql.NullString{String: e.ActorID, Valid: e.ActorID != ""},
+		targetID:  sql.NullString{String: e.TargetID, Valid: e.TargetID != ""},
+		userAgent: TruncateUserAgent(meta.userAgent), details: string(details)}
+	res, err := q.ExecContext(ctx, `INSERT INTO audit_events(ts,name,outcome,actor_id,target_id,ip,user_agent,details)
 		VALUES(?,?,?,?,?,?,?,?)`,
-		r.now().UnixMilli(), string(e.Name), e.Outcome, nullable(e.ActorID), nullable(e.TargetID), ip,
-		TruncateUserAgent(meta.userAgent), string(details))
+		row.ts, row.name, row.outcome, nullOrString(row.actorID), nullOrString(row.targetID), ip, row.userAgent, row.details)
 	if err != nil {
 		return fmt.Errorf("audit: insert %s: %w", e.Name, err)
 	}
-	return nil
+	if row.id, err = res.LastInsertId(); err != nil {
+		return err
+	}
+	return seal(ctx, q, prev.Hash, row)
 }
 
 // TruncateUserAgent cuts a user agent to MaxUserAgent bytes without splitting a
@@ -138,11 +165,4 @@ func TruncateUserAgent(ua string) string {
 		cut--
 	}
 	return ua[:cut]
-}
-
-func nullable(s string) any {
-	if s == "" {
-		return nil
-	}
-	return s
 }

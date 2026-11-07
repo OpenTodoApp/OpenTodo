@@ -35,7 +35,7 @@ The repository SHALL publish `docs/performance.md` with the budgets kept as data
 
 #### Scenario: Reading the budgets
 - **WHEN** a self-hoster opens `docs/performance.md`
-- **THEN** it lists every metric with its limit per setting, the fixture's composition, and the latest reference-device results
+- **THEN** it lists every metric with its limit per setting, the fixture's composition, and the latest reference-device results, or says plainly that no real device has been measured yet
 
 #### Scenario: Budget file and page disagree
 - **WHEN** a change raises the search budget in `budgets.json` without updating the docs page
@@ -67,12 +67,16 @@ A nightly workflow SHALL build the server, generate the fixture, and measure eve
 - **WHEN** the benchmark runs the app with network logging
 - **THEN** no request carries the measurement marks and the only requests go to the local server
 
-### Requirement: Reference device results before every minor release
-Before every minor release, the budgets marked for reference devices SHALL be measured on a 2022 mid-range Android phone in the Android shell, an iPhone 12 in the iOS shell, and the server metrics on a Raspberry Pi 4 with 4 GB, and recorded in `docs/performance/results-<version>.md` with the device, OS version, app version and each value. Device budgets SHALL be at most: cold start 3,000 ms; opening the 2,000-task project 1,200 ms; search keystroke 150 ms and completing a task 150 ms at the 95th percentile; first sync 90 s; app process memory 350 MB; Raspberry Pi server values at most four times the CI server budgets. `make release-prepare` SHALL refuse a minor release without the record or with a value over budget that does not link an issue.
+### Requirement: Reference device results when real devices are available
+The budgets marked for reference devices SHALL be measured on a 2022 mid-range Android phone in the Android shell, an iPhone 12 in the iOS shell, and the server metrics on a Raspberry Pi 4 with 4 GB, and recorded in `docs/performance/results-<version>.md` with the device, OS version, app version and each value, once the project has those devices or a device lab (owner decision 2026-11-07: none was measured for 1.0, issue #990). Device budgets SHALL be at most: cold start 3,000 ms; opening the 2,000-task project 1,200 ms; search keystroke 150 ms and completing a task 150 ms at the 95th percentile; first sync 90 s; app process memory 350 MB; Raspberry Pi server values at most four times the CI server budgets. Until real devices are measured, no release SHALL require the record, and `docs/performance.md` SHALL state that the release's budgets were measured in CI only (desktop, the phone profile and the server) and that no real device was measured. When a minor release from 1.0.0 on has a record, `make release-prepare` SHALL refuse it while a value is not a number or is over budget without a link to an issue.
 
 #### Scenario: Releasing without device results
 - **WHEN** a maintainer runs `make release-prepare VERSION=1.1.0` and `docs/performance/results-1.1.0.md` does not exist
-- **THEN** the command fails naming the missing record
+- **THEN** the gate passes without a warning, and `docs/performance.md` says no real device was measured
+
+#### Scenario: A record over budget without an issue
+- **WHEN** `docs/performance/results-1.1.0.md` shows first sync on the Android phone at 97 s with no issue link
+- **THEN** `make release-prepare VERSION=1.1.0` fails naming the record, the metric and the 90 s budget
 
 #### Scenario: Over budget with an issue
 - **WHEN** the record shows first sync on the iPhone at 97 s with a link to an open issue

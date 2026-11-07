@@ -23,7 +23,7 @@ import (
 // goes through sync.AddMemberTx like adding a member by email.
 
 func (s *Server) registerProjectInviteRoutes(mux *routes) {
-	s.projectInviteLimiter = newRateLimiter(20, time.Hour)
+	s.projectInviteLimiter = s.limit("project.invite", 20, time.Hour)
 	mux.handle("GET /api/v1/projects/{id}/invites", signedIn.DemoDenied(), s.handleListProjectInvites)
 	mux.handle("POST /api/v1/projects/{id}/invites", signedIn.Recent().DemoDenied(), s.handleCreateProjectInvite)
 	mux.handle("DELETE /api/v1/projects/{id}/invites/{inviteId}", signedIn.DemoDenied(), s.handleRevokeProjectInvite)

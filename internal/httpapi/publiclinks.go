@@ -26,10 +26,10 @@ type publicLimiters struct {
 
 func (s *Server) registerPublicLinkRoutes(mux *routes) {
 	s.public = publicLimiters{
-		create: newRateLimiter(20, time.Hour),
-		read:   newRateLimiter(120, time.Minute),
-		tick:   newRateLimiter(60, time.Minute),
-		addr:   newRateLimiter(120, time.Minute),
+		create: s.limit("public.create", 20, time.Hour),
+		read:   s.limit("public.read", 120, time.Minute),
+		tick:   s.limit("public.tick", 60, time.Minute),
+		addr:   s.limit("public.addr", 120, time.Minute),
 	}
 	mux.handle("GET /api/v1/projects/{id}/public-links", signedIn.DemoDenied(), s.handleListPublicLinks)
 	mux.handle("POST /api/v1/projects/{id}/public-links", signedIn.Recent().DemoDenied(), s.handleCreatePublicLink)

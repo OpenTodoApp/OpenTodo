@@ -16,9 +16,11 @@ import (
 func occurrenceID(seriesID, date string) string { return opsync.OccurrenceID(seriesID, date) }
 
 // canonicalizeRecurrence rewrites body.recurrence to its canonical form when it
-// parses; an invalid rule is left untouched so op validation rejects it with the
-// usual invalid_input error.
-func canonicalizeRecurrence(body map[string]json.RawMessage) {
+// parses, the form a 1.0 client reads when one means the same thing for the
+// task's due date: the body's, else the task's (recurrence-1-0-compatible;
+// existing is nil on a create). An invalid rule is left untouched so op
+// validation rejects it with the usual invalid_input error.
+func canonicalizeRecurrence(body map[string]json.RawMessage, existing opsync.Entity) {
 	raw, ok := body["recurrence"]
 	if !ok || string(raw) == "null" {
 		return
@@ -27,9 +29,21 @@ func canonicalizeRecurrence(body map[string]json.RawMessage) {
 	if json.Unmarshal(raw, &s) != nil {
 		return
 	}
-	if c, err := recurrence.Canonicalize(s); err == nil {
-		body["recurrence"], _ = json.Marshal(c)
+	c, err := recurrence.Canonicalize(s)
+	if err != nil {
+		return
 	}
+	dueRaw, has := body["due"]
+	if !has {
+		dueRaw = existing["due"]
+	}
+	var due struct {
+		Date string `json:"date"`
+	}
+	if len(dueRaw) > 0 && json.Unmarshal(dueRaw, &due) == nil {
+		c = recurrence.Compatible(c, due.Date)
+	}
+	body["recurrence"], _ = json.Marshal(c)
 }
 
 // pairDayPart completes a task body that sets Morning or Afternoon without the

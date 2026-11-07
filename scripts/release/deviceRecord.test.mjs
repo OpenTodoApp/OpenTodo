@@ -1,5 +1,6 @@
 // node --test scripts/release/deviceRecord.test.mjs (make deploy-check)
-// The reference-device record gate of make release-prepare (OpenSpec change performance-10k, task 4.3).
+// The reference-device record check of make release-prepare (OpenSpec change performance-10k, task 4.3):
+// optional until real devices are measured (#990), checked when it exists.
 import assert from 'node:assert/strict'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync, cpSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -20,7 +21,7 @@ const record = (rows) => `# Reference devices, 1.1.0
 ${rows.join('\n')}
 `
 
-test('only minor releases from 1.0 on need the record', () => {
+test('only minor releases from 1.0 on have their record checked', () => {
   assert.equal(needsRecord('1.0.0', '0.30.2'), true)
   assert.equal(needsRecord('1.1.0', '1.0.3'), true)
   assert.equal(needsRecord('1.1.1', '1.1.0'), false)
@@ -40,15 +41,16 @@ test('an empty or unknown table is refused', () => {
   assert.match(recordProblems(record(['| `warp-speed` (ms) | 1 | 1 | 1 |']), budgets)[0], /warp-speed: not a metric/)
 })
 
-test('make release-prepare fails naming the missing record, and passes with it', () => {
+test('make release-prepare passes without a record and checks one that exists', () => {
   const root = mkdtempSync(join(tmpdir(), 'device-record-'))
   try {
     mkdirSync(join(root, 'scripts/perf'), { recursive: true })
     cpSync(new URL('../perf/budgets.json', import.meta.url), join(root, 'scripts/perf/budgets.json'))
-    assert.throws(() => checkDeviceRecord(root, '1.1.0', '1.0.4'), /docs\/performance\/results-1\.1\.0\.md/)
+    // Real devices are measured after 1.0 (#990): no record is no refusal.
+    checkDeviceRecord(root, '1.1.0', '1.0.4')
     mkdirSync(join(root, 'docs/performance'), { recursive: true })
     writeFileSync(join(root, 'docs/performance/results-1.1.0.md'), record(['| `first-sync` (s) | 97 | 64 | — |']))
-    assert.throws(() => checkDeviceRecord(root, '1.1.0', '1.0.4'), /links no issue/)
+    assert.throws(() => checkDeviceRecord(root, '1.1.0', '1.0.4'), /docs\/performance\/results-1\.1\.0\.md:\n.*links no issue/)
     writeFileSync(join(root, 'docs/performance/results-1.1.0.md'), record(['| `first-sync` (s) | 88 | 64 | — |']))
     checkDeviceRecord(root, '1.1.0', '1.0.4')
     checkDeviceRecord(root, '1.0.5', '1.0.4')

@@ -2,20 +2,28 @@ import { useCallback, useEffect, useState } from 'react'
 import { Button, Notice, SettingRow } from '../ui'
 import { SecretReveal } from './TokensSection'
 import { api, isNetworkError } from '../lib/api'
-import { describeAssistantsError, type McpOAuthClient } from '../lib/assistants'
+import { describeAssistantsError, oauthClientApp, type McpOAuthClient, type McpOAuthPlatform, type McpOAuthTarget } from '../lib/assistants'
 import { t } from '../lib/i18n'
 import { copyText } from '../lib/clipboard'
 import { rowCopy } from '../lib/settingsCopy'
 
+/** The App choice for a custom redirect address. */
+const CUSTOM = 'custom'
+
 /**
- * OAuth clients for the MCP endpoint (OpenSpec change mcp-oauth): the way in for
- * an app that cannot be handed a pasted token, Google Gemini's Connected apps
- * being the one this exists for. The secret exists in the create response only,
- * so it is shown once, next to the client id the app also needs.
+ * OAuth clients for the MCP endpoint (OpenSpec changes mcp-oauth and
+ * mcp-oauth-connector-redirects): the way in for an app that signs in instead
+ * of taking a pasted token, such as Gemini, ChatGPT or Claude. A client is made
+ * for one of the platforms the server knows, or for one exact redirect address.
+ * The secret exists in the create response only, so it is shown once, next to
+ * the client id the app also needs.
  */
 export function OAuthClients({ disabled }: { disabled: boolean }) {
   const [clients, setClients] = useState<McpOAuthClient[] | null>(null)
-  const [name, setName] = useState('Gemini')
+  const [platforms, setPlatforms] = useState<McpOAuthPlatform[]>([])
+  const [app, setApp] = useState('google')
+  const [redirect, setRedirect] = useState('')
+  const [name, setName] = useState('')
   const [scope, setScope] = useState<'read' | 'agent'>('read')
   const [created, setCreated] = useState<{ client: McpOAuthClient; secret: string } | null>(null)
   const [busy, setBusy] = useState(false)
@@ -26,6 +34,7 @@ export function OAuthClients({ disabled }: { disabled: boolean }) {
     try {
       const res = await api.getMcpOAuthClients()
       setClients(res.clients)
+      setPlatforms(res.platforms ?? [])
       setError(null)
     } catch (err) {
       if (!isNetworkError(err)) setError(describeAssistantsError(err))
@@ -35,14 +44,24 @@ export function OAuthClients({ disabled }: { disabled: boolean }) {
     void load()
   }, [load])
 
+  const platform = platforms.find((p) => p.id === app)
+  const custom = app === CUSTOM
   const create = async () => {
+    const address = redirect.trim()
+    if (custom && !address) {
+      setError(t('Enter the address the app returns to after you sign in.'))
+      return
+    }
+    // A platform's addresses, or the one exact address typed; before the list
+    // has loaded, the server's default (Google's preset).
+    const target: McpOAuthTarget | undefined = custom ? { redirect_uris: [address] } : platform ? { platform: platform.id } : undefined
     setBusy(true)
     setError(null)
     try {
-      const res = await api.createMcpOAuthClient(name.trim() || 'Gemini', scope)
+      const res = await api.createMcpOAuthClient(name.trim() || platform?.name || '', scope, target)
       setCreated(res)
-      // A second client usually has another name; keeping "Gemini" invites a duplicate.
       setName('')
+      setRedirect('')
       await load()
     } catch (err) {
       setError(describeAssistantsError(err))
@@ -75,14 +94,24 @@ export function OAuthClients({ disabled }: { disabled: boolean }) {
       <div>
         <h3 className="text-body font-semibold text-default">{t('Apps that sign in with OAuth')}</h3>
         <p className="text-meta text-muted">
-          {t('Some apps, such as Google Gemini, cannot take a pasted token. They sign in with OAuth instead: create a client here and paste its client ID and secret into the app.')}
+          {t('Some apps, such as Gemini, ChatGPT and Claude, sign in with OAuth instead of taking a pasted token: create a client here for the app and paste its client ID and secret into it.')}
         </p>
       </div>
 
       <div className="flex flex-wrap items-end gap-2">
+        {platforms.length > 0 && (
+          <label className="text-meta text-muted">
+            <span className="mb-1 block">{t('App')}</span>
+            <select value={app} onChange={(e) => setApp(e.target.value)} disabled={disabled || busy}
+              className="rounded-control border border-default bg-surface px-2 py-1 text-body text-default" data-oauth-client-app>
+              {platforms.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              <option value={CUSTOM}>{t('Other app')}</option>
+            </select>
+          </label>
+        )}
         <label className="min-w-40 flex-1 text-meta text-muted">
           <span className="mb-1 block">{t('Client name')}</span>
-          <input value={name} onChange={(e) => setName(e.target.value)} disabled={disabled || busy}
+          <input value={name} onChange={(e) => setName(e.target.value)} disabled={disabled || busy} placeholder={platform?.name}
             className="w-full rounded-control border border-default bg-surface px-2 py-1 text-body text-default" data-oauth-client-name />
         </label>
         <label className="text-meta text-muted">
@@ -97,6 +126,17 @@ export function OAuthClients({ disabled }: { disabled: boolean }) {
           {t('Create client')}
         </Button>
       </div>
+      {custom && (
+        <label className="block text-meta text-muted">
+          <span className="mb-1 block">{t('Redirect address')}</span>
+          <input value={redirect} onChange={(e) => setRedirect(e.target.value)} disabled={disabled || busy} type="url" inputMode="url"
+            spellCheck={false} autoComplete="off" aria-describedby="oauth-redirect-hint"
+            className="w-full rounded-control border border-default bg-surface px-2 py-1 font-mono text-body text-default" data-oauth-client-redirect />
+          <span id="oauth-redirect-hint" className="mt-1 block text-faint">
+            {t('The exact address the app returns to after you sign in, starting with https://. The app’s documentation names it.')}
+          </span>
+        </label>
+      )}
 
       {created && (
         <div className="space-y-2" data-oauth-created>
@@ -114,6 +154,7 @@ export function OAuthClients({ disabled }: { disabled: boolean }) {
       {clients?.map((c) => (
         <SettingRow key={c.id} data-oauth-client={c.id}
           label={<span className="flex flex-wrap items-center gap-2">{c.name}
+            {oauthClientApp(c, platforms) && <span className="rounded-full bg-sunken px-2 text-meta text-muted" data-oauth-client-for>{oauthClientApp(c, platforms)}</span>}
             <span className="rounded-full bg-sunken px-2 text-meta text-muted">{c.scope === 'agent' ? t('Can make changes') : t('Read only')}</span>
             {c.dynamic && <span className="rounded-full bg-sunken px-2 text-meta text-faint">{t('Registered by the app')}</span>}
           </span>}

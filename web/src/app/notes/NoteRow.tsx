@@ -13,13 +13,36 @@ import { t } from '../../lib/i18n'
 export const SOURCE_ICON: Record<NoteEntry['source'], IconName> = { note: 'notebook-pen', task: 'circle-check-big', project: 'folder' }
 const SOURCE_NAME: Record<NoteEntry['source'], () => string> = { note: () => t('Note'), task: () => t('Task note'), project: () => t('Project note') }
 
-/** The first line of the note's text, without Markdown syntax. */
+/** How many characters of a preview a row keeps: more than a line of the widest list shows. */
+export const PREVIEW_MAX = 300
+
+/** The first line of the note's text, without Markdown syntax, cut to PREVIEW_MAX characters. */
 export function previewOf(text: string): string {
   for (const line of stripMarkdown(text).split('\n')) {
     const s = line.trim()
-    if (s) return s
+    if (s) return cut(s, PREVIEW_MAX)
   }
   return ''
+}
+
+/** s cut to at most max code points. */
+function cut(s: string, max: number): string {
+  if (s.length <= max) return s
+  // 2 * max code units hold at least max code points.
+  const head = [...s.slice(0, 2 * max)]
+  return head.length <= max && s.length <= 2 * max ? s : head.slice(0, max).join('')
+}
+
+/**
+ * Each entry's preview, worked out once: every row of the page drew the whole
+ * note again on each keystroke of a search (a 10 KB note stripped of its Markdown,
+ * then laid out on one line), though a search row shows its snippet instead.
+ */
+const previews = new WeakMap<NoteEntry, string>()
+function previewOfEntry(entry: NoteEntry): string {
+  let p = previews.get(entry)
+  if (p === undefined) previews.set(entry, (p = previewOf(entry.text)))
+  return p
 }
 
 /** The snippet's segments, the matched ones in <mark>: text only, never HTML from the note. */
@@ -46,7 +69,7 @@ export interface NoteRowProps {
 
 export function NoteRow({ entry, snippet, project, labels, updated, current, onOpen, menu }: NoteRowProps) {
   const title = entry.title.trim() || (entry.source === 'note' ? t('Untitled note') : t('Untitled'))
-  const preview = previewOf(entry.text)
+  const preview = snippet?.length ? '' : previewOfEntry(entry)
   return (
     <li className={`group relative flex min-h-12 items-start gap-1 rounded-control md:min-h-(--size-row) ${current ? 'bg-selected-row' : 'hover:bg-sunken dark:hover:bg-raised'}`}
       data-note-key={entry.key} data-note-source={entry.source}>

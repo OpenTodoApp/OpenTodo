@@ -129,7 +129,18 @@ While the relay is on, the server is trusted with content within those caps; see
   - with a stale session.
 - `TestDemoDenyListMatchesPolicy` keeps the demo's deny list and the `.demoDenied()` routes identical in both directions. A route registered without a method, and every route under a rule that carries no method, is probed with every HTTP and WebDAV method.
 
-**Limits.** Public routes are skipped by the matrix and rely on their own tests. The source scan covers the package and its route subpackages; `httpx`, which defines the router, is the one exception.
+- The same test calls every public route anonymously, with the owner's and a member's session, with each token scope and cross-site (`route_matrix_public_test.go`). Each public route has one declared promise, and the answers are checked against it:
+  - **no account data**: everyone gets the same answer;
+  - **a secret in the address**: with a wrong secret, every caller is refused alike, and a valid public-list link shows the same list, and only that list, to everyone;
+  - **a sign-in step**: a write from another site gets 403 `bad_origin`, and a session or token changes nothing;
+  - **signing out**: another site cannot end a session or clear its cookie;
+  - **its own credential** (app password, OAuth client, bearer token for MCP): the session cookie never authenticates, and an API token only where it is the credential;
+  - **a browser step** (OAuth authorize, single sign-on): an API token never stands in for the session;
+  - **the sign-in bootstrap**: no account is named to an anonymous caller, and a signed-in caller sees only their own.
+
+  A public route without a declared promise fails the test.
+
+**Limits.** The matrix checks public routes with a wrong secret; what a valid secret unlocks is tested by each feature's own tests. The source scan covers the package and its route subpackages; `httpx`, which defines the router, is the one exception.
 
 ## Token scopes
 
@@ -245,6 +256,9 @@ The last five rows were added with this retrospective.
 ## Other checks worth knowing
 
 - **Audit log allow-list.** `TestConstructorsNeverCarryEntityFields` (`internal/audit/audit_test.go`) fails if an audit event could carry a synced content field or a secret.
+- **Audit log hash chain.** `internal/audit/chain_test.go` edits, deletes, reorders and strips the hash of events in a real database and checks that verification names the first broken event; it also prunes across more than one batch and checks that the kept events still verify, and pins the hash format with a known-answer vector. `TestHousekeepingReportsABrokenAuditChain` checks the startup check logs a broken chain without stopping.
+- **Revoked devices wipe, forged answers do not.** `TestRevokedDeviceGetsProof`, `TestRevokedDeviceOnDeactivation`, `TestPasswordChangeDoesNotWipe` and `TestRevokedDeviceEndsRelay` (`internal/httpapi/revoked_device_test.go`) check that sign out everywhere, deactivation and deletion give each ended session a proof under its own wipe key, that another account, an unknown cookie and a password change get none, and that relay opt-ins end. `web/src/app/revokedDevice.test.tsx` opens the app on a revoked device and checks that its tasks and outbox are gone and the notice shows, and that a proof made with another key clears nothing; `scripts/e2e-revoked.mjs` (`make e2e`) does the same in Chromium against the built server, with a change queued offline on the revoked device. What it does not cover: a device that stays offline, which keeps its copy ([Security limits](limits.md)).
+- **Limits survive a restart.** `TestLimitsSurviveRestart` (`internal/tenant/limits_test.go`) uses up the sign-in window, closes the tenant and opens it again on the same data directory: the next sign-in, with the right password, is still refused, and no stored key holds the address or the email. `TestAgentBudgetSurvivesARestart` and `TestTimesSurviveAReopen` (`internal/ratelimit`) do the same for the agent day budget and the relay's and email's sliding windows, and `TestStoredLimiterRestores` for a fixed window's refusals and reset. `BenchmarkRateLimiterHit` measures what a stored limiter adds to a check (a few hundred nanoseconds; the write happens in the `limits` job). What it does not cover: a crash between two writes, which forgets at most a second of counts.
 - **Secrets never serialised.** `TestAssistantSecretsNeverSerialised` checks the assistant's key in JSON, `slog` and every `%v` form.
 - **Contracts between Go and TypeScript.** Logic that exists on both sides is pinned by shared fixtures ([Shared contracts](../contracts.md)). `scripts/contracts.test.mjs` checks the index of fixtures.
 - **Race detector.** The full Go suite runs nightly with `-race`.
@@ -326,10 +340,15 @@ Every item below is in the CHANGELOG's Security section of its release. Most wer
 
 These are known and tracked as follow-up tasks of the OpenSpec change `external-security-review`. [Security limits](limits.md) lists what is not protected by design.
 
-- **Public routes in the route matrix.** The matrix skips public routes, which rely on their own tests.
 - **Write paths are checked in source only.** `internal/writepaths` reads the Go source, so a write reached through reflection or SQL assembled from pieces is not seen; a table named at run time is caught only as an allow-listed place.
 - **Fuzzing.** The TypeScript client has no fuzz target (see [Fuzzing](#fuzzing)).
 - **No independent review** of the design or the code yet.
+
+## AI security review before each release
+
+Before every release tag, including patches and release candidates, the maintainer runs Claude Code's `/security-review` on the code changed since the previous release tag (`git diff <previous tag>..<release commit>`, without translations, test data and generated files). It looks for exploitable problems the release adds (authorization bypass, injection, unsafe redirects, data from one account reaching another, secrets in logs) and checks each candidate again before reporting it. It runs on the maintainer's machine: nothing is sent to an extra service and no key is kept in CI. A real finding is fixed in its own pull request with a regression test before the tag. The release pull request records the result.
+
+This is an extra layer, not an independent review. It is a tool the maintainer runs, it can miss problems a person would find, and it does not replace the checks above or the review described below.
 
 ## Independent review
 

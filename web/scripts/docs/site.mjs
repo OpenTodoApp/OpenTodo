@@ -15,9 +15,12 @@ const ICON = {
   arrow: '<path d="M5 12h14" /><path d="m12 5 7 7-7 7" />',
   chevron: '<path d="m6 9 6 6 6-6" />',
 }
+/** The mark's URLs when the build gives none (build.mjs passes version.brand, lib.mjs brandUrls). */
+const PLAIN_BRAND = { favicon: '/assets/favicon.svg', touchIcon: '/assets/apple-touch-icon.png' }
+
 const icon = (name, size = 16) => `<svg class="icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${ICON[name]}</svg>`
 
-function head({ title, description: full, url, ld = [] }) {
+function head({ title, description: full, url, ld = [], brand = PLAIN_BRAND }) {
   // Search results show about 160 characters; the page keeps its whole summary (docs-landing-restyle D5).
   const description = metaDescription(full)
   return `<!doctype html>
@@ -38,8 +41,8 @@ function head({ title, description: full, url, ld = [] }) {
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="icon" href="${brand.favicon}" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="${brand.touchIcon}">
   <link rel="preload" href="/fonts/InterVariable-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/docs/docs.css">${ld.length ? `\n  ${jsonLdScript(ld.length === 1 ? { '@context': 'https://schema.org', ...ld[0] } : { '@context': 'https://schema.org', '@graph': ld })}` : ''}
   <script data-cfasync="false">document.documentElement.classList.remove('no-js')</script>
@@ -54,11 +57,11 @@ function head({ title, description: full, url, ld = [] }) {
 const NAV = [['Features', '/features/'], ['Learn', '/learn/'], ['Docs', '/docs/'], ['Blog', '/blog/']]
 const navLinks = () => NAV.map(([label, href]) => `<li><a class="nav-link" href="${href}"${href === '/docs/' ? ' aria-current="page"' : ''}>${label}</a></li>`).join('')
 
-function header() {
+function header(brand = PLAIN_BRAND) {
   return `<a class="skip" href="#content">Skip to content</a>
 <header class="site-header">
   <div class="wrap header-inner">
-    <a class="brand" href="/"><img src="/assets/favicon.svg" width="28" height="28" alt=""><span>OpenTodo</span></a>
+    <a class="brand" href="/"><img src="${brand.favicon}" width="28" height="28" alt=""><span>OpenTodo</span></a>
     <nav class="nav-desktop" aria-label="Main"><ul>${navLinks()}</ul></nav>
     <div class="header-tools">
       <a class="header-star" href="${REPO_URL}" rel="noopener">${icon('star')}<span>Star<span class="sr-only"> OpenTodo on GitHub</span></span></a>
@@ -93,7 +96,7 @@ function footer(version) {
   <div class="wrap">
     <div class="footer-top">
       <div class="footer-brand">
-        <a class="brand" href="/"><img src="/assets/favicon.svg" width="24" height="24" alt=""><span>OpenTodo</span></a>
+        <a class="brand" href="/"><img src="${(version.brand ?? PLAIN_BRAND).favicon}" width="24" height="24" alt=""><span>OpenTodo</span></a>
         <p>The task manager you host yourself. Free and open source.</p>
       </div>
       ${FOOTER_GROUPS.map(([title, items]) => `<nav class="footer-group" aria-label="${title}"><h2>${title}</h2>${list(items)}</nav>`).join('\n      ')}
@@ -207,9 +210,9 @@ ${withInlineToc(html, t)}
     breadcrumbLd([['OpenTodo', '/'], ['Docs', '/docs/'], [entry.title, entryUrl(key)], [page.fm.title, url]]),
     { '@type': 'TechArticle', headline: page.fm.title, description: metaDescription(page.fm.summary), url: SITE_URL + url, inLanguage: 'en' },
   ]
-  return `${head({ title: `${page.fm.title} · OpenTodo docs`, description: page.fm.summary, url, ld })}
+  return `${head({ title: `${page.fm.title} · OpenTodo docs`, description: page.fm.summary, url, ld, brand: version.brand })}
 <body class="docs">
-${header()}
+${header(version.brand)}
 ${shell({ entries, current: page.slug, currentEntry: key, body, tocHtml: t })}
 ${footer(version)}
 </body>
@@ -231,9 +234,9 @@ export function sectionHtml({ key, entries, version }) {
       <p class="section-line">${e(entry.line)} ${count} pages.</p>
       ${groups.map(([g, list]) => `${g ? `<h2 id="${g.toLowerCase().replace(/[^a-z]+/g, '-')}">${e(g)}</h2>` : ''}<ul class="section-rows">${list.map(row).join('')}</ul>`).join('\n      ')}
     </article>`
-  return `${head({ title: `${entry.title} · OpenTodo docs`, description: `${entry.line} Every page, with what it covers.`, url: entryUrl(key), ld: [breadcrumbLd([['OpenTodo', '/'], ['Docs', '/docs/'], [entry.title, entryUrl(key)]])] })}
+  return `${head({ title: `${entry.title} · OpenTodo docs`, description: `${entry.line} Every page, with what it covers.`, url: entryUrl(key), ld: [breadcrumbLd([['OpenTodo', '/'], ['Docs', '/docs/'], [entry.title, entryUrl(key)]])], brand: version.brand })}
 <body class="docs">
-${header()}
+${header(version.brand)}
 ${shell({ entries, current: `@${key}`, currentEntry: key, body })}
 ${footer(version)}
 </body>
@@ -253,9 +256,9 @@ export function landingHtml({ index, entries, version }) {
       <a class="entry-all" href="${entryUrl(entry.key)}">All ${all.length} pages${icon('arrow')}</a>
     </section>`
   }
-  return `${head({ title: 'OpenTodo docs', description: index.fm.summary ?? 'Guides for using OpenTodo, running your own server and building on it.', url: '/docs/', ld: [breadcrumbLd([['OpenTodo', '/'], ['Docs', '/docs/']])] })}
+  return `${head({ title: 'OpenTodo docs', description: index.fm.summary ?? 'Guides for using OpenTodo, running your own server and building on it.', url: '/docs/', ld: [breadcrumbLd([['OpenTodo', '/'], ['Docs', '/docs/']])], brand: version.brand })}
 <body class="docs docs-home">
-${header()}
+${header(version.brand)}
 <main id="content" tabindex="-1">
   <div class="wrap home">
     <div class="home-head">

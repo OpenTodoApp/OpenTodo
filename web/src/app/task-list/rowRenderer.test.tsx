@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest'
 import { flatRow, type ListRow } from '../../lib/listGroups'
 import type { Progress } from '../../lib/subtasks'
 import type { Task } from '../../lib/types'
+import { noteKeys } from '../../lib/taskDelta'
 import { render } from '../../ui/test-utils'
 import { useRowRenderer, type RowContext } from './ListGroups'
 import type { RowActions } from './TaskListRow'
@@ -55,6 +56,26 @@ describe('useRowRenderer', () => {
     expect(second[0]).toBe(first[0])
     expect(second[1]).not.toBe(first[1])
     expect(second[2]).not.toBe(first[2])
+    await r.unmount()
+  })
+
+  it('with the keys a patched map noted, looks up only those rows (incremental-list-updates D3)', async () => {
+    const out: ReactNode[][] = []
+    const before = progress({ done: 0, total: 1 })
+    const first = context({ progress: before })
+    const r = await render(<Probe c={first} rows={rows} out={out} />)
+    // A patch renewed the map and noted 'b'; 'a' reads differently but was not noted, so it is not looked up.
+    const after = new Map([['a', { done: 2, total: 2 }], ['b', { done: 1, total: 1 }]])
+    const looked: string[] = []
+    const spy = new Proxy(after, { get: (m, k) => { if (k === 'get') return (id: string) => { looked.push(id); return m.get(id) }; const v = Reflect.get(m, k, m); return typeof v === 'function' ? v.bind(m) : v } })
+    noteKeys(before, spy, new Set(['b']))
+    // The other maps stay the objects they were, as a write that touched only progress leaves them.
+    await r.rerender(<Probe c={{ ...first, progress: spy as Map<string, Progress> }} rows={rows} out={out} />)
+    const [was, now] = out.slice(-2)
+    expect(now[0]).toBe(was[0])
+    expect(now[1]).not.toBe(was[1])
+    expect(now[2]).toBe(was[2])
+    expect(looked.filter((id) => id !== 'b')).toEqual([])
     await r.unmount()
   })
 

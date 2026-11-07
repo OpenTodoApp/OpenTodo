@@ -376,6 +376,17 @@ ot issues sync 7f3a --dry-run   # print the request, run nothing
 
 `ot issues sync` writes, so `--read-only` and a `read` or `agent` token refuse it before any poll (exit 5). It exits 5 with `issues_disabled` while the owner has not enabled issue connections, and 1 when a connection is stopped (`connection_stopped`), the provider's rate limit applies (`provider_rate_limited`), the hourly limit of 12 checks and syncs is reached (`rate_limited`) or the poll fails (`poll_failed`). Connections are added and changed in Settings → Integrations → Issues.
 
+## Audit log
+
+For the server owner: check that the [audit log](self-hosting/docker.md#checking-the-log-for-tampering) was not changed outside OpenTodo.
+
+```bash
+ot audit verify          # Audit chain intact: 1203 events checked, newest 8512.  Head: 8512 9f2c…
+ot audit verify --json   # {ok, checked, uncovered, checkpoint, head, break}
+```
+
+It exits 1 with `audit_chain_broken` and names the first broken event when an event was changed, removed or moved, and 5 (`forbidden`) for anyone but the owner. Keep the head somewhere else to notice later rewrites; see [Keep an anchor outside the server](self-hosting/docker.md#checking-the-log-for-tampering).
+
 ## Tokens and export
 
 `--scope` is `full` (the default), `read` or `agent`; anything else exits with code 2 before a request is sent. Creating a token is a [credential route](api.md#token-scopes): `ot token create` needs an `admin` token in the profile (the token `ot login` stores is `full`, so run `ot login` again to mint a new one, or create it in Settings → Integrations → API tokens). An `admin` token can only be created in the web app, from a recently confirmed session; with it, scripts can also manage second factors, other tokens, app passwords, accounts and server secrets. A `full` token gets exit 5 (`insufficient_scope`) on those routes. An `agent` token is for an [AI assistant](mcp.md#letting-an-assistant-make-changes): it reads everything and can create and edit tasks, projects, sections, labels, comments, reminders and time entries (through the MCP write tools or `ot`, see [Using ot from an agent](#using-ot-from-an-agent)), and only while both assistant switches are on (the owner's and yours, in Settings → Integrations → AI assistants).

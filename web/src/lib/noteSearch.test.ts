@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import vectors from '../../../internal/notesearch/testdata/vectors.json'
-import { matchNote, normalizeText, parseQuery, prepareNote, rankNotes, snippet, snippetPlain, stripMarkdown } from './noteSearch'
+import { matchNote, matchPrepared, normalizeText, parseQuery, prepareNote, rankNotes, snippet, snippetPlain, stripMarkdown } from './noteSearch'
 
 describe('note search (shared vectors.json with internal/notesearch)', () => {
   it('has the same cases as the Go test', () => {
@@ -44,6 +44,20 @@ describe('note search details', () => {
   })
   it('prepareNote is what matchNote compares', () => {
     expect(prepareNote({ title: 'Café', text: '**Oat** milk' })).toEqual({ title: 'cafe', body: 'oat milk' })
+  })
+  it('a phrase can run from the title into the body', () => {
+    const p = prepareNote({ title: 'Oat', text: 'milk and honey' })
+    expect(matchPrepared(p, parseQuery('"oat milk"'))).toEqual({ matched: true, titleMatch: false, bodyWords: 0 })
+    expect(matchPrepared(p, parseQuery('"oat honey"')).matched).toBe(false)
+    expect(matchPrepared(p, parseQuery('oatmilk')).matched).toBe(false)
+  })
+  it('strips blank lines, line endings and space runs as one text', () => {
+    // The fast paths (blank lines skipped, no pattern when nothing is to collapse) give what the full pass gives.
+    const md = '# Plan\r\n\r\n- buy  milk\r\n\r\n\r\nCall\tthe bank\n\n \n'
+    expect(stripMarkdown(md)).toBe('Plan buy milk Call the bank')
+    expect(stripMarkdown('\n\nOne line\n\n')).toBe('One line')
+    expect(stripMarkdown('a\n\nb **c**')).toBe('a b c')
+    expect(stripMarkdown('\n \n')).toBe('')
   })
 })
 

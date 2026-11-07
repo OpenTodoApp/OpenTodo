@@ -4,10 +4,12 @@
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from './db'
-import { changedTaskKeys, deriveSets, patchRows, taskSnapshot, type TaskSets } from './taskSnapshot'
+import { changedTaskKeys, deriveSets, patchRows, patchSets, taskSnapshot, type TaskSets } from './taskSnapshot'
+import { changesBetween } from './taskDelta'
 import { applyOps, createProject, createTask, deleteTask, resetDeviceId, setTaskCompleted, updateProject, updateTask } from './ops'
 import { readWorkspaceState, storeWorkspaces } from './workspaces'
-import type { Op, Task } from './types'
+import type { Op, Project, Task } from './types'
+import type { WorkspaceState } from './workspaces'
 import { waitFor } from '../ui/test-utils'
 
 let n = 0
@@ -97,5 +99,21 @@ describe('the patched task snapshot', () => {
     const out = patchRows(rows, ['b', 'c', 'e'], [row('b'), row('c', 'C'), undefined])
     expect(out.map((r) => `${r.id}:${r.title}`)).toEqual(['a:a', 'b:b', 'c:C'])
     expect(out[0]).toBe(rows[0])
+  })
+
+  it('patches its visible sets from the changed rows and notes them; several workspaces derive in full (incremental-list-updates D1)', () => {
+    const row = (id: string, over: Partial<Task> = {}) => ({ id, title: id, project_id: null, deleted_at: null, ...over }) as Task
+    const projects = [{ id: 'gone', deleted_at: 1 }] as Project[]
+    const one = { current: '', defaultId: '', list: [] } as unknown as WorkspaceState
+    const rows = [row('a'), row('b'), row('c', { project_id: 'gone' })]
+    const prev = deriveSets(rows, projects, one)
+    const changes = [{ id: 'b', before: rows[1], after: row('b', { deleted_at: 2 }) }, { id: 'd', before: undefined, after: row('d') }]
+    const next = patchSets(prev, changes, projects, one)!
+    expect(next.every.map((t) => t.id)).toEqual(['a', 'd'])
+    expect(next.here).toBe(next.every)
+    expect(changesBetween(prev.every, next.every)!.map((c) => c.id).sort()).toEqual(['b', 'd'])
+    expect(patchSets(prev, [{ id: 'a', before: rows[0], after: rows[0] }], projects, one)).toBe(prev)
+    const two = { current: 'w1', defaultId: 'w1', list: [{ id: 'w1' }, { id: 'w2' }] } as unknown as WorkspaceState
+    expect(patchSets(deriveSets(rows, projects, two), changes, projects, two)).toBeNull()
   })
 })

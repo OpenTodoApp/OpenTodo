@@ -209,6 +209,19 @@
   --ot-hue-slate-solid: oklch(0.5544 0.0407 257.42); --ot-hue-slate-soft: color-mix(in oklab, var(--ot-hue-slate-solid) var(--ot-mix-hue-soft-light), var(--ot-surface)); --ot-hue-slate-text: color-mix(in oklch, var(--ot-hue-slate-solid) var(--ot-mix-hue-text-light), oklch(0 0 0));
 }
 :root {
+  /* Safe areas (GitHub issue 973): the strips of the screen the status bar, the notch
+     or Dynamic Island, the home indicator and the rounded sides take, read once here
+     (index.html sets viewport-fit=cover, so the page runs under them). Every surface
+     that touches an edge of the viewport pads by these, never by env() itself
+     (`make ui-lint`), and the safe-area check (scripts/e2e-safe-area.mjs) sets them on
+     an engine that cannot emulate the insets. Utilities: pt-safe, pb-safe, pl-safe,
+     pr-safe, px-safe. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+}
+:root {
   --duration-ui: 120ms;
   --duration-emphasis: 250ms;
   /* The moment (tokens-v2 D9, motion-v2 D1): the one longer duration, for the completion
@@ -689,6 +702,20 @@ html:root[data-contrast="high"] :focus-visible {
 html, body, #root {
   height: 100%;
 }
+/* The status bar's backdrop (GitHub issue 999): on an iPhone the installed app runs
+   under the status bar, and Safari covers that strip with a soft blur, taller than the
+   strip and drawn over whatever is below it, unless an opaque fixed element spans the
+   top edge, whose colour it extends instead. This one (index.html, before the app) is
+   that element: the canvas, as tall as the top inset (nothing without one), under the
+   side panels, the drawer and every overlay, which pad their own tops by the inset.
+   The safe-area check (topEdge in scripts/ux-audit/measure.mjs) requires it. */
+[data-status-bar-backdrop] {
+  position: fixed;
+  inset: 0 0 auto;
+  height: var(--safe-top);
+  z-index: 20;
+  background-color: var(--color-canvas);
+}
 /* Follow the visible viewport on phones (iOS toolbars), where supported. */
 @supports (height: 100dvh) {
   #root { height: 100dvh; }
@@ -1016,8 +1043,15 @@ button.ui-column-add { @apply flex-row items-start justify-start px-3 py-2.5 hov
 /* Not in WebKit (only it supports hanging-punctuation): its layout check twice found rows
    on screen left skipped, the list drawn blank and a tap on the checkbox landing on the
    row (release 0.22.0). Safari draws every row, as before list-rendering-at-scale. */
+/* A long list skips whole blocks of rows instead (incremental-list-updates D5): with the
+   rule on each of 2,000 rows, every frame worked out which rows to skip and every hit
+   test walked all of them. A block far from the viewport is skipped; its rows are drawn
+   with it. A block holding a row that draws normally (above) draws normally too. Its
+   size until drawn: its rows at the row estimate. */
+.row-block { display: block; content-visibility: auto; contain-intrinsic-size: auto calc(var(--row-estimate, 2.375rem) * var(--block-rows, 50)); overflow-clip-margin: 0.25rem; }
+.row-block .row-offscreen, .row-block:has(> ul > li[data-task-id]:not(.row-offscreen)) { content-visibility: visible; }
 @supports (hanging-punctuation: first) {
-  .row-offscreen { content-visibility: visible; }
+  .row-offscreen, .row-block { content-visibility: visible; }
 }
 /* The page (precision-shell D3, app-shell "Page template"): content uses the whole
    content surface, the header included, so every title, first row and last action
@@ -1098,7 +1132,7 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 .row-check-pop, [data-departing] [data-check-mark], [data-rolled] [data-check-mark] {
   animation: row-check-pop var(--duration-emphasis) var(--ease-spring) backwards;
 }
-[data-departing] { overflow: hidden; animation: row-collapse calc(var(--duration-moment) - 200ms) var(--ease-spring) 200ms both; }
+[data-departing] { overflow: hidden; interpolate-size: allow-keywords; animation: row-collapse calc(var(--duration-moment) - 200ms) var(--ease-spring) 200ms both; }
 [data-departing] [data-row-open] { animation: row-text-fade 200ms var(--ease-calm) 60ms both; }
 [data-departing] [data-row-title] { position: relative; inline-size: fit-content; max-inline-size: 100%; text-decoration-line: none; }
 [data-departing] [data-row-title]::after {
@@ -1140,6 +1174,7 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 @media (pointer: coarse) {
   :root[data-density="compact"] .row-pad { padding-block: 0.5rem; }
   .row-offscreen { contain-intrinsic-size: auto var(--row-estimate, 2.625rem); }
+  .row-block { contain-intrinsic-size: auto calc(var(--row-estimate, 2.625rem) * var(--block-rows, 50)); }
   :root[data-density="compact"] [data-sidebar-item] { min-height: 2.75rem; }
 }
 /* User-written text wraps instead of pushing the page sideways. */
@@ -1255,6 +1290,19 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
   }
 }
 
+/* Full task titles (OpenSpec change full-task-titles, design D2): with the setting on,
+   <html> carries data-titles="full" and every row, card and Today title shows in full,
+   wrapped onto as many lines as it takes, instead of two lines (one on a phone) and an
+   ellipsis. Outside the layers and more specific than the phone row's one-line clamp, so
+   it wins at every width. On the phone row the cell at the end stays on the title's
+   first line rather than in the middle of a tall title. */
+:root[data-titles="full"] [data-row-title] { -webkit-line-clamp: none; line-clamp: none; }
+@media (width < 48rem) {
+  @container row (width < 40rem) {
+    :root[data-titles="full"] [data-row-props] { align-self: start; min-height: 1.25rem; }
+  }
+}
+
 /* Detailed rows (OpenSpec change row-layouts, design D2): the title, the parent and a
    details line, stacked at every width; the property column and the phone's one-line
    row are for one-line rows only. Outside the layers, after the column's rules, so
@@ -1334,6 +1382,13 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
     min-height: 44px;
   }
 }
+/* Safe areas (GitHub issue 973): a surface that touches an edge pads by its inset.
+   With a minimum, write the token in an arbitrary value: pt-[max(0.5rem,var(--safe-top))]. */
+@utility pt-safe { padding-top: var(--safe-top); }
+@utility pb-safe { padding-bottom: var(--safe-bottom); }
+@utility pl-safe { padding-left: var(--safe-left); }
+@utility pr-safe { padding-right: var(--safe-right); }
+@utility px-safe { padding-left: var(--safe-left); padding-right: var(--safe-right); }
 @layer utilities {
 /* Controls revealed on hover stay visible where there is no hover. */
 @media (hover: hover) {
@@ -1395,7 +1450,7 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
    --display-scale (set per size on the display's root), so they follow the
    browser's font-size setting: body text is about 20, 24 and 32 px at m, l, xl.
    Day columns stack below 768 px and wrap instead of scrolling sideways. */
-.display-root { --display-scale: 1.6; @apply flex flex-col bg-canvas text-default; min-height: 100%; font-size: calc(var(--text-prose) * var(--display-scale)); line-height: 1.35; }
+.display-root { --display-scale: 1.6; @apply flex flex-col bg-canvas text-default; min-height: 100%; padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left); font-size: calc(var(--text-prose) * var(--display-scale)); line-height: 1.35; }
 .display-root[data-size="m"] { --display-scale: 1.35; }
 .display-root[data-size="xl"] { --display-scale: 2.15; }
 .display-clock { @apply font-semibold text-strong; font-size: min(calc(var(--text-display) * var(--display-scale) * 1.5), 16vw); line-height: 1.05; font-variant-numeric: tabular-nums; }
@@ -1495,3 +1550,8 @@ html:root[data-contrast="high"] .quick-add-tint { background-color: transparent;
 /* The frame (precision-shell D3): the whole content surface, from its left edge, so the
    docked panel narrows it from the right and nothing moves. */
 .page-frame { margin-left: 0; margin-right: 0; }
+
+/* A long list's block of rows (.row-block, incremental-list-updates D5): its row count is not
+   inherited. It changes when a row comes or goes, and as an inherited property it restyled every
+   element of the block's rows (about 800, 55 ms in the phone profile). */
+@property --block-rows { syntax: '<number>'; inherits: false; initial-value: 25; }

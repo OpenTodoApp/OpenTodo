@@ -36,6 +36,7 @@ gosec.sarif
 /web/playwright-report/
 /web/test-results/
 /layout-report/
+/safe-area-report/
 /ux-audit-report/
 
 # Agent worktrees

@@ -3,7 +3,7 @@ import { t } from './i18n/catalog'
 import { fetchWithTimeout, NetworkError, RequestTimeoutError, timeouts } from './http'
 import type { Branding } from './branding'
 import type { AssistantSkill } from './assistantSkills'
-import type { AgentAccess, ApiToken, McpConsentInfo, McpOAuthClient, McpOAuthClients, McpStatus, TokenScope } from './assistants'
+import type { AgentAccess, ApiToken, McpConsentInfo, McpOAuthClient, McpOAuthClients, McpOAuthTarget, McpStatus, TokenScope } from './assistants'
 import type { AssistantStatus } from './assistantStatus'
 import type { AssistantOwnerSettings, AssistantMemberSettings, AssistantSettingsInput, AssistantTestDraft, AssistantTestResult, MyAssistantTestDraft, AssistantUsage, MyAssistantInput } from './assistantTypes'
 import type { KeyRecord } from './crypto'
@@ -378,8 +378,9 @@ export const api = {
   // OAuth clients for the MCP endpoint (mcp-oauth): an app that cannot take a
   // pasted token signs in instead. The secret comes back once, on creation.
   getMcpOAuthClients: () => request<McpOAuthClients>('GET', '/api/v1/settings/mcp/clients'),
-  createMcpOAuthClient: (name: string, scope: 'read' | 'agent') =>
-    request<{ client: McpOAuthClient; secret: string }>('POST', '/api/v1/settings/mcp/clients', { name, scope }),
+  /** `target`: a platform's addresses, or one exact custom address; without it, Google's preset. */
+  createMcpOAuthClient: (name: string, scope: 'read' | 'agent', target?: McpOAuthTarget) =>
+    request<{ client: McpOAuthClient; secret: string }>('POST', '/api/v1/settings/mcp/clients', { name, scope, ...target }),
   deleteMcpOAuthClient: (id: string) => request<void>('DELETE', `/api/v1/settings/mcp/clients/${encodeURIComponent(id)}`),
   /** The consent screen of an app connecting through OAuth: `query` is its authorize request. */
   getMcpConsent: (query: string) => request<McpConsentInfo>('GET', `/api/v1/me/mcp-consent?${query}`),

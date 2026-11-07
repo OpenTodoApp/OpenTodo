@@ -1,0 +1,80 @@
+// @vitest-environment happy-dom
+// Full task titles (OpenSpec change full-task-titles, GitHub issue 998): a synced
+// additive preference applied as an attribute on the root, which the stylesheet turns
+// into titles wrapped onto as many lines as they take in list rows, on board cards and
+// in Today, at every width.
+import 'fake-indexeddb/auto'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { db } from '../lib/db'
+import { fullTitlesOn, setFullTitles } from '../lib/fullTitles'
+import { applyOps, resetDeviceId } from '../lib/ops'
+import { click, render, waitFor } from '../ui/test-utils'
+import { AppearanceProvider } from './AppearanceProvider'
+import { AppearanceSection } from './AppearanceSection'
+import { searchSettings } from './settingsIndex'
+import css from '../index.css?raw'
+import row from './TaskRow.tsx?raw'
+
+const root = () => document.documentElement
+
+beforeEach(async () => {
+  await db.delete()
+  await db.open()
+  resetDeviceId()
+  root().removeAttribute('data-titles')
+})
+afterEach(() => { root().removeAttribute('data-titles') })
+
+describe('preference', () => {
+  it('reads "on" as on, anything else as off, and leaves an unknown stored value alone', async () => {
+    expect(fullTitlesOn({ full_titles: 'on' })).toBe(true)
+    expect(fullTitlesOn({ full_titles: 'wrap' })).toBe(false)
+    expect(fullTitlesOn({ full_titles: '' })).toBe(false)
+    expect(fullTitlesOn(null)).toBe(false)
+    await applyOps([{ id: 't1', entity: 'user_prefs', entityId: 'me', field: 'full_titles', value: 'wrap', ts: Date.now(), device: 'phone' }] as never)
+    expect((await db.userPrefs.get('me'))?.full_titles).toBe('wrap')
+    expect(await db.outbox.count()).toBe(0)
+  })
+
+  it('is written as one op, off as ""', async () => {
+    await setFullTitles(true)
+    await setFullTitles(false)
+    expect((await db.outbox.toArray()).map((o) => `${o.field}=${o.value}`)).toEqual(['full_titles=on', 'full_titles='])
+  })
+
+  it('the stylesheet lifts the title clamp of rows, cards and the phone row', () => {
+    // Every list row, card and Today title is RowTitle's element, clamped to two lines.
+    expect(row).toMatch(/line-clamp-2 break-words \$\{tone\}`\} data-row-title/)
+    expect(css).toContain(':root[data-titles="full"] [data-row-title] { -webkit-line-clamp: none; line-clamp: none; }')
+    // More specific than the phone row's one-line clamp, which it must beat.
+    expect(css).toContain('[data-row-title] { font-size: 0.90625rem; -webkit-line-clamp: 1; line-clamp: 1; }')
+    expect(css).toMatch(/:root\[data-titles="full"\] \[data-row-props\] \{ align-self: start;/)
+  })
+
+  it('is found by the settings search', () => {
+    const user = { id: 'u1', email: 'ada@example.com', name: 'Ada', role: 'member' as const, createdAt: 1 }
+    for (const q of ['full task titles', 'truncate', 'wrap']) {
+      const hits = searchSettings(q, user as never).flatMap((h) => h.entries)
+      expect(hits.some((e) => e.anchor === 'appearance-titles' && e.page === 'theme')).toBe(true)
+    }
+  })
+})
+
+describe('Appearance → Show full task titles', () => {
+  it('applies at once on this device and arrives on another device through sync', async () => {
+    const r = await render(<AppearanceProvider><AppearanceSection /></AppearanceProvider>)
+    const toggle = () => document.querySelector<HTMLButtonElement>('#appearance-titles-switch')
+    await waitFor(() => !!toggle(), 'the switch')
+    expect(toggle()!.getAttribute('aria-checked')).toBe('false')
+    expect(root().hasAttribute('data-titles')).toBe(false)
+    await click(toggle()!)
+    await waitFor(() => root().getAttribute('data-titles') === 'full', 'full titles applied')
+    expect(toggle()!.getAttribute('aria-checked')).toBe('true')
+    expect((await db.userPrefs.get('me'))?.full_titles).toBe('on')
+    // The other device: the op arrives by sync and the root follows without any local write.
+    await applyOps([{ id: 't2', entity: 'user_prefs', entityId: 'me', field: 'full_titles', value: '', ts: Date.now() + 1000, device: 'tablet' }] as never)
+    await waitFor(() => !root().hasAttribute('data-titles'), 'the synced choice applied')
+    expect(toggle()!.getAttribute('aria-checked')).toBe('false')
+    await r.unmount()
+  })
+})

@@ -81,7 +81,7 @@ Measured on iOS 27 in the simulator (design D2): without a matching app-bound do
 
 | File | What it does |
 | --- | --- |
-| `SetupActivity`, `ServerAddress`, `HealthCheck` | first-run screen: https, or http only for local addresses after a warning; `GET /healthz` names the failure (no network, not OpenTodo, untrusted certificate, refused) |
+| `SetupActivity`, `ServerAddress`, `HealthCheck` | first-run screen: https, or http only for local addresses after a warning; `GET /api/v1/health`, then `/healthz` for older servers, names the failure (no network, not OpenTodo, untrusted certificate, refused) |
 | `MainActivity` | the full-screen `WebView` on the configured origin; other origins open in the browser; file chooser; back; shares; "Change server" (long-press the app icon) |
 | `Bridge` | the bridge, injected with `WebViewCompat.addWebMessageListener` and `addDocumentStartJavaScript`, both restricted to the configured origin |
 | `ReminderSchedule`, `Reminders.kt` | the handed-over schedule, exact alarms (inexact when refused), notifications with Snooze 10 min and Dismiss, re-arming after a reboot |
@@ -96,7 +96,7 @@ Certificates: `res/xml/network_security_config.xml` trusts the system and the us
 
 | File | What it does |
 | --- | --- |
-| `OpenTodo/SetupView`, `ServerAddress`, `HealthCheck` | first-run screen with the same address rules as Android (`https`, or `http` only for local addresses); `GET /healthz` names the failure (no answer, not OpenTodo, untrusted certificate, must be https) |
+| `OpenTodo/SetupView`, `ServerAddress`, `HealthCheck` | first-run screen with the same address rules as Android (`https`, or `http` only for local addresses); `GET /api/v1/health`, then `/healthz` for older servers, names the failure (no answer, not OpenTodo, untrusted certificate, must be https) |
 | `OpenTodo/ShellView` | the `WKWebView` on the configured origin, origin-locked navigation, other origins and `mailto:`/`tel:` in the system browser (only the schemes the bridge allows), the system's own certificate check (no bypass, and a private authority the user installed works), reload after a WebContent crash, pull to refresh, an offline screen until the first page loads |
 | `OpenTodo/Bridge` | the bridge: a document-start `WKUserScript` that defines `window.opentodoShell` on the configured origin, and one `WKScriptMessageHandlerWithReply` that checks the frame's origin and main-frame flag again |
 | `OpenTodo/Reminders`, `OpenTodo/Notifications` | the handed-over schedule: `UNUserNotificationCenter`, at most 64 pending notifications, Snooze 10 min and Dismiss as foreground actions, a tap or an action carrying `opentodo://task/…` or `opentodo://reminder/…?action=` into the web app; notifications are shown while the app is in front |

@@ -164,7 +164,7 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 		if !s.rotationOK(r.Context(), w, body, nil) {
 			return
 		}
-		canonicalizeRecurrence(body)
+		canonicalizeRecurrence(body, nil)
 		pairDayPart(body)
 		// Custom field values become fields.<id> keys before an idempotent
 		// replay compares the planned ops (custom-fields D3).
@@ -542,7 +542,7 @@ func (s *Server) handlePatch(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if entity == "task" {
-		canonicalizeRecurrence(body)
+		canonicalizeRecurrence(body, existing)
 		pairDayPart(body)
 		// Completing a recurring task records the occurrence and moves the series.
 		recordID, record, ok, err := s.recurringCompletion(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"), body, existing, localToday(s.now()))

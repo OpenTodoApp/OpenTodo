@@ -13,6 +13,7 @@ import { activeBody, encodeDoc, newDoc, updateBody, type RNode } from '../../lib
 import { setCurrentUserId } from '../../lib/sharing'
 import { click, flush, key, minWidthPx, render, type, waitFor } from '../../ui/test-utils'
 import { noteViewOf } from '../NotesEditor'
+import { PREVIEW_MAX, previewOf } from './NoteRow'
 import { panelOccupant, resetPanel } from '../panel'
 import { ProjectNote } from '../ProjectNote'
 import { NOTE_FILTERS_KEY, NotesPage } from './NotesPage'
@@ -257,5 +258,17 @@ describe('the note editor for a standalone note', () => {
     const options = [...listbox()!.querySelectorAll('[role="option"]')].map((o) => o.textContent ?? '')
     expect(options.some((o) => o.includes('Checklist'))).toBe(true)
     for (const missing of ['Mention', 'Image', 'Make subtask']) expect(options.some((o) => o.includes(missing)), missing).toBe(false)
+  })
+})
+
+describe('the row preview', () => {
+  it('is the stripped note, cut to PREVIEW_MAX code points', () => {
+    expect(previewOf('# Plan\n\n**Buy** milk')).toBe('Plan Buy milk')
+    const long = 'word '.repeat(200)
+    expect(previewOf(long)).toBe(long.trim().slice(0, PREVIEW_MAX))
+    // Never half of a character outside the Basic Multilingual Plane.
+    const astral = '\u{1D11E}'.repeat(PREVIEW_MAX + 5)
+    expect([...previewOf(astral)]).toHaveLength(PREVIEW_MAX)
+    expect(previewOf(astral)).toBe('\u{1D11E}'.repeat(PREVIEW_MAX))
   })
 })

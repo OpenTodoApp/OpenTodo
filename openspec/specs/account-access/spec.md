@@ -153,7 +153,7 @@ A user SHALL sign in with email and password and receive a session delivered as 
 - **THEN** the session cookie is marked `Secure`, while the same header from an untrusted peer is ignored
 
 ### Requirement: Brute-force protection
-Anonymous authentication routes SHALL be rate limited per client address, with one window per purpose: failed password sign-ins (successful sign-ins SHALL NOT count), registration and sign-up links, password reset requests and links, invitation and project-invite links, unknown public links, MCP requests without a valid token, and passkey sign-in, 10 per minute each. IPv6 client addresses SHALL be counted per /64 in every per-address limit. In addition, 10 failed passwords, second-factor codes or re-authentications for one account within 15 minutes SHALL lock that account's password sign-in, second step and re-authentication from every address until the window ends, checked before the credential is verified; a sign-in for an email without an account SHALL be counted and locked the same way. A successful sign-in SHALL clear the account's count. Limits are server memory, not synced; they reset on restart.
+Anonymous authentication routes SHALL be rate limited per client address, with one window per purpose: failed password sign-ins (successful sign-ins SHALL NOT count), registration and sign-up links, password reset requests and links, invitation and project-invite links, unknown public links, MCP requests without a valid token, and passkey sign-in, 10 per minute each. IPv6 client addresses SHALL be counted per /64 in every per-address limit. In addition, 10 failed passwords, second-factor codes or re-authentications for one account within 15 minutes SHALL lock that account's password sign-in, second step and re-authentication from every address until the window ends, checked before the credential is verified; a sign-in for an email without an account SHALL be counted and locked the same way. A successful sign-in SHALL clear the account's count. Limits are counted in server memory and kept in the server's database within a second of each change and when it stops, so a restart, an upgrade or a crash does not reset them (a crash may lose the last second of counts); they are not synced, so offline behaviour and convergence are unaffected. Stored keys are hashes, never the client address or email.
 
 #### Scenario: Repeated failures
 - **WHEN** a client exceeds 10 failed sign-in attempts or 10 registration attempts within one minute
@@ -178,6 +178,14 @@ Anonymous authentication routes SHALL be rate limited per client address, with o
 #### Scenario: IPv6 neighbours
 - **WHEN** two addresses in the same IPv6 /64 make attempts
 - **THEN** they share one window
+
+#### Scenario: Restart keeps the account locked
+- **WHEN** an account is locked after 10 failed passwords and the server restarts within the 15 minutes
+- **THEN** the next sign-in for it is still refused with 429 `account_locked` until the window ends
+
+#### Scenario: Restart keeps an address's window
+- **WHEN** a client used up its sign-in window and the server restarts within the minute
+- **THEN** its next failed sign-in is still refused with 429 `rate_limited`
 
 ### Requirement: Authentication required by default
 Every API route except the health check and the authentication bootstrap routes SHALL require a valid session or API token.
@@ -546,3 +554,34 @@ Settings → Integrations SHALL list the user's API tokens as rows: the name, a 
 #### Scenario: Shown once
 - **WHEN** the user creates a token
 - **THEN** the token is shown in a monospace box with Copy, the dialog says it will not be shown again, and after closing it the list shows the new row without the secret
+
+### Requirement: A revoked device removes its local copy
+When sessions are ended by **Sign out everywhere**, by deactivating the account or by deleting it, the server SHALL keep, for a year, a record of each ended session that holds only its token hash and its wipe key. `GET /api/v1/auth/status` SHALL return `wipeKey` (a per-session random key) to a signed-in cookie session, and SHALL answer the cookie of a recorded session with `authenticated: false` and `revoked: {proof}`, the HMAC-SHA256 of `opentodo device revoked v1` under that session's key. An expired session, and sessions ended by a password change, a password reset or the device's own sign-out, SHALL get no proof. The web app SHALL keep the key in its local database and, only when a proof matches it, SHALL remove everything sign-out removes (the local database with the outbox and the stored encryption key, the native shell's reminders, geofences, widget and biometric key, and the HTTP cache), end the cookie and show the sign-in screen with "This device was signed out and its data was removed." Device relay opt-ins of the ended sessions SHALL end with them. Unsynced changes on the device are lost. The wipe happens on the device's next contact with the server; a device that never connects again keeps its copy. The wipe removes only a local copy: the server's data and the other devices' convergence are unaffected.
+
+#### Scenario: Signed out everywhere from another device
+- **WHEN** a person signs out everywhere on their laptop and later opens the app on their phone
+- **THEN** the phone's `auth/status` carries a proof that matches its key, the phone removes its local copy and outbox, and shows the sign-in screen with "This device was signed out and its data was removed."
+
+#### Scenario: Account deactivated
+- **WHEN** an admin deactivates an account and one of its devices next contacts the server
+- **THEN** that device removes its local copy in the same way, and the account's data stays on the server
+
+#### Scenario: Expired session keeps its data
+- **WHEN** a device's session expired, or was ended by a password change elsewhere
+- **THEN** `auth/status` carries no proof, the sign-in screen appears and the local copy and outbox stay, uploading after the next sign-in
+
+#### Scenario: Forged answer
+- **WHEN** an answer claims `revoked` with a proof that does not match the key the device stored, or the device has no stored key
+- **THEN** nothing is removed
+
+#### Scenario: Another account's sessions
+- **WHEN** one account signs out everywhere
+- **THEN** no session of another account is recorded, and those devices keep working
+
+#### Scenario: Relay opt-ins end with the sessions
+- **WHEN** a device opted in to the device relay and its account signs out everywhere
+- **THEN** the opt-in is removed and its relay stream closes
+
+#### Scenario: Device that stays offline
+- **WHEN** a revoked device never contacts the server again
+- **THEN** it keeps its local copy, as the security limits state

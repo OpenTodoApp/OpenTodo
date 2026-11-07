@@ -33,6 +33,9 @@ type Entry struct {
 	IP          *string           `json:"ip"`
 	UserAgent   string            `json:"userAgent"`
 	Details     map[string]string `json:"details"`
+	// Hash is the event's link in the hash chain (`audit-hash-chain`); null for an
+	// event recorded before the chain started.
+	Hash *string `json:"hash"`
 }
 
 // Filter selects events. Zero values mean "no constraint".
@@ -61,7 +64,7 @@ func (r *Recorder) List(ctx context.Context, f Filter) ([]Entry, int64, error) {
 	where, args := f.where()
 	args = append(args, f.Limit+1)
 	rows, err := r.db.QueryContext(ctx, `SELECT e.id, e.ts, e.name, e.outcome, e.actor_id, a.email, e.target_id, t.email,
-			e.ip, e.user_agent, e.details
+			e.ip, e.user_agent, e.details, e.hash
 		FROM audit_events e
 		LEFT JOIN users a ON a.id = e.actor_id
 		LEFT JOIN users t ON t.id = e.target_id
@@ -76,7 +79,7 @@ func (r *Recorder) List(ctx context.Context, f Filter) ([]Entry, int64, error) {
 		var details string
 		var actorEmail, targetEmail sql.NullString
 		if err := rows.Scan(&e.ID, &e.TS, &e.Name, &e.Outcome, &e.ActorID, &actorEmail, &e.TargetID, &targetEmail,
-			&e.IP, &e.UserAgent, &details); err != nil {
+			&e.IP, &e.UserAgent, &details, &e.Hash); err != nil {
 			return nil, 0, err
 		}
 		e.Details = map[string]string{}
