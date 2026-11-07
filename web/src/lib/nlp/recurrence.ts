@@ -4,7 +4,7 @@
 // into the canonical English rule of the recurring-tasks grammar and accepted
 // only if parseRule accepts it, so the parser never emits a rule the server
 // would refuse.
-import { firstOccurrence, parseRule } from '../recurrence'
+import { parseRule } from '../recurrence'
 import { countAt, dayNumber, lookupAt, matchDateAt, ofMonthAt, phraseAt, weekdayAt, weekdayOrdinalAt, type DateContext } from './dates'
 import type { Token } from './tokenize'
 import type { Vocabulary } from './vocab'
@@ -20,7 +20,10 @@ export interface RecurrenceMatch {
    * comparison like any match but records no attribute.
    */
   literal?: true
-  /** The first date when the phrase names a weekday the rule cannot hold ("every other friday": the next Friday). */
+  /**
+   * The date of a start phrase next to the rule ("starting tomorrow", "from 3 March",
+   * quick-add-weekday-recurrence D3): the series starts on its first date on or after it.
+   */
   start?: string
 }
 
@@ -91,11 +94,15 @@ function ordinalAt(tokens: readonly Token[], i: number, v: Vocabulary): { n: num
 function patternAt(tokens: readonly Token[], k: number, v: Vocabulary): Pattern | null {
   const all = phraseAt(tokens, k, v.weekdayAll, `${v.code}:wdall`)
   if (all) return { n: all, pattern: 'weekday', monthly: false }
-  // [N] unit
+  // [N] unit, and "[N] weeks on <weekdays>" (quick-add-weekday-recurrence D1)
   const count = /^\d{1,3}$/.test(tokens[k]?.norm ?? '') && !tokens[k].quoted ? Number(tokens[k].norm) : 0
   const unit = recUnitAt(tokens, k + (count ? 1 : 0), v)
   if (unit) {
-    return { n: (count ? 1 : 0) + unit.n, pattern: count && count !== 1 ? `${count} ${unit.unit}s` : unit.unit, monthly: false }
+    const n = (count ? 1 : 0) + unit.n
+    const pattern = count && count !== 1 ? `${count} ${unit.unit}s` : unit.unit
+    const on = unit.unit === 'week' ? weeksOnAt(tokens, k + n, v) : null
+    if (on) return { n: n + on.n, pattern: `${pattern} on ${on.days}`, monthly: false }
+    return { n, pattern, monthly: false }
   }
   if (count && anyUnitAt(tokens, k + 1, v)) return null // "every 3 hours": not expressible
   // ordinal weekday: "2nd monday", "2e lundis", "segunda segunda-feira" (quick-add-nth-weekday D3)
@@ -125,7 +132,12 @@ function patternAt(tokens: readonly Token[], k: number, v: Vocabulary): Pattern 
     }
     return null
   }
-  // weekday list: Mon, Wed and Fri
+  const list = weekdayListAt(tokens, k, v)
+  return list ? { n: list.n, pattern: list.days, monthly: false } : null
+}
+
+/** A weekday list at k ("Mon, Wed and Fri") as the rule's English list, or null. */
+function weekdayListAt(tokens: readonly Token[], k: number, v: Vocabulary): { n: number; days: string } | null {
   const days: number[] = []
   let j = k
   for (;;) {
@@ -142,8 +154,15 @@ function patternAt(tokens: readonly Token[], k: number, v: Vocabulary): Pattern 
     if (/[,;]$/.test(tokens[j - 1].text) && weekdayPluralAt(tokens, j, v) >= 0) continue
     break
   }
-  if (days.length) return { n: j - k, pattern: days.map((d) => WEEKDAY_EN[d]).join(', '), monthly: false }
-  return null
+  return days.length ? { n: j - k, days: days.map((d) => WEEKDAY_EN[d]).join(', ') } : null
+}
+
+/** "on Saturday", "am Samstag", "le samedi" after a week count: the weekdays the rule keeps. */
+function weeksOnAt(tokens: readonly Token[], k: number, v: Vocabulary): { n: number; days: string } | null {
+  const on = phraseAt(tokens, k, v.weekOnWords, `${v.code}:weekon`)
+  if (!on) return null
+  const list = weekdayListAt(tokens, k + on, v)
+  return list ? { n: on + list.n, days: list.days } : null
 }
 
 /**
@@ -159,16 +178,17 @@ function countWeekdayAt(tokens: readonly Token[], k: number, v: Vocabulary): num
 
 /**
  * "every other" with a unit or a weekday at token i (quick-add-month-and-every-other
- * D3): "every other week" is every 2 weeks; "every other friday" is every 2 weeks
- * starting on the first Friday on or after today. Also the French form around the
- * noun, "une semaine sur deux", "un vendredi sur deux".
+ * D3): "every other week" is every 2 weeks; "every other friday" is every 2 weeks on
+ * Friday (quick-add-weekday-recurrence D1), so the rule keeps its weekday whatever
+ * the due date. Also the French form around the noun, "une semaine sur deux",
+ * "un vendredi sur deux".
  */
-function everyOtherAt(tokens: readonly Token[], i: number, v: Vocabulary, today: string): { n: number; pattern: string; start?: string } | null {
-  const noun = (k: number): { n: number; pattern: string; start?: string } | null => {
+function everyOtherAt(tokens: readonly Token[], i: number, v: Vocabulary): { n: number; pattern: string } | null {
+  const noun = (k: number): { n: number; pattern: string } | null => {
     const unit = recUnitAt(tokens, k, v)
     if (unit) return { n: unit.n, pattern: `2 ${unit.unit}s` }
     const wd = weekdayPluralAt(tokens, k, v)
-    if (wd >= 0) return { n: 1, pattern: '2 weeks', start: firstOccurrence(`every ${WEEKDAY_EN[wd]}`, today) }
+    if (wd >= 0) return { n: 1, pattern: `2 weeks on ${WEEKDAY_EN[wd]}` }
     return null
   }
   const ev = phraseAt(tokens, i, v.everyOther, `${v.code}:other`)
@@ -183,28 +203,65 @@ function everyOtherAt(tokens: readonly Token[], i: number, v: Vocabulary, today:
   return m && post ? { ...m, n: pre + m.n + post } : null
 }
 
+/** The longest phrase of a vocabulary list at token k across the active languages. */
+function anyPhraseAt(tokens: readonly Token[], k: number, ctx: DateContext, field: 'afterCompletion' | 'untilWords' | 'repeatWords' | 'startWords'): number {
+  let n = 0
+  for (const w of ctx.vocabs) n = Math.max(n, phraseAt(tokens, k, w[field], `${w.code}:${field}`))
+  return n
+}
+
+/** A start phrase at k ("starting tomorrow", "ab Montag", "à partir du 3 mars"): its date and the token after it. */
+function startAt(tokens: readonly Token[], k: number, ctx: DateContext): { date: string; to: number } | null {
+  const sw = anyPhraseAt(tokens, k, ctx, 'startWords')
+  const dm = sw ? matchDateAt(tokens, k + sw, ctx) : null
+  return dm ? { date: dm.date, to: dm.to } : null
+}
+
 /**
- * The longest recurrence phrase at token i across the active vocabularies, with
- * its optional tails: of the month (after a monthly pattern), after completion,
- * until <date phrase>, for N times.
+ * The longest recurrence phrase at token i, with what may surround it
+ * (quick-add-weekday-recurrence D3, D4): a connector before it ("and repeat",
+ * "und dann") and a start phrase before or after it ("starting today every
+ * other Saturday", "every day from Monday"), which go with the rule only when
+ * a rule follows or precedes them, so "Repeat the test" keeps its words.
  */
 export function matchRecurrenceAt(tokens: readonly Token[], i: number, ctx: DateContext): RecurrenceMatch | null {
   if (!tokens[i] || tokens[i].quoted) return null
+  let k = i + anyPhraseAt(tokens, i, ctx, 'repeatWords')
+  const lead = startAt(tokens, k, ctx)
+  if (lead) k = lead.to + anyPhraseAt(tokens, lead.to, ctx, 'repeatWords')
+  if (k === i) return ruleAt(tokens, i, ctx)
+  const m = ruleAt(tokens, k, ctx)
+  if (!m || m.literal) return ruleAt(tokens, i, ctx)
+  return { ...m, from: i, ...(lead && !m.start ? { start: lead.date } : {}) }
+}
+
+/**
+ * The longest rule at token i across the active vocabularies, with its optional
+ * tails: of the month (after a monthly pattern), after completion, until <date
+ * phrase>, for N times, and a start phrase.
+ */
+function ruleAt(tokens: readonly Token[], i: number, ctx: DateContext): RecurrenceMatch | null {
+  if (!tokens[i] || tokens[i].quoted) return null
   let best: RecurrenceMatch | null = null
   // Tails are tried in every active language: "every monday until 31 Dec" works with any vocabulary.
-  const tail = (k: number, field: 'afterCompletion' | 'untilWords'): number => {
-    let n = 0
-    for (const w of ctx.vocabs) n = Math.max(n, phraseAt(tokens, k, w[field], `${w.code}:${field}`))
-    return n
-  }
+  const tail = (k: number, field: 'afterCompletion' | 'untilWords'): number => anyPhraseAt(tokens, k, ctx, field)
   /** A head (the pattern after "every", ending before token k) with its tails; kept when longer than the best so far. */
-  const consider = (pattern: string, k: number, start?: string) => {
+  const consider = (pattern: string, k: number) => {
+    let start: string | undefined
+    const startTail = () => {
+      const st = start === undefined ? startAt(tokens, k, ctx) : null
+      if (st) {
+        start = st.date
+        k = st.to
+      }
+    }
     let rule = `every ${pattern}`
     const ac = tail(k, 'afterCompletion')
     if (ac && parseRule(`${rule} after completion`).ok) {
       rule += ' after completion'
       k += ac
     }
+    startTail()
     const until = tail(k, 'untilWords')
     if (until) {
       const dm = matchDateAt(tokens, k + until, ctx)
@@ -225,14 +282,15 @@ export function matchRecurrenceAt(tokens: readonly Token[], i: number, ctx: Date
         }
       }
     }
+    startTail()
     const parsed = parseRule(rule)
     if (!parsed.ok) return
     if (!best || k > best.to) best = { rule: parsed.canonical, from: i, to: k, ...(start ? { start } : {}) }
   }
   for (const v of ctx.vocabs) {
     // "every other" first: on a tie it wins over the ordinal reading of "jeden zweiten Freitag".
-    const other = everyOtherAt(tokens, i, v, ctx.today)
-    if (other) consider(other.pattern, i + other.n, other.start)
+    const other = everyOtherAt(tokens, i, v)
+    if (other) consider(other.pattern, i + other.n)
     const one = lookupAt(tokens, i, v.everyOne, `${v.code}:every1`)
     if (one) {
       consider(one.value, i + one.n)
