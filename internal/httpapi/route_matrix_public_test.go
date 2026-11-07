@@ -60,6 +60,7 @@ const (
 // registered in some configurations (the web app, the demo) is classified too.
 var publicRouteClasses = map[string]publicClass{
 	"GET /healthz":                    pubStatic,
+	"GET /api/v1/health":              pubStatic,
 	"GET /.well-known/security.txt":   pubStatic,
 	"/api/":                           pubStatic,
 	"/":                               pubStatic,

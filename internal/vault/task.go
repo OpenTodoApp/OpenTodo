@@ -139,7 +139,8 @@ func (e *engine) fileProj(m *mergeRun, pl place, baseP map[string]string) map[st
 	if l.Recur == "" {
 		p["recur"] = ""
 	} else if rule, err := ruleFromFile(l.Recur); err == nil {
-		p["recur"] = rule
+		// The form a 1.0 client reads when one means the same thing (recurrence-1-0-compatible).
+		p["recur"] = recurrence.Compatible(rule, dueDate(p["due"]))
 	} else {
 		bad("🔁 %s: %v", l.Recur, err)
 	}

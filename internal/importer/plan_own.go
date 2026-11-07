@@ -155,9 +155,18 @@ func (pl *planner) ownAttachment(row Row, fields []field, res *RowResult) ([]fie
 	return out, true
 }
 
-// ownTask stores the rule in canonical form and keeps an assignee only when it
+// ownTask stores the rule in canonical form, the one 1.0 reads when its due
+// date allows (recurrence-1-0-compatible), and keeps an assignee only when it
 // is the importing account (anyone else is not a member here, design D2).
 func (pl *planner) ownTask(fields []field, res *RowResult) []field {
+	var due struct {
+		Date string `json:"date"`
+	}
+	for _, f := range fields {
+		if f.name == "due" {
+			_ = json.Unmarshal(f.value, &due)
+		}
+	}
 	out := fields[:0]
 	for _, f := range fields {
 		switch f.name {
@@ -165,7 +174,8 @@ func (pl *planner) ownTask(fields []field, res *RowResult) []field {
 			var rule string
 			if json.Unmarshal(f.value, &rule) == nil && rule != "" {
 				if c, err := recurrence.Canonicalize(rule); err == nil {
-					f.value = raw(c)
+					// The form a 1.0 client reads when one means the same thing (recurrence-1-0-compatible).
+					f.value = raw(recurrence.Compatible(c, due.Date))
 				}
 			}
 		case "energy", "sector":

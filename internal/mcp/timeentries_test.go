@@ -80,16 +80,32 @@ func TestTimeEntriesReadTool(t *testing.T) {
 
 // A repeating task's tracked_minutes counts its current occurrence: the entries
 // since its last completion (OpenSpec change fix-recurring-tracked-time).
+// TestTrackedMinutesOfRepeatingTask pins the v1.0.0 meaning of tracked_minutes
+// (every entry of the task, docs/stability.md) next to the added
+// tracked_minutes_occurrence (tracked-time-api-compatible): 30 minutes before a
+// completion and 10 after give 40 and 10.
 func TestTrackedMinutesOfRepeatingTask(t *testing.T) {
 	f := newFixture(t)
 	f.task("u1", "s1", "Water the plants", map[string]any{"due": map[string]any{"date": "2026-03-11"}, "recurrence": "every day", "estimate_minutes": 30})
 	rec := opsync.OccurrenceID("s1", "2026-03-10")
 	f.task("u1", rec, "Water the plants", map[string]any{"due": map[string]any{"date": "2026-03-10"}, "series_id": "s1", "occurrence_date": "2026-03-10", "completed_at": 1773100000000})
+	f.task("u1", "once", "Write the report", nil)
 	f.put("u1", "time_entry", "before", map[string]any{"task_id": "s1", "user_id": "u1", "started_at": 1773090000000, "ended_at": 1773091800000, "note": "", "device_id": "d", "created_at": 1})
 	f.put("u1", "time_entry", "after", map[string]any{"task_id": "s1", "user_id": "u1", "started_at": 1773110000000, "ended_at": 1773110600000, "note": "", "device_id": "d", "created_at": 1})
-	res := f.tool("u1", "get_task", map[string]any{"id": "s1"})
-	if got := res["task"].(map[string]any)["tracked_minutes"]; got != float64(10) {
-		t.Fatalf("tracked_minutes = %v, want 10 (the current occurrence's)", got)
+	f.put("u1", "time_entry", "plain", map[string]any{"task_id": "once", "user_id": "u1", "started_at": 1773090000000, "ended_at": 1773091800000, "note": "", "device_id": "d", "created_at": 1})
+	task := f.tool("u1", "get_task", map[string]any{"id": "s1"})["task"].(map[string]any)
+	if got := task["tracked_minutes"]; got != float64(40) {
+		t.Fatalf("tracked_minutes = %v, want 40 (every entry, as in 1.0)", got)
+	}
+	if got := task["tracked_minutes_occurrence"]; got != float64(10) {
+		t.Fatalf("tracked_minutes_occurrence = %v, want 10 (the current occurrence's)", got)
+	}
+	plain := f.tool("u1", "get_task", map[string]any{"id": "once"})["task"].(map[string]any)
+	if got := plain["tracked_minutes"]; got != float64(30) {
+		t.Fatalf("plain tracked_minutes = %v, want 30", got)
+	}
+	if _, ok := plain["tracked_minutes_occurrence"]; ok {
+		t.Fatalf("a task that does not repeat carries tracked_minutes_occurrence: %v", plain)
 	}
 	if res := f.tool("u1", "list_time_entries", map[string]any{"task_id": "s1"}); len(res["time_entries"].([]any)) != 2 {
 		t.Fatalf("entries = %v", res)

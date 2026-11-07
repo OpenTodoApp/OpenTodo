@@ -196,6 +196,10 @@ func (t *Tenant) Close() error {
 		if t.Set != nil {
 			t.Backups.Stop()
 			t.Sync.Notifier().CloseAll()
+			// The last limit windows, so a restart does not reset them (persistent-limits D1).
+			if err := t.Limits.Flush(context.Background()); err != nil {
+				t.log.Warn("limits: write windows on close", "err", err)
+			}
 		}
 		if t.Reader != nil {
 			t.Reader.Close()

@@ -28,8 +28,13 @@ const mcpMaxBody = 1 << 20
 func (s *Server) registerMCPRoutes(mux *routes) {
 	s.agentAccess = agenttools.NewAccess(s.sync.DB())
 	s.agentExclusions = agenttools.NewExclusions(s.sync.DB())
+	// The agent write limits outlive a restart (persistent-limits D4).
+	agentLimits := agenttools.NewLimiter(s.now)
+	if st := s.limitStore(); st != nil {
+		agentLimits.Attach(st)
+	}
 	s.agentTools = agenttools.New(s.sync, agenttools.Options{
-		Audit: s.audit, Log: s.log, Exclusions: s.agentExclusions,
+		Audit: s.audit, Log: s.log, Exclusions: s.agentExclusions, Limits: agentLimits,
 		LocalToday: func() string { return localToday(s.now()) },
 		// Reminders an assistant adds are read in the zone REST uses (agent-tools-complete D2).
 		UserZone: s.tzLocation,

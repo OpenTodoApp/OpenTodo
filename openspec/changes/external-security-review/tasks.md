@@ -62,3 +62,8 @@ Behaviour changes get their own small OpenSpec change (suggested name in bracket
   - [x] 6.13d Deferred after 1.0 (owner decision 2026-11-06): release-signature checks of the web app in the service worker, #970
 - [x] 6.14 Agent paths refuse routines that send content off the server: creating, changing, turning on and running a routine with a Send a webhook, Email me or Email project members step answer `forbidden_for_agents`; reading, testing, turning off and trashing stay open [`agent-routine-sends`, #930]; verify `go test ./internal/agenttools -run TestSendsOut` and `go test ./internal/httpapi -run TestRoutineSendingStepsRefusedForAgents`
 - [x] 6.15 `run_routine` runs only within what is left of the agent's daily items (token and account), holding them before the run and settling after [`agent-run-routine-limits`, #934]; verify `go test ./internal/agenttools -run 'TestRunRoutineWithinDailyItems|TestLimiterHold'` and `go test ./internal/rules -run TestRoutineRunMaxWrites`
+
+## 7. Second wave
+
+- [x] 7.1 A revoked device removes its local copy: sign out everywhere, deactivation and deletion leave a proof under each session's wipe key, which the device checks before clearing what sign-out clears [`revoked-device-wipe`]; verify `go test ./internal/httpapi -run 'TestRevokedDevice|TestPasswordChangeDoesNotWipe'`, `npm test -- revokedDevice revocation` and `scripts/e2e-revoked.mjs`
+- [x] 7.2 Rate limits and agent limits survive a restart: counted in memory as before, written behind to SQLite by the tenant's `limits` job and on close, keys hashed [`persistent-limits`]; verify `go test ./internal/tenant -run TestLimitsSurviveRestart` and `go test ./internal/ratelimit`

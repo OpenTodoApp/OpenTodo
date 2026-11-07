@@ -58,7 +58,7 @@ The server does not encrypt its own storage. Use disk or volume encryption on th
 | `<data>/attachments/` | Unencrypted files, except files of encrypted accounts, which are encrypted on the device |
 | `<data>/secrets/*.json` | Unencrypted JSON, mode 0600 |
 | `<data>/cache/maps` | Map tiles and styles. No account data |
-| Each device's IndexedDB | Unencrypted on the device, including for encrypted accounts. The browser and the operating system protect it. **Lock this device** forgets the key; signing out clears the data |
+| Each device's IndexedDB | Unencrypted on the device, including for encrypted accounts. The browser and the operating system protect it. **Lock this device** forgets the key; signing out clears the data, and so does a revoked device when it next connects |
 | Backup archives | Encrypted only when a backup passphrase is set (argon2id and AES-256-GCM) |
 
 ## What a backup contains
@@ -99,12 +99,13 @@ Routes that make outbound requests or touch credentials, settings, members or bu
 
 OpenTodo is held to [performance budgets](../performance.md) with a 10,000-task account, and a 50,000-task account is measured nightly without a budget. Beyond that, nothing is promised.
 
-The server is one process with one SQLite writer, sized for a household, a team or a small organisation, not for thousands of concurrent writers. Rate limits and AI agent limits live in memory: they are per process and reset when the server restarts.
+The server is one process with one SQLite writer, sized for a household, a team or a small organisation, not for thousands of concurrent writers. Rate limits and AI agent limits are counted in memory and written to the database within a second, so a restart keeps them and a crash forgets at most the last second. In host mode the host's per-client request limit stays in memory.
 
 ## Other limits
 
 - **The audit log is tamper-evident, not tamper-proof.** Each event is chained to the one before by a hash, and the server checks the chain. Someone who can write the database file can still rewrite every hash, or remove the newest events, without the check noticing. Keep the chain head of an export outside the server to catch that ([Audit log](../self-hosting/docker.md#checking-the-log-for-tampering)). Events from before the chain existed are not covered.
 - **Rollback re-opens fixed issues.** Running a binary older than a security fix brings that issue back. There are no down-migrations.
 - **Capability links** (public lists, task pages, calendar feeds) give their access to anyone who holds them, until revoked or expired.
+- **A revoked device clears its copy only when it connects.** After **Sign out everywhere**, or when an admin deactivates or deletes the account, each of its devices removes its local copy the next time it contacts the server, and loses the changes it had not synced. A device that never connects again keeps its copy, and so does one that comes back more than a year later. A password change or reset only signs the other devices out. Clients that use API tokens (`ot`, the vault, the Obsidian plugin, the browser extension) keep what they hold after the token is revoked.
 - **Bearer tokens** are never asked for a second factor. A leaked `full` token can read and change the account's data until it is revoked.
 - **No independent review** has been made yet ([Independent review](how-we-verify.md#independent-review)).

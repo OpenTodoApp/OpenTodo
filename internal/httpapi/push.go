@@ -28,7 +28,7 @@ func (s *Server) registerPushRoutes(mux *routes) {
 	mux.handle("GET /api/v1/push/vapid-key", signedIn, s.handlePushKey)
 	mux.handle("POST /api/v1/push/subscriptions", signedIn.DemoDenied(), s.handlePushSubscribe)
 	mux.handle("DELETE /api/v1/push/subscriptions/{id}", signedIn.DemoDenied(), s.handlePushUnsubscribe)
-	s.pushTestLimiter = newRateLimiter(pushTestLimit, pushTestWindow)
+	s.pushTestLimiter = s.limit("push.test", pushTestLimit, pushTestWindow)
 	mux.handle("POST /api/v1/push/test", signedIn.DemoDenied(), s.handlePushTest)
 }
 

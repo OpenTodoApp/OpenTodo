@@ -284,7 +284,7 @@ Every write tool call SHALL be applied as one batch of ops with `ApplyStrict` as
 - **THEN** the request is refused with 400 `invalid_op` and nothing is applied
 
 ### Requirement: Write limits
-One write call SHALL change at most 50 entities; larger requests SHALL be refused with `-32602`. Each token SHALL be limited to 30 write calls per minute and 1,000 changed entities per UTC day, and all the agent tokens of one account together SHALL be limited to 60 write calls per minute and 2,000 changed entities per UTC day, so creating more tokens or connecting more clients does not raise the budget. Beyond either limit the tool error SHALL be `rate_limited` with `retry_after_seconds` and nothing SHALL change on any device; a call refused for either limit SHALL count against neither. The agent REST content routes SHALL share these counters. Read tools SHALL not count toward these limits. The counters are server memory, not ops: offline behaviour and convergence are unaffected.
+One write call SHALL change at most 50 entities; larger requests SHALL be refused with `-32602`. Each token SHALL be limited to 30 write calls per minute and 1,000 changed entities per UTC day, and all the agent tokens of one account together SHALL be limited to 60 write calls per minute and 2,000 changed entities per UTC day, so creating more tokens or connecting more clients does not raise the budget. Beyond either limit the tool error SHALL be `rate_limited` with `retry_after_seconds` and nothing SHALL change on any device; a call refused for either limit SHALL count against neither. The agent REST content routes SHALL share these counters. Read tools SHALL not count toward these limits. The counters are kept in server memory and in the server's database, so a restart does not reset them; they are not ops: offline behaviour and convergence are unaffected.
 
 #### Scenario: Too many items
 - **WHEN** an assistant calls `create_tasks` with 51 items
@@ -301,6 +301,10 @@ One write call SHALL change at most 50 entities; larger requests SHALL be refuse
 #### Scenario: Account day limit across tokens
 - **WHEN** two agent tokens of one person have changed 1,000 entities each in one UTC day and a third token of that person tries to change one more
 - **THEN** the result is a `rate_limited` tool error and nothing changes until the next UTC day
+
+#### Scenario: Restart keeps the day's budget
+- **WHEN** an `agent` token changed 1,000 entities today and the server restarts
+- **THEN** its next write call that changes an entity is refused with `rate_limited` until the next UTC day
 
 ### Requirement: Untrusted content in tool results
 Tool results SHALL carry user-written text (titles, descriptions, names, comment bodies) inside fields marked as untrusted data, with a fixed notice telling the assistant to treat it as data and not as instructions, and SHALL mark items from shared projects with `shared: true` and comments by other people with `author_is_you: false`. Marking changes no stored data; results reflect synced data only.

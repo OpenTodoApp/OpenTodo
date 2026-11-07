@@ -702,6 +702,20 @@ html:root[data-contrast="high"] :focus-visible {
 html, body, #root {
   height: 100%;
 }
+/* The status bar's backdrop (GitHub issue 999): on an iPhone the installed app runs
+   under the status bar, and Safari covers that strip with a soft blur, taller than the
+   strip and drawn over whatever is below it, unless an opaque fixed element spans the
+   top edge, whose colour it extends instead. This one (index.html, before the app) is
+   that element: the canvas, as tall as the top inset (nothing without one), under the
+   side panels, the drawer and every overlay, which pad their own tops by the inset.
+   The safe-area check (topEdge in scripts/ux-audit/measure.mjs) requires it. */
+[data-status-bar-backdrop] {
+  position: fixed;
+  inset: 0 0 auto;
+  height: var(--safe-top);
+  z-index: 20;
+  background-color: var(--color-canvas);
+}
 /* Follow the visible viewport on phones (iOS toolbars), where supported. */
 @supports (height: 100dvh) {
   #root { height: 100dvh; }
@@ -1268,6 +1282,19 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
     /* The project as its dot, the assignee as the avatar; both names stay in the accessible text. */
     [data-row-cell="project"][data-dot] > :last-child,
     [data-row-cell="assignee"] [data-assignee] > :last-child { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  }
+}
+
+/* Full task titles (OpenSpec change full-task-titles, design D2): with the setting on,
+   <html> carries data-titles="full" and every row, card and Today title shows in full,
+   wrapped onto as many lines as it takes, instead of two lines (one on a phone) and an
+   ellipsis. Outside the layers and more specific than the phone row's one-line clamp, so
+   it wins at every width. On the phone row the cell at the end stays on the title's
+   first line rather than in the middle of a tall title. */
+:root[data-titles="full"] [data-row-title] { -webkit-line-clamp: none; line-clamp: none; }
+@media (width < 48rem) {
+  @container row (width < 40rem) {
+    :root[data-titles="full"] [data-row-props] { align-self: start; min-height: 1.25rem; }
   }
 }
 
