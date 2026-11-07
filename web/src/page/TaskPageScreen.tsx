@@ -255,7 +255,7 @@ export function TaskPageScreen({ secret, fragment }: { secret: string; fragment:
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
-  return <main className="mx-auto min-h-dvh w-full max-w-2xl bg-canvas px-4 py-8 sm:px-6">{children}</main>
+  return <main className="mx-auto min-h-dvh w-full max-w-2xl bg-canvas px-4 pb-8 pt-[max(2rem,var(--safe-top))] sm:px-6">{children}</main>
 }
 
 function Ended({ title, body }: { title: string; body: string }) {

@@ -281,3 +281,27 @@ test('safe areas (GitHub issue 973): a control under the island fails; one in a 
   assert.equal(b.length, 1)
   assert.match(b[0], /"Today" \(button\) is in the bottom safe area/)
 })
+
+test('top edge (GitHub issue 999): without an opaque fixed backdrop over the status bar, or with text under it, the check fails', { skip }, async () => {
+  const { topEdge } = await import('./measure.mjs')
+  const insets = { top: 59, right: 0, bottom: 34, left: 0 }
+  // The issue: a padded bar, but nothing fixed and opaque over the strip, so Safari blurs it.
+  await fixture('<header style="padding-top:59px"><h1 style="margin:0">Inbox</h1></header>')
+  const r = await page.evaluate(topEdge, [insets])
+  assert.equal(r.length, 1)
+  assert.match(r[0], /no opaque fixed element covers the top safe area/)
+  // With the backdrop, the padded bar passes; a title not padded by the inset fails, even under the backdrop.
+  const backdrop = '<div data-status-bar-backdrop style="position:fixed;top:0;left:0;right:0;height:59px;background:#fff;z-index:20"></div>'
+  await fixture(`${backdrop}<header style="padding-top:59px"><h1 style="margin:0">Inbox</h1></header>`)
+  assert.deepEqual(await page.evaluate(topEdge, [insets]), [])
+  await fixture(`${backdrop}<header><h1 style="margin:0">Inbox</h1></header>`)
+  const t = await page.evaluate(topEdge, [insets])
+  assert.equal(t.length, 1)
+  assert.match(t[0], /"Inbox" is drawn in the top safe area at rest/)
+  // A translucent fixed bar is not a backdrop; a list scrolled down may pass under the strip.
+  await fixture('<div style="position:fixed;top:0;left:0;right:0;height:59px;background:rgba(0,0,0,0.4)"></div><div id="s" style="height:640px;overflow:auto"><div style="height:2000px;padding-top:80px">Row</div></div>')
+  await page.evaluate(() => { document.getElementById('s').scrollTop = 60 })
+  const u = await page.evaluate(topEdge, [insets])
+  assert.equal(u.length, 1)
+  assert.match(u[0], /no opaque fixed element/)
+})
