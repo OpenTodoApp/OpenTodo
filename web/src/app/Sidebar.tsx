@@ -242,7 +242,6 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
   }, [route])
 
   const [adding, setAdding] = useState(false)
-  const [name, setName] = useState('')
   const { labels, counts: labelCounts, duplicates } = useLabelData()
   const labelDrag = useLabelDrag()
 
@@ -305,16 +304,6 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
     setParentId(route.view === 'project' && tree.nodes.has(route.id) ? route.id : '')
     setGroupOpen('projects', true)
     setAdding(true)
-  }
-
-  async function submit(e: FormEvent) {
-    e.preventDefault()
-    if (!name.trim()) return
-    const id = await createProject({ name, parent_id: parentId || null })
-    if (parentId) await toggleCollapsedProject(parentId, false)
-    setName('')
-    setAdding(false)
-    navigate({ view: 'project', id })
   }
 
   const focusRow = (id: string | null) => {
@@ -532,18 +521,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
             )
           })}
         </ul>
-        {adding && !collapsed && (
-          <form onSubmit={(e) => void submit(e)} className="space-y-1 px-1 pt-1">
-            <input className="ui-input" autoFocus placeholder={t('Project name')} value={name} onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Escape' && setAdding(false)} />
-            <ProjectPickerField label={t('Parent project')} projects={projects} value={parentId || null} onChange={(id) => setParentId(id ?? '')}
-              rankContext="project.parent" inbox={false} noneLabel={t('Top level')} className="py-1 text-meta" />
-            <div className="flex gap-1">
-              <Button type="submit" variant="primary" size="sm" className="flex-1">{t('Create')}</Button>
-              <Button type="button" variant="ghost" size="sm" onClick={() => setAdding(false)}>{t('Cancel')}</Button>
-            </div>
-          </form>
-        )}
+        {adding && !collapsed && <NewProjectForm projects={projects} parentId={parentId} onParent={setParentId} onDone={() => setAdding(false)} />}
         {projects.length === 0 && !adding && !collapsed && <p className="px-2 py-1 text-meta text-faint">{t('No projects yet.')}</p>}
       </SidebarGroup>}
       {groupsReady && labelsShown && <SidebarGroup title={t('Labels')} collapsible open={isOpen('labels')} onToggle={() => toggleGroup('labels')} count={labels.length} collapsed={collapsed}
@@ -580,6 +558,44 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
 }
 
 /** A project's mark: its icon in its colour, or the colour dot (project-organization "Project icon"). */
+/**
+ * The sidebar's inline New project form, under the last project. It opens from the
+ * + menu, often below the fold with a long list (issue #997), and on a phone that
+ * menu is a bottom sheet over an app that is inert while it is open, so the field
+ * cannot take focus as it renders. Once the menu has closed (its cleanup runs before
+ * this effect, in the same pass as the tap, so a phone still opens its keyboard), the
+ * field takes focus and the whole form, buttons included, scrolls into view.
+ */
+function NewProjectForm({ projects, parentId, onParent, onDone }: { projects: Project[]; parentId: string; onParent: (id: string) => void; onDone: () => void }) {
+  const [name, setName] = useState('')
+  const form = useRef<HTMLFormElement>(null)
+  const field = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    field.current?.focus({ preventScroll: true })
+    form.current?.scrollIntoView?.({ block: 'nearest' })
+  }, [])
+  async function submit(e: FormEvent) {
+    e.preventDefault()
+    if (!name.trim()) return
+    const id = await createProject({ name, parent_id: parentId || null })
+    if (parentId) await toggleCollapsedProject(parentId, false)
+    onDone()
+    navigate({ view: 'project', id })
+  }
+  return (
+    <form ref={form} onSubmit={(e) => void submit(e)} className="space-y-1 scroll-mb-4 px-1 pt-1" data-new-project-form>
+      <input ref={field} className="ui-input" placeholder={t('Project name')} value={name} onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => e.key === 'Escape' && onDone()} />
+      <ProjectPickerField label={t('Parent project')} projects={projects} value={parentId || null} onChange={(id) => onParent(id ?? '')}
+        rankContext="project.parent" inbox={false} noneLabel={t('Top level')} className="py-1 text-meta" />
+      <div className="flex gap-1">
+        <Button type="submit" variant="primary" size="sm" className="flex-1">{t('Create')}</Button>
+        <Button type="button" variant="ghost" size="sm" onClick={onDone}>{t('Cancel')}</Button>
+      </div>
+    </form>
+  )
+}
+
 export function ProjectMark({ project, size = 'sm' }: { project: Pick<Project, 'color' | 'icon'>; size?: 'sm' | 'md' }) {
   const dot = <span className={`inline-block shrink-0 rounded-full ${size === 'md' ? 'h-3 w-3' : 'h-2.5 w-2.5'}`} style={{ backgroundColor: project.color }} />
   // A catalogue icon (icons-and-section-style); the dot while the catalogue loads and for a name this device does not know.
