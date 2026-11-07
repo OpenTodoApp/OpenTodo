@@ -1640,7 +1640,7 @@
   "Every day": "每天",
   "Every day at {time}": "每天 {time}",
   "Every day still has room.": "每天都还有余量。",
-  "Every device and browser signed in to your account is signed out, remembered browsers must enter a code again, and your API tokens and app passwords stop working at once. Scripts, calendar apps and assistants need new ones. Changes another device has not synced yet are lost. Your data stays on your server.": "所有登录你账户的设备和浏览器都将退出登录，已记住的浏览器必须重新输入验证码，且你的 API 令牌和应用专用密码会立即失效。脚本、日历应用和助手需要重新配置。其他设备尚未同步的更改将会丢失。你的数据仍保留在你的服务器上。",
+  "Every device and browser signed in to your account is signed out, remembered browsers must enter a code again, and your API tokens and app passwords stop working at once. Scripts, calendar apps and assistants need new ones. Other devices remove their copy of your data when they next connect, and changes they have not synced yet are lost. Your data stays on your server.": "所有登录你账户的设备和浏览器都将退出登录，已记住的浏览器必须重新输入验证码，且你的 API 令牌和应用专用密码会立即失效。脚本、日历应用和助手需要重新配置。其他设备下次连接时会删除其中的数据副本，尚未同步的更改将会丢失。你的数据仍保留在你的服务器上。",
   "Every device, plus your API tokens and app passwords.": "所有设备，以及你的 API 令牌和应用专用密码。",
   "Every hour": "每小时",
   "Every hour at :{minute}": "每小时 :{minute} 分",
@@ -5090,7 +5090,7 @@
   "These browsers skip the code for 30 days after you chose \"Remember this device\".": "在你选择“记住此设备”后，这些浏览器可在 30 天内免输验证码。",
   "These fields go back to this version’s values:": "以下字段将恢复为此版本的值：",
   "These tasks already have {label}": "这些任务已有标签 {label}",
-  "They are signed out everywhere, their API tokens and pending invitations are revoked, and they cannot sign in until reactivated. Their data is kept.": "该用户将在所有设备上退出登录，其 API 令牌和待处理邀请将被撤销，且在重新激活前无法登录。其数据将予以保留。",
+  "They are signed out everywhere, their API tokens and pending invitations are revoked, and they cannot sign in until reactivated. Their devices remove their copy when they next connect, and changes not synced yet are lost. Their data on the server is kept.": "该用户将在所有设备上退出登录，其 API 令牌和待处理邀请将被撤销，且在重新激活前无法登录。其设备下次连接时会删除数据副本，尚未同步的更改将会丢失。其在服务器上的数据将予以保留。",
   "They can no longer invite people or manage members.": "他们将无法再邀请他人或管理成员。",
   "They can sign in again with their existing password. Revoked tokens are not restored.": "他们可以使用现有密码重新登录。已撤销的令牌不会恢复。",
   "They go to the Trash with their subtasks. You can restore them from the Trash.": "它们会连同子任务一起进入废纸篓。你可以从废纸篓恢复它们。",
@@ -7179,5 +7179,6 @@
   "Confirm reads first": "先确认读取",
   "Each request to read your text shows here before this device sends it.": "每个读取你文本的请求都会先在这里显示，然后此设备才会发送。",
   "Text to send": "要发送的文本",
-  "{n, plural, one {and # more value} other {and # more values}}": "{n, plural, other {还有 # 个值}}"
+  "{n, plural, one {and # more value} other {and # more values}}": "{n, plural, other {还有 # 个值}}",
+  "This device was signed out and its data was removed.": "此设备已退出登录，其数据已被删除。"
 }
