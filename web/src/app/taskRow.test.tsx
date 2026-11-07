@@ -517,7 +517,8 @@ describe('completion feedback (8.2) and the shared checkbox slot (8.3)', () => {
     expect(li.hasAttribute('inert')).toBe(true)
     // The check mark shows done while the sequence plays.
     expect(li.querySelector('[data-check-mark] svg')).not.toBeNull()
-    expect(li.style.getPropertyValue('--row-h')).toMatch(/px$/)
+    // Measured where the browser cannot animate the collapse from auto itself (incremental-list-updates).
+    if (!CSS.supports('interpolate-size', 'allow-keywords')) expect(li.style.getPropertyValue('--row-h')).toMatch(/px$/)
     await leave.unmount()
     const rolled = await render(<ul><TaskRow task={task({})} motion="rolled" selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} /></ul>)
     expect(rolled.container.querySelector('li')!.hasAttribute('data-rolled')).toBe(true)

@@ -19,13 +19,12 @@ import { readMethodMode, type MethodMode } from '../lib/method/mode'
 import { SidebarFooter } from './SidebarFooter'
 import { WorkspaceControl } from './WorkspaceControl'
 import { InstanceMark, useInstanceName } from './InstanceBrand'
-import { buildProjectTree, collapseAllProjects, expandAllProjects, expandAncestorsOf, openCountsByProject, projectPath, siblingEdges, toggleCollapsedProject, visibleProjects, type ProjectNode, useCollapsedProjects } from '../lib/projects'
+import { buildProjectTree, collapseAllProjects, expandAllProjects, expandAncestorsOf, projectPath, rollUpCounts, siblingEdges, toggleCollapsedProject, visibleProjects, type ProjectNode, useCollapsedProjects } from '../lib/projects'
 import { flattenTree } from '../lib/tree'
 import type { Label, Project, Review, Task, User, View } from '../lib/types'
 import { useTrackedTotals } from '../lib/timeEntries'
-import { evaluateViews, isDashboard, openCount } from '../lib/views'
-import { todayCount } from '../lib/appBadge'
-import { todayAssigneeFilter } from '../lib/dayLists'
+import { evaluateViews, isDashboard } from '../lib/views'
+import { todayAssigneeFilter, type TodayAssigneeFilter } from '../lib/dayLists'
 import { LabelRow, NewLabelForm, useLabelData, useLabelDrag } from './LabelsView'
 import { ViewMark, ViewMenu } from './ViewsView'
 import { FavouritesGroup } from './FavouritesGroup'
@@ -34,7 +33,7 @@ import { useFavourites } from './useFavourites'
 import { useAssigneeDirectory, useToday, useViewerZone, useViews } from './useViews'
 import { MAX_INDENT } from './TaskRow'
 import { navigate, type Route } from './router'
-import { useLiveTasks, useOpenTasks } from '../lib/liveTasks'
+import { taskIndexOf, useLiveTasks, useOpenTasks } from '../lib/liveTasks'
 import { useSettledValue } from '../lib/useSettledValue'
 import { beginDrag } from '../lib/dnd'
 import { moveProjectBy, moveProjectTo } from '../lib/move'
@@ -47,7 +46,9 @@ import { matchSidebar } from '../lib/sidebarFind'
 import { sidebarFind } from './signals'
 import { t } from '../lib/i18n'
 import { act } from './actionError'
-import { countInbox } from '../lib/inbox'
+import { patchSidebarCounts, sidebarCounts, type CountLookups, type SidebarCounts } from '../lib/sidebarCounts'
+import { Derived } from '../lib/taskDelta'
+import { liveProgress } from '../lib/subtasks'
 import { StartGuideMoreItem, StartGuideMoreMenuItems } from './FirstDay'
 import { readString, writeString } from '../lib/deviceStorage'
 import { SidebarSchedule } from './calendar/SidebarSchedule'
@@ -120,6 +121,9 @@ export const openTasksLabel = (n: number | undefined): string | undefined => (n 
  * one pass; tracked time and custom fields are part of the context so `tracked` and field views count too
  * (time-tracking D4).
  */
+/** The parents and subtasks of a snapshot, for the Inbox count. */
+const lookups = (tasks: readonly Task[]): CountLookups => ({ parentOf: (id) => taskIndexOf(tasks).get(id), hasChildren: (id) => liveProgress(tasks).has(id) })
+
 function useViewCounts(views: View[], today: string, labels: Label[], projects: Project[], tasks: Task[]) {
   const tracked = useTrackedTotals()
   const directory = useAssigneeDirectory()
@@ -213,18 +217,17 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
   const zone = useViewerZone()
   // Re-read every minute, so the counts move to the new day at midnight.
   const today = useToday()
-  const counts = useMemo(() => {
-    let assigned = 0
-    // Deferred and parked tasks are not counted (someday-and-evening D2).
-    const active = openTasks.filter((tk) => openCount(tk, today))
-    for (const task of active) {
-      if (task.assignee_id === user.id) assigned++
-    }
-    // The same number the app icon badge shows (app-icon-badge).
-    const hide = todayAssigneeFilter(prefsRow, [...memberMap.values()], user.id)
-    return { inbox: countInbox(openTasks, liveTasks ?? openTasks), today: todayCount(openTasks, today, hide), assigned, byProject: openCountsByProject(active, tree, collapsed_) }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  }, [openTasks, liveTasks, tree, collapsed_, user.id, zone, today, prefsRow, memberMap])
+  // The same Today number the app icon badge shows (app-icon-badge).
+  const hide = useMemo(() => todayAssigneeFilter(prefsRow, [...memberMap.values()], user.id), [prefsRow, memberMap, user.id])
+  // Worked out from the rows each write changed (incremental-list-updates D2); deferred and
+  // parked tasks are not counted (someday-and-evening D2). The Inbox looks up parents among every live task.
+  const live = liveTasks ?? openTasks
+  const countsOf = useRef(new Derived<SidebarCounts, [string, string, TodayAssigneeFilter | null, string]>(
+    (tasks, today, _zone, hide, userId) => sidebarCounts(tasks, today, hide, userId, lookups(tasks)),
+    (prev, changes, tasks, today, _zone, hide, userId) => patchSidebarCounts(prev, changes, tasks, today, hide, userId, lookups(tasks)),
+  )).current
+  const own = countsOf.get(live, today, zone, hide, user.id)
+  const counts = useMemo(() => ({ inbox: own.inbox.size, today: own.today, assigned: own.assigned, byProject: rollUpCounts(own.own, tree, collapsed_) }), [own, tree, collapsed_])
 
   // Navigating to a sub-project reveals it: its ancestors leave the collapsed set.
   // Only on a real route change, not on mount or on project edits, so a reload (or a
@@ -458,7 +461,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
       {/* Favourites first (sidebar-favourites D5); while finding, the matches show in their own groups. */}
       {groupsReady && !found && favourites.length > 0 && (
         <FavouritesGroup favourites={favourites} route={route} collapsed={collapsed} projects={projects}
-          tree={tree} openTasks={openTasks} today={today} labelCounts={labelCounts} viewCounts={viewCounts} projectCountMode={projectCountMode} countsAll={countsAll} />
+          tree={tree} ownCounts={own.own} labelCounts={labelCounts} viewCounts={viewCounts} projectCountMode={projectCountMode} countsAll={countsAll} />
       )}
       {/* Projects stays while finding: its header holds the field's opener. */}
       {groupsReady && (finding || groupShown(shownRows.length)) && <SidebarGroup title={t('Projects')} collapsible open={isOpen('projects')} onToggle={() => toggleGroup('projects')} count={projects.length} collapsed={collapsed} actions={(<>

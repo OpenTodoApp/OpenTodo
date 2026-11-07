@@ -3,12 +3,12 @@
 // pure functions of lib/listGroups. One hook, so TaskListView only renders.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePlace } from '../../lib/locations'
-import { blockedMap } from '../../lib/dependencies'
+import { liveBlocked } from '../../lib/dependencies'
 import { useFlowView } from '../../lib/useFlow'
 import { durationPredicate, loadDurationFilter, saveDurationFilter, type DurationFilter } from '../../lib/filters'
 import { UPCOMING_FILTER_KEY, useQueryFilter } from '../calendar/queryFilter'
-import { habitStatsMap } from '../../lib/habits'
-import { boardColumns, completedBySection, completedNewestFirst, completedOpenKey, keepGroups, listGroups, sectionBuckets, siblingPositions, splitLater, tasksForView, type ListGroup, type ListScope } from '../../lib/listGroups'
+import { habitStatsMap, patchHabitStats, type HabitStats } from '../../lib/habits'
+import { boardColumns, completedBySection, completedNewestFirst, completedOpenKey, keepGroups, listGroups, patchCompletedBySection, patchTreeParts, patchViewTasks, siblingPositions, tasksForView, treeParts, type ListGroup, type ListScope, type TreeParts } from '../../lib/listGroups'
 import { useAllLabels, useCollapsedSections, useListColumnsPref, useLiveProjects, useMemberships, useProjectPrefsRow, useProjectSectionRows, useProjectViewMode, useShowCompletedPref } from '../../lib/liveData'
 import { listDisplayOf, type DisplayScope } from '../../lib/listDisplay'
 import { useListDisplay } from './useListDisplay'
@@ -18,12 +18,13 @@ import { useUserPrefsRow } from '../../lib/localData'
 import { upcomingStartsWithToday } from '../../lib/userPrefs'
 import { dayPartsOn } from '../../lib/dayParts'
 import { useClosedList, useWaitingNow } from './useClosedList'
-import { NO_TASKS, useLiveTasks } from '../../lib/liveTasks'
+import { NO_TASKS, taskIndexOf, useLiveTasks } from '../../lib/liveTasks'
+import { Derived } from '../../lib/taskDelta'
 import { LOGBOOK_PAGE, logbookGroups } from '../../lib/logbook'
 import { todayAssigneeFilter } from '../../lib/dayLists'
 import { canEditTasks, roleOf, useMe } from '../../lib/sharing'
-import { buildTaskTree, progressMap } from '../../lib/subtasks'
-import type { Task } from '../../lib/types'
+import { liveProgress } from '../../lib/subtasks'
+import type { Project, Section, Task } from '../../lib/types'
 import { inToday, upcomingDate } from '../../lib/views'
 import { DESKTOP_HEADER_QUERY, useMediaQuery } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
@@ -38,6 +39,11 @@ import { useUpcomingGroups } from './upcomingProjections'
 import { isReusable } from '../../lib/reusable'
 
 export type ListRoute = Extract<Route, ListScope>
+
+/** Whether any task of the list has `id` as its parent. */
+function taskHasChildren(tasks: readonly Task[], id: string): boolean {
+  return tasks.some((task) => task.parent_id === id)
+}
 
 const COLLAPSE_KEY = 'opentodo.collapsed'
 
@@ -141,14 +147,16 @@ export function useListModel(route: ListRoute, userId?: string) {
   // snapshot is shared with the sidebar and the panel (large-list-performance D2).
   const liveTasks = useLiveTasks()
   const allTasks = liveTasks ?? NO_TASKS
-  const taskMap = useMemo(() => new Map(allTasks.map((task) => [task.id, task])), [allTasks])
-  const progress = useMemo(() => progressMap(allTasks), [allTasks])
-  const blocked = useMemo(() => blockedMap(allTasks), [allTasks])
+  // Each worked out from the rows a write changed, once per snapshot (incremental-list-updates D2).
+  const taskMap = taskIndexOf(allTasks)
+  const progress = liveProgress(allTasks)
+  const blocked = liveBlocked(allTasks)
   // Steps waiting in sequence (project-flow-modes): dimmed rows, and Today folds them with the blocked ones.
   const flow = useFlowView(allTasks, today, taskMap)
   const held = useMemo(() => flow.held(blocked), [flow, blocked])
   // Streaks of habits (OpenSpec habits D5): once per list, from the rows it holds.
-  const habits = useMemo(() => habitStatsMap(allTasks, today), [allTasks, today])
+  const habitsOf = useRef(new Derived<Map<string, HabitStats>, [string]>(habitStatsMap, patchHabitStats)).current
+  const habits = habitsOf.get(allTasks, today)
 
   const filter = useDurationFilter(route)
   const { duration, filterKey } = filter
@@ -156,8 +164,15 @@ export function useListModel(route: ListRoute, userId?: string) {
   const accountPrefs = useUserPrefsRow()
   const upcomingToday = route.view === 'upcoming' && upcomingStartsWithToday(accountPrefs)
   const assigneeFilter = useMemo(() => (route.view === 'today' ? todayAssigneeFilter(accountPrefs, memberships, me) : null), [route.view, accountPrefs, memberships, me])
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  const viewTasks = useMemo(() => tasksForView(route, allTasks, projects, today, userId, upcomingToday, assigneeFilter), [allTasks, projects, route, today, zone, userId, upcomingToday, assigneeFilter])
+  // A view's tasks follow the rows a write changed (incremental-list-updates D2); a zone change re-groups zoned dues (absolute-datetimes).
+  const viewOf = useRef(new Derived<Task[], [string, string, readonly Project[], string, string, string | undefined, boolean, ReturnType<typeof todayAssigneeFilter>]>(
+    (tasks, _view, _id, projects, today, _zone, userId, upcomingToday, hide) => tasksForView(routeRef.current, tasks, projects, today, userId, upcomingToday, hide),
+    (prev, changes, tasks, _view, _id, projects, today, _zone, userId, upcomingToday, hide) => patchViewTasks(prev, changes, routeRef.current, projects, today,
+      { parentOf: (id) => taskIndexOf(tasks).get(id), hasChildren: (id) => liveProgress(tasks).has(id) }, userId, upcomingToday, hide),
+  )).current
+  const routeRef = useRef(route)
+  routeRef.current = route
+  const viewTasks = viewOf.get(allTasks, route.view, 'id' in route ? route.id : '', projects, today, zone, userId, upcomingToday, assigneeFilter)
   // The last day Upcoming lists, before its filters, so calendar events stay when a filter hides the tasks.
   // viewTasks already recomputes when the zone changes, so this follows it.
   const upcomingThrough = useMemo(() => {
@@ -189,11 +204,11 @@ export function useListModel(route: ListRoute, userId?: string) {
   // Project lists keep deferred and parked tasks in a Later group at the
   // end (someday-and-evening D2), each with its subtasks (subtasks-follow-later);
   // the board keeps every card in its column.
-  const split = useMemo(() => (treeView && !board ? splitLater(tasks, today) : null), [treeView, board, tasks, today])
+  // The split, the tree and the section buckets follow the rows a write changed (incremental-list-updates D2).
+  const partsOf = useRef(new Derived<TreeParts, [boolean, boolean, string, string | null, Section[]]>(treeParts,
+    (prev, changes, tasks) => patchTreeParts(prev, changes, (id) => taskHasChildren(tasks, id)))).current
+  const { split, tree, buckets } = partsOf.get(tasks, treeView, board, today, projectId, sections)
   const laterTasks = split?.later ?? NO_TASKS
-  const treeTasks = split?.later.length ? split.active : tasks
-  const tree = useMemo(() => (treeView ? buildTaskTree(treeTasks) : null), [treeView, treeTasks])
-  const buckets = useMemo(() => sectionBuckets(projectId, tree, sections), [projectId, tree, sections])
   const columns = useMemo(() => boardColumns(buckets, collapsedSections), [buckets, collapsedSections])
 
   // A project's or label's display options (list-display-options): personal and synced.
@@ -245,7 +260,8 @@ export function useListModel(route: ListRoute, userId?: string) {
   const timeColumn = useMemo(() => !board && hasTimeColumn(rows.map((r) => r.task), slotted), [board, rows, slotted])
   // Sections with only completed tasks keep a header with "n completed" and Show
   // (task-list-presentation "Empty groups").
-  const doneBySection = useMemo(() => completedBySection(allTasks, projectId, layout.sectionMap), [allTasks, projectId, layout.sectionMap])
+  const doneOf = useRef(new Derived<Map<string, Task[]>, [string | null, Map<string, Section>]>(completedBySection, patchCompletedBySection)).current
+  const doneBySection = doneOf.get(allTasks, projectId, layout.sectionMap)
   // With "Show completed tasks" on (project-completed-section), the list layout
   // keeps them in one Completed group at the end, newest first, closed by default.
   const showCompletedPref = useShowCompletedPref(projectId)

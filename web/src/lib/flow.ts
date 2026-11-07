@@ -7,6 +7,7 @@
 // and must agree. Change them together.
 import { compareByPosition } from './ordering'
 import type { Project, Section, Task } from './types'
+import { patchSorted } from './taskDelta'
 
 export type ProjectFlow = 'parallel' | 'sequential' | 'area'
 export type SectionFlow = '' | 'parallel' | 'sequential'
@@ -113,7 +114,6 @@ export class FlowState {
       const s = t.section_id ? sections.get(t.section_id) : undefined
       return s && !s.deleted_at && s.project_id === projectId ? s.id : null
     }
-    const loose = tasks.filter((t) => !sectionOf(t)).sort(compareByPosition)
     const inSection = (id: string) => tasks.filter((t) => sectionOf(t) === id).sort(compareByPosition)
     // Inside one sequential group, the first candidate is offered and every later candidate waits on it.
     const oneByOne = (list: FlowTask[]) => {
@@ -125,6 +125,7 @@ export class FlowState {
       return holds
     }
     // Sequential: loose tasks are one step each, then each section is one step.
+    const loose = tasks.filter((t) => !sectionOf(t)).sort(compareByPosition)
     const steps: { held: HeldBy; tasks: FlowTask[]; section?: Pick<Section, 'flow_mode'> }[] = [
       ...loose.map((t) => ({ held: { kind: 'task', id: t.id } as HeldBy, tasks: [t] })),
       ...live.map((s) => ({ held: { kind: 'section', id: s.id } as HeldBy, tasks: inSection(s.id), section: s })),
@@ -166,6 +167,39 @@ export class FlowState {
       this.out.set(id, f)
     }
     return f
+  }
+
+  /**
+   * The state of `input`, whose tasks are this state's after `changes` (OpenSpec change
+   * incremental-list-updates D2): the sequence worked out for every project no changed
+   * row belongs to is kept, so asking for a long list's rows is a lookup each. `keys`:
+   * the tasks whose wait may differ from this state's, or null when it cannot say
+   * (a row moved, came or went, or a project in sequence changed).
+   */
+  next(input: FlowInput, changes: readonly { id: string; before: FlowTask | undefined; after: FlowTask | undefined }[]): { state: FlowState; keys: Set<string> | null } {
+    const next = new FlowState(input)
+    const touched = new Set<string>()
+    let known = true
+    for (const c of changes) {
+      const a = c.before
+      const b = c.after
+      if (a?.project_id) touched.add(a.project_id)
+      if (b?.project_id) touched.add(b.project_id)
+      if (!a || !b || (a.parent_id ?? null) !== (b.parent_id ?? null) || (a.project_id ?? null) !== (b.project_id ?? null)) known = false
+    }
+    for (const [p, h] of this.holds) if (!touched.has(p)) next.holds.set(p, h)
+    if (this.topByProject) {
+      const tops = new Map(this.topByProject)
+      for (const p of touched) {
+        const list = patchSorted<FlowTask>(tops.get(p) ?? [], changes, (t) => open(t) && !t.parent_id && t.project_id === p).list
+        if (list.length) tops.set(p, list)
+        else tops.delete(p)
+      }
+      next.topByProject = tops
+    }
+    // A project in sequence before or after: its waits may move anywhere in it.
+    if (known) for (const p of touched) if (this.holdsIn(p).size || next.holdsIn(p).size) { known = false; break }
+    return { state: next, keys: known ? new Set(changes.map((c) => c.id)) : null }
   }
 
   /** Available (project-flow "Available tasks"): live, open, not blocked, not waiting, neither Someday nor deferred. */
