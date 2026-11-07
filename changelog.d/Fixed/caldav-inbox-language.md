@@ -1,0 +1,1 @@
+- **The Inbox list in Apple Reminders and other CalDAV apps is named in your language.** It was always "Inbox"; it now uses the word the app shows ("Eingang" in German), from the language chosen in Settings, else the one your calendar app asks for (#1029).
