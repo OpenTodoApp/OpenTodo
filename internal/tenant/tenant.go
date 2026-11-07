@@ -65,6 +65,8 @@ type Tenant struct {
 	hosted *Hosted
 	jobs   []jobs.Job
 	upkeep *jobs.Upkeep
+	// checkpoints schedules the checkpoint job (checkpoint.go).
+	checkpoints *checkpointer
 	// auditChecked: the audit log's hash chain was verified once since the
 	// tenant opened (audit-hash-chain); later checks run with upkeep.
 	auditChecked atomic.Bool
@@ -136,6 +138,7 @@ func (t *Tenant) wire(ctx context.Context, cfg config.Config, o Options) error {
 		t.now = time.Now
 	}
 	t.upkeep = jobs.NewUpkeep(upkeepEvery, set.Signal, t.now())
+	t.checkpoints = newCheckpointer(set.Signal, t.Reader, cfg.DataDir, t.now())
 	t.jobs = t.buildJobs()
 	return nil
 }

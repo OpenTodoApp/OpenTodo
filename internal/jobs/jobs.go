@@ -28,6 +28,7 @@ const (
 	Email        = "email"        // the operator's mailbox (email to task; self-hosted only)
 	Demo         = "demo"         // sandbox cleanup and the nightly reset (demo instances only)
 	Writes       = "writes"       // writes by another process (self-hosted only)
+	Checkpoint   = "checkpoint"   // the write-ahead log copied back into the database
 )
 
 // Timing defaults (design D2).
@@ -57,6 +58,10 @@ type Job struct {
 	Check time.Duration
 	// Retry overrides RetryAfter for this job.
 	Retry time.Duration
+	// WhileOpen: closing the tenant does the job's work too (closing the
+	// database checkpoints its log), so a host keeps no due time for it once
+	// the tenant closed and never opens a tenant for it.
+	WhileOpen bool
 }
 
 // CheckInterval is how long the job's next due time is trusted.
