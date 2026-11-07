@@ -57,6 +57,8 @@ export interface Draft {
   energy: Energy
   /** `me`, `unassigned`, or a member's name (today-assigned-filter). */
   assignee: string
+  /** `tracked occurrence`: a repeating task's current occurrence only (tracked-time-api-compatible). */
+  occurrence: boolean
 }
 
 const DATE_KINDS: readonly string[] = ['due', 'deadline', 'start', 'created', 'completed']
@@ -104,7 +106,7 @@ function dateOf(d: Draft): DateExpr | null {
 export function draftOf(leaf: Leaf | null): Draft {
   const d: Draft = {
     kind: 'label', name: '', descendants: false, priority: 1, op: '<=', when: 'today', n: '3', weekday: 1, iso: '',
-    keyword: 'overdue', text: '', duration: '', value: '', energy: 'deep', assignee: 'me',
+    keyword: 'overdue', text: '', duration: '', value: '', energy: 'deep', assignee: 'me', occurrence: false,
   }
   if (!leaf) return d
   switch (leaf.kind) {
@@ -120,7 +122,7 @@ export function draftOf(leaf: Leaf | null): Draft {
     case 'sector': return { ...d, kind: 'sector', text: leaf.value }
     case 'energy': return { ...d, kind: 'energy', energy: leaf.value }
     case 'workspace': return { ...d, kind: 'workspace', name: leaf.name }
-    case 'tracked': return { ...d, kind: 'tracked', op: leaf.op, duration: formatMinutes(leaf.minutes) }
+    case 'tracked': return { ...d, kind: 'tracked', op: leaf.op, duration: formatMinutes(leaf.minutes), occurrence: !!leaf.occurrence }
     case 'field': {
       const v = leaf.value
       const value = v.type === 'text' ? v.value : v.type === 'date' ? formatDate(v.date) : String(v.value)
@@ -153,7 +155,8 @@ export function leafOf(d: Draft): Leaf | null {
     case 'workspace': return name ? { kind: 'workspace', name, pos: 0 } : null
     case 'tracked': {
       const minutes = durationMinutes(d.duration)
-      return minutes === null ? null : { kind: 'tracked', op: d.op, minutes }
+      if (minutes === null) return null
+      return d.occurrence ? { kind: 'tracked', op: d.op, minutes, occurrence: true } : { kind: 'tracked', op: d.op, minutes }
     }
     case 'nofield': return name ? { kind: 'nofield', name, pos: 0 } : null
     case 'field': {
@@ -340,6 +343,7 @@ export function ConditionEditor({ leaf, not: initialNot, labels, projects, field
             <Field label={t('Duration')} description={t('For example 30m, 1h or 1h30')}>
               <Input value={draft.duration} onChange={(e) => set({ duration: e.target.value })} autoComplete="off" spellCheck={false} />
             </Field>
+            <Switch checked={!draft.occurrence} onChange={(v) => set({ occurrence: !v })} label={t('All occurrences')} />
           </div>
         )}
 

@@ -728,6 +728,37 @@ describe('evaluate: tracked time (OpenSpec time-tracking 7.1)', () => {
   })
 })
 
+// tracked-time-api-compatible: `tracked` keeps its 1.0 meaning, every entry of the
+// task; `tracked occurrence` reads a repeating task's current occurrence. A
+// repeating task with 30 minutes before a completion and 10 after: 40 and 10.
+describe('evaluate: tracked occurrence', () => {
+  const L: Task[] = [task('series', { recurrence: 'every day' }), task('plain')]
+  const tracked = new Map([['series', 40], ['plain', 20]])
+  const trackedOccurrence = new Map([['series', 10], ['plain', 20]])
+  const run = (q: string, ctx: Partial<FilterContext> = { tracked, trackedOccurrence }) => {
+    const r = runFilter(q, L, { ...CTX, ...ctx })
+    return r.ok ? r.tasks.map((x) => x.id).sort() : r.error
+  }
+  it('tracked counts every occurrence, as in 1.0', () => {
+    expect(run('tracked >= 30m')).toEqual(['series'])
+    expect(run('tracked = 40m')).toEqual(['series'])
+  })
+  it('tracked occurrence counts the current occurrence', () => {
+    expect(run('tracked occurrence >= 30m')).toEqual([])
+    expect(run('tracked occurrence = 10m')).toEqual(['series'])
+    expect(run('TRACKED OCCURRENCE')).toEqual(['plain', 'series'])
+  })
+  it('reads the total without the occurrence map', () => {
+    expect(run('tracked occurrence >= 30m', { tracked })).toEqual(['series'])
+  })
+  it('parses and prints', () => {
+    expect(parse('tracked occurrence > 10')).toEqual({ kind: 'tracked', op: '>', minutes: 10, occurrence: true })
+    expect(parse('tracked occurrence')).toEqual({ kind: 'keyword', keyword: 'tracked occurrence' })
+    expect(printQuery(parse('tracked occurrence >= 1h')!)).toBe('tracked occurrence >= 60')
+    expect(errorOf('tracked occurrence >').message).toBe('Expected a duration such as 30m or 1h30 after ">" at position 20')
+  })
+})
+
 describe('evaluate: warnings and graceful degradation', () => {
   it('unknown label warns and rest still matches', () => {
     const r = runFilter('@errands | p1', TASKS, CTX)

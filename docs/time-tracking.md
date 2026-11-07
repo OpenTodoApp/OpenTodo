@@ -40,14 +40,14 @@ An end before the start is refused. The **⋯** menu of each of your own entries
 
 Once a task has entries, its row shows the tracked time with the estimate, `35m / 1h`, or `35m tracked` without one. It takes the estimate's place in the line under the title, as one item. A running entry counts up to the current minute. Rows and the Time tab show the task's total, everyone's entries included.
 
-A [repeating task](recurrence.md) is one task that moves on to its next date, so its entries stay on it from one occurrence to the next. Its total against the estimate counts only the current occurrence: the entries that started since it was last completed (or, for a [habit](recurrence.md#habits), skipped). An entry counts whole for the occurrence it started in. The Time tab still lists every entry and adds **All occurrences** with their sum under the total. Skipping a repeating task that is not a habit leaves no record of the skipped day, so its time stays with the next occurrence. Statistics, the CSV export, Today's tracked total and the routine step **Tracked time** count every entry by the day it started, as before.
+A [repeating task](recurrence.md) is one task that moves on to its next date, so its entries stay on it from one occurrence to the next. Its total against the estimate counts only the current occurrence: the entries that started since it was last completed (or, for a [habit](recurrence.md#habits), skipped). An entry counts whole for the occurrence it started in. The Time tab still lists every entry and adds **All occurrences** with their sum under the total. Skipping a repeating task that is not a habit leaves no record of the skipped day, so its time stays with the next occurrence. Statistics, the CSV export, Today's tracked total and the routine step **Tracked time** count every entry by the day it started, as before. The filter term `tracked`, the routine condition on tracked time and `tracked_minutes` for [AI assistants](mcp.md) also keep counting every entry, as in 1.0; `tracked occurrence` and `tracked_minutes_occurrence` give the current occurrence.
 
 Today's header adds `3h planned · 1h 20m tracked`: the estimates of the open tasks listed, and your own entries that started today, each counted whole on the day it started even across midnight, with your [day start](dates-and-times.md#when-a-day-ends) applied.
 
 ## Statistics, filters and quick add
 
 - [Statistics](statistics.md) shows the time you tracked in the period, per day and per project.
-- The filter terms `tracked` and `tracked > 1h` list tasks by their tracked time, a repeating task's current occurrence only; see [Filter queries](filters.md).
+- The filter terms `tracked` and `tracked > 1h` list tasks by their tracked time, every entry counted; `tracked occurrence > 1h` counts a repeating task's current occurrence only; see [Filter queries](filters.md).
 - In [quick add](quick-add.md#time-spent), `30m/2h` means 30 minutes already spent and a two-hour estimate.
 
 ## Export

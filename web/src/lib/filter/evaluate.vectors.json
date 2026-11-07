@@ -13,7 +13,8 @@
   "fields": [
     {"id": "f_cost", "name": "Cost", "type": "number", "project_id": "p_work", "deleted_at": null}
   ],
-  "tracked": {"t8": 45},
+  "tracked": {"t8": 40},
+  "tracked_occurrence": {"t8": 10},
   "me": "u_me",
   "members": [
     {"userId": "u_me", "name": "Ada", "email": "ada@example.com"},
@@ -28,7 +29,7 @@
     {"id": "t5", "title": "Someday idea", "start": "someday", "origin": {"kind": "url", "url": "https://example.com/a"}},
     {"id": "t6", "title": "Evening walk", "evening": true, "habit": true},
     {"id": "t7", "title": "Blocked thing", "project_id": "p_work", "blocked_by": ["t2"], "fields.f_cost": 150, "sector": "2026-W45", "assignee_id": "u_sam2"},
-    {"id": "t8", "title": "Morning run", "project_id": "p_work", "day_part": "morning", "energy": "low", "fields.f_cost": 50, "sector": "2026-W43"},
+    {"id": "t8", "title": "Morning run", "recurrence": "every day", "project_id": "p_work", "day_part": "morning", "energy": "low", "fields.f_cost": 50, "sector": "2026-W43"},
     {"id": "t9", "title": "Pick brand", "project_id": "p_home", "parent_id": "t1", "origin": {"kind": "issue", "provider": "github", "url": "https://github.com/o/r/issues/1"}, "sector": "2026-11"},
     {"id": "t10", "title": "Gone", "deleted_at": 5}
   ],
@@ -76,6 +77,10 @@
     {"query": "tracked", "ids": ["t8"]},
     {"query": "tracked >= 30m", "ids": ["t8"]},
     {"query": "tracked < 30m & #Work", "ids": ["t2", "t7"]},
+    {"query": "tracked occurrence", "ids": ["t8"]},
+    {"query": "tracked occurrence >= 30m", "ids": []},
+    {"query": "Tracked Occurrence < 30m & #Work", "ids": ["t2", "t7", "t8"]},
+    {"query": "tracked occurrence = 10m | tracked = 40m", "ids": ["t8"]},
     {"query": "cost > 100", "ids": ["t7"]},
     {"query": "cost = 50", "ids": ["t8"]},
     {"query": "no cost", "ids": ["t2", "t3"]},

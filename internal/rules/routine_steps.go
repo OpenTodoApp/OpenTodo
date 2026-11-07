@@ -299,7 +299,7 @@ func (st *runState) queryMatcher(s *ruleval.Step) (func(opsync.Entity) bool, err
 func (st *runState) filterContext() (filter.Context, error) {
 	ws := int(st.w.weekStart)
 	c := filter.Context{Today: st.w.today, WeekStart: ws, Zone: time.FixedZone("", st.w.offset*60), DayStart: ruleval.DayStartMinutes(st.w.dayStart),
-		Tracked: st.e.trackedMinutes(st.ctx, st.w)}
+		Tracked: st.e.trackedMinutes(st.ctx, st.w), TrackedOccurrence: st.e.trackedOccurrence(st.ctx, st.w)}
 	for _, t := range st.tasks {
 		c.Tasks = append(c.Tasks, t)
 	}
