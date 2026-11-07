@@ -82,7 +82,7 @@ export function useViewData(): ViewData {
   const ws = useWorkspaceFilter()
   const sections = useLiveSections()
   // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  const ctx = useMemo(() => ({ today, labels, projects, tasks, sections, fields, tracked, ...directory, ...ws }), [today, labels, projects, tasks, sections, fields, tracked, directory, ws, zone])
+  const ctx = useMemo(() => ({ today, labels, projects, tasks, sections, fields, ...tracked, ...directory, ...ws }), [today, labels, projects, tasks, sections, fields, tracked, directory, ws, zone])
   return { views, projects, labels, tasks, ctx }
 }
 

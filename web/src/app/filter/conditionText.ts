@@ -39,6 +39,7 @@ export const KEYWORD_NAME = translatedMap<Keyword>({
   origin: msg('Has an origin'),
   'no origin': msg('No origin'),
   tracked: msg('Has tracked time'),
+  'tracked occurrence': msg('Has tracked time in this occurrence'),
   energy: msg('Has an energy'),
   sector: msg('Has a time sector'),
   'no sector': msg('No time sector'),
@@ -120,7 +121,7 @@ export function conditionText(leaf: Leaf): string {
     case 'energy': return t('Energy is {level}', { level: energyName(leaf.value) })
     case 'sector': return t('Time sector is {name}', { name: (SECTOR_WORDS as readonly string[]).includes(leaf.value) ? sectorWordName(leaf.value as SectorWord) : leaf.value })
     case 'workspace': return t('Workspace is {name}', { name: leaf.name })
-    case 'tracked': return compareText(t('Tracked time'), leaf.op, formatMinutes(leaf.minutes))
+    case 'tracked': return compareText(leaf.occurrence ? t('Tracked time in this occurrence') : t('Tracked time'), leaf.op, formatMinutes(leaf.minutes))
     case 'field': return compareText(leaf.name, leaf.op, fieldValueWords(leaf.value))
     case 'nofield': return t('{name} is empty', { name: leaf.name })
   }

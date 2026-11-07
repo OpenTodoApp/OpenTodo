@@ -563,9 +563,19 @@ func (p *parser) parseWordTerm(t *token) (*Node, error) {
 	case w == "tracked":
 		// Tracked time (OpenSpec change time-tracking, design D9): the keyword, or
 		// `tracked cmp duration`. A reserved word: a field named "tracked" is
-		// reachable only quoted.
+		// reachable only quoted. `tracked occurrence` reads a repeating task's
+		// current occurrence (tracked-time-api-compatible): a syntax error before,
+		// so no saved query changes meaning.
+		occurrence := false
+		if o := p.peek(); o != nil && o.typ == tWord && lower(o) == "occurrence" {
+			p.i++
+			occurrence = true
+		}
 		c := p.peek()
 		if c == nil || c.typ != tCmp {
+			if occurrence {
+				return &Node{Kind: KindKeyword, Keyword: "tracked occurrence"}, nil
+			}
 			return &Node{Kind: KindKeyword, Keyword: "tracked"}, nil
 		}
 		p.i++
@@ -578,7 +588,7 @@ func (p *parser) parseWordTerm(t *token) (*Node, error) {
 			return nil, fail(v.pos, `Expected a duration such as 30m or 1h30 after "%s" at position %d`, c.raw, v.pos+1)
 		}
 		p.i++
-		return &Node{Kind: KindTracked, Op: c.value, Minutes: minutes}, nil
+		return &Node{Kind: KindTracked, Op: c.value, Minutes: minutes, Occurrence: occurrence}, nil
 	case w == "no":
 		// A keyword, or any other name: a custom field without a value (custom-fields).
 		nt := p.peek()
