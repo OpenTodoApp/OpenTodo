@@ -142,6 +142,7 @@ func (r *Registry) planCreateTasks(ctx context.Context, c Caller, a args, overla
 		if err := snap.planningPatch(p, it, c, patch); err != nil {
 			return Plan{}, err
 		}
+		compatibleRecurrence(patch, nil)
 		if err := checkPatch(p, "task", id, patch); err != nil {
 			return Plan{}, err
 		}
@@ -249,6 +250,7 @@ func (r *Registry) planUpdateTasks(ctx context.Context, c Caller, a args, overla
 			missing = append(missing, id)
 			continue
 		}
+		compatibleRecurrence(patch, t)
 		// The people who take turns (chore-rotation D6), checked against the task.
 		if hasRotation {
 			if err := snap.rotationPatch(p, rotation, t, patch); err != nil {

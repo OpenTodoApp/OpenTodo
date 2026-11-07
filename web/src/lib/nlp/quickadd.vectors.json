@@ -1,5 +1,5 @@
 {
- "comment": "Quick-add vectors shared by web/src/lib/nlp (nlp.test.ts) and internal/quickadd (vectors_test.go), OpenSpec changes quick-add-recurrence, quick-add-nth-weekday and time-tracking (spentMinutes) and day-parts (ctx.dayParts; dayPart and evening are compared when a case states them) and task-energy (ctx.energy; energy, \"\" for none, is compared when a case states it) and time-sectors (ctx.sectors and ctx.weekStart; sector, \"\" for none, is compared when a case states it) and quick-add-month-and-every-other (bare months, \"every other\") and quick-add-by-deadline (\"by\" words; deadline, \"\" for none, is compared when a case states it) and quick-add-weekday-recurrence (every other weekday, week intervals on a weekday, start phrases, connectors). Every scenario of its spec deltas is a case.",
+ "comment": "Quick-add vectors shared by web/src/lib/nlp (nlp.test.ts) and internal/quickadd (vectors_test.go), OpenSpec changes quick-add-recurrence, quick-add-nth-weekday and time-tracking (spentMinutes) and day-parts (ctx.dayParts; dayPart and evening are compared when a case states them) and task-energy (ctx.energy; energy, \"\" for none, is compared when a case states it) and time-sectors (ctx.sectors and ctx.weekStart; sector, \"\" for none, is compared when a case states it) and quick-add-month-and-every-other (bare months, \"every other\") and quick-add-by-deadline (\"by\" words; deadline, \"\" for none, is compared when a case states it) and quick-add-weekday-recurrence (every other weekday, week intervals on a weekday, start phrases, connectors) and recurrence-1-0-compatible (a rule on one weekday whose due date falls on it is every N weeks). Every scenario of its spec deltas is a case.",
  "cases": [
   {
    "name": "Water plants every Monday",
@@ -4106,7 +4106,7 @@
     "priority": null,
     "estimateMinutes": null,
     "spentMinutes": null,
-    "recurrence": "every 2 weeks on friday",
+    "recurrence": "every 2 weeks",
     "reminders": []
    }
   },
@@ -4256,7 +4256,7 @@
     "priority": null,
     "estimateMinutes": null,
     "spentMinutes": null,
-    "recurrence": "every 2 weeks on friday",
+    "recurrence": "every 2 weeks",
     "reminders": []
    }
   },
@@ -4376,7 +4376,7 @@
     "priority": null,
     "estimateMinutes": null,
     "spentMinutes": null,
-    "recurrence": "every 2 weeks on friday",
+    "recurrence": "every 2 weeks",
     "reminders": []
    }
   },
@@ -4496,7 +4496,7 @@
     "priority": null,
     "estimateMinutes": null,
     "spentMinutes": null,
-    "recurrence": "every 2 weeks on friday",
+    "recurrence": "every 2 weeks",
     "reminders": []
    }
   },
@@ -4646,7 +4646,7 @@
     "priority": null,
     "estimateMinutes": null,
     "spentMinutes": null,
-    "recurrence": "every 2 weeks on friday",
+    "recurrence": "every 2 weeks",
     "reminders": []
    }
   },
@@ -4766,7 +4766,7 @@
     "priority": null,
     "estimateMinutes": null,
     "spentMinutes": null,
-    "recurrence": "every 2 weeks on friday",
+    "recurrence": "every 2 weeks",
     "reminders": []
    }
   },
@@ -6108,7 +6108,7 @@
    }
   },
   {
-   "name": "Bins today and repeat every other Saturday (en, issue 1016)",
+   "name": "Bins today and repeat every other Saturday (en, issue 1016, on a Wednesday)",
    "line": "take the bins out today and repeat every other Saturday",
    "ctx": {
     "today": "2026-11-04",
@@ -6138,7 +6138,37 @@
    }
   },
   {
-   "name": "Bins every other Saturday (en, issue 1016)",
+   "name": "Bins today and repeat every other Saturday (en, issue 1016, on a Saturday)",
+   "line": "take the bins out today and repeat every other Saturday",
+   "ctx": {
+    "today": "2026-11-07",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "take the bins out",
+    "due": {
+     "date": "2026-11-07"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Bins every other Saturday (en, issue 1016, on a Wednesday)",
    "line": "take the bins out every other Saturday",
    "ctx": {
     "today": "2026-11-04",
@@ -6163,12 +6193,42 @@
     "priority": null,
     "estimateMinutes": null,
     "spentMinutes": null,
-    "recurrence": "every 2 weeks on saturday",
+    "recurrence": "every 2 weeks",
     "reminders": []
    }
   },
   {
-   "name": "Bins every other Saturday starting today (en, issue 1016)",
+   "name": "Bins every other Saturday (en, issue 1016, on a Saturday)",
+   "line": "take the bins out every other Saturday",
+   "ctx": {
+    "today": "2026-11-07",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "take the bins out",
+    "due": {
+     "date": "2026-11-07"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Bins every other Saturday starting today (en, issue 1016, on a Wednesday)",
    "line": "take the bins out every other saturday starting today",
    "ctx": {
     "today": "2026-11-04",
@@ -6193,7 +6253,37 @@
     "priority": null,
     "estimateMinutes": null,
     "spentMinutes": null,
-    "recurrence": "every 2 weeks on saturday",
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Bins every other Saturday starting today (en, issue 1016, on a Saturday)",
+   "line": "take the bins out every other saturday starting today",
+   "ctx": {
+    "today": "2026-11-07",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "take the bins out",
+    "due": {
+     "date": "2026-11-07"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
     "reminders": []
    }
   },
@@ -6223,7 +6313,7 @@
     "priority": null,
     "estimateMinutes": null,
     "spentMinutes": null,
-    "recurrence": "every 2 weeks on saturday",
+    "recurrence": "every 2 weeks",
     "reminders": []
    }
   },
@@ -6553,7 +6643,7 @@
     "priority": null,
     "estimateMinutes": null,
     "spentMinutes": null,
-    "recurrence": "every 2 weeks on friday",
+    "recurrence": "every 2 weeks",
     "reminders": []
    }
   },
@@ -6879,7 +6969,7 @@
     "priority": null,
     "estimateMinutes": null,
     "spentMinutes": null,
-    "recurrence": "every 2 weeks on saturday",
+    "recurrence": "every 2 weeks",
     "reminders": []
    }
   },
@@ -6939,7 +7029,7 @@
     "priority": null,
     "estimateMinutes": null,
     "spentMinutes": null,
-    "recurrence": "every 2 weeks on saturday",
+    "recurrence": "every 2 weeks",
     "reminders": []
    }
   },
@@ -7027,7 +7117,7 @@
     "priority": null,
     "estimateMinutes": null,
     "spentMinutes": null,
-    "recurrence": "every 2 weeks on saturday",
+    "recurrence": "every 2 weeks",
     "reminders": []
    }
   },
@@ -7057,7 +7147,7 @@
     "priority": null,
     "estimateMinutes": null,
     "spentMinutes": null,
-    "recurrence": "every 2 weeks on saturday",
+    "recurrence": "every 2 weeks",
     "reminders": []
    }
   },
@@ -7145,7 +7235,7 @@
     "priority": null,
     "estimateMinutes": null,
     "spentMinutes": null,
-    "recurrence": "every 2 weeks on saturday",
+    "recurrence": "every 2 weeks",
     "reminders": []
    }
   },
@@ -7175,7 +7265,7 @@
     "priority": null,
     "estimateMinutes": null,
     "spentMinutes": null,
-    "recurrence": "every 2 weeks on saturday",
+    "recurrence": "every 2 weeks",
     "reminders": []
    }
   },
@@ -7263,7 +7353,7 @@
     "priority": null,
     "estimateMinutes": null,
     "spentMinutes": null,
-    "recurrence": "every 2 weeks on friday",
+    "recurrence": "every 2 weeks",
     "reminders": []
    }
   },
@@ -7381,7 +7471,7 @@
     "priority": null,
     "estimateMinutes": null,
     "spentMinutes": null,
-    "recurrence": "every 2 weeks on friday",
+    "recurrence": "every 2 weeks",
     "reminders": []
    }
   },
@@ -7439,7 +7529,7 @@
     "priority": null,
     "estimateMinutes": null,
     "spentMinutes": null,
-    "recurrence": "every 2 weeks on saturday",
+    "recurrence": "every 2 weeks",
     "reminders": []
    }
   },
@@ -7469,7 +7559,7 @@
     "priority": null,
     "estimateMinutes": null,
     "spentMinutes": null,
-    "recurrence": "every 2 weeks on saturday",
+    "recurrence": "every 2 weeks",
     "reminders": []
    }
   }

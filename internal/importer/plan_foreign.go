@@ -405,7 +405,12 @@ func (fp *foreignPlan) taskFields(row Row, projectID, parentID string, due *Due)
 		fields = append(fields, field{"due", raw(due)})
 	}
 	if row.Recurrence != "" {
-		fields = append(fields, field{"recurrence", raw(row.Recurrence)})
+		// The form a 1.0 client reads when one means the same thing (recurrence-1-0-compatible).
+		dueDate := ""
+		if due != nil {
+			dueDate = due.Date
+		}
+		fields = append(fields, field{"recurrence", raw(recurrence.Compatible(row.Recurrence, dueDate))})
 	}
 	if row.EstimateMinutes > 0 {
 		fields = append(fields, field{"estimate_minutes", raw(row.EstimateMinutes)})

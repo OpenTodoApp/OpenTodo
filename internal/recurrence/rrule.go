@@ -158,7 +158,8 @@ func rruleParts(s string) (map[string]string, error) {
 // FromRRULE converts an RRULE value into a rule when the grammar expresses it
 // exactly. due is the task's due date ("YYYY-MM-DD" or ""), the series anchor: an
 // RRULE that only restates the anchor (FREQ=MONTHLY;INTERVAL=2;BYMONTHDAY=<due's
-// day>) is accepted as the plain interval, and FREQ=WEEKLY;INTERVAL=2;BYDAY=SA is
+// day>) is accepted as the plain interval, and so is FREQ=WEEKLY;INTERVAL=2;BYDAY=SA
+// on a Saturday due date (Compatible); on another due date, or without one, it is
 // `every 2 weeks on saturday`. ok is false for anything else
 // (hourly rules, BYHOUR, several ordinals, BYSETPOS other than the 1st to 4th or last weekday…).
 func FromRRULE(value, due string) (rule Rule, ok bool) {
@@ -233,8 +234,10 @@ func FromRRULE(value, due string) (rule Rule, ok bool) {
 			return Rule{}, false
 		}
 		if interval > 1 {
+			// A single weekday the due date falls on is the plain interval, which a
+			// 1.0 client reads (recurrence-1-0-compatible).
 			r.kind, r.days, r.interval = kWeekdays, mask, interval
-			return r, true
+			return r.Compatible(due), true
 		}
 		if mask == 0b00111110 {
 			r.kind, r.days = kWeekday, mask

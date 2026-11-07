@@ -432,6 +432,25 @@ export function firstOccurrence(rule: Rule | string, from: string): string {
 }
 
 /**
+ * The rule a writer stores for a task due on `due` (the due date at write time):
+ * the form a 1.0 client reads when one means the same thing (OpenSpec change
+ * recurrence-1-0-compatible). 1.0 cannot parse `every N weeks on <weekdays>`, and
+ * completing such a task there ends the series, so `every N weeks on <day>` whose
+ * due date falls on that day is stored as `every N weeks`, which the due date
+ * anchors. Several weekdays, a due date on another weekday or no due date keep the
+ * new form, the only correct one. A rule that does not parse is returned as given.
+ * Go: recurrence.Compatible; both run the "compatible" vectors.
+ */
+export function compatibleRule(rule: string, due: string | null | undefined): string {
+  const p = parseRule(rule)
+  if (!p.ok) return rule
+  const r = p.rule
+  const z = due ? dayNumber(due) : null
+  if (r.kind !== 'weekdays' || r.interval <= 1 || z === null || r.days !== 1 << isoWeekday(z)) return p.canonical
+  return canonicalOf({ kind: 'interval', interval: r.interval, unit: 'week', afterCompletion: false, until: r.until, count: r.count })
+}
+
+/**
  * Up to n occurrences that would follow the current one if each were completed on
  * time (calendar rules), or today and then on each due date (completion-relative),
  * stopping at the end condition. Drives the detail panel preview.

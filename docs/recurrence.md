@@ -32,7 +32,7 @@ is stored as `every 2nd tuesday`.
 | --- | --- | --- |
 | day, N days | `every day`, `every 3 days` | Daily, or every N days (1–999). |
 | week, N weeks | `every week`, `every 2 weeks` | Every 7 × N days. |
-| N weeks on weekday names | `every 2 weeks on saturday`, `every 3 weeks on mon, fri` | Those weekdays, every N weeks (see below). `every week on tuesday` is stored as `every tuesday`. |
+| N weeks on weekday names | `every 2 weeks on saturday`, `every 3 weeks on mon, fri` | Those weekdays, every N weeks (see below). `every week on tuesday` is stored as `every tuesday`, and on a task due on its one weekday the rule is stored as the plain week interval, `every 2 weeks` ([older devices](#rules-older-devices-read)). |
 | weekday | `every weekday` | Monday to Friday. |
 | month, N months | `every month`, `every 6 months` | Same day of month; a day the month does not have becomes its last day. |
 | year, N years | `every year`, `every 2 years` | Same date; 29 February becomes 28 February in common years. |
@@ -107,6 +107,18 @@ in Someday clears its due date and so ends the repetition.
 - A rule set on a task without a due date gives it one: the first matching date
   from today on (for `every 2 weeks on saturday`, the next Saturday, which then
   sets the rhythm).
+
+### Rules older devices read
+
+OpenTodo 1.0 does not know week intervals on weekdays. So whatever writes a
+rule (quick add, the Repeat field, the API, an assistant, CalDAV, an import or
+the vault) stores the form 1.0 reads when one gives the same dates: on a task
+due on Saturday, `every 2 weeks on saturday` is stored as `every 2 weeks`, which
+the due date keeps on Saturdays. On a task due on another day, with several
+weekdays, or without a due date, the rule keeps its weekdays, the only way to
+say it. A 1.0 device shows such a rule as text, and completing the task
+there ends the series ([stability](stability.md#what-may-change-within-1x)):
+update your devices.
 
 ## Completing, skipping and editing
 
