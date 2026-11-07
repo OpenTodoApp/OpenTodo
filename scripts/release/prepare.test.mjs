@@ -85,7 +85,7 @@ const PATCH_RELEASE_FILES = [
 /** A copy of what prepare and the deploy checks read, in a temporary directory. */
 function copyRepo() {
   const dir = mkdtempSync(join(tmpdir(), 'release-prepare-'))
-  for (const p of ['.github', 'deploy', 'docs/self-hosting', 'internal', 'scripts', 'skills', 'web/public', 'CHANGELOG.md', 'LICENSE', 'README.md',
+  for (const p of ['.github', 'deploy', 'docs/self-hosting', 'docs/accessibility', 'internal', 'scripts', 'skills', 'web/public', 'CHANGELOG.md', 'LICENSE', 'README.md',
     'web/package.json', 'web/package-lock.json']) {
     mkdirSync(dirname(join(dir, p)), { recursive: true })
     cpSync(join(ROOT, p), join(dir, p), { recursive: true, filter: (src) => !src.includes('node_modules') })
@@ -95,6 +95,12 @@ function copyRepo() {
   // So are the sections of a release candidate this tree has open (between 1.0.0-rc.1 and 1.0.0):
   // the tests prepare the next patch, minor or candidate after the latest release.
   writeFileSync(join(dir, 'CHANGELOG.md'), BASE_CHANGELOG)
+  // The tests release on dates in 2030: the audit this tree carries is dated just before them, so
+  // its age (tested on its own in accessibilityAudit.test.mjs) never decides a test here.
+  for (const f of readdirSync(join(dir, 'docs/accessibility')).filter((n) => /^audit-.*\.md$/.test(n))) {
+    const p = join(dir, 'docs/accessibility', f)
+    writeFileSync(p, readFileSync(p, 'utf8').replace(/^Date: \d{4}-\d{2}-\d{2}$/m, 'Date: 2030-01-01'))
+  }
   return dir
 }
 

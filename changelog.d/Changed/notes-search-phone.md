@@ -1,1 +1,0 @@
-- **Searching notes right after a first sync no longer stalls.** The first keys typed into the note search on a phone could wait a quarter of a second while the app finished writing the sync's activity and built its search index; both now run in short pieces between keystrokes, and preparing a note for search is about twice as fast.
