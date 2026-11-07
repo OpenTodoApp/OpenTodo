@@ -1,5 +1,5 @@
 {
- "_comment": "Shared recurrence test vectors (OpenSpec change recurring-tasks). Executed by internal/recurrence (Go) and web/src/lib/recurrence.test.ts (TypeScript); both must agree with every entry. next: Following(rule, due, today, completedOn, done) where done = completed occurrence records that already exist and expected null = the end condition is reached. first: first occurrence on or after `from`. preview: the next three occurrences shown in the detail panel. deadline: ShiftDate(deadline, from, to), a series deadline moved by the same days as its due date (OpenSpec change deadlines, design D8).",
+ "_comment": "Shared recurrence test vectors (OpenSpec change recurring-tasks). Executed by internal/recurrence (Go) and web/src/lib/recurrence.test.ts (TypeScript); both must agree with every entry. next: Following(rule, due, today, completedOn, done) where done = completed occurrence records that already exist and expected null = the end condition is reached. first: first occurrence on or after `from`. preview: the next three occurrences shown in the detail panel. deadline: ShiftDate(deadline, from, to), a series deadline moved by the same days as its due date (OpenSpec change deadlines, design D8). compatible: Compatible(rule, due), the rule a writer stores for a task due on due, in the form a 1.0 client reads when one means the same thing (OpenSpec change recurrence-1-0-compatible).",
  "parse": [
   {"input": "every day", "canonical": "every day"},
   {"input": "Every Day", "canonical": "every day"},
@@ -264,5 +264,21 @@
   {"name": "deadline before the due date", "deadline": "2026-10-10", "from": "2026-10-12", "to": "2026-10-13", "expected": "2026-10-11"},
   {"name": "across a year end", "deadline": "2026-12-31", "from": "2026-12-25", "to": "2027-01-01", "expected": "2027-01-07"},
   {"name": "start date of a weekly task (someday-and-evening spec)", "deadline": "2026-10-17", "from": "2026-10-19", "to": "2026-10-26", "expected": "2026-10-24"}
+ ],
+ "compatible": [
+  {"name": "every other saturday, due on a Saturday", "rule": "every 2 weeks on saturday", "due": "2026-11-07", "expected": "every 2 weeks"},
+  {"name": "every other saturday, due on a Wednesday", "rule": "every 2 weeks on saturday", "due": "2026-11-04", "expected": "every 2 weeks on saturday"},
+  {"name": "no due date keeps the weekday", "rule": "every 2 weeks on saturday", "due": null, "expected": "every 2 weeks on saturday"},
+  {"name": "every other friday, due on a Friday", "rule": "every 2 weeks on friday", "due": "2026-11-06", "expected": "every 2 weeks"},
+  {"name": "every 4 weeks on sunday, due on a Sunday", "rule": "every 4 weeks on sun", "due": "2026-11-08", "expected": "every 4 weeks"},
+  {"name": "until is kept", "rule": "every 2 weeks on saturday until 2027-06-30", "due": "2026-11-07", "expected": "every 2 weeks until 2027-06-30"},
+  {"name": "for N times is kept", "rule": "every 2 weeks on friday for 5 times", "due": "2026-11-06", "expected": "every 2 weeks for 5 times"},
+  {"name": "input spelling is canonicalised", "rule": "Every 2 Weeks On Sat", "due": "2026-11-07", "expected": "every 2 weeks"},
+  {"name": "two weekdays keep the new form", "rule": "every 3 weeks on monday, thursday", "due": "2026-11-02", "expected": "every 3 weeks on monday, thursday"},
+  {"name": "every week on a weekday is the weekday rule", "rule": "every week on saturday", "due": "2026-11-04", "expected": "every saturday"},
+  {"name": "a weekday rule is unchanged", "rule": "every monday", "due": "2026-11-02", "expected": "every monday"},
+  {"name": "an interval is unchanged", "rule": "every 2 weeks", "due": "2026-11-04", "expected": "every 2 weeks"},
+  {"name": "a date that is not a date keeps the new form", "rule": "every 2 weeks on saturday", "due": "2026-11-31", "expected": "every 2 weeks on saturday"},
+  {"name": "an invalid rule is returned as given", "rule": "every 2 weeks on", "due": "2026-11-07", "expected": "every 2 weeks on"}
  ]
 }
