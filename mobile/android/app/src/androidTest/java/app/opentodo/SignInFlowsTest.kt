@@ -306,7 +306,7 @@ class WalledServer(private val idp: FakeProvider, private val wall: Boolean, pri
             when {
                 path.startsWith("/_wall/callback") -> redirect("/").setHeader("Set-Cookie", "wall=ok; Path=/; Max-Age=86400; HttpOnly")
                 !through -> { idp.returnTo = "$origin/_wall/callback?token=1"; redirect("${idp.origin}/login?rd=%2F") }
-                path == "/healthz" -> MockResponse().setHeader("Content-Type", "application/json").setBody("""{"status":"ok","version":"0.0.0-test"}""")
+                path == "/api/v1/health" || path == "/healthz" -> MockResponse().setHeader("Content-Type", "application/json").setBody("""{"status":"ok","version":"0.0.0-test"}""")
                 path.startsWith("/api/v1/auth/oidc/start") -> { idp.returnTo = "$origin/api/v1/auth/oidc/callback?code=1"; redirect("${idp.origin}/login?client_id=opentodo") }
                 path.startsWith("/api/v1/auth/oidc/callback") -> redirect("/").setHeader("Set-Cookie", "session=1; Path=/; HttpOnly")
                 else -> page("<!doctype html><title>OpenTodo test</title><p>$path</p><a id=sso href=\"/api/v1/auth/oidc/start\">SSO</a>")

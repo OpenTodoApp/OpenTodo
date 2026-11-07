@@ -72,4 +72,57 @@ class HealthCheckTest {
         val closed = ServerSocket(0).let { val p = it.localPort; it.close(); p }
         assertEquals(Outcome.NO_NETWORK, HealthCheck.check("http://127.0.0.1:$closed").outcome)
     }
+
+    /** health-route-alias: `/api/v1/health` first, `/healthz` for servers before 1.0.1. */
+    @Test fun routes() {
+        // A server that answers each path as given, recording the paths asked.
+        fun serve(byPath: Map<String, String>, asked: MutableList<String>): Int {
+            val socket = ServerSocket(0)
+            thread {
+                socket.use { s ->
+                    repeat(byPath.size) {
+                        s.accept().use { c ->
+                            val r = c.getInputStream().bufferedReader()
+                            val path = r.readLine()?.split(" ")?.getOrNull(1) ?: "/"
+                            while (r.readLine()?.isNotEmpty() == true) Unit
+                            synchronized(asked) { asked += path }
+                            c.getOutputStream().write((byPath[path] ?: "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n").toByteArray())
+                        }
+                    }
+                }
+            }
+            return socket.localPort
+        }
+        fun ok(version: String): String {
+            val body = """{"status":"ok","version":"$version"}"""
+            return "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: ${body.length}\r\nConnection: close\r\n\r\n$body"
+        }
+        // A current server: one request, to the new route.
+        val asked = mutableListOf<String>()
+        val current = serve(mapOf("/api/v1/health" to ok("1.0.1")), asked)
+        assertEquals(HealthCheck.Answer(Outcome.OK, "1.0.1"), HealthCheck.check("http://127.0.0.1:$current"))
+        assertEquals(listOf("/api/v1/health"), synchronized(asked) { asked.toList() })
+        // An older server: the new route is unknown, /healthz answers.
+        val asked2 = mutableListOf<String>()
+        val older = serve(mapOf("/api/v1/health" to "HTTP/1.1 404 Not Found\r\nContent-Type: application/json\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}", "/healthz" to ok("1.0.0")), asked2)
+        assertEquals(HealthCheck.Answer(Outcome.OK, "1.0.0"), HealthCheck.check("http://127.0.0.1:$older"))
+        assertEquals(listOf("/api/v1/health", "/healthz"), synchronized(asked2) { asked2.toList() })
+    }
+
+    @Test fun combine() {
+        val ok = HealthCheck.Answer(Outcome.OK, "1.0.1")
+        fun never(): HealthCheck.Answer = throw AssertionError("the second route must not be asked")
+        // Settled by the first route.
+        assertEquals(ok, HealthCheck.combine(ok, ::never))
+        assertEquals(Outcome.NO_NETWORK, HealthCheck.combine(HealthCheck.Answer(Outcome.NO_NETWORK), ::never).outcome)
+        assertEquals(Outcome.UNTRUSTED, HealthCheck.combine(HealthCheck.Answer(Outcome.UNTRUSTED), ::never).outcome)
+        // An older server, or a proxy that only passes /healthz: the second route's OK wins.
+        assertEquals(ok, HealthCheck.combine(HealthCheck.Answer(Outcome.NOT_OPENTODO)) { ok })
+        assertEquals(ok, HealthCheck.combine(HealthCheck.Answer(Outcome.LOGIN_WALL)) { ok })
+        // Neither answers: the first route's answer stands (a login wall stays a login wall).
+        assertEquals(Outcome.LOGIN_WALL, HealthCheck.combine(HealthCheck.Answer(Outcome.LOGIN_WALL)) { HealthCheck.Answer(Outcome.NOT_OPENTODO) }.outcome)
+        assertEquals(Outcome.NOT_OPENTODO, HealthCheck.combine(HealthCheck.Answer(Outcome.NOT_OPENTODO)) { HealthCheck.Answer(Outcome.WEB_PAGE) }.outcome)
+        // A redirect to the other health route is a moved server, not a wall.
+        assertEquals(Outcome.NOT_OPENTODO, HealthCheck.classify(301, null, "https://todo.example.com/api/v1/health", origin = "http://todo.example.com").outcome)
+    }
 }

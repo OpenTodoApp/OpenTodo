@@ -91,6 +91,10 @@ The owner also sees a **Server configuration warning** at the top of **Settings*
 
 OpenTodo has its own sign-in (password, passkeys, two-factor, [single sign-on](sso.md)), so a login wall in front of it is optional. If you keep one, browsers and the installed web app pass it like any other site, and the [Android app](../android-app.md#behind-a-login-page-pangolin-authelia-and-others) signs in to it inside the app. Give the wall a long session, or let it bypass the paths the app fetches without a page (`/healthz`, `/api/*`, the service worker and manifest files); the Android guide lists them. Calendar apps, AI assistants and calendar feeds can't pass a login page at all: bypass `/dav/`, `/.well-known/caldav`, `/mcp` and `/feeds/*` if you use them.
 
+### Proxies that answer `/healthz` themselves (Pomerium, Cloud Run)
+
+Some proxies and platforms keep `/healthz` for themselves: Pomerium answers it with a plain `OK` before the request reaches OpenTodo, and Google Cloud Run's front end answers paths ending in `z` with its own 404. The same health answer is also served at `/api/v1/health`, which they pass through. Point an external uptime monitor there; the mobile apps (from 1.0.1) check a server at `/api/v1/health` first and only then at `/healthz`. The container's own health check (`/opentodo healthcheck`) talks to the server directly and is not affected.
+
 ### Calendar apps (CalDAV) through the proxy
 
 When the owner enables [CalDAV](../caldav.md), calendar apps use `/dav/` and `/.well-known/caldav` with WebDAV methods (`PROPFIND`, `REPORT`, `MKCALENDAR`, `PROPPATCH`). Most proxies (Caddy, Traefik, nginx) forward them unchanged; make sure no rule limits methods to GET/POST or blocks `/.well-known/`, and that the `Authorization` header is passed through. App passwords travel in every request, so serve CalDAV over https only.
@@ -311,7 +315,7 @@ Before an image is published, CI starts it the way Coolify does (health check, o
 
 ## Health
 
-`GET /healthz` returns `{"status":"ok","version":"..."}`. The image defines a `HEALTHCHECK` that runs `/opentodo healthcheck`, which works without curl or a shell.
+`GET /healthz` returns `{"status":"ok","version":"..."}`, and so does `GET /api/v1/health` for proxies that keep `/healthz` for themselves ([Pomerium, Cloud Run](#proxies-that-answer-healthz-themselves-pomerium-cloud-run)). The image defines a `HEALTHCHECK` that runs `/opentodo healthcheck`, which works without curl or a shell.
 
 ## Resource usage
 

@@ -88,7 +88,7 @@ If you'd rather the app not meet the wall at all, let it bypass these paths for 
 
 | Path | Used by |
 | --- | --- |
-| `/healthz` | the app's first-run check |
+| `/api/v1/health`, `/healthz` | the app's first-run check (`/api/v1/health` first; `/healthz` for servers before 1.0.1) |
 | `/api/*` | everything the web app loads or saves, including sync and sign-in |
 | `/sw.js`, `/registerSW.js`, `/push-sw.js` | service worker updates (offline use, push) |
 | `/manifest.webmanifest`, `/branding/*` | the app's name and icons |
