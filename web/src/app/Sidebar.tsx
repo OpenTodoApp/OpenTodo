@@ -560,7 +560,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onAssistant, onSig
 /** A project's mark: its icon in its colour, or the colour dot (project-organization "Project icon"). */
 /**
  * The sidebar's inline New project form, under the last project. It opens from the
- * + menu, often below the fold with a long list (issue #997), and on a phone that
+ * + menu, often below the fold with a long list (GitHub issue 997), and on a phone that
  * menu is a bottom sheet over an app that is inert while it is open, so the field
  * cannot take focus as it renders. Once the menu has closed (its cleanup runs before
  * this effect, in the same pass as the tap, so a phone still opens its keyboard), the
