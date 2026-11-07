@@ -516,6 +516,10 @@ func (d *davRequest) recordName(id, name, uid string) error {
 func (d *davRequest) update(v *davView, cur opsync.Entity, in *caldav.Inbound) (string, error) {
 	id := idOf(cur["id"])
 	ts := d.s.opTS()
+	// A zoned due is served in UTC: read the times sent back in its zone.
+	if cd := decodeDue(cur["due"]); cd != nil {
+		in.KeepZone(&caldav.Due{Date: cd.Date, Time: cd.Time, TZ: cd.TZ})
+	}
 	df, err := d.fields(v, in, cur, id, ts)
 	if err != nil {
 		return "", err
