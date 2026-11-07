@@ -4966,6 +4966,9 @@
   "Done today, {instant}": [
     "web/src/app/review/DailyCheck.tsx"
   ],
+  "Done|task": [
+    "web/public/push-sw.js"
+  ],
   "Down": [
     "web/src/app/palette/BarParts.tsx"
   ],
