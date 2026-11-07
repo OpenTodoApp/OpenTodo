@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-// "New project" from the Projects group's + menu (issue #997): the inline form sits
+// "New project" from the Projects group's + menu (GitHub issue 997): the inline form sits
 // under the last project, so with a long list it opens below the fold. Choosing the
 // item brings the form into view and puts focus in its name field, on a phone too,
 // where the menu is a bottom sheet over an inert app and the field's own autofocus
@@ -58,7 +58,7 @@ async function openNewProject(container: HTMLElement) {
   return field()!
 }
 
-describe('New project from the + menu (issue #997)', () => {
+describe('New project from the + menu (GitHub issue 997)', () => {
   it('on a phone the sheet closes, the name field takes focus and the form is scrolled into view', async () => {
     phone()
     honourInert()
