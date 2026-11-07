@@ -284,7 +284,7 @@ Every write tool call SHALL be applied as one batch of ops with `ApplyStrict` as
 - **THEN** the request is refused with 400 `invalid_op` and nothing is applied
 
 ### Requirement: Write limits
-One write call SHALL change at most 50 entities; larger requests SHALL be refused with `-32602`. Each token SHALL be limited to 30 write calls per minute and 1,000 changed entities per UTC day, and all the agent tokens of one account together SHALL be limited to 60 write calls per minute and 2,000 changed entities per UTC day, so creating more tokens or connecting more clients does not raise the budget. Beyond either limit the tool error SHALL be `rate_limited` with `retry_after_seconds` and nothing SHALL change on any device; a call refused for either limit SHALL count against neither. The agent REST content routes SHALL share these counters. Read tools SHALL not count toward these limits. The counters are server memory, not ops: offline behaviour and convergence are unaffected.
+One write call SHALL change at most 50 entities; larger requests SHALL be refused with `-32602`. Each token SHALL be limited to 30 write calls per minute and 1,000 changed entities per UTC day, and all the agent tokens of one account together SHALL be limited to 60 write calls per minute and 2,000 changed entities per UTC day, so creating more tokens or connecting more clients does not raise the budget. Beyond either limit the tool error SHALL be `rate_limited` with `retry_after_seconds` and nothing SHALL change on any device; a call refused for either limit SHALL count against neither. The agent REST content routes SHALL share these counters. Read tools SHALL not count toward these limits. The counters are kept in server memory and in the server's database, so a restart does not reset them; they are not ops: offline behaviour and convergence are unaffected.
 
 #### Scenario: Too many items
 - **WHEN** an assistant calls `create_tasks` with 51 items
@@ -301,6 +301,10 @@ One write call SHALL change at most 50 entities; larger requests SHALL be refuse
 #### Scenario: Account day limit across tokens
 - **WHEN** two agent tokens of one person have changed 1,000 entities each in one UTC day and a third token of that person tries to change one more
 - **THEN** the result is a `rate_limited` tool error and nothing changes until the next UTC day
+
+#### Scenario: Restart keeps the day's budget
+- **WHEN** an `agent` token changed 1,000 entities today and the server restarts
+- **THEN** its next write call that changes an entity is refused with `rate_limited` until the next UTC day
 
 ### Requirement: Untrusted content in tool results
 Tool results SHALL carry user-written text (titles, descriptions, names, comment bodies) inside fields marked as untrusted data, with a fixed notice telling the assistant to treat it as data and not as instructions, and SHALL mark items from shared projects with `shared: true` and comments by other people with `author_is_you: false`. Marking changes no stored data; results reflect synced data only.
@@ -594,7 +598,7 @@ For an encrypted account with an opted-in device online, every tool SHALL run on
 - **THEN** both devices converge on the later title by last-writer-wins, as for any two devices
 
 ### Requirement: Relay errors
-A tool call that needs the relay SHALL return a tool error and change nothing when it cannot be answered: `device_unavailable` when no opted-in device is online and unlocked, naming how to make one available; `device_timeout` when the device does not answer within the call's deadline (at most 20 seconds for reads and 30 for writes); `device_busy` when the account already has the maximum of queued relayed calls; `device_limit` when the device refused because its own limit is reached; and `declined_on_device` when the user declined a write on the device. A write that timed out SHALL NOT be retried on another device by the server.
+A tool call that needs the relay SHALL return a tool error and change nothing when it cannot be answered: `device_unavailable` when no opted-in device is online and unlocked, naming how to make one available; `device_timeout` when the device does not answer within the call's deadline (at most 20 seconds for reads and 30 for writes); `device_busy` when the account already has the maximum of queued relayed calls; `device_limit` when the device refused because its own limit is reached; and `declined_on_device` when the user declined the request, a read or a write, on the device. A write that timed out SHALL NOT be retried on another device by the server.
 
 #### Scenario: No device online
 - **WHEN** the only opted-in device is closed and an assistant calls `create_tasks`
@@ -609,7 +613,7 @@ A tool call that needs the relay SHALL return a tool error and change nothing wh
 - **THEN** the result is `device_timeout`, no op is written, and no other device is asked
 
 ### Requirement: Relay limits
-The server SHALL limit relayed requests to 60 per account per minute, to 4 queued at once per account, and to 2,000 values and 2 MB of text per request, after the existing MCP limits. Each device SHALL enforce its own limit on decrypted values, by default 5,000 per hour and 20,000 per day, whatever the server asks, SHALL show while it is answering a request, SHALL list the recent relayed calls (tool, time, number of values, never the values), and SHALL offer stopping the relay in one action.
+The server SHALL limit relayed requests to 60 per account per minute, to 4 queued at once per account, and to 2,000 values and 2 MB of text per request, after the existing MCP limits. Each device SHALL enforce its own limit on decrypted values, by default 5,000 per hour and 20,000 per day, whatever the server asks, SHALL show while it is answering a request and for which connector and tool, SHALL list the recent relayed calls, decryption and encryption alike (connector, tool, time, number of values, outcome, never the values), and SHALL offer stopping the relay in one action.
 
 #### Scenario: Server minute limit
 - **WHEN** an account's assistants make a 61st relayed call within one minute
@@ -619,8 +623,12 @@ The server SHALL limit relayed requests to 60 per account per minute, to 4 queue
 - **WHEN** a server asks a device to decrypt more values in an hour than the device's limit
 - **THEN** the device answers `device_limit` for the rest of the hour and decrypts nothing more
 
+#### Scenario: Reads are listed
+- **WHEN** an assistant's `list_tasks` made the laptop decrypt 24 titles
+- **THEN** the laptop's recent requests list `list_tasks` with the connector's name, 24 values read and the time, without any title
+
 ### Requirement: Confirming writes on the device
-A device SHALL offer the option "Ask me before AI connectors change anything", off by default. When it is on, a relayed write SHALL show the change set on the device with Apply and Decline before any content is encrypted; Decline SHALL return `declined_on_device` and write nothing; no answer within the deadline SHALL return `device_timeout`. Reads SHALL never ask.
+A device SHALL offer the option "Confirm changes first", off by default. When it is on, a relayed write SHALL show the change set on the device, with the connector, the tool and the call's arguments, with Apply and Decline before any content is encrypted; Decline SHALL return `declined_on_device` and write nothing; no answer within the deadline SHALL return `device_timeout`. This option SHALL not make reads ask; "Confirm reads first" does.
 
 #### Scenario: Declined
 - **WHEN** the option is on and the user declines an assistant's `create_tasks` on the laptop
@@ -1005,7 +1013,7 @@ The server SHALL serve `GET /.well-known/oauth-authorization-server` with `issue
 
 ### Requirement: Owner-managed clients
 
-The owner SHALL create clients through `GET`, `POST` and `DELETE /api/v1/settings/mcp/clients`, each with a name, a scope of `read` or `agent` and a redirect list, and `POST` SHALL return the client secret exactly once and never again. A member SHALL be refused with 403.
+The owner SHALL create clients through `GET`, `POST` and `DELETE /api/v1/settings/mcp/clients`, each with a name, a scope of `read` or `agent` and a redirect list, and `POST` SHALL return the client secret exactly once and never again. A member SHALL be refused with 403. `POST` SHALL take either `platform` (`google`, `openai` or `anthropic`), which gives the client that platform's redirect addresses, or `redirect_uris`, each of which SHALL be an absolute `https` address with a host, without user information, fragment, white space or `*`, at most 2,000 bytes, at most ten addresses, and SHALL then be matched exactly. With neither, the client SHALL get Google's addresses. Both together SHALL be refused with 400 `bad_request`, an unknown platform with 400 `bad_request`, and an address that breaks a rule with 400 `invalid_redirect_uri`, creating no client. `GET` SHALL also list each platform's id, name and redirect addresses. Clients are server state, not ops: offline behaviour and convergence are unaffected.
 
 #### Scenario: The secret is shown once
 
@@ -1017,13 +1025,38 @@ The owner SHALL create clients through `GET`, `POST` and `DELETE /api/v1/setting
 - **WHEN** a member calls `POST /api/v1/settings/mcp/clients`
 - **THEN** the response is 403 and no client is created
 
-### Requirement: Dynamic registration only for Google
+#### Scenario: A client made for ChatGPT
 
-`POST /oauth/register` SHALL implement RFC 7591 for redirect addresses on `oauth-redirect`, `oauth-redirect-sandbox` and `oauth-redirect-test` `.googleusercontent.com` under `/r/` and `/a/` only, SHALL issue a confidential client with scope `read`, and SHALL refuse every other address with 400 `invalid_redirect_uri`. Registration SHALL be limited to five a minute per client address, SHALL remove dynamic clients nobody authorized within a day, and SHALL refuse with 503 while 200 dynamic clients remain.
+- **WHEN** the owner creates a client with `platform` `openai`
+- **THEN** its redirect addresses are `https://chatgpt.com/connector_platform_oauth_redirect` and the prefix `https://chatgpt.com/connector/oauth/`, and an authorize request naming `https://chatgpt.com/connector/oauth/<callback id>` is accepted
+
+#### Scenario: A client made for Claude
+
+- **WHEN** the owner creates a client with `platform` `anthropic`
+- **THEN** an authorize request naming `https://claude.ai/api/mcp/auth_callback` or `https://claude.com/api/mcp/auth_callback` is accepted
+
+#### Scenario: A custom address is exact
+
+- **WHEN** the owner creates a client with `redirect_uris` `["https://assistant.example/oauth/callback"]`
+- **THEN** that address is accepted at the authorize step and `https://assistant.example/oauth/callback/x` is refused with 400
+
+#### Scenario: An unsafe custom address is refused
+
+- **WHEN** the owner creates a client with `redirect_uris` `["http://assistant.example/cb"]` or `["https://*.example/cb"]`
+- **THEN** the response is 400 `invalid_redirect_uri` and no client is created
+
+### Requirement: Dynamic registration only for known connector platforms
+
+`POST /oauth/register` SHALL implement RFC 7591 only for redirect addresses of the known AI connector platforms, all of one platform: Google's `oauth-redirect`, `oauth-redirect-sandbox` and `oauth-redirect-test` `.googleusercontent.com` under `/r/` and `/a/`; ChatGPT's `https://chatgpt.com/connector_platform_oauth_redirect` and `https://chatgpt.com/connector/oauth/` followed by one segment; Claude's `https://claude.ai/api/mcp/auth_callback` and `https://claude.com/api/mcp/auth_callback`. It SHALL store that platform's redirect addresses, SHALL issue a confidential client with scope `read`, and SHALL refuse every other address, and a mix of platforms, with 400 `invalid_redirect_uri`. Registration SHALL be limited to five a minute per client address, SHALL remove dynamic clients nobody authorized within a day, and SHALL refuse with 503 while 200 dynamic clients remain.
 
 #### Scenario: A foreign redirect is refused
 
 - **WHEN** an anonymous caller registers `https://evil.example/cb`
+- **THEN** the response is 400 `invalid_redirect_uri` and no client is created
+
+#### Scenario: A look-alike address is refused
+
+- **WHEN** an anonymous caller registers `https://chatgpt.com.evil.example/connector_platform_oauth_redirect`, `https://claude.ai/api/mcp/auth_callback/x` or `https://chatgpt.com/connector/oauth/a/b`
 - **THEN** the response is 400 `invalid_redirect_uri` and no client is created
 
 #### Scenario: Registration is rate limited
@@ -1035,6 +1068,11 @@ The owner SHALL create clients through `GET`, `POST` and `DELETE /api/v1/setting
 
 - **WHEN** an anonymous caller registers `https://oauth-redirect.googleusercontent.com/r/user_bound_custom-mcp-123`
 - **THEN** the response is 201 with a client id, a secret and scope `read`
+
+#### Scenario: ChatGPT and Claude register
+
+- **WHEN** an anonymous caller registers `https://chatgpt.com/connector/oauth/abc123`, or `https://claude.ai/api/mcp/auth_callback`
+- **THEN** the response is 201 with a client id, a secret and scope `read`, and the client can complete the authorization with that address
 
 ### Requirement: Secrets are stored hashed
 
@@ -1080,7 +1118,7 @@ The consent screen SHALL name the client, the scope it would receive and the hos
 
 ### Requirement: Authorize validates and redirects
 
-The authorize step and the consent calls SHALL validate the client, the registered `redirect_uri`, `response_type=code` and `code_challenge_method=S256`, answering 400 without a `Location` when the client or address is wrong. The code's scope SHALL be the client's own: the request neither widens nor narrows it.
+The authorize step and the consent calls SHALL validate the client, the registered `redirect_uri`, `response_type=code` and `code_challenge_method=S256`, answering 400 without a `Location` when the client or address is wrong. A registered address SHALL match only itself, except a known platform's prefix, which SHALL match that prefix followed by exactly one segment that is not empty, `.` or `..` and holds no `/`, `\`, `?`, `#`, `%`, white space or control character. The code's scope SHALL be the client's own: the request neither widens nor narrows it.
 
 #### Scenario: An agent client stays writable
 
@@ -1090,6 +1128,11 @@ The authorize step and the consent calls SHALL validate the client, the register
 #### Scenario: An unknown redirect is not redirected to
 
 - **WHEN** the `redirect_uri` is not registered for the client
+- **THEN** the response is 400 and carries no `Location` header
+
+#### Scenario: A stored address ending in a slash is not a prefix
+
+- **WHEN** a client registered `https://assistant.example/cb/` and the request names `https://assistant.example/cb/other`
 - **THEN** the response is 400 and carries no `Location` header
 
 ### Requirement: Codes are single use
@@ -1210,3 +1253,33 @@ A `run_routine` call that may write (not a test) SHALL run only within what is l
 #### Scenario: Test past the limit
 - **WHEN** an `agent` token has no items left and calls `run_routine` with `test: true`
 - **THEN** the test runs and nothing is written or counted
+
+### Requirement: Relay requests name their call
+Every relay request SHALL carry, sealed with it, the agent call it serves: the tool's name, the name of the connector's token, and the call's arguments as compact JSON cut to at most 300 bytes. A device SHALL refuse a request that names no tool, answering it as refused. While a device answers a request, it SHALL show which connector and tool it is answering without interrupting the user (no dialog), and its list of recent relayed calls SHALL name the connector beside the tool. Neither SHALL show or keep the arguments or any value after the request ends. The call's description is the server's word: the device cannot prove it, and the settings SHALL not claim it can.
+
+#### Scenario: Request names its call
+- **WHEN** an assistant connected with the token "Claude.ai" calls `get_task` with `{"id":"t1"}` for an encrypted account with the laptop opted in
+- **THEN** the laptop's request carries the tool `get_task`, the token name "Claude.ai" and the arguments `{"id":"t1"}`, and while it answers the laptop shows that it is answering Claude.ai's `get_task`
+
+#### Scenario: Long arguments
+- **WHEN** an assistant calls `create_tasks` with arguments longer than 300 bytes
+- **THEN** the request carries the arguments cut to 300 bytes on a character boundary, and the call proceeds as before
+
+#### Scenario: Request without a call
+- **WHEN** the device receives a request that names no tool
+- **THEN** it decrypts and encrypts nothing and answers refused, and the assistant's call fails with `device_unavailable`
+
+### Requirement: Confirming reads on the device
+A device SHALL offer the option "Confirm reads first", off by default, beside "Confirm changes first". When it is on, a relayed decryption request SHALL show on the device, before any value is sent, the connector, the tool, the call's arguments and the values it would send (decrypted on the device for this view, at most 20 listed with the count of the rest), with Allow and Decline. Decline, or no decision before the request's deadline, SHALL return `declined_on_device` and send nothing. The values shown SHALL exist only while the sheet is open.
+
+#### Scenario: Declined read
+- **WHEN** the option is on and the user declines an assistant's `list_tasks` on the laptop
+- **THEN** the result is the tool error `declined_on_device`, no decrypted value leaves the laptop and nothing changes
+
+#### Scenario: Allowed read
+- **WHEN** the user allows the same request
+- **THEN** the assistant's result shows the decrypted titles, as without the option
+
+#### Scenario: Option off
+- **WHEN** the option is off and an assistant reads a task
+- **THEN** the device answers without asking, as before

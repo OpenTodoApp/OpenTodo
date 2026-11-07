@@ -59,6 +59,22 @@ final class HealthCheckTests: XCTestCase {
         XCTAssertEqual(HealthCheck.classify(status: 404, body: Data(#"{"status":"ok","version":"x"}"#.utf8)).outcome, .notOpenTodo)
     }
 
+    /// health-route-alias: `/api/v1/health` first, `/healthz` only when that is not settled.
+    func testRoutesInOrder() async {
+        XCTAssertEqual(HealthCheck.paths, ["/api/v1/health", "/healthz"])
+        let ok = HealthCheck.Answer(outcome: .ok, version: "1.0.1")
+        var asked = 0
+        let older = await HealthCheck.combine(HealthCheck.Answer(outcome: .notOpenTodo)) { asked += 1; return HealthCheck.Answer(outcome: .ok, version: "1.0.0") }
+        XCTAssertEqual(older.outcome, .ok)
+        XCTAssertEqual(older.version, "1.0.0")
+        XCTAssertEqual(asked, 1)
+        for first in [ok, HealthCheck.Answer(outcome: .noNetwork), HealthCheck.Answer(outcome: .untrusted)] {
+            let answer = await HealthCheck.combine(first) { asked += 1; return ok }
+            XCTAssertEqual(answer.outcome, first.outcome)
+        }
+        XCTAssertEqual(asked, 1)
+    }
+
     func testErrorClassification() {
         let offline = NSError(domain: NSURLErrorDomain, code: NSURLErrorCannotConnectToHost)
         XCTAssertEqual(HealthCheck.classify(offline), .noNetwork)

@@ -202,6 +202,10 @@ func TestClientRotatesRefresh(t *testing.T) {
 		{[]string{rotatingRedirect}, true},
 		{append(mcpoauth.GoogleRegistration(), rotatingRedirect), true},
 		{nil, true},
+		// ChatGPT and Claude rotate (mcp-oauth-connector-redirects D5).
+		{platformRegistration("openai"), true},
+		{platformRegistration("anthropic"), true},
+		{append(mcpoauth.GoogleRegistration(), platformRegistration("openai")...), true},
 	} {
 		if got := (mcpoauth.Client{RedirectURIs: c.redirects}).RotatesRefresh(); got != c.want {
 			t.Errorf("RotatesRefresh(%v) = %v, want %v", c.redirects, got, c.want)

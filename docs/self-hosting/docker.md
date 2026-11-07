@@ -48,7 +48,7 @@ To add more people, keep sign-up closed and create single-use invitation links i
 - Data lives in the named volume `opentodo-data`, mounted at `/data`.
 - Change the host port with `OPENTODO_PORT` in `.env`, and the host address it is published on with `OPENTODO_BIND` (default `0.0.0.0`, every interface, so other devices on your network reach it). Behind a reverse proxy on the same machine, `OPENTODO_BIND=127.0.0.1` is the safer choice: only the proxy reaches the server. That `.env` value is not passed into the container, so the process keeps listening on 8080 and the mapping stays `host:8080`. To move the process, set `OPENTODO_PORT` in the container's own environment and publish that container port (`-p 7610:7610 -e OPENTODO_PORT=7610`). An invalid port stops startup with a message naming the variable. The health check probes the port the process is using.
 - Every variable in the [configuration reference](configuration.md) can be set in `.env`; the compose file passes them to the container. With `docker run`, pass them with `-e`.
-- The compose file pulls `ghcr.io/opentodoapp/opentodo:stable`, which every release moves. To stay on one release line use `:0.23` (its fixes only), to pin one version `:0.23.0`; `:latest` follows the main branch and carries unreleased changes; it reports its version as `dev+<commit>`, the commit it was built from. The running version is shown in **Settings → About**, at the bottom of the sign-in screen, at `/healthz` and in the startup log line `opentodo listening`.
+- The compose file pulls `ghcr.io/opentodoapp/opentodo:stable`, which every release moves. To stay on one release line use `:1.0` (its fixes only), to pin one version `:1.0.0`; `:latest` follows the main branch and carries unreleased changes; it reports its version as `dev+<commit>`, the commit it was built from. The running version is shown in **Settings → About**, at the bottom of the sign-in screen, at `/healthz` and in the startup log line `opentodo listening`.
 - To build locally instead of pulling: replace `image: ghcr.io/opentodoapp/opentodo:stable` with `build: .`.
 
 ## Plain `docker run`
@@ -90,6 +90,10 @@ The owner also sees a **Server configuration warning** at the top of **Settings*
 ### Behind a login wall (Pangolin, Authelia, Authentik, Cloudflare Access, oauth2-proxy)
 
 OpenTodo has its own sign-in (password, passkeys, two-factor, [single sign-on](sso.md)), so a login wall in front of it is optional. If you keep one, browsers and the installed web app pass it like any other site, and the [Android app](../android-app.md#behind-a-login-page-pangolin-authelia-and-others) signs in to it inside the app. Give the wall a long session, or let it bypass the paths the app fetches without a page (`/healthz`, `/api/*`, the service worker and manifest files); the Android guide lists them. Calendar apps, AI assistants and calendar feeds can't pass a login page at all: bypass `/dav/`, `/.well-known/caldav`, `/mcp` and `/feeds/*` if you use them.
+
+### Proxies that answer `/healthz` themselves (Pomerium, Cloud Run)
+
+Some proxies and platforms keep `/healthz` for themselves: Pomerium answers it with a plain `OK` before the request reaches OpenTodo, and Google Cloud Run's front end answers paths ending in `z` with its own 404. The same health answer is also served at `/api/v1/health`, which they pass through. Point an external uptime monitor there; the mobile apps (from 1.0.1) check a server at `/api/v1/health` first and only then at `/healthz`. The container's own health check (`/opentodo healthcheck`) talks to the server directly and is not affected.
 
 ### Calendar apps (CalDAV) through the proxy
 
@@ -201,6 +205,29 @@ The owner sees an audit log of sign-ins, failed sign-ins, sign-outs, credentials
 - **Client addresses** are not recorded unless you turn on address logging in Settings. Behind a trusted reverse proxy the address is the nearest untrusted `X-Forwarded-For` hop (the one the proxy appended; see [Which proxies are believed](#behind-a-reverse-proxy)), so make sure the proxy sets that header (Caddy, Traefik and nginx with `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` do). Turning address logging off erases every stored address immediately.
 - **Disk use** is roughly 200 bytes per event: a household produces a few MB per year; a public server under credential stuffing records one `rate_limited` event per address per minute rather than one per attempt.
 - **Export** the log as newline-delimited JSON from the same panel to archive it beyond the retention window.
+- **Pruning** removes events from the start of the log, in order, and stops at the first one still within the retention.
+
+### Checking the log for tampering
+
+Each event carries a hash of itself and of the event before it, so the log is a chain. Changing an event, or removing or moving one from the middle, breaks the chain from that event on. Pruning does not: the server keeps the hash of the last event it pruned and checks from there.
+
+The server checks the chain when it starts and hourly while events are recorded, and writes `audit: hash chain broken` with the first broken event to its log; it keeps running and changes nothing. Check it yourself at any time:
+
+```bash
+ot audit verify
+```
+
+It prints the number of events checked and the newest one, or the first broken event, and exits with 1 when the chain is broken ([`ot audit verify`](../cli.md#audit-log), API: [`GET /api/v1/audit/verify`](../api.md#audit-log)).
+
+**Keep an anchor outside the server.** Someone who can write the database file can rewrite every hash, or remove the newest events, and the chain would still check. To notice that, keep the chain head somewhere the server cannot reach:
+
+1. Export the log. The last line of the file is the chain head, for example `{"chain":{"id":418,"hash":"9f2c…"}}`. Keep that line, or the whole file, in a password manager, on another machine or in a ticket.
+2. Later, export again and run `ot audit verify`. Find the event with the kept id in the new export:
+   - its `hash` is the kept hash: nothing up to that event changed since you kept it;
+   - its `hash` differs: events up to that one were rewritten;
+   - it is missing: it was pruned only if `checkpoint.id` in `ot audit verify --json` is at least the kept id, which happens once the event is older than the retention. Otherwise events were removed.
+
+Events recorded before your server had the chain have `"hash": null` and are not covered; they leave the log with the retention. The client address is not part of the hash, so erasing addresses keeps the chain intact.
 
 ## Two-factor authentication
 
@@ -288,7 +315,7 @@ Before an image is published, CI starts it the way Coolify does (health check, o
 
 ## Health
 
-`GET /healthz` returns `{"status":"ok","version":"..."}`. The image defines a `HEALTHCHECK` that runs `/opentodo healthcheck`, which works without curl or a shell.
+`GET /healthz` returns `{"status":"ok","version":"..."}`, and so does `GET /api/v1/health` for proxies that keep `/healthz` for themselves ([Pomerium, Cloud Run](#proxies-that-answer-healthz-themselves-pomerium-cloud-run)). The image defines a `HEALTHCHECK` that runs `/opentodo healthcheck`, which works without curl or a shell.
 
 ## Resource usage
 

@@ -23,6 +23,7 @@ import (
 func (s *Server) registerRelayRoutes(mux *routes) {
 	s.relayStore = relay.NewStore(s.sync.DB())
 	s.relayHub = relay.NewHub()
+	s.relayHub.Keep(s.limitStore())
 	mux.handle("GET /api/v1/relay/devices", signedIn.SessionOnly().DemoDenied(), s.handleListRelayDevices)
 	mux.handle("PUT /api/v1/relay/devices/{device}", signedIn.SessionOnly().Recent().DemoDenied(), s.handlePutRelayDevice)
 	mux.handle("DELETE /api/v1/relay/devices/{device}", signedIn.SessionOnly().DemoDenied(), s.handleDeleteRelayDevice)
@@ -162,6 +163,25 @@ func (s *Server) relayEndSession(ctx context.Context, uid, sessionHash string) {
 	ended, err := s.relayStore.DisableSession(ctx, uid, sessionHash)
 	if err != nil {
 		s.log.Warn("relay: end session", "err", err)
+		return
+	}
+	for _, d := range ended {
+		s.relayHub.CloseDevice(uid, d.DeviceID)
+		if s.audit != nil {
+			s.audit.Record(ctx, audit.RelayDisabled(uid, d.DeviceID, d.Label, "signed_out"))
+		}
+	}
+}
+
+// relayEndRevoked opts out the devices whose session was revoked (Sign out
+// everywhere, deactivation; revoked-device-wipe D7) and closes their streams.
+func (s *Server) relayEndRevoked(ctx context.Context, uid string) {
+	if s.relayStore == nil {
+		return
+	}
+	ended, err := s.relayStore.DisableEnded(ctx, uid)
+	if err != nil {
+		s.log.Warn("relay: end revoked sessions", "err", err)
 		return
 	}
 	for _, d := range ended {

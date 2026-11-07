@@ -33,8 +33,8 @@ const (
 )
 
 func (s *Server) registerCalendarFeedRoutes(mux *routes) {
-	s.calFetchLimiter = newRateLimiter(handFetchesPerHr, time.Hour)
-	s.feedLimiter = newRateLimiter(feedFetchesPerHr, time.Hour)
+	s.calFetchLimiter = s.limit("calfeed.fetch", handFetchesPerHr, time.Hour)
+	s.feedLimiter = s.limit("calfeed.feed", feedFetchesPerHr, time.Hour)
 
 	s.switchRoutes(mux, "/api/v1/settings/calendar-feeds", switchRoute{sw: s.calFeedsOn,
 		get: signedIn.DemoDenied(), put: ownerOnly("manage the calendar feeds setting").DemoDenied()})

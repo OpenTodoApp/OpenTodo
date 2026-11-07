@@ -44,9 +44,9 @@ Encryption hides **content fields** from the server: titles, descriptions, notes
 - **The shape of activity:** how many items there are, when each was edited, from how many devices, and the approximate length of each text (ciphertext length follows plaintext length).
 - **Shared projects.** They are never encrypted.
 - **Plaintext from before encryption was turned on,** until **Purge plaintext history**, and in backups made before the purge.
-- **Older versions.** The server can serve an older ciphertext of the same field, and the app cannot tell.
+- **Older versions.** The server can serve an older ciphertext of the same field, and the app cannot tell. Planned after 1.0 ([#969](https://github.com/OpenTodoApp/OpenTodo/issues/969)).
 - **The device relay.** While a device is opted in to answer for AI assistants and is unlocked, the server can ask it to decrypt or encrypt values within its caps.
-- **The code.** A malicious server can serve tampered JavaScript that captures the passphrase.
+- **The code.** A malicious server can serve tampered JavaScript that captures the passphrase. Signed web app code is planned after 1.0 ([#970](https://github.com/OpenTodoApp/OpenTodo/issues/970)).
 
 ## What is not encrypted at rest
 
@@ -58,7 +58,7 @@ The server does not encrypt its own storage. Use disk or volume encryption on th
 | `<data>/attachments/` | Unencrypted files, except files of encrypted accounts, which are encrypted on the device |
 | `<data>/secrets/*.json` | Unencrypted JSON, mode 0600 |
 | `<data>/cache/maps` | Map tiles and styles. No account data |
-| Each device's IndexedDB | Unencrypted on the device, including for encrypted accounts. The browser and the operating system protect it. **Lock this device** forgets the key; signing out clears the data |
+| Each device's IndexedDB | Unencrypted on the device, including for encrypted accounts. The browser and the operating system protect it. **Lock this device** forgets the key; signing out clears the data, and so does a revoked device when it next connects |
 | Backup archives | Encrypted only when a backup passphrase is set (argon2id and AES-256-GCM) |
 
 ## What a backup contains
@@ -80,7 +80,7 @@ In [host mode](../self-hosting/host-mode.md), tenants are isolated by data:
 - tenants cannot reach the operator's private network;
 - tenants cannot change operator-owned settings.
 
-They are **not** isolated by resources. All tenants share one process, its CPU, memory and file descriptors. The per-tenant limits bound storage, writes, requests per client address, imports and members, but not CPU time or memory, so a heavy tenant slows the others.
+They are **not** isolated by resources. All tenants share one process, its CPU, memory and file descriptors. The per-tenant limits bound storage, writes, requests per client address, imports and members, but not CPU time or memory, so a heavy tenant slows the others. Isolation is planned after 1.0 ([#968](https://github.com/OpenTodoApp/OpenTodo/issues/968)).
 
 The operator can read every tenant's data, as above.
 
@@ -99,12 +99,13 @@ Routes that make outbound requests or touch credentials, settings, members or bu
 
 OpenTodo is held to [performance budgets](../performance.md) with a 10,000-task account, and a 50,000-task account is measured nightly without a budget. Beyond that, nothing is promised.
 
-The server is one process with one SQLite writer, sized for a household, a team or a small organisation, not for thousands of concurrent writers. Rate limits and AI agent limits live in memory: they are per process and reset when the server restarts.
+The server is one process with one SQLite writer, sized for a household, a team or a small organisation, not for thousands of concurrent writers. Rate limits and AI agent limits are counted in memory and written to the database within a second, so a restart keeps them and a crash forgets at most the last second. In host mode the host's per-client request limit stays in memory.
 
 ## Other limits
 
-- **The audit log is not tamper-evident** against someone who can write the database file.
+- **The audit log is tamper-evident, not tamper-proof.** Each event is chained to the one before by a hash, and the server checks the chain. Someone who can write the database file can still rewrite every hash, or remove the newest events, without the check noticing. Keep the chain head of an export outside the server to catch that ([Audit log](../self-hosting/docker.md#checking-the-log-for-tampering)). Events from before the chain existed are not covered.
 - **Rollback re-opens fixed issues.** Running a binary older than a security fix brings that issue back. There are no down-migrations.
 - **Capability links** (public lists, task pages, calendar feeds) give their access to anyone who holds them, until revoked or expired.
+- **A revoked device clears its copy only when it connects.** After **Sign out everywhere**, or when an admin deactivates or deletes the account, each of its devices removes its local copy the next time it contacts the server, and loses the changes it had not synced. A device that never connects again keeps its copy, and so does one that comes back more than a year later. A password change or reset only signs the other devices out. Clients that use API tokens (`ot`, the vault, the Obsidian plugin, the browser extension) keep what they hold after the token is revoked.
 - **Bearer tokens** are never asked for a second factor. A leaked `full` token can read and change the account's data until it is revoked.
 - **No independent review** has been made yet ([Independent review](how-we-verify.md#independent-review)).

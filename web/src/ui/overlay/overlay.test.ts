@@ -39,6 +39,18 @@ describe('place (anchored popovers from 640 px up)', () => {
     expect(p.left).toBe(8)
     expect(p.maxWidth).toBe(624)
   })
+
+  it('keeps out of the safe areas: a rounded side in landscape, the home indicator (GitHub issue 973)', () => {
+    const land = { width: 844, height: 390 }
+    const insets = { top: 0, right: 59, bottom: 21, left: 59 }
+    // A menu of a trigger at the left edge starts after the left inset, not 8 px from the glass.
+    expect(place({ top: 20, bottom: 50, left: 60, right: 90 }, panel, land, { insets }).left).toBe(59 + 8)
+    // Near the right edge it ends before the right inset.
+    expect(place({ top: 20, bottom: 50, left: 780, right: 800 }, panel, land, { align: 'start', insets }).left).toBe(844 - 59 - 8 - 224)
+    // A tall menu stops above the home indicator.
+    const p = place({ top: 20, bottom: 50, left: 300, right: 340 }, { width: 224, height: 600 }, land, { insets })
+    expect(p.top + (p.maxHeight ?? 0)).toBe(390 - 21 - 8)
+  })
 })
 
 describe('overlay stack', () => {

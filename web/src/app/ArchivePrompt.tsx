@@ -52,7 +52,7 @@ export function ArchivePrompt() {
   if (!project && archived.length === 0) return null
   return (
     <div className="fixed left-1/2 z-40 w-[min(28rem,calc(100%-2rem))] -translate-x-1/2 space-y-2"
-      style={{ bottom: 'calc(var(--vv-bottom, 0px) + max(1rem, env(safe-area-inset-bottom)))' }}>
+      style={{ bottom: 'calc(var(--vv-bottom, 0px) + max(1rem, var(--safe-bottom)))' }}>
       {project && (
         <div role="alert" className="flex items-center gap-2 rounded-control border border-accent/40 bg-surface px-3 py-2 text-body shadow-2">
           <span className="user-text min-w-0 flex-1">{t.rich('Archive <strong>{name}</strong>? {kbd}', { name: project.name, kbd: <Kbd k="Enter" only />, strong: (chunks) => <strong>{chunks}</strong> })}</span>

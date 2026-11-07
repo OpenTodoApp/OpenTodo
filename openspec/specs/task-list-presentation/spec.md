@@ -901,3 +901,41 @@ A narrow row's title SHALL keep the width its checkbox, time column, marks, phon
 #### Scenario: Narrow list on a wide screen
 - **WHEN** a list narrower than 30 rem on a 1280 px screen shows a task from a GitHub issue
 - **THEN** its row ends with the link icon, a link whose name says it opens the source "o/r#7", while a 38 rem list still reads "o/r#7"
+
+### Requirement: Long lists draw only what is in view
+A task list SHALL let the browser skip the layout and paint of rows far from the viewport while keeping every row in the document, so keyboard navigation, find in page, drag and drop and assistive technology work on every row; a long list MAY draw its first rows in its first frame and the rest within the next frames, drawing the row the cursor is on at once, and SHALL never remove a drawn row to save work. One write (local or from sync) SHALL update the shared task data from the changed rows instead of reading every stored task again, SHALL draw again only the rows whose shown data changed and the groups that hold them, and completing a task SHALL show its tick in the frame of the click. With the 10,000-task account of the performance budgets, opening the 2,000-task project, completing a task in it, a cursor move, a search keystroke and an edit from another device SHALL stay within their budgets in `scripts/perf/budgets.json`. Only reading and drawing change, so offline behaviour and convergence are unchanged.
+
+#### Scenario: Opening a 2,000-task project
+- **WHEN** the user opens a project of 2,000 open tasks
+- **THEN** the list is ready within the open-project budget, and pressing `End` then `k` reaches and selects the last rows
+
+#### Scenario: Completing a task in a long list
+- **WHEN** the user ticks a task in a 2,000-row list
+- **THEN** the tick shows in the next frame, and the stored tasks are not read again in full
+
+#### Scenario: Ticking several tasks in a row
+- **WHEN** the user ticks one task after another in a 2,000-row list
+- **THEN** each tick redraws the ticked row and its group, the other rows keep what they drew, and no tick waits for the list to work out all its rows again
+
+### Requirement: List updates follow the changed rows
+After a write (local or from sync), a task list, its groups and its row details (progress, blockers, the step a task waits for, habit streaks), Today's closed list, the sidebar's counts and the app badge SHALL be worked out from the rows that write changed rather than from every stored task, and SHALL show exactly what working them out from all tasks shows: the same rows in the same order and groups, the same counts and the same flow and closed-list state. A row SHALL compare only the details a write could have changed. Completing a task SHALL redraw the list once, when the task leaves the list's data; the end of the departing row's animation SHALL NOT redraw the list. A long list SHALL let the browser skip blocks of rows far from the viewport, each row keeping its block from one drawing to the next, without splitting the list: every row stays an item of the one list (or section list) that assistive technology announces. Only how the screen derives and draws local data changes, so this behaves the same offline and convergence is unchanged.
+
+#### Scenario: A completion in a 2,000-row project
+- **WHEN** the user completes a task in a project of 2,000 open tasks in a 10,000-task account
+- **THEN** the list, the section count, the sidebar counts and the app badge show the task gone, as a full recomputation would, without going over the 10,000 tasks
+
+#### Scenario: Random writes give the same lists as a full recomputation
+- **WHEN** any sequence of creates, edits, completions, reopenings, moves, deletions and blocker changes is applied
+- **THEN** after each write the incremental lists, groups, counts, flows and closed list equal those worked out from all tasks
+
+#### Scenario: The departing row ends
+- **WHEN** a completed row's departure animation ends
+- **THEN** the row leaves the screen without the list drawing again
+
+#### Scenario: Rows in blocks for assistive technology
+- **WHEN** a section lists 2,000 tasks
+- **THEN** a screen reader finds 2,000 items in that one named list, each with its Complete button
+
+#### Scenario: Synced changes while offline
+- **WHEN** a device comes back online and a sync page changes many tasks at once
+- **THEN** the lists show the synced state, worked out in full when the change is too large to follow row by row

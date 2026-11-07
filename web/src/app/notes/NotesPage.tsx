@@ -76,23 +76,29 @@ export function NotesEmpty({ onNew }: { onNew: () => void }) {
 
 interface Row { entry: NoteEntry; snippet?: SnippetSegment[] }
 
-/** Runs `step` in idle moments while it returns true; returns the cancel. */
+/** How long one slice of warming the index may run before the page gets the thread back (ms). */
+const WARM_SLICE_MS = 8
+
+/**
+ * Runs `step` in short slices while it returns true; returns the cancel. Not in idle
+ * periods: just after a first sync (the activity log written, every list catching up)
+ * a phone had too few of them, and a search typed then prepared most of 2,500 notes
+ * on its first keystroke (perf: notes-search). A slice of WARM_SLICE_MS leaves a
+ * keystroke waiting at most that long.
+ */
 function warmSoon(step: () => boolean): () => void {
-  let handle = 0
   let stopped = false
-  // As many steps as the idle period allows (notes-compaction-at-scale: the index
-  // is ready sooner after the page opens).
-  const run = (deadline?: IdleDeadline) => {
+  let handle = 0
+  const run = () => {
     if (stopped) return
+    const until = performance.now() + WARM_SLICE_MS
     let more = step()
-    while (more && deadline && !deadline.didTimeout && deadline.timeRemaining() > 4) more = step()
-    if (more) handle = schedule()
+    while (more && performance.now() < until) more = step()
+    if (more) handle = window.setTimeout(run, 0)
   }
-  const schedule = () => (typeof requestIdleCallback === 'function' ? requestIdleCallback(run, { timeout: 500 }) : window.setTimeout(run, 50))
-  handle = schedule()
+  handle = window.setTimeout(run, 0)
   return () => {
     stopped = true
-    if (typeof cancelIdleCallback === 'function') cancelIdleCallback(handle)
     clearTimeout(handle)
   }
 }
@@ -132,10 +138,10 @@ export function NotesPage({ id }: { id?: string }) {
 
   const entries = useStableEntries(useMemo(() => noteEntries(tasks, projects, notes), [tasks, projects, notes]))
   const filtered = useMemo(() => filterEntries(entries, filters), [entries, filters])
-  // The search index is built in idle moments once the page is open (or on the first
+  // The search index is built in short slices once the page is open (or on the first
   // search, if that comes first) and forgets notes no longer listed.
   useEffect(() => { index.current?.prune(entries) }, [entries])
-  useEffect(() => warmSoon(() => (index.current ??= new NoteIndex(currentLanguage())).warm(entries)), [entries])
+  useEffect(() => warmSoon(() => (index.current ??= new NoteIndex(currentLanguage())).warm(entries, 8)), [entries])
   // Dropped when the account locks (D4).
   useEffect(() => onEncryptionChange(() => { const s = encryptionSnapshot(); if (s.enabled && !s.unlocked) index.current?.clear() }), [])
   const rows = useMemo<Row[]>(() => {

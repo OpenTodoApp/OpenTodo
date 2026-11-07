@@ -26,13 +26,13 @@ type taskPageLimiters struct {
 
 func (s *Server) registerTaskPageRoutes(mux *routes) {
 	s.pages = taskPageLimiters{
-		create: newRateLimiter(20, time.Hour),
-		read:   newRateLimiter(120, time.Minute),
-		tick:   newRateLimiter(60, time.Minute),
-		reply:  newRateLimiter(20, time.Hour),
+		create: s.limit("page.create", 20, time.Hour),
+		read:   s.limit("page.read", 120, time.Minute),
+		tick:   s.limit("page.tick", 60, time.Minute),
+		reply:  s.limit("page.reply", 20, time.Hour),
 		// A map loads a few dozen tiles at a time; its own budget per page.
-		maps: newRateLimiter(1200, time.Minute),
-		addr: newRateLimiter(120, time.Minute),
+		maps: s.limit("page.maps", 1200, time.Minute),
+		addr: s.limit("page.addr", 120, time.Minute),
 	}
 	manage := signedIn.FullTokens().DemoDenied()
 	mux.handle("GET /api/v1/task-pages", manage, s.handleListTaskPages)

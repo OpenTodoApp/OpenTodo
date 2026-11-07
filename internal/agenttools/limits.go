@@ -4,6 +4,8 @@ import (
 	"math"
 	"sync"
 	"time"
+
+	"github.com/OpenTodoApp/opentodo/internal/ratelimit"
 )
 
 // Write limits (design D5). Fixed constants in v1, documented in docs/mcp.md;
@@ -18,13 +20,20 @@ const (
 )
 
 // Limiter keeps the write counters of each token and each account in memory:
-// the call times of the last minute and the entities changed today. A restart
-// resets them; they exist to contain runaway loops, not to bill anyone.
+// the call times of the last minute and the entities changed today. Attached
+// to a ratelimit.Store, they survive a restart (persistent-limits D4); its
+// keys are then the store's hashes. They exist to contain runaway loops, not
+// to bill anyone.
 type Limiter struct {
 	mu     sync.Mutex
 	now    func() time.Time
 	tokens map[string]*usage
+	store  *ratelimit.Store
+	dirty  map[string]struct{}
 }
+
+// dayLayout is the format of a usage's UTC day.
+const dayLayout = "2006-01-02"
 
 type usage struct {
 	calls    []time.Time // the last minute's, oldest first
@@ -38,10 +47,12 @@ func NewLimiter(now func() time.Time) *Limiter {
 	if now == nil {
 		now = time.Now
 	}
-	return &Limiter{now: now, tokens: map[string]*usage{}}
+	return &Limiter{now: now, tokens: map[string]*usage{}, dirty: map[string]struct{}{}}
 }
 
 func (l *Limiter) get(token string, now time.Time) *usage {
+	token = l.key(token)
+	l.mark(token)
 	u, ok := l.tokens[token]
 	if !ok {
 		if len(l.tokens) > 1000 {
@@ -56,7 +67,7 @@ func (l *Limiter) get(token string, now time.Time) *usage {
 		l.tokens[token] = u
 	}
 	u.last = now
-	if d := now.UTC().Format("2006-01-02"); u.day != d {
+	if d := now.UTC().Format(dayLayout); u.day != d {
 		u.day, u.entities = d, 0
 	}
 	return u
@@ -170,8 +181,10 @@ func (l *Limiter) RefundFor(userID, token string, n int) {
 		keys = append(keys, accountKey(userID))
 	}
 	for _, k := range keys {
+		k = l.key(k)
 		if u, ok := l.tokens[k]; ok {
 			u.entities = max(0, u.entities-n)
+			l.mark(k)
 		}
 	}
 }
@@ -220,8 +233,21 @@ func (l *Limiter) SettleFor(userID, token string, held, used int) {
 		keys = append(keys, accountKey(userID))
 	}
 	for _, k := range keys {
+		k = l.key(k)
 		if u, ok := l.tokens[k]; ok {
 			u.entities = max(0, u.entities-held+used)
+			l.mark(k)
 		}
+	}
+}
+
+// key is the map key of a token or account: the store's hash once attached.
+func (l *Limiter) key(raw string) string { return l.store.Key(raw) }
+
+// mark records that key's counters changed, for the store (l.mu held).
+func (l *Limiter) mark(key string) {
+	if l.store != nil {
+		l.dirty[key] = struct{}{}
+		l.store.Changed()
 	}
 }

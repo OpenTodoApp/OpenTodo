@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/OpenTodoApp/opentodo/internal/agenttools"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // list_time_entries and tracked_minutes (OpenSpec change time-tracking, D11).
@@ -74,6 +75,24 @@ func TestTimeEntriesReadTool(t *testing.T) {
 	}
 	if r := f.call("u1", "tools/call", map[string]any{"name": "list_time_entries", "arguments": map[string]any{"from": "2026-13-01"}}); errCode(r) != CodeInvalidParams {
 		t.Fatalf("bad from: %v", r)
+	}
+}
+
+// A repeating task's tracked_minutes counts its current occurrence: the entries
+// since its last completion (OpenSpec change fix-recurring-tracked-time).
+func TestTrackedMinutesOfRepeatingTask(t *testing.T) {
+	f := newFixture(t)
+	f.task("u1", "s1", "Water the plants", map[string]any{"due": map[string]any{"date": "2026-03-11"}, "recurrence": "every day", "estimate_minutes": 30})
+	rec := opsync.OccurrenceID("s1", "2026-03-10")
+	f.task("u1", rec, "Water the plants", map[string]any{"due": map[string]any{"date": "2026-03-10"}, "series_id": "s1", "occurrence_date": "2026-03-10", "completed_at": 1773100000000})
+	f.put("u1", "time_entry", "before", map[string]any{"task_id": "s1", "user_id": "u1", "started_at": 1773090000000, "ended_at": 1773091800000, "note": "", "device_id": "d", "created_at": 1})
+	f.put("u1", "time_entry", "after", map[string]any{"task_id": "s1", "user_id": "u1", "started_at": 1773110000000, "ended_at": 1773110600000, "note": "", "device_id": "d", "created_at": 1})
+	res := f.tool("u1", "get_task", map[string]any{"id": "s1"})
+	if got := res["task"].(map[string]any)["tracked_minutes"]; got != float64(10) {
+		t.Fatalf("tracked_minutes = %v, want 10 (the current occurrence's)", got)
+	}
+	if res := f.tool("u1", "list_time_entries", map[string]any{"task_id": "s1"}); len(res["time_entries"].([]any)) != 2 {
+		t.Fatalf("entries = %v", res)
 	}
 }
 

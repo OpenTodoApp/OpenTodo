@@ -63,6 +63,16 @@ node scripts/e2e-offline.mjs
 
 The unit tests of the built service worker and manifest (`web/src/lib/serviceWorker.test.ts`, `web/src/ui/workbench.test.ts`) skip without a build; `npm run test:built` (in `web/`, after `npm run build`) runs them with `REQUIRE_BUILT=1`, which fails instead of skipping. CI runs it after the web build.
 
+## `e2e-revoked.mjs`
+
+A revoked device (OpenSpec change `revoked-device-wipe`), run by `make e2e`: two browser contexts are two devices of the owner on a **fresh** server. The phone receives a task and queues one offline; the laptop signs out everywhere. When the phone reconnects and reloads it must show "This device was signed out and its data was removed.", its IndexedDB must hold no task and no queued change, and its session cookie must be gone.
+
+```bash
+make build
+OPENTODO_DATA_DIR=$(mktemp -d) ./bin/opentodo &
+node scripts/e2e-revoked.mjs
+```
+
 ## `e2e-network.mjs`
 
 Network audit for locations and maps (OpenSpec change `task-locations`, task 7.1), run by `make e2e`. It starts a fake tile and Photon provider on localhost and two fresh servers of its own (`OPENTODO_BIN`, default `bin/opentodo`), one with `OPENTODO_MAPS=off` and one with maps on, both pointed at the fake with `OPENTODO_MAPS_TILES_URL` and `OPENTODO_MAPS_GEOCODER_URL`, so nothing reaches OpenFreeMap or Photon. In each it opens a task with a location, its location editor (searching an address when maps are on) and the Locations page, and fails when the browser contacts any origin but the server's, when the server contacts the provider with maps off, or when a provider request with maps on lacks OpenTodo's User-Agent or carries the viewer's cookie, token or address. The map draws through SwiftShader WebGL, so tiles are really requested.
@@ -84,6 +94,17 @@ node scripts/e2e-layout.mjs [report-dir]
 ```
 
 Environment: `OPENTODO_URL`, `ENGINES` (default `chromium,webkit`), `WIDTHS` (`360,390,768`), `THEMES` (`light,dark`), `ONLY` (screen names), `CONCURRENCY` (3), `SHOTS=all` (also save a screenshot of every screen and overlay), `CHROMIUM_PATH`, `WEBKIT_PATH`, `OPENTODO_LANG` (an interface language such as `de`: the run writes the synced language preference before capturing, to find labels that a longer translation makes overflow). When you add a screen or an overlay, add it to the `screens()` and `OVERLAYS` tables in `scripts/ux-audit/layout-screens.mjs` and an entry to the screen inventory. The seed (`ux-audit/seed.mjs`), the screens and overlay openers (`ux-audit/layout-screens.mjs`) and the page measurements (`ux-audit/measure.mjs`) are shared with the interface audit. With `OPENTODO_LANG` set to another language, each screen is checked once a heading, a task row or an alert shows, without its overlays or layout switches (their openers find controls by English names); CI runs a German leg at 360 px.
+
+## `e2e-safe-area.mjs`
+
+Safe-area check (GitHub issue 973), a leg of the `layout` CI job: the layout check's screens and overlays (plus Focus and the theme editor) as the installed app (standalone display mode) on an iPhone with a Dynamic Island, in portrait (390 × 844, insets 59 px top and 34 px bottom) and landscape (844 × 390, 59 px left and right, 21 px bottom). It fails when a control that can be tapped sits in an inset (`insetOverlaps` in `ux-audit/measure.mjs`), or when a phone sheet's Close button rises under the top inset with the keyboard open. Chromium emulates the insets through the DevTools protocol, so `env()` itself answers; WebKit sets the app's `--safe-*` tokens instead.
+
+```bash
+make safe-area-check            # builds, starts a throwaway server on :18080, runs the check
+node scripts/e2e-safe-area.mjs [report-dir]   # against a running server with a FRESH data directory
+```
+
+Environment: `OPENTODO_URL`, `ENGINES` (default `chromium`), `ORIENTATIONS` (`portrait,landscape`), `ONLY` (screen names), `SHOTS=all`, `LAYOUT_DATE`, `CHROMIUM_PATH`, `WEBKIT_PATH`.
 
 Every screen, and every overlay on its own, is also run through axe-core in light and dark; serious and critical issues (colour contrast below WCAG AA, missing names and labels, invalid roles or ARIA) fail the check. The check also covers the in-app Help (OpenSpec change `user-documentation`): Help is opened offline from the service worker's precache (Chromium), and the contextual help panel is opened over the share dialog with an email typed into it, which must still be there after the panel closes. axe-core comes from `web/node_modules` (run `npm ci` in `web/`); the context uses `bypassCSP` so it can be injected.
 

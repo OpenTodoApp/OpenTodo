@@ -102,6 +102,9 @@ func parseRecurrence(text, dueDate string) (string, error) {
 	if rest, ok := strings.CutPrefix(low, "every other "); ok {
 		if u, ok := units[rest]; ok {
 			low = "every 2 " + u + "s"
+		} else if _, err := recurrence.Canonicalize("every 2 weeks on " + rest); err == nil {
+			// "every other saturday" keeps its weekday (quick-add-weekday-recurrence D1).
+			low = "every 2 weeks on " + rest
 		}
 	}
 	if after && !strings.Contains(low, "after completion") {

@@ -496,7 +496,7 @@ export function RoutineEditor({ rule, draft: initial, project, dropped, describe
       <p className="sr-only" aria-live="polite" data-announce>{announce}</p>
       {body}
       {!desktop && (
-        <div className="sticky bottom-0 z-10 -mx-4 flex flex-wrap items-center gap-2 border-t border-soft bg-canvas px-4 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]" data-routine-actions>
+        <div className="sticky bottom-0 z-10 -mx-4 flex flex-wrap items-center gap-2 border-t border-soft bg-canvas px-4 py-2 pb-[calc(0.5rem+var(--safe-bottom))]" data-routine-actions>
           <div className="mr-auto">{status}</div>
           {actions}
         </div>

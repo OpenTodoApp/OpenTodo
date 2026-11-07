@@ -15,7 +15,7 @@ OpenTodo is used every day, often for hours, by people who use a keyboard only, 
 
 **Standard:** [Web Content Accessibility Guidelines (WCAG) 2.2](https://www.w3.org/TR/WCAG22/), Level AA.
 
-**Status:** <!-- accessibility:claim -->**Partially conforms**<!-- /accessibility:claim -->. Every screen passes the automated checks below on every change, and no failure is known. The claim is "partially" until the manual screen-reader passes (NVDA, VoiceOver and TalkBack) of the [audit record](accessibility/audit-1.0.0.md) are done; release 1.0.0 cannot be made before they are.
+**Status:** <!-- accessibility:claim -->**Partially conforms**<!-- /accessibility:claim -->. Every screen passes the automated checks below on every change, and no failure is known. OpenTodo 1.0 claims partial conformance: the keyboard-only and 200% zoom passes of the [audit record](accessibility/audit-1.0.0.md) are done on every core screen, and no screen-reader pass (NVDA, VoiceOver, TalkBack) is recorded yet. Screen-reader passes are recorded when someone runs them and do not hold a release back; the record has the steps, and you can contribute one through [issue #9](https://github.com/OpenTodoApp/OpenTodo/issues/9).
 
 **Applies to:** OpenTodo 0.23 and later (the web app on every server, and the app inside the Android and iOS shells), as of 3 November 2026.
 
@@ -37,7 +37,7 @@ Not covered: what people write themselves (an image without a description in a n
 - **No dragging needed.** A test fails when a drag, resize or swipe has no way to do the same with one click or tap (2.5.7, 2.5.1).
 - **The native shells.** Android's accessibility lint checks are errors; the iOS app's UI tests run the system's accessibility audit.
 - **The docs website** is checked with axe-core on every change to the docs, at phone and computer widths. **The browser extension's** popup and settings page were checked with axe-core in light and dark for this statement (no finding after one fix: the settings page's Save button contrast).
-- **By people, at least once a year.** A keyboard-only pass, NVDA with Firefox, VoiceOver with Safari, VoiceOver and TalkBack in the phone apps, and 200% zoom with large text, on every core screen, recorded in the [audit record](accessibility/audit-1.0.0.md). A release is refused when the latest record is more than 12 months old.
+- **By people, at least once a year.** A keyboard-only pass, NVDA with Firefox, VoiceOver with Safari, VoiceOver and TalkBack in the phone apps, and 200% zoom with large text, on every core screen, recorded in the [audit record](accessibility/audit-1.0.0.md). A release is refused when the latest record is more than 12 months old, or from 1.0.0 on while a keyboard or zoom pass of a core screen is pending; pending screen-reader passes are named in the release instead.
 
 ## Results by criterion
 

@@ -285,7 +285,6 @@ func (s *Service) Deactivate(ctx context.Context, actorID, targetID string) (*Ad
 		}{
 			{`INSERT INTO user_status(user_id, deactivated_at) VALUES(?, ?)
 				ON CONFLICT(user_id) DO UPDATE SET deactivated_at = excluded.deactivated_at`, []any{target.ID, now}},
-			{"DELETE FROM sessions WHERE user_id = ?", []any{target.ID}},
 			{"DELETE FROM api_tokens WHERE user_id = ?", []any{target.ID}},
 			// CalDAV app passwords are revoked too (OpenSpec `caldav`).
 			{"UPDATE app_passwords SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL", []any{now, target.ID}},
@@ -301,6 +300,10 @@ func (s *Service) Deactivate(ctx context.Context, actorID, targetID string) (*Ad
 			if _, err := tx.ExecContext(ctx, st.q, st.args...); err != nil {
 				return err
 			}
+		}
+		// Its devices remove their local copy on next contact (revoked-device-wipe).
+		if _, err := s.revokeSessionsTx(ctx, tx, target.ID); err != nil {
+			return err
 		}
 		if err := s.audit.RecordTx(ctx, tx, audit.UserDeactivated(actor.ID, target.ID)); err != nil {
 			return err
@@ -357,6 +360,11 @@ func (s *Service) DeleteUser(ctx context.Context, actorID, targetID, confirmEmai
 			if notify, err = s.beforeDelete(ctx, tx, target.ID); err != nil {
 				return err
 			}
+		}
+		// Recorded before the cascade deletes them, so its devices remove their
+		// local copy on next contact (revoked-device-wipe).
+		if _, err := s.revokeSessionsTx(ctx, tx, target.ID); err != nil {
+			return err
 		}
 		if _, err := tx.ExecContext(ctx, "DELETE FROM users WHERE id = ?", target.ID); err != nil {
 			return err
@@ -604,11 +612,14 @@ func (s *Service) SignOutEverywhere(ctx context.Context, userID string) error {
 	defer tx.Rollback()
 	now := s.clock().UnixMilli()
 	counts := make([]int64, 4)
+	// Its devices remove their local copy on next contact (revoked-device-wipe).
+	if counts[0], err = s.revokeSessionsTx(ctx, tx, userID); err != nil {
+		return fmt.Errorf("sign out everywhere: %w", err)
+	}
 	for i, st := range []struct {
 		q    string
 		args []any
 	}{
-		{"DELETE FROM sessions WHERE user_id = ?", []any{userID}},
 		{"DELETE FROM trusted_devices WHERE user_id = ?", []any{userID}},
 		{"DELETE FROM api_tokens WHERE user_id = ?", []any{userID}},
 		{"UPDATE app_passwords SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL", []any{now, userID}},
@@ -617,7 +628,7 @@ func (s *Service) SignOutEverywhere(ctx context.Context, userID string) error {
 		if err != nil {
 			return fmt.Errorf("sign out everywhere: %w", err)
 		}
-		counts[i], _ = res.RowsAffected()
+		counts[i+1], _ = res.RowsAffected()
 	}
 	if err := s.audit.RecordTx(ctx, tx, audit.SignedOutEverywhere(userID, counts[0], counts[1], counts[2], counts[3])); err != nil {
 		return err

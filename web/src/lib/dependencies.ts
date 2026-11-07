@@ -8,6 +8,7 @@ import { db } from './db'
 import { getDeviceId, mutate, mutationTables } from './ops'
 import { membershipMap, scopeOf } from './sharing'
 import type { Membership, Task } from './types'
+import { locateById, noteKeys, perList, type TaskChange } from './taskDelta'
 import { t } from './i18n'
 
 /** The server's limit on blockers per task. */
@@ -92,7 +93,7 @@ function stronglyConnected(ids: string[], edges: (id: string) => string[]): stri
 }
 
 /** The task's blockers that are live and open (unknown ids, completed and deleted ones never block). */
-export function openBlockers(task: Pick<Task, 'id' | 'blocked_by'>, byId: ReadonlyMap<string, Task>, broken: ReadonlySet<string> = new Set()): Task[] {
+export function openBlockers(task: Pick<Task, 'id' | 'blocked_by'>, byId: { get(id: string): Task | undefined }, broken: ReadonlySet<string> = new Set()): Task[] {
   const out: Task[] = []
   for (const id of blockersOf(task)) {
     const b = byId.get(id)
@@ -118,6 +119,65 @@ export function blockedMap(tasks: readonly Task[]): Map<string, number> {
   }
   return out
 }
+
+// What a blockers map was worked out with, so the next write can patch it
+// (incremental-list-updates D2): the tasks waiting for each blocker, and the broken edges.
+const blockInfo = new WeakMap<Map<string, number>, { dependents: Map<string, string[]>; broken: ReadonlySet<string> }>()
+
+function blockedWithInfo(tasks: readonly Task[]): Map<string, number> {
+  const out = blockedMap(tasks)
+  const dependents = new Map<string, string[]>()
+  for (const t of tasks) for (const b of blockersOf(t)) { const l = dependents.get(b); if (l) l.push(t.id); else dependents.set(b, [t.id]) }
+  blockInfo.set(out, { dependents, broken: dependents.size ? brokenEdges(tasks) : new Set() })
+  return out
+}
+
+const sameBlockers = (a: Task, b: Task): boolean => {
+  const x = blockersOf(a)
+  const y = blockersOf(b)
+  const ca = a._clock?.blocked_by
+  const cb = b._clock?.blocked_by
+  return x.length === y.length && x.every((id, i) => id === y[i]) && (ca?.ts ?? 0) === (cb?.ts ?? 0) && (ca?.device ?? '') === (cb?.device ?? '')
+}
+
+/**
+ * blockedMap after `changes` to `tasks` (sorted by id, as a snapshot): the same map when
+ * no changed row waits or is waited for; the changed rows and the tasks waiting for them
+ * counted again when no list of blockers changed and no blocker came or went; null
+ * otherwise (cycles are broken over the whole graph, so it is worked out in full).
+ */
+export function patchBlocked(prev: Map<string, number>, changes: readonly TaskChange[], tasks: readonly Task[]): Map<string, number> | null {
+  const info = blockInfo.get(prev)
+  if (!info) return null
+  const again = new Set<string>()
+  for (const c of changes) {
+    const a = c.before
+    const b = c.after
+    const waits = blockersOf(a ?? {}).length > 0 || blockersOf(b ?? {}).length > 0
+    if (!a || !b) {
+      if (waits || info.dependents.has(c.id)) return null
+      continue
+    }
+    if (!sameBlockers(a, b)) return null
+    if (waits) again.add(c.id)
+    for (const d of info.dependents.get(c.id) ?? []) again.add(d)
+  }
+  if (!again.size) return prev
+  const byId = { get: (id: string) => { const [at, found] = locateById(tasks, id); return found ? tasks[at] : undefined } }
+  const next = new Map(prev)
+  for (const id of again) {
+    const t = byId.get(id)
+    const n = t && blockersOf(t).length && !t.completed_at && !t.deleted_at ? openBlockers(t, byId, info.broken).length : 0
+    if (n) next.set(id, n)
+    else next.delete(id)
+  }
+  blockInfo.set(next, info)
+  noteKeys(prev, next, again)
+  return next
+}
+
+/** blockedMap of a task snapshot, worked out from the rows each write changed. */
+export const liveBlocked = perList<Map<string, number>>(blockedWithInfo, patchBlocked)
 
 /** Live tasks that wait for `taskId` (the "Blocks" list). */
 export function dependents(taskId: string, tasks: readonly Task[]): Task[] {

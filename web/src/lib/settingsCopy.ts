@@ -196,6 +196,7 @@ export const SETTINGS_COPY = {
       theme: { label: msg('Accent') },
       density: { label: msg('Density'), description: msg('Compact tightens rows, headers and the sidebar; touch targets stay full size.') },
       rows: { label: msg('Task rows'), description: msg('Detailed adds the parent task and a line of dates, priority and labels.') },
+      titles: { label: msg('Show full task titles'), description: msg('Long titles wrap in lists, boards and Today instead of ending with an ellipsis.') },
       haptics: { label: msg('Haptic feedback'), description: msg('A short vibration when you complete a task or pick one up with a long press.') },
     },
   },
@@ -707,6 +708,7 @@ export const SETTINGS_COPY = {
         description: msg('Lets connectors such as Claude.ai read and write your encrypted text through this device.'),
       },
       relayConfirm: { label: msg('Confirm changes first'), description: msg('Each change an AI connector asks for shows here before it is written.') },
+      relayConfirmReads: { label: msg('Confirm reads first'), description: msg('Each request to read your text shows here before this device sends it.') },
       relayDevices: { label: msg('Devices that answer') },
       relayRecent: { label: msg('Recent requests'), description: msg('What this device answered, without the text.') },
       // OAuth clients (mcp-oauth): the one row that shows a new client's credentials.

@@ -102,9 +102,11 @@ func DBPath(dataDir string) string { return filepath.Join(dataDir, DBFile) }
 const ReaderConns = 4
 
 // OpenFile opens a database file with the server's pragmas without migrating
-// it: the writer handle.
+// it: the writer handle. Its automatic checkpoint is the backstop of
+// AutoCheckpointPages (checkpoint.go).
 func OpenFile(path string) (*sql.DB, error) {
-	dsn := "file:" + path + "?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)&_pragma=foreign_keys(ON)&_pragma=synchronous(NORMAL)&_txlock=immediate"
+	dsn := "file:" + path + "?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)&_pragma=foreign_keys(ON)&_pragma=synchronous(NORMAL)" +
+		"&_pragma=wal_autocheckpoint(" + strconv.Itoa(AutoCheckpointPages) + ")&_txlock=immediate"
 	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("open database: %w", err)
@@ -216,6 +218,9 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 		return err
 	}
 	if err := migrateAssistantNotice(ctx, db); err != nil {
+		return err
+	}
+	if err := migrateAuditChain(ctx, db); err != nil {
 		return err
 	}
 	return migrateEmailVerified(ctx, db)

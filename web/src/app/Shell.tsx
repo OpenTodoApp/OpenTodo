@@ -258,13 +258,13 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const minimised = usePhoneChrome(content, phoneChrome, sidebarOpen)
 
   return (
-    <div className="flex h-full bg-canvas">
+    <div className="flex h-full bg-canvas px-safe">
       <SkipLink frame={frame} content={content} />
       {/* The sidebar column: a drawer below 768 px, a column from there, resizable and collapsible from 1024 px (app-shell); its colour, shared by the sticky group headers, is --sidebar-bg: the surface in the drawer, the canvas as a column (precision-tokens D1), where it sits beside the inset content surface without an edge (precision-shell D1). */}
       {drawer.open && <DrawerOverlay panel={drawer.drawer} onClose={() => setSidebarOpen(false)} />}
       <aside {...drawer.aside} data-sidebar data-sidebar-width={sidebar.collapsed ? 'collapsed' : sidebar.width}
         style={{ '--sidebar-w': `${sidebar.collapsed ? SIDEBAR_COLLAPSED_REM : sidebar.width}rem` } as React.CSSProperties}
-        className={`fixed inset-y-0 left-0 z-[45] flex w-80 max-w-[85vw] max-md:[&_[data-sidebar-item]]:min-h-12 transform max-md:border-r max-md:border-default bg-(--sidebar-bg) [--sidebar-bg:var(--color-surface)] md:[--sidebar-bg:var(--color-canvas)] md:pointer-fine:[--sidebar-bg:var(--color-sidebar)] pl-[env(safe-area-inset-left)] transition-transform md:static md:w-(--sidebar-w) md:max-w-none md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed inset-y-0 left-0 z-[45] flex w-80 max-w-[85vw] max-md:[&_[data-sidebar-item]]:min-h-12 transform max-md:border-r max-md:border-default bg-(--sidebar-bg) [--sidebar-bg:var(--color-surface)] md:[--sidebar-bg:var(--color-canvas)] md:pointer-fine:[--sidebar-bg:var(--color-sidebar)] max-md:pl-safe transition-transform md:static md:w-(--sidebar-w) md:max-w-none md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="min-w-0 flex-1">
           <Sidebar route={route} user={user} onSearch={openPalette} onShortcuts={() => setShowHelp(true)} onSignOut={onLogout} onAssistant={showLauncher(assistant) ? openAssistant : undefined} collapsed={sidebar.collapsed} onToggleCollapse={toggleSidebarCollapsed} />
@@ -272,8 +272,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         {!sidebar.collapsed && <SidebarResizer width={sidebar.width} />}
       </aside>
       {/* From 768 px the page is one inset content surface on the canvas: 8 px from the window, the surface radius, one hairline (precision-shell D1). */}
-      <main ref={frame} className="flex min-w-0 flex-1 flex-col md:!pb-0 md:my-2 md:mr-2 md:overflow-hidden md:rounded-surface md:border md:border-default md:bg-surface" data-app-frame data-phone-chrome={phoneChrome || undefined} inert={drawer.open || undefined}
-        style={phoneChrome ? { paddingBottom: `calc(${TAB_BAR_HEIGHT_REM}rem + env(safe-area-inset-bottom))` } : undefined}>
+      <main ref={frame} className="flex min-w-0 flex-1 flex-col md:!pb-0 md:mt-[max(0.5rem,var(--safe-top))] md:mb-2 md:mr-2 md:overflow-hidden md:rounded-surface md:border md:border-default md:bg-surface" data-app-frame data-phone-chrome={phoneChrome || undefined} inert={drawer.open || undefined}
+        style={phoneChrome ? { paddingBottom: `calc(${TAB_BAR_HEIGHT_REM}rem + var(--safe-bottom))` } : undefined}>
         {/* Below 768 px: the bar with the menu button, the page's title and its actions (app-shell "No desktop top bar"). */}
         <PhoneBar onMenu={() => setSidebarOpen(true)} />
         {notice && (
@@ -437,7 +437,7 @@ function PhoneBar({ onMenu }: { onMenu: () => void }) {
   if (desktop) return null
   const day = !!bar?.day
   return (
-    <header className={`flex min-h-12 items-center gap-1 px-2 pt-[max(0.25rem,env(safe-area-inset-top))] pr-[max(0.5rem,env(safe-area-inset-right))] md:hidden ${day ? '' : 'border-b border-soft'}`} data-phone-bar data-phone-bar-day={day || undefined}>
+    <header className={`flex min-h-12 items-center gap-1 pl-2 pr-2 pt-[max(0.25rem,var(--safe-top))] md:hidden ${day ? '' : 'border-b border-soft'}`} data-phone-bar data-phone-bar-day={day || undefined}>
       {bar?.back
         ? <IconButton icon="chevron-left" label={bar.back.label} onClick={bar.back.onClick} className="touch-target" data-page-back />
         : <IconButton icon="menu" label={t('Open menu')} onClick={onMenu} className="touch-target" />}

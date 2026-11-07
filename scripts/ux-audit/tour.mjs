@@ -229,7 +229,8 @@ async function capture(ctx, anonCtx, page, e, combo, ids) {
     // A project screen is captured in its list layout, whatever an earlier capture left.
     else if (host.path.startsWith('/project/')) {
       await backToList(p)
-      await host.ready(p)
+      // English ready signals only in the first language, as above (the columns screen waits for its English table name).
+      if (combo.lang === LANGS[0] || host.own) await host.ready(p)
     }
     await p.waitForTimeout(300)
     if (e.kind !== 'overlay') return null
