@@ -87,9 +87,15 @@ type Vocab struct {
 		After  []string `json:"after"`
 	} `json:"everyOtherAround"`
 	MonthTextBefore []string `json:"monthTextBefore"`
-	RemindWords     []string `json:"remindWords"`
-	BeforeWords     []string `json:"beforeWords"`
-	AfterWords      []string `json:"afterWords"`
+	// WeekOnWords, RepeatWords and StartWords surround a recurrence phrase
+	// (quick-add-weekday-recurrence D1, D3, D4): "every 2 weeks on Saturday",
+	// "and repeat every Monday", "every day starting tomorrow".
+	WeekOnWords []string `json:"weekOnWords"`
+	RepeatWords []string `json:"repeatWords"`
+	StartWords  []string `json:"startWords"`
+	RemindWords []string `json:"remindWords"`
+	BeforeWords []string `json:"beforeWords"`
+	AfterWords  []string `json:"afterWords"`
 }
 
 // MonthVocab holds a month's full names and abbreviations.

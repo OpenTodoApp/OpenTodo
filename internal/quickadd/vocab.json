@@ -333,6 +333,30 @@
    "before": [],
    "after": []
   },
+  "weekOnWords": [
+   "on"
+  ],
+  "repeatWords": [
+   "and repeat",
+   "and repeating",
+   "and repeats",
+   "repeat",
+   "repeating",
+   "repeats",
+   "recurring",
+   "and then",
+   "then",
+   "and"
+  ],
+  "startWords": [
+   "starting",
+   "starting on",
+   "starting from",
+   "beginning",
+   "beginning on",
+   "from",
+   "as of"
+  ],
   "monthTextBefore": [
    "from",
    "since",
@@ -692,6 +716,27 @@
    "before": [],
    "after": []
   },
+  "weekOnWords": [
+   "am",
+   "jeweils am"
+  ],
+  "repeatWords": [
+   "und wiederholen",
+   "und wiederhole",
+   "wiederholen",
+   "wiederhole",
+   "wiederholt",
+   "und dann",
+   "dann",
+   "und"
+  ],
+  "startWords": [
+   "ab",
+   "ab dem",
+   "beginnend",
+   "beginnend am",
+   "beginnend ab"
+  ],
   "monthTextBefore": [
    "seit",
    "von",
@@ -1032,6 +1077,28 @@
     "sur deux"
    ]
   },
+  "weekOnWords": [
+   "le"
+  ],
+  "repeatWords": [
+   "et repeter",
+   "et repete",
+   "repeter",
+   "repete",
+   "et ensuite",
+   "ensuite",
+   "et puis",
+   "puis",
+   "et"
+  ],
+  "startWords": [
+   "a partir de",
+   "a partir du",
+   "des",
+   "des le",
+   "en commencant",
+   "commencant"
+  ],
   "monthTextBefore": [
    "depuis",
    "de",
@@ -1381,6 +1448,30 @@
    "before": [],
    "after": []
   },
+  "weekOnWords": [
+   "il",
+   "di"
+  ],
+  "repeatWords": [
+   "e ripeti",
+   "e ripetere",
+   "ripeti",
+   "ripetere",
+   "e poi",
+   "poi",
+   "e"
+  ],
+  "startWords": [
+   "a partire da",
+   "a partire dal",
+   "a partire dalla",
+   "da",
+   "dal",
+   "dalla",
+   "iniziando",
+   "iniziando da",
+   "cominciando da"
+  ],
   "monthTextBefore": [
    "da",
    "dal",
@@ -1721,6 +1812,31 @@
    "before": [],
    "after": []
   },
+  "weekOnWords": [
+   "el",
+   "los"
+  ],
+  "repeatWords": [
+   "y repetir",
+   "y repite",
+   "repetir",
+   "repite",
+   "y luego",
+   "luego",
+   "y despues",
+   "despues",
+   "y"
+  ],
+  "startWords": [
+   "a partir de",
+   "a partir del",
+   "desde",
+   "desde el",
+   "empezando",
+   "empezando el",
+   "comenzando",
+   "comenzando el"
+  ],
   "monthTextBefore": [
    "desde",
    "de",
@@ -2074,6 +2190,33 @@
    "before": [],
    "after": []
   },
+  "weekOnWords": [
+   "na",
+   "no",
+   "as",
+   "aos"
+  ],
+  "repeatWords": [
+   "e repetir",
+   "e repete",
+   "repetir",
+   "repete",
+   "e depois",
+   "depois",
+   "e"
+  ],
+  "startWords": [
+   "a partir de",
+   "a partir do",
+   "a partir da",
+   "desde",
+   "desde o",
+   "desde a",
+   "comecando",
+   "comecando em",
+   "comecando no",
+   "comecando na"
+  ],
   "monthTextBefore": [
    "desde",
    "de",

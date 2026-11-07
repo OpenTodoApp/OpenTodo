@@ -32,7 +32,7 @@ type kind int
 const (
 	kInterval   kind = iota // every [N] day(s)/week(s)/month(s)/year(s)
 	kWeekday                // every weekday (Monday to Friday)
-	kWeekdays               // every monday, wednesday
+	kWeekdays               // every monday, wednesday; every 2 weeks on saturday (interval > 1)
 	kMonthDay               // every 15th
 	kLastDay                // every last day
 	kWorkday                // every 1st weekday … every last weekday: the n-th Monday to Friday
@@ -53,7 +53,7 @@ var unitNames = [...]string{"day", "week", "month", "year"}
 // Rule is a parsed recurrence rule. The zero value is not valid; use Parse.
 type Rule struct {
 	kind            kind
-	interval        int
+	interval        int // N for kInterval; for kWeekdays the week interval (0 or 1: every week)
 	unit            unit
 	days            uint8 // bit (1<<isoWeekday) for kWeekdays / kWeekday
 	monthDay        int   // 1..31 for kMonthDay
@@ -154,6 +154,16 @@ func Parse(input string) (Rule, error) {
 	case tok == "day" || tok == "week" || tok == "month" || tok == "year":
 		r.kind, r.interval, r.unit = kInterval, 1, unitOf(tok)
 		i++
+		if tok == "week" && peek(0) == "on" {
+			if _, isDay := weekdayAliases[peek(1)]; !isDay {
+				return r, fail("expected a weekday after \"on\"")
+			}
+			mask, next, err := parseWeekdayList(toks, i+1)
+			if err != nil {
+				return r, err
+			}
+			r.kind, r.interval, r.days, i = kWeekdays, 0, mask, next
+		}
 	case tok == "weekday" || tok == "weekdays":
 		r.kind, r.days = kWeekday, 0b00111110
 		i++
@@ -169,6 +179,20 @@ func Parse(input string) (Rule, error) {
 		}
 		r.kind, r.interval, r.unit = kInterval, n, unitOf(singular)
 		i += 2
+		if r.unit == uWeek && peek(0) == "on" {
+			// every N weeks on <weekdays> (quick-add-weekday-recurrence D1).
+			if _, isDay := weekdayAliases[peek(1)]; !isDay {
+				return r, fail("expected a weekday after \"on\"")
+			}
+			mask, next, err := parseWeekdayList(toks, i+1)
+			if err != nil {
+				return r, err
+			}
+			r.kind, r.days, i = kWeekdays, mask, next
+			if n == 1 {
+				r.interval = 0
+			}
+		}
 	case tok == "last" && (peek(1) == "day" || peek(1) == "weekday"):
 		if peek(1) == "day" {
 			r.kind = kLastDay
@@ -313,6 +337,9 @@ func (r Rule) Canonical() string {
 	case kWeekday:
 		b.WriteString("weekday")
 	case kWeekdays:
+		if r.interval > 1 {
+			fmt.Fprintf(&b, "%d weeks on ", r.interval)
+		}
 		first := true
 		for wd := 1; wd <= 7; wd++ {
 			if r.days&(1<<wd) != 0 {
@@ -530,12 +557,38 @@ func (r Rule) inMonth(y, m int) int {
 	}
 }
 
+// weekStart is the Monday of z's ISO week.
+func weekStart(z int) int { return z - (isoWeekday(z) - 1) }
+
+// inPhaseAfter is, for an "every N weeks on <days>" rule, the first of its days
+// strictly after z in a week that is a multiple of N weeks from anchor's ISO
+// week (Monday to Sunday, like an iCalendar RRULE with WKST=MO and DTSTART =
+// anchor). anchor is the series' current due date, so a due date on another
+// weekday is an occurrence of its own and the next ones follow the rule
+// (quick-add-weekday-recurrence D2).
+func (r Rule) inPhaseAfter(anchor, z int) int {
+	a := weekStart(anchor)
+	for x := z + 1; ; {
+		if rem := ((floorDiv(weekStart(x)-a, 7) % r.interval) + r.interval) % r.interval; rem != 0 {
+			x = weekStart(x) + 7*(r.interval-rem)
+			continue
+		}
+		if r.days&(1<<isoWeekday(x)) != 0 {
+			return x
+		}
+		x++
+	}
+}
+
 // firstAfter is the first date matching the pattern strictly after z.
 func (r Rule) firstAfter(z int) int {
 	switch r.kind {
 	case kInterval:
 		return r.step(z, 1)
 	case kWeekday, kWeekdays:
+		if r.interval > 1 {
+			return r.inPhaseAfter(z, z)
+		}
 		for i := 1; i <= 7; i++ {
 			if r.days&(1<<isoWeekday(z+i)) != 0 {
 				return z + i
@@ -582,6 +635,9 @@ func (r Rule) Next(due, today string) (string, error) {
 	c := r.firstAfter(d)
 	if c >= t {
 		return formatDate(c), nil
+	}
+	if r.kind == kWeekdays && r.interval > 1 {
+		return formatDate(r.inPhaseAfter(d, t)), nil
 	}
 	if r.kind != kInterval {
 		return formatDate(r.firstAfter(t)), nil
@@ -645,6 +701,12 @@ func (r Rule) First(from string) (string, error) {
 	}
 	if r.kind == kInterval {
 		return from, nil
+	}
+	if r.kind == kWeekdays && r.interval > 1 {
+		// The nearest of its days; that date then sets the rule's week phase.
+		plain := r
+		plain.interval = 0
+		return formatDate(plain.firstAfter(z - 1)), nil
 	}
 	return formatDate(r.firstAfter(z - 1)), nil
 }

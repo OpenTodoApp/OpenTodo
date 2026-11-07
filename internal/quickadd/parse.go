@@ -160,8 +160,8 @@ type parser struct {
 
 	date, deadline, project, rec found
 	// dateBare marks a date from a month name alone, which a later complete
-	// date phrase replaces; recStart is the first date of an "every other
-	// friday" rule (quick-add-month-and-every-other D1, D3).
+	// date phrase replaces (quick-add-month-and-every-other D1); recStart is the
+	// date of a start phrase next to the rule (quick-add-weekday-recurrence D3).
 	dateBare bool
 	recStart string
 	// dayPart is Morning or Afternoon (day-parts D5); Evening is evening.
@@ -408,11 +408,16 @@ func (p *parser) due() *Due {
 	d := p.date.value
 	if !p.date.set {
 		switch {
-		case p.rec.set && p.recStart != "":
-			d = p.recStart
 		case p.rec.set:
+			// The rule's first date on or after its start phrase, or today. A date
+			// phrase is the first occurrence even off the rule's weekday
+			// (quick-add-weekday-recurrence D2, D3).
+			from := p.ctx.Today
+			if p.recStart != "" {
+				from = p.recStart
+			}
 			r, _ := recurrence.Parse(p.rec.value)
-			d, _ = r.First(p.ctx.Today)
+			d, _ = r.First(from)
 		case p.timeV.date != "":
 			d = p.timeV.date
 		default:

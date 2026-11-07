@@ -306,11 +306,11 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
   // A sector phrase, like a someday phrase, counts only if the line ends up without a date (time-sectors D8).
   const sectored = !!sector && !date && !time && !recurrence, parked = !!someday && !sectored && !date && !time && !deadline && !recurrence
 
-  // A rule without a date phrase starts on its first occurrence on or after today,
-  // or on the weekday it was typed with ("every other friday", D3).
+  // A rule without a date phrase starts on its first date on or after today or its start
+  // phrase; a date phrase is the first occurrence even off the rule's weekday (D2, D3).
   let due: Due | null = null
   if (date || time || recurrence) {
-    due = { date: date?.value ?? (recurrence ? recurrence.start ?? firstOccurrence(recurrence.value, ctx.today) : time?.date ?? ctx.today) }
+    due = { date: date?.value ?? (recurrence ? firstOccurrence(recurrence.value, recurrence.start ?? ctx.today) : time?.date ?? ctx.today) }
     if (time) due.time = time.value
   }
 
