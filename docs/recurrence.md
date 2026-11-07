@@ -32,6 +32,7 @@ is stored as `every 2nd tuesday`.
 | --- | --- | --- |
 | day, N days | `every day`, `every 3 days` | Daily, or every N days (1–999). |
 | week, N weeks | `every week`, `every 2 weeks` | Every 7 × N days. |
+| N weeks on weekday names | `every 2 weeks on saturday`, `every 3 weeks on mon, fri` | Those weekdays, every N weeks (see below). `every week on tuesday` is stored as `every tuesday`. |
 | weekday | `every weekday` | Monday to Friday. |
 | month, N months | `every month`, `every 6 months` | Same day of month; a day the month does not have becomes its last day. |
 | year, N years | `every year`, `every 2 years` | Same date; 29 February becomes 28 February in common years. |
@@ -91,8 +92,21 @@ in Someday clears its due date and so ends the repetition.
 - **Month ends**: `every month` due 31 January moves to 28 (or 29) February. The
   rule has no memory of the original day, so the following month is the 28th too;
   use `every 31st` or `every last day` to stay at the end of the month.
+- **Every N weeks on weekdays**: the weeks run Monday to Sunday, and the rule
+  repeats in every Nth week counted from the week of the current due date. The
+  next occurrence is the first of its weekdays after the due date in such a week,
+  also when catching up. A due date on another weekday is an occurrence of its
+  own and the next ones follow the rule: `every 2 weeks on saturday` due
+  Wednesday 4 November 2026 is next due Saturday 7 November, then 21 November.
+  Due Sunday 8 November, it is next due 21 November, since that Sunday ends the
+  week of 7 November. Completed late on Sunday 6 December after being due
+  7 November, it moves to 19 December, keeping the rhythm. These are the dates of
+  the iCalendar rule `FREQ=WEEKLY;INTERVAL=2;BYDAY=SA` starting on the due date,
+  which is how [CalDAV](caldav.md) serves it. Your week-start setting does not
+  change them.
 - A rule set on a task without a due date gives it one: the first matching date
-  from today on.
+  from today on (for `every 2 weeks on saturday`, the next Saturday, which then
+  sets the rhythm).
 
 ## Completing, skipping and editing
 
