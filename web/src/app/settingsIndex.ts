@@ -70,7 +70,8 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = translatedList<SettingsE
   { section: 'notifications', label: msg('App icon badge'), description: msg('The installed app\'s icon shows how many of today\'s tasks are open.'), page: 'push', anchor: 'app-badge-heading', keywords: 'badge count icon home screen today' },
   { section: 'notifications', label: msg('Delivery channels'), description: msg('Send notifications to ntfy, Pushover, Gotify or any address you choose.'), page: 'channels', anchor: 'notification-channels-heading', keywords: 'ntfy pushover gotify webhook phone' },
   { section: 'notifications', label: msg('Weekly digest'), description: msg('An email on your review day with last week\'s numbers'), page: 'digest', anchor: 'email-digest-heading', keywords: 'email summary review statistics' },
-  // About (welcome-note)
+  // About (welcome-note, version-changelog)
+  { section: 'about', label: msg('Version'), description: msg('Opens the changelog on the website, at this release.'), anchor: 'about-version', keywords: 'changelog release notes what is new history updates version number' },
   { section: 'about', label: msg('Documentation'), description: msg('The same guides on the website, with setup and self-hosting.'), anchor: 'about-docs', keywords: 'docs help manual guide website version' },
   { section: 'about', label: msg('Share feedback or report a problem'), description: msg('Open an issue on GitHub. Every report is read.'), anchor: 'about-feedback', keywords: 'bug issue github feedback support contact' },
   { section: 'about', label: msg('Community'), description: msg('Questions, ideas and other people who use OpenTodo, on Discord.'), anchor: 'about-community', keywords: 'discord community chat forum people' },

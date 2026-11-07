@@ -7179,5 +7179,7 @@
   "Confirm reads first": "Lesezugriffe erst bestätigen",
   "Each request to read your text shows here before this device sends it.": "Jede Anfrage, deinen Text zu lesen, erscheint hier, bevor dieses Gerät ihn sendet.",
   "Text to send": "Zu sendender Text",
-  "{n, plural, one {and # more value} other {and # more values}}": "{n, plural, one {und # weiterer Wert} other {und # weitere Werte}}"
+  "{n, plural, one {and # more value} other {and # more values}}": "{n, plural, one {und # weiterer Wert} other {und # weitere Werte}}",
+  "Version": "Version",
+  "Opens the changelog on the website, at this release.": "Öffnet das Changelog auf der Website, bei dieser Version."
 }

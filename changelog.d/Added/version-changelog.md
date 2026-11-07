@@ -1,0 +1,1 @@
+- **The version in Settings → About opens the changelog.** Selecting the number opens the newest release on open-todo.app, with every earlier release below it.

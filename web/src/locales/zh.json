@@ -7179,5 +7179,7 @@
   "Confirm reads first": "先确认读取",
   "Each request to read your text shows here before this device sends it.": "每个读取你文本的请求都会先在这里显示，然后此设备才会发送。",
   "Text to send": "要发送的文本",
-  "{n, plural, one {and # more value} other {and # more values}}": "{n, plural, other {还有 # 个值}}"
+  "{n, plural, one {and # more value} other {and # more values}}": "{n, plural, other {还有 # 个值}}",
+  "Version": "版本",
+  "Opens the changelog on the website, at this release.": "在网站上打开此版本的更新日志。"
 }

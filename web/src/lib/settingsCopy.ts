@@ -497,6 +497,7 @@ export const SETTINGS_COPY = {
       plain: msg('Free and open source · no tracking, no telemetry.'),
     },
     rows: {
+      version: { label: msg('Version'), description: msg('Opens the changelog on the website, at this release.') },
       help: { label: msg('Help'), description: msg('The guides of this version, inside the app and offline.') },
       docs: { label: msg('Documentation'), description: msg('The same guides on the website, with setup and self-hosting.') },
       website: { label: msg('Website'), description: msg('News, guides, comparisons and what is new in each release.') },

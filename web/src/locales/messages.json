@@ -11619,6 +11619,10 @@
   "Open {title}": [
     "web/src/app/palette/registry.ts"
   ],
+  "Opens the changelog on the website, at this release.": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "OpenTodo Dark": [
     "web/src/app/ThemeRow.tsx"
   ],
@@ -19377,6 +19381,10 @@
   ],
   "Using": [
     "web/src/lib/rules/sentence.ts"
+  ],
+  "Version": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "VS Code theme": [
     "web/src/app/themes/YourThemes.tsx"
