@@ -55,6 +55,8 @@ const esc = (s) => s.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
 const FIXED = ['.github/ISSUE_TEMPLATE/bug_report.yml']
 /** Files in which every occurrence of the release is the release (a store's own test fixture). */
 const WHOLE = new Set(['deploy/runtipi/upstream/scripts/__tests__/update-config.test.ts'])
+/** Files whose version is another project's (the Runtipi store repo's own package): never edited. */
+const FOREIGN = new Set(['deploy/runtipi/upstream/package.json'])
 const HA_CHANGELOG = 'deploy/homeassistant/upstream/opentodo/CHANGELOG.md'
 const HA_DOCKERFILE = 'deploy/homeassistant/upstream/opentodo/Dockerfile'
 const RUNTIPI_CONFIG = 'deploy/runtipi/config.json'
@@ -71,7 +73,7 @@ export function scannedFiles(root = ROOT) {
     return statSync(join(root, rel)).isDirectory() ? walk(rel) : [rel]
   })
   return [...walk('deploy'), ...walk('docs/self-hosting'), ...FIXED]
-    .filter((rel) => !copies.has(rel))
+    .filter((rel) => !copies.has(rel) && !FOREIGN.has(rel))
     .filter((rel) => !readFileSync(join(root, rel)).includes(0))
 }
 
