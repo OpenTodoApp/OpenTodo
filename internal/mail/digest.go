@@ -70,6 +70,14 @@ var digestWords = map[string]struct{ inbox, nothing, more, never string }{
 	"zh": {"收件箱", "没有。", "以及另外 %d 项", "从未"},
 }
 
+// InboxName is the Inbox's name in a shipped language, the word the app uses
+// (web/src/locales, kept equal by TestInboxNameMatchesWebCatalogs); false for
+// a language that is not shipped. The CalDAV Inbox list uses it too.
+func InboxName(lang string) (string, bool) {
+	w, ok := digestWords[lang]
+	return w.inbox, ok
+}
+
 // FormatDay writes a YYYY-MM-DD date as weekday, day and month in a language
 // ("Fri 23 Oct", "Fr. 23. Okt."), unambiguous without a numeric date format.
 func FormatDay(iso, lang string) string {

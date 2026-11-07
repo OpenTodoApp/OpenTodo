@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/OpenTodoApp/opentodo/internal/mail"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
@@ -111,4 +112,23 @@ func (v *davView) workspaceValue(cal string) json.RawMessage {
 		return json.RawMessage("null")
 	}
 	return mustJSON(ws)
+}
+
+// inboxName is the Inbox list's name in the user's language (issue #1029):
+// the language chosen in Settings, else the client's Accept-Language, else
+// English; the same word as the app and the weekly digest. Read once per
+// request.
+func (d *davRequest) inboxName(v *davView) string {
+	if v.inboxName == "" {
+		lang := ""
+		if prefs, err := d.s.sync.Get(d.ctx(), v.uid, "user_prefs", "me"); err == nil && prefs != nil {
+			lang = idOf(prefs["language"])
+		}
+		name, ok := mail.InboxName(lang)
+		if !ok {
+			name, _ = mail.InboxName(mail.LangFrom(d.r.Header.Get("Accept-Language")))
+		}
+		v.inboxName = name
+	}
+	return v.inboxName
 }
