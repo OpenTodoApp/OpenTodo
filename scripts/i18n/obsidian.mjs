@@ -14,6 +14,8 @@ export const obsidianDir = (root = repo) => join(root, 'obsidian')
 /** The plugin's languages, read from the catalogues it actually ships (English first). */
 export function obsidianLanguages(root = repo) {
   const dir = join(obsidianDir(root), 'locales')
+  // Two-letter codes only, as in the web app's SHIPPED: a pt-BR.json is a
+  // region variant of an existing language, not a language of its own here.
   const codes = existsSync(dir)
     ? readdirSync(dir).filter((f) => /^[a-z]{2}\.json$/.test(f)).map((f) => f.slice(0, -5))
     : []
