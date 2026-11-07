@@ -25,5 +25,5 @@
 
 ## 5. Measure and document
 
-- [ ] 5.1 Phone and desktop profiles, five runs each of `scripts/perf/run.mjs`, before and after: every list budget (complete-task, cursor-move, search-keystroke, saved-view, open-project, remote-edit, cold-start); record the numbers in this design and the pull requests
+- [x] 5.1 Phone and desktop profiles, five runs each of `scripts/perf/run.mjs`, before and after: every list budget (complete-task, cursor-move, search-keystroke, saved-view, open-project, remote-edit, cold-start); record the numbers in this design and the pull requests
 - [x] 5.2 `npm run build` and `make bundle-budget` within `web/bundle-budget.json`; `make docs-check`; `docs/performance.md` names the change; changelog fragment `changelog.d/Changed/incremental-list-updates.md`
