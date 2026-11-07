@@ -13,10 +13,13 @@ import fr from '../locales/fr.json'
 import it from '../locales/it.json'
 import pt from '../locales/pt.json'
 
-export const LANGUAGES = ['en', 'de', 'fr', 'es', 'it', 'pt'] as const
-export type Language = (typeof LANGUAGES)[number]
+const catalogs = { en, de, fr, es, it, pt }
 
-const CATALOGS: Record<Language, Record<string, string>> = { en, de, fr, es, it, pt }
+/** The plugin's languages, derived from the catalogues it imports (English first). */
+export type Language = keyof typeof catalogs
+export const LANGUAGES = Object.keys(catalogs) as Language[]
+
+const CATALOGS: Record<Language, Record<string, string>> = catalogs
 
 let language: Language = 'en'
 
