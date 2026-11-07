@@ -6,6 +6,15 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 Changes since the last release are in [changelog.d/](changelog.d/README.md), one file per change; `make release-prepare` moves them here when a release is cut.
 
+## [1.1.1] - 2026-11-07
+
+A fix release for Apple Reminders and other CalDAV apps: tasks with a time zone, often set by AI assistants, now show and remind at the right time, and the Inbox list is named in your language. Replace the image or the binary and restart; there is no migration.
+
+### Fixed
+
+- **Tasks with a time zone show the right time in Apple Reminders.** A task fixed to a time zone (as tasks created through an AI assistant often are) could show in Apple Reminders at another time marked GMT, with its alarm firing at the wrong time. Over CalDAV such a task is now served at its exact moment in UTC, which every app reads the same way, and a repeating one keeps its zone with a standard time zone definition, also in the calendar feed. Changing the time in Apple Reminders keeps the task's time zone, and syncing it back unchanged changes nothing (#1028).
+- **The Inbox list in Apple Reminders and other CalDAV apps is named in your language.** It was always "Inbox"; it now uses the word the app shows ("Eingang" in German), from the language chosen in Settings, else the one your calendar app asks for (#1029).
+
 ## [1.1.0] - 2026-11-07
 
 OpenTodo 1.1.0 brings the first part of a new security wave and a batch of fixes from your reports. A device you sign out with **Sign out everywhere** now deletes its local copy the next time it connects, and sign-in and AI agent limits no longer reset when the server restarts. Long task titles can be shown in full, the iPhone app no longer blurs its top edge, quick add keeps "every other Saturday" when you also say "today", and a repeating task's tracked time starts again with each occurrence.
@@ -1448,7 +1457,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.24.0...v1.0.0
 [0.24.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.23.0...v0.24.0
