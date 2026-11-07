@@ -1,1 +1,0 @@
-- **Show full task titles.** A new switch in **Settings → Appearance** wraps long task titles onto as many lines as they need in lists, on board cards and in Today, instead of cutting them with an ellipsis after two lines (one on a phone). Off by default; it follows your account to every device (#998).
