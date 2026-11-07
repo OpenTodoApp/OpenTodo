@@ -287,7 +287,7 @@ Fixed in this version, the same for every token:
 
 The REST routes of an `agent` token share these counters: one REST write is one write call. `run_routine` is one write call too. The 50 items per call do not apply to it, because a routine has its own limit of 500 items a run, but its writes count toward the token's 1,000 and the account's 2,000 a day, and it runs only within what is left of them.
 
-Over a limit the result is `rate_limited` with `retry_after_seconds`, and nothing changes. Read tools never count. Counters are kept in memory and reset when the server restarts; they are there to stop a runaway loop, not to bill anyone.
+Over a limit the result is `rate_limited` with `retry_after_seconds`, and nothing changes. Read tools never count. Counters are kept in the server's database too, so a restart does not reset them; they are there to stop a runaway loop, not to bill anyone.
 
 ### History, audit and undo
 

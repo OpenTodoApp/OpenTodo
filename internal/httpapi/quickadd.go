@@ -33,7 +33,7 @@ const (
 )
 
 func (s *Server) registerQuickAddRoutes(mux *routes) {
-	s.parseLimiter = newRateLimiter(parsesPerMinute, time.Minute)
+	s.parseLimiter = s.limit("quickadd.parse", parsesPerMinute, time.Minute)
 	mux.handle("POST "+parsePath, signedIn, s.handleQuickAddParse)
 }
 

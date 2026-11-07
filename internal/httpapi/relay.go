@@ -23,6 +23,7 @@ import (
 func (s *Server) registerRelayRoutes(mux *routes) {
 	s.relayStore = relay.NewStore(s.sync.DB())
 	s.relayHub = relay.NewHub()
+	s.relayHub.Keep(s.limitStore())
 	mux.handle("GET /api/v1/relay/devices", signedIn.SessionOnly().DemoDenied(), s.handleListRelayDevices)
 	mux.handle("PUT /api/v1/relay/devices/{device}", signedIn.SessionOnly().Recent().DemoDenied(), s.handlePutRelayDevice)
 	mux.handle("DELETE /api/v1/relay/devices/{device}", signedIn.SessionOnly().DemoDenied(), s.handleDeleteRelayDevice)
