@@ -240,7 +240,13 @@ describe('service worker due text (date-time-preferences D7)', () => {
     await db.open()
     const sw = loadWorker()
     await dispatch(sw, 'push', pushEvent({ type: 'reminder', reminderId, taskId, fireAt: Date.now() - 1000 }))
-    expect(sw.shown[0].options.body).toBe('Due Nov 3, 3:00 PM')
+    // The worker keeps the host's locale when no language is stored (design D4),
+    // so compute the English-or-local expectation from the same formatter the
+    // app uses instead of hard-coding one language.
+    const year = new Date().getFullYear()
+    const r = resolveDateTime({ date_format: 'month-day', time_format: '12h', week_start: 'system' }, { order: 'MD', hour12: false, weekStart: 1 })
+    const want = `${formatDate(`${year}-11-03`, 'compact', r, `${year}-10-14`)}, ${formatTime('15:00', r)}`
+    expect(sw.shown[0].options.body).toBe(`Due ${want}`)
   })
 
   it('falls back to the locale date and the stored time without preferences', async () => {
