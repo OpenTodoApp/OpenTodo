@@ -1,6 +1,8 @@
 import Foundation
 
-/// The first-run check: `GET <origin>/healthz` must answer `{"status":"ok","version":…}`.
+/// The first-run check: `GET <origin>/api/v1/health` must answer `{"status":"ok","version":…}`;
+/// when it does not, `/healthz` is asked too, the only route of servers before 1.0.1. Some proxies
+/// answer `/healthz` themselves (Pomerium, Google Cloud Run), so it is never asked first.
 /// Mirrors `mobile/android/app/src/main/java/app/opentodo/HealthCheck.kt`.
 enum HealthCheck {
     enum Outcome { case ok, noNetwork, notOpenTodo, untrusted }
@@ -27,8 +29,25 @@ enum HealthCheck {
         }
     }
 
+    /// The health routes, in the order they are asked (health-route-alias).
+    static let paths = ["/api/v1/health", "/healthz"]
+
     static func check(origin: String) async -> Answer {
-        guard let url = URL(string: origin + "/healthz") else { return Answer(outcome: .notOpenTodo) }
+        await combine(await check(origin: origin, path: paths[0])) { await check(origin: origin, path: paths[1]) }
+    }
+
+    /// The check's answer from the first route's and, unless that one settles it, the second's:
+    /// no network or a refused certificate fails the same on every path, and an OpenTodo answer
+    /// is final; otherwise the second route's answer is the check's (a server before 1.0.1).
+    static func combine(_ first: Answer, fallback: () async -> Answer) async -> Answer {
+        switch first.outcome {
+        case .ok, .noNetwork, .untrusted: return first
+        case .notOpenTodo: return await fallback()
+        }
+    }
+
+    private static func check(origin: String, path: String) async -> Answer {
+        guard let url = URL(string: origin + path) else { return Answer(outcome: .notOpenTodo) }
         do {
             let (data, response) = try await session.data(from: url)
             guard let http = response as? HTTPURLResponse else { return Answer(outcome: .notOpenTodo) }

@@ -33,7 +33,7 @@ A native shell SHALL load the web app from the server address the user entered, 
 - **THEN** the shell accepts it after showing that the connection is not encrypted on the way to that address
 
 ### Requirement: First-run server screen
-On first start, and whenever no server is configured, a shell SHALL show a screen asking for the server address with the device's language, SHALL check the address by requesting the server's health route, and SHALL name the reason when the check fails (no network, not an OpenTodo server, certificate not trusted, address refused). A trusted certificate the user installed on the device SHALL be accepted. The address SHALL be changeable later from the shell's own menu, and changing it SHALL discard the web view's storage for the old server only after the user confirms.
+On first start, and whenever no server is configured, a shell SHALL show a screen asking for the server address with the device's language, SHALL check the address by requesting the server's health route, and SHALL name the reason when the check fails (no network, not an OpenTodo server, certificate not trusted, address refused). The shell SHALL request `/api/v1/health` first and, unless that answers as OpenTodo or the connection or certificate failed, `/healthz`, so a server whose proxy answers `/healthz` itself and a server from before `/api/v1/health` both pass. A trusted certificate the user installed on the device SHALL be accepted. The address SHALL be changeable later from the shell's own menu, and changing it SHALL discard the web view's storage for the old server only after the user confirms.
 
 #### Scenario: Not an OpenTodo server
 - **WHEN** the user enters `https://example.com`
@@ -50,6 +50,14 @@ On first start, and whenever no server is configured, a shell SHALL show a scree
 #### Scenario: Behind a login page
 - **WHEN** the user enters the address of a server whose login wall redirects `/healthz` to its sign-in page
 - **THEN** the screen says the server is behind a login page and offers "Sign in here"; after signing in there, the check passes and the app opens the server
+
+#### Scenario: Behind a proxy that answers /healthz
+- **WHEN** the user enters the address of a server behind Pomerium, which answers `/healthz` with a plain `OK`
+- **THEN** the check passes on `/api/v1/health` and the app opens the server
+
+#### Scenario: A server before 1.0.1
+- **WHEN** the user enters the address of a server that has no `/api/v1/health`
+- **THEN** the check passes on `/healthz` and the app opens the server
 
 ### Requirement: Offline start
 On Android, once the web app has been loaded once, the shell SHALL open offline and show the app from the service worker's precache with the local data, like the installed web app. Where that origin cannot install a service worker (plain http other than localhost), the Android shell SHALL keep the same precache itself after a successful load and open from that copy. On iOS the system gives a service worker to an app only for a host the app declares at build time, so the iOS shell SHALL offer two builds and say which one it is: a portable build for any server, which needs the network and SHALL show an offline screen naming the reason and offering a retry; and a one-server build, whose declared host gets the service worker, the precache and therefore the same offline start as Android. In both builds the first start SHALL need the network and SHALL say so when it is missing.

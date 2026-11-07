@@ -31,7 +31,7 @@ class FakeServer(https: okhttp3.tls.HandshakeCertificates? = null) {
                 val path = request.path ?: "/"
                 paths += path
                 return when {
-                    path == "/healthz" -> MockResponse().setHeader("Content-Type", "application/json").setBody("""{"status":"ok","version":"0.0.0-test"}""")
+                    path == "/api/v1/health" || path == "/healthz" -> MockResponse().setHeader("Content-Type", "application/json").setBody("""{"status":"ok","version":"0.0.0-test"}""")
                     path.startsWith("/share") -> html(SHARE_PAGE)
                     else -> html("<!doctype html><title>OpenTodo test</title><p id=path>$path</p><a id=out href=\"https://example.org/outside\">out</a>")
                 }

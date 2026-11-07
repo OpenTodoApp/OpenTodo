@@ -4381,6 +4381,16 @@
         "200"
       ]
     },
+    "GET /api/v1/health": {
+      "policy": "public",
+      "response": {
+        "status": "string",
+        "version": "string"
+      },
+      "statuses": [
+        "200"
+      ]
+    },
     "GET /api/v1/import/jobs": {
       "policy": "signed-in",
       "response": {
