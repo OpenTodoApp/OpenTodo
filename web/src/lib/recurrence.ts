@@ -16,7 +16,8 @@ type Unit = 'day' | 'week' | 'month' | 'year'
 export type Rule =
   | Ends & { kind: 'interval'; interval: number; unit: Unit; afterCompletion: boolean }
   | Ends & { kind: 'weekday'; days: number; afterCompletion: false }
-  | Ends & { kind: 'weekdays'; days: number; afterCompletion: false }
+  /** `every mon, wed`; with `interval` > 1 `every 2 weeks on saturday` (quick-add-weekday-recurrence D1). */
+  | Ends & { kind: 'weekdays'; days: number; interval: number; afterCompletion: false }
   | Ends & { kind: 'monthDay'; monthDay: number; afterCompletion: false }
   | Ends & { kind: 'lastDay'; afterCompletion: false }
   /** The ordinal-th Monday-to-Friday day of the month (1–4, or -1 for the last). */
@@ -86,11 +87,31 @@ function parseOrThrow(input: string): Rule {
   const peek = (k = 0) => toks[i + k]
   const ends: Ends = { until: null, count: 0 }
   let rule: Rule
+  /** `name ((, | and | , and) name)*` from token i: the weekday mask. */
+  const weekdayList = (): number => {
+    let days = 0
+    for (;;) {
+      const item = peek()
+      if (!has(WEEKDAY_ALIASES, item)) throw new RuleError(t('expected a weekday, got "{word}"', { word: item }))
+      days |= 1 << WEEKDAY_ALIASES[item]
+      i++
+      let j = i
+      if (toks[j] === ',') j++
+      if (toks[j] === 'and') j++
+      if (j === i) return days
+      if (j >= toks.length) throw new RuleError(t('expected a weekday after the list separator'))
+      i = j
+    }
+  }
   const tok = peek()
   if (tok === undefined) throw new RuleError(t('missing pattern after "every"'))
   if (tok === 'day' || tok === 'week' || tok === 'month' || tok === 'year') {
     rule = { kind: 'interval', interval: 1, unit: tok, afterCompletion: false, ...ends }
     i++
+    if (tok === 'week' && peek() === 'on') {
+      i++
+      rule = { kind: 'weekdays', days: weekdayList(), interval: 1, afterCompletion: false, ...ends }
+    }
   } else if (tok === 'weekday' || tok === 'weekdays') {
     rule = { kind: 'weekday', days: 0b00111110, afterCompletion: false, ...ends }
     i++
@@ -101,24 +122,16 @@ function parseOrThrow(input: string): Rule {
     if (!(UNITS as string[]).includes(singular)) throw new RuleError(t('expected day(s), week(s), month(s) or year(s) after {word}', { word: tok }))
     rule = { kind: 'interval', interval: n, unit: singular as Unit, afterCompletion: false, ...ends }
     i += 2
+    // every N weeks on <weekdays> (quick-add-weekday-recurrence D1).
+    if (singular === 'week' && peek() === 'on') {
+      i++
+      rule = { kind: 'weekdays', days: weekdayList(), interval: n, afterCompletion: false, ...ends }
+    }
   } else if (tok === 'last' && (peek(1) === 'day' || peek(1) === 'weekday')) {
     rule = peek(1) === 'day' ? { kind: 'lastDay', afterCompletion: false, ...ends } : { kind: 'workday', ordinal: -1, afterCompletion: false, ...ends }
     i += 2
   } else if (has(WEEKDAY_ALIASES, tok)) {
-    let days = 0
-    for (;;) {
-      const item = peek()
-      if (!has(WEEKDAY_ALIASES, item)) throw new RuleError(t('expected a weekday, got "{word}"', { word: item }))
-      days |= 1 << WEEKDAY_ALIASES[item]
-      i++
-      let j = i
-      if (toks[j] === ',') j++
-      if (toks[j] === 'and') j++
-      if (j === i) break
-      if (j >= toks.length) throw new RuleError(t('expected a weekday after the list separator'))
-      i = j
-    }
-    rule = { kind: 'weekdays', days, afterCompletion: false, ...ends }
+    rule = { kind: 'weekdays', days: weekdayList(), interval: 1, afterCompletion: false, ...ends }
   } else {
     const word = has(WORD_ORDINALS, tok) ? WORD_ORDINALS[tok] : null
     const num = numericOrdinal(tok)
@@ -173,6 +186,7 @@ export function canonicalOf(r: Rule): string {
       s += 'weekday'
       break
     case 'weekdays':
+      if (r.interval > 1) s += `${r.interval} weeks on `
       s += WEEKDAY_NAMES.filter((_, wd) => wd > 0 && r.days & (1 << wd)).join(', ')
       break
     case 'monthDay':
@@ -309,6 +323,36 @@ function inMonth(r: Rule, y: number, m: number): number {
   }
 }
 
+/** The Monday of z's ISO week. */
+const weekStart = (z: number): number => z - (isoWeekday(z) - 1)
+
+/**
+ * For `every N weeks on <days>`: the first of its days strictly after z in a week
+ * a multiple of N weeks from anchor's ISO week (Monday to Sunday, an RRULE with
+ * WKST=MO and DTSTART = anchor). The anchor is the current due date, so a due date
+ * on another weekday is an occurrence of its own and the next ones follow the rule
+ * (quick-add-weekday-recurrence D2). Go: Rule.inPhaseAfter.
+ */
+function inPhaseAfter(r: Rule & { kind: 'weekdays' }, anchor: number, z: number): number {
+  const a = weekStart(anchor)
+  for (let x = z + 1; ; ) {
+    const rem = ((Math.floor((weekStart(x) - a) / 7) % r.interval) + r.interval) % r.interval
+    if (rem !== 0) {
+      x = weekStart(x) + 7 * (r.interval - rem)
+      continue
+    }
+    if (r.days & (1 << isoWeekday(x))) return x
+    x++
+  }
+}
+
+/** Whether `every N weeks on <days>` schedules day z, with `anchor` (the due date) setting the week phase. */
+export function weeklyInPhase(r: Rule & { kind: 'weekdays' }, anchor: number, z: number): boolean {
+  if (!(r.days & (1 << isoWeekday(z)))) return false
+  if (r.interval <= 1) return true
+  return ((Math.floor((weekStart(z) - weekStart(anchor)) / 7) % r.interval) + r.interval) % r.interval === 0
+}
+
 /** First date matching the pattern strictly after day z. */
 function firstAfter(r: Rule, z: number): number {
   switch (r.kind) {
@@ -316,6 +360,7 @@ function firstAfter(r: Rule, z: number): number {
       return step(r, z, 1)
     case 'weekday':
     case 'weekdays':
+      if (r.kind === 'weekdays' && r.interval > 1) return inPhaseAfter(r, z, z)
       for (let i = 1; i <= 7; i++) if (r.days & (1 << isoWeekday(z + i))) return z + i
       return z + 7
     default: {
@@ -345,6 +390,7 @@ export function nextCalendar(rule: Rule | string, due: string | null, today: str
   const d = due ? mustDate(due, 'due') : item
   let c = firstAfter(r, d)
   if (c >= item) return formatDate(c)
+  if (r.kind === 'weekdays' && r.interval > 1) return formatDate(inPhaseAfter(r, d, item))
   if (r.kind !== 'interval') return formatDate(firstAfter(r, item))
   if (r.unit === 'day' || r.unit === 'week') {
     const size = r.unit === 'week' ? 7 * r.interval : r.interval
@@ -380,7 +426,9 @@ export function followingOccurrence(rule: Rule | string, due: string | null, tod
 export function firstOccurrence(rule: Rule | string, from: string): string {
   const r = asRule(rule)
   const z = mustDate(from, 'from')
-  return r.kind === 'interval' ? from : formatDate(firstAfter(r, z - 1))
+  if (r.kind === 'interval') return from
+  // `every 2 weeks on saturday`: the nearest Saturday, which then sets the week phase.
+  return formatDate(firstAfter(r.kind === 'weekdays' ? { ...r, interval: 1 } : r, z - 1))
 }
 
 /**

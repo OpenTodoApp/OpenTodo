@@ -115,6 +115,20 @@ export interface Vocabulary {
   everyOther: string[]
   /** "every other" around the unit or weekday: French "un vendredi sur deux". */
   everyOtherAround: { before: string[]; after: string[] }
+  // ---- around a recurrence phrase (OpenSpec change quick-add-weekday-recurrence) ----
+  /** "on" between a week count and weekdays: "every 2 weeks on Saturday" (D1). */
+  weekOnWords: string[]
+  /**
+   * Connectors directly before a recurrence phrase, removed with it ("and repeat",
+   * "repeating", "and then", D4). Read only when a rule follows: "Repeat the test" keeps its words.
+   */
+  repeatWords: string[]
+  /**
+   * Words before a date next to a recurrence phrase that start the series there
+   * ("starting tomorrow", "from Monday", D3); the first occurrence is the rule's
+   * first date on or after it. Elsewhere they stay in the title ("Work from home").
+   */
+  startWords: string[]
   // ---- bare months (quick-add-month-and-every-other, D2) ----
   /** Single words after which a month name alone stays text ("from September", "seit März"). */
   monthTextBefore: string[]
