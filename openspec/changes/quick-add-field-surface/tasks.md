@@ -10,7 +10,7 @@
 ## 2. Visual checks
 
 - [ ] 2.1 Update the quick add and list stories (`web/src/app/quickAdd.stories.tsx`, `taskList.stories.tsx`) to show the field in light, dark and high contrast; verify `make ui-check` (accessibility and contrast gate) and regenerate baselines with `make ui-baselines`
-- [ ] 2.2 If `sunken` is too faint in dark, add a per-theme `--color-field` token and use it in the class; verify the contrast gate and the screenshots
+- [x] 2.2 If `sunken` is too faint in dark, add a per-theme `--color-field` token and use it in the class; verify the contrast gate and the screenshots (decided: a resting `border-soft` hairline instead, see design.md decision 2)
 
 ## 3. Wrap up
 
