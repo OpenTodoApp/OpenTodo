@@ -352,3 +352,14 @@ describe('input method', () => {
     await r.unmount()
   })
 })
+
+describe('the field surface (quick-add-field-surface)', () => {
+  it('fills the line presentation only', async () => {
+    const noop = async () => {}
+    for (const [layout, filled] of [['line', true], ['palette', false], ['sheet', false]] as const) {
+      const r = await render(<QuickAdd layout={layout} placeholder="Add a task" onAdd={noop} />)
+      expect(!!r.container.querySelector('.quick-add-field')).toBe(filled)
+      await r.unmount()
+    }
+  })
+})
