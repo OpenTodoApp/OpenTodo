@@ -80,4 +80,17 @@ describe('project header', () => {
     await waitFor(() => !r.container.querySelector('[data-project-maintenance]'), 'no maintenance note')
     await r.unmount()
   })
+
+  it('starts renaming with the selected project name after switching projects', async () => {
+    const r = await render(<ProjectHeader project={p('first', 'Example Project 1')} />)
+    await waitFor(() => r.container.querySelector('button[data-project-name]')?.textContent === 'Example Project 1', 'the first project title')
+
+    await r.rerender(<ProjectHeader project={p('second', 'Example Project 2')} />)
+    const title = r.container.querySelector('button[data-project-name]')
+    expect(title?.textContent).toBe('Example Project 2')
+    await click(title!)
+
+    expect(r.container.querySelector<HTMLInputElement>('input[aria-label="Project name"]')?.value).toBe('Example Project 2')
+    await r.unmount()
+  })
 })
