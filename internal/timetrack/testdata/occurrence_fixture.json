@@ -1,0 +1,403 @@
+{
+ "about": "When a repeating task's current occurrence began and the tracked totals shown against its estimate (OpenSpec change fix-recurring-tracked-time), shared by internal/timetrack (occurrence_test.go) and web/src/lib/time.ts (time.test.ts). tasks are task rows; starts: occurrenceStarts per series (ms); totals: the current occurrence's minutes per task at now; all_totals: every entry's minutes (reports, the CSV export). Records that start no occurrence: a later or the current date, a trashed record (an undone completion), an open record, a task without the record's derived id, a record whose series is absent; a plain series' skip writes no record.",
+ "cases": [
+  {
+   "name": "A completion and a habit's skip each start a new occurrence",
+   "now": 1793300000000,
+   "tasks": [
+    {
+     "id": "series-a",
+     "series_id": null,
+     "occurrence_date": null,
+     "due": {
+      "date": "2026-11-10"
+     },
+     "completed_at": null,
+     "deleted_at": null,
+     "skipped": false,
+     "recurrence": "every day"
+    },
+    {
+     "id": "cae2e923-d9ce-85ee-ab3b-5b36e025f618",
+     "series_id": "series-a",
+     "occurrence_date": "2026-11-03",
+     "due": {
+      "date": "2026-11-03"
+     },
+     "completed_at": 1793060000000,
+     "deleted_at": null,
+     "skipped": false,
+     "recurrence": null
+    },
+    {
+     "id": "8111e4b8-8ea8-8227-8043-8bc0d0062812",
+     "series_id": "series-a",
+     "occurrence_date": "2026-11-06",
+     "due": {
+      "date": "2026-11-06"
+     },
+     "completed_at": 1793180000000,
+     "deleted_at": null,
+     "skipped": true,
+     "recurrence": null
+    }
+   ],
+   "entries": [
+    {
+     "id": "before-completion",
+     "task_id": "series-a",
+     "user_id": "u1",
+     "started_at": 1793000000000,
+     "ended_at": 1793001800000,
+     "note": "",
+     "deleted_at": null
+    },
+    {
+     "id": "before-skip",
+     "task_id": "series-a",
+     "user_id": "u2",
+     "started_at": 1793060600000,
+     "ended_at": 1793061800000,
+     "note": "",
+     "deleted_at": null
+    },
+    {
+     "id": "after-skip",
+     "task_id": "series-a",
+     "user_id": "u1",
+     "started_at": 1793180600000,
+     "ended_at": 1793181500000,
+     "note": "",
+     "deleted_at": null
+    },
+    {
+     "id": "running",
+     "task_id": "series-a",
+     "user_id": "u1",
+     "started_at": 1793299400000,
+     "ended_at": null,
+     "note": "",
+     "deleted_at": null
+    },
+    {
+     "id": "deleted",
+     "task_id": "series-a",
+     "user_id": "u1",
+     "started_at": 1793183000000,
+     "ended_at": 1793185400000,
+     "note": "",
+     "deleted_at": 1793186000000
+    }
+   ],
+   "starts": {
+    "series-a": 1793180000000
+   },
+   "totals": {
+    "series-a": 25
+   },
+   "all_totals": {
+    "series-a": 75
+   }
+  },
+  {
+   "name": "An entry belongs whole to the occurrence it started in",
+   "now": 1793300000000,
+   "tasks": [
+    {
+     "id": "series-b",
+     "series_id": null,
+     "occurrence_date": null,
+     "due": {
+      "date": "2026-11-08"
+     },
+     "completed_at": null,
+     "deleted_at": null,
+     "skipped": false,
+     "recurrence": "every week"
+    },
+    {
+     "id": "c023b775-4988-86cb-b08b-09c793309a0a",
+     "series_id": "series-b",
+     "occurrence_date": "2026-11-01",
+     "due": null,
+     "completed_at": 1793060000000,
+     "deleted_at": null,
+     "skipped": false,
+     "recurrence": null
+    }
+   ],
+   "entries": [
+    {
+     "id": "across",
+     "task_id": "series-b",
+     "user_id": "u1",
+     "started_at": 1793058800000,
+     "ended_at": 1793062400000,
+     "note": "",
+     "deleted_at": null
+    },
+    {
+     "id": "after",
+     "task_id": "series-b",
+     "user_id": "u1",
+     "started_at": 1793063600000,
+     "ended_at": 1793063900000,
+     "note": "",
+     "deleted_at": null
+    }
+   ],
+   "starts": {
+    "series-b": 1793060000000
+   },
+   "totals": {
+    "series-b": 5
+   },
+   "all_totals": {
+    "series-b": 65
+   }
+  },
+  {
+   "name": "Records that do not start an occurrence",
+   "now": 1793300000000,
+   "tasks": [
+    {
+     "id": "series-c",
+     "series_id": null,
+     "occurrence_date": null,
+     "due": {
+      "date": "2026-11-10"
+     },
+     "completed_at": null,
+     "deleted_at": null,
+     "skipped": false,
+     "recurrence": "every day"
+    },
+    {
+     "id": "e3a6b9db-72ec-85a0-a7da-af33c62ebb56",
+     "series_id": "series-c",
+     "occurrence_date": "2026-11-12",
+     "due": {
+      "date": "2026-11-12"
+     },
+     "completed_at": 1793180000000,
+     "deleted_at": null,
+     "skipped": false,
+     "recurrence": null
+    },
+    {
+     "id": "a6889d1a-cdeb-85ab-ab20-688fc33384c8",
+     "series_id": "series-c",
+     "occurrence_date": "2026-11-10",
+     "due": {
+      "date": "2026-11-10"
+     },
+     "completed_at": 1793180000000,
+     "deleted_at": null,
+     "skipped": false,
+     "recurrence": null
+    },
+    {
+     "id": "575c7113-cbbf-8c77-8663-7a3b5724f92e",
+     "series_id": "series-c",
+     "occurrence_date": "2026-11-03",
+     "due": {
+      "date": "2026-11-03"
+     },
+     "completed_at": 1793180000000,
+     "deleted_at": 1793180060000,
+     "skipped": false,
+     "recurrence": null
+    },
+    {
+     "id": "66784d29-c6b0-892a-be72-9dd218b0ee49",
+     "series_id": "series-c",
+     "occurrence_date": "2026-11-05",
+     "due": {
+      "date": "2026-11-05"
+     },
+     "completed_at": null,
+     "deleted_at": null,
+     "skipped": false,
+     "recurrence": null
+    },
+    {
+     "id": "not-a-record",
+     "series_id": "series-c",
+     "occurrence_date": "2026-11-04",
+     "due": {
+      "date": "2026-11-04"
+     },
+     "completed_at": 1793180000000,
+     "deleted_at": null,
+     "skipped": false,
+     "recurrence": null
+    },
+    {
+     "id": "48264d7b-d0c1-80a1-97f1-da26fc9d70d2",
+     "series_id": "gone",
+     "occurrence_date": "2026-11-01",
+     "due": {
+      "date": "2026-11-01"
+     },
+     "completed_at": 1793180000000,
+     "deleted_at": null,
+     "skipped": false,
+     "recurrence": null
+    },
+    {
+     "id": "plain",
+     "series_id": null,
+     "occurrence_date": null,
+     "due": {
+      "date": "2026-11-09"
+     },
+     "completed_at": null,
+     "deleted_at": null,
+     "skipped": false,
+     "recurrence": null
+    },
+    {
+     "id": "plain-series",
+     "series_id": null,
+     "occurrence_date": null,
+     "due": {
+      "date": "2026-11-12"
+     },
+     "completed_at": null,
+     "deleted_at": null,
+     "skipped": false,
+     "recurrence": "every day"
+    }
+   ],
+   "entries": [
+    {
+     "id": "c1",
+     "task_id": "series-c",
+     "user_id": "u1",
+     "started_at": 1793000000000,
+     "ended_at": 1793001800000,
+     "note": "",
+     "deleted_at": null
+    },
+    {
+     "id": "c2",
+     "task_id": "series-c",
+     "user_id": "u1",
+     "started_at": 1793180600000,
+     "ended_at": 1793181200000,
+     "note": "",
+     "deleted_at": null
+    },
+    {
+     "id": "p1",
+     "task_id": "plain",
+     "user_id": "u1",
+     "started_at": 1793000000000,
+     "ended_at": 1793002700000,
+     "note": "",
+     "deleted_at": null
+    },
+    {
+     "id": "s1",
+     "task_id": "plain-series",
+     "user_id": "u1",
+     "started_at": 1793000000000,
+     "ended_at": 1793000900000,
+     "note": "",
+     "deleted_at": null
+    },
+    {
+     "id": "s2",
+     "task_id": "plain-series",
+     "user_id": "u1",
+     "started_at": 1793180000000,
+     "ended_at": 1793180900000,
+     "note": "",
+     "deleted_at": null
+    }
+   ],
+   "starts": {},
+   "totals": {
+    "series-c": 40,
+    "plain": 45,
+    "plain-series": 30
+   },
+   "all_totals": {
+    "series-c": 40,
+    "plain": 45,
+    "plain-series": 30
+   }
+  },
+  {
+   "name": "A record written before occurrence_date reads its due date; the latest completion wins",
+   "now": 1793300000000,
+   "tasks": [
+    {
+     "id": "series-d",
+     "series_id": null,
+     "occurrence_date": null,
+     "due": {
+      "date": "2026-11-10"
+     },
+     "completed_at": null,
+     "deleted_at": null,
+     "skipped": false,
+     "recurrence": "every day"
+    },
+    {
+     "id": "fb194f0c-6174-8920-918c-fba274238c27",
+     "series_id": "series-d",
+     "occurrence_date": null,
+     "due": {
+      "date": "2026-11-08"
+     },
+     "completed_at": 1793180000000,
+     "deleted_at": null,
+     "skipped": false,
+     "recurrence": null
+    },
+    {
+     "id": "b0136b11-ab2b-8939-915f-51d6185dc558",
+     "series_id": "series-d",
+     "occurrence_date": "2026-11-09",
+     "due": {
+      "date": "2026-11-09"
+     },
+     "completed_at": 1793060000000,
+     "deleted_at": null,
+     "skipped": false,
+     "recurrence": null
+    }
+   ],
+   "entries": [
+    {
+     "id": "d1",
+     "task_id": "series-d",
+     "user_id": "u1",
+     "started_at": 1793060300000,
+     "ended_at": 1793061500000,
+     "note": "",
+     "deleted_at": null
+    },
+    {
+     "id": "d2",
+     "task_id": "series-d",
+     "user_id": "u1",
+     "started_at": 1793180000000,
+     "ended_at": 1793181800000,
+     "note": "",
+     "deleted_at": null
+    }
+   ],
+   "starts": {
+    "series-d": 1793180000000
+   },
+   "totals": {
+    "series-d": 30
+   },
+   "all_totals": {
+    "series-d": 50
+   }
+  }
+ ]
+}

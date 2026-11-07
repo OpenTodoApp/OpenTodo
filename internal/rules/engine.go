@@ -297,7 +297,12 @@ func (e *Engine) trackedMinutes(ctx context.Context, w *world) map[string]int {
 	for _, r := range rows {
 		entries = append(entries, timetrack.FromRow(r))
 	}
-	w.tracked = timetrack.TotalsByTask(entries, e.now().UnixMilli())
+	// A repeating task counts its current occurrence (fix-recurring-tracked-time).
+	occ := make([]timetrack.Occurrence, 0, len(w.tasks))
+	for _, t := range w.tasks {
+		occ = append(occ, timetrack.OccurrenceFromRow(t))
+	}
+	w.tracked = timetrack.CurrentTotals(entries, occ, e.now().UnixMilli())
 	return w.tracked
 }
 
