@@ -95,7 +95,7 @@ func TestSaltIsPerDatabase(t *testing.T) {
 	if a.Key("203.0.113.7") == b.Key("203.0.113.7") {
 		t.Fatal("two databases hash a key alike")
 	}
-	if a.Key("x") != a.Key("x") {
+	if first, again := a.Key("x"), a.Key("x"); first != again {
 		t.Fatal("the hash is not stable")
 	}
 	var nilStore *ratelimit.Store
