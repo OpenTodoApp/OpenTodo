@@ -6,6 +6,35 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 Changes since the last release are in [changelog.d/](changelog.d/README.md), one file per change; `make release-prepare` moves them here when a release is cut.
 
+## [1.1.0] - 2026-11-07
+
+OpenTodo 1.1.0 brings the first part of a new security wave and a batch of fixes from your reports. A device you sign out with **Sign out everywhere** now deletes its local copy the next time it connects, and sign-in and AI agent limits no longer reset when the server restarts. Long task titles can be shown in full, the iPhone app no longer blurs its top edge, quick add keeps "every other Saturday" when you also say "today", and a repeating task's tracked time starts again with each occurrence.
+
+### Upgrade notes
+
+- **Replace the image or the binary and restart; back up first.** Three migrations run at start (`0060`–`0062`: the audit log's hash chain if you skipped 0.24.0, revoked sessions, and saved limit windows). There are no down-migrations. One new synced field, `user_prefs.full_titles`. No new mandatory variable.
+- **Update every device that shares an account to 1.1.** A repeat rule that only 1.1 can express (for example "every 2 weeks on Saturday" on a task due on another day) shows as text on a 1.0 device, and completing the task there ends the series. Rules 1.0 can read are still stored in their 1.0 form.
+- **APIs and automations keep their 1.0 meaning.** MCP's `tracked_minutes`, the routine `tracked` condition and the filter term `tracked` still count all of a task's time; the new `tracked_minutes_occurrence` field and the `tracked occurrence` filter term give the current occurrence of a repeating task.
+- **Behind Pomerium or Google Cloud Run,** point health checks at `/api/v1/health`; the 1.1 phone apps use it automatically.
+
+### Security
+
+- **Rate limits and AI agent limits survive a restart.** Sign-in attempts, the account lockout, the other per-address and per-account limits, the AI agent write limits, the device relay's calls and the email sending limits are kept in the server's database as well as in memory. Restarting or upgrading the server no longer gives someone guessing passwords, or an agent that used its day's budget, a fresh start. Checks still run in memory and cost the same. Keys are stored as salted hashes, never as addresses or emails.
+- **A revoked device removes its local copy.** After **Sign out everywhere**, or when an admin deactivates or deletes an account, each of its devices removes its tasks, its unsynced changes and its encryption key the next time it connects, and shows "This device was signed out and its data was removed." The server proves the revocation with a key only that device holds, so a forged answer removes nothing. A password change or reset still only signs the other devices out, and a device that never connects again keeps its copy.
+
+### Added
+
+- **Show full task titles.** A new switch in **Settings → Appearance** wraps long task titles onto as many lines as they need in lists, on board cards and in Today, instead of cutting them with an ellipsis after two lines (one on a phone). Off by default; it follows your account to every device (#998).
+- **The health check is also served at `/api/v1/health`.** Pomerium and Google Cloud Run answer `/healthz` themselves, so behind them the mobile apps said the address was not an OpenTodo server. The Android and iOS apps now check `/api/v1/health` first and fall back to `/healthz` for older servers; point an uptime monitor behind such a proxy at the new route. `/healthz` is unchanged (GitHub issue 1000).
+
+### Fixed
+
+- **A repeating task's tracked time starts again with each occurrence.** Completing a repeating task, or skipping a habit, carried its tracked time over to the next date, so the next occurrence started with the old total against its estimate. Rows and the Time tab now count only the current occurrence's entries, and the Time tab adds **All occurrences** with every entry's sum. What scripts, assistants, routines and saved views read keeps its 1.0 meaning, every entry of the task: the assistant's `tracked_minutes`, the routine condition on tracked time and the `tracked` filter terms. The current occurrence is added alongside, as `tracked_minutes_occurrence` on repeating tasks and as the filter term `tracked occurrence` (in the builder, **All occurrences** turned off). Statistics and the CSV export are unchanged. Nothing is rewritten: past entries keep their place.
+- **The top of the installed app on an iPhone is no longer blurred.** After a force quit, or once a menu such as the project menu closed, iOS drew its blur over the status bar and the page title below it. The app now keeps a solid strip in the background colour behind the status bar, so iOS shows that colour there instead of the blur (GitHub issue 999).
+- **Reminder notifications write dates in the language you chose.** With English picked on a browser in another language, a pushed reminder's due date used that browser's month names (German on a German browser), and so did an unrecognised stored language. The notification now writes the date in the chosen language, with the browser's region of it when it has one (English on a British browser reads 3 Nov), like the app; the browser's locale applies only when no language is stored.
+- **"Today and repeat every other Saturday" keeps the Saturday.** Quick add stored "every other Saturday" as `every 2 weeks` from the task's date, so a line with its own date ("today") repeated on that weekday instead, and "and repeat" or "starting" stayed in the title (#1016). Rules can now say `every 2 weeks on saturday`: the date you type is the first occurrence and completing it moves to the next right Saturday. Where `every 2 weeks` means the same, because the task is due on that Saturday, that is what is stored, so OpenTodo 1.0 devices keep reading the rule; a rule only 1.1 can express is shown as text on a 1.0 device, and completing it there ends the series, so update your devices. "and repeat", "repeating", "and then" and their equivalents leave the title with the rule, and "starting tomorrow", "starting 16 Nov" or "from Monday" next to a rule set where the series starts, in all six quick-add languages. The importer reads "every other Monday", and CalDAV serves and reads `FREQ=WEEKLY;INTERVAL=2;BYDAY=SA` (as `every 2 weeks` when the task's date is a Saturday).
+- **New project from the sidebar's + menu opens where you can see it.** With many projects, choosing **New project** opened its form under the last project, out of sight, and on a phone the name field did not get the cursor, so the menu item seemed to do nothing. The sidebar now scrolls the form into view and focuses its name field, on phones and desktops alike (#997).
+
 ## [1.0.0] - 2026-11-07
 
 **OpenTodo 1.0.** From this release on, OpenTodo keeps the promises in [Stability and compatibility](docs/stability.md): the API, the sync protocol, the export format and the upgrade path stay compatible within 1.x, and every release upgrades from every earlier one. 1.0 adds no feature. It is the release where the trust work of the last months comes together: a published [threat model, how we verify it and the documented limits](docs/security/), with the hardening they called for (0.23.0 and 0.24.0); an [accessibility statement](docs/accessibility.md) against WCAG 2.2 AA (partial conformance: keyboard and 200% zoom are tested on every core screen, screen-reader passes are still to come); and [performance budgets](docs/performance.md) for a 10,000-task account that pass every night. Getting those budgets to pass made long lists much faster: completing a task in a 2,000-task project on a phone now takes about 100 ms instead of over 200, note search stays quick right after a first sync, and a sync no longer stalls while the database tidies its log.
@@ -1419,7 +1448,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.24.0...v1.0.0
 [0.24.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.23.0...v0.24.0
 [0.23.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.22.0...v0.23.0
