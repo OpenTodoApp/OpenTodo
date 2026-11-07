@@ -294,7 +294,7 @@ The Filter view SHALL keep a per-device history of the last 20 distinct queries,
 - **THEN** the term is the origin keyword, and the field is reachable only through its quoted name
 
 ### Requirement: Tracked time terms
-`tracked` SHALL be a keyword matching tasks with at least one minute of live tracked time (every member's entries, a running entry to now). `tracked cmp duration` SHALL compare the task's tracked minutes with a duration (`30m`, `45min`, `1h`, `1h30`, `1.5h` or a bare number of minutes) using `<`, `<=`, `=`, `>=`, `>`. `tracked` SHALL be a reserved word. Evaluation SHALL stay on the device from local entries and follow synced ones.
+`tracked` SHALL be a keyword matching tasks with at least one minute of live tracked time (every member's entries, a running entry to now; for a repeating task the entries of its current occurrence only, as time-tracking "Tracked time of a repeating task" defines). `tracked cmp duration` SHALL compare the task's tracked minutes with a duration (`30m`, `45min`, `1h`, `1h30`, `1.5h` or a bare number of minutes) using `<`, `<=`, `=`, `>=`, `>`. `tracked` SHALL be a reserved word. Evaluation SHALL stay on the device from local entries and follow synced ones.
 
 #### Scenario: Any tracked time
 - **WHEN** the user enters `tracked & #Work`
@@ -303,6 +303,10 @@ The Filter view SHALL keep a per-device history of the last 20 distinct queries,
 #### Scenario: Over an hour
 - **WHEN** a task has entries of 40 and 30 minutes and the user enters `tracked > 1h`
 - **THEN** the task is listed, and it is not listed for `tracked <= 1h`
+
+#### Scenario: Repeating task's current occurrence
+- **WHEN** a repeating task had 70 minutes tracked before its last completion and 10 minutes since, and the user enters `tracked > 1h`
+- **THEN** the task is not listed, and it is listed for `tracked >= 10m`
 
 #### Scenario: Running entry counts live
 - **WHEN** the user has tracked 55 minutes on a task whose entry is still running and the saved view `tracked >= 1h` is open
