@@ -6,7 +6,7 @@
 // Dates are floating YYYY-MM-DD strings and all arithmetic runs on day numbers
 // (Date.UTC), never on local `Date` values, so time zones and daylight saving
 // changes cannot shift a day.
-import { parseRule, type Rule } from './recurrence'
+import { parseRule, weeklyInPhase, type Rule } from './recurrence'
 import { lineageOf, pieceEnd } from './lineage'
 import { isRecordOf, recordDate } from './recurring'
 import type { Task } from './types'
@@ -85,8 +85,11 @@ export function scheduled(rule: Rule, dueDate: string | null, date: string): boo
   if (rule.until && date > rule.until) return false
   switch (rule.kind) {
     case 'weekday':
-    case 'weekdays':
       return (rule.days & (1 << isoWeekday(z))) !== 0
+    case 'weekdays':
+      // `every 2 weeks on saturday` is anchored at the due date's week, like an interval.
+      if (rule.interval > 1 && !dueDate) return false
+      return weeklyInPhase(rule, dueDate ? dayOf(dueDate) : z, z)
     case 'monthDay':
       return d === Math.min(rule.monthDay, monthLen(y, m))
     case 'lastDay':
