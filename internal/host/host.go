@@ -114,7 +114,7 @@ func Open(cfg config.Config, o Options) (*Host, error) {
 		assistantSlots: assistant.NewSlots(assistant.MaxConcurrentTurns)}
 	h.pool = newPool(cfg.Host.MaxOpen, cfg.Host.IdleTimeout, now)
 	h.pool.open = h.openTenant
-	h.pool.beforeClose = func(name string, t *tenant.Tenant) { h.refreshDue(context.Background(), name, t, nil) }
+	h.pool.beforeClose = h.refreshDueOnClose
 	return h, nil
 }
 
