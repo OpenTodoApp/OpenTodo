@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url'
 import { existsSync } from 'node:fs'
 import { extract } from './i18n/extract.mjs'
 import { checkShellCatalog, readShellCatalog, shellCatalogPath } from './i18n/shell.mjs'
-import { checkObsidianCatalogs, obsidianDir, obsidianMessages, readObsidianCatalogs } from './i18n/obsidian.mjs'
+import { checkObsidianCatalogs, checkObsidianSource, obsidianDir, obsidianMessages, readObsidianCatalogs } from './i18n/obsidian.mjs'
 import { repo, ts } from './i18n/source.mjs'
 
 /** The shipped language codes, read from web/src/locales/index.ts. */
@@ -105,6 +105,7 @@ export async function check(root = repo) {
   // The Obsidian plugin's own strings (obsidian-plugin task 6.1): obsidian/locales/.
   if (existsSync(join(obsidianDir(root), 'src'))) {
     problems.push(...checkObsidianCatalogs(obsidianMessages(root), readObsidianCatalogs(root), fmt))
+    problems.push(...checkObsidianSource(root))
   }
   return { problems, summary, count: messages.length }
 }
