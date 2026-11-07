@@ -870,6 +870,12 @@ var Schema = map[string]map[string]Field{
 		// clients read an empty or unknown value as off and keep the stored
 		// value. Objectives stay in the export, REST, the CLI and MCP either way.
 		"objectives": {Kind: kString, Default: `""`},
+		// Full task titles (OpenSpec change full-task-titles, design D1): "on"
+		// shows every task title in list rows, on board cards and in Today in
+		// full, wrapped onto as many lines as it takes, instead of cutting it
+		// with an ellipsis; clients read an empty or unknown value as off and
+		// keep the stored value. Settings, never content.
+		"full_titles": {Kind: kString, Default: `""`},
 	},
 	// objective: one quarterly or weekly objective (OpenSpec change
 	// plan-objectives, design D1). Personal like place: it resolves to the

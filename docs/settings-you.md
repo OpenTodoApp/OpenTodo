@@ -40,7 +40,8 @@ Three pages, **Theme and density**, **Sidebar** and **Task details**. These choi
 - **Accent**: the colour of buttons, links and selected items: **Emerald** (the default) to **Graphite**, or [**Custom**](custom-accent.md). The arrow keys move between the tiles; on a phone they are one scrollable row.
 - **Density**: **Comfortable** (the default) or **Compact**, which makes task rows, group headers and the sidebar tighter. On a touch screen every target stays full size in both.
 - **Task rows**: [one line or detailed](row-layouts.md).
-- **Haptic feedback**: on a phone or tablet that can vibrate, a short tick when you complete a task or pick one up with the row's grip. On by default; turning it off on one device turns it off on all of them. Computers without vibration do not show the switch.
+- **Show full task titles**: long titles wrap instead of ending with **…**.
+- **Haptic feedback**: on a phone or tablet that can vibrate, a short tick when you complete a task or pick one up with the row's grip. On by default. Computers without vibration do not show the switch.
 - **Open tasks** (Task details): **As a page** (the default) or **In a side panel** beside every list, from 1024 px wide. See [The task page](task-panel.md#open-tasks-beside-the-list).
 - **Sidebar**: numbers on every list or only on Inbox and Today, the order of the main destinations, and which **More** destinations sit next to them. See [Sidebar counts and order](sidebar-counts-and-order.md).
 
