@@ -1,5 +1,7 @@
 // Captures the screenshots of the user guide (docs/images/*.webp) from the seeded
-// demo data, in light and dark (OpenSpec change `user-documentation`, task 2.2).
+// demo data, in light and dark (OpenSpec change `user-documentation`, task 2.2),
+// and F-Droid's phone screenshots (fastlane/metadata/android/en-US/images/
+// phoneScreenshots/<n>.png, one theme each).
 //
 //   make docs-screenshots            builds the app, then runs this script
 //   node scripts/docs-screenshots.mjs [only,names]
@@ -37,7 +39,8 @@ const DESKTOP = { width: 1200, height: 760 }
 const PHONE = { width: 390, height: 780 }
 const QUALITY = 0.72
 const PASSWORD = 'correct horse battery staple'
-mkdirSync(OUT, { recursive: true })
+const STORE = 'fastlane/metadata/android/en-US/images/phoneScreenshots'
+mkdirSync(OUT, { recursive: true }); mkdirSync(STORE, { recursive: true })
 
 // ------------------------------------------------------------------ servers
 const freePort = () => new Promise((ok) => { const s = createServer(); s.listen(0, '127.0.0.1', () => { const { port } = s.address(); s.close(() => ok(port)) }) })
@@ -677,6 +680,13 @@ const shots = [
     await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Earlier' }).waitFor())
     await p.getByRole('button', { name: 'Open menu' }).click(); await settle(p, 600)
   } },
+  // F-Droid's phone screenshots (fastlane/README.md): one theme each, as PNG, at a sharper scale.
+  { name: 'store-today', store: 1, server: D, phone: true, async run(p) { await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Earlier' }).waitFor()) } },
+  { name: 'store-upcoming-dark', store: 2, dark: true, server: D, phone: true, async run(p) { await go(p, demoBase, '/upcoming', () => p.getByRole('heading', { name: 'Tomorrow' }).first().waitFor()) } },
+  { name: 'store-menu', store: 3, server: D, phone: true, async run(p) {
+    await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Earlier' }).waitFor())
+    await p.getByRole('button', { name: 'Open menu' }).click(); await settle(p, 600)
+  } },
   // Ordinary instance: account, settings and sharing
   { name: 'signin', card: true, server: FRESH, async run(p) {
     await p.goto(plainBase); await p.getByRole('button', { name: 'Sign in', exact: true }).first().waitFor(); await settle(p)
@@ -886,8 +896,8 @@ const assistant = shots.some((s) => s.server === 'assistant' && want(s.name)) ? 
 let failed = 0
 for (const shot of shots) {
   if (!want(shot.name)) continue
-  for (const theme of ['light', 'dark']) {
-    const opts = shot.phone ? { viewport: PHONE, deviceScaleFactor: 1.5, isMobile: true, hasTouch: true } : {}
+  for (const theme of shot.store ? [shot.dark ? 'dark' : 'light'] : ['light', 'dark']) {
+    const opts = shot.phone ? { viewport: PHONE, deviceScaleFactor: shot.store ? 2.5 : 1.5, isMobile: true, hasTouch: true } : {}
     let extra = {}
     if (shot.server === 'setup') extra.setupBase = await startServer({})
     const storageState = shot.server === D ? demo : shot.server === P ? plain.state : shot.server === 'assistant' ? assistant : undefined
@@ -896,7 +906,7 @@ for (const shot of shots) {
     try {
       const clip = await shot.run(p, { ctx, home: plain?.home, ...extra })
       const png = await p.screenshot(clip ? { clip } : {})
-      await save(shot.name, theme, png, shot.card)
+      if (shot.store) { writeFileSync(`${STORE}/${shot.store}.png`, png); console.log(`  ${STORE}/${shot.store}.png`) } else await save(shot.name, theme, png, shot.card)
       if (shot.after) await shot.after(p, { ctx })
     } catch (err) {
       failed++
