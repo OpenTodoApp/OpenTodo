@@ -727,7 +727,7 @@ jobs:
           # The release certificate (play-production D1): the one documented in docs/android-app.md
           # and allowed in the F-Droid metadata, so Play, F-Droid and GitHub share one signature.
           cert=$("$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "../../dist/opentodo-android-$version.apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
-          want=$(sed -n 's/^AllowedAPKSigningKeys: *\([0-9a-f]\{64\}\)$/\1/p' store/fdroid/app.opentodo.yml)
+          want=$(grep -A1 '^AllowedAPKSigningKeys:' store/fdroid/app.opentodo.yml | grep -oE '[0-9a-f]{64}')
           printf '### Android release certificate\n\nSHA-256 `%s`\n' "$cert" >> "$GITHUB_STEP_SUMMARY"
           if [ "$cert" != "$want" ]; then
             if [ "$GITHUB_REPOSITORY" = "OpenTodoApp/OpenTodo" ]; then
