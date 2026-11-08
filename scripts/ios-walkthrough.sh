@@ -88,7 +88,8 @@ for run in \
   "iphone-se|iPhone SE (3rd generation)|light|large" \
   "iphone-16|iPhone 16|light|large" \
   "iphone-16-pro-max|iPhone 16 Pro Max|light|large" \
-  "iphone-16-dark-xxxl|iPhone 16|dark|accessibility-extra-extra-extra-large"; do
+  "iphone-16-dark-xxxl|iPhone 16|dark|accessibility-extra-extra-extra-large" \
+  "ipad-pro-13|iPad Pro 13-inch (M4)|light|large"; do
   IFS='|' read -r label name appearance size <<EOF
 $run
 EOF
