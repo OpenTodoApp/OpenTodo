@@ -6,6 +6,28 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 Changes since the last release are in [changelog.d/](changelog.d/README.md), one file per change; `make release-prepare` moves them here when a release is cut.
 
+## [1.2.0] - 2026-11-08
+
+OpenTodo 1.2.0 makes capturing and finishing tasks quicker. A reminder notification now has a **Done** button, quick add wraps long titles and takes notes while you add (Shift+Enter, or the notes button on a phone), and the phone's add sheet stays open so you can add several tasks in a row. The Android app also gets its own store listing for F-Droid.
+
+### Upgrade notes
+
+- **Replace the image or the binary and restart.** No migration, no new synced field and no new mandatory variable since 1.1.1.
+
+### Added
+
+- **Write a task's notes while you add it.** Press Shift+Enter in quick add, or tap the new notes button in the phone's add sheet, and a Notes field opens under the title; what you write there is saved as the task's notes, links included, and never read as dates or projects (#1035).
+- **Long titles wrap in quick add.** The box grows onto more lines as you type instead of scrolling sideways, up to five lines, so a long title is easy to read back and edit, on a phone too (#1034).
+- **Done on reminder notifications.** A reminder notification now offers **Done** first, then **Snooze 10 min** and **Dismiss**, in the Android app and through web push, and completes the task like the app does: a repeating task moves to its next occurrence. In the Android app nothing opens; in the browser an open tab of the app completes it, or the app opens to do so. Works offline and with end-to-end encryption (#967, thanks @kiwikern).
+
+### Changed
+
+- **Keep adding from the phone's add sheet.** After you add a task with the **+** button, the sheet stays open with an empty box and the keyboard up, ready for the next one; tap outside it or swipe it down when you are done (#1038).
+
+### Fixed
+
+- **The digest settings error lists every shipped language.** It named only six of the seven languages the server can send, leaving out Simplified Chinese; it now lists them all.
+
 ## [1.1.1] - 2026-11-07
 
 A fix release for Apple Reminders and other CalDAV apps: tasks with a time zone, often set by AI assistants, now show and remind at the right time, and the Inbox list is named in your language. Replace the image or the binary and restart; there is no migration.
@@ -1457,7 +1479,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.24.0...v1.0.0
