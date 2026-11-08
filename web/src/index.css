@@ -1517,6 +1517,16 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
    recognised span; under the high-contrast presentation a 1 px underline in its colour. */
 .quick-add-tint { background-color: var(--hue-soft); color: transparent; border-radius: 0.1875rem; }
 html:root[data-contrast="high"] .quick-add-tint { background-color: transparent; text-decoration: underline 1px var(--hue-solid); text-decoration-color: var(--hue-solid); text-underline-offset: 0.2em; }
+/* Quick add's fields wrap (quick-add-notes D1): the field and a copy of its text share one
+   grid cell, so the copy sets the height without measuring in script. The line grows to
+   five lines, the notes to six, then the field scrolls; the copy scrolls with it. */
+.quick-add-grid { display: grid; grid-template-columns: minmax(0, 1fr); }
+.quick-add-lead { display: flex; flex-shrink: 0; align-items: center; height: calc(1lh + 1rem + 2px); }
+.quick-add-grid > * { grid-area: 1 / 1; }
+.quick-add-field, .quick-add-notes { resize: none; overflow-y: auto; scrollbar-width: none; }
+.quick-add-field::-webkit-scrollbar, .quick-add-notes::-webkit-scrollbar { display: none; }
+[data-quick-add-tints] { max-height: calc(5lh + 1rem + 2px); }
+.quick-add-notes-sizer { max-height: calc(6lh + 0.25rem + 2px); overflow: hidden; white-space: pre-wrap; overflow-wrap: break-word; }
 /* The sequence spotlight (shortcut-spotlight D2) fades in; reduced motion makes it instant. */
 .spotlight-in { animation: dialog-sheet-fade 120ms var(--ease-calm, ease-out) both; }
 }

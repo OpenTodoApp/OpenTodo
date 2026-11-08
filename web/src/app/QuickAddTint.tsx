@@ -1,6 +1,7 @@
 // Inline highlighting in the quick add (OpenSpec change moments-and-onboarding, design
 // D8; natural-language-capture "Live preview chips"): a layer behind the plain
-// <input>, in the same box, font and padding, mirrors the text and tints each
+// <textarea>, in the same grid cell, box, font and padding, mirrors the text (and,
+// wrapping the same way, sets the field's height: quick-add-notes D1) and tints each
 // recognised span in its chip's soft colour (a 1 px underline under high contrast,
 // see `.quick-add-tint` in index.css). The chips stay the explanation and the place to
 // dismiss a token; a dismissed or quoted span is no chip, so it has no tint. The layer
@@ -34,7 +35,7 @@ export const QuickAddTint = forwardRef<HTMLDivElement, { value: string; chips: r
     : <span key={i}>{s.text}</span>))
   return (
     <div ref={ref} aria-hidden="true" data-quick-add-tints
-      className={`ui-input pointer-events-none absolute inset-0 overflow-hidden whitespace-pre border-transparent bg-transparent px-1 text-transparent shadow-none dark:bg-transparent ${className}`}>
+      className={`ui-input pointer-events-none overflow-hidden whitespace-pre-wrap break-words border-transparent bg-transparent px-1 text-transparent shadow-none dark:bg-transparent ${className}`}>
       {parts}
     </div>
   )

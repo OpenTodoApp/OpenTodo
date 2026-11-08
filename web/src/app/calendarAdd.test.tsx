@@ -43,8 +43,8 @@ async function dblclick(el: Element, init: MouseEventInit = { bubbles: true }) {
   await act(async () => { el.dispatchEvent(new MouseEvent('dblclick', init)) })
 }
 async function addThroughDialog(title: string) {
-  await waitFor(() => document.querySelector('[role="dialog"] input') !== null, 'the add dialog')
-  const input = document.querySelector<HTMLInputElement>('[role="dialog"] input')!
+  await waitFor(() => document.querySelector('[role="dialog"] textarea') !== null, 'the add dialog')
+  const input = document.querySelector<HTMLTextAreaElement>('[role="dialog"] textarea')!
   await type(input, title)
   await act(async () => { input.form!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
   await waitFor(async () => (await db.tasks.toArray()).some((t) => t.title === title.replace(/ at 4pm$/, '')), 'the new task')
@@ -129,7 +129,7 @@ describe('Day and Week', () => {
     await waitFor(() => !!r.container.querySelector(`[data-block="${id}"]`), 'the block')
     await dblclick(r.container.querySelector(`[data-block="${id}"]`)!, at(11 * 60 + 5))
     expect(openedTask()).toBe(id)
-    expect(document.querySelector('[role="dialog"] input')).toBeNull()
+    expect(document.querySelector('[role="dialog"] textarea')).toBeNull()
     await r.unmount()
   })
 })
@@ -162,7 +162,7 @@ describe('Month', () => {
     await waitFor(() => !!r.container.querySelector(`[data-month-task="${id}"]`), 'the row')
     await dblclick(r.container.querySelector(`[data-month-task="${id}"]`)!)
     expect(openedTask()).toBe(id)
-    expect(document.querySelector('[role="dialog"] input')).toBeNull()
+    expect(document.querySelector('[role="dialog"] textarea')).toBeNull()
     expect(cell(r.container, '2026-11-16').className).toContain('pointer-fine:hover:bg-hover')
     await r.unmount()
   })

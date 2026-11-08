@@ -31,7 +31,7 @@ beforeEach(async () => {
 afterEach(() => { window.matchMedia = original; vi.unstubAllGlobals() })
 
 const sheet = () => document.querySelector('[data-overlay="sheet"]')
-const field = () => document.querySelector<HTMLInputElement>('[data-quick-add-sheet] input[aria-label="Add a task"]')
+const field = () => document.querySelector<HTMLTextAreaElement>('[data-quick-add-sheet] textarea[aria-label="Add a task"]')
 
 describe('the add button', () => {
   it('opens quick add as a bottom sheet with the field focused, and the Upcoming default date applied', async () => {
@@ -143,6 +143,25 @@ describe('chips and tools (palette-quick-add D7; natural-language-capture "Quick
     await click(document.querySelector('[data-sheet-send]')!)
     await waitFor(async () => (await db.tasks.count()) === 1, 'the task')
     expect((await db.tasks.toArray()).map((t) => [t.title, t.project_id, t.due?.time])).toEqual([['Call Mia about the tiles', pid, '17:00']])
+    await r.unmount()
+  })
+
+  // #1035 (quick-add-notes D2): a phone has no Shift+Enter, so the tool row opens the notes.
+  it('the Notes tool opens a notes field with the caret in it, and send saves them as the task notes', async () => {
+    const r = await openSheet()
+    await type(field()!, 'Read the article')
+    const down = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+    document.querySelector('[data-sheet-tool="notes"]')!.dispatchEvent(down)
+    expect(down.defaultPrevented).toBe(true)
+    await click(document.querySelector('[data-sheet-tool="notes"]')!)
+    const notes = () => document.querySelector<HTMLTextAreaElement>('[data-quick-add-sheet] textarea[aria-label="Notes"]')
+    await waitFor(() => !!notes(), 'the notes field')
+    expect(document.activeElement).toBe(notes())
+    expect(document.querySelector('[data-sheet-tool="notes"]')!.getAttribute('aria-pressed')).toBe('true')
+    await type(notes()!, 'https://example.com/article')
+    await click(document.querySelector('[data-sheet-send]')!)
+    await waitFor(async () => (await db.tasks.count()) === 1, 'the task')
+    expect((await db.tasks.toArray()).map((t) => [t.title, t.description])).toEqual([['Read the article', 'https://example.com/article']])
     await r.unmount()
   })
 })

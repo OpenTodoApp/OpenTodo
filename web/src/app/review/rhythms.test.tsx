@@ -39,8 +39,8 @@ describe('weekly review steps', () => {
   it('Rapid capture: three tasks typed in Mind sweep land in the Inbox in order, focus stays in quick add', async () => {
     navigate({ view: 'review', step: 'sweep' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!document.querySelector('[data-testid="review-sweep"] input'))
-    const input = document.querySelector<HTMLInputElement>('[data-testid="review-sweep"] input')!
+    await waitFor(() => !!document.querySelector('[data-testid="review-sweep"] textarea'))
+    const input = document.querySelector<HTMLTextAreaElement>('[data-testid="review-sweep"] textarea')!
     await act(async () => input.focus())
     for (const title of ['Call the dentist', 'Fix the bike light', 'Thank Mara']) {
       await type(input, title)

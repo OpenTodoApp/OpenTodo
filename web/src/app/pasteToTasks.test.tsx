@@ -35,7 +35,7 @@ afterEach(() => {
   resetPanel()
 })
 
-async function paste(input: HTMLInputElement, text: string) {
+async function paste(input: HTMLTextAreaElement, text: string) {
   const e = new Event('paste', { bubbles: true, cancelable: true })
   Object.defineProperty(e, 'clipboardData', { value: { files: [], getData: (kind: string) => (kind === 'text/plain' ? text : '') } })
   await act(async () => { input.dispatchEvent(e) })
@@ -51,8 +51,8 @@ describe('a pasted list in a list page', () => {
   it('Today: every line is due today unless it names its own date; one batch', async () => {
     const work = await createProject({ name: 'Work' })
     const r = await render(<TaskListView route={{ view: 'today' }} />)
-    await waitFor(() => !!r.container.querySelector('form input'))
-    await paste(r.container.querySelector<HTMLInputElement>('form input')!, 'Call Anna tomorrow 10am\nSend invoice #Work p1\n- Water plants')
+    await waitFor(() => !!r.container.querySelector('form textarea'))
+    await paste(r.container.querySelector<HTMLTextAreaElement>('form textarea')!, 'Call Anna tomorrow 10am\nSend invoice #Work p1\n- Water plants')
     await confirm()
     await waitFor(() => !!bulkToast(), 'the toast')
     expect(bulkToast()!.label).toBe('3 tasks added')
@@ -71,8 +71,8 @@ describe('a pasted list in a list page', () => {
 
   it('Inbox: the tasks in the pasted order, one toast with Undo that removes them all', async () => {
     const r = await render(<TaskListView route={{ view: 'inbox' }} />)
-    await waitFor(() => !!r.container.querySelector('form input'))
-    await paste(r.container.querySelector<HTMLInputElement>('form input')!, '- Milk\n- Eggs\n\n- Bread')
+    await waitFor(() => !!r.container.querySelector('form textarea'))
+    await paste(r.container.querySelector<HTMLTextAreaElement>('form textarea')!, '- Milk\n- Eggs\n\n- Bread')
     await confirm()
     await waitFor(() => !!bulkToast(), 'the toast')
     expect((await live()).map((x) => x.title)).toEqual(['Milk', 'Eggs', 'Bread'])
@@ -84,8 +84,8 @@ describe('a pasted list in a list page', () => {
 
   it('Inbox: lines that schedule their task are counted once in the toast', async () => {
     const r = await render(<TaskListView route={{ view: 'inbox' }} />)
-    await waitFor(() => !!r.container.querySelector('form input'))
-    await paste(r.container.querySelector<HTMLInputElement>('form input')!, 'Milk\nCall the bank friday\nPay rent friday')
+    await waitFor(() => !!r.container.querySelector('form textarea'))
+    await paste(r.container.querySelector<HTMLTextAreaElement>('form textarea')!, 'Milk\nCall the bank friday\nPay rent friday')
     await confirm()
     await waitFor(() => !!bulkToast(), 'the toast')
     expect(bulkToast()!.label).toBe('3 tasks added, 2 not in the Inbox')
@@ -101,7 +101,7 @@ describe('a pasted list in a section', () => {
     const project = (await db.projects.get(home))!
     const projects = await db.projects.toArray()
     const r = await render(<SectionQuickAdd project={project} sectionId={garden} sectionName="Garden" projects={projects} labels={[]} onClose={() => {}} />)
-    await paste(r.container.querySelector('input')!, '1. Mow\n2. Rake\n3. Email Bob #Work')
+    await paste(r.container.querySelector('textarea')!, '1. Mow\n2. Rake\n3. Email Bob #Work')
     await confirm()
     await waitFor(() => !!bulkToast(), 'the toast')
     expect((await live()).map((x) => [x.title, x.project_id, x.section_id ?? null])).toEqual([
