@@ -61,7 +61,7 @@ SIM="iPhone 16" make ios                   # a specific simulator
 cd mobile/ios && open OpenTodo.xcodeproj   # Run, with your team selected for signing
 ```
 
-`make ios` is not part of `make check` (it needs macOS). CI's `ios` job runs it on a macOS runner, only when `mobile/ios` or the workflow changes.
+`make ios` is not part of `make check` (it needs macOS). CI's `ios` job runs it on a macOS runner, only when `mobile/ios` or the workflow changes. `WalkthroughTests` is skipped there; it needs a server and runs in the on-demand iPhone walkthrough workflow (`docs/ios-app.md`).
 
 ### Signing for a device
 
