@@ -1,6 +1,6 @@
 name: OpenTodo
 options:
-  bundleIdPrefix: app.opentodo
+  bundleIdPrefix: app.open-todo.ios
   deploymentTarget:
     iOS: "16.4"
   createIntermediateGroups: true
@@ -58,10 +58,10 @@ targets:
     entitlements:
       path: OpenTodo/OpenTodo.entitlements
       properties:
-        com.apple.security.application-groups: [group.app.opentodo]
+        com.apple.security.application-groups: [group.app.open-todo.ios]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: app.opentodo
+        PRODUCT_BUNDLE_IDENTIFIER: app.open-todo.ios
         INFOPLIST_FILE: OpenTodo/Info.plist
         TARGETED_DEVICE_FAMILY: "1,2"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -96,10 +96,10 @@ targets:
     entitlements:
       path: OpenTodoWidget/OpenTodoWidget.entitlements
       properties:
-        com.apple.security.application-groups: [group.app.opentodo]
+        com.apple.security.application-groups: [group.app.open-todo.ios]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: app.opentodo.widget
+        PRODUCT_BUNDLE_IDENTIFIER: app.open-todo.ios.widget
         INFOPLIST_FILE: OpenTodoWidget/Info.plist
         SKIP_INSTALL: YES
         APPLICATION_EXTENSION_API_ONLY: YES
@@ -131,10 +131,10 @@ targets:
     entitlements:
       path: OpenTodoShare/OpenTodoShare.entitlements
       properties:
-        com.apple.security.application-groups: [group.app.opentodo]
+        com.apple.security.application-groups: [group.app.open-todo.ios]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: app.opentodo.share
+        PRODUCT_BUNDLE_IDENTIFIER: app.open-todo.ios.share
         INFOPLIST_FILE: OpenTodoShare/Info.plist
         SKIP_INSTALL: YES
         APPLICATION_EXTENSION_API_ONLY: YES
@@ -148,7 +148,7 @@ targets:
       - target: OpenTodo
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: app.opentodo.tests
+        PRODUCT_BUNDLE_IDENTIFIER: app.open-todo.ios.tests
         TEST_HOST: $(BUILT_PRODUCTS_DIR)/OpenTodo.app/OpenTodo
         BUNDLE_LOADER: $(TEST_HOST)
         GENERATE_INFOPLIST_FILE: YES
@@ -162,7 +162,7 @@ targets:
       - target: OpenTodo
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: app.opentodo.uitests
+        PRODUCT_BUNDLE_IDENTIFIER: app.open-todo.ios.uitests
         TEST_TARGET_NAME: OpenTodo
         GENERATE_INFOPLIST_FILE: YES
 
