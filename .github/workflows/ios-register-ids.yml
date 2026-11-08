@@ -1,6 +1,6 @@
 name: iOS register IDs
 
-# Registers the iOS app's bundle IDs (app.opentodo, app.opentodo.widget, app.opentodo.share) with
+# Registers the iOS app's bundle IDs (app.open-todo.ios, app.open-todo.ios.widget, app.open-todo.ios.share) with
 # App Groups turned on, and prints what exists, what it added and what is left to do by hand (the
 # App Group itself and the app record, which the API cannot create). Safe to run any number of
 # times. The TestFlight job runs the same registration before every archive

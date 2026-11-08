@@ -12,18 +12,18 @@ The official iOS app SHALL be distributed through TestFlight and the App Store, 
 - **THEN** the build needs no account from the project and no secret from the repository, and behaves like the store build
 
 ### Requirement: iOS bundle identifiers registered by CI
-CI SHALL register the app's bundle identifiers (`app.opentodo`, `app.opentodo.widget`, `app.opentodo.share`) through the App Store Connect API when they are missing, with every capability their entitlements need, before every TestFlight archive, and SHALL leave existing ones unchanged. A manual workflow SHALL run only this registration and report, for each identifier, whether it existed or was added, whether the app record exists, and what the API cannot do (the App Group and the app record). When an identifier belongs to another team, the registration SHALL fail and say that a new prefix is needed and where to change it.
+CI SHALL register the app's bundle identifiers (`app.open-todo.ios`, `app.open-todo.ios.widget`, `app.open-todo.ios.share`) through the App Store Connect API when they are missing, with every capability their entitlements need, before every TestFlight archive, and SHALL leave existing ones unchanged. A manual workflow SHALL run only this registration and report, for each identifier, whether it existed or was added, whether the app record exists, and what the API cannot do (the App Group and the app record). When an identifier belongs to another team, the registration SHALL fail and say that a new prefix is needed and where to change it.
 
 #### Scenario: First registration
 - **WHEN** the owner runs "iOS register IDs" with the App Store Connect secrets set and no identifier registered
-- **THEN** the three identifiers are registered with App Groups, and the report says to register `group.app.opentodo` and to create the app record in App Store Connect
+- **THEN** the three identifiers are registered with App Groups, and the report says to register `group.app.open-todo.ios` and to create the app record in App Store Connect
 
 #### Scenario: Run again
 - **WHEN** the registration runs a second time
 - **THEN** it changes nothing and reports the three identifiers as already registered
 
 #### Scenario: Identifier taken
-- **WHEN** `app.opentodo` belongs to another developer team
+- **WHEN** `app.open-todo.ios` belongs to another developer team
 - **THEN** the registration fails, naming the identifier, Apple's answer and the files where the prefix changes
 
 #### Scenario: No secrets
