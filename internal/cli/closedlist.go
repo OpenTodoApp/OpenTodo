@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strconv"
 
 	"github.com/OpenTodoApp/opentodo/internal/closedlist"
 )
@@ -20,12 +21,13 @@ type todaySplit struct {
 	// rank is each counted task's place in fill order.
 	rank map[string]int
 	// soon is the waiting tasks with a time today, soonest first
-	// (OpenSpec change today-waiting-time-sensitive).
+	// (OpenSpec change today-waiting-time-sensitive), each marked Passed once
+	// its time is before now (today-waiting-time-passed).
 	soon []closedlist.Sensitive
 }
 
 // todayClosedList fills Today's slots from its listed tasks; nil when the limit is off.
-func (a *App) todayClosedList(ctx context.Context, c *client, all []task, projects []project, tasks []task, today string) (*todaySplit, error) {
+func (a *App) todayClosedList(ctx context.Context, c *client, all []task, projects []project, tasks []task, today, now string) (*todaySplit, error) {
 	var me struct {
 		ClosedList struct {
 			Limit     int    `json:"limit"`
@@ -74,7 +76,7 @@ func (a *App) todayClosedList(ctx context.Context, c *client, all []task, projec
 			Habit: row.Habit, Blocked: !available(t), Time: clock, Deadline: deadline})
 	}
 	f := closedlist.Compute(in, nil)
-	s := &todaySplit{waiting: f.WaitingSet(), rank: map[string]int{}, soon: closedlist.TimeSensitive(f.WaitingTasks(in.Tasks), today)}
+	s := &todaySplit{waiting: f.WaitingSet(), rank: map[string]int{}, soon: closedlist.TimeSensitive(f.WaitingTasks(in.Tasks), today, now)}
 	for i, id := range append(append([]string{}, f.Slots...), f.Waiting...) {
 		s.rank[id] = i
 	}
@@ -108,9 +110,11 @@ func (s *todaySplit) parts(tasks []task) (listed, waiting []task) {
 func (s *todaySplit) heading(all bool) bool { return s != nil && !all && len(s.waiting) > 0 }
 
 // printWaiting prints the "Waiting for a slot" heading with its count and,
-// when some waiting tasks have a time today, the next one, then those tasks
+// when some waiting tasks have a time today, the next one whose time has not
+// passed (or, when every time has passed, that they have), then those tasks
 // soonest first with their time (a deadline today without one reads
-// "deadline"). The table of the waiting tasks in fill order follows it.
+// "deadline") and "time passed" on those whose time is before now. The table
+// of the waiting tasks in fill order follows it.
 func (s *todaySplit) printWaiting(w io.Writer, waiting []task) {
 	byID := map[string]task{}
 	for _, t := range waiting {
@@ -132,15 +136,26 @@ func (s *todaySplit) printWaiting(w io.Writer, waiting []task) {
 		fmt.Fprintf(w, "Waiting for a slot · %d\n", len(waiting))
 		return
 	}
-	fmt.Fprintf(w, "Waiting for a slot · %d — next: %s, %s\n", len(waiting), byID[soon[0].ID].Title, at(soon[0]))
+	switch next, ok := closedlist.Next(soon); {
+	case ok:
+		fmt.Fprintf(w, "Waiting for a slot · %d — next: %s, %s\n", len(waiting), byID[next.ID].Title, at(next))
+	case len(soon) == 1:
+		fmt.Fprintf(w, "Waiting for a slot · %d — time passed: %s, %s\n", len(waiting), byID[soon[0].ID].Title, at(soon[0]))
+	default:
+		fmt.Fprintf(w, "Waiting for a slot · %d — %d past their time\n", len(waiting), len(soon))
+	}
 	for _, x := range soon {
-		fmt.Fprintf(w, "  %-9s %s  %s\n", at(x), shortID(x.ID), byID[x.ID].Title)
+		passed := ""
+		if x.Passed {
+			passed = "  (time passed)"
+		}
+		fmt.Fprintf(w, "  %-9s %s  %s%s\n", at(x), shortID(x.ID), byID[x.ID].Title, passed)
 	}
 	fmt.Fprintln(w)
 }
 
-// raw is the task's JSON with waiting_for_slot set (ot today --json), and
-// time_sensitive on a waiting task.
+// raw is the task's JSON with waiting_for_slot set (ot today --json),
+// time_sensitive on a waiting task and time_passed on a time-sensitive one.
 func (s *todaySplit) raw(t task) json.RawMessage {
 	if s == nil {
 		return t.Raw
@@ -156,6 +171,7 @@ func (s *todaySplit) raw(t task) json.RawMessage {
 		for _, x := range s.soon {
 			if x.ID == t.ID {
 				m["time_sensitive"] = json.RawMessage("true")
+				m["time_passed"] = json.RawMessage(strconv.FormatBool(x.Passed))
 			}
 		}
 	}

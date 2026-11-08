@@ -1,4 +1,4 @@
-import { DESKTOP_HEADER_QUERY, IconButton, setSidebarToggle, PageActions, PageBarTitle, TruncatedText, useMediaQuery, usePageBar, useOverlayDepth } from '../ui'
+import { DESKTOP_HEADER_QUERY, IconButton, setSidebarToggle, PageActions, PageBarTitle, Skeleton, TruncatedText, trapTab, useMediaQuery, useOverlay, usePageBar, useOverlayDepth } from '../ui'
 import { useCommandBar } from './palette/useCommandBar'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { User } from '../lib/types'
@@ -6,9 +6,8 @@ import { resolveStartView } from '../lib/views'
 import { describeRejected } from '../lib/sharing'
 import { keysOf } from '../lib/shortcuts'
 import { dismissRejected, useSyncStatus } from '../lib/sync'
-import { canonicalPath, navigate, parseRoute, useRoute } from './router'
-import { SIDEBAR_COLLAPSED_REM, SIDEBAR_MAX_REM, SIDEBAR_MIN_REM, setSidebarCollapsed, setSidebarWidth, toggleSidebarCollapsed, useSidebarLayout } from './sidebarLayout'
-import { CalendarView } from './CalendarView'
+import { canonicalPath, navigate, offersQuickAdd, parseRoute, useRoute } from './router'
+import { SIDEBAR_COLLAPSED_REM, SIDEBAR_DEFAULT_REM, SIDEBAR_MAX_REM, SIDEBAR_MIN_REM, setSidebarCollapsed, setSidebarWidth, toggleSidebarCollapsed, useSidebarLayout } from './sidebarLayout'
 import { FilterView } from './FilterView'
 import { LabelsView } from './LabelsView'
 import { PlacesView } from './locations/PlacesView'
@@ -20,8 +19,6 @@ import { TaskListView } from './TaskListView'
 import { AskScreen } from './assistant/AskEntry'
 import { TrashView } from './TrashView'
 import { FeedView } from './FeedView'
-import { ImportScreen } from './ImportScreen'
-import { SettingsView } from './SettingsView'
 import { ReminderToasts } from './ReminderToasts'
 import { WorkspaceHost } from './NewWorkspaceDialog'
 import { FramesHost } from './calendar/framesRequest'
@@ -38,7 +35,7 @@ import { onQuickAddSheetRequest, QuickAddSheet, requestQuickAddSheet } from './Q
 import { PanelHost } from './PanelHost'
 import { TaskPage } from './TaskPage'
 import { watchViewerZone } from '../lib/dates'
-import { UndoToast } from './bulk/UndoToast'
+import { ActionToasts } from './ActionToasts'
 import { DailyCheckToast } from './method/DailyCheckToast'
 import { PanelBoundary } from './PanelBoundary'
 import { TemplateDialogHost } from './TemplateDialogs'
@@ -56,6 +53,7 @@ import { useRunningRepair } from '../lib/timeEntries'
 import { TrackingPill } from './TrackingIndicator'
 import { BreakReminder } from './focus/BreakReminder'
 import { SkipLink, usePageFocus } from './pageFocus'
+import { useDuplicateCollapse } from '../lib/duplicateCollapse'
 
 // Optional Vim layer (vim-keybindings): its own chunk, fetched only while the
 // per-device switch is on, so the default bundle carries just this boundary.
@@ -80,6 +78,8 @@ const HelpPanel = lazy(() => import('./help/HelpBundle').then((m) => ({ default:
 const AssistantRoot = lazy(() => import('./assistant/AssistantRoot'))
 // Command palette (search-and-command-palette D1): its own chunk, fetched on first open.
 const CommandPalette = lazy(() => import('./palette/CommandPalette'))
+// Its search index, prepared in idle moments before the first open (list-rendering-at-scale D6).
+const PaletteWarmer = lazy(() => import('./palette/PaletteWarmer'))
 // Weekly review and Statistics (stats-and-review D8): one chunk, fetched on first open.
 const ReviewView = lazy(() => import('./review/ReviewBundle').then((m) => ({ default: m.ReviewView })))
 const StatsView = lazy(() => import('./review/ReviewBundle').then((m) => ({ default: m.StatsView })))
@@ -95,6 +95,13 @@ const NotesPage = lazy(() => import('./notes/NotesPage'))
 const LoopHome = lazy(() => import('./method/LoopHome').then((m) => ({ default: m.LoopHome })))
 // The start guide (lean-chrome D5): its own chunk; it opens over the Inbox once per account, or from Settings.
 const FirstRunGuide = lazy(() => import('./FirstRun').then((m) => ({ default: m.FirstRunGuide })))
+// Calendar, Settings and Import are not on the Inbox's first screen: each loads on first visit.
+const CalendarView = lazy(() => import('./CalendarView').then((m) => ({ default: m.CalendarView })))
+const SettingsView = lazy(() => import('./SettingsView').then((m) => ({ default: m.SettingsView })))
+const ImportScreen = lazy(() => import('./ImportScreen').then((m) => ({ default: m.ImportScreen })))
+
+/** Shown while a screen's chunk is fetched: the page's rows, as the other screens do. */
+const SCREEN_LOADING = <div className="px-4 py-6"><Skeleton shape="row" count={4} /></div>
 
 /** Requests that need the sidebar on screen: the phone drawer opens, and for a find the icon rail expands. */
 function useSidebarRequests(setSidebarOpen: (open: boolean) => void) {
@@ -104,9 +111,34 @@ function useSidebarRequests(setSidebarOpen: (open: boolean) => void) {
   useEffect(() => notificationsOpen.subscribe(() => { if (!window.matchMedia?.('(min-width: 48rem)').matches) setSidebarOpen(true) }), [setSidebarOpen])
 }
 
+/** The phone drawer (phone-v2): below 768 px it is an overlay when open and inert when closed; from there the sidebar is a column. */
+function usePhoneDrawer(sidebarOpen: boolean) {
+  const column = useMediaQuery(DESKTOP_HEADER_QUERY)
+  const drawer = useRef<HTMLElement>(null)
+  const open = sidebarOpen && !column, closed = !column && !sidebarOpen
+  // The aside's own props: aria-hidden next to inert on purpose, so assistive technology without inert support
+  // still skips the closed drawer; open, Tab stays inside it.
+  const aside = {
+    ref: drawer, inert: closed || undefined, 'aria-hidden': closed || undefined,
+    onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => { if (open) trapTab(e, e.currentTarget) },
+  }
+  return { drawer, open, closed, aside }
+}
+
+/** The command bar when open, and its search index prepared before (list-rendering-at-scale D6). */
+function CommandBar({ palette, user, showShortcuts }: { palette: ReturnType<typeof useCommandBar>; user: User; showShortcuts: () => void }) {
+  return (
+    <>
+      {palette.warm && <PanelBoundary><Suspense fallback={null}><PaletteWarmer user={user} onDone={palette.warmed} /></Suspense></PanelBoundary>}
+      {palette.loaded && palette.open && <PanelBoundary resetKey={palette.open}><Suspense fallback={null}><CommandPalette user={user} initialMode={palette.mode} logWin={palette.win} onClose={palette.close} showShortcuts={showShortcuts} /></Suspense></PanelBoundary>}
+    </>
+  )
+}
+
 export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) {
   const route = useRoute()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const drawer = usePhoneDrawer(sidebarOpen)
   useSidebarRequests(setSidebarOpen)
   const [notice, setNotice] = useState<string | null>(null)
   // Changes the server refused after a role change (project-sharing).
@@ -114,8 +146,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   // A travelling device: re-read the time zone whenever the app becomes visible
   // (absolute-datetimes), so zoned dues re-render in the new zone.
   useEffect(() => watchViewerZone(), [])
-  // Two devices started tracking while offline: keep one running entry (time-tracking D2).
-  useRunningRepair()
+  // Offline doubles converge: one running time entry (time-tracking D2), one item per title in a reusable list (reusable-lists D4).
+  useRunningRepair(); useDuplicateCollapse()
   // Start view (per device, OpenSpec `custom-views`): applied once per launch, and only
   // when the app opens at its root, so deep links and reloads keep their page.
   useEffect(() => {
@@ -228,14 +260,13 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const minimised = usePhoneChrome(content, phoneChrome, sidebarOpen)
 
   return (
-    <div className="flex h-full bg-canvas">
+    <div className="flex h-full bg-canvas px-safe">
       <SkipLink frame={frame} content={content} />
-      {/* touch-none: a swipe on the scrim does not scroll the page behind the open drawer (sidebar-drawer-scroll). */}
-      {sidebarOpen && <div className="fixed inset-0 z-[45] touch-none bg-scrim md:hidden" onClick={() => setSidebarOpen(false)} />}
       {/* The sidebar column: a drawer below 768 px, a column from there, resizable and collapsible from 1024 px (app-shell); its colour, shared by the sticky group headers, is --sidebar-bg: the surface in the drawer, the canvas as a column (precision-tokens D1), where it sits beside the inset content surface without an edge (precision-shell D1). */}
-      <aside data-sidebar data-sidebar-width={sidebar.collapsed ? 'collapsed' : sidebar.width}
+      {drawer.open && <DrawerOverlay panel={drawer.drawer} onClose={() => setSidebarOpen(false)} />}
+      <aside {...drawer.aside} data-sidebar data-sidebar-width={sidebar.collapsed ? 'collapsed' : sidebar.width}
         style={{ '--sidebar-w': `${sidebar.collapsed ? SIDEBAR_COLLAPSED_REM : sidebar.width}rem` } as React.CSSProperties}
-        className={`fixed inset-y-0 left-0 z-[45] flex w-80 max-w-[85vw] max-md:[&_[data-sidebar-item]]:min-h-12 transform max-md:border-r max-md:border-default bg-(--sidebar-bg) [--sidebar-bg:var(--color-surface)] md:[--sidebar-bg:var(--color-canvas)] md:pointer-fine:[--sidebar-bg:var(--color-sidebar)] pl-[env(safe-area-inset-left)] transition-transform md:static md:w-(--sidebar-w) md:max-w-none md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed inset-y-0 left-0 z-[45] flex w-80 max-w-[85vw] max-md:[&_[data-sidebar-item]]:min-h-12 transform max-md:border-r max-md:border-default bg-(--sidebar-bg) [--sidebar-bg:var(--color-surface)] md:[--sidebar-bg:var(--color-canvas)] md:pointer-fine:[--sidebar-bg:var(--color-sidebar)] max-md:pl-safe transition-transform md:static md:w-(--sidebar-w) md:max-w-none md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="min-w-0 flex-1">
           <Sidebar route={route} user={user} onSearch={openPalette} onShortcuts={() => setShowHelp(true)} onFeedback={() => { setSidebarOpen(false); openFeedback() }} onSignOut={onLogout} onAssistant={showLauncher(assistant) ? openAssistant : undefined} collapsed={sidebar.collapsed} onToggleCollapse={toggleSidebarCollapsed} />
@@ -243,8 +274,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         {!sidebar.collapsed && <SidebarResizer width={sidebar.width} />}
       </aside>
       {/* From 768 px the page is one inset content surface on the canvas: 8 px from the window, the surface radius, one hairline (precision-shell D1). */}
-      <main ref={frame} className="flex min-w-0 flex-1 flex-col md:!pb-0 md:my-2 md:mr-2 md:overflow-hidden md:rounded-surface md:border md:border-default md:bg-surface" data-app-frame data-phone-chrome={phoneChrome || undefined}
-        style={phoneChrome ? { paddingBottom: `calc(${TAB_BAR_HEIGHT_REM}rem + env(safe-area-inset-bottom))` } : undefined}>
+      <main ref={frame} className="flex min-w-0 flex-1 flex-col md:!pb-0 md:mt-[max(0.5rem,var(--safe-top))] md:mb-2 md:mr-2 md:overflow-hidden md:rounded-surface md:border md:border-default md:bg-surface" data-app-frame data-phone-chrome={phoneChrome || undefined} inert={drawer.open || undefined}
+        style={phoneChrome ? { paddingBottom: `calc(${TAB_BAR_HEIGHT_REM}rem + var(--safe-bottom))` } : undefined}>
         {/* Below 768 px: the bar with the menu button, the page's title and its actions (app-shell "No desktop top bar"). */}
         <PhoneBar onMenu={() => setSidebarOpen(true)} />
         {notice && (
@@ -270,9 +301,9 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           {route.view === 'help' ? (
             <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading help…')}</p>}><HelpView page={route.page} q={route.q} /></Suspense>
           ) : route.view === 'settings' ? (
-            <SettingsView user={user} onLogout={onLogout} section={route.section} page={route.page} anchor={route.anchor} />
+            <Suspense fallback={SCREEN_LOADING}><SettingsView user={user} onLogout={onLogout} section={route.section} page={route.page} anchor={route.anchor} /></Suspense>
           ) : route.view === 'theme-editor' ? <Suspense fallback={null}><ThemeEditorPage id={route.id} /></Suspense> : route.view === 'import' ? (
-            <ImportScreen />
+            <Suspense fallback={SCREEN_LOADING}><ImportScreen /></Suspense>
           ) : route.view === 'labels' ? (
             <LabelsView route={route} />
           ) : route.view === 'places' ? (
@@ -312,7 +343,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           ) : route.view === 'ask' ? (
             <AskScreen role={user.role} name={user.name} />
           ) : route.view === 'day' || route.view === 'week' ? (
-            <CalendarView mode={route.view} date={route.date} />
+            <Suspense fallback={SCREEN_LOADING}><CalendarView mode={route.view} date={route.date} /></Suspense>
           ) : route.view === 'month' || route.view === 'plan' || route.view === 'year' ? (
             <Suspense fallback={null}>{route.view === 'month' ? <MonthView date={route.date} /> : route.view === 'plan' ? <PlanView date={route.date} /> : <YearView date={route.date} />}</Suspense>
           ) : (
@@ -331,13 +362,13 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       </main>
       <PanelBoundary><PanelHost user={user} /></PanelBoundary>
       {phoneChrome && <TabBar route={route} onSearch={openPalette} minimised={minimised} />}
-      {(phoneChrome || addOpen) && <AddButton ref={addButton} open={addOpen} away={minimised && !addOpen} onClick={() => setAddOpen((v) => !v)} />}
+      {((phoneChrome && offersQuickAdd(route)) || addOpen) && <AddButton ref={addButton} open={addOpen} away={minimised && !addOpen} onClick={() => setAddOpen((v) => !v)} />}
       <QuickAddSheet open={addOpen} onClose={() => setAddOpen(false)} anchor={addButton} route={route} userId={user.id} />
       {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} vim={vim} extraSections={vim && vimHelp ? [vimHelp] : []}
         context={{ view: route.view, board: hasScope('board') || hasScope('timeline'), panelOpen: hasScope('panel') || !!panelTaskId() }} />}
       {helpRequest && <PanelBoundary><Suspense fallback={null}><HelpPanel key={helpRequest.screen} screen={helpRequest.screen} trigger={helpRequest.trigger} onClose={closeHelp} /></Suspense></PanelBoundary>}
       {assistantLoaded && <PanelBoundary><Suspense fallback={null}><AssistantRoot name={user.name} onPage={route.view === 'ask'} context={() => ({ view: route.view, projectId: route.view === 'project' ? route.id : undefined })} /></Suspense></PanelBoundary>}
-      {palette.loaded && palette.open && <PanelBoundary resetKey={palette.open}><Suspense fallback={null}><CommandPalette user={user} initialMode={palette.mode} logWin={palette.win} onClose={palette.close} showShortcuts={() => setShowHelp(true)} /></Suspense></PanelBoundary>}
+      <CommandBar palette={palette} user={user} showShortcuts={() => setShowHelp(true)} />
       {/* The owner's one-time thank-you on a new server (welcome-note). */}
       <WelcomeDialog user={user} /><FeedbackHost />
       {/* The start guide after it (first-run "Three-step first run"); never a row of the list. */}
@@ -346,7 +377,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       <Spotlight />
       <ReminderToasts />
       <BreakReminder />
-      <UndoToast />
+      <ActionToasts />
       <DailyCheckToast />
       <TemplateDialogHost />
       <ArchivePrompt /><WorkspaceHost route={route} panelTask={panelTaskId()} />
@@ -355,23 +386,39 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   )
 }
 
-/** The sidebar's drag edge (app-shell "Resizable sidebar"): 15 to 22.5 rem, per device; arrows resize it from the keyboard. */
+/** The open phone drawer as an overlay: its scrim (a swipe on it does not scroll the page behind, sidebar-drawer-scroll), Escape and Back through the stack, focus moved in and back to the menu button on close, and the tab bar and add button out of the page (they hide while an overlay is open). */
+function DrawerOverlay({ panel, onClose }: { panel: React.RefObject<HTMLElement | null>; onClose: () => void }) {
+  useOverlay({ panel, onClose })
+  return <div className="fixed inset-0 z-[45] touch-none bg-scrim md:hidden" onClick={onClose} />
+}
+
+/**
+ * The sidebar's drag edge (app-shell "Resizable sidebar"): 15 to 22.5 rem, per device; arrows resize it
+ * from the keyboard, and a click without dragging switches between the widest and the default width
+ * (accessibility-aa D3, WCAG 2.2 2.5.7).
+ */
 function SidebarResizer({ width }: { width: number }) {
-  const dragging = useRef<{ startX: number; startWidth: number } | null>(null)
+  const dragging = useRef<{ startX: number; startWidth: number; moved: boolean } | null>(null)
   const rem = () => parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
   return (
     <div role="separator" aria-orientation="vertical" aria-label={t('Resize sidebar')} aria-valuemin={SIDEBAR_MIN_REM} aria-valuemax={SIDEBAR_MAX_REM} aria-valuenow={width}
-      tabIndex={0} data-sidebar-resizer
+      tabIndex={0} data-sidebar-resizer data-drag-id="sidebar-resizer"
       className="hidden w-1 shrink-0 cursor-col-resize self-stretch hover:bg-accent/40 focus-visible:bg-accent focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus lg:block"
       onPointerDown={(e) => {
-        dragging.current = { startX: e.clientX, startWidth: width }
+        dragging.current = { startX: e.clientX, startWidth: width, moved: false }
         e.currentTarget.setPointerCapture(e.pointerId)
       }}
       onPointerMove={(e) => {
         const d = dragging.current
-        if (d) setSidebarWidth(d.startWidth + (e.clientX - d.startX) / rem())
+        if (!d || (!d.moved && Math.abs(e.clientX - d.startX) < 4)) return
+        d.moved = true
+        setSidebarWidth(d.startWidth + (e.clientX - d.startX) / rem())
       }}
-      onPointerUp={() => { dragging.current = null }}
+      onPointerUp={() => {
+        const d = dragging.current
+        dragging.current = null
+        if (d && !d.moved) setSidebarWidth(width >= SIDEBAR_MAX_REM ? SIDEBAR_DEFAULT_REM : SIDEBAR_MAX_REM)
+      }}
       onKeyDown={(e) => {
         if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); setSidebarWidth(width + (e.key === 'ArrowRight' ? 0.5 : -0.5)) }
         if (e.key === 'Home') { e.preventDefault(); setSidebarWidth(SIDEBAR_MIN_REM) }
@@ -392,7 +439,7 @@ function PhoneBar({ onMenu }: { onMenu: () => void }) {
   if (desktop) return null
   const day = !!bar?.day
   return (
-    <header className={`flex min-h-12 items-center gap-1 px-2 pt-[max(0.25rem,env(safe-area-inset-top))] pr-[max(0.5rem,env(safe-area-inset-right))] md:hidden ${day ? '' : 'border-b border-soft'}`} data-phone-bar data-phone-bar-day={day || undefined}>
+    <header className={`flex min-h-12 items-center gap-1 pl-2 pr-2 pt-[max(0.25rem,var(--safe-top))] md:hidden ${day ? '' : 'border-b border-soft'}`} data-phone-bar data-phone-bar-day={day || undefined}>
       {bar?.back
         ? <IconButton icon="chevron-left" label={bar.back.label} onClick={bar.back.onClick} className="touch-target" data-page-back />
         : <IconButton icon="menu" label={t('Open menu')} onClick={onMenu} className="touch-target" />}

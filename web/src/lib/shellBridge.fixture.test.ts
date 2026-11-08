@@ -9,12 +9,13 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { forgetShellData, setSystemBars, type OpenTodoShell } from './shell'
+import { shellGeofences } from './geofences'
+import { forgetShellData, setSystemBars, type OpenTodoShell, type ShellGeofencePayload } from './shell'
 import { shellUrlAction } from './shellActions'
 import { shellReminders, shellWidget } from './shellPublish'
 import { openOrigin } from './taskOrigin'
 import vectors from '../../../internal/origin/testdata/origin_vectors.json'
-import type { Reminder, Task } from './types'
+import type { Place, Reminder, Task } from './types'
 
 // Vitest runs in web/ (happy-dom's URL cannot resolve file: addresses).
 const dir = path.resolve(process.cwd(), '../mobile/android/app/src/test/resources/bridge')
@@ -42,11 +43,65 @@ const reminders = [
   reminder('r-done', 'done', NOW + HOUR),
 ]
 
+// Location reminders (location-reminders D3): a post office, a home linked to a
+// saved place whose pin moved, a dismissed one, one on a completed task, one on a
+// task without coordinates.
+const place = (id: string, lat: number, lon: number): Place =>
+  ({ id, name: `Place ${id}`, address: '', geo: { lat, lon }, position: 1, created_at: 0, deleted_at: null }) as unknown as Place
+const placeTasks = [
+  task('stamps', { title: 'Buy stamps', location: { name: 'Post office', lat: 45.4642, lon: 9.19 } }),
+  task('parcel', { title: 'Take the parcel', location: { name: 'Home', lat: 1, lon: 1, place_id: 'home' } }),
+  task('gym', { title: 'Book a class', completed_at: NOW - HOUR, location: { name: 'Gym', lat: 45.47, lon: 9.2 } }),
+  task('bank', { title: 'Ask about the card', location: { address: 'Via Roma 1' } }),
+]
+const places = [place('home', 45.4781, 9.2272)]
+const locationReminders = [
+  reminder('g-arrive', 'stamps', 0, { kind: 'arrive', fire_at: null, radius_m: 150 }),
+  reminder('g-leave', 'parcel', 0, { kind: 'leave', fire_at: null, radius_m: 300 }),
+  reminder('g-dismissed', 'stamps', 0, { kind: 'leave', fire_at: null, radius_m: 150, dismissed_at: NOW - HOUR }),
+  reminder('g-done', 'gym', 0, { kind: 'arrive', fire_at: null, radius_m: 500 }),
+  reminder('g-nowhere', 'bank', 0, { kind: 'arrive', fire_at: null, radius_m: 150 }),
+]
+
+/** 40 armed regions, 20 in Milan and 20 in Berlin, for the shells' ranking tests. */
+function twoCities() {
+  const cities = [{ name: 'milan', lat: 45.4642, lon: 9.19 }, { name: 'berlin', lat: 52.52, lon: 13.405 }]
+  const ts: Task[] = []
+  const rs: Reminder[] = []
+  for (const c of cities) {
+    for (let i = 0; i < 20; i++) {
+      const id = `${c.name}-${String(i).padStart(2, '0')}`
+      // Spread over about 2 km, nearest first by index.
+      ts.push(task(id, { title: id, location: { lat: c.lat + i * 0.001, lon: c.lon + i * 0.001 } }))
+      rs.push(reminder(`r-${id}`, id, 0, { kind: i % 2 ? 'leave' : 'arrive', fire_at: null, radius_m: 150 }))
+    }
+  }
+  const payload = shellGeofences(rs, ts, [], { titles: false, encrypted: false })
+  return {
+    description: 'Ranking (location-reminders D3): 40 armed regions in two cities. A shell registers the 19 nearest to its position; from either city that is the 19 of that city nearest to it, and it re-ranks after leaving the 1 km region around the position it ranked from.',
+    method: 'scheduleGeofences' as const, payload: JSON.stringify(payload), now: NOW,
+    expect: cities.map((c) => ({ from: { lat: c.lat, lon: c.lon }, registered: Array.from({ length: 19 }, (_, i) => `r-${c.name}-${String(i).padStart(2, '0')}`) })),
+  }
+}
+
+function captureGeofencesSignOut(): string {
+  let sent = ''
+  window.opentodoShell = {
+    bridge: 1, platform: 'android', app: '0.21.0', capabilities: ['geofences'],
+    scheduleGeofences: (json) => { sent = json; return 'granted' },
+  }
+  forgetShellData()
+  delete window.opentodoShell
+  return sent
+}
+
+const regionExpect = (p: ShellGeofencePayload) => p.regions.map((r) => ({ id: r.id, taskId: r.taskId, lat: r.lat, lon: r.lon, radius: r.radius, on: r.on, title: r.title ?? null }))
+
 /** What a bridge call hands over, and what the shell must read from it. */
 interface Fixture {
   description: string
   /** The bridge method and the exact argument string the web app passes. */
-  method: 'scheduleReminders' | 'publishWidget'
+  method: 'scheduleReminders' | 'publishWidget' | 'scheduleGeofences'
   payload: string
   now: number
   expect: unknown
@@ -72,7 +127,27 @@ function fixtures(): Record<string, Fixture> {
   const locked = shellWidget(tasks, TODAY, NOW, true)
   const signOut = captureSignOut()
   const signedOutWidget = { ...JSON.parse(signOut.widget), updatedAt: NOW }
+  const geo = shellGeofences(locationReminders, placeTasks, places, { titles: true, encrypted: false })
+  const geoEncrypted = shellGeofences(locationReminders, placeTasks, places, { titles: true, encrypted: true })
+  const geoAsk = { ...shellGeofences([], placeTasks, places, { titles: false, encrypted: false }), ask: true as const }
   return {
+    'geofences.json': {
+      description: 'Location reminders (location-reminders D3): every armed one, sorted by id, titles on and the account readable. A linked place uses its current pin; dismissed ones, ones on completed tasks and ones without coordinates are left out. The shell registers at most 19 by distance and answers granted, foreground-only, denied or unavailable.',
+      method: 'scheduleGeofences', payload: JSON.stringify(geo), now: NOW, expect: { ask: false, regions: regionExpect(geo) },
+    },
+    'geofences-encrypted.json': {
+      description: 'An end-to-end encrypted account (unlocked): coordinates but no titles reach the shell.',
+      method: 'scheduleGeofences', payload: JSON.stringify(geoEncrypted), now: NOW, expect: { ask: false, regions: regionExpect(geoEncrypted) },
+    },
+    'geofences-ask.json': {
+      description: 'Turning on "Location reminders on this phone" with nothing armed yet: ask is set, so a shell with a screen asks for fine then background location even though there are no regions.',
+      method: 'scheduleGeofences', payload: JSON.stringify(geoAsk), now: NOW, expect: { ask: true, regions: [] },
+    },
+    'geofences-signed-out.json': {
+      description: 'Sign-out (and lock of an encrypted account, and the switch turned off): every region is removed.',
+      method: 'scheduleGeofences', payload: captureGeofencesSignOut(), now: NOW, expect: { ask: false, regions: [] },
+    },
+    'geofences-two-cities.json': twoCities(),
     'reminders.json': {
       description: 'The next reminders with titles (titles on, account readable), earliest first.',
       method: 'scheduleReminders', payload: JSON.stringify(titled), now: NOW,
@@ -109,10 +184,15 @@ function fixtures(): Record<string, Fixture> {
 function actions() {
   return {
     description: 'Notification buttons and the quick-add widget: the address the shell opens, and the action the web app reads.',
+    // A time reminder's buttons in the shell's order (reminder-done-action): Done, Snooze 10 min, Dismiss.
     reminderActions: [
-      { id: 'abc', action: 'snooze' }, { id: 'abc', action: 'dismiss' }, { id: 'r 1/ü', action: 'snooze' },
+      { id: 'abc', action: 'done' }, { id: 'abc', action: 'snooze' }, { id: 'abc', action: 'dismiss' }, { id: 'r 1/ü', action: 'snooze' },
     ].map(({ id, action }) => ({ id, action, path: `/?reminder=${encodeURIComponent(id).replace(/%20/g, '+')}&action=${action}` })),
     taskPaths: ['t1', 't/1'].map((taskId) => ({ taskId, path: `/?task=${encodeURIComponent(taskId)}` })),
+    // location-reminders D2: a crossing's notification offers Done (complete the task) and Dismiss.
+    locationActions: [
+      { id: 'g-arrive', action: 'done' }, { id: 'g-arrive', action: 'dismiss' }, { id: 'r 1/ü', action: 'done' },
+    ].map(({ id, action }) => ({ id, action, path: `/?reminder=${encodeURIComponent(id).replace(/%20/g, '+')}&action=${action}` })),
     quickAdd: { path: '/?add=' },
   }
 }
@@ -184,7 +264,7 @@ describe('Android bridge fixtures', () => {
 
   it('every address the shell opens is read back by the web app', () => {
     const a = actions()
-    for (const r of a.reminderActions) expect(shellUrlAction(new URL(r.path, 'https://x').search)).toEqual({ kind: 'reminder', id: r.id, action: r.action })
+    for (const r of [...a.reminderActions, ...a.locationActions]) expect(shellUrlAction(new URL(r.path, 'https://x').search)).toEqual({ kind: 'reminder', id: r.id, action: r.action })
     expect(shellUrlAction(new URL(a.quickAdd.path, 'https://x').search)).toEqual({ kind: 'add', text: '' })
   })
 })

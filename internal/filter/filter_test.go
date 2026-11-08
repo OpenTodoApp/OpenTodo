@@ -51,9 +51,15 @@ func TestFilterParserAcceptsDocsExamples(t *testing.T) {
 		"no origin & #Work", "origin: github & open", "!origin",
 		// Energy terms (task-energy).
 		"energy", "no energy", "energy: deep", "energy:LOW", `energy: "medium"`, "energy: low & unblocked & today", "energy: deep & #Work", `"energy" = 3`,
+		// Time sector terms (time-sectors).
+		"sector", "no sector", "carried", "sector: this week", "sector:next-month", `sector: "this quarter"`, "SECTOR: Next Quarter",
+		"sector: 2026-W44", "sector:2026-11", "sector: 2026-q4", "#Work & sector: this week", "carried | sector: this week", "!sector & open",
 		// Notes terms (notes-overview).
 		"notes", "no notes", "notes: permit", "notes:permit", `notes: "permit office"`, "NOTES: x", "notes & #Renovation", "no notes & p1",
 		"!notes", `"Notes" = 3`, `no "Notes"`, `notes: "a & b"`,
+		// Assignee terms (today-assigned-filter).
+		"assigned", "unassigned", "!assigned", "assigned: me", "assigned:me", `assigned: "Sam Lee"`, "ASSIGNED: sam",
+		"today & (assigned: me | unassigned)", `"assigned" = x`,
 		// Workspace terms (group-mentions).
 		"workspace: Home", "workspace:Home", `workspace:"Side projects"`, `workspace: "Side projects" & p1`, "WORKSPACE: work",
 		"(workspace: Home | workspace: Work) & due = this week", "!workspace: Home", "workspace: home & no project",
@@ -118,6 +124,11 @@ func TestFilterParserRejects(t *testing.T) {
 		"energy: high":       "Energy must be deep, medium or low at position 1",
 		"p1 & energy:":       "Energy must be deep, medium or low at position 6",
 		"energy = deep":      `Expected "&" or "|" before "=" at position 8`,
+		"sector: 2026-W60":   `Unknown time sector "2026-W60" at position 1; use this week, next week, this month, next month, this quarter, next quarter or a period such as 2026-W44`,
+		"p1 & sector: soon":  `Unknown time sector "soon" at position 6; use this week, next week, this month, next month, this quarter, next quarter or a period such as 2026-W44`,
+		"sector: this year":  `Unknown time sector "this year" at position 1; use this week, next week, this month, next month, this quarter, next quarter or a period such as 2026-W44`,
+		"assigned:":          `Expected a name after "assigned:" at position 1`,
+		"p1 & assigned: ":    `Expected a name after "assigned:" at position 6`,
 		"notes:":             `Expected text after "notes:" at position 1`,
 		"p1 & notes: ":       `Expected text after "notes:" at position 6`,
 		"notes: & p1":        `Expected text after "notes:" at position 1`,
@@ -166,7 +177,8 @@ func TestFilterParserRejects(t *testing.T) {
 // Tracked time terms (OpenSpec change time-tracking, design D9).
 func TestFilterTrackedTerms(t *testing.T) {
 	for _, q := range []string{"tracked", "!tracked & #Work", "tracked > 1h", "tracked <= 1h", "tracked >= 1h30", "tracked < 1.5h",
-		"tracked = 0", "tracked > 45min", "tracked > 90", "TRACKED > 30M", "tracked > 10", `"tracked" > 10`, "tracked & due <= today"} {
+		"tracked = 0", "tracked > 45min", "tracked > 90", "TRACKED > 30M", "tracked > 10", `"tracked" > 10`, "tracked & due <= today",
+		"tracked occurrence", "!tracked occurrence & p1", "tracked occurrence > 1h", "Tracked Occurrence <= 30m"} {
 		if err := Parse(q); err != nil {
 			t.Errorf("%q: %v", q, err)
 		}
@@ -177,6 +189,8 @@ func TestFilterTrackedTerms(t *testing.T) {
 		"tracked = 1h75": `Expected a duration such as 30m or 1h30 after "=" at position 11`,
 		"tracked > +30m": `Expected a duration such as 30m or 1h30 after ">" at position 11`,
 		"tracked today":  `Expected "&" or "|" before "today" at position 9`,
+		// tracked-time-api-compatible: the same message as web/src/lib/filter.
+		"tracked occurrence >": `Expected a duration such as 30m or 1h30 after ">" at position 20`,
 	} {
 		if err := Parse(q); err == nil || err.Error() != want {
 			t.Errorf("%q: got %v, want %q", q, err, want)

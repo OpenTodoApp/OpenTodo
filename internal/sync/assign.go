@@ -41,8 +41,35 @@ func (s *Service) emitAssignments(ctx context.Context, author string, at int64, 
 	if len(s.sinks) == 0 {
 		return
 	}
-	var actorName string
-	actorLoaded := false
+	// Series completed in this batch: a new occurrence record names them
+	// (chore-rotation D5), so their assignee change is a turn passing.
+	completed := map[string]bool{}
+	for _, c := range changes {
+		if fc, ok := c.Fields["series_id"]; ok && c.Entity == "task" {
+			if id := idValue(fc.To); id != "" {
+				completed[id] = true
+			}
+		}
+	}
+	s.emitAssigned(ctx, at, changes, func(c Change) (string, bool) { return author, completed[c.EntityID] })
+}
+
+// EmitHandOffs hands the assignment events of a committed departure (a member
+// who left, was removed or lost their group, a deleted account) to the sinks.
+// A departure sets an assignee only when it passes a rotating task's turn, so
+// every event is worded as a turn (rotation-handoff-notice D1). A change's
+// author is the actor of the departure, who is not told.
+func (s *Service) EmitHandOffs(ctx context.Context, changes []Change) {
+	if len(s.sinks) == 0 || len(changes) == 0 {
+		return
+	}
+	s.emitAssigned(ctx, s.now().UnixMilli(), changes, func(c Change) (string, bool) { return c.UserID, true })
+}
+
+// emitAssigned emits one event per task change that sets an assignee other
+// than its author; who gives a change's author and whether it passes a turn.
+func (s *Service) emitAssigned(ctx context.Context, at int64, changes []Change, who func(Change) (string, bool)) {
+	names := map[string]string{}
 	for _, c := range changes {
 		if c.Entity != "task" {
 			continue
@@ -51,15 +78,17 @@ func (s *Service) emitAssignments(ctx context.Context, author string, at int64, 
 		if !ok {
 			continue
 		}
+		author, turn := who(c)
 		assignee := idValue(fc.To)
 		if assignee == "" || assignee == author {
 			continue
 		}
-		if !actorLoaded {
+		actorName, loaded := names[author]
+		if !loaded {
 			actorName = s.userName(ctx, author)
-			actorLoaded = true
+			names[author] = actorName
 		}
-		e := notify.Assigned{AssigneeID: assignee, ActorID: author, ActorName: actorName, TaskID: c.EntityID, At: at}
+		e := notify.Assigned{AssigneeID: assignee, ActorID: author, ActorName: actorName, TaskID: c.EntityID, At: at, Turn: turn}
 		e.TaskTitle = s.stringField(ctx, c.ScopeID, "task", c.EntityID, "title")
 		e.ProjectID = idValue(json.RawMessage(s.rawField(ctx, c.ScopeID, "task", c.EntityID, "project_id")))
 		if e.ProjectID == "" {

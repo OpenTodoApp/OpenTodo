@@ -1,12 +1,12 @@
 # today-agenda Specification
 
 ## Purpose
-Lets a person see the day's events from their subscribed and synced calendars at the top of Today, behind an option that is off by default and follows them to every device, so one page gives the overall look at their day without opening the Calendar.
+Lets a person see the day's events from their subscribed and synced calendars at the top of Today, and on each day of Upcoming, behind an option that is off by default and follows them to every device, so one page gives the overall look at their day without opening the Calendar.
 
 ## Requirements
 
 ### Requirement: Calendar events option on Today
-Today's day-page menu SHALL offer "Show calendar events" and, while the option is on, "Hide calendar events" in its place, beside the briefing's item; on a phone the item SHALL be in the bar's overflow. The item SHALL be offered only while the device knows at least one subscribed calendar, the condition under which Day and Week offer their "Calendars" toggle; with calendar feeds off on the server, or no subscription, it SHALL not be offered. Upcoming SHALL not offer it. The option SHALL be off by default and SHALL be a synced preference of the account (`user_prefs.today_events`, "shown" or "hidden"), written as one operation locally first: it SHALL work offline, reach the account's other devices with sync and converge by last-writer-wins. An empty or unknown stored value SHALL read as off and SHALL not be rewritten.
+Today's day-page menu SHALL offer "Show calendar events" and, while the option is on, "Hide calendar events" in its place, beside the briefing's item; on a phone the item SHALL be in the bar's overflow. The item SHALL be offered only while the device knows at least one subscribed calendar, the condition under which Day and Week offer their "Calendars" toggle; with calendar feeds off on the server, or no subscription, it SHALL not be offered. Upcoming offers its own item, specified below. The option SHALL be off by default and SHALL be a synced preference of the account (`user_prefs.today_events`, "shown" or "hidden"), written as one operation locally first: it SHALL work offline, reach the account's other devices with sync and converge by last-writer-wins. An empty or unknown stored value SHALL read as off and SHALL not be rewritten.
 
 #### Scenario: Turn it on
 - **WHEN** the user has a subscribed calendar and chooses "Show calendar events" in Today's menu on the laptop
@@ -72,3 +72,37 @@ The agenda SHALL be a region named "Calendar events today". Each event SHALL be 
 #### Scenario: Screen reader
 - **WHEN** a screen reader reaches the free "Focus time" at "Room 2" of the calendar "Work"
 - **THEN** it reads the time and "Focus time", then "Room 2", "Work" and that the event is free
+
+### Requirement: Calendar events option on Upcoming
+Upcoming's page menu SHALL offer "Show calendar events" and, while the option is on, "Hide calendar events" in its place, beside "Show repeating occurrences". The item SHALL be offered only while the device knows at least one subscribed calendar; with calendar feeds off, or no subscription, it SHALL not be offered. The option SHALL be off by default and SHALL be a synced preference of the account (`user_prefs.upcoming_events`, "shown" or "hidden"), separate from Today's option, written as one operation locally first: it SHALL work offline, reach the account's other devices with sync and converge by last-writer-wins. An empty or unknown stored value SHALL read as off and SHALL not be rewritten.
+
+#### Scenario: Turn it on
+- **WHEN** the user has a subscribed calendar and chooses "Show calendar events" in Upcoming's menu
+- **THEN** the menu offers "Hide calendar events" from then on, and another device shows the events on Upcoming after sync
+
+#### Scenario: Unknown value
+- **WHEN** a newer client stores a value this version does not know in `upcoming_events`
+- **THEN** this version shows no events on Upcoming, offers "Show calendar events", and leaves the stored value unchanged
+
+### Requirement: Upcoming's agenda
+With the option on, each day Upcoming lists after today SHALL show that day's events from the user's enabled subscriptions above that day's tasks, in the same order and shape as Today's agenda: all-day and multi-day events as chips, then timed events in start order, each with the time range, the summary, the calendar's colour dot and the location when set. A day that has events and no tasks, and that falls after today and on or before the last day Upcoming lists, SHALL still have its heading and its events; Upcoming looks no further than 92 days ahead. Events SHALL be read-only: activating one opens the same details popover as Today, and nothing in the agenda moves, edits or completes an event. Events SHALL NOT count toward the day's task count. Upcoming's query filter and its duration filter SHALL NOT hide or change events. The per-device "Calendars" toggle SHALL hide the events, as it does on the calendar grid; events of a disabled subscription SHALL never show. Today's own groups, when Upcoming starts with Today, SHALL NOT gain this agenda; today's events stay Today's option. On a day without events, no agenda SHALL be shown. The agenda writes nothing. It SHALL be drawn from the device's cache, so it shows offline, and while the option is on Upcoming SHALL ask for a fresh copy of the days it covers when it opens, served from the cache while it is younger than 10 minutes. With the option off, Upcoming SHALL make no request. When the cached copy is stale, or the device is offline, and at least one event is shown, the list SHALL end with the calendar toolbar's line "Calendars as of <time>".
+
+#### Scenario: Thursday's meetings
+- **WHEN** the option is on, Thursday has the all-day "Conference" and a "Standup" at 09:00, and one task
+- **THEN** Thursday shows the "Conference" chip, then "Standup", then the task, and Thursday's count is the one task
+
+#### Scenario: A day of meetings only
+- **WHEN** Wednesday, between two days that have tasks, has a meeting and no task
+- **THEN** Upcoming shows Wednesday's heading and that meeting
+
+#### Scenario: The filter
+- **WHEN** Upcoming's filter matches none of Thursday's tasks and Thursday has a meeting
+- **THEN** Thursday still shows the meeting and does not show the tasks
+
+#### Scenario: Calendars hidden on this device
+- **WHEN** the option is on and the user turned the "Calendars" toggle off on this device
+- **THEN** Upcoming shows no events
+
+#### Scenario: Offline
+- **WHEN** the device is offline and the events were cached at 07:40
+- **THEN** Upcoming shows the cached events and the list ends with "Calendars as of 07:40"

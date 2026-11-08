@@ -8,6 +8,7 @@ import { type KeyboardEvent, type Ref, useEffect, useImperativeHandle, useMemo, 
 import { logicalToday } from '../lib/dates'
 import { dismissChip, type Chip, type LabelRef, loadQuickAddSettings, onQuickAddSettingsChange, type ProjectRef, rebaseDismissed, resolveDayMonthOrder, resolveLanguages, type Span } from '../lib/nlp'
 import { editPlan, parseEdit, type EditPlan } from '../lib/nlp/edit'
+import { composingEnter } from '../lib/composeKey'
 import { preferredLanguages } from '../lib/i18n'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { dayPartsOn } from '../lib/dayParts'
@@ -29,7 +30,7 @@ export interface TitleFieldProps {
   projects: readonly ProjectRef[]
   labels: readonly LabelRef[]
   readOnly?: boolean
-  /** A two-line textarea (the panel header) or a one-line input (the inline editor). */
+  /** A growing textarea (the panel and the page) or a one-line input (the inline editor). */
   multiline?: boolean
   className?: string
   placeholder?: string
@@ -99,6 +100,7 @@ export function TitleField({ title, value, onChange, onCommit, onCancel, project
   }, [])
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (composingEnter(e)) return
     if (suggest.onKeyDown(e)) return
     if (onKeyDownFirst?.(e)) return
     if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur() }
@@ -118,7 +120,8 @@ export function TitleField({ title, value, onChange, onCommit, onCancel, project
     ...dataAttrs,
     onChange: (e: { target: { value: string } }) => change(e.target.value),
     onFocus: () => { base.current = title; setDismissed([]); setFocused(true); suggest.fieldProps.onFocus() },
-    onBlur: () => { suggest.fieldProps.onBlur(); setFocused(false); commit() },
+    // A long title scrolled to its end while edited shows its start again once left.
+    onBlur: () => { suggest.fieldProps.onBlur(); setFocused(false); commit(); if (multiline && input.current) input.current.scrollTop = 0 },
     onKeyDown,
   }
   return (

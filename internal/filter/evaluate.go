@@ -8,6 +8,7 @@ import (
 
 	"github.com/OpenTodoApp/opentodo/internal/daypart"
 	"github.com/OpenTodoApp/opentodo/internal/flow"
+	"github.com/OpenTodoApp/opentodo/internal/sector"
 )
 
 // The filter evaluator on the server (OpenSpec change routines-engine,
@@ -27,8 +28,10 @@ const (
 	KindKeyword   = "keyword"
 	KindSearch    = "search"
 	KindNotes     = "notes"
+	KindAssigned  = "assigned"
 	KindOrigin    = "origin"
 	KindEnergy    = "energy"
+	KindSector    = "sector"
 	KindWorkspace = "workspace"
 	KindField     = "field"
 	KindNoField   = "nofield"
@@ -51,6 +54,9 @@ type Node struct {
 	Text    string
 	Value   FieldValue
 	Minutes int
+	// Occurrence is set on a `tracked occurrence` term: a repeating task's
+	// current occurrence instead of all its entries.
+	Occurrence bool
 }
 
 // DateExpr is a date of the grammar: iso, relative (days from today), weekday
@@ -87,8 +93,28 @@ type Context struct {
 	// Live labels, projects, sections and custom field definitions, and every
 	// task (for blocked and available).
 	Labels, Projects, Sections, Fields, Tasks []Row
-	// Tracked is the minutes tracked per task.
-	Tracked map[string]int
+	// Tracked is the minutes tracked per task, every entry (the `tracked` terms).
+	// TrackedOccurrence counts a repeating task's current occurrence only (the
+	// `tracked occurrence` terms); without it they read Tracked.
+	Tracked, TrackedOccurrence map[string]int
+	// Me is the viewer. Members name the people `assigned:` can match.
+	Me      string
+	Members []Member
+}
+
+// tracked is the map a tracked term reads.
+func (c Context) tracked(occurrence bool) map[string]int {
+	if occurrence && c.TrackedOccurrence != nil {
+		return c.TrackedOccurrence
+	}
+	return c.Tracked
+}
+
+// Member is one person an assignee term can name.
+type Member struct {
+	UserID string `json:"userId"`
+	Name   string `json:"name"`
+	Email  string `json:"email"`
 }
 
 func str(r Row, f string) string {
@@ -344,18 +370,27 @@ func (k *compiler) build(n *Node) (Pred, error) {
 	case KindNotes:
 		needle := lowerText(n.Text)
 		return func(t Row) bool { return strings.Contains(lowerText(str(t, "description")), needle) }, nil
+	case KindAssigned:
+		return k.assignedTo(n.Text), nil
 	case KindOrigin:
 		want := lowerText(n.Text)
 		return func(t Row) bool { ok, key := originOf(t); return ok && lowerText(key) == want }, nil
 	case KindEnergy:
 		want := n.Text
 		return func(t Row) bool { return energyOf(t) == want }, nil
+	case KindSector:
+		// A relative word means the viewer's period of that name (time-sectors).
+		want := n.Text
+		if p := sector.Resolve(want, k.c.Today, k.c.WeekStart); p != "" {
+			want = p
+		}
+		return func(t Row) bool { return str(t, "sector") == want }, nil
 	case KindWorkspace:
 		k.warn(`No workspace named "` + n.Name + `"`)
 		return never, nil
 	case KindTracked:
-		op, want := n.Op, n.Minutes
-		return func(t Row) bool { return cmpInt(k.c.Tracked[str(t, "id")], op, want) }, nil
+		op, want, m := n.Op, n.Minutes, k.c.tracked(n.Occurrence)
+		return func(t Row) bool { return cmpInt(m[str(t, "id")], op, want) }, nil
 	case KindKeyword:
 		return k.keyword(n.Keyword), nil
 	}
@@ -709,6 +744,28 @@ func (k *compiler) available(t Row) bool {
 	return k.flow.Available(str(t, "id"))
 }
 
+// assignedTo matches the viewer (`me`) or every member whose name or email equals name.
+func (k *compiler) assignedTo(name string) Pred {
+	if strings.EqualFold(name, "me") {
+		me := k.c.Me
+		if me == "" {
+			return never
+		}
+		return func(t Row) bool { return str(t, "assignee_id") == me }
+	}
+	set := map[string]bool{}
+	for _, m := range k.c.Members {
+		if strings.EqualFold(m.Name, name) || strings.EqualFold(m.Email, name) {
+			set[m.UserID] = true
+		}
+	}
+	if len(set) == 0 {
+		k.warn(`No member named "` + name + `"`)
+		return never
+	}
+	return func(t Row) bool { return set[str(t, "assignee_id")] }
+}
+
 func (k *compiler) keyword(w string) Pred {
 	today, c := k.c.Today, k.c
 	due := func(t Row) string { d, _ := dueOf(t, c.Zone); return d }
@@ -752,16 +809,27 @@ func (k *compiler) keyword(w string) Pred {
 		return func(t Row) bool { ok, _ := originOf(t); return ok }
 	case "no origin":
 		return func(t Row) bool { ok, _ := originOf(t); return !ok }
+	case "sector":
+		return func(t Row) bool { return sector.Valid(str(t, "sector")) }
+	case "no sector":
+		return func(t Row) bool { return !sector.Valid(str(t, "sector")) }
+	case "carried":
+		return func(t Row) bool { return sector.Carried(str(t, "sector"), c.Today, c.WeekStart) }
 	case "energy":
 		return func(t Row) bool { return energyOf(t) != "" }
 	case "no energy":
 		return func(t Row) bool { return energyOf(t) == "" }
+	case "assigned":
+		return func(t Row) bool { return str(t, "assignee_id") != "" }
+	case "unassigned":
+		return func(t Row) bool { return str(t, "assignee_id") == "" }
 	case "notes":
 		return func(t Row) bool { return desc(t) != "" }
 	case "no notes":
 		return func(t Row) bool { return desc(t) == "" }
-	case "tracked":
-		return func(t Row) bool { return c.Tracked[str(t, "id")] >= 1 }
+	case "tracked", "tracked occurrence":
+		m := c.tracked(w == "tracked occurrence")
+		return func(t Row) bool { return m[str(t, "id")] >= 1 }
 	case "blocked":
 		return k.isBlocked
 	case "unblocked":

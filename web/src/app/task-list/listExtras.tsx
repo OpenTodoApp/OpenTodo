@@ -1,7 +1,7 @@
 // What calendar-clarity adds to the task list page: Colour by on a project's board
 // (the card edge and the project menu's choice), Upcoming's query filter (its header
 // control and dialog), and a project's Calendar layout, loaded when first shown.
-import { useState, type ReactNode } from 'react'
+import { lazy, Suspense, useState, type ReactNode } from 'react'
 import { BOARD_COLOR_BY_KEY } from '../../lib/colorBy'
 import { t } from '../../lib/i18n'
 import type { Project, Task } from '../../lib/types'
@@ -12,10 +12,12 @@ import type { ActionGroup } from '../menus/ActionMenu'
 import { COMPACT_LAYOUT_QUERY, layoutGroup, type QueryFilterControl } from './ListChrome'
 import type { ProjectViewMode } from '../../lib/sections'
 import { useMediaQuery } from '../../ui'
-import ProjectCalendar from '../calendar/ProjectCalendar'
 import { useProjectPrefsRow } from '../../lib/liveData'
 import { mutate } from '../../lib/ops'
 import { act } from '../actionError'
+
+// A project's Calendar layout draws CalendarView: its chunk loads with the layout, not the first screen.
+const ProjectCalendar = lazy(() => import('../calendar/ProjectCalendar'))
 
 
 export interface ListExtras {
@@ -58,5 +60,5 @@ export function useListExtras(board: boolean, filter: QueryFilter | null, layout
 
 /** A project's Calendar layout in place of its list. */
 export function ProjectCalendarLayout(props: { project: Project; userId?: string; layout: ReactNode; onCycle: () => void; onChoose: (m: ProjectViewMode) => void }) {
-  return <ProjectCalendar {...props} />
+  return <Suspense fallback={null}><ProjectCalendar {...props} /></Suspense>
 }

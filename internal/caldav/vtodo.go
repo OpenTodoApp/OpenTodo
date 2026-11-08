@@ -3,13 +3,13 @@ package caldav
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"slices"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/recurrence"
+	"github.com/OpenTodoApp/opentodo/internal/sector"
 	"github.com/OpenTodoApp/opentodo/internal/zoned"
 )
 
@@ -56,7 +56,10 @@ type Task struct {
 	DayPart string
 	// Energy is "deep", "medium" or "low" (OpenSpec change task-energy),
 	// served as X-OPENTODO-ENERGY; empty serves nothing.
-	Energy     string
+	Energy string
+	// Sector is the time sector (OpenSpec change time-sectors), served as
+	// X-OPENTODO-SECTOR; empty serves nothing.
+	Sector     string
 	Categories []string
 	ParentUID  string
 	// DependsOn are the UIDs of the task's blockers in the same calendar
@@ -133,6 +136,10 @@ type Inbound struct {
 	// which leaves the field alone.
 	Start   *string
 	Evening *bool
+	// Sector comes from X-OPENTODO-SECTOR (time-sectors): a valid period, else
+	// nil, which leaves the sector alone (a client without the property never
+	// clears it).
+	Sector *string
 	// Span comes from X-OPENTODO-SPAN (multi-day-tasks D7): TRUE or FALSE;
 	// nil when the client did not send a known value.
 	Span *bool
@@ -217,10 +224,41 @@ func dueProp(name string, d *Due) Prop {
 	switch {
 	case d.Time == nil:
 		return Prop{Name: name, Params: []Param{{Name: "VALUE", Values: []string{"DATE"}}}, Value: dateValue(d.Date)}
+	case isUTC(d):
+		return Prop{Name: name, Value: dateValue(d.Date) + "T" + clockValue(*d.Time) + "Z"}
 	case d.TZ != nil:
 		return Prop{Name: name, Params: []Param{{Name: "TZID", Values: []string{*d.TZ}}}, Value: dateValue(d.Date) + "T" + clockValue(*d.Time)}
 	}
 	return Prop{Name: name, Value: dateValue(d.Date) + "T" + clockValue(*d.Time)}
+}
+
+// isUTC reports a due time in UTC, written as a UTC date-time (`…Z`).
+func isUTC(d *Due) bool { return d.Time != nil && d.TZ != nil && *d.TZ == "UTC" }
+
+// servedDue is the due a VTODO carries (issue #1028). A zoned due time on a
+// task that does not repeat is one instant: it is served as that instant in
+// UTC (RFC 5545 §3.3.5, form #2), which every client reads without a
+// VTIMEZONE; Apple Reminders showed a TZID time with this server's time zone
+// definition in a "GMT" zone of its own, an hour off in summer. A repeating
+// task keeps its TZID, since its occurrences follow the zone's daylight saving
+// time (§3.8.5.3). Reading back, Inbound.KeepZone puts the UTC time in the
+// task's zone again.
+func servedDue(t Task) *Due {
+	d := t.Due
+	if d == nil || d.Time == nil || d.TZ == nil || t.Recurrence != "" || isUTC(d) {
+		return d
+	}
+	loc, err := zoned.Load(*d.TZ)
+	if err != nil {
+		return d
+	}
+	at, err := zoned.Instant(d.Date, *d.Time, loc)
+	if err != nil {
+		return d
+	}
+	date, clock := zoned.Local(at, time.UTC)
+	utc := "UTC"
+	return &Due{Date: date, Time: &clock, TZ: &utc}
 }
 
 // Encode renders a task as a complete VCALENDAR object.
@@ -230,8 +268,10 @@ func Encode(t Task) []byte {
 		{Name: "PRODID", Value: ProdID},
 		{Name: "CALSCALE", Value: "GREGORIAN"},
 	}}
-	if t.Due != nil && t.Due.TZ != nil && t.Due.Time != nil {
-		if tz := vtimezone(*t.Due.TZ, t.Due.Date, *t.Due.Time); tz != nil {
+	due := servedDue(t)
+	// The zone's definition precedes the VTODO that names it.
+	if due != nil && due.TZ != nil && due.Time != nil && !isUTC(due) {
+		if tz := vtimezone(*due.TZ, due.Date, *due.Time); tz != nil {
 			cal.Children = append(cal.Children, tz)
 		}
 	}
@@ -256,23 +296,23 @@ func Encode(t Task) []byte {
 		// With a deadline, DUE is the deadline (a date) and DTSTART the planned
 		// day (OpenSpec change deadlines, design D6).
 		todo.Props = append(todo.Props, Prop{Name: "DUE", Params: []Param{{Name: "VALUE", Values: []string{"DATE"}}}, Value: dateValue(t.Deadline)})
-		if t.Due != nil {
-			todo.Props = append(todo.Props, dueProp("DTSTART", t.Due))
+		if due != nil {
+			todo.Props = append(todo.Props, dueProp("DTSTART", due))
 			extra = dropTopLevel(extra, "DTSTART")
 		}
-	} else if t.Due != nil {
-		todo.Props = append(todo.Props, dueProp("DUE", t.Due))
+	} else if due != nil {
+		todo.Props = append(todo.Props, dueProp("DUE", due))
 		switch {
-		case t.Due.Time != nil:
+		case due.Time != nil:
 			// A due time is a scheduled moment: clients that schedule by DTSTART
 			// (Mitra, issue #248) only see it as such with DTSTART = DUE. The
 			// server's own start replaces any copy a client echoed into the remainder.
-			todo.Props = append(todo.Props, dueProp("DTSTART", t.Due))
+			todo.Props = append(todo.Props, dueProp("DTSTART", due))
 			extra = dropTopLevel(extra, "DTSTART")
 		case t.Recurrence != "" && !hasTopLevel(extra, "DTSTART"):
 			// A recurring VTODO is anchored at DTSTART; restate the due date unless
 			// the client keeps its own DTSTART in the preserved remainder.
-			todo.Props = append(todo.Props, dueProp("DTSTART", t.Due))
+			todo.Props = append(todo.Props, dueProp("DTSTART", due))
 		}
 	}
 	if t.Recurrence != "" {
@@ -283,8 +323,8 @@ func Encode(t Task) []byte {
 		// EXDATE stays client data only beside a rule the server does not map.
 		extra = dropTopLevel(extra, "EXDATE")
 	}
-	if len(t.ExDates) > 0 && t.Due != nil {
-		todo.Props = append(todo.Props, exdateProp(t.Due, t.ExDates))
+	if len(t.ExDates) > 0 && due != nil {
+		todo.Props = append(todo.Props, exdateProp(due, t.ExDates))
 	}
 	if t.EstimateMinutes > 0 {
 		add("ESTIMATED-DURATION", DurationText(t.EstimateMinutes))
@@ -305,6 +345,9 @@ func Encode(t Task) []byte {
 	}
 	if t.Span {
 		add("X-OPENTODO-SPAN", "TRUE")
+	}
+	if sector.Valid(t.Sector) {
+		add("X-OPENTODO-SECTOR", t.Sector)
 	}
 	if t.Evening {
 		add("X-OPENTODO-EVENING", "TRUE")
@@ -429,61 +472,3 @@ func lineName(l string) string {
 	}
 	return strings.ToUpper(l[:i])
 }
-
-// vtimezone describes a zone around the given wall time: the observance in force
-// at the start of that year plus every transition within it, which is enough
-// for any client to resolve the due time. Clients that know the IANA name (all
-// target clients do) use their own rules.
-func vtimezone(tz, date, clock string) *Component {
-	loc, err := zoned.Load(tz)
-	if err != nil {
-		return nil
-	}
-	at, err := zoned.Instant(date, clock, loc)
-	if err != nil {
-		return nil
-	}
-	year := at.Year()
-	start := time.Date(year, 1, 1, 0, 0, 0, 0, loc)
-	end := time.Date(year+1, 1, 1, 0, 0, 0, 0, loc)
-	c := &Component{Name: "VTIMEZONE", Props: []Prop{{Name: "TZID", Value: tz}}}
-	observance := func(t time.Time, from int, dtstart string) {
-		name, off := t.Zone()
-		kind := "STANDARD"
-		if t.IsDST() {
-			kind = "DAYLIGHT"
-		}
-		c.Children = append(c.Children, &Component{Name: kind, Props: []Prop{
-			{Name: "DTSTART", Value: dtstart},
-			{Name: "TZOFFSETFROM", Value: offsetText(from)},
-			{Name: "TZOFFSETTO", Value: offsetText(off)},
-			{Name: "TZNAME", Value: EscapeText(name)},
-		}})
-	}
-	_, off0 := start.Zone()
-	observance(start, off0, "19700101T000000")
-	t := start
-	for i := 0; i < 8; i++ {
-		_, next := t.ZoneBounds()
-		if next.IsZero() || !next.Before(end) {
-			break
-		}
-		_, before := next.Add(-time.Second).Zone()
-		wall := next.In(time.FixedZone("", before))
-		observance(next, before, wall.Format("20060102T150405"))
-		t = next
-	}
-	return c
-}
-
-func offsetText(sec int) string {
-	sign := '+'
-	if sec < 0 {
-		sign, sec = '-', -sec
-	}
-	return fmt.Sprintf("%c%02d%02d", sign, sec/3600, (sec%3600)/60)
-}
-
-// VTimezone is the VTIMEZONE for an IANA zone around a date and time (shared
-// with the task feed, OpenSpec change calendar-feeds); nil for an unknown zone.
-func VTimezone(tz, date, clock string) *Component { return vtimezone(tz, date, clock) }

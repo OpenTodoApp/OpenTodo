@@ -16,6 +16,7 @@ import (
 type fakeRelay struct {
 	calls []relay.Op
 	asked [][]relay.Item
+	about []relay.Call
 	err   error
 }
 
@@ -27,8 +28,9 @@ func fakeSeal(entity, id, field, plain string) string {
 	return "enc:v1:" + base64.RawURLEncoding.EncodeToString([]byte(s))
 }
 
-func (f *fakeRelay) Do(_ context.Context, op relay.Op, items []relay.Item, _ relay.Call) ([]relay.Result, error) {
+func (f *fakeRelay) Do(_ context.Context, op relay.Op, items []relay.Item, call relay.Call) ([]relay.Result, error) {
 	f.calls = append(f.calls, op)
+	f.about = append(f.about, call)
 	f.asked = append(f.asked, items)
 	if f.err != nil {
 		return nil, f.err

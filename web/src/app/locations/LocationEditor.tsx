@@ -1,12 +1,13 @@
 // The task panel's location editor (OpenSpec change task-locations, "Setting a
-// location"): one field that finds saved places and, with maps on, addresses as
-// you type, and reads typed coordinates; "Use my location"; picking a point on a
-// map; "Save as a place"; and "Open in maps". Every choice is one undoable edit
-// of the task's whole location value.
+// location"): one field that keeps a typed name even when it is not an address,
+// finds saved places and, with maps on, addresses as you type, and reads typed
+// coordinates; "Use my location"; picking a point on a map; "Save as a place";
+// and "Open in maps". Every choice is one undoable edit of the task's whole
+// location value.
 import { useCallback, useMemo, useState } from 'react'
 import { isNetworkError, type MapResult } from '../../lib/api'
 import {
-  createPlace, formatCoordinates, isPhone, locationFromPlace, locationLabel, makeLocation, openInMapsHref, parseCoordinates,
+  createPlace, formatCoordinates, isPhone, locationFromPlace, locationLabel, makeLocation, MAX_NAME, openInMapsHref, parseCoordinates,
   reverseAddress, searchAddress, setTaskLocation, shownLocation, useLivePlaces, useMapsOn, usePlaceRows, type ShownLocation,
 } from '../../lib/locations'
 import type { Geo, Place, Task, TaskLocation } from '../../lib/types'
@@ -32,6 +33,14 @@ type Item =
   | { kind: 'place'; key: string; label: string; secondary: string; place: Place }
   | { kind: 'result'; key: string; label: string; secondary: string; result: MapResult }
   | { kind: 'coords'; key: string; label: string; secondary: string; geo: Geo }
+  | { kind: 'text'; key: string; label: string; secondary: string; name: string }
+
+/** The typed text as a location name. Null for a blank or for coordinates, which are their own choice. */
+function nameItem(q: string): Item | null {
+  const name = q.trim().slice(0, MAX_NAME)
+  if (!name || parseCoordinates(q)) return null
+  return { kind: 'text', key: 'text', label: t('Use “{name}”', { name }), secondary: t('Not a place on the map'), name }
+}
 
 const offline = () => typeof navigator !== 'undefined' && navigator.onLine === false
 
@@ -63,13 +72,16 @@ export function LocationEditor({ task, onClose }: { task: Task; onClose: () => v
     kind: 'place', key: `place:${p.id}`, label: p.name || t('Untitled location'), secondary: p.address, place: p,
   })), [places])
 
-  // Saved places are matched as typed; addresses come from the geocoder (never text
-  // matched, as it understands more than the words) and typed coordinates are a
-  // choice of their own. Both go first, in `prefix`.
+  // A typed name is offered first, so Enter keeps it even when search is slow or
+  // finds nothing. Saved places are matched as typed; addresses come from the
+  // geocoder (never text matched) and coordinates replace the name. All of those
+  // go in `prefix`, the name ahead of any address.
   const source = useCallback<AsyncSource<Item>>(async (q, signal) => {
     const coords = parseCoordinates(q)
-    const coordItems: Item[] = coords ? [{ kind: 'coords', key: 'coords', label: t('Use {coords}', { coords: formatCoordinates(coords.lat, coords.lon) }), secondary: t('Coordinates'), geo: coords }] : []
-    setPrefix(coordItems)
+    const head: Item[] = coords
+      ? [{ kind: 'coords', key: 'coords', label: t('Use {coords}', { coords: formatCoordinates(coords.lat, coords.lon) }), secondary: t('Coordinates'), geo: coords }]
+      : [nameItem(q)].filter((item): item is Item => item !== null)
+    setPrefix(head)
     setMessage('')
     if (!coords && q.trim().length >= 3 && mapsOn) {
       if (offline()) setMessage(t('Address search needs a connection.'))
@@ -79,7 +91,8 @@ export function LocationEditor({ task, onClose }: { task: Task; onClose: () => v
           if (signal.aborted) return { items: placeItems }
           const results = await searchAddress(q.trim())
           if (!signal.aborted) {
-            setPrefix(results.map((r, i) => ({ kind: 'result', key: `result:${i}:${r.lat},${r.lon}`, label: r.name || r.address, secondary: r.name ? r.address : '', result: r })))
+            const found: Item[] = results.map((r, i) => ({ kind: 'result', key: `result:${i}:${r.lat},${r.lon}`, label: r.name || r.address, secondary: r.name ? r.address : '', result: r }))
+            setPrefix([...head, ...found])
           }
         } catch (err) {
           if (!signal.aborted) setMessage(isNetworkError(err) ? t('Address search needs a connection.') : t('Address search is not available right now.'))
@@ -94,6 +107,7 @@ export function LocationEditor({ task, onClose }: { task: Task; onClose: () => v
   const pick = async (item: Item) => {
     if (item.kind === 'place') write(locationFromPlace(item.place))
     else if (item.kind === 'result') write(makeLocation(item.result))
+    else if (item.kind === 'text') write(makeLocation({ name: item.name }))
     else write(makeLocation({ lat: item.geo.lat, lon: item.geo.lon }))
   }
 
@@ -161,11 +175,11 @@ export function LocationEditor({ task, onClose }: { task: Task; onClose: () => v
       )}
       <div className="space-y-1">
         <ComboboxPanel<Item> label={t('Location')}
-          placeholder={mapsOn ? t('Search an address, a saved location or coordinates') : t('Find a saved location or type coordinates')}
+          placeholder={mapsOn ? t('A name, an address, a saved location or coordinates') : t('A name, a saved location or coordinates')}
           source={source} prefix={prefix} getKey={(i) => i.key} getLabel={(i) => i.label} getSecondary={(i) => i.secondary || undefined}
           getGroup={(i) => (i.kind === 'place' ? t('Saved locations') : i.kind === 'result' ? t('Addresses') : undefined)}
-          renderLeading={(i) => <Icon name={i.kind === 'place' ? 'pin' : i.kind === 'coords' ? 'locate-fixed' : 'map-pin'} size="sm" className="text-faint" />}
-          emptyText={mapsOn ? t('Type an address, a saved location or coordinates such as 45.4642, 9.19.') : t('No saved location matches. Type coordinates such as 45.4642, 9.19.')}
+          renderLeading={(i) => <Icon name={i.kind === 'place' ? 'pin' : i.kind === 'coords' ? 'locate-fixed' : i.kind === 'text' ? 'tag' : 'map-pin'} size="sm" className="text-faint" />}
+          emptyText={mapsOn ? t('Type a name, an address, a saved location or coordinates such as 45.4642, 9.19.') : t('Type a name, a saved location or coordinates such as 45.4642, 9.19.')}
           onPick={pick} onClose={onClose} />
         {mapsOn && <p className="text-meta text-faint" data-privacy-line>{t('What you type here is sent to the map provider through this server.')}</p>}
         {message && <p role="status" className="text-meta text-danger" data-location-message>{message}</p>}

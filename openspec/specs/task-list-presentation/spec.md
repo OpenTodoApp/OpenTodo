@@ -6,7 +6,7 @@ Defines how a task reads in every list and board: one row anatomy, one metadata 
 ## Requirements
 
 ### Requirement: One row anatomy
-Every task list (Inbox, Today, Upcoming, Anytime, Someday, Assigned, Completed, projects, labels, filters, saved filters, dashboards, Trash, Next, Waiting, the review screens, Close the day) SHALL render tasks with the same row: a fixed 24 px leading slot (collapse chevron only when the task has children, otherwise empty), the checkbox, the time column (see "Time column"), the title with its marks beside it (the repeat mark and the counts: subtask progress, the notes marker, comments, attachments), the properties (see "Metadata language"), and a trailing group at the end of the row holding the origin. The layout SHALL follow the width of the row itself, not of the screen. The title SHALL use the width the row leaves it, wrap onto a second line when it is longer, and end with an ellipsis after two lines; on a very wide row it SHALL wrap at a readable measure of about 100 characters (48 rem). While the title is cut, a pointer resting on it SHALL show the whole title in a tooltip; the open control is named by the whole title at all times, and the task panel shows it in full. No room SHALL be kept at the row's end for controls that only appear on hover or focus. From 40 rem of row width a row SHALL be one line, or two while its title wraps: the title on the left and the properties in a right-hand column of fixed cells, in this order: the date, the project when the list shows projects, one cell holding the labels, else the deadline, else the subtask progress, the estimate, and the assignee; every row of a list SHALL use the same cell widths, so each property lines up down the list, and an empty cell keeps its width. As the row narrows the column SHALL drop cells from its end: under 56 rem the estimate and the assignee, and under 48 rem the third cell when the list shows projects; the task panel shows every property. Facts the column does not hold (the start, the deadline when the labels take its cell, blocked, the habit streak, field values, a parent's name, the sample mark) SHALL take a second line only when there are any. Under 40 rem of row width the properties and those facts SHALL form one metadata line under the title, except on a screen narrower than 768 px: there the row SHALL be one line at least 44 px tall, with the title at 14.5 px on one line ending with an ellipsis and one cell at its end, which is the date, else the deadline when it holds the third cell, else the assignee's avatar, else the project's colour dot; the project's and the assignee's names SHALL stay in the accessible text, and the other properties, the second line of facts and the counts SHALL be left to the task page. The checkbox SHALL sit at the same horizontal position in every flat view and at the same position plus indentation in tree views; within one list every title SHALL start at the same horizontal position. The counts SHALL be in the page and read by assistive technology at all times, at the faint text colour (still meeting text contrast) until the pointer is over the row or focus is inside it, then at the muted colour; they are not a control and SHALL NOT add a touch or tab target.
+Every task list (Inbox, Today, Upcoming, Anytime, Someday, Assigned, Completed, projects, labels, filters, saved filters, dashboards, Trash, Next, Waiting, the review screens, Close the day) SHALL render tasks with the same row: a fixed 24 px leading slot (collapse chevron only when the task has children, otherwise empty), the checkbox, the time column (see "Time column"), the title with its marks beside it (the repeat mark and the counts: subtask progress, the notes marker, comments, attachments), the properties (see "Metadata language"), and a trailing group at the end of the row holding the origin. From 40 rem of row width the trailing group SHALL be one fixed width on every row of a list, with an origin or empty, so the right-hand column ends at the same place on every row whatever a row ends with; an origin longer than the group ends with an ellipsis, its whole text in its accessible name and the task's details. The layout SHALL follow the width of the row itself, not of the screen. The title SHALL use the width the row leaves it, wrap onto a second line when it is longer, and end with an ellipsis after two lines; on a very wide row it SHALL wrap at a readable measure of about 100 characters (48 rem). While the title is cut, a pointer resting on it SHALL show the whole title in a tooltip; the open control is named by the whole title at all times, and the task panel shows it in full. No room SHALL be kept at the row's end for controls that only appear on hover or focus. From 40 rem of row width a row SHALL be one line, or two while its title wraps: the title on the left and the properties in a right-hand column of fixed cells, in this order: the date, the project when the list shows projects, one cell holding the labels, else the deadline, else the subtask progress, the estimate, and the assignee; every row of a list SHALL use the same cell widths, so each property lines up down the list, and an empty cell keeps its width. As the row narrows the column SHALL drop cells from its end: under 56 rem the estimate and the assignee, and under 48 rem the third cell when the list shows projects; the task panel shows every property. Facts the column does not hold (the start, the deadline when the labels take its cell, blocked, the habit streak, field values, a parent's name, the sample mark) SHALL take a second line only when there are any. Under 40 rem of row width the properties and those facts SHALL form one metadata line under the title, except on a screen narrower than 768 px: there the row SHALL be one line at least 44 px tall, with the title at 14.5 px on one line ending with an ellipsis and one cell at its end, which is the date, else the deadline when it holds the third cell, else the assignee's avatar, else the project's colour dot; the project's and the assignee's names SHALL stay in the accessible text, and the other properties, the second line of facts and the counts SHALL be left to the task page. The checkbox SHALL sit at the same horizontal position in every flat view and at the same position plus indentation in tree views; within one list every title SHALL start at the same horizontal position. The counts SHALL be in the page and read by assistive technology at all times, at the faint text colour (still meeting text contrast) until the pointer is over the row or focus is inside it, then at the muted colour; they are not a control and SHALL NOT add a touch or tab target.
 
 #### Scenario: Same alignment across views
 - **WHEN** the user moves between Today, the Inbox and a project without sections
@@ -56,8 +56,12 @@ Every task list (Inbox, Today, Upcoming, Anytime, Someday, Assigned, Completed, 
 - **WHEN** a list row 60 rem wide holds a task due tomorrow whose title takes two lines
 - **THEN** "Tomorrow" stands in the date cell on the title's first line, aligned with the dates of the one-line rows
 
+#### Scenario: Columns line up with and without an origin
+- **WHEN** a project list at 1280 or 768 px holds tasks imported from Todoist, a task from a GitHub issue, a task captured from a page, a Trello card and a task without an origin, each with a date and a label
+- **THEN** every row's date cell starts at the same horizontal position and so does every row's label cell, and at 390 px every row's date ends at the same position
+
 ### Requirement: Metadata language
-Row metadata SHALL be one language in every list and on every card. A list row's properties SHALL be at the metadata size in the muted text colour: in the right-hand column of a one-line row, each in its cell (the date, the estimate and the subtask progress with their icons, the assignee as an avatar named in its tooltip and for assistive technology), and in a narrower row one run of text under the title, its items separated by a middle dot, in this order: the date words with evening as a suffix, the project, the labels or the deadline or the subtask progress, the estimate (`1h`, or `35m / 1h` once time was tracked, or `35m` alone without an estimate), the assignee, then the parent's name, the deadline countdown with its hourglass icon when the time column and the third cell do not already hold it, the start ("Starts 3 Nov", "Started 1 Nov", "Someday"), blocked ("Blocked by 2" with its lock icon), the habit streak with its flame icon, and up to three custom field values and "+n" for the rest. The repeat mark SHALL be the repeat icon beside the title, read as "repeats" (an occurrence: "occurrence"). A card's line SHALL keep one run in the order of the date words, the repeat word with its icon, the deadline, the start, the estimate, blocked, the streak, the field values, the assignee and the project. The origin (the icon for its kind and the external id, else the URL's host; a link opening in a new tab without passing the referrer when it has a URL, never opening the task) SHALL be in the row's trailing group and at the end of a card, except on the Inbox's top-level rows, whose source line names it instead (see `inbox-triage` "Inbox source lines"). Labels SHALL be chips: each a small chip with the label's colour as a dot and its name, at most two shown, then "+n"; the full names in order SHALL be read by assistive technology, shown in a tooltip while the pointer is over the group or it has keyboard focus, and in the task panel. No other item of a row SHALL have a pill background. Counts SHALL use tabular figures, not a monospace face.
+Row metadata SHALL be one language in every list and on every card. A list row's properties SHALL be at the metadata size in the muted text colour: in the right-hand column of a one-line row, each in its cell (the date, the estimate and the subtask progress with their icons, the assignee as an avatar named in its tooltip and for assistive technology), and in a narrower row one run of text under the title, its items separated by a middle dot, in this order: the date words with evening as a suffix, the project, the labels or the deadline or the subtask progress, the estimate (`1h`, or `35m / 1h` once time was tracked, or `35m` alone without an estimate), the assignee, then the parent's name, the deadline countdown with its hourglass icon when the time column and the third cell do not already hold it, the start ("Starts 3 Nov", "Started 1 Nov", "Someday"), blocked ("Blocked by 2" with its lock icon), the habit streak with its flame icon, and up to three custom field values and "+n" for the rest. The repeat mark SHALL be the repeat icon beside the title, read as "repeats" (an occurrence: "occurrence"). A card's line SHALL keep one run in the order of the date words, the repeat word with its icon, the deadline, the start, the estimate, blocked, the streak, the field values, the assignee and the project. The origin (the icon for its kind and the external id, else the URL's host; a link opening in a new tab without passing the referrer when it has a URL, never opening the task) SHALL be in the row's trailing group and at the end of a card, except on the Inbox's top-level rows, whose source line names it instead (see `inbox-triage` "Inbox source lines"), and on a narrow row as "The title comes first on a narrow row" says. An imported origin (kind `import`) SHALL NOT show its id anywhere a person sees or hears it (rows, cards, the task's details and panel, its history, search results), since it is the key the importer keeps for duplicate detection: in a row or on a card without a URL it SHALL carry no origin item, and with one its item SHALL be the icon alone, a link named "Imported from <app>"; the task's details, panel and history SHALL read "Imported from <app>" (the app's name, such as Todoist or Microsoft To Do, else the provider as stored), or "Imported" without a provider. Labels SHALL be chips: each a small chip with the label's colour as a dot and its name, at most two shown, then "+n"; the full names in order SHALL be read by assistive technology, shown in a tooltip while the pointer is over the group or it has keyboard focus, and in the task panel. No other item of a row SHALL have a pill background. Counts SHALL use tabular figures, not a monospace face.
 
 Colour SHALL carry meaning only: the priority ring on the checkbox is coloured for P1 and P2 and neutral for P3 and P4; the date text follows one due ladder by how close the task's day is to the user's logical today: a date after tomorrow in the muted tone; tomorrow, as "Tomorrow" or the time under the Tomorrow heading, in the default text tone; today, timed or not, in the accent tone; and a day before today in the danger tone. A heading that implies the day leaves the date text out, so the ladder shows on the parts that remain (a time, "evening", the repeat mark). The ladder is computed on the device from local data and changes with the logical day without a reload; the deadline keeps its neutral, warning and danger tones; the label dot is the label's colour; everything else in the row is the muted colour, and the counts the faint colour. Every colour is a token.
 
@@ -161,6 +165,14 @@ A row SHALL never omit a value because of what it is, only because the heading o
 - **WHEN** a task due tomorrow has a deadline in two days
 - **THEN** "Tomorrow" is in the default text tone and the countdown "2d" is in the warning tone
 
+#### Scenario: Imported origin in a project
+- **WHEN** a project lists a task whose origin is `{kind: "import", provider: "todoist", id: "dfc92cb10aed05a4:1"}`
+- **THEN** its row carries no origin item and no text "dfc92cb10aed05a4:1", and its expanded details and the task panel read "Imported from Todoist", never the id
+
+#### Scenario: Imported card with a link
+- **WHEN** a row shows a task whose origin is `{kind: "import", provider: "trello", id: "5f3a…", url: "https://trello.com/c/AbCd1234"}`
+- **THEN** its item is the download icon alone, a link to the card whose accessible name is "Imported from Trello", and "5f3a…" is neither shown nor read out
+
 ### Requirement: Group headers
 Date groups, section groups, project groups, the Earlier group, the "Later" group and the Completed group SHALL use one header: a label, a count, a collapse control, and trailing actions. In a list the header SHALL be a group bar: a 32 px strip filled with the raised surface, with the label at the metadata size in the medium weight and the default text tone, in sentence case whether the view generated the group (a date, Earlier, Today, This Evening, Blocked, Later, Completed, No section) or the user named it (a section, a project, a label); on a board column the header SHALL stay a plain heading on the column's surface. The count SHALL be in the faint tone with tabular figures. Trailing actions SHALL appear on hover, focus or touch, except the actions of the Earlier group, which SHALL be visible at all times. No group header SHALL use the danger tone. Collapse state SHALL be remembered per device; the Earlier group of Today SHALL be collapsed by default on a device that never opened or closed it while it holds more than five tasks, and open by default otherwise. This is presentation only and behaves the same offline.
 
@@ -261,11 +273,23 @@ Completing a task SHALL write the completion as an ordinary operation at once (a
 - **THEN** the card plays the completion sequence, collapses, and the cards below it in the column move up
 
 ### Requirement: Single-action undo
-Deleting a task, moving it to another project, changing its date or parking it SHALL offer the same Undo toast as bulk actions, replacing the previous offer.
+Deleting a task from any surface, moving it to another project, changing its date or parking it SHALL offer the same Undo toast as bulk actions, replacing the previous offer. Every delete path SHALL write through the same undoable trash, whether it comes from the row menu, the command palette, Vim's `dd`, the Filter view or a saved view, so all of them restore the task and its subtasks the same way.
 
 #### Scenario: Delete then undo
 - **WHEN** the user deletes a task from its row menu and activates Undo
 - **THEN** the task returns to its place with its subtasks and no tombstone remains after sync
+
+#### Scenario: Delete from the command palette
+- **WHEN** the user runs "Move Write the report to the Trash" in the command palette
+- **THEN** the task goes to the Trash and the toast offers Undo, exactly as its row menu does
+
+#### Scenario: Delete with Vim
+- **WHEN** the user selects one task and presses `dd` with Vim keybindings on
+- **THEN** the task goes to the Trash and the toast offers Undo
+
+#### Scenario: Delete from a Filter or saved view
+- **WHEN** the user presses Delete on a row of the Filter view or a saved view
+- **THEN** the task goes to the Trash and the toast offers Undo
 
 ### Requirement: Bulk selection does not shift rows
 The selection checkbox SHALL take the place of the task checkbox only while a selection is in progress (a row is ticked, or touch Select mode is on), so the row does not change width or alignment. Hover and keyboard focus SHALL NOT replace the task checkbox: clicking it always completes or reopens the task.
@@ -279,11 +303,15 @@ The selection checkbox SHALL take the place of the task checkbox only while a se
 - **THEN** every row shows the selection checkbox where the task checkbox was and no title moves
 
 ### Requirement: Drag feedback
-A dragged row SHALL lift with the popover elevation and a slight scale, the drop position SHALL show as a line with a dot at its start, and dropping on the middle of a row SHALL ring that row. Under reduced motion the lift is an opacity change. In the sidebar's project tree the line SHALL start at the indent of the level the dragged project lands on, and a dragged project SHALL show only this indicator: the ring a project row shows while a task is dragged onto it SHALL not appear.
+A dragged row SHALL lift with the popover elevation and a slight scale, the drop position SHALL show as a line with a dot at its start, and dropping on the middle of a row SHALL ring that row. Under reduced motion the lift is an opacity change. In a task list that shows subtasks under their parents the line SHALL start at the indent of the level the dragged task lands on. In the sidebar's project tree the line SHALL start at the indent of the level the dragged project lands on, and a dragged project SHALL show only this indicator: the ring a project row shows while a task is dragged onto it SHALL not appear.
 
 #### Scenario: Start a drag
 - **WHEN** the user drags a task in a project list
 - **THEN** the row lifts and the target line appears between rows as the pointer moves
+
+#### Scenario: Line at the level
+- **WHEN** the user drags a top-level task below a subtask two levels deep and moves the pointer one indent to the right
+- **THEN** the line starts one indent in, at the level of the subtask's parent
 
 #### Scenario: Drag a project in the sidebar
 - **WHEN** the user drags the sub-project "Acme" over the top edge of the top-level project "Clients"
@@ -361,7 +389,7 @@ The keyboard cursor of a task list SHALL be real focus: when the cursor moves to
 - **THEN** its complete button is named "Complete Pack"
 
 ### Requirement: Completed group in a project
-A project's Project menu SHALL offer "Show completed tasks" in the list layout, a preference of the device per project that is off by default and never synced. While it is on, the project's list SHALL end with a "Completed" group holding every completed (not skipped) task of the project, most recently completed first. The group SHALL be closed by default with its count on the heading, and its open or closed state SHALL be remembered on the device. Completing a task SHALL move it into the group; unticking a task in the group SHALL reopen it and return it among the open tasks. While it is off and the project has completed tasks, a list with open tasks SHALL end with one line, "n completed tasks hidden by display options" and a Show link that turns the preference on. The board and the timeline SHALL be unchanged. A completed task's circle SHALL show the filled check without the priority ring.
+Outside a reusable list (OpenSpec `reusable-lists`), a project's Project menu SHALL offer "Show completed tasks" in the list layout, a preference of the device per project that is off by default and never synced. While it is on, the project's list SHALL end with a "Completed" group holding every completed (not skipped) task of the project, most recently completed first. The group SHALL be closed by default with its count on the heading, and its open or closed state SHALL be remembered on the device. Completing a task SHALL move it into the group; unticking a task in the group SHALL reopen it and return it among the open tasks. While it is off and the project has completed tasks, a list with open tasks SHALL end with one line, "n completed tasks hidden by display options" and a Show link that turns the preference on. The board and the timeline SHALL be unchanged. In a reusable list the group SHALL always be shown, headed "Got it", whatever the device preference, the Project menu SHALL NOT offer the preference, and the hidden-tasks line SHALL NOT appear. A completed task's circle SHALL show the filled check without the priority ring.
 
 #### Scenario: Groceries reused
 - **WHEN** a user turns on "Show completed tasks" in a Groceries project where Milk and Eggs were ticked off, Eggs last, and opens the Completed group
@@ -374,6 +402,10 @@ A project's Project menu SHALL offer "Show completed tasks" in the list layout, 
 #### Scenario: Board layout
 - **WHEN** the project is shown as a board
 - **THEN** the Project menu does not offer "Show completed tasks" and the board shows open tasks only
+
+#### Scenario: Reusable list ignores the device preference
+- **WHEN** a device with "Show completed tasks" off opens a reusable list where Milk was ticked off
+- **THEN** the list ends with "Got it 1" holding Milk, and the Project menu has no "Show completed tasks" item
 
 ### Requirement: Inline title editing
 On a fine pointer from 768 px wide, with the panel closed and the device preference "Click a task to" set to "Edit in place" (the default), clicking a task's title in a list SHALL select the row and turn its title into a text field in place, with the caret where the user clicked. `F2` on a selected row SHALL do the same with the caret at the end. Enter or a click outside the row SHALL save the title, Esc SHALL discard the title change and leave the row selected, and `Shift+Enter` SHALL save and open the task panel. Only one row SHALL be edited inline at a time, and that row SHALL not start a drag, so pressing and moving in its field selects text; the other rows stay draggable. Edits SHALL apply locally at once, work offline and converge per field like any title edit. Viewers SHALL never get the inline editor. With the preference set to "Open details", on a coarse pointer, below 768 px, or while the panel is open, a click SHALL open the task in the panel as before. A click on a row's or a board card's empty area (anything that is not the title, the checkbox, the chevron, the selection box, a link or a revealed action: the padding, the gaps, the leading slot, the trailing space) SHALL select the task and open it in the panel under either preference and on any pointer, Shift or Ctrl/⌘ on it SHALL tick the row as on the title, and a drag or a swipe that ends on it SHALL not open anything. The row's controls keep their own actions and the keyboard behaviour is unchanged.
@@ -819,7 +851,7 @@ A task list row SHALL be able to show the task's details directly under it, insi
 - **THEN** the details appear at once without fading
 
 ### Requirement: Quick add stays reachable in long lists
-From 768 px wide, wherever the floating Add button is not shown, a list page's quick add SHALL stay visible directly under the page header while the list scrolls under it, on the page surface with its bottom border, so a new task can be added at any scroll position without scrolling back up. It SHALL be the same row as before, not an extra one, and SHALL never cover a focused row, the selection bar or a toast; focused rows SHALL scroll into view below it. Below 768 px the quick add SHALL scroll with the list as before, the floating Add button being the always reachable add control. Section add rows and board columns SHALL NOT stick. This is presentation only and behaves the same offline.
+From 768 px wide, except on a phone held in landscape (a coarse pointer under 500 px tall), wherever the floating Add button is not shown, a list page's quick add SHALL stay visible directly under the page header while the list scrolls under it, on the page surface with its bottom border, so a new task can be added at any scroll position without scrolling back up. It SHALL be the same row as before, not an extra one, and SHALL never cover a focused row, the selection bar or a toast; focused rows SHALL scroll into view below it, counting it only while it is pinned. Below 768 px, and on a landscape phone, the quick add SHALL scroll with the list as before, the floating Add button being the always reachable add control. Section add rows and board columns SHALL NOT stick. This is presentation only and behaves the same offline.
 
 #### Scenario: Add after scrolling down
 - **WHEN** on a 1280 × 800 window the user scrolls a project with 80 tasks to its end
@@ -832,6 +864,10 @@ From 768 px wide, wherever the floating Add button is not shown, a list page's q
 #### Scenario: Phone unchanged
 - **WHEN** the same project is scrolled on a 390 × 844 screen
 - **THEN** the quick add scrolls away with the list and the floating Add button stays visible
+
+#### Scenario: Landscape phone leaves it unpinned
+- **WHEN** the same project is scrolled on an 844 × 390 phone held in landscape
+- **THEN** the quick add scrolls with the list, the page header takes only its own height, and the floating Add button is the way to add a task
 
 ### Requirement: A new task out of sight is announced
 When a task added from a list page's quick add or a section's add row lands outside the visible part of the list, the app SHALL show a toast naming where it went ("Added to the bottom of {list}" or "Added to the top of {list}") with a Show action that scrolls the task into view and selects it. No toast SHALL be shown when the new row is visible, and the Inbox's note about a task that left the Inbox SHALL take precedence. This is presentation only and behaves the same offline.
@@ -854,3 +890,56 @@ On a coarse pointer a task row's checkbox SHALL take taps within a square of at 
 #### Scenario: Row while animated
 - **WHEN** the row's title is moving (the first-visit swipe hint) and the user taps 8 px outside the circle
 - **THEN** the tap still completes the task
+
+### Requirement: The title comes first on a narrow row
+A narrow row's title SHALL keep the width its checkbox, time column, marks, phone cell and disclosure leave. On a row under 30 rem the origin SHALL show as its icon only, its words in its accessible name. On the phone row (under 768 px of screen and 40 rem of row) the origin SHALL be left to the row's details and the task page, and the Inbox's source line SHALL be the line under the title, never beside it.
+
+#### Scenario: Imported task on a phone
+- **WHEN** a task imported from Todoist with a long title, a date and a repeat is shown at 390 px
+- **THEN** the row shows the title up to its ellipsis, the repeat mark and the date, and nothing of its origin; its expanded details show the origin
+
+#### Scenario: Inbox source line on a phone
+- **WHEN** the Inbox shows an imported task at 390 px
+- **THEN** the title is on the row's first line and "Imported from Todoist · 19 h ago" on the line under it
+
+#### Scenario: Narrow list on a wide screen
+- **WHEN** a list narrower than 30 rem on a 1280 px screen shows a task from a GitHub issue
+- **THEN** its row ends with the link icon, a link whose name says it opens the source "o/r#7", while a 38 rem list still reads "o/r#7"
+
+### Requirement: Long lists draw only what is in view
+A task list SHALL let the browser skip the layout and paint of rows far from the viewport while keeping every row in the document, so keyboard navigation, find in page, drag and drop and assistive technology work on every row; a long list MAY draw its first rows in its first frame and the rest within the next frames, drawing the row the cursor is on at once, and SHALL never remove a drawn row to save work. One write (local or from sync) SHALL update the shared task data from the changed rows instead of reading every stored task again, SHALL draw again only the rows whose shown data changed and the groups that hold them, and completing a task SHALL show its tick in the frame of the click. With the 10,000-task account of the performance budgets, opening the 2,000-task project, completing a task in it, a cursor move, a search keystroke and an edit from another device SHALL stay within their budgets in `scripts/perf/budgets.json`. Only reading and drawing change, so offline behaviour and convergence are unchanged.
+
+#### Scenario: Opening a 2,000-task project
+- **WHEN** the user opens a project of 2,000 open tasks
+- **THEN** the list is ready within the open-project budget, and pressing `End` then `k` reaches and selects the last rows
+
+#### Scenario: Completing a task in a long list
+- **WHEN** the user ticks a task in a 2,000-row list
+- **THEN** the tick shows in the next frame, and the stored tasks are not read again in full
+
+#### Scenario: Ticking several tasks in a row
+- **WHEN** the user ticks one task after another in a 2,000-row list
+- **THEN** each tick redraws the ticked row and its group, the other rows keep what they drew, and no tick waits for the list to work out all its rows again
+
+### Requirement: List updates follow the changed rows
+After a write (local or from sync), a task list, its groups and its row details (progress, blockers, the step a task waits for, habit streaks), Today's closed list, the sidebar's counts and the app badge SHALL be worked out from the rows that write changed rather than from every stored task, and SHALL show exactly what working them out from all tasks shows: the same rows in the same order and groups, the same counts and the same flow and closed-list state. A row SHALL compare only the details a write could have changed. Completing a task SHALL redraw the list once, when the task leaves the list's data; the end of the departing row's animation SHALL NOT redraw the list. A long list SHALL let the browser skip blocks of rows far from the viewport, each row keeping its block from one drawing to the next, without splitting the list: every row stays an item of the one list (or section list) that assistive technology announces. Only how the screen derives and draws local data changes, so this behaves the same offline and convergence is unchanged.
+
+#### Scenario: A completion in a 2,000-row project
+- **WHEN** the user completes a task in a project of 2,000 open tasks in a 10,000-task account
+- **THEN** the list, the section count, the sidebar counts and the app badge show the task gone, as a full recomputation would, without going over the 10,000 tasks
+
+#### Scenario: Random writes give the same lists as a full recomputation
+- **WHEN** any sequence of creates, edits, completions, reopenings, moves, deletions and blocker changes is applied
+- **THEN** after each write the incremental lists, groups, counts, flows and closed list equal those worked out from all tasks
+
+#### Scenario: The departing row ends
+- **WHEN** a completed row's departure animation ends
+- **THEN** the row leaves the screen without the list drawing again
+
+#### Scenario: Rows in blocks for assistive technology
+- **WHEN** a section lists 2,000 tasks
+- **THEN** a screen reader finds 2,000 items in that one named list, each with its Complete button
+
+#### Scenario: Synced changes while offline
+- **WHEN** a device comes back online and a sync page changes many tasks at once
+- **THEN** the lists show the synced state, worked out in full when the change is too large to follow row by row

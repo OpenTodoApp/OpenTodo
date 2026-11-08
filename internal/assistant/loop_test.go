@@ -13,7 +13,7 @@ import (
 
 	"github.com/OpenTodoApp/opentodo/internal/agenttools"
 	"github.com/OpenTodoApp/opentodo/internal/ids"
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
@@ -29,7 +29,7 @@ type fixture struct {
 
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
+	db, err := storetest.OpenDir(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -279,8 +279,8 @@ func TestLoopCapsChangeSetAt50(t *testing.T) {
 	}
 }
 
-// TestLoopRoundLimit: a model that keeps calling tools stops after 8 model
-// calls with no change set.
+// TestLoopRoundLimit: a model that keeps calling tools stops after MaxRounds
+// model calls with no change set.
 func TestLoopRoundLimit(t *testing.T) {
 	f := newFixture(t)
 	f.task("u1", "a", "A", nil)

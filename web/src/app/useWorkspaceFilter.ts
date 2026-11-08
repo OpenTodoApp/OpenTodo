@@ -24,8 +24,9 @@ export function workspaceFilterContext(
   defaultId: string, list: readonly { id: string; name: string }[],
   projects: FilterContext['projects'], labels: FilterContext['labels'], tasks: readonly Task[],
 ): WorkspaceFilterContext {
-  const p = new Partition(defaultId, list.map((w) => w.id), projects, tasks)
-  const workspaceOf = (task: Task) => p.taskRow(task)
+  // Built when first asked: with one workspace a filter rarely asks, and it maps every task (incremental-list-updates).
+  let p: Partition | null = null
+  const workspaceOf = (task: Task) => (p ??= new Partition(defaultId, list.map((w) => w.id), projects, tasks)).taskRow(task)
   if (list.length <= 1) return { workspaces: list, workspaceOf }
   return { workspaces: list, workspaceOf, everyWorkspace: { tasks, projects, labels } }
 }

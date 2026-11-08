@@ -1,0 +1,26 @@
+你在 OpenTodo 的一周：完成了 {{.Completed}} 项
+
+这是来自 {{.Origin}} 上 OpenTodo 的每周摘要。
+
+上周（{{.Week}}）
+  已完成：{{.Completed}}
+  新建：{{.Created}}
+  延迟完成：{{.Late}}
+  被推迟：{{.Slipped}}
+
+更早仍未完成
+{{.Overdue}}
+
+未来七天到期
+{{.Ahead}}
+
+没有下一步的项目
+{{.Idle}}
+
+上次回顾：{{.LastReview}}
+
+开始你的每周回顾：
+
+{{.Link}}
+
+你收到这封邮件，是因为你在设置的通知中为 {{.Email}} 打开了每周摘要。你可以随时在那里关闭。

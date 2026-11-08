@@ -100,11 +100,23 @@ Every API write SHALL be recorded as operations stamped with server time, with d
 - **THEN** `workspaces` lists the three with the user's role, Personal marked `default`, Work with its members' ids, roles and groups, Family with the user's role only, and each project carries its `workspace_id`
 
 ### Requirement: Health endpoint
-`GET /healthz` SHALL require no authentication and SHALL return 200 with the version when the database is reachable, otherwise 503.
+`GET /healthz` SHALL require no authentication and SHALL return 200 with the version when the database is reachable, otherwise 503. `GET /api/v1/health` SHALL give the same answer, for clients behind reverse proxies and platforms that answer `/healthz` themselves; both SHALL reveal nothing but the status and the version, whoever asks.
 
 #### Scenario: Healthy server
 - **WHEN** a monitor requests `/healthz`
 - **THEN** the response is 200 with `{"status":"ok","version":"<version>"}`
+
+#### Scenario: Behind a proxy that reserves /healthz
+- **WHEN** a client behind Pomerium or Google Cloud Run requests `/api/v1/health` without credentials
+- **THEN** the request reaches the server and the response is 200 with `{"status":"ok","version":"<version>"}`, the same as `/healthz` answers
+
+#### Scenario: Signed in or with a token
+- **WHEN** a signed-in browser or a `read` API token requests `/api/v1/health`
+- **THEN** the response is the same 200 answer, with no account data
+
+#### Scenario: Database unreachable
+- **WHEN** the database cannot be read and a monitor requests `/healthz` or `/api/v1/health`
+- **THEN** both answer 503 with the error code `unhealthy`
 
 ### Requirement: Idempotency keys on create
 `POST /api/v1/{collection}` SHALL accept `Idempotency-Key` (1 to 128 characters of letters, digits and `._:-`) and derive entity and op ids from user, collection and key: 201 first, 200 with the stored entity and `Idempotent-Replayed: true` on a same-content repeat, 409 `idempotency_conflict` on other content. A replay SHALL be recognised only by the same user's stored ops, so keys never cross accounts. Retries converge on every device.
@@ -253,3 +265,34 @@ A request under `/api/` to a path some route serves, with a method none of its r
 #### Scenario: Switched-off feature
 - **WHEN** push is turned off and a client sends `POST /api/v1/push/subscriptions`
 - **THEN** the response is 404, not 405, because the generic collection routes count only for a real collection
+
+### Requirement: Objectives collection
+The API SHALL expose an `objectives` collection (OpenSpec `plan-objectives`) on the existing collection routes:
+- `GET` and `POST /api/v1/objectives`;
+- `GET`, `PATCH` and `DELETE /api/v1/objectives/{id}`.
+
+The routes SHALL be registered with the signed-in policy and cover only the caller's own objectives. Writes SHALL go through the operation log with `ApplyStrict` and wake devices. The list SHALL accept `period` and `open=true`. Read tokens SHALL be able to list and get, and SHALL be refused on writes, as agent tokens are. An objective of another account SHALL be 404. Validation failures SHALL be `400 invalid_input`, and a create or move into a period with 5 open objectives SHALL be `409 too_many_objectives`. Deletion SHALL be a tombstone.
+
+#### Scenario: Create an objective
+- **WHEN** a script POSTs `{"title":"Ship 1.0","period":"2026-Q4"}` to `/api/v1/objectives` with a full token
+- **THEN** the response is 201 with the objective's id, `done_at` 0 and `position`, and the user's devices show the card after sync
+
+#### Scenario: Anonymous request
+- **WHEN** a request without credentials lists or creates objectives
+- **THEN** the response is 401 `unauthorized`
+
+#### Scenario: Read token cannot write
+- **WHEN** a read token POSTs to `/api/v1/objectives`
+- **THEN** the response is 403 `insufficient_scope` and nothing is written
+
+#### Scenario: Another account's objective
+- **WHEN** a user requests `/api/v1/objectives/<id>` for an objective of another account
+- **THEN** the response is 404
+
+#### Scenario: Invalid period
+- **WHEN** a script POSTs an objective with the period `2026-11` or an empty title
+- **THEN** the response is 400 `invalid_input` naming the field
+
+#### Scenario: Limit reached
+- **WHEN** a script POSTs a sixth open objective for `2026-W44`
+- **THEN** the response is 409 `too_many_objectives` and nothing is written

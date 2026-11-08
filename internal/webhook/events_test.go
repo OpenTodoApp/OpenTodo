@@ -40,6 +40,9 @@ func TestEventPrecedence(t *testing.T) {
 		{"project archived from absent", "project", map[string]opsync.FieldChange{"archived": fc("", "true")}, "project.archived"},
 		{"project unarchived is an update", "project", map[string]opsync.FieldChange{"archived": fc("true", "false")}, "project.updated"},
 		{"project deleted", "project", map[string]opsync.FieldChange{"deleted_at": fc("null", "9"), "archived": fc("false", "true")}, "project.deleted"},
+		{"comment created", "comment", map[string]opsync.FieldChange{"created_at": fc("", "1"), "body": fc("", `"hello"`)}, "comment.created"},
+		{"comment deleted wins over an edit", "comment", map[string]opsync.FieldChange{"deleted_at": fc("null", "9"), "body": fc(`"a"`, `"b"`)}, "comment.deleted"},
+		{"comment edit is an update", "comment", map[string]opsync.FieldChange{"body": fc(`"a"`, `"b"`), "edited_at": fc("null", "8")}, "comment.updated"},
 		{"completed_at is not an event for projects", "project", map[string]opsync.FieldChange{"name": fc(`"a"`, `"b"`)}, "project.updated"},
 	}
 	for _, c := range cases {

@@ -76,7 +76,7 @@ export function SlotBlock({ view, b, past, selected, dragging, dropTarget, onSel
   }
 
   return (
-    <div
+    <div data-drag-id="calendar-slot"
       data-cal-id={view.key}
       data-slot={view.slot.id}
       data-drop-slot={view.slot.id}
@@ -143,7 +143,7 @@ function SlotRow({ task, tabIndex, onKeyDown, onFocus, onOpen, onDragStart }: {
   const title = task.title || t('Untitled')
   return (
     <li>
-      <div data-slot-row={task.id} data-cal-id={task.id} role="checkbox" aria-checked={done} aria-label={title} tabIndex={tabIndex}
+      <div data-drag-id="calendar-slot-task" data-slot-row={task.id} data-cal-id={task.id} role="checkbox" aria-checked={done} aria-label={title} tabIndex={tabIndex}
         className="flex h-6 cursor-grab items-center gap-1 rounded-chip px-0.5 text-meta outline-none hover:bg-hover focus-visible:ring-2 focus-visible:ring-focus"
         onKeyDown={onKeyDown} onFocus={onFocus}
         onPointerDown={(e) => { e.stopPropagation(); if (!done) onDragStart(e, { taskId: task.id, kind: 'move' }) }}

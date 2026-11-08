@@ -6,10 +6,12 @@
 // Outside a shell nothing here runs.
 import { liveQuery, type Subscription } from 'dexie'
 import { localDueOf, logicalToday } from './dates'
-import { todayList } from './dayLists'
+import { todayAssigneeFilter, todayList, type TodayAssigneeFilter } from './dayLists'
 import { db, getMeta, setMeta } from './db'
 import { encryptionSnapshot, onEncryptionChange } from './e2ee'
+import { publishGeofences } from './geofences'
 import { has, publishWidget, scheduleReminders, shell, type ShellPermission, type ShellReminder, type ShellWidgetData } from './shell'
+import { currentUserId } from './sharing'
 import type { Reminder, Task } from './types'
 
 /** The device's "notifications through the app" switch (Settings → Notifications in a shell). */
@@ -38,8 +40,8 @@ export function shellReminders(reminders: readonly Reminder[], tasks: readonly T
 }
 
 /** The widgets' Today list: titles only while the account is readable on this device, counts otherwise. */
-export function shellWidget(tasks: readonly Task[], today: string, now: number, locked: boolean): ShellWidgetData {
-  const list = todayList(tasks.filter((task) => !task.deleted_at && !task.completed_at), today)
+export function shellWidget(tasks: readonly Task[], today: string, now: number, locked: boolean, hide?: TodayAssigneeFilter | null): ShellWidgetData {
+  const list = todayList(tasks.filter((task) => !task.deleted_at && !task.completed_at), today, hide)
   const rows = list.slice(0, WIDGET_MAX).map((task) => {
     const due = localDueOf(task.due)
     const overdue = !!due && due.date < today
@@ -94,15 +96,16 @@ async function publishReminders(now = Date.now()): Promise<ShellPermission | nul
 /** Computes and hands over the widgets' Today list now. */
 async function publishToday(now = Date.now()): Promise<void> {
   const enc = encryptionSnapshot()
-  const tasks = await db.tasks.toArray()
-  publishWidget(shellWidget(tasks, logicalToday(undefined, now), now, enc.enabled && !enc.unlocked))
+  const [tasks, prefs, memberships, me] = await Promise.all([db.tasks.toArray(), db.userPrefs.get('me'), db.memberships.toArray(), currentUserId()])
+  const hide = todayAssigneeFilter(prefs, memberships, me)
+  publishWidget(shellWidget(tasks, logicalToday(undefined, now), now, enc.enabled && !enc.unlocked, hide))
 }
 
 let started = false
 
 /** Starts the publishers when the page runs in a shell with `reminders` or `widgets`; a no-op otherwise. */
 export function startShellPublishers(): () => void {
-  if (started || !shell() || (!has('reminders') && !has('widgets'))) return () => {}
+  if (started || !shell() || (!has('reminders') && !has('widgets') && !has('geofences'))) return () => {}
   started = true
   let timer: ReturnType<typeof setTimeout> | null = null
   const run = () => {
@@ -111,10 +114,12 @@ export function startShellPublishers(): () => void {
       timer = null
       if (has('reminders')) void publishReminders().catch(() => undefined)
       if (has('widgets')) void publishToday().catch(() => undefined)
+      // Location reminders (location-reminders D3): the armed regions, on every change and on the tick.
+      if (has('geofences')) void publishGeofences().catch(() => undefined)
     }, DEBOUNCE_MS)
   }
-  // Any change to tasks, reminders or the meta table (the switch, the titles option).
-  const sub: Subscription = liveQuery(() => Promise.all([db.tasks.count(), db.reminders.toArray(), db.tasks.toArray(), db.meta.toArray()])).subscribe({ next: run, error: () => undefined })
+  // Any change to tasks, reminders, places (a linked place's pin) or the meta table (the switches, the titles option).
+  const sub: Subscription = liveQuery(() => Promise.all([db.tasks.count(), db.reminders.toArray(), db.tasks.toArray(), db.places.toArray(), db.meta.toArray()])).subscribe({ next: run, error: () => undefined })
   const offEnc = onEncryptionChange(run)
   // The day rolls over at the logical day start even when nothing changes.
   const tick = setInterval(run, 15 * 60 * 1000)

@@ -102,12 +102,13 @@ Longer horizons, and the household.
 
 | Change | What | Issues |
 | --- | --- | --- |
-| [`time-sectors`](openspec/changes/time-sectors/) | This week, Next week, This month, Next quarter, without a fake due date |  |
-| [`plan-objectives`](openspec/changes/plan-objectives/) | Quarterly and weekly objectives as small cards in Plan and the weekly review |  |
-| [`reusable-lists`](openspec/changes/reusable-lists/) | Grocery mode: adding an existing item reopens it |  |
-| [`chore-rotation`](openspec/changes/chore-rotation/) | Recurring tasks that rotate between members of a group |  |
-| [`location-reminders`](openspec/changes/location-reminders/) | Reminders when you arrive at or leave a place |  |
+| [`time-sectors`](openspec/changes/archive/2026-11-02-time-sectors/) | **Shipped.** This week, Next week, This month, Next quarter, without a fake due date | [#579](https://github.com/OpenTodoApp/OpenTodo/issues/579) |
+| [`plan-objectives`](openspec/changes/archive/2026-11-02-plan-objectives/) | **Shipped.** Quarterly and weekly objectives as small cards in Plan and the weekly review | [#580](https://github.com/OpenTodoApp/OpenTodo/issues/580) |
+| [`reusable-lists`](openspec/changes/archive/2026-11-02-reusable-lists/) | **Shipped.** Grocery mode: adding an existing item reopens it | [#581](https://github.com/OpenTodoApp/OpenTodo/issues/581) |
+| [`chore-rotation`](openspec/changes/archive/2026-11-02-chore-rotation/) | **Shipped.** Recurring tasks that rotate between members of a group | [#582](https://github.com/OpenTodoApp/OpenTodo/issues/582) |
+| [`location-reminders`](openspec/changes/location-reminders/) | **Shipped on Android; iOS follows.** Reminders when you arrive at or leave a place |  |
 | [`more-languages`](openspec/changes/more-languages/) | Dutch, and a kit for community languages |  |
+| [`simplified-chinese`](openspec/changes/simplified-chinese/) | Simplified Chinese (简体中文) | [#883](https://github.com/OpenTodoApp/OpenTodo/issues/883) |
 | [`priority-names`](openspec/changes/priority-names/) | Rename the four priorities |  |
 | [`telegram-channel`](openspec/changes/telegram-channel/) | Telegram as a notification channel |  |
 
@@ -117,11 +118,12 @@ The release that makes OpenTodo the default choice.
 
 | Change | What | Issues |
 | --- | --- | --- |
-| [`stability-contract`](openspec/changes/stability-contract/) | A frozen v1 API and op schema, upgrade paths from any 0.x, an export guarantee |  |
+| [`stability-contract`](openspec/changes/archive/2026-11-03-stability-contract/) | **Shipped.** A frozen v1 API and op schema, upgrade paths from any 0.x, an export guarantee | [#587](https://github.com/OpenTodoApp/OpenTodo/issues/587) |
 | [`external-security-review`](openspec/changes/external-security-review/) | A threat model and disclosure policy; an independent security review is optional, depending on funding |  |
-| [`accessibility-aa`](openspec/changes/accessibility-aa/) | WCAG 2.2 AA on every screen, with a conformance statement |  |
+| [`accessibility-aa`](openspec/changes/archive/2026-11-03-accessibility-aa/) | **Shipped.** WCAG 2.2 AA on every screen, with a conformance statement |  |
 | [`performance-10k`](openspec/changes/performance-10k/) | Budgets and tests for 10,000 tasks, on phones too |  |
-| [`migration-everywhere`](openspec/changes/migration-everywhere/) | A switch guide and checked importer for every competitor |  |
+| [`notes-compaction-at-scale`](openspec/changes/archive/2026-11-03-notes-compaction-at-scale/) | **Shipped.** A year of note history compacted in a minute without holding writes back; a new device downloads only the latest notes | [#590](https://github.com/OpenTodoApp/OpenTodo/issues/590) |
+| [`migration-everywhere`](openspec/changes/archive/2026-11-03-migration-everywhere/) | **Shipped.** A switch guide and checked importer for every competitor | [#591](https://github.com/OpenTodoApp/OpenTodo/issues/591) |
 | [`caldav-verified`](openspec/changes/caldav-verified/) | CalDAV verified on real clients | [#9](https://github.com/OpenTodoApp/OpenTodo/issues/9) |
 | [`docs-1-0`](openspec/changes/docs-1-0/) | Complete user, self-host and API docs and a contributor guide |  |
 
@@ -189,7 +191,7 @@ The five changes land in this order. Routines never fetch URLs or feeds: outboun
 | Filter by completion date (`completed = last week`), period dates (this, last or next week or month) and a Completed logbook (closes #86) | `completed-date-filters` |
 | Trash with restore, auto-archive of completed projects, revision history from the op log | `trash-and-history` |
 | Drag-and-drop ordering | `manual-ordering` |
-| Custom fields per project: text, number, date, choice, link and checkbox values on tasks, in the panel, on cards, as columns and in filters; sub-projects inherit their parent's fields | `custom-fields`, `inherited-custom-fields` |
+| Custom fields per project: text, number, date, choice, link and checkbox values on tasks, in the panel, on cards, as columns and in filters; sub-projects inherit their parent's fields; lists and saved views can be ordered by a Number or Date field (closes [#404](https://github.com/OpenTodoApp/OpenTodo/issues/404)) | `custom-fields`, `inherited-custom-fields`, `custom-field-sort` |
 | Open Loops, OpenTodo's own method inspired by GTD: the five moves, Next and Waiting views, the Loop home, a weekly review that walks every project with a Daily check and a Monthly look, and a choice of how prominent it is (Lists only, Companion, Open Loops first) | `open-loops-method` |
 | Appearance: light, dark or system, and eight colour themes, synced to every device | `theming` |
 
@@ -232,6 +234,7 @@ The five changes land in this order. Routines never fetch URLs or feeds: outboun
 | Read-only MCP server for AI assistants, off by default | `mcp-server` |
 | AI assistants can make changes through MCP: `agent` tokens, owner and user switches, limits, audit, history labels | `mcp-write-tools` |
 | Assistants plan like the app (deadline, start, Someday, This Evening, waiting for, location) on every surface; projects can be kept away from assistants | `agent-planning-fields` |
+| OAuth for the MCP endpoint, so apps that refuse a pasted token (Google Gemini) can connect: discovery, Google-only dynamic registration, PKCE, a consent dialog, one-hour access tokens and a stable refresh token (#876) | `mcp-oauth` |
 | stdio bridge for assistants that only speak stdio (`ot mcp`), read-only by default | `mcp-stdio-bridge` |
 | `ot` for agent harnesses: versioned `--json` schemas, `ot schema`, `--dry-run`, idempotency keys, `--yes` off a terminal, exit code 5, read-only mode, `agent` tokens on REST content routes, the agent skill file | `agent-ready-cli` |
 
@@ -260,7 +263,7 @@ In this order. Each starts as an OpenSpec change under `openspec/changes/`. The 
 | --- | --- | --- | --- |
 | 1 | **Shipped.** AI assistants can act through MCP: create, edit, complete, reschedule and move tasks, create projects and labels, comment | `mcp-write-tools` | Needs an `agent` token plus owner and user switches (both off by default). Every write goes through the op log, is attributed in history, audited, rate limited and reversible. No permanent deletion |
 | 2 | **Shipped.** `ot` as a dependable tool for agent harnesses | `agent-ready-cli` | Versioned `--json` schemas, `ot schema`, `--dry-run`, idempotency keys, `--yes` required without a terminal, read-only mode, a shipped agent skill file. The CLI stays in this repository; no Homebrew or Scoop repositories for now |
-| 3 | **Shipped.** Conversational assistant in the app, with your own model key | `in-app-assistant` | Anthropic, OpenAI, Gemini or any OpenAI-compatible endpoint (including local models). Off by default, per-user consent, every change reviewed before it applies and undoable in one step. End-to-end encrypted accounts run it on their own device with their own key when the owner allows it (`assistant-on-device`). Its own page, the composer tray and the change-set card: `assistant-surface` |
+| 3 | **Shipped.** Conversational assistant in the app, with your own model key | `in-app-assistant` | Anthropic, OpenAI, Gemini or any OpenAI-compatible endpoint (including local models). Off by default, per-user consent, every change reviewed before it applies and undoable in one step. End-to-end encrypted accounts run it on their own device with their own key when the owner allows it (`assistant-on-device`). Its own page, the composer tray and the change-set card: `assistant-surface`. Optionally, right after a task is added, it proposes a clearer title, a project and subtasks for review: `assistant-suggest-after-add` |
 | 4 | **Shipped.** A Claude Code plugin with an MCP agent skill | `claude-plugin` | Built in `deploy/claude-plugin/`, published to `OpenTodoApp/opentodo-claude` after each release. Asks for the server address and an agent token; checks keep the skills in step with the MCP tools |
 
 ### Design refresh

@@ -14,7 +14,7 @@ Many tasks start as "deal with this page later". OpenTodo can receive a page fro
 | From | How | Works offline |
 | --- | --- | --- |
 | Phone or desktop share sheet | Install the app, then choose **OpenTodo** in the share menu | Yes, once the app has been opened online |
-| Any desktop browser | The bookmarklet from **Settings → Capture** | The popup opens from the app's offline cache once the app has been loaded in that browser |
+| Any desktop browser | The bookmarklet from **Settings → Capture → Bookmarklet and extension** | The popup opens from the app's offline cache once the app has been loaded in that browser |
 | Chromium and Firefox | The browser extension in [`extension/`](../extension/) | Same as the bookmarklet in Capture screen mode |
 
 The capture screen proposes:
@@ -32,7 +32,7 @@ When the capture screen was opened as a popup (bookmarklet, extension) or in a w
 
 A task saved from a shared link also remembers that link as its **origin**. The task's row shows a small chip with the link's host (`example.org`), and the task panel an **Origin** chip; both open the page in a new tab, and the page title you shared is their tooltip. On a row the chip is quiet, like the counts at the end of the row; on a board card it ends the line under the title. A link to an issue on GitHub, GitLab, Jira (`*.atlassian.net`) or Linear is recognised on your device, without opening it: the chip reads the issue (`owner/repo#7`, `ENG-123`) and the task is listed by `origin: github`, `origin: gitlab`, `origin: jira` or `origin: linear` in a [filter](filters.md). Self-hosted trackers are kept as ordinary links. The link still ends the description, so your notes read as before.
 
-To forget the origin, remove the **Origin** chip in the task panel; the description keeps the link. The [command palette](search.md) also finds a task by its issue id (`eng-123`) or the shared page title. Tasks [from email](email.md) carry an **Email** origin without a link, and [imported](import.md) tasks carry their source (`origin: todoist`). A message saved from Gmail or Outlook on the web with the extension's Quick save reads **Gmail** or **Outlook**, opens the message, has the subject as its tooltip, and is listed by `origin: gmail` or `origin: outlook`.
+To forget the origin, remove the **Origin** chip in the task panel; the description keeps the link. The [command palette](search.md) also finds a task by its issue id (`eng-123`) or the shared page title. Tasks [from email](email.md) carry an **Email** origin without a link, and [imported](import.md) tasks carry their source (`origin: todoist`), which reads **Imported from Todoist** in the task panel. A message saved from Gmail or Outlook on the web with the extension's Quick save reads **Gmail** or **Outlook**, opens the message, has the subject as its tooltip, and is listed by `origin: gmail` or `origin: outlook`.
 
 A task can also come from a note in [Obsidian](https://obsidian.md) (sent with the [OpenTodo plugin for Obsidian](obsidian.md), or written by an [AI agent](mcp.md) or the [API](api.md#task-fields)). Its chip shows a note icon and the note's name, its tooltip reads **Open in Obsidian:** followed by the vault and the note's path, and `origin: obsidian` lists these tasks in a filter. Activating the chip opens the note in Obsidian: the browser first asks whether to open the app, and nothing happens when Obsidian is not installed. Only a link that opens a note is followed; any other Obsidian link (a new note, a search, a plugin's own command) is never opened. The Android and iPhone apps hand the link to Obsidian the same way; an older version of the app shows the chip with **Copy link** in its menu instead, and there the task panel's **Origin** copies the link.
 
@@ -71,11 +71,11 @@ After an update that adds or changes the share target, the browser may need the 
 
 **Shared files never leave the device before you save.** The app's service worker receives the share on the device, also offline, and keeps the files in a separate local store (`opentodo-share`) only until the capture screen is saved or cancelled. Anything left there is removed after ten minutes and at sign-out. Saving creates the task and its attachments in one step, on the device first; the files upload with the next sync.
 
-The service worker only takes a share from the system share sheet or from the app's own pages: a form on another website that posts to `/share` just opens the app and nothing is stored. A share larger than 100 MB in total (files and text together) is not stored either.
+The service worker only takes a share from the system share sheet or from the app's own pages: a form on another website that posts to `/share` just opens the app and nothing is stored. It tells them apart by the `Sec-Fetch-Site` header, which every browser that can share to an installed app sends; a share without it is not stored either, and the capture screen says to update the browser. A share larger than 100 MB in total (files and text together) is not stored either.
 
 ## Bookmarklet
 
-**Settings → Capture** shows an **Add to OpenTodo** button generated for your server's address. Drag it to the bookmarks bar (or use **Copy bookmarklet** and paste the code as the address of a new bookmark). Clicking it on any page opens a small popup with the capture screen, prefilled with the page's address, title and the text you selected.
+**Settings → Capture → Bookmarklet and extension** shows an **Add to OpenTodo** button generated for your server's address. Drag it to the bookmarks bar (or use **Copy bookmarklet** and paste the code as the address of a new bookmark). Clicking it on any page opens a small popup with the capture screen, prefilled with the page's address, title and the text you selected.
 
 The bookmarklet contains no password or token. It only opens your server's `/share` page in a popup, where your normal sign-in applies. Its source, with your server's address in place of `https://todo.example.com`:
 
@@ -102,7 +102,7 @@ Right-click to start from something else with **Add to OpenTodo**: on a link, th
 - **Capture screen** (the default): Save opens your server's capture screen in a popup window with the line, the text and the address, where you check and save as above. The extension holds no token and sends nothing itself.
 - **Quick save**: paste a full-access [API token](api.md) (create one per browser, so you can revoke it alone). Save then creates the task at once and shows **Saved** with a link to it. While you type, the line is previewed as chips (date, project, labels, priority, reminders, the part of the day while your [day parts](day-parts.md) are on, and the energy while [Energy levels](method/set-up.md#energy-levels) is on) in your account's language; a `#name` that is no project shows a grey chip and stays in the title. A label that does not exist yet is created. If the server cannot be reached or refuses the token, the popup keeps your text and offers **Open capture screen**. On an account with [end-to-end encryption](e2ee.md), save from the capture screen, which encrypts on your device. A read-only token previews but does not save.
 
-The extension's own texts follow the browser's interface language in English, German, French, Spanish, Italian and Portuguese, and English otherwise; the chips and the capture screen follow your [interface language](language.md).
+The extension's own texts follow the browser's interface language in English, German, French, Spanish, Italian, Portuguese and Simplified Chinese, and English otherwise; the chips and the capture screen follow your [interface language](language.md).
 
 **Install** (it is not published in the browser stores yet): download `opentodo-browser-extension-chrome.zip` or `opentodo-browser-extension-firefox.zip` from a release (or run `make extension`) and unzip it.
 

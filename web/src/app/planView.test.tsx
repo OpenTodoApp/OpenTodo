@@ -299,20 +299,26 @@ describe('rescheduling in the plan', () => {
     await again.unmount()
   })
 
-  it('Projection is read-only: no drag, j and k skip it', async () => {
+  it('Projection: j and k skip it, and a drag moves that occurrence alone (series-exceptions D4)', async () => {
     await setMeta(GRID_PREFS_META_KEY, { planDays: 21 })
     const series = await createTask({ title: 'Weekly report', due: { date: '2026-10-12' }, recurrence: 'every monday' })
     const other = await createTask({ title: 'After', due: { date: '2026-10-27' } })
     const r = await plan()
     await waitFor(() => r.container.querySelectorAll('[data-plan-projected]').length === 2)
-    const before = await db.outbox.count()
-    await drag(r.container.querySelector('[data-plan-projected]')!, day(r.container, '2026-10-20'))
     await key(document.body, 'j')
     expect(row(r.container, series).getAttribute('aria-pressed')).toBe('true')
     await key(document.body, 'j')
     expect(row(r.container, other).getAttribute('aria-pressed')).toBe('true')
-    // Checked once the keys after the drag were handled: the drag queued nothing.
-    expect(await db.outbox.count()).toBe(before)
+    // The move loads its code on first use; the test waits for its write, so it never
+    // lands in the next test's database ("Database has been closed").
+    const before = await db.outbox.count()
+    await drag(r.container.querySelector('[data-plan-projected]')!, day(r.container, '2026-10-20'))
+    await waitFor(async () => (await db.outbox.count()) > before, 'the occurrence move')
+    expect((await db.tasks.get(series))!.due).toEqual({ date: '2026-10-12' })
+    const moved = (await db.tasks.toArray()).find((t) => t.series_id === series)!
+    expect([moved.due, moved.occurrence_date]).toEqual([{ date: '2026-10-20' }, '2026-10-19'])
+    await waitFor(() => day(r.container, '2026-10-20').querySelector(`[data-plan-task="${moved.id}"]`) !== null, 'the moved occurrence')
+    expect(day(r.container, '2026-10-19').querySelector('[data-plan-projected]')).toBeNull()
     await r.unmount()
   })
 
@@ -356,8 +362,8 @@ describe('keyboard in the plan', () => {
     for (let i = 0; i < 3; i++) await key(document.body, 'ArrowRight')
     expect(day(r.container, '2026-10-15').getAttribute('aria-selected')).toBe('true')
     await key(document.body, 'q')
-    await waitFor(() => document.querySelector('[role="dialog"] input') !== null)
-    const input = document.querySelector<HTMLInputElement>('[role="dialog"] input')!
+    await waitFor(() => document.querySelector('[role="dialog"] textarea') !== null)
+    const input = document.querySelector<HTMLTextAreaElement>('[role="dialog"] textarea')!
     await type(input, 'Dentist')
     await act(async () => { input.form!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
     await waitFor(() => day(r.container, '2026-10-15').textContent!.includes('Dentist'))

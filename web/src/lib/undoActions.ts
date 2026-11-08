@@ -7,7 +7,8 @@
 import { planComplete, planLabels, planMove, planReopen, planTrash, readTicked, toProposed } from './bulk'
 import { db, type AssistantUndo } from './db'
 import { logicalToday } from './dates'
-import { getDeviceId, planReminders, type Change } from './ops'
+import { seriesRule } from './recurring'
+import { getDeviceId, liveSubtree, planReminders, type Change } from './ops'
 import type { ReminderPhrase } from './nlp'
 import { currentUserId, membershipMap } from './sharing'
 import type { FilterContext } from './filter'
@@ -20,6 +21,7 @@ import { uuid } from './ids'
 import { labelKey } from './labels'
 import { dayPartFields, dayPartName, dayPartOf, type DayPart } from './dayParts'
 import { energyName, type Energy } from './energy'
+import { sectorPatch } from './sectorWrites'
 import { replanChanges, type ReplanProposal, type UnfitChoice } from './replan'
 import { keepWorkspaceFor, Partition, readWorkspaceState, workspaceIdFor } from './workspaces'
 
@@ -38,10 +40,16 @@ async function apply(changes: Change[], label: string): Promise<UndoableResult> 
 
 /** Complete (subtree, or a series rolling forward) or reopen one task. */
 export async function completeUndoable(id: string, completed: boolean, opts: { now?: number; today?: string } = {}): Promise<UndoableResult> {
-  const { tasks, all } = await readTicked([id])
+  // A plain task needs only its subtree; a series plans its roll over every task
+  // (its occurrence records). Reading all 10,000 tasks of a large account for every
+  // tick queued the next writes behind it (list-rendering-at-scale).
+  const own = await db.tasks.get(id)
+  const { tasks, all } = own && !own.deleted_at && !seriesRule(own)
+    ? await liveSubtree(id).then((rows) => ({ tasks: [own], all: rows }))
+    : await readTicked([id])
   const task = tasks[0]
   if (!task) return { entry: null, label: '' }
-  const changes = completed ? planComplete([task], all, opts.now ?? Date.now(), opts.today ?? logicalToday()) : planReopen([task])
+  const changes = completed ? planComplete([task], all, opts.now ?? Date.now(), opts.today ?? logicalToday(), await membershipMap()) : planReopen([task])
   return apply(changes, completed ? t('Task completed') : t('Task reopened'))
 }
 
@@ -116,7 +124,7 @@ export async function dropUndoable(target: string, ids: readonly string[]): Prom
 }
 
 /** Set a project's or a section's flow (project-flow-modes): one op, with Undo. */
-export async function flowUndoable(entity: 'project' | 'section', id: string, flow: string, label: string): Promise<UndoableResult> {
+export async function flowUndoable(entity: 'project' | 'section' | 'task', id: string, flow: string, label: string): Promise<UndoableResult> {
   await getDeviceId()
   const entry = await applyBatch([{ entity, entityId: id, patch: { flow_mode: flow }, base: { flow_mode: '' } }], { source: 'action', label })
   return { entry, label }
@@ -199,6 +207,30 @@ export async function energyUndoable(ids: readonly string[], energy: Energy | nu
     .map((task) => ({ entity: 'task', entityId: task.id, patch: { energy: energy ?? '' } }))
   if (!changes.length) return { entry: null, label: '' }
   return apply(changes, energy ? t('Energy set to {level}', { level: energyName(energy) }) : t('Energy cleared'))
+}
+
+export interface SectorResult extends UndoableResult {
+  /** Repeating tasks left as they are: they keep a date (time-sectors D2). */
+  skipped: number
+}
+
+/**
+ * Plan the tasks for a time sector, or with '' clear it (time-sectors D2, D6): one
+ * batch writing the sector and clearing each task's do-on date, start and evening,
+ * with one Undo. Repeating tasks keep their date and are counted, not changed.
+ */
+export async function sectorUndoable(ids: readonly string[], sector: string, name = ''): Promise<SectorResult> {
+  const { tasks } = await readTicked(ids)
+  const repeating = sector ? tasks.filter((task) => !!task.recurrence) : []
+  const changes: Change[] = tasks
+    .filter((task) => !repeating.includes(task))
+    .map((task): Change => ({ entity: 'task', entityId: task.id, patch: sectorPatch(task, sector) }))
+    .filter((c) => Object.keys(c.patch).length > 0)
+  if (!changes.length) return { entry: null, label: '', skipped: repeating.length }
+  const label = sector
+    ? t('{n, plural, one {Planned for {name}} other {# tasks planned for {name}}}', { n: changes.length, name })
+    : t('Time sector cleared')
+  return { ...(await apply(changes, label)), skipped: repeating.length }
 }
 
 export interface DropResult extends UndoableResult {

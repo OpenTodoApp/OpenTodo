@@ -16,6 +16,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/OpenTodoApp/opentodo/internal/sector"
 	"github.com/OpenTodoApp/opentodo/internal/timetrack"
 )
 
@@ -62,8 +63,12 @@ const (
 	tWorkspace
 	// tEnergy is `energy: deep|medium|low` (OpenSpec change task-energy, D5).
 	tEnergy
+	// tSector is `sector: this week` or `sector: 2026-W44` (OpenSpec change time-sectors).
+	tSector
 	// tNotes is `notes: text`, text in a task's note (OpenSpec change notes-overview, D5).
 	tNotes
+	// tAssigned is `assigned: me` or `assigned: name` (OpenSpec change today-assigned-filter).
+	tAssigned
 	tWord
 	tString
 )
@@ -88,15 +93,17 @@ func fail(offset int, format string, args ...any) error {
 }
 
 var (
-	searchPrefix = regexp.MustCompile(`(?i)^search:`)
-	originPrefix = regexp.MustCompile(`(?i)^origin:`)
-	wsPrefix     = regexp.MustCompile(`(?i)^workspace:`)
-	energyPrefix = regexp.MustCompile(`(?i)^energy:`)
-	notesPrefix  = regexp.MustCompile(`(?i)^notes:`)
-	priorityWord = regexp.MustCompile(`(?i)^p([1-4])$`)
-	anyPriority  = regexp.MustCompile(`^p\d+$`)
-	isoDate      = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
-	digits       = regexp.MustCompile(`^\d+$`)
+	searchPrefix   = regexp.MustCompile(`(?i)^search:`)
+	originPrefix   = regexp.MustCompile(`(?i)^origin:`)
+	wsPrefix       = regexp.MustCompile(`(?i)^workspace:`)
+	energyPrefix   = regexp.MustCompile(`(?i)^energy:`)
+	sectorPrefix   = regexp.MustCompile(`(?i)^sector:`)
+	notesPrefix    = regexp.MustCompile(`(?i)^notes:`)
+	assignedPrefix = regexp.MustCompile(`(?i)^assigned:`)
+	priorityWord   = regexp.MustCompile(`(?i)^p([1-4])$`)
+	anyPriority    = regexp.MustCompile(`^p\d+$`)
+	isoDate        = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
+	digits         = regexp.MustCompile(`^\d+$`)
 )
 
 func tokenize(src []rune) ([]token, error) {
@@ -210,6 +217,13 @@ func tokenize(src []rune) ([]token, error) {
 		}
 		if term, ok := prefixedTermOf(word); ok {
 			text, err := readPrefixed(term.prefix)
+			// `sector: this week`: a relative word is two words (time-sectors).
+			if w := strings.ToLower(text); err == nil && term.typ == tSector && (w == "this" || w == "next") {
+				for i < n && unicode.IsSpace(src[i]) {
+					i++
+				}
+				text += " " + readBare()
+			}
 			if err == nil {
 				text, err = term.check(text, pos)
 			}
@@ -257,12 +271,30 @@ func energyText(text string, pos int) (string, error) {
 	return v, nil
 }
 
+// sectorText accepts a relative word (`this week`, `next-month`) or an absolute
+// period (`2026-W44`), kept as the word ("this-week") or the period in upper
+// case (OpenSpec change time-sectors); anything else is refused naming it.
+func sectorText(text string, pos int) (string, error) {
+	w := strings.ToLower(strings.Join(strings.FieldsFunc(text, func(r rune) bool { return r == ' ' || r == '-' || r == '_' }), "-"))
+	for _, word := range sector.Words {
+		if w == word {
+			return w, nil
+		}
+	}
+	if p := strings.ToUpper(strings.TrimSpace(text)); sector.Valid(p) {
+		return p, nil
+	}
+	return "", fail(pos, `Unknown time sector "%s" at position %d; use this week, next week, this month, next month, this quarter, next quarter or a period such as 2026-W44`, text, pos+1)
+}
+
 var prefixedTerms = []prefixedTerm{
 	{searchPrefix, "search:", tSearch, needText(`Expected text after "search:" at position %d`)},
 	{originPrefix, "origin:", tOrigin, needText(`Expected a provider or kind after "origin:" at position %d`)},
 	{wsPrefix, "workspace:", tWorkspace, needText(`Expected a workspace name after "workspace:" at position %d`)},
 	{energyPrefix, "energy:", tEnergy, energyText},
+	{sectorPrefix, "sector:", tSector, sectorText},
 	{notesPrefix, "notes:", tNotes, needText(`Expected text after "notes:" at position %d`)},
+	{assignedPrefix, "assigned:", tAssigned, needText(`Expected a name after "assigned:" at position %d`)},
 }
 
 func prefixedTermOf(word string) (prefixedTerm, bool) {
@@ -275,8 +307,8 @@ func prefixedTermOf(word string) (prefixedTerm, bool) {
 }
 
 var (
-	simpleKeywords = map[string]bool{"overdue": true, "today": true, "tomorrow": true, "completed": true, "open": true, "subtask": true, "someday": true, "deferred": true, "evening": true, "morning": true, "afternoon": true, "blocked": true, "unblocked": true, "available": true, "habit": true, "origin": true, "energy": true, "notes": true}
-	noKeywords     = map[string]bool{"date": true, "project": true, "labels": true, "time": true, "deadline": true, "start": true, "origin": true, "energy": true, "notes": true}
+	simpleKeywords = map[string]bool{"overdue": true, "today": true, "tomorrow": true, "completed": true, "open": true, "subtask": true, "someday": true, "deferred": true, "evening": true, "morning": true, "afternoon": true, "blocked": true, "unblocked": true, "available": true, "habit": true, "origin": true, "energy": true, "notes": true, "sector": true, "carried": true, "assigned": true, "unassigned": true}
+	noKeywords     = map[string]bool{"date": true, "project": true, "labels": true, "time": true, "deadline": true, "start": true, "origin": true, "energy": true, "notes": true, "sector": true}
 	weekdays       = map[string]bool{"sunday": true, "monday": true, "tuesday": true, "wednesday": true, "thursday": true, "friday": true, "saturday": true}
 )
 
@@ -426,9 +458,15 @@ func (p *parser) parseTerm(prev *token) (*Node, error) {
 	case tEnergy:
 		p.i++
 		return &Node{Kind: KindEnergy, Text: t.value}, nil
+	case tSector:
+		p.i++
+		return &Node{Kind: KindSector, Text: t.value}, nil
 	case tNotes:
 		p.i++
 		return &Node{Kind: KindNotes, Text: t.value}, nil
+	case tAssigned:
+		p.i++
+		return &Node{Kind: KindAssigned, Text: t.value}, nil
 	case tWord:
 		return p.parseWordTerm(t)
 	case tString:
@@ -525,9 +563,19 @@ func (p *parser) parseWordTerm(t *token) (*Node, error) {
 	case w == "tracked":
 		// Tracked time (OpenSpec change time-tracking, design D9): the keyword, or
 		// `tracked cmp duration`. A reserved word: a field named "tracked" is
-		// reachable only quoted.
+		// reachable only quoted. `tracked occurrence` reads a repeating task's
+		// current occurrence (tracked-time-api-compatible): a syntax error before,
+		// so no saved query changes meaning.
+		occurrence := false
+		if o := p.peek(); o != nil && o.typ == tWord && lower(o) == "occurrence" {
+			p.i++
+			occurrence = true
+		}
 		c := p.peek()
 		if c == nil || c.typ != tCmp {
+			if occurrence {
+				return &Node{Kind: KindKeyword, Keyword: "tracked occurrence"}, nil
+			}
 			return &Node{Kind: KindKeyword, Keyword: "tracked"}, nil
 		}
 		p.i++
@@ -540,7 +588,7 @@ func (p *parser) parseWordTerm(t *token) (*Node, error) {
 			return nil, fail(v.pos, `Expected a duration such as 30m or 1h30 after "%s" at position %d`, c.raw, v.pos+1)
 		}
 		p.i++
-		return &Node{Kind: KindTracked, Op: c.value, Minutes: minutes}, nil
+		return &Node{Kind: KindTracked, Op: c.value, Minutes: minutes, Occurrence: occurrence}, nil
 	case w == "no":
 		// A keyword, or any other name: a custom field without a value (custom-fields).
 		nt := p.peek()

@@ -5,10 +5,13 @@ import "testing"
 // Task metadata chosen from fixed values stays plaintext: priority, the part of
 // the day and the energy (OpenSpec task-energy, design D2) are never content.
 func TestTaskChoiceFieldsNotContent(t *testing.T) {
-	for _, f := range []string{"priority", "day_part", "evening", "energy", "estimate_minutes"} {
+	for _, f := range []string{"priority", "day_part", "evening", "energy", "estimate_minutes", "sector"} {
 		if IsContentField("task", f) {
 			t.Errorf("task.%s is a content field, want plaintext", f)
 		}
+	}
+	if IsContentField("user_prefs", "time_sectors") {
+		t.Error("user_prefs.time_sectors is a content field, want plaintext")
 	}
 	if IsContentField("user_prefs", "energy") {
 		t.Error("user_prefs.energy is a content field, want plaintext")

@@ -7,7 +7,13 @@
 // ServeMux of its own.
 package httpx
 
-import "net/http"
+import (
+	"errors"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+)
 
 // Kind is who may call a route at all.
 type Kind uint8
@@ -55,6 +61,44 @@ type Policy struct {
 	// Demo: a demo instance refuses the route (the deny list in httpapi's
 	// demo.go is checked against this flag by TestDemoDenyListMatchesPolicy).
 	Demo bool
+	// Deprecation marks a deprecated v1 route (stability-contract D3): it keeps
+	// its behaviour and answers with the Deprecation and Sunset headers.
+	Deprecation *Deprecation
+}
+
+// MinDeprecationWindow is the shortest time between a route's deprecation and
+// its sunset (docs/stability.md: 12 months, and at least two minor releases,
+// which the release notes track).
+const MinDeprecationWindow = 365 * 24 * time.Hour
+
+// Deprecation is when a route was deprecated, the earliest date it may stop
+// being served (only by a new major API path) and what replaces it.
+type Deprecation struct {
+	Since       time.Time
+	Sunset      time.Time
+	Replacement string
+}
+
+// Headers sets the Deprecation (RFC 9745) and Sunset (RFC 8594) headers, and a
+// successor-version link when the replacement is a path.
+func (d *Deprecation) Headers(h http.Header) {
+	h.Set("Deprecation", "@"+strconv.FormatInt(d.Since.Unix(), 10))
+	h.Set("Sunset", d.Sunset.UTC().Format(http.TimeFormat))
+	if strings.HasPrefix(d.Replacement, "/") {
+		h.Add("Link", "<"+d.Replacement+">; rel=\"successor-version\"")
+	}
+}
+
+// Check reports a deprecation that breaks the policy: no replacement, or a
+// sunset sooner than MinDeprecationWindow after the deprecation.
+func (d *Deprecation) Check() error {
+	switch {
+	case d.Replacement == "":
+		return errors.New("a deprecated route names its replacement")
+	case d.Sunset.Sub(d.Since) < MinDeprecationWindow:
+		return errors.New("a deprecated route's sunset is at least 12 months after its deprecation")
+	}
+	return nil
 }
 
 // Public is a route that needs no sign-in, with the reason it is safe.
@@ -87,6 +131,13 @@ func (p Policy) FullTokens() Policy { p.Tokens = TokensFull; return p }
 
 // DemoDenied marks a route a demo instance refuses.
 func (p Policy) DemoDenied() Policy { p.Demo = true; return p }
+
+// Deprecated marks a route deprecated since a date, served at least until
+// sunset, and replaced by replacement (a path or a short description).
+func (p Policy) Deprecated(since, sunset time.Time, replacement string) Policy {
+	p.Deprecation = &Deprecation{Since: since, Sunset: sunset, Replacement: replacement}
+	return p
+}
 
 // Router registers a handler for a pattern behind a policy (httpapi's routes).
 type Router interface {

@@ -9,6 +9,8 @@ import { addReminder } from './reminders'
 import { checkReminders, SHOWN_KEY, type ShownSet } from './reminderWatcher'
 import { formatDate, formatTime, logicalDay, resolveDateTime } from './dates'
 import { setUserPref, type DateTimePrefs } from './userPrefs'
+import { applyReminderAction, handleShellUrl } from './shellActions'
+import { occurrenceId } from './ids'
 import source from '../../public/push-sw.js?raw'
 
 const HOUR = 3_600_000
@@ -21,7 +23,7 @@ interface Scope {
   opened: string[]
 }
 
-function loadWorker(opts: { windows?: { focused: boolean }[]; fetchOk?: boolean; answer?: (body: { ops: { id: string; field: string }[] }) => unknown; badge?: (number | 'clear')[] } = {}): Scope {
+function loadWorker(opts: { windows?: { focused: boolean }[]; maxActions?: number; fetchOk?: boolean; answer?: (body: { ops: { id: string; field: string }[] }) => unknown; badge?: (number | 'clear')[] } = {}): Scope {
   const scope: Scope = { listeners: {}, shown: [], messages: [], fetches: [], opened: [] }
   const badge = opts.badge
   const windows = (opts.windows ?? []).map((w) => ({
@@ -30,6 +32,7 @@ function loadWorker(opts: { windows?: { focused: boolean }[]; fetchOk?: boolean;
   }))
   const self = {
     crypto: globalThis.crypto,
+    Notification: opts.maxActions === undefined ? undefined : { maxActions: opts.maxActions },
     navigator: badge ? { setAppBadge: async (n: number) => { badge.push(n) }, clearAppBadge: async () => { badge.push('clear') } } : {},
     addEventListener: (type: string, fn: (ev: unknown) => void) => (scope.listeners[type] = fn),
     clients: { matchAll: async () => windows, openWindow: vi.fn(async (url: string) => scope.opened.push(url)) },
@@ -82,7 +85,7 @@ describe('service worker reminder handlers', () => {
     expect(sw.shown).toHaveLength(1)
     expect(sw.shown[0].title).toBe('Call the dentist')
     expect(sw.shown[0].options.tag).toBe(`reminder:${reminderId}`)
-    expect((sw.shown[0].options.actions as { action: string }[]).map((a) => a.action)).toEqual(['snooze10', 'dismiss'])
+    expect((sw.shown[0].options.actions as { action: string }[]).map((a) => a.action)).toEqual(['done', 'snooze10', 'dismiss'])
     const shown = await getMeta<ShownSet>(SHOWN_KEY, {})
     expect(shown[reminderId]).toEqual({ fireAt: now - 1000, by: 'sw' })
     // The in-app path does not repeat a reminder the worker already showed.
@@ -231,7 +234,7 @@ describe('service worker due text (date-time-preferences D7)', () => {
     expect(fmt(due, prefs, TODAY)).toBe(want)
   })
 
-  it('a pushed reminder reads Due Nov 3, 3:00 PM with month-day and 12h stored on the device', async () => {
+  it('a pushed reminder reads the due date and 12h time as lib/dates formats them', async () => {
     const taskId = await createTask({ title: 'Pay rent', due: { date: `${new Date().getFullYear()}-11-03`, time: '15:00' } })
     const reminderId = await addReminder(taskId, { kind: 'absolute', fire_at: Date.now() - 1000 })
     await setUserPref('date_format', 'month-day')
@@ -240,7 +243,13 @@ describe('service worker due text (date-time-preferences D7)', () => {
     await db.open()
     const sw = loadWorker()
     await dispatch(sw, 'push', pushEvent({ type: 'reminder', reminderId, taskId, fireAt: Date.now() - 1000 }))
-    expect(sw.shown[0].options.body).toBe('Due Nov 3, 3:00 PM')
+    // The worker keeps the host's locale when no language is stored (design D4),
+    // so compute the English-or-local expectation from the same formatter the
+    // app uses instead of hard-coding one language.
+    const year = new Date().getFullYear()
+    const r = resolveDateTime({ date_format: 'month-day', time_format: '12h', week_start: 'system' }, { order: 'MD', hour12: false, weekStart: 1 })
+    const want = `${formatDate(`${year}-11-03`, 'compact', r, `${year}-10-14`)}, ${formatTime('15:00', r)}`
+    expect(sw.shown[0].options.body).toBe(`Due ${want}`)
   })
 
   it('falls back to the locale date and the stored time without preferences', async () => {
@@ -252,8 +261,97 @@ describe('service worker due text (date-time-preferences D7)', () => {
   })
 })
 
+describe('service worker due dates in the chosen language (#1009)', () => {
+  // A browser in another language: the stored language decides, never the browser.
+  function formatterOn(languages: string[]): DueFormatter {
+    const self: { addEventListener: () => void; navigator: { languages: string[] }; __opentodoFormatDue?: DueFormatter } = { addEventListener: () => undefined, navigator: { languages } }
+    new Function('self', 'fetch', 'indexedDB', source)(self, undefined, undefined)
+    return self.__opentodoFormatDue!
+  }
+  const TODAY = '2026-10-14'
+  const DUE = { date: '2026-11-03', time: '15:00' }
+
+  it('English on a German browser writes English month names', () => {
+    expect(formatterOn(['de-DE', 'de'])(DUE, { language: 'en', time_format: '12h' } as never, TODAY)).toBe('Nov 3, 3:00 PM')
+  })
+
+  it('English takes the browser’s English region, like the app', () => {
+    expect(formatterOn(['de-DE', 'en-GB'])(DUE, { language: 'en', time_format: '24h' } as never, TODAY)).toBe('3 Nov, 15:00')
+  })
+
+  it('German on an English browser writes German month names', () => {
+    expect(formatterOn(['en-US'])(DUE, { language: 'de', time_format: '24h' } as never, TODAY)).toBe('3. Nov., 15:00')
+  })
+
+  it('an unknown stored language is the browser’s locale', () => {
+    const want = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(new Date(2026, 10, 3))
+    expect(formatterOn([])({ date: '2026-11-03' }, { language: 'xx' } as never, TODAY)).toBe(want)
+  })
+})
+
+describe('Done on a reminder notification (reminder-done-action)', () => {
+  function localDate(offsetDays = 0): string {
+    const d = new Date()
+    d.setDate(d.getDate() + offsetDays)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  }
+
+  async function repeating() {
+    const taskId = await createTask({ title: 'Water the plants', due: { date: localDate(), time: '09:00' }, recurrence: 'every day' })
+    const reminderId = await addReminder(taskId, { kind: 'absolute', fire_at: Date.now() - 1000 })
+    await db.outbox.clear()
+    db.close()
+    await db.open()
+    return { taskId, reminderId }
+  }
+
+  async function expectAdvanced(taskId: string) {
+    const series = await db.tasks.get(taskId)
+    expect(series).toMatchObject({ completed_at: null, recurrence: 'every day', due: { date: localDate(1), time: '09:00' } })
+    const record = await db.tasks.get(occurrenceId(taskId, localDate()))
+    expect(record?.completed_at).toBeGreaterThan(0)
+    expect(record?.series_id).toBe(taskId)
+    // The completion is queued as ordinary ops, uploaded by the next sync.
+    expect((await db.outbox.toArray()).some((o) => o.entityId === taskId && o.field === 'due')).toBe(true)
+  }
+
+  it('a browser with two buttons keeps Done and Snooze 10 min', async () => {
+    const { taskId, reminderId, now } = await setup()
+    const sw = loadWorker({ maxActions: 2 })
+    await dispatch(sw, 'push', pushEvent({ type: 'reminder', reminderId, taskId, fireAt: now - 1000 }))
+    expect((sw.shown[0].options.actions as { action: string }[]).map((a) => a.action)).toEqual(['done', 'snooze10'])
+  })
+
+  it('with a window open, the worker writes nothing and one window completes the task: a repeating task advances', async () => {
+    const { taskId, reminderId } = await repeating()
+    const sw = loadWorker({ windows: [{ focused: false }, { focused: true }] })
+    await dispatch(sw, 'notificationclick', { action: 'done', notification: { data: { reminderId, taskId, fireAt: 1 }, close: () => undefined } })
+    expect(sw.messages).toEqual([{ type: 'reminders:done', reminderId }])
+    expect(sw.opened).toEqual([])
+    expect(await db.outbox.count()).toBe(0)
+    // What the app does with the message (ReminderToasts): the app's completion.
+    await applyReminderAction(reminderId, 'done')
+    await expectAdvanced(taskId)
+  })
+
+  it('with no window, the app opens at the Done address, which advances a repeating task', async () => {
+    const { taskId, reminderId } = await repeating()
+    const sw = loadWorker()
+    await dispatch(sw, 'notificationclick', { action: 'done', notification: { data: { reminderId, taskId, fireAt: 1 }, close: () => undefined } })
+    expect(sw.opened).toEqual([`/?reminder=${reminderId}&action=done`])
+    expect(sw.fetches).toEqual([])
+    const url = new URL(sw.opened[0], 'https://todo.example')
+    const replaced: string[] = []
+    const loc = { search: url.search, pathname: url.pathname, hash: '' } as Location
+    const hist = { state: null, replaceState: (_s: unknown, _t: string, u: string) => replaced.push(u) } as unknown as History
+    expect(await handleShellUrl(() => false, loc, hist)).toEqual({ kind: 'reminder', id: reminderId, action: 'done' })
+    expect(replaced).toEqual(['/'])
+    await expectAdvanced(taskId)
+  })
+})
+
 describe('service worker texts in the stored language (app-localization D9)', () => {
-  const KEYS = { reminder: 'Reminder', due: 'Due {date}', generic: 'You have a reminder', snooze: 'Snooze 10 min', dismiss: 'Dismiss', test: 'Test notification: push works on this device.' } as const
+  const KEYS = { reminder: 'Reminder', due: 'Due {date}', generic: 'You have a reminder', done: 'Done|task', snooze: 'Snooze 10 min', dismiss: 'Dismiss', test: 'Test notification: push works on this device.' } as const
   function workerText(): Record<string, Record<keyof typeof KEYS, string>> {
     const self: Record<string, unknown> = { addEventListener: () => undefined }
     new Function('self', 'fetch', 'indexedDB', source)(self, async () => ({ ok: true }), globalThis.indexedDB)
@@ -283,7 +381,7 @@ describe('service worker texts in the stored language (app-localization D9)', ()
     const sw = loadWorker()
     await dispatch(sw, 'push', pushEvent({ type: 'reminder', reminderId, taskId, fireAt: Date.now() - 1000 }))
     expect(sw.shown[0].options.body).toBe('Fällig 3. Nov., 15:00')
-    expect((sw.shown[0].options.actions as { title: string }[]).map((a) => a.title)).toEqual(['10 Min. später', 'Verwerfen'])
+    expect((sw.shown[0].options.actions as { title: string }[]).map((a) => a.title)).toEqual(['Erledigt', '10 Min. später', 'Verwerfen'])
   })
 
   it('without a preferences row the texts stay English', async () => {
@@ -291,7 +389,7 @@ describe('service worker texts in the stored language (app-localization D9)', ()
     const sw = loadWorker()
     await dispatch(sw, 'push', pushEvent({ type: 'reminder', reminderId, taskId, fireAt: now - 1000 }))
     expect(String(sw.shown[0].options.body)).toMatch(/^Due /)
-    expect((sw.shown[0].options.actions as { title: string }[]).map((a) => a.title)).toEqual(['Snooze 10 min', 'Dismiss'])
+    expect((sw.shown[0].options.actions as { title: string }[]).map((a) => a.title)).toEqual(['Done', 'Snooze 10 min', 'Dismiss'])
   })
 })
 

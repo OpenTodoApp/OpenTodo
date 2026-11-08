@@ -6,6 +6,7 @@ import {
   applyOps, completeTask, createTask, deleteTask, detachOccurrence, getDeviceId, resetDeviceId, setRecurrence, setTaskCompleted, skipOccurrence, updateTask,
 } from './ops'
 import type { Op, Task } from './types'
+import { check10 } from './testdata/check10'
 
 let n = 0
 const run = () => `${Date.now()}-${n++}`
@@ -215,6 +216,22 @@ describe('setRecurrence', () => {
     expect(await db.tasks.get(id)).toMatchObject({ recurrence: null, due: null })
   })
 
+  it('stores every N weeks on <day> as every N weeks when the due date is on that day (recurrence-1-0-compatible)', async () => {
+    const sat = await createTask({ title: 'Bins', due: { date: '2026-11-07' } })
+    expect(await setRecurrence(sat, 'every 2 weeks on saturday')).toEqual({ ok: true, rule: 'every 2 weeks' })
+    const wed = await createTask({ title: 'Paper', due: { date: '2026-11-04' } })
+    expect(await setRecurrence(wed, 'every 2 weeks on sat')).toEqual({ ok: true, rule: 'every 2 weeks on saturday' })
+    const undated = await createTask({ title: 'Glass' })
+    await setRecurrence(undated, 'every 2 weeks on saturday', { today: '2026-11-04' })
+    expect(await db.tasks.get(undated)).toMatchObject({ recurrence: 'every 2 weeks', due: { date: '2026-11-07' } })
+    const created = await createTask({ title: 'Cans', due: { date: '2026-11-07' }, recurrence: 'every 2 weeks on saturday' })
+    expect((await db.tasks.get(created))?.recurrence).toBe('every 2 weeks')
+    for (const id of [sat, wed, undated, created]) {
+      const tk = await db.tasks.get(id)
+      expect(check10(tk?.recurrence ?? '', tk?.due?.date)).toBeNull()
+    }
+  })
+
   it('createTask with a rule and no due date starts at the first occurrence', async () => {
     const id = await createTask({ title: 'T', recurrence: 'every day' })
     expect((await db.tasks.get(id))?.due?.date).toMatch(/^\d{4}-\d\d-\d\d$/)
@@ -418,5 +435,74 @@ describe('start and evening follow the series (OpenSpec someday-and-evening 7.1)
     expect(await snapshot(a)).toBe(await snapshot(b))
     await use(a)
     expect((await db.tasks.get(id))?.start).toBe('2026-10-24')
+  })
+})
+
+// OpenSpec change chore-rotation (D2, D3): completion passes the turn.
+describe('rotating series', () => {
+  const people = ['alice', 'bob', 'carol']
+  /** The shared project "house" (alice, bob, carol) and the series "bins" on this device. */
+  async function seed(extra: Record<string, unknown> = {}) {
+    await db.memberships.put({ projectId: 'house', role: 'editor', ownerId: 'alice',
+      members: people.map((u) => ({ userId: u, name: u, email: `${u}@example.com`, role: 'editor' as const })) })
+    const fields: Record<string, unknown> = { title: 'Bins', project_id: 'house', parent_id: null, priority: 4, labels: [], position: 1, created_at: 1,
+      completed_at: null, deleted_at: null, recurrence: 'every monday', series_id: null, due: { date: '2026-11-09' }, assignee_id: 'alice',
+      rotation: people, section_id: null, ...extra }
+    await applyOps(Object.entries(fields).map(([field, value]) => ({ id: `seed-${field}-${run()}`, entity: 'task', entityId: 'bins', field, value, ts: 10 + n, device: 'seed' })))
+  }
+
+  it('assigns the next person and keeps the holder on the record', async () => {
+    await seed()
+    const rec = await completeTask('bins', { today: '2026-11-09' })
+    expect((await db.tasks.get('bins'))?.assignee_id).toBe('bob')
+    expect((await db.tasks.get(rec!))?.assignee_id).toBe('alice')
+    await completeTask('bins', { today: '2026-11-16' })
+    await completeTask('bins', { today: '2026-11-23' })
+    expect((await db.tasks.get('bins'))?.assignee_id).toBe('alice') // wrapped around
+  })
+
+  it('does not rotate on skip or when the series ends', async () => {
+    await seed()
+    await skipOccurrence('bins', { today: '2026-11-09' })
+    expect((await db.tasks.get('bins'))?.assignee_id).toBe('alice')
+    await use(`end-${run()}`)
+    await seed({ recurrence: 'every monday for 1 times' })
+    await completeTask('bins', { today: '2026-11-09' })
+    const t = await db.tasks.get('bins')
+    expect(t?.completed_at).not.toBeNull()
+    expect(t?.assignee_id).toBe('alice')
+  })
+
+  it('is inert on a subtask and in a project the device does not share', async () => {
+    await seed({ parent_id: 'other' })
+    await completeTask('bins', { today: '2026-11-09' })
+    expect((await db.tasks.get('bins'))?.assignee_id).toBe('alice')
+    await use(`personal-${run()}`)
+    await seed()
+    await db.memberships.clear()
+    await completeTask('bins', { today: '2026-11-09' })
+    expect((await db.tasks.get('bins'))?.assignee_id).toBe('alice')
+  })
+
+  it('two devices completing the same occurrence offline write the same batch', async () => {
+    const a = `A-${run()}`
+    const b = `B-${run()}`
+    const batches: Record<string, unknown>[][] = []
+    for (const dev of [a, b]) {
+      await use(dev)
+      await seed()
+      await db.outbox.clear()
+      await completeTask('bins', { today: '2026-11-09', now: 5000 })
+      batches.push((await outbox()).map(({ entityId, field, value }) => ({ entityId, field, value }))
+        .sort((x, y) => `${x.entityId}${x.field}`.localeCompare(`${y.entityId}${y.field}`)))
+    }
+    expect(batches[0]).toEqual(batches[1])
+    expect(batches[0]).toContainEqual({ entityId: 'bins', field: 'assignee_id', value: 'bob' })
+    await syncAll([a, b])
+    for (const dev of [a, b]) {
+      await use(dev)
+      expect((await db.tasks.get('bins'))?.assignee_id).toBe('bob')
+      expect(await records('bins')).toHaveLength(1)
+    }
   })
 })

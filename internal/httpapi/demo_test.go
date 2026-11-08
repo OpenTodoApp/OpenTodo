@@ -13,7 +13,7 @@ import (
 
 	"github.com/OpenTodoApp/opentodo/internal/config"
 	"github.com/OpenTodoApp/opentodo/internal/demo"
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 	"github.com/OpenTodoApp/opentodo/internal/tenant/services"
 )
 
@@ -28,7 +28,7 @@ type demoServer struct {
 
 func newDemoServer(t *testing.T) *demoServer {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
+	db, err := storetest.OpenDir(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -536,7 +536,7 @@ func TestDemoRobotsHeader(t *testing.T) {
 	d := newDemoServer(t)
 	e := d.anonymous()
 	for _, c := range []struct{ method, path string }{{"GET", "/"}, {"GET", "/inbox"}, {"GET", "/api/v1/auth/status"}, {"GET", "/api/v1/tasks"},
-		{"POST", "/api/v1/tokens"}, {"GET", "/api/v1/nope"}, {"GET", "/healthz"}} {
+		{"POST", "/api/v1/tokens"}, {"GET", "/api/v1/nope"}, {"GET", "/healthz"}, {"GET", "/api/v1/health"}} {
 		resp, _ := e.do(c.method, c.path, nil)
 		if got := resp.Header.Get("X-Robots-Tag"); got != "noindex, nofollow" {
 			t.Errorf("%s %s: X-Robots-Tag = %q", c.method, c.path, got)

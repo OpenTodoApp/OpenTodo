@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { InlineEditor } from './task-list/InlineEditor'
-import type { CSSProperties, ReactNode } from 'react'
+import { type CSSProperties, type ReactNode, useLayoutEffect } from 'react'
 import { setDateTime } from '../lib/dates'
+import { applyFullTitles } from '../lib/fullTitles'
 import type { HabitStats } from '../lib/habits'
 import { rowTimeWidth } from '../lib/rowTime'
 import { HEX, label, project, seedCounts, task, TODAY, TOMORROW, withClock, withSeed } from './stories/fixtures'
@@ -146,6 +147,23 @@ export const Energy: StoryObj = {
       <TaskRow {...base} task={task({ id: 't1', title: 'Draft the strategy', estimate_minutes: 120, energy: 'deep' })} />
       <TaskRow {...base} task={task({ id: 't2', title: 'Sort the receipts', due: { date: TODAY }, energy: 'low' })} />
       <TaskRow {...base} task={task({ id: 't3', title: 'Reply to Mara', estimate_minutes: 15 })} />
+    </List>
+  ),
+}
+
+/**
+ * A time sector in the date slot of an undated task (time-sectors D4): named on the
+ * frozen Wednesday 14 October 2026, a later week by its number, a month by name, and
+ * a week that has ended carried over in the faint tone, never the overdue colour.
+ */
+export const Sector: StoryObj = {
+  render: () => (
+    <List>
+      <TaskRow {...base} task={task({ id: 't1', title: 'Draft the budget', sector: '2026-W42', deadline: '2026-10-16' })} />
+      <TaskRow {...base} task={task({ id: 't2', title: 'Book the venue', sector: '2026-W43' })} />
+      <TaskRow {...base} task={task({ id: 't3', title: 'Plan the offsite', sector: '2026-W46', estimate_minutes: 60 })} />
+      <TaskRow {...base} task={task({ id: 't4', title: 'Renew the insurance', sector: '2026-11' })} />
+      <TaskRow {...base} task={task({ id: 't5', title: 'Sort the photos', sector: '2026-W40' })} />
     </List>
   ),
 }
@@ -308,6 +326,39 @@ export const LongTitleNarrow: StoryObj = {
   ),
 }
 
+/** Turns full task titles on while the story is shown, as the synced setting does on <html>. */
+function FullTitles({ children }: { children: ReactNode }) {
+  useLayoutEffect(() => {
+    applyFullTitles(true)
+    return () => applyFullTitles(false)
+  }, [])
+  return <>{children}</>
+}
+
+/**
+ * Show full task titles (full-task-titles, GitHub issue 998): the LongTitle rows and a
+ * long card with the setting on. Every title is whole, wrapped onto as many lines as it
+ * takes; the column (and on a phone the date) stays on the title's first line.
+ */
+export const LongTitleFull: StoryObj = {
+  render: () => (
+    <FullTitles>
+      <List>
+        <TaskRow {...base} timeColumn showProject project={work} labels={[errand, call]} progress={{ done: 2, total: 5 }}
+          task={task({ id: 't1', title: 'Collect testimonials from the first three customers, pick two quotes and send them to the designer before Friday', project_id: work.id, due: { date: TODAY, time: '09:30' }, estimate_minutes: 45, labels: [errand.id, call.id] })} />
+        <TaskRow {...base} timeColumn showProject project={home}
+          task={task({ id: 't2', title: 'Compare the three quotes for the kitchen renovation and call the one with the earliest start date', project_id: home.id, deadline: '2026-10-17', due: { date: TOMORROW } })} />
+        <TaskRow {...base} timeColumn showProject project={home}
+          task={task({ id: 't3', title: 'Email the cutting board company about the warped board, the replacement they promised in September, the refund for the shipping and why the second board never arrived either', project_id: home.id })} />
+        <TaskRow {...base} timeColumn task={task({ id: 't4', title: 'Renew passport' })} />
+      </List>
+      <ul className="mt-3 w-72 space-y-1.5 rounded-card bg-canvas p-1.5 dark:border dark:border-default dark:bg-sunken">
+        <TaskCard {...base} task={task({ id: 'c1', title: 'Email the cutting board company about the warped board, the replacement they promised in September and the refund for the shipping' })} labels={[errand]} />
+      </ul>
+    </FullTitles>
+  ),
+}
+
 /** Every item of the line in its order (date words, repeat, deadline, start, tracked over estimate, blocked, streak, assignee), three labels, and the project, the counts and the origin trailing. */
 export const EveryMetadata: StoryObj = {
   ...withSeed(() => seedCounts('t-counts')),
@@ -349,6 +400,53 @@ export const WithOrigins: StoryObj = {
           <TaskCard {...base} task={task({ id: 'c-page', title: 'Summarise the offline sync article', origin: page })} labels={[deepWork]} />
         </ul>
       </div>
+    )
+  },
+}
+
+/**
+ * Tasks imported from Todoist (row-title-first-on-phones, GitHub issue 844): the import's
+ * id is not shown in the row, so the title keeps the row's width; the Inbox's source line
+ * sits under the title. At 375 px each row is the phone's one line, the Inbox row two.
+ */
+export const ImportedOrigins: StoryObj = {
+  render: () => {
+    const todoist = (id: string) => ({ kind: 'import' as const, provider: 'todoist', id })
+    const trello = { kind: 'import' as const, provider: 'trello', id: '5f3a9c1e2b7d4a0012345678', url: 'https://trello.com/c/AbCd1234' }
+    return (
+      <List>
+        <TaskRow {...base} onExpand={noop} task={task({ id: 'im-1', title: 'Küche aufräumen und den Kühlschrank abtauen', due: { date: TOMORROW }, recurrence: 'every week', origin: todoist('dfc92cb10aed05a4:1') })} />
+        <TaskRow {...base} onExpand={noop} depth={2} task={task({ id: 'im-2', title: 'Geschenke für die Familie besorgen', origin: todoist('32dc159c4ebf721d:1') })} />
+        <TaskRow {...base} onExpand={noop} task={task({ id: 'im-3', title: 'Move the onboarding checklist into the new board', origin: trello })} />
+        <TaskRow {...base} onExpand={noop} source task={task({ id: 'im-4', title: 'Unterlagen für die Steuererklärung zusammensuchen', created_at: Date.now() - 19 * 3600_000, origin: todoist('b3e8862820356c2e:1') })} />
+      </List>
+    )
+  },
+}
+
+/**
+ * A project after a Todoist import (GitHub issue 945): the import's id shows nowhere,
+ * and the date and label cells line up down the list whether a row ends with an
+ * origin (an issue, a page, a Trello card's icon) or with nothing. The list takes the
+ * whole width, so at 1280 and 768 px each row has the property column, at 390 px the
+ * phone's one line. scripts/ui-check/alignment.mjs measures it at the three widths.
+ */
+export const ImportedAlignment: StoryObj = {
+  render: () => {
+    const todoist = (id: string) => ({ kind: 'import' as const, provider: 'todoist', id })
+    const trello = { kind: 'import' as const, provider: 'trello', id: '5f3a9c1e2b7d4a0012345678', url: 'https://trello.com/c/AbCd1234' }
+    const issue = { kind: 'issue' as const, provider: 'github', id: 'o/r#7', url: 'https://github.com/o/r/issues/7' }
+    const page = { kind: 'url' as const, url: 'https://docs.example-company.org/handbook/onboarding', title: 'Onboarding handbook' }
+    const row = { ...base, onExpand: noop }
+    return (
+      <ul data-alignment-list="" className="w-full space-y-0.5 rounded-card border border-default bg-surface p-2 shadow-1">
+        <TaskRow {...row} task={task({ id: 'ia-1', title: 'Küche aufräumen', due: { date: TOMORROW }, labels: [errand.id], origin: todoist('dfc92cb10aed05a4:1') })} labels={[errand]} />
+        <TaskRow {...row} task={task({ id: 'ia-2', title: 'Fix the login timeout', due: { date: '2026-10-20' }, labels: [deepWork.id], origin: issue })} labels={[deepWork]} />
+        <TaskRow {...row} task={task({ id: 'ia-3', title: 'Geschenke für die Familie besorgen', due: { date: TODAY }, labels: [errand.id, deepWork.id], origin: todoist('32dc159c4ebf721d:1') })} labels={[errand, deepWork]} />
+        <TaskRow {...row} task={task({ id: 'ia-4', title: 'Read the onboarding handbook', due: { date: '2026-10-22' }, labels: [deepWork.id], origin: page })} labels={[deepWork]} />
+        <TaskRow {...row} task={task({ id: 'ia-5', title: 'Plan the autumn trip', due: { date: '2026-10-25' }, labels: [errand.id] })} labels={[errand]} />
+        <TaskRow {...row} task={task({ id: 'ia-6', title: 'Move the onboarding checklist into the new board', due: { date: TOMORROW }, labels: [errand.id], origin: trello })} labels={[errand]} />
+      </ul>
     )
   },
 }

@@ -19,9 +19,11 @@ OpenTodo is free and open source, made by one person in the open. These are the 
 
 If you found a security problem, do not open a public issue: follow `SECURITY.md` in the repository instead.
 
+If something stops you because of how you use a computer or phone (a screen reader, the keyboard only, voice control, zoom), add the label `accessibility`: such a report is answered within 10 business days. The [accessibility statement](accessibility.md) says what is tested and what is known.
+
 ## Talk to other people
 
-[Join the OpenTodo server on Discord](https://discord.gg/Jmj7WuRQ) to ask a question, show how you use the app or see what other people build. It is the place for conversation; a bug report is still best as an issue, so it is not lost in the chat. Nothing in the app talks to Discord: the link opens it in a new tab only when you choose to.
+[Join the OpenTodo server on Discord](https://discord.gg/mmSsuCRduD) to ask a question, show how you use the app or see what other people build. It is the place for conversation; a bug report is still best as an issue, so it is not lost in the chat. Nothing in the app talks to Discord: the link opens it in a new tab only when you choose to.
 
 ## Follow the news
 

@@ -9,13 +9,15 @@ import { db, getMeta, setMeta } from './db'
 import { compile, filterScope, mentionsState, namesWorkspace, parse, withCompletedTasks, type FilterContext, type Node } from './filter'
 import type { BoardTemplate } from './boardTemplates'
 import { activeLabels } from './labels'
+import { applicableFieldsLookup } from './fieldTree'
+import { nameKey } from './fieldNames'
 import { VIEW_DEFAULTS, getDeviceId, mutate, mutateMany, mutationTables, type Change } from './ops'
 import { knownRule } from './rules'
 import { buildProjectTree } from './projects'
 import { ancestors, flattenTree } from './tree'
 import {
   GROUP_BY_OPTIONS, ROW_PROPERTIES, SORT_BY_OPTIONS, SORT_DIR_OPTIONS, VIEW_KINDS, VIEW_LAYOUTS,
-  type GroupBy, type OnDropRule, type Project, type RowProperty, type SortBy, type SortDir, type Task, type View, type ViewKind, type ViewLayout,
+  fieldSortId, readSortBy, type FieldDef, type GroupBy, type OnDropRule, type Project, type RowProperty, type SortBy, type SortDir, type Task, type View, type ViewKind, type ViewLayout,
 } from './types'
 import { t, msg } from './i18n'
 import { uuid } from './ids'
@@ -26,7 +28,7 @@ import { spanOf } from './span'
 // ---- Today and Upcoming selection (OpenSpec change `deadlines`, design D3) ----
 // One definition shared by the list, its grouping and the sidebar count.
 
-type DatedTask = Pick<Task, 'completed_at' | 'due' | 'deadline' | 'start'> & { project_id?: string | null; span?: boolean }
+type DatedTask = Pick<Task, 'completed_at' | 'due' | 'deadline' | 'start'> & { project_id?: string | null; span?: boolean; sector?: string }
 
 // ---- start dates, Someday and This Evening (OpenSpec change `someday-and-evening`, D2) ----
 
@@ -58,7 +60,7 @@ export function inToday(item: DatedTask, today: string): boolean {
 
 /** Anytime: open, active tasks with no date of any kind and no start. */
 export function inAnytime(item: DatedTask, today: string): boolean {
-  return !item.completed_at && isActive(item, today) && !item.due && !(item.deadline ?? null) && (item.start ?? null) === null
+  return !item.completed_at && isActive(item, today) && !item.due && !(item.deadline ?? null) && (item.start ?? null) === null && !item.sector
 }
 
 /** Counted in the sidebar (Inbox, projects): open and active. */
@@ -139,7 +141,7 @@ export function viewOptions(v: Pick<View, 'kind' | 'group_by' | 'sort_by' | 'sor
   return {
     kind: pick(v.kind, VIEW_KINDS, VIEW_DEFAULTS.kind as ViewKind),
     groupBy: pick(v.group_by, GROUP_BY_OPTIONS, VIEW_DEFAULTS.group_by as GroupBy),
-    sortBy: pick(v.sort_by, SORT_BY_OPTIONS, VIEW_DEFAULTS.sort_by as SortBy),
+    sortBy: readSortBy(v.sort_by, SORT_BY_OPTIONS, VIEW_DEFAULTS.sort_by as SortBy),
     sortDir: pick(v.sort_dir, SORT_DIR_OPTIONS, VIEW_DEFAULTS.sort_dir as SortDir),
   }
 }
@@ -356,7 +358,7 @@ export async function setOnDrop(viewId: string, rule: OnDropRule | null): Promis
 /**
  * Create a board from a template (D8): its saved filters, unpinned and each with
  * its rule, and one pinned board of them in order, after the last view, in one
- * batch. Like a new saved filter (sidebar-favourites), the board is a favourite by
+ * batch and in the current workspace. Like a new saved filter (sidebar-favourites), the board is a favourite by
  * its pinned flag and lists after the ordered entries until the user moves it.
  * Returns the board's id.
  */
@@ -367,7 +369,7 @@ export async function createBoardFromTemplate(template: BoardTemplate, name: str
   const now = Date.now()
   let position = now
   for (const v of await liveViews()) if (v.position >= position) position = v.position + 1
-  const base = { group_by: VIEW_DEFAULTS.group_by, sort_by: VIEW_DEFAULTS.sort_by, sort_dir: VIEW_DEFAULTS.sort_dir, created_at: now, deleted_at: null }
+  const base = { group_by: VIEW_DEFAULTS.group_by, sort_by: VIEW_DEFAULTS.sort_by, sort_dir: VIEW_DEFAULTS.sort_dir, created_at: now, deleted_at: null, ...(await workspaceFields()) }
   const changes: Change[] = []
   const panels: string[] = []
   for (const c of template.columns) {
@@ -440,19 +442,76 @@ export function compileView(view: Pick<View, 'query'>, given: FilterContext, wit
   return { ok: true, warnings, every: !!given.everyWorkspace && namesWorkspace(ast), test: (task) => !(task.project_id && archived.has(task.project_id)) && test(task) }
 }
 
+const TITLE_COLLATOR = new Intl.Collator(undefined, { sensitivity: 'base' })
+
 function byTitle(a: Task, b: Task): number {
-  return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' })
+  return TITLE_COLLATOR.compare(a.title, b.title)
+}
+
+export interface FieldSortContext {
+  projects: readonly Project[]
+  fields?: readonly FieldDef[]
+}
+
+interface SortableFieldValue {
+  rank: number
+  value: number | string
+}
+
+function isFieldDate(value: unknown): value is string {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+  const [year, month, day] = value.split('-').map(Number)
+  const date = new Date(Date.UTC(year, month - 1, day))
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
+}
+
+function fieldValueFor(task: Task, selectedName: string, fieldsOf: (projectId: string | null | undefined) => FieldDef[]): SortableFieldValue | null {
+  const def = fieldsOf(task.project_id).find((field) => nameKey(field.name) === selectedName)
+  if (!def) return null
+  const value = task.fields?.[def.id]
+  switch (def.type) {
+    case 'number':
+      return typeof value === 'number' && Number.isFinite(value) ? { rank: 0, value } : null
+    case 'date':
+      return isFieldDate(value) ? { rank: 1, value } : null
+    case 'text':
+      return typeof value === 'string' && value.length > 0 ? { rank: 2, value } : null
+    default:
+      return null
+  }
 }
 
 /**
- * Comparator for one view's sort. `desc` reverses the field order, except that undated
- * tasks always come last under a due-date sort. For priority, "descending" means the
- * most important first (p1 before p4). Ties fall back to due, priority, position, id.
+ * Comparator for one view's sort. Descending reverses field values, except that undated
+ * tasks always come last under a due-date sort. Priority 1 is highest: descending
+ * puts it first. Ties fall back to due, priority, position and id.
  */
-export function compareTasks(sortBy: SortBy, dir: SortDir): (a: Task, b: Task) => number {
+export function compareTasks(sortBy: SortBy, dir: SortDir, context?: FieldSortContext): (a: Task, b: Task) => number {
   const sign = dir === 'desc' ? -1 : 1
   const fallback = (a: Task, b: Task) =>
     compareDue(a.due, b.due) || a.priority - b.priority || a.position - b.position || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+  const selectedId = fieldSortId(sortBy)
+  if (selectedId) {
+    const selected = context?.fields?.find((field) => field.id === selectedId && !field.deleted_at)
+    if (!selected || !context || (selected.type !== 'number' && selected.type !== 'date')) return compareTasks('due', 'asc')
+    const selectedName = nameKey(selected.name)
+    const fieldsOf = applicableFieldsLookup(context.projects, context.fields ?? [])
+    const values = new WeakMap<Task, SortableFieldValue | null>()
+    const valueOf = (task: Task) => {
+      if (!values.has(task)) values.set(task, fieldValueFor(task, selectedName, fieldsOf))
+      return values.get(task)!
+    }
+    return (a, b) => {
+      const av = valueOf(a)
+      const bv = valueOf(b)
+      if (!av || !bv) return (av ? -1 : bv ? 1 : 0) || fallback(a, b)
+      if (av.rank !== bv.rank) return av.rank - bv.rank
+      const order = typeof av.value === 'number' && typeof bv.value === 'number'
+        ? av.value - bv.value
+        : TITLE_COLLATOR.compare(String(av.value), String(bv.value))
+      return sign * order || fallback(a, b)
+    }
+  }
   switch (sortBy) {
     case 'due':
       return (a, b) => {
@@ -474,6 +533,8 @@ export function compareTasks(sortBy: SortBy, dir: SortDir): (a: Task, b: Task) =
         if (!a.deadline || !b.deadline) return (a.deadline ? -1 : b.deadline ? 1 : 0) || fallback(a, b)
         return sign * (a.deadline < b.deadline ? -1 : a.deadline > b.deadline ? 1 : 0) || fallback(a, b)
       }
+    default:
+      return compareTasks('due', 'asc')
   }
 }
 
@@ -482,8 +543,8 @@ export function compareTasks(sortBy: SortBy, dir: SortDir): (a: Task, b: Task) =
  * Manual order is the view's own stored order, then the other tasks by position;
  * descending reverses it.
  */
-export function viewComparator(view: Pick<View, 'manual_order'>, sortBy: SortBy, dir: SortDir): (a: Task, b: Task) => number {
-  if (sortBy !== 'position') return compareTasks(sortBy, dir)
+export function viewComparator(view: Pick<View, 'manual_order'>, sortBy: SortBy, dir: SortDir, context?: FieldSortContext): (a: Task, b: Task) => number {
+  if (sortBy !== 'position') return compareTasks(sortBy, dir, context)
   const asc = compareManual(orderRank(view.manual_order))
   return dir === 'desc' ? (a, b) => asc(b, a) : asc
 }
@@ -564,7 +625,7 @@ export function runView(view: View, ctx: ViewContext): ViewResult {
   if (!c.ok) return c
   const { groupBy, sortBy, sortDir } = viewOptions(view)
   const scoped = viewScope(c, ctx)
-  const tasks = scoped.tasks.filter(c.test).sort(viewComparator(view, sortBy, sortDir))
+  const tasks = scoped.tasks.filter(c.test).sort(viewComparator(view, sortBy, sortDir, scoped))
   return { ok: true, tasks, groups: groupTasks(tasks, groupBy, scoped), warnings: c.warnings }
 }
 
@@ -594,12 +655,13 @@ export function evaluateViews(views: View[], ctx: ViewContext, limit = PANEL_TAS
   for (const tk of every.length ? ctx.everyWorkspace!.tasks : []) for (const l of every) if (l.test(tk)) l.matches.push(tk)
   for (const l of live) {
     const { groupBy, sortBy, sortDir } = viewOptions(l.view)
-    const sorted = l.matches.sort(viewComparator(l.view, sortBy, sortDir))
+    const scoped = viewScope(l, ctx)
+    const sorted = l.matches.sort(viewComparator(l.view, sortBy, sortDir, scoped))
     const firstN: Task[] = []
     if (limit > 0) {
       // Grouping by label can list a task twice; a panel shows each task once.
       const seen = new Set<string>()
-      for (const g of groupTasks(sorted, groupBy, l.every ? viewScope(l, ctx) : ctx)) {
+      for (const g of groupTasks(sorted, groupBy, scoped)) {
         for (const item of g.tasks) {
           if (firstN.length >= limit) break
           if (!seen.has(item.id)) {

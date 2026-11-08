@@ -2,6 +2,7 @@
 // only on the tokens, the reference date/time and the vocabularies passed in.
 import { nthWeekdayDate } from '../recurrence'
 import type { Token } from './tokenize'
+import type { SectorWord } from '../sectors'
 import { normalize, type DayMonthOrder, type Vocabulary } from './vocab'
 
 export interface DateContext {
@@ -244,6 +245,19 @@ export function wordsAt(tokens: readonly Token[], i: number, ctx: DateContext, f
   return best
 }
 
+/** A time sector phrase at `i` (time-sectors D8): the longest in any active language, with the sector word it means, or null. */
+export function sectorPhraseAt(tokens: readonly Token[], i: number, ctx: DateContext): { n: number; word: SectorWord } | null {
+  if (!tokens[i] || tokens[i].quoted) return null
+  let best: { n: number; word: SectorWord } | null = null
+  for (const v of ctx.vocabs) {
+    for (const [word, list] of Object.entries(v.sectorPhrases) as [SectorWord, string[]][]) {
+      const n = phraseAt(tokens, i, list, `${v.code}:sector:${word}`)
+      if (n && (!best || n > best.n)) best = { n, word }
+    }
+  }
+  return best
+}
+
 /** A part word at `i` ("morning" after "tomorrow", day-parts D5): the longest in any active language, or null. */
 export function partWordAt(tokens: readonly Token[], i: number, ctx: DateContext): { n: number; part: 'morning' | 'afternoon' | 'evening' } | null {
   if (!tokens[i] || tokens[i].quoted) return null
@@ -259,16 +273,34 @@ export function partWordAt(tokens: readonly Token[], i: number, ctx: DateContext
 
 /**
  * A deadline phrase at `i`: a deadline word ("deadline", "Frist", "fecha límite")
- * directly followed by a date phrase (OpenSpec change deadlines, design D7).
+ * directly followed by a date phrase (OpenSpec change deadlines, design D7), or a
+ * "by" word ("by", "bis", "entro") followed by a date phrase with no time after it
+ * (quick-add-by-deadline D1, D2).
  */
 export function matchDeadlineAt(tokens: readonly Token[], i: number, ctx: DateContext): DateMatch | null {
   if (!tokens[i] || tokens[i].quoted) return null
   let best: DateMatch | null = null
   for (const v of ctx.vocabs) {
-    const n = phraseAt(tokens, i, v.deadlineWords, `${v.code}:deadline`)
-    if (!n) continue
-    const dm = matchDateAt(tokens, i + n, ctx)
-    if (dm && (!best || dm.to > best.to)) best = { date: dm.date, from: i, to: dm.to }
+    for (const by of [false, true]) {
+      const n = by ? phraseAt(tokens, i, v.byWords, `${v.code}:by`) : phraseAt(tokens, i, v.deadlineWords, `${v.code}:deadline`)
+      if (!n) continue
+      const dm = matchDateAt(tokens, i + n, ctx)
+      // "by friday 5pm" has a time a deadline cannot hold: it stays a due date.
+      if (!dm || (by && matchTimeAt(tokens, dm.to, ctx))) continue
+      if (!best || dm.to > best.to) best = { date: dm.date, from: i, to: dm.to }
+    }
+  }
+  return best
+}
+
+/** A "by" word followed by a time ("by 5pm"): a due time, the word removed with it (quick-add-by-deadline D2). */
+export function matchByTimeAt(tokens: readonly Token[], i: number, ctx: DateContext): TimeMatch | null {
+  if (!tokens[i] || tokens[i].quoted) return null
+  let best: TimeMatch | null = null
+  for (const v of ctx.vocabs) {
+    const n = phraseAt(tokens, i, v.byWords, `${v.code}:by`)
+    const tm = n ? matchTimeAt(tokens, i + n, ctx) : null
+    if (tm && (!best || tm.to > best.to)) best = { ...tm, from: i }
   }
   return best
 }

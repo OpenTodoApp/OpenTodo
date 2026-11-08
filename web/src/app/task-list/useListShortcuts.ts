@@ -13,7 +13,7 @@ import { toggleTracking } from '../../lib/timeEntries'
 import type { Priority, Task } from '../../lib/types'
 import type { Tree } from '../../lib/tree'
 import { act } from '../actionError'
-import { runBulk } from '../bulk/BulkActions'
+import { runBulk, trashTicked } from '../bulk/BulkActions'
 import { panelTaskId, setPanelTaskId as setOpenId, sidePanelDocks, taskSplitDocks } from '../panel'
 import { closeSidePanelFrom } from '../sidePanel'
 import { navigate } from '../router'
@@ -26,6 +26,7 @@ import type { ListRoute } from './useListModel'
 import { dayPartFields } from '../../lib/dayParts'
 import { t } from '../../lib/i18n'
 import { announceOnBoard } from '../BoardView'
+import type { AddingBelow } from './belowLine'
 
 /** The list's transient UI state the keys open and close. */
 export interface ListUi {
@@ -37,6 +38,9 @@ export interface ListUi {
   setPrompt: Dispatch<SetStateAction<Task | null>>
   addingUnder: string | null
   setAddingUnder: Dispatch<SetStateAction<string | null>>
+  /** The row whose "Add task below" line is open (add-below). */
+  addingBelow: AddingBelow | null
+  setAddingBelow: Dispatch<SetStateAction<AddingBelow | null>>
   setAddingTo: Dispatch<SetStateAction<string | null>>
   /** `from`: the row's More button, where the menu then opens. */
   openActions: (picker?: string | null, from?: HTMLElement | null) => void
@@ -69,7 +73,7 @@ export interface ShortcutContext {
   today: string
   userId?: string
   ui: ListUi
-  quickAddRef: RefObject<HTMLInputElement | null>
+  quickAddRef: RefObject<HTMLTextAreaElement | null>
   toggleCollapsed: (id: string, force?: boolean) => void
   toggleComplete: (id: string, completed: boolean) => Promise<void>
   acceptPrompt: () => void
@@ -161,6 +165,7 @@ export function useListShortcuts(c: ShortcutContext) {
       else if (ui.assignFor) ui.setAssignFor(null)
       else if (ui.prompt) ui.setPrompt(null)
       else if (ui.addingUnder) ui.setAddingUnder(null)
+      else if (ui.addingBelow) ui.setAddingBelow(null)
       else if (openId && !taskSplitDocks()) setOpenId(null)
       // The details of an expanded row close before the selection clears (row-expand D1).
       else if (c.expandedId) c.setExpandedId(null)
@@ -204,6 +209,7 @@ export function useListShortcuts(c: ShortcutContext) {
     'list.add-subtask': () => {
       if (!row || !writable) return false
       c.toggleCollapsed(row.task.id, false)
+      ui.setAddingBelow(null)
       ui.setAddingUnder(row.task.id)
     },
     // Tab inside a row's revealed actions moves between them (rows-v2 D7), never indents.
@@ -235,7 +241,7 @@ export function useListShortcuts(c: ShortcutContext) {
       ui.setAssignFor(row.task.id)
     },
     'list.delete': () => {
-      if (ticked.length) { act(runBulk(ticked, { kind: 'trash' })); return }
+      if (ticked.length) { act(trashTicked(ticked)); return }
       if (!selectedId || (row && !writable)) return false
       act(deleteWithUndo(selectedId))
       setSelectedId(rows[idx + 1]?.task.id ?? rows[idx - 1]?.task.id ?? null)

@@ -18,19 +18,37 @@ const ASCII = /^[\x00-\x7f]*$/
 export function fold(s: string): string {
   if (ASCII.test(s)) return s.toLowerCase()
   let out = ''
-  for (const ch of s) out += ch.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().charAt(0) || ch
+  for (const ch of s) {
+    // ASCII characters of mixed text (a task's "Project · date" line) by char code.
+    const code = ch.charCodeAt(0)
+    if (code < 0x80) out += code >= 65 && code <= 90 ? String.fromCharCode(code + 32) : ch
+    else out += ch.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().charAt(0) || ch
+  }
   return out
 }
 
 const NONE: Match = { tier: 0, gaps: 0, label: [], secondary: [] }
 const WORD = /[\p{L}\p{N}]/u
-const ALNUM_ASCII = /[a-z0-9]/
+
+/** a-z and 0-9 by char code: a word character of folded (lower-case) ASCII text. */
+const asciiWord = (code: number) => (code >= 97 && code <= 122) || (code >= 48 && code <= 57)
 
 function wordStarts(text: string): number[] {
   const ascii = ASCII.test(text)
-  const isWord = (c: string) => (ascii ? ALNUM_ASCII.test(c) : WORD.test(c))
   const starts: number[] = []
-  for (let i = 0; i < text.length; i++) if (isWord(text[i]) && (i === 0 || !isWord(text[i - 1]))) starts.push(i)
+  if (ascii) {
+    // The command bar folds 10,000 tasks when it opens: two regex tests per character
+    // were most of its first keystroke (list-rendering-at-scale).
+    let prev = false
+    for (let i = 0; i < text.length; i++) {
+      const word = asciiWord(text.charCodeAt(i))
+      if (word && !prev) starts.push(i)
+      prev = word
+    }
+    return starts
+  }
+  const isWord = (i: number) => { const code = text.charCodeAt(i); return code < 0x80 ? asciiWord(code) : WORD.test(text[i]) }
+  for (let i = 0; i < text.length; i++) if (isWord(i) && (i === 0 || !isWord(i - 1))) starts.push(i)
   return starts
 }
 
@@ -45,6 +63,25 @@ export interface Prepared {
 export function prepare(label: string, secondary = ''): Prepared {
   const l = fold(label), s = fold(secondary)
   return { l, starts: wordStarts(l), s, sStarts: s ? wordStarts(s) : [] }
+}
+
+/** Above this many texts the cache of prepareCached starts again. */
+const PREPARED_MAX = 40_000
+const preparedTexts = new Map<string, Prepared>()
+
+/**
+ * prepare, remembered by text for the life of the page (list-rendering-at-scale): the
+ * command bar builds its 10,000 task options again after every write and on every
+ * opening, and folding them all again was most of the first keystroke on a phone.
+ */
+export function prepareCached(label: string, secondary = ''): Prepared {
+  const key = `${label}\u0000${secondary}`
+  const known = preparedTexts.get(key)
+  if (known) return known
+  if (preparedTexts.size >= PREPARED_MAX) preparedTexts.clear()
+  const p = prepare(label, secondary)
+  preparedTexts.set(key, p)
+  return p
 }
 
 function prefixRanges(text: string, starts: number[], words: string[]): Range[] | null {

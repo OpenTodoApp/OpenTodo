@@ -1,23 +1,28 @@
 import { type RefObject, type SyntheticEvent, useEffect, useLayoutEffect, useRef } from 'react'
-import { captureFocus, focusInto, lockScroll, pushOverlay } from './stack'
+import { captureFocus, focusInto, inertBehind, lockScroll, pushOverlay } from './stack'
+import { useBackToClose } from './useBackToClose'
 
 /**
  * Behaviour every overlay shares (design D1): Escape through the overlay stack,
  * focus moved in on open and back to the trigger on close, and (modal overlays)
  * the page behind kept from scrolling.
  */
-export function useOverlay({ panel, onClose, modal = true, trigger }: {
+export function useOverlay({ panel, onClose, modal = true, trigger, blocking = false }: {
   panel: RefObject<HTMLElement | null>
   onClose: () => void
   modal?: boolean
   trigger?: RefObject<HTMLElement | null>
+  /** A dialog or sheet over the whole page: the app behind it is inert while it is open (accessibility-aa). */
+  blocking?: boolean
 }) {
   const close = useRef(onClose)
   useLayoutEffect(() => { close.current = onClose })
+  useBackToClose(modal, onClose)
   useEffect(() => {
     const { pop } = pushOverlay(() => close.current())
     const unlock = modal ? lockScroll() : () => {}
     const el = panel.current
+    const release = modal && blocking ? inertBehind(el) : () => {}
     const inside = (a: unknown) => !!el && el.contains(a as Node)
     const restore = modal ? captureFocus(trigger?.current, undefined, inside) : () => {}
     // After layout: an anchored panel is placed in a layout effect first.
@@ -27,6 +32,7 @@ export function useOverlay({ panel, onClose, modal = true, trigger }: {
       cancelAnimationFrame(raf)
       pop()
       unlock()
+      release()
       restore()
     }
     // Mount-only: the overlay is mounted while open.

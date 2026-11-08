@@ -67,7 +67,7 @@ func (s *Server) occurrenceAction(kind string) http.HandlerFunc {
 			}
 			stripAnnotations("task", body)
 			pairDayPart(body)
-			if !energyOK(w, body) {
+			if !taskBodyOK(w, body) {
 				return
 			}
 			if msg, err := s.checkReferences(ctx, uid, "task", body); err != nil {

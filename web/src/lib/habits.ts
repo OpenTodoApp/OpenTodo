@@ -6,10 +6,11 @@
 // Dates are floating YYYY-MM-DD strings and all arithmetic runs on day numbers
 // (Date.UTC), never on local `Date` values, so time zones and daylight saving
 // changes cannot shift a day.
-import { parseRule, type Rule } from './recurrence'
+import { parseRule, weeklyInPhase, type Rule } from './recurrence'
 import { lineageOf, pieceEnd } from './lineage'
 import { isRecordOf, recordDate } from './recurring'
 import type { Task } from './types'
+import type { TaskChange } from './taskDelta'
 import { t } from './i18n'
 
 export type DayState = 'blank' | 'done' | 'skipped' | 'missed' | 'pending' | 'upcoming'
@@ -84,16 +85,25 @@ export function scheduled(rule: Rule, dueDate: string | null, date: string): boo
   if (rule.until && date > rule.until) return false
   switch (rule.kind) {
     case 'weekday':
-    case 'weekdays':
       return (rule.days & (1 << isoWeekday(z))) !== 0
+    case 'weekdays':
+      // `every 2 weeks on saturday` is anchored at the due date's week, like an interval.
+      if (rule.interval > 1 && !dueDate) return false
+      return weeklyInPhase(rule, dueDate ? dayOf(dueDate) : z, z)
     case 'monthDay':
       return d === Math.min(rule.monthDay, monthLen(y, m))
     case 'lastDay':
       return d === monthLen(y, m)
-    case 'lastWeekday': {
-      let last = dayOf(`${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}-${String(monthLen(y, m)).padStart(2, '0')}`)
-      while (isoWeekday(last) > 5) last--
-      return z === last
+    case 'workday': {
+      if (isoWeekday(z) > 5) return false
+      if (rule.ordinal < 0) {
+        // No weekday follows z in its month.
+        for (let k = d + 1; k <= monthLen(y, m); k++) if (isoWeekday(z + k - d) <= 5) return false
+        return true
+      }
+      let n = 0
+      for (let k = 1; k <= d; k++) if (isoWeekday(z - d + k) <= 5) n++
+      return n === rule.ordinal
     }
     case 'nthWeekday': {
       if (isoWeekday(z) !== rule.weekday) return false
@@ -268,6 +278,18 @@ export function habitStatsMap(tasks: readonly Task[], today: string): Map<string
     if (stats) out.set(tk.id, stats)
   }
   return out
+}
+
+/** A row a habit's streak reads: a habit, an occurrence record of a series, or part of a split lineage. */
+const habitRow = (t: Task | undefined) => !!t && (!!t.habit || !!t.series_id || !!t.split_from)
+
+/**
+ * habitStatsMap after `changes` (incremental-list-updates D2): the same map when no
+ * changed row is one a streak reads; null (worked out in full) otherwise.
+ */
+export function patchHabitStats(prev: Map<string, HabitStats>, changes: readonly TaskChange[]): Map<string, HabitStats> | null {
+  for (const c of changes) if (habitRow(c.before) || habitRow(c.after)) return null
+  return prev
 }
 
 /** The streak chip's accessible name: "12-day streak", with "at risk" when the day has passed. */

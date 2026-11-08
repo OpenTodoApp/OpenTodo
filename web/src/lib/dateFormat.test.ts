@@ -2,7 +2,7 @@
 // combination, the spec examples, and `system` matching the old toLocale* calls.
 import { afterEach, describe, expect, it } from 'vitest'
 import {
-  describeDue, formatDate, formatDateHeading, formatHour, formatInstant, formatShort, formatTime, resolveDateTime, setDateTime,
+  describeDue, formatDate, formatDateHeading, formatHour, formatInstant, formatShort, formatTime, resolveDateTime, setDateLocale, setDateTime,
   systemDateTime, weekDays, weekStartOf, weekday, type SystemDateTime,
 } from './dates'
 import { readUserPrefs, type DateTimePrefs } from './userPrefs'
@@ -12,7 +12,7 @@ const prefs = (p: Partial<DateTimePrefs>): DateTimePrefs => ({ date_format: 'sys
 const r = (p: Partial<DateTimePrefs>, sys = US) => resolveDateTime(prefs(p), sys)
 const TODAY = '2026-10-14'
 
-afterEach(() => { setDateTime(prefs({})) })
+afterEach(() => { setDateLocale(undefined); setDateTime(prefs({})) })
 
 describe('resolveDateTime (2.1)', () => {
   it('fills system values from the device', () => {
@@ -61,6 +61,10 @@ describe('formatDate and formatTime (2.2)', () => {
     ['heading', MD, '2026-10-16', 'Friday, Oct 16'],
   ] as const)('%s %o %s → %s', (style, p, iso, want) => {
     expect(formatDate(iso, style, p, TODAY)).toBe(want)
+  })
+  it('a Simplified Chinese locale writes the year with 年', () => {
+    setDateLocale('zh-CN')
+    expect(formatDate('2025-11-04', 'compact', r({}), TODAY)).toMatch(/年/)
   })
   it('formats times on each clock and keeps stored due times on system', () => {
     expect(formatTime('15:00', r({ time_format: '12h' }))).toBe('3:00 PM')

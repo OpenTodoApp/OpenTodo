@@ -12,6 +12,7 @@ import { nextFree } from './occurrences'
 import type { Change } from './ops'
 import { bounded, lineageOf, pieceEnd } from './lineage'
 import { followingOccurrence, parseRule, type Rule } from './recurrence'
+import { turnAfterCompletion } from './rotation'
 import type { Due, Task } from './types'
 
 /** The parsed rule of an open, live series, or null when `task` is not one. */
@@ -250,8 +251,13 @@ export type CompletionPlan =
  * Completing the series' current occurrence: create the occurrence record and move
  * the series to the next occurrence that is not an exception, or report that the
  * end condition is reached (the caller then completes the series like a plain task).
+ * A rotating series also passes the turn to the next person (OpenSpec change
+ * chore-rotation, D2): `members` are the series' project's current members, as
+ * this device knows them; the record keeps who held the occurrence.
  */
-export function planCompletion(series: Task, rule: Rule, tasks: Iterable<Task>, now: number, today: string): CompletionPlan {
+export function planCompletion(
+  series: Task, rule: Rule, tasks: Iterable<Task>, now: number, today: string, members?: ReadonlySet<string>,
+): CompletionPlan {
   const list = [...tasks]
   const date = currentOccurrence(series, rule, list, today)
   if (date === null) return { kind: 'end' }
@@ -264,9 +270,15 @@ export function planCompletion(series: Task, rule: Rule, tasks: Iterable<Task>, 
     kind: 'roll', recordId, next,
     changes: [
       { entity: 'task', entityId: recordId, patch: { ...recordFields(at, date, now, today), completed_at: now } },
-      { entity: 'task', entityId: series.id, patch: moveDates(at, next, today) },
+      { entity: 'task', entityId: series.id, patch: withTurn(moveDates(at, next, today), at, members) },
     ],
   }
+}
+
+/** The series' patch with the next assignee of its rotation, when the turn passes. */
+function withTurn(patch: Record<string, unknown>, at: Task, members: ReadonlySet<string> | undefined): Record<string, unknown> {
+  const next = turnAfterCompletion(at, members)
+  return next ? { ...patch, assignee_id: next } : patch
 }
 
 /** Skips never count towards `for N times` (a negative count never reaches the end). */

@@ -17,14 +17,14 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/config"
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 	"github.com/OpenTodoApp/opentodo/internal/tenant/services"
 )
 
 // newEnvConfig is newEnv with a caller-supplied configuration.
 func newEnvConfig(t *testing.T, cfg config.Config) *env {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
+	db, err := storetest.OpenDir(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -96,7 +96,7 @@ export function ListPageActions({ route, userRole, rowCount, selectMode, onSelec
       )}
       {route.view !== 'completed' && rowCount > 0 && (
         <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm hidden px-2 py-1 text-body pointer-coarse:inline-flex" aria-pressed={selectMode} onClick={onSelectMode} data-select-mode>
-          {selectMode ? t('Done') : t('Select')}
+          {selectMode ? t('Close') : t('Select')}
         </button>
       )}
       {queryFilter?.query && <FilterQueryChip query={queryFilter.query} onOpen={queryFilter.onOpen} onClear={queryFilter.onClear} />}
@@ -360,7 +360,9 @@ export function MissingTarget({ kind }: { kind: 'project' | 'label' | 'place' })
 export function ReadOnlyQuickAdd() {
   return (
     <>
-      <input className="ui-input" disabled aria-label={t('Quick add (read-only)')} placeholder={t('You can view this project but not add tasks')} />
+      <div className="quick-add-surface">
+        <input className="w-full bg-transparent px-1 text-body placeholder:text-faint" disabled aria-label={t('Quick add (read-only)')} placeholder={t('You can view this project but not add tasks')} />
+      </div>
       <p role="note" className="mt-1 text-meta text-muted">{t('Read-only: you are a viewer of this shared project.')}</p>
     </>
   )
@@ -369,7 +371,7 @@ export function ReadOnlyQuickAdd() {
 /** After the last open subtask: offer to complete the parent too (Enter) or keep it open (Esc). */
 export function CompleteParentPrompt({ parent, onAccept, onDismiss }: { parent: Task; onAccept: () => void; onDismiss: () => void }) {
   return (
-    <div role="status" className="fixed inset-x-0 z-40 flex justify-center px-4" style={{ bottom: 'calc(var(--vv-bottom, 0px) + max(1rem, env(safe-area-inset-bottom)))' }}>
+    <div role="status" className="fixed inset-x-0 z-40 flex justify-center px-4" style={{ bottom: 'calc(var(--vv-bottom, 0px) + max(1rem, var(--safe-bottom)))' }}>
       <div className="flex flex-wrap items-center gap-3 rounded-control border border-default bg-surface px-4 py-2 text-body shadow-2">
         <span className="user-text min-w-0">{t.rich('All subtasks done. Complete <b>{title}</b> too?', { title: parent.title || t('Untitled'), b: (chunks) => <strong>{chunks}</strong> })}</span>
         <button className="ui-btn ui-btn--primary ui-btn--sm text-meta" onClick={onAccept}>{t('Complete')} <Kbd k="Enter" only className="ml-1 border-on-accent/40 bg-accent-hover text-on-accent" /></button>

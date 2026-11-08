@@ -4,7 +4,8 @@ import { resolveLabels } from '../../lib/labels'
 import { createSubtask } from '../../lib/ops'
 import type { Label, Task } from '../../lib/types'
 import { act } from '../actionError'
-import { MAX_INDENT, TaskRow, type TaskRowProps } from '../TaskRow'
+import { isGhost, useDeparture } from '../motion'
+import { MAX_INDENT, TaskRow, type RowMotion, type TaskRowProps } from '../TaskRow'
 
 /** The list's row handlers, stable for the life of the list (large-list-performance D1). */
 export interface RowActions {
@@ -14,6 +15,10 @@ export interface RowActions {
   open: (id: string, e?: React.MouseEvent) => void
   tick: (id: string, range: boolean) => void
   drag: (e: React.PointerEvent, task: Task) => void
+  /** A press on the row's touch grip: hold selects, hold then move drags (bulk-actions on touch). */
+  grip: (e: React.PointerEvent, task: Task) => void
+  /** A tap on the grip: tick the row and enter Select mode. */
+  gripTap: (task: Task) => void
   /** Opens the row menu for the task, as `.` does (rows-v2: the revealed More action). */
   more: (id: string, from: HTMLElement) => void
   /** Shows or hides the task's details under its row (row-expand D4). */
@@ -24,7 +29,7 @@ export interface RowActions {
   contextAt: (task: Task, x: number, y: number, row: HTMLElement) => void
 }
 
-type TaskListRowProps = Omit<TaskRowProps, 'labels' | 'onToggle' | 'onOpen' | 'onTick' | 'onToggleCollapse' | 'onPointerDown' | 'dropKey' | 'actions' | 'onMore' | 'onExpand'> & {
+type TaskListRowProps = Omit<TaskRowProps, 'motion' | 'labels' | 'onToggle' | 'onOpen' | 'onTick' | 'onToggleCollapse' | 'onPointerDown' | 'onGripDown' | 'onGripClick' | 'dropKey' | 'actions' | 'onMore' | 'onExpand'> & {
   labelMap: Map<string, Label>
   /** The row can be picked up (to a sidebar project or label, ux-feedback-2 D4). */
   draggable: boolean
@@ -38,18 +43,39 @@ type TaskListRowProps = Omit<TaskRowProps, 'labels' | 'onToggle' | 'onOpen' | 'o
 }
 
 /**
+ * The sequence a row plays: a ghost departs, a completed row that stayed rolled forward,
+ * Undo restores (motion-v2 D2, D3).
+ */
+export function rowMotion(task: Task, departure: ReturnType<typeof useDeparture>): RowMotion | undefined {
+  if (isGhost(task)) return 'leave'
+  if (departure === 'restored') return 'restored'
+  if (departure === 'leave' && !task.completed_at) return 'rolled'
+  return undefined
+}
+
+/**
  * One list row, memoized: every prop is a primitive, a stable object from the
  * list's maps, or the stable `handlers`, so moving the cursor re-renders only the
- * rows whose `selected` changed.
+ * rows whose `selected` changed. The row follows its own task's completion sequence,
+ * so a click on its checkbox draws this row only (list-rendering-at-scale D7).
  */
 export const TaskListRow = memo(function TaskListRow({ task, labelMap, draggable, reorderable, collapsible, expandable, handlers: actions, ...rest }: TaskListRowProps) {
   const labels = useMemo(() => resolveLabels(task.labels, labelMap), [task.labels, labelMap])
+  const departure = useDeparture(task.id)
+  // A departing row leaves by itself when its moment ends (or Undo turns it into a
+  // restore): the list does not draw again for it, so a completion draws the list
+  // once, when the task leaves its data (incremental-list-updates D4).
+  if (isGhost(task) && departure !== 'leave') return null
+  const motion = rowMotion(task, departure)
   return (
     <TaskRow
       {...rest}
+      motion={motion}
       task={task}
       labels={labels}
       onPointerDown={draggable ? (e) => actions.drag(e, task) : undefined}
+      onGripDown={draggable ? (e) => actions.grip(e, task) : undefined}
+      onGripClick={draggable ? () => actions.gripTap(task) : undefined}
       onContextMenu={(e) => actions.context(e, task)}
       onRowMenu={(x, y, row) => actions.contextAt(task, x, y, row)}
       dropKey={reorderable ? `task:${task.id}` : undefined}
@@ -63,8 +89,11 @@ export const TaskListRow = memo(function TaskListRow({ task, labelMap, draggable
   )
 })
 
-/** Inline "Add subtask" line under a row; stays focused for the next entry, Escape closes. */
-export function SubtaskInput({ parent, depth, onClose }: { parent: Task; depth: number; onClose: () => void }) {
+/**
+ * An inline add line in a tree list: stays focused for the next entry, Escape (or
+ * leaving it empty) closes it. `add` writes one task from the typed title.
+ */
+export function AddLine({ depth, placeholder, label, add, onClose }: { depth: number; placeholder: string; label: string; add: (title: string) => Promise<unknown>; onClose: () => void }) {
   const [value, setValue] = useState('')
   const ref = useRef<HTMLInputElement>(null)
   useEffect(() => {
@@ -75,22 +104,30 @@ export function SubtaskInput({ parent, depth, onClose }: { parent: Task; depth: 
     const title = value.trim()
     if (!title) return
     setValue('')
-    await createSubtask(parent.id, title)
+    await add(title)
     ref.current?.focus()
   }
   return (
-    <form onSubmit={(e) => act(submit(e))} className="flex items-center gap-2 py-1 pr-2" style={{ paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 2}rem` }}>
+    <form data-add-line onSubmit={(e) => act(submit(e))} className="flex items-center gap-2 py-1 pr-2" style={{ paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 2}rem` }}>
       <span className="text-accent">+</span>
       <input
         ref={ref}
         className="ui-input py-1"
-        placeholder={(parent.title ? t('Add a subtask to {title}…', { title: parent.title }) : t('Add a subtask to this task…'))}
-        aria-label={t('Add a subtask')}
+        placeholder={placeholder}
+        aria-label={label}
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onClose() } }}
-        onBlur={() => { if (!value) onClose() }}
+        // Left empty, it closes; not when focus went to the line that took its place
+        // (the "Add task below" line moves down after each add).
+        onBlur={() => { if (!value) requestAnimationFrame(() => { if (!document.activeElement?.closest('[data-add-line]')) onClose() }) }}
       />
     </form>
   )
+}
+
+/** Inline "Add subtask" line under a row; each entry is the parent's last subtask. */
+export function SubtaskInput({ parent, depth, onClose }: { parent: Task; depth: number; onClose: () => void }) {
+  return <AddLine depth={depth} onClose={onClose} label={t('Add a subtask')} add={(title) => createSubtask(parent.id, title)}
+    placeholder={parent.title ? t('Add a subtask to {title}…', { title: parent.title }) : t('Add a subtask to this task…')} />
 }

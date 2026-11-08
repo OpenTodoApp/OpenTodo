@@ -52,7 +52,7 @@ class SetupActivityTest {
         // Plain http on this device: a warning first, the check only after "Connect anyway".
         onView(withId(R.id.message)).check(matches(withText(R.string.setup_insecure)))
         onView(withId(R.id.connect)).check(matches(withText(R.string.setup_connect_anyway))).perform(click())
-        server.waitForPath("/healthz")
+        server.waitForPath("/api/v1/health")
         // Blocks until the screen closes.
         assertEquals(Activity.RESULT_OK, scenario.result.resultCode)
         assertEquals(server.origin, Prefs(context).server)

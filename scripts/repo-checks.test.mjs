@@ -10,9 +10,14 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import { cpSync, mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { checkSurfaceFreeze, surfaceProblems, SURFACE_FILE } from './release/surfaceFreeze.mjs'
+import { MATRIX_APPS, matrixProblems, parseMatrix, staleRows, checkMatrixFreshness } from './release/switchMatrix.mjs'
+import { readFragments, unreleasedProblems } from './release/fragments.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const read = (p) => readFileSync(path.join(root, p), 'utf8')
@@ -47,18 +52,20 @@ const table = [
   [['templates/trip-planning/template.yaml'], { code: 'true', docs: 'false', mobile: 'false' }],
   [['scripts/templates-check.mjs'], { code: 'true', docs: 'false', mobile: 'false' }],
   [['docs/self-hosting/docker.md'], { code: 'false', docs: 'true', mobile: 'false' }],
-  [['web/src/generated/help.json'], { code: 'false', docs: 'true', mobile: 'false' }],
+  [['changelog.d/Added/urgency-sort.md'], { code: 'false', docs: 'true', mobile: 'false' }],
   [['README.md'], { code: 'false', docs: 'true', mobile: 'false' }],
   [['CHANGELOG.md'], { code: 'false', docs: 'true', mobile: 'false' }],
   [['openspec/changes/x/proposal.md'], { code: 'false', docs: 'true', mobile: 'false' }],
-  [['docs/api.md', 'web/src/generated/help.json'], { code: 'false', docs: 'true', mobile: 'false' }],
+  [['docs/api.md', 'changelog.d/Added/urgency-sort.md'], { code: 'false', docs: 'true', mobile: 'false' }],
   [['docs/api.md', 'internal/httpapi/router.go'], { code: 'true', docs: 'true', mobile: 'false' }],
   [['skill/README.md'], { code: 'false', docs: 'false', mobile: 'false' }],
   [['LICENSE'], { code: 'false', docs: 'false', mobile: 'false' }],
   [['mobile/android/app/src/main/java/app/opentodo/Bridge.kt'], { code: 'false', docs: 'false', mobile: 'true', ios: 'false' }],
   [['mobile/README.md', 'mobile/android/app/build.gradle.kts'], { code: 'false', docs: 'false', mobile: 'true', ios: 'false' }],
   [['mobile/android/store/permissions.txt', 'internal/httpapi/router.go'], { code: 'true', docs: 'false', mobile: 'true' }],
+  [['fastlane/metadata/android/en-US/full_description.txt'], { code: 'false', docs: 'false', mobile: 'true', ios: 'false' }],
   [['mobile/ios/OpenTodo/Bridge.swift'], { code: 'false', docs: 'false', mobile: 'false', ios: 'true' }],
+  [['scripts/release/ios-testflight.sh'], { code: 'true', docs: 'false', mobile: 'false', ios: 'true' }],
   [['mobile/ios/project.yml', 'mobile/android/app/build.gradle.kts'], { code: 'false', docs: 'false', mobile: 'true', ios: 'true' }],
   [['mobile/README.md'], { code: 'false', docs: 'false', mobile: 'false', ios: 'false' }],
 ]
@@ -83,8 +90,13 @@ const tiers = [
   [['skills/opentodo-cli/SKILL.md'], { ui: 'false', layout: 'false', extension: 'false', skill: 'true' }],
   [['docs/api.md'], { code: 'false', docs: 'true', ui: 'false', layout: 'false', extension: 'false', skill: 'false' }],
   [['openspec/changes/x/proposal.md'], { code: 'false', docs: 'true', ui: 'false', layout: 'false' }],
-  [['web/src/generated/help.json'], { code: 'false', ui: 'false', layout: 'false' }],
-  [['.github/workflows/ci.yml'], { ui: 'true', layout: 'true', extension: 'true', obsidian: 'true', skill: 'true', mobile: 'true', ios: 'true' }],
+  [['changelog.d/Fixed/x.md'], { code: 'false', docs: 'true', ui: 'false', layout: 'false' }],
+  [['.github/workflows/ci.yml'], { ui: 'true', layout: 'true', a11y: 'true', extension: 'true', obsidian: 'true', skill: 'true', mobile: 'true', ios: 'true' }],
+  // The accessibility gate on real screens (accessibility-aa D1): the web app and the audit scripts only.
+  [['web/src/app/Shell.tsx'], { a11y: 'true' }],
+  [['scripts/ux-audit/tour.mjs'], { a11y: 'true', ui: 'false' }],
+  [['internal/sync/ops.go'], { a11y: 'false' }],
+  [['docs/api.md'], { a11y: 'false' }],
 ]
 
 const pick = (o, keys) => Object.fromEntries(keys.map((k) => [k, o[k]]))
@@ -231,6 +243,9 @@ test('every workflow has a concurrency group and every job a timeout', () => {
     const text = read(f)
     assert.match(text, /^concurrency:\n {2}group: /m, `${f}: concurrency group`)
     for (const [id, block] of Object.entries(jobsOf(text))) {
+      // A job that calls a workflow of this repository takes no timeout of its own
+      // (GitHub refuses one): the called workflow's jobs carry theirs, checked here too.
+      if (/^ {4}uses: \.\/\.github\/workflows\/[\w-]+\.yml$/m.test(block)) continue
       assert.match(block, /^ {4}timeout-minutes: \d+$/m, `${f}: job ${id} needs timeout-minutes`)
     }
   }
@@ -242,7 +257,8 @@ test('base and job images are pinned by digest', () => {
   const dockerfile = read('Dockerfile')
   const stages = [...dockerfile.matchAll(/^FROM .* AS (\S+)$/gm)].map((m) => m[1])
   for (const [, from] of dockerfile.matchAll(/^FROM (?:--platform=\S+ )?(\S+)/gm)) {
-    if (stages.includes(from)) continue
+    // scratch is the empty image, nothing to pin (the web-dist stage, signed-web-app D4).
+    if (stages.includes(from) || from === 'scratch') continue
     assert.match(from, /^[\w.\/-]+:[\w.-]+@sha256:[0-9a-f]{64}$/, `Dockerfile: ${from} must be tag@sha256:digest`)
   }
   const pinned = read('Makefile').match(/^PLAYWRIGHT_IMAGE := (.+)$/m)?.[1].replace('$(PLAYWRIGHT_VERSION)', read('Makefile').match(/^PLAYWRIGHT_VERSION := (\S+)$/m)[1])
@@ -282,11 +298,13 @@ test('the image, stable tag and release are published only after every gate', ()
   // claude-plugin publishes the Claude Code marketplace after the release (claude-plugin D5).
   // play uploads the Android bundle to Google Play's internal track after the release (play-production D2).
   // obsidian-plugin publishes the Obsidian plugin's release repository after the release (obsidian-plugin D1).
-  const publishing = ['docker', 'release', 'claude-plugin', 'play', 'obsidian-plugin']
+  // ios-testflight uploads the iPhone app to TestFlight after the release (ios-distribution D5).
+  const publishing = ['docker', 'release', 'claude-plugin', 'play', 'obsidian-plugin', 'ios-testflight']
   for (const p of publishing) assert.ok(jobs[p], `ci.yml has a ${p} job`)
   assert.deepEqual(needsOf(jobs['claude-plugin']), ['release'], 'the plugin is published only after the release')
   assert.deepEqual(needsOf(jobs.play), ['release'], 'the Play upload runs only after the release')
   assert.deepEqual(needsOf(jobs['obsidian-plugin']), ['release'], 'the Obsidian plugin is published only after the release')
+  assert.deepEqual(needsOf(jobs['ios-testflight']), ['release'], 'the TestFlight upload runs only after the release')
   const gates = Object.keys(jobs).filter((j) => !publishing.includes(j))
   for (const g of gates) {
     assert.ok(needsOf(jobs.docker).includes(g), `the docker (publish) job must need ${g}`)
@@ -449,6 +467,23 @@ test('.dockerignore leaves out what the image does not need and keeps what the D
   for (const p of ['web/src/main.tsx', 'web/package-lock.json', 'internal/web/web.go', 'go.sum']) assert.ok(!dockerIgnored(p), `${p} stays in the build context`)
 })
 
+// ---- changelog fragments (changelog.d/README.md) ----
+
+test('changelog: entries are fragments in changelog.d/<Section>/<name>.md, never written under Unreleased', () => {
+  // Pull requests in parallel all edited the top of "## [Unreleased]" and conflicted on every
+  // merge; each now adds its own file, which make release-prepare assembles.
+  assert.deepEqual(readFragments(root).problems, [])
+  assert.deepEqual(unreleasedProblems(read('CHANGELOG.md')), [])
+  assert.deepEqual(unreleasedProblems('## [Unreleased]\n\nSee changelog.d/.\n\n## [1.0.0] - 2030-01-01\n\n### Fixed\n\n- Old.\n'), [])
+  assert.match(unreleasedProblems('## [Unreleased]\n\n### Fixed\n\n- New.\n\n## [1.0.0] - 2030-01-01\n')[0], /2 line\(s\) under "## \[Unreleased\]".*changelog\.d\/<Section>\/<name>\.md/)
+  assert.match(unreleasedProblems('## [Unreleased]\n- New.\n\n[Unreleased]: https://x/compare/v1.0.0...HEAD\n')[0], /1 line\(s\)/)
+  // The in-app help is built, not committed: nothing may bring it back into the tree.
+  assert.ok(read('.gitignore').split('\n').includes('/web/src/generated/help.json'))
+  for (const s of ['build', 'dev', 'test', 'typecheck', 'storybook', 'build-storybook']) {
+    assert.equal(JSON.parse(read('web/package.json')).scripts[`pre${s}`], 'npm run --silent help', `web: npm run ${s} builds the in-app help first`)
+  }
+})
+
 // ---- contributor docs (OpenSpec change contributor-docs-and-template-checks) ----
 
 /** Every Go package under internal/ (a directory holding .go files), as `internal/<path>`. */
@@ -503,7 +538,7 @@ function androidToolchainProblems({ wrapper, rootGradle, appGradle, ci, readme }
   const tools = appGradle.match(/^\s*buildToolsVersion = "(\d+\.\d+\.\d+)"$/m)?.[1]
   if (!tools) problems.push('app/build.gradle.kts: no buildToolsVersion')
   const javas = [...ci.matchAll(/^\s+java-version: (\S+)$/gm)].map((m) => m[1])
-  if (javas.length === 0 || javas.some((j) => !/^17\.\d+\.\d+\+\d+$/.test(j))) problems.push(`CI: setup-java must pin an exact JDK 17 (found ${javas.join(', ') || 'none'})`)
+  if (javas.length === 0 || javas.some((j) => !/^21\.\d+\.\d+\+\d+$/.test(j))) problems.push(`CI: setup-java must pin an exact JDK 21 (found ${javas.join(', ') || 'none'})`)
   if (new Set(javas).size > 1) problems.push(`CI: one JDK everywhere (found ${[...new Set(javas)].join(', ')})`)
   if (tools && !ci.includes(`build-tools;${tools}`)) problems.push(`CI: the SDK step installs another build-tools than ${tools}`)
   for (const [what, v] of [['Gradle', gradle], ['the Android Gradle Plugin', agp], ['build tools', tools], ['the JDK', javas[0]]]) {
@@ -528,7 +563,7 @@ test('a Gradle wrapper without its checksum is refused', () => {
   const t = androidToolchain()
   const wrapper = t.wrapper.replace(/^distributionSha256Sum=.*\n/m, '')
   assert.deepEqual(androidToolchainProblems({ ...t, wrapper }), ['gradle-wrapper.properties: no distributionSha256Sum'])
-  assert.match(androidToolchainProblems({ ...t, ci: t.ci.replace(/java-version: 17\.\S+/, 'java-version: 17') }).join('\n'), /exact JDK 17/)
+  assert.match(androidToolchainProblems({ ...t, ci: t.ci.replace(/java-version: 21\.\S+/, 'java-version: 21') }).join('\n'), /exact JDK 21/)
 })
 
 test('the release APK carries no dependency block or commit file', () => {
@@ -552,6 +587,63 @@ test('release tags prove the Android build reproducible, and anyone can run it o
   assert.match(read('scripts/android-repro.sh'), /apksigcopier compare "\$apk" --unsigned "\$first"/)
 })
 
+test('the Play AAB is the build without location, checked on every Android run (play-location-later)', () => {
+  const android = jobsOf(read('.github/workflows/ci.yml')).android
+  const steps = android.split(/\n(?= {6}- )/)
+  const check = steps.find((s) => s.includes('Play AAB without location'))
+  assert.ok(check, 'a step checks the two builds')
+  assert.doesNotMatch(check, /^ {8}if:/m, 'on every run, not only tags')
+  assert.match(check, /-Popentodo\.play=true :app:bundleRelease\n/)
+  assert.match(check, /scripts\/android-store-check\.sh /)
+  const signed = steps.find((s) => s.includes('Signed release APK and AAB'))
+  assert.match(signed, /OPENTODO_VERSION="\$version" \.\/gradlew --no-daemon -Popentodo\.play=true :app:bundleRelease\n/, 'the release AAB is the Play build')
+  assert.match(signed, /OPENTODO_VERSION="\$version" \.\/gradlew --no-daemon :app:assembleRelease\n/, 'the release APK is the plain build')
+  assert.match(signed, /android-store-check\.sh "\.\.\/\.\.\/dist\/opentodo-android-\$version\.aab"/, 'the signed files are checked too')
+  assert.doesNotMatch(read('scripts/android-repro.sh'), /opentodo\.play/, 'the reproducible APK never uses the Play property')
+  assert.doesNotMatch(read('mobile/android/store/fdroid/app.opentodo.yml'), /opentodo\.play/)
+  assert.match(read('mobile/android/app/src/play/AndroidManifest.xml'), /ACCESS_BACKGROUND_LOCATION" tools:node="remove"/)
+})
+
+// Signed web app (OpenSpec signed-web-app D4): one job signs, on release tags, in the
+// protected environment whose required reviewer approves every signing; the
+// binaries and the image embed what it signed.
+test('only web-sign reads the web signing key, on release tags, in the web-signing environment', () => {
+  const jobs = jobsOf(read('.github/workflows/ci.yml'))
+  const sign = jobs['web-sign']
+  assert.ok(sign, 'ci.yml has a web-sign job')
+  assert.match(sign, /^ {4}if: startsWith\(github\.ref, 'refs\/tags\/v'\)$/m, 'release tags only')
+  assert.match(sign, /^ {4}environment: web-signing$/m)
+  assert.match(sign, /websign sign -version "\$GITHUB_REF_NAME"/, 'the version must match the tag')
+  assert.match(sign, /::warning::WEB_SIGNING_KEY is not set/, 'without the secret the release stays unsigned and green')
+  for (const f of workflowFiles()) {
+    for (const [id, block] of Object.entries(jobsOf(read(f)))) {
+      const uses = /environment: web-signing|secrets\.WEB_SIGNING_KEY/.test(block)
+      if (uses) assert.ok(f.endsWith('ci.yml') && id === 'web-sign', `${f}: only the web-sign job uses the web-signing environment or its key (${id})`)
+    }
+  }
+  for (const id of ['cli', 'image', 'docker']) {
+    assert.ok(needsOf(jobs[id]).includes('web-sign'), `${id} waits for the signed web app`)
+    assert.match(jobs[id], /web-dist-signed/, `${id} embeds the signed web app on release tags`)
+  }
+})
+
+test('the official web app keys are published, and the test key is never one of them', async () => {
+  const { createHash, createPrivateKey, createPublicKey } = await import('node:crypto')
+  const official = JSON.parse(read('internal/websign/release-keys.json'))
+  assert.equal(typeof official.refuse, 'boolean')
+  const security = read('SECURITY.md')
+  const page = read('docs/security/signed-app.md')
+  for (const k of official.keys) {
+    const fp = createHash('sha256').update(Buffer.from(k.spki, 'base64')).digest('hex')
+    assert.ok(security.includes(fp), `SECURITY.md publishes the ${k.role} key's fingerprint ${fp}`)
+    assert.ok(page.includes(fp), `docs/security/signed-app.md publishes the ${k.role} key's fingerprint ${fp}`)
+  }
+  for (const test of ['test-key.pem', 'test-recovery-key.pem']) {
+    const spki = createPublicKey(createPrivateKey(read(`internal/websign/testdata/${test}`))).export({ type: 'spki', format: 'der' }).toString('base64')
+    assert.ok(!official.keys.some((k) => k.spki === spki), `${test} is a test key and never official`)
+  }
+})
+
 test('the Play upload runs only for final tags, after the release, with its secrets in the release environment', () => {
   const play = jobsOf(read('.github/workflows/ci.yml')).play
   assert.match(play, /^ {4}if: startsWith\(github\.ref, 'refs\/tags\/v'\) && !contains\(github\.ref_name, '-'\)$/m, 'final tags only')
@@ -566,12 +658,244 @@ test('the Play upload runs only for final tags, after the release, with its secr
   }
 })
 
+// The iPhone app's TestFlight upload (OpenSpec change ios-distribution D5, D9): final tags after the
+// release and by hand, the App Store Connect key only in the release environment, a registration
+// job of its own, and never any signing material in the repository.
+test('the TestFlight upload runs for final tags after the release and by hand, with its secrets in the release environment', () => {
+  const caller = jobsOf(read('.github/workflows/ci.yml'))['ios-testflight']
+  assert.match(caller, /^ {4}if: startsWith\(github\.ref, 'refs\/tags\/v'\) && !contains\(github\.ref_name, '-'\)$/m, 'final tags only')
+  assert.match(caller, /^ {4}uses: \.\/\.github\/workflows\/ios-testflight\.yml$/m)
+  const flow = read('.github/workflows/ios-testflight.yml')
+  assert.match(flow, /^ {2}workflow_call:$/m)
+  assert.match(flow, /^ {2}workflow_dispatch:$/m, 'the owner can upload any ref by hand')
+  const job = jobsOf(flow)['ios-testflight']
+  assert.match(job, /^ {4}environment: release$/m)
+  assert.match(job, /::warning::APPLE_TEAM_ID, ASC_KEY_ID, ASC_ISSUER_ID or ASC_KEY_P8 is not set in the release environment: no TestFlight upload/)
+  assert.match(job, /node scripts\/release\/appstore\.mjs register\n[\s\S]*ios-testflight\.sh archive /, 'the bundle IDs are registered before the archive')
+  assert.match(job, /if: always\(\) && steps\.secrets\.outputs\.ready == 'true'\n {8}run: \|\n.*\n.*appstore\.mjs cleanup/, 'the certificate and profiles are removed whatever happened')
+  assert.doesNotMatch(flow, /reviewSubmissions|appStoreVersionSubmissions|betaAppReviewSubmissions/, 'CI never submits for review')
+  const register = jobsOf(read('.github/workflows/ios-register-ids.yml'))['ios-register-ids']
+  assert.ok(register, 'ios-register-ids.yml has an ios-register-ids job')
+  assert.match(read('.github/workflows/ios-register-ids.yml'), /^ {2}workflow_dispatch:$/m)
+  assert.match(register, /^ {4}environment: release$/m)
+  assert.match(register, /node scripts\/release\/appstore\.mjs register/)
+  const ios = jobsOf(read('.github/workflows/ci.yml')).ios
+  assert.match(ios, /make ios-archive/, 'the unsigned archive and its ad hoc signature are checked on every iOS change')
+  for (const f of workflowFiles()) {
+    for (const [id, block] of Object.entries(jobsOf(read(f)))) {
+      if (/secrets\.(ASC_|APPLE_TEAM_ID)/.test(block)) {
+        assert.ok(['ios-testflight', 'ios-register-ids'].includes(id) && /^ {4}environment: release$/m.test(block), `${f}: only the iOS release jobs read the App Store Connect secrets`)
+      }
+    }
+  }
+})
+
+test('no signing key, certificate or profile is ever committed', () => {
+  const tracked = execFileSync('git', ['ls-files'], { cwd: root, encoding: 'utf8' }).split('\n').filter(Boolean)
+  const material = /\.(p8|p12|pfx|mobileprovision|provisionprofile|cer|certSigningRequest|keystore|jks)$/i
+  assert.deepEqual(tracked.filter((f) => material.test(f)), [], 'key and certificate files never go into the repository')
+  // A PEM block with real content (a header line followed by base64), in the places CI reads.
+  const pem = /-----BEGIN [A-Z ]*(PRIVATE KEY|CERTIFICATE)[A-Z ]*-----\r?\n[A-Za-z0-9+/=]{40,}/
+  for (const f of tracked.filter((f) => /^(\.github|scripts|mobile)\//.test(f) && !/\.(png|jpg|webp|jar|apk|aab|zip)$/i.test(f))) {
+    assert.doesNotMatch(read(f), pem, `${f} holds key or certificate material`)
+  }
+  const ignore = read('mobile/ios/.gitignore').split('\n')
+  for (const p of ['*.p8', '*.p12', '*.mobileprovision', '*.cer']) assert.ok(ignore.includes(p), `mobile/ios/.gitignore ignores ${p}`)
+})
+
 test('the F-Droid metadata allows the release certificate that docs/android-app.md publishes', () => {
   const fdroid = read('mobile/android/store/fdroid/app.opentodo.yml')
   const cert = fdroid.match(/^AllowedAPKSigningKeys: ([0-9a-f]{64})$/m)?.[1]
   assert.ok(cert, 'AllowedAPKSigningKeys names one SHA-256')
   assert.ok(read('docs/android-app.md').includes(cert), 'docs/android-app.md publishes the same certificate')
-  assert.match(fdroid, /^Binaries: https:\/\/github\.com\/OpenTodoApp\/OpenTodo\/releases\/download\/v%v\/opentodo-android-%v\.apk$/m)
-  assert.match(fdroid, /^UpdateCheckMode: Tags \^v\[0-9\.\]\+\$$/m, 'release candidates are skipped')
+  assert.match(fdroid, /^Binaries: \n {2}https:\/\/github\.com\/OpenTodoApp\/OpenTodo\/releases\/download\/v%v\/opentodo-android-%v\.apk$/m)
+  // The version comes from the tag, so the bot reads it from this file at each tag, which only a
+  // final release's prepare commit moves (release candidates never reach F-Droid).
+  assert.match(fdroid, /^UpdateCheckMode: Tags$/m)
+  assert.match(fdroid, /^UpdateCheckData: \n {2}mobile\/android\/store\/fdroid\/app\.opentodo\.yml\|CurrentVersionCode:\\s\*\(\\d\+\)\|\.\|CurrentVersion:\\s\*\(\[0-9\.\]\+\)$/m)
   assert.match(fdroid, /^AutoUpdateMode: Version$/m, "F-Droid's bot adds each final tag")
+  assert.doesNotMatch(fdroid, /^ {4}sudo:/m, "the build server's default JDK, as in CI")
+  // F-Droid takes the name, summary and description from fastlane/.
+  // AutoName is the app's label, which F-Droid's checkupdates writes itself.
+  assert.doesNotMatch(fdroid, /^(Name|Summary|Description):/m, 'the texts live in fastlane/metadata/android/')
+  const builds = [...fdroid.matchAll(/^ {2}- versionName: (\S+)\n {4}versionCode: (\d+)\n {4}commit: (\S+)$/gm)]
+  assert.equal(builds.length, 1, 'Builds keeps only the latest version')
+  const [, name, code, commit] = builds[0]
+  const [maj, min, patch] = name.split('.').map(Number)
+  assert.equal(Number(code), maj * 10000 + min * 100 + patch, 'versionCode is major·10000 + minor·100 + patch')
+  assert.ok(/^[0-9a-f]{40}$/.test(commit) || commit === `v${name}`, 'commit is a full hash or the tag of its version')
+  assert.match(fdroid, new RegExp(`^CurrentVersion: ${name.replaceAll('.', '\\.')}\\nCurrentVersionCode: ${code}$`, 'm'))
+})
+
+// F-Droid's listing (fastlane/README.md): F-Droid reads fastlane/metadata/android/<locale>/ at the
+// repository root of the built commit, within its limits; en-US is the fallback for the images.
+const FASTLANE = 'fastlane/metadata/android'
+const pngSize = (p) => { const b = readFileSync(path.join(root, p)); return [b.readUInt32BE(16), b.readUInt32BE(20)] }
+
+test("F-Droid's Fastlane listing has the six languages within F-Droid's limits", () => {
+  assert.deepEqual(readdirSync(path.join(root, FASTLANE)).sort(), ['de-DE', 'en-US', 'es-ES', 'fr-FR', 'it-IT', 'pt-PT'])
+  for (const locale of readdirSync(path.join(root, FASTLANE))) {
+    const text = (f) => read(`${FASTLANE}/${locale}/${f}`).trim()
+    for (const [f, limit] of [['title.txt', 50], ['short_description.txt', 80], ['full_description.txt', 4000]]) {
+      const t = text(f)
+      assert.ok(t.length > 0 && [...t].length <= limit, `${locale}/${f}: 1 to ${limit} characters, has ${[...t].length}`)
+    }
+    assert.equal(text('title.txt'), 'OpenTodo', locale)
+    assert.match(text('full_description.txt'), /OpenTodo/, `${locale}: the description says it needs an OpenTodo server`)
+  }
+  const images = `${FASTLANE}/en-US/images`
+  assert.deepEqual(pngSize(`${images}/icon.png`), [512, 512])
+  assert.deepEqual(pngSize(`${images}/featureGraphic.png`), [1024, 500])
+  const shots = readdirSync(path.join(root, images, 'phoneScreenshots')).sort()
+  assert.ok(shots.length >= 3 && shots.length <= 8, `3 to 8 phone screenshots, has ${shots.length}`)
+  assert.deepEqual(shots, shots.map((_, i) => `${i + 1}.png`))
+})
+
+test("F-Droid's notes exist for the latest release's version code, within 500 characters", () => {
+  const [maj, min, patch] = /^## \[(\d+)\.(\d+)\.(\d+)\]/m.exec(read('CHANGELOG.md')).slice(1).map(Number)
+  const rel = `${FASTLANE}/en-US/changelogs/${maj * 10000 + min * 100 + patch}.txt`
+  assert.ok(existsSync(path.join(root, rel)), `${rel} is missing: write what changed for the Android app (RELEASING.md)`)
+  for (const f of readdirSync(path.join(root, FASTLANE, 'en-US/changelogs'))) {
+    const t = read(`${FASTLANE}/en-US/changelogs/${f}`).trim()
+    assert.ok(/^\d+\.txt$/.test(f) && t.length > 0 && [...t].length <= 500, `changelogs/${f}: 1 to 500 characters`)
+  }
+})
+
+// The migration matrix (migration-everywhere D6): every listed competitor has a
+// row, an importer format, a guide with export steps and a real-export fixture
+// with a golden; the Import screen's picker lists the same apps and formats.
+test('every competitor in the migration matrix has a verified path', () => {
+  assert.deepEqual(matrixProblems(root), [])
+  const rows = parseMatrix(read('docs/switch/README.md'))
+  assert.deepEqual(rows.map((r) => r.guide).sort(), [...MATRIX_APPS].sort())
+  const picker = [...read('web/src/lib/switchApps.ts').matchAll(/\{ guide: '([a-z0-9-]+)', name: '[^']+', format: '([a-z0-9-]+)'/g)].map((m) => `${m[1]} ${m[2]}`)
+  assert.deepEqual(picker.sort(), rows.map((r) => `${r.guide} ${r.format}`).sort())
+})
+
+test('the matrix check fails on a missing fixture, guide section or row', () => {
+  const tmp = mkdtempSync(path.join(tmpdir(), 'matrix-'))
+  try {
+    for (const p of ['docs/switch', 'internal/importer']) cpSync(path.join(root, p), path.join(tmp, p), { recursive: true, filter: (src) => !src.includes('sanitize') })
+    rmSync(path.join(tmp, 'internal/importer/testdata/tududi-db'), { recursive: true })
+    assert.deepEqual(matrixProblems(tmp), ['Tududi: no fixture with a golden preview in internal/importer/testdata/tududi-db/'])
+    const guide = path.join(tmp, 'docs/switch/vikunja.md')
+    writeFileSync(guide, readFileSync(guide, 'utf8').replace('## Export from Vikunja', '## Getting the file'))
+    const readme = path.join(tmp, 'docs/switch/README.md')
+    writeFileSync(readme, readFileSync(readme, 'utf8').split('\n').filter((l) => !l.startsWith('| [Linear]')).join('\n'))
+    const problems = matrixProblems(tmp)
+    assert.ok(problems.includes('Vikunja: docs/switch/vikunja.md has no "## Export from …" section'), problems.join('\n'))
+    assert.ok(problems.includes('linear: no row in docs/switch/README.md'), problems.join('\n'))
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+})
+
+test('release preparation for 1.0 and later refuses a row checked more than 120 days before', () => {
+  const text = '| [OmniFocus](omnifocus.md) | `omnifocus-csv` | a | b | 2026-04-01, OmniFocus 4 |\n| [Tududi](tududi.md) | `tududi-db` | a | b | 2026-11-03, Tududi 1.14 |\n'
+  assert.deepEqual(staleRows(text, '2026-10-18').map((r) => r.name), ['OmniFocus'])
+  assert.deepEqual(staleRows(text, '2026-07-29').map((r) => r.name), [])
+  const tmp = mkdtempSync(path.join(tmpdir(), 'matrix-'))
+  try {
+    mkdirSync(path.join(tmp, 'docs/switch'), { recursive: true })
+    writeFileSync(path.join(tmp, 'docs/switch/README.md'), text)
+    assert.throws(() => checkMatrixFreshness(tmp, '1.0.0', '2026-10-18'), /OmniFocus \(2026-04-01\)/)
+    assert.doesNotThrow(() => checkMatrixFreshness(tmp, '0.22.0', '2026-10-18'))
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+})
+
+// ---- The v1 surface freeze (OpenSpec change stability-contract) ----------------------------------
+
+test('the v1 surface keeps every entry of the snapshot at v1.0.0', (t) => {
+  const problems = checkSurfaceFreeze(root)
+  if (problems === null) {
+    t.skip('v1.0.0 is not tagged yet')
+    return
+  }
+  assert.deepEqual(problems, [], 'the v1 surface only grows within 1.x (docs/stability.md)')
+})
+
+test('the surface freeze names an entry deleted by hand after v1.0.0', () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'surface-freeze-'))
+  try {
+    const g = (...args) => execFileSync('git', args, { cwd: dir, stdio: 'ignore' })
+    g('init', '-q')
+    g('config', 'user.email', 'test@example.com')
+    g('config', 'user.name', 'test')
+    mkdirSync(path.join(dir, path.dirname(SURFACE_FILE)), { recursive: true })
+    const surface = { about: 'x', errors: { bad_request: ['400', 'listed'] }, routes: { 'GET /api/v1/me': { policy: 'signed-in' } } }
+    writeFileSync(path.join(dir, SURFACE_FILE), JSON.stringify(surface))
+    g('add', '.')
+    g('commit', '-q', '-m', 'one')
+    assert.equal(checkSurfaceFreeze(dir), null, 'no tag: skipped')
+    g('tag', 'v1.0.0')
+    assert.deepEqual(checkSurfaceFreeze(dir), [])
+    delete surface.errors.bad_request
+    surface.routes['GET /api/v1/me'].policy = 'owner-only'
+    surface.routes['GET /api/v1/new'] = { policy: 'signed-in' }
+    writeFileSync(path.join(dir, SURFACE_FILE), JSON.stringify(surface))
+    assert.deepEqual(checkSurfaceFreeze(dir), [
+      'errors › bad_request › 400: present at v1.0.0, missing now',
+      'errors › bad_request › listed: present at v1.0.0, missing now',
+      'routes › GET /api/v1/me › policy: was "signed-in" at v1.0.0, now "owner-only"',
+    ])
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('the recorded client calls carry no session, token or password (stability-contract D5)', () => {
+  const dir = 'internal/sync/testdata/v1_clients'
+  const files = readdirSync(path.join(root, dir)).filter((f) => f.endsWith('.json'))
+  assert.ok(files.length >= 3, `${dir} holds the web, ot and extension recordings`)
+  for (const f of files) {
+    const text = read(`${dir}/${f}`)
+    assert.doesNotMatch(text, /\bot_[A-Za-z0-9_-]{16,}/, `${dir}/${f} holds an API token`)
+    assert.doesNotMatch(text, /opentodo_session=|"(?:cookie|authorization|set-cookie)"\s*:/i, `${dir}/${f} holds a session cookie or credential header`)
+    for (const m of text.matchAll(/"(?:password|newPassword|currentPassword)"\s*:\s*"([^"]*)"/g)) {
+      assert.equal(m[1], '<password>', `${dir}/${f} holds a password`)
+    }
+  }
+})
+
+test('surfaceProblems ignores the about text and additions', () => {
+  assert.deepEqual(surfaceProblems({ about: 'a', ops: { task: { title: 'string' } } }, { about: 'b', ops: { task: { title: 'string', new: 'bool' } } }), [])
+})
+
+// Contributor pages name only make targets that exist (OpenSpec change docs-1-0,
+// documentation "Contributor guide"). A target counts when it is named in code:
+// an inline `make x` or a line of a fenced block, so prose ("make the change") never does.
+function makeTargets(makefile) {
+  return new Set([...makefile.matchAll(/^([A-Za-z0-9][A-Za-z0-9_.-]*)\s*:(?!=)/gm)].map((m) => m[1]))
+}
+
+function makeTargetProblems(docs, targets) {
+  const out = new Set()
+  for (const [file, text] of Object.entries(docs)) {
+    const fence = /```[^\n]*\n([\s\S]*?)```/g
+    const code = [...text.matchAll(fence)].map((m) => m[1])
+    code.push(...[...text.replace(fence, '').matchAll(/`([^`\n]+)`/g)].map((m) => m[1]))
+    for (const snippet of code) {
+      for (const m of snippet.matchAll(/(?:^|[\s;&|(])make\s+([a-z][a-z0-9_-]*)/gm)) {
+        if (!targets.has(m[1])) out.add(`${file}: names \`make ${m[1]}\`, which is not a target of the Makefile`)
+      }
+    }
+  }
+  return [...out].sort()
+}
+
+test('contributor pages name only make targets that exist', () => {
+  const files = ['CONTRIBUTING.md', ...readdirSync(path.join(root, 'docs/contributing')).filter((f) => f.endsWith('.md')).map((f) => `docs/contributing/${f}`)]
+  assert.deepEqual(makeTargetProblems(Object.fromEntries(files.map((f) => [f, read(f)])), makeTargets(read('Makefile'))), [])
+})
+
+test('a renamed make target fails the contributor pages check, naming the page', () => {
+  const targets = makeTargets('check: lint\n\techo\ni18n-lint:\n\tnode x\nVERSION := 1\n')
+  assert.deepEqual([...targets].sort(), ['check', 'i18n-lint'])
+  const docs = { 'docs/contributing/x.md': 'First make the change.\n\nRun `make i18n-check`, then:\n\n```sh\nmake check\nOUT_DIR=x make screens\n```\n' }
+  assert.deepEqual(makeTargetProblems(docs, targets), [
+    'docs/contributing/x.md: names `make i18n-check`, which is not a target of the Makefile',
+    'docs/contributing/x.md: names `make screens`, which is not a target of the Makefile',
+  ])
 })

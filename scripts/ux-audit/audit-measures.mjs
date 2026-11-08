@@ -258,35 +258,192 @@ export function motionSeen() {
  * no outline or box-shadow (on themselves or the two nearest ancestors) that differs
  * from how they look unfocused.
  */
-export async function focusWalk(page, maxSteps = 80) {
-  await page.evaluate(() => { document.activeElement?.blur?.(); window.scrollTo(0, 0) })
+export async function focusWalk(page, maxSteps = 80, { obscured = false, keep = false } = {}) {
+  // `keep`: an open overlay holds the focus it moved in; the walk starts from there, as a person's would.
+  await page.evaluate((k) => { if (!k || document.activeElement === document.body) { document.activeElement?.blur?.(); window.scrollTo(0, 0) } }, keep)
+  // Transitions off for the walk: a ring fading in reads as its resting look for a frame.
+  await page.evaluate(() => {
+    const st = document.createElement('style')
+    st.id = '__ux-no-transition'
+    st.textContent = '*, *::before, *::after { transition: none !important; }'
+    document.head.append(st)
+  })
   const seen = new Set()
   const out = []
   for (let i = 0; i < maxSteps; i++) {
     await page.keyboard.press('Tab')
-    const r = await page.evaluate(() => {
+    // Two frames: what the app does after a focus move (scrolling it clear of a bar) is drawn.
+    if (obscured) await page.evaluate(() => new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok))))
+    const r = await page.evaluate((checkObscured) => {
       const el = document.activeElement
       if (!el || el === document.body) return null
       // A heading or panel with tabindex="-1" is focused by the page itself (on load, for screen
       // readers), never by Tab; when that lands mid-walk it is not a stop that needs the ring.
       if (el.tabIndex < 0) return null
       const key = el.id || window.__ux.d(el) + ':' + Math.round(el.getBoundingClientRect().top)
+      // M17, 2.4.11 Focus not obscured (accessibility-aa D2): the corners and the centre of the
+      // focused element (or of the box drawn for a visually hidden one), one of which must hit it.
+      let covered = null
+      if (checkObscured && window.__ux.shown(el)) {
+        let box = el
+        while (box.parentElement && box.getBoundingClientRect().width <= 2) box = box.parentElement
+        const r = box.getBoundingClientRect()
+        // A link wrapped over two lines is two boxes: the centre of each is a point of its own.
+        const lines = [...box.getClientRects()].filter((q) => q.width > 1 && q.height > 1)
+        const pts = [[r.left + 2, r.top + 2], [r.right - 2, r.top + 2], [r.left + 2, r.bottom - 2], [r.right - 2, r.bottom - 2], [r.left + r.width / 2, r.top + r.height / 2],
+          ...(lines.length > 1 ? lines.map((q) => [q.left + q.width / 2, q.top + q.height / 2]) : [])]
+          .filter(([x, y]) => x >= 0 && y >= 0 && x < innerWidth && y < innerHeight)
+        const hits = pts.map(([x, y]) => document.elementFromPoint(x, y))
+        if (pts.length && !hits.some((h) => h && (box.contains(h) || h.contains(box)))) covered = window.__ux.d(hits.find(Boolean))
+      }
       // The element and its two nearest ancestors (a ring drawn by focus-within), focused and not.
       const chain = [el, el.parentElement, el.parentElement?.parentElement].filter((n) => n && n.nodeType === 1)
-      const look = () => chain.map((n) => { const cs = getComputedStyle(n); return [cs.outlineStyle, cs.outlineWidth, cs.outlineColor, cs.boxShadow, cs.borderColor, cs.backgroundColor].join('|') })
+      // A ring may be drawn on the element's ::after or ::before (a card's stretched link).
+      const styles = (n) => [getComputedStyle(n), getComputedStyle(n, '::after'), getComputedStyle(n, '::before')]
+      const look = () => chain.flatMap((n) => styles(n).map((cs) => [cs.outlineStyle, cs.outlineWidth, cs.outlineColor, cs.boxShadow, cs.borderColor, cs.backgroundColor].join('|')))
       const focused = look()
-      const ring = chain.some((n) => { const cs = getComputedStyle(n); return (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0) || (cs.boxShadow && cs.boxShadow !== 'none') })
+      const ring = chain.some((n) => styles(n).some((cs) => (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0) || (cs.boxShadow && cs.boxShadow !== 'none')))
       el.blur()
       const resting = look()
       el.focus({ preventScroll: true })
       const changed = focused.some((v, i) => v !== resting[i])
-      return { key, name: window.__ux.d(el), shown: ring && changed, visible: window.__ux.shown(el) }
-    })
+      return { key, name: window.__ux.d(el), shown: ring && changed, visible: window.__ux.shown(el), covered }
+    }, obscured)
     if (!r) continue
     if (seen.has(r.key)) break
     seen.add(r.key)
     if (r.visible && !r.shown) out.push({ rule: 'M8', element: r.name, value: 'no ring', limit: 'token ring' })
+    if (r.covered) out.push({ rule: 'M17', element: r.name, value: `focus obscured by ${r.covered}`, limit: 'partly visible' })
   }
+  await page.evaluate(() => document.getElementById('__ux-no-transition')?.remove()).catch(() => {})
   await page.keyboard.press('Escape').catch(() => {})
   return out.slice(0, 10)
+}
+
+// ---------------------------------------------------------------- accessibility gate (accessibility-aa D2)
+/**
+ * M18, 1.4.10 Reflow: run at a 320 × 256 CSS px viewport (1280 × 1024 at 400% zoom). The page must
+ * not scroll sideways, and no element may scroll sideways inside it outside a listed
+ * two-dimensional region (scripts/ux-audit/reflow-exempt.json) or a tab row.
+ */
+export function reflow(exempt) {
+  const out = []
+  const vw = innerWidth
+  const skip = ['[role="tablist"]', '[aria-hidden="true"]', 'svg', ...exempt].join(', ')
+  const de = document.scrollingElement || document.documentElement
+  if (de.scrollWidth > vw + 1) out.push({ rule: 'M18', element: 'document', value: de.scrollWidth, limit: vw })
+  for (const el of document.querySelectorAll('body *')) {
+    if (el.closest(skip)) continue
+    const cs = getComputedStyle(el)
+    if (/(auto|scroll)/.test(cs.overflowX) && el.scrollWidth > el.clientWidth + 1 && el.clientWidth > 0 && window.__ux.shown(el)) {
+      // Name the deepest element that reaches past the scroller's right edge: that is what to fix.
+      const right = el.getBoundingClientRect().right
+      const wide = [...el.querySelectorAll('*')].filter((c) => !c.closest(skip) && c.getBoundingClientRect().width > 0 && c.getBoundingClientRect().right > right + 1)
+      const deepest = wide.filter((c) => !wide.some((o) => o !== c && c.contains(o)))[0]
+      out.push({ rule: 'M18', element: window.__ux.d(el), value: `scrolls sideways (${el.scrollWidth} in ${el.clientWidth})${deepest ? `; widest: ${window.__ux.d(deepest)}` : ''}`, limit: vw })
+    }
+    if (out.length >= 6) break
+  }
+  return out
+}
+
+/**
+ * M21, 2.5.8 Target size (minimum), as WCAG words it: a target at least 24 × 24 CSS px, or
+ * an undersized one whose 24 px circle (centred on its box) meets no other target and no
+ * other undersized target's circle. Links inline in running text are exempt.
+ */
+export function targetSizeWcag() {
+  const out = []
+  const all = [...document.querySelectorAll(window.__ux.targets)].filter((el) => {
+    if (el.closest('[role="option"]') && el.getAttribute('role') !== 'option') return false
+    if (el.tagName === 'A' && getComputedStyle(el).display === 'inline') return false
+    return window.__ux.shown(el)
+  })
+  const boxOf = (el) => {
+    const t = el.getAttribute('type')
+    return (el.tagName === 'INPUT' && (t === 'checkbox' || t === 'radio') ? el.closest('label') ?? el : el).getBoundingClientRect()
+  }
+  // A target under an open menu, sheet or panel is covered, not a target at that moment.
+  const targets = all.filter((el) => {
+    const r = boxOf(el)
+    const x = Math.min(Math.max(r.left + r.width / 2, 0), innerWidth - 1), y = Math.min(Math.max(r.top + r.height / 2, 0), innerHeight - 1)
+    const hit = document.elementFromPoint(x, y)
+    return !!hit && (el.contains(hit) || hit.contains(el) || !!hit.closest('label')?.contains(el))
+  })
+  all.length = 0
+  all.push(...targets)
+  const boxes = all.map(boxOf)
+  const small = boxes.map((r) => r.width + 0.5 < 24 || r.height + 0.5 < 24)
+  const centre = (r) => [r.left + r.width / 2, r.top + r.height / 2]
+  // Targets of different layers (the page and an open menu over it) are not compared, as in M11.
+  const LAYER = '[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [role="tooltip"], dialog'
+  const layers = all.map((el) => el.closest(LAYER))
+  const seen = new Set()
+  all.forEach((el, i) => {
+    if (!small[i]) return
+    const [cx, cy] = centre(boxes[i])
+    const clash = all.findIndex((o, j) => {
+      if (j === i || o.contains(el) || el.contains(o) || layers[j] !== layers[i]) return false
+      const b = boxes[j]
+      const dx = Math.max(b.left - cx, 0, cx - b.right), dy = Math.max(b.top - cy, 0, cy - b.bottom)
+      if (Math.hypot(dx, dy) < 12) return true
+      if (!small[j]) return false
+      const [ox, oy] = centre(b)
+      return Math.hypot(ox - cx, oy - cy) < 24
+    })
+    if (clash < 0) return
+    const key = window.__ux.d(el)
+    if (seen.has(key)) return
+    seen.add(key)
+    out.push({ rule: 'M21', element: key, value: `${Math.round(boxes[i].width)}×${Math.round(boxes[i].height)} near ${window.__ux.d(all[clash])}`, limit: 24 })
+  })
+  return out.slice(0, 15)
+}
+
+/** The WCAG 1.4.12 text-spacing styles (the values of the W3C's text spacing bookmarklet). */
+export const TEXT_SPACING_CSS = '*:not(svg):not(svg *){line-height:1.5!important;letter-spacing:0.12em!important;word-spacing:0.16em!important}p{margin-bottom:2em!important}'
+
+/**
+ * M19, 1.4.12 Text spacing: with TEXT_SPACING_CSS applied, no visible element with hidden
+ * overflow cuts its own text vertically. A one-line cut with an ellipsis is M10's concern,
+ * and a line clamp shows its full text elsewhere.
+ */
+export function textSpacingClip() {
+  const out = []
+  for (const el of document.querySelectorAll('body *')) {
+    if (el.classList.contains('sr-only')) continue
+    if (![...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) continue
+    const cs = getComputedStyle(el)
+    if (!/(hidden|clip)/.test(cs.overflowY)) continue
+    if ((cs.webkitLineClamp && cs.webkitLineClamp !== 'none') || cs.whiteSpace === 'nowrap' || cs.whiteSpace === 'pre') continue
+    if (el.closest('[contenteditable="true"], textarea, [aria-hidden="true"]')) continue
+    if (el.scrollHeight <= el.clientHeight + 1 || !window.__ux.shown(el)) continue
+    out.push({ rule: 'M19', element: window.__ux.d(el), value: `${el.scrollHeight} in ${el.clientHeight}`, limit: 'text not clipped' })
+    if (out.length >= 6) break
+  }
+  return out
+}
+
+/**
+ * M20, 3.3.8 Accessible authentication: every password, one-time code and recovery field
+ * has an `autocomplete` value, and a synthetic paste (the event the system paste or a
+ * password manager fires) is not cancelled. `signIn`: a signed-out screen, where every
+ * password field is a credential; elsewhere (a third party's API key in Settings) only a
+ * field that names itself a credential, by its autocomplete or `data-credential`, is.
+ */
+export function credentialFields(signIn = true) {
+  const out = []
+  const sel = signIn ? 'input[type="password"], input[autocomplete~="one-time-code"], input[data-credential]'
+    : 'input[autocomplete~="current-password"], input[autocomplete~="one-time-code"], input[data-credential]'
+  for (const el of document.querySelectorAll(sel)) {
+    if (el.hidden) continue
+    const ac = (el.getAttribute('autocomplete') || '').trim()
+    if (!ac || ac === 'off' || ac === 'on') out.push({ rule: 'M20', element: window.__ux.d(el), value: `autocomplete="${ac}"`, limit: 'username, current-password, new-password or one-time-code' })
+    const data = new DataTransfer()
+    data.setData('text/plain', '123456')
+    if (!el.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: data }))) {
+      out.push({ rule: 'M20', element: window.__ux.d(el), value: 'paste cancelled', limit: 'paste allowed' })
+    }
+  }
+  return out
 }

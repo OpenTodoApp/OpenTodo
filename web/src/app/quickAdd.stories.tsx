@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { type ReactNode, useEffect, useRef } from 'react'
 import { QuickAdd } from './QuickAdd'
+import { ReadOnlyQuickAdd } from './task-list/ListChrome'
 import { PasteOfferPanel } from './quickadd/PasteOffer'
 import { HEX, label, withClock } from './stories/fixtures'
 
@@ -29,6 +30,28 @@ export const Empty: StoryObj = {
   render: () => <Frame><QuickAdd placeholder="Add a task to Inbox" projects={projects} labels={labels} onAdd={noop} hideHint /></Frame>,
 }
 
+/** The filled field (quick-add-field-surface) and the viewer's disabled one; the workbench shows each story in light and dark. */
+function SurfaceFrame() {
+  return (
+    <div className="grid max-w-3xl gap-3">
+      <Frame><QuickAdd placeholder="Add a task to Inbox" projects={projects} labels={labels} onAdd={noop} hideHint /></Frame>
+      <Frame><ReadOnlyQuickAdd /></Frame>
+    </div>
+  )
+}
+export const Surface: StoryObj = { render: () => <SurfaceFrame /> }
+
+/** The same under the high-contrast presentation, where the fill cannot differ from the page and a border carries the field. */
+function HighContrastSurface() {
+  useEffect(() => {
+    const root = document.documentElement
+    root.setAttribute('data-contrast', 'high')
+    return () => root.removeAttribute('data-contrast')
+  }, [])
+  return <SurfaceFrame />
+}
+export const SurfaceHighContrast: StoryObj = { render: () => <HighContrastSurface /> }
+
 /** A typed line with every attribute: the date, a nested project, a label, the priority and an estimate become chips. */
 export const WithChips: StoryObj = {
   render: () => (
@@ -50,7 +73,7 @@ export const NewLabel: StoryObj = {
 
 /** Typing `#web`: the project list under the field, Create last (smart-title-tokens). */
 function Suggesting({ line }: { line: string }) {
-  const ref = useRef<HTMLInputElement>(null)
+  const ref = useRef<HTMLTextAreaElement>(null)
   useEffect(() => {
     const el = ref.current
     if (!el) return
@@ -98,6 +121,28 @@ export const PhoneSheet: StoryObj = {
     </div>
   ),
 }
+
+/** A long line wraps (quick-add-notes D1), and Shift+Enter opened the notes under it (D2). */
+function WithNotesStory({ layout }: { layout: 'line' | 'sheet' }) {
+  const ref = useRef<HTMLTextAreaElement>(null)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      ref.current?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', shiftKey: true, bubbles: true, cancelable: true }))
+      const notes = document.querySelector<HTMLTextAreaElement>('textarea[aria-label="Notes"]')
+      if (!notes) return
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(notes, 'https://example.com/the-long-read')
+      notes.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    return () => clearTimeout(timer)
+  }, [])
+  const line = 'Read the long piece about local-first software and write down the three ideas worth trying in OpenTodo tomorrow #Work'
+  return layout === 'sheet'
+    ? <div className="max-w-sm rounded-t-popover border-t border-strong bg-pop pt-3 shadow-3"><QuickAdd ref={ref} layout="sheet" placeholder="Add a task…" projects={projects} labels={labels} onAdd={noop} hideHint initialValue={line} /></div>
+    : <Frame><QuickAdd ref={ref} placeholder="Add a task to Inbox" projects={projects} labels={labels} onAdd={noop} hideHint initialValue={line} /></Frame>
+}
+
+export const WithNotes: StoryObj = { render: () => <WithNotesStory layout="line" /> }
+export const PhoneSheetWithNotes: StoryObj = { render: () => <WithNotesStory layout="sheet" /> }
 
 /** A pasted list (paste-to-tasks D1): the offer under the empty field, five lines as they will be titled and how many more. */
 export const PasteOffer: StoryObj = {

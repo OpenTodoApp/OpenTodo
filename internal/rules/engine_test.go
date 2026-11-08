@@ -13,7 +13,7 @@ import (
 
 	"github.com/OpenTodoApp/opentodo/internal/ids"
 	"github.com/OpenTodoApp/opentodo/internal/notify"
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
@@ -42,7 +42,7 @@ type harness struct {
 // clock (Wednesday 2026-10-21 12:00 UTC).
 func newHarness(t *testing.T) *harness {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
+	db, err := storetest.OpenDir(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -305,6 +305,11 @@ func (d *davRequest) fields(v *davView, in *caldav.Inbound, current opsync.Entit
 		}
 	}
 	energyWrite(f, in, current)
+	// X-OPENTODO-SECTOR (time-sectors D9): only a valid property the client
+	// sent changes the sector; absence leaves it alone.
+	if in.Sector != nil && idOf(current["sector"]) != *in.Sector {
+		f["sector"] = mustJSON(*in.Sector)
+	}
 	extra := in.Extra
 	alarms, err := d.alarmWrites(v, in, current, id, f, ts)
 	if err != nil {
@@ -511,6 +516,10 @@ func (d *davRequest) recordName(id, name, uid string) error {
 func (d *davRequest) update(v *davView, cur opsync.Entity, in *caldav.Inbound) (string, error) {
 	id := idOf(cur["id"])
 	ts := d.s.opTS()
+	// A zoned due is served in UTC: read the times sent back in its zone.
+	if cd := decodeDue(cur["due"]); cd != nil {
+		in.KeepZone(&caldav.Due{Date: cd.Date, Time: cd.Time, TZ: cd.TZ})
+	}
 	df, err := d.fields(v, in, cur, id, ts)
 	if err != nil {
 		return "", err
@@ -523,6 +532,10 @@ func (d *davRequest) update(v *davView, cur opsync.Entity, in *caldav.Inbound) (
 			same = sameLabels(val, cur["labels"])
 		}
 		if field == "ical_extra" && isNullish(cur[field]) && isNullish(val) {
+			same = true
+		}
+		// No DESCRIPTION is how a missing description is served (issue #1033).
+		if field == "description" && idOf(cur[field]) == "" && idOf(val) == "" {
 			same = true
 		}
 		if !same {

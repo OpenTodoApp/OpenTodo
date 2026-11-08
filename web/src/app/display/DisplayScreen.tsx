@@ -7,23 +7,24 @@
 // the display is shown and removed when it leaves (design D4).
 import { useCallback, useMemo } from 'react'
 import { Icon, MenuItem, Menu } from '../../ui'
-import { useAllLabels, useMemberships, useProjectsLoaded, useSectionRows, useViewRowsLoaded } from '../../lib/localData'
-import { completedOn, groupToday, nextDays, projectOpenList, todayList, withoutArchived } from '../../lib/dayLists'
+import { useAllLabels, useMemberships, useProjectsLoaded, useSectionRows, useUserPrefsRow, useViewRowsLoaded } from '../../lib/localData'
+import { completedOn, groupToday, nextDays, projectOpenList, todayAssigneeFilter, todayList, withoutArchived } from '../../lib/dayLists'
 import { describeDue, formatTime, localDueOf, logicalDay } from '../../lib/dates'
 import { blockedMap } from '../../lib/dependencies'
 import { setTaskCompleted } from '../../lib/ops'
 import { groupBySection } from '../../lib/sections'
-import { canEditTask, memberName } from '../../lib/sharing'
+import { canEditTask, memberName, useMe } from '../../lib/sharing'
 import { breadcrumbOf, buildTaskTree } from '../../lib/subtasks'
 import { useSyncStatus } from '../../lib/sync'
 import { NO_TASKS, useLiveTasks } from '../../lib/liveTasks'
 import { flattenTree, type TreeNode } from '../../lib/tree'
 import type { Task } from '../../lib/types'
-import { inLater, isDashboard, runView, setStartView } from '../../lib/views'
+import { isDashboard, runView, setStartView } from '../../lib/views'
+import { splitLater } from '../../lib/listGroups'
 import { useOnline } from '../../lib/online'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { navigate, routePath, type Route } from '../router'
-import { useStartView, useViewerZone } from '../useViews'
+import { useStartView, useViewData, useViewerZone } from '../useViews'
 import { Clock, useNow } from './Clock'
 import { DisplayColumn, type DisplayRowData } from './DisplayColumn'
 import { defaultDays, type DisplayTarget } from './displayOptions'
@@ -86,9 +87,15 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
   const memberships = useMemberships()
   const labels = useAllLabels()
   const views = useViewRowsLoaded()
+  // A saved view runs with the same context as its own screen (workspaces, people, fields, sections,
+  // tracked time), or `workspace:`, `assigned:`, field and `available` terms match nothing (issue 901).
+  const viewCtx = useViewData().ctx
   const projectId = target.kind === 'project' ? target.id : null
   const sections = useSectionRows(projectId)
   const memberMap = useMemo(() => new Map(memberships.map((m) => [m.projectId, m])), [memberships])
+  const prefs = useUserPrefsRow()
+  const me = useMe()
+  const hideOthers = useMemo(() => (target.kind === 'today' ? todayAssigneeFilter(prefs, memberships, me) : null), [target.kind, prefs, memberships, me])
   const taskMap = useMemo(() => new Map(tasks.map((task) => [task.id, task])), [tasks])
   const blocked = useMemo(() => blockedMap(tasks), [tasks])
 
@@ -122,7 +129,7 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
 
     switch (target.kind) {
       case 'today': {
-        const g = groupToday(todayList(all, today), today, blocked)
+        const g = groupToday(todayList(all, today, hideOthers), today, blocked)
         const groups: Group[] = [
           { id: 'overdue', heading: t('Earlier'), rows: g.overdue.map((task) => toRow(task, 'overdue')) },
           { id: 'today', heading: t('Today'), rows: g.day.map((task) => toRow(task, 'today')), empty: g.overdue.length || g.evening.length ? undefined : t('Nothing left for today') },
@@ -138,8 +145,9 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
         const project = live.find((p) => p.id === target.id)
         if (!project) return { title: t('Project'), missing: { message: t('This project no longer exists.') }, groups: [], columns: [] }
         const open = projectOpenList(all, project.id)
-        const later = open.filter((task) => inLater(task, today))
-        const tree = buildTaskTree(later.length ? open.filter((task) => !inLater(task, today)) : open)
+        // A subtree goes where its top-level task goes (subtasks-follow-later).
+        const { active, later } = splitLater(open, today)
+        const tree = buildTaskTree(active)
         const byId = new Map(tree.roots.map((n) => [n.id, n]))
         const groups: Group[] = groupBySection(project.id, tree.roots.map((n) => n.item), sections)
           .filter((s) => s.tasks.length > 0)
@@ -147,7 +155,7 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
             id: `section:${s.key}`, heading: s.section?.name ?? null,
             rows: flattenTree(s.tasks.map((task) => byId.get(task.id) as TreeNode<Task>)).map((n) => toRow(n.item, `section:${s.key}`, { depth: n.depth })),
           }))
-        if (later.length) groups.push({ id: 'later', heading: t('Later'), rows: later.map((task) => toRow(task, 'later')) })
+        if (later.length) groups.push({ id: 'later', heading: t('Later'), rows: flattenTree(buildTaskTree(later).roots).map((n) => toRow(n.item, 'later', { depth: n.depth })) })
         if (groups.length === 0) groups.push({ id: 'empty', rows: [], empty: t('Nothing left to do in this project') })
         return { title: project.name, groups, columns: [] }
       }
@@ -156,7 +164,7 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
         const view = views.find((v) => v.id === target.id && !v.deleted_at)
         if (!view) return { title: t('View'), missing: { message: t('This view no longer exists.') }, groups: [], columns: [] }
         if (isDashboard(view)) return { title: view.name, missing: { message: t('A dashboard cannot be shown in display mode. Open one of its views instead.') }, groups: [], columns: [] }
-        const result = runView(view, { today, labels, projects: live, tasks: all })
+        const result = runView(view, { ...viewCtx, today, labels, projects: live, tasks: all })
         if (!result.ok) return { title: view.name, missing: { message: t('This view’s query has an error: {error}', { error: result.error }) }, groups: [], columns: [] }
         const groups: Group[] = result.groups.map((g) => ({ id: g.key, heading: g.heading || null, rows: g.tasks.map((task) => toRow(task, g.key)) }))
         if (groups.length === 0) groups.push({ id: 'empty', rows: [], empty: t('No task matches this view') })
@@ -164,7 +172,7 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  }, [projects, liveTasks, tasks, views, labels, sections, memberMap, taskMap, blocked, target, projectId, today, zone, dt, options.days])
+  }, [projects, liveTasks, tasks, views, labels, sections, memberMap, taskMap, blocked, target, projectId, today, zone, dt, options.days, hideOthers, viewCtx])
 
   // ---- keyboard and focus (design D5): one roving focus across groups and columns ----
   const rows = useMemo(() => (content ? [...content.groups, ...content.columns].flatMap((g) => g.rows) : []), [content])

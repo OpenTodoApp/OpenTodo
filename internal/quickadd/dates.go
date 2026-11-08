@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/recurrence"
+	"github.com/OpenTodoApp/opentodo/internal/sector"
 )
 
 // dateCtx mirrors DateContext in web/src/lib/nlp/dates.ts.
@@ -259,18 +260,65 @@ func wordsAt(tokens []token, i int, ctx *dateCtx, pick func(*Vocab) []string) in
 	return best
 }
 
+// sectorPhraseAt is the longest time sector phrase at token i in any active
+// language and the sector word it means (time-sectors D8), or 0.
+func sectorPhraseAt(tokens []token, i int, ctx *dateCtx) (int, string) {
+	if tok(tokens, i) == nil {
+		return 0, ""
+	}
+	best, word := 0, ""
+	for _, v := range ctx.vocabs {
+		for _, w := range sector.Words {
+			if n := phraseAt(tokens, i, v.SectorPhrases[w]); n > best {
+				best, word = n, w
+			}
+		}
+	}
+	return best, word
+}
+
 func matchDeadlineAt(tokens []token, i int, ctx *dateCtx) *dateMatch {
 	if tok(tokens, i) == nil {
 		return nil
 	}
 	var best *dateMatch
 	for _, v := range ctx.vocabs {
-		n := phraseAt(tokens, i, v.DeadlineWords)
+		for _, by := range []bool{false, true} {
+			list := v.DeadlineWords
+			if by {
+				list = v.ByWords
+			}
+			n := phraseAt(tokens, i, list)
+			if n == 0 {
+				continue
+			}
+			dm := matchDateAt(tokens, i+n, ctx)
+			// "by friday 5pm" has a time a deadline cannot hold: it stays a due date.
+			if dm == nil || (by && matchTimeAt(tokens, dm.to, ctx) != nil) {
+				continue
+			}
+			if best == nil || dm.to > best.to {
+				best = &dateMatch{date: dm.date, from: i, to: dm.to}
+			}
+		}
+	}
+	return best
+}
+
+// matchByTimeAt is a "by" word followed by a time ("by 5pm"): a due time, the
+// word removed with it (quick-add-by-deadline D2).
+func matchByTimeAt(tokens []token, i int, ctx *dateCtx) *timeMatch {
+	if tok(tokens, i) == nil {
+		return nil
+	}
+	var best *timeMatch
+	for _, v := range ctx.vocabs {
+		n := phraseAt(tokens, i, v.ByWords)
 		if n == 0 {
 			continue
 		}
-		if dm := matchDateAt(tokens, i+n, ctx); dm != nil && (best == nil || dm.to > best.to) {
-			best = &dateMatch{date: dm.date, from: i, to: dm.to}
+		if tm := matchTimeAt(tokens, i+n, ctx); tm != nil && (best == nil || tm.to > best.to) {
+			best = &timeMatch{time: tm.time, date: tm.date, from: i, to: tm.to}
 		}
 	}
 	return best

@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { api, ApiError } from '../lib/api'
 import { connectionSnippet, describeAssistantsError } from '../lib/assistants'
 import { AssistantsView, type AssistantsViewProps, clientSnippet } from './AssistantsPanel'
+import { OAuthClients } from './OAuthClients'
 
 const noop = () => {}
 const endpoint = 'https://todo.example.com/mcp'
@@ -52,6 +53,20 @@ describe('AssistantsView', () => {
     expect(html).toContain('>Other MCP clients<')
     expect(html).toContain('time zone')
     expect(button(html, 'Copy configuration')).toBeTruthy()
+  })
+
+  it('offers the owner OAuth clients for apps that sign in instead of taking a token (mcp-oauth)', () => {
+    const oauthClients = (disabled: boolean) => <OAuthClients disabled={disabled} />
+    const html = render({ status: { enabled: true, endpoint }, oauthClients })
+    expect(html).toContain('data-mcp-oauth')
+    expect(html).toContain('Apps that sign in with OAuth')
+    expect(html).toContain('data-oauth-client-name')
+    expect(html).toContain('data-oauth-client-scope')
+    expect(html).toContain('Create client')
+    // A member sees the endpoint and the steps, never the client list.
+    expect(render({ isOwner: false, status: { enabled: true, endpoint }, oauthClients })).not.toContain('data-mcp-oauth')
+    // Nothing to manage while the endpoint is off.
+    expect(render({ oauthClients })).not.toContain('data-mcp-oauth')
   })
 
   it('tells an encrypted account what remote assistants can do and how ot mcp --decrypt works (mcp-projects)', () => {

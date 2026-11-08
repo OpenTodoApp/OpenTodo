@@ -21,7 +21,8 @@ The notes field formats as you type: `- ` starts a bullet list, `[ ] ` a checkli
 
 Big tasks are easier as a few small steps. To add one:
 
-- open the task and type in **Add subtask**, or
+- open the task and type in **Add subtask**,
+- choose **Add subtask** in its menu, or
 - select the task in the list and press <kbd>a</kbd>.
 
 Subtasks appear indented under their parent, and the parent shows your progress, like **1/3**. You can nest subtasks inside subtasks.

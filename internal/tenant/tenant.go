@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"net/http"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/backup"
@@ -59,14 +60,19 @@ type Tenant struct {
 	Reader  *sql.DB // query-only pool for pure reads (store.OpenReader)
 	Handler http.Handler
 
-	log       *slog.Logger
-	now       func() time.Time
-	hosted    *Hosted
-	jobs      []jobs.Job
-	upkeep    *jobs.Upkeep
-	unlock    func()
-	closeOnce sync.Once
-	closeErr  error
+	log    *slog.Logger
+	now    func() time.Time
+	hosted *Hosted
+	jobs   []jobs.Job
+	upkeep *jobs.Upkeep
+	// checkpoints schedules the checkpoint job (checkpoint.go).
+	checkpoints *checkpointer
+	// auditChecked: the audit log's hash chain was verified once since the
+	// tenant opened (audit-hash-chain); later checks run with upkeep.
+	auditChecked atomic.Bool
+	unlock       func()
+	closeOnce    sync.Once
+	closeErr     error
 }
 
 // Open applies a pending web restore, takes the data directory's shared lock,
@@ -132,6 +138,7 @@ func (t *Tenant) wire(ctx context.Context, cfg config.Config, o Options) error {
 		t.now = time.Now
 	}
 	t.upkeep = jobs.NewUpkeep(upkeepEvery, set.Signal, t.now())
+	t.checkpoints = newCheckpointer(set.Signal, t.Reader, cfg.DataDir, t.now())
 	t.jobs = t.buildJobs()
 	return nil
 }
@@ -189,6 +196,10 @@ func (t *Tenant) Close() error {
 		if t.Set != nil {
 			t.Backups.Stop()
 			t.Sync.Notifier().CloseAll()
+			// The last limit windows, so a restart does not reset them (persistent-limits D1).
+			if err := t.Limits.Flush(context.Background()); err != nil {
+				t.log.Warn("limits: write windows on close", "err", err)
+			}
 		}
 		if t.Reader != nil {
 			t.Reader.Close()

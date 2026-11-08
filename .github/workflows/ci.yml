@@ -41,6 +41,7 @@ jobs:
       mobile: ${{ steps.filter.outputs.mobile }}
       ui: ${{ steps.filter.outputs.ui }}
       layout: ${{ steps.filter.outputs.layout }}
+      a11y: ${{ steps.filter.outputs.a11y }}
       extension: ${{ steps.filter.outputs.extension }}
       obsidian: ${{ steps.filter.outputs.obsidian }}
       skill: ${{ steps.filter.outputs.skill }}
@@ -61,7 +62,7 @@ jobs:
           BASE: ${{ github.event.pull_request.base.sha }}
         run: |
           if [ "$EVENT" != "pull_request" ]; then
-            for k in code docs mobile ui layout extension obsidian skill ios; do echo "$k=true" >> "$GITHUB_OUTPUT"; done
+            for k in code docs mobile ui layout a11y extension obsidian skill ios; do echo "$k=true" >> "$GITHUB_OUTPUT"; done
             exit 0
           fi
           git diff --name-only "$BASE"...HEAD > changed.txt
@@ -85,8 +86,19 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - run: npm ci --no-audit --no-fund
         working-directory: web
-      - run: npm run build
+      # The signed file list (signed-web-app): a release tag names the version, a build
+      # of main is labelled a preview build; anything else is 0.0.0-dev. Signing is the
+      # web-sign job's, on release tags only.
+      - name: Build (the file list names the version)
         working-directory: web
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          case "$REF" in
+            refs/tags/v*) export OPENTODO_VERSION="${GITHUB_REF_NAME#v}" ;;
+            refs/heads/main) export OPENTODO_BUILD=preview ;;
+          esac
+          npm run build
       # The first load's gzip size against web/bundle-budget.json (raise it only on purpose).
       - name: Bundle budget
         run: node scripts/bundle-budget.mjs
@@ -100,6 +112,53 @@ jobs:
           name: web-dist
           path: internal/web/dist
           include-hidden-files: true
+
+  # Signs the web app's file list (OpenSpec signed-web-app D4): release tags only, the
+  # only job in the protected `web-signing` environment (its required reviewer approves
+  # every signing) and the only one that reads WEB_SIGNING_KEY. It signs the build of
+  # web-build, after checking every file against the list and the version against the
+  # tag, and hands it on as web-dist-signed, which the binaries and the image embed.
+  # Without the secret (a fork, or before the keys exist) it passes the build on
+  # unsigned, so the release reads "Self-built" and stays green.
+  web-sign:
+    name: Web app signature
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [changes, web-build]
+    environment: web-signing
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: web-dist
+          path: internal/web/dist
+      - name: Sign the file list
+        env:
+          WEB_SIGNING_KEY: ${{ secrets.WEB_SIGNING_KEY }}
+        run: |
+          if [ -z "$WEB_SIGNING_KEY" ]; then
+            echo "::warning::WEB_SIGNING_KEY is not set in the web-signing environment: this release is not signed and reads Self-built."
+            go run ./cmd/websign verify internal/web/dist
+          else
+            go run ./cmd/websign sign -version "$GITHUB_REF_NAME" internal/web/dist
+            go run ./cmd/websign verify -require-signed internal/web/dist
+          fi
+          mkdir -p web-manifest
+          cp internal/web/dist/app-manifest.json "web-manifest/opentodo-web-manifest-${GITHUB_REF_NAME}.json"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: web-dist-signed
+          path: internal/web/dist
+          include-hidden-files: true
+      # The public record of what this version's code is, attached to the release.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: web-manifest
+          path: web-manifest
 
   web:
     name: Web (typecheck, lint, test)
@@ -125,12 +184,13 @@ jobs:
         working-directory: web
 
   web-scale:
-    # The 2,000-row scale tests (*.perf.test.tsx) on a runner of their own, beside the
-    # web job: in the parallel unit pool they raced every other file and timed out under
-    # load (test audit F4). They assert counts, not times.
-    name: Web scale tests (2,000 rows)
+    # The scale tests (*.perf.test.tsx: lists of 2,000 rows, the 10,000-task account of
+    # performance-10k) on a runner of their own, beside the web job: in the parallel
+    # unit pool they raced every other file and timed out under load (test audit F4).
+    # They assert counts, not times.
+    name: Web scale tests (10,000 tasks)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     needs: changes
     if: needs.changes.outputs.code == 'true'
     steps:
@@ -220,11 +280,11 @@ jobs:
     if: needs.changes.outputs.layout == 'true'
     strategy:
       fail-fast: false
-      # A pull request runs one leg (Chromium at every width in English, then the
-      # end-to-end checks); pushes and tags run one leg per engine, width and the
+      # A pull request runs two legs (Chromium at every width in English, then the
+      # end-to-end checks; and the safe-area check); pushes and tags run one leg per engine, width and the
       # German and French catalogs, and the end-to-end checks beside them.
       matrix:
-        include: ${{ fromJSON(github.event_name == 'pull_request' && '[{"engine":"chromium","name":"Chromium, all widths, end-to-end","widths":"360,390,768","e2e":true}]' || '[{"engine":"chromium","name":"Chromium 360 px","widths":"360"},{"engine":"chromium","name":"Chromium 390 px","widths":"390"},{"engine":"chromium","name":"Chromium 768 px","widths":"768"},{"engine":"chromium","name":"End-to-end","e2e":true},{"engine":"webkit","name":"WebKit 360 px","widths":"360"},{"engine":"webkit","name":"WebKit 390 px","widths":"390"},{"engine":"webkit","name":"WebKit 768 px","widths":"768"},{"engine":"chromium","name":"Chromium 360 px German","widths":"360","lang":"de"},{"engine":"chromium","name":"Chromium 360 px French","widths":"360","lang":"fr"}]') }}
+        include: ${{ fromJSON(github.event_name == 'pull_request' && '[{"engine":"chromium","name":"Chromium, all widths, end-to-end","widths":"360,390,768","e2e":true},{"engine":"chromium","name":"Safe area","safearea":true}]' || '[{"engine":"chromium","name":"Chromium 360 px","widths":"360"},{"engine":"chromium","name":"Chromium 390 px","widths":"390"},{"engine":"chromium","name":"Chromium 768 px","widths":"768"},{"engine":"chromium","name":"End-to-end","e2e":true},{"engine":"chromium","name":"Safe area","safearea":true},{"engine":"webkit","name":"WebKit 360 px","widths":"360"},{"engine":"webkit","name":"WebKit 390 px","widths":"390"},{"engine":"webkit","name":"WebKit 768 px","widths":"768"},{"engine":"chromium","name":"Chromium 360 px German","widths":"360","lang":"de"},{"engine":"chromium","name":"Chromium 360 px French","widths":"360","lang":"fr"}]') }}
     # The pinned Playwright image (PLAYWRIGHT_IMAGE in the Makefile): Chromium, WebKit and
     # their system packages are in it. The server is a static Go build made in the job.
     container: mcr.microsoft.com/playwright:v1.56.1-noble@sha256:f1e7e01021efd65dd1a2c56064be399f3e4de00fd021ac561325f2bfbb2b837a
@@ -262,6 +322,14 @@ jobs:
           OPENTODO_DATA_DIR=$(mktemp -d) ./bin/opentodo &
           for i in $(seq 1 30); do curl -fsS localhost:8080/healthz >/dev/null && break; sleep 0.5; done
           node scripts/e2e-layout.mjs layout-report
+      # The safe-area check (GitHub issue 973): every screen and overlay as the installed app
+      # on a phone with a Dynamic Island, portrait and landscape, insets emulated.
+      - name: Safe-area check against a fresh server
+        if: ${{ matrix.safearea }}
+        run: |
+          OPENTODO_DATA_DIR=$(mktemp -d) ./bin/opentodo &
+          for i in $(seq 1 30); do curl -fsS localhost:8080/healthz >/dev/null && break; sleep 0.5; done
+          node scripts/e2e-safe-area.mjs layout-report
       # What `make e2e` runs (the image has no make).
       - name: End-to-end (two devices, offline sync, offline start, inbox triage, saved views)
         if: ${{ matrix.e2e }}
@@ -277,6 +345,62 @@ jobs:
   # The interface audit (OpenSpec web-app "Interface audit tour") runs in its own
   # workflow, .github/workflows/ux-audit.yml: on pull requests and nightly, off the
   # push critical path (ci-speed).
+
+  # The accessibility gate on real screens (OpenSpec accessibility "Accessibility gate on
+  # real screens", change accessibility-aa D1): every entry of the screen inventory against
+  # a seeded server at 360 and 1280 px, light and dark, English; fails on any serious or
+  # critical axe violation and on the measured criteria (focus visible and not obscured,
+  # WCAG target size, reflow at 320 px, text spacing, credential fields). Two shards of the
+  # inventory side by side; the nightly Interface audit runs the full matrix.
+  a11y-screens:
+    name: Accessibility (screens ${{ matrix.shard }}/2)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    needs: [changes, web-build]
+    if: needs.changes.outputs.a11y == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    container: mcr.microsoft.com/playwright:v1.56.1-noble@sha256:f1e7e01021efd65dd1a2c56064be399f3e4de00fd021ac561325f2bfbb2b837a
+    env:
+      GOFLAGS: -buildvcs=false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: web-dist
+          path: internal/web/dist
+      - run: CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/opentodo ./cmd/opentodo
+      # axe-core (web devDependency).
+      - run: npm ci --no-audit --no-fund
+        working-directory: web
+      - run: npm i -g --no-audit --no-fund playwright@1.56.1
+      - name: Measurement tests (fixtures in Chromium)
+        if: matrix.shard == 1
+        run: node --test scripts/ux-audit/measure.test.mjs
+      - name: Accessibility gate (every screen, 360 and 1280 px, light and dark)
+        env:
+          A11Y_ONLY: "1"
+          WIDTHS: 360,1280
+          LANGS: en
+          SHARD: ${{ matrix.shard }}/2
+          CONCURRENCY: 2
+          OUT_DIR: a11y-report
+        run: node scripts/ux-audit/tour.mjs
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: a11y-report-${{ matrix.shard }}
+          path: a11y-report
 
   # The docs website (user-documentation): no sideways scrolling at 360/390/1280 px,
   # axe-core without serious or critical issues, search, and pages without JavaScript.
@@ -431,8 +555,9 @@ jobs:
     name: Binaries (${{ matrix.goos }}/${{ matrix.goarch }})
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [changes, server]
-    if: needs.changes.outputs.code == 'true'
+    needs: [changes, server, web-sign]
+    # web-sign runs on release tags only; elsewhere it is skipped, not failed.
+    if: ${{ !cancelled() && !failure() && needs.changes.outputs.code == 'true' }}
     strategy:
       fail-fast: false
       matrix:
@@ -456,9 +581,10 @@ jobs:
         # The version comes from the environment (GITHUB_REF_NAME), never from an
         # expression pasted into the script: a branch or tag name is not trusted text.
         run: go build -trimpath -ldflags="-s -w -X main.version=${GITHUB_REF_NAME}" -o "dist/ot-${GOOS}-${GOARCH}${EXT}" ./cmd/ot
+      # A release embeds the signed build (signed-web-app D4); anything else the plain one.
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: web-dist
+          name: ${{ startsWith(github.ref, 'refs/tags/v') && 'web-dist-signed' || 'web-dist' }}
           path: internal/web/dist
       - name: Cross-compile the server (web app embedded)
         env:
@@ -536,6 +662,8 @@ jobs:
   # AndroidX-only dependency check, translations and store metadata, a debug APK.
   # On tags, a release APK and AAB signed with the keystore from secrets (skipped
   # with a warning while the secrets are not set); the release job attaches them.
+  # The AAB is the Google Play build, without location permissions (play-location-later),
+  # checked by scripts/android-store-check.sh on every run.
   # Tags also prove the build reproducible (play-production D5): a second build in a
   # fresh checkout, compared with the first by scripts/android-repro.sh. The JDK is
   # pinned to the exact Temurin release named in mobile/README.md (D4).
@@ -550,12 +678,23 @@ jobs:
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
-          java-version: 17.0.21+9
+          java-version: 21.0.13+9
       - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
         with:
           packages: "platforms;android-37.0 build-tools;36.0.0"
-      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
       - run: make android
+      # The two release builds (play-location-later): the AAB for Google Play is built with
+      # -Popentodo.play=true and must not declare background (or any) location until Play
+      # approves the declaration; the APK for GitHub and F-Droid keeps it. Both unsigned here;
+      # tags check the signed ones again below.
+      - name: Play AAB without location, APK with it
+        run: |
+          cd mobile/android
+          ./gradlew --no-daemon -Popentodo.play=true :app:bundleRelease
+          ./gradlew --no-daemon :app:assembleRelease
+          cd ../..
+          scripts/android-store-check.sh mobile/android/app/build/outputs/bundle/release/app-release.aab mobile/android/app/build/outputs/apk/release/app-release-unsigned.apk
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: opentodo-android-debug
@@ -635,15 +774,20 @@ jobs:
           cd mobile/android
           printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
           printf 'storeFile=%s\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' "$RUNNER_TEMP/release.jks" "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > keystore.properties
-          OPENTODO_VERSION="$version" ./gradlew --no-daemon :app:assembleRelease :app:bundleRelease
+          # The AAB is the Google Play build (play-location-later: no location permission until
+          # Play approves background location); the APK for GitHub and F-Droid is the plain build,
+          # the one F-Droid and the reproducible-build step below rebuild.
+          OPENTODO_VERSION="$version" ./gradlew --no-daemon -Popentodo.play=true :app:bundleRelease
+          OPENTODO_VERSION="$version" ./gradlew --no-daemon :app:assembleRelease
           rm -f keystore.properties "$RUNNER_TEMP/release.jks"
           mkdir -p ../../dist
           cp app/build/outputs/apk/release/app-release.apk "../../dist/opentodo-android-$version.apk"
           cp app/build/outputs/bundle/release/app-release.aab "../../dist/opentodo-android-$version.aab"
+          ../../scripts/android-store-check.sh "../../dist/opentodo-android-$version.aab" "../../dist/opentodo-android-$version.apk"
           # The release certificate (play-production D1): the one documented in docs/android-app.md
           # and allowed in the F-Droid metadata, so Play, F-Droid and GitHub share one signature.
           cert=$("$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "../../dist/opentodo-android-$version.apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
-          want=$(sed -n 's/^AllowedAPKSigningKeys: *\([0-9a-f]\{64\}\)$/\1/p' store/fdroid/app.opentodo.yml)
+          want=$(grep -A1 '^AllowedAPKSigningKeys:' store/fdroid/app.opentodo.yml | grep -oE '[0-9a-f]{64}')
           printf '### Android release certificate\n\nSHA-256 `%s`\n' "$cert" >> "$GITHUB_STEP_SUMMARY"
           if [ "$cert" != "$want" ]; then
             if [ "$GITHUB_REPOSITORY" = "OpenTodoApp/OpenTodo" ]; then
@@ -674,10 +818,12 @@ jobs:
           path: dist/opentodo-android-*
           if-no-files-found: warn
 
-  # The iOS app (ios-shell D7). A macOS runner, because the shell is built and
-  # tested with Xcode against a simulator; it starts only for iOS changes, since a
-  # macOS minute costs ten Ubuntu ones. No Apple Developer account is involved:
-  # the build is unsigned, and whoever distributes the app signs it themselves.
+  # The iOS app (ios-shell). A macOS runner, because the shell is built and tested
+  # with Xcode against a simulator; it starts only for iOS changes, since a macOS
+  # minute costs ten Ubuntu ones. No Apple account is involved here: the last step is
+  # the first half of the TestFlight upload (ios-distribution D9), an unsigned archive
+  # with the newest Xcode signed ad hoc with the entitlements, so that path is checked
+  # on every iOS change. The signed upload is the ios-testflight job below.
   ios:
     name: iOS (build and test)
     runs-on: macos-15
@@ -695,6 +841,10 @@ jobs:
           xcrun simctl list runtimes
       - name: Unit tests, device build and the dependency check (make ios)
         run: make ios
+      - name: Archive with the newest Xcode, signed ad hoc (the TestFlight job's first half)
+        run: |
+          scripts/release/ios-testflight.sh xcode
+          make ios-archive
 
   # The agent skills (OpenSpec changes agent-ready-cli and claude-plugin): the CLI
   # skill that `ot skill` prints and the MCP skill, zipped as release assets.
@@ -753,11 +903,18 @@ jobs:
     name: Docker image (build, scan, smoke test)
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: changes
-    if: needs.changes.outputs.code == 'true'
+    needs: [changes, web-sign]
+    # web-sign runs on release tags only; elsewhere it is skipped, not failed.
+    if: ${{ !cancelled() && !failure() && needs.changes.outputs.code == 'true' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      # A release builds the image around the signed web app (signed-web-app D4).
+      - if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: web-dist-signed
+          path: web-dist-signed
       - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           # The runner's platform (linux/amd64). No `platforms:` key here: the site
@@ -766,13 +923,28 @@ jobs:
           load: true
           push: false
           tags: opentodo:ci
+          build-contexts: ${{ startsWith(github.ref, 'refs/tags/v') && 'web-dist=web-dist-signed' || '' }}
           # A release reports its tag; anything else (latest, pull requests) dev+<commit>, never the branch name (#160).
           build-args: |
             VERSION=${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || 'dev' }}
             SOURCE_COMMIT=${{ github.event.pull_request.head.sha || github.sha }}
           cache-from: type=gha,scope=image-amd64
           cache-to: type=gha,mode=max,scope=image-amd64
+      # The scanner and its database are downloaded from GitHub releases, which sometimes answer
+      # 504. A failed first scan runs once more: a real finding fails both times, a download
+      # hiccup only the first.
       - name: Vulnerability scan (fails on critical findings that have a fix)
+        id: scan
+        continue-on-error: true
+        uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
+        with:
+          image: opentodo:ci
+          fail-build: true
+          severity-cutoff: critical
+          only-fixed: true
+          output-format: table
+      - name: Vulnerability scan, second attempt
+        if: steps.scan.outcome == 'failure'
         uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
         with:
           image: opentodo:ci
@@ -785,6 +957,22 @@ jobs:
           node-version: 24
       - name: Smoke test the built image like Coolify starts it
         run: node scripts/coolify-template-check.mjs --smoke --image opentodo:ci
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      # The web app the image serves matches its file list, downloaded as a browser
+      # does (signed-web-app D4). Once the official keys exist, a release must be signed
+      # by one of them, or it does not publish.
+      - name: The served web app matches its signed file list
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          docker run -d --name websign-check -p 18095:8080 opentodo:ci
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:18095/healthz >/dev/null 2>&1 && break; sleep 1; done
+          require=""
+          case "$REF" in refs/tags/v*) grep -q '"spki"' internal/websign/release-keys.json && require=-require-signed ;; esac
+          go run ./cmd/websign verify $require http://127.0.0.1:18095/
+          docker rm -f websign-check
 
   # Publishes the multi-arch image (main and v* tags), only after every gate above
   # passed (OpenSpec ci-release-gates): `stable`, `latest` and the version tags never
@@ -796,13 +984,19 @@ jobs:
     if: ${{ !cancelled() && !failure() && github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    needs: [changes, web-build, web, web-scale, server, layout, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, obsidian, android, ios, skill, checks, image]
+    needs: [changes, web-build, web-sign, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, obsidian, android, ios, skill, checks, image]
     permissions:
       contents: read
       packages: write
       id-token: write # cosign keyless signing
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # A release publishes the image around the signed web app (signed-web-app D4).
+      - if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: web-dist-signed
+          path: web-dist-signed
       - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Log in to GHCR
@@ -819,6 +1013,8 @@ jobs:
             type=ref,event=branch
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+            # The major line from 1.0 on (docs/stability.md): `1` follows every 1.x release.
+            type=semver,pattern={{major}},enable=${{ !startsWith(github.ref, 'refs/tags/v0.') }}
             # The tag every platform template names (OpenSpec stable-image-tag): releases only, never release candidates.
             type=raw,value=stable,enable=${{ startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-') }}
             type=raw,value=latest,enable={{is_default_branch}}
@@ -832,10 +1028,13 @@ jobs:
           sbom: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-contexts: ${{ startsWith(github.ref, 'refs/tags/v') && 'web-dist=web-dist-signed' || '' }}
           # A release reports its tag; anything else (latest, pull requests) dev+<commit>, never the branch name (#160).
+          # `latest` is never signed and says so (signed-web-app D4).
           build-args: |
             VERSION=${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || 'dev' }}
             SOURCE_COMMIT=${{ github.event.pull_request.head.sha || github.sha }}
+            OPENTODO_BUILD=${{ github.ref == 'refs/heads/main' && 'preview' || '' }}
           cache-from: |
             type=gha,scope=image-amd64
             type=gha,scope=image-release
@@ -876,21 +1075,25 @@ jobs:
     if: ${{ !cancelled() && !failure() && startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [changes, web-build, web, web-scale, server, layout, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, obsidian, android, ios, skill, checks, image, docker]
+    needs: [changes, web-build, web-sign, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, obsidian, android, ios, skill, checks, image, docker]
     permissions:
       contents: write
       id-token: write # build provenance (Sigstore)
       attestations: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: The image can be pulled without signing in
+        # Every install pulls the image anonymously; a package left private on ghcr.io
+        # (the Home Assistant add-on's image after the move to OpenTodoApp) answers 401
+        # to all of them. Fails the release before it is published, naming the setting.
+        run: scripts/release/check-public-image.sh "${GITHUB_REPOSITORY}" "${GITHUB_REF_NAME#v}"
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           path: artifacts
       - name: Collect assets and checksums
-        run: |
-          mkdir -p release
-          find artifacts -type f \( -name 'opentodo-*' -o -name 'ot-*' \) -exec cp {} release/ \;
-          cd release && sha256sum * > SHA256SUMS && cat SHA256SUMS
+        # Only the files named in the script, never the rest of an artifact (the web
+        # app's build chunks reached v0.20.0 through a catch-all name pattern).
+        run: scripts/release/collect-assets.sh artifacts release
       - name: Build provenance for every asset
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
@@ -934,7 +1137,7 @@ jobs:
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
-          java-version: 17.0.21+9
+          java-version: 21.0.13+9
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
@@ -970,6 +1173,20 @@ jobs:
           rm -f "$RUNNER_TEMP/upload.jks"
           node scripts/release/play-upload.mjs "$GITHUB_REF_NAME" "$upload"
 
+  # TestFlight (OpenSpec change ios-distribution D5, D9): after the release, the iPhone app of a
+  # final tag is archived, signed through the App Store Connect API and uploaded to TestFlight by
+  # .github/workflows/ios-testflight.yml, which the owner can also run by hand for any ref. A
+  # person submits a build for review in App Store Connect (RELEASING.md). The secrets live in the
+  # `release` environment; without them the job warns and succeeds, and the release never depends
+  # on it.
+  ios-testflight:
+    name: iOS (TestFlight)
+    if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-')
+    needs: [release]
+    uses: ./.github/workflows/ios-testflight.yml
+    with:
+      ref: ${{ github.ref_name }}
+
   # The Claude Code plugin marketplace (OpenSpec change claude-plugin): after the
   # release, deploy/claude-plugin/upstream/ of the tag becomes the content of
   # OpenTodoApp/opentodo-claude, committed and tagged with the version. The deploy key in
@@ -978,7 +1195,8 @@ jobs:
   # release never depends on it.
   claude-plugin:
     name: Claude Code plugin (publish)
-    if: startsWith(github.ref, 'refs/tags/v')
+    # Release candidates (v1.0.0-rc.1) are never published to the marketplace (release-candidates).
+    if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [release]
@@ -1029,7 +1247,8 @@ jobs:
   # succeeds: the release never depends on it.
   obsidian-plugin:
     name: Obsidian plugin (publish)
-    if: startsWith(github.ref, 'refs/tags/v')
+    # Release candidates are never pushed: Obsidian installs the repository's latest version (release-candidates).
+    if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: [release]

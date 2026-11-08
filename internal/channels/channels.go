@@ -23,6 +23,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/OpenTodoApp/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/mail"
 	"github.com/OpenTodoApp/opentodo/internal/outbound"
 	"github.com/OpenTodoApp/opentodo/internal/settings"
 	"github.com/OpenTodoApp/opentodo/internal/webhook"
@@ -310,8 +311,9 @@ func normalizeEvents(in []string) ([]string, error) {
 	return out, nil
 }
 
-// Languages are the message languages, English first (the app's languages).
-var Languages = []string{"en", "de", "fr", "es", "it", "pt"}
+// Languages are the message languages, English first. The mail templates are
+// the source of truth; keep one list so channels and mail cannot drift.
+var Languages = slices.Clone(mail.Languages)
 
 func normalizeLang(v string) string {
 	v = strings.ToLower(strings.TrimSpace(v))

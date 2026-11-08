@@ -25,7 +25,7 @@ A task SHALL have an optional `start`, which is null (default), a floating calen
 - **THEN** after sync the task is still in Someday with the new title on every device
 
 ### Requirement: Deferred tasks
-A task whose start is a date after the viewer's local date SHALL be deferred: absent from Today, Upcoming, Anytime and the sidebar counts, and listed in its project view in a **Later** group after the other tasks with a "Starts" chip showing the date. A deferred task without a project is not an Inbox task (OpenSpec `project-organization`); when it also has no do-on date it SHALL be listed in Upcoming under its start date with the "Starts" chip, so it is always reachable. A deferred task drawn as a span (OpenSpec `multi-day-tasks`) SHALL be listed in Upcoming once, under its start date, with its range chip. A task due or with a deadline today or earlier SHALL be in Today regardless of its start. Deferral SHALL be computed on the device from local data and SHALL change on the start day without any write.
+A task whose start is a date after the viewer's local date SHALL be deferred: absent from Today, Upcoming, Anytime and the sidebar counts, and listed in its project view in a **Later** group after the other tasks with a "Starts" chip showing the date. In the project view a subtask SHALL be listed with its top-level task (OpenSpec `subtasks` "Subtasks in a project's Later group"): the subtasks of a deferred top-level task are in Later under it, and a deferred subtask of an active parent stays under that parent. A deferred task without a project is not an Inbox task (OpenSpec `project-organization`); when it also has no do-on date it SHALL be listed in Upcoming under its start date with the "Starts" chip, so it is always reachable. A deferred task drawn as a span (OpenSpec `multi-day-tasks`) SHALL be listed in Upcoming once, under its start date, with its range chip. A task due or with a deadline today or earlier SHALL be in Today regardless of its start. Deferral SHALL be computed on the device from local data and SHALL change on the start day without any write.
 
 #### Scenario: Deferred until next week
 - **WHEN** today is 2026-10-14 and an open task without a project has the start `2026-10-21` and no due date
@@ -34,6 +34,10 @@ A task whose start is a date after the viewer's local date SHALL be deferred: ab
 #### Scenario: Deferred with a later due date
 - **WHEN** a task is due 2026-10-24 with the start `2026-10-21` and today is 2026-10-14
 - **THEN** Upcoming does not list it, and its project view shows it under Later
+
+#### Scenario: Deferred parent with subtasks
+- **WHEN** a top-level task with two open subtasks gets the start `2026-10-21` and today is 2026-10-14
+- **THEN** its project view lists it under Later with both subtasks indented beneath it
 
 #### Scenario: Hard date wins
 - **WHEN** a task with the start `2026-10-21` has the deadline `2026-10-14` and today is 2026-10-14
@@ -67,7 +71,7 @@ A task whose start is a date on or before the viewer's local date SHALL be activ
 - **THEN** Today lists it with the chip `until 24 Oct` and Upcoming does not list it under 24 October
 
 ### Requirement: Someday
-A task whose start is `someday` SHALL be parked: absent from Today, Upcoming, Anytime and the sidebar counts, listed in the Someday view and in its project's Later group with a "Someday" chip; a parked task without a project is not an Inbox task (OpenSpec `project-organization`). Parking from the app SHALL clear the due date in the same batch; giving a parked task a due or start date from the app SHALL un-park it in the same batch. A parked task dated by another client SHALL stay parked, except that a due date or deadline today or earlier puts it in Today.
+A task whose start is `someday` SHALL be parked: absent from Today, Upcoming, Anytime and the sidebar counts, listed in the Someday view and in its project's Later group with a "Someday" chip; in the project view a subtask SHALL be listed with its top-level task (OpenSpec `subtasks` "Subtasks in a project's Later group"). A parked task without a project is not an Inbox task (OpenSpec `project-organization`). Parking from the app SHALL clear the due date in the same batch; giving a parked task a due or start date from the app SHALL un-park it in the same batch. A parked task dated by another client SHALL stay parked, except that a due date or deadline today or earlier puts it in Today.
 
 #### Scenario: Park a scheduled task
 - **WHEN** the user parks a task due 2026-10-16 with `every week` in Someday
@@ -97,7 +101,7 @@ The client SHALL provide a Someday view, reachable from the sidebar and with `g`
 - **THEN** the task is created parked, in the Inbox, and stays in the view
 
 ### Requirement: Anytime view
-The client SHALL provide an Anytime view, reachable from the sidebar and with `g` then `n`, listing every open task that is not parked, not deferred, has no due date and no start date, grouped by project with Inbox first, rendered from local data. The Anytime view SHALL leave out tasks of archived projects like the other cross-project views.
+The client SHALL provide an Anytime view, reachable from the sidebar and with `g` then `n`, listing every open task that is not parked, not deferred, has no due date, no start date and no time sector (OpenSpec `time-sectors`), grouped by project with Inbox first, rendered from local data. The Anytime view SHALL leave out tasks of archived projects like the other cross-project views.
 
 #### Scenario: Undated and active
 - **WHEN** an open task has no due date and no start, and another is deferred, and a third is due tomorrow
@@ -106,6 +110,10 @@ The client SHALL provide an Anytime view, reachable from the sidebar and with `g
 #### Scenario: Results follow sync
 - **WHEN** Anytime is open and another device gives a listed task a due date, then this device syncs
 - **THEN** the task leaves the view without a reload
+
+#### Scenario: A sectored task is not Anytime
+- **WHEN** an open task without a date has the sector This week
+- **THEN** Anytime does not list it, and it leaves the view when the sector is set on another device and this device syncs
 
 ### Requirement: This Evening
 In Today, tasks of today's group with `evening` set SHALL be listed under a **This Evening** heading after the other tasks of the day; overdue tasks SHALL stay in Overdue. Elsewhere an evening task SHALL show an evening chip. The flag SHALL be independent of the due time and SHALL be kept when the task is rescheduled.
@@ -131,7 +139,7 @@ The detail panel SHALL set the start inside the When popover: a Start segment of
 
 #### Scenario: Start from the When control
 - **WHEN** the user opens the Do on part of a task, switches to Start and picks a date next week
-- **THEN** the popover closes on Done, the When line reads the due date and "from" with the start date, and no separate Start line exists in the panel
+- **THEN** the popover closes on Close, the When line reads the due date and "from" with the start date, and no separate Start line exists in the panel
 
 #### Scenario: Start in the past
 - **WHEN** a task's start was two days ago

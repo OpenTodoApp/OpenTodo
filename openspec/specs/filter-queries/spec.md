@@ -294,7 +294,7 @@ The Filter view SHALL keep a per-device history of the last 20 distinct queries,
 - **THEN** the term is the origin keyword, and the field is reachable only through its quoted name
 
 ### Requirement: Tracked time terms
-`tracked` SHALL be a keyword matching tasks with at least one minute of live tracked time (every member's entries, a running entry to now). `tracked cmp duration` SHALL compare the task's tracked minutes with a duration (`30m`, `45min`, `1h`, `1h30`, `1.5h` or a bare number of minutes) using `<`, `<=`, `=`, `>=`, `>`. `tracked` SHALL be a reserved word. Evaluation SHALL stay on the device from local entries and follow synced ones.
+`tracked` SHALL be a keyword matching tasks with at least one minute of live tracked time (every member's entries, a running entry to now, every entry of the task as in v1.0.0, a repeating task's earlier occurrences included). `tracked cmp duration` SHALL compare the task's tracked minutes with a duration (`30m`, `45min`, `1h`, `1h30`, `1.5h` or a bare number of minutes) using `<`, `<=`, `=`, `>=`, `>`. `tracked occurrence` and `tracked occurrence cmp duration` SHALL do the same with a repeating task's current occurrence only, as time-tracking "Tracked time of a repeating task" defines, and the same minutes as `tracked` for a task that does not repeat. `tracked` SHALL be a reserved word; `occurrence` SHALL be read as part of the term only right after `tracked`. Evaluation SHALL stay on the device from local entries and follow synced ones, and the server's evaluator (routine Find tasks steps, saved views it checks) SHALL give the same results.
 
 #### Scenario: Any tracked time
 - **WHEN** the user enters `tracked & #Work`
@@ -303,6 +303,18 @@ The Filter view SHALL keep a per-device history of the last 20 distinct queries,
 #### Scenario: Over an hour
 - **WHEN** a task has entries of 40 and 30 minutes and the user enters `tracked > 1h`
 - **THEN** the task is listed, and it is not listed for `tracked <= 1h`
+
+#### Scenario: Repeating task keeps its total
+- **WHEN** a repeating task had 70 minutes tracked before its last completion and 10 minutes since, and the user enters `tracked > 1h`
+- **THEN** the task is listed, as on 1.0.0
+
+#### Scenario: Repeating task's current occurrence
+- **WHEN** the same task and the user enters `tracked occurrence > 1h`
+- **THEN** the task is not listed, and it is listed for `tracked occurrence >= 10m`
+
+#### Scenario: Builder
+- **WHEN** the user adds a tracked time condition in the builder and turns off **All occurrences**
+- **THEN** the query reads `tracked occurrence > 1h` for "more than 1h", and opening it again shows the switch off
 
 #### Scenario: Running entry counts live
 - **WHEN** the user has tracked 55 minutes on a task whose entry is still running and the saved view `tracked >= 1h` is open
@@ -532,3 +544,28 @@ The server SHALL evaluate a filter query, or a saved view's query, for a routine
 #### Scenario: Completed tasks
 - **WHEN** a routine's Find tasks step uses the query `completed = last week` and the user completed four tasks last week, one of them since deleted
 - **THEN** the step's output is the three live completed tasks, the same list the device shows for the query
+
+### Requirement: Time sector terms
+The query grammar SHALL accept these terms:
+- `sector`: tasks with a time sector;
+- `no sector`: tasks without one;
+- `carried`: tasks whose sector is carried over (OpenSpec `time-sectors`);
+- `sector: <name>`, where the name is `this week`, `next week`, `this month`, `next month`, `this quarter` or `next quarter` (resolved on the viewer's local date and week start) or an absolute period such as `2026-W44`, `2026-11` or `2026-Q4`, matching that sector exactly.
+
+The terms SHALL be evaluated on the device from local data with the open-only default, combine with every other term, and be keywords in the published grammar. The server's filter parser SHALL accept them when it validates a saved view, and refuse an invalid period with an error that names it.
+
+#### Scenario: This week's work in one project
+- **WHEN** the user enters `#Work & sector: this week`
+- **THEN** open tasks of "Work" whose sector is the viewer's current week are listed
+
+#### Scenario: Carried over
+- **WHEN** the user enters `carried | sector: this week`
+- **THEN** open tasks of this week and those carried over from earlier periods are listed
+
+#### Scenario: Invalid period
+- **WHEN** the user enters `sector: 2026-W60`
+- **THEN** the query shows an error naming `2026-W60` and lists nothing, and saving it as a view over REST is refused with `400 invalid_input`
+
+#### Scenario: Saved view offline across a week boundary
+- **WHEN** a view `sector: this week` is open offline and the local date moves into the next week
+- **THEN** the view lists the new week's tasks from local data without a reload

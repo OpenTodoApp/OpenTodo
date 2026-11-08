@@ -5,7 +5,10 @@
 //   3. no user-facing text in web/src/app and web/src/ui bypasses the message layer
 //      (OpenSpec change app-localization, design D8; scripts/i18n/untranslated.mjs,
 //      exceptions in scripts/i18n/allow.txt),
-//   4. "Learn more" is rendered only by the LearnMore element (settings-refresh D2).
+//   4. "Learn more" is rendered only by the LearnMore element (settings-refresh D2),
+//   5. no screen in web/src/app renders a raw radio input: use RadioGroup from web/src/ui
+//      (OpenSpec change settings-foundation, design D7; files still being moved are in
+//      RAW_RADIO_ALLOWED and leave it as they move).
 // A glyph counts as an icon when it stands alone in a string or JSX text, starts or
 // ends a label ("✓ Complete", "Next ›"), or is a trigger=/icon= prop. Typography
 // inside copy ("Settings → Integrations", "2 × 3") is fine.
@@ -77,6 +80,31 @@ export function learnMoreProblems(file, text) {
   return out
 }
 
+// Raw radio inputs (OpenSpec change settings-foundation, design D7; design-system
+// "Form controls"): a screen chooses one of several options with RadioGroup, whose
+// mark takes the accent and whose group carries its label. The files below still
+// render their own and are moved one by one; the list only shrinks.
+export const RAW_RADIO_ALLOWED = new Set([
+  'web/src/app/QuickAddSettings.tsx',
+  'web/src/app/BackupsPanel.tsx',
+  'web/src/app/RestoreSection.tsx',
+  'web/src/app/AssistantsPanel.tsx',
+  'web/src/app/TokensSection.tsx',
+  'web/src/app/assistant/AssistantSettings.tsx',
+  'web/src/app/NewBoardDialog.tsx',
+  'web/src/app/task-detail/TaskPageDialog.tsx',
+])
+
+export function rawRadioProblems(file, text) {
+  if (RAW_RADIO_ALLOWED.has(file)) return []
+  const out = []
+  text.split('\n').forEach((line, i) => {
+    const code = line.replace(/\/\/.*$/, '').replace(/^\s*\*.*$/, '')
+    if (/<input\b[^>]*\btype=(?:"radio"|'radio'|\{\s*['"]radio['"]\s*\})/.test(code)) out.push(`${file}:${i + 1}: a raw radio input (use RadioGroup from web/src/ui)`)
+  })
+  return out
+}
+
 // Illustrations (OpenSpec change inbox-means-unplaced, design D9; design-system
 // "Illustrations") use the design tokens only: no hard-coded colour, no raster or
 // external image, no text, no gradient or filter, and at most 4 KB per file.
@@ -138,6 +166,8 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
       .flatMap((f) => rawDueTimeProblems(relative(repo, f), readFileSync(f, 'utf8'))),
     ...[...walk(app), ...walk(join(repo, 'web/src/ui'))].filter((f) => /\.tsx?$/.test(f) && !/\.(test|stories)\.tsx?$/.test(f))
       .flatMap((f) => learnMoreProblems(relative(repo, f), readFileSync(f, 'utf8'))),
+    ...walk(app).filter((f) => f.endsWith('.tsx') && !/\.(test|stories)\.tsx$/.test(f))
+      .flatMap((f) => rawRadioProblems(relative(repo, f), readFileSync(f, 'utf8'))),
     ...walk(join(repo, 'web/src/ui/illustrations')).filter((f) => f.endsWith('.tsx') && !/\.(test|stories)\.tsx$/.test(f))
       .flatMap((f) => illustrationProblems(relative(repo, f), readFileSync(f, 'utf8'))),
     ...untranslated().map((p) => `${p} (untranslated: wrap it in t() or add it to scripts/i18n/allow.txt)`),

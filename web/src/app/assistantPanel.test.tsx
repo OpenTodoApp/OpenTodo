@@ -34,7 +34,7 @@ describe('AssistantSheet', () => {
     expect(html).toContain('justify-end')
     // Above the on-screen keyboard and clear of the notch / home indicator.
     expect(html).toContain('--vv-bottom')
-    expect(html).toContain('safe-area-inset-bottom')
+    expect(html).toContain('var(--safe-bottom)')
     expect(html.indexOf('data-overlay-close')).toBeLessThan(html.indexOf('content'))
     const id = /aria-labelledby="([^"]+)"/.exec(html)?.[1]
     expect(html).toContain(`id="${id}"`)

@@ -137,6 +137,19 @@ export function destinationOrder(row: Partial<UserPrefs> | null | undefined): De
   return orderDestinations<DestinationId>([...FIXED_DESTINATIONS, ...PROMOTABLE], row?.sidebar_order)
 }
 
+/** The destinations the phone tab bar holds, in the default order (app-shell "Phone navigation"). Search is not one of them. */
+export const TAB_BAR_DESTINATIONS = ['inbox', 'today', 'upcoming'] as const
+export type TabBarDestination = (typeof TAB_BAR_DESTINATIONS)[number]
+
+/**
+ * Inbox, Today and Upcoming in the user's destination order (appearance-preferences
+ * "Primary destination order"). Anything else in the stored order is ignored, and a
+ * destination missing from it follows in the default order. Search stays outside this.
+ */
+export function tabBarDestinations(row: Partial<UserPrefs> | null | undefined): TabBarDestination[] {
+  return orderDestinations(TAB_BAR_DESTINATIONS, row?.sidebar_order)
+}
+
 /**
  * Moves one destination by `delta` places in the full order and stores it whole
  * (last-writer-wins on the order). Ids this client does not know stay at the end.

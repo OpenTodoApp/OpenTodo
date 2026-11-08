@@ -6,6 +6,8 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import { roleOf } from '../../lib/sharing'
 import type { Label, Project, Task } from '../../lib/types'
 import { IconButton, playExit } from '../../ui'
+import { navigate } from '../router'
+import { ProjectMark } from '../Sidebar'
 import { panelTaskId } from '../panel'
 import { PanelResizeHandle } from '../sidePanel'
 import { SampleNotice } from '../SampleNotice'
@@ -23,6 +25,7 @@ import { ReadOnlyNote, TaskHead, TaskRelations } from './TaskHead'
 import { useFollowing, useOccurrenceView } from './occurrenceView'
 import { TaskNotes } from './TaskNotes'
 import { TaskPageDialog } from './TaskPageDialog'
+import { TaskPath } from './TaskPath'
 import { useTaskDetail } from './useTaskDetail'
 
 export { taskLink } from './useTaskDetail'
@@ -69,13 +72,28 @@ export function TaskDetail({ taskId, initial, userId, projects, labelMap, onClos
   const [footer, setFooter] = useState<HTMLDivElement | null>(null)
   const { task } = m
   if (!task) return null
+  const project = task.project_id ? projects.find((p) => p.id === task.project_id) : undefined
+  const open = (id: string) => (onOpen ? onOpen(id) : navigate({ view: 'task', id }))
 
   return (
     <aside ref={panel} data-detail-for={task.id} data-detail-variant="panel"
-      className={`fixed inset-y-0 right-0 z-30 flex w-full flex-col border-l border-default bg-surface pb-[env(safe-area-inset-bottom)] shadow-3 md:max-w-md lg:relative lg:z-auto lg:w-(--panel-w) lg:max-w-none lg:shadow-none ${entering ? 'panel-enter' : ''}`}>
+      className={`fixed inset-y-0 right-0 z-30 flex w-full flex-col border-l border-default bg-surface pb-safe max-lg:pr-safe shadow-3 md:max-w-md lg:relative lg:z-auto lg:w-(--panel-w) lg:max-w-none lg:shadow-none ${entering ? 'panel-enter' : ''}`}>
       <PanelResizeHandle />
       {/* Sticky header (ux-overhaul, web-app "Task panel layout"): the checkbox, the title, the menu, Close. */}
-      <div data-panel-header className="flex items-center gap-2 border-b border-default px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
+      <div data-panel-header className="border-b border-default pt-[max(0.5rem,var(--safe-top))]">
+        {m.parents.length > 0 && (
+          <div className="px-2">
+            <TaskPath compact
+              project={project
+                ? { label: project.name, onClick: () => navigate({ view: 'project', id: project.id }), mark: <ProjectMark project={project} /> }
+                : { label: t('Inbox'), onClick: () => navigate({ view: 'inbox' }) }}
+              parents={m.parents.map((p) => ({ id: p.id, title: p.title }))}
+              current={task.title || t('Untitled')}
+              onOpen={open}
+            />
+          </div>
+        )}
+        <div className="flex items-start gap-2 px-3 py-2">
         <TaskHead m={m} readOnly={readOnly} completeLocked={locked} projects={projects} size="panel" />
         {/* Start focus in one tap (focus-everywhere D2): beside the menu, for an open task the user can edit. */}
         {!locked && !task.completed_at && !task.deleted_at && (
@@ -83,6 +101,7 @@ export function TaskDetail({ taskId, initial, userId, projects, labelMap, onClos
         )}
         <TaskActionsMenu m={m} page={false} readOnly={locked} onOpen={onOpen} />
         <IconButton icon="x" label={t('Close')} onClick={onDismiss ?? onClose} data-overlay-close className="touch-target" />
+        </div>
       </div>
       {viewer && <ReadOnlyNote />}
       {isSample(task) && !readOnly && <SampleNotice />}

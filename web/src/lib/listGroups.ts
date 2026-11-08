@@ -3,24 +3,25 @@
 // headings (dates, projects, sections, Later, Blocked, the logbook's days), and the
 // tree positions assistive technology announces. TaskListView only wires these to
 // the live data; tests call them directly.
-import { waitingTimeSensitive } from './closedList'
+import { nextWaiting, waitingTimeSensitive } from './closedList'
 import { formatDateHeading, formatTime, type ResolvedDateTime } from './dates'
 import type { Projection } from './occurrences'
-import { inboxTasks } from './inbox'
-import { groupToday, groupUpcoming, projectOpenList, todayList, upcomingList, upcomingWithToday, withoutArchived } from './dayLists'
+import { inboxTasks, isInboxTask, isPlaced, type InboxParentOf } from './inbox'
+import { assignedToSomeoneElse, groupToday, groupUpcoming, projectOpenList, todayList, upcomingList, upcomingWithToday, withoutArchived, type TodayAssigneeFilter } from './dayLists'
 import { appendTo, groupBy } from './collections'
 import { t } from './i18n'
 import { logbookHeading, type LogbookGroup } from './logbook'
 import { byPosition, compareByPosition, compareDueThenPriority } from './ordering'
 import { effectiveSection, groupBySection } from './sections'
-import { breadcrumbOf } from './subtasks'
-import { flattenTree, type Tree, type TreeNode } from './tree'
-import type { Label, Project, Section, Task } from './types'
-import { compareTasks, groupTasks, inAnytime, inToday, isSomeday } from './views'
+import { breadcrumbOf, buildTaskTree } from './subtasks'
+import { effectiveParents, flattenTree, type Tree, type TreeNode } from './tree'
+import { fieldSortId, type FieldDef, type Label, type Project, type Section, type Task } from './types'
+import { compareTasks, groupTasks, inAnytime, inLater, inToday, inUpcoming, isSomeday } from './views'
 import { compareManual } from './viewOrder'
 import type { ListDisplay } from './listDisplay'
 import type { DayPart } from './dayParts'
 import { linkedPlaceId } from './locations'
+import { locateById, noteChanges, patchOrdered, patchSorted, type TaskChange } from './taskDelta'
 
 /** The list views TaskListView renders, as the router names them. */
 export type ListScope =
@@ -95,10 +96,11 @@ export interface ListGroup {
   projectedNote?: string
 }
 
-/** A waiting task with a time today: its due time in the user's zone, null for a deadline today without one. */
+/** A waiting task with a time today: its due time in the user's zone, null for a deadline today without one; `passed` once that time is before now (today-waiting-time-passed). */
 export interface WaitingSoon {
   task: Task
   time: string | null
+  passed: boolean
 }
 
 /** A board column: a section ('' = "No section") and its top-level cards. */
@@ -139,7 +141,7 @@ export function earlierCollapsed(stored: ReadonlySet<string>, count: number): bo
   return count > EARLIER_FOLD_ABOVE
 }
 
-/** A row outside the tree (flat views, cards, Later): depth 0, no children. */
+/** A row outside the tree (flat views, cards): depth 0, no children. */
 export function flatRow(task: Task, breadcrumb: string | null = null): ListRow {
   return { task, depth: 0, parent: null, hasChildren: false, collapsed: false, breadcrumb }
 }
@@ -148,7 +150,7 @@ export function flatRow(task: Task, breadcrumb: string | null = null): ListRow {
  * The tasks a list view holds, in its order (archived projects stay out of cross-project views).
  * `upcomingToday`: Upcoming starts with Today's tasks (upcoming-start-with-today D2).
  */
-export function tasksForView(scope: ListScope, allTasks: readonly Task[], projects: readonly Project[], today: string, userId?: string, upcomingToday = false): Task[] {
+export function tasksForView(scope: ListScope, allTasks: readonly Task[], projects: readonly Project[], today: string, userId?: string, upcomingToday = false, hide?: TodayAssigneeFilter | null): Task[] {
   // Tasks of archived projects stay out of the cross-project views (lib/dayLists, shared with the display).
   const all = withoutArchived(allTasks as Task[], projects as Project[], scope.view === 'project' ? scope.id : undefined)
   switch (scope.view) {
@@ -156,7 +158,7 @@ export function tasksForView(scope: ListScope, allTasks: readonly Task[], projec
       // Not placed, and no placed parent (lib/inbox, inbox-means-unplaced).
       return inboxTasks(all, allTasks)
     case 'today':
-      return todayList(all, today)
+      return todayList(all, today, hide)
     case 'upcoming':
       return upcomingToday ? upcomingWithToday(all, today) : upcomingList(all, today)
     // Someday and Anytime (someday-and-evening D5), grouped by project in listGroups.
@@ -180,6 +182,158 @@ export function tasksForView(scope: ListScope, allTasks: readonly Task[], projec
   }
 }
 
+/** What patchViewTasks needs of the whole snapshot: its parents (the Inbox walks them) and which tasks have children. */
+export interface ViewPatchContext {
+  parentOf: InboxParentOf
+  hasChildren: (id: string) => boolean
+}
+
+/**
+ * tasksForView after `changes` to `allTasks`, from the changed rows (OpenSpec change
+ * incremental-list-updates D2): views whose membership is a test of the task alone take
+ * the changed rows out and put the ones that pass in at their place in the view's order
+ * (the order ends with the id, as a stable sort of the id-ordered snapshot does). Null
+ * when the view cannot follow the change (Upcoming with Today, an Inbox task whose
+ * placement or parent changed while it has subtasks): worked out in full.
+ */
+export function patchViewTasks(prev: Task[], changes: readonly TaskChange[], scope: ListScope, projects: readonly Project[], today: string, ctx: ViewPatchContext,
+  userId?: string, upcomingToday = false, hide?: TodayAssigneeFilter | null): Task[] | null {
+  const hidden = new Set(projects.filter((p) => p.archived).map((p) => p.id))
+  const keepProject = scope.view === 'project' ? scope.id : undefined
+  // withoutArchived's rule, a task at a time. inbox-rule-ok: tasks of archived projects, not the Inbox.
+  const shown = (task: Task) => !task.project_id || !hidden.has(task.project_id) || task.project_id === keepProject // inbox-rule-ok: as above
+  const byDone = (a: Task, b: Task) => (b.completed_at ?? 0) - (a.completed_at ?? 0) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+  switch (scope.view) {
+    case 'inbox': {
+      for (const c of changes) {
+        const a = c.before
+        const b = c.after
+        const same = a && b && isPlaced(a) === isPlaced(b) && (a.parent_id ?? null) === (b.parent_id ?? null)
+        if (!same && ctx.hasChildren(c.id)) return null
+      }
+      return linked(prev, patchSorted(prev, changes, (task) => shown(task) && isInboxTask(task, ctx.parentOf)))
+    }
+    case 'today':
+      return patchOrdered(prev, changes, (task) => shown(task) && inToday(task, today) && !assignedToSomeoneElse(task, hide), compareDueThenPriority)
+    case 'upcoming':
+      return upcomingToday ? null : patchOrdered(prev, changes, (task) => shown(task) && inUpcoming(task, today), compareDueThenPriority)
+    case 'someday':
+      return patchOrdered(prev, changes, (task) => shown(task) && !task.completed_at && isSomeday(task), byPosition)
+    case 'anytime':
+      return patchOrdered(prev, changes, (task) => shown(task) && inAnytime(task, today), byPosition)
+    case 'completed':
+      return patchOrdered(prev, changes, (task) => shown(task) && !!task.completed_at && !task.skipped, byDone)
+    case 'project':
+      return linked(prev, patchSorted(prev, changes, (task) => shown(task) && !task.completed_at && task.project_id === scope.id))
+    case 'label':
+      return patchOrdered(prev, changes, (task) => shown(task) && !task.completed_at && task.labels.includes(scope.id), byPosition)
+    case 'place':
+      return patchOrdered(prev, changes, (task) => shown(task) && !task.completed_at && linkedPlaceId(task) === scope.id, byPosition)
+    case 'assigned':
+      return patchOrdered(prev, changes, (task) => shown(task) && !task.completed_at && !!userId && task.assignee_id === userId, compareDueThenPriority)
+  }
+}
+
+/** A patched list in id order, noted as made from `prev` so the tree that follows it can patch too. */
+function linked(prev: Task[], out: { list: Task[]; changes: TaskChange[] }): Task[] {
+  noteChanges(prev, out.list, out.changes)
+  return out.list
+}
+
+/** A tree list's structure: its Later split, the tree of its other tasks and their section buckets. */
+export interface TreeParts {
+  split: { active: Task[]; later: Task[] } | null
+  tree: Tree<Task> | null
+  buckets: SectionBucket[] | null
+}
+
+/** TreeParts in full (what useListModel derives for a project or the Inbox). */
+export function treeParts(tasks: readonly Task[], treeView: boolean, board: boolean, today: string, projectId: string | null, sections: Section[]): TreeParts {
+  const split = treeView && !board ? splitLater(tasks, today) : null
+  const tree = treeView ? buildTaskTree((split?.later.length ? split.active : tasks) as Task[]) : null
+  return { split, tree, buckets: sectionBuckets(projectId, tree, sections) }
+}
+
+/**
+ * TreeParts after `changes` to the list's tasks (incremental-list-updates D2): a task
+ * that leaves without subtasks, or changes without moving (the same parent, position,
+ * section, project and start), is taken out of or swapped into the split, the tree (the
+ * nodes above it are copied, every other subtree kept) and its section's bucket. Null
+ * (worked out in full) for a task that comes, moves, or leaves with subtasks.
+ */
+export function patchTreeParts(prev: TreeParts, changes: readonly TaskChange[], hasChildren: (id: string) => boolean): TreeParts | null {
+  if (!prev.tree) return prev.split ? null : prev
+  const nodes = new Map(prev.tree.nodes)
+  let roots = prev.tree.roots
+  const swapped = new Map<TreeNode<Task>, TreeNode<Task> | null>()
+  const swap = (old: TreeNode<Task>, next: TreeNode<Task> | null): boolean => {
+    if (next) nodes.set(old.id, next)
+    else nodes.delete(old.id)
+    if (old.parent === null) {
+      swapped.set(old, next)
+      roots = next ? roots.map((r) => (r === old ? next : r)) : roots.filter((r) => r !== old)
+      return true
+    }
+    // Its parent left in the same write: worked out in full.
+    const parent = nodes.get(old.parent)
+    if (!parent) return false
+    const children = next ? parent.children.map((c) => (c === old ? next : c)) : parent.children.filter((c) => c !== old)
+    return swap(parent, { ...parent, children })
+  }
+  let active = prev.split?.active
+  let later = prev.split?.later
+  const inList = (list: Task[] | undefined, c: TaskChange) => {
+    if (!list) return list
+    const [at, found] = locateById(list, c.id)
+    if (!found) return list
+    const out = list.slice()
+    if (c.after) out[at] = c.after
+    else out.splice(at, 1)
+    return out
+  }
+  for (const c of changes) {
+    const a = c.before
+    const b = c.after
+    const node = nodes.get(c.id)
+    if (!a || (!b && (node ? node.children.length > 0 : hasChildren(c.id)))) return null
+    if (b && ((a.parent_id ?? null) !== (b.parent_id ?? null) || a.position !== b.position || (a.section_id ?? null) !== (b.section_id ?? null)
+      || a.project_id !== b.project_id || (a.start ?? null) !== (b.start ?? null))) return null
+    active = inList(active, c)
+    later = inList(later, c)
+    if (node && !swap(node, b ? { ...node, item: b } : null)) return null
+  }
+  const split = prev.split && active && later ? { active, later } : null
+  const buckets = prev.buckets && swapped.size
+    ? prev.buckets.map((g) => {
+      if (!g.roots.some((r) => swapped.has(r))) return g
+      const now = (r: TreeNode<Task>): TreeNode<Task> | null => { let n: TreeNode<Task> | null = r; while (n && swapped.has(n)) n = swapped.get(n)!; return n }
+      const kept = g.roots.flatMap((r) => { const n = now(r); return n ? [n] : [] })
+      return { ...g, roots: kept, tasks: kept.map((n) => n.item) }
+    })
+    : prev.buckets
+  return { split, tree: { roots, nodes }, buckets }
+}
+
+/**
+ * A project list's open tasks split into the main list and its Later group
+ * (subtasks-follow-later): a whole subtree goes where its top-level task goes, so
+ * a deferred or parked parent takes its subtasks into Later, and a deferred
+ * subtask of an active parent stays under it. Both keep the input order.
+ */
+export function splitLater(tasks: readonly Task[], today: string): { active: Task[]; later: Task[] } {
+  const parents = effectiveParents(tasks as Task[])
+  const byId = new Map(tasks.map((task) => [task.id, task]))
+  const rootOf = (id: string): Task => {
+    let cur = id
+    for (let up = parents.get(cur); up; up = parents.get(cur)) cur = up
+    return byId.get(cur)!
+  }
+  const active: Task[] = []
+  const later: Task[] = []
+  for (const task of tasks) (inLater(rootOf(task.id), today) ? later : active).push(task)
+  return { active, later }
+}
+
 /** Top-level tasks of the project bucketed by section: list headings and board columns. */
 export function sectionBuckets(projectId: string | null, tree: Tree<Task> | null, sections: Section[]): SectionBucket[] | null {
   if (!projectId || !tree) return null
@@ -200,7 +354,7 @@ export interface GroupInput {
   view: ListScope['view']
   /** The view's tasks after filters; for tree views without the Later ones. */
   tasks: Task[]
-  /** Project views: deferred and parked tasks, shown in a Later group at the end (Inbox tasks are never deferred or parked). */
+  /** Project views: deferred and parked top-level tasks with their subtasks (splitLater), shown as a tree in a Later group at the end (Inbox tasks are never deferred or parked). */
   laterTasks: Task[]
   tree: Tree<Task> | null
   today: string
@@ -211,6 +365,7 @@ export interface GroupInput {
   taskMap: Map<string, Task>
   projects: readonly Project[]
   projectMap: Map<string, Project>
+  fields?: readonly FieldDef[]
   board: boolean
   columns: ListColumn[]
   buckets: SectionBucket[] | null
@@ -230,7 +385,7 @@ export interface GroupInput {
    * Today with a limit (today-closed-list D1, D2): the limit, and the tasks waiting for
    * a slot in fill order (left out of the day's groups, listed in a folded group).
    */
-  closedList?: { limit: number; waiting: readonly Task[] }
+  closedList?: { limit: number; waiting: readonly Task[]; now?: string }
   /** Today's Done today group (today-closed-list D6): the tasks completed today, newest first; absent when hidden. */
   doneToday?: readonly Task[]
   /** Upcoming starts with Today's own groups, then Tomorrow onwards (upcoming-start-with-today D2). */
@@ -241,12 +396,16 @@ export interface GroupInput {
  * The comparator of a display's order, or null for manual order as stored (list-display-options D3).
  * A label page's manual order is its own (view-manual-order): `rank` of the label's placed tasks.
  */
-function displayOrder(d: ListDisplay | undefined, rank?: ReadonlyMap<string, number>): ((a: Task, b: Task) => number) | null {
+function displayOrder(d: ListDisplay | undefined, rank?: ReadonlyMap<string, number>, projects: readonly Project[] = [], fields: readonly FieldDef[] = []): ((a: Task, b: Task) => number) | null {
+  const selectedId = fieldSortId(d?.sortBy)
+  if (selectedId && !fields.some((field) => field.id === selectedId && !field.deleted_at && (field.type === 'number' || field.type === 'date'))) {
+    return rank ? compareManual(rank) : null
+  }
   if (rank && d?.sortBy === 'position') {
     const asc = compareManual(rank)
     return d.sortDir === 'desc' ? (a, b) => asc(b, a) : asc
   }
-  return d && !(d.sortBy === 'position' && d.sortDir === 'asc') ? compareTasks(d.sortBy, d.sortDir) : null
+  return d && !(d.sortBy === 'position' && d.sortDir === 'asc') ? compareTasks(d.sortBy, d.sortDir, { projects, fields }) : null
 }
 
 /** Top-level nodes in the display's order; subtasks keep their manual order under their parent. */
@@ -256,9 +415,6 @@ function sortedRoots(roots: TreeNode<Task>[], order: ((a: Task, b: Task) => numb
 
 /** The list's groups, in render order: one pass, linear in the number of tasks. */
 export function listGroups(p: GroupInput): ListGroup[] {
-  const later: ListGroup[] = p.laterTasks.length
-    ? [{ key: 'later', heading: t('Later'), rows: p.laterTasks.map((task) => flatRow(task, task.parent_id ? breadcrumbOf(task, p.taskMap) : null)) }]
-    : []
   const toRow = (n: TreeNode<Task>): ListRow => ({
     task: n.item,
     depth: n.depth,
@@ -269,9 +425,13 @@ export function listGroups(p: GroupInput): ListGroup[] {
     breadcrumb: n.parent === null && n.item.parent_id ? breadcrumbOf(n.item, p.taskMap) : null,
   })
   const isCollapsed = (id: string) => p.collapsed.has(id)
+  // Later keeps each subtree together under its top-level task (subtasks-follow-later).
+  const later: ListGroup[] = p.laterTasks.length
+    ? [{ key: 'later', heading: t('Later'), rows: flattenTree(buildTaskTree(p.laterTasks).roots, isCollapsed).map(toRow) }]
+    : []
   // Board: cards are top-level tasks, column by column (keyboard order); a folded column has none on screen (board-polish D1).
   if (p.board) return p.columns.map((c) => ({ key: c.key, heading: null, rows: c.folded ? [] : c.cards.map((task) => flatRow(task)) }))
-  const order = displayOrder(p.display, p.manualOrder)
+  const order = displayOrder(p.display, p.manualOrder, p.projects, p.fields)
   const groupByKey = p.display?.groupBy
   if (p.tree && p.view === 'project' && groupByKey && groupByKey !== 'section' && groupByKey !== 'none' && groupByKey !== 'project') {
     // Grouped by a property of the top-level tasks (list-display-options D3); each brings its subtasks.
@@ -320,7 +480,7 @@ function flatGroups(p: GroupInput): ListGroup[] {
   }
   if (p.view === 'label' && p.display && p.display.groupBy !== 'project') {
     // A label page with its own grouping (list-display-options D3): in its order, each task once.
-    const order = displayOrder(p.display, p.manualOrder)
+    const order = displayOrder(p.display, p.manualOrder, p.projects, p.fields)
     const tasks = order ? [...p.tasks].sort(order) : p.tasks
     if (p.display.groupBy === 'none' || p.display.groupBy === 'section') return [{ key: 'all', heading: null, rows: tasks.map(row) }]
     return groupTasks(tasks, p.display.groupBy, { today: p.today, labels: p.labels ?? [], projects: p.projects }, true)
@@ -328,7 +488,7 @@ function flatGroups(p: GroupInput): ListGroup[] {
   }
   if (p.view === 'label' || p.view === 'assigned' || p.view === 'someday' || p.view === 'anytime') {
     // Grouped by project: Inbox first, then projects in sidebar order; flat rows with breadcrumbs.
-    const sort = p.view === 'label' ? displayOrder(p.display, p.manualOrder) : null
+    const sort = p.view === 'label' ? displayOrder(p.display, p.manualOrder, p.projects, p.fields) : null
     const byProject = groupBy(sort ? [...p.tasks].sort(sort) : p.tasks, (tk) => tk.project_id ?? '')
     const order = ['', ...p.projects.slice().sort(compareByPosition).map((pr) => pr.id)]
     const implied: RowImplied | undefined = p.view === 'someday' ? { someday: true } : undefined
@@ -380,11 +540,11 @@ function closedListGroups(p: GroupInput, row: (task: Task) => ListRow): ListGrou
   if (p.closedList && waiting.length) {
     const folded = !p.collapsed.has(WAITING_OPEN_KEY)
     // Folded, the waiting tasks with a time today stay in sight (today-waiting-time-sensitive D2); opened, the group is as before.
-    const soon = folded ? waitingTimeSensitive(waiting, p.today) : []
+    const soon = folded ? waitingTimeSensitive(waiting, p.today, p.closedList.now) : []
     g.push({
       key: 'waiting', heading: t('Waiting for a slot'), count: waiting.length, folded, openKey: WAITING_OPEN_KEY, rows: folded ? [] : waiting.map(row),
       hint: t('Today holds {n}. The next one comes in when you finish one.', { n: p.closedList.limit }),
-      ...(soon.length ? { soon, detail: nextDetail(soon[0], p.resolved) } : {}),
+      ...(soon.length ? { soon, detail: nextDetail(soon, p.resolved) } : {}),
     })
   }
   if (p.doneToday) {
@@ -394,10 +554,64 @@ function closedListGroups(p: GroupInput, row: (task: Task) => ListRow): ListGrou
   return g
 }
 
-/** The folded Waiting heading's "next: Send the form, 4:00 PM" (a deadline today without a time: "next: File the taxes, deadline today"). */
-export function nextDetail(next: WaitingSoon, resolved?: ResolvedDateTime): string {
-  const title = next.task._e2ee?.raw?.title || !next.task.title ? t('Untitled') : next.task.title
-  return next.time ? t('next: {title}, {time}', { title, time: formatTime(next.time, resolved) }) : t('next: {title}, deadline today', { title })
+/**
+ * The folded Waiting heading's words (today-waiting-time-sensitive D2, today-waiting-time-passed D2):
+ * "next: Send the form, 4:00 PM" for the first whose time has not passed (a deadline today
+ * without a time: "next: File the taxes, deadline today"); when every time has passed,
+ * "time passed: Call the school, 9:00 AM" for one and "2 past their time" for more.
+ */
+export function nextDetail(soon: readonly WaitingSoon[], resolved?: ResolvedDateTime): string {
+  const title = (s: WaitingSoon) => (s.task._e2ee?.raw?.title || !s.task.title ? t('Untitled') : s.task.title)
+  const next = nextWaiting(soon)
+  if (next) return next.time ? t('next: {title}, {time}', { title: title(next), time: formatTime(next.time, resolved) }) : t('next: {title}, deadline today', { title: title(next) })
+  if (soon.length === 1) return t('time passed: {title}, {time}', { title: title(soon[0]), time: formatTime(soon[0].time ?? '', resolved) })
+  return t('{n, plural, one {# past its time} other {# past their time}}', { n: soon.length })
+}
+
+const sameImplied = (a: RowImplied | undefined, b: RowImplied | undefined): boolean =>
+  a === b || (!!a && !!b && a.date === b.date && a.evening === b.evening && a.part === b.part && a.someday === b.someday)
+
+/** Two rows show the same thing: the same task object in the same place. */
+export const sameRow = (a: ListRow, b: ListRow): boolean =>
+  a.task === b.task && a.depth === b.depth && a.parent === b.parent && a.hasChildren === b.hasChildren
+  && a.collapsed === b.collapsed && a.breadcrumb === b.breadcrumb && sameImplied(a.implied, b.implied)
+
+const sameValue = (a: unknown, b: unknown): boolean =>
+  Object.is(a, b) || (Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((v, i) => Object.is(v, b[i])))
+
+/**
+ * The groups of a new derivation with everything that did not change kept from the
+ * previous one (OpenSpec change list-rendering-at-scale, D6): a row equal to its
+ * previous row is that object, a group whose rows and heading did not change is
+ * that object, and when no group changed the previous list itself. One completion
+ * in a 2,000-row list then gives new objects to its own row's group only, so the
+ * list draws again only the rows that changed, and whatever is derived from the
+ * groups (rows, sibling positions, the time column) is kept when nothing moved.
+ */
+export function keepGroups(prev: readonly ListGroup[] | null, next: ListGroup[]): ListGroup[] {
+  if (!prev?.length) return next
+  const before = new Map(prev.map((g) => [g.key, g]))
+  let changed = prev.length !== next.length
+  const out = next.map((g, i) => {
+    const old = before.get(g.key)
+    if (!old) { changed = true; return g }
+    const oldRows = new Map(old.rows.map((r) => [r.task.id, r]))
+    let rowsChanged = old.rows.length !== g.rows.length
+    const rows = g.rows.map((r, j) => {
+      const was = oldRows.get(r.task.id)
+      const kept = was && sameRow(was, r) ? was : r
+      if (kept !== old.rows[j]) rowsChanged = true
+      return kept
+    })
+    const fieldsSame = (Object.keys(g) as (keyof ListGroup)[]).every((k) => k === 'rows' || sameValue(g[k], old[k])) && Object.keys(old).length === Object.keys(g).length
+    if (!rowsChanged && fieldsSame) {
+      if (prev[i] !== old) changed = true
+      return old
+    }
+    changed = true
+    return { ...g, rows: rowsChanged ? rows : old.rows }
+  })
+  return changed ? out : (prev as ListGroup[])
 }
 
 /**
@@ -428,6 +642,30 @@ export const completedOpenKey = (projectId: string) => `project:${projectId}:com
 /** Every completed task of a project, most recently completed first, for its Completed group (project-completed-section). */
 export function completedNewestFirst(bySection: Map<string, Task[]>): Task[] {
   return [...bySection.values()].flat().sort((a, b) => (b.completed_at ?? 0) - (a.completed_at ?? 0))
+}
+
+/**
+ * completedBySection after `changes` (incremental-list-updates D2): the same map when no
+ * changed row is a completed task of the project; otherwise the section lists that held
+ * or now hold a changed row, each in the snapshot's order (by id).
+ */
+export function patchCompletedBySection(prev: Map<string, Task[]>, changes: readonly TaskChange[], _tasks: readonly Task[], projectId: string | null, sectionMap: Map<string, Section>): Map<string, Task[]> | null {
+  if (!projectId) return prev
+  const counts = (task: Task | undefined): task is Task => !!task && task.project_id === projectId && !!task.completed_at && !task.skipped
+  let next: Map<string, Task[]> | null = null
+  for (const c of changes) {
+    const was = counts(c.before) ? effectiveSection(c.before, sectionMap) ?? '' : null
+    const is = counts(c.after) ? effectiveSection(c.after, sectionMap) ?? '' : null
+    if (was === null && is === null) continue
+    next ??= new Map(prev)
+    for (const key of new Set([was, is])) {
+      if (key === null) continue
+      const list = patchSorted(next.get(key) ?? [], [{ id: c.id, after: key === is ? c.after : undefined }], () => true).list
+      if (list.length) next.set(key, list)
+      else next.delete(key)
+    }
+  }
+  return next ?? prev
 }
 
 /** Completed tasks of the project by section key, for "n completed" and Show (task-list-presentation "Empty groups"). */

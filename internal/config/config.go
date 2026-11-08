@@ -5,6 +5,7 @@ package config
 import (
 	"fmt"
 	"log/slog"
+	"net"
 	"net/netip"
 	"net/url"
 	"os"
@@ -169,10 +170,35 @@ const (
 // design D2); Coolify's generated SERVICE_PASSWORD_* values are longer.
 const MinSetupTokenLen = 16
 
+// ListenAddress is the address the server binds. OPENTODO_ADDR defaults to
+// :8080. OPENTODO_PORT, when set, replaces that port: the image always sets
+// OPENTODO_ADDR, so a container that only sets the port would otherwise keep
+// listening on 8080.
+func ListenAddress() (string, error) {
+	addr := getenv("OPENTODO_ADDR", ":8080")
+	port := strings.TrimSpace(os.Getenv("OPENTODO_PORT"))
+	if port == "" {
+		return addr, nil
+	}
+	n, err := strconv.Atoi(port)
+	if err != nil || n < 1 || n > 65535 {
+		return "", fmt.Errorf("OPENTODO_PORT must be a port from 1 to 65535, got %q", port)
+	}
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		return "", fmt.Errorf("OPENTODO_ADDR must be host:port when OPENTODO_PORT is set, got %q", addr)
+	}
+	return net.JoinHostPort(host, strconv.Itoa(n)), nil
+}
+
 // Load reads OPENTODO_* variables from the environment.
 func Load() (Config, error) {
+	addr, err := ListenAddress()
+	if err != nil {
+		return Config{}, err
+	}
 	c := Config{
-		Addr:        getenv("OPENTODO_ADDR", ":8080"),
+		Addr:        addr,
 		DataDir:     getenv("OPENTODO_DATA_DIR", "./data"),
 		SessionTTL:  90 * 24 * time.Hour,
 		LogLevel:    slog.LevelInfo,

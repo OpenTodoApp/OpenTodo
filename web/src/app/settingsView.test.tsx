@@ -215,7 +215,7 @@ describe('Learn more on a settings card', () => {
     const r = await render(<><Webhooks /><HelpSlot /></>)
     const url = document.querySelector<HTMLInputElement>('input[type="url"]')!
     await type(url, 'https://n8n.example.com/webhook/garden')
-    const link = r.container.querySelector<HTMLButtonElement>('#webhooks-heading ~ [data-settings-line] [data-learn-more]')!
+    const link = r.container.querySelector<HTMLButtonElement>('[data-testid="webhooks-panel"] [data-settings-line] [data-learn-more]')!
     expect(link.dataset.helpScreen).toBe('settings/webhooks')
     expect(link.getAttribute('aria-label')).toBe('Learn more: Webhooks')
     await click(link)
@@ -230,5 +230,33 @@ describe('Learn more on a settings card', () => {
     expect(document.activeElement).toBe(link)
     expect(document.querySelector<HTMLInputElement>('input[type="url"]')!.value).toBe('https://n8n.example.com/webhook/garden')
     await r.unmount()
+  })
+})
+
+// settings-foundation D1/D2: the page head leads every page, on phones too, and a
+// page with one section shows no heading of its own for it.
+describe('page head (settings-foundation)', () => {
+  const lead = () => document.querySelector('[data-settings-page-head] [data-settings-lead]')?.textContent ?? ''
+  const visibleHeadings = () => [...document.querySelectorAll('[data-settings-card]:not([data-settings-bare]) h2')].map((h) => h.textContent)
+
+  it('leads a one-section sub-page with its section line and hides the repeated heading', async () => {
+    width = 1280
+    const r = await render(<SettingsView user={member} onLogout={() => {}} section="integrations" page="webhooks" />)
+    await waitFor(() => !!document.querySelector('[data-settings-bare]'), 'the webhooks section gave up its heading')
+    expect(lead()).toMatch(/endpoint|request/i)
+    expect(visibleHeadings()).not.toContain('Webhooks')
+    // The heading stays for assistive technology.
+    expect(document.querySelector('[data-settings-bare] h2')?.textContent).toBe('Webhooks')
+    await r.unmount()
+  })
+
+  it('shows the lead line on a phone, where the title is in the header', async () => {
+    width = 390
+    const r = await render(<SettingsView user={member} onLogout={() => {}} section="capture" page="voice" />)
+    await waitFor(() => lead().length > 0, 'the lead line')
+    expect(document.querySelector('[data-settings-page-head] .text-h1')).toBeNull()
+    expect(document.querySelector('[data-settings-scope="device"]')?.textContent).toContain('This device only')
+    await r.unmount()
+    width = 1280
   })
 })

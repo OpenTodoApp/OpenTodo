@@ -73,7 +73,9 @@ describe('one footer row', () => {
     const row = r.container.querySelector('[data-footer-icons]')!
     expect(row.className).not.toContain('flex-wrap')
     expect(row.className).not.toContain('flex-col')
-    expect(account(row).className).toContain('min-w-0')
+    // The name truncates, but the account control keeps room for its avatar (large text, German).
+    expect(account(row).className).toContain('min-w-10')
+    expect(account(row).className).toContain('flex-1')
     expect(account(row).querySelector('.truncate')?.textContent).toBe('Alexandra Konstantinopoulou')
     for (const b of [...row.querySelectorAll('button.ui-btn--icon')]) expect(b.className).toMatch(/ui-btn--(sm|md)/)
     await r.unmount()

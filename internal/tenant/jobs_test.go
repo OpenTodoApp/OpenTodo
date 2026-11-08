@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/OpenTodoApp/opentodo/internal/audit"
 	"github.com/OpenTodoApp/opentodo/internal/backup"
 	"github.com/OpenTodoApp/opentodo/internal/jobs"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
@@ -222,7 +223,7 @@ func TestJobListMatchesTheConfiguration(t *testing.T) {
 		return out
 	}
 	got := names(openJobsTenant(t, t.TempDir()))
-	for _, n := range []string{jobs.Reminders, jobs.Backup, jobs.Webhooks, jobs.Calendars, jobs.Issues, jobs.Digest, jobs.Rules, jobs.Housekeeping, jobs.Compaction} {
+	for _, n := range []string{jobs.Reminders, jobs.Backup, jobs.Webhooks, jobs.Calendars, jobs.Issues, jobs.Digest, jobs.Rules, jobs.Housekeeping, jobs.Compaction, jobs.Checkpoint} {
 		if !got[n] {
 			t.Errorf("job %q missing: %v", n, got)
 		}
@@ -243,7 +244,7 @@ func TestJobListMatchesTheConfiguration(t *testing.T) {
 			t.Errorf("demo instance has job %q", n)
 		}
 	}
-	if !got[jobs.Demo] || !got[jobs.Housekeeping] || !got[jobs.Compaction] {
+	if !got[jobs.Demo] || !got[jobs.Housekeeping] || !got[jobs.Compaction] || !got[jobs.Checkpoint] {
 		t.Errorf("demo instance jobs: %v", got)
 	}
 }
@@ -281,4 +282,35 @@ func firstWebhook(t *testing.T, tn *Tenant, uid string) string {
 		t.Fatalf("webhooks %+v %v", list, err)
 	}
 	return list[0].ID
+}
+
+// TestHousekeepingReportsABrokenAuditChain (audit-hash-chain): the first
+// housekeeping pass after the tenant opens verifies the audit log's chain and
+// logs the first broken link; nothing stops and the log is left as it is.
+func TestHousekeepingReportsABrokenAuditChain(t *testing.T) {
+	ctx := context.Background()
+	logs := &lockedBuffer{}
+	tn, err := Open(ctx, testConfig(t.TempDir()), Options{Version: "test", Web: http.NotFoundHandler(),
+		Log: slog.New(slog.NewTextHandler(logs, nil))})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tn.Close()
+	rec := tn.Auth.Audit()
+	for i := 0; i < 3; i++ {
+		rec.Record(ctx, audit.Logout("u"))
+	}
+	if _, err := tn.DB.Exec("UPDATE audit_events SET actor_id = 'v' WHERE id = (SELECT MIN(id) + 1 FROM audit_events)"); err != nil {
+		t.Fatal(err)
+	}
+	tn.housekeeping(ctx)
+	if out := logs.String(); !strings.Contains(out, "hash chain broken") || !strings.Contains(out, "reason=mismatch") {
+		t.Fatalf("broken chain not reported:\n%s", out)
+	}
+	// Only the first pass checks; later checks run with upkeep.
+	before := strings.Count(logs.String(), "hash chain broken")
+	tn.housekeeping(ctx)
+	if n := strings.Count(logs.String(), "hash chain broken"); n != before {
+		t.Fatalf("second housekeeping pass verified again (%d reports)", n)
+	}
 }

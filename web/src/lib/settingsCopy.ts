@@ -73,6 +73,10 @@ export const SETTINGS_COPY = {
       // Today's focus style and Bento order (bento-daily-check D4): synced user_prefs, as in the Daily check's menu.
       focus: { label: msg('Daily focus'), description: msg('Three tasks of any size, or a Bento: one Large, one Medium and one Small.') },
       order: { label: msg('Order'), description: msg('Frog does the Large task first; Summit warms up with the Medium one.') },
+      // Time sectors (time-sectors D7): synced user_prefs.time_sectors, off by default in every mode.
+      sectors: { label: msg('Time sectors'), description: msg('Plan tasks into this week, next week or this month without a fake date.') },
+      // Objectives (plan-objectives D8): synced user_prefs.objectives, off by default in every mode.
+      objectives: { label: msg('Objectives'), description: msg('Pin up to five quarterly and weekly objectives in Plan and the weekly review.') },
       // Energy levels (task-energy D3): synced user_prefs.energy, off by default in every mode.
       energy: { label: msg('Energy levels'), description: msg('Mark tasks Deep, Medium or Low and filter by the energy they need.') },
       // Formatting button (notes-toolbar-desktop D4): synced user_prefs.formatting_toggle, on by default.
@@ -192,6 +196,7 @@ export const SETTINGS_COPY = {
       theme: { label: msg('Accent') },
       density: { label: msg('Density'), description: msg('Compact tightens rows, headers and the sidebar; touch targets stay full size.') },
       rows: { label: msg('Task rows'), description: msg('Detailed adds the parent task and a line of dates, priority and labels.') },
+      titles: { label: msg('Show full task titles'), description: msg('Long titles wrap in lists, boards and Today instead of ending with an ellipsis.') },
       haptics: { label: msg('Haptic feedback'), description: msg('A short vibration when you complete a task or pick one up with a long press.') },
     },
   },
@@ -302,6 +307,7 @@ export const SETTINGS_COPY = {
     learnMore: 'settings/keyboard',
     rows: {
       hints: { label: msg('Show shortcut hints'), description: msg('Print the keys in the app itself, not only in tooltips. This device only.') },
+      singleKeys: { label: msg('Single-key shortcuts'), description: msg('Letters and symbols alone run commands. Turn off for speech input. This device only.') },
       vim: { label: msg('Vim keybindings'), description: msg('Normal, Insert and Command modes with counts, {kbd}, {kbd2} and {kbd3}. This device only.') },
       rowClick: { label: msg('Click a task to'), description: msg('Edit its title in place, or open its details beside the list. This device only.') },
     },
@@ -346,6 +352,21 @@ export const SETTINGS_COPY = {
       unsupported: msg('This browser cannot receive push notifications; installing the app may help.'),
       blocked: msg('Notifications are blocked in your browser settings; reminders still appear in the app.'),
       renew: msg('The push service stopped accepting notifications for this device.'),
+    },
+  },
+  // Settings → Notifications → Location reminders (location-reminders D4): a per-device switch in the phone app.
+  'location-reminders': {
+    title: msg('Location reminders'),
+    icon: 'map-pin',
+    description: msg('Reminders when you arrive at or leave a place. Your position stays on the phone.'),
+    learnMore: 'settings/location-reminders',
+    rows: {
+      phone: { label: msg('On this phone'), description: msg('Watches the places of your location reminders, even with the app closed.') },
+    },
+    notices: {
+      browser: msg('Location reminders fire only in the Android or iPhone app, with Location reminders on.'),
+      update: msg('Update the OpenTodo app on this phone to use location reminders here.'),
+      play: msg('Location reminders come to the Google Play version later; the GitHub/F-Droid app has them.'),
     },
   },
   // Settings → Notifications → App icon badge (app-icon-badge): a device-local flag.
@@ -650,6 +671,7 @@ export const SETTINGS_COPY = {
       yours: { label: msg('Your assistant') },
       usage: { label: msg('Usage') },
       auto: { label: msg('Small changes without review'), description: msg('This device: up to 3 existing tasks, done, dates, priority or labels. Undo appears.') },
+      suggest: { label: msg('Suggest after adding'), description: msg('This device: after an add, the assistant proposes a title, project, subtasks. You review.') },
       conversations: { label: msg('Conversations'), description: msg('Stored only on this device, never on the server.') },
     },
     notices: {
@@ -695,8 +717,11 @@ export const SETTINGS_COPY = {
         description: msg('Lets connectors such as Claude.ai read and write your encrypted text through this device.'),
       },
       relayConfirm: { label: msg('Confirm changes first'), description: msg('Each change an AI connector asks for shows here before it is written.') },
+      relayConfirmReads: { label: msg('Confirm reads first'), description: msg('Each request to read your text shows here before this device sends it.') },
       relayDevices: { label: msg('Devices that answer') },
       relayRecent: { label: msg('Recent requests'), description: msg('What this device answered, without the text.') },
+      // OAuth clients (mcp-oauth): the one row that shows a new client's credentials.
+      oauthClient: { label: msg('Client ID'), description: msg('The secret is shown only now, next to the client ID.') },
     },
     notices: { offline: msg('Offline: these settings live on the server; this is the last state fetched.') },
   },

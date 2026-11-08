@@ -55,6 +55,15 @@ const (
 	CalendarConnectionCreatedName Name = "calendar_connection.created"
 	CalendarConnectionUpdatedName Name = "calendar_connection.updated"
 	CalendarConnectionDeletedName Name = "calendar_connection.deleted"
+	// OAuth clients for the MCP endpoint (mcp-oauth): the client id and scope
+	// only, never its secret, a code or a refresh token.
+	MCPOAuthClientCreatedName Name = "mcp_oauth.client_created"
+	MCPOAuthClientDeletedName Name = "mcp_oauth.client_deleted"
+	MCPOAuthGrantedName       Name = "mcp_oauth.granted"
+	MCPOAuthRevokedName       Name = "mcp_oauth.revoked"
+	// A refresh token that was already exchanged came back, and its grant was
+	// revoked (mcp-oauth-refresh-rotation).
+	MCPOAuthRefreshReusedName Name = "mcp_oauth.refresh_reused"
 	// Notification delivery channels (OpenSpec change notification-channels):
 	// created, deleted, and changed settings or secrets by name.
 	NotificationChannelCreatedName Name = "notification_channel.created"
@@ -156,6 +165,7 @@ var Names = []Name{
 	EmailInboxCreatedName, EmailInboxRotatedName, EmailInboxUpdatedName,
 	IssueConnectionCreatedName, IssueConnectionUpdatedName, IssueConnectionDeletedName,
 	CalendarConnectionCreatedName, CalendarConnectionUpdatedName, CalendarConnectionDeletedName,
+	MCPOAuthClientCreatedName, MCPOAuthClientDeletedName, MCPOAuthGrantedName, MCPOAuthRevokedName, MCPOAuthRefreshReusedName,
 	NotificationChannelCreatedName, NotificationChannelUpdatedName, NotificationChannelDeletedName,
 	InvitationCreatedName, InvitationAcceptedName, InvitationRevokedName,
 	ProjectInviteCreatedName, ProjectInviteRevokedName, ProjectInviteAcceptedName,
@@ -262,6 +272,9 @@ var allowedDetailKeys = map[string]bool{
 	"to":                true, // new value of a setting or role
 	"provider":          true, // identity provider name, or github | gitlab for an issue connection
 	"connection_id":     true, // id of an issue or calendar connection (never its host, username or secret)
+	// OAuth clients (mcp-oauth): the client's id, never its secret or a token it
+	// was given, and never a client name it chose for itself.
+	"oauth_client_id": true,
 	// A notification channel's id and kind (ntfy, pushover, gotify, webhook),
 	// never its address, topic, token or user key.
 	"notification_channel_id": true,
@@ -508,6 +521,37 @@ func CalendarConnectionUpdated(userID, connID, provider, setting string) Event {
 // CalendarConnectionDeleted records a deleted calendar connection (its secret removed).
 func CalendarConnectionDeleted(userID, connID, provider string) Event {
 	return ev(CalendarConnectionDeletedName, Success, userID, "", "connection_id", connID, "provider", provider)
+}
+
+// ---- OAuth clients for the MCP endpoint ----
+
+// MCPOAuthClientCreated records a registered client: its id, its scope and how
+// it came to exist (manual by the owner, or dynamic registration).
+func MCPOAuthClientCreated(userID, clientID, scope, method string) Event {
+	return ev(MCPOAuthClientCreatedName, Success, userID, "", "oauth_client_id", clientID, "token_scope", scope, "method", method)
+}
+
+// MCPOAuthClientDeleted records a client removed with its grants.
+func MCPOAuthClientDeleted(userID, clientID string) Event {
+	return ev(MCPOAuthClientDeletedName, Success, userID, "", "oauth_client_id", clientID)
+}
+
+// MCPOAuthGranted records a person authorizing a client: who, which client and
+// the scope granted, never a code or token.
+func MCPOAuthGranted(userID, clientID, scope string) Event {
+	return ev(MCPOAuthGrantedName, Success, userID, "", "oauth_client_id", clientID, "token_scope", scope)
+}
+
+// MCPOAuthRevoked records a grant ended through the revocation endpoint.
+func MCPOAuthRevoked(userID, clientID string) Event {
+	return ev(MCPOAuthRevokedName, Success, userID, "", "oauth_client_id", clientID)
+}
+
+// MCPOAuthRefreshReused records a grant revoked because a refresh token it had
+// already rotated was presented again: the person whose grant it was and the
+// client, never the token.
+func MCPOAuthRefreshReused(userID, clientID string) Event {
+	return ev(MCPOAuthRefreshReusedName, Failure, userID, "", "oauth_client_id", clientID)
 }
 
 // ---- notification channels ----

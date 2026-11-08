@@ -2,6 +2,14 @@
 
 The browser extension versions on its own, independently of the app. `make extension` refuses a build whose manifest version is not the first entry here.
 
+## 0.6.4 - 2026-11-06
+
+- The settings page's Save button has enough contrast in light and dark (WCAG 2.2 1.4.3), like the popup's.
+
+## 0.6.3 - 2026-11-05
+
+- The new tray mark as the toolbar and store icon, the same as the app's.
+
 ## 0.6.2 - 2026-10-31
 
 - A shorter description in every language, within the Chrome Web Store's 132-character limit.

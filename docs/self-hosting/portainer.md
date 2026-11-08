@@ -22,7 +22,7 @@ OpenTodo is one container with one volume and no required settings. Its Portaine
 2. Open your environment, go to **App Templates** and pick **OpenTodo**.
 3. Check the settings below and click **Deploy the container**.
 
-OpenTodo has been submitted to the community list [Lissy93/portainer-templates](https://github.com/Lissy93/portainer-templates) ([#160](https://github.com/lissy93/portainer-templates/pull/160)); once it is merged, people who load that list find it there as well.
+OpenTodo is listed in the community list [Lissy93/portainer-templates](https://github.com/Lissy93/portainer-templates) ([portainer-templates.as93.net/opentodo](https://portainer-templates.as93.net/opentodo)), so people who load that list find it there as well.
 
 Without templates, the same container is:
 
@@ -54,7 +54,7 @@ On `http://<your-host>:8080`, tasks, projects, sync, sharing and attachments wor
 
 The template uses the `stable` image, which every release moves. To update, open the container, click **Recreate** and turn on **Re-pull image**. The volume is kept and migrations run on start. There are no down-migrations, so back up first. To stay on one release line, recreate the container with the image `ghcr.io/opentodoapp/opentodo:0.6` (or one version, `0.6.1`).
 
-Everything OpenTodo stores (the database, attachments and its own backups) is in the volume Portainer created for `/data`; find it in the container's **Volumes** section. Back it up from the host, or turn on scheduled backups in OpenTodo's **Settings → Server** (written to `backups/` in the same volume, or to S3 or WebDAV). See [Backups](../backups.md).
+Everything OpenTodo stores (the database, attachments and its own backups) is in the volume Portainer created for `/data`; find it in the container's **Volumes** section. Back it up from the host, or turn on scheduled backups in OpenTodo's **Settings → Server → Backups** (written to `backups/` in the same volume, or to S3 or WebDAV). See [Backups](../backups.md).
 
 ## Troubleshooting
 

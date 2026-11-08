@@ -11,7 +11,9 @@ import (
 
 	"github.com/OpenTodoApp/opentodo/internal/daypart"
 	"github.com/OpenTodoApp/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/flow"
 	"github.com/OpenTodoApp/opentodo/internal/location"
+	"github.com/OpenTodoApp/opentodo/internal/sector"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
@@ -34,6 +36,10 @@ func planningProps() map[string]any {
 			"description": "The part of the day the task belongs to: morning, afternoon or evening (This Evening); null for any time. Sets evening too; wins over evening when both are sent."},
 		"energy": map[string]any{"type": []string{"string", "null"}, "enum": []any{"deep", "medium", "low", nil},
 			"description": "The energy the task asks for: deep (focused work), medium or low (routine); null for none."},
+		"flow_mode": map[string]any{"type": "string", "enum": []string{"", flow.Parallel, flow.Sequential},
+			"description": "How the task's own subtasks flow: sequential offers them one at a time in list order, each after the one before; parallel or \"\" offers them all together."},
+		"sector": map[string]any{"type": []string{"string", "null"}, "pattern": `^\d{4}-(W\d{2}|\d{2}|Q[1-4])$`,
+			"description": "The time sector: the period the task is planned for without a date, an ISO week (2026-W45), a month (2026-11) or a quarter (2026-Q4); null for none. Absolute only, never a word like this week. Written as sent: it does not clear the due date, send due null too if you mean that."},
 		"blocked_by": map[string]any{"type": "array", "maxItems": opsync.MaxBlockedBy, "items": map[string]any{"type": "string"},
 			"description": "Ids of tasks this one waits for (same project sharing, never itself, no cycles); an empty array removes every blocker."},
 		"location": map[string]any{"type": []string{"object", "null"}, "additionalProperties": false,
@@ -118,6 +124,23 @@ func (snap *snapshot) planningPatch(p string, it args, c Caller, patch map[strin
 			return argErr(p + "energy: must be deep, medium, low or null")
 		}
 		patch["energy"] = raw(e)
+	}
+	// How the task's subtasks flow (OpenSpec change subtask-flow): "", parallel or sequential.
+	if v, ok := it["flow_mode"]; ok {
+		var f string
+		if json.Unmarshal(v, &f) != nil || !flow.ValidTask(f) {
+			return argErr(p + "flow_mode: must be \"\", parallel or sequential")
+		}
+		patch["flow_mode"] = raw(f)
+	}
+	// The time sector (OpenSpec change time-sectors, D9): an absolute period, or
+	// null or "" for none; relative words are refused (a call has no viewer date).
+	if v, ok := it["sector"]; ok {
+		var sec string
+		if string(v) != "null" && (json.Unmarshal(v, &sec) != nil || sector.Check(sec) != nil) {
+			return argErr(p + "sector: must be a period YYYY-Www, YYYY-MM or YYYY-Qn (absolute, not a word like \"next week\") or null")
+		}
+		patch["sector"] = raw(sec)
 	}
 	if v, ok := it["blocked_by"]; ok {
 		var list []string

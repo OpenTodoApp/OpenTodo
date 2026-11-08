@@ -555,3 +555,50 @@ Today's focus SHALL be fillable and emptiable without a keyboard. In Bento style
 #### Scenario: Viewer
 - **WHEN** the task belongs to a shared project the user only views
 - **THEN** the menu still offers Add to focus or Put in a slot, and the task joins the user's own focus
+
+### Requirement: Time sectors in Look ahead
+While time sectors are on (OpenSpec `time-sectors`), the Look ahead step SHALL also list two groups of open tasks below the next seven days: those whose sector is carried over, and those of Next week. Each row SHALL offer, as visible buttons and in the row's action menu, Keep this week, Next week, This month and Date…. The existing list keys SHALL keep their meaning, so `n` parks the task in Someday. No new shortcut SHALL be registered. Each action SHALL be one undoable batch written through the operation log, applied locally first and converging like any sector edit. The section SHALL not change whether the step is done. With the switch off, or with no such task, the section SHALL not be shown.
+
+#### Scenario: Carried-over tasks in the review
+- **WHEN** it is Sunday of week 45 with Monday weeks and two open tasks still have the sector `2026-W44`
+- **THEN** Look ahead lists them under "Carried over", and choosing Next week on one sets it to `2026-W46` and removes it from the section
+
+#### Scenario: Park from the review
+- **WHEN** a carried-over row is selected and the user presses `n`
+- **THEN** the task is parked in Someday with its sector cleared in the same batch, and it leaves the section
+
+#### Scenario: Offline review
+- **WHEN** the device is offline and the user chooses Keep this week on a carried-over task
+- **THEN** the task moves to This week at once and the batch uploads on the next sync
+
+#### Scenario: Switch off
+- **WHEN** time sectors are off and tasks with sectors exist
+- **THEN** Look ahead shows the next seven days only
+
+### Requirement: Objectives in the weekly review
+While objectives are on (OpenSpec `plan-objectives`), the Look ahead step SHALL show an Objectives section above the next seven days:
+- this quarter's objectives, read-only;
+- the planned week's objectives, with Add and edit under the limit;
+- the open weekly objectives of the week before the planned week, each offering Carry (to the planned week), Done and Drop.
+
+The planned week SHALL be next week when the review is opened on the last three days of the viewer's week (Friday to Sunday with Monday weeks), and this week otherwise, with a toggle to switch. In the first review whose local date falls in a new quarter, the previous quarter's open quarterly objectives SHALL be offered with Carry (to the current quarter), Done and Drop. Each action SHALL be one undoable batch written through the operation log, applied locally first and working offline. The section SHALL not change whether the step is done, the number of steps or the progress indicator.
+
+#### Scenario: Sunday review plans next week
+- **WHEN** objectives are on and the user opens the review on Sunday 2026-11-01 with Monday weeks
+- **THEN** Look ahead shows this quarter's objectives, "Objectives for next week" (week 45) with Add, and week 44's open objectives with Carry, Done and Drop
+
+#### Scenario: Carry one objective
+- **WHEN** the user chooses Carry on week 44's open objective "Draft the talk"
+- **THEN** its period becomes `2026-W45`, it moves to "Objectives for next week", and Undo puts it back
+
+#### Scenario: New quarter
+- **WHEN** the first review of January 2027 runs and Q4 2026 has two open objectives
+- **THEN** both are offered with Carry to Q1 2027, Done and Drop, and once each is handled they are no longer offered
+
+#### Scenario: Offline
+- **WHEN** the device is offline and the user adds a weekly objective in the review
+- **THEN** it appears in the section and in the Plan strip at once, and uploads on the next sync
+
+#### Scenario: Switch off
+- **WHEN** objectives are off
+- **THEN** Look ahead shows no Objectives section and the step is unchanged

@@ -13,6 +13,8 @@ The OpenTodo app for Android opens your own OpenTodo server, like the [installed
 
 ## Install the app
 
+**Install from GitHub for now.** The Google Play and F-Droid links below don't open yet: the app is still in Google Play's closed testing and waiting for its first F-Droid build. You can switch to a store later (see below).
+
 The same app comes from three places. Pick the one you already use; all three are signed with the same certificate, so updates from one install over the others.
 
 - **Google Play**: search for **OpenTodo** in the Play Store, or open [play.google.com/store/apps/details?id=app.opentodo](https://play.google.com/store/apps/details?id=app.opentodo). Play updates it by itself.
@@ -20,8 +22,6 @@ The same app comes from three places. Pick the one you already use; all three ar
 - **GitHub**: download `opentodo-android-<version>.apk` from the [latest release](https://github.com/OpenTodoApp/OpenTodo/releases/latest) and open it on the phone (Android asks you to allow installing from your browser or file manager once). You update it the same way; tools such as Obtainium can follow the releases for you.
 
 Release candidates (`-rc` versions) are only on GitHub, never in the stores.
-
-While the app is in Google Play's closed testing and waiting for its first F-Droid build, the two store links above don't open yet: install from GitHub meanwhile, and switch to a store later (next section).
 
 ### Switching between Google Play, F-Droid and GitHub
 
@@ -66,7 +66,7 @@ On first start the app asks for your server's address, the one you open in the b
 - **Certificate not trusted**: the phone doesn't trust the server's certificate. If your server uses its own certificate authority, install it in Android's security settings; the app trusts certificates you installed there.
 - **Address refused**: the app needs `https://`. Plain `http://` works only for addresses on your own network (such as `192.168.1.4:8080` or `nas.local`), after a warning.
 
-Then sign in as usual. After the first start the app also opens offline, with your local copy.
+Then sign in as usual. After that first successful open the app keeps a copy of itself on the phone and opens it offline, with the server switched off or the phone in flight mode. That includes a server at a plain http address on your own network.
 
 To use another server, long-press the app icon and choose **Change server**. This removes the current server's data from the phone (the offline copy, scheduled reminders, widget data and fingerprint unlock); changes not yet synced are lost.
 
@@ -80,7 +80,7 @@ If your server sits behind a login wall, such as Pangolin (with Pocket ID or its
 
 Only pages the sign-in leads through stay in the app; a link to another site on a sign-in page (a privacy policy, a help page) opens in your browser, like every other link. The wall's session cookie is kept, so you sign in again only when the wall's session ends. Give the wall a long session (a "remember me" option, or a longer session lifetime) so that happens rarely: while the session has expired, the app's hourly background refresh of reminders and widgets doesn't get through and simply waits until you next open the app.
 
-**Providers that refuse apps.** Some identity providers refuse to sign in inside an app's web view; Google, for example, shows "Error 403: disallowed_useragent". The app can't work around this yet. Sign in to OpenTodo with a password or a passkey instead (set a password in **Settings → Account** if your account is SSO-only), or use a provider that allows it in front of the wall, or let the wall bypass the app's paths (next section).
+**Providers that refuse apps.** Some identity providers refuse to sign in inside an app's web view; Google, for example, shows "Error 403: disallowed_useragent". The app can't work around this yet. Sign in to OpenTodo with a password or a passkey instead (set a password in **Settings → Account → Security** if your account is SSO-only), or use a provider that allows it in front of the wall, or let the wall bypass the app's paths (next section).
 
 ### Bypassing the wall instead
 
@@ -88,7 +88,7 @@ If you'd rather the app not meet the wall at all, let it bypass these paths for 
 
 | Path | Used by |
 | --- | --- |
-| `/healthz` | the app's first-run check |
+| `/api/v1/health`, `/healthz` | the app's first-run check (`/api/v1/health` first; `/healthz` for servers before 1.0.1) |
 | `/api/*` | everything the web app loads or saves, including sync and sign-in |
 | `/sw.js`, `/registerSW.js`, `/push-sw.js` | service worker updates (offline use, push) |
 | `/manifest.webmanifest`, `/branding/*` | the app's name and icons |
@@ -99,6 +99,19 @@ The page itself (`/` and the app's files under `/assets/`) still goes through th
 ## Reminders
 
 In **Settings → Notifications**, turn on **Notifications through the app**. The app schedules the next seven days of reminders on the phone itself and refreshes them about once an hour, so a reminder you add on your computer reaches the phone too. Details in [Notifications](push-notifications.md#in-the-android-app).
+
+A reminder's notification offers **Done**, **Snooze 10 min** and **Dismiss**. **Done** completes the task without opening the app, the same as ticking it off (a repeating task moves to its next date), and works offline: the change goes out with the next sync.
+
+## Location reminders
+
+[Location reminders](location-reminders.md) ("when I arrive at the post office") fire on the phone. Turn on **Settings → Notifications → Location reminders → On this phone**: the app explains what the location is for, then Android asks twice, first for your location (**While using the app** or **Only this time**), then for **Allow all the time**, which on Android 11 and later is a choice on the app's location settings page. Without **Allow all the time** nothing is watched and the setting says so, with **Open settings**.
+
+- The app uses Android's own proximity alerts, with no Google Play services, so it works on phones without Google.
+- It watches at most 19 places, the nearest to where you are, plus one larger circle around that spot; leaving that circle makes it pick the nearest places again.
+- Your position stays on the phone. It is never sent to your server or anyone else, never passed to the app's pages and never logged; the app keeps only the point it last picked the places from, in its private storage.
+- A notification offers **Done** and **Dismiss**; a crossing fires at most once an hour per reminder.
+- Sign-out, locking an encrypted account and **Change server** remove every watched place.
+- **Only the app from GitHub or F-Droid has location reminders for now.** The Google Play version leaves them out, and doesn't ask for your location at all, until Google has approved the background-location use; there the setting reads "Location reminders come to the Google Play version later". To use them now, install the app from GitHub or F-Droid over the Play one ([switching keeps everything](#switching-between-google-play-f-droid-and-github)).
 
 ## Sharing
 
@@ -112,10 +125,14 @@ Two home-screen widgets: **Today** shows your tasks for today with the time of t
 
 The phone's status and navigation bars take the colour of your [theme](themes.md) (the accent in light, the canvas in dark, or the theme's own bar colour), with light or dark icons so they stay readable, and they switch with it. The app remembers the colour, so the bars are right from the first frame of the next launch.
 
+## Voice input
+
+Dictate in quick add the same way as in a browser (**Settings → Capture → Voice capture**). The first time, Android asks for the microphone. Allow it; there is no address bar to look at. If you refused, allow **Microphone** for OpenTodo in the phone's app settings and try again. The app keeps no recording.
+
 ## Fingerprint unlock
 
 With [end-to-end encryption](e2ee.md#unlock-with-a-fingerprint), the unlock screen offers **Unlock with fingerprint or face next time**.
 
 ## Privacy
 
-No trackers, no analytics, no advertising. The app stores the server address, the scheduled reminders, the widget data and, if you turned on fingerprint unlock, the encrypted account key, only in its private storage, excluded from Android backup.
+No trackers, no analytics, no advertising. The app stores the server address, the scheduled reminders, the watched places of your location reminders, the widget data and, if you turned on fingerprint unlock, the encrypted account key, only in its private storage, excluded from Android backup.

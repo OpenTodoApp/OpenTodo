@@ -8,10 +8,11 @@ import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
-import { createTask, resetDeviceId } from '../lib/ops'
+import { createProject, createTask, resetDeviceId } from '../lib/ops'
 import { TOUCH_HOLD_MS } from '../lib/dnd'
 import type { Task } from '../lib/types'
-import { mockFetch, noPublicLinks, render, waitFor } from '../ui/test-utils'
+import { click, mockFetch, noPublicLinks, render, waitFor } from '../ui/test-utils'
+import { ActionToasts } from './ActionToasts'
 import { TaskListView } from './TaskListView'
 import { TaskRow } from './TaskRow'
 import { useBulkList } from './bulk/useBulkList'
@@ -39,6 +40,8 @@ function touchContextMenu(el: Element, x: number, y: number): MouseEvent {
   act(() => { el.dispatchEvent(e) })
   return e
 }
+
+const menuItem = (label: string) => [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((m) => m.textContent?.includes(label)) ?? null
 
 function escape() {
   act(() => { document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })) })
@@ -75,6 +78,8 @@ async function rightClickUntilMenu(row: () => Element | null, container: HTMLEle
   // One more, on a settled row: this dispatch goes through the real handler.
   e = rightClick(row()!, x, y)
   expect(e.defaultPrevented).toBe(true)
+  // The panel shows once the reads its items depend on have landed (issue 840).
+  await waitFor(() => !!document.querySelector('[data-overlay-root]'), 'the menu panel')
   return e
 }
 
@@ -227,13 +232,36 @@ describe('right-click in a list', () => {
   })
 })
 
+describe('moving from the right-click menu', () => {
+  it('Move to project, a project, then Apply moves the task and it leaves the list (issue #839)', async () => {
+    const home = await createProject({ name: 'Project 4' })
+    const target = await createProject({ name: 'Project8' })
+    const id = await createTask({ title: 'Call mum', project_id: home })
+    // The Shell's feedback hosts sit beside the list, as in the app.
+    const r = await render(<><TaskListView route={{ view: 'project', id: home }} /><ActionToasts /></>)
+    await waitFor(() => r.container.textContent!.includes('Call mum'))
+    await rightClickUntilMenu(() => r.container.querySelector(`[data-task-id="${id}"]`), r.container, 120, 200)
+    await waitFor(() => !!menuItem('Move to project'), 'the Move to project item')
+    await click(menuItem('Move to project')!)
+    const option = () => [...document.querySelectorAll<HTMLElement>('[role="option"]')].find((o) => o.textContent?.includes('Project8'))
+    await waitFor(() => !!option(), 'the project options')
+    await act(async () => { option()!.dispatchEvent(new MouseEvent('mousedown', { bubbles: true })); option()!.click() })
+    // The menu closes and the move is reviewed before it is applied (bulk-edit D6).
+    await waitFor(() => !!document.querySelector('[data-assistant-apply]:not([disabled])'), 'the move review')
+    await click(document.querySelector('[data-assistant-apply]')!)
+    await waitFor(async () => (await db.tasks.get(id))?.project_id === target, 'the task in Project8')
+    await waitFor(() => !r.container.querySelector(`[data-task-id="${id}"]`), 'the row leaving the list')
+    await r.unmount()
+  })
+})
+
 describe('the list bindings', () => {
   const ctxOver = (over: Partial<BindingContext> = {}): BindingContext => ({
     route: { view: 'today' }, rows: [], columns: [], board: false, manual: false,
     selectedId: null, setSelectedId: vi.fn(), openId: null, isReadOnly: () => false,
     taskMap: new Map(), ticked: ['a', 'b'],
     selection: { ticked: new Set(['a', 'b']), toggle: vi.fn(), extendTo: vi.fn(), selectAll: vi.fn(), set: vi.fn(), clear: vi.fn() },
-    ui: { pickerFor: null, setPickerFor: vi.fn(), assignFor: null, setAssignFor: vi.fn(), prompt: null, setPrompt: vi.fn(), addingUnder: null, setAddingUnder: vi.fn(), addingTo: null, setAddingTo: vi.fn(), openActions: vi.fn() },
+    ui: { pickerFor: null, setPickerFor: vi.fn(), assignFor: null, setAssignFor: vi.fn(), prompt: null, setPrompt: vi.fn(), addingUnder: null, setAddingUnder: vi.fn(), addingBelow: null, setAddingBelow: vi.fn(), addingTo: null, setAddingTo: vi.fn(), openActions: vi.fn() },
     setSelectMode: vi.fn(), toggleComplete: vi.fn(), toggleCollapsed: vi.fn(), startDrag: vi.fn(), setExpandedId: vi.fn(),
     quickAddRef: { current: null }, insertAfter: { current: null }, listRoot: { current: null },
     projectReadOnly: false, openRowMenu: vi.fn(), draggingId: null, ...over,
@@ -285,9 +313,9 @@ describe('the list bindings', () => {
 })
 
 // Touch: hold and release (task-row-context-menu). A mouse never sends this gesture:
-// the hold arms the row (tint feedback), a release opens the menu at the finger on a
-// fine pointer, a move ends the hold — a scroll on a plain row, the drag itself on a
-// draggable one. On a coarse pointer (a phone) the hold never opens a menu at all.
+// the hold arms the row (tint feedback), a release opens the menu at the finger, a
+// move ends the hold — a scroll on a plain row, the drag itself on a draggable one —
+// on every pointer, coarse included: the row's grip took selection (bulk-actions).
 describe('touch hold', () => {
   const TOUCH_ID = 3
   const touch = (target: EventTarget, type: string, x: number, y: number) => act(() => {
@@ -336,6 +364,7 @@ describe('touch hold', () => {
     expect(trigger.style.position).toBe('fixed')
     expect(trigger.style.left).toBe('120px')
     expect(trigger.style.top).toBe('200px')
+    await waitFor(() => !!document.querySelector('[data-overlay-root]'), 'the menu panel')
     escape()
     await waitFor(() => !menuButton(r.container), 'the menu to close')
     await r.unmount()
@@ -358,7 +387,7 @@ describe('touch hold', () => {
     await r.unmount()
   })
 
-  it('on a coarse pointer (a phone) the hold never arms and never opens a menu', async () => {
+  it('on a coarse pointer (a phone) the hold arms and opens the menu — selection is the grip\'s', async () => {
     const spy = vi.fn()
     const restore = coarsePointer()
     try {
@@ -368,16 +397,40 @@ describe('touch hold', () => {
       try {
         touch(li, 'pointerdown', 40, 60)
         await vi.advanceTimersByTimeAsync(TOUCH_HOLD_MS + 50)
-        // The long press keeps bulk-actions' meaning on a phone: no arm, no menu.
-        expect(li.hasAttribute('data-touch-hold')).toBe(false)
+        // One rule on every device: the held row tints, and a release opens its menu.
+        expect(li.hasAttribute('data-touch-hold')).toBe(true)
         release(40, 60)
       } finally {
         vi.useRealTimers()
       }
-      expect(spy).not.toHaveBeenCalled()
+      expect(spy).toHaveBeenCalledTimes(1)
       await r.unmount()
     } finally {
       restore()
     }
+  })
+})
+
+describe('the menu opens complete (issue 840)', () => {
+  it('its first painted panel already holds every item, so it is placed once', async () => {
+    await createTask({ title: 'Call mum' })
+    const r = await render(<TaskListView route={{ view: 'inbox' }} />)
+    await waitFor(() => r.container.textContent!.includes('Call mum'))
+    // Every committed state of the panel's item list, from the first one on.
+    const seen: string[] = []
+    const items = () => [...document.querySelectorAll('[data-overlay-root] [data-action]')].map((el) => el.getAttribute('data-action')).join(',')
+    const observer = new MutationObserver(() => {
+      const now = items()
+      if (now && now !== seen[seen.length - 1]) seen.push(now)
+    })
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true })
+    await rightClickUntilMenu(() => r.container.querySelector('[data-task-id]'), r.container, 120, 200)
+    // The one task's own items (read after the menu mounted) are there in the end…
+    await waitFor(() => items().includes('track'), 'the one task’s Start tracking')
+    observer.disconnect()
+    // …and were there from the first paint: the list never grew under the pointer.
+    expect(seen).toEqual([items()])
+    escape()
+    await r.unmount()
   })
 })

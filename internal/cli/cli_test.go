@@ -18,7 +18,8 @@ import (
 	"context"
 	"github.com/OpenTodoApp/opentodo/internal/config"
 	"github.com/OpenTodoApp/opentodo/internal/httpapi"
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 	"github.com/OpenTodoApp/opentodo/internal/tenant/services"
 )
 
@@ -48,6 +49,9 @@ type harness struct {
 	// command's read and its write).
 	bodies []string
 	hook   func(r *http.Request)
+	// sync is the server's sync service, for fixtures the API cannot make in
+	// one step (sharing a project without an invitation).
+	sync *opsync.Service
 }
 
 // requestLog returns the requests received since the last call, as
@@ -74,7 +78,7 @@ func writesIn(log []string) []string {
 
 func newHarness(t *testing.T) *harness {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
+	db, err := storetest.OpenDir(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +91,7 @@ func newHarness(t *testing.T) *harness {
 	}
 	t.Cleanup(set.Sync.Notifier().CloseAll)
 	h := httpapi.New(set, nil)
-	hs := &harness{t: t, db: db, configPath: filepath.Join(t.TempDir(), "cfg", "config.json"), env: map[string]string{}}
+	hs := &harness{t: t, db: db, configPath: filepath.Join(t.TempDir(), "cfg", "config.json"), env: map[string]string{}, sync: set.Sync}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var body []byte
 		if r.Body != nil {

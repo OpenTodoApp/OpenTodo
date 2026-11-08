@@ -26,7 +26,7 @@ Alternative: let the reviewer derive the model. Rejected: it costs paid reviewer
 
 Naming a firm in a spec would tie the spec to a contract. OSTIF is the recommended route because it handles scoping and funding for open-source projects. The alternatives are listed so the owner can pick.
 
-**D3. Findings table as the single record.** `docs/security/reviews/<yyyy-mm>-<reviewer>.md` starts with front matter (reviewer, commit, delivery date, publication date) and has one table:
+**D3. Findings table as the single record.** `docs/security/reviews/<yyyy-mm>-<reviewer>.md` keeps the docs site's front matter (the docs check allows only its own keys) and records the review in a `## Record` table (reviewer, commit, delivery date, publication date, scope item ids) followed by one `## Findings` table:
 
 | Column | Values |
 |---|---|
@@ -61,6 +61,8 @@ Alternative: a CI check on every PR. Rejected: during the fix window main would 
 
 A repo check asserts these headings exist and the response-time numbers are present, so they can't silently disappear.
 
+**D8. security.txt.** `GET /.well-known/security.txt` is a `public("…")` route (`internal/httpapi/securitytxt.go`) generated per request: two `Contact` fields (the private advisory link and the email of `SECURITY.md`), `Expires` 180 days ahead (RFC 9116 wants less than a year, and a generated file never goes stale), `Policy`, `Preferred-Languages` and, with a base URL, `Canonical`. It is not demo-denied: it reveals nothing about the instance. A test ties its channels to `SECURITY.md`.
+
 **D7. Cadence.** A new review happens before every new major version and at least every 24 months. The D4 gate enforces this, because a release after 24 months without a new review fails.
 
 ## Data model impact
@@ -84,4 +86,4 @@ Nothing in the app.
 - **Optional (owner, 2026-10-30):** the review is not required for 1.0; the gate passes with no review file.
 - **Funding and route (if done):** apply to OSTIF first (it also covers the Go supply chain), with the Sovereign Tech Fund or NLnet NGI Zero as fallbacks. The review must be booked about three months before the planned 1.0 date.
 - **Contact address:** `SECURITY.md` lists a personal email as the fallback channel. A project address (for example `security@` on the website domain) may be preferable before publishing response times.
-- **security.txt:** not served by instances (out of scope). Owner decision.
+- **security.txt (decided 2026-11-05):** every instance serves `/.well-known/security.txt` naming the project's channels, with a comment sending problems with the particular server to its operator. Whether operators may add their own contact is an open owner question.

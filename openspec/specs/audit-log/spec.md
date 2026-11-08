@@ -85,7 +85,7 @@ Every signed-in user SHALL be able to read their own sign-in, sign-out, credenti
 - **THEN** the response is a 401 `unauthorized` error
 
 ### Requirement: Retention and pruning
-The owner SHALL set retention through `GET`/`PUT /api/v1/settings/audit` between 7 and 3650 days, default 90, and SHALL toggle address logging there. The server SHALL prune events at startup and, while it runs, within a minute of the oldest event passing the retention; after the owner shortens the retention, the events it no longer covers SHALL be pruned within a minute. Retention is server configuration, not synced.
+The owner SHALL set retention through `GET`/`PUT /api/v1/settings/audit` between 7 and 3650 days, default 90, and SHALL toggle address logging there. The server SHALL prune events at startup and, while it runs, within a minute of the first event in the log passing the retention; after the owner shortens the retention, the events it no longer covers SHALL be pruned within a minute. Pruning SHALL remove events from the start of the log in the order they were recorded and SHALL stop at the first event still within the retention, so the events kept form one unbroken run of the hash chain, and SHALL record, in the same transaction, the hash of the last event it removed as the chain's checkpoint. Retention is server configuration, not synced.
 
 #### Scenario: Shorter retention prunes
 - **WHEN** the owner lowers retention to 30 days while events older than that exist
@@ -95,23 +95,27 @@ The owner SHALL set retention through `GET`/`PUT /api/v1/settings/audit` between
 - **WHEN** the oldest event in the log becomes older than the retention while the server runs
 - **THEN** it is pruned within a minute, without waiting for an hourly pass
 
+#### Scenario: Pruned log still verifies
+- **WHEN** events older than the retention are pruned and the chain is verified afterwards
+- **THEN** verification starts at the checkpoint and reports the kept events intact
+
 #### Scenario: Invalid retention or wrong role
 - **WHEN** retention is set to 3 days, or a member writes the settings
 - **THEN** the response is a 400 `invalid_input` error for the value and a 403 `forbidden` error for the member
 
 ### Requirement: Export of the log
-The owner SHALL download the log through `GET /api/v1/audit/export` as newline-delimited JSON with the same filters as the list, served as a download, and the export itself SHALL be recorded as an event. The user data export at `/api/v1/export` SHALL NOT include audit events.
+The owner SHALL download the log through `GET /api/v1/audit/export` as newline-delimited JSON with the same filters as the list, served as a download, and the export itself SHALL be recorded as an event. Each exported event SHALL carry its `hash`, and the last line SHALL be the chain head of the whole log, `{"chain": {"id", "hash"}}`, at or after every exported event whatever the filters, so the owner can keep it outside the server and compare a later export with it. The user data export at `/api/v1/export` SHALL NOT include audit events.
 
 #### Scenario: Export is produced and recorded
 - **WHEN** the owner exports the log
-- **THEN** the response is a download with one JSON object per line and a new `audit.exported` event appears in the log
+- **THEN** the response is a download with one JSON object per event, then the chain head line, and a new `audit.exported` event appears in the log
 
 #### Scenario: Member or anonymous export
 - **WHEN** a member or an anonymous request calls the export route
 - **THEN** the response is a 403 `forbidden` error for the member and a 401 `unauthorized` error for the anonymous request
 
 ### Requirement: Append-only record
-There SHALL be no API to modify or delete individual events; pruning by retention and address scrubbing are the only removals. Events that describe a state change SHALL be stored in the same transaction as that change, so a change without its event or an event without its change cannot exist. The log SHALL live in the data directory and be included in any backup of it.
+There SHALL be no API to modify or delete individual events; pruning by retention and address scrubbing are the only removals. Events that describe a state change SHALL be stored in the same transaction as that change, so a change without its event or an event without its change cannot exist. Each event SHALL store a hash of the previous event's hash and of its own content (everything but the client address), written in the transaction that stores the event, so that changing, removing or reordering a stored event is detectable. Events recorded before the server had the chain have no hash and are not covered. The log SHALL live in the data directory and be included in any backup of it.
 
 #### Scenario: No deletion route
 - **WHEN** any client sends a delete or patch for an audit event
@@ -120,6 +124,10 @@ There SHALL be no API to modify or delete individual events; pruning by retentio
 #### Scenario: Atomic with the change
 - **WHEN** an API token creation fails after the token row was written but before the response
 - **THEN** either both the token and its event exist or neither does
+
+#### Scenario: Address scrubbing keeps the chain
+- **WHEN** the owner turns address logging off and every stored address is erased
+- **THEN** the chain still verifies
 
 ### Requirement: Audit surfaces in Settings
 Settings SHALL show the owner an Audit log card and every user a Recent activity card. The Audit log card SHALL show its events as a compact list, newest first, one line per event: an icon for the kind, the event in words ("Signed in", "Token created", "Sign-in failed"), the account, the time (relative today, then the date), and the client in muted text; details open in place when the line is activated. Its filters (event, account, outcome, period) SHALL sit in one row from 768 px and behind a "Filters" disclosure below it, with the active filters named as removable chips, and Export SHALL be an action in the card header that downloads with the current filters. The retention and address-logging settings SHALL be their own "Audit settings" card under it. The Recent activity card SHALL group events by day ("Today", "Yesterday", then the date), one line each (what, the browser and system, the time), SHALL fold repeated sign-ins from the same browser on the same day into one line with a count, SHALL show at most ten lines with "Show all" for the rest of the 90 days, and SHALL name a failed or unusual event in the warning tone. Both SHALL be keyboard reachable, SHALL show an offline notice instead of stale data when the network is unavailable, and SHALL keep nothing in browser storage.
@@ -266,3 +274,44 @@ The server SHALL record `member_invitation.created` when an add by email becomes
 #### Scenario: Unknown address
 - **WHEN** Alice adds an address without an account
 - **THEN** the log contains `member_invitation.created` with Alice as actor and no target
+
+### Requirement: MCP OAuth refresh reuse event
+
+The server SHALL record `mcp_oauth.refresh_reused` with outcome `failure`, the person whose grant it was as actor and `oauth_client_id` in its details when a refresh token that a grant had already exchanged is presented again and the grant is revoked. The event SHALL NOT carry any token, code or secret. Settings SHALL show it in the audit log and in the person's recent activity with a translated label, and the owner SHALL be able to filter by it. It is server state, recorded online; offline behaviour and convergence are unaffected.
+
+#### Scenario: Reuse is recorded without the token
+
+- **WHEN** a grant is revoked because its used refresh token came back
+- **THEN** the log contains one `mcp_oauth.refresh_reused` event with outcome `failure`, the person as actor and the client id, and no token value
+
+#### Scenario: Only the owner reads it
+
+- **WHEN** a member who is not the owner requests the server's audit log
+- **THEN** the request is refused as for every other audit event
+
+### Requirement: Hash chain verification
+The server SHALL verify the audit log's hash chain at startup and at most hourly while events are recorded, and SHALL log the first broken link at error level without stopping or changing the log. The owner SHALL verify it on demand through `GET /api/v1/audit/verify`, which answers 200 with `{ok, checked, uncovered, checkpoint, head, break}` whether or not the chain holds; `break` is null or the first event whose hash does not follow, with reason `missing_hash` or `mismatch`. `ot audit verify` SHALL print the result and exit 1 with `audit_chain_broken` when the chain is broken. The check reads only server state; nothing is synced, so devices, offline use and convergence are unaffected.
+
+#### Scenario: Intact chain
+- **WHEN** the owner verifies a log nobody changed outside OpenTodo
+- **THEN** the answer has `ok: true`, the number of events checked and the head's id and hash
+
+#### Scenario: Edited event
+- **WHEN** an event in the middle of the log was changed directly in the database
+- **THEN** the answer has `ok: false` and `break` names that event with reason `mismatch`
+
+#### Scenario: Deleted or reordered events
+- **WHEN** an event was deleted from the middle of the log, or two events swapped places
+- **THEN** `break` names the first event after the gap, or the first moved event
+
+#### Scenario: Fresh database
+- **WHEN** the owner verifies on a new server
+- **THEN** the answer has `ok: true` and every event recorded so far checked
+
+#### Scenario: Member or anonymous verification
+- **WHEN** a member or an anonymous request calls the verify route
+- **THEN** the response is a 403 `forbidden` error for the member and a 401 `unauthorized` error for the anonymous request
+
+#### Scenario: Broken chain at startup
+- **WHEN** the server starts on a database whose audit log was edited
+- **THEN** it logs the first broken event at error level and keeps running

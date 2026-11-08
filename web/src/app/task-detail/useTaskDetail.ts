@@ -5,6 +5,7 @@
 import { type RefObject, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { openAssistantWith, useAssistantStatus } from '../../lib/assistantStatus'
 import { useSubtasks, useTask, useMembershipMapOrLoading } from '../../lib/localData'
+import { useParentChain } from '../../lib/taskPath'
 import { markTaskNotificationsRead } from '../../lib/notifications'
 import { skipOccurrence, updateTask } from '../../lib/ops'
 import { roleOf } from '../../lib/sharing'
@@ -21,6 +22,25 @@ import { completeWithUndo, deleteWithUndo } from '../undoable'
 import { useTaskPageStatus } from './taskPageStatus'
 import { useResetOnChange } from '../../lib/useResetOnChange'
 import { copyText } from '../../lib/clipboard'
+
+/** The panel and page title grow with the text up to this many lines, then scroll. */
+export const TITLE_LINES = 8
+
+/** The height of a title field: the whole text, capped at TITLE_LINES. */
+export function titleBoxHeight(scrollHeight: number, lineHeight: number): { height: number; scrolls: boolean } {
+  const line = Number.isFinite(lineHeight) && lineHeight > 0 ? lineHeight : 20
+  const max = Math.ceil(line * TITLE_LINES)
+  return { height: Math.min(scrollHeight, max), scrolls: scrollHeight > max }
+}
+
+function fitTitleBox(el: HTMLTextAreaElement): number {
+  const width = el.clientWidth
+  el.style.height = 'auto'
+  const box = titleBoxHeight(el.scrollHeight, parseFloat(getComputedStyle(el).lineHeight))
+  el.style.height = `${box.height}px`
+  el.style.overflowY = box.scrolls ? 'auto' : 'hidden'
+  return width
+}
 
 /** The link that opens a task in the app: its page (task-full-page). */
 export function taskLink(id: string, origin = typeof location === 'undefined' ? '' : location.origin): string {
@@ -49,6 +69,7 @@ export function useTaskDetail({ taskId, initial, readOnly, projects, labelMap, o
   const [copied, setCopied] = useState(false)
   const children = useSubtasks(taskId)
   const parent = useTask(task?.parent_id)
+  const parents = useParentChain(task)
   const series = useTask(task?.series_id)
   const progress = useMemo(() => progressOf({ id: taskId }, children), [taskId, children])
   const memberships = useMembershipMapOrLoading()
@@ -75,13 +96,18 @@ export function useTaskDetail({ taskId, initial, readOnly, projects, labelMap, o
     setTitle(task.title)
   }, [task?.id, task?.title]) // eslint-disable-line react-hooks/exhaustive-deps -- reacts to the stored title only; the draft is read, not a trigger
   useResetOnChange([taskId], () => setCopied(false))
-  // The title grows to two lines, then stops (it scrolls inside itself while being edited).
+  // The title grows with its text (up to eight lines). Widening the panel reflows it.
   useLayoutEffect(() => {
     const el = titleField.current
-    if (!el) return
-    el.style.height = 'auto'
-    const line = parseFloat(getComputedStyle(el).lineHeight) || 24
-    el.style.height = `${Math.min(el.scrollHeight, Math.ceil(line * 2))}px`
+    if (!(el instanceof HTMLTextAreaElement)) return
+    let width = fitTitleBox(el)
+    if (typeof ResizeObserver !== 'function') return
+    const ro = new ResizeObserver(() => {
+      if (el.clientWidth === width) return
+      width = fitTitleBox(el)
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
   }, [title, task?.id])
   // Opening a task reads its notifications (task-assignment); works offline.
   useEffect(() => {
@@ -102,6 +128,10 @@ export function useTaskDetail({ taskId, initial, readOnly, projects, labelMap, o
     'panel.skip': () => {
       if (!task || readOnly || !task.recurrence) return false
       act(skipOccurrence(task.id))
+    },
+    'panel.parent': () => {
+      if (!parent || parent.deleted_at || !onOpen) return false
+      onOpen(parent.id)
     },
   }, { within: () => scope.current })
 
@@ -124,7 +154,7 @@ export function useTaskDetail({ taskId, initial, readOnly, projects, labelMap, o
 
   return {
     task, title, setTitle, titleField, labelList, commitTitle, toggle, remove, copyLink, copied, breakDown,
-    children, parent, series, progress, memberships, canPublish, pageStatus, pageDialog, setPageDialog, online,
+    children, parent, parents, series, progress, memberships, canPublish, pageStatus, pageDialog, setPageDialog, online,
     assistantAvailable: !!assistant?.available,
   }
 }

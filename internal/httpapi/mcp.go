@@ -28,8 +28,13 @@ const mcpMaxBody = 1 << 20
 func (s *Server) registerMCPRoutes(mux *routes) {
 	s.agentAccess = agenttools.NewAccess(s.sync.DB())
 	s.agentExclusions = agenttools.NewExclusions(s.sync.DB())
+	// The agent write limits outlive a restart (persistent-limits D4).
+	agentLimits := agenttools.NewLimiter(s.now)
+	if st := s.limitStore(); st != nil {
+		agentLimits.Attach(st)
+	}
 	s.agentTools = agenttools.New(s.sync, agenttools.Options{
-		Audit: s.audit, Log: s.log, Exclusions: s.agentExclusions,
+		Audit: s.audit, Log: s.log, Exclusions: s.agentExclusions, Limits: agentLimits,
 		LocalToday: func() string { return localToday(s.now()) },
 		// Reminders an assistant adds are read in the zone REST uses (agent-tools-complete D2).
 		UserZone: s.tzLocation,
@@ -61,6 +66,9 @@ func (s *Server) registerMCPRoutes(mux *routes) {
 	mux.handle("GET /api/v1/me/agent-access", signedIn.FullTokens(), s.handleGetAgentAccess)
 	mux.handle("PUT /api/v1/me/agent-access", signedIn.FullTokens().DemoDenied(), s.handlePutAgentAccess)
 	s.registerAgentExclusionRoutes(mux)
+	// OAuth 2.1 in front of the same endpoint (mcp-oauth), for clients that
+	// cannot be handed a pasted token.
+	s.registerMCPOAuthRoutes(mux)
 }
 
 func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
@@ -99,7 +107,9 @@ func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 	}
 	if u == nil {
 		s.mcpLimiter.hit(ip)
-		w.Header().Set("WWW-Authenticate", `Bearer realm="OpenTodo MCP"`)
+		// The challenge names the protected-resource document, which is how a
+		// client that only speaks OAuth discovers the flow (mcp-oauth D1).
+		w.Header().Set("WWW-Authenticate", `Bearer realm="OpenTodo MCP", resource_metadata="`+s.publicOrigin(r)+mcpProtectedResourcePath+`"`)
 		writeError(w, http.StatusUnauthorized, "unauthorized", "an API token is required: Authorization: Bearer <token>")
 		return
 	}

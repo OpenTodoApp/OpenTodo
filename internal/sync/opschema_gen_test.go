@@ -39,20 +39,20 @@ const (
 var tsEntity = map[string]string{
 	"project": "Project", "task": "Task", "label": "Label", "view": "View", "reminder": "Reminder", "section": "Section",
 	"comment": "Comment", "project_prefs": "ProjectPrefs", "user_prefs": "UserPrefs", "attachment": "Attachment",
-	"field": "FieldDef", "review": "Review", "time_entry": "TimeEntry", "place": "Place", "rule": "Rule", "frame": "Frame", "slot": "Slot", "note": "Note", "theme": "CustomTheme",
+	"field": "FieldDef", "review": "Review", "time_entry": "TimeEntry", "place": "Place", "rule": "Rule", "frame": "Frame", "slot": "Slot", "note": "Note", "theme": "CustomTheme", "objective": "Objective",
 }
 
 // tsKind is the web type of a field of each kind. A hand-written entity type
 // may narrow it (a literal union, a required field).
 func tsKind(k kind) string {
 	switch k {
-	case kString, kID, kDoc, kClock, kWeekdays, kEnergy:
+	case kString, kID, kDoc, kClock, kWeekdays, kEnergy, kSector, kObjectiveTitle, kObjectivePeriod:
 		return "string"
 	case kNullableString, kRecurrence, kNullableText, kDate, kStart, kDayPart:
 		return "string | null"
 	case kNumber, kFocusSession:
 		return "number"
-	case kNullableNumber, kPositiveInt, kOffsetMinutes, kInstant:
+	case kNullableNumber, kPositiveInt, kOffsetMinutes, kInstant, kRadius:
 		return "number | null"
 	case kBool:
 		return "boolean"
@@ -319,6 +319,14 @@ func TestGeneratedOpSchema(t *testing.T) {
 			}
 		}
 	}
+	// The op schema only grows (AGENTS.md rule 3, docs/stability.md): an entity
+	// or field of the committed fixture that is gone is a removal or a rename,
+	// and regenerating never writes it away.
+	if old, err := os.ReadFile(schemaFixtureOut); err == nil {
+		if gone := removedOpFields(t, old, d); len(gone) > 0 {
+			t.Fatalf("op fields are never removed or renamed (docs/stability.md); missing now: %s", strings.Join(gone, ", "))
+		}
+	}
 	files := map[string]string{
 		opSchemaTS:       genOpSchemaTS(t, d),
 		contentFieldsGo:  genContentFieldsGo(t, d),
@@ -338,5 +346,41 @@ func TestGeneratedOpSchema(t *testing.T) {
 		if err != nil || string(got) != want {
 			t.Errorf("%s is out of date: run UPDATE_OP_SCHEMA=1 go test ./internal/sync -run TestGeneratedOpSchema", path)
 		}
+	}
+}
+
+// removedOpFields lists the entities and fields of a committed schema fixture
+// that the declaration no longer has ("task.completed_at", "objective").
+func removedOpFields(t *testing.T, fixture []byte, d schemaDecl) []string {
+	t.Helper()
+	var f struct {
+		Entities map[string][]string `json:"entities"`
+	}
+	if err := json.Unmarshal(fixture, &f); err != nil {
+		t.Fatalf("%s: %v", schemaFixtureOut, err)
+	}
+	var gone []string
+	for e, fields := range f.Entities {
+		if !slices.Contains(d.entities, e) {
+			gone = append(gone, e)
+			continue
+		}
+		for _, name := range fields {
+			if !slices.Contains(d.fields[e], name) {
+				gone = append(gone, e+"."+name)
+			}
+		}
+	}
+	slices.Sort(gone)
+	return gone
+}
+
+// TestRemovedOpFields: a field or entity missing from the declaration is
+// reported; additions are not.
+func TestRemovedOpFields(t *testing.T) {
+	d := schemaDecl{entities: []string{"task"}, fields: map[string][]string{"task": {"title", "done_at", "new"}}}
+	got := removedOpFields(t, []byte(`{"entities":{"task":["title","completed_at"],"label":["name"]}}`), d)
+	if strings.Join(got, ",") != "label,task.completed_at" {
+		t.Fatalf("removed = %v", got)
 	}
 }

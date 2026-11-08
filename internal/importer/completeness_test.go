@@ -33,6 +33,11 @@ func TestParseRecurrence(t *testing.T) {
 		{"fortnightly", "", "every 2 weeks"},
 		{"every other month", "", "every 2 months"},
 		{"every workday", "", "every weekday"},
+		{"every first workday", "", "every 1st weekday"},
+		{"every 2nd business day", "", "every 2nd weekday"},
+		{"every last workday", "", "every last weekday"},
+		{"every first weekday", "", "every 1st weekday"},
+		{"FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=1", "", "every 1st weekday"},
 		{"weekdays", "", "every weekday"},
 		{"every weekend", "", "every saturday, sunday"},
 		{"every! 3 days", "", "every 3 days after completion"},
@@ -48,7 +53,7 @@ func TestParseRecurrence(t *testing.T) {
 		{"hourly", "", ""},
 		{"FREQ=HOURLY", "", ""},
 		{"every mon starting next week", "", ""},
-		{"every other monday", "", ""},
+		{"every other monday", "", "every 2 weeks on monday"},
 		{"whenever I feel like it", "", ""},
 	}
 	for _, c := range cases {

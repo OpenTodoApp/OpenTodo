@@ -18,7 +18,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/oidc"
 	"github.com/OpenTodoApp/opentodo/internal/oidc/oidctest"
 	"github.com/OpenTodoApp/opentodo/internal/settings"
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 	"github.com/OpenTodoApp/opentodo/internal/tenant/services"
 )
 
@@ -39,7 +39,7 @@ func newOIDCEnvWith(t *testing.T, allowSignup bool, opts ...Option) *oidcEnv {
 	t.Helper()
 	idp := oidctest.New(t)
 	dir := t.TempDir()
-	db, err := store.Open(dir)
+	db, err := storetest.OpenDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,0 +1,52 @@
+{
+  "$comment": [
+    "Performance budgets of the 10,000-task account (OpenSpec change performance-10k). docs/performance.md shows the same table; `node --test scripts/perf/budgets.test.mjs` (make repo-check) fails when the two differ.",
+    "Settings: desktop and phone are measured nightly by scripts/perf/run.mjs (phone: 4x CPU throttling, 412x915), server by `go test -tags perf ./internal/perf`; a nightly run fails when the median of five runs exceeds the limit. device-android, device-ios and pi4 are to be recorded by hand (scripts/perf/device.md) in docs/performance/results-<version>.md; none was measured for 1.0 and no release requires the record until real devices are available (owner decision 2026-11-07, #990).",
+    "A limit is only raised in a pull request that states the reason, here and in its description.",
+    "Reviewed on 2026-11-03 against the first CI measurements (task 1.6; numbers in the pull requests and docs/performance.md). The interaction limits of the design (cursor 16 ms, completion and keystroke 50 ms on a computer; 50 and 150 in the phone profile) were set before the benchmark existed and are below what it can measure: it times from the input to the frame after the change (requestAnimationFrame, then a task), so an interaction that does nothing measures one frame of up to 16.7 ms plus the paint. They now follow the response times the design meant: on a computer the cursor in 50 ms (three frames: holding j keeps up with the key repeat) and a completion or keystroke in 100 ms (RAIL's instant response); in the phone profile, the CPU slowed four times as Lighthouse's mid-tier phone, 150 ms for the cursor and 200 ms for a completion or keystroke (Core Web Vitals' good interaction). The phones measured by hand keep their limits. No other limit changed.",
+    "notes-share raised from 100 to 130 MB on 2026-11-03 (OpenSpec change notes-compaction-at-scale, design D5): the first complete compaction of the notes fixture leaves 116 MB, all of it kept by the compaction rules: one revision per UTC day of each note's projection (13,400 descriptions, 65 MB), the 30-day window's documents (31 MB) and the current values, stored twice (the op and the materialized row, 15 MB). The 100 MB of performance-10k D7 was an estimate made before the fixture existed."
+  ],
+  "settings": {
+    "desktop": "CI runner, Chromium",
+    "phone": "CI runner, Chromium, 4x CPU throttling, 412x915 viewport",
+    "server": "CI runner, the server binary",
+    "device-android": "2022 mid-range Android phone, Android shell",
+    "device-ios": "iPhone 12, iOS shell",
+    "pi4": "Raspberry Pi 4 (4 GB), arm64 image"
+  },
+  "gated": ["desktop", "phone", "server"],
+  "metrics": [
+    { "id": "cold-start", "name": "cold start to the Today list", "unit": "ms", "limits": { "desktop": 1200, "phone": 3000, "device-android": 3000, "device-ios": 3000 } },
+    { "id": "open-project", "name": "open the 2,000-task project", "unit": "ms", "limits": { "desktop": 400, "phone": 1200, "device-android": 1200, "device-ios": 1200 } },
+    { "id": "search-keystroke", "name": "search keystroke, p95", "unit": "ms", "limits": { "desktop": 100, "phone": 200, "device-android": 150, "device-ios": 150 } },
+    { "id": "saved-view", "name": "saved view (8 clauses)", "unit": "ms", "limits": { "desktop": 100, "phone": 300 } },
+    { "id": "complete-task", "name": "complete a task in the 2,000-row list, p95", "unit": "ms", "limits": { "desktop": 100, "phone": 200, "device-android": 150, "device-ios": 150 } },
+    { "id": "cursor-move", "name": "cursor move, p95", "unit": "ms", "limits": { "desktop": 50, "phone": 150 } },
+    { "id": "first-sync", "name": "first sync", "unit": "s", "limits": { "desktop": 30, "phone": 75, "device-android": 90, "device-ios": 90 } },
+    { "id": "first-sync-long-task", "name": "longest main-thread task during first sync", "unit": "ms", "limits": { "desktop": 200 } },
+    { "id": "remote-edit", "name": "remote edit painted on another device", "unit": "ms", "limits": { "desktop": 1000 } },
+    { "id": "js-heap", "name": "JS heap after the session", "unit": "MB", "limits": { "desktop": 150, "phone": 150 } },
+    { "id": "indexeddb", "name": "IndexedDB usage", "unit": "MB", "limits": { "desktop": 80 } },
+    { "id": "app-memory", "name": "app process memory", "unit": "MB", "limits": { "device-android": 350, "device-ios": 350 } },
+    { "id": "server-start", "name": "server start to healthy", "unit": "ms", "limits": { "server": 2000, "pi4": 8000 } },
+    { "id": "server-idle-rss", "name": "server idle memory", "unit": "MB", "limits": { "server": 60, "pi4": 240 } },
+    { "id": "server-pull-rss", "name": "server peak memory during a first pull", "unit": "MB", "limits": { "server": 150, "pi4": 600 } },
+    { "id": "server-export-rss", "name": "server peak memory during the export", "unit": "MB", "limits": { "server": 200, "pi4": 800 } },
+    { "id": "server-pull-page", "name": "pull page of 1,000 ops, p95", "unit": "ms", "limits": { "server": 80, "pi4": 320 } },
+    { "id": "server-push", "name": "push of 100 ops, p95", "unit": "ms", "limits": { "server": 100, "pi4": 400 } },
+    { "id": "server-list-project", "name": "REST list of the 2,000-task project, p95", "unit": "ms", "limits": { "server": 150, "pi4": 600 } },
+    { "id": "server-get-task", "name": "REST read of one task, p95", "unit": "ms", "limits": { "server": 10, "pi4": 40 } },
+    { "id": "server-export", "name": "full JSON export", "unit": "ms", "limits": { "server": 3000, "pi4": 12000 } },
+    { "id": "server-mcp-search", "name": "MCP search_tasks, p95", "unit": "ms", "limits": { "server": 200, "pi4": 800 } },
+    { "id": "server-db-size", "name": "database file", "unit": "MB", "limits": { "server": 150, "pi4": 150 } },
+    { "id": "notes-db-size", "name": "database file after compaction (notes fixture)", "unit": "MB", "limits": { "server": 250, "pi4": 250 } },
+    { "id": "notes-share", "name": "notes' share of the database (notes fixture)", "unit": "MB", "limits": { "server": 130 } },
+    { "id": "notes-compaction", "name": "full compaction of the notes fixture", "unit": "s", "limits": { "server": 120, "pi4": 480 } },
+    { "id": "notes-push-wait", "name": "longest push wait behind compaction", "unit": "ms", "limits": { "server": 100 } },
+    { "id": "notes-first-sync", "name": "first sync with notes", "unit": "s", "limits": { "desktop": 45, "phone": 110, "device-android": 120, "device-ios": 120 } },
+    { "id": "notes-indexeddb", "name": "IndexedDB usage with notes", "unit": "MB", "limits": { "desktop": 120 } },
+    { "id": "notes-page", "name": "open the Notes page", "unit": "ms", "limits": { "desktop": 400, "phone": 1200, "device-android": 1200, "device-ios": 1200 } },
+    { "id": "notes-search", "name": "note search keystroke, p95", "unit": "ms", "limits": { "desktop": 50, "phone": 150, "device-android": 150, "device-ios": 150 } },
+    { "id": "notes-js-heap", "name": "JS heap after the notes session", "unit": "MB", "limits": { "desktop": 170, "phone": 170 } }
+  ]
+}

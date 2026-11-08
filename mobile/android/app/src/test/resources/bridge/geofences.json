@@ -1,0 +1,29 @@
+{
+  "description": "Location reminders (location-reminders D3): every armed one, sorted by id, titles on and the account readable. A linked place uses its current pin; dismissed ones, ones on completed tasks and ones without coordinates are left out. The shell registers at most 19 by distance and answers granted, foreground-only, denied or unavailable.",
+  "method": "scheduleGeofences",
+  "payload": "{\"version\":1,\"regions\":[{\"id\":\"g-arrive\",\"taskId\":\"stamps\",\"lat\":45.4642,\"lon\":9.19,\"radius\":150,\"on\":\"arrive\",\"title\":\"Buy stamps\"},{\"id\":\"g-leave\",\"taskId\":\"parcel\",\"lat\":45.4781,\"lon\":9.2272,\"radius\":300,\"on\":\"leave\",\"title\":\"Take the parcel\"}]}",
+  "now": 1792670400000,
+  "expect": {
+    "ask": false,
+    "regions": [
+      {
+        "id": "g-arrive",
+        "taskId": "stamps",
+        "lat": 45.4642,
+        "lon": 9.19,
+        "radius": 150,
+        "on": "arrive",
+        "title": "Buy stamps"
+      },
+      {
+        "id": "g-leave",
+        "taskId": "parcel",
+        "lat": 45.4781,
+        "lon": 9.2272,
+        "radius": 300,
+        "on": "leave",
+        "title": "Take the parcel"
+      }
+    ]
+  }
+}

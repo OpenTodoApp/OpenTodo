@@ -142,7 +142,12 @@ class SignInFlowsTest {
     @Test fun theSiteBarLeadsBackToTheServer() {
         server = WalledServer(idp, wall = false)
         val (scenario, web) = openApp()
-        web.waitForJs("document.readyState", "\"complete\"")
+        // Wait for the server's page itself: until it commits, the new web view's initial blank
+        // document already reports readyState "complete", the click below then finds no link,
+        // and the web view stays on the server (three main runs failed so, waiting for the
+        // provider's origin).
+        web.waitForJs("location.origin", "\"${server.origin}\"")
+        web.waitForJs("document.getElementById('sso') !== null", "true")
         web.js("document.getElementById('sso').click(); 0")
         web.waitForJs("location.origin", "\"${idp.origin}\"")
         waitUntil("the site bar") { siteBar(scenario) != null }
@@ -301,7 +306,7 @@ class WalledServer(private val idp: FakeProvider, private val wall: Boolean, pri
             when {
                 path.startsWith("/_wall/callback") -> redirect("/").setHeader("Set-Cookie", "wall=ok; Path=/; Max-Age=86400; HttpOnly")
                 !through -> { idp.returnTo = "$origin/_wall/callback?token=1"; redirect("${idp.origin}/login?rd=%2F") }
-                path == "/healthz" -> MockResponse().setHeader("Content-Type", "application/json").setBody("""{"status":"ok","version":"0.0.0-test"}""")
+                path == "/api/v1/health" || path == "/healthz" -> MockResponse().setHeader("Content-Type", "application/json").setBody("""{"status":"ok","version":"0.0.0-test"}""")
                 path.startsWith("/api/v1/auth/oidc/start") -> { idp.returnTo = "$origin/api/v1/auth/oidc/callback?code=1"; redirect("${idp.origin}/login?client_id=opentodo") }
                 path.startsWith("/api/v1/auth/oidc/callback") -> redirect("/").setHeader("Set-Cookie", "session=1; Path=/; HttpOnly")
                 else -> page("<!doctype html><title>OpenTodo test</title><p>$path</p><a id=sso href=\"/api/v1/auth/oidc/start\">SSO</a>")

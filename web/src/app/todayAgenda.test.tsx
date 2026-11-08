@@ -10,14 +10,20 @@ import { db, setMeta, useDatabase } from '../lib/db'
 import { setDateTime } from '../lib/dates'
 import { createTask, resetDeviceId } from '../lib/ops'
 import type { CalendarEvent, CalendarSubscription } from '../lib/types'
-import { setTodayEventsShown, todayEventsShown } from '../lib/userPrefs'
+import { setCurrentUserId } from '../lib/sharing'
+import { setTodayEventsShown, setTodayHidesOthers, todayEventsShown, todayHidesOthers } from '../lib/userPrefs'
 import { click, flush, key, render, waitFor } from '../ui/test-utils'
 import { resetTodayAgendaFetch } from './calendar/TodayAgenda'
 import { resetPanel } from './panel'
 import { navigate } from './router'
 import { TaskListView } from './TaskListView'
 
-const fetchMock = vi.fn(async () => new Response('{"error":{"code":"feeds_disabled","message":"off"}}', { status: 404 }))
+// The server's answers: both switches are plain reads (off by default), the events route is 404 while they are off.
+const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
+const fetchMock = vi.fn(async (url: unknown) =>
+  String(url).includes('/api/v1/settings/') ? json({ enabled: false }) : json({ error: { code: 'feeds_disabled', message: 'off' } }, 404))
+const eventCalls = () => fetchMock.mock.calls.filter((c) => String(c[0]).includes('/calendar-feeds/events'))
+const switchCalls = () => fetchMock.mock.calls.filter((c) => String(c[0]).includes('/settings/calendar-feeds'))
 let n = 0
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
@@ -92,10 +98,10 @@ describe('the option', () => {
     await r.unmount()
   })
 
-  it('is not offered without a subscription (feeds off), and Today asks the server at most once in ten minutes', async () => {
+  it('is not offered without a subscription (feeds off), and Today looks at the switches at most once in ten minutes', async () => {
     await setTodayEventsShown(true)
     let r = await openToday()
-    await waitFor(() => fetchMock.mock.calls.length === 1)
+    await waitFor(() => switchCalls().length === 1)
     await click(menu())
     await waitFor(() => !!document.querySelector('[data-briefing-toggle]'))
     expect(toggle()).toBeNull()
@@ -104,7 +110,8 @@ describe('the option', () => {
     r = await openToday()
     // eslint-disable-next-line test-hygiene/no-fixed-wait -- a request not made leaves no signal; give a wrong second request time to go out
     await flush(10)
-    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(switchCalls()).toHaveLength(1)
+    expect(eventCalls()).toHaveLength(0)
     await r.unmount()
   })
 
@@ -112,14 +119,15 @@ describe('the option', () => {
     const r = await openToday()
     // eslint-disable-next-line test-hygiene/no-fixed-wait -- a request not made leaves no signal; give a wrong request time to go out
     await flush(10)
-    expect(fetchMock).not.toHaveBeenCalled()
+    expect(eventCalls()).toHaveLength(0)
     await r.unmount()
   })
 
   it('learns about a first calendar added in Settings, without a calendar view opened before', async () => {
-    fetchMock.mockImplementationOnce(async () => new Response(JSON.stringify({ events: [standup], subscriptions: [work] }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    fetchMock.mockImplementation(async (url: unknown) =>
+      String(url).includes('/settings/calendar-feeds') ? json({ enabled: true }) : json({ events: [standup], subscriptions: [work] }))
     expect(await refreshAfterChange()).toBe(true)
-    expect(String((fetchMock.mock.calls[0] as unknown[])[0])).toContain('from=2026-09-24&to=2026-11-19')
+    expect(String((eventCalls()[0] as unknown[])[0])).toContain('from=2026-09-24&to=2026-11-19')
     const r = await openToday()
     await click(menu())
     await waitFor(() => toggle()?.textContent?.includes('Show calendar events') === true)
@@ -131,6 +139,52 @@ describe('the option', () => {
     expect(todayEventsShown({ today_events: '' })).toBe(false)
     expect(todayEventsShown({ today_events: 'compact' })).toBe(false)
     expect(todayEventsShown({ today_events: 'shown' })).toBe(true)
+  })
+
+  it('hiding others is off until mine, and an unknown value stays stored', async () => {
+    expect(todayHidesOthers(null)).toBe(false)
+    expect(todayHidesOthers({ today_assignees: '' })).toBe(false)
+    expect(todayHidesOthers({ today_assignees: 'compact' })).toBe(false)
+    expect(todayHidesOthers({ today_assignees: 'mine' })).toBe(true)
+    await setTodayHidesOthers(true)
+    expect((await db.outbox.toArray()).filter((o) => o.entity === 'user_prefs').map((o) => [o.field, o.value])).toEqual([['today_assignees', 'mine']])
+    await setTodayHidesOthers(false)
+    expect((await db.outbox.toArray()).filter((o) => o.field === 'today_assignees').map((o) => o.value)).toEqual(['mine', ''])
+  })
+
+  it('offers Hide tasks assigned to others in the header overflow once someone else shares a project', async () => {
+    await setCurrentUserId('me')
+    await db.memberships.put({
+      projectId: 'shared', role: 'editor', ownerId: 'me',
+      members: [
+        { userId: 'me', name: 'Ada', email: 'ada@example.com', role: 'editor' },
+        { userId: 'sam', name: 'Sam', email: 'sam@example.com', role: 'editor' },
+      ],
+    })
+    await createTask({ title: 'Sam task', due: { date: '2026-10-22' }, project_id: 'shared', assignee_id: 'sam' })
+    const r = await openToday()
+    await waitFor(() => r.container.textContent?.includes('Sam task') === true)
+    await click(menu())
+    const item = () => document.querySelector<HTMLElement>('[data-today-assignees-toggle]')
+    await waitFor(() => !!item())
+    expect(item()!.textContent).toContain('Hide tasks assigned to others')
+    await click(item()!)
+    await waitFor(() => r.container.textContent?.includes('Sam task') !== true)
+    expect(r.container.textContent).toContain('Write the report')
+    await click(menu())
+    await waitFor(() => item()?.textContent?.includes('Show tasks assigned to others') === true)
+    await r.unmount()
+  })
+
+  it('does not offer it while no shared project has another member, and keeps a stored value', async () => {
+    await setCurrentUserId('me')
+    await setTodayHidesOthers(true)
+    const r = await openToday()
+    await click(menu())
+    await waitFor(() => !!document.querySelector('[data-briefing-toggle]'))
+    expect(document.querySelector('[data-today-assignees-toggle]')).toBeNull()
+    expect((await db.userPrefs.get('me'))?.today_assignees).toBe('mine')
+    await r.unmount()
   })
 })
 

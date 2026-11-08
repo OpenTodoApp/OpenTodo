@@ -3,11 +3,13 @@
 // focused with the keyboard up, the view's defaults applied (Today's date in Today,
 // tomorrow in Upcoming, the project in a project), the list visible above it. Under the
 // line, the understood fields as chips and a tool row with send (palette-quick-add D7).
+// It stays open after an add, the field empty and focused for the next task, until
+// the user closes it (quick-add-keep-adding D1).
 import { Popover } from '../ui'
 import type { RefObject } from 'react'
 import { useLabels, useProjects } from '../lib/localData'
 import { logicalToday } from '../lib/dates'
-import { createTask } from '../lib/ops'
+import { createTaskThenSuggest } from '../lib/assistantSuggest'
 import { preferredPlacement } from '../lib/userPrefs'
 import { taskDefaults } from './listActions'
 import { addTasksUndoable } from '../lib/pasteTasks'
@@ -16,7 +18,8 @@ import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import type { Route } from './router'
 import { t } from '../lib/i18n'
 import { takeQuickAddPrefill } from '../lib/shellActions'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { addManyToList, addToList } from './reuseAdd'
 
 // An empty view's "Add a task" on a touch device opens this sheet (lean-chrome D7,
 // task-list-presentation "Empty views"): the Shell registers the opener; without a
@@ -55,20 +58,25 @@ export function QuickAddSheet({ open, onClose, anchor, route, userId }: {
     if (rest.due || rest.deadline) delete defaults.start
     return { ...defaults, ...rest, labels: [...new Set([...viewLabels, ...(typed ?? [])])] }
   }
+  // A count of adds, so the status line announces "Added" again for each one.
+  const [added, setAdded] = useState(0)
   const onAdd = async (input: QuickAddInput) => {
     // Top or bottom of the list it lands in (add-position D3).
-    await createTask({ ...withDefaults(input), placement: await preferredPlacement() })
-    onClose()
+    await addToList({ ...withDefaults(input), placement: await preferredPlacement() }, createTaskThenSuggest)
+    setAdded((n) => n + 1)
   }
   // A pasted list (paste-to-tasks D3): one batch with the view's defaults per line, one Undo.
   const onAddMany = async (inputs: QuickAddInput[]) => {
-    const added = await addTasksUndoable(inputs.map(withDefaults), { placement: await preferredPlacement() })
-    showBulkToast(added.label, added.undoId)
-    onClose()
+    const placement = await preferredPlacement()
+    await addManyToList(inputs.map(withDefaults), async (fresh) => {
+      const added = await addTasksUndoable(fresh, { placement })
+      showBulkToast(added.label, added.undoId)
+    })
   }
   return (
     <Popover open={open} onClose={onClose} anchor={anchor} label={t('Add a task')} side="top" align="end" width="sm:w-96" className="pt-3 pb-0">
       <div data-quick-add-sheet>
+        <span className="sr-only" role="status" aria-live="polite" data-sheet-added>{added > 0 && <span key={added}>{t('Added')}</span>}</span>
         <QuickAdd layout="sheet" autoFocus hideHint initialValue={prefill ?? undefined} placeholder={t('Add a task…')} label={t('Add a task')} projects={projects} labels={labels} onAdd={onAdd} onAddMany={onAddMany} />
       </div>
     </Popover>

@@ -6,7 +6,7 @@ Defines projects as the containers tasks live in, the Inbox as the default conta
 ## Requirements
 
 ### Requirement: Project fields
-A project SHALL have a name, a colour, a sort position, an archived flag, an optional parent project, creation time, optional deletion time, a note held as a Markdown `description` with its mergeable `notes_doc` document (see `project-notes`), and an additive `workspace_id` naming the workspace it belongs to (absent or null means the account's default workspace), written and synced as an ordinary operation that converges by last-writer-wins. A sub-project SHALL belong to the workspace of its parent; a parent in another workspace SHALL be treated as missing (the project shows at the top level of its own workspace).
+A project SHALL have a name, a colour, a sort position, an archived flag, an optional parent project, creation time, optional deletion time, a note held as a Markdown `description` with its mergeable `notes_doc` document (see `project-notes`), an additive `workspace_id` naming the workspace it belongs to (absent or null means the account's default workspace), and the additive booleans `reusable` and `aisles` of the reusable-list mode (OpenSpec `reusable-lists`; absent means `false`, and `aisles` reads as `false` while `reusable` is `false`), written and synced as an ordinary operation that converges by last-writer-wins. A sub-project SHALL belong to the workspace of its parent; a parent in another workspace SHALL be treated as missing (the project shows at the top level of its own workspace).
 
 #### Scenario: Create a project
 - **WHEN** the user creates a project with a name
@@ -24,6 +24,10 @@ A project SHALL have a name, a colour, a sort position, an archived flag, an opt
 - **WHEN** a project's `parent_id` names a project of another workspace
 - **THEN** the project is shown at the top level of its own workspace until the parent is in the same workspace, and no data is changed
 
+#### Scenario: Project synced before reusable lists existed
+- **WHEN** a device holds a project row received before the `reusable` and `aisles` fields existed
+- **THEN** the project reads as an ordinary project, and no operation is written
+
 ### Requirement: Sub-projects through the parent reference
 A project whose parent is unset SHALL be a top-level project; a project whose parent is set SHALL be a sub-project of that parent, to any depth. The parent reference SHALL be stored and synced as the existing `parent_id` field, so edits made offline are applied locally at once and converge under per-field last-writer-wins.
 
@@ -36,7 +40,7 @@ A project whose parent is unset SHALL be a top-level project; a project whose pa
 - **THEN** the project is shown at the top level until the parent arrives or is restored, and no data is changed
 
 ### Requirement: Inbox is the default container
-A task SHALL be an Inbox task while it is open, not deleted, has no project, is not scheduled, and no task above it (its parent, that parent's parent and so on) has a project or is scheduled: a subtask is part of its parent's plan and follows it out of the Inbox. Whether such a parent is open, completed or deleted SHALL NOT matter; a parent the device or server does not know ends the check. An Inbox task belongs to the Inbox of its workspace: the workspace its `workspace_id` names, or the default workspace when the field is absent. A task SHALL be scheduled when it has a do-on date (`due`), a start date (`start` set to a date) or is parked in Someday (`start` set to `someday`). A deadline, a reminder, a repeat rule without a do-on date, a label or an assignee SHALL NOT make a task scheduled. Membership SHALL be computed on every device from the task's own fields, with no operation written, so it works offline and changes exactly when those fields converge. Every place that lists or counts the Inbox (the Inbox view and its counts, the Process control and the triage queue, the weekly review, the Daily check, the Open Loops pulse, the command-line client, the assistant tools and resources) SHALL use this one rule. Every workspace SHALL have an Inbox that always exists and SHALL not be deletable or renamable. The Inbox view, its counts and the process flow SHALL show the current workspace's Inbox only.
+A task SHALL be an Inbox task while it is open, not deleted, has no project, is not scheduled, and no task above it (its parent, that parent's parent and so on) has a project or is scheduled: a subtask is part of its parent's plan and follows it out of the Inbox. Whether such a parent is open, completed or deleted SHALL NOT matter; a parent the device or server does not know ends the check. An Inbox task belongs to the Inbox of its workspace: the workspace its `workspace_id` names, or the default workspace when the field is absent. A task SHALL be scheduled when it has a do-on date (`due`), a start date (`start` set to a date), is parked in Someday (`start` set to `someday`) or has a time sector (`sector` not empty, OpenSpec `time-sectors`). A deadline, a reminder, a repeat rule without a do-on date, a label or an assignee SHALL NOT make a task scheduled. Membership SHALL be computed on every device from the task's own fields, with no operation written, so it works offline and changes exactly when those fields converge. Every place that lists or counts the Inbox (the Inbox view and its counts, the Process control and the triage queue, the weekly review, the Daily check, the Open Loops pulse, the command-line client, the assistant tools and resources) SHALL use this one rule. Every workspace SHALL have an Inbox that always exists and SHALL not be deletable or renamable. The Inbox view, its counts and the process flow SHALL show the current workspace's Inbox only.
 
 #### Scenario: Task without project
 - **WHEN** a task is created outside any project view or its project is cleared
@@ -73,6 +77,10 @@ A task SHALL be an Inbox task while it is open, not deleted, has no project, is 
 #### Scenario: Two Inboxes stay apart
 - **WHEN** "Personal" has 3 Inbox tasks and "Work" has 5
 - **THEN** the sidebar in Personal reads "Inbox 3", the switcher lists "Work · Inbox 5", and neither view lists the other's tasks
+
+#### Scenario: A time sector is a decision
+- **WHEN** an Inbox task without a project is set to This week
+- **THEN** it leaves the Inbox and its count on every device once the sector syncs, the command-line client and the assistant tools no longer count it in the Inbox, and clearing the sector brings it back
 
 ### Requirement: Rename and recolour
 The user SHALL be able to rename a project and choose its colour from a palette.
@@ -424,3 +432,22 @@ Through the API:
 #### Scenario: Editor of a shared project
 - **WHEN** an editor of the shared project "Household" opens its menu
 - **THEN** no maintenance item is offered, and a PATCH of `status` by that editor is refused with 403 as for the project's other fields
+
+### Requirement: Empty Projects view
+
+When the Projects view has loaded and contains no projects, it SHALL show the shared empty state with the title "No projects yet", one line that distinguishes projects from labels, and a primary "New project" action. Activating the action SHALL open the existing project creation prompt.
+
+#### Scenario: Empty state offers creation
+
+- **WHEN** a user with no projects opens the Projects view
+- **THEN** the view shows the title, the distinguishing line and a New project action
+
+#### Scenario: The action starts creation
+
+- **WHEN** the user activates New project from the empty state
+- **THEN** the existing creation prompt opens with the first field focused
+
+#### Scenario: A populated view is unchanged
+
+- **WHEN** the user has at least one project
+- **THEN** the empty state is absent and the projects table renders as before

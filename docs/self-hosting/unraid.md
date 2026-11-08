@@ -79,7 +79,7 @@ Open OpenTodo at that address from every device on your tailnet. Installing the 
 
 The template uses the `stable` image, which every release moves: **Check for Updates** in the Docker tab shows each new release, **Update** installs it, and migrations run on start. There are no down-migrations, so back up the appdata folder first (see below). To stay on one release line and take only its fixes, change **Repository** to `ghcr.io/opentodoapp/opentodo:0.6` (or pin one version, `0.6.1`) in the container's settings.
 
-Back up `/mnt/user/appdata/opentodo` with the Appdata Backup plugin, or turn on scheduled backups in **Settings → Server** (they are written to `backups/` in the same folder, or to S3 or WebDAV). See [Backups](../backups.md).
+Back up `/mnt/user/appdata/opentodo` with the Appdata Backup plugin, or turn on scheduled backups in **Settings → Server → Backups** (they are written to `backups/` in the same folder, or to S3 or WebDAV). See [Backups](../backups.md).
 
 ## Troubleshooting
 

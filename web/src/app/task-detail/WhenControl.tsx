@@ -26,8 +26,10 @@ import { useUserPrefsRow } from '../../lib/localData'
 import { dayPartUndoable } from '../../lib/undoActions'
 import { showUndoToast } from '../bulk/toastStore'
 import { formatSpan, multiDayOnPatch, spanOf } from '../../lib/span'
+import { useTimeSectors } from '../../lib/sectorPrefs'
+import { SectorChoice } from './SectorChoice'
 
-export type WhenSegment = 'due' | 'start' | 'deadline' | 'evening' | 'repeat' | 'reminders'
+export type WhenSegment = 'due' | 'start' | 'sector' | 'deadline' | 'evening' | 'repeat' | 'reminders'
 
 const FOCUSABLE = 'input:not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
@@ -45,25 +47,33 @@ function Segment({ id, icon, label, bare = false, children }: { id: WhenSegment;
 export const WHEN_SEGMENTS: { id: WhenSegmentId; icon: IconName; label: () => string }[] = [
   { id: 'due', icon: 'calendar-days', label: () => t('Do on') },
   { id: 'start', icon: 'calendar-range', label: () => t('Start') },
+  // Shown while time sectors are on or the task has a sector (time-sectors D6).
+  { id: 'sector', icon: 'calendar-range', label: () => t('Sector') },
   { id: 'deadline', icon: 'hourglass', label: () => t('Deadline') },
   { id: 'repeat', icon: 'repeat', label: () => t('Repeat') },
   { id: 'reminders', icon: 'alarm-clock', label: () => t('Reminders') },
 ]
 
+/** Whether the When popover offers the Sector segment for a task (time-sectors D6, D7). */
+export function useSectorSegment(task: Pick<Task, 'sector'>): boolean {
+  return useTimeSectors() || !!task.sector
+}
+
 /** The segmented control in the When popover's header: one segment shown at a time. */
-export function WhenSegmentPicker({ value, onChange }: { value: WhenSegmentId; onChange: (id: WhenSegmentId) => void }) {
+export function WhenSegmentPicker({ value, onChange, sector = false }: { value: WhenSegmentId; onChange: (id: WhenSegmentId) => void; sector?: boolean }) {
   const refs = useRef<(HTMLButtonElement | null)[]>([])
+  const segments = WHEN_SEGMENTS.filter((sg) => sector || sg.id !== 'sector')
   const move = (e: KeyboardEvent, i: number) => {
-    const n = WHEN_SEGMENTS.length
+    const n = segments.length
     const next = e.key === 'ArrowRight' ? (i + 1) % n : e.key === 'ArrowLeft' ? (i - 1 + n) % n : e.key === 'Home' ? 0 : e.key === 'End' ? n - 1 : -1
     if (next < 0) return
     e.preventDefault()
-    onChange(WHEN_SEGMENTS[next].id)
+    onChange(segments[next].id)
     refs.current[next]?.focus()
   }
   return (
     <div role="tablist" aria-label={t('When')} className="ui-scroller -mx-1 flex gap-0.5 overflow-x-auto" data-when-segments>
-      {WHEN_SEGMENTS.map((sg, i) => (
+      {segments.map((sg, i) => (
         <button key={sg.id} ref={(el) => { refs.current[i] = el }} type="button" role="tab" aria-selected={value === sg.id} tabIndex={value === sg.id ? 0 : -1}
           data-when-tab={sg.id} onClick={() => onChange(sg.id)} onKeyDown={(e) => move(e, i)}
           className={`shrink-0 whitespace-nowrap rounded-control px-2 py-1 text-meta ${value === sg.id ? 'bg-sunken font-semibold text-default dark:bg-raised' : 'text-muted hover:text-default'}`}>
@@ -218,7 +228,7 @@ function RepeatPresets({ task, onOpen }: { task: Task; onOpen?: (id: string) => 
   )
 }
 
-export function WhenControl({ task, readOnly = false, focus = 'due', segment, onDone, onOpen }: {
+export function WhenControl({ task, readOnly = false, focus = 'due', segment, onDone, onOpen, onClose, onAddLocation }: {
   task: Task
   readOnly?: boolean
   /** The segment that takes focus when the control opens. */
@@ -229,6 +239,10 @@ export function WhenControl({ task, readOnly = false, focus = 'due', segment, on
   onDone?: () => void
   /** Open another task (a detached occurrence). */
   onOpen?: (id: string) => void
+  /** Close the popover (after a sector is chosen, time-sectors D6). */
+  onClose?: () => void
+  /** Open the task's location editor (a location reminder needs a point, location-reminders D5). */
+  onAddLocation?: () => void
 }) {
   const zone = useViewerZone()
   const local = localDueOf(task.due, zone)
@@ -244,6 +258,7 @@ export function WhenControl({ task, readOnly = false, focus = 'due', segment, on
   }, [segment])
   const shows = (id: WhenSegment) => !segment || id === segment || (segment === 'due' && id === 'evening')
   const parts = dayPartsOn(useUserPrefsRow())
+  const sectorShown = useSectorSegment(task)
 
   return (
     <div ref={root} data-when-control data-when-shown={segment} className="space-y-3">
@@ -263,6 +278,10 @@ export function WhenControl({ task, readOnly = false, focus = 'due', segment, on
         {task.due && <MultiDaySwitch task={task} readOnly={readOnly} root={root} />}
       </Segment>}
 
+      {shows('sector') && sectorShown && <Segment id="sector" icon="calendar-range" label={t('Time sector')} bare={!!segment}>
+        <SectorChoice task={task} readOnly={readOnly} onChosen={segment ? onClose : undefined} />
+      </Segment>}
+
       {shows('deadline') && <Segment id="deadline" icon="hourglass" label={t('Deadline')} bare={!!segment}>
         <DatePicker label={t('Deadline')} value={task.deadline ?? null} choices={quickChoices('deadline')} emptyText={t('No deadline')}
           onChange={(deadline) => act(updateTask(task.id, { deadline }))} />
@@ -277,12 +296,12 @@ export function WhenControl({ task, readOnly = false, focus = 'due', segment, on
       </Segment>}
 
       {shows('reminders') && <Segment id="reminders" icon="alarm-clock" label={t('Reminders')} bare={!!segment}>
-        <fieldset disabled={readOnly} className="min-w-0"><RemindersField task={task} /></fieldset>
+        <fieldset disabled={readOnly} className="min-w-0"><RemindersField task={task} onAddLocation={onAddLocation} /></fieldset>
       </Segment>}
 
       {onDone && (
         <div className="flex justify-end border-t border-default pt-2">
-          <Button size="sm" onClick={onDone}>{t('Done')}</Button>
+          <Button size="sm" onClick={onDone} data-when-close>{t('Close')}</Button>
         </div>
       )}
     </div>

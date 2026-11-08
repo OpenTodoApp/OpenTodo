@@ -265,3 +265,29 @@ func TestAcquireLimits(t *testing.T) {
 	}
 	r2()
 }
+
+// A host's tenants share one cap (host-assistant-concurrency): a turn in one
+// tenant's service takes a slot the other tenant's service cannot use.
+func TestSharedSlotsAcrossServices(t *testing.T) {
+	slots := NewSlots(1)
+	a, b := NewService(nil, nil), NewService(nil, nil)
+	a.UseSlots(slots)
+	b.UseSlots(slots)
+	release, err := a.Acquire("u1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Another tenant, even the same user id there, finds the host busy.
+	if _, err := b.Acquire("u1"); err != ErrBusy {
+		t.Fatalf("second tenant: %v, want ErrBusy", err)
+	}
+	release()
+	r2, err := b.Acquire("u1")
+	if err != nil {
+		t.Fatalf("after release: %v", err)
+	}
+	r2()
+	if _, err := NewService(nil, nil).Acquire("u1"); err != nil {
+		t.Fatalf("a self-hosted service keeps its own cap: %v", err)
+	}
+}

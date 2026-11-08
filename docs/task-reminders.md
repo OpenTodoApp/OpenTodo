@@ -34,6 +34,10 @@ To get reminders when the app is closed, turn on notifications for each device i
 
 Snoozing or dismissing on one device applies to all of them.
 
+## Location reminders
+
+**At a place** in the same menu adds **When I arrive** or **When I leave** for a task whose location has a point on the map. They fire on your phone in the Android app; see [Location reminders](location-reminders.md).
+
 ## Tips
 
 - For bills, use a day-of-month rule (`every 1st`) plus a **1 day before** reminder.

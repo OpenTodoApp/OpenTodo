@@ -2,8 +2,14 @@
 # This copy is the source of truth (OpenSpec change play-production D3). F-Droid builds each
 # tag from source and publishes the project-signed APK from the GitHub release only when its
 # own build matches it apart from the signature (reproducible builds), so the app from
-# F-Droid, Google Play and GitHub carries one certificate. `fdroid lint` passes; drop these
-# comment lines when copying it to fdroiddata (`fdroid rewritemeta` removes them anyway).
+# F-Droid, Google Play and GitHub carries one certificate. The name, summary, description,
+# icon, screenshots and release notes come from fastlane/metadata/android/ at the repository
+# root (fastlane/README.md), so they are not repeated here. Drop these comment lines when
+# copying the file to fdroiddata; `fdroid lint` and `fdroid rewritemeta` pass on it.
+# The version comes from the tag, not from a file, so F-Droid's bot reads CurrentVersion and
+# CurrentVersionCode from this file at each tag (UpdateCheckMode: Tags); `make release-prepare`
+# moves them with the Builds entry in the release commit. The build uses the build server's
+# default JDK 21, as CI does.
 Categories:
   - Task
 License: AGPL-3.0-only
@@ -14,34 +20,30 @@ IssueTracker: https://github.com/OpenTodoApp/OpenTodo/issues
 Changelog: https://github.com/OpenTodoApp/OpenTodo/blob/HEAD/CHANGELOG.md
 
 AutoName: OpenTodo
-Summary: The app for your own OpenTodo server
-Description: |-
-  OpenTodo is a self-hosted task manager. This app opens your own OpenTodo server
-  and adds what a phone app can do: reminders on time without a push service,
-  sharing from other apps, home-screen widgets and fingerprint unlock of an
-  encrypted account. It has no trackers, no analytics and talks only to your server.
 
 RepoType: git
 Repo: https://github.com/OpenTodoApp/OpenTodo.git
-Binaries: https://github.com/OpenTodoApp/OpenTodo/releases/download/v%v/opentodo-android-%v.apk
+Binaries: 
+  https://github.com/OpenTodoApp/OpenTodo/releases/download/v%v/opentodo-android-%v.apk
 
 Builds:
-  - versionName: 0.20.0
-    versionCode: 2000
-    commit: v0.20.0
+  - versionName: 1.2.0
+    versionCode: 10200
+    commit: 0d4dd3f78e108fbe046fb8781c9e4d1eb33e729a
     subdir: mobile/android/app
-    sudo:
-      - echo 'deb https://deb.debian.org/debian bookworm main' > /etc/apt/sources.list.d/bookworm.list
-      - apt-get update
-      - apt-get install -y -t bookworm openjdk-17-jdk-headless
-      - update-alternatives --auto java
     gradle:
       - yes
+    rm:
+      - extension
+      - internal/importer/testdata
+      - internal/store/testdata
     prebuild: sed -i -e 's/System.getenv("OPENTODO_VERSION")/"$$VERSION$$"/' build.gradle.kts
 
 AllowedAPKSigningKeys: ff2eacdf7e79712e44fdd9d2e3110891e712c170ea516bd3fbbecc291072befa
 
 AutoUpdateMode: Version
-UpdateCheckMode: Tags ^v[0-9.]+$
-CurrentVersion: 0.20.0
-CurrentVersionCode: 2000
+UpdateCheckMode: Tags
+UpdateCheckData: 
+  mobile/android/store/fdroid/app.opentodo.yml|CurrentVersionCode:\s*(\d+)|.|CurrentVersion:\s*([0-9.]+)
+CurrentVersion: 1.2.0
+CurrentVersionCode: 10200

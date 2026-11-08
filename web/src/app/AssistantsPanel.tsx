@@ -6,6 +6,7 @@ import { SettingRow, SettingsSection } from '../ui'
 import { Switch } from '../ui'
 import { SecretReveal } from './TokensSection'
 import { RelaySettings } from './RelaySettings'
+import { OAuthClients } from './OAuthClients'
 import { api, isNetworkError } from '../lib/api'
 import { useAction } from '../lib/useAction'
 import {
@@ -43,6 +44,8 @@ export interface AssistantsViewProps {
   onCreateToken: (scope: 'read' | 'agent') => void
   onCopy: (target: CopyTarget, text: string) => void
   onDismissSecret: () => void
+  /** The owner's OAuth clients (mcp-oauth), given by the panel so this view stays pure. */
+  oauthClients?: (disabled: boolean) => ReactNode
 }
 
 /** The clients the third step has instructions for (mcp-server "Settings screen for assistants"). */
@@ -77,10 +80,10 @@ function OwnerSwitches({ p, disabled, guard }: { p: AssistantsViewProps; disable
   const ownerWrites = !!status.writes_enabled
   return (
     <div className="rounded-control border border-default px-3" role="group" aria-label={t('On this server')} data-mcp-owner>
-      <SettingRow {...rowCopy('assistants', 'endpoint', { variant: status.enabled ? 'on' : 'off' })}
+      <SettingRow {...rowCopy('assistants', 'endpoint', { variant: status.enabled ? 'on' : 'off' })} scope="server"
         control={<Switch checked={status.enabled} disabled={disabled} onChange={guard(p.onToggle)} label={t('Allow AI assistants (MCP endpoint)')} hideLabel />} />
       {status.enabled && (
-        <SettingRow {...rowCopy('assistants', 'writes', { variant: ownerWrites ? 'on' : 'off' })}
+        <SettingRow {...rowCopy('assistants', 'writes', { variant: ownerWrites ? 'on' : 'off' })} scope="server"
           control={<Switch checked={ownerWrites} disabled={disabled} onChange={guard(p.onToggleWrites)} label={t('AI assistants may make changes')} hideLabel />} />
       )}
     </div>
@@ -188,6 +191,9 @@ export function AssistantsView(p: AssistantsViewProps) {
         ? <ConnectSteps p={p} disabled={disabled} />
         : p.isOwner && <p className="py-3 text-meta text-muted" data-mcp-why>{t('Turn on the endpoint above to connect an assistant.')}</p>)}
 
+      {/* Apps that sign in instead of taking a token (mcp-oauth). */}
+      {p.status?.enabled && p.isOwner && p.oauthClients?.(disabled)}
+
       {p.error && <Notice tone="danger">{p.error}</Notice>}
 
       {p.encrypted && p.status?.enabled && (
@@ -244,6 +250,7 @@ export function AssistantsPanel({ isOwner, onTokenCreated }: { isOwner: boolean;
     <AssistantsView
       isOwner={isOwner} encrypted={encryption.enabled} connected={online && !unreachable} status={status} access={access} busy={busy} error={error}
       secret={secret} secretScope={secretScope} copied={copied}
+      oauthClients={(disabled) => <OAuthClients disabled={disabled} />}
       onToggle={(enabled) => void run(async () => {
         const s = await api.setMcpSettings(enabled)
         setStatus(s)

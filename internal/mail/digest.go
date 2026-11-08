@@ -47,6 +47,7 @@ var weekdayNames = map[string][7]string{
 	"es": {"dom", "lun", "mar", "mié", "jue", "vie", "sáb"},
 	"it": {"dom", "lun", "mar", "mer", "gio", "ven", "sab"},
 	"pt": {"dom", "seg", "ter", "qua", "qui", "sex", "sáb"},
+	"zh": {"周日", "周一", "周二", "周三", "周四", "周五", "周六"},
 }
 
 var monthNames = map[string][12]string{
@@ -56,6 +57,7 @@ var monthNames = map[string][12]string{
 	"es": {"ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sept", "oct", "nov", "dic"},
 	"it": {"gen", "feb", "mar", "apr", "mag", "giu", "lug", "ago", "set", "ott", "nov", "dic"},
 	"pt": {"jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"},
+	"zh": {"1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"},
 }
 
 var digestWords = map[string]struct{ inbox, nothing, more, never string }{
@@ -65,6 +67,15 @@ var digestWords = map[string]struct{ inbox, nothing, more, never string }{
 	"es": {"Bandeja de entrada", "Nada.", "y %d más", "nunca"},
 	"it": {"In arrivo", "Niente.", "e altri %d", "mai"},
 	"pt": {"Caixa de entrada", "Nada.", "e mais %d", "nunca"},
+	"zh": {"收件箱", "没有。", "以及另外 %d 项", "从未"},
+}
+
+// InboxName is the Inbox's name in a shipped language, the word the app uses
+// (web/src/locales, kept equal by TestInboxNameMatchesWebCatalogs); false for
+// a language that is not shipped. The CalDAV Inbox list uses it too.
+func InboxName(lang string) (string, bool) {
+	w, ok := digestWords[lang]
+	return w.inbox, ok
 }
 
 // FormatDay writes a YYYY-MM-DD date as weekday, day and month in a language

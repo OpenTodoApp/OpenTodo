@@ -15,7 +15,9 @@ import { OPTIONAL, PartEditor, type PropertiesProps, useFacetParts, usePartEdito
 import { usePropertiesModel } from './usePropertiesModel'
 import { dayPartOf, dayPartWord } from '../../lib/dayParts'
 import { energyLevelsOn } from '../../lib/energy'
+import { useTimeSectors } from '../../lib/sectorPrefs'
 import { useUserPrefsRow } from '../../lib/localData'
+import { RotationLine } from './RotationLine'
 
 const TONE: Record<string, string> = {
   overdue: 'text-danger',
@@ -63,10 +65,13 @@ export function TaskFacts({ stacked = false, ...props }: PropertiesProps & { sta
 
   // Energy is offered while unset only with Energy levels on; a value is always shown (task-energy D3).
   const energyOn = energyLevelsOn(useUserPrefsRow())
+  const sectorsOn = useTimeSectors()
   const due = text('due')
   const partWord = dayPartWord(dayPartOf(task))
   const schedule: Fact[] = [
     { id: 'due', label: t('Do'), icon: 'sun', value: due && partWord ? `${due} · ${partWord}` : due ?? partWord, empty: t('Set a date'), tone: tone('due') },
+    // The time sector (time-sectors D6): offered while unset only with the switch on; a value always shows.
+    { id: 'sector', label: t('Time sector'), icon: 'calendar-range', value: text('sector'), empty: t('Set a time sector'), onlySet: !sectorsOn || !!task.recurrence },
     { id: 'when', label: t('Start'), icon: 'calendar-range', value: text('when'), empty: t('Set a start') },
     { id: 'deadline', label: t('Deadline'), icon: 'hourglass', value: text('deadline'), empty: t('Set a deadline'), tone: tone('deadline') },
     { id: 'reminders', label: t('Reminder'), icon: 'alarm-clock', value: text('reminders'), empty: t('Add a reminder') },
@@ -162,7 +167,7 @@ export function TaskFacts({ stacked = false, ...props }: PropertiesProps & { sta
     return (
       <section ref={m.section} aria-label={t('Properties')} data-facts="stacked">
         <ul className="divide-y divide-soft">
-          {shown.map(stackedRow)}
+          {shown.map(withTurns(stackedRow, (n) => <RotationLine key={n} as="li" className="px-3 py-1.5" task={task} userId={userId} />))}
           {labelsRow}
           {!expanded && hiddenCount > 0 && (
             <li>
@@ -189,7 +194,7 @@ export function TaskFacts({ stacked = false, ...props }: PropertiesProps & { sta
   return (
     <section ref={m.section} aria-label={t('Properties')} className="space-y-5" data-facts>
       {group(t('Schedule'), 'schedule', schedule.map(row))}
-      {group(t('Details'), 'details', <>{details.map(row)}<LocationPreview shown={shownLocation} /></>)}
+      {group(t('Details'), 'details', <>{details.map(withTurns(row, (n) => <RotationLine key={n} as="div" className="pl-[7rem]" task={task} userId={userId} />))}<LocationPreview shown={shownLocation} /></>)}
       {group(t('Labels'), 'labels', (
         <div className="flex flex-wrap items-center gap-1" data-fact="labels">
           {m.labels.map((l) => <LabelChip key={l.id} label={l} />)}
@@ -208,4 +213,9 @@ export function TaskFacts({ stacked = false, ...props }: PropertiesProps & { sta
       {editor}
     </section>
   )
+}
+
+/** A fact row renderer that adds the "Takes turns" line under the assignee (chore-rotation D5). */
+function withTurns<F extends { id: string }>(render: (f: F) => ReactNode, line: (key: string) => ReactNode): (f: F) => ReactNode {
+  return (f) => (f.id === 'assignee' ? [render(f), line('assignee-turns')] : render(f))
 }

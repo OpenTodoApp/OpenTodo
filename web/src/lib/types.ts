@@ -1,11 +1,12 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-import type { AttachmentFields, CommentFields, FieldDefFields, FrameFields, CustomThemeFields, LabelFields, NoteFields, PlaceFields, ProjectFields, ProjectPrefsFields, ReminderFields, ReviewFields, RuleFields, SectionFields, SlotFields, TaskFields, TimeEntryFields, UserPrefsFields, ViewFields } from '../generated/opSchema'
+import type { AttachmentFields, CommentFields, FieldDefFields, FrameFields, CustomThemeFields, ObjectiveFields, LabelFields, NoteFields, PlaceFields, ProjectFields, ProjectPrefsFields, ReminderFields, ReviewFields, RuleFields, SectionFields, SlotFields, TaskFields, TimeEntryFields, UserPrefsFields, ViewFields } from '../generated/opSchema'
+import type { LanguageCode } from '../locales'
 import type { ThemeDocument } from './theme/format'
 
-export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place' | 'rule' | 'frame' | 'slot' | 'note' | 'theme'
-export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry', 'place', 'rule', 'frame', 'slot', 'note', 'theme']
+export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place' | 'rule' | 'frame' | 'slot' | 'note' | 'theme' | 'objective'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry', 'place', 'rule', 'frame', 'slot', 'note', 'theme', 'objective']
 
 export interface Op {
   id: string
@@ -344,6 +345,24 @@ export interface CustomTheme extends CustomThemeFields {
   _e2ee?: RowEncryption
 }
 
+/**
+ * A quarterly or weekly objective (OpenSpec change `plan-objectives`):
+ * personal, at most five open per period. `period` is a quarter "YYYY-Qn" or
+ * an ISO week "YYYY-Www"; `done_at` is 0 while open. A title this device
+ * could not decrypt is the placeholder string.
+ */
+export interface Objective extends ObjectiveFields {
+  id: string
+  title: string
+  period: string
+  position: number
+  done_at: number
+  created_at: number
+  deleted_at: number | null
+  _clock: Clock
+  _e2ee?: RowEncryption
+}
+
 /** A task's origin kind; the list is closed (the server refuses any other). */
 export type OriginKind = 'url' | 'email' | 'issue' | 'import' | 'obsidian'
 
@@ -425,12 +444,39 @@ export interface Label extends LabelFields {
 
 export type ViewKind = 'list' | 'dashboard'
 export type GroupBy = 'project' | 'due' | 'priority' | 'label' | 'none'
-export type SortBy = 'due' | 'priority' | 'position' | 'created' | 'title' | 'deadline'
+export type FieldSortBy = `field:${string}`
+export type SortBy = 'due' | 'priority' | 'position' | 'created' | 'title' | 'deadline' | FieldSortBy
 export type SortDir = 'asc' | 'desc'
 
 export const VIEW_KINDS: readonly ViewKind[] = ['list', 'dashboard']
 export const GROUP_BY_OPTIONS: readonly GroupBy[] = ['project', 'due', 'priority', 'label', 'none']
 export const SORT_BY_OPTIONS: readonly SortBy[] = ['due', 'priority', 'position', 'created', 'deadline', 'title']
+
+const FIELD_SORT_PREFIX = 'field:'
+const FIELD_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+
+/** Client parsing is deliberately tolerant: sync preserves strings the REST API rejects. */
+export function fieldSortId(value: unknown): string | null {
+  if (typeof value !== 'string' || !value.startsWith(FIELD_SORT_PREFIX)) return null
+  const id = value.slice(FIELD_SORT_PREFIX.length)
+  return FIELD_ID_PATTERN.test(id) ? id : null
+}
+
+export function fieldSortBy(id: string): FieldSortBy {
+  return `${FIELD_SORT_PREFIX}${id}`
+}
+
+/** Whether a stored or selected sort value names a custom field by its definition id. */
+export function isFieldSortBy(value: unknown): value is FieldSortBy {
+  return fieldSortId(value) !== null
+}
+
+/** A stored sort_by as one page reads it: a field sort, an allowed option, or the fallback. */
+export function readSortBy(value: unknown, options: readonly SortBy[], fallback: SortBy): SortBy {
+  if (isFieldSortBy(value)) return value
+  return typeof value === 'string' && options.includes(value as SortBy) ? value as SortBy : fallback
+}
+
 export const SORT_DIR_OPTIONS: readonly SortDir[] = ['asc', 'desc']
 export type ViewLayout = 'list' | 'board'
 export const VIEW_LAYOUTS: readonly ViewLayout[] = ['list', 'board']
@@ -741,8 +787,12 @@ export interface RoutineStep {
   do?: RoutineStep[]
 }
 
-/** 'deadline' (OpenSpec change `deadlines`): offset from 09:00 local on the task's deadline. */
-export type ReminderKind = 'relative' | 'absolute' | 'deadline'
+/**
+ * 'deadline' (OpenSpec change `deadlines`): offset from 09:00 local on the task's deadline.
+ * 'arrive' and 'leave' (OpenSpec change `location-reminders`): fire on a phone that
+ * enters or leaves the circle of `radius_m` around the task's location; never a `fire_at`.
+ */
+export type ReminderKind = 'relative' | 'absolute' | 'deadline' | 'arrive' | 'leave'
 
 /**
  * A reminder on a task (OpenSpec change `reminders`). `fire_at` is always the
@@ -762,6 +812,8 @@ export interface Reminder extends ReminderFields {
   dismissed_at: number | null
   created_at: number
   deleted_at: number | null
+  /** Metres, 100–5,000, only on the location kinds (absent on rows from older clients). */
+  radius_m?: number | null
   _clock: Clock
 }
 
@@ -872,7 +924,7 @@ export interface ProjectPrefs extends ProjectPrefsFields {
 /** Date and time preference values (OpenSpec `date-time-preferences`); unknown values read as 'system'. */
 export type DateFormatPref = 'system' | 'day-month' | 'month-day' | 'iso'
 /** Interface language preference (app-localization D1): 'system' or a shipped language code. */
-export type LanguagePref = 'system' | 'en' | 'de' | 'fr' | 'es' | 'it' | 'pt'
+export type LanguagePref = 'system' | LanguageCode
 export type TimeFormatPref = 'system' | '12h' | '24h'
 export type WeekStartPref = 'system' | 'mon' | 'sun' | 'sat'
 
@@ -931,6 +983,10 @@ export interface UserPrefs extends UserPrefsFields {
   row_layout?: string
   /** Today's agenda of calendar events (today-agenda D1): 'shown' shows it; '' and anything else read as hidden. */
   today_events?: string
+  /** Today hides tasks assigned to others (today-assigned-filter): 'mine' hides them; '' and anything else read as off. */
+  today_assignees?: string
+  /** Upcoming's calendar events (today-agenda): 'shown' lists them on each day; '' and anything else read as hidden. */
+  upcoming_events?: string
   /** Where new tasks are added from a list's quick add (add-position D1): 'top' or 'bottom'; '' and anything else read as 'bottom'. */
   add_position?: string
   /** Default reminder for tasks with a time (default-reminders D1): minutes from the due time as a decimal string; '' or anything malformed reads as none. */
@@ -1127,6 +1183,8 @@ export interface AuthStatus {
   /** Without a token, setup from outside the server's local network needs the
    * one-time code printed in the server log (trusted-client-identity); absent on older servers. */
   setupCodeRequired?: boolean
+  /** The code is asked for because the page was opened under a domain name while the server has no OPENTODO_BASE_URL (host-check-without-base-url). */
+  setupCodeForHost?: boolean
   signupAllowed: boolean
   authenticated: boolean
   user: User | null
@@ -1149,6 +1207,10 @@ export interface AuthStatus {
   branding?: { name: string; logoVersion: number }
   /** The version of the instance's themes (theme-instance-default D3), signed in only; absent on older servers. */
   themes?: { version: number }
+  /** This session's wipe key (revoked-device-wipe D3), signed-in browser sessions only. */
+  wipeKey?: string
+  /** This cookie's session was revoked: the proof made with its wipe key (revoked-device-wipe D3). */
+  revoked?: { proof: string }
   /** Outgoing email (OpenSpec `outgoing-email`): email actions are shown only when enabled; absent on older servers. */
   outgoingEmail?: { enabled: boolean }
   /** A tenant of a hosted service (OpenSpec `multi-tenant-host`): the operator owns server settings; absent when self-hosted. */
@@ -1596,6 +1658,7 @@ export interface ProjectInvitePreview extends InvitationPreview {
 /** Events an outbound webhook can subscribe to (OpenSpec `webhooks`). */
 export type WebhookEvent =
   | 'task.created' | 'task.updated' | 'task.completed' | 'task.reopened' | 'task.deleted'
+  | 'comment.created' | 'comment.updated' | 'comment.deleted'
   | 'project.created' | 'project.updated' | 'project.archived' | 'project.deleted'
   | 'import.completed' | 'import.undone' | 'rule.fired'
 
@@ -1865,6 +1928,10 @@ export const AUDIT_EVENT_NAMES = [
   'project.member_added', 'project.grant_added', 'project.grant_changed', 'project.grant_removed',
   'workspace_invite.created', 'workspace_invite.accepted', 'workspace_invite.revoked',
   'member_invitation.created', 'member_invitation.accepted', 'member_invitation.declined', 'member_invitation.cancelled',
+  'calendar_connection.created', 'calendar_connection.updated', 'calendar_connection.deleted',
+  'project.agent_access',
+  'task_page.published', 'task_page.revoked',
+  'mcp_oauth.client_created', 'mcp_oauth.client_deleted', 'mcp_oauth.granted', 'mcp_oauth.revoked', 'mcp_oauth.refresh_reused',
 ] as const
 export type AuditEventName = (typeof AUDIT_EVENT_NAMES)[number]
 
@@ -1904,9 +1971,19 @@ export type ImportFormat =
   | 'opentodo' | 'things-db' | 'json-items' | 'json-lists' | 'json-generic'
   | 'todoist-csv' | 'todoist-backup' | 'ticktick-csv' | 'linear-csv' | 'csv'
   | 'google-tasks-json' | 'trello-json' | 'asana-csv' | 'microsoft-todo-json' | 'apple-reminders-json' | 'anydo-json'
+  | 'notion-csv'
+  | 'omnifocus-csv'
+  | 'super-productivity-json'
+  | 'tududi-db'
+  | 'vikunja-export'
 export const IMPORT_FORMATS: readonly ImportFormat[] = [
   'opentodo', 'todoist-backup', 'todoist-csv', 'things-db', 'ticktick-csv', 'linear-csv',
   'google-tasks-json', 'trello-json', 'asana-csv', 'microsoft-todo-json', 'apple-reminders-json', 'anydo-json',
+  'vikunja-export',
+  'tududi-db',
+  'super-productivity-json',
+  'omnifocus-csv',
+  'notion-csv',
   'json-items', 'json-lists', 'json-generic', 'csv',
 ]
 
@@ -1923,7 +2000,16 @@ export interface ImportOptions {
   existing?: 'skip' | 'overwrite'
   /** Workspace id that receives what the import creates (import-workspace); omitted = default, or an own export's own mapping. */
   workspace?: string
+  /**
+   * A Notion export's column per role (migration-everywhere D3): a column name,
+   * or null for "not imported"; a role left out keeps the preview's guess.
+   */
+  columns?: Partial<Record<NotionRole, string | null>>
 }
+
+/** The roles a Notion database's columns can take, in the order the preview shows them. */
+export const NOTION_ROLES = ['status', 'due', 'labels', 'priority', 'project', 'notes'] as const
+export type NotionRole = typeof NOTION_ROLES[number]
 
 export interface ImportTotals {
   rows: number
@@ -1968,7 +2054,10 @@ export interface ImportRow {
 export interface ImportPreview {
   format: ImportFormat
   version?: number
-  columns?: { recognised: string[]; ignored: string[] }
+  /** CSV columns used and ignored; for a Notion export also the column of each role and every column it can use. */
+  columns?: { recognised: string[]; ignored: string[]; roles?: Partial<Record<NotionRole, string | null>>; available?: string[] }
+  /** The format the file looks like when another one was chosen (migration-everywhere). */
+  detected?: ImportFormat
   options: ImportOptions
   totals: ImportTotals
   rows: ImportRow[]
@@ -2212,6 +2301,8 @@ export interface AssignedPayload {
   projectId?: string
   projectName?: string
   at: number
+  /** The turn of a rotating recurring task passed to the recipient (chore-rotation D5). */
+  turn?: boolean
 }
 
 /** Payload of an `unblocked` notification (task-dependencies): the assignee's task is ready to start. */

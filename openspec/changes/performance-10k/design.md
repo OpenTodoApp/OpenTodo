@@ -71,13 +71,15 @@ The nightly `perf` workflow builds the server, runs perfseed, and runs `scripts/
 
 **D4. Measurement points in the app, local only.** The app calls `performance.mark('ot:list-ready')` when a list's first rows are committed, `ot:search-results` when search results render, `ot:sync-idle` when the first sync finishes, and `ot:remote-applied` when a pulled batch is painted. The harness reads them with `performance.getEntriesByName`. Nothing leaves the browser: no telemetry, no endpoint. The marks cost microseconds and stay in production builds, so the reference-device runs measure the real app.
 
-**D5. Reference devices before every minor release.**
+**D5. Reference devices, after 1.0.**
 
 - Android: a 2022 mid-range phone (Pixel 6a or Galaxy A54 class) running the Android shell.
 - iOS: an iPhone 12 running the iOS shell.
 - Server: a Raspberry Pi 4 (4 GB) running the arm64 image.
 
-`scripts/perf/device.md` gives the steps: the shells open a debug page that runs the same scripted session and shows the marks, and memory comes from the platform tools. Results go in `docs/performance/results-<version>.md`. `release-prepare` refuses a minor release without the file, or with a value over budget that doesn't link an issue.
+`scripts/perf/device.md` gives the steps: the shells open a debug page that runs the same scripted session and shows the marks, and memory comes from the platform tools. Results go in `docs/performance/results-<version>.md`.
+
+Owner decision 2026-11-07: the owner owns none of these devices, so the record is not required for 1.0 and real-device measurement moves to after 1.0 (#990, the debug page in the shells with it). 1.0's performance promise rests on the nightly CI budgets (desktop, the phone profile, the server), and `docs/performance.md` says plainly that no real device was measured. `release-prepare` keeps the record's format and its check as an optional gate: a release without the file passes with no warning, and a file that exists is refused (a warning on a candidate) while a value is over budget without an issue link. Keeping the check rather than removing it costs nothing, keeps a published record honest, and the gate becomes a requirement again by restoring one line once records can be made for every minor release. Removing it would have dropped tested code that #990 needs again.
 
 **D6. Fix strategy.** First runs decide the work. Candidates, in order of preference:
 
@@ -110,6 +112,17 @@ How the numbers were set: the notes' share is the 500 winning documents and proj
 
 **If the phone budgets fail.** The owner's plan (DECISIONS.md, "Notes storage safety", item 4) defers lazy note bodies (`notes-on-demand`: devices receive the projection and fetch the document when a note opens) until these numbers show phones need it. A failing first-sync or IndexedDB budget on the phone profile or a reference phone after compaction is that signal: task 3.3 then proposes `notes-on-demand` as its own OpenSpec change instead of raising the budget.
 
+**D8. What the first measurement found (task 1.6), and the fixes.**
+
+- **First sync** took about 145 s on desktop: 1.4 s of client work per 1,000-op page, against 12 ms on the server. Most of it was the local activity log: every pulled op became an entry, about 100,000 of them, and after each page the log of every touched project was read back to trim it. The fixes:
+  - during a sync exchange, activity entries wait in memory and are written once at its end, already trimmed; a *long pull* (a response with more pages to come) adds only the newest 100 entries per project. The local log stays a bounded cache of recent history (activity-log "Local activity retention"): older events are on the server, which the Activity tab and Updates load on request;
+  - during a long pull the shared live snapshots are not re-read after every page, but every 2 s, and once at its end, so a page commit no longer re-reads 10,000 tasks and re-renders the screen;
+  - `applyOps` reads and writes each table in bulk; the series repair runs once after the last page with one scan for every series; shared due-date following reads in bulk; an unchanged membership list and an empty outbox write nothing.
+  
+  The first sync is now about 12 s on the same machine. Offline behaviour and convergence are unchanged: the rows and their clocks are written exactly as before, and the scale tests check two devices in two orders.
+- **Listing the 2,000-task project over REST** listed the whole account: `project_id` was not a filter. It now is (http-api "Collection list by project"), answered by a subquery on a partial index of `project_id` values (`scope_fields_project`, a migration), and the list's sort no longer decodes JSON in its comparator.
+- **List rendering at 2,000 rows** (opening the project, the cursor, a remote edit painted) is over its desktop budget on the development machine. Whether it needs windowing (task 3.2) is decided on the CI runner's numbers, not on this machine's slow IndexedDB.
+
 ## Data model impact
 
 None from the harness. Index additions are local (Dexie) or a SQLite migration; neither changes the op schema.
@@ -128,6 +141,6 @@ Nothing user-visible.
 
 ## Open questions for the owner
 
-- Reference devices: which Android phone and iPhone the project owns or can borrow for the per-release run.
+- Reference devices: which Android phone and iPhone the project owns or can borrow for the per-release run. Answered 2026-11-07: none for now; real devices after 1.0 (D5, #990).
 - Whether to also gate the nightly 50,000-task run later. It's reported only for now.
 - The notes budgets (D7) are first estimates from the fixture's composition. Default chosen: gate them nightly from the start and adjust after task 1.6's first measurement, like the others.

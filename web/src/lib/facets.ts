@@ -10,11 +10,12 @@ import type { Due, Label, Priority, Task } from './types'
 import { dayPartOf, dayPartWord } from './dayParts'
 import { energyName, energyOf } from './energy'
 import { formatSpan, spanOf } from './span'
+import { sectorLabel } from './sectorNames'
 
 export type FacetId = 'where' | 'when' | 'how' | 'who'
 
 /** The When popover's segments a part opens on. */
-export type WhenSegmentId = 'due' | 'start' | 'deadline' | 'repeat' | 'reminders'
+export type WhenSegmentId = 'due' | 'start' | 'sector' | 'deadline' | 'repeat' | 'reminders'
 
 export type PartTone = 'overdue' | 'today' | 'soon' | 'later' | 'warning'
 
@@ -110,6 +111,11 @@ export function facetsOf(task: Task, ctx: FacetContext): Facets {
     const text = span ? (ctx.local?.time ? `${formatSpan(span)} ${t('until {time}', { time: formatTime(ctx.local.time, ctx.dateTime) })}` : formatSpan(span)) : label
     when.push({ id: 'due', text: ctx.zoneCity ? `${text} ${ctx.zoneCity}` : text, tone: due.tone, segment: 'due' })
   }
+  // The time sector (time-sectors D2, D4): in the date's place without a do-on date;
+  // beside one, read as ignored while dated so it can be cleared.
+  const sector = sectorLabel(task.sector, today, ctx.dateTime)
+  if (sector && !due) when.push({ id: 'sector', text: sector.text, segment: 'sector' })
+  else if (sector) when.push({ id: 'sector', text: t('Sector: {name} (ignored while dated)', { name: sector.text }), segment: 'sector' })
   // The part of the day (day-parts): evening, morning or afternoon, in the evening's slot.
   const part = dayPartWord(dayPartOf(task))
   if (part) when.push({ id: 'evening', text: part, segment: 'due' })
@@ -126,7 +132,7 @@ export function facetsOf(task: Task, ctx: FacetContext): Facets {
   else if (revealed.has('reminders')) when.push({ id: 'reminders', text: t('Reminder'), segment: 'reminders', empty: true })
   // Nothing set: one part that reads so, and opens Do on.
   if (!due && !when.some((p) => p.id !== 'evening')) when.unshift({ id: 'due', text: t('Not scheduled'), segment: 'due', empty: true })
-  else if (!due) when.unshift({ id: 'due', text: t('No date'), segment: 'due', empty: true })
+  else if (!due && !sector) when.unshift({ id: 'due', text: t('No date'), segment: 'due', empty: true })
 
   // How: priority, estimate, energy (task-energy), labels.
   const how: FacetPart[] = [{ id: 'priority', text: PRIORITY_TEXT[task.priority] ?? 'P4' }]

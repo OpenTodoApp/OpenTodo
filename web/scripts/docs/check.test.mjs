@@ -4,8 +4,8 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { buildAll, OUT_SITE, writeAll } from './build.mjs'
-import { quickAddLinkProblems, runChecks } from './check.mjs'
+import { buildAll, buildHelp, OUT_HELP, OUT_SITE, writeAll } from './build.mjs'
+import { quickAddLinkProblems, runChecks, selfHostingOrphans, stabilityLinkProblems, switchExportProblems, undeclaredScreens } from './check.mjs'
 import { SCREENSHOTS, SHOTS_DIR } from '../../../scripts/site-bundle.mjs'
 
 // A 1×1 WebP (VP8L).
@@ -45,6 +45,14 @@ describe('docs check', () => {
     const help = JSON.parse(read('web/src/generated/help.json'))
     expect(help.screens['board-view']).toEqual({ page: 'boards', anchor: 'switch-to-a-board' })
     expect(help.version).toBe('1.2.3')
+  })
+
+  it('serves a linked file under docs/ beside the pages', async () => {
+    write('docs/themes/format.schema.json', '{"type":"object"}')
+    write('docs/boards.md', read('docs/boards.md') + '\nThe [schema](themes/format.schema.json).\n')
+    const { files } = await buildAll(root)
+    expect(files.get(`${OUT_SITE}/themes/format.schema.json`)?.toString()).toBe('{"type":"object"}')
+    expect(files.get(`${OUT_SITE}/boards/index.html`)).toContain('href="/docs/themes/format.schema.json"')
   })
 
   it('names a page without front matter', async () => {
@@ -120,8 +128,22 @@ describe('docs check', () => {
   })
 
   it('reports stale generated files', async () => {
+    write('web/src/generated/screen-ids.json', '[]\n')
+    write('web/src/app/screens.ts', "export const SCREEN_IDS = ['board-view']\n")
+    expect(await runChecks(root)).toContainEqual(expect.stringMatching(/^generated docs are out of date; run `make docs` \(web\/src\/generated\/screen-ids\.json/))
+  })
+
+  it('does not compare the in-app help, which is built and not committed', async () => {
     write('docs/boards.md', read('docs/boards.md').replace('## Switch to a board', '## Switch to a board\n\nNew sentence.'))
-    expect(await runChecks(root)).toContainEqual(expect.stringMatching(/^generated docs are out of date; run `make docs` \(web\/src\/generated\/help\.json/))
+    rmSync(join(root, OUT_HELP))
+    expect(await runChecks(root)).toEqual([])
+  })
+
+  it('builds the same help.json from docs/ alone (help.mjs) as the full build', async () => {
+    const { files } = await buildAll(root)
+    expect(buildHelp(root)).toBe(files.get(OUT_HELP))
+    rmSync(join(root, 'web'), { recursive: true })
+    expect(buildHelp(root)).toBe(files.get(OUT_HELP))
   })
 
   it('ignores the built docs website, which is not committed (site-bundle D6)', async () => {
@@ -140,5 +162,43 @@ describe('docs check', () => {
     const body = '# Views\n\n## What each view shows\n\nAdd with [quick add](quick-add.md).\n\n## Park ideas in Someday\n\nParked tasks.\n\n### More\n\nSee [quick add](quick-add.md).\n'
     const pages = [{ rel: 'views.md', body, fm: { screens: ['inbox#what-each-view-shows', 'someday#park-ideas-in-someday', 'board-view#park-ideas-in-someday'] } }]
     expect(quickAddLinkProblems(pages)).toEqual(['docs/views.md: section "#park-ideas-in-someday" (screen "someday") does not link the quick-add guide (quick-add.md) before its first subheading'])
+  })
+
+  it('names a surface page or the README that does not link the compatibility policy (stability-contract)', () => {
+    const pages = [
+      { rel: 'api.md', body: '# API\n\nSee [stability](stability.md#deprecation).\n', fm: {} },
+      { rel: 'mcp.md', body: '# MCP\n\nNo link here.\n', fm: {} },
+      { rel: 'views.md', body: '# Views\n', fm: {} },
+    ]
+    expect(stabilityLinkProblems(pages, '[policy](docs/stability.md)')).toEqual(['docs/mcp.md: does not link the compatibility policy (stability.md)'])
+    expect(stabilityLinkProblems([], 'no link')).toEqual(['README.md: does not link the compatibility policy (docs/stability.md)'])
+  })
+
+  it('names a self-hosting page the handbook does not link (docs-1-0)', () => {
+    const pg = (rel, body = '') => ({ rel, body, fm: {} })
+    const handbook = pg('self-hosting/README.md', '| Docker | [Running with Docker](docker.md) |\n')
+    expect(selfHostingOrphans([handbook, pg('self-hosting/docker.md')])).toEqual([])
+    expect(selfHostingOrphans([handbook, pg('self-hosting/docker.md'), pg('self-hosting/nixos.md')]))
+      .toEqual(['docs/self-hosting/nixos.md: not linked from the self-hosting handbook (docs/self-hosting/README.md); add it to the install table or a section'])
+    expect(selfHostingOrphans([pg('self-hosting/nixos.md')])).toEqual([])
+  })
+
+  it('names a screen of the app that no page declares (docs-1-0 D1)', async () => {
+    write('web/src/app/screens.ts', "export const SCREEN_IDS: readonly string[] = ['board-view', 'settings/telegram']\n")
+    const problems = await runChecks(root)
+    expect(problems).toContain('web/src/app/screens.ts: screen "settings/telegram" has no guide; name it in the "screens" of the page that explains it')
+    expect(problems.some((p) => p.includes('"board-view" has no guide'))).toBe(false)
+    expect(undeclaredScreens(['a', 'b'], new Map([['a', 'x.md']]))).toEqual(['web/src/app/screens.ts: screen "b" has no guide; name it in the "screens" of the page that explains it'])
+  })
+
+  it('names a switch guide without its export section (docs-1-0 1.3)', () => {
+    const pg = (rel) => ({ rel })
+    const headings = new Map([
+      ['switch/README.md', []],
+      ['switch/todoist.md', [{ depth: 1, id: 'switch-from-todoist' }, { depth: 2, id: 'export-from-todoist' }]],
+      ['switch/linear.md', [{ depth: 1, id: 'switch-from-linear' }, { depth: 2, id: 'import' }]],
+    ])
+    expect(switchExportProblems([pg('switch/README.md'), pg('switch/todoist.md'), pg('switch/linear.md')], headings))
+      .toEqual(['docs/switch/linear.md: a switch guide needs an "## Export from …" section with the export steps'])
   })
 })

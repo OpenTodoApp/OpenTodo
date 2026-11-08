@@ -39,6 +39,18 @@ export function current(state: TriageState): string | null {
 }
 
 /** A decision or a skip on the current task: it counts once and the queue moves on. */
+/**
+ * The task being decided keeps its place while its write lands: a live update
+ * that arrives before the decision moves on (the task list is patched as soon as
+ * the write commits) must not drop it from the queue first.
+ */
+export function claim(state: TriageState, id: string): TriageState {
+  if (state.handled.has(id)) return state
+  const handled = new Set(state.handled)
+  handled.add(id)
+  return { ...state, handled }
+}
+
 export function advance(state: TriageState): TriageState {
   const id = current(state)
   if (id === null) return state

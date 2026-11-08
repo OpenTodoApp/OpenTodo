@@ -2,7 +2,8 @@
 // one dismissible chip per recognised attribute in the words the task will read, and a
 // grey chip for a #token that names no project. Shared by quick add and the title
 // editors, so a title typed in either place reads the same.
-import { describeDue, formatDate, todayISO } from '../lib/dates'
+import { describeDue, formatDate, logicalToday, todayISO } from '../lib/dates'
+import { sectorLabel } from '../lib/sectorNames'
 import { type Chip, describeOffset, findLabel, formatMinutes, type LabelRef, type ProjectRef, type ReminderPhrase, resolveReminder } from '../lib/nlp'
 import type { Unmatched } from '../lib/nlp/parse'
 import type { Due } from '../lib/types'
@@ -15,6 +16,7 @@ export const CHIP_HUE: Record<Chip['kind'], HueName> = {
   due: 'violet',
   deadline: 'red',
   someday: 'slate',
+  sector: 'violet',
   evening: 'indigo',
   daypart: 'indigo',
   project: 'slate',
@@ -67,6 +69,8 @@ export function chipText(chip: Chip, projects: readonly ProjectRef[], labels: re
       return dueInWords(chip.value as Due)
     case 'someday':
       return t('Someday')
+    case 'sector':
+      return sectorLabel(String(chip.value), logicalToday())?.text ?? String(chip.value)
     case 'evening':
       return t('This Evening')
     case 'daypart':
@@ -88,7 +92,7 @@ export function chipText(chip: Chip, projects: readonly ProjectRef[], labels: re
   }
 }
 
-const KIND_NAME = translatedMap<Chip['kind']>({ due: msg('Due'), deadline: msg('Deadline'), someday: msg('Someday'), evening: msg('Evening'), daypart: msg('Part of the day'), project: msg('Project'), label: msg('Label'), priority: msg('Priority'), estimate: msg('Estimate'), spent: msg('Time spent'), recurrence: msg('Repeats'), reminder: msg('Reminder'), energy: msg('Energy') })
+const KIND_NAME = translatedMap<Chip['kind']>({ due: msg('Due'), deadline: msg('Deadline'), someday: msg('Someday'), sector: msg('Time sector'), evening: msg('Evening'), daypart: msg('Part of the day'), project: msg('Project'), label: msg('Label'), priority: msg('Priority'), estimate: msg('Estimate'), spent: msg('Time spent'), recurrence: msg('Repeats'), reminder: msg('Reminder'), energy: msg('Energy') })
 
 
 export interface ParseChipsProps {

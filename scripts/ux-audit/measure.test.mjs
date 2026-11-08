@@ -5,8 +5,8 @@
 import { after, before, test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  chromeRows, focusWalk, horizontalOverflow, installHelpers, layoutShift, LAYOUT_SHIFT_INIT, motionSeen, movingAnimations,
-  overlaps, primaryDestinations, rowMetaItems, targetSize, truncation, watchMotion,
+  chromeRows, credentialFields, focusWalk, horizontalOverflow, installHelpers, layoutShift, LAYOUT_SHIFT_INIT, motionSeen, movingAnimations,
+  overlaps, primaryDestinations, reflow, rowMetaItems, targetSize, targetSizeWcag, TEXT_SPACING_CSS, textSpacingClip, truncation, watchMotion,
 } from './audit-measures.mjs'
 import { smallFields } from './measure.mjs'
 
@@ -185,4 +185,123 @@ test('overlay content fit (issue #731): a wrapped notice passes, a squeezed or s
   const out = await page.evaluate(overlayContentFit, '#o')
   assert.equal(out.length, 1, out.join('; '))
   assert.match(out[0], /^span .* sticks out of the overlay/)
+})
+
+test('cut labels: whole options and day names pass, a cut option or day name fails', { skip }, async () => {
+  const { cutLabels } = await import('./measure.mjs')
+  const opt = (w, text) => `<button role="radio" style="width:${w}px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding:0;border:0">${text}</button>`
+  const day = (w) => `<div data-day-header><span data-day-name style="display:block;width:${w}px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">Tue 3</span></div>`
+  await fixture(`<div role="radiogroup" aria-label="Edit scope">${opt(200, 'This occurrence')}${opt(200, 'All occurrences')}</div>${day(120)}`)
+  assert.deepEqual(await page.evaluate(cutLabels), [])
+  await fixture(`<div role="radiogroup" aria-label="Edit scope">${opt(60, 'This occurrence')}${opt(200, 'All occurrences')}</div>${day(12)}`)
+  const r = await page.evaluate(cutLabels)
+  assert.equal(r.length, 2, r.join('; '))
+  assert.match(r[0], /^option "This occurrence" of "Edit scope" is cut/)
+  assert.match(r[1], /^day name "Tue 3" in the calendar header is cut/)
+})
+
+// The accessibility gate's measures (accessibility-aa D2): one passing and one failing page each.
+test('M17 focus not obscured: a button under a sticky bar fails, one in view passes', { skip }, async () => {
+  const ring = '<style>button:focus-visible{outline:2px solid #2563eb}</style>'
+  await fixture(`${ring}<button>ok</button>`)
+  assert.deepEqual(await focusWalk(page, 10, { obscured: true }), [])
+  await fixture(`${ring}<button style="position:absolute;top:600px;left:10px">hidden</button><div style="position:fixed;left:0;right:0;top:560px;height:80px;background:#eee">toast</div>`)
+  const r = await focusWalk(page, 10, { obscured: true })
+  assert.deepEqual(rules(r), ['M17'])
+  assert.match(r[0].value, /focus obscured by <div>/)
+})
+
+test('M17: a link wrapped over two lines shows when one of its lines does', { skip }, async () => {
+  const ring = '<style>a:focus-visible{outline:2px solid #2563eb}</style>'
+  // The bar covers the first line of the link; the second line is in view.
+  await fixture(`${ring}<p style="width:200px;margin-top:40px">Some words before <a href="#">a link that wraps onto the next line</a> and after.</p><div style="position:fixed;left:0;right:0;top:0;height:62px;background:#eee"></div>`)
+  assert.deepEqual(await focusWalk(page, 5, { obscured: true }), [])
+})
+
+test('M18 reflow: a wrapping page and a listed grid pass, a wide form row fails', { skip }, async () => {
+  await page.setViewportSize({ width: 320, height: 256 })
+  try {
+    await fixture('<p>Some text that wraps at any width.</p><div data-calendar-scroller style="overflow:auto"><div style="width:900px">week grid</div></div>')
+    assert.deepEqual(await page.evaluate(reflow, ['[data-calendar-scroller]']), [])
+    await fixture('<div style="overflow-x:auto"><div style="width:900px">settings row</div></div><div style="width:600px">wide</div>')
+    const r = await page.evaluate(reflow, ['[data-calendar-scroller]'])
+    assert.deepEqual(rules(r), ['M18', 'M18'])
+    assert.equal(r[0].element, 'document')
+  } finally {
+    await page.setViewportSize({ width: 360, height: 640 })
+  }
+})
+
+test('M19 text spacing: a growing box passes, a fixed-height label with hidden overflow fails', { skip }, async () => {
+  const label = (style) => `<style>${TEXT_SPACING_CSS}</style><div style="width:120px;${style}">A label that wraps onto two lines</div>`
+  await fixture(label(''))
+  assert.deepEqual(await page.evaluate(textSpacingClip), [])
+  await fixture(label('height:40px;overflow:hidden'))
+  assert.deepEqual(rules(await page.evaluate(textSpacingClip)), ['M19'])
+})
+
+test('M20 credential fields: autocomplete and paste pass; no autocomplete or a blocked paste fails', { skip }, async () => {
+  await fixture('<input type="password" autocomplete="current-password"><input inputmode="numeric" autocomplete="one-time-code">')
+  assert.deepEqual(await page.evaluate(credentialFields), [])
+  await fixture('<input type="password"><input data-credential autocomplete="one-time-code" onpaste="return false">')
+  const r = await page.evaluate(credentialFields)
+  assert.deepEqual(r.map((v) => v.value), ['autocomplete=""', 'paste cancelled'])
+})
+
+test('M21 target size per WCAG 2.5.8: 24 px, or a clear 24 px circle', { skip }, async () => {
+  let n = 0
+  const b = (style) => `<button style="position:absolute;padding:0;border:0;${style}">${++n}</button>`
+  // Two 20 px buttons 2 px apart: their circles overlap.
+  await fixture(b('left:10px;top:10px;width:20px;height:20px') + b('left:32px;top:10px;width:20px;height:20px'))
+  assert.deepEqual(rules(await page.evaluate(targetSizeWcag)), ['M21', 'M21'])
+  // 20 px buttons whose centres are 24 px apart pass; so does a 24 px one beside anything.
+  await fixture(b('left:10px;top:10px;width:20px;height:20px') + b('left:34px;top:10px;width:20px;height:20px'))
+  assert.deepEqual(await page.evaluate(targetSizeWcag), [])
+  await fixture(b('left:10px;top:10px;width:24px;height:24px') + b('left:34px;top:10px;width:24px;height:24px'))
+  assert.deepEqual(await page.evaluate(targetSizeWcag), [])
+  // A 16 px tall button 2 px under a full-size one: its circle reaches into it.
+  await fixture(b('left:10px;top:10px;width:120px;height:30px') + b('left:10px;top:42px;width:120px;height:16px'))
+  assert.deepEqual(rules(await page.evaluate(targetSizeWcag)), ['M21'])
+})
+
+test('safe areas (GitHub issue 973): a control under the island fails; one in a padded bar or a list that scrolls on passes', { skip }, async () => {
+  const { insetOverlaps } = await import('./measure.mjs')
+  const insets = { top: 59, right: 0, bottom: 34, left: 0 }
+  // The issue: a sheet's header with no top inset puts Close under the Dynamic Island.
+  await fixture('<div style="position:fixed;inset:0"><header style="display:flex;justify-content:flex-end"><button aria-label="Close" style="width:44px;height:44px">x</button></header></div>')
+  const r = await page.evaluate(insetOverlaps, [null, insets])
+  assert.equal(r.length, 1)
+  assert.match(r[0], /"Close" \(button\) is in the top safe area/)
+  // Padded by the inset, the bar's padding is what lies under the island.
+  await fixture('<div style="position:fixed;inset:0"><header style="padding-top:59px;display:flex;justify-content:flex-end;background:#fff"><button aria-label="Close" style="width:44px;height:44px">x</button></header></div>')
+  assert.deepEqual(await page.evaluate(insetOverlaps, [null, insets]), [])
+  // A fixed bar at the bottom without the inset fails; rows of a list that scrolls on pass.
+  await fixture('<div style="height:640px;overflow:auto"><div style="height:2000px"><button style="margin-top:600px;width:100px;height:44px">Row</button></div></div><nav style="position:fixed;bottom:0;left:0;right:0"><button style="width:100px;height:44px">Today</button></nav>')
+  const b = await page.evaluate(insetOverlaps, [null, insets])
+  assert.equal(b.length, 1)
+  assert.match(b[0], /"Today" \(button\) is in the bottom safe area/)
+})
+
+test('top edge (GitHub issue 999): without an opaque fixed backdrop over the status bar, or with text under it, the check fails', { skip }, async () => {
+  const { topEdge } = await import('./measure.mjs')
+  const insets = { top: 59, right: 0, bottom: 34, left: 0 }
+  // The issue: a padded bar, but nothing fixed and opaque over the strip, so Safari blurs it.
+  await fixture('<header style="padding-top:59px"><h1 style="margin:0">Inbox</h1></header>')
+  const r = await page.evaluate(topEdge, [insets])
+  assert.equal(r.length, 1)
+  assert.match(r[0], /no opaque fixed element covers the top safe area/)
+  // With the backdrop, the padded bar passes; a title not padded by the inset fails, even under the backdrop.
+  const backdrop = '<div data-status-bar-backdrop style="position:fixed;top:0;left:0;right:0;height:59px;background:#fff;z-index:20"></div>'
+  await fixture(`${backdrop}<header style="padding-top:59px"><h1 style="margin:0">Inbox</h1></header>`)
+  assert.deepEqual(await page.evaluate(topEdge, [insets]), [])
+  await fixture(`${backdrop}<header><h1 style="margin:0">Inbox</h1></header>`)
+  const t = await page.evaluate(topEdge, [insets])
+  assert.equal(t.length, 1)
+  assert.match(t[0], /"Inbox" is drawn in the top safe area at rest/)
+  // A translucent fixed bar is not a backdrop; a list scrolled down may pass under the strip.
+  await fixture('<div style="position:fixed;top:0;left:0;right:0;height:59px;background:rgba(0,0,0,0.4)"></div><div id="s" style="height:640px;overflow:auto"><div style="height:2000px;padding-top:80px">Row</div></div>')
+  await page.evaluate(() => { document.getElementById('s').scrollTop = 60 })
+  const u = await page.evaluate(topEdge, [insets])
+  assert.equal(u.length, 1)
+  assert.match(u[0], /no opaque fixed element/)
 })

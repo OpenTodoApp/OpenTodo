@@ -13,7 +13,7 @@ import { resolveLabels } from '../lib/labels'
 import { hasTimeColumn } from '../lib/rowTime'
 import { setTaskCompleted } from '../lib/ops'
 import { breadcrumbOf, progressMap } from '../lib/subtasks'
-import type { View } from '../lib/types'
+import { GROUP_BY_OPTIONS, SORT_BY_OPTIONS, type View } from '../lib/types'
 import { displayOptions, runView, updateView, viewOptions, type ViewPatch } from '../lib/views'
 import { setFavourite } from '../lib/favourites'
 import { DashboardView } from './DashboardView'
@@ -35,6 +35,7 @@ import { useViewData, type ViewData } from './useViews'
 import { t } from '../lib/i18n'
 import { keysOf } from '../lib/shortcuts'
 import { act } from './actionError'
+import { ListReorderContext, type ListReorder } from './bulk/BulkActions'
 import { FilterBuilder } from './filter/FilterBuilder'
 import { useBuilderOpen } from './filter/builderToggle'
 import { ViewsCrumb } from './views/ViewsCrumb'
@@ -43,7 +44,9 @@ import { BOARD_COLOR_BY_KEY } from '../lib/colorBy'
 import { useColorBy } from './calendar/colorByControls'
 import { useFoldedGroups, ViewResults } from './views/ViewResults'
 import type { ViewDisplay } from './views/DisplayPanel'
+import { useDisplayKeys } from './views/useDisplayKeys'
 import { rowLayoutOf, useAccountRowLayout } from '../lib/rowLayout'
+import { LIST_READY, perfMark } from '../lib/perfMarks'
 
 function parseError(src: string): string | null {
   if (!src.trim()) return t('The query must not be empty')
@@ -87,6 +90,8 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   const boardColor = useColorBy(BOARD_COLOR_BY_KEY)
   const display: ViewDisplay = { layout: shown.layout, groupBy: opts.groupBy, sortBy: opts.sortBy, sortDir: opts.sortDir, showCompleted: shown.showCompleted, hidden: shown.hidden, rowLayout: rowLayoutOf(view.row_layout, account), cardNotes: shown.cardNotes }
   const result = useMemo(() => runView(view, ctx), [view, ctx])
+  // The view's rows are on screen (performance-10k D4): once per view opened.
+  useEffect(() => { perfMark(LIST_READY, { view: 'view' }) }, [view.id])
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
   const taskMap = useMemo(() => new Map(tasks.map((tk) => [tk.id, tk])), [tasks])
@@ -162,6 +167,29 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
     const group = groups.find((g) => g.key === groupOfKey(r.key))
     return stepInView(host, bulkTasks, group?.tasks ?? [], r.task.id, step)
   }
+  // The row menu's Reorder items (accessibility-aa D3): the same step as Alt+arrows, from a pointer.
+  const latestRows = useRef({ rows, groups, selected })
+  latestRows.current = { rows, groups, selected }
+  const listReorder = useMemo<ListReorder>(() => {
+    const rowOf = (id: string) => {
+      const { rows: rs, selected: sel } = latestRows.current
+      return rs.find((r) => r.key === sel && r.task.id === id) ?? rs.find((r) => r.task.id === id)
+    }
+    const groupOf = (r: KeyRow) => latestRows.current.groups.find((g) => g.key === groupOfKey(r.key))
+    return {
+      move: (id, step) => {
+        const r = rowOf(id)
+        const group = r && groupOf(r)
+        if (r) act(stepInView(host, latestRows.current.rows.map((x) => x.task), group?.tasks ?? [], id, step))
+      },
+      edges: async (id) => {
+        const r = rowOf(id)
+        const tasks = (r && groupOf(r)?.tasks) ?? []
+        const i = tasks.findIndex((tk) => tk.id === id)
+        return i < 0 ? null : { first: i === 0, last: i === tasks.length - 1 }
+      },
+    }
+  }, [host])
   const drag = useViewOrderDrag(host, rows, { ticked: bulk.ticked, openRowMenu: (tk, x, y, el) => bulk.rowProps(tk).onRowMenu(x, y, el), onDropped: setSelected })
 
   useListKeys({
@@ -178,6 +206,9 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
     },
   })
 
+  // Group by, Order by and the direction from the keyboard (display-keys): the panel's write.
+  useDisplayKeys({ value: display, groupOptions: GROUP_BY_OPTIONS, sortOptions: SORT_BY_OPTIONS, sortFields: ctx.fields, set: (patch) => updateView(view.id, displayPatch(patch)) })
+
   useEffect(() => {
     if (!selected) return
     const i = selected.lastIndexOf(':')
@@ -190,19 +221,20 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   const count = result.ok ? result.tasks.length : null
 
   return (
+    <ListReorderContext.Provider value={listReorder}>
     <PageBody width="list">
           <PageHeader title={<ViewsCrumb name={view.name} />} meta={count !== null ? count : undefined} help="saved-filter"
             leading={view.icon ? <span className="flex h-5 w-5 shrink-0 items-center justify-center text-muted" aria-hidden="true"><ViewMark view={view} /></span> : undefined}
             actions={<IconButton icon={view.pinned ? 'pin-off' : 'pin'} size="sm" label={view.pinned ? t('Unpin') : t('Pin')} onClick={() => act(setFavourite('view', view.id, !view.pinned))} />}
             menu={<ViewMenu view={view} />} />
 
-          <ViewToolbar query={view.query} filterOpen={filterOpen} setFilterOpen={setFilterOpen} display={display}
+          <ViewToolbar sortFields={ctx.fields} query={view.query} filterOpen={filterOpen} setFilterOpen={setFilterOpen} display={display}
             onDisplay={(patch) => act(updateView(view.id, displayPatch(patch)))}
             colorBy={display.layout === 'board' ? { mode: boardColor.mode, onChange: boardColor.setMode } : undefined}
             onAdd={() => document.querySelector<HTMLButtonElement>('[data-filter-panel] [data-add-condition]')?.click()} />
           {filterOpen && (
             <FilterPanel count={draftCount} onClose={() => setFilterOpen(false)} inputRef={inputRef}
-              builder={<FilterBuilder query={draft} onChange={(q) => { setDraft(q); setDraftError(null) }} labels={labels} projects={projects} fields={ctx.fields ?? []} workspaces={ctx.workspaces} />}
+              builder={<FilterBuilder query={draft} onChange={(q) => { setDraft(q); setDraftError(null) }} labels={labels} projects={projects} fields={ctx.fields ?? []} workspaces={ctx.workspaces} members={ctx.members} />}
               formula={(
                 <div className="flex items-center gap-2">
                   <input ref={inputRef} className="ui-input border-transparent bg-transparent font-mono" aria-label={t('View query')} aria-invalid={!!message} aria-describedby="view-message"
@@ -271,5 +303,6 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
         </Dialog>
       )}
     </PageBody>
+    </ListReorderContext.Provider>
   )
 }

@@ -18,9 +18,41 @@ export function withoutArchived(tasks: readonly Task[], projects: readonly Pick<
   return tasks.filter((t) => !t.project_id || !hidden.has(t.project_id) || t.project_id === keepProject)
 }
 
-/** Today: open tasks due today or earlier (or deadline / start reached), by due then priority. */
-export function todayList(tasks: readonly Task[], today: string): Task[] {
-  return tasks.filter((t) => inToday(t, today)).sort(compareDueThenPriority)
+/**
+ * Today hides tasks assigned to others (today-assigned-filter) only when the
+ * account stored `mine`. `shared` is every project the membership cache knows;
+ * a project missing from that cache is treated as not shared.
+ */
+export interface TodayAssigneeFilter {
+  shared: ReadonlySet<string>
+  me: string | null
+}
+
+/** The hide to apply, or null while the option is off or the stored value is anything but `mine`. */
+export function todayAssigneeFilter(
+  row: { today_assignees?: string } | null | undefined,
+  memberships: readonly { projectId: string }[],
+  me: string | null,
+): TodayAssigneeFilter | null {
+  if (row?.today_assignees !== 'mine') return null
+  return { shared: new Set(memberships.map((m) => m.projectId)), me }
+}
+
+/** True when the cache lists a shared project that has a member other than the viewer. */
+export function sharedWithSomeoneElse(memberships: readonly { members: readonly { userId: string }[] }[], me: string | null): boolean {
+  if (!me) return false
+  return memberships.some((m) => (m.members ?? []).some((member) => member.userId !== '' && member.userId !== me))
+}
+
+/** A task Today drops: a known shared project, assigned, and the assignee is not the viewer. Unassigned stays. */
+export function assignedToSomeoneElse(task: Pick<Task, 'project_id' | 'assignee_id'>, filter: TodayAssigneeFilter | null | undefined): boolean {
+  if (!filter?.me || !task.project_id || !filter.shared.has(task.project_id)) return false
+  return !!task.assignee_id && task.assignee_id !== filter.me
+}
+
+/** Today: open tasks due today or earlier (or deadline / start reached), by due then priority. `hide` drops other people's shared tasks. */
+export function todayList(tasks: readonly Task[], today: string, hide?: TodayAssigneeFilter | null): Task[] {
+  return tasks.filter((t) => inToday(t, today) && !assignedToSomeoneElse(t, hide)).sort(compareDueThenPriority)
 }
 
 /**
@@ -34,8 +66,9 @@ export function upcomingList(tasks: readonly Task[], today: string): Task[] {
 
 /**
  * Upcoming with Start with Today (OpenSpec change upcoming-start-with-today, D2):
- * Today's list as Today holds it, then the Upcoming tasks Today does not already
+ * Today's list by the date rule, then the Upcoming tasks Today does not already
  * hold (a task due tomorrow whose deadline has passed is Today's), each task once.
+ * The "hide tasks assigned to others" option is not applied here.
  */
 export function upcomingWithToday(tasks: readonly Task[], today: string): Task[] {
   return [...todayList(tasks, today), ...upcomingList(tasks, today).filter((t) => !inToday(t, today))]
@@ -79,9 +112,9 @@ export function groupToday(list: readonly Task[], today: string, blocked: { has(
  * The ids of Today's Earlier group (page-rhythm D6), as the list shows it: open tasks
  * of active projects due (or with a deadline) before today, blocked ones left out.
  */
-export function earlierIds(tasks: readonly Task[], projects: readonly Pick<Project, 'id' | 'archived'>[], today: string): string[] {
+export function earlierIds(tasks: readonly Task[], projects: readonly Pick<Project, 'id' | 'archived'>[], today: string, hide?: TodayAssigneeFilter | null): string[] {
   const live = withoutArchived(tasks.filter((t) => !t.deleted_at), projects)
-  return groupToday(todayList(live, today), today, blockedMap(live)).overdue.map((t) => t.id)
+  return groupToday(todayList(live, today, hide), today, blockedMap(live)).overdue.map((t) => t.id)
 }
 
 /** Upcoming's list (already sorted) bucketed by its day, in date order. */

@@ -4,6 +4,6 @@
     "lib": ["ES2022", "WebWorker"],
     "types": []
   },
-  "include": ["src/sw.ts"],
+  "include": ["src/sw.ts", "src/buildKeys.d.ts"],
   "exclude": []
 }

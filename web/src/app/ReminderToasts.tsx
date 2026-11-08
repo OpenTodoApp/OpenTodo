@@ -6,6 +6,7 @@ import { pushEnabledHere, swRegistration } from '../lib/push'
 import { dismissReminder, snoozeReminder } from '../lib/reminders'
 import { markShown, startReminderWatcher, type DueReminder, type Watcher } from '../lib/reminderWatcher'
 import type { SnoozeChoice } from '../lib/reminderTime'
+import { applyReminderAction } from '../lib/shellActions'
 import { requestSync } from '../lib/sync'
 import { openTaskInList } from './signals'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
@@ -18,7 +19,7 @@ import { t } from '../lib/i18n'
  * subscription, shows a system notification instead (tagged per reminder, so a
  * push for the same reminder replaces rather than duplicates it). Also handles the
  * service worker's messages: a push that arrived while the app is focused, ops it
- * wrote from a notification action, and "open this task".
+ * wrote from a notification action, Done on a notification, and "open this task".
  */
 export function ReminderToasts() {
   const dt = useDateTimeFormat()
@@ -126,6 +127,7 @@ async function notifyIfHidden(list: DueReminder[], notified: Set<string>): Promi
 
 interface WorkerMessage {
   type?: string
+  reminderId?: string
   reminderIds?: string[]
   ts?: number
   taskId?: string
@@ -147,6 +149,13 @@ async function handleWorkerMessage(data: WorkerMessage, w: Watcher): Promise<voi
       w.poke()
       return
     }
+    case 'reminders:done':
+      // Done on a system notification (reminder-done-action D1): the app's own completion,
+      // so a repeating task moves to its next occurrence.
+      if (!data.reminderId) return
+      await applyReminderAction(data.reminderId, 'done')
+      requestSync(0)
+      return
     case 'reminders:open': {
       if (!data.taskId) return
       const task = await getTask(data.taskId)

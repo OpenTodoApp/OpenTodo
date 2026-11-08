@@ -21,7 +21,7 @@ A task SHALL have an optional `recurrence` rule stored as a human-readable strin
 - **THEN** every device shows the rule with the greater timestamp and computes the same next occurrence from it
 
 ### Requirement: Rule grammar
-The grammar SHALL be case-insensitive English of the form `every <pattern> [after completion] [until YYYY-MM-DD | for N times]` and SHALL be documented. Patterns SHALL include `day`, `N days`, `week`, `N weeks`, `weekday`, `month`, `N months`, `year`, one or more weekday names, a day of month (`15th`), `last day`, `last weekday`, and an ordinal weekday (`2nd tuesday`, `last friday`). Parsing SHALL produce one canonical lowercase form that is what gets stored.
+The grammar SHALL be case-insensitive English of the form `every <pattern> [after completion] [until YYYY-MM-DD | for N times]` and SHALL be documented. Patterns SHALL include `day`, `N days`, `week`, `N weeks`, `N weeks on` one or more weekday names (`every 2 weeks on saturday`), `weekday`, `month`, `N months`, `year`, one or more weekday names, a day of month (`15th`), `last day`, an ordinal weekday of the month (`1st weekday` to `4th weekday`, or `last weekday`: that Monday-to-Friday day of each month, counting only Monday to Friday), and an ordinal weekday (`2nd tuesday`, `last friday`). Ordinals SHALL be written as words (`first` to `fourth`, `last`) or with a suffix (`1st` to `4th`). Parsing SHALL produce one canonical lowercase form that is what gets stored, with ordinals in suffix form (`every first weekday` is stored as `every 1st weekday`, `every week on tue` as `every tuesday`). `N weeks on` weekdays SHALL be a calendar pattern, never completion-relative. A rule is a string field, so it works offline and converges by the field's last-writer-wins like any other.
 
 #### Scenario: Canonical storage
 - **WHEN** the user types `Every  2nd  Tuesday`
@@ -31,12 +31,24 @@ The grammar SHALL be case-insensitive English of the form `every <pattern> [afte
 - **WHEN** the user enters `every mon, wed, fri`
 - **THEN** the rule is accepted and the next occurrence is the first of those weekdays after the current due date
 
+#### Scenario: Week interval on a weekday
+- **WHEN** the user enters `every 2 weeks on sat`, `every 3 weeks on mon and thu` or `every week on tuesday`
+- **THEN** the stored rules are `every 2 weeks on saturday`, `every 3 weeks on monday, thursday` and `every tuesday`, while `every 2 weeks on saturday after completion` and `every 2 months on monday` are rejected
+
+#### Scenario: First and second weekday of the month
+- **WHEN** a task with `every first weekday` is due 2026-02-02 and is completed, and a task with `every 2nd weekday` is due 2026-02-03 and is completed
+- **THEN** the first is stored as `every 1st weekday` and becomes due Monday 2026-03-02, and the second becomes due Tuesday 2026-03-03, because 1 March 2026 is a Sunday and weekends are not counted
+
+#### Scenario: Ordinal weekday of the month is a calendar pattern
+- **WHEN** the user enters `every first weekday after completion` or `every 5th weekday`
+- **THEN** the rule is rejected, while `every 4th weekday for 6 times` and `every first weekday until 2027-03-31` are accepted
+
 #### Scenario: Same result on server and client
 - **WHEN** the same rule and due date are evaluated by the server and by a client
 - **THEN** both produce the same next occurrence date for every rule in the shared test vectors
 
 ### Requirement: Next occurrence for calendar rules
-For a rule without `after completion`, the next occurrence SHALL be the first date matching the pattern strictly after the current due date that is not an exception date of the series (see "Exceptions come from the records"). If that date is already in the past, the next occurrence SHALL instead be the first matching date after today that is not an exception date, so overdue recurring tasks catch up rather than pile up. Day-of-month patterns that do not exist in a month SHALL use that month's last day. The due time, if any, SHALL be preserved.
+For a rule without `after completion`, the next occurrence SHALL be the first date matching the pattern strictly after the current due date that is not an exception date of the series (see "Exceptions come from the records"). If that date is already in the past, the next occurrence SHALL instead be the first matching date after today that is not an exception date, so overdue recurring tasks catch up rather than pile up. Day-of-month patterns that do not exist in a month SHALL use that month's last day. For `every N weeks on` weekdays, a matching date SHALL be one of the weekdays in a week (Monday to Sunday) that is a multiple of N weeks from the week of the current due date, also while catching up, the same dates as an iCalendar `FREQ=WEEKLY;INTERVAL=N;BYDAY` rule with the due date as its start; a due date on another weekday SHALL count as an occurrence of its own. A task without a due date that gets such a rule SHALL be due on the nearest of its weekdays from today on. The due time, if any, SHALL be preserved. Every device and the server SHALL compute the same dates offline from the rule and the due date.
 
 #### Scenario: Every last weekday of the month
 - **WHEN** a task with `every last weekday` due Friday 2026-10-30 is completed
@@ -53,6 +65,14 @@ For a rule without `after completion`, the next occurrence SHALL be the first da
 #### Scenario: Jump over an exception
 - **WHEN** a task with `every day` due the 12th has a skipped record for the 13th and is completed
 - **THEN** its due date becomes the 14th
+
+#### Scenario: Every other Saturday from a Wednesday
+- **WHEN** a task with `every 2 weeks on saturday` due Wednesday 2026-11-04 is completed, and then completed again
+- **THEN** its due date becomes Saturday 2026-11-07, then Saturday 2026-11-21
+
+#### Scenario: Week interval keeps its phase while catching up
+- **WHEN** a task with `every 2 weeks on saturday` due 2026-11-07 is completed on Sunday 2026-12-06
+- **THEN** its due date becomes Saturday 2026-12-19, not 2026-12-12
 
 ### Requirement: Completion-relative rules
 For a rule with `after completion`, the next occurrence SHALL be computed from the local calendar date on which the task was completed, not from the previous due date, and the due time SHALL be preserved.
@@ -472,3 +492,33 @@ It SHALL never change a record's completion, skip, occurrence date or due date, 
 #### Scenario: Viewer
 - **WHEN** a viewer of a shared project opens a series with done records
 - **THEN** the second choice is not shown
+
+### Requirement: Ordinal weekday of the month in calendars
+A rule `every Nth weekday` SHALL be served to calendar clients as `RRULE:FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=N` (N from 1 to 4, `-1` for `every last weekday`), and an inbound RRULE of that form, in any order of its parts and days, SHALL become that rule. Any other `BYSETPOS` SHALL stay outside the grammar. The rule is an ordinary field value: set offline it SHALL sync and converge by last-writer-wins like any rule.
+
+#### Scenario: Served and read back
+- **WHEN** a task with `every 2nd weekday` is fetched over CalDAV and the client sends `RRULE:FREQ=MONTHLY;BYSETPOS=2;BYDAY=FR,TH,WE,TU,MO` back
+- **THEN** the task is served with `RRULE:FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=2` and keeps the rule `every 2nd weekday`
+
+#### Scenario: Unsupported position
+- **WHEN** a client sends `RRULE:FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=5`
+- **THEN** the grammar cannot express it and the task is handled like any other unsupported RRULE
+
+### Requirement: Rules a 1.0 client reads
+Every writer of a rule (quick add, the repeat field, REST, the AI assistant tools, CalDAV, the importer, the Markdown vault and a series split) SHALL store a rule in the form a 1.0 client reads whenever one gives the same dates: `every N weeks on` a single weekday, for a task whose due date at write time falls on that weekday, SHALL be stored as `every N weeks`, with its `until` or `for N times` end. A rule on several weekdays with N above 1, on a weekday the due date is not on, or on a task without a due date SHALL keep the `every N weeks on` form. The web app and the Go server SHALL do this through one function each, checked against shared vectors, so the stored rule is the same whichever device or route writes it; it is computed locally from the write's own fields, works offline and converges like any rule.
+
+#### Scenario: Every other Saturday due on a Saturday
+- **WHEN** a task due Saturday 2026-11-07 gets the rule `every 2 weeks on saturday`
+- **THEN** the stored rule is `every 2 weeks`, and completing the task makes it due 2026-11-21
+
+#### Scenario: Due date on another weekday
+- **WHEN** a task due Wednesday 2026-11-04 gets the rule `every 2 weeks on saturday`
+- **THEN** the stored rule is `every 2 weeks on saturday`
+
+#### Scenario: CalDAV rule on its start date
+- **WHEN** a CalDAV client sends a VTODO with `RRULE:FREQ=WEEKLY;INTERVAL=2;BYDAY=SA` whose DTSTART or DUE is Saturday 2026-11-07
+- **THEN** the stored rule is `every 2 weeks`
+
+#### Scenario: Several weekdays
+- **WHEN** a task due Monday 2026-11-02 gets the rule `every 3 weeks on monday, thursday`
+- **THEN** the stored rule is `every 3 weeks on monday, thursday`

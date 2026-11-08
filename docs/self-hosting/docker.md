@@ -33,14 +33,22 @@ level=WARN msg="No owner account exists yet. To create it from another machine, 
 
 Type it into the **Setup code** field (case and dashes do not matter). It works once: as soon as the owner exists it is discarded, and a restart without an owner prints a new one. Attempts count against the registration rate limit. On a platform without a terminal, open the container's logs in its panel.
 
+**Opened under a domain name before `OPENTODO_BASE_URL` is set.** Even with the code off, the setup screen asks for a setup code when the page's address is a domain name, such as `todo.example.com`, and the server has no `OPENTODO_BASE_URL`. Without the base URL, the server cannot tell its own name from another site's name that someone pointed at your server (DNS rebinding), which would let a web page you visit create the owner account through your browser. An IP address (`http://192.168.1.20:8080`), `localhost`, a name without a dot (`http://nas:8080`) and names under `.local`, `.lan`, `.home`, `.home.arpa`, `.internal`, `.corp`, `.localhost` or `.test` need no code. In this case the start-up warning about the first visitor carries the code:
+
+```text
+level=WARN msg="No owner account exists yet: the first person to open this server becomes its owner. Finish setup now, or set OPENTODO_SETUP_CODE=required to require the code printed in this log. Opened under a domain name while OPENTODO_BASE_URL is not set, setup asks for this setup code: ABCD-EFGH-IJKL-MNOP (…)" setup_code=ABCD-EFGH-IJKL-MNOP
+```
+
+Enter that code, open the server by its IP address once, or set `OPENTODO_BASE_URL` to the address people use and restart; with a base URL, the server only accepts browser requests addressed to that name and asks for no code.
+
 Instead of the code you can set `OPENTODO_SETUP_TOKEN` (16+ characters) in `.env`, a secret you choose: the setup screen then asks for it from every address, including your own network, and no code is printed, whatever `OPENTODO_SETUP_CODE` says. Neither has an effect once the owner exists. Any value of `OPENTODO_SETUP_CODE` other than `required`, `off` or empty stops the server at startup with a message naming the variable.
 
-To add more people, keep sign-up closed and create single-use invitation links in **Settings → People → Users and invitations** (see [Adding people](../../README.md#adding-people)). `OPENTODO_ALLOW_SIGNUP=true` opens registration to anyone who can reach the server and is rarely what you want on a public URL. If you do open it, configure [outgoing email](outgoing-email.md) too: new accounts are then created only after the person confirms their address through a mailed link.
+To add more people, keep sign-up closed and create single-use invitation links in **Settings → People → Users and invitations** (see [Managing users](#managing-users)). `OPENTODO_ALLOW_SIGNUP=true` opens registration to anyone who can reach the server and is rarely what you want on a public URL. If you do open it, configure [outgoing email](outgoing-email.md) too: new accounts are then created only after the person confirms their address through a mailed link.
 
 - Data lives in the named volume `opentodo-data`, mounted at `/data`.
-- Change the host port with `OPENTODO_PORT` in `.env`, and the host address it is published on with `OPENTODO_BIND` (default `0.0.0.0`, every interface, so other devices on your network reach it). Behind a reverse proxy on the same machine, `OPENTODO_BIND=127.0.0.1` is the safer choice: only the proxy reaches the server.
-- Every variable in the [configuration table](../../README.md#configuration) can be set in `.env`; the compose file passes them to the container. With `docker run`, pass them with `-e`.
-- The compose file pulls `ghcr.io/opentodoapp/opentodo:stable`, which every release moves. To stay on one release line use `:0.19` (its fixes only), to pin one version `:0.19.0`; `:latest` follows the main branch and carries unreleased changes; it reports its version as `dev+<commit>`, the commit it was built from. The running version is shown in **Settings → About**, at the bottom of the sign-in screen, at `/healthz` and in the startup log line `opentodo listening`.
+- Change the host port with `OPENTODO_PORT` in `.env`, and the host address it is published on with `OPENTODO_BIND` (default `0.0.0.0`, every interface, so other devices on your network reach it). Behind a reverse proxy on the same machine, `OPENTODO_BIND=127.0.0.1` is the safer choice: only the proxy reaches the server. That `.env` value is not passed into the container, so the process keeps listening on 8080 and the mapping stays `host:8080`. To move the process, set `OPENTODO_PORT` in the container's own environment and publish that container port (`-p 7610:7610 -e OPENTODO_PORT=7610`). An invalid port stops startup with a message naming the variable. The health check probes the port the process is using.
+- Every variable in the [configuration reference](configuration.md) can be set in `.env`; the compose file passes them to the container. With `docker run`, pass them with `-e`.
+- The compose file pulls `ghcr.io/opentodoapp/opentodo:stable`, which every release moves. To stay on one release line use `:1.2` (its fixes only), to pin one version `:1.2.0`; `:latest` follows the main branch and carries unreleased changes; it reports its version as `dev+<commit>`, the commit it was built from. The running version is shown in **Settings → About**, at the bottom of the sign-in screen, at `/healthz` and in the startup log line `opentodo listening`.
 - To build locally instead of pulling: replace `image: ghcr.io/opentodoapp/opentodo:stable` with `build: .`.
 
 ## Plain `docker run`
@@ -82,6 +90,10 @@ The owner also sees a **Server configuration warning** at the top of **Settings*
 ### Behind a login wall (Pangolin, Authelia, Authentik, Cloudflare Access, oauth2-proxy)
 
 OpenTodo has its own sign-in (password, passkeys, two-factor, [single sign-on](sso.md)), so a login wall in front of it is optional. If you keep one, browsers and the installed web app pass it like any other site, and the [Android app](../android-app.md#behind-a-login-page-pangolin-authelia-and-others) signs in to it inside the app. Give the wall a long session, or let it bypass the paths the app fetches without a page (`/healthz`, `/api/*`, the service worker and manifest files); the Android guide lists them. Calendar apps, AI assistants and calendar feeds can't pass a login page at all: bypass `/dav/`, `/.well-known/caldav`, `/mcp` and `/feeds/*` if you use them.
+
+### Proxies that answer `/healthz` themselves (Pomerium, Cloud Run)
+
+Some proxies and platforms keep `/healthz` for themselves: Pomerium answers it with a plain `OK` before the request reaches OpenTodo, and Google Cloud Run's front end answers paths ending in `z` with its own 404. The same health answer is also served at `/api/v1/health`, which they pass through. Point an external uptime monitor there; the mobile apps (from 1.0.1) check a server at `/api/v1/health` first and only then at `/healthz`. The container's own health check (`/opentodo healthcheck`) talks to the server directly and is not affected.
 
 ### Calendar apps (CalDAV) through the proxy
 
@@ -154,7 +166,7 @@ If your host restricts outbound traffic, allow that one host (or all three built
 
 The **on-device assistant for encrypted accounts** (off by default) makes no server request at all: the person's browser calls the provider they set up, with their own key. While the owner allows it, the page's Content-Security-Policy lets the app connect to the allowed providers' API origins and the model server origins the owner listed, so a proxy or browser policy that rewrites `Content-Security-Policy` must keep that `connect-src`. See [Assistant owner options](../assistant-owner-options.md#on-device-assistant-for-encrypted-accounts).
 
-The answer streams to the browser as server-sent events on `POST /api/v1/assistant/turn`, like the live updates stream: a proxy that buffers responses delays the answer until it is complete (see [Live updates through the proxy](#live-updates-through-the-proxy) for the same settings). The server logs one line per answer with the provider, whether it ran on the member's own key, outcome, duration and token counts, never questions, answers or task text. Turns are limited to 8 at a time on the server, one per person, and each person's monthly token allowance (answers on a member's own key are outside the allowance unless the owner counts them). A turn with [photos](../assistant-capture.md) may be up to 16 MB (at most 4 photos of 3.75 MB, the text still at most 256 KB), so a proxy with a smaller body limit for `POST /api/v1/assistant/turn` refuses it; the photos are held in memory for that turn only, at worst about 128 MB across 8 turns, and never written to disk or logged.
+The answer streams to the browser as server-sent events on `POST /api/v1/assistant/turn`, like the live updates stream: a proxy that buffers responses delays the answer until it is complete (see [Live updates through the proxy](#live-updates-through-the-proxy) for the same settings). The server logs one line per answer with the provider, whether it ran on the member's own key, outcome, duration and token counts, never questions, answers or task text. Turns are limited to 8 at a time on the server (in [host mode](host-mode.md), 8 for all tenants together), one per person, and each person's monthly token allowance (answers on a member's own key are outside the allowance unless the owner counts them). A turn with [photos](../assistant-capture.md) may be up to 16 MB (at most 4 photos of 3.75 MB, the text still at most 256 KB), so a proxy with a smaller body limit for `POST /api/v1/assistant/turn` refuses it; the photos are held in memory for that turn only, at worst about 128 MB across 8 turns, and never written to disk or logged.
 
 ## Bind mounts
 
@@ -167,7 +179,7 @@ docker run -v "$PWD/data:/data" ...
 
 ## Backup and restore
 
-Turn on scheduled backups in **Settings → Server** (owner only): consistent snapshots of the database, taken while the server runs, written to `/data/backups`, an S3-compatible bucket or a WebDAV share, with retention and optional encryption. Restore with the binary in the image while the container is stopped:
+Turn on scheduled backups in **Settings → Server → Backups** (owner only): consistent snapshots of the database, taken while the server runs, written to `/data/backups`, an S3-compatible bucket or a WebDAV share, with retention and optional encryption. Restore with the binary in the image while the container is stopped:
 
 ```bash
 docker compose stop opentodo
@@ -193,6 +205,29 @@ The owner sees an audit log of sign-ins, failed sign-ins, sign-outs, credentials
 - **Client addresses** are not recorded unless you turn on address logging in Settings. Behind a trusted reverse proxy the address is the nearest untrusted `X-Forwarded-For` hop (the one the proxy appended; see [Which proxies are believed](#behind-a-reverse-proxy)), so make sure the proxy sets that header (Caddy, Traefik and nginx with `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` do). Turning address logging off erases every stored address immediately.
 - **Disk use** is roughly 200 bytes per event: a household produces a few MB per year; a public server under credential stuffing records one `rate_limited` event per address per minute rather than one per attempt.
 - **Export** the log as newline-delimited JSON from the same panel to archive it beyond the retention window.
+- **Pruning** removes events from the start of the log, in order, and stops at the first one still within the retention.
+
+### Checking the log for tampering
+
+Each event carries a hash of itself and of the event before it, so the log is a chain. Changing an event, or removing or moving one from the middle, breaks the chain from that event on. Pruning does not: the server keeps the hash of the last event it pruned and checks from there.
+
+The server checks the chain when it starts and hourly while events are recorded, and writes `audit: hash chain broken` with the first broken event to its log; it keeps running and changes nothing. Check it yourself at any time:
+
+```bash
+ot audit verify
+```
+
+It prints the number of events checked and the newest one, or the first broken event, and exits with 1 when the chain is broken ([`ot audit verify`](../cli.md#audit-log), API: [`GET /api/v1/audit/verify`](../api.md#audit-log)).
+
+**Keep an anchor outside the server.** Someone who can write the database file can rewrite every hash, or remove the newest events, and the chain would still check. To notice that, keep the chain head somewhere the server cannot reach:
+
+1. Export the log. The last line of the file is the chain head, for example `{"chain":{"id":418,"hash":"9f2c…"}}`. Keep that line, or the whole file, in a password manager, on another machine or in a ticket.
+2. Later, export again and run `ot audit verify`. Find the event with the kept id in the new export:
+   - its `hash` is the kept hash: nothing up to that event changed since you kept it;
+   - its `hash` differs: events up to that one were rewritten;
+   - it is missing: it was pruned only if `checkpoint.id` in `ot audit verify --json` is at least the kept id, which happens once the event is older than the retention. Otherwise events were removed.
+
+Events recorded before your server had the chain have `"hash": null` and are not covered; they leave the log with the retention. The client address is not part of the hash, so erasing addresses keeps the chain intact.
 
 ## Two-factor authentication
 
@@ -228,11 +263,15 @@ The command needs only the data volume: shell access to the host is the proof of
 
 ## Host kernel
 
+What the server itself defends, and what it leaves to the host, is in the [threat model](../security/threat-model.md).
+
 A container shares the host's kernel, so kernel flaws reachable from the network affect OpenTodo however it is installed. OpenTodo turns Multipath TCP off on its listeners, which keeps the kernel's MPTCP code out of reach for [CVE-2026-98432](https://www.openwall.com/lists/oss-security/2026/10/30/1), a use-after-free in TCP connection handling. That is a mitigation, not the fix: update the host kernel through your distribution as soon as a patched one is available.
 
 ## Updating
 
 `docker compose pull && docker compose up -d` replaces the container; the new version applies migrations at startup. Orchestrators that start the new container before stopping the old one (Coolify, Docker Swarm, Kubernetes with a shared volume on one node) work too: several server processes may use the data directory at once, and the background jobs (reminder push, webhooks, backups, email polling, Trash cleanup) run in only one of them and move to the newer one when the old one exits. Maintenance commands (`restore`, `mfa-reset`, `reset-owner-password` without a running server) still need every server stopped.
+
+Any version from 0.1.0 on upgrades directly to the latest one, with no version in between, and from 1.0 on nothing you rely on breaks within a major version. The image tags follow semantic versioning: `1.2.3` is one release, `1.2` its latest patch, `1` (from 1.0 on) the latest 1.x and `stable` the latest release. See [Stability and compatibility](../stability.md).
 
 **Upgrading from 0.1.0 to 0.2.0:** 0.1.0 locked the data directory exclusively, so a 0.2.0 container cannot start beside it. Plain `docker compose up -d` already stops the old container first and needs nothing special. With an orchestrator that starts the new container first, stop the old one for this one upgrade (`docker compose down && docker compose up -d`, or **Stop** then **Deploy** in Coolify); from 0.2.0 on, updates roll without stopping. If you pinned a tag such as `ghcr.io/pixari/opentodo:0.1`, change it to `0.2` (or `0.2.0`).
 
@@ -276,8 +315,8 @@ Before an image is published, CI starts it the way Coolify does (health check, o
 
 ## Health
 
-`GET /healthz` returns `{"status":"ok","version":"..."}`. The image defines a `HEALTHCHECK` that runs `/opentodo healthcheck`, which works without curl or a shell.
+`GET /healthz` returns `{"status":"ok","version":"..."}`, and so does `GET /api/v1/health` for proxies that keep `/healthz` for themselves ([Pomerium, Cloud Run](#proxies-that-answer-healthz-themselves-pomerium-cloud-run)). The image defines a `HEALTHCHECK` that runs `/opentodo healthcheck`, which works without curl or a shell.
 
 ## Resource usage
 
-Idle memory is around 20 MB (18 MB measured on a fresh instance); the static binary is about 34 MB with the web app embedded, and the image adds only the distroless base (about 5 MB, most of it time-zone data); a pull downloads about 13 MB. A Raspberry Pi 3 or any 1 vCPU / 512 MB VPS is plenty.
+Idle memory is around 20 MB (18 MB measured on a fresh instance); the static binary is about 41 MB with the web app embedded, and the image adds only the distroless base (about 5 MB, most of it time-zone data); a pull downloads about 13 MB. A Raspberry Pi 3 or any 1 vCPU / 512 MB VPS is plenty. How the server, the app and phones are held to account with 10,000 tasks (memory during a first sync, an export, start-up time, a Raspberry Pi 4) is in [Performance budgets](../performance.md).

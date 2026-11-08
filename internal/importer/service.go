@@ -209,13 +209,19 @@ func (s *Service) prepare(ctx context.Context, uid string, data []byte, opts Opt
 	if err := s.targetWorkspace(ctx, uid, opts, st); err != nil {
 		return nil, err
 	}
-	return BuildPlan(parsed, opts, st, s.now(), s.newID), nil
+	plan := BuildPlan(parsed, opts, st, s.now(), s.newID)
+	if opts.Format != "" && !write {
+		if d := DetectedFormat(data, opts.maxBytesOrDefault()); d != "" && d != plan.Format {
+			plan.Detected = d
+		}
+	}
+	return plan, nil
 }
 
 func (s *Service) loadState(ctx context.Context, uid, profile string) (*State, error) {
 	st := &State{Remembered: map[string]string{}, UserID: uid}
 	for kind, dst := range map[string]*[]opsync.Entity{KindProject: &st.Projects, KindLabel: &st.Labels, KindTask: &st.Tasks,
-		KindSection: &st.Sections, KindReminder: &st.Reminders, KindView: &st.Views, KindRule: &st.Rules, KindUserPrefs: &st.UserPrefs, KindAttachment: &st.Attachments, KindTimeEntry: &st.TimeEntries, KindPlace: &st.Places, KindField: &st.Fields, KindReview: &st.Review, KindProjectPrefs: &st.ProjectPrefs, KindNote: &st.Notes, KindTheme: &st.Themes} {
+		KindSection: &st.Sections, KindReminder: &st.Reminders, KindView: &st.Views, KindRule: &st.Rules, KindUserPrefs: &st.UserPrefs, KindAttachment: &st.Attachments, KindTimeEntry: &st.TimeEntries, KindPlace: &st.Places, KindField: &st.Fields, KindReview: &st.Review, KindProjectPrefs: &st.ProjectPrefs, KindNote: &st.Notes, KindTheme: &st.Themes, KindObjective: &st.Objectives} {
 		list, err := s.sync.List(ctx, uid, kind, true)
 		if err != nil {
 			return nil, err
@@ -593,7 +599,7 @@ func (s *Service) Undo(ctx context.Context, uid, id string) (*Job, error) {
 	if err != nil {
 		return nil, err
 	}
-	undoKinds := []string{KindAttachment, KindTimeEntry, KindReminder, KindTask, KindNote, KindField, KindSection, KindProject, KindLabel, KindView, KindRule, KindPlace, KindTheme}
+	undoKinds := []string{KindAttachment, KindTimeEntry, KindReminder, KindTask, KindNote, KindField, KindSection, KindProject, KindLabel, KindView, KindRule, KindPlace, KindTheme, KindObjective}
 	created := map[string]map[string]bool{}
 	for _, k := range undoKinds {
 		created[k] = map[string]bool{}

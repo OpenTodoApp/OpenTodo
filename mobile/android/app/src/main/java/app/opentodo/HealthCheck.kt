@@ -14,7 +14,9 @@ import javax.net.ssl.SSLException
 import javax.net.ssl.SSLHandshakeException
 
 /**
- * The first-run check: `GET <origin>/healthz` must answer `{"status":"ok","version":…}`.
+ * The first-run check: `GET <origin>/api/v1/health` must answer `{"status":"ok","version":…}`;
+ * when it does not, `/healthz` is asked too, the only route of servers before 1.0.1. Some proxies
+ * answer `/healthz` themselves (Pomerium, Google Cloud Run), so it is never asked first.
  * A login wall in front of the server (Pangolin, Authelia, Authentik, Cloudflare Access,
  * oauth2-proxy…) answers with a redirect to its sign-in page or with a sign-in page itself;
  * that is told apart from an address that is simply not OpenTodo (android-sign-in-flows).
@@ -27,6 +29,21 @@ object HealthCheck {
     enum class Outcome { OK, NO_NETWORK, NOT_OPENTODO, UNTRUSTED, LOGIN_WALL, WEB_PAGE }
 
     data class Answer(val outcome: Outcome, val version: String? = null)
+
+    /** The health routes, in the order they are asked (health-route-alias). */
+    val PATHS = listOf("/api/v1/health", "/healthz")
+
+    /**
+     * The check's answer from the first route's answer and, unless that one settles it, the
+     * second's: a failed connection or a refused certificate fails the same on every path, and an
+     * OpenTodo answer is final. Otherwise the second route decides when it answers OK (a server
+     * before 1.0.1), and the first route's answer stands (a login wall, a web page).
+     */
+    fun combine(first: Answer, fallback: () -> Answer): Answer {
+        if (first.outcome == Outcome.OK || first.outcome == Outcome.NO_NETWORK || first.outcome == Outcome.UNTRUSTED) return first
+        val second = fallback()
+        return if (second.outcome == Outcome.OK) second else first
+    }
 
     /** Classifies a failed connection: certificate problems apart from everything else. */
     fun classify(error: Throwable): Outcome {
@@ -41,7 +58,7 @@ object HealthCheck {
     }
 
     /**
-     * Classifies a response to `GET <origin>/healthz`. [location] is the redirect target as
+     * Classifies a response to a health route. [location] is the redirect target as
      * sent, [contentType] the response's type. A redirect to a health route elsewhere (another
      * host, http to https) is a moved server, not a login wall: "not an OpenTodo server".
      */
@@ -59,14 +76,14 @@ object HealthCheck {
         }
     }
 
-    /** True when a redirect leads anywhere but a `/healthz` (a sign-in page, the wall's portal). */
+    /** True when a redirect leads anywhere but a health route (a sign-in page, the wall's portal). */
     private fun redirectsToLogin(location: String, origin: String?): Boolean {
         val target = try {
             if (origin != null) URI("$origin/healthz").resolve(location.trim()) else URI(location.trim())
         } catch (e: Exception) {
             return false
         }
-        return target.path?.trimEnd('/') != "/healthz"
+        return target.path?.trimEnd('/') !in PATHS
     }
 
     /**
@@ -74,8 +91,11 @@ object HealthCheck {
      * server). [cookies]: the web view's cookies for the server, so a login wall the person got
      * through in the app lets the check through too.
      */
-    fun check(origin: String, cookies: String? = null): Answer {
-        val conn = try { URL("$origin/healthz").openConnection() as HttpURLConnection } catch (e: IOException) { return Answer(classify(e)) }
+    fun check(origin: String, cookies: String? = null): Answer =
+        combine(check(origin, PATHS[0], cookies)) { check(origin, PATHS[1], cookies) }
+
+    private fun check(origin: String, path: String, cookies: String?): Answer {
+        val conn = try { URL("$origin$path").openConnection() as HttpURLConnection } catch (e: IOException) { return Answer(classify(e)) }
         return try {
             conn.instanceFollowRedirects = false
             conn.connectTimeout = 10_000

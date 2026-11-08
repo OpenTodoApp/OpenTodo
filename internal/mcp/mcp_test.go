@@ -15,7 +15,7 @@ import (
 
 	"github.com/OpenTodoApp/opentodo/internal/agenttools"
 	"github.com/OpenTodoApp/opentodo/internal/ids"
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
@@ -32,7 +32,7 @@ type fixture struct {
 
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
+	db, err := storetest.OpenDir(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -228,7 +228,7 @@ func TestToolsListShape(t *testing.T) {
 			t.Fatalf("%s schema = %v", tl["name"], tl["inputSchema"])
 		}
 	}
-	if strings.Join(names, ",") != "list_projects,list_tasks,get_task,search_tasks,today_summary,list_frames,list_icons,list_notes,search_notes,get_note,list_routines,get_routine,list_routine_runs,get_routine_run,list_slots,list_time_entries,list_workspaces" {
+	if strings.Join(names, ",") != "list_projects,list_tasks,get_task,search_tasks,today_summary,list_frames,list_icons,list_notes,search_notes,get_note,list_objectives,list_routines,get_routine,list_routine_runs,get_routine_run,list_slots,list_time_entries,list_workspaces" {
 		t.Fatalf("tools = %v", names)
 	}
 }
@@ -251,7 +251,7 @@ func TestResourcesListShape(t *testing.T) {
 		}
 		uris = append(uris, m["uri"].(string))
 	}
-	if strings.Join(uris, " ") != "opentodo://projects opentodo://workspaces opentodo://views/inbox opentodo://views/today opentodo://views/upcoming opentodo://views/someday opentodo://views/anytime opentodo://rules opentodo://routines opentodo://frames opentodo://slots opentodo://notes opentodo://time-entries/running opentodo://integrations/issues" {
+	if strings.Join(uris, " ") != "opentodo://projects opentodo://workspaces opentodo://views/inbox opentodo://views/today opentodo://views/upcoming opentodo://views/someday opentodo://views/anytime opentodo://rules opentodo://routines opentodo://frames opentodo://slots opentodo://objectives opentodo://notes opentodo://time-entries/running opentodo://integrations/issues" {
 		t.Fatalf("resources = %v", uris)
 	}
 	tpl := f.call("u1", "resources/templates/list", nil)["result"].(map[string]any)
@@ -571,7 +571,7 @@ func TestMcpLogsNoArguments(t *testing.T) {
 }
 
 func TestMcpPresetSeedsOnce(t *testing.T) {
-	db, err := store.Open(t.TempDir())
+	db, err := storetest.OpenDir(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -649,10 +649,10 @@ func TestWriteToolsThroughHandle(t *testing.T) {
 	// Listed with readOnlyHint false; instructions mention undo.
 	r := send(agent, `{"jsonrpc":"2.0","id":1,"method":"tools/list"}`)
 	tools := r["result"].(map[string]any)["tools"].([]any)
-	if len(tools) != 51 {
+	if len(tools) != 52 {
 		t.Fatalf("tools = %d", len(tools))
 	}
-	for _, tl := range tools[17:] {
+	for _, tl := range tools[18:] {
 		if tl.(map[string]any)["annotations"].(map[string]any)["readOnlyHint"] != false {
 			t.Fatalf("write tool annotations: %v", tl)
 		}
@@ -695,7 +695,7 @@ func TestWriteToolsThroughHandle(t *testing.T) {
 }
 
 func TestMcpWritesPresetSeedsOnce(t *testing.T) {
-	db, err := store.Open(t.TempDir())
+	db, err := storetest.OpenDir(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}

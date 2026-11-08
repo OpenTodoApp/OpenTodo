@@ -5,14 +5,16 @@ import { db, entityTables, getMeta, localEpoch, setMeta, tableOf, type EntityRow
 import { dueToInstant, logicalToday, todayISO } from './dates'
 import { resolveReminder, type ReminderPhrase } from './nlp/reminders'
 import { CLOCK_OFFSET_META, HLC_META, hlcLast, hlcNow, hlcReceive, hlcSeed, hlcSeedOffset, wins } from './hlc'
-import { firstOccurrence, parseRule } from './recurrence'
+import { compatibleRule, firstOccurrence, parseRule } from './recurrence'
 import { deadlineFireAt, relativeFireAt } from './reminderTime'
 import { defaultReminderChanges } from './defaultReminder'
+import { withSectorClears } from './sectorWrites'
 import { planCompletion, planSkip, seriesRule, skipsInstead } from './recurring'
 import { assignableIn, currentUserId, membershipMap, roleOf, scopeOf } from './sharing'
+import { memberSet } from './rotation'
 import { descendants, isDescendant } from './tree'
 import { GAP } from './ordering'
-import { ENTITIES, type Clock, type Attachment, type Comment, type Entity, type FieldDef, type Label, type Op, type Origin, type Place, type Project, type Rule, type Frame, type CustomTheme, type Note, type Slot, type TaskLocation, type ProjectPrefs, type Reminder, type Review, type Section, type Task, type TimeEntry, type UserPrefs, type View } from './types'
+import { ENTITIES, type Clock, type Attachment, type Comment, type Entity, type FieldDef, type Label, type Op, type Origin, type Place, type Project, type Rule, type Frame, type CustomTheme, type Objective, type Note, type Slot, type TaskLocation, type ProjectPrefs, type Reminder, type Review, type Section, type Task, type TimeEntry, type UserPrefs, type View } from './types'
 import { recordActivity, type RecordInput } from './activity'
 import { DOC_FIELDS, DocTooLargeError, isDocField, loadRichText, MAX_DOC_CHARS, MAX_DOC_CHARS_ENCRYPTED, MAX_TEXT_VALUE, NOTE_ENTITIES, type RichText } from './docfields'
 import { byteLength, MAX_PLAINTEXT_BYTES } from './crypto'
@@ -24,6 +26,7 @@ import { lineageRows } from './lineageRows'
 import { keepProjectWorkspace, keepWorkspaceFor, workspaceFields, type KeepWorkspace } from './workspaces'
 import { resettable } from './moduleState'
 import type { AppendRow } from './noteAppends'
+import { LOCAL_ERRORS } from './localErrors'
 
 let devicePromise: Promise<string> | null = null
 /** The local data epoch the memoised id was read in; a sign-out starts a new one. */
@@ -90,11 +93,13 @@ export const SLOT_DEFAULTS: Omit<Slot, 'id' | '_clock'> = OP_DEFAULTS.slot
 export const NOTE_DEFAULTS: Omit<Note, 'id' | '_clock'> = OP_DEFAULTS.note
 /** A custom theme (theme-editor D1): no document, so never applied or listed, until its ops arrive. */
 export const THEME_DEFAULTS: Omit<CustomTheme, 'id' | '_clock'> = OP_DEFAULTS.theme
+/** An objective (plan-objectives D1): no period, so never shown, until its ops arrive. */
+export const OBJECTIVE_DEFAULTS: Omit<Objective, 'id' | '_clock'> = OP_DEFAULTS.objective
 /** The row a field op creates when its entity is new; one key per op field (the schema contract in internal/sync/testdata/schema_fixture.json), `fields` holding the `fields.<id>` values. */
 export const DEFAULTS: Record<Entity, Record<string, unknown>> = {
   project: PROJECT_DEFAULTS, task: TASK_DEFAULTS, label: LABEL_DEFAULTS, view: VIEW_DEFAULTS, reminder: REMINDER_DEFAULTS, section: SECTION_DEFAULTS,
   comment: COMMENT_DEFAULTS, project_prefs: PROJECT_PREFS_DEFAULTS, user_prefs: USER_PREFS_DEFAULTS, attachment: ATTACHMENT_DEFAULTS, field: FIELD_DEFAULTS,
-  review: REVIEW_DEFAULTS, time_entry: TIME_ENTRY_DEFAULTS, place: PLACE_DEFAULTS, rule: RULE_DEFAULTS, frame: FRAME_DEFAULTS, slot: SLOT_DEFAULTS, note: NOTE_DEFAULTS, theme: THEME_DEFAULTS,
+  review: REVIEW_DEFAULTS, time_entry: TIME_ENTRY_DEFAULTS, place: PLACE_DEFAULTS, rule: RULE_DEFAULTS, frame: FRAME_DEFAULTS, slot: SLOT_DEFAULTS, note: NOTE_DEFAULTS, theme: THEME_DEFAULTS, objective: OBJECTIVE_DEFAULTS,
 }
 
 /**
@@ -135,10 +140,23 @@ export async function applyOps(
   await db.transaction('rw', entityTables(), async () => {
     const recorded: RecordInput[] = []
     const rows = new Map<string, Record<string, unknown>>()
+    // One read and one write per table, not one per row (performance-10k): a
+    // pulled page of 1,000 ops touches about a hundred rows.
+    const stored = new Map<string, unknown>()
+    const byTable = new Map<Entity, string[]>()
+    for (const [, list] of grouped) {
+      const ids = byTable.get(list[0].entity)
+      if (ids) ids.push(list[0].entityId)
+      else byTable.set(list[0].entity, [list[0].entityId])
+    }
+    for (const [entity, ids] of byTable) {
+      const found = await tableOf(entity).bulkGet(ids)
+      ids.forEach((id, i) => { if (found[i]) stored.set(`${entity}:${id}`, found[i]) })
+    }
+    const writes = new Map<Entity, EntityRow[]>()
     for (const [, list] of grouped) {
       const { entity, entityId } = list[0]
-      const table = tableOf(entity)
-      const existing = (await table.get(entityId)) as (Project | Task | Label | View | Reminder | Section | Comment | ProjectPrefs) | undefined
+      const existing = stored.get(`${entity}:${entityId}`) as (Project | Task | Label | View | Reminder | Section | Comment | ProjectPrefs) | undefined
       const row: Record<string, unknown> = existing ? { ...existing } : { ...DEFAULTS[entity], id: entityId, _clock: {} }
       const clock: Clock = { ...(row._clock as Clock) }
       let changed = !existing
@@ -184,7 +202,9 @@ export async function applyOps(
       rows.set(`${entity}:${entityId}`, row)
       if (changed) {
         row._clock = clock
-        await table.put(row as EntityRow)
+        const w = writes.get(entity)
+        if (w) w.push(row as EntityRow)
+        else writes.set(entity, [row as EntityRow])
       }
       if (rt && NOTE_ENTITIES.has(entity) && (merged !== undefined || list.some((o) => appendId(o.field)))) {
         let patch: Record<string, unknown> | null = merged !== undefined ? reconcileNote(rt, row as unknown as Task, merged) : null
@@ -199,6 +219,7 @@ export async function applyOps(
         }
       }
     }
+    for (const [entity, list] of writes) await tableOf(entity).bulkPut(list)
     // Place each recorded op in its task and project once every row is written.
     for (const r of recorded) {
       if (r.op.entity === 'task') r.taskId = r.op.entityId
@@ -396,6 +417,8 @@ export async function mutateMany(changes: Change[], opts: MutateOptions = {}): P
   changes = unfoldFieldPatches(changes)
   checkEncryptedSize(changes)
   const device = await deviceFor(opts)
+  // Dating a task that holds a time sector clears it in the same batch (time-sectors D2).
+  if (!opts.restore) changes = await withSectorClears(changes)
   // A task that gets a due date gets the person's default reminder (default-reminders D3).
   if (!opts.restore) changes = [...changes, ...(await defaultReminderChanges(changes))]
   changes = [...changes, ...(await reminderFollowUps(changes))]
@@ -659,13 +682,13 @@ export async function createProject(input: { name: string; color?: string; paren
  */
 export async function moveProject(id: string, parentId: string | null): Promise<void> {
   const project = await db.projects.get(id)
-  if (!project || project.deleted_at) throw new Error('project not found')
+  if (!project || project.deleted_at) throw new Error(LOCAL_ERRORS.projectNotFound)
   if (parentId === project.parent_id) return
   const all = await liveProjects()
   if (parentId !== null) {
     if (parentId === id) throw new Error(t('a project cannot be its own parent'))
     const parent = all.find((p) => p.id === parentId)
-    if (!parent || parent.archived) throw new Error('parent project not found')
+    if (!parent || parent.archived) throw new Error(LOCAL_ERRORS.parentProjectNotFound)
     if (isDescendant(parentId, id, all)) throw new Error(t('parent cannot be a descendant of the project'))
   }
   // It stays in the workspace it is in when it becomes a top-level project (issue 544).
@@ -699,6 +722,8 @@ export type NewTaskInput = {
   day_part?: 'morning' | 'afternoon' | null
   /** Deep, Medium or Low (task-energy); only sent when set. */
   energy?: 'deep' | 'medium' | 'low' | null
+  /** A time sector such as "2026-W45" (time-sectors); only sent when set. */
+  sector?: string | null
   /** A recurrence rule (any spelling the grammar accepts; stored canonical). Throws when invalid. */
   recurrence?: string | null
   /** Assignee account id (task-assignment); only sent when set. */
@@ -740,8 +765,9 @@ export async function planTask(input: NewTaskInput, position?: number): Promise<
     // Only recurring tasks carry the field, so plain tasks keep their op footprint.
     const parsed = parseRule(input.recurrence)
     if (!parsed.ok) throw new Error(`invalid recurrence: ${parsed.error}`)
-    extra.recurrence = parsed.canonical
     if (!due) due = { date: firstOccurrence(parsed.rule, logicalToday()) }
+    // The form a 1.0 client reads when one means the same thing (recurrence-1-0-compatible).
+    extra.recurrence = compatibleRule(parsed.canonical, due.date)
   }
   if (input.assignee_id) extra.assignee_id = input.assignee_id
   // Only tasks created in a section carry the field (board-view).
@@ -756,6 +782,8 @@ export async function planTask(input: NewTaskInput, position?: number): Promise<
   else if (input.day_part) extra.day_part = input.day_part
   // Only tasks created with an energy carry the field (task-energy).
   if (input.energy) extra.energy = input.energy
+  // Only tasks created with a time sector carry the field (time-sectors).
+  if (input.sector) extra.sector = input.sector
   // Only captured, mailed or imported tasks carry the field (task-origin).
   if (input.origin) extra.origin = input.origin
   if (input.location) extra.location = input.location
@@ -885,7 +913,7 @@ function remember(position: number): number {
 /** A new subtask lives in its parent's project, with default priority and no due date. */
 export async function createSubtask(parentId: string, title: string): Promise<string> {
   const parent = await db.tasks.get(parentId)
-  if (!parent || parent.deleted_at) throw new Error('parent task not found')
+  if (!parent || parent.deleted_at) throw new Error(LOCAL_ERRORS.parentTaskNotFound)
   return createTask({ title, project_id: parent.project_id, parent_id: parentId })
 }
 
@@ -901,13 +929,13 @@ async function liveTasks(): Promise<Task[]> {
  */
 export async function setTaskParent(id: string, parentId: string | null): Promise<void> {
   const task = await db.tasks.get(id)
-  if (!task || task.deleted_at) throw new Error('task not found')
+  if (!task || task.deleted_at) throw new Error(LOCAL_ERRORS.taskNotFound)
   if (parentId === task.parent_id) return
   const all = await liveTasks()
   if (parentId !== null) {
     if (parentId === id) throw new Error(t('a task cannot be its own parent'))
     const parent = all.find((tk) => tk.id === parentId)
-    if (!parent) throw new Error('parent task not found')
+    if (!parent) throw new Error(LOCAL_ERRORS.parentTaskNotFound)
     if (parent.project_id !== task.project_id) throw new Error(t('parent must be in the same project'))
     if (isDescendant(parentId, id, all)) throw new Error(t('parent cannot be a descendant of the task'))
   }
@@ -924,7 +952,7 @@ export async function setTaskParent(id: string, parentId: string | null): Promis
  * different project, and changing a task's project clears its section (board-view).
  */
 // blocked_by stays behind: blockers live in one sharing scope (task-dependencies D5).
-const COPY_FIELDS = ['title', 'description', 'notes_doc', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'start', 'evening', 'span', 'day_part', 'energy', 'recurrence', 'series_id', 'assignee_id', 'completed_at', 'completed_by', 'position', 'created_at', 'origin'] as const
+const COPY_FIELDS = ['title', 'description', 'notes_doc', 'priority', 'due', 'labels', 'estimate_minutes', 'deadline', 'start', 'evening', 'span', 'day_part', 'energy', 'sector', 'recurrence', 'series_id', 'assignee_id', 'completed_at', 'completed_by', 'position', 'created_at', 'origin'] as const
 
 /**
  * Copy tasks into `projectId` under new ids, keeping parent links between copied
@@ -950,6 +978,8 @@ function copyTasks(
     if (typeof patch.day_part !== 'string') delete patch.day_part
     // And its energy (task-energy); none needs no op.
     if (typeof patch.energy !== 'string' || !patch.energy) delete patch.energy
+    // And its time sector (time-sectors); none needs no op.
+    if (typeof patch.sector !== 'string' || !patch.sector) delete patch.sector
     // The copy keeps where the task came from (task-origin); none needs no op.
     if (!patch.origin || typeof patch.origin !== 'object') delete patch.origin
     // Custom field values travel with the copy (custom-fields), one op each.
@@ -976,7 +1006,7 @@ function copyTasks(
  */
 export async function moveTaskAcrossScopes(id: string, patch: Partial<Omit<Task, 'id' | '_clock'>>, opts?: MutateOptions): Promise<string> {
   const task = await db.tasks.get(id)
-  if (!task || task.deleted_at) throw new Error('task not found')
+  if (!task || task.deleted_at) throw new Error(LOCAL_ERRORS.taskNotFound)
   const assignable = assignableIn(patch.project_id ?? null, await membershipMap(), await currentUserId())
   const plan = planProjectChange(task, await liveTasks(), patch, { assignable }, Date.now(), await keepWorkspaceFor())
   await mutateMany(plan.changes, opts)
@@ -1148,7 +1178,25 @@ export async function setTaskCompleted(id: string, completed: boolean): Promise<
 }
 
 async function completePlain(id: string, now: number, stops: Change[]): Promise<void> {
-  await mutateMany([...planCompletePlain(id, await liveTasks(), now), ...stops])
+  await mutateMany([...planCompletePlain(id, await liveSubtree(id), now), ...stops])
+}
+
+/**
+ * The task and its live descendants, read level by level through the parent_id
+ * index: the same set `descendants` finds in every live task, without reading the
+ * 10,000 tasks of a large account on each completion (list-rendering-at-scale).
+ */
+export async function liveSubtree(id: string): Promise<Task[]> {
+  const root = await db.tasks.get(id)
+  const out: Task[] = root && !root.deleted_at ? [root] : []
+  const seen = new Set([id])
+  for (let level = [id]; level.length > 0; ) {
+    const kids = (await db.tasks.where('parent_id').anyOf(level).toArray()).filter((tk) => !tk.deleted_at && !seen.has(tk.id))
+    for (const k of kids) seen.add(k.id)
+    out.push(...kids)
+    level = kids.map((k) => k.id)
+  }
+  return out
 }
 
 /**
@@ -1186,6 +1234,9 @@ export async function completeTask(id: string, opts: { now?: number; today?: str
   const today = opts.today ?? logicalToday()
   await getDeviceId()
   const stops = await trackingStops(id, now)
+  // The project's members as this device knows them, for a rotating series (chore-rotation D2).
+  const pid = (await db.tasks.get(id))?.project_id
+  const members = pid ? memberSet(await db.memberships.get(pid)) : undefined
   let recordId: string | null = null
   let plain = false
   await db.transaction('rw', mutationTables(), async () => {
@@ -1195,7 +1246,7 @@ export async function completeTask(id: string, opts: { now?: number; today?: str
       plain = true
       return
     }
-    const plan = planCompletion(series, rule, await db.tasks.toArray(), now, today)
+    const plan = planCompletion(series, rule, await db.tasks.toArray(), now, today, series.project_id === pid ? members : undefined)
     if (plan.kind === 'end') {
       plain = true
       return
@@ -1277,10 +1328,13 @@ export async function setRecurrence(
   const parsed = parseRule(input)
   if (!parsed.ok) return { ok: false, error: parsed.error }
   const patch: Record<string, unknown> = {}
-  if (parsed.canonical !== task.recurrence) patch.recurrence = parsed.canonical
-  if (!task.due) patch.due = { date: firstOccurrence(parsed.rule, opts.today ?? logicalToday()) }
+  const due = task.due?.date ?? firstOccurrence(parsed.rule, opts.today ?? logicalToday())
+  // The form a 1.0 client reads when one means the same thing (recurrence-1-0-compatible).
+  const rule = compatibleRule(parsed.canonical, due)
+  if (rule !== task.recurrence) patch.recurrence = rule
+  if (!task.due) patch.due = { date: due }
   if (Object.keys(patch).length) await commitEdit(task, patch, [{ entity: 'task', entityId: id, patch }])
-  return { ok: true, rule: parsed.canonical }
+  return { ok: true, rule }
 }
 
 /** Deleting a task tombstones its whole subtree, one op per task, in one batch. */
@@ -1366,7 +1420,7 @@ export function copyNoteChange(note: Note, projectId: string | null, workspaceId
  */
 export async function restoreTask(id: string): Promise<string> {
   const task = await db.tasks.get(id)
-  if (!task) throw new Error('task not found')
+  if (!task) throw new Error(LOCAL_ERRORS.taskNotFound)
   if (!task.deleted_at) return id
   const all = await db.tasks.toArray()
   const subtree = [task, ...[...descendants(id, all)].map((d) => all.find((tk) => tk.id === d)).filter((item): item is Task => !!item && item.deleted_at === task.deleted_at)]
@@ -1396,7 +1450,7 @@ export async function restoreTask(id: string): Promise<string> {
  */
 export async function restoreProject(id: string): Promise<void> {
   const project = await db.projects.get(id)
-  if (!project) throw new Error('project not found')
+  if (!project) throw new Error(LOCAL_ERRORS.projectNotFound)
   if (!project.deleted_at) return
   const memberships = await membershipMap()
   if (memberships.has(id) && roleOf(id, memberships) !== 'owner') throw new Error(t('only the owner can restore a shared project'))

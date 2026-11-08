@@ -15,6 +15,8 @@ Sign in once in the browser first, at your server's `https://` address; then add
 
 Once installed, the round **+** at the bottom right adds a task, and the menu button at the top left opens a drawer with your projects, labels and views.
 
+On Settings the round **+** is hidden, because that page has no quick-add action and the button would cover the rows; it returns on the next list. The installed app opens on a splash in the dark canvas colour (a manifest has one splash colour, and a bright flash in dark mode is worse than a dark one before a light app), and its status bar uses the same colour as the app's bar from the first frame.
+
 ## iPhone and iPad
 
 1. Open your OpenTodo address in **Safari**.
@@ -43,4 +45,4 @@ Instead of installing from the browser, you can install the **OpenTodo** app fro
 
 ## The iOS app
 
-There is no OpenTodo app in the App Store: the licence and the store's terms conflict, so the app is built from source. With a Mac and Xcode you can build it, sign it for your own iPhone or iPad and open your server from it; it then appears in the share sheet and adds a Today widget, Face ID unlock of an encrypted account and reminders scheduled on the phone. See [The iOS app](ios-app.md).
+The **OpenTodo** app for iPhone and iPad comes through TestFlight and later the App Store; with a Mac and Xcode you can also build it yourself. Enter your server's address on its first screen. It appears in the share sheet and adds a Today widget, Face ID unlock of an encrypted account and reminders scheduled on the phone. Unlike the installed web app, the app from TestFlight needs the network to start. See [The iOS app](ios-app.md).

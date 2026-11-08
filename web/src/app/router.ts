@@ -4,6 +4,7 @@ import { useMemo, useSyncExternalStore } from 'react'
 import { readCalendarMode } from '../lib/calendarMode'
 import { resettable } from '../lib/moduleState'
 import { displayTargetPath, parseDisplayOptions, parseDisplayTarget, serializeDisplayOptions, type DisplayOptions, type DisplayTarget } from './display/displayOptions'
+import { afterOverlayPops } from '../ui'
 
 export type Route =
   | { view: 'inbox' }
@@ -74,6 +75,30 @@ export type Route =
   | { view: 'focus'; id?: string }
   // Notes (notes-overview D7): every note, /notes/<id> one standalone note; `create` (/notes?new=1) starts a new note.
   | { view: 'notes'; id?: string; create?: boolean }
+
+/**
+ * Whether a view offers quick add, which decides the floating add button on a
+ * phone. Screens with nothing to add a task to (Settings and its sub-pages, the
+ * theme editor, Import, Help, the feeds, statistics, sign-in links) leave the
+ * button out: there it would only cover the ends of rows and form fields. Every
+ * view is listed, so a new one has to decide.
+ */
+export const VIEW_QUICK_ADD: Readonly<Record<Route['view'], boolean>> = {
+  inbox: true, today: true, upcoming: true, someday: true, anytime: true,
+  day: true, week: true, month: true, plan: true, year: true,
+  completed: true, assigned: true, project: true, task: true, label: true, labels: true,
+  places: true, place: true, projects: true, filter: true, views: true, view: true,
+  triage: true, review: true, next: true, waiting: true, loop: true, focus: true, notes: true,
+  rules: false, settings: false, 'theme-editor': false, import: false, help: false,
+  invite: false, 'project-invite': false, 'workspace-invite': false, reset: false,
+  'confirm-email': false, forgot: false, verify: false, public: false, share: false,
+  trash: false, feed: false, ask: false, display: false, stats: false,
+}
+
+/** Whether the route's view offers quick add (VIEW_QUICK_ADD). */
+export function offersQuickAdd(r: Route): boolean {
+  return VIEW_QUICK_ADD[r.view]
+}
 
 /** Settings sections, each at /settings/<id> (settings-navigation), in list order (workspaces added Workspaces, settings-subpages Language and region). */
 export const SETTINGS_SECTION_IDS = [
@@ -385,8 +410,10 @@ export function routeBeforeFocus(): Route {
 
 if (typeof window !== 'undefined') {
   window.addEventListener('popstate', () => {
-    // The browser's Back already left the page: put its address back and ask (D4).
-    if (leaveGuard) {
+    // The browser's Back already left the page: put its address back and ask (D4). An
+    // overlay's marker entries (useBackToClose) share the page's address: stepping over one
+    // leaves nothing, so it never asks.
+    if (leaveGuard && addressOf(location) !== current) {
       history.pushState(null, '', current)
       leaveGuard(() => { leaveGuard = null; history.back() })
       return
@@ -398,10 +425,16 @@ if (typeof window !== 'undefined') {
 
 /** Go to a route; `replace` swaps the current history entry (the start view on launch, leaving the capture screen). */
 export function navigate(r: Route, opts: { replace?: boolean } = {}): void {
+  // A closed overlay's history.go() is still on its way: it would step back over the new entry.
+  if (afterOverlayPops(() => navigate(r, opts))) return
   const path = routePath(r)
   if (path === current) return
   if (leaveGuard && leaveGuard(() => { leaveGuard = null; navigate(r, opts) })) return
-  if (opts.replace) history.replaceState(null, '', path)
+  // An open overlay owns the top history entry (useBackToClose): the new route takes its place,
+  // so Back returns to the page the overlay was opened from, not to a stale marker. (A marker
+  // kept across a reload sits over the page's own entry: replacing it leaves Back on that page.)
+  const onMarker = ((history.state as { overlay?: number } | null)?.overlay ?? 0) > 0
+  if (opts.replace || onMarker) history.replaceState(null, '', path)
   else history.pushState(null, '', path)
   track(path)
   listeners.forEach((fn) => fn())

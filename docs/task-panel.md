@@ -15,11 +15,11 @@ Select a task with <kbd>j</kbd> / <kbd>k</kbd> and press <kbd>Enter</kbd> to ope
 
 ## Moving around
 
-The top of the page names the list you came from (click it to go back), the task's project and parent, and its place in that list, such as **2 / 5**. Press <kbd>j</kbd> or <kbd>k</kbd> (or the ↓ and ↑ buttons) for the next or previous task of that list, and <kbd>Esc</kbd> or **×** to go back to the list, with the task selected where it was. On a phone, **Back** in the bar does the same. Opened from a reminder or the search bar, it goes back to the task's own list. From 1024 px wide, the Inbox and **Process the Inbox** keep the task beside the list or the card instead: in the Inbox, <kbd>Enter</kbd> then opens its page.
+The top of the page names the list you came from (click it to go back), the task's project and every parent, and its place in that list. Extra parents are under **…**. The panel too. Press <kbd>u</kbd> for the parent, <kbd>j</kbd> or <kbd>k</kbd> for the next or previous task of that list, and <kbd>Esc</kbd> or **×** to go back to the list, with the task selected where it was. On a phone, **Back** in the bar does the same. Opened from a reminder or the search bar, it goes back to the task's own list. From 1024 px wide, the Inbox and **Process the Inbox** keep the task beside the list or the card instead: in the Inbox, <kbd>Enter</kbd> then opens its page.
 
 ## The top of the page
 
-The **⋯** menu holds **Copy link**, **Attach**, **Delete** and the less frequent actions. Under the breadcrumb are the task's **checkbox** and its **title** (edit it in place), then **Notes**: one quiet line until you click it, then an editor (see [Write notes](notes-and-subtasks.md#write-notes)).
+The **⋯** menu holds **Copy link**, **Attach** and **Delete**. Under the breadcrumb are the task's **checkbox** and its **title** (edit it in place; a long title grows), then **Notes**: one quiet line until you click it, then an editor (see [Write notes](notes-and-subtasks.md#write-notes)).
 
 ## The facts
 
@@ -32,7 +32,7 @@ Beside the notes (above them on a narrow screen) are the task's facts, in the wo
 
 On a phone the facts are one card of rows: those with a value, **Do** and **Deadline**, then **More properties** for the rest.
 
-A fact without a value reads as what sets it, such as **Set a deadline** or **Add a place**. Click a fact, or <kbd>Tab</kbd> to it and press <kbd>Enter</kbd>, to open its editor next to it; click it again or press <kbd>Esc</kbd> to close it. Every editor has **Clear** and **Done**. The **When** editor shows one part at a time (**Do on**, **Start**, **Deadline**, **Repeat**, **Reminders**), starting with the one you clicked; **This Evening** and the time zone are in **Do on**. Press <kbd>1</kbd> to <kbd>4</kbd> anywhere on the page for the priority. See [Dates and times](dates-and-times.md), [Deadlines and start dates](deadlines-and-start-dates.md) and [Assign tasks](sharing.md#assign-tasks).
+A fact without a value reads as what sets it, such as **Set a deadline** or **Add a place**. Click a fact, or <kbd>Tab</kbd> to it and press <kbd>Enter</kbd>, to open its editor next to it; click it again or press <kbd>Esc</kbd> to close it. Every editor has **Clear** and **Close**. The **When** editor shows one part at a time (**Do on**, **Start**, **Deadline**, **Repeat**, **Reminders**), starting with the one you clicked; **This Evening** and the time zone are in **Do on**. Press <kbd>1</kbd> to <kbd>4</kbd> anywhere on the page for the priority. See [Dates and times](dates-and-times.md), [Deadlines and start dates](deadlines-and-start-dates.md) and [Assign tasks](sharing.md#assign-tasks).
 
 ## Viewers
 
@@ -44,6 +44,6 @@ To keep tasks beside the list, choose **In a side panel** under **Settings → A
 
 - A click on a task, or moving to it with <kbd>j</kbd> / <kbd>k</kbd>, shows it there; <kbd>Enter</kbd> on the task shown opens its page.
 - The panel never closes by itself. Only its **×**, or <kbd>Esc</kbd> inside it, closes it, and it stays closed until you click a task or press <kbd>Enter</kbd> on one.
-- Drag its left edge to resize it (or focus the edge and press ← or →; a double click resets it). Each device keeps its own width.
+- Resize it by its left edge: drag it, click it (widest, then back), or focus it and press ← or →. Each device keeps its own width.
 
 Phones and narrow windows keep the page.

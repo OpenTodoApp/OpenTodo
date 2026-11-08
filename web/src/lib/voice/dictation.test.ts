@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createDictation, type DictationHost, type DictationView, insertTranscript, MESSAGES, resetLanguageFallbacks } from './dictation'
+import { createDictation, type DictationHost, type DictationView, insertTranscript, microphoneBlocked, MESSAGES, resetLanguageFallbacks } from './dictation'
 import { FakeRecognition, fakeWindow, flush } from './fakeRecognition'
 import { startRecognition } from './recognition'
 import { normalizeSpoken } from './spoken'
@@ -74,6 +74,29 @@ describe('dictation state machine', () => {
     d.toggle()
     expect(state.value).toBe('renew insurance #home p2')
     expect(view()).toMatchObject({ status: 'idle', announcement: 'Stopped' })
+  })
+
+  it('a shell that refuses the microphone never starts listening', async () => {
+    const state = { value: 'draft', caret: 5, views: [] as DictationView[] }
+    const refused = createDictation({
+      getValue: () => state.value,
+      getSelection: () => ({ start: state.caret, end: state.caret }),
+      setValue: (v, caret) => { state.value = v; state.caret = caret },
+      normalize: (text) => text,
+      lang: () => 'en-US',
+      update: (v) => state.views.push(v),
+    }, (o) => startRecognition(o, fakeWindow()), async () => false)
+    refused.start()
+    expect(state.views.at(-1)?.status).toBe('starting')
+    await flush()
+    expect(FakeRecognition.instances).toHaveLength(0)
+    expect(state.value).toBe('draft')
+    expect(state.views.at(-1)).toMatchObject({ status: 'idle', message: MESSAGES.denied })
+  })
+
+  it('the refusal names the phone in the app and the address bar in a browser', () => {
+    expect(microphoneBlocked(true)).toContain('phone’s settings')
+    expect(microphoneBlocked(false)).toContain('address')
   })
 
   it('permission denied: message, text preserved, can retry', async () => {

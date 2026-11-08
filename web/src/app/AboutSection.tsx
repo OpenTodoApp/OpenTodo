@@ -3,7 +3,8 @@
 // (discord-community), the account on X (x-account-link), Buy Me a Coffee, and the
 // owner's welcome note on demand. Every link is a plain link opening a new tab;
 // the version comes from this server's status while online. What's new (OpenSpec whats-new)
-// loads with this section.
+// loads with this section. The App code row says who signed the code this device
+// runs (signed-web-app).
 import { lazy, Suspense, useState } from 'react'
 import { Badge, Icon, Notice, SettingRow, SettingsSection } from '../ui'
 import { t } from '../lib/i18n'
@@ -14,6 +15,7 @@ import { openFeedback } from '../lib/feedbackRequest'
 import { cardCopy, rowCopy } from '../lib/settingsCopy'
 import { shell, shellOutdated, type OpenTodoShell } from '../lib/shell'
 import { useServerVersion } from '../lib/serverVersion'
+import { AppCodeRow } from './AppCodeRow'
 
 const WhatsNew = lazy(() => import('./WhatsNew'))
 
@@ -52,6 +54,7 @@ export function AboutSection({ user }: { user: User }) {
     <>
       <SettingsSection {...cardCopy('about', { variant: version ? 'version' : 'plain', values: { version } })}>
         <ShellAppRow app={app} />
+        <AppCodeRow serverVersion={version} />
         <SettingRow id="about-help" {...rowCopy('about', 'help')}
           control={<button type="button" className="ui-btn ui-btn--secondary ui-btn--sm" onClick={() => navigate({ view: 'help' })} data-about-help>{t('Open Help')}</button>} />
         <SettingRow id="about-docs" {...rowCopy('about', 'docs')}
