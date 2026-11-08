@@ -17,6 +17,10 @@ on:
       ref:
         type: string
         required: true
+      build_number:
+        type: string
+        required: false
+        default: ""
   workflow_dispatch:
     inputs:
       ref:
@@ -47,12 +51,11 @@ jobs:
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
       ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
-      SIGNING: ${{ runner.temp }}/signing
-      ARCHIVE: ${{ runner.temp }}/OpenTodo.xcarchive
     steps:
       - name: Secrets
         id: secrets
         run: |
+          { echo "SIGNING=$RUNNER_TEMP/signing"; echo "ARCHIVE=$RUNNER_TEMP/OpenTodo.xcarchive"; } >> "$GITHUB_ENV"
           if [ -z "$APPLE_TEAM_ID" ] || [ -z "$ASC_KEY_ID" ] || [ -z "$ASC_ISSUER_ID" ] || [ -z "$ASC_KEY_P8" ]; then
             echo "::warning::APPLE_TEAM_ID, ASC_KEY_ID, ASC_ISSUER_ID or ASC_KEY_P8 is not set in the release environment: no TestFlight upload"
             echo "ready=false" >> "$GITHUB_OUTPUT"
