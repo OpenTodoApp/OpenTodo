@@ -37,6 +37,9 @@ export function setBranding(b: Partial<Branding> | undefined): void {
 
 export const getBranding = store.get
 
+/** Calls `listener` whenever the branding changes; returns the unsubscribe. */
+export const subscribeBranding = store.subscribe
+
 /** The branding, re-rendering when it changes. */
 export const useBranding = store.use
 
