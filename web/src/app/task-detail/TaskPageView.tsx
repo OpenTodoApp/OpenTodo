@@ -105,7 +105,8 @@ export function TaskPageView({ taskId, userId, readOnly: viewer, projects, label
   )
   // The first crumb leads back to the list the task was opened from (Today, a view, a
   // label), with the task selected there; the project follows when it is another page.
-  // Every parent follows, the middle ones folded when there is more than one.
+  // Every parent follows, the middle ones folded when there is more than one. A phone shows the
+  // nearest step only.
   const origin = nav.backLabel && !nav.fromProject
   const crumbs = (
     <TaskPath
@@ -116,6 +117,7 @@ export function TaskPageView({ taskId, userId, readOnly: viewer, projects, label
       parents={m.parents.map((p) => ({ id: p.id, title: p.title }))}
       current={task.title || t('Untitled')}
       onOpen={onOpen}
+      nearestOnly={!desktop}
     />
   )
 
