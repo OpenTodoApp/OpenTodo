@@ -22,6 +22,7 @@ import { labelKey } from './labels'
 import { dayPartFields, dayPartName, dayPartOf, type DayPart } from './dayParts'
 import { energyName, type Energy } from './energy'
 import { sectorPatch } from './sectorWrites'
+import { planDayDrop } from './dayDrop'
 import { replanChanges, type ReplanProposal, type UnfitChoice } from './replan'
 import { keepWorkspaceFor, Partition, readWorkspaceState, workspaceIdFor } from './workspaces'
 
@@ -120,7 +121,20 @@ export async function dropUndoable(target: string, ids: readonly string[]): Prom
     if (part === 'none') return dayPartUndoable(ids, null)
     return part === 'morning' || part === 'afternoon' || part === 'evening' ? dayPartUndoable(ids, part) : null
   }
+  // Upcoming's day groups (upcoming-drag).
+  if (target.startsWith('day:')) {
+    const date = target.slice('day:'.length)
+    return /^\d{4}-\d{2}-\d{2}$/.test(date) ? dayDropUndoable(ids, date) : null
+  }
   return null
+}
+
+/** Put tasks on a day as a drop on the calendar does (upcoming-drag): one batch with Undo; tasks already there write nothing. */
+export async function dayDropUndoable(ids: readonly string[], date: string, today = logicalToday()): Promise<UndoableResult> {
+  const { tasks } = await readTicked(ids)
+  const changes = planDayDrop(tasks, date, today)
+  if (!changes.length) return { entry: null, label: '' }
+  return apply(changes, changes.length === 1 ? t('Date changed') : t('{n, plural, one {# task moved} other {# tasks moved}}', { n: changes.length }))
 }
 
 /** Set a project's or a section's flow (project-flow-modes): one op, with Undo. */

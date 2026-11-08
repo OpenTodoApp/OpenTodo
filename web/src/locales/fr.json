@@ -4419,7 +4419,7 @@
   "Sort direction": "Sens du tri",
   "Sort first": "Trier d’abord",
   "Sort {list} by {by}": "Trier {list} par {by}",
-  "Sorted by date (or their own rule): no drag or Alt moves there": "Triées par date (ou selon leur propre règle) : pas de glisser ni de déplacement avec Alt",
+  "Sorted by date (or their own rule): no Alt moves there; in Upcoming, drag a task onto another day to move it": "Triées par date (ou selon leur propre règle) : pas de déplacement avec Alt ; dans À venir, glissez une tâche sur un autre jour pour la déplacer",
   "Sound": "Son",
   "Sound at the end of a session": "Son à la fin d’une session",
   "Source": "Source",

@@ -81,6 +81,8 @@ export interface ListGroup {
   named?: true
   /** Today with day parts on (day-parts D4): the part a task dropped on the heading gets ('none' = Any time). */
   dropPart?: DayPart | 'none'
+  /** Upcoming (upcoming-drag): the day a task dropped anywhere on the group moves to. */
+  dropDay?: string
   /** One line under an open folded group's heading (today-closed-list: the Waiting hint). */
   hint?: string
   /**
@@ -475,8 +477,11 @@ function flatGroups(p: GroupInput): ListGroup[] {
     // Start with Today (upcoming-start-with-today D2): Today's own groups, then Tomorrow onwards.
     const lead = p.upcomingToday ? p.tasks.filter((x) => inToday(x, p.today)) : []
     const ahead = lead.length ? p.tasks.filter((x) => !inToday(x, p.today)) : p.tasks
-    const days = groupUpcoming(ahead, p.today).map(({ date, tasks: list }): ListGroup => ({ key: date, heading: formatDateHeading(date, p.today, p.resolved), rows: withImplied(list.map(row), { date }) }))
-    return p.upcomingToday ? [...todayGroups({ ...p, tasks: lead, doneToday: undefined }, row, true), ...days] : days
+    const days = groupUpcoming(ahead, p.today).map(({ date, tasks: list }): ListGroup => ({ key: date, heading: formatDateHeading(date, p.today, p.resolved), rows: withImplied(list.map(row), { date }), dropDay: date }))
+    // Today's day groups take a drop for today (upcoming-drag); Earlier, Blocked and Waiting do not.
+    const onToday = new Set(['today', 'morning', 'afternoon', 'evening'])
+    const leadGroups = p.upcomingToday ? todayGroups({ ...p, tasks: lead, doneToday: undefined }, row, true).map((g) => (onToday.has(g.key) ? { ...g, dropDay: p.today } : g)) : []
+    return [...leadGroups, ...days]
   }
   if (p.view === 'label' && p.display && p.display.groupBy !== 'project') {
     // A label page with its own grouping (list-display-options D3): in its order, each task once.
