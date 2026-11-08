@@ -24,6 +24,9 @@ logUnhandledRejections()
 installShellLinks()
 // In a native shell, reminders and the widgets' Today list are handed over as they change.
 startShellPublishers()
+// The page's icons and description follow the instance branding: the service
+// worker serves the signed page unchanged (signed-web-app D7).
+void import('./lib/pageBranding').then((m) => m.watchPageBranding())
 
 // The last language applied on this device (else the browser's) is loaded before
 // the first render, so there is no flash of English (app-localization D3).

@@ -21,7 +21,11 @@ type Options struct {
 }
 
 // Handler serves static assets with long-lived caching for hashed files and
-// falls back to index.html for client-side routes.
+// falls back to index.html for client-side routes. Every file is served byte for
+// byte as the build's signed list names it (OpenSpec change signed-web-app,
+// design D7): /index.html is the built page, never the noindex or branded copy
+// that navigations get, app-manifest.json is never cached, and every answer
+// carries no-transform so caching proxies leave the files as they are.
 func Handler() http.Handler { return HandlerWith(Options{}) }
 
 // noIndexMeta is inserted right after <head> when Options.NoIndex is set.
@@ -39,7 +43,8 @@ func HandlerWith(o Options) http.Handler {
 // handlerFor serves the built app from sub.
 func handlerFor(sub fs.FS, o Options) http.Handler {
 	fileServer := http.FileServer(http.FS(sub))
-	index, _ := fs.ReadFile(sub, "index.html")
+	built, _ := fs.ReadFile(sub, "index.html")
+	index := built
 	if o.NoIndex && index != nil {
 		index = InjectNoIndex(index)
 	}
@@ -49,12 +54,18 @@ func handlerFor(sub fs.FS, o Options) http.Handler {
 			return
 		}
 		p := strings.TrimPrefix(path.Clean(r.URL.Path), "/")
-		// The page is always served from memory: http.FileServer answers
-		// /index.html with a redirect to "/", and the service worker precaches
-		// index.html for navigations, which WebKit refuses to serve when the
-		// cached response was redirected. With NoIndex this is also the noindex copy.
-		if p == "index.html" {
-			p = ""
+		// /index.html is served from memory as built: http.FileServer answers it
+		// with a redirect to "/", and the service worker downloads it to serve
+		// navigations, which WebKit refuses to do from a redirected response. It
+		// must be the exact bytes of the signed list, so never the noindex copy.
+		if p == "index.html" && built != nil {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.Header().Set("Cache-Control", "no-cache, no-transform")
+			w.WriteHeader(http.StatusOK)
+			if r.Method != http.MethodHead {
+				w.Write(built)
+			}
+			return
 		}
 		if p != "" {
 			if f, err := sub.Open(p); err == nil {
@@ -62,15 +73,16 @@ func handlerFor(sub fs.FS, o Options) http.Handler {
 				f.Close()
 				if statErr == nil && !stat.IsDir() {
 					if strings.HasPrefix(p, "assets/") {
-						w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
-					} else if strings.HasSuffix(p, ".js") {
-						// Service worker scripts (sw.js, registerSW.js, push-sw.js) must never
-						// be cached: a CDN in front (Cloudflare gives .js a 4 h TTL and rewrites
-						// no-cache) would keep phones on the previous release.
-						w.Header().Set("Cache-Control", "no-store")
+						w.Header().Set("Cache-Control", "public, max-age=31536000, immutable, no-transform")
+					} else if strings.HasSuffix(p, ".js") || p == "app-manifest.json" {
+						// Service worker scripts (sw.js, registerSW.js, push-sw.js) and the
+						// signed file list must never be cached: a CDN in front (Cloudflare
+						// gives .js a 4 h TTL and rewrites no-cache) would keep phones on the
+						// previous release.
+						w.Header().Set("Cache-Control", "no-store, no-transform")
 						w.Header().Set("CDN-Cache-Control", "no-store")
 					} else {
-						w.Header().Set("Cache-Control", "no-cache")
+						w.Header().Set("Cache-Control", "no-cache, no-transform")
 					}
 					// The theme credits (theme-catalogue D4) are shown as text, never offered as a download.
 					if strings.HasSuffix(p, ".md") {
@@ -94,7 +106,7 @@ func handlerFor(sub fs.FS, o Options) http.Handler {
 			return
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("Cache-Control", "no-cache, no-transform")
 		w.WriteHeader(http.StatusOK)
 		w.Write(index)
 	})

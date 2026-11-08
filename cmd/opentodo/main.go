@@ -35,6 +35,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/demo"
 	"github.com/OpenTodoApp/opentodo/internal/store"
 	"github.com/OpenTodoApp/opentodo/internal/tenant"
+	"github.com/OpenTodoApp/opentodo/internal/web"
 )
 
 // version is set at build time with -ldflags "-X main.version=...".
@@ -172,6 +173,7 @@ func run() error {
 	go func() {
 		log.Info("opentodo listening", "addr", cfg.Addr, "data_dir", cfg.DataDir, "version", version, "signup_open", t.Cfg.AllowSignup, "log_level", logLevelName(cfg.LogLevel))
 		logDebugNote(log)
+		web.LogSignature(log)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errCh <- err
 		}
