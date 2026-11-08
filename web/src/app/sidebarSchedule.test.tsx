@@ -7,6 +7,8 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, setMeta, useDatabase } from '../lib/db'
 import { setDateTime } from '../lib/dates'
+import { CALENDAR_COLOR_BY_KEY } from '../lib/colorBy'
+import { createLabel } from '../lib/labels'
 import { createTask, resetDeviceId } from '../lib/ops'
 import type { CalendarEvent, CalendarSubscription, Task } from '../lib/types'
 import { click, render, waitFor } from '../ui/test-utils'
@@ -104,6 +106,18 @@ describe('the schedule', () => {
     await waitFor(() => !!document.querySelector('[role="dialog"]'), 'the event details')
     await click(document.querySelector<HTMLElement>('[data-schedule-calendar]')!)
     expect(parseRoute(location.pathname).view).toBe('day')
+    await r.unmount()
+  })
+
+  it('colours a task as the Calendar does (Colour by, issue #1080)', async () => {
+    localStorage.setItem('ot.sidebar.group.schedule', '1')
+    const label = await createLabel({ name: 'deep', color: '#f97316' })
+    await createTask({ title: 'Write', due: { date: '2026-10-22', time: '11:00' }, labels: [label] })
+    const r = await render(<SidebarSchedule />)
+    await waitFor(() => rows().length === 1, 'the row')
+    expect(rows()[0].getAttribute('data-hue')).toBe('slate')
+    await setMeta(CALENDAR_COLOR_BY_KEY, 'label')
+    await waitFor(() => rows()[0].getAttribute('data-hue') === 'orange', 'the label hue')
     await r.unmount()
   })
 
