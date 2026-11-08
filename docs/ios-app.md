@@ -89,4 +89,8 @@ Reminders, Face ID, the certificate and local-network behaviour and the backgrou
 
 Either way the first run on a device needs **Developer Mode** on (iPhone ▸ Settings ▸ Privacy & Security) and, for a free team, trusting the developer under Settings ▸ General ▸ VPN & Device Management. If Xcode reports that the bundle identifier is taken, change the `app.open-todo.ios` prefix in `mobile/ios/project.yml` for every target and run `xcodegen generate`.
 
+### Walkthrough
+
+To look at the app on several iPhones without a Mac, run **Actions → iPhone walkthrough** (`gh workflow run ios-walkthrough.yml --ref <branch>`). On a macOS runner it builds the server, seeds an account and walks the app through first run, sign-in, the lists, a project, a task, quick add, completing, swiping and dragging, search, the calendar and Settings (`mobile/ios/OpenTodoUITests/WalkthroughTests.swift`), on an iPhone SE (3rd generation), an iPhone 16, an iPhone 16 Pro Max and an iPhone 16 in dark mode with the largest text. The `ios-walkthrough` artifact holds one PNG per step and device and `summary.txt`, with what the accessibility audit found and the steps it could not reach. It reports and never fails; `scripts/ios-walkthrough.sh` runs the same on a Mac.
+
 `mobile/README.md` describes the files, the bridge and the build settings; `openspec/changes/ios-shell` records the decisions and what was measured on the platform.
