@@ -50,7 +50,7 @@ export const NewLabel: StoryObj = {
 
 /** Typing `#web`: the project list under the field, Create last (smart-title-tokens). */
 function Suggesting({ line }: { line: string }) {
-  const ref = useRef<HTMLInputElement>(null)
+  const ref = useRef<HTMLTextAreaElement>(null)
   useEffect(() => {
     const el = ref.current
     if (!el) return
@@ -98,6 +98,28 @@ export const PhoneSheet: StoryObj = {
     </div>
   ),
 }
+
+/** A long line wraps (quick-add-notes D1), and Shift+Enter opened the notes under it (D2). */
+function WithNotesStory({ layout }: { layout: 'line' | 'sheet' }) {
+  const ref = useRef<HTMLTextAreaElement>(null)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      ref.current?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', shiftKey: true, bubbles: true, cancelable: true }))
+      const notes = document.querySelector<HTMLTextAreaElement>('textarea[aria-label="Notes"]')
+      if (!notes) return
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(notes, 'https://example.com/the-long-read')
+      notes.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    return () => clearTimeout(timer)
+  }, [])
+  const line = 'Read the long piece about local-first software and write down the three ideas worth trying in OpenTodo tomorrow #Work'
+  return layout === 'sheet'
+    ? <div className="max-w-sm rounded-t-popover border-t border-strong bg-pop pt-3 shadow-3"><QuickAdd ref={ref} layout="sheet" placeholder="Add a task…" projects={projects} labels={labels} onAdd={noop} hideHint initialValue={line} /></div>
+    : <Frame><QuickAdd ref={ref} placeholder="Add a task to Inbox" projects={projects} labels={labels} onAdd={noop} hideHint initialValue={line} /></Frame>
+}
+
+export const WithNotes: StoryObj = { render: () => <WithNotesStory layout="line" /> }
+export const PhoneSheetWithNotes: StoryObj = { render: () => <WithNotesStory layout="sheet" /> }
 
 /** A pasted list (paste-to-tasks D1): the offer under the empty field, five lines as they will be titled and how many more. */
 export const PasteOffer: StoryObj = {

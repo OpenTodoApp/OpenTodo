@@ -69,7 +69,7 @@ export interface ShortcutContext {
   today: string
   userId?: string
   ui: ListUi
-  quickAddRef: RefObject<HTMLInputElement | null>
+  quickAddRef: RefObject<HTMLTextAreaElement | null>
   toggleCollapsed: (id: string, force?: boolean) => void
   toggleComplete: (id: string, completed: boolean) => Promise<void>
   acceptPrompt: () => void
