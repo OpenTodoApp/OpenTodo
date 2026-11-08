@@ -171,7 +171,12 @@ func signCmd(args []string, out io.Writer, getenv func(string) string) error {
 	if err != nil {
 		return err
 	}
-	if err := os.WriteFile(file, signed, 0o644); err != nil {
+	// The list keeps the permissions the build gave it: it is a public file of the web app.
+	info, err := os.Stat(file)
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(file, signed, info.Mode().Perm()); err != nil {
 		return err
 	}
 	for _, k := range keys {
