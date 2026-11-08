@@ -65,10 +65,11 @@ func previewFixture(t *testing.T, path string) namedPreview {
 // Real exports (sanitised, named-importers D5) import with pinned results.
 func TestNamedFormatFixtures(t *testing.T) {
 	for _, dir := range []string{"todoist-backup", "ticktick-csv", "linear-csv", "things-db",
-		"google-tasks-json", "trello-json", "asana-csv", "microsoft-todo-json", "apple-reminders-json", "anydo-json"} {
+		"google-tasks-json", "trello-json", "asana-csv", "microsoft-todo-json", "apple-reminders-json", "anydo-json",
+		"vikunja-export", "tududi-db", "super-productivity-json", "omnifocus-csv", "notion-csv"} {
 		files, _ := filepath.Glob(filepath.Join("testdata", dir, "*"))
 		for _, f := range files {
-			if strings.HasSuffix(f, ".golden.json") {
+			if strings.HasSuffix(f, ".golden.json") || strings.HasSuffix(f, ".md") {
 				continue
 			}
 			t.Run(f, func(t *testing.T) {

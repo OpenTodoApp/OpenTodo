@@ -24,8 +24,8 @@ import { Kbd } from './shortcuts/Kbd'
 import { t } from '../lib/i18n'
 import { messageOf } from '../lib/errorText'
 
-/** How files come with this share: the hand-over store, the extension's message, or lost on the way. */
-export type ShareFiles = { inbox?: string | null; mode?: 'extension' | 'denied' | 'lost' | null }
+/** How files come with this share: the hand-over store, the extension's message, lost on the way, or refused by the service worker. */
+export type ShareFiles = { inbox?: string | null; mode?: 'extension' | 'denied' | 'lost' | 'unverified' | null }
 
 // The payload lives in memory only, read once from the address bar before the auth
 // gate renders. The query string is then removed from the address bar and history so
@@ -38,7 +38,7 @@ if (typeof location !== 'undefined' && location.pathname.replace(/\/+$/, '') ===
   const q = new URLSearchParams(location.search)
   pending = parseShare(q)
   const mode = q.get('files')
-  pendingFiles = { inbox: q.get('inbox'), mode: mode === '1' ? 'extension' : mode === 'denied' ? 'denied' : mode === 'lost' ? 'lost' : null }
+  pendingFiles = { inbox: q.get('inbox'), mode: mode === '1' ? 'extension' : mode === 'denied' || mode === 'lost' || mode === 'unverified' ? mode : null }
   if (location.search) history.replaceState(history.state, '', '/share')
 }
 
@@ -129,7 +129,7 @@ export function ShareCapture() {
   const [projectId, setProjectId] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const titleRef = useRef<HTMLInputElement>(null)
+  const titleRef = useRef<HTMLTextAreaElement>(null)
   // Same inputs as the task views' quick add, so `#project`, `@label`, dates and `p1` in the title parse alike.
   const projects = useProjects()
   const labels = useAllLabels()
@@ -196,7 +196,7 @@ export function ShareCapture() {
   }
 
   return (
-    <div className="flex min-h-full justify-center bg-canvas p-4 sm:items-center">
+    <div className="flex min-h-full justify-center bg-canvas p-4 pt-[max(1rem,var(--safe-top))] sm:items-center">
       <div className="w-full max-w-lg rounded-card border border-default bg-surface p-5 shadow-1">
         <div className="mb-4 flex items-center gap-2">
           <InstanceMark size={24} />
@@ -218,6 +218,7 @@ export function ShareCapture() {
             labels={labels}
             onAdd={save}
             onAddMany={saveMany}
+            notes={false}
           />
         </div>
         )}
@@ -266,6 +267,7 @@ function SharedFiles({ files, dropped, demo, disabled, mode, onRemove }: {
   const notes: string[] = []
   if (mode === 'denied') notes.push(t('The screenshot could not be handed over. Allow the extension to reach your server in its options, then try again.'))
   if (mode === 'lost') notes.push(t('The shared files did not arrive: open the app once so it can receive files, then share again.'))
+  if (mode === 'unverified') notes.push(t('Nothing from this share was kept: the browser did not say where it came from. Update the browser, then share again.'))
   if (files.length && demo) notes.push(t('Files are not attached on this demo instance.'))
   else if (files.length && disabled) notes.push(t('Attachments are turned off on this server, so the files are not attached.'))
   if (dropped) notes.push(t('{n, plural, one {# more file was left out: a share takes at most 10.} other {# more files were left out: a share takes at most 10.}}', { n: dropped }))

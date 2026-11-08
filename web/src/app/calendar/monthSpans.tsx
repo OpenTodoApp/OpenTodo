@@ -61,7 +61,7 @@ export function monthSpanKeys(c: { selected: Task | undefined; viewed: ReadonlyM
 /** The trailing end of a date-only row: dragged onto a later day, the task becomes a span (D2). */
 export function ExtendHandle({ task, day, onDone }: { task: Task; day: string; onDone: (id: string) => void }) {
   return (
-    <span aria-hidden data-span-handle="extend" className="absolute inset-y-0 end-0 w-2 cursor-ew-resize touch-none"
+    <span data-drag-id="month-span-extend" aria-hidden data-span-handle="extend" className="absolute inset-y-0 end-0 w-2 cursor-ew-resize touch-none"
       data-day={day} onPointerDown={(e) => startExtend(e, task, (patch) => { act(spanWithUndo(task.id, patch)); onDone(task.id) })} />
   )
 }

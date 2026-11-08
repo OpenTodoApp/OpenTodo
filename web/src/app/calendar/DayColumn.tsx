@@ -11,10 +11,11 @@ import type { PlacedFrame } from '../../lib/frames'
 import { slotCapacity, slotCount, slotName } from '../../lib/slots'
 import type { PlacedBlock, Overflow } from '../../lib/layout'
 import type { CalendarEvent, CalendarSubscription, Task } from '../../lib/types'
-import { Button, Tooltip, TruncatedText, type HueName } from '../../ui'
+import { Button, Icon, Tooltip, TruncatedText, type HueName } from '../../ui'
 import { EventBlockView, EventChip } from '../CalendarEvents'
 import type { useCalendarDrag } from '../calendarDrag'
 import { ALL_DAY_CAP, toggleAllDay, useAllDayExpanded } from './allDayExpanded'
+import { laneShape, setLaneFold, useLaneFold } from './laneFold'
 import { CapacityLine, capacityTooltip, hiddenByFilter } from './CapacityLine'
 import { isEmptyPlace, startAddHold, type AddHere } from './addHere'
 import { DeadlineDiamond, deadlineMark, DeadlineMarker } from './DeadlineMarker'
@@ -68,8 +69,13 @@ export function HourGutter() {
   )
 }
 
-export function DayHeader({ day, today, tasks, meetings, prefs, showName, selectedId, subMap, zone, laneTarget, onSelect, onOpen, onPointerDown, hueOf, projectionHue, deadlines = NO_TASKS, hidden = 0, gestures, part = 'all', spanRows = 0, spanHidden = 0, onExtend }: {
+export function DayHeader({ day, today, tasks, meetings, prefs, showName, selectedId, subMap, zone, laneTarget, onSelect, onOpen, onPointerDown, hueOf, projectionHue, deadlines = NO_TASKS, hidden = 0, gestures, part = 'all', spanRows = 0, spanHidden = 0, onExtend, compact = false }: {
   day: DayData
+  /**
+   * A touch screen or a narrow window (GitHub issue 775): a lane of more than a few
+   * items folds behind an "Unscheduled (n)" header, the choice kept on this device.
+   */
+  compact?: boolean
   /**
    * With spans on screen (multi-day-tasks D3) the header is drawn in two parts around
    * the span band: the name and capacity, then the all-day strip and the lane.
@@ -105,15 +111,24 @@ export function DayHeader({ day, today, tasks, meetings, prefs, showName, select
   const load = dayLoad(tasks, day.date, prefs.dayLength, meetings?.minutes ?? 0, slotCapacity([...day.slots.values()]), dayLoadProjections(day))
   const d = Number(day.date.slice(8))
   const weekdayName = formatDateParts(day.date, { weekday: 'short' })
+  const choice = useLaneFold()
+  const count = day.lane.length + day.laneProjected.length
+  const shape = compact ? laneShape(count, choice) : { toggle: false, open: true }
+  // A folded lane opens while the keyboard selection is one of its tasks, so the selection stays visible.
+  const open = shape.open || (selectedId !== null && day.lane.some((tk) => tk.id === selectedId))
+  // A narrow column (Week beside the planning list, issue: "T… 0m / 8h +1?") puts the
+  // capacity under the day's name instead of cutting the name to a letter.
   const head = (
-      <div className="flex items-baseline justify-between gap-1 px-1">
+    <div className="@container/dayhead">
+      <div className="flex flex-col items-start px-1 @min-[10rem]/dayhead:flex-row @min-[10rem]/dayhead:items-baseline @min-[10rem]/dayhead:justify-between @min-[10rem]/dayhead:gap-1">
         {showName ? (
-          <TruncatedText className={`text-meta font-medium ${day.date === today ? 'text-accent' : 'text-muted'}`} text={`${weekdayName} ${d}`} />
+          <TruncatedText data-day-name="" className={`max-w-full text-meta font-medium ${day.date === today ? 'text-accent' : 'text-muted'}`} text={`${weekdayName} ${d}`} />
         ) : <span />}
         <Tooltip label={[capacityTooltip(load, prefs.dayLength, meetings), hiddenByFilter(hidden)].filter(Boolean).join(' ')}>
           <CapacityLine load={load} dayLength={prefs.dayLength} unestimated focusable />
         </Tooltip>
       </div>
+    </div>
   )
   const body = <>
       {day.allDay.length + deadlines.length + spanHidden > 0 && <AllDayStrip day={day} deadlines={deadlines} today={today} subMap={subMap} zone={zone} onOpen={onOpen} spanRows={spanRows} spanHidden={spanHidden} />}
@@ -122,11 +137,21 @@ export function DayHeader({ day, today, tasks, meetings, prefs, showName, select
         {...addHandlers(gestures, () => ({ date: day.date }))}
         role="group"
         aria-label={t('Unscheduled on {date}', { date: day.date })}
+        data-lane-open={shape.toggle ? String(open) : undefined}
         className={`mt-1 min-h-8 space-y-0.5 rounded-control border border-dashed p-0.5 ${laneTarget ? 'border-accent bg-accent-soft' : 'border-default'}`}
       >
-        {day.lane.length === 0 && day.laneProjected.length === 0 && <span className="block px-1 py-1 text-hint text-faint">{t('Unscheduled')}</span>}
-        {day.lane.map((task) => (
-          <button
+        {count === 0 && <span className="block px-1 py-1 text-hint text-faint">{t('Unscheduled')}</span>}
+        {shape.toggle && (
+          // Still the lane's drop target while folded: a task dragged onto the header lands in the lane.
+          <button type="button" data-lane-toggle={day.date} aria-expanded={open} onClick={() => setLaneFold(open ? 'closed' : 'open')}
+            className="flex min-h-8 w-full touch-manipulation items-center gap-1 rounded-chip px-1 text-left text-meta text-muted hover:bg-hover">
+            <Icon name="chevron-down" size="xs" className={`shrink-0 ${open ? '' : '-rotate-90'}`} />
+            <span className="truncate">{t('Unscheduled')}</span>
+            <span data-lane-count className="ml-auto shrink-0 rounded-full bg-sunken px-1.5 text-hint tabular-nums text-strong">{count}</span>
+          </button>
+        )}
+        {open && day.lane.map((task) => (
+          <button data-drag-id="calendar-lane-task"
             key={task.id}
             type="button"
             data-cal-id={task.id}
@@ -142,10 +167,10 @@ export function DayHeader({ day, today, tasks, meetings, prefs, showName, select
             {task.deadline === day.date && !task.completed_at && <><DeadlineDiamond past={day.date < today} /><span className="sr-only">, {deadlineMark(task, day.date)}</span></>}
             {task.estimate_minutes ? <span className="ml-auto shrink-0 text-hint tabular-nums">{formatMinutes(task.estimate_minutes)}</span> : null}
             {/* The trailing end: drag it onto a later day to make the task a span (multi-day-tasks D2). */}
-            {onExtend && !task.completed_at && !task.due?.time && <span aria-hidden data-span-handle="extend" onPointerDown={(e) => onExtend(e, task)} className="absolute inset-y-0 end-0 w-2 cursor-ew-resize touch-none" />}
+            {onExtend && !task.completed_at && !task.due?.time && <span data-drag-id="calendar-lane-extend" aria-hidden data-span-handle="extend" onPointerDown={(e) => onExtend(e, task)} className="absolute inset-y-0 end-0 w-2 cursor-ew-resize touch-none" />}
           </button>
         ))}
-        {day.laneProjected.map((p) => <ProjectedItem key={p.id} p={p} hue={projectionHue?.(p)} variant="row" className="truncate" onDrag={(e) => onPointerDown(e, p.id)} />)}
+        {open && day.laneProjected.map((p) => <ProjectedItem key={p.id} p={p} hue={projectionHue?.(p)} variant="row" className="truncate" onDrag={(e) => onPointerDown(e, p.id)} />)}
       </div>
   </>
   if (part === 'head') return <div className="min-w-0 flex-1 border-l border-default px-1 pt-1" data-day-header={day.date}>{head}</div>
@@ -309,7 +334,7 @@ function TaskBlock({ b, block, task, date, past, hue, selected, dragging, movesT
   const height = Math.max(MIN_BLOCK_MINUTES * PX_PER_MIN, (b.end - b.start) * PX_PER_MIN)
   const ghost = dragging ? 'opacity-40' : '' // tone-lint-allow: the dragged block's ghost
   return (
-    <div
+    <div data-drag-id="calendar-block"
       data-cal-id={b.id}
       data-block={b.id}
       data-overlap={b.overlap || undefined}
@@ -418,7 +443,7 @@ function OverflowStack({ o, day, taskMap, selectedId, expanded, setExpanded, onS
             const blk = day.blocks.get(id)
             return (
               <li key={id}>
-                <button
+                <button data-drag-id="calendar-overflow-task"
                   type="button"
                   data-cal-id={id}
                   onPointerDown={tk?.completed_at ? undefined : (e) => onDragStart(e, { taskId: id, kind: 'move' })}

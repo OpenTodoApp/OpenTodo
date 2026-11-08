@@ -32,16 +32,21 @@ is stored as `every 2nd tuesday`.
 | --- | --- | --- |
 | day, N days | `every day`, `every 3 days` | Daily, or every N days (1–999). |
 | week, N weeks | `every week`, `every 2 weeks` | Every 7 × N days. |
+| N weeks on weekday names | `every 2 weeks on saturday`, `every 3 weeks on mon, fri` | Those weekdays, every N weeks (see below). `every week on tuesday` is stored as `every tuesday`, and on a task due on its one weekday the rule is stored as the plain week interval, `every 2 weeks` ([older devices](#rules-older-devices-read)). |
 | weekday | `every weekday` | Monday to Friday. |
 | month, N months | `every month`, `every 6 months` | Same day of month; a day the month does not have becomes its last day. |
 | year, N years | `every year`, `every 2 years` | Same date; 29 February becomes 28 February in common years. |
 | weekday names | `every monday`, `every mon, wed, fri`, `every tuesday and thursday` | Any set of weekdays, full names or three-letter abbreviations, separated by commas or "and". |
 | day of month | `every 1st`, `every 15th`, `every 31st` | That day of each month; in shorter months the last day. |
 | last day | `every last day` | The last day of each month. |
-| last weekday | `every last weekday` | The last Monday–Friday of each month. |
+| ordinal weekday of the month | `every first weekday`, `every 2nd weekday`, `every last weekday` | 1st/first to 4th/fourth or last Monday–Friday of each month. |
 | ordinal weekday | `every 2nd tuesday`, `every first monday`, `every last friday` | 1st/first to 4th/fourth or last of that weekday in each month. |
 
-`every 2nd` is the 2nd day of each month; `every 2nd tuesday` is the second Tuesday.
+`every 2nd` is the 2nd day of each month; `every 2nd tuesday` is the second Tuesday;
+`every 2nd weekday` is the second Monday–Friday. Weekends are not counted: in
+March 2026, which starts on a Sunday, `every first weekday` is Monday 2 March and
+`every 2nd weekday` is Tuesday 3 March. `every first weekday` is stored as
+`every 1st weekday`.
 
 ### Completion-relative rules
 
@@ -87,8 +92,33 @@ in Someday clears its due date and so ends the repetition.
 - **Month ends**: `every month` due 31 January moves to 28 (or 29) February. The
   rule has no memory of the original day, so the following month is the 28th too;
   use `every 31st` or `every last day` to stay at the end of the month.
+- **Every N weeks on weekdays**: the weeks run Monday to Sunday, and the rule
+  repeats in every Nth week counted from the week of the current due date. The
+  next occurrence is the first of its weekdays after the due date in such a week,
+  also when catching up. A due date on another weekday is an occurrence of its
+  own and the next ones follow the rule: `every 2 weeks on saturday` due
+  Wednesday 4 November 2026 is next due Saturday 7 November, then 21 November.
+  Due Sunday 8 November, it is next due 21 November, since that Sunday ends the
+  week of 7 November. Completed late on Sunday 6 December after being due
+  7 November, it moves to 19 December, keeping the rhythm. These are the dates of
+  the iCalendar rule `FREQ=WEEKLY;INTERVAL=2;BYDAY=SA` starting on the due date,
+  which is how [CalDAV](caldav.md) serves it. Your week-start setting does not
+  change them.
 - A rule set on a task without a due date gives it one: the first matching date
-  from today on.
+  from today on (for `every 2 weeks on saturday`, the next Saturday, which then
+  sets the rhythm).
+
+### Rules older devices read
+
+OpenTodo 1.0 does not know week intervals on weekdays. So whatever writes a
+rule (quick add, the Repeat field, the API, an assistant, CalDAV, an import or
+the vault) stores the form 1.0 reads when one gives the same dates: on a task
+due on Saturday, `every 2 weeks on saturday` is stored as `every 2 weeks`, which
+the due date keeps on Saturdays. On a task due on another day, with several
+weekdays, or without a due date, the rule keeps its weekdays, the only way to
+say it. A 1.0 device shows such a rule as text, and completing the task
+there ends the series ([stability](stability.md#what-may-change-within-1x)):
+update your devices.
 
 ## Completing, skipping and editing
 
@@ -116,6 +146,13 @@ in Someday clears its due date and so ends the repetition.
 - **Reopen** an occurrence record and it becomes an open occurrence of its date
   again; the series is not moved back. Reopening a series that ended keeps its rule,
   so its next completion continues the schedule.
+- **Tracked time** stays on the series, since the series is the task. Its total
+  against the estimate counts the entries since the latest completion or skip
+  among its records dated before its current occurrence; see
+  [Tracked against estimated](time-tracking.md#tracked-against-estimated).
+  The `tracked` filter term and `tracked_minutes` still count every entry.
+
+In a shared project a repeating task can pass between people each time it is completed; see [Take turns](take-turns.md).
 
 ## One occurrence alone
 

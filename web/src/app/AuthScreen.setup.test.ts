@@ -42,6 +42,14 @@ describe('AuthScreen setup token', () => {
     expect(render({ ...setup, setupCodeRequired: true, setupTokenRequired: true })).toContain('Setup token')
   })
 
+  it('says why a page under a domain name asks for the code (host-check-without-base-url)', () => {
+    const html = render({ ...setup, setupCodeRequired: true, setupCodeForHost: true })
+    expect(html).toContain('Setup code')
+    expect(html).toContain('OPENTODO_BASE_URL')
+    expect(html).toContain('docker logs opentodo')
+    expect(render({ ...setup, setupCodeRequired: true })).not.toContain('OPENTODO_BASE_URL')
+  })
+
   it('explains a wrong setup code and a locked account', () => {
     expect(describeAuthError(new ApiError(403, 'setup_code_invalid', 'x'))).toContain('server log')
     expect(describeAuthError(new ApiError(429, 'account_locked', 'x'))).toContain('15 minutes')

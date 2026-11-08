@@ -36,6 +36,10 @@
   }
 }
 
+/* `pins`: from 768 px, except on a phone held in landscape (coarse pointer, under 500 px
+   tall), where a pinned row would cover the top of the list (stickyQuickAdd.ts). */
+@custom-variant pins (@media (width >= 48rem) and (not ((pointer: coarse) and (height < 500px))));
+
 @theme inline {
   /* A theme may set --ot-font (theme-engine D1: a system, serif, monospace or installed
      font, never one from another host); without it the bundled Inter applies. */
@@ -203,6 +207,19 @@
   --ot-hue-violet-solid: oklch(0.5413 0.2466 293.01); --ot-hue-violet-soft: color-mix(in oklab, var(--ot-hue-violet-solid) var(--ot-mix-hue-soft-light), var(--ot-surface)); --ot-hue-violet-text: color-mix(in oklch, var(--ot-hue-violet-solid) var(--ot-mix-hue-text-light), oklch(0 0 0));
   --ot-hue-pink-solid: oklch(0.5916 0.218 0.58); --ot-hue-pink-soft: color-mix(in oklab, var(--ot-hue-pink-solid) var(--ot-mix-hue-soft-light), var(--ot-surface)); --ot-hue-pink-text: color-mix(in oklch, var(--ot-hue-pink-solid) var(--ot-mix-hue-text-light), oklch(0 0 0));
   --ot-hue-slate-solid: oklch(0.5544 0.0407 257.42); --ot-hue-slate-soft: color-mix(in oklab, var(--ot-hue-slate-solid) var(--ot-mix-hue-soft-light), var(--ot-surface)); --ot-hue-slate-text: color-mix(in oklch, var(--ot-hue-slate-solid) var(--ot-mix-hue-text-light), oklch(0 0 0));
+}
+:root {
+  /* Safe areas (GitHub issue 973): the strips of the screen the status bar, the notch
+     or Dynamic Island, the home indicator and the rounded sides take, read once here
+     (index.html sets viewport-fit=cover, so the page runs under them). Every surface
+     that touches an edge of the viewport pads by these, never by env() itself
+     (`make ui-lint`), and the safe-area check (scripts/e2e-safe-area.mjs) sets them on
+     an engine that cannot emulate the insets. Utilities: pt-safe, pb-safe, pl-safe,
+     pr-safe, px-safe. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
 }
 :root {
   --duration-ui: 120ms;
@@ -685,6 +702,20 @@ html:root[data-contrast="high"] :focus-visible {
 html, body, #root {
   height: 100%;
 }
+/* The status bar's backdrop (GitHub issue 999): on an iPhone the installed app runs
+   under the status bar, and Safari covers that strip with a soft blur, taller than the
+   strip and drawn over whatever is below it, unless an opaque fixed element spans the
+   top edge, whose colour it extends instead. This one (index.html, before the app) is
+   that element: the canvas, as tall as the top inset (nothing without one), under the
+   side panels, the drawer and every overlay, which pad their own tops by the inset.
+   The safe-area check (topEdge in scripts/ux-audit/measure.mjs) requires it. */
+[data-status-bar-backdrop] {
+  position: fixed;
+  inset: 0 0 auto;
+  height: var(--safe-top);
+  z-index: 20;
+  background-color: var(--color-canvas);
+}
 /* Follow the visible viewport on phones (iOS toolbars), where supported. */
 @supports (height: 100dvh) {
   #root { height: 100dvh; }
@@ -694,6 +725,8 @@ html {
   font-synthesis: style;
   /* Inter's optical-size axis picks its Display cut at large sizes (tokens-v2 D7). */
   font-optical-sizing: auto;
+  /* Closing punctuation stays with the previous character (simplified-chinese D5). Latin wrapping is unchanged. */
+  line-break: strict;
 }
 
 body {
@@ -721,7 +754,10 @@ body {
 @layer base {
   @media (pointer: coarse) {
     input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="hidden"], [type="file"], [type="button"], [type="submit"], [type="reset"], [type="image"]),
-    textarea, select, [contenteditable]:not([contenteditable="false"]) {
+    textarea, select, [contenteditable]:not([contenteditable="false"]),
+    /* The copies of quick add's text behind its fields (QuickAddTint, the notes sizer)
+       wrap and tint the same text, so they take the same size (GitHub issue 1051). */
+    [data-quick-add-tints], .quick-add-notes-sizer {
       --ot-text-hint: 16px; --ot-text-meta: 16px; --ot-text-list: 16px;
       --ot-text-prose: 16px; --ot-text-h3: 16px;
       font-size: max(16px, 1em);
@@ -739,6 +775,12 @@ body {
    and an overlay. Dark pairs a border with the elevation, which does not read on a
    dark canvas on its own. */
 .surface-row { @apply rounded-chip hover:bg-hover; }
+/* The quick add's line field (quick-add-field-surface): a filled input surface with a resting
+   hairline, because the dark fill alone is about 1.03:1 on the surface. The sunken and surface
+   tokens are one colour in the high-contrast presentation, so it gets a stronger border there. */
+.quick-add-surface { @apply rounded-control border border-soft bg-sunken px-3 py-1.5 focus-within:border-focus focus-within:ring-2 focus-within:ring-focus/30; }
+.quick-add-surface:has(:disabled) { @apply opacity-60; }
+html:root[data-contrast="high"] .quick-add-surface:not(:focus-within) { @apply border-default; }
 .surface-card { @apply rounded-card border border-default bg-surface; }
 .surface-overlay { @apply rounded-popover border border-strong bg-pop shadow-3; }
 /* Shared Button (src/ui/Button.tsx, OpenSpec change ui-primitives D3): the same
@@ -992,6 +1034,29 @@ button.ui-column-add { @apply flex-row items-start justify-start px-3 py-2.5 hov
    preference", precision-tokens D5): comfortable rows are 36 px, compact 32 px. Touch
    targets keep 44 px on coarse pointers through the rules further down. */
 .row-pad { padding-block: 0.5rem; }
+/* A list row far from the viewport costs no layout or paint (list-rendering-at-scale
+   D1): the browser skips it while it stays in the document, so focus, find in page,
+   drag and drop and screen readers reach every row. Its last drawn height holds its
+   place. A dragged or dropped-on row, a row edited in place and an expanded row draw
+   normally, so nothing they show is clipped to the row; the row the cursor is on
+   draws nothing outside itself and keeps the rule, so a cursor move does not change
+   what the browser skips (D6). A row not drawn yet holds the average height of the
+   rows drawn first (RowEstimate; a one-line row until then), so the scroll height is
+   close before every row has been drawn once. */
+.row-offscreen { content-visibility: auto; contain-intrinsic-size: auto var(--row-estimate, 2.375rem); overflow-clip-margin: 0.25rem; }
+/* Not in WebKit (only it supports hanging-punctuation): its layout check twice found rows
+   on screen left skipped, the list drawn blank and a tap on the checkbox landing on the
+   row (release 0.22.0). Safari draws every row, as before list-rendering-at-scale. */
+/* A long list skips whole blocks of rows instead (incremental-list-updates D5): with the
+   rule on each of 2,000 rows, every frame worked out which rows to skip and every hit
+   test walked all of them. A block far from the viewport is skipped; its rows are drawn
+   with it. A block holding a row that draws normally (above) draws normally too. Its
+   size until drawn: its rows at the row estimate. */
+.row-block { display: block; content-visibility: auto; contain-intrinsic-size: auto calc(var(--row-estimate, 2.375rem) * var(--block-rows, 50)); overflow-clip-margin: 0.25rem; }
+.row-block .row-offscreen, .row-block:has(> ul > li[data-task-id]:not(.row-offscreen)) { content-visibility: visible; }
+@supports (hanging-punctuation: first) {
+  .row-offscreen, .row-block { content-visibility: visible; }
+}
 /* The page (precision-shell D3, app-shell "Page template"): content uses the whole
    content surface, the header included, so every title, first row and last action
    share the surface's padding. Only a form page keeps its fields at 42 rem from the
@@ -1007,6 +1072,27 @@ button.ui-column-add { @apply flex-row items-start justify-start px-3 py-2.5 hov
    row tints while the hold counts, so holding reads as feedback before the menu opens
    on release. A plain attribute, so it survives the row's re-renders mid-hold. */
 li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--text-color-accent) 8%, transparent); }
+/* The bulk-selection box (bulk-actions): drawn by us, not by the platform, so it fills
+   the same 20 px slot as the completion circle it stands in for on every device — the
+   native control's size and alignment vary per browser and read as off-centre on a phone. */
+.row-tick {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+  flex-shrink: 0;
+  cursor: pointer;
+  border: 2px solid var(--ot-border-input);
+  border-radius: var(--radius-chip);
+  background: transparent;
+}
+.row-tick:checked {
+  border-color: var(--ot-accent);
+  background-color: var(--ot-accent);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+  background-position: center;
+  background-size: 75% 75%;
+  background-repeat: no-repeat;
+}
 /* A narrow row's line is one run of muted text (rows-v2 D4): a faint middle dot between
    adjacent items, as generated content so it is never read out. A row's line holds two
    wrappers (the column's cells, then the rest), so its dots also cross from the first
@@ -1050,7 +1136,7 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 .row-check-pop, [data-departing] [data-check-mark], [data-rolled] [data-check-mark] {
   animation: row-check-pop var(--duration-emphasis) var(--ease-spring) backwards;
 }
-[data-departing] { overflow: hidden; animation: row-collapse calc(var(--duration-moment) - 200ms) var(--ease-spring) 200ms both; }
+[data-departing] { overflow: hidden; interpolate-size: allow-keywords; animation: row-collapse calc(var(--duration-moment) - 200ms) var(--ease-spring) 200ms both; }
 [data-departing] [data-row-open] { animation: row-text-fade 200ms var(--ease-calm) 60ms both; }
 [data-departing] [data-row-title] { position: relative; inline-size: fit-content; max-inline-size: 100%; text-decoration-line: none; }
 [data-departing] [data-row-title]::after {
@@ -1091,6 +1177,8 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 :root[data-density="compact"] [data-group-header] { min-height: 2rem; }
 @media (pointer: coarse) {
   :root[data-density="compact"] .row-pad { padding-block: 0.5rem; }
+  .row-offscreen { contain-intrinsic-size: auto var(--row-estimate, 2.625rem); }
+  .row-block { contain-intrinsic-size: auto calc(var(--row-estimate, 2.625rem) * var(--block-rows, 50)); }
   :root[data-density="compact"] [data-sidebar-item] { min-height: 2.75rem; }
 }
 /* User-written text wraps instead of pushing the page sideways. */
@@ -1112,6 +1200,21 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
    are outside the layers so they win over the line's utility classes. */
 @container row (width < 40rem) {
   [data-row-props] :is([data-date], [data-estimate], [data-progress]) > svg { display: none; }
+}
+/* The title keeps a very narrow row's width (row-title-first-on-phones): the origin at its
+   end is its icon, the words stay in the link's name and the task's details. */
+@container row (width < 30rem) {
+  [data-row-trailing] [data-origin-text] { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
+/* The row's end is one width from 40 rem (GitHub issue 945): every list row has the
+   trailing slot, with an origin or empty, so the property column ends at the same
+   place on every row and the date and label cells line up down the list. A longer
+   origin is cut with an ellipsis; its whole text stays in the link's name and the
+   task's details. A detailed row has no column and keeps its end as wide as it is. */
+@container row (width >= 40rem) {
+  [data-row-trailing] { flex: none; width: 6rem; }
+  [data-row-trailing] > span, [data-row-trailing] [data-origin] { flex-shrink: 1; min-width: 0; max-width: 100%; }
+  [data-row-layout="detailed"] > [data-row-trailing] { flex: 0 1 auto; width: auto; }
 }
 @container row (width >= 40rem) {
   /* align-content: on touch the open control is at least 44 px tall (the coarse-pointer
@@ -1180,9 +1283,27 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
     [data-row-props] { grid-area: 1 / 2; display: flex; align-items: center; white-space: nowrap; }
     [data-row-props] > [data-row-cell]:not([data-row-phone]), [data-row-rest] { display: none; }
     [data-row-meta="row"] > [data-row-props] > [data-row-item]::before { content: none; }
+    /* The title comes first (row-title-first-on-phones): the origin is left to the row's
+       details and the task page, and the Inbox's source line is the second line, never a
+       second column beside the title. */
+    [data-row-trailing] { display: none; }
+    [data-row-source] { grid-area: 2 / 1 / 3 / 3; }
     /* The project as its dot, the assignee as the avatar; both names stay in the accessible text. */
     [data-row-cell="project"][data-dot] > :last-child,
     [data-row-cell="assignee"] [data-assignee] > :last-child { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  }
+}
+
+/* Full task titles (OpenSpec change full-task-titles, design D2): with the setting on,
+   <html> carries data-titles="full" and every row, card and Today title shows in full,
+   wrapped onto as many lines as it takes, instead of two lines (one on a phone) and an
+   ellipsis. Outside the layers and more specific than the phone row's one-line clamp, so
+   it wins at every width. On the phone row the cell at the end stays on the title's
+   first line rather than in the middle of a tall title. */
+:root[data-titles="full"] [data-row-title] { -webkit-line-clamp: none; line-clamp: none; }
+@media (width < 48rem) {
+  @container row (width < 40rem) {
+    :root[data-titles="full"] [data-row-props] { align-self: start; min-height: 1.25rem; }
   }
 }
 
@@ -1212,11 +1333,11 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
   --fade: linear-gradient(to bottom, transparent, black var(--fade-top), black calc(100% - var(--fade-bottom)), transparent);
 }
 .ui-scroller:hover, .ui-scroller:focus-within { scrollbar-color: var(--ot-border-input) transparent; }
-/* A tab row's baseline (tab-row-scrollbar D1): an inset box-shadow, not a border, so the
-   selected tab's underline covers it without overflowing the row; the row scrolls
-   sideways only and never shows a vertical scrollbar (GitHub issue 445). Forced
-   colours drop box-shadows, so the border comes back there (D3). */
-.ui-tab-row { overflow-y: hidden; box-shadow: inset 0 -1px 0 var(--tab-row-line, var(--ot-border)); }
+/* A tab row's baseline (tab-row-scrollbar D1): an inset box-shadow on the bar around the
+   row, not a border, so the selected tab's underline covers it without overflowing the
+   row; the row inside scrolls sideways only and never shows a vertical scrollbar (GitHub
+   issue 445). Forced colours drop box-shadows, so the border comes back there (D3). */
+.ui-tab-row { box-shadow: inset 0 -1px 0 var(--tab-row-line, var(--ot-border)); }
 .ui-tab-row-soft { --tab-row-line: var(--ot-border-soft); }
 @media (forced-colors: active) { .ui-tab-row { border-bottom: 1px solid CanvasText; } }
 .ui-scroller::-webkit-scrollbar { width: 6px; }
@@ -1224,6 +1345,10 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 .ui-scroller:hover::-webkit-scrollbar-thumb { background: var(--ot-border-input); }
 .ui-scroller[data-fade-top] { --fade-top: 0.75rem; }
 .ui-scroller[data-fade-bottom] { --fade-bottom: 1rem; }
+/* Sideways (a tab row wider than the screen in a long translation): the tabs fade out at
+   the edge where more of them are hidden, so the row reads as one that scrolls. */
+.ui-scroller[data-fade-left] { --fade-left: 1.5rem; }
+.ui-scroller[data-fade-right] { --fade-right: 1.5rem; }
 /* Shown on hover or focus (quiet-sidebar D1, sidebar-v2 D5): a row's count, a group
    header's actions. Opacity, not display, so it keeps its width, stays in the Tab order
    and the accessibility tree, and nothing moves; always shown where there is no hover. */
@@ -1249,6 +1374,9 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
   mask-position: 0 0, 100% 0;
   mask-repeat: no-repeat;
 }
+.ui-scroller:is([data-fade-left], [data-fade-right]) {
+  mask-image: linear-gradient(to right, transparent, black var(--fade-left, 0px), black calc(100% - var(--fade-right, 0px)), transparent);
+}
 }
 /* Touch screens: an icon control is at least 44 x 44 px (the rule below already
    covers plain buttons; this names the intent and covers other elements). */
@@ -1258,6 +1386,13 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
     min-height: 44px;
   }
 }
+/* Safe areas (GitHub issue 973): a surface that touches an edge pads by its inset.
+   With a minimum, write the token in an arbitrary value: pt-[max(0.5rem,var(--safe-top))]. */
+@utility pt-safe { padding-top: var(--safe-top); }
+@utility pb-safe { padding-bottom: var(--safe-bottom); }
+@utility pl-safe { padding-left: var(--safe-left); }
+@utility pr-safe { padding-right: var(--safe-right); }
+@utility px-safe { padding-left: var(--safe-left); padding-right: var(--safe-right); }
 @layer utilities {
 /* Controls revealed on hover stay visible where there is no hover. */
 @media (hover: hover) {
@@ -1268,6 +1403,15 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 }
 }
 @media (pointer: coarse) {
+  /* A held row is the menu's gesture, never a text selection (task-row-context-menu
+     follow-up): a long press on a phone must not select words under the finger.
+     Editing controls keep text selection — the inline editor still selects its text. */
+  li[data-task-id] { -webkit-user-select: none; user-select: none; }
+  /* The expanded row's notes and its detailed facts line are reading text, not part of
+     the gesture: the whole `li` is unselectable on a phone so a hold cannot hand words to
+     the browser, but `RowDetails` and that facts line must stay selectable and copyable. */
+  li[data-task-id] [data-row-details] { -webkit-user-select: text; user-select: text; }
+  li[data-task-id] :is(input, textarea, [contenteditable="true"]) { -webkit-user-select: text; user-select: text; }
   :where(button, [role="button"], summary, select, a.ui-btn) { min-height: 44px; min-width: 44px; }
   :where(input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="range"], [type="color"]), textarea) { min-height: 44px; }
   :where(label:has(> input[type="checkbox"], > input[type="radio"])) { min-height: 44px; }
@@ -1310,7 +1454,7 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
    --display-scale (set per size on the display's root), so they follow the
    browser's font-size setting: body text is about 20, 24 and 32 px at m, l, xl.
    Day columns stack below 768 px and wrap instead of scrolling sideways. */
-.display-root { --display-scale: 1.6; @apply flex flex-col bg-canvas text-default; min-height: 100%; font-size: calc(var(--text-prose) * var(--display-scale)); line-height: 1.35; }
+.display-root { --display-scale: 1.6; @apply flex flex-col bg-canvas text-default; min-height: 100%; padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left); font-size: calc(var(--text-prose) * var(--display-scale)); line-height: 1.35; }
 .display-root[data-size="m"] { --display-scale: 1.35; }
 .display-root[data-size="xl"] { --display-scale: 2.15; }
 .display-clock { @apply font-semibold text-strong; font-size: min(calc(var(--text-display) * var(--display-scale) * 1.5), 16vw); line-height: 1.05; font-variant-numeric: tabular-nums; }
@@ -1382,6 +1526,16 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
    recognised span; under the high-contrast presentation a 1 px underline in its colour. */
 .quick-add-tint { background-color: var(--hue-soft); color: transparent; border-radius: 0.1875rem; }
 html:root[data-contrast="high"] .quick-add-tint { background-color: transparent; text-decoration: underline 1px var(--hue-solid); text-decoration-color: var(--hue-solid); text-underline-offset: 0.2em; }
+/* Quick add's fields wrap (quick-add-notes D1): the field and a copy of its text share one
+   grid cell, so the copy sets the height without measuring in script. The line grows to
+   five lines, the notes to six, then the field scrolls; the copy scrolls with it. */
+.quick-add-grid { display: grid; grid-template-columns: minmax(0, 1fr); }
+.quick-add-lead { display: flex; flex-shrink: 0; align-items: center; height: calc(1lh + 1rem + 2px); }
+.quick-add-grid > * { grid-area: 1 / 1; }
+.quick-add-field, .quick-add-notes { resize: none; overflow-y: auto; scrollbar-width: none; }
+.quick-add-field::-webkit-scrollbar, .quick-add-notes::-webkit-scrollbar { display: none; }
+[data-quick-add-tints] { max-height: calc(5lh + 1rem + 2px); }
+.quick-add-notes-sizer { max-height: calc(6lh + 0.25rem + 2px); overflow: hidden; white-space: pre-wrap; overflow-wrap: break-word; }
 /* The sequence spotlight (shortcut-spotlight D2) fades in; reduced motion makes it instant. */
 .spotlight-in { animation: dialog-sheet-fade 120ms var(--ease-calm, ease-out) both; }
 }
@@ -1410,3 +1564,8 @@ html:root[data-contrast="high"] .quick-add-tint { background-color: transparent;
 /* The frame (precision-shell D3): the whole content surface, from its left edge, so the
    docked panel narrows it from the right and nothing moves. */
 .page-frame { margin-left: 0; margin-right: 0; }
+
+/* A long list's block of rows (.row-block, incremental-list-updates D5): its row count is not
+   inherited. It changes when a row comes or goes, and as an inherited property it restyled every
+   element of the block's rows (about 800, 55 ms in the phone profile). */
+@property --block-rows { syntax: '<number>'; inherits: false; initial-value: 25; }

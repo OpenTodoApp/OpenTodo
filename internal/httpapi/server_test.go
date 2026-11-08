@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/config"
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 	"github.com/OpenTodoApp/opentodo/internal/tenant/services"
 	"github.com/OpenTodoApp/opentodo/internal/webhook"
@@ -50,7 +50,7 @@ func newEnv(t *testing.T, allowSignup bool) *env {
 func newEnvWith(t *testing.T, allowSignup bool, opts ...Option) *env {
 	t.Helper()
 	dir := t.TempDir()
-	db, err := store.Open(dir)
+	db, err := storetest.OpenDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -136,6 +136,10 @@ func (e *env) do(method, path string, body any, headers ...string) (*http.Respon
 		req.Header.Set("X-Forwarded-For", e.ip)
 	}
 	for i := 0; i+1 < len(headers); i += 2 {
+		if headers[i] == "Host" {
+			req.Host = headers[i+1] // the Host header is the request's own field
+			continue
+		}
 		req.Header.Set(headers[i], headers[i+1])
 	}
 	resp, err := e.client.Do(req)
@@ -243,6 +247,43 @@ func TestCrossSiteCookieWritesAreRejected(t *testing.T) {
 	u, _ := url.Parse(e.srv.URL)
 	resp, out = e.do("POST", "/api/v1/tasks", map[string]any{"title": "fine"}, "Origin", "http://"+u.Host)
 	e.mustStatus(resp, 201, out)
+
+	// cookie-writes-need-origin: a cookie write naming neither Origin nor
+	// Sec-Fetch-Site is refused unless it declares a JSON body, whatever the
+	// method: a form, multipart or bodiless one is what an old browser could
+	// send from another site. One from the app's own pages that names only
+	// Sec-Fetch-Site is accepted, and so is a JSON write from a non-browser
+	// client (older `ot` releases create their token this way).
+	taskID, _ := out["id"].(string)
+	for _, mp := range [][2]string{{"POST", "/api/v1/tasks"}, {"PATCH", "/api/v1/tasks/" + taskID}, {"DELETE", "/api/v1/tasks/" + taskID}, {"PUT", "/api/v1/me/assistant"}} {
+		for _, ct := range []string{"application/x-www-form-urlencoded", "multipart/form-data; boundary=x", "text/plain", ""} {
+			resp, out = e.do(mp[0], mp[1], map[string]any{"title": "bare"}, noFetchMetadata, "1", "Content-Type", ct)
+			if resp.StatusCode != http.StatusForbidden || errCode(out) != "bad_origin" || !strings.Contains(errMessage(out), "API token") {
+				t.Fatalf("%s %s as %q without Origin or Sec-Fetch-Site = %d %v", mp[0], mp[1], ct, resp.StatusCode, out)
+			}
+		}
+	}
+	resp, out = e.do("POST", "/api/v1/tasks", map[string]any{"title": "from ot"}, noFetchMetadata, "1", "Content-Type", "application/json; charset=utf-8")
+	e.mustStatus(resp, 201, out)
+	for _, site := range []string{"cross-site", "same-site", "none"} {
+		resp, out = e.do("POST", "/api/v1/tasks", map[string]any{"title": "bare"}, "Sec-Fetch-Site", site)
+		if resp.StatusCode != http.StatusForbidden || errCode(out) != "bad_origin" {
+			t.Fatalf("Sec-Fetch-Site %s without Origin = %d %v", site, resp.StatusCode, out)
+		}
+	}
+	resp, out = e.do("POST", "/api/v1/tasks", map[string]any{"title": "fine"}, "Sec-Fetch-Site", "same-origin")
+	e.mustStatus(resp, 201, out)
+	resp, out = e.do("POST", "/api/v1/tasks", map[string]any{"title": "fine"}, "Origin", "http://"+u.Host, "Sec-Fetch-Site", "same-origin")
+	e.mustStatus(resp, 201, out)
+	// Reads stay unaffected.
+	resp, out = e.do("GET", "/api/v1/tasks", nil, noFetchMetadata, "1")
+	e.mustStatus(resp, 200, out)
+
+	// A bearer token needs neither header.
+	secret := e.token("")
+	bare := &env{t: t, srv: e.srv, client: &http.Client{}}
+	resp, out = bare.do("POST", "/api/v1/tasks", map[string]any{"title": "from a script"}, "Authorization", "Bearer "+secret, noFetchMetadata, "1")
+	bare.mustStatus(resp, 201, out)
 }
 
 func TestRestWriteThroughAndSyncRoundTrip(t *testing.T) {

@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/config"
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 	"github.com/OpenTodoApp/opentodo/internal/tenant/services"
 )
 
@@ -35,7 +35,7 @@ var fakeWeb = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 func brandingEnv(t *testing.T) *env {
 	t.Helper()
 	dir := t.TempDir()
-	db, err := store.Open(dir)
+	db, err := storetest.OpenDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,9 +99,13 @@ func TestBranding(t *testing.T) {
 	if resp.StatusCode != 200 || !strings.Contains(string(body), `"short_name":"Acme <Tasks>"`) || !strings.Contains(string(body), "pwa-192") || resp.Header.Get("Content-Type") != "application/manifest+json" {
 		t.Fatalf("named manifest: %d %s %v", resp.StatusCode, body, resp.Header)
 	}
-	// Assets are never touched.
+	// Assets are never touched, and neither is /index.html: the service worker
+	// checks it against the signed list and the page brands itself (signed-web-app D7).
 	if _, body = e.raw("GET", "/sw.js", nil); !strings.Contains(string(body), "OpenTodo worker") {
 		t.Fatalf("asset rewritten: %s", body)
+	}
+	if _, body = e.raw("GET", "/index.html", nil); !strings.Contains(string(body), "<title>OpenTodo</title>") {
+		t.Fatalf("/index.html rewritten: %s", body)
 	}
 
 	// The logo: refused when small or not an image; rendered into every size.

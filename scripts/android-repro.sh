@@ -12,7 +12,7 @@
 #   SOURCE_DATE_EPOCH and an empty Gradle cache, and compares the two builds.
 # On a mismatch it names the files inside the APK that differ, and exits 1.
 #
-# Needs a JDK 17 (CI and the F-Droid recipe use 17; mobile/README.md names the
+# Needs a JDK 21 (CI and F-Droid's build server use 21; mobile/README.md names the
 # exact one), the Android SDK with ANDROID_HOME set, git, python3, and for the
 # first form apksigcopier:
 #   python3 -m pip install --require-hashes -r scripts/release/requirements-repro.txt

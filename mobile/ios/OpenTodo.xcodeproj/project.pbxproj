@@ -27,6 +27,7 @@
 		66ACE71599133FD6F72251D1 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750F4C1ECA56E888998D2B8C /* AppModel.swift */; };
 		6EF08424DEF31BCC9E483D41 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30808D5A379DF00A50741685 /* Store.swift */; };
 		727ECE59A8C0B1E621FDCBB2 /* FirstRunTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E0B20322933077E18A7D51 /* FirstRunTests.swift */; };
+		7A11C0DE5EED0F1A2B3C4D5E /* WalkthroughTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A11C0DE5EED0F1A2B3C4D5F /* WalkthroughTests.swift */; };
 		754F1F0DA4E9CEC80D381AC0 /* WidgetPublication.swift in Sources */ = {isa = PBXBuildFile; fileRef = D76B6CC810FF847258BFE66C /* WidgetPublication.swift */; };
 		806F4F34BA69562B003495FF /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 957AC17D01C033216546B603 /* SetupView.swift */; };
 		8580D45311D98649791F0605 /* ShareMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38F2434289E6B5E5C230FE9 /* ShareMap.swift */; };
@@ -48,6 +49,7 @@
 		F2E95D1D34C7A76BED542BDD /* WidgetPublication.swift in Sources */ = {isa = PBXBuildFile; fileRef = D76B6CC810FF847258BFE66C /* WidgetPublication.swift */; };
 		F5191A0E8249CEE610DA9512 /* OpenTodoShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 6D58C5588CD05D765202A22F /* OpenTodoShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		F5E06AABC6A2113125D151CD /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30808D5A379DF00A50741685 /* Store.swift */; };
+		741C63C0C61315944B3111C9 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 0198F8B662DFAD6F1E420480 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -134,11 +136,13 @@
 		C7D944907B9AC239B781669B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		C7E631346169346BF2C4779E /* ShellTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellTests.swift; sourceTree = "<group>"; };
 		C8E0B20322933077E18A7D51 /* FirstRunTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunTests.swift; sourceTree = "<group>"; };
+		7A11C0DE5EED0F1A2B3C4D5F /* WalkthroughTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkthroughTests.swift; sourceTree = "<group>"; };
 		CFD246A16B3958BB2712D921 /* AppBoundDomains.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBoundDomains.swift; sourceTree = "<group>"; };
 		D76B6CC810FF847258BFE66C /* WidgetPublication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetPublication.swift; sourceTree = "<group>"; };
 		DBD2D9F3CA1F7C5D63C9F0FC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E3DEC136C0E25392B8582FB5 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		F44BDB908FFA6D9D6BFDEFF7 /* OpenTodo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = OpenTodo.entitlements; sourceTree = "<group>"; };
+		0198F8B662DFAD6F1E420480 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -158,6 +162,7 @@
 			isa = PBXGroup;
 			children = (
 				C8E0B20322933077E18A7D51 /* FirstRunTests.swift */,
+				7A11C0DE5EED0F1A2B3C4D5F /* WalkthroughTests.swift */,
 			);
 			path = OpenTodoUITests;
 			sourceTree = "<group>";
@@ -167,6 +172,7 @@
 			children = (
 				7DBFFA13DDE2752DC1E0D5A6 /* Info.plist */,
 				0284DCAD743970B2CB3CCC0F /* OpenTodoShare.entitlements */,
+				0198F8B662DFAD6F1E420480 /* PrivacyInfo.xcprivacy */,
 				40389A7CBF63E93B78B6D95B /* ShareViewController.swift */,
 			);
 			path = OpenTodoShare;
@@ -293,6 +299,7 @@
 			buildConfigurationList = A5E4AFF91446A5A61D194903 /* Build configuration list for PBXNativeTarget "OpenTodoShare" */;
 			buildPhases = (
 				7F979573DE5AEB17B31CC603 /* Sources */,
+				7C4E73EF970D5CF8DC6EB861 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -415,6 +422,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		7C4E73EF970D5CF8DC6EB861 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				741C63C0C61315944B3111C9 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -423,6 +438,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				727ECE59A8C0B1E621FDCBB2 /* FirstRunTests.swift in Sources */,
+				7A11C0DE5EED0F1A2B3C4D5E /* WalkthroughTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -527,7 +543,7 @@
 					"@executable_path/Frameworks",
 				);
 				OPENTODO_APP_BOUND_HOST = none.invalid;
-				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.open-todo.ios";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -546,7 +562,7 @@
 					"@executable_path/Frameworks",
 				);
 				OPENTODO_APP_BOUND_HOST = none.invalid;
-				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.open-todo.ios";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -562,7 +578,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo.uitests;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.open-todo.ios.uitests";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = OpenTodo;
@@ -580,7 +596,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo.share;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.open-todo.ios.share";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -597,7 +613,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.open-todo.ios.tests";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OpenTodo.app/OpenTodo";
@@ -677,7 +693,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.open-todo.ios.tests";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OpenTodo.app/OpenTodo";
@@ -695,7 +711,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo.widget;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.open-todo.ios.widget";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -783,7 +799,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo.widget;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.open-todo.ios.widget";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -800,7 +816,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo.uitests;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.open-todo.ios.uitests";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = OpenTodo;
@@ -818,7 +834,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo.share;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.open-todo.ios.share";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";

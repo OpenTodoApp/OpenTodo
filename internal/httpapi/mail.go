@@ -29,7 +29,7 @@ type smtpLastTest struct {
 }
 
 func (s *Server) registerMailRoutes(mux *routes) {
-	s.smtpTestLimiter = newRateLimiter(smtpTestLimit, smtpTestWindow)
+	s.smtpTestLimiter = s.limit("smtp.test", smtpTestLimit, smtpTestWindow)
 	mux.handle("GET /api/v1/settings/smtp", ownerOnly("manage outgoing email").Credential().DemoDenied(), s.handleGetSMTP)
 	mux.handle("PUT /api/v1/settings/smtp", ownerOnly("manage outgoing email").Sensitive().DemoDenied(), s.handlePutSMTP)
 	mux.handle("POST /api/v1/settings/smtp/test", ownerOnly("send a test message").DemoDenied(), s.handleTestSMTP)

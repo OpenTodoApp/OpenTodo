@@ -2,7 +2,7 @@
 // web-component-structure): what TaskListView renders, tested without a DOM.
 import { describe, expect, it } from 'vitest'
 import { currentDateTime } from './dates'
-import { BLOCKED_OPEN_KEY, DONE_OPEN_KEY, WAITING_OPEN_KEY, EARLIER_KEY, EARLIER_OPEN_KEY, earlierCollapsed, boardColumns, completedBySection, flatRow, listGroups, sectionBuckets, sectionOfRows, siblingPositions, tasksForView, type GroupInput } from './listGroups'
+import { BLOCKED_OPEN_KEY, DONE_OPEN_KEY, WAITING_OPEN_KEY, EARLIER_KEY, EARLIER_OPEN_KEY, earlierCollapsed, boardColumns, completedBySection, flatRow, keepGroups, listGroups, sectionBuckets, sectionOfRows, siblingPositions, splitLater, tasksForView, type GroupInput } from './listGroups'
 import { buildTaskTree } from './subtasks'
 import type { Project, Section, Task } from './types'
 
@@ -134,6 +134,25 @@ describe('listGroups', () => {
     expect(listGroups(input({ view: 'today', tasks: [a, plain], closedList: { limit: 1, waiting: [plain] } })).find((x) => x.key === 'waiting')!.detail).toBeUndefined()
   })
 
+  it('a time that has passed is marked and never named next (today-waiting-time-passed D2)', () => {
+    const a = task({ title: 'A', due: { date: TODAY } })
+    const call = task({ title: 'Call the school', due: { date: TODAY, time: '09:00' } })
+    const form = task({ title: 'Send the form', due: { date: TODAY, time: '16:00' } })
+    const taxes = task({ title: 'File the taxes', deadline: TODAY })
+    const resolved = { ...currentDateTime(), time: '12h' as const }
+    const waiting = (list: Task[], now: string) => listGroups(input({ view: 'today', tasks: [a, ...list], resolved, closedList: { limit: 1, waiting: list, now } })).find((x) => x.key === 'waiting')!
+    const some = waiting([form, call, taxes], '12:00')
+    expect(some.soon!.map((s) => [s.task.title, s.passed])).toEqual([['Call the school', true], ['Send the form', false], ['File the taxes', false]])
+    expect(some.detail).toBe('next: Send the form, 4:00 PM')
+    // Only a deadline left to come: it is next.
+    expect(waiting([call, taxes], '12:00').detail).toBe('next: File the taxes, deadline today')
+    // Every time passed: one by name, more by count.
+    expect(waiting([call], '12:00').detail).toBe('time passed: Call the school, 9:00 AM')
+    expect(waiting([form, call], '16:01').detail).toBe('2 past their time')
+    // At the minute itself the time has not passed yet.
+    expect(waiting([form], '16:00').detail).toBe('next: Send the form, 4:00 PM')
+  })
+
   it('Today ends with a folded Done today group, newest first (today-closed-list D6)', () => {
     const open = task({ title: 'Open', due: { date: TODAY } })
     const done1 = task({ title: 'Done 1', completed_at: 5 })
@@ -181,6 +200,41 @@ describe('listGroups', () => {
     const closed = listGroups(input({ tree, collapsed: new Set([parent.id]) }))
     expect(titles(closed[0])).toEqual(['Parent'])
     expect(closed[0].rows[0].collapsed).toBe(true)
+  })
+
+  // GitHub issue #755: a parent deferred to Later left its subtasks behind in its old group.
+  it('a deferred parent takes its subtasks into Later, nested, with their own dates (subtasks-follow-later)', () => {
+    const parent = task({ title: 'Paint fence', project_id: 'p', start: '2026-11-20' })
+    const plain = task({ title: 'Buy paint', project_id: 'p', parent_id: parent.id })
+    const dated = task({ title: 'Book sprayer', project_id: 'p', parent_id: parent.id, due: { date: TODAY } })
+    const grandchild = task({ title: 'Compare prices', project_id: 'p', parent_id: plain.id })
+    const other = task({ title: 'Water plants', project_id: 'p', due: { date: TODAY } })
+    const all = [parent, plain, dated, grandchild, other]
+    const { active, later } = splitLater(all, TODAY)
+    expect(active.map((x) => x.title)).toEqual(['Water plants'])
+    expect(later.map((x) => x.title)).toEqual(['Paint fence', 'Buy paint', 'Book sprayer', 'Compare prices'])
+    const g = listGroups(input({ view: 'project', tasks: all, tree: buildTaskTree(active), laterTasks: later, taskMap: new Map(all.map((x) => [x.id, x])) }))
+    expect(g.map((x) => x.key)).toEqual(['all', 'later'])
+    expect(titles(g[0])).toEqual(['Water plants'])
+    expect(g[1].rows.map((r) => [r.task.title, r.depth, r.parent, r.breadcrumb])).toEqual([
+      ['Paint fence', 0, null, null], ['Buy paint', 1, parent.id, null], ['Compare prices', 2, plain.id, null], ['Book sprayer', 1, parent.id, null],
+    ])
+    // Folding the parent in Later hides its subtasks like anywhere else in the tree.
+    const folded = listGroups(input({ view: 'project', tree: buildTaskTree(active), laterTasks: later, collapsed: new Set([parent.id]) }))
+    expect(titles(folded[1])).toEqual(['Paint fence'])
+  })
+
+  it('a deferred or parked subtask of an active parent stays under it; grouping by date keeps the subtree together', () => {
+    const parent = task({ title: 'Plan trip', project_id: 'p', due: { date: TODAY } })
+    const deferred = task({ title: 'Renew passport', project_id: 'p', parent_id: parent.id, start: '2026-12-01' })
+    const parked = task({ title: 'Upgrade seats', project_id: 'p', parent_id: parent.id, start: 'someday' })
+    const { active, later } = splitLater([parent, deferred, parked], TODAY)
+    expect(later).toEqual([])
+    const display = { groupBy: 'due', sortBy: 'position', sortDir: 'asc', rowLayout: 'line' } as GroupInput['display']
+    const g = listGroups(input({ view: 'project', tasks: active, tree: buildTaskTree(active), laterTasks: later, display }))
+    const today = g.find((x) => x.rows.some((r) => r.task.id === parent.id))!
+    expect(titles(today)).toEqual(['Plan trip', 'Renew passport', 'Upgrade seats'])
+    expect(g.some((x) => x.key === 'later')).toBe(false)
   })
 
   it('a sectioned project lists "No section" first, then sections by position; a folded section keeps its count', () => {
@@ -333,5 +387,58 @@ describe('the Inbox list (inbox-only-inbox)', () => {
     const waiting = task({ title: 'Waiting', due: { date: TODAY } })
     const g = listGroups(input({ view: 'today', tasks: [waiting], blocked: new Set([waiting.id]) })).find((x) => x.key === 'blocked')!
     expect(g.openKey).toBe(BLOCKED_OPEN_KEY)
+  })
+})
+
+describe('keepGroups (list-rendering-at-scale D6)', () => {
+  // A project with two sections, as a write sees it: a new derivation each time.
+  const p = project('p', 1)
+  const sections = [section('s1', 'p', 1), section('s2', 'p', 2)]
+  const derive = (tasks: Task[]) => {
+    const tree = buildTaskTree(tasks)
+    return listGroups(input({ view: 'project', tasks, tree, buckets: sectionBuckets('p', tree, sections), sectionCount: 2, projects: [p], projectMap: new Map([['p', p]]) }))
+  }
+  const a = task({ title: 'A', project_id: 'p', section_id: 's1' })
+  const b = task({ title: 'B', project_id: 'p', section_id: 's1' })
+  const c = task({ title: 'C', project_id: 'p', section_id: 's2' })
+  const d = task({ title: 'D', project_id: 'p', section_id: 's2' })
+
+  it('keeps the whole list when nothing changed', () => {
+    const first = derive([a, b, c, d])
+    expect(keepGroups(first, derive([a, b, c, d]))).toBe(first)
+  })
+
+  it('gives new objects only to the changed row and its group', () => {
+    const first = derive([a, b, c, d])
+    const c2 = { ...c, title: 'C renamed' }
+    const next = keepGroups(first, derive([a, b, c2, d]))
+    expect(next).not.toBe(first)
+    const [s1, s2] = next.filter((g) => g.section)
+    const [o1, o2] = first.filter((g) => g.section)
+    expect(s1).toBe(o1)
+    expect(s2).not.toBe(o2)
+    expect(s2.rows[0]).not.toBe(o2.rows[0])
+    expect(s2.rows[0].task.title).toBe('C renamed')
+    expect(s2.rows[1]).toBe(o2.rows[1])
+  })
+
+  it('keeps the other rows of a group a task left', () => {
+    const first = derive([a, b, c, d])
+    const next = keepGroups(first, derive([b, c, d]))
+    const [s1] = next.filter((g) => g.section)
+    const [o1] = first.filter((g) => g.section)
+    expect(s1).not.toBe(o1)
+    expect(titles(s1)).toEqual(['B'])
+    expect(s1.rows[0]).toBe(o1.rows[1])
+    expect(s1.count).toBe(1)
+  })
+
+  it('takes the new row when its place changed', () => {
+    const first = derive([a, b, c, d])
+    const child = { ...b, parent_id: a.id }
+    const next = keepGroups(first, derive([a, child, c, d]))
+    const [s1] = next.filter((g) => g.section)
+    expect(s1.rows.map((r) => [r.task.title, r.depth])).toEqual([['A', 0], ['B', 1]])
+    expect(s1.rows[0].hasChildren).toBe(true)
   })
 })

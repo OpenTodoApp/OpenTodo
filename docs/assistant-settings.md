@@ -36,6 +36,8 @@ If you saved a key in an earlier version of OpenTodo, it still works with the se
 
 Answers on your own key are paid by you; how they count is explained under [Costs and limits](assistant-privacy.md#costs-and-limits).
 
-## Apply small changes without review
+## Small changes without review
 
 The switch **Settings → Integrations → Assistant → Small changes without review** (this device) is off by default. When it is on, a proposal that touches at most 3 existing tasks and only changes completion, due dates, priority or labels is applied at once, with an Undo notice. Anything else, including every new task, every move to another project or section, every deletion and every text edit, is always shown for [review](assistant-ask.md#ask-and-review).
+
+To have the assistant propose improvements to each task you add, see [Suggest after adding](assistant-suggest-after-add.md).

@@ -7,6 +7,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/deliveryq"
 	"github.com/OpenTodoApp/opentodo/internal/jobs"
 	"github.com/OpenTodoApp/opentodo/internal/push"
+	"github.com/OpenTodoApp/opentodo/internal/ratelimit"
 	"github.com/OpenTodoApp/opentodo/internal/store"
 )
 
@@ -53,6 +54,12 @@ func (t *Tenant) buildJobs() []jobs.Job {
 	// Superseded note history (op-log-compaction): its own job, so a long pass
 	// never delays retention; registered on a demo too, where it finds nothing.
 	list = append(list, t.Compaction.Job())
+	// The write-ahead log, copied back from the reader pool so no commit pays
+	// for it (store.CheckpointWAL).
+	list = append(list, t.checkpointJob())
+	// Rate limit and agent limit windows, written behind the in-memory checks
+	// (persistent-limits D1); closing the tenant writes the last ones.
+	list = append(list, jobs.Job{Name: jobs.Limits, Next: t.Limits.Next, Run: t.writeLimits, Retry: ratelimit.FlushEvery, WhileOpen: true})
 	if p := t.Email.Poller(); p != nil {
 		list = append(list, jobs.Job{Name: jobs.Email, Run: p.Tick, Retry: p.Interval(),
 			Next: func(context.Context) (time.Time, bool, error) { return p.Next(), true, nil }})
@@ -61,6 +68,12 @@ func (t *Tenant) buildJobs() []jobs.Job {
 		list = append(list, jobs.Job{Name: jobs.Demo, Next: t.Demo.NextDue, Run: t.Demo.RunDue})
 	}
 	return list
+}
+
+func (t *Tenant) writeLimits(ctx context.Context) {
+	if err := t.Limits.Flush(ctx); err != nil && ctx.Err() == nil {
+		t.log.Warn("limits: write windows", "err", err)
+	}
 }
 
 func (t *Tenant) reminders(ctx context.Context) {
@@ -150,7 +163,7 @@ func (t *Tenant) nextHousekeeping(ctx context.Context) (time.Time, bool, error) 
 		}
 		return t.Channels.NextPrune(ctx)
 	}
-	return jobs.Earliest(ctx, retention, t.Auth.Audit().NextPrune, t.Auth.NextSignupExpiry, t.Hooks.NextPrune, channels,
+	return jobs.Earliest(ctx, retention, t.Auth.Audit().NextPrune, t.Auth.NextSignupExpiry, t.Auth.NextRevokedExpiry, t.Hooks.NextPrune, channels,
 		t.Inbox.NextSweep, upkeep)
 }
 
@@ -169,8 +182,17 @@ func (t *Tenant) housekeeping(ctx context.Context) {
 	} else if n > 0 {
 		log.Info("audit: pruned expired events", "count", n)
 	}
+	// The first pass after the tenant opens checks the audit chain; upkeep
+	// checks it again after changes.
+	if t.auditChecked.CompareAndSwap(false, true) {
+		t.verifyAudit(ctx)
+	}
 	if _, err := t.Auth.PruneSignups(ctx); err != nil {
 		log.Error("prune failed", "err", err)
+	}
+	// Revoked sessions a year old (revoked-device-wipe D2).
+	if _, err := t.Auth.PruneRevokedSessions(ctx); err != nil {
+		log.Error("prune revoked sessions failed", "err", err)
 	}
 	// Expired membership invitations, declined ones included (member-add-consent).
 	if _, err := t.Auth.PruneMemberInvitations(ctx); err != nil {
@@ -195,8 +217,25 @@ func (t *Tenant) housekeeping(ctx context.Context) {
 	}
 }
 
+// verifyAudit checks the audit log's hash chain (OpenSpec change
+// audit-hash-chain) and logs the first broken link at error level. A broken
+// chain is evidence to keep, so nothing is repaired and nothing stops.
+func (t *Tenant) verifyAudit(ctx context.Context) {
+	v, err := t.Auth.Audit().Verify(ctx)
+	switch {
+	case err != nil:
+		if ctx.Err() == nil {
+			t.log.Error("audit: chain verification failed", "err", err)
+		}
+	case v.Break != nil:
+		t.log.Error("audit: hash chain broken: the log was changed outside OpenTodo",
+			"event_id", v.Break.ID, "reason", v.Break.Reason, "checked", v.Checked)
+	}
+}
+
 func (t *Tenant) runUpkeep(ctx context.Context) {
 	log := t.log
+	t.verifyAudit(ctx)
 	if t.Rules != nil {
 		if _, err := t.Rules.Store.Prune(ctx); err != nil {
 			log.Error("rules: prune runs", "err", err)

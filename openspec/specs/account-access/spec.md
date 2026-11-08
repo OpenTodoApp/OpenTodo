@@ -6,7 +6,7 @@ Controls who can use a server: owner bootstrap on first run, sign-up policy, sig
 ## Requirements
 
 ### Requirement: First-run owner setup
-A server with no accounts SHALL let the first visitor create an account, and that account SHALL receive the owner role. The setup state SHALL be discoverable without authentication so the client can show the setup screen. When the operator configured a setup token, creating the first account SHALL require that token from every address; the token SHALL have no effect once an owner exists. The one-time setup code SHALL be off by default and turned on only by the optional `OPENTODO_SETUP_CODE=required`; unset, empty or `off` leaves it off, and any other value SHALL stop startup with a message naming the variable. With the code off and no token, the first registration SHALL need nothing more, and while no account exists the server SHALL log one warning at startup saying that the first person to open the server becomes its owner and naming `OPENTODO_SETUP_CODE=required`. With the code on and no setup token, a first registration over a loopback connection that carries no forwarding header (`X-Forwarded-For`, `Forwarded`, `X-Real-IP`, `CF-Connecting-IP`, `True-Client-IP`) SHALL need nothing more; any other registration, including one from a private address or through a proxy, SHALL require the setup code, because behind a NAT, a port forwarder or a rootless container every client can arrive from a private address. A configured setup token SHALL always be required instead of the code. A tenant served by a host SHALL always have the code on behind its setup token. The server SHALL generate the code at startup only while no account exists, the code is on and no token is configured (80 random bits, shown as four groups of four base32 characters), print it once in its log at warning level with a sentence saying what it is for, accept it in the setup-token field ignoring case, spaces and dashes, compare it in constant time, count attempts against the registration rate limit, keep it only in memory and discard it once the owner exists. The authentication status SHALL say when the requesting client needs the setup code. Setup creates no ops, so offline behaviour and convergence are unaffected.
+A server with no accounts SHALL let the first visitor create an account, and that account SHALL receive the owner role. The setup state SHALL be discoverable without authentication so the client can show the setup screen. When the operator configured a setup token, creating the first account SHALL require that token from every address; the token SHALL have no effect once an owner exists. The one-time setup code SHALL be off by default and turned on only by the optional `OPENTODO_SETUP_CODE=required`; unset, empty or `off` leaves it off, and any other value SHALL stop startup with a message naming the variable. With the code off and no token, the first registration SHALL need nothing more, and while no account exists the server SHALL log one warning at startup saying that the first person to open the server becomes its owner and naming `OPENTODO_SETUP_CODE=required`. With the code on and no setup token, a first registration over a loopback connection that carries no forwarding header (`X-Forwarded-For`, `Forwarded`, `X-Real-IP`, `CF-Connecting-IP`, `True-Client-IP`) SHALL need nothing more; any other registration, including one from a private address or through a proxy, SHALL require the setup code, because behind a NAT, a port forwarder or a rootless container every client can arrive from a private address. A configured setup token SHALL always be required instead of the code. A tenant served by a host SHALL always have the code on behind its setup token. While no `OPENTODO_BASE_URL` is set, a first registration addressed to an unverified host SHALL also require the setup code, whatever `OPENTODO_SETUP_CODE` says and also over a loopback connection, unless a setup token is configured, which it then requires instead. The host is the request's `Host`, or `X-Forwarded-Host` from a trusted proxy; it is verified when it is an IP address, a name without a dot, or a name ending in `.localhost`, `.local`, `.lan`, `.home`, `.home.arpa`, `.internal`, `.corp` or `.test`, and unverified otherwise, because a page under any other name may belong to whoever controls that name and points it at the server (DNS rebinding). Refused for this reason, the error SHALL be 403 `setup_code_invalid` with a message naming the setup code in the server log and `OPENTODO_BASE_URL`, and the authentication status SHALL report `setupCodeForHost` so the setup screen can say why the code is asked for and offer the IP address or `OPENTODO_BASE_URL` instead. The server SHALL generate the code at startup only while no account exists, no token is configured, and either the code is on or no `OPENTODO_BASE_URL` is set (80 random bits, shown as four groups of four base32 characters), print it once in its log at warning level with a sentence saying what it is for (with the code off, inside the warning about the first visitor, saying it is asked for under a domain name until `OPENTODO_BASE_URL` is set), accept it in the setup-token field ignoring case, spaces and dashes, compare it in constant time, count attempts against the registration rate limit, keep it only in memory and discard it once the owner exists. The authentication status SHALL say when the requesting client needs the setup code. Setup creates no ops, so offline behaviour and convergence are unaffected.
 
 #### Scenario: Fresh server reports setup required
 - **WHEN** a client asks for the authentication status of a server with zero accounts
@@ -37,8 +37,24 @@ A server with no accounts SHALL let the first visitor create an account, and tha
 - **THEN** its log has one warning line with the setup code and how to use it, and no code is generated when a token is configured or an owner exists
 
 #### Scenario: Code off by default
-- **WHEN** the server starts without `OPENTODO_SETUP_CODE`, no account and no setup token, and a client on a public address registers without a code
-- **THEN** no code is generated or printed, the log has one warning that the first visitor becomes the owner, the status says no setup code is required, and the account becomes the owner
+- **WHEN** the server starts without `OPENTODO_SETUP_CODE`, no account and no setup token, and a client on a public address registers without a code through an IP address or a local name
+- **THEN** the log has one warning that the first visitor becomes the owner, the status says no setup code is required, and the account becomes the owner
+
+#### Scenario: Domain name without a base URL
+- **WHEN** no `OPENTODO_BASE_URL`, no setup token and no account exist, and a browser registers the first account with `Host: rebind.example` and `Origin: http://rebind.example`, without the code
+- **THEN** the status says a setup code is required and that the host is the reason, the registration is refused with 403 `setup_code_invalid` naming `OPENTODO_BASE_URL`, and no account is created; with the code printed in the warning at startup, the same registration creates the owner
+
+#### Scenario: Local names need no code
+- **WHEN** no `OPENTODO_BASE_URL`, no setup token and no account exist, the code is off, and the first registration is addressed to `192.168.1.20:8080`, `localhost`, `nas:8080` or `nas.local:8080`
+- **THEN** it needs no code and the account becomes the owner
+
+#### Scenario: Rebound name over loopback
+- **WHEN** `OPENTODO_SETUP_CODE=required`, no `OPENTODO_BASE_URL`, no setup token and no account exist, and a registration over a direct loopback connection is addressed to `rebind.example`
+- **THEN** it needs the setup code like one from another machine
+
+#### Scenario: Base URL set
+- **WHEN** `OPENTODO_BASE_URL` is set and the code is off
+- **THEN** no code is generated, and the base URL's host check in cross-site request protection decides which names may register
 
 #### Scenario: Invalid setting
 - **WHEN** the server starts with `OPENTODO_SETUP_CODE=yes`
@@ -137,7 +153,7 @@ A user SHALL sign in with email and password and receive a session delivered as 
 - **THEN** the session cookie is marked `Secure`, while the same header from an untrusted peer is ignored
 
 ### Requirement: Brute-force protection
-Anonymous authentication routes SHALL be rate limited per client address, with one window per purpose: failed password sign-ins (successful sign-ins SHALL NOT count), registration and sign-up links, password reset requests and links, invitation and project-invite links, unknown public links, MCP requests without a valid token, and passkey sign-in, 10 per minute each. IPv6 client addresses SHALL be counted per /64 in every per-address limit. In addition, 10 failed passwords, second-factor codes or re-authentications for one account within 15 minutes SHALL lock that account's password sign-in, second step and re-authentication from every address until the window ends, checked before the credential is verified; a sign-in for an email without an account SHALL be counted and locked the same way. A successful sign-in SHALL clear the account's count. Limits are server memory, not synced; they reset on restart.
+Anonymous authentication routes SHALL be rate limited per client address, with one window per purpose: failed password sign-ins (successful sign-ins SHALL NOT count), registration and sign-up links, password reset requests and links, invitation and project-invite links, unknown public links, MCP requests without a valid token, and passkey sign-in, 10 per minute each. IPv6 client addresses SHALL be counted per /64 in every per-address limit. In addition, 10 failed passwords, second-factor codes or re-authentications for one account within 15 minutes SHALL lock that account's password sign-in, second step and re-authentication from every address until the window ends, checked before the credential is verified; a sign-in for an email without an account SHALL be counted and locked the same way. A successful sign-in SHALL clear the account's count. Limits are counted in server memory and kept in the server's database within a second of each change and when it stops, so a restart, an upgrade or a crash does not reset them (a crash may lose the last second of counts); they are not synced, so offline behaviour and convergence are unaffected. Stored keys are hashes, never the client address or email.
 
 #### Scenario: Repeated failures
 - **WHEN** a client exceeds 10 failed sign-in attempts or 10 registration attempts within one minute
@@ -162,6 +178,14 @@ Anonymous authentication routes SHALL be rate limited per client address, with o
 #### Scenario: IPv6 neighbours
 - **WHEN** two addresses in the same IPv6 /64 make attempts
 - **THEN** they share one window
+
+#### Scenario: Restart keeps the account locked
+- **WHEN** an account is locked after 10 failed passwords and the server restarts within the 15 minutes
+- **THEN** the next sign-in for it is still refused with 429 `account_locked` until the window ends
+
+#### Scenario: Restart keeps an address's window
+- **WHEN** a client used up its sign-in window and the server restarts within the minute
+- **THEN** its next failed sign-in is still refused with 429 `rate_limited`
 
 ### Requirement: Authentication required by default
 Every API route except the health check and the authentication bootstrap routes SHALL require a valid session or API token.
@@ -210,7 +234,7 @@ A signed-in user SHALL be able to create named API tokens with a scope of `full`
 - **THEN** it is stored as a `read` scope row plus an admin marker row, so a server without the marker treats it as read-only
 
 ### Requirement: Cross-site request protection
-A state-changing request authenticated by a session cookie SHALL be refused when its `Origin` header is present and does not match the server's public origin. With `OPENTODO_BASE_URL` set, an `Origin` that is not the base URL's origin SHALL be accepted only when it names the request's host and that host is the base URL's host, so a page under another name that resolves to the server (DNS rebinding) is cross-site. The same check guards registration and sign-in. Requests authenticated by a bearer token are not subject to this check.
+A state-changing request authenticated by a session cookie SHALL be refused when its `Origin` header is present and does not match the server's public origin. With `OPENTODO_BASE_URL` set, an `Origin` that is not the base URL's origin SHALL be accepted only when it names the request's host and that host is the base URL's host, so a page under another name that resolves to the server (DNS rebinding) is cross-site. The same check guards registration and sign-in. A state-changing request authenticated by a session cookie that carries no `Origin` SHALL be refused with 403 `bad_origin` when its `Sec-Fetch-Site` header is present and is not `same-origin`, and, when it carries neither header, unless it declares `Content-Type: application/json` (any parameters allowed): a browser too old to send either header can send a cross-site write only as a form or a navigation, which cannot declare that type without a CORS preflight the server never grants, while non-browser clients such as earlier `ot` releases send JSON. The refusal's message SHALL say to use an API token for scripts or to update the browser. `GET` and `HEAD` requests are not subject to this check, and requests authenticated by a bearer token are not subject to it either. The check creates no ops, so offline behaviour and convergence are unaffected.
 
 #### Scenario: Cross-site POST with cookie
 - **WHEN** a browser on another origin sends a POST that carries the session cookie
@@ -223,6 +247,26 @@ A state-changing request authenticated by a session cookie SHALL be refused when
 #### Scenario: Rebound host name with a base URL
 - **WHEN** `OPENTODO_BASE_URL` is `https://todo.example.com` and a request carries `Host: rebind.example` and `Origin: http://rebind.example`
 - **THEN** it is refused with 403 `bad_origin`
+
+#### Scenario: Cookie form write with neither Origin nor Sec-Fetch-Site
+- **WHEN** a POST, PATCH, PUT or DELETE carries the session cookie, no `Origin`, no `Sec-Fetch-Site`, and a form, multipart, plain-text or no content type
+- **THEN** it is refused with 403 `bad_origin` naming API tokens, and nothing changes
+
+#### Scenario: Fetch Metadata from another site
+- **WHEN** a cookie write carries no `Origin` and `Sec-Fetch-Site` is `cross-site`, `same-site` or `none`
+- **THEN** it is refused with 403 `bad_origin`
+
+#### Scenario: The app's own pages without Origin
+- **WHEN** a cookie write carries no `Origin` and `Sec-Fetch-Site: same-origin`
+- **THEN** it is processed normally
+
+#### Scenario: A non-browser client with a session
+- **WHEN** a client signed in with a password sends `POST /api/v1/tokens` with the session cookie, `Content-Type: application/json` and neither header
+- **THEN** the token is created, as before
+
+#### Scenario: Bearer tokens are unaffected
+- **WHEN** a request authenticated by a bearer token carries neither `Origin` nor `Sec-Fetch-Site`
+- **THEN** it is processed normally
 
 ### Requirement: Agent content routes
 An `agent` token SHALL write only on `POST /api/v1/tasks|projects|labels|sections|reminders`, `POST /api/v1/tasks/{id}/comments`, `PATCH /api/v1/tasks/{id}` (not `assignee_id`, `parent_id`, `position` or a restore), `PATCH /api/v1/projects/{id}` (`name`, `color`, `icon`, `parent_id`, `description`, or `archived` alone), `PATCH /api/v1/sections/{id}` (`name`, `color`, `icon`, `position`), `PATCH /api/v1/labels/{id}` (`name`, `color`, `position`), `PATCH /api/v1/reminders/{id}` (`offset_minutes`, `fire_at` of an absolute reminder), `DELETE /api/v1/reminders/{id}`, `POST /api/v1/time-entries`, `POST /api/v1/time-entries/stop`, `PATCH /api/v1/time-entries/{id}` (entries the same token created) and `DELETE /api/v1/tasks/{id}` (own creations), while both assistant switches are on, through the agent tool registry with MCP's limits, audit, E2EE refusal and mention suppression. On the task routes the accepted fields SHALL be `title`, `description`, `project_id`, `section_id`, `parent_id` (create only), `priority`, `due`, `labels`, `estimate_minutes`, `recurrence`, `fields`, `origin`, `deadline`, `start`, `evening`, `blocked_by` and `location`, plus `completed_at` and `deleted_at` on PATCH, each validated by the registry exactly as the sync path validates it and answered with the registry's codes (400 `invalid_input` naming the field, 404 `not_found`, 403 `forbidden`, 409 `encryption_enabled`). A project PATCH carrying `archived` together with another field SHALL be 400 `invalid_input`. `POST /api/v1/time-entries` with `taskId` alone SHALL start a timer and SHALL answer 409 `timer_running` while another entry of the user runs, unless the body carries `stopRunning: true`. Other write routes and fields, including `DELETE` of sections, labels, projects and time entries, SHALL answer 403 `insufficient_scope`. A task in a project kept away from AI assistants (OpenSpec `agent-project-exclusion`) SHALL be `not_found` on these routes, as SHALL its sections, reminders and time entries, and a create into such a project SHALL be refused the same way.
@@ -510,3 +554,34 @@ Settings → Integrations SHALL list the user's API tokens as rows: the name, a 
 #### Scenario: Shown once
 - **WHEN** the user creates a token
 - **THEN** the token is shown in a monospace box with Copy, the dialog says it will not be shown again, and after closing it the list shows the new row without the secret
+
+### Requirement: A revoked device removes its local copy
+When sessions are ended by **Sign out everywhere**, by deactivating the account or by deleting it, the server SHALL keep, for a year, a record of each ended session that holds only its token hash and its wipe key. `GET /api/v1/auth/status` SHALL return `wipeKey` (a per-session random key) to a signed-in cookie session, and SHALL answer the cookie of a recorded session with `authenticated: false` and `revoked: {proof}`, the HMAC-SHA256 of `opentodo device revoked v1` under that session's key. An expired session, and sessions ended by a password change, a password reset or the device's own sign-out, SHALL get no proof. The web app SHALL keep the key in its local database and, only when a proof matches it, SHALL remove everything sign-out removes (the local database with the outbox and the stored encryption key, the native shell's reminders, geofences, widget and biometric key, and the HTTP cache), end the cookie and show the sign-in screen with "This device was signed out and its data was removed." Device relay opt-ins of the ended sessions SHALL end with them. Unsynced changes on the device are lost. The wipe happens on the device's next contact with the server; a device that never connects again keeps its copy. The wipe removes only a local copy: the server's data and the other devices' convergence are unaffected.
+
+#### Scenario: Signed out everywhere from another device
+- **WHEN** a person signs out everywhere on their laptop and later opens the app on their phone
+- **THEN** the phone's `auth/status` carries a proof that matches its key, the phone removes its local copy and outbox, and shows the sign-in screen with "This device was signed out and its data was removed."
+
+#### Scenario: Account deactivated
+- **WHEN** an admin deactivates an account and one of its devices next contacts the server
+- **THEN** that device removes its local copy in the same way, and the account's data stays on the server
+
+#### Scenario: Expired session keeps its data
+- **WHEN** a device's session expired, or was ended by a password change elsewhere
+- **THEN** `auth/status` carries no proof, the sign-in screen appears and the local copy and outbox stay, uploading after the next sign-in
+
+#### Scenario: Forged answer
+- **WHEN** an answer claims `revoked` with a proof that does not match the key the device stored, or the device has no stored key
+- **THEN** nothing is removed
+
+#### Scenario: Another account's sessions
+- **WHEN** one account signs out everywhere
+- **THEN** no session of another account is recorded, and those devices keep working
+
+#### Scenario: Relay opt-ins end with the sessions
+- **WHEN** a device opted in to the device relay and its account signs out everywhere
+- **THEN** the opt-in is removed and its relay stream closes
+
+#### Scenario: Device that stays offline
+- **WHEN** a revoked device never contacts the server again
+- **THEN** it keeps its local copy, as the security limits state

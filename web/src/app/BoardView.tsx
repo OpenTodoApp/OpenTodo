@@ -113,7 +113,7 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
         <span className="sr-only" aria-live="polite">{t('Column {n} of {count}: {name}', { n: current + 1, count: open.length, name: names[current] })}</span>
         {open.map((col, i) => (
           <button key={col.key || 'none'} type="button" onClick={() => goTo(i)} aria-label={t('{name}, column {n} of {count}', { name: names[i], n: i + 1, count: open.length })} aria-current={i === current ? 'true' : undefined}
-            className="touch-target flex items-center justify-center" data-board-dot={i === current ? 'current' : ''}>
+            className="touch-target flex min-h-6 min-w-6 items-center justify-center" data-board-dot={i === current ? 'current' : ''}>
             <span aria-hidden="true" className={`block h-2 w-2 rounded-full ${i === current ? 'bg-accent' : 'bg-faint'}`} />
           </button>
         ))}

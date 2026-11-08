@@ -220,3 +220,15 @@ export function holdSelect(id: string, selection: { ticked: ReadonlySet<string>;
   setSelectMode(true)
   tick()
 }
+
+/**
+ * A tap on the row's grip selects on touch (bulk-actions on touch): the row is ticked,
+ * or unticked when it already was, and every checkbox and the selection bar show. It
+ * shares the hold's feedback — one `tick` that respects the Haptic feedback preference
+ * (focus-everywhere D3) — so both touch selection paths live here.
+ */
+export function gripSelect(id: string, selection: { ticked: ReadonlySet<string>; toggle: (id: string) => void }, setSelectMode: (on: boolean) => void): void {
+  selection.toggle(id)
+  setSelectMode(true)
+  tick()
+}

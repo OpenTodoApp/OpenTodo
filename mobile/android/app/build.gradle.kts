@@ -10,6 +10,12 @@ plugins {
 val appVersion: String = (System.getenv("OPENTODO_VERSION") ?: "0.0.0-dev").removePrefix("v")
 val versionParts = Regex("""^(\d+)\.(\d+)\.(\d+)""").find(appVersion)?.destructured?.toList()?.map { it.toInt() } ?: listOf(0, 0, 0)
 
+// The Google Play build (play-location-later): `-Popentodo.play=true`, used only for the AAB that
+// goes to Play. It removes the location permissions from the manifest (src/play/AndroidManifest.xml)
+// and location reminders from the bridge until Play approves the background-location declaration.
+// The APK for GitHub and F-Droid is built without it, so its reproducible build stays as it was.
+val playBuild = providers.gradleProperty("opentodo.play").orNull == "true"
+
 // Release signing only when CI provides a keystore (secrets); never committed.
 val keystoreProps = Properties().apply {
     val f = rootProject.file("keystore.properties")
@@ -19,7 +25,7 @@ val keystoreProps = Properties().apply {
 android {
     namespace = "app.opentodo"
     compileSdk = 37
-    // Pinned with the Gradle wrapper (checksum), AGP and JDK 17 for reproducible builds (play-production D4).
+    // Pinned with the Gradle wrapper (checksum), AGP and JDK 21 for reproducible builds (play-production D4).
     buildToolsVersion = "36.0.0"
 
     defaultConfig {
@@ -29,7 +35,11 @@ android {
         versionCode = (versionParts[0] * 10000 + versionParts[1] * 100 + versionParts[2]).coerceAtLeast(1)
         versionName = appVersion
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("boolean", "PLAY_BUILD", playBuild.toString())
     }
+
+    // Only the Play build overlays the release manifest (tools:node="remove" on the location permissions).
+    if (playBuild) sourceSets.getByName("release").manifest.srcFile("src/play/AndroidManifest.xml")
 
     signingConfigs {
         if (keystoreProps.getProperty("storeFile") != null) {
@@ -71,6 +81,9 @@ android {
         abortOnError = true
         // Translations are checked by checkTranslations (six languages, every key).
         disable += setOf("MissingTranslation", "GradleDependency", "OldTargetApi")
+        // Accessibility (accessibility-aa D6): a missing description or label, a touch handler
+        // without a click, a clickable view the keyboard cannot reach fail the build.
+        error += setOf("ContentDescription", "ClickableViewAccessibility", "LabelFor", "KeyboardInaccessibleWidget")
     }
     testOptions { unitTests.isReturnDefaultValues = true }
 }
@@ -135,10 +148,12 @@ tasks.register("checkStoreMetadata") {
             .findAll(file("src/main/AndroidManifest.xml").readText()).map { it.groupValues[1] }.toSortedSet()
         val declared = rootProject.file("store/permissions.txt").readLines().map { it.trim() }.filter { it.isNotEmpty() && !it.startsWith("#") }.toSortedSet()
         if (manifest != declared) throw GradleException("store/permissions.txt $declared does not match the manifest $manifest")
-        val langs = listOf("en", "de", "es", "fr", "it", "pt")
-        val missing = langs.filter { !rootProject.file("store/listing/$it.txt").exists() }
-        if (missing.isNotEmpty()) throw GradleException("Store listing missing for $missing")
-        // The Play review answers (play-production D6) and the data-safety form sit next to the listings.
+        // The store listing is F-Droid's Fastlane folder at the repository root (fastlane/README.md).
+        val locales = listOf("en-US", "de-DE", "es-ES", "fr-FR", "it-IT", "pt-PT")
+        val listing = rootProject.file("../../fastlane/metadata/android")
+        val missing = locales.filter { l -> listOf("title", "short_description", "full_description").any { !File(listing, "$l/$it.txt").exists() } }
+        if (missing.isNotEmpty()) throw GradleException("Store listing missing for $missing in fastlane/metadata/android")
+        // The Play review answers (play-production D6) and the data-safety form.
         val forms = listOf("data-safety.md", "play-review.md").filter { !rootProject.file("store/$it").exists() }
         if (forms.isNotEmpty()) throw GradleException("Store forms missing: $forms")
         val review = rootProject.file("store/play-review.md").readText()

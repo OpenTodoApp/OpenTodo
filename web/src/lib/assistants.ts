@@ -32,6 +32,67 @@ export interface McpStatus {
   endpoint: string
 }
 
+/**
+ * One OAuth client for the MCP endpoint (mcp-oauth): an app that signs in
+ * instead of taking a pasted token. `secret_set` never carries the value.
+ */
+export interface McpOAuthClient {
+  id: string
+  name: string
+  redirect_uris: string[]
+  scope: 'read' | 'agent'
+  dynamic: boolean
+  created_by: string
+  created_at: number
+  last_used_at: number | null
+  secret_set: boolean
+}
+
+/** GET /api/v1/me/mcp-consent: who asks to connect, for what, and where the answer goes. */
+export interface McpConsentInfo {
+  client: { id: string; name: string; dynamic: boolean }
+  scope: 'read' | 'agent'
+  redirectHost: string
+}
+
+/** A known AI connector platform and the redirect addresses its clients accept (mcp-oauth-connector-redirects). */
+export interface McpOAuthPlatform {
+  id: string
+  /** The app's name (Gemini, ChatGPT, Claude): a proper noun, not translated. */
+  name: string
+  redirect_uris: string[]
+}
+
+/** What a new client is for: a known platform, or one exact custom redirect address. */
+export type McpOAuthTarget = { platform: string } | { redirect_uris: string[] }
+
+/**
+ * What a client row names: the platform whose addresses the client holds (all of
+ * them, and nothing else), or the host of its custom address.
+ */
+export function oauthClientApp(client: Pick<McpOAuthClient, 'redirect_uris'>, platforms: McpOAuthPlatform[]): string {
+  const uris = new Set(client.redirect_uris)
+  const platform = platforms.find((p) => p.redirect_uris.length === uris.size && p.redirect_uris.every((u) => uris.has(u)))
+  if (platform) return platform.name
+  try {
+    return new URL(client.redirect_uris[0] ?? '').host
+  } catch {
+    return ''
+  }
+}
+
+/** GET /api/v1/settings/mcp/clients: the clients plus the addresses to paste. */
+export interface McpOAuthClients {
+  clients: McpOAuthClient[]
+  platforms?: McpOAuthPlatform[]
+  redirect_uris: string[]
+  authorize_url: string
+  token_url: string
+  discovery_url: string
+  metadata_url: string
+  resource: string
+}
+
 /** The user's own switch, GET/PUT /api/v1/me/agent-access. */
 export interface AgentAccess {
   allow_writes: boolean

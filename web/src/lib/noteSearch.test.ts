@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import vectors from '../../../internal/notesearch/testdata/vectors.json'
-import { matchNote, normalizeText, parseQuery, prepareNote, rankNotes, snippet, snippetPlain, stripMarkdown } from './noteSearch'
+import { matchNote, matchPrepared, normalizeText, parseQuery, prepareNote, rankNotes, snippet, snippetPlain, stripMarkdown } from './noteSearch'
 
 describe('note search (shared vectors.json with internal/notesearch)', () => {
   it('has the same cases as the Go test', () => {
@@ -45,6 +45,20 @@ describe('note search details', () => {
   it('prepareNote is what matchNote compares', () => {
     expect(prepareNote({ title: 'Café', text: '**Oat** milk' })).toEqual({ title: 'cafe', body: 'oat milk' })
   })
+  it('a phrase can run from the title into the body', () => {
+    const p = prepareNote({ title: 'Oat', text: 'milk and honey' })
+    expect(matchPrepared(p, parseQuery('"oat milk"'))).toEqual({ matched: true, titleMatch: false, bodyWords: 0 })
+    expect(matchPrepared(p, parseQuery('"oat honey"')).matched).toBe(false)
+    expect(matchPrepared(p, parseQuery('oatmilk')).matched).toBe(false)
+  })
+  it('strips blank lines, line endings and space runs as one text', () => {
+    // The fast paths (blank lines skipped, no pattern when nothing is to collapse) give what the full pass gives.
+    const md = '# Plan\r\n\r\n- buy  milk\r\n\r\n\r\nCall\tthe bank\n\n \n'
+    expect(stripMarkdown(md)).toBe('Plan buy milk Call the bank')
+    expect(stripMarkdown('\n\nOne line\n\n')).toBe('One line')
+    expect(stripMarkdown('a\n\nb **c**')).toBe('a b c')
+    expect(stripMarkdown('\n \n')).toBe('')
+  })
 })
 
 // The Go port has no NFKD of its own: internal/notesearch/fold.go is a table of the code points
@@ -68,5 +82,44 @@ describe('the Go fold table', () => {
       }
     expect(table.size).toBe(want.size)
     for (const [c, d] of want) expect([c.toString(16), table.get(c)]).toEqual([c.toString(16), d])
+  })
+})
+
+describe('snippets of ASCII text (list-rendering-at-scale)', () => {
+  it('match the per-character path: a non-ASCII character past the window takes that path', () => {
+    let seed = 11
+    const rand = (n: number) => Math.floor(((seed = (seed * 1103515245 + 12345) % 2 ** 31) / 2 ** 31) * n)
+    const words = ['Kitchen', 'kitchen', 'aa', 'a', 'Oven', 'IKEA', 'shelf', 'in', 'the', 'I']
+    for (let round = 0; round < 200; round++) {
+      const head = Array.from({ length: 12 }, () => words[rand(words.length)]).join(' ')
+      const text = `${head} ${'filler '.repeat(60)}`
+      const terms = [...new Set([words[rand(words.length)], words[rand(words.length)]].map((w) => normalizeText(w)))]
+      for (const lang of [undefined, 'en', 'tr']) {
+        expect(snippetPlain(text, terms, 140, lang)).toEqual(snippetPlain(`${text}é`, terms, 140, lang))
+      }
+    }
+  })
+})
+
+describe('fast paths for ASCII notes (notes-compaction-at-scale)', () => {
+  let seed = 7
+  const rand = (n: number) => Math.floor(((seed = (seed * 1103515245 + 12345) % 2 ** 31) / 2 ** 31) * n)
+  const pieces = ['word', 'Kitchen', ' ', '  ', '\t', '*', '**', '_', '~~', '~', '`', '``', '[', ']', '(', ')', '](x)', '!', '|', '\\', '\\*', '#', '- ', '1. ', '> ', '[ ] ', 'a_b', 'x*y', '---']
+
+  it('strip a line the same way as the per-character path', () => {
+    for (let round = 0; round < 3000; round++) {
+      // Starting with a word: block markers stay out of it, the inline pass is what differs.
+      const line = `word ${Array.from({ length: 1 + rand(10) }, () => pieces[rand(pieces.length)]).join('')}`
+      // "—" (no letter, digit or marker) at the end sends the line through the code-point path and adds only itself.
+      const ascii = stripMarkdown(line)
+      const other = stripMarkdown(`${line}—`)
+      expect(other.endsWith('—') ? other.slice(0, -1).trimEnd() : other).toBe(ascii)
+    }
+  })
+
+  it('normalize ASCII text as NFKD would, in every language', () => {
+    const slow = (s: string, lang?: string) => (lang ? s.normalize('NFKD').toLocaleLowerCase(lang) : s.normalize('NFKD').toLowerCase()).replace(/\p{M}/gu, '').replace(/ς/g, 'σ')
+    for (const lang of [undefined, 'en', 'tr', 'az', 'lt', 'de'])
+      for (const s of ['Kitchen IKEA', 'I i İ', 'ISTANBUL', 'Ii Jj', 'x'.repeat(50)]) expect(normalizeText(s, lang)).toBe(slow(s, lang))
   })
 })

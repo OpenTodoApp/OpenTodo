@@ -3,7 +3,7 @@ import { t } from './i18n/catalog'
 import { fetchWithTimeout, NetworkError, RequestTimeoutError, timeouts } from './http'
 import type { Branding } from './branding'
 import type { AssistantSkill } from './assistantSkills'
-import type { AgentAccess, ApiToken, McpStatus, TokenScope } from './assistants'
+import type { AgentAccess, ApiToken, McpConsentInfo, McpOAuthClient, McpOAuthClients, McpOAuthTarget, McpStatus, TokenScope } from './assistants'
 import type { AssistantStatus } from './assistantStatus'
 import type { AssistantOwnerSettings, AssistantMemberSettings, AssistantSettingsInput, AssistantTestDraft, AssistantTestResult, MyAssistantTestDraft, AssistantUsage, MyAssistantInput } from './assistantTypes'
 import type { KeyRecord } from './crypto'
@@ -110,6 +110,12 @@ interface RequestOptions { signal?: AbortSignal }
 
 /** Sync protocol additions this client supports (POST /api/v1/sync `features`). */
 export const SYNC_FEATURES = ['clock_skew', 'backfill_ack']
+/**
+ * Sent while the device copies the account for the first time (cursor 0 until
+ * the last page): the server leaves out note history the copy never needs
+ * (OpenSpec change notes-compaction-at-scale D3).
+ */
+export const FIRST_COPY_FEATURE = 'latest_docs'
 
 export async function request<T>(method: string, path: string, body?: unknown, retried = false, opts: RequestOptions = {}): Promise<T> {
   try {
@@ -228,6 +234,11 @@ async function parse<T>(res: Response): Promise<T> {
   const data = await res.json().catch((err: unknown) => {
     // The deadline passed while the body was still arriving: no answer, not an empty one.
     if (err instanceof DOMException && (err.name === 'TimeoutError' || err.name === 'AbortError')) throw new RequestTimeoutError()
+    // Only a body that arrived but is not JSON (an empty one, a proxy's page) reads as {}.
+    // A body that stopped arriving (WebKit's "Load failed" TypeError when the connection
+    // or the page goes away mid-read) is no answer: as {} it gave callers a success
+    // without the fields they rely on, such as `links` of listPublicLinks.
+    if (!(err instanceof SyntaxError)) throw new NetworkError(err)
     return {}
   })
   if (!res.ok) {
@@ -301,10 +312,10 @@ export const api = {
   /** `tzOffset` (minutes east of UTC) lets REST writes recompute relative reminders in this zone. */
   // `features` tells the server which protocol additions this client handles
   // (sync-convergence): `clock_skew` refusals and confirmed backfill pages.
-  sync: (device: string, cursor: number, ops: Op[], tzOffset?: number, backfillAck = 0, signal?: AbortSignal) =>
+  sync: (device: string, cursor: number, ops: Op[], tzOffset?: number, backfillAck = 0, signal?: AbortSignal, firstCopy = false) =>
     request<SyncResponse>('POST', '/api/v1/sync', {
       device, cursor, ops, ...(tzOffset === undefined ? {} : { tzOffset }),
-      features: SYNC_FEATURES, ...(backfillAck > 0 ? { backfillAck } : {}),
+      features: firstCopy ? [...SYNC_FEATURES, FIRST_COPY_FEATURE] : SYNC_FEATURES, ...(backfillAck > 0 ? { backfillAck } : {}),
     }, false, { signal }),
   // Project sharing: membership is server-side authorization data, changed only through these routes.
   // Keep a project away from AI assistants (agent-planning-fields D9).
@@ -364,6 +375,16 @@ export const api = {
   setMcpSettings: (enabled: boolean) => request<McpStatus>('PUT', '/api/v1/settings/mcp', { enabled }),
   /** Owner only: "AI assistants may make changes" (mcp-write-tools). */
   setMcpWrites: (writesEnabled: boolean) => request<McpStatus>('PUT', '/api/v1/settings/mcp', { writes_enabled: writesEnabled }),
+  // OAuth clients for the MCP endpoint (mcp-oauth): an app that cannot take a
+  // pasted token signs in instead. The secret comes back once, on creation.
+  getMcpOAuthClients: () => request<McpOAuthClients>('GET', '/api/v1/settings/mcp/clients'),
+  /** `target`: a platform's addresses, or one exact custom address; without it, Google's preset. */
+  createMcpOAuthClient: (name: string, scope: 'read' | 'agent', target?: McpOAuthTarget) =>
+    request<{ client: McpOAuthClient; secret: string }>('POST', '/api/v1/settings/mcp/clients', { name, scope, ...target }),
+  deleteMcpOAuthClient: (id: string) => request<void>('DELETE', `/api/v1/settings/mcp/clients/${encodeURIComponent(id)}`),
+  /** The consent screen of an app connecting through OAuth: `query` is its authorize request. */
+  getMcpConsent: (query: string) => request<McpConsentInfo>('GET', `/api/v1/me/mcp-consent?${query}`),
+  answerMcpConsent: (query: string, allow: boolean) => request<{ redirect: string }>('POST', '/api/v1/me/mcp-consent', { query, allow }),
   /** The user's own "Allow AI assistants to make changes" switch. */
   getAgentAccess: () => request<AgentAccess>('GET', '/api/v1/me/agent-access'),
   setAgentAccess: (allowWrites: boolean) => request<AgentAccess>('PUT', '/api/v1/me/agent-access', { allow_writes: allowWrites }),

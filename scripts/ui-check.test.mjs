@@ -63,3 +63,12 @@ test('Learn more comes only from the LearnMore element', () => {
   assert.deepEqual(learnMoreProblems('web/src/app/X.tsx', "<LearnMore screen=\"demo\" />"), [])
   assert.deepEqual(learnMoreProblems('web/src/app/X.tsx', "t('Learn more: {topic}', { topic })"), [])
 })
+
+test('a raw radio input in a screen is refused, RadioGroup and allowed files are not', async () => {
+  const { rawRadioProblems } = await import('./ui-check.mjs')
+  assert.equal(rawRadioProblems('web/src/app/New.tsx', '<input type="radio" name="x" />').length, 1)
+  assert.equal(rawRadioProblems('web/src/app/New.tsx', "  <input checked type='radio' />").length, 1)
+  assert.deepEqual(rawRadioProblems('web/src/app/New.tsx', '<RadioGroup label="x" value="a" options={[]} onChange={f} />'), [])
+  assert.deepEqual(rawRadioProblems('web/src/app/New.tsx', "t.matches('input[type=\"radio\"]')"), [])
+  assert.deepEqual(rawRadioProblems('web/src/app/QuickAddSettings.tsx', '<input type="radio" />'), [])
+})

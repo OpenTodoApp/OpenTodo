@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/backup"
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
@@ -93,7 +93,7 @@ type testEnv struct {
 func newTestEnv(t *testing.T) *testEnv {
 	t.Helper()
 	dir := t.TempDir()
-	db, err := store.Open(dir)
+	db, err := storetest.OpenDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}

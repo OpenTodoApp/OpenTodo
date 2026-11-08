@@ -51,6 +51,8 @@ type State struct {
 	Places []opsync.Entity
 	// Themes are custom themes, deleted ones included (theme-editor D1).
 	Themes []opsync.Entity
+	// Objectives are quarterly and weekly objectives, deleted ones included (plan-objectives D7).
+	Objectives []opsync.Entity
 	// Notes are standalone notes, deleted ones included (notes-overview D9).
 	Notes []opsync.Entity
 	// Rules are the account's automation rules (automation-rules).
@@ -131,10 +133,14 @@ type Totals struct {
 	Refused int `json:"refused,omitempty"`
 }
 
-// Columns lists the recognised and ignored CSV columns.
+// Columns lists the recognised and ignored CSV columns. For a Notion export
+// it also carries the column chosen for each role (null: not imported) and
+// every column the roles can use (migration-everywhere D3).
 type Columns struct {
-	Recognised []string `json:"recognised"`
-	Ignored    []string `json:"ignored"`
+	Recognised []string           `json:"recognised"`
+	Ignored    []string           `json:"ignored"`
+	Roles      map[string]*string `json:"roles,omitempty"`
+	Available  []string           `json:"available,omitempty"`
 }
 
 // Plan is a dry run: what each row would do and the entity changes to write.
@@ -151,6 +157,10 @@ type Plan struct {
 	// ViewHints are projects this import creates that were boards in the source
 	// app; the web app opens them as boards on the importing device.
 	ViewHints []PlanViewHint `json:"viewHints,omitempty"`
+	// Detected is the format the file is read as without a chosen format, set
+	// only when the chosen format differs (migration-everywhere, "Switching
+	// from another app"): the web app offers to switch to it.
+	Detected string `json:"detected,omitempty"`
 	// Template is set when the file is a template (project-templates D7): the web
 	// app suggests "From a template" for a fresh copy.
 	Template *TemplateInfo `json:"template,omitempty"`
@@ -274,7 +284,7 @@ func sectionKey(projectID, name string) string {
 func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID func() string) *Plan {
 	pl := &planner{opts: opts, st: st, now: now.UnixMilli(), newID: newID, position: now.UnixMilli(), files: parsed.Files,
 		byKind: map[string]map[string]opsync.Entity{KindProject: {}, KindLabel: {}, KindTask: {},
-			KindSection: {}, KindReminder: {}, KindView: {}, KindRule: {}, KindUserPrefs: {}, KindAttachment: {}, KindTimeEntry: {}, KindPlace: {}, KindField: {}, KindReview: {}, KindProjectPrefs: {}, KindNote: {}, KindTheme: {}},
+			KindSection: {}, KindReminder: {}, KindView: {}, KindRule: {}, KindUserPrefs: {}, KindAttachment: {}, KindTimeEntry: {}, KindPlace: {}, KindField: {}, KindReview: {}, KindProjectPrefs: {}, KindNote: {}, KindTheme: {}, KindObjective: {}},
 		projectByName: map[string]string{}, labelByName: map[string]string{}, fingerprints: map[string]string{},
 		implicitProj: map[string]*implicit{}, implicitByID: map[string]*implicit{}, implicitLbl: map[string]*implicit{},
 		sectionByKey: map[string]string{}, implicitSec: map[string]*implicit{}, createdBySource: map[string]string{}}
@@ -282,7 +292,7 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 		st.Remembered = map[string]string{}
 	}
 	for kind, list := range map[string][]opsync.Entity{KindProject: st.Projects, KindLabel: st.Labels, KindTask: st.Tasks,
-		KindSection: st.Sections, KindReminder: st.Reminders, KindView: st.Views, KindRule: st.Rules, KindUserPrefs: st.UserPrefs, KindAttachment: st.Attachments, KindTimeEntry: st.TimeEntries, KindPlace: st.Places, KindField: st.Fields, KindReview: st.Review, KindProjectPrefs: st.ProjectPrefs, KindNote: st.Notes, KindTheme: st.Themes} {
+		KindSection: st.Sections, KindReminder: st.Reminders, KindView: st.Views, KindRule: st.Rules, KindUserPrefs: st.UserPrefs, KindAttachment: st.Attachments, KindTimeEntry: st.TimeEntries, KindPlace: st.Places, KindField: st.Fields, KindReview: st.Review, KindProjectPrefs: st.ProjectPrefs, KindNote: st.Notes, KindTheme: st.Themes, KindObjective: st.Objectives} {
 		for _, e := range list {
 			id := str(e, "id")
 			pl.byKind[kind][id] = e
@@ -332,6 +342,13 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 	p := &Plan{Format: parsed.Format, Version: parsed.Version, Options: opts, Notes: nonNil(parsed.Notes), Template: parsed.Template}
 	if parsed.Format == "csv" {
 		p.Columns = &Columns{Recognised: nonNil(parsed.Recognised), Ignored: nonNil(parsed.Ignored)}
+	}
+	if parsed.Format == notionFormat {
+		roles := map[string]*string{}
+		for _, r := range NotionRoles {
+			roles[r] = parsed.Roles[r]
+		}
+		p.Columns = &Columns{Recognised: nonNil(parsed.Recognised), Ignored: nonNil(parsed.Ignored), Roles: roles, Available: nonNil(parsed.Available)}
 	}
 	pl.results = make([]RowResult, len(parsed.Rows))
 	for i, r := range parsed.Rows {

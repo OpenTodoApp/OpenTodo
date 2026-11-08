@@ -1,9 +1,11 @@
 // Today's closed list on screen (OpenSpec change today-closed-list): the slots and the
 // waiting tasks derived from local rows every time Today renders (D1), and the Done
 // today group (D6). No write; Take a slot is the only one, in lib/closedListPrefs.
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { publishClosedList } from './slotActions'
-import { takenSlots, type SlotFill } from '../../lib/closedList'
+import { takenSlots, waitingNow, type SlotFill } from '../../lib/closedList'
+import { currentDayStart, logicalDay, logicalToday, todayISO } from '../../lib/dates'
+import { Derived, patchOrdered } from '../../lib/taskDelta'
 import { doneTodayShown, todaySlots } from '../../lib/closedListPrefs'
 import { completedOn } from '../../lib/dayLists'
 import { t } from '../../lib/i18n'
@@ -30,6 +32,10 @@ export function closedListMeta(c: Pick<ClosedList, 'fill' | 'doneToday'>): strin
   return c.doneToday ? `${used} · ${t('{n, plural, one {# done} other {# done}}', { n: c.doneToday.length })}` : used
 }
 
+const doneOn = (x: Task, today: string, dayStart: number) => x.completed_at !== null && !x.deleted_at && !x.skipped && logicalDay(x.completed_at, dayStart) === today
+// completedOn's order with the id last (a stable sort of the snapshot, which is in id order).
+const newestDone = (a: Task, b: Task) => (b.completed_at ?? 0) - (a.completed_at ?? 0) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+
 const NONE: SlotFill = { limit: 0, slots: [], waiting: [], chosen: 0 }
 
 /**
@@ -46,7 +52,12 @@ export function useClosedList(on: boolean, todayTasks: readonly Task[], allTasks
   const taken = useMemo(() => takenSlots(review, today), [review, today])
   const waitingIds = useMemo(() => new Set(fill.waiting), [fill])
   const shown = on && doneTodayShown(prefs)
-  const doneToday = useMemo(() => (shown ? completedOn(allTasks, today) : null), [shown, allTasks, today])
+  // Followed from the rows each write changed (incremental-list-updates D2).
+  const doneOf = useRef(new Derived<Task[], [string, number]>(
+    (tasks, today) => completedOn(tasks, today),
+    (prev, changes, _tasks, today, dayStart) => patchOrdered(prev, changes, (x) => doneOn(x, today, dayStart), newestDone),
+  )).current
+  const doneToday = shown ? doneOf.get(allTasks, today, currentDayStart()) : null
   const list = useMemo(() => ({ fill, taken, waitingIds, review, doneToday }), [fill, taken, waitingIds, review, doneToday])
   // The row action, the Actions menu and the palette read Today's slots from here (slotActions).
   useEffect(() => {
@@ -55,4 +66,22 @@ export function useClosedList(on: boolean, todayTasks: readonly Task[], allTasks
     return () => publishClosedList(null)
   }, [on, fill.limit, list, today])
   return list
+}
+
+/**
+ * Now for the waiting tasks' passed times (today-waiting-time-passed D3): the wall time
+ * of the logical today, refreshed on each minute boundary while `active` (tasks wait).
+ */
+export function useWaitingNow(active: boolean): string | undefined {
+  const read = () => { const d = new Date(); return waitingNow(d, logicalToday(undefined, d.getTime()), todayISO(d)) }
+  const [now, setNow] = useState(read)
+  useEffect(() => {
+    if (!active) return
+    setNow(read())
+    let timer: ReturnType<typeof setTimeout>
+    const tick = () => { timer = setTimeout(() => { setNow(read()); tick() }, 60_000 - (Date.now() % 60_000) + 5) }
+    tick()
+    return () => clearTimeout(timer)
+  }, [active])
+  return active ? now : undefined
 }

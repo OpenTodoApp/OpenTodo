@@ -15,6 +15,8 @@ It is an **online** client: it keeps no local copy of your tasks and makes no ch
 
 `ot rules list` lists your [automation rules](automations.md); `ot rules enable <id>` and `ot rules disable <id>` turn one on or off (an id prefix or the exact name works; `--dry-run` prints the request); `ot rules runs <id>` prints its run log. A read token lists but cannot switch (exit 5). [Routines](routines.md) have their own command, `ot routine` (below).
 
+Command names, flags, exit codes and the `--json` output are part of the v1 surface: within 1.x they only grow ([stability and compatibility](stability.md)).
+
 ## Install
 
 Release assets are published for linux, macOS and Windows on amd64 and arm64 (`ot-<os>-<arch>`, with `SHA256SUMS`); download one, make it executable and put it on your `PATH`. Or build from source (Go 1.26+, no other dependency):
@@ -115,9 +117,12 @@ ot list --someday              # parked in Someday
 ot list --anytime              # no due date, deadline or start
 ot list --blocked --project Home   # waiting for an open task
 ot list --available                # what can be done now: not blocked, not waiting for an earlier step
+ot list --sector this-week         # planned for this week without a date; carried: periods that ended
 ```
 
-Human output is a compact table: an id prefix, priority, due date and time (overdue dates are marked and shown in red on a terminal), project and title, plus an `ORIGIN` column (the issue id or the page's host) when a listed task has an [origin](capture.md#where-a-task-came-from) and a `BY` column with the deadline when one has a deadline (a passed deadline is marked overdue), and an `ENERGY` column when a listed task has an energy; `--json` always carries `energy` (null for none). The due cell adds `(someday)`, `starts <date>` (for a multi-day task its days instead: `3–5 Nov`, `30 Oct – 2 Nov`, or with the years when they differ), `evening` (or `morning`, `afternoon`) and `waiting` when they apply. Dates are evaluated in your local time zone. A task fixed to a time zone (see [sync.md](sync.md#zoned-due-values)) is shown converted to your zone with the original as a hint, e.g. `2026-10-11 00:00 (09:00 Berlin)`; `ot edit --due/--time` on it takes the date and time as shown and keeps the zone, and `--time ""` releases it to a floating date. Tasks of archived projects stay out of the cross-project views, as in the web app.
+Human output is a compact table: an id prefix, priority, due date and time (overdue dates are marked and shown in red on a terminal), project and title, plus an `ORIGIN` column (the issue id or the page's host) when a listed task has an [origin](capture.md#where-a-task-came-from) and a `BY` column with the deadline when one has a deadline (a passed deadline is marked overdue), and an `ENERGY` column when a listed task has an energy; `--json` always carries `energy` (null for none). The due cell adds `(someday)`, `starts <date>` (for a multi-day task its days instead: `3–5 Nov`, `30 Oct – 2 Nov`, or with the years when they differ), the [time sector](time-sectors.md) of a task without a due date (`this week`, `next month`, the period such as `2026-W47`, or `from 2026-W43` when its period has ended; `--json` always carries `sector`, null for none), `evening` (or `morning`, `afternoon`) and `waiting` when they apply. Dates are evaluated in your local time zone. A task fixed to a time zone (see [sync.md](sync.md#zoned-due-values)) is shown converted to your zone with the original as a hint, e.g. `2026-10-11 00:00 (09:00 Berlin)`; `ot edit --due/--time` on it takes the date and time as shown and keeps the zone, and `--time ""` releases it to a floating date. Tasks of archived projects stay out of the cross-project views, as in the web app.
+
+Custom-field sorting is available in the web app and saved views; `ot list` has no sort flag for it (see [Group and order](group-and-order.md)).
 
 ```
 ID        P   DUE                 PROJECT  TITLE
@@ -125,7 +130,7 @@ ID        P   DUE                 PROJECT  TITLE
 3f1d7a22  P1  2026-10-10 09:00             Call the plumber
 ```
 
-With a [Today limit](today-limit.md) on, `ot today` prints the tasks in the slots, then a **Waiting for a slot** heading and the waiting tasks in fill order (the first comes in next), with the app's rule: today's focus, the tasks you let in, Earlier oldest first, then the rest by when they were created. `--all` prints every task in one table, and `--json` adds `waiting_for_slot` to each task while the limit is on. When waiting tasks are due today with a time or have a deadline today, the heading names the next one (`Waiting for a slot · 4 — next: Send the form, 16:00`) and lists them first, soonest first, with their time (`deadline` for a deadline without one), before the waiting tasks in fill order; `--json` marks them with `time_sensitive: true` (`false` on the other waiting tasks).
+With a [Today limit](today-limit.md) on, `ot today` prints the tasks in the slots, then a **Waiting for a slot** heading and the waiting tasks in fill order (the first comes in next), with the app's rule: today's focus, the tasks you let in, Earlier oldest first, then the rest by when they were created. `--all` prints every task in one table, and `--json` adds `waiting_for_slot` to each task while the limit is on. When waiting tasks are due today with a time or have a deadline today, the heading names the next one (`Waiting for a slot · 4 — next: Send the form, 16:00`) and lists them first, soonest first, with their time (`deadline` for a deadline without one), before the waiting tasks in fill order. A time that has passed is marked `(time passed)` and never named next; when every time has passed the heading says so (`— time passed: Call the school, 09:00`, or `— 2 past their time`). `--json` marks them with `time_sensitive: true` (`false` on the other waiting tasks) and `time_passed`.
 
 ### Add and edit
 
@@ -145,6 +150,8 @@ ot add "Install shelves" --blocked-by 91f0 --location Home
 ot edit 8c2a --evening=false --blocked-by none --location none
 ot edit 8c2a --start 2026-11-03 --due 2026-11-05 --span   # a trip from 3 to 5 November
 ot add --done "Fixed the printer"                    # log a win: created already completed
+ot edit bins --rotate "alice,Bob,carol@example.com"  # take turns, in this order
+ot edit bins --no-rotate                             # stop taking turns
 ```
 
 | Flag | Meaning |
@@ -156,6 +163,8 @@ ot add --done "Fixed the printer"                    # log a win: created alread
 | `--label <l>` | Repeatable; a label name (case-insensitive) or id. Unknown names create the label. With `ot edit` the given labels replace the list |
 | `--note <text>` | Description; `--note ""` clears it |
 | `--title <text>` | New title (`ot edit` only) |
+| `--rotate <people>` | `ot edit` only: the people who [take turns](take-turns.md) on a recurring task of a shared project, comma-separated, in order. Each is a member's email, name or account id (any case), or a unique prefix of a name or email; an unknown or ambiguous person exits 2 listing the members, before any write. Completing the task then assigns the next of them. The command prints `Takes turns: Alice* → Bob → Carol`, the current assignee marked with `*` |
+| `--no-rotate` | `ot edit` only: stop taking turns (the assignee stays) |
 | `--repeat <rule>` | Recurrence rule in any spelling of the [rule grammar](recurrence.md) (`"Every Week"`, `"every mon, wed"`), checked locally and sent in canonical form; `none` (edit) clears the rule and keeps the date |
 | `--origin-url <url>` | Where the task comes from: an `http` or `https` URL, sent as the task's [origin](capture.md#where-a-task-came-from). A GitHub, GitLab, Jira or Linear issue link becomes `{kind: "issue", provider, id}` (`o/r#7`, `ENG-123`), derived on your machine with the same table as the web app; any other link is a `url` origin. `ot` never requests the URL. Another scheme (`ftp:`, `file:`) exits 2 before any request; `none` (edit) clears the origin |
 | `--deadline <when>` | The day the task must be finished by, separate from the due date; same words as `--due`; `none` (edit) clears it |
@@ -164,6 +173,7 @@ ot add --done "Fixed the printer"                    # log a win: created alread
 | `--span`, `--no-span` | Draw the task across the days from its start date to its due date, both included (a trip, a conference); a span needs `--start` and `--due` with the start before the due date, otherwise it shows on its due date as before. `--no-span` takes it back to one day and keeps the start date. Both together exit 2 before any request |
 | `--part <part>` | The [part of the day](day-parts.md): `morning`, `afternoon`, `evening` (This Evening) or `none`; written with the evening flag, so `--part afternoon` takes an evening task out of This Evening. Another word exits 2 before any request. It wins over `--evening` |
 | `--energy <level>` | The task's energy: `deep`, `medium` or `low` (any case); `none` clears it. Another word exits 2 before any request |
+| `--sector <when>` | The [time sector](time-sectors.md): `this-week`, `next-week`, `this-month`, `next-month`, `this-quarter` or `next-quarter` (weeks start on Monday), or a period such as `2026-W45`, `2026-11` or `2026-Q4`; `none` (edit) clears it. Written as sent: the due date is kept. Another word exits 2 naming it, before any request. `ot list --sector` takes the same words or `carried` |
 | `--blocked-by <ref>` | Repeatable: a task this one waits for, by id or unique id prefix (an ambiguous prefix exits 1 listing the candidates, before any write). With `ot edit` the list is replaced; `none` clears it |
 | `--location <where>` | A saved location's name (case-insensitive) or id, sent with its current name, address and coordinates; or `lat,lon`; `none` (edit) clears it. An unknown name exits 1 before any write |
 | `--remind <phrase>` | `ot add` only, repeatable: a reminder without the reminder word, either an offset (`"30 min before"`, `"1 day before"`, `"2 hours after"`) or a moment (`"at 9"`, `"tomorrow at 9"`, `"20 Oct at 9"`). It is resolved like a quick-add reminder: relative to the task's due time (09:00 for a date-only due), or absolute in your local time zone when the task has no due date. An offset on an undated task waits for a due date, and the command says so |
@@ -190,6 +200,15 @@ A `<ref>` is a full task id or an id prefix that matches exactly one non-deleted
 
 A task that is already in the requested state (`ot done` on a completed task, `ot reopen` on an open one) is reported as `unchanged`, keeps its completion time and nothing is sent; the command still exits 0. `ot edit` with values equal to the current ones sends nothing either.
 
+### One task's details
+
+```bash
+ot task show 8c2a          # title, due date, deadline, location and reminders
+ot task show 8c2a --json   # {"task": {…}, "reminders": [{…}]}
+```
+
+`ot task show <ref>` prints a task with its due date, deadline, location and your reminders, one per line: "30 minutes before the due time", "At 2026-10-13 09:00", and [location reminders](location-reminders.md) as "When I arrive at Post office (150 m)" or "When I leave Home (300 m)". It only reads, so a `read` token will do. Location reminders are created in the app or through [`POST /api/v1/reminders`](api.md#reminders-and-push), not with `ot`.
+
 ### Repeating tasks ahead
 
 ```bash
@@ -213,10 +232,13 @@ ot task split 8c2a --from 2026-10-14 --time 19:00       # 19:00 from Wednesday o
 ot project list [--all]                 # --all includes archived projects
 ot project add "Garden" [--color "#22c55e"] [--idempotency-key <key>]
 ot project rename Garden "Back garden"
+ot project edit Groceries --reusable --aisles  # a reusable list; --no-reusable, --no-aisles turn it off
 ot project move Garden --workspace Family  # only the project's owner
 ot project archive Garden [--undo]
 ot project rm Garden [--yes]
 ```
+
+In a [reusable list](reusable-lists.md), `ot add Milk --project Groceries` reopens a ticked-off Milk instead of adding a second one, or finds it already open; it prints the item's id and says "reopened" or "already on the list" on stderr. `--new` always adds a new task.
 
 Projects are referenced by name (case-insensitive), full id or unique id prefix. `ot project list` shows every workspace's projects with a WORKSPACE column and each project's FLOW (`parallel`, `sequential` or `area`, see [Sequential projects and areas](project-flows.md)), and STATUS `archived` or `maintenance` ([Review intervals and maintenance](review-intervals.md)); `--workspace` narrows it to one.
 
@@ -325,6 +347,21 @@ ot slots rm 7f3a [--yes]                                      # its tasks stay o
 
 `--date` takes `YYYY-MM-DD`, `today`, `tomorrow` or a weekday name (default today); `--for` a length from 15 minutes to 8 hours in 15-minute steps (default `30m`). `put` adds the tasks at the end of the slot and, in the same batch, sets each one's date to the slot's day without a time and takes it out of your other slots of that day; a slot holds at most 20 tasks, and a task you may not edit (a viewer of its project) is refused with `forbidden` and nothing changes. `add`, `put` and `rm` write, so `--dry-run`, `--read-only` and token scope apply (a `read` or `agent` token exits 5). `--json` prints the [`slot`](#machine-readable-help-ot-schema) objects; an encrypted account's titles are ciphertext and the table shows `(encrypted)`.
 
+## Objectives
+
+Your quarterly and weekly [objectives](objectives.md), a few short lines per period:
+
+```bash
+ot objectives [--quarter|--week] [--period 2026-W45]          # this quarter's and this week's by default
+ot objectives add "Draft the talk" --week [--next]             # --quarter or --week; --next for next quarter or week
+ot objectives done 3fa1                                        # an id or id prefix
+ot objectives undone 3fa1
+ot objectives edit 3fa1 --title "Give the talk"
+ot objectives delete 3fa1 [--yes]
+```
+
+Weeks are ISO weeks starting on Monday, taken from this machine's date. A period holds at most 5 open objectives: a sixth exits 1 with `too_many_objectives`. `add`, `done`, `undone`, `edit` and `delete` write, so `--dry-run`, `--read-only` and token scope apply (a `read` or `agent` token exits 5). `--json` prints the [`objective`](#machine-readable-help-ot-schema) objects. On an encrypted account titles are decrypted after `ot encryption unlock` and print as `[encrypted]` otherwise; adding or editing a title needs the key (exit 5 `encryption_enabled` without it).
+
 ## Issue connections
 
 Your [issue import](issue-import.md) connections, once the server owner has turned the feature on:
@@ -338,6 +375,17 @@ ot issues sync 7f3a --dry-run   # print the request, run nothing
 ```
 
 `ot issues sync` writes, so `--read-only` and a `read` or `agent` token refuse it before any poll (exit 5). It exits 5 with `issues_disabled` while the owner has not enabled issue connections, and 1 when a connection is stopped (`connection_stopped`), the provider's rate limit applies (`provider_rate_limited`), the hourly limit of 12 checks and syncs is reached (`rate_limited`) or the poll fails (`poll_failed`). Connections are added and changed in Settings → Integrations → Issues.
+
+## Audit log
+
+For the server owner: check that the [audit log](self-hosting/docker.md#checking-the-log-for-tampering) was not changed outside OpenTodo.
+
+```bash
+ot audit verify          # Audit chain intact: 1203 events checked, newest 8512.  Head: 8512 9f2c…
+ot audit verify --json   # {ok, checked, uncovered, checkpoint, head, break}
+```
+
+It exits 1 with `audit_chain_broken` and names the first broken event when an event was changed, removed or moved, and 5 (`forbidden`) for anyone but the owner. Keep the head somewhere else to notice later rewrites; see [Keep an anchor outside the server](self-hosting/docker.md#checking-the-log-for-tampering).
 
 ## Tokens and export
 
@@ -366,7 +414,7 @@ ot import tasks.csv --duplicates import --time-zone Europe/Rome
 ot import opentodo-export.json --existing overwrite       # restore, keeping the export's workspaces
 ```
 
-`--format` forces a format id instead of detection, `--existing skip|overwrite` applies to an OpenTodo export, `--duplicates skip|import` to possible duplicates, and `--time-zone` (default: this machine's zone) to date-times written with a zone. Imports need a `full` or `admin` token: `read` and `agent` tokens and read-only mode exit 5 before the file is sent. A failed job exits 1 with `import_failed`; undo an import in the app under **Past imports**.
+`--format` forces a format id instead of detection (`ot import --help` lists them; for example `notion-csv` for a single Notion CSV, which is never detected), `--existing skip|overwrite` applies to an OpenTodo export, `--duplicates skip|import` to possible duplicates, and `--time-zone` (default: this machine's zone) to date-times written with a zone. Imports need a `full` or `admin` token: `read` and `agent` tokens and read-only mode exit 5 before the file is sent. A failed job exits 1 with `import_failed`; undo an import in the app under **Past imports**.
 
 ## MCP bridge and encryption
 

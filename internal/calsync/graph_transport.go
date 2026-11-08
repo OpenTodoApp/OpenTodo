@@ -32,6 +32,13 @@ func eventPath(id string) string     { return "/me/events/" + url.PathEscape(id)
 
 func graphStamp(t time.Time) string { return t.UTC().Format("2006-01-02T15:04:05Z") }
 
+// graphPage is one page of a calendarView or calendarView/delta answer.
+type graphPage struct {
+	Value []graphEvent `json:"value"`
+	Next  string       `json:"@odata.nextLink"`
+	Delta string       `json:"@odata.deltaLink"`
+}
+
 // errGone is a delta link Microsoft no longer accepts (410).
 var errGone = &Error{Reason: "delta_gone"}
 
@@ -53,11 +60,7 @@ func (t *graphTransport) readDelta(ctx context.Context, start string) (*listing,
 		case resp.Status != http.StatusOK:
 			return nil, "", graphStatus(resp.Status)
 		}
-		var p struct {
-			Value []graphEvent `json:"value"`
-			Next  string       `json:"@odata.nextLink"`
-			Delta string       `json:"@odata.deltaLink"`
-		}
+		var p graphPage
 		if json.Unmarshal(resp.Body, &p) != nil {
 			return nil, "", &Error{Reason: ReasonInvalid}
 		}
@@ -167,10 +170,7 @@ func (t *graphTransport) window(ctx context.Context, cal string, win calfeed.Win
 		if page >= maxGraphPages {
 			return nil, &Error{Reason: ReasonTooLarge}
 		}
-		var p struct {
-			Value []graphEvent `json:"value"`
-			Next  string       `json:"@odata.nextLink"`
-		}
+		var p graphPage
 		if err := t.g.get(ctx, next, &p); err != nil {
 			return nil, err
 		}

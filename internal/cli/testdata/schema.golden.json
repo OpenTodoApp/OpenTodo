@@ -106,6 +106,11 @@
           "description": "the energy the task asks for (edit: none clears)"
         },
         {
+          "name": "sector",
+          "type": "string",
+          "description": "the time sector: this-week, next-week, this-month, next-month, this-quarter, next-quarter (weeks from Monday) or a period such as 2026-W45, 2026-11 or 2026-Q4; written as sent, the due date is kept (edit: none clears)"
+        },
+        {
           "name": "blocked-by",
           "type": "string_list",
           "description": "a task this one waits for: id or unique id prefix, repeatable (edit replaces the list; none clears)"
@@ -141,6 +146,11 @@
           "description": "log a win: create the task already completed now (refuses --repeat and --remind)"
         },
         {
+          "name": "new",
+          "type": "bool",
+          "description": "in a reusable list, create a new task even when an item with the same title is there"
+        },
+        {
           "name": "idempotency-key",
           "type": "string",
           "description": "1-128 characters of [A-Za-z0-9._:-]; running again with the same key returns the same entity instead of creating another"
@@ -152,6 +162,19 @@
       "idempotency_key": true,
       "output_schema": {
         "$ref": "#/schemas/task"
+      }
+    },
+    {
+      "name": "audit verify",
+      "summary": "check the audit log's hash chain on the server (owner only); exit 1 with audit_chain_broken when an event was changed, removed or moved",
+      "args": [],
+      "flags": [],
+      "writes": false,
+      "destructive": false,
+      "dry_run": false,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/audit_verification"
       }
     },
     {
@@ -365,6 +388,11 @@
           "description": "the energy the task asks for (edit: none clears)"
         },
         {
+          "name": "sector",
+          "type": "string",
+          "description": "the time sector: this-week, next-week, this-month, next-month, this-quarter, next-quarter (weeks from Monday) or a period such as 2026-W45, 2026-11 or 2026-Q4; written as sent, the due date is kept (edit: none clears)"
+        },
+        {
           "name": "blocked-by",
           "type": "string_list",
           "description": "a task this one waits for: id or unique id prefix, repeatable (edit replaces the list; none clears)"
@@ -378,6 +406,16 @@
           "name": "no-default-reminder",
           "type": "bool",
           "description": "add no default reminder when the task gets a due date (--remind also leaves it out)"
+        },
+        {
+          "name": "rotate",
+          "type": "string",
+          "description": "people who take turns on a recurring task in a shared project, in order: member names or emails, comma-separated; completing the task assigns the next of them"
+        },
+        {
+          "name": "no-rotate",
+          "type": "bool",
+          "description": "stop taking turns (the assignee stays)"
         }
       ],
       "writes": true,
@@ -762,6 +800,11 @@
           "description": "only tasks completed before: YYYY-MM-DD (local), an RFC 3339 time or Unix ms"
         },
         {
+          "name": "sector",
+          "type": "string",
+          "description": "only tasks with this time sector: this-week, next-week, this-month, next-month, this-quarter, next-quarter, a period such as 2026-W45, or carried for periods that have ended"
+        },
+        {
           "name": "limit",
           "type": "int",
           "description": "print at most n tasks"
@@ -1141,6 +1184,171 @@
       }
     },
     {
+      "name": "objectives add",
+      "aliases": [
+        "objectives create"
+      ],
+      "summary": "add an objective to the current (or next) quarter or week and print its id; at most 5 open per period",
+      "args": [
+        {
+          "name": "title",
+          "required": true,
+          "repeatable": true
+        }
+      ],
+      "flags": [
+        {
+          "name": "quarter",
+          "type": "bool",
+          "description": "a quarterly objective"
+        },
+        {
+          "name": "week",
+          "type": "bool",
+          "description": "a weekly objective"
+        },
+        {
+          "name": "next",
+          "type": "bool",
+          "description": "for next quarter or next week"
+        }
+      ],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/objective"
+      }
+    },
+    {
+      "name": "objectives delete",
+      "aliases": [
+        "objectives rm"
+      ],
+      "summary": "delete an objective (soft delete)",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [
+        {
+          "name": "yes",
+          "short": "y",
+          "type": "bool",
+          "description": "confirm a destructive command (required off a terminal and with --json)"
+        }
+      ],
+      "writes": true,
+      "destructive": true,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/objective"
+      }
+    },
+    {
+      "name": "objectives done",
+      "summary": "mark an objective done",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/objective"
+      }
+    },
+    {
+      "name": "objectives edit",
+      "summary": "change an objective's title",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [
+        {
+          "name": "title",
+          "type": "string",
+          "description": "the new title, one line of up to 140 characters"
+        }
+      ],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/objective"
+      }
+    },
+    {
+      "name": "objectives list",
+      "aliases": [
+        "objectives ls"
+      ],
+      "summary": "list the current quarter's and current week's objectives (weeks from Monday)",
+      "args": [],
+      "flags": [
+        {
+          "name": "quarter",
+          "type": "bool",
+          "description": "only the current quarter's"
+        },
+        {
+          "name": "week",
+          "type": "bool",
+          "description": "only the current week's"
+        },
+        {
+          "name": "period",
+          "type": "string",
+          "description": "only this period: a quarter YYYY-Qn or an ISO week YYYY-Www"
+        }
+      ],
+      "writes": false,
+      "destructive": false,
+      "dry_run": false,
+      "idempotency_key": false,
+      "output_schema": {
+        "items": {
+          "$ref": "#/schemas/objective"
+        },
+        "type": "array"
+      }
+    },
+    {
+      "name": "objectives undone",
+      "summary": "mark a done objective open again",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/objective"
+      }
+    },
+    {
       "name": "project add",
       "aliases": [
         "project create"
@@ -1188,6 +1396,46 @@
           "name": "undo",
           "type": "bool",
           "description": "restore an archived project"
+        }
+      ],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/project"
+      }
+    },
+    {
+      "name": "project edit",
+      "summary": "change a project's reusable-list mode",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [
+        {
+          "name": "reusable",
+          "type": "bool",
+          "description": "make it a reusable list: adding an item already there reopens it"
+        },
+        {
+          "name": "no-reusable",
+          "type": "bool",
+          "description": "make it an ordinary project again"
+        },
+        {
+          "name": "aisles",
+          "type": "bool",
+          "description": "sort new items of the reusable list into aisle sections"
+        },
+        {
+          "name": "no-aisles",
+          "type": "bool",
+          "description": "stop sorting new items into aisle sections"
         }
       ],
       "writes": true,
@@ -1988,6 +2236,25 @@
       }
     },
     {
+      "name": "task show",
+      "summary": "print a task's details and its reminders, location reminders included (When I arrive at Post office (150 m)); read-only",
+      "args": [
+        {
+          "name": "ref",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [],
+      "writes": false,
+      "destructive": false,
+      "dry_run": false,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/task_detail"
+      }
+    },
+    {
       "name": "task split",
       "summary": "change a recurring task from one of its later occurrences on (This and following): the series ends the day before and a new series continues it; prints the new series",
       "args": [
@@ -2594,6 +2861,11 @@
       "meaning": "an issue poll ran and failed; the reason is in the message"
     },
     {
+      "code": "audit_chain_broken",
+      "exit": 1,
+      "meaning": "`ot audit verify`: the audit log was changed outside OpenTodo; the message names the first broken event"
+    },
+    {
       "code": "invalid_input",
       "exit": 1,
       "meaning": "the server refused a value"
@@ -2602,6 +2874,11 @@
       "code": "body_changed",
       "exit": 1,
       "meaning": "the note changed since the command read it (on a device or by another write); nothing was replaced: read it again"
+    },
+    {
+      "code": "too_many_objectives",
+      "exit": 1,
+      "meaning": "the period already has 5 open objectives; finish or delete one first"
     },
     {
       "code": "too_many_appends",
@@ -2725,6 +3002,92 @@
   ],
   "output_version": 1,
   "schemas": {
+    "audit_verification": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "audit_verification",
+      "description": "The answer of GET /api/v1/audit/verify: the audit log's hash chain recomputed on the server (OpenSpec audit-hash-chain).",
+      "type": "object",
+      "required": [
+        "ok",
+        "checked",
+        "uncovered",
+        "checkpoint",
+        "head",
+        "break"
+      ],
+      "properties": {
+        "ok": {
+          "type": "boolean",
+          "description": "true when every event after the checkpoint follows from the one before"
+        },
+        "checked": {
+          "type": "integer",
+          "description": "events whose hash was recomputed"
+        },
+        "uncovered": {
+          "type": "integer",
+          "description": "kept events from before the chain started, not covered"
+        },
+        "checkpoint": {
+          "type": "object",
+          "description": "where checking starts: the last pruned event (or the newest from before the chain) and the hash the next event chains from",
+          "required": [
+            "id",
+            "hash"
+          ],
+          "properties": {
+            "id": {
+              "type": "integer"
+            },
+            "hash": {
+              "type": "string"
+            }
+          }
+        },
+        "head": {
+          "type": "object",
+          "description": "the newest checked event, the anchor to keep outside the server",
+          "required": [
+            "id",
+            "hash"
+          ],
+          "properties": {
+            "id": {
+              "type": "integer"
+            },
+            "hash": {
+              "type": "string"
+            }
+          }
+        },
+        "break": {
+          "description": "the first event whose hash does not follow, or null",
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "required": [
+                "id",
+                "reason"
+              ],
+              "properties": {
+                "id": {
+                  "type": "integer"
+                },
+                "reason": {
+                  "enum": [
+                    "missing_hash",
+                    "mismatch"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
     "auth_result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "title": "auth_result",
@@ -3653,6 +4016,47 @@
         }
       }
     },
+    "objective": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "objective",
+      "description": "A quarterly or weekly objective as the REST API returns it (OpenSpec plan-objectives), with the title decrypted when this machine holds the account key, \"[encrypted]\" when it cannot be decrypted.",
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "period",
+        "done_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string",
+          "description": "one line of 1 to 140 characters"
+        },
+        "period": {
+          "type": "string",
+          "description": "a quarter YYYY-Qn or an ISO week YYYY-Www"
+        },
+        "position": {
+          "type": "number"
+        },
+        "done_at": {
+          "type": "number",
+          "description": "Unix ms when it was marked done; 0 while open"
+        },
+        "created_at": {
+          "type": "number"
+        },
+        "deleted_at": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
     "occurrences": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "title": "occurrences",
@@ -3765,6 +4169,14 @@
             "number",
             "null"
           ]
+        },
+        "reusable": {
+          "type": "boolean",
+          "description": "a reusable list: adding an item already there reopens it"
+        },
+        "aisles": {
+          "type": "boolean",
+          "description": "a reusable list that sorts new items into aisle sections"
         },
         "role": {
           "type": "string",
@@ -4331,6 +4743,15 @@
             "null"
           ]
         },
+        "reused": {
+          "type": "string",
+          "enum": [
+            "reopened",
+            "open",
+            "unavailable"
+          ],
+          "description": "only on ot add in a reusable list: the item was reopened, was already open, or the server could not match an encrypted title"
+        },
         "completed_by": {
           "type": [
             "string",
@@ -4384,6 +4805,13 @@
             "null"
           ]
         },
+        "rotation": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "account ids of the people who take turns on a recurring task, in order; completing it assigns the next of them"
+        },
         "deadline": {
           "type": [
             "string",
@@ -4430,6 +4858,13 @@
             null
           ],
           "description": "the energy the task asks for; null for none"
+        },
+        "sector": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "the time sector: an ISO week YYYY-Www, a month YYYY-MM or a quarter YYYY-Qn the task is planned for without a date; null for none"
         },
         "waiting_for_slot": {
           "type": "boolean",
@@ -4503,6 +4938,76 @@
             },
             "title": {
               "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "task_detail": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "task_detail",
+      "description": "What ot task show prints with --json: the task and its live reminders as GET /api/v1/reminders returns them, location reminders (kind arrive or leave, radius_m in metres, no fire_at) included (OpenSpec location-reminders).",
+      "type": "object",
+      "required": [
+        "task",
+        "reminders"
+      ],
+      "properties": {
+        "task": {
+          "$ref": "#/schemas/task"
+        },
+        "reminders": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "task_id",
+              "kind"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "task_id": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "relative",
+                  "absolute",
+                  "deadline",
+                  "arrive",
+                  "leave"
+                ]
+              },
+              "offset_minutes": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "fire_at": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "Unix ms; always null for arrive and leave"
+              },
+              "radius_m": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "metres, 100 to 5000, only for arrive and leave"
+              },
+              "dismissed_at": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
             }
           }
         }

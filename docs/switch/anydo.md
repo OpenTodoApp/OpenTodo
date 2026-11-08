@@ -11,7 +11,7 @@ order: 100
 
 Any.do has no export button, but it sends you a copy of your data when you ask for it.
 
-## Request your data from Any.do
+## Export from Any.do
 
 1. In Any.do, open **Settings → Privacy** (on the web: your profile, then **Privacy**), and choose **Request my data** (or write to Any.do's support asking for a copy of your personal data).
 2. Any.do emails you a download, usually within a few days. Unpack it if it is a ZIP; the tasks are in a `.json` file.

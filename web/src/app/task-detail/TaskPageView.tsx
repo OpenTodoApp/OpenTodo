@@ -6,11 +6,11 @@
 // facts sit under the notes; below 768 px they are one stacked card of rows, the
 // unset ones behind More (precision-phone D4). Esc, Close and the phone's Back
 // return to the list.
-import { type ReactNode, useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { roleOf } from '../../lib/sharing'
 import type { Label, Project } from '../../lib/types'
 import { t } from '../../lib/i18n'
-import { DESKTOP_HEADER_QUERY, Icon, IconButton, PAGE_FRAME, PageHeader, useMediaQuery } from '../../ui'
+import { DESKTOP_HEADER_QUERY, IconButton, PAGE_FRAME, PageHeader, useMediaQuery } from '../../ui'
 import { navigate } from '../router'
 import { SampleNotice } from '../SampleNotice'
 import { isSample } from '../../lib/sampleTasks'
@@ -27,6 +27,7 @@ import { ReadOnlyNote, TaskHead, TaskRelations } from './TaskHead'
 import { useFollowing, useOccurrenceView } from './occurrenceView'
 import { TaskNotes } from './TaskNotes'
 import { TaskPageDialog } from './TaskPageDialog'
+import { TaskPath } from './TaskPath'
 import { useTaskDetail } from './useTaskDetail'
 
 export interface TaskPageNav {
@@ -80,6 +81,10 @@ export function TaskPageView({ taskId, userId, readOnly: viewer, projects, label
       if ((e.target as HTMLElement | null)?.closest('[data-overlay], [data-overlay-root]')) return false
       nav.onBack()
     },
+    'task.parent': () => {
+      if (!m.parent || m.parent.deleted_at) return false
+      onOpen(m.parent.id)
+    },
   }, { view: 'task' })
 
   const { task } = m
@@ -100,30 +105,23 @@ export function TaskPageView({ taskId, userId, readOnly: viewer, projects, label
   )
   // The first crumb leads back to the list the task was opened from (Today, a view, a
   // label), with the task selected there; the project follows when it is another page.
-  const crumbClass = 'rounded-control px-1 text-muted hover:bg-hover hover:text-default'
+  // Every parent follows, the middle ones folded when there is more than one.
   const origin = nav.backLabel && !nav.fromProject
   const crumbs = (
-    <Breadcrumb>
-      {origin && (
-        <button type="button" className={`min-w-0 truncate ${crumbClass}`} onClick={nav.onBack} data-crumb="origin">{nav.backLabel}</button>
-      )}
-      {project
-        ? <button type="button" className={`inline-flex min-w-0 items-center gap-1.5 ${crumbClass}`} onClick={nav.fromProject ? nav.onBack : () => navigate({ view: 'project', id: project.id })} data-crumb="project">
-            <ProjectMark project={project} /><span className="truncate">{project.name}</span>
-          </button>
-        : !origin && <button type="button" className={crumbClass} onClick={nav.onBack} data-crumb="project">{t('Inbox')}</button>}
-      {m.parent && (
-        <button type="button" className="min-w-0 truncate rounded-control px-1 text-muted hover:bg-hover hover:text-default" onClick={() => onOpen(m.parent!.id)} data-crumb="parent">
-          {m.parent.title || t('Untitled')}
-        </button>
-      )}
-      <span className="min-w-0 truncate px-1 text-strong" aria-current="page" data-crumb="task">{task.title || t('Untitled')}</span>
-    </Breadcrumb>
+    <TaskPath
+      origin={origin ? { label: nav.backLabel, onClick: nav.onBack } : null}
+      project={project
+        ? { label: project.name, onClick: nav.fromProject ? nav.onBack : () => navigate({ view: 'project', id: project.id }), mark: <ProjectMark project={project} /> }
+        : !origin ? { label: t('Inbox'), onClick: nav.onBack } : null}
+      parents={m.parents.map((p) => ({ id: p.id, title: p.title }))}
+      current={task.title || t('Untitled')}
+      onOpen={onOpen}
+    />
   )
 
   return (
     <div ref={root} className={`${PAGE_FRAME} px-4 md:px-8`} data-task-page={task.id} data-detail-for={task.id} data-detail-variant="page">
-      <PageHeader title={desktop ? crumbs : nav.backLabel || project?.name || t('Inbox')} help="task-panel" barActions
+      <PageHeader title={crumbs} help="task-panel" barActions
         back={desktop ? undefined : { label: t('Back to the list'), onClick: nav.onBack }}
         menu={<TaskActionsMenu m={m} page readOnly={locked} onOpen={onOpen} />}
         actions={<>{stepper}{desktop && <IconButton icon="x" size="sm" label={t('Close')} shortcut="Esc" onClick={nav.onBack} data-task-close />}</>} />
@@ -166,20 +164,5 @@ export function TaskPageView({ taskId, userId, readOnly: viewer, projects, label
       </div>
       {m.pageDialog && <TaskPageDialog task={task} status={m.pageStatus ?? null} onClose={() => m.setPageDialog(false)} />}
     </div>
-  )
-}
-
-/** Crumbs separated by a chevron; the last one is the page. Phrasing content, since the page's heading holds it. */
-function Breadcrumb({ children }: { children: ReactNode[] }) {
-  const items = children.filter(Boolean)
-  return (
-    <span className="flex min-w-0 items-center gap-0.5 text-body font-normal" data-breadcrumb>
-      {items.map((c, i) => (
-        <span key={i} className="flex min-w-0 items-center gap-0.5">
-          {i > 0 && <Icon name="chevron-right" size="xs" className="shrink-0 text-faint" />}
-          {c}
-        </span>
-      ))}
-    </span>
   )
 }

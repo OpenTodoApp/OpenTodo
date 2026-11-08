@@ -34,6 +34,8 @@ type listOptions struct {
 	completedAfter, completedBefore string
 	// todayAll is `ot today --all` (today-closed-list D7): no waiting heading.
 	todayAll bool
+	// sector is --sector: a relative word, a period or carried (time-sectors).
+	sector string
 }
 
 func (o *listOptions) bind(fs *flag.FlagSet) {
@@ -48,6 +50,7 @@ func (o *listOptions) bind(fs *flag.FlagSet) {
 	fs.BoolVar(&o.blocked, "blocked", false, "open tasks waiting for an open task")
 	fs.BoolVar(&o.available, "available", false, "open tasks that can be done now (not blocked, not waiting for an earlier step, not in Someday or starting later)")
 	fs.IntVar(&o.limit, "limit", 0, "print at most n tasks")
+	fs.StringVar(&o.sector, "sector", "", "only tasks with this time sector: a relative word, a period or carried")
 	fs.StringVar(&o.completedAfter, "completed-after", "", "only tasks completed at or after: YYYY-MM-DD (local), an RFC 3339 time or Unix ms")
 	fs.StringVar(&o.completedBefore, "completed-before", "", "only tasks completed before: YYYY-MM-DD (local), an RFC 3339 time or Unix ms")
 }
@@ -167,6 +170,12 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 	if err != nil {
 		return err
 	}
+	wantSector := ""
+	if strings.TrimSpace(o.sector) != "" {
+		if wantSector, err = sectorWord(o.sector, a.Now(), false, true); err != nil {
+			return err
+		}
+	}
 	c, t, err := a.connect(g)
 	if err != nil {
 		return err
@@ -216,6 +225,9 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 		}
 		tasks = filterPlanning(tasks, all, planning, available)
 	}
+	if wantSector != "" {
+		tasks = filterSector(tasks, wantSector, today)
+	}
 	// One workspace's tasks (workspaces); a named project is shown wherever it is.
 	if view != "project" {
 		tasks = scope.filterTasks(projects, all, tasks)
@@ -223,7 +235,7 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 	// Today's closed list (today-closed-list D7): the slots first, then the waiting tasks.
 	var split *todaySplit
 	if view == "today" && planning == "" && !o.ranged() {
-		if split, err = a.todayClosedList(ctx, c, all, projects, tasks, today); err != nil {
+		if split, err = a.todayClosedList(ctx, c, all, projects, tasks, today, a.Now().Format("15:04")); err != nil {
 			return err
 		}
 		tasks = split.ordered(tasks)
@@ -399,11 +411,18 @@ type taskFlags struct {
 	lang    string
 	// done is --done (today-closed-list D6): log a win, created already completed.
 	done bool
+	// fresh is --new (reusable-lists D6): never reopen an item of a reusable list.
+	fresh bool
+	// edit only (chore-rotation D6): the people who take turns, or none.
+	rotate   string
+	noRotate bool
 }
 
 func (f *taskFlags) bind(fs *flag.FlagSet, edit bool) {
 	if edit {
 		fs.StringVar(&f.title, "title", "", "new title")
+		fs.StringVar(&f.rotate, "rotate", "", "people who take turns on a recurring task in a shared project, in order: names or emails, comma-separated")
+		fs.BoolVar(&f.noRotate, "no-rotate", false, "stop taking turns")
 	}
 	fs.StringVar(&f.project, "project", "", "project name or id (edit: `none` moves to Inbox)")
 	fs.StringVar(&f.dueWord, "due", "", "YYYY-MM-DD, today, tomorrow or a weekday (edit: `none` clears)")
@@ -420,6 +439,7 @@ func (f *taskFlags) bind(fs *flag.FlagSet, edit bool) {
 		fs.BoolVar(&f.natural, "natural", false, "parse the title like the app's quick add (dates, #project, @label, p1, every …, remind me …)")
 		fs.StringVar(&f.lang, "lang", "", "languages for --natural and --remind, e.g. de,en (default: the locale, English always)")
 		fs.BoolVar(&f.done, "done", false, "log a win: create the task already completed now (refuses --repeat and --remind)")
+		fs.BoolVar(&f.fresh, "new", false, "in a reusable list, create a new task even when an item with the same title is there")
 	}
 }
 
@@ -614,6 +634,9 @@ func cmdAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 		phrases = nil
 		body["completed_at"] = a.Now().UnixMilli()
 	}
+	if err := markReuse(ctx, c, body, f.fresh || f.done); err != nil {
+		return err
+	}
 	raw, _, err := c.do(ctx, "POST", "/tasks"+defaultReminderQuery(body, f.noDefault || len(phrases) > 0 || f.done), body, headers)
 	if err != nil {
 		return err
@@ -631,6 +654,7 @@ func cmdAdd(a *App, ctx context.Context, g *globalFlags, args []string) error {
 		return a.printJSON(json.RawMessage(raw))
 	}
 	fmt.Fprintln(a.Stdout, created.ID)
+	a.reportReused(raw)
 	if waiting > 0 {
 		fmt.Fprintf(a.Stderr, "%d reminder(s) will fire once the task has a due date\n", waiting)
 	}
@@ -743,8 +767,11 @@ func cmdEdit(a *App, ctx context.Context, g *globalFlags, args []string) error {
 			return err
 		}
 	}
-	if !set["title"] && !set["priority"] && !set["label"] && !set["note"] && !set["due"] && !set["time"] && !set["project"] && !set["repeat"] && !set["origin-url"] && !f.plan.any(set) {
-		return usageErr("nothing to change; pass at least one of --title, --project, --due, --time, --priority, --label, --note, --repeat, --origin-url, --deadline, --start, --evening, --span, --no-span, --part, --energy, --blocked-by, --location")
+	if set["rotate"] && set["no-rotate"] {
+		return usageErr("pass --rotate or --no-rotate, not both")
+	}
+	if !set["title"] && !set["priority"] && !set["label"] && !set["note"] && !set["due"] && !set["time"] && !set["project"] && !set["repeat"] && !set["origin-url"] && !set["rotate"] && !set["no-rotate"] && !f.plan.any(set) {
+		return usageErr("nothing to change; pass at least one of --title, --project, --due, --time, --priority, --label, --note, --repeat, --origin-url, --deadline, --start, --evening, --span, --no-span, --part, --energy, --sector, --blocked-by, --location, --rotate, --no-rotate")
 	}
 	c, _, err := a.connect(g)
 	if err != nil {
@@ -779,6 +806,9 @@ func cmdEdit(a *App, ctx context.Context, g *globalFlags, args []string) error {
 			return err
 		}
 		patch["labels"] = ids
+	}
+	if err := a.fillRotation(ctx, c, t, set, f.rotate, patch); err != nil {
+		return err
 	}
 	if err := f.plan.fill(ctx, a, c, set, patch, func() ([]task, error) { return all, nil }); err != nil {
 		return err
@@ -831,6 +861,9 @@ func cmdEdit(a *App, ctx context.Context, g *globalFlags, args []string) error {
 		verb = "parked"
 	}
 	fmt.Fprintf(a.Stdout, "%s  %s  %s\n", verb, shortID(updated.ID), updated.Title)
+	if set["rotate"] {
+		a.printTurns(ctx, c, a.Stdout, raw)
+	}
 	return nil
 }
 
@@ -1015,7 +1048,7 @@ func cmdRm(a *App, ctx context.Context, g *globalFlags, args []string) error {
 
 // inboxTask is the part of a task the Inbox rule reads (internal/inbox).
 func inboxTask(t task) inbox.Task {
-	it := inbox.Task{HasDue: t.Due != nil, Completed: t.CompletedAt != nil, Deleted: t.DeletedAt != nil}
+	it := inbox.Task{HasDue: t.Due != nil, Completed: t.CompletedAt != nil, Deleted: t.DeletedAt != nil, Sector: t.Sector}
 	if t.ProjectID != nil {
 		it.ProjectID = *t.ProjectID
 	}

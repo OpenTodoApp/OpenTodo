@@ -91,6 +91,9 @@ func TestICalRoundTripFixtures(t *testing.T) {
 				}
 			}
 			first.Alarms, second.Alarms, second.ServedAlarms = nil, nil, nil
+			// A zoned due is served in UTC; the server reads it back in the
+			// task's zone (issue #1028).
+			second.KeepZone(first.Due)
 			// A timed DUE comes back with this server's DTSTART next to it (issue
 			// #248): the shape is how the dates were written, not what they mean.
 			if first.Shape == ShapeDueOnly && second.Shape == ShapeStartDueEqual && first.Due != nil && first.Due.Time != nil {
@@ -210,10 +213,16 @@ func TestDueMapping(t *testing.T) {
 	if out := enc(Due{Date: "2026-10-11"}); !strings.Contains(out, "\r\nDUE;VALUE=DATE:20261011\r\n") {
 		t.Fatalf("date: %s", out)
 	}
+	// A zoned due is served as its instant in UTC (issue #1028), a repeating
+	// one with its TZID and the zone's definition.
 	out := enc(Due{Date: "2026-10-11", Time: strp("09:30"), TZ: strp("Europe/Berlin")})
+	if !strings.Contains(out, "\r\nDUE:20261011T073000Z\r\n") || strings.Contains(out, "VTIMEZONE") || strings.Contains(out, "TZID") {
+		t.Fatalf("zoned: %s", out)
+	}
+	out = string(Encode(Task{UID: "u", Due: &Due{Date: "2026-10-11", Time: strp("09:30"), TZ: strp("Europe/Berlin")}, Recurrence: "every week", Priority: 4}))
 	if !strings.Contains(out, "DUE;TZID=Europe/Berlin:20261011T093000") || !strings.Contains(out, "BEGIN:VTIMEZONE\r\nTZID:Europe/Berlin") ||
 		!strings.Contains(out, "TZOFFSETTO:+0200") || !strings.Contains(out, "TZOFFSETTO:+0100") {
-		t.Fatalf("zoned: %s", out)
+		t.Fatalf("zoned series: %s", out)
 	}
 	if _, err := Parse([]byte(out)); err != nil {
 		t.Fatal(err)

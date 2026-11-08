@@ -21,7 +21,7 @@ func defaultColor(name string) string {
 
 func cmdProject(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	if len(args) == 0 {
-		return usageErr("usage: ot project list|add|rename|archive|rm ...")
+		return usageErr("usage: ot project list|add|rename|edit|move|archive|rm ...")
 	}
 	sub, rest := args[0], args[1:]
 	switch sub {
@@ -33,12 +33,14 @@ func cmdProject(a *App, ctx context.Context, g *globalFlags, args []string) erro
 		return projectRename(a, ctx, g, rest)
 	case "move":
 		return projectMove(a, ctx, g, rest)
+	case "edit":
+		return projectEdit(a, ctx, g, rest)
 	case "archive":
 		return projectArchive(a, ctx, g, rest)
 	case "rm", "delete":
 		return projectRm(a, ctx, g, rest)
 	}
-	return usageErr("unknown project command %q (expected list, add, rename, move, archive or rm)", sub)
+	return usageErr("unknown project command %q (expected list, add, rename, edit, move, archive or rm)", sub)
 }
 
 func projectList(a *App, ctx context.Context, g *globalFlags, args []string) error {

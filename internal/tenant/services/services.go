@@ -12,6 +12,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/OpenTodoApp/opentodo/internal/assistant"
 	"github.com/OpenTodoApp/opentodo/internal/auth"
 	"github.com/OpenTodoApp/opentodo/internal/backup"
 	"github.com/OpenTodoApp/opentodo/internal/blobs"
@@ -29,9 +30,11 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/mail"
 	"github.com/OpenTodoApp/opentodo/internal/maps"
 	"github.com/OpenTodoApp/opentodo/internal/mcp"
+	"github.com/OpenTodoApp/opentodo/internal/mcpoauth"
 	"github.com/OpenTodoApp/opentodo/internal/notify"
 	"github.com/OpenTodoApp/opentodo/internal/oidc"
 	"github.com/OpenTodoApp/opentodo/internal/push"
+	"github.com/OpenTodoApp/opentodo/internal/ratelimit"
 	"github.com/OpenTodoApp/opentodo/internal/rules"
 	"github.com/OpenTodoApp/opentodo/internal/settings"
 	"github.com/OpenTodoApp/opentodo/internal/stt"
@@ -72,6 +75,10 @@ type Hosted struct {
 	MaxMembers int
 	// Workspaces lowers the workspace limits for this tenant (workspaces "Limits").
 	Workspaces opsync.WorkspaceLimits
+	// AssistantSlots is the host's one cap on running assistant turns, shared
+	// by all its tenants (host-assistant-concurrency); nil gives the tenant
+	// its own.
+	AssistantSlots *assistant.Slots
 	// Changed is called after every committed write and every wake-up of one
 	// of the tenant's jobs, so the host can refresh the tenant's entries in the
 	// "next due" index (D3).
@@ -101,7 +108,8 @@ type Set struct {
 	Inbox    *notify.InApp
 	Backups  *backup.Service
 	MCP      *mcp.Settings
-	Push     *push.Service // nil when web push is off
+	MCPOAuth *mcpoauth.Store // OAuth in front of /mcp (mcp-oauth)
+	Push     *push.Service   // nil when web push is off
 	Email    *email.Service
 	Calendar *calfeed.Worker
 	Issues   *issues.Worker    // issue connections (issue-import)
@@ -118,6 +126,8 @@ type Set struct {
 	STT      *stt.Service
 	// Compaction removes superseded note history (op-log-compaction).
 	Compaction *compaction.Service
+	// Limits keeps the rate limit and agent limit windows (persistent-limits).
+	Limits *ratelimit.Store
 
 	// The owner switches (settings.Switch).
 	RuleSwitch    *settings.Switch
@@ -151,11 +161,20 @@ func Build(ctx context.Context, cfg config.Config, db, reader *sql.DB, o Options
 	s.Auth = auth.NewService(db, cfg.SessionTTL, cfg.AllowSignup)
 	s.Auth.SetSetupToken(cfg.SetupToken)
 	s.Auth.SetSetupCodeRequired(cfg.SetupCodeRequired)
+	// Without a base URL nothing pins the host a page was opened under, so a
+	// first visit under a domain name needs the setup code
+	// (host-check-without-base-url).
+	s.Auth.SetSetupHostCheck(cfg.Origin() == "")
 	s.Sync = opsync.NewService(db)
 	if reader != nil {
 		s.Sync.SetReader(reader)
 	}
 	var err error
+	// Rate limits and agent limits outlive a restart (persistent-limits): the
+	// limiters count in memory and the limits job writes what changed.
+	if s.Limits, err = ratelimit.Open(ctx, db, o.Now, func() { s.Signal.Wake(jobs.Limits) }); err != nil {
+		return nil, err
+	}
 	if s.Hooks, err = wireWebhooks(ctx, cfg, o, db, s.Auth, s.Sync, log); err != nil {
 		return nil, err
 	}
@@ -175,6 +194,7 @@ func Build(ctx context.Context, cfg config.Config, db, reader *sql.DB, o Options
 	if s.MCP, err = openMCPSettings(ctx, cfg, o.Hosted, db, log); err != nil {
 		return nil, err
 	}
+	s.MCPOAuth = mcpoauth.New(db)
 	s.Push = openPush(cfg, o, db, s.Sync, log)
 	s.Channels = openChannels(ctx, cfg, o, db, s.Sync, s.Push, s.Hooks, log)
 	if s.Channels != nil {
@@ -195,6 +215,9 @@ func Build(ctx context.Context, cfg config.Config, db, reader *sql.DB, o Options
 		s.Issues.SetClock(o.Now)
 	}
 	s.Mail, s.Digest = openMail(cfg, o, db, s.Auth, s.Sync, log)
+	if s.Mail != nil {
+		s.Mail.KeepLimits(s.Limits)
+	}
 	if s.Demo, err = startDemo(ctx, cfg, s.Auth, s.Sync, log); err != nil {
 		return nil, err
 	}
@@ -205,7 +228,7 @@ func Build(ctx context.Context, cfg config.Config, db, reader *sql.DB, o Options
 	s.openAttachments(ctx)
 	s.openMaps()
 	s.STT = stt.New(s.Settings, cfg.DataDir, cfg.STT, s.Hooks.AllowPrivate)
-	s.Compaction = compaction.New(compaction.Options{DB: db, Sync: s.Sync, Settings: s.Settings, DataDir: cfg.DataDir,
+	s.Compaction = compaction.New(compaction.Options{DB: db, Reader: reader, Sync: s.Sync, Settings: s.Settings, DataDir: cfg.DataDir,
 		Signal: s.Signal, Now: o.Now, Log: log})
 	return s, nil
 }

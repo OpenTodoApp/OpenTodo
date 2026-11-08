@@ -1,0 +1,1 @@
+No changes to the app itself. OpenTodo 1.1.1 is a server fix release for Apple Reminders and other CalDAV apps: tasks with a time zone, often set by AI assistants, now show and remind at the right time, and the Inbox list is named in your language. Update your server to get them.

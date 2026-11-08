@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import filtersDoc from '../../../../docs/filters.md?raw'
+import { draftOf, leafOf } from '../../app/filter/ConditionEditor'
 import { builderQuery, formatQuery, fromBuilder, removeItem, stripPositions, toBuilder, updateGroup, type BGroup, type Leaf } from './builder'
 import { parse, type Cmp, type DateExpr, type Node } from './parse'
 
@@ -24,9 +25,11 @@ const GO_EDGES = [
   'energy', 'no energy', 'energy: deep', 'energy:LOW', 'energy: "medium"', 'energy: low & unblocked & today', 'energy: deep & #Work',
   'notes', 'no notes', 'notes: permit', 'notes:permit', 'notes: "permit office"', 'NOTES: x', 'notes & #Renovation', 'no notes & p1',
   '!notes', '"Notes" = 3', 'no "Notes"', 'notes: "a & b"',
+  'assigned', 'unassigned', '!assigned', 'assigned: me', 'assigned:me', 'assigned: "Sam Lee"', 'ASSIGNED: sam',
+  'today & (assigned: me | unassigned)', '"assigned" = x',
   'paid = false', 'cost >= -2.5', 'status = Ordered', 'due_by <= 3 days', '"due" = 2026-10-16', 'no idea', 'kitchen = this week',
   // Nesting the parser keeps (it flattens only a & b & c, not (a & b) & c).
-  '(a = 1 & p1) & p2', '(p1 | p2) | p3', '!(p1 & p2)', '!(p1 | p2) & !p3', 'tracked', 'tracked > 1h', 'tracked <= 90', 'tracked >= 1h30',
+  '(a = 1 & p1) & p2', '(p1 | p2) | p3', '!(p1 & p2)', '!(p1 | p2) & !p3', 'tracked', 'tracked > 1h', 'tracked <= 90', 'tracked >= 1h30', 'tracked occurrence', 'tracked occurrence > 1h', '!tracked occurrence & p1',
   '@"x|y" & #"a(b)" & search: "a & b"', 'search: \\', '@a\\b',
 ]
 
@@ -181,5 +184,14 @@ describe('builder model', () => {
     expect(h).toBeNull()
     const k: BGroup = { type: 'group', id: 'r', not: false, op: 'and', items: [{ type: 'group', id: 'g', not: true, op: 'or', items: [{ type: 'condition', id: 'c', not: true, leaf: { kind: 'priority', value: 1 } }] }] }
     expect(fromBuilder(k)).toEqual({ kind: 'priority', value: 1 })
+  })
+
+  it('an Assignee condition writes assigned: me, unassigned or assigned: "Name"', () => {
+    const text = (assignee: string) => formatQuery(leafOf({ ...draftOf(null), kind: 'assignee', assignee })!)
+    expect(text('me')).toBe('assigned: me')
+    expect(text('unassigned')).toBe('unassigned')
+    expect(text('Sam Lee')).toBe('assigned: "Sam Lee"')
+    expect(draftOf({ kind: 'assigned', name: 'me' }).kind).toBe('assignee')
+    expect(draftOf({ kind: 'keyword', keyword: 'unassigned' }).assignee).toBe('unassigned')
   })
 })

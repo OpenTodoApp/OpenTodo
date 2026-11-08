@@ -2,6 +2,7 @@
 // tasks. Pure; names are resolved against the labels and projects passed in on
 // every compile, so renames are picked up and deleted names degrade to a warning
 // plus an empty match instead of an error (design D3).
+import { nameKey } from '../fieldNames'
 import { blockedMap } from '../dependencies'
 import { currentDateTime, currentDayStart, localDueOf } from '../dates'
 import { descendants } from '../tree'
@@ -13,6 +14,7 @@ import { fieldValueText, FilterSyntaxError, parse, resolveRange, shiftISO, type 
 import { t } from '../i18n'
 import { dayPartOf } from '../dayParts'
 import { energyOf } from '../energy'
+import { isCarried, isSector, resolvePhrase } from '../sectors'
 
 export interface FilterContext {
   /** The viewer's local calendar date, YYYY-MM-DD. */
@@ -38,6 +40,8 @@ export interface FilterContext {
    * (time-tracking D4), for `tracked` and `tracked cmp duration`; none tracked without it.
    */
   tracked?: ReadonlyMap<string, number>
+  /** A repeating task's current occurrence only (`tracked occurrence`, tracked-time-api-compatible); `tracked` without it. */
+  trackedOccurrence?: ReadonlyMap<string, number>
   /**
    * The cached workspaces and the workspace a task belongs to (OpenSpec change
    * group-mentions, D6), for `workspace: name`; without them the term matches nothing.
@@ -49,6 +53,17 @@ export interface FilterContext {
    * is evaluated over these instead of the current workspace's (filterScope).
    */
   everyWorkspace?: { tasks: readonly Task[]; projects: readonly Project[]; labels: readonly Label[] }
+  /** The viewer, for `assigned: me`. */
+  me?: string | null
+  /** People `assigned: name` can match, from the local membership cache. */
+  members?: readonly { userId: string; name: string; email: string }[]
+}
+
+/** The people a membership cache knows, one row per account. */
+export function membersFrom(memberships: readonly { members: readonly { userId: string; name: string; email: string }[] }[]): { userId: string; name: string; email: string }[] {
+  const byId = new Map<string, { userId: string; name: string; email: string }>()
+  for (const m of memberships) for (const member of m.members ?? []) if (!byId.has(member.userId)) byId.set(member.userId, { userId: member.userId, name: member.name, email: member.email })
+  return [...byId.values()]
 }
 
 export interface CompiledFilter {
@@ -64,10 +79,6 @@ export type FilterResult =
 type Pred = (task: Task) => boolean
 
 const NEVER: Pred = () => false
-
-function nameKey(name: string): string {
-  return name.trim().toLocaleLowerCase()
-}
 
 /**
  * True when the query mentions `completed` or `open`, or compares the completion
@@ -227,6 +238,23 @@ function fieldPred(def: FieldDef, n: Extract<Node, { kind: 'field' }>, today: st
 }
 
 /** Compile an AST into a predicate. Deleted tasks never match; open-only unless the query mentions state. */
+/** `assigned: me` is the viewer; any other name matches every member with that name or email. */
+function assignedTo(name: string, ctx: FilterContext, warn: (message: string) => void): Pred {
+  if (name.toLocaleLowerCase() === 'me') {
+    const me = ctx.me
+    if (!me) return NEVER
+    return (task) => task.assignee_id === me
+  }
+  const key = nameKey(name)
+  const ids = (ctx.members ?? []).filter((m) => nameKey(m.name) === key || nameKey(m.email) === key).map((m) => m.userId)
+  if (ids.length === 0) {
+    warn(t('No member named "{name}"', { name }))
+    return NEVER
+  }
+  const set = new Set(ids)
+  return (task) => task.assignee_id !== null && set.has(task.assignee_id)
+}
+
 export function compile(ast: Node, given: FilterContext): CompiledFilter {
   const ctx = filterScope(ast, given)
   const warnings: string[] = []
@@ -256,6 +284,8 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
   const today = ctx.today
   const weekStart = ctx.weekStart ?? currentDateTime().weekStart
   const tomorrow = shiftISO(today, 1)
+  // `tracked` reads every entry, as in 1.0; `tracked occurrence` a repeating task's current occurrence.
+  const trackedOf = (occurrence: boolean) => (occurrence ? ctx.trackedOccurrence ?? ctx.tracked : ctx.tracked)
   // Open blockers per task, built once when the query asks (task-dependencies D6).
   let blocked: Map<string, number> | null = null
   const blockedSet = () => {
@@ -367,8 +397,15 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
         const needle = n.text.toLocaleLowerCase()
         return (task) => (task.description ?? '').toLocaleLowerCase().includes(needle)
       }
+      case 'assigned':
+        return assignedTo(n.name, ctx, warn)
       case 'origin':
         return (task) => originMatches(originOf(task), n.value)
+      // A relative word is the viewer's period of that name, on this evaluation's day (time-sectors).
+      case 'sector': {
+        const want = resolvePhrase(n.value, today, weekStart) ?? n.value
+        return (task) => task.sector === want
+      }
       // A value this client does not know reads as none (task-energy D5).
       case 'energy': {
         const want = n.value
@@ -386,8 +423,9 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
       case 'tracked': {
         const minutes = n.minutes
         const op = n.op
+        const of = trackedOf(!!n.occurrence)
         return (task) => {
-          const m = ctx.tracked?.get(task.id) ?? 0
+          const m = of?.get(task.id) ?? 0
           return op === '<' ? m < minutes : op === '<=' ? m <= minutes : op === '=' ? m === minutes : op === '>=' ? m >= minutes : m > minutes
         }
       }
@@ -417,11 +455,19 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
           case 'no origin': return (task) => originOf(task) === null
           case 'energy': return (task) => energyOf(task) !== null
           case 'no energy': return (task) => energyOf(task) === null
+          case 'sector': return (task) => isSector(task.sector)
+          case 'no sector': return (task) => !isSector(task.sector)
+          case 'carried': return (task) => isCarried(task.sector ?? '', today, weekStart)
           // A note of only whitespace is no note (notes-overview D5).
+          case 'assigned': return (task) => !!task.assignee_id
+          case 'unassigned': return (task) => !task.assignee_id
           case 'notes': return (task) => (task.description ?? '').trim() !== ''
           case 'no notes': return (task) => (task.description ?? '').trim() === ''
           // At least one minute of live tracked time (time-tracking D9).
-          case 'tracked': return (task) => (ctx.tracked?.get(task.id) ?? 0) >= 1
+          case 'tracked': case 'tracked occurrence': {
+            const of = trackedOf(n.keyword === 'tracked occurrence')
+            return (task) => (of?.get(task.id) ?? 0) >= 1
+          }
           case 'blocked': { const b = blockedSet(); return (task) => b.has(task.id) }
           case 'unblocked': { const b = blockedSet(); return (task) => !b.has(task.id) }
           // Available now (project-flow-modes): not blocked, not waiting in sequence, neither Someday nor deferred.

@@ -4,10 +4,11 @@
 // like every other object menu. Moves and assignments go through the review (D6).
 import { keysOf } from '../../lib/shortcuts'
 import { Kbd } from '../shortcuts/Kbd'
-import { useMemo, useRef, useState, type RefObject } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import type { Step } from '../../lib/move'
 import { useBelowStickyHeader } from './useBelowStickyHeader'
 import { allCompleted, applyBulk, commonSharedProject, readTicked, reviewAssign, reviewMove, type BulkAction, type ReviewPlan, useTickedTasks } from '../../lib/bulk'
-import { useAllLabels, useLiveSections, useProjects, useMembershipMap, useReviewRow, useUserPrefsRow } from '../../lib/localData'
+import { useAllLabels, useLabelsLoaded, useLiveSections, useProjects, useMembershipMapOrLoading, useReviewRow, useUserPrefsRow } from '../../lib/localData'
 import { DAY_PARTS, dayPartName, dayPartOf, dayPartsOn, type DayPart } from '../../lib/dayParts'
 import { dayPartUndoable, energyUndoable } from '../../lib/undoActions'
 import { ENERGY_LEVELS, energyLevelsOn, energyName, energyOf, type Energy } from '../../lib/energy'
@@ -19,10 +20,12 @@ import type { Label, Membership, Priority, Project, Section, Task } from '../../
 import { Icon, Dialog, useFinePointer } from '../../ui'
 import { Tooltip } from '../../ui'
 import { DateField } from '../datetime/DateField'
-import { ActionMenu, type ActionGroup, type ActionItem } from '../menus/ActionMenu'
+import { ActionMenu, type ActionGroup, type ActionItem, type ConfirmSpec } from '../menus/ActionMenu'
 import { openRowSchedule } from '../task-list/RowSwipe'
 import { BulkReview } from './BulkReview'
 import { showBulkToast, showUndoToast } from './toastStore'
+import { navigate } from '../router'
+import { createStore } from '../../lib/store'
 import { startFocusOn } from '../focus/startFocus'
 import { t } from '../../lib/i18n'
 import { withListTransition } from '../motion'
@@ -30,14 +33,61 @@ import { slotAction, slotLabel, useSlotState, type SlotState } from '../task-lis
 import { focusMenuLabel, focusMenuState, runFocusPress, type FocusMenuState } from '../focus/focusRequest'
 import { useToday } from '../useViews'
 
+/** Confirm the trash of more than this many ticked tasks (the keyboard's big selection; a menu click stays immediate). */
+export const BULK_TRASH_CONFIRM_ABOVE = 20
+
+/**
+ * The keyboard's Delete on the ticked set: a big one asks first (the same way a
+ * project delete does), a small one runs at once.
+ */
+export async function trashTicked(ids: readonly string[]): Promise<void> {
+  if (ids.length > BULK_TRASH_CONFIRM_ABOVE) {
+    askBulkConfirm({
+      title: t('Move {tasks} to the Trash?', { tasks: tasksWord(ids.length) }),
+      body: t('They go to the Trash with their subtasks. You can restore them from the Trash.'),
+      confirmLabel: t('Move to Trash'),
+      onConfirm: () => runBulk(ids, { kind: 'trash' }),
+    })
+    return
+  }
+  await runBulk(ids, { kind: 'trash' })
+}
+
+// The confirmation asked from code with no menu of its own (below).
+const bulkConfirm = createStore<ConfirmSpec | null>('bulkConfirm', null)
+
 /** Apply a bulk action and offer its undo. */
 export async function runBulk(ids: readonly string[], action: BulkAction): Promise<void> {
   if (ids.length === 0) return
   // The rows that stay slide into place; more than the cap update at once (motion-v2 D4).
   const r = await withListTransition(ids.length, () => applyBulk(ids, action))
-  showBulkToast(r.label, r.undoId)
+  // Trash keeps its offer longer and offers the way back: a new offer replaces the
+  // previous one, so the shorter window must be enough to undo a big delete.
+  if (action.kind === 'trash') showBulkToast(r.label, r.undoId, { ttl: TRASH_TOAST_MS, action: { label: t('Show Trash'), run: () => navigate({ view: 'trash' }) } })
+  else showBulkToast(r.label, r.undoId)
 }
 
+/** How long the bulk Trash offer stays: three times one task's own action window, long enough to undo a big delete. */
+export const TRASH_TOAST_MS = 15_000
+
+/**
+ * Confirm a large trash from code with no menu of its own (the keyboard's Delete on
+ * a big selection): the host in the Shell renders the spec when set, like a menu's
+ * confirm step does. The count is checked by the caller, so small deletes stay
+ * immediate.
+ */
+export function askBulkConfirm(spec: ConfirmSpec): void {
+  bulkConfirm.set(spec)
+}
+
+/** The confirmation now asked, if any. */
+export const bulkConfirmSpec = bulkConfirm.get
+export const useBulkConfirm = bulkConfirm.use
+export function clearBulkConfirm(): void {
+  bulkConfirm.set(null)
+}
+
+const NO_MEMBER_MAP = new Map<string, Membership>()
 const tasksWord = (n: number) => t('{n, plural, one {# task} other {# tasks}}', { n })
 const itemKey = (i: PickerItem) => i.key
 const itemLabel = (i: PickerItem) => i.label
@@ -49,7 +99,11 @@ interface Data { tasks: Task[]; labels: Label[]; projects: Project[]; sections: 
   /** Today with a limit (today-closed-list D3): the one task's slot command. */
   slot?: SlotState
   /** Today's focus (phone-touch-focus D3): the one task's focus command. */
-  focus?: FocusMenuState }
+  focus?: FocusMenuState
+  /** Every read the items depend on has landed: until then the menu stays closed, so it opens complete (issue 840). */
+  ready?: boolean
+  /** One task's place in a manually ordered list (accessibility-aa D3): the Reorder items. */
+  edges?: { first: boolean; last: boolean } | null }
 
 /**
  * Start or Stop tracking for one task (time-tracking D5): Stop while its entry runs,
@@ -125,8 +179,54 @@ export function energyItem(ids: readonly string[], d: Pick<Data, 'tasks' | 'memb
   })) }]
 }
 
+/**
+ * How the list the menu opened on reorders a task (accessibility-aa D3): set by a manually
+ * ordered list (a project, the Inbox, a label page's own order), absent everywhere else.
+ */
+export interface ListReorder {
+  /** The same write as the keyboard move (Alt+↑ and Alt+↓) and the drag: works offline. */
+  move: (id: string, step: Step) => void
+  /** First or last in its list (the items at that edge are disabled); null when the task cannot move. */
+  edges: (id: string) => Promise<{ first: boolean; last: boolean } | null>
+  /** A tree list (a project, the Inbox): open an inline add line after the task or under it (add-below). */
+  add?: { below: (id: string) => void; under: (id: string) => void }
+}
+export const ListReorderContext = createContext<ListReorder | null>(null)
+
+/**
+ * "Reorder" for one task in a manually ordered list (accessibility-aa D3, WCAG 2.2 2.5.7):
+ * Move up, Move down, Move to top and Move to bottom, the single-pointer alternative to
+ * dragging a row; nothing where the list has no manual order, the task cannot move or is alone.
+ */
+export function reorderItem(id: string | undefined, r: ListReorder | null | undefined, edges: { first: boolean; last: boolean } | null | undefined): ActionItem[] {
+  // Alone in its list, there is nowhere to move it.
+  if (!id || !r || !edges || (edges.first && edges.last)) return []
+  const first = { disabled: edges.first, reason: t('Already first') }
+  const last = { disabled: edges.last, reason: t('Already last') }
+  return [{ kind: 'submenu', id: 'reorder', label: t('Reorder'), icon: 'chevrons-up-down', items: [
+    { kind: 'action', id: 'move-up', label: t('Move up'), icon: 'arrow-up', shortcut: keysOf('list.move-up'), ...first, onSelect: () => r.move(id, -1) },
+    { kind: 'action', id: 'move-down', label: t('Move down'), icon: 'arrow-down', shortcut: keysOf('list.move-down'), ...last, onSelect: () => r.move(id, 1) },
+    { kind: 'action', id: 'move-top', label: t('Move to top'), icon: 'arrow-up', shortcut: keysOf('list.move-top'), ...first, onSelect: () => r.move(id, 'top') },
+    { kind: 'action', id: 'move-bottom', label: t('Move to bottom'), icon: 'arrow-down', shortcut: keysOf('list.move-bottom'), ...last, onSelect: () => r.move(id, 'bottom') },
+  ] }]
+}
+
+/**
+ * "Add task below" and "Add subtask" for one task of a tree list (OpenSpec change add-below,
+ * GitHub issue 1036): an inline line where the new tasks will appear; nothing for a task
+ * that cannot move (a viewer's, a completed one) or outside a tree list.
+ */
+export function addItems(id: string | undefined, r: ListReorder | null | undefined, edges: { first: boolean; last: boolean } | null | undefined): ActionItem[] {
+  const add = r?.add
+  if (!id || !add || !edges) return []
+  return [
+    { kind: 'action', id: 'add-below', label: t('Add task below'), icon: 'plus', onSelect: () => add.below(id) },
+    { kind: 'action', id: 'add-subtask', label: t('Add subtask'), icon: 'corner-down-right', shortcut: keysOf('list.add-subtask'), onSelect: () => add.under(id) },
+  ]
+}
+
 /** The menu's groups for the given tasks (exported for the palette and tests). */
-export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (title: string, plan: Promise<ReviewPlan>) => void; pickDate: () => void; schedule?: () => void }, besideRow = false): ActionGroup[] {
+export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (title: string, plan: Promise<ReviewPlan>) => void; pickDate: () => void; schedule?: () => void; reorder?: ListReorder | null }, besideRow = false): ActionGroup[] {
   const n = d.tasks.length
   const reopen = allCompleted(d.tasks)
   const live = d.labels.filter((l) => !l.deleted_at)
@@ -169,6 +269,7 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
       } },
     ] },
     { items: [
+      ...(n === 1 ? [...addItems(ids[0], a.reorder, d.edges), ...reorderItem(ids[0], a.reorder, d.edges)] : []),
       { kind: 'picker', id: 'move', label: t('Move to project'), icon: 'folder-input', picker: {
         title: t('Move to project'), placeholder: t('Find a project…'), source: projectSource(d.projects, { memberships: d.memberships }),
         getKey: itemKey, getLabel: itemLabel, getPath: itemPath, getKeywords: itemKeywords, rankContext: 'project',
@@ -196,6 +297,18 @@ async function labelToggle(ids: readonly string[], labelId: string) {
   await runBulk(ids, { kind: 'label', labelId, add: !all })
 }
 
+/** A task's edges in its list while the menu is open, for the Reorder items; null outside a manual order. */
+function useReorderEdges(id: string, reorder: ListReorder | null) {
+  const [edges, setEdges] = useState<{ id: string; at: { first: boolean; last: boolean } | null } | null>(null)
+  useEffect(() => {
+    if (!id || !reorder) return
+    let live = true
+    void reorder.edges(id).then((at) => { if (live) setEdges({ id, at }) })
+    return () => { live = false }
+  }, [id, reorder])
+  return edges?.id === id && reorder ? edges.at : null
+}
+
 /** Live data the menu needs, read while it is mounted. */
 function useBulkData(ids: readonly string[]): Data {
   const key = ids.join(',')
@@ -204,9 +317,11 @@ function useBulkData(ids: readonly string[]): Data {
   const read = useTickedTasks(ids, key)
   const tasks = useMemo(() => (read?.key === key ? read.tasks : []), [read, key])
   const labels = useAllLabels()
+  const labelsLoaded = useLabelsLoaded()
   const projects = useProjects()
   const sections = useLiveSections()
-  const memberships = useMembershipMap()
+  const memberMap = useMembershipMapOrLoading()
+  const memberships = memberMap ?? NO_MEMBER_MAP
   const runningTask = useRunningEntry()?.task_id ?? null
   const prefs = useUserPrefsRow()
   const dayParts = dayPartsOn(prefs)
@@ -215,14 +330,17 @@ function useBulkData(ids: readonly string[]): Data {
   const review = useReviewRow()
   const today = useToday()
   const focus = tasks.length === 1 ? focusMenuState(tasks[0], review, prefs, today) : null
-  return { tasks, labels, projects, sections, memberships, runningTask, dayParts, energy, slot, focus }
+  // The one task's items (focus, tracking, slot, Energy, Day part) and the Labels item's
+  // reason come from these reads: a menu shown before them grows under the pointer.
+  const ready = read?.key === key && labelsLoaded && memberMap !== undefined && prefs !== undefined && review !== undefined
+  return { tasks, labels, projects, sections, memberships, runningTask, dayParts, energy, slot, focus, ready }
 }
 
 /**
  * The Actions menu for `ids`. `startPicker` opens it straight into a picker
  * ("labels" for `L`, "assign" for Shift+A on a selection).
  */
-export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClassName, triggerProps, startPicker = null, onApplied, anchor }: {
+export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClassName, triggerProps, startPicker = null, anchor }: {
   ids: readonly string[]
   open?: boolean
   onOpenChange?: (open: boolean) => void
@@ -231,32 +349,49 @@ export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClass
   /** Extra attributes on the trigger button (the pointer position of a right-click menu). */
   triggerProps?: React.ComponentProps<typeof ActionMenu>['triggerProps']
   startPicker?: string | null
-  onApplied?: () => void
   /** Opened from a row's More button: placed there, without the groups the row's own buttons offer. */
   anchor?: RefObject<HTMLElement | null>
 }) {
-  const data = useBulkData(ids)
-  const [review, setReview] = useState<{ title: string; plan: ReviewPlan } | null>(null)
-  const [dating, setDating] = useState(false)
+  const reorder = useContext(ListReorderContext)
+  const edges = useReorderEdges(ids.length === 1 ? ids[0] : '', reorder)
+  const bulk = useBulkData(ids)
+  const data = useMemo(() => ({ ...bulk, edges }), [bulk, edges])
+  // Held back only until the first full read: a later selection's read must not close an open menu.
+  const [settled, setSettled] = useState(false)
+  if (data.ready && !settled) setSettled(true)
   const besideRow = !!anchor?.current
   const touch = !useFinePointer()
-  const groups = useMemo(() => bulkMenuGroups(ids, data, {
-    review: (title, plan) => { void plan.then((p) => setReview({ title, plan: p })) },
-    pickDate: () => setDating(true),
-    schedule: touch && ids.length === 1 ? () => openRowSchedule(ids[0]) : undefined,
-  }, besideRow), [ids, data, besideRow, touch])
   const n = data.tasks.length || ids.length
+  const groups = useMemo(() => bulkMenuGroups(ids, data, {
+    review: (title, plan) => { void plan.then((p) => bulkDialog.set({ kind: 'review', title, plan: p })) },
+    pickDate: () => bulkDialog.set({ kind: 'date', ids, n }),
+    schedule: touch && ids.length === 1 ? () => openRowSchedule(ids[0]) : undefined,
+    reorder,
+  }, besideRow), [ids, data, besideRow, touch, n, reorder])
   return (
-    <>
-      <ActionMenu label={t('Actions for {tasks}', { tasks: tasksWord(n) })} title={tasksWord(n)} groups={groups} open={open} onOpenChange={onOpenChange}
-        trigger={trigger} triggerClassName={triggerClassName} triggerProps={triggerProps} startPicker={startPicker} width="sm:w-72" anchor={anchor} />
-      {review && <BulkReview title={review.title} plan={review.plan} onClose={() => setReview(null)} onApplied={onApplied} />}
-      {dating && (
-        <Dialog title={t('Date for {tasks}', { tasks: tasksWord(n) })} onClose={() => setDating(false)}>
-          <DateField label={t('Date')} autoFocus value={null} onChange={(iso) => { setDating(false); if (iso) void runBulk(ids, { kind: 'due', pick: iso }) }} />
-        </Dialog>
-      )}
-    </>
+    <ActionMenu label={t('Actions for {tasks}', { tasks: tasksWord(n) })} title={tasksWord(n)} groups={groups} open={open} pending={!settled && !data.ready} onOpenChange={onOpenChange}
+      trigger={trigger} triggerClassName={triggerClassName} triggerProps={triggerProps} startPicker={startPicker} width="sm:w-72" anchor={anchor} />
+  )
+}
+
+/**
+ * The step a menu item leads to once the menu has closed: the move or assign review,
+ * or the date for "Pick a date…". Held here and rendered by the Shell's host, not
+ * by the menu, because a row's menu unmounts as it closes (issue 839).
+ */
+type BulkDialog = { kind: 'review'; title: string; plan: ReviewPlan } | { kind: 'date'; ids: readonly string[]; n: number }
+const bulkDialog = createStore<BulkDialog | null>('bulkDialog', null)
+
+/** Renders the menu's follow-up dialog when one is asked. Mounted once by the Shell. */
+export function BulkDialogHost() {
+  const d = bulkDialog.use()
+  const close = () => bulkDialog.set(null)
+  if (!d) return null
+  if (d.kind === 'review') return <BulkReview title={d.title} plan={d.plan} onClose={close} />
+  return (
+    <Dialog title={t('Date for {tasks}', { tasks: tasksWord(d.n) })} onClose={close}>
+      <DateField label={t('Date')} autoFocus value={null} onChange={(iso) => { close(); if (iso) void runBulk(d.ids, { kind: 'due', pick: iso }) }} />
+    </Dialog>
   )
 }
 
@@ -285,7 +420,7 @@ export function SelectionBar({ ids, onClear, menuOpen, onMenuOpenChange, startPi
           <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body" onClick={onClear}><Icon name="x" />{t('Clear')}</button>
         </Tooltip>
       )}
-      {onDone && <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1 text-body font-medium" onClick={onDone} data-select-done>{t('Done')}</button>}
+      {onDone && <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1 text-body font-medium" onClick={onDone} data-select-done>{t('Close')}</button>}
     </div>
   )
 }

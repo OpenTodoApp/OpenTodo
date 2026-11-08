@@ -58,7 +58,7 @@ func (e *compactEnv) apply(user string, ops ...Op) {
 
 func (e *compactEnv) compact() CompactResult {
 	e.t.Helper()
-	res, err := e.s.CompactNotes(e.ctx, e.now, 0, time.Hour)
+	res, err := e.s.CompactNotes(e.ctx, e.now, "", time.Hour)
 	if err != nil {
 		e.t.Fatal(err)
 	}
@@ -124,7 +124,7 @@ func TestCompactionWindowAndWinners(t *testing.T) {
 	e.apply("u1", e.op("task", "t2", "notes_doc", doc("late"), "B", old), e.op("task", "t2", "notes_doc", doc("now"), "A", 0))
 	e.advance(2 * day)
 	res := e.compact()
-	if res.OpsRemoved != 2 || res.ValueBytesRemoved <= 0 || res.More || res.Next != 0 {
+	if res.OpsRemoved != 2 || res.ValueBytesRemoved <= 0 || res.More || res.Next != "" {
 		t.Fatalf("31 days: %+v, want 2 removed", res)
 	}
 	if n := e.count(`entity_id = 't1' AND field = 'notes_doc'`); n != 1 {
@@ -169,7 +169,7 @@ func TestCompactionSharedScope(t *testing.T) {
 	f.apply("alice", "A", f.op("task", "inbox", "notes_doc", doc("x")))
 	f.apply("alice", "A", f.op("task", "inbox", "notes_doc", doc("x", "y")))
 	now = now.Add(31 * day)
-	res, err := f.s.CompactNotes(f.ctx, now, 0, time.Hour)
+	res, err := f.s.CompactNotes(f.ctx, now, "", time.Hour)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -250,24 +250,52 @@ func TestCompactionRecentRevisionsUntouched(t *testing.T) {
 func TestCompactionRechecksBeforeDeleting(t *testing.T) {
 	e := newCompactEnv(t)
 	e.apply("u1", e.op("task", "t1", "notes_doc", doc("a"), "A", 0), e.op("task", "t1", "notes_doc", doc("b"), "A", 0))
+	d := time.Date(2026, 8, 2, 10, 0, 0, 0, time.UTC).UnixMilli()
+	e.apply("u1", e.op("task", "t2", "description", `"morning"`, "A", d), e.op("task", "t2", "description", `"evening"`, "A", d+1000),
+		e.op("task", "t2", "description", `"next day"`, "A", d+86400000))
+	e.apply("u1", e.op("task", "t3", "notes_doc", doc("a"), "A", 0), e.op("task", "t3", "notes_doc", doc("b"), "A", 0))
 	e.advance(31 * day)
 	cutoff := e.now.Add(-CompactGrace).UnixMilli()
-	seqs, err := e.s.compactCandidates(e.ctx, 0, 1<<40, cutoff, 10)
-	if err != nil || len(seqs) != 1 {
-		t.Fatalf("candidates %v, %v", seqs, err)
+	plan := func(id, field string) (compactGroup, []compactCand) {
+		t.Helper()
+		g := compactGroup{scope: PersonalScope("u1"), entity: "task", entityID: id, field: field, daily: field == "description"}
+		cands, err := compactPlan(e.ctx, e.s.reader(), g, cutoff)
+		if err != nil || len(cands) != 1 {
+			t.Fatalf("%s candidates %v, %v", id, cands, err)
+		}
+		return g, cands
 	}
-	// Meanwhile the stored winner moves to the candidate (as a restore or a
-	// relabel would rewrite scope_fields).
-	if _, err := e.s.db.Exec(`UPDATE scope_fields SET ts = (SELECT ts FROM ops WHERE seq = ?), device = 'A' WHERE entity_id = 't1' AND field = 'notes_doc'`, seqs[0]); err != nil {
+	kept := func(g compactGroup, cands []compactCand, why string) {
+		t.Helper()
+		n, _, done, err := e.s.compactTx(e.ctx, g, cands, compactSlice, compactHold)
+		if err != nil || n != 0 || done != len(cands) {
+			t.Fatalf("%s: deleted %d (dealt with %d), %v", why, n, done, err)
+		}
+		if c := e.count(`seq = ?`, cands[0].seq); c != 1 {
+			t.Fatalf("%s: deleted", why)
+		}
+	}
+	// The stored winner moves to the candidate (as a restore would rewrite scope_fields).
+	g, cands := plan("t1", "notes_doc")
+	if _, err := e.s.db.Exec(`UPDATE scope_fields SET ts = ?, device = 'A' WHERE entity_id = 't1' AND field = 'notes_doc'`, cands[0].ts); err != nil {
 		t.Fatal(err)
 	}
-	n, _, err := e.s.compactDelete(e.ctx, seqs, cutoff)
-	if err != nil || n != 0 {
-		t.Fatalf("deleted %d, %v; want the new winner kept", n, err)
+	kept(g, cands, "new winner")
+	// The day's later revision goes meanwhile (an encryption purge): the earlier one is now the day's last.
+	g, cands = plan("t2", "description")
+	if _, err := e.s.db.Exec(`DELETE FROM ops WHERE seq = ?`, cands[0].keeper); err != nil {
+		t.Fatal(err)
 	}
-	if c := e.count(`seq = ?`, seqs[0]); c != 1 {
-		t.Fatal("new winner deleted")
+	if _, err := e.s.db.Exec(`DELETE FROM op_scopes WHERE seq = ?`, cands[0].keeper); err != nil {
+		t.Fatal(err)
 	}
+	kept(g, cands, "day's last revision")
+	// The op moves to another scope (a first share relabels it).
+	g, cands = plan("t3", "notes_doc")
+	if _, err := e.s.db.Exec(`UPDATE op_scopes SET scope_id = 'project:p' WHERE seq = ?`, cands[0].seq); err != nil {
+		t.Fatal(err)
+	}
+	kept(g, cands, "relabelled")
 }
 
 // TestCompactionResentOp: a deleted op sent again is stored again, loses, and
@@ -314,11 +342,11 @@ func TestCompactionCursorsAndBudget(t *testing.T) {
 	}
 	cursor := ops[2].Seq // inside the range compaction will delete
 	e.advance(31 * day)
-	res, err := e.s.CompactNotes(e.ctx, e.now, 0, 0)
+	res, err := e.s.CompactNotes(e.ctx, e.now, "", 0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !res.More || res.OpsRemoved != 3 || res.Next == 0 {
+	if !res.More || res.OpsRemoved != 3 {
 		t.Fatalf("budget 0: %+v, want one chunk and more", res)
 	}
 	for res.More {
@@ -354,23 +382,29 @@ func TestCompactionCursorsAndBudget(t *testing.T) {
 	}
 }
 
-// TestCompactionWindows: a pass examines the log in bounded ranges of sequence
-// numbers, so stretches without notes are crossed and every old version found.
-func TestCompactionWindows(t *testing.T) {
+// TestCompactionListsFieldsInPages: a pass lists the fields in bounded pages
+// in key order, so many notes, other fields between them and fields of every
+// family are all reached, and nothing else is touched.
+func TestCompactionListsFieldsInPages(t *testing.T) {
 	e := newCompactEnv(t)
-	e.s.SetCompactChunk(2) // a range of 8 sequence numbers per query
+	e.s.SetCompactChunk(2) // two fields per listing, two ops per transaction
 	for i := 0; i < 5; i++ {
-		e.apply("u1", e.op("task", "t1", "notes_doc", doc(fmt.Sprint(i)), "A", 0))
-		for j := 0; j < 12; j++ {
-			e.apply("u1", e.op("task", fmt.Sprintf("x%d-%d", i, j), "title", `"filler"`, "A", 0))
+		id := fmt.Sprintf("t%d", i)
+		for j := 0; j < 3; j++ {
+			e.apply("u1", e.op("task", id, "notes_doc", doc(fmt.Sprint(j)), "A", 0), e.op("task", id, "title", quoted(fmt.Sprint(j)), "A", 0))
 		}
 	}
+	e.apply("u1", e.op("note", "n1", "appends.x", `"text"`, "server", 0))
+	e.apply("u1", e.op("note", "n1", "appends.x", `""`, "A", 0))
 	e.advance(31 * day)
-	if res := e.compact(); res.OpsRemoved != 4 || res.More || res.Next != 0 {
-		t.Fatalf("pass: %+v, want the 4 superseded documents", res)
+	if res := e.compact(); res.OpsRemoved != 11 || res.More || res.Next != "" {
+		t.Fatalf("pass: %+v, want the 10 superseded documents and the folded append", res)
 	}
-	if n := e.count(`field = 'title'`); n != 60 {
+	if n := e.count(`field = 'title'`); n != 15 {
 		t.Fatalf("titles left %d", n)
+	}
+	if n := e.count(`field = 'notes_doc'`); n != 5 {
+		t.Fatalf("documents left %d, want the 5 winners", n)
 	}
 }
 
@@ -387,6 +421,10 @@ type noteDevice struct {
 	doc    map[string]bool
 	rows   map[string]Op
 	outbox []Op
+	// latest pulls with the "latest_docs" feature (PullOptions.LatestDocs).
+	latest bool
+	// pulled counts the document ops it received.
+	pulled int
 }
 
 func (e *compactEnv) device(user, name string) *noteDevice {
@@ -439,12 +477,14 @@ func (d *noteDevice) sync() {
 			d.outbox = nil
 		}
 		for {
-			ops, next, more, err := d.e.s.Pull(d.e.ctx, d.user, d.cursor, d.name, 50)
+			page, err := d.e.s.PullWith(d.e.ctx, d.user, d.cursor, d.name, 50, PullOptions{LatestDocs: d.latest})
 			if err != nil {
 				d.e.t.Fatal(err)
 			}
+			ops, next, more := page.Ops, page.Cursor, page.More
 			for _, o := range ops {
 				if o.Field == "notes_doc" {
+					d.pulled++
 					for _, p := range decodeDoc(d.e.t, o.Value) {
 						d.doc[p] = true
 					}

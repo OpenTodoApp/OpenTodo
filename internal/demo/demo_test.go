@@ -10,13 +10,13 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/auth"
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 func newDemo(t *testing.T) (*Service, *sql.DB) {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
+	db, err := storetest.OpenDir(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -155,7 +155,7 @@ func TestSandboxSeedThroughOps(t *testing.T) {
 
 func TestUpgradeDeletesSharedDemoAccount(t *testing.T) {
 	ctx := context.Background()
-	db, err := store.Open(t.TempDir())
+	db, err := storetest.OpenDir(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -306,6 +306,11 @@ func TestNightlyResetDeletesAllSandboxes(t *testing.T) {
 	}
 	if n := count(t, db, `SELECT COUNT(*) FROM users`); n != 1 {
 		t.Errorf("users left = %d", n)
+	}
+	// The visitors' audit events left with them and the chain was rebuilt over
+	// the rest (audit-hash-chain).
+	if v, err := s.auth.Audit().Verify(ctx); err != nil || !v.OK {
+		t.Errorf("audit chain after the reset: %+v %v", v, err)
 	}
 	// VACUUM gave the space back: no free pages, fewer pages.
 	var pagesAfter, free int

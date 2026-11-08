@@ -16,25 +16,38 @@ import org.json.JSONObject
  * script, both restricted to the configured origin, so no other page sees
  * `window.opentodoShell`. The activity is the [Host] for what needs a screen (permission
  * prompts, the biometric prompt, the system browser); the hidden background run has none,
- * so it offers only reminders and widgets.
+ * so it offers only reminders, widgets and geofences (and never asks for a permission).
  */
 class Bridge(private val context: Context, private val origin: String, private val host: Host?) {
     interface Host {
         fun requestNotificationPermission(done: (Boolean) -> Unit)
         fun requestExactAlarms()
+        /** The microphone for dictation. The default refuses, so a host without a screen never grants it. */
+        fun requestMicrophone(done: (Boolean) -> Unit) { done(false) }
         fun biometricStore(key: ByteArray, done: (Boolean) -> Unit)
         fun biometricRead(done: (ByteArray?) -> Unit)
         fun openExternal(url: String)
         /** theme-engine D8: colour the status and navigation bars (main thread). */
         fun setSystemBars(bars: SystemBars) {}
+        /** location-reminders D4: fine (with coarse) location; done(true) when either is granted. */
+        fun requestLocationPermission(done: (Boolean) -> Unit) = done(false)
+        /** "Allow all the time" (Android 10+; on 11+ the system sends the user to the setting). */
+        fun requestBackgroundLocation(done: (Boolean) -> Unit) = done(false)
     }
 
     private val main = Handler(Looper.getMainLooper())
 
-    fun capabilities(): List<String> {
+    fun capabilities(): List<String> = capabilities(BuildConfig.PLAY_BUILD)
+
+    /**
+     * geofences also in the hidden run, which hands the regions over hourly (it never asks);
+     * never in the Google Play build, which has no location permission (play-location-later).
+     */
+    fun capabilities(play: Boolean): List<String> {
         val caps = mutableListOf("reminders", "widgets")
+        if (!play) caps += "geofences"
         if (host != null) {
-            caps += listOf("share", "links", "obsidian-links", "system-bars")
+            caps += listOf("share", "links", "obsidian-links", "system-bars", "microphone")
             if (BiometricKeyStore.available(context)) caps += "biometric"
         }
         return caps
@@ -48,7 +61,7 @@ class Bridge(private val context: Context, private val origin: String, private v
         WebViewCompat.addWebMessageListener(webView, "opentodoNative", rules) { _, message, sourceOrigin, isMainFrame, reply ->
             if (isMainFrame && originOf(sourceOrigin) == origin) handle(message.data ?: return@addWebMessageListener, reply)
         }
-        WebViewCompat.addDocumentStartJavaScript(webView, script(BuildConfig.VERSION_NAME, capabilities()), rules)
+        WebViewCompat.addDocumentStartJavaScript(webView, script(BuildConfig.VERSION_NAME, capabilities(), BuildConfig.PLAY_BUILD), rules)
         return true
     }
 
@@ -60,6 +73,7 @@ class Bridge(private val context: Context, private val origin: String, private v
         val answer = { value: Any? -> if (id > 0) main.post { reply.postMessage(JSONObject().put("id", id).put("result", value ?: JSONObject.NULL).toString()) } }
         when (msg.optString("method")) {
             "scheduleReminders" -> scheduleReminders(args.optString(0, "[]"), answer)
+            "scheduleGeofences" -> scheduleGeofences(args.optString(0, ""), answer)
             "testNotification" -> answer(Notifier.test(context))
             "publishWidget" -> WidgetStore.publish(context, args.optString(0, ""))
             "biometricStore" -> {
@@ -71,6 +85,7 @@ class Bridge(private val context: Context, private val origin: String, private v
             }
             "biometricForget" -> BiometricKeyStore.forget(context)
             "openExternal" -> args.optString(0).takeIf { externalLink(it) }?.let { host?.openExternal(it) }
+            "requestMicrophone" -> if (host == null) answer(false) else host.requestMicrophone { answer(it) }
             "setSystemBars" -> if (host != null) {
                 // A malformed payload keeps the bars, and nothing of it is logged.
                 val json = args.optString(0)
@@ -91,6 +106,23 @@ class Bridge(private val context: Context, private val origin: String, private v
         }
         if (Scheduler.notificationsAllowed(context) || !wantsAlarms || host == null) afterPermission(Scheduler.notificationsAllowed(context))
         else host.requestNotificationPermission { afterPermission(it) }
+    }
+
+    /**
+     * location-reminders D3/D4: replaces the watched regions. Only with `ask` and a screen does
+     * the shell ask, fine location first, then "Allow all the time"; the answer is the state after.
+     */
+    private fun scheduleGeofences(json: String, answer: (Any?) -> Unit) {
+        val payload = GeofenceSchedule.parse(json)
+        val finish: () -> Unit = { answer(Geofences.replace(context, payload.regions)) }
+        val h: Host = host ?: return finish()
+        // The Play build declares no location permission (play-location-later): it never asks.
+        if (BuildConfig.PLAY_BUILD || !payload.ask || !Geofences.available(context)) return finish()
+        val askBackground: () -> Unit = {
+            if (Geofences.background(context)) finish() else h.requestBackgroundLocation { finish() }
+        }
+        if (Geofences.fine(context)) askBackground()
+        else h.requestLocationPermission { if (Geofences.fine(context)) askBackground() else finish() }
     }
 
     companion object {
@@ -119,7 +151,7 @@ class Bridge(private val context: Context, private val origin: String, private v
         fun externalLink(url: String): Boolean = safeExternal(url) || ObsidianLink.valid(url)
 
         /** The page side: `window.opentodoShell`, promise-returning methods over the message channel. */
-        fun script(app: String, caps: List<String>): String = """
+        fun script(app: String, caps: List<String>, play: Boolean = false): String = """
             (function () {
               if (window.opentodoShell || !window.opentodoNative) return;
               var nat = window.opentodoNative, seq = 0, waiting = {};
@@ -132,16 +164,18 @@ class Bridge(private val context: Context, private val origin: String, private v
               }
               function send(method, args) { nat.postMessage(JSON.stringify({ method: method, args: args })) }
               window.opentodoShell = Object.freeze({
-                bridge: $VERSION, platform: 'android', app: ${JSONObject.quote(app)},
+                bridge: $VERSION, platform: 'android', app: ${JSONObject.quote(app)},${if (play) " store: 'play'," else ""}
                 capabilities: Object.freeze(${JSONArray(caps)}),
                 scheduleReminders: function (json) { return call('scheduleReminders', [String(json)]) },
+                scheduleGeofences: function (json) { return call('scheduleGeofences', [String(json)]) },
                 testNotification: function () { return call('testNotification', []) },
                 publishWidget: function (json) { send('publishWidget', [String(json)]) },
                 biometricStore: function (key) { return call('biometricStore', [String(key)]) },
                 biometricRead: function () { return call('biometricRead', []) },
                 biometricForget: function () { send('biometricForget', []) },
                 openExternal: function (url) { send('openExternal', [String(url)]) },
-                setSystemBars: function (json) { send('setSystemBars', [String(json)]) }
+                setSystemBars: function (json) { send('setSystemBars', [String(json)]) },
+                requestMicrophone: function () { return call('requestMicrophone', []) }
               });
             })();
         """.trimIndent()

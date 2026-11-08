@@ -11,11 +11,13 @@ order: 90
 
 Apple Reminders has no export button. There are two ways over.
 
-## First choice: CalDAV
+## Export from Apple Reminders
+
+### First choice: CalDAV
 
 If you want to keep using the Reminders app on your iPhone or Mac, connect it to OpenTodo with [CalDAV](../caldav.md): your OpenTodo projects appear as Reminders lists, and what you add on either side shows up on the other. Then move reminders into those lists. Nothing needs to be exported.
 
-## Or: save your reminders with a Shortcut
+### Or: save your reminders with a Shortcut
 
 To bring everything in at once, build this Shortcut in the Shortcuts app (iPhone, iPad or Mac):
 

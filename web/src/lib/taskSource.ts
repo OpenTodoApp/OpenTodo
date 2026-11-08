@@ -6,6 +6,7 @@
 // than when it was added. No request, no new field.
 import { t } from './i18n'
 import type { Task } from './types'
+import { originText } from './originText'
 import { originHost, originLabel, originOf } from './taskOrigin'
 
 export type SourceKind = 'email' | 'web' | 'issue' | 'import' | 'calendar' | 'assistant' | 'api' | 'vault' | 'app'
@@ -31,7 +32,7 @@ export function taskSource(task: Pick<Task, 'origin' | '_clock'>): TaskSource {
   }
   if (origin?.kind === 'issue') return { kind: 'issue', text: t('From {issue}', { issue: originLabel(origin) }) }
   if (origin?.kind === 'import') {
-    return { kind: 'import', text: origin.provider ? t('Imported from {app}', { app: origin.provider }) : t('Imported') }
+    return { kind: 'import', text: originText(origin) }
   }
   if (origin?.kind === 'obsidian') return { kind: 'vault', text: t('From Obsidian') }
   if (origin?.kind === 'url') {

@@ -7,6 +7,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import type { ProposedChange } from './assistantTypes'
 import { addDaysISO, logicalToday, weekStartOf } from './dates'
 import { db } from './db'
+import { memberSet } from './rotation'
 import { getDeviceId, planCompletePlain, planProjectChange, type Change } from './ops'
 import { planCompletion, seriesRule, skipsInstead } from './recurring'
 import { assignableIn, canEditTask, currentUserId, membershipMap, scopeOf } from './sharing'
@@ -31,13 +32,14 @@ export function mergeChanges(changes: Change[]): Change[] {
 export const allCompleted = (tasks: readonly Task[]): boolean => tasks.length > 0 && tasks.every((task) => !!task.completed_at)
 
 /** Complete the open tasks (series roll forward, subtrees complete), or reopen when all are completed. */
-export function planComplete(tasks: readonly Task[], all: Task[], now: number, today: string): Change[] {
+export function planComplete(tasks: readonly Task[], all: Task[], now: number, today: string, memberships?: Map<string, Membership>): Change[] {
   if (allCompleted(tasks)) return planReopen(tasks)
   const out: Change[] = []
   for (const task of tasks) {
     if (task.completed_at) continue
     const rule = seriesRule(task)
-    const plan = rule ? planCompletion(task, rule, all, now, today) : null
+    const members = task.project_id ? memberSet(memberships?.get(task.project_id)) : undefined
+    const plan = rule ? planCompletion(task, rule, all, now, today, members) : null
     if (plan && plan.kind === 'roll') out.push(...plan.changes)
     else out.push(...planCompletePlain(task.id, all, now))
   }
@@ -194,7 +196,7 @@ export async function applyBulk(ids: readonly string[], action: BulkAction, opts
   switch (action.kind) {
     case 'complete': {
       const reopen = allCompleted(tasks)
-      changes = planComplete(tasks, all, now, today)
+      changes = planComplete(tasks, all, now, today, await membershipMap())
       label = bulkLabel(reopen ? { kind: 'reopen' } : action, reopen ? tasks.length : tasks.filter((task) => !task.completed_at).length)
       break
     }

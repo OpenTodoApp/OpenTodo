@@ -15,6 +15,7 @@ import { db } from './db'
 import { fieldValueLabel } from './fieldNames'
 import type { ActivityChange, ActivityEntry, ActivityEvent, ActivityKind, ActivityPage, Op } from './types'
 import { t, msg, translatedMap, translatedList } from './i18n'
+import { resettable } from './moduleState'
 
 /** Device prefix of a public link's ops (OpenSpec `public-links`). */
 export const PUBLIC_DEVICE_PREFIX = 'public:'
@@ -219,6 +220,17 @@ export async function recordActivity(inputs: RecordInput[]): Promise<void> {
     rows.push(row)
   }
   if (rows.length === 0) return
+  if (pending) {
+    // A sync exchange is running: kept in memory and written, already
+    // trimmed, when it ends (or when many are waiting).
+    for (const r of rows) {
+      const first = pending.get(r.id)
+      pending.set(r.id, first ? { ...first, value: r.value } : r)
+    }
+    if (longPull) capPending(rows)
+    if (pending.size >= PENDING_FLUSH) await flushPending()
+    return
+  }
   // An op already recorded (a retry, or the server echoing a rewritten value)
   // keeps its first old value and author; only the value can change.
   const existing = await db.activity.bulkGet(rows.map((r) => r.id))
@@ -230,9 +242,137 @@ export async function recordActivity(inputs: RecordInput[]): Promise<void> {
   for (const k of new Set(rows.map((r) => r.projectKey))) await trimProject(k)
 }
 
+/** Entries recorded during a sync exchange and not yet written (withDeferredActivity). */
+let pending: Map<string, ActivityEntry> | null = null
+/** The exchange pulls many pages (a first sync, a long catch-up): see LONG_PULL_OPS. */
+let longPull = false
+/** During a long pull, the pending entry ids of each project. */
+const pendingByProject = new Map<string, string[]>()
+
+/**
+ * Entries per project a long pull adds to the local log, its newest
+ * (performance-10k): a first sync of a 10,000-task account pulls about 100,000
+ * ops, and writing an entry for each took most of the sync. The older history
+ * stays on the server, which the Activity tab and Updates load on request
+ * (activity-log "Local activity retention").
+ */
+export const LONG_PULL_OPS = 100
+
+/** Marks the running exchange as a long pull (called by the sync loop). */
+export function markLongPull(): void {
+  if (pending) longPull = true
+}
+
+resettable('activity', () => {
+  pending = null
+  longPull = false
+  pendingByProject.clear()
+})
+
+/** Written early past this many, so memory stays bounded. */
+const PENDING_FLUSH = 20_000
+
+const byTsThenId = (a: ActivityEntry, b: ActivityEntry) => a.ts - b.ts || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+
+/** Keeps a long pull's pending entries to about the newest LONG_PULL_OPS per project. */
+function capPending(rows: ActivityEntry[]) {
+  if (!pending) return
+  for (const r of rows) {
+    const ids = pendingByProject.get(r.projectKey)
+    if (ids) ids.push(r.id)
+    else pendingByProject.set(r.projectKey, [r.id])
+  }
+  for (const [key, ids] of pendingByProject) {
+    if (ids.length <= 2 * LONG_PULL_OPS) continue
+    const live = ids.flatMap((id) => pending!.get(id) ?? []).sort(byTsThenId)
+    for (const e of live.slice(0, -LONG_PULL_OPS)) pending.delete(e.id)
+    pendingByProject.set(key, live.slice(-LONG_PULL_OPS).map((e) => e.id))
+  }
+}
+
+/**
+ * Runs a sync exchange with the activity it records kept in memory and
+ * written at its end, trimmed to the per-project bound first (performance-10k):
+ * a first sync pulls about a hundred pages, and writing each page's ops, then
+ * reading a project's whole log back to trim it, took most of the time of the
+ * pull, for entries the trim then dropped.
+ */
+export async function withDeferredActivity<T>(fn: () => Promise<T>, current: () => boolean = () => true): Promise<T> {
+  if (pending) return fn()
+  pending = new Map()
+  const done = () => {
+    pending = null
+    longPull = false
+    pendingByProject.clear()
+  }
+  try {
+    return await fn()
+  } finally {
+    // Not after a sign-out: the cleared database never gets the previous account's entries.
+    if (current()) await db.transaction('rw', db.activity, () => flushPending()).finally(done)
+    else done()
+  }
+}
+
+/** Writes the pending entries, each project trimmed with what it already holds. */
+async function flushPending(): Promise<void> {
+  if (!pending?.size) return
+  const rows = [...pending.values()]
+  pending.clear()
+  pendingByProject.clear()
+  const existing = await db.activity.bulkGet(rows.map((r) => r.id))
+  const byProject = new Map<string, ActivityEntry[]>()
+  rows.forEach((r, i) => {
+    const e = existing[i]
+    const row = e ? { ...e, value: r.value } : r
+    const list = byProject.get(row.projectKey)
+    if (list) list.push(row)
+    else byProject.set(row.projectKey, [row])
+  })
+  const put: ActivityEntry[] = []
+  const drop: string[] = []
+  for (const [key, all] of byProject) {
+    // A long pull adds only each project's newest entries.
+    const list = longPull ? all.sort(byTsThenId).slice(-LONG_PULL_OPS) : all
+    const stored = await projectEntries(key).toArray()
+    const fresh = new Set(list.map((r) => r.id))
+    const dropped = trimmed([...stored.filter((e) => !fresh.has(e.id)), ...list].sort(byTsThenId), LOCAL_RETENTION).drop
+    for (const r of list) if (!dropped.has(r.id)) put.push(r)
+    for (const e of stored) if (dropped.has(e.id)) drop.push(e.id)
+  }
+  // In slices: each one is written from the answer to the one before, so the page
+  // handles a keystroke between them. A first sync's entries in one call were one
+  // main-thread task of about half a second in the phone profile, and a search typed
+  // just after the sync waited for it (perf: notes-search). Still one transaction.
+  for (let i = 0; i < put.length; i += FLUSH_SLICE) await db.activity.bulkPut(put.slice(i, i + FLUSH_SLICE))
+  if (drop.length) await db.activity.bulkDelete(drop)
+}
+
+/** How many entries flushPending writes per call. */
+const FLUSH_SLICE = 500
+
 /** Every recorded op of a project, oldest first. */
 function projectEntries(projectKey: string) {
   return db.activity.where('[projectKey+ts]').between([projectKey, Dexie.minKey], [projectKey, Dexie.maxKey])
+}
+
+/**
+ * The ops to drop so a project keeps at most `limit` derived events, the oldest
+ * first; `entries` oldest first. Each event has at least one op, so nothing is
+ * derived until the op count passes the bound.
+ */
+function trimmed(entries: ActivityEntry[], limit: number): { drop: Set<string>; over: number } {
+  const none = { drop: new Set<string>(), over: 0 }
+  if (entries.length <= limit) return none
+  const events = deriveActivity(entries)
+  if (events.length <= limit) return none
+  // deriveActivity is oldest first: the first events are the ones to drop.
+  const drop = new Set(events.slice(0, events.length - limit).flatMap((e) => e.opIds))
+  // Ops that never form an event (no-op writes) older than the kept window go too.
+  const keep = new Set(events.slice(events.length - limit).flatMap((e) => e.opIds))
+  const oldestKept = Math.min(...events.slice(events.length - limit).map((e) => e.ts))
+  for (const e of entries) if (!keep.has(e.id) && e.ts < oldestKept) drop.add(e.id)
+  return { drop, over: events.length - limit }
 }
 
 /**
@@ -242,20 +382,14 @@ function projectEntries(projectKey: string) {
 export async function trimProject(projectKey: string, limit = LOCAL_RETENTION): Promise<number> {
   if ((await projectEntries(projectKey).count()) <= limit) return 0
   const entries = await projectEntries(projectKey).toArray()
-  const events = deriveActivity(entries)
-  if (events.length <= limit) return 0
-  // deriveActivity is oldest first: the first events are the ones to drop.
-  const drop = events.slice(0, events.length - limit).flatMap((e) => e.opIds)
-  // Ops that never form an event (no-op writes) older than the kept window go too.
-  const keep = new Set(events.slice(events.length - limit).flatMap((e) => e.opIds))
-  const oldestKept = Math.min(...events.slice(events.length - limit).map((e) => e.ts))
-  for (const e of entries) if (!keep.has(e.id) && e.ts < oldestKept) drop.push(e.id)
-  await db.activity.bulkDelete([...new Set(drop)])
-  return events.length - limit
+  const { drop, over } = trimmed(entries, limit)
+  if (drop.size) await db.activity.bulkDelete([...drop])
+  return over
 }
 
 /** Drop recorded ops (refused by the server). */
 export async function forgetActivity(opIds: string[]): Promise<void> {
+  for (const id of opIds) pending?.delete(id)
   if (opIds.length) await db.activity.bulkDelete(opIds)
 }
 
@@ -263,6 +397,10 @@ export async function forgetActivity(opIds: string[]): Promise<void> {
 export async function forgetEntities(ids: Iterable<string>): Promise<void> {
   const list = [...ids]
   if (list.length === 0) return
+  if (pending) {
+    const gone = new Set(list)
+    for (const [id, r] of pending) if (gone.has(r.entityId) || (r.taskId && gone.has(r.taskId))) pending.delete(id)
+  }
   const byEntity = await db.activity.where('entityId').anyOf(list).primaryKeys()
   const byTask = await db.activity.where('taskId').anyOf(list).primaryKeys()
   await db.activity.bulkDelete([...new Set([...byEntity, ...byTask])])
@@ -319,14 +457,16 @@ function dueText(v: unknown): string {
  * 2026-10-12", "assigned to Bob". `name` resolves account ids, `project`
  * project ids.
  */
-export function describeEvent(ev: ActivityEvent, name: (id: string) => string, project: (id: string | null) => string, task?: (id: string) => string | undefined): string {
+export function describeEvent(ev: ActivityEvent, name: (id: string) => string, project: (id: string | null) => string, task?: (id: string) => string | undefined,
+  /** A deleted item a reusable list's duplicate collapse merged (reusable-lists D4). */
+  merged?: (id: string) => boolean): string {
   const to = (f: string) => ev.changes.find((c) => c.field === f)?.to
   const isProject = ev.entity === 'project'
   switch (ev.kind) {
     case 'created': return isProject ? t('created the project') : t('created the task')
     case 'completed': return t('completed')
     case 'reopened': return t('reopened')
-    case 'deleted': return isProject ? t('deleted the project') : t('deleted the task')
+    case 'deleted': return isProject ? t('deleted the project') : merged?.(ev.entityId) ? t('merged a duplicate') : t('deleted the task')
     case 'restored': return isProject ? t('restored the project') : t('restored the task')
     case 'rescheduled': return to('due') ? t('moved the due date to {date}', { date: dueText(to('due')) }) : t('removed the due date')
     case 'assigned': return t('assigned to {name}', { name: name(String(to('assignee_id'))) })
@@ -355,7 +495,7 @@ const FIELD_LABELS = translatedMap<string>({
   position: msg('the order'), estimate_minutes: msg('the estimate'), recurrence: msg('the repeat rule'), name: msg('the name'), color: msg('the colour'),
   series_id: msg('the series'), deadline: msg('the deadline'),
   start: msg('when it starts'), evening: msg('This Evening'), origin: msg('the origin'),
-  day_part: msg('the part of the day'),
+  day_part: msg('the part of the day'), sector: msg('the time sector'),
 })
 
 /** The event kinds a project activity view can filter by, with labels. */

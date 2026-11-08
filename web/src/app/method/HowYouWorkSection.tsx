@@ -13,6 +13,9 @@ import { openStartGuide } from '../../lib/startGuide'
 import { firstRunDone, formattingButtonOn, setFormattingButton } from '../../lib/userPrefs'
 import { readBentoOrder, readFocusStyle, setBentoOrder, setFocusStyle, type BentoOrder, type FocusStyle } from '../../lib/bento'
 import { energyLevelsOn, setEnergyLevels } from '../../lib/energy'
+import { timeSectorsOn } from '../../lib/sectorNames'
+import { setTimeSectors } from '../../lib/sectorPrefs'
+import { objectivesOn, setObjectivesOn } from '../../lib/objectivePrefs'
 import { Button, Select, SettingRow, SettingsSection, Switch } from '../../ui'
 import { act } from '../actionError'
 import { navigate } from '../router'
@@ -58,8 +61,14 @@ export function HowYouWorkSection() {
     // Copy: SETTINGS_COPY['how-you-work']; no Learn more, "Learn the method" is the line's link (settings-copy D7).
     <SettingsSection {...cardCopy('how-you-work')} testId="how-you-work">
       <div className="py-3 first:pt-0"><MethodModeChooser value={mode} /></div>
+      {/* Below the three choices, off by default in every mode; off hides the controls, never a sector (time-sectors D7). */}
+      <SettingRow {...rowCopy('how-you-work', 'sectors')} id="time-sectors" htmlFor="time-sectors-switch"
+        control={<span data-time-sectors-switch><Switch id="time-sectors-switch" checked={timeSectorsOn(prefs)} onChange={(on) => act(setTimeSectors(on))} label={t('Time sectors')} hideLabel /></span>} />
       <DailyFocusRows style={readFocusStyle(prefs)} order={readBentoOrder(prefs)}
         onStyle={(s) => act(setFocusStyle(s))} onOrder={(o) => act(setBentoOrder(o))} />
+      {/* Off by default in every mode; off hides the Plan's strip and the review's section, never an objective (plan-objectives D8). */}
+      <SettingRow {...rowCopy('how-you-work', 'objectives')} id="objectives" htmlFor="objectives-switch"
+        control={<span data-objectives-switch><Switch id="objectives-switch" checked={objectivesOn(prefs)} onChange={(on) => act(setObjectivesOn(on))} label={t('Objectives')} hideLabel /></span>} />
       {/* Off by default in every mode; turning it off hides the choice, never a value (task-energy D3). */}
       <SettingRow {...rowCopy('how-you-work', 'energy')} id="energy-levels" htmlFor="energy-levels-switch"
         control={<span data-energy-levels-switch><Switch id="energy-levels-switch" checked={energyLevelsOn(prefs)} onChange={(on) => act(setEnergyLevels(on))} label={t('Energy levels')} hideLabel /></span>} />

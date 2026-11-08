@@ -13,17 +13,24 @@
   "fields": [
     {"id": "f_cost", "name": "Cost", "type": "number", "project_id": "p_work", "deleted_at": null}
   ],
-  "tracked": {"t8": 45},
+  "tracked": {"t8": 40},
+  "tracked_occurrence": {"t8": 10},
+  "me": "u_me",
+  "members": [
+    {"userId": "u_me", "name": "Ada", "email": "ada@example.com"},
+    {"userId": "u_sam1", "name": "Sam", "email": "sam1@example.com"},
+    {"userId": "u_sam2", "name": "Sam", "email": "sam2@example.com"}
+  ],
   "tasks": [
-    {"id": "t1", "title": "Buy oat milk", "description": "at the market", "labels": ["l_err"], "project_id": "p_home", "priority": 1, "due": {"date": "2026-11-04"}, "created_at": 1793779200000},
-    {"id": "t2", "title": "Call plumber", "labels": ["l_call"], "project_id": "p_work", "priority": 2, "due": {"date": "2026-11-03"}, "deadline": "2026-11-10"},
+    {"id": "t1", "title": "Buy oat milk", "description": "at the market", "labels": ["l_err"], "project_id": "p_home", "priority": 1, "due": {"date": "2026-11-04"}, "created_at": 1793779200000, "assignee_id": "u_me"},
+    {"id": "t2", "title": "Call plumber", "labels": ["l_call"], "project_id": "p_work", "priority": 2, "due": {"date": "2026-11-03"}, "deadline": "2026-11-10", "assignee_id": "u_sam1"},
     {"id": "t3", "title": "Write report", "project_id": "p_sub", "due": {"date": "2026-11-05", "time": "09:00"}, "start": "2026-11-10", "energy": "deep"},
     {"id": "t4", "title": "Old task", "project_id": "p_home", "completed_at": 1793613600000},
     {"id": "t5", "title": "Someday idea", "start": "someday", "origin": {"kind": "url", "url": "https://example.com/a"}},
     {"id": "t6", "title": "Evening walk", "evening": true, "habit": true},
-    {"id": "t7", "title": "Blocked thing", "project_id": "p_work", "blocked_by": ["t2"], "fields.f_cost": 150},
-    {"id": "t8", "title": "Morning run", "project_id": "p_work", "day_part": "morning", "energy": "low", "fields.f_cost": 50},
-    {"id": "t9", "title": "Pick brand", "project_id": "p_home", "parent_id": "t1", "origin": {"kind": "issue", "provider": "github", "url": "https://github.com/o/r/issues/1"}},
+    {"id": "t7", "title": "Blocked thing", "project_id": "p_work", "blocked_by": ["t2"], "fields.f_cost": 150, "sector": "2026-W45", "assignee_id": "u_sam2"},
+    {"id": "t8", "title": "Morning run", "recurrence": "every day", "project_id": "p_work", "day_part": "morning", "energy": "low", "fields.f_cost": 50, "sector": "2026-W43"},
+    {"id": "t9", "title": "Pick brand", "project_id": "p_home", "parent_id": "t1", "origin": {"kind": "issue", "provider": "github", "url": "https://github.com/o/r/issues/1"}, "sector": "2026-11"},
     {"id": "t10", "title": "Gone", "deleted_at": 5}
   ],
   "cases": [
@@ -70,6 +77,10 @@
     {"query": "tracked", "ids": ["t8"]},
     {"query": "tracked >= 30m", "ids": ["t8"]},
     {"query": "tracked < 30m & #Work", "ids": ["t2", "t7"]},
+    {"query": "tracked occurrence", "ids": ["t8"]},
+    {"query": "tracked occurrence >= 30m", "ids": []},
+    {"query": "Tracked Occurrence < 30m & #Work", "ids": ["t2", "t7", "t8"]},
+    {"query": "tracked occurrence = 10m | tracked = 40m", "ids": ["t8"]},
     {"query": "cost > 100", "ids": ["t7"]},
     {"query": "cost = 50", "ids": ["t8"]},
     {"query": "no cost", "ids": ["t2", "t3"]},
@@ -81,6 +92,22 @@
     {"query": "!(#Home | no project)", "ids": ["t2", "t3", "t7", "t8"]},
     {"query": "start <= next week", "ids": ["t3"]},
     {"query": "(@errand | @call) & p1", "ids": ["t1"]},
-    {"query": "", "ids": []}
+    {"query": "", "ids": []},
+    {"query": "sector", "ids": ["t7", "t8", "t9"]},
+    {"query": "carried", "ids": ["t8"]},
+    {"query": "sector: this week", "ids": ["t7"]},
+    {"query": "#Work & sector: this week", "ids": ["t7"]},
+    {"query": "carried | sector: this week", "ids": ["t7", "t8"]},
+    {"query": "sector: 2026-11", "ids": ["t9"]},
+    {"query": "sector: this month", "ids": ["t9"]},
+    {"query": "sector:next-week", "ids": []},
+    {"query": "assigned", "ids": ["t1", "t2", "t7"]},
+    {"query": "unassigned", "ids": ["t3", "t5", "t6", "t8", "t9"]},
+    {"query": "!assigned", "ids": ["t3", "t5", "t6", "t8", "t9"]},
+    {"query": "assigned: me", "ids": ["t1"]},
+    {"query": "assigned: sam", "ids": ["t2", "t7"]},
+    {"query": "assigned: SAM", "ids": ["t2", "t7"]},
+    {"query": "assigned: ada@example.com", "ids": ["t1"]},
+    {"query": "assigned: Rowan", "ids": [], "warnings": 1}
   ]
 }

@@ -24,7 +24,7 @@ import { setCurrentFilter } from './listActions'
 import { useBulkList } from './bulk/useBulkList'
 import { useListKeys } from './useListKeys'
 import { useShortcutScope } from './shortcuts'
-import { useToday, useViewerZone } from './useViews'
+import { useAssigneeDirectory, useToday, useViewerZone } from './useViews'
 import { setPanelTaskId, usePanelTaskId } from './panel'
 import { openFromRow } from './sidePanel'
 import { TaskRow } from './TaskRow'
@@ -45,7 +45,7 @@ import { ROW_LAYOUTS, useAccountRowLayout, type RowLayout } from '../lib/rowLayo
 import { useWorkspaceState } from '../lib/localData'
 import { currentWorkspaceId } from '../lib/workspaces'
 import { ACTION_TOAST_MS, showBulkToast } from './bulk/toastStore'
-import { GROUP_BY_OPTIONS, ROW_PROPERTIES, SORT_BY_OPTIONS, SORT_DIR_OPTIONS, VIEW_LAYOUTS, type GroupBy, type RowProperty, type SortBy, type SortDir, type ViewLayout } from '../lib/types'
+import { GROUP_BY_OPTIONS, readSortBy, ROW_PROPERTIES, SORT_BY_OPTIONS, SORT_DIR_OPTIONS, VIEW_LAYOUTS, type GroupBy, type RowProperty, type SortBy, type SortDir, type ViewLayout } from '../lib/types'
 
 const DEBOUNCE_MS = 150
 
@@ -75,7 +75,7 @@ export function displayOfDraft(d: FilterDraft): ViewDisplay {
   return {
     layout: pick<ViewLayout>(d.layout, VIEW_LAYOUTS, NEW_VIEW_DISPLAY.layout),
     groupBy: pick<GroupBy>(d.group_by, GROUP_BY_OPTIONS, NEW_VIEW_DISPLAY.groupBy),
-    sortBy: pick<SortBy>(d.sort_by, NEW_VIEW_SORT_OPTIONS, NEW_VIEW_DISPLAY.sortBy),
+    sortBy: readSortBy(d.sort_by, NEW_VIEW_SORT_OPTIONS, NEW_VIEW_DISPLAY.sortBy),
     sortDir: pick<SortDir>(d.sort_dir, SORT_DIR_OPTIONS, NEW_VIEW_DISPLAY.sortDir),
     showCompleted: d.show_completed === true,
     cardNotes: d.card_notes === true,
@@ -137,9 +137,9 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
 
   useEffect(() => { setCurrentFilter(good.ast ? good.src : null); return () => setCurrentFilter(null) }, [good])
   // Custom field definitions and tracked minutes (time-tracking: `tracked > 1h` follows a running entry live).
-  const fieldDefs = useFieldDefs(), tracked = useTrackedTotals()
-  const ctx = useMemo(() => ({ today, labels, projects, tasks: allTasks, sections: flow.sections, weekStart, fields: fieldDefs, tracked, workspaces: ws.workspaces, workspaceOf: ws.workspaceOf }),
-    [today, labels, projects, allTasks, flow.sections, weekStart, fieldDefs, tracked, ws])
+  const fieldDefs = useFieldDefs(), tracked = useTrackedTotals(), directory = useAssigneeDirectory()
+  const ctx = useMemo(() => ({ today, labels, projects, tasks: allTasks, sections: flow.sections, weekStart, fields: fieldDefs, ...tracked, ...directory, workspaces: ws.workspaces, workspaceOf: ws.workspaceOf }),
+    [today, labels, projects, allTasks, flow.sections, weekStart, fieldDefs, tracked, directory, ws])
   const compiled = useMemo(() => {
     if (!good.ast) return null
     // "Completed tasks: Show" (views-and-display D4) reads the query as `(query) & (open | completed)`.
@@ -157,8 +157,8 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
     // Like the other cross-project views, tasks of archived projects stay out.
     const archived = new Set(projects.filter((p) => p.archived).map((p) => p.id))
     const tasks = allTasks.filter((item) => !(item.project_id && archived.has(item.project_id)) && compiled.test(item))
-    return { tasks: tasks.sort(compareTasks(display.sortBy, display.sortDir)), warnings: compiled.warnings }
-  }, [compiled, allTasks, projects, display.sortBy, display.sortDir])
+    return { tasks: tasks.sort(compareTasks(display.sortBy, display.sortDir, ctx)), warnings: compiled.warnings }
+  }, [compiled, allTasks, projects, display.sortBy, display.sortDir, ctx])
   // After `origin:` the kinds and providers are offered (task-origin), else field names.
   const origins = useMemo(() => originSuggestions(query, allTasks), [query, allTasks])
   const suggestions = useMemo(() => (origins.length ? origins : fieldSuggestions(query, fieldDefs)), [origins, query, fieldDefs])
@@ -280,12 +280,12 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
         <PageHeader title={<ViewsCrumb name={t('New view')} />} meta={count ?? undefined} help="filter"
           actions={<Button variant="secondary" size="sm" disabled={!canSave} onClick={() => setSaving(true)}>{t('Save as view')}</Button>} />
       )}
-      <ViewToolbar query={query} filterOpen={filterOpen} setFilterOpen={setFilterOpen} display={{ ...display, rowLayout: display.rowLayout ?? account }} sortOptions={NEW_VIEW_SORT_OPTIONS}
+      <ViewToolbar query={query} filterOpen={filterOpen} setFilterOpen={setFilterOpen} display={{ ...display, rowLayout: display.rowLayout ?? account }} sortOptions={NEW_VIEW_SORT_OPTIONS} sortFields={fieldDefs}
         onDisplay={(patch) => setDisplay((d) => ({ ...d, ...patch }))}
         onAdd={() => document.querySelector<HTMLButtonElement>('[data-filter-panel] [data-add-condition]')?.click()} />
       {filterOpen && (
         <FilterPanel count={count} onClose={() => setFilterOpen(false)} inputRef={inputRef} onClear={() => { setHistIdx(-1); draftWs.clear(); focusQuery() }}
-          builder={<FilterBuilder query={query} onChange={(q) => { setQuery(q); setHistIdx(-1) }} labels={labels} projects={projects} fields={fieldDefs} workspaces={ws.workspaces} />}
+          builder={<FilterBuilder query={query} onChange={(q) => { setQuery(q); setHistIdx(-1) }} labels={labels} projects={projects} fields={fieldDefs} workspaces={ws.workspaces} members={directory.members} />}
           formula={(
             <input
               ref={inputRef}

@@ -2,6 +2,7 @@ package cli
 
 import (
 	"encoding/json"
+	"github.com/OpenTodoApp/opentodo/internal/importer"
 	"os"
 	"path/filepath"
 	"strings"
@@ -101,4 +102,11 @@ func TestImportRefusedForAgentToken(t *testing.T) {
 func mustJSON(v any) []byte {
 	b, _ := json.Marshal(v)
 	return b
+}
+
+// --format lists every format the server imports (migration-everywhere 7.6).
+func TestImportFormatsHelp(t *testing.T) {
+	if strings.Join(importFormats, ",") != strings.Join(importer.ProfileNames(), ",") {
+		t.Fatalf("ot import --format lists %v, the server imports %v", importFormats, importer.ProfileNames())
+	}
 }

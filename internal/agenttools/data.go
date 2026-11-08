@@ -32,7 +32,9 @@ type snapshot struct {
 	sections map[string]string // id → name
 	tasks    []opsync.Entity
 	people   map[string]string // account id → display name
-	shared   map[string]opsync.ProjectAccess
+	// members maps a shared project id onto its current members (chore-rotation).
+	members map[string]map[string]bool
+	shared  map[string]opsync.ProjectAccess
 	// sectionProject maps a section id onto its project id (write validation).
 	sectionProject map[string]string
 	// sectionRows are the live section rows, for the flow of their tasks (project-flow-modes).
@@ -44,8 +46,10 @@ type snapshot struct {
 	fieldDefs    map[string][]opsync.Entity
 	allFieldDefs []opsync.Entity
 	// tracked is every member's live tracked minutes per task, a running entry
-	// to the server time (time-tracking D11).
-	tracked map[string]int
+	// to the server time (time-tracking D11): every entry of the task, the 1.0
+	// meaning of tracked_minutes. trackedOccurrence counts a repeating task's
+	// current occurrence only (tracked-time-api-compatible).
+	tracked, trackedOccurrence map[string]int
 	// places are the user's live saved locations by id (task-locations), for
 	// writes that link a location by place_id and reads that show its current values.
 	places map[string]opsync.Entity
@@ -89,7 +93,18 @@ func (r *Registry) keptAway(ctx context.Context, projects []opsync.Entity) (map[
 }
 
 func (r *Registry) load(ctx context.Context, userID string) (*snapshot, error) {
-	snap := &snapshot{projects: map[string]opsync.Entity{}, labels: map[string]string{}, sections: map[string]string{}, people: map[string]string{}, sectionProject: map[string]string{}, fieldDefs: map[string][]opsync.Entity{}}
+	return r.loadWith(ctx, userID, nil)
+}
+
+// taskReader reads a snapshot's tasks in place of every live task (live:
+// not deleted); ok false reads them all after all.
+type taskReader func(ctx context.Context) (tasks []opsync.Entity, ok bool, err error)
+
+// loadWith is load with the tasks read by tasks when it is not nil: a tool
+// whose answer depends on a few tasks reads only those (searchTasks). Every
+// other part of the snapshot is the same.
+func (r *Registry) loadWith(ctx context.Context, userID string, tasks taskReader) (*snapshot, error) {
+	snap := &snapshot{projects: map[string]opsync.Entity{}, labels: map[string]string{}, sections: map[string]string{}, people: map[string]string{}, members: map[string]map[string]bool{}, sectionProject: map[string]string{}, fieldDefs: map[string][]opsync.Entity{}}
 	var err error
 	if snap.projList, err = r.list(ctx, userID, "project", false); err != nil {
 		return nil, err
@@ -139,8 +154,16 @@ func (r *Registry) load(ctx context.Context, userID string) (*snapshot, error) {
 		}
 		snap.allFieldDefs = append(snap.allFieldDefs, d)
 	}
-	if snap.tasks, err = r.list(ctx, userID, "task", false); err != nil {
-		return nil, err
+	narrowed := false
+	if tasks != nil {
+		if snap.tasks, narrowed, err = tasks(ctx); err != nil {
+			return nil, err
+		}
+	}
+	if !narrowed {
+		if snap.tasks, err = r.list(ctx, userID, "task", false); err != nil {
+			return nil, err
+		}
 	}
 	hidden := map[string]bool{}
 	if len(snap.keptAway) > 0 {
@@ -173,7 +196,12 @@ func (r *Registry) load(ctx context.Context, userID string) (*snapshot, error) {
 	for _, pl := range places {
 		snap.places[rawStr(pl, "id")] = pl
 	}
-	snap.tracked = timetrack.TotalsByTask(list, r.now().UnixMilli())
+	occ := make([]timetrack.Occurrence, 0, len(snap.tasks))
+	for _, t := range snap.tasks {
+		occ = append(occ, timetrack.OccurrenceFromRow(t))
+	}
+	snap.tracked = timetrack.TotalsByTask(list, r.now().UnixMilli(), nil)
+	snap.trackedOccurrence = timetrack.CurrentTotals(list, occ, r.now().UnixMilli())
 	if err := r.loadWorkspaces(ctx, userID, snap); err != nil {
 		return nil, err
 	}
@@ -186,7 +214,9 @@ func (r *Registry) load(ctx context.Context, userID string) (*snapshot, error) {
 			return nil, err
 		}
 		for _, m := range ms {
+			snap.members[m.ProjectID] = map[string]bool{}
 			for _, mem := range m.Members {
+				snap.members[m.ProjectID][mem.UserID] = true
 				name := mem.Name
 				if name == "" {
 					name = mem.Email
@@ -283,6 +313,7 @@ func inboxTask(t opsync.Entity) inbox.Task {
 		Completed: !isOpen(t),
 		Deleted:   num(t, "deleted_at") != 0,
 		ParentID:  rawStr(t, "parent_id"),
+		Sector:    rawStr(t, "sector"),
 	}
 }
 
@@ -392,6 +423,8 @@ type taskText struct {
 	Section     string   `json:"section,omitempty"`
 	Labels      []string `json:"labels"`
 	Assignee    string   `json:"assignee,omitempty"`
+	// Rotation names the people who take turns, in order (chore-rotation).
+	Rotation []string `json:"rotation,omitempty"`
 	// Fields holds the string custom field values (text, link, date, choice)
 	// keyed by definition id: people wrote them (custom-fields).
 	Fields map[string]string `json:"fields,omitempty"`
@@ -443,6 +476,9 @@ type taskOut struct {
 	Overdue    bool     `json:"overdue,omitempty"`
 	LabelIDs   []string `json:"label_ids"`
 	AssigneeID *string  `json:"assignee_id,omitempty"`
+	// Rotation is the account ids of the people who take turns on a recurring
+	// task, in order; completing it assigns the next (chore-rotation).
+	Rotation   []string `json:"rotation,omitempty"`
 	Recurrence *string  `json:"recurrence,omitempty"`
 	// NextOccurrences are the next three projected dates of an open recurring
 	// task (floating YYYY-MM-DD), from the calculator every device draws
@@ -477,8 +513,13 @@ type taskOut struct {
 	// (OpenSpec change task-origin); its title and URL are in untrusted_text.
 	Origin *originOut `json:"origin"`
 	// TrackedMinutes is the task's live tracked time, every member's entries
-	// and a running one to the server time (OpenSpec change time-tracking).
+	// and a running one to the server time (OpenSpec change time-tracking):
+	// every entry of the task, a repeating task's earlier occurrences included.
 	TrackedMinutes int `json:"tracked_minutes"`
+	// TrackedMinutesOccurrence is set on a repeating task only: the minutes of
+	// its current occurrence, the entries since it was last completed or skipped
+	// (OpenSpec changes fix-recurring-tracked-time, tracked-time-api-compatible).
+	TrackedMinutesOccurrence *int `json:"tracked_minutes_occurrence,omitempty"`
 	// Planning fields (OpenSpec change agent-planning-fields, design D4):
 	// deadline and start as stored (start may be "someday"), evening, the ids
 	// the task waits for and blocked, true while any of them is open. Location
@@ -493,7 +534,10 @@ type taskOut struct {
 	// Evening stays the evening flag.
 	DayPart *string `json:"day_part"`
 	// Energy is "deep", "medium", "low" or null (OpenSpec change task-energy).
-	Energy    *string      `json:"energy"`
+	Energy *string `json:"energy"`
+	// Sector is the time sector as stored (2026-W45, 2026-11, 2026-Q4) or null
+	// (OpenSpec change time-sectors); plaintext for encrypted accounts too.
+	Sector    *string      `json:"sector"`
 	BlockedBy []string     `json:"blocked_by"`
 	Blocked   bool         `json:"blocked"`
 	Location  *locationOut `json:"location"`
@@ -505,6 +549,10 @@ type taskOut struct {
 	// change today-waiting-time-sensitive): true when it is due today with a
 	// time or its deadline is today.
 	TimeSensitive *bool `json:"time_sensitive,omitempty"`
+	// TimePassed is set by today_summary on a time-sensitive waiting task only
+	// (OpenSpec change today-waiting-time-passed): true once its time today is
+	// before now in the asked time zone (a deadline without a time never is).
+	TimePassed *bool `json:"time_passed,omitempty"`
 }
 
 // render builds the assistant-facing view of a task, evaluating dates in loc
@@ -519,6 +567,10 @@ func (snap *snapshot) render(t opsync.Entity, loc *time.Location, today string, 
 	}
 	if out.Completed {
 		out.CompletedBy = strPtr(t, "completed_by")
+	}
+	if out.Recurrence != nil {
+		m := snap.trackedOccurrence[out.ID]
+		out.TrackedMinutesOccurrence = &m
 	}
 	// An occurrence record names its series and the date it stands for
 	// (OpenSpec change series-exceptions, design D11).
@@ -550,6 +602,7 @@ func (snap *snapshot) render(t opsync.Entity, loc *time.Location, today string, 
 		out.AssigneeID = &aid
 		out.Untrusted.Assignee = snap.people[aid]
 	}
+	snap.rotationView(t, &out)
 	if m := int(num(t, "estimate_minutes")); m > 0 {
 		out.EstimateMinutes = &m
 	}
@@ -574,6 +627,9 @@ func (snap *snapshot) render(t opsync.Entity, loc *time.Location, today string, 
 	}
 	if e := str(t, "energy"); slices.Contains(opsync.EnergyLevels, e) {
 		out.Energy = &e
+	}
+	if sec := str(t, "sector"); sec != "" {
+		out.Sector = &sec
 	}
 	out.BlockedBy = stringList(t, "blocked_by")
 	if out.BlockedBy == nil {

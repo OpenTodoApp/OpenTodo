@@ -110,7 +110,8 @@ describe('task selection', () => {
     await click(q('[data-focus-complete]')!)
     await waitFor(() => q('#focus-done-heading')?.textContent === 'Today’s focus is done.', 'focus done')
     expect(button('Choose a task')).toBeTruthy()
-    expect(location.pathname).toBe('/focus')
+    // The heading shows when the session ends; the address follows once the completion is stored.
+    await waitFor(() => location.pathname === '/focus', 'back to /focus')
     await r.unmount()
   })
 

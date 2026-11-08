@@ -35,6 +35,32 @@ final class VersionTests: XCTestCase {
         XCTAssertEqual(Version.code("2.0"), 20000)
         XCTAssertEqual(Version.code("0.0.0-dev"), 0)
     }
+
+    /// `make ios` and the TestFlight job set both numbers (ios-distribution D9): the build
+    /// number is the version code, and a re-upload of the same version adds `.1`, `.2`, …
+    func testTheBundlesBuildNumberIsItsVersionCode() throws {
+        let info = Bundle.main.infoDictionary ?? [:]
+        let version = Version.normalize(info["CFBundleShortVersionString"] as? String)
+        try XCTSkipIf(version == "0.0.0", "a plain Run from Xcode carries the project's placeholder version")
+        let build = info["CFBundleVersion"] as? String ?? ""
+        let code = String(Version.code(version))
+        XCTAssertTrue(build == code || build.range(of: "^\(code)\\.[0-9]+$", options: .regularExpression) != nil,
+                      "CFBundleVersion \(build) does not belong to \(version) (\(code))")
+    }
+}
+
+/// What App Store review reads from the bundle (ios-distribution D7).
+final class StoreReadinessTests: XCTestCase {
+    func testExportComplianceIsDeclared() {
+        XCTAssertEqual(Bundle.main.object(forInfoDictionaryKey: "ITSAppUsesNonExemptEncryption") as? Bool, false)
+    }
+
+    func testTheAppAndTheShareExtensionCarryAPrivacyManifest() throws {
+        XCTAssertNotNil(Bundle.main.url(forResource: "PrivacyInfo", withExtension: "xcprivacy"))
+        let plugins = try XCTUnwrap(Bundle.main.builtInPlugInsURL)
+        let share = plugins.appendingPathComponent("OpenTodoShare.appex/PrivacyInfo.xcprivacy")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: share.path), "the share extension reads file sizes, which needs its own manifest")
+    }
 }
 
 final class ShareMapTests: XCTestCase {
@@ -143,6 +169,39 @@ final class BridgeTests: XCTestCase {
         XCTAssertTrue(script.contains("bridge: 1"))
         XCTAssertTrue(script.contains("'reminders'") || script.contains("\"reminders\""))
         XCTAssertTrue(script.contains("1.2.3"))
+    }
+
+    /// The message handler's origin check (external-security-review 5.7): only the main
+    /// frame of the configured server's origin is answered, compared by scheme, host and
+    /// port as WebKit reports a frame's security origin.
+    func testMessagesAreAnsweredOnlyFromTheConfiguredOrigin() throws {
+        let server = try XCTUnwrap(URL(string: "https://todo.example.com"))
+        XCTAssertTrue(Bridge.accepts(scheme: "https", host: "todo.example.com", port: 443, mainFrame: true, configured: server))
+        XCTAssertTrue(Bridge.accepts(scheme: "HTTPS", host: "Todo.Example.com", port: 443, mainFrame: true, configured: server))
+        // A frame inside the server's own page is refused too.
+        XCTAssertFalse(Bridge.accepts(scheme: "https", host: "todo.example.com", port: 443, mainFrame: false, configured: server))
+        // Another scheme, host or port is another origin.
+        XCTAssertFalse(Bridge.accepts(scheme: "http", host: "todo.example.com", port: 80, mainFrame: true, configured: server))
+        XCTAssertFalse(Bridge.accepts(scheme: "http", host: "todo.example.com", port: 443, mainFrame: true, configured: server))
+        XCTAssertFalse(Bridge.accepts(scheme: "https", host: "todo.example.com", port: 8443, mainFrame: true, configured: server))
+        XCTAssertFalse(Bridge.accepts(scheme: "https", host: "evil.example.com", port: 443, mainFrame: true, configured: server))
+        XCTAssertFalse(Bridge.accepts(scheme: "https", host: "todo.example.com.evil.example", port: 443, mainFrame: true, configured: server))
+        XCTAssertFalse(Bridge.accepts(scheme: "https", host: "example.com", port: 443, mainFrame: true, configured: server))
+        XCTAssertFalse(Bridge.accepts(scheme: "https", host: "sub.todo.example.com", port: 443, mainFrame: true, configured: server))
+        // Pages without a host (about:blank, data:, file:) never are.
+        XCTAssertFalse(Bridge.accepts(scheme: "about", host: "", port: 0, mainFrame: true, configured: server))
+        let file = try XCTUnwrap(URL(string: "file:///index.html"))
+        XCTAssertFalse(Bridge.accepts(scheme: "file", host: "", port: 0, mainFrame: true, configured: file))
+
+        let local = try XCTUnwrap(URL(string: "http://localhost:8080/today"))
+        XCTAssertTrue(Bridge.accepts(scheme: "http", host: "localhost", port: 8080, mainFrame: true, configured: local))
+        XCTAssertFalse(Bridge.accepts(scheme: "http", host: "localhost", port: 8081, mainFrame: true, configured: local))
+        XCTAssertFalse(Bridge.accepts(scheme: "http", host: "127.0.0.1", port: 8080, mainFrame: true, configured: local))
+        XCTAssertFalse(Bridge.accepts(scheme: "https", host: "localhost", port: 8080, mainFrame: true, configured: local))
+
+        let custom = try XCTUnwrap(URL(string: "https://todo.example.com:8443"))
+        XCTAssertTrue(Bridge.accepts(scheme: "https", host: "todo.example.com", port: 8443, mainFrame: true, configured: custom))
+        XCTAssertFalse(Bridge.accepts(scheme: "https", host: "todo.example.com", port: 443, mainFrame: true, configured: custom))
     }
 
     func testCapabilitiesFollowTheDevice() {

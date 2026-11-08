@@ -31,6 +31,10 @@ What keeps a sequence where it is:
 
 The order is always the list's own order, whatever sort you chose to look at it.
 
+## Subtasks one at a time
+
+A task with two subtasks or more has **One at a time** above its subtasks. Turn it on and only the first open subtask is available, with everything under it; the others wait for it, in any project or the Inbox. A subtask can have its own subtasks one at a time too, so a plan can mix steps in order with steps done together.
+
 ## Areas
 
 An area shows no progress on the [All projects](all-projects.md) page, where its progress reads **Area**. It is never called **Quiet**, and it is never listed as without a next action in the weekly review, on the Loop home or in the weekly email. Its tasks work like a parallel project's, and its sub-projects keep their own flows. A top-level area is listed in the Monthly look's **Areas** step, with or without sub-projects.

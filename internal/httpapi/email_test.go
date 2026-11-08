@@ -14,7 +14,7 @@ import (
 
 	"github.com/OpenTodoApp/opentodo/internal/config"
 	"github.com/OpenTodoApp/opentodo/internal/email"
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 	"github.com/OpenTodoApp/opentodo/internal/tenant/services"
 )
@@ -69,7 +69,7 @@ const (
 // emailEnv is newEnv with email capture configured and an in-memory mailbox.
 func emailEnv(t *testing.T) (*env, *email.Service, *testMailbox) {
 	t.Helper()
-	db, err := store.Open(t.TempDir())
+	db, err := storetest.OpenDir(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}

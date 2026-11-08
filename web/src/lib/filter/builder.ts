@@ -66,12 +66,14 @@ export function formatLeaf(n: Node): string {
     case 'search': return `search: ${quoteText(n.text)}`
     case 'notes': return `notes: ${quoteText(n.text)}`
     case 'origin': return `origin: ${quoteText(n.value)}`
+    case 'assigned': return `assigned: ${quoteText(n.name)}`
     case 'energy': return `energy: ${n.value}`
+    case 'sector': return `sector: ${/^\d/.test(n.value) ? n.value : n.value.replace('-', ' ')}`
     case 'workspace': return `workspace: ${quoteText(n.name)}`
     // Field names are always quoted: a bare one could be a reserved word.
     case 'field': return `${quoteAlways(n.name)} ${n.op} ${formatFieldValue(n.value)}`
     case 'nofield': return `no ${quoteAlways(n.name)}`
-    case 'tracked': return `tracked ${n.op} ${formatMinutes(n.minutes)}`
+    case 'tracked': return `tracked ${n.occurrence ? 'occurrence ' : ''}${n.op} ${formatMinutes(n.minutes)}`
     case 'or': case 'and': case 'not': return formatQuery(n)
   }
 }

@@ -15,7 +15,8 @@
 //   logTime(taskId, startedAt, endedAt, note)  a closed entry (manual entries)
 //   updateTimeEntry(id, { started_at?, ended_at?, note? }) / deleteTimeEntry(id)
 //   repairRunning()                            the one-running-entry repair (design D2)
-//   useRunningEntry(), useTaskEntries(id), useTaskTracked(id), useTrackedTotals(), useMinuteNow(active)
+//   useRunningEntry(), useTaskEntries(id), useTaskTracked(id), useTrackedTotals(), useMinuteNow(active),
+//   useOccurrenceStart(id)
 //
 // Every action is one mutateMany batch: applied locally at once, queued for the
 // server, offline-safe. A pause is a stop; resuming starts a new entry (each
@@ -26,10 +27,11 @@ import { db } from './db'
 import { derived, liveSnapshot } from './liveSnapshot'
 import { getDeviceId, mutateMany, mutationTables, type Change } from './ops'
 import { currentUserId, useMe } from './sharing'
-import { isRunning, ownMinutesOnDay, repairs, running, startBatch, totalsByTask, type Repair } from './time'
-import { useLiveTasks } from './liveTasks'
+import { currentTotals, isRunning, occurrenceStarts, ownMinutesOnDay, repairs, running, startBatch, totalsByTask, type Repair } from './time'
+import { everyTask, useLiveTasks, useTasksOfEveryWorkspace } from './liveTasks'
 import { uuid } from './ids'
 import type { Task, TimeEntry } from './types'
+import { LOCAL_ERRORS } from './localErrors'
 
 /** An end before the start (the form and the actions refuse it). */
 export class TimeRangeError extends Error {
@@ -69,7 +71,7 @@ export function planEntry(id: string, taskId: string, me: string, device: string
 
 async function signedIn(): Promise<string> {
   const me = await currentUserId()
-  if (!me) throw new Error('not signed in')
+  if (!me) throw new Error(LOCAL_ERRORS.notSignedIn)
   return me
 }
 
@@ -138,7 +140,7 @@ export async function logTime(taskId: string, startedAt: number, endedAt: number
  */
 export async function updateTimeEntry(id: string, patch: Partial<Pick<TimeEntry, 'started_at' | 'ended_at' | 'note'>>): Promise<void> {
   const row = await db.timeEntries.get(id)
-  if (!row) throw new Error('time entry not found')
+  if (!row) throw new Error(LOCAL_ERRORS.timeEntryNotFound)
   const start = patch.started_at ?? row.started_at
   const end = patch.ended_at !== undefined ? patch.ended_at : row.ended_at
   if (end !== null && end < start) throw new TimeRangeError()
@@ -217,24 +219,38 @@ export function useMinuteNow(active: boolean): number {
 
 const NO_TOTALS: ReadonlyMap<string, number> = new Map()
 
+/** The tracked minutes per task the filter reads (filter/evaluate.ts FilterContext). */
+export interface TrackedTotals {
+  /** Every entry of the task, as in 1.0: `tracked` in filters and saved views. */
+  tracked: ReadonlyMap<string, number>
+  /** A repeating task's current occurrence only (fix-recurring-tracked-time): the row chip, `tracked occurrence`. */
+  trackedOccurrence: ReadonlyMap<string, number>
+}
+
+const NO_TRACKED: TrackedTotals = { tracked: NO_TOTALS, trackedOccurrence: NO_TOTALS }
+
+const sameTotals = (a: ReadonlyMap<string, number>, b: ReadonlyMap<string, number>) => a.size === b.size && [...a].every(([k, v]) => b.get(k) === v)
+
 /**
- * Every member's tracked minutes per task, shared by every row (design D4): one
- * map recomputed when the entries change and, while an entry runs, on each
- * minute boundary by one timer for the whole app. A row reads its own number,
+ * Every member's tracked minutes per task, shared by every row (design D4): two
+ * maps recomputed when the entries or the tasks change and, while an entry runs, on
+ * each minute boundary by one timer for the whole app. A row reads its own number,
  * so a tick re-renders only the rows whose total changed.
  */
 const totals = (() => {
-  let value: ReadonlyMap<string, number> = NO_TOTALS
+  let value: TrackedTotals = NO_TRACKED
   let timer: ReturnType<typeof setTimeout> | null = null
   let stop: (() => void) | null = null
   const listeners = new Set<() => void>()
   const recompute = () => {
     const all = entryRows.read()
     const live = all ? liveOf(all) : NO_ENTRIES
-    const next = live.length ? totalsByTask(live, Date.now()) : NO_TOTALS
-    const same = next.size === value.size && [...next].every(([k, v]) => value.get(k) === v)
-    if (!same) {
-      value = next
+    const now = Date.now()
+    const tracked = live.length ? totalsByTask(live, now) : NO_TOTALS
+    const trackedOccurrence = live.length ? currentTotals(live, everyTask.read() ?? [], now) : NO_TOTALS
+    const sameAll = sameTotals(tracked, value.tracked), sameOcc = sameTotals(trackedOccurrence, value.trackedOccurrence)
+    if (!sameAll || !sameOcc) {
+      value = { tracked: sameAll ? value.tracked : tracked, trackedOccurrence: sameOcc ? value.trackedOccurrence : trackedOccurrence }
       for (const l of listeners) l()
     }
     if (timer) clearTimeout(timer)
@@ -244,7 +260,9 @@ const totals = (() => {
     subscribe(fn: () => void): () => void {
       listeners.add(fn)
       if (!stop) {
-        stop = entryRows.subscribe(recompute)
+        const offEntries = entryRows.subscribe(recompute)
+        const offTasks = everyTask.subscribe(recompute)
+        stop = () => { offEntries(); offTasks() }
         recompute()
       }
       return () => {
@@ -254,7 +272,7 @@ const totals = (() => {
           stop = null
           if (timer) clearTimeout(timer)
           timer = null
-          value = NO_TOTALS
+          value = NO_TRACKED
         }
       }
     },
@@ -262,15 +280,25 @@ const totals = (() => {
   }
 })()
 
-/** Every member's tracked minutes per task (the filter, the panel, Today), live and ticking. */
-export function useTrackedTotals(): ReadonlyMap<string, number> {
+/** Every member's tracked minutes per task (the filter, saved views, the sidebar's counts), live and ticking: spread it into a filter context. */
+export function useTrackedTotals(): TrackedTotals {
   return useSyncExternalStore(totals.subscribe, totals.read, totals.read)
 }
 
-/** One task's tracked minutes, undefined without entries (rows). */
+/** One task's tracked minutes shown against its estimate, a repeating task's current occurrence; undefined without entries (rows). */
 export function useTaskTracked(taskId: string): number | undefined {
-  const read = useCallback(() => totals.read().get(taskId), [taskId])
+  const read = useCallback(() => totals.read().trackedOccurrence.get(taskId), [taskId])
   return useSyncExternalStore(totals.subscribe, read, read)
+}
+
+/**
+ * When a repeating task's current occurrence began (time.ts occurrenceStarts):
+ * the panel counts the entries from then against the estimate. Undefined for
+ * any other task, and for a series not yet completed or skipped.
+ */
+export function useOccurrenceStart(taskId: string): number | undefined {
+  const tasks = useTasksOfEveryWorkspace()
+  return useMemo(() => (tasks ? occurrenceStarts(tasks, new Set([taskId])).get(taskId) : undefined), [tasks, taskId])
 }
 
 /**

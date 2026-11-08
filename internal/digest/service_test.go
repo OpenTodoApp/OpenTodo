@@ -19,7 +19,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/mail"
 	"github.com/OpenTodoApp/opentodo/internal/mail/smtptest"
 	"github.com/OpenTodoApp/opentodo/internal/settings"
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
@@ -78,7 +78,7 @@ func at(s string) time.Time {
 func newEnv(t *testing.T) *env {
 	t.Helper()
 	dir := t.TempDir()
-	db, err := store.Open(dir)
+	db, err := storetest.OpenDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -49,6 +49,6 @@ The package names one release, pinned by its digest, because Umbrel requires tha
 
 ## Data and backups
 
-Everything OpenTodo stores (the database, attachments and its own backups) is in the app's data folder, `~/umbrel/app-data/opentodo/data` on the Umbrel. umbrelOS backups include it, and the data folder can be moved to another drive in umbrelOS 2.0. You can also turn on scheduled backups in OpenTodo's **Settings → Server** (written to `backups/` in the same folder, or to S3 or WebDAV). See [Backups](../backups.md).
+Everything OpenTodo stores (the database, attachments and its own backups) is in the app's data folder, `~/umbrel/app-data/opentodo/data` on the Umbrel. umbrelOS backups include it, and the data folder can be moved to another drive in umbrelOS 2.0. You can also turn on scheduled backups in OpenTodo's **Settings → Server → Backups** (written to `backups/` in the same folder, or to S3 or WebDAV). See [Backups](../backups.md).
 
 OpenTodo runs as user 1000 there, the owner of Umbrel's app data, so no permission changes are needed.

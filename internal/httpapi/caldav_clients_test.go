@@ -4,6 +4,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 )
 
 // OpenSpec change caldav-interop, tasks 5.2 and 5.3: what real clients sent in
@@ -52,6 +53,10 @@ func occurrenceRecords(e *env, seriesID string) int {
 // (RECURRENCE-ID with STATUS:COMPLETED) next to the unchanged series.
 func TestThunderbirdCompletesOccurrence(t *testing.T) {
 	e, c := davSetup(t)
+	// The series starts on 2026-11-02. Freeze before that day: once real time
+	// passes the next occurrence, catch-up moves the series to the day after
+	// today instead of 2026-11-03.
+	e.now.Freeze(time.Date(2026, 10, 22, 12, 0, 0, 0, time.UTC))
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "TB daily", "due": map[string]any{"date": "2026-11-02"}, "recurrence": "every day"})
 	e.mustStatus(resp, 201, out)
 	id := out["id"].(string)
@@ -76,6 +81,10 @@ func TestThunderbirdCompletesOccurrence(t *testing.T) {
 // date as EXDATE and without the override.
 func TestCompletedOverrideOfAnotherDay(t *testing.T) {
 	e, c := davSetup(t)
+	// The series starts on 2026-11-02. Freeze before that day, as the test above
+	// does: once real time passes the next occurrence, catch-up moves the series to
+	// the day after today and the series no longer keeps the date asserted below.
+	e.now.Freeze(time.Date(2026, 10, 22, 12, 0, 0, 0, time.UTC))
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "TB daily", "due": map[string]any{"date": "2026-11-02"}, "recurrence": "every day"})
 	e.mustStatus(resp, 201, out)
 	id := out["id"].(string)

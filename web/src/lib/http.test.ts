@@ -53,6 +53,23 @@ describe('fetchWithTimeout', () => {
     expect(isTransientNetworkError(new TypeError('x is not a function'))).toBe(false)
   })
 
+  it('a body that stops arriving is a NetworkError, not an empty success', async () => {
+    // WebKit rejects the body read with a TypeError ("Load failed") when the
+    // connection or the page goes away mid-read; read as {}, listPublicLinks
+    // resolved without `links` and the project header crashed on `.length`.
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(new ReadableStream({
+      start(c) { c.enqueue(new TextEncoder().encode('{"li')); c.error(new TypeError('Load failed')) },
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } })))
+    const err = await api.listPublicLinks('p1').catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(NetworkError)
+    expect(isTransientNetworkError(err)).toBe(true)
+  })
+
+  it('a complete body that is not JSON still reads as an empty answer', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('', { status: 200 })))
+    await expect(api.me()).resolves.toEqual({})
+  })
+
   it("the caller's own abort is passed on, not reported as a timeout", async () => {
     vi.stubGlobal('fetch', hangingFetch())
     const c = new AbortController()

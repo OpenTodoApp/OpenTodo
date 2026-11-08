@@ -7,10 +7,12 @@ import { type FormEvent, type KeyboardEvent, type PointerEvent as ReactPointerEv
 import { useLabels, useProjects } from '../lib/localData'
 import { beginDrag } from '../lib/dnd'
 import {
-  LabelExistsError, countOpenByLabel, createLabel, deleteLabel, duplicateLabelIds, labelKey, labelUsage,
+  LabelExistsError, createLabel, deleteLabel, duplicateLabelIds, labelKey, labelUsage,
   mergeLabels, moveLabelTo, reorderLabel, updateLabel,
 } from '../lib/labels'
 import { useOpenTasks } from '../lib/liveTasks'
+import { labelCounts, patchLabelCounts } from '../lib/sidebarCounts'
+import { Derived } from '../lib/taskDelta'
 import type { Label } from '../lib/types'
 import { Badge, Button, PageBody, PageHeader, ReadAs, Popover } from '../ui'
 import { ComboboxPanel } from '../ui'
@@ -37,10 +39,10 @@ export function useLabelData() {
   // hidden. The tasks come from the shared snapshot (large-list-performance D2).
   const projects = useProjects()
   const openTasks = useOpenTasks()
-  const counts = useMemo(() => {
-    const skip = new Set(projects.filter((p) => p.archived).map((p) => p.id))
-    return countOpenByLabel(openTasks.filter((task) => !task.project_id || !skip.has(task.project_id)))
-  }, [projects, openTasks])
+  // Worked out from the rows each write changed (incremental-list-updates D2).
+  const archived = useMemo(() => new Set(projects.filter((p) => p.archived).map((p) => p.id)), [projects])
+  const countsOf = useRef(new Derived<Map<string, number>, [ReadonlySet<string>]>(labelCounts, patchLabelCounts)).current
+  const counts = countsOf.get(openTasks, archived)
   return { labels, counts, duplicates: duplicateLabelIds(labels) }
 }
 
@@ -322,7 +324,7 @@ export function LabelRow({ label, labels, count, duplicate, route, drop, onDragS
       {drop?.id === label.id && <span aria-hidden="true" className={`pointer-events-none absolute inset-x-1 h-0.5 rounded-control bg-accent ${drop.zone === 'before' ? '-top-px' : '-bottom-px'}`} />}
       <div className="flex items-center gap-1 pr-1">
         {onDragStart && (
-          <span className="hover-reveal flex cursor-grab touch-none items-center pl-1 text-faint" aria-hidden="true"
+          <span data-drag-id="label" className="hover-reveal flex cursor-grab touch-none items-center pl-1 text-faint" aria-hidden="true"
             onPointerDown={(e) => onDragStart(e, label)} data-label-handle>
             <Icon name="grip-vertical" size="xs" />
           </span>

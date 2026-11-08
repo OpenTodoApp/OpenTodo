@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 // Swipe actions on a touch list (OpenSpec change phone-v2, design D3, D4, D8): right
 // completes with Undo, left opens the Schedule sheet, short pulls and diagonal moves
-// do nothing, a selection turns swipes off, the one-time cue, and a long press selects.
+// do nothing, a selection turns swipes off, the one-time cue, and the grip's tap and
+// long press select (the row body's own long press is the menu's, not a tick).
 import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -14,7 +15,7 @@ import { navigate } from './router'
 import { Shell } from './Shell'
 import { hideBulkToast } from './bulk/toastStore'
 import { UndoToast } from './bulk/UndoToast'
-import { resetPanel } from './panel'
+import { panelTaskId, resetPanel } from './panel'
 import { TaskListView } from './TaskListView'
 import { TaskRow } from './TaskRow'
 
@@ -109,12 +110,13 @@ describe('swipe actions on a touch list', () => {
     expect((await db.tasks.get(id))!.completed_at).toBeNull()
   })
 
-  it('a long press ticks the row, shows the checkboxes and the bar; swipes are then off', async () => {
+  it("the grip's long press ticks the row, shows the checkboxes and the bar; swipes are then off", async () => {
     const vibrate = vi.fn()
     Object.defineProperty(navigator, 'vibrate', { value: vibrate, configurable: true })
     const [id] = await inbox('Hold me', 'Other')
+    const grip = row(id).querySelector<HTMLElement>('[data-row-grip] button')!
     vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout'] })
-    await act(async () => { row(id).dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 4, pointerType: 'touch', clientX: 20, clientY: 20 })) })
+    await act(async () => { grip.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 4, pointerType: 'touch', clientX: 20, clientY: 20 })) })
     await act(async () => { vi.advanceTimersByTime(400) })
     await act(async () => { window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 4, pointerType: 'touch', clientX: 20, clientY: 20 })) })
     // The swallowed click's guard ends on a timer; let it run before real timers come back.
@@ -126,6 +128,28 @@ describe('swipe actions on a touch list', () => {
     expect(document.querySelectorAll('[data-tick]').length).toBe(2)
     expect(document.querySelector('[data-selection-bar]')).toBeTruthy()
     expect(row(id).hasAttribute('data-swipeable')).toBe(false)
+  })
+
+  it('a tap on the grip ticks with one haptic; a long press on the row body never ticks', async () => {
+    const vibrate = vi.fn()
+    Object.defineProperty(navigator, 'vibrate', { value: vibrate, configurable: true })
+    const [gripId, bodyId] = await inbox('Tap me', 'Body hold')
+    const grip = row(gripId).querySelector<HTMLElement>('[data-row-grip] button')!
+    await act(async () => { grip.click() })
+    await waitFor(() => row(gripId).hasAttribute('data-ticked'))
+    expect(vibrate).toHaveBeenCalledWith(10)
+    expect(document.querySelector('[data-selection-bar]')).toBeTruthy()
+    // The body's own hold is the menu's gesture now: it tints, but never ticks.
+    const body = row(bodyId)
+    vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout'] })
+    await act(async () => { body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 5, pointerType: 'touch', clientX: 30, clientY: 60 })) })
+    await act(async () => { vi.advanceTimersByTime(400) })
+    expect(body.hasAttribute('data-touch-hold')).toBe(true)
+    await act(async () => { window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 5, pointerType: 'touch', clientX: 30, clientY: 60 })) })
+    await act(async () => { vi.advanceTimersByTime(10) })
+    vi.useRealTimers()
+    vi.useFakeTimers({ toFake: ['Date'] })
+    expect(body.hasAttribute('data-ticked')).toBeFalsy()
   })
 
   it('the one-time cue: shown once per device, the toast names the gesture and its menu twin', async () => {
@@ -163,7 +187,7 @@ describe('the swipes\' twins and touch selection', () => {
     await waitFor(async () => (await db.tasks.get(id))!.completed_at !== null, 'the completion written')
   })
 
-  it('Select tasks in the bar\'s menu shows every checkbox without a tick; Done hides them and keeps the ticks', async () => {
+  it('Select tasks in the bar\'s menu shows every checkbox without a tick; Close hides them and keeps the ticks', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
     await createTask({ title: 'One' })
     await createTask({ title: 'Two' })
@@ -185,6 +209,30 @@ describe('the swipes\' twins and touch selection', () => {
     await waitFor(() => [...document.querySelectorAll('[data-tick]')].filter((i) => i.closest('label')!.className.includes('inline-flex')).length === 1)
     expect(document.querySelectorAll('[data-ticked]')).toHaveLength(1)
     expect(document.querySelector('[data-selection-bar]')).toBeTruthy()
+  })
+
+  it('in Select mode a tap on a row ticks it and does not open it, the title or the bare row alike', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 404 })))
+    const one = await createTask({ title: 'One' })
+    const two = await createTask({ title: 'Two' })
+    navigate({ view: 'inbox' })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    mounted.push(r)
+    await waitFor(() => !!document.querySelector('[data-phone-bar] [data-inbox-menu]'))
+    await act(async () => { document.querySelector<HTMLButtonElement>('[data-phone-bar] [data-inbox-menu]')!.click() })
+    await waitFor(() => !!document.querySelector('[data-phone-item="select"]'))
+    await act(async () => { document.querySelector<HTMLElement>('[data-phone-item="select"]')!.click() })
+    await waitFor(() => document.querySelectorAll('[data-tick]').length === 2)
+    await act(async () => { row(one).querySelector<HTMLButtonElement>('[data-row-open]')!.click() })
+    await waitFor(() => row(one).hasAttribute('data-ticked'))
+    // Ticked, not opened: no task is in the side panel.
+    expect(panelTaskId()).toBeNull()
+    // The bare row (outside its title button) ticks too.
+    await act(async () => { row(two).click() })
+    await waitFor(() => document.querySelectorAll('[data-ticked]').length === 2)
+    await act(async () => { row(one).querySelector<HTMLButtonElement>('[data-row-open]')!.click() })
+    await waitFor(() => document.querySelectorAll('[data-ticked]').length === 1)
+    expect(row(two).hasAttribute('data-ticked')).toBe(true)
   })
 })
 

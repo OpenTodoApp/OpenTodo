@@ -87,6 +87,17 @@ export const AUDIT_LABELS = translatedMap<AuditEventName>({
   'member_invitation.accepted': msg('Invitation to join accepted'),
   'member_invitation.declined': msg('Invitation to join declined'),
   'member_invitation.cancelled': msg('Invitation to join cancelled'),
+  'calendar_connection.created': msg('Calendar connected'),
+  'calendar_connection.updated': msg('Calendar connection changed'),
+  'calendar_connection.deleted': msg('Calendar disconnected'),
+  'project.agent_access': msg('Project kept away from AI assistants changed'),
+  'task_page.published': msg('Task published as a page'),
+  'task_page.revoked': msg('Task page revoked'),
+  'mcp_oauth.client_created': msg('AI app sign-in client created'),
+  'mcp_oauth.client_deleted': msg('AI app sign-in client deleted'),
+  'mcp_oauth.granted': msg('AI app connected'),
+  'mcp_oauth.revoked': msg('AI app disconnected'),
+  'mcp_oauth.refresh_reused': msg('AI app disconnected: an old token was reused'),
 })
 
 const REASONS = translatedMap<string>({

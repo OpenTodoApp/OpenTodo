@@ -28,7 +28,7 @@ const (
 
 func (s *Server) registerCalendarSyncRoutes(mux *routes) {
 	w := s.calsync
-	s.calsyncLimiter = newRateLimiter(calsyncActionsPerHr, time.Hour)
+	s.calsyncLimiter = s.limit("calsync.action", calsyncActionsPerHr, time.Hour)
 	gate := switchGate(s.calsyncOn, "calendar_sync_disabled", "the server owner has not enabled calendar sync")
 
 	s.switchRoutes(mux, "/api/v1/settings/calendar-sync", switchRoute{sw: s.calsyncOn,

@@ -95,8 +95,8 @@ Do not set an `https://` address while you open OpenTodo over plain http: the se
 
 The project uses the `stable` image, which every release moves. Container Manager shows no update notice for images from `ghcr.io`, so update by hand: **Project → opentodo → Action → Stop**, then **Action → Build**. Because of `pull_policy: always`, the build pulls the current `stable` image and recreates the container; the data folder is kept and migrations run on start. There are no down-migrations, so back up first. If the version at `http://<your-nas-address>:8080/healthz` did not change, stop the project, choose **Action → Clean**, delete the image under **Image**, and **Build** again.
 
-To stay on one release line, use `ghcr.io/opentodoapp/opentodo:0.19` (or one version, `0.19.0`) as the image.
+To stay on one release line, use `ghcr.io/opentodoapp/opentodo:1.2` (or one version, `1.2.0`) as the image.
 
 ## Backups
 
-Everything OpenTodo stores (the database, attachments and its own backups) is in `/volume1/docker/opentodo/data`. Back up the `docker/opentodo` folder with **Hyper Backup**, or take snapshots of the `docker` shared folder with **Snapshot Replication** (Btrfs volumes). For a copy that is consistent while OpenTodo runs, turn on scheduled backups in OpenTodo's **Settings → Server**: they are written to `data/backups` (which Hyper Backup then picks up) or to S3 or WebDAV. See [Backups](../backups.md).
+Everything OpenTodo stores (the database, attachments and its own backups) is in `/volume1/docker/opentodo/data`. Back up the `docker/opentodo` folder with **Hyper Backup**, or take snapshots of the `docker` shared folder with **Snapshot Replication** (Btrfs volumes). For a copy that is consistent while OpenTodo runs, turn on scheduled backups in OpenTodo's **Settings → Server → Backups**: they are written to `data/backups` (which Hyper Backup then picks up) or to S3 or WebDAV. See [Backups](../backups.md).

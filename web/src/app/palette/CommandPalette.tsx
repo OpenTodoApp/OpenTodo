@@ -12,17 +12,16 @@ import { useWorkspaceFilter } from '../useWorkspaceFilter'
 import { useAgentExclusions } from '../../lib/agentAccess'
 import { useFieldDefs } from '../useFields'
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type SetStateAction } from 'react'
-import { useLabels, useProjects, useProjectsOfEveryWorkspace, useSectionPlace, useUserPrefsRow, useWorkspaceState, useMembershipMapOrLoading, useReviewEvery } from '../../lib/localData'
+import { useLabels, useProjects, useSectionPlace, useUserPrefsRow, useWorkspaceState, useMembershipMapOrLoading, useReviewEvery } from '../../lib/localData'
 import { dayPartsOn } from '../../lib/dayParts'
+import { timeSectorsOn } from '../../lib/sectorNames'
 import { isFavourite } from '../../lib/favourites'
-import { earlierIds } from '../../lib/dayLists'
+import { earlierIds, todayAssigneeFilter } from '../../lib/dayLists'
 import { usePickScores } from '../../lib/pickRank'
 import { canEditProject, roleOf } from '../../lib/sharing'
 import { useViewMode } from '../../lib/sections'
-import { NO_TASKS, useLiveTasks, useTasksOfEveryWorkspace } from '../../lib/liveTasks'
-import { Partition } from '../../lib/workspaces'
-import { workspaceLabel } from '../workspaceNav'
-import type { Task, User } from '../../lib/types'
+import { NO_TASKS, useLiveTasks } from '../../lib/liveTasks'
+import type { User } from '../../lib/types'
 import { ComboboxField, ComboboxList, ComboboxPanel, Dialog } from '../../ui'
 import { useCombobox } from '../../ui'
 import { CatalogueIcon, Icon } from '../../ui'
@@ -35,7 +34,8 @@ import { useStartView, useToday, useViews } from '../useViews'
 import { useVimEnabled } from '../vim/prefs'
 import { groupOf, isStep, KIND_ICON, secondaryOf, type Entry, type Step } from './entries'
 import { filterEntries } from './filterEntries'
-import { buildEntries, makeTaskEntry } from './index'
+import { makeTaskEntry } from './index'
+import { usePaletteEntities } from './usePaletteEntities'
 import { commandEntries, contextEntries, trailingEntries, type PaletteContext } from './registry'
 import { t } from '../../lib/i18n'
 import { useAssistantStatus } from '../../lib/assistantStatus'
@@ -46,6 +46,7 @@ import { AddPanel, AskPanel, BarFooter, ModeSwitch, ShortcutKeys } from './BarPa
 import { barModes, PREFIX_OF, prefixSwitch, type BarMode } from './modes'
 import { useResetOnChange } from '../../lib/useResetOnChange'
 import { Snippet, usePaletteNotes } from './notesSection'
+import { perfMark, SEARCH_RESULTS } from '../../lib/perfMarks'
 
 /** At most this many entries are listed; the rest are counted. */
 export const PALETTE_LIMIT = 50
@@ -95,6 +96,10 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
   const agentExclusions = useAgentExclusions()
   const reviewEvery = useReviewEvery()
   const missedBlocks = useMissedBlocks().length
+  // Today's earlier tasks, once per data change: ctx follows the text typed, and this
+  // read every task on each keystroke (list-rendering-at-scale D6).
+  const hideOthers = useMemo(() => (memberships ? todayAssigneeFilter(prefs, [...memberships.values()], user?.id ?? null) : null), [prefs, memberships, user])
+  const earlier = useMemo(() => earlierIds(tasks, projects, today, hideOthers), [tasks, projects, today, hideOthers])
   const ctx = useMemo<PaletteContext>(() => {
     const projectId = route.view === 'project' ? route.id : null
     const project = projectId ? projects.find((p) => p.id === projectId) : undefined
@@ -117,29 +122,17 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
       view: view ? { row: view, peers: sorted, isStart: startView === `view:${view.id}` } : undefined,
       label: label ? { row: label, labels: [...labels].sort((a, b) => a.position - b.position), pinned: isFavourite(prefs, 'label', label.id) } : undefined,
       section: sectionInfo && task && list && !list.readOnly(task) ? sectionInfo : undefined,
-      earlier: earlierIds(tasks, projects, today),
+      earlier,
       dayParts: dayPartsOn(prefs),
+      timeSectors: timeSectorsOn(prefs),
       slot: task ? slotStateOf(task.id) : null,
       missedBlocks,
     }
-  }, [route, user, today, list, task, query, vimEnabled, showShortcuts, projects, memberships, views, labels, tasks, startView, sectionInfo, prefs, agentExclusions, reviewEvery, workspaceState, missedBlocks])
+  }, [route, user, today, list, task, query, vimEnabled, showShortcuts, projects, memberships, views, labels, tasks, startView, sectionInfo, prefs, agentExclusions, reviewEvery, workspaceState, missedBlocks, earlier])
 
   const taskEntry = useMemo(() => makeTaskEntry(projects, today), [projects, today])
-  // Tasks and projects of every workspace: picking one elsewhere switches the device (workspaces).
-  const everyTask = useTasksOfEveryWorkspace() ?? tasks
-  const everyProject = useProjectsOfEveryWorkspace()
-  const elsewhere = useMemo(() => {
-    if (workspaceState.list.length <= 1) return undefined
-    const p = new Partition(workspaceState.defaultId, workspaceState.list.map((w) => w.id), everyProject, everyTask)
-    const here = p.own(workspaceState.current)
-    const names = new Map(workspaceState.list.map((w) => [w.id, workspaceLabel(w.name, w.default)]))
-    return (kind: 'task' | 'project', row: { id: string }) => {
-      const ws = kind === 'task' ? p.taskRow(row as Task) : p.project(row.id)
-      return ws === here ? undefined : names.get(ws)
-    }
-  }, [workspaceState, everyProject, everyTask])
-  const source = useMemo(() => [...commandEntries(ctx), ...buildEntries({ tasks: everyTask, projects: everyProject.length ? everyProject : projects, labels, views, user, today, elsewhere })],
-    [ctx, everyTask, everyProject, projects, labels, views, user, today, elsewhere])
+  const entities = usePaletteEntities(user, today, projects, labels, views, tasks)
+  const source = useMemo(() => [...commandEntries(ctx), ...entities], [ctx, entities])
   const emptySource = useMemo(() => {
     const context = contextEntries(ctx)
     const seen = new Set(context.map((e) => e.key))
@@ -183,6 +176,8 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
     onClose: () => { if (keepOpen.current) keepOpen.current = false; else onClose() },
   })
   useResetOnChange([state.query], () => setTyped(state.query))
+  // The results for the text typed so far are on screen (performance-10k D4).
+  useEffect(() => { if (state.query.trim()) perfMark(SEARCH_RESULTS) }, [state.query, state.options])
   // The prefixes switch mode as the first character of an empty field (modes.ts).
   const field = { ...state, setQuery: (next: SetStateAction<string>) => {
     const v = typeof next === 'function' ? next(state.query) : next

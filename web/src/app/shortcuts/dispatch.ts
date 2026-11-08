@@ -5,9 +5,10 @@
 // registry (`web/src/lib/shortcuts.ts`) in the innermost active scope first, and
 // runs once. No DOM beyond the event and `document.activeElement`, so tests drive
 // it with plain frames and synthetic events.
-import { type Chord, chordKey, chordsOf, matchesChord, SHORTCUTS, type Shortcut, type ShortcutScope } from '../../lib/shortcuts'
+import { type Chord, chordKey, chordsOf, matchesChord, SEQUENCE_STEPS, SHORTCUTS, type Shortcut, type ShortcutScope } from '../../lib/shortcuts'
 import { resettable } from '../../lib/moduleState'
 import { createSignal } from '../../lib/store'
+import { isCharacterKey, singleKeysOn } from './singleKeys'
 
 export type ShortcutHandler = (e: KeyboardEvent, s: Shortcut) => boolean | void
 
@@ -123,9 +124,19 @@ export function isActivationTarget(target: EventTarget | null): boolean {
   return !!t && typeof t.matches === 'function' && t.matches('button, a[href], summary, select, [role="button"], [role="link"], [role="tab"], [role="menuitem"], [role="option"], [role="checkbox"], [role="switch"], [role="treeitem"], input[type="checkbox"], input[type="radio"]')
 }
 
+const DIALOG = '[role="dialog"]:not([data-spotlight])'
+
 function dialogOpen(): boolean {
+  if (typeof document === 'undefined' || !document.body) return false
   // The sequence spotlight is a hint over the page, not a modal: it does not mute the scopes.
-  return typeof document !== 'undefined' && !!document.querySelector('[role="dialog"]:not([data-spotlight])')
+  // Dialogs and popovers are portalled to the body (ui/overlay): the app's own tree is not
+  // searched, which on a 2,000-row list cost a full scan of the page on every key
+  // (list-rendering-at-scale).
+  for (const el of document.body.children) {
+    if (el.id === 'root') continue
+    if (el.matches(DIALOG) || el.querySelector(DIALOG)) return true
+  }
+  return false
 }
 
 function focusInside(frame: ScopeFrame): boolean {
@@ -153,12 +164,15 @@ interface Candidate { entry: Shortcut; frame: ScopeFrame; seq: Chord[] }
 
 /** Entries of a frame whose chord completes with this key, given the pending prefix. */
 function candidatesOf(frame: ScopeFrame, e: KeyboardEvent, pend: Chord[]): { done: Candidate[]; longer: boolean } {
+  const singleKeys = singleKeysOn()
   const done: Candidate[] = []
   let longer = false
   for (const entry of byScope.get(frame.scope) ?? []) {
     if (frame.scope === 'view' && entry.views && (!frame.view || !entry.views.includes(frame.view))) continue
     if (!frame.handlers[entry.id]) continue
     for (const seq of chordsOf(entry)) {
+      // Single-key shortcuts turned off (accessibility-aa, WCAG 2.1.4): a sequence that starts with a character key does nothing.
+      if (!singleKeys && isCharacterKey(seq[0])) continue
       if (!prefixMatches(seq, pend)) continue
       if (!matchesChord(seq[pend.length], e)) continue
       if (seq.length === pend.length + 1) done.push({ entry, frame, seq })
@@ -253,15 +267,24 @@ export function pendingContinuations(): Continuation[] {
       if (frame.scope === 'view' && entry.views && (!frame.view || !entry.views.includes(frame.view))) continue
       if (!frame.handlers[entry.id]) continue
       for (const seq of chordsOf(entry)) {
-        if (seq.length !== pend.length + 1 || !prefixMatches(seq, pend)) continue
+        if (seq.length <= pend.length || !prefixMatches(seq, pend)) continue
+        // A longer sequence is listed by its middle step (`r` then "g Group by"), when it has one.
+        const step = seq.length === pend.length + 1 ? entry : stepOf(seq.slice(0, pend.length + 1))
         const k = chordKey([seq[pend.length]])
-        if (seen.has(k)) continue
+        if (!step || seen.has(k)) continue
         seen.add(k)
-        out.push({ entry, next: seq[pend.length] })
+        out.push({ entry: step, next: seq[pend.length] })
       }
     }
   }
   return out
+}
+
+const steps = new Map(SEQUENCE_STEPS.flatMap((s) => chordsOf(s).map((c) => [chordKey(c), s] as const)))
+
+/** The named middle step of a longer sequence, if the registry names it. */
+function stepOf(seq: Chord[]): Shortcut | undefined {
+  return steps.get(chordKey(seq))
 }
 
 function chordOf(e: KeyboardEvent): Chord {

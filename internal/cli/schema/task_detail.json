@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "task_detail",
+  "description": "What ot task show prints with --json: the task and its live reminders as GET /api/v1/reminders returns them, location reminders (kind arrive or leave, radius_m in metres, no fire_at) included (OpenSpec location-reminders).",
+  "type": "object",
+  "required": ["task", "reminders"],
+  "properties": {
+    "task": {"$ref": "#/schemas/task"},
+    "reminders": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "task_id", "kind"],
+        "properties": {
+          "id": {"type": "string"},
+          "task_id": {"type": "string"},
+          "kind": {"type": "string", "enum": ["relative", "absolute", "deadline", "arrive", "leave"]},
+          "offset_minutes": {"type": ["integer", "null"]},
+          "fire_at": {"type": ["number", "null"], "description": "Unix ms; always null for arrive and leave"},
+          "radius_m": {"type": ["integer", "null"], "description": "metres, 100 to 5000, only for arrive and leave"},
+          "dismissed_at": {"type": ["number", "null"]}
+        }
+      }
+    }
+  }
+}

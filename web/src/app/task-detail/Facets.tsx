@@ -15,8 +15,9 @@ import { openOrigin, originLink, originOf } from '../../lib/taskOrigin'
 import { copyText } from '../../lib/clipboard'
 import type { Label, Priority, Project, Task } from '../../lib/types'
 import { isZoned, zoneCity } from '../../lib/dates'
-import { ComboboxPanel, Icon, type IconName, Menu, MenuGroup, MenuItem, MenuSeparator, Switch } from '../../ui'
-import { AssigneePicker } from '../AssigneePicker'
+import { ComboboxPanel, Icon, type IconName, Menu, MenuGroup, MenuItem, MenuSeparator } from '../../ui'
+import { AssigneeEditor } from './AssigneeEditor'
+import { RotationLine } from './RotationLine'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { EstimateField } from '../EstimateField'
 import { LabelChip, LabelPicker } from '../LabelPicker'
@@ -30,7 +31,8 @@ import { FacetEditor } from './FacetEditor'
 import { FacetLine } from './FacetLine'
 import { usePropertiesModel, type PropertiesModel } from './usePropertiesModel'
 import type { Optional } from './usePropertyEditing'
-import { WhenControl, WhenSegmentPicker } from './WhenControl'
+import { useSectorSegment, WhenControl, WhenSegmentPicker } from './WhenControl'
+import { setSectorWithUndo } from './SectorChoice'
 import { t } from '../../lib/i18n'
 import { act, reportActionError } from '../actionError'
 import { dayPartFields } from '../../lib/dayParts'
@@ -69,7 +71,7 @@ const itemMeta = (i: PickerItem) => i.meta
 /** The parts that are optional (revealed by Add, removed when left empty); the rest are fixed. */
 export const OPTIONAL = new Set<string>(['deadline', 'when', 'evening', 'reminders', 'estimate', 'repeat', 'labels', 'assignee', 'blocked-by', 'parent', 'section', 'location', 'energy'])
 /** The When segment a part opens on. */
-const SEGMENT_OF: Record<string, WhenSegmentId> = { due: 'due', evening: 'due', repeat: 'repeat', deadline: 'deadline', when: 'start', reminders: 'reminders' }
+const SEGMENT_OF: Record<string, WhenSegmentId> = { due: 'due', evening: 'due', repeat: 'repeat', deadline: 'deadline', when: 'start', sector: 'sector', reminders: 'reminders' }
 
 function Dot({ color }: { color?: string }) {
   return <span aria-hidden="true" className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: color ?? 'var(--ot-faint)' }} />
@@ -158,6 +160,7 @@ export function Facets(props: PropertiesProps) {
       {line('when', 'calendar-days', t('When'), facets.when)}
       {line('how', 'flag', t('How'), facets.how)}
       {facets.who.length > 0 && line('who', 'users', t('Who'), facets.who)}
+      <RotationLine task={task} userId={userId} />
       <LocationPreview shown={shownLocation} />
       {!readOnly && <AddMenu task={task} userId={userId} m={m} />}
       {!readOnly && pe.open && (
@@ -178,6 +181,7 @@ export function PartEditor({ id, props, m, anchor, segment, onSegment, onClose }
   onClose: () => void
 }) {
   const { task, readOnly, userId, childCount, onOpen } = props
+  const sectorSegment = useSectorSegment(task)
   const frame = (icon: IconName, title: string, body: ReactNode, onClear?: () => void, extra: { header?: ReactNode; width?: string } = {}) => (
     <FacetEditor anchor={anchor} icon={icon} title={title} onClose={onClose} onClear={onClear} {...extra}>{body}</FacetEditor>
   )
@@ -188,9 +192,10 @@ export function PartEditor({ id, props, m, anchor, segment, onSegment, onClose }
       start: task.start ? () => void unparkTask(task.id) : undefined,
       deadline: task.deadline ? () => act(updateTask(task.id, { deadline: null })) : undefined,
       repeat: task.recurrence ? () => act(setRecurrence(task.id, null)) : undefined,
+      sector: task.sector ? () => act(setSectorWithUndo(task.id, '')) : undefined,
     }
-    return frame('calendar-days', t('When'), <WhenControl task={task} readOnly={readOnly} segment={segment} onOpen={onOpen} />, clear[segment],
-      { header: <WhenSegmentPicker value={segment} onChange={onSegment} />, width: 'sm:w-[28rem]' })
+    return frame('calendar-days', t('When'), <WhenControl task={task} readOnly={readOnly} segment={segment} onOpen={onOpen} onClose={onClose} onAddLocation={() => m.editing.reveal('location')} />, clear[segment],
+      { header: <WhenSegmentPicker value={segment} onChange={onSegment} sector={sectorSegment} />, width: 'sm:w-[28rem]' })
   }
 
   switch (id) {
@@ -250,10 +255,7 @@ export function PartEditor({ id, props, m, anchor, segment, onSegment, onClose }
         </div>
       ))
     case 'assignee':
-      return frame('user-check', t('Assignee'), m.solo && userId
-        ? <Switch label={t('Show in Assigned to me')} checked={task.assignee_id === userId} disabled={readOnly} onChange={(on) => act(updateTask(task.id, { assignee_id: on ? userId : null }))} />
-        : <AssigneePicker taskId={task.id} userId={userId ?? ''} onClose={onClose} />,
-      task.assignee_id ? () => act(updateTask(task.id, { assignee_id: null })) : undefined)
+      return <AssigneeEditor task={task} userId={userId} solo={m.solo} readOnly={readOnly} anchor={anchor} onClose={onClose} />
     case 'blocked-by':
       return frame('lock', t('Blocked by'), (
         <div className="space-y-2">

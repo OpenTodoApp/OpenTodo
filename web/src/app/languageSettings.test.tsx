@@ -13,7 +13,8 @@ import { USER_PREFS_ID } from '../lib/userPrefs'
 import { render, waitFor } from '../ui/test-utils'
 import { LanguageProvider } from './LanguageProvider'
 import { LanguageSection, LanguageView } from './PreferencesPanels'
-import { t } from '../lib/i18n'
+import { resolveLanguage, t } from '../lib/i18n'
+import { nativeName } from '../locales'
 
 function Tree() {
   useLanguageVersion()
@@ -76,7 +77,17 @@ describe('Language panel', () => {
   it('System names the language it resolves to, and every language in its own name', async () => {
     const view = await render(<LanguageView value="system" system="English" onChange={vi.fn()} />)
     const options = [...view.container.querySelectorAll('#language-select option')].map((o) => o.textContent)
-    expect(options).toEqual(['System (English)', 'English', 'Deutsch', 'Français', 'Español', 'Italiano', 'Português'])
+    expect(options).toEqual(['System (English)', 'English', 'Deutsch', 'Français', 'Español', 'Italiano', 'Português', '简体中文'])
+    await view.unmount()
+  })
+
+  it('System names 简体中文 when the browser prefers zh-CN', async () => {
+    const system = nativeName(resolveLanguage('system', ['zh-CN']))
+    expect(system).toBe('简体中文')
+    const view = await render(<LanguageView value="system" system={system} onChange={vi.fn()} />)
+    const options = [...view.container.querySelectorAll('#language-select option')].map((o) => o.textContent)
+    expect(options[0]).toBe('System (简体中文)')
+    expect(options).toHaveLength(8)
     await view.unmount()
   })
 

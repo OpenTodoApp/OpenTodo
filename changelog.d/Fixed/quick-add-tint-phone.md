@@ -1,0 +1,1 @@
+- **Quick add's token highlights line up with the typed text on phones.** On a touch screen the field's text is 16 px but the highlights behind it were laid out at the smaller desktop size, so they sat above and beside the words they marked.

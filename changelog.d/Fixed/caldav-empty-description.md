@@ -1,0 +1,1 @@
+- **A calendar app no longer adds an empty description to a task.** A task created without notes and then synced back unchanged by a CalDAV app got a pointless description change in its history.

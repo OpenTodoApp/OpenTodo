@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -73,6 +74,9 @@ const (
 	// KindTheme is a custom theme (OpenSpec change theme-editor, D1), restored
 	// verbatim from an own export with its id, like a rule.
 	KindTheme = "theme"
+	// KindObjective is a quarterly or weekly objective (OpenSpec change
+	// plan-objectives, D7), restored verbatim from an own export with its id.
+	KindObjective = "objective"
 )
 
 // Due is a floating due date with an optional wall-clock time.
@@ -128,6 +132,15 @@ type Row struct {
 	// Links are attachment references the file only gives as URLs; they become
 	// link attachments of the task (OpenSpec change attachments, design D12).
 	Links []Link
+	// TimeEntries are tracked time per day (Super Productivity, OpenSpec change
+	// migration-everywhere D4); the planner writes them as time entries of the
+	// importing account.
+	TimeEntries []TimeEntry
+	// Files are attachment files the export carries with their bytes (a
+	// Vikunja ZIP); they become file attachments of the task.
+	Files []FileAttachment
+	// Archived marks a project row archived in the source app.
+	Archived bool
 	// AssignSelf assigns the task to the importing account (a Linear issue
 	// assigned to the importer's own email address).
 	AssignSelf bool
@@ -173,6 +186,19 @@ func (r *Row) fail(format string, args ...any) {
 
 // Link is a link attachment read from a file.
 type Link struct{ Name, URL string }
+
+// FileAttachment is a file an export carries with its bytes.
+type FileAttachment struct {
+	Name, Mime string
+	Data       []byte
+}
+
+// TimeEntry is time tracked on one day, as a file gives it: a day
+// ("YYYY-MM-DD") and the minutes spent that day, with no clock times.
+type TimeEntry struct {
+	Day     string
+	Minutes int
+}
 
 // Custom field value types a profile may produce (more-importers D3).
 const (
@@ -233,6 +259,10 @@ type Parsed struct {
 	// Template is set for an own export that declares itself a template
 	// (OpenSpec change project-templates, design D7).
 	Template *TemplateInfo
+	// Roles and Available are a Notion export's column mapping and every
+	// column it could use (migration-everywhere D3).
+	Roles     map[string]*string
+	Available []string
 	// Workspaces are an own export's workspaces (OpenSpec change workspaces),
 	// mapped onto the importing account's by Service.mapWorkspaces.
 	Workspaces []ExportedWorkspace
@@ -265,10 +295,10 @@ type Profile interface {
 // Profiles lists every format in detection order: the own export first, then each
 // named app's JSON shape by its structural signature (more-importers D2), then the
 // generic JSON shapes, then the named CSV exports and generic CSV.
-var Profiles = []Profile{opentodoProfile{}, thingsDBProfile{},
-	googleTasksProfile{}, trelloProfile{}, msTodoProfile{}, appleRemindersProfile{}, anydoProfile{},
+var Profiles = []Profile{opentodoProfile{}, tududiProfile{}, thingsDBProfile{},
+	vikunjaProfile{}, superProductivityProfile{}, googleTasksProfile{}, trelloProfile{}, msTodoProfile{}, appleRemindersProfile{}, anydoProfile{},
 	itemsProfile{}, listsProfile{}, genericProfile{},
-	todoistProfile{}, tickTickProfile{}, linearProfile{}, asanaProfile{}, csvProfile{}}
+	todoistProfile{}, tickTickProfile{}, linearProfile{}, omnifocusProfile{}, asanaProfile{}, csvProfile{}, notionProfile{}}
 
 // formatAliases are format names that select a profile for a container: a
 // Todoist backup is a ZIP of todoist-csv files.
@@ -341,6 +371,9 @@ func Parse(data []byte, opts Options) (*Parsed, error) {
 	if isZip(data) {
 		return parseArchive(data, opts)
 	}
+	if err := checkShape(data); err != nil {
+		return nil, err
+	}
 	p, err := Detect(data, opts.Format)
 	if err != nil {
 		return nil, err
@@ -350,6 +383,9 @@ func Parse(data []byte, opts Options) (*Parsed, error) {
 
 // parseOne reads one file with a known profile.
 func parseOne(p Profile, data []byte, opts Options) (*Parsed, error) {
+	if err := checkShape(data); err != nil {
+		return nil, err
+	}
 	parsed, err := p.Read(bytes.NewReader(trimBOM(data)), opts)
 	if err != nil {
 		return nil, err
@@ -392,6 +428,10 @@ type Options struct {
 	// import-workspace). Empty: the default workspace, or an own export's own
 	// mapping.
 	Workspace string `json:"workspace,omitempty"`
+	// Columns maps a Notion database's roles (status, due, labels, priority,
+	// project, notes) to a column name, or to null for "not imported"; a role
+	// left out keeps the preview's guess (migration-everywhere D3).
+	Columns map[string]*string `json:"columns,omitempty"`
 
 	loc *time.Location
 	// Set by the Service for one preview or job, never by the client:
@@ -403,6 +443,9 @@ type Options struct {
 	entryName     string    // archive entry being read
 	fileName      string    // the uploaded file's name (an Asana CSV names its project)
 	thingsWAL     []byte    // a Things database's WAL from the same archive
+	// vikunjaFiles are a Vikunja export's files/<file id> entries; nil when only
+	// data.json was uploaded.
+	vikunjaFiles map[string][]byte
 	// ownFiles are the attachment files of an own ZIP export, by attachment id.
 	ownFiles map[string][]byte
 }
@@ -452,6 +495,11 @@ func (o *Options) Normalize() error {
 	}
 	o.TargetProject = strings.TrimSpace(o.TargetProject)
 	o.Workspace = strings.TrimSpace(o.Workspace)
+	for role := range o.Columns {
+		if !slices.Contains(NotionRoles, role) {
+			return &OptionError{fmt.Sprintf("columns: unknown role %q (roles: %s)", role, strings.Join(NotionRoles, ", "))}
+		}
+	}
 	return nil
 }
 

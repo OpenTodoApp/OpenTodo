@@ -222,7 +222,7 @@ describe('date phrases (English)', () => {
     ['Monday', '2026-10-12'],
     ['fri', '2026-10-16'],
     ['on Friday', '2026-10-16'],
-    ['by wed.', '2026-10-14'],
+    ['due wed.', '2026-10-14'],
     ['next Monday', '2026-10-12'],
     ['next sat', '2026-10-17'],
     ['this sat', '2026-10-10'],
@@ -581,7 +581,7 @@ describe('parse: energy (task-energy D4)', () => {
 describe('parse: precedence and passthrough', () => {
   it('no match passes the line through, whitespace collapsed', () => {
     const r = parse('  Buy   oat milk  ', ctx())
-    expect(r).toEqual({ title: 'Buy oat milk', due: null, deadline: null, start: null, evening: false, dayPart: null, projectId: null, labels: [], priority: null, energy: null, estimateMinutes: null, spentMinutes: null, recurrence: null, reminders: [], chips: [], unmatched: [] })
+    expect(r).toEqual({ title: 'Buy oat milk', due: null, deadline: null, start: null, sector: null, evening: false, dayPart: null, projectId: null, labels: [], priority: null, energy: null, estimateMinutes: null, spentMinutes: null, recurrence: null, reminders: [], chips: [], unmatched: [] })
   })
 
   it('first match of each attribute wins; later ones stay in the title', () => {
@@ -697,9 +697,26 @@ describe('deadline phrases (OpenSpec deadlines 7.1)', () => {
     expect(at('Send report deadline friday', { dismissed })).toMatchObject({ title: 'Send report deadline friday', deadline: null, due: null })
   })
 
-  it('by and due keep setting the due date', () => {
-    expect(at('Pay rent by friday')).toMatchObject({ title: 'Pay rent', due: { date: '2026-10-16' }, deadline: null })
+  it('on and due keep setting the due date', () => {
+    expect(at('Pay rent on friday')).toMatchObject({ title: 'Pay rent', due: { date: '2026-10-16' }, deadline: null })
     expect(at('Pay rent due friday')).toMatchObject({ due: { date: '2026-10-16' }, deadline: null })
+  })
+
+  it('by sets the deadline, with a deadline chip (quick-add-by-deadline)', () => {
+    const r = at('Pay rent by friday')
+    expect(r).toMatchObject({ title: 'Pay rent', due: null, deadline: '2026-10-16' })
+    expect(r.chips.map((c) => c.kind)).toEqual(['deadline'])
+    expect(r.chips[0].spans[0].text).toBe('by friday')
+  })
+
+  it('by with a time sets the due date and time', () => {
+    expect(at('Call back by 5pm')).toMatchObject({ title: 'Call back', due: { date: '2026-10-14', time: '17:00' }, deadline: null })
+    expect(at('Pay rent by friday 5pm')).toMatchObject({ title: 'Pay rent', due: { date: '2026-10-16', time: '17:00' }, deadline: null })
+  })
+
+  it('a dismissed by phrase stays in the title', () => {
+    const dismissed = [{ start: 9, end: 18, text: 'by friday' }]
+    expect(at('Pay rent by friday', { dismissed })).toMatchObject({ title: 'Pay rent by friday', deadline: null })
   })
 })
 

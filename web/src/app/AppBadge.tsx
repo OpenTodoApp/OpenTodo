@@ -1,9 +1,14 @@
 // App icon badge (OpenSpec change `app-icon-badge`): the signed-in app keeps the badge
 // current, and Settings → Notifications has the per-device switch, shown only where
 // the browser can badge the installed app.
+import { useMemo } from 'react'
 import { badgeSupported, setBadgeEnabled, useAppBadge, useBadgeEnabled } from '../lib/appBadge'
+import { todayAssigneeFilter } from '../lib/dayLists'
+import { useMemberships, useUserPrefsRow } from '../lib/localData'
+import { useMe } from '../lib/sharing'
 import { t } from '../lib/i18n'
 import { useLiveTasks, useOpenTasks } from '../lib/liveTasks'
+import { useSettledValue } from '../lib/useSettledValue'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 import { Notice, SettingRow, SettingsSection, Switch } from '../ui'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
@@ -12,11 +17,16 @@ import { useToday, useViewerZone } from './useViews'
 /** Sets the badge from the live open tasks; rendered once beside the signed-in Shell. */
 export function AppBadgeSync(): null {
   const live = useLiveTasks()
-  const open = useOpenTasks()
+  // Counted once the writes stop (list-rendering-at-scale D6): the badge need not follow each tick.
+  const open = useSettledValue(useOpenTasks())
   const today = useToday()
   const zone = useViewerZone()
   const { dayStart } = useDateTimeFormat()
-  useAppBadge(open, live !== undefined, today, dayStart, zone)
+  const prefs = useUserPrefsRow()
+  const memberships = useMemberships()
+  const me = useMe()
+  const hide = useMemo(() => todayAssigneeFilter(prefs, memberships, me), [prefs, memberships, me])
+  useAppBadge(open, live !== undefined, today, dayStart, zone, hide)
   return null
 }
 

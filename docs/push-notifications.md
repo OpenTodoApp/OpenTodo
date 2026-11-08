@@ -21,7 +21,7 @@ Push notifications deliver [reminders](notifications.md) even when OpenTodo isn'
 
 Repeat this on every device where you want them: your phone, your laptop, your tablet. Turning it off, or signing out, removes that device.
 
-From a push notification you can **Snooze 10 min** or **Dismiss**, and that applies on all your devices.
+From a push notification you can tick the task off with **Done**, **Snooze 10 min** or **Dismiss**, and that applies on all your devices. Chrome shows two buttons: **Done** and **Snooze 10 min**. With no tab of OpenTodo open, **Done** opens the app to complete the task ([Done from a notification](reminders.md#done-from-a-notification)).
 
 Below the options, **Delivery check** lists everything push needs on this device and what the test found; see [Check that push works](push-delivery-check.md).
 

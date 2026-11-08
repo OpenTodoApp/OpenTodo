@@ -33,8 +33,15 @@ type Vocab struct {
 	Months        []MonthVocab   `json:"months"`
 	Before        []string       `json:"before"`
 	DeadlineWords []string       `json:"deadlineWords"`
-	SomedayWords  []string       `json:"somedayWords"`
-	EveningWords  []string       `json:"eveningWords"`
+	// ByWords ("by", "bis", "entro", "até") are also Before words: directly
+	// before a date with no time after it they make it the deadline, before a
+	// time they go with the due time (quick-add-by-deadline D1, D2).
+	ByWords      []string `json:"byWords"`
+	SomedayWords []string `json:"somedayWords"`
+	// SectorPhrases are the time sector phrases by the word they mean
+	// (time-sectors D8): "this-week" → ["this week", "sometime this week"].
+	SectorPhrases map[string][]string `json:"sectorPhrases"`
+	EveningWords  []string            `json:"eveningWords"`
 	// MorningWords, AfternoonWords and PartWords are the day-part phrases
 	// (OpenSpec change day-parts, D5), read only with Context.DayParts.
 	MorningWords   []string          `json:"morningWords"`
@@ -80,9 +87,15 @@ type Vocab struct {
 		After  []string `json:"after"`
 	} `json:"everyOtherAround"`
 	MonthTextBefore []string `json:"monthTextBefore"`
-	RemindWords     []string `json:"remindWords"`
-	BeforeWords     []string `json:"beforeWords"`
-	AfterWords      []string `json:"afterWords"`
+	// WeekOnWords, RepeatWords and StartWords surround a recurrence phrase
+	// (quick-add-weekday-recurrence D1, D3, D4): "every 2 weeks on Saturday",
+	// "and repeat every Monday", "every day starting tomorrow".
+	WeekOnWords []string `json:"weekOnWords"`
+	RepeatWords []string `json:"repeatWords"`
+	StartWords  []string `json:"startWords"`
+	RemindWords []string `json:"remindWords"`
+	BeforeWords []string `json:"beforeWords"`
+	AfterWords  []string `json:"afterWords"`
 }
 
 // MonthVocab holds a month's full names and abbreviations.

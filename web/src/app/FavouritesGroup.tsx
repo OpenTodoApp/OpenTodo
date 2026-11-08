@@ -5,9 +5,9 @@
 // and no actions; Alt+↑ / Alt+↓ on a row moves it among the favourites.
 import { type KeyboardEvent, useEffect, useMemo, useRef } from 'react'
 import { moveFavourite, type Favourite } from '../lib/favourites'
-import { projectPath, subtreeOpenCounts, type ProjectTree } from '../lib/projects'
-import type { Project, Task } from '../lib/types'
-import { isDashboard, openCount, type ViewSummary } from '../lib/views'
+import { projectPath, rollUpCounts, type ProjectTree } from '../lib/projects'
+import type { Project } from '../lib/types'
+import { isDashboard, type ViewSummary } from '../lib/views'
 import { t } from '../lib/i18n'
 import { hueFor, ReadAs, SidebarGroup, SidebarItem } from '../ui'
 import { act } from './actionError'
@@ -22,17 +22,16 @@ import { ViewMark, ViewMenu } from './ViewsView'
 
 const keyOf = (f: Pick<Favourite, 'kind' | 'id'>) => `${f.kind}:${f.id}`
 
-export function FavouritesGroup({ favourites, route, collapsed, projects, tree, openTasks, today, labelCounts, viewCounts, projectCountMode = 'hover', countsAll = false }: {
+export function FavouritesGroup({ favourites, route, collapsed, projects, tree, ownCounts, labelCounts, viewCounts, projectCountMode = 'hover', countsAll = false }: {
   favourites: Favourite[]
   route: Route
   /** The icon rail. */
   collapsed: boolean
   /** Every live project, for a sub-project's path in its tooltip. */
   projects: readonly Project[]
-  /** The sidebar's tree and open tasks: a project's count here is its whole subtree's (D4). */
+  /** The sidebar's tree and each project's own open, active tasks: a project's count here is its whole subtree's (D4). */
   tree: ProjectTree
-  openTasks: readonly Task[]
-  today: string
+  ownCounts: ReadonlyMap<string, number>
   labelCounts: Map<string, number>
   viewCounts: Map<string, ViewSummary>
   /** `always` where there is no hover (a coarse pointer). */
@@ -43,8 +42,8 @@ export function FavouritesGroup({ favourites, route, collapsed, projects, tree, 
   const memberships = useMembershipMap()
   const pinsProject = favourites.some((f) => f.kind === 'project')
   const projectCounts = useMemo(
-    () => (pinsProject ? subtreeOpenCounts(openTasks.filter((tk) => openCount(tk, today)), tree) : new Map<string, number>()),
-    [pinsProject, openTasks, tree, today],
+    () => (pinsProject ? rollUpCounts(ownCounts, tree, new Set(tree.nodes.keys())) : new Map<string, number>()),
+    [pinsProject, ownCounts, tree],
   )
   const byId = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const pathOf = (p: Project) => projectPath(p, byId)

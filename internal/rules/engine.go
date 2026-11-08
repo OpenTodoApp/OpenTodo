@@ -24,14 +24,6 @@ const DevicePrefix = opsync.RuleDevicePrefix
 // Device is the op device of one rule's batches.
 func Device(ruleID string) string { return DevicePrefix + ruleID }
 
-// RuleID returns the rule of a rule: device, "" for any other device.
-func RuleID(device string) string {
-	if id, ok := strings.CutPrefix(device, DevicePrefix); ok {
-		return id
-	}
-	return ""
-}
-
 // ReminderOps recomputes the reminders that follow a task's due or deadline
 // (the REST PATCH's rule, injected by internal/httpapi).
 type ReminderOps func(ctx context.Context, uid, taskID string, patch map[string]json.RawMessage, ts int64, device string) ([]opsync.Op, error)
@@ -210,9 +202,13 @@ type world struct {
 	labels    map[string]bool
 	sections  map[string]string
 	shared    map[string]bool
-	tracked   map[string]int
-	changed   map[string]string
-	encrypted bool
+	// tracked is every entry of a task (the 1.0 meaning, for the tracked
+	// condition); trackedOcc a repeating task's current occurrence only, for a
+	// Find tasks step's `tracked occurrence` (tracked-time-api-compatible).
+	tracked    map[string]int
+	trackedOcc map[string]int
+	changed    map[string]string
+	encrypted  bool
 	// projectRows and labelNames serve routine steps (routines-engine).
 	projectRows map[string]opsync.Entity
 	labelNames  map[string]bool
@@ -291,22 +287,40 @@ func (e *Engine) load(ctx context.Context, uid string) (*world, error) {
 	return w, nil
 }
 
-// trackedMinutes loads the time entries once, when a condition reads them.
+// trackedMinutes loads the time entries once, when a condition reads them:
+// every entry of each task, as in 1.0 (tracked-time-api-compatible).
 func (e *Engine) trackedMinutes(ctx context.Context, w *world) map[string]int {
+	e.loadTracked(ctx, w)
+	return w.tracked
+}
+
+// trackedOccurrence is trackedMinutes with a repeating task's current
+// occurrence only (fix-recurring-tracked-time).
+func (e *Engine) trackedOccurrence(ctx context.Context, w *world) map[string]int {
+	e.loadTracked(ctx, w)
+	return w.trackedOcc
+}
+
+func (e *Engine) loadTracked(ctx context.Context, w *world) {
 	if w.tracked != nil {
-		return w.tracked
+		return
 	}
-	w.tracked = map[string]int{}
+	w.tracked, w.trackedOcc = map[string]int{}, map[string]int{}
 	rows, err := e.Sync.List(ctx, w.uid, "time_entry", false)
 	if err != nil {
-		return w.tracked
+		return
 	}
 	entries := make([]timetrack.Entry, 0, len(rows))
 	for _, r := range rows {
 		entries = append(entries, timetrack.FromRow(r))
 	}
-	w.tracked = timetrack.TotalsByTask(entries, e.now().UnixMilli())
-	return w.tracked
+	occ := make([]timetrack.Occurrence, 0, len(w.tasks))
+	for _, t := range w.tasks {
+		occ = append(occ, timetrack.OccurrenceFromRow(t))
+	}
+	now := e.now().UnixMilli()
+	w.tracked = timetrack.TotalsByTask(entries, now, nil)
+	w.trackedOcc = timetrack.CurrentTotals(entries, occ, now)
 }
 
 // changedDates is each task's logical date of its newest field change, read

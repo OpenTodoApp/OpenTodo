@@ -15,6 +15,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/mail"
 	"github.com/OpenTodoApp/opentodo/internal/origin"
 	"github.com/OpenTodoApp/opentodo/internal/quickadd"
+	"github.com/OpenTodoApp/opentodo/internal/sector"
 )
 
 // Quick-add parse (OpenSpec change extension-v2, design D1): one read route that
@@ -32,7 +33,7 @@ const (
 )
 
 func (s *Server) registerQuickAddRoutes(mux *routes) {
-	s.parseLimiter = newRateLimiter(parsesPerMinute, time.Minute)
+	s.parseLimiter = s.limit("quickadd.parse", parsesPerMinute, time.Minute)
 	mux.handle("POST "+parsePath, signedIn, s.handleQuickAddParse)
 }
 
@@ -169,6 +170,8 @@ func (s *Server) parseAccount(ctx context.Context, uid, acceptLanguage string) (
 	a.ctx.DayParts = idOf(prefs["day_parts"]) == "on"
 	// The Energy levels preference turns the `~deep` tokens on (task-energy D3).
 	a.ctx.Energy = idOf(prefs["energy"]) == "on"
+	// The Time sectors switch turns the sector phrases on (time-sectors D8).
+	a.ctx.Sectors = idOf(prefs["time_sectors"]) == "on"
 	if ws, ok := map[string]int{"mon": 1, "sun": 0, "sat": 6}[idOf(prefs["week_start"])]; ok {
 		a.ctx.WeekStart = &ws
 	}
@@ -221,6 +224,7 @@ func acceptedLanguages(h string) []string {
 func parseLine(line string, a parseAccountData, today, now string) parseResponse {
 	ctx := a.ctx
 	ctx.Today, ctx.Now = today, now
+	a.ctx = ctx // the chips name a sector relative to this day
 	r, marks := quickadd.ParseMarked(line, ctx)
 	fields := map[string]any{}
 	if r.Due != nil {
@@ -235,6 +239,9 @@ func parseLine(line string, a parseAccountData, today, now string) parseResponse
 	}
 	if r.Someday {
 		fields["start"] = "someday"
+	}
+	if r.Sector != "" {
+		fields["sector"] = r.Sector
 	}
 	if r.Evening {
 		fields["evening"] = true
@@ -329,6 +336,15 @@ func chipsOf(line string, r quickadd.Result, marks []quickadd.Mark, a parseAccou
 			}
 		case "someday":
 			c.Text = w.someday
+		case "sector":
+			ws := 1
+			if a.ctx.WeekStart != nil {
+				ws = *a.ctx.WeekStart
+			}
+			c.Text = r.Sector
+			if name := w.sectors[sector.Relative(r.Sector, a.ctx.Today, ws)]; name != "" {
+				c.Text = name
+			}
 		case "energy":
 			// Every energy token is a mark; one chip, on the last one, names the value.
 			if energies++; energies < countKind(marks, "energy") {
@@ -409,19 +425,22 @@ func utf16Index(s string, byteOffset int) int {
 }
 
 // parseWords are the chip words the server writes, in the six shipped languages.
-// The energy chips (task-energy) are the web catalog's "Deep energy" lines.
+// The energy chips (task-energy) are the web catalog's "Deep energy" lines, the
+// sector chips (time-sectors) its "This week" names.
 type parseWords struct {
 	deadline, evening, someday, noProject, morning, afternoon string
 	energy                                                    map[string]string
+	// sectors are the time sector names by word (time-sectors D8), as the web catalog has them.
+	sectors map[string]string
 }
 
 var parseWordTable = map[string]parseWords{
-	"en": {"Deadline", "This evening", "Someday", "No project named %s", "Morning", "Afternoon", map[string]string{"deep": "Deep energy", "medium": "Medium energy", "low": "Low energy"}},
-	"de": {"Frist", "Heute Abend", "Irgendwann", "Kein Projekt heißt %s", "Vormittag", "Nachmittag", map[string]string{"deep": "Energie: tief", "medium": "Energie: mittel", "low": "Energie: niedrig"}},
-	"fr": {"Échéance", "Ce soir", "Un jour", "Aucun projet ne s’appelle %s", "Matin", "Après-midi", map[string]string{"deep": "Énergie profonde", "medium": "Énergie moyenne", "low": "Énergie faible"}},
-	"es": {"Fecha límite", "Esta tarde", "Algún día", "Ningún proyecto se llama %s", "Mañana", "Tarde", map[string]string{"deep": "Energía profunda", "medium": "Energía media", "low": "Energía baja"}},
-	"it": {"Scadenza", "Stasera", "Un giorno", "Nessun progetto si chiama %s", "Mattina", "Pomeriggio", map[string]string{"deep": "Energia profonda", "medium": "Energia media", "low": "Energia bassa"}},
-	"pt": {"Prazo", "Esta noite", "Um dia", "Nenhum projeto se chama %s", "Manhã", "Tarde", map[string]string{"deep": "Energia profunda", "medium": "Energia média", "low": "Energia baixa"}},
+	"en": {"Deadline", "This evening", "Someday", "No project named %s", "Morning", "Afternoon", map[string]string{"deep": "Deep energy", "medium": "Medium energy", "low": "Low energy"}, map[string]string{"this-week": "This week", "next-week": "Next week", "this-month": "This month", "next-month": "Next month", "this-quarter": "This quarter", "next-quarter": "Next quarter"}},
+	"de": {"Frist", "Heute Abend", "Irgendwann", "Kein Projekt heißt %s", "Vormittag", "Nachmittag", map[string]string{"deep": "Energie: tief", "medium": "Energie: mittel", "low": "Energie: niedrig"}, map[string]string{"this-week": "Diese Woche", "next-week": "Nächste Woche", "this-month": "Diesen Monat", "next-month": "Nächsten Monat", "this-quarter": "Dieses Quartal", "next-quarter": "Nächstes Quartal"}},
+	"fr": {"Échéance", "Ce soir", "Un jour", "Aucun projet ne s’appelle %s", "Matin", "Après-midi", map[string]string{"deep": "Énergie profonde", "medium": "Énergie moyenne", "low": "Énergie faible"}, map[string]string{"this-week": "Cette semaine", "next-week": "Semaine prochaine", "this-month": "Ce mois-ci", "next-month": "Mois prochain", "this-quarter": "Ce trimestre", "next-quarter": "Trimestre prochain"}},
+	"es": {"Fecha límite", "Esta tarde", "Algún día", "Ningún proyecto se llama %s", "Mañana", "Tarde", map[string]string{"deep": "Energía profunda", "medium": "Energía media", "low": "Energía baja"}, map[string]string{"this-week": "Esta semana", "next-week": "La próxima semana", "this-month": "Este mes", "next-month": "El próximo mes", "this-quarter": "Este trimestre", "next-quarter": "El próximo trimestre"}},
+	"it": {"Scadenza", "Stasera", "Un giorno", "Nessun progetto si chiama %s", "Mattina", "Pomeriggio", map[string]string{"deep": "Energia profonda", "medium": "Energia media", "low": "Energia bassa"}, map[string]string{"this-week": "Questa settimana", "next-week": "Prossima settimana", "this-month": "Questo mese", "next-month": "Prossimo mese", "this-quarter": "Questo trimestre", "next-quarter": "Prossimo trimestre"}},
+	"pt": {"Prazo", "Esta noite", "Um dia", "Nenhum projeto se chama %s", "Manhã", "Tarde", map[string]string{"deep": "Energia profunda", "medium": "Energia média", "low": "Energia baixa"}, map[string]string{"this-week": "Esta semana", "next-week": "Próxima semana", "this-month": "Este mês", "next-month": "Próximo mês", "this-quarter": "Este trimestre", "next-quarter": "Próximo trimestre"}},
 }
 
 func parseWordsFor(lang string) parseWords {

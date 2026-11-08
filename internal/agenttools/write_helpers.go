@@ -301,6 +301,23 @@ func canonicalRecurrence(prefix string, rawRule json.RawMessage) (json.RawMessag
 	return raw(c), nil
 }
 
+// compatibleRecurrence stores a planned rule in the form a 1.0 client reads
+// when one means the same thing for the task's due date: the planned one, else
+// the task's (recurrence-1-0-compatible). current is nil for a new task.
+func compatibleRecurrence(patch map[string]json.RawMessage, current opsync.Entity) {
+	var rule string
+	if json.Unmarshal(patch["recurrence"], &rule) != nil || rule == "" {
+		return
+	}
+	d := taskDue(current)
+	if _, planned := patch["due"]; planned {
+		d = taskDue(opsync.Entity{"due": patch["due"]})
+	}
+	if d != nil {
+		patch["recurrence"] = raw(recurrence.Compatible(rule, d.Date))
+	}
+}
+
 // requestID derives entity ids from client_request_id (design D4): the same
 // user, token and request id always name the same entities and op ids.
 func (a args) requestID(c Caller) (string, error) {

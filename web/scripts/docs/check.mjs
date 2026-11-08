@@ -8,7 +8,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { buildAll, OUT_SITE, staleFiles } from './build.mjs'
+import { buildAll, OUT_HELP, OUT_SITE, staleFiles } from './build.mjs'
 import { headingsOf, parseFrontMatter, repoRootFrom, specNames } from './lib.mjs'
 import { END, START, loadShortcuts, shortcutsMarkdown } from './shortcuts.mjs'
 import { missingScreenshots } from '../../../scripts/site-bundle.mjs'
@@ -105,9 +105,57 @@ export function quickAddLinkProblems(pages) {
   return out
 }
 
+/**
+ * The pages that describe a part of the v1 surface link the compatibility policy
+ * (OpenSpec change stability-contract): docs/stability.md.
+ */
+export const STABILITY_LINKERS = ['api.md', 'sync.md', 'mcp.md', 'cli.md', 'import-export.md']
+const STABILITY_LINK = /\]\((?:\.\/)?(?:docs\/)?stability\.md(?:#[^)]*)?\)/
+
+/** Problems: a page of STABILITY_LINKERS (when present) or the README (when given) that does not link stability.md. */
+export function stabilityLinkProblems(pages, readme = null) {
+  const out = []
+  for (const p of pages) {
+    if (STABILITY_LINKERS.includes(p.rel) && !STABILITY_LINK.test(p.body)) out.push(`docs/${p.rel}: does not link the compatibility policy (stability.md)`)
+  }
+  if (readme !== null && !STABILITY_LINK.test(readme)) out.push('README.md: does not link the compatibility policy (docs/stability.md)')
+  return out
+}
+
+/**
+ * Every page under docs/self-hosting/ is reachable from the self-hosting handbook
+ * (OpenSpec change docs-1-0, documentation "Self-hosting handbook"): a platform
+ * page from its install table, a feature page from its sections.
+ */
+export function selfHostingOrphans(pages) {
+  const handbook = pages.find((p) => p.rel === 'self-hosting/README.md')
+  if (!handbook) return []
+  const linked = new Set([...handbook.body.matchAll(/\]\((?:\.\/)?([a-z0-9-]+\.md)(?:#[^)]*)?\)/g)].map((m) => m[1]))
+  return pages
+    .filter((p) => p.rel.startsWith('self-hosting/') && p.rel !== handbook.rel && !linked.has(p.rel.slice('self-hosting/'.length)))
+    .map((p) => `docs/${p.rel}: not linked from the self-hosting handbook (docs/self-hosting/README.md); add it to the install table or a section`)
+}
+
+/** Problems: a screen of the app (web/src/app/screens.ts) that no page declares in "screens". */
+export function undeclaredScreens(screenIds, declared) {
+  return screenIds.filter((id) => !declared.has(id))
+    .map((id) => `web/src/app/screens.ts: screen "${id}" has no guide; name it in the "screens" of the page that explains it`)
+}
+
+/**
+ * Problems: a switch guide without its "Export from …" section (documentation
+ * "User guide"), which the Import screen shows inline.
+ */
+export function switchExportProblems(pages, headings) {
+  return pages
+    .filter((p) => p.rel.startsWith('switch/') && p.rel !== 'switch/README.md')
+    .filter((p) => !headings.get(p.rel).some((h) => h.depth === 2 && h.id.startsWith('export-from-')))
+    .map((p) => `docs/${p.rel}: a switch guide needs an "## Export from …" section with the export steps`)
+}
+
 /** Runs every check; returns a list of problems (empty when all is well). */
 export async function runChecks(repoRoot) {
-  const { files, pages, rendered, problems } = await buildAll(repoRoot)
+  const { files, pages, rendered, problems, screenIds } = await buildAll(repoRoot)
   const out = [...problems]
   const byRel = new Map(pages.map((p) => [p.rel, p]))
   const headings = new Map(pages.map((p) => [p.rel, rendered.get(p.rel).site.headings]))
@@ -178,10 +226,17 @@ export async function runChecks(repoRoot) {
     if (!existsSync(join(repoRoot, img))) out.push(`docs/${p.rel}: card "${p.fm.card}" has no ${img}; mark the shot \`card: true\` in scripts/docs-screenshots.mjs and run it`)
   }
   out.push(...quickAddLinkProblems(pages))
+  out.push(...selfHostingOrphans(pages))
+  const readmePath = join(repoRoot, 'README.md')
+  if (byRel.has('stability.md')) out.push(...stabilityLinkProblems(pages, existsSync(readmePath) ? readFileSync(readmePath, 'utf8') : null))
   const used = appScreenIds(repoRoot)
   for (const [id, file] of used) if (!screens.has(id)) out.push(`${file}: help screen "${id}" is not named by any page's "screens"`)
+  // Every screen of the app has a guide (docs-1-0 D1): web/src/app/screens.ts.
+  out.push(...undeclaredScreens(screenIds ?? [], screens))
+  for (const id of screenIds ?? []) if (!used.has(id)) used.set(id, 'web/src/app/screens.ts')
   // The reverse direction applies once the app has help links (task 4.2).
   if (used.size) for (const [id, rel] of screens) if (!used.has(id)) out.push(`docs/${rel}: screen "${id}" is not used by any help link in the app`)
+  out.push(...switchExportProblems(pages, headings))
 
   // The keyboard guide lists exactly the app's shortcuts.
   const kbPath = join(repoRoot, 'docs/keyboard.md')
@@ -199,9 +254,10 @@ export async function runChecks(repoRoot) {
   for (const path of missingScreenshots(repoRoot)) out.push(`${path}: named by the site bundle but missing; run scripts/screenshots.mjs`)
 
   // Generated files are up to date.
-  // The docs website is built, not committed (site-bundle D6): only the in-app
-  // help is compared with a fresh build.
-  const committed = new Map([...files].filter(([path]) => !path.startsWith(OUT_SITE + '/')))
+  // The docs website is built, not committed (site-bundle D6), and neither is the
+  // in-app help (the web app's scripts build it): only the generated guides and the
+  // screen ids are compared with a fresh build.
+  const committed = new Map([...files].filter(([path]) => !path.startsWith(OUT_SITE + '/') && path !== OUT_HELP))
   const stale = staleFiles(repoRoot, committed, OUT_SITE).filter((f) => f !== 'docs/keyboard.md' && !f.startsWith(OUT_SITE + '/'))
   if (stale.length) out.push(`generated docs are out of date; run \`make docs\` (${stale.slice(0, 5).join(', ')}${stale.length > 5 ? `, and ${stale.length - 5} more` : ''})`)
   return out

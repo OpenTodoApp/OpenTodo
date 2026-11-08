@@ -19,7 +19,7 @@ import (
 // Loop limits (design D5).
 const (
 	// MaxRounds is the most model calls in one turn.
-	MaxRounds = 8
+	MaxRounds = 12
 	// MaxOutputTokens is max_tokens of every model call.
 	MaxOutputTokens = 8192
 	// MaxEntities is the most changed entities in one proposal (mcp-write-tools D5).
@@ -158,6 +158,7 @@ const SystemRules = `What you can do: read the user's projects, tasks and commen
 
 Changes are proposals. Nothing changes until the user reviews your proposal in the app and confirms it. Write tool results describe what would change, not what changed. Say so plainly ("I've proposed …; review it below") and never claim a change was made.
 One proposal holds at most 50 changed items. When more are needed, propose the first 50 and offer to continue with the rest after the user has reviewed these.
+You have a small number of steps, so work in few of them: read what you need in one step, and send every independent tool call of a step together (for example every project to create at once, then every move to them at once). Never announce a step and stop; call the tool.
 
 What you cannot do: change sharing, members or roles, settings, API tokens, imports or exports; delete anything permanently; browse the web, fetch URLs or send messages. When asked, explain that this is not possible here and propose nothing.
 
@@ -336,7 +337,10 @@ var notInApp = map[string]bool{"update_project": true, "set_favourite": true, "c
 	"archive_projects": true, "update_labels": true, "add_reminders": true, "update_reminders": true, "remove_reminders": true,
 	"start_timer": true, "stop_timer": true, "log_time": true, "update_time_entries": true,
 	// Routines are made and run from the Routines page, the CLI or MCP (routines-engine).
-	"run_routine": true, "set_routine_enabled": true, "create_routine": true, "update_routine": true, "trash_routine": true}
+	"run_routine": true, "set_routine_enabled": true, "create_routine": true, "update_routine": true, "trash_routine": true,
+	// Objectives are read by external agents only (plan-objectives D7): the
+	// in-app assistant's disclosure does not name them.
+	"list_objectives": true}
 
 // runTool runs one call: read tools return their result with the untrusted
 // notice; write tools plan into the draft and never apply. Anything else (an

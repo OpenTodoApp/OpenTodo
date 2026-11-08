@@ -127,13 +127,20 @@ func DayOf(ms int64, loc *time.Location, dayStart int) string {
 	return l.Format(time.DateOnly)
 }
 
-// TotalsByTask sums the minutes of the live entries per task, a running one to now.
-func TotalsByTask(entries []Entry, now int64) map[string]int {
+// TotalsByTask sums the minutes of the live entries per task, a running one to
+// now. With since (OccurrenceStarts) a repeating task counts only the entries
+// that started in its current occurrence; an entry belongs whole to the
+// occurrence it started in. A nil since counts every entry.
+func TotalsByTask(entries []Entry, now int64, since map[string]int64) map[string]int {
 	out := map[string]int{}
 	for _, e := range entries {
-		if e.Live() {
-			out[e.TaskID] += MinutesOf(e, now)
+		if !e.Live() {
+			continue
 		}
+		if from, ok := since[e.TaskID]; ok && e.StartedAt < from {
+			continue
+		}
+		out[e.TaskID] += MinutesOf(e, now)
 	}
 	return out
 }

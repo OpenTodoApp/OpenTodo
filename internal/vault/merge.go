@@ -371,6 +371,10 @@ func (e *engine) placeTasks(m *mergeRun) error {
 				id = e.newID("task", p, raw, strconv.Itoa(seen[p+"\x00"+raw]))
 				n.Line.ID = id
 				e.fresh["task:"+id] = true
+				if e.freshLines[p] == nil {
+					e.freshLines[p] = map[string]string{}
+				}
+				e.freshLines[p][raw+"\x00"+strconv.Itoa(seen[p+"\x00"+raw])] = id
 			}
 			taken[id] = true
 		})

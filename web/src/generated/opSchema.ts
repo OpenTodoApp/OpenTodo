@@ -2,7 +2,7 @@
 // Declare a field in internal/sync/ops.go, then run
 // UPDATE_OP_SCHEMA=1 go test ./internal/sync -run TestGeneratedOpSchema
 import type {
-  Attachment, Comment, CustomTheme, Due, Entity, FieldDef, Frame, Geo, Label, Note, OnDropRule, Origin, Place, Priority, Project, ProjectPrefs, Reminder, ReminderKind, Review, RoutineStep, Rule, RuleActions, RuleCondition, RuleTrigger, Section, Slot, SplitFrom, Task, TaskLocation, ThemeDocument, TimeEntry, UserPrefs, View,
+  Attachment, Comment, CustomTheme, Due, Entity, FieldDef, Frame, Geo, Label, Note, Objective, OnDropRule, Origin, Place, Priority, Project, ProjectPrefs, Reminder, ReminderKind, Review, RoutineStep, Rule, RuleActions, RuleCondition, RuleTrigger, Section, Slot, SplitFrom, Task, TaskLocation, ThemeDocument, TimeEntry, UserPrefs, View,
 } from '../lib/types'
 
 /**
@@ -52,6 +52,15 @@ export interface ProjectFields {
    * checks the kind only; REST and the agent tools check the set. Not user text.
    */
   status?: string
+  /**
+   * The reusable-list mode (OpenSpec change reusable-lists, design D1):
+   * adding an item already in the project reopens it instead of
+   * duplicating it, and ticked items always show. aisles sorts new items
+   * into aisle sections and reads as false while reusable is false. Flags,
+   * not user text, so not content; additive.
+   */
+  reusable?: boolean
+  aisles?: boolean
 }
 
 /**
@@ -106,6 +115,25 @@ export interface TaskFields {
    */
   energy?: string
   /**
+   * The period the task is planned for without a date (OpenSpec change
+   * time-sectors, design D1): "" (none), an ISO week "2026-W44", a month
+   * "2026-11" or a quarter "2026-Q4". A sector with no do-on date schedules
+   * the task (it leaves the Inbox and Anytime) and is never overdue; clients
+   * name it relative to the viewer's date and derive carry-over, never
+   * writing it. A scheduling field like start: plaintext, not content;
+   * additive.
+   */
+  sector?: string
+  /**
+   * How the task's own subtasks flow (OpenSpec change subtask-flow, GitHub
+   * issue 1046): "sequential" offers its open subtasks one at a time in list
+   * order; empty, "parallel", missing or unknown read as parallel, as on a
+   * project. Sync checks the kind only, so a later value stays additive; a
+   * client that does not know it shows every subtask as available. Not user
+   * text, so not content.
+   */
+  flow_mode?: string
+  /**
    * The tasks this one waits for, in its own sharing scope (OpenSpec change
    * task-dependencies): one whole-list register; the resolver refuses ids of
    * other scopes and lists that close a cycle.
@@ -117,6 +145,11 @@ export interface TaskFields {
    * current members of the task's shared project at receipt, plaintext.
    */
   note_mentions?: string[]
+  /**
+   * Who takes turns on a recurring task, in order (OpenSpec change chore-rotation; see rotation.go):
+   * plaintext member ids like assignee_id, not content; inert without a rule or a second member.
+   */
+  rotation?: string[]
   /**
    * Recurrence rule and the series an occurrence record belongs to
    * (OpenSpec change recurring-tasks); additive. See docs/recurrence.md.
@@ -225,6 +258,15 @@ export interface SectionFields {
    * project. Sync checks the kind only. Not user text.
    */
   flow_mode?: string
+  /**
+   * The aisle an aisle section stands for in a reusable list (OpenSpec
+   * change reusable-lists, design D1): produce, bakery, dairy, meat,
+   * frozen, pantry, drinks, household or personal, or null. A fixed key,
+   * not user text, so it survives a rename and reads the same in every
+   * language; clients read an unknown key as null, and the REST API
+   * refuses it (invalid_aisle). Sync checks the kind only. Additive.
+   */
+  aisle?: string | null
 }
 
 /**
@@ -388,6 +430,15 @@ export interface ReminderFields {
   dismissed_at?: number | null
   created_at?: number
   deleted_at?: number | null
+  /**
+   * A location reminder's radius in metres, 100 to 5,000 (OpenSpec change
+   * location-reminders, design D1): set only on the kinds "arrive" and
+   * "leave", which fire on a phone that enters or leaves the circle
+   * around the task's location and never have a fire_at or an offset
+   * (reminder_check.go refuses the mixes). Not content: the place is in
+   * the task's encrypted location.
+   */
+  radius_m?: number | null
 }
 
 /**
@@ -733,6 +784,13 @@ export interface UserPrefsFields {
    */
   method_mode?: string
   /**
+   * Time sectors (OpenSpec change time-sectors, design D7): "on" shows the
+   * Sector segment, the planning list's Time sectors source, the quick-add
+   * sector phrases and the review's sector section; empty or any other value
+   * reads as off and is kept. Sectors on tasks keep working either way.
+   */
+  time_sectors?: string
+  /**
    * The first-day checklist (OpenSpec change moments-and-onboarding, design
    * D5): "hidden" once its sidebar entry was hidden on any device; clients
    * read an empty or unknown value as shown.
@@ -740,9 +798,9 @@ export interface UserPrefsFields {
   start_checklist?: string
   /**
    * Interface language (OpenSpec change app-localization, design D1):
-   * "system" or a shipped language code (en, de, fr, es, it, pt). Not
-   * restricted here; clients read an unknown code as "system" and keep the
-   * stored value, so a catalog added later stays additive.
+   * "system" or a code from SHIPPED. Not restricted here; clients read an
+   * unknown code as "system" and keep the stored value, so a catalog added
+   * later stays additive.
    */
   language?: string
   /**
@@ -799,6 +857,19 @@ export interface UserPrefsFields {
    * value as hidden and keep the stored value.
    */
   today_events?: string
+  /**
+   * Today hides tasks assigned to others (OpenSpec change
+   * today-assigned-filter): "mine" omits them; clients read an empty or
+   * unknown value as off and keep the stored value. Settings, never content.
+   */
+  today_assignees?: string
+  /**
+   * Upcoming's calendar events, one agenda per day (OpenSpec
+   * today-agenda): "shown" or "hidden"; clients read an empty or
+   * unknown value as hidden and keep the stored value. Settings,
+   * never content.
+   */
+  upcoming_events?: string
   /**
    * Where new tasks are added from a list's quick add (OpenSpec change
    * add-position, design D1): "bottom" or "top"; clients read an empty
@@ -912,6 +983,45 @@ export interface UserPrefsFields {
    * and keep the stored value. Settings, never content.
    */
   upcoming_today?: string
+  /**
+   * Objectives (OpenSpec change plan-objectives, design D8): "on" shows the
+   * Plan's objectives strip and the weekly review's Objectives section;
+   * clients read an empty or unknown value as off and keep the stored
+   * value. Objectives stay in the export, REST, the CLI and MCP either way.
+   */
+  objectives?: string
+  /**
+   * Full task titles (OpenSpec change full-task-titles, design D1): "on"
+   * shows every task title in list rows, on board cards and in Today in
+   * full, wrapped onto as many lines as it takes, instead of cutting it
+   * with an ellipsis; clients read an empty or unknown value as off and
+   * keep the stored value. Settings, never content.
+   */
+  full_titles?: string
+}
+
+/**
+ * objective: one quarterly or weekly objective (OpenSpec change
+ * plan-objectives, design D1). Personal like place: it resolves to the
+ * author's personal scope, syncs to that user's devices only and derives no
+ * activity event. At most 5 open objectives per period: REST refuses a
+ * sixth, sync cannot refuse convergently and devices show all of them.
+ * A row written before a field existed lacks it, so every field is optional here; the entity type may require it.
+ */
+export interface ObjectiveFields {
+  /**
+   * The objective, one line of 1 to 140 characters (ciphertext for an
+   * encrypted account).
+   */
+  title?: string
+  /** The quarter "YYYY-Qn" or ISO week "YYYY-Www" it is for; never a month. */
+  period?: string
+  /** Order within its period. */
+  position?: number
+  /** When it was marked done, Unix ms; 0 = open. */
+  done_at?: number
+  created_at?: number
+  deleted_at?: number | null
 }
 
 /**
@@ -974,13 +1084,13 @@ export interface ReviewFields {
 /** The row a field op creates when its entity is new: one key per op field, a family (`fields.<id>`) in one key named after its prefix. */
 export const OP_DEFAULTS = {
   project: {
-    name: '', color: '#64748b', position: 0, archived: false, parent_id: null, created_at: 0, deleted_at: null, icon: null, description: '', notes_doc: '', workspace_id: null, flow_mode: '', status: '',
+    name: '', color: '#64748b', position: 0, archived: false, parent_id: null, created_at: 0, deleted_at: null, icon: null, description: '', notes_doc: '', workspace_id: null, flow_mode: '', status: '', reusable: false, aisles: false,
   } satisfies Omit<Project, 'id' | '_clock'>,
   task: {
-    title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, span: false, day_part: null, energy: '', blocked_by: [], note_mentions: [], recurrence: null, series_id: null, occurrence_date: null, split_from: null, assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, origin: null, location: null, sample: false, workspace_id: null, fields: {}, appends: {},
+    title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, span: false, day_part: null, energy: '', sector: '', flow_mode: '', blocked_by: [], note_mentions: [], rotation: [], recurrence: null, series_id: null, occurrence_date: null, split_from: null, assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, origin: null, location: null, sample: false, workspace_id: null, fields: {}, appends: {},
   } satisfies Omit<Task, 'id' | '_clock'>,
   section: {
-    name: '', project_id: '', position: 0, created_at: 0, deleted_at: null, color: null, icon: null, flow_mode: '',
+    name: '', project_id: '', position: 0, created_at: 0, deleted_at: null, color: null, icon: null, flow_mode: '', aisle: null,
   } satisfies Omit<Section, 'id' | '_clock'>,
   field: {
     name: '', project_id: '', type: 'text', options: '', position: 0, created_at: 0, deleted_at: null,
@@ -995,7 +1105,7 @@ export const OP_DEFAULTS = {
     name: '', query: '', kind: 'list', group_by: 'project', sort_by: 'due', sort_dir: 'asc', pinned: false, position: 0, color: '#64748b', panels: [], on_drop: null, layout: 'list', show_completed: false, hidden_props: [], row_layout: '', card_notes: false, created_at: 0, deleted_at: null, workspace_id: null, icon: null, manual_order: [],
   } satisfies Omit<View, 'id' | '_clock'>,
   reminder: {
-    task_id: '', kind: 'relative', offset_minutes: null, fire_at: null, delivered_at: null, dismissed_at: null, created_at: 0, deleted_at: null,
+    task_id: '', kind: 'relative', offset_minutes: null, fire_at: null, delivered_at: null, dismissed_at: null, created_at: 0, deleted_at: null, radius_m: null,
   } satisfies Omit<Reminder, 'id' | '_clock'>,
   comment: {
     task_id: '', parent_id: null, body: '', author_id: '', mentions: [], created_at: 0, edited_at: null, deleted_at: null, guest_name: null, page_id: null, reactions: {},
@@ -1025,8 +1135,11 @@ export const OP_DEFAULTS = {
     feed_seen_at: 0, reviewed_at: 0, group_by: '', sort_by: '', sort_dir: '', row_layout: '', review_every: '', card_notes: false,
   } satisfies Omit<ProjectPrefs, 'id' | '_clock'>,
   user_prefs: {
-    date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', theme_accent_custom: '', theme_light: '', theme_dark: '', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '', today_events: '', add_position: '', reminder_default_timed: '', reminder_default_dated: '', sidebar_counts: '', sidebar_order: '', focus_presets: '', focus_noise: '', day_parts: '', today_limit: 0, today_done: '', focus_style: '', energy: '', bento_order: '', formatting_toggle: '', routines_seen_at: 0, routines_hide_successes: '', upcoming_today: '',
+    date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', theme_accent_custom: '', theme_light: '', theme_dark: '', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', time_sectors: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '', today_events: '', today_assignees: '', upcoming_events: '', add_position: '', reminder_default_timed: '', reminder_default_dated: '', sidebar_counts: '', sidebar_order: '', focus_presets: '', focus_noise: '', day_parts: '', today_limit: 0, today_done: '', focus_style: '', energy: '', bento_order: '', formatting_toggle: '', routines_seen_at: 0, routines_hide_successes: '', upcoming_today: '', objectives: '', full_titles: '',
   } satisfies Omit<UserPrefs, 'id' | '_clock'>,
+  objective: {
+    title: '', period: '', position: 0, done_at: 0, created_at: 0, deleted_at: null,
+  } satisfies Omit<Objective, 'id' | '_clock'>,
   review: {
     completed_at: 0, daily_at: 0, monthly_at: 0, focus_date: '', focus: '', closed_at: 0, tomorrow_note: '', closed_day: '', carry_over: '', slots_date: '', slots: '', focus_slots: '',
   } satisfies Omit<Review, 'id' | '_clock'>,
@@ -1048,5 +1161,6 @@ export const OP_CONTENT_FIELDS: Partial<Record<Entity, readonly string[]>> = {
   frame: ['title'],
   slot: ['title'],
   place: ['name', 'address', 'geo'],
+  objective: ['title'],
   review: ['tomorrow_note'],
 }

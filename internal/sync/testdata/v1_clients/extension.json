@@ -1,0 +1,342 @@
+{
+ "about": "Requests and responses of the extension client, recorded by the client compatibility recorder (OpenSpec change stability-contract, design D5). internal/tenant TestV1ClientsReplay replays them in order against the current server: every recorded response field must still be there with the same type. Recorded once per major version; never regenerated within it (new files may be added).",
+ "client": "extension",
+ "pairs": [
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/auth/register",
+    "auth": "none",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "email": "extension-1793670761719@example.com",
+     "name": "extension",
+     "password": "<password>"
+    }
+   },
+   "response": {
+    "status": 201,
+    "session": "session:17",
+    "body": {
+     "user": {
+      "id": "61ea7472-08dd-45a6-ae5e-738c6d689904",
+      "email": "extension-1793670761719@example.com",
+      "name": "extension",
+      "role": "member",
+      "createdAt": 1793670761739
+     }
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/tokens",
+    "auth": "session:17",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "name": "extension"
+    }
+   },
+   "response": {
+    "status": 201,
+    "body": {
+     "secret": "<token:2>",
+     "token": {
+      "id": "2b217fde-aba1-4e68-8fbe-5efd52c77bbe",
+      "name": "extension",
+      "scope": "full",
+      "createdAt": 1793670761744,
+      "lastUsedAt": null
+     }
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/me",
+    "auth": "token:2"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "agent_excluded_projects": [],
+     "attachments": {
+      "enabled": true,
+      "max_file_bytes": 26214400,
+      "quota_bytes": 1073741824,
+      "used_bytes": 0
+     },
+     "auth": {
+      "method": "token",
+      "scope": "full",
+      "token_id": "2b217fde-aba1-4e68-8fbe-5efd52c77bbe",
+      "token_name": "extension"
+     },
+     "automations": {
+      "enabled": true,
+      "paused": false
+     },
+     "closed_list": {
+      "focus": "",
+      "focus_date": "",
+      "limit": 0,
+      "slots": "",
+      "slots_date": ""
+     },
+     "day_parts": false,
+     "encryption": {
+      "enabled": false,
+      "keyVersion": 0
+     },
+     "energy_levels": false,
+     "maps": true,
+     "mfa": {
+      "enrolled": false,
+      "recoveryCodesRemaining": 0,
+      "policy": "none",
+      "required": false,
+      "restricted": false
+     },
+     "minClientVersion": 1,
+     "speech": {
+      "connected": false
+     },
+     "time_sectors": false,
+     "user": {
+      "id": "61ea7472-08dd-45a6-ae5e-738c6d689904",
+      "email": "extension-1793670761719@example.com",
+      "name": "extension",
+      "role": "member",
+      "createdAt": 1793670761739
+     }
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/projects",
+    "auth": "token:2"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "projects": []
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/v1/labels",
+    "auth": "token:2"
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "labels": []
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/quick-add/parse",
+    "auth": "token:2",
+    "headers": {
+     "content-type": "application/json"
+    },
+    "body": {
+     "line": "Read the article tomorrow p2 #reading",
+     "url": "https://example.com/a",
+     "today": "2026-11-03",
+     "now": "09:00"
+    }
+   },
+   "response": {
+    "status": 200,
+    "body": {
+     "title": "Read the article #reading",
+     "fields": {
+      "due": {
+       "date": "2026-11-04"
+      },
+      "priority": 2
+     },
+     "chips": [
+      {
+       "kind": "due",
+       "text": "Wed 4 Nov",
+       "start": 17,
+       "end": 25
+      },
+      {
+       "kind": "priority",
+       "text": "P2",
+       "start": 26,
+       "end": 28
+      },
+      {
+       "kind": "unmatched",
+       "text": "No project named #reading",
+       "start": 29,
+       "end": 37
+      }
+     ],
+     "unmatched": [
+      "#reading"
+     ],
+     "origin": {
+      "kind": "url",
+      "url": "https://example.com/a"
+     }
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/labels",
+    "auth": "token:2",
+    "headers": {
+     "content-type": "application/json",
+     "idempotency-key": "ext-contract.l1"
+    },
+    "body": {
+     "name": "reading"
+    }
+   },
+   "response": {
+    "status": 201,
+    "body": {
+     "color": "#14b8a6",
+     "created_at": 1793670761768,
+     "id": "dde10e57-b445-898a-9c22-09a2ff4317e2",
+     "name": "reading",
+     "position": 1793670761768
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/tasks?default_reminder=true",
+    "auth": "token:2",
+    "headers": {
+     "content-type": "application/json",
+     "idempotency-key": "ext-contract"
+    },
+    "body": {
+     "title": "Read the article",
+     "priority": 2,
+     "labels": [
+      "dde10e57-b445-898a-9c22-09a2ff4317e2"
+     ],
+     "due": {
+      "date": "2026-11-04"
+     },
+     "origin": {
+      "kind": "url",
+      "url": "https://example.com/a",
+      "title": "An article"
+     }
+    }
+   },
+   "response": {
+    "status": 201,
+    "body": {
+     "appends": [],
+     "body_version": "0",
+     "created_at": 1793670761775,
+     "due": {
+      "date": "2026-11-04"
+     },
+     "energy": null,
+     "fields": {},
+     "id": "8cb586d7-6a3b-8fca-bdfb-dda1c28342b7",
+     "labels": [
+      "dde10e57-b445-898a-9c22-09a2ff4317e2"
+     ],
+     "origin": {
+      "kind": "url",
+      "url": "https://example.com/a",
+      "title": "An article"
+     },
+     "position": 1793670761775,
+     "priority": 2,
+     "rotation": [],
+     "sector": null,
+     "title": "Read the article"
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/reminders",
+    "auth": "token:2",
+    "headers": {
+     "content-type": "application/json",
+     "idempotency-key": "ext-contract.r1"
+    },
+    "body": {
+     "task_id": "8cb586d7-6a3b-8fca-bdfb-dda1c28342b7",
+     "kind": "relative",
+     "offset_minutes": 15
+    }
+   },
+   "response": {
+    "status": 201,
+    "body": {
+     "created_at": 1793670761780,
+     "deleted_at": null,
+     "delivered_at": null,
+     "dismissed_at": null,
+     "fire_at": 1793783700000,
+     "id": "48d7149f-a69b-83ae-9e72-a4631f56413e",
+     "kind": "relative",
+     "offset_minutes": 15,
+     "task_id": "8cb586d7-6a3b-8fca-bdfb-dda1c28342b7"
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/v1/time-entries",
+    "auth": "token:2",
+    "headers": {
+     "content-type": "application/json",
+     "idempotency-key": "ext-contract.t"
+    },
+    "body": {
+     "taskId": "8cb586d7-6a3b-8fca-bdfb-dda1c28342b7",
+     "startedAt": 1762160400000,
+     "endedAt": 1762162200000
+    }
+   },
+   "response": {
+    "status": 201,
+    "body": {
+     "id": "9eb9eb26-86c5-8eed-9522-b056bb4ddd10",
+     "taskId": "8cb586d7-6a3b-8fca-bdfb-dda1c28342b7",
+     "userId": "61ea7472-08dd-45a6-ae5e-738c6d689904",
+     "startedAt": 1762160400000,
+     "endedAt": 1762162200000,
+     "minutes": 30,
+     "note": "",
+     "deviceId": "server:892954b3",
+     "taskTitle": "Read the article",
+     "projectId": null,
+     "focus": null
+    }
+   }
+  }
+ ]
+}

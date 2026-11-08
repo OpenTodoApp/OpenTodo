@@ -48,4 +48,19 @@ describe('leave guard', () => {
     navigate({ view: 'today' })
     expect(asked).toBe(1)
   })
+
+  // An overlay's marker entry (useBackToClose) has the page's own address: popping it is not leaving.
+  it('does not ask when a popstate stays on the same address, and asks when it leaves', () => {
+    navigate({ view: 'rules', id: 'r2' })
+    let asked = 0
+    setLeaveGuard(() => { asked++; return true })
+    history.pushState({ overlay: 1 }, '')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    expect(asked).toBe(0)
+    history.pushState(null, '', '/today')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    expect(asked).toBe(1)
+    expect(location.pathname).toBe('/routines/r2')
+    setLeaveGuard(null)
+  })
 })

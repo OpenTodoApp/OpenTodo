@@ -4,7 +4,7 @@
 // offline state and the captured browser values.
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { setDateTime } from '../lib/dates'
+import { setDateLocale, setDateTime } from '../lib/dates'
 import type { EmailDigest } from '../lib/types'
 import { render, waitFor } from '../ui/test-utils'
 import { browserDigestLanguage, DigestCard, digestSummary } from './DigestCard'
@@ -30,6 +30,9 @@ function server(get: Partial<EmailDigest> | 'offline') {
 }
 
 beforeEach(() => {
+  // Dates are written in the date locale; without one Intl follows the host's
+  // language, so these English assertions would fail on a non-English machine.
+  setDateLocale('en-US')
   setDateTime({ date_format: 'day-month', time_format: '24h', week_start: 'mon' }, { order: 'DM', hour12: false, weekStart: 1 })
   const real = Intl.DateTimeFormat.prototype.resolvedOptions
   vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockImplementation(function (this: Intl.DateTimeFormat) {
@@ -37,6 +40,7 @@ beforeEach(() => {
   })
 })
 afterEach(() => {
+  setDateLocale(undefined)
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
 })
@@ -100,6 +104,9 @@ describe('helpers', () => {
     expect(browserDigestLanguage(['de-CH', 'en'])).toBe('de')
     expect(browserDigestLanguage(['ja', 'pt-BR'])).toBe('pt')
     expect(browserDigestLanguage(['ja'])).toBe('en')
+    expect(browserDigestLanguage(['zh-CN'])).toBe('zh')
+    expect(browserDigestLanguage(['zh-TW'])).toBe('en')
+    expect(browserDigestLanguage(['zh-TW', 'zh-CN'])).toBe('zh')
     expect(digestSummary({ enabled: true, weekday: 0, hour: 18, timeZone: 'America/New_York' }, '18:00')).toBe('On, Sundays at 18:00 (America/New_York)')
   })
 })

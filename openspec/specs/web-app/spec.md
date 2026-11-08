@@ -371,7 +371,7 @@ CI SHALL open every screen and every overlay at 360, 390 and 768 px wide, in lig
 - **THEN** the layout job fails for WebKit
 
 ### Requirement: Task panel layout
-The task page SHALL show, top to bottom: a compact header with the breadcrumb (the list the task was opened from as a link back to it, the task's project, its parent task when it has one, and the task), the task's place in the list it was opened from ("4 / 12") with the next and previous task, a menu holding Delete, Copy link, Attach and the less frequent actions, and Close; then the content column with the task's checkbox and editable title, the notes (never clamped), an Attach control, the project's custom fields, the subtasks as one bordered block with their count and progress, the attachments list only when there are attachments, and the tabbed area with Comments, Activity, History and Time, the comment composer pinned to the bottom; and the facts column beside the content from 1024 px, above the notes below that. The docked panel of a page that keeps a split SHALL keep the earlier panel layout: the sticky header with the checkbox, the title, the menu (with Expand) and Close, the facet lines with Add, the custom fields, the subtasks, the attachments, the notes in full and the tabs.
+The task page SHALL show, top to bottom: a compact header with the breadcrumb (the list the task was opened from as a link back to it, the task's project, its parent tasks as Subtask path requires, and the task), the task's place in the list it was opened from ("4 / 12") with the next and previous task, a menu holding Delete, Copy link, Attach and the less frequent actions, and Close; then the content column with the task's checkbox and editable title, the notes (never clamped), an Attach control, the project's custom fields, the subtasks as one bordered block with their count and progress, the attachments list only when there are attachments, and the tabbed area with Comments, Activity, History and Time, the comment composer pinned to the bottom; and the facts column beside the content from 1024 px, above the notes below that. The docked panel of a page that keeps a split SHALL keep the earlier panel layout: the sticky header with the subtask path as its first line when the task has a parent, then the checkbox, the title, the menu (with Expand) and Close, the facet lines with Add, the custom fields, the subtasks, the attachments, the notes in full and the tabs.
 
 #### Scenario: Delete from the header menu
 - **WHEN** the user opens the header menu on the task page and chooses Delete
@@ -404,6 +404,29 @@ The task page SHALL show, top to bottom: a compact header with the breadcrumb (t
 #### Scenario: Facts above the notes on a narrow task page
 - **WHEN** the user opens a task as a page at 768 px wide
 - **THEN** the facts card is shown between the title and the notes
+
+### Requirement: Subtask path
+The header of a subtask, on the task page and in the docked panel, SHALL show the path from its project through every parent to the task. Each part except the task itself SHALL open that part. The path SHALL be a navigation region named "Task path", and the task SHALL be its current item. A task with one parent SHALL show that parent as its own crumb. A task with more than one parent SHALL keep the project, the nearest parent and the task on one line and put every parent between them in one menu anchored to that line, including below 640 px, where the menu SHALL NOT become a sheet. The chain SHALL stop at a missing or deleted parent and SHALL still show a completed parent. Pressing `u` SHALL open the nearest parent from the task page, and from the docked panel while focus is inside it, and SHALL do nothing to the path while a text field has focus. A task with no parent SHALL keep the header it has without this path.
+
+#### Scenario: Three levels
+- **WHEN** the user opens the subtask "Ask finance", whose parent is "Gather numbers", whose parent is "Draft the budget", in the project "Work"
+- **THEN** the header reads Work, then a control for the parents in between, then Gather numbers, then Ask finance, and Draft the budget is not a crumb of its own
+
+#### Scenario: The parents in between
+- **WHEN** the user opens that control
+- **THEN** a menu anchored to it lists Draft the budget, choosing it opens that task, and the page behind is not covered by a sheet
+
+#### Scenario: One parent
+- **WHEN** the user opens a subtask whose only parent is "Draft the budget"
+- **THEN** the header reads the project, Draft the budget and the subtask, with no control for parents in between
+
+#### Scenario: Up to the parent
+- **WHEN** the user presses `u` on that subtask, outside a text field
+- **THEN** the parent task opens
+
+#### Scenario: The panel
+- **WHEN** the same subtask is open in the docked panel
+- **THEN** the path is the first line of the panel, and `u` while focus is inside the panel opens the nearest parent
 
 ### Requirement: Task panel tabs
 The tabbed area SHALL offer Comments (with the comment count), Activity, History and Time (with the tracked total when there is one) as tabs reachable with the keyboard (arrow keys between tabs, Tab into the content). Comments SHALL be the default tab; the last chosen tab SHALL be remembered on the device only. The task's created and completed times SHALL be the first entries of Activity. The Time tab SHALL hold the task's time entries as the time-tracking capability defines them.
@@ -608,7 +631,7 @@ The panel SHALL group the task's properties into four facet lines, each with a l
 - **THEN** the facet lines render as text, no part opens an editor, and the Add menu is absent
 
 ### Requirement: Facet editors are popovers
-Activating a part SHALL open its editor as a popover anchored to the part from 640 px and as a bottom sheet below, with the facet's name and icon as its title and a footer offering Clear (when the part has a value) and Done. The panel's content SHALL not move while a popover is open. Done, Escape or a committed single-value edit SHALL close the popover and return focus to the part; Clear SHALL remove the value and close it.
+Activating a part SHALL open its editor as a popover anchored to the part from 640 px and as a bottom sheet below, with the facet's name and icon as its title and a footer offering Clear (when the part has a value) and Close. The panel's content SHALL not move while a popover is open. Close, Escape or a committed single-value edit SHALL close the popover and return focus to the part; Clear SHALL remove the value and close it.
 
 #### Scenario: Clear from the footer
 - **WHEN** the user opens the deadline part and chooses Clear
@@ -620,7 +643,7 @@ Activating a part SHALL open its editor as a popover anchored to the part from 6
 
 #### Scenario: Phone sheet
 - **WHEN** the user taps the labels part on a 390 px wide screen
-- **THEN** the labels editor opens as a bottom sheet with the facet's title and Done, and closing it returns to the panel scrolled where it was
+- **THEN** the labels editor opens as a bottom sheet with the facet's title and Close, and closing it returns to the panel scrolled where it was
 
 ### Requirement: When popover shows one segment
 The When popover SHALL offer the segments Do on, Start, Deadline, Repeat and Reminders in a segmented control and show one at a time, starting on the segment of the part that opened it (Do on when opened from the Add menu or a shortcut that names no part). The Do on segment SHALL hold the date, the time, the Evening toggle and the zone control.
@@ -1075,3 +1098,41 @@ Every Copy button SHALL put its text on the clipboard whether the app is opened 
 #### Scenario: Recovery key is not reported copied when it was not
 - **WHEN** the browser refuses every way of copying and the user clicks Copy on the encryption recovery key
 - **THEN** the panel does not mark the key as copied
+
+### Requirement: Static startup colours match the default appearance
+Before the app applies a synced appearance, the static `theme-color` metas and the web app manifest SHALL use the default OpenTodo bars: the emerald light bar `#047857` for the light scheme and the dark canvas `#0d0e10` for the dark scheme. The light fallback in `public/appearance.js` SHALL use `#047857`, and the manifest's splash `background_color` SHALL be the dark canvas `#0d0e10`, because a manifest has one splash colour and a bright flash on a phone in dark mode is worse than a dark splash before a light app. A test SHALL read `index.html`, `public/appearance.js` and `vite.config.ts` and fail when a static value drifts from the default appearance.
+
+#### Scenario: Android status bar before and after load
+- **WHEN** someone with the default emerald appearance opens the installed app in light mode on an Android phone
+- **THEN** the status bar is `#047857` from the first frame and keeps that colour after the app applies the synced appearance
+
+#### Scenario: Splash of the installed app
+- **WHEN** the installed app starts on a phone, in either scheme
+- **THEN** the manifest's splash background is the dark canvas `#0d0e10`
+
+### Requirement: Back closes the open overlay on a touch device
+On a device with a coarse pointer, outside WebKit (Safari and the other iOS browsers, which have no system Back of this kind), the system Back SHALL close the topmost open overlay (a dialog, a menu, a popover, a sheet, the command palette, the assistant panel, a help panel or the phone drawer) and SHALL leave the page underneath on its address, instead of navigating behind the overlay. Each open overlay SHALL own one history entry at the address it was opened from, numbered by its place in the overlay stack; a second Back SHALL then navigate as it would with no overlay open. Back SHALL close the overlays one at a time, the topmost first, and overlays that close together (a dialog and the dialog over it, or a single action that closes two) SHALL remove their entries together so no marker remains. Closing an overlay with its own control, Escape or a tap outside SHALL remove its entry as well, so a later Back navigates and never reopens a stale marker. A navigation made while an overlay is open SHALL take the overlay's entry, so Back returns to the page the overlay was opened from. With a fine pointer the browser's Back SHALL keep navigating and SHALL NOT be used to close overlays. The entries are device interface state: they are never written to the server or synced.
+
+#### Scenario: Back closes a dialog
+- **WHEN** a user on a phone opens a dialog from a list and presses the system Back
+- **THEN** the dialog closes, no task behind it opens, and the list keeps its address, scroll position and focus
+
+#### Scenario: Two overlays close one at a time
+- **WHEN** a dialog is open over a list and a second dialog opens over it, and the user presses Back twice
+- **THEN** the second dialog closes on the first Back, the first closes on the second, and the list stays shown
+
+#### Scenario: A closed overlay leaves no entry
+- **WHEN** the user closes a sheet with its close button and then presses Back
+- **THEN** Back navigates to the previous page and does not reopen the sheet
+
+#### Scenario: The phone drawer closes on Back
+- **WHEN** the user opens the phone drawer on a 390 px phone and presses the system Back
+- **THEN** the drawer closes and the page it was opened from stays on screen
+
+#### Scenario: A destination chosen in the drawer keeps the page behind it
+- **WHEN** the user opens the drawer from Today, taps a project and then presses Back
+- **THEN** the project opens with no marker left over, and Back returns to Today
+
+#### Scenario: A mouse keeps the browser's Back
+- **WHEN** a user with a mouse or trackpad opens a dialog and presses the browser's Back
+- **THEN** the browser navigates and the dialog is not what closed

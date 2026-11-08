@@ -31,7 +31,7 @@ beforeEach(async () => {
 afterEach(() => { window.matchMedia = original; vi.unstubAllGlobals() })
 
 const sheet = () => document.querySelector('[data-overlay="sheet"]')
-const field = () => document.querySelector<HTMLInputElement>('[data-quick-add-sheet] input[aria-label="Add a task"]')
+const field = () => document.querySelector<HTMLTextAreaElement>('[data-quick-add-sheet] textarea[aria-label="Add a task"]')
 
 describe('the add button', () => {
   it('opens quick add as a bottom sheet with the field focused, and the Upcoming default date applied', async () => {
@@ -51,11 +51,37 @@ describe('the add button', () => {
 
     await type(field()!, 'Call the plumber')
     await act(async () => { field()!.form!.requestSubmit() })
-    await waitFor(() => (document.querySelector('[data-quick-add-sheet]') === null))
+    await waitFor(async () => (await db.tasks.count()) === 1, 'the task')
     const tomorrow = new Date(todayISO())
     tomorrow.setDate(tomorrow.getDate() + 1)
     const tasks = await db.tasks.toArray()
     expect(tasks.map((t) => [t.title, t.due?.date])).toEqual([['Call the plumber', tomorrow.toISOString().slice(0, 10)]])
+    await r.unmount()
+  })
+
+  // #1038 (quick-add-keep-adding): the sheet stays open, empty and focused, for the next task.
+  it('stays open after an add, with the field empty and focused, until it is closed', async () => {
+    navigate({ view: 'inbox' })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => !!document.querySelector('[data-add-button]'), 'the add button')
+    await click(document.querySelector<HTMLButtonElement>('[data-add-button]')!)
+    await waitFor(() => !!field())
+    await type(field()!, 'Buy milk')
+    await click(document.querySelector('[data-sheet-send]')!)
+    await waitFor(async () => (await db.tasks.count()) === 1, 'the first task')
+    await waitFor(() => field()?.value === '', 'the field cleared')
+    expect(sheet()).toBeTruthy()
+    expect(document.activeElement).toBe(field())
+    await waitFor(() => document.querySelector('[data-sheet-added]')!.textContent === 'Added', 'the announcement')
+
+    await type(field()!, 'Buy bread')
+    await act(async () => { field()!.form!.requestSubmit() })
+    await waitFor(async () => (await db.tasks.count()) === 2, 'the second task')
+    expect((await db.tasks.orderBy('position').toArray()).map((t) => t.title)).toEqual(['Buy milk', 'Buy bread'])
+    expect(sheet()).toBeTruthy()
+
+    await key(field()!, 'Escape')
+    await waitFor(() => !sheet())
     await r.unmount()
   })
 
@@ -69,10 +95,8 @@ describe('the add button', () => {
     await waitFor(() => !!field())
     await type(field()!, 'Mow the lawn')
     await act(async () => { field()!.form!.requestSubmit() })
-    await waitFor(() => !sheet())
+    await waitFor(async () => (await db.tasks.count()) === 1, 'the task')
     expect((await db.tasks.toArray()).map((t) => t.project_id)).toEqual([pid])
-    await click(document.querySelector<HTMLButtonElement>('[data-add-button]')!)
-    await waitFor(() => !!field())
     await key(field()!, 'Escape')
     await waitFor(() => !sheet())
     expect(document.querySelector('[data-add-button]')!.getAttribute('aria-expanded')).toBe('false')
@@ -117,8 +141,27 @@ describe('chips and tools (palette-quick-add D7; natural-language-capture "Quick
     expect(document.querySelector('[data-sheet-placeholder="label"]')).toBeTruthy()
     expect(document.querySelector('[data-sheet-placeholder="project"]')).toBeNull()
     await click(document.querySelector('[data-sheet-send]')!)
-    await waitFor(() => !sheet())
+    await waitFor(async () => (await db.tasks.count()) === 1, 'the task')
     expect((await db.tasks.toArray()).map((t) => [t.title, t.project_id, t.due?.time])).toEqual([['Call Mia about the tiles', pid, '17:00']])
+    await r.unmount()
+  })
+
+  // #1035 (quick-add-notes D2): a phone has no Shift+Enter, so the tool row opens the notes.
+  it('the Notes tool opens a notes field with the caret in it, and send saves them as the task notes', async () => {
+    const r = await openSheet()
+    await type(field()!, 'Read the article')
+    const down = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+    document.querySelector('[data-sheet-tool="notes"]')!.dispatchEvent(down)
+    expect(down.defaultPrevented).toBe(true)
+    await click(document.querySelector('[data-sheet-tool="notes"]')!)
+    const notes = () => document.querySelector<HTMLTextAreaElement>('[data-quick-add-sheet] textarea[aria-label="Notes"]')
+    await waitFor(() => !!notes(), 'the notes field')
+    expect(document.activeElement).toBe(notes())
+    expect(document.querySelector('[data-sheet-tool="notes"]')!.getAttribute('aria-pressed')).toBe('true')
+    await type(notes()!, 'https://example.com/article')
+    await click(document.querySelector('[data-sheet-send]')!)
+    await waitFor(async () => (await db.tasks.count()) === 1, 'the task')
+    expect((await db.tasks.toArray()).map((t) => [t.title, t.description])).toEqual([['Read the article', 'https://example.com/article']])
     await r.unmount()
   })
 })

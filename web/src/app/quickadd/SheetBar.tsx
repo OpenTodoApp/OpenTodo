@@ -2,8 +2,9 @@
 // natural-language-capture "Quick add tools on a phone"): under the line, one neutral
 // chip per understood attribute (× keeps its words as text) and a dashed placeholder
 // for the project and the label while the line sets none; then a tool row that starts
-// a token at the end of the line, and the send button. The buttons never take focus
-// from the field, so the keyboard stays up.
+// a token at the end of the line, a Notes tool that opens the notes field
+// (quick-add-notes D2), and the send button. The buttons never take focus from the
+// fields, so the keyboard stays up.
 import { findLabel, type Chip, type LabelRef, type ProjectRef } from '../../lib/nlp'
 import type { Due } from '../../lib/types'
 import { t } from '../../lib/i18n'
@@ -22,7 +23,7 @@ function chipWords(chip: Chip, projects: readonly ProjectRef[], labels: readonly
   return text
 }
 
-export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, canSend, energy = false }: {
+export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, canSend, energy = false, notes }: {
   chips: readonly Chip[]
   projects: readonly ProjectRef[]
   labels: readonly LabelRef[]
@@ -33,13 +34,15 @@ export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, ca
   canSend: boolean
   /** The account offers energy (task-energy D3): a tool starts `~`, so a phone reaches the levels by touch. */
   energy?: boolean
+  /** The notes field under the line (quick-add-notes D2): the last tool opens it and moves the caret there. */
+  notes?: { open: boolean; start: () => void }
 }) {
   const tools: FieldKind[] = energy ? [...TOOLS, 'energy'] : TOOLS
   const set = new Set(chips.map((c) => fieldOf(c.kind)))
   const placeholders = (['project', 'label'] as const).filter((k) => !set.has(k))
   return (
     <div data-quick-add-sheet-bar>
-      <div className="flex gap-1.5 overflow-x-auto px-3 pb-3 pt-1 [scrollbar-width:none]" role="group" aria-label={t('Understood')}>
+      <div className="flex gap-1.5 overflow-x-auto px-3 pb-3 pt-1 [scrollbar-width:none]" role="group" aria-label={t('Understood')} data-scroll-x>
         {chips.map((c) => {
           const color = c.kind === 'project' ? projectColor(projects.find((p) => p.id === c.value)) : undefined
           return (
@@ -70,6 +73,12 @@ export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, ca
             <Icon name={FIELD_ICON[k]} size={18} />
           </button>
         ))}
+        {notes && (
+          <button type="button" data-sheet-tool="notes" onMouseDown={keepFocus} onClick={notes.start} aria-label={t('Notes')} aria-pressed={notes.open}
+            className={`inline-flex h-[2.375rem] w-[2.375rem] items-center justify-center rounded-control hover:bg-hover hover:text-default ${notes.open ? 'text-default' : 'text-muted'}`}>
+            <Icon name="text-quote" size={18} />
+          </button>
+        )}
         <span className="flex-1" />
         <button type="submit" onMouseDown={keepFocus} disabled={!canSend} aria-label={t('Add task')} data-sheet-send
           className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-accent text-on-accent disabled:opacity-40">

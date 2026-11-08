@@ -30,6 +30,7 @@ export const DAY_CAP = 20_000
 const RECENT_MAX = 20
 const K_OPTED_IN = 'relay.optedIn'
 const K_CONFIRM = 'relay.confirmWrites'
+const K_CONFIRM_READS = 'relay.confirmReads'
 const K_USAGE = 'relay.usage'
 const K_RECENT = 'relay.recent'
 const K_ROUTINES = 'relay.routines'
@@ -71,10 +72,12 @@ export interface RoutineRunRequest {
   budget: number
 }
 
-/** One relayed call, as the device lists it: never a value. */
+/** One relayed call, as the device lists it: never a value or the call's arguments. */
 export interface RecentCall {
   at: number
   tool: string
+  /** The connector's token name (relay-request-transparency). */
+  token?: string
   op: 'decrypt' | 'encrypt'
   count: number
   outcome: 'answered' | 'device_limit' | 'declined_on_device' | 'locked' | 'refused'
@@ -83,15 +86,22 @@ export interface RecentCall {
 interface Usage { hourStart: number; hour: number; dayStart: number; day: number }
 
 export interface RelayItem { entity: string; id: string; field: string; value: string }
-interface RelayCallInfo { tool: string; token?: string; write: boolean }
+/** The agent call a request serves, as the server describes it (relay-request-transparency D1). */
+interface RelayCallInfo { tool: string; token?: string; args?: string; write: boolean }
 interface RelayRequest { op: 'decrypt' | 'encrypt'; items: RelayItem[]; call: RelayCallInfo; deadline: number }
 interface RelayResult { value?: string; error?: string }
 type Answer = { results: RelayResult[] } | { error: string }
 
-/** A relayed write waiting for the user's decision (design D7). */
+/**
+ * A relayed request waiting for the user's decision: a write (mcp-device-relay
+ * D7) with the text to encrypt, or a read (relay-request-transparency D4) with
+ * the values it would send, decrypted on this device for the sheet only.
+ */
 export interface PendingConfirmation {
+  op: 'decrypt' | 'encrypt'
   tool: string
   token?: string
+  args?: string
   items: RelayItem[]
   deadline: number
   decide: (apply: boolean) => void
@@ -102,15 +112,19 @@ export interface RelaySnapshot {
   connected: boolean
   busy: boolean
   confirmWrites: boolean
+  /** "Confirm reads first" (relay-request-transparency). */
+  confirmReads: boolean
   recent: RecentCall[]
   pending: PendingConfirmation | null
+  /** The call this device is answering now, for the footer mark. */
+  answering: { tool: string; token?: string } | null
   /** "Run my routines on this device", the routine running now and the last runs. */
   routines: boolean
   running: { rule: string; name: string } | null
   routineRecent: RecentRoutineRun[]
 }
 
-const snapshot = createStore<RelaySnapshot>('relay', { optedIn: false, connected: false, busy: false, confirmWrites: false, recent: [], pending: null,
+const snapshot = createStore<RelaySnapshot>('relay', { optedIn: false, connected: false, busy: false, confirmWrites: false, confirmReads: false, recent: [], pending: null, answering: null,
   routines: false, running: null, routineRecent: [] })
 
 function publish(patch: Partial<RelaySnapshot>): void {
@@ -177,14 +191,26 @@ async function remember(call: RecentCall): Promise<void> {
 
 /** What this device answers to one request (exported for tests). */
 export async function answer(req: RelayRequest): Promise<Answer> {
-  const tool = req.call?.tool ?? ''
+  const tool = typeof req.call?.tool === 'string' ? req.call.tool : ''
+  const token = typeof req.call?.token === 'string' && req.call.token ? req.call.token : undefined
   const op = req.op
   const items = Array.isArray(req.items) ? req.items : []
-  const note = (outcome: RecentCall['outcome']) => remember({ at: Date.now(), tool, op, count: items.length, outcome })
-  if ((op !== 'decrypt' && op !== 'encrypt') || items.length > MAX_VALUES) {
+  const note = (outcome: RecentCall['outcome']) => remember({ at: Date.now(), tool, token, op, count: items.length, outcome })
+  // A request names the call it serves; one that names none is refused (relay-request-transparency D6).
+  if ((op !== 'decrypt' && op !== 'encrypt') || items.length > MAX_VALUES || !tool) {
     await note('refused')
     return { error: 'refused' }
   }
+  publish({ answering: { tool, token } })
+  try {
+    return await answerCall(req, items, note)
+  } finally {
+    publish({ answering: null })
+  }
+}
+
+async function answerCall(req: RelayRequest, items: RelayItem[], note: (o: RecentCall['outcome']) => Promise<void>): Promise<Answer> {
+  const op = req.op
   const key = await currentKey()
   if (!key) {
     await note('locked')
@@ -195,7 +221,7 @@ export async function answer(req: RelayRequest): Promise<Answer> {
     return { error: 'device_limit' }
   }
   if (op === 'encrypt' && (await getMeta<boolean>(K_CONFIRM, false))) {
-    const apply = await confirm(req)
+    const apply = await confirm(req, items)
     if (!apply) {
       await note('declined_on_device')
       return { error: 'declined_on_device' }
@@ -215,12 +241,20 @@ export async function answer(req: RelayRequest): Promise<Answer> {
       results.push({ error: op === 'decrypt' ? 'decrypt_failed' : 'encrypt_failed' })
     }
   }
+  // "Confirm reads first": the values are decrypted, shown here, and sent only on Allow (design D4).
+  if (op === 'decrypt' && (await getMeta<boolean>(K_CONFIRM_READS, false))) {
+    const shown = items.flatMap((it, i) => (results[i].value === undefined ? [] : [{ ...it, value: results[i].value }]))
+    if (!(await confirm(req, shown))) {
+      await note('declined_on_device')
+      return { error: 'declined_on_device' }
+    }
+  }
   await note('answered')
   return { results }
 }
 
-/** Asks the user to apply or decline a relayed write before its deadline. */
-function confirm(req: RelayRequest): Promise<boolean> {
+/** Asks the user to allow or decline a relayed request before its deadline. */
+function confirm(req: RelayRequest, items: RelayItem[]): Promise<boolean> {
   return new Promise((resolve) => {
     let settled = false
     const decide = (apply: boolean) => {
@@ -231,7 +265,7 @@ function confirm(req: RelayRequest): Promise<boolean> {
       resolve(apply)
     }
     const timer = setTimeout(() => decide(false), Math.max(0, req.deadline - Date.now() - 500))
-    publish({ pending: { tool: req.call.tool, token: req.call.token, items: req.items, deadline: req.deadline, decide } })
+    publish({ pending: { op: req.op, tool: req.call.tool, token: req.call.token, args: typeof req.call.args === 'string' ? req.call.args : undefined, items, deadline: req.deadline, decide } })
   })
 }
 
@@ -403,13 +437,18 @@ export async function setConfirmWrites(on: boolean): Promise<void> {
   publish({ confirmWrites: on })
 }
 
+export async function setConfirmReads(on: boolean): Promise<void> {
+  await setMeta(K_CONFIRM_READS, on)
+  publish({ confirmReads: on })
+}
+
 /** Starts following leadership and the lock; returns a stop function. */
 export function startRelay(): () => void {
   started = true
   void Promise.all([getMeta<boolean>(K_OPTED_IN, false), getMeta<boolean>(K_CONFIRM, false), getMeta<RecentCall[]>(K_RECENT, []),
-    getMeta<boolean>(K_ROUTINES, false), getMeta<RecentRoutineRun[]>(K_ROUTINE_RECENT, [])])
-    .then(([optedIn, confirmWrites, recent, routines, routineRecent]) => {
-      publish({ optedIn, confirmWrites, recent, routines, routineRecent })
+    getMeta<boolean>(K_ROUTINES, false), getMeta<RecentRoutineRun[]>(K_ROUTINE_RECENT, []), getMeta<boolean>(K_CONFIRM_READS, false)])
+    .then(([optedIn, confirmWrites, recent, routines, routineRecent, confirmReads]) => {
+      publish({ optedIn, confirmWrites, confirmReads, recent, routines, routineRecent })
       void connect()
     })
   const offLead = onLeadership((on) => {

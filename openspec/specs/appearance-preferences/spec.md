@@ -270,11 +270,15 @@ The sidebar SHALL list the primary destinations that are shown in this order:
 - destinations missing from it follow in the default order;
 - ids a client does not know are ignored and kept.
 
-The order is an additive field of the user's preferences row, separate from the promotion list: written offline through the outbox, converging by last-writer-wins on the whole order, and included in the export. While "How you work" is Open Loops first, the list SHALL be disabled with the existing explanation and the stored order kept. The phone tab bar keeps Today, Inbox and Upcoming, and the drawer lists the remaining primary destinations in the stored order.
+The order is an additive field of the user's preferences row, separate from the promotion list: written offline through the outbox, converging by last-writer-wins on the whole order, and included in the export. While "How you work" is Open Loops first, the list SHALL be disabled with the existing explanation and the stored order kept. On a phone the tab bar lists Inbox, Today and Upcoming in this order, then Search, which is not a destination and stays last; the bar does not gain further destinations, including while Open Loops first arranges the sidebar. The drawer lists the remaining primary destinations in the stored order and does not repeat the three the bar holds. The bar reads the stored order from the local preferences row, so it is right offline and follows a reorder from another device after sync.
 
 #### Scenario: Move Today first
 - **WHEN** the user moves Today above Inbox with Move up in Settings → Appearance
 - **THEN** the sidebar lists Today, Inbox, Upcoming, Calendar on this device at once and on the user's other devices after sync
+
+#### Scenario: Phone tab bar follows the order
+- **WHEN** the user moved Today above Inbox and opens the app on a 390 px phone
+- **THEN** the tab bar shows Today, Inbox, Upcoming and Search, and the drawer lists Calendar without repeating those three
 
 #### Scenario: Keyboard
 - **WHEN** focus is on the Calendar row of the list and the user presses Alt+↑ twice
@@ -333,3 +337,38 @@ A device SHALL remember the derived values of the custom accent with the rest of
 #### Scenario: Export and import
 - **WHEN** a user with a custom accent downloads their JSON export and imports it into a new account
 - **THEN** the export holds the theme `custom` and the custom colour, and the new account shows the same accent
+
+### Requirement: Full task titles preference
+Each user SHALL have a full task titles preference, off by default, stored as the additive field `full_titles` of the user's preferences (`"on"`, else off). It SHALL be written as an operation on the user's personal data like the density, so it is editable offline, applies at once on the editing device, reaches the user's other devices with sync and converges by last-writer-wins. A client SHALL treat an empty or unknown value as off and keep the stored value unchanged.
+
+While it is on, every task title in list rows (in both row layouts), on board cards and in Today SHALL be shown in full, wrapped onto as many lines as it takes, at every width, instead of ending with an ellipsis after two lines (one on a phone row); the phone row's end cell SHALL stay on the title's first line. The calendar's compact rows and other one-line mentions of a task keep their shapes. A long list SHALL keep its scroll height close to the real one with the taller rows, so End and the scroll bar reach the last task.
+
+Settings → Appearance SHALL offer it as the switch "Show full task titles" after the task rows choice, announced with its state to assistive technology. Searching settings for "full task titles", "truncate" or "wrap" SHALL find it.
+
+#### Scenario: Turn it on
+- **WHEN** a user turns on Show full task titles and opens a project whose task has a title of four lines' length on a 390 px phone
+- **THEN** the row shows the whole title on four lines, with its date beside the first line, and no ellipsis
+
+#### Scenario: Board and Today
+- **WHEN** the preference is on and the same task is shown as a board card and in Today on a desktop
+- **THEN** the card and the Today row show the whole title, wrapped
+
+#### Scenario: Off by default
+- **WHEN** a user who never changed the preference opens the same project
+- **THEN** the title ends with an ellipsis after one line on the phone and after two lines on a desktop, and resting the pointer on it shows the whole title
+
+#### Scenario: Offline on two devices
+- **WHEN** the user turns the preference on while offline on a phone and the laptop syncs later
+- **THEN** the phone shows full titles at once and the laptop shows them after sync without a reload
+
+#### Scenario: A long project
+- **WHEN** the preference is on and the user presses End in a project of 2,000 tasks
+- **THEN** the list scrolls to its last task
+
+#### Scenario: Unknown value from a newer client
+- **WHEN** a device receives a `full_titles` value it does not know
+- **THEN** it shows titles cut as by default and writes no operation
+
+#### Scenario: Older device
+- **WHEN** a device with an app version before this preference receives the field
+- **THEN** it ignores the field and keeps syncing as before

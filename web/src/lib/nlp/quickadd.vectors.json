@@ -1,5 +1,5 @@
 {
- "comment": "Quick-add vectors shared by web/src/lib/nlp (nlp.test.ts) and internal/quickadd (vectors_test.go), OpenSpec changes quick-add-recurrence, quick-add-nth-weekday and time-tracking (spentMinutes) and day-parts (ctx.dayParts; dayPart and evening are compared when a case states them) and task-energy (ctx.energy; energy, \"\" for none, is compared when a case states it) and quick-add-month-and-every-other (bare months, \"every other\"). Every scenario of its spec deltas is a case.",
+ "comment": "Quick-add vectors shared by web/src/lib/nlp (nlp.test.ts) and internal/quickadd (vectors_test.go), OpenSpec changes quick-add-recurrence, quick-add-nth-weekday and time-tracking (spentMinutes) and day-parts (ctx.dayParts; dayPart and evening are compared when a case states them) and task-energy (ctx.energy; energy, \"\" for none, is compared when a case states it) and time-sectors (ctx.sectors and ctx.weekStart; sector, \"\" for none, is compared when a case states it) and quick-add-month-and-every-other (bare months, \"every other\") and quick-add-by-deadline (\"by\" words; deadline, \"\" for none, is compared when a case states it) and quick-add-weekday-recurrence (every other weekday, week intervals on a weekday, start phrases, connectors) and recurrence-1-0-compatible (a rule on one weekday whose due date falls on it is every N weeks). Every scenario of its spec deltas is a case.",
  "cases": [
   {
    "name": "Water plants every Monday",
@@ -4857,6 +4857,2709 @@
     "estimateMinutes": null,
     "spentMinutes": null,
     "recurrence": "every 2 days",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Time sectors: this week on a Monday-week Wednesday",
+   "line": "Draft the budget this week #Work",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "projects": [
+     {
+      "id": "p-work",
+      "name": "Work"
+     }
+    ],
+    "languages": [
+     "en"
+    ],
+    "sectors": true
+   },
+   "expect": {
+    "title": "Draft the budget",
+    "due": null,
+    "projectId": "p-work",
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "sector": "2026-W44"
+   }
+  },
+  {
+   "name": "Time sectors: next week alone keeps its date meaning",
+   "line": "Call Ana next week",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "projects": [
+     {
+      "id": "p-work",
+      "name": "Work"
+     }
+    ],
+    "languages": [
+     "en"
+    ],
+    "sectors": true
+   },
+   "expect": {
+    "title": "Call Ana",
+    "due": {
+     "date": "2026-11-02"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "sector": ""
+   }
+  },
+  {
+   "name": "Time sectors: sometime next week is the sector",
+   "line": "Call Bo sometime next week",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "projects": [
+     {
+      "id": "p-work",
+      "name": "Work"
+     }
+    ],
+    "languages": [
+     "en"
+    ],
+    "sectors": true
+   },
+   "expect": {
+    "title": "Call Bo",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "sector": "2026-W45"
+   }
+  },
+  {
+   "name": "Time sectors: next quarter",
+   "line": "Plan the offsite next quarter",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "projects": [
+     {
+      "id": "p-work",
+      "name": "Work"
+     }
+    ],
+    "languages": [
+     "en"
+    ],
+    "sectors": true
+   },
+   "expect": {
+    "title": "Plan the offsite",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "sector": "2027-Q1"
+   }
+  },
+  {
+   "name": "Time sectors: a deadline stays beside the sector",
+   "line": "Close the books this quarter deadline friday",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "projects": [
+     {
+      "id": "p-work",
+      "name": "Work"
+     }
+    ],
+    "languages": [
+     "en"
+    ],
+    "sectors": true
+   },
+   "expect": {
+    "title": "Close the books",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "sector": "2026-Q4"
+   }
+  },
+  {
+   "name": "Time sectors: the date wins and the phrase stays in the title",
+   "line": "Review this week plan friday",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "projects": [
+     {
+      "id": "p-work",
+      "name": "Work"
+     }
+    ],
+    "languages": [
+     "en"
+    ],
+    "sectors": true
+   },
+   "expect": {
+    "title": "Review this week plan",
+    "due": {
+     "date": "2026-10-30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "sector": ""
+   }
+  },
+  {
+   "name": "Time sectors: switch off, the phrase stays in the title",
+   "line": "Clean the garage this month",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "projects": [
+     {
+      "id": "p-work",
+      "name": "Work"
+     }
+    ],
+    "languages": [
+     "en"
+    ]
+   },
+   "expect": {
+    "title": "Clean the garage this month",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "sector": ""
+   }
+  },
+  {
+   "name": "Time sectors: Italian, this month",
+   "line": "Rinnovare l'assicurazione questo mese",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "projects": [
+     {
+      "id": "p-work",
+      "name": "Work"
+     }
+    ],
+    "languages": [
+     "it"
+    ],
+    "sectors": true
+   },
+   "expect": {
+    "title": "Rinnovare l'assicurazione",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "sector": "2026-10"
+   }
+  },
+  {
+   "name": "Time sectors: German, sometime next week",
+   "line": "Bericht schreiben irgendwann nächste woche",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "projects": [
+     {
+      "id": "p-work",
+      "name": "Work"
+     }
+    ],
+    "languages": [
+     "de"
+    ],
+    "sectors": true
+   },
+   "expect": {
+    "title": "Bericht schreiben",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "sector": "2026-W45"
+   }
+  },
+  {
+   "name": "Time sectors: French, this month",
+   "line": "Ranger le garage ce mois-ci",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "projects": [
+     {
+      "id": "p-work",
+      "name": "Work"
+     }
+    ],
+    "languages": [
+     "fr"
+    ],
+    "sectors": true
+   },
+   "expect": {
+    "title": "Ranger le garage",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "sector": "2026-10"
+   }
+  },
+  {
+   "name": "Time sectors: Spanish, next quarter",
+   "line": "Pintar la valla el próximo trimestre",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "projects": [
+     {
+      "id": "p-work",
+      "name": "Work"
+     }
+    ],
+    "languages": [
+     "es"
+    ],
+    "sectors": true
+   },
+   "expect": {
+    "title": "Pintar la valla",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "sector": "2027-Q1"
+   }
+  },
+  {
+   "name": "Time sectors: Portuguese, this month",
+   "line": "Pagar o seguro neste mês",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "projects": [
+     {
+      "id": "p-work",
+      "name": "Work"
+     }
+    ],
+    "languages": [
+     "pt"
+    ],
+    "sectors": true
+   },
+   "expect": {
+    "title": "Pagar o seguro",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "sector": "2026-10"
+   }
+  },
+  {
+   "name": "Time sectors: a Sunday week on a Sunday is the week of the Monday after",
+   "line": "Plan the week this week",
+   "ctx": {
+    "today": "2026-11-01",
+    "now": "10:00",
+    "projects": [
+     {
+      "id": "p-work",
+      "name": "Work"
+     }
+    ],
+    "languages": [
+     "en"
+    ],
+    "sectors": true,
+    "weekStart": 0
+   },
+   "expect": {
+    "title": "Plan the week",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "sector": "2026-W45"
+   }
+  },
+  {
+   "name": "Time sectors: someday stays someday",
+   "line": "Learn the cello someday",
+   "ctx": {
+    "today": "2026-10-28",
+    "now": "10:00",
+    "projects": [
+     {
+      "id": "p-work",
+      "name": "Work"
+     }
+    ],
+    "languages": [
+     "en"
+    ],
+    "sectors": true
+   },
+   "expect": {
+    "title": "Learn the cello",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "sector": ""
+   }
+  },
+  {
+   "name": "ordinal generic weekday en",
+   "line": "Pay rent every first weekday",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Pay rent",
+    "due": {
+     "date": "2026-11-02"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 1st weekday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "ordinal generic weekday en numeric workday",
+   "line": "Payroll every 2nd workday of the month",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Payroll",
+    "due": {
+     "date": "2026-11-03"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2nd weekday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "ordinal generic weekday with a time",
+   "line": "Invoices every 1st weekday at 15:00",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Invoices",
+    "due": {
+     "date": "2026-11-02",
+     "time": "15:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 1st weekday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "ordinal generic weekday de",
+   "line": "Miete jeden ersten Werktag",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Miete",
+    "due": {
+     "date": "2026-11-02"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 1st weekday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "ordinal generic weekday fr",
+   "line": "Loyer chaque premier jour ouvré",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "fr"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Loyer",
+    "due": {
+     "date": "2026-11-02"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 1st weekday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "ordinal generic weekday it",
+   "line": "Affitto ogni primo giorno feriale",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "it"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Affitto",
+    "due": {
+     "date": "2026-11-02"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 1st weekday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "ordinal generic weekday es",
+   "line": "Alquiler cada primer día laborable",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "es"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Alquiler",
+    "due": {
+     "date": "2026-11-02"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 1st weekday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "ordinal generic weekday pt",
+   "line": "Aluguel todo primeiro dia útil",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pt"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Aluguel",
+    "due": {
+     "date": "2026-11-02"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 1st weekday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "last generic weekday it",
+   "line": "Report ogni ultimo giorno feriale",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "it"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Report",
+    "due": {
+     "date": "2026-10-30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every last weekday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "last generic weekday es",
+   "line": "Informe cada último día laborable",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "es"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Informe",
+    "due": {
+     "date": "2026-10-30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every last weekday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "last generic weekday pt",
+   "line": "Relatório todo último dia útil",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pt"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Relatório",
+    "due": {
+     "date": "2026-10-30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every last weekday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "last day it stays the last day",
+   "line": "Report ogni ultimo giorno",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "it"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Report",
+    "due": {
+     "date": "2026-10-31"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every last day",
+    "reminders": []
+   }
+  },
+  {
+   "name": "by before a date sets the deadline",
+   "line": "Install winter tires by March 31",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Install winter tires",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": "2027-03-31"
+   }
+  },
+  {
+   "name": "on before a date keeps setting the due date",
+   "line": "Install winter tires on March 31",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Install winter tires",
+    "due": {
+     "date": "2027-03-31"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": ""
+   }
+  },
+  {
+   "name": "due before a date keeps setting the due date",
+   "line": "Install winter tires due March 31",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Install winter tires",
+    "due": {
+     "date": "2027-03-31"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": ""
+   }
+  },
+  {
+   "name": "by before a bare time is a due time",
+   "line": "call back by 5pm",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "call back",
+    "due": {
+     "date": "2026-10-09",
+     "time": "17:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": ""
+   }
+  },
+  {
+   "name": "a due date and a by deadline",
+   "line": "Pay tax tomorrow by friday",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Pay tax",
+    "due": {
+     "date": "2026-10-10"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": "2026-10-16"
+   }
+  },
+  {
+   "name": "a due date and a deadline word",
+   "line": "Pay tax tomorrow deadline friday",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Pay tax",
+    "due": {
+     "date": "2026-10-10"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": "2026-10-16"
+   }
+  },
+  {
+   "name": "by before a date with a time is a due date and time",
+   "line": "Pay tax by friday 5pm",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Pay tax",
+    "due": {
+     "date": "2026-10-16",
+     "time": "17:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": ""
+   }
+  },
+  {
+   "name": "by before a date with at and a time is a due date and time",
+   "line": "Pay tax by friday at 5pm",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Pay tax",
+    "due": {
+     "date": "2026-10-16",
+     "time": "17:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": ""
+   }
+  },
+  {
+   "name": "by without a date stays in the title",
+   "line": "Book by Stephen King",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Book by Stephen King",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": ""
+   }
+  },
+  {
+   "name": "a rule keeps its due date and takes a by deadline",
+   "line": "Water plants every monday by friday",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Water plants",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every monday",
+    "reminders": [],
+    "deadline": "2026-10-16"
+   }
+  },
+  {
+   "name": "a rule alone sets no deadline",
+   "line": "Water plants every monday",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Water plants",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every monday",
+    "reminders": [],
+    "deadline": ""
+   }
+  },
+  {
+   "name": "Italian entro sets the deadline",
+   "line": "Cambiare gomme entro il 31 marzo",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "it"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Cambiare gomme",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": "2027-03-31"
+   }
+  },
+  {
+   "name": "German bis sets the deadline",
+   "line": "Reifen wechseln bis Freitag",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Reifen wechseln",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": "2026-10-16"
+   }
+  },
+  {
+   "name": "German bis before a time is a due time",
+   "line": "Reifen wechseln bis 17 Uhr",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Reifen wechseln",
+    "due": {
+     "date": "2026-10-09",
+     "time": "17:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": ""
+   }
+  },
+  {
+   "name": "German bis in a rule is its end",
+   "line": "Gießen jeden Montag bis Juni",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Gießen",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every monday until 2027-06-01",
+    "reminders": [],
+    "deadline": ""
+   }
+  },
+  {
+   "name": "Portuguese até sets the deadline",
+   "line": "Trocar pneus até sexta",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "pt"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Trocar pneus",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": "2026-10-16"
+   }
+  },
+  {
+   "name": "French pour keeps setting the due date",
+   "line": "Rapport pour vendredi",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "fr"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Rapport",
+    "due": {
+     "date": "2026-10-16"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": ""
+   }
+  },
+  {
+   "name": "Spanish para keeps setting the due date",
+   "line": "Informe para viernes",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "es"
+    ],
+    "projects": []
+   },
+   "expect": {
+    "title": "Informe",
+    "due": {
+     "date": "2026-10-16"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": ""
+   }
+  },
+  {
+   "name": "Bins today and repeat every other Saturday (en, issue 1016, on a Wednesday)",
+   "line": "take the bins out today and repeat every other Saturday",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "take the bins out",
+    "due": {
+     "date": "2026-11-04"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks on saturday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Bins today and repeat every other Saturday (en, issue 1016, on a Saturday)",
+   "line": "take the bins out today and repeat every other Saturday",
+   "ctx": {
+    "today": "2026-11-07",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "take the bins out",
+    "due": {
+     "date": "2026-11-07"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Bins every other Saturday (en, issue 1016, on a Wednesday)",
+   "line": "take the bins out every other Saturday",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "take the bins out",
+    "due": {
+     "date": "2026-11-07"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Bins every other Saturday (en, issue 1016, on a Saturday)",
+   "line": "take the bins out every other Saturday",
+   "ctx": {
+    "today": "2026-11-07",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "take the bins out",
+    "due": {
+     "date": "2026-11-07"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Bins every other Saturday starting today (en, issue 1016, on a Wednesday)",
+   "line": "take the bins out every other saturday starting today",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "take the bins out",
+    "due": {
+     "date": "2026-11-07"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Bins every other Saturday starting today (en, issue 1016, on a Saturday)",
+   "line": "take the bins out every other saturday starting today",
+   "ctx": {
+    "today": "2026-11-07",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "take the bins out",
+    "due": {
+     "date": "2026-11-07"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Bins every other Saturday starting next week (en)",
+   "line": "take the bins out every other saturday starting next week",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "take the bins out",
+    "due": {
+     "date": "2026-11-14"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Bins today and repeat every other Saturday with a Chinese preference (zh falls back to en)",
+   "line": "take the bins out today and repeat every other Saturday",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "zh-CN"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "take the bins out",
+    "due": {
+     "date": "2026-11-04"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks on saturday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Repeat connector before a rule (en)",
+   "line": "Water plants repeat every monday",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Water plants",
+    "due": {
+     "date": "2026-11-09"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every monday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Repeating connector before a rule (en)",
+   "line": "Water plants repeating every monday",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Water plants",
+    "due": {
+     "date": "2026-11-09"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every monday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "And then connector after a date (en)",
+   "line": "Call mom tomorrow and then every sunday",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Call mom",
+    "due": {
+     "date": "2026-11-05"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every sunday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "And connector after a date (en)",
+   "line": "Call mom tomorrow and every sunday",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Call mom",
+    "due": {
+     "date": "2026-11-05"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every sunday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Start phrase after a rule (en)",
+   "line": "Stretch every day starting tomorrow",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Stretch",
+    "due": {
+     "date": "2026-11-05"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every day",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Start phrase before a rule (en)",
+   "line": "Stretch starting tomorrow every day",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Stretch",
+    "due": {
+     "date": "2026-11-05"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every day",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Start phrase with from and a date (en)",
+   "line": "Gym every monday from November 16",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Gym",
+    "due": {
+     "date": "2026-11-16"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every monday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Start phrase before the until tail (en)",
+   "line": "Gym every monday starting tomorrow until December 31",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Gym",
+    "due": {
+     "date": "2026-11-09"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every monday until 2026-12-31",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Start phrase with connector before (en)",
+   "line": "Stretch starting tomorrow and repeat every 3 days",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Stretch",
+    "due": {
+     "date": "2026-11-05"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 3 days",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Every 2 weeks on a weekday (en)",
+   "line": "Review every 2 weeks on friday",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Review",
+    "due": {
+     "date": "2026-11-06"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Every 2 weeks on a weekday with a date (en)",
+   "line": "Review today every 2 weeks on fri",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Review",
+    "due": {
+     "date": "2026-11-04"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks on friday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Every 3 weeks on two weekdays (en)",
+   "line": "Clean every 3 weeks on mon and thu",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Clean",
+    "due": {
+     "date": "2026-11-05"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 3 weeks on monday, thursday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Every week on weekdays is the weekday rule (en)",
+   "line": "Standup every week on mon and thu",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Standup",
+    "due": {
+     "date": "2026-11-05"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every monday, thursday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Repeat stays in a title without a rule (en)",
+   "line": "Repeat the test",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Repeat the test",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Repeat stays in a title with a date (en)",
+   "line": "Repeat the test tomorrow",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Repeat the test",
+    "due": {
+     "date": "2026-11-05"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Repeat stays before a bare every (en)",
+   "line": "Plan repeat every",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Plan repeat every",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "From stays in a title when no date follows (en)",
+   "line": "Work from home every friday",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Work from home",
+    "due": {
+     "date": "2026-11-06"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every friday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Starting stays without a rule (en)",
+   "line": "Call mom starting tomorrow",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Call mom starting",
+    "due": {
+     "date": "2026-11-05"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "From stays without a rule (en)",
+   "line": "Leave from Monday",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Leave from",
+    "due": {
+     "date": "2026-11-09"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Heute und dann jeden zweiten Samstag (de)",
+   "line": "Müll rausbringen heute und dann jeden zweiten Samstag",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Müll rausbringen",
+    "due": {
+     "date": "2026-11-04"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks on saturday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Jeden zweiten Samstag ab heute (de)",
+   "line": "Müll rausbringen jeden zweiten Samstag ab heute",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Müll rausbringen",
+    "due": {
+     "date": "2026-11-07"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Wiederholen vor einer Regel (de)",
+   "line": "Blumen gießen wiederholen jeden Montag",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Blumen gießen",
+    "due": {
+     "date": "2026-11-09"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every monday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Alle 2 Wochen am Samstag (de)",
+   "line": "Training alle 2 Wochen am Samstag",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Training",
+    "due": {
+     "date": "2026-11-07"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Wiederholen bleibt ohne Regel (de)",
+   "line": "Test wiederholen",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Test wiederholen",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Aujourd'hui et répéter un samedi sur deux (fr)",
+   "line": "Sortir les poubelles aujourd'hui et répéter un samedi sur deux",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "fr"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Sortir les poubelles",
+    "due": {
+     "date": "2026-11-04"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks on saturday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Un samedi sur deux à partir de demain (fr)",
+   "line": "Sortir les poubelles un samedi sur deux à partir de demain",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "fr"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Sortir les poubelles",
+    "due": {
+     "date": "2026-11-07"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Toutes les 2 semaines le samedi (fr)",
+   "line": "Sport toutes les 2 semaines le samedi",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "fr"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Sport",
+    "due": {
+     "date": "2026-11-07"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Répéter reste sans règle (fr)",
+   "line": "Répéter la scène",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "fr"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Répéter la scène",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Hoy y repetir cada dos sábados (es)",
+   "line": "Sacar la basura hoy y repetir cada dos sábados",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "es"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Sacar la basura",
+    "due": {
+     "date": "2026-11-04"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks on saturday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Cada dos sábados a partir de mañana (es)",
+   "line": "Sacar la basura cada dos sábados a partir de mañana",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "es"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Sacar la basura",
+    "due": {
+     "date": "2026-11-07"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Cada 2 semanas los sábados (es)",
+   "line": "Correr cada 2 semanas los sábados",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "es"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Correr",
+    "due": {
+     "date": "2026-11-07"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Repetir queda sin regla (es)",
+   "line": "Repetir el examen",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "es"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Repetir el examen",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Oggi e poi ogni due venerdì (it)",
+   "line": "Portare fuori la spazzatura oggi e poi ogni due venerdì",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "it"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Portare fuori la spazzatura",
+    "due": {
+     "date": "2026-11-04"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks on friday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Ogni due venerdì a partire da domani (it)",
+   "line": "Spazzatura ogni due venerdì a partire da domani",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "it"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Spazzatura",
+    "due": {
+     "date": "2026-11-06"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Ripeti prima di una regola (it)",
+   "line": "Annaffiare ripeti ogni lunedì",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "it"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Annaffiare",
+    "due": {
+     "date": "2026-11-09"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every monday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Ripetere resta senza regola (it)",
+   "line": "Ripetere il test",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "it"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Ripetere il test",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Hoje e repetir a cada duas sextas (pt)",
+   "line": "Levar o lixo hoje e repetir a cada duas sextas",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "pt"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Levar o lixo",
+    "due": {
+     "date": "2026-11-04"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks on friday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "A cada duas sextas a partir de amanhã (pt)",
+   "line": "Levar o lixo a cada duas sextas a partir de amanhã",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "pt"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Levar o lixo",
+    "due": {
+     "date": "2026-11-06"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Repetir fica sem regra (pt)",
+   "line": "Repetir o teste",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "pt"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Repetir o teste",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Ogni 2 settimane il sabato (it)",
+   "line": "Correre ogni 2 settimane il sabato",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "it"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Correre",
+    "due": {
+     "date": "2026-11-07"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Cada 2 semanas aos sábados (pt)",
+   "line": "Correr cada 2 semanas aos sábados",
+   "ctx": {
+    "today": "2026-11-04",
+    "now": "10:00",
+    "languages": [
+     "pt"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Correr",
+    "due": {
+     "date": "2026-11-07"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
     "reminders": []
    }
   }

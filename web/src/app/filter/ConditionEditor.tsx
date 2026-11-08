@@ -11,14 +11,16 @@ import type { FieldDef, Label, Project } from '../../lib/types'
 import { msg, t, translatedMap } from '../../lib/i18n'
 import { KEYWORD_NAME } from './conditionText'
 import { ENERGY_LEVELS, energyName, type Energy } from '../../lib/energy'
+import { SECTOR_WORDS } from '../../lib/sectors'
+import { sectorWordName } from '../../lib/sectorNames'
 
-export type ConditionKind = 'label' | 'project' | 'priority' | DateField | 'state' | 'search' | 'notes' | 'origin' | 'workspace' | 'tracked' | 'field' | 'nofield' | 'energy'
+export type ConditionKind = 'label' | 'project' | 'priority' | DateField | 'state' | 'assignee' | 'search' | 'notes' | 'origin' | 'workspace' | 'tracked' | 'field' | 'nofield' | 'energy' | 'sector'
 
 const KIND_NAME = translatedMap<ConditionKind>({
   label: msg('Label'), project: msg('Project'), priority: msg('Priority'),
   due: msg('Due date'), deadline: msg('Deadline'), start: msg('Start date'), created: msg('Created'), completed: msg('Completed date'),
-  state: msg('State'), search: msg('Title or notes'), notes: msg('Note'), origin: msg('Origin'), workspace: msg('Workspace'), tracked: msg('Tracked time'),
-  field: msg('Custom field'), nofield: msg('Custom field is empty'), energy: msg('Energy'),
+  state: msg('State'), assignee: msg('Assignee'), search: msg('Title or notes'), notes: msg('Note'), origin: msg('Origin'), workspace: msg('Workspace'), tracked: msg('Tracked time'),
+  field: msg('Custom field'), nofield: msg('Custom field is empty'), energy: msg('Energy'), sector: msg('Time sector'),
 })
 
 type When = 'today' | 'tomorrow' | 'yesterday' | 'this-week' | 'next-week' | 'last-week' | 'this-month' | 'next-month' | 'last-month' | 'days-ahead' | 'days-ago' | 'weeks-ago' | 'months-ago' | 'weekday' | 'date'
@@ -53,6 +55,10 @@ export interface Draft {
   value: string
   /** `energy: value` (task-energy D5). */
   energy: Energy
+  /** `me`, `unassigned`, or a member's name (today-assigned-filter). */
+  assignee: string
+  /** `tracked occurrence`: a repeating task's current occurrence only (tracked-time-api-compatible). */
+  occurrence: boolean
 }
 
 const DATE_KINDS: readonly string[] = ['due', 'deadline', 'start', 'created', 'completed']
@@ -100,7 +106,7 @@ function dateOf(d: Draft): DateExpr | null {
 export function draftOf(leaf: Leaf | null): Draft {
   const d: Draft = {
     kind: 'label', name: '', descendants: false, priority: 1, op: '<=', when: 'today', n: '3', weekday: 1, iso: '',
-    keyword: 'overdue', text: '', duration: '', value: '', energy: 'deep',
+    keyword: 'overdue', text: '', duration: '', value: '', energy: 'deep', assignee: 'me', occurrence: false,
   }
   if (!leaf) return d
   switch (leaf.kind) {
@@ -108,13 +114,15 @@ export function draftOf(leaf: Leaf | null): Draft {
     case 'project': return { ...d, kind: 'project', name: leaf.name, descendants: leaf.descendants }
     case 'priority': return { ...d, kind: 'priority', priority: leaf.value }
     case 'date': return { ...d, kind: leaf.field, op: leaf.op, ...whenOf(leaf.date) }
-    case 'keyword': return { ...d, kind: 'state', keyword: leaf.keyword }
+    case 'keyword': return leaf.keyword === 'unassigned' ? { ...d, kind: 'assignee', assignee: 'unassigned' } : { ...d, kind: 'state', keyword: leaf.keyword }
+    case 'assigned': return { ...d, kind: 'assignee', assignee: leaf.name.toLocaleLowerCase() === 'me' ? 'me' : leaf.name }
     case 'search': return { ...d, kind: 'search', text: leaf.text }
     case 'notes': return { ...d, kind: 'notes', text: leaf.text }
     case 'origin': return { ...d, kind: 'origin', text: leaf.value }
+    case 'sector': return { ...d, kind: 'sector', text: leaf.value }
     case 'energy': return { ...d, kind: 'energy', energy: leaf.value }
     case 'workspace': return { ...d, kind: 'workspace', name: leaf.name }
-    case 'tracked': return { ...d, kind: 'tracked', op: leaf.op, duration: formatMinutes(leaf.minutes) }
+    case 'tracked': return { ...d, kind: 'tracked', op: leaf.op, duration: formatMinutes(leaf.minutes), occurrence: !!leaf.occurrence }
     case 'field': {
       const v = leaf.value
       const value = v.type === 'text' ? v.value : v.type === 'date' ? formatDate(v.date) : String(v.value)
@@ -136,14 +144,19 @@ export function leafOf(d: Draft): Leaf | null {
     case 'project': return name ? { kind: 'project', name, descendants: d.descendants, pos: 0 } : null
     case 'priority': return { kind: 'priority', value: d.priority }
     case 'state': return { kind: 'keyword', keyword: d.keyword }
+    case 'assignee':
+      if (d.assignee === 'unassigned') return { kind: 'keyword', keyword: 'unassigned' }
+      return { kind: 'assigned', name: d.assignee.trim() || 'me' }
     case 'search': return d.text.trim() ? { kind: 'search', text: d.text.trim() } : null
     case 'notes': return d.text.trim() ? { kind: 'notes', text: d.text.trim() } : null
     case 'origin': return d.text.trim() ? { kind: 'origin', value: d.text.trim() } : null
     case 'energy': return { kind: 'energy', value: d.energy }
+    case 'sector': return { kind: 'sector', value: d.text || 'this-week' }
     case 'workspace': return name ? { kind: 'workspace', name, pos: 0 } : null
     case 'tracked': {
       const minutes = durationMinutes(d.duration)
-      return minutes === null ? null : { kind: 'tracked', op: d.op, minutes }
+      if (minutes === null) return null
+      return d.occurrence ? { kind: 'tracked', op: d.op, minutes, occurrence: true } : { kind: 'tracked', op: d.op, minutes }
     }
     case 'nofield': return name ? { kind: 'nofield', name, pos: 0 } : null
     case 'field': {
@@ -175,6 +188,8 @@ export interface ConditionEditorProps {
   fields: readonly FieldDef[]
   /** The cached workspaces (group-mentions D6): the Workspace condition is offered with more than one. */
   workspaces?: readonly { id: string; name: string }[]
+  /** People the Assignee condition can name (today-assigned-filter). */
+  members?: readonly { userId: string; name: string }[]
   onSave: (leaf: Leaf, not: boolean) => void
   onRemove?: () => void
   onClose: () => void
@@ -182,13 +197,13 @@ export interface ConditionEditorProps {
 
 
 
-export function ConditionEditor({ leaf, not: initialNot, labels, projects, fields, workspaces = [], onSave, onRemove, onClose }: ConditionEditorProps) {
+export function ConditionEditor({ leaf, not: initialNot, labels, projects, fields, workspaces = [], members = [], onSave, onRemove, onClose }: ConditionEditorProps) {
   const [draft, setDraft] = useState<Draft>(() => draftOf(leaf))
   const [not, setNot] = useState(initialNot)
   const set = (patch: Partial<Draft>) => setDraft((d) => ({ ...d, ...patch }))
   const result = leafOf(draft)
   const fieldNames = useMemo(() => [...new Set(fields.filter((f) => !f.deleted_at).map((f) => f.name))].sort((a, b) => a.localeCompare(b)), [fields])
-  const kinds: ConditionKind[] = ['label', 'project', 'priority', 'due', 'deadline', 'start', 'created', 'completed', 'state', 'search', 'notes', 'origin', 'tracked', 'energy']
+  const kinds: ConditionKind[] = ['label', 'project', 'priority', 'due', 'deadline', 'start', 'created', 'completed', 'state', 'assignee', 'search', 'notes', 'origin', 'tracked', 'energy', 'sector']
   if (workspaces.length > 1 || draft.kind === 'workspace') kinds.splice(kinds.indexOf('origin') + 1, 0, 'workspace')
   if (fieldNames.length || draft.kind === 'field' || draft.kind === 'nofield') kinds.push('field', 'nofield')
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
@@ -274,6 +289,16 @@ export function ConditionEditor({ leaf, not: initialNot, labels, projects, field
           </div>
         )}
 
+        {draft.kind === 'assignee' && (
+          <Field label={t('Assignee')}>
+            <Select value={draft.assignee} onChange={(e) => set({ assignee: e.target.value })} data-assignee-select>
+              <option value="me">{t('Assigned to me')}</option>
+              <option value="unassigned">{t('Unassigned')}</option>
+              {[...new Set([...members.map((m) => m.name), draft.assignee !== 'me' && draft.assignee !== 'unassigned' ? draft.assignee : ''].filter(Boolean))].map((n) => <option key={n} value={n}>{n}</option>)}
+            </Select>
+          </Field>
+        )}
+
         {draft.kind === 'state' && (
           <Field label={t('State')}>
             <Select value={draft.keyword} onChange={(e) => set({ keyword: e.target.value as Keyword })}>
@@ -286,6 +311,16 @@ export function ConditionEditor({ leaf, not: initialNot, labels, projects, field
           <Field label={draft.kind === 'search' ? t('Text in the title or notes') : draft.kind === 'notes' ? t('Text in the note') : t('Provider or kind')}
             description={draft.kind === 'origin' ? t('For example github, gitlab, url, email or import') : undefined}>
             <Input value={draft.text} onChange={(e) => set({ text: e.target.value })} autoComplete="off" spellCheck={false} />
+          </Field>
+        )}
+
+        {/* A relative word follows the viewer's date; a period kept from the query stays a choice (time-sectors). */}
+        {draft.kind === 'sector' && (
+          <Field label={t('Time sector')}>
+            <Select value={draft.text || 'this-week'} onChange={(e) => set({ text: e.target.value })} data-sector-select>
+              {SECTOR_WORDS.map((w) => <option key={w} value={w}>{sectorWordName(w)}</option>)}
+              {draft.text && !(SECTOR_WORDS as readonly string[]).includes(draft.text) && <option value={draft.text}>{draft.text}</option>}
+            </Select>
           </Field>
         )}
 
@@ -308,6 +343,7 @@ export function ConditionEditor({ leaf, not: initialNot, labels, projects, field
             <Field label={t('Duration')} description={t('For example 30m, 1h or 1h30')}>
               <Input value={draft.duration} onChange={(e) => set({ duration: e.target.value })} autoComplete="off" spellCheck={false} />
             </Field>
+            <Switch checked={!draft.occurrence} onChange={(v) => set({ occurrence: !v })} label={t('All occurrences')} />
           </div>
         )}
 

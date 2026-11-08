@@ -4,7 +4,7 @@
 // Object commands (project, saved view, label, section) are built from the menus'
 // own item lists, so the two cannot drift; a guard test checks it.
 import { createLabel } from '../../lib/labels'
-import { createProject, deleteTask, detachOccurrence, parkTask, skipOccurrence, unparkTask, updateProject, updateTask } from '../../lib/ops'
+import { createProject, detachOccurrence, parkTask, skipOccurrence, unparkTask, updateProject, updateTask } from '../../lib/ops'
 import { reorderLabel, updateLabel } from '../../lib/labels'
 import { deleteSection, renameSection, reorderSection } from '../../lib/sections'
 import { syncNow } from '../../lib/sync'
@@ -33,16 +33,19 @@ import { switchWorkspace, workspaceLabel } from '../workspaceNav'
 import { viewMenuGroups } from '../ViewsView'
 import type { Entry, Step } from './entries'
 import { runBulk } from '../bulk/BulkActions'
+import { deleteWithUndo } from '../undoable'
 import { keysOf } from '../../lib/shortcuts'
 import { runGroupDue } from '../task-list/EarlierActions'
 import { hueName } from '../../lib/colourNames'
 import { t, msg, translatedList } from '../../lib/i18n'
 import { DAY_PARTS, dayPartFields, dayPartName, dayPartOf } from '../../lib/dayParts'
-import { dayPartUndoable } from '../../lib/undoActions'
+import { dayPartUndoable, sectorUndoable } from '../../lib/undoActions'
+import { sectorChoices } from '../../lib/sectorNames'
 import { runGiveBackSlot, runTakeSlot, type SlotState } from '../task-list/slotActions'
 import { requestFrames } from '../calendar/framesRequest'
 import { newSlotNow } from '../calendar/slotActions'
-import { act } from '../actionError'
+import { act, reportActionError } from '../actionError'
+import { showUndoToast } from '../bulk/toastStore'
 import { assistantStatus, openAssistantWith } from '../../lib/assistantStatus'
 
 /** What the registry needs to know about the screen the palette was opened on. */
@@ -73,6 +76,8 @@ export interface PaletteContext {
   earlier?: readonly string[]
   /** The account groups Today by part of the day (day-parts D4): the part commands are offered. */
   dayParts?: boolean
+  /** The account's Time sectors switch (time-sectors D6): "Set time sector…" is offered while it is on. */
+  timeSectors?: boolean
   /** The selected task's slot command on Today with a limit (today-closed-list D3). */
   slot?: SlotState
   /** Today's missed blocks (replan-the-day D4): "Re-plan the rest of the day" is offered while there are any. */
@@ -144,6 +149,35 @@ function rescheduleEarlierStep(ids: readonly string[]): Step {
   } }
 }
 
+/**
+ * Set time sector… (time-sectors D6): This week to Next quarter, then None, as one
+ * batch with one Undo; repeating tasks keep their date and the toast counts them.
+ */
+export function sectorStep(ids: readonly string[], today: string): Step {
+  type Choice = { id: string; label: string; detail?: string }
+  const source: Choice[] = [
+    ...sectorChoices(today).map((c) => ({ id: c.sector, label: c.name, detail: c.detail })),
+    { id: '', label: t('No time sector') },
+  ]
+  return { kind: 'picker', picker: {
+    title: t('Set time sector…'), placeholder: t('Pick a time sector…'), source,
+    getKey: (c: Choice) => c.id || 'none', getLabel: (c: Choice) => c.label, getSecondary: (c: Choice) => c.detail ?? '',
+    onPick: (c: Choice) => { void runSector(ids, c.id, c.label) },
+  } }
+}
+
+/** Plans the tasks for a sector with an Undo toast that says how many repeating tasks it skipped. */
+export async function runSector(ids: readonly string[], sector: string, name: string): Promise<void> {
+  try {
+    const r = await sectorUndoable(ids, sector, name)
+    const skipped = r.skipped ? t('{n, plural, one {# repeating task skipped} other {# repeating tasks skipped}}', { n: r.skipped }) : ''
+    if (r.entry) showUndoToast(skipped ? `${r.label}. ${skipped}` : r.label, r.entry.id)
+    else if (skipped) showUndoToast(skipped, null)
+  } catch (err) {
+    reportActionError(err)
+  }
+}
+
 /** Commands from an object menu: every enabled item, run as the menu runs it. */
 function fromMenu(prefix: string, groups: ActionGroup[], idPrefix: string): Command[] {
   // A step (the icon grid, the colour swatches) runs here as its Combobox form; one without it is not listed.
@@ -171,6 +205,7 @@ export function commands(ctx: PaletteContext): Command[] {
       { id: 'sel:tomorrow', label: t('Reschedule {tasks} to tomorrow', { tasks: n }), icon: 'calendar-days', run: () => runBulk(ticked, { kind: 'due', pick: 'tomorrow' }) },
       { id: 'sel:next-week', label: t('Reschedule {tasks} to next week', { tasks: n }), icon: 'calendar-range', run: () => runBulk(ticked, { kind: 'due', pick: 'next-week' }) },
       { id: 'sel:no-date', label: t('Remove the date from {tasks}', { tasks: n }), icon: 'x', run: () => runBulk(ticked, { kind: 'due', pick: null }) },
+      ...(ctx.timeSectors ? [{ id: 'sel:sector', label: t('Set time sector for {tasks}…', { tasks: n }), icon: 'calendar-range' as const, keywords: 'sector this week next week month quarter plan', run: () => sectorStep(ticked, ctx.today) }] : []),
       ...(list.openActions ? [
         { id: 'sel:labels', label: t('Labels for {tasks}', { tasks: n }), icon: 'tag' as const, shortcut: keysOf('list.labels'), run: () => list.openActions!('labels') },
         { id: 'sel:move', label: t('Move {tasks} to a project', { tasks: n }), icon: 'folder-input' as const, run: () => list.openActions!('move') },
@@ -206,6 +241,7 @@ export function commands(ctx: PaletteContext): Command[] {
           id: `task:part:${part ?? 'none'}`, label: part ? t('Move {title} to {part}', { title, part: dayPartName(part) }) : t('Move {title} to Any time', { title }),
           icon: part === 'evening' ? 'moon' : 'sun', keywords: 'day part morning afternoon evening', run: () => dayPartUndoable([tk.id], part).then(() => {}),
         })) : []),
+        ...(ctx.timeSectors && !tk.recurrence ? [{ id: 'task:sector', label: t('Set time sector for {title}…', { title }), icon: 'calendar-range' as const, keywords: 'sector this week next week month quarter plan', run: () => sectorStep([tk.id], ctx.today) }] : []),
         { id: 'task:schedule', label: t('Schedule {title} in the Day view', { title }), icon: 'clock', shortcut: keysOf('list.schedule'), run: () => placeInDay(tk, ctx.today) },
       )
       // A task without a project moves to another workspace's Inbox (workspaces "Move an Inbox task").
@@ -225,7 +261,7 @@ export function commands(ctx: PaletteContext): Command[] {
       }
       // Start focus (focus-everywhere D2): the same as the Actions menu's item.
       if (!tk.completed_at && !tk.deleted_at) out.push({ id: 'task:focus', label: t('Start focus on {title}', { title }), icon: 'clock', keywords: 'focus timer pomodoro session start', run: () => startFocusOn(tk.id) })
-      out.push({ id: 'task:trash', label: t('Move {title} to the Trash', { title }), icon: 'trash-2', shortcut: keysOf('list.delete'), keywords: 'delete remove', run: () => deleteTask(tk.id) })
+      out.push({ id: 'task:trash', label: t('Move {title} to the Trash', { title }), icon: 'trash-2', shortcut: keysOf('list.delete'), keywords: 'delete remove', run: () => deleteWithUndo(tk.id) })
     }
   }
 

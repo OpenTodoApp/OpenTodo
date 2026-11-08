@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/ratelimit"
 )
 
 // Limits of the relay (design D4-D6). Tests may lower the deadlines.
@@ -50,12 +51,18 @@ type Result struct {
 }
 
 // Call describes the tool call a request belongs to, for the device's
-// confirmation sheet and its list of recent calls. Never a value.
+// confirmation sheets, its footer mark and its list of recent calls
+// (relay-request-transparency). Args is the call's arguments as compact JSON
+// cut to MaxArgs bytes; it travels sealed and is never stored or logged.
 type Call struct {
 	Tool  string `json:"tool"`
 	Token string `json:"token,omitempty"`
+	Args  string `json:"args,omitempty"`
 	Write bool   `json:"write"`
 }
+
+// MaxArgs bounds Call.Args in bytes.
+const MaxArgs = 300
 
 // Error is a relayed call that could not be answered (mcp-server "Relay
 // errors"). Code is the tool error code.
@@ -148,12 +155,12 @@ type Hub struct {
 	streams map[string][]*Stream // by account
 	pending map[string]*pending  // by request id
 	queued  map[string]int       // by account
-	calls   map[string][]time.Time
+	calls   *ratelimit.Times     // relayed call times per account (persistent-limits D4)
 }
 
 // NewHub returns an empty hub.
 func NewHub() *Hub {
-	return &Hub{now: time.Now, streams: map[string][]*Stream{}, pending: map[string]*pending{}, queued: map[string]int{}, calls: map[string][]time.Time{}}
+	return &Hub{now: time.Now, streams: map[string][]*Stream{}, pending: map[string]*pending{}, queued: map[string]int{}, calls: ratelimit.NewTimes(time.Minute)}
 }
 
 // Open registers a device's stream; a stream already open for the same device
@@ -282,24 +289,26 @@ func (h *Hub) pick(userID string) *Stream {
 // admit applies the per-account minute limit and the queue cap.
 func (h *Hub) admit(userID string) error {
 	now := h.now()
-	recent := h.calls[userID][:0]
-	for _, t := range h.calls[userID] {
-		if now.Sub(t) < time.Minute {
-			recent = append(recent, t)
-		}
-	}
+	recent := h.calls.Recent(userID, now)
 	if len(recent) >= MaxPerMinute {
-		h.calls[userID] = recent
 		retry := int(time.Minute.Seconds()-now.Sub(recent[0]).Seconds()) + 1
 		return &Error{Code: CodeRateLimited, RetryAfter: retry}
 	}
 	if h.queued[userID] >= MaxQueued {
-		h.calls[userID] = recent
 		return &Error{Code: CodeBusy}
 	}
-	h.calls[userID] = append(recent, now)
+	h.calls.Add(userID, now)
 	h.queued[userID]++
 	return nil
+}
+
+// Keep makes store keep the per-account minute windows, so a restart does not
+// reopen them (persistent-limits D4). The queue and stream caps end with the
+// process.
+func (h *Hub) Keep(store *ratelimit.Store) {
+	if store != nil {
+		h.calls.Attach(store, "relay")
+	}
 }
 
 // request is the sealed payload of one request.

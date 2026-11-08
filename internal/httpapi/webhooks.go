@@ -17,7 +17,7 @@ type Option func(*Server)
 // registerWebhookRoutes adds the webhook routes. Every route requires
 // authentication and is scoped to the caller; the policy route is owner-only.
 func (s *Server) registerWebhookRoutes(mux *routes) {
-	s.webhookSendLimiter = newRateLimiter(webhookSendsPerHour, time.Hour)
+	s.webhookSendLimiter = s.limit("webhook.send", webhookSendsPerHour, time.Hour)
 	mux.handle("GET /api/v1/webhooks", signedIn, s.handleListWebhooks)
 	mux.handle("POST /api/v1/webhooks", signedIn.DemoDenied(), s.handleCreateWebhook)
 	mux.handle("GET /api/v1/webhooks/{id}", signedIn, s.handleGetWebhook)

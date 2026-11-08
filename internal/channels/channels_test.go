@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/notify"
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 	"github.com/OpenTodoApp/opentodo/internal/webhook"
 )
 
@@ -92,7 +92,7 @@ type harness struct {
 func newHarness(t *testing.T, codes ...int) *harness {
 	t.Helper()
 	h := &harness{t: t, dir: t.TempDir(), clock: &fakeClock{t: time.UnixMilli(1_760_000_000_000)}, encrypted: map[string]bool{}, on: true}
-	db, err := store.Open(h.dir)
+	db, err := storetest.OpenDir(h.dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -287,6 +287,9 @@ func TestContentPolicyAndLanguages(t *testing.T) {
 	if got := e.render("de", "", false).Body; got != "Eine Erinnerung ist fällig" {
 		t.Fatalf("German: %q", got)
 	}
+	if got := e.render("zh", "", false).Body; got != "有一条提醒到期" || strings.Contains(got, "A reminder is due") || strings.Contains(got, "Call the plumber") {
+		t.Fatalf("Chinese: %q", got)
+	}
 	if got := e.render("xx", "", false).Body; got != "A reminder is due" {
 		t.Fatalf("fallback: %q", got)
 	}
@@ -299,12 +302,41 @@ func TestContentPolicyAndLanguages(t *testing.T) {
 	if m := mention.render("en", "", true); m.Body != "Ben mentioned you: can you book it?" {
 		t.Fatalf("mention: %q", m.Body)
 	}
+	// A rotating chore's turn (chore-rotation D5): its own line, generic without titles.
+	turn := event{kind: EventAssigned, key: txtTurn, withKey: txtTurnWith, taskID: "t1", taskTitle: "Take out the bins", actorName: "Ben"}
+	if m := turn.render("en", "", true); m.Title != "Take out the bins" || m.Body != "It's your turn" {
+		t.Fatalf("turn: %+v", m)
+	}
+	want := map[string]string{"en": "It's your turn on a task", "de": "Du bist bei einer Aufgabe an der Reihe", "fr": "C’est votre tour pour une tâche",
+		"es": "Te toca una tarea", "it": "Tocca a te per un’attività", "pt": "É a sua vez em uma tarefa"}
+	for lang, w := range want {
+		if m := turn.render(lang, "", false); m.Body != w || m.Title != "OpenTodo" {
+			t.Errorf("%s turn: %+v", lang, m)
+		}
+	}
 	for _, lang := range Languages {
 		for k := range texts["en"] {
 			if texts[lang][k] == "" {
 				t.Errorf("%s misses %s", lang, k)
 			}
 		}
+	}
+}
+
+func TestTurnUsesTheTurnMessage(t *testing.T) {
+	h := newHarness(t)
+	ctx := context.Background()
+	h.create("u1", ntfyInput(h.recv.srv.URL, EventAssigned))
+	h.svc.Assigned(ctx, notify.Assigned{AssigneeID: "u1", ActorID: "u2", ActorName: "Ben", TaskID: "t1", TaskTitle: "Bins", At: 10, Turn: true})
+	h.drain()
+	reqs := h.recv.all()
+	if len(reqs) != 1 {
+		t.Fatalf("requests: %d", len(reqs))
+	}
+	var body map[string]any
+	_ = json.Unmarshal(reqs[0].body, &body)
+	if body["message"] != "It's your turn on a task" {
+		t.Fatalf("ntfy body: %v", body)
 	}
 }
 

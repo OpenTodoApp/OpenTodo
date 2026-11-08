@@ -38,6 +38,10 @@ final class ShellController: NSObject, ObservableObject {
         webView.navigationDelegate = self
         webView.uiDelegate = self
         webView.allowsBackForwardNavigationGestures = true
+        // The page reaches every edge and pads itself by env(safe-area-inset-*) (viewport-fit=cover).
+        // The default adjustment would also inset the scroll view, shrinking 100dvh by the top and
+        // bottom insets and leaving the bar colour as a band under the tab bar.
+        webView.scrollView.contentInsetAdjustmentBehavior = .never
         // Pull to refresh: the gesture every iOS person tries when a page looks stale.
         refresher.addTarget(self, action: #selector(pulledToRefresh), for: .valueChanged)
         webView.scrollView.refreshControl = refresher
@@ -201,7 +205,7 @@ struct FailureView: View {
     var body: some View {
         VStack(spacing: 12) {
             Text(message.title).font(.headline)
-            Text(message.body).font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+            Text(message.body).font(.subheadline).multilineTextAlignment(.center)
             Button("Try again", action: retry).buttonStyle(.borderedProminent).padding(.top, 4)
         }
         .padding(32)

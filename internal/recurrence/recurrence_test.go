@@ -142,7 +142,7 @@ func TestRecurrenceVectors(t *testing.T) {
 
 func TestParseRejectsInvalid(t *testing.T) {
 	for _, in := range []string{
-		"every blursday", "every", "weekly", "every 2", "every day until 2026-02-29", "every last weekday after completion",
+		"every blursday", "every", "weekly", "every 2", "every day until 2026-02-29", "every last weekday after completion", "every 1st weekday after completion", "every 5th weekday",
 		"every " + strings.Repeat("day ", 60), "every 5th friday", "every mon,, wed", "every day for -1 times",
 	} {
 		if _, err := Parse(in); !errors.Is(err, ErrInvalid) {

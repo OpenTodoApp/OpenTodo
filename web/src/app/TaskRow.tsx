@@ -25,7 +25,8 @@
 import { isSample } from '../lib/sampleTasks'
 import { hueFor, Icon, LabelChips, ReadAs, ToneText, Tooltip, TruncatedText, useOverflowing, type HueName, type IconName, type Tone } from '../ui'
 import { slotName, useSlotOf } from '../lib/slots'
-import { lazy, memo, type ReactNode, Suspense, useLayoutEffect, useRef } from 'react'
+import { lazy, memo, type ReactNode, Suspense, use, useLayoutEffect, useRef } from 'react'
+import { RowBlockContext } from './task-list/rowBlockContext'
 import type { RowImplied } from '../lib/listGroups'
 import { describeDeadline, describeDue, formatDate, formatTime, localDueOf, logicalToday, zoneHint, type ResolvedDateTime } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
@@ -33,16 +34,17 @@ import type { Progress } from '../lib/subtasks'
 import { streakLabel, type HabitStats } from '../lib/habits'
 import type { Label, Project, RowProperty, Task } from '../lib/types'
 import { AssigneeChip } from './AssigneePicker'
+import { rowTakesTurns } from '../lib/rotation'
 import { useAttachmentCount, useCommentCount, useSharedProject } from './useCommentCounts'
 import { notYetEncrypted, useEncryption } from '../lib/e2ee'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { prefersReducedMotion } from './motion'
 import { useRowSwipe } from './task-list/RowSwipe'
-import { dragFeedback } from './listDrop'
+import { dragFeedback, dropIndent } from './listDrop'
 import { fieldBadges } from '../lib/fields'
 import { useApplicableFields, useFieldDefs } from './useFields'
 import { t } from '../lib/i18n'
-import { originOf } from '../lib/taskOrigin'
+import { originOf, rowOrigin } from '../lib/taskOrigin'
 import { taskSource, type SourceKind } from '../lib/taskSource'
 import { relativeLabel } from './task-detail/RelativeTime'
 import { trackedLabel, trackedText } from '../lib/time'
@@ -50,11 +52,14 @@ import { useTaskTracked } from '../lib/timeEntries'
 import { OriginChip } from './OriginChip'
 import { DEADLINE_TONE, ladderTone, PRIORITY_RING } from './rowTone'
 import { RowActionCluster } from './task-list/RowActionCluster'
+import { useFullTitles } from '../lib/fullTitles'
 import { useAccountRowLayout, type RowLayout } from '../lib/rowLayout'
-import { DRAG_THRESHOLD, finePointer, swallowNextClick, trackHold } from '../lib/dnd'
+import { DRAG_THRESHOLD, swallowNextClick, trackHold } from '../lib/dnd'
 import { dayPartName, dayPartOf, dayPartWord, type DayPart } from '../lib/dayParts'
 import { energyChipLabel, energyName, energyOf, type Energy } from '../lib/energy'
+import { sectorLabel } from '../lib/sectorNames'
 import { formatSpan, spanOf, type Span } from '../lib/span'
+import { usePendingDone } from '../lib/pendingDone'
 
 /** The details of an expanded row (row-expand D3), loaded on the first expand. */
 const RowDetails = lazy(() => import('./task-list/RowDetails'))
@@ -149,6 +154,8 @@ interface MetaValues {
   breadcrumb?: string | null
   date: string | null
   dateTone: Tone
+  /** The date slot holds the time sector of a task without a do-on date (time-sectors D4): its read-out name. */
+  sectorLabel?: string | null
   hint: string | null
   zone: string
   repeat: string | null
@@ -198,6 +205,12 @@ function BlockMark({ m, rowItem = false }: { m: MetaValues; rowItem?: boolean })
   )
 }
 
+/** The date slot: the do-on date, or a time sector in the same place (time-sectors D4), carried over in the faint tone. */
+function DateText({ m }: { m: MetaValues }) {
+  if (m.sectorLabel) return <ToneText tone={m.dateTone} icon="calendar-range" data-date="" data-sector="" label={m.sectorLabel}>{m.date}</ToneText>
+  return <ToneText tone={m.dateTone} icon="calendar-days" data-date="">{m.date}</ToneText>
+}
+
 /** The energy as one muted word, read as "Deep energy" (task-energy D6). */
 function EnergyWord({ energy, rowItem = false }: { energy: Energy; rowItem?: boolean }) {
   return <ToneText data-energy={energy} data-row-item={rowItem ? '' : undefined} label={energyChipLabel(energy)}>{energyName(energy)}</ToneText>
@@ -218,7 +231,7 @@ function CardMeta({ m }: { m: MetaValues }) {
   const more = m.badges.slice(MAX_FIELD_BADGES)
   return (
     <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1" data-row-meta="card">
-      {m.date && <ToneText tone={m.dateTone} icon="calendar-days" data-date="">{m.date}</ToneText>}
+      {m.date && <DateText m={m} />}
       {m.estimate && <ToneText icon="clock" data-estimate="" data-tracked={m.estimate.tracked ? '' : undefined} label={m.estimate.label}>{m.estimate.text}</ToneText>}
       {m.progress && <ToneText icon="circle-check-big" data-progress="" label={m.progress.label}>{m.progress.text}</ToneText>}
       {m.energy && <EnergyWord energy={m.energy} />}
@@ -275,7 +288,7 @@ function DetailedMeta({ m, priority, projectColor, labels }: { m: MetaValues; pr
   const facts = [
     (m.date || m.hint) && (
       <span key="date" data-row-cell="date" className="inline-flex min-w-0 items-center gap-1">
-        {m.date && <ToneText tone={m.dateTone} icon="calendar-days" data-date="">{m.date}</ToneText>}
+        {m.date && <DateText m={m} />}
         {m.hint && <ToneText tone="faint" data-zone-hint="" label={t('fixed to {zone}', { zone: m.zone })}>{m.hint}</ToneText>}
       </span>
     ),
@@ -352,7 +365,7 @@ function RowLine({ m, extra, progress, projectColor, projectColumn }: { m: MetaV
       <span className="contents" data-row-props={projectColumn ? 'project' : ''}>
         {(m.date || m.hint) && (
           <span data-row-cell="date" data-row-item="" {...keep('date')} className="inline-flex min-w-0 items-center gap-1">
-            {m.date && <ToneText tone={m.dateTone} icon="calendar-days" data-date="">{m.date}</ToneText>}
+            {m.date && <DateText m={m} />}
             {m.hint && <ToneText tone="faint" data-zone-hint="" label={t('fixed to {zone}', { zone: m.zone })}>{m.hint}</ToneText>}
           </span>
         )}
@@ -404,6 +417,8 @@ export interface TaskRowProps {
   ticked?: boolean
   /** Checkboxes always shown: something is ticked, or touch Select mode is on. */
   showCheckbox?: boolean
+  /** Select mode: a plain tap anywhere on the row ticks it instead of opening it. */
+  selectMode?: boolean
   /** Tick or untick; `range` for Shift (extend from the anchor). */
   onTick?: (range: boolean) => void
   onToggleCollapse?: () => void
@@ -423,21 +438,28 @@ export interface TaskRowProps {
   onContextMenu?: (e: React.MouseEvent<HTMLLIElement>) => void
   /** A touch hold's release: the same menu at those coordinates — no event, so no cast (task-row-context-menu). */
   onRowMenu?: (x: number, y: number, row: HTMLElement) => void
+  /** Starts a drag from the row's touch grip (right edge): hold selects, hold then move drags. */
+  onGripDown?: (e: React.PointerEvent<HTMLElement>) => void
+  /** A tap on the grip: tick the row and enter Select mode (bulk-actions on touch). */
+  onGripClick?: () => void
   /** Drop target key for lib/dnd (manual-ordering): the row accepts drops before, after or inside it. */
   dropKey?: string
   /** Where the dragged task would land relative to this row (manual-ordering). */
   dropIndicator?: 'before' | 'after' | 'inside' | null
+  /** Before or after a row of a tree list: the depth the task lands at, where the line starts (drop-depth). */
+  dropDepth?: number
   /** This row is the one being dragged: it lifts (an opacity change under reduced motion). */
   dragging?: boolean
   /** The columns layout shows field values in cells, so the row leaves out their values (custom-fields). */
   hideFieldBadges?: boolean
   /**
-   * Position among the visible rows with the same parent (assistive-tech-semantics):
-   * with `depth`, the row's aria-level, aria-posinset and aria-setsize, so the
-   * subtask hierarchy is announced and not only indented.
+   * A row of a tree list (assistive-tech-semantics): with `depth`, the row's
+   * aria-level, so the subtask hierarchy is announced and not only indented. Its
+   * aria-posinset and aria-setsize, which change for every row when one leaves,
+   * are written by the list (SiblingAria), so that does not draw every row again
+   * (list-rendering-at-scale).
    */
-  posInSet?: number
-  setSize?: number
+  treeItem?: boolean
   /** What the view or the group heading already says (calm-rows D3); the row leaves it out. */
   implied?: RowImplied
   /** The label whose view is open: the row leaves out its chip. */
@@ -535,7 +557,7 @@ function CompactRow({ task, date, time, today, selected, readOnly = false, proje
   const priority = task.priority < 4 ? PRIORITY_RING[task.priority] : null
   const canDrag = !readOnly && onPointerDown !== undefined
   return (
-    <button type="button" tabIndex={large ? 0 : -1} {...attrs} data-row-shape="compact" data-hue={hue ?? hueFor(project?.color ?? null)} aria-pressed={selected}
+    <button data-drag-id="compact-row" type="button" tabIndex={large ? 0 : -1} {...attrs} data-row-shape="compact" data-hue={hue ?? hueFor(project?.color ?? null)} aria-pressed={selected}
       onPointerDown={canDrag ? onPointerDown : undefined}
       onClick={(e) => { e.stopPropagation(); if (selected && large) onOpen(); else onSelect() }}
       onDoubleClick={onOpen}
@@ -566,14 +588,14 @@ function CompactRow({ task, date, time, today, selected, readOnly = false, proje
  * Touch hold on a row the drag does not own (task-row-context-menu "Touch: hold and
  * release"): the hold arms with a tint on the row, a release then opens the actions
  * menu at the finger, a move ends it as a scroll — one rule, so a long press means the
- * same thing on every list of a device. Only a fine pointer holds for the menu; a
- * coarse one (a phone) keeps its long press for ticking the row (bulk-actions) and
- * never opens it here. A draggable row gets the same hold inside beginDrag, so
- * exactly one owner per row.
+ * same thing on every list of every device. Selection moved to the row's grip
+ * (bulk-actions), so a phone's long press no longer ticks the row: it is the menu's
+ * gesture on a coarse pointer as on a fine one. A draggable row gets the same hold
+ * inside beginDrag, so exactly one owner per row.
  */
 function holdForRow(e: React.PointerEvent<HTMLLIElement>, drag: TaskRowProps['onPointerDown'], open: TaskRowProps['onRowMenu']): void {
   drag?.(e)
-  if (drag || e.pointerType !== 'touch' || !open || !finePointer()) return
+  if (drag || e.pointerType !== 'touch' || !open) return
   const fire = open
   const li = e.currentTarget
   const x0 = e.clientX
@@ -626,11 +648,13 @@ function startWords(start: string, span: Span | null, p: ResolvedDateTime): stri
 /**
  * A list row's title (task-list-width D1, D3): two lines, then an ellipsis. The whole
  * title is the open control's name, and its tooltip while it is cut; its own component,
- * so a change of "cut" re-renders the title only.
+ * so a change of "cut" re-renders the title only. With full titles on (full-task-titles)
+ * the stylesheet lifts the clamp and nothing is cut, so the title is not measured.
  */
 function RowTitle({ title, tone, waiting, undecryptable, unencrypted, measure }: { title: string; tone: string; waiting: boolean; undecryptable: boolean; unencrypted: boolean; measure: boolean }) {
   const ref = useRef<HTMLDivElement>(null)
-  const cut = useOverflowing(ref, title, measure && !undecryptable)
+  const full = useFullTitles()
+  const cut = useOverflowing(ref, title, measure && !undecryptable && !full)
   return (
     <Tooltip label={title} disabled={!cut}>
       <div ref={ref} className={`user-text min-w-0 text-body line-clamp-2 break-words ${tone}`} data-row-title data-waiting={waiting ? '' : undefined}>
@@ -655,7 +679,7 @@ export const TaskRow = memo(function TaskRow(props: TaskRowProps | CompactRowPro
   return props.shape === 'compact' ? <CompactRow {...props} /> : <FullRow {...props} />
 })
 
-function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, onTick, hideFieldBadges = false, posInSet, setSize, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout, edge, notes = false }: TaskRowProps) {
+function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, onGripDown, onGripClick, dropKey, dropIndicator = null, dropDepth, dragging = false, ticked = false, showCheckbox = false, selectMode = false, onTick, hideFieldBadges = false, treeItem = false, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout, edge, notes = false }: TaskRowProps) {
   const card = shape === 'card'
   // The row's layout (row-layouts D1): the list's own choice, else the account's; a card keeps its shape.
   const accountLayout = useAccountRowLayout()
@@ -703,23 +727,26 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
     ? { text: trackedText(tracked, task.estimate_minutes ?? null), label: trackedLabel(tracked, task.estimate_minutes ?? null), tracked: true }
     : task.estimate_minutes ? { text: formatMinutes(task.estimate_minutes), label: t('Estimate {minutes}', { minutes: formatMinutes(task.estimate_minutes) }), tracked: false } : null
   // Where the task came from (task-origin D7): quiet text, in the trailing group of a row and the line of a card.
-  // The Inbox's source line names it instead (inbox-split D4).
-  const origin = hides('origin') || (source && !card) ? null : originOf(task)
-  const originChip = origin ? <OriginChip origin={origin} quiet /> : null
+  // The Inbox's source line names it instead (inbox-split D4). An import's id is never shown (row-title-first-on-phones).
+  const origin = hides('origin') || (source && !card) ? null : rowOrigin(originOf(task))
+  const originChip = origin ? <OriginChip origin={origin} quiet iconOnly={origin.kind === 'import'} /> : null
   const projectName = showProject && project && !hides('project') ? project.name : null
   const hint = zoneHint(task.due)
+  // A task without a do-on date shows its time sector in the date slot (time-sectors D4); a dated task never does.
+  const sector = !task.due && !hides('date') ? sectorLabel(task.sector, logicalToday(), dt.resolved) : null
   const m: MetaValues = {
     sample: isSample(task),
     breadcrumb,
-    date: hides('date') ? null : span ? formatSpan(span) : rowDateText(due, dueDay, done ? null : dayPartOf(task), implied, timeInColumn),
-    dateTone: dueDay ? ladderTone(dueDay, logicalToday()) : 'muted',
+    date: hides('date') ? null : sector ? sector.text : span ? formatSpan(span) : rowDateText(due, dueDay, done ? null : dayPartOf(task), implied, timeInColumn),
+    dateTone: dueDay ? ladderTone(dueDay, logicalToday()) : sector?.carried ? 'faint' : 'muted',
+    sectorLabel: sector?.label ?? null,
     hint, zone: task.due?.tz ?? '', repeatLabel: repeatLabelOf(task),
     repeat: task.recurrence ? t('repeats') : task.series_id ? t('occurrence') : null, recurring: !!task.recurrence,
     deadline: deadlineInColumn ? null : deadline, deadlineLabel,
     startText, someday: start === 'someday',
     estimate, energy: hides('energy') ? null : energyOf(task), blockedBy: done ? 0 : blockedBy, waitsFor: done ? null : waitsFor, streak: habit && !done ? habit : null,
     badges: hideFieldBadges ? [] : fieldBadges(task, fieldDefs, dt.resolved, fieldsOf),
-    assignee: assignee && task.assignee_id && !hides('assignee') ? <AssigneeChip id={task.assignee_id} name={assignee} me={assignedToMe} /> : null,
+    assignee: assignee && task.assignee_id && !hides('assignee') ? <AssigneeChip id={task.assignee_id} name={assignee} me={assignedToMe} turns={rowTakesTurns(task)} /> : null,
     origin: null,
     labels: <LabelChips labels={labels} omit={omitLabel} />,
     counts: null,
@@ -751,8 +778,11 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
 
   // A departing row is the last picture of a task that was completed: done, and out of reach.
   const departing = motion === 'leave'
-  const checked = done || departing
+  // The tick the user just gave shows before the write comes back (list-rendering-at-scale D3).
+  const checked = usePendingDone(task) || departing
   const rowRef = useRowHeight(departing)
+  // In a long list's block (incremental-list-updates D5) the lists around the row are presentational: it says it is an item.
+  const inBlock = use(RowBlockContext)
   // Swipe right completes, left schedules, on touch rows the user may edit (phone-v2 D3).
   const swiping = useRowSwipe({ task, enabled: swipe && !card && !readOnly && !inline && !departing, onComplete: onToggle, force: forceSwipe, rowEl: rowRef })
   const feedback = dragFeedback(prefersReducedMotion())
@@ -760,8 +790,9 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   // The origin is a link, so it never sits inside the open button: on a card it ends the
   // card at the top right, as before rows-v2 (a link nested in a button is invalid).
   const trailing = card ? originChip && <span data-row-trailing="" className="ml-auto flex shrink-0 items-start">{originChip}</span>
-    : (originChip || revealed) && (
+    : (originChip || !inline) && (
     // The revealed actions float over the row's end at every width (task-list-width D2): the row keeps no room for them, so the title has the whole width and revealing them moves nothing.
+    // Every list row has the slot, empty or not: from 40 rem it is one fixed width (index.css), so the property column ends at the same place on every row (GitHub issue 945).
     <span data-row-trailing="" className={`ml-auto mt-0.5 flex h-5 min-w-0 items-center justify-end gap-2 transition-opacity duration-(--duration-ui) ${revealed ? (forceActions ? 'md:pointer-fine:opacity-0' : 'md:pointer-fine:group-hover:opacity-0 md:pointer-fine:group-focus-within:opacity-0') : ''}`}>
       {originChip && <span className="flex shrink-0">{originChip}</span>}
     </span>
@@ -771,8 +802,9 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   const handlePointerDown = (e: React.PointerEvent<HTMLLIElement>) => { if (swipe) swiping.onPointerDown(e); holdForRow(e, onPointerDown, onRowMenu) }
 
   return (
-    <li
+    <li data-drag-id="task-row"
       ref={rowRef}
+      role={inBlock ? 'listitem' : undefined}
       // A departing row is not a row of the list: no id for the cursor, drops or tests.
       data-task-id={departing ? undefined : task.id}
       data-departing={departing ? task.id : undefined}
@@ -787,9 +819,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
       data-ticked={ticked || undefined}
       data-dragging={dragging || undefined}
       aria-current={selected || undefined}
-      aria-level={card || setSize === undefined ? undefined : depth + 1}
-      aria-posinset={card ? undefined : posInSet}
-      aria-setsize={card ? undefined : setSize}
+      aria-level={card || !treeItem ? undefined : depth + 1}
       onPointerDown={handlePointerDown}
       // The row's empty area opens the task under either "Click a task to" choice (row-and-cursor
       // D1): a pointer shortcut; the open button stays the keyboard path. Drags and swipes
@@ -797,18 +827,20 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
       onClick={inline || departing ? undefined : (e) => {
         const hit = (e.target as Element).closest(ROW_CONTROL)
         if (hit && e.currentTarget.contains(hit)) return
-        if (onTick && !readOnly && (e.shiftKey || e.ctrlKey || e.metaKey)) { onTick(e.shiftKey); return }
+        if (onTick && !readOnly && (selectMode || e.shiftKey || e.ctrlKey || e.metaKey)) { onTick(e.shiftKey); return }
         onOpen()
       }}
       onContextMenu={onContextMenu}
       style={depth ? { paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 0.5}rem` } : undefined}
       data-expanded={showDetails || undefined}
       data-row-layout={detailed ? 'detailed' : undefined} {...(card && edge ? { 'data-hue': edge, 'data-card-edge': '' } : {})}
-      className={`group relative flex items-start gap-2 rounded-control px-2 ${showDetails ? 'flex-wrap' : ''} ${card ? '' : '@container/row'} ${card && edge ? 'border-s-3 border-s-hue-solid' : ''} ${swipe ? 'touch-pan-y' : ''} transition-[opacity,transform] duration-(--duration-emphasis) ease-calm ${card ? 'py-2.5 border border-default bg-surface shadow-1 dark:bg-raised' : 'row-pad'} ${dropIndicator === 'inside' ? feedback.inside : ''} ${ticked ? 'bg-accent-soft' : selected ? (card ? 'ring-1 ring-accent/50' : 'row-selected') : card ? '' : 'row-hover'} ${lift}`}
+      className={`group relative flex items-start gap-2 rounded-control px-2 ${showDetails ? 'flex-wrap' : ''} ${card ? '' : '@container/row'} ${card && edge ? 'border-s-3 border-s-hue-solid' : ''} ${swipe ? 'touch-pan-y' : ''} transition-[opacity,transform] duration-(--duration-emphasis) ease-calm ${card ? 'py-2.5 border border-default bg-surface shadow-1 dark:bg-raised' : 'row-pad'} ${card || dragging || dropIndicator || inline || showDetails ? '' : 'row-offscreen'} ${dropIndicator === 'inside' ? feedback.inside : ''} ${ticked ? 'bg-accent-soft' : selected ? (card ? 'ring-1 ring-accent/50' : 'row-selected') : card ? '' : 'row-hover'} ${lift}`}
     >
       {(dropIndicator === 'before' || dropIndicator === 'after') && (
         // The drop position: a line with a dot at its start (task-list-presentation "Drag feedback").
-        <span aria-hidden="true" data-drop-indicator={dropIndicator}
+        // In a tree list it starts at the indent of the depth the task lands at (drop-depth).
+        <span aria-hidden="true" data-drop-indicator={dropIndicator} data-drop-depth={dropDepth}
+          style={dropDepth !== undefined ? { left: dropIndent(dropDepth, MAX_INDENT) } : undefined}
           className={`${feedback.line} ${dropIndicator === 'before' ? '-top-px' : '-bottom-px'}`} />
       )}
       {!card && (
@@ -845,19 +877,14 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
             {checked && <Icon name="check" size="xs" />}
           </span>
         </button>
-        {onTick && !readOnly && (
-          <label className={`absolute inset-0 cursor-pointer items-center justify-center pointer-fine:-inset-0.5 pointer-coarse:-inset-3.5 ${showCheckbox || ticked ? 'inline-flex' : 'hidden'}`}>
-            <input type="checkbox" className="h-4 w-4 accent-(--ot-accent)" checked={ticked} aria-label={t('Select {title}', { title: name })} data-tick
-              onClick={(e) => { e.stopPropagation(); e.preventDefault(); onTick(e.shiftKey) }} onChange={() => {}} />
-          </label>
-        )}
+        {onTick && !readOnly && <RowTick name={name} ticked={ticked} showCheckbox={showCheckbox} onTick={onTick} />}
       </span>
       {column && <TimeCell time={due?.time ?? null} slot={slotInColumn} timeTone={dueDay ? ladderTone(dueDay, logicalToday()) : 'muted'} deadline={deadlineInColumn ? deadline : null} deadlineLabel={deadlineLabel} />}
       {inline ?? <button type="button" className="flex min-w-0 flex-1 flex-col text-left pointer-fine:-my-px pointer-fine:py-px" data-row-open
         aria-expanded={canExpand ? showDetails : undefined} aria-controls={showDetails ? detailsId : undefined}
         onClick={(e) => {
-          // Shift+click extends, Ctrl/⌘+click toggles the tick instead of opening (bulk-edit D3).
-          if (onTick && !readOnly && (e.shiftKey || e.ctrlKey || e.metaKey)) { e.preventDefault(); onTick(e.shiftKey); return }
+          // Shift+click extends, Ctrl/⌘+click toggles the tick instead of opening (bulk-edit D3); in Select mode a tap does.
+          if (onTick && !readOnly && (selectMode || e.shiftKey || e.ctrlKey || e.metaKey)) { e.preventDefault(); onTick(e.shiftKey); return }
           onOpen(e)
         }}>
         <div className={card ? '' : 'flex min-w-0 items-start gap-2'} data-row-head>
@@ -885,6 +912,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
       )}
       {revealed && <RowActionCluster task={task} onMore={onMore} force={forceActions} editable={!readOnly}
         details={canExpand ? { expanded: showDetails, controls: detailsId, onToggle: onExpand! } : undefined} />}
+      {onGripDown && onGripClick && onTick && !readOnly && !inline && !departing && <RowGrip name={name} ticked={ticked} showCheckbox={showCheckbox} onDown={onGripDown} onClick={onGripClick} />}
       {showDetails && (
         // Indented under the title column: past the leading slot, the checkbox and the time column (row-expand D3).
         // The id lives here, so `aria-controls` names an element while the lazy details still load.
@@ -899,15 +927,70 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   )
 }
 
-/** Measures a departing row so its collapse starts from its own height (motion-v2 D3). */
+/**
+ * The row's selection box, drawn by the app rather than the platform (bulk-actions on
+ * touch): it fills the same 20 px slot as the completion circle it stands in for,
+ * identically on every device, instead of taking whatever size and offset the browser
+ * gave the native control.
+ */
+function RowTick({ name, ticked, showCheckbox, onTick }: { name: string; ticked: boolean; showCheckbox?: boolean; onTick: (range: boolean) => void }) {
+  return (
+    <label className={`absolute inset-0 cursor-pointer items-center justify-center pointer-fine:-inset-0.5 pointer-coarse:-inset-3.5 ${showCheckbox || ticked ? 'inline-flex' : 'hidden'}`}>
+      <input type="checkbox" className="row-tick size-5 shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" checked={ticked} aria-label={t('Select {title}', { title: name })} data-tick
+        onClick={(e) => { e.stopPropagation(); e.preventDefault(); onTick(e.shiftKey) }} onChange={() => {}} />
+    </label>
+  )
+}
+
+/**
+ * The touch grip at a row's right edge (task-row-context-menu follow-up, bulk-actions
+ * on touch): a tap ticks the row and enters Select mode, a hold selects it, a hold
+ * then a move drags — so the row body's own press stays tap-to-open, swipe and
+ * hold-for-menu, and never selects words under the finger. A coarse pointer only
+ * (hidden before it renders): a fine pointer drags the row anywhere and ticks through
+ * the same box as before.
+ */
+function RowGrip({ name, ticked, showCheckbox, onDown, onClick }: { name: string; ticked: boolean; showCheckbox?: boolean; onDown: (e: React.PointerEvent<HTMLElement>) => void; onClick: () => void }) {
+  // While Select mode shows the checkboxes the tick box is the row's one announced
+  // control: the grip leaves the tree and the tab order, so TalkBack and VoiceOver do
+  // not stop on two controls with the same name (bulk-actions on touch).
+  const quiet = !!(showCheckbox || ticked)
+  return (
+    <span data-row-grip="" className="mt-0.5 hidden h-5 w-5 shrink-0 items-center justify-center self-start pointer-coarse:flex">
+      <button
+        type="button"
+        aria-label={t('Select {title}', { title: name })}
+        aria-pressed={ticked}
+        aria-hidden={quiet || undefined}
+        tabIndex={quiet ? -1 : undefined}
+        // A hold then a move drags the row: the row's own alternatives (accessibility-aa D3).
+        data-drag-id="task-row"
+        onPointerDown={(e) => { e.stopPropagation(); onDown(e) }}
+        onClick={onClick}
+        className="touch-target pointer-coarse:-m-3 flex select-none items-center justify-center rounded-chip text-faint touch-none hover:text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+      >
+        <Icon name="grip-vertical" size="sm" />
+      </button>
+    </span>
+  )
+}
+
+/**
+ * Measures a departing row so its collapse starts from its own height (motion-v2 D3),
+ * where the browser cannot animate from `auto` itself (`interpolate-size`): measuring
+ * laid out the list in the commit that drew the ghost (about 15 ms in the phone profile
+ * of the 2,000-row list, incremental-list-updates).
+ */
 function useRowHeight(departing: boolean) {
   const ref = useRef<HTMLLIElement>(null)
   useLayoutEffect(() => {
     const el = ref.current
-    if (departing && el) el.style.setProperty('--row-h', `${el.offsetHeight}px`)
+    if (departing && el && !animatesAuto()) el.style.setProperty('--row-h', `${el.offsetHeight}px`)
   }, [departing])
   return ref
 }
+
+const animatesAuto = (): boolean => typeof CSS !== 'undefined' && typeof CSS.supports === 'function' && CSS.supports('interpolate-size', 'allow-keywords')
 
 /** The board card: the same row data as a card (sections-and-boards "Card content"). */
 export function TaskCard(props: Omit<TaskRowProps, 'shape'>) {

@@ -2,7 +2,7 @@
 // until both sides are quiet. Runs on mutation, reconnect, tab focus, a timer and
 // on live wake-ups from the server's event stream (which carries no data; it only
 // tells us to run the exchange now).
-import { forgetActivity } from './activity'
+import { forgetActivity, markLongPull, withDeferredActivity } from './activity'
 import { api, ApiError } from './api'
 import { isTransientNetworkError } from './http'
 import { bumpLocalEpoch, db, entityTables, getMeta, localEpoch, setMeta, tableOf } from './db'
@@ -23,13 +23,15 @@ import { refreshEvents } from './calendarFeeds'
 import { ENTITIES, type Clock, type Op, type RowEncryption, type SyncResponse, type SyncState } from './types'
 import { isEnabled, loadEncryptionState, refreshFromServer, syncBlocked } from './e2ee'
 import { HELD_RETRY_MS, heldCount, holdOps, limitMessage, requeueHeld, splitRejected } from './limits'
-import { decryptIncoming, LockedError, markSent, normalizeOnSight, prepareOutgoing, reconcileMode, runMigration } from './e2eeSync'
+import { catchUpEncryption, decryptIncoming, LockedError, markSent, normalizeOnSight, prepareOutgoing, reconcileMode, runMigration } from './e2eeSync'
 import { t } from './i18n'
 import { uuid } from './ids'
 import { onTestTeardown } from './testTeardown'
 import { resettable } from './moduleState'
 import { messageOf } from './errorText'
 import { createStore } from './store'
+import { holdLiveSnapshots } from './liveSnapshot'
+import { markFirstSyncIdle, perfMarkAfterPaint, REMOTE_APPLIED } from './perfMarks'
 
 const BATCH = 500
 /** Poll interval while the live channel is disconnected (the historical default). */
@@ -41,6 +43,8 @@ const RECONNECT_CAP_MS = 30_000
 /** No `open` within this window counts as a failed attempt (e.g. a buffering proxy). */
 const OPEN_TIMEOUT_MS = 10_000
 const EVENTS_PATH = '/api/v1/sync/events'
+/** Meta key: this device is making its first copy of the account (notes-compaction-at-scale D3). */
+export const FIRST_COPY_META = 'firstCopy'
 
 interface Snapshot {
   state: SyncState
@@ -199,6 +203,9 @@ function isSyncResponse(v: unknown): v is SyncResponse {
     && ((r.rejected ?? []) as unknown[]).every((x) => typeof x === 'object' && x !== null && typeof (x as { id?: unknown }).id === 'string' && typeof (x as { reason?: unknown }).reason === 'string')
 }
 
+/** Releases the live data a long pull holds (holdLiveSnapshots). */
+let liveHold: (() => void) | null = null
+
 async function runOnce(): Promise<void> {
   // Sign-out (or stop) starts a new local epoch: from then on this exchange
   // writes nothing, so the previous account's data never lands in the cleared
@@ -211,7 +218,13 @@ async function runOnce(): Promise<void> {
     if (localEpoch() !== epoch) throw new SessionEnded()
   }
   try {
-    await exchange(alive, signal)
+    try {
+      await withDeferredActivity(() => exchange(alive, signal), () => localEpoch() === epoch)
+    } finally {
+      // A long pull held the screen's live data (exchange); it shows the end state now.
+      liveHold?.()
+      liveHold = null
+    }
   } catch (err) {
     if (err instanceof SessionEnded || localEpoch() !== epoch) return
     throw err
@@ -251,6 +264,7 @@ async function exchange(alive: () => void, signal: AbortSignal): Promise<void> {
     // any exchange that brought changes (an assignment arrives as an op).
     let received = needNotifications
     let skewRounds = 0
+    let seriesOps: Op[] = []
     for (;;) {
       const cursor = await getMeta<number>('cursor', 0)
       const batch = await db.outbox.orderBy('local').limit(BATCH).toArray()
@@ -258,12 +272,23 @@ async function exchange(alive: () => void, signal: AbortSignal): Promise<void> {
       // The only place ops leave the device: content is encrypted here.
       const wireOps = await prepareOutgoing(sent)
       const backfillAck = await getMeta<number>('backfillAck', 0)
+      // The first copy of the account (from cursor 0 to its last page, also
+      // after a restore's re-seed) leaves out note history it never needs
+      // (notes-compaction-at-scale D3); kept across reloads until it ends.
+      if (cursor === 0 && !(await getMeta<boolean>(FIRST_COPY_META, false))) await setMeta(FIRST_COPY_META, true)
+      const firstCopy = await getMeta<boolean>(FIRST_COPY_META, false)
       alive()
-      const res: unknown = await api.sync(device, cursor, wireOps, -new Date().getTimezoneOffset(), backfillAck, signal)
+      const res: unknown = await api.sync(device, cursor, wireOps, -new Date().getTimezoneOffset(), backfillAck, signal, firstCopy)
       alive()
       // A proxy or captive portal can answer 200 with a page of its own: nothing
       // was synced, so the outbox stays as it is (client-data-safety).
       if (!isSyncResponse(res)) throw new Error(t('The server sent an answer this app does not understand. Your changes stay on this device.'))
+      // A long pull (more pages follow) holds the screen's live data, read
+      // every few seconds instead of after every page (performance-10k D6).
+      if (res.hasMore) {
+        liveHold ??= holdLiveSnapshots()
+        markLongPull()
+      }
       hlcObserveServerTime(res.serverTime)
       // Stored for the service worker's notification actions (and the next start).
       if ((await getMeta<number>(CLOCK_OFFSET_META, 0)) !== hlcOffset()) await setMeta(CLOCK_OFFSET_META, hlcOffset())
@@ -280,7 +305,8 @@ async function exchange(alive: () => void, signal: AbortSignal): Promise<void> {
       // drops a change without handling its refusal (client-data-safety).
       let keys: string[] = []
       let notice: RejectedNotice | null = null
-      await db.transaction('rw', [...entityTables(), db.outbox, db.meta], async () => {
+      // Nothing was sent or refused (every page of a long pull but the first): no write.
+      if (batch.length > 0 || res.rejected?.length) await db.transaction('rw', [...entityTables(), db.outbox, db.meta], async () => {
         if (batch.length > 0) {
           await db.outbox.bulkDelete(batch.map((o) => o.local as number))
           await markSent(sent, wireOps)
@@ -307,7 +333,10 @@ async function exchange(alive: () => void, signal: AbortSignal): Promise<void> {
       }
       await applyOps(incoming.ops, { wire: incoming.wire })
       alive()
-      if (res.ops.length > 0) received = true
+      if (res.ops.length > 0) {
+        received = true
+        perfMarkAfterPaint(REMOTE_APPLIED)
+      }
       await dropUnconfirmed(keys)
       alive()
       if (res.memberships) await storeMemberships(res.memberships)
@@ -325,7 +354,14 @@ async function exchange(alive: () => void, signal: AbortSignal): Promise<void> {
       alive()
       // Series standing on an exception move on; empty records on an encrypted
       // account get their series' content (series-exceptions M5, D12).
-      if (incoming.ops.some((o) => o.entity === 'task')) await (await import('./seriesRepair')).afterPullSeries(incoming.ops)
+      // A long pull (a first sync) repairs once, after its last page, with
+      // every page's task ops (performance-10k): the repair reads the tasks.
+      for (const o of incoming.ops) if (o.entity === 'task') seriesOps.push(o)
+      if (!res.hasMore && seriesOps.length) {
+        const touched = seriesOps
+        seriesOps = []
+        await (await import('./seriesRepair')).afterPullSeries(touched)
+      }
       alive()
       // Encrypt-on-sight (OpenSpec e2ee, design D7): queued re-writes upload in
       // the next round of this loop.
@@ -357,12 +393,23 @@ async function exchange(alive: () => void, signal: AbortSignal): Promise<void> {
       }
       alive()
       await setMeta('cursor', res.cursor)
+      if (firstCopy && !res.hasMore) await setMeta(FIRST_COPY_META, false)
       // Confirms a page of a joined project's history once it was applied (sync-convergence).
       await setMeta('backfillAck', res.backfillSeq ?? 0)
       const left = await db.outbox.count()
       publish({ pending: left })
       if (!res.hasMore && left === 0) break
     }
+    // Everything is pulled: the screen shows it now, not after the chores below and
+    // the deferred activity log (which took seconds after a first sync, and the first
+    // things typed then waited for the whole screen to catch up at once).
+    liveHold?.()
+    liveHold = null
+    // Everything is pulled and the outbox is empty: content an older re-write
+    // job left in the wrong form is converted now (encryption-rewrite-coverage)
+    // and uploads in the next exchange.
+    if (await catchUpEncryption()) requestSync(0)
+    alive()
     if (received) {
       needNotifications = false
       await refreshNotifications()
@@ -389,6 +436,7 @@ async function exchange(alive: () => void, signal: AbortSignal): Promise<void> {
       heldReason = null
       publish({ state: 'idle', lastSyncedAt: Date.now(), error: null })
     }
+    markFirstSyncIdle()
     // Files wait for their rows to reach the server (attachments D3): send them now.
     void runUploader().catch(() => undefined)
     // An encryption change stopped while re-uploading files continues here.
@@ -759,6 +807,8 @@ resettable('sync', () => {
   needNotifications = true
   failures = 0
   attempts = 0
+  liveHold?.()
+  liveHold = null
 })
 
 /**

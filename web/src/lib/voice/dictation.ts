@@ -5,6 +5,7 @@
 import { type RecognitionCallbacks, type RecognitionSession, startRecognition, type VoiceErrorKind } from './recognition'
 import { t } from '../i18n'
 import { resettable } from '../moduleState'
+import { allowMicrophone, shell } from '../shell'
 
 export type DictationStatus = 'idle' | 'starting' | 'listening'
 
@@ -32,8 +33,15 @@ export interface DictationHost {
 
 export type Recognizer = (opts: { lang?: string } & RecognitionCallbacks) => RecognitionSession
 
+/** How to allow a refused microphone: the phone's settings in an app, the browser's site settings otherwise. */
+export function microphoneBlocked(inApp: boolean): string {
+  return inApp
+    ? t('Microphone access is blocked. Allow the microphone for OpenTodo in the phone’s settings, then try again.')
+    : t('Microphone access is blocked. Allow the microphone for this site in your browser’s site settings (usually the icon next to the address), then try again.')
+}
+
 export const MESSAGES = {
-  get denied() { return t('Microphone access is blocked. Allow the microphone for this site in your browser’s site settings (usually the icon next to the address), then try again.') },
+  get denied() { return microphoneBlocked(!!shell()) },
   get unavailable() { return t('Voice capture is unavailable right now. Typing works as usual.') },
   get noMicrophone() { return t('No microphone was found. Connect one, or keep typing.') },
   get service() { return t('The speech service did not answer. Try again, or keep typing.') },
@@ -66,10 +74,11 @@ export interface Dictation {
   dispose(): void
 }
 
-export function createDictation(host: DictationHost, recognize: Recognizer = startRecognition): Dictation {
+export function createDictation(host: DictationHost, recognize: Recognizer = startRecognition, allow: () => Promise<boolean> = allowMicrophone): Dictation {
   let view: DictationView = { status: 'idle', announcement: '', message: null }
   let session: RecognitionSession | null = null
   let disposed = false
+  let round = 0
 
   const set = (patch: Partial<DictationView>) => {
     view = { ...view, ...patch }
@@ -77,6 +86,7 @@ export function createDictation(host: DictationHost, recognize: Recognizer = sta
   }
 
   function begin(langOverride?: string | null) {
+    const mine = ++round
     const original = host.getValue()
     const sel = host.getSelection()
     const prefix = original.slice(0, sel.start)
@@ -87,6 +97,17 @@ export function createDictation(host: DictationHost, recognize: Recognizer = sta
     let touched = false
     let error: VoiceErrorKind | null = null
     set({ status: 'starting', message: view.message && langOverride === null ? view.message : null, announcement: '' })
+    // The shell asks the phone before the page records, so the first tap shows Android's
+    // prompt rather than a refusal about a browser address bar the app does not have.
+    void allow().then((ok) => {
+      if (disposed || mine !== round) return
+      if (!ok) {
+        set({ status: 'idle', message: MESSAGES.denied, announcement: MESSAGES.denied })
+        return
+      }
+      listen()
+    })
+    function listen() {
     session = recognize({
       lang,
       onStart: () => set({ status: 'listening', announcement: 'Listening' }),
@@ -128,18 +149,23 @@ export function createDictation(host: DictationHost, recognize: Recognizer = sta
         set({ status: 'idle', message, announcement: failure ?? 'Stopped' })
       },
     })
+    }
+  }
+
+  function stop() {
+    round++
+    if (session) session.stop()
+    else if (view.status === 'starting') set({ status: 'idle', announcement: 'Stopped' })
   }
 
   return {
     start() {
-      if (session || disposed) return
+      if (session || disposed || view.status === 'starting') return
       begin()
     },
-    stop() {
-      session?.stop()
-    },
+    stop,
     toggle() {
-      if (session) session.stop()
+      if (session || view.status === 'starting') stop()
       else if (!disposed) begin()
     },
     dismissMessage() {

@@ -77,7 +77,7 @@ vi.mock('./api', () => ({
   },
 }))
 
-import { decryptValue, isEnvelope, ITERATION_LIMITS, KeyRecordParamsError, MAX_PLAINTEXT_BYTES } from './crypto'
+import { ACCEPTED_ITERATIONS, decryptValue, isEnvelope, ITERATION_LIMITS, KeyRecordParamsError, MAX_PLAINTEXT_BYTES } from './crypto'
 import { DocTooLargeError, MAX_DOC_CHARS_ENCRYPTED } from './docfields'
 import { db, getMeta, setMeta, useDatabase } from './db'
 import {
@@ -545,9 +545,9 @@ describe('a server without the key record (encryption-state-integrity)', () => {
     await on('B')
     const good = structuredClone(server.record!)
     const saved = ITERATION_LIMITS.min
-    ITERATION_LIMITS.min = 100_000
+    ITERATION_LIMITS.min = ACCEPTED_ITERATIONS.min
     try {
-      for (const iterations of [99_999, 10_000_001, 1.5]) {
+      for (const iterations of [99_999, 100_000, 599_999, 10_000_001, 1.5]) {
         server.record = { ...good, iterations }
         await expect(unlock(PASS, 'passphrase')).rejects.toBeInstanceOf(KeyRecordParamsError)
         expect(await currentKey()).toBeNull()
@@ -823,6 +823,35 @@ describe('locations and places (task-locations 1.4, "Encrypted locations and pla
   })
 })
 
+describe('objectives (plan-objectives 1.3, "Encrypted objectives")', () => {
+  it("an objective's title is ciphertext; its period and done time are not", async () => {
+    await enableOnA()
+    const mark = server.calls.length
+    await mutate('objective', 'ob1', { title: 'Finish the grant', period: '2026-W44', position: 1024, done_at: 0, created_at: 1, deleted_at: null })
+    await syncNow()
+    const sent = sentAfter(mark).filter((o) => o.entity === 'objective')
+    expect(isEnvelope(sent.find((o) => o.field === 'title')!.value)).toBe(true)
+    expect(sent.find((o) => o.field === 'period')!.value).toBe('2026-W44')
+    expect(JSON.stringify(server.log)).not.toMatch(/Finish the grant/)
+    await on('B')
+    await unlock(PASS, 'passphrase')
+    await syncNow()
+    expect(await db.objectives.get('ob1')).toMatchObject({ title: 'Finish the grant', period: '2026-W44' })
+  })
+
+  it('enabling re-writes existing objective titles', async () => {
+    await on('A')
+    await mutate('objective', 'ob2', { title: 'Ship 1.0', period: '2026-Q4', position: 1, done_at: 0, created_at: 1, deleted_at: null })
+    await syncNow()
+    await enableEncryption(PASS, FAST)
+    await startMigration('encrypt')
+    await syncNow()
+    expect(isEnvelope(current('objective', 'ob2', 'title'))).toBe(true)
+    expect(current('objective', 'ob2', 'period')).toBe('2026-Q4')
+    expect((await db.objectives.get('ob2'))!.title).toBe('Ship 1.0')
+  })
+})
+
 // Biometric unlock in a native shell (OpenSpec change native-shells, design D7).
 describe('biometric unlock through the shell', () => {
   const g = globalThis as unknown as { window?: { opentodoShell?: unknown } }
@@ -891,5 +920,31 @@ describe('biometric unlock through the shell', () => {
     expect(await biometricUnlockState()).toEqual({ available: false, enabled: false })
     expect(await enableBiometricUnlock(PASS, 'passphrase')).toBe(false)
     expect(stored).toBeNull()
+  })
+})
+
+describe('Done on a reminder notification (reminder-done-action, "Done on an encrypted account")', () => {
+  it('a repeating task completes and advances; the occurrence record leaves as ciphertext', async () => {
+    const { addReminder } = await import('./reminders')
+    const { applyReminderAction } = await import('./shellActions')
+    const { logicalToday } = await import('./dates')
+    const { occurrenceId } = await import('./ids')
+    await enableOnA()
+    const today = logicalToday()
+    await mutate('task', 't1', { due: { date: today, time: '09:00' }, recurrence: 'every day' })
+    const reminderId = await addReminder('t1', { kind: 'absolute', fire_at: Date.now() - 1000 })
+    await syncNow()
+    const mark = server.calls.length
+    await applyReminderAction(reminderId, 'done')
+    await syncNow()
+    const sent = sentAfter(mark)
+    expect(sent.some((o) => o.entityId === occurrenceId('t1', today) && o.field === 'completed_at')).toBe(true)
+    const content = sent.filter((o) => isContentField(o.entity, o.field))
+    expect(content.length).toBeGreaterThan(0)
+    for (const o of content) expect(isEnvelope(o.value), `${o.entity}.${o.field}`).toBe(true)
+    expect(JSON.stringify(sent)).not.toMatch(/Dentist|crown/)
+    const series = await db.tasks.get('t1')
+    expect(series?.completed_at).toBeNull()
+    expect(String(series?.due?.date) > today).toBe(true)
   })
 })

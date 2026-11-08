@@ -1,5 +1,7 @@
 // Captures the screenshots of the user guide (docs/images/*.webp) from the seeded
-// demo data, in light and dark (OpenSpec change `user-documentation`, task 2.2).
+// demo data, in light and dark (OpenSpec change `user-documentation`, task 2.2),
+// and F-Droid's phone screenshots (fastlane/metadata/android/en-US/images/
+// phoneScreenshots/<n>.png, one theme each).
 //
 //   make docs-screenshots            builds the app, then runs this script
 //   node scripts/docs-screenshots.mjs [only,names]
@@ -29,6 +31,7 @@ let eisenhowerPath = null
 let completedCalendarFixture = null
 let repeatingCalendarFixture = null
 let spansCalendarFixture = null
+let locationReminderFixture = null
 const BIN = process.env.OPENTODO_BIN ?? 'bin/opentodo'
 const only = process.argv[2] ? new Set(process.argv[2].split(',')) : null
 const want = (name) => !only || only.has(name)
@@ -36,7 +39,8 @@ const DESKTOP = { width: 1200, height: 760 }
 const PHONE = { width: 390, height: 780 }
 const QUALITY = 0.72
 const PASSWORD = 'correct horse battery staple'
-mkdirSync(OUT, { recursive: true })
+const STORE = 'fastlane/metadata/android/en-US/images/phoneScreenshots'
+mkdirSync(OUT, { recursive: true }); mkdirSync(STORE, { recursive: true })
 
 // ------------------------------------------------------------------ servers
 const freePort = () => new Promise((ok) => { const s = createServer(); s.listen(0, '127.0.0.1', () => { const { port } = s.address(); s.close(() => ok(port)) }) })
@@ -206,6 +210,33 @@ async function plainSetup() {
   await api('POST', '/api/v1/rules', { name: 'Due today means urgent', trigger: { kind: 'due.reached' }, actions: { priority: 1, notify: true }, enabled: false })
   await p.reload(); await settle(p, 1500)
   const state = await c.storageState(); await c.close(); return { state, home, pageLink: page.link }
+}
+
+// ------------------------------------------------------------------ reusable list
+// The Groceries list of the reusable-list scenes, created once on the plain instance
+// (or deleted with `remove`): four aisle sections, open items and two ticked off.
+let groceryId = null
+let groceryShots = 0
+async function groceries(ctx, remove = false) {
+  const api = async (method, path, body) => {
+    const r = await ctx.request.fetch(plainBase + path, { method, headers: { Origin: plainBase, 'Content-Type': 'application/json' }, data: body === undefined ? undefined : JSON.stringify(body) })
+    if (!r.ok()) throw new Error(`${method} ${path} → ${r.status()} ${await r.text()}`)
+    const t = await r.text(); return t ? JSON.parse(t) : null
+  }
+  if (remove) { if (groceryId) await api('DELETE', `/api/v1/projects/${groceryId}`); groceryId = null; return null }
+  if (groceryId) return groceryId
+  const g = await api('POST', '/api/v1/projects', { name: 'Groceries', color: '#22c55e', icon: 'shopping-cart', reusable: true, aisles: true })
+  const sec = {}
+  for (const [aisle, name, icon] of [['produce', 'Produce', 'carrot'], ['bakery', 'Bakery', 'croissant'], ['dairy', 'Dairy and eggs', 'milk'], ['drinks', 'Drinks', 'cup-soda']]) {
+    sec[aisle] = (await api('POST', '/api/v1/sections', { name, project_id: g.id, aisle, icon })).id
+  }
+  const items = [['Bananas', 'produce'], ['Cherry tomatoes', 'produce'], ['Sourdough loaf', 'bakery'], ['Greek yoghurt', 'dairy'], ['Eggs', 'dairy'], ['Sparkling water', 'drinks'], ['Milk', 'dairy', true], ['Butter', 'dairy', true]]
+  for (const [title, aisle, done] of items) {
+    const t = await api('POST', '/api/v1/tasks', { title, project_id: g.id, section_id: sec[aisle] })
+    if (done) await api('PATCH', `/api/v1/tasks/${t.id}`, { completed_at: Date.now() - (title === 'Milk' ? 3_600_000 : 7_200_000) })
+  }
+  groceryId = g.id
+  return g.id
 }
 
 // ------------------------------------------------------------------ assistant instance
@@ -439,6 +470,24 @@ const shots = [
     await editor.getByRole('tab', { name: /^Reminders/ }).click(); await settle(p, 400)
     return clipOf(p, editor, 16)
   }, async after(p) { await p.keyboard.press('Escape') } },
+  // Location reminders (location-reminders D5): "Arriving at Post office · 150 m" in a browser, where it fires on the phone.
+  { name: 'location-reminders', server: P, async run(p, { ctx }) {
+    if (!locationReminderFixture) {
+      const api = async (method, path, body) => {
+        const r = await ctx.request.fetch(plainBase + path, { method, headers: { Origin: plainBase, 'Content-Type': 'application/json' }, data: JSON.stringify(body) })
+        if (!r.ok()) throw new Error(`${method} ${path} → ${r.status()} ${await r.text()}`)
+        return r.json()
+      }
+      const task = await api('POST', '/api/v1/tasks', { title: 'Buy stamps', location: { name: 'Post office', lat: 45.4642, lon: 9.19 } })
+      await api('POST', '/api/v1/reminders', { task_id: task.id, kind: 'arrive', radius_m: 150 })
+      await api('POST', '/api/v1/reminders', { task_id: task.id, kind: 'leave', radius_m: 300 })
+      locationReminderFixture = task.id
+    }
+    await go(p, plainBase, '/inbox'); await openTask(p, 'Buy stamps')
+    await detail(p).getByRole('button', { name: /\d+ reminders?/ }).first().click(); const editor = p.getByRole('dialog', { name: 'When' }); await editor.waitFor()
+    await editor.getByRole('tab', { name: /^Reminders/ }).click(); await editor.locator('[data-location-chip]').first().waitFor(); await settle(p, 400)
+    return clipOf(p, editor, 16)
+  }, async after(p) { await p.keyboard.press('Escape') } },
   { name: 'week', server: D, card: true, async run(p) {
     await go(p, demoBase, '/week', () => p.getByRole('button', { name: 'Week' }).first().waitFor())
     await p.getByRole('button', { name: 'Hide task list' }).click().catch(() => {}); await settle(p, 500)
@@ -595,7 +644,8 @@ const shots = [
   { name: 'time-zone', server: D, async run(p) {
     await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation'); await openTask(p, 'Get three quotes for the kitchen')
     await detail(p).getByRole('button', { name: /^Do: / }).first().click(); await p.getByRole('dialog', { name: 'When' }).waitFor()
-    await p.getByRole('dialog', { name: 'When' }).getByRole('button', { name: /^Time zone/ }).first().click()
+    // The zone is a quiet "Floating time · Change" line under the due time (task-panel-polish D3).
+    await p.getByRole('dialog', { name: 'When' }).locator('[data-zone-line]').getByRole('button', { name: 'Change' }).click()
     const d = p.getByRole('dialog', { name: 'Time zone' }); await d.waitFor(); await settle(p, 400)
     return clipOf(p, d, 16)
   }, async after(p) { await p.keyboard.press('Escape') } },
@@ -627,6 +677,13 @@ const shots = [
   // Phone
   { name: 'mobile-today', card: true, server: D, phone: true, async run(p) { await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Earlier' }).waitFor()) } },
   { name: 'mobile-menu', server: D, phone: true, async run(p) {
+    await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Earlier' }).waitFor())
+    await p.getByRole('button', { name: 'Open menu' }).click(); await settle(p, 600)
+  } },
+  // F-Droid's phone screenshots (fastlane/README.md): one theme each, as PNG, at a sharper scale.
+  { name: 'store-today', store: 1, server: D, phone: true, async run(p) { await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Earlier' }).waitFor()) } },
+  { name: 'store-upcoming-dark', store: 2, dark: true, server: D, phone: true, async run(p) { await go(p, demoBase, '/upcoming', () => p.getByRole('heading', { name: 'Tomorrow' }).first().waitFor()) } },
+  { name: 'store-menu', store: 3, server: D, phone: true, async run(p) {
     await go(p, demoBase, '/today', () => p.getByRole('heading', { name: 'Earlier' }).waitFor())
     await p.getByRole('button', { name: 'Open menu' }).click(); await settle(p, 600)
   } },
@@ -713,7 +770,8 @@ const shots = [
   } },
   // All projects as a table with health (projects-table): the header, the tabs and the table.
   { name: 'all-projects', server: P, async run(p) {
-    await go(p, plainBase, '/projects', () => p.locator('[data-projects-table] [data-health]').first().waitFor())
+    // Each row carries its health twice (a hidden copy under the name for narrow tables): wait for the shown one.
+    await go(p, plainBase, '/projects', () => p.locator('[data-projects-table] [data-health]:visible').first().waitFor())
     await settle(p, 400)
     const main = await p.locator('main').boundingBox(); const table = await p.locator('[data-projects-table]').boundingBox()
     return { x: main.x, y: main.y, width: main.width, height: Math.min(table.y + table.height - main.y + 56, 640) }
@@ -744,8 +802,10 @@ const shots = [
     ['microsoft-todo', 'microsoft-todo-json/todo.json'], ['apple-reminders', 'apple-reminders-json/reminders.json'], ['anydo', 'anydo-json/data.json']].map(([app, fixture]) => (
     { name: `import-${app}`, server: P, async run(p) {
       await go(p, plainBase, '/settings/import', () => p.getByRole('heading', { level: 1 }).first().waitFor())
+      // Choosing a file starts the preview by itself and the button turns into "Refresh preview";
+      // clicking "Preview" raced that and timed out when the preview won (#924). Wait for the result.
+      await p.waitForFunction(() => document.querySelector('#import-file') && !document.querySelector('#import-file').disabled, null, { timeout: 20000 })
       await p.locator('#import-file').setInputFiles(`internal/importer/testdata/${fixture}`)
-      await p.getByRole('button', { name: 'Preview', exact: true }).click()
       const h = p.getByRole('heading', { level: 2, name: /^Preview · / }); await h.waitFor({ timeout: 20000 })
       await h.evaluate((el) => el.scrollIntoView({ block: 'start' })); await settle(p, 400)
       const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
@@ -790,6 +850,23 @@ const shots = [
     await p.getByRole('button', { name: /^Family/ }).first().click(); await p.getByRole('tab', { name: /^Members/ }).click()
     await p.locator('#workspace-members').waitFor(); await settle(p, 600)
   } },
+  // A reusable list sorting into aisles (reusable-lists): made for these two scenes and
+  // deleted after the last one, so no other screenshot shows it.
+  { name: 'reusable-list', server: P, async run(p, { ctx }) {
+    const id = await groceries(ctx)
+    await go(p, plainBase, `/project/${id}`, () => p.getByRole('heading', { level: 1, name: 'Groceries' }).waitFor())
+    await unfold(p, p.locator('[data-completed-group] button[aria-expanded]').first()); await p.locator('[data-completed-group] [data-task-id]').first().waitFor()
+    await p.mouse.move(700, 120); await settle(p, 500)
+  } },
+  { name: 'reusable-list-menu', server: P, async run(p, { ctx }) {
+    const id = await groceries(ctx)
+    await go(p, plainBase, `/project/${id}`, () => p.getByRole('heading', { level: 1, name: 'Groceries' }).waitFor())
+    await p.getByRole('button', { name: 'Project menu' }).click(); await p.locator('[data-menu-label="List…"]').click()
+    await p.locator('[data-list-mode]').waitFor(); await p.locator('[data-list-mode]').hover(); await settle(p, 500)
+  }, async after(p, { ctx }) {
+    await p.keyboard.press('Escape')
+    if (++groceryShots === 2) await groceries(ctx, true)
+  } },
   { name: 'assistant-settings', server: 'assistant', async run(p) {
     await go(p, assistantBase, '/settings/integrations/assistant', () => p.getByRole('heading', { name: 'Assistant', level: 1 }).waitFor())
     const h = p.locator('#assistant-settings-heading'); await h.waitFor(); await p.locator('[data-assistant-owner]').waitFor()
@@ -819,8 +896,8 @@ const assistant = shots.some((s) => s.server === 'assistant' && want(s.name)) ? 
 let failed = 0
 for (const shot of shots) {
   if (!want(shot.name)) continue
-  for (const theme of ['light', 'dark']) {
-    const opts = shot.phone ? { viewport: PHONE, deviceScaleFactor: 1.5, isMobile: true, hasTouch: true } : {}
+  for (const theme of shot.store ? [shot.dark ? 'dark' : 'light'] : ['light', 'dark']) {
+    const opts = shot.phone ? { viewport: PHONE, deviceScaleFactor: shot.store ? 2.5 : 1.5, isMobile: true, hasTouch: true } : {}
     let extra = {}
     if (shot.server === 'setup') extra.setupBase = await startServer({})
     const storageState = shot.server === D ? demo : shot.server === P ? plain.state : shot.server === 'assistant' ? assistant : undefined
@@ -829,7 +906,7 @@ for (const shot of shots) {
     try {
       const clip = await shot.run(p, { ctx, home: plain?.home, ...extra })
       const png = await p.screenshot(clip ? { clip } : {})
-      await save(shot.name, theme, png, shot.card)
+      if (shot.store) { writeFileSync(`${STORE}/${shot.store}.png`, png); console.log(`  ${STORE}/${shot.store}.png`) } else await save(shot.name, theme, png, shot.card)
       if (shot.after) await shot.after(p, { ctx })
     } catch (err) {
       failed++

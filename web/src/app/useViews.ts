@@ -2,7 +2,9 @@
 // non-deleted view, task, project and label as live queries, plus the evaluation
 // context for lib/views. Local edits and synced ops re-render without a reload.
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
-import { useAllLabels, useLiveSections, useProjects, useViewRows } from '../lib/localData'
+import { membersFrom } from '../lib/filter/evaluate'
+import { useAllLabels, useLiveSections, useMemberships, useProjects, useViewRows } from '../lib/localData'
+import { useMe } from '../lib/sharing'
 import { logicalToday, onViewerZoneChange, viewerZone } from '../lib/dates'
 import type { Label, Project, Task, View } from '../lib/types'
 import { activeViews, type ViewContext } from '../lib/views'
@@ -56,8 +58,17 @@ export interface ViewData {
   ctx: ViewContext
 }
 
+/** The viewer and the people `assigned:` can name, from the local membership cache. */
+export function useAssigneeDirectory() {
+  const me = useMe()
+  const memberships = useMemberships()
+  const members = useMemo(() => membersFrom(memberships), [memberships])
+  return useMemo(() => ({ me, members }), [me, members])
+}
+
 export function useViewData(): ViewData {
   const today = useToday()
+  const directory = useAssigneeDirectory()
   const views = useViews()
   const projects = useProjects()
   const labels = useAllLabels()
@@ -71,7 +82,7 @@ export function useViewData(): ViewData {
   const ws = useWorkspaceFilter()
   const sections = useLiveSections()
   // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  const ctx = useMemo(() => ({ today, labels, projects, tasks, sections, fields, tracked, ...ws }), [today, labels, projects, tasks, sections, fields, tracked, ws, zone])
+  const ctx = useMemo(() => ({ today, labels, projects, tasks, sections, fields, ...tracked, ...directory, ...ws }), [today, labels, projects, tasks, sections, fields, tracked, directory, ws, zone])
   return { views, projects, labels, tasks, ctx }
 }
 

@@ -147,10 +147,37 @@
   "deadlineWords": [
    "deadline"
   ],
+  "byWords": [
+   "by"
+  ],
   "somedayWords": [
    "someday",
    "some day"
   ],
+  "sectorPhrases": {
+   "this-week": [
+    "this week",
+    "sometime this week"
+   ],
+   "next-week": [
+    "sometime next week"
+   ],
+   "this-month": [
+    "this month",
+    "sometime this month"
+   ],
+   "next-month": [
+    "sometime next month"
+   ],
+   "this-quarter": [
+    "this quarter",
+    "sometime this quarter"
+   ],
+   "next-quarter": [
+    "next quarter",
+    "sometime next quarter"
+   ]
+  },
   "eveningWords": [
    "tonight",
    "this evening"
@@ -306,6 +333,30 @@
    "before": [],
    "after": []
   },
+  "weekOnWords": [
+   "on"
+  ],
+  "repeatWords": [
+   "and repeat",
+   "and repeating",
+   "and repeats",
+   "repeat",
+   "repeating",
+   "repeats",
+   "recurring",
+   "and then",
+   "then",
+   "and"
+  ],
+  "startWords": [
+   "starting",
+   "starting on",
+   "starting from",
+   "beginning",
+   "beginning on",
+   "from",
+   "as of"
+  ],
   "monthTextBefore": [
    "from",
    "since",
@@ -471,9 +522,37 @@
    "frist",
    "deadline"
   ],
+  "byWords": [
+   "bis"
+  ],
   "somedayWords": [
    "irgendwann"
   ],
+  "sectorPhrases": {
+   "this-week": [
+    "diese woche",
+    "irgendwann diese woche"
+   ],
+   "next-week": [
+    "irgendwann nachste woche"
+   ],
+   "this-month": [
+    "diesen monat",
+    "irgendwann diesen monat"
+   ],
+   "next-month": [
+    "irgendwann nachsten monat"
+   ],
+   "this-quarter": [
+    "dieses quartal",
+    "irgendwann dieses quartal"
+   ],
+   "next-quarter": [
+    "nachstes quartal",
+    "im nachsten quartal",
+    "irgendwann nachstes quartal"
+   ]
+  },
   "eveningWords": [
    "heute abend"
   ],
@@ -637,6 +716,27 @@
    "before": [],
    "after": []
   },
+  "weekOnWords": [
+   "am",
+   "jeweils am"
+  ],
+  "repeatWords": [
+   "und wiederholen",
+   "und wiederhole",
+   "wiederholen",
+   "wiederhole",
+   "wiederholt",
+   "und dann",
+   "dann",
+   "und"
+  ],
+  "startWords": [
+   "ab",
+   "ab dem",
+   "beginnend",
+   "beginnend am",
+   "beginnend ab"
+  ],
   "monthTextBefore": [
    "seit",
    "von",
@@ -798,9 +898,34 @@
    "echeance",
    "deadline"
   ],
+  "byWords": [],
   "somedayWords": [
    "un jour"
   ],
+  "sectorPhrases": {
+   "this-week": [
+    "cette semaine",
+    "dans le courant de la semaine"
+   ],
+   "next-week": [
+    "dans le courant de la semaine prochaine"
+   ],
+   "this-month": [
+    "ce mois-ci",
+    "dans le courant du mois"
+   ],
+   "next-month": [
+    "dans le courant du mois prochain"
+   ],
+   "this-quarter": [
+    "ce trimestre",
+    "dans le courant du trimestre"
+   ],
+   "next-quarter": [
+    "le trimestre prochain",
+    "dans le courant du trimestre prochain"
+   ]
+  },
   "eveningWords": [
    "ce soir"
   ],
@@ -952,6 +1077,28 @@
     "sur deux"
    ]
   },
+  "weekOnWords": [
+   "le"
+  ],
+  "repeatWords": [
+   "et repeter",
+   "et repete",
+   "repeter",
+   "repete",
+   "et ensuite",
+   "ensuite",
+   "et puis",
+   "puis",
+   "et"
+  ],
+  "startWords": [
+   "a partir de",
+   "a partir du",
+   "des",
+   "des le",
+   "en commencant",
+   "commencant"
+  ],
   "monthTextBefore": [
    "depuis",
    "de",
@@ -1115,9 +1262,38 @@
   "deadlineWords": [
    "scadenza"
   ],
+  "byWords": [
+   "entro"
+  ],
   "somedayWords": [
    "prima o poi"
   ],
+  "sectorPhrases": {
+   "this-week": [
+    "questa settimana",
+    "nel corso della settimana"
+   ],
+   "next-week": [
+    "nel corso della prossima settimana",
+    "nel corso della settimana prossima"
+   ],
+   "this-month": [
+    "questo mese",
+    "nel corso del mese"
+   ],
+   "next-month": [
+    "nel corso del prossimo mese",
+    "nel corso del mese prossimo"
+   ],
+   "this-quarter": [
+    "questo trimestre",
+    "nel corso del trimestre"
+   ],
+   "next-quarter": [
+    "il prossimo trimestre",
+    "nel corso del prossimo trimestre"
+   ]
+  },
   "eveningWords": [
    "stasera"
   ],
@@ -1272,6 +1448,30 @@
    "before": [],
    "after": []
   },
+  "weekOnWords": [
+   "il",
+   "di"
+  ],
+  "repeatWords": [
+   "e ripeti",
+   "e ripetere",
+   "ripeti",
+   "ripetere",
+   "e poi",
+   "poi",
+   "e"
+  ],
+  "startWords": [
+   "a partire da",
+   "a partire dal",
+   "a partire dalla",
+   "da",
+   "dal",
+   "dalla",
+   "iniziando",
+   "iniziando da",
+   "cominciando da"
+  ],
   "monthTextBefore": [
    "da",
    "dal",
@@ -1430,9 +1630,36 @@
    "fecha limite",
    "plazo"
   ],
+  "byWords": [],
   "somedayWords": [
    "algun dia"
   ],
+  "sectorPhrases": {
+   "this-week": [
+    "esta semana",
+    "en algun momento de esta semana"
+   ],
+   "next-week": [
+    "en algun momento de la proxima semana",
+    "en algun momento de la semana que viene"
+   ],
+   "this-month": [
+    "este mes",
+    "en algun momento de este mes"
+   ],
+   "next-month": [
+    "en algun momento del proximo mes",
+    "en algun momento del mes que viene"
+   ],
+   "this-quarter": [
+    "este trimestre",
+    "en algun momento de este trimestre"
+   ],
+   "next-quarter": [
+    "el proximo trimestre",
+    "en algun momento del proximo trimestre"
+   ]
+  },
   "eveningWords": [
    "esta noche"
   ],
@@ -1585,6 +1812,31 @@
    "before": [],
    "after": []
   },
+  "weekOnWords": [
+   "el",
+   "los"
+  ],
+  "repeatWords": [
+   "y repetir",
+   "y repite",
+   "repetir",
+   "repite",
+   "y luego",
+   "luego",
+   "y despues",
+   "despues",
+   "y"
+  ],
+  "startWords": [
+   "a partir de",
+   "a partir del",
+   "desde",
+   "desde el",
+   "empezando",
+   "empezando el",
+   "comenzando",
+   "comenzando el"
+  ],
   "monthTextBefore": [
    "desde",
    "de",
@@ -1743,9 +1995,39 @@
   "deadlineWords": [
    "prazo"
   ],
+  "byWords": [
+   "ate"
+  ],
   "somedayWords": [
    "algum dia"
   ],
+  "sectorPhrases": {
+   "this-week": [
+    "esta semana",
+    "nesta semana",
+    "em algum momento desta semana"
+   ],
+   "next-week": [
+    "em algum momento da proxima semana"
+   ],
+   "this-month": [
+    "este mes",
+    "neste mes",
+    "em algum momento deste mes"
+   ],
+   "next-month": [
+    "em algum momento do proximo mes"
+   ],
+   "this-quarter": [
+    "este trimestre",
+    "neste trimestre",
+    "em algum momento deste trimestre"
+   ],
+   "next-quarter": [
+    "no proximo trimestre",
+    "em algum momento do proximo trimestre"
+   ]
+  },
   "eveningWords": [
    "hoje a noite"
   ],
@@ -1908,6 +2190,33 @@
    "before": [],
    "after": []
   },
+  "weekOnWords": [
+   "na",
+   "no",
+   "as",
+   "aos"
+  ],
+  "repeatWords": [
+   "e repetir",
+   "e repete",
+   "repetir",
+   "repete",
+   "e depois",
+   "depois",
+   "e"
+  ],
+  "startWords": [
+   "a partir de",
+   "a partir do",
+   "a partir da",
+   "desde",
+   "desde o",
+   "desde a",
+   "comecando",
+   "comecando em",
+   "comecando no",
+   "comecando na"
+  ],
   "monthTextBefore": [
    "desde",
    "de",

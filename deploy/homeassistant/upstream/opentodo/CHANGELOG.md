@@ -2,6 +2,42 @@
 
 The add-on's version is the OpenTodo release it runs. A version with a fourth number, such as `0.12.0.1`, changes only the add-on and runs the same OpenTodo release. OpenTodo's own changes are in its [changelog](https://github.com/OpenTodoApp/OpenTodo/blob/main/CHANGELOG.md).
 
+## 1.2.0
+
+- OpenTodo [1.2.0](https://github.com/OpenTodoApp/OpenTodo/releases/tag/v1.2.0).
+
+## 1.1.1
+
+- OpenTodo [1.1.1](https://github.com/OpenTodoApp/OpenTodo/releases/tag/v1.1.1).
+
+## 1.1.0
+
+- OpenTodo [1.1.0](https://github.com/OpenTodoApp/OpenTodo/releases/tag/v1.1.0).
+
+## 1.0.0
+
+- OpenTodo [1.0.0](https://github.com/OpenTodoApp/OpenTodo/releases/tag/v1.0.0).
+
+## 0.24.0
+
+- OpenTodo [0.24.0](https://github.com/OpenTodoApp/OpenTodo/releases/tag/v0.24.0).
+
+## 0.23.0
+
+- OpenTodo [0.23.0](https://github.com/OpenTodoApp/OpenTodo/releases/tag/v0.23.0).
+
+## 0.22.0
+
+- OpenTodo [0.22.0](https://github.com/OpenTodoApp/OpenTodo/releases/tag/v0.22.0).
+
+## 0.21.0
+
+- OpenTodo [0.21.0](https://github.com/OpenTodoApp/OpenTodo/releases/tag/v0.21.0).
+
+## 0.20.0
+
+- OpenTodo [0.20.0](https://github.com/OpenTodoApp/OpenTodo/releases/tag/v0.20.0).
+
 ## 0.19.0
 
 - OpenTodo [0.19.0](https://github.com/OpenTodoApp/OpenTodo/releases/tag/v0.19.0).

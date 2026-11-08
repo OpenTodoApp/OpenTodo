@@ -73,6 +73,14 @@
       "title",
       "workspace_id"
     ],
+    "objective": [
+      "created_at",
+      "deleted_at",
+      "done_at",
+      "period",
+      "position",
+      "title"
+    ],
     "place": [
       "address",
       "created_at",
@@ -82,6 +90,7 @@
       "position"
     ],
     "project": [
+      "aisles",
       "archived",
       "color",
       "created_at",
@@ -93,6 +102,7 @@
       "notes_doc",
       "parent_id",
       "position",
+      "reusable",
       "status",
       "workspace_id"
     ],
@@ -114,6 +124,7 @@
       "fire_at",
       "kind",
       "offset_minutes",
+      "radius_m",
       "task_id"
     ],
     "review": [
@@ -145,6 +156,7 @@
       "trigger"
     ],
     "section": [
+      "aisle",
       "color",
       "created_at",
       "deleted_at",
@@ -178,6 +190,7 @@
       "energy",
       "estimate_minutes",
       "evening",
+      "flow_mode",
       "habit",
       "ical_extra",
       "labels",
@@ -191,8 +204,10 @@
       "priority",
       "project_id",
       "recurrence",
+      "rotation",
       "sample",
       "section_id",
+      "sector",
       "series_id",
       "skipped",
       "span",
@@ -243,10 +258,12 @@
       "focus_style",
       "focus_work_minutes",
       "formatting_toggle",
+      "full_titles",
       "haptics",
       "language",
       "maps",
       "method_mode",
+      "objectives",
       "reminder_default_dated",
       "reminder_default_timed",
       "routines_hide_successes",
@@ -264,9 +281,12 @@
       "theme_light",
       "theme_mode",
       "time_format",
+      "time_sectors",
+      "today_assignees",
       "today_done",
       "today_events",
       "today_limit",
+      "upcoming_events",
       "upcoming_today",
       "week_start",
       "welcome"
@@ -330,6 +350,9 @@
     "note": [
       "description",
       "notes_doc",
+      "title"
+    ],
+    "objective": [
       "title"
     ],
     "place": [

@@ -14,7 +14,7 @@ optionally encrypt them with a passphrase, and restore them from the web app or
 with nothing but the `opentodo` binary.
 
 Nothing runs until the owner turns it on. Every setting is optional and managed
-from **Settings → Server** (owner only); operators who prefer environment
+from **Settings → Server → Backups** (owner only); operators who prefer environment
 variables can preset them (see [Environment presets](#environment-presets)).
 
 - [Quick start](#quick-start)
@@ -27,7 +27,7 @@ variables can preset them (see [Environment presets](#environment-presets)).
 
 ## Quick start
 
-1. Sign in as the owner and open **Settings → Server**. The top of the page
+1. Sign in as the owner and open **Settings → Server → Backups**. The top of the page
    shows the schedule, the next run and the last run with its outcome; below it
    are the destination, schedule, retention and encryption, then the recent runs.
 2. Select **Change settings** and pick a destination. **Folder on the server** writes to `<data>/backups`
@@ -45,7 +45,11 @@ The same is available over the API ([docs/api.md](api.md#backups)).
 ## Destinations
 
 The server contacts a destination only for a test or a backup run, and only the
-destination the owner configured.
+destination the owner configured. It connects directly: the `HTTP_PROXY` and
+`HTTPS_PROXY` environment variables are not used for destinations. A
+destination may redirect up to three times within its own scheme and host (for
+example from `/dav` to `/dav/`); a redirect to another host, or from https to
+http, fails the run, so the password and the archives never go anywhere else.
 
 ### Folder on the server
 
@@ -159,12 +163,12 @@ records that the archive is encrypted and the file name ends in `.enc`.
 
 Restoring replaces the whole database (every account, token, project, task and
 the operation log) with the one in an archive. There are two ways, with the
-same checks and the same result: from **Settings → Server** while the server
+same checks and the same result: from **Settings → Server → Backups** while the server
 runs, or with `opentodo restore` while it is stopped.
 
 ### Restore from the web app
 
-1. Open **Settings → Server** as the owner and scroll to **Restore from a
+1. Open **Settings → Server → Backups** as the owner and scroll to **Restore from a
    backup**.
 2. Choose the source:
    - **From the backup destination** lists the archives in the configured
@@ -334,6 +338,7 @@ Every save of a note stores the whole note, so the database would keep every old
 
 - **Backups get smaller** after compaction. Earlier backups keep the history they had.
 - **The file shrinks** because the server returns the freed space to the file system in small steps. That needs SQLite's incremental vacuum mode, which databases created by 0.19 or later have from the start.
+- **Devices keep syncing meanwhile.** The job works in steps of about 20 ms and lets waiting writes go first, so a sync or a REST write waits at most a moment. A large backlog takes several runs a minute apart: a year of heavy note history (2.6 GB) shrinks to about 240 MB within a few minutes of work.
 - **One-time conversion of an older database.** A database created by an earlier version is converted once: the job rewrites the whole file (`VACUUM`) when no change arrived for 10 minutes (or at its next run once 7 days passed without such a moment), and only when the data directory's disk has free space of at least the database's size plus 10 %. It takes about as long as a backup (seconds for a 50 MB database on an SSD, about a minute for 500 MB on a Raspberry Pi's SD card). Meanwhile reads continue; a write waits up to 5 seconds and then fails as busy, and the device retries later without losing anything. The log says when it ran and how long it took. Without enough free disk the server logs a warning once a day, the Database storage card says how much space is needed, old versions are still removed, and the freed space is reused, so the file stops growing even though it does not shrink. Where the free space cannot be read, the conversion is skipped with a warning.
 
 ## What a backup contains

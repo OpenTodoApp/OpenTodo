@@ -275,11 +275,19 @@ While the server has no key record, the device SHALL show a screen that offers t
 - **THEN** the passphrase is checked against the device's copy of the record and, if correct, the record is restored and the device is unlocked
 
 ### Requirement: Bounded key derivation parameters
-A device SHALL accept a key record only with an integer PBKDF2 iteration count from 100,000 to 10,000,000. A record outside that range SHALL NOT be used or cached; a device without the key SHALL stay locked and show an error that names the problem.
+A device SHALL accept a key record only with an integer PBKDF2 iteration count from 600,000, the count devices write, to 10,000,000: the same range the server stores. The `ot` CLI SHALL apply the same range to a record it reads. A record outside that range SHALL NOT be used or cached; a device without the key SHALL stay locked and show an error that names the problem. Key records are server data, not ops, so offline behaviour and convergence are unaffected: a device that already holds the key keeps working offline.
 
 #### Scenario: Iteration count out of range
-- **WHEN** the server serves a key record with 99,999 or 10,000,001 iterations
+- **WHEN** the server serves a key record with 599,999 or 10,000,001 iterations
 - **THEN** unlocking fails with the out-of-range error, the device stays locked and nothing is synced
+
+#### Scenario: A record the app wrote
+- **WHEN** the server serves a key record with 600,000 iterations
+- **THEN** the device derives the key with that count and unlocks with the right passphrase
+
+#### Scenario: The CLI reads a weak record
+- **WHEN** `ot` reads a key record with 100,000 iterations
+- **THEN** it refuses the record with the out-of-range error and decrypts nothing
 
 ### Requirement: Ciphertext rollback is a documented limit
 The threat model in the documentation SHALL state that a ciphertext is bound to its entity, id and field but not to a version, so a server can serve an older ciphertext of the same field again without the device detecting it.
@@ -384,3 +392,56 @@ For an encrypted account the server SHALL never decrypt, read or produce a routi
 #### Scenario: Offline device
 - **WHEN** the device that ran a routine goes offline before its commit reached the server
 - **THEN** nothing of the run is written, and the run is recorded missed after 24 hours if no device completes it
+
+### Requirement: Encrypted objectives
+For an encrypted account the device SHALL encrypt an objective's `title` (OpenSpec `plan-objectives`) before it leaves the device, and SHALL keep its `period`, `position`, `done_at`, `created_at` and `deleted_at` plaintext. Enabling encryption SHALL re-write existing objective titles with the other content fields. REST and the export SHALL return ciphertext titles. The MCP read SHALL return a title only through a device the user opted in to answer AI connectors, and otherwise `title: null` with `encrypted: true`. The documented field split SHALL list objectives.
+
+#### Scenario: Title is ciphertext
+- **WHEN** an encrypted account adds the weekly objective "Finish the grant"
+- **THEN** the operation sent to the server carries ciphertext for `title` and the plaintext period `2026-W44`
+
+#### Scenario: Enabling encryption later
+- **WHEN** an account with three objectives enables encryption
+- **THEN** the re-write job replaces the three titles with ciphertext, and the user's other devices show them decrypted
+
+#### Scenario: Assistant without a relay device
+- **WHEN** an assistant calls `list_objectives` for an encrypted account with no opted-in device online
+- **THEN** each result carries the period and done state, `title: null` and `encrypted: true`
+
+### Requirement: Re-write job covers every content kind
+The re-write job that runs when encryption is turned on or off SHALL re-write the content fields of every entity kind that has content fields in the operation schema, including notes, time entries, routines, calendar frames and slots, saved locations, objectives and the review record, not only tasks, projects, labels, sections, saved views, custom fields, comments and attachments. A kind added to the schema with content fields SHALL fail the client's tests until the job covers it. A note SHALL be personal only when its project is, and a time entry only when its task is, both at upload and in the job; the job SHALL NOT re-write a time entry or comment of another person. The job works offline on local rows and uploads through the operation log; its values converge by per-field last-writer-wins.
+
+#### Scenario: Enable with existing notes, time entries and places
+- **WHEN** a user with a standalone note, a time entry note, a saved location, a routine, a frame, a slot and a line for tomorrow turns encryption on
+- **THEN** after the next sync the server's current value of each of their content fields is ciphertext, and the device still shows the plaintext
+
+#### Scenario: Disable
+- **WHEN** the same user turns encryption off
+- **THEN** after the next sync the server's current value of each of those fields is plaintext again
+
+#### Scenario: Shared project
+- **WHEN** an encrypted account has a note and a time entry in a project shared with other accounts
+- **THEN** neither is encrypted, at upload or by the job, and the members read them
+
+#### Scenario: New content kind
+- **WHEN** a developer adds an entity with a content field to the schema without adding it to the job
+- **THEN** the client's unit tests fail and name the missing kind
+
+### Requirement: Catch-up after the job gains kinds
+A device SHALL remember which entity kinds its last complete run of the re-write job covered. When the account encrypts, the device is unlocked, the key record is present, no job is stored, and the remembered list lacks a kind the job now covers (or the device never ran the job), the device SHALL run the encrypt job once at the end of its next exchange that pulled every operation and emptied its outbox, and upload the result. It SHALL skip every value the server already holds as ciphertext, write back as plaintext any ciphertext of a shared project, and record the current list when the run completes, so a further exchange writes nothing. A device that holds the key of an account that no longer encrypts SHALL run the decrypt job the same way. A locked device SHALL wait until it is unlocked; an offline device until its next complete exchange.
+
+#### Scenario: Account that turned encryption on with the older job
+- **WHEN** an account turned encryption on with a release whose job missed time entries, and a device of the account is updated and unlocked
+- **THEN** at the end of its next complete sync the device re-writes the time entry notes the server holds in plaintext, uploads them as ciphertext, writes nothing for tasks already encrypted, and a further sync writes nothing
+
+#### Scenario: Two devices updated at once
+- **WHEN** two unlocked devices of the account run the catch-up concurrently
+- **THEN** both re-write the same plaintext, the server's current value of each field is ciphertext that decrypts to the same text on both devices, and neither runs the catch-up again
+
+#### Scenario: Locked device
+- **WHEN** the updated device is locked
+- **THEN** nothing is re-written or uploaded until the user unlocks it, and then the catch-up runs after the next complete sync
+
+#### Scenario: Account that never encrypted
+- **WHEN** a device of an account that never turned encryption on syncs
+- **THEN** the catch-up writes nothing

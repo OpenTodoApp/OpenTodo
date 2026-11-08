@@ -3,6 +3,11 @@
   "reminderActions": [
     {
       "id": "abc",
+      "action": "done",
+      "path": "/?reminder=abc&action=done"
+    },
+    {
+      "id": "abc",
       "action": "snooze",
       "path": "/?reminder=abc&action=snooze"
     },
@@ -25,6 +30,23 @@
     {
       "taskId": "t/1",
       "path": "/?task=t%2F1"
+    }
+  ],
+  "locationActions": [
+    {
+      "id": "g-arrive",
+      "action": "done",
+      "path": "/?reminder=g-arrive&action=done"
+    },
+    {
+      "id": "g-arrive",
+      "action": "dismiss",
+      "path": "/?reminder=g-arrive&action=dismiss"
+    },
+    {
+      "id": "r 1/ü",
+      "action": "done",
+      "path": "/?reminder=r+1%2F%C3%BC&action=done"
     }
   ],
   "quickAdd": {

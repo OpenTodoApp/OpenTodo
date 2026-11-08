@@ -1,6 +1,8 @@
 package importer
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"slices"
@@ -102,7 +104,7 @@ func (fp *foreignPlan) createProject(row Row, pp *projPlan, res *RowResult) bool
 		{"name", raw(pp.name)},
 		{"color", raw(palette[len(fp.projChanges)%len(palette)])},
 		{"position", raw(pl.nextPosition())},
-		{"archived", raw(false)},
+		{"archived", raw(row.Archived)},
 		{"created_at", raw(pl.now)},
 	}
 	if d := strings.TrimSpace(row.Description); d != "" {
@@ -301,6 +303,8 @@ func (fp *foreignPlan) resolve(i int) {
 	tp.entityID = id
 	fp.taskChanges[i] = &change{entity: KindTask, id: id, fields: fields, created: true, sourceID: row.SourceID}
 	fp.reminderChanges[i] = append(pl.reminders(id, due, row.Reminders, res), pl.links(id, row.Links, res)...)
+	fp.reminderChanges[i] = append(fp.reminderChanges[i], pl.timeEntries(id, row.TimeEntries, res)...)
+	fp.reminderChanges[i] = append(fp.reminderChanges[i], pl.fileAttachments(id, row.Files, res)...)
 }
 
 // taskPlace resolves the project and the parent task of task row i (a subtask
@@ -401,7 +405,12 @@ func (fp *foreignPlan) taskFields(row Row, projectID, parentID string, due *Due)
 		fields = append(fields, field{"due", raw(due)})
 	}
 	if row.Recurrence != "" {
-		fields = append(fields, field{"recurrence", raw(row.Recurrence)})
+		// The form a 1.0 client reads when one means the same thing (recurrence-1-0-compatible).
+		dueDate := ""
+		if due != nil {
+			dueDate = due.Date
+		}
+		fields = append(fields, field{"recurrence", raw(recurrence.Compatible(row.Recurrence, dueDate))})
 	}
 	if row.EstimateMinutes > 0 {
 		fields = append(fields, field{"estimate_minutes", raw(row.EstimateMinutes)})
@@ -436,7 +445,7 @@ func (fp *foreignPlan) taskFields(row Row, projectID, parentID string, due *Due)
 
 // changes lists the planned changes in apply order: used implicit labels, the
 // file's projects, used implicit projects, used sections, created custom field
-// definitions, tasks, then their reminders and links.
+// definitions, tasks, then their reminders, links and time entries.
 func (fp *foreignPlan) changes() []change {
 	pl := fp.pl
 	var out []change
@@ -647,11 +656,45 @@ func (pl *planner) links(taskID string, list []Link, res *RowResult) []change {
 }
 
 func displaySource(s string) string {
-	for _, p := range []string{"google-tasks:", "trello:", "asana:", "microsoft-todo:", "apple-reminders:", "anydo:"} {
+	for _, p := range []string{"google-tasks:", "trello:", "asana:", "microsoft-todo:", "apple-reminders:", "anydo:", "vikunja:", "tududi:", "super-productivity:", "omnifocus:", "notion:"} {
 		s = strings.TrimPrefix(s, p)
 	}
 	for _, p := range []string{"id:", "task:", "item:"} {
 		s = strings.TrimPrefix(s, p)
 	}
 	return s
+}
+
+// fileAttachments builds the file attachments of a created task from bytes the export
+// carries (a Vikunja ZIP); the job stores each file before its row, under the
+// same limits and ownership checks as an own export's files.
+func (pl *planner) fileAttachments(taskID string, list []FileAttachment, res *RowResult) []change {
+	var out []change
+	for _, f := range list {
+		id := pl.newID()
+		name := []rune(strings.NewReplacer("/", "-", "\\", "-").Replace(strings.TrimSpace(f.Name)))
+		if len(name) > opsync.MaxAttachmentName {
+			name = name[:opsync.MaxAttachmentName]
+		}
+		if len(name) == 0 {
+			name = []rune("file")
+		}
+		mt := f.Mime
+		if mt == "" {
+			mt = "application/octet-stream"
+		}
+		sum := sha256.Sum256(f.Data)
+		fields := []field{
+			{"task_id", raw(taskID)}, {"author_id", raw(pl.st.UserID)}, {"comment_id", json.RawMessage("null")},
+			{"name", raw(string(name))}, {"mime", raw(mt)}, {"size", raw(len(f.Data))}, {"sha256", raw(hex.EncodeToString(sum[:]))},
+			{"url", json.RawMessage("null")}, {"encrypted", raw(false)}, {"created_at", raw(pl.now)},
+			{"deleted_at", json.RawMessage("null")},
+		}
+		if err := validateFields(KindAttachment, id, fields); err != nil {
+			res.Warnings = append(res.Warnings, "attachment dropped: "+err.Error())
+			continue
+		}
+		out = append(out, change{entity: KindAttachment, id: id, fields: fields, created: true, file: f.Data})
+	}
+	return out
 }

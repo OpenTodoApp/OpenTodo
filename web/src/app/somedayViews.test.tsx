@@ -124,7 +124,7 @@ describe('Someday and Anytime views (3.1)', () => {
     const r = await render(<TaskListView route={{ view: 'someday' }} />)
     await waitFor(() => text(r.container).includes('Learn Italian'))
     expect(text(r.container)).not.toContain('Buy milk')
-    const quick = r.container.querySelector('input[aria-label="Add a task"]') as HTMLInputElement
+    const quick = r.container.querySelector('textarea[aria-label="Add a task"]') as HTMLTextAreaElement
     await type(quick, 'Learn Portuguese')
     await act(async () => { quick.form!.requestSubmit() })
     await waitFor(() => text(r.container).includes('Learn Portuguese'))

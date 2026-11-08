@@ -20,14 +20,13 @@ import { copyText } from '../lib/clipboard'
 import { t } from '../lib/i18n'
 import { safeUrl } from '../lib/share'
 import { shell } from '../lib/shell'
-import { obsidianPlace, openOrigin, originIcon, originLabel, originLink } from '../lib/taskOrigin'
+import { originText } from '../lib/originText'
+import { obsidianPlace, openOrigin, originIcon, originLink } from '../lib/taskOrigin'
 import type { Origin } from '../lib/types'
 import { act } from './actionError'
 
-/** The text a chip reads as: the id or host, "Email" for a mail (its Message-ID is not a label). */
-export function originText(origin: Origin): string {
-  return originLabel(origin) || t('Email')
-}
+/** The text a chip reads as (lib/taskOrigin `originText`): never an import's id. */
+export { originText }
 
 /**
  * The tooltip of an origin: "Open in Obsidian: <vault> › <path>" for a valid
@@ -44,16 +43,24 @@ const LINK = 'inline-flex max-w-40 min-w-0 rounded-chip outline-none hover:text-
 // Activating the chip acts on the source only: the row neither opens nor starts a drag.
 const stop = (e: SyntheticEvent) => e.stopPropagation()
 
-export function OriginChip({ origin, quiet = false }: { origin: Origin; quiet?: boolean }) {
+/**
+ * `iconOnly` shows the kind's icon without the text (an imported origin in a row, whose id
+ * is not for reading); the text stays in the chip's accessible name. A row under 30 rem
+ * shows every quiet chip so (row-title-first-on-phones, index.css "The property column").
+ */
+export function OriginChip({ origin, quiet = false, iconOnly = false }: { origin: Origin; quiet?: boolean; iconOnly?: boolean }) {
   const text = originText(origin)
   const icon = originIcon(origin)
   // The stored page title or the Obsidian note's place, as a tooltip (never a second line).
   const tip = originTip(origin)
   const withTip = (el: ReactElement<Record<string, unknown>>) => (tip ? <Tooltip label={tip}>{el}</Tooltip> : el)
   const face = quiet
-    ? <span className={QUIET}><Icon name={icon} size="xs" /><span className="truncate">{text}</span></span>
+    ? <span className={QUIET}><Icon name={icon} size="xs" /><span className={iconOnly ? 'sr-only' : 'truncate'} data-origin-text>{text}</span></span>
     : <NeutralChip icon={icon}>{text}</NeutralChip>
-  const label = t('Opens the source {text}', { text })
+  // An import already reads as a sentence ("Imported from Trello"); the others name their source.
+  const imported = origin.kind === 'import'
+  const label = imported ? text : t('Opens the source {text}', { text })
+  const from = imported ? text : t('From {text}', { text })
   const link = originLink(origin)
   if (link?.obsidian) {
     // A same-page link activation: the browser asks before it opens Obsidian and
@@ -81,7 +88,7 @@ export function OriginChip({ origin, quiet = false }: { origin: Origin; quiet?: 
   if (url) {
     return (
       <span data-origin={origin.kind} className="mt-0.5 inline-flex max-w-40 min-w-0 shrink-0" onClick={stop} onPointerDown={stop}>
-        <Menu kind="menu" label={t('From {text}', { text })} trigger={face} triggerClassName={LINK} tip={origin.title || undefined} width="sm:w-48">
+        <Menu kind="menu" label={from} trigger={face} triggerClassName={LINK} tip={origin.title || undefined} width="sm:w-48">
           <MenuItem label={t('Copy link')} icon="copy" onSelect={() => act(copyText(url))} data-origin-copy />
         </Menu>
       </span>
@@ -89,7 +96,7 @@ export function OriginChip({ origin, quiet = false }: { origin: Origin; quiet?: 
   }
   return withTip(
     <span data-origin={origin.kind} className="mt-0.5 inline-flex max-w-40 min-w-0 shrink-0">
-      <ReadAs label={t('From {text}', { text })}>{face}</ReadAs>
+      <ReadAs label={from}>{face}</ReadAs>
     </span>,
   )
 }

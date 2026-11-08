@@ -26,7 +26,7 @@ func (s *Server) handleAuthStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	count, _ := s.auth.UserCount(r.Context())
-	u, sess, _, err := s.authenticateSession(r)
+	u, sess, viaCookie, err := s.authenticateSession(r)
 	if err != nil {
 		s.internal(w, err)
 		return
@@ -50,8 +50,12 @@ func (s *Server) handleAuthStatus(w http.ResponseWriter, r *http.Request) {
 		"branding": brandingJSON(s.branding(r)),
 	}
 	// Without a token, a client outside the local network needs the setup code
-	// from the server log (trusted-client-identity).
-	out["setupCodeRequired"] = count == 0 && s.auth.SetupCodeRequired() && !isLocalSetup(r)
+	// from the server log (trusted-client-identity), and so does a page under a
+	// domain name while no OPENTODO_BASE_URL is set (host-check-without-base-url);
+	// setupCodeForHost says it is the second reason, so the screen can say so.
+	from := setupFrom(r)
+	out["setupCodeRequired"] = count == 0 && s.auth.SetupCodeNeeded(from)
+	out["setupCodeForHost"] = count == 0 && from.UnverifiedHost && s.auth.SetupCodeOnlyForHosts()
 	if s.hosted {
 		// A hosted tenant (multi-tenant-host D4): the app hides the operator's panels.
 		out["hosted"] = true
@@ -74,7 +78,46 @@ func (s *Server) handleAuthStatus(w http.ResponseWriter, r *http.Request) {
 		// The instance themes' version (theme-instance-default D3): devices read them again when it grows.
 		out["themes"] = map[string]int64{"version": s.themesVersion(r)}
 	}
+	if err := s.deviceRevocation(r, out, sess, u == nil && viaCookie); err != nil {
+		s.internal(w, err)
+		return
+	}
 	writeJSON(w, http.StatusOK, out)
+}
+
+// deviceRevocation adds what lets a device remove its local copy once its
+// session is revoked (OpenSpec change revoked-device-wipe, design D3): a
+// signed-in browser session's wipe key, and for the cookie of a revoked session
+// the proof made with that key. Only the device that holds the key can check
+// it, so an answer from anything else wipes nothing.
+func (s *Server) deviceRevocation(r *http.Request, out map[string]any, sess *auth.Session, refusedCookie bool) error {
+	if sess != nil {
+		key, err := s.auth.WipeKey(r.Context(), sess.TokenHash)
+		if errors.Is(err, auth.ErrNotFound) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		out["wipeKey"] = key
+		return nil
+	}
+	if !refusedCookie || s.demo != nil {
+		return nil
+	}
+	c, err := r.Cookie(sessionCookie)
+	if err != nil {
+		return nil
+	}
+	proof, err := s.auth.RevokedProof(r.Context(), c.Value)
+	if errors.Is(err, auth.ErrNotFound) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	out["revoked"] = map[string]string{"proof": proof}
+	return nil
 }
 
 type credentials struct {
@@ -141,12 +184,12 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 	// Without a setup token, a first registration from a public address needs
 	// the setup code from the server log (trusted-client-identity).
-	u, err := s.auth.RegisterFrom(r.Context(), c.Email, c.Name, c.Password, c.Invitation, c.SetupToken, isLocalSetup(r))
+	u, err := s.auth.RegisterFrom(r.Context(), c.Email, c.Name, c.Password, c.Invitation, c.SetupToken, setupFrom(r))
 	switch {
 	case errors.Is(err, auth.ErrSetupTokenInvalid):
 		writeError(w, http.StatusForbidden, "setup_token_invalid", err.Error())
 		return
-	case errors.Is(err, auth.ErrSetupCodeInvalid):
+	case errors.Is(err, auth.ErrSetupCodeInvalid), errors.Is(err, auth.ErrSetupHostUnverified):
 		writeError(w, http.StatusForbidden, "setup_code_invalid", err.Error())
 		return
 	case errors.Is(err, auth.ErrMemberLimit):
@@ -275,6 +318,16 @@ func (s *Server) issueSession(w http.ResponseWriter, r *http.Request, u *auth.Us
 }
 
 func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
+	// Signing out acts on the session cookie without requiring a valid one, so
+	// the policy layer's cross-site check does not run: a request a browser
+	// marks as coming from another site (a sibling subdomain is same-site, so
+	// SameSite=Lax still sends the cookie) must not end the session or clear
+	// the cookie. A request naming neither header comes from a non-browser
+	// client such as `ot logout` and keeps working (public route matrix).
+	if s.crossSiteDeclared(r) {
+		writeError(w, http.StatusForbidden, "bad_origin", "cross-site request rejected")
+		return
+	}
 	redirect := ""
 	if c, err := r.Cookie(sessionCookie); err == nil {
 		u, lookupErr := s.auth.UserBySession(r.Context(), c.Value)
@@ -349,6 +402,8 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 		out["day_parts"] = idOf(prefs["day_parts"]) == "on"
 		// And Energy levels (task-energy D3), for the CLI's `~deep` tokens.
 		out["energy_levels"] = idOf(prefs["energy"]) == "on"
+		// And Time sectors (time-sectors D8), for the CLI's sector phrases.
+		out["time_sectors"] = idOf(prefs["time_sectors"]) == "on"
 	}
 	// Today's closed list (today-closed-list D7): the limit and today's chosen
 	// tasks, so the CLI fills Today's slots as the app does.

@@ -17,9 +17,9 @@ afterEach(() => { vi.useRealTimers() })
 
 const projects = [{ id: 'p-work', name: 'Work' }]
 
-function Harness({ title, onCommit, readOnly = false }: { title: string; onCommit: (p: EditPlan) => void; readOnly?: boolean }) {
+function Harness({ title, onCommit, readOnly = false, multiline = false }: { title: string; onCommit: (p: EditPlan) => void; readOnly?: boolean; multiline?: boolean }) {
   const [value, setValue] = useState(title)
-  return <TitleField title={title} value={value} onChange={setValue} onCommit={onCommit} projects={projects} labels={[]} ariaLabel="Title" readOnly={readOnly} />
+  return <TitleField title={title} value={value} onChange={setValue} onCommit={onCommit} projects={projects} labels={[]} ariaLabel="Title" readOnly={readOnly} multiline={multiline} />
 }
 
 async function edit(field: HTMLInputElement, text: string) {
@@ -28,7 +28,11 @@ async function edit(field: HTMLInputElement, text: string) {
   await act(async () => { field.setSelectionRange(text.length, text.length) })
   await flush()
 }
-const commit = (field: HTMLInputElement) => act(async () => { field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })) })
+const enter = (field: HTMLInputElement, init: KeyboardEventInit = {}) => {
+  const ev = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true, ...init })
+  return act(async () => { field.dispatchEvent(ev) })
+}
+const commit = (field: HTMLInputElement) => enter(field)
 
 describe('TitleField', () => {
   it('appending " tomorrow p1" shows chips, and Enter commits the date and priority with the title unchanged', async () => {
@@ -42,6 +46,23 @@ describe('TitleField', () => {
     await flush()
     expect(plans.at(-1)!.patch).toMatchObject({ due: { date: '2026-10-10' }, priority: 1 })
     expect(plans.at(-1)!.patch.title).toBeUndefined()
+    await r.unmount()
+  })
+
+  it('Enter while an input method is composing does not save the title', async () => {
+    const plans: EditPlan[] = []
+    const r = await render(<Harness title="开会" onCommit={(p) => plans.push(p)} />)
+    const field = r.container.querySelector('input')!
+    await edit(field, '开会明天')
+    await enter(field, { isComposing: true })
+    expect(plans).toEqual([])
+    const code = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })
+    Object.defineProperty(code, 'keyCode', { get: () => 229 })
+    await act(async () => { field.dispatchEvent(code) })
+    expect(plans).toEqual([])
+    await commit(field)
+    await flush()
+    expect(plans.at(-1)!.patch.title).toBe('开会明天')
     await r.unmount()
   })
 
@@ -83,6 +104,16 @@ describe('TitleField', () => {
     await commit(field)
     await flush()
     expect(plans.at(-1)).toEqual({ patch: { title: 'Call the bank tomorrow' }, labels: [], reminders: [] })
+    await r.unmount()
+  })
+
+  it('a long panel title scrolled to its end shows its start again once left', async () => {
+    const r = await render(<Harness title={'Long title '.repeat(20).trim()} onCommit={() => {}} multiline />)
+    const field = r.container.querySelector('textarea')!
+    await act(async () => { field.focus() })
+    field.scrollTop = 80
+    await act(async () => { field.blur() })
+    expect(field.scrollTop).toBe(0)
     await r.unmount()
   })
 })

@@ -4,23 +4,28 @@ import "testing"
 
 func TestRRULERoundTrip(t *testing.T) {
 	cases := map[string]string{
-		"every day":                    "FREQ=DAILY",
-		"every 3 days":                 "FREQ=DAILY;INTERVAL=3",
-		"every 2 weeks":                "FREQ=WEEKLY;INTERVAL=2",
-		"every weekday":                "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR",
-		"every monday, wednesday":      "FREQ=WEEKLY;BYDAY=MO,WE",
-		"every 15th":                   "FREQ=MONTHLY;BYMONTHDAY=15",
-		"every last day":               "FREQ=MONTHLY;BYMONTHDAY=-1",
-		"every last weekday":           "FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-1",
-		"every 2nd tuesday":            "FREQ=MONTHLY;BYDAY=2TU",
-		"every last friday":            "FREQ=MONTHLY;BYDAY=-1FR",
-		"every year":                   "FREQ=YEARLY",
-		"every day until 2026-12-31":   "FREQ=DAILY;UNTIL=20261231",
-		"every weekday for 10 times":   "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;COUNT=10",
-		"every 6 months":               "FREQ=MONTHLY;INTERVAL=6",
-		"every saturday and sunday":    "FREQ=WEEKLY;BYDAY=SA,SU",
-		"every 4th thursday":           "FREQ=MONTHLY;BYDAY=4TH",
-		"every month until 2027-01-01": "FREQ=MONTHLY;UNTIL=20270101",
+		"every day":                                   "FREQ=DAILY",
+		"every 3 days":                                "FREQ=DAILY;INTERVAL=3",
+		"every 2 weeks":                               "FREQ=WEEKLY;INTERVAL=2",
+		"every weekday":                               "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR",
+		"every monday, wednesday":                     "FREQ=WEEKLY;BYDAY=MO,WE",
+		"every 15th":                                  "FREQ=MONTHLY;BYMONTHDAY=15",
+		"every last day":                              "FREQ=MONTHLY;BYMONTHDAY=-1",
+		"every last weekday":                          "FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-1",
+		"every 1st weekday":                           "FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=1",
+		"every 2nd weekday":                           "FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=2",
+		"every 4th weekday for 3 times":               "FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=4;COUNT=3",
+		"every 2nd tuesday":                           "FREQ=MONTHLY;BYDAY=2TU",
+		"every last friday":                           "FREQ=MONTHLY;BYDAY=-1FR",
+		"every year":                                  "FREQ=YEARLY",
+		"every day until 2026-12-31":                  "FREQ=DAILY;UNTIL=20261231",
+		"every weekday for 10 times":                  "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;COUNT=10",
+		"every 6 months":                              "FREQ=MONTHLY;INTERVAL=6",
+		"every saturday and sunday":                   "FREQ=WEEKLY;BYDAY=SA,SU",
+		"every 4th thursday":                          "FREQ=MONTHLY;BYDAY=4TH",
+		"every month until 2027-01-01":                "FREQ=MONTHLY;UNTIL=20270101",
+		"every 2 weeks on saturday":                   "FREQ=WEEKLY;INTERVAL=2;BYDAY=SA",
+		"every 3 weeks on monday, friday for 4 times": "FREQ=WEEKLY;INTERVAL=3;BYDAY=MO,FR;COUNT=4",
 	}
 	for text, rrule := range cases {
 		r, err := Parse(text)
@@ -42,12 +47,15 @@ func TestFromRRULEClientSpellings(t *testing.T) {
 	ok := map[string]string{
 		"FREQ=WEEKLY;INTERVAL=1;WKST=MO":                "every week",
 		"freq=weekly;byday=TU;interval=2":               "every 2 weeks",
+		"FREQ=WEEKLY;INTERVAL=2;BYDAY=SA":               "every 2 weeks on saturday",
+		"FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,WE":            "every 2 weeks on monday, wednesday",
 		"FREQ=MONTHLY;INTERVAL=3;BYMONTHDAY=13":         "every 3 months",
 		"FREQ=YEARLY;BYMONTH=10;BYMONTHDAY=13":          "every year",
 		"FREQ=DAILY;UNTIL=20261231T225959Z":             "every day until 2026-12-31",
 		"FREQ=WEEKLY;BYDAY=FR,MO,TH,TU,WE":              "every weekday",
 		"FREQ=MONTHLY;BYDAY=+1MO":                       "every 1st monday",
 		"FREQ=MONTHLY;BYSETPOS=-1;BYDAY=MO,TU,WE,TH,FR": "every last weekday",
+		"FREQ=MONTHLY;BYSETPOS=+3;BYDAY=FR,TH,WE,TU,MO": "every 3rd weekday",
 	}
 	for rr, want := range ok {
 		r, good := FromRRULE(rr, "2026-10-13")
@@ -56,9 +64,12 @@ func TestFromRRULEClientSpellings(t *testing.T) {
 		}
 	}
 	for _, rr := range []string{
-		"FREQ=HOURLY", "FREQ=DAILY;BYHOUR=9", "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,WE", "FREQ=MONTHLY;BYDAY=5MO",
+		"FREQ=HOURLY", "FREQ=DAILY;BYHOUR=9", "FREQ=MONTHLY;BYDAY=5MO",
 		"FREQ=MONTHLY;BYDAY=1MO,3MO", "FREQ=YEARLY;BYMONTH=3", "FREQ=DAILY;COUNT=2;UNTIL=20261231", "FREQ=SECONDLY", "",
 		"FREQ=DAILY;INTERVAL=0", "FREQ=MONTHLY;BYMONTHDAY=40",
+		"FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=5", "FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-2",
+		"FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=1,2", "FREQ=MONTHLY;BYDAY=MO,TU,WE,TH;BYSETPOS=1",
+		"FREQ=MONTHLY;INTERVAL=2;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=1",
 	} {
 		if r, good := FromRRULE(rr, "2026-10-13"); good {
 			t.Fatalf("%s accepted as %q", rr, r.Canonical())

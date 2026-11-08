@@ -75,13 +75,18 @@ func PlanSplit(id string, row Entity, date string, patch map[string]json.RawMess
 	plan.Series = map[string]json.RawMessage{"recurrence": JSONOf(s.rule.WithUntil(recurrence.AddDays(date, -1)).Canonical())}
 	piece := recordFields(row, id, s.dueDate(today), first, now)
 	delete(piece, "occurrence_date")
+	// The people who take turns go on with the piece (chore-rotation).
+	if l := idList(row["rotation"]); len(l) > 0 {
+		piece["rotation"] = JSONOf(l)
+	}
 	for k, v := range patch {
 		if k != "due" && k != "recurrence" {
 			piece[k] = v
 		}
 	}
 	piece["due"] = pieceDue(row["due"], patch["due"], first)
-	piece["recurrence"] = JSONOf(own.Canonical())
+	// The form a 1.0 client reads when one means the same thing (recurrence-1-0-compatible).
+	piece["recurrence"] = JSONOf(own.Compatible(first).Canonical())
 	piece["series_id"] = json.RawMessage("null")
 	piece["split_from"] = JSONOf(SplitFrom{Series: id, Date: date})
 	piece["created_at"], piece["completed_at"], piece["deleted_at"] = JSONOf(now), json.RawMessage("null"), json.RawMessage("null")

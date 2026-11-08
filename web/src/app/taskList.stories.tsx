@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ReactNode } from 'react'
-import { createTask } from '../lib/ops'
+import { createSubtask, createTask } from '../lib/ops'
 import { setTodayLimit } from '../lib/closedListPrefs'
-import { seedBase, seeded, seedProjectWithSections, seedToday, storyUser, TODAY, withSeed } from './stories/fixtures'
+import { seedBase, seeded, seedProjectWithSections, seedToday, storyUser, TODAY, TOMORROW, withSeed } from './stories/fixtures'
 import { db } from '../lib/db'
 import { setTaskOpen } from '../lib/userPrefs'
 import { PANEL_WIDTH_KEY, SIDE_PANEL_CLOSED_KEY } from './panel'
@@ -77,6 +77,24 @@ export const UpcomingByDay: StoryObj = {
 export const ProjectBySection: StoryObj = {
   ...withSeed(() => seedProjectWithSections(false)),
   render: () => <Column><TaskListView route={{ view: 'project', id: seeded.website }} userId={storyUser.id} userRole={storyUser.role} /></Column>,
+}
+
+/**
+ * A project whose parent was deferred to Later (subtasks-follow-later, GitHub issue #755):
+ * its subtasks go with it, nested under it in the Later group, one keeping its own date.
+ */
+export const ProjectLaterWithSubtasks: StoryObj = {
+  ...withSeed(async () => {
+    await seedBase()
+    const p = seeded.home
+    await createTask({ title: 'Water the plants', project_id: p, due: { date: TODAY } })
+    await createTask({ title: 'Fix the bike light', project_id: p })
+    const fence = await createTask({ title: 'Paint the fence', project_id: p, start: '2026-10-24' })
+    await createSubtask(fence, 'Buy paint')
+    await createTask({ title: 'Book the sprayer', project_id: p, parent_id: fence, due: { date: TOMORROW } })
+    await createSubtask(fence, 'Sand the boards')
+  }),
+  render: () => <Column><TaskListView route={{ view: 'project', id: seeded.home }} userId={storyUser.id} userRole={storyUser.role} /></Column>,
 }
 
 /** Nothing due today: one sentence, Add a task and the Open Upcoming link. */

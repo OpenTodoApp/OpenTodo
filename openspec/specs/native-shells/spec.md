@@ -25,7 +25,7 @@ A native shell SHALL load the web app from the server address the user entered, 
 - **THEN** the shell accepts it after showing that the connection is not encrypted on the way to that address
 
 ### Requirement: First-run server screen
-On first start, and whenever no server is configured, a shell SHALL show a screen asking for the server address with the device's language, SHALL check the address by requesting the server's health route with the web view's cookies for it, and SHALL name the reason when the check fails (no network, not an OpenTodo server, behind a login page, certificate not trusted, address refused). When the health route answers with a redirect to a sign-in page or with a sign-in page refusing access, the screen SHALL say the server is behind a login page and offer to sign in inside the app; when it answers with a web page, the screen SHALL say so and offer the same. Signing in SHALL use the shell's sign-in flow without the bridge and SHALL end, with the check repeated, once the health route answers. A trusted certificate the user installed on the device SHALL be accepted. The address SHALL be changeable later from the shell's own menu, and changing it SHALL discard the web view's storage for the old server only after the user confirms.
+On first start, and whenever no server is configured, a shell SHALL show a screen asking for the server address with the device's language, SHALL check the address by requesting the server's health route with the web view's cookies for it, and SHALL name the reason when the check fails (no network, not an OpenTodo server, behind a login page, certificate not trusted, address refused). The shell SHALL request `/api/v1/health` first and, unless that answers as OpenTodo or the connection or certificate failed, `/healthz`, so a server whose proxy answers `/healthz` itself and a server from before `/api/v1/health` both pass. When the health route answers with a redirect to a sign-in page or with a sign-in page refusing access, the screen SHALL say the server is behind a login page and offer to sign in inside the app; when it answers with a web page, the screen SHALL say so and offer the same. Signing in SHALL use the shell's sign-in flow without the bridge and SHALL end, with the check repeated, once the health route answers. A trusted certificate the user installed on the device SHALL be accepted. The address SHALL be changeable later from the shell's own menu, and changing it SHALL discard the web view's storage for the old server only after the user confirms.
 
 #### Scenario: Not an OpenTodo server
 - **WHEN** the user enters `https://example.com`
@@ -34,6 +34,14 @@ On first start, and whenever no server is configured, a shell SHALL show a scree
 #### Scenario: Behind a login page
 - **WHEN** the user enters the address of a server whose login wall redirects `/healthz` to its sign-in page
 - **THEN** the screen says the server is behind a login page and offers "Sign in here"; after signing in there, the check passes and the app opens the server
+
+#### Scenario: Behind a proxy that answers /healthz
+- **WHEN** the user enters the address of a server behind Pomerium, which answers `/healthz` with a plain `OK`
+- **THEN** the check passes on `/api/v1/health` and the app opens the server
+
+#### Scenario: A server before 1.0.1
+- **WHEN** the user enters the address of a server that has no `/api/v1/health`
+- **THEN** the check passes on `/healthz` and the app opens the server
 
 #### Scenario: Self-signed certificate the user trusts
 - **WHEN** the home server uses a certificate from a private authority installed in the device's user credentials
@@ -44,10 +52,14 @@ On first start, and whenever no server is configured, a shell SHALL show a scree
 - **THEN** the shell forgets the old server's storage, scheduled reminders and widget data, and shows the first-run screen
 
 ### Requirement: Offline start
-Once the web app has been loaded once, a shell SHALL open offline and show the app from the service worker's precache with the local data, like the installed web app. The first start SHALL need the network and SHALL say so when it is missing.
+Once the web app has been loaded once, a shell SHALL open offline and show the app from the service worker's precache with the local data, like the installed web app. Where that origin cannot install a service worker (plain http other than localhost), the shell SHALL keep the same precache itself after a successful load and open from that copy. The first start SHALL need the network and SHALL say so when it is missing.
 
 #### Scenario: Opened in flight mode
 - **WHEN** the user has used the Android app before and opens it with no network
+- **THEN** the Today list shows the locally stored tasks, and the sync indicator reads offline
+
+#### Scenario: Server on the local network switched off
+- **WHEN** the user has opened the Android app on `http://192.168.1.20:8080` and opens it again with that server switched off
 - **THEN** the Today list shows the locally stored tasks, and the sync indicator reads offline
 
 #### Scenario: First start offline
@@ -238,3 +250,33 @@ A shell MAY offer the bridge capability `system-bars`, which lets the web app ha
 #### Scenario: Fixture changes
 - **WHEN** a change renames the `dark` field of the payload
 - **THEN** the web fixture test fails until the fixture is regenerated, and then the Android and iOS unit tests fail until the shells read the new field
+
+### Requirement: Google Play build without location reminders
+Until Google Play approves the app's background-location declaration, the Android app built for Google Play (the AAB) SHALL NOT declare `ACCESS_BACKGROUND_LOCATION`, `ACCESS_FINE_LOCATION` or `ACCESS_COARSE_LOCATION`, SHALL NOT list the `geofences` bridge capability, SHALL never ask for location, and SHALL add `store: 'play'` to the bridge object. In that app, Settings → Notifications → Location reminders SHALL show no switch and say that location reminders come to the Google Play version later and that the app from GitHub or F-Droid has them. The APK published on GitHub and built by F-Droid SHALL keep the three permissions and the capability, and its build SHALL stay the reproducible one F-Droid verifies. CI SHALL read the built AAB's and APK's manifests and fail when the AAB declares any of the three permissions or the APK lacks one. This requirement touches no synced data: nothing is stored, and offline behaviour and convergence are unchanged.
+
+#### Scenario: Play app
+- **WHEN** a person opens Settings → Notifications in the Android app installed from Google Play
+- **THEN** Location reminders reads "Location reminders come to the Google Play version later; the GitHub/F-Droid app has them." with no switch, and Android never asks for location
+
+#### Scenario: GitHub or F-Droid app
+- **WHEN** a person opens the same card in the app from GitHub or F-Droid
+- **THEN** the switch "On this phone" is there as before, and the APK declares background location
+
+#### Scenario: The permission slips into the bundle
+- **WHEN** a change makes the AAB declare `ACCESS_BACKGROUND_LOCATION` again, or removes it from the APK
+- **THEN** the Android CI job fails and names the permission and the build
+
+### Requirement: Microphone for voice capture
+The Android shell SHALL declare `RECORD_AUDIO` and SHALL ask for it the first time the web app records, and not before. It SHALL grant audio capture only to a page of the configured server, and SHALL NOT grant the camera from that request. A page of another origin SHALL be refused without a prompt. The microphone feature SHALL NOT be required, so a device without one can still install the app. The web app SHALL ask the shell before it records when the shell lists the `microphone` capability, and SHALL keep today's behaviour when it does not.
+
+#### Scenario: First dictation
+- **WHEN** the person taps the microphone in the Android app and has not allowed it
+- **THEN** Android asks for the microphone, and allowing it lets the page record
+
+#### Scenario: Another origin
+- **WHEN** a page of another origin loaded in the shell asks for the microphone
+- **THEN** the shell refuses and Android does not ask
+
+#### Scenario: Already allowed
+- **WHEN** the person has already allowed the microphone and taps it again
+- **THEN** Android does not ask again and the page records

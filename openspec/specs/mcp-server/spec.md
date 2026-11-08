@@ -284,7 +284,7 @@ Every write tool call SHALL be applied as one batch of ops with `ApplyStrict` as
 - **THEN** the request is refused with 400 `invalid_op` and nothing is applied
 
 ### Requirement: Write limits
-One write call SHALL change at most 50 entities; larger requests SHALL be refused with `-32602`. Each token SHALL be limited to 30 write calls per minute and 1,000 changed entities per UTC day; beyond that the tool error SHALL be `rate_limited` with `retry_after_seconds` and nothing SHALL change on any device. Read tools SHALL not count toward these limits.
+One write call SHALL change at most 50 entities; larger requests SHALL be refused with `-32602`. Each token SHALL be limited to 30 write calls per minute and 1,000 changed entities per UTC day, and all the agent tokens of one account together SHALL be limited to 60 write calls per minute and 2,000 changed entities per UTC day, so creating more tokens or connecting more clients does not raise the budget. Beyond either limit the tool error SHALL be `rate_limited` with `retry_after_seconds` and nothing SHALL change on any device; a call refused for either limit SHALL count against neither. The agent REST content routes SHALL share these counters. Read tools SHALL not count toward these limits. The counters are kept in server memory and in the server's database, so a restart does not reset them; they are not ops: offline behaviour and convergence are unaffected.
 
 #### Scenario: Too many items
 - **WHEN** an assistant calls `create_tasks` with 51 items
@@ -293,6 +293,18 @@ One write call SHALL change at most 50 entities; larger requests SHALL be refuse
 #### Scenario: Minute limit
 - **WHEN** an `agent` token makes its 31st write call within one minute
 - **THEN** the result is a `rate_limited` tool error with a positive `retry_after_seconds` and nothing changes
+
+#### Scenario: Account minute limit across tokens
+- **WHEN** a person's two agent tokens have made 60 write calls together within one minute and a third agent token of the same person makes a write call
+- **THEN** the result is a `rate_limited` tool error with a positive `retry_after_seconds`, nothing changes, and another person's agent token can still write
+
+#### Scenario: Account day limit across tokens
+- **WHEN** two agent tokens of one person have changed 1,000 entities each in one UTC day and a third token of that person tries to change one more
+- **THEN** the result is a `rate_limited` tool error and nothing changes until the next UTC day
+
+#### Scenario: Restart keeps the day's budget
+- **WHEN** an `agent` token changed 1,000 entities today and the server restarts
+- **THEN** its next write call that changes an entity is refused with `rate_limited` until the next UTC day
 
 ### Requirement: Untrusted content in tool results
 Tool results SHALL carry user-written text (titles, descriptions, names, comment bodies) inside fields marked as untrusted data, with a fixed notice telling the assistant to treat it as data and not as instructions, and SHALL mark items from shared projects with `shared: true` and comments by other people with `author_is_you: false`. Marking changes no stored data; results reflect synced data only.
@@ -586,7 +598,7 @@ For an encrypted account with an opted-in device online, every tool SHALL run on
 - **THEN** both devices converge on the later title by last-writer-wins, as for any two devices
 
 ### Requirement: Relay errors
-A tool call that needs the relay SHALL return a tool error and change nothing when it cannot be answered: `device_unavailable` when no opted-in device is online and unlocked, naming how to make one available; `device_timeout` when the device does not answer within the call's deadline (at most 20 seconds for reads and 30 for writes); `device_busy` when the account already has the maximum of queued relayed calls; `device_limit` when the device refused because its own limit is reached; and `declined_on_device` when the user declined a write on the device. A write that timed out SHALL NOT be retried on another device by the server.
+A tool call that needs the relay SHALL return a tool error and change nothing when it cannot be answered: `device_unavailable` when no opted-in device is online and unlocked, naming how to make one available; `device_timeout` when the device does not answer within the call's deadline (at most 20 seconds for reads and 30 for writes); `device_busy` when the account already has the maximum of queued relayed calls; `device_limit` when the device refused because its own limit is reached; and `declined_on_device` when the user declined the request, a read or a write, on the device. A write that timed out SHALL NOT be retried on another device by the server.
 
 #### Scenario: No device online
 - **WHEN** the only opted-in device is closed and an assistant calls `create_tasks`
@@ -601,7 +613,7 @@ A tool call that needs the relay SHALL return a tool error and change nothing wh
 - **THEN** the result is `device_timeout`, no op is written, and no other device is asked
 
 ### Requirement: Relay limits
-The server SHALL limit relayed requests to 60 per account per minute, to 4 queued at once per account, and to 2,000 values and 2 MB of text per request, after the existing MCP limits. Each device SHALL enforce its own limit on decrypted values, by default 5,000 per hour and 20,000 per day, whatever the server asks, SHALL show while it is answering a request, SHALL list the recent relayed calls (tool, time, number of values, never the values), and SHALL offer stopping the relay in one action.
+The server SHALL limit relayed requests to 60 per account per minute, to 4 queued at once per account, and to 2,000 values and 2 MB of text per request, after the existing MCP limits. Each device SHALL enforce its own limit on decrypted values, by default 5,000 per hour and 20,000 per day, whatever the server asks, SHALL show while it is answering a request and for which connector and tool, SHALL list the recent relayed calls, decryption and encryption alike (connector, tool, time, number of values, outcome, never the values), and SHALL offer stopping the relay in one action.
 
 #### Scenario: Server minute limit
 - **WHEN** an account's assistants make a 61st relayed call within one minute
@@ -611,8 +623,12 @@ The server SHALL limit relayed requests to 60 per account per minute, to 4 queue
 - **WHEN** a server asks a device to decrypt more values in an hour than the device's limit
 - **THEN** the device answers `device_limit` for the rest of the hour and decrypts nothing more
 
+#### Scenario: Reads are listed
+- **WHEN** an assistant's `list_tasks` made the laptop decrypt 24 titles
+- **THEN** the laptop's recent requests list `list_tasks` with the connector's name, 24 values read and the time, without any title
+
 ### Requirement: Confirming writes on the device
-A device SHALL offer the option "Ask me before AI connectors change anything", off by default. When it is on, a relayed write SHALL show the change set on the device with Apply and Decline before any content is encrypted; Decline SHALL return `declined_on_device` and write nothing; no answer within the deadline SHALL return `device_timeout`. Reads SHALL never ask.
+A device SHALL offer the option "Confirm changes first", off by default. When it is on, a relayed write SHALL show the change set on the device, with the connector, the tool and the call's arguments, with Apply and Decline before any content is encrypted; Decline SHALL return `declined_on_device` and write nothing; no answer within the deadline SHALL return `device_timeout`. This option SHALL not make reads ask; "Confirm reads first" does.
 
 #### Scenario: Declined
 - **WHEN** the option is on and the user declines an assistant's `create_tasks` on the laptop
@@ -760,15 +776,15 @@ For an end-to-end encrypted account the `location` argument of `create_tasks` an
 - **THEN** the tool returns an error and nothing is written
 
 ### Requirement: Today summary reports the Today limit
-`today_summary` SHALL return `today_limit` (`null` when off, else the number of slots) and SHALL mark each listed task due today or overdue with `waiting_for_slot` (true when the user's Today limit keeps it waiting, false otherwise), computed with the same fill rule as the web app (OpenSpec `today-closed-list`) from the rows devices have synced. Each waiting task SHALL also carry `time_sensitive` (true when it is due today with a time or its deadline is today), and the result SHALL carry `waiting_time_sensitive`, the ids of those tasks soonest first (OpenSpec `today-waiting-time-sensitive`); the slots SHALL not change because of a time. It SHALL write nothing. `list_tasks` with `view: "today"` SHALL be unchanged and list every task.
+`today_summary` SHALL return `today_limit` (`null` when off, else the number of slots) and SHALL mark each listed task due today or overdue with `waiting_for_slot` (true when the user's Today limit keeps it waiting, false otherwise), computed with the same fill rule as the web app (OpenSpec `today-closed-list`) from the rows devices have synced. Each waiting task SHALL also carry `time_sensitive` (true when it is due today with a time or its deadline is today), each time-sensitive one `time_passed` (true when its time today is before now in the asked time zone; a deadline without a time is never passed), and the result SHALL carry `waiting_time_sensitive`, the ids of those tasks soonest first (OpenSpec `today-waiting-time-sensitive`, `today-waiting-time-passed`); the slots SHALL not change because of a time. It SHALL write nothing. `list_tasks` with `view: "today"` SHALL be unchanged and list every task.
 
 #### Scenario: Limit on
 - **WHEN** the user's limit is 3, Today has five available tasks and an assistant calls `today_summary`
 - **THEN** the result carries `today_limit: 3`, three tasks with `waiting_for_slot: false` and two with `waiting_for_slot: true`
 
 #### Scenario: Time-sensitive waiting tasks
-- **WHEN** the limit is 1 and the waiting tasks include one due today at 16:00, one at 09:00 and one with a deadline today
-- **THEN** those three carry `time_sensitive: true`, the other waiting tasks `time_sensitive: false`, and `waiting_time_sensitive` lists the 09:00 task, the 16:00 task, then the deadline
+- **WHEN** it is 10:00, the limit is 1 and the waiting tasks include one due today at 16:00, one at 09:00 and one with a deadline today
+- **THEN** those three carry `time_sensitive: true`, the other waiting tasks `time_sensitive: false`, the 09:00 task `time_passed: true` and the other two `time_passed: false`, and `waiting_time_sensitive` lists the 09:00 task, the 16:00 task, then the deadline
 
 #### Scenario: Limit off
 - **WHEN** the user has no limit
@@ -916,6 +932,8 @@ While MCP is enabled, the read tools SHALL include `list_routines` (each routine
 ### Requirement: Routine write tools
 The write tools SHALL include `run_routine` (`routine` id or exact name, optional `task_id`, optional `test`), `set_routine_enabled`, `create_routine`, `update_routine` (the name, or whole `trigger`, `condition` or `steps` values) and `trash_routine` (a tombstone, restorable), offered only under the write permission gate (an `agent` token while the owner's `mcp.writes` and the user's "Allow AI assistants to make changes" are on). They SHALL validate exactly as the routines routes do (shape, ids, types, the limit of 50 routines, step availability as warnings), SHALL count against the write limits (a definition write counts one, a run counts the entities it wrote), SHALL be audited as `agent.write` with the routine id and counts, and SHALL write definitions through the operation log with device `agent:<token-id>`, so the routine's history names the assistant. A run started by `run_routine` SHALL write with device `rule:<rule-id>`, follow the routine's own limits and record source `mcp`. On an encrypted account a name or text literal SHALL be accepted only as a ciphertext envelope or through the device relay. No tool and no routine step SHALL let an agent turn on applying AI results without asking (`routines-ai-step`).
 
+A routine that sends content off the server SHALL be the person's to create, change, turn on and run. Such a routine has a `webhook`, `email_me` or `email_members` step anywhere in its steps, or the legacy `webhook` action. On every agent path, `create_routine` SHALL refuse a routine with such a step. `update_routine` SHALL refuse a change after which the routine still has one. `set_routine_enabled` SHALL refuse turning such a routine on. `run_routine` SHALL refuse running it unless `test` is true. Each refusal SHALL answer `forbidden_for_agents` and write nothing. Reading, testing, turning off and trashing such a routine SHALL stay allowed, and so SHALL an `update_routine` that takes every sending step out. The routines routes for the person's session or a `full` token SHALL be unchanged. The routine model is unchanged, so offline edits and convergence of routines are unaffected: the refusal happens before any op is written.
+
 #### Scenario: Create and test
 - **WHEN** an assistant with an `agent` token calls `create_routine` with a manual trigger and three valid steps, then `run_routine` with `test: true`
 - **THEN** the routine exists on every device after sync with history "Added by an AI assistant", and the test answer lists each step's planned output while nothing is written
@@ -929,5 +947,339 @@ The write tools SHALL include `run_routine` (`routine` id or exact name, optiona
 - **THEN** the tool returns `invalid_argument` naming the step and input, and the routine is unchanged
 
 #### Scenario: Unavailable step
-- **WHEN** an assistant creates a routine with Email me on a server without outgoing email
+- **WHEN** an assistant creates a routine with an Ask AI step on a server without an assistant provider
 - **THEN** the routine is created and the result warns that the step is not available, naming the reason
+
+#### Scenario: A sending step is refused
+- **WHEN** an assistant calls `create_routine` with an Email me step inside a Then branch, or `update_routine` adding a Send a webhook step
+- **THEN** the tool returns `forbidden_for_agents` and no routine op is written
+
+#### Scenario: The person's sending routine
+- **WHEN** the person built a routine with Email me and an assistant calls `set_routine_enabled` with `enabled: true`, `update_routine` with a new name, or `run_routine` without `test`
+- **THEN** each call returns `forbidden_for_agents`, the routine is unchanged and no run is recorded
+
+#### Scenario: Read, test, turn off and trash stay open
+- **WHEN** an assistant calls `get_routine`, `run_routine` with `test: true`, `set_routine_enabled` with `enabled: false` or `trash_routine` on the person's routine with Email me
+- **THEN** each call succeeds, and the test sends no email
+
+### Requirement: Time sector in tools
+`create_tasks` items and `update_tasks` updates SHALL accept `sector`: an absolute period (`YYYY-Www`, `YYYY-MM` or `YYYY-Qn`, OpenSpec `time-sectors`) or null. It SHALL be written exactly as sent, as one operation through the operation log, converging with device edits by per-field last-writer-wins. Relative words SHALL be refused, because a tool call has no viewer date. Task results of the read tools, the write tools and the `opentodo://` resources SHALL carry `sector` (`null` when empty), in plain text for encrypted accounts too. `list_tasks` SHALL accept a `sector` filter with an absolute period or `carried`, evaluated in the user's time zone with Monday weeks. An invalid or relative value SHALL be a `-32602` error naming the item and the field, and SHALL change nothing.
+
+#### Scenario: Sector a batch
+- **WHEN** an allowed assistant calls `update_tasks` with three updates setting `sector: "2026-W45"`
+- **THEN** the three tasks show "Next week" on devices after sync, their due dates are as stored, and the history shows the change under the assistant
+
+#### Scenario: Relative word refused
+- **WHEN** an assistant sends `sector: "next week"`
+- **THEN** the response is a `-32602` error naming the item and `sector`, and nothing changes
+
+#### Scenario: Read
+- **WHEN** an assistant calls `get_task` on a task with the sector `2026-Q1`
+- **THEN** the result carries `sector: "2026-Q1"`
+
+### Requirement: Objectives in reads
+`tools/list` SHALL advertise a read-only `list_objectives` tool that takes an optional `period` (a quarter or an ISO week) and an optional `timezone`. By default it returns the current quarter's and current week's objectives in that time zone, with Monday weeks. `resources/list` SHALL expose `opentodo://objectives` built from the same read. Each result SHALL carry `id`, `period`, `position`, `done` and `done_at`, with the `title` inside the untrusted-text marking. Deleted objectives SHALL be excluded. The tool SHALL write nothing and reflect only data devices have synced. No write tool for objectives SHALL be advertised. An invalid `period` SHALL be a `-32602` error naming the argument.
+
+#### Scenario: Current objectives
+- **WHEN** an assistant calls `list_objectives` with `timezone: "Europe/Rome"` on 2026-10-28
+- **THEN** the result lists the open and done objectives of `2026-Q4` and `2026-W44`, titles marked as untrusted text
+
+#### Scenario: Invalid period
+- **WHEN** an assistant calls `list_objectives` with `period: "Q4"`
+- **THEN** the response is a `-32602` error naming `period`
+
+### Requirement: Protected-resource metadata
+
+The server SHALL serve `GET /.well-known/oauth-protected-resource` and `GET /.well-known/oauth-protected-resource/mcp` with `resource` naming `<origin>/mcp`, `authorization_servers` naming the origin, `scopes_supported` `["read","agent"]` and `bearer_methods_supported` `["header"]`. Both SHALL be anonymous and SHALL answer 404 while the owner's MCP setting is off.
+
+#### Scenario: A client discovers the resource
+
+- **WHEN** an anonymous client reads `/.well-known/oauth-protected-resource` on a server whose base URL is `https://tasks.example.com`
+- **THEN** the response is 200 with `resource` = `https://tasks.example.com/mcp` and that same origin as the only authorization server
+
+#### Scenario: Discovery while MCP is off
+
+- **WHEN** the owner's MCP setting is off and a client reads either document
+- **THEN** the response is 404
+
+### Requirement: Authorization-server metadata
+
+The server SHALL serve `GET /.well-known/oauth-authorization-server` with `issuer`, `authorization_endpoint`, `token_endpoint`, `registration_endpoint`, `revocation_endpoint`, `response_types_supported` containing `code`, `grant_types_supported` containing `authorization_code` and `refresh_token`, `code_challenge_methods_supported` `["S256"]` and `scopes_supported`. It SHALL be anonymous and SHALL answer 404 while MCP is off.
+
+#### Scenario: The metadata names the flow
+
+- **WHEN** a client reads the authorization-server document
+- **THEN** the authorize, token, registration and revocation endpoints are absolute addresses under the server's origin
+
+### Requirement: Owner-managed clients
+
+The owner SHALL create clients through `GET`, `POST` and `DELETE /api/v1/settings/mcp/clients`, each with a name, a scope of `read` or `agent` and a redirect list, and `POST` SHALL return the client secret exactly once and never again. A member SHALL be refused with 403. `POST` SHALL take either `platform` (`google`, `openai` or `anthropic`), which gives the client that platform's redirect addresses, or `redirect_uris`, each of which SHALL be an absolute `https` address with a host, without user information, fragment, white space or `*`, at most 2,000 bytes, at most ten addresses, and SHALL then be matched exactly. With neither, the client SHALL get Google's addresses. Both together SHALL be refused with 400 `bad_request`, an unknown platform with 400 `bad_request`, and an address that breaks a rule with 400 `invalid_redirect_uri`, creating no client. `GET` SHALL also list each platform's id, name and redirect addresses. Clients are server state, not ops: offline behaviour and convergence are unaffected.
+
+#### Scenario: The secret is shown once
+
+- **WHEN** the owner creates a client and then reads the client list
+- **THEN** the create response carries the secret and the list reports only that a secret is set
+
+#### Scenario: A member cannot manage clients
+
+- **WHEN** a member calls `POST /api/v1/settings/mcp/clients`
+- **THEN** the response is 403 and no client is created
+
+#### Scenario: A client made for ChatGPT
+
+- **WHEN** the owner creates a client with `platform` `openai`
+- **THEN** its redirect addresses are `https://chatgpt.com/connector_platform_oauth_redirect` and the prefix `https://chatgpt.com/connector/oauth/`, and an authorize request naming `https://chatgpt.com/connector/oauth/<callback id>` is accepted
+
+#### Scenario: A client made for Claude
+
+- **WHEN** the owner creates a client with `platform` `anthropic`
+- **THEN** an authorize request naming `https://claude.ai/api/mcp/auth_callback` or `https://claude.com/api/mcp/auth_callback` is accepted
+
+#### Scenario: A custom address is exact
+
+- **WHEN** the owner creates a client with `redirect_uris` `["https://assistant.example/oauth/callback"]`
+- **THEN** that address is accepted at the authorize step and `https://assistant.example/oauth/callback/x` is refused with 400
+
+#### Scenario: An unsafe custom address is refused
+
+- **WHEN** the owner creates a client with `redirect_uris` `["http://assistant.example/cb"]` or `["https://*.example/cb"]`
+- **THEN** the response is 400 `invalid_redirect_uri` and no client is created
+
+### Requirement: Dynamic registration only for known connector platforms
+
+`POST /oauth/register` SHALL implement RFC 7591 only for redirect addresses of the known AI connector platforms, all of one platform: Google's `oauth-redirect`, `oauth-redirect-sandbox` and `oauth-redirect-test` `.googleusercontent.com` under `/r/` and `/a/`; ChatGPT's `https://chatgpt.com/connector_platform_oauth_redirect` and `https://chatgpt.com/connector/oauth/` followed by one segment; Claude's `https://claude.ai/api/mcp/auth_callback` and `https://claude.com/api/mcp/auth_callback`. It SHALL store that platform's redirect addresses, SHALL issue a confidential client with scope `read`, and SHALL refuse every other address, and a mix of platforms, with 400 `invalid_redirect_uri`. Registration SHALL be limited to five a minute per client address, SHALL remove dynamic clients nobody authorized within a day, and SHALL refuse with 503 while 200 dynamic clients remain.
+
+#### Scenario: A foreign redirect is refused
+
+- **WHEN** an anonymous caller registers `https://evil.example/cb`
+- **THEN** the response is 400 `invalid_redirect_uri` and no client is created
+
+#### Scenario: A look-alike address is refused
+
+- **WHEN** an anonymous caller registers `https://chatgpt.com.evil.example/connector_platform_oauth_redirect`, `https://claude.ai/api/mcp/auth_callback/x` or `https://chatgpt.com/connector/oauth/a/b`
+- **THEN** the response is 400 `invalid_redirect_uri` and no client is created
+
+#### Scenario: Registration is rate limited
+
+- **WHEN** one address registers a sixth client within a minute
+- **THEN** the response is 429 `rate_limited` and no client is created
+
+#### Scenario: A Google connector registers
+
+- **WHEN** an anonymous caller registers `https://oauth-redirect.googleusercontent.com/r/user_bound_custom-mcp-123`
+- **THEN** the response is 201 with a client id, a secret and scope `read`
+
+#### Scenario: ChatGPT and Claude register
+
+- **WHEN** an anonymous caller registers `https://chatgpt.com/connector/oauth/abc123`, or `https://claude.ai/api/mcp/auth_callback`
+- **THEN** the response is 201 with a client id, a secret and scope `read`, and the client can complete the authorization with that address
+
+### Requirement: Secrets are stored hashed
+
+Client secrets, authorization codes and refresh tokens SHALL be stored only as SHA-256 hashes and compared in constant time, and no secret, code or token value SHALL be logged or audited.
+
+#### Scenario: Nothing replayable is stored
+
+- **WHEN** a client, a code and a grant exist
+- **THEN** the database rows hold hashes and the audit entries name ids only
+
+### Requirement: Authorize requires a session
+
+`GET /oauth/authorize` SHALL require a signed-in browser session and SHALL refuse API tokens. A browser without a session SHALL be sent to the app with the authorize address to return to. A browser with a session SHALL be sent to the app's consent screen (`/?oauth_consent=<request>`) and SHALL NOT receive a code from the authorize address itself.
+
+#### Scenario: No session, no code
+
+- **WHEN** an anonymous browser opens the authorize address
+- **THEN** it is redirected to `/?oauth=<authorize address>` and no code is issued
+
+#### Scenario: A link alone grants nothing
+
+- **WHEN** a signed-in person opens a valid authorize address someone sent them
+- **THEN** the browser is sent to the consent screen and no code is issued
+
+### Requirement: Consent issues the code
+
+The consent screen SHALL name the client, the scope it would receive and the host of its redirect address, through `GET /api/v1/me/mcp-consent`. `POST /api/v1/me/mcp-consent` with `{query, allow}` SHALL accept only a browser session, never an API token, and SHALL validate the request again. Allow SHALL issue a single-use code and answer the registered address with `code` and the client's `state`; Deny SHALL answer it with `error=access_denied` and no code.
+
+#### Scenario: Allow returns a code
+
+- **WHEN** the signed-in person presses Allow for a valid request with `state=abc`
+- **THEN** the answer is the registered redirect with a `code` and `state=abc`
+
+#### Scenario: Deny returns no code
+
+- **WHEN** the person presses Cancel
+- **THEN** the answer is the registered redirect with `error=access_denied` and no `code`
+
+#### Scenario: A token cannot consent
+
+- **WHEN** a request to `POST /api/v1/me/mcp-consent` carries an API token instead of a session
+- **THEN** it is refused and no code is issued
+
+### Requirement: Authorize validates and redirects
+
+The authorize step and the consent calls SHALL validate the client, the registered `redirect_uri`, `response_type=code` and `code_challenge_method=S256`, answering 400 without a `Location` when the client or address is wrong. A registered address SHALL match only itself, except a known platform's prefix, which SHALL match that prefix followed by exactly one segment that is not empty, `.` or `..` and holds no `/`, `\`, `?`, `#`, `%`, white space or control character. The code's scope SHALL be the client's own: the request neither widens nor narrows it.
+
+#### Scenario: An agent client stays writable
+
+- **WHEN** an `agent` client authorizes with `scope=read` because that is the first scope the metadata lists
+- **THEN** the code carries `agent` and the token response reports `agent`
+
+#### Scenario: An unknown redirect is not redirected to
+
+- **WHEN** the `redirect_uri` is not registered for the client
+- **THEN** the response is 400 and carries no `Location` header
+
+#### Scenario: A stored address ending in a slash is not a prefix
+
+- **WHEN** a client registered `https://assistant.example/cb/` and the request names `https://assistant.example/cb/other`
+- **THEN** the response is 400 and carries no `Location` header
+
+### Requirement: Codes are single use
+
+A code SHALL be stored as a hash with a 60-second expiry, SHALL be deleted in the same statement that reads it, and SHALL be bound to the client, the person, the redirect address and the PKCE challenge.
+
+#### Scenario: A code is exchanged once
+
+- **WHEN** the same code is exchanged twice
+- **THEN** the second response is 400 `invalid_grant`
+
+### Requirement: Code exchange enforces PKCE
+
+`POST /oauth/token` SHALL accept `authorization_code` with `code_verifier`, authenticating the client with `client_secret_post` or `client_secret_basic`, SHALL verify the S256 challenge and the registered redirect address, and SHALL mint an OpenTodo API token of the granted scope.
+
+#### Scenario: PKCE is enforced
+
+- **WHEN** the token request sends a verifier that does not match the challenge
+- **THEN** the response is 400 `invalid_grant` and no token is minted
+
+### Requirement: Refresh token rotation and reuse detection
+
+`grant_type=refresh_token` SHALL return a new access token, revoking the previous access token. For a client with any redirect address outside Google's connector addresses, it SHALL also return a new refresh token and the refresh token sent SHALL stop working; the new token SHALL replace the old one only while the grant is live and still holds the old one, in one transaction. A refresh token that the grant already exchanged, presented again with the credentials of the client it was issued to, SHALL revoke the grant: its current refresh token and its access token stop working, the answer is 400 `invalid_grant`, and the audit log records `mcp_oauth.refresh_reused`. Concurrent refreshes with one token SHALL count as such a reuse. A used token presented with another client's credentials SHALL be answered as unknown and SHALL change nothing. A new authorization of the same client by the same person SHALL start a new token family. For a client whose every redirect address is one of Google's connector addresses, the refresh SHALL return the same refresh token with its expiry extended, as Google's guide for connected apps requires. A refresh token SHALL last 180 days from its last refresh and an access token one hour; an access token SHALL stop authenticating once its hour is over, even if it was never refreshed or revoked. A new access token SHALL replace the grant's previous one only while the grant still holds it, so concurrent refreshes leave at most one access token per grant. Grants are server state, not ops: offline behaviour and convergence are unaffected.
+
+#### Scenario: An access token expires
+
+- **WHEN** an access token is used more than an hour after it was issued
+- **THEN** `/mcp` answers 401 and the token no longer appears in the person's token list
+
+#### Scenario: Refresh rotates the token
+
+- **WHEN** a client registered for its own redirect address refreshes with the token it was given
+- **THEN** the response carries a new refresh token and a new access token, and the old access token stops working
+
+#### Scenario: A used refresh token revokes the grant
+
+- **WHEN** that client, after a successful refresh, sends the refresh token it had before
+- **THEN** the response is 400 `invalid_grant`, the newest refresh token and the current access token stop working, the person holds no access token for that grant, and the audit log has one `mcp_oauth.refresh_reused` event with the client id and no token
+
+#### Scenario: Another client cannot end a grant
+
+- **WHEN** another client sends a used refresh token of the first client's grant with its own credentials
+- **THEN** the response is 400 `invalid_grant` and the first client's grant keeps working
+
+#### Scenario: Concurrent refreshes with one token
+
+- **WHEN** a rotating client sends several refreshes with the same token at once
+- **THEN** at most one of them succeeds, the grant is revoked, and the person holds no access token for it
+
+#### Scenario: Authorizing again reconnects
+
+- **WHEN** the person allows the client again after its grant was revoked for reuse
+- **THEN** the exchange returns working tokens and their refresh succeeds
+
+#### Scenario: Refresh keeps the link
+
+- **WHEN** a client registered with the Google preset refreshes with the token it was given
+- **THEN** the response carries the same refresh token and a new access token, and the old access token stops working
+
+#### Scenario: Concurrent refreshes leave one token
+
+- **WHEN** Google's connector sends several refreshes of the same grant at once
+- **THEN** afterwards the person holds exactly one access token for that grant
+
+### Requirement: Revocation
+
+`POST /oauth/revoke` SHALL authenticate the client as the token endpoint does, SHALL accept that client's refresh token or the access token one of its grants holds, revoke the grant and its access token, and answer 200 for any other token without changing it, including another client's tokens and ordinary API tokens. Deleting a client SHALL cut off every grant issued for it in one transaction.
+
+#### Scenario: Revoking a grant
+
+- **WHEN** the client posts its refresh token to `/oauth/revoke`
+- **THEN** that refresh token and its access token are refused afterwards
+
+#### Scenario: Revoke needs the client
+
+- **WHEN** a caller posts a token to `/oauth/revoke` without the client's id and secret
+- **THEN** the response is 401 `invalid_client` and nothing is revoked
+
+#### Scenario: Revoke leaves other tokens alone
+
+- **WHEN** a client posts a personal API token or another client's token to `/oauth/revoke`
+- **THEN** the response is 200 and that token keeps working
+
+#### Scenario: Deleting the client cuts the grant off
+
+- **WHEN** the owner deletes the client a grant was issued for
+- **THEN** its access token and refresh token are refused afterwards
+
+### Requirement: OAuth access tokens are API tokens on /mcp
+
+An access token from the exchange SHALL authenticate `/mcp` by the existing bearer path as the person who authorized it: a `read` client reaches the read tools only, and an `agent` client additionally needs the owner's MCP setting and the person's agent-access switch for writes. The `/mcp` 401 challenge SHALL name the protected-resource document.
+
+#### Scenario: A read grant reads but does not write
+
+- **WHEN** a turn arrives on `/mcp` with the access token of a `read` grant
+- **THEN** the read tools answer for that person and a write tool answers its read-only refusal
+
+#### Scenario: The challenge points at discovery
+
+- **WHEN** `/mcp` is called without a token while MCP is enabled
+- **THEN** the response is 401 with `WWW-Authenticate` carrying a `resource_metadata` parameter that resolves to the protected-resource document
+
+### Requirement: Routine runs within the agent write limits
+A `run_routine` call that may write (not a test) SHALL run only within what is left of the calling token's changed items for the UTC day and of its account's (`agent-limits-per-account`), whichever is smaller. Before the run, the server SHALL hold the rest of that budget. When nothing is left, it SHALL answer `rate_limited` with `retry_after_seconds` and SHALL NOT run the routine. A run that plans more writes than were held SHALL write nothing and SHALL be logged as failed with the reason. After the run, the items it did not write SHALL go back to the budget. A run on the person's device, which the server cannot cap before it writes, SHALL book what it wrote. A test SHALL NOT be limited by the daily items. The counters SHALL stay in server memory; runs write through the operation log as before, so offline devices converge on what a run wrote and a refused run writes nothing to sync.
+
+#### Scenario: Budget spent
+- **WHEN** an `agent` token has changed 1,000 items today and calls `run_routine` without `test`
+- **THEN** the answer is `rate_limited` with `retry_after_seconds`, the routine does not run and nothing is written
+
+#### Scenario: Run larger than what is left
+- **WHEN** an `agent` token has 2 items left today and calls `run_routine` on a routine that would create 3 tasks
+- **THEN** the run writes nothing, its log entry is failed with the reason naming the 2 items left, and the 2 items are still left
+
+#### Scenario: Unused items go back
+- **WHEN** an `agent` token has 5 items left and runs a routine that writes 3
+- **THEN** the run is applied and the token has 2 items left
+
+#### Scenario: Test past the limit
+- **WHEN** an `agent` token has no items left and calls `run_routine` with `test: true`
+- **THEN** the test runs and nothing is written or counted
+
+### Requirement: Relay requests name their call
+Every relay request SHALL carry, sealed with it, the agent call it serves: the tool's name, the name of the connector's token, and the call's arguments as compact JSON cut to at most 300 bytes. A device SHALL refuse a request that names no tool, answering it as refused. While a device answers a request, it SHALL show which connector and tool it is answering without interrupting the user (no dialog), and its list of recent relayed calls SHALL name the connector beside the tool. Neither SHALL show or keep the arguments or any value after the request ends. The call's description is the server's word: the device cannot prove it, and the settings SHALL not claim it can.
+
+#### Scenario: Request names its call
+- **WHEN** an assistant connected with the token "Claude.ai" calls `get_task` with `{"id":"t1"}` for an encrypted account with the laptop opted in
+- **THEN** the laptop's request carries the tool `get_task`, the token name "Claude.ai" and the arguments `{"id":"t1"}`, and while it answers the laptop shows that it is answering Claude.ai's `get_task`
+
+#### Scenario: Long arguments
+- **WHEN** an assistant calls `create_tasks` with arguments longer than 300 bytes
+- **THEN** the request carries the arguments cut to 300 bytes on a character boundary, and the call proceeds as before
+
+#### Scenario: Request without a call
+- **WHEN** the device receives a request that names no tool
+- **THEN** it decrypts and encrypts nothing and answers refused, and the assistant's call fails with `device_unavailable`
+
+### Requirement: Confirming reads on the device
+A device SHALL offer the option "Confirm reads first", off by default, beside "Confirm changes first". When it is on, a relayed decryption request SHALL show on the device, before any value is sent, the connector, the tool, the call's arguments and the values it would send (decrypted on the device for this view, at most 20 listed with the count of the rest), with Allow and Decline. Decline, or no decision before the request's deadline, SHALL return `declined_on_device` and send nothing. The values shown SHALL exist only while the sheet is open.
+
+#### Scenario: Declined read
+- **WHEN** the option is on and the user declines an assistant's `list_tasks` on the laptop
+- **THEN** the result is the tool error `declined_on_device`, no decrypted value leaves the laptop and nothing changes
+
+#### Scenario: Allowed read
+- **WHEN** the user allows the same request
+- **THEN** the assistant's result shows the decrypted titles, as without the option
+
+#### Scenario: Option off
+- **WHEN** the option is off and an assistant reads a task
+- **THEN** the device answers without asking, as before

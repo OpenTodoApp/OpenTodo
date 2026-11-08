@@ -1,6 +1,6 @@
 ---
 title: The iOS app
-summary: The OpenTodo app for iPhone and iPad, built from source in Xcode: connect it to your server, reminders without push, sharing, widgets and Face ID unlock.
+summary: The OpenTodo app for iPhone and iPad, from TestFlight or built from source: connect it to your server, reminders without push, sharing, widgets and Face ID unlock.
 audience: user
 section: Reference
 specs: []
@@ -11,7 +11,11 @@ order: 23
 
 The OpenTodo app for iPhone and iPad opens your own OpenTodo server, like the [installed web app](install-phone.md#iphone-and-ipad), and adds what only an app can do: the share sheet, a Today widget and Face ID unlock of an encrypted account. It needs iOS 16.4 or later and an OpenTodo server; it talks to nothing else.
 
-There is no App Store listing. OpenTodo is under the AGPL, and the App Store's terms conflict with that licence; whoever wants the app builds it from the source in `mobile/ios` in Xcode and signs it for their own devices. That is also why the app is not on this website as a download.
+## Install it
+
+The official app comes through TestFlight, Apple's app for testing new apps, and later from the App Store. Install **TestFlight** from the App Store, then open the OpenTodo invitation link; the link will be on this page once the first build is out. TestFlight updates the app with every release.
+
+As the copyright holder, the author of OpenTodo allows distributing its iOS app through Apple's App Store and TestFlight. You can still build the app yourself from source ([Building it](#building-it)).
 
 ## Connect to your server
 
@@ -30,9 +34,13 @@ Your server's reminders arrive as notifications, scheduled on the phone from the
 
 Two limits come from iOS. A WKWebView cannot receive web push, so unlike the [installed web app](push-notifications.md) the app has no immediate push; it refreshes the schedule whenever you open it, and iOS lets it refresh in the background about hourly when it decides to. Reminders that change while the app is closed can therefore arrive late, and notifications further away than seven days are not scheduled at all. If you want push per reminder, use the installed web app on iOS 16.4 or later; both can be on the same phone, and they share the same account.
 
+## Location reminders
+
+[Location reminders](location-reminders.md) do not fire in the iPhone app yet: it does not offer **Location reminders on this phone**, and the reminders say **Fires on your phone**. Watching places with iOS region monitoring (When In Use, then Always) comes in a later version of the app; until then they fire in the [Android app](android-app.md#location-reminders).
+
 ## Offline
 
-Whether the app starts without a network depends on how it was built. A build for one known server — set `OPENTODO_APP_BOUND_HOST=todo.example.com` when you build — gets the whole installed-web-app treatment: the service worker, the precache and an offline start. A build without that setting can open any server, which iOS does not allow a service worker for, so it needs the network and says so. Whoever builds the app decides; there is no switch inside it.
+The app from TestFlight or the App Store opens any server, and iOS gives such an app no service worker, so it needs the network to start and says so when there is none. For an offline start, use the [installed web app](install-phone.md#iphone-and-ipad), or build the app for your one server: set `OPENTODO_APP_BOUND_HOST=todo.example.com` when you build, and it gets the whole installed-web-app treatment, the service worker, the precache and an offline start.
 
 ## Sharing into OpenTodo
 
@@ -54,11 +62,11 @@ The copy never leaves the phone. It is deleted when you sign out, reset the pass
 
 ## Voice notes and photos
 
-The web app records voice notes and can attach a photo taken with the camera. iOS ends an app that asks for either without declaring it first, so the app declares both and the system's question comes from the app; as everywhere else, only your server is ever loaded, so no other page can ask. The Android app declares neither, so those two are iOS-only for now — nothing else in the shell depends on them.
+The web app records voice notes and can attach a photo taken with the camera. iOS ends an app that asks for either without declaring it first, so the app declares both and the system's question comes from the app; as everywhere else, only your server is ever loaded, so no other page can ask. The Android app declares the microphone and asks the first time you dictate. It does not declare the camera, so taking a photo from the page stays iOS-only.
 
 ## Building it
 
-The app is not in the App Store, because the store's terms and the licence do not fit. So you build and sign it yourself. Needs a Mac with Xcode 16 or newer and an iOS simulator runtime:
+Instead of installing it, you can build the app yourself and sign it for your own devices, for example to get the offline start above. Needs a Mac with Xcode 16 or newer and an iOS simulator runtime:
 
 ```sh
 make ios                             # unit tests on a simulator, an unsigned device build, the dependency check
@@ -77,8 +85,12 @@ Running it in the simulator needs nothing more than Xcode. For your own iPhone y
 
 Reminders, Face ID, the certificate and local-network behaviour and the background refresh all work in that build. A free build stops launching after seven days; run it again from Xcode to renew it.
 
-**Widget and share sheet included: a paid Apple Developer Program membership.** Add your account in Xcode ▸ Settings ▸ Accounts, select the team on all three targets, and keep **App Groups** on each of them with one group name — `group.app.opentodo`, or your own if the name is taken. Xcode registers it in the developer portal on the first signing attempt.
+**Widget and share sheet included: a paid Apple Developer Program membership.** Add your account in Xcode ▸ Settings ▸ Accounts, select the team on all three targets, and keep **App Groups** on each of them with one group name — `group.app.open-todo`, or your own if the name is taken. Xcode registers it in the developer portal on the first signing attempt.
 
-Either way the first run on a device needs **Developer Mode** on (iPhone ▸ Settings ▸ Privacy & Security) and, for a free team, trusting the developer under Settings ▸ General ▸ VPN & Device Management. If Xcode reports that the bundle identifier is taken, change the `app.opentodo` prefix in `mobile/ios/project.yml` for all three targets and run `xcodegen generate`.
+Either way the first run on a device needs **Developer Mode** on (iPhone ▸ Settings ▸ Privacy & Security) and, for a free team, trusting the developer under Settings ▸ General ▸ VPN & Device Management. If Xcode reports that the bundle identifier is taken, change the `app.open-todo.ios` prefix in `mobile/ios/project.yml` for every target and run `xcodegen generate`.
+
+### Walkthrough
+
+To look at the app on several iPhones without a Mac, run **Actions → iPhone walkthrough** (`gh workflow run ios-walkthrough.yml --ref <branch>`). On a macOS runner it builds the server, seeds an account and walks the app through first run, sign-in, the lists, a project, a task, quick add, completing, swiping and dragging, search, the calendar and Settings (`mobile/ios/OpenTodoUITests/WalkthroughTests.swift`), on an iPhone SE (3rd generation), an iPhone 16, an iPhone 16 Pro Max and an iPhone 16 in dark mode with the largest text. The `ios-walkthrough` artifact holds one PNG per step and device and `summary.txt`, with what the accessibility audit found and the steps it could not reach. It reports and never fails; `scripts/ios-walkthrough.sh` runs the same on a Mac.
 
 `mobile/README.md` describes the files, the bridge and the build settings; `openspec/changes/ios-shell` records the decisions and what was measured on the platform.

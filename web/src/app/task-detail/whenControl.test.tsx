@@ -46,7 +46,7 @@ describe('WhenControl', () => {
     const { container, seg, onDone, unmount } = await mount(id, 'deadline')
     expect([...container.querySelectorAll('[data-when-segment]')].map((s) => s.getAttribute('data-when-segment'))).toEqual(['due', 'start', 'deadline', 'evening', 'repeat', 'reminders'])
     expect(seg('deadline').contains(document.activeElement)).toBe(true)
-    await click([...container.querySelectorAll('button')].find((b) => b.textContent === 'Done')!)
+    await click(container.querySelector<HTMLButtonElement>('[data-when-close]')!)
     expect(onDone).toHaveBeenCalled()
     await unmount()
   })
@@ -153,6 +153,24 @@ describe('WhenControl', () => {
     await unmount()
   })
 
+  it('a custom every 2 weeks on <the due date’s weekday> is written as every 2 weeks, which 1.0 reads (recurrence-1-0-compatible)', async () => {
+    // 2026-10-17 is a Saturday, 2026-10-14 a Wednesday.
+    for (const [date, want] of [['2026-10-17', 'every 2 weeks'], ['2026-10-14', 'every 2 weeks on saturday']] as const) {
+      const id = await createTask({ title: 'Bins', due: { date } })
+      const { seg, unmount } = await mount(id, 'repeat')
+      await click(seg('repeat').querySelector('[data-preset="custom"]')!)
+      await waitFor(() => !!seg('repeat').querySelector('input[aria-label="Repeat rule"]'), 'the rule field')
+      const input = seg('repeat').querySelector('input[aria-label="Repeat rule"]') as HTMLInputElement
+      const from = await mark()
+      await type(input, 'every 2 weeks on sat')
+      await key(input, 'Enter')
+      await queued(id, from)
+      expect(await queuedFields(id, from)).toEqual({ recurrence: want })
+      await waitFor(() => input.value === want, 'the field shows the stored rule')
+      await unmount()
+    }
+  })
+
   it('Reminders adds a reminder record and touches no task field', async () => {
     const id = await createTask({ title: 'Plan', due: { date: '2026-10-15', time: '09:00' } })
     const { seg, unmount } = await mount(id, 'reminders')
@@ -208,7 +226,11 @@ describe('WhenControl', () => {
     expect(await queuedFields(id, from)).toEqual({ due: { date: '2026-10-15', time: '09:00' } })
     await waitFor(() => !!seg('due').querySelector('[data-zone-line]'), 'the zone line')
     expect(seg('due').querySelector('[data-zone-line]')!.textContent).toContain('Floating time')
-    expect(seg('due').querySelector('button[aria-label^="Time zone:"]')!.textContent).toBe('Change')
+    // Named by its visible word and described by the line (WCAG 2.5.3 Label in Name).
+    const change = seg('due').querySelector<HTMLButtonElement>('[data-zone-line] button[aria-haspopup="dialog"]')!
+    expect(change.textContent).toBe('Change')
+    expect(change.hasAttribute('aria-label')).toBe(false)
+    expect(document.getElementById(change.getAttribute('aria-describedby')!)!.textContent).toBe('Floating time')
     expect(seg('due').querySelector('button[aria-label="Clear due date"]')).toBeNull()
     await unmount()
   })

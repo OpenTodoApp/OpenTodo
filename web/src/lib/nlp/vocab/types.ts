@@ -15,6 +15,8 @@ export interface MonthVocab {
   abbr: string[]
 }
 
+import type { SectorWord } from '../../sectors'
+
 export interface Vocabulary {
   /** BCP 47 primary language subtag. */
   code: string
@@ -30,8 +32,21 @@ export interface Vocabulary {
   before: string[]
   /** Words directly before a date phrase that make it the deadline (OpenSpec change deadlines, D7). */
   deadlineWords: string[]
+  /**
+   * "by" words, also in `before` (OpenSpec change quick-add-by-deadline): directly
+   * before a date phrase they make it the deadline, unless a time follows the date;
+   * before a time, or a date with a time, they are swallowed with the due date.
+   */
+  byWords: string[]
   /** Words that park a task when the line has no date (someday-and-evening D6). */
   somedayWords: string[]
+  /**
+   * Time sector phrases by the sector they mean (OpenSpec change time-sectors, D8),
+   * read only while the account's switch is on and only on a line without a date:
+   * "this week", "sometime next month". "next week" and "next month" alone keep
+   * their date meaning, so they are only here with their "sometime" word.
+   */
+  sectorPhrases: Record<SectorWord, string[]>
   /** Words that make a task due today and for This Evening ("tonight"). */
   eveningWords: string[]
   /**
@@ -100,6 +115,20 @@ export interface Vocabulary {
   everyOther: string[]
   /** "every other" around the unit or weekday: French "un vendredi sur deux". */
   everyOtherAround: { before: string[]; after: string[] }
+  // ---- around a recurrence phrase (OpenSpec change quick-add-weekday-recurrence) ----
+  /** "on" between a week count and weekdays: "every 2 weeks on Saturday" (D1). */
+  weekOnWords: string[]
+  /**
+   * Connectors directly before a recurrence phrase, removed with it ("and repeat",
+   * "repeating", "and then", D4). Read only when a rule follows: "Repeat the test" keeps its words.
+   */
+  repeatWords: string[]
+  /**
+   * Words before a date next to a recurrence phrase that start the series there
+   * ("starting tomorrow", "from Monday", D3); the first occurrence is the rule's
+   * first date on or after it. Elsewhere they stay in the title ("Work from home").
+   */
+  startWords: string[]
   // ---- bare months (quick-add-month-and-every-other, D2) ----
   /** Single words after which a month name alone stays text ("from September", "seit März"). */
   monthTextBefore: string[]

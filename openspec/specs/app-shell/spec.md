@@ -294,15 +294,19 @@ Wherever a task docks, the panel's left edge SHALL be a resize handle. Dragging 
 - **THEN** the panel stops at the window's width less 38 rem, and the list's rows drop their right-hand cells as their width requires
 
 ### Requirement: Phone navigation
-Below 768 px the shell SHALL show a bottom tab bar with Inbox, Today, Upcoming and Search (the phone drawer opens from the bar's menu button, see "Phone drawer"), marking the current tab in the strong text tone rather than the accent, and a floating add button at the bottom right above the bar that opens quick add as a bottom sheet with the keyboard up. The bar and the button SHALL hide while a sheet is open and on the task page, which has its own bar with Back and the next and previous task. Tabs SHALL be at least 48 px tall and SHALL respect the bottom safe area. Every list SHALL reserve the add button's footprint under its last row, so the button never covers a row or its metadata. While the content scrolls down by more than 24 px the bar SHALL minimise to its icons and the button SHALL slide out below it; on any scroll up, at the end of the content, or 600 ms after scrolling stops, both SHALL return. When the system requests reduced motion the bar and the button SHALL stay in place at all times. This is presentation only; every action behind the bar and the button is the same local operation offline.
+Below 768 px the shell SHALL show a bottom tab bar with Inbox, Today and Upcoming in the user's primary destination order (`appearance-preferences` "Primary destination order"), then Search. With no stored order that is Inbox, Today, Upcoming and Search. Search is not a destination and SHALL stay last, and the bar SHALL NOT gain further destinations. The phone drawer opens from the shell bar's menu button (see "Phone drawer"). The bar SHALL mark the current tab in the strong text tone rather than the accent, and a floating add button at the bottom right above the bar SHALL open quick add as a bottom sheet with the keyboard up. The bar and the button SHALL hide while a sheet is open and on the task page, which has its own bar with Back and the next and previous task. Tabs SHALL be at least 48 px tall and SHALL respect the bottom safe area. Every list SHALL reserve the add button's footprint under its last row, so the button never covers a row or its metadata. While the content scrolls down by more than 24 px the bar SHALL minimise to its icons and the button SHALL slide out below it; on any scroll up, at the end of the content, or 600 ms after scrolling stops, both SHALL return. When the system requests reduced motion the bar and the button SHALL stay in place at all times. This is presentation only; every action behind the bar and the button is the same local operation offline.
 
 #### Scenario: Two taps to any primary view
 - **WHEN** the user is in a project on a phone and taps Today in the bar
 - **THEN** Today opens without the drawer
 
 #### Scenario: Four tabs
-- **WHEN** the Inbox is open on a 390 px phone
+- **WHEN** the Inbox is open on a 390 px phone and the user has never reordered destinations
 - **THEN** the tab bar shows Inbox, Today, Upcoming and Search in that order, Inbox is marked current in the strong text tone, and no tab is in the accent colour
+
+#### Scenario: Tab order follows the sidebar
+- **WHEN** the user moved Today above Inbox in Settings → Appearance and opens the app on a 390 px phone
+- **THEN** the tab bar shows Today, Inbox, Upcoming and Search, Search is last, and no tab is in the accent colour
 
 #### Scenario: Add from anywhere
 - **WHEN** the user taps the floating add button in Upcoming
@@ -459,7 +463,7 @@ The top of the sidebar SHALL be one header row holding the instance's mark and n
 
 #### Scenario: Header at rest
 - **WHEN** a user opens the app on a 1280×800 screen in light and in dark
-- **THEN** the sidebar starts with the brand mark at 24 px, the wordmark "OpenTodo" and the search button in one row of 40 px or less, the mark is drawn in the current text tone with the accent on its loop, and no tick-in-a-square image is anywhere in the sidebar
+- **THEN** the sidebar starts with the brand mark at 24 px, the wordmark "OpenTodo" and the search button in one row of 40 px or less, the mark's tray is drawn in the current text tone with the accent on its tick, and no tick-in-a-square image is anywhere in the sidebar
 
 #### Scenario: Icon rail
 - **WHEN** the user collapses the sidebar with `[`
@@ -657,3 +661,50 @@ The More group SHALL list Notes after Focus, in every "How you work" mode, openi
 #### Scenario: Open Loops first
 - **WHEN** the same user switches to Open Loops first
 - **THEN** Notes is back in the More group, the six primary destinations are unchanged, and the promotion is kept for a later switch back
+
+### Requirement: No floating add button on Settings
+Below 768 px the shell SHALL hide the floating add button while Settings is open, because Settings has no quick-add action and the button would cover the chevrons at the end of its rows. The tab bar SHALL stay. The button SHALL return on the next view that offers quick add, and SHALL remain available while a quick-add sheet opened from another view is open.
+
+#### Scenario: Settings on a phone
+- **WHEN** the user opens Settings on a 390 px phone
+- **THEN** the tab bar stays visible, the floating add button is gone, and none of Settings' row chevrons is covered
+
+### Requirement: Screens off the start path load on demand
+The shell SHALL keep the Inbox, Today, Upcoming and a project's list on its first screen, and SHALL load the Calendar (Day and Week), Settings, Import and a project's Calendar layout from their own chunks when their route or layout is first shown. Those screens' components and their static imports SHALL NOT be part of the entry chunk or the first load's static imports. While a chunk is fetched the content column SHALL show the shared row skeleton as one accessible status, with the sidebar, page bar and keyboard shortcuts still usable. No screen SHALL require a chunk preloaded while the app is idle, on speculation, or by an earlier visit to a different screen.
+
+The service worker SHALL precache every emitted chunk, so a route whose chunk was precached opens offline with its local data after the first visit. A chunk that is missing after an upgrade SHALL leave the shell usable without losing the route's address.
+
+#### Scenario: First visit to the calendar
+- **WHEN** a user whose start screen is the Inbox opens Day or Week for the first time
+- **THEN** the Inbox was drawn without downloading the Calendar chunk, the content column shows the row skeleton while that chunk loads, and the Day or Week grid then renders with the same address and keyboard shortcuts
+
+#### Scenario: First visit to settings and import
+- **WHEN** the user opens Settings from the sidebar and then Import from Settings on a device that has visited neither
+- **THEN** each screen's chunk is fetched on that visit and each screen renders without a full page reload or a spinner
+
+#### Scenario: Offline after one visit
+- **WHEN** the device is offline and the user reopens Day, Settings or Import after having opened it once
+- **THEN** the screen renders from the service worker's precache with the device's local data, and no request is needed to fetch its chunk
+
+#### Scenario: Project Calendar layout
+- **WHEN** a project is opened on a device that has never shown the project's Calendar layout, and the user switches that project to Calendar
+- **THEN** the Calendar layout and its CalendarView chunk load then, and the project's list did not carry them on the first visit
+
+### Requirement: The phone drawer is inert when closed and owns the page when open
+Below 768 px the drawer SHALL be out of the tab order and out of the accessibility tree while it is closed: it SHALL carry inert and be hidden from assistive technology, and nothing inside it (the find field, the destinations, the account footer) SHALL be focusable or read. While it is open it SHALL behave as an overlay: it SHALL take focus when it opens, Tab and Shift+Tab SHALL stay inside it, the page behind it SHALL be inert and SHALL not scroll, Escape and the system Back SHALL close it, and focus SHALL return to the menu button that opened it. From 768 px the sidebar SHALL be a column: never inert, never hidden from assistive technology, and never marking the page as inert. The scrim SHALL belong to the open drawer, and a swipe on it SHALL not scroll the page behind.
+
+#### Scenario: A closed drawer is skipped
+- **WHEN** the Inbox is open on a 390 px phone and the user presses Tab from the menu button
+- **THEN** focus leaves the bar for the page content, never entering the off-screen drawer, and a screen reader does not list the drawer's destinations
+
+#### Scenario: The open drawer holds focus
+- **WHEN** the user opens the drawer with the menu button
+- **THEN** focus moves into the drawer, Tab and Shift+Tab cycle inside it, the page behind is inert and does not scroll, and the tab bar and add button leave the page
+
+#### Scenario: Escape closes it and gives focus back
+- **WHEN** the open drawer has focus and the user presses Escape
+- **THEN** the drawer closes, becomes inert again, the page behind is interactive, and focus is back on the menu button
+
+#### Scenario: The column is never inert
+- **WHEN** the same account is open at 1280 px
+- **THEN** the sidebar is not inert and not hidden from assistive technology, and the page behind it is not inert

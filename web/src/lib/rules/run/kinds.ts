@@ -1,7 +1,7 @@
 // The step kinds (internal/rules/routine_steps.go): data steps call the pure
 // functions of stepData.ts, steps with a tool plan through tools.ts.
 import { nameId } from '../../ids'
-import { compile, parse as parseQuery, type FilterContext } from '../../filter'
+import { compile, membersFrom, parse as parseQuery, type FilterContext } from '../../filter'
 import type { Label, Project, Section, Task, FieldDef, RoutineStep } from '../../types'
 import { cutText, filterLines, inFindScope, joinLines, replaceText, sortLines, sortTasks, splitLines, take, valueLen } from '../stepData'
 import { dateLiteral } from '../steps'
@@ -114,11 +114,12 @@ function queryMatcher(st: RunState, s: RoutineStep): (t: Row) => boolean {
     if (!v || !isNull(v.deleted_at)) throw fail('not_found', `saved view ${view} not found`)
     q = str(v, 'query')
   }
+  const known = st.w.project ? [...st.w.memberships.values()].filter((m) => m.projectId === st.w.project) : [...st.w.memberships.values()]
   const ctx: FilterContext = {
     today: st.w.today, weekStart: st.w.weekStart, tasks: [...st.tasks.values()] as unknown as Task[],
     projects: [...st.projects.values()] as unknown as Project[], labels: st.labels as unknown as Label[],
     sections: [...st.sections.values()] as unknown as Section[], fields: (st.w.fields ?? []).filter((f) => isNull(f.deleted_at)) as unknown as FieldDef[],
-    tracked: st.tracked(),
+    tracked: st.tracked(), trackedOccurrence: st.trackedOccurrence(), me: st.w.userId, members: membersFrom(known),
   }
   let test: (t: Task) => boolean
   try {

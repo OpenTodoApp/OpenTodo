@@ -37,7 +37,7 @@ What the compose file does for you:
 - The health check uses the binary itself, so Coolify shows the service as healthy or unhealthy correctly.
 - `ports:` is ignored by Coolify's proxy routing and only matters for plain Docker.
 
-The compose file pulls the published image `ghcr.io/opentodoapp/opentodo:stable`, which every release moves. Use a release line (`:0.19`) to take only its fixes, or `:latest` to follow `main` with unreleased changes. To build from your fork instead, change `image:` to `build: .` in the compose file; Coolify will build the multi-stage Dockerfile on the server. A build from source reports version `dev`; with the Dockerfile build pack, set **Advanced → Source commit availability** to *Available during build* and it reports `dev+<commit>`.
+The compose file pulls the published image `ghcr.io/opentodoapp/opentodo:stable`, which every release moves. Use a release line (`:1.2`) to take only its fixes, or `:latest` to follow `main` with unreleased changes. To build from your fork instead, change `image:` to `build: .` in the compose file; Coolify will build the multi-stage Dockerfile on the server. A build from source reports version `dev`; with the Dockerfile build pack, set **Advanced → Source commit availability** to *Available during build* and it reports `dev+<commit>`.
 
 ## Option B: Dockerfile build pack
 
@@ -55,7 +55,7 @@ If you prefer not to use compose:
 
 ## Environment variables
 
-None is required. With a Compose resource (the one-click template or Option A), a variable you add in Coolify's **Environment Variables** tab reaches the container **only if the compose file references it**; anything else is silently ignored. Both compose files reference the variables below (the template the most common ones, `docker-compose.yml` all of them); add a line with **Edit Compose file** for any other. The complete list is in the [README](../../README.md#configuration).
+None is required. With a Compose resource (the one-click template or Option A), a variable you add in Coolify's **Environment Variables** tab reaches the container **only if the compose file references it**; anything else is silently ignored. Both compose files reference the variables below (the template the most common ones, `docker-compose.yml` all of them); add a line with **Edit Compose file** for any other. The complete list is in the [README](configuration.md).
 
 | Variable | Default | Notes |
 | --- | --- | --- |
@@ -75,7 +75,7 @@ None is required. With a Compose resource (the one-click template or Option A), 
 | `OPENTODO_EMAIL_*` | unset | Optional [email to task](../email.md): `ADDRESS`, `IMAP_HOST`, `IMAP_USER` and `IMAP_PASSWORD` together (mark the password as a secret, or mount a file and set `IMAP_PASSWORD_FILE`). Partial settings stop the container at startup with the missing name in the log |
 | `OPENTODO_SMTP_*` | unset | Optional [outgoing email](outgoing-email.md) (`HOST`, `SECURITY`, `USER`, `PASSWORD` or `PASSWORD_FILE`, `FROM`; `HOST` and `FROM` together). Mark the password as a secret. Each one set locks its field in Settings → Server → Outgoing email |
 | `OPENTODO_OIDC_*` | unset | Optional [single sign-on](sso.md) settings (`ISSUER`, `CLIENT_ID`, `CLIENT_SECRET`, `DISPLAY_NAME`, `SSO_ONLY`) that override and lock the fields in Settings → People → Single sign-on |
-| `OPENTODO_BACKUP_*` | unset | Optional presets for [scheduled backups](../backups.md#environment-presets), applied once; Settings → Server wins afterwards |
+| `OPENTODO_BACKUP_*` | unset | Optional presets for [scheduled backups](../backups.md#environment-presets), applied once; Settings → Server → Backups wins afterwards |
 
 ## Passkeys
 
@@ -93,11 +93,11 @@ Coolify gives the app the **first** domain of the service as `OPENTODO_BASE_URL`
 
 ## Adding people
 
-Leave `OPENTODO_ALLOW_SIGNUP` unset. In the app, open **Settings → People → Users and invitations**, create an invitation (optionally bound to an email, expiring in 1 hour to 30 days) and send the link. It creates one account and then stops working; pending links can be revoked. Links use `OPENTODO_BASE_URL`, which the compose file sets from Coolify's domain. See [Adding people](../../README.md#adding-people). **Settings → People → Users and invitations** manages accounts afterwards: admins, deactivation, reset links, deletion and owner transfer. If the owner forgot their password, open the service's terminal in Coolify and run `/opentodo reset-owner-password` (see [Recovering owner access](docker.md#recovering-owner-access)).
+Leave `OPENTODO_ALLOW_SIGNUP` unset. In the app, open **Settings → People → Users and invitations**, create an invitation (optionally bound to an email, expiring in 1 hour to 30 days) and send the link. It creates one account and then stops working; pending links can be revoked. Links use `OPENTODO_BASE_URL`, which the compose file sets from Coolify's domain. See [Managing users](docker.md#managing-users). **Settings → People → Users and invitations** manages accounts afterwards: admins, deactivation, reset links, deletion and owner transfer. If the owner forgot their password, open the service's terminal in Coolify and run `/opentodo reset-owner-password` (see [Recovering owner access](docker.md#recovering-owner-access)).
 
 ## Backups
 
-Everything is in the `/data` volume (one file, `opentodo.db`, plus its WAL files while running, the web push keys and settings secrets). Turn on scheduled backups in **Settings → Server**: consistent snapshots to `/data/backups`, an S3-compatible bucket or a WebDAV share, with retention and optional encryption, restorable with `opentodo restore` (see [docs/backups.md](../backups.md#restore)). Coolify's scheduled volume backups archive the volume with `tar`; a copy taken while the server writes can catch the database mid-write, so set **Archive behavior** to *Stop containers during archive* there, or rely on the built-in backups. The in-app **Settings → Data → Download export** gives a portable JSON copy at any time.
+Everything is in the `/data` volume (one file, `opentodo.db`, plus its WAL files while running, the web push keys and settings secrets). Turn on scheduled backups in **Settings → Server → Backups**: consistent snapshots to `/data/backups`, an S3-compatible bucket or a WebDAV share, with retention and optional encryption, restorable with `opentodo restore` (see [docs/backups.md](../backups.md#restore)). Coolify's scheduled volume backups archive the volume with `tar`; a copy taken while the server writes can catch the database mid-write, so set **Archive behavior** to *Stop containers during archive* there, or rely on the built-in backups. The in-app **Settings → Data → Download export** gives a portable JSON copy at any time.
 
 ## Audit log
 

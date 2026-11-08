@@ -11,11 +11,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/OpenTodoApp/opentodo/internal/store"
+	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 )
 
 func TestStoreGetSet(t *testing.T) {
-	db, err := store.Open(t.TempDir())
+	db, err := storetest.OpenDir(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}

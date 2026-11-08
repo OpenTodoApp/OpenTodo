@@ -82,11 +82,9 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
                                            replyHandler: @escaping (Any?, String?) -> Void) {
         MainActor.assumeIsolated {
             let frameOrigin = message.frameInfo.securityOrigin
-            let sent = Origin.signature(scheme: frameOrigin.protocol, host: frameOrigin.host, port: frameOrigin.port)
             guard message.name == Self.handlerName,
-                  !frameOrigin.host.isEmpty,
-                  sent == Origin.signature(origin),
-                  message.frameInfo.isMainFrame,
+                  Self.accepts(scheme: frameOrigin.protocol, host: frameOrigin.host, port: frameOrigin.port,
+                               mainFrame: message.frameInfo.isMainFrame, configured: origin),
                   let body = message.body as? [String: Any],
                   let method = body["m"] as? String
             else { return replyHandler(nil, "refused") }
@@ -94,6 +92,13 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
             if let first = args.first as? String, first.utf8.count > Self.maxMessage { return replyHandler(nil, "too_large") }
             handle(method: method, args: args, reply: replyHandler)
         }
+    }
+
+    /// The origin decision of every message: answered only from the main frame of a page
+    /// whose security origin (the parts WebKit reports) is the configured server's.
+    /// Pinned by BridgeTests (OpenTodoTests/ShellDataTests.swift).
+    nonisolated static func accepts(scheme: String, host: String, port: Int, mainFrame: Bool, configured: URL) -> Bool {
+        mainFrame && !host.isEmpty && Origin.signature(scheme: scheme, host: host, port: port) == Origin.signature(configured)
     }
 
     private func handle(method: String, args: [Any], reply: @escaping (Any?, String?) -> Void) {

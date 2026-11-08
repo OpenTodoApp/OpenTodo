@@ -35,10 +35,10 @@ On a plain http address (`http://192.168.1.10:8400`) tasks, projects, sync, shar
 
 ## Updates
 
-The app names one release (`ghcr.io/opentodoapp/opentodo:0.19.0`), not a moving tag. After each release the store repository gets an update with the new version; Runtipi shows it on the app once it refreshes its app stores (**Settings → Update App Stores** does it right away). Click **Update**; migrations run on start. There are no down-migrations, so back up first. Release candidates are never offered.
+The app names one release (`ghcr.io/opentodoapp/opentodo:1.2.0`), not a moving tag. After each release the store repository gets an update with the new version; Runtipi shows it on the app once it refreshes its app stores (**Settings → Update App Stores** does it right away). Click **Update**; migrations run on start. There are no down-migrations, so back up first. Release candidates are never offered.
 
 ## Data and backups
 
 Everything OpenTodo stores (the database, attachments and its own backups) is in `app-data/<store name>/opentodo/data` inside the Runtipi folder. A small helper container gives that folder to the user OpenTodo runs as (65532) before each start, because Runtipi creates it owned by root.
 
-Back it up with Runtipi's app backup (the app's **Backups** tab), with your usual backup tool (stop the app first for a consistent copy), or turn on scheduled backups in OpenTodo's **Settings → Server** (written to `backups/` in the same folder, or to S3 or WebDAV). See [Backups](../backups.md).
+Back it up with Runtipi's app backup (the app's **Backups** tab), with your usual backup tool (stop the app first for a consistent copy), or turn on scheduled backups in OpenTodo's **Settings → Server → Backups** (written to `backups/` in the same folder, or to S3 or WebDAV). See [Backups](../backups.md).

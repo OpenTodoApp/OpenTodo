@@ -4,6 +4,7 @@ import (
 	"sort"
 
 	"github.com/OpenTodoApp/opentodo/internal/recurrence"
+	"github.com/OpenTodoApp/opentodo/internal/sector"
 )
 
 // Context is the reference state of one parse (ParseContext in parse.ts).
@@ -20,6 +21,9 @@ type Context struct {
 	// Energy reads the `~deep` tokens (OpenSpec change task-energy, D4): the
 	// account's Energy levels preference.
 	Energy bool `json:"energy,omitempty"`
+	// Sectors reads the time sector phrases (OpenSpec change time-sectors, D8):
+	// the account's Time sectors switch.
+	Sectors bool `json:"sectors,omitempty"`
 }
 
 // Due is a floating due date with an optional time.
@@ -34,7 +38,10 @@ type Result struct {
 	Due      *Due   `json:"due"`
 	Deadline string `json:"deadline,omitempty"`
 	Someday  bool   `json:"someday,omitempty"`
-	Evening  bool   `json:"evening,omitempty"`
+	// Sector is the time sector from a sector phrase on a line without a date
+	// (time-sectors D8), resolved on Today with WeekStart.
+	Sector  string `json:"sector,omitempty"`
+	Evening bool   `json:"evening,omitempty"`
 	// DayPart is "morning" or "afternoon" from a part phrase (day-parts D5).
 	DayPart   string   `json:"dayPart,omitempty"`
 	ProjectID string   `json:"projectId,omitempty"`
@@ -118,6 +125,7 @@ func (p *parser) marks(r Result) []Mark {
 	if p.someday != nil {
 		add("someday", *p.someday, r.Someday)
 	}
+	add("sector", p.sector.span, p.sector.set && r.Sector != "")
 	add("project", p.project.span, p.project.set)
 	for _, l := range p.labels {
 		add("label", l.span, true)
@@ -152,13 +160,15 @@ type parser struct {
 
 	date, deadline, project, rec found
 	// dateBare marks a date from a month name alone, which a later complete
-	// date phrase replaces; recStart is the first date of an "every other
-	// friday" rule (quick-add-month-and-every-other D1, D3).
+	// date phrase replaces (quick-add-month-and-every-other D1); recStart is the
+	// date of a start phrase next to the rule (quick-add-weekday-recurrence D3).
 	dateBare bool
 	recStart string
 	// dayPart is Morning or Afternoon (day-parts D5); Evening is evening.
 	dayPart found
-	timeV   struct {
+	// sector is the time sector a sector phrase means (time-sectors D8).
+	sector found
+	timeV  struct {
 		value, date string
 		span        Span
 		set         bool
@@ -325,7 +335,9 @@ func (p *parser) phrase(i int) int {
 		}
 	}
 	if !p.timeV.set {
-		tm = matchTimeAt(tokens, i, dctx)
+		if tm = matchTimeAt(tokens, i, dctx); tm == nil {
+			tm = matchByTimeAt(tokens, i, dctx)
+		}
 	}
 	// After the first rule only a literal match still counts; a suffixed number
 	// above four before a weekday is one too (quick-add-nth-weekday D1, D3).
@@ -368,6 +380,13 @@ func (p *parser) phrase(i int) int {
 		p.timeV.value, p.timeV.date, p.timeV.span, p.timeV.set = tm.time, tm.date, p.span(tm.from, tm.to), true
 		return tm.to
 	}
+	// A sector phrase, like a someday phrase, counts only on a line without a date (time-sectors D8).
+	if p.ctx.Sectors && !p.sector.set {
+		if n, word := sectorPhraseAt(tokens, i, dctx); n > 0 {
+			p.sector = found{sector.Resolve(word, p.ctx.Today, dctx.weekStart), p.span(i, i+n), true}
+			return i + n
+		}
+	}
 	n := 0
 	if p.someday == nil {
 		n = wordsAt(tokens, i, dctx, func(v *Vocab) []string { return v.SomedayWords })
@@ -389,11 +408,16 @@ func (p *parser) due() *Due {
 	d := p.date.value
 	if !p.date.set {
 		switch {
-		case p.rec.set && p.recStart != "":
-			d = p.recStart
 		case p.rec.set:
+			// The rule's first date on or after its start phrase, or today. A date
+			// phrase is the first occurrence even off the rule's weekday
+			// (quick-add-weekday-recurrence D2, D3).
+			from := p.ctx.Today
+			if p.recStart != "" {
+				from = p.recStart
+			}
 			r, _ := recurrence.Parse(p.rec.value)
-			d, _ = r.First(p.ctx.Today)
+			d, _ = r.First(from)
 		case p.timeV.date != "":
 			d = p.timeV.date
 		default:
@@ -410,7 +434,8 @@ func (p *parser) due() *Due {
 // result builds the Result and the title: the line without the recognised
 // spans (quoted text always stays).
 func (p *parser) result(quotes []Span) Result {
-	parked := p.someday != nil && !p.date.set && !p.timeV.set && !p.deadline.set && !p.rec.set
+	sectored := p.sector.set && !p.date.set && !p.timeV.set && !p.rec.set
+	parked := p.someday != nil && !sectored && !p.date.set && !p.timeV.set && !p.deadline.set && !p.rec.set
 	var remove []Span
 	add := func(s Span, ok bool) {
 		if ok {
@@ -426,13 +451,20 @@ func (p *parser) result(quotes []Span) Result {
 	if parked {
 		remove = append(remove, *p.someday)
 	}
+	add(p.sector.span, sectored)
 	add(p.deadline.span, p.deadline.set)
 	add(p.project.span, p.project.set)
 	add(p.rec.span, p.rec.set)
 	add(p.priority.span, p.priority.value > 0)
 	add(p.estimate.span, p.estimate.value > 0)
-	out := Result{Due: p.due(), Deadline: p.deadline.value, Someday: parked, Evening: p.evening != nil, DayPart: p.dayPart.value, ProjectID: p.project.value,
-		Priority: p.priority.value, EstimateMinutes: p.estimate.value, SpentMinutes: p.spent, Recurrence: p.rec.value, Labels: []string{}, Reminders: []Reminder{}}
+	due := p.due()
+	rule := p.rec.value
+	if due != nil && rule != "" {
+		// The form a 1.0 client reads when one means the same thing (recurrence-1-0-compatible).
+		rule = recurrence.Compatible(rule, due.Date)
+	}
+	out := Result{Due: due, Deadline: p.deadline.value, Someday: parked, Sector: map[bool]string{true: p.sector.value}[sectored], Evening: p.evening != nil, DayPart: p.dayPart.value, ProjectID: p.project.value,
+		Priority: p.priority.value, EstimateMinutes: p.estimate.value, SpentMinutes: p.spent, Recurrence: rule, Labels: []string{}, Reminders: []Reminder{}}
 	for _, e := range p.energies {
 		remove = append(remove, e.span)
 		out.Energy = e.value

@@ -3,11 +3,11 @@
 // "Task panel tabs"; time-tracking "Time tab and manual entries").
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createProject, createTask, resetDeviceId, applyOps } from '../../lib/ops'
+import { completeTask, createProject, createTask, resetDeviceId, applyOps } from '../../lib/ops'
 import { db, useDatabase } from '../../lib/db'
 import { setDateTime } from '../../lib/dates'
 import { setCurrentUserId } from '../../lib/sharing'
-import { logTime } from '../../lib/timeEntries'
+import { logTime, useTaskTracked, useTrackedTotals } from '../../lib/timeEntries'
 import type { HistoryPage, Task } from '../../lib/types'
 import { click, key, render, type, visibleText, waitFor } from '../../ui/test-utils'
 import { ConversationTabs } from './ConversationTabs'
@@ -32,6 +32,17 @@ afterEach(() => {
   vi.useRealTimers()
   setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' })
 })
+
+/** The figure a row's chip reads (the shared totals). */
+function RowFigure({ id }: { id: string }) {
+  return <span data-row-tracked>{useTaskTracked(id) ?? 'none'}</span>
+}
+
+/** The figures a saved view's filter reads: `tracked` (every entry, as in 1.0) and `tracked occurrence`. */
+function FilterFigures({ id }: { id: string }) {
+  const { tracked, trackedOccurrence } = useTrackedTotals()
+  return <span data-filter-tracked>{`${tracked.get(id) ?? 'none'}/${trackedOccurrence.get(id) ?? 'none'}`}</span>
+}
 
 const rows = (c: HTMLElement) => [...c.querySelectorAll<HTMLElement>('[data-time-entry]')]
 const at = (h: number, m: number) => new Date(2026, 9, 14, h, m).getTime()
@@ -73,6 +84,29 @@ describe('Time tab', () => {
     expect(rows(v.container)[0].getAttribute('data-time-entry')).toBe(top.id)
     expect(visibleText(v.container.querySelector('[data-time-total]')!)).toBe('Total 2h')
     await v.unmount()
+  })
+
+  it('Repeating task: the total counts the current occurrence, the line below every occurrence (fix-recurring-tracked-time)', async () => {
+    const id = await createTask({ title: 'Water the plants', recurrence: 'every day', due: { date: '2026-10-14' }, estimate_minutes: 30 })
+    await logTime(id, at(8, 0), at(8, 40))
+    await completeTask(id, { now: at(9, 0), today: '2026-10-14' })
+    await logTime(id, at(10, 0), at(10, 10))
+    const series = (await db.tasks.get(id))!
+    expect(series.due?.date).toBe('2026-10-15')
+    const v = await render(<TimeTab task={series} readOnly={false} />)
+    await waitFor(() => !!v.container.querySelector('[data-time-total-all]'), 'both totals')
+    expect(visibleText(v.container.querySelector('[data-time-total]')!)).toBe('Total 10m')
+    expect(visibleText(v.container.querySelector('[data-time-total-all]')!)).toBe('All occurrences 50m')
+    expect(rows(v.container)).toHaveLength(2)
+    await v.unmount()
+    // The row's chip reads the same current occurrence: `10m / 30m`.
+    const row = await render(<RowFigure id={id} />)
+    await waitFor(() => row.container.querySelector('[data-row-tracked]')?.textContent === '10', 'the row figure')
+    await row.unmount()
+    // Filters and saved views keep the 1.0 meaning of `tracked` (tracked-time-api-compatible).
+    const filter = await render(<FilterFigures id={id} />)
+    await waitFor(() => filter.container.querySelector('[data-filter-tracked]')?.textContent === '50/10', 'the filter figures')
+    await filter.unmount()
   })
 
   it('End before start: the form shows the error and writes nothing', async () => {

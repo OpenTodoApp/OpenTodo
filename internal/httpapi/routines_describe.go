@@ -31,7 +31,7 @@ const (
 )
 
 func (s *Server) registerRoutineDraft(mux *routes) {
-	s.routineDraftLimiter = newRateLimiter(assistant.DraftsPerHour, routineDraftWindow)
+	s.routineDraftLimiter = s.limit("routine.draft", assistant.DraftsPerHour, routineDraftWindow)
 	mux.handle(routineDraftPath, signedIn.SessionOnly().DemoDenied(), s.handleRoutineDraft)
 }
 

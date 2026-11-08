@@ -194,7 +194,7 @@ describe('parse: errors', () => {
     expect(errorOf('p0 | p1').message).toBe('Priority must be p1, p2, p3 or p4 at position 1')
     expect(errorOf('"milk"').message).toBe('Unexpected text "milk" at position 1; quote names after "@" or "#", or use search:')
     expect(errorOf('no').message).toBe('Expected "date", "project", "labels", "time", "deadline", "start", "origin" or a field name after "no" at position 1')
-    expect(errorOf('no').expected).toEqual(['"date"', '"project"', '"labels"', '"time"', '"deadline"', '"start"', '"origin"', '"energy"', '"notes"', 'field name'])
+    expect(errorOf('no').expected).toEqual(['"date"', '"project"', '"labels"', '"time"', '"deadline"', '"start"', '"origin"', '"energy"', '"notes"', '"sector"', 'field name'])
   })
 
   it('reports incomplete date terms', () => {
@@ -728,6 +728,37 @@ describe('evaluate: tracked time (OpenSpec time-tracking 7.1)', () => {
   })
 })
 
+// tracked-time-api-compatible: `tracked` keeps its 1.0 meaning, every entry of the
+// task; `tracked occurrence` reads a repeating task's current occurrence. A
+// repeating task with 30 minutes before a completion and 10 after: 40 and 10.
+describe('evaluate: tracked occurrence', () => {
+  const L: Task[] = [task('series', { recurrence: 'every day' }), task('plain')]
+  const tracked = new Map([['series', 40], ['plain', 20]])
+  const trackedOccurrence = new Map([['series', 10], ['plain', 20]])
+  const run = (q: string, ctx: Partial<FilterContext> = { tracked, trackedOccurrence }) => {
+    const r = runFilter(q, L, { ...CTX, ...ctx })
+    return r.ok ? r.tasks.map((x) => x.id).sort() : r.error
+  }
+  it('tracked counts every occurrence, as in 1.0', () => {
+    expect(run('tracked >= 30m')).toEqual(['series'])
+    expect(run('tracked = 40m')).toEqual(['series'])
+  })
+  it('tracked occurrence counts the current occurrence', () => {
+    expect(run('tracked occurrence >= 30m')).toEqual([])
+    expect(run('tracked occurrence = 10m')).toEqual(['series'])
+    expect(run('TRACKED OCCURRENCE')).toEqual(['plain', 'series'])
+  })
+  it('reads the total without the occurrence map', () => {
+    expect(run('tracked occurrence >= 30m', { tracked })).toEqual(['series'])
+  })
+  it('parses and prints', () => {
+    expect(parse('tracked occurrence > 10')).toEqual({ kind: 'tracked', op: '>', minutes: 10, occurrence: true })
+    expect(parse('tracked occurrence')).toEqual({ kind: 'keyword', keyword: 'tracked occurrence' })
+    expect(printQuery(parse('tracked occurrence >= 1h')!)).toBe('tracked occurrence >= 60')
+    expect(errorOf('tracked occurrence >').message).toBe('Expected a duration such as 30m or 1h30 after ">" at position 20')
+  })
+})
+
 describe('evaluate: warnings and graceful degradation', () => {
   it('unknown label warns and rest still matches', () => {
     const r = runFilter('@errands | p1', TASKS, CTX)
@@ -899,5 +930,22 @@ describe('available (project-flow-modes)', () => {
   it('round-trips through printQuery', () => {
     const ast = parse('available & !available')!
     expect(stripPos(parse(printQuery(ast))!)).toEqual(stripPos(ast))
+  })
+})
+
+describe('assignee terms (today-assigned-filter)', () => {
+  it('accepts assigned, unassigned, assigned: me and a quoted name', () => {
+    expect(parse('assigned')).toEqual({ kind: 'keyword', keyword: 'assigned' })
+    expect(parse('unassigned')).toEqual({ kind: 'keyword', keyword: 'unassigned' })
+    expect(parse('!assigned')).toEqual({ kind: 'not', item: { kind: 'keyword', keyword: 'assigned' } })
+    expect(parse('assigned: me')).toEqual({ kind: 'assigned', name: 'me' })
+    expect(parse('assigned:"Sam Lee"')).toEqual({ kind: 'assigned', name: 'Sam Lee' })
+    expect(printQuery(parse('assigned: me & unassigned')!)).toBe('(assigned: me & unassigned)')
+  })
+  it('assigned: with no name is an error, and assigned is reserved', () => {
+    expect(errorOf('assigned:')).toMatchObject({ message: 'Expected a name after "assigned:" at position 1', position: 1 })
+    expect(errorOf('p1 & assigned: ')).toMatchObject({ message: 'Expected a name after "assigned:" at position 6' })
+    expect(() => parse('assigned = x')).toThrow(FilterSyntaxError)
+    expect(parse('"assigned" = x')).toMatchObject({ kind: 'field', name: 'assigned' })
   })
 })

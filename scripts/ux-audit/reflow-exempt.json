@@ -1,0 +1,12 @@
+{
+ "reason": "Regions the accessibility gate's reflow measure (M18, WCAG 1.4.10, OpenSpec change accessibility-aa D2) lets scroll sideways inside themselves at 320 CSS px. Only content whose meaning needs two dimensions belongs here: the page around it must still not scroll sideways.",
+ "regions": [
+  { "id": "calendar-day", "selector": "[data-calendar-scroller]", "reason": "Day and Week time grids: hours down, days across; a day column narrower than a time slot can no longer show a block." },
+  { "id": "timeline", "selector": "[role=\"grid\"][data-scroll-x]", "reason": "Project timeline: tasks down, dates across." },
+  { "id": "board", "selector": "[data-board]", "reason": "Board columns (and a saved view as a board): sections across, cards down; at 320 px one column fills the width and the next scrolls into view." },
+  { "id": "field-columns", "selector": "[data-field-columns]", "reason": "Tasks and fields as a data table: rows of tasks, a column per field." },
+  { "id": "markdown-code-table", "selector": "[data-lang], pre, .markdown table, [data-markdown-table]", "reason": "A code block keeps its lines (wrapping changes the meaning of code) and a Markdown table its columns." },
+  { "id": "charts", "selector": "[data-chart-table], [data-heatmap], [data-dot-grid]", "reason": "Statistics tables and calendar heatmaps: weeks across, days down." },
+  { "id": "import-preview", "selector": "[data-import-preview]", "reason": "The import preview is a data table of the file's columns." }
+ ]
+}
