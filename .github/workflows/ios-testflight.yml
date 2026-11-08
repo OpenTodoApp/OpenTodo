@@ -7,10 +7,13 @@ name: iOS TestFlight
 # Signing needs no Mac and nothing stored: the archive is built unsigned and signed ad hoc, then
 # scripts/release/appstore.mjs makes an Apple Distribution certificate from a key generated on the
 # runner and one App Store profile per bundle ID through the App Store Connect API, the export
-# signs with them (checked before the upload), altool uploads, the job waits until Apple has
-# processed the build (a certificate revoked earlier makes Apple refuse it as ITMS-90035), and the
-# last step revokes the certificate and deletes the profiles and the keychain, whatever happened
-# before. The secrets are in the `release`
+# signs with them (checked before the upload), altool uploads, and the job waits until Apple has
+# processed the build. The certificate of an uploaded build stays valid: Apple checks the signature
+# again when the build is submitted for review, and a revoked one makes it ITMS-90035 "Invalid
+# Signature". Its private key never leaves the runner, so nobody can sign with it. At Apple's
+# limit of certificates the next run retires the oldest one this workflow made. The last step
+# deletes the keychain and the key whatever happened, and revokes the certificate and deletes the
+# profiles only when nothing was uploaded. The secrets are in the `release`
 # environment: APPLE_TEAM_ID, ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8. Without them the job warns
 # and succeeds, so a fork or a release before the owner set this up stays green.
 on:
@@ -109,6 +112,7 @@ jobs:
         if: steps.secrets.outputs.ready == 'true'
         run: scripts/release/ios-testflight.sh export "$ARCHIVE" "$SIGNING" "$RUNNER_TEMP/export"
       - name: Upload to TestFlight
+        id: upload
         if: steps.secrets.outputs.ready == 'true'
         env:
           VERSION: ${{ steps.version.outputs.version }}
@@ -130,11 +134,13 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
           BUILD: ${{ steps.version.outputs.build }}
         run: node scripts/release/appstore.mjs processed "$VERSION" "$BUILD"
-      - name: Revoke the certificate, delete the profiles, the keychain and the key
+      - name: Delete the keychain and the key; revoke the certificate only if nothing was uploaded
         if: always() && steps.secrets.outputs.ready == 'true'
+        env:
+          UPLOADED: ${{ steps.upload.outcome == 'success' }}
         run: |
           status=0
-          if [ -f "$SIGNING/state.json" ]; then node scripts/release/appstore.mjs cleanup "$SIGNING" || status=$?; fi
+          if [ "$UPLOADED" != "true" ] && [ -f "$SIGNING/state.json" ]; then node scripts/release/appstore.mjs cleanup "$SIGNING" || status=$?; fi
           scripts/release/ios-testflight.sh cleanup "$SIGNING" || status=$?
           rm -rf "$RUNNER_TEMP/asc-keys"
           exit $status
