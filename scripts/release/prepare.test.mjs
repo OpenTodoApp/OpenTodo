@@ -8,7 +8,7 @@ import { test } from 'node:test'
 import { run as deployCheck } from '../deploy-check.mjs'
 import { compareVersions, laterRelease, loadFacts, readText, releaseVersion, ROOT } from '../deploy/common.mjs'
 import { staleCopies } from '../deploy/mirror.mjs'
-import { bumpLine, bumpText, candidateChangelogText, candidates, casaosText, changelogText, easypanelText, fdroidChangelog, haChangelogText, prepare, truenasText, withoutCandidates } from './prepare.mjs'
+import { bumpLine, bumpText, candidateChangelogText, candidates, casaosText, changelogText, easypanelText, fdroidChangelog, fdroidRecipeText, haChangelogText, prepare, truenasText, withoutCandidates } from './prepare.mjs'
 import { releaseNotes } from './play-upload.mjs'
 import { checkUpgradeFixture, fixtureDir, isNewMinor } from './upgradeFixture.mjs'
 import { fragmentsMarkdown, readFragments } from './fragments.mjs'
@@ -78,6 +78,7 @@ const PATCH_RELEASE_FILES = [
   'docs/self-hosting/render.md',
   'docs/self-hosting/runtipi.md',
   'docs/self-hosting/synology.md',
+  'mobile/android/store/fdroid/app.opentodo.yml',
   'docs/self-hosting/truenas.md',
   'web/package-lock.json',
   'web/package.json',
@@ -87,7 +88,7 @@ const PATCH_RELEASE_FILES = [
 function copyRepo() {
   const dir = mkdtempSync(join(tmpdir(), 'release-prepare-'))
   for (const p of ['.github', 'deploy', 'docs/self-hosting', 'docs/accessibility', 'internal', 'scripts', 'skills', 'web/public', 'CHANGELOG.md', 'LICENSE', 'README.md',
-    'web/package.json', 'web/package-lock.json']) {
+    'web/package.json', 'web/package-lock.json', 'mobile/android/store/fdroid/app.opentodo.yml']) {
     mkdirSync(dirname(join(dir, p)), { recursive: true })
     cpSync(join(ROOT, p), join(dir, p), { recursive: true, filter: (src) => !src.includes('node_modules') })
   }
@@ -516,4 +517,9 @@ test('release-prepare: the changelog of a candidate and of the release after it'
   // A candidate of an older release is history: it neither blocks nor is removed.
   const old = log.replace('## [1.2.3] - 2030-01-01\n\n', '## [1.2.3] - 2030-01-01\n\n## [1.2.3-rc.1] - 2029-12-01\n\nOld.\n\n')
   assert.ok(changelogText(old, '1.2.3', '1.2.4', '2030-02-15').includes('## [1.2.3-rc.1] - 2029-12-01\n\nOld.\n'))
+})
+
+test("release-prepare: F-Droid's recipe moves its build and the version its bot reads", () => {
+  const before = 'Builds:\n  - versionName: 1.2.0\n    versionCode: 10200\n    commit: 0d4dd3f78e108fbe046fb8781c9e4d1eb33e729a\n    subdir: mobile/android/app\n\nCurrentVersion: 1.2.0\nCurrentVersionCode: 10200\n'
+  assert.equal(fdroidRecipeText(before, '1.10.3'), 'Builds:\n  - versionName: 1.10.3\n    versionCode: 11003\n    commit: v1.10.3\n    subdir: mobile/android/app\n\nCurrentVersion: 1.10.3\nCurrentVersionCode: 11003\n')
 })
