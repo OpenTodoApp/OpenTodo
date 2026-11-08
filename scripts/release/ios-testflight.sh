@@ -7,7 +7,7 @@
 #                                                              archive unsigned, then sign ad hoc
 #   ios-testflight.sh csr <dir>                                a new private key and its CSR
 #   ios-testflight.sh keychain <dir>                           this run's keychain and profiles
-#   ios-testflight.sh export <archive> <dir> <out>             sign for the App Store, write the .ipa
+#   ios-testflight.sh export <archive> <dir> <out>             sign for the App Store, write and check the .ipa
 #   ios-testflight.sh upload <ipa> <app-id> <version> <build>  upload with the API key (altool)
 #   ios-testflight.sh cleanup <dir>                            delete keychain, profiles and key
 #
@@ -26,6 +26,57 @@ keychain_name=opentodo-testflight.keychain-db
 profile_dirs=("$HOME/Library/MobileDevice/Provisioning Profiles" "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles")
 
 die() { echo "::error::$*"; exit 1; }
+
+# Xcode's own record of an export (IDEDistribution*.log in the .xcdistributionlogs bundle it names
+# in its output): the steps, the certificate it chose and the profiles. No key material.
+distribution_logs() { # <file with xcodebuild's output>
+  local logs f
+  logs=$(grep -oE '/[^"]+\.xcdistributionlogs' "$1" | tail -1 || true)
+  if [ -z "$logs" ] || [ ! -d "$logs" ]; then
+    echo "Xcode named no distribution logs"
+    return 0
+  fi
+  for f in "$logs"/*.log; do
+    [ -f "$f" ] || continue
+    echo "::group::$(basename "$f")"
+    cat "$f"
+    echo "::endgroup::"
+  done
+}
+
+# What App Store Connect checks after the upload, checked before it: the app and each extension in
+# the .ipa are signed by an Apple Distribution certificate of the team, chained to Apple's root,
+# with their App Store profile and the App Group. Apple only answers by email, an hour later.
+verify_ipa() { # <ipa> <team>
+  local ipa=$1 team=$2 tmp b name info ents p bad=0 problems
+  tmp=$(mktemp -d)
+  ditto -x -k "$ipa" "$tmp"
+  [ -d "$tmp/Payload/OpenTodo.app" ] || { echo "::error::the .ipa holds no Payload/OpenTodo.app"; rm -rf "$tmp"; return 1; }
+  for b in "$tmp/Payload/OpenTodo.app"/PlugIns/*.appex "$tmp/Payload/OpenTodo.app"; do
+    [ -d "$b" ] || continue
+    name=$(basename "$b")
+    problems=()
+    codesign --verify --deep --strict "$b" >"$tmp/verify.txt" 2>&1 || problems+=("codesign --verify --deep --strict: $(tr '\n' ' ' <"$tmp/verify.txt")")
+    info=$(codesign -dvvv "$b" 2>&1 || true)
+    grep -q '^Authority=Apple Distribution: ' <<<"$info" || problems+=("not signed by an Apple Distribution certificate")
+    grep -qx 'Authority=Apple Worldwide Developer Relations Certification Authority' <<<"$info" || problems+=("no Apple Worldwide Developer Relations intermediate in the chain")
+    grep -qx 'Authority=Apple Root CA' <<<"$info" || problems+=("no Apple Root CA in the chain")
+    grep -qx "TeamIdentifier=$team" <<<"$info" || problems+=("TeamIdentifier is not the team")
+    [ -f "$b/embedded.mobileprovision" ] || problems+=("no embedded.mobileprovision")
+    ents=$(codesign -d --entitlements - --xml "$b" 2>/dev/null || true)
+    grep -q '<string>group.app.open-todo</string>' <<<"$ents" || problems+=("no App Group group.app.open-todo in the entitlements")
+    if grep -q '<key>get-task-allow</key><true/>' <<<"$ents"; then problems+=("get-task-allow is true (a development signature)"); fi
+    echo "$name:"
+    grep -E '^(Identifier|Authority|TeamIdentifier|Signature)=' <<<"$info" | sed 's/^/  /'
+    echo "  entitlements: $(plutil -convert json -o - - <<<"$ents" 2>/dev/null || echo "$ents" | tr -d '\n\t')"
+    if [ ${#problems[@]} -gt 0 ]; then
+      bad=1
+      for p in "${problems[@]}"; do echo "::error::$name: $p"; done
+    fi
+  done
+  rm -rf "$tmp"
+  return $bad
+}
 
 cmd=${1:-}
 shift || true
@@ -111,10 +162,19 @@ keychain)
 
 export)
   archive=$1 dir=$2 out=$3
-  xcodebuild -exportArchive -archivePath "$archive" -exportPath "$out" -exportOptionsPlist "$dir/ExportOptions.plist"
+  team=$(/usr/libexec/PlistBuddy -c 'Print :teamID' "$dir/ExportOptions.plist")
+  log=$(mktemp)
+  if ! xcodebuild -exportArchive -archivePath "$archive" -exportPath "$out" -exportOptionsPlist "$dir/ExportOptions.plist" 2>&1 | tee "$log"; then
+    distribution_logs "$log"
+    die "the export failed; Xcode's distribution logs are above"
+  fi
   ipa=$(ls "$out"/*.ipa 2>/dev/null | head -1)
-  [ -n "$ipa" ] || die "the export wrote no .ipa"
+  [ -n "$ipa" ] || { distribution_logs "$log"; die "the export wrote no .ipa"; }
   echo "exported $ipa ($(du -k "$ipa" | cut -f1) KB)"
+  if ! verify_ipa "$ipa" "$team"; then
+    distribution_logs "$log"
+    die "the .ipa is not signed for the App Store; Xcode's distribution logs are above"
+  fi
   ;;
 
 upload)
