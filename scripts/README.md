@@ -182,6 +182,14 @@ scripts/android-repro.sh v0.20.0 opentodo-android-0.20.0.apk
 scripts/android-repro.sh HEAD                                                     # two builds of a commit
 ```
 
+## `ios-walkthrough.sh`
+
+The iPhone walkthrough (macOS with Xcode, after building `bin/opentodo`): for each of four simulators it erases the device, starts a fresh seeded server, runs `WalkthroughTests` and exports the step screenshots from the result bundle as `<device>-<step>.png`, with `summary.txt` listing the accessibility audit's issues. Run by `.github/workflows/ios-walkthrough.yml`; see [`docs/ios-app.md`](../docs/ios-app.md#walkthrough).
+
+```bash
+scripts/ios-walkthrough.sh dist/ios-walkthrough
+```
+
 ## `release/play-upload.mjs`
 
 Puts the AAB of a final release on Google Play's internal testing track with the version's CHANGELOG notes (cut to 500 characters), through the Play Developer API with the service account in `PLAY_SERVICE_ACCOUNT_JSON`. The CI job `play` runs it after the release; release candidates upload nothing and missing secrets give a warning. Tests against a fake Play API: `node --test scripts/release/play-upload.test.mjs` (in `make repo-check`).
