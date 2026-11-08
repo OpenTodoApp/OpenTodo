@@ -193,13 +193,13 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
   /** Below 768 px (phone-v2 D1): the bar's visible slots, and items for the project menu (Layout, Share, the list's own). */
   phone?: { slots: ReactNode; groups: ActionGroup[] }
 }) {
-  const [editing, setEditing] = useState(false)
+  const [nameEdit, setNameEdit] = useState<{ projectId: string; value: string } | null>(null)
+  const currentNameEdit = nameEdit?.projectId === project.id ? nameEdit : null
   const [sharing, setSharing] = useState<false | true | 'public'>(false)
   // Cached membership (project-sharing): roles render the same offline.
   const membership = useMembership(project.id)
   const role = membership?.role ?? 'owner'
   const editable = canEditProject(role)
-  const [name, setName] = useState(project.name)
   const [menuOpen, setMenuOpen] = useState(false)
   const [startPicker, setStartPicker] = useState<string | null>(null)
   const occupant = usePanelOccupantKey()
@@ -245,10 +245,12 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
   }, { view: 'project' })
 
   async function save() {
-    setEditing(false)
+    setNameEdit(null)
+    const name = currentNameEdit?.value ?? project.name
     if (name.trim() && name.trim() !== project.name) await updateProject(project.id, { name: name.trim() })
-    else setName(project.name)
   }
+
+  const startEditing = () => setNameEdit({ projectId: project.id, value: project.name })
 
   const [dialog, setDialog] = useState<'duplicate' | 'template' | 'fields' | null>(null)
   const otherWorkspaces = useOtherWorkspaces()
@@ -267,7 +269,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
   // Every role gets the copies (project-templates D6); editing items follow the role inside projectMenuGroups.
   const groups: ActionGroup[] = [
     ...projectMenuGroups(project, { role, shared: !!membership, targets, subCount, openTasks, pinned, workspaces: otherWorkspaces, mode, reviewEvery },
-      { rename: () => setEditing(true), duplicate: () => setDialog('duplicate'), saveTemplate: () => setDialog('template'), fields: () => setDialog('fields'), pin: () => setFavourite('project', project.id, !pinned) }),
+      { rename: startEditing, duplicate: () => setDialog('duplicate'), saveTemplate: () => setDialog('template'), fields: () => setDialog('fields'), pin: () => setFavourite('project', project.id, !pinned) }),
     ...(extraGroups ?? []),
     panels,
   ]
@@ -275,11 +277,11 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
   // On a phone Share is a menu item, since the bar keeps two slots (phone-v2 D1).
   const shareItem: ActionItem = { kind: 'action', id: 'share', label: canManageMembers(role) ? t('Share project') : t('Members'), icon: 'users', onSelect: () => setSharing(true) }
 
-  const title = editing ? (
-    <input className="ui-input max-w-xs text-h1 font-semibold" autoFocus value={name} onChange={(e) => setName(e.target.value)} aria-label={t('Project name')}
-      onBlur={() => void save()} onKeyDown={(e) => { if (e.key === 'Enter') void save(); if (e.key === 'Escape') { setName(project.name); setEditing(false) } }} />
+  const title = currentNameEdit ? (
+    <input className="ui-input max-w-xs text-h1 font-semibold" autoFocus value={currentNameEdit.value} onChange={(e) => setNameEdit({ projectId: project.id, value: e.target.value })} aria-label={t('Project name')}
+      onBlur={() => void save()} onKeyDown={(e) => { if (e.key === 'Enter') void save(); if (e.key === 'Escape') setNameEdit(null) }} />
   ) : editable ? (
-    <Tooltip label={t('Rename')}><button type="button" className="user-text min-w-0 truncate rounded-control text-left hover:bg-sunken dark:hover:bg-raised" onClick={() => setEditing(true)} data-project-name>{project.name}</button></Tooltip>
+    <Tooltip label={t('Rename')}><button type="button" className="user-text min-w-0 truncate rounded-control text-left hover:bg-sunken dark:hover:bg-raised" onClick={startEditing} data-project-name>{project.name}</button></Tooltip>
   ) : <span className="user-text min-w-0 truncate" data-project-name>{project.name}</span>
 
   // The list page waits for the membership (audit M12), so this row has its final content at first paint.
