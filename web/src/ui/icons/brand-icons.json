@@ -26,6 +26,8 @@
     "deploy/homeassistant/upstream/opentodo/icon.png": "2309d2c90c42662a46d00a3e4d4ec3f0063c98975aeab55a89424a1800da9409",
     "deploy/homeassistant/upstream/opentodo/logo.png": "cf04430d455d79bb0a27f1c2b8f8a5cc08a130293694007dff2c5944fec29e78",
     "deploy/claude-plugin/upstream/plugins/opentodo/.claude-plugin/icon.png": "24e0a62f96eac4d99b851387d0115285cdc5616705230b9fb68b798da4473c77",
+    "fastlane/metadata/android/en-US/images/icon.png": "e8646027caabce05f35f882a526221f9b63ca67fcb67879233cd5be3d7f3d790",
+    "fastlane/metadata/android/en-US/images/featureGraphic.png": "5391e30ee8eaac57d8f139abffac7134b024029f1f7bcbbc95b97557c697d383",
     "mobile/ios/OpenTodo/Assets.xcassets/AppIcon.appiconset/AppIcon.png": "fb07a7869efb5fc77936e3b196fe22001a2ec8b25217b011f8fcd404a17b27d8",
     "mobile/android/app/src/main/res/drawable/ic_launcher.xml": "c6105dad82dabac7c1a892e7a5a6526ffe530bec0c58d517e88f1b6f9e2c81a1",
     "mobile/android/app/src/main/res/drawable/ic_launcher_background.xml": "c89f77725f4ceb13a8c6ccc72419ec3fe1672a50c3a77189de0aa1515fb61954",

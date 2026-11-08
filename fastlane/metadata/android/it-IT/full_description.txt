@@ -1,6 +1,3 @@
-Title: OpenTodo
-Short description: Il tuo gestore di attività, sul tuo server.
-
 OpenTodo è un gestore di attività open source che ospiti tu. Questa app apre il tuo server OpenTodo e aggiunge ciò che solo un’app per telefono può fare:
 
 - Promemoria puntuali, programmati sul telefono, senza servizi push in mezzo

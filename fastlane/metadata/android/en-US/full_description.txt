@@ -1,6 +1,3 @@
-Title: OpenTodo
-Short description: Your own task manager, on your own server.
-
 OpenTodo is an open-source task manager you host yourself. This app opens your OpenTodo server and adds what only a phone app can do:
 
 - Reminders on time, scheduled on the phone, with no push service in between

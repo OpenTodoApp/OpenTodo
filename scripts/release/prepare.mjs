@@ -15,6 +15,9 @@
 //   - "## [<version>] - <date>" under Unreleased in CHANGELOG.md with the changelog fragments
 //     (changelog.d/<Section>/<name>.md, scripts/release/fragments.mjs) as its entries, which it
 //     deletes, and the compare links;
+//   - F-Droid's notes for the Android version code, fastlane/metadata/android/en-US/changelogs/
+//     <code>.txt: that section as plain text within 500 characters, as for Google Play (when it
+//     has entries; the owner then rewrites it for the app);
 //   - then the upstream/ copies (scripts/deploy/mirror.mjs).
 // Only the project's own version contexts change (an image tag, a version/tag/placeholder key,
 // a version in backticks), never a bare number: web/package-lock.json, for one, has packages
@@ -31,8 +34,8 @@
 // reference-device record itself is optional until real devices can be measured (#990), and
 // pending screen-reader passes are a warning for any release (screen-reader-passes-optional).
 
-import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { compareVersions, imageFor, latestRelease, loadFacts, ROOT } from '../deploy/common.mjs'
 import { COPIES, mirror } from '../deploy/mirror.mjs'
@@ -43,6 +46,7 @@ import { checkUpgradeFixture } from './upgradeFixture.mjs'
 import { checkSecurityReviews } from './securityReview.mjs'
 import { checkScreenshotFreshness } from './screenshotFreshness.mjs'
 import { checkAccessibilityAudit } from './accessibilityAudit.mjs'
+import { finalVersion, releaseNotes } from './play-upload.mjs'
 
 const VERSION = /^(\d+)\.(\d+)\.(\d+)$/
 /** A release (x.y.z) or a release candidate (x.y.z-rc.N, N from 1). */
@@ -63,6 +67,8 @@ const RUNTIPI_CONFIG = 'deploy/runtipi/config.json'
 const CASAOS_COMPOSE = 'deploy/casaos/docker-compose.yml'
 const EASYPANEL_META = 'deploy/easypanel/meta.yaml'
 const TRUENAS_APP = 'deploy/truenas/opentodo/app.yaml'
+/** F-Droid's release notes of an Android version code (fastlane/README.md). */
+export const fdroidChangelog = (version) => `fastlane/metadata/android/en-US/changelogs/${finalVersion(version).code}.txt`
 
 /** Every text file prepare may edit: deploy/ (but not the generated copies) and the self-hosting docs. */
 export function scannedFiles(root = ROOT) {
@@ -308,6 +314,13 @@ export function prepare(to, { root = ROOT, date = new Date().toISOString().slice
   edit('CHANGELOG.md', (t) => changelogText(t, from, to, date, fragmentsMarkdown(fragments)))
   removeFragments(root, fragments)
   for (const f of fragments) changed.add(f.rel)
+  // Without fragments the section is still empty: the notes are written by hand with its summary.
+  if (fragments.length) {
+    const notes = fdroidChangelog(to)
+    mkdirSync(dirname(join(root, notes)), { recursive: true })
+    writeFileSync(join(root, notes), releaseNotes(readFileSync(join(root, 'CHANGELOG.md'), 'utf8'), to) + '\n')
+    changed.add(notes)
+  }
   for (const [, dst] of mirror(root)) changed.add(dst)
   return { from, to, changed: [...changed].sort(), warnings }
 }
@@ -332,6 +345,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     } else {
       if (!changed.some((f) => f.startsWith('changelog.d/'))) console.log('No changelog fragments: the release has no entries yet (changelog.d/README.md).')
       console.log(`Next: write the release's summary paragraph under "## [${to}]" in CHANGELOG.md, check the order of its entries (and the add-on's entry if it needs more),`)
+      console.log(`write ${fdroidChangelog(to)} as what changed for the Android app (at most 500 characters),`)
       console.log('run make deploy-check docs-check, commit "Prepare ' + to + '" and open the pull request (RELEASING.md).')
     }
   } catch (e) {
