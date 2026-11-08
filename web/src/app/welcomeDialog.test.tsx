@@ -123,10 +123,11 @@ describe('Settings → About', () => {
   afterEach(() => vi.unstubAllGlobals())
   const links = () => Object.fromEntries([...document.querySelectorAll<HTMLAnchorElement>('[data-about-link]')].map((a) => [a.dataset.aboutLink, a.getAttribute('href')]))
 
-  it('lists Help, the docs, the website, issues, Discord, X, the source and the coffee button for everyone; no welcome row for a member', async () => {
+  it('lists Help, the docs, the website, Discord, X, the source and the coffee button for everyone, and opens feedback; no welcome row for a member', async () => {
     const r = await render(<AboutSection user={member} />)
     await waitFor(() => document.querySelectorAll('[data-about-link]').length > 0, 'the links')
-    expect(links()).toEqual({ docs: DOCS_URL, website: WEBSITE_URL, issues: ISSUES_URL, discord: DISCORD_URL, x: X_URL, source: REPO_URL })
+    expect(links()).toEqual({ docs: DOCS_URL, website: WEBSITE_URL, discord: DISCORD_URL, x: X_URL, source: REPO_URL })
+    expect(document.querySelector('[data-about-feedback]')).not.toBeNull()
     for (const a of document.querySelectorAll('[data-about-link]')) expect(a.getAttribute('target')).toBe('_blank')
     expect(document.querySelector('[data-welcome-coffee]')!.getAttribute('href')).toBe(COFFEE_URL)
     expect(document.querySelector('[data-about-help]')).not.toBeNull()

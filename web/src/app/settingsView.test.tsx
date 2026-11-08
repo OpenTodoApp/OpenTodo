@@ -58,6 +58,60 @@ describe('from 1024 px', () => {
       .toEqual(['account', 'workspaces', 'appearance', 'general', 'language', 'notifications', 'capture', 'about', 'integrations', 'data'])
     await r.unmount()
   })
+
+  // OpenSpec settings-tree: the open section's sub-pages sit under its row in the pane.
+  it('lists the open section\'s sub-pages under its row, marks the current one, and jumps between them', async () => {
+    width = 1280
+    history.replaceState(null, '', '/settings/integrations/webhooks')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    const r = await render(<SettingsView user={member} onLogout={() => {}} section="integrations" page="webhooks" />)
+    await waitFor(() => !!r.container.querySelector('aside [data-settings-pane-page="webhooks"]'), 'the pane pages')
+    const aside = r.container.querySelector('aside')!
+    const pane = [...aside.querySelectorAll<HTMLAnchorElement>('[data-settings-pane-pages="integrations"] a[data-settings-pane-page]')]
+    expect(pane.map((a) => a.getAttribute('data-settings-pane-page'))).toEqual(['caldav', 'calendar-feeds', 'calendar-sync', 'issues', 'webhooks', 'tokens', 'assistant', 'mcp'])
+    expect(pane.find((a) => a.getAttribute('data-settings-pane-page') === 'webhooks')?.getAttribute('aria-current')).toBe('page')
+    expect(aside.querySelector('a[data-settings-link="integrations"]')?.getAttribute('aria-current')).toBe('true')
+    // Only the open section lists its pages.
+    expect(aside.querySelectorAll('[data-settings-pane-pages]')).toHaveLength(1)
+    expect(pane.find((a) => a.getAttribute('data-settings-pane-page') === 'tokens')?.getAttribute('href')).toBe('/settings/integrations/tokens')
+    await click(pane.find((a) => a.getAttribute('data-settings-pane-page') === 'tokens')!)
+    expect(location.pathname).toBe('/settings/integrations/tokens')
+    await r.unmount()
+    navigate({ view: 'settings' })
+  })
+
+  it('a section without sub-pages lists nothing under its row', async () => {
+    width = 1280
+    history.replaceState(null, '', '/settings/workspaces')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    const r = await render(<SettingsView user={member} onLogout={() => {}} section="workspaces" />)
+    await waitFor(() => !!r.container.querySelector('aside a[data-settings-link="workspaces"]'), 'the pane')
+    expect(r.container.querySelectorAll('aside [data-settings-pane-pages]')).toHaveLength(0)
+    await r.unmount()
+    navigate({ view: 'settings' })
+  })
+
+  it('a section the viewer sees as one page lists nothing under its row', async () => {
+    width = 1280
+    const admin: User = { ...member, id: 'a1', role: 'admin' }
+    history.replaceState(null, '', '/settings/people')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    const r = await render(<SettingsView user={admin} onLogout={() => {}} section="people" />)
+    await waitFor(() => !!r.container.querySelector('aside a[data-settings-link="people"]'), 'the pane')
+    expect(r.container.querySelectorAll('aside [data-settings-pane-pages]')).toHaveLength(0)
+    await r.unmount()
+    navigate({ view: 'settings' })
+  })
+
+  it('below 1024 px the section list lists no sub-pages', async () => {
+    width = 800
+    history.replaceState(null, '', '/settings')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    const r = await render(<SettingsView user={member} onLogout={() => {}} />)
+    await waitFor(() => !!r.container.querySelector('[data-settings-overview]'), 'the list')
+    expect(r.container.querySelectorAll('[data-settings-pane-pages]')).toHaveLength(0)
+    await r.unmount()
+  })
 })
 
 describe('below 1024 px', () => {
