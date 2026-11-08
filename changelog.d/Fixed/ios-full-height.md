@@ -1,0 +1,1 @@
+- iOS: the app fills the whole screen; a coloured band no longer shows under the tab bar and the sheets.

@@ -128,7 +128,9 @@ final class WalkthroughTests: XCTestCase {
         guard #available(iOS 17.0, *) else { return }
         do {
             try app.performAccessibilityAudit { issue in
-                let element = issue.element.map { "\"\($0.label)\" at \($0.frame)" } ?? "no element"
+                // A toast can vanish between the audit and this line; reading a gone element's
+                // label fails the test, so check that it still exists first.
+                let element = issue.element.flatMap { $0.exists ? "\"\($0.label)\" at \($0.frame)" : nil } ?? "no element"
                 print("walkthrough audit: \(self.current) · \(Self.kind(issue.auditType)) · \(issue.compactDescription) · \(element)")
                 return true
             }
