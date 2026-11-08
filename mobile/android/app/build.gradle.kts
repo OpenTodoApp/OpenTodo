@@ -25,7 +25,7 @@ val keystoreProps = Properties().apply {
 android {
     namespace = "app.opentodo"
     compileSdk = 37
-    // Pinned with the Gradle wrapper (checksum), AGP and JDK 17 for reproducible builds (play-production D4).
+    // Pinned with the Gradle wrapper (checksum), AGP and JDK 21 for reproducible builds (play-production D4).
     buildToolsVersion = "36.0.0"
 
     defaultConfig {

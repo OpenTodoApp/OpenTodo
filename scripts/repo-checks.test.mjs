@@ -538,7 +538,7 @@ function androidToolchainProblems({ wrapper, rootGradle, appGradle, ci, readme }
   const tools = appGradle.match(/^\s*buildToolsVersion = "(\d+\.\d+\.\d+)"$/m)?.[1]
   if (!tools) problems.push('app/build.gradle.kts: no buildToolsVersion')
   const javas = [...ci.matchAll(/^\s+java-version: (\S+)$/gm)].map((m) => m[1])
-  if (javas.length === 0 || javas.some((j) => !/^17\.\d+\.\d+\+\d+$/.test(j))) problems.push(`CI: setup-java must pin an exact JDK 17 (found ${javas.join(', ') || 'none'})`)
+  if (javas.length === 0 || javas.some((j) => !/^21\.\d+\.\d+\+\d+$/.test(j))) problems.push(`CI: setup-java must pin an exact JDK 21 (found ${javas.join(', ') || 'none'})`)
   if (new Set(javas).size > 1) problems.push(`CI: one JDK everywhere (found ${[...new Set(javas)].join(', ')})`)
   if (tools && !ci.includes(`build-tools;${tools}`)) problems.push(`CI: the SDK step installs another build-tools than ${tools}`)
   for (const [what, v] of [['Gradle', gradle], ['the Android Gradle Plugin', agp], ['build tools', tools], ['the JDK', javas[0]]]) {
@@ -563,7 +563,7 @@ test('a Gradle wrapper without its checksum is refused', () => {
   const t = androidToolchain()
   const wrapper = t.wrapper.replace(/^distributionSha256Sum=.*\n/m, '')
   assert.deepEqual(androidToolchainProblems({ ...t, wrapper }), ['gradle-wrapper.properties: no distributionSha256Sum'])
-  assert.match(androidToolchainProblems({ ...t, ci: t.ci.replace(/java-version: 17\.\S+/, 'java-version: 17') }).join('\n'), /exact JDK 17/)
+  assert.match(androidToolchainProblems({ ...t, ci: t.ci.replace(/java-version: 21\.\S+/, 'java-version: 21') }).join('\n'), /exact JDK 21/)
 })
 
 test('the release APK carries no dependency block or commit file', () => {
@@ -705,17 +705,19 @@ test('no signing key, certificate or profile is ever committed', () => {
 
 test('the F-Droid metadata allows the release certificate that docs/android-app.md publishes', () => {
   const fdroid = read('mobile/android/store/fdroid/app.opentodo.yml')
-  const cert = fdroid.match(/^AllowedAPKSigningKeys: \n {2}([0-9a-f]{64})$/m)?.[1]
+  const cert = fdroid.match(/^AllowedAPKSigningKeys: ([0-9a-f]{64})$/m)?.[1]
   assert.ok(cert, 'AllowedAPKSigningKeys names one SHA-256')
   assert.ok(read('docs/android-app.md').includes(cert), 'docs/android-app.md publishes the same certificate')
   assert.match(fdroid, /^Binaries: \n {2}https:\/\/github\.com\/OpenTodoApp\/OpenTodo\/releases\/download\/v%v\/opentodo-android-%v\.apk$/m)
-  // The version comes from the tag, so the bot reads it from this file on main, which only a final
-  // release's prepare commit moves (release candidates never reach F-Droid).
-  assert.match(fdroid, /^UpdateCheckMode: HTTP$/m)
-  assert.match(fdroid, /^UpdateCheckData: \n {2}https:\/\/raw\.githubusercontent\.com\/OpenTodoApp\/OpenTodo\/main\/mobile\/android\/store\/fdroid\/app\.opentodo\.yml\|CurrentVersionCode:\\s\*\(\\d\+\)\|\.\|CurrentVersion:\\s\*\(\[0-9\.\]\+\)$/m)
-  assert.match(fdroid, /^AutoUpdateMode: Version v%v$/m, "F-Droid's bot adds each final tag")
+  // The version comes from the tag, so the bot reads it from this file at each tag, which only a
+  // final release's prepare commit moves (release candidates never reach F-Droid).
+  assert.match(fdroid, /^UpdateCheckMode: Tags$/m)
+  assert.match(fdroid, /^UpdateCheckData: \n {2}mobile\/android\/store\/fdroid\/app\.opentodo\.yml\|CurrentVersionCode:\\s\*\(\\d\+\)\|\.\|CurrentVersion:\\s\*\(\[0-9\.\]\+\)$/m)
+  assert.match(fdroid, /^AutoUpdateMode: Version$/m, "F-Droid's bot adds each final tag")
+  assert.doesNotMatch(fdroid, /^ {4}sudo:/m, "the build server's default JDK, as in CI")
   // F-Droid takes the name, summary and description from fastlane/.
-  assert.doesNotMatch(fdroid, /^(AutoName|Name|Summary|Description):/m, 'the texts live in fastlane/metadata/android/')
+  // AutoName is the app's label, which F-Droid's checkupdates writes itself.
+  assert.doesNotMatch(fdroid, /^(Name|Summary|Description):/m, 'the texts live in fastlane/metadata/android/')
   const builds = [...fdroid.matchAll(/^ {2}- versionName: (\S+)\n {4}versionCode: (\d+)\n {4}commit: (\S+)$/gm)]
   assert.equal(builds.length, 1, 'Builds keeps only the latest version')
   const [, name, code, commit] = builds[0]
