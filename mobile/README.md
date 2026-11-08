@@ -14,7 +14,7 @@ The release build is reproducible (OpenSpec change `play-production`): the same 
 
 | Tool | Version | Pinned in |
 | --- | --- | --- |
-| JDK | Temurin 17.0.21+9 (F-Droid: Debian's OpenJDK 17) | `java-version` in `.github/workflows/ci.yml` and `android-repro.yml`; `sudo` in `android/store/fdroid/app.opentodo.yml` |
+| JDK | Temurin 21.0.13+9 (F-Droid: its build server's default, Debian's OpenJDK 21) | `java-version` in `.github/workflows/ci.yml` and `android-repro.yml` |
 | Gradle | 9.8.2 | `distributionUrl` and `distributionSha256Sum` in `android/gradle/wrapper/gradle-wrapper.properties` |
 | Android Gradle Plugin | 9.5.1 (Kotlin 2.4.21) | `android/build.gradle.kts` |
 | Build tools | 36.0.0 | `buildToolsVersion` in `android/app/build.gradle.kts`; the SDK step in CI |
