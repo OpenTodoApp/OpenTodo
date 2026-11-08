@@ -3,6 +3,11 @@
   "reminderActions": [
     {
       "id": "abc",
+      "action": "done",
+      "path": "/?reminder=abc&action=done"
+    },
+    {
+      "id": "abc",
       "action": "snooze",
       "path": "/?reminder=abc&action=snooze"
     },

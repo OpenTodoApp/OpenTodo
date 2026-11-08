@@ -1,1 +1,0 @@
-- **New project from the sidebar's + menu opens where you can see it.** With many projects, choosing **New project** opened its form under the last project, out of sight, and on a phone the name field did not get the cursor, so the menu item seemed to do nothing. The sidebar now scrolls the form into view and focuses its name field, on phones and desktops alike (#997).

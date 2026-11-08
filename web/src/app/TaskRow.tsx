@@ -40,7 +40,7 @@ import { notYetEncrypted, useEncryption } from '../lib/e2ee'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { prefersReducedMotion } from './motion'
 import { useRowSwipe } from './task-list/RowSwipe'
-import { dragFeedback } from './listDrop'
+import { dragFeedback, dropIndent } from './listDrop'
 import { fieldBadges } from '../lib/fields'
 import { useApplicableFields, useFieldDefs } from './useFields'
 import { t } from '../lib/i18n'
@@ -446,6 +446,8 @@ export interface TaskRowProps {
   dropKey?: string
   /** Where the dragged task would land relative to this row (manual-ordering). */
   dropIndicator?: 'before' | 'after' | 'inside' | null
+  /** Before or after a row of a tree list: the depth the task lands at, where the line starts (drop-depth). */
+  dropDepth?: number
   /** This row is the one being dragged: it lifts (an opacity change under reduced motion). */
   dragging?: boolean
   /** The columns layout shows field values in cells, so the row leaves out their values (custom-fields). */
@@ -677,7 +679,7 @@ export const TaskRow = memo(function TaskRow(props: TaskRowProps | CompactRowPro
   return props.shape === 'compact' ? <CompactRow {...props} /> : <FullRow {...props} />
 })
 
-function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, onGripDown, onGripClick, dropKey, dropIndicator = null, dragging = false, ticked = false, showCheckbox = false, selectMode = false, onTick, hideFieldBadges = false, treeItem = false, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout, edge, notes = false }: TaskRowProps) {
+function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, onGripDown, onGripClick, dropKey, dropIndicator = null, dropDepth, dragging = false, ticked = false, showCheckbox = false, selectMode = false, onTick, hideFieldBadges = false, treeItem = false, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout, edge, notes = false }: TaskRowProps) {
   const card = shape === 'card'
   // The row's layout (row-layouts D1): the list's own choice, else the account's; a card keeps its shape.
   const accountLayout = useAccountRowLayout()
@@ -836,7 +838,9 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
     >
       {(dropIndicator === 'before' || dropIndicator === 'after') && (
         // The drop position: a line with a dot at its start (task-list-presentation "Drag feedback").
-        <span aria-hidden="true" data-drop-indicator={dropIndicator}
+        // In a tree list it starts at the indent of the depth the task lands at (drop-depth).
+        <span aria-hidden="true" data-drop-indicator={dropIndicator} data-drop-depth={dropDepth}
+          style={dropDepth !== undefined ? { left: dropIndent(dropDepth, MAX_INDENT) } : undefined}
           className={`${feedback.line} ${dropIndicator === 'before' ? '-top-px' : '-bottom-px'}`} />
       )}
       {!card && (

@@ -52,7 +52,7 @@ describe('shared files', () => {
     vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
     const id = await open({ files: [shared('Beach.jpg', 'image/jpeg')] })
     await waitFor(() => listedFiles().includes('Beach.jpg'))
-    expect(document.querySelector<HTMLInputElement>('input[aria-label="Task title"]')!.value).toBe('Beach')
+    expect(document.querySelector<HTMLTextAreaElement>('textarea[aria-label="Task title"]')!.value).toBe('Beach')
     await save()
     await waitFor(async () => (await db.attachments.count()) === 1)
     const task = (await db.tasks.toArray())[0]
@@ -66,8 +66,8 @@ describe('shared files', () => {
   it('shows the shared title and text with the PDF below and attaches it', async () => {
     await open({ title: 'Invoice', text: 'From the accountant', files: [shared('invoice.pdf', 'application/pdf')] })
     await waitFor(() => listedFiles().includes('invoice.pdf'))
-    expect(document.querySelector<HTMLInputElement>('input[aria-label="Task title"]')!.value).toBe('Invoice')
-    expect(document.querySelector('textarea')!.value).toContain('From the accountant')
+    expect(document.querySelector<HTMLTextAreaElement>('textarea[aria-label="Task title"]')!.value).toBe('Invoice')
+    expect(document.querySelector<HTMLTextAreaElement>('textarea:not([aria-label="Task title"])')!.value).toContain('From the accountant')
     await save()
     await waitFor(async () => (await db.attachments.count()) === 1)
     expect((await db.tasks.toArray())[0].title).toBe('Invoice')

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { SHIPPED } from '../locales'
 import { db, useDatabase } from './db'
 import { applyOps, resetDeviceId } from './ops'
 import { DAY_STARTS, hideStartChecklist, readDayStart, readLanguage, readUserPrefs, setUserPref, startChecklistHidden } from './userPrefs'
@@ -52,6 +53,14 @@ describe('language (app-localization D1)', () => {
     const row = await db.userPrefs.get('me')
     expect(row?.language).toBe('ja')
     expect(readLanguage(row)).toBe('system')
+  })
+
+  it('every shipped language reads back, so a language added to SHIPPED cannot be dropped by the preference list', async () => {
+    let ts = 10
+    for (const code of SHIPPED.map((l) => l.code)) {
+      await applyOps([{ id: `s-${code}`, entity: 'user_prefs', entityId: 'me', field: 'language', value: code, ts: ts++, device: 'laptop' }])
+      expect(readLanguage(await db.userPrefs.get('me'))).toBe(code)
+    }
   })
 
   it('a change made offline applies at once and waits in the outbox', async () => {

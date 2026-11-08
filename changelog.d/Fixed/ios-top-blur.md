@@ -1,1 +1,0 @@
-- **The top of the installed app on an iPhone is no longer blurred.** After a force quit, or once a menu such as the project menu closed, iOS drew its blur over the status bar and the page title below it. The app now keeps a solid strip in the background colour behind the status bar, so iOS shows that colour there instead of the blur (GitHub issue 999).

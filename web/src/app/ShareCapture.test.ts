@@ -30,7 +30,7 @@ describe('ShareCapture', () => {
   it('prefills the title and description from the pending payload as text', () => {
     setPendingShare(parseShare(sample.replace('paragraph', 'paragraph%3Cb%3E')))
     const html = renderToStaticMarkup(createElement(ShareCapture))
-    expect(html).toContain('value="Interesting article"')
+    expect(html).toMatch(/aria-label="Task title"[^>]*>Interesting article<\/textarea>/)
     expect(html).toContain('the quoted paragraph&lt;b&gt;')
     expect(html).toContain('https://example.org/post')
     expect(html).not.toContain('<b>')

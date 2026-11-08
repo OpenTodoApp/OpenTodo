@@ -30,6 +30,8 @@ export interface QuickAddInput {
   recurrence?: string
   /** Typed reminders; createTask resolves them against the final due. */
   reminders?: ReminderPhrase[]
+  /** The notes typed under the line (quick-add-notes D2); never parsed. */
+  description?: string
 }
 
 /** The slice of a label the resolver needs. */

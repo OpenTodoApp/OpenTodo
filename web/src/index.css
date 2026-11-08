@@ -775,9 +775,9 @@ body {
 /* The quick add's line field (quick-add-field-surface): a filled input surface with a resting
    hairline, because the dark fill alone is about 1.03:1 on the surface. The sunken and surface
    tokens are one colour in the high-contrast presentation, so it gets a stronger border there. */
-.quick-add-field { @apply rounded-control border border-soft bg-sunken px-3 py-1.5 focus-within:border-focus focus-within:ring-2 focus-within:ring-focus/30; }
-.quick-add-field:has(:disabled) { @apply opacity-60; }
-html:root[data-contrast="high"] .quick-add-field:not(:focus-within) { @apply border-default; }
+.quick-add-surface { @apply rounded-control border border-soft bg-sunken px-3 py-1.5 focus-within:border-focus focus-within:ring-2 focus-within:ring-focus/30; }
+.quick-add-surface:has(:disabled) { @apply opacity-60; }
+html:root[data-contrast="high"] .quick-add-surface:not(:focus-within) { @apply border-default; }
 .surface-card { @apply rounded-card border border-default bg-surface; }
 .surface-overlay { @apply rounded-popover border border-strong bg-pop shadow-3; }
 /* Shared Button (src/ui/Button.tsx, OpenSpec change ui-primitives D3): the same
@@ -1523,6 +1523,16 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
    recognised span; under the high-contrast presentation a 1 px underline in its colour. */
 .quick-add-tint { background-color: var(--hue-soft); color: transparent; border-radius: 0.1875rem; }
 html:root[data-contrast="high"] .quick-add-tint { background-color: transparent; text-decoration: underline 1px var(--hue-solid); text-decoration-color: var(--hue-solid); text-underline-offset: 0.2em; }
+/* Quick add's fields wrap (quick-add-notes D1): the field and a copy of its text share one
+   grid cell, so the copy sets the height without measuring in script. The line grows to
+   five lines, the notes to six, then the field scrolls; the copy scrolls with it. */
+.quick-add-grid { display: grid; grid-template-columns: minmax(0, 1fr); }
+.quick-add-lead { display: flex; flex-shrink: 0; align-items: center; height: calc(1lh + 1rem + 2px); }
+.quick-add-grid > * { grid-area: 1 / 1; }
+.quick-add-field, .quick-add-notes { resize: none; overflow-y: auto; scrollbar-width: none; }
+.quick-add-field::-webkit-scrollbar, .quick-add-notes::-webkit-scrollbar { display: none; }
+[data-quick-add-tints] { max-height: calc(5lh + 1rem + 2px); }
+.quick-add-notes-sizer { max-height: calc(6lh + 0.25rem + 2px); overflow: hidden; white-space: pre-wrap; overflow-wrap: break-word; }
 /* The sequence spotlight (shortcut-spotlight D2) fades in; reduced motion makes it instant. */
 .spotlight-in { animation: dialog-sheet-fade 120ms var(--ease-calm, ease-out) both; }
 }

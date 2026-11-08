@@ -1,0 +1,1 @@
+- **The iPhone app comes through TestFlight.** Every release is signed and uploaded to TestFlight by CI, without a Mac, and goes to the App Store after Apple's review; building it yourself from `mobile/ios` still works. The author, as copyright holder, allows distributing the iOS app through Apple's App Store and TestFlight. See [The iOS app](docs/ios-app.md).

@@ -1,9 +1,10 @@
 // Addresses a native shell opens the app at (OpenSpec change native-shells, design
 // D4 and D6): `/?reminder=<id>&action=snooze|dismiss` from a notification's buttons,
 // written as the same reminder operations the push worker writes, and `/?add=<text>`
-// from the quick-add widget, which prefills quick add without saving anything. A
-// location reminder's notification (location-reminders D2) offers `done`, which
-// completes the reminder's task, and `dismiss`.
+// from the quick-add widget, which prefills quick add without saving anything. Every
+// reminder notification offers `done` (location-reminders D2, reminder-done-action),
+// which completes the reminder's task; the push worker opens the same address for
+// Done when no window of the app is open.
 import { db } from './db'
 import { completeTask } from './ops'
 import { dismissReminder, snoozeReminder } from './reminders'
@@ -29,8 +30,8 @@ export function shellUrlAction(search: string): ShellUrlAction {
 
 /**
  * Writes a notification button's operation: Snooze 10 min or Dismiss, as `push-sw.js`
- * does, or Done, which completes the reminder's task (a location reminder's
- * notification); completing disarms every reminder of the task.
+ * does, or Done, which completes the reminder's task through completeTask (a repeating
+ * task moves to its next occurrence); completing disarms every reminder of the task.
  */
 export async function applyReminderAction(id: string, action: ReminderAction, now = Date.now()): Promise<void> {
   if (action === 'snooze') await snoozeReminder(id, '10m', now)

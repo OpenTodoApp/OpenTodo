@@ -70,7 +70,7 @@ On your devices and on the OpenTodo server you use. Nothing goes to anyone else:
 
 ### Is there an app in the app stores?
 
-No. OpenTodo is a web app that you install from your server's address, and it then behaves like any other app. See [Installing the app](install-app.md).
+For phones, the [Android](android-app.md) and [iPhone](ios-app.md) apps. Elsewhere, install the web app from your server's address ([how](install-app.md)).
 
 ### Can I use OpenTodo on my own, without a server?
 

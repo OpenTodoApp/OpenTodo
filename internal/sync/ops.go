@@ -241,6 +241,13 @@ var Schema = map[string]map[string]Field{
 		// writing it. A scheduling field like start: plaintext, not content;
 		// additive.
 		"sector": {Kind: kSector, Default: `""`},
+		// How the task's own subtasks flow (OpenSpec change subtask-flow, GitHub
+		// issue 1046): "sequential" offers its open subtasks one at a time in list
+		// order; empty, "parallel", missing or unknown read as parallel, as on a
+		// project. Sync checks the kind only, so a later value stays additive; a
+		// client that does not know it shows every subtask as available. Not user
+		// text, so not content.
+		"flow_mode": {Kind: kString, Default: `""`},
 		// The tasks this one waits for, in its own sharing scope (OpenSpec change
 		// task-dependencies): one whole-list register; the resolver refuses ids of
 		// other scopes and lists that close a cycle.
@@ -731,9 +738,9 @@ var Schema = map[string]map[string]Field{
 		// read an empty or unknown value as shown.
 		"start_checklist": {Kind: kString, Default: `""`},
 		// Interface language (OpenSpec change app-localization, design D1):
-		// "system" or a shipped language code (en, de, fr, es, it, pt). Not
-		// restricted here; clients read an unknown code as "system" and keep the
-		// stored value, so a catalog added later stays additive.
+		// "system" or a code from SHIPPED. Not restricted here; clients read an
+		// unknown code as "system" and keep the stored value, so a catalog added
+		// later stays additive.
 		"language": {Kind: kString, Default: `"system"`},
 		// Focus timer preferences (OpenSpec change focus-mode, design D5): the
 		// timer mode (pomodoro|flowtime|countdown), which phases start on their

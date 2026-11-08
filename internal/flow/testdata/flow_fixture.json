@@ -1,5 +1,5 @@
 {
-  "about": "Shared vectors for the available-task rule (OpenSpec change project-flow-modes): web/src/lib/flow.ts and internal/flow both evaluate this file; change them together. Missing task fields read as their defaults. expected.available lists every available task; expected.waits maps every task waiting in sequence to what holds it (task:<id> or section:<id>); every other task is neither.",
+  "about": "Shared vectors for the available-task rule (OpenSpec changes project-flow-modes and subtask-flow): web/src/lib/flow.ts and internal/flow both evaluate this file; change them together. Missing task fields read as their defaults. expected.available lists every available task; expected.waits maps every task waiting in sequence to what holds it (task:<id> or section:<id>); every other task is neither.",
   "cases": [
     {
       "name": "sequential project: one step at a time, subtasks follow their step",
@@ -274,6 +274,95 @@
       "expected": {
         "available": ["deep", "sub-ok", "van"],
         "waits": { "pack": "task:van", "pack-sub": "task:van", "deep-wait": "task:van" }
+      }
+    },
+    {
+      "name": "subtasks one at a time: the first subtask and everything under it are offered, the later ones wait on it with theirs",
+      "today": "2026-11-08",
+      "projects": [{ "id": "dog" }],
+      "sections": [],
+      "tasks": [
+        { "id": "paint", "project_id": "dog", "position": 1, "flow_mode": "sequential" },
+        { "id": "prep", "project_id": "dog", "parent_id": "paint", "position": 1 },
+        { "id": "colour", "project_id": "dog", "parent_id": "prep", "position": 1 },
+        { "id": "insta", "project_id": "dog", "parent_id": "colour", "position": 1 },
+        { "id": "pinterest", "project_id": "dog", "parent_id": "colour", "position": 2 },
+        { "id": "learn", "project_id": "dog", "parent_id": "prep", "position": 2 },
+        { "id": "weather", "project_id": "dog", "parent_id": "learn", "position": 1 },
+        { "id": "dogsafe", "project_id": "dog", "parent_id": "learn", "position": 2 },
+        { "id": "buy", "project_id": "dog", "parent_id": "paint", "position": 2 },
+        { "id": "can", "project_id": "dog", "parent_id": "buy", "position": 1 },
+        { "id": "roller", "project_id": "dog", "parent_id": "buy", "position": 2 },
+        { "id": "brush", "project_id": "dog", "parent_id": "buy", "position": 3 },
+        { "id": "do", "project_id": "dog", "parent_id": "paint", "position": 3 }
+      ],
+      "expected": {
+        "available": ["paint", "prep", "colour", "insta", "pinterest", "learn", "weather", "dogsafe"],
+        "waits": { "buy": "task:prep", "can": "task:prep", "roller": "task:prep", "brush": "task:prep", "do": "task:prep" }
+      }
+    },
+    {
+      "name": "subtasks one at a time: completing the first offers the next",
+      "today": "2026-11-08",
+      "projects": [{ "id": "dog" }],
+      "sections": [],
+      "tasks": [
+        { "id": "paint", "project_id": "dog", "position": 1, "flow_mode": "sequential" },
+        { "id": "prep", "project_id": "dog", "parent_id": "paint", "position": 1, "completed_at": 1790000000000 },
+        { "id": "colour", "project_id": "dog", "parent_id": "prep", "position": 1, "completed_at": 1790000000000 },
+        { "id": "insta", "project_id": "dog", "parent_id": "colour", "position": 1, "completed_at": 1790000000000 },
+        { "id": "pinterest", "project_id": "dog", "parent_id": "colour", "position": 2, "completed_at": 1790000000000 },
+        { "id": "learn", "project_id": "dog", "parent_id": "prep", "position": 2, "completed_at": 1790000000000 },
+        { "id": "weather", "project_id": "dog", "parent_id": "learn", "position": 1, "completed_at": 1790000000000 },
+        { "id": "dogsafe", "project_id": "dog", "parent_id": "learn", "position": 2, "completed_at": 1790000000000 },
+        { "id": "buy", "project_id": "dog", "parent_id": "paint", "position": 2 },
+        { "id": "can", "project_id": "dog", "parent_id": "buy", "position": 1 },
+        { "id": "roller", "project_id": "dog", "parent_id": "buy", "position": 2 },
+        { "id": "brush", "project_id": "dog", "parent_id": "buy", "position": 3 },
+        { "id": "do", "project_id": "dog", "parent_id": "paint", "position": 3 }
+      ],
+      "expected": {
+        "available": ["paint", "buy", "can", "roller", "brush"],
+        "waits": { "do": "task:buy" }
+      }
+    },
+    {
+      "name": "subtasks one at a time: the nearest parent in order holds, inside a sequential project",
+      "today": "2026-11-08",
+      "projects": [{ "id": "p", "flow_mode": "sequential" }],
+      "sections": [],
+      "tasks": [
+        { "id": "a", "project_id": "p", "position": 1, "flow_mode": "sequential" },
+        { "id": "a1", "project_id": "p", "parent_id": "a", "position": 1, "flow_mode": "sequential" },
+        { "id": "a1x", "project_id": "p", "parent_id": "a1", "position": 1 },
+        { "id": "a1y", "project_id": "p", "parent_id": "a1", "position": 2 },
+        { "id": "a2", "project_id": "p", "parent_id": "a", "position": 2 },
+        { "id": "b", "project_id": "p", "position": 2 },
+        { "id": "b1", "project_id": "p", "parent_id": "b", "position": 1 }
+      ],
+      "expected": {
+        "available": ["a", "a1", "a1x"],
+        "waits": { "a1y": "task:a1x", "a2": "task:a1", "b": "task:a", "b1": "task:a" }
+      }
+    },
+    {
+      "name": "subtasks one at a time: outside a project, Someday and repeating subtasks neither hold nor wait, a reorder decides, unknown values read as parallel",
+      "today": "2026-11-08",
+      "projects": [],
+      "sections": [],
+      "tasks": [
+        { "id": "trip", "position": 1, "flow_mode": "sequential" },
+        { "id": "later", "parent_id": "trip", "position": 0.5, "start": "someday" },
+        { "id": "water", "parent_id": "trip", "position": 0.7, "recurrence": "every day" },
+        { "id": "book", "parent_id": "trip", "position": 2 },
+        { "id": "pack", "parent_id": "trip", "position": 1.5 },
+        { "id": "list", "position": 2, "flow_mode": "area" },
+        { "id": "milk", "parent_id": "list", "position": 1 },
+        { "id": "eggs", "parent_id": "list", "position": 2 }
+      ],
+      "expected": {
+        "available": ["trip", "water", "pack", "list", "milk", "eggs"],
+        "waits": { "book": "task:pack" }
       }
     }
   ]

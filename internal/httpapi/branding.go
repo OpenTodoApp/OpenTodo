@@ -322,7 +322,9 @@ func (s *Server) brandedWeb(next http.Handler) http.Handler {
 		}
 		p := strings.TrimPrefix(path.Clean(r.URL.Path), "/")
 		manifest := p == "manifest.webmanifest"
-		page := p == "" || p == "index.html" || (path.Ext(p) == "" && !strings.HasPrefix(p, "assets/"))
+		// /index.html itself is served as built: the service worker downloads it and
+		// checks it against the signed list, and the page brands itself (signed-web-app D7).
+		page := p == "" || (path.Ext(p) == "" && !strings.HasPrefix(p, "assets/"))
 		if !manifest && !page {
 			next.ServeHTTP(w, r)
 			return

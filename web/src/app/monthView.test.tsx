@@ -142,8 +142,8 @@ describe('month grid', () => {
     for (let i = 0; i < 3; i++) await key(document.body, 'ArrowLeft')
     expect(cell(r.container, '2026-11-15').getAttribute('aria-selected')).toBe('true')
     await key(document.body, 'q')
-    await waitFor(() => document.querySelector('[role="dialog"] input') !== null)
-    const input = document.querySelector<HTMLInputElement>('[role="dialog"] input')!
+    await waitFor(() => document.querySelector('[role="dialog"] textarea') !== null)
+    const input = document.querySelector<HTMLTextAreaElement>('[role="dialog"] textarea')!
     await type(input, 'Dentist')
     await act(async () => { input.form!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
     await waitFor(() => cell(r.container, '2026-11-15').textContent!.includes('Dentist'))

@@ -124,7 +124,7 @@ export async function dropUndoable(target: string, ids: readonly string[]): Prom
 }
 
 /** Set a project's or a section's flow (project-flow-modes): one op, with Undo. */
-export async function flowUndoable(entity: 'project' | 'section', id: string, flow: string, label: string): Promise<UndoableResult> {
+export async function flowUndoable(entity: 'project' | 'section' | 'task', id: string, flow: string, label: string): Promise<UndoableResult> {
   await getDeviceId()
   const entry = await applyBatch([{ entity, entityId: id, patch: { flow_mode: flow }, base: { flow_mode: '' } }], { source: 'action', label })
   return { entry, label }

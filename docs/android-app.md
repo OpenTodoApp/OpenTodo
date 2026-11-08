@@ -100,6 +100,8 @@ The page itself (`/` and the app's files under `/assets/`) still goes through th
 
 In **Settings → Notifications**, turn on **Notifications through the app**. The app schedules the next seven days of reminders on the phone itself and refreshes them about once an hour, so a reminder you add on your computer reaches the phone too. Details in [Notifications](push-notifications.md#in-the-android-app).
 
+A reminder's notification offers **Done**, **Snooze 10 min** and **Dismiss**. **Done** completes the task without opening the app, the same as ticking it off (a repeating task moves to its next date), and works offline: the change goes out with the next sync.
+
 ## Location reminders
 
 [Location reminders](location-reminders.md) ("when I arrive at the post office") fire on the phone. Turn on **Settings → Notifications → Location reminders → On this phone**: the app explains what the location is for, then Android asks twice, first for your location (**While using the app** or **Only this time**), then for **Allow all the time**, which on Android 11 and later is a choice on the app's location settings page. Without **Allow all the time** nothing is watched and the setting says so, with **Open settings**.
