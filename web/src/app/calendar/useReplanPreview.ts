@@ -4,6 +4,7 @@
 // "Nothing to re-plan" when nothing is behind any more, and applied as one batch.
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { covers, type EventsWindow } from '../../lib/calendarFeeds'
+import { NEUTRAL_HUE } from '../../lib/colorBy'
 import type { GridPrefs } from '../../lib/calendar'
 import { useMembershipMap } from '../../lib/liveData'
 import { t } from '../../lib/i18n'
@@ -11,7 +12,7 @@ import { missedBlocks, replan, type ReplanProposal, type UnfitChoice } from '../
 import { useMe, useRunningEntry } from '../../lib/timeEntries'
 import { replanUndoable } from '../../lib/undoActions'
 import type { CalendarEvent, Project, Task } from '../../lib/types'
-import { hueFor } from '../../ui'
+import type { HueName } from '../../ui'
 import { act } from '../actionError'
 import { showUndoToast } from '../bulk/toastStore'
 import { replanRequest } from '../signals'
@@ -40,7 +41,8 @@ export function useReplanPreview(c: {
   tasks: readonly Task[]
   rawMap: ReadonlyMap<string, Task>
   projects: readonly Project[]
-  projectMap: ReadonlyMap<string, Project>
+  /** A task's hue under the Calendar's Colour by. */
+  hueOf: (task: Task) => HueName
   prefs: GridPrefs
   events: readonly CalendarEvent[]
   /** Today's calendar slots, fixed obstacles of the proposal (calendar-slots D8). */
@@ -97,14 +99,15 @@ export function useReplanPreview(c: {
     act(replanUndoable(proposal, { today: c.today, choice, stored, zone: c.zone }).then((r) => showUndoToast(r.label, r.entry?.id ?? null)))
   }, [proposal, choice, c.rawMap, c.today, c.zone])
 
+  const { hueOf } = c
   const taskById = useMemo(() => new Map(c.tasks.map((tk) => [tk.id, tk])), [c.tasks])
   const ghosts = useMemo<ReplanGhosts | null>(() => proposal && {
     movesTo: new Map(proposal.moves.map((m) => [m.id, m.to])),
     ghosts: proposal.moves.map((m) => {
       const tk = taskById.get(m.id)
-      return { id: `replan-ghost:${m.id}`, start: m.to, length: m.length, title: tk?.title ?? '', hue: hueFor(tk?.project_id ? c.projectMap.get(tk.project_id)?.color : null) }
+      return { id: `replan-ghost:${m.id}`, start: m.to, length: m.length, title: tk?.title ?? '', hue: tk ? hueOf(tk) : NEUTRAL_HUE }
     }),
-  }, [proposal, taskById, c.projectMap])
+  }, [proposal, taskById, hueOf])
   const ghostsFor = useCallback((date: string) => (date === c.today ? ghosts : null), [ghosts, c.today])
 
   const calendarsUnavailable = c.eventsUsed && !c.online && !covers(c.win, { from: c.today, to: c.today })
