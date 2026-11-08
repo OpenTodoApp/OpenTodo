@@ -119,6 +119,7 @@ export function SectionHeader({ section, count, layout, editable, first, last, c
   const [renaming, setRenaming] = useState(false)
   const [name, setName] = useState(section?.name ?? '')
   const title = section ? section.name || t('Untitled section') : t('No section')
+  const hue = section?.color ? hueFor(section.color) : undefined
 
   async function commit() {
     setRenaming(false)
@@ -157,14 +158,16 @@ export function SectionHeader({ section, count, layout, editable, first, last, c
 
   // One group header for every list (task-list-presentation "Group headers"); a
   // section with only completed tasks keeps its header with "n completed" and Show.
+  // A coloured section tints its header, in the list and on the board (section-tint).
   return (
     <div data-section-heading={section?.id ?? ''} onKeyDown={editable && section && !renaming ? onRowKey : undefined}>
       <ListGroupHeader title={titleNode} count={count} countTone={layout === 'board' ? 'muted' : 'faint'} bar={layout !== 'board'} kind={section ? 'named' : 'generated'}
+        hue={hue}
         collapsed={collapsed} onToggle={onToggleCollapse}
         note={count === 0 && completed > 0 ? (
           <span className="flex items-center gap-1">
             {t('{completed} completed', { completed })}
-            <button type="button" className="rounded-chip px-1.5 py-0.5 text-meta text-accent hover:bg-sunken dark:hover:bg-raised" aria-expanded={revealed} onClick={onReveal} data-reveal-completed>
+            <button type="button" className={`rounded-chip px-1.5 py-0.5 text-meta ${hue ? 'text-default' : 'text-accent'} hover:bg-sunken dark:hover:bg-raised`} aria-expanded={revealed} onClick={onReveal} data-reveal-completed>
               {revealed ? t('Hide') : t('Show')}
             </button>
           </span>

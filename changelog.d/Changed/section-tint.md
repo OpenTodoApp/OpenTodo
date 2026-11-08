@@ -1,0 +1,1 @@
+- **A section's colour tints its header.** In a project's list the section's group bar, and on the board the top of its column, carry a soft tint of the section's colour, so sections stand apart at a glance; rows and cards keep their surface, and the header's text stays readable in light, dark, high contrast and every theme (#781).
