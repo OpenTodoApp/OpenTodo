@@ -15,6 +15,7 @@
   "automations_off",
   "bad_origin",
   "bad_request",
+  "base_url_mismatch",
   "base_url_required",
   "body_changed",
   "busy",

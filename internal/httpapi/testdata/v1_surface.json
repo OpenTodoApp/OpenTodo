@@ -1545,6 +1545,10 @@
       "400",
       "listed"
     ],
+    "base_url_mismatch": [
+      "409",
+      "listed"
+    ],
     "base_url_required": [
       "409",
       "listed"

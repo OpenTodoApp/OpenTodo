@@ -4,7 +4,7 @@ summary: Two-way sync with your own calendar: dated tasks become events in iClou
 audience: user
 section: Integrations
 specs: [calendar-sync, calendar-feeds, end-to-end-encryption]
-screens: [settings/calendar-sync]
+screens: [settings/calendar-sync, calendar-sync/denied#access-blocked-or-app-not-verified, calendar-sync/authorization_failed#fix-a-failed-google-connection, calendar-sync/redirect_uri_mismatch#error-400-redirect_uri_mismatch, calendar-sync/base_url_mismatch#wrong-address-behind-a-proxy, calendar-sync/google_client_refused#google-refused-the-client, calendar-sync/scope_not_granted#calendar-permission-not-ticked, calendar-sync/caldav_api_disabled#the-caldav-api-is-not-enabled]
 order: 33
 ---
 # Calendar sync
@@ -59,19 +59,61 @@ A calendar of its own for tasks ("OpenTodo") keeps them easy to hide or recolour
 
 ## Connect Google Calendar
 
-With a Google client set up by the server owner, choose **Connect Google**. Google asks you to sign in and to allow OpenTodo to see and edit your calendars, then sends you back to the panel to choose the calendars. You can remove the access at any time at myaccount.google.com/permissions; the connection then asks you to **Reconnect**.
+With a Google client set up by the server owner, choose **Connect Google**. Google asks you to sign in and to allow OpenTodo to see and edit your calendars, then sends you back to the panel to choose the calendars. Leave the calendar permission ticked: without it Google gives OpenTodo nothing to sync. You can remove the access at any time at myaccount.google.com/permissions; the connection then asks you to **Reconnect**.
+
+When Google does not connect, the panel names the cause and links to the matching part of [Fix a failed Google connection](#fix-a-failed-google-connection).
 
 ### Set up the Google client (server owner)
 
-Google only lets a server use its calendar API with an OAuth client that belongs to whoever runs the server, so each server owner creates their own, once:
+Google only lets a server use its calendar API with an OAuth client that belongs to whoever runs the server, so each server owner creates their own, once. It takes about ten minutes and a Google account. The steps follow the Google Cloud console as of November 2026, where the OAuth settings are grouped under **Google Auth Platform** (older guides call the same pages **APIs & Services → OAuth consent screen** and **Credentials**).
 
-1. In the Google Cloud console, create a project (or pick one).
-2. **APIs & Services → Library**: enable the **CalDAV API**.
-3. **APIs & Services → OAuth consent screen**: choose **External**, enter the app name and your email, and add the scope `https://www.googleapis.com/auth/calendar`. While the app is in **Testing**, only the test users you list can connect, and Google ends their access after 7 days; **publish** the app for lasting access (Google may ask to verify it when many people use it).
-4. **APIs & Services → Credentials → Create credentials → OAuth client ID**, type **Web application**. Under **Authorized redirect URIs**, add the address shown in **Settings → Integrations → Calendar sync → Google client**, which is `https://<your server>/api/v1/calendar-sync/google/callback`. It must be the address people open OpenTodo at; set `OPENTODO_BASE_URL` when the server runs behind a proxy.
-5. Copy the client ID and the client secret into **Google client** in the panel. The secret is stored in `<data>/secrets/calendar-sync.json`, never in the database, and is never shown again.
+1. **Create a project.** Open console.cloud.google.com, choose the project picker at the top of the page, then **New project**. Name it (for example "OpenTodo") and choose **Create**. Make sure the new project is selected in the picker for every step below.
+2. **Enable the CalDAV API.** Open **APIs & Services → Library**, search for **CalDAV API** and choose **Enable**. It must be the **CalDAV API**: the **Google Calendar API** is a different API and is not the one OpenTodo uses.
+3. **Start Google Auth Platform.** Open **Google Auth Platform** (in the menu, or search for it at the top). When it says that Google Auth Platform is not configured yet, choose **Get started** and fill in its pages:
+   - **App information**: an **App name** people will see when they connect (for example "OpenTodo") and a **User support email**. **Next**.
+   - **Audience**: **External** (choose **Internal** only if everyone who connects is in your own Google Workspace organisation). **Next**.
+   - **Contact information**: your email address. **Next**.
+   - **Finish**: agree to the Google API Services User Data Policy, **Continue**, then **Create**.
+4. **Add the calendar scope.** Open **Data Access → Add or remove scopes**. Under **Manually add scopes**, paste `https://www.googleapis.com/auth/calendar`, choose **Add to table**, tick it, then **Update** and **Save**. Google lists it under **Your sensitive scopes**.
+5. **Add test users.** A new External app is in the **Testing** status. Open **Audience** and, under **Test users**, choose **Add users** and enter the Google address of everyone who will connect, yourself included, then **Save**. Only these people can connect while the app is in Testing.
+6. **Publish for lasting access.** In Testing, Google ends each person's access after 7 days and they have to reconnect. For access that lasts, open **Audience** and, under **Publishing status**, choose **Publish app** and confirm. A published app that has not been verified by Google shows "Google hasn't verified this app" when people connect (they choose **Advanced**, then **Go to** the app) and is limited to 100 people; Google's verification removes both, and is optional for a server that only you and people you know use.
+7. **Create the OAuth client.** Open **Clients → Create client**. **Application type**: **Web application**; **Name**: anything (only you see it). Under **Authorized redirect URIs**, choose **Add URI** and paste the address shown in **Settings → Integrations → Calendar sync → Google client**, which is `https://<your server>/api/v1/calendar-sync/google/callback`. It must match exactly: the same `https` or `http`, the same host name and port, no slash at the end. Leave **Authorized JavaScript origins** empty. Choose **Create**.
+8. **Copy the client ID and secret.** Google shows the **Client ID** and the **Client secret** once, in the dialog that follows **Create**; copy both, or choose **Download JSON**. Google does not show the secret again: if you lose it, open the client, add a new secret and delete the old one.
+9. **Paste them into OpenTodo.** In **Settings → Integrations → Calendar sync**, choose **Set up** next to **Google client** and paste the client ID and the client secret. The secret is stored in `<data>/secrets/calendar-sync.json`, never in the database, and is never shown again. **Connect Google** now appears for everyone on the server.
 
 Instead of the panel, you can set `OPENTODO_GOOGLE_CLIENT_ID` and `OPENTODO_GOOGLE_CLIENT_SECRET` (or `OPENTODO_GOOGLE_CLIENT_SECRET_FILE`, a file that holds it). Both are optional; when set, they replace the panel's values, which then cannot be changed there.
+
+### Fix a failed Google connection
+
+#### Error 400: redirect_uri_mismatch
+
+Google shows this on its own page when the address OpenTodo sends it back to is not in the client's **Authorized redirect URIs**. Copy the address from **Settings → Integrations → Calendar sync → Google client** and add it to the client exactly as shown (**Google Auth Platform → Clients**, the client, **Authorized redirect URIs**), then **Save**. Google can take a few minutes to apply it. If the address shown starts with `http://` or names an internal host while people open OpenTodo at an `https://` address, see [Wrong address behind a proxy](#wrong-address-behind-a-proxy).
+
+#### Wrong address behind a proxy
+
+Behind a reverse proxy, OpenTodo cannot always tell the address people open it at, and would send Google an internal or `http://` address. The panel then refuses to start and says that Google would return to another address. Set `OPENTODO_BASE_URL` to the address people open OpenTodo at (for example `https://todo.example.com`) and restart the server; the redirect address in the panel follows it. Register that address with Google as in step 7, and open OpenTodo at it when you connect.
+
+#### Access blocked or app not verified
+
+- **"Access blocked: … has not completed the Google verification process"** (Error 403: access_denied): the app is in Testing and your Google address is not one of its test users. The server owner adds it under **Google Auth Platform → Audience → Test users** (step 5), or publishes the app (step 6).
+- **"Google hasn't verified this app"**: the app is published but not verified. Choose **Advanced**, then **Go to** the app, if you trust the server owner.
+- **Declined**: choosing **Cancel** at Google, or not allowing the calendar permission, returns to the panel with nothing connected. Connect again and allow it.
+
+#### Calendar permission not ticked
+
+Google's consent page lets you untick each permission. Without the calendar permission OpenTodo has nothing to sync, so the panel says so and connects nothing. Choose **Connect Google** again and leave the calendar permission ticked.
+
+#### The CalDAV API is not enabled
+
+Google accepted the sign-in but its CalDAV service refused OpenTodo: the CalDAV API is not enabled in the server owner's project, or it was enabled in another project than the client's. The server owner enables it (step 2) in the same project as the OAuth client; after a few minutes, connect again.
+
+#### Google refused the client
+
+Google did not accept the client ID or secret: they were mistyped, the secret was replaced, or the client was deleted. The server owner pastes the current client ID and a valid secret into **Google client** (steps 8 and 9).
+
+#### Access ends after 7 days
+
+While the app is in **Testing**, Google ends each person's access 7 days after they connect, and the connection asks to **Reconnect**. Reconnect to get another 7 days; for access that lasts, the server owner publishes the app (step 6) and everyone reconnects once.
 
 ## Connect Microsoft Outlook
 
