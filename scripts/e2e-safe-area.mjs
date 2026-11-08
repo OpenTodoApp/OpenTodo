@@ -36,7 +36,7 @@ const pw = await import('playwright').catch(async () => {
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { insetOverlaps, topEdge } from './ux-audit/measure.mjs'
 import { calendarEvents, seed as seedAccount } from './ux-audit/seed.mjs'
-import { OVERLAYS, chooseLayout, screens } from './ux-audit/layout-screens.mjs'
+import { OVERLAYS, chooseLayout, openScreen, screens } from './ux-audit/layout-screens.mjs'
 
 const base = process.env.OPENTODO_URL ?? 'http://127.0.0.1:8080'
 const outDir = process.argv[2] ?? 'safe-area-report'
@@ -135,7 +135,7 @@ async function run(engine, orientation, ids) {
       if (s.widths && !s.widths.includes(viewport.width)) continue
       const p = s.anon ? await pageIn(anonCtx) : page
       const load = async () => {
-        await p.goto(base + s.path)
+        await openScreen(p, base + s.path)
         await s.ready(p)
         if (s.layout) { await chooseLayout(p, s.layout); await p.waitForTimeout(300) }
         await p.waitForTimeout(250)
