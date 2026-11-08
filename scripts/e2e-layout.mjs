@@ -51,7 +51,7 @@ const pw = await import('playwright').catch(async () => {
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { MAX_SCROLLERS, addButtonCovers, axeProblems, calendarGridRoom, crowdedControls, cutLabels, overlayContentFit, pageOverflow, rowCheckReach, rowMisalignment, settled, smallFields, smallTargets, tabRowOverflow, verticalScrollers } from './ux-audit/measure.mjs'
 import { calendarEvents, seed as seedAccount } from './ux-audit/seed.mjs'
-import { ANY_LANG_OVERLAYS, OVERLAYS, chooseLayout, closes, screens } from './ux-audit/layout-screens.mjs'
+import { ANY_LANG_OVERLAYS, OVERLAYS, chooseLayout, closes, openScreen, screens } from './ux-audit/layout-screens.mjs'
 
 const base = process.env.OPENTODO_URL ?? 'http://127.0.0.1:8080'
 const outDir = process.argv[2] ?? 'layout-report'
@@ -212,7 +212,7 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
         throw new Error(`${e.message.split('\n')[0]}${st && !st.authenticated ? ' (the session was signed out)' : ''}`)
       }))
       const load = async () => {
-        await p.goto(base + s.path)
+        await openScreen(p, base + s.path)
         await (OTHER_LANG ? anyReady : s.ready)(p)
         if (s.layout) {
           await chooseLayout(p, s.layout)
