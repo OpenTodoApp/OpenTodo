@@ -672,7 +672,8 @@ test('the TestFlight upload runs for final tags after the release and by hand, w
   assert.match(job, /^ {4}environment: release$/m)
   assert.match(job, /::warning::APPLE_TEAM_ID, ASC_KEY_ID, ASC_ISSUER_ID or ASC_KEY_P8 is not set in the release environment: no TestFlight upload/)
   assert.match(job, /node scripts\/release\/appstore\.mjs register\n[\s\S]*ios-testflight\.sh archive /, 'the bundle IDs are registered before the archive')
-  assert.match(job, /if: always\(\) && steps\.secrets\.outputs\.ready == 'true'\n {8}run: \|\n.*\n.*appstore\.mjs cleanup/, 'the certificate and profiles are removed whatever happened')
+  assert.match(job, /^ {8}id: upload$/m, 'the upload step has an id the cleanup reads')
+  assert.match(job, /if: always\(\) && steps\.secrets\.outputs\.ready == 'true'\n[\s\S]*?UPLOADED: \$\{\{ steps\.upload\.outcome == 'success' \}\}\n[\s\S]*?if \[ "\$UPLOADED" != "true" \][^\n]*appstore\.mjs cleanup/, 'the keychain always goes; the certificate is revoked only when nothing was uploaded (ITMS-90035)')
   assert.doesNotMatch(flow, /reviewSubmissions|appStoreVersionSubmissions|betaAppReviewSubmissions/, 'CI never submits for review')
   const register = jobsOf(read('.github/workflows/ios-register-ids.yml'))['ios-register-ids']
   assert.ok(register, 'ios-register-ids.yml has an ios-register-ids job')
