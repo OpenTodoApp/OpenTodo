@@ -35,6 +35,32 @@ final class VersionTests: XCTestCase {
         XCTAssertEqual(Version.code("2.0"), 20000)
         XCTAssertEqual(Version.code("0.0.0-dev"), 0)
     }
+
+    /// `make ios` and the TestFlight job set both numbers (ios-distribution D9): the build
+    /// number is the version code, and a re-upload of the same version adds `.1`, `.2`, …
+    func testTheBundlesBuildNumberIsItsVersionCode() throws {
+        let info = Bundle.main.infoDictionary ?? [:]
+        let version = Version.normalize(info["CFBundleShortVersionString"] as? String)
+        try XCTSkipIf(version == "0.0.0", "a plain Run from Xcode carries the project's placeholder version")
+        let build = info["CFBundleVersion"] as? String ?? ""
+        let code = String(Version.code(version))
+        XCTAssertTrue(build == code || build.range(of: "^\(code)\\.[0-9]+$", options: .regularExpression) != nil,
+                      "CFBundleVersion \(build) does not belong to \(version) (\(code))")
+    }
+}
+
+/// What App Store review reads from the bundle (ios-distribution D7).
+final class StoreReadinessTests: XCTestCase {
+    func testExportComplianceIsDeclared() {
+        XCTAssertEqual(Bundle.main.object(forInfoDictionaryKey: "ITSAppUsesNonExemptEncryption") as? Bool, false)
+    }
+
+    func testTheAppAndTheShareExtensionCarryAPrivacyManifest() throws {
+        XCTAssertNotNil(Bundle.main.url(forResource: "PrivacyInfo", withExtension: "xcprivacy"))
+        let plugins = try XCTUnwrap(Bundle.main.builtInPlugInsURL)
+        let share = plugins.appendingPathComponent("OpenTodoShare.appex/PrivacyInfo.xcprivacy")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: share.path), "the share extension reads file sizes, which needs its own manifest")
+    }
 }
 
 final class ShareMapTests: XCTestCase {
