@@ -1,0 +1,337 @@
+{
+  "$comment": "Shared vectors of the signed web app (OpenSpec change signed-web-app): read by internal/websign/vectors_test.go and web/src/lib/appCode.test.ts. Written by UPDATE_WEBSIGN_VECTORS=1 go test ./internal/websign -run TestVectors; never edit by hand.",
+  "domain": "opentodo-web-manifest/v1\n",
+  "keys": {
+    "recovery": {
+      "spki": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE7VYBdbl/yBE1aKDiNQR7p6XAWuQarj5roMb+y19MBWC1CvdSOxhHNeEePimXuShWH04ctesAGdWWkDRX5+1Rlw==",
+      "fingerprint": "b3a2acd594b46f73fd29f1e5bcc42c533d0aafabae8b06d97ba627990a2e6262",
+      "short": "B3A2 ACD5 94B4 6F73"
+    },
+    "release": {
+      "spki": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEuOIT0CiBJMpKWitbglj3xHgS6lWw0iE3nuPfP/mwDg3isDKKCLoRLJIi+0o8SW3RPhBIxeoGz4E1ZwUguucUbA==",
+      "fingerprint": "aeca03a5fc4a754f6d9b9b66c61771f3375ce1d563b9a68e7efa36752b5b8b87",
+      "short": "AECA 03A5 FC4A 754F"
+    },
+    "unknown": {
+      "spki": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEEdLyXJf+08yOtHozRmXPDkkJVeF89aKtmQ0PhrWSTNAXu6yNKQdn/DIa/8Un//YPl69SOXYL07WxaIrHFeNxzw==",
+      "fingerprint": "3aa9922eaea37931f9127546f5fd4dbe1b4e5e68c48958bd84f49ec4dd2f7546",
+      "short": "3AA9 922E AEA3 7931"
+    }
+  },
+  "envelopes": [
+    {
+      "name": "valid",
+      "envelope": {
+        "format": 1,
+        "payload": "eyJhcHAiOiJvcGVudG9kby13ZWIiLCJ2ZXJzaW9uIjoiMS4zLjAiLCJyZWZ1c2UiOmZhbHNlLCJrZXlzIjpbeyJzcGtpIjoiTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFdU9JVDBDaUJKTXBLV2l0YmdsajN4SGdTNmxXdzBpRTNudVBmUC9td0RnM2lzREtLQ0xvUkxKSWkrMG84U1czUlBoQkl4ZW9HejRFMVp3VWd1dWNVYkE9PSIsInJvbGUiOiJyZWxlYXNlIn0seyJzcGtpIjoiTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFN1ZZQmRibC95QkUxYUtEaU5RUjdwNlhBV3VRYXJqNXJvTWIreTE5TUJXQzFDdmRTT3hoSE5lRWVQaW1YdVNoV0gwNGN0ZXNBR2RXV2tEUlg1KzFSbHc9PSIsInJvbGUiOiJyZWNvdmVyeSJ9XSwid29ya2VyIjp7InBhdGgiOiJzdy5qcyIsInNoYTI1NiI6ImFhIn0sImZpbGVzIjp7InN3LmpzIjp7InNoYTI1NiI6ImFhIiwic2l6ZSI6MiwibG9hZCI6Imluc3RhbGwifX19",
+        "signatures": [
+          {
+            "key": "aeca03a5fc4a754f6d9b9b66c61771f3375ce1d563b9a68e7efa36752b5b8b87",
+            "sig": "8i3b4mA8xcqjyE688BHamyKc0ML3u4ITYVE2N8kkaVJKl1WpLXvaZk9YTwRN87UrIwOGUXFFgF5aeQjQfuNK3Q"
+          }
+        ]
+      },
+      "trusted": [
+        "release",
+        "recovery"
+      ],
+      "signer": "release",
+      "error": ""
+    },
+    {
+      "name": "unsigned",
+      "envelope": {
+        "format": 1,
+        "payload": "eyJhcHAiOiJvcGVudG9kby13ZWIiLCJ2ZXJzaW9uIjoiMS4zLjAiLCJyZWZ1c2UiOmZhbHNlLCJrZXlzIjpbeyJzcGtpIjoiTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFdU9JVDBDaUJKTXBLV2l0YmdsajN4SGdTNmxXdzBpRTNudVBmUC9td0RnM2lzREtLQ0xvUkxKSWkrMG84U1czUlBoQkl4ZW9HejRFMVp3VWd1dWNVYkE9PSIsInJvbGUiOiJyZWxlYXNlIn0seyJzcGtpIjoiTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFN1ZZQmRibC95QkUxYUtEaU5RUjdwNlhBV3VRYXJqNXJvTWIreTE5TUJXQzFDdmRTT3hoSE5lRWVQaW1YdVNoV0gwNGN0ZXNBR2RXV2tEUlg1KzFSbHc9PSIsInJvbGUiOiJyZWNvdmVyeSJ9XSwid29ya2VyIjp7InBhdGgiOiJzdy5qcyIsInNoYTI1NiI6ImFhIn0sImZpbGVzIjp7InN3LmpzIjp7InNoYTI1NiI6ImFhIiwic2l6ZSI6MiwibG9hZCI6Imluc3RhbGwifX19",
+        "signatures": []
+      },
+      "trusted": [
+        "release"
+      ],
+      "signer": "",
+      "error": "unsigned"
+    },
+    {
+      "name": "bad signature",
+      "envelope": {
+        "format": 1,
+        "payload": "eyJhcHAiOiJvcGVudG9kby13ZWIiLCJ2ZXJzaW9uIjoiMS4zLjAiLCJyZWZ1c2UiOmZhbHNlLCJrZXlzIjpbeyJzcGtpIjoiTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFdU9JVDBDaUJKTXBLV2l0YmdsajN4SGdTNmxXdzBpRTNudVBmUC9td0RnM2lzREtLQ0xvUkxKSWkrMG84U1czUlBoQkl4ZW9HejRFMVp3VWd1dWNVYkE9PSIsInJvbGUiOiJyZWxlYXNlIn0seyJzcGtpIjoiTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFN1ZZQmRibC95QkUxYUtEaU5RUjdwNlhBV3VRYXJqNXJvTWIreTE5TUJXQzFDdmRTT3hoSE5lRWVQaW1YdVNoV0gwNGN0ZXNBR2RXV2tEUlg1KzFSbHc9PSIsInJvbGUiOiJyZWNvdmVyeSJ9XSwid29ya2VyIjp7InBhdGgiOiJzdy5qcyIsInNoYTI1NiI6ImFhIn0sImZpbGVzIjp7InN3LmpzIjp7InNoYTI1NiI6ImFhIiwic2l6ZSI6MiwibG9hZCI6Imluc3RhbGwifX19",
+        "signatures": [
+          {
+            "key": "aeca03a5fc4a754f6d9b9b66c61771f3375ce1d563b9a68e7efa36752b5b8b87",
+            "sig": "T3uSW1pq36vxLC3fh2_4rbexSj0P9Kg7Bk8rrEG8Jq-9buo2WTlxgmLe7JVV2e_9dm-TbjRQjcvI5wPnTc973w"
+          }
+        ]
+      },
+      "trusted": [
+        "release"
+      ],
+      "signer": "",
+      "error": "bad-signature"
+    },
+    {
+      "name": "unknown key",
+      "envelope": {
+        "format": 1,
+        "payload": "eyJhcHAiOiJvcGVudG9kby13ZWIiLCJ2ZXJzaW9uIjoiMS4zLjAiLCJyZWZ1c2UiOmZhbHNlLCJrZXlzIjpbeyJzcGtpIjoiTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFdU9JVDBDaUJKTXBLV2l0YmdsajN4SGdTNmxXdzBpRTNudVBmUC9td0RnM2lzREtLQ0xvUkxKSWkrMG84U1czUlBoQkl4ZW9HejRFMVp3VWd1dWNVYkE9PSIsInJvbGUiOiJyZWxlYXNlIn0seyJzcGtpIjoiTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFN1ZZQmRibC95QkUxYUtEaU5RUjdwNlhBV3VRYXJqNXJvTWIreTE5TUJXQzFDdmRTT3hoSE5lRWVQaW1YdVNoV0gwNGN0ZXNBR2RXV2tEUlg1KzFSbHc9PSIsInJvbGUiOiJyZWNvdmVyeSJ9XSwid29ya2VyIjp7InBhdGgiOiJzdy5qcyIsInNoYTI1NiI6ImFhIn0sImZpbGVzIjp7InN3LmpzIjp7InNoYTI1NiI6ImFhIiwic2l6ZSI6MiwibG9hZCI6Imluc3RhbGwifX19",
+        "signatures": [
+          {
+            "key": "3aa9922eaea37931f9127546f5fd4dbe1b4e5e68c48958bd84f49ec4dd2f7546",
+            "sig": "8UY5SNbwiMuYjVXiKYul5j7kyGbtgpvfo_bUzhkb9sQU6I4pi7VQWoq1byppCx7Gk0sAs8lcciRmhyzrq7gKag"
+          }
+        ]
+      },
+      "trusted": [
+        "release",
+        "recovery"
+      ],
+      "signer": "",
+      "error": "unknown-key"
+    },
+    {
+      "name": "wrong domain",
+      "envelope": {
+        "format": 1,
+        "payload": "eyJhcHAiOiJvcGVudG9kby13ZWIiLCJ2ZXJzaW9uIjoiMS4zLjAiLCJyZWZ1c2UiOmZhbHNlLCJrZXlzIjpbeyJzcGtpIjoiTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFdU9JVDBDaUJKTXBLV2l0YmdsajN4SGdTNmxXdzBpRTNudVBmUC9td0RnM2lzREtLQ0xvUkxKSWkrMG84U1czUlBoQkl4ZW9HejRFMVp3VWd1dWNVYkE9PSIsInJvbGUiOiJyZWxlYXNlIn0seyJzcGtpIjoiTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFN1ZZQmRibC95QkUxYUtEaU5RUjdwNlhBV3VRYXJqNXJvTWIreTE5TUJXQzFDdmRTT3hoSE5lRWVQaW1YdVNoV0gwNGN0ZXNBR2RXV2tEUlg1KzFSbHc9PSIsInJvbGUiOiJyZWNvdmVyeSJ9XSwid29ya2VyIjp7InBhdGgiOiJzdy5qcyIsInNoYTI1NiI6ImFhIn0sImZpbGVzIjp7InN3LmpzIjp7InNoYTI1NiI6ImFhIiwic2l6ZSI6MiwibG9hZCI6Imluc3RhbGwifX19",
+        "signatures": [
+          {
+            "key": "aeca03a5fc4a754f6d9b9b66c61771f3375ce1d563b9a68e7efa36752b5b8b87",
+            "sig": "JfsiNoMTzurCifbv3cfMyLiROws4zMDmmx2cxlOk5lxJU6akizcxvF_98P7JUYiyo6NIUdiDwEQWrFNQ9u3gkw"
+          }
+        ]
+      },
+      "trusted": [
+        "release"
+      ],
+      "signer": "",
+      "error": "bad-signature"
+    },
+    {
+      "name": "mutated payload",
+      "envelope": {
+        "format": 1,
+        "payload": "eyJhcHAiOiJvcGVudG9kby13ZWIiLCJ2ZXJzaW9uIjoiMS4zLjEiLCJyZWZ1c2UiOmZhbHNlLCJrZXlzIjpbeyJzcGtpIjoiTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFdU9JVDBDaUJKTXBLV2l0YmdsajN4SGdTNmxXdzBpRTNudVBmUC9td0RnM2lzREtLQ0xvUkxKSWkrMG84U1czUlBoQkl4ZW9HejRFMVp3VWd1dWNVYkE9PSIsInJvbGUiOiJyZWxlYXNlIn0seyJzcGtpIjoiTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFN1ZZQmRibC95QkUxYUtEaU5RUjdwNlhBV3VRYXJqNXJvTWIreTE5TUJXQzFDdmRTT3hoSE5lRWVQaW1YdVNoV0gwNGN0ZXNBR2RXV2tEUlg1KzFSbHc9PSIsInJvbGUiOiJyZWNvdmVyeSJ9XSwid29ya2VyIjp7InBhdGgiOiJzdy5qcyIsInNoYTI1NiI6ImFhIn0sImZpbGVzIjp7InN3LmpzIjp7InNoYTI1NiI6ImFhIiwic2l6ZSI6MiwibG9hZCI6Imluc3RhbGwifX19",
+        "signatures": [
+          {
+            "key": "aeca03a5fc4a754f6d9b9b66c61771f3375ce1d563b9a68e7efa36752b5b8b87",
+            "sig": "1B-gHVkrPD9OK-Rmqo7JIf25r6yoOYW1SVVKBKaLdJ_r2Nw2DH77oPdHZ41CPYn0896ES6HZxDib9Jq_CLuv9A"
+          }
+        ]
+      },
+      "trusted": [
+        "release"
+      ],
+      "signer": "",
+      "error": "bad-signature"
+    },
+    {
+      "name": "two signatures, the old key trusted",
+      "envelope": {
+        "format": 1,
+        "payload": "eyJhcHAiOiJvcGVudG9kby13ZWIiLCJ2ZXJzaW9uIjoiMS4zLjAiLCJyZWZ1c2UiOmZhbHNlLCJrZXlzIjpbeyJzcGtpIjoiTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFdU9JVDBDaUJKTXBLV2l0YmdsajN4SGdTNmxXdzBpRTNudVBmUC9td0RnM2lzREtLQ0xvUkxKSWkrMG84U1czUlBoQkl4ZW9HejRFMVp3VWd1dWNVYkE9PSIsInJvbGUiOiJyZWxlYXNlIn0seyJzcGtpIjoiTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFN1ZZQmRibC95QkUxYUtEaU5RUjdwNlhBV3VRYXJqNXJvTWIreTE5TUJXQzFDdmRTT3hoSE5lRWVQaW1YdVNoV0gwNGN0ZXNBR2RXV2tEUlg1KzFSbHc9PSIsInJvbGUiOiJyZWNvdmVyeSJ9XSwid29ya2VyIjp7InBhdGgiOiJzdy5qcyIsInNoYTI1NiI6ImFhIn0sImZpbGVzIjp7InN3LmpzIjp7InNoYTI1NiI6ImFhIiwic2l6ZSI6MiwibG9hZCI6Imluc3RhbGwifX19",
+        "signatures": [
+          {
+            "key": "3aa9922eaea37931f9127546f5fd4dbe1b4e5e68c48958bd84f49ec4dd2f7546",
+            "sig": "ny3-nxSb3R0Zg7vwSPFMVl_el3eK0JVi8PNvuG3Ne8ZuTHBYvRjStbV6AgcvtZNvDJfHa9giRwXJ_A-0JNXSIQ"
+          },
+          {
+            "key": "aeca03a5fc4a754f6d9b9b66c61771f3375ce1d563b9a68e7efa36752b5b8b87",
+            "sig": "8dhGP-v85toYbBiwuuWljF_djN20CyPdh5jae-9KjtREtY0IHoSzZ1KO04e5bquhcQq2tYuRzGzVP0MeVuR9ng"
+          }
+        ]
+      },
+      "trusted": [
+        "unknown"
+      ],
+      "signer": "unknown",
+      "error": ""
+    },
+    {
+      "name": "two signatures, the new key trusted",
+      "envelope": {
+        "format": 1,
+        "payload": "eyJhcHAiOiJvcGVudG9kby13ZWIiLCJ2ZXJzaW9uIjoiMS4zLjAiLCJyZWZ1c2UiOmZhbHNlLCJrZXlzIjpbeyJzcGtpIjoiTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFdU9JVDBDaUJKTXBLV2l0YmdsajN4SGdTNmxXdzBpRTNudVBmUC9td0RnM2lzREtLQ0xvUkxKSWkrMG84U1czUlBoQkl4ZW9HejRFMVp3VWd1dWNVYkE9PSIsInJvbGUiOiJyZWxlYXNlIn0seyJzcGtpIjoiTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFN1ZZQmRibC95QkUxYUtEaU5RUjdwNlhBV3VRYXJqNXJvTWIreTE5TUJXQzFDdmRTT3hoSE5lRWVQaW1YdVNoV0gwNGN0ZXNBR2RXV2tEUlg1KzFSbHc9PSIsInJvbGUiOiJyZWNvdmVyeSJ9XSwid29ya2VyIjp7InBhdGgiOiJzdy5qcyIsInNoYTI1NiI6ImFhIn0sImZpbGVzIjp7InN3LmpzIjp7InNoYTI1NiI6ImFhIiwic2l6ZSI6MiwibG9hZCI6Imluc3RhbGwifX19",
+        "signatures": [
+          {
+            "key": "3aa9922eaea37931f9127546f5fd4dbe1b4e5e68c48958bd84f49ec4dd2f7546",
+            "sig": "HPo9gsy7Gl_yuhY4yju-L4qucq0zSaNjkvLXHF_Wn0LJtIAJNRCyLvDyL0hESqx9SZcix1_5R4aDvVRRgsjjWw"
+          },
+          {
+            "key": "aeca03a5fc4a754f6d9b9b66c61771f3375ce1d563b9a68e7efa36752b5b8b87",
+            "sig": "j5L9KMyIb6coCn7htU3MIxsh0NsWHvvtvJSB60qLq4nMQp551GD4jXmKlgQpVAb6xZ0lN7xPB0T8JqCxR2zTOw"
+          }
+        ]
+      },
+      "trusted": [
+        "release"
+      ],
+      "signer": "release",
+      "error": ""
+    },
+    {
+      "name": "recovery key",
+      "envelope": {
+        "format": 1,
+        "payload": "eyJhcHAiOiJvcGVudG9kby13ZWIiLCJ2ZXJzaW9uIjoiMS4zLjAiLCJyZWZ1c2UiOmZhbHNlLCJrZXlzIjpbeyJzcGtpIjoiTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFdU9JVDBDaUJKTXBLV2l0YmdsajN4SGdTNmxXdzBpRTNudVBmUC9td0RnM2lzREtLQ0xvUkxKSWkrMG84U1czUlBoQkl4ZW9HejRFMVp3VWd1dWNVYkE9PSIsInJvbGUiOiJyZWxlYXNlIn0seyJzcGtpIjoiTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFN1ZZQmRibC95QkUxYUtEaU5RUjdwNlhBV3VRYXJqNXJvTWIreTE5TUJXQzFDdmRTT3hoSE5lRWVQaW1YdVNoV0gwNGN0ZXNBR2RXV2tEUlg1KzFSbHc9PSIsInJvbGUiOiJyZWNvdmVyeSJ9XSwid29ya2VyIjp7InBhdGgiOiJzdy5qcyIsInNoYTI1NiI6ImFhIn0sImZpbGVzIjp7InN3LmpzIjp7InNoYTI1NiI6ImFhIiwic2l6ZSI6MiwibG9hZCI6Imluc3RhbGwifX19",
+        "signatures": [
+          {
+            "key": "b3a2acd594b46f73fd29f1e5bcc42c533d0aafabae8b06d97ba627990a2e6262",
+            "sig": "huKiQLEChGDQLJF-eusps-K1kI0591mz_HoR4Td_VA70ZYobClsuXis11X8kacg1adGJ_qLTczVu2JvKsdsIyw"
+          }
+        ]
+      },
+      "trusted": [
+        "release",
+        "recovery"
+      ],
+      "signer": "recovery",
+      "error": ""
+    },
+    {
+      "name": "a bad signature then a good one",
+      "envelope": {
+        "format": 1,
+        "payload": "eyJhcHAiOiJvcGVudG9kby13ZWIiLCJ2ZXJzaW9uIjoiMS4zLjAiLCJyZWZ1c2UiOmZhbHNlLCJrZXlzIjpbeyJzcGtpIjoiTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFdU9JVDBDaUJKTXBLV2l0YmdsajN4SGdTNmxXdzBpRTNudVBmUC9td0RnM2lzREtLQ0xvUkxKSWkrMG84U1czUlBoQkl4ZW9HejRFMVp3VWd1dWNVYkE9PSIsInJvbGUiOiJyZWxlYXNlIn0seyJzcGtpIjoiTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFN1ZZQmRibC95QkUxYUtEaU5RUjdwNlhBV3VRYXJqNXJvTWIreTE5TUJXQzFDdmRTT3hoSE5lRWVQaW1YdVNoV0gwNGN0ZXNBR2RXV2tEUlg1KzFSbHc9PSIsInJvbGUiOiJyZWNvdmVyeSJ9XSwid29ya2VyIjp7InBhdGgiOiJzdy5qcyIsInNoYTI1NiI6ImFhIn0sImZpbGVzIjp7InN3LmpzIjp7InNoYTI1NiI6ImFhIiwic2l6ZSI6MiwibG9hZCI6Imluc3RhbGwifX19",
+        "signatures": [
+          {
+            "key": "aeca03a5fc4a754f6d9b9b66c61771f3375ce1d563b9a68e7efa36752b5b8b87",
+            "sig": "T3uSW1pq36vxLC3fh2_4rbexSj0P9Kg7Bk8rrEG8Jq-9buo2WTlxgmLe7JVV2e_9dm-TbjRQjcvI5wPnTc973w"
+          },
+          {
+            "key": "b3a2acd594b46f73fd29f1e5bcc42c533d0aafabae8b06d97ba627990a2e6262",
+            "sig": "_78cX2Jny1fSoupv6kYYj8TkoOh15QfvSyIKDsazMZBLOR3ZDENy9yYv8waArRAjHkMmiz1C-rvnmM-qLooqEw"
+          }
+        ]
+      },
+      "trusted": [
+        "release",
+        "recovery"
+      ],
+      "signer": "recovery",
+      "error": ""
+    },
+    {
+      "name": "another app",
+      "envelope": {
+        "format": 1,
+        "payload": "eyJhcHAiOiJzb21ldGhpbmctZWxzZSIsInZlcnNpb24iOiIxLjMuMCIsImtleXMiOltdLCJ3b3JrZXIiOnsicGF0aCI6InN3LmpzIiwic2hhMjU2IjoiYWEifSwiZmlsZXMiOnt9fQ",
+        "signatures": [
+          {
+            "key": "aeca03a5fc4a754f6d9b9b66c61771f3375ce1d563b9a68e7efa36752b5b8b87",
+            "sig": "c0TBDQdyVCRg1rBgeAGx5wuydgyIBku7leLtjiLVaCQtxs4TI9n7RgjYU7EyVx6Ed8pLa9vmRpKoEKZhGSbsJw"
+          }
+        ]
+      },
+      "trusted": [
+        "release"
+      ],
+      "signer": "",
+      "error": "invalid"
+    },
+    {
+      "name": "format 2",
+      "envelope": {
+        "format": 2,
+        "payload": "eyJhcHAiOiJvcGVudG9kby13ZWIiLCJ2ZXJzaW9uIjoiMS4zLjAiLCJyZWZ1c2UiOmZhbHNlLCJrZXlzIjpbeyJzcGtpIjoiTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFdU9JVDBDaUJKTXBLV2l0YmdsajN4SGdTNmxXdzBpRTNudVBmUC9td0RnM2lzREtLQ0xvUkxKSWkrMG84U1czUlBoQkl4ZW9HejRFMVp3VWd1dWNVYkE9PSIsInJvbGUiOiJyZWxlYXNlIn0seyJzcGtpIjoiTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFN1ZZQmRibC95QkUxYUtEaU5RUjdwNlhBV3VRYXJqNXJvTWIreTE5TUJXQzFDdmRTT3hoSE5lRWVQaW1YdVNoV0gwNGN0ZXNBR2RXV2tEUlg1KzFSbHc9PSIsInJvbGUiOiJyZWNvdmVyeSJ9XSwid29ya2VyIjp7InBhdGgiOiJzdy5qcyIsInNoYTI1NiI6ImFhIn0sImZpbGVzIjp7InN3LmpzIjp7InNoYTI1NiI6ImFhIiwic2l6ZSI6MiwibG9hZCI6Imluc3RhbGwifX19",
+        "signatures": [
+          {
+            "key": "aeca03a5fc4a754f6d9b9b66c61771f3375ce1d563b9a68e7efa36752b5b8b87",
+            "sig": "aFkrp1Zmpw3z27eIpVFKfFYbyhhmktZ_Ea8ROP4FRw1W8ORvbtxqvvjnFRy9cf6hpCVgu2xpA5S6gx3oSolPEA"
+          }
+        ]
+      },
+      "trusted": [
+        "release"
+      ],
+      "signer": "",
+      "error": "invalid"
+    }
+  ],
+  "versions": [
+    {
+      "a": "1.0.0",
+      "b": "1.0.0",
+      "cmp": 0
+    },
+    {
+      "a": "1.0.0",
+      "b": "1.0.1",
+      "cmp": -1
+    },
+    {
+      "a": "1.2.0",
+      "b": "1.10.0",
+      "cmp": -1
+    },
+    {
+      "a": "2.0.0",
+      "b": "1.99.99",
+      "cmp": 1
+    },
+    {
+      "a": "1.0.0-rc.2",
+      "b": "1.0.0",
+      "cmp": -1
+    },
+    {
+      "a": "1.0.0-rc.2",
+      "b": "1.0.0-rc.10",
+      "cmp": -1
+    },
+    {
+      "a": "1.0.0-alpha",
+      "b": "1.0.0-alpha.1",
+      "cmp": -1
+    },
+    {
+      "a": "1.0.0-alpha.1",
+      "b": "1.0.0-alpha.beta",
+      "cmp": -1
+    },
+    {
+      "a": "1.0.0-beta",
+      "b": "1.0.0-alpha",
+      "cmp": 1
+    },
+    {
+      "a": "1.0.0+a",
+      "b": "1.0.0+b",
+      "cmp": 0
+    },
+    {
+      "a": "0.0.0-dev",
+      "b": "0.0.1",
+      "cmp": -1
+    },
+    {
+      "a": "dev",
+      "b": "0.0.0",
+      "cmp": -1
+    },
+    {
+      "a": "dev",
+      "b": "nonsense",
+      "cmp": 0
+    },
+    {
+      "a": "1.0",
+      "b": "0.0.1",
+      "cmp": -1
+    },
+    {
+      "a": "01.0.0",
+      "b": "0.0.1",
+      "cmp": -1
+    },
+    {
+      "a": "1.0.0-01",
+      "b": "0.0.1",
+      "cmp": -1
+    },
+    {
+      "a": "1.1.1",
+      "b": "1.1.1-rc.1",
+      "cmp": 1
+    }
+  ]
+}
