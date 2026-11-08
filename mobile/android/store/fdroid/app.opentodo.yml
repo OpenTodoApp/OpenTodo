@@ -7,8 +7,9 @@
 # root (fastlane/README.md), so they are not repeated here. Drop these comment lines when
 # copying the file to fdroiddata; `fdroid lint` and `fdroid rewritemeta` pass on it.
 # The version comes from the tag, not from a file, so F-Droid's bot reads CurrentVersion and
-# CurrentVersionCode from this file on main (UpdateCheckMode: HTTP) and builds the tag v%v.
-# `make release-prepare` moves them with the Builds entry in the release commit.
+# CurrentVersionCode from this file at each tag (UpdateCheckMode: Tags); `make release-prepare`
+# moves them with the Builds entry in the release commit. The build uses the build server's
+# default JDK 21, as CI does.
 Categories:
   - Task
 License: AGPL-3.0-only
@@ -17,6 +18,8 @@ WebSite: https://github.com/OpenTodoApp/OpenTodo
 SourceCode: https://github.com/OpenTodoApp/OpenTodo
 IssueTracker: https://github.com/OpenTodoApp/OpenTodo/issues
 Changelog: https://github.com/OpenTodoApp/OpenTodo/blob/HEAD/CHANGELOG.md
+
+AutoName: OpenTodo
 
 RepoType: git
 Repo: https://github.com/OpenTodoApp/OpenTodo.git
@@ -28,27 +31,19 @@ Builds:
     versionCode: 10200
     commit: 0d4dd3f78e108fbe046fb8781c9e4d1eb33e729a
     subdir: mobile/android/app
-    sudo:
-      - echo 'deb https://deb.debian.org/debian bookworm main' > 
-        /etc/apt/sources.list.d/bookworm.list
-      - apt-get update
-      - apt-get install -y -t bookworm openjdk-17-jdk-headless
-      - update-alternatives --auto java
     gradle:
       - yes
     rm:
       - extension
       - internal/importer/testdata
       - internal/store/testdata
-    prebuild: sed -i -e 's/System.getenv("OPENTODO_VERSION")/"$$VERSION$$"/' 
-      build.gradle.kts
+    prebuild: sed -i -e 's/System.getenv("OPENTODO_VERSION")/"$$VERSION$$"/' build.gradle.kts
 
-AllowedAPKSigningKeys: 
-  ff2eacdf7e79712e44fdd9d2e3110891e712c170ea516bd3fbbecc291072befa
+AllowedAPKSigningKeys: ff2eacdf7e79712e44fdd9d2e3110891e712c170ea516bd3fbbecc291072befa
 
-AutoUpdateMode: Version v%v
-UpdateCheckMode: HTTP
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
 UpdateCheckData: 
-  https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/mobile/android/store/fdroid/app.opentodo.yml|CurrentVersionCode:\s*(\d+)|.|CurrentVersion:\s*([0-9.]+)
+  mobile/android/store/fdroid/app.opentodo.yml|CurrentVersionCode:\s*(\d+)|.|CurrentVersion:\s*([0-9.]+)
 CurrentVersion: 1.2.0
 CurrentVersionCode: 10200
