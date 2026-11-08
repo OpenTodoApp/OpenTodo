@@ -1,0 +1,1 @@
+- **Add a task right where it belongs.** In a project or the Inbox, a task's menu (right-click, or press and hold on a phone) has **Add task below** and **Add subtask**. A line opens exactly where the new task will appear, and it stays open, moving down as you add, so you can write a whole run of steps in place (#1036).

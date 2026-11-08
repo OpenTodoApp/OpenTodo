@@ -104,6 +104,7 @@ export function useListBindings(c: BindingContext): RowActions {
     setSelectedId(pick)
     setOpenId(want)
     ui.setAddingUnder(null)
+    ui.setAddingBelow(null)
     ui.setPrompt(null)
     ui.setPickerFor(null)
     ui.setAssignFor(null)
