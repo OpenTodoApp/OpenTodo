@@ -86,8 +86,19 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - run: npm ci --no-audit --no-fund
         working-directory: web
-      - run: npm run build
+      # The signed file list (signed-web-app): a release tag names the version, a build
+      # of main is labelled a preview build; anything else is 0.0.0-dev. Signing is the
+      # web-sign job's, on release tags only.
+      - name: Build (the file list names the version)
         working-directory: web
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          case "$REF" in
+            refs/tags/v*) export OPENTODO_VERSION="${GITHUB_REF_NAME#v}" ;;
+            refs/heads/main) export OPENTODO_BUILD=preview ;;
+          esac
+          npm run build
       # The first load's gzip size against web/bundle-budget.json (raise it only on purpose).
       - name: Bundle budget
         run: node scripts/bundle-budget.mjs
@@ -101,6 +112,53 @@ jobs:
           name: web-dist
           path: internal/web/dist
           include-hidden-files: true
+
+  # Signs the web app's file list (OpenSpec signed-web-app D4): release tags only, the
+  # only job in the protected `web-signing` environment (its required reviewer approves
+  # every signing) and the only one that reads WEB_SIGNING_KEY. It signs the build of
+  # web-build, after checking every file against the list and the version against the
+  # tag, and hands it on as web-dist-signed, which the binaries and the image embed.
+  # Without the secret (a fork, or before the keys exist) it passes the build on
+  # unsigned, so the release reads "Self-built" and stays green.
+  web-sign:
+    name: Web app signature
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [changes, web-build]
+    environment: web-signing
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: web-dist
+          path: internal/web/dist
+      - name: Sign the file list
+        env:
+          WEB_SIGNING_KEY: ${{ secrets.WEB_SIGNING_KEY }}
+        run: |
+          if [ -z "$WEB_SIGNING_KEY" ]; then
+            echo "::warning::WEB_SIGNING_KEY is not set in the web-signing environment: this release is not signed and reads Self-built."
+            go run ./cmd/websign verify internal/web/dist
+          else
+            go run ./cmd/websign sign -version "$GITHUB_REF_NAME" internal/web/dist
+            go run ./cmd/websign verify -require-signed internal/web/dist
+          fi
+          mkdir -p web-manifest
+          cp internal/web/dist/app-manifest.json "web-manifest/opentodo-web-manifest-${GITHUB_REF_NAME}.json"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: web-dist-signed
+          path: internal/web/dist
+          include-hidden-files: true
+      # The public record of what this version's code is, attached to the release.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: web-manifest
+          path: web-manifest
 
   web:
     name: Web (typecheck, lint, test)
@@ -497,8 +555,9 @@ jobs:
     name: Binaries (${{ matrix.goos }}/${{ matrix.goarch }})
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [changes, server]
-    if: needs.changes.outputs.code == 'true'
+    needs: [changes, server, web-sign]
+    # web-sign runs on release tags only; elsewhere it is skipped, not failed.
+    if: ${{ !cancelled() && !failure() && needs.changes.outputs.code == 'true' }}
     strategy:
       fail-fast: false
       matrix:
@@ -522,9 +581,10 @@ jobs:
         # The version comes from the environment (GITHUB_REF_NAME), never from an
         # expression pasted into the script: a branch or tag name is not trusted text.
         run: go build -trimpath -ldflags="-s -w -X main.version=${GITHUB_REF_NAME}" -o "dist/ot-${GOOS}-${GOARCH}${EXT}" ./cmd/ot
+      # A release embeds the signed build (signed-web-app D4); anything else the plain one.
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: web-dist
+          name: ${{ startsWith(github.ref, 'refs/tags/v') && 'web-dist-signed' || 'web-dist' }}
           path: internal/web/dist
       - name: Cross-compile the server (web app embedded)
         env:
@@ -843,11 +903,18 @@ jobs:
     name: Docker image (build, scan, smoke test)
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: changes
-    if: needs.changes.outputs.code == 'true'
+    needs: [changes, web-sign]
+    # web-sign runs on release tags only; elsewhere it is skipped, not failed.
+    if: ${{ !cancelled() && !failure() && needs.changes.outputs.code == 'true' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      # A release builds the image around the signed web app (signed-web-app D4).
+      - if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: web-dist-signed
+          path: web-dist-signed
       - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           # The runner's platform (linux/amd64). No `platforms:` key here: the site
@@ -856,6 +923,7 @@ jobs:
           load: true
           push: false
           tags: opentodo:ci
+          build-contexts: ${{ startsWith(github.ref, 'refs/tags/v') && 'web-dist=web-dist-signed' || '' }}
           # A release reports its tag; anything else (latest, pull requests) dev+<commit>, never the branch name (#160).
           build-args: |
             VERSION=${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || 'dev' }}
@@ -875,6 +943,22 @@ jobs:
           node-version: 24
       - name: Smoke test the built image like Coolify starts it
         run: node scripts/coolify-template-check.mjs --smoke --image opentodo:ci
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      # The web app the image serves matches its file list, downloaded as a browser
+      # does (signed-web-app D4). Once the official keys exist, a release must be signed
+      # by one of them, or it does not publish.
+      - name: The served web app matches its signed file list
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          docker run -d --name websign-check -p 18095:8080 opentodo:ci
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:18095/healthz >/dev/null 2>&1 && break; sleep 1; done
+          require=""
+          case "$REF" in refs/tags/v*) grep -q '"spki"' internal/websign/release-keys.json && require=-require-signed ;; esac
+          go run ./cmd/websign verify $require http://127.0.0.1:18095/
+          docker rm -f websign-check
 
   # Publishes the multi-arch image (main and v* tags), only after every gate above
   # passed (OpenSpec ci-release-gates): `stable`, `latest` and the version tags never
@@ -886,13 +970,19 @@ jobs:
     if: ${{ !cancelled() && !failure() && github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    needs: [changes, web-build, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, obsidian, android, ios, skill, checks, image]
+    needs: [changes, web-build, web-sign, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, obsidian, android, ios, skill, checks, image]
     permissions:
       contents: read
       packages: write
       id-token: write # cosign keyless signing
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # A release publishes the image around the signed web app (signed-web-app D4).
+      - if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: web-dist-signed
+          path: web-dist-signed
       - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Log in to GHCR
@@ -924,10 +1014,13 @@ jobs:
           sbom: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-contexts: ${{ startsWith(github.ref, 'refs/tags/v') && 'web-dist=web-dist-signed' || '' }}
           # A release reports its tag; anything else (latest, pull requests) dev+<commit>, never the branch name (#160).
+          # `latest` is never signed and says so (signed-web-app D4).
           build-args: |
             VERSION=${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || 'dev' }}
             SOURCE_COMMIT=${{ github.event.pull_request.head.sha || github.sha }}
+            OPENTODO_BUILD=${{ github.ref == 'refs/heads/main' && 'preview' || '' }}
           cache-from: |
             type=gha,scope=image-amd64
             type=gha,scope=image-release
@@ -968,7 +1061,7 @@ jobs:
     if: ${{ !cancelled() && !failure() && startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [changes, web-build, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, obsidian, android, ios, skill, checks, image, docker]
+    needs: [changes, web-build, web-sign, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, obsidian, android, ios, skill, checks, image, docker]
     permissions:
       contents: write
       id-token: write # build provenance (Sigstore)

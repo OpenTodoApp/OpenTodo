@@ -257,7 +257,8 @@ test('base and job images are pinned by digest', () => {
   const dockerfile = read('Dockerfile')
   const stages = [...dockerfile.matchAll(/^FROM .* AS (\S+)$/gm)].map((m) => m[1])
   for (const [, from] of dockerfile.matchAll(/^FROM (?:--platform=\S+ )?(\S+)/gm)) {
-    if (stages.includes(from)) continue
+    // scratch is the empty image, nothing to pin (the web-dist stage, signed-web-app D4).
+    if (stages.includes(from) || from === 'scratch') continue
     assert.match(from, /^[\w.\/-]+:[\w.-]+@sha256:[0-9a-f]{64}$/, `Dockerfile: ${from} must be tag@sha256:digest`)
   }
   const pinned = read('Makefile').match(/^PLAYWRIGHT_IMAGE := (.+)$/m)?.[1].replace('$(PLAYWRIGHT_VERSION)', read('Makefile').match(/^PLAYWRIGHT_VERSION := (\S+)$/m)[1])
@@ -601,6 +602,46 @@ test('the Play AAB is the build without location, checked on every Android run (
   assert.doesNotMatch(read('scripts/android-repro.sh'), /opentodo\.play/, 'the reproducible APK never uses the Play property')
   assert.doesNotMatch(read('mobile/android/store/fdroid/app.opentodo.yml'), /opentodo\.play/)
   assert.match(read('mobile/android/app/src/play/AndroidManifest.xml'), /ACCESS_BACKGROUND_LOCATION" tools:node="remove"/)
+})
+
+// Signed web app (OpenSpec signed-web-app D4): one job signs, on release tags, in the
+// protected environment whose required reviewer approves every signing; the
+// binaries and the image embed what it signed.
+test('only web-sign reads the web signing key, on release tags, in the web-signing environment', () => {
+  const jobs = jobsOf(read('.github/workflows/ci.yml'))
+  const sign = jobs['web-sign']
+  assert.ok(sign, 'ci.yml has a web-sign job')
+  assert.match(sign, /^ {4}if: startsWith\(github\.ref, 'refs\/tags\/v'\)$/m, 'release tags only')
+  assert.match(sign, /^ {4}environment: web-signing$/m)
+  assert.match(sign, /websign sign -version "\$GITHUB_REF_NAME"/, 'the version must match the tag')
+  assert.match(sign, /::warning::WEB_SIGNING_KEY is not set/, 'without the secret the release stays unsigned and green')
+  for (const f of workflowFiles()) {
+    for (const [id, block] of Object.entries(jobsOf(read(f)))) {
+      const uses = /environment: web-signing|secrets\.WEB_SIGNING_KEY/.test(block)
+      if (uses) assert.ok(f.endsWith('ci.yml') && id === 'web-sign', `${f}: only the web-sign job uses the web-signing environment or its key (${id})`)
+    }
+  }
+  for (const id of ['cli', 'image', 'docker']) {
+    assert.ok(needsOf(jobs[id]).includes('web-sign'), `${id} waits for the signed web app`)
+    assert.match(jobs[id], /web-dist-signed/, `${id} embeds the signed web app on release tags`)
+  }
+})
+
+test('the official web app keys are published, and the test key is never one of them', async () => {
+  const { createHash, createPrivateKey, createPublicKey } = await import('node:crypto')
+  const official = JSON.parse(read('internal/websign/release-keys.json'))
+  assert.equal(typeof official.refuse, 'boolean')
+  const security = read('SECURITY.md')
+  const page = read('docs/security/signed-app.md')
+  for (const k of official.keys) {
+    const fp = createHash('sha256').update(Buffer.from(k.spki, 'base64')).digest('hex')
+    assert.ok(security.includes(fp), `SECURITY.md publishes the ${k.role} key's fingerprint ${fp}`)
+    assert.ok(page.includes(fp), `docs/security/signed-app.md publishes the ${k.role} key's fingerprint ${fp}`)
+  }
+  for (const test of ['test-key.pem', 'test-recovery-key.pem']) {
+    const spki = createPublicKey(createPrivateKey(read(`internal/websign/testdata/${test}`))).export({ type: 'spki', format: 'der' }).toString('base64')
+    assert.ok(!official.keys.some((k) => k.spki === spki), `${test} is a test key and never official`)
+  }
 })
 
 test('the Play upload runs only for final tags, after the release, with its secrets in the release environment', () => {
