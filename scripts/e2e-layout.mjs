@@ -49,7 +49,7 @@ const pw = await import('playwright').catch(async () => {
   return createRequire(execSync('npm root -g').toString().trim() + '/')('playwright')
 })
 import { mkdirSync, writeFileSync } from 'node:fs'
-import { MAX_SCROLLERS, addButtonCovers, axeProblems, calendarGridRoom, crowdedControls, crumbOverlap, cutLabels, overlayContentFit, pageOverflow, rowCheckReach, rowMisalignment, settled, smallFields, smallTargets, tabRowOverflow, verticalScrollers } from './ux-audit/measure.mjs'
+import { MAX_SCROLLERS, addButtonCovers, axeProblems, calendarGridRoom, crowdedControls, crumbOverlap, cutLabels, overlayContentFit, pageOverflow, rowCheckReach, rowMisalignment, settled, smallFields, smallTargets, tabRowOverflow, tintDrift, verticalScrollers } from './ux-audit/measure.mjs'
 import { calendarEvents, seed as seedAccount } from './ux-audit/seed.mjs'
 import { ANY_LANG_OVERLAYS, OVERLAYS, chooseLayout, closes, openScreen, screens } from './ux-audit/layout-screens.mjs'
 
@@ -332,6 +332,7 @@ async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructi
   const sel = await overlay.evaluate((el) => { el.setAttribute('data-layout-check', ''); return '[data-layout-check]' })
   for (const m of await p.evaluate(smallTargets, [sel, MIN_TARGET])) await fail(p, screen, name, `touch target: ${m}`)
   for (const m of await p.evaluate(smallFields, [sel, MIN_FIELD_TEXT])) await fail(p, screen, name, `text field: ${m}`)
+  for (const m of await p.evaluate(tintDrift, sel)) await fail(p, screen, name, m)
   // Its content fits the panel: nothing sideways out of it, no sentence squeezed by its buttons (issue #731).
   if (fit) for (const m of await p.evaluate(overlayContentFit, sel)) await fail(p, screen, name, m)
   await overlay.evaluate((el) => el.removeAttribute('data-layout-check'))
