@@ -204,7 +204,7 @@
   "open": {
    "steps": [
     {
-     "focus": "input[aria-label=\"Add a task\"]"
+     "focus": "textarea[aria-label=\"Add a task\"]"
     },
     {
      "type": "Call mum tomorrow p1 @errand"
