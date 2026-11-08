@@ -1,0 +1,9 @@
+Bevestig je OpenTodo-account
+
+Dit is een aanmeldbevestiging van OpenTodo.
+
+Iemand heeft zich op {{.Origin}} aangemeld met {{.Email}}. Om het account aan te maken, open je deze link en klik je op de knop op de pagina:
+
+{{.Link}}
+
+De link vervalt over {{.Expiry}}. Als jij je niet hebt aangemeld, kun je dit bericht negeren: er wordt geen account aangemaakt.

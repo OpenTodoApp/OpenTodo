@@ -1,0 +1,12 @@
+{{.Subject}}
+
+{{.Text}}
+
+--
+Dit bericht is door je routine „{{.Routine}}“ in OpenTodo op {{.Origin}} verstuurd.
+
+Bekijk deze uitvoering:
+
+{{.Link}}
+
+Je ontvangt dit bericht omdat je routine een stap „Mail mij“ heeft en deze naar {{.Email}} stuurt. Om dit te stoppen, zet je de routine uit of verwijder je de stap op de pagina Routinen.

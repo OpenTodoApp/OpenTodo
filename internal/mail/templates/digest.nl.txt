@@ -1,0 +1,26 @@
+Jouw week in OpenTodo: {{.Completed}} voltooid
+
+Dit is je wekelijkse overzicht van OpenTodo op {{.Origin}}.
+
+Afgelopen week ({{.Week}})
+  Voltooid: {{.Completed}}
+  Aangemaakt: {{.Created}}
+  Te laat voltooid: {{.Late}}
+  Uitgesteld: {{.Slipped}}
+
+Nog open van eerder
+{{.Overdue}}
+
+Vervalt in de komende zeven dagen
+{{.Ahead}}
+
+Projecten zonder volgende actie
+{{.Idle}}
+
+Laatste wekelijkse terugblik: {{.LastReview}}
+
+Start je wekelijkse terugblik:
+
+{{.Link}}
+
+Je ontvangt dit bericht omdat je het wekelijkse overzicht voor {{.Email}} hebt ingeschakeld bij Instellingen, Meldingen. Daar kun je het op elk moment uitschakelen.

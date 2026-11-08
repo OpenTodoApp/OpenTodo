@@ -1,0 +1,9 @@
+{{.Inviter}} wil een project of werkruimte met je delen
+
+{{.Inviter}} wil je account {{.Email}} als {{.Role}} toevoegen aan de OpenTodo-server op {{.Origin}}. Er wordt niets met je gedeeld voordat je antwoordt.
+
+Om te accepteren of af te wijzen, meld je aan en open je:
+
+{{.Link}}
+
+De uitnodiging vervalt over {{.Expiry}}. Als je {{.Inviter}} niet kent, wijs de uitnodiging af of laat haar verlopen.

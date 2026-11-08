@@ -139,6 +139,18 @@ var texts = map[string]map[string]string{
 		txtPageDoneBy: "{name} 在页面上完成了这项任务", txtPageReopenedBy: "{name} 在页面上重新打开了这项任务",
 		txtTestTitle: "来自 OpenTodo 的测试", txtTestBody: "这个频道可以正常使用。", txtGuest: "一位访客",
 	},
+	"nl": {
+		txtTurn: "Jij bent aan de beurt bij een taak", txtTurnWith: "Jij bent aan de beurt",
+		txtRoutine:       "Een routine heeft je een bericht gestuurd",
+		txtRoutineFailed: "Een routine is mislukt", txtRoutineFailedWith: "Deze is niet voltooid. Open de uitvoering om te zien waarom.",
+		txtReminder: "Er is een melding verschuldigd", txtAssigned: "Er is een taak aan je toegewezen", txtMentioned: "Je bent genoemd",
+		txtUnblocked: "Een taak die aan jou is toegewezen kan beginnen", txtPageReplied: "Een gast heeft gereageerd op een taakpagina",
+		txtPageDone: "Een gast heeft een taakpagina voltooid", txtPageReopened: "Een gast heeft een taakpagina opnieuw geopend",
+		txtReminderWith: "Melding", txtAssignedBy: "{name} heeft deze taak aan jou toegewezen", txtMentionedBy: "{name} heeft je genoemd",
+		txtUnblockedWith: "Kan beginnen", txtPageRepliedBy: "{name} heeft gereageerd op de taakpagina",
+		txtPageDoneBy: "{name} heeft de taak op de pagina voltooid", txtPageReopenedBy: "{name} heeft de taak op de pagina opnieuw geopend",
+		txtTestTitle: "Test van OpenTodo", txtTestBody: "Dit kanaal werkt.", txtGuest: "Een gast",
+	},
 }
 
 func text(lang, key, name string) string {
