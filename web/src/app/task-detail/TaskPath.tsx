@@ -84,7 +84,9 @@ export function TaskPath({ origin, project, parents, current, onOpen, compact = 
   return (
     <nav aria-label={t('Task path')} data-breadcrumb className={`flex min-w-0 flex-1 items-center gap-0.5 overflow-hidden font-normal ${compact ? 'text-meta' : 'text-body'}`}>
       {bits.map((b, i) => (
-        <span key={b.key} className={`flex items-center gap-0.5 ${b.key === 'more' ? 'shrink-0' : 'min-w-0'}`}>
+        // A squeezed crumb keeps room for its chevron and an ellipsis and clips the rest,
+        // so it never paints over the next one (GitHub issue 1050).
+        <span key={b.key} className={`flex items-center gap-0.5 ${b.key === 'more' ? 'shrink-0' : `overflow-hidden has-focus-visible:overflow-visible ${i > 0 ? 'min-w-10' : 'min-w-8'}`}`}>
           {i > 0 && <Icon name="chevron-right" size="xs" className="shrink-0 text-faint" aria-hidden />}
           {b.node}
         </span>
