@@ -57,6 +57,17 @@ The switch is the `refuse` field of the signed manifest, copied by the build fro
 
 With refusal on, a failed update is not installed. The page shows "This update wasn't installed." with the likely cause and **What to do**, which opens [Signed updates](../signed-updates.md).
 
+## How a release is signed
+
+The `web-sign` job of `.github/workflows/ci.yml` runs on `v*` tags only, in the GitHub environment `web-signing`. That environment allows only `v*` tags and has the maintainer as required reviewer, so the job waits for his approval on every release. It is the only job that reads the secret `WEB_SIGNING_KEY` (`scripts/repo-checks.test.mjs` checks this). It signs the build of the web-build job after `websign sign` has checked every file and that the version is the tag's, and hands it on as `web-dist-signed`; the binaries and the image (through `--build-context web-dist=…`) embed exactly those files. The image job then checks what the built image serves with `websign verify`, requiring an official signature once `release-keys.json` lists a key. The release attaches the signed list as `opentodo-web-manifest-<tag>.json`. Without the secret, the job warns and passes the build on unsigned.
+
+Setting it up (once, by the maintainer):
+
+1. On an offline computer, `go run ./cmd/websign keygen -out release-key.pem` and `go run ./cmd/websign keygen -out recovery-key.pem`. Each prints its public key and fingerprint.
+2. In the repository's **Settings → Environments → New environment**, name it `web-signing`; under **Deployment protection rules** tick **Required reviewers** and add yourself; under **Deployment branches and tags** choose **Selected branches and tags** and add the tag rule `v*`; under **Environment secrets** add `WEB_SIGNING_KEY` with the whole text of `release-key.pem`.
+3. Put both public keys in `internal/websign/release-keys.json` (`"role": "release"` and `"role": "recovery"`) and both full fingerprints in the table above and in SECURITY.md, in one pull request.
+4. Keep `recovery-key.pem` offline, with a second copy in another place, and delete `release-key.pem` from the computer once the secret is saved.
+
 ## Rotating keys
 
 - **Planned rotation.** Generate the new key offline with `go run ./cmd/websign keygen -out new-release.pem`. Add its public key to `release-keys.json` next to the old one, and sign the next release with both (`websign sign -key old.pem -key new.pem`, or both secrets in the job). Keep both signatures for six months, then remove the old key from the file and the environment.
@@ -66,7 +77,7 @@ With refusal on, a failed update is not installed. The page shows "This update w
 
 ## Your own key
 
-A self-built server can sign its own builds. Make a key pair with `go run ./cmd/websign keygen -out my-key.pem`, keep the private key on the build machine, then build with `make build WEB_SIGNING_KEY=my-key.pem`. The build trusts that key alone, the list is signed with it, and About reads **Signed with this server's key**. The running server needs no key. Moving an installed base from the official key to your own, or back, needs a release signed by the old key that names the new one; otherwise each device starts over.
+A self-built server can sign its own builds. Make a key pair with `go run ./cmd/websign keygen -out my-key.pem`, keep the private key on the build machine, then build with `make build WEB_SIGNING_KEY=my-key.pem`, or `docker build --secret id=web_signing_key,src=my-key.pem .` for the image. The build trusts that key alone, the list is signed with it, and About reads **Signed with this server's key**. The running server needs no key. Moving an installed base from the official key to your own, or back, needs a release signed by the old key that names the new one; otherwise each device starts over.
 
 Check any server with `go run github.com/OpenTodoApp/opentodo/cmd/websign@latest verify https://your.server/` (`-keys release-keys.json` for your own key).
 
