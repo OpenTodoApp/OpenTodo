@@ -539,7 +539,7 @@
 					"@executable_path/Frameworks",
 				);
 				OPENTODO_APP_BOUND_HOST = none.invalid;
-				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.open-todo.ios";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -558,7 +558,7 @@
 					"@executable_path/Frameworks",
 				);
 				OPENTODO_APP_BOUND_HOST = none.invalid;
-				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.open-todo.ios";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -574,7 +574,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo.uitests;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.open-todo.ios.uitests";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = OpenTodo;
@@ -592,7 +592,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo.share;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.open-todo.ios.share";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -609,7 +609,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.open-todo.ios.tests";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OpenTodo.app/OpenTodo";
@@ -689,7 +689,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.open-todo.ios.tests";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OpenTodo.app/OpenTodo";
@@ -707,7 +707,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo.widget;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.open-todo.ios.widget";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -795,7 +795,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo.widget;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.open-todo.ios.widget";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -812,7 +812,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo.uitests;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.open-todo.ios.uitests";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = OpenTodo;
@@ -830,7 +830,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = app.opentodo.share;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.open-todo.ios.share";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";

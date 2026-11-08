@@ -65,7 +65,7 @@ archive)
   sign "$app" "$ios/OpenTodo/OpenTodo.entitlements"
   codesign --verify --deep --strict "$app"
   for b in "$app" "$app"/PlugIns/*.appex; do
-    codesign -d --entitlements - --xml "$b" 2>/dev/null | grep -q 'group.app.opentodo' || die "$(basename "$b") lost the App Group entitlement"
+    codesign -d --entitlements - --xml "$b" 2>/dev/null | grep -q 'group.app.open-todo.ios' || die "$(basename "$b") lost the App Group entitlement"
   done
   short=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Info.plist")
   bundle=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Info.plist")
@@ -125,7 +125,7 @@ upload)
   log=$(mktemp)
   # altool's exit code is not reliable across Xcode versions; its own success line is.
   API_PRIVATE_KEYS_DIR="$keys" xcrun altool --upload-package "$ipa" -t ios --apple-id "$app_id" \
-    --bundle-id app.opentodo --bundle-short-version-string "$version" --bundle-version "$build" \
+    --bundle-id app.open-todo.ios --bundle-short-version-string "$version" --bundle-version "$build" \
     --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" 2>&1 | tee "$log" || true
   grep -qE 'UPLOAD SUCCEEDED|No errors uploading' "$log" || die "the upload of $version ($build) failed; altool's answer is above"
   ;;
