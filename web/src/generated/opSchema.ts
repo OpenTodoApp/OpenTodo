@@ -125,6 +125,15 @@ export interface TaskFields {
    */
   sector?: string
   /**
+   * How the task's own subtasks flow (OpenSpec change subtask-flow, GitHub
+   * issue 1046): "sequential" offers its open subtasks one at a time in list
+   * order; empty, "parallel", missing or unknown read as parallel, as on a
+   * project. Sync checks the kind only, so a later value stays additive; a
+   * client that does not know it shows every subtask as available. Not user
+   * text, so not content.
+   */
+  flow_mode?: string
+  /**
    * The tasks this one waits for, in its own sharing scope (OpenSpec change
    * task-dependencies): one whole-list register; the resolver refuses ids of
    * other scopes and lists that close a cycle.
@@ -1078,7 +1087,7 @@ export const OP_DEFAULTS = {
     name: '', color: '#64748b', position: 0, archived: false, parent_id: null, created_at: 0, deleted_at: null, icon: null, description: '', notes_doc: '', workspace_id: null, flow_mode: '', status: '', reusable: false, aisles: false,
   } satisfies Omit<Project, 'id' | '_clock'>,
   task: {
-    title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, span: false, day_part: null, energy: '', sector: '', blocked_by: [], note_mentions: [], rotation: [], recurrence: null, series_id: null, occurrence_date: null, split_from: null, assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, origin: null, location: null, sample: false, workspace_id: null, fields: {}, appends: {},
+    title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, span: false, day_part: null, energy: '', sector: '', flow_mode: '', blocked_by: [], note_mentions: [], rotation: [], recurrence: null, series_id: null, occurrence_date: null, split_from: null, assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, completed_by: null, origin: null, location: null, sample: false, workspace_id: null, fields: {}, appends: {},
   } satisfies Omit<Task, 'id' | '_clock'>,
   section: {
     name: '', project_id: '', position: 0, created_at: 0, deleted_at: null, color: null, icon: null, flow_mode: '', aisle: null,
