@@ -87,6 +87,21 @@ export function tabRowOverflow() {
   return out
 }
 
+// Crumbs that paint over each other (GitHub issue 1050): a crumb of a breadcrumb squeezed
+// below its content must clip it, or its text and chevron run into the next crumb.
+export function crumbOverlap() {
+  const out = []
+  for (const nav of document.querySelectorAll('[data-breadcrumb]')) {
+    if (!nav.getClientRects().length) continue
+    for (const crumb of nav.children) {
+      if (getComputedStyle(crumb).overflowX === 'visible' && crumb.scrollWidth > crumb.clientWidth + 1) {
+        out.push(`breadcrumb: "${crumb.textContent.trim().slice(0, 40)}" overflows its crumb (${crumb.scrollWidth} px in ${crumb.clientWidth} px) and paints over its neighbour`)
+      }
+    }
+  }
+  return out
+}
+
 // Cut labels (polish 2026-11-02): an option of a segmented control and the day's name
 // in a Day or Week header are never cut. The scope toggle split its row evenly and cut
 // "This occurrence" with room to spare; the Week header beside the planning list cut

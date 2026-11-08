@@ -40,6 +40,8 @@ export function screens(ids, base) {
     { name: 'today', path: '/today', ready: row('Renew passport') },
     // A repeating task's page: the scope toggle's options are not cut (truncated-labels).
     ...(ids.repeating ? [{ name: 'task-repeating', path: `/task/${ids.repeating}`, ready: (p) => p.locator('[data-scope-control]').waitFor() }] : []),
+    // A subtask two parents deep in a long-named project: its path never paints over itself (GitHub issue 1050).
+    ...(ids.deep ? [{ name: 'task-deep-path', path: `/task/${ids.deep}`, ready: (p) => p.locator('[data-breadcrumb] [data-crumb="more"]').first().waitFor() }] : []),
     // Display mode (display-mode 3.4, 5.1): no shell, large type; high contrast and the largest size included.
     { name: 'display-today', path: '/display/today', ready: (p) => p.locator('[data-screen="display"] [data-display-row]').first().waitFor() },
     { name: 'display-today-high-xl', path: '/display/today?contrast=high&size=xl', ready: (p) => p.locator('[data-screen="display"] [data-display-row]').first().waitFor() },
