@@ -29,12 +29,15 @@ const shipped = [
   'opentodo-android/opentodo-android-0.20.0.apk',
   'opentodo-android/opentodo-android-0.20.0.aab',
   'opentodo-site-bundle-v0.20.0/opentodo-site-bundle-v0.20.0.tar.gz',
+  'web-manifest/opentodo-web-manifest-v0.20.0.json',
 ]
 // What else the run's artifacts hold, some of it named like a release file.
 const stray = [
   'web-dist/assets/opentodo-dark-tMkRgx0r.js',
   'web-dist/assets/opentodo-light-BU5bAA6P.js',
   'web-dist/opentodo-dark-tMkRgx0r.js',
+  'web-dist/app-manifest.json',
+  'web-dist-signed/app-manifest.json',
   'opentodo-obsidian/main.js',
   'opentodo-android-debug/app-debug.apk',
   'opentodo-android-test-report/index.html',
