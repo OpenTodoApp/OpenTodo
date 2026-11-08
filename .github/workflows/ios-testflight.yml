@@ -1,0 +1,136 @@
+name: iOS TestFlight
+
+# The iPhone app to TestFlight (OpenSpec change ios-distribution D5, D9). ci.yml calls this after
+# the GitHub release of every final tag (v1.2.0, never v1.2.0-rc.1); Actions → iOS TestFlight →
+# Run workflow uploads any tag, branch or commit by hand. Nothing is ever submitted for review.
+#
+# Signing needs no Mac and nothing stored: the archive is built unsigned and signed ad hoc, then
+# scripts/release/appstore.mjs makes an Apple Distribution certificate from a key generated on the
+# runner and one App Store profile per bundle ID through the App Store Connect API, the export
+# signs with them, altool uploads, and the last step revokes the certificate and deletes the
+# profiles and the keychain, whatever happened before. The secrets are in the `release`
+# environment: APPLE_TEAM_ID, ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8. Without them the job warns
+# and succeeds, so a fork or a release before the owner set this up stays green.
+on:
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Tag, branch or commit to upload (v1.2.0 uploads as 1.2.0; a later commit as its last tag's version)
+        required: true
+        default: main
+      build_number:
+        description: Build number to use instead of the next free one (10200 or 10200.N for 1.2.0); usually empty
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+# One signing run at a time: Apple allows only a few distribution certificates per team.
+concurrency:
+  group: ios-testflight
+  cancel-in-progress: false
+
+jobs:
+  ios-testflight:
+    name: iOS (TestFlight upload)
+    runs-on: macos-15
+    timeout-minutes: 60
+    environment: release
+    env:
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+      SIGNING: ${{ runner.temp }}/signing
+      ARCHIVE: ${{ runner.temp }}/OpenTodo.xcarchive
+    steps:
+      - name: Secrets
+        id: secrets
+        run: |
+          if [ -z "$APPLE_TEAM_ID" ] || [ -z "$ASC_KEY_ID" ] || [ -z "$ASC_ISSUER_ID" ] || [ -z "$ASC_KEY_P8" ]; then
+            echo "::warning::APPLE_TEAM_ID, ASC_KEY_ID, ASC_ISSUER_ID or ASC_KEY_P8 is not set in the release environment: no TestFlight upload"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.secrets.outputs.ready == 'true'
+        with:
+          ref: ${{ inputs.ref }}
+          # The version comes from the last tag (git describe), so the history and tags are needed.
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: steps.secrets.outputs.ready == 'true'
+        with:
+          node-version: 24
+      - name: Bundle IDs and App Groups (registered when missing)
+        if: steps.secrets.outputs.ready == 'true'
+        run: node scripts/release/appstore.mjs register
+      - name: Version and build number
+        id: version
+        if: steps.secrets.outputs.ready == 'true'
+        env:
+          BUILD_NUMBER: ${{ inputs.build_number }}
+        run: |
+          described=$(git describe --tags --abbrev=0)
+          v=$(node scripts/release/appstore.mjs version "$described")
+          read -r version code <<< "$v"
+          build=$(node scripts/release/appstore.mjs build-number "$version" "$BUILD_NUMBER")
+          app_id=$(node scripts/release/appstore.mjs app-id)
+          echo "version $version, build $build (version code $code), app $app_id"
+          { echo "version=$version"; echo "build=$build"; echo "app_id=$app_id"; } >> "$GITHUB_OUTPUT"
+      - name: Newest Xcode
+        if: steps.secrets.outputs.ready == 'true'
+        run: scripts/release/ios-testflight.sh xcode
+      - name: Archive, unsigned, then signed ad hoc with the entitlements
+        if: steps.secrets.outputs.ready == 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          BUILD: ${{ steps.version.outputs.build }}
+        run: scripts/release/ios-testflight.sh archive "$ARCHIVE" "$VERSION" "$BUILD" "$APPLE_TEAM_ID"
+      - name: This run's distribution certificate and App Store profiles
+        if: steps.secrets.outputs.ready == 'true'
+        run: |
+          scripts/release/ios-testflight.sh csr "$SIGNING"
+          node scripts/release/appstore.mjs sign "$SIGNING"
+          scripts/release/ios-testflight.sh keychain "$SIGNING"
+      - name: Export for the App Store
+        if: steps.secrets.outputs.ready == 'true'
+        run: scripts/release/ios-testflight.sh export "$ARCHIVE" "$SIGNING" "$RUNNER_TEMP/export"
+      - name: Upload to TestFlight
+        if: steps.secrets.outputs.ready == 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          BUILD: ${{ steps.version.outputs.build }}
+          APP_ID: ${{ steps.version.outputs.app_id }}
+        run: |
+          export ASC_KEY_FILE="$RUNNER_TEMP/asc-keys/AuthKey_$ASC_KEY_ID.p8"
+          node scripts/release/appstore.mjs key-file "$ASC_KEY_FILE"
+          scripts/release/ios-testflight.sh upload "$RUNNER_TEMP"/export/*.ipa "$APP_ID" "$VERSION" "$BUILD"
+      - name: What to test
+        if: steps.secrets.outputs.ready == 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          BUILD: ${{ steps.version.outputs.build }}
+        run: node scripts/release/appstore.mjs notes "$VERSION" "$BUILD"
+      - name: Revoke the certificate, delete the profiles, the keychain and the key
+        if: always() && steps.secrets.outputs.ready == 'true'
+        run: |
+          status=0
+          if [ -f "$SIGNING/state.json" ]; then node scripts/release/appstore.mjs cleanup "$SIGNING" || status=$?; fi
+          scripts/release/ios-testflight.sh cleanup "$SIGNING" || status=$?
+          rm -rf "$RUNNER_TEMP/asc-keys"
+          exit $status
+      - name: Summary
+        if: success() && steps.secrets.outputs.ready == 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          BUILD: ${{ steps.version.outputs.build }}
+        run: |
+          echo "OpenTodo $VERSION ($BUILD) is uploaded to TestFlight. App Store Connect → TestFlight shows it once Apple has processed it; nothing was submitted for review." >> "$GITHUB_STEP_SUMMARY"

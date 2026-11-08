@@ -11,7 +11,7 @@ WEB_EXT := web-ext@10.7.0
 SKILL_ZIP := dist/opentodo-agent-skill.zip
 MCP_SKILL_ZIP := dist/opentodo-mcp-skill.zip
 
-.PHONY: brand-icons site-bundle all web server cli cli-release cli-smoke skill extension obsidian obsidian-e2e obsidian-review test-obsidian android build run dev test test-go test-web test-extension check lint staticcheck gosec gosec-sarif clean docker openspec-validate layout-check safe-area-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check release-prepare perf storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check bundle-budget fmt-check ci-checks e2e
+.PHONY: brand-icons site-bundle all web server cli cli-release cli-smoke skill extension obsidian obsidian-e2e obsidian-review test-obsidian android ios ios-archive build run dev test test-go test-web test-extension check lint staticcheck gosec gosec-sarif clean docker openspec-validate layout-check safe-area-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check release-prepare perf storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check bundle-budget fmt-check ci-checks e2e
 
 all: build
 
@@ -114,6 +114,13 @@ ios:
 	  third=$$(otool -L $$app/OpenTodo | tail -n +2 | grep -vE '/System/Library/|/usr/lib/|@rpath/libswift|@executable_path/Frameworks|/usr/lib/swift/' || true); \
 	  if [ -n "$$third" ]; then echo "third-party libraries:"; echo "$$third"; exit 1; fi; \
 	  echo "  no third-party libraries (native-shells D1)"
+
+## The first half of the TestFlight upload (ios-distribution D9): a Release archive built
+## unsigned and signed ad hoc with each target's entitlements, which the TestFlight job then
+## signs for the App Store (scripts/release/ios-testflight.sh). APPLE_TEAM_ID names the team in
+## the entitlements; a placeholder otherwise. CI runs it on every iOS change.
+ios-archive:
+	scripts/release/ios-testflight.sh archive mobile/ios/build/OpenTodo.xcarchive $(IOS_VERSION) $(IOS_BUILD) $(APPLE_TEAM_ID)
 
 build: web server
 
@@ -307,7 +314,7 @@ release-prepare:
 ## the Go/TypeScript contract index (docs/contracts.md);
 ## the brand rasters rendered from the current brand.svg (sidebar-v2 D3).
 repo-check:
-	node --test scripts/repo-checks.test.mjs scripts/security-review.test.mjs scripts/brand-icons.test.mjs scripts/contracts.test.mjs scripts/bundle-budget.test.mjs scripts/release/play-upload.test.mjs scripts/release/collect-assets.test.mjs scripts/release/check-public-image.test.mjs scripts/perf/budgets.test.mjs scripts/android-a11y.test.mjs scripts/accessibility.test.mjs scripts/release/accessibilityAudit.test.mjs
+	node --test scripts/repo-checks.test.mjs scripts/security-review.test.mjs scripts/brand-icons.test.mjs scripts/contracts.test.mjs scripts/bundle-budget.test.mjs scripts/release/play-upload.test.mjs scripts/release/appstore.test.mjs scripts/release/collect-assets.test.mjs scripts/release/check-public-image.test.mjs scripts/perf/budgets.test.mjs scripts/android-a11y.test.mjs scripts/accessibility.test.mjs scripts/release/accessibilityAudit.test.mjs
 
 ## The time benchmark of the performance budgets (docs/performance.md): builds the app,
 ## the server and the 10,000-task account, then measures every server, desktop and

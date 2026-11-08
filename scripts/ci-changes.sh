@@ -42,7 +42,8 @@ extension=$(match 'extension/|Makefile$')
 # The Obsidian plugin (obsidian-plugin task 6.4): its folder and the shared code it bundles.
 obsidian=$(match 'obsidian/|web/src/lib/nlp/|web/src/lib/e2eeEnvelope\.ts$|web/src/lib/crypto\.ts$|web/src/lib/hlc\.ts$|web/src/lib/recurrence\.ts$|web/src/lib/i18n/format\.ts$|web/src/lib/taskOrigin\.ts$|web/src/lib/ids\.ts$|web/src/lib/moduleState\.ts$|web/src/lib/types\.ts$|web/src/lib/theme/|web/src/lib/colourMath\.ts$|web/src/generated/opSchema\.ts$|internal/vault/testdata/|internal/origin/testdata/|internal/httpapi/sync_handlers\.go$|Makefile$')
 skill=$(match 'skills/|Makefile$')
-ios=$(match 'mobile/ios/')
+# The TestFlight job's archive script is checked by the iOS job (ios-distribution D9).
+ios=$(match 'mobile/ios/|scripts/release/ios-testflight\.sh$')
 echo "code=$code"
 echo "docs=$docs"
 echo "mobile=$mobile"
