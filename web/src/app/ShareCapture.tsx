@@ -129,7 +129,7 @@ export function ShareCapture() {
   const [projectId, setProjectId] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const titleRef = useRef<HTMLInputElement>(null)
+  const titleRef = useRef<HTMLTextAreaElement>(null)
   // Same inputs as the task views' quick add, so `#project`, `@label`, dates and `p1` in the title parse alike.
   const projects = useProjects()
   const labels = useAllLabels()
@@ -218,6 +218,7 @@ export function ShareCapture() {
             labels={labels}
             onAdd={save}
             onAddMany={saveMany}
+            notes={false}
           />
         </div>
         )}

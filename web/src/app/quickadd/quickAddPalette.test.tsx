@@ -18,7 +18,7 @@ beforeEach(() => {
 afterEach(() => { vi.useRealTimers() })
 
 const q = <T extends HTMLElement = HTMLElement>(sel: string) => document.querySelector<T>(sel)
-const input = () => q<HTMLInputElement>('input[aria-label="Add a task"]')!
+const input = () => q<HTMLTextAreaElement>('textarea[aria-label="Add a task"]')!
 const row = (kind: string) => q(`[data-field-row="${kind}"]`)!
 const highlighted = () => q('[data-highlighted]')?.getAttribute('data-field-row') ?? null
 

@@ -1,7 +1,6 @@
 import { type FormEvent, forwardRef, useCallback, type KeyboardEvent, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { keysOf } from '../lib/shortcuts'
 import { useShortcutHints } from './shortcuts/hints'
-import { Tooltip } from '../ui'
 import { Icon } from '../ui'
 import { logicalToday } from '../lib/dates'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
@@ -24,11 +23,13 @@ import { chipRange, type FieldKind, fieldRows, type FieldRow, startToken } from 
 import { FieldRows, QuickAddFooter } from './quickadd/FieldRows'
 import { SheetBar } from './quickadd/SheetBar'
 import { usePasteOffer } from './quickadd/PasteOffer'
+import { NotesLine, useNotesField } from './quickadd/NotesLine'
+import { VoiceButton, VoiceNotice } from './quickadd/VoiceParts'
 
 export type { QuickAddInput }
 
 /** Whether the field's caret is outside `span` (an unmatched token is explained only then). */
-function caretOutside(el: HTMLInputElement | null, span: Span): boolean {
+function caretOutside(el: HTMLTextAreaElement | null, span: Span): boolean {
   const c = el?.selectionStart ?? -1
   return c < span.start || c > span.end
 }
@@ -113,16 +114,18 @@ function useParseContext(settings: QuickAddSettings, projects: readonly ProjectR
 }
 
 /**
- * Single-line capture. With natural-language parsing on (per-device setting), the
+ * One-line capture. With natural-language parsing on (per-device setting), the
  * line is parsed on every keystroke and each recognised attribute is shown as a
  * dismissible chip; `onAdd` receives the title plus only the attributes the line
- * set, so the view's defaults fill the rest.
+ * set, so the view's defaults fill the rest. A long line wraps in the field and
+ * scrolls past five lines; Shift+Enter (or the sheet's Notes tool) opens a notes
+ * field under it, saved as the task's notes (quick-add-notes D1, D2).
  *
  * Three presentations of the same field and parse (palette-quick-add D1): `line`
  * (chips under the field), `palette` (the command bar's field rows and footer) and
  * `sheet` (the phone's neutral chips and tool row).
  */
-export const QuickAdd = forwardRef<HTMLInputElement, {
+export const QuickAdd = forwardRef<HTMLTextAreaElement, {
   placeholder: string
   projects?: readonly ProjectRef[]
   /** Every label (deleted ones are ignored) for resolving and colouring `@name` chips. */
@@ -151,19 +154,25 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
   onAddMany?: (inputs: QuickAddInput[]) => Promise<void> | void
   /** Log a win (today-closed-list D6): recurrence and reminder phrases are refused with a note. */
   logDone?: boolean
-}>(function QuickAdd({ placeholder, projects = [], labels = [], onAdd, initialValue, formId, hideHint, autoFocus, label, voiceShortcut, layout = 'line', onAddAndOpen, escape, onAddMany, logDone }, ref) {
+  /** Whether Shift+Enter opens the notes field (quick-add-notes D2); off where the screen has its own notes, and in the palette, whose Shift+Enter adds and opens. */
+  notes?: boolean
+}>(function QuickAdd({ placeholder, projects = [], labels = [], onAdd, initialValue, formId, hideHint, autoFocus, label, voiceShortcut, layout = 'line', onAddAndOpen, escape, onAddMany, logDone, notes: notesOn = true }, ref) {
   // The `q` badge is printed only while "Show shortcut hints" is on (keyboard-shortcuts).
   const hints = useShortcutHints()
   const [value, setValue] = useState(initialValue ?? '')
   const valueRef = useRef(value)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   const tints = useRef<HTMLDivElement>(null)
-  // The tint layer follows the field's horizontal scroll after every change of text or caret.
+  // The tint layer follows the field's vertical scroll after every change of text or caret.
   // The tints mirror the text, so their scroll follows the field when the text changes (the field's
   // onScroll does the rest). On every render it read the field's scroll, a layout of the whole page,
   // after each write in a 2,000-row list (list-rendering-at-scale).
-  useEffect(() => { if (tints.current && inputRef.current) tints.current.scrollLeft = inputRef.current.scrollLeft }, [value])
-  useImperativeHandle(ref, () => inputRef.current as HTMLInputElement, [])
+  useEffect(() => { if (tints.current && inputRef.current) tints.current.scrollTop = inputRef.current.scrollTop }, [value])
+  useImperativeHandle(ref, () => inputRef.current as HTMLTextAreaElement, [])
+  // The notes field under the line (quick-add-notes D2).
+  const notesField = useNotesField(inputRef)
+  const { notes } = notesField
+  const notesAllowed = notesOn && layout !== 'palette'
   const [dismissed, setDismissed] = useState<Span[]>([])
   const [highlight, setHighlight] = useState<number | null>(null)
   const [settings, setSettings] = useState(loadQuickAddSettings)
@@ -176,7 +185,9 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
   const rows = useMemo(() => fieldRows(chips), [chips])
   const [row, setRow] = useState<number | null>(null)
 
-  function change(next: string) {
+  function change(raw: string) {
+    // A title is one line: a line break pasted or dictated into it becomes a space.
+    const next = raw.replace(/\r?\n/g, ' ')
     // The previous text comes from a ref: dictation calls this from engine events.
     const prev = valueRef.current
     valueRef.current = next
@@ -236,13 +247,16 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
     if (!line) return
     if (parsed && !parsed.title) return // only attributes typed so far; wait for a title
     const snapshot = parsed
+    const description = notes?.trim()
     // Clear first so the next entry can be typed while labels are being created.
     valueRef.current = ''
     setValue('')
     setDismissed([])
     setHighlight(null)
+    if (notes !== null) notesField.close()
     // Unknown @names become labels first (one op each), then the task references their ids.
-    const input: QuickAddInput = snapshot ? await toTaskInput(snapshot, { labels, createLabel: createLabelByName }) : { title: line }
+    const parsedInput: QuickAddInput = snapshot ? await toTaskInput(snapshot, { labels, createLabel: createLabelByName }) : { title: line }
+    const input = description ? { ...parsedInput, description } : parsedInput
     await (open && onAddAndOpen ? onAddAndOpen(input) : onAdd(input))
   }
 
@@ -264,7 +278,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
   const palette = layout === 'palette'
 
   /** The palette's own keys (D3): ↑/↓ over the rows, Tab edits the highlighted one, Shift+Enter adds and opens, Escape clears the highlight. */
-  function fieldKeys(e: KeyboardEvent<HTMLInputElement>): boolean {
+  function fieldKeys(e: KeyboardEvent<HTMLTextAreaElement>): boolean {
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault()
       setRow((r) => (e.key === 'ArrowDown' ? (r === null ? 0 : Math.min(r + 1, rows.length - 1)) : r === null || r === 0 ? null : r - 1))
@@ -290,31 +304,43 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
 
   // The field's text size: the prose step (15 px) in the palette and on the phone's sheet.
   const size = layout === 'line' ? '' : 'text-prose'
+  // The marks beside the field stay on its first line when the line wraps (quick-add-notes D1).
+  const lead = `quick-add-lead ${size || 'text-body'}`
   return (
     <form id={formId} onSubmit={submit} data-quick-add-layout={layout}>
-      <div className={`relative flex items-center ${palette ? 'gap-2.5 border-b border-default px-4 py-2.5 sm:pr-11' : layout === 'sheet' ? 'gap-2 px-3 pb-2' : 'gap-2'}`}>
-        {palette ? <Icon name="plus" className="shrink-0 text-faint" /> : layout === 'line' && <span className="text-h2 leading-none text-accent">+</span>}
+      <div className={`relative flex items-start ${palette ? 'gap-2.5 border-b border-default px-4 py-2.5 sm:pr-11' : layout === 'sheet' ? 'gap-2 px-3 pb-2' : 'gap-2'}`}>
+        {palette ? <span className={lead}><Icon name="plus" className="text-faint" /></span> : layout === 'line' && <span className={lead}><span className="text-h2 leading-none text-accent">+</span></span>}
         {/* The recognised spans tinted behind the text (moments-and-onboarding D8, QuickAddTint). */}
-        <span className="relative flex min-w-0 flex-1">
+        {/* The tints are the field's sizer (quick-add-notes D1): in one grid cell with the
+            field, they wrap the same text and set the height, up to five lines. */}
+        <span className="quick-add-grid min-w-0 flex-1">
         <QuickAddTint ref={tints} value={value} chips={chips} className={size} />
-        <input
+        <textarea
           ref={inputRef}
-          className={`ui-input relative border-transparent bg-transparent px-1 shadow-none focus:border-transparent focus:ring-0 dark:bg-transparent ${size}`}
+          rows={1}
+          className={`quick-add-field ui-input border-transparent bg-transparent px-1 shadow-none focus:border-transparent focus:ring-0 dark:bg-transparent ${size}`}
           placeholder={placeholder}
           value={value}
           onChange={(e) => change(e.target.value)}
-          onScroll={(e) => { if (tints.current) tints.current.scrollLeft = e.currentTarget.scrollLeft }}
+          onScroll={(e) => { if (tints.current) tints.current.scrollTop = e.currentTarget.scrollTop }}
           {...suggest.fieldProps}
           onPaste={paste.onPaste}
           onKeyDown={(e) => {
             if (composingEnter(e)) { e.preventDefault(); return }
             if (suggest.onKeyDown(e)) return
             if (palette && fieldKeys(e)) return
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              // Enter adds, as the one-line field did; Shift+Enter starts the notes.
+              if (e.shiftKey && notesAllowed) notesField.open()
+              else e.currentTarget.form?.requestSubmit()
+              return
+            }
             if (e.key === 'Escape') {
               if (highlight !== null) {
                 e.stopPropagation()
                 setHighlight(null)
-              } else (e.target as HTMLInputElement).blur()
+              } else e.currentTarget.blur()
               return
             }
             if (e.key === 'Backspace' && !e.metaKey && !e.ctrlKey && !e.altKey) {
@@ -338,38 +364,16 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
           aria-describedby={chips.length ? 'quick-add-preview' : undefined}
         />
         </span>
-        {voice.enabled && (
-          <Tooltip label={voice.listening ? t('Stop dictation') : t('Dictate a task')} shortcut={voice.listening ? 'Esc' : voiceShortcut ? keysOf('list.dictate') : undefined}>
-            <button
-              type="button"
-              className={`relative shrink-0 rounded-full p-1.5 ${voice.listening ? 'bg-danger-soft text-danger' : 'text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised'}`}
-              aria-pressed={voice.listening}
-              aria-label={voice.listening ? t('Stop dictation') : t('Dictate a task')}
-              data-voice-button
-              // Keep focus and caret in the input: the transcript goes where the caret is.
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={voice.toggle}
-            >
-              {voice.listening && <span className="absolute inset-0 animate-ping rounded-full bg-danger/40 motion-reduce:hidden" aria-hidden="true" />}
-              <Icon name="mic" className="relative" />
-            </button>
-          </Tooltip>
-        )}
-        {!hideHint && hints && <span className="ui-kbd hidden sm:inline" data-quick-add-hint>{keysOf('list.quick-add')}</span>}
+        {voice.enabled && <span className={lead}><VoiceButton voice={voice} shortcut={voiceShortcut} /></span>}
+        {!hideHint && hints && <span className={`${lead} max-sm:hidden`}><span className="ui-kbd" data-quick-add-hint>{keysOf('list.quick-add')}</span></span>}
         {suggest.list}
         {paste.offer}
       </div>
-      {voice.enabled && (
-        <>
-          <span className="sr-only" role="status" aria-live="polite" data-voice-status>{voice.view.announcement}</span>
-          {voice.view.message && (
-            <p className="mt-1 flex items-start gap-2 pl-6 text-meta text-on-warning-soft" data-voice-message>
-              <span className="flex-1">{voice.view.message}</span>
-              <button type="button" className="underline" onClick={voice.dismissMessage}>{t('Dismiss')}</button>
-            </p>
-          )}
-        </>
+      {notes !== null && (
+        <NotesLine ref={notesField.ref} value={notes} onChange={notesField.setNotes} onClose={notesField.close}
+          className={layout === 'sheet' ? 'px-3 pb-2' : 'pl-5'} size={size} />
       )}
+      {voice.enabled && <VoiceNotice voice={voice} />}
       {palette && <>
         <div id="quick-add-preview" role="status" aria-live="polite">
           <FieldRows rows={rows} highlight={row} chipHighlight={highlight} projects={projects} labels={labels} line={lineInfo} onEdit={edit} onDismiss={(r) => r.chip && dismiss(r.chip)} />
@@ -381,7 +385,8 @@ export const QuickAdd = forwardRef<HTMLInputElement, {
       {layout === 'sheet' && (
         <div id="quick-add-preview" role="status" aria-live="polite">
           {misses.length > 0 && <div className="flex flex-wrap gap-1.5 px-3 pb-2 text-meta"><ParseChips chips={[]} misses={misses} projects={projects} labels={labels} onDismiss={dismiss} onMiss={(m) => suggest.openAt(m.span.end)} /></div>}
-          <SheetBar chips={chips} projects={projects} labels={labels} line={lineInfo} onDismiss={dismiss} onStart={edit} canSend={!!value.trim() && !emptyTitle} energy={energyOn && settings.enabled} />
+          <SheetBar chips={chips} projects={projects} labels={labels} line={lineInfo} onDismiss={dismiss} onStart={edit} canSend={!!value.trim() && !emptyTitle} energy={energyOn && settings.enabled}
+            notes={notesAllowed ? { open: notes !== null, start: notesField.open } : undefined} />
         </div>
       )}
       {layout === 'line' && <div id="quick-add-preview" role="status" aria-live="polite" className="empty:hidden">

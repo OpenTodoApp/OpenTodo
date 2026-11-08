@@ -86,8 +86,8 @@ describe('the Inbox view', () => {
   it('Quick add with a date in the Inbox: "Added to Friday" with an Open control, and the task is not listed', async () => {
     const r = await render(<TaskListView route={{ view: 'inbox' }} />)
     // The list shows once its tasks are read (ux-fixes-phone D5).
-    await waitFor(() => !!r.container.querySelector('form input'))
-    const input = r.container.querySelector<HTMLInputElement>('form input')!
+    await waitFor(() => !!r.container.querySelector('form textarea'))
+    const input = r.container.querySelector<HTMLTextAreaElement>('form textarea')!
     await type(input, 'Call the bank friday')
     await act(async () => { r.container.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
     await waitFor(() => !!bulkToast())
@@ -106,8 +106,8 @@ describe('the Inbox view', () => {
 
   it('an undated line in the Inbox quick add announces nothing', async () => {
     const r = await render(<TaskListView route={{ view: 'inbox' }} />)
-    await waitFor(() => !!r.container.querySelector('form input'))
-    await type(r.container.querySelector<HTMLInputElement>('form input')!, 'Think about it')
+    await waitFor(() => !!r.container.querySelector('form textarea'))
+    await type(r.container.querySelector<HTMLTextAreaElement>('form textarea')!, 'Think about it')
     await act(async () => { r.container.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
     await waitFor(() => r.container.querySelectorAll('[data-task-id]').length === 1)
     expect(bulkToast()).toBeNull()

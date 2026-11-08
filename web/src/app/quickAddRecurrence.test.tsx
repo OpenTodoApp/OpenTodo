@@ -25,7 +25,7 @@ describe('repeat and remind chips', () => {
   it('shows a Repeats and a Reminder chip, and Backspace twice keeps the reminder as text', async () => {
     const added: QuickAddInput[] = []
     const r = await render(<QuickAdd placeholder="Add a task" onAdd={(i) => { added.push(i) }} />)
-    const input = r.container.querySelector('input')!
+    const input = r.container.querySelector('textarea')!
     await type(input, 'Water plants every Monday remind me at 8')
     const kinds = () => [...r.container.querySelectorAll('[data-chip]')].map((c) => c.getAttribute('data-chip'))
     await waitFor(() => kinds().includes('reminder'), 'the reminder chip')
@@ -52,7 +52,7 @@ describe('ordinal weekday rules (quick-add-nth-weekday 2.5)', () => {
     vi.setSystemTime(new Date(2026, 9, 9, 9, 0))
     const added: QuickAddInput[] = []
     const r = await render(<QuickAdd placeholder="Add a task" onAdd={(i) => { added.push(i) }} />)
-    const input = r.container.querySelector('input')!
+    const input = r.container.querySelector('textarea')!
     await type(input, 'Board every 2nd monday of the month')
     await waitFor(() => !!r.container.querySelector('[data-chip="recurrence"]'), 'the recurrence chip')
     const kinds = [...r.container.querySelectorAll('[data-chip]')].map((c) => c.getAttribute('data-chip'))
@@ -78,10 +78,10 @@ describe('the share screen', () => {
     resetDeviceId()
     setPendingShare(parseShare('?title=Read%20this&url=https://example.org/post'))
     await render(<ShareCapture />)
-    await waitFor(() => !!document.querySelector('#share-capture input[aria-label="Task title"]'), 'the capture form')
-    const input = document.querySelector<HTMLInputElement>('#share-capture input[aria-label="Task title"]')!
+    await waitFor(() => !!document.querySelector('#share-capture textarea[aria-label="Task title"]'), 'the capture form')
+    const input = document.querySelector<HTMLTextAreaElement>('#share-capture textarea[aria-label="Task title"]')!
     await act(async () => {
-      const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!
+      const set = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!
       set.call(input, '')
       input.dispatchEvent(new Event('input', { bubbles: true }))
     })

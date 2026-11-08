@@ -105,7 +105,7 @@ describe('adding to a reusable list', () => {
     expect(group()!.querySelector('[data-group-count] .sr-only')?.textContent).toBe('1 item ticked off')
     // No "hidden by display options" line in a reusable list.
     expect(r.container.textContent).not.toContain('hidden by display options')
-    const quick = r.container.querySelector('input[aria-label="Add a task"]') as HTMLInputElement
+    const quick = r.container.querySelector('textarea[aria-label="Add a task"]') as HTMLTextAreaElement
     await type(quick, 'Milk')
     await act(async () => { quick.form!.requestSubmit() })
     await waitFor(async () => (await db.tasks.get(milk))!.completed_at === null, 'Milk reopened')

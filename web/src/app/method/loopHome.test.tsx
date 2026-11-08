@@ -67,7 +67,7 @@ describe('Loop home', () => {
   it('Capture from the Loop home: the task is in the Inbox, counts rise and focus stays in the field', async () => {
     const r = await open()
     await waitFor(() => says('catch').includes('The Inbox is empty'))
-    const input = document.querySelector<HTMLInputElement>('[data-loop-capture] input')!
+    const input = document.querySelector<HTMLTextAreaElement>('[data-loop-capture] textarea')!
     input.focus()
     await type(input, 'Call the plumber')
     await act(async () => { input.form!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
