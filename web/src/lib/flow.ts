@@ -1,6 +1,7 @@
 // How a project's tasks flow (OpenSpec change project-flow-modes): Parallel,
-// Sequential or an Area, and the one derived "available" rule every list, view,
-// filter and tool asks. Pure functions over local rows; nothing is stored, so a
+// Sequential or an Area; how a task's own subtasks flow (OpenSpec change
+// subtask-flow): Parallel or Sequential; and the one derived "available" rule every
+// list, view, filter and tool asks. Pure functions over local rows; nothing is stored, so a
 // completion, a reorder or a flow change on any device converges with the rows.
 //
 // The Go twin is internal/flow; both evaluate internal/flow/testdata/flow_fixture.json
@@ -27,6 +28,11 @@ export function sectionFlowOf(s: Pick<Section, 'flow_mode'> | undefined | null):
   return v === 'parallel' || v === 'sequential' ? v : ''
 }
 
+/** How a task's own subtasks flow: 'sequential' one at a time, anything else reads as Parallel. */
+export function taskFlowOf(t: Pick<Task, 'flow_mode'> | undefined | null): 'parallel' | 'sequential' {
+  return t?.flow_mode === 'sequential' ? 'sequential' : 'parallel'
+}
+
 /** The flow a section works by: its own, else its project's (an area's sections read as Parallel). */
 export function effectiveSectionFlow(s: Pick<Section, 'flow_mode'>, project: ProjectFlow): 'parallel' | 'sequential' {
   const own = sectionFlowOf(s)
@@ -34,7 +40,7 @@ export function effectiveSectionFlow(s: Pick<Section, 'flow_mode'>, project: Pro
   return project === 'sequential' ? 'sequential' : 'parallel'
 }
 
-export type FlowTask = Pick<Task, 'id' | 'project_id' | 'parent_id' | 'section_id' | 'position' | 'completed_at' | 'deleted_at' | 'start' | 'blocked_by' | 'recurrence' | 'habit'>
+export type FlowTask = Pick<Task, 'id' | 'project_id' | 'parent_id' | 'section_id' | 'position' | 'completed_at' | 'deleted_at' | 'start' | 'blocked_by' | 'recurrence' | 'habit' | 'flow_mode'>
 
 export interface FlowInput {
   tasks: readonly FlowTask[]
@@ -72,6 +78,7 @@ export class FlowState {
   private readonly holds = new Map<string, Map<string, HeldBy>>()
   private byIdCache: ReadonlyMap<string, FlowTask> | null
   private topByProject: Map<string, FlowTask[]> | null = null
+  private firstSubtask: Map<string, string> | null = null
   private readonly input: FlowInput
 
   constructor(input: FlowInput) {
@@ -96,6 +103,26 @@ export class FlowState {
       this.topByProject = m
     }
     return this.topByProject.get(projectId) ?? []
+  }
+
+  /**
+   * Every parent whose subtasks go one at a time, with its first open subtask in list
+   * order that is not skipped ('' when it has none) (subtask-flow).
+   */
+  private firsts(): Map<string, string> {
+    if (this.firstSubtask) return this.firstSubtask
+    const byId = this.byId
+    const firsts = new Map<string, string>()
+    const best = new Map<string, FlowTask>()
+    for (const t of this.input.tasks) {
+      const p = t.parent_id ? byId.get(t.parent_id) : undefined
+      if (!p || taskFlowOf(p) !== 'sequential') continue
+      if (!firsts.has(p.id)) firsts.set(p.id, '')
+      if (!open(t) || skipped(t)) continue
+      const b = best.get(p.id)
+      if (!b || compareByPosition(t, b) < 0) { best.set(p.id, t); firsts.set(p.id, t.id) }
+    }
+    return (this.firstSubtask = firsts)
   }
 
   /** The open top-level tasks of the project that wait in sequence, and what holds each (spec "Waiting in sequence"). */
@@ -146,15 +173,20 @@ export class FlowState {
     const byId = this.byId
     const t = byId.get(id)
     if (!t || !open(t)) return NOT
-    // A subtask follows its top-level task's place in the sequence.
+    // Walking up: the nearest parent whose subtasks go one at a time and that offers
+    // another subtask first holds this task and everything under it (subtask-flow);
+    // else a subtask follows its top-level task's place in the project's sequence.
+    let held: HeldBy | null = null
     let top = t
     for (let d = 0; top.parent_id && d < MAX_DEPTH; d++) {
       const p = byId.get(top.parent_id)
       if (!p) break
+      const first: string | undefined = !held && open(top) && !skipped(top) ? this.firsts().get(p.id) : undefined
+      if (first !== undefined && first !== top.id) held = { kind: 'task', id: first }
       top = p
     }
     // Only open top-level tasks of a project are put in sequence.
-    const heldBy = (!top.parent_id && top.project_id && open(top) ? this.holdsIn(top.project_id).get(top.id) : undefined) ?? null
+    const heldBy = held ?? (!top.parent_id && top.project_id && open(top) ? this.holdsIn(top.project_id).get(top.id) : undefined) ?? null
     const blocked = (t.blocked_by ?? []).some((b) => { const x = byId.get(b); return !!x && open(x) })
     const later = !!t.start && t.start !== 'someday' && t.start > this.input.today
     return { available: !heldBy && !blocked && t.start !== 'someday' && !later, waits: !!heldBy, heldBy }
@@ -186,6 +218,8 @@ export class FlowState {
       if (a?.project_id) touched.add(a.project_id)
       if (b?.project_id) touched.add(b.project_id)
       if (!a || !b || (a.parent_id ?? null) !== (b.parent_id ?? null) || (a.project_id ?? null) !== (b.project_id ?? null)) known = false
+      // A parent whose subtasks go one at a time, or one of those subtasks: its siblings' waits may move (subtask-flow).
+      if ((a?.flow_mode ?? '') !== (b?.flow_mode ?? '') || [a, b].some((x) => x?.parent_id && taskFlowOf(this.byId.get(x.parent_id) ?? input.byId?.get(x.parent_id)) === 'sequential')) known = false
     }
     for (const [p, h] of this.holds) if (!touched.has(p)) next.holds.set(p, h)
     if (this.topByProject) {

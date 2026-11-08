@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/OpenTodoApp/opentodo/internal/flow"
 	"github.com/OpenTodoApp/opentodo/internal/sector"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
@@ -29,15 +30,36 @@ func checkSector(body map[string]json.RawMessage) string {
 	return ""
 }
 
+// checkTaskFlow checks how a task's subtasks flow (OpenSpec change
+// subtask-flow): "", "parallel" or "sequential"; anything else is refused with
+// the message the caller answers as 400 invalid_input. null clears it (stored as "").
+func checkTaskFlow(body map[string]json.RawMessage) string {
+	raw, has := body["flow_mode"]
+	if !has {
+		return ""
+	}
+	if string(raw) == "null" {
+		body["flow_mode"] = json.RawMessage(`""`)
+		return ""
+	}
+	var v string
+	if json.Unmarshal(raw, &v) != nil || !flow.ValidTask(v) {
+		return `task.flow_mode: must be "", "parallel" or "sequential"`
+	}
+	return ""
+}
+
 // taskBodyOK runs the task field checks REST does before the op path: the
-// energy (400 invalid_energy) and the time sector (400 invalid_input).
+// energy (400 invalid_energy), the time sector and the subtask flow (400 invalid_input).
 func taskBodyOK(w http.ResponseWriter, body map[string]json.RawMessage) bool {
 	if !energyOK(w, body) {
 		return false
 	}
-	if msg := checkSector(body); msg != "" {
-		writeError(w, http.StatusBadRequest, "invalid_input", msg)
-		return false
+	for _, msg := range []string{checkSector(body), checkTaskFlow(body)} {
+		if msg != "" {
+			writeError(w, http.StatusBadRequest, "invalid_input", msg)
+			return false
+		}
 	}
 	return true
 }

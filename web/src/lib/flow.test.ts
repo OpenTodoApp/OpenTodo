@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import fixture from '../../../internal/flow/testdata/flow_fixture.json'
-import { availability, effectiveSectionFlow, projectFlowOf, sectionFlowOf, type FlowInput, type FlowTask } from './flow'
+import { availability, effectiveSectionFlow, projectFlowOf, sectionFlowOf, taskFlowOf, type FlowInput, type FlowTask } from './flow'
 
 type Case = (typeof fixture.cases)[number]
 
@@ -51,5 +51,24 @@ describe('reading the flow', () => {
     })
     expect(availability(base(true)).available('pack')).toBe(true)
     expect(availability(base(false)).waits('pack')).toBe(true)
+  })
+
+  it('a task’s subtask flow reads Sequential only for "sequential"', () => {
+    expect(taskFlowOf({ flow_mode: 'sequential' })).toBe('sequential')
+    expect(taskFlowOf({ flow_mode: '' })).toBe('parallel')
+    expect(taskFlowOf({ flow_mode: 'area' })).toBe('parallel')
+    expect(taskFlowOf({})).toBe('parallel')
+  })
+
+  it('completing a subtask of a parent in order moves its siblings’ waits (subtask-flow, incremental)', () => {
+    const task = (id: string, position: number, extra: Partial<FlowTask> = {}): FlowTask => ({ id, project_id: null, parent_id: 'trip', section_id: null, position, completed_at: null, deleted_at: null, start: null, blocked_by: [], recurrence: null, habit: false, ...extra })
+    const before = [task('trip', 0, { parent_id: null, flow_mode: 'sequential' }), task('book', 1), task('pack', 2)]
+    const after = [before[0], { ...before[1], completed_at: 1 }, before[2]]
+    const input = (tasks: FlowTask[]): FlowInput => ({ today: '2026-11-08', projects: [], sections: [], tasks })
+    const a = availability(input(before))
+    expect(a.waits('pack')).toBe(true)
+    const { state, keys } = a.next(input(after), [{ id: 'book', before: before[1], after: after[1] }])
+    expect(keys).toBeNull()
+    expect(state.available('pack')).toBe(true)
   })
 })

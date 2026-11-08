@@ -1,5 +1,6 @@
 // Package flow is how a project's tasks flow (OpenSpec change project-flow-modes):
-// Parallel, Sequential or an Area, and the one derived "available" rule the agent
+// Parallel, Sequential or an Area, how a task's own subtasks flow (OpenSpec change
+// subtask-flow: Parallel or Sequential), and the one derived "available" rule the agent
 // tools, the MCP resources, the digest and the CLI ask. Availability is derived
 // from synced fields and the caller's logical today, never stored, so it
 // converges with the rows. The same rule is implemented in web/src/lib/flow.ts;
@@ -24,6 +25,18 @@ func ValidProject(v string) bool { return v == Parallel || v == Sequential || v 
 // ValidSection reports whether v is a section flow REST and the agent tools accept
 // ("" follows the project).
 func ValidSection(v string) bool { return v == "" || v == Parallel || v == Sequential }
+
+// ValidTask reports whether v is a subtask flow REST and the agent tools accept
+// ("" is Parallel).
+func ValidTask(v string) bool { return v == "" || v == Parallel || v == Sequential }
+
+// TaskFlow reads a task's stored subtask flow: Sequential, else Parallel.
+func TaskFlow(stored string) string {
+	if stored == Sequential {
+		return Sequential
+	}
+	return Parallel
+}
 
 // ProjectFlow reads a stored project flow: unknown values read as Parallel.
 func ProjectFlow(stored string) string {
@@ -64,6 +77,8 @@ type Task struct {
 	BlockedBy []string
 	// Recurring is a task with a recurrence rule; Habit a habit series.
 	Recurring, Habit bool
+	// FlowMode is how the task's own subtasks flow: "sequential" one at a time.
+	FlowMode string
 }
 
 // Project is the part of a project the rule reads.
@@ -128,21 +143,32 @@ func Compute(in Input) States {
 		byID[t.ID] = t
 	}
 	holds := sequence(in)
+	firsts := firstSubtasks(in.Tasks, byID)
 	out := make(States, len(in.Tasks))
 	for _, t := range in.Tasks {
 		if !t.open() {
 			out[t.ID] = State{}
 			continue
 		}
+		// Walking up: the nearest parent whose subtasks go one at a time and that
+		// offers another subtask first holds this task and everything under it;
+		// else the top-level task's place in its project's sequence does.
+		var held Held
+		waits := false
 		top := t
 		for d := 0; top.ParentID != "" && d < maxDepth; d++ {
 			p, ok := byID[top.ParentID]
 			if !ok {
 				break
 			}
+			if first, seq := firsts[p.ID]; !waits && seq && top.open() && !top.skipped() && first != top.ID {
+				held, waits = Held{Kind: "task", ID: first}, true
+			}
 			top = p
 		}
-		held, waits := holds[top.ID]
+		if !waits {
+			held, waits = holds[top.ID]
+		}
 		blocked := false
 		for _, id := range t.BlockedBy {
 			if b, ok := byID[id]; ok && b.open() {
@@ -159,6 +185,30 @@ func Compute(in Input) States {
 		out[t.ID] = st
 	}
 	return out
+}
+
+// firstSubtasks maps every parent whose subtasks go one at a time to its first
+// open subtask in list order that is not skipped ("" when it has none).
+func firstSubtasks(tasks []Task, byID map[string]Task) map[string]string {
+	firsts := map[string]string{}
+	best := map[string]Task{}
+	for _, t := range tasks {
+		p, ok := byID[t.ParentID]
+		if t.ParentID == "" || !ok || TaskFlow(p.FlowMode) != Sequential {
+			continue
+		}
+		if _, seen := firsts[p.ID]; !seen {
+			firsts[p.ID] = ""
+		}
+		if !t.open() || t.skipped() {
+			continue
+		}
+		if b, ok := best[p.ID]; !ok || less(t.Position, b.Position, t.ID, b.ID) {
+			best[p.ID] = t
+			firsts[p.ID] = t.ID
+		}
+	}
+	return firsts
 }
 
 // sequence marks the open top-level tasks that wait in sequence, per project.
@@ -312,7 +362,7 @@ func TaskOf(r Row) Task {
 	t := Task{
 		ID: str(r, "id"), ProjectID: str(r, "project_id"), ParentID: str(r, "parent_id"), SectionID: str(r, "section_id"),
 		Position: num(r, "position"), Completed: set(r, "completed_at"), Deleted: set(r, "deleted_at"),
-		Start: str(r, "start"), Recurring: set(r, "recurrence"), Habit: boolean(r, "habit"),
+		Start: str(r, "start"), Recurring: set(r, "recurrence"), Habit: boolean(r, "habit"), FlowMode: str(r, "flow_mode"),
 	}
 	if v, ok := r["blocked_by"]; ok {
 		_ = json.Unmarshal(v, &t.BlockedBy)

@@ -991,6 +991,12 @@
   "Add a task at {place}…": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
+  "Add a task below this one…": [
+    "web/src/app/task-list/SiblingInput.tsx"
+  ],
+  "Add a task below {title}…": [
+    "web/src/app/task-list/SiblingInput.tsx"
+  ],
   "Add a task due {adding}": [
     "web/src/app/calendar/AddOnDayDialog.tsx"
   ],
@@ -1179,6 +1185,7 @@
     "web/src/app/routines/StepCard.tsx"
   ],
   "Add subtask": [
+    "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/task-detail/Subtasks.tsx"
   ],
   "Add subtask…": [
@@ -1186,6 +1193,10 @@
   ],
   "Add task": [
     "web/src/app/quickadd/SheetBar.tsx"
+  ],
+  "Add task below": [
+    "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/task-list/SiblingInput.tsx"
   ],
   "Add task here…": [
     "web/src/app/calendar/addHere.tsx"
@@ -11339,6 +11350,9 @@
   "One address per line. Leave empty to accept any sender. Sender addresses can be forged, so this filters mistakes and casual spam; the secret address is the real protection.": [
     "web/src/app/EmailInboxPanel.tsx"
   ],
+  "One at a time": [
+    "web/src/app/task-detail/Subtasks.tsx"
+  ],
   "One block for several small tasks": [
     "web/src/app/CalendarView.tsx"
   ],
@@ -15954,6 +15968,12 @@
   ],
   "Subtasks follow their parent task’s section.": [
     "web/src/app/task-detail/Facets.tsx"
+  ],
+  "Subtasks in any order": [
+    "web/src/app/task-detail/Subtasks.tsx"
+  ],
+  "Subtasks one at a time": [
+    "web/src/app/task-detail/Subtasks.tsx"
   ],
   "Subtasks tick off on their own row": [
     "web/src/lib/sampleTasks.ts"
