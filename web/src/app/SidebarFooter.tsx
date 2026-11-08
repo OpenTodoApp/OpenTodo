@@ -10,6 +10,7 @@ import { keysOf } from '../lib/shortcuts'
 import type { User } from '../lib/types'
 import { t } from '../lib/i18n'
 import { SignOutDialog } from './AccountSettings'
+import { openFeedback } from '../lib/feedbackRequest'
 import { NotificationBell } from './NotificationBell'
 import { navigate, type Route } from './router'
 import { SyncStatus } from './SyncStatus'
@@ -21,13 +22,15 @@ const IDLE = 'text-faint hover:bg-sunken hover:text-default dark:hover:bg-raised
 /** Below 768 px every control of the row keeps a touch-height target. */
 const TOUCH = 'max-md:min-h-11 max-md:min-w-11 touch-target'
 
-export function SidebarFooter({ route, user, collapsed, onSearch, onShortcuts, onAssistant, onToggleCollapse, onSignOut }: {
+export function SidebarFooter({ route, user, collapsed, onSearch, onShortcuts, onFeedback = openFeedback, onAssistant, onToggleCollapse, onSignOut }: {
   route: Route
   user: User
   /** The icon rail. */
   collapsed: boolean
   onSearch?: () => void
   onShortcuts?: () => void
+  /** Opens "Something isn't working" (feedback-door); the shell closes the drawer first. */
+  onFeedback?: () => void
   onAssistant?: () => void
   onToggleCollapse?: () => void
   /** Signs out of this device, after the same confirmation as Settings → Account. */
@@ -54,6 +57,7 @@ export function SidebarFooter({ route, user, collapsed, onSearch, onShortcuts, o
           </>}>
           <MenuItem label={t('Settings')} icon="settings" shortcut={keysOf('go.settings')} onSelect={() => navigate({ view: 'settings' })} data-settings-button />
           <MenuItem label={t('Help')} icon="circle-help" shortcut={keysOf('go.help')} onSelect={() => navigate({ view: 'help' })} data-help-button />
+          <MenuItem label={t("Something isn't working")} icon="messages-square" onSelect={onFeedback} data-feedback-button />
           {onShortcuts && <MenuItem label={t('Keyboard shortcuts')} icon="keyboard" shortcut={keysOf('global.help')} onSelect={onShortcuts} data-shortcuts-button />}
           {onSignOut && <>
             <MenuSeparator />

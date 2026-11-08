@@ -501,11 +501,20 @@ export const SETTINGS_COPY = {
       help: { label: msg('Help'), description: msg('The guides of this version, inside the app and offline.') },
       docs: { label: msg('Documentation'), description: msg('The same guides on the website, with setup and self-hosting.') },
       website: { label: msg('Website'), description: msg('News, guides, comparisons and what is new in each release.') },
-      feedback: { label: msg('Feedback and problems'), description: msg('Open an issue on GitHub. Every report is read.') },
+      feedback: { label: msg('Feedback and problems'), description: msg('Write it here. It opens as a GitHub issue or an email.') },
       community: { label: msg('Community'), description: msg('Questions, ideas and other people who use OpenTodo, on Discord.') },
-      news: { label: msg('News and updates'), description: msg('Releases and what is being built, on X.') },
+      x: { label: msg('Follow on X'), description: msg('Releases and what is being built, on X.') },
       source: { label: msg('Source code'), description: msg('A star on GitHub helps other people find it.') },
       welcome: { label: msg('Welcome note'), description: msg('The thank-you shown the first time you opened this server.') },
+    },
+  },
+  // Settings → About → What's new (OpenSpec whats-new): the card's copy; its entries are English.
+  'about-news': {
+    title: msg("What's new"),
+    icon: 'sparkles',
+    description: msg('What changed in each version, in English.'),
+    rows: {
+      notices: { label: msg('Version notices'), description: msg('A dot shows when this version has notes you have not read yet.') },
     },
   },
   'about-support': {

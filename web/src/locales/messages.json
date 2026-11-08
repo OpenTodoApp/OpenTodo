@@ -2689,6 +2689,7 @@
     "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/app/DigestCard.tsx",
     "web/src/app/EncryptionPanel.tsx",
+    "web/src/app/FeedbackDialog.tsx",
     "web/src/app/FieldsDialog.tsx",
     "web/src/app/IssueEditor.tsx",
     "web/src/app/LinkDialog.tsx",
@@ -6093,6 +6094,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Feedback and problems": [
+    "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
   ],
   "Fetching more…": [
@@ -6460,7 +6462,9 @@
     "web/src/app/QuickAddSettings.tsx"
   ],
   "Follow on X": [
-    "web/src/app/AboutSection.tsx"
+    "web/src/app/AboutSection.tsx",
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Follow project ({flow})": [
     "web/src/app/menus/flowMenu.ts"
@@ -9877,10 +9881,6 @@
     "web/src/app/WorkspacesSettings.tsx",
     "web/src/app/palette/registry.ts"
   ],
-  "News and updates": [
-    "web/src/app/settingsIndex.ts",
-    "web/src/lib/settingsCopy.ts"
-  ],
   "News, guides, comparisons and what is new in each release.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -11511,9 +11511,6 @@
   ],
   "Open an authenticator app on your phone (any app that supports time-based codes).": [
     "web/src/app/TwoFactorPanel.tsx"
-  ],
-  "Open an issue": [
-    "web/src/app/AboutSection.tsx"
   ],
   "Open an issue on GitHub. Every report is read.": [
     "web/src/app/WelcomeDialog.tsx",
@@ -14558,6 +14555,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Send by email": [
+    "web/src/app/FeedbackDialog.tsx",
     "web/src/app/InviteLinksSection.tsx",
     "web/src/app/MembersPanel.tsx",
     "web/src/app/WorkspaceInvites.tsx"
@@ -24156,5 +24154,62 @@
   ],
   "⤼ Skip": [
     "web/src/app/RecurrenceField.tsx"
+  ],
+  "A dot shows when this version has notes you have not read yet.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Earlier versions": [
+    "web/src/app/WhatsNew.tsx"
+  ],
+  "New notes": [
+    "web/src/app/NewsDot.tsx"
+  ],
+  "New notes for this version": [
+    "web/src/app/WhatsNew.tsx"
+  ],
+  "Nothing new in this version yet.": [
+    "web/src/app/WhatsNew.tsx"
+  ],
+  "Release notes on GitHub": [
+    "web/src/app/WhatsNew.tsx"
+  ],
+  "These notes are in English.": [
+    "web/src/app/WhatsNew.tsx"
+  ],
+  "Version notices": [
+    "web/src/app/WhatsNew.tsx",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "What changed in each version, in English.": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "What's new": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Open on GitHub": [
+    "web/src/app/FeedbackDialog.tsx"
+  ],
+  "Something isn't working": [
+    "web/src/app/AboutSection.tsx",
+    "web/src/app/FeedbackDialog.tsx",
+    "web/src/app/SidebarFooter.tsx"
+  ],
+  "Tell us what went wrong. A hello is welcome too.": [
+    "web/src/app/FeedbackDialog.tsx"
+  ],
+  "The text is too long for a link. It is copied: paste it into the message.": [
+    "web/src/app/FeedbackDialog.tsx"
+  ],
+  "The text is too long for a link. It is selected: copy it and paste it into the message.": [
+    "web/src/app/FeedbackDialog.tsx"
+  ],
+  "Write it here. It opens as a GitHub issue or an email.": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Your message": [
+    "web/src/app/FeedbackDialog.tsx"
   ]
 }

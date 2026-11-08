@@ -47,10 +47,15 @@ describe('index', () => {
     }
   })
 
-  it('"twitter" and "news" list the About › News and updates row (x-account-link)', () => {
-    for (const q of ['twitter', 'news']) {
+  it('"twitter" lists the About › Follow on X row (x-account-link)', () => {
+    const entries = searchSettings('twitter', member).flatMap((h) => h.entries)
+    expect(entries).toContainEqual(expect.objectContaining({ section: 'about', label: 'Follow on X', anchor: 'about-x' }))
+  })
+
+  it('"news" and "changelog" list the About › What\'s new card (whats-new)', () => {
+    for (const q of ['news', 'changelog']) {
       const entries = searchSettings(q, member).flatMap((h) => h.entries)
-      expect(entries).toContainEqual(expect.objectContaining({ section: 'about', label: 'News and updates', anchor: 'about-news' }))
+      expect(entries).toContainEqual(expect.objectContaining({ section: 'about', label: "What's new", anchor: 'about-whats-new' }))
     }
   })
 
