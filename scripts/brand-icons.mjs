@@ -52,6 +52,11 @@ export const OUTPUTS = [
   { path: 'deploy/homeassistant/upstream/opentodo/icon.png', size: 128 },
   { path: 'deploy/homeassistant/upstream/opentodo/logo.png', width: 250, height: 100, page: (s, w, h) => bannerPage(250, 100, s, w, h) },
   { path: 'deploy/claude-plugin/upstream/plugins/opentodo/.claude-plugin/icon.png', size: 192 },
+  // F-Droid's listing (fastlane/README.md): the 512 px icon and the 1024 × 500 feature graphic,
+  // the same renders as the web app's icon and Google Play's feature graphic.
+  { path: 'fastlane/metadata/android/en-US/images/icon.png', size: 512 },
+  ...KIT_OUTPUTS.filter((o) => o.path === 'brand/png/play-feature-graphic-1024x500.png')
+    .map((o) => ({ ...o, path: 'fastlane/metadata/android/en-US/images/featureGraphic.png' })),
   // The native shells (brand-mark-tray D3, D4): the iOS app icon, opaque as the App Store
   // requires, and the Android adaptive launcher icon and notification icon as vector drawables.
   { path: 'mobile/ios/OpenTodo/Assets.xcassets/AppIcon.appiconset/AppIcon.png', size: 1024, full: true, opaque: true },

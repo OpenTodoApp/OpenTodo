@@ -46,7 +46,7 @@ Checks that `make android` runs besides the unit tests and lint:
 | --- | --- |
 | `:app:checkDependencies` | the release runtime classpath holds anything but AndroidX and Kotlin (no third-party SDK, design D8) |
 | `:app:checkTranslations` | a language (`values-de`, `-es`, `-fr`, `-it`, `-pt`) misses a key of `values/strings.xml` |
-| `:app:checkStoreMetadata` | the manifest's permissions differ from `store/permissions.txt`, a store listing language is missing, or `data-safety.md` or `play-review.md` is missing |
+| `:app:checkStoreMetadata` | the manifest's permissions differ from `store/permissions.txt`, a listing language is missing in `fastlane/metadata/android/`, or `data-safety.md` or `play-review.md` is missing |
 
 The version comes from `OPENTODO_VERSION` (CI sets it from the tag; local builds are `0.0.0-dev`), the version code is `major·10000 + minor·100 + patch`.
 
@@ -196,4 +196,4 @@ Release builds are signed only in CI, on a `v*` tag, from four repository secret
 
 The iOS app is not distributed through a store: OpenTodo is AGPL-3.0 and the App Store terms conflict with it (design, `openspec/changes/ios-shell`). Whoever wants the app builds and signs it, or distributes it outside the store under the same licence. So there is no iOS signing secret in CI: the `ios` job builds unsigned, and nothing in this repository holds an Apple certificate.
 
-Store texts live in `android/store/`: `listing/<lang>.txt` (six languages), `data-safety.md` (the Play form: no data collected, no third-party SDK), `play-review.md` (App access with the demo instance, the exact-alarm declaration, the content rating answers), `fdroid/app.opentodo.yml` (fdroiddata metadata, the source of truth for F-Droid's copy) and `permissions.txt`.
+The store listing (name, summary, description, icon, feature graphic, phone screenshots and each release's notes, six languages) is the Fastlane folder at the repository root, `fastlane/metadata/android/`: F-Droid reads it from the commit it builds (it never looks under the recipe's `subdir`), and the Play listing is copied from it; [`fastlane/README.md`](../fastlane/README.md) says what makes each file. The other store files live in `android/store/`: `data-safety.md` (the Play form: no data collected, no third-party SDK), `play-review.md` (App access with the demo instance, the exact-alarm declaration, the content rating answers), `fdroid/app.opentodo.yml` (fdroiddata metadata without texts, the source of truth for F-Droid's copy) and `permissions.txt`.
