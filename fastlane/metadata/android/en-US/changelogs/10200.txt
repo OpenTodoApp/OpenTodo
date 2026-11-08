@@ -1,0 +1,1 @@
+Mark a task done right from its reminder notification. Quick add now wraps long titles, lets you write notes while adding (Shift+Enter, or the notes button on the phone), and the add sheet stays open so you can add several tasks in a row.
