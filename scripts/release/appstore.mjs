@@ -105,12 +105,20 @@ export function buildNumber(code, upload = 0) {
   return upload > 0 ? `${code}.${upload}` : `${code}`
 }
 
+/** The upload number of a build number of this version (`10200` → 0, `10200.3` → 3), or null. */
+export function uploadOf(code, build) {
+  const [head, upload, ...rest] = String(build).split('.')
+  if (head !== String(code) || rest.length) return null
+  if (upload === undefined) return 0
+  return /^\d+$/.test(upload) ? Number(upload) : null
+}
+
 /** The next free build number of a version, given the build numbers TestFlight already has for it. */
 export function nextBuildNumber(code, existing) {
   let next = 0
   for (const v of existing) {
-    const m = new RegExp(`^${code}(?:\\.(\\d+))?$`).exec(v)
-    if (m) next = Math.max(next, m[1] ? Number(m[1]) + 1 : 1)
+    const n = uploadOf(code, v)
+    if (n !== null) next = Math.max(next, n + 1)
   }
   return buildNumber(code, next)
 }
@@ -396,7 +404,7 @@ async function main(argv) {
       const v = marketingVersion(version)
       if (!v) throw new Error(`"${version}" is not a release version`)
       if (explicit) {
-        if (!new RegExp(`^${v.code}(\\.\\d+)?$`).test(explicit)) throw new Error(`build number ${explicit} must be ${v.code} or ${v.code}.N for ${v.version}`)
+        if (uploadOf(v.code, explicit) === null) throw new Error(`build number ${explicit} must be ${v.code} or ${v.code}.N for ${v.version}`)
         console.log(explicit)
         return
       }

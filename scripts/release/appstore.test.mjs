@@ -49,7 +49,7 @@ test('a re-upload of a version takes the next free build number', () => {
   assert.equal(nextBuildNumber(10200, ['10200', '10200.1', '10200.3']), '10200.4')
   assert.equal(nextBuildNumber(10200, ['10200.2']), '10200.3')
   // Numbers outside the scheme (an upload from Xcode by hand) are left alone.
-  assert.equal(nextBuildNumber(10200, ['7', '102001']), '10200')
+  assert.equal(nextBuildNumber(10200, ['7', '102001', '10200.x', '10200.1.2']), '10200')
 })
 
 test('the token is an ES256 JWT for App Store Connect that lives under 20 minutes', () => {
@@ -121,7 +121,7 @@ test('register adds what is missing, keeps what exists, and says what to do by h
   assert.equal(first.app, null)
   const report = registerReport(first).join('\n')
   assert.match(report, /App record: none yet\. Create it in App Store Connect/)
-  assert.match(report, new RegExp(`${APP_GROUP.replace(/\./g, '\\.')}: the API can neither create an App Group nor assign one`))
+  assert.ok(report.includes(`${APP_GROUP}: the API can neither create an App Group nor assign one`), 'the report names the App Group step')
   assert.match(calls[0].auth, /^Bearer [\w-]+\.[\w-]+\.[\w-]+$/)
 
   const writes = calls.filter((c) => c.key.startsWith('POST')).length
