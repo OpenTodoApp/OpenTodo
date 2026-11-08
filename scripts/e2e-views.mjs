@@ -349,7 +349,15 @@ const converged = async (p) => p.waitForFunction(() => {
 await converged(pageA)
 await converged(pageB)
 const sideCounts = (p) => p.evaluate(() => [...document.querySelectorAll('nav[aria-label="Views"] button[data-view-id]')].map((b) => (b.querySelector('.truncate')?.textContent ?? '') + (b.querySelector('[data-open-count]')?.getAttribute('data-open-count') ?? '')))
-const ca = await sideCounts(pageA), cb = await sideCounts(pageB)
+// The sidebar counts follow the converged rows a moment later on each device
+// (and a little later still while the service worker checks for an update after
+// reconnecting): wait for them to agree instead of reading them once.
+let ca = await sideCounts(pageA), cb = await sideCounts(pageB)
+for (let i = 0; i < 40 && JSON.stringify(ca) !== JSON.stringify(cb); i++) {
+  await pageA.waitForTimeout(250)
+  ca = await sideCounts(pageA)
+  cb = await sideCounts(pageB)
+}
 assert(JSON.stringify(ca) === JSON.stringify(cb), `identical sidebars ${ca} / ${cb}`)
 const ha = await pageA.locator('[aria-label="View results"] [data-group-label]').allTextContents()
 const hb = await pageB.locator('[aria-label="View results"] [data-group-label]').allTextContents()

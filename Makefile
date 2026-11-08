@@ -11,13 +11,17 @@ WEB_EXT := web-ext@10.7.0
 SKILL_ZIP := dist/opentodo-agent-skill.zip
 MCP_SKILL_ZIP := dist/opentodo-mcp-skill.zip
 
-.PHONY: brand-icons site-bundle all web server cli cli-release cli-smoke skill extension obsidian obsidian-e2e obsidian-review test-obsidian android ios ios-archive build run dev test test-go test-web test-extension check lint staticcheck gosec gosec-sarif clean docker openspec-validate layout-check safe-area-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check release-prepare perf storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check bundle-budget fmt-check ci-checks e2e
+.PHONY: brand-icons site-bundle all web server cli cli-release cli-smoke skill extension obsidian obsidian-e2e obsidian-review test-obsidian android ios ios-archive build run dev test test-go test-web test-extension check lint staticcheck gosec gosec-sarif clean docker openspec-validate layout-check safe-area-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check release-prepare perf storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check bundle-budget fmt-check ci-checks e2e e2e-signed
 
 all: build
 
-## Build the web app into internal/web/dist (embedded by the Go binary).
+## Build the web app into internal/web/dist (embedded by the Go binary). With
+## WEB_SIGNING_KEY=<private key file> the build trusts that key alone and is signed
+## with it (OpenSpec signed-web-app D11; `go run ./cmd/websign keygen -out <file>`).
+WEB_SIGNING_KEY ?=
 web:
-	cd web && npm ci --no-audit --no-fund && npm run build
+	cd web && npm ci --no-audit --no-fund && WEB_SIGNING_KEY="$(WEB_SIGNING_KEY)" npm run build
+	@if [ -n "$(WEB_SIGNING_KEY)" ]; then WEB_SIGNING_KEY="$(WEB_SIGNING_KEY)" go run ./cmd/websign sign internal/web/dist; fi
 
 ## Build the server binary (expects `make web` to have run).
 server:
@@ -348,6 +352,13 @@ fmt-check:
 ## (it builds bin/ot itself); needs Playwright with Chromium.
 e2e: cli
 	scripts/e2e.sh
+
+## Signed web app end to end (signed-web-app): Chromium installs the app and follows
+## signed, tampered, older and refused updates, each signed with the test key; then
+## opens it with the server stopped. Builds its own copy of the web app; needs Go and
+## Playwright with Chromium (CHROMIUM_PATH optional).
+e2e-signed:
+	node scripts/e2e-signed.mjs
 
 ## Design-system check (ui-primitives): stories for every shared component, no
 ## emoji or glyph icons in web/src/app.

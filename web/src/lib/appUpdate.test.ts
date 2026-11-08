@@ -51,15 +51,16 @@ describe('a chunk of the previous release is gone', () => {
 })
 
 describe('a new service worker takes over', () => {
-  it('an update shows the reload prompt; the first install does not', () => {
+  it('asks the worker, which says ready only when it installed a new version (signed-web-app)', () => {
     const win = fakeWindow()
-    const fresh = fakeServiceWorker(null)
-    watchAppUpdates(win, fresh)
-    fresh.dispatchEvent(new Event('controllerchange'))
+    const sent: unknown[] = []
+    const sw = fakeServiceWorker({ postMessage: (m: unknown) => sent.push(m) })
+    watchAppUpdates(win, sw)
+    expect(sent).toEqual([{ type: 'opentodo-app', check: true }])
+    sw.dispatchEvent(new Event('controllerchange'))
+    expect(sent).toHaveLength(2)
     expect(updateReason()).toBeNull()
-    const updated = fakeServiceWorker({})
-    watchAppUpdates(fakeWindow(), updated)
-    updated.dispatchEvent(new Event('controllerchange'))
+    sw.dispatchEvent(Object.assign(new Event('message'), { data: { type: 'opentodo-app', state: 'ready', version: '1.4.0' } }))
     expect(updateReason()).toBe('release')
     expect(win.location.reload).not.toHaveBeenCalled()
   })
