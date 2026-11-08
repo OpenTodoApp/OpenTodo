@@ -89,8 +89,11 @@ export const TaskListRow = memo(function TaskListRow({ task, labelMap, draggable
   )
 })
 
-/** Inline "Add subtask" line under a row; stays focused for the next entry, Escape closes. */
-export function SubtaskInput({ parent, depth, onClose }: { parent: Task; depth: number; onClose: () => void }) {
+/**
+ * An inline add line in a tree list: stays focused for the next entry, Escape (or
+ * leaving it empty) closes it. `add` writes one task from the typed title.
+ */
+export function AddLine({ depth, placeholder, label, add, onClose }: { depth: number; placeholder: string; label: string; add: (title: string) => Promise<unknown>; onClose: () => void }) {
   const [value, setValue] = useState('')
   const ref = useRef<HTMLInputElement>(null)
   useEffect(() => {
@@ -101,22 +104,30 @@ export function SubtaskInput({ parent, depth, onClose }: { parent: Task; depth: 
     const title = value.trim()
     if (!title) return
     setValue('')
-    await createSubtask(parent.id, title)
+    await add(title)
     ref.current?.focus()
   }
   return (
-    <form onSubmit={(e) => act(submit(e))} className="flex items-center gap-2 py-1 pr-2" style={{ paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 2}rem` }}>
+    <form data-add-line onSubmit={(e) => act(submit(e))} className="flex items-center gap-2 py-1 pr-2" style={{ paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 2}rem` }}>
       <span className="text-accent">+</span>
       <input
         ref={ref}
         className="ui-input py-1"
-        placeholder={(parent.title ? t('Add a subtask to {title}…', { title: parent.title }) : t('Add a subtask to this task…'))}
-        aria-label={t('Add a subtask')}
+        placeholder={placeholder}
+        aria-label={label}
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onClose() } }}
-        onBlur={() => { if (!value) onClose() }}
+        // Left empty, it closes; not when focus went to the line that took its place
+        // (the "Add task below" line moves down after each add).
+        onBlur={() => { if (!value) requestAnimationFrame(() => { if (!document.activeElement?.closest('[data-add-line]')) onClose() }) }}
       />
     </form>
   )
+}
+
+/** Inline "Add subtask" line under a row; each entry is the parent's last subtask. */
+export function SubtaskInput({ parent, depth, onClose }: { parent: Task; depth: number; onClose: () => void }) {
+  return <AddLine depth={depth} onClose={onClose} label={t('Add a subtask')} add={(title) => createSubtask(parent.id, title)}
+    placeholder={parent.title ? t('Add a subtask to {title}…', { title: parent.title }) : t('Add a subtask to this task…')} />
 }

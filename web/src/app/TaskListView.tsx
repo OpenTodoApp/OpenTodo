@@ -63,6 +63,7 @@ import { afterListAdd, afterListAddMany } from './task-list/afterListAdd'
 import { addTasksUndoable } from '../lib/pasteTasks'
 import { useListBindings } from './task-list/useListBindings'
 import { useListDrag } from './task-list/useListDrag'
+import { useAddLines, type AddingBelow } from './task-list/belowLine'
 import { useListModel, type ListRoute } from './task-list/useListModel'
 import { LIST_READY, perfMark } from '../lib/perfMarks'
 import { markPendingDone } from '../lib/pendingDone'
@@ -92,6 +93,7 @@ function useListUi(ticked: ReadonlySet<string>, order: readonly string[]) {
   const actions = useActionsOpen(order.length)
   const [selectMode, setSelectMode] = useState(false)
   const [addingUnder, setAddingUnder] = useState<string | null>(null)
+  const [addingBelow, setAddingBelow] = useState<AddingBelow | null>(null)
   /** Parent whose last open subtask was just completed; Enter completes it too. */
   const [prompt, setPrompt] = useState<Task | null>(null)
   /** Task whose label picker (`L`) is open. */
@@ -109,7 +111,7 @@ function useListUi(ticked: ReadonlySet<string>, order: readonly string[]) {
   // The row's menu at the pointer (task-row-context-menu): one state, one selection
   // rule and one focus restore, shared with the filter, saved-view and method lists.
   const rowMenu = useRowMenu(ticked, order)
-  const ui: ListUi = { pickerFor, setPickerFor, assignFor, setAssignFor, prompt, setPrompt, addingUnder, setAddingUnder, setAddingTo, openActions }
+  const ui: ListUi = { pickerFor, setPickerFor, assignFor, setAssignFor, prompt, setPrompt, addingUnder, setAddingUnder, addingBelow, setAddingBelow, setAddingTo, openActions }
   return { ui, actions, actionsFrom, selectMode, setSelectMode, addingTo, expandedId, setExpandedId, rowMenu }
 }
 
@@ -178,11 +180,24 @@ function useOwnOrder(route: ListRoute, rows: ListRow[], groups: ListGroup[]) {
 }
 
 /** The row menu's Reorder items (accessibility-aa D3): the keyboard move's writes, from a pointer; null without a manual order. */
-function useListReorder(manual: boolean, ownStep: ((id: string, how: Step) => Promise<boolean>) | undefined, onReorder: (() => void) | undefined): ListReorder | null {
+function useListReorder(manual: boolean, ownStep: ((id: string, how: Step) => Promise<boolean>) | undefined, onReorder: (() => void) | undefined, add?: ListReorder['add']): ListReorder | null {
   return useMemo<ListReorder | null>(() => (!manual ? null : {
     move: (id, step) => { if (ownStep) act(ownStep(id, step)); else { onReorder?.(); act(moveTaskBy(id, step)) } },
     edges: ownStep ? () => Promise.resolve({ first: false, last: false }) : taskStepEdges,
-  }), [manual, ownStep, onReorder])
+    add,
+  }), [manual, ownStep, onReorder, add])
+}
+
+/**
+ * The row menu's "Add task below" and "Add subtask" (add-below) in a tree list: the line
+ * opens once the menu has closed and given focus back, so it keeps the focus it takes.
+ */
+function useListAdd(on: boolean, ui: ListUi, toggleCollapsed: (id: string, force?: boolean) => void): ListReorder['add'] {
+  const { setAddingUnder, setAddingBelow } = ui
+  return useMemo(() => (!on ? undefined : {
+    below: (id: string) => { requestAnimationFrame(() => { setAddingUnder(null); setAddingBelow({ anchor: id, last: id }) }) },
+    under: (id: string) => { requestAnimationFrame(() => { toggleCollapsed(id, false); setAddingBelow(null); setAddingUnder(id) }) },
+  }), [on, setAddingUnder, setAddingBelow, toggleCollapsed])
 }
 
 export function TaskListView({ route, userId, userRole }: { route: ListRoute; userId?: string; userRole?: AccountRole }) {
@@ -257,9 +272,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     act(withListTransition(1, () => moveTaskToSection(task.id, key || null)))
   }, [sectionMap])
   // Manual ordering (manual-ordering): projects (editors and above) and the Inbox by positions; a label page by its own order (view-manual-order).
-  const projectManual = (route.view === 'project' && m.projectEditable) || route.view === 'inbox', ownOrder = useOwnOrder(route, rows, upcomingCal.groups), manual = projectManual || !!ownOrder, listReorder = useListReorder(manual, ownOrder?.step, m.listDisplay.onReorder)
+  const projectManual = (route.view === 'project' && m.projectEditable) || route.view === 'inbox', ownOrder = useOwnOrder(route, rows, upcomingCal.groups), manual = projectManual || !!ownOrder, listReorder = useListReorder(manual, ownOrder?.step, m.listDisplay.onReorder, useListAdd(projectManual && m.treeView && !board, ui, m.toggleCollapsed))
   const sectionOfRow = useMemo(() => sectionOfRows(board, dataColumns, upcomingCal.groups), [board, dataColumns, upcomingCal.groups])
-  const drag = useListDrag({ manual, onReorder: ownOrder ? undefined : m.listDisplay.onReorder, source: { rows, sectionOfRow, tree: m.tree, board, sectionMap, ticked: selection.ticked, onHold: (task) => holdSelect(task.id, selection, setSelectMode), openRowMenu: rowMenu.open, reorder: ownOrder?.reorder, groupOf: ownOrder?.groupOf, readOnly: isReadOnly }, moveToSection, onDropped: setSelectedId, onDragStart: rowMenu.dismiss })
+  const drag = useListDrag({ manual, onReorder: ownOrder ? undefined : m.listDisplay.onReorder, source: { rows, groups: upcomingCal.groups, sectionOfRow, tree: m.tree, board, sectionMap, ticked: selection.ticked, onHold: (task) => holdSelect(task.id, selection, setSelectMode), openRowMenu: rowMenu.open, reorder: ownOrder?.reorder, groupOf: ownOrder?.groupOf, readOnly: isReadOnly }, moveToSection, onDropped: setSelectedId, onDragStart: rowMenu.dismiss })
   const { latestSectionMap } = drag
   // The view supplies defaults; attributes typed in the quick-add line override them.
   const withDefaults = useCallback(async (inputs: QuickAddInput[]) => {
@@ -328,7 +343,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     view: route.view, labelId: route.view === 'label' ? route.id : undefined, userId, projectMap: m.projectMap, labelMap: m.labelMap, memberMap: m.memberMap, selectedId, progress: m.progress, blocked: m.blocked, flow: m.flow,
     habits: m.habits, isReadOnly, board, manual, ownOrder: !!ownOrder, treeView: m.treeView, dropAt: drag.dropAt, draggingId: drag.draggingId, ticked: selection.ticked,
     showCheckbox: selectMode || (fine && selection.ticked.size > 0), selectMode, fieldColumns: m.fieldColumns, projectFieldDefs: m.projectFieldDefs, siblingPos: m.siblingPos,
-    timeColumn: m.timeColumn, rowLayout: m.display?.rowLayout, actions: rowActions, addingUnder: ui.addingUnder, onCloseSubtask: () => ui.setAddingUnder(null), edgeOf, cardNotes,
+    timeColumn: m.timeColumn, rowLayout: m.display?.rowLayout, actions: rowActions, ...useAddLines(rows, ui), edgeOf, cardNotes,
     inlineId: inline?.id ?? null, renderInline, expandedId, swipe: useListSwipe(listRoot, !fine && selection.ticked.size === 0 && !selectMode && !board, rows.length),
   })
 

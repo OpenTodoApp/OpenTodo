@@ -4,3 +4,9 @@ DerivedData/
 xcuserdata/
 *.xcuserstate
 
+# Signing material is made in CI for one run and never committed (ios-distribution D9)
+*.p8
+*.p12
+*.mobileprovision
+*.cer
+

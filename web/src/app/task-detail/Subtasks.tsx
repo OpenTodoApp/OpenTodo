@@ -1,11 +1,16 @@
 // The task's subtasks as a checklist with a quiet add line (ux-overhaul, "Task panel
 // layout"). On the task page the list is one bordered block with its count and a
 // progress bar in the head (task-full-page D1); in the docked panel it stays bare.
+// With two subtasks or more the head has "One at a time" (subtask-flow): the task's
+// subtasks are then offered in list order, each after the one before.
 import { type FormEvent, useRef, useState } from 'react'
 import { createSubtask } from '../../lib/ops'
 import type { Task } from '../../lib/types'
 import { t } from '../../lib/i18n'
-import { Icon } from '../../ui'
+import { Icon, Switch } from '../../ui'
+import { taskFlowOf } from '../../lib/flow'
+import { flowUndoable } from '../../lib/undoActions'
+import { showUndoToast } from '../bulk/toastStore'
 import { addTasksUndoable, subtaskInputs } from '../../lib/pasteTasks'
 import { showBulkToast } from '../bulk/toastStore'
 import { usePasteOffer } from '../quickadd/PasteOffer'
@@ -26,18 +31,33 @@ export interface SubtasksProps {
 export function Subtasks({ task, items, progress, readOnly, boxed = false, add = true, onToggle, onOpen }: SubtasksProps) {
   const row = boxed ? 'flex min-h-9 items-center gap-2 border-t border-soft px-3 hover:bg-hover' : 'flex items-center gap-2 rounded-control px-1 py-1 hover:bg-sunken dark:hover:bg-raised'
   const pct = progress.total ? Math.round((progress.done / progress.total) * 100) : 0
+  const inOrder = taskFlowOf(task) === 'sequential'
+  // Where subtasks are listed with their add line, in every mode: it is about what the page shows.
+  const flow = add && items.length > 1 && (inOrder || !readOnly)
+  const setInOrder = async (on: boolean) => {
+    const r = await flowUndoable('task', task.id, on ? 'sequential' : '', on ? t('Subtasks one at a time') : t('Subtasks in any order'))
+    if (r.entry) showUndoToast(r.label, r.entry.id)
+  }
   return (
     <section aria-label={t('Subtasks')} data-subtasks className={boxed ? 'overflow-hidden rounded-card border border-default' : undefined}>
       {(items.length > 0 || boxed) && (
-        <h3 className={`flex items-center gap-2 text-meta font-semibold text-muted ${boxed ? 'min-h-9 px-3' : 'mb-1'}`}>
-          <Icon name="list" className="text-faint" />{t('Subtasks')}
-          {items.length > 0 && <span className="font-normal text-faint">{boxed ? t('{done} of {total}', progress) : `${progress.done}/${progress.total}`}</span>}
+        // The switch sits beside the heading, never inside it, so the heading reads as its name and count.
+        <div className={`flex items-center gap-2 text-meta text-muted ${boxed ? 'min-h-9 px-3' : 'mb-1'}`}>
+          <h3 className="flex items-center gap-2 font-semibold">
+            <Icon name="list" className="text-faint" />{t('Subtasks')}
+            {items.length > 0 && <span className="font-normal text-faint">{boxed ? t('{done} of {total}', progress) : `${progress.done}/${progress.total}`}</span>}
+          </h3>
+          {flow && (
+            <span className="ml-auto" data-subtask-flow>
+              <Switch checked={inOrder} onChange={(on) => { void setInOrder(on) }} label={t('One at a time')} disabled={readOnly} />
+            </span>
+          )}
           {boxed && items.length > 0 && (
-            <span className="ml-auto h-1 w-20 overflow-hidden rounded-full bg-sunken" aria-hidden="true" data-subtask-progress>
+            <span className={`${flow ? 'ml-2 ' : 'ml-auto '}h-1 w-20 overflow-hidden rounded-full bg-sunken`} aria-hidden="true" data-subtask-progress>
               <span className="block h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
             </span>
           )}
-        </h3>
+        </div>
       )}
       <ul className={`empty:hidden ${boxed ? '' : 'space-y-0.5'}`} aria-label={t('Subtasks')}>
         {items.map((c) => (
