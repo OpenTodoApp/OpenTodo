@@ -28,4 +28,4 @@ None. A drop is the same one `moveTask` write as before (a parent and a position
 
 ## Size
 
-About 0.6 KB gzip in the list's drag code, which is in the entry with every list: the first load goes from 688.0 to 688.6 KB and the entry from 139.7 to 140.2 KB, so both budgets rise by 1 KB with the reason in `web/bundle-budget.json`. Loading the rule at the press would leave the first moves of a drag without a level.
+About 0.6 KB gzip in the list's drag code, which is in the entry with every list: measured on main after signed-web-app, the first load is 688.6 KB (within its 689 KB) and the entry 140.3 KB, so the entry budget rises to 141 KB with the reason in `web/bundle-budget.json`. Loading the rule at the press would leave the first moves of a drag without a level.
