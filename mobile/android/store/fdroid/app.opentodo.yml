@@ -20,9 +20,9 @@ Repo: https://github.com/OpenTodoApp/OpenTodo.git
 Binaries: https://github.com/OpenTodoApp/OpenTodo/releases/download/v%v/opentodo-android-%v.apk
 
 Builds:
-  - versionName: 1.1.1
-    versionCode: 10101
-    commit: e7cab19a5d88dd418606ee46e718a0a565cd2acd
+  - versionName: 1.2.0
+    versionCode: 10200
+    commit: 0d4dd3f78e108fbe046fb8781c9e4d1eb33e729a
     subdir: mobile/android/app
     sudo:
       - echo 'deb https://deb.debian.org/debian bookworm main' > /etc/apt/sources.list.d/bookworm.list
@@ -37,5 +37,5 @@ AllowedAPKSigningKeys: ff2eacdf7e79712e44fdd9d2e3110891e712c170ea516bd3fbbecc291
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9.]+$
-CurrentVersion: 1.1.1
-CurrentVersionCode: 10101
+CurrentVersion: 1.2.0
+CurrentVersionCode: 10200
