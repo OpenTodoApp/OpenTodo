@@ -42,7 +42,7 @@ import {
   overlaps, primaryDestinations, reflow, rowMetaItems, targetSize, targetSizeWcag, TEXT_SPACING_CSS, textSpacingClip, truncation, watchMotion,
 } from './audit-measures.mjs'
 import { seed } from './seed.mjs'
-import { OVERLAYS, chooseLayout, screens as layoutScreens } from './layout-screens.mjs'
+import { OVERLAYS, chooseLayout, openScreen, screens as layoutScreens } from './layout-screens.mjs'
 import { inventory } from './inventory.mjs'
 import { A11Y_RULES, STRICT_RULES, summarize, writeReport } from './report.mjs'
 import { coverage } from './stories.mjs'
@@ -222,7 +222,7 @@ async function capture(ctx, anonCtx, page, e, combo, ids) {
   const shot = `shots/${e.id}-${combo.width}-${combo.theme}-${combo.lang}${TEXT_SIZE === 16 ? '' : `-t${TEXT_SIZE}`}.jpg`
   const out = { id: e.id, width: combo.width, theme: combo.theme, lang: combo.lang, shot, violations: [] }
   const load = async (hideToasts = false) => {
-    await p.goto(base + host.path)
+    await openScreen(p, base + host.path)
     // A later language: the screens' ready signals are English headings (as in the layout check).
     await (combo.lang === LANGS[0] || host.own ? host.ready(p) : p.locator('main :is(h1, [data-page-body], [data-task-id]), [data-screen], h1, form').first().waitFor({ timeout: 15000 }))
     if (host.layout) { await chooseLayout(p, host.layout); await p.waitForTimeout(300) }

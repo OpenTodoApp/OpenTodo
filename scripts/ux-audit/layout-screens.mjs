@@ -10,6 +10,17 @@ import { settled } from './measure.mjs'
 // an overlay that stays open.
 export const closes = (overlay) => overlay.waitFor({ state: 'hidden', timeout: 2000 }).then(() => true, () => false)
 
+// Opens a screen in a new document. A goto to the address the page already has, apart
+// from its #fragment, only moves to the fragment in the same document: nothing loads
+// again. So the retry of a screen with a fragment (/projects#archived) after a load
+// that hung waited on the same stuck page and failed every time, while every other
+// screen's retry loaded it again. Such a page leaves for about:blank first.
+export async function openScreen(p, url) {
+  const doc = (u) => u.split('#')[0]
+  if (url.includes('#') && doc(p.url()) === doc(url)) await p.goto('about:blank')
+  await p.goto(url)
+}
+
 // `overlays` names openers from OVERLAYS below; each runs on the screen it is listed for.
 // Settings pages checked for crowded controls (themes-layout-template): no two controls
 // overlap and none touches a row divider. The theme rows and Branding's server themes.
