@@ -27,7 +27,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { releaseNotes } from './play-upload.mjs'
 
 export const API = 'https://api.appstoreconnect.apple.com'
-export const APP_GROUP = 'group.app.open-todo.ios'
+export const APP_GROUP = 'group.app.open-todo'
 /** The app first: its record is the one App Store Connect knows the app by. */
 export const BUNDLE_IDS = [
   { identifier: 'app.open-todo.ios', name: 'OpenTodo' },
