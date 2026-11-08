@@ -9,17 +9,21 @@
 //   node scripts/release/appstore.mjs build-number <version> [n]    the next free build number
 //   node scripts/release/appstore.mjs app-id                        the app record's id
 //   node scripts/release/appstore.mjs sign <dir>                    certificate, profiles, ExportOptions.plist
-//   node scripts/release/appstore.mjs cleanup <dir>                 revoke and delete what `sign` made
+//   node scripts/release/appstore.mjs cleanup <dir>                 revoke and delete what `sign` made (a run that uploaded nothing)
 //   node scripts/release/appstore.mjs notes <version> <build>       "What to test" from CHANGELOG.md
 //   node scripts/release/appstore.mjs processed <version> <build>   wait for Apple's processing (VALID)
 //   node scripts/release/appstore.mjs key-file <path>               ASC_KEY_P8 as a file for altool (mode 600)
 //
 // The key comes from ASC_KEY_ID, ASC_ISSUER_ID and ASC_KEY_P8 (the .p8 file's content), the team
-// from APPLE_TEAM_ID. Nothing is stored between runs: `sign` makes an Apple Distribution
-// certificate from a key generated on the runner (csr.pem in <dir>) and one App Store profile per
-// bundle ID, and `cleanup` revokes and deletes them once Apple has processed the build (`processed`):
-// a certificate revoked while the build is processing makes Apple refuse it (ITMS-90035). Builds
-// processed stay valid, because Apple re-signs what it distributes.
+// from APPLE_TEAM_ID. Nothing secret is stored between runs: `sign` makes an Apple Distribution
+// certificate from a key generated on the runner (csr.pem in <dir>, deleted with the runner) and one
+// App Store profile per bundle ID. The certificate of a build that was uploaded stays valid: Apple
+// checks the signature again when the build is submitted for TestFlight or App Store review, and a
+// revoked certificate then turns it into ITMS-90035 "Invalid Signature" (builds 10101 and 10101.1).
+// Without its private key nobody can sign with it. When Apple's limit of distribution certificates
+// is reached, `sign` revokes the oldest one this workflow made (found by its "OpenTodo CI" profiles)
+// and deletes its profiles; a certificate made by hand is never touched. `cleanup` revokes and
+// deletes what `sign` made only for a run that uploaded nothing.
 // Tests: node --test scripts/release/appstore.test.mjs (make repo-check).
 
 import { sign as cryptoSign } from 'node:crypto'
@@ -257,20 +261,28 @@ export async function prepareSigning(call, { dir, team, stamp = String(Date.now(
   const state = readState(dir)
   writeState(dir, state)
   const csr = readFileSync(join(dir, 'csr.pem'), 'utf8')
-  let cert
-  try {
-    cert = await call('creating the distribution certificate', 'POST', '/v1/certificates', {
+  const create = () =>
+    call('creating the distribution certificate', 'POST', '/v1/certificates', {
       data: { type: 'certificates', attributes: { certificateType: 'DISTRIBUTION', csrContent: csr } },
     })
+  let cert
+  try {
+    try {
+      cert = await create()
+    } catch (err) {
+      // At Apple's limit: make room by retiring the oldest certificate of an earlier run, once.
+      if (err.status !== 409 || !(await retireOldestCertificate(call, { log }))) throw err
+      cert = await create()
+    }
   } catch (err) {
     if (err.status === 403) throw new Error(`${err.message}. The API key's role may not create certificates: make a key with the Admin role and replace ASC_KEY_ID and ASC_KEY_P8`)
-    if (err.status === 409) throw new Error(`${err.message}. Apple allows only a few Apple Distribution certificates per team: revoke an unused one at developer.apple.com → Certificates and run again`)
+    if (err.status === 409) throw new Error(`${err.message}. Apple allows only a few Apple Distribution certificates per team and none of them was made by this workflow: revoke an unused one at developer.apple.com → Certificates and run again`)
     throw err
   }
   state.certificateId = cert.data.id
   writeState(dir, state)
   writeFileSync(join(dir, 'distribution.cer'), Buffer.from(cert.data.attributes.certificateContent, 'base64'))
-  log('notice', `made Apple Distribution certificate ${cert.data.id} for this run; cleanup revokes it`)
+  log('notice', `made Apple Distribution certificate ${cert.data.id} for this run; it stays valid once a build signed with it is uploaded`)
 
   mkdirSync(join(dir, 'profiles'), { recursive: true })
   const profiles = {}
@@ -281,7 +293,7 @@ export async function prepareSigning(call, { dir, team, stamp = String(Date.now(
     const res = await call(`creating the App Store profile of ${b.identifier}`, 'POST', '/v1/profiles', {
       data: {
         type: 'profiles',
-        attributes: { name: `OpenTodo CI ${b.identifier} ${stamp}`, profileType: 'IOS_APP_STORE' },
+        attributes: { name: `${CI_PROFILE_PREFIX}${b.identifier} ${stamp}`, profileType: 'IOS_APP_STORE' },
         relationships: {
           bundleId: { data: { type: 'bundleIds', id: bundle.id } },
           certificates: { data: [{ type: 'certificates', id: cert.data.id }] },
@@ -306,7 +318,40 @@ export async function prepareSigning(call, { dir, team, stamp = String(Date.now(
   return { certificateId: cert.data.id, profiles }
 }
 
-/** Revokes the certificate and deletes the profiles `prepareSigning` recorded. Missing ones are fine. */
+/** The name every profile this workflow makes starts with; it is how an earlier run's certificate is found. */
+export const CI_PROFILE_PREFIX = 'OpenTodo CI '
+
+/**
+ * Revokes the oldest distribution certificate an earlier run made, and deletes its profiles.
+ * A run's certificate is the one its "OpenTodo CI" profiles name; the oldest is the one whose
+ * first profile is the oldest. Builds signed with it can no longer be submitted for review, so
+ * it is only done when Apple refuses a new certificate. Returns the revoked id, or null when no
+ * certificate was made by this workflow.
+ */
+export async function retireOldestCertificate(call, { log = defaultLog } = {}) {
+  const res = await call('listing the profiles', 'GET', '/v1/profiles?limit=200&include=certificates')
+  const runs = new Map()
+  for (const p of res.data ?? []) {
+    if (!String(p.attributes?.name ?? '').startsWith(CI_PROFILE_PREFIX)) continue
+    for (const c of p.relationships?.certificates?.data ?? []) {
+      const run = runs.get(c.id) ?? { id: c.id, created: Infinity, profileIds: [] }
+      run.profileIds.push(p.id)
+      run.created = Math.min(run.created, Date.parse(p.attributes.createdDate ?? '') || Infinity)
+      runs.set(c.id, run)
+    }
+  }
+  const oldest = [...runs.values()].sort((a, b) => a.created - b.created || a.id.localeCompare(b.id))[0]
+  if (!oldest) return null
+  const gone = (err) => {
+    if (err.status !== 404) throw err
+  }
+  await call(`revoking certificate ${oldest.id}`, 'DELETE', `/v1/certificates/${oldest.id}`).catch(gone)
+  for (const id of oldest.profileIds) await call(`deleting profile ${id}`, 'DELETE', `/v1/profiles/${id}`).catch(gone)
+  log('notice', `at Apple's limit of distribution certificates: revoked ${oldest.id}, made by an earlier run, and deleted its ${oldest.profileIds.length} profiles`)
+  return oldest.id
+}
+
+/** Revokes the certificate and deletes the profiles `prepareSigning` recorded, for a run that uploaded nothing. Missing ones are fine. */
 export async function cleanup(call, { dir, log = defaultLog }) {
   const state = readState(dir)
   const gone = (err) => err.status === 404
@@ -371,10 +416,9 @@ async function findBuild(call, appId, version, build) {
 
 /**
  * Waits until Apple has processed the uploaded build, and fails when Apple refused it. The
- * certificate that signed the build must stay valid until then: Apple checks the signature while
- * processing, and a certificate revoked before that turns the build into ITMS-90035 "Invalid
- * Signature". So `cleanup` runs after this. Returns the final processingState, or null when
- * processing outlasted the wait (a warning: the build may then be refused).
+ * certificate that signed the build stays valid (Apple checks the signature while processing and
+ * again at every review submission). Returns the final processingState, or null when processing
+ * outlasted the wait (a warning: App Store Connect then shows the build once it is done).
  */
 export async function waitForProcessing(call, { version, build, attempts = 90, wait = 30_000, pause = sleep, log = defaultLog }) {
   const app = await findApp(call)
@@ -392,7 +436,7 @@ export async function waitForProcessing(call, { version, build, attempts = 90, w
   if (state === 'INVALID' || state === 'FAILED') {
     throw new Error(`Apple refused build ${build} of ${version} (${state}); its email to the account holder names the reason`)
   }
-  log('warning', `build ${build} of ${version} was still ${state ? state.toLowerCase() : 'missing'} after the wait; the certificate is revoked now, which can make Apple refuse it as an invalid signature`)
+  log('warning', `build ${build} of ${version} was still ${state ? state.toLowerCase() : 'missing'} after the wait; App Store Connect shows it once Apple is done`)
   return null
 }
 
