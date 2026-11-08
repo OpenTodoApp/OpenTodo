@@ -15,6 +15,8 @@ export type Route =
   | { view: 'day'; date?: string }
   | { view: 'week'; date?: string }
   | { view: 'month'; date?: string }
+  // The Calendar's Quarter mode (quarter-view-and-plan-spans): the calendar quarter of `date`, this quarter when absent.
+  | { view: 'quarter'; date?: string }
   // The Calendar's Plan mode (planner-view D1): the span starts on `date`, today when absent.
   | { view: 'plan'; date?: string }
   // The Calendar's Year mode (year-view D2): the year of `date`, this year when absent.
@@ -85,7 +87,7 @@ export type Route =
  */
 export const VIEW_QUICK_ADD: Readonly<Record<Route['view'], boolean>> = {
   inbox: true, today: true, upcoming: true, someday: true, anytime: true,
-  day: true, week: true, month: true, plan: true, year: true,
+  day: true, week: true, month: true, quarter: true, plan: true, year: true,
   completed: true, assigned: true, project: true, task: true, label: true, labels: true,
   places: true, place: true, projects: true, filter: true, views: true, view: true,
   triage: true, review: true, next: true, waiting: true, loop: true, focus: true, notes: true,
@@ -153,12 +155,13 @@ export function parseRoute(pathname: string): Route {
     case 'day':
     case 'week':
     case 'month':
+    case 'quarter':
     case 'plan':
     case 'year':
       // An optional anchor date; anything that is not YYYY-MM-DD means "today".
       return parts[1] && /^\d{4}-\d{2}-\d{2}$/.test(parts[1]) ? { view: parts[0], date: parts[1] } : { view: parts[0] }
     case 'calendar':
-      // One Calendar destination (ux-overhaul): Day, Week, Month, Plan or Year as last used on this device.
+      // One Calendar destination (ux-overhaul): Day, Week, Month, Quarter, Plan or Year as last used on this device.
       return { view: readCalendarMode() }
     case 'settings':
       // /settings/import is the import screen; an unknown section shows the overview.
@@ -334,6 +337,7 @@ export function routePath(r: Route): string {
     case 'day':
     case 'week':
     case 'month':
+    case 'quarter':
     case 'plan':
     case 'year':
       return r.date ? `/${r.view}/${r.date}` : `/${r.view}`

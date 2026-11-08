@@ -5,7 +5,7 @@
 // a task, by drag onto a day or with the arrows, is one due edit that keeps its time
 // and zone. Projections and events are read-only and written nowhere. Works offline.
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Button, hueFor, MenuItem, MenuSeparator, PageBody, Skeleton, useWide } from '../ui'
+import { Button, Dialog, hueFor, MenuItem, MenuSeparator, NumberInput, PageBody, Skeleton, useWide } from '../ui'
 import { allDayEvents, calendarTasks, deadlineMarkers, eventBlocks, nudgeDue } from '../lib/calendar'
 import { CalendarsToggle } from './calendar/CalendarsToggle'
 import { rememberCalendarMode } from '../lib/calendarMode'
@@ -17,7 +17,7 @@ import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
 import { slotCapacity, slotsByDate, useSlots } from '../lib/slots'
 import { useOnline } from '../lib/online'
 import { updateTask } from '../lib/ops'
-import { columnEntries, followAnchor, PLAN_SPANS, planLoad, planSeries, projectedOccurrences, spanDates } from '../lib/plan'
+import { columnEntries, followAnchor, MAX_PLAN_DAYS, MIN_PLAN_DAYS, PLAN_SPANS, planLoad, planSeries, projectedOccurrences, spanDates } from '../lib/plan'
 import { canEditTasks, roleOf } from '../lib/sharing'
 import type { Task } from '../lib/types'
 import { t } from '../lib/i18n'
@@ -113,6 +113,7 @@ export function PlanView({ date }: { date?: string }) {
   const order = useMemo(() => [...new Set(days.flatMap((d) => d.entries.flatMap((e) => (e.kind === 'task' ? [e.task.id] : []))))], [days])
 
   const [focused, setFocused] = useState(anchor)
+  const [customOpen, setCustomOpen] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const setAdding = (d: string) => chrome.add.add({ date: d })
   const openId = usePanelTaskId()
@@ -228,6 +229,9 @@ export function PlanView({ date }: { date?: string }) {
       <MenuItem key={n} label={t('{n} days', { n })} icon="calendar-days" checked={span === n} data-plan-span={n}
         onSelect={() => act(saveGridPrefs({ ...prefs, planDays: n }))} />
     ))}
+    {/* A custom length is checked only while it is the one in use (quarter-view-and-plan-spans D5). */}
+    <MenuItem label={t('Custom…')} icon="sliders-horizontal" checked={!PLAN_SPANS.includes(span)} data-plan-span="custom"
+      description={!PLAN_SPANS.includes(span) ? t('{n} days', { n: span }) : undefined} onSelect={() => setCustomOpen(true)} />
     <MenuSeparator />
     <MenuItem label={planOpen ? t('Hide the planning list') : t('Plan from a list')} icon="list" description={t('Drag tasks onto a day, or press s on one')} onSelect={() => chrome.plan(planOpen, togglePlan)} />
     {chrome.overflow}
@@ -261,7 +265,28 @@ export function PlanView({ date }: { date?: string }) {
         {t.rich('Arrows move the focused day, or the selected task. {j} / {k} select, {q} adds on the focused day.', { j: <span className="ui-kbd">j</span>, k: <span className="ui-kbd">k</span>, q: <span className="ui-kbd">q</span> })}
       </p>
       {chrome.element}
+      {customOpen && <CustomSpanDialog span={span}
+        onSave={(n) => { act(saveGridPrefs({ ...prefs, planDays: n })); setCustomOpen(false) }}
+        onCancel={() => setCustomOpen(false)} />}
     </PageBody>
+  )
+}
+
+/** One field, one Save: a custom Plan length, refused until it is a whole number in range. */
+function CustomSpanDialog({ span, onSave, onCancel }: { span: number; onSave: (n: number) => void; onCancel: () => void }) {
+  const [draft, setDraft] = useState(span)
+  const [valid, setValid] = useState(true)
+  return (
+    <Dialog title={t('Custom…')} onClose={onCancel} testId="plan-custom-span-dialog">
+      <form className="space-y-3" data-plan-custom-form onSubmit={(e) => { e.preventDefault(); if (valid) onSave(draft) }}>
+        <NumberInput label={t('Number of days')} value={draft} min={MIN_PLAN_DAYS} max={MAX_PLAN_DAYS} unit={t('Days')}
+          onChange={(n) => { if (n !== null) setDraft(n) }} onValidityChange={setValid} />
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="submit" className="ui-btn ui-btn--primary ui-btn--md" disabled={!valid} data-plan-custom-save>{t('Save')}</button>
+          <button type="button" className="ui-btn ui-btn--ghost ui-btn--md" onClick={onCancel}>{t('Cancel')}</button>
+        </div>
+      </form>
+    </Dialog>
   )
 }
 

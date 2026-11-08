@@ -129,6 +129,7 @@ const screens = [
   { name: 'calendar-week', entry: 'week', async run(p) { await go(p, '/week', () => p.getByRole('region', { name: 'Week calendar' }).waitFor()) } },
   { name: 'calendar-month', entry: 'month', async run(p) { await go(p, '/month', () => p.locator('[data-month-grid]').waitFor()) } },
   { name: 'calendar-plan', entry: 'plan', async run(p) { await go(p, '/plan', () => p.locator('[data-plan-grid], [data-plan-agenda]').waitFor()) } },
+  { name: 'calendar-quarter', entry: 'quarter', async run(p) { await go(p, '/quarter', () => p.locator('[data-quarter-grid]').waitFor()) } },
   { name: 'task-panel', entry: 'task-panel', async run(p, { ids }) {
     await go(p, `/project/${ids.home}`, h1(p, 'Home renovation')); await openTask(p, 'Get three quotes for the kitchen')
   } },

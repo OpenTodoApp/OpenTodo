@@ -1,6 +1,6 @@
 ---
 title: Several months and the year
-summary: Stack two, three or six months in the Month, and see the twelve months of a year with a mark for how busy each day is.
+summary: Stack two, three or six months in the Month, see a whole quarter at a glance, and see the twelve months of a year with a mark for how busy each day is.
 audience: user
 section: Guides
 specs: [month-view, year-view]
@@ -11,7 +11,7 @@ order: 61
 
 <picture><source srcset="images/year-calendar-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/year-calendar-light.webp" alt="The Year calendar: twelve small month grids, four to a row, each day's number with a bar under it that is longer on busier days, and today marked."></picture>
 
-The [Month](calendar-views.md#see-the-month) shows one month by default. To look further ahead, stack several months, or open **Year** to see the whole year at once.
+The [Month](calendar-views.md#see-the-month) shows one month by default. To look further ahead, stack several months, open [Quarter](quarter-calendar.md) for a calendar quarter, or open **Year** to see the whole year at once.
 
 ## See several months
 

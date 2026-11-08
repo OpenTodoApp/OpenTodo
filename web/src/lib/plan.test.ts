@@ -3,7 +3,7 @@
 // to the shared recurrence vectors.
 import { describe, expect, it } from 'vitest'
 import { occurrenceId } from './ids'
-import { columnEntries, eventMinutes, followAnchor, formatPlanLoad, planLoad, planLoadTooltip, planSeries, projectedOccurrences, spanDates } from './plan'
+import { columnEntries, eventMinutes, followAnchor, formatPlanLoad, MAX_PLAN_DAYS, MIN_PLAN_DAYS, PLAN_SPANS, planLoad, planLoadTooltip, planSeries, projectedOccurrences, spanDates, validPlanDays } from './plan'
 import vectors from './recurrence.vectors.json'
 import type { CalendarEvent, Task } from './types'
 
@@ -18,6 +18,14 @@ function ev(id: string, start: CalendarEvent['start'], end: CalendarEvent['end']
 }
 
 describe('span', () => {
+  it('offers 3, 7, 14 and 21 days and accepts any whole number from 1 to 90', () => {
+    expect(PLAN_SPANS).toEqual([3, 7, 14, 21])
+    expect(MIN_PLAN_DAYS).toBe(1)
+    expect(MAX_PLAN_DAYS).toBe(90)
+    for (const n of [1, 3, 10, 21, 90]) expect(validPlanDays(n), String(n)).toBe(true)
+    for (const n of [0, 91, 2.5, -1, '10', null, undefined, NaN]) expect(validPlanDays(n), String(n)).toBe(false)
+  })
+
   it('lists consecutive days from the anchor', () => {
     expect(spanDates('2026-10-12', 14)).toHaveLength(14)
     expect(spanDates('2026-10-12', 14).at(-1)).toBe('2026-10-25')

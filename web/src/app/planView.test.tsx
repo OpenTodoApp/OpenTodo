@@ -8,7 +8,7 @@ import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { GRID_PREFS_META_KEY } from '../lib/calendar'
-import { db, setMeta } from '../lib/db'
+import { db, getMeta, setMeta } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
 import { click, flush, key, render, type, minWidthPx, waitFor } from '../ui/test-utils'
 import { CalendarRangeSwitch } from './CalendarRange'
@@ -404,6 +404,45 @@ describe('keyboard in the plan', () => {
 })
 
 describe('span and phone', () => {
+  it('3 days and a custom span from the menu, kept on this device', async () => {
+    let r = await plan()
+    await waitFor(() => r.container.querySelectorAll('[role="gridcell"]').length === 14)
+    const openMenu = () => click(r.container.querySelector('[data-page-header] button[aria-label="More actions"]')!)
+    await openMenu()
+    await waitFor(() => !!document.querySelector('[data-plan-span="3"]'), 'the 3 days item')
+    await click(document.querySelector('[data-plan-span="3"]')!)
+    await waitFor(() => r.container.querySelectorAll('[role="gridcell"]').length === 3)
+    expect(r.container.querySelector('h1')!.textContent).toContain('Next 3 days')
+
+    await openMenu()
+    await waitFor(() => !!document.querySelector('[data-plan-span="custom"]'), 'the custom item')
+    await click(document.querySelector('[data-plan-span="custom"]')!)
+    const form = document.querySelector<HTMLFormElement>('[data-plan-custom-form]')!
+    await type(form.querySelector('input')!, '10')
+    await click(form.querySelector('[data-plan-custom-save]')!)
+    await waitFor(() => r.container.querySelectorAll('[role="gridcell"]').length === 10)
+    expect(r.container.querySelector('h1')!.textContent).toContain('Next 10 days')
+    expect(await getMeta(GRID_PREFS_META_KEY, null)).toMatchObject({ planDays: 10 })
+    await r.unmount()
+
+    r = await plan()
+    await waitFor(() => r.container.querySelectorAll('[role="gridcell"]').length === 10)
+    await r.unmount()
+  })
+
+  it('refuses a custom span outside 1 to 90', async () => {
+    const r = await plan()
+    await click(r.container.querySelector('[data-page-header] button[aria-label="More actions"]')!)
+    await waitFor(() => !!document.querySelector('[data-plan-span="custom"]'), 'the custom item')
+    await click(document.querySelector('[data-plan-span="custom"]')!)
+    const form = document.querySelector<HTMLFormElement>('[data-plan-custom-form]')!
+    await type(form.querySelector('input')!, '91')
+    expect(form.querySelector<HTMLButtonElement>('[data-plan-custom-save]')!.disabled).toBe(true)
+    expect(r.container.querySelectorAll('[role="gridcell"]').length).toBe(14)
+    expect(await getMeta(GRID_PREFS_META_KEY, null)).not.toMatchObject({ planDays: 91 })
+    await r.unmount()
+  })
+
   it('Span kept on this device: 21 days from the menu, read back from the meta row', async () => {
     let r = await plan()
     await waitFor(() => r.container.querySelectorAll('[role="gridcell"]').length === 14)

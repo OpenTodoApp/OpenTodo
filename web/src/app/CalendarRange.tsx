@@ -1,16 +1,18 @@
-// The Day | Week | Month | Plan | Year switch of the Calendar destination (OpenSpec changes
-// ux-overhaul, month-and-timeline-views, planner-view and year-view): one control in each calendar view's
-// page header. Switching keeps the anchor date, so Week of 18 November → Month
+// The Day | Week | Month | Quarter | Plan | Year switch of the Calendar destination (OpenSpec changes
+// ux-overhaul, month-and-timeline-views, planner-view, year-view and
+// quarter-view-and-plan-spans): one control in each calendar view's page header.
+// Switching keeps the anchor date, so Week of 18 November → Month
 // opens November and Day from there opens the 18th.
 import { useCalendarGo } from './calendar/scope'
 import { t, msg, translatedList } from '../lib/i18n'
 
-export type CalendarRangeMode = 'day' | 'week' | 'month' | 'plan' | 'year'
+export type CalendarRangeMode = 'day' | 'week' | 'month' | 'quarter' | 'plan' | 'year'
 
 const MODES: { mode: CalendarRangeMode; label: string }[] = translatedList([
   { mode: 'day', label: msg('Day') },
   { mode: 'week', label: msg('Week') },
   { mode: 'month', label: msg('Month') },
+  { mode: 'quarter', label: msg('Quarter') },
   { mode: 'plan', label: msg('Plan') },
   { mode: 'year', label: msg('Year') },
 ], 'label')

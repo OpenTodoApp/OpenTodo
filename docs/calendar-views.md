@@ -11,13 +11,13 @@ order: 61
 
 <picture><source srcset="images/week-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/week-light.webp" alt="The Week calendar with timed tasks as blocks, an Unscheduled lane under each day, and planned hours against an 8-hour day in each day's header."></picture>
 
-The calendar shows dated tasks by day, week, month, two-week plan or [year](months-and-year.md). Dragging and keyboard moves are in [Place tasks on the calendar](place-tasks-on-the-calendar.md); estimates and the grid settings are in [Time blocking](time-blocking.md).
+The calendar shows dated tasks by day, week, month, quarter, two-week plan or [year](months-and-year.md). A [Quarter](quarter-calendar.md) shows three months. Dragging and keyboard moves are in [Place tasks on the calendar](place-tasks-on-the-calendar.md); estimates and the grid settings are in [Time blocking](time-blocking.md).
 
 [Completed](completed-on-the-calendar.md "Show completed tasks on the calendar").
 
 ## Open the calendar
 
-Choose **Calendar** in the sidebar, then **Day**, **Week**, **Month**, **Plan** or **Year** in its header, or press <kbd>g</kbd> <kbd>d</kbd>, <kbd>g</kbd> <kbd>w</kbd>, <kbd>g</kbd> <kbd>m</kbd>, <kbd>g</kbd> <kbd>Shift+C</kbd> or <kbd>g</kbd> <kbd>y</kbd>. The sidebar remembers the last one on each device.
+Choose **Calendar** in the sidebar, then **Day**, **Week**, **Month**, **Quarter**, **Plan** or **Year** in its header, or press <kbd>g</kbd> <kbd>d</kbd>, <kbd>g</kbd> <kbd>w</kbd>, <kbd>g</kbd> <kbd>m</kbd>, <kbd>g</kbd> <kbd>q</kbd>, <kbd>g</kbd> <kbd>Shift+C</kbd> or <kbd>g</kbd> <kbd>y</kbd>. The sidebar remembers the last one on each device.
 
 - Tasks with a date **and** a time appear as blocks at that time, filled in their project's colour. The block is as tall as the estimate.
 - A timed task without an estimate gets a 30-minute block with a dashed edge.
@@ -50,11 +50,11 @@ Switching views keeps the date you're looking at. On a phone, each day shows how
 
 <picture><source srcset="images/plan-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/plan-light.webp" alt="The Plan: fourteen days as two rows of seven columns, each with a capacity bar and its tasks, and dimmed projected occurrences of repeating tasks."></picture>
 
-**Plan** shows the next 14 days as columns, seven to a row. Each day lists its tasks with their time, estimate and priority, under a bar of planned time against your day length. The bar counts task estimates, busy meetings from [other calendars](other-calendars.md), and the dimmed coming occurrences of [repeating tasks](recurrence.md).
+**Plan** shows the next days as columns, seven to a row, each with its tasks under a bar of planned time against your day length. The bar counts estimates, busy [meetings](other-calendars.md) and the coming occurrences of [repeating tasks](recurrence.md).
 
 [Objectives](objectives.md), when on, sit in a strip above the columns.
 
 - Drag a task onto another day, or select it and press the arrows: a day (<kbd>←</kbd> <kbd>→</kbd>) or a week (<kbd>↑</kbd> <kbd>↓</kbd>). <kbd>q</kbd> adds a task on the focused day, <kbd>c</kbd> completes the selected one.
-- Choose 7, 14 or 21 days in the page's menu; this device remembers it.
+- Choose 3, 7, 14 or 21 days, or **Custom…** (1–90), in the page's menu; this device remembers it.
 
 On a phone the days are listed vertically.

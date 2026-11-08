@@ -390,14 +390,23 @@ export interface GridPrefs {
   endHour: number
   /** Capacity of a day in minutes. */
   dayLength: number
-  /** Days the Plan shows (planner-view D7): 7, 14 or 21. */
-  planDays: 7 | 14 | 21
+  /** Days the Plan shows (planner-view D7, quarter-view-and-plan-spans): a whole number from 1 to 90. */
+  planDays: number
   /** "Count meetings in capacity" (meeting-aware-capacity D2): busy event minutes join Day, Week and Month capacity. */
   countEvents: boolean
 }
 
 export const DEFAULT_GRID_PREFS: GridPrefs = { startHour: 6, endHour: 22, dayLength: 480, planDays: 14, countEvents: false }
 export const GRID_PREFS_META_KEY = 'calendar.grid'
+
+/** The shortest and longest Plan span a device may store (quarter-view-and-plan-spans D4): a day to a quarter. */
+export const MIN_PLAN_DAYS = 1
+export const MAX_PLAN_DAYS = 90
+
+/** Whether a stored or typed value is a Plan span we can draw. */
+export function validPlanDays(n: unknown): n is number {
+  return typeof n === 'number' && Number.isInteger(n) && n >= MIN_PLAN_DAYS && n <= MAX_PLAN_DAYS
+}
 
 /** Coerce a stored value into valid preferences; anything missing or invalid takes its default. */
 export function normalizeGridPrefs(raw: unknown): GridPrefs {
@@ -412,6 +421,6 @@ export function normalizeGridPrefs(raw: unknown): GridPrefs {
     else ({ startHour, endHour } = DEFAULT_GRID_PREFS)
   }
   const dayLength = int(r.dayLength, SLOT_MINUTES, DAY_MINUTES) ?? DEFAULT_GRID_PREFS.dayLength
-  const planDays = r.planDays === 7 || r.planDays === 21 ? r.planDays : DEFAULT_GRID_PREFS.planDays
+  const planDays = validPlanDays(r.planDays) ? r.planDays : DEFAULT_GRID_PREFS.planDays
   return { startHour, endHour, dayLength, planDays, countEvents: r.countEvents === true }
 }

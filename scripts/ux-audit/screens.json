@@ -318,6 +318,16 @@
   "story": "Screens/Year"
  },
  {
+  "id": "quarter",
+  "route": "quarter",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": "quarter",
+  "story": "Screens/Year"
+ },
+ {
   "id": "plan",
   "route": "plan",
   "kind": "screen",

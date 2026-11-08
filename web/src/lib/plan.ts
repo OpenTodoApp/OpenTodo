@@ -4,7 +4,7 @@
 // estimates, busy calendar events, projections). Nothing here is ever written:
 // every device with the same rows draws the same plan.
 import { addDaysISO, daysBetweenISO, localDueOf } from './dates'
-import { eventMinutes } from './calendar'
+import { eventMinutes, MIN_PLAN_DAYS, MAX_PLAN_DAYS, validPlanDays } from './calendar'
 import { formatMinutes } from './duration'
 import { t } from './i18n'
 import { seriesRule } from './recurring'
@@ -18,9 +18,12 @@ export { MAX_PROJECTIONS, projectedOccurrences, type Projection } from './occurr
 // The one definition of event minutes lives in calendar.ts (meeting-aware-capacity D1).
 export { eventMinutes }
 
-export type PlanSpan = 7 | 14 | 21
-export const PLAN_SPANS: readonly PlanSpan[] = [7, 14, 21]
+/** A Plan span is any whole number of days within the custom bounds (quarter-view-and-plan-spans D4). */
+export type PlanSpan = number
+/** The presets in the Plan's overflow menu, in ascending order. */
+export const PLAN_SPANS: readonly PlanSpan[] = [3, 7, 14, 21]
 export const DEFAULT_PLAN_DAYS: PlanSpan = 14
+export { MIN_PLAN_DAYS, MAX_PLAN_DAYS, validPlanDays }
 
 /** `days` consecutive ISO dates starting on `anchor`. */
 export function spanDates(anchor: string, days: number): string[] {
