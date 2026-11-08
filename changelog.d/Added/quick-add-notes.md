@@ -1,2 +1,0 @@
-- **Write a task's notes while you add it.** Press Shift+Enter in quick add, or tap the new notes button in the phone's add sheet, and a Notes field opens under the title; what you write there is saved as the task's notes, links included, and never read as dates or projects (#1035).
-- **Long titles wrap in quick add.** The box grows onto more lines as you type instead of scrolling sideways, up to five lines, so a long title is easy to read back and edit, on a phone too (#1034).
