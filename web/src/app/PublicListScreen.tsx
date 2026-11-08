@@ -114,7 +114,7 @@ export function PublicListScreen({ token }: { token: string }) {
 
   return (
     <main className="min-h-full bg-canvas" data-screen="public/list">
-      <div className="mx-auto w-full max-w-2xl px-4 py-6 md:px-8">
+      <div className="mx-auto w-full max-w-2xl px-4 pb-6 pt-[max(1.5rem,var(--safe-top))] md:px-8">
         {state.kind === 'loading' && <p className="text-meta text-muted">{t('Loading the list…')}</p>}
         {state.kind === 'invalid' && (
           <div className="space-y-2 rounded-card border border-default bg-surface p-6" data-public-invalid>

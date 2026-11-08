@@ -1,8 +1,11 @@
 // node --test scripts/i18n/obsidian.test.mjs (run by `make i18n-check`)
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { loadFormat } from '../i18n-check.mjs'
-import { checkObsidianCatalogs, OBSIDIAN_LANGS, trMessagesIn } from './obsidian.mjs'
+import { checkObsidianCatalogs, checkObsidianSource, OBSIDIAN_LANGS, trMessagesIn } from './obsidian.mjs'
 
 const fmt = await loadFormat()
 const all = (entries) => Object.fromEntries(OBSIDIAN_LANGS.map((l) => [l, { ...entries }]))
@@ -28,4 +31,22 @@ test('a missing German entry, a stale one and a dropped placeholder are named', 
     'obsidian fr: unused "Old"',
     'obsidian it: placeholders of "{n} waiting" are {}, the source has {n}',
   ])
+})
+
+test('a catalogue on disk that the plugin never imports is named', () => {
+  const root = mkdtempSync(join(tmpdir(), 'opentodo-obsidian-'))
+  try {
+    const locales = join(root, 'obsidian', 'locales')
+    const src = join(root, 'obsidian', 'src')
+    mkdirSync(locales, { recursive: true })
+    mkdirSync(src, { recursive: true })
+    writeFileSync(join(locales, 'en.json'), '{}\n')
+    writeFileSync(join(locales, 'de.json'), '{}\n')
+    writeFileSync(join(src, 'strings.ts'), "import en from '../locales/en.json'\n")
+    assert.deepEqual(checkObsidianSource(root), [
+      'obsidian de: obsidian/locales/de.json is not imported by src/strings.ts',
+    ])
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
 })

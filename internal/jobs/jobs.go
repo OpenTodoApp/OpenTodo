@@ -29,6 +29,7 @@ const (
 	Demo         = "demo"         // sandbox cleanup and the nightly reset (demo instances only)
 	Writes       = "writes"       // writes by another process (self-hosted only)
 	Checkpoint   = "checkpoint"   // the write-ahead log copied back into the database
+	Limits       = "limits"       // rate limit and agent limit windows written to the database (persistent-limits)
 )
 
 // Timing defaults (design D2).

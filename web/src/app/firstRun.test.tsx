@@ -77,7 +77,7 @@ describe('three-step first run', () => {
     expect(r.container.querySelector('[data-list-page] [data-first-run]')).toBeNull()
     expect(r.container.querySelector('[data-empty-state="inbox"]')).not.toBeNull()
     // Step one: its own quick add, focused.
-    const field = q<HTMLInputElement>('[data-overlay="dialog"] input')!
+    const field = q<HTMLTextAreaElement>('[data-overlay="dialog"] textarea')!
     expect(document.activeElement).toBe(field)
     await type(field, 'Call the dentist')
     await act(async () => { field.form!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
@@ -292,7 +292,7 @@ describe('the Start guide row in Settings (settings-refresh D3)', () => {
     expect(stepOf()).toBe('task')
     expect(await db.outbox.count()).toBe(0)
     // A task added from the guide goes to the Inbox behind it.
-    const field = q<HTMLInputElement>('[data-overlay="dialog"] input')!
+    const field = q<HTMLTextAreaElement>('[data-overlay="dialog"] textarea')!
     await type(field, 'Water the plants')
     await act(async () => { field.form!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
     await waitFor(() => r.container.querySelector('[data-list-page]')?.textContent?.includes('Water the plants') ?? false)

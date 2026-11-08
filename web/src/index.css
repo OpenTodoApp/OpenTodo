@@ -702,6 +702,20 @@ html:root[data-contrast="high"] :focus-visible {
 html, body, #root {
   height: 100%;
 }
+/* The status bar's backdrop (GitHub issue 999): on an iPhone the installed app runs
+   under the status bar, and Safari covers that strip with a soft blur, taller than the
+   strip and drawn over whatever is below it, unless an opaque fixed element spans the
+   top edge, whose colour it extends instead. This one (index.html, before the app) is
+   that element: the canvas, as tall as the top inset (nothing without one), under the
+   side panels, the drawer and every overlay, which pad their own tops by the inset.
+   The safe-area check (topEdge in scripts/ux-audit/measure.mjs) requires it. */
+[data-status-bar-backdrop] {
+  position: fixed;
+  inset: 0 0 auto;
+  height: var(--safe-top);
+  z-index: 20;
+  background-color: var(--color-canvas);
+}
 /* Follow the visible viewport on phones (iOS toolbars), where supported. */
 @supports (height: 100dvh) {
   #root { height: 100dvh; }
@@ -1271,6 +1285,19 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
   }
 }
 
+/* Full task titles (OpenSpec change full-task-titles, design D2): with the setting on,
+   <html> carries data-titles="full" and every row, card and Today title shows in full,
+   wrapped onto as many lines as it takes, instead of two lines (one on a phone) and an
+   ellipsis. Outside the layers and more specific than the phone row's one-line clamp, so
+   it wins at every width. On the phone row the cell at the end stays on the title's
+   first line rather than in the middle of a tall title. */
+:root[data-titles="full"] [data-row-title] { -webkit-line-clamp: none; line-clamp: none; }
+@media (width < 48rem) {
+  @container row (width < 40rem) {
+    :root[data-titles="full"] [data-row-props] { align-self: start; min-height: 1.25rem; }
+  }
+}
+
 /* Detailed rows (OpenSpec change row-layouts, design D2): the title, the parent and a
    details line, stacked at every width; the property column and the phone's one-line
    row are for one-line rows only. Outside the layers, after the column's rules, so
@@ -1490,6 +1517,16 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
    recognised span; under the high-contrast presentation a 1 px underline in its colour. */
 .quick-add-tint { background-color: var(--hue-soft); color: transparent; border-radius: 0.1875rem; }
 html:root[data-contrast="high"] .quick-add-tint { background-color: transparent; text-decoration: underline 1px var(--hue-solid); text-decoration-color: var(--hue-solid); text-underline-offset: 0.2em; }
+/* Quick add's fields wrap (quick-add-notes D1): the field and a copy of its text share one
+   grid cell, so the copy sets the height without measuring in script. The line grows to
+   five lines, the notes to six, then the field scrolls; the copy scrolls with it. */
+.quick-add-grid { display: grid; grid-template-columns: minmax(0, 1fr); }
+.quick-add-lead { display: flex; flex-shrink: 0; align-items: center; height: calc(1lh + 1rem + 2px); }
+.quick-add-grid > * { grid-area: 1 / 1; }
+.quick-add-field, .quick-add-notes { resize: none; overflow-y: auto; scrollbar-width: none; }
+.quick-add-field::-webkit-scrollbar, .quick-add-notes::-webkit-scrollbar { display: none; }
+[data-quick-add-tints] { max-height: calc(5lh + 1rem + 2px); }
+.quick-add-notes-sizer { max-height: calc(6lh + 0.25rem + 2px); overflow: hidden; white-space: pre-wrap; overflow-wrap: break-word; }
 /* The sequence spotlight (shortcut-spotlight D2) fades in; reduced motion makes it instant. */
 .spotlight-in { animation: dialog-sheet-fade 120ms var(--ease-calm, ease-out) both; }
 }

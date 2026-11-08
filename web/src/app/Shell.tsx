@@ -273,7 +273,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         {!sidebar.collapsed && <SidebarResizer width={sidebar.width} />}
       </aside>
       {/* From 768 px the page is one inset content surface on the canvas: 8 px from the window, the surface radius, one hairline (precision-shell D1). */}
-      <main ref={frame} className="flex min-w-0 flex-1 flex-col md:!pb-0 md:my-2 md:mr-2 md:overflow-hidden md:rounded-surface md:border md:border-default md:bg-surface" data-app-frame data-phone-chrome={phoneChrome || undefined} inert={drawer.open || undefined}
+      <main ref={frame} className="flex min-w-0 flex-1 flex-col md:!pb-0 md:mt-[max(0.5rem,var(--safe-top))] md:mb-2 md:mr-2 md:overflow-hidden md:rounded-surface md:border md:border-default md:bg-surface" data-app-frame data-phone-chrome={phoneChrome || undefined} inert={drawer.open || undefined}
         style={phoneChrome ? { paddingBottom: `calc(${TAB_BAR_HEIGHT_REM}rem + var(--safe-bottom))` } : undefined}>
         {/* Below 768 px: the bar with the menu button, the page's title and its actions (app-shell "No desktop top bar"). */}
         <PhoneBar onMenu={() => setSidebarOpen(true)} />

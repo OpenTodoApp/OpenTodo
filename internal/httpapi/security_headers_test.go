@@ -34,6 +34,18 @@ func TestSecurityHeaders(t *testing.T) {
 			t.Errorf("%s: Referrer-Policy = %q", path, got)
 		}
 	}
+	// The app's files reach the browser as built (signed-web-app D7): proxies
+	// that honour no-transform leave them alone. Only when the web app is built.
+	for _, path := range []string{"/", "/index.html", "/sw.js", "/app-manifest.json"} {
+		resp, err := http.Get(e.srv.URL + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		if resp.StatusCode == http.StatusOK && !strings.Contains(resp.Header.Get("Cache-Control"), "no-transform") {
+			t.Errorf("%s: Cache-Control %q lacks no-transform", path, resp.Header.Get("Cache-Control"))
+		}
+	}
 	for _, path := range []string{"/", "/healthz"} {
 		csp := map[string]string{}
 		for _, d := range strings.Split(get(path).Get("Content-Security-Policy"), ";") {

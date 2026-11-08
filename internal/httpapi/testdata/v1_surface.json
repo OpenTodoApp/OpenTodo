@@ -2361,6 +2361,7 @@
         "focus_style": "string",
         "focus_work_minutes": "number",
         "formatting_toggle": "string",
+        "full_titles": "string",
         "haptics": "string",
         "id": "string",
         "language": "string",
@@ -2774,9 +2775,12 @@
         "tasks[].fields": "object",
         "tasks[].id": "string",
         "tasks[].label_ids": "array",
+        "tasks[].next_occurrences": "array",
         "tasks[].priority": "number",
         "tasks[].project_id": "string",
+        "tasks[].recurrence": "string",
         "tasks[].tracked_minutes": "number",
+        "tasks[].tracked_minutes_occurrence": "number",
         "tasks[].untrusted_text": "object",
         "timezone": "string",
         "today": "string"
@@ -2948,9 +2952,12 @@
         "due_today[].fields": "object",
         "due_today[].id": "string",
         "due_today[].label_ids": "array",
+        "due_today[].next_occurrences": "array",
         "due_today[].priority": "number",
         "due_today[].project_id": "string",
+        "due_today[].recurrence": "string",
         "due_today[].tracked_minutes": "number",
+        "due_today[].tracked_minutes_occurrence": "number",
         "due_today[].untrusted_text": "object",
         "due_today[].waiting_for_slot": "boolean",
         "overdue": "array",
@@ -3352,6 +3359,7 @@
       "focus_style": "string",
       "focus_work_minutes": "number",
       "formatting_toggle": "string",
+      "full_titles": "string",
       "haptics": "string",
       "language": "string",
       "maps": "string",
@@ -4376,6 +4384,16 @@
       "response": {
         "encrypted": "boolean",
         "id": "string"
+      },
+      "statuses": [
+        "200"
+      ]
+    },
+    "GET /api/v1/health": {
+      "policy": "public",
+      "response": {
+        "status": "string",
+        "version": "string"
       },
       "statuses": [
         "200"

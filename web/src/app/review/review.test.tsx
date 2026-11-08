@@ -69,8 +69,8 @@ describe('Weekly review', () => {
     expect(document.querySelector('[data-walk-card]')!.textContent).toContain('Garage')
     expect(document.querySelector('[data-walk-card]')!.textContent).toContain('No next action')
     await key(document.activeElement!, 'q')
-    await waitFor(() => !!document.querySelector('[role="dialog"] input'))
-    const input = document.querySelector<HTMLInputElement>('[role="dialog"] input')!
+    await waitFor(() => !!document.querySelector('[role="dialog"] textarea'))
+    const input = document.querySelector<HTMLTextAreaElement>('[role="dialog"] textarea')!
     await type(input, 'Buy shelf brackets')
     await act(async () => { input.form!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
     await waitFor(() => document.querySelector('[data-walk-next]')?.textContent === 'Buy shelf brackets')

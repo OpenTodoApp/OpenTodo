@@ -88,7 +88,7 @@ If you'd rather the app not meet the wall at all, let it bypass these paths for 
 
 | Path | Used by |
 | --- | --- |
-| `/healthz` | the app's first-run check |
+| `/api/v1/health`, `/healthz` | the app's first-run check (`/api/v1/health` first; `/healthz` for servers before 1.0.1) |
 | `/api/*` | everything the web app loads or saves, including sync and sign-in |
 | `/sw.js`, `/registerSW.js`, `/push-sw.js` | service worker updates (offline use, push) |
 | `/manifest.webmanifest`, `/branding/*` | the app's name and icons |
@@ -99,6 +99,8 @@ The page itself (`/` and the app's files under `/assets/`) still goes through th
 ## Reminders
 
 In **Settings → Notifications**, turn on **Notifications through the app**. The app schedules the next seven days of reminders on the phone itself and refreshes them about once an hour, so a reminder you add on your computer reaches the phone too. Details in [Notifications](push-notifications.md#in-the-android-app).
+
+A reminder's notification offers **Done**, **Snooze 10 min** and **Dismiss**. **Done** completes the task without opening the app, the same as ticking it off (a repeating task moves to its next date), and works offline: the change goes out with the next sync.
 
 ## Location reminders
 

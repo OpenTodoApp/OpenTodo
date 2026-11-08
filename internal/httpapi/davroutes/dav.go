@@ -219,8 +219,10 @@ type davView struct {
 	// once per request (caldav-interop D5): they are served as VALARMs.
 	reminders map[string][]opsync.Entity
 	remTask   map[string]string
-	// ws places calendars in workspaces (caldav_workspaces.go).
-	ws *davWorkspaces
+	// ws places calendars in workspaces (caldav_workspaces.go); inboxName is
+	// the Inbox's name in the user's language, read on first use.
+	ws        *davWorkspaces
+	inboxName string
 	// today is the server's calendar date; bySeries groups the tasks pointing
 	// at each series (occurrences.go, series-exceptions).
 	today    string
@@ -597,7 +599,7 @@ func (d *davRequest) calendarProps(v *davView, cal string) map[caldav.PropName]p
 		pResourceType: func() string { return "<d:collection/><c:calendar/>" },
 		pDisplayName: func() string {
 			if ws, ok := v.ws.inboxWorkspace(cal); ok {
-				return caldav.Esc(v.ws.displayName(ws, "Inbox"))
+				return caldav.Esc(v.ws.displayName(ws, d.inboxName(v)))
 			}
 			return caldav.Esc(v.ws.displayName(v.ws.part.Project(cal), idOf(v.projects[cal]["name"])))
 		},

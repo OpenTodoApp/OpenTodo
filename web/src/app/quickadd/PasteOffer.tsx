@@ -24,7 +24,7 @@ interface Pending {
  * any other paste goes in as the browser does.
  */
 export function usePasteOffer({ field, kind, onConfirm, onPasteAsLine }: {
-  field: RefObject<HTMLInputElement | null>
+  field: RefObject<HTMLInputElement | HTMLTextAreaElement | null>
   kind: 'tasks' | 'subtasks'
   /** Adds the cleaned lines; a rejection is shown in the offer and nothing is closed. */
   onConfirm: (lines: string[]) => Promise<void>
@@ -33,7 +33,7 @@ export function usePasteOffer({ field, kind, onConfirm, onPasteAsLine }: {
 }) {
   const [pending, setPending] = useState<Pending | null>(null)
 
-  function onPaste(e: ClipboardEvent<HTMLInputElement>) {
+  function onPaste(e: ClipboardEvent<HTMLInputElement | HTMLTextAreaElement>) {
     const text = e.clipboardData?.getData('text/plain') ?? ''
     const el = e.currentTarget
     const whole = el.value === '' || (el.selectionStart === 0 && el.selectionEnd === el.value.length)

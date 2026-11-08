@@ -71,7 +71,7 @@ const settle = (p, ms = 600) => p.waitForTimeout(ms)
 const esc = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const row = (p, title) => p.getByRole('button', { name: new RegExp('^' + esc(title)) }).first()
 const detail = (p) => p.locator('[data-detail-for]')
-const quickAddInput = (p) => p.locator('input[aria-label="Add a task"]').first()
+const quickAddInput = (p) => p.locator('textarea[aria-label="Add a task"]').first()
 async function go(p, path, ready) { await p.goto(base + path); if (ready) await ready(); await settle(p, 800) }
 async function openTask(p, title) { await row(p, title).click(); await detail(p).waitFor(); await settle(p, 500) }
 /** Focus the quick add field: the inline field where there is one, else the sheet opened with `q`. */
@@ -79,7 +79,7 @@ async function focusQuickAdd(p) {
   const inline = quickAddInput(p)
   if (await inline.count()) { await inline.click(); return inline }
   await p.keyboard.press('q')
-  const field = p.locator('[data-quick-add-sheet] input[aria-label="Add a task"], input[aria-label="Add a task"]').first()
+  const field = p.locator('[data-quick-add-sheet] textarea[aria-label="Add a task"], textarea[aria-label="Add a task"]').first()
   await field.waitFor({ timeout: 5000 })
   return field
 }

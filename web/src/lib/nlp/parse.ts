@@ -3,7 +3,7 @@
 // the dismissed spans. No network, no clock reads, no randomness.
 import type { Due, Priority } from '../types'
 import { matchDuration, matchEnergy, matchLabel, matchPriority, matchProject, matchSpent, projectMiss, type ProjectRef } from './attributes'
-import { firstOccurrence } from '../recurrence'
+import { compatibleRule, firstOccurrence } from '../recurrence'
 import { matchByTimeAt, matchDateAt, matchDeadlineAt, matchTimeAt, ordinalOutOfRangeAt, partWordAt, sectorPhraseAt, wordsAt, type DateContext, type DateMatch, type TimeMatch } from './dates'
 import { resolvePhrase, type SectorWord } from '../sectors'
 import { matchRecurrenceAt, type RecurrenceMatch } from './recurrence'
@@ -103,6 +103,22 @@ function sectorAt(line: string, tokens: readonly Token[], i: number, ctx: ParseC
   const span = sp ? spanOf(line, tokens, i, i + sp.n) : null
   if (!sp || !span || overlaps(span, dismissed)) return null
   return { value: resolvePhrase(sp.word, ctx.today, ctx.weekStart ?? 1)!, span, n: sp.n }
+}
+
+/**
+ * The due date a line sets. A rule without a date phrase starts on its first date on or
+ * after today or its start phrase; a date phrase is the first occurrence even off the
+ * rule's weekday (quick-add-weekday-recurrence D2, D3). The rule is then stored in the
+ * form a 1.0 client reads when one means the same thing (recurrence-1-0-compatible).
+ */
+function lineDue(
+  date: { value: string } | null, time: { value: string; date?: string } | null, recurrence: { value: string; start?: string } | null, today: string,
+): Due | null {
+  if (!date && !time && !recurrence) return null
+  const due: Due = { date: date?.value ?? (recurrence ? firstOccurrence(recurrence.value, recurrence.start ?? today) : time?.date ?? today) }
+  if (time) due.time = time.value
+  if (recurrence) recurrence.value = compatibleRule(recurrence.value, due.date)
+  return due
 }
 
 export function parse(line: string, ctx: ParseContext): ParseResult {
@@ -306,13 +322,7 @@ export function parse(line: string, ctx: ParseContext): ParseResult {
   // A sector phrase, like a someday phrase, counts only if the line ends up without a date (time-sectors D8).
   const sectored = !!sector && !date && !time && !recurrence, parked = !!someday && !sectored && !date && !time && !deadline && !recurrence
 
-  // A rule without a date phrase starts on its first occurrence on or after today,
-  // or on the weekday it was typed with ("every other friday", D3).
-  let due: Due | null = null
-  if (date || time || recurrence) {
-    due = { date: date?.value ?? (recurrence ? recurrence.start ?? firstOccurrence(recurrence.value, ctx.today) : time?.date ?? ctx.today) }
-    if (time) due.time = time.value
-  }
+  const due = lineDue(date, time, recurrence, ctx.today)
 
   const chips: Chip[] = []
   const chip = (kind: AttributeKind, spans: Span[], value: Chip['value']) =>

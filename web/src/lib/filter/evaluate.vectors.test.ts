@@ -30,6 +30,7 @@ describe('filter evaluation (shared vectors with internal/filter)', () => {
     fields: vectors.fields as unknown as FieldDef[],
     tasks,
     tracked: new Map(Object.entries(vectors.tracked)),
+    trackedOccurrence: new Map(Object.entries(vectors.tracked_occurrence)),
     me: vectors.me,
     members: vectors.members,
   }

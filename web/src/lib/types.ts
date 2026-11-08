@@ -2,6 +2,7 @@
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
 import type { AttachmentFields, CommentFields, FieldDefFields, FrameFields, CustomThemeFields, ObjectiveFields, LabelFields, NoteFields, PlaceFields, ProjectFields, ProjectPrefsFields, ReminderFields, ReviewFields, RuleFields, SectionFields, SlotFields, TaskFields, TimeEntryFields, UserPrefsFields, ViewFields } from '../generated/opSchema'
+import type { LanguageCode } from '../locales'
 import type { ThemeDocument } from './theme/format'
 
 export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place' | 'rule' | 'frame' | 'slot' | 'note' | 'theme' | 'objective'
@@ -923,7 +924,7 @@ export interface ProjectPrefs extends ProjectPrefsFields {
 /** Date and time preference values (OpenSpec `date-time-preferences`); unknown values read as 'system'. */
 export type DateFormatPref = 'system' | 'day-month' | 'month-day' | 'iso'
 /** Interface language preference (app-localization D1): 'system' or a shipped language code. */
-export type LanguagePref = 'system' | 'en' | 'de' | 'fr' | 'es' | 'it' | 'pt' | 'zh'
+export type LanguagePref = 'system' | LanguageCode
 export type TimeFormatPref = 'system' | '12h' | '24h'
 export type WeekStartPref = 'system' | 'mon' | 'sun' | 'sat'
 
@@ -1206,6 +1207,10 @@ export interface AuthStatus {
   branding?: { name: string; logoVersion: number }
   /** The version of the instance's themes (theme-instance-default D3), signed in only; absent on older servers. */
   themes?: { version: number }
+  /** This session's wipe key (revoked-device-wipe D3), signed-in browser sessions only. */
+  wipeKey?: string
+  /** This cookie's session was revoked: the proof made with its wipe key (revoked-device-wipe D3). */
+  revoked?: { proof: string }
   /** Outgoing email (OpenSpec `outgoing-email`): email actions are shown only when enabled; absent on older servers. */
   outgoingEmail?: { enabled: boolean }
   /** A tenant of a hosted service (OpenSpec `multi-tenant-host`): the operator owns server settings; absent when self-hosted. */

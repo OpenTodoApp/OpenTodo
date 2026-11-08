@@ -36,7 +36,7 @@ term     := "@" name                       label
           | "assigned:" name                               the assignee is you (`me`) or that member
           | "sector:" (sectorword | period)              the task's time sector
           | "workspace:" name                           the task's workspace
-          | "tracked" ("<" | "<=" | "=" | ">=" | ">") duration   tracked time
+          | "tracked" ["occurrence"] ("<" | "<=" | "=" | ">=" | ">") duration   tracked time
           | field ("<" | "<=" | "=" | ">=" | ">") value   custom field
           | "no" field                                  custom field without a value
 field    := a word that is not a reserved word | '"' chars '"'
@@ -50,7 +50,7 @@ weekday  := "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturd
 keyword  := "overdue" | "today" | "tomorrow" | "no date" | "no project"
           | "no labels" | "no time" | "no deadline" | "no start" | "completed" | "open" | "subtask"
           | "someday" | "deferred" | "evening" | "morning" | "afternoon" | "blocked" | "unblocked" | "available" | "habit"
-          | "origin" | "no origin" | "tracked" | "energy" | "no energy" | "notes" | "no notes"
+          | "origin" | "no origin" | "tracked" | "tracked occurrence" | "energy" | "no energy" | "notes" | "no notes"
           | "sector" | "no sector" | "carried" | "assigned" | "unassigned"
 sectorword := ("this" | "next") ("week" | "month" | "quarter"), with a space or a hyphen
 period   := YYYY "-W" WW | YYYY "-" MM | YYYY "-Q" N              a week, a month or a quarter
@@ -124,8 +124,9 @@ text     := word | '"' chars '"'
 | `carried` | tasks whose sector's period has ended before your current week, month or quarter (carried over) |
 | `sector: value` | tasks whose sector is `this week`, `next week`, `this month`, `next month`, `this quarter` or `next quarter` (named on your date and first day of the week, so `sector: this week` follows you into the next week without editing the view), or exactly a period: `sector: 2026-W44`, `sector: 2026-11`, `sector: 2026-Q4`. Any other value is an error that names it. The terms work whether or not **Time sectors** is on |
 | `workspace: name` | tasks of the [workspace](workspaces.md) of that name, ignoring case (`workspace: Home`, `workspace: "Side projects"`); see [Workspaces](#workspaces) |
-| `tracked` | tasks with at least one minute of [tracked time](time-tracking.md), every member's entries counted and a running entry up to now; a repeating task counts its [current occurrence](time-tracking.md#tracked-against-estimated) only |
+| `tracked` | tasks with at least one minute of [tracked time](time-tracking.md), every member's entries counted and a running entry up to now; a repeating task counts every occurrence's entries |
 | `tracked <cmp> duration` | tasks whose tracked time compares as asked: `tracked > 1h`, `tracked <= 30m`, `tracked >= 1h30`, `tracked < 1.5h`, `tracked = 0`; a bare number is minutes |
+| `tracked occurrence`, `tracked occurrence <cmp> duration` | the same, with a repeating task's [current occurrence](time-tracking.md#tracked-against-estimated) only: the entries since it was last completed or skipped, the time its row shows against the estimate. `tracked occurrence > 1h` on a task that does not repeat is `tracked > 1h` |
 | `name <cmp> value` | tasks whose [custom field](custom-fields.md) of that name compares as asked (see [Custom fields](#custom-fields)) |
 | `no name` | tasks of a project that defines the field, with no value for it |
 
@@ -222,7 +223,7 @@ You can also type a query straight into the [search box](search.md) (<kbd>Ctrl</
 
 In the filter panel, above the query input, the **builder** shows the same query as conditions you can read: *Label is errand*, *Due on or before tomorrow*, *Priority is P1*, *No project*.
 
-- **Conditions.** **+ Condition** opens a small dialog: choose what to filter on (label, project, priority, one of the five dates, a state such as *Due earlier* or *Waiting on another task*, text in the title or notes, origin, workspace (with more than one), tracked time, energy, time sector or a custom field), then its value. Labels and projects are picked from a searchable list. Click a condition to change it.
+- **Conditions.** **+ Condition** opens a small dialog: choose what to filter on (label, project, priority, one of the five dates, a state such as *Due earlier* or *Waiting on another task*, text in the title or notes, origin, workspace (with more than one), tracked time (turn off **All occurrences** for a repeating task's current occurrence), energy, time sector or a custom field), then its value. Labels and projects are picked from a searchable list. Click a condition to change it.
 - **Groups.** A group is a block headed **All of these** (every condition must match, `&`) or **Any of these** (one is enough, `|`). **+ Group** adds one inside, up to three levels deep. Change the heading to switch between the two.
 - **Not.** The **Not** switch in a condition's dialog, or the **Not** button on a group, matches the tasks it would otherwise leave out (`!`).
 - **Keyboard.** Tab reaches every control. Inside a group, the arrow keys move between conditions, and Delete or Backspace removes the focused one.
@@ -431,4 +432,10 @@ no notes & p1
 
 ```filter
 assigned: me | unassigned
+```
+
+### 32. Repeating chores that ran over this time
+
+```filter
+tracked occurrence > 30m & no date
 ```

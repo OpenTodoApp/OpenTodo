@@ -292,7 +292,7 @@ The parser SHALL recognise a recurrence phrase in the quick-add line and SHALL s
 - **THEN** the rule is `every 1st weekday`, nothing of the phrase remains in the title and the task is due `2026-11-02`
 
 ### Requirement: Recurrence sets the first occurrence
-When the line carries a rule and no date phrase, the task's due date SHALL be the rule's first occurrence on or after today, computed locally, and the recurrence chip SHALL show that date. When the line carries a date, that date SHALL be the due date and the rule applies from it; a time in the line SHALL be the series' due time. The rule and the due date SHALL be written in the same operation set as the task.
+When the line carries a rule and no date phrase, the task's due date SHALL be the rule's first occurrence on or after today, computed locally, and the recurrence chip SHALL show that date. A start phrase directly before or after the recurrence phrase (`starting`, `starting on`, `starting from`, `beginning`, `from`, `as of` followed by a date phrase, and the bundled equivalents such as `ab`, `beginnend am`, `à partir de`, `dès`, `a partir de`, `desde`, `a partire da`, `da`, `começando em`) SHALL be part of the recurrence phrase and SHALL make the due date the rule's first occurrence on or after that date. When the line carries a date phrase of its own, that date SHALL be the due date and the rule applies from it, even when it is not one of the rule's weekdays; a time in the line SHALL be the series' due time. A start word without a recurrence phrase next to it SHALL stay in the title. The rule SHALL be stored in the form a 1.0 client reads when one gives the same dates for that due date (recurring-tasks, Rules a 1.0 client reads). The rule and the due date SHALL be written in the same operation set as the task, so the task works offline and converges like any created task.
 
 #### Scenario: First occurrence from today
 - **WHEN** today is Friday 2026-10-09 and the user enters `Water plants every Monday`
@@ -305,6 +305,22 @@ When the line carries a rule and no date phrase, the task's due date SHALL be th
 #### Scenario: View default does not override the rule's date
 - **WHEN** the user enters `Review every Friday` in the Today view on a Wednesday
 - **THEN** the task is due on Friday, not today
+
+#### Scenario: Start phrase after the rule
+- **WHEN** today is Wednesday 2026-11-04 and the user enters `take the bins out every other saturday starting today` or `take the bins out every other saturday starting next week`
+- **THEN** the title is `take the bins out`, the task is due Saturday 2026-11-07, or 2026-11-14 for the second line, and the rule is `every 2 weeks`, which a 1.0 client reads
+
+#### Scenario: Start phrase before the rule
+- **WHEN** today is 2026-11-04 and the user enters `Stretch starting tomorrow every day` or `Gym every monday from November 16`
+- **THEN** the titles are `Stretch` and `Gym`, the rules `every day` and `every monday`, and the tasks are due 2026-11-05 and 2026-11-16
+
+#### Scenario: Start phrase in each language
+- **WHEN** today is 2026-11-04 and the user enters, with that language active, `Müll rausbringen jeden zweiten Samstag ab heute`, `Sortir les poubelles un samedi sur deux à partir de demain`, `Sacar la basura cada dos sábados a partir de mañana`, `Spazzatura ogni due venerdì a partire da domani` or `Levar o lixo a cada duas sextas a partir de amanhã`
+- **THEN** nothing of the start phrase remains in the title, and the task is due on the rule's first weekday on or after that date
+
+#### Scenario: Start word without a rule
+- **WHEN** the user enters `Call mom starting tomorrow`, `Leave from Monday` or `Work from home every friday`
+- **THEN** the titles are `Call mom starting`, `Leave from` and `Work from home`
 
 ### Requirement: Reminder phrases
 The parser SHALL recognise reminder phrases introduced by a reminder word (`remind me`, `erinnere mich`, `rappelle-moi`, `ricordamelo`, `recuérdame`, `lembre-me` and documented variants) followed by either an offset (`30 min before`, `1 hour after`, `2 days before`) or a moment (a time phrase, optionally with a date phrase). A line MAY carry several reminder phrases; each SHALL become one reminder and one chip. A reminder word with neither an offset nor a moment SHALL stay in the title.
@@ -498,7 +514,7 @@ Numeric dates SHALL be read in the order of the user's date format (OpenSpec `da
 - **THEN** the task is due Sunday `2026-10-18`
 
 ### Requirement: Quick add tools on a phone
-The phone's quick-add sheet SHALL show, under the line, a row of neutral chips for the attributes the line sets, each with a control that keeps its words as text, followed by a dashed placeholder chip for the project and for the label when the line sets none; and a tool row with buttons for a date, a priority, a label, an estimate and a project, and a send button. A tool button or a placeholder chip SHALL start that attribute's token at the end of the line (`#` for a project, `@` for a label, `p` for a priority, `+` for an estimate; for a date, the caret moves to the end of the line), keeping the keyboard up and the field focused, and opening the suggestions for `#` and `@`. The send button SHALL add the task exactly as Enter does. The sheet SHALL add tasks offline through the same local operation as every quick add.
+The phone's quick-add sheet SHALL show, under the line, a row of neutral chips for the attributes the line sets, each with a control that keeps its words as text, followed by a dashed placeholder chip for the project and for the label when the line sets none; and a tool row with buttons for a date, a priority, a label, an estimate and a project, then a Notes tool, and a send button. A tool button or a placeholder chip SHALL start that attribute's token at the end of the line (`#` for a project, `@` for a label, `p` for a priority, `+` for an estimate; for a date, the caret moves to the end of the line), keeping the keyboard up and the field focused, and opening the suggestions for `#` and `@`. The Notes tool SHALL open the notes field of "A wrapping line and notes in quick add" and move the caret into it with the keyboard up, and SHALL show as pressed while that field is open. The send button SHALL add the task exactly as Enter does. After a task, or a confirmed pasted list, is added from the sheet, the sheet SHALL stay open with its field empty and focused, so the next task can be typed at once, and a polite status SHALL announce that the task was added; the sheet SHALL close only when the user closes it (a tap outside, a drag down, Escape or the system Back). The sheet SHALL add tasks offline through the same local operation as every quick add.
 
 #### Scenario: Start a project from the tool row
 - **WHEN** the user has typed `Buy primer` in the phone's sheet and taps the project tool
@@ -511,6 +527,14 @@ The phone's quick-add sheet SHALL show, under the line, a row of neutral chips f
 #### Scenario: Send offline
 - **WHEN** the device is offline and the user taps send with `Water the plants`
 - **THEN** the task appears at once in the current view with its defaults and syncs when the connection returns
+
+#### Scenario: Keep adding
+- **WHEN** the user opens the sheet in the Inbox, sends `Buy milk`, then types `Buy bread` and presses Enter
+- **THEN** both tasks are in the Inbox in that order, the sheet is still open with an empty, focused field, and it closes only on Escape or a tap outside
+
+#### Scenario: Notes from the tool row
+- **WHEN** the user types `Read the article` in the sheet, taps the Notes tool, types `https://example.com/article` and taps send
+- **THEN** the task "Read the article" is added with those notes, and the keyboard stayed up throughout
 
 ### Requirement: Pasting several lines into quick add
 When text with at least two non-empty lines is pasted into an empty quick add (or one whose whole text is selected), in any of its presentations (a list's or a section's quick add, the command bar, the phone's add sheet, the share capture screen, a calendar day's add dialog), the paste SHALL NOT be inserted; instead an offer anchored to the field SHALL show the number of tasks, the first five lines as they will be titled and how many more follow, with "Add N tasks" (the default, Enter) and "Paste as one line" (inserts the lines joined by spaces); Escape SHALL close the offer and paste nothing. A paste into a field that already holds unselected text, or of a single line, SHALL behave as before.
@@ -629,11 +653,19 @@ A month name alone (without a day) SHALL be a date only while the line has no co
 - **THEN** no due date is set and the title is the line as typed
 
 ### Requirement: Every other phrases
-The parser SHALL read "every other" before a unit or a weekday as a repeat every 2 of that unit: `every other day`, `week`, `month` and `year` SHALL set `every 2 days`, `every 2 weeks`, `every 2 months` and `every 2 years`, and `every other <weekday>` SHALL set `every 2 weeks` with the task due on the first such weekday on or after today unless the line has its own date phrase. The bundled equivalents SHALL be `jeden zweiten`, `jede zweite`, `jedes zweite`, `alle zwei`; `un … sur deux`, `une … sur deux`, `tous les deux`, `toutes les deux`; `ogni due`, `a giorni alterni`, `a settimane alterne`, `a mesi alterni`, `ad anni alterni`; `cada dos`; `a cada dois`, `a cada duas`, `cada dois`, `cada duas`. The phrase SHALL be removed from the title. A German ordinal weekday followed by "of the month" (`jeden zweiten Montag im Monat`) SHALL keep its monthly reading. The TypeScript parser and the Go port SHALL agree on shared vectors.
+The parser SHALL read "every other" before a unit or a weekday as a repeat every 2 of that unit: `every other day`, `week`, `month` and `year` SHALL set `every 2 days`, `every 2 weeks`, `every 2 months` and `every 2 years`, and `every other <weekday>` SHALL set `every 2 weeks on <weekday>`, with the task due on the first such weekday on or after today unless the line has its own date phrase; when the due date falls on that weekday the rule SHALL be stored as `every 2 weeks`, the form a 1.0 client reads (recurring-tasks, Rules a 1.0 client reads). `every N weeks on <weekday>` and its bundled equivalents (`alle 2 Wochen am Samstag`, `toutes les 2 semaines le samedi`, `ogni 2 settimane il sabato`, `cada 2 semanas los sábados`, `cada 2 semanas aos sábados`) SHALL set the same rule, stored the same way. The bundled equivalents SHALL be `jeden zweiten`, `jede zweite`, `jedes zweite`, `alle zwei`; `un … sur deux`, `une … sur deux`, `tous les deux`, `toutes les deux`; `ogni due`, `a giorni alterni`, `a settimane alterne`, `a mesi alterni`, `ad anni alterni`; `cada dos`; `a cada dois`, `a cada duas`, `cada dois`, `cada duas`. The phrase SHALL be removed from the title. A German ordinal weekday followed by "of the month" (`jeden zweiten Montag im Monat`) SHALL keep its monthly reading. The TypeScript parser and the Go port SHALL agree on shared vectors.
 
 #### Scenario: Every other weekday
 - **WHEN** today is Wednesday 2026-10-28 and the user enters `Send timesheet every other friday`
-- **THEN** the title is `Send timesheet`, the rule is `every 2 weeks` and the task is due 2026-10-30
+- **THEN** the title is `Send timesheet`, the task is due Friday 2026-10-30 and the rule is `every 2 weeks`
+
+#### Scenario: Every other weekday with a date of its own
+- **WHEN** today is Wednesday 2026-11-04 and the user enters `take the bins out today and repeat every other Saturday`
+- **THEN** the title is `take the bins out`, the rule is `every 2 weeks on saturday`, the task is due 2026-11-04, and completing it makes it due Saturday 2026-11-07
+
+#### Scenario: Every other weekday typed on that weekday
+- **WHEN** today is Saturday 2026-11-07 and the user enters `take the bins out today and repeat every other Saturday`, `take the bins out every other Saturday` or `take the bins out every other saturday starting today`
+- **THEN** the title is `take the bins out`, the task is due 2026-11-07 and the rule is `every 2 weeks`
 
 #### Scenario: Every other unit
 - **WHEN** today is 2026-10-28 and the user enters `Review budget every other week`, `Pay invoice every other month`, `Water ferns every other day` or `Renew passport every other year`
@@ -641,7 +673,11 @@ The parser SHALL read "every other" before a unit or a weekday as a repeat every
 
 #### Scenario: Every other weekday in each language
 - **WHEN** today is 2026-10-28 and the user enters, with that language active, `Stundenzettel senden jeden zweiten Freitag`, `Envoyer la feuille de temps un vendredi sur deux`, `Inviare il foglio ore ogni due venerdì`, `Enviar la hoja de horas cada dos viernes` or `Enviar a folha de horas a cada duas sextas`
-- **THEN** the rule is `every 2 weeks`, the task is due 2026-10-30 and only the words before the phrase remain in the title
+- **THEN** the rule is `every 2 weeks`, the task is due Friday 2026-10-30 and only the words before the phrase remain in the title
+
+#### Scenario: Week interval on a weekday in each language
+- **WHEN** today is 2026-11-04 and the user enters `Review every 2 weeks on friday`, or with that language active `Training alle 2 Wochen am Samstag`, `Sport toutes les 2 semaines le samedi` or `Correr cada 2 semanas los sábados`
+- **THEN** the task is due Friday 2026-11-06 or Saturday 2026-11-07, the rule is `every 2 weeks` and only the words before the phrase remain in the title
 
 #### Scenario: Every other unit in each language
 - **WHEN** the user enters, with that language active, `jede zweite Woche`, `une semaine sur deux`, `ogni due settimane`, `a settimane alterne`, `cada dos semanas` or `a cada duas semanas` after a title
@@ -688,3 +724,43 @@ The title field on the task page and in the docked panel SHALL grow with its tex
 #### Scenario: Leaving a long panel title
 - **WHEN** the user edits a panel title long enough to scroll the field and then leaves it by clicking elsewhere or pressing Enter
 - **THEN** the field shows the beginning of the title, not the line it was scrolled to
+
+### Requirement: Connectors before a recurrence phrase
+A connector directly before a recurrence phrase, or before the start phrase in front of it, SHALL be part of the recurrence phrase and SHALL leave the title with it: `and repeat`, `and repeating`, `repeat`, `repeating`, `repeats`, `recurring`, `and then`, `then` and `and`, and in the other bundled languages `und wiederholen`, `wiederholen`, `und dann`, `dann`, `und`; `et répéter`, `répéter`, `et ensuite`, `et puis`, `puis`, `et`; `y repetir`, `repetir`, `y luego`, `luego`, `y después`, `y`; `e ripeti`, `ripeti`, `ripetere`, `e poi`, `poi`, `e`; `e repetir`, `repetir`, `e depois`, `depois`, `e`. A connector without a recurrence phrase after it SHALL stay in the title. Dismissing the recurrence chip SHALL keep the connector in the title with the rest of the phrase. The TypeScript parser and the Go port SHALL agree on shared vectors.
+
+#### Scenario: And repeat
+- **WHEN** today is 2026-11-04 and the user enters `Water plants repeat every monday`, `Water plants repeating every monday` or `Call mom tomorrow and then every sunday`
+- **THEN** the titles are `Water plants` and `Call mom`, with the rules `every monday` and `every sunday`
+
+#### Scenario: Connectors in each language
+- **WHEN** today is 2026-11-04 and the user enters, with that language active, `Müll rausbringen heute und dann jeden zweiten Samstag`, `Sortir les poubelles aujourd'hui et répéter un samedi sur deux`, `Sacar la basura hoy y repetir cada dos sábados`, `Portare fuori la spazzatura oggi e poi ogni due venerdì` or `Levar o lixo hoje e repetir a cada duas sextas`
+- **THEN** only the words before the date remain in the title, the task is due 2026-11-04 and the rule is `every 2 weeks on saturday` or `every 2 weeks on friday`
+
+#### Scenario: Repeat in a title
+- **WHEN** the user enters `Repeat the test`, `Repeat the test tomorrow`, `Test wiederholen`, `Répéter la scène`, `Repetir el examen`, `Ripetere il test` or `Repetir o teste`
+- **THEN** no rule is set and the word stays in the title
+
+### Requirement: A wrapping line and notes in quick add
+Quick add's field SHALL wrap a long title onto further lines and grow with it up to five lines, then scroll vertically; it SHALL never scroll sideways. The title SHALL stay one line of text: Enter SHALL add the task, and a line break pasted into a field that holds text, or dictated, SHALL become a space (a multi-line paste into an empty field stays the paste offer). The controls beside the field SHALL stay beside its first line, and the inline tints SHALL wrap with the text.
+
+Shift+Enter in the field SHALL open a notes field under it and move the caret there, except in the command bar's Add mode, where Shift+Enter keeps adding and opening the task, and on a screen that has its own notes field for the new task (the share screen). The text of the notes field SHALL be saved as the new task's notes, trimmed and never parsed, in the same local operation that creates the task, so it works offline and converges like any task field. In the notes field Enter SHALL add the task, Shift+Enter SHALL insert a line break, and Backspace in the empty field SHALL close it and put the caret at the end of the title. The notes field SHALL grow up to six lines, then scroll. After an add both fields SHALL be empty and the notes field closed.
+
+#### Scenario: A long title wraps
+- **WHEN** the user types a title longer than the field's width
+- **THEN** the field shows it on two or more lines with no sideways scroll, and Enter adds the task with the whole title
+
+#### Scenario: Notes while adding
+- **WHEN** the user types `Read the article tomorrow`, presses Shift+Enter, types `https://example.com/article` and presses Enter
+- **THEN** a task "Read the article" due tomorrow is added with the notes `https://example.com/article`, and quick add is empty with its notes field closed
+
+#### Scenario: Notes are never parsed
+- **WHEN** the notes field holds `tomorrow #work p1` and the line holds `Pay rent`
+- **THEN** the task "Pay rent" is added with no date, project or priority from the notes, and its notes read `tomorrow #work p1`
+
+#### Scenario: Closing empty notes
+- **WHEN** the notes field is open and empty and the user presses Backspace
+- **THEN** the notes field closes and the caret is at the end of the title
+
+#### Scenario: The command bar keeps add and open
+- **WHEN** the user presses Shift+Enter in the command bar's Add mode
+- **THEN** the task is added and opened, and no notes field opens

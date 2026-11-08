@@ -52,7 +52,7 @@ async function bar(opts: { initialMode?: 'search' | 'add'; onClose?: () => void 
   return r
 }
 async function submitAdd(text: string) {
-  const input = q<HTMLInputElement>('[data-bar-add] input')!
+  const input = q<HTMLTextAreaElement>('[data-bar-add] textarea')!
   await type(input, text)
   await act(async () => { input.form!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
   return input
@@ -88,7 +88,7 @@ describe('prefixes (5.1)', () => {
     await type(searchField(), '')
     q<HTMLButtonElement>('[data-bar-mode="add"]')!.click()
     await waitFor(() => mode() === 'add')
-    await key(q('[data-bar-add] input')!, 'Escape')
+    await key(q('[data-bar-add] textarea')!, 'Escape')
     await waitFor(() => mode() === 'search')
     expect(onClose).not.toHaveBeenCalled()
     await key(searchField(), 'Escape')
@@ -129,7 +129,7 @@ describe('Add mode (5.2)', () => {
     const onClose = vi.fn()
     await bar({ initialMode: 'add', onClose })
     expect(q('[data-quick-add-escape]')!.textContent).toContain('Close')
-    await key(q('[data-bar-add] input')!, 'Escape')
+    await key(q('[data-bar-add] textarea')!, 'Escape')
     expect(onClose).toHaveBeenCalled()
     expect(mode()).toBe('add')
   })
@@ -139,7 +139,7 @@ describe('Add mode (5.2)', () => {
     navigate({ view: 'settings' })
     const onClose = vi.fn()
     await bar({ initialMode: 'add', onClose })
-    const input = q<HTMLInputElement>('[data-bar-add] input')!
+    const input = q<HTMLTextAreaElement>('[data-bar-add] textarea')!
     // A space after the token: with the project list open, Enter picks from the list.
     await type(input, 'Draft the offer #Work ')
     await key(input, 'Enter', { shiftKey: true })
@@ -229,17 +229,17 @@ describe('`q` where there is no quick add (5.5)', () => {
       await key(document.body, 'q')
       // The bar is a lazy chunk: its first load can take a moment.
       await waitFor(() => mode() === 'add')
-      expect(document.activeElement).toBe(q('[data-bar-add] input'))
+      expect(document.activeElement).toBe(q('[data-bar-add] textarea'))
       await r.unmount()
       document.body.innerHTML = ''
     }
     navigate({ view: 'today' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!q('[data-list-page] input[aria-label="Add a task"]'))
+    await waitFor(() => !!q('[data-list-page] textarea[aria-label="Add a task"]'))
     await key(document.body, 'q')
-    await waitFor(() => document.activeElement === q('[data-list-page] input[aria-label="Add a task"]'), 'focus in Add a task')
+    await waitFor(() => document.activeElement === q('[data-list-page] textarea[aria-label="Add a task"]'), 'focus in Add a task')
     expect(q('[data-palette]')).toBeNull()
-    expect(document.activeElement).toBe(q('[data-list-page] input[aria-label="Add a task"]'))
+    expect(document.activeElement).toBe(q('[data-list-page] textarea[aria-label="Add a task"]'))
     await r.unmount()
   })
 })

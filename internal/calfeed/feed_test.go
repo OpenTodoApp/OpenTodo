@@ -46,3 +46,22 @@ func TestWriteFeed(t *testing.T) {
 		t.Fatalf("encrypted feed:\n%s", enc)
 	}
 }
+
+// The feed shares the CalDAV zone definition (issue #1028): a zoned event's
+// VTIMEZONE comes before the events and follows the zone's yearly rules, so a
+// weekly event keeps its wall time after the year's last transition.
+func TestWriteFeedZoneDefinition(t *testing.T) {
+	now := time.Date(2026, 10, 15, 9, 0, 0, 0, time.UTC)
+	out := string(WriteFeed([]FeedTask{
+		{ID: "t-standup", Title: "Standup", Date: "2026-10-19", Time: sp("09:30"), TZ: sp("Europe/Berlin"), RRULE: "FREQ=WEEKLY;BYDAY=MO"},
+		{ID: "t-sync", Title: "Sync", Date: "2026-10-20", Time: sp("10:00"), TZ: sp("Europe/Berlin")},
+	}, FeedOptions{Now: now}))
+	if strings.Count(out, "BEGIN:VTIMEZONE") != 1 || strings.Index(out, "BEGIN:VTIMEZONE") > strings.Index(out, "BEGIN:VEVENT") {
+		t.Fatalf("one VTIMEZONE before the events:\n%s", out)
+	}
+	for _, want := range []string{"TZID:Europe/Berlin", "RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU", "RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("feed lacks %q:\n%s", want, out)
+		}
+	}
+}

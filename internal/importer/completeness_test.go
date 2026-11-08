@@ -53,7 +53,7 @@ func TestParseRecurrence(t *testing.T) {
 		{"hourly", "", ""},
 		{"FREQ=HOURLY", "", ""},
 		{"every mon starting next week", "", ""},
-		{"every other monday", "", ""},
+		{"every other monday", "", "every 2 weeks on monday"},
 		{"whenever I feel like it", "", ""},
 	}
 	for _, c := range cases {

@@ -30,6 +30,7 @@ energy: low & unblocked & today
 notes & #Renovation
 no notes & p1
 assigned: me | unassigned
+tracked occurrence > 30m & no date
 @work & due <= tomorrow & p1
 @errand | @call & p1
 (@errand | @call) & p1
@@ -129,6 +130,9 @@ tracked
 tracked > 1h
 tracked <= 1h30
 tracked >= 1h30
+tracked occurrence
+tracked occurrence > 1h
+!tracked occurrence & p1
 @"x|y" & #"a(b)" & search: "a & b"
 search: \
 @a\b

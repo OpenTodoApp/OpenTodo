@@ -6,6 +6,13 @@
 // (insetOverlaps in scripts/ux-audit/measure.mjs): under the island, the status bar,
 // the home indicator or a rounded side.
 //
+// The top edge (GitHub issue 999, topEdge in measure.mjs): with a top inset, every
+// screen keeps an opaque fixed backdrop over the status bar (without one, Safari blurs
+// whatever is under it) and draws no text in that strip at rest. It is checked on
+// each screen as it loads, after each of its overlays closes again, and after a cold
+// start (COLD_START, default inbox,project,today): the screen loads with no insets, as
+// iOS sometimes reports them on launch, and the insets arrive once it is drawn.
+//
 // The insets are emulated, and the app runs in standalone display mode (the
 // display-mode media query and navigator.standalone answer as an installed app):
 //   - Chromium: the DevTools protocol's safe-area override, so `env(safe-area-inset-*)`
@@ -27,9 +34,9 @@ const pw = await import('playwright').catch(async () => {
   return createRequire(execSync('npm root -g').toString().trim() + '/')('playwright')
 })
 import { mkdirSync, writeFileSync } from 'node:fs'
-import { insetOverlaps } from './ux-audit/measure.mjs'
+import { insetOverlaps, topEdge } from './ux-audit/measure.mjs'
 import { calendarEvents, seed as seedAccount } from './ux-audit/seed.mjs'
-import { OVERLAYS, chooseLayout, screens } from './ux-audit/layout-screens.mjs'
+import { OVERLAYS, chooseLayout, openScreen, screens } from './ux-audit/layout-screens.mjs'
 
 const base = process.env.OPENTODO_URL ?? 'http://127.0.0.1:8080'
 const outDir = process.argv[2] ?? 'safe-area-report'
@@ -53,6 +60,8 @@ const EXTRA = [
 // with the bulk toast), and the drawer's view menu opener needs the phone drawer, which
 // landscape (a 768 px layout and up) does not have.
 const SKIP = new Set(['reminder-toast', 'sidebar-view-menu@landscape'])
+const COLD_START = new Set((process.env.COLD_START ?? 'inbox,project,today').split(',').filter(Boolean))
+const NO_INSETS = { top: 0, right: 0, bottom: 0, left: 0 }
 const WANT =(process.env.ORIENTATIONS ?? 'portrait,landscape').split(',').filter(Boolean)
 mkdirSync(outDir, { recursive: true })
 const failures = []
@@ -81,25 +90,41 @@ async function run(engine, orientation, ids) {
     await p.screenshot({ path: `${outDir}/${engine}-${orientation}-${screen}${overlay ? '-' + overlay : ''}.png`.replace(/[^\w./-]/g, '_') }).catch(() => {})
   }
   const shot = (p, screen, overlay) => SHOTS_ALL && p.screenshot({ path: `${outDir}/ok-${engine}-${orientation}-${screen}${overlay ? '-' + overlay : ''}.png` }).catch(() => {})
-  const pageIn = async (ctx) => {
+  const cdp = new Map()
+  const pageIn = async (ctx, start = insets) => {
     const p = await ctx.newPage()
     p.on('dialog', (d) => d.dismiss())
-    if (engine === 'chromium') await (await ctx.newCDPSession(p)).send('Emulation.setSafeAreaInsetsOverride', { insets })
+    if (engine === 'chromium') {
+      cdp.set(p, await ctx.newCDPSession(p))
+      await cdp.get(p).send('Emulation.setSafeAreaInsetsOverride', { insets: start })
+    }
     return p
+  }
+  // The insets changing under a loaded page, as iOS reports them late on a cold start.
+  const setInsets = async (p, v) => {
+    if (engine === 'chromium') return cdp.get(p).send('Emulation.setSafeAreaInsetsOverride', { insets: v })
+    await p.evaluate((t) => {
+      const s = document.querySelector('style[data-safe-area-emulation]')
+      if (s) s.textContent = `:root{--safe-top:${t.top}px!important;--safe-right:${t.right}px!important;--safe-bottom:${t.bottom}px!important;--safe-left:${t.left}px!important}`
+    }, v)
   }
   const measure = async (p, screen, overlay) => {
     for (const m of await p.evaluate(insetOverlaps, [null, insets])) await fail(p, screen, overlay, m)
     await shot(p, screen, overlay)
   }
+  const measureTop = async (p, screen, overlay) => {
+    for (const m of await p.evaluate(topEdge, [insets])) await fail(p, screen, overlay, m)
+  }
+  const newContext = async (storageState, tokens) => {
+    const c = await browser.newContext({ ...opts, ...(storageState ? { storageState } : {}) })
+    await c.clock.setFixedTime(NOW)
+    await c.addInitScript(standalone, engine === 'chromium' ? null : tokens)
+    await c.route('**/api/v1/calendar-feeds/events?*', (route) => route.fulfill({ json: calendarEvents(NOW) }))
+    return c
+  }
   try {
     const contexts = []
-    for (const storageState of [undefined, ids.storageState]) {
-      const c = await browser.newContext({ ...opts, ...(storageState ? { storageState } : {}) })
-      await c.clock.setFixedTime(NOW)
-      await c.addInitScript(standalone, engine === 'chromium' ? null : insets)
-      await c.route('**/api/v1/calendar-feeds/events?*', (route) => route.fulfill({ json: calendarEvents(NOW) }))
-      contexts.push(c)
-    }
+    for (const storageState of [undefined, ids.storageState]) contexts.push(await newContext(storageState, insets))
     const [anonCtx, ctx] = contexts
     const page = await pageIn(ctx)
     await page.goto(base + '/inbox')
@@ -110,7 +135,7 @@ async function run(engine, orientation, ids) {
       if (s.widths && !s.widths.includes(viewport.width)) continue
       const p = s.anon ? await pageIn(anonCtx) : page
       const load = async () => {
-        await p.goto(base + s.path)
+        await openScreen(p, base + s.path)
         await s.ready(p)
         if (s.layout) { await chooseLayout(p, s.layout); await p.waitForTimeout(300) }
         await p.waitForTimeout(250)
@@ -124,6 +149,26 @@ async function run(engine, orientation, ids) {
       }
       checked++
       await measure(p, s.name, null)
+      await measureTop(p, s.name, null)
+      // A cold start: a fresh app loads this screen with no insets, which arrive once it is drawn.
+      if (insets.top > 0 && COLD_START.has(s.name) && !s.anon) {
+        const coldCtx = await newContext(ids.storageState, NO_INSETS)
+        try {
+          const cold = await pageIn(coldCtx, NO_INSETS)
+          await cold.goto(base + s.path)
+          await s.ready(cold)
+          await cold.waitForTimeout(250)
+          await setInsets(cold, insets)
+          await cold.waitForTimeout(250)
+          checked++
+          await measure(cold, s.name, 'cold start')
+          await measureTop(cold, s.name, 'cold start')
+        } catch (e) {
+          await fail(p, s.name, 'cold start', `could not be checked: ${e.message.split('\n')[0]}`)
+        } finally {
+          await coldCtx.close()
+        }
+      }
       // The phone's drawer and the sheets, panels and dialogs opened from this screen.
       for (const o of (s.overlays ?? []).filter((n) => !SKIP.has(n) && !SKIP.has(`${n}@${orientation}`))) {
         const checkOne = async () => {
@@ -161,6 +206,11 @@ async function run(engine, orientation, ids) {
         }
         await p.keyboard.press('Escape').catch(() => {})
         await p.keyboard.press('Escape').catch(() => {})
+        // Closed again, the screen is as it was at rest: nothing of it under the status bar.
+        if (insets.top > 0) {
+          await p.waitForTimeout(400)
+          await measureTop(p, s.name, `${o} (closed)`)
+        }
       }
       if (s.layout) await chooseLayout(p, s.layout === 'Columns' ? 'Columns' : 'List').catch(() => {})
       if (s.anon) await p.close()

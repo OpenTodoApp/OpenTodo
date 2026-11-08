@@ -21,7 +21,7 @@ import (
 // through sync.AddWorkspaceMemberTx inside the transaction that spends the link.
 
 func (s *Server) registerWorkspaceInviteRoutes(mux *routes) {
-	s.workspaceInviteLimiter = newRateLimiter(20, time.Hour)
+	s.workspaceInviteLimiter = s.limit("workspace.invite", 20, time.Hour)
 	write := signedIn.FullTokens().DemoDenied()
 	mux.handle("GET /api/v1/workspaces/{id}/invites", signedIn.FullTokens(), s.handleListWorkspaceInvites)
 	mux.handle("POST /api/v1/workspaces/{id}/invites", write, s.handleCreateWorkspaceInvite)
