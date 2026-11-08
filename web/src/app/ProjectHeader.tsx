@@ -193,13 +193,16 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
   /** Below 768 px (phone-v2 D1): the bar's visible slots, and items for the project menu (Layout, Share, the list's own). */
   phone?: { slots: ReactNode; groups: ActionGroup[] }
 }) {
-  const [editing, setEditing] = useState(false)
+  // The header stays mounted when another project opens (#1018), so a rename belongs
+  // to one project and its draft lives in the field, which mounts when it starts.
+  const [renamingId, setRenamingId] = useState<string | null>(null)
+  const editing = renamingId === project.id
+  const startRename = () => setRenamingId(project.id)
   const [sharing, setSharing] = useState<false | true | 'public'>(false)
   // Cached membership (project-sharing): roles render the same offline.
   const membership = useMembership(project.id)
   const role = membership?.role ?? 'owner'
   const editable = canEditProject(role)
-  const [name, setName] = useState(project.name)
   const [menuOpen, setMenuOpen] = useState(false)
   const [startPicker, setStartPicker] = useState<string | null>(null)
   const occupant = usePanelOccupantKey()
@@ -244,12 +247,6 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
     'project.fields': () => { if (!canEditTasks(role)) return false; setDialog('fields') },
   }, { view: 'project' })
 
-  async function save() {
-    setEditing(false)
-    if (name.trim() && name.trim() !== project.name) await updateProject(project.id, { name: name.trim() })
-    else setName(project.name)
-  }
-
   const [dialog, setDialog] = useState<'duplicate' | 'template' | 'fields' | null>(null)
   const otherWorkspaces = useOtherWorkspaces()
   const mode = useMethodMode()
@@ -267,7 +264,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
   // Every role gets the copies (project-templates D6); editing items follow the role inside projectMenuGroups.
   const groups: ActionGroup[] = [
     ...projectMenuGroups(project, { role, shared: !!membership, targets, subCount, openTasks, pinned, workspaces: otherWorkspaces, mode, reviewEvery },
-      { rename: () => setEditing(true), duplicate: () => setDialog('duplicate'), saveTemplate: () => setDialog('template'), fields: () => setDialog('fields'), pin: () => setFavourite('project', project.id, !pinned) }),
+      { rename: startRename, duplicate: () => setDialog('duplicate'), saveTemplate: () => setDialog('template'), fields: () => setDialog('fields'), pin: () => setFavourite('project', project.id, !pinned) }),
     ...(extraGroups ?? []),
     panels,
   ]
@@ -276,10 +273,9 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
   const shareItem: ActionItem = { kind: 'action', id: 'share', label: canManageMembers(role) ? t('Share project') : t('Members'), icon: 'users', onSelect: () => setSharing(true) }
 
   const title = editing ? (
-    <input className="ui-input max-w-xs text-h1 font-semibold" autoFocus value={name} onChange={(e) => setName(e.target.value)} aria-label={t('Project name')}
-      onBlur={() => void save()} onKeyDown={(e) => { if (e.key === 'Enter') void save(); if (e.key === 'Escape') { setName(project.name); setEditing(false) } }} />
+    <ProjectNameField key={project.id} project={project} onDone={() => setRenamingId(null)} />
   ) : editable ? (
-    <Tooltip label={t('Rename')}><button type="button" className="user-text min-w-0 truncate rounded-control text-left hover:bg-sunken dark:hover:bg-raised" onClick={() => setEditing(true)} data-project-name>{project.name}</button></Tooltip>
+    <Tooltip label={t('Rename')}><button type="button" className="user-text min-w-0 truncate rounded-control text-left hover:bg-sunken dark:hover:bg-raised" onClick={startRename} data-project-name>{project.name}</button></Tooltip>
   ) : <span className="user-text min-w-0 truncate" data-project-name>{project.name}</span>
 
   // The list page waits for the membership (audit M12), so this row has its final content at first paint.
@@ -348,5 +344,22 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
       {dialog === 'template' && <SaveTemplateDialog project={project} onClose={() => setDialog(null)} />}
       {dialog === 'fields' && <FieldsDialog project={project} onClose={() => setDialog(null)} />}
     </>
+  )
+}
+
+/** The rename field. It mounts when a rename starts, so its draft is always this project's name. */
+function ProjectNameField({ project, onDone }: { project: Project; onDone: () => void }) {
+  const [name, setName] = useState(project.name)
+  const finished = useRef(false)
+  const finish = (save: boolean) => {
+    if (finished.current) return
+    finished.current = true
+    onDone()
+    const next = name.trim()
+    if (save && next && next !== project.name) act(updateProject(project.id, { name: next }))
+  }
+  return (
+    <input className="ui-input max-w-xs text-h1 font-semibold" autoFocus value={name} onChange={(e) => setName(e.target.value)} aria-label={t('Project name')}
+      onBlur={() => finish(true)} onKeyDown={(e) => { if (e.key === 'Enter') finish(true); if (e.key === 'Escape') finish(false) }} />
   )
 }

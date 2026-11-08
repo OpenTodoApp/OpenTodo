@@ -1,0 +1,1 @@
+- **Renaming a project starts from its own name.** After moving from one project to another, the rename field could show the name of the project shown before (#1018).

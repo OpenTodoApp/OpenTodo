@@ -80,4 +80,23 @@ describe('project header', () => {
     await waitFor(() => !r.container.querySelector('[data-project-maintenance]'), 'no maintenance note')
     await r.unmount()
   })
+
+  // #1018: the header stays mounted from one project to the next, so the rename
+  // field must start from the project on screen, never the one shown before.
+  it('starts a rename from the project on screen after another project was shown', async () => {
+    await db.projects.put(p('work', 'Work'))
+    const r = await render(<ProjectHeader project={p('home', 'Home')} />)
+    await waitFor(() => r.container.querySelector('[data-project-name]')?.textContent === 'Home', 'the first project')
+    await r.rerender(<ProjectHeader project={p('work', 'Work')} />)
+    await waitFor(() => r.container.querySelector('[data-project-name]')?.textContent === 'Work', 'the second project')
+    await click(r.container.querySelector('[data-project-name]')!)
+    await waitFor(() => !!r.container.querySelector('input[aria-label="Project name"]'), 'the rename field')
+    expect(r.container.querySelector<HTMLInputElement>('input[aria-label="Project name"]')!.value).toBe('Work')
+
+    // A rename left open does not follow to the next project.
+    await r.rerender(<ProjectHeader project={p('home', 'Home')} />)
+    await waitFor(() => r.container.querySelector('[data-project-name]')?.textContent === 'Home', 'the first project again')
+    expect(r.container.querySelector('input[aria-label="Project name"]')).toBeNull()
+    await r.unmount()
+  })
 })
