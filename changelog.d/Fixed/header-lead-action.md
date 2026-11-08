@@ -1,0 +1,1 @@
+- **The calendar's Re-plan button is no longer cut off** when the header is narrow, as on an iPad: the header's tools move under the title instead.
