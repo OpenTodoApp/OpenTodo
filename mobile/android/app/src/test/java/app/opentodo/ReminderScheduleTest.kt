@@ -59,4 +59,11 @@ class ReminderScheduleTest {
         assertEquals("/?reminder=abc&action=dismiss", ReminderSchedule.actionPath("abc", "dismiss"))
         assertEquals("/?task=t%2F1", ReminderSchedule.taskPath("t/1"))
     }
+
+    @Test fun doneComesFirstOnEveryReminder() {
+        assertEquals(listOf("done", "snooze", "dismiss"), ReminderSchedule.REMINDER_ACTIONS)
+        assertEquals(listOf("done", "dismiss"), ReminderSchedule.LOCATION_ACTIONS)
+        for (a in ReminderSchedule.REMINDER_ACTIONS + ReminderSchedule.LOCATION_ACTIONS) assertTrue(ReminderSchedule.isAction(a))
+        assertTrue(!ReminderSchedule.isAction("delete") && !ReminderSchedule.isAction(null))
+    }
 }
