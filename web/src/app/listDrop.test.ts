@@ -66,9 +66,10 @@ describe('drop depth in a tree list (drop-depth)', () => {
     expect(gapTarget(null, rows.a, 0, rowOf)).toEqual({ parent_id: null, at: { before: 'a' } })
   })
 
-  it('the line starts at the depth, capped like the row indent', () => {
-    expect(dropIndent(2, 3)).toBe('3rem')
-    expect(dropIndent(5, 3)).toBe('4.5rem')
+  it('the line starts at the checkbox of a row at the depth, capped like the row indent', () => {
+    expect(dropIndent(0, 3)).toBe('2rem')
+    expect(dropIndent(2, 3)).toBe('5rem')
+    expect(dropIndent(5, 3)).toBe('6.5rem')
   })
 })
 

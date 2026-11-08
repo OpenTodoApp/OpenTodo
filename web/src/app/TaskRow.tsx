@@ -840,7 +840,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
         // The drop position: a line with a dot at its start (task-list-presentation "Drag feedback").
         // In a tree list it starts at the indent of the depth the task lands at (drop-depth).
         <span aria-hidden="true" data-drop-indicator={dropIndicator} data-drop-depth={dropDepth}
-          style={dropDepth ? { left: dropIndent(dropDepth, MAX_INDENT) } : undefined}
+          style={dropDepth !== undefined ? { left: dropIndent(dropDepth, MAX_INDENT) } : undefined}
           className={`${feedback.line} ${dropIndicator === 'before' ? '-top-px' : '-bottom-px'}`} />
       )}
       {!card && (

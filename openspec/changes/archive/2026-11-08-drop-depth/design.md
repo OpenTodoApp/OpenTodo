@@ -12,7 +12,7 @@ The issue proposed three zones across the row (left, middle, right). Zones acros
 
 ## D3. Feedback
 
-The line keeps its look (a 2 px accent line with a dot at its start) and starts at the indent of the depth, capped at the row's own cap of three levels, as the sidebar's project line does. Dropping on the middle of a row keeps its ring.
+The line keeps its look (a 2 px accent line with a dot at its start) and starts where the checkbox of a row at that depth would be, capped at the row's own cap of three levels, as the sidebar's project line starts at its level. Even at the top level the line starts at the checkbox, so two levels are never confused at the start of a row. Dropping on the middle of a row keeps its ring.
 
 ## D4. Without dragging
 
