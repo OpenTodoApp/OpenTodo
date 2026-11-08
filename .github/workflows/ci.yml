@@ -862,7 +862,21 @@ jobs:
             SOURCE_COMMIT=${{ github.event.pull_request.head.sha || github.sha }}
           cache-from: type=gha,scope=image-amd64
           cache-to: type=gha,mode=max,scope=image-amd64
+      # The scanner and its database are downloaded from GitHub releases, which sometimes answer
+      # 504. A failed first scan runs once more: a real finding fails both times, a download
+      # hiccup only the first.
       - name: Vulnerability scan (fails on critical findings that have a fix)
+        id: scan
+        continue-on-error: true
+        uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
+        with:
+          image: opentodo:ci
+          fail-build: true
+          severity-cutoff: critical
+          only-fixed: true
+          output-format: table
+      - name: Vulnerability scan, second attempt
+        if: steps.scan.outcome == 'failure'
         uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
         with:
           image: opentodo:ci
