@@ -664,20 +664,23 @@ test('no signing key, certificate or profile is ever committed', () => {
 
 test('the F-Droid metadata allows the release certificate that docs/android-app.md publishes', () => {
   const fdroid = read('mobile/android/store/fdroid/app.opentodo.yml')
-  const cert = fdroid.match(/^AllowedAPKSigningKeys: ([0-9a-f]{64})$/m)?.[1]
+  const cert = fdroid.match(/^AllowedAPKSigningKeys: \n {2}([0-9a-f]{64})$/m)?.[1]
   assert.ok(cert, 'AllowedAPKSigningKeys names one SHA-256')
   assert.ok(read('docs/android-app.md').includes(cert), 'docs/android-app.md publishes the same certificate')
-  assert.match(fdroid, /^Binaries: https:\/\/github\.com\/OpenTodoApp\/OpenTodo\/releases\/download\/v%v\/opentodo-android-%v\.apk$/m)
-  assert.match(fdroid, /^UpdateCheckMode: Tags \^v\[0-9\.\]\+\$$/m, 'release candidates are skipped')
-  assert.match(fdroid, /^AutoUpdateMode: Version$/m, "F-Droid's bot adds each final tag")
-  // F-Droid takes the name, summary and description from fastlane/; its build pins a full commit hash.
+  assert.match(fdroid, /^Binaries: \n {2}https:\/\/github\.com\/OpenTodoApp\/OpenTodo\/releases\/download\/v%v\/opentodo-android-%v\.apk$/m)
+  // The version comes from the tag, so the bot reads it from this file on main, which only a final
+  // release's prepare commit moves (release candidates never reach F-Droid).
+  assert.match(fdroid, /^UpdateCheckMode: HTTP$/m)
+  assert.match(fdroid, /^UpdateCheckData: \n {2}https:\/\/raw\.githubusercontent\.com\/OpenTodoApp\/OpenTodo\/main\/mobile\/android\/store\/fdroid\/app\.opentodo\.yml\|CurrentVersionCode:\\s\*\(\\d\+\)\|\.\|CurrentVersion:\\s\*\(\[0-9\.\]\+\)$/m)
+  assert.match(fdroid, /^AutoUpdateMode: Version v%v$/m, "F-Droid's bot adds each final tag")
+  // F-Droid takes the name, summary and description from fastlane/.
   assert.doesNotMatch(fdroid, /^(AutoName|Name|Summary|Description):/m, 'the texts live in fastlane/metadata/android/')
   const builds = [...fdroid.matchAll(/^ {2}- versionName: (\S+)\n {4}versionCode: (\d+)\n {4}commit: (\S+)$/gm)]
   assert.equal(builds.length, 1, 'Builds keeps only the latest version')
   const [, name, code, commit] = builds[0]
   const [maj, min, patch] = name.split('.').map(Number)
   assert.equal(Number(code), maj * 10000 + min * 100 + patch, 'versionCode is major·10000 + minor·100 + patch')
-  assert.match(commit, /^[0-9a-f]{40}$/, 'commit is a full hash, not a tag')
+  assert.ok(/^[0-9a-f]{40}$/.test(commit) || commit === `v${name}`, 'commit is a full hash or the tag of its version')
   assert.match(fdroid, new RegExp(`^CurrentVersion: ${name.replaceAll('.', '\\.')}\\nCurrentVersionCode: ${code}$`, 'm'))
 })
 
