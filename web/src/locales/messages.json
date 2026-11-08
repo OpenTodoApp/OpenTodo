@@ -1251,6 +1251,7 @@
     "web/src/app/palette/CommandPalette.tsx"
   ],
   "Added": [
+    "web/src/app/QuickAddSheet.tsx",
     "web/src/lib/taskSource.ts"
   ],
   "Added a next action to {name}.": [
