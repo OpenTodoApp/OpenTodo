@@ -731,9 +731,9 @@ var Schema = map[string]map[string]Field{
 		// read an empty or unknown value as shown.
 		"start_checklist": {Kind: kString, Default: `""`},
 		// Interface language (OpenSpec change app-localization, design D1):
-		// "system" or a shipped language code (en, de, fr, es, it, pt). Not
-		// restricted here; clients read an unknown code as "system" and keep the
-		// stored value, so a catalog added later stays additive.
+		// "system" or a code from SHIPPED. Not restricted here; clients read an
+		// unknown code as "system" and keep the stored value, so a catalog added
+		// later stays additive.
 		"language": {Kind: kString, Default: `"system"`},
 		// Focus timer preferences (OpenSpec change focus-mode, design D5): the
 		// timer mode (pomodoro|flowtime|countdown), which phases start on their

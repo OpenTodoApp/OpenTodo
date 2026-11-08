@@ -5,12 +5,33 @@
 //   - every tr() message has an entry in every catalog, and no entry is stale,
 //   - no entry is empty, and every message and translation parses,
 //   - a translation has the same placeholders and plural arguments as its source.
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { calleeName, literalsOf, parse, repo, ts, walk } from './source.mjs'
 
 export const obsidianDir = (root = repo) => join(root, 'obsidian')
-export const OBSIDIAN_LANGS = ['en', 'de', 'fr', 'es', 'it', 'pt']
+
+/** The plugin's languages, read from the catalogues it actually ships (English first). */
+export function obsidianLanguages(root = repo) {
+  const dir = join(obsidianDir(root), 'locales')
+  // Two-letter codes only, as in the web app's SHIPPED: a pt-BR.json is a
+  // region variant of an existing language, not a language of its own here.
+  const codes = existsSync(dir)
+    ? readdirSync(dir).filter((f) => /^[a-z]{2}\.json$/.test(f)).map((f) => f.slice(0, -5))
+    : []
+  return ['en', ...codes.filter((c) => c !== 'en').sort()]
+}
+
+export const OBSIDIAN_LANGS = obsidianLanguages()
+
+/** A catalogue on disk that the plugin's source never imports cannot be selected. */
+export function checkObsidianSource(root = repo) {
+  const text = readFileSync(join(obsidianDir(root), 'src/strings.ts'), 'utf8')
+  const imported = [...text.matchAll(/from '\.\.\/locales\/([a-z]{2})\.json'/g)].map((m) => m[1])
+  return obsidianLanguages(root)
+    .filter((l) => !imported.includes(l))
+    .map((l) => `obsidian ${l}: obsidian/locales/${l}.json is not imported by src/strings.ts`)
+}
 
 /** The tr() messages of one source text. */
 export function trMessagesIn(file, text) {
@@ -61,7 +82,7 @@ export function checkObsidianCatalogs(messages, catalogs, fmt) {
 
 export function readObsidianCatalogs(root = repo) {
   const out = {}
-  for (const lang of OBSIDIAN_LANGS) {
+  for (const lang of obsidianLanguages(root)) {
     const p = join(obsidianDir(root), 'locales', `${lang}.json`)
     if (existsSync(p)) out[lang] = JSON.parse(readFileSync(p, 'utf8'))
   }

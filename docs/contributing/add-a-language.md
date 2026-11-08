@@ -24,6 +24,7 @@ Open an issue or a discussion naming the language and who will review it. Until 
 | Browser tags that pick it | `web/src/lib/i18n/locale.ts`, only when the language has script or region variants (as Chinese does) |
 | Notification texts of the service worker | the table in `web/public/push-sw.js` |
 | The browser extension | `extension/_locales/<code>/messages.json` |
+| The Obsidian plugin (optional) | `obsidian/locales/<code>.json`, imported in `obsidian/src/strings.ts` |
 | The Android app | `mobile/android/app/src/main/res/values-<code>/strings.xml` |
 | Emails | `internal/mail/templates/*.<code>.txt`, and `<code>` in `mail.Languages` |
 | Delivery channel messages | the rows in `internal/channels/messages.go` |
