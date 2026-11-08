@@ -4,19 +4,22 @@
 // list; placing it among other rows needs a manually ordered list.
 import { useCallback, useRef, useState } from 'react'
 import { beginDrag } from '../../lib/dnd'
-import type { ListRow } from '../../lib/listGroups'
+import type { ListGroup, ListRow } from '../../lib/listGroups'
 import { moveTask } from '../../lib/move'
 import type { Section, Task } from '../../lib/types'
 import { flattenTree, type Tree } from '../../lib/tree'
 import { act } from '../actionError'
 import { withListTransition } from '../motion'
 import { dropTarget, sameDrop, zoneUnder, type DropAt } from '../listDrop'
+import { gapAround, gapDepths, gapRow, gapTarget, indentStep, pointedDepth } from './dropDepth'
 import { dropTasks } from '../taskDrop'
 import type { ViewPlacement } from '../../lib/viewOrder'
 
 /** What a drag session reads at drop time; the latest render's values. */
 export interface DragSource {
   rows: ListRow[]
+  /** The list's groups: a drop between two rows of a tree list sees its neighbours in one group (drop-depth). */
+  groups?: readonly ListGroup[]
   sectionOfRow: Map<string, string>
   tree: Tree<Task> | null
   board: boolean
@@ -74,6 +77,10 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
     const row = host
     const node = st.tree?.nodes.get(task.id)
     const own = new Set(node ? flattenTree([node]).map((n) => n.id) : [task.id])
+    // A tree list's drop line takes a depth from the pointer's sideways movement (drop-depth).
+    const startX = e.clientX
+    const startDepth = st.rows.find((r) => r.task.id === task.id)?.depth ?? 0
+    const step = indentStep()
     const height = host?.offsetHeight ?? 0
     let column: string | null = null
     const showColumn = (key: string | null) => {
@@ -101,19 +108,22 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
       },
       onHoldChange: (held) => row?.toggleAttribute('data-touch-hold', held),
       onHoldRelease: grip ? undefined : (x, y) => dragState.current.openRowMenu(task, x, y, row),
-      onMove: (target, _x, y) => {
+      onMove: (target, x, y) => {
         // Over a sidebar target the list shows no drop line (the target shows its ring).
         const now = dragState.current
         let id = manual && target?.startsWith('task:') ? target.slice('task:'.length) : null
         // An own order moves within the task's group only (view-manual-order D4).
         if (id && now.groupOf && now.groupOf.get(id) !== now.groupOf.get(task.id)) id = null
-        const zone = id && !own.has(id) ? zoneUnder('data-task-id', id, y, !now.board && !now.reorder) : null
-        show(id && zone ? { id, zone } : null)
+        const tree = !now.board && !now.reorder
+        const zone = id && !own.has(id) ? zoneUnder('data-task-id', id, y, tree) : null
+        const gap = tree && id && zone ? gapAround(now.groups, own, id, zone) : null
+        const depth = gap ? pointedDepth(startDepth, x - startX, step, gapDepths(gap.above, gap.below)) : undefined
+        show(id && zone ? { id, zone, ...(depth !== undefined ? { depth } : {}) } : null)
         // A drop on a column lands last in it, so the placeholder follows its last card.
         showColumn(manual && dragState.current.board && target?.startsWith('section:') ? target.slice('section:'.length) : null)
       },
       onDrop: (target) => {
-        const { rows: rs, sectionOfRow: secs, board: b, ticked, reorder, readOnly } = dragState.current
+        const { rows: rs, groups, sectionOfRow: secs, board: b, ticked, reorder, readOnly } = dragState.current
         if (target.startsWith('drop:')) {
           if (readOnly?.(task)) return
           const ids = ticked?.has(task.id) ? [...ticked] : [task.id]
@@ -127,8 +137,15 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
         } else if (target.startsWith('task:')) {
           const r = current ? rs.find((x) => x.task.id === current?.id) : undefined
           if (!r || !current) return
-          const entry = dropTarget({ id: r.task.id, parent: r.parent, expanded: !b && r.hasChildren && !r.collapsed }, current.zone)
-          const section = entry.parent_id === null ? secs.get(r.task.id) : undefined
+          // Between two rows of a tree list the line's depth decides the parent (drop-depth).
+          const gap = current.depth !== undefined ? gapAround(groups, own, r.task.id, current.zone) : null
+          const byId = gap ? new Map(rs.map((x) => [x.task.id, gapRow(x)])) : null
+          const placed = gap && current.depth !== undefined ? gapTarget(gap.above, gap.below, current.depth, (id) => byId?.get(id)) : null
+          const entry = placed ?? dropTarget({ id: r.task.id, parent: r.parent, expanded: !b && r.hasChildren && !r.collapsed }, current.zone)
+          // A top-level drop takes the section of the row it lands beside.
+          const at = entry.at
+          const beside = typeof at === 'object' ? ('before' in at ? at.before : at.after) : r.task.id
+          const section = entry.parent_id === null ? secs.get(beside) : undefined
           onReorder?.()
           // The row travels to its new place and the others make room (motion-v2 D4).
           act(withListTransition(1, () => moveTask(task.id, { ...entry, ...(section !== undefined ? { section_id: section } : {}) })))
