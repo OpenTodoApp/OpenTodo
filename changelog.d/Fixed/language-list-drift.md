@@ -1,0 +1,1 @@
+- **The digest settings error lists every shipped language.** It named only six of the seven languages the server can send, leaving out Simplified Chinese; it now lists them all.

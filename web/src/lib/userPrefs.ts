@@ -5,6 +5,7 @@
 import { db } from './db'
 import { mutate, USER_PREFS_DEFAULTS } from './ops'
 import { formatDefaultReminder, MAX_DEFAULT_OFFSET } from './defaultReminder'
+import { SHIPPED } from '../locales'
 import type { DateFormatPref, LanguagePref, TimeFormatPref, UserPrefs, WeekStartPref } from './types'
 
 export const USER_PREFS_ID = 'me'
@@ -47,8 +48,12 @@ export function readDayStart(row: Partial<UserPrefs> | null | undefined): number
   return minutes <= 360 ? minutes : 0
 }
 
-/** Interface language values (app-localization D1): 'system' and the shipped language codes. */
-export const LANGUAGES: readonly LanguagePref[] = ['system', 'en', 'de', 'fr', 'es', 'it', 'pt', 'zh']
+/**
+ * Interface language values (app-localization D1): 'system' and the shipped
+ * language codes. Derived from the shipped list, so a language added to
+ * `web/src/locales/index.ts` can always be chosen and kept in Settings.
+ */
+export const LANGUAGES: readonly LanguagePref[] = ['system', ...SHIPPED.map((l) => l.code)]
 
 /** The stored interface language; a missing row or a code this build does not ship reads as 'system', without rewriting the row. */
 export function readLanguage(row: Partial<UserPrefs> | null | undefined): LanguagePref {

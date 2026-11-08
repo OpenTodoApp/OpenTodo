@@ -2,6 +2,7 @@
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
 import type { AttachmentFields, CommentFields, FieldDefFields, FrameFields, CustomThemeFields, ObjectiveFields, LabelFields, NoteFields, PlaceFields, ProjectFields, ProjectPrefsFields, ReminderFields, ReviewFields, RuleFields, SectionFields, SlotFields, TaskFields, TimeEntryFields, UserPrefsFields, ViewFields } from '../generated/opSchema'
+import type { LanguageCode } from '../locales'
 import type { ThemeDocument } from './theme/format'
 
 export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place' | 'rule' | 'frame' | 'slot' | 'note' | 'theme' | 'objective'
@@ -923,7 +924,7 @@ export interface ProjectPrefs extends ProjectPrefsFields {
 /** Date and time preference values (OpenSpec `date-time-preferences`); unknown values read as 'system'. */
 export type DateFormatPref = 'system' | 'day-month' | 'month-day' | 'iso'
 /** Interface language preference (app-localization D1): 'system' or a shipped language code. */
-export type LanguagePref = 'system' | 'en' | 'de' | 'fr' | 'es' | 'it' | 'pt' | 'zh'
+export type LanguagePref = 'system' | LanguageCode
 export type TimeFormatPref = 'system' | '12h' | '24h'
 export type WeekStartPref = 'system' | 'mon' | 'sun' | 'sat'
 

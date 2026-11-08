@@ -13,10 +13,11 @@ import type { EmailDigest, EmailDigestInput } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { isSimplifiedChineseTag, t, currentLocale, preferredLanguages } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
+import { SHIPPED } from '../locales'
 import { useSettingsPending } from './settingsPending'
 
-/** The digest's languages, as the server's message templates (internal/mail). */
-export const DIGEST_LANGUAGES: Record<string, string> = { en: 'English', de: 'Deutsch', fr: 'Français', es: 'Español', it: 'Italiano', pt: 'Português', zh: '简体中文' }
+/** The digest's languages, named from the shipped interface languages (server templates: internal/mail). */
+export const DIGEST_LANGUAGES: Record<string, string> = Object.fromEntries(SHIPPED.map((l) => [l.code, l.name] as const))
 
 /** The browser's first supported language (primary subtag), else English (design D7). */
 export function browserDigestLanguage(languages: readonly string[] = preferredLanguages()): string {

@@ -5,7 +5,7 @@ import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { afterEach, beforeEach, describe, it } from 'vitest'
 import { useDatabase } from '../lib/db'
-import { setDateTime } from '../lib/dates'
+import { setDateLocale, setDateTime } from '../lib/dates'
 import { applyOps, resetDeviceId } from '../lib/ops'
 import { setUserPref } from '../lib/userPrefs'
 import { render, waitFor } from '../ui/test-utils'
@@ -20,8 +20,14 @@ let n = 0
 beforeEach(() => {
   useDatabase(`dtprov-${Date.now()}-${n++}`)
   resetDeviceId()
+  // Pin the date locale: these assertions expect English AM/PM, while an
+  // unset locale makes Intl follow the host's language.
+  setDateLocale('en-US')
 })
-afterEach(() => { setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' }) })
+afterEach(() => {
+  setDateLocale(undefined)
+  setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' })
+})
 
 describe('DateTimePrefsProvider', () => {
   it('re-renders on a local change and on a synced one', async () => {
