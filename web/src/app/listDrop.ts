@@ -42,8 +42,8 @@ export function dropTarget(row: DropRow, zone: DropZone): { parent_id: string | 
   return { parent_id: row.parent, at: zone === 'before' ? { before: row.id } : { after: row.id } }
 }
 
-/** The left edge of a drop line at `depth`, matching a row's indent (TaskRow caps it at three levels). */
-export const dropIndent = (depth: number, maxIndent: number) => `${Math.min(depth, maxIndent) * 1.5}rem`
+/** The left edge of a drop line at `depth`: the checkbox of a row at that depth (TaskRow caps the indent at three levels). */
+export const dropIndent = (depth: number, maxIndent: number) => `${Math.min(depth, maxIndent) * 1.5 + 2}rem`
 
 export const sameDrop = (a: DropAt | null, b: DropAt | null) => a === b || (!!a && !!b && a.id === b.id && a.zone === b.zone && a.depth === b.depth)
 
