@@ -207,7 +207,7 @@ test('sign makes a certificate and three profiles, and cleanup removes exactly t
 test('a profile without the App Group stops the run with the steps, and cleanup still finds everything', async () => {
   const dir = signingDir()
   const { call, deleted } = signingAsc({ withGroup: false })
-  await assert.rejects(prepareSigning(call, { dir, team: 'TEAM123456', log: () => {} }), /do not carry the App Group group\.app\.open-todo\.ios\. The API cannot assign one: at developer\.apple\.com → Identifiers → App Groups/)
+  await assert.rejects(prepareSigning(call, { dir, team: 'TEAM123456', log: () => {} }), /do not carry the App Group group\.app\.open-todo\. The API cannot assign one: at developer\.apple\.com → Identifiers → App Groups/)
   await cleanup(call, { dir, log: () => {} })
   assert.deepEqual(deleted, ['P1', 'P2', 'C1'])
 })

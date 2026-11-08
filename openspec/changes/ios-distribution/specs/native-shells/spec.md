@@ -16,7 +16,7 @@ CI SHALL register the app's bundle identifiers (`app.open-todo.ios`, `app.open-t
 
 #### Scenario: First registration
 - **WHEN** the owner runs "iOS register IDs" with the App Store Connect secrets set and no identifier registered
-- **THEN** the three identifiers are registered with App Groups, and the report says to register `group.app.open-todo.ios` and to create the app record in App Store Connect
+- **THEN** the three identifiers are registered with App Groups, and the report says to register `group.app.open-todo` and to create the app record in App Store Connect
 
 #### Scenario: Run again
 - **WHEN** the registration runs a second time
