@@ -27,12 +27,12 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { releaseNotes } from './play-upload.mjs'
 
 export const API = 'https://api.appstoreconnect.apple.com'
-export const APP_GROUP = 'group.app.opentodo'
+export const APP_GROUP = 'group.app.open-todo.ios'
 /** The app first: its record is the one App Store Connect knows the app by. */
 export const BUNDLE_IDS = [
-  { identifier: 'app.opentodo', name: 'OpenTodo' },
-  { identifier: 'app.opentodo.widget', name: 'OpenTodo Widget' },
-  { identifier: 'app.opentodo.share', name: 'OpenTodo Share' },
+  { identifier: 'app.open-todo.ios', name: 'OpenTodo' },
+  { identifier: 'app.open-todo.ios.widget', name: 'OpenTodo Widget' },
+  { identifier: 'app.open-todo.ios.share', name: 'OpenTodo Share' },
 ]
 /** What the entitlements of the three targets need (the .entitlements files in mobile/ios). */
 export const CAPABILITIES = ['APP_GROUPS']
@@ -136,8 +136,8 @@ export async function findApp(call) {
 function takenMessage(identifier, detail) {
   return (
     `${identifier} belongs to another Apple developer team (Apple: "${detail}"). ` +
-    `Pick a new prefix: change app.opentodo in mobile/ios/project.yml (bundleIdPrefix and the three PRODUCT_BUNDLE_IDENTIFIER values), ` +
-    `the App Group group.app.opentodo, and BUNDLE_IDS and APP_GROUP in scripts/release/appstore.mjs, then run "iOS register IDs" again.`
+    `Pick a new prefix: change ${BUNDLE_IDS[0].identifier} in mobile/ios/project.yml (bundleIdPrefix and every PRODUCT_BUNDLE_IDENTIFIER, then regenerate the Xcode project), ` +
+    `the App Group ${APP_GROUP}, and BUNDLE_IDS and APP_GROUP in scripts/release/appstore.mjs, then run "iOS register IDs" again.`
   )
 }
 
@@ -339,7 +339,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
  */
 export async function setWhatToTest(call, { version, build, text, attempts = 40, wait = 30_000, pause = sleep, log = defaultLog }) {
   const app = await findApp(call)
-  if (!app) throw new Error('no app record for app.opentodo')
+  if (!app) throw new Error(`no app record for ${BUNDLE_IDS[0].identifier}`)
   let found = null
   for (let i = 0; i < attempts && !found; i++) {
     if (i > 0) await pause(wait)
@@ -395,7 +395,7 @@ async function main(argv) {
     }
     case 'app-id': {
       const app = await findApp(call)
-      if (!app) throw new Error('there is no app record for app.opentodo yet: create it in App Store Connect → Apps → + → New App')
+      if (!app) throw new Error(`there is no app record for ${BUNDLE_IDS[0].identifier} yet: create it in App Store Connect → Apps → + → New App`)
       console.log(app.id)
       return
     }
@@ -409,7 +409,7 @@ async function main(argv) {
         return
       }
       const app = await findApp(call)
-      if (!app) throw new Error('there is no app record for app.opentodo yet: create it in App Store Connect → Apps → + → New App')
+      if (!app) throw new Error(`there is no app record for ${BUNDLE_IDS[0].identifier} yet: create it in App Store Connect → Apps → + → New App`)
       console.log(nextBuildNumber(v.code, await existingBuilds(call, app.id, v.version)))
       return
     }

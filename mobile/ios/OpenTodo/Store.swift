@@ -4,7 +4,7 @@ import Foundation
 /// container, or the app's own Documents folder when the group is unavailable (a
 /// simulator build without a signed entitlement).
 enum Store {
-    static let appGroup = "group.app.opentodo"
+    static let appGroup = "group.app.open-todo.ios"
 
     static var container: URL {
         if let url = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup) { return url }
