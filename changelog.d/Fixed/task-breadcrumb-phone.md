@@ -1,1 +1,1 @@
-- **A task's path no longer overlaps itself on a phone.** On a subtask in a long-named project, the crumbs in the task page's header were drawn on top of each other; a crumb without room now shortens and clips its text.
+- **A task's path reads clearly on a phone.** The task page's header used to squeeze the whole path into a few cut-off crumbs ("H. › G…") that could overlap. On a phone it now shows only the nearest step up, the parent task or the project, in full. Tap it to go up one level.
