@@ -31,10 +31,14 @@ func TestNoIndexOnlyWhenAsked(t *testing.T) {
 		b, _ := io.ReadAll(rec.Result().Body)
 		return string(b)
 	}
-	for _, p := range []string{"/", "/inbox", "/index.html"} {
+	for _, p := range []string{"/", "/inbox"} {
 		if !strings.Contains(get(Options{NoIndex: true}, p), noIndexMeta) {
 			t.Errorf("%s: noindex missing on the demo page", p)
 		}
+	}
+	// /index.html is the built page the signed list names (signed-web-app D7).
+	if strings.Contains(get(Options{NoIndex: true}, "/index.html"), "noindex") {
+		t.Error("/index.html: noindex added to the built page")
 	}
 	if strings.Contains(get(Options{}, "/"), "noindex") {
 		t.Error("noindex on a normal instance")
@@ -60,7 +64,7 @@ func TestServiceWorkerNeverCached(t *testing.T) {
 	if _, err := fs.Stat(dist, "dist/sw.js"); err != nil {
 		t.Skip("web app not built")
 	}
-	for path, want := range map[string]string{"/sw.js": "no-store", "/": "no-cache", "/manifest.webmanifest": "no-cache"} {
+	for path, want := range map[string]string{"/sw.js": "no-store, no-transform", "/": "no-cache, no-transform", "/manifest.webmanifest": "no-cache, no-transform"} {
 		rec := httptest.NewRecorder()
 		Handler().ServeHTTP(rec, httptest.NewRequest("GET", path, nil))
 		if got := rec.Header().Get("Cache-Control"); got != want {
@@ -104,6 +108,39 @@ func TestMissingFilesAreNotFound(t *testing.T) {
 		}
 		if want == 404 && strings.Contains(rec.Body.String(), "<html") {
 			t.Errorf("%s: answered with the page", path)
+		}
+	}
+}
+
+// TestServedAsBuilt: every file of the signed list reaches the browser as
+// built (OpenSpec change signed-web-app, design D7): /index.html unmodified on
+// a demo instance too, the list never cached, and no-transform everywhere.
+func TestServedAsBuilt(t *testing.T) {
+	page := []byte("<!doctype html><html><head></head><body><div id=root></div></body></html>")
+	sub := fstest.MapFS{
+		"index.html":          {Data: page},
+		"assets/index-abc.js": {Data: []byte("console.log(1)")},
+		"app-manifest.json":   {Data: []byte(`{"format":1}`)},
+		"favicon.svg":         {Data: []byte("<svg/>")},
+	}
+	h := handlerFor(sub, Options{NoIndex: true})
+	for path, want := range map[string]string{
+		"/index.html":          "no-cache, no-transform",
+		"/app-manifest.json":   "no-store, no-transform",
+		"/assets/index-abc.js": "public, max-age=31536000, immutable, no-transform",
+		"/favicon.svg":         "no-cache, no-transform",
+		"/":                    "no-cache, no-transform",
+	} {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest("GET", path, nil))
+		if rec.Code != 200 || rec.Header().Get("Cache-Control") != want {
+			t.Errorf("%s: %d, Cache-Control %q, want %q", path, rec.Code, rec.Header().Get("Cache-Control"), want)
+		}
+		if path == "/index.html" && rec.Body.String() != string(page) {
+			t.Errorf("/index.html changed: %q", rec.Body.String())
+		}
+		if path == "/app-manifest.json" && rec.Header().Get("CDN-Cache-Control") != "no-store" {
+			t.Error("app-manifest.json: CDN-Cache-Control missing")
 		}
 	}
 }
