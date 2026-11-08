@@ -68,11 +68,15 @@ A pushed tag never moves. If the tag's run fails before anything is published, f
 
 ## 3. The release workflow
 
-The tag runs the full CI matrix (`.github/workflows/ci.yml`: every binary, the WebKit, German and French layouts, Android, the image). Only when every gate passes:
+The tag runs the full CI matrix (`.github/workflows/ci.yml`: every binary, the WebKit, German and French layouts, Android, the image).
+
+**Approve the web app's signature.** The `web-sign` job (Web app signature) waits in the protected `web-signing` environment until the maintainer approves it: open the run, **Review deployments**, tick `web-signing`, **Approve and deploy**. It signs the web app's file list with `WEB_SIGNING_KEY` after checking every file and that the version matches the tag; the binaries and the image are built around what it signed, and the image job checks the files the image serves against the list. Without the secret (before the keys exist) it warns and passes the release on unsigned ([Signed app code](docs/security/signed-app.md)).
+
+Only when every gate passes:
 
 - the image is pushed to `ghcr.io/opentodoapp/opentodo` as `0.15.0`, `0.15` and `stable`, signed with its SBOM and provenance;
 - before the GitHub release is published, the release job checks that the new tag can be pulled without signing in (an anonymous ghcr.io token, then the manifest; `scripts/release/check-public-image.sh`). If the package was left private, it fails with a message naming the package's visibility setting;
-- the **GitHub release** gets the binaries, the extension and skill zips, the Android APK and AAB, the site bundle and `SHA256SUMS` (only these, by exact name: `scripts/release/collect-assets.sh`) with attestations, and its notes from the `CHANGELOG.md` section (`scripts/release-notes.sh`; a tag without a section fails);
+- the **GitHub release** gets the binaries, the extension and skill zips, the Android APK and AAB, the site bundle, the web app's signed file list (`opentodo-web-manifest-<tag>.json`) and `SHA256SUMS` (only these, by exact name: `scripts/release/collect-assets.sh`) with attestations, and its notes from the `CHANGELOG.md` section (`scripts/release-notes.sh`; a tag without a section fails);
 - for a final tag, the Helm chart is published (`.github/workflows/helm.yml`), the Claude plugin is pushed to `OpenTodoApp/opentodo-claude` and the Obsidian plugin to `OpenTodoApp/obsidian-opentodo`;
 - the release also carries the signed Android APK and AAB (`opentodo-android-<version>.apk`, `.aab`), after the Android job proved the build reproducible (a second build in a fresh checkout, compared by `scripts/android-repro.sh`; a mismatch fails the release) and checked the certificate against the documented one;
 - the AAB is the Google Play build, without location permissions until Play approves background location (`-Popentodo.play=true`; the Android job fails when it declares one or the APK lost one, `scripts/android-store-check.sh`);
