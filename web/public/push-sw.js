@@ -8,7 +8,9 @@
 //   toast only, no system notification); otherwise show a notification titled
 //   from the local copy of the task (the payload carries ids only unless the
 //   device opted in to titles) and record it in the shared "shown" set.
-// - notificationclick: "Snooze 10 min" / "Dismiss" write ordinary reminder ops
+// - notificationclick: "Done" has the app complete the task (an open window, else
+//   the app opened at /?reminder=<id>&action=done; OpenSpec reminder-done-action).
+//   "Snooze 10 min" / "Dismiss" write ordinary reminder ops
 //   into the local store and the outbox (exactly what the app's mutate() does),
 //   then ask an open window to sync, or post them to /api/v1/sync directly.
 //   Offline they simply wait in the outbox. A click on the body opens the task;
@@ -30,15 +32,20 @@
   // A missing preferences row or "system" means English: the worker cannot know
   // which language the browser resolves to when no window is open.
   const TEXT = {
-    en: { reminder: 'Reminder', due: 'Due {date}', generic: 'You have a reminder', snooze: 'Snooze 10 min', dismiss: 'Dismiss', test: 'Test notification: push works on this device.' },
-    de: { reminder: 'Erinnerung', due: 'Fällig {date}', generic: 'Du hast eine Erinnerung', snooze: '10 Min. später', dismiss: 'Verwerfen', test: 'Testbenachrichtigung: Push funktioniert auf diesem Gerät.' },
-    fr: { reminder: 'Rappel', due: 'Échéance {date}', generic: 'Vous avez un rappel', snooze: 'Reporter de 10 min', dismiss: 'Ignorer', test: 'Notification de test : les notifications push fonctionnent sur cet appareil.' },
-    es: { reminder: 'Recordatorio', due: 'Vence {date}', generic: 'Tienes un recordatorio', snooze: 'Posponer 10 min', dismiss: 'Descartar', test: 'Notificación de prueba: las notificaciones push funcionan en este dispositivo.' },
-    it: { reminder: 'Promemoria', due: 'Scadenza {date}', generic: 'Hai un promemoria', snooze: 'Posticipa di 10 min', dismiss: 'Ignora', test: 'Notifica di prova: le notifiche push funzionano su questo dispositivo.' },
-    pt: { reminder: 'Lembrete', due: 'Vence {date}', generic: 'Você tem um lembrete', snooze: 'Adiar 10 min', dismiss: 'Dispensar', test: 'Notificação de teste: as notificações push funcionam neste dispositivo.' },
-    zh: { reminder: '提醒', due: '{date} 截止', generic: '你有一条提醒', snooze: '延后 10 分钟', dismiss: '忽略', test: '测试通知：推送在此设备上正常工作。' },
+    en: { reminder: 'Reminder', due: 'Due {date}', generic: 'You have a reminder', done: 'Done|task', snooze: 'Snooze 10 min', dismiss: 'Dismiss', test: 'Test notification: push works on this device.' },
+    de: { reminder: 'Erinnerung', due: 'Fällig {date}', generic: 'Du hast eine Erinnerung', done: 'Erledigt', snooze: '10 Min. später', dismiss: 'Verwerfen', test: 'Testbenachrichtigung: Push funktioniert auf diesem Gerät.' },
+    fr: { reminder: 'Rappel', due: 'Échéance {date}', generic: 'Vous avez un rappel', done: 'Terminé', snooze: 'Reporter de 10 min', dismiss: 'Ignorer', test: 'Notification de test : les notifications push fonctionnent sur cet appareil.' },
+    es: { reminder: 'Recordatorio', due: 'Vence {date}', generic: 'Tienes un recordatorio', done: 'Hecho', snooze: 'Posponer 10 min', dismiss: 'Descartar', test: 'Notificación de prueba: las notificaciones push funcionan en este dispositivo.' },
+    it: { reminder: 'Promemoria', due: 'Scadenza {date}', generic: 'Hai un promemoria', done: 'Fatto', snooze: 'Posticipa di 10 min', dismiss: 'Ignora', test: 'Notifica di prova: le notifiche push funzionano su questo dispositivo.' },
+    pt: { reminder: 'Lembrete', due: 'Vence {date}', generic: 'Você tem um lembrete', done: 'Concluído', snooze: 'Adiar 10 min', dismiss: 'Dispensar', test: 'Notificação de teste: as notificações push funcionam neste dispositivo.' },
+    zh: { reminder: '提醒', due: '{date} 截止', generic: '你有一条提醒', done: '完成', snooze: '延后 10 分钟', dismiss: '忽略', test: '测试通知：推送在此设备上正常工作。' },
   }
   self.__opentodoText = TEXT
+
+  /** A text without its catalog context ("Done|task" is shown as "Done"). */
+  function plain(s) {
+    return String(s).replace(/\|[^|]*$/, '')
+  }
 
   /** The stored language when it is one the worker has texts for, else English. */
   function languageOf(prefs) {
@@ -334,6 +341,41 @@
     }
   }
 
+  /**
+   * Done, Snooze 10 min, Dismiss (reminder-done-action D3): Done first. A browser that
+   * shows fewer buttons (Chrome shows two) keeps the first ones; a reminder whose
+   * notification has no Dismiss is still dismissed from the app.
+   */
+  function reminderActions(text) {
+    const all = [
+      { action: 'done', title: plain(text.done) },
+      { action: 'snooze10', title: text.snooze },
+      { action: 'dismiss', title: text.dismiss },
+    ]
+    const N = self.Notification
+    const max = N && Number.isInteger(N.maxActions) && N.maxActions > 0 ? N.maxActions : all.length
+    return all.slice(0, max)
+  }
+
+  /**
+   * Done (reminder-done-action D1): the worker cannot run the app's completion (a
+   * repeating task moves to its next occurrence, an encrypted account's records are
+   * encrypted at upload), so the app does it with completeTask. One open window
+   * completes the task in place; with none, the app opens at the address a native
+   * shell's Done uses, which completes it and shows Today. Offline, the app's ops wait
+   * in the outbox like any other change.
+   */
+  async function completeFromNotification(reminderId) {
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+    // Exactly one window: two would each complete, and a series would move twice.
+    const w = windows.find((c) => c.focused || c.visibilityState === 'visible') || windows[0]
+    if (w) {
+      w.postMessage({ type: 'reminders:done', reminderId })
+      return
+    }
+    await self.clients.openWindow(`/?reminder=${encodeURIComponent(reminderId)}&action=done`)
+  }
+
   self.addEventListener('push', (event) => {
     event.waitUntil((async () => {
       let data = {}
@@ -383,10 +425,7 @@
         badge: '/pwa-192.png',
         timestamp: data.fireAt,
         data: { reminderId: data.reminderId, taskId: data.taskId, fireAt: data.fireAt },
-        actions: [
-          { action: 'snooze10', title: TEXT[languageOf(prefs)].snooze },
-          { action: 'dismiss', title: TEXT[languageOf(prefs)].dismiss },
-        ],
+        actions: reminderActions(TEXT[languageOf(prefs)]),
       })
       await markShown(data.reminderId, data.fireAt)
     })())
@@ -421,6 +460,10 @@
         return
       }
       if (!d.reminderId) return
+      if (event.action === 'done') {
+        await completeFromNotification(d.reminderId)
+        return
+      }
       if (event.action === 'snooze10' || event.action === 'dismiss') {
         const now = Date.now()
         const patch = event.action === 'snooze10'
