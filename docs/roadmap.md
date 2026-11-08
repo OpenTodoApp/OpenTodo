@@ -68,7 +68,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 
 | Change | What | Status |
 | --- | --- | --- |
-| `ios-distribution` | The iPhone app in TestFlight and the App Store | Planned |
+| `ios-distribution` | The iPhone app in TestFlight and the App Store | In progress (11 of 24) |
 | `apple-shortcuts` | Siri, Shortcuts, the Action Button and iOS widgets | Planned |
 | `focus-live-activity` | Focus as a Live Activity and in the Dynamic Island | Planned |
 | `focus-session-readable` | The running Focus session readable by the shells and agents | Shipped in 0.20 |

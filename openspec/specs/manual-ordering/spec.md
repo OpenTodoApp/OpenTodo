@@ -17,7 +17,7 @@ Lists that support manual ordering SHALL sort items by their `position` number a
 - **THEN** the list shows the new order immediately, it survives a reload, and the single position operation is uploaded when the network returns
 
 ### Requirement: Drag and drop within a list
-Items in a manually ordered list SHALL be draggable with a mouse and with touch (after a short press), showing a drop indicator between items while dragging. Dropping SHALL place the item at the indicated place; pressing Escape or dropping outside any list SHALL cancel without changes.
+Items in a manually ordered list SHALL be draggable with a mouse and with touch (after a short press), showing a drop indicator between items while dragging. Dropping SHALL place the item at the indicated place; pressing Escape or dropping outside any list SHALL cancel without changes. In a list that shows subtasks under their parents, a drop between two rows SHALL take a level: the dragged task's own level while the pointer moves only up or down, one level deeper for each indent the pointer has moved to the right since the drag began and one shallower for each indent to the left, never shallower than the row below the line and never deeper than one level under the row above. At the level of the row above or shallower the task SHALL land after that row's ancestor at that level; one level deeper it SHALL become a subtask of the row above. Dropping on the middle of a row SHALL make the task that row's last subtask. The move SHALL be one local operation, so it works offline and converges like every move.
 
 #### Scenario: Drag to a new place
 - **WHEN** the user drags the third task and drops it above the first
@@ -26,6 +26,18 @@ Items in a manually ordered list SHALL be draggable with a mouse and with touch 
 #### Scenario: Cancel a drag
 - **WHEN** the user starts dragging a task and presses Escape
 - **THEN** the list is unchanged and no operation is queued
+
+#### Scenario: Keep the level below a deep subtree
+- **WHEN** a project lists D, then A with its subtask B and B's subtask C, then E, and the user drags D straight down to just below C
+- **THEN** the line starts at the top level's indent, and dropping makes D a top-level task between A and E
+
+#### Scenario: Move right to nest
+- **WHEN** in the same project the user drags D below C and moves the pointer two indents to the right
+- **THEN** the line starts at C's indent, and dropping makes D a subtask of B right after C
+
+#### Scenario: Offline
+- **WHEN** the device is offline and the user drops a task at a new level
+- **THEN** the list shows it there at once, and its parent and position are uploaded when the network returns
 
 ### Requirement: Keyboard moves
 With an item selected, Alt+Up and Alt+Down SHALL move it one place up or down within its list, and Alt+Shift+Up and Alt+Shift+Down SHALL move it to the top or bottom. The selection SHALL stay on the moved item. At the edge of a list the key SHALL do nothing. The shortcuts SHALL not fire while typing in a field.
@@ -159,3 +171,22 @@ A label page and a saved list view SHALL each keep their own manual order, store
 #### Scenario: Offline and concurrent
 - **WHEN** the phone, offline, moves a task to the top of the view "Urgent" while the laptop moves another task to its top, and the phone syncs later
 - **THEN** both devices show the phone's order and no task is listed twice or lost
+
+### Requirement: Add a task below another
+In a project the user can edit and in the Inbox, the row menu of a task that can move SHALL offer Add task below. It SHALL open an inline line after the task and its visible subtasks, at the task's level, focused. Each title entered SHALL become a task in the same project, parent and section, placed right after the last task the line added (the first time, right after the task); the line SHALL then show under the new task and keep the focus. Escape, or leaving the line empty, SHALL close it. Each task SHALL be created and placed by local operations, so it works offline and converges like a quick add followed by a move. The item SHALL not be offered for a completed task, for a viewer of a shared project, on a board, or in a list without subtasks under their parents.
+
+#### Scenario: Between a subtree and the next task
+- **WHEN** a project lists A with its subtask B and B's subtask C, then E, and the user chooses Add task below on A, types "Prepare", sends it, then types "Buy paint" and sends it
+- **THEN** the project lists A (with B and C), Prepare, Buy paint, E, and the line shows under Buy paint
+
+#### Scenario: Below a subtask
+- **WHEN** the user chooses Add task below on the subtask B and adds "Buy supplies"
+- **THEN** "Buy supplies" is a subtask of A right after B
+
+#### Scenario: Offline
+- **WHEN** the device is offline and the user adds a task below another
+- **THEN** it shows in place at once, survives a reload, and is uploaded with its position when the network returns
+
+#### Scenario: Not for a viewer
+- **WHEN** a viewer of a shared project opens a task's row menu
+- **THEN** Add task below and Add subtask are not offered

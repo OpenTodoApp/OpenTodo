@@ -22,12 +22,16 @@ import { SectionHeader, SectionQuickAdd } from '../Sections'
 import { departures$, ghostMemory, isGhost, listCommitted, markGhost, registerList, withGhosts } from '../motion'
 import type { FlowView } from '../../lib/useFlow'
 import { TaskListRow, SubtaskInput, type RowActions } from './TaskListRow'
+import type { BelowLine } from './belowLine'
 import { WaitingSoonList } from './WaitingSoon'
 import type { ListRoute } from './useListModel'
 import { useFullTitles } from '../../lib/fullTitles'
 import { BLOCK_ROWS, BLOCKS_FROM, blockOf, rowBlocks, type RowBlock } from './rowBlocks'
 import { RowBlockContext } from './rowBlockContext'
 import { keysBetween } from '../../lib/taskDelta'
+
+/** The "Add task below" line (add-below): loaded when it first opens. */
+const SiblingInput = lazy(() => import('./SiblingInput'))
 
 export interface RowContext {
   /** Touch rows follow a swipe (phone-v2 D3): coarse pointer, nothing ticked, not select mode. */
@@ -66,6 +70,10 @@ export interface RowContext {
   rowLayout?: RowLayout
   actions: RowActions
   addingUnder: string | null
+  /** The open "Add task below" line (add-below): its row, its depth and the row it follows (the last of the row's subtree). */
+  addingBelow?: BelowLine | null
+  /** A task the open "Add task below" line added: the line moves under it. */
+  onAddedBelow?: (anchor: string, id: string) => void
   onCloseSubtask: () => void
   /** The row being edited in place, and its editor (inline-task-editing). */
   inlineId?: string | null
@@ -173,6 +181,7 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           // No row shows its details while a drag runs, so drop zones are one-line rows (row-expand D4).
           expanded={!ghost && !c.draggingId && c.expandedId === r.task.id}
           dropIndicator={!ghost && c.dropAt?.id === r.task.id ? c.dropAt.zone : null}
+          dropDepth={!ghost && c.dropAt?.id === r.task.id ? c.dropAt.depth : undefined}
           dragging={!ghost && c.draggingId === r.task.id}
           ticked={!ghost && c.ticked.has(r.task.id)}
           showCheckbox={c.showCheckbox}
@@ -190,6 +199,13 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
             <SubtaskInput parent={r.task} depth={r.depth + 1} onClose={c.onCloseSubtask} />
           </li>
         )}
+        {c.addingBelow?.at === r.task.id && c.onAddedBelow && !c.board && (
+          <li>
+            <Suspense fallback={null}>
+              <SiblingInput anchor={c.addingBelow.anchor} after={c.addingBelow.after} depth={c.addingBelow.depth} onAdded={c.onAddedBelow} onClose={c.onCloseSubtask} />
+            </Suspense>
+          </li>
+        )}
       </Fragment>
     )
   }
@@ -203,7 +219,7 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
  * every row of a 2,000-row list again after each completion (list-rendering-at-scale
  * D6). `siblingPos` is written on the rows by SiblingAria, not drawn.
  */
-const ROW_FIELDS = new Set<keyof RowContext>(['selectedId', 'inlineId', 'expandedId', 'dropAt', 'draggingId', 'ticked', 'addingUnder', 'onCloseSubtask',
+const ROW_FIELDS = new Set<keyof RowContext>(['selectedId', 'inlineId', 'expandedId', 'dropAt', 'draggingId', 'ticked', 'addingUnder', 'addingBelow', 'onAddedBelow', 'onCloseSubtask',
   'progress', 'blocked', 'flow', 'habits', 'isReadOnly', 'projectMap', 'memberMap', 'siblingPos', 'renderInline'])
 
 const sameProgress = (a: Progress | undefined, b: Progress | undefined): boolean => a === b || (!!a && !!b && a.done === b.done && a.total === b.total)
@@ -220,7 +236,7 @@ const sameHabit = (a: HabitStats | undefined, b: HabitStats | undefined): boolea
 function mayChange(a: RowContext, b: RowContext): ReadonlySet<string> | null {
   if (a.ticked !== b.ticked || !a.draggingId !== !b.draggingId || a.isReadOnly !== b.isReadOnly || a.projectMap !== b.projectMap || a.memberMap !== b.memberMap) return null
   const ids = new Set<string>()
-  for (const x of [a.selectedId, b.selectedId, a.inlineId, b.inlineId, a.expandedId, b.expandedId, a.draggingId, b.draggingId, a.addingUnder, b.addingUnder, a.dropAt?.id, b.dropAt?.id]) if (x) ids.add(x)
+  for (const x of [a.selectedId, b.selectedId, a.inlineId, b.inlineId, a.expandedId, b.expandedId, a.draggingId, b.draggingId, a.addingUnder, b.addingUnder, a.addingBelow?.at, b.addingBelow?.at, a.dropAt?.id, b.dropAt?.id]) if (x) ids.add(x)
   const maps: [object | undefined, object | undefined][] = [[a.progress, b.progress], [a.blocked, b.blocked], [a.flow, b.flow], [a.habits, b.habits]]
   for (const [x, y] of maps) {
     if (x === y) continue
@@ -242,8 +258,9 @@ function sameForRow(a: RowContext, b: RowContext, r: Row): boolean {
   const id = task.id
   const is = (x: unknown) => x === id
   if (is(a.selectedId) !== is(b.selectedId) || is(a.inlineId) !== is(b.inlineId) || is(a.expandedId) !== is(b.expandedId)) return false
-  if (is(a.draggingId) !== is(b.draggingId) || !a.draggingId !== !b.draggingId || is(a.addingUnder) !== is(b.addingUnder)) return false
+  if (is(a.draggingId) !== is(b.draggingId) || !a.draggingId !== !b.draggingId || is(a.addingUnder) !== is(b.addingUnder) || is(a.addingBelow?.at) !== is(b.addingBelow?.at)) return false
   if ((is(a.dropAt?.id) ? a.dropAt!.zone : null) !== (is(b.dropAt?.id) ? b.dropAt!.zone : null)) return false
+  if ((is(a.dropAt?.id) ? a.dropAt!.depth : null) !== (is(b.dropAt?.id) ? b.dropAt!.depth : null)) return false
   if (a.ticked !== b.ticked && a.ticked.has(id) !== b.ticked.has(id)) return false
   if (a.progress !== b.progress && !sameProgress(a.progress.get(id), b.progress.get(id))) return false
   if (a.blocked !== b.blocked && a.blocked.get(id) !== b.blocked.get(id)) return false

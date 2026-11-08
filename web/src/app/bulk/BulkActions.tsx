@@ -188,6 +188,8 @@ export interface ListReorder {
   move: (id: string, step: Step) => void
   /** First or last in its list (the items at that edge are disabled); null when the task cannot move. */
   edges: (id: string) => Promise<{ first: boolean; last: boolean } | null>
+  /** A tree list (a project, the Inbox): open an inline add line after the task or under it (add-below). */
+  add?: { below: (id: string) => void; under: (id: string) => void }
 }
 export const ListReorderContext = createContext<ListReorder | null>(null)
 
@@ -207,6 +209,20 @@ export function reorderItem(id: string | undefined, r: ListReorder | null | unde
     { kind: 'action', id: 'move-top', label: t('Move to top'), icon: 'arrow-up', shortcut: keysOf('list.move-top'), ...first, onSelect: () => r.move(id, 'top') },
     { kind: 'action', id: 'move-bottom', label: t('Move to bottom'), icon: 'arrow-down', shortcut: keysOf('list.move-bottom'), ...last, onSelect: () => r.move(id, 'bottom') },
   ] }]
+}
+
+/**
+ * "Add task below" and "Add subtask" for one task of a tree list (OpenSpec change add-below,
+ * GitHub issue 1036): an inline line where the new tasks will appear; nothing for a task
+ * that cannot move (a viewer's, a completed one) or outside a tree list.
+ */
+export function addItems(id: string | undefined, r: ListReorder | null | undefined, edges: { first: boolean; last: boolean } | null | undefined): ActionItem[] {
+  const add = r?.add
+  if (!id || !add || !edges) return []
+  return [
+    { kind: 'action', id: 'add-below', label: t('Add task below'), icon: 'plus', onSelect: () => add.below(id) },
+    { kind: 'action', id: 'add-subtask', label: t('Add subtask'), icon: 'corner-down-right', shortcut: keysOf('list.add-subtask'), onSelect: () => add.under(id) },
+  ]
 }
 
 /** The menu's groups for the given tasks (exported for the palette and tests). */
@@ -253,7 +269,7 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
       } },
     ] },
     { items: [
-      ...(n === 1 ? reorderItem(ids[0], a.reorder, d.edges) : []),
+      ...(n === 1 ? [...addItems(ids[0], a.reorder, d.edges), ...reorderItem(ids[0], a.reorder, d.edges)] : []),
       { kind: 'picker', id: 'move', label: t('Move to project'), icon: 'folder-input', picker: {
         title: t('Move to project'), placeholder: t('Find a project…'), source: projectSource(d.projects, { memberships: d.memberships }),
         getKey: itemKey, getLabel: itemLabel, getPath: itemPath, getKeywords: itemKeywords, rankContext: 'project',

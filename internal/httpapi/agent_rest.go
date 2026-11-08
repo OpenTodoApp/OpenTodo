@@ -377,6 +377,8 @@ var taskCreateFields = map[string]bool{"title": true, "description": true, "proj
 	"energy": true,
 	// The task's time sector (OpenSpec change time-sectors).
 	"sector": true,
+	// How the task's subtasks flow (OpenSpec change subtask-flow).
+	"flow_mode": true,
 	// Custom field values keyed by field id (agent-tools-complete D7).
 	"fields": true}
 
@@ -409,7 +411,7 @@ func agentPatchTaskCalls(id string, body map[string]json.RawMessage, existing op
 	for k, v := range body {
 		switch k {
 		case "title", "description", "priority", "labels", "estimate_minutes", "recurrence", "origin",
-			"deadline", "start", "evening", "span", "day_part", "blocked_by", "location", "energy", "sector", "fields":
+			"deadline", "start", "evening", "span", "day_part", "blocked_by", "location", "energy", "sector", "flow_mode", "fields":
 			update[k] = v
 		case "project_id", "section_id":
 			if move == nil {

@@ -190,6 +190,7 @@
       "energy",
       "estimate_minutes",
       "evening",
+      "flow_mode",
       "habit",
       "ical_extra",
       "labels",

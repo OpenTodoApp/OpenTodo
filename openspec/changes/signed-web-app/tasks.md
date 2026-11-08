@@ -19,10 +19,10 @@ The maintainer approved the design on #1025 (2026-11-08). The work lands in two 
 ### 2. Build and server
 
 - [ ] 2.1 `scripts/app-manifest.mjs`, run by `npm run build` after `vite build`, writes the unsigned `app-manifest.json`: every file in `dist` as `install` or `lazy`, the worker's hash, the build's key set and `refuse` from `internal/websign/release-keys.json`, the version from `OPENTODO_VERSION` and the preview label from `OPENTODO_BUILD`. With `WEB_SIGNING_KEY` set, `make web` signs with it. Verified by a test of the script on a fixture `dist`, and by `make web` then `go run ./cmd/websign verify internal/web/dist`.
-- [ ] 2.2 `internal/web`: `/index.html` served unmodified, `app-manifest.json` with `no-store`, and `no-transform` on every app file. Branded and `noindex` navigations unchanged. Verified by `go test ./internal/web` and `TestSecurityHeaders`.
-- [ ] 2.3 The server logs the build's signature state and short fingerprint at startup, and warns when the embedded files don't match their list. Verified by a `go test ./internal/web` log assertion.
+- [x] 2.2 `internal/web`: `/index.html` served unmodified, `app-manifest.json` with `no-store`, and `no-transform` on every app file. Branded and `noindex` navigations unchanged. Verified by `go test ./internal/web` and `TestSecurityHeaders`.
+- [x] 2.3 The server logs the build's signature state and short fingerprint at startup, and warns when the embedded files don't match their list. Verified by `TestLogSignature` (`go test ./internal/web`).
 - [ ] 2.4 The Dockerfile accepts the BuildKit secret `web_signing_key`, and the build args `VERSION` and `OPENTODO_BUILD` reach the web stage. Verified by `docker build --secret id=web_signing_key,src=internal/websign/testdata/test-key.pem .` followed by `websign verify` against the running container.
-- [ ] 2.5 The page applies the branded title and icons from `branding.ts` on start, so the worker can serve the signed `index.html` byte for byte. Verified by `web/src/lib/branding.test.ts`.
+- [x] 2.5 The page applies the branded title and icons from `branding.ts` on start, so the worker can serve the signed `index.html` byte for byte. Verified by `web/src/lib/branding.test.ts`.
 
 ### 3. The verifier worker, report-only
 

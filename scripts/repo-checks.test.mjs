@@ -65,6 +65,7 @@ const table = [
   [['mobile/android/store/permissions.txt', 'internal/httpapi/router.go'], { code: 'true', docs: 'false', mobile: 'true' }],
   [['fastlane/metadata/android/en-US/full_description.txt'], { code: 'false', docs: 'false', mobile: 'true', ios: 'false' }],
   [['mobile/ios/OpenTodo/Bridge.swift'], { code: 'false', docs: 'false', mobile: 'false', ios: 'true' }],
+  [['scripts/release/ios-testflight.sh'], { code: 'true', docs: 'false', mobile: 'false', ios: 'true' }],
   [['mobile/ios/project.yml', 'mobile/android/app/build.gradle.kts'], { code: 'false', docs: 'false', mobile: 'true', ios: 'true' }],
   [['mobile/README.md'], { code: 'false', docs: 'false', mobile: 'false', ios: 'false' }],
 ]
@@ -296,11 +297,13 @@ test('the image, stable tag and release are published only after every gate', ()
   // claude-plugin publishes the Claude Code marketplace after the release (claude-plugin D5).
   // play uploads the Android bundle to Google Play's internal track after the release (play-production D2).
   // obsidian-plugin publishes the Obsidian plugin's release repository after the release (obsidian-plugin D1).
-  const publishing = ['docker', 'release', 'claude-plugin', 'play', 'obsidian-plugin']
+  // ios-testflight uploads the iPhone app to TestFlight after the release (ios-distribution D5).
+  const publishing = ['docker', 'release', 'claude-plugin', 'play', 'obsidian-plugin', 'ios-testflight']
   for (const p of publishing) assert.ok(jobs[p], `ci.yml has a ${p} job`)
   assert.deepEqual(needsOf(jobs['claude-plugin']), ['release'], 'the plugin is published only after the release')
   assert.deepEqual(needsOf(jobs.play), ['release'], 'the Play upload runs only after the release')
   assert.deepEqual(needsOf(jobs['obsidian-plugin']), ['release'], 'the Obsidian plugin is published only after the release')
+  assert.deepEqual(needsOf(jobs['ios-testflight']), ['release'], 'the TestFlight upload runs only after the release')
   const gates = Object.keys(jobs).filter((j) => !publishing.includes(j))
   for (const g of gates) {
     assert.ok(needsOf(jobs.docker).includes(g), `the docker (publish) job must need ${g}`)
@@ -612,6 +615,51 @@ test('the Play upload runs only for final tags, after the release, with its secr
       if (/secrets\.PLAY_/.test(block)) assert.ok(f.endsWith('ci.yml') && id === 'play', `${f}: only the play job reads the Play secrets`)
     }
   }
+})
+
+// The iPhone app's TestFlight upload (OpenSpec change ios-distribution D5, D9): final tags after the
+// release and by hand, the App Store Connect key only in the release environment, a registration
+// job of its own, and never any signing material in the repository.
+test('the TestFlight upload runs for final tags after the release and by hand, with its secrets in the release environment', () => {
+  const caller = jobsOf(read('.github/workflows/ci.yml'))['ios-testflight']
+  assert.match(caller, /^ {4}if: startsWith\(github\.ref, 'refs\/tags\/v'\) && !contains\(github\.ref_name, '-'\)$/m, 'final tags only')
+  assert.match(caller, /^ {4}uses: \.\/\.github\/workflows\/ios-testflight\.yml$/m)
+  const flow = read('.github/workflows/ios-testflight.yml')
+  assert.match(flow, /^ {2}workflow_call:$/m)
+  assert.match(flow, /^ {2}workflow_dispatch:$/m, 'the owner can upload any ref by hand')
+  const job = jobsOf(flow)['ios-testflight']
+  assert.match(job, /^ {4}environment: release$/m)
+  assert.match(job, /::warning::APPLE_TEAM_ID, ASC_KEY_ID, ASC_ISSUER_ID or ASC_KEY_P8 is not set in the release environment: no TestFlight upload/)
+  assert.match(job, /node scripts\/release\/appstore\.mjs register\n[\s\S]*ios-testflight\.sh archive /, 'the bundle IDs are registered before the archive')
+  assert.match(job, /if: always\(\) && steps\.secrets\.outputs\.ready == 'true'\n {8}run: \|\n.*\n.*appstore\.mjs cleanup/, 'the certificate and profiles are removed whatever happened')
+  assert.doesNotMatch(flow, /reviewSubmissions|appStoreVersionSubmissions|betaAppReviewSubmissions/, 'CI never submits for review')
+  const register = jobsOf(read('.github/workflows/ios-register-ids.yml'))['ios-register-ids']
+  assert.ok(register, 'ios-register-ids.yml has an ios-register-ids job')
+  assert.match(read('.github/workflows/ios-register-ids.yml'), /^ {2}workflow_dispatch:$/m)
+  assert.match(register, /^ {4}environment: release$/m)
+  assert.match(register, /node scripts\/release\/appstore\.mjs register/)
+  const ios = jobsOf(read('.github/workflows/ci.yml')).ios
+  assert.match(ios, /make ios-archive/, 'the unsigned archive and its ad hoc signature are checked on every iOS change')
+  for (const f of workflowFiles()) {
+    for (const [id, block] of Object.entries(jobsOf(read(f)))) {
+      if (/secrets\.(ASC_|APPLE_TEAM_ID)/.test(block)) {
+        assert.ok(['ios-testflight', 'ios-register-ids'].includes(id) && /^ {4}environment: release$/m.test(block), `${f}: only the iOS release jobs read the App Store Connect secrets`)
+      }
+    }
+  }
+})
+
+test('no signing key, certificate or profile is ever committed', () => {
+  const tracked = execFileSync('git', ['ls-files'], { cwd: root, encoding: 'utf8' }).split('\n').filter(Boolean)
+  const material = /\.(p8|p12|pfx|mobileprovision|provisionprofile|cer|certSigningRequest|keystore|jks)$/i
+  assert.deepEqual(tracked.filter((f) => material.test(f)), [], 'key and certificate files never go into the repository')
+  // A PEM block with real content (a header line followed by base64), in the places CI reads.
+  const pem = /-----BEGIN [A-Z ]*(PRIVATE KEY|CERTIFICATE)[A-Z ]*-----\r?\n[A-Za-z0-9+/=]{40,}/
+  for (const f of tracked.filter((f) => /^(\.github|scripts|mobile)\//.test(f) && !/\.(png|jpg|webp|jar|apk|aab|zip)$/i.test(f))) {
+    assert.doesNotMatch(read(f), pem, `${f} holds key or certificate material`)
+  }
+  const ignore = read('mobile/ios/.gitignore').split('\n')
+  for (const p of ['*.p8', '*.p12', '*.mobileprovision', '*.cer']) assert.ok(ignore.includes(p), `mobile/ios/.gitignore ignores ${p}`)
 })
 
 test('the F-Droid metadata allows the release certificate that docs/android-app.md publishes', () => {
