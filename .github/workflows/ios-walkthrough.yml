@@ -1,0 +1,51 @@
+name: iPhone walkthrough
+
+# The iPhone walkthrough (docs/ios-app.md "Walkthrough"): the iOS app in the Simulator
+# against a seeded server built here, through the main flows on an iPhone SE (3rd
+# generation), an iPhone 16, an iPhone 16 Pro Max and an iPhone 16 in dark mode with the
+# largest text. It uploads ios-walkthrough: screenshots/<device>-<step>.png, summary.txt
+# (accessibility audit issues and steps it could not reach) and the logs. It reports and
+# never gates. On demand only (a macOS minute costs ten Ubuntu ones):
+#   gh workflow run ios-walkthrough.yml --ref <branch>
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  walkthrough:
+    name: Walkthrough
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - name: Server (web app first, then the binary)
+        run: |
+          (cd web && npm ci --no-audit --no-fund && npm run build)
+          CGO_ENABLED=0 go build -trimpath -o bin/opentodo ./cmd/opentodo
+      - name: Simulators on this runner
+        run: xcrun simctl list devices available
+      - name: Walk through the app
+        run: scripts/ios-walkthrough.sh dist/ios-walkthrough
+      - name: Summary
+        if: always()
+        run: |
+          { echo '```'; cat dist/ios-walkthrough/summary.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: ios-walkthrough
+          path: dist/ios-walkthrough
