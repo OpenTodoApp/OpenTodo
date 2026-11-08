@@ -35,19 +35,19 @@ The server SHALL serve `/app-manifest.json` to any request without sign-in, like
 - **THEN** the bytes are exactly those named in the list, while a navigation to `/` still gets the branded page
 
 ### Requirement: Updates are installed only when verified
-An installed app SHALL install a new version only when a key it trusts signed the version's list, the version is newer than the installed one, and every file needed offline downloaded with the listed size and SHA-256. It SHALL switch to the new set in one step, only after every file is verified. On any failure it SHALL keep running the version it has, serve nothing from the failed set, and show once, for that list: "This update wasn't signed by OpenTodo. It wasn't installed." A successful install SHALL show "A new version of OpenTodo is ready." with "Reload to update". Offline, the app SHALL make no check, show no warning and keep serving its installed version. A download cut off by the network SHALL be discarded and retried later. No operation is written, so local data, sync and convergence are unaffected.
+An installed app SHALL check every new version: a key it trusts signed the version's list, the version is newer than the installed one, and every file needed offline downloaded with the listed size and SHA-256. It SHALL switch to the new set in one step, only after every file is downloaded and checked. Once refusal is on for the device (see "Report-only first, then refusal"), on any failure it SHALL keep running the version it has, serve nothing from the failed set, and show once, for that list, "This update wasn't installed." with the likely cause and a **What to do** link. A successful install SHALL show "A new version of OpenTodo is ready." with "Reload to update". Offline, the app SHALL make no check, show no warning and keep serving its installed version. A download cut off by the network SHALL be discarded and retried later. No operation is written, so local data, sync and convergence are unaffected.
 
 #### Scenario: Valid update
 - **WHEN** the server moves from signed 1.3.0 to signed 1.4.0 while a tab is open
 - **THEN** the app verifies and installs 1.4.0, the tab shows "A new version of OpenTodo is ready.", and after the reload About shows 1.4.0
 
-#### Scenario: Tampered chunk
-- **WHEN** the server offers a signed 1.4.0 list but one chunk it serves differs by a single byte
-- **THEN** nothing of 1.4.0 is installed, the tab shows "This update wasn't signed by OpenTodo. It wasn't installed.", and the app keeps running 1.3.0
+#### Scenario: Tampered chunk with refusal on
+- **WHEN** refusal is on and the server offers a signed 1.4.0 list but one chunk it serves differs by a single byte
+- **THEN** nothing of 1.4.0 is installed, the tab shows "This update wasn't installed. A proxy or the server changed the app's files." with **What to do**, and the app keeps running 1.3.0
 
-#### Scenario: Unsigned update
-- **WHEN** an app installed from a signed release is offered an unsigned list
-- **THEN** the update is refused with the same message and the app keeps its version
+#### Scenario: Unsigned update with refusal on
+- **WHEN** refusal is on and an app installed from a signed release is offered an unsigned list
+- **THEN** the update is refused with "This update wasn't installed. It isn't signed by OpenTodo." and the app keeps its version
 
 #### Scenario: Interrupted download
 - **WHEN** the network drops halfway through downloading 1.4.0
@@ -58,11 +58,33 @@ An installed app SHALL install a new version only when a key it trusts signed th
 - **THEN** the installed version opens with its local data and no update message appears
 
 ### Requirement: Older versions are refused
-An app in signed mode SHALL refuse a signed list whose version is lower than the installed one, or equal to it with different content, keep its version and show once: "This server went back to an older version. It wasn't installed." Sync SHALL keep working with the older server, because the operation schema is additive.
+An app in signed mode SHALL treat a signed list whose version is lower than the installed one, or equal to it with different content, as a failed check with the cause "older". With refusal on, it SHALL keep its version and show once: "This update wasn't installed. The server went back to an older version." with **What to do**. Sync SHALL keep working with the older server, because the operation schema is additive.
 
 #### Scenario: Server rolled back
-- **WHEN** a device runs 1.4.0 and the server is rolled back to signed 1.3.0
-- **THEN** the device keeps 1.4.0, shows "This server went back to an older version. It wasn't installed.", and keeps syncing
+- **WHEN** refusal is on, a device runs 1.4.0 and the server is rolled back to signed 1.3.0
+- **THEN** the device keeps 1.4.0, shows "This update wasn't installed. The server went back to an older version.", and keeps syncing
+
+### Requirement: Report-only first, then refusal
+Until a device has installed a list that verified with a key it trusts and says `"refuse": true`, it SHALL run every check and record the result (passed, or the first failure with its cause and, for a file, its path), and SHALL still install the update through the same staging and one-step switch, showing no refusal. A failed check SHALL never move the device's mode or trusted keys backwards. Once a device has installed a verified list with `"refuse": true`, it SHALL refuse failed updates from then on, and no later list, server setting or header SHALL turn refusal off. Refusal SHALL be turned on only by a signed release, after PikaPods and a server behind Cloudflare (Auto Minify and Rocket Loader each on and off) have been checked. The security documentation SHALL say plainly while report-only mode is on.
+
+#### Scenario: Tampered chunk while reporting
+- **WHEN** a device without refusal is offered a signed 1.4.0 list and one chunk differs by a single byte
+- **THEN** 1.4.0 is installed, no refusal is shown, and Settings → About shows that the last update didn't pass the check, the cause "A proxy or the server changed the app's files." and the chunk's path in the diagnostics line
+
+#### Scenario: Refusal turned on
+- **WHEN** a device installs a verified list that says `"refuse": true`, and later the server offers a list signed by a trusted key that says `"refuse": false` and has a changed file
+- **THEN** the later update is refused
+
+#### Scenario: Unsigned list while reporting
+- **WHEN** a device in signed mode without refusal is offered an unsigned list
+- **THEN** the update is installed, the check is recorded as failed with "The update isn't signed by OpenTodo.", and the device is still in signed mode afterwards
+
+### Requirement: A failed check names the likely cause and links to the fix
+Every refusal, and every failed check shown while reporting, SHALL name the likely cause in one sentence: a proxy or the server changed the app's files; the update isn't signed by OpenTodo (or with this app's key); the server went back to an older version; the server's list of files couldn't be read. It SHALL offer **What to do**, which opens the in-app Help page "Signed updates", built from `docs/signed-updates.md`. That page SHALL cover proxies such as Cloudflare and the settings to turn off, rolled-back servers, self-built servers, and how a person gets unstuck without a reset button.
+
+#### Scenario: Cloudflare rewrote the page
+- **WHEN** a check fails because a proxy changed `index.html`
+- **THEN** the message names a proxy or the server as the likely cause, and **What to do** opens "Signed updates" with the Cloudflare settings to turn off, offline too
 
 ### Requirement: Trust on first use, and no way back to unchecked
 A device's first install SHALL decide its mode for that server. A list signed by a key built into the app gives signed mode. An unsigned list, or one signed by a key the app doesn't know, gives self-built mode: file hashes are checked, signatures are not. A self-built install SHALL move to signed mode when a list signed by a built-in key arrives. A signed install SHALL never move back to self-built mode. The trusted keys and the mode SHALL survive signing out, a revoked device's wipe and a new service worker.
@@ -110,7 +132,7 @@ A list SHALL be accepted when any one of its signatures verifies with a trusted 
 - **THEN** devices install it and accept the next release signed with the new key
 
 ### Requirement: About shows who signed the app
-Settings → About SHALL show an "App code" row. When an official key signed the app, the row SHALL show "Signed by OpenTodo" with the key's short fingerprint (four groups of four characters), a link to the website's Security page where the same fingerprint is published, and a **Verify** action. When another key signed it, the row SHALL show "Signed with this server's key" with its fingerprint and **Verify**. When the app is self-built, the row SHALL show "Self-built: updates are not signature-checked". After a refused update, the row SHALL show the refusal message until a valid update is installed. **Verify** SHALL open the website's verify page with the full fingerprint in the address fragment, so no request carries the fingerprint and the app makes no request to the website. About SHALL show the version the device runs, and the server's version when it differs. Offline, the row shows the installed state.
+Settings → About SHALL show an "App code" row once the app is installed. When an official key signed the app, the row SHALL show "Signed by OpenTodo" with the key's short fingerprint (four groups of four characters), a link to the website's Security page where the same fingerprint is published, and a **Verify** action. When another key signed it, the row SHALL show "Signed with this server's key" with its fingerprint and **Verify**. When the app is self-built, the row SHALL show "Self-built: updates are not signature-checked", and for a preview build from `main`, "Preview build: updates are not signature-checked". After a refused update, or a failed check while reporting, the row SHALL show the message with its cause and **What to do** until an update passes. A **Copy diagnostics** action SHALL copy one line with the version, the mode, the short fingerprint, whether refusal is on and the last check's result, cause and path, and no account data. **Verify** SHALL open the website's verify page with the full fingerprint in the address fragment, so no request carries the fingerprint and the app makes no request to the website. About SHALL show the version the device runs, and the server's version when it differs. Offline, the row shows the installed state.
 
 #### Scenario: Official build
 - **WHEN** a person opens Settings → About on a device installed from the official image
@@ -123,6 +145,10 @@ Settings → About SHALL show an "App code" row. When an official key signed the
 #### Scenario: Self-built server
 - **WHEN** a person opens Settings → About on a server built without a signing key
 - **THEN** the row reads "Self-built: updates are not signature-checked" and nothing fails
+
+#### Scenario: Copy diagnostics
+- **WHEN** the person presses **Copy diagnostics** after a failed check
+- **THEN** the clipboard holds one line starting `opentodo-app-code` with the version, the mode, the fingerprint, `refuse=off`, `check=failed`, the cause and the file's path
 
 ### Requirement: A server can sign with its own key
 One documented build setting, `WEB_SIGNING_KEY`, SHALL sign a build with the operator's own private key at build time, for `make` and for `docker build`, and make that key the build's only built-in key. A documented command SHALL create a key pair. The running server SHALL need no key and no new environment variable.
@@ -139,7 +165,7 @@ One documented build setting, `WEB_SIGNING_KEY`, SHALL sign a build with the ope
 - **THEN** the app loads and works, and no signature message appears
 
 ### Requirement: A changed service worker is reported
-In a browser, when a new service worker installs or takes control, the open page SHALL compare the server's service worker with the one in the verified list. If they differ after a fresh check, it SHALL show: "This server changed how the app checks updates. Don't enter your passphrase, and ask the server's operator."
+Once refusal is on, in a browser, when a new service worker installs or takes control, the open page SHALL compare the server's service worker with the one in the verified list. If they differ after a fresh check, it SHALL show: "This server changed how the app checks updates. Don't enter your passphrase, and ask the server's operator."
 
 #### Scenario: Unannounced worker
 - **WHEN** a tab of a signed install is open and the server starts serving a service worker that no verified list names
@@ -150,7 +176,8 @@ The security documentation SHALL state, in plain words, what the check does not 
 - a first-ever visit to a hostile server;
 - in a browser, a server that replaces the service worker itself or clears the site's data;
 - a stolen release key, until a rotation reaches each device;
-- the iOS app, which can warn but not refuse.
+- the iOS app, which this change doesn't cover;
+- while report-only mode is on, any failed check, which is recorded but installed.
 
 It SHALL publish the official keys' fingerprints and explain how to verify them.
 

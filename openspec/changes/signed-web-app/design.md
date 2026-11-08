@@ -11,6 +11,8 @@ How the web app reaches a device today:
 
 One platform fact shapes the whole design. **A service worker cannot vet its own successor.** The browser fetches `sw.js` for updates without passing through the current worker, installs any new bytes, and lets the new worker take over. A server can also send `Clear-Site-Data` and wipe the worker and the app's storage. So in an ordinary browser, a check in the worker stops a server that sends changed files the ordinary way, but not a server that replaces the worker itself. Only code the server does not deliver, such as a native app, can make the check binding. D8 and D9 follow from this.
 
+The maintainer approved the design on pull request #1025 (2026-11-08), answered its six questions (recorded under "Maintainer's answers" at the end) and added three requirements: report-only first (D17), real hosting tested before refusal (D17, task group 6), and a refusal message that names the likely cause and links to a help page (D6, D18).
+
 ## Goals / Non-Goals
 
 **Goals:**
@@ -18,6 +20,7 @@ One platform fact shapes the whole design. **A service worker cannot vet its own
 - Official builds check with no setup. Self-built servers keep working and say they are unchecked.
 - The private key never touches a server. The browser uses WebCrypto, the build uses the Go standard library.
 - `make dev` and every existing test run without a key.
+- Nobody gets stuck because of the check while it is new: it reports before it refuses (D17), and every refusal says what probably caused it and how to fix it (D18).
 
 **Non-Goals:**
 - Protecting a first-ever visit to a hostile server.
@@ -45,6 +48,7 @@ The payload is the manifest, verified as the exact bytes, so nobody has to canon
 {
   "app": "opentodo-web",
   "version": "1.3.0",
+  "refuse": false,
   "keys": [{ "spki": "<base64 SubjectPublicKeyInfo>", "role": "release" }, { "spki": "…", "role": "recovery" }],
   "worker": { "path": "sw.js", "sha256": "…" },
   "files": {
@@ -60,6 +64,7 @@ The payload is the manifest, verified as the exact bytes, so nobody has to canon
 - **`push-sw.js` goes into `sw.js`.** A worker's `importScripts` fetch does not pass through any worker, so a separate file could not be checked. The worker is one file, and its hash is listed (D8 uses it).
 - **What is signed** is the domain string `opentodo-web-manifest/v1\n` followed by the payload bytes, so a signature can never be reused as anything else.
 - **`keys`** is the key set future updates must be signed with (D3).
+- **`refuse`** is the switch from report-only to refusal (D17). An unsigned list may also carry `"build": "preview"` (D4).
 - **Self-built builds** write the same envelope with `"signatures": []`.
 
 A Vite plugin writes the unsigned envelope after the bundle is written. Signing is a separate step on the finished `dist`, so CI signs exactly the files it embeds.
@@ -74,26 +79,28 @@ The check runs in four places: the browser (WebCrypto), Android (minSdk 26), iOS
 - **Signing.** Go's ECDSA signing uses hedged nonces, so a weak random source in CI does not leak the key.
 - **Fingerprints.** A key's fingerprint is the SHA-256 of its SubjectPublicKeyInfo. The full one is 64 hex characters. The short one is the first 16, in four groups: `3F2A 9C41 7B0D E615`. About shows the short one. Verify (D10) compares the full one.
 
-New code: `internal/websign` (manifest, envelope, sign, verify; standard library only) and `cmd/websign` (`keygen`, `sign <dist>`, `verify <dist|url>`). The server links only the verify half, for its startup log. A test like `TestServerDoesNotLinkCrypt` keeps the signing code out of the server binary.
+New code: `internal/websign` (manifest, envelope, verify, fingerprints, version order; standard library only), `internal/websign/sign` (key generation and signing) and `cmd/websign` (`keygen`, `sign <dist>`, `verify <dist|url>`). The server links only `internal/websign`, for its startup log. A test like `TestServerDoesNotLinkCrypt` keeps `internal/websign/sign` out of the server binary: the split into two packages is what makes that test possible.
 
 ### D3. Keys: one release key, one recovery key, rotation by overlap
 
-- **Release key.** It is generated offline and stored as a secret of a GitHub environment, `web-signing`. Only `v*` tags may use that environment (deployment rule) and only one job references it (D4). It never reaches a server, an image or an artifact.
-- **Recovery key.** A second key pair, generated offline and never in CI. It is in the trusted set from the first signed release and is used only to rotate after the release key is lost or stolen. Who holds it is question 3.
+- **Release key.** It is generated offline and stored as the secret `WEB_SIGNING_KEY` of a GitHub environment, `web-signing`. Only `v*` tags may use that environment (deployment rule), the maintainer is its required reviewer, so every release waits for his approval before it is signed (answer 2), and only one job references it (D4). It never reaches a server, an image or an artifact.
+- **Recovery key.** A second key pair, generated offline and never in CI. It is in the trusted set from the first signed release and is used only to rotate after the release key is lost or stolen. The maintainer keeps it offline, with a second copy in a separate place (answer 3). Its public half is committed; its private half never leaves those two copies.
+- **The rotation procedure is written down and rehearsed** (answer 3) in `docs/security/signed-app.md`: generate, publish the fingerprint, sign one release with both keys, drop the old key after six months, and the lost-key path with the recovery key. It is rehearsed once with throwaway keys against a test server (task 5.7) before it is ever needed.
 - **Public keys** are in `web/release-keys.json` in the repository, marked official. Their fingerprints are also in SECURITY.md, `docs/security/signed-app.md`, the website's Security page and every release's notes.
 - **Accepting a list.** An update is accepted when at least one signature verifies with a key in the device's trusted set. After a verified install, the device's trusted set becomes the list's `keys`.
-- **Planned rotation.** One release lists the old and the new key and is signed by both. Releases keep both signatures for six months, then drop the old key. A device offline for longer than that refuses the next update and needs the reset (question 5).
+- **Planned rotation.** One release lists the old and the new key and is signed by both. Releases keep both signatures for six months, then drop the old key. A device offline for longer than that refuses the next update, and the person clears the site's data as `docs/signed-updates.md` explains (answer 5).
 - **Lost release key.** A release signed with the recovery key lists a new release key. Devices accept it because the recovery key is trusted.
 - **Stolen release key.** The same rotation, published loudly, removes the stolen key. Until a device installs that release, a hostile server holding the stolen key can still serve it signed code (D15).
-- **Both keys lost.** Installed apps refuse every update and keep running the last good version. Each person resets the app (question 5). This is the price of having no server-side override.
+- **Both keys lost.** Installed apps refuse every update and keep running the last good version. Each person clears the site's data or reinstalls, as the help page explains (answer 5). This is the price of having no server-side override.
 
 ### D4. Release pipeline: build once, sign once, embed everywhere
 
 1. The `web-build` job builds `dist` once on the tag and uploads it as an artifact.
-2. A new `web-sign` job runs only on `v*` tags, in the `web-signing` environment. It is the only job that reads the key. It runs `websign sign`, which first checks that every file matches the unsigned list and the version matches the tag, then writes the signed envelope. It uploads `web-dist-signed` and nothing else.
+2. A new `web-sign` job runs only on `v*` tags, in the `web-signing` environment, so it waits for the maintainer's approval (answer 2). It is the only job that reads the key. It runs `websign sign`, which first checks that every file matches the unsigned list and the version matches the tag, then writes the signed envelope. It uploads `web-dist-signed` and nothing else. When the secret is not set (a fork, or before the maintainer adds it), the job says so and uploads the unsigned `dist` unchanged, so the release stays green and its builds read "Self-built" until a key exists.
 3. The image and the release binaries are built from `web-dist-signed`. The Dockerfile's web stage stays for pull requests and local builds, and a build context (`--build-context web-dist=…`) replaces it on tags.
 4. The `image` job's smoke test runs `websign verify http://…/` against the running container with the official keys. A release whose served files fail the check does not publish.
 5. The release job attaches `app-manifest.json` to the GitHub release. That is the public record of what each version's code is.
+6. **`latest` is never signed** (answer 4). The image built from every merge to `main` writes `"build": "preview"` into its unsigned list, and About reads "Preview build: updates are not signature-checked". The label is unsigned, so it proves nothing; it only tells people which unchecked build they run.
 
 `scripts/repo-checks.test.mjs` adds three checks: only `web-sign` references the environment, the official keys in `web/release-keys.json` match the fingerprints in SECURITY.md and `docs/security/signed-app.md`, and the test key (D11) is never in an official build's key set.
 
@@ -122,11 +129,15 @@ How the built-in key is trusted at all: it arrives inside the first worker, from
 - **Atomic install.** Files go into a staging cache, `opentodo-app-<version>`. Only when every file is present and verified does one IndexedDB transaction move `current` to the new version and `previous` to the old one. Then every other cache is deleted. A failure or interruption at any step leaves `current` untouched and deletes the staging cache. Nothing half-installed is ever served.
 - **When `index.html` changes.** It is one file of the list like any other. The worker never takes `index.html` from the network for a navigation. A new page is served only after the list that names it was verified and installed. A different `index.html` on the server with no new signed list is never used.
 - **Telling the page.** After the switch, the worker posts `{type: "opentodo-app", state: "ready", version}`, and the existing banner shows "A new version of OpenTodo is ready." with "Reload to update". Open tabs keep working: the previous version's set stays cached until the next install, so their lazy chunks still load. The `vite:preloadError` reload remains for a tab older than that.
-- **Refusing.** The worker posts `state: "refused"` with a reason, and the page shows one banner without a reload button:
-  - an unsigned list, an untrusted key, a bad signature or a file that doesn't match: "This update wasn't signed by OpenTodo. It wasn't installed." A device that trusts an own-key build's key reads "This update wasn't signed with this app's key. It wasn't installed."
-  - an older signed version: "This server went back to an older version. It wasn't installed."
+- **`sw.js` still changes with every release in phase 1.** It keeps Workbox's inlined list of files (`self.__WB_MANIFEST`, as plain data; no Workbox code is left), because the Android app versions already installed read that list from `sw.js` for their offline copy (`ShellCache.precacheEntries`) until the Android app reads `app-manifest.json` (D9, phase 2). A side effect: the browser's own update cycle is unchanged, a new release still installs a new worker, and the worker's install runs the check. `controllerchange` stays the release signal until `sw.js` stops changing per release.
+- **Refusing** (only once refusal is on, D17). The worker posts `state: "refused"` with a cause, and the page shows one banner without a reload button. It names the likely cause and links to the help page (D18):
+  - a file that doesn't match or is missing: "This update wasn't installed. A proxy or the server changed the app's files."
+  - an unsigned list, an untrusted key or a bad signature: "This update wasn't installed. It isn't signed by OpenTodo." A device that trusts an own-key build's key reads "It isn't signed with this app's key."
+  - an older signed version, or the same version with other files: "This update wasn't installed. The server went back to an older version."
+  - a list that can't be read: "This update wasn't installed. The server's list of files couldn't be read."
 
-  Each refused list is announced once (its hash is remembered, five at most). The banner can be dismissed, and About keeps the state until a good update arrives.
+  Each ends with the link **What to do**, which opens the help page "Signed updates" in the in-app Help (D18). Each refused list is announced once (its hash is remembered, five at most). The banner can be dismissed, and About keeps the state until a good update arrives.
+- **Reporting** (report-only, D17). The same checks run in the same order and the same cause is recorded, but the update is installed anyway, by the same staging and switch, and no banner is shown. About shows the result.
 - **Downgrades are refused.** An older signed release may have a hole that was fixed later, and a hostile server could serve it again to use that hole. The app's local database also cannot move to an older schema: Dexie upgrades are one way, and an older app cannot open a newer database. An operator who rolls back the server leaves installed apps on the newer version, and sync keeps working because the op schema is additive. The docs say so. Self-built mode does not enforce the order, because its lists prove nothing anyway.
 - **Offline.** No check, no warning. The current set serves everything. A download cut off by the network is discarded and retried on the next check.
 
@@ -147,6 +158,8 @@ A check is only as good as the paths around it. The worker answers every same-or
 - **Branding moves into the page.** The worker serves the signed `index.html` byte for byte. The page sets the branded title and icon links on start from the copy it already keeps (`web/src/lib/branding.ts`). The server keeps rewriting pages it serves directly (first visits, no worker), and keeps serving `manifest.webmanifest` and `/branding/` images as data.
 - **Server changes.** `/index.html` is served unmodified, with no branding and no `noindex`, so the worker can download the signed bytes. `app-manifest.json` is served `no-store`. Every app file gets `no-transform`, so caching proxies don't rewrite files. No new route: the existing public handler for `/` serves all of it.
 
+**Phase 1 and phase 2.** Phase 1 (report-only, D17) serves listed files from the verified set, checks lazy files, refuses scripts, workers and styles from data paths, and writes the CSP from the build. The rules that could break an honest setup land with refusal (phase 2), each after it is measured: the 404 for unknown paths (a route the worker doesn't know would stop working), the sandbox on data-path documents (Chrome's PDF viewer and the OAuth consent form must be checked inside a sandbox first), `t.html` and `/public/` from the verified set, and `push-sw.js` folded into `sw.js` (until then the worker still imports it, and its hash is checked like any other file's but cannot bind the import). The data paths gain `/dav/`, `/feeds/`, `/branding/` and `/public/` in phase 2 as well; phase 1 keeps today's navigation deny list exactly.
+
 ### D8. What an ordinary browser cannot stop, and the one warning it gives
 
 In a browser, D5 to D7 stop changed files delivered the ordinary way: a changed chunk, page or locale, an unsigned build, an older build. They don't stop:
@@ -159,7 +172,11 @@ A cheap warning still catches careless or accidental cases. When the page sees a
 
 The same fact is also the escape hatch for bugs. A broken verifier can always be replaced by the next release's `sw.js`.
 
-### D9. The native apps: Android checks the code itself, iOS warns
+The warning lands in phase 2, with refusal: while checks only report, `sw.js` changes with every release (D6) and the warning would only repeat what About records.
+
+### D9. The native apps: Android checks the code itself (phase 2); iOS comes later
+
+The Android part is phase 2: it refuses by nature (a file that fails is never handed to the web view), so it lands with refusal, after report-only has shown that real setups pass. Until then the Android app keeps today's offline copy, read from `sw.js` (D6). iOS is not part of this change (answer 6): both the native warning below and loading the app in a way the iOS app can check move to a separate change after `ios-shell`. The text below stays as the plan for both.
 
 The Android app is the strong form, because its code doesn't come from the server:
 
@@ -172,7 +189,7 @@ The Android app is the strong form, because its code doesn't come from the serve
 
 What remains: a server first met in self-built mode stays unchecked, and whoever can sign APKs with the release certificate can change the key.
 
-**The iOS app warns but can't refuse.** `WKWebView` lets an app serve its own files only for a custom scheme, never for `https`, so the shell can't check what its web view loads. In the one-server build (`ios-shell` D2), the web view runs the worker, so it gets the browser-level checks of D5 to D7. On top of that, on every launch and resume the shell fetches `app-manifest.json` itself and checks it with the key built into the app (CryptoKit's `P256.Signing`, the same vectors). If the list is unsigned after being signed, signed by an unknown key, or older than the last one it saw, the shell shows a native alert before the page: "This server's app isn't signed by OpenTodo. Don't enter your passphrase." This catches a server that changed its build. It doesn't catch one that shows the shell a good list and the web view other files. To refuse, the app would have to serve the web app from a custom scheme with the API on `https`, which changes cookies, the API's cross-site check and the CSP. That is a change of its own, after `ios-shell` (question 6). The bridge's `verified-files` capability stays off on iOS.
+**The iOS app warns but can't refuse.** `WKWebView` lets an app serve its own files only for a custom scheme, never for `https`, so the shell can't check what its web view loads. In the one-server build (`ios-shell` D2), the web view runs the worker, so it gets the browser-level checks of D5 to D7. On top of that, on every launch and resume the shell fetches `app-manifest.json` itself and checks it with the key built into the app (CryptoKit's `P256.Signing`, the same vectors). If the list is unsigned after being signed, signed by an unknown key, or older than the last one it saw, the shell shows a native alert before the page: "This server's app isn't signed by OpenTodo. Don't enter your passphrase." This catches a server that changed its build. It doesn't catch one that shows the shell a good list and the web view other files. To refuse, the app would have to serve the web app from a custom scheme with the API on `https`, which changes cookies, the API's cross-site check and the CSP. That is a change of its own, after `ios-shell` (answer 6). The bridge's `verified-files` capability stays off on iOS.
 
 ### D10. About and Verify
 
@@ -183,7 +200,12 @@ Settings → About gets one row, **App code**, built from `SettingRow` and the c
 | Signed with an official key | "Signed by OpenTodo" | `3F2A 9C41 7B0D E615` · Security page link · **Verify** |
 | Signed with another key | "Signed with this server's key" | the short fingerprint · **Verify** |
 | Self-built | "Self-built" | "Updates are not signature-checked." |
-| Last update refused | a warning `Notice` under the row with the refused message | |
+| Preview build (`latest`, D4) | "Preview build" | "Updates are not signature-checked." |
+| Last update refused | a warning `Notice` under the row: "This update wasn't installed." with the cause and **What to do** (D6, D18) | |
+| Last update failed the check while reporting (D17) | a warning `Notice`: "The last update didn't pass the check. It was installed, because checks only report for now." with the cause and **What to do** | |
+
+- **Copy diagnostics.** The row has a **Copy diagnostics** action that copies one line a person can paste into an issue or a support chat: `opentodo-app-code version=1.3.0 mode=signed key=3F2A9C417B0DE615 refuse=off check=failed cause=changed-file path=assets/index-3fa1c2.js at=2026-11-08T10:12:00Z`. It holds no account data, only the trust record's summary.
+- **No record yet.** Without a trust record (no worker: `make dev`, a plain-http address, the first visit before install), the row is not shown.
 
 - **The Security page link** opens `https://open-todo.app/security#app-signing`, where the fingerprints are published.
 - **Verify** opens `https://open-todo.app/security/verify#<full fingerprint>` in a new tab, or in the system browser inside a shell. That static page compares the fragment with its published list and says "This is OpenTodo's release key." or "This key is not one of OpenTodo's." A fragment is never sent to any server. It is a link the person opens, not a request the app makes, so the no-third-party-calls rule holds and the CSP needs no change.
@@ -198,13 +220,14 @@ Settings → About gets one row, **App code**, built from `SettingRow` and the c
 - **Host mode.** One binary means one signed list for every tenant. Trust is per origin, so per tenant host name, and needs nothing in `internal/host`.
 - **The demo** runs the official image and is checked like any server. Its `noindex` tag stays on pages the server serves directly. Crawlers don't run workers.
 - **Development.** `make dev` serves through Vite without a worker (`vite-plugin-pwa` dev mode stays off), so nothing is checked and nothing changes. Unit tests use fakes. The e2e signing tests sign with `internal/websign/testdata/test-key.pem` through the same `WEB_SIGNING_KEY` setting. A repo check keeps that key out of official builds.
+- **The list is written by a build step, not a Vite plugin.** `npm run build` runs `scripts/app-manifest.mjs` after `vite build`, once `vite-plugin-pwa` has written `sw.js`, whose hash the list needs; a plugin's `closeBundle` would race the worker build. Every way of building the web app (`make web`, the Dockerfile, CI) goes through `npm run build`. The step reads `OPENTODO_VERSION` for the version (`0.0.0-dev` without it) and `OPENTODO_BUILD=preview` for the preview label (D4).
 
 ### D12. Interactions
 
 - **Update banner.** It is the same one-line `role="alert"` strip (`UpdateBanner`), with two new texts. A refused update has a close button and no "Reload to update". `appUpdate.ts` gets a `refused` reason. `ready` replaces `controllerchange` as the release signal, because the worker no longer changes with each release.
 - **Safe area.** No new surface. The banner sits where it does today, under the status-bar backdrop. `scripts/e2e-safe-area.mjs` adds the refused state.
 - **Offline.** As D6. Offline start in a browser is unchanged: the current verified set serves everything.
-- **Bundle budget.** The first-load budget is 687 KB with 686.1 KB measured. New first-load code: the two banner texts and the message listener in `appUpdate.ts`, and the branding title and icons on start. That is about 0.3 to 0.6 KB gzip. The About row and Verify load with Settings. The D8 check is a lazy import. The verifier itself is in `sw.js`, which the budget does not measure. Replacing `workbox-core`, `workbox-precaching` and `workbox-routing` with about 300 lines makes `sw.js` smaller, even with `push-sw.js` folded in. If the measured first load passes 687 KB, the budget goes to 688 KB with this change named in its comment.
+- **Bundle budget.** New first-load code: the banner texts and the message listener in `appUpdate.ts`, and the branding title and icons on start, about 0.3 to 0.6 KB gzip. The About row, Verify and the diagnostics line load with Settings. The D8 check is a lazy import. The verifier itself is in `sw.js`, which the budget does not measure. Replacing `workbox-core`, `workbox-precaching` and `workbox-routing` with about 300 lines makes `sw.js` smaller, even with `push-sw.js` folded in later. The budget is measured when the work lands; if the first load passes it, the budget is raised by the measured amount with this change named in its comment.
 - **Unlocking an encrypted account.** Nothing changes in `e2ee.ts`. The unlock screen comes from the verified set, so a refused update never blocks unlocking: the last good code asks for the passphrase. The refused banner shows above the unlock screen like anywhere else.
 - **Interface budget.** No chrome is added above a list, no task property, no sidebar destination, no scroll region and no shortcut. About gains one row ("App code": 2 words; lines under 90 characters). All banner and row texts go through `t()` in every catalog.
 
@@ -225,7 +248,9 @@ Settings → About gets one row, **App code**, built from `SettingRow` and the c
   - *Accepted risks:* the operator line becomes "…only while the operator does not change the served code, which installed apps check where the platform allows (see [Signed app code](signed-app.md))."
 - **Limits, "The code".** "Installed apps check that updates are signed. In a browser, a malicious server can still replace the update check itself, and a first visit is not checked. The Android app checks the code itself. [Signed app code](signed-app.md) explains what is covered."
 - **`docs/e2ee.md`.** The same bullet, shortened, with the advice: "If you don't trust the server, use the Android app, and compare the fingerprint in About once."
-- **`docs/security/signed-app.md` (new).** What is signed, the fingerprints, Verify, the modes, what to do when an update is refused, rotation, and the own-key setting.
+- **`docs/security/signed-app.md` (new).** What is signed, the fingerprints, Verify, the modes, report-only and the switch to refusal (D17), rotation and its rehearsal, and the own-key setting.
+- **`docs/signed-updates.md` (new, D18).** The help page the refusal message links to.
+- **While report-only mode is on**, the threat model's *Defended* line says so plainly: "Report-only for now: the app checks and records, but still installs an update that fails. Refusal is switched on in a later release." The limits page says the same.
 - **Self-hosting docs.** Proxies that rewrite HTML or JavaScript (Cloudflare Rocket Loader, email obfuscation, injected analytics) make updates fail the check. Turn that rewriting off, and check the deployment with `websign verify https://your.server/`. A rolled-back server leaves apps on the newer version.
 
 ### D15. What stays undefended
@@ -233,8 +258,9 @@ Settings → About gets one row, **App code**, built from `SettingRow` and the c
 - A first-ever visit to a hostile server, and the first contact of the Android app with a server that has never been signed.
 - In a browser: a server that replaces `sw.js` or sends `Clear-Site-Data` (D8).
 - A stolen release key, until a rotation reaches each device. A stolen Android release certificate.
-- A compromised CI that runs the `web-sign` job on a malicious tree. Tag protection limits this, and so would the approval in question 2.
-- The iOS app until it serves files itself (D9, question 6).
+- A compromised CI that runs the `web-sign` job on a malicious tree. Tag protection and the maintainer's approval of every signing (answer 2) limit this.
+- The iOS app until it serves files itself (D9, answer 6).
+- While report-only mode is on (D17), everything: a failed check is recorded and shown in About, but the update is installed.
 - Code that was signed but has a bug. A signature says who built the code, not that it is safe.
 
 ### D16. Tests that prove it
@@ -253,9 +279,9 @@ Settings → About gets one row, **App code**, built from `SettingRow` and the c
   - signing out leaves the trust record.
 - **Browser end to end** (`scripts/e2e-signed.mjs`, Playwright against real servers signed with the test key):
   - v1 installs;
-  - v2 with one byte changed in a chunk shows "This update wasn't signed by OpenTodo. It wasn't installed." and About still shows v1;
-  - a correctly signed v2 shows "A new version of OpenTodo is ready." and v2 after the reload;
-  - a signed v0 shows "This server went back to an older version. It wasn't installed.";
+  - v2 with one byte changed in a chunk: in report-only mode it is installed and About shows the failed check with the cause and the path; with refusal on, the banner reads "This update wasn't installed. A proxy or the server changed the app's files." and About still shows v1;
+  - a correctly signed v2 shows "A new version of OpenTodo is ready." and v2 after the reload, with the check passed;
+  - a signed v0 is recorded as `older` (report-only), or refused with "The server went back to an older version." (refusal on);
   - with the server stopped, a reload opens the app from the verified set.
 - **Go:**
   - `go test ./internal/websign` covers keygen, sign and verify round trips and the sign step refusing a `dist` that doesn't match its list;
@@ -268,11 +294,13 @@ Settings → About gets one row, **App code**, built from `SettingRow` and the c
   - the move from self-built to signed;
   - the worker requests refused.
 - **CI:** the release smoke test runs `websign verify` against the built image, and the repo checks of D4.
+- **Report-only** (`sw.test.ts` and `scripts/e2e-signed.mjs`): a tampered chunk is installed and recorded as `changed-file` with its path; About shows the notice and the diagnostics line; nothing is refused. A list with `refuse: true` turns refusal on, and a later list with `refuse: false` does not turn it off.
 
 ## Risks / Trade-offs
 
-- **Proxies that rewrite files** cause refused updates on otherwise honest servers. Mitigations: `no-transform`, the self-hosting note, `websign verify` for operators, and the refused message in About until fixed.
-- **A device can get stuck** after a legitimate change: a rollback, a switch to a self-built server, or a key change without overlap. The way out is a reset (question 5). Allowing these changes silently would defeat the check.
+- **Proxies that rewrite files** cause refused updates on otherwise honest servers. Mitigations: report-only first, so these setups show up in About before anything is refused (D17), the tests on PikaPods and behind Cloudflare, `no-transform`, the help page (D18), `websign verify` for operators, and the refused message in About until fixed.
+- **A device can get stuck** after a legitimate change: a rollback, a switch to a self-built server, or a key change without overlap. The way out is to clear the site's data or reinstall, as the help page explains (answer 5). Allowing these changes silently would defeat the check.
+- **Report-only proves nothing on its own.** While it is on, a hostile server is recorded, not stopped. It is a short phase, and the docs say it is on.
 - **A verifier bug could block updates.** The next release's `sw.js` always replaces it in a browser. The Android app updates through its store.
 - **The browser guarantee is weaker than it sounds.** D8 and the docs say so in plain words. The strong form is the Android app.
 - **Storage.** Two copies of the app are kept briefly. Cache sizes are already bounded by the browser's quota.
@@ -283,7 +311,42 @@ Settings → About gets one row, **App code**, built from `SettingRow` and the c
 - **Android.** An app update brings the key. On a server still older than the first signed release, `app-manifest.json` is missing, so the server is treated as self-built, which is today's behaviour. It moves to signed with the server's first signed release.
 - **Servers.** Nothing to configure.
 
-## Questions for the maintainer
+### D17. Report-only first, then refusal
+
+The maintainer's first addition: for the first release or releases, the check runs and records its result, but still installs the update. Refusal is switched on only after real setups have been seen to pass.
+
+- **Phase 1, report-only.** Every check of D5 to D7 runs exactly as it will when refusing: the signature, the trusted key, the version order, every file's size and hash, the lazy files. The worker records the result in the trust record: passed, or the first failure with its cause (`unsigned`, `unknown-key`, `bad-signature`, `older`, `changed-file` or `missing-file` with the path, `no-list`). Then it installs the update anyway, through the same staging and one-step switch, so the installed files are the ones the server sent. The mode and the trusted keys never move backwards on a failed list: a signed device that installs an unsigned list in this phase is still in signed mode afterwards, and the next good list passes. Nobody sees a banner; About shows the result and the diagnostics line (D10).
+- **The switch is a field of the signed list**, `"refuse": true`, which the build copies from `web/release-keys.json` (`"refuse": false` in phase 1). A device starts refusing when it installs a list that verified with a key it trusts and says `refuse: true`. It writes that into its trust record and never goes back, whatever later lists say.
+- **Why there, and not a server or worker setting.** The check guards against the server, so a switch the server holds proves nothing:
+  - A server-side switch (an environment variable, an owner setting, a header) is held by the operator. A hostile operator, or a careless one, would turn refusal off again.
+  - A constant in the worker is no better. The worker is a file the server serves, and in a browser the server can replace it (D8).
+  - A field of the signed payload can be set only by whoever holds the release key, so only a release can turn refusal on, and every device can tell. The trust record keeps it on: neither the operator nor an older signed release that still says `false` can turn it off for a device that has seen it on (an older release is refused as a downgrade anyway). Changing the field breaks the signature.
+  - A build that signs with its own key (D11) uses the same field from its own `web/release-keys.json`.
+- **Phase 2, refusal.** A release sets `refuse: true` once the checks of task group 6 pass: PikaPods, a server behind Cloudflare with Auto Minify and Rocket Loader each on and off (on must show the cause; off must pass), the official image behind nginx and Caddy, and the report-only results of at least one release show no unexplained failure. The phase 2 parts of D7, D8 and D9 land with it.
+- **Self-built and preview builds** are unsigned, so refusal never applies to who signed them; in self-built mode the hashes are still checked and reported.
+
+### D18. A refusal says what probably happened, and links to the fix
+
+The maintainer's third addition, so that less experienced people don't get stuck.
+
+- **The cause, named.** Every refusal and every failed report names the likely cause in one sentence (D6): a proxy or the server changed the app's files; the update isn't signed by OpenTodo (the server may run a self-built version); the server went back to an older version; the list couldn't be read.
+- **One link, What to do**, opens the page "Signed updates" in the in-app Help. It is built from `docs/signed-updates.md` like every guide, so it opens offline and the app makes no request to another site. The same page is on the website.
+- **What the page covers, briefly, one section per cause:**
+  - *Cloudflare and other proxies*: turn off Rocket Loader, Auto Minify (where still offered), Email Address Obfuscation and other HTML or JavaScript rewriting for the server's host name; nginx `sub_filter` and injected analytics do the same. `Cache-Control: no-transform` is already sent. Check with `websign verify https://your.server/`.
+  - *The server went back to an older version*: the device keeps the newer one and sync keeps working; to follow the rollback, clear the site's data in the browser (the local data downloads again from the server) or reinstall the Android app. There is no reset button (answer 5).
+  - *A self-built server*: what self-built, preview and own-key builds show, how to move a server to the official image or to an own key without stranding devices, and how a person gets unstuck after a switch.
+  - *If you don't trust the server*: don't enter your passphrase; ask the operator; use the Android app.
+
+## Maintainer's answers (pull request #1025, 2026-11-08)
+
+1. **Ship the browser check even though a hostile server can still replace it?** Yes. It stops tampering delivered the ordinary way and costs almost nothing. The docs say plainly what it doesn't stop and recommend the Android app to anyone who doesn't trust their server.
+2. **Should every release wait for the maintainer's approval before it's signed?** Yes. The `web-signing` environment has him as required reviewer (D3, D4).
+3. **Who keeps the recovery key?** The maintainer, offline, with a second copy in a separate place. The rotation procedure is documented and rehearsed before it's needed (D3).
+4. **Sign the `latest` image built from `main`?** No. Only tagged releases are signed; preview builds say "Preview build: updates are not signature-checked" (D4).
+5. **How do people recover after a legitimate rollback or a switch to a self-built server?** Documentation only, no reset button (D18).
+6. **Later, make the iPhone app check the code too?** Yes, as a separate change. The iOS warning moves there too (D9).
+
+The original questions, as asked:
 
 1. **Is the browser part worth shipping as it is?** In a normal browser, a hostile server can still replace the part of the app that does the checking, and nothing in the browser can prevent that. Only the Android app makes the check impossible to get around. The browser part still stops ordinary tampering, older versions and broken files, and the docs say plainly what it can't do. Recommendation: ship both, and recommend the Android app to people who don't trust their server.
 2. **Should every release wait for your click before it's signed?** GitHub can hold the signing step until you press "Approve". Then someone who gets into CI alone can't sign code. The cost is one click per release, and releases stop being fully automatic. Recommendation: yes, because this key is the most powerful secret in the project.
