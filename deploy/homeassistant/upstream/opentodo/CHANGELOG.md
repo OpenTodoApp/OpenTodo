@@ -2,6 +2,10 @@
 
 The add-on's version is the OpenTodo release it runs. A version with a fourth number, such as `0.12.0.1`, changes only the add-on and runs the same OpenTodo release. OpenTodo's own changes are in its [changelog](https://github.com/OpenTodoApp/OpenTodo/blob/main/CHANGELOG.md).
 
+## 1.1.2
+
+- OpenTodo [1.1.2](https://github.com/OpenTodoApp/OpenTodo/releases/tag/v1.1.2).
+
 ## 1.1.1
 
 - OpenTodo [1.1.1](https://github.com/OpenTodoApp/OpenTodo/releases/tag/v1.1.1).

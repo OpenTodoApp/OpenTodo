@@ -6,6 +6,14 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 Changes since the last release are in [changelog.d/](changelog.d/README.md), one file per change; `make release-prepare` moves them here when a release is cut.
 
+## [1.1.2] - 2026-11-08
+
+A packaging release: the Android app's store listing now lives in the source repository so F-Droid can list OpenTodo. Nothing changed in the server or the apps. Replace the image or the binary and restart if you like; there is no migration.
+
+### Changed
+
+- **The Android app is ready for F-Droid.** Its store listing (name, summary, description, icon and screenshots in six languages, plus release notes) now lives in the source repository in the Fastlane layout F-Droid reads, and the build stays reproducible, so F-Droid can publish the same signed APK as GitHub and Google Play. The app itself is unchanged.
+
 ## [1.1.1] - 2026-11-07
 
 A fix release for Apple Reminders and other CalDAV apps: tasks with a time zone, often set by AI assistants, now show and remind at the right time, and the Inbox list is named in your language. Replace the image or the binary and restart; there is no migration.
@@ -1457,7 +1465,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.1.2...HEAD
+[1.1.2]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v0.24.0...v1.0.0
