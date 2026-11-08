@@ -246,6 +246,7 @@
       "energy",
       "favourites",
       "first_run",
+      "focus_alert",
       "focus_auto_start",
       "focus_break_after_minutes",
       "focus_long_break_every",

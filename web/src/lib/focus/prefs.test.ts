@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from '../db'
 import { applyOps, resetDeviceId } from '../ops'
 import type { Op } from '../types'
-import { autoStartValue, FOCUS_DEFAULTS, FocusBoundsError, FocusPresetsError, focusPrefs, parsePresets, presetsValue, setFocusPref } from './prefs'
+import { autoStartValue, FOCUS_DEFAULTS, setFocusSound, soundChoice, FocusBoundsError, FocusPresetsError, focusPrefs, parsePresets, presetsValue, setFocusPref } from './prefs'
 
 // Focus preferences (OpenSpec focus-mode, task 1.2): defaults, values from a newer
 // client, bounds before a write, per-field convergence of two devices.
@@ -16,7 +16,7 @@ beforeEach(() => {
 describe('focus preferences', () => {
   it('Defaults: Pomodoro, 25, 5 and 15 minutes, a long break every 4, no auto-start, reminder and sound off', () => {
     expect(focusPrefs(null)).toEqual(FOCUS_DEFAULTS)
-    expect(FOCUS_DEFAULTS).toEqual({ mode: 'pomodoro', workMinutes: 25, shortBreakMinutes: 5, longBreakMinutes: 15, longBreakEvery: 4, autoStartBreaks: false, autoStartWork: false, breakAfterMinutes: 0, sound: false, presets: [10, 20, 40], noise: 'off' })
+    expect(FOCUS_DEFAULTS).toEqual({ mode: 'pomodoro', workMinutes: 25, shortBreakMinutes: 5, longBreakMinutes: 15, longBreakEvery: 4, autoStartBreaks: false, autoStartWork: false, breakAfterMinutes: 0, sound: false, alert: 'short', presets: [10, 20, 40], noise: 'off' })
     expect(focusPrefs({ focus_mode: '', focus_work_minutes: 0, focus_auto_start: '' })).toEqual(FOCUS_DEFAULTS)
   })
 
@@ -33,6 +33,19 @@ describe('focus preferences', () => {
     expect(p).toMatchObject({ workMinutes: 25, longBreakEvery: 4, breakAfterMinutes: 0, autoStartBreaks: false, autoStartWork: false, sound: false })
     expect(focusPrefs({ focus_auto_start: 'both', focus_sound: 'on', focus_break_after_minutes: 90 })).toMatchObject({ autoStartBreaks: true, autoStartWork: true, sound: true, breakAfterMinutes: 90 })
     expect([autoStartValue(true, true), autoStartValue(true, false), autoStartValue(false, true), autoStartValue(false, false)]).toEqual(['both', 'breaks', 'work', 'none'])
+  })
+
+  it('Sound (focus-end-alert D1): the length reads as short unless long, and only counts while the sound is on', async () => {
+    expect(soundChoice(focusPrefs({ focus_sound: 'on' }))).toBe('short')
+    expect(soundChoice(focusPrefs({ focus_sound: 'on', focus_alert: 'long' }))).toBe('long')
+    expect(soundChoice(focusPrefs({ focus_sound: 'on', focus_alert: 'siren' }))).toBe('short')
+    expect(soundChoice(focusPrefs({ focus_sound: 'off', focus_alert: 'long' }))).toBe('off')
+    await setFocusSound('long')
+    await setFocusSound('off')
+    expect((await db.outbox.toArray()).map((o) => `${o.field}=${o.value}`)).toEqual(['focus_sound=on', 'focus_alert=long', 'focus_sound=off'])
+    expect(soundChoice(focusPrefs(await db.userPrefs.get('me')))).toBe('off')
+    await setFocusSound('long')
+    expect(soundChoice(focusPrefs(await db.userPrefs.get('me')))).toBe('long')
   })
 
   it('Bounds: 0 and 400 minutes are refused and nothing is written; the reminder takes 0 as off', async () => {
