@@ -7,7 +7,9 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { GRID_PREFS_META_KEY } from '../lib/calendar'
 import { db, setMeta } from '../lib/db'
-import { createTask, resetDeviceId } from '../lib/ops'
+import { CALENDAR_COLOR_BY_KEY } from '../lib/colorBy'
+import { createLabel } from '../lib/labels'
+import { createTask, resetDeviceId, updateTask } from '../lib/ops'
 import { undoBatch } from '../lib/undo'
 import type { CalendarEvent } from '../lib/types'
 import { click, flush, key, minWidthPx, mockFetch, noPublicLinks, render, waitFor } from '../ui/test-utils'
@@ -154,6 +156,18 @@ describe('preview', () => {
     await waitFor(() => ghosts().length === 0, 'the ghosts gone')
     expect(await db.outbox.count()).toBe(before)
     expect(await dueOf(ids.a)).toEqual({ date: DAY, time: '09:00' })
+    await r.unmount()
+  })
+
+  it('colours ghosts as the Calendar colours its blocks (Colour by, issue #1080)', async () => {
+    const ids = await behind()
+    const label = await createLabel({ name: 'deep', color: '#f97316' })
+    await updateTask(ids.a, { labels: [label] })
+    await setMeta(CALENDAR_COLOR_BY_KEY, 'label')
+    const r = await render(<CalendarView mode="day" />)
+    await startPreview()
+    await waitFor(() => ghosts().length === 3, 'three ghosts')
+    expect(ghosts().map((g) => g.getAttribute('data-hue'))).toEqual(['orange', 'slate', 'slate'])
     await r.unmount()
   })
 

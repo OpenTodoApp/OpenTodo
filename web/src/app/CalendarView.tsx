@@ -120,7 +120,6 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   const showCompleted = useCalendarShowCompleted()
 
   const projects = useLiveProjects()
-  const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const liveTasks = useLiveTasks()
   const rawTasks = liveTasks ?? NO_TASKS
   // The grid shows every due in the viewer's zone (absolute-datetimes): zoned dues
@@ -227,7 +226,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
   }, [dates, goTo])
 
   // Re-plan the rest of the day (replan-the-day): the entry, the live proposal, the preview.
-  const rp = useReplanPreview({ today, dates, nowMinutes, tasks: allTasks, rawMap, projects, projectMap, prefs, events: feeds.visibleEvents, obstacles,
+  const rp = useReplanPreview({ today, dates, nowMinutes, tasks: allTasks, rawMap, projects, hueOf: chrome.color.hueOf, prefs, events: feeds.visibleEvents, obstacles,
     eventsUsed: feeds.eventsShown && feeds.subs.length > 0, win: feeds.win, online, zone, loaded: liveTasks !== undefined, goTo })
   // Where the header has its own row the bar sits in its lead line and the grid shows ghosts; below, a bottom sheet (design D8).
   const desktopHead = useMediaQuery(DESKTOP_HEADER_QUERY)

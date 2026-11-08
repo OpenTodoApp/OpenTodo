@@ -6,17 +6,19 @@
 // a few items and links the rest to the Day calendar.
 import { useMemo, useState } from 'react'
 import { blockFor, calendarTasks, formatTime as toHHMM } from '../../lib/calendar'
+import { CALENDAR_COLOR_BY_KEY } from '../../lib/colorBy'
 import { formatTime as formatWallTime, viewedTask } from '../../lib/dates'
 import { t } from '../../lib/i18n'
 import { useLiveProjects } from '../../lib/liveData'
 import { NO_TASKS, useLiveTasks } from '../../lib/liveTasks'
 import { readString, writeString } from '../../lib/deviceStorage'
 import type { CalendarEvent, Task } from '../../lib/types'
-import { hueFor, Icon, SIDEBAR_HEADING } from '../../ui'
+import { Icon, SIDEBAR_HEADING, type HueName } from '../../ui'
 import { openTaskPanel } from '../panel'
 import { navigate } from '../router'
 import { useToday, useViewerZone } from '../useViews'
 import { AgendaEvent, useTodayCalendar } from './TodayAgenda'
+import { useColorBy } from './colorByControls'
 import { useNowMinutes } from './useNowMinutes'
 
 const OPEN_KEY = 'ot.sidebar.group.schedule'
@@ -64,7 +66,7 @@ function ScheduleBody() {
   const projects = useLiveProjects()
   const rawTasks = useLiveTasks() ?? NO_TASKS
   const cal = useTodayCalendar(true, false, today, zone)
-  const colours = useMemo(() => new Map(projects.map((p) => [p.id, p.color])), [projects])
+  const { hueOf } = useColorBy(CALENDAR_COLOR_BY_KEY)
   const items = useMemo(() => {
     const tasks = calendarTasks(rawTasks.map((tk) => viewedTask(tk, zone)), projects, today, today)
     return scheduleAhead(tasks, cal.timed, now)
@@ -76,7 +78,7 @@ function ScheduleBody() {
       <p className="px-1 text-meta text-muted tabular-nums" data-schedule-now>{t('Now {time}', { time: time(Math.min(now, 24 * 60 - 1)) })}</p>
       {shown.length === 0
         ? <p className="px-1 text-meta text-faint" data-schedule-empty>{t('Nothing else scheduled today.')}</p>
-        : <ul className="space-y-0.5">{shown.map((i) => <li key={i.id}><ScheduleRow item={i} now={now} colour={i.kind === 'task' && i.task.project_id ? colours.get(i.task.project_id) : undefined} subName={i.kind === 'event' ? cal.subMap.get(i.event.subscriptionId)?.name : undefined} zone={zone} cal={cal} /></li>)}</ul>}
+        : <ul className="space-y-0.5">{shown.map((i) => <li key={i.id}><ScheduleRow item={i} now={now} hue={i.kind === 'task' ? hueOf(i.task) : undefined} subName={i.kind === 'event' ? cal.subMap.get(i.event.subscriptionId)?.name : undefined} zone={zone} cal={cal} /></li>)}</ul>}
       <button type="button" onClick={() => navigate({ view: 'day' })} data-schedule-calendar
         className="flex w-full items-center gap-1 rounded-control px-1 py-0.5 text-left text-meta text-muted hover:bg-hover hover:text-default">
         <span className="min-w-0 flex-1 truncate">{later > 0 ? t('{n} more today', { n: later }) : t('Open the calendar')}</span>
@@ -86,10 +88,10 @@ function ScheduleBody() {
   )
 }
 
-function ScheduleRow({ item, now, colour, subName, zone, cal }: {
+function ScheduleRow({ item, now, hue, subName, zone, cal }: {
   item: ScheduleItem
   now: number
-  colour?: string
+  hue?: HueName
   subName?: string
   zone?: string
   cal: ReturnType<typeof useTodayCalendar>
@@ -110,7 +112,7 @@ function ScheduleRow({ item, now, colour, subName, zone, cal }: {
     )
   }
   return (
-    <button type="button" onClick={() => openTaskPanel(item.id)} data-schedule-task={item.id} data-current={current || undefined} data-hue={hueFor(colour)}
+    <button type="button" onClick={() => openTaskPanel(item.id)} data-schedule-task={item.id} data-current={current || undefined} data-hue={hue}
       className={`flex w-full items-center gap-2 rounded-control px-1 py-0.5 text-left text-meta hover:bg-hover ${current ? 'bg-selected text-strong' : 'text-default'}`}>
       {when}
       <span aria-hidden className="ui-block-dot" />

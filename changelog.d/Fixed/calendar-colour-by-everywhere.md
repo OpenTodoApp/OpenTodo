@@ -1,0 +1,1 @@
+- **The sidebar's schedule and the re-plan preview follow the Calendar's Colour by.** With Colour by set to Label or Priority, they still showed project colours.
