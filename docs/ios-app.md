@@ -1,6 +1,6 @@
 ---
 title: The iOS app
-summary: The OpenTodo app for iPhone and iPad, built from source in Xcode: connect it to your server, reminders without push, sharing, widgets and Face ID unlock.
+summary: The OpenTodo app for iPhone and iPad, from TestFlight or built from source: connect it to your server, reminders without push, sharing, widgets and Face ID unlock.
 audience: user
 section: Reference
 specs: []
@@ -11,7 +11,11 @@ order: 23
 
 The OpenTodo app for iPhone and iPad opens your own OpenTodo server, like the [installed web app](install-phone.md#iphone-and-ipad), and adds what only an app can do: the share sheet, a Today widget and Face ID unlock of an encrypted account. It needs iOS 16.4 or later and an OpenTodo server; it talks to nothing else.
 
-There is no App Store listing. OpenTodo is under the AGPL, and the App Store's terms conflict with that licence; whoever wants the app builds it from the source in `mobile/ios` in Xcode and signs it for their own devices. That is also why the app is not on this website as a download.
+## Install it
+
+The official app comes through TestFlight, Apple's app for testing new apps, and later from the App Store. Install **TestFlight** from the App Store, then open the OpenTodo invitation link; the link will be on this page once the first build is out. TestFlight updates the app with every release.
+
+As the copyright holder, the author of OpenTodo allows distributing its iOS app through Apple's App Store and TestFlight. You can still build the app yourself from source ([Building it](#building-it)).
 
 ## Connect to your server
 
@@ -36,7 +40,7 @@ Two limits come from iOS. A WKWebView cannot receive web push, so unlike the [in
 
 ## Offline
 
-Whether the app starts without a network depends on how it was built. A build for one known server — set `OPENTODO_APP_BOUND_HOST=todo.example.com` when you build — gets the whole installed-web-app treatment: the service worker, the precache and an offline start. A build without that setting can open any server, which iOS does not allow a service worker for, so it needs the network and says so. Whoever builds the app decides; there is no switch inside it.
+The app from TestFlight or the App Store opens any server, and iOS gives such an app no service worker, so it needs the network to start and says so when there is none. For an offline start, use the [installed web app](install-phone.md#iphone-and-ipad), or build the app for your one server: set `OPENTODO_APP_BOUND_HOST=todo.example.com` when you build, and it gets the whole installed-web-app treatment, the service worker, the precache and an offline start.
 
 ## Sharing into OpenTodo
 
@@ -62,7 +66,7 @@ The web app records voice notes and can attach a photo taken with the camera. iO
 
 ## Building it
 
-The app is not in the App Store, because the store's terms and the licence do not fit. So you build and sign it yourself. Needs a Mac with Xcode 16 or newer and an iOS simulator runtime:
+Instead of installing it, you can build the app yourself and sign it for your own devices, for example to get the offline start above. Needs a Mac with Xcode 16 or newer and an iOS simulator runtime:
 
 ```sh
 make ios                             # unit tests on a simulator, an unsigned device build, the dependency check

@@ -48,6 +48,7 @@
 		F2E95D1D34C7A76BED542BDD /* WidgetPublication.swift in Sources */ = {isa = PBXBuildFile; fileRef = D76B6CC810FF847258BFE66C /* WidgetPublication.swift */; };
 		F5191A0E8249CEE610DA9512 /* OpenTodoShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 6D58C5588CD05D765202A22F /* OpenTodoShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		F5E06AABC6A2113125D151CD /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30808D5A379DF00A50741685 /* Store.swift */; };
+		741C63C0C61315944B3111C9 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 0198F8B662DFAD6F1E420480 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -139,6 +140,7 @@
 		DBD2D9F3CA1F7C5D63C9F0FC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E3DEC136C0E25392B8582FB5 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		F44BDB908FFA6D9D6BFDEFF7 /* OpenTodo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = OpenTodo.entitlements; sourceTree = "<group>"; };
+		0198F8B662DFAD6F1E420480 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -167,6 +169,7 @@
 			children = (
 				7DBFFA13DDE2752DC1E0D5A6 /* Info.plist */,
 				0284DCAD743970B2CB3CCC0F /* OpenTodoShare.entitlements */,
+				0198F8B662DFAD6F1E420480 /* PrivacyInfo.xcprivacy */,
 				40389A7CBF63E93B78B6D95B /* ShareViewController.swift */,
 			);
 			path = OpenTodoShare;
@@ -293,6 +296,7 @@
 			buildConfigurationList = A5E4AFF91446A5A61D194903 /* Build configuration list for PBXNativeTarget "OpenTodoShare" */;
 			buildPhases = (
 				7F979573DE5AEB17B31CC603 /* Sources */,
+				7C4E73EF970D5CF8DC6EB861 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -412,6 +416,14 @@
 				49BDEDE91D605613D757ED93 /* Assets.xcassets in Resources */,
 				E8272D009EC5D29F2FDC49DC /* Localizable.xcstrings in Resources */,
 				D02A9017D75C70840990A6F9 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7C4E73EF970D5CF8DC6EB861 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				741C63C0C61315944B3111C9 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1,0 +1,22 @@
+Name: OpenTodo
+Subtitle: Tasks on your own server
+Keywords: tasks,todo,to-do,self-hosted,open source,reminders,lists,projects,planner,widget,encrypted,privacy
+Support URL: https://open-todo.app
+Privacy Policy URL: https://open-todo.app/privacy
+
+Description:
+OpenTodo is an open-source task manager you host yourself. This app opens your OpenTodo server and adds what only a phone app can do:
+
+- Reminders on time, scheduled on the phone, with no push service in between
+- Share links, text, photos and files from any app into a new task
+- A Today widget on the home screen
+- Unlock an end-to-end encrypted account with Face ID or Touch ID
+
+You need your own OpenTodo server: enter its address on the first screen. The self-hosting guide is on the project's website, and demo.open-todo.app lets you try it without an account.
+
+The app needs a connection to your server to start. For offline use, add OpenTodo to the home screen from Safari instead.
+
+No trackers, no analytics, no ads. The app talks only to the server you enter.
+
+Promotional text:
+Your tasks, on your own server. Reminders, the share sheet, a Today widget and Face ID unlock, with nothing sent anywhere else.
