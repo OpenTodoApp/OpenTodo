@@ -5,7 +5,7 @@
 import 'fake-indexeddb/auto'
 import { act } from 'react'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { flush, render, type, waitFor } from '../ui/test-utils'
+import { flush, key, render, type, waitFor } from '../ui/test-utils'
 import { pastedInputs, QuickAdd } from './QuickAdd'
 
 beforeEach(() => localStorage.clear())
@@ -15,7 +15,7 @@ describe('no help under the field', () => {
     const added: unknown[] = []
     const r = await render(<QuickAdd placeholder="Add a task" onAdd={async (input) => { added.push(input) }} />)
     const link = () => r.container.querySelector('[data-help-screen]')
-    const input = r.container.querySelector('input')!
+    const input = r.container.querySelector('textarea')!
     const form = r.container.querySelector('form')!
     const submit = () => act(async () => { form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
     expect(link()).toBeNull()
@@ -35,7 +35,7 @@ describe('spent and estimate (OpenSpec time-tracking 8.2)', () => {
   it('Spent and estimate: `30m/2h` shows a Spent chip beside the estimate and hands both to the task', async () => {
     const added: Record<string, unknown>[] = []
     const r = await render(<QuickAdd placeholder="Add a task" onAdd={async (input) => { added.push(input as never) }} />)
-    const input = r.container.querySelector('input')!
+    const input = r.container.querySelector('textarea')!
     await type(input, 'Draft the offer 30m/2h')
     await waitFor(() => !!r.container.querySelector('[data-chip="spent"]'), 'the Spent chip')
     const chips = [...r.container.querySelectorAll('[data-chip]')].map((c) => [c.getAttribute('data-chip'), c.textContent])
@@ -50,7 +50,7 @@ describe('spent and estimate (OpenSpec time-tracking 8.2)', () => {
   it('Plus stays an estimate only', async () => {
     const added: Record<string, unknown>[] = []
     const r = await render(<QuickAdd placeholder="Add a task" onAdd={async (input) => { added.push(input as never) }} />)
-    await type(r.container.querySelector('input')!, 'Draft the offer +30m')
+    await type(r.container.querySelector('textarea')!, 'Draft the offer +30m')
     await act(async () => { r.container.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
     await waitFor(() => added.length === 1, 'the add')
     expect(added[0]).toMatchObject({ title: 'Draft the offer', estimate_minutes: 30 })
@@ -65,18 +65,18 @@ describe('# and @ suggestions', () => {
   const projects = [{ id: 'p-home', name: 'Home' }, { id: 'p-homework', name: 'Homework' }, { id: 'p-reno', name: 'Home renovation' }]
   const labels = [{ id: 'l-errand', name: 'errand' }, { id: 'l-deep', name: 'deep-work' }]
   /** Types `text` with the caret at its end, as a person would. */
-  async function typeAtEnd(input: HTMLInputElement, text: string) {
+  async function typeAtEnd(input: HTMLTextAreaElement, text: string) {
     await type(input, text)
     await act(async () => { input.setSelectionRange(text.length, text.length); input.dispatchEvent(new Event('select', { bubbles: true })) })
     await flush()
   }
-  const key = (input: HTMLInputElement, k: string) => act(async () => { input.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true })) })
+  const key = (input: HTMLTextAreaElement, k: string) => act(async () => { input.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true })) })
   const options = () => [...document.querySelectorAll('[role="listbox"] [role="option"]')].map((o) => o.textContent ?? '')
 
   it('#ren lists "Home renovation"; Enter inserts a token that resolves to it and shows its chip', async () => {
     const added: Record<string, unknown>[] = []
     const r = await render(<QuickAdd placeholder="Add a task" projects={projects} onAdd={async (i) => { added.push(i as never) }} />)
-    const input = r.container.querySelector('input')!
+    const input = r.container.querySelector('textarea')!
     await typeAtEnd(input, 'Paint the hall #ren')
     expect(input.getAttribute('aria-expanded')).toBe('true')
     expect(options()[0]).toContain('Home renovation')
@@ -93,7 +93,7 @@ describe('# and @ suggestions', () => {
 
   it('@d lists deep-work and offers Create last', async () => {
     const r = await render(<QuickAdd placeholder="Add a task" labels={labels} onAdd={() => {}} />)
-    const input = r.container.querySelector('input')!
+    const input = r.container.querySelector('textarea')!
     await typeAtEnd(input, 'Focus @d')
     expect(options()[0]).toContain('deep-work')
     expect(options().at(-1)).toContain('Create label “d”')
@@ -102,7 +102,7 @@ describe('# and @ suggestions', () => {
 
   it('Esc closes the list and keeps the text, without leaving quick add', async () => {
     const r = await render(<QuickAdd placeholder="Add a task" projects={projects} onAdd={() => {}} />)
-    const input = r.container.querySelector('input')!
+    const input = r.container.querySelector('textarea')!
     input.focus()
     await typeAtEnd(input, 'Fix #ho')
     expect(options().length).toBeGreaterThan(0)
@@ -116,7 +116,7 @@ describe('# and @ suggestions', () => {
 
   it('explains an unknown and an ambiguous #token, and names a new label', async () => {
     const r = await render(<QuickAdd placeholder="Add a task" projects={projects} labels={labels} onAdd={() => {}} />)
-    const input = r.container.querySelector('input')!
+    const input = r.container.querySelector('textarea')!
     await typeAtEnd(input, 'Rake leaves #gardn @urgent')
     expect(r.container.querySelector('[data-unmatched="none"]')!.textContent).toContain('No project “gardn” · stays in the title')
     expect(r.container.querySelector('[data-new-label]')!.textContent).toBe('New label “urgent”')
@@ -130,7 +130,7 @@ describe('inline tints (moments-and-onboarding 6.1)', () => {
   const tints = (root: ParentNode) => [...root.querySelectorAll('[data-quick-add-tints] [data-tint]')].map((m) => [m.getAttribute('data-tint'), m.textContent])
   const setup = async () => {
     const r = await render(<QuickAdd placeholder="Add a task" onAdd={async () => {}} />)
-    return { r, input: r.container.querySelector('input')! }
+    return { r, input: r.container.querySelector('textarea')! }
   }
 
   it('Chips appear as tokens are typed, and the field tints the same spans in their hue', async () => {
@@ -191,7 +191,7 @@ describe('inline tints (moments-and-onboarding 6.1)', () => {
 // OpenSpec change paste-to-tasks, tasks 3.1 and 3.2: a pasted list offers one task per line.
 describe('pasting several lines', () => {
   /** Pastes `text` into the field; returns whether the paste was held back. */
-  async function paste(input: HTMLInputElement, text: string): Promise<boolean> {
+  async function paste(input: HTMLTextAreaElement, text: string): Promise<boolean> {
     const e = new Event('paste', { bubbles: true, cancelable: true })
     Object.defineProperty(e, 'clipboardData', { value: { files: [], getData: (kind: string) => (kind === 'text/plain' ? text : '') } })
     await act(async () => { input.dispatchEvent(e) })
@@ -207,7 +207,7 @@ describe('pasting several lines', () => {
     const r = await render(<QuickAdd placeholder="Add a task" projects={[{ id: 'p-work', name: 'Work' }]}
       onAdd={async (i) => { added.push(i as never) }}
       onAddMany={extra.onAddMany === false ? undefined : async (inputs) => { many.push(inputs as never) }} />)
-    return { r, added, many, input: r.container.querySelector('input')! }
+    return { r, added, many, input: r.container.querySelector('textarea')! }
   }
 
   it('an empty field: the offer shows the count, five previews and "and N more"; Add hands every line at once', async () => {
@@ -289,7 +289,7 @@ describe('pasting several lines', () => {
 
   it('a refused batch keeps the offer open with the reason', async () => {
     const r = await render(<QuickAdd placeholder="Add a task" onAdd={() => {}} onAddMany={async () => { throw new Error('This title is too long to encrypt.') }} />)
-    const input = r.container.querySelector('input')!
+    const input = r.container.querySelector('textarea')!
     await paste(input, 'Milk\nEggs')
     await waitFor(() => !!offer(), 'the offer')
     await press('[data-paste-add]')
@@ -327,7 +327,7 @@ describe('pastedInputs (paste-to-tasks 3.2)', () => {
 })
 
 describe('input method', () => {
-  async function press(input: HTMLInputElement, init: KeyboardEventInit = {}, keyCode?: number) {
+  async function press(input: HTMLTextAreaElement, init: KeyboardEventInit = {}, keyCode?: number) {
     const ev = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true, ...init })
     if (keyCode !== undefined) Object.defineProperty(ev, 'keyCode', { get: () => keyCode })
     await act(async () => { input.dispatchEvent(ev) })
@@ -337,18 +337,91 @@ describe('input method', () => {
   it('Enter while composing does not create a task, and Enter afterwards does, offline', async () => {
     const added: Record<string, unknown>[] = []
     const r = await render(<QuickAdd placeholder="Add a task" onAdd={async (input) => { added.push(input as never) }} />)
-    const input = r.container.querySelector('input')!
+    const input = r.container.querySelector('textarea')!
     await type(input, '开会')
     expect((await press(input, { isComposing: true })).defaultPrevented).toBe(true)
     expect((await press(input, {}, 229)).defaultPrevented).toBe(true)
     expect(added).toEqual([])
     expect(input.value).toBe('开会')
-    // A later Enter is not cancelled, so the browser submits the form. happy-dom
-    // does not submit on Enter, so the test submits the form the key left alone.
-    expect((await press(input)).defaultPrevented).toBe(false)
-    await act(async () => { input.form!.requestSubmit() })
+    // A later Enter submits the form itself (the field is a textarea, quick-add-notes D1).
+    expect((await press(input)).defaultPrevented).toBe(true)
     await waitFor(() => added.length === 1, 'the add')
     expect(added[0]).toMatchObject({ title: '开会' })
     await r.unmount()
+  })
+})
+
+// #1034, #1035 (quick-add-notes): the line wraps instead of scrolling sideways, and
+// Shift+Enter opens a notes field whose text becomes the task's notes.
+describe('a wrapping line and its notes (quick-add-notes)', () => {
+  const line = (root: ParentNode) => root.querySelector<HTMLTextAreaElement>('textarea[aria-label="Add a task"]')!
+  const notes = (root: ParentNode) => root.querySelector<HTMLTextAreaElement>('textarea[aria-label="Notes"]')
+
+  it('is a wrapping field where Enter adds and a line break never enters the title', async () => {
+    const added: Record<string, unknown>[] = []
+    const r = await render(<QuickAdd placeholder="Add a task" onAdd={async (input) => { added.push(input as never) }} />)
+    expect(line(r.container).getAttribute('rows')).toBe('1')
+    await type(line(r.container), 'Call the plumber\nabout the sink')
+    expect(line(r.container).value).toBe('Call the plumber about the sink')
+    await key(line(r.container), 'Enter')
+    await waitFor(() => added.length === 1, 'the add')
+    expect(added[0]).toEqual({ title: 'Call the plumber about the sink' })
+    expect(notes(r.container)).toBeNull()
+    await r.unmount()
+  })
+
+  it('Shift+Enter opens the notes; Enter there adds the task with its notes, and the next one starts clean', async () => {
+    const added: Record<string, unknown>[] = []
+    const r = await render(<QuickAdd placeholder="Add a task" onAdd={async (input) => { added.push(input as never) }} />)
+    await type(line(r.container), 'Read the article tomorrow')
+    await key(line(r.container), 'Enter', { shiftKey: true })
+    await waitFor(() => !!notes(r.container), 'the notes field')
+    expect(document.activeElement).toBe(notes(r.container))
+    expect(added).toHaveLength(0)
+    await type(notes(r.container)!, 'https://example.com/article')
+    await key(notes(r.container)!, 'Enter')
+    await waitFor(() => added.length === 1, 'the add')
+    expect(added[0]).toMatchObject({ title: 'Read the article', description: 'https://example.com/article' })
+    expect(added[0].due).toBeTruthy()
+    await waitFor(() => notes(r.container) === null, 'the notes closed')
+    expect(document.activeElement).toBe(line(r.container))
+    await r.unmount()
+  })
+
+  it('Backspace in empty notes closes them and returns to the end of the line; notes are never parsed', async () => {
+    const added: Record<string, unknown>[] = []
+    const r = await render(<QuickAdd placeholder="Add a task" onAdd={async (input) => { added.push(input as never) }} />)
+    await type(line(r.container), 'Pay rent')
+    await key(line(r.container), 'Enter', { shiftKey: true })
+    await waitFor(() => !!notes(r.container), 'the notes field')
+    await key(notes(r.container)!, 'Backspace')
+    await waitFor(() => notes(r.container) === null, 'the notes closed')
+    expect(document.activeElement).toBe(line(r.container))
+    expect(line(r.container).selectionStart).toBe('Pay rent'.length)
+    await key(line(r.container), 'Enter', { shiftKey: true })
+    await waitFor(() => !!notes(r.container), 'the notes again')
+    await type(notes(r.container)!, 'tomorrow #work p1')
+    await act(async () => { r.container.querySelector('form')!.requestSubmit() })
+    await waitFor(() => added.length === 1, 'the add')
+    expect(added[0]).toEqual({ title: 'Pay rent', description: 'tomorrow #work p1' })
+    await r.unmount()
+  })
+
+  it('the palette keeps Shift+Enter for add and open, and a screen with its own notes turns them off', async () => {
+    const opened: Record<string, unknown>[] = []
+    const r = await render(<QuickAdd layout="palette" placeholder="Add a task" onAdd={() => {}} onAddAndOpen={async (input) => { opened.push(input as never) }} />)
+    await type(line(r.container), 'Plan the trip')
+    await key(line(r.container), 'Enter', { shiftKey: true })
+    await waitFor(() => opened.length === 1, 'add and open')
+    expect(notes(r.container)).toBeNull()
+    await r.unmount()
+
+    const added: Record<string, unknown>[] = []
+    const s = await render(<QuickAdd notes={false} placeholder="Add a task" onAdd={async (input) => { added.push(input as never) }} />)
+    await type(line(s.container), 'Shared page')
+    await key(line(s.container), 'Enter', { shiftKey: true })
+    await waitFor(() => added.length === 1, 'the add')
+    expect(notes(s.container)).toBeNull()
+    await s.unmount()
   })
 })

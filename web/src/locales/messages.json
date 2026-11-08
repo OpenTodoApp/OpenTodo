@@ -4793,7 +4793,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Dictate a task": [
-    "web/src/app/QuickAdd.tsx"
+    "web/src/app/quickadd/VoiceParts.tsx"
   ],
   "Dictate into quick add (turn voice capture on in Settings first); Esc or a pause stops, Enter saves": [
     "web/src/lib/shortcuts.ts"
@@ -4849,7 +4849,6 @@
     "web/public/push-sw.js",
     "web/src/app/ArchivePrompt.tsx",
     "web/src/app/DemoBanner.tsx",
-    "web/src/app/QuickAdd.tsx",
     "web/src/app/ReminderToasts.tsx",
     "web/src/app/RemindersField.tsx",
     "web/src/app/Shell.tsx",
@@ -4858,6 +4857,7 @@
     "web/src/app/assistant/AssistantRoot.tsx",
     "web/src/app/assistant/ComposerCapture.tsx",
     "web/src/app/bulk/UndoToast.tsx",
+    "web/src/app/quickadd/VoiceParts.tsx",
     "web/src/app/routines/ProposalReview.tsx"
   ],
   "Dismiss {name}": [
@@ -7643,6 +7643,9 @@
   "In maintenance": [
     "web/src/app/ProjectHeader.tsx",
     "web/src/app/review/ProjectWalk.tsx"
+  ],
+  "In quick add: write notes under the title; Enter adds the task with them": [
+    "web/src/lib/shortcuts.ts"
   ],
   "In shared projects this includes text other members wrote.": [
     "web/src/app/assistant/DisclosureNotice.tsx"
@@ -10698,6 +10701,8 @@
     "web/src/app/notes/NotesPage.tsx",
     "web/src/app/palette/entries.ts",
     "web/src/app/palette/notesSection.tsx",
+    "web/src/app/quickadd/NotesLine.tsx",
+    "web/src/app/quickadd/SheetBar.tsx",
     "web/src/app/task-detail/TaskNotes.tsx",
     "web/src/app/themes/EditorSections.tsx",
     "web/src/lib/shortcuts.ts"
@@ -15793,7 +15798,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Stop dictation": [
-    "web/src/app/QuickAdd.tsx"
+    "web/src/app/quickadd/VoiceParts.tsx"
   ],
   "Stop encrypting future backups": [
     "web/src/app/BackupsPanel.tsx"

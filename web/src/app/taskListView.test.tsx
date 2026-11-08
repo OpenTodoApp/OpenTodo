@@ -48,7 +48,7 @@ describe('list chrome', () => {
     await waitFor(() => r.container.textContent!.includes('Call mum'))
     const chrome = chromeBeforeFirstTask(r.container)
     expect(chrome.map((c) => c.tagName.toLowerCase())).toEqual(['header', 'div'])
-    expect(chrome[1].querySelector('input[aria-label="Add a task"]')).toBeTruthy()
+    expect(chrome[1].querySelector('textarea[aria-label="Add a task"]')).toBeTruthy()
     expect(r.container.querySelector('[role="group"][aria-label="Duration filter"]')).toBeNull()
     expect(r.container.querySelector('[data-duration-active]')).toBeNull()
     expect([...r.container.querySelectorAll('[data-task-id] [data-row-meta]')].some((m) => m.textContent?.includes('Inbox'))).toBe(false)
@@ -119,7 +119,7 @@ describe('selection', () => {
 
     // A row, a control and an overlay do not clear.
     press(title())
-    press(r.container.querySelector('input[aria-label="Add a task"]')!)
+    press(r.container.querySelector('textarea[aria-label="Add a task"]')!)
     const overlay = document.createElement('div')
     overlay.setAttribute('data-overlay', 'popover')
     document.body.querySelector('main')!.append(overlay)

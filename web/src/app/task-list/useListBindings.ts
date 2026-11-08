@@ -79,7 +79,7 @@ export interface BindingContext {
   toggleComplete: (id: string, completed: boolean) => Promise<void>
   toggleCollapsed: (id: string, force?: boolean) => void
   startDrag: (e: React.PointerEvent, task: Task, grip?: boolean) => void
-  quickAddRef: RefObject<HTMLInputElement | null>
+  quickAddRef: RefObject<HTMLTextAreaElement | null>
   /** Vim `o` (vim-keybindings): the task the next quick-add entry is placed after, if any. */
   insertAfter: RefObject<string | null>
   listRoot: RefObject<HTMLDivElement | null>
@@ -169,13 +169,14 @@ export function useListBindings(c: BindingContext): RowActions {
     openActions: (picker) => live.current.ui.openActions(picker ?? null),
   }), [setSelectedId, quickAddRef, insertAfter])
   useEffect(() => {
-    // Leaving the quick-add line ends an `o` insertion; `q` and clicks add at the end as before.
-    const input = quickAddRef.current
+    // Leaving the quick add ends an `o` insertion; `q` and clicks add at the end as before.
+    // Moving between the line and its notes field stays inside it (quick-add-notes D2).
+    const form = quickAddRef.current?.form
     insertAfter.current = null
-    if (!input) return
-    const reset = () => (insertAfter.current = null)
-    input.addEventListener('blur', reset)
-    return () => input.removeEventListener('blur', reset)
+    if (!form) return
+    const reset = (e: FocusEvent) => { if (!form.contains(e.relatedTarget as Node | null)) insertAfter.current = null }
+    form.addEventListener('focusout', reset)
+    return () => form.removeEventListener('focusout', reset)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the quick add is re-mounted on a route change or when it becomes read-only
   }, [route, c.projectReadOnly])
 

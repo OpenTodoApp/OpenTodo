@@ -203,7 +203,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   // side panel (task-side-panel D2, D7), keep it there beside the list, set up before the bindings' route reset.
   const openId = usePanelTaskId()
   const inbox = useListSplit({ inbox: route.view === 'inbox', rows, ownRows: m.ownRows, selectedId, setSelectedId, openId, ticking: selection.ticked.size > 0 })
-  const quickAddRef = useRef<HTMLInputElement>(null)
+  const quickAddRef = useRef<HTMLTextAreaElement>(null)
   const quickAddRow = useRef<HTMLDivElement>(null)
   // The first-day checklist's "Plan today" (moments-and-onboarding D5): Today opened after the first task.
   useEffect(() => { if (route.view === 'today') void noteTodayOpened() }, [route.view])

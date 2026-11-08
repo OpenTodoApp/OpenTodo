@@ -63,7 +63,7 @@ describe('empty views', () => {
     expectContract(empty, 'Nothing due today.', null)
     expect(empty.querySelector('[data-empty-secondary]')!.textContent).toBe('Open Upcoming')
     // The view's own quick add, above the empty view, stays the way to add.
-    expect(r.container.querySelector('input[aria-label="Add a task"]')).not.toBeNull()
+    expect(r.container.querySelector('textarea[aria-label="Add a task"]')).not.toBeNull()
     await click(empty.querySelector('[data-empty-secondary]')!)
     expect(location.pathname).toBe('/upcoming')
     await r.unmount()

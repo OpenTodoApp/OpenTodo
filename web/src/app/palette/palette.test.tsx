@@ -42,7 +42,7 @@ describe('opening (1.1)', () => {
   it('Ctrl+K from the Inbox and from a text field, ⌘+K, not in the notes editor; Escape closes', async () => {
     navigate({ view: 'inbox' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!document.querySelector('input[aria-label="Add a task"]'), 'the shell')
+    await waitFor(() => !!document.querySelector('textarea[aria-label="Add a task"]'), 'the shell')
     const ev = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true, cancelable: true })
     await act(async () => { document.body.dispatchEvent(ev) })
     await waitFor(() => !!palette())
@@ -50,7 +50,7 @@ describe('opening (1.1)', () => {
     await key(field(), 'Escape')
     await waitFor(() => !palette())
 
-    const quick = document.querySelector('input[aria-label="Add a task"]') as HTMLInputElement
+    const quick = document.querySelector('textarea[aria-label="Add a task"]') as HTMLTextAreaElement
     quick.focus()
     await key(quick, 'k', { metaKey: true })
     await waitFor(() => !!palette())
