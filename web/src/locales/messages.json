@@ -990,6 +990,12 @@
   "Add a task at {place}…": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
+  "Add a task below this one…": [
+    "web/src/app/task-list/TaskListRow.tsx"
+  ],
+  "Add a task below {title}…": [
+    "web/src/app/task-list/TaskListRow.tsx"
+  ],
   "Add a task due {adding}": [
     "web/src/app/calendar/AddOnDayDialog.tsx"
   ],
@@ -1178,6 +1184,7 @@
     "web/src/app/routines/StepCard.tsx"
   ],
   "Add subtask": [
+    "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/task-detail/Subtasks.tsx"
   ],
   "Add subtask…": [
@@ -1185,6 +1192,10 @@
   ],
   "Add task": [
     "web/src/app/quickadd/SheetBar.tsx"
+  ],
+  "Add task below": [
+    "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/task-list/TaskListRow.tsx"
   ],
   "Add task here…": [
     "web/src/app/calendar/addHere.tsx"

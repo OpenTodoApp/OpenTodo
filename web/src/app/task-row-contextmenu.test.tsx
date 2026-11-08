@@ -261,7 +261,7 @@ describe('the list bindings', () => {
     selectedId: null, setSelectedId: vi.fn(), openId: null, isReadOnly: () => false,
     taskMap: new Map(), ticked: ['a', 'b'],
     selection: { ticked: new Set(['a', 'b']), toggle: vi.fn(), extendTo: vi.fn(), selectAll: vi.fn(), set: vi.fn(), clear: vi.fn() },
-    ui: { pickerFor: null, setPickerFor: vi.fn(), assignFor: null, setAssignFor: vi.fn(), prompt: null, setPrompt: vi.fn(), addingUnder: null, setAddingUnder: vi.fn(), addingTo: null, setAddingTo: vi.fn(), openActions: vi.fn() },
+    ui: { pickerFor: null, setPickerFor: vi.fn(), assignFor: null, setAssignFor: vi.fn(), prompt: null, setPrompt: vi.fn(), addingUnder: null, setAddingUnder: vi.fn(), addingBelow: null, setAddingBelow: vi.fn(), addingTo: null, setAddingTo: vi.fn(), openActions: vi.fn() },
     setSelectMode: vi.fn(), toggleComplete: vi.fn(), toggleCollapsed: vi.fn(), startDrag: vi.fn(), setExpandedId: vi.fn(),
     quickAddRef: { current: null }, insertAfter: { current: null }, listRoot: { current: null },
     projectReadOnly: false, openRowMenu: vi.fn(), draggingId: null, ...over,
