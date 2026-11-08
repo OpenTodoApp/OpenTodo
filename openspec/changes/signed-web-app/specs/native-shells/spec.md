@@ -37,7 +37,7 @@ Once the web app has been loaded once, a shell SHALL open offline and show the a
 ## ADDED Requirements
 
 ### Requirement: The Android app checks the web app's signature
-The Android app SHALL carry the trusted public keys in its own package. It SHALL serve every web app file to its web view only after checking it against a list signed by a trusted key, and SHALL apply the web app's rules for updates: install all at once, refuse unsigned or older versions, never move from signed back to self-built for a server. It SHALL refuse every service worker request in its web view. It SHALL show the signature state and the key's short fingerprint on its own native server screen, with a Verify action that opens the website in the system browser. A server whose list is missing or unsigned at first contact SHALL work as self-built and be shown as such. Offline, the app opens from its verified copy and checks nothing. No operation is written, so sync and convergence are unaffected.
+Once refusal is on (signed-web-app, "Report-only first, then refusal"), the Android app SHALL carry the trusted public keys in its own package. It SHALL serve every web app file to its web view only after checking it against a list signed by a trusted key, and SHALL apply the web app's rules for updates: install all at once, refuse unsigned or older versions, never move from signed back to self-built for a server. It SHALL refuse every service worker request in its web view. It SHALL show the signature state and the key's short fingerprint on its own native server screen, with a Verify action that opens the website in the system browser. A server whose list is missing or unsigned at first contact SHALL work as self-built and be shown as such. Offline, the app opens from its verified copy and checks nothing. No operation is written, so sync and convergence are unaffected.
 
 #### Scenario: Tampered file from the server
 - **WHEN** the Android app is in signed mode and the server serves a chunk that does not match the verified list
@@ -51,9 +51,3 @@ The Android app SHALL carry the trusted public keys in its own package. It SHALL
 - **WHEN** the Android app connects for the first time to a server that serves no signed list
 - **THEN** the web app loads as before, and the server screen reads "Self-built: updates are not signature-checked"
 
-### Requirement: The iOS app warns about unsigned code
-On every launch and resume, the iOS app SHALL fetch the web app's list and check it with the keys in its own package. If a server it saw signed now serves an unsigned list, a list signed by an unknown key, or an older version, it SHALL show a native alert before the page: "This server's app isn't signed by OpenTodo. Don't enter your passphrase." Offline it SHALL check nothing.
-
-#### Scenario: Server switched to an unsigned build
-- **WHEN** the iOS app last saw a signed list from a server and now finds an unsigned one
-- **THEN** it shows the native alert before the web app opens
