@@ -534,6 +534,10 @@ func (d *davRequest) update(v *davView, cur opsync.Entity, in *caldav.Inbound) (
 		if field == "ical_extra" && isNullish(cur[field]) && isNullish(val) {
 			same = true
 		}
+		// No DESCRIPTION is how a missing description is served (issue #1033).
+		if field == "description" && idOf(cur[field]) == "" && idOf(val) == "" {
+			same = true
+		}
 		if !same {
 			body[field] = val
 		}
