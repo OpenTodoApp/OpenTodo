@@ -225,8 +225,10 @@ The person turned on end-to-end encryption and does not trust the server, its op
 - Moving a ciphertext to another field, item or entity: it fails authentication.
 - Turning encryption off on devices by "forgetting" the key record: devices pause sync instead of uploading plaintext.
 - Serving a key record with a derivation weaker than the 600,000 PBKDF2 iterations the app writes, or one that would hang the device.
+- Serving changed or older web app files to an installed app: the app checks every update against a file list signed by a key it trusts, with every file's hash. **Report-only for now:** the app checks and records the result in Settings → About, but still installs an update that fails. Refusal is switched on in a later release ([Signed app code](signed-app.md)).
 
 **Mechanism.**
+- The signed file list `app-manifest.json` and its check in the service worker: `internal/websign`, `web/src/lib/appInstall.ts`, `web/src/sw.ts`. The worker writes the page's script policy from the signed build (`web/src/lib/pagePolicy.ts`).
 - AES-256-GCM in the browser (`web/src/lib/crypto.ts`), with additional data binding each value to `entity\0id\0field`.
 - The account key is wrapped with AES-KW under a PBKDF2-SHA-256 passphrase key (600,000 iterations) and an HKDF-derived recovery key. Devices, `ot` and the server accept the same range, 600,000 to 10,000,000 (`ACCEPTED_ITERATIONS` in `web/src/lib/crypto.ts`, `crypt.MinIterations`, `e2ee.MinIterations`).
 - The content field list is generated from the op schema (`Content: true` in `internal/sync/ops.go`, `CONTENT_FIELDS`, `internal/e2ee/contentfields.go`).
@@ -241,9 +243,10 @@ The person turned on end-to-end encryption and does not trust the server, its op
 - `TestGeneratedOpSchema` keeps the content list in step with the schema.
 - `TestSharingRefusedForEncryptedAccount`, `TestNotificationsNeverShowCiphertext`.
 - `TestServerDoesNotLinkCrypt`: the server binary never links the CLI's crypto.
+- The signed file list (report-only for now): the shared vectors `internal/websign/testdata/manifest.vectors.json` (`TestVectors`, `web/src/lib/appCode.test.ts`), the worker's checks in `web/src/lib/appInstall.test.ts`, `TestServerDoesNotLinkSign` and `scripts/e2e-signed.mjs`; see [Signed app code](signed-app.md#tests).
 
 **Not defended.**
-- **Tampered JavaScript.** The server delivers the web app. A malicious server can change it and capture the passphrase or key on the next load. This is inherent to web-delivered end-to-end encryption. Checking release signatures in the service worker is planned after 1.0 ([#970](https://github.com/OpenTodoApp/OpenTodo/issues/970)).
+- **Tampered JavaScript.** The server delivers the web app. A malicious server can change it and capture the passphrase or key on the next load. This is inherent to web-delivered end-to-end encryption. Installed apps now check every update against the release's signed file list, but **report-only mode is on**: the app checks and records, and still installs an update that fails. Refusal is switched on in a later release ([Signed app code](signed-app.md), [#970](https://github.com/OpenTodoApp/OpenTodo/issues/970)). Even then, in a browser a server can replace the service worker itself or clear the site's data and serve any code, and a first visit, or any visit before the app is installed, runs whatever the server sends.
 - **Metadata.** Dates, priorities, structure, labels on tasks, counts, timing, device ids and ciphertext lengths are plaintext ([docs/e2ee.md](../e2ee.md)).
 - **Rollback.** The server can serve an older ciphertext of the same field. The additional data has no version. Planned after 1.0 ([#969](https://github.com/OpenTodoApp/OpenTodo/issues/969)).
 - **The device relay.** While a device is opted in to the relay and unlocked, the server can ask it to decrypt any content value it holds, or to encrypt text of its choosing for any content field. It needs only the entity, id and field, which it knows.
@@ -540,8 +543,9 @@ Each item of the [review scope](review-scope.md) has a section here: where the c
   - Links from encrypted data open only `http(s)`.
   - The share target stores only same-origin or share-sheet requests up to 100 MB, identified by `Sec-Fetch-Site`. A request without the header is not stored, and the capture screen says why (`shareRequestVerdict`, `web/src/lib/shareInbox.test.ts`).
   - Signing out empties the app's caches, and so does a revoked session once the server proves the revocation with the device's wipe key (`web/src/lib/revocation.ts`).
-  - Strict CSP: `script-src 'self'` and `frame-ancestors 'none'` (`cspBase`), `X-Frame-Options: DENY`.
-- **Tests:** `TestSecurityHeaders` (`internal/httpapi/security_headers_test.go`) pins `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy` and the page policy's `default-src`, `script-src`, `frame-ancestors`, `base-uri` and `form-action`.
+  - Strict CSP: `script-src 'self'` and `frame-ancestors 'none'` (`cspBase`), `X-Frame-Options: DENY`. Pages the service worker serves get the policy of the signed build (`web/src/lib/pagePolicy.ts`, equal to `cspBase` by a shared fixture), with only the assistant's `connect-src` origins taken from the server.
+  - The service worker installs and serves the app from the signed file list (signed-web-app, report-only for now) and never loads a script, worker or stylesheet from the server's own addresses (`/api/` and the other data paths). Its trust record survives signing out and the revoked-device wipe.
+- **Tests:** `TestSecurityHeaders` (`internal/httpapi/security_headers_test.go`) pins `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, the page policy's `default-src`, `script-src`, `frame-ancestors`, `base-uri` and `form-action`, and `no-transform` on the app's files. `TestCSPFixture` and `web/src/lib/pagePolicy.test.ts` keep the worker's policy equal to the server's; `web/src/lib/appInstall.test.ts` covers the worker's checks.
 
 ### Android and iOS bridges
 
@@ -586,7 +590,7 @@ Each item of the [review scope](review-scope.md) has a section here: where the c
 
 ## Accepted risks
 
-- **The operator.** Whoever runs the server can read the database and the secrets files. TOTP secrets are stored in plain form because the server computes codes from them. End-to-end encryption protects content only, and only while the operator does not change the served code.
+- **The operator.** Whoever runs the server can read the database and the secrets files. TOTP secrets are stored in plain form because the server computes codes from them. End-to-end encryption protects content only, and only while the operator does not change the served code, which installed apps check against the signed release where the platform allows; report-only for now ([Signed app code](signed-app.md)).
 - **The audit log is tamper-evident, not tamper-proof.** Someone with write access to the database file can rewrite the whole hash chain or cut off its newest events. Only a chain head kept outside the server reveals that ([Audit log](#audit-log)).
 - **Rolling back** to a binary older than a security fix re-opens that issue. For example, deactivated accounts could sign in again on a server older than user administration. There are no down-migrations.
 - **Availability** rests on one process. Host mode shares that process between tenants.
