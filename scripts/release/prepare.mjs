@@ -18,6 +18,8 @@
 //   - F-Droid's notes for the Android version code, fastlane/metadata/android/en-US/changelogs/
 //     <code>.txt: that section as plain text within 500 characters, as for Google Play (when it
 //     has entries; the owner then rewrites it for the app);
+//   - F-Droid's recipe (mobile/android/store/fdroid/app.opentodo.yml): its build and the
+//     CurrentVersion its bot reads from main;
 //   - then the upstream/ copies (scripts/deploy/mirror.mjs).
 // Only the project's own version contexts change (an image tag, a version/tag/placeholder key,
 // a version in backticks), never a bare number: web/package-lock.json, for one, has packages
@@ -67,6 +69,7 @@ const RUNTIPI_CONFIG = 'deploy/runtipi/config.json'
 const CASAOS_COMPOSE = 'deploy/casaos/docker-compose.yml'
 const EASYPANEL_META = 'deploy/easypanel/meta.yaml'
 const TRUENAS_APP = 'deploy/truenas/opentodo/app.yaml'
+const FDROID_RECIPE = 'mobile/android/store/fdroid/app.opentodo.yml'
 /** F-Droid's release notes of an Android version code (fastlane/README.md). */
 export const fdroidChangelog = (version) => `fastlane/metadata/android/en-US/changelogs/${finalVersion(version).code}.txt`
 
@@ -221,6 +224,14 @@ export function truenasText(text) {
  * is a warning that names it; pending screen-reader passes are a warning for any release; everything
  * else is as strict as for the release.
  */
+/** F-Droid's recipe at <to>: its one build and the version its bot reads from main (UpdateCheckMode: HTTP). */
+export function fdroidRecipeText(text, to) {
+  const { code } = finalVersion(to)
+  return text
+    .replace(/^( {2}- versionName: )\S+\n( {4}versionCode: )\d+\n( {4}commit: )\S+$/m, `$1${to}\n$2${code}\n$3v${to}`)
+    .replace(/^CurrentVersion: \S+\nCurrentVersionCode: \d+$/m, `CurrentVersion: ${to}\nCurrentVersionCode: ${code}`)
+}
+
 export function runGates(root, { base, from, date, candidate = false, fromDate = '' }) {
   const warnings = []
   // A minor release's reference-device record, when it has one, is within budget or links issues
@@ -303,6 +314,7 @@ export function prepare(to, { root = ROOT, date = new Date().toISOString().slice
   edit(CASAOS_COMPOSE, (t) => casaosText(t, date))
   edit(EASYPANEL_META, (t) => easypanelText(t, to, date))
   edit(TRUENAS_APP, truenasText)
+  edit(FDROID_RECIPE, (t) => fdroidRecipeText(t, to))
   edit(HA_CHANGELOG, (t) => haChangelogText(t, to, facts.repository))
   // The add-on copies the binary from the image the release is published under (as its scripts/bump.sh does).
   edit(HA_DOCKERFILE, (t) => t.replace(/^FROM ghcr\.io\/[\w-]+\/opentodo:(\$\{OPENTODO_VERSION\} AS opentodo)$/m, `FROM ${imageFor(facts, to)}:$1`))
