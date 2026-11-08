@@ -15,4 +15,4 @@
 ## 3. Wrap up
 
 - [x] 3.1 Add a "Quick add field" note to `docs/design-system.md` and a changelog fragment `changelog.d/Changed/quick-add-field-surface.md`; verify `node scripts/release/fragments.mjs` and `make repo-check`
-- [ ] 3.2 Run `make openspec-validate`, `npm test` and `npm run build` in `web/`, `make bundle-budget`, then `make check`; verify all pass
+- [x] 3.2 Run `make openspec-validate`, `npm test` and `npm run build` in `web/`, `make bundle-budget`, then `make check`; verify all pass
