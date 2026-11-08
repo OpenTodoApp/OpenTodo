@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { type ReactNode, useEffect, useRef } from 'react'
 import { QuickAdd } from './QuickAdd'
+import { ReadOnlyQuickAdd } from './task-list/ListChrome'
 import { PasteOfferPanel } from './quickadd/PasteOffer'
 import { HEX, label, withClock } from './stories/fixtures'
 
@@ -28,6 +29,28 @@ function Frame({ children }: { children: ReactNode }) {
 export const Empty: StoryObj = {
   render: () => <Frame><QuickAdd placeholder="Add a task to Inbox" projects={projects} labels={labels} onAdd={noop} hideHint /></Frame>,
 }
+
+/** The filled field (quick-add-field-surface) and the viewer's disabled one; the workbench shows each story in light and dark. */
+function SurfaceFrame() {
+  return (
+    <div className="grid max-w-3xl gap-3">
+      <Frame><QuickAdd placeholder="Add a task to Inbox" projects={projects} labels={labels} onAdd={noop} hideHint /></Frame>
+      <Frame><ReadOnlyQuickAdd /></Frame>
+    </div>
+  )
+}
+export const Surface: StoryObj = { render: () => <SurfaceFrame /> }
+
+/** The same under the high-contrast presentation, where the fill cannot differ from the page and a border carries the field. */
+function HighContrastSurface() {
+  useEffect(() => {
+    const root = document.documentElement
+    root.setAttribute('data-contrast', 'high')
+    return () => root.removeAttribute('data-contrast')
+  }, [])
+  return <SurfaceFrame />
+}
+export const SurfaceHighContrast: StoryObj = { render: () => <HighContrastSurface /> }
 
 /** A typed line with every attribute: the date, a nested project, a label, the priority and an estimate become chips. */
 export const WithChips: StoryObj = {

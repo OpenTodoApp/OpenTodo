@@ -351,6 +351,17 @@ describe('input method', () => {
   })
 })
 
+describe('the field surface (quick-add-field-surface)', () => {
+  it('fills the line presentation only', async () => {
+    const noop = async () => {}
+    for (const [layout, filled] of [['line', true], ['palette', false], ['sheet', false]] as const) {
+      const r = await render(<QuickAdd layout={layout} placeholder="Add a task" onAdd={noop} />)
+      expect(!!r.container.querySelector('.quick-add-surface')).toBe(filled)
+      await r.unmount()
+    }
+  })
+})
+
 // #1034, #1035 (quick-add-notes): the line wraps instead of scrolling sideways, and
 // Shift+Enter opens a notes field whose text becomes the task's notes.
 describe('a wrapping line and its notes (quick-add-notes)', () => {

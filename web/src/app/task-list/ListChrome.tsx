@@ -360,7 +360,9 @@ export function MissingTarget({ kind }: { kind: 'project' | 'label' | 'place' })
 export function ReadOnlyQuickAdd() {
   return (
     <>
-      <input className="ui-input" disabled aria-label={t('Quick add (read-only)')} placeholder={t('You can view this project but not add tasks')} />
+      <div className="quick-add-surface">
+        <input className="w-full bg-transparent px-1 text-body placeholder:text-faint" disabled aria-label={t('Quick add (read-only)')} placeholder={t('You can view this project but not add tasks')} />
+      </div>
       <p role="note" className="mt-1 text-meta text-muted">{t('Read-only: you are a viewer of this shared project.')}</p>
     </>
   )
