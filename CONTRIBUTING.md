@@ -58,7 +58,7 @@ What keeps that trustworthy is the same for every contributor, human or not:
 
 - Behaviour is specified before it is built, and the spec is reviewed.
 - Every pull request passes the same checks: tests, the shared Go and TypeScript fixtures, the accessibility gate, the v1 surface snapshot, the docs check.
-- An agent opens, reviews and merges the maintainer's own pull requests and dependency updates once CI is green. Pull requests from other contributors get a review, often drafted by an agent, and are merged by the maintainer, never by an agent.
+- An agent opens, reviews and merges the maintainer's own pull requests and dependency updates once CI is green. Pull requests from other contributors get a review, often drafted by an agent. Once a contributor has addressed every point of the review and CI is green, the maintainer or an agent working for him merges it. An agent never pushes to a contributor's branch.
 - Translations are never machine-made: a speaker of each language reviews its catalog.
 - Security reports go to a person ([SECURITY.md](SECURITY.md)).
 
