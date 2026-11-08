@@ -622,7 +622,7 @@ jobs:
       - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
         with:
           packages: "platforms;android-37.0 build-tools;36.0.0"
-      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
       - run: make android
       # The two release builds (play-location-later): the AAB for Google Play is built with
       # -Popentodo.play=true and must not declare background (or any) location until Play
@@ -758,10 +758,12 @@ jobs:
           path: dist/opentodo-android-*
           if-no-files-found: warn
 
-  # The iOS app (ios-shell D7). A macOS runner, because the shell is built and
-  # tested with Xcode against a simulator; it starts only for iOS changes, since a
-  # macOS minute costs ten Ubuntu ones. No Apple Developer account is involved:
-  # the build is unsigned, and whoever distributes the app signs it themselves.
+  # The iOS app (ios-shell). A macOS runner, because the shell is built and tested
+  # with Xcode against a simulator; it starts only for iOS changes, since a macOS
+  # minute costs ten Ubuntu ones. No Apple account is involved here: the last step is
+  # the first half of the TestFlight upload (ios-distribution D9), an unsigned archive
+  # with the newest Xcode signed ad hoc with the entitlements, so that path is checked
+  # on every iOS change. The signed upload is the ios-testflight job below.
   ios:
     name: iOS (build and test)
     runs-on: macos-15
@@ -779,6 +781,10 @@ jobs:
           xcrun simctl list runtimes
       - name: Unit tests, device build and the dependency check (make ios)
         run: make ios
+      - name: Archive with the newest Xcode, signed ad hoc (the TestFlight job's first half)
+        run: |
+          scripts/release/ios-testflight.sh xcode
+          make ios-archive
 
   # The agent skills (OpenSpec changes agent-ready-cli and claude-plugin): the CLI
   # skill that `ot skill` prints and the MCP skill, zipped as release assets.
@@ -1059,6 +1065,20 @@ jobs:
           jarsigner -keystore "$RUNNER_TEMP/upload.jks" -storepass:env UPLOAD_KEYSTORE_PASSWORD -keypass:env UPLOAD_KEY_PASSWORD "$upload" "$UPLOAD_KEY_ALIAS" > /dev/null
           rm -f "$RUNNER_TEMP/upload.jks"
           node scripts/release/play-upload.mjs "$GITHUB_REF_NAME" "$upload"
+
+  # TestFlight (OpenSpec change ios-distribution D5, D9): after the release, the iPhone app of a
+  # final tag is archived, signed through the App Store Connect API and uploaded to TestFlight by
+  # .github/workflows/ios-testflight.yml, which the owner can also run by hand for any ref. A
+  # person submits a build for review in App Store Connect (RELEASING.md). The secrets live in the
+  # `release` environment; without them the job warns and succeeds, and the release never depends
+  # on it.
+  ios-testflight:
+    name: iOS (TestFlight)
+    if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-')
+    needs: [release]
+    uses: ./.github/workflows/ios-testflight.yml
+    with:
+      ref: ${{ github.ref_name }}
 
   # The Claude Code plugin marketplace (OpenSpec change claude-plugin): after the
   # release, deploy/claude-plugin/upstream/ of the tag becomes the content of

@@ -303,11 +303,15 @@ The selection checkbox SHALL take the place of the task checkbox only while a se
 - **THEN** every row shows the selection checkbox where the task checkbox was and no title moves
 
 ### Requirement: Drag feedback
-A dragged row SHALL lift with the popover elevation and a slight scale, the drop position SHALL show as a line with a dot at its start, and dropping on the middle of a row SHALL ring that row. Under reduced motion the lift is an opacity change. In the sidebar's project tree the line SHALL start at the indent of the level the dragged project lands on, and a dragged project SHALL show only this indicator: the ring a project row shows while a task is dragged onto it SHALL not appear.
+A dragged row SHALL lift with the popover elevation and a slight scale, the drop position SHALL show as a line with a dot at its start, and dropping on the middle of a row SHALL ring that row. Under reduced motion the lift is an opacity change. In a task list that shows subtasks under their parents the line SHALL start at the indent of the level the dragged task lands on. In the sidebar's project tree the line SHALL start at the indent of the level the dragged project lands on, and a dragged project SHALL show only this indicator: the ring a project row shows while a task is dragged onto it SHALL not appear.
 
 #### Scenario: Start a drag
 - **WHEN** the user drags a task in a project list
 - **THEN** the row lifts and the target line appears between rows as the pointer moves
+
+#### Scenario: Line at the level
+- **WHEN** the user drags a top-level task below a subtask two levels deep and moves the pointer one indent to the right
+- **THEN** the line starts one indent in, at the level of the subtask's parent
 
 #### Scenario: Drag a project in the sidebar
 - **WHEN** the user drags the sub-project "Acme" over the top edge of the top-level project "Clients"

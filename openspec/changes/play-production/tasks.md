@@ -29,7 +29,7 @@ Android tasks are verified with `make android` (JDK 17 and the Android SDK) and 
 
 - [ ] 3.1 Owner: answer owner questions 1 and 2 in design D6 (account type, developer verification), and record the answers there. Verified by the design file.
 - [ ] 3.2 If the account is a personal one created after November 2023: run the closed test with at least 12 testers for 14 days, recruited through #9, before applying for production. Verified by the Play Console's production access status.
-- [ ] 3.3 Owner: create the production listing from `listing/<lang>.txt`, the data-safety answers and the screenshots, promote the first internal build to production with a staged rollout, and register `app.opentodo` and the certificate for developer verification. Verified by the public Play listing URL answering.
+- [ ] 3.3 Owner: create the production listing from `fastlane/metadata/android/<locale>/` (the texts and images F-Droid also reads), the data-safety answers and the screenshots, promote the first internal build to production with a staged rollout, and register `app.opentodo` and the certificate for developer verification. Verified by the public Play listing URL answering.
 
 ## 4. F-Droid
 

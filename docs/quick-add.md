@@ -31,11 +31,17 @@ As you type, each thing OpenTodo recognises shows up as a chip under the input a
 
 A dismissed chip stays dismissed while you keep typing; it comes back only if you edit that word. Backspace only highlights a chip when that chip's text ends the line; otherwise Backspace deletes text as usual.
 
+## Long titles and notes
+
+A long title wraps onto more lines as you type, so you can read it back and put the caret anywhere; past five lines the box scrolls. The title is still one line of text: <kbd>Enter</kbd> adds the task.
+
+To write the task's [notes](notes-and-subtasks.md#write-notes) while you add it, press <kbd>Shift</kbd>+<kbd>Enter</kbd> in the box (on a phone, tap the notes button in the add sheet's tool row). A **Notes** field opens under the title. Whatever you write there is saved as the task's notes, exactly as typed: a link stays a link, and nothing in the notes is read as a date or a project. <kbd>Enter</kbd> adds the task from the notes too, <kbd>Shift</kbd>+<kbd>Enter</kbd> starts a new line in them, and <kbd>Backspace</kbd> in empty notes closes them. The command bar keeps <kbd>Shift</kbd>+<kbd>Enter</kbd> for adding and opening the task, and the [share screen](capture.md) has its own Description field.
+
 ## In the command bar
 
 In the [command bar](search.md#four-modes)'s Add mode (<kbd>q</kbd> on screens without a quick add, or <kbd>+</kbd> in the box), what quick add understood is a row per field: **When**, **Project**, **Label**, **Priority** and **Estimate**, plus **Deadline**, **Repeats**, **Reminder** and **Time spent** when you type them. Each row shows its value, or how to set it (`#`, `@`, `p1`, `+30m`). Click a row, or move to it with <kbd>↓</kbd> and press <kbd>Tab</kbd>: a set field's words are selected so you can type over them, and an empty field gets its token at the end of the line. The `×` on a row keeps its words as text. <kbd>Enter</kbd> adds the task and keeps the box open for the next one; <kbd>Shift</kbd>+<kbd>Enter</kbd> adds it and opens it.
 
-On a phone, the add sheet shows plain chips for what it understood, and buttons under them (date, priority, label, estimate, project) that start a token for you.
+On a phone, the add sheet shows plain chips for what it understood, and buttons under them (date, priority, label, estimate, project) that start a token for you, then a notes button that opens the notes field. The sheet stays open after you add a task, with the box empty and the keyboard up, so you can type the next one straight away; tap outside it or swipe it down when you are done.
 
 ## Tokens (any language)
 

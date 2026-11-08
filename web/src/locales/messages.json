@@ -990,6 +990,12 @@
   "Add a task at {place}…": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
+  "Add a task below this one…": [
+    "web/src/app/task-list/SiblingInput.tsx"
+  ],
+  "Add a task below {title}…": [
+    "web/src/app/task-list/SiblingInput.tsx"
+  ],
   "Add a task due {adding}": [
     "web/src/app/calendar/AddOnDayDialog.tsx"
   ],
@@ -1178,6 +1184,7 @@
     "web/src/app/routines/StepCard.tsx"
   ],
   "Add subtask": [
+    "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/task-detail/Subtasks.tsx"
   ],
   "Add subtask…": [
@@ -1185,6 +1192,10 @@
   ],
   "Add task": [
     "web/src/app/quickadd/SheetBar.tsx"
+  ],
+  "Add task below": [
+    "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/task-list/SiblingInput.tsx"
   ],
   "Add task here…": [
     "web/src/app/calendar/addHere.tsx"
@@ -1251,6 +1262,7 @@
     "web/src/app/palette/CommandPalette.tsx"
   ],
   "Added": [
+    "web/src/app/QuickAddSheet.tsx",
     "web/src/lib/taskSource.ts"
   ],
   "Added a next action to {name}.": [
@@ -4792,7 +4804,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Dictate a task": [
-    "web/src/app/QuickAdd.tsx"
+    "web/src/app/quickadd/VoiceParts.tsx"
   ],
   "Dictate into quick add (turn voice capture on in Settings first); Esc or a pause stops, Enter saves": [
     "web/src/lib/shortcuts.ts"
@@ -4848,7 +4860,6 @@
     "web/public/push-sw.js",
     "web/src/app/ArchivePrompt.tsx",
     "web/src/app/DemoBanner.tsx",
-    "web/src/app/QuickAdd.tsx",
     "web/src/app/ReminderToasts.tsx",
     "web/src/app/RemindersField.tsx",
     "web/src/app/Shell.tsx",
@@ -4857,6 +4868,7 @@
     "web/src/app/assistant/AssistantRoot.tsx",
     "web/src/app/assistant/ComposerCapture.tsx",
     "web/src/app/bulk/UndoToast.tsx",
+    "web/src/app/quickadd/VoiceParts.tsx",
     "web/src/app/routines/ProposalReview.tsx"
   ],
   "Dismiss {name}": [
@@ -4965,6 +4977,9 @@
   ],
   "Done today, {instant}": [
     "web/src/app/review/DailyCheck.tsx"
+  ],
+  "Done|task": [
+    "web/public/push-sw.js"
   ],
   "Down": [
     "web/src/app/palette/BarParts.tsx"
@@ -7642,6 +7657,9 @@
   "In maintenance": [
     "web/src/app/ProjectHeader.tsx",
     "web/src/app/review/ProjectWalk.tsx"
+  ],
+  "In quick add: write notes under the title; Enter adds the task with them": [
+    "web/src/lib/shortcuts.ts"
   ],
   "In shared projects this includes text other members wrote.": [
     "web/src/app/assistant/DisclosureNotice.tsx"
@@ -10697,6 +10715,8 @@
     "web/src/app/notes/NotesPage.tsx",
     "web/src/app/palette/entries.ts",
     "web/src/app/palette/notesSection.tsx",
+    "web/src/app/quickadd/NotesLine.tsx",
+    "web/src/app/quickadd/SheetBar.tsx",
     "web/src/app/task-detail/TaskNotes.tsx",
     "web/src/app/themes/EditorSections.tsx",
     "web/src/lib/shortcuts.ts"
@@ -11292,6 +11312,9 @@
   ],
   "One address per line. Leave empty to accept any sender. Sender addresses can be forged, so this filters mistakes and casual spam; the secret address is the real protection.": [
     "web/src/app/EmailInboxPanel.tsx"
+  ],
+  "One at a time": [
+    "web/src/app/task-detail/Subtasks.tsx"
   ],
   "One block for several small tasks": [
     "web/src/app/CalendarView.tsx"
@@ -15792,7 +15815,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Stop dictation": [
-    "web/src/app/QuickAdd.tsx"
+    "web/src/app/quickadd/VoiceParts.tsx"
   ],
   "Stop encrypting future backups": [
     "web/src/app/BackupsPanel.tsx"
@@ -15901,6 +15924,12 @@
   ],
   "Subtasks follow their parent task’s section.": [
     "web/src/app/task-detail/Facets.tsx"
+  ],
+  "Subtasks in any order": [
+    "web/src/app/task-detail/Subtasks.tsx"
+  ],
+  "Subtasks one at a time": [
+    "web/src/app/task-detail/Subtasks.tsx"
   ],
   "Subtasks tick off on their own row": [
     "web/src/lib/sampleTasks.ts"

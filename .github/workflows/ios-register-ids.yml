@@ -1,0 +1,42 @@
+name: iOS register IDs
+
+# Registers the iOS app's bundle IDs (app.open-todo.ios, app.open-todo.ios.widget, app.open-todo.ios.share) with
+# App Groups turned on, and prints what exists, what it added and what is left to do by hand (the
+# App Group itself and the app record, which the API cannot create). Safe to run any number of
+# times. The TestFlight job runs the same registration before every archive
+# (OpenSpec change ios-distribution D9). Actions → iOS register IDs → Run workflow.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-register-ids
+  cancel-in-progress: false
+
+jobs:
+  ios-register-ids:
+    name: iOS (register bundle IDs)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: release
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - name: Register and report
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          if [ -z "$ASC_KEY_ID" ] || [ -z "$ASC_ISSUER_ID" ] || [ -z "$ASC_KEY_P8" ]; then
+            echo "::warning::ASC_KEY_ID, ASC_ISSUER_ID or ASC_KEY_P8 is not set in the release environment: nothing registered"
+            exit 0
+          fi
+          set -o pipefail
+          node scripts/release/appstore.mjs register | tee report.txt
+          { echo '### iOS bundle IDs'; echo; sed 's/^/- /' report.txt; } >> "$GITHUB_STEP_SUMMARY"

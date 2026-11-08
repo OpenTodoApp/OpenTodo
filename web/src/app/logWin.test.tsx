@@ -29,7 +29,7 @@ describe('Log as done', () => {
   it('a recurrence or reminder phrase is refused with a note and stays in the title', async () => {
     const onAdd = vi.fn()
     const r = await render(<QuickAdd layout="palette" placeholder="What did you get done?" label="Log a win" logDone onAdd={onAdd} escape={{ label: 'Close', run: () => {} }} />)
-    const input = q<HTMLInputElement>('input[aria-label="Log a win"]')!
+    const input = q<HTMLTextAreaElement>('textarea[aria-label="Log a win"]')!
     await type(input, 'Water the plants every day')
     expect(q('[data-win-refused]')!.textContent).toContain('A win does not repeat or remind')
     await act(async () => { input.form!.requestSubmit() })

@@ -148,10 +148,12 @@ tasks.register("checkStoreMetadata") {
             .findAll(file("src/main/AndroidManifest.xml").readText()).map { it.groupValues[1] }.toSortedSet()
         val declared = rootProject.file("store/permissions.txt").readLines().map { it.trim() }.filter { it.isNotEmpty() && !it.startsWith("#") }.toSortedSet()
         if (manifest != declared) throw GradleException("store/permissions.txt $declared does not match the manifest $manifest")
-        val langs = listOf("en", "de", "es", "fr", "it", "pt")
-        val missing = langs.filter { !rootProject.file("store/listing/$it.txt").exists() }
-        if (missing.isNotEmpty()) throw GradleException("Store listing missing for $missing")
-        // The Play review answers (play-production D6) and the data-safety form sit next to the listings.
+        // The store listing is F-Droid's Fastlane folder at the repository root (fastlane/README.md).
+        val locales = listOf("en-US", "de-DE", "es-ES", "fr-FR", "it-IT", "pt-PT")
+        val listing = rootProject.file("../../fastlane/metadata/android")
+        val missing = locales.filter { l -> listOf("title", "short_description", "full_description").any { !File(listing, "$l/$it.txt").exists() } }
+        if (missing.isNotEmpty()) throw GradleException("Store listing missing for $missing in fastlane/metadata/android")
+        // The Play review answers (play-production D6) and the data-safety form.
         val forms = listOf("data-safety.md", "play-review.md").filter { !rootProject.file("store/$it").exists() }
         if (forms.isNotEmpty()) throw GradleException("Store forms missing: $forms")
         val review = rootProject.file("store/play-review.md").readText()

@@ -5,7 +5,7 @@
 # itself counts as code (skills/ is embedded in the binary, scripts/deploy*
 # generate and check the deploy/ templates); docs/ and the changelog (CHANGELOG.md and
 # its fragments in changelog.d/) count as docs. templates/ is compiled into the web app (template-library).
-# mobile/android is the Android app (native-shells D9) and mobile/ios the iOS app
+# mobile/android is the Android app (native-shells D9), with its store listing in fastlane/, and mobile/ios the iOS app
 # (ios-shell D7): each has its own answer, so an iOS-only change does not run the
 # Android job. Both also run when the workflow or this filter changes; iOS is
 # separate because a macOS runner costs ten times an Ubuntu one, which is also why
@@ -28,7 +28,7 @@ fi
 if printf '%s\n' "$files" | grep -qE '^(docs/|website/|CHANGELOG\.md$|changelog\.d/|README\.md$|openspec/|scripts/(site-bundle|e2e-docs|screenshots|docs-screenshots))'; then
   docs=true
 fi
-if printf '%s\n' "$files" | grep -qE '^(mobile/android/|\.github/workflows/ci\.yml$|scripts/ci-changes\.sh$)'; then
+if printf '%s\n' "$files" | grep -qE '^(mobile/android/|fastlane/|\.github/workflows/ci\.yml$|scripts/ci-changes\.sh$)'; then
   mobile=true
 fi
 # Changes to CI itself run every tier, so a workflow edit is tested by its own run.
@@ -42,7 +42,8 @@ extension=$(match 'extension/|Makefile$')
 # The Obsidian plugin (obsidian-plugin task 6.4): its folder and the shared code it bundles.
 obsidian=$(match 'obsidian/|web/src/lib/nlp/|web/src/lib/e2eeEnvelope\.ts$|web/src/lib/crypto\.ts$|web/src/lib/hlc\.ts$|web/src/lib/recurrence\.ts$|web/src/lib/i18n/format\.ts$|web/src/lib/taskOrigin\.ts$|web/src/lib/ids\.ts$|web/src/lib/moduleState\.ts$|web/src/lib/types\.ts$|web/src/lib/theme/|web/src/lib/colourMath\.ts$|web/src/generated/opSchema\.ts$|internal/vault/testdata/|internal/origin/testdata/|internal/httpapi/sync_handlers\.go$|Makefile$')
 skill=$(match 'skills/|Makefile$')
-ios=$(match 'mobile/ios/')
+# The TestFlight job's archive script is checked by the iOS job (ios-distribution D9).
+ios=$(match 'mobile/ios/|scripts/release/ios-testflight\.sh$')
 echo "code=$code"
 echo "docs=$docs"
 echo "mobile=$mobile"

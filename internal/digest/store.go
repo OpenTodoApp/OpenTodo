@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/mail"
@@ -53,7 +54,7 @@ func (s Settings) Validate() error {
 		return &InvalidError{"timeZone", "unknown time zone " + fmt.Sprintf("%q", s.TimeZone)}
 	}
 	if !slices.Contains(mail.Languages, s.Lang) {
-		return &InvalidError{"language", "must be one of en, de, fr, es, it, pt"}
+		return &InvalidError{"language", fmt.Sprintf("must be one of %s", strings.Join(mail.Languages, ", "))}
 	}
 	return nil
 }

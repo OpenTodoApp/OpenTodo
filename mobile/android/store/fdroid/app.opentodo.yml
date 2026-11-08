@@ -2,8 +2,10 @@
 # This copy is the source of truth (OpenSpec change play-production D3). F-Droid builds each
 # tag from source and publishes the project-signed APK from the GitHub release only when its
 # own build matches it apart from the signature (reproducible builds), so the app from
-# F-Droid, Google Play and GitHub carries one certificate. `fdroid lint` passes; drop these
-# comment lines when copying it to fdroiddata (`fdroid rewritemeta` removes them anyway).
+# F-Droid, Google Play and GitHub carries one certificate. The name, summary, description,
+# icon, screenshots and release notes come from fastlane/metadata/android/ at the repository
+# root (fastlane/README.md), so they are not repeated here. Drop these comment lines when
+# copying the file to fdroiddata; `fdroid lint` and `fdroid rewritemeta` pass on it.
 Categories:
   - Task
 License: AGPL-3.0-only
@@ -13,22 +15,14 @@ SourceCode: https://github.com/OpenTodoApp/OpenTodo
 IssueTracker: https://github.com/OpenTodoApp/OpenTodo/issues
 Changelog: https://github.com/OpenTodoApp/OpenTodo/blob/HEAD/CHANGELOG.md
 
-AutoName: OpenTodo
-Summary: The app for your own OpenTodo server
-Description: |-
-  OpenTodo is a self-hosted task manager. This app opens your own OpenTodo server
-  and adds what a phone app can do: reminders on time without a push service,
-  sharing from other apps, home-screen widgets and fingerprint unlock of an
-  encrypted account. It has no trackers, no analytics and talks only to your server.
-
 RepoType: git
 Repo: https://github.com/OpenTodoApp/OpenTodo.git
 Binaries: https://github.com/OpenTodoApp/OpenTodo/releases/download/v%v/opentodo-android-%v.apk
 
 Builds:
-  - versionName: 0.20.0
-    versionCode: 2000
-    commit: v0.20.0
+  - versionName: 1.1.1
+    versionCode: 10101
+    commit: e7cab19a5d88dd418606ee46e718a0a565cd2acd
     subdir: mobile/android/app
     sudo:
       - echo 'deb https://deb.debian.org/debian bookworm main' > /etc/apt/sources.list.d/bookworm.list
@@ -43,5 +37,5 @@ AllowedAPKSigningKeys: ff2eacdf7e79712e44fdd9d2e3110891e712c170ea516bd3fbbecc291
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9.]+$
-CurrentVersion: 0.20.0
-CurrentVersionCode: 2000
+CurrentVersion: 1.1.1
+CurrentVersionCode: 10101

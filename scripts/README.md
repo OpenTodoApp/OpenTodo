@@ -152,11 +152,12 @@ Environment: `PAGES` (comma-separated paths), `WIDTHS` (`360,390,1280`), `CHROMI
 
 ## `docs-screenshots.mjs`
 
-Captures the user guide's screenshots (`docs/images/<name>-{light,dark}.webp`, plus small `card-<name>-*.webp` thumbnails for the docs landing page) from the seeded demo data. It starts two throwaway servers from a binary itself: a demo instance (`OPENTODO_DEMO=true`, one sandbox, the demo banner hidden) for everyday screens and a fresh ordinary instance for sign-in, settings and sharing screens the demo switches off. Desktop shots are 1200×760 at 1.25×, phone shots 390×780 at 1.5×, WebP quality 0.72, encoded by Chromium; the whole set is about 2.3 MB. `make docs-screenshots` builds the web app and a binary that reports the latest released version, runs the script, then `make docs`.
+Captures the user guide's screenshots (`docs/images/<name>-{light,dark}.webp`, plus small `card-<name>-*.webp` thumbnails for the docs landing page) from the seeded demo data. It starts two throwaway servers from a binary itself: a demo instance (`OPENTODO_DEMO=true`, one sandbox, the demo banner hidden) for everyday screens and a fresh ordinary instance for sign-in, settings and sharing screens the demo switches off. Desktop shots are 1200×760 at 1.25×, phone shots 390×780 at 1.5×, WebP quality 0.72, encoded by Chromium; the whole set is about 2.3 MB. The `store-*` shots are F-Droid's phone screenshots instead (`fastlane/metadata/android/en-US/images/phoneScreenshots/<n>.png`, one theme each, 390×780 at 2.5×, PNG). `make docs-screenshots` builds the web app and a binary that reports the latest released version, runs the script, then `make docs`.
 
 ```bash
 make docs-screenshots
 OPENTODO_BIN=bin/opentodo node scripts/docs-screenshots.mjs [name,name]   # a subset
+OPENTODO_BIN=bin/opentodo node scripts/docs-screenshots.mjs store-today,store-upcoming-dark,store-menu   # F-Droid's
 ```
 
 ## `screenshots.mjs`

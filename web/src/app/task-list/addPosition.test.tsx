@@ -47,7 +47,7 @@ const ordered = async (filter: (t: { project_id: string | null; section_id?: str
   (await db.tasks.toArray()).filter(filter).sort((a, b) => a.position - b.position || (a.id < b.id ? -1 : 1)).map((t) => t.title)
 
 async function submitQuickAdd(root: ParentNode, text: string) {
-  const input = root.querySelector<HTMLInputElement>('form input')!
+  const input = root.querySelector<HTMLTextAreaElement>('form textarea')!
   await type(input, text)
   await act(async () => { input.closest('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
 }
@@ -126,9 +126,10 @@ describe('entry points follow the preference (2.2)', () => {
     await setAddPosition('top')
     const onClose = vi.fn()
     const r = await render(<QuickAddSheet open onClose={onClose} anchor={{ current: null }} route={{ view: 'inbox' }} />)
-    await waitFor(() => !!document.querySelector('[data-quick-add-sheet] form input'))
+    await waitFor(() => !!document.querySelector('[data-quick-add-sheet] form textarea'))
     await submitQuickAdd(document.querySelector('[data-quick-add-sheet]')!, 'From the sheet')
-    await waitFor(() => onClose.mock.calls.length > 0)
+    await waitFor(async () => (await db.tasks.count()) === 2, 'the task')
+    expect(onClose).not.toHaveBeenCalled() // the sheet stays open for the next task (quick-add-keep-adding)
     expect(await ordered((t) => t.project_id === null)).toEqual(['From the sheet', 'Old'])
     await r.unmount()
   })

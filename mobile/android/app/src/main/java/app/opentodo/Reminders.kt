@@ -93,6 +93,17 @@ object Notifier {
         return PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
     }
 
+    private fun label(action: String): Int = when (action) {
+        "done" -> R.string.action_done
+        "snooze" -> R.string.action_snooze
+        else -> R.string.action_dismiss
+    }
+
+    private fun NotificationCompat.Builder.actions(context: Context, id: String, actions: List<String>): NotificationCompat.Builder {
+        for (a in actions) addAction(0, context.getString(label(a)), action(context, id, a))
+        return this
+    }
+
     fun notificationId(id: String): Int = id.hashCode()
 
     fun reminder(context: Context, r: ShellReminder): Boolean {
@@ -107,8 +118,7 @@ object Notifier {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(open(context, ReminderSchedule.taskPath(r.taskId), notificationId(r.id)))
-            .addAction(0, context.getString(R.string.action_snooze), action(context, r.id, "snooze"))
-            .addAction(0, context.getString(R.string.action_dismiss), action(context, r.id, "dismiss"))
+            .actions(context, r.id, ReminderSchedule.REMINDER_ACTIONS)
             .build()
         return try { NotificationManagerCompat.from(context).notify(notificationId(r.id), n); true } catch (e: SecurityException) { false }
     }
@@ -126,8 +136,7 @@ object Notifier {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(open(context, ReminderSchedule.taskPath(r.taskId), notificationId(r.id)))
-            .addAction(0, context.getString(R.string.action_done), action(context, r.id, "done"))
-            .addAction(0, context.getString(R.string.action_dismiss), action(context, r.id, "dismiss"))
+            .actions(context, r.id, ReminderSchedule.LOCATION_ACTIONS)
             .build()
         return try { NotificationManagerCompat.from(context).notify(notificationId(r.id), n); true } catch (e: SecurityException) { false }
     }
@@ -155,13 +164,13 @@ class AlarmReceiver : BroadcastReceiver() {
 }
 
 /**
- * Snooze 10 min and Dismiss, and a location reminder's Done: the web app applies them in a
- * hidden web view, as ordinary ops.
+ * Done, Snooze 10 min and Dismiss: the web app applies them in a hidden web view, as ordinary
+ * ops (Done through the app's completion, so a repeating task moves to its next occurrence).
  */
 class NotificationActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val id = intent.getStringExtra("id") ?: return
-        val action = intent.getStringExtra("action")?.takeIf { it == "snooze" || it == "dismiss" || it == "done" } ?: return
+        val action = intent.getStringExtra("action")?.takeIf { ReminderSchedule.isAction(it) } ?: return
         NotificationManagerCompat.from(context).cancel(Notifier.notificationId(id))
         HiddenRun.enqueueOnce(context, ReminderSchedule.actionPath(id, action))
     }

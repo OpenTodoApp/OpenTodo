@@ -60,3 +60,40 @@ func TestCalDAVTwoWorkspaces(t *testing.T) {
 	// An unknown workspace inbox is not a calendar.
 	c.must("PROPFIND", c.cal("inbox-nope"), propfindCalendars, 404, "Depth", "0")
 }
+
+// The Inbox list is named in the user's language (issue #1029); project lists
+// keep the names the user gave them, and the Inbox still cannot be renamed.
+func TestCalDAVInboxNameFollowsLanguage(t *testing.T) {
+	e, c := davSetup(t)
+	resp, out := e.do("POST", "/api/v1/workspaces", map[string]any{"name": "Work"})
+	e.mustStatus(resp, 201, out)
+	resp, out = e.do("POST", "/api/v1/projects", map[string]any{"name": "Garden"})
+	e.mustStatus(resp, 201, out)
+	listing := func(headers ...string) string {
+		_, body := c.must("PROPFIND", "/dav/calendars/"+c.uid+"/", propfindCalendars, 207, append([]string{"Depth", "1"}, headers...)...)
+		return body
+	}
+	has := func(body string, names ...string) {
+		t.Helper()
+		for _, n := range names {
+			if !strings.Contains(body, "<d:displayname>"+n+"</d:displayname>") {
+				t.Fatalf("listing lacks %q:\n%s", n, body)
+			}
+		}
+	}
+	// No language chosen: the client's language, else English.
+	has(listing(), "Inbox", "Work · Inbox", "Garden")
+	has(listing("Accept-Language", "fr-FR,fr;q=0.9"), "Boîte de réception", "Work · Boîte de réception", "Garden")
+	has(listing("Accept-Language", "ja-JP"), "Inbox")
+	// The language chosen in Settings wins over the client's.
+	e.syncOps("devA", rop("l1", "user_prefs", "me", "language", "de", 1))
+	has(listing("Accept-Language", "fr-FR"), "Eingang", "Work · Eingang", "Garden")
+	pp := `<?xml version="1.0"?><d:propertyupdate xmlns:d="DAV:"><d:set><d:prop><d:displayname>Mine</d:displayname></d:prop></d:set></d:propertyupdate>`
+	if _, body := c.must("PROPPATCH", c.cal("inbox"), pp, 207); !strings.Contains(body, "403 Forbidden") {
+		t.Fatalf("inbox rename: %s", body)
+	}
+	e.syncOps("devA", rop("l2", "user_prefs", "me", "language", "zh", 2))
+	has(listing(), "收件箱")
+	e.syncOps("devA", rop("l3", "user_prefs", "me", "language", "system", 3))
+	has(listing("Accept-Language", "it"), "In arrivo")
+}

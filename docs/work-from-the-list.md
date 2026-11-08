@@ -62,6 +62,6 @@ Right-click or hold a row: its menu opens at the pointer and acts on all ticked 
 
 ## Put things in order
 
-In the Inbox and in projects, you decide the order. Drag a task to a new place (on a touch screen, drag it by its grip), or select it and press <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>Alt</kbd>+<kbd>↓</kbd>. <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>↑</kbd> sends it to the top. Dropping a task on the middle of another one makes it a subtask. Projects in the sidebar can be reordered the same way.
+In the Inbox and in projects, you decide the order. Drag a task to a new place (on a touch screen, by its grip), or select it and press <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>Alt</kbd>+<kbd>↓</kbd>. <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>↑</kbd> sends it to the top. Drop on a row to nest it, or move sideways to pick the level. **Add task below** in a task's menu adds one right under it.
 
 Today, Upcoming, labels and filters sort themselves by date and priority; there a drag only goes to the sidebar (see [Drop on the sidebar](bulk-actions.md#drop-on-the-sidebar)).

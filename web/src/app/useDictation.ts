@@ -25,7 +25,7 @@ const IDLE: DictationView = { status: 'idle', announcement: '', message: null }
  * nothing is ever submitted from here.
  */
 export function useDictation(opts: {
-  inputRef: RefObject<HTMLInputElement | null>
+  inputRef: RefObject<HTMLInputElement | HTMLTextAreaElement | null>
   getText: () => string
   setText: (next: string) => void
   settings: QuickAddSettings

@@ -77,7 +77,7 @@ class ReminderTest {
         val n = waitForNotification("r1")
         assertEquals("Water the plants", n.notification.extras.getString(Notification.EXTRA_TITLE))
         val actions = n.notification.actions.map { it.title.toString() }
-        assertEquals(listOf(context.getString(R.string.action_snooze), context.getString(R.string.action_dismiss)), actions)
+        assertEquals(listOf(context.getString(R.string.action_done), context.getString(R.string.action_snooze), context.getString(R.string.action_dismiss)), actions)
     }
 
     @Test fun withoutExactAlarmsTheInexactFallbackIsArmed() {
@@ -106,11 +106,19 @@ class ReminderTest {
         assertEquals(context.getString(R.string.reminder_generic), waitForNotification("r8").notification.extras.getString(Notification.EXTRA_TITLE))
     }
 
+    @Test fun doneAppliesInTheBackgroundAtTheActionAddress() {
+        Scheduler.replace(context, schedule("r9", 60 * 60_000))
+        assertTrue(Notifier.reminder(context, Scheduler.find(context, "r9")!!))
+        waitForNotification("r9").notification.actions[0].actionIntent.send()
+        waitUntil("the notification to go") { shown("r9") == null }
+        assertEquals("/?reminder=r9&action=done", server.waitForPath("/?reminder=", timeoutMs = 60_000))
+    }
+
     @Test fun snoozeAppliesInTheBackgroundAtTheActionAddress() {
         Scheduler.replace(context, schedule("r3", 60 * 60_000))
         assertTrue(Notifier.reminder(context, Scheduler.find(context, "r3")!!))
         val n = waitForNotification("r3")
-        n.notification.actions[0].actionIntent.send()
+        n.notification.actions[1].actionIntent.send()
         waitUntil("the notification to go") { shown("r3") == null }
         assertEquals("/?reminder=r3&action=snooze", server.waitForPath("/?reminder=", timeoutMs = 60_000))
     }
@@ -118,7 +126,7 @@ class ReminderTest {
     @Test fun dismissAppliesInTheBackgroundAtTheActionAddress() {
         Scheduler.replace(context, schedule("r4", 60 * 60_000))
         assertTrue(Notifier.reminder(context, Scheduler.find(context, "r4")!!))
-        waitForNotification("r4").notification.actions[1].actionIntent.send()
+        waitForNotification("r4").notification.actions[2].actionIntent.send()
         waitUntil("the notification to go") { shown("r4") == null }
         assertEquals("/?reminder=r4&action=dismiss", server.waitForPath("/?reminder=", timeoutMs = 60_000))
     }
