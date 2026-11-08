@@ -58,7 +58,7 @@ targets:
     entitlements:
       path: OpenTodo/OpenTodo.entitlements
       properties:
-        com.apple.security.application-groups: [group.app.open-todo.ios]
+        com.apple.security.application-groups: [group.app.open-todo]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.open-todo.ios
@@ -96,7 +96,7 @@ targets:
     entitlements:
       path: OpenTodoWidget/OpenTodoWidget.entitlements
       properties:
-        com.apple.security.application-groups: [group.app.open-todo.ios]
+        com.apple.security.application-groups: [group.app.open-todo]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.open-todo.ios.widget
@@ -131,7 +131,7 @@ targets:
     entitlements:
       path: OpenTodoShare/OpenTodoShare.entitlements
       properties:
-        com.apple.security.application-groups: [group.app.open-todo.ios]
+        com.apple.security.application-groups: [group.app.open-todo]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.open-todo.ios.share

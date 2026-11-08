@@ -65,7 +65,7 @@ archive)
   sign "$app" "$ios/OpenTodo/OpenTodo.entitlements"
   codesign --verify --deep --strict "$app"
   for b in "$app" "$app"/PlugIns/*.appex; do
-    codesign -d --entitlements - --xml "$b" 2>/dev/null | grep -q 'group.app.open-todo.ios' || die "$(basename "$b") lost the App Group entitlement"
+    codesign -d --entitlements - --xml "$b" 2>/dev/null | grep -q 'group.app.open-todo' || die "$(basename "$b") lost the App Group entitlement"
   done
   short=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Info.plist")
   bundle=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Info.plist")
