@@ -38,7 +38,7 @@ ROADMAP.md: none of its rows. This is hardening item 6.13d of `external-security
 
 ## Impact
 
-- **Build and release:** a Vite plugin writes the unsigned list; `cmd/websign` (Go standard library only) generates keys, signs and verifies; a `web-sign` CI job on release tags; the image and the release binaries embed the signed list; `web/release-keys.json` holds the public keys.
+- **Build and release:** a Vite plugin writes the unsigned list; `cmd/websign` (Go standard library only) generates keys, signs and verifies; a `web-sign` CI job on release tags; the image and the release binaries embed the signed list; `internal/websign/release-keys.json` holds the public keys.
 - **Web:** `web/src/sw.ts` becomes the verifier and also takes in `push-sw.js`; `UpdateBanner`, About, the branding of the page title and icons; `workbox-core`, `workbox-precaching` and `workbox-routing` are removed.
 - **Server:** serves `app-manifest.json` with `no-store`, serves `/index.html` unmodified, adds `no-transform` to the app's files and logs the signature state at startup. No new route.
 - **Android:** `ShellCache` verifies the list with the built-in key and serves every app file (with refusal). **iOS:** none in this change.
