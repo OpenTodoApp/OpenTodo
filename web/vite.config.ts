@@ -6,6 +6,12 @@ import { configDefaults } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { buildKeys } from './scripts/signingKeys.mjs'
+
+// The keys this build trusts (signed-web-app D3, D11): the official keys, or
+// the public half of WEB_SIGNING_KEY. Built into the service worker, which
+// trusts them on first use, and into the page, which names official ones.
+const signing = buildKeys()
 
 // The production bundle is written into the Go module so it can be embedded in
 // the single binary (see internal/web/web.go).
@@ -31,13 +37,20 @@ function taskPageWithoutPwa(): Plugin {
 }
 
 export default defineConfig({
+  define: {
+    __APP_KEYS__: JSON.stringify(signing.keys.map((k: { spki: string }) => k.spki)),
+    __OFFICIAL_KEYS__: JSON.stringify(signing.official),
+  },
   plugins: [
     react(),
     taskPageWithoutPwa(),
     tailwindcss(),
     VitePWA({
-      // Our own worker (OpenSpec attachments D9): Workbox precaching plus the
-      // share sheet's POST with files, which a generated worker cannot handle.
+      // Our own worker (OpenSpec attachments D9, signed-web-app): it installs
+      // the app from the signed file list (scripts/app-manifest.mjs, whose
+      // install/lazy rule matches the globs below) and handles the share
+      // sheet's POST with files. The Workbox-format list is still injected, as
+      // data for the Android apps that read it from sw.js (signed-web-app D6).
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.ts',

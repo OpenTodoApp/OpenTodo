@@ -46,7 +46,7 @@ Encryption hides **content fields** from the server: titles, descriptions, notes
 - **Plaintext from before encryption was turned on,** until **Purge plaintext history**, and in backups made before the purge.
 - **Older versions.** The server can serve an older ciphertext of the same field, and the app cannot tell. Planned after 1.0 ([#969](https://github.com/OpenTodoApp/OpenTodo/issues/969)).
 - **The device relay.** While a device is opted in to answer for AI assistants and is unlocked, the server can ask it to decrypt or encrypt values within its caps.
-- **The code.** A malicious server can serve tampered JavaScript that captures the passphrase. Signed web app code is planned after 1.0 ([#970](https://github.com/OpenTodoApp/OpenTodo/issues/970)).
+- **The code.** A malicious server can serve tampered JavaScript that captures the passphrase. Installed apps check every update against the release's signed file list, but **report-only mode is on**: an update that fails is recorded in Settings → About and still installed. Once refusal is on, in a browser a malicious server can still replace the update check itself, and a first visit is never checked. [Signed app code](signed-app.md) explains what is covered.
 
 ## What is not encrypted at rest
 
