@@ -1,0 +1,1 @@
+- **A task's path no longer overlaps itself on a phone.** On a subtask in a long-named project, the crumbs in the task page's header were drawn on top of each other; a crumb without room now shortens and clips its text.
