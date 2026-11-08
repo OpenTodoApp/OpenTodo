@@ -63,6 +63,7 @@ const table = [
   [['mobile/android/app/src/main/java/app/opentodo/Bridge.kt'], { code: 'false', docs: 'false', mobile: 'true', ios: 'false' }],
   [['mobile/README.md', 'mobile/android/app/build.gradle.kts'], { code: 'false', docs: 'false', mobile: 'true', ios: 'false' }],
   [['mobile/android/store/permissions.txt', 'internal/httpapi/router.go'], { code: 'true', docs: 'false', mobile: 'true' }],
+  [['fastlane/metadata/android/en-US/full_description.txt'], { code: 'false', docs: 'false', mobile: 'true', ios: 'false' }],
   [['mobile/ios/OpenTodo/Bridge.swift'], { code: 'false', docs: 'false', mobile: 'false', ios: 'true' }],
   [['mobile/ios/project.yml', 'mobile/android/app/build.gradle.kts'], { code: 'false', docs: 'false', mobile: 'true', ios: 'true' }],
   [['mobile/README.md'], { code: 'false', docs: 'false', mobile: 'false', ios: 'false' }],
@@ -621,6 +622,49 @@ test('the F-Droid metadata allows the release certificate that docs/android-app.
   assert.match(fdroid, /^Binaries: https:\/\/github\.com\/OpenTodoApp\/OpenTodo\/releases\/download\/v%v\/opentodo-android-%v\.apk$/m)
   assert.match(fdroid, /^UpdateCheckMode: Tags \^v\[0-9\.\]\+\$$/m, 'release candidates are skipped')
   assert.match(fdroid, /^AutoUpdateMode: Version$/m, "F-Droid's bot adds each final tag")
+  // F-Droid takes the name, summary and description from fastlane/; its build pins a full commit hash.
+  assert.doesNotMatch(fdroid, /^(AutoName|Name|Summary|Description):/m, 'the texts live in fastlane/metadata/android/')
+  const builds = [...fdroid.matchAll(/^ {2}- versionName: (\S+)\n {4}versionCode: (\d+)\n {4}commit: (\S+)$/gm)]
+  assert.equal(builds.length, 1, 'Builds keeps only the latest version')
+  const [, name, code, commit] = builds[0]
+  const [maj, min, patch] = name.split('.').map(Number)
+  assert.equal(Number(code), maj * 10000 + min * 100 + patch, 'versionCode is major·10000 + minor·100 + patch')
+  assert.match(commit, /^[0-9a-f]{40}$/, 'commit is a full hash, not a tag')
+  assert.match(fdroid, new RegExp(`^CurrentVersion: ${name.replaceAll('.', '\\.')}\\nCurrentVersionCode: ${code}$`, 'm'))
+})
+
+// F-Droid's listing (fastlane/README.md): F-Droid reads fastlane/metadata/android/<locale>/ at the
+// repository root of the built commit, within its limits; en-US is the fallback for the images.
+const FASTLANE = 'fastlane/metadata/android'
+const pngSize = (p) => { const b = readFileSync(path.join(root, p)); return [b.readUInt32BE(16), b.readUInt32BE(20)] }
+
+test("F-Droid's Fastlane listing has the six languages within F-Droid's limits", () => {
+  assert.deepEqual(readdirSync(path.join(root, FASTLANE)).sort(), ['de-DE', 'en-US', 'es-ES', 'fr-FR', 'it-IT', 'pt-PT'])
+  for (const locale of readdirSync(path.join(root, FASTLANE))) {
+    const text = (f) => read(`${FASTLANE}/${locale}/${f}`).trim()
+    for (const [f, limit] of [['title.txt', 50], ['short_description.txt', 80], ['full_description.txt', 4000]]) {
+      const t = text(f)
+      assert.ok(t.length > 0 && [...t].length <= limit, `${locale}/${f}: 1 to ${limit} characters, has ${[...t].length}`)
+    }
+    assert.equal(text('title.txt'), 'OpenTodo', locale)
+    assert.match(text('full_description.txt'), /OpenTodo/, `${locale}: the description says it needs an OpenTodo server`)
+  }
+  const images = `${FASTLANE}/en-US/images`
+  assert.deepEqual(pngSize(`${images}/icon.png`), [512, 512])
+  assert.deepEqual(pngSize(`${images}/featureGraphic.png`), [1024, 500])
+  const shots = readdirSync(path.join(root, images, 'phoneScreenshots')).sort()
+  assert.ok(shots.length >= 3 && shots.length <= 8, `3 to 8 phone screenshots, has ${shots.length}`)
+  assert.deepEqual(shots, shots.map((_, i) => `${i + 1}.png`))
+})
+
+test("F-Droid's notes exist for the latest release's version code, within 500 characters", () => {
+  const [maj, min, patch] = /^## \[(\d+)\.(\d+)\.(\d+)\]/m.exec(read('CHANGELOG.md')).slice(1).map(Number)
+  const rel = `${FASTLANE}/en-US/changelogs/${maj * 10000 + min * 100 + patch}.txt`
+  assert.ok(existsSync(path.join(root, rel)), `${rel} is missing: write what changed for the Android app (RELEASING.md)`)
+  for (const f of readdirSync(path.join(root, FASTLANE, 'en-US/changelogs'))) {
+    const t = read(`${FASTLANE}/en-US/changelogs/${f}`).trim()
+    assert.ok(/^\d+\.txt$/.test(f) && t.length > 0 && [...t].length <= 500, `changelogs/${f}: 1 to 500 characters`)
+  }
 })
 
 // The migration matrix (migration-everywhere D6): every listed competitor has a

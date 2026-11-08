@@ -1,6 +1,3 @@
-Title: OpenTodo
-Short description: Tu propio gestor de tareas, en tu propio servidor.
-
 OpenTodo es un gestor de tareas de código abierto que alojas tú. Esta app abre tu servidor OpenTodo y añade lo que solo una app de teléfono puede hacer:
 
 - Recordatorios puntuales, programados en el teléfono, sin servicio push de por medio

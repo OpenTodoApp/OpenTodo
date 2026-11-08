@@ -8,7 +8,8 @@ import { test } from 'node:test'
 import { run as deployCheck } from '../deploy-check.mjs'
 import { compareVersions, laterRelease, loadFacts, readText, releaseVersion, ROOT } from '../deploy/common.mjs'
 import { staleCopies } from '../deploy/mirror.mjs'
-import { bumpLine, bumpText, candidateChangelogText, candidates, casaosText, changelogText, easypanelText, haChangelogText, prepare, truenasText, withoutCandidates } from './prepare.mjs'
+import { bumpLine, bumpText, candidateChangelogText, candidates, casaosText, changelogText, easypanelText, fdroidChangelog, haChangelogText, prepare, truenasText, withoutCandidates } from './prepare.mjs'
+import { releaseNotes } from './play-upload.mjs'
 import { checkUpgradeFixture, fixtureDir, isNewMinor } from './upgradeFixture.mjs'
 import { fragmentsMarkdown, readFragments } from './fragments.mjs'
 import { checkSecurityReviews, monthsBetween } from './securityReview.mjs'
@@ -126,7 +127,7 @@ test('release-prepare: a patch release on this tree makes the edits a hand relea
     fragment(dir, 'Security/a-hole.md', '- **A security fix.**\n')
     const { from, changed } = prepare(NEXT_PATCH, { root: dir, date: '2030-01-02' })
     assert.equal(from, CURRENT)
-    assert.deepEqual(changed, [...PATCH_RELEASE_FILES, 'changelog.d/Fixed/a-fix.md', 'changelog.d/Fixed/b-fix.md', 'changelog.d/Security/a-hole.md'].sort())
+    assert.deepEqual(changed, [...PATCH_RELEASE_FILES, 'changelog.d/Fixed/a-fix.md', 'changelog.d/Fixed/b-fix.md', 'changelog.d/Security/a-hole.md', fdroidChangelog(NEXT_PATCH)].sort())
     // The fragments became the release's entries and are gone.
     assert.deepEqual(readdirSync(join(dir, 'changelog.d'), { recursive: true }).filter((f) => f.endsWith('.md')), [])
     // Every problem the checks find on the new release, none (Umbrel's digest is checked by shape until pin.mjs runs).
@@ -166,6 +167,12 @@ test('release-prepare: a patch release on this tree makes the edits a hand relea
     const notes = execFileSync('sh', [join(ROOT, 'scripts/release-notes.sh'), NEXT_PATCH, join(dir, 'CHANGELOG.md')], { encoding: 'utf8' })
     assert.ok(notes.trimStart().startsWith('### Security\n\n- **A security fix.**\n\n### Fixed\n\n- **The first fix.**'), notes.slice(0, 200))
     assert.ok(!notes.includes('changelog.d'), 'the Unreleased pointer is not part of the notes')
+    // F-Droid's notes for the new version code: the same plain text as Google Play's.
+    const [a, b, c] = NEXT_PATCH.split('.').map(Number)
+    assert.equal(fdroidChangelog(NEXT_PATCH), `fastlane/metadata/android/en-US/changelogs/${a * 10000 + b * 100 + c}.txt`)
+    const fdroid = readFileSync(join(dir, fdroidChangelog(NEXT_PATCH)), 'utf8')
+    assert.equal(fdroid, releaseNotes(log, NEXT_PATCH) + '\n')
+    assert.ok(fdroid.startsWith('Security\n• A security fix.\n\nFixed\n• The first fix.'), fdroid)
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
