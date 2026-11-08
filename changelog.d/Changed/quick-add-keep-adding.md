@@ -1,0 +1,1 @@
+- **Keep adding from the phone's add sheet.** After you add a task with the **+** button, the sheet stays open with an empty box and the keyboard up, ready for the next one; tap outside it or swipe it down when you are done (#1038).

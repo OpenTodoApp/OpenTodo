@@ -514,7 +514,7 @@ Numeric dates SHALL be read in the order of the user's date format (OpenSpec `da
 - **THEN** the task is due Sunday `2026-10-18`
 
 ### Requirement: Quick add tools on a phone
-The phone's quick-add sheet SHALL show, under the line, a row of neutral chips for the attributes the line sets, each with a control that keeps its words as text, followed by a dashed placeholder chip for the project and for the label when the line sets none; and a tool row with buttons for a date, a priority, a label, an estimate and a project, and a send button. A tool button or a placeholder chip SHALL start that attribute's token at the end of the line (`#` for a project, `@` for a label, `p` for a priority, `+` for an estimate; for a date, the caret moves to the end of the line), keeping the keyboard up and the field focused, and opening the suggestions for `#` and `@`. The send button SHALL add the task exactly as Enter does. The sheet SHALL add tasks offline through the same local operation as every quick add.
+The phone's quick-add sheet SHALL show, under the line, a row of neutral chips for the attributes the line sets, each with a control that keeps its words as text, followed by a dashed placeholder chip for the project and for the label when the line sets none; and a tool row with buttons for a date, a priority, a label, an estimate and a project, and a send button. A tool button or a placeholder chip SHALL start that attribute's token at the end of the line (`#` for a project, `@` for a label, `p` for a priority, `+` for an estimate; for a date, the caret moves to the end of the line), keeping the keyboard up and the field focused, and opening the suggestions for `#` and `@`. The send button SHALL add the task exactly as Enter does. After a task, or a confirmed pasted list, is added from the sheet, the sheet SHALL stay open with its field empty and focused, so the next task can be typed at once, and a polite status SHALL announce that the task was added; the sheet SHALL close only when the user closes it (a tap outside, a drag down, Escape or the system Back). The sheet SHALL add tasks offline through the same local operation as every quick add.
 
 #### Scenario: Start a project from the tool row
 - **WHEN** the user has typed `Buy primer` in the phone's sheet and taps the project tool
@@ -527,6 +527,10 @@ The phone's quick-add sheet SHALL show, under the line, a row of neutral chips f
 #### Scenario: Send offline
 - **WHEN** the device is offline and the user taps send with `Water the plants`
 - **THEN** the task appears at once in the current view with its defaults and syncs when the connection returns
+
+#### Scenario: Keep adding
+- **WHEN** the user opens the sheet in the Inbox, sends `Buy milk`, then types `Buy bread` and presses Enter
+- **THEN** both tasks are in the Inbox in that order, the sheet is still open with an empty, focused field, and it closes only on Escape or a tap outside
 
 ### Requirement: Pasting several lines into quick add
 When text with at least two non-empty lines is pasted into an empty quick add (or one whose whole text is selected), in any of its presentations (a list's or a section's quick add, the command bar, the phone's add sheet, the share capture screen, a calendar day's add dialog), the paste SHALL NOT be inserted; instead an offer anchored to the field SHALL show the number of tasks, the first five lines as they will be titled and how many more follow, with "Add N tasks" (the default, Enter) and "Paste as one line" (inserts the lines joined by spaces); Escape SHALL close the offer and paste nothing. A paste into a field that already holds unselected text, or of a single line, SHALL behave as before.
