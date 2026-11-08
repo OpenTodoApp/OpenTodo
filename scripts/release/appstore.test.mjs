@@ -21,6 +21,7 @@ import {
   registerReport,
   setWhatToTest,
   token,
+  waitForProcessing,
   whatToTest,
 } from './appstore.mjs'
 
@@ -269,4 +270,31 @@ test('a build that never shows up only warns', async () => {
   const ok = await setWhatToTest(call, { version: '1.2.0', build: '10200', text: 'Notes', attempts: 2, pause: async () => {}, log: (l, m) => logs.push(`${l} ${m}`) })
   assert.equal(ok, false)
   assert.match(logs[0], /^warning build 10200 of 1\.2\.0 did not appear in App Store Connect in time/)
+})
+
+test('the certificate outlives Apple\'s processing: wait for VALID, fail on INVALID', async () => {
+  const states = ['PROCESSING', 'PROCESSING', 'VALID']
+  let looks = 0
+  const { call } = fakeAsc({
+    'GET /v1/apps': () => [200, { data: [{ id: 'A1', attributes: { bundleId: 'app.open-todo.ios' } }] }],
+    'GET /v1/builds': () => [200, { data: looks === 0 ? (looks++, []) : [{ id: 'B1', attributes: { processingState: states[looks++ - 1] } }] }],
+  })
+  const logs = []
+  assert.equal(await waitForProcessing(call, { version: '1.2.0', build: '10200', pause: async () => {}, log: (l, m) => logs.push(`${l} ${m}`) }), 'VALID')
+  assert.equal(looks, 4, 'missing, processing twice, then valid')
+  assert.match(logs[0], /^notice Apple processed build 10200 of 1\.2\.0: valid/)
+
+  const refused = fakeAsc({
+    'GET /v1/apps': () => [200, { data: [{ id: 'A1', attributes: { bundleId: 'app.open-todo.ios' } }] }],
+    'GET /v1/builds': () => [200, { data: [{ id: 'B1', attributes: { processingState: 'INVALID' } }] }],
+  })
+  await assert.rejects(waitForProcessing(refused.call, { version: '1.2.0', build: '10200', pause: async () => {}, log: () => {} }), /Apple refused build 10200 of 1\.2\.0 \(INVALID\)/)
+
+  const slow = fakeAsc({
+    'GET /v1/apps': () => [200, { data: [{ id: 'A1', attributes: { bundleId: 'app.open-todo.ios' } }] }],
+    'GET /v1/builds': () => [200, { data: [{ id: 'B1', attributes: { processingState: 'PROCESSING' } }] }],
+  })
+  const warned = []
+  assert.equal(await waitForProcessing(slow.call, { version: '1.2.0', build: '10200', attempts: 3, pause: async () => {}, log: (l, m) => warned.push(l) }), null)
+  assert.deepEqual(warned, ['warning'])
 })
