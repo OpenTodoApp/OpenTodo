@@ -8,20 +8,25 @@ Changes since the last release are in [changelog.d/](changelog.d/README.md), one
 
 ## [1.2.0] - 2026-11-08
 
-OpenTodo 1.2.0 makes capturing and finishing tasks quicker. A reminder notification now has a **Done** button, quick add wraps long titles and takes notes while you add (Shift+Enter, or the notes button on a phone), and the phone's add sheet stays open so you can add several tasks in a row. The Android app also gets its own store listing for F-Droid.
+OpenTodo 1.2.0 makes capturing and finishing tasks quicker. A reminder notification now has a **Done** button, quick add wraps long titles and takes notes while you add (Shift+Enter, or the notes button on a phone), and the phone's add sheet stays open so you can add several tasks in a row. A task's subtasks can now run **one at a time**, a task's menu adds a task right below it or under it, and dragging sideways chooses whether a dropped task becomes a subtask. The Android app gets its own store listing for F-Droid, and the iPhone app is on its way to TestFlight.
 
 ### Upgrade notes
 
-- **Replace the image or the binary and restart.** No migration, no new synced field and no new mandatory variable since 1.1.1.
+- **Replace the image or the binary and restart.** No migration and no new mandatory variable since 1.1.1. One new synced field, `task.flow_mode` (subtasks one at a time); a 1.1 device ignores it and shows every subtask as available.
+- **Update every device that shares an account** so a task's "one at a time" setting is respected everywhere.
 
 ### Added
 
+- **Subtasks one at a time.** A task with two subtasks or more has **One at a time** above them on its page: only the first open subtask (with everything under it) is available, and the others wait their turn in Today, Next, filters and for assistants, without setting blockers by hand. Nest it to mix steps in order with steps done together. Through the API and the agent tools it is the task's `flow_mode` (#1046).
+- **Add a task right where it belongs.** In a project or the Inbox, a task's menu (right-click, or press and hold on a phone) has **Add task below** and **Add subtask**. A line opens exactly where the new task will appear, and it stays open, moving down as you add, so you can write a whole run of steps in place (#1036).
+- **The iPhone app is getting ready for TestFlight.** CI can now sign the app and upload it to TestFlight without a Mac; a public beta follows once Apple has set up the app, and the App Store after Apple's review. Building it yourself from `mobile/ios` still works. The author, as copyright holder, allows distributing the iOS app through Apple's App Store and TestFlight. See [The iOS app](docs/ios-app.md).
 - **Write a task's notes while you add it.** Press Shift+Enter in quick add, or tap the new notes button in the phone's add sheet, and a Notes field opens under the title; what you write there is saved as the task's notes, links included, and never read as dates or projects (#1035).
 - **Long titles wrap in quick add.** The box grows onto more lines as you type instead of scrolling sideways, up to five lines, so a long title is easy to read back and edit, on a phone too (#1034).
 - **Done on reminder notifications.** A reminder notification now offers **Done** first, then **Snooze 10 min** and **Dismiss**, in the Android app and through web push, and completes the task like the app does: a repeating task moves to its next occurrence. In the Android app nothing opens; in the browser an open tab of the app completes it, or the app opens to do so. Works offline and with end-to-end encryption (#967, thanks @kiwikern).
 
 ### Changed
 
+- **Drag a task to the level you want.** Between two rows of a project or the Inbox, a task now keeps its level while you drag straight up or down, and moving sideways by an indent nests it deeper or brings it out. The drop line starts at that level, so a top-level task can finally go between a long subtree and the next task (#1037).
 - **Keep adding from the phone's add sheet.** After you add a task with the **+** button, the sheet stays open with an empty box and the keyboard up, ready for the next one; tap outside it or swipe it down when you are done (#1038).
 
 ### Fixed
