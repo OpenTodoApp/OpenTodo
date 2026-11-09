@@ -140,7 +140,7 @@ Each user SHALL have a synced list of promoted destinations, shown among the pri
 - **THEN** Focus is listed among the primary items on every device after sync, and a client that predates this change ignores the `focus` entry and keeps the stored value unchanged
 
 ### Requirement: Favourites preference
-Each user SHALL have a synced, ordered list of favourites, each an entry naming a kind (project, label or saved filter) and an id, stored and synced like the promoted destinations as an additive preference; the default is empty. A client SHALL ignore entries of an unknown kind or whose item is missing, archived or deleted, and keep the stored value unchanged. A saved filter whose own pinned flag is set SHALL be treated as a favourite even when the list does not name it, after the listed entries.
+Each user SHALL have a synced, ordered list of favourites, each an entry naming a kind (project, label, saved filter or standalone note) and an id, stored and synced like the promoted destinations as an additive preference; the default is empty. A client SHALL ignore entries of an unknown kind or whose item is missing, archived or deleted, and keep the stored value unchanged. A saved filter whose own pinned flag is set SHALL be treated as a favourite even when the list does not name it, after the listed entries.
 
 #### Scenario: Pin on two devices
 - **WHEN** the user pins a project on a laptop
@@ -157,6 +157,10 @@ Each user SHALL have a synced, ordered list of favourites, each an entry naming 
 #### Scenario: Concurrent pins converge
 - **WHEN** two devices pin different projects while offline and then sync
 - **THEN** both devices show the same Favourites group, the later write's order winning for the list and no project duplicated
+
+#### Scenario: Pinned note on a 1.0 device
+- **WHEN** a 1.0 device receives a favourites list holding a pinned note and then pins a project
+- **THEN** the list it writes still holds the note entry, and devices with this change keep showing the note as pinned
 
 ### Requirement: Retired row detail preference
 The `row_detail` field of the user's appearance preferences SHALL remain in the operation schema and the client defaults as a retired field: it is accepted, stored, synced and exported exactly as before, converges by last-writer-wins on the field, and SHALL have no effect on how rows render. No client SHALL write it, and no client SHALL remove or rename it; an older client that still writes `detailed` SHALL cause no change on a current client.

@@ -130,10 +130,10 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 
 | Change | What | Status |
 | --- | --- | --- |
-| `note-links` | Link notes, tasks and projects with `[[`; Linked references on each | In progress (14 of 14) |
-| `notes-home` | The Notes page as a home: write from the search field, pinned notes, unlinked notes | In progress (11 of 11) |
-| `notes-graph` | Connections: a local graph of what links to and from an item | In progress (10 of 10) |
-| `note-pane-width` | A note beside the Notes list resizes by its left edge and keeps a readable column | In progress (7 of 7) |
+| `note-links` | Link notes, tasks and projects with `[[`; Linked references on each | Shipped in 1.3 |
+| `notes-home` | The Notes page as a home: write from the search field, pinned notes, unlinked notes | Shipped in 1.3 |
+| `notes-graph` | Connections: a local graph of what links to and from an item | Shipped in 1.3 |
+| `note-pane-width` | A note beside the Notes list resizes by its left edge and keeps a readable column | Shipped in 1.3 |
 
 ## Assistant area
 

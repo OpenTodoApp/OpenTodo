@@ -3,7 +3,7 @@ title: See an item's connections
 summary: Show what a note, task or project links with, two steps out, as a small graph or as two lists, and walk from item to item.
 audience: user
 section: Guides
-specs: [rich-text-editing, standalone-notes]
+specs: [notes-graph, rich-text-editing, standalone-notes]
 screens: []
 order: 16
 ---
