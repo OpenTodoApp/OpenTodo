@@ -16,6 +16,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/config"
 	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/syncscope"
 )
 
 var quietLog = slog.New(slog.NewTextHandler(io.Discard, nil))
@@ -54,8 +55,9 @@ func newHarness(t *testing.T) *harness {
 	return h
 }
 
-// feedTasks is the task feed's selection, simplified for tests: open tasks with a due.
-func (h *harness) feedTasks(ctx context.Context, userID string) ([]calfeed.FeedTask, error) {
+// feedTasks is the task feed's selection, simplified for tests: open tasks
+// with a due, in the scope by their workspace_id and project_id fields.
+func (h *harness) feedTasks(ctx context.Context, userID string, scope syncscope.Scope) ([]calfeed.FeedTask, error) {
 	list, err := h.sync.List(ctx, userID, "task", false)
 	if err != nil {
 		return nil, err
@@ -75,6 +77,13 @@ func (h *harness) feedTasks(ctx context.Context, userID string) ([]calfeed.FeedT
 			TZ   *string `json:"tz"`
 		}
 		if json.Unmarshal(t["due"], &due) != nil || due.Date == "" {
+			continue
+		}
+		place := syncscope.Place{Workspace: str(t["workspace_id"])}
+		if p := str(t["project_id"]); p != "" {
+			place.Projects = []string{p}
+		}
+		if !scope.Includes(place) {
 			continue
 		}
 		id := str(t["id"])

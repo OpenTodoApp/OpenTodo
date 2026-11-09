@@ -57,6 +57,12 @@ Tasks are written from 30 days back to a year ahead, the same tasks as the [task
 
 A calendar of its own for tasks ("OpenTodo") keeps them easy to hide or recolour in your calendar app; your main calendar works too.
 
+## Choose which tasks sync
+
+A connection writes all your dated tasks by default. To keep work tasks out of a personal calendar, open the connection's **Calendars** and under **Tasks from** choose **Only these** or **All except these**, then the workspaces, projects and Inboxes. A workspace stands for all its projects and its Inbox; a project for itself and its sub-projects; an Inbox for the tasks without a project in that workspace. With two connections, one per workspace, each calendar gets its own tasks.
+
+At the next check after a change, the events OpenTodo wrote for tasks that left the choice are removed, and the tasks themselves stay as they are. Your own events are never removed. Changes you make in the calendar to an event of a task outside the choice are not applied to the task. Events never create tasks, so there is no question of where a new one would land.
+
 ## Connect Google Calendar
 
 With a Google client set up by the server owner, choose **Connect Google**. Google asks you to sign in and to allow OpenTodo to see and edit your calendars, then sends you back to the panel to choose the calendars. Leave the calendar permission ticked: without it Google gives OpenTodo nothing to sync. You can remove the access at any time at myaccount.google.com/permissions; the connection then asks you to **Reconnect**.

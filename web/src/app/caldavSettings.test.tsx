@@ -61,6 +61,7 @@ describe('CaldavView', () => {
   it('keeps every control a native, keyboard-reachable element', () => {
     const html = render({ passwords: [pw()], creating: true })
     expect(html).toContain('aria-label="App password name"')
+    expect(html).toContain('data-sync-scope')
     expect(html).not.toMatch(/<div[^>]*onclick/i)
     expect(html).toContain('<button')
   })
@@ -79,7 +80,7 @@ describe('caldav API client', () => {
     const calls: [string, string, unknown][] = []
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
       calls.push([init?.method ?? 'GET', String(input), init?.body ? JSON.parse(String(init.body)) : undefined])
-      const body = String(input).includes('app-passwords') && init?.method === 'POST' ? { appPassword: pw(), secret: 'otap_x' } : { enabled: true, url: 'u', secure: true, appPasswords: [] }
+      const body = String(input).includes('app-passwords') && (init?.method === 'POST' || init?.method === 'PATCH') ? { appPassword: pw(), secret: 'otap_x' } : { enabled: true, url: 'u', secure: true, appPasswords: [] }
       return init?.method === 'DELETE' ? new Response(null, { status: 204 }) : new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } })
     })
     await api.caldavSwitch.get()
@@ -87,9 +88,15 @@ describe('caldav API client', () => {
     await api.listAppPasswords()
     expect((await api.createAppPassword('iPhone')).secret).toBe('otap_x')
     await api.revokeAppPassword('a1')
+    const work = { mode: 'only' as const, workspaces: ['w'], projects: [], inboxes: [] }
+    await api.createAppPassword('Work phone', work)
+    await api.setAppPasswordScope('a1', work)
     expect(calls.map(([m, u]) => `${m} ${u}`)).toEqual([
       'GET /api/v1/settings/caldav', 'PUT /api/v1/settings/caldav', 'GET /api/v1/app-passwords', 'POST /api/v1/app-passwords', 'DELETE /api/v1/app-passwords/a1',
+      'POST /api/v1/app-passwords', 'PATCH /api/v1/app-passwords/a1',
     ])
+    expect(calls[5][2]).toEqual({ name: 'Work phone', scope: work })
+    expect(calls[6][2]).toEqual({ scope: work })
     expect(calls[1][2]).toEqual({ enabled: true })
     expect(calls[3][2]).toEqual({ name: 'iPhone' })
   })

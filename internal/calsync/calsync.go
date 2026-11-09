@@ -14,6 +14,7 @@ import (
 	"time"
 
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/syncscope"
 )
 
 // Providers.
@@ -151,19 +152,21 @@ type Connection struct {
 	TargetURL       string     `json:"target"`
 	ReadURLs        []string   `json:"read"`
 	IncludeDateOnly bool       `json:"include_date_only"`
-	SyncToken       string     `json:"-"`
-	CTag            string     `json:"-"`
-	Enabled         bool       `json:"enabled"`
-	NextSyncAt      int64      `json:"next_sync_at"`
-	BackoffSeconds  int64      `json:"-"`
-	LastSyncAt      *int64     `json:"last_sync_at"`
-	LastSuccessAt   *int64     `json:"last_success_at"`
-	LastError       string     `json:"last_error"`
-	LastErrorAt     *int64     `json:"last_error_at"`
-	StoppedReason   string     `json:"stopped_reason"`
-	LastRun         *RunCounts `json:"last_run"`
-	CreatedAt       int64      `json:"created_at"`
-	UpdatedAt       int64      `json:"updated_at"`
+	// Scope is the part of the account written to the calendar (sync-scope).
+	Scope          syncscope.Scope `json:"scope"`
+	SyncToken      string          `json:"-"`
+	CTag           string          `json:"-"`
+	Enabled        bool            `json:"enabled"`
+	NextSyncAt     int64           `json:"next_sync_at"`
+	BackoffSeconds int64           `json:"-"`
+	LastSyncAt     *int64          `json:"last_sync_at"`
+	LastSuccessAt  *int64          `json:"last_success_at"`
+	LastError      string          `json:"last_error"`
+	LastErrorAt    *int64          `json:"last_error_at"`
+	StoppedReason  string          `json:"stopped_reason"`
+	LastRun        *RunCounts      `json:"last_run"`
+	CreatedAt      int64           `json:"created_at"`
+	UpdatedAt      int64           `json:"updated_at"`
 }
 
 // States served to the client (design D2).

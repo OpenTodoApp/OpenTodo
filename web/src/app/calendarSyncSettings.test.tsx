@@ -123,7 +123,7 @@ describe('calendar sync panel', () => {
     await click(choice.querySelector('[role="switch"]')!)
     await click(button(choice, 'Save')!)
     await waitFor(() => keys().includes('PATCH /api/v1/calendar-sync/connections/c1'))
-    expect(calls.find((c) => c.key === 'PATCH /api/v1/calendar-sync/connections/c1')!.body).toEqual({ target: base.target, read: [], include_date_only: true })
+    expect(calls.find((c) => c.key === 'PATCH /api/v1/calendar-sync/connections/c1')!.body).toEqual({ target: base.target, read: [], include_date_only: true, scope: { mode: 'all', workspaces: [], projects: [], inboxes: [] } })
     await waitFor(() => document.querySelector('[data-testid="calendar-choice"]') === null)
     await r.unmount()
   })

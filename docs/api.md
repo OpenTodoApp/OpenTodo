@@ -222,7 +222,8 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | GET | `/api/v1/webhooks/{id}/deliveries` | yes | `{deliveries:[…]}`, newest 100 |
 | POST | `/api/v1/webhooks/{id}/deliveries/{did}/redeliver` | yes | queue the same body with a new id → 202 `{delivery}` |
 | GET | `/api/v1/app-passwords` | yes | `{appPasswords:[…]}`, see [CalDAV and app passwords](#caldav-and-app-passwords) |
-| POST | `/api/v1/app-passwords` | credential, fresh | `{name}` → 201 `{appPassword, secret}` (secret shown once) |
+| POST | `/api/v1/app-passwords` | credential, fresh | `{name, scope?}` → 201 `{appPassword, secret}` (secret shown once) |
+| PATCH | `/api/v1/app-passwords/{id}` | credential, fresh | `{scope}` → `{appPassword}` |
 | DELETE | `/api/v1/app-passwords/{id}` | yes | revoke → 204 |
 | GET | `/api/v1/email-inbox` | session or `full` token | your email-to-task address and settings, see [Email to task](#email-to-task) |
 | PATCH | `/api/v1/email-inbox` | session or `full` token | `{enabled?, allowlist?}` → the same shape; creates the inbox when there is none |
@@ -1818,9 +1819,9 @@ The account's own calendar (any CalDAV server with an app password, Google Calen
 | `PUT` | `/api/v1/settings/calendar-sync/google` | owner session or admin token | `{client_id, client_secret?}` (an empty secret removes it); `409 managed_by_environment` while `OPENTODO_GOOGLE_CLIENT_ID` and a secret are set; recorded as `settings.changed` for `calendar_sync.google_client` without values |
 | `GET` | `/api/v1/settings/calendar-sync/microsoft` | owner | `{client_id, tenant, secret_set, from_env, redirect_uri, refused_at}` (`tenant` is `common` unless set; `refused_at`: when Microsoft last refused the secret, Unix ms, else `null`); never the secret |
 | `PUT` | `/api/v1/settings/calendar-sync/microsoft` | owner session or admin token | `{client_id, tenant?, client_secret?}` (an empty secret removes it; `tenant` is `common`, `organizations`, `consumers`, a tenant id or a domain, else `400 invalid_input` with `field: tenant`); a new secret clears `refused_at` and resumes the connections stopped with `microsoft_client_refused`; `409 managed_by_environment` while `OPENTODO_MICROSOFT_CLIENT_ID` and a secret are set; recorded as `settings.changed` for `calendar_sync.microsoft_client` without values |
-| `GET` | `/api/v1/calendar-sync/connections` | session or token | `{connections: [...]}`: `id`, `provider` (`caldav`, `google`, `microsoft`), `name`, `server_url`, `username`, `calendars` (`[{url, name, color, time_zone?, read_only}]`), `target`, `read`, `include_date_only`, `enabled`, `state` (`off`, `choose_calendar`, `pending`, `ok`, `failed`, `reconnect`, `stopped`), `next_sync_at`, `last_sync_at`, `last_success_at`, `last_error`, `last_error_at`, `stopped_reason`, `last_run` (`{moved, renamed, unscheduled, written, removed, conflicts, refused, partial}`), `password_set`, `event_count`. Never the password or token. |
+| `GET` | `/api/v1/calendar-sync/connections` | session or token | `{connections: [...]}`: `id`, `provider` (`caldav`, `google`, `microsoft`), `name`, `server_url`, `username`, `calendars` (`[{url, name, color, time_zone?, read_only}]`), `target`, `read`, `include_date_only`, `scope` (see [Sync scope](#sync-scope)), `enabled`, `state` (`off`, `choose_calendar`, `pending`, `ok`, `failed`, `reconnect`, `stopped`), `next_sync_at`, `last_sync_at`, `last_success_at`, `last_error`, `last_error_at`, `stopped_reason`, `last_run` (`{moved, renamed, unscheduled, written, removed, conflicts, refused, partial}`), `password_set`, `event_count`. Never the password or token. |
 | `POST` | `/api/v1/calendar-sync/connections` | session or full token, fresh sign-in | `{server_url, username, password, name?}`: `server_url` is an address, a host name or an email address (then `/.well-known/caldav` of its domain); discovery runs at once; `201 {connection}` in the state `choose_calendar` |
-| `PATCH` | `/api/v1/calendar-sync/connections/{id}` | session or full token | any of `name`, `target` (a writable calendar of the connection), `read` (up to 10 of its calendars), `include_date_only`, `enabled`, `password` (CalDAV only; Google and Microsoft reconnect instead; needs a fresh sign-in, `403 reauth_required`; checked by discovery, then clears a stop) |
+| `PATCH` | `/api/v1/calendar-sync/connections/{id}` | session or full token | any of `name`, `target` (a writable calendar of the connection), `read` (up to 10 of its calendars), `include_date_only`, `scope` (see [Sync scope](#sync-scope); makes the connection due now), `enabled`, `password` (CalDAV only; Google and Microsoft reconnect instead; needs a fresh sign-in, `403 reauth_required`; checked by discovery, then clears a stop) |
 | `DELETE` | `/api/v1/calendar-sync/connections/{id}` | session or full token | `204`; the secret is removed, tasks and events already written stay |
 | `POST` | `/api/v1/calendar-sync/connections/{id}/sync` | session or full token | discovery and a cycle now: `{ok, run?, reason?, connection}` |
 | `POST` | `/api/v1/calendar-sync/google/start` | session or full token, fresh sign-in | `{connection_id?}` (to reconnect); `{url}`: Google's consent page with a single-use state (10 minutes) and a PKCE challenge; `409 google_not_configured` without a Google client; `409 base_url_mismatch` when the request's `Origin` is not the origin of the redirect address (set `OPENTODO_BASE_URL`) |
@@ -1898,13 +1899,28 @@ The CalDAV endpoint itself (`/dav/`, `/.well-known/caldav`) speaks WebDAV/CalDAV
 
 | Method | Path | Who | Body / result |
 | --- | --- | --- | --- |
-| `GET` | `/api/v1/app-passwords` | any user | `{"appPasswords":[{"id","name","createdAt","lastUsedAt","revokedAt"}]}`, newest first, revoked ones included; `lastUsedAt` is updated at most once a minute. Never the secret. |
-| `POST` | `/api/v1/app-passwords` | any user, recent sign-in (`403 reauth_required` otherwise, like token creation) | `{"name":"iPhone"}` → `201 {"appPassword":{…},"secret":"otap_…"}`. The secret is shown only here. |
+| `GET` | `/api/v1/app-passwords` | any user | `{"appPasswords":[{"id","name","createdAt","lastUsedAt","revokedAt","scope"}]}`, newest first, revoked ones included; `lastUsedAt` is updated at most once a minute. Never the secret. |
+| `POST` | `/api/v1/app-passwords` | any user, recent sign-in (`403 reauth_required` otherwise, like token creation) | `{"name":"iPhone","scope":{…}}` (`scope` optional, the whole account without it) → `201 {"appPassword":{…},"secret":"otap_…"}`. The secret is shown only here. |
+| `PATCH` | `/api/v1/app-passwords/{id}` | owner of the app password, recent sign-in | `{"scope":{…}}` → `200 {"appPassword":{…}}`, applied from the password's next request; `400 invalid_input` (field `scope`) for a refused scope, `404 not_found` for an unknown, foreign or revoked id. |
 | `DELETE` | `/api/v1/app-passwords/{id}` | owner of the app password | `204`; `404 not_found` for an unknown, foreign or already revoked id. |
 | `GET` | `/api/v1/settings/caldav` | any user | `{"enabled":false,"url":"https://todo.example.com/dav/","secure":true}`; `url` is what calendar apps are configured with, `secure` is false for plain http. |
 | `PUT` | `/api/v1/settings/caldav` | owner | `{"enabled":true}` → the same shape. `400 invalid_input` without a boolean `enabled`, `403 forbidden` for members. Recorded as `settings.changed` (`caldav.enabled`). |
 
 App passwords are refused by every `/api/v1` route, and API tokens, passwords and session cookies are refused by `/dav/`. Creating and revoking one records `app_password.created` / `app_password.revoked` in the audit log.
+
+#### Sync scope
+
+An app password and a calendar sync connection carry a `scope`, the part of the account they cover:
+
+```json
+{"mode": "only", "workspaces": ["<workspace id>"], "projects": ["<project id>"], "inboxes": ["<workspace id>"]}
+```
+
+- `mode` is `all` (the default; the lists are empty), `only` (the chosen places) or `except` (everything but them).
+- `workspaces` covers a workspace's projects and its Inbox, `projects` a project and its sub-projects, `inboxes` the tasks without a project of a workspace.
+- At most 200 ids of at most 64 characters, duplicates dropped. A scope with nothing chosen is `all`. Unknown ids are kept and match nothing.
+- Under an app password's scope, `/dav/` lists only the calendars in it; the others answer 404 and PUT into them 409, and a VTODO whose UID is a task outside the scope creates a new task. `MKCALENDAR` creates the project in the first chosen workspace of an `only` scope, else in the default workspace, and answers 403 when the project would be outside the scope.
+- Under a connection's scope, only the tasks in it are written as events; the next cycle removes the events the connection wrote for tasks that left it, and changes to those events are not applied.
 
 ### Email to task
 

@@ -7232,5 +7232,11 @@
   "Google Calendar was not connected: Google refused the server’s client ID or secret. The server owner must check them.": "Google Calendar no se conectó: Google rechazó el ID de cliente o el secreto del servidor. El propietario del servidor debe revisarlos.",
   "Google Calendar was not connected: the calendar permission was not allowed. Connect again and leave it ticked.": "Google Calendar no se conectó: no se permitió el acceso al calendario. Vuelve a conectar y déjalo marcado.",
   "Google Calendar was not connected: the CalDAV API is not enabled in the server owner’s Google project.": "Google Calendar no se conectó: la API de CalDAV no está habilitada en el proyecto de Google del propietario del servidor.",
-  "Google would send you back to another address than the one this page is open at. The server owner must set OPENTODO_BASE_URL to the address people open OpenTodo at.": "Google te devolvería a una dirección distinta de la que tiene abierta esta página. El propietario del servidor debe definir OPENTODO_BASE_URL con la dirección en la que se abre OpenTodo."
+  "Google would send you back to another address than the one this page is open at. The server owner must set OPENTODO_BASE_URL to the address people open OpenTodo at.": "Google te devolvería a una dirección distinta de la que tiene abierta esta página. El propietario del servidor debe definir OPENTODO_BASE_URL con la dirección en la que se abre OpenTodo.",
+  "Tasks from": "Tareas de",
+  "Only these": "Solo estos",
+  "All except these": "Todo excepto estos",
+  "Find a workspace or project…": "Buscar un espacio de trabajo o proyecto…",
+  "All except {names}": "Todo excepto {names}",
+  "Lists of {name}": "Listas de {name}"
 }
