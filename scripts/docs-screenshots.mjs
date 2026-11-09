@@ -326,6 +326,22 @@ const shots = [
     await go(p, demoBase, '/notes', () => p.locator('[data-note-key], [data-empty-state]').first().waitFor())
     await settle(p, 400)
   } },
+  // Note links (note-links): a new note, `[[` typed and the picker open on a task of the sample data; the note is removed after.
+  { name: 'note-links', server: D, async run(p) {
+    await go(p, demoBase, '/notes', () => p.locator('[data-note-key], [data-empty-state]').first().waitFor())
+    await p.getByRole('button', { name: 'New note' }).first().click(); await settle(p, 800)
+    const title = p.locator('input[data-note-title-field]')
+    // The new note is first in the list: open it when it did not open by itself.
+    if (!(await title.count())) await p.locator('[data-note-key]').first().click()
+    await title.waitFor(); await title.fill('Kitchen meeting'); await title.press('Enter')
+    const editor = p.locator('[data-note-form] .notes-editor[contenteditable="true"]'); await editor.waitFor(); await editor.click()
+    await p.keyboard.type('Agenda for Thursday. Next: [[quotes', { delay: 15 })
+    await p.locator('[data-suggest="link"] [role="option"]').first().waitFor(); await p.mouse.move(600, 700); await settle(p, 500)
+  }, async after(p) {
+    const id = new URL(p.url()).pathname.split('/').pop()
+    await p.keyboard.press('Escape'); await p.keyboard.press('Escape')
+    await p.evaluate((nid) => fetch(`/api/v1/notes/${nid}`, { method: 'DELETE' }), id).catch(() => {})
+  } },
   // Focus (focus-mode 7.2): a task of the sample data, its session started a moment ago.
   { name: 'focus', server: D, async run(p) {
     await go(p, demoBase, '/focus', () => p.locator('[data-focus-timer], [data-empty-state="focus"]').first().waitFor())

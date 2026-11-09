@@ -9,6 +9,8 @@ order: 16
 ---
 # Link notes, tasks and projects
 
+<picture><source srcset="images/note-links-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/note-links-light.webp" alt="A note being written: after [[quotes, a list at the caret offers the task Get three quotes for the kitchen, with its project, and New note quotes."></picture>
+
 Type `[[` in any note (a task's, a project's or a standalone note) and a few letters of what you want to link to. A list of matching notes, tasks and projects opens at the caret, grouped by kind, with the project beside each; <kbd>↑</kbd> and <kbd>↓</kbd> move, <kbd>Enter</kbd> inserts the link and <kbd>Esc</kbd> keeps what you typed. When nothing has that title, the last row, **New note "…"**, creates the note (in the same project as the note you are writing) and links it; <kbd>Ctrl</kbd>+<kbd>Z</kbd> right after takes both back. **Link to…** in the `/` menu does the same.
 
 A link always shows the current title of what it points to, so renaming a task or a note never breaks it, and a link to a completed task is struck through. Click a link in a note you are reading, or <kbd>Ctrl</kbd>+click (<kbd>⌘</kbd>+click on a Mac) while you write, to open it. A link to something in the Trash, or to something you cannot see, reads as plain muted text; it works again when the item is restored.

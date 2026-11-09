@@ -17,6 +17,7 @@ import { db } from './db'
 import { encryptionSnapshot, onEncryptionChange } from './e2ee'
 import { t } from './i18n'
 import { liveSnapshot } from './liveSnapshot'
+import { resettable } from './moduleState'
 import { everyTask, taskIndexOf } from './liveTasks'
 import { linksIn, type LinkKind, type NoteLink } from './noteLinkGrammar'
 import { noteText, updatedOf } from './noteList'
@@ -458,3 +459,4 @@ export function resetLinkIndex(): void {
   index?.stop()
   index = null
 }
+resettable('noteLinks', resetLinkIndex)

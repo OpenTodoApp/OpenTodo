@@ -180,7 +180,6 @@ describe('links read as their target now', () => {
     const afterRename = await db.outbox.count()
     await waitFor(() => chips(container)[0]?.textContent === 'Holiday', 'the renamed link')
     expect(chips(container)[0].dataset.refState).toBe('live')
-    await flush(500)
     // Only the rename was written: showing the new title is not a write.
     expect(await db.outbox.count()).toBe(afterRename)
     expect(afterRename).toBeGreaterThan(before)

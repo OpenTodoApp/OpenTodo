@@ -19,8 +19,7 @@ export const REFERENCES_OPEN_KEY = 'opentodo.linkedReferences.open'
 /** Marked in the performance timeline when the section is painted (nightly metric note-references). */
 export const REFERENCES_MARK = 'ot:note-references'
 
-function Row({ r }: { r: Reference }) {
-  const project = r.kind === 'project' ? null : projectName(r.projectId)
+function Row({ r, project }: { r: Reference; project: string | null }) {
   return (
     <li>
       <a href={`?${r.kind}=${r.id}`} className="linked-ref" data-linked-ref={`${r.kind}:${r.id}`}
@@ -46,8 +45,6 @@ function Row({ r }: { r: Reference }) {
 
 export default function LinkedReferences({ kind, id, folded = false }: { kind: LinkKind; id: string; folded?: boolean }) {
   const refs = useReferences(kind, id)
-  const [open, setOpen] = useState(() => !folded || readString(REFERENCES_OPEN_KEY) === '1')
-  const listId = useId()
   const shown = !!refs && refs.length > 0
   useEffect(() => {
     if (!shown) return
@@ -59,13 +56,20 @@ export default function LinkedReferences({ kind, id, folded = false }: { kind: L
     }
   }, [shown])
   if (!refs || refs.length === 0) return null
+  return <ReferencesSection target={`${kind}:${id}`} refs={refs} folded={folded} project={(r) => (r.kind === 'project' ? null : projectName(r.projectId))} />
+}
+
+/** The section itself (stories render it with sample rows). */
+export function ReferencesSection({ target, refs, folded, project }: { target: string; refs: readonly Reference[]; folded: boolean; project: (r: Reference) => string | null }) {
+  const [open, setOpen] = useState(() => !folded || readString(REFERENCES_OPEN_KEY) === '1')
+  const listId = useId()
   const heading = (
     <>
       {t('Linked references')}<span className="text-faint tabular-nums">{refs.length}</span>
     </>
   )
   return (
-    <section aria-label={t('Linked references')} className="linked-refs" data-linked-references={`${kind}:${id}`} data-folded={folded || undefined}>
+    <section aria-label={t('Linked references')} className="linked-refs" data-linked-references={target} data-folded={folded || undefined}>
       {folded
         ? (
           <button type="button" className="linked-refs__head linked-refs__toggle" aria-expanded={open} aria-controls={listId}
@@ -74,7 +78,7 @@ export default function LinkedReferences({ kind, id, folded = false }: { kind: L
           </button>
         )
         : <h2 className="linked-refs__head">{heading}</h2>}
-      {open && <ul id={listId} className="space-y-0.5">{refs.map((r) => <Row key={`${r.kind}:${r.id}`} r={r} />)}</ul>}
+      {open && <ul id={listId} className="space-y-0.5">{refs.map((r) => <Row key={`${r.kind}:${r.id}`} r={r} project={project(r)} />)}</ul>}
     </section>
   )
 }
