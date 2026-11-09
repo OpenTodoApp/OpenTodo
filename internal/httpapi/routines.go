@@ -28,7 +28,7 @@ func (s *Server) wireRoutines() {
 		return
 	}
 	s.rules.Tools = agenttools.New(s.sync, agenttools.Options{Log: s.log, Now: s.now, UserZone: s.tzLocation,
-		LocalToday: func() string { return localToday(s.now()) }})
+		LocalToday: func() string { return localToday(s.now()) }, Events: s.freeTimeEvents})
 	s.rules.Env = s.routineEnv
 	s.rules.Mail = routineMailer{s}
 	s.rules.AI = routineAI{s}

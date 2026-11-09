@@ -1,0 +1,20 @@
+{
+  "name": "deadlines",
+  "title": "What is due by a date is shown as the deadlines block",
+  "seed": {
+    "tasks": [
+      { "key": "invoice", "title": "Send the invoice", "deadline": 2 },
+      { "key": "release", "title": "Ship the release", "deadline": 4 },
+      { "key": "later", "title": "Renew the passport", "deadline": 20 }
+    ]
+  },
+  "turns": [
+    {
+      "say": "What has a deadline in the next four days?",
+      "expect": {
+        "blocks": [{ "kind": "deadlines", "to": 4 }],
+        "changeset": false
+      }
+    }
+  ]
+}

@@ -2641,6 +2641,32 @@
       },
       "kind": "write"
     },
+    "find_free_time": {
+      "arguments": {
+        "day_end_hour": "integer?",
+        "day_start_hour": "integer?",
+        "from": "string?",
+        "min_minutes": "integer?",
+        "timezone": "string?",
+        "to": "string?"
+      },
+      "kind": "read",
+      "result": {
+        "_notice": "string",
+        "days": "array",
+        "days[].date": "string",
+        "days[].free": "array",
+        "days[].free_minutes": "number",
+        "from": "string",
+        "min_minutes": "number",
+        "server_time": "string",
+        "timezone": "string",
+        "to": "string",
+        "working_day": "object",
+        "working_day.end": "string",
+        "working_day.start": "string"
+      }
+    },
     "get_note": {
       "arguments": {
         "id": "string",

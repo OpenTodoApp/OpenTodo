@@ -235,6 +235,8 @@ var consentFields = []string{
 	"workspace, project, section and label names, and project descriptions",
 	"saved view names and the hosts of your webhooks, when you describe a routine",
 	"your routines and calendar frames",
+	// find_free_time (assistant-time-blocks): free stretches only, never an event's title.
+	"your free time, worked out from your calendar events, frames, slots and timed tasks",
 	"tracked time and its notes",
 	"names of members and groups of shared projects and workspaces",
 	"your display name, today's date and your time zone",
@@ -245,8 +247,9 @@ var consentFields = []string{
 // deviceConsentFields is consentFields for the on-device assistant of an
 // encrypted account (assistant-on-device): its read tools return tasks,
 // comments, projects, notes, calendar frames and slots and tracked time
-// (web/src/lib/assistantDevice/read*.ts, assistant-device-reads), and a
-// Describe it draft on the device adds the same names as the server's.
+// (web/src/lib/assistantDevice/read*.ts, assistant-device-reads), free time
+// (readFreeTime.ts, assistant-time-blocks), and a Describe it draft on the
+// device adds the same names as the server's.
 var deviceConsentFields = []string{
 	"task titles and descriptions",
 	"due dates, repeats, priorities, estimates and completion",
@@ -255,6 +258,7 @@ var deviceConsentFields = []string{
 	"project, section and label names, and project descriptions",
 	"saved view names and the hosts of your webhooks, when you describe a routine",
 	"calendar frames and slots",
+	"your free time, worked out from your calendar events, frames, slots and timed tasks",
 	"tracked time and its notes",
 	"your display name, today's date and your time zone",
 	"the messages you type",

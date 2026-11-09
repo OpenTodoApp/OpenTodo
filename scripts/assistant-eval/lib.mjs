@@ -4,10 +4,10 @@
 // (lib.test.mjs) drive this on recorded events.
 
 // Display tools and the block kind each streams (internal/assistant/blocks.go).
-export const DISPLAY_TOOLS = { show_tasks: 'tasks', show_calendar: 'calendar', show_map: 'map', show_note: 'note', show_project: 'project', ask_choice: 'choice' }
+export const DISPLAY_TOOLS = { show_tasks: 'tasks', show_calendar: 'calendar', show_map: 'map', show_note: 'note', show_project: 'project', ask_choice: 'choice', show_time: 'time', show_free_time: 'free_time', show_deadlines: 'deadlines' }
 const KINDS = new Set(Object.values(DISPLAY_TOOLS))
 const EXPECT_KEYS = new Set(['blocks', 'no_tools', 'no_text', 'text', 'links', 'changeset', 'changes', 'never_ids', 'no_map_claim'])
-const BLOCK_KEYS = new Set(['kind', 'ids', 'ids_include', 'min_ids', 'date', 'span', 'min_options'])
+const BLOCK_KEYS = new Set(['kind', 'ids', 'ids_include', 'min_ids', 'date', 'span', 'min_options', 'to', 'group_by'])
 const CHANGE_KEYS = new Set(['entity', 'ids', 'fields', 'create', 'min'])
 
 // A text that says a map is there (proposal: "no claim that a map appeared").
@@ -133,11 +133,13 @@ export function checkTurn(expect, sum, ids = {}, today = new Date().toISOString(
       if (want.date !== undefined && b.date !== day(want.date, today)) return false
       if (want.span && (b.span || 'day') !== want.span) return false
       if (want.min_options && (b.options ?? []).length < want.min_options) return false
+      if (want.to !== undefined && b.to !== day(want.to, today)) return false
+      if (want.group_by && b.group_by !== want.group_by) return false
       return true
     })
     if (!match) {
       const detail = ofKind.length ? `; got ${ofKind.map((b) => `${b.kind}${b.date ? ' ' + b.date : ''} ${show(blockIds(b))}`).join(', ')}` : sum.blocks.length ? `; got only ${sum.blocks.map((b) => b.kind).join(', ')}` : '; no block was shown'
-      const parts = [want.ids && `ids ${show(want.ids.map(id))}`, want.ids_include && `including ${show(want.ids_include.map(id))}`, want.min_ids && `at least ${want.min_ids} ids`, want.date !== undefined && `on ${day(want.date, today)}`, want.min_options && `${want.min_options}+ options`].filter(Boolean)
+      const parts = [want.ids && `ids ${show(want.ids.map(id))}`, want.ids_include && `including ${show(want.ids_include.map(id))}`, want.min_ids && `at least ${want.min_ids} ids`, want.date !== undefined && `on ${day(want.date, today)}`, want.min_options && `${want.min_options}+ options`, want.to !== undefined && `until ${day(want.to, today)}`, want.group_by && `by ${want.group_by}`].filter(Boolean)
       fail.push(`expected a ${want.kind} block${parts.length ? ' with ' + parts.join(', ') : ''}${detail}`)
     }
   }

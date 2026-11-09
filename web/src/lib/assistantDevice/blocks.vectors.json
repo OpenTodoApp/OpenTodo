@@ -357,6 +357,165 @@
       ]
     },
     {
+      "name": "time, free time and deadlines",
+      "calls": [
+        {
+          "name": "show_time",
+          "args": {
+            "from": "2026-11-09",
+            "group_by": "project",
+            "to": "2026-11-15"
+          }
+        },
+        {
+          "name": "show_free_time",
+          "args": {
+            "date": "2026-11-12",
+            "min_minutes": 120,
+            "span": "day"
+          }
+        },
+        {
+          "name": "show_free_time",
+          "args": {
+            "date": "2026-11-09",
+            "span": "week"
+          }
+        },
+        {
+          "name": "show_deadlines",
+          "args": {
+            "from": "2026-11-09",
+            "to": "2026-11-13"
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "time",
+          "from": "2026-11-09",
+          "to": "2026-11-15",
+          "group_by": "project"
+        },
+        {
+          "kind": "free_time",
+          "date": "2026-11-12",
+          "span": "day",
+          "min_minutes": 120
+        },
+        {
+          "kind": "free_time",
+          "date": "2026-11-09",
+          "span": "week",
+          "min_minutes": 30
+        },
+        {
+          "kind": "deadlines",
+          "from": "2026-11-09",
+          "to": "2026-11-13"
+        }
+      ],
+      "results": [
+        {
+          "count": 1,
+          "is_error": false,
+          "shown": "time"
+        },
+        {
+          "count": 1,
+          "is_error": false,
+          "shown": "free_time"
+        },
+        {
+          "count": 1,
+          "is_error": false,
+          "shown": "free_time"
+        },
+        {
+          "count": 1,
+          "is_error": false,
+          "shown": "deadlines"
+        }
+      ]
+    },
+    {
+      "name": "time blocks with invalid arguments",
+      "calls": [
+        {
+          "name": "show_time",
+          "args": {
+            "from": "2026-11-09",
+            "group_by": "day",
+            "to": "2026-12-15"
+          }
+        },
+        {
+          "name": "show_time",
+          "args": {
+            "from": "2026-11-09",
+            "group_by": "label",
+            "to": "2026-11-15"
+          }
+        },
+        {
+          "name": "show_free_time",
+          "args": {
+            "date": "2026-11-12",
+            "min_minutes": 0,
+            "span": "day"
+          }
+        },
+        {
+          "name": "show_free_time",
+          "args": {
+            "date": "2026-11-12",
+            "min_minutes": 1.5,
+            "span": "day"
+          }
+        },
+        {
+          "name": "show_deadlines",
+          "args": {
+            "from": "2026-11-13",
+            "to": "2026-11-09"
+          }
+        },
+        {
+          "name": "show_deadlines",
+          "args": {
+            "from": "2026-11-09"
+          }
+        }
+      ],
+      "blocks": [],
+      "results": [
+        {
+          "error": "invalid_arguments",
+          "is_error": true
+        },
+        {
+          "error": "invalid_arguments",
+          "is_error": true
+        },
+        {
+          "error": "invalid_arguments",
+          "is_error": true
+        },
+        {
+          "error": "invalid_arguments",
+          "is_error": true
+        },
+        {
+          "error": "invalid_arguments",
+          "is_error": true
+        },
+        {
+          "error": "invalid_arguments",
+          "is_error": true
+        }
+      ]
+    },
+    {
       "name": "invalid arguments",
       "calls": [
         {

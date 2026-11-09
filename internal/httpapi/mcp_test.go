@@ -346,7 +346,7 @@ func TestMcpSession(t *testing.T) {
 		t.Fatalf("initialized: %d", resp.StatusCode)
 	}
 	tools := c.rpc(secret, "tools/list", map[string]any{})["result"].(map[string]any)["tools"].([]any)
-	if len(tools) != 18 {
+	if len(tools) != 19 {
 		t.Fatalf("tools = %v", tools)
 	}
 	projects := c.mcpTool(secret, "list_projects", nil)["projects"].([]any)

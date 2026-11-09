@@ -1,0 +1,21 @@
+{
+  "name": "free-time",
+  "title": "When the user is free is shown as the free time block, and nothing is written",
+  "seed": {
+    "tasks": [
+      { "key": "review", "title": "Review the budget", "due": 1, "time": "10:00", "estimate_minutes": 90 },
+      { "key": "call", "title": "Call the landlord", "due": 1, "time": "14:00", "estimate_minutes": 30 },
+      { "key": "gym", "title": "Gym", "due": 1, "time": "18:00", "estimate_minutes": 60 }
+    ]
+  },
+  "turns": [
+    {
+      "say": "When am I free tomorrow for two hours?",
+      "expect": {
+        "blocks": [{ "kind": "free_time", "date": 1 }],
+        "changeset": false,
+        "no_map_claim": true
+      }
+    }
+  ]
+}
