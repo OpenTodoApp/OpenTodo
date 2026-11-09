@@ -188,6 +188,20 @@ They land in waves:
 
 Each change ships on its own. Blocks keep carrying ids only, rendered on the device, except over MCP, where the host can't read the device's data.
 
+### UX polish (2026-11 feedback)
+
+These changes come from the owner's November review of the screens used every day. Each one gives a screen a single job and lets the layout carry it.
+
+| Change | What | Issues |
+| --- | --- | --- |
+| [`sidebar-brand-and-row-grid`](openspec/changes/sidebar-brand-and-row-grid/) | The workspace gets its own picture and OpenTodo a quiet brand line with the version in the sidebar's footer. Task rows get one grid of fixed slots, with marks on the title's baseline. The task panel fits its width, with quieter subtasks and a compact estimate editor. Upcoming summarises later days | |
+| [`when-picker`](openspec/changes/when-picker/) | The Do on editor gets a date field that shows an example, one "time of day" row (Any time, Morning, Afternoon, Evening, Time) and the zone beside the time | |
+| [`focus-redesign`](openspec/changes/focus-redesign/) | Focus becomes one stage: the task, the time left and one control. Settings, the mode and today's sessions move behind a quiet menu, and breaks are a calm state | |
+| [`close-the-day-redesign`](openspec/changes/close-the-day-redesign/) | Close the day becomes three steps (done, what moves, tomorrow's first thing), keyboard-first, with one write and one Undo | |
+| [`loop-guided-dashboard`](openspec/changes/loop-guided-dashboard/) | The Loop home names the next step and why. A stepper shows only the moves with work, and each move opens in place | |
+
+Each change ships on its own, in any order. Only `sidebar-brand-and-row-grid` adds an op field: an additive `user_prefs.upcoming_later`. The others change interface only, and every value they write reads the same in 1.0 clients.
+
 ## Shipped
 
 ### 1. Core engine and architecture
