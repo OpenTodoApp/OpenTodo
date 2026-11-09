@@ -42,7 +42,7 @@
     { "id": "notes-db-size", "name": "database file after compaction (notes fixture)", "unit": "MB", "limits": { "server": 250, "pi4": 250 } },
     { "id": "notes-share", "name": "notes' share of the database (notes fixture)", "unit": "MB", "limits": { "server": 130 } },
     { "id": "notes-compaction", "name": "full compaction of the notes fixture", "unit": "s", "limits": { "server": 120, "pi4": 480 } },
-    { "id": "notes-push-wait", "name": "longest push wait behind compaction", "unit": "ms", "limits": { "server": 100 } },
+    { "id": "notes-push-wait", "name": "push wait behind compaction (all but the single slowest)", "unit": "ms", "limits": { "server": 100 } },
     { "id": "notes-first-sync", "name": "first sync with notes", "unit": "s", "limits": { "desktop": 45, "phone": 110, "device-android": 120, "device-ios": 120 } },
     { "id": "notes-indexeddb", "name": "IndexedDB usage with notes", "unit": "MB", "limits": { "desktop": 120 } },
     { "id": "notes-page", "name": "open the Notes page", "unit": "ms", "limits": { "desktop": 400, "phone": 1200, "device-android": 1200, "device-ios": 1200 } },

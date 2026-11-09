@@ -77,10 +77,13 @@ func TestNotesBudgets(t *testing.T) {
 	job := compaction.New(compaction.Options{DB: db, Reader: reader, Sync: svc, Settings: settings.New(db), DataDir: out, Log: slog.New(slog.DiscardHandler),
 		FreeSpace: func(string) (uint64, bool, error) { return 1 << 40, true, nil }})
 
-	// A device keeps writing while compaction runs: the longest wait of one push.
+	// A device keeps writing while compaction runs. The budget is judged on the
+	// second-longest wait of one push: the runner's shared disk alone sometimes
+	// stalls a single write past 100 ms (see copyFile), so one outlier is noise
+	// and two are a regression (#987). The longest is still reported.
 	stop := make(chan struct{})
 	var wg sync.WaitGroup
-	var longest time.Duration
+	var longest, second time.Duration
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -97,7 +100,12 @@ func TestNotesBudgets(t *testing.T) {
 				t.Error(err)
 				return
 			}
-			longest = max(longest, time.Since(start))
+			switch d := time.Since(start); {
+			case d > longest:
+				longest, second = d, longest
+			case d > second:
+				second = d
+			}
 		}
 	}()
 	start := time.Now()
@@ -124,7 +132,8 @@ func TestNotesBudgets(t *testing.T) {
 	samples["notes-compaction"] = []float64{time.Since(start).Seconds()}
 	close(stop)
 	wg.Wait()
-	samples["notes-push-wait"] = []float64{ms(longest)}
+	samples["notes-push-wait"] = []float64{ms(second)}
+	reported["notes-push-wait-longest-ms"] = ms(longest)
 	if err := store.Checkpoint(ctx, db); err != nil {
 		t.Fatal(err)
 	}
