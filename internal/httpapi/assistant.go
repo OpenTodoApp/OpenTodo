@@ -731,6 +731,8 @@ func (s *Server) handleAssistantTurn(w http.ResponseWriter, r *http.Request) {
 	}, assistant.Events{
 		Text:   func(t string) { send("text", map[string]string{"text": t}) },
 		Status: func(t string) { send("status", map[string]string{"text": t}) },
+		// A block carries its kind and checked ids only, never content (assistant-generative-ui D3).
+		Block: func(b assistant.Block) { send("block", b) },
 	})
 	// Usage is counted from the provider's usage fields, whatever the outcome
 	// (a refusal still costs tokens), in a context that outlives a disconnect.

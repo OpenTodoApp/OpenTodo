@@ -38,7 +38,7 @@ When the owner allows it, **Settings → Integrations → Assistant** lets you c
 
 ## Ask and review
 
-Type a question and press <kbd>Enter</kbd>. When you ask for changes, the answer ends with **Proposed changes**: every item is checked, you uncheck what you don't want, then **Apply** or **Discard**. One proposal holds at most 50 changes. See [Ask and review](assistant-ask.md#ask-and-review).
+Type a question and press <kbd>Enter</kbd>; answers [show tasks](assistant-answers.md). When you ask for changes, the answer ends with **Proposed changes**: uncheck what you don't want, then **Apply** or **Discard**. One proposal holds at most 50 changes. See [Ask and review](assistant-ask.md#ask-and-review).
 
 ## Undo
 

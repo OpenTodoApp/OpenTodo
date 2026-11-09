@@ -8,6 +8,7 @@
 //
 // Script:
 //   "… overdue … / … Friday …"  → list_tasks(today) → schedule_tasks(overdue or due today → next Friday) → a short answer
+//   "… plan my day …"           → today_summary → show_tasks → show_calendar → a short answer (assistant-generative-ui)
 //   anything else               → today_summary → a list of what is due
 // It also answers the connection test (one tool, "Reply with OK").
 import { createServer } from 'node:http'
@@ -89,6 +90,15 @@ function reply(body, { text, tool }) {
     const n = result?.results?.length ?? 0
     return text(`I've proposed moving ${n} task${n === 1 ? '' : 's'} to ${words(nextFriday(date))}. Review the changes below; nothing changes until you apply them.`)
   }
+  // Blocks (assistant-generative-ui): the day's tasks, then the day as planned.
+  const planDay = /plan my day/.test(question)
+  if (planDay && lastCall === 'today_summary') {
+    const ids = [...(result?.overdue ?? []), ...(result?.due_today ?? [])].map((t) => t.id).slice(0, 20)
+    if (ids.length === 0) return text('Nothing is due today, so there is nothing to plan.')
+    return tool('show_tasks', { ids, title: 'On your plate today' })
+  }
+  if (planDay && lastCall === 'show_tasks') return tool('show_calendar', { date, span: 'day' })
+  if (planDay && lastCall === 'show_calendar') return text('That is the day as it stands. Start with the overdue ones; I can move the rest to tomorrow if the day is too full.')
   if (lastCall === 'today_summary') {
     const items = [...(result?.overdue ?? []), ...(result?.due_today ?? [])]
     if (items.length === 0) return text('Nothing is due today. Enjoy the free time.')

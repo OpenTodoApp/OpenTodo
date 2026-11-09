@@ -5,35 +5,29 @@ import { AssistantWelcome } from './AssistantWelcome'
 import type { Review } from '../../lib/assistant'
 import { usageLine, type AssistantMessage, type AssistantThread } from '../../lib/assistant'
 import type { AssistantStatus } from '../../lib/assistantStatus'
-import { msg, t } from '../../lib/i18n'
+import { t } from '../../lib/i18n'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
-import { Markdown } from '../Markdown'
-import { navigate } from '../router'
 import { AssistantConsent } from './AssistantConsent'
 import { ChangeSetReview, type ReviewResult } from './ChangeSetReview'
+import type { ItemEdits } from '../../lib/assistantShape'
+import { AnswerActions, QuestionActions } from './MessageActions'
+import { AnswerContent } from './blocks/AnswerContent'
+import type { ChoiceState } from './blocks/ChoiceBlock'
+import { answerMarkdown } from '../../lib/assistantBlocks'
 import { DeviceLocked, DeviceSetupForm } from './AssistantDevice'
 import type { DeviceMode } from './useDeviceAssistant'
 
 // Shown once to few people (assistant-disclosure-notice), so it loads only when due.
 const DisclosureNotice = lazy(() => import('./DisclosureNotice').then((m) => ({ default: m.DisclosureNotice })))
 
-export const ENCRYPTED_MESSAGE = msg('The assistant can’t read end-to-end encrypted tasks. Your tasks never leave your devices unencrypted.')
-
-/** What an encrypted account can do to use the assistant: a link to the encryption settings. */
-export function EncryptionOffHint() {
-  return (
-    <span data-assistant-encryption-hint>
-      {t.rich('To use the assistant, you can turn encryption off in <a>Settings → Account → Encryption</a>; your tasks are then stored on the server without end-to-end encryption.', { a: (chunks) => <a className="underline" href="/settings/account/encryption" onClick={(e) => { e.preventDefault(); navigate({ view: 'settings', section: 'account', page: 'encryption' }) }}>{chunks}</a> })}
-    </span>
-  )
-}
-export const OFFLINE_MESSAGE = msg('The assistant needs a connection.')
+import { ENCRYPTED_MESSAGE, EncryptionOffHint, OFFLINE_MESSAGE } from './assistantHints'
+export { ENCRYPTED_MESSAGE, EncryptionOffHint, OFFLINE_MESSAGE }
 
 export interface PanelViewProps {
   status: AssistantStatus | null
   connected: boolean
   messages: AssistantMessage[]
-  streaming: { text: string; status: string[] } | null
+  streaming: { text: string; status: string[]; blocks?: AssistantMessage['blocks'] } | null
   /** Polite live regions: completed sentences of the answer, and status lines. */
   announce: string
   statusAnnounce: string
@@ -47,6 +41,8 @@ export interface PanelViewProps {
   threads: AssistantThread[] | null
   reviewRef?: React.RefObject<HTMLDivElement | null>
   onToggle: (i: number, c: boolean) => void
+  /** Edits a proposed value before applying (assistant-generative-ui D6). */
+  onEdit?: (i: number, edits: ItemEdits) => void
   onApply: () => void
   onDiscard: () => void
   onUndo: () => void
@@ -59,6 +55,14 @@ export interface PanelViewProps {
   name?: string
   skills?: AssistantSkill[]
   onStarter?: (s: AssistantSkill) => void
+  /** Following the stream (assistant-generative-ui D8): on the element that grows with the conversation. */
+  followRef?: (el: HTMLElement | null) => void
+  /** Message actions (D8): Regenerate the latest answer, Edit the latest question, when it can be asked again. */
+  onRegenerate?: () => void
+  onEditLast?: () => void
+  canRedo?: boolean
+  /** A choice block's option, sent as the next message (assistant-generative-ui D4). */
+  onChoose?: (option: string) => void
   /** The page's empty state holds the composer; the sheet keeps it at its foot. */
   composer?: ReactNode
   layout?: 'page' | 'sheet'
@@ -118,19 +122,19 @@ export function AssistantPanelBody(p: PanelViewProps) {
           {p.messages.length === 0 && !p.streaming && !p.threads ? (
             <AssistantWelcome name={p.name ?? ''} skills={p.skills ?? []} onStarter={(s) => p.onStarter?.(s)} composer={p.composer} layout={p.layout ?? 'sheet'} />
           ) : (
-            <ol className="space-y-5" aria-label={t('Conversation')}>
-              {p.messages.map((m, i) => <MessageItem key={i} m={m} />)}
+            <ol ref={p.followRef} className="space-y-5" aria-label={t('Conversation')}>
+              {p.messages.map((m, i) => <MessageItem key={i} m={m} actions={actionsFor(p, i)} />)}
               {p.streaming && (
                 <AnswerItem busy>
                   {p.streaming.status.length > 0 && <p className="text-meta text-muted">{p.streaming.status[p.streaming.status.length - 1]}</p>}
-                  {p.streaming.text ? <Markdown source={p.streaming.text} /> : <p className="text-muted">{t('Thinking…')}</p>}
+                  {p.streaming.text || p.streaming.blocks?.length ? <AnswerContent text={p.streaming.text} blocks={p.streaming.blocks} /> : <p className="text-muted">{t('Thinking…')}</p>}
                 </AnswerItem>
               )}
             </ol>
           )}
           {(p.review || p.result) && (
             <div className="sm:pl-9">
-              <ChangeSetReview review={p.review} result={p.result} busy={p.reviewBusy} onToggle={p.onToggle} onApply={p.onApply} onDiscard={p.onDiscard} onUndo={p.onUndo} regionRef={p.reviewRef} />
+              <ChangeSetReview review={p.review} result={p.result} busy={p.reviewBusy} onToggle={p.onToggle} onEdit={p.onEdit} shapes onApply={p.onApply} onDiscard={p.onDiscard} onUndo={p.onUndo} regionRef={p.reviewRef} />
             </div>
           )}
         </>
@@ -152,7 +156,36 @@ function AnswerItem({ busy, children }: { busy?: boolean; children: ReactNode })
   )
 }
 
-function MessageItem({ m }: { m: AssistantMessage }) {
+/** The progress lines of a finished answer, closed by default (assistant-generative-ui D8). */
+function AnswerSteps({ lines }: { lines: string[] }) {
+  return (
+    <details className="text-meta text-muted" data-assistant-steps>
+      <summary className="w-fit cursor-pointer rounded-control">{t('{n, plural, one {# step} other {# steps}}', { n: lines.length })}</summary>
+      <ol className="mt-1 list-decimal space-y-0.5 pl-5">
+        {lines.map((line, i) => <li key={i}>{line}</li>)}
+      </ol>
+    </details>
+  )
+}
+
+interface ItemActions { enabled: boolean; regenerate?: () => void; edit?: () => void; choice: ChoiceState }
+
+/** Which actions a message offers: Copy on every answer, Regenerate and Edit on the latest ones only. */
+function actionsFor(p: PanelViewProps, i: number): ItemActions {
+  const enabled = p.connected && !p.streaming
+  const msgs = p.messages
+  const latest = (role: 'user' | 'assistant') => msgs.findLastIndex((m) => m.role === role) === i
+  const redo = !!p.canRedo
+  return {
+    enabled,
+    // Only the latest answer's choice is active, and only while nothing follows it.
+    choice: { active: enabled && i === msgs.length - 1, chosen: msgs[i]?.chosen, onChoose: p.onChoose },
+    regenerate: redo && latest('assistant') && i === msgs.length - 1 && !p.streaming ? p.onRegenerate : undefined,
+    edit: redo && latest('user') && !p.streaming ? p.onEditLast : undefined,
+  }
+}
+
+function MessageItem({ m, actions }: { m: AssistantMessage; actions: ItemActions }) {
   if (m.role === 'user') {
     return (
       <li className="ml-auto w-fit max-w-[85%] rounded-card bg-sunken px-3 py-2 text-body">
@@ -161,17 +194,20 @@ function MessageItem({ m }: { m: AssistantMessage }) {
             m.photos && t('{n, plural, one {# photo (not kept)} other {# photos (not kept)}}', { n: m.photos })].filter(Boolean).join(' · ')}</p>
         )}
         <span className="sr-only">{t('You:')}</span><span className="whitespace-pre-wrap user-text">{m.text}</span>
+        {actions.edit && <QuestionActions onEdit={actions.edit} enabled={actions.enabled} />}
       </li>
     )
   }
   return (
     <AnswerItem>
       <span className="sr-only">{t('Assistant:')}{' '}</span>
-      {m.text && <Markdown source={m.text} />}
+      {m.status && m.status.length > 0 && <AnswerSteps lines={m.status} />}
+      <AnswerContent text={m.text} blocks={m.blocks} choice={actions.choice} />
       {m.stop === 'max_tokens' && <p className="text-meta font-medium text-on-warning-soft">{t('Cut off: the answer reached its length limit.')}</p>}
       {m.error && <p className="text-danger">{m.error}</p>}
       {m.note && <p className="text-meta text-muted">{m.note}</p>}
       {m.usage && <p className="text-meta text-faint">{usageLine(m.usage)}</p>}
+      {(m.text || m.blocks?.length) && <AnswerActions text={() => answerMarkdown(m)} onRegenerate={actions.regenerate} enabled={actions.enabled} />}
     </AnswerItem>
   )
 }
