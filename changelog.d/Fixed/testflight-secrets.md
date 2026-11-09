@@ -1,0 +1,1 @@
+- **A release uploads the iPhone app to TestFlight again.** The release's TestFlight job got no secrets, so it only warned and uploaded nothing.
