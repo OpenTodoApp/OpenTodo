@@ -144,6 +144,19 @@ describe('choice block (3.5)', () => {
     expect(buttons.find((b) => b.textContent === 'Saturday')!.getAttribute('aria-pressed')).toBe('true')
   })
 
+  it('a double click on an option sends one turn', async () => {
+    reply = () => sse(['block', { kind: 'choice', question: 'A or B?', options: ['A', 'B'] }], ['done', { stop_reason: 'end_turn' }])
+    openAssistantWith({ text: 'pick', send: true })
+    await render(<AssistantPanel onClose={noop} context={() => ({ view: 'today' })} onApplied={noop} />)
+    await waitFor(() => document.querySelectorAll<HTMLButtonElement>('[data-choice-option]:not([disabled])').length === 2, 'the choice')
+    reply = () => sse(['text', { text: 'Fine.' }], ['done', { stop_reason: 'end_turn' }])
+    const a = [...document.querySelectorAll<HTMLButtonElement>('[data-choice-option]')].find((b) => b.textContent === 'A')!
+    a.click()
+    a.click()
+    await waitFor(() => document.body.textContent!.includes('Fine.'), 'the answer')
+    expect(turns).toHaveLength(2)
+  })
+
   it('an older choice and a choice offline are disabled', async () => {
     const choice = { kind: 'choice' as const, question: 'A or B?', options: ['A', 'B'] }
     const older = await render(<AssistantPanelBody {...props({ onChoose: noop, messages: [answer('', [{ at: 0, block: choice }]), { role: 'user', text: 'never mind', at: 3 }] })} />)

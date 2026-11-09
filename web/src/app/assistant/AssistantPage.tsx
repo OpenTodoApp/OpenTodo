@@ -25,7 +25,7 @@ export default function AssistantPage({ name }: { name: string }) {
   const { status, composer, review: rv, streaming } = c
   const usable = !!status?.enabled && status.reason !== 'encryption_enabled'
   const empty = (c.thread?.messages.length ?? 0) === 0 && !streaming && !c.threads
-  const follow = useFollowStream((c.thread?.messages.length ?? 0) > 0 || !!streaming)
+  const follow = useFollowStream((c.thread?.messages.length ?? 0) > 0 || !!streaming, c.thread?.id)
   const composerFor = (large: boolean) => (
     <Composer draft={composer.draft} onDraft={composer.setDraft} onSend={() => void c.send()} onStop={c.stop} streaming={!!streaming} connected={connected} disabled={!ready}
       skills={composer.skills} skill={composer.skill} onSkill={composer.chooseSkill} pasted={composer.pasted} onPasted={composer.setPasted}

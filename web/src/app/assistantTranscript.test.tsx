@@ -186,6 +186,18 @@ describe('message actions (D8)', () => {
     expect(thread.messages.map((m) => m.text)).toEqual(['plan my week, no meetings Friday', 'Done.'])
   })
 
+  it('an Edit whose draft is emptied and retyped asks a new question instead of replacing the old one', async () => {
+    await answered()
+    await click(document.querySelector('[data-assistant-edit]')!)
+    const field = document.querySelector<HTMLTextAreaElement>('[data-assistant-panel] textarea')!
+    await waitFor(() => field.value === 'plan my week', 'the question in the composer')
+    await type(field, '')
+    await type(field, 'and next month?')
+    await key(field, 'Enter')
+    await waitFor(() => turns.length === 2, 'the new question sent')
+    expect(turns[1].messages.map((m) => m.text)).toEqual(['plan my week', 'Done.', 'and next month?'])
+  })
+
   it('offers Regenerate and Edit only on the latest messages, and never for a question with pasted text', async () => {
     const msgs = [
       { role: 'user' as const, text: 'one', at: 1 }, { role: 'assistant' as const, text: 'A1', at: 2 },

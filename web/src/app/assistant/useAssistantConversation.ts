@@ -270,6 +270,8 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
   const abort = useRef<AbortController | null>(null)
   // Where an edited question replaces the thread (assistant-generative-ui D8).
   const editCut = useRef<number | null>(null)
+  // A choice in flight: a second click before the turn starts sends nothing.
+  const choosing = useRef(false)
   const consent = useConsent(status, setStatus)
 
   // Tells the suggest-after-add trigger that a turn is running (it skips instead of replacing the draft).
@@ -431,12 +433,20 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
   const choose = async (option: string) => {
     const msgs = [...(thread?.messages ?? [])]
     const last = msgs[msgs.length - 1]
-    if (!thread || streaming || last?.role !== 'assistant' || last.chosen) return
-    msgs[msgs.length - 1] = { ...last, chosen: option }
-    const base = { ...thread, messages: msgs }
-    await persist(base)
-    await send({ cut: msgs.length, question: option, skill: null, base })
+    if (choosing.current || !thread || streaming || last?.role !== 'assistant' || last.chosen) return
+    choosing.current = true
+    try {
+      msgs[msgs.length - 1] = { ...last, chosen: option }
+      const base = { ...thread, messages: msgs }
+      await persist(base)
+      await send({ cut: msgs.length, question: option, skill: null, base })
+    } finally {
+      choosing.current = false
+    }
   }
+
+  // Emptying the composer ends an Edit: the next question is a new one, not a replacement.
+  useEffect(() => { if (!composer.draft.trim()) editCut.current = null }, [composer.draft])
 
   const startNew = () => {
     editCut.current = null

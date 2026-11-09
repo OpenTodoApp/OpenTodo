@@ -97,7 +97,7 @@ export function AssistantPanel({ onClose, context, onApplied, name = '' }: Assis
   }
 
   const ready = useConversationReady(c, connected, 'data-assistant-panel')
-  const follow = useFollowStream((c.thread?.messages.length ?? 0) > 0 || !!streaming)
+  const follow = useFollowStream((c.thread?.messages.length ?? 0) > 0 || !!streaming, c.thread?.id)
   const { skill } = composer
   const headerExtra = status?.enabled && status.reason !== 'encryption_enabled' ? (
     <>

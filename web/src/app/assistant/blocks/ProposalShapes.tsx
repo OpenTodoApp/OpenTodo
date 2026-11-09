@@ -58,6 +58,8 @@ function OutlineShape({ review, onToggle }: { review: Review; onToggle: Toggle }
   const sections = indexed.filter((x) => x.item.change.entity === 'section' && inProject(x))
   const tasks = indexed.filter((x) => x.item.change.entity === 'task' && x.item.change.create && inProject(x))
   const taskIds = new Set(tasks.map((x) => x.item.change.entityId))
+  // What the tree draws; everything else is listed after it, so every item keeps its checkbox.
+  const drawn = new Set<number>([project.index, ...sections.map((s) => s.index)])
   const tree = (parent: string | null, section: string | null, depth: number): ReactNode => {
     const level = tasks.filter(({ item }) => {
       const p = item.change.patch
@@ -65,19 +67,21 @@ function OutlineShape({ review, onToggle }: { review: Review; onToggle: Toggle }
       return parentId === parent && (parent !== null || (p.section_id ?? null) === section)
     })
     if (!level.length) return null
+    for (const x of level) drawn.add(x.index)
     return <ul>{level.map((x) => <CheckRow key={x.index} item={x.item} index={x.index} onToggle={onToggle} depth={depth}>{tree(x.item.change.entityId, null, depth + 1)}</CheckRow>)}</ul>
   }
-  const placed = new Set([project, ...sections, ...tasks].map((x) => x.index))
-  const others = indexed.filter((x) => !placed.has(x.index))
+  const loose = tree(null, null, 1)
+  const bySection = sections.map((s) => ({ s, children: tree(null, s.item.change.entityId, 2) }))
+  const others = indexed.filter((x) => !drawn.has(x.index))
   return (
     <div className="py-1" data-proposal-outline>
       <ul>
         <CheckRow item={project.item} index={project.index} onToggle={onToggle}>
-          {tree(null, null, 1)}
-          {sections.length > 0 && (
+          {loose}
+          {bySection.length > 0 && (
             <ul>
-              {sections.map((s) => (
-                <CheckRow key={s.index} item={s.item} index={s.index} onToggle={onToggle} depth={1}>{tree(null, s.item.change.entityId, 2)}</CheckRow>
+              {bySection.map(({ s, children }) => (
+                <CheckRow key={s.index} item={s.item} index={s.index} onToggle={onToggle} depth={1}>{children}</CheckRow>
               ))}
             </ul>
           )}
