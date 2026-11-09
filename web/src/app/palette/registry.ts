@@ -61,6 +61,8 @@ export interface PaletteContext {
   project?: { row: Project; role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks: number; pinned?: boolean; keptAway?: boolean; reviewEvery?: string }
   view?: { row: View; peers: View[]; isStart: boolean }
   label?: { row: Label; labels: Label[]; pinned?: boolean }
+  /** The standalone note open on the Notes page (notes-home D4): Pin note or Unpin note. */
+  note?: { id: string; pinned: boolean }
   section?: { row: Section; first: boolean; last: boolean; layout: 'list' | 'board'; count: number }
   /** The Filter view's current valid query, on the Filter view. */
   filterQuery: string | null
@@ -326,6 +328,11 @@ export function commands(ctx: PaletteContext): Command[] {
       move: (to) => reorderLabel(l.row.id, to),
       pin: { checked: !!l.pinned, toggle: () => setFavourite('label', l.row.id, !l.pinned) },
     }), 'label'))
+  }
+  if (ctx.note) {
+    const n = ctx.note
+    out.push({ id: n.pinned ? 'note:unpin' : 'note:pin', label: n.pinned ? t('Unpin note') : t('Pin note'), icon: n.pinned ? 'pin-off' : 'pin',
+      keywords: 'pin favourite favorite sidebar notes', run: () => setFavourite('note', n.id, !n.pinned) })
   }
   if (ctx.section) {
     const s = ctx.section

@@ -2,7 +2,8 @@
 // source icon, the title, a one-line preview (or, while searching, the snippet
 // with its matched words highlighted, as text), then the project, the labels and
 // the relative time of the last change. At least 48 px tall on phones; a
-// standalone note's menu holds Turn into task and Delete (no swipe actions).
+// standalone note's menu holds Pin, Turn into task and Delete (no swipe actions),
+// and a long press opens it.
 import type { ReactNode } from 'react'
 import { stripMarkdown, type SnippetSegment } from '../../lib/noteSearch'
 import type { NoteEntry } from '../../lib/noteList'
@@ -62,17 +63,26 @@ export interface NoteRowProps {
   updatedTitle?: string
   /** The note open in the panel. */
   current?: boolean
+  /** Under the list cursor while the search field holds text (notes-home D3): Enter opens it. */
+  cursor?: boolean
   onOpen: () => void
   /** A standalone note the user may change: its menu. */
   menu?: ReactNode
 }
 
-export function NoteRow({ entry, snippet, project, labels, updated, current, onOpen, menu }: NoteRowProps) {
+export function NoteRow({ entry, snippet, project, labels, updated, current, cursor, onOpen, menu }: NoteRowProps) {
   const title = entry.title.trim() || (entry.source === 'note' ? t('Untitled note') : t('Untitled'))
   const preview = snippet?.length ? '' : previewOfEntry(entry)
   return (
-    <li className={`group relative flex min-h-12 items-start gap-1 rounded-control md:min-h-(--size-row) ${current ? 'bg-selected-row' : 'hover:bg-sunken dark:hover:bg-raised'}`}
-      data-note-key={entry.key} data-note-source={entry.source}>
+    <li className={`group relative flex min-h-12 items-start gap-1 rounded-control md:min-h-(--size-row) ${current ? 'bg-selected-row' : cursor ? 'bg-sunken dark:bg-raised' : 'hover:bg-sunken dark:hover:bg-raised'}`}
+      data-note-key={entry.key} data-note-source={entry.source} data-cursor={cursor || undefined}
+      // A long press (a right click on a computer) opens the row's menu (notes-home D6).
+      onContextMenu={menu ? (e) => {
+        const trigger = e.currentTarget.querySelector<HTMLButtonElement>('[data-note-menu]')
+        if (!trigger || (e.target as Element).closest('[data-note-menu]')) return
+        e.preventDefault()
+        trigger.click()
+      } : undefined}>
       <button type="button" data-note-open onClick={onOpen} aria-current={current || undefined}
         className="flex min-w-0 flex-1 items-start gap-3 rounded-control px-2 py-2 text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus">
         <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center text-muted"><Icon name={SOURCE_ICON[entry.source]} label={SOURCE_NAME[entry.source]()} /></span>
@@ -98,12 +108,23 @@ export function NoteRow({ entry, snippet, project, labels, updated, current, onO
   )
 }
 
-/** A standalone note's menu (the row and the panel): Turn into task, Delete. */
-export function NoteMenu({ onTurnIntoTask, onDelete, label = t('Note actions') }: { onTurnIntoTask: () => void; onDelete: () => void; label?: string }) {
+/**
+ * A standalone note's menu (the row and the panel): Pin or Unpin (notes-home D4,
+ * personal, so a viewer of a shared project has it too), then Turn into task and
+ * Delete for a note the user may change.
+ */
+export function NoteMenu({ pinned, onPin, onTurnIntoTask, onDelete, pinKey, label = t('Note actions') }: {
+  pinned: boolean; onPin: () => void; onTurnIntoTask?: () => void; onDelete?: () => void
+  /** The list row's key for Pin (`p` on a focused row); the panel's menu has none. */
+  pinKey?: string
+  label?: string
+}) {
   return (
-    <Menu kind="menu" label={label} trigger={<Icon name="ellipsis" size="md" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" width="sm:w-56">
-      <MenuItem label={t('Turn into task')} icon="circle-check-big" description={t('The note goes to the Trash; Undo brings it back')} onSelect={onTurnIntoTask} data-note-to-task />
-      <MenuItem label={t('Delete')} icon="trash-2" danger onSelect={onDelete} data-note-delete />
+    <Menu kind="menu" label={label} trigger={<Icon name="ellipsis" size="md" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" width="sm:w-56"
+      triggerProps={{ 'data-note-menu': '' }}>
+      <MenuItem label={pinned ? t('Unpin') : t('Pin')} icon={pinned ? 'pin-off' : 'pin'} shortcut={pinKey} onSelect={onPin} data-note-pin={pinned ? 'unpin' : 'pin'} />
+      {onTurnIntoTask && <MenuItem label={t('Turn into task')} icon="circle-check-big" description={t('The note goes to the Trash; Undo brings it back')} onSelect={onTurnIntoTask} data-note-to-task />}
+      {onDelete && <MenuItem label={t('Delete')} icon="trash-2" danger onSelect={onDelete} data-note-delete />}
     </Menu>
   )
 }
