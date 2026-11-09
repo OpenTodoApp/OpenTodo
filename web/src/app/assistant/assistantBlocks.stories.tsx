@@ -1,10 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useEffect, useState } from 'react'
+import { reviewChangeSet, type Review } from '../../lib/assistant'
 import type { AssistantStatus } from '../../lib/assistantStatus'
 import type { AssistantMessage } from '../../lib/db'
 import { createPlace } from '../../lib/locations'
 import { createNote } from '../../lib/noteOps'
 import { createProject, createTask } from '../../lib/ops'
 import { createSection } from '../../lib/sections'
+import { addDaysISO } from '../../lib/dates'
 import { HEX, seeded, seedBase, TODAY, withSeed } from '../stories/fixtures'
 import { AssistantPanelBody, type PanelViewProps } from './AssistantPanelBody'
 
@@ -79,4 +82,32 @@ export const ProjectNoteAndPlaces: StoryObj = {
       },
     ]} />
   ),
+}
+
+/** A proposal that moves work across the week, in its calendar shape (the list one switch away). */
+function WeekProposal() {
+  const [review, setReview] = useState<Review | null>(null)
+  useEffect(() => {
+    const plan = [[seeded.a, 1], [seeded.b, 1], [seeded.c, 2], [seeded.d, 3]] as const
+    void reviewChangeSet(plan.map(([id, days]) => ({ entity: 'task', entityId: id, patch: { due: { date: addDaysISO(TODAY, days) } }, base: { due: { date: TODAY } } }))).then(setReview)
+  }, [])
+  if (!review) return null
+  return (
+    <div className="-m-4 min-h-[40rem] bg-surface px-4 py-6"><div className="mx-auto w-full max-w-[46rem]">
+      <AssistantPanelBody {...base} layout="page" review={review} onEdit={noop}
+        messages={[{ role: 'user', text: 'Today is too full, spread it over the next days.', at: 1 }, { role: 'assistant', text: 'I moved four tasks to the next three days; review it below.', at: 2 }]} />
+    </div></div>
+  )
+}
+
+export const WeekPlanProposal: StoryObj = {
+  ...withSeed(async () => {
+    await seedBase()
+    await createTask({ title: 'Team sync', due: { date: addDaysISO(TODAY, 1), time: '10:00' }, estimate_minutes: 30 })
+    seeded.a = await createTask({ title: 'Draft the roadmap', due: { date: TODAY }, estimate_minutes: 90 })
+    seeded.b = await createTask({ title: 'Reply to the agency', due: { date: TODAY }, estimate_minutes: 20 })
+    seeded.c = await createTask({ title: 'Review the budget', due: { date: TODAY }, estimate_minutes: 60 })
+    seeded.d = await createTask({ title: 'Book the venue', due: { date: TODAY } })
+  }),
+  render: () => <WeekProposal />,
 }

@@ -141,6 +141,8 @@ export interface ReviewItem {
   /** Each change in words ("Due Wed 14 Oct → Fri 16 Oct"). */
   lines: string[]
   shared: boolean
+  /** Edited before applying (assistant-generative-ui D6): the change holds the edited values. */
+  edited?: boolean
 }
 
 export interface Review {
@@ -371,8 +373,10 @@ export async function reviewChangeSet(changes: ProposedChange[]): Promise<Review
 export async function refreshReview(r: Review): Promise<Review> {
   const fresh = await reviewChangeSet(r.items.map((i) => i.change))
   const wasChecked = new Map(r.items.map((i) => [i.change.entity + i.change.entityId, i.checked]))
+  const wasEdited = new Set(r.items.filter((i) => i.edited).map((i) => i.change.entity + i.change.entityId))
   for (const i of fresh.items) {
     if (i.state === 'ok') i.checked = wasChecked.get(i.change.entity + i.change.entityId) ?? true
+    if (wasEdited.has(i.change.entity + i.change.entityId)) i.edited = true
   }
   return { items: fresh.items, dropped: [...r.dropped, ...fresh.dropped.filter((d) => !r.dropped.includes(d))] }
 }

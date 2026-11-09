@@ -10,7 +10,8 @@
     "web/src/lib/facets.ts"
   ],
   "(changed since proposed)": [
-    "web/src/app/assistant/ChangeSetReview.tsx"
+    "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/assistant/blocks/ProposalShapes.tsx"
   ],
   "(completed)": [
     "web/src/app/TaskRow.tsx",
@@ -25,6 +26,10 @@
   ],
   "(does not match the field type)": [
     "web/src/app/FieldColumns.tsx"
+  ],
+  "(edited)": [
+    "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/assistant/blocks/ProposalShapes.tsx"
   ],
   "(lost)": [
     "web/src/app/HistoryPanel.tsx"
@@ -43,7 +48,8 @@
     "web/src/app/AuthScreen.tsx"
   ],
   "(shared project)": [
-    "web/src/app/assistant/ChangeSetReview.tsx"
+    "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/assistant/blocks/ProposalShapes.tsx"
   ],
   "(status {status})": [
     "web/src/lib/push.ts"
@@ -2570,6 +2576,7 @@
   "Calendar": [
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/Sidebar.tsx",
+    "web/src/app/assistant/ChangeSetReview.tsx",
     "web/src/app/shortcuts/Spotlight.tsx",
     "web/src/app/task-list/ListChrome.tsx",
     "web/src/lib/settingsCopy.ts"
@@ -2731,6 +2738,7 @@
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/assistant/AssistantDevice.tsx",
     "web/src/app/assistant/AssistantSettings.tsx",
+    "web/src/app/assistant/ChangeSetReview.tsx",
     "web/src/app/assistant/ComposerCapture.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/calendar/ReplanPreview.tsx",
@@ -3052,6 +3060,9 @@
   ],
   "Choose a person": [
     "web/src/app/ShareDirectory.tsx"
+  ],
+  "Choose a priority.": [
+    "web/src/app/assistant/ChangeSetReview.tsx"
   ],
   "Choose a project": [
     "web/src/app/filter/ConditionEditor.tsx",
@@ -4408,6 +4419,7 @@
   ],
   "Deadline": [
     "web/src/app/ParseChips.tsx",
+    "web/src/app/assistant/ChangeSetReview.tsx",
     "web/src/app/calendar/DeadlineMarker.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/filter/conditionText.ts",
@@ -4935,6 +4947,7 @@
     "web/src/lib/method/vocabulary.json"
   ],
   "Do on": [
+    "web/src/app/assistant/ChangeSetReview.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/task-list/RowSchedule.tsx"
@@ -4977,6 +4990,7 @@
     "web/src/app/TwoFactorPanel.tsx",
     "web/src/app/UsersPanel.tsx",
     "web/src/app/WebhooksPanel.tsx",
+    "web/src/app/assistant/ChangeSetReview.tsx",
     "web/src/app/calendar/QueryFilterDialog.tsx",
     "web/src/app/objectives/ReviewObjectives.tsx",
     "web/src/app/review/ReviewView.tsx",
@@ -5331,6 +5345,9 @@
   "Edit webhook": [
     "web/src/app/WebhooksPanel.tsx"
   ],
+  "Edit {title}": [
+    "web/src/app/assistant/ChangeSetReview.tsx"
+  ],
   "Editing. Enter saves, Escape cancels, Shift+Enter opens the details.": [
     "web/src/app/task-list/InlineEditor.tsx"
   ],
@@ -5607,6 +5624,7 @@
     "web/src/ui/ColourField.tsx"
   ],
   "Enter a date.": [
+    "web/src/app/assistant/ChangeSetReview.tsx",
     "web/src/lib/fields.ts"
   ],
   "Enter a duration instead": [
@@ -5632,6 +5650,9 @@
   ],
   "Enter a start and an end time": [
     "web/src/app/task-detail/TimeTab.tsx"
+  ],
+  "Enter a title.": [
+    "web/src/app/assistant/ChangeSetReview.tsx"
   ],
   "Enter a valid redirect address: the exact address, starting with https://, without wildcards.": [
     "web/src/lib/i18n/errors.ts"
@@ -8726,6 +8747,7 @@
     "web/src/lib/attachments.ts"
   ],
   "List": [
+    "web/src/app/assistant/ChangeSetReview.tsx",
     "web/src/app/menus/listMenu.tsx",
     "web/src/app/task-list/ListChrome.tsx",
     "web/src/app/themes/ThemePreview.tsx",
@@ -9111,6 +9133,9 @@
   "Manual order": [
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/shortcuts.ts"
+  ],
+  "Map": [
+    "web/src/app/assistant/ChangeSetReview.tsx"
   ],
   "Map of your locations": [
     "web/src/app/locations/PlacesView.tsx"
@@ -11963,6 +11988,9 @@
   "Other calendars in Day and Week, and your tasks in a calendar app.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Other changes": [
+    "web/src/app/assistant/blocks/ProposalShapes.tsx"
+  ],
   "Other edits": [
     "web/src/lib/activity.ts"
   ],
@@ -12014,6 +12042,9 @@
   ],
   "Outgoing email username": [
     "web/src/app/auditFormat.ts"
+  ],
+  "Outline": [
+    "web/src/app/assistant/ChangeSetReview.tsx"
   ],
   "Outlook was not connected: Microsoft did not complete the sign-in. Try again.": [
     "web/src/app/CalendarSyncPanel.tsx"
@@ -12636,6 +12667,7 @@
     "web/src/app/ImportScreen.tsx",
     "web/src/app/ParseChips.tsx",
     "web/src/app/RuleEditor.tsx",
+    "web/src/app/assistant/ChangeSetReview.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/calendar/colorByControls.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
@@ -12688,6 +12720,7 @@
   "Priority {p}": [
     "web/src/app/RuleEditor.tsx",
     "web/src/app/TaskRow.tsx",
+    "web/src/app/assistant/ChangeSetReview.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/lib/views.ts"
@@ -15201,6 +15234,9 @@
   "Show the map": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
+  "Show the proposal as": [
+    "web/src/app/assistant/ChangeSetReview.tsx"
+  ],
   "Show times": [
     "web/src/app/datetime/TimeField.tsx"
   ],
@@ -15765,6 +15801,7 @@
   ],
   "Start": [
     "web/src/app/RuleEditor.tsx",
+    "web/src/app/assistant/ChangeSetReview.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/method/DailyCheckToast.tsx",
@@ -17529,6 +17566,9 @@
   "The time entry could not be stopped; the minutes may not be logged correctly. ({detail})": [
     "web/src/app/ToastActionHost.tsx"
   ],
+  "The title is too long.": [
+    "web/src/app/assistant/ChangeSetReview.tsx"
+  ],
   "The token is removed from the server and nothing is polled any more. The {n, plural, one {# task} other {# tasks}} it created stay as ordinary tasks.": [
     "web/src/app/IssuesPanel.tsx"
   ],
@@ -18547,6 +18587,7 @@
     "web/src/app/ImportScreen.tsx",
     "web/src/app/RelayConfirm.tsx",
     "web/src/app/TriageView.tsx",
+    "web/src/app/assistant/ChangeSetReview.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/task-detail/TaskHead.tsx",
@@ -20985,7 +21026,8 @@
     "web/src/app/routines/wordPicker.tsx"
   ],
   "changed since proposed": [
-    "web/src/app/assistant/ChangeSetReview.tsx"
+    "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/assistant/blocks/ProposalShapes.tsx"
   ],
   "changed the {fields}": [
     "web/src/lib/activityRuns.ts"
@@ -21238,6 +21280,7 @@
     "web/src/lib/rules/sentence.ts"
   ],
   "edited": [
+    "web/src/app/assistant/ChangeSetReview.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
     "web/src/lib/activity.ts"
   ],
@@ -23669,6 +23712,7 @@
   ],
   "{n, plural, one {Map, # place} other {Map, # places}}": [
     "web/src/app/assistant/blocks/MapBlock.tsx",
+    "web/src/app/assistant/blocks/ProposalShapes.tsx",
     "web/src/lib/assistantBlocks.ts"
   ],
   "{n, plural, one {Moving this task moves its subtask too.} other {Moving this task moves its subtasks too.}}": [

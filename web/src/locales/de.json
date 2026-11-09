@@ -7268,5 +7268,14 @@
   "proposed": "vorgeschlagen",
   "{n, plural, one {# open} other {# open}}": "{n, plural, one {# offen} other {# offen}}",
   "{n, plural, one {# task removed} other {# tasks removed}}": "{n, plural, one {# Aufgabe entfernt} other {# Aufgaben entfernt}}",
-  "{n, plural, one {Map, # place} other {Map, # places}}": "{n, plural, one {Karte, # Ort} other {Karte, # Orte}}"
+  "{n, plural, one {Map, # place} other {Map, # places}}": "{n, plural, one {Karte, # Ort} other {Karte, # Orte}}",
+  "(edited)": "(bearbeitet)",
+  "Choose a priority.": "Wähle eine Priorität.",
+  "Edit {title}": "{title} bearbeiten",
+  "Enter a title.": "Gib einen Titel ein.",
+  "Map": "Karte",
+  "Other changes": "Weitere Änderungen",
+  "Outline": "Gliederung",
+  "Show the proposal as": "Vorschlag anzeigen als",
+  "The title is too long.": "Der Titel ist zu lang."
 }

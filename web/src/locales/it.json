@@ -7268,5 +7268,14 @@
   "proposed": "proposto",
   "{n, plural, one {# open} other {# open}}": "{n, plural, one {# aperta} other {# aperte}}",
   "{n, plural, one {# task removed} other {# tasks removed}}": "{n, plural, one {# attività rimossa} other {# attività rimosse}}",
-  "{n, plural, one {Map, # place} other {Map, # places}}": "{n, plural, one {Mappa, # luogo} other {Mappa, # luoghi}}"
+  "{n, plural, one {Map, # place} other {Map, # places}}": "{n, plural, one {Mappa, # luogo} other {Mappa, # luoghi}}",
+  "(edited)": "(modificato)",
+  "Choose a priority.": "Scegli una priorità.",
+  "Edit {title}": "Modifica {title}",
+  "Enter a title.": "Inserisci un titolo.",
+  "Map": "Mappa",
+  "Other changes": "Altre modifiche",
+  "Outline": "Schema",
+  "Show the proposal as": "Mostra la proposta come",
+  "The title is too long.": "Il titolo è troppo lungo."
 }

@@ -23,6 +23,8 @@ export interface AgendaItem {
   task: Task
   /** Proposed, not applied (the proposal's calendar shape). */
   proposed?: boolean
+  /** The proposal's checkbox: whether this item applies, and its accessible name. */
+  check?: { checked: boolean; label: string; onChange: (checked: boolean) => void }
 }
 
 /** A task placed on its local day: its date and time. */
@@ -44,10 +46,11 @@ export function AgendaDays({ days, items, dayLength }: { days: readonly string[]
             </div>
             {own.length === 0 ? <p className="text-meta text-faint">{t('Nothing planned')}</p> : (
               <ul className="mt-1 space-y-0.5">
-                {own.map(({ task, proposed }) => {
+                {own.map(({ task, proposed, check }) => {
                   const due = placed(task)
                   return (
                     <li key={task.id} className={`flex items-baseline gap-2 text-body ${proposed ? 'rounded-control border border-dashed border-accent px-1.5' : ''}`} data-agenda-item={task.id} data-proposed={proposed || undefined}>
+                      {check && <input type="checkbox" className="h-4 w-4 shrink-0 self-center accent-(--ot-accent)" checked={check.checked} aria-label={check.label} onChange={(e) => check.onChange(e.target.checked)} />}
                       <span className="w-14 shrink-0 text-meta tabular-nums text-muted">{due?.time ? formatTime(due.time) : t('Any time')}</span>
                       <button type="button" className={`min-w-0 flex-1 truncate text-left user-text hover:underline ${task.completed_at ? 'text-muted line-through' : ''}`} onClick={() => openTaskPanel(task.id)}>{task.title}</button>
                       {task.estimate_minutes ? <span className="text-meta text-muted">{formatMinutes(task.estimate_minutes)}</span> : null}
