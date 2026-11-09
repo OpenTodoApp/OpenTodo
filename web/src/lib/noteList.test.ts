@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { filterEntries, NO_NOTE_FILTERS, NoteIndex, noteEntries, NOTES_PAGE, sameEntries, updatedOf, type NoteEntry } from './noteList'
+import { filterEntries, homeGroups, isDefaultFilters, NO_NOTE_FILTERS, NoteIndex, noteEntries, NOTES_PAGE, sameEntries, updatedOf, type NoteEntry } from './noteList'
+import { LinkIndex, worldOf } from './noteLinks'
 import * as search from './noteSearch'
 import type { Note, Project, Task } from './types'
 
@@ -107,5 +108,69 @@ describe('sameEntries (notes-compaction-at-scale)', () => {
       expect(sameEntries([e()], [e(over)])).toBe(false)
     }
     expect(sameEntries([e()], [e(), e({ key: 'note:b' })])).toBe(false)
+  })
+})
+
+// The home of notes (OpenSpec notes-home, tasks 2.1 and 4.1).
+describe('Pinned and Recent (D4)', () => {
+  const list = noteEntries(
+    [task('t', { description: 'task note', _clock: { description: c(50) } })],
+    [],
+    [note('wifi', { _clock: { title: c(10) } }), note('pack', { _clock: { title: c(20) } }), note('trip', { _clock: { title: c(40) } })],
+  )
+
+  it('lists the pinned notes first in the pinned order, the others after without repeating them', () => {
+    const g = homeGroups(list, ['wifi', 'pack'])
+    expect(g.pinned.map((e) => e.key)).toEqual(['note:wifi', 'note:pack'])
+    expect(g.recent.map((e) => e.key)).toEqual(['task:t', 'note:trip'])
+  })
+
+  it('has no Pinned group without pins, or when the pins name no listed note', () => {
+    expect(homeGroups(list, [])).toEqual({ pinned: [], recent: list })
+    expect(homeGroups(list, ['gone', 't']).pinned).toEqual([])
+    expect(homeGroups(list, ['gone', 't']).recent).toBe(list)
+  })
+
+  it('keeps Recent paginated like the list: the count is of the notes that are not pinned', () => {
+    const many = noteEntries([], [], Array.from({ length: NOTES_PAGE + 5 }, (_, i) => note(`n${i}`, { _clock: { title: c(i + 1) } })))
+    const g = homeGroups(many, ['n0'])
+    expect(g.pinned).toHaveLength(1)
+    expect(g.recent).toHaveLength(NOTES_PAGE + 4)
+    expect(g.recent.slice(0, NOTES_PAGE).some((e) => e.key === 'note:n0')).toBe(false)
+  })
+
+  it('the default state is no source, project or label', () => {
+    expect(isDefaultFilters(NO_NOTE_FILTERS)).toBe(true)
+    expect(isDefaultFilters({ ...NO_NOTE_FILTERS, source: 'unlinked' })).toBe(false)
+    expect(isDefaultFilters({ ...NO_NOTE_FILTERS, labelId: 'l' })).toBe(false)
+  })
+})
+
+describe('Unlinked (D5)', () => {
+  // "Trip" is linked from a task; "Ideas" links to "Trip" but nothing links to it; "Self" links only to itself.
+  const tasks = [task('t1', { description: 'see [Trip](?note=trip)', _clock: { description: c(5) } })]
+  const notes = [
+    note('trip', { title: 'Trip', _clock: { title: c(10) } }),
+    note('ideas', { title: 'Ideas', description: 'go on [Trip](?note=trip)', _clock: { title: c(20) } }),
+    note('self', { title: 'Self', description: 'here [me](?note=self)', _clock: { title: c(30) } }),
+    note('trashed', { title: 'Old', deleted_at: 1 }),
+  ]
+  const index = new LinkIndex()
+  index.buildNow(worldOf(tasks, [], notes))
+  const entries = noteEntries(tasks, [], notes)
+  const unlinked = { ...NO_NOTE_FILTERS, source: 'unlinked' as const }
+
+  it('keeps standalone notes nothing else links to; outgoing links do not count', () => {
+    expect(filterEntries(entries, unlinked, index.linkedTargets()).map((e) => e.title)).toEqual(['Self', 'Ideas'])
+  })
+
+  it('never lists task or project notes, and lists nothing before the index is ready', () => {
+    expect(filterEntries(entries, unlinked, index.linkedTargets()).every((e) => e.source === 'note')).toBe(true)
+    expect(filterEntries(entries, unlinked, null)).toEqual([])
+  })
+
+  it('narrows with the project filter like the other sources', () => {
+    const inP = noteEntries([], [], [note('a', { project_id: 'p' }), note('b')])
+    expect(filterEntries(inP, { ...unlinked, projectId: 'p' }, new Set()).map((e) => e.key)).toEqual(['note:a'])
   })
 })

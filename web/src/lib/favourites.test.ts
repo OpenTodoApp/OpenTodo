@@ -1,8 +1,10 @@
 // Favourites preference (OpenSpec change sidebar-favourites, task 1.2; appearance-preferences "Favourites preference").
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { db } from './db'
-import { favouritesOf, isFavourite, moveFavourite, parseFavourites, pin, unpin } from './favourites'
+import { db, useDatabase } from './db'
+import { favouritesOf, isFavourite, moveFavourite, parseFavourites, pin, pinnedNoteIds, unpin } from './favourites'
+import { createNote, trashNote } from './noteOps'
+import * as v10 from './testdata/favourites-1.0'
 import { archiveProject, applyOps, createProject, deleteProject, resetDeviceId } from './ops'
 import { createLabel } from './labels'
 import { createView } from './views'
@@ -130,5 +132,82 @@ describe('favourites', () => {
     await mergeLabels(src, dst)
     expect(await shown()).toEqual([])
     expect(isFavourite(await prefs(), 'label', dst)).toBe(false)
+  })
+})
+
+// notes-home 1.1: a standalone note is a favourite of the kind `note`; 1.0 clients keep it.
+describe('pinned notes', () => {
+  const withNotes = async () => ({ ...(await sources()), notes: await db.notes.toArray() })
+  const shownWithNotes = async () => favouritesOf(await prefs(), await withNotes()).map((f) => `${f.kind}:${f.item.id}`)
+
+  it('pins a note with one preference op, hides it in the Trash and shows it again after a restore', async () => {
+    const n = await createNote({ title: 'Wi-Fi' })
+    await db.outbox.clear()
+    await pin('note', n)
+    expect(await outbox()).toEqual([`user_prefs.favourites="note:${n}"`])
+    expect(isFavourite(await prefs(), 'note', n)).toBe(true)
+    expect(pinnedNoteIds((await prefs())!.favourites)).toEqual([n])
+    expect(await shownWithNotes()).toEqual([`note:${n}`])
+    await trashNote(n)
+    expect(await shownWithNotes()).toEqual([])
+    expect((await prefs())!.favourites).toBe(`note:${n}`)
+    await applyOps([remote('deleted_at', null, Date.now() + 5000, 'note', n)])
+    expect(await shownWithNotes()).toEqual([`note:${n}`])
+  })
+
+  it('a note of a project that is gone is not shown', async () => {
+    const p = await createProject({ name: 'Trip' })
+    const n = await createNote({ title: 'Packing', project_id: p })
+    await pin('note', n)
+    expect(await shownWithNotes()).toEqual([`note:${n}`])
+    await deleteProject(p)
+    expect(await shownWithNotes()).toEqual([])
+  })
+
+  it('moves a note among the favourites', async () => {
+    const p = await createProject({ name: 'Home' })
+    const n = await createNote({ title: 'Wi-Fi' })
+    await pin('project', p)
+    await pin('note', n)
+    await moveFavourite('note', n, -1)
+    expect((await prefs())!.favourites).toBe(`note:${n},project:${p}`)
+  })
+
+  it('a 1.0 device ignores a pinned note and keeps it when it pins, moves and unpins', async () => {
+    const a = await createProject({ name: 'A' })
+    const b = await createProject({ name: 'B' })
+    const n = await createNote({ title: 'Wi-Fi' })
+    await pin('project', a)
+    await pin('note', n)
+    expect(v10.favouritesOf(await prefs(), await sources()).map((f) => f.id)).toEqual([a])
+    await v10.pin('project', b)
+    expect((await prefs())!.favourites).toBe(`project:${a},note:${n},project:${b}`)
+    await v10.moveFavourite('project', b, -1)
+    expect((await prefs())!.favourites).toBe(`project:${b},note:${n},project:${a}`)
+    await v10.unpin('project', a)
+    expect((await prefs())!.favourites).toBe(`project:${b},note:${n}`)
+    expect(await shownWithNotes()).toEqual([`project:${b}`, `note:${n}`])
+  })
+
+  it('a pin made on one device shows on the other after sync, and an unpin there comes back', async () => {
+    const sent = async (): Promise<Op[]> => (await db.outbox.toArray()).map((o) => ({ id: o.id, entity: o.entity, entityId: o.entityId, field: o.field, value: o.value, ts: o.ts, device: o.device }) as Op)
+    useDatabase(`favourites-laptop-${Date.now()}`)
+    resetDeviceId()
+    const n = await createNote({ title: 'Wi-Fi' })
+    await pin('note', n)
+    const fromLaptop = await sent()
+    useDatabase(`favourites-phone-${Date.now()}`)
+    resetDeviceId()
+    await applyOps(fromLaptop)
+    expect(await shownWithNotes()).toEqual([`note:${n}`])
+    await db.outbox.clear()
+    await unpin('note', n)
+    const fromPhone = await sent()
+    useDatabase(`favourites-laptop-${Date.now()}-again`)
+    resetDeviceId()
+    await applyOps(fromLaptop)
+    await applyOps(fromPhone)
+    expect(await shownWithNotes()).toEqual([])
+    expect(isFavourite(await prefs(), 'note', n)).toBe(false)
   })
 })

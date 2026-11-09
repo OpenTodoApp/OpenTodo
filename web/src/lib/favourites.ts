@@ -4,23 +4,30 @@
 // across kinds is one last-writer-wins value. Saved filters keep their own `pinned`
 // flag for the API, the CLI and older devices: a pinned filter the list does not name
 // is a favourite after the listed entries, and pinning or unpinning one writes both.
+// A standalone note is a favourite of the kind `note` (notes-home D4): the Notes
+// page lists it under Pinned and the sidebar beside the other pins; a 1.0 client
+// keeps the entry as an unknown kind.
 import { db } from './db'
+import { resettable } from './moduleState'
 import { mutateMany, type Change } from './ops'
-import type { Label, Project, UserPrefs, View } from './types'
+import type { Label, Note, Project, UserPrefs, View } from './types'
 import { USER_PREFS_ID } from './userPrefs'
 
-export const FAVOURITE_KINDS = ['project', 'label', 'view'] as const
+export const FAVOURITE_KINDS = ['project', 'label', 'view', 'note'] as const
 export type FavouriteKind = (typeof FAVOURITE_KINDS)[number]
 
 export type Favourite =
   | { kind: 'project'; id: string; item: Project }
   | { kind: 'label'; id: string; item: Label }
   | { kind: 'view'; id: string; item: View }
+  | { kind: 'note'; id: string; item: Note }
 
 export interface FavouriteSources {
   projects: readonly Project[]
   labels: readonly Label[]
   views: readonly View[]
+  /** The pinned notes' rows (pinnedNoteRows); none when omitted. */
+  notes?: readonly Note[]
 }
 
 const entryOf = (kind: string, id: string) => `${kind}:${id}`
@@ -33,6 +40,11 @@ export function parseFavourites(raw: string | null | undefined): string[] {
     if (e && e.includes(':') && !out.includes(e)) out.push(e)
   }
   return out
+}
+
+/** The ids of the pinned notes, in the favourites order (the Notes page's Pinned group). */
+export function pinnedNoteIds(raw: string | null | undefined): string[] {
+  return parseFavourites(raw).filter((e) => e.startsWith('note:')).map((e) => e.slice(5))
 }
 
 function split(entry: string): { kind: string; id: string } {
@@ -50,6 +62,9 @@ export function favouritesOf(prefs: Partial<UserPrefs> | null | undefined, src: 
   const projects = new Map(src.projects.filter((p) => !p.deleted_at && !p.archived).map((p) => [p.id, p]))
   const labels = new Map(src.labels.filter((l) => !l.deleted_at).map((l) => [l.id, l]))
   const views = new Map(src.views.filter((v) => !v.deleted_at).map((v) => [v.id, v]))
+  // A note in the Trash, or in a project that is gone or out of reach, is not shown.
+  const live = new Set(src.projects.filter((p) => !p.deleted_at).map((p) => p.id))
+  const notes = new Map((src.notes ?? []).filter((n) => !n.deleted_at && (!n.project_id || live.has(n.project_id))).map((n) => [n.id, n]))
   const out: Favourite[] = []
   const named = new Set<string>()
   for (const entry of parseFavourites(prefs?.favourites)) {
@@ -58,6 +73,7 @@ export function favouritesOf(prefs: Partial<UserPrefs> | null | undefined, src: 
     if (kind === 'project') { const item = projects.get(id); if (item) out.push({ kind, id, item }) }
     else if (kind === 'label') { const item = labels.get(id); if (item) out.push({ kind, id, item }) }
     else if (kind === 'view') { const item = views.get(id); if (item && item.pinned !== false) out.push({ kind, id, item }) }
+    else if (kind === 'note') { const item = notes.get(id); if (item) out.push({ kind, id, item }) }
   }
   const extra = [...views.values()].filter((v) => v.pinned === true && !named.has(v.id))
     .sort((a, b) => a.position - b.position || a.created_at - b.created_at || (a.id < b.id ? -1 : 1))
@@ -65,7 +81,7 @@ export function favouritesOf(prefs: Partial<UserPrefs> | null | undefined, src: 
   return out
 }
 
-/** Whether an item is a favourite: a view by its pinned flag, a project or label by the list. */
+/** Whether an item is a favourite: a view by its pinned flag, a project, label or note by the list. */
 export function isFavourite(prefs: Partial<UserPrefs> | null | undefined, kind: FavouriteKind, id: string, view?: Pick<View, 'pinned'>): boolean {
   if (kind === 'view') return view?.pinned === true
   return parseFavourites(prefs?.favourites).includes(entryOf(kind, id))
@@ -73,6 +89,7 @@ export function isFavourite(prefs: Partial<UserPrefs> | null | undefined, kind: 
 
 // Read-then-write on this device is serialised, so two quick pins never drop one another.
 let queue: Promise<unknown> = Promise.resolve()
+resettable('favourites', () => { queue = Promise.resolve() })
 function serial<T>(fn: () => Promise<T>): Promise<T> {
   const next = queue.then(fn, fn)
   queue = next.catch(() => undefined)
@@ -124,9 +141,9 @@ export async function setFavourite(kind: FavouriteKind, id: string, on: boolean)
   await (on ? pin(kind, id) : unpin(kind, id))
 }
 
-async function liveSources(): Promise<FavouriteSources> {
-  const [projects, labels, views] = await Promise.all([db.projects.toArray(), db.labels.toArray(), db.views.toArray()])
-  return { projects, labels, views }
+async function liveSources(favourites: string | undefined): Promise<FavouriteSources> {
+  const [projects, labels, views, notes] = await Promise.all([db.projects.toArray(), db.labels.toArray(), db.views.toArray(), db.notes.bulkGet(pinnedNoteIds(favourites))])
+  return { projects, labels, views, notes: notes.filter((n): n is Note => !!n) }
 }
 
 /**
@@ -138,7 +155,7 @@ async function liveSources(): Promise<FavouriteSources> {
 export function moveFavourite(kind: FavouriteKind, id: string, dir: -1 | 1): Promise<void> {
   return serial(async () => {
     const prefs = await db.userPrefs.get(USER_PREFS_ID)
-    const shown = favouritesOf(prefs, await liveSources()).map((f) => entryOf(f.kind, f.id))
+    const shown = favouritesOf(prefs, await liveSources(prefs?.favourites)).map((f) => entryOf(f.kind, f.id))
     const i = shown.indexOf(entryOf(kind, id))
     const j = i + dir
     if (i < 0 || j < 0 || j >= shown.length) return
