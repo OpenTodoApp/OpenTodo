@@ -10,10 +10,11 @@
 // rewrites the documents). Test and generator only.
 import referenceJson from '../reference.json'
 import { checkTheme, type ContrastFailure } from '../check'
-import { deriveTheme, formatLch, parseColour } from '../derive'
+import { deriveTheme, formatLch, parseColour, type ResolvedTheme } from '../derive'
 import { colourError, type ThemeDocument } from '../format'
 import { HUES, type Hue } from '../tokens'
 import { labToRgb, lchToLab, toHex } from '../../colourMath'
+import { PAIRS } from '../../../ui/tokens/pairs'
 import type { Palette } from './palettes'
 
 type Lch = { L: number; C: number; H: number; a: number }
@@ -40,6 +41,17 @@ export function atLightness(c: Lch, L: number): Lch {
 }
 
 const hexOf = (v: string) => toHex(labToRgb(lchToLab(...(Object.values(parseColour(v)).slice(0, 3) as [number, number, number]))))
+const CHIP_PAIRS = PAIRS.filter((pair) => pair.kind === 'chip')
+
+/** The contrast gate also reads the rendered chip colours rounded to 8-bit sRGB. */
+export function checkRoundedChipContrast(theme: ResolvedTheme): ContrastFailure[] {
+  const tokens = { ...theme.tokens }
+  for (const { fg, bg } of CHIP_PAIRS) {
+    tokens[fg] = hexOf(tokens[fg])
+    tokens[bg] = hexOf(tokens[bg])
+  }
+  return checkTheme({ ...theme, tokens }, CHIP_PAIRS)
+}
 
 /** The label hues the palette lacks: OpenTodo's hue at the mean lightness and the strongest chroma of the palette's own hues. */
 function missingHues(p: Palette): Partial<Record<Hue, string>> {
@@ -89,7 +101,10 @@ export function generateTheme(p: Palette): Generated {
     opentodoTheme: 1, id: p.id, name: p.name, author: p.project.author, licence: 'MIT', source: p.project.source, kind: p.kind,
     seeds: { ...seeds } as ThemeDocument['seeds'], tokens: { ...tokens }, bar: p.seeds.canvas,
   })
-  const failures = (d: ThemeDocument): ContrastFailure[] => checkTheme(deriveTheme(d))
+  const failures = (d: ThemeDocument): ContrastFailure[] => {
+    const theme = deriveTheme(d)
+    return [...checkTheme(theme), ...checkRoundedChipContrast(theme)]
+  }
   const fixed = new Set(Object.keys(tokens))
   for (let round = 0; round < 80; round++) {
     const fails = failures(doc())
