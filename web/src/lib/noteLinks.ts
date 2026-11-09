@@ -372,6 +372,23 @@ export class LinkIndex {
     return out
   }
 
+  /**
+   * Every target some other source links to (`<kind>:<id>`): the Notes page's
+   * Unlinked filter keeps the standalone notes not in it (notes-home D5). Kept
+   * until the index changes.
+   */
+  linkedTargets(): ReadonlySet<string> {
+    if (this.linked?.built === this.built && this.linked.size === this.reverse.size) return this.linked.set
+    const set = new Set<string>()
+    for (const [tk, keys] of this.reverse) {
+      for (const k of keys) if (k !== tk && this.sources.has(k)) { set.add(tk); break }
+    }
+    this.linked = { built: this.built, size: this.reverse.size, set }
+    return set
+  }
+
+  private linked: { built: World | null; size: number; set: Set<string> } | null = null
+
   /** The items linking to `kind:id` the device can read, most recently changed first. */
   references(kind: LinkKind, id: string): Reference[] {
     const keys = this.reverse.get(`${kind}:${id}`)
@@ -452,6 +469,20 @@ export function useReferences(kind: LinkKind, id: string): Reference[] | null {
   useEffect(() => { sharedIndex() })
   if (!idx?.ready) return null
   return idx.references(kind, id)
+}
+
+const noSubscribe = () => () => {}
+
+/**
+ * The targets something links to, live (notes-home D5): null while the index is
+ * being built or while `enabled` is false, when nothing is read or built.
+ */
+export function useLinkedTargets(enabled: boolean): ReadonlySet<string> | null {
+  useSyncExternalStore(enabled ? subscribe : noSubscribe, () => version, () => version)
+  const idx = enabled ? sharedIndex() : null
+  useEffect(() => { if (enabled) sharedIndex() }, [enabled])
+  if (!idx?.ready) return null
+  return idx.linkedTargets()
 }
 
 /** Test hook: forget the shared index. */

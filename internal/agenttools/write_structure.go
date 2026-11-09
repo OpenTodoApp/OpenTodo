@@ -53,10 +53,10 @@ func init() {
 
 	register(tool{def: func(Caller) Definition {
 		return writeDef("set_favourite", "Add to or remove from Favourites",
-			"Pin a project to the user's Favourites in the sidebar (at the end) or remove it; the other entries keep their order.",
+			"Pin a project or a standalone note to the user's Favourites in the sidebar (at the end) or remove it; the other entries keep their order. A pinned note is also listed first on the Notes page.",
 			object([]string{"kind", "id", "favourite"}, map[string]any{
-				"kind":      map[string]any{"type": "string", "enum": []string{"project"}, "description": "What to pin: project."},
-				"id":        map[string]any{"type": "string", "description": "Project id."},
+				"kind":      map[string]any{"type": "string", "enum": []string{"project", "note"}, "description": "What to pin: project or note (a standalone note)."},
+				"id":        map[string]any{"type": "string", "description": "Project id or note id."},
 				"favourite": map[string]any{"type": "boolean", "description": "true to pin, false to remove."},
 			}), false, true, nil, false)
 	}, plan: (*Registry).planSetFavourite})
@@ -324,12 +324,12 @@ func (r *Registry) planSetFavourite(ctx context.Context, c Caller, a args, overl
 		return Plan{}, err
 	}
 	kind, err := a.str("kind")
-	if err != nil || kind != "project" {
-		return Plan{}, argErr(`kind: must be "project"`)
+	if err != nil || (kind != "project" && kind != "note") {
+		return Plan{}, argErr(`kind: must be "project" or "note"`)
 	}
 	id, err := a.str("id")
 	if err != nil || id == "" {
-		return Plan{}, argErr("id: the project id is required")
+		return Plan{}, argErr("id: the " + kind + " id is required")
 	}
 	if !a.present("favourite") {
 		return Plan{}, argErr("favourite: is required")
@@ -338,12 +338,25 @@ func (r *Registry) planSetFavourite(ctx context.Context, c Caller, a args, overl
 	if err != nil {
 		return Plan{}, err
 	}
-	snap, err := r.loadFor(ctx, c, overlay)
-	if err != nil {
-		return Plan{}, err
-	}
-	if _, ok := snap.projects[id]; !ok {
-		return Plan{}, notFound("project", []string{id})
+	// A note is pinned like a project (notes-home D4): a standalone note the caller
+	// can read, not in the Trash; a favourite holds no content, so this works on
+	// encrypted accounts too.
+	if kind == "note" {
+		_, notes, err := r.notesFor(ctx, c, overlay)
+		if err != nil {
+			return Plan{}, err
+		}
+		if _, ok := notes[id]; !ok {
+			return Plan{}, notFound("note", []string{id})
+		}
+	} else {
+		snap, err := r.loadFor(ctx, c, overlay)
+		if err != nil {
+			return Plan{}, err
+		}
+		if _, ok := snap.projects[id]; !ok {
+			return Plan{}, notFound("project", []string{id})
+		}
 	}
 	prefs, err := r.get(ctx, c.UserID, "user_prefs", "me")
 	if err != nil {

@@ -1,15 +1,17 @@
 // The Favourites group (sidebar-favourites D4, app-shell "Favourites group"): the
-// user's pinned projects, labels and saved filters, mixed, in the user's order, each
+// user's pinned projects, labels, saved filters and notes (notes-home D4), mixed, in the user's order, each
 // with the mark of its own group, its count by the rule of its kind (a project's on
 // hover, none on a label or a filter: quiet-sidebar D2) and the same menu. It has no chevron
 // and no actions; Alt+↑ / Alt+↓ on a row moves it among the favourites.
 import { type KeyboardEvent, useEffect, useMemo, useRef } from 'react'
-import { moveFavourite, type Favourite } from '../lib/favourites'
+import { favouriteEdges, moveFavourite, setFavourite, type Favourite } from '../lib/favourites'
 import { projectPath, rollUpCounts, type ProjectTree } from '../lib/projects'
 import type { Project } from '../lib/types'
 import { isDashboard, type ViewSummary } from '../lib/views'
 import { t } from '../lib/i18n'
 import { hueFor, ReadAs, SidebarGroup, SidebarItem } from '../ui'
+import { ActionMenu } from './menus/ActionMenu'
+import { pinItem } from './menus/pinItem'
 import { act } from './actionError'
 import { taskDrop } from './taskDrop'
 import { useMembershipMap } from '../lib/localData'
@@ -21,6 +23,20 @@ import { openTasksLabel, ProjectMark } from './Sidebar'
 import { ViewMark, ViewMenu } from './ViewsView'
 
 const keyOf = (f: Pick<Favourite, 'kind' | 'id'>) => `${f.kind}:${f.id}`
+
+/** A pinned note's menu: Pin to sidebar (checked, so choosing it unpins), Move up, Move down. */
+function NoteFavouriteMenu({ id, name, favourites, className }: { id: string; name: string; favourites: Favourite[]; className: string }) {
+  const { first, last } = favouriteEdges(favourites, 'note', id)
+  return (
+    <ActionMenu label={t('Menu for note {name}', { name })} title={name} groups={[
+      { items: [pinItem(true, () => setFavourite('note', id, false))] },
+      { items: [
+        { kind: 'action', id: 'up', label: t('Move up'), icon: 'arrow-up', shortcut: 'Alt+↑', disabled: first, reason: t('Already first'), onSelect: () => moveFavourite('note', id, -1) },
+        { kind: 'action', id: 'down', label: t('Move down'), icon: 'arrow-down', shortcut: 'Alt+↓', disabled: last, reason: t('Already last'), onSelect: () => moveFavourite('note', id, 1) },
+      ] },
+    ]} triggerClassName={`touch-target rounded-control px-1.5 py-0.5 text-faint hover:bg-sunken dark:hover:bg-raised ${className}`} />
+  )
+}
 
 export function FavouritesGroup({ favourites, route, collapsed, projects, tree, ownCounts, labelCounts, viewCounts, projectCountMode = 'hover', countsAll = false }: {
   favourites: Favourite[]
@@ -63,14 +79,14 @@ export function FavouritesGroup({ favourites, route, collapsed, projects, tree, 
     act(moveFavourite(f.kind, f.id, e.key === 'ArrowUp' ? -1 : 1))
   }
   const menuClass = countsAll ? 'ui-swap-menu' : 'hover-reveal'
-  const isActive = (f: Favourite) => (route.view === f.kind && 'id' in route && route.id === f.id)
+  const isActive = (f: Favourite) => (f.kind === 'note' ? route.view === 'notes' && route.id === f.id : route.view === f.kind && 'id' in route && route.id === f.id)
 
   return (
     <SidebarGroup title={t('Favourites')} collapsed={collapsed} testId="sidebar-favourites">
       {favourites.map((f) => {
         const common = {
           'data-favourite': keyOf(f), active: isActive(f), collapsed, onKeyDown: (e: KeyboardEvent<HTMLButtonElement>) => onKey(e, f),
-          onClick: () => navigate({ view: f.kind, id: f.id } as Route),
+          onClick: () => navigate(f.kind === 'note' ? { view: 'notes', id: f.id } : { view: f.kind, id: f.id } as Route),
         }
         let item
         let menu
@@ -83,6 +99,10 @@ export function FavouritesGroup({ favourites, route, collapsed, projects, tree, 
           item = <SidebarItem {...common} label={f.item.name} count={n} countMode={countsAll ? 'swap' : 'hidden'} countLabel={openTasksLabel(n)}
             leading={<span data-hue={hueFor(f.item.color)} className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-hue-solid" />} />
           menu = <LabelMenu label={f.item} within="favourites" className={menuClass} />
+        } else if (f.kind === 'note') {
+          const name = f.item.title.trim() || t('Untitled note')
+          item = <SidebarItem {...common} label={name} icon="notebook-pen" />
+          menu = <NoteFavouriteMenu id={f.id} name={name} favourites={favourites} className={menuClass} />
         } else {
           const c = viewCounts.get(f.id)
           const list = !isDashboard(f.item)

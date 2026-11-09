@@ -81,7 +81,7 @@ export const PhoneDrawer: StoryObj = {
   ),
 }
 
-/** Favourites (sidebar-favourites): a pinned saved filter, project and label, mixed in the user's order above Projects; Labels and Filters folded on this new device. */
+/** Favourites (sidebar-favourites): a pinned saved filter, project, label and note (notes-home), mixed in the user's order above Projects; Labels and Filters folded on this new device. */
 async function seedFavourites() {
   await seedInbox()
   const { createView } = await import('../lib/views')
@@ -90,6 +90,8 @@ async function seedFavourites() {
   await pin('view', seeded.deepWorkView)
   await pin('project', seeded.website)
   await pin('label', seeded.errand)
+  const { createNote } = await import('../lib/noteOps')
+  await pin('note', await createNote({ title: 'Wi-Fi' }))
 }
 export const Favourites: StoryObj = {
   ...withSeed(seedFavourites),

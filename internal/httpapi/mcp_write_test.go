@@ -792,3 +792,32 @@ func TestUntrustedTextInSharedProject(t *testing.T) {
 		t.Fatal("a read wrote")
 	}
 }
+
+// TestSetFavouriteNote (notes-home, mcp-server "Pinning notes in write tools"):
+// an allowed assistant pins a standalone note through the op log, the user's
+// phone receives it, and with the user's switch off nothing changes.
+func TestSetFavouriteNote(t *testing.T) {
+	e, tokenID, secret, c := agentReady(t)
+	resp, out := e.do("POST", "/api/v1/notes", map[string]any{"title": "Wi-Fi", "description": "home-5G"})
+	e.mustStatus(resp, 201, out)
+	note := out["id"].(string)
+	if sc, isErr := c.toolCall(secret, "set_favourite", map[string]any{"kind": "note", "id": "nope", "favourite": true}); !isErr || sc["error"] != "not_found" {
+		t.Fatalf("unknown note: %v", sc)
+	}
+	c.mustTool(secret, "set_favourite", map[string]any{"kind": "note", "id": note, "favourite": true})
+	ops, _, _ := syncAll(e, "phone", 0)
+	pinned := false
+	for _, o := range ops {
+		op := o.(map[string]any)
+		if op["entity"] == "user_prefs" && op["field"] == "favourites" && op["value"] == "note:"+note && op["device"] == "agent:"+tokenID {
+			pinned = true
+		}
+	}
+	if !pinned {
+		t.Fatalf("phone did not receive the pin: %v", ops)
+	}
+	e.allowMyAssistants(false)
+	if sc, isErr := c.toolCall(secret, "set_favourite", map[string]any{"kind": "note", "id": note, "favourite": false}); !isErr || sc["error"] != "writes_disabled_by_user" {
+		t.Fatalf("switch off: %v", sc)
+	}
+}
