@@ -71,7 +71,7 @@ Two build settings matter:
 
 | Setting | Effect |
 | --- | --- |
-| `OPENTODO_APP_BOUND_HOST` | empty (`none.invalid`, the default): a portable build that opens any server, without a service worker, so it needs the network. Set to a host name (`todo.example.com`, at most ten, comma separated): the app-bound domains list, and only for those origins `limitsNavigationsToAppBoundDomains` is switched on at runtime, which is what gives the web app its service worker, its precache and an offline start (design D2) |
+| `OPENTODO_APP_BOUND_HOST` | empty (the default): a portable build that opens any server, without a service worker, so it needs the network; its Info.plist has no `WKAppBoundDomains` at all, since the key alone, even with a placeholder, denies the bridge on every other server (`ios-bridge-portable`). Set to a host name (`todo.example.com`, at most ten, comma separated): the "App-bound domains" build phase writes them as `WKAppBoundDomains`, and only for those origins `limitsNavigationsToAppBoundDomains` is switched on at runtime, which is what gives the web app its service worker, its precache and an offline start (design D2) |
 | `OPENTODO_VERSION` | the version the shell reports to the web app and the app's `CFBundleShortVersionString`; `CFBundleVersion` is `major·10000 + minor·100 + patch` |
 
 A build without `OPENTODO_VERSION` reports `0.0.0-dev`, which is older than `MIN_SHELL_APP` (`0.10.0`) in `web/src/lib/shell.ts`, so the web app's About screen calls that build outdated. `make ios` and CI pass the version from `git describe`, so this only affects a plain Run from Xcode.
@@ -106,7 +106,7 @@ Certificates: `res/xml/network_security_config.xml` trusts the system and the us
 | `OpenTodo/WidgetPublication`, `OpenTodoWidget/TodayWidget` | the Today widget (WidgetKit, medium): rows from the last publication, counts only while locked, no request of its own |
 | `OpenTodoShare/ShareViewController` | the share sheet: text, links and files (10 files, 20 MB each, 25 MB in all) through the App Group, then `opentodo://share?files=1` and the `opentodo-files` message into the capture screen |
 | `OpenTodo/BiometricKeyStore` | the account key in the Keychain under `kSecAccessControlBiometryCurrentSet`, so an added face or finger invalidates it |
-| `OpenTodo/AppBoundDomains` | reads `WKAppBoundDomains` and turns `limitsNavigationsToAppBoundDomains` on only for those origins |
+| `OpenTodo/AppBoundDomains` | reads `WKAppBoundDomains` (only a one-server build has it) and turns `limitsNavigationsToAppBoundDomains` on only for those origins |
 
 Storage, the schedule, the widget data and the key are in the app's container and the App Group; nothing is backed up to iCloud unless the phone's own backup is on, and `Change server` (long-press the icon) asks once and then deletes all of it.
 
@@ -168,7 +168,7 @@ Record each run here: date, device, Android version, server version.
 
 ## Testing the iOS app
 
-- Unit tests (`make ios`, `OpenTodoTests`): the address rules, the health check's status and error mapping, the origin signatures, the version and version-code rules, the reminder schedule (future only, sorted, capped), the widget publication round trip, the share mapping and limits, the bridge script and its capability list, the background-request defaults, the app-bound-domain placeholder, the bundle's build number against its version, and what App Review reads from the bundle (the export compliance key, both privacy manifests).
+- Unit tests (`make ios`, `OpenTodoTests`): the address rules, the health check's status and error mapping, the origin signatures, the version and version-code rules, the reminder schedule (future only, sorted, capped), the widget publication round trip, the share mapping and limits, the bridge script and its capability list, the background-request defaults, no app-bound domain in the portable build, the bridge on a page from a server on an ordinary host (`BridgeOnAServerTests`), the bundle's build number against its version, and what App Review reads from the bundle (the export compliance key, both privacy manifests).
 - UI tests (`make ios`, `OpenTodoUITests`): the first-run screen in the real app — an unusable address is refused, a public `http` address is refused with the `https` suggestion as a button. They start from a clean install (`-OPENTODO_RESET`).
 - Not covered automatically, because no simulator command can grant a notification permission or tap: the notification prompt and the delivered reminder, the share sheet end to end, the Face ID prompt, the widget on a home screen. `docs/ios-app.md` says what these should do; record a run here when you do it.
 - The background refresh cannot be run in the simulator at all: `BGTaskScheduler.submit` answers `BGTaskScheduler is not available on this platform.` (`BGTaskSchedulerErrorDomain` code 1), so even the debugger's `_simulateLaunchForTaskWithIdentifier:` hook does nothing. It is the one part that is only ever exercised on a device.

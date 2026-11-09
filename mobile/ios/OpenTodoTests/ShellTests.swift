@@ -1,3 +1,5 @@
+import Network
+import UIKit
 import XCTest
 @testable import OpenTodo
 
@@ -82,5 +84,157 @@ final class HealthCheckTests: XCTestCase {
         XCTAssertEqual(HealthCheck.classify(untrusted), .untrusted)
         let wrapped = NSError(domain: "x", code: 1, userInfo: [NSUnderlyingErrorKey: untrusted])
         XCTAssertEqual(HealthCheck.classify(wrapped), .untrusted)
+    }
+}
+
+/// The bridge on a real page (ios-bridge-portable): the shell loads a page from a small
+/// server in this process and the page reports what it sees. Only the page's own script
+/// reports, with a request to its server, so the answer does not depend on an API that
+/// App-Bound Domains can switch off. The server is on this Mac's network address, not on
+/// 127.0.0.1: WebKit treats localhost and loopback addresses as app-bound whatever the
+/// app declares (`shouldTreatURLProtocolAsAppBound` in WebPageProxy.cpp), so a loopback
+/// page would see the bridge even in a build that denies it to every real server.
+@MainActor
+final class BridgeOnAServerTests: XCTestCase {
+    func testThePageSeesTheBridge() async throws {
+        let host = try XCTUnwrap(PageServer.networkAddress(), "this device has a network address besides loopback")
+        let server = try await PageServer.start(host: host)
+        defer { server.stop() }
+        let origin = try XCTUnwrap(URL(string: "http://\(host):\(server.port)"))
+        let shell = ShellController(origin: origin)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        shell.webView.frame = window.bounds
+        window.addSubview(shell.webView)
+        window.isHidden = false
+        defer { window.isHidden = true }
+        shell.load()
+        let report = try await server.report(timeout: 30)
+        XCTAssertEqual(report["origin"], origin.absoluteString)
+        XCTAssertEqual(report["handler"], "object", "the message handler reaches the page: \(report)")
+        XCTAssertEqual(report["shell"], "object", "window.opentodoShell exists: \(report)")
+        XCTAssertEqual(report["platform"], "ios")
+    }
+}
+
+/// A one-page HTTP server: `/` is a page whose script reports
+/// `typeof window.opentodoShell` and the message handler as `/report?…`.
+final class PageServer: @unchecked Sendable {
+    private static let page = """
+    <!doctype html><meta charset="utf-8"><title>bridge</title><script>
+    var s = window.opentodoShell, w = window.webkit;
+    fetch('/report?shell=' + typeof s + '&platform=' + encodeURIComponent(s ? s.platform : '') +
+      '&handler=' + typeof (w && w.messageHandlers && w.messageHandlers.opentodoNative) +
+      '&origin=' + encodeURIComponent(location.origin));
+    </script>
+    """
+
+    private let listener: NWListener
+    /// Every field below is touched on this queue only.
+    private let queue = DispatchQueue(label: "PageServer")
+    private var starting: CheckedContinuation<Void, Error>?
+    private var reported: [String: String]?
+    private var waiting: CheckedContinuation<[String: String], Error>?
+
+    private init(listener: NWListener) { self.listener = listener }
+
+    var port: UInt16 { listener.port?.rawValue ?? 0 }
+
+    /// The first IPv4 address of an interface that is up and not loopback (the simulator
+    /// shares the Mac's interfaces), or nil.
+    static func networkAddress() -> String? {
+        var list: UnsafeMutablePointer<ifaddrs>?
+        guard getifaddrs(&list) == 0, let first = list else { return nil }
+        defer { freeifaddrs(list) }
+        for entry in sequence(first: first, next: { $0.pointee.ifa_next }) {
+            let flags = Int32(entry.pointee.ifa_flags)
+            guard let address = entry.pointee.ifa_addr, address.pointee.sa_family == UInt8(AF_INET),
+                  flags & IFF_UP != 0, flags & IFF_RUNNING != 0, flags & IFF_LOOPBACK == 0 else { continue }
+            var name = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+            guard getnameinfo(address, socklen_t(address.pointee.sa_len), &name, socklen_t(name.count),
+                              nil, 0, NI_NUMERICHOST) == 0 else { continue }
+            let text = String(cString: name)
+            if !text.hasPrefix("169.254.") { return text }
+        }
+        return nil
+    }
+
+    static func start(host: String) async throws -> PageServer {
+        let parameters = NWParameters.tcp
+        parameters.requiredLocalEndpoint = .hostPort(host: NWEndpoint.Host(host), port: .any)
+        let server = PageServer(listener: try NWListener(using: parameters))
+        try await withCheckedThrowingContinuation { (done: CheckedContinuation<Void, Error>) in
+            server.queue.async {
+                server.starting = done
+                server.listener.stateUpdateHandler = { state in server.changed(state) }
+                server.listener.newConnectionHandler = { connection in server.serve(connection) }
+                server.listener.start(queue: server.queue)
+            }
+        }
+        return server
+    }
+
+    func stop() { listener.cancel() }
+
+    private func changed(_ state: NWListener.State) {
+        guard let starting else { return }
+        switch state {
+        case .ready: self.starting = nil; starting.resume()
+        case .failed(let error): self.starting = nil; starting.resume(throwing: error)
+        default: break
+        }
+    }
+
+    func report(timeout: TimeInterval) async throws -> [String: String] {
+        try await withCheckedThrowingContinuation { (done: CheckedContinuation<[String: String], Error>) in
+            queue.async {
+                if let reported = self.reported { return done.resume(returning: reported) }
+                self.waiting = done
+                self.queue.asyncAfter(deadline: .now() + timeout) {
+                    guard let waiting = self.waiting else { return }
+                    self.waiting = nil
+                    waiting.resume(throwing: NSError(domain: "PageServer", code: 1,
+                                                     userInfo: [NSLocalizedDescriptionKey: "the page never reported"]))
+                }
+            }
+        }
+    }
+
+    private func serve(_ connection: NWConnection) {
+        connection.start(queue: queue)
+        receive(connection, Data())
+    }
+
+    private func receive(_ connection: NWConnection, _ received: Data) {
+        connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { data, _, done, error in
+            let buffer = received + (data ?? Data())
+            guard let head = String(data: buffer, encoding: .utf8), head.contains("\r\n\r\n") else {
+                if done || error != nil { connection.cancel() } else { self.receive(connection, buffer) }
+                return
+            }
+            let target = head.split(separator: " ").dropFirst().first.map(String.init) ?? "/"
+            self.answer(connection, target)
+        }
+    }
+
+    private func answer(_ connection: NWConnection, _ target: String) {
+        var status = "404 Not Found", type = "text/plain", body = ""
+        if target == "/" {
+            status = "200 OK"
+            type = "text/html; charset=utf-8"
+            body = Self.page
+        } else if target.hasPrefix("/report?") {
+            status = "204 No Content"
+            var values: [String: String] = [:]
+            for item in URLComponents(string: target)?.queryItems ?? [] { values[item.name] = item.value ?? "" }
+            if reported == nil { reported = values }
+            if let waiting {
+                self.waiting = nil
+                waiting.resume(returning: values)
+            }
+        }
+        let bytes = Data(body.utf8)
+        let head = "HTTP/1.1 \(status)\r\nContent-Type: \(type)\r\nContent-Length: \(bytes.count)\r\n"
+            + "Cache-Control: no-store\r\nConnection: close\r\n\r\n"
+        connection.send(content: Data(head.utf8) + bytes, completion: .contentProcessed { _ in connection.cancel() })
     }
 }

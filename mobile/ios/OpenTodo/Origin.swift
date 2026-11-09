@@ -18,11 +18,14 @@ enum Origin {
         !(a.host ?? "").isEmpty && signature(a) == signature(b)
     }
 
-    /// `scheme://host[:port]` with a default port left out, which is what `location.origin` prints.
+    /// `scheme://host[:port]` with the scheme's own default port left out, which is what
+    /// `location.origin` prints: `https://…:80` keeps its port.
     static func pageOrigin(_ url: URL) -> String {
         guard var c = URLComponents(url: url, resolvingAgainstBaseURL: false), let host = c.host else { return "" }
+        let scheme = (c.scheme ?? "").lowercased()
+        c.scheme = scheme
         c.host = host.lowercased()
-        if c.port == 443 || c.port == 80 { c.port = nil }
+        if (scheme == "https" && c.port == 443) || (scheme == "http" && c.port == 80) { c.port = nil }
         c.path = ""
         c.query = nil
         c.fragment = nil
