@@ -82,6 +82,8 @@ async function streamAnswer(req: TurnRequest, signal: AbortSignal, on: { text: (
     failure = { err }
   }
   answer.text = text
+  // The steps stay on the answer (assistant-generative-ui D8).
+  if (statusLines.length) answer.status = [...statusLines]
   return { answer, proposal, failure, errorCode }
 }
 
@@ -207,6 +209,25 @@ function useReview(thread: AssistantThread | null, note: (x: AssistantThread, te
   return { review, setReview, result, setResult, reviewBusy, reviewRef, apply, discard, undo, toggle }
 }
 
+/** A question asked again: where it cuts the thread, its text and its skill. */
+interface Redo { cut: number; question: string; skill: AssistantSkill | null }
+
+/**
+ * The latest question of a thread, when it can be asked again (assistant-generative-ui
+ * D8): pasted text and photos are not kept, and a skill must still be offered.
+ */
+export function redoTarget(thread: AssistantThread | null, skills: AssistantSkill[]): Redo | null {
+  const msgs = thread?.messages ?? []
+  let i = msgs.length - 1
+  while (i >= 0 && msgs[i].role !== 'user') i--
+  if (i < 0) return null
+  const q = msgs[i]
+  if (q.pastedLines || q.photos) return null
+  const skill = q.skill ? skills.find((x) => x.name === q.skill) ?? null : null
+  if (q.skill && !skill) return null
+  return { cut: i, question: q.text, skill }
+}
+
 export function useAssistantConversation({ context, onApplied, userName = '' }: ConversationOptions) {
   // The cached status renders at once (offline too); a fresh one follows.
   const [serverStatus, setStatus] = useState<AssistantStatus | null>(assistantStatus)
@@ -221,6 +242,8 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
   const [statusAnnounce, setStatusAnnounce] = useState('')
   const live = useSentenceAnnouncer()
   const abort = useRef<AbortController | null>(null)
+  // Where an edited question replaces the thread (assistant-generative-ui D8).
+  const editCut = useRef<number | null>(null)
   const consent = useConsent(status, setStatus)
 
   // Tells the suggest-after-add trigger that a turn is running (it skips instead of replacing the draft).
@@ -268,22 +291,30 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
     }
   }
 
-  const send = async () => {
-    const { draft, skill: chosen, pasted, photos } = composer
+  /** Regenerate runs a question again from the thread, never from the composer (assistant-generative-ui D8). */
+  const send = async (redo?: Redo) => {
+    const { draft, pasted, photos } = redo ? { draft: redo.question, pasted: null, photos: [] as PreparedPhoto[] } : composer
+    const chosen = redo ? redo.skill : composer.skill
     // A skill, pasted material or photos can be sent without typed text.
     const question = draft.trim() || (chosen ? chosen.example : pasted ? t('Use the pasted text.') : photos.length ? t('Turn this into tasks') : '')
     if (!question || streaming) return
     const material = pasted
-    const selection = composer.selectedFor.current
-    const mustReview = composer.reviewNext.current
-    composer.reviewNext.current = false
+    const selection = redo ? null : composer.selectedFor.current
+    const mustReview = !redo && composer.reviewNext.current
+    // Edit and Regenerate replace the question they start from and everything after it.
+    const cut = redo ? redo.cut : editCut.current
+    editCut.current = null
     // The latest thread may still be loading from the device: start a new one then.
-    const current = thread ?? newThread(status?.provider ?? '')
-    composer.setDraft('')
-    composer.setSkill(null)
-    composer.setPasted(null)
-    composer.setPhotos([])
-    composer.clearSelection()
+    const loaded = thread ?? newThread(status?.provider ?? '')
+    const current = cut === null ? loaded : { ...loaded, messages: loaded.messages.slice(0, cut) }
+    if (!redo) {
+      composer.reviewNext.current = false
+      composer.setDraft('')
+      composer.setSkill(null)
+      composer.setPasted(null)
+      composer.setPhotos([])
+      composer.clearSelection()
+    }
     setError(null)
     rv.setReview(null)
     rv.setResult(null)
@@ -355,7 +386,21 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
     if (items && items.length) await offer(entry, items, mustReview || chosen?.id === 'capture' || photos.length > 0)
   }
 
+  /** Edit puts the latest question back in the composer; sending it replaces that question and its answer. */
+  const editLast = () => {
+    const target = redoTarget(thread, composer.skills)
+    if (!target || streaming) return
+    editCut.current = target.cut
+    composer.setDraft(target.question)
+    composer.chooseSkill(target.skill)
+  }
+  const regenerate = () => {
+    const target = redoTarget(thread, composer.skills)
+    if (target && !streaming) void send(target)
+  }
+
   const startNew = () => {
+    editCut.current = null
     abort.current?.abort()
     setThread(newThread(status?.provider ?? ''))
     rv.setReview(null)
@@ -371,12 +416,14 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
   const pickThread = (id: string) => {
     void listThreads().then((all) => {
       const item = all.find((x) => x.id === id)
-      if (item) { setThread(item); setThreads(null); rv.setReview(null); rv.setResult(null) }
+      if (item) { editCut.current = null; setThread(item); setThreads(null); rv.setReview(null); rv.setResult(null) }
     })
   }
 
   return {
     status, device, thread, threads, toggleThreads, clearAll, composer, streaming, error, statusAnnounce, live, abort, consent, review: rv,
-    send, startNew, pickThread, stop: () => abort.current?.abort(),
+    send, startNew, pickThread, stop: () => abort.current?.abort(), editLast, regenerate,
+    /** Whether the latest question can be asked again: its material (pasted text, photos) is not kept. */
+    canRedo: !!redoTarget(thread, composer.skills),
   }
 }

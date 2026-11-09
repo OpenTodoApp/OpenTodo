@@ -8,7 +8,7 @@ import type { PreparedPhoto } from '../../lib/assistantImages'
 import { isMaterial, type AssistantSkill } from '../../lib/assistantSkills'
 import { t } from '../../lib/i18n'
 import { ComposerFrame, Icon, Menu, MenuGroup, MenuItem } from '../../ui'
-import { OFFLINE_MESSAGE } from './AssistantPanelBody'
+import { OFFLINE_MESSAGE } from './assistantHints'
 import { useComposerCapture } from './ComposerCapture'
 
 export interface ComposerProps {

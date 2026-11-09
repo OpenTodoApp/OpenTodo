@@ -7250,5 +7250,11 @@
   "Link to": "Ligar a",
   "Link to…": "Ligar a…",
   "Linked references": "Referências ligadas",
-  "New note \"{title}\"": "Nova nota «{title}»"
+  "New note \"{title}\"": "Nova nota «{title}»",
+  "Copy answer": "Copiar resposta",
+  "Could not copy": "Não foi possível copiar",
+  "Edit question": "Editar pergunta",
+  "Jump to latest": "Ir para o mais recente",
+  "Regenerate": "Regenerar",
+  "{n, plural, one {# step} other {# steps}}": "{n, plural, one {# passo} other {# passos}}"
 }

@@ -7250,5 +7250,11 @@
   "Link to": "链接到",
   "Link to…": "链接到…",
   "Linked references": "链接引用",
-  "New note \"{title}\"": "新建笔记“{title}”"
+  "New note \"{title}\"": "新建笔记“{title}”",
+  "Copy answer": "复制回答",
+  "Could not copy": "无法复制",
+  "Edit question": "编辑问题",
+  "Jump to latest": "跳到最新",
+  "Regenerate": "重新生成",
+  "{n, plural, one {# step} other {# steps}}": "{n, plural, other {# 个步骤}}"
 }

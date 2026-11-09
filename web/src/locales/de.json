@@ -7250,5 +7250,11 @@
   "Link to": "Verknüpfen mit",
   "Link to…": "Verknüpfen mit…",
   "Linked references": "Verlinkt von",
-  "New note \"{title}\"": "Neue Notiz „{title}“"
+  "New note \"{title}\"": "Neue Notiz „{title}“",
+  "Copy answer": "Antwort kopieren",
+  "Could not copy": "Kopieren nicht möglich",
+  "Edit question": "Frage bearbeiten",
+  "Jump to latest": "Zum Neuesten springen",
+  "Regenerate": "Neu erzeugen",
+  "{n, plural, one {# step} other {# steps}}": "{n, plural, one {# Schritt} other {# Schritte}}"
 }
