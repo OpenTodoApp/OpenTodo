@@ -201,8 +201,9 @@ export function useListModel(route: ListRoute, userId?: string) {
   const layout = useProjectLayout(projectId)
   const { board, sections, liveSections, collapsedSections } = layout
 
-  // Project lists keep deferred and parked tasks in a Later group at the
-  // end (someday-and-evening D2), each with its subtasks (subtasks-follow-later);
+  // Project lists keep deferred and parked tasks apart from the active ones, each with its
+  // subtasks (subtasks-follow-later): in a folded Later inside their own section when the list
+  // is grouped by section (later-in-section), else in a Later group at the end (someday-and-evening D2);
   // the board keeps every card in its column.
   // The split, the tree and the section buckets follow the rows a write changed (incremental-list-updates D2).
   const partsOf = useRef(new Derived<TreeParts, [boolean, boolean, string, string | null, Section[]]>(treeParts,
@@ -243,11 +244,11 @@ export function useListModel(route: ListRoute, userId?: string) {
   // A write keeps every group and row it did not change (list-rendering-at-scale D6).
   const keptGroups = useRef<ListGroup[] | null>(null)
   const groups = useMemo<ListGroup[]>(() => (keptGroups.current = keepGroups(keptGroups.current, listGroups({
-    view: route.view, tasks, laterTasks, tree, today, resolved: dt.resolved, collapsed, blocked: held, taskMap,
+    view: route.view, tasks, laterTasks, projectId, timeline: layout.timeline, tree, today, resolved: dt.resolved, collapsed, blocked: held, taskMap,
     projects, projectMap, fields: sortFields, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday,
     upcomingToday,
     // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  }))), [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, board, columns, buckets, liveSections, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday, upcomingToday])
+  }))), [dt.resolved, tree, tasks, laterTasks, projectId, layout.timeline, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, board, columns, buckets, liveSections, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday, upcomingToday])
   // Upcoming's projected occurrences (series-occurrences D4): off by default, per device; never rows.
   const projectedGroups = useUpcomingGroups(route.view === 'upcoming', groups, { allTasks, projects, today, zone, duration: filterKey ? duration : null, queryTest, resolved: dt.resolved })
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
