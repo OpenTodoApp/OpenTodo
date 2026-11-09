@@ -6,8 +6,10 @@
 // the label at the metadata size and medium weight in the default text tone, in
 // sentence case whoever named the group, and the count in the faint tone. On a board
 // column's sunken surface it stays a plain heading. No header is red: how late a task
-// is shows on its row.
+// is shows on its row. A coloured section's header is tinted with its hue (section-tint):
+// the bar's fill, or on a board a strip of the same fill, never its rows.
 import type { ReactNode } from 'react'
+import type { HueName } from '../tokens/palette'
 import { Icon } from '../Icon'
 import { ReadAs } from '../Chips'
 import { t } from '../../lib/i18n'
@@ -43,12 +45,14 @@ export interface ListGroupHeaderProps {
   className?: string
   /** The filled group bar of a list; a board column passes false (its column is the surface). */
   bar?: boolean
+  /** A palette hue tints the header (a coloured section): the bar's fill, or a strip of the same fill on a board column. */
+  hue?: HueName
 }
 
 /** The label's classes (precision-rows D4): one style whether the view or the user named the group; `kind` stays a hook for tests and drop targets. */
 const GROUP_LABEL = 'min-w-0 truncate text-meta font-medium text-default'
 
-export function ListGroupHeader({ title, count, countLabel, countTone = 'faint', kind = 'generated', collapsed, onToggle, actions, actionsAlwaysVisible = false, note, detail, level = 2, testId, className = '', bar = true }: ListGroupHeaderProps) {
+export function ListGroupHeader({ title, count, countLabel, countTone = 'faint', kind = 'generated', collapsed, onToggle, actions, actionsAlwaysVisible = false, note, detail, level = 2, testId, className = '', bar = true, hue }: ListGroupHeaderProps) {
   const H = level === 2 ? 'h2' : 'h3'
   const collapsible = onToggle !== undefined
   const text = (
@@ -59,7 +63,7 @@ export function ListGroupHeader({ title, count, countLabel, countTone = 'faint',
     </>
   )
   return (
-    <div className={`group flex items-center gap-1.5 ${bar ? 'mt-2 mb-0.5 min-h-8 rounded-chip bg-raised px-2' : 'min-h-9 px-1'} ${actionsAlwaysVisible ? 'flex-wrap' : ''} ${className}`} data-group-header data-group-bar={bar || undefined} data-testid={testId} data-collapsed={collapsed || undefined}>
+    <div className={`group flex items-center gap-1.5 ${bar ? 'mt-2 mb-0.5 min-h-8 rounded-chip px-2' : `min-h-9 ${hue ? 'rounded-chip px-2' : 'px-1'}`} ${hue ? 'ui-group-tint' : bar ? 'bg-raised' : ''} ${actionsAlwaysVisible ? 'flex-wrap' : ''} ${className}`} data-group-header data-group-bar={bar || undefined} data-hue={hue} data-testid={testId} data-collapsed={collapsed || undefined}>
       <H className="flex min-w-0 flex-1 items-center">
         {collapsible ? (
           // Named by its visible title and count (WCAG 2.5.3 Label in Name); aria-expanded says whether it is open.

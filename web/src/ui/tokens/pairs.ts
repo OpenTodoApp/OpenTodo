@@ -60,16 +60,23 @@ export const PAIRS: Pair[] = [
     ...text('text-strong', [`hue-${h}-soft`]),
     ...text('faint', [`hue-${h}-past`]),
     ...ui(`hue-${h}-solid`, ['canvas']),
+    // A coloured section's header (section-tint): the label, the count, the chevron,
+    // the actions and Show on the tinted bar or board strip. No accent tone sits there.
+    ...['text', 'muted', 'faint'].flatMap((fg) => text(fg, [`hue-${h}-tint`])),
   ]),
 ]
 
 /**
  * Colours the stylesheet computes in a component class rather than naming as a token,
  * measured like tokens: the past calendar block's fill is `.ui-block--past` in
- * index.css (surfaces-v2 D3), the soft fill mixed 55 % towards the surface.
+ * index.css (surfaces-v2 D3), the soft fill mixed 55 % towards the surface; a coloured
+ * section's header is `.ui-group-tint` (section-tint), the soft fill mixed 50 % towards the surface.
  */
 export const DERIVED_TOKENS: Record<string, string> = Object.fromEntries(
-  HUE_NAMES.map((h) => [`hue-${h}-past`, `color-mix(in oklab, var(--ot-hue-${h}-soft) 55%, var(--ot-surface))`]),
+  HUE_NAMES.flatMap((h) => [
+    [`hue-${h}-past`, `color-mix(in oklab, var(--ot-hue-${h}-soft) 55%, var(--ot-surface))`],
+    [`hue-${h}-tint`, `color-mix(in oklab, var(--ot-hue-${h}-soft) 50%, var(--ot-surface))`],
+  ]),
 )
 
 /**
