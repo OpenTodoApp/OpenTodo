@@ -2145,6 +2145,9 @@ data: {"text":"Looking at Today…"}
 event: text
 data: {"text":"I've proposed moving 12 tasks to Friday. "}
 
+event: block
+data: {"kind":"tasks","ids":["…","…"]}
+
 event: usage
 data: {"input":2700,"output":360,"month_total":18240,"cap":500000,"own_key":false}
 
@@ -2156,6 +2159,8 @@ data: {"stop_reason":"end_turn","server_time":"2026-10-12T10:00:00Z"}
 ```
 
 In `usage`, `month_total` is what counts toward the cap and `cap` is `0` for a turn the cap does not apply to (your own key while `cap_member_keys` is off); `own_key` marks a turn on your own key.
+
+`block` (change `assistant-generative-ui`) is a view the app shows in the answer where it arrives, between the text before and after it: at most 4 per answer, each with its kind and checked parameters only, never the content of what it names (the app reads that from its own data). Kinds: `tasks` (`ids`, optional `title`), `calendar` (`date`, `span` `day` or `week`), `choice` (`question`, `options`: 2 to 4 answers; the one the person picks is sent as their next message), `map` (`task_ids`, `place_ids`), `note` (`id`) and `project` (`id`). Every id names something the person can see and that is not in a project kept away from assistants. A client skips event types it does not know.
 
 `changeset` comes at most once, only after `end_turn`, with at most 50 entities: `patch` is what to write, `base` the values it was planned on (for "changed since proposed"), `create` marks new entities, `shared` marks shared projects. The server never applies it: the app applies the confirmed part as ordinary ops with device `assistant:<device-id>`, which `/api/v1/sync` accepts and history labels "Assistant". `done.stop_reason` is `end_turn`, `max_tokens` (with a `message`; no change set), `refusal` (`message`: "The model declined this request."; no change set) or `round_limit` (more than 12 model calls). A failure ends the stream with `event: error` and `{code, message}`: `provider_auth`, `provider_not_found`, `provider_rate_limited`, `provider_error`, `images_unsupported` (the provider refused the photos) or `timeout`; never a key or the provider's error text. Usage is recorded whatever the outcome.
 

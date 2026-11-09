@@ -834,6 +834,10 @@ const shots = [
   { name: 'assistant-review', server: 'assistant', async run(p) {
     await ask(p, 'Move everything overdue to Friday', () => p.locator('[data-assistant-review]').waitFor({ timeout: 20000 }))
   }, async after(p) { await p.locator('[data-assistant-review]').getByRole('button', { name: 'Discard' }).click().catch(() => {}) } },
+  // Blocks in an answer (assistant-generative-ui): the day's tasks and the day as planned.
+  { name: 'assistant-answers', server: 'assistant', async run(p) {
+    await ask(p, 'Plan my day', () => p.locator('[data-assistant-panel] [data-assistant-block="calendar"] [data-agenda-item]').first().waitFor({ timeout: 20000 }))
+  } },
   { name: 'assistant-phone', server: 'assistant', phone: true, async run(p) {
     await ask(p, 'Move everything overdue to Friday', () => p.locator('[data-assistant-review]').waitFor({ timeout: 20000 }))
   }, async after(p) { await p.locator('[data-assistant-review]').getByRole('button', { name: 'Discard' }).click().catch(() => {}) } },

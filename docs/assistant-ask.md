@@ -23,7 +23,7 @@ The button, the shortcut and the page only work when the assistant is available 
 
 ## Ask and review
 
-Type a question and press <kbd>Enter</kbd> (<kbd>Shift</kbd>+<kbd>Enter</kbd> adds a line). The answer appears as it is written; lines such as "Looking at Today…" show what the assistant is reading. Screen readers hear the answer a sentence at a time.
+Type a question and press <kbd>Enter</kbd> (<kbd>Shift</kbd>+<kbd>Enter</kbd> adds a line). The answer appears as it is written; lines such as "Looking at Today…" show what the assistant is reading. Screen readers hear the answer a sentence at a time. Answers can also [show your tasks](assistant-answers.md).
 
 When you ask for changes, the answer ends with **Proposed changes**: one line per task or project, each change in words ("Due Sun 11 Oct → Fri 16 Oct", "Completed", "New task in Garden: Buy seeds").
 
