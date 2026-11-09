@@ -169,9 +169,11 @@ export async function runDeviceTurn(req: TurnRequest, onEvent: (e: TurnEvent) =>
   let draft: ProposedChange[] = []
   const display: DisplayTurn = { shown: 0 }
   let input = 0
+  let cached = 0
+  let cacheWrite = 0
   let output = 0
   let paused = false
-  const usage = () => onEvent({ type: 'usage', input, output, month_total: 0, cap: 0, own_key: true })
+  const usage = () => onEvent({ type: 'usage', input, ...(cached || cacheWrite ? { cached, cache_write: cacheWrite } : {}), output, month_total: 0, cap: 0, own_key: true })
   const done = (stop: string, message?: string) => {
     usage()
     onEvent({ type: 'done', stop_reason: stop, ...(message ? { message } : {}) })
@@ -191,6 +193,8 @@ export async function runDeviceTurn(req: TurnRequest, onEvent: (e: TurnEvent) =>
       return failed('provider_error', 'the provider could not answer')
     }
     input += r.input
+    cached += r.cached ?? 0
+    cacheWrite += r.cacheWrite ?? 0
     output += r.output
     switch (r.stop) {
       case 'end_turn': {

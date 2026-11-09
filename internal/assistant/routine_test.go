@@ -106,7 +106,7 @@ func TestRoutineChecks(t *testing.T) {
 	}
 
 	// The allowance: at the cap no request is made.
-	_ = svc.Store.AddUsage(ctx, "u1", 900, 100, false)
+	_ = svc.Store.AddUsage(ctx, "u1", Tokens{Input: 900, Output: 100}, false)
 	_, err = svc.Routine(ctx, set, routineCall("text"))
 	if !errors.As(err, &re) || re.Code != CodeAIQuota || p.calls != 0 {
 		t.Fatalf("quota: %v, %d calls", err, p.calls)

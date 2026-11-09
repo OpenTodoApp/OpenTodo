@@ -41,7 +41,7 @@ export interface DraftAnswer {
   note: string
   errors: DraftProblem[]
   warnings?: { step: string; kind: string; reason: string; message: string }[]
-  usage?: { input: number; output: number; month_total: number; cap: number; own_key: boolean }
+  usage?: { input: number; output: number; cached?: number; cache_write?: number; month_total: number; cap: number; own_key: boolean }
 }
 
 /** A webhook by its host only: its address may hold a secret. */

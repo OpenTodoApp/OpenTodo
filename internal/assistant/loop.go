@@ -143,9 +143,8 @@ type Result struct {
 	Stop    Stop
 	Message string
 	Changes []Proposed
-	Input   int64
-	Output  int64
-	Err     error
+	Tokens
+	Err error
 }
 
 var idPattern = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
@@ -282,8 +281,7 @@ func (l *Loop) Run(ctx context.Context, prov Provider, in TurnInput, ev Events) 
 	paused := false
 	for round := 0; round < MaxRounds; round++ {
 		r, err := conv.Next(ctx, ev.Text)
-		res.Input += r.Input
-		res.Output += r.Output
+		res.Add(r.Tokens)
 		if err != nil {
 			res.Err = err
 			return res
