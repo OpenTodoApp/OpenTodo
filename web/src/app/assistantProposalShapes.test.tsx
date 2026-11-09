@@ -95,6 +95,17 @@ describe('proposal shapes (5.2)', () => {
     expect(r.container.querySelectorAll('[data-proposal-outline] input[type="checkbox"]')).toHaveLength(6)
   })
 
+  it('an outline lists every item it cannot place in the tree, so each keeps its checkbox', async () => {
+    const { r } = await card([
+      { entity: 'project', entityId: 'p', create: true, patch: { name: 'Move flat' } },
+      { entity: 'task', entityId: 't1', create: true, patch: { title: 'In a section that is not new', project_id: 'p', section_id: 'old-section' } },
+      { entity: 'label', entityId: 'l1', create: true, patch: { name: 'moving' } },
+    ])
+    await waitFor(() => !!r.container.querySelector('[data-proposal-outline]'), 'the outline')
+    expect(r.container.querySelectorAll('[data-proposal-outline] input[type="checkbox"]')).toHaveLength(3)
+    expect(r.container.querySelector('[data-review-item="t1"]')).not.toBeNull()
+  })
+
   it('a proposal that sets places shows as a map with one checkbox per item, while maps are on', async () => {
     await setMeta('mapsAvailable', true)
     const ids = await Promise.all(['Pick up parcel', 'Buy ink'].map((title) => createTask({ title })))
@@ -140,6 +151,17 @@ describe('edits before applying (5.3)', () => {
     await waitFor(() => !!document.querySelector('[data-assistant-result] button'), 'Undo')
     await click(document.querySelector('[data-assistant-result] button')!)
     await waitFor(async () => !!(await db.tasks.get('new-landlord'))!.deleted_at, 'in the Trash')
+  })
+
+  it('Enter on Cancel cancels the edit; Enter in a field keeps it', async () => {
+    const edits: unknown[] = []
+    const review = await reviewChangeSet([{ entity: 'task', entityId: 'n', create: true, patch: { title: 'Call landlord', due: { date: '2026-11-13' } } }])
+    const r = await render(<ChangeSetReview review={review} result={null} busy={false} shapes onToggle={noop} onApply={noop} onDiscard={noop} onUndo={noop} onEdit={(_i, e) => edits.push(e)} />)
+    await click(r.container.querySelector('[data-edit-item]')!)
+    await type(r.container.querySelector<HTMLInputElement>('[data-edit-field="title"]')!, 'Something else')
+    const cancel = [...r.container.querySelectorAll<HTMLButtonElement>('[data-assistant-editor] button')].find((b) => b.textContent === 'Cancel')!
+    await key(cancel, 'Enter')
+    expect(edits).toEqual([])
   })
 
   it('a wrong value shows its error and keeps the proposal as it was', async () => {

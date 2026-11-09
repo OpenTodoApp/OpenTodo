@@ -90,7 +90,8 @@ function ItemEditor({ item, index, onEdit, onClose }: { item: ReviewItem; index:
   }
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     // Enter and Esc belong to the editor here, not to the card (apply, discard).
-    if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); done() }
+    const inField = (e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'SELECT'
+    if (e.key === 'Enter' && inField) { e.preventDefault(); e.stopPropagation(); done() }
     if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onClose() }
   }
   return (

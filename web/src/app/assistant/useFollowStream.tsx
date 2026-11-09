@@ -20,8 +20,8 @@ export interface FollowStream {
   jump: () => void
 }
 
-/** `active`: a conversation is shown (the empty state never follows). */
-export function useFollowStream(active: boolean): FollowStream {
+/** `active`: a conversation is shown (the empty state never follows); `threadId`: the conversation shown. */
+export function useFollowStream(active: boolean, threadId?: string): FollowStream {
   const reduced = useMediaQuery('(prefers-reduced-motion: reduce)')
   const stick = useStickToBottom({ initial: 'instant', resize: reduced ? 'instant' : 'smooth' })
   const { scrollRef, contentRef: stickContent } = stick
@@ -29,8 +29,9 @@ export function useFollowStream(active: boolean): FollowStream {
     stickContent(el)
     scrollRef(scrollerOf(el))
   }, [scrollRef, stickContent])
-  // A new thread (or the first message) starts at its end.
-  useEffect(() => { if (active) void stick.scrollToBottom('instant') }, [active]) // eslint-disable-line react-hooks/exhaustive-deps
+  // A conversation opens at its end: the first message, a new thread, or one picked from History.
+  const { scrollToBottom } = stick
+  useEffect(() => { if (active) void scrollToBottom('instant') }, [active, threadId, scrollToBottom])
   return { contentRef, away: active && !stick.isAtBottom, jump: () => void stick.scrollToBottom(reduced ? 'instant' : 'smooth') }
 }
 
