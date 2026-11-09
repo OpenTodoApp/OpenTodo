@@ -111,7 +111,8 @@ func TestTurnRunsSkill(t *testing.T) {
 		tools = append(tools, tl.(map[string]any)["name"].(string))
 	}
 	slices.Sort(tools)
-	if strings.Join(tools, ",") != "get_task,list_tasks,schedule_tasks,search_tasks,update_tasks" {
+	// Its registry tools and its display tools (assistant-generative-ui D1).
+	if strings.Join(tools, ",") != "ask_choice,get_task,list_tasks,schedule_tasks,search_tasks,show_calendar,update_tasks" {
 		t.Fatalf("tools offered = %v", tools)
 	}
 	uses, err := (*svc).Store.SkillUses(t.Context(), userIDOf(t, e))
