@@ -337,14 +337,15 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'dashboard.move-next', keys: ['Shift+→'], description: 'On a board: move the selected card to the next panel that has a rule, applying it', section: 'filter', scope: 'view', views: ['dashboard'] },
   { id: 'filter.history', keys: ['↑', '↓'], description: 'In the query of New view: recall recent queries on this device', section: 'filter', scope: 'view', views: ['filter'], local: true, typing: true },
 
-  // ---- group and order (display-keys): the Display options of a project's list, a label's page and a saved view,
+  // ---- group and order (display-keys): the Display options of a project's list, a label's page, a saved view, Today, Upcoming and the Inbox,
   // as `r` sequences; a list registers only the choices its panel offers.
   { id: 'arrange.group-section', keys: ['r g s'], label: 'Section', description: 'Group by section (in a project)', section: 'arrange', scope: 'list' },
-  { id: 'arrange.group-project', keys: ['r g j'], label: 'Project', description: 'Group by project (on a label page or in a saved view)', section: 'arrange', scope: 'list' },
+  { id: 'arrange.group-project', keys: ['r g j'], label: 'Project', description: 'Group by project (on a label page, in a saved view or on Today)', section: 'arrange', scope: 'list' },
   { id: 'arrange.group-none', keys: ['r g n'], label: 'None', description: 'No grouping', section: 'arrange', scope: 'list' },
   { id: 'arrange.group-due', keys: ['r g d'], label: 'Due date', description: 'Group by due date', section: 'arrange', scope: 'list' },
   { id: 'arrange.group-priority', keys: ['r g p'], label: 'Priority', description: 'Group by priority', section: 'arrange', scope: 'list' },
-  { id: 'arrange.group-label', keys: ['r g l'], label: 'Label', description: 'Group by label (in a project or a saved view)', section: 'arrange', scope: 'list' },
+  { id: 'arrange.group-label', keys: ['r g l'], label: 'Label', description: 'Group by label (in a project, a saved view, Today or the Inbox)', section: 'arrange', scope: 'list' },
+  { id: 'arrange.group-time', keys: ['r g t'], label: 'Time of day', description: 'Group by time of day (on Today)', section: 'arrange', scope: 'list' },
   { id: 'arrange.order-manual', keys: ['r o m'], label: 'Manual order', description: 'Order by manual order', section: 'arrange', scope: 'list' },
   { id: 'arrange.order-priority', keys: ['r o p'], label: 'Priority', description: 'Order by priority', section: 'arrange', scope: 'list' },
   { id: 'arrange.order-due', keys: ['r o d'], label: 'Due date', description: 'Order by due date', section: 'arrange', scope: 'list' },

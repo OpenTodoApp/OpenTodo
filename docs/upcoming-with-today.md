@@ -20,6 +20,8 @@ Each task is listed once. A task due tomorrow whose deadline has passed is under
 
 Earlier works as in Today: **Move all to today** and **Reschedule…** in its header, and the group remembers on this device whether you folded it.
 
+The Today part follows Today's own [Display options](arrange-built-in-views.md), grouped by project for example, so it looks as Today does. Upcoming's own order and Nest subtasks apply from Tomorrow on.
+
 ## With a Today limit
 
 With a [Today limit](today-limit.md), the same tasks fill the slots as in Today. The others wait in the folded **Waiting for a slot** group before Tomorrow, with **Take a slot** in their menu. Tasks after today never take a slot. **Done today** and **Close the day** stay on Today, since Upcoming looks ahead.

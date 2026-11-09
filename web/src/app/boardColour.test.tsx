@@ -12,7 +12,7 @@ import { saveViewMode } from '../lib/sections'
 import { click, mockFetch, noPublicLinks, render, spokenText, waitFor } from '../ui/test-utils'
 import { resetPanel } from './panel'
 import { TaskListView } from './TaskListView'
-import { DisplayOptionsBody } from './views/DisplayPanel'
+import { DisplayOptionsBody } from './views/DisplayOptionsBody'
 
 beforeEach(async () => {
   await db.delete()

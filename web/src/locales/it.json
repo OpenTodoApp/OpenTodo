@@ -7160,9 +7160,9 @@
   "Show tasks assigned to others": "Mostra le attività assegnate ad altri",
   "Group and order": "Raggruppa e ordina",
   "Group by due date": "Raggruppa per data di scadenza",
-  "Group by label (in a project or a saved view)": "Raggruppa per etichetta (in un progetto o in una vista salvata)",
+  "Group by label (in a project, a saved view, Today or the Inbox)": "Raggruppa per etichetta (in un progetto, in una vista salvata, in Oggi o in «In arrivo»)",
   "Group by priority": "Raggruppa per priorità",
-  "Group by project (on a label page or in a saved view)": "Raggruppa per progetto (nella pagina di un’etichetta o in una vista salvata)",
+  "Group by project (on a label page, in a saved view or on Today)": "Raggruppa per progetto (nella pagina di un’etichetta, in una vista salvata o in Oggi)",
   "Group by section (in a project)": "Raggruppa per sezione (in un progetto)",
   "Group by: {name}": "Raggruppa per: {name}",
   "No grouping": "Nessun raggruppamento",
@@ -7243,5 +7243,8 @@
   "Stop emails": "Interrompi le email",
   "Stop emails from “{routine}”?": "Interrompere le email di «{routine}»?",
   "You will get no more emails from “{routine}”.": "Non riceverai più email da «{routine}».",
-  "Email project members: {subject}": "Invia un’email ai membri del progetto: {subject}"
+  "Email project members: {subject}": "Invia un’email ai membri del progetto: {subject}",
+  "Time of day": "Momento della giornata",
+  "Nest subtasks": "Annida le sottoattività",
+  "Group by time of day (on Today)": "Raggruppa per momento della giornata (in Oggi)"
 }

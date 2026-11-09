@@ -240,11 +240,12 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | Keys | What it does |
 | --- | --- |
 | <kbd>r</kbd> then <kbd>g</kbd> then <kbd>s</kbd> | Group by section (in a project) |
-| <kbd>r</kbd> then <kbd>g</kbd> then <kbd>j</kbd> | Group by project (on a label page or in a saved view) |
+| <kbd>r</kbd> then <kbd>g</kbd> then <kbd>j</kbd> | Group by project (on a label page, in a saved view or on Today) |
 | <kbd>r</kbd> then <kbd>g</kbd> then <kbd>n</kbd> | No grouping |
 | <kbd>r</kbd> then <kbd>g</kbd> then <kbd>d</kbd> | Group by due date |
 | <kbd>r</kbd> then <kbd>g</kbd> then <kbd>p</kbd> | Group by priority |
-| <kbd>r</kbd> then <kbd>g</kbd> then <kbd>l</kbd> | Group by label (in a project or a saved view) |
+| <kbd>r</kbd> then <kbd>g</kbd> then <kbd>l</kbd> | Group by label (in a project, a saved view, Today or the Inbox) |
+| <kbd>r</kbd> then <kbd>g</kbd> then <kbd>t</kbd> | Group by time of day (on Today) |
 | <kbd>r</kbd> then <kbd>o</kbd> then <kbd>m</kbd> | Order by manual order |
 | <kbd>r</kbd> then <kbd>o</kbd> then <kbd>p</kbd> | Order by priority |
 | <kbd>r</kbd> then <kbd>o</kbd> then <kbd>d</kbd> | Order by due date |

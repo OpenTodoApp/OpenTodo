@@ -161,7 +161,7 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           assignee={r.task.assignee_id && r.task.project_id && c.memberMap.has(r.task.project_id)
             ? (r.task.assignee_id === c.userId ? t('You') : memberName(r.task.assignee_id, c.memberMap) ?? t('Former member')) : null}
           assignedToMe={!!c.userId && r.task.assignee_id === c.userId}
-          showProject={c.view !== 'project' && c.view !== 'label' && c.view !== 'inbox'}
+          showProject={c.view !== 'project' && c.view !== 'label' && c.view !== 'inbox' && !r.implied?.project}
           source={c.view === 'inbox' && r.depth === 0 && !c.board}
           implied={r.implied}
           omitLabel={c.view === 'label' ? c.labelId : undefined}

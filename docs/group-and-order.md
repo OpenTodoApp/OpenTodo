@@ -48,4 +48,4 @@ A label page and a [saved view](saved-views.md) keep their **own** manual order.
 - Tasks you never moved follow the ones you placed, in project order, so a new task appears after them.
 - The order is kept for up to 500 tasks per page, follows you to your other devices and works offline. If you reorder a page on two devices offline, the last device to sync wins.
 
-Today, Upcoming, Anytime, Someday, Assigned to me, Completed and places have fixed orders. **New view** offers Manual order after the view is saved.
+Anytime, Someday, Assigned to me, Completed and places have fixed orders; Today, Upcoming and the Inbox have [their own options](arrange-built-in-views.md). **New view** offers Manual order after the view is saved.

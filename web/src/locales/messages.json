@@ -7055,7 +7055,7 @@
   "Group by due date": [
     "web/src/lib/shortcuts.ts"
   ],
-  "Group by label (in a project or a saved view)": [
+  "Group by label (in a project, a saved view, Today or the Inbox)": [
     "web/src/lib/shortcuts.ts"
   ],
   "Group by part of the day": [
@@ -7064,10 +7064,13 @@
   "Group by priority": [
     "web/src/lib/shortcuts.ts"
   ],
-  "Group by project (on a label page or in a saved view)": [
+  "Group by project (on a label page, in a saved view or on Today)": [
     "web/src/lib/shortcuts.ts"
   ],
   "Group by section (in a project)": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Group by time of day (on Today)": [
     "web/src/lib/shortcuts.ts"
   ],
   "Group by: {name}": [
@@ -9757,6 +9760,9 @@
   ],
   "Neither the server nor the app keeps the audio or the text. Only the task you save with Enter is stored and synced.": [
     "web/src/app/VoiceSettings.tsx"
+  ],
+  "Nest subtasks": [
+    "web/src/app/views/DisplayPanel.tsx"
   ],
   "Never": [
     "web/src/app/PublicLinksSection.tsx",
@@ -13682,7 +13688,8 @@
     "web/src/app/task-list/EarlierActions.tsx"
   ],
   "Reset": [
-    "web/src/app/focus/FocusSettings.tsx"
+    "web/src/app/focus/FocusSettings.tsx",
+    "web/src/app/views/DisplayPanel.tsx"
   ],
   "Reset link created for {name}.": [
     "web/src/app/UsersPanel.tsx"
@@ -18376,6 +18383,10 @@
   "Time format": [
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Time of day": [
+    "web/src/app/views/DisplayPanel.tsx",
+    "web/src/lib/shortcuts.ts"
   ],
   "Time passed": [
     "web/src/app/task-list/WaitingSoon.tsx"

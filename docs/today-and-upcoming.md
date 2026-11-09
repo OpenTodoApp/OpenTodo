@@ -49,4 +49,4 @@ The Inbox holds tasks with no project and no plan. A due date, a start date or S
 
 To see the hours, switch to **Week**: timed tasks as blocks on a grid ([Time blocking](time-blocking.md)).
 
-Subtasks show up on their own in both views, with their parent's name.
+Subtasks show up on their own, with their parent's name, unless you [nest them](arrange-built-in-views.md).

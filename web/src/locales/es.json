@@ -7160,9 +7160,9 @@
   "Show tasks assigned to others": "Mostrar las tareas asignadas a otras personas",
   "Group and order": "Agrupar y ordenar",
   "Group by due date": "Agrupar por fecha de vencimiento",
-  "Group by label (in a project or a saved view)": "Agrupar por etiqueta (en un proyecto o una vista guardada)",
+  "Group by label (in a project, a saved view, Today or the Inbox)": "Agrupar por etiqueta (en un proyecto, una vista guardada, Hoy o la Bandeja de entrada)",
   "Group by priority": "Agrupar por prioridad",
-  "Group by project (on a label page or in a saved view)": "Agrupar por proyecto (en la página de una etiqueta o una vista guardada)",
+  "Group by project (on a label page, in a saved view or on Today)": "Agrupar por proyecto (en la página de una etiqueta, una vista guardada o Hoy)",
   "Group by section (in a project)": "Agrupar por sección (en un proyecto)",
   "Group by: {name}": "Agrupar por: {name}",
   "No grouping": "Sin agrupar",
@@ -7243,5 +7243,8 @@
   "Stop emails": "Detener los correos",
   "Stop emails from “{routine}”?": "¿Detener los correos de «{routine}»?",
   "You will get no more emails from “{routine}”.": "No recibirás más correos de «{routine}».",
-  "Email project members: {subject}": "Enviar correo a los miembros del proyecto: {subject}"
+  "Email project members: {subject}": "Enviar correo a los miembros del proyecto: {subject}",
+  "Time of day": "Momento del día",
+  "Nest subtasks": "Anidar subtareas",
+  "Group by time of day (on Today)": "Agrupar por momento del día (en Hoy)"
 }

@@ -66,6 +66,8 @@ export interface ShortcutContext {
   /** A list with its own order (a label page, view-manual-order D4): one step within the task's group. */
   moveInView?: (id: string, step: Step) => Promise<boolean>
   treeView: boolean
+  /** Today or Upcoming with Nest subtasks (builtin-view-options D5): Left and Right fold the tree, nothing indents. */
+  nested?: boolean
   projectReadOnly: boolean
   projectEditable: boolean
   isReadOnly: (task: Task | undefined) => boolean
@@ -187,13 +189,13 @@ export function useListShortcuts(c: ShortcutContext) {
     'list.collapse': () => {
       if (!row) return false
       if (c.expandedId === row.task.id) c.setExpandedId(null)
-      else if (!c.treeView) return false
+      else if (!c.treeView && !c.nested) return false
       else if (row.hasChildren && !row.collapsed) c.toggleCollapsed(row.task.id, true)
       else if (row.parent) setSelectedId(row.parent)
     },
     'list.expand': () => {
       if (!row) return false
-      if (c.treeView && row.hasChildren && row.collapsed) c.toggleCollapsed(row.task.id, false)
+      if ((c.treeView || c.nested) && row.hasChildren && row.collapsed) c.toggleCollapsed(row.task.id, false)
       else if (!c.board) c.setExpandedId(row.task.id)
       else return false
     },
