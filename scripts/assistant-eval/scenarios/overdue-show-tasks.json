@@ -1,0 +1,54 @@
+{
+  "name": "overdue-show-tasks",
+  "title": "Overdue tasks are shown as task rows, not listed in prose",
+  "seed": {
+    "tasks": [
+      {
+        "key": "pay",
+        "title": "Pay the electricity bill",
+        "due": -2
+      },
+      {
+        "key": "call",
+        "title": "Call the plumber",
+        "due": -1
+      },
+      {
+        "key": "report",
+        "title": "Finish the quarterly report",
+        "due": 0,
+        "time": "10:00",
+        "estimate_minutes": 90
+      },
+      {
+        "key": "gym",
+        "title": "Gym",
+        "due": 0,
+        "time": "18:00",
+        "estimate_minutes": 60
+      },
+      {
+        "key": "later",
+        "title": "Renew the passport",
+        "due": 9
+      }
+    ]
+  },
+  "turns": [
+    {
+      "say": "What's overdue?",
+      "expect": {
+        "blocks": [
+          {
+            "kind": "tasks",
+            "ids": [
+              "pay",
+              "call"
+            ]
+          }
+        ],
+        "changeset": false
+      }
+    }
+  ]
+}

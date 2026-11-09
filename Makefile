@@ -11,7 +11,7 @@ WEB_EXT := web-ext@10.7.0
 SKILL_ZIP := dist/opentodo-agent-skill.zip
 MCP_SKILL_ZIP := dist/opentodo-mcp-skill.zip
 
-.PHONY: news news-check brand-icons site-bundle all web server cli cli-release cli-smoke skill extension obsidian obsidian-e2e obsidian-review test-obsidian android ios ios-archive build run dev test test-go test-web test-extension check lint staticcheck gosec gosec-sarif clean docker openspec-validate layout-check safe-area-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check release-prepare perf storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check bundle-budget fmt-check ci-checks e2e e2e-signed
+.PHONY: assistant-eval news news-check brand-icons site-bundle all web server cli cli-release cli-smoke skill extension obsidian obsidian-e2e obsidian-review test-obsidian android ios ios-archive build run dev test test-go test-web test-extension check lint staticcheck gosec gosec-sarif clean docker openspec-validate layout-check safe-area-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check release-prepare perf storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check bundle-budget fmt-check ci-checks e2e e2e-signed
 
 all: build
 
@@ -155,6 +155,14 @@ safe-area-check: build
 ux-audit: build
 	node scripts/ux-audit/tour.mjs
 	@echo "report: $${OUT_DIR:-ux-audit-report}/index.html"
+
+## Assistant eval (assistant-eval): recorded scenarios against a real model
+## provider through the turn route, on a throwaway server per scenario. Costs
+## tokens, so never in CI. Needs ASSISTANT_EVAL_PROVIDER, ASSISTANT_EVAL_KEY and
+## for most providers ASSISTANT_EVAL_MODEL (docs/assistant-eval.md); writes
+## eval-report/report.md and report.json, and fails when a scenario fails.
+assistant-eval: build
+	node scripts/assistant-eval/run.mjs
 
 ## Design workbench (design-language): Storybook on http://localhost:6006.
 storybook:

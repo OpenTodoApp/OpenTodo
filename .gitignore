@@ -38,6 +38,7 @@ gosec.sarif
 /layout-report/
 /safe-area-report/
 /ux-audit-report/
+/eval-report/
 
 # Agent worktrees
 /.claude/worktrees/
