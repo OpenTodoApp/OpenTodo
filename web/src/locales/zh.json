@@ -3953,6 +3953,7 @@
   "Reset your password": "重置你的密码",
   "Reset {name} to derived": "将 {name} 重置为派生值",
   "Resize sidebar": "调整侧边栏大小",
+  "Resize the note": "调整笔记大小",
   "Resize the task panel": "调整任务面板大小",
   "Response": "响应",
   "Restore": "恢复",
@@ -7293,5 +7294,16 @@
   "found by address": "按地址找到",
   "not on the map": "不在地图上",
   "Finding these places on the map needs a connection.": "在地图上查找这些地点需要网络连接。",
-  "These places could not be looked up right now. Try again in a minute.": "暂时无法查找这些地点，请一分钟后再试。"
+  "These places could not be looked up right now. Try again in a minute.": "暂时无法查找这些地点，请一分钟后再试。",
+  "Show connections": "显示关联",
+  "Show connections of {title}": "显示 {title} 的关联",
+  "Connections of {title}": "{title} 的关联",
+  "Show as": "显示为",
+  "Graph": "图",
+  "Links": "链接到",
+  "Linked from": "链接自",
+  "Centre on {title}": "以 {title} 为中心",
+  "+{n}": "+{n}",
+  "{n} more": "另外 {n} 个",
+  "{title}, {kind, select, note {note} task {task} other {project}}, {ring, select, centre {in the centre} direct {linked directly} other {two steps away}}": "{title}，{kind, select, note {笔记} task {任务} other {项目}}，{ring, select, centre {位于中心} direct {直接链接} other {相隔两步}}"
 }

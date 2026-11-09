@@ -262,6 +262,7 @@
 				C9A820EFBD5DA11E70EC2DD1 /* Sources */,
 				E3E731A009DE647AB6372C29 /* Resources */,
 				1637260C5AD6CBEF7EB44BDB /* Embed Foundation Extensions */,
+				A11B0D0DA11B0D0DA11B0D01 /* App-bound domains */,
 			);
 			buildRules = (
 			);
@@ -432,6 +433,29 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		A11B0D0DA11B0D0DA11B0D01 /* App-bound domains */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",
+			);
+			name = "App-bound domains";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# ios-shell D2, ios-bridge-portable: WKAppBoundDomains only in a one-server build.\nplist=\"$TARGET_BUILD_DIR/$INFOPLIST_PATH\"\n/usr/libexec/PlistBuddy -c \"Delete :WKAppBoundDomains\" \"$plist\" 2>/dev/null || true\n[ -n \"$OPENTODO_APP_BOUND_HOST\" ] || exit 0\n/usr/libexec/PlistBuddy -c \"Add :WKAppBoundDomains array\" \"$plist\"\ni=0\nfor host in $(printf '%s' \"$OPENTODO_APP_BOUND_HOST\" | tr ',' ' '); do\n  [ \"$i\" -lt 10 ] || { echo \"error: OPENTODO_APP_BOUND_HOST lists more than ten hosts\"; exit 1; }\n  case $host in *[!A-Za-z0-9.-]*) echo \"error: OPENTODO_APP_BOUND_HOST: $host is not a host name\"; exit 1 ;; esac\n  /usr/libexec/PlistBuddy -c \"Add :WKAppBoundDomains:$i string $host\" \"$plist\"\n  i=$((i + 1))\ndone\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		301B02D227D1B3C030B7A897 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -537,12 +561,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = OpenTodo/OpenTodo.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				INFOPLIST_FILE = OpenTodo/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				OPENTODO_APP_BOUND_HOST = none.invalid;
+				OPENTODO_APP_BOUND_HOST = "";
 				PRODUCT_BUNDLE_IDENTIFIER = "app.open-todo.ios";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -556,12 +581,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = OpenTodo/OpenTodo.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				INFOPLIST_FILE = OpenTodo/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				OPENTODO_APP_BOUND_HOST = none.invalid;
+				OPENTODO_APP_BOUND_HOST = "";
 				PRODUCT_BUNDLE_IDENTIFIER = "app.open-todo.ios";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";

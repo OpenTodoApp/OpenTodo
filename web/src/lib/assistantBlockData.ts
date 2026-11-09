@@ -2,6 +2,7 @@
 // assistant-generative-ui D4): live, so a block shows edits made since the answer,
 // and imported only by the lazily loaded block renderers.
 import { useLiveQuery } from 'dexie-react-hooks'
+import { resettable } from './moduleState'
 import { useEffect, useState } from 'react'
 import { useOnline } from './online'
 import type { AssistantBlock } from './assistantBlocks'
@@ -107,7 +108,8 @@ let running = 0
 const waiting: (() => void)[] = []
 
 /** Tests: forget the points found this session. */
-export function resetMapLookup(): void { found.clear(); inFlight.clear() }
+export function resetMapLookup(): void { found.clear(); inFlight.clear(); running = 0; waiting.length = 0 }
+resettable('assistantBlockData', resetMapLookup)
 
 /** What a place is searched by: its address, else its name; never a task's title. */
 const queryOf = (it: MapItem) => (it.address || it.name || '').trim()

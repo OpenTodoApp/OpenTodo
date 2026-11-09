@@ -23,7 +23,7 @@ Narrow the list with **Source** (All, Task notes, Project notes, Standalone only
 
 ## Writing a note
 
-**New note** (or `q` on the page) creates a standalone note, and so does typing a title in the search field and pressing <kbd>Enter</kbd> when no note matches. Give it a title, write in it with the same formatting as task notes (headings, lists, checklists, tables, links, code), and choose a project and labels below it if you like. A note without a title reads "Untitled note". Notes save on your device as you type and sync like everything else, offline included.
+**New note** (or `q` on the page) creates a standalone note, and so does typing a title in the search field and pressing <kbd>Enter</kbd> when no note matches. Give it a title, write in it with the same formatting as task notes (headings, lists, checklists, tables, links, code), and choose a project and labels below it if you like. A note without a title reads "Untitled note". Notes save on your device as you type and sync like everything else, offline included. On a computer, resize the note beside the list by its left edge: drag it, click it (widest, then back), or focus it and press ← or →; each device keeps its own width.
 
 There are no folders: projects and labels organise notes. A note in a shared project is shared with that project: editors can change it and viewers can read it. A single note cannot be shared on its own. Moving a note into a project that is shared differently makes a copy there and removes the original, as for tasks.
 
@@ -31,7 +31,7 @@ Mentions, images and **Make subtask** are not offered in standalone notes: they 
 
 ## Linking notes, tasks and projects
 
-Type `[[` in a note to link to another note, a task or a project; what links to a note shows at its end. See [Link notes, tasks and projects](note-links.md).
+Type `[[` in a note to link to another note, a task or a project; what links to a note shows at its end. See [Link notes, tasks and projects](note-links.md). **Show connections** draws what an item is connected to, two steps out: [See an item's connections](note-connections.md).
 
 ## Searching and pinning
 

@@ -5,7 +5,7 @@
 // as a page on a phone. A viewer of a shared project gets it read-only, without
 // conversions. The title saves on the note editor's cadence (notes-save-cadence):
 // a timed save pushed later, leaving the field pushes at once.
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useLabels, useMembershipMap, useProjects, useUserPrefsRow } from '../../lib/localData'
 import { createLabel } from '../../lib/labels'
 import { useNoteRow } from '../../lib/noteRows'
@@ -21,11 +21,14 @@ import { t } from '../../lib/i18n'
 import { act } from '../actionError'
 import { LinkedRefs, Markdown } from '../Markdown'
 import { PanelFrame } from '../PanelFrame'
+import { applyPanelWidth, NOTE_PANEL_WIDTH } from '../panel'
+import { PanelResizeHandle } from '../sidePanel'
 import { ProjectPickerField } from '../ProjectPickerField'
 import { navigate } from '../router'
 import { isFavourite, setFavourite } from '../../lib/favourites'
 import { deleteNote, turnNoteIntoTask } from './noteActions'
 import { NoteMenu } from './NoteRow'
+import { openConnections, useConnected } from '../signals'
 
 const NotesEditor = lazy(() => import('../NotesEditor'))
 
@@ -139,23 +142,47 @@ const toList = () => navigate({ view: 'notes' })
 /** The note's menu: Pin or Unpin always (a pin is personal), the conversions when the note may change. */
 function NoteActions({ note, editable }: { note: Note; editable: boolean }) {
   const pinned = isFavourite(useUserPrefsRow(), 'note', note.id)
+  const connected = useConnected('note', note.id)
   return (
     <NoteMenu pinned={pinned} onPin={() => act(setFavourite('note', note.id, !pinned))}
+      onConnections={connected ? () => openConnections('note', note.id) : undefined}
       onTurnIntoTask={editable ? () => void turnNoteIntoTask(note.id).then((id) => { if (id) toList() }) : undefined}
       onDelete={editable ? () => { toList(); void deleteNote(note.id) } : undefined} />
   )
 }
 
-/** The docked panel on a computer: a non-task occupant of the shell's panel slot. */
+/**
+ * While the note is docked, the root says so and carries the width this device chose
+ * for it (note-pane-width D1): `:root[data-note-split]` sizes the slot from it, apart
+ * from the docked task's width. Before paint, so the pane opens at its width.
+ */
+function useNoteSplit() {
+  useLayoutEffect(() => {
+    const root = document.documentElement
+    root.setAttribute('data-note-split', '')
+    applyPanelWidth(NOTE_PANEL_WIDTH)
+    return () => root.removeAttribute('data-note-split')
+  }, [])
+}
+
+/**
+ * The docked panel on a computer: a non-task occupant of the shell's panel slot, resized
+ * by its left edge like the docked task (D1). The text keeps a readable column, centred
+ * when the pane is wide (D2).
+ */
 export function NotePanel({ id }: { id: string }) {
   const note = useNoteRow(id)
   const editable = useNoteEditable(note)
+  useNoteSplit()
   // A note that is gone (deleted here or on another device) leaves the slot.
   useEffect(() => { if (note === null || note?.deleted_at) toList() }, [note])
   if (!note || note.deleted_at) return null
   return (
-    <PanelFrame title={t('Note')} testId="note" onClose={toList} actions={<NoteActions note={note} editable={editable} />}>
-      <NoteForm note={note} readOnly={!editable} />
+    <PanelFrame title={t('Note')} testId="note" onClose={toList} actions={<NoteActions note={note} editable={editable} />}
+      edge={<PanelResizeHandle store={NOTE_PANEL_WIDTH} label={t('Resize the note')} />}>
+      <div className="mx-auto w-full max-w-[40rem] px-2 pt-2 pb-12 lg:px-4" data-note-column>
+        <NoteForm note={note} readOnly={!editable} />
+      </div>
     </PanelFrame>
   )
 }

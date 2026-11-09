@@ -4,11 +4,13 @@
 // nothing here; the location stays readable with "Open in maps".
 import { Component, lazy, Suspense, useState, type ReactNode } from 'react'
 import { useMapsOn } from '../../lib/locations'
+import { resettable } from '../../lib/moduleState'
 import type { MapViewProps } from './MapView'
 
 const MapView = lazy(() => import('./MapView'))
 
 let webglCache: boolean | undefined
+resettable('LocationMap', () => { webglCache = undefined })
 
 /** Whether this browser can draw a map (WebGL), asked once: each check creates a context (assistant-map-lookup). */
 export function hasWebGL(): boolean {

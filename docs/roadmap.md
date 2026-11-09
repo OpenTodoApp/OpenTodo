@@ -132,6 +132,24 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | --- | --- | --- |
 | `note-links` | Link notes, tasks and projects with `[[`; Linked references on each | In progress (14 of 14) |
 | `notes-home` | The Notes page as a home: write from the search field, pinned notes, unlinked notes | In progress (11 of 11) |
-| `notes-graph` | Connections: a local graph of what links to and from an item | Planned |
+| `notes-graph` | Connections: a local graph of what links to and from an item | In progress (10 of 10) |
+| `note-pane-width` | A note beside the Notes list resizes by its left edge and keeps a readable column | In progress (7 of 7) |
+
+## Assistant area
+
+| Change | What | Status |
+| --- | --- | --- |
+| `assistant-eval` | Recorded scenarios against a real provider, which check the tool calls a model makes (blocks used, nothing written, no map claims), run by hand with `make assistant-eval` | Planned |
+| `assistant-usage-cache` | Input read from the provider's cache counts at a tenth toward the monthly cap, and each answer names it | Planned |
+| `assistant-device-reads` | The on-device assistant (encrypted accounts) reads time entries, frames, slots and notes like the server's | Planned |
+| `assistant-time-blocks` | Time, free time and deadlines blocks; `find_free_time` as a read tool for the assistant and MCP | Planned |
+| `assistant-project-blocks` | Board, timeline, activity, stats, task and habit blocks, offered by relevance | Planned |
+| `assistant-followups` | Up to three follow-up suggestions under an answer, sent with one tap | Planned |
+| `assistant-proposal-editing` | Edit proposals in every shape, drag them in the calendar, proposals that grow over turns, before and after | Planned |
+| `assistant-memory` | The assistant remembers facts you confirm: synced and encrypted like settings, managed in Settings, never sent to MCP or routines | Planned |
+| `assistant-in-context` | Rewrite this, Find a slot, What's next? and Brief me, started from a task, a project or Today | Planned |
+| `assistant-routine-blocks` | Routines' AI steps show the day's agenda, deadlines and tasks as blocks in the routine inbox | Planned |
+| `assistant-lean-tools` | Write tools only once the model asks for them, so questions send far fewer tokens | Planned |
+| `mcp-blocks` | Blocks for external agents that support MCP Apps, rendered by the host from self-contained HTML; a spike first | Planned |
 
 <!-- roadmap:end -->

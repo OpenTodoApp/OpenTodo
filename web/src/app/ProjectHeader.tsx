@@ -1,4 +1,5 @@
 import { Button, Icon, IconPicker, PageHeader, Tooltip } from '../ui'
+import { openConnections, useConnected } from './signals'
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { api } from '../lib/api'
 import { useMembership, useProjects } from '../lib/localData'
@@ -259,11 +260,14 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
   const otherWorkspaces = useOtherWorkspaces()
   const mode = useMethodMode()
   const reviewEvery = useProjectPrefsRow(project.id)?.review_every
+  const connected = useConnected('project', project.id)
   const panels: ActionGroup = { items: [
     // A reusable list always shows its ticked items (reusable-lists D7), so it offers no switch.
     ...(listLayout && !isReusable(project) ? [{ kind: 'check' as const, id: 'show-completed', label: t('Show completed tasks'), icon: 'circle-check-big' as const, checked: showCompleted, onSelect: () => saveShowCompleted(project.id, !showCompleted) }] : []),
     { kind: 'action', id: 'activity', label: t('Activity'), icon: 'history', shortcut: keysOf('project.activity'), onSelect: showActivity },
     { kind: 'action', id: 'history', label: t('History'), icon: 'rotate-ccw', onSelect: showHistory },
+    // What links with the project (notes-graph D3), offered while something does.
+    ...(connected ? [{ kind: 'action' as const, id: 'connections', label: t('Show connections'), icon: 'waypoints' as const, onSelect: () => openConnections('project', project.id) }] : []),
     // The project's routines on the Routines page (routines-shared D12).
     { kind: 'action', id: 'routines', label: t('Routines'), icon: 'zap', onSelect: () => navigate({ view: 'rules', project: project.id }) },
     // Display mode (display-mode D6): the project in large type, without the shell.

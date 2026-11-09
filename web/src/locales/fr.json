@@ -3878,6 +3878,7 @@
   "Reset your password": "Réinitialisez votre mot de passe",
   "Reset {name} to derived": "Revenir à la valeur dérivée pour {name}",
   "Resize sidebar": "Redimensionner la barre latérale",
+  "Resize the note": "Redimensionner la note",
   "Resize the task panel": "Redimensionner le panneau de la tâche",
   "Response": "Réponse",
   "Restore": "Restaurer",
@@ -7293,5 +7294,16 @@
   "found by address": "trouvé par l’adresse",
   "not on the map": "pas sur la carte",
   "Finding these places on the map needs a connection.": "Trouver ces lieux sur la carte nécessite une connexion.",
-  "These places could not be looked up right now. Try again in a minute.": "Ces lieux n’ont pas pu être recherchés pour le moment. Réessaie dans une minute."
+  "These places could not be looked up right now. Try again in a minute.": "Ces lieux n’ont pas pu être recherchés pour le moment. Réessaie dans une minute.",
+  "Show connections": "Afficher les connexions",
+  "Show connections of {title}": "Afficher les connexions de {title}",
+  "Connections of {title}": "Connexions de {title}",
+  "Show as": "Afficher en",
+  "Graph": "Graphe",
+  "Links": "Liens",
+  "Linked from": "Lié depuis",
+  "Centre on {title}": "Centrer sur {title}",
+  "+{n}": "+{n}",
+  "{n} more": "{n} de plus",
+  "{title}, {kind, select, note {note} task {task} other {project}}, {ring, select, centre {in the centre} direct {linked directly} other {two steps away}}": "{title}, {kind, select, note {note} task {tâche} other {projet}}, {ring, select, centre {au centre} direct {lien direct} other {à deux pas}}"
 }
