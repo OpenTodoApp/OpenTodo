@@ -47,11 +47,15 @@ Project and Inbox views SHALL render subtasks indented beneath their parent, ord
 - **THEN** the checkboxes of top-level tasks sit at the same horizontal position in both
 
 ### Requirement: Flat display in cross-project and date views
-Views that span projects or filter by date SHALL list each matching task once, flat, with a breadcrumb naming its parent; a parent that does not itself match SHALL not be shown.
+Views that span projects or filter by date SHALL list each matching task once, flat, with a breadcrumb naming its parent; a parent that does not itself match SHALL not be shown. Today and Upcoming with their Nest subtasks display option on (OpenSpec `builtin-view-options` "Nest subtasks in Today and Upcoming") SHALL instead list a subtask under its parent when both are listed in the same group, and keep the flat row with its breadcrumb otherwise.
 
 #### Scenario: Flat in Today
 - **WHEN** only "Compare prices" is due today
 - **THEN** Today lists "Compare prices" once with a breadcrumb "Hotel" and does not list "Plan trip" or "Hotel"
+
+#### Scenario: Nested in Today
+- **WHEN** Nest subtasks is on in Today and "Hotel" and its subtask "Compare prices" are both due today
+- **THEN** Today lists "Hotel" with "Compare prices" indented under it, and does not list "Plan trip"
 
 ### Requirement: Parent progress
 A task with at least one non-deleted subtask SHALL show its progress as "completed/total" over its direct subtasks in list rows and in the detail panel, computed from local data so it is correct offline and updates live when a subtask changes on any device.
@@ -136,7 +140,7 @@ Pasting text with at least two non-empty lines into an empty "Add subtask" field
 - **THEN** the three subtasks are shown under the parent at once, survive a reload and upload together when the network returns
 
 ### Requirement: Subtasks in a project's Later group
-In a project's list, a subtask SHALL be listed where its top-level task is: when the top-level task is deferred or parked, the whole subtree SHALL be listed in the project's Later group, nested under it as in the rest of the list, each subtask keeping its own dates and chips; when the top-level task is active, a deferred or parked subtask SHALL stay nested under its parent with its "Starts" or "Someday" chip. Parents in the Later group SHALL fold like any other parent. Today, Upcoming, Anytime, Someday and the sidebar counts SHALL keep deciding per task. The placement SHALL be computed on the device from local data without any write, so it is the same offline and follows synced changes on every device.
+In a project's list, a subtask SHALL be listed where its top-level task is: when the top-level task is deferred or parked, the whole subtree SHALL be listed in the project's Later, nested under it as in the rest of the list, each subtask keeping its own dates and chips; when the top-level task is active, a deferred or parked subtask SHALL stay nested under its parent with its "Starts" or "Someday" chip. In a list grouped by section the subtree SHALL be in the Later of the top-level task's section (OpenSpec `start-dates` "Deferred tasks"), whatever the subtasks' own sections. Parents in Later SHALL fold like any other parent. Today, Upcoming, Anytime, Someday and the sidebar counts SHALL keep deciding per task. The placement SHALL be computed on the device from local data without any write, so it is the same offline and follows synced changes on every device.
 
 #### Scenario: Parent deferred to Later
 - **WHEN** "Paint the fence" with subtasks "Buy paint" and "Book the sprayer" (due tomorrow) is given a start date next week in the project "Home"
@@ -149,3 +153,7 @@ In a project's list, a subtask SHALL be listed where its top-level task is: when
 #### Scenario: Deferred on another device
 - **WHEN** another device defers "Paint the fence" and this device syncs while the project is open
 - **THEN** the parent and its subtasks move to Later together without a reload, and nothing is written by this device
+
+#### Scenario: Subtree in its section's Later
+- **WHEN** "Paint the fence" in the section "Garden" has the subtask "Buy paint" and is given a start date next week, in a project listed by section
+- **THEN** "Garden"'s Later, once opened, shows "Paint the fence" with "Buy paint" indented beneath it, and no other section lists either

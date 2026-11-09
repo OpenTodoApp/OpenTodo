@@ -174,7 +174,7 @@ A row SHALL never omit a value because of what it is, only because the heading o
 - **THEN** its item is the download icon alone, a link to the card whose accessible name is "Imported from Trello", and "5f3a…" is neither shown nor read out
 
 ### Requirement: Group headers
-Date groups, section groups, project groups, the Earlier group, the "Later" group and the Completed group SHALL use one header: a label, a count, a collapse control, and trailing actions. In a list the header SHALL be a group bar: a 32 px strip filled with the raised surface, with the label at the metadata size in the medium weight and the default text tone, in sentence case whether the view generated the group (a date, Earlier, Today, This Evening, Blocked, Later, Completed, No section) or the user named it (a section, a project, a label); on a board column the header SHALL stay a plain heading on the column's surface. The count SHALL be in the faint tone with tabular figures. Trailing actions SHALL appear on hover, focus or touch, except the actions of the Earlier group, which SHALL be visible at all times. No group header SHALL use the danger tone. Collapse state SHALL be remembered per device; the Earlier group of Today SHALL be collapsed by default on a device that never opened or closed it while it holds more than five tasks, and open by default otherwise. This is presentation only and behaves the same offline.
+Date groups, section groups, project groups, the Earlier group, the "Later" group and the Completed group SHALL use one header: a label, a count, a collapse control, and trailing actions. In a list the header SHALL be a group bar: a 32 px strip filled with the raised surface, with the label at the metadata size in the medium weight and the default text tone, in sentence case whether the view generated the group (a date, Earlier, Today, This Evening, Blocked, Later, Completed, No section) or the user named it (a section, a project, a label); on a board column the header SHALL stay a plain heading on the column's surface, and so SHALL a section's own Later heading inside the section, so the section's bar stays the only bar. The count SHALL be in the faint tone with tabular figures. Trailing actions SHALL appear on hover, focus or touch, except the actions of the Earlier group, which SHALL be visible at all times. No group header SHALL use the danger tone. Collapse state SHALL be remembered per device; the Earlier group of Today SHALL be collapsed by default on a device that never opened or closed it while it holds more than five tasks, and open by default otherwise. This is presentation only and behaves the same offline.
 
 #### Scenario: Collapse a date group
 - **WHEN** the user collapses "Tomorrow" in Upcoming and reloads
@@ -196,8 +196,12 @@ Date groups, section groups, project groups, the Earlier group, the "Later" grou
 - **WHEN** a user who never touched the group opens Today with two tasks due before today
 - **THEN** the Earlier group shows its two rows
 
+#### Scenario: A section's Later heading
+- **WHEN** the section "Garden" holds two active tasks and one deferred task
+- **THEN** after the two rows the section shows a plain "Later" heading with "1" in the faint tone and a collapse control, without the raised fill
+
 ### Requirement: Empty groups
-A group with no open tasks SHALL be hidden when it is generated (a date, "No section", "Later"), and SHALL show only its header when it is user-created (a section). A section whose tasks are all completed SHALL show "n completed" in its header with a control that reveals them, except while the project shows its Completed group, which holds those tasks.
+A group with no open tasks SHALL be hidden when it is generated (a date, "No section", "Later"; "No section" counts the tasks in its Later), and SHALL show only its header when it is user-created (a section). A section whose tasks are all completed SHALL show "n completed" in its header with a control that reveals them, except while the project shows its Completed group, which holds those tasks.
 
 #### Scenario: Done section
 - **WHEN** a project's "Done" section holds two completed tasks and no open one
@@ -943,3 +947,26 @@ After a write (local or from sync), a task list, its groups and its row details 
 #### Scenario: Synced changes while offline
 - **WHEN** a device comes back online and a sync page changes many tasks at once
 - **THEN** the lists show the synced state, worked out in full when the change is too large to follow row by row
+
+### Requirement: Printing a list
+Printing a list page (the Inbox, Today, Upcoming, Anytime, Someday, Assigned to me, Completed, a project or a saved view in the list layout, a label, a location) with the browser's Print SHALL print the page's title with its line under it and the list as the screen shows it: its group headers in their order, its folded groups and parents still folded, subtasks indented, and each row with its checkbox as an empty circle, its time, its whole title, its marks and the properties of its column (the date, the project when the list shows projects, the labels) on any page at least as wide as A4 or Letter with the browser's default margins. Nothing else SHALL be printed: no sidebar, bar, tab bar, quick add, page, group or row action, drag handle, toast, assistant, panel or open overlay. The printout SHALL be black text on white in every theme, high contrast and custom theme included, without fills, tints or shadows; the priority colours of the checkbox and the priority mark MAY stay. Every row of the list SHALL be printed, over as many pages as it takes, none cut by the screen's scrolling area or skipped because it was off screen; a row SHALL NOT be split across two pages and a group header SHALL be kept on the page of its first row. The list's menu (the page header's "…", the Inbox menu, the label menu, and the project menu and a saved view's menu in the list layout) SHALL end with "Print…", which opens the same print once the menu has closed; inside the Android or iOS app, whose web view does not print, the item SHALL be left out. Printing reads only what the screen shows, writes nothing and works offline.
+
+#### Scenario: Printing Today in a dark theme
+- **WHEN** the user, in the dark theme, presses Ctrl+P on Today with three tasks under Earlier and twelve under Today
+- **THEN** the print shows "Today" with its date, "Earlier" and "Today" with their counts and the rows beneath them in black on white, and no sidebar, quick add, action button or dark fill
+
+#### Scenario: A long project over several pages
+- **WHEN** the user prints a project of 60 tasks in two sections, one task with two subtasks
+- **THEN** every task is printed, over the pages it takes, each section header on the page of its first row, the subtasks indented under their parent, and no row split between two pages
+
+#### Scenario: Folded groups stay folded
+- **WHEN** the user prints Today with Earlier folded
+- **THEN** the print shows the "Earlier" header with its count and none of its rows
+
+#### Scenario: Print… from the menu
+- **WHEN** the user opens the "…" menu of Someday in the installed app and chooses "Print…"
+- **THEN** the menu closes and the browser's print opens for Someday's list
+
+#### Scenario: A row keeps its column on paper
+- **WHEN** the user prints Upcoming on A4 paper and a task has a date, a project and the label "work"
+- **THEN** its row shows the date, the project and "work" beside its title, as on a wide screen, not the phone's one-line row

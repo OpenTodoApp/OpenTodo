@@ -759,7 +759,7 @@ The tokens SHALL include a spring easing curve (an ease-out that settles without
 - **THEN** the sheet reaches its resting place within 250 ms without passing it, and under reduced motion it fades in without moving
 
 ### Requirement: Brand mark
-OpenTodo SHALL have one brand mark and one wordmark, kept as a single SVG source in the shared UI folder, from which every other brand asset is generated. The mark SHALL be an open tray whose two upper ends turn inward, with a tick dropping into its opening. It is drawn as two strokes, the tray and the tick, on a 24-unit grid with a 2-unit stroke and round caps and joins. The tick SHALL stay within the tray's width, and the lips SHALL stay clear of the tick by at least the visible gap between the tick and the tray's sides. The mark is never a tick inside a closed square and never a generic checkbox. It SHALL exist in two variants:
+OpenTodo SHALL have one brand mark and one wordmark, kept as SVG sources in the shared UI folder, from which every other brand asset is generated: the mark's source, and the wordmark's outlined shapes (the name "OpenTodo" in the bundled typeface's semibold, as paths, for files that are opened without that typeface). The mark SHALL be an open tray whose two upper ends turn inward, with a tick dropping into its opening. It is drawn as two strokes, the tray and the tick, on a 24-unit grid with a 2-unit stroke and round caps and joins. The tick SHALL stay within the tray's width, and the lips SHALL stay clear of the tick by at least the visible gap between the tick and the tray's sides. The mark is never a tick inside a closed square and never a generic checkbox. It SHALL exist in two variants:
 - **mono**, for use in the interface: the tray in `currentColor` and the tick in the accent colour.
 - **colour**, for icons on other people's surfaces (home screens, browser toolbars, store listings, launchers): the mark on a filled rounded square in the brand's dark slate, the tray in white and the tick in the accent.
 
@@ -767,13 +767,14 @@ The wordmark SHALL be the name "OpenTodo" set in the bundled interface typeface 
 - the web app manifest icons and the Apple touch icon;
 - the extension icons;
 - the iOS app icon, an opaque 1024 px image that fills its square;
-- the Android launcher icon and notification icon, as vector drawables. The notification icon is the mono mark as one white silhouette on transparency.
+- the Android launcher icon and notification icon, as vector drawables. The notification icon is the mono mark as one white silhouette on transparency;
+- the brand kit in the repository's top-level `brand/` folder, for people using the logo outside the code: the mark alone for light and dark backgrounds and in one colour, the colour icon (rounded and square), the mark with the wordmark beside it for light and dark backgrounds, each as SVG and PNG; the colour icon at 16 to 1024 px; an avatar; a repository social preview and a default social card; and a README naming each file's use.
 
 The mono mark SHALL meet 3:1 against every surface it is placed on in both themes and the high-contrast override. The colour mark's tray and tick SHALL each meet 3:1 against its own square. The source SVG SHALL be under 2 KB and carry the project's licence note.
 
 #### Scenario: One source, every asset
 - **WHEN** the brand script runs after the source SVG changes
-- **THEN** the favicon, the 192 and 512 px manifest icons, the maskable icon, the Apple touch icon, the three extension icons, the iOS app icon and the two Android icons are regenerated from it, a test compares each file against the source and fails when one is stale, and no other brand file exists in the repository
+- **THEN** the favicon, the 192 and 512 px manifest icons, the maskable icon, the Apple touch icon, the three extension icons, the iOS app icon, the two Android icons and every file of the brand kit are regenerated from the sources, a test compares each file against them and fails when one is stale, and no other brand file exists in the repository
 
 #### Scenario: Legible at 16 px
 - **WHEN** the workbench renders the mono mark at 16 px in light and dark
@@ -798,6 +799,14 @@ The mono mark SHALL meet 3:1 against every surface it is placed on in both theme
 #### Scenario: Not a checkbox
 - **WHEN** the mark is reviewed in the workbench's Brand story beside the row checkbox at the same size
 - **THEN** the two are different shapes: the checkbox is a closed ring or a square, the mark is an open tray with a tick dropping into its opening
+
+#### Scenario: The brand kit stays current
+- **WHEN** a contributor adds a file to `brand/` by hand, or edits one
+- **THEN** the brand test fails naming the file, and running the brand script restores the folder to exactly its generated files
+
+#### Scenario: A lockup opened in a design tool
+- **WHEN** someone opens `brand/svg/lockup-on-light.svg` on a computer without the interface typeface
+- **THEN** the name reads "OpenTodo" in the same shapes as in the app, because the lockup draws the wordmark's outlines, not text
 
 ### Requirement: Illustration set
 The client SHALL provide, in the illustration style, these named illustrations, each inside the open loop with its accent in the opening:
