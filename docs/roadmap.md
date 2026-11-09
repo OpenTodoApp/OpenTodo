@@ -131,7 +131,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | Change | What | Status |
 | --- | --- | --- |
 | `note-links` | Link notes, tasks and projects with `[[`; Linked references on each | In progress (14 of 14) |
-| `notes-home` | The Notes page as a home: write from the search field, pinned notes, unlinked notes | Planned |
+| `notes-home` | The Notes page as a home: write from the search field, pinned notes, unlinked notes | In progress (11 of 11) |
 | `notes-graph` | Connections: a local graph of what links to and from an item | Planned |
 
 <!-- roadmap:end -->

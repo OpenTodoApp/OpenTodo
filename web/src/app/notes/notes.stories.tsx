@@ -3,11 +3,12 @@ import { useState, type ReactNode } from 'react'
 import { NO_NOTE_FILTERS, type NoteEntry, type NoteFilters } from '../../lib/noteList'
 import { NoteFiltersSheet, NoteFilterControls } from './NoteFilters'
 import { NoteMenu, NoteRow } from './NoteRow'
-import { NotesEmpty } from './NotesPage'
+import { GroupHeading, NewNoteRow, NotesEmpty } from './NotesPage'
 import { HEX, label, project } from '../stories/fixtures'
 
 // Core screen: Notes (`/notes`, OpenSpec change notes-overview task 4.11): the note
-// row, the empty state and the filter row (weekly in the inventory).
+// row, the empty state and the filter row (weekly in the inventory); the home with
+// Pinned and Recent and the New note row of the search field (notes-home).
 const meta: Meta = { title: 'Screens/Notes' }
 export default meta
 
@@ -28,13 +29,13 @@ export const Rows: StoryObj = {
     <Column>
       <ul className="max-w-2xl space-y-0.5">
         <NoteRow entry={entry({ key: 'n1', source: 'note', title: 'Meeting with the architect', text: '- move the kitchen wall\n- skylight in the hall', projectId: home.id, labels: [reference.id] })}
-          project={home} labels={[reference]} updated="5 min ago" onOpen={() => {}} menu={<NoteMenu onTurnIntoTask={() => {}} onDelete={() => {}} />} />
+          project={home} labels={[reference]} updated="5 min ago" onOpen={() => {}} menu={<NoteMenu pinned={false} onPin={() => {}} onTurnIntoTask={() => {}} onDelete={() => {}} />} />
         <NoteRow entry={entry({ key: 't1', source: 'task', title: 'Kitchen', text: '**Tiles**: white, matte. Ask about delivery before the end of the month and the price of grout in two colours.', projectId: home.id })}
           project={home} labels={[]} updated="2 h ago" onOpen={() => {}} current />
         <NoteRow entry={entry({ key: 'p1', source: 'project', title: 'Work', text: 'Quarterly goals and the team rota.', projectId: work.id })}
           project={work} labels={[]} updated="3 d ago" onOpen={() => {}} />
         <NoteRow entry={entry({ key: 'n2', source: 'note', title: '', text: 'Wi-Fi: home-5G', labels: [ideas.id] })}
-          labels={[ideas]} updated="12 Oct" onOpen={() => {}} menu={<NoteMenu onTurnIntoTask={() => {}} onDelete={() => {}} />} />
+          labels={[ideas]} updated="12 Oct" onOpen={() => {}} menu={<NoteMenu pinned={false} onPin={() => {}} onTurnIntoTask={() => {}} onDelete={() => {}} />} />
         <NoteRow entry={entry({ key: 't2', source: 'task', title: 'Renew passport', text: 'Two photos, the old passport.', marker: 'completed' })}
           labels={[]} updated="1 Oct" onOpen={() => {}} />
       </ul>
@@ -50,6 +51,47 @@ export const SearchResult: StoryObj = {
         <NoteRow entry={entry({ key: 'n3', source: 'note', title: 'Trip', text: 'the ferry leaves at 7' })} labels={[]} updated="just now" onOpen={() => {}}
           snippet={[{ text: '…the ', mark: false }, { text: 'ferry', mark: true }, { text: ' leaves at 7…', mark: false }]} />
       </ul>
+    </Column>
+  ),
+}
+
+/** The home (notes-home D4): pinned notes first, then the others under Recent. */
+export const Home: StoryObj = {
+  render: () => (
+    <Column>
+      <ul className="max-w-2xl space-y-0.5">
+        <GroupHeading title="Pinned" count={2} testId="pinned" />
+        <NoteRow entry={entry({ key: 'n4', source: 'note', title: 'Wi-Fi', text: 'home-5G, the password is on the router' })} labels={[]} updated="3 d ago" onOpen={() => {}}
+          menu={<NoteMenu pinned onPin={() => {}} onTurnIntoTask={() => {}} onDelete={() => {}} />} />
+        <NoteRow entry={entry({ key: 'n5', source: 'note', title: 'Packing list', text: 'Passport, chargers, the blue jacket', labels: [reference.id] })} labels={[reference]} updated="12 Oct" onOpen={() => {}}
+          menu={<NoteMenu pinned onPin={() => {}} onTurnIntoTask={() => {}} onDelete={() => {}} />} />
+        <GroupHeading title="Recent" count={2} testId="recent" />
+        <NoteRow entry={entry({ key: 'n1', source: 'note', title: 'Meeting with the architect', text: '- move the kitchen wall\n- skylight in the hall', projectId: home.id })}
+          project={home} labels={[]} updated="5 min ago" onOpen={() => {}} menu={<NoteMenu pinned={false} onPin={() => {}} onTurnIntoTask={() => {}} onDelete={() => {}} />} />
+        <NoteRow entry={entry({ key: 't1', source: 'task', title: 'Kitchen', text: '**Tiles**: white, matte.', projectId: home.id })} project={home} labels={[]} updated="2 h ago" onOpen={() => {}} />
+      </ul>
+    </Column>
+  ),
+}
+
+/** Typing in the search field (notes-home D3): New note "<text>" first, the cursor on the best match. */
+export const WriteFromSearch: StoryObj = {
+  render: () => (
+    <Column>
+      <ul className="max-w-2xl space-y-0.5">
+        <NewNoteRow text="ferry" cursor={false} onCreate={() => {}} />
+        <NoteRow entry={entry({ key: 'n3', source: 'note', title: 'Trip', text: 'the ferry leaves at 7' })} labels={[]} updated="just now" onOpen={() => {}} cursor
+          snippet={[{ text: '…the ', mark: false }, { text: 'ferry', mark: true }, { text: ' leaves at 7…', mark: false }]} />
+      </ul>
+    </Column>
+  ),
+}
+
+/** Nothing matches: New note "<text>" is under the cursor and Enter writes it. */
+export const WriteNew: StoryObj = {
+  render: () => (
+    <Column>
+      <ul className="max-w-2xl"><NewNoteRow text="Packing for Lisbon" cursor onCreate={() => {}} /></ul>
     </Column>
   ),
 }

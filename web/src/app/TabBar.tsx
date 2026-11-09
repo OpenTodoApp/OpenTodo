@@ -48,9 +48,10 @@ export function TabBar({ route, onSearch, minimised = false }: { route: Route; o
 }
 
 /** The floating add button above the tab bar; the sheet it opens is anchored to it. */
-export const AddButton = forwardRef<HTMLButtonElement, { onClick: () => void; open: boolean; away?: boolean }>(function AddButton({ onClick, open, away = false }, ref) {
+/** On the Notes page it starts a note (`note`, notes-home): the one add of that phone screen. */
+export const AddButton = forwardRef<HTMLButtonElement, { onClick: () => void; open: boolean; away?: boolean; note?: boolean }>(function AddButton({ onClick, open, away = false, note = false }, ref) {
   return (
-    <button ref={ref} type="button" onClick={onClick} aria-label={t('Add a task')} aria-haspopup="dialog" aria-expanded={open} data-add-button
+    <button ref={ref} type="button" onClick={onClick} aria-label={note ? t('New note') : t('Add a task')} aria-haspopup={note ? undefined : 'dialog'} aria-expanded={note ? undefined : open} data-add-button
       data-away={away || undefined} tabIndex={away ? -1 : undefined} aria-hidden={away || undefined}
       className={`fixed right-[calc(1rem+var(--safe-right))] z-40 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-on-accent shadow-3 transition-transform duration-(--duration-ui) md:hidden ${away ? 'pointer-events-none translate-y-[calc(100%+6rem)]' : ''}`}
       style={{ bottom: `calc(${TAB_BAR_HEIGHT_REM}rem + 0.75rem + var(--safe-bottom))` }}>

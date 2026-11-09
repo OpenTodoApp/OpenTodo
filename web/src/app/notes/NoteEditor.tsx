@@ -6,7 +6,7 @@
 // conversions. The title saves on the note editor's cadence (notes-save-cadence):
 // a timed save pushed later, leaving the field pushes at once.
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { useLabels, useMembershipMap, useProjects } from '../../lib/localData'
+import { useLabels, useMembershipMap, useProjects, useUserPrefsRow } from '../../lib/localData'
 import { createLabel } from '../../lib/labels'
 import { useNoteRow } from '../../lib/noteRows'
 import { setNoteProject, toggleNoteLabel } from '../../lib/noteOps'
@@ -14,6 +14,7 @@ import { mutate } from '../../lib/ops'
 import { canEditTasks, roleOf } from '../../lib/sharing'
 import { pushPendingNotes } from '../../lib/sync'
 import type { Label, Note } from '../../lib/types'
+import { resettable } from '../../lib/moduleState'
 import { useResetOnChange } from '../../lib/useResetOnChange'
 import { Combobox, LabelChip, PageBody, PageHeader } from '../../ui'
 import { t } from '../../lib/i18n'
@@ -22,10 +23,23 @@ import { LinkedRefs, Markdown } from '../Markdown'
 import { PanelFrame } from '../PanelFrame'
 import { ProjectPickerField } from '../ProjectPickerField'
 import { navigate } from '../router'
+import { isFavourite, setFavourite } from '../../lib/favourites'
 import { deleteNote, turnNoteIntoTask } from './noteActions'
 import { NoteMenu } from './NoteRow'
 
 const NotesEditor = lazy(() => import('../NotesEditor'))
+
+/** The note whose body takes the caret when it opens next (a note written from the search field, notes-home D3). */
+let bodyFocus: string | null = null
+resettable('noteBodyFocus', () => { bodyFocus = null })
+export function focusBodyOnOpen(id: string): void {
+  bodyFocus = id
+}
+function takeBodyFocus(id: string): boolean {
+  if (bodyFocus !== id) return false
+  bodyFocus = null
+  return true
+}
 
 /** Debounce of the title's timed save, as the note editor's (NotesEditor SAVE_MS). */
 const TITLE_SAVE_MS = 400
@@ -98,11 +112,12 @@ export function NoteForm({ note, readOnly }: { note: Note; readOnly: boolean }) 
   const projects = useProjects()
   const labels = useLabels()
   const project = projects.find((p) => p.id === note.project_id)
+  const [focusBody] = useState(() => takeBodyFocus(note.id))
   return (
     <div className="space-y-4" data-note-form={note.id}>
       <TitleInput note={note} readOnly={readOnly} />
       <Suspense fallback={<div className="notes-host" aria-busy="true"><div className="notes-editor">{note.description ? <Markdown source={note.description} /> : <p className="text-faint">{t('Add notes…')}</p>}</div></div>}>
-        <NotesEditor key={note.id} note={{ ...note, entity: 'note' }} readOnly={readOnly} />
+        <NotesEditor key={note.id} note={{ ...note, entity: 'note' }} readOnly={readOnly} autoFocus={focusBody} />
       </Suspense>
       <div className="grid gap-3 sm:grid-cols-[auto_1fr] sm:items-start">
         <span className="pt-2 text-meta text-muted">{t('Project')}</span>
@@ -121,11 +136,13 @@ export function NoteForm({ note, readOnly }: { note: Note; readOnly: boolean }) 
 /** Back to the list, which closes the panel or leaves the phone's note page. */
 const toList = () => navigate({ view: 'notes' })
 
-function menuFor(note: Note) {
+/** The note's menu: Pin or Unpin always (a pin is personal), the conversions when the note may change. */
+function NoteActions({ note, editable }: { note: Note; editable: boolean }) {
+  const pinned = isFavourite(useUserPrefsRow(), 'note', note.id)
   return (
-    <NoteMenu
-      onTurnIntoTask={() => void turnNoteIntoTask(note.id).then((id) => { if (id) toList() })}
-      onDelete={() => { toList(); void deleteNote(note.id) }} />
+    <NoteMenu pinned={pinned} onPin={() => act(setFavourite('note', note.id, !pinned))}
+      onTurnIntoTask={editable ? () => void turnNoteIntoTask(note.id).then((id) => { if (id) toList() }) : undefined}
+      onDelete={editable ? () => { toList(); void deleteNote(note.id) } : undefined} />
   )
 }
 
@@ -137,7 +154,7 @@ export function NotePanel({ id }: { id: string }) {
   useEffect(() => { if (note === null || note?.deleted_at) toList() }, [note])
   if (!note || note.deleted_at) return null
   return (
-    <PanelFrame title={t('Note')} testId="note" onClose={toList} actions={editable ? menuFor(note) : undefined}>
+    <PanelFrame title={t('Note')} testId="note" onClose={toList} actions={<NoteActions note={note} editable={editable} />}>
       <NoteForm note={note} readOnly={!editable} />
     </PanelFrame>
   )
@@ -158,7 +175,7 @@ export function NotePage({ id }: { id: string }) {
   }
   return (
     <PageBody width="form" data-note-page={id}>
-      <PageHeader title={note.title.trim() || t('Untitled note')} back={{ label: t('Notes'), onClick: toList }} menu={editable ? menuFor(note) : undefined} />
+      <PageHeader title={note.title.trim() || t('Untitled note')} back={{ label: t('Notes'), onClick: toList }} menu={<NoteActions note={note} editable={editable} />} />
       <NoteForm note={note} readOnly={!editable} />
     </PageBody>
   )

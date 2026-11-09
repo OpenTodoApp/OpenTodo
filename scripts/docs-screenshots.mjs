@@ -326,6 +326,21 @@ const shots = [
     await go(p, demoBase, '/notes', () => p.locator('[data-note-key], [data-empty-state]').first().waitFor())
     await settle(p, 400)
   } },
+  // The home of notes (notes-home): two standalone notes pinned from their row menus, the
+  // sample data's notes under Recent; both notes are removed after (which takes them out of Pinned).
+  { name: 'notes-home', server: D, async run(p) {
+    await go(p, demoBase, '/notes', () => p.locator('[data-note-key], [data-empty-state]').first().waitFor())
+    const add = (title, description) => p.evaluate(async ([t, d]) => (await (await fetch('/api/v1/notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: t, description: d }) })).json()).id, [title, description])
+    p.notesHome = [await add('Packing list', 'Passport, chargers, the blue jacket'), await add('Wi-Fi', 'home-5G, the password is on the router')]
+    for (const id of p.notesHome) {
+      const row = p.locator(`[data-note-key="note:${id}"]`); await row.waitFor()
+      await row.locator('[data-note-menu]').click(); await p.locator('[data-note-pin="pin"]').click()
+      await p.locator(`[data-notes-group="pinned"]`).waitFor()
+    }
+    await p.mouse.move(900, 700); await settle(p, 500)
+  }, async after(p) {
+    for (const id of p.notesHome ?? []) await p.evaluate((nid) => fetch(`/api/v1/notes/${nid}`, { method: 'DELETE' }), id).catch(() => {})
+  } },
   // Note links (note-links): a new note, `[[` typed and the picker open on a task of the sample data; the note is removed after.
   { name: 'note-links', server: D, async run(p) {
     await go(p, demoBase, '/notes', () => p.locator('[data-note-key], [data-empty-state]').first().waitFor())

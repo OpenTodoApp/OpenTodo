@@ -4,14 +4,14 @@ Answers for the Play Console sections a reviewer reads, next to `data-safety.md`
 
 ## App access
 
-The app needs an OpenTodo server, which the user runs. Reviewers use the public demo instance, which needs no credentials. Paste into **App content → App access → All or some functionality is restricted → Add instructions**:
+The app needs an OpenTodo server, which the user runs. Reviewers use the review server `review.open-todo.app` (a normal server, not the demo, on the current release; Coolify app `open-todo:review`) with the review account. Paste into **App content → App access → All or some functionality is restricted → Add instructions**:
 
-> OpenTodo is a client for a self-hosted server. To review it without your own server:
-> 1. On the first screen, enter `demo.open-todo.app` and tap Connect.
-> 2. On the sign-in screen, tap "Try the demo". No account or password is needed; you get a private sandbox with sample tasks that is deleted after a few hours.
-> Reminders: open a task, add a reminder a few minutes ahead, and allow notifications and alarms when asked. Widgets: long-press the home screen → Widgets → OpenTodo.
+> OpenTodo is a client for a self-hosted server. For review we run one with a reviewer account, sample content and a project shared by a second user:
+> 1. On the first screen, enter `review.open-todo.app` and tap Connect.
+> 2. Sign in with the user name and password below.
+> Reminders: open a task, add a reminder a few minutes ahead, and allow notifications and alarms when asked. Widgets: long-press the home screen → Widgets → OpenTodo. The shared project "Household" shows sharing and assignments.
 
-Username and password fields: leave empty (none needed).
+Username: `appreview@open-todo.app`. Password: the one the owner set; it is entered only in the Play Console, never in this repository.
 
 ## Exact alarms
 

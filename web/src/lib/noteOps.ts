@@ -51,6 +51,13 @@ export async function createNote(fields: NewNote = {}): Promise<string> {
   return change.entityId
 }
 
+/** Creates a note as one undoable batch (the Notes page's search field, notes-home D3). */
+export async function createNoteUndoable(fields: NewNote = {}): Promise<Converted> {
+  const change = await planNote(fields)
+  const label = t('Note created')
+  return { id: change.entityId, entry: await undoable([{ ...change, create: true }], label), label }
+}
+
 /** A live note row, after folding pending appends and plain-text writes into its document. */
 async function liveNote(id: string): Promise<Note> {
   await foldNote('note', id)

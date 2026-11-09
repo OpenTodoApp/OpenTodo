@@ -1,7 +1,7 @@
 // The note conversions as user actions (OpenSpec change notes-overview, design D6):
 // one batch each and one Undo toast; a failure shows its message. The task menu
 // imports this module on first use, so the first load does not carry it.
-import { moveTaskNoteOut, noteToTask, trashNote, type Converted } from '../../lib/noteOps'
+import { createNoteUndoable, moveTaskNoteOut, noteToTask, trashNote, type NewNote, type Converted } from '../../lib/noteOps'
 import { reportActionError } from '../actionError'
 import { showUndoToast } from '../bulk/toastStore'
 
@@ -29,4 +29,9 @@ export async function deleteNote(noteId: string): Promise<void> {
 /** Move note to a new note (a task's menu); resolves to the new note's id. */
 export async function moveNoteOut(taskId: string): Promise<string | null> {
   return (await withToast(moveTaskNoteOut(taskId)))?.id ?? null
+}
+
+/** A new note from the Notes page's search field, with one Undo; resolves to its id. */
+export async function createNoteWithUndo(fields: NewNote): Promise<string | null> {
+  return (await withToast(createNoteUndoable(fields)))?.id ?? null
 }
