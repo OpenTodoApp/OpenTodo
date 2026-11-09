@@ -88,15 +88,19 @@ final class HealthCheckTests: XCTestCase {
 }
 
 /// The bridge on a real page (ios-bridge-portable): the shell loads a page from a small
-/// server in this process, on an ordinary host that no build declares as app-bound, and
-/// the page reports what it sees. Only the page's own script reports, with a request to
-/// its server, so the answer does not depend on an API App-Bound Domains can switch off.
+/// server in this process and the page reports what it sees. Only the page's own script
+/// reports, with a request to its server, so the answer does not depend on an API that
+/// App-Bound Domains can switch off. The server is on this Mac's network address, not on
+/// 127.0.0.1: WebKit treats localhost and loopback addresses as app-bound whatever the
+/// app declares (`shouldTreatURLProtocolAsAppBound` in WebPageProxy.cpp), so a loopback
+/// page would see the bridge even in a build that denies it to every real server.
 @MainActor
 final class BridgeOnAServerTests: XCTestCase {
     func testThePageSeesTheBridge() async throws {
-        let server = try await PageServer.start()
+        let host = try XCTUnwrap(PageServer.networkAddress(), "this device has a network address besides loopback")
+        let server = try await PageServer.start(host: host)
         defer { server.stop() }
-        let origin = try XCTUnwrap(URL(string: "http://127.0.0.1:\(server.port)"))
+        let origin = try XCTUnwrap(URL(string: "http://\(host):\(server.port)"))
         let shell = ShellController(origin: origin)
         let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
         shell.webView.frame = window.bounds
@@ -105,14 +109,14 @@ final class BridgeOnAServerTests: XCTestCase {
         defer { window.isHidden = true }
         shell.load()
         let report = try await server.report(timeout: 30)
-        XCTAssertEqual(report["origin"], "http://127.0.0.1:\(server.port)")
+        XCTAssertEqual(report["origin"], origin.absoluteString)
         XCTAssertEqual(report["handler"], "object", "the message handler reaches the page: \(report)")
         XCTAssertEqual(report["shell"], "object", "window.opentodoShell exists: \(report)")
         XCTAssertEqual(report["platform"], "ios")
     }
 }
 
-/// A one-page HTTP server on 127.0.0.1: `/` is a page whose script reports
+/// A one-page HTTP server: `/` is a page whose script reports
 /// `typeof window.opentodoShell` and the message handler as `/report?…`.
 final class PageServer: @unchecked Sendable {
     private static let page = """
@@ -135,9 +139,28 @@ final class PageServer: @unchecked Sendable {
 
     var port: UInt16 { listener.port?.rawValue ?? 0 }
 
-    static func start() async throws -> PageServer {
+    /// The first IPv4 address of an interface that is up and not loopback (the simulator
+    /// shares the Mac's interfaces), or nil.
+    static func networkAddress() -> String? {
+        var list: UnsafeMutablePointer<ifaddrs>?
+        guard getifaddrs(&list) == 0, let first = list else { return nil }
+        defer { freeifaddrs(list) }
+        for entry in sequence(first: first, next: { $0.pointee.ifa_next }) {
+            let flags = Int32(entry.pointee.ifa_flags)
+            guard let address = entry.pointee.ifa_addr, address.pointee.sa_family == UInt8(AF_INET),
+                  flags & IFF_UP != 0, flags & IFF_RUNNING != 0, flags & IFF_LOOPBACK == 0 else { continue }
+            var name = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+            guard getnameinfo(address, socklen_t(address.pointee.sa_len), &name, socklen_t(name.count),
+                              nil, 0, NI_NUMERICHOST) == 0 else { continue }
+            let text = String(cString: name)
+            if !text.hasPrefix("169.254.") { return text }
+        }
+        return nil
+    }
+
+    static func start(host: String) async throws -> PageServer {
         let parameters = NWParameters.tcp
-        parameters.requiredLocalEndpoint = .hostPort(host: "127.0.0.1", port: .any)
+        parameters.requiredLocalEndpoint = .hostPort(host: NWEndpoint.Host(host), port: .any)
         let server = PageServer(listener: try NWListener(using: parameters))
         try await withCheckedThrowingContinuation { (done: CheckedContinuation<Void, Error>) in
             server.queue.async {
