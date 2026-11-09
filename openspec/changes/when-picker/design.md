@@ -117,7 +117,11 @@ No dependency. A few hundred bytes gzip in the task detail chunk. The first-load
 
 UI only. It ships behind nothing, and rollback is a revert. Stored tasks with both a part and a time keep showing both until someone edits them.
 
-## Open questions for the owner
+## Decided for the night (2026-11-09)
+
+The owner asked for the open OpenSpec changes to be implemented overnight; each open question below was decided with its recommendation, for the owner to review and overturn in the morning.
+
+### The questions as asked
 
 1. **Should `Shift+E` follow the same exclusive rule** (clear a time when it sets Evening)? Recommendation: no. Keep `Shift+E` as it is, a quick toggle that never removes data silently. The exclusive rule stays a property of the one control where both answers are visible side by side.
 2. **Should a task with a time but no part show its derived part in the row**, for example Evening shown faintly for 19:30? Recommendation: no. Select Time only. Placement already shows the derived part on Today, and a second, faint selection would make the control read as two answers again.

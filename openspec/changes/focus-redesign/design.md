@@ -130,7 +130,11 @@ No dependency. The Focus chunk stays about the same size, and the sessions sheet
 
 UI only. Rollback is a revert. The remembered disclosure state is a new device-only key, and its absence reads as closed.
 
-## Open questions for the owner
+## Decided for the night (2026-11-09)
+
+The owner asked for the open OpenSpec changes to be implemented overnight; each open question below was decided with its recommendation, for the owner to review and overturn in the morning.
+
+### The questions as asked
 
 1. **Should the next open subtask be on the stage** (D1), or should the stage hold only the task? Recommendation: show it. It is the smallest real next step, it can be ticked in place, and a task without subtasks shows nothing extra.
 2. **Should Today's sessions count breaks**, for example "4 sessions, 1 h 40 min, 3 breaks"? Recommendation: no. Breaks write nothing today (by spec), and counting them would need new data for a number nobody acts on.

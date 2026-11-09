@@ -117,7 +117,11 @@ No dependency. Neutral to slightly smaller (the card view goes). The review chun
 
 UI and one additive JSON key. Rollback is a revert. Records written with the key stay readable by the old code, which ignores it.
 
-## Open questions for the owner
+## Decided for the night (2026-11-09)
+
+The owner asked for the open OpenSpec changes to be implemented overnight; each open question below was decided with its recommendation, for the owner to review and overturn in the morning.
+
+### The questions as asked
 
 1. **What does "drop" mean?** Recommendation: Someday, shown with the word "Someday". It parks the task without a date, and it is reversible from the Someday list. Never move it to the Trash from a ritual, where a mis-tap would delete work.
 2. **Should tomorrow's first thing also pin the task to the top of tomorrow's Today**, beyond seeding the focus? Recommendation: no. The focus already leads the Daily check and the Focus screen, and reordering Today would be a second, hidden effect of one choice.

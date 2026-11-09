@@ -159,7 +159,11 @@ Alternatives considered:
 
 Ship as one change. The new pref field is additive, and rollback is a revert: the field's rows stay and are ignored. The interface guide and design-system docs update in the same pull request.
 
-## Open questions for the owner
+## Decided for the night (2026-11-09)
+
+The owner asked for the open OpenSpec changes to be implemented overnight; each open question below was decided with its recommendation, for the owner to review and overturn in the morning.
+
+### The questions as asked
 
 1. **Merge History into Activity?** Recommendation: not now (D6). With icons and counts the four tabs fit at 22 rem, and Activity (on the device, offline) and History (the server's log, online, with restore) differ in where they come from and when they work. If you want three tabs, a follow-up can put History behind an "Every change" switch inside Activity.
 2. **Should Upcoming be Summarised by default for existing users too?** Recommendation: yes. Calm by default is the point, nothing is hidden that the bar does not count, and In full is one choice in the display panel.

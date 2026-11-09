@@ -135,7 +135,11 @@ No dependency. The home chunk gets smaller. Each move part and the pulse popover
 
 UI only. `/loop` keeps working, and `/loop/<move>` is additive. Rollback is a revert. Existing links to `/triage`, Next and the review stay valid.
 
-## Open questions for the owner
+## Decided for the night (2026-11-09)
+
+The owner asked for the open OpenSpec changes to be implemented overnight; each open question below was decided with its recommendation, for the owner to review and overturn in the morning.
+
+### The questions as asked
 
 1. **Words and order.** Keep the method's moves (Catch, Clarify, Place, Do, Review) or adopt GTD's Capture, Clarify, Organise, Reflect, Engage? Recommendation: keep the method's words and order. They are a stable, translated vocabulary in the app, Help and the site bundle (`One method vocabulary`), and the Next step card already puts Review before Do whenever a rhythm is due.
 2. **Should `/loop` open the next move by default** instead of showing only the card? Recommendation: no. The card states the step and opens it in one press. Opening it by default would put a triage card in front of someone who came to look, and the Back button would have nothing to close.
