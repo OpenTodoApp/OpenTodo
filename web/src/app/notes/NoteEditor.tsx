@@ -26,6 +26,7 @@ import { navigate } from '../router'
 import { isFavourite, setFavourite } from '../../lib/favourites'
 import { deleteNote, turnNoteIntoTask } from './noteActions'
 import { NoteMenu } from './NoteRow'
+import { openConnections, useConnected } from '../signals'
 
 const NotesEditor = lazy(() => import('../NotesEditor'))
 
@@ -139,8 +140,10 @@ const toList = () => navigate({ view: 'notes' })
 /** The note's menu: Pin or Unpin always (a pin is personal), the conversions when the note may change. */
 function NoteActions({ note, editable }: { note: Note; editable: boolean }) {
   const pinned = isFavourite(useUserPrefsRow(), 'note', note.id)
+  const connected = useConnected('note', note.id)
   return (
     <NoteMenu pinned={pinned} onPin={() => act(setFavourite('note', note.id, !pinned))}
+      onConnections={connected ? () => openConnections('note', note.id) : undefined}
       onTurnIntoTask={editable ? () => void turnNoteIntoTask(note.id).then((id) => { if (id) toList() }) : undefined}
       onDelete={editable ? () => { toList(); void deleteNote(note.id) } : undefined} />
   )

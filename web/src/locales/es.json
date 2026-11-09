@@ -7284,5 +7284,16 @@
   "Other changes": "Otros cambios",
   "Outline": "Esquema",
   "Show the proposal as": "Mostrar la propuesta como",
-  "The title is too long.": "El título es demasiado largo."
+  "The title is too long.": "El título es demasiado largo.",
+  "Show connections": "Mostrar conexiones",
+  "Show connections of {title}": "Mostrar las conexiones de {title}",
+  "Connections of {title}": "Conexiones de {title}",
+  "Show as": "Mostrar como",
+  "Graph": "Grafo",
+  "Links": "Enlaces",
+  "Linked from": "Enlazado desde",
+  "Centre on {title}": "Centrar en {title}",
+  "+{n}": "+{n}",
+  "{n} more": "{n} más",
+  "{title}, {kind, select, note {note} task {task} other {project}}, {ring, select, centre {in the centre} direct {linked directly} other {two steps away}}": "{title}, {kind, select, note {nota} task {tarea} other {proyecto}}, {ring, select, centre {en el centro} direct {enlace directo} other {a dos pasos}}"
 }

@@ -3,7 +3,9 @@
 // the "place this task in the Day view" request (`s` on a row). Module state, no
 // React context: the requests survive a route change and are consumed once.
 
+import { useEffect, useState, type ComponentType } from 'react'
 import { localDate } from '../lib/dates'
+import { createStore } from '../lib/store'
 import type { Task } from '../lib/types'
 import { navigate, routePath } from './router'
 import { openTaskPage } from './taskTrail'
@@ -115,4 +117,37 @@ export const notificationsOpen = channel()
  */
 export function openTaskInList(task: Pick<Task, 'id' | 'project_id'>): void {
   openTaskPage(task.id, { from: routePath(task.project_id ? { view: 'project', id: task.project_id } : { view: 'inbox' }) })
+}
+
+// ---- Connections (OpenSpec change notes-graph, design D3, D6) ----
+// The menus, the palette and Linked references ask for an item's connections here;
+// the Shell mounts the lazy dialog. Whether an item has a link either way is read by
+// a probe in the lazy Linked references chunk, so nothing of the index is in the first load.
+
+export type ConnectionKind = 'note' | 'task' | 'project'
+
+type DialogProps = { kind: ConnectionKind; id: string; onClose: () => void }
+const connections = createStore<{ kind: ConnectionKind; id: string; Dialog: ComponentType<DialogProps> } | null>('connectionsRequest', null)
+
+/** Loads the dialog's chunk, then asks the Shell to show it (no Suspense round, which React reveals only after 300 ms). */
+export function openConnections(kind: ConnectionKind, id: string): void {
+  void import('./connections/ConnectionsDialog').then((m) => connections.set({ kind, id, Dialog: m.default }))
+}
+
+export const closeConnections = (): void => connections.set(null)
+export const useConnectionsRequest = connections.use
+
+/** Whether the item links to, or is linked from, something this device can read (false until known). */
+export function useConnected(kind: ConnectionKind, id: string | undefined): boolean {
+  const [on, setOn] = useState('')
+  const key = id ? `${kind}:${id}` : ''
+  useEffect(() => {
+    if (!id) return
+    let stop: (() => void) | undefined
+    let live = true
+    // The probe sits in the Linked references chunk, which already holds the link index.
+    void import('./LinkedReferences').then((m) => { if (live) stop = m.watchConnected(kind, id, (v) => setOn(v ? key : '')) })
+    return () => { live = false; stop?.() }
+  }, [kind, id, key])
+  return !!key && on === key
 }
