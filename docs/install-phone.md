@@ -45,4 +45,4 @@ Instead of installing from the browser, you can install the **OpenTodo** app fro
 
 ## The iOS app
 
-The **OpenTodo** app for iPhone and iPad comes through TestFlight and later the App Store; with a Mac and Xcode you can also build it yourself. Enter your server's address on its first screen. It appears in the share sheet and adds a Today widget, Face ID unlock of an encrypted account and reminders scheduled on the phone. Unlike the installed web app, the app from TestFlight needs the network to start. See [The iOS app](ios-app.md).
+The **OpenTodo** app for iPhone and iPad is in the [App Store](https://apps.apple.com/us/app/opentodo/id6832200428), as a first release; with a Mac and Xcode you can also build it yourself. Enter your server's address on its first screen. It appears in the share sheet and adds a Today widget, Face ID unlock of an encrypted account and reminders scheduled on the phone. Unlike the installed web app, the app from the App Store needs the network to start. See [The iOS app](ios-app.md).

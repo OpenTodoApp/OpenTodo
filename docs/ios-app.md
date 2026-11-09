@@ -1,6 +1,6 @@
 ---
 title: The iOS app
-summary: The OpenTodo app for iPhone and iPad, from TestFlight or built from source: connect it to your server, reminders without push, sharing, widgets and Face ID unlock.
+summary: The OpenTodo app for iPhone and iPad, from the App Store or built from source: connect it to your server, reminders without push, sharing, widgets and Face ID unlock.
 audience: user
 section: Reference
 specs: []
@@ -13,7 +13,7 @@ The OpenTodo app for iPhone and iPad opens your own OpenTodo server, like the [i
 
 ## Install it
 
-The official app comes through TestFlight, Apple's app for testing new apps, and later from the App Store. Install **TestFlight** from the App Store, then open the OpenTodo invitation link; the link will be on this page once the first build is out. TestFlight updates the app with every release.
+The official app is in the App Store: [OpenTodo for iPhone and iPad](https://apps.apple.com/us/app/opentodo/id6832200428). It is the first release, so expect some rough edges, and [say what to improve](feedback-and-support.md). New builds go to testers through TestFlight, Apple's app for testing, before they reach the App Store.
 
 As the copyright holder, the author of OpenTodo allows distributing its iOS app through Apple's App Store and TestFlight. You can still build the app yourself from source ([Building it](#building-it)).
 
