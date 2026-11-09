@@ -4,14 +4,14 @@
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { currentDateTime } from './dates'
-import { db } from './db'
-import { defaultListDisplay, isDefaultDisplay, listDisplayOf, setListDisplay } from './listDisplay'
+import { db, useDatabase } from './db'
+import { defaultListDisplay, isDefaultDisplay, listDisplayOf, resetListDisplay, setListDisplay } from './listDisplay'
 import { listGroups, sectionBuckets, type GroupInput } from './listGroups'
 import { buildTaskTree } from './subtasks'
-import { fieldSortBy, type FieldDef, type Label, type Project, type Section, type Task } from './types'
+import { fieldSortBy, type FieldDef, type Label, type Op, type Project, type Section, type Task } from './types'
 import { compareTasks } from './views'
 import { createField } from './fields'
-import { createProject } from './ops'
+import { applyOps, createProject, getDeviceId, resetDeviceId } from './ops'
 
 const TODAY = '2026-10-14'
 let n = 0
@@ -205,5 +205,81 @@ describe('label page with display options', () => {
     expect(listGroups({ ...base, display: manual }).map(titles)).toEqual([['Three', 'One', 'Two']])
     expect(listGroups({ ...base, display: { ...manual, sortDir: 'desc' } }).map(titles)).toEqual([['Two', 'One', 'Three']])
     expect(listGroups({ ...base, display: { ...manual, groupBy: 'none' } }).map(titles)).toEqual([['Three', 'One', 'Two']])
+  })
+})
+
+// Today, Upcoming and the Inbox (OpenSpec change builtin-view-options): stored per view in user_prefs.
+describe('built-in view options (builtin-view-options)', () => {
+  beforeEach(async () => {
+    await db.delete()
+    await db.open()
+  })
+
+  it('reads every default, and a missing, unknown or not-offered value as the default, writing nothing', async () => {
+    expect(listDisplayOf('today', null)).toEqual({ groupBy: 'day', sortBy: 'due', sortDir: 'asc', rowLayout: 'line', subtasks: false })
+    expect(listDisplayOf('upcoming', undefined, 'detailed')).toEqual({ groupBy: 'none', sortBy: 'due', sortDir: 'asc', rowLayout: 'detailed', subtasks: false })
+    expect(listDisplayOf('inbox', {})).toEqual({ groupBy: 'none', sortBy: 'position', sortDir: 'asc', rowLayout: 'line' })
+    // A project's grouping on Today, manual order on Today, a newer client's value, a custom field in the Inbox.
+    expect(listDisplayOf('today', { today_group_by: 'section', today_sort_by: 'position', today_sort_dir: 'sideways', today_subtasks: 'tree' }))
+      .toEqual({ groupBy: 'day', sortBy: 'due', sortDir: 'asc', rowLayout: 'line', subtasks: false })
+    expect(listDisplayOf('upcoming', { upcoming_group_by: 'priority' }).groupBy).toBe('none')
+    expect(listDisplayOf('inbox', { inbox_group_by: 'project', inbox_sort_by: fieldSortBy('cccccccc-cccc-4ccc-8ccc-cccccccccccc') }))
+      .toMatchObject({ groupBy: 'none', sortBy: 'position' })
+    // Each view reads its own fields.
+    const row = { today_group_by: 'project', today_sort_by: 'title', today_sort_dir: 'desc', today_row_layout: 'detailed', today_subtasks: 'nested', inbox_group_by: 'label', upcoming_sort_by: 'priority' }
+    expect(listDisplayOf('today', row)).toEqual({ groupBy: 'project', sortBy: 'title', sortDir: 'desc', rowLayout: 'detailed', subtasks: true })
+    expect(listDisplayOf('inbox', row)).toMatchObject({ groupBy: 'label', sortBy: 'position' })
+    expect(listDisplayOf('upcoming', row)).toMatchObject({ sortBy: 'priority', subtasks: false })
+    expect(listDisplayOf('today', { today_sort_by: fieldSortBy('cccccccc-cccc-4ccc-8ccc-cccccccccccc') }).sortBy).toBe(fieldSortBy('cccccccc-cccc-4ccc-8ccc-cccccccccccc'))
+    // Reset is offered only while something differs, the row layout from the account's included.
+    expect(isDefaultDisplay('today', listDisplayOf('today', null, 'detailed'), 'detailed')).toBe(true)
+    expect(isDefaultDisplay('today', listDisplayOf('today', { today_row_layout: 'line' }, 'detailed'), 'detailed')).toBe(false)
+    expect(isDefaultDisplay('upcoming', listDisplayOf('upcoming', { upcoming_subtasks: 'nested' }), 'line')).toBe(false)
+    expect(isDefaultDisplay('inbox', listDisplayOf('inbox', { inbox_sort_dir: 'desc' }), 'line')).toBe(false)
+    expect(await db.outbox.count()).toBe(0)
+  })
+
+  it('writes the changed fields of a view to user_prefs "me", one op each', async () => {
+    await setListDisplay({ kind: 'today' }, { groupBy: 'project', subtasks: true })
+    await setListDisplay({ kind: 'inbox' }, { sortBy: 'priority' })
+    expect(await db.userPrefs.get('me')).toMatchObject({ today_group_by: 'project', today_subtasks: 'nested', inbox_sort_by: 'priority' })
+    const ops = await db.outbox.toArray()
+    expect(ops.map((o) => `${o.entity}.${o.entityId}.${o.field}`).sort()).toEqual(['user_prefs.me.inbox_sort_by', 'user_prefs.me.today_group_by', 'user_prefs.me.today_subtasks'])
+    // Nest subtasks off is stored as empty, and the Inbox has no such option to write.
+    await setListDisplay({ kind: 'today' }, { subtasks: false })
+    await setListDisplay({ kind: 'inbox' }, { subtasks: true })
+    expect(await db.userPrefs.get('me')).toMatchObject({ today_subtasks: '' })
+    expect((await db.userPrefs.get('me')) as unknown as Record<string, unknown>).not.toHaveProperty('inbox_subtasks')
+  })
+
+  it('Reset writes "" to that view\'s non-empty fields only and leaves the other views alone', async () => {
+    await setListDisplay({ kind: 'today' }, { groupBy: 'project', sortBy: 'priority', subtasks: true })
+    await setListDisplay({ kind: 'inbox' }, { sortBy: 'priority' })
+    await db.outbox.clear()
+    await resetListDisplay({ kind: 'today' })
+    const ops = await db.outbox.toArray()
+    expect(ops.map((o) => [o.field, o.value]).sort()).toEqual([['today_group_by', ''], ['today_sort_by', ''], ['today_subtasks', '']])
+    const row = await db.userPrefs.get('me')
+    expect(listDisplayOf('today', row)).toEqual(defaultListDisplay('today'))
+    expect(listDisplayOf('inbox', row).sortBy).toBe('priority')
+    // Nothing to reset: nothing written.
+    await db.outbox.clear()
+    await resetListDisplay({ kind: 'upcoming' })
+    expect(await db.outbox.count()).toBe(0)
+  })
+
+  it('two devices, two fields: a grouping on one and an order on the other both survive', async () => {
+    const ops = (rows: Op[]) => rows.map((row) => { const { local: _l, ...o } = row as Op & { local?: unknown }; return o as Op })
+    useDatabase(`laptop-${Date.now()}`); resetDeviceId(); await getDeviceId()
+    await setListDisplay({ kind: 'inbox' }, { groupBy: 'label' })
+    const fromLaptop = ops(await db.outbox.toArray())
+    useDatabase(`phone-${Date.now()}`); resetDeviceId(); await getDeviceId()
+    await setListDisplay({ kind: 'inbox' }, { sortBy: 'title' })
+    const fromPhone = ops(await db.outbox.toArray())
+    await applyOps(fromLaptop)
+    expect(listDisplayOf('inbox', await db.userPrefs.get('me'))).toMatchObject({ groupBy: 'label', sortBy: 'title' })
+    useDatabase(`laptop2-${Date.now()}`); resetDeviceId(); await getDeviceId()
+    await applyOps(fromLaptop); await applyOps(fromPhone)
+    expect(listDisplayOf('inbox', await db.userPrefs.get('me'))).toMatchObject({ groupBy: 'label', sortBy: 'title' })
   })
 })

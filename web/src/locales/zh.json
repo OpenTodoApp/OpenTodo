@@ -7160,9 +7160,9 @@
   "Show tasks assigned to others": "显示指派给其他人的任务",
   "Group and order": "分组和排序",
   "Group by due date": "按截止日期分组",
-  "Group by label (in a project or a saved view)": "按标签分组（在项目或已保存视图中）",
+  "Group by label (in a project, a saved view, Today or the Inbox)": "按标签分组（在项目、已保存视图、今天或收件箱中）",
   "Group by priority": "按优先级分组",
-  "Group by project (on a label page or in a saved view)": "按项目分组（在标签页面或已保存视图中）",
+  "Group by project (on a label page, in a saved view or on Today)": "按项目分组（在标签页面、已保存视图或今天中）",
   "Group by section (in a project)": "按分组归类（在项目中）",
   "Group by: {name}": "分组方式：{name}",
   "No grouping": "不分组",
@@ -7243,5 +7243,8 @@
   "Stop emails": "停止邮件",
   "Stop emails from “{routine}”?": "停止来自“{routine}”的邮件？",
   "You will get no more emails from “{routine}”.": "你将不再收到来自“{routine}”的邮件。",
-  "Email project members: {subject}": "给项目成员发邮件：{subject}"
+  "Email project members: {subject}": "给项目成员发邮件：{subject}",
+  "Time of day": "时段",
+  "Nest subtasks": "嵌套子任务",
+  "Group by time of day (on Today)": "按时段分组（在今天中）"
 }

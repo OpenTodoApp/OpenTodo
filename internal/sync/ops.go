@@ -889,6 +889,47 @@ var Schema = map[string]map[string]Field{
 		// with an ellipsis; clients read an empty or unknown value as off and
 		// keep the stored value. Settings, never content.
 		"full_titles": {Kind: kString, Default: `""`},
+		// Today's display options (OpenSpec change builtin-view-options, design
+		// D1, D2): the grouping of the day's own tasks, "day" (Time of day),
+		// "project", "priority", "label" or "none"; Earlier, Blocked, Waiting for
+		// a slot and Done today keep their place. Clients read an empty, unknown
+		// or not-offered value as "day" and keep the stored value. Settings,
+		// never content.
+		"today_group_by": {Kind: kString, Default: `""`},
+		// Today's order (builtin-view-options D2): "due", "priority", "created",
+		// "deadline", "title" or "field:<id>"; empty or unknown reads as "due".
+		"today_sort_by": {Kind: kString, Default: `""`},
+		// Today's order direction: "asc" or "desc"; empty or unknown reads as "asc".
+		"today_sort_dir": {Kind: kString, Default: `""`},
+		// Today's row layout (row-layouts): "line" or "detailed"; empty or
+		// unknown follows the account's row_layout.
+		"today_row_layout": {Kind: kString, Default: `""`},
+		// Today's Nest subtasks (builtin-view-options D5): "nested" lists a
+		// subtask under its parent when both are in the same group; anything
+		// else reads as flat.
+		"today_subtasks": {Kind: kString, Default: `""`},
+		// Upcoming's order within each day (builtin-view-options D2, D4): the
+		// same values as today_sort_by; empty or unknown reads as "due".
+		"upcoming_sort_by": {Kind: kString, Default: `""`},
+		// Upcoming's order direction: "asc" or "desc"; empty or unknown reads as "asc".
+		"upcoming_sort_dir": {Kind: kString, Default: `""`},
+		// Upcoming's row layout: "line" or "detailed"; empty or unknown follows
+		// the account's row_layout.
+		"upcoming_row_layout": {Kind: kString, Default: `""`},
+		// Upcoming's Nest subtasks: "nested" or flat, as today_subtasks.
+		"upcoming_subtasks": {Kind: kString, Default: `""`},
+		// The Inbox's grouping of its top-level tasks (builtin-view-options D6):
+		// "none", "due", "priority" or "label"; empty, unknown or not-offered
+		// reads as "none".
+		"inbox_group_by": {Kind: kString, Default: `""`},
+		// The Inbox's order: "position" (manual), "priority", "due", "created",
+		// "deadline" or "title"; empty or unknown reads as "position".
+		"inbox_sort_by": {Kind: kString, Default: `""`},
+		// The Inbox's order direction: "asc" or "desc"; empty or unknown reads as "asc".
+		"inbox_sort_dir": {Kind: kString, Default: `""`},
+		// The Inbox's row layout: "line" or "detailed"; empty or unknown follows
+		// the account's row_layout.
+		"inbox_row_layout": {Kind: kString, Default: `""`},
 	},
 	// objective: one quarterly or weekly objective (OpenSpec change
 	// plan-objectives, design D1). Personal like place: it resolves to the

@@ -1,16 +1,20 @@
-// Display options of a project's list and a label's page (OpenSpec change
-// list-display-options): the grouping, the order and its direction, the same
-// choices a saved view offers, stored per project (in the user's personal
-// project_prefs row) and per label (on the label, which is personal), so the
-// choice follows the user to every device and never reaches other members of a
+// Display options of a project's list, a label's page and the built-in Today,
+// Upcoming and Inbox (OpenSpec changes list-display-options, builtin-view-options):
+// the grouping, the order and its direction, the same choices a saved view offers,
+// stored per project (in the user's personal project_prefs row), per label (on the
+// label, which is personal) and per built-in view (in the user's user_prefs row), so
+// the choice follows the user to every device and never reaches other members of a
 // shared project. Read-time fallback like a view's: "" or a value this build does
-// not know reads as the page's default and is never rewritten.
+// not know, or one the page does not offer, reads as the page's default and is never
+// rewritten.
+import { db } from './db'
 import { mutate } from './ops'
 import { rowLayoutOf, type RowLayout } from './rowLayout'
-import { readSortBy, type GroupBy, type Label, type ProjectPrefs, type SortBy, type SortDir } from './types'
+import { USER_PREFS_ID } from './userPrefs'
+import { readSortBy, type GroupBy, type SortBy, type SortDir } from './types'
 
-/** A list page's grouping: a view's choices plus the project's sections. */
-export type ListGroupBy = GroupBy | 'section'
+/** A list page's grouping: a view's choices plus the project's sections and Today's time of day. */
+export type ListGroupBy = GroupBy | 'section' | 'day'
 
 export interface ListDisplay {
   groupBy: ListGroupBy
@@ -18,13 +22,20 @@ export interface ListDisplay {
   sortDir: SortDir
   /** The rows' layout (row-layouts): the page's own choice, else the account's. */
   rowLayout: RowLayout
+  /** Today and Upcoming (builtin-view-options D5): subtasks under their parent in the same group; absent where not offered. */
+  subtasks?: boolean
 }
 
+/** The built-in lists with display options (builtin-view-options). */
+export type BuiltinDisplayKind = 'today' | 'upcoming' | 'inbox'
+
 /** Which page the options belong to. */
-export type DisplayScope = { kind: 'project' | 'label'; id: string }
+export type DisplayScope = { kind: 'project' | 'label'; id: string } | { kind: BuiltinDisplayKind }
 
 /** Order by, as the panel lists them on a project or label page: manual first. */
 export const LIST_SORT_OPTIONS: readonly SortBy[] = ['position', 'priority', 'due', 'created', 'deadline', 'title']
+/** Today and Upcoming keep their own order rules: no manual order (builtin-view-options D2). */
+export const DAY_SORT_OPTIONS: readonly SortBy[] = ['due', 'priority', 'created', 'deadline', 'title']
 /** A project groups by its sections by default; projects make no sense inside one project. */
 export const PROJECT_GROUP_OPTIONS: readonly ListGroupBy[] = ['section', 'none', 'due', 'priority', 'label']
 /** A label page groups by project by default; its own label would be the only group. */
@@ -32,30 +43,88 @@ export const LABEL_GROUP_OPTIONS: readonly ListGroupBy[] = ['project', 'none', '
 
 const SORT_DIRS: readonly SortDir[] = ['asc', 'desc']
 
+interface DisplayKind {
+  groups: readonly ListGroupBy[]
+  sorts: readonly SortBy[]
+  groupBy: ListGroupBy
+  sortBy: SortBy
+  /** Offers Nest subtasks. */
+  nest?: true
+  /** Custom-field orders are offered (not in the Inbox, whose tasks have no project). */
+  fields: boolean
+}
+
+/** What each page offers and shows by default (list-display-options D2, builtin-view-options D2). */
+export const DISPLAY_KINDS: Record<DisplayScope['kind'], DisplayKind> = {
+  project: { groups: PROJECT_GROUP_OPTIONS, sorts: LIST_SORT_OPTIONS, groupBy: 'section', sortBy: 'position', fields: true },
+  label: { groups: LABEL_GROUP_OPTIONS, sorts: LIST_SORT_OPTIONS, groupBy: 'project', sortBy: 'position', fields: true },
+  today: { groups: ['day', 'project', 'priority', 'label', 'none'], sorts: DAY_SORT_OPTIONS, groupBy: 'day', sortBy: 'due', nest: true, fields: true },
+  // Upcoming is its days: no Group by.
+  upcoming: { groups: [], sorts: DAY_SORT_OPTIONS, groupBy: 'none', sortBy: 'due', nest: true, fields: true },
+  inbox: { groups: ['none', 'due', 'priority', 'label'], sorts: LIST_SORT_OPTIONS, groupBy: 'none', sortBy: 'position', fields: false },
+}
+
+const isBuiltin = (kind: DisplayScope['kind']): kind is BuiltinDisplayKind => kind === 'today' || kind === 'upcoming' || kind === 'inbox'
+
+/** A built-in view's options live in the user's preferences and can be reset. */
+export const isBuiltinScope = (scope: DisplayScope): scope is { kind: BuiltinDisplayKind } => isBuiltin(scope.kind)
+
+/** The stored field of each option: `group_by` on a project's prefs or a label, `today_group_by` in user_prefs. */
+function fieldsOf(kind: DisplayScope['kind']) {
+  const pre = isBuiltin(kind) ? `${kind}_` : ''
+  return {
+    groupBy: `${pre}group_by`, sortBy: `${pre}sort_by`, sortDir: `${pre}sort_dir`, rowLayout: `${pre}row_layout`,
+    ...(DISPLAY_KINDS[kind].nest ? { subtasks: `${pre}subtasks` } : {}),
+  } as Record<keyof ListDisplay, string>
+}
+
 /** The defaults: what the page showed before it had options. */
 export function defaultListDisplay(kind: DisplayScope['kind'], rowLayout: RowLayout = 'line'): ListDisplay {
-  return { groupBy: kind === 'project' ? 'section' : 'project', sortBy: 'position', sortDir: 'asc', rowLayout }
+  const k = DISPLAY_KINDS[kind]
+  return { groupBy: k.groupBy, sortBy: k.sortBy, sortDir: 'asc', rowLayout, ...(k.nest ? { subtasks: false } : {}) }
 }
 
 function pick<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
   return typeof value === 'string' && (allowed as readonly string[]).includes(value) ? (value as T) : fallback
 }
 
-/** The options of a project's prefs row or a label row; missing or unknown values read as the default. */
-export function listDisplayOf(kind: DisplayScope['kind'], row: Pick<ProjectPrefs | Label, 'group_by' | 'sort_by' | 'sort_dir' | 'row_layout'> | null | undefined, account: RowLayout = 'line'): ListDisplay {
-  const d = defaultListDisplay(kind)
+/**
+ * The options of a project's prefs row, a label row or (built-in views) the user's
+ * prefs row; missing, unknown or not-offered values read as the default.
+ */
+export function listDisplayOf(kind: DisplayScope['kind'], row: object | null | undefined, account: RowLayout = 'line'): ListDisplay {
+  const k = DISPLAY_KINDS[kind]
+  const f = fieldsOf(kind)
+  const r = (row ?? {}) as Record<string, unknown>
+  const sortBy = readSortBy(r[f.sortBy], k.sorts, k.sortBy)
   return {
-    rowLayout: rowLayoutOf(row?.row_layout, account),
-    groupBy: pick(row?.group_by, kind === 'project' ? PROJECT_GROUP_OPTIONS : LABEL_GROUP_OPTIONS, d.groupBy),
-    sortBy: readSortBy(row?.sort_by, LIST_SORT_OPTIONS, d.sortBy),
-    sortDir: pick(row?.sort_dir, SORT_DIRS, d.sortDir),
+    rowLayout: rowLayoutOf(r[f.rowLayout], account),
+    groupBy: pick(r[f.groupBy], k.groups, k.groupBy),
+    sortBy: !k.fields && sortBy.startsWith('field:') ? k.sortBy : sortBy,
+    sortDir: pick(r[f.sortDir], SORT_DIRS, 'asc'),
+    ...(k.nest ? { subtasks: r[f.subtasks] === 'nested' } : {}),
   }
 }
 
-/** The page shows what it showed before options existed: its own grouping, in manual order. */
-export function isDefaultDisplay(kind: DisplayScope['kind'], d: ListDisplay): boolean {
+/**
+ * The page shows what it showed before options existed: its own grouping, in its own
+ * order. With `account`, the row layout and Nest subtasks count too (Reset, builtin-view-options D7).
+ */
+export function isDefaultDisplay(kind: DisplayScope['kind'], d: ListDisplay, account?: RowLayout): boolean {
   const def = defaultListDisplay(kind)
-  return d.groupBy === def.groupBy && d.sortBy === 'position' && d.sortDir === 'asc'
+  const same = d.groupBy === def.groupBy && d.sortBy === def.sortBy && d.sortDir === 'asc'
+  return account === undefined ? same : same && d.rowLayout === account && !d.subtasks
+}
+
+/** The stored value of an option. */
+function stored(key: keyof ListDisplay, value: ListDisplay[keyof ListDisplay]): string {
+  return key === 'subtasks' ? (value ? 'nested' : '') : String(value)
+}
+
+function write(scope: DisplayScope, out: Record<string, string>): Promise<void> {
+  if (scope.kind === 'project') return mutate('project_prefs', scope.id, out)
+  if (scope.kind === 'label') return mutate('label', scope.id, out)
+  return mutate('user_prefs', USER_PREFS_ID, out)
 }
 
 /**
@@ -63,11 +132,20 @@ export function isDefaultDisplay(kind: DisplayScope['kind'], d: ListDisplay): bo
  * device and an order on another both survive). Works offline.
  */
 export async function setListDisplay(scope: DisplayScope, patch: Partial<ListDisplay>): Promise<void> {
+  const f = fieldsOf(scope.kind)
   const out: Record<string, string> = {}
-  if (patch.groupBy !== undefined) out.group_by = patch.groupBy
-  if (patch.sortBy !== undefined) out.sort_by = patch.sortBy
-  if (patch.sortDir !== undefined) out.sort_dir = patch.sortDir
-  if (patch.rowLayout !== undefined) out.row_layout = patch.rowLayout
+  for (const key of Object.keys(patch) as (keyof ListDisplay)[]) {
+    if (patch[key] !== undefined && f[key]) out[f[key]] = stored(key, patch[key])
+  }
   if (Object.keys(out).length === 0) return
-  await mutate(scope.kind === 'project' ? 'project_prefs' : 'label', scope.id, out)
+  await write(scope, out)
+}
+
+/** Reset (builtin-view-options D7): "" to every option of a built-in view that is not already empty, one op each. */
+export async function resetListDisplay(scope: { kind: BuiltinDisplayKind }): Promise<void> {
+  const row = (await db.userPrefs.get(USER_PREFS_ID)) as unknown as Record<string, unknown> | undefined
+  const out: Record<string, string> = {}
+  for (const field of Object.values(fieldsOf(scope.kind))) if (row?.[field]) out[field] = ''
+  if (Object.keys(out).length === 0) return
+  await mutate('user_prefs', USER_PREFS_ID, out)
 }

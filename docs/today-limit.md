@@ -17,7 +17,7 @@ A busy [Today](today-and-upcoming.md) can hold twenty tasks. A **Today limit** t
 
 Choose a limit under **Today limit** in **Settings → General → Start view and briefing**: **Off**, 3, 5, 7 or 10 tasks, or **Custom** for any whole number from 1 to 20. In the **Lists with method hints** and **Full Open Loops method** modes, Today's menu has **Limit Today…** too. The limit is yours alone and reaches your other devices.
 
-With a limit on, the line under Today's title reads **3 of 5**: the slots in use and the limit. Today lists that many tasks in its usual groups and order (Earlier, Today, the [day parts](day-parts.md), This Evening). The others wait in a folded **Waiting for a slot** group at the end, with their count. Nothing is rescheduled, and a full Today never refuses a new task.
+With a limit on, the line under Today's title reads **3 of 5**: the slots in use and the limit. Today lists that many tasks in its groups. The others wait in a folded **Waiting for a slot** group at the end, with their count. Nothing is rescheduled, and a full Today never refuses a new task.
 
 ## Who gets a slot
 
@@ -28,7 +28,7 @@ Slots are filled first come, first served:
 3. **Earlier** tasks, the oldest first;
 4. the other tasks by when they were created, the oldest first.
 
-A task captured on a full day waits instead of pushing out a planned one; a priority or a time never reshuffles the slots. The Waiting group keeps this order: its first task comes in when you finish one.
+A task captured on a full day waits instead of pushing out a planned one; a priority or a time never reshuffles the slots, nor do [Display options](arrange-built-in-views.md). The Waiting group keeps this order: its first task comes in when you finish one.
 
 [Blocked](tasks-and-projects.md#wait-for-another-task) tasks and the later steps of a [sequential project](project-flows.md) never take a slot; they stay where they were. Nor do habits.
 

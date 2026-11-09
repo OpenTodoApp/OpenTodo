@@ -55,6 +55,8 @@ export interface RowImplied {
   part?: 'morning' | 'afternoon'
   /** The Someday view: the "Someday" chip is left out. */
   someday?: true
+  /** Today grouped by project (builtin-view-options D3): the heading names the project, so the row leaves it out. */
+  project?: true
 }
 
 /** Sets what a group's heading implies on each of its rows (a new row object only when there is something to imply). */
@@ -385,8 +387,10 @@ export interface GroupInput {
   sectionCount: number
   collapsedSections: readonly string[]
   logbook: { groups: LogbookGroup[] } | null
-  /** A project's or label's display options (list-display-options); absent shows the page's default. */
+  /** A project's, label's or built-in view's display options (list-display-options, builtin-view-options); absent shows the page's default. */
   display?: ListDisplay
+  /** Upcoming with Start with Today: Today's own display options lay out its Today groups (builtin-view-options D4). */
+  todayDisplay?: ListDisplay
   /** Labels, for grouping by label. */
   labels?: readonly Label[]
   /** A label page's own manual order (view-manual-order): the rank of each placed task. */
@@ -425,17 +429,37 @@ function sortedRoots(roots: TreeNode<Task>[], order: ((a: Task, b: Task) => numb
   return order ? [...roots].sort((a, b) => order(a.item, b.item)) : roots
 }
 
-/** The list's groups, in render order: one pass, linear in the number of tasks. */
-export function listGroups(p: GroupInput): ListGroup[] {
-  const toRow = (n: TreeNode<Task>): ListRow => ({
+/** A tree node's row in a list; a top-level task that still points at a parent (completed, deleted, missing, outside the group) names it. */
+function nodeRow(p: GroupInput): (n: TreeNode<Task>) => ListRow {
+  return (n) => ({
     task: n.item,
     depth: n.depth,
     parent: n.parent,
     hasChildren: n.children.length > 0,
     collapsed: p.collapsed.has(n.id),
-    // A top-level task that still points at a parent (completed, deleted, missing) names it.
     breadcrumb: n.parent === null && n.item.parent_id ? breadcrumbOf(n.item, p.taskMap) : null,
   })
+}
+
+/** Today's and Upcoming's chosen order (builtin-view-options D2), or null for their own: due, then priority. */
+function dayOrder(p: GroupInput, d: ListDisplay | undefined): ((a: Task, b: Task) => number) | null {
+  return !d || (d.sortBy === 'due' && d.sortDir === 'asc') ? null : displayOrder(d, undefined, p.projects, p.fields)
+}
+
+/**
+ * A group's rows in Today or Upcoming (builtin-view-options D3, D5): in the chosen order;
+ * with Nest subtasks, a subtask under its parent when both are in the group, the order
+ * sorting the top-level rows and subtasks keeping their manual order.
+ */
+function dayRows(p: GroupInput, list: Task[], order: ((a: Task, b: Task) => number) | null, nest: boolean, row: (task: Task) => ListRow): ListRow[] {
+  if (!nest) return (order ? [...list].sort(order) : list).map(row)
+  const roots = buildTaskTree(list).roots.sort((a, b) => (order ?? compareDueThenPriority)(a.item, b.item))
+  return flattenTree(roots, (id) => p.collapsed.has(id)).map(nodeRow(p))
+}
+
+/** The list's groups, in render order: one pass, linear in the number of tasks. */
+export function listGroups(p: GroupInput): ListGroup[] {
+  const toRow = nodeRow(p)
   const isCollapsed = (id: string) => p.collapsed.has(id)
   // Later keeps each subtree together under its top-level task (subtasks-follow-later).
   const later = (): ListGroup[] => (p.laterTasks.length
@@ -445,7 +469,7 @@ export function listGroups(p: GroupInput): ListGroup[] {
   if (p.board) return p.columns.map((c) => ({ key: c.key, heading: null, rows: c.folded ? [] : c.cards.map((task) => flatRow(task)) }))
   const order = displayOrder(p.display, p.manualOrder, p.projects, p.fields)
   const groupByKey = p.display?.groupBy
-  if (p.tree && p.view === 'project' && groupByKey && groupByKey !== 'section' && groupByKey !== 'none' && groupByKey !== 'project') {
+  if (p.tree && (p.view === 'project' || p.view === 'inbox') && groupByKey && groupByKey !== 'section' && groupByKey !== 'none' && groupByKey !== 'project' && groupByKey !== 'day') {
     // Grouped by a property of the top-level tasks (list-display-options D3); each brings its subtasks.
     const roots = sortedRoots(p.tree.roots, order)
     const byId = new Map(roots.map((n) => [n.id, n]))
@@ -522,7 +546,9 @@ function flatGroups(p: GroupInput): ListGroup[] {
     // Start with Today (upcoming-start-with-today D2): Today's own groups, then Tomorrow onwards.
     const lead = p.upcomingToday ? p.tasks.filter((x) => inToday(x, p.today)) : []
     const ahead = lead.length ? p.tasks.filter((x) => !inToday(x, p.today)) : p.tasks
-    const days = groupUpcoming(ahead, p.today).map(({ date, tasks: list }): ListGroup => ({ key: date, heading: formatDateHeading(date, p.today, p.resolved), rows: withImplied(list.map(row), { date }), dropDay: date }))
+    // Upcoming's own order and nesting apply from Tomorrow on (builtin-view-options D4).
+    const order = dayOrder(p, p.display)
+    const days = groupUpcoming(ahead, p.today).map(({ date, tasks: list }): ListGroup => ({ key: date, heading: formatDateHeading(date, p.today, p.resolved), rows: withImplied(dayRows(p, list, order, !!p.display?.subtasks, row), { date }), dropDay: date }))
     // Today's day groups take a drop for today (upcoming-drag); Earlier, Blocked and Waiting do not.
     const onToday = new Set(['today', 'morning', 'afternoon', 'evening'])
     const leadGroups = p.upcomingToday ? todayGroups({ ...p, tasks: lead, doneToday: undefined }, row, true).map((g) => (onToday.has(g.key) ? { ...g, dropDay: p.today } : g)) : []
@@ -532,7 +558,7 @@ function flatGroups(p: GroupInput): ListGroup[] {
     // A label page with its own grouping (list-display-options D3): in its order, each task once.
     const order = displayOrder(p.display, p.manualOrder, p.projects, p.fields)
     const tasks = order ? [...p.tasks].sort(order) : p.tasks
-    if (p.display.groupBy === 'none' || p.display.groupBy === 'section') return [{ key: 'all', heading: null, rows: tasks.map(row) }]
+    if (p.display.groupBy === 'none' || p.display.groupBy === 'section' || p.display.groupBy === 'day') return [{ key: 'all', heading: null, rows: tasks.map(row) }]
     return groupTasks(tasks, p.display.groupBy, { today: p.today, labels: p.labels ?? [], projects: p.projects }, true)
       .map((g) => ({ key: g.key, heading: g.heading, rows: g.tasks.map(row) }))
   }
@@ -564,23 +590,53 @@ function todayGroups(p: GroupInput, row: (task: Task) => ListRow, inUpcoming = f
   const out = slotWaiting.length ? new Set(slotWaiting.map((x) => x.id)) : null
   const listed = out ? p.tasks.filter((x) => !out.has(x.id)) : p.tasks
   const { overdue: earlier, day, morning, afternoon, evening, blocked: waiting } = groupToday(listed, p.today, p.blocked, parts)
+  // Today's display options (builtin-view-options D3), also for Upcoming's Today groups (D4):
+  // the order applies within Earlier, the day's groups and Blocked.
+  const d = inUpcoming ? p.todayDisplay : p.display
+  const order = dayOrder(p, d)
+  const rows = (list: Task[]) => dayRows(p, list, order, !!d?.subtasks, row)
   const g: ListGroup[] = []
   // In Upcoming the part headings take no drops: a drop there would change the part and leave the date (D3).
   const drop = (part: DayPart | 'none') => (parts && !inUpcoming ? { dropPart: part } : {})
   // Earlier and Blocked imply nothing: how late a task is stays visible on its row (calm-rows D3, page-rhythm D5).
-  if (earlier.length) g.push({ key: 'earlier', heading: t('Earlier'), rows: earlier.map(row) })
-  const others = earlier.length || morning.length || afternoon.length || evening.length
-  // With day parts on an empty Today group is left out, unless the list would be empty without it.
-  // In Upcoming the group is named, since Tomorrow follows, and left out when empty (D2).
-  if (inUpcoming ? day.length : !parts || day.length || !others) g.push({ key: 'today', heading: others || inUpcoming ? t('Today') : null, rows: withImplied(day.map(row), { date: p.today }), ...drop('none') })
-  if (morning.length) g.push({ key: 'morning', heading: t('Morning'), rows: withImplied(morning.map(row), { date: p.today, part: 'morning' }), ...drop('morning') })
-  if (afternoon.length) g.push({ key: 'afternoon', heading: t('Afternoon'), rows: withImplied(afternoon.map(row), { date: p.today, part: 'afternoon' }), ...drop('afternoon') })
-  if (evening.length) g.push({ key: 'evening', heading: t('This Evening'), rows: withImplied(evening.map(row), { date: p.today, evening: true }), ...drop('evening') })
+  if (earlier.length) g.push({ key: 'earlier', heading: t('Earlier'), rows: rows(earlier) })
+  const groupBy = d?.groupBy ?? 'day'
+  if (groupBy !== 'day') {
+    // Another grouping lays out only the day's own tasks (D3); Earlier, Blocked, Waiting and Done keep their place.
+    const own = new Set([...day, ...morning, ...afternoon, ...evening])
+    g.push(...chosenTodayGroups(p, listed.filter((x) => own.has(x)), groupBy, earlier.length > 0, inUpcoming, rows))
+  } else {
+    const others = earlier.length || morning.length || afternoon.length || evening.length
+    // With day parts on an empty Today group is left out, unless the list would be empty without it.
+    // In Upcoming the group is named, since Tomorrow follows, and left out when empty (D2).
+    if (inUpcoming ? day.length : !parts || day.length || !others) g.push({ key: 'today', heading: others || inUpcoming ? t('Today') : null, rows: withImplied(rows(day), { date: p.today }), ...drop('none') })
+    if (morning.length) g.push({ key: 'morning', heading: t('Morning'), rows: withImplied(rows(morning), { date: p.today, part: 'morning' }), ...drop('morning') })
+    if (afternoon.length) g.push({ key: 'afternoon', heading: t('Afternoon'), rows: withImplied(rows(afternoon), { date: p.today, part: 'afternoon' }), ...drop('afternoon') })
+    if (evening.length) g.push({ key: 'evening', heading: t('This Evening'), rows: withImplied(rows(evening), { date: p.today, evening: true }), ...drop('evening') })
+  }
   if (waiting.length) {
     const folded = !p.collapsed.has(BLOCKED_OPEN_KEY)
-    g.push({ key: 'blocked', heading: t('Blocked'), count: waiting.length, folded, openKey: BLOCKED_OPEN_KEY, rows: folded ? [] : waiting.map(row) })
+    g.push({ key: 'blocked', heading: t('Blocked'), count: waiting.length, folded, openKey: BLOCKED_OPEN_KEY, rows: folded ? [] : rows(waiting) })
   }
   return [...g, ...closedListGroups(p, row)]
+}
+
+/**
+ * The day's own tasks under a grouping chosen for Today (builtin-view-options D3): the
+ * headings and order of a saved view's grouping, each task once; None is one group, named
+ * Today when Earlier is above it. The headings take no drops, and a row shows its part of the day.
+ */
+function chosenTodayGroups(p: GroupInput, tasks: Task[], groupBy: ListDisplay['groupBy'], afterEarlier: boolean, inUpcoming: boolean, rows: (list: Task[]) => ListRow[]): ListGroup[] {
+  const implied: RowImplied = { date: p.today }
+  if (groupBy === 'project' || groupBy === 'priority' || groupBy === 'label') {
+    const named = (key: string) => (groupBy === 'project' ? key !== 'inbox' && key !== 'unknown' : groupBy === 'label' && key !== 'none')
+    return groupTasks(tasks, groupBy, { today: p.today, labels: p.labels ?? [], projects: p.projects }, true).map((x) => ({
+      key: `day:${x.key}`, heading: x.heading, rows: withImplied(rows(x.tasks), groupBy === 'project' ? { ...implied, project: true } : implied),
+      ...(named(x.key) ? { named: true as const } : {}),
+    }))
+  }
+  if (inUpcoming ? !tasks.length : !tasks.length && afterEarlier) return []
+  return [{ key: 'day:all', heading: afterEarlier || inUpcoming ? t('Today') : null, rows: withImplied(rows(tasks), implied) }]
 }
 
 /** Today's Waiting for a slot and Done today groups (today-closed-list D1, D6): folded unless opened on this device. */
@@ -619,7 +675,7 @@ export function nextDetail(soon: readonly WaitingSoon[], resolved?: ResolvedDate
 }
 
 const sameImplied = (a: RowImplied | undefined, b: RowImplied | undefined): boolean =>
-  a === b || (!!a && !!b && a.date === b.date && a.evening === b.evening && a.part === b.part && a.someday === b.someday)
+  a === b || (!!a && !!b && a.date === b.date && a.evening === b.evening && a.part === b.part && a.someday === b.someday && a.project === b.project)
 
 /** Two rows show the same thing: the same task object in the same place. */
 export const sameRow = (a: ListRow, b: ListRow): boolean =>

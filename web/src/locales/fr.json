@@ -7160,9 +7160,9 @@
   "Show tasks assigned to others": "Afficher les tâches assignées aux autres",
   "Group and order": "Grouper et trier",
   "Group by due date": "Grouper par date d’échéance",
-  "Group by label (in a project or a saved view)": "Grouper par étiquette (dans un projet ou une vue enregistrée)",
+  "Group by label (in a project, a saved view, Today or the Inbox)": "Grouper par étiquette (dans un projet, une vue enregistrée, Aujourd’hui ou la Boîte de réception)",
   "Group by priority": "Grouper par priorité",
-  "Group by project (on a label page or in a saved view)": "Grouper par projet (sur la page d’une étiquette ou dans une vue enregistrée)",
+  "Group by project (on a label page, in a saved view or on Today)": "Grouper par projet (sur la page d’une étiquette, dans une vue enregistrée ou dans Aujourd’hui)",
   "Group by section (in a project)": "Grouper par section (dans un projet)",
   "Group by: {name}": "Grouper par : {name}",
   "No grouping": "Sans regroupement",
@@ -7243,5 +7243,8 @@
   "Stop emails": "Arrêter les e-mails",
   "Stop emails from “{routine}”?": "Arrêter les e-mails de « {routine} » ?",
   "You will get no more emails from “{routine}”.": "Vous ne recevrez plus d’e-mails de « {routine} ».",
-  "Email project members: {subject}": "Envoyer un e-mail aux membres du projet : {subject}"
+  "Email project members: {subject}": "Envoyer un e-mail aux membres du projet : {subject}",
+  "Time of day": "Moment de la journée",
+  "Nest subtasks": "Imbriquer les sous-tâches",
+  "Group by time of day (on Today)": "Grouper par moment de la journée (dans Aujourd’hui)"
 }
