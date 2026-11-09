@@ -1,6 +1,6 @@
 Name: OpenTodo
 Subtitle: Tasks on your own server
-Keywords: tasks,todo,to-do,self-hosted,open source,reminders,lists,projects,planner,widget,encrypted,privacy
+Keywords: todo,to-do,self-hosted,open source,free,reminders,checklist,planner,gtd,encrypted,privacy,caldav
 Support URL: https://open-todo.app
 Privacy Policy URL: https://open-todo.app/privacy
 
@@ -19,4 +19,4 @@ The app needs a connection to your server to start. For offline use, add OpenTod
 No trackers, no analytics, no ads. The app talks only to the server you enter.
 
 Promotional text:
-Your tasks, on your own server. Reminders, the share sheet, a Today widget and Face ID unlock, with nothing sent anywhere else.
+The task app you own. Free, open source and self-hosted: no subscription, no tracking, no lock-in. Export everything, anytime.
