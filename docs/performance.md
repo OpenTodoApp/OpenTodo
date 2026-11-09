@@ -148,7 +148,7 @@ which the database holds twice (the operation and the stored value). That is
 | `notes-db-size` The database file after compaction | MB | 250 | — | — | — | — | 250 |
 | `notes-share` What the notes take of it | MB | 130 | — | — | — | — | — |
 | `notes-compaction` A full compaction of the fixture | s | 120 | — | — | — | — | 480 |
-| `notes-push-wait` The longest a write waits behind compaction | ms | 100 | — | — | — | — | — |
+| `notes-push-wait` The longest a write waits behind compaction, leaving out the single slowest (a runner's disk alone can stall one write; the longest is reported) | ms | 100 | — | — | — | — | — |
 | `notes-first-sync` First sync of a new device, tasks and notes | s | — | 45 | 110 | 120 | 120 | — |
 | `notes-indexeddb` Storage on the device after that sync | MB | — | 120 | — | — | — | — |
 | `notes-page` Open the Notes page | ms | — | 400 | 1,200 | 1,200 | 1,200 | — |
