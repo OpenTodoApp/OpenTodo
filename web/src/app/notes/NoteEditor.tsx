@@ -21,6 +21,7 @@ import { act } from '../actionError'
 import { Markdown } from '../Markdown'
 import { PanelFrame } from '../PanelFrame'
 import { ProjectPickerField } from '../ProjectPickerField'
+import { LinkedRefs } from '../linkedRefsLazy'
 import { navigate } from '../router'
 import { deleteNote, turnNoteIntoTask } from './noteActions'
 import { NoteMenu } from './NoteRow'
@@ -113,6 +114,7 @@ export function NoteForm({ note, readOnly }: { note: Note; readOnly: boolean }) 
         <span className="pt-2 text-meta text-muted">{t('Labels')}</span>
         <LabelsField note={note} readOnly={readOnly} labels={labels} />
       </div>
+      <LinkedRefs kind="note" id={note.id} />
     </div>
   )
 }

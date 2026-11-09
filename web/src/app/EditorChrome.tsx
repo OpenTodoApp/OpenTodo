@@ -12,11 +12,13 @@ import { t } from '../lib/i18n'
 import { Icon, IconButton, type IconName, Menu, MenuItem, Popover, useMediaQuery } from '../ui'
 import { editorCommands, filterCommands, tableCommands, type CommandEnv, type EditorCommand } from './editorCommands'
 import { MentionOption } from './task-detail/MentionOption'
+import { offersNewNote, type LinkCandidate } from '../lib/linkPicker'
+import { LinkOption, linkGroupLabel } from './LinkOption'
 
 // A person or a workspace group (group-mentions D4).
 type Member = MentionTarget
 const MAX_ITEMS = 8
-type Item = { kind: 'command'; cmd: EditorCommand } | { kind: 'member'; m: Member }
+type Item = { kind: 'command'; cmd: EditorCommand } | { kind: 'member'; m: Member } | { kind: 'link'; c: LinkCandidate } | { kind: 'new'; title: string }
 
 export interface ChromeOptions {
   /** Unique id prefix for the list and its options. */
@@ -51,7 +53,8 @@ export function useEditorChrome(o: ChromeOptions): EditorChrome {
   const items: Item[] = !open ? []
     // At most eight at a time, so the list never scrolls: typing narrows it.
     : open.s.kind === 'slash' ? filterCommands(commands, open.s.query, open.view, o.env).slice(0, MAX_ITEMS).map((cmd) => ({ kind: 'command' as const, cmd }))
-      : mentionCandidates(o.members, open.s.query, o.me).map((m) => ({ kind: 'member' as const, m }))
+      : open.s.kind === 'link' ? linkItems(o.env, open.s.query)
+        : mentionCandidates(o.members, open.s.query, o.me).map((m) => ({ kind: 'member' as const, m }))
   const itemsRef = useRef(items)
   itemsRef.current = items
   const listId = `${o.id}-suggest`
@@ -64,6 +67,8 @@ export function useEditorChrome(o: ChromeOptions): EditorChrome {
       insertMention(view, s, { id: item.m.userId, token: mentionToken(item.m) })
       return
     }
+    if (item.kind === 'link') return opts.current.env.linkTo?.insert(view, s, item.c)
+    if (item.kind === 'new') return opts.current.env.linkTo?.create(view, s, item.title)
     view.dispatch(view.state.tr.delete(s.from, s.to))
     item.cmd.run(view, opts.current.env)
   }
@@ -72,6 +77,7 @@ export function useEditorChrome(o: ChromeOptions): EditorChrome {
 
   const bridge = useMemo<SuggestBridge>(() => ({
     mentions: () => opts.current.members.length > 0,
+    links: () => !!opts.current.env.linkTo,
     onChange: (s, view) => {
       setOpen(s ? { s, view } : null)
       setActive(0)
@@ -135,7 +141,18 @@ export function useEditorChrome(o: ChromeOptions): EditorChrome {
   return { bridge, notify, openTableMenu: (view, cell) => setTableMenu({ view, anchor: { current: cell } }), overlays }
 }
 
-/** The `/` or `@` list at the caret: a listbox; focus stays in the editor. */
+/** The link picker's rows: the matches grouped by kind, then New note "<text>" (note-links D3). */
+function linkItems(env: CommandEnv, query: string): Item[] {
+  if (!env.linkTo) return []
+  const rows = env.linkTo.candidates(query)
+  const items: Item[] = rows.map((c) => ({ kind: 'link' as const, c }))
+  if (offersNewNote(query, rows)) items.push({ kind: 'new', title: query.trim() })
+  return items
+}
+
+const itemKey = (item: Item): string => item.kind === 'command' ? item.cmd.id : item.kind === 'member' ? item.m.userId : item.kind === 'link' ? `${item.c.kind}:${item.c.id}` : 'new'
+
+/** The `/`, `@` or `[[` list at the caret: a listbox; focus stays in the editor. */
 function SuggestList({ id, open, items, active, onPick }: { id: string; open: { s: Suggest; view: EditorView }; items: Item[]; active: number; onPick: (item: Item) => void }) {
   let left = 16
   let top = 0
@@ -146,20 +163,28 @@ function SuggestList({ id, open, items, active, onPick }: { id: string; open: { 
   } catch {
     // No layout (a test, a hidden editor): the list sits at the start.
   }
-  const width = 256
+  const width = open.s.kind === 'link' ? 320 : 256
   if (typeof window !== 'undefined') left = Math.max(8, Math.min(left, window.innerWidth - width - 8))
-  const label = open.s.kind === 'slash' ? t('Commands') : t('Mention a member')
+  const label = open.s.kind === 'slash' ? t('Commands') : open.s.kind === 'link' ? t('Link to') : t('Mention a member')
+  const link = open.s.kind === 'link'
   return (
-    <ul id={id} role="listbox" aria-label={label} className="slash-menu fixed" style={{ left, top }} data-suggest={open.s.kind}>
-      {items.map((item, i) => (
-        <li key={item.kind === 'command' ? item.cmd.id : item.m.userId} id={`${id}-${i}`} role="option" aria-selected={i === active}
-          className="flex min-h-11 items-center gap-2 rounded-control px-2 py-1 text-body"
-          onMouseDown={(e) => { e.preventDefault(); onPick(item) }}>
-          {item.kind === 'command'
-            ? <><Icon name={item.cmd.icon} size="sm" className="text-muted" />{item.cmd.label}</>
-            : <MentionOption m={item.m} />}
-        </li>
-      ))}
+    <ul id={id} role="listbox" aria-label={label} className={`slash-menu fixed${link ? ' link-menu' : ''}`} style={{ left, top }} data-suggest={open.s.kind}>
+      {items.map((item, i) => {
+        const prev = items[i - 1]
+        const group = item.kind === 'link' && (prev?.kind !== 'link' || prev.c.kind !== item.c.kind) ? linkGroupLabel(item.c.kind) : null
+        return [
+          group && <li key={`g:${item.kind === 'link' ? item.c.kind : ''}`} role="presentation" className="link-menu__group">{group}</li>,
+          <li key={itemKey(item)} id={`${id}-${i}`} role="option" aria-selected={i === active}
+            className={`flex items-center gap-2 rounded-control px-2 text-body min-h-11 py-1${link ? ' sm:min-h-9' : ''}`}
+            onMouseDown={(e) => { e.preventDefault(); onPick(item) }}>
+            {item.kind === 'command'
+              ? <><Icon name={item.cmd.icon} size="sm" className="text-muted" />{item.cmd.label}</>
+              : item.kind === 'member' ? <MentionOption m={item.m} />
+                : item.kind === 'link' ? <LinkOption c={item.c} />
+                  : <><Icon name="plus" size="sm" className="text-muted" /><span className="user-text truncate">{t('New note "{title}"', { title: item.title })}</span></>}
+          </li>,
+        ]
+      })}
     </ul>
   )
 }

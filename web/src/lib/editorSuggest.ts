@@ -1,12 +1,12 @@
 // Typed triggers in the editor (OpenSpec change editor-everywhere, design D7, D9):
 // `/` at the start of a line or after a space opens the command menu, `@` the
-// member completion. The plugin only finds the trigger and the text typed after
+// member completion, `[[` the link picker in notes (note-links D3). The plugin only finds the trigger and the text typed after
 // it; the app renders the list and decides what a key does while it is open, so
 // the menu is ordinary React (a listbox) and the editor stays framework-free.
 import { type EditorState, Plugin, PluginKey } from 'prosemirror-state'
 import type { EditorView } from 'prosemirror-view'
 
-export type SuggestKind = 'slash' | 'mention'
+export type SuggestKind = 'slash' | 'mention' | 'link'
 
 export interface Suggest {
   kind: SuggestKind
@@ -20,6 +20,8 @@ export interface Suggest {
 export interface SuggestBridge {
   /** Whether `@` opens member completion (a task with members). */
   mentions: () => boolean
+  /** Whether `[[` opens the link picker (notes, not comments; never read-only). */
+  links?: () => boolean
   onChange: (s: Suggest | null, view: EditorView) => void
   /** True when the open list used the key. */
   onKey: (event: KeyboardEvent) => boolean
@@ -34,11 +36,14 @@ interface PluginState {
 export const suggestKey = new PluginKey<PluginState>('suggest')
 
 /** The trigger before the caret, if any. */
-export function findSuggest(state: EditorState, mentions: boolean): Suggest | null {
+export function findSuggest(state: EditorState, mentions: boolean, links = false): Suggest | null {
   const { $from, empty } = state.selection
   if (!empty || !$from.parent.isTextblock || $from.parent.type.spec.code) return null
   const start = Math.max(0, $from.parentOffset - 64)
   const before = $from.parent.textBetween(start, $from.parentOffset, undefined, '￼')
+  // `[[` starts the text block or follows a space; the query is any text up to a bracket.
+  const l = links ? /(^|\s)\[\[([^[\]\n￼]{0,60})$/u.exec(before) : null
+  if (l) return { kind: 'link', from: $from.pos - 2 - l[2].length, to: $from.pos, query: l[2] }
   // A slash or `@` starts the text block or follows a space; a command query may
   // hold words ("/add column"), a mention query is one token.
   const m = /(^|\s)(\/)([\p{L}\p{N}._-][\p{L}\p{N} ._-]{0,39})?$/u.exec(before) ?? /(^|\s)(@)([\p{L}\p{N}._-]{0,40})$/u.exec(before)
@@ -62,7 +67,7 @@ export function suggestPlugin(bridge: SuggestBridge): Plugin<PluginState> {
       apply(tr, prev, _old, next) {
         let dismissed = prev.dismissed === null ? null : tr.mapping.map(prev.dismissed)
         if (tr.getMeta(suggestKey) === 'dismiss' && prev.active) dismissed = prev.active.from
-        const found = findSuggest(next, bridge.mentions())
+        const found = findSuggest(next, bridge.mentions(), bridge.links?.() ?? false)
         if (!found) return { active: null, dismissed: null }
         return found.from === dismissed ? { active: null, dismissed } : { active: found, dismissed: null }
       },

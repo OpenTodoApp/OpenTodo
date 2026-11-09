@@ -9,17 +9,21 @@ import { t } from '../../lib/i18n'
 import { act } from '../actionError'
 import { Markdown } from '../Markdown'
 import { useResetOnChange } from '../../lib/useResetOnChange'
+import { LinkedRefs } from '../linkedRefsLazy'
 
 const NotesEditor = lazy(() => import('../NotesEditor'))
 
-/** The notes editor with its loading and failure fallbacks. */
+/** The notes editor with its loading and failure fallbacks, then what links to the task (note-links). */
 export function TaskNotes({ task, readOnly }: { task: Task; readOnly: boolean }) {
   return (
-    <NotesBoundary task={task} readOnly={readOnly}>
-      <Suspense fallback={<NotesPreview text={task.description} />}>
-        <NotesEditor key={task.id} note={{ ...task, entity: 'task' }} readOnly={readOnly} />
-      </Suspense>
-    </NotesBoundary>
+    <>
+      <NotesBoundary task={task} readOnly={readOnly}>
+        <Suspense fallback={<NotesPreview text={task.description} />}>
+          <NotesEditor key={task.id} note={{ ...task, entity: 'task' }} readOnly={readOnly} />
+        </Suspense>
+      </NotesBoundary>
+      <LinkedRefs kind="task" id={task.id} />
+    </>
   )
 }
 

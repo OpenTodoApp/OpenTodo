@@ -885,9 +885,28 @@ select.ui-input:not([multiple]) {
 /* group-mentions D4: a group reads as the same chip with an outline (and the group icon where rendered). */
 .mention[data-mention^="group:"], .mention-chip--group { @apply font-medium ring-1 ring-inset ring-focus; }
 .mention-chip--group svg { display: inline; vertical-align: -0.125em; margin-right: 0.125rem; }
+/* note-links D2, D4: an internal link reads as a quiet reference (icon and current
+   title in the accent tone, underlined only on hover); a done task's is struck
+   through; one the reader cannot open is muted text with no hover. */
+.note-ref { @apply inline-flex max-w-full items-baseline gap-0.5 rounded-chip px-0.5 text-accent no-underline transition-colors duration-(--duration-ui) ease-calm; }
+.note-ref svg { @apply shrink-0 self-center; }
+a.note-ref:hover { @apply bg-accent-soft underline; }
+.note-ref[data-ref-state="done"] { @apply text-muted line-through; }
+.note-ref[data-ref-state="muted"] { @apply cursor-default text-muted; }
+.notes-editor .note-ref { @apply align-baseline; }
+/* Linked references (note-links D5): a calm section at the end, rows without boxes. */
+.linked-refs { @apply mt-6 space-y-1; }
+.linked-refs[data-folded] { @apply -mx-2 mt-0 mb-3; }
+.linked-refs__head { @apply flex items-center gap-1.5 px-2 text-meta font-medium text-muted; }
+.linked-refs__toggle { @apply -mx-0 min-h-8 rounded-control hover:bg-sunken hover:text-default dark:hover:bg-raised; }
+.linked-ref { @apply block min-w-0 space-y-0.5 rounded-control px-2 py-1.5 no-underline transition-colors duration-(--duration-ui) ease-calm hover:bg-sunken focus-visible:outline-2 focus-visible:outline-focus dark:hover:bg-raised; }
+.linked-ref__link { @apply rounded-chip bg-accent-soft px-0.5 text-accent; }
 .issue-chip { @apply inline-flex items-center gap-1 rounded-chip border border-default bg-sunken px-1 font-mono text-meta text-default no-underline; }
 .slash-menu { @apply z-50 w-64 max-w-[calc(100vw-2rem)] rounded-control border border-default bg-surface p-1 shadow-3 dark:bg-raised; }
 .slash-menu [aria-selected="true"] { @apply bg-accent-soft text-strong; }
+/* The `[[` picker (note-links D3): a little wider, its rows grouped by kind under quiet headings. */
+.slash-menu.link-menu { @apply w-80; }
+.link-menu__group { @apply px-2 pt-2 pb-0.5 text-meta font-medium text-faint first:pt-1; }
 .editor-toolbar { @apply -mx-2 mb-1 flex items-center gap-1 overflow-x-auto px-2 py-1; }
 /* The Formatting toggle on a computer (notes-toolbar-desktop D2): at the note's top
    end corner, over end padding of the first block (and of the row), so text never

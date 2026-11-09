@@ -117,7 +117,10 @@ describe('editor-everywhere additions', () => {
 
   it('strike, task links and mentions', () => {
     expect(parseInline('~~gone~~')).toEqual([{ t: 'strike', c: [{ t: 'text', v: 'gone' }] }])
-    expect(parseInline('[Book hotel](?task=t-1)')).toEqual([{ t: 'task', id: 't-1', c: [{ t: 'text', v: 'Book hotel' }] }])
+    expect(parseInline('[Book hotel](?task=t-1)')).toEqual([{ t: 'ref', kind: 'task', id: 't-1', c: [{ t: 'text', v: 'Book hotel' }] }])
+    expect(parseInline('[Trip](?note=n_1) [Home](?project=p)')).toEqual([{ t: 'ref', kind: 'note', id: 'n_1', c: [{ t: 'text', v: 'Trip' }] },
+      { t: 'text', v: ' ' }, { t: 'ref', kind: 'project', id: 'p', c: [{ t: 'text', v: 'Home' }] }])
+    expect(parseInline('[x](?view=v)')).toEqual([{ t: 'text', v: 'x' }])
     expect(parseInline('hi @Bob and @eve', 0, { mention: (x) => x === 'Bob' })).toEqual([
       { t: 'text', v: 'hi ' }, { t: 'mention', v: 'Bob' }, { t: 'text', v: ' and @eve' },
     ])
