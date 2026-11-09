@@ -160,6 +160,33 @@ Notes that link to each other, a calm home for them, and a picture of what is co
 
 The three changes land in this order; each ships on its own. Links are computed on the device, so they work offline and with end-to-end encryption, and the server keeps no link table.
 
+### Assistant area
+
+The assistant's answers show the app's own interface (`assistant-generative-ui`, `assistant-map-lookup`). These changes build on that, in four waves.
+
+| Change | What | Issues |
+| --- | --- | --- |
+| [`assistant-eval`](openspec/changes/assistant-eval/) | Recorded scenarios against a real provider, which check the tool calls a model makes (blocks used, nothing written, no map claims), run by hand with `make assistant-eval` | |
+| [`assistant-usage-cache`](openspec/changes/assistant-usage-cache/) | Input read from the provider's cache counts at a tenth toward the monthly cap, and each answer names it | |
+| [`assistant-device-reads`](openspec/changes/assistant-device-reads/) | The on-device assistant (encrypted accounts) reads time entries, frames, slots and notes like the server's | |
+| [`assistant-time-blocks`](openspec/changes/assistant-time-blocks/) | Time, free time and deadlines blocks; `find_free_time` as a read tool for the assistant and MCP | |
+| [`assistant-project-blocks`](openspec/changes/assistant-project-blocks/) | Board, timeline, activity, stats, task and habit blocks, offered by relevance | |
+| [`assistant-followups`](openspec/changes/assistant-followups/) | Up to three follow-up suggestions under an answer, sent with one tap | |
+| [`assistant-proposal-editing`](openspec/changes/assistant-proposal-editing/) | Edit proposals in every shape, drag them in the calendar, proposals that grow over turns, before and after | |
+| [`assistant-memory`](openspec/changes/assistant-memory/) | The assistant remembers facts you confirm: synced and encrypted like settings, managed in Settings, never sent to MCP or routines | |
+| [`assistant-in-context`](openspec/changes/assistant-in-context/) | Rewrite this, Find a slot, What's next? and Brief me, started from a task, a project or Today | |
+| [`assistant-routine-blocks`](openspec/changes/assistant-routine-blocks/) | Routines' AI steps show the day's agenda, deadlines and tasks as blocks in the routine inbox | |
+| [`assistant-lean-tools`](openspec/changes/assistant-lean-tools/) | Write tools only once the model asks for them, so questions send far fewer tokens | |
+| [`mcp-blocks`](openspec/changes/mcp-blocks/) | Blocks for external agents that support MCP Apps, rendered by the host from self-contained HTML; a spike first | |
+
+They land in waves:
+1. the evaluation suite, the usage accounting and the device reads;
+2. the new blocks, follow-ups and proposal editing;
+3. memory and the assistant in context;
+4. routines with blocks, fewer tools per turn, and MCP blocks.
+
+Each change ships on its own. Blocks keep carrying ids only, rendered on the device, except over MCP, where the host can't read the device's data.
+
 ## Shipped
 
 ### 1. Core engine and architecture
