@@ -102,7 +102,7 @@ export function NewNoteRow({ text, cursor, onCreate }: { text: string; cursor: b
 /** A quiet heading over Pinned or Recent, with the number of notes beneath it. */
 export function GroupHeading({ title, count, testId }: { title: string; count: number; testId: string }) {
   return (
-    <li role="presentation" data-notes-group={testId}>
+    <li data-notes-group={testId}>
       <ListGroupHeader title={title} count={count} bar={false} countLabel={(n) => t('{n, plural, one {# note} other {# notes}}', { n })} />
     </li>
   )
