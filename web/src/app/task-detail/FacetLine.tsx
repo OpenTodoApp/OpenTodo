@@ -36,7 +36,7 @@ export function FacetLine({ facet, icon, name, parts, readOnly = false, open = n
   return (
     <div role="group" aria-label={name} data-facet={facet} className="facet-line flex min-w-0 items-start gap-2">
       <Tooltip label={name}>
-        <span className="flex h-7 w-5 shrink-0 items-center justify-center text-faint" aria-hidden="true"><Icon name={icon} size="sm" /></span>
+        <span className="flex h-8 w-5 shrink-0 items-center justify-center text-faint pointer-coarse:h-11" aria-hidden="true"><Icon name={icon} size="sm" /></span>
       </Tooltip>
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1 gap-y-0.5 text-body">
         {parts.map((p, i) => {
@@ -50,11 +50,11 @@ export function FacetLine({ facet, icon, name, parts, readOnly = false, open = n
                 ? <Icon name="chevron-right" size="xs" className="text-faint" />
                 : <span aria-hidden="true" className="text-faint">·</span>)}
               {readOnly || p.fixed ? (
-                <span className={`inline-flex min-h-7 max-w-full items-center px-1 ${tone}`} data-part={p.id}>{content}</span>
+                <span className={`inline-flex min-h-8 max-w-full items-center px-1 pointer-coarse:min-h-11 ${tone}`} data-part={p.id}>{content}</span>
               ) : withTip(p.tip, (
                 <button type="button" ref={(el) => partRef?.(p.id, el)} data-part={p.id}
                   aria-expanded={p.id === 'origin' ? undefined : open === p.id} aria-haspopup={p.id === 'origin' ? undefined : 'dialog'}
-                  className={`inline-flex min-h-7 max-w-full items-center rounded-control px-1 text-left hover:bg-sunken focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus dark:hover:bg-raised ${open === p.id ? 'bg-sunken dark:bg-raised' : ''} ${tone}`}
+                  className={`inline-flex min-h-8 max-w-full items-center rounded-control px-1 text-left pointer-coarse:min-h-11 hover:bg-sunken focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus dark:hover:bg-raised ${open === p.id ? 'bg-sunken dark:bg-raised' : ''} ${tone}`}
                   onClick={(e) => onPart?.(p, e.currentTarget)}>
                   {/* The facet's name is read first; the visible text stays part of the name (label-content-name-match). */}
                   <span className="sr-only">{`${name}: `}</span>

@@ -93,7 +93,8 @@ export function TaskDetail({ taskId, initial, userId, projects, labelMap, onClos
             />
           </div>
         )}
-        <div className="flex items-start gap-2 px-3 py-2">
+        {/* px-4: the checkbox shares its left edge with the facet lines' icons below it (sidebar-brand-and-row-grid D5). */}
+        <div className="flex items-start gap-2 px-4 py-2">
         <TaskHead m={m} readOnly={readOnly} completeLocked={locked} projects={projects} size="panel" />
         {/* Start focus in one tap (focus-everywhere D2): beside the menu, for an open task the user can edit. */}
         {!locked && !task.completed_at && !task.deleted_at && (

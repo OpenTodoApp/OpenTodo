@@ -314,7 +314,7 @@ function AddMenu({ task, userId, m }: { task: Task; userId?: string; m: Properti
     <div className="pl-7" data-add-property>
       <Menu kind="menu" label={t('Add a property')} title={t('Add')} width="sm:w-64" align="start"
         trigger={<span className="inline-flex items-center gap-1 text-meta"><Icon name="plus" size="xs" />{t('Add')}</span>}
-        triggerClassName="inline-flex min-h-7 items-center rounded-control px-1 text-muted hover:bg-sunken hover:text-default dark:hover:bg-raised">
+        triggerClassName="inline-flex min-h-8 items-center rounded-control px-1 text-muted pointer-coarse:min-h-11 hover:bg-sunken hover:text-default dark:hover:bg-raised">
         {shown.map((g) => (
           <MenuGroup key={g.title} label={g.title}>
             {g.offers.map((o) => <MenuItem key={o.id} label={o.label} icon={o.icon} shortcut={o.shortcut} onSelect={() => (o.run ? o.run() : ed.reveal(o.id))} />)}

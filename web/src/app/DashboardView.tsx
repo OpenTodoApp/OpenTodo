@@ -10,6 +10,7 @@ import { groupKey, setGroupCollapsed, useCollapsedGroups } from './collapsedGrou
 import { useId, useMemo, useRef, useState } from 'react'
 import { resolveLabels } from '../lib/labels'
 import { hasTimeColumn } from '../lib/rowTime'
+import { listSlotsOff } from '../lib/rowSlots'
 import { useLiveSections } from '../lib/localData'
 import { setTaskCompleted } from '../lib/ops'
 import { describeRule, type RuleNames } from '../lib/rules'
@@ -238,6 +239,7 @@ function Panel({ index, panel, selectedId, tasks, held, names, projectMap, label
   const ruled = !!rule
   // The time column (rows-v2 D2): one fact of the panel's list.
   const timeColumn = hasTimeColumn(tasks)
+  const slotsOff = listSlotsOff(tasks)
   if (folded) {
     // A folded panel (board-polish D2, adapted to the dashboard's grid): one line that unfolds it; still a drop target.
     const count = summary.ok ? summary.count : 0
@@ -286,7 +288,7 @@ function Panel({ index, panel, selectedId, tasks, held, names, projectMap, label
           {tasks.map((tk) => {
             const row = (
               <TaskRow key={tk.id} task={tk} project={tk.project_id ? projectMap.get(tk.project_id) : undefined} labels={resolveLabels(tk.labels, labelMap)}
-                showProject selected={tk.id === selectedId} timeColumn={timeColumn} blockedBy={blocked.get(tk.id)} onToggle={() => act(setTaskCompleted(tk.id, !tk.completed_at))} onOpen={() => onOpenTask(tk.id)}
+                showProject selected={tk.id === selectedId} timeColumn={timeColumn} slotsOff={slotsOff} blockedBy={blocked.get(tk.id)} onToggle={() => act(setTaskCompleted(tk.id, !tk.completed_at))} onOpen={() => onOpenTask(tk.id)}
                 onPointerDown={(e) => onDragTask(tk, e)} />
             )
             // A held card (rule-boards D6): shown first, marked, until it matches or changes again.

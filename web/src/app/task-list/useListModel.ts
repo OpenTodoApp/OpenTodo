@@ -29,6 +29,8 @@ import { inToday, upcomingDate } from '../../lib/views'
 import { DESKTOP_HEADER_QUERY, useMediaQuery } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { hasTimeColumn } from '../../lib/rowTime'
+import { useUnusedSlots } from '../../lib/rowSlots'
+import { localDueOf } from '../../lib/dates'
 import { useSlotted } from '../../lib/slots'
 import type { Route } from '../router'
 import { useApplicableFields, useFieldDefs } from '../useFields'
@@ -125,8 +127,10 @@ function useProjectLayout(projectId: string | null) {
 
 /** The same display object while its options are the same, so the groups are not worked out again. */
 function useStableDisplay(d: ListDisplay | undefined): ListDisplay | undefined {
-  const { groupBy, sortBy, sortDir, rowLayout, subtasks } = d ?? {}
-  return useMemo(() => (groupBy && sortBy && sortDir && rowLayout ? { groupBy, sortBy, sortDir, rowLayout, ...(subtasks !== undefined ? { subtasks } : {}) } : undefined), [groupBy, sortBy, sortDir, rowLayout, subtasks])
+  const { groupBy, sortBy, sortDir, rowLayout, subtasks, laterInFull } = d ?? {}
+  return useMemo(() => (groupBy && sortBy && sortDir && rowLayout
+    ? { groupBy, sortBy, sortDir, rowLayout, ...(subtasks !== undefined ? { subtasks } : {}), ...(laterInFull !== undefined ? { laterInFull } : {}) }
+    : undefined), [groupBy, sortBy, sortDir, rowLayout, subtasks, laterInFull])
 }
 
 export function useListModel(route: ListRoute, userId?: string) {
@@ -270,7 +274,19 @@ export function useListModel(route: ListRoute, userId?: string) {
   // The time column (rows-v2 D2): one fact of the whole list, from its visible rows; cards have none.
   // A task a calendar slot holds shows the slot's start there (calendar-slots D8).
   const slotted = useSlotted()
-  const timeColumn = useMemo(() => !board && hasTimeColumn(rows.map((r) => r.task), slotted), [board, rows, slotted])
+  const rowTasks = useMemo(() => rows.map((r) => r.task), [rows])
+  const timeColumn = useMemo(() => !board && hasTimeColumn(rowTasks, slotted), [board, rowTasks, slotted])
+  // The property column's slots no row uses (sidebar-brand-and-row-grid D2): one fact of the whole list, like the time column.
+  // A row under a heading that names its day shows no date words (Upcoming's days): its date slot stays empty.
+  const dateShown = useMemo(() => {
+    const implied = new Map(rows.filter((r) => r.implied?.date).map((r) => [r.task.id, r.implied!.date!]))
+    return (task: Pick<Task, 'id' | 'due' | 'start' | 'sector' | 'evening' | 'day_part'>) => {
+      const day = implied.get(task.id)
+      if (!day || !task.due || task.due.tz || task.start || task.evening || task.day_part) return true
+      return localDueOf(task.due).date !== day || (!!task.due.time && !timeColumn)
+    }
+  }, [rows, timeColumn])
+  const slotsOff = useUnusedSlots(board ? undefined : rowTasks, { omitLabel: route.view === 'label' ? route.id : undefined, dateShown })
   // Sections with only completed tasks keep a header with "n completed" and Show
   // (task-list-presentation "Empty groups").
   const doneOf = useRef(new Derived<Map<string, Task[]>, [string | null, Map<string, Section>]>(completedBySection, patchCompletedBySection)).current
@@ -298,7 +314,7 @@ export function useListModel(route: ListRoute, userId?: string) {
     projectReadOnly: route.view === 'project' && roleOf(route.id, memberMap) === 'viewer',
     projectEditable: !!projectId && canEditTasks(roleOf(projectId, memberMap)),
     allTasks, taskMap, progress, blocked, flow, habits, ...filter, logbook, logbookLimit, setLogbookLimit,
-    collapsed, toggleCollapsed, ...layout, tree, columns, groups: projectedGroups, rows, ownRows, siblingPos, timeColumn, doneBySection,
+    collapsed, toggleCollapsed, ...layout, tree, columns, groups: projectedGroups, rows, ownRows, siblingPos, timeColumn, slotsOff, doneBySection,
     showCompleted, reusable, completedTasks, completedOpen, display, displayScope, listDisplay, nested, dayParts, closed, upcomingToday, upcomingThrough,
     queryFilter: route.view === 'upcoming' ? upcoming : null,
   }

@@ -16,6 +16,7 @@ import { formatInstant } from '../../lib/dates'
 import { t } from '../../lib/i18n'
 import { resolveLabels } from '../../lib/labels'
 import { hasTimeColumn } from '../../lib/rowTime'
+import { listSlotsOff } from '../../lib/rowSlots'
 import { useAllLabels, useReviewRow, useUserPrefsRow } from '../../lib/localData'
 import { setTaskCompleted } from '../../lib/ops'
 import { dailyDue, finishDailyCheck, FOCUS_MAX, focusTasks, yesterdaysNote } from '../../lib/review'
@@ -76,6 +77,7 @@ export function DailyCheck() {
   const rows = sections.flatMap((s) => s.tasks.map((task) => ({ key: `${s.key}:${task.id}`, task })))
   // The time column (rows-v2 D2): one fact of the whole check.
   const timeColumn = hasTimeColumn(rows.map((r) => r.task))
+  const slotsOff = listSlotsOff(rows.map((r) => r.task))
   useListKeys({ rows, selected, setSelected, openId, setOpenId: setPanelTaskId, pickerFor, setPickerFor, onIdleEscape: () => setSelected(null) })
   useEffect(() => { if (selected && !rows.some((r) => r.key === selected)) setSelected(null) }, [rows, selected])
   const focusIds = new Set(groups?.focus.map((x) => x.id) ?? [])
@@ -111,7 +113,7 @@ export function DailyCheck() {
     const key = `${sectionKey}:${task.id}`
     return (
       <TaskRow key={key} task={task} project={task.project_id ? projectMap.get(task.project_id) : undefined} labels={resolveLabels(task.labels, labelMap)}
-        showProject selected={key === selected} timeColumn={timeColumn} breadcrumb={crumb}
+        showProject selected={key === selected} timeColumn={timeColumn} slotsOff={slotsOff} breadcrumb={crumb}
         onToggle={() => act(setTaskCompleted(task.id, !task.completed_at))}
         onOpen={() => { setSelected(key); setPanelTaskId(task.id) }} />
     )

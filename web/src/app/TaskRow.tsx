@@ -115,7 +115,7 @@ export function rowCounts(c: { progress?: Progress; notes: boolean; comments: nu
 export function RowCounts({ counts }: { counts: RowCount[] }) {
   return (
     // min-w-0 and overflow-hidden: in a very narrow panel the counts clip, never the page (they are read in full).
-    <span data-row-counts="" className="flex min-w-0 items-center gap-2 overflow-hidden text-meta tabular-nums text-faint transition-colors duration-(--duration-ui) group-hover:text-muted group-focus-within:text-muted">
+    <span data-row-counts="" className="flex min-w-0 items-center gap-2 overflow-clip text-meta tabular-nums text-faint transition-colors duration-(--duration-ui) group-hover:text-muted group-focus-within:text-muted">
       {counts.map((c) => (
         <span key={c.key} className="inline-flex items-center gap-1" {...{ [`data-${c.key}`]: '' }}>
           {c.icon && <Icon name={c.icon} size="xs" />}
@@ -126,18 +126,32 @@ export function RowCounts({ counts }: { counts: RowCount[] }) {
   )
 }
 
+/** The part of the day the column shows when there is no time (sidebar-brand-and-row-grid D4): none under a heading that states it. */
+function shownPart(part: DayPart | null, implied: RowImplied | undefined): DayPart | null {
+  return (part === 'evening' ? !implied?.evening : !!part && implied?.part !== part) ? part : null
+}
+
+/** The part of the day's icon in the time column (sidebar-brand-and-row-grid D4). */
+const PART_ICON: Record<DayPart, IconName> = { morning: 'sunrise', afternoon: 'sun', evening: 'moon' }
+
 /**
  * The time column's value (rows-v2 D3): the due time in the date tone, else the start
  * of the calendar slot that holds the task with the stack icon (calendar-slots D8),
- * else the deadline countdown in its tone.
+ * else the part of the day as its icon, named in its tooltip (sidebar-brand-and-row-grid
+ * D4), else the deadline countdown in its tone.
  */
-function TimeCell({ time, timeTone, slot, deadline, deadlineLabel }: { time: string | null; timeTone: Tone; slot: { start: string; name: string } | null; deadline: { label: string; tone: 'overdue' | 'soon' | 'later' } | null; deadlineLabel: string }) {
+function TimeCell({ time, timeTone, slot, part, deadline, deadlineLabel }: { time: string | null; timeTone: Tone; slot: { start: string; name: string } | null; part: DayPart | null; deadline: { label: string; tone: 'overdue' | 'soon' | 'later' } | null; deadlineLabel: string }) {
   return (
-    <span data-row-time="" className="mt-0.5 flex h-5 w-(--row-time-w) shrink-0 items-center">
+    <span data-row-time="" className="mt-px flex h-5 w-(--row-time-w) shrink-0 items-center">
       {time ? <ToneText tone={timeTone} data-time="">{time}</ToneText>
         : slot ? (
           <Tooltip label={t('In the slot {slot}', { slot: slot.name })}>
             <span data-row-slot="" className="inline-flex min-w-0"><ToneText tone={timeTone} icon="layers" data-time="" label={t('{time}, in the slot {slot}', { time: slot.start, slot: slot.name })}>{slot.start}</ToneText></span>
+          </Tooltip>
+        )
+        : part ? (
+          <Tooltip label={dayPartName(part)}>
+            <span data-row-part={part} className="inline-flex"><ToneText tone={timeTone} icon={PART_ICON[part]} label={dayPartName(part)}>{null}</ToneText></span>
           </Tooltip>
         )
         : deadline ? <ToneText tone={DEADLINE_TONE[deadline.tone]} data-deadline="" label={deadlineLabel}>{deadline.label}</ToneText>
@@ -324,37 +338,34 @@ function DetailedMeta({ m, priority, projectColor, labels }: { m: MetaValues; pr
   )
 }
 
-/** What a list row's third cell holds (precision-rows D2): the labels, else the deadline, else the sub-task progress. */
-export type RowExtra = 'labels' | 'deadline' | 'progress' | null
-
-export function rowExtra(labels: boolean, deadline: boolean, progress: boolean): RowExtra {
-  return labels ? 'labels' : deadline ? 'deadline' : progress ? 'progress' : null
-}
-
 /** The one cell a phone row keeps (precision-phone D2): the date, else the deadline, else the assignee, else the project's dot. */
-export type PhoneCell = 'date' | 'extra' | 'assignee' | 'project' | null
+export type PhoneCell = 'date' | 'deadline' | 'assignee' | 'project' | null
 
 export function phoneCell(c: { date: boolean; deadline: boolean; assignee: boolean; project: boolean }): PhoneCell {
-  return c.date ? 'date' : c.deadline ? 'extra' : c.assignee ? 'assignee' : c.project ? 'project' : null
+  return c.date ? 'date' : c.deadline ? 'deadline' : c.assignee ? 'assignee' : c.project ? 'project' : null
 }
 
 /**
- * A list row's properties (precision-rows D1, D3): the cells of the column in their
- * order, then the facts the column does not hold. Under 40 rem of row width the two
- * wrappers are not boxes, so everything reads as one muted run under the title; on a
- * phone the row is one line that keeps a single cell (`data-row-phone`, precision-phone D2).
+ * A list row's properties (precision-rows D1, D3; sidebar-brand-and-row-grid D2): the
+ * slots of the column, then the facts the column does not hold. From 40 rem of row
+ * width the slots stand in their list-wide tracks in the order project, labels,
+ * estimate, date, assignee, each one kind of fact; the date ends the column. The DOM
+ * keeps the narrow line's reading order (date first): under 40 rem the two wrappers are
+ * not boxes, so everything reads as one muted run under the title; on a phone the row
+ * is one line that keeps a single cell (`data-row-phone`, precision-phone D2). The
+ * deadline is never a slot: it is in the time column, else in the facts.
  */
-function RowLine({ m, extra, progress, projectColor, projectColumn }: { m: MetaValues; extra: RowExtra; progress?: RowCount; projectColor?: string; projectColumn: boolean }) {
+function RowLine({ m, projectColor, projectColumn, slotsOff }: { m: MetaValues; projectColor?: string; projectColumn: boolean; slotsOff?: string }) {
   const more = m.badges.slice(MAX_FIELD_BADGES)
-  const phone = phoneCell({ date: !!(m.date || m.hint), deadline: extra === 'deadline', assignee: !!m.assignee, project: !!m.project })
+  const phone = phoneCell({ date: !!(m.date || m.hint), deadline: !!m.deadline, assignee: !!m.assignee, project: !!m.project })
   const keep = (cell: Exclude<PhoneCell, null>) => (phone === cell ? { 'data-row-phone': '' } : {})
-  const deadline = m.deadline && <ToneText tone={DEADLINE_TONE[m.deadline.tone]} icon="hourglass" data-deadline="" data-row-item="" label={m.deadlineLabel}>{m.deadline.label}</ToneText>
+  const deadline = (rowItem: boolean) => m.deadline && <ToneText tone={DEADLINE_TONE[m.deadline.tone]} icon="hourglass" data-deadline="" data-row-item={rowItem ? '' : undefined} label={m.deadlineLabel}>{m.deadline.label}</ToneText>
   const rest = [
     // After the column, so it reads right after the estimate; a phone row hides the rest (precision-phone D2).
     m.energy && <EnergyWord key="energy" energy={m.energy} rowItem />,
     m.sample && <ToneText key="sample" data-sample="" data-row-item="">{t('Sample')}</ToneText>,
     m.breadcrumb && <ToneText key="crumb" icon="corner-down-right" label={t('In {breadcrumb}', { breadcrumb: m.breadcrumb })} data-breadcrumb="" data-row-item="">{m.breadcrumb}</ToneText>,
-    extra !== 'deadline' && deadline && <span key="deadline" className="contents">{deadline}</span>,
+    m.deadline && <span key="deadline" className="contents">{deadline(true)}</span>,
     m.startText && <ToneText key="start" icon={m.someday ? 'archive' : 'calendar-days'} data-start="" data-row-item="">{m.startText}</ToneText>,
     (m.blockedBy > 0 || m.waitsFor) && <BlockMark key="blocked" m={m} rowItem />,
     m.streak && <ToneText key="streak" icon="flame" data-streak="" data-row-item="" data-at-risk={m.streak.atRisk ? '' : undefined} label={streakLabel(m.streak)}>{m.streak.current}</ToneText>,
@@ -363,7 +374,7 @@ function RowLine({ m, extra, progress, projectColor, projectColumn }: { m: MetaV
   ].filter(Boolean)
   return (
     <div className="mt-0.5 flex flex-wrap items-center gap-x-1 gap-y-0.5" data-row-meta="row">
-      <span className="contents" data-row-props={projectColumn ? 'project' : ''}>
+      <span className="contents" data-row-props={projectColumn ? 'project' : ''} data-slots-off={slotsOff || undefined}>
         {(m.date || m.hint) && (
           <span data-row-cell="date" data-row-item="" {...keep('date')} className="inline-flex min-w-0 items-center gap-1">
             {m.date && <DateText m={m} />}
@@ -376,11 +387,11 @@ function RowLine({ m, extra, progress, projectColor, projectColumn }: { m: MetaV
             {m.project}
           </span>
         )}
-        {extra === 'labels' && <span data-row-cell="extra" data-row-labels="" className="inline-flex max-w-full min-w-0 items-center">{m.labels}</span>}
-        {extra === 'deadline' && <span data-row-cell="extra" data-row-item="" {...keep('extra')} className="inline-flex min-w-0 items-center">{deadline}</span>}
-        {extra === 'progress' && progress && <span data-row-cell="extra" data-row-item="" className="inline-flex min-w-0 items-center"><ToneText icon="circle-check-big" data-progress="" label={progress.label}>{progress.text}</ToneText></span>}
+        {m.labels && <span data-row-cell="labels" data-row-labels="" className="inline-flex max-w-full min-w-0 items-center">{m.labels}</span>}
         {m.estimate && <span data-row-cell="estimate" data-row-item="" className="inline-flex min-w-0 items-center"><ToneText icon="clock" data-estimate="" data-tracked={m.estimate.tracked ? '' : undefined} label={m.estimate.label}>{m.estimate.text}</ToneText></span>}
         {m.assignee && <span data-row-cell="assignee" data-row-item="" data-row-assignee="" {...keep('assignee')} className="inline-flex min-w-0 items-center gap-1 text-meta">{m.assignee}</span>}
+        {/* The phone row's one cell when it is the deadline (precision-phone D2); elsewhere the deadline is in the facts. */}
+        {phone === 'deadline' && <span data-row-cell="deadline" data-row-phone="" className="inline-flex min-w-0 items-center">{deadline(false)}</span>}
       </span>
       {rest.length > 0 && <span className="contents" data-row-rest>{rest}</span>}
     </div>
@@ -429,6 +440,8 @@ export interface TaskRowProps {
   shape?: 'row' | 'card'
   /** The list shows the time column (rows-v2 D2): one fact of the whole list, never per row. */
   timeColumn?: boolean
+  /** The column's slots no row of the list uses (sidebar-brand-and-row-grid D2, `unusedSlots`): they take no width. */
+  slotsOff?: string
   /** The revealed actions (rows-v2 D7); off where the screen has its own controls (Close the day, D9). */
   actions?: boolean
   /** Opens the row menu, as `.` does: the revealed More action. */
@@ -700,6 +713,18 @@ function RowTitle({ title, tone, waiting, undecryptable, unencrypted, measure }:
   )
 }
 
+/** The marks beside a list row's title in one run on its first baseline (sidebar-brand-and-row-grid D3): smaller than the title, 12 px icons. */
+function RowMarks({ priority, m, counts }: { priority: number | null; m: MetaValues; counts: RowCount[] }) {
+  if (!priority && !m.repeat && counts.length === 0) return null
+  return (
+    <span data-row-marks="" className="row-marks">
+      {priority && <PriorityMark priority={priority} />}
+      {m.repeat && <ToneText tone="faint" icon="repeat" data-repeat="" data-recurring={m.recurring ? '' : undefined} label={m.repeatLabel ?? m.repeat} className="shrink-0">{null}</ToneText>}
+      {counts.length > 0 && <RowCounts counts={counts} />}
+    </span>
+  )
+}
+
 /**
  * Memoized (large-list-performance D1): a list re-renders a row only when one of its
  * props changes, so callers pass stable handlers and per-row values (`selected` is a
@@ -709,7 +734,7 @@ export const TaskRow = memo(function TaskRow(props: TaskRowProps | CompactRowPro
   return props.shape === 'compact' ? <CompactRow {...props} /> : <FullRow {...props} />
 })
 
-function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onOpenPage, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, onGripDown, onGripClick, dropKey, dropIndicator = null, dropDepth, dragging = false, ticked = false, showCheckbox = false, selectMode = false, onTick, hideFieldBadges = false, treeItem = false, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout, edge, notes = false }: TaskRowProps) {
+function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onOpenPage, onToggleCollapse, shape = 'row', timeColumn = false, slotsOff, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, onGripDown, onGripClick, dropKey, dropIndicator = null, dropDepth, dragging = false, ticked = false, showCheckbox = false, selectMode = false, onTick, hideFieldBadges = false, treeItem = false, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout, edge, notes = false }: TaskRowProps) {
   const card = shape === 'card'
   // The row's layout (row-layouts D1): the list's own choice, else the account's; a card keeps its shape.
   const accountLayout = useAccountRowLayout()
@@ -736,7 +761,9 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   // A task a calendar slot holds shows the slot's start (calendar-slots D8).
   const slotted = useSlotOf(task)
   const slotInColumn = column && !due?.time && slotted ? { start: formatTime(slotted.start), name: slotName(slotted) } : null
-  const deadlineInColumn = column && !due?.time && !slotInColumn && !!deadline
+  const part = done ? null : dayPartOf(task)
+  const partInColumn = column && !due?.time && !slotInColumn ? shownPart(part, implied) : null
+  const deadlineInColumn = column && !due?.time && !slotInColumn && !partInColumn && !!deadline
   const comments = useCommentCount(task.id)
   const attachments = useAttachmentCount(task.id)
   // End-to-end encryption (OpenSpec e2ee): content the server still holds in
@@ -767,7 +794,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   const m: MetaValues = {
     sample: isSample(task),
     breadcrumb,
-    date: hides('date') ? null : sector ? sector.text : span ? formatSpan(span) : rowDateText(due, dueDay, done ? null : dayPartOf(task), implied, timeInColumn),
+    date: hides('date') ? null : sector ? sector.text : span ? formatSpan(span) : rowDateText(due, dueDay, partInColumn ? null : part, implied, timeInColumn),
     dateTone: dueDay ? ladderTone(dueDay, logicalToday()) : sector?.carried ? 'faint' : 'muted',
     sectorLabel: sector?.label ?? null,
     hint, zone: task.due?.tz ?? '', repeatLabel: repeatLabelOf(task),
@@ -784,10 +811,8 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   if (hides('labels') || !labels.some((l) => l.id !== omitLabel)) m.labels = null
   // The project: a cell of a list row's column (precision-rows D1), the end of a card's line.
   if (projectName) m.project = <span data-project="" className="inline-flex max-w-48 min-w-0 items-center gap-1 text-meta text-muted"><TruncatedText text={projectName} /></span>
-  // A list row (precision-rows D2): the third cell takes the labels, else the deadline, else the progress, which then leaves the counts.
+  // The subtask progress stays in the counts beside the title (sidebar-brand-and-row-grid D2); a card leads its property row with it.
   const progressCount = counts.find((c) => c.key === 'progress')
-  const extra = rowExtra(!!m.labels, !!m.deadline, !!progressCount)
-  const headCounts = extra === 'progress' ? counts.filter((c) => c.key !== 'progress') : counts
   if (card) {
     // The card's progress leads its property row; the other counts close it (precision-boards-timeline D3).
     const rest = counts.filter((c) => c.key !== 'progress')
@@ -798,7 +823,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   const meta = card ? (metaItems(m) > 0 || m.project) && <CardMeta m={m} />
     : detailed ? <DetailedMeta m={m} priority={priority} projectColor={projectName ? project?.color : undefined}
       labels={m.labels && <LabelChips labels={labels} omit={omitLabel} fit />} />
-    : (metaItems({ ...m, repeat: null }) > 0 || m.project || extra === 'progress') && <RowLine m={m} extra={extra} progress={progressCount} projectColor={projectName ? project?.color : undefined} projectColumn={showProject && !hides('project')} />
+    : (metaItems({ ...m, repeat: null }) > 0 || m.project) && <RowLine m={m} projectColor={projectName ? project?.color : undefined} projectColumn={showProject && !hides('project')} slotsOff={slotsOff} />
   // Expanded rows (row-expand D2): a list row may show its details under it; never a card, the row edited in place or a departing row.
   const canExpand = !!onExpand && !card && !inline && motion !== 'leave'
   const showDetails = canExpand && expanded
@@ -910,7 +935,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
         </button>
         {onTick && !readOnly && <RowTick name={name} ticked={ticked} showCheckbox={showCheckbox} onTick={onTick} />}
       </span>
-      {column && <TimeCell time={due?.time ?? null} slot={slotInColumn} timeTone={dueDay ? ladderTone(dueDay, logicalToday()) : 'muted'} deadline={deadlineInColumn ? deadline : null} deadlineLabel={deadlineLabel} />}
+      {column && <TimeCell time={due?.time ?? null} slot={slotInColumn} part={partInColumn} timeTone={dueDay ? ladderTone(dueDay, logicalToday()) : 'muted'} deadline={deadlineInColumn ? deadline : null} deadlineLabel={deadlineLabel} />}
       {inline ?? <button type="button" className="flex min-w-0 flex-1 flex-col text-left pointer-fine:-my-px pointer-fine:py-px" data-row-open
         aria-expanded={canExpand ? showDetails : undefined} aria-controls={showDetails ? detailsId : undefined}
         onClick={(e) => {
@@ -918,12 +943,10 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
           if (onTick && !readOnly && (selectMode || e.shiftKey || e.ctrlKey || e.metaKey)) { e.preventDefault(); onTick(e.shiftKey); return }
           clickRow(e, () => onOpen(e))
         }}>
-        <div className={card ? '' : 'flex min-w-0 items-start gap-2'} data-row-head>
+        <div className={card ? '' : 'flex min-w-0 items-baseline gap-2'} data-row-head>
         <RowTitle title={task.title} tone={checked ? 'text-faint line-through' : blockedBy > 0 || (waitsFor && !done) ? 'text-muted' : ''} waiting={!!waitsFor && !done}
           undecryptable={undecryptable} unencrypted={unencrypted} measure={!inline && !departing} />
-        {!card && !detailed && priority && <PriorityMark priority={priority} />}
-        {!card && m.repeat && <ToneText tone="faint" icon="repeat" data-repeat="" data-recurring={m.recurring ? '' : undefined} label={m.repeatLabel ?? m.repeat} className="shrink-0">{null}</ToneText>}
-        {!card && headCounts.length > 0 && <RowCounts counts={headCounts} />}
+        {!card && <RowMarks priority={detailed ? null : priority} m={m} counts={counts} />}
         </div>
         {card && notes && task.description && <Suspense fallback={null}><CardNotes task={task} /></Suspense>}
         {meta}

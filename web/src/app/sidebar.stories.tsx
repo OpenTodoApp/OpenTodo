@@ -223,7 +223,7 @@ async function seedWorkspaces(): Promise<void> {
   await createTask({ title: 'Buy a birthday present' })
 }
 
-/** The header as the workspace control (workspaces D6): the current workspace's mark and name, no new row. */
+/** The header as the workspace control (workspaces D6, sidebar-brand-and-row-grid D1): the current workspace's picture and name, no new row. */
 export const WorkspaceControl: StoryObj = {
   ...withSeed(seedWorkspaces),
   render: () => <Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column>,
@@ -241,7 +241,7 @@ export const SwitcherOpen: StoryObj = {
   ),
 }
 
-/** One workspace (the account never created one): the header shows OpenTodo with Personal below it. */
+/** One workspace (the account never created one): the header shows the picture "P" and Personal on one line; the brand line ends the sidebar. */
 export const OneWorkspace: StoryObj = {
   ...withSeed(async () => {
     await seedInbox()
@@ -257,7 +257,7 @@ function Branded({ name, children }: { name: string; children: ReactNode }) {
   return <>{children}</>
 }
 
-/** One workspace on a branded instance with a long name (issue 492): the name on the first line, cut if it must be, the workspace below it in full. */
+/** One workspace on a branded instance with a long name: the header shows the workspace; the brand line ends with the instance's name, cut if it must be, and the version. */
 export const OneWorkspaceBranded: StoryObj = {
   ...withSeed(async () => {
     await seedInbox()

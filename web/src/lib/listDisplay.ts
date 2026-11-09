@@ -24,6 +24,8 @@ export interface ListDisplay {
   rowLayout: RowLayout
   /** Today and Upcoming (builtin-view-options D5): subtasks under their parent in the same group; absent where not offered. */
   subtasks?: boolean
+  /** Upcoming's Later days (sidebar-brand-and-row-grid D8): every day in full; summarised otherwise; absent where not offered. */
+  laterInFull?: boolean
 }
 
 /** The built-in lists with display options (builtin-view-options). */
@@ -50,6 +52,8 @@ interface DisplayKind {
   sortBy: SortBy
   /** Offers Nest subtasks. */
   nest?: true
+  /** Offers Later days (Upcoming). */
+  later?: true
   /** Custom-field orders are offered (not in the Inbox, whose tasks have no project). */
   fields: boolean
 }
@@ -60,7 +64,7 @@ export const DISPLAY_KINDS: Record<DisplayScope['kind'], DisplayKind> = {
   label: { groups: LABEL_GROUP_OPTIONS, sorts: LIST_SORT_OPTIONS, groupBy: 'project', sortBy: 'position', fields: true },
   today: { groups: ['day', 'project', 'priority', 'label', 'none'], sorts: DAY_SORT_OPTIONS, groupBy: 'day', sortBy: 'due', nest: true, fields: true },
   // Upcoming is its days: no Group by.
-  upcoming: { groups: [], sorts: DAY_SORT_OPTIONS, groupBy: 'none', sortBy: 'due', nest: true, fields: true },
+  upcoming: { groups: [], sorts: DAY_SORT_OPTIONS, groupBy: 'none', sortBy: 'due', nest: true, later: true, fields: true },
   inbox: { groups: ['none', 'due', 'priority', 'label'], sorts: LIST_SORT_OPTIONS, groupBy: 'none', sortBy: 'position', fields: false },
 }
 
@@ -75,13 +79,14 @@ function fieldsOf(kind: DisplayScope['kind']) {
   return {
     groupBy: `${pre}group_by`, sortBy: `${pre}sort_by`, sortDir: `${pre}sort_dir`, rowLayout: `${pre}row_layout`,
     ...(DISPLAY_KINDS[kind].nest ? { subtasks: `${pre}subtasks` } : {}),
+    ...(DISPLAY_KINDS[kind].later ? { laterInFull: `${pre}later` } : {}),
   } as Record<keyof ListDisplay, string>
 }
 
 /** The defaults: what the page showed before it had options. */
 export function defaultListDisplay(kind: DisplayScope['kind'], rowLayout: RowLayout = 'line'): ListDisplay {
   const k = DISPLAY_KINDS[kind]
-  return { groupBy: k.groupBy, sortBy: k.sortBy, sortDir: 'asc', rowLayout, ...(k.nest ? { subtasks: false } : {}) }
+  return { groupBy: k.groupBy, sortBy: k.sortBy, sortDir: 'asc', rowLayout, ...(k.nest ? { subtasks: false } : {}), ...(k.later ? { laterInFull: false } : {}) }
 }
 
 function pick<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
@@ -103,6 +108,8 @@ export function listDisplayOf(kind: DisplayScope['kind'], row: object | null | u
     sortBy: !k.fields && sortBy.startsWith('field:') ? k.sortBy : sortBy,
     sortDir: pick(r[f.sortDir], SORT_DIRS, 'asc'),
     ...(k.nest ? { subtasks: r[f.subtasks] === 'nested' } : {}),
+    // An empty or unknown value reads as Summarised.
+    ...(k.later ? { laterInFull: r[f.laterInFull] === 'full' } : {}),
   }
 }
 
@@ -113,11 +120,12 @@ export function listDisplayOf(kind: DisplayScope['kind'], row: object | null | u
 export function isDefaultDisplay(kind: DisplayScope['kind'], d: ListDisplay, account?: RowLayout): boolean {
   const def = defaultListDisplay(kind)
   const same = d.groupBy === def.groupBy && d.sortBy === def.sortBy && d.sortDir === 'asc'
-  return account === undefined ? same : same && d.rowLayout === account && !d.subtasks
+  return account === undefined ? same : same && d.rowLayout === account && !d.subtasks && !d.laterInFull
 }
 
 /** The stored value of an option. */
 function stored(key: keyof ListDisplay, value: ListDisplay[keyof ListDisplay]): string {
+  if (key === 'laterInFull') return value ? 'full' : 'summary'
   return key === 'subtasks' ? (value ? 'nested' : '') : String(value)
 }
 

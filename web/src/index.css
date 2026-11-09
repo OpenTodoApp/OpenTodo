@@ -119,6 +119,8 @@
   --text-prose: var(--ot-text-prose); --text-prose--line-height: 1.5rem;
   /* Headings and the display step (tokens-v2 D7): weight 600, tighter tracking as the size grows. */
   --text-h3: var(--ot-text-h3); --text-h3--line-height: 1.25rem; --text-h3--font-weight: 600;
+  /* The title step (sidebar-brand-and-row-grid D5): the docked task panel's title, between the section heading and the page's. */
+  --text-title: 1rem; --text-title--line-height: 1.5rem; --text-title--font-weight: 600; --text-title--letter-spacing: -0.005em;
   --text-h2: 1.25rem; --text-h2--line-height: 1.75rem; --text-h2--font-weight: 600; --text-h2--letter-spacing: -0.01em;
   --text-h1: 1.375rem; --text-h1--line-height: 1.75rem; --text-h1--font-weight: 600; --text-h1--letter-spacing: -0.015em;
   --text-display: 1.75rem; --text-display--line-height: 2.125rem; --text-display--font-weight: 650; --text-display--letter-spacing: -0.025em;
@@ -1087,6 +1089,12 @@ button.ui-column-add { @apply flex-row items-start justify-start px-3 py-2.5 hov
    preference", precision-tokens D5): comfortable rows are 36 px, compact 32 px. Touch
    targets keep 44 px on coarse pointers through the rules further down. */
 .row-pad { padding-block: 0.5rem; }
+/* The marks beside a row's title (sidebar-brand-and-row-grid D3): the priority, the repeat
+   mark and the counts in one run at the metadata size with 12 px icons. A zero-width
+   character gives the run a text baseline, so it sits on the title's first baseline
+   whatever its first mark is; `clip`, not `hidden`, so it keeps that baseline. */
+.row-marks { display: inline-flex; min-width: 0; align-items: center; gap: 0.375rem; overflow: clip; font-size: var(--text-meta); line-height: var(--text-meta--line-height); }
+.row-marks::before { content: '\200b'; margin-inline-end: -0.375rem; }
 /* A list row far from the viewport costs no layout or paint (list-rendering-at-scale
    D1): the browser skips it while it stays in the document, so focus, find in page,
    drag and drop and screen readers reach every row. Its last drawn height holds its
@@ -1242,18 +1250,26 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 .briefing-link { @apply inline cursor-pointer rounded-chip text-inherit underline-offset-2 outline-none hover:underline focus-visible:underline focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-1 focus-visible:outline-focus; font: inherit; text-align: inherit; }
 }
 
-/* The property column (precision-rows D1 to D3, task-list-presentation "One row
-   anatomy"). Every list row is its own size container. From 40 rem of row width the
-   open control is a grid: the title with its marks on the left, the column's cells on
-   the right in fixed tracks, so values line up down the list, and the facts the column
-   does not hold on a second line. The column drops cells from its end as the row
-   narrows (assignee and estimate under 56 rem, then the third cell under 48 rem; with
-   no project cell, assignee and estimate under 48 rem); the task panel shows them all.
+/* The property column (precision-rows D1 to D3, sidebar-brand-and-row-grid D2 and D3,
+   task-list-presentation "One row anatomy"). Every list row is its own size container.
+   From 40 rem of row width the open control is a grid: the title with its marks on the
+   left, the column's slots on the right, and the facts the column does not hold on a
+   second line. The slots are, in order, project, labels, estimate, date and assignee,
+   each one kind of fact, the date ending the column. Each slot is one list-wide track
+   (--slot-*, the same in both densities): a slot that is empty on a row keeps its width,
+   and a slot no row of the list uses (`data-slots-off`, decided by the list from its
+   rows) is 0 wide. A slot carries its own lead gap, so a 0-wide slot leaves no gap. The
+   head and the slots align on the title's first baseline. The column drops slots as the
+   row narrows (assignee and estimate under 56 rem, then the labels under 48 rem; with
+   no project slot, assignee and estimate under 48 rem); the task panel shows them all.
    Under 40 rem the wrappers are not boxes and the row keeps its two lines. These rules
    are outside the layers so they win over the line's utility classes. */
 @container row (width < 40rem) {
   [data-row-props] :is([data-date], [data-estimate], [data-progress]) > svg { display: none; }
 }
+/* The deadline is never a slot: it is in the time column or the facts. Its copy in the
+   column's wrapper is the phone row's one cell only (precision-phone D2). */
+[data-row-cell="deadline"] { display: none; }
 /* The title keeps a very narrow row's width (row-title-first-on-phones): the origin at its
    end is its icon, the words stay in the link's name and the task's details. */
 @container row (width < 30rem) {
@@ -1261,9 +1277,9 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 }
 /* The row's end is one width from 40 rem (GitHub issue 945): every list row has the
    trailing slot, with an origin or empty, so the property column ends at the same
-   place on every row and the date and label cells line up down the list. A longer
-   origin is cut with an ellipsis; its whole text stays in the link's name and the
-   task's details. A detailed row has no column and keeps its end as wide as it is. */
+   place on every row and the slots line up down the list. A longer origin is cut with
+   an ellipsis; its whole text stays in the link's name and the task's details. A
+   detailed row has no column and keeps its end as wide as it is. */
 @container row (width >= 40rem) {
   [data-row-trailing] { flex: none; width: 6rem; }
   [data-row-trailing] > span, [data-row-trailing] [data-origin] { flex-shrink: 1; min-width: 0; max-width: 100%; }
@@ -1272,21 +1288,33 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 @container row (width >= 40rem) {
   /* align-content: on touch the open control is at least 44 px tall (the coarse-pointer
      button rule); the lines stay at its top, on the circle's line, not in its middle. */
-  [data-row-open] { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; align-content: start; column-gap: 0.75rem; row-gap: 0.125rem; }
+  [data-row-open] { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: first baseline; align-content: start; column-gap: 0; row-gap: 0.125rem; }
   [data-row-head] { grid-area: 1 / 1; }
   [data-row-meta="row"] { display: contents; }
-  /* On the title's first line, also when the title takes two (task-list-width D1). */
+  /* On the title's first baseline, also when the title takes two (task-list-width D1). */
   [data-row-props] {
-    grid-area: 1 / 2; align-self: start; min-height: 1.25rem; display: grid; align-items: center; column-gap: 0.75rem; white-space: nowrap;
-    grid-template-columns: [date] 5.75rem [extra] 6.875rem [estimate] 4rem [assignee] 1.25rem;
+    --slot-project: 0rem; --slot-labels: 7.625rem; --slot-estimate: 4.75rem; --slot-date: 6.5rem; --slot-assignee: 2rem;
+    grid-area: 1 / 2; display: grid; align-items: baseline; column-gap: 0; white-space: nowrap;
+    grid-template-columns: [project] var(--slot-project) [labels] var(--slot-labels) [estimate] var(--slot-estimate) [date] var(--slot-date) [assignee] var(--slot-assignee);
   }
-  [data-row-props="project"] { grid-template-columns: [date] 5.75rem [project] 9.375rem [extra] 6rem [estimate] 4rem [assignee] 1.25rem; }
-  [data-row-cell] { overflow: hidden; }
-  [data-row-cell="date"] { grid-column: date; }
+  [data-row-props="project"] { --slot-project: 10.125rem; --slot-labels: 6.75rem; }
+  [data-row-props][data-slots-off~="project"] { --slot-project: 0rem; }
+  [data-row-props][data-slots-off~="labels"] { --slot-labels: 0rem; }
+  [data-row-props][data-slots-off~="estimate"] { --slot-estimate: 0rem; }
+  [data-row-props][data-slots-off~="date"] { --slot-date: 0rem; }
+  [data-row-props][data-slots-off~="assignee"] { --slot-assignee: 0rem; }
+  [data-row-cell] { grid-row: 1; overflow: clip; padding-inline-start: 0.75rem; }
+  /* `clip` keeps a cut value's text baseline (a scroll container's is its bottom edge), so every slot sits on the title's baseline. */
+  [data-row-cell] .truncate { overflow: clip; }
+  /* A value that leads with its icon takes its baseline from its text, not from the icon. */
+  [data-row-cell] :is([data-date], [data-estimate]) { align-items: baseline; }
+  [data-row-cell] :is([data-date], [data-estimate]) > svg { align-self: center; }
   [data-row-cell="project"] { grid-column: project; }
-  [data-row-cell="extra"] { grid-column: extra; }
-  [data-row-cell="estimate"] { grid-column: estimate; }
-  [data-row-cell="assignee"] { grid-column: assignee; }
+  [data-row-cell="labels"] { grid-column: labels; }
+  /* Figures and dates end their slots, so the dates of a list form its right edge. */
+  [data-row-cell="estimate"] { grid-column: estimate; justify-content: flex-end; }
+  [data-row-cell="date"] { grid-column: date; justify-content: flex-end; }
+  [data-row-cell="assignee"] { grid-column: assignee; justify-content: flex-end; }
   [data-row-cell] [data-label-chips] { flex-wrap: nowrap; }
   /* The assignee cell shows the avatar; the name stays in the tooltip and is read out. */
   [data-row-cell="assignee"] [data-assignee] > :last-child { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -1299,16 +1327,16 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
      at about 100 characters before its two lines end, whatever room the column leaves. */
   [data-row-title] { max-width: 48rem; }
   /* The Inbox's source line, in the column's place: on the title's first line too. */
-  [data-row-source] { align-self: start; min-height: 1.25rem; margin-top: 0; }
+  [data-row-source] { align-self: start; min-height: 1.25rem; margin-top: 0; margin-inline-start: 0.75rem; }
 }
 @container row (40rem <= width < 48rem) {
-  [data-row-props] { grid-template-columns: [date] 5.75rem [extra] 6.875rem; }
-  [data-row-props="project"] { grid-template-columns: [date] 5.75rem [project] 9.375rem; }
-  [data-row-props="project"] > [data-row-cell="extra"] { display: none; }
+  [data-row-props] { --slot-estimate: 0rem; --slot-assignee: 0rem; }
+  [data-row-props="project"] { --slot-labels: 0rem; }
+  [data-row-props="project"] > [data-row-cell="labels"] { display: none; }
   [data-row-cell="estimate"], [data-row-cell="assignee"] { display: none; }
 }
 @container row (48rem <= width < 56rem) {
-  [data-row-props="project"] { grid-template-columns: [date] 5.75rem [project] 9.375rem [extra] 6rem; }
+  [data-row-props="project"] { --slot-estimate: 0rem; --slot-assignee: 0rem; }
   [data-row-props="project"] > :is([data-row-cell="estimate"], [data-row-cell="assignee"]) { display: none; }
 }
 /* The phone row (precision-phone D2, task-list-presentation "Phone rows"): below 768 px
@@ -1336,6 +1364,7 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
     [data-row-meta="row"] { display: contents; }
     [data-row-props] { grid-area: 1 / 2; display: flex; align-items: center; white-space: nowrap; }
     [data-row-props] > [data-row-cell]:not([data-row-phone]), [data-row-rest] { display: none; }
+    [data-row-props] > [data-row-cell="deadline"][data-row-phone] { display: inline-flex; }
     [data-row-meta="row"] > [data-row-props] > [data-row-item]::before { content: none; }
     /* The title comes first (row-title-first-on-phones): the origin is left to the row's
        details and the task page, and the Inbox's source line is the second line, never a
