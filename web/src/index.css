@@ -1608,6 +1608,12 @@ html:root[data-contrast="high"] .quick-add-tint { background-color: transparent;
 :root[data-task-split] {
   --panel-w: clamp(22rem, var(--task-panel-w, clamp(26rem, 42vw, 44rem)), max(22rem, min(64rem, 100vw - 38rem)));
 }
+/* The Notes page's docked note (note-pane-width D1, D2): room to write, about half of the
+   content by default, or the width chosen with its own handle (`--note-panel-w`, this
+   device only), within the docked task's bounds. */
+:root[data-note-split] {
+  --panel-w: clamp(22rem, var(--note-panel-w, clamp(30rem, 46vw, 48rem)), max(22rem, min(64rem, 100vw - 38rem)));
+}
 /* The panel's resize handle: a hairline that takes the accent on hover, focus and drag. */
 .panel-resize::after {
   content: ""; position: absolute; inset-block: 0; left: 50%; width: 2px; transform: translateX(-50%);

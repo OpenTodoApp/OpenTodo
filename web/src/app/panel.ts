@@ -100,24 +100,30 @@ function setSidePanelOpen(open: boolean): void {
 }
 
 /**
- * The docked task's width (task-side-panel D3): CSS pixels on this device, never synced,
- * read by `:root[data-task-split]` as `--task-panel-w` and bounded there.
+ * A docked panel's width (task-side-panel D3, note-pane-width D1): CSS pixels on this
+ * device, never synced, kept under `key` and set on the root as `cssVar`, which
+ * `:root[data-task-split]` (the docked task) or `:root[data-note-split]` (the Notes
+ * page's note) reads as `--panel-w` and bounds. Each keeps its own width.
  */
+export interface PanelWidthStore { key: string; cssVar: string }
 export const PANEL_WIDTH_KEY = 'opentodo.taskPanel.width'
-export function storedPanelWidth(): number | null {
-  const n = Number(readString(PANEL_WIDTH_KEY))
+export const TASK_PANEL_WIDTH: PanelWidthStore = { key: PANEL_WIDTH_KEY, cssVar: '--task-panel-w' }
+export const NOTE_PANEL_WIDTH: PanelWidthStore = { key: 'opentodo.notePanel.width', cssVar: '--note-panel-w' }
+export function storedPanelWidth(store: PanelWidthStore = TASK_PANEL_WIDTH): number | null {
+  const n = Number(readString(store.key))
   return Number.isFinite(n) && n > 0 ? n : null
 }
-function applyPanelWidth(): void {
-  setPanelWidth(storedPanelWidth(), false)
+/** Puts the width kept on this device on the root, as the panel opens. */
+export function applyPanelWidth(store: PanelWidthStore = TASK_PANEL_WIDTH): void {
+  setPanelWidth(storedPanelWidth(store), false, store)
 }
-/** Sets (a number) or forgets (null: the default width) the docked task's width; `persist` keeps it on the device. */
-export function setPanelWidth(px: number | null, persist = true): void {
+/** Sets (a number) or forgets (null: the default width) a docked panel's width; `persist` keeps it on the device. */
+export function setPanelWidth(px: number | null, persist = true, store: PanelWidthStore = TASK_PANEL_WIDTH): void {
   if (typeof document === 'undefined') return
-  if (px) document.documentElement.style.setProperty('--task-panel-w', `${Math.round(px)}px`)
-  else document.documentElement.style.removeProperty('--task-panel-w')
+  if (px) document.documentElement.style.setProperty(store.cssVar, `${Math.round(px)}px`)
+  else document.documentElement.style.removeProperty(store.cssVar)
   if (!persist) return
-  writeString(PANEL_WIDTH_KEY, px ? String(Math.round(px)) : null) // storage refused: the width holds until the next split
+  writeString(store.key, px ? String(Math.round(px)) : null) // storage refused: the width holds until the panel opens again
 }
 
 export const SPLIT_QUERY = '(min-width: 64rem)'

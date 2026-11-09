@@ -13858,6 +13858,9 @@
   "Resize sidebar": [
     "web/src/app/Shell.tsx"
   ],
+  "Resize the note": [
+    "web/src/app/notes/NoteEditor.tsx"
+  ],
   "Resize the task panel": [
     "web/src/app/sidePanel.tsx"
   ],
