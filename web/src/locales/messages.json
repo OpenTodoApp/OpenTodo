@@ -5296,9 +5296,6 @@
   "Edit issue connection": [
     "web/src/app/IssueEditor.tsx"
   ],
-  "Edit its title in place, or open its details beside the list. This device only.": [
-    "web/src/lib/settingsCopy.ts"
-  ],
   "Edit label {name}": [
     "web/src/app/LabelsView.tsx"
   ],
@@ -5340,6 +5337,9 @@
   ],
   "Edit the selected task's title in place, with its date, priority, labels and project under it; Enter saves, Esc cancels, Shift+Enter opens the details": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Edit the title, open the details or expand the row. This device only.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Edit the title. Tab, Enter or a click away saves it and the decision keys work again. Esc restores it": [
     "web/src/lib/shortcuts.ts"
@@ -6001,6 +6001,9 @@
   ],
   "Expand subtasks": [
     "web/src/app/TaskRow.tsx"
+  ],
+  "Expand the row": [
+    "web/src/app/PreferencesPanels.tsx"
   ],
   "Expand {name}": [
     "web/src/app/ProjectsTable.tsx",

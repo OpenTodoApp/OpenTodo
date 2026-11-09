@@ -60,6 +60,7 @@ import { energyChipLabel, energyName, energyOf, type Energy } from '../lib/energ
 import { sectorLabel } from '../lib/sectorNames'
 import { formatSpan, spanOf, type Span } from '../lib/span'
 import { usePendingDone } from '../lib/pendingDone'
+import { clickExpands, DOUBLE_CLICK_MS } from './rowClick'
 
 /** The details of an expanded row (row-expand D3), loaded on the first expand. */
 const RowDetails = lazy(() => import('./task-list/RowDetails'))
@@ -413,6 +414,8 @@ export interface TaskRowProps {
   onToggle: () => void
   /** Opens the task; Shift or Ctrl/⌘ clicks tick instead when `onTick` is set (bulk-edit D3). */
   onOpen: (e?: React.MouseEvent) => void
+  /** A double-click on the row opens the task's page (row-click-modes D2); without it a double-click is two clicks. */
+  onOpenPage?: () => void
   /** Ticked for a bulk action (bulk-edit). */
   ticked?: boolean
   /** Checkboxes always shown: something is ticked, or touch Select mode is on. */
@@ -551,6 +554,33 @@ export interface CompactRowProps {
 /** The row's own controls: a click on one of them is theirs, not the row's (row-and-cursor D1). */
 const ROW_CONTROL = 'button, a, input, label, select, textarea, [role="button"], [role="menuitem"], [contenteditable="true"]'
 
+/**
+ * A click on a row's title or empty area, and a double-click on the row (row-click-modes D1,
+ * D2). `expand`: the row can show its details. With a double-click to open the page, its
+ * second click does nothing; under "Expand the row" a pointer click expands. A double-click
+ * opens the page except on the row's controls and in a title already being edited, where it
+ * selects a word; one whose first click opened the editor still opens the page.
+ */
+function useRowClicks(expand: false | undefined | (() => void), openPage: (() => void) | undefined, selectMode: boolean) {
+  const opened = useRef(-Infinity)
+  const clickRow = (e: React.MouseEvent, open: () => void) => {
+    if (openPage && e.detail > 1) return
+    opened.current = e.timeStamp
+    if (expand && clickExpands(e, true)) expand()
+    else open()
+  }
+  const doubleClick = (e: React.MouseEvent<HTMLLIElement>) => {
+    const el = e.target as Element
+    if (el.closest('[data-inline-title]')) { if (e.timeStamp - opened.current > DOUBLE_CLICK_MS) return }
+    else {
+      const hit = el.closest(`[data-inline-editor], ${ROW_CONTROL}`)
+      if (hit && e.currentTarget.contains(hit) && !hit.matches('[data-row-open]')) return
+    }
+    if (!selectMode && !e.shiftKey && !e.ctrlKey && !e.metaKey) openPage?.()
+  }
+  return { clickRow, doubleClick }
+}
+
 const TONE_TEXT: Partial<Record<Tone, string>> ={ danger: 'text-danger', accent: 'text-accent', default: 'text-default' }
 
 function CompactRow({ task, date, time, today, selected, readOnly = false, project, large = false, onPointerDown, onSelect, onOpen, attrs, hue, position }: CompactRowProps) {
@@ -679,7 +709,7 @@ export const TaskRow = memo(function TaskRow(props: TaskRowProps | CompactRowPro
   return props.shape === 'compact' ? <CompactRow {...props} /> : <FullRow {...props} />
 })
 
-function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, onGripDown, onGripClick, dropKey, dropIndicator = null, dropDepth, dragging = false, ticked = false, showCheckbox = false, selectMode = false, onTick, hideFieldBadges = false, treeItem = false, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout, edge, notes = false }: TaskRowProps) {
+function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onOpenPage, onToggleCollapse, shape = 'row', timeColumn = false, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, onGripDown, onGripClick, dropKey, dropIndicator = null, dropDepth, dragging = false, ticked = false, showCheckbox = false, selectMode = false, onTick, hideFieldBadges = false, treeItem = false, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout, edge, notes = false }: TaskRowProps) {
   const card = shape === 'card'
   // The row's layout (row-layouts D1): the list's own choice, else the account's; a card keeps its shape.
   const accountLayout = useAccountRowLayout()
@@ -798,6 +828,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
     </span>
   )
 
+  const { clickRow, doubleClick } = useRowClicks(canExpand && onExpand, onOpenPage, selectMode)
   // The swipe takes the press first (rowSwipe), then the drag owner — or, with no drag, the row's own touch hold (task-row-context-menu).
   const handlePointerDown = (e: React.PointerEvent<HTMLLIElement>) => { if (swipe) swiping.onPointerDown(e); holdForRow(e, onPointerDown, onRowMenu) }
 
@@ -828,9 +859,9 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
         const hit = (e.target as Element).closest(ROW_CONTROL)
         if (hit && e.currentTarget.contains(hit)) return
         if (onTick && !readOnly && (selectMode || e.shiftKey || e.ctrlKey || e.metaKey)) { onTick(e.shiftKey); return }
-        onOpen()
+        clickRow(e, () => onOpen())
       }}
-      onContextMenu={onContextMenu}
+      onDoubleClick={onOpenPage && !departing ? doubleClick : undefined} onContextMenu={onContextMenu}
       style={depth ? { paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 0.5}rem` } : undefined}
       data-expanded={showDetails || undefined}
       data-row-layout={detailed ? 'detailed' : undefined} {...(card && edge ? { 'data-hue': edge, 'data-card-edge': '' } : {})}
@@ -885,7 +916,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
         onClick={(e) => {
           // Shift+click extends, Ctrl/⌘+click toggles the tick instead of opening (bulk-edit D3); in Select mode a tap does.
           if (onTick && !readOnly && (selectMode || e.shiftKey || e.ctrlKey || e.metaKey)) { e.preventDefault(); onTick(e.shiftKey); return }
-          onOpen(e)
+          clickRow(e, () => onOpen(e))
         }}>
         <div className={card ? '' : 'flex min-w-0 items-start gap-2'} data-row-head>
         <RowTitle title={task.title} tone={checked ? 'text-faint line-through' : blockedBy > 0 || (waitsFor && !done) ? 'text-muted' : ''} waiting={!!waitsFor && !done}

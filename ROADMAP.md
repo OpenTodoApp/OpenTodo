@@ -376,7 +376,7 @@ Considered and set aside for now, so they are not forgotten: ~~a focus timer wit
 
 | # | Capability | Change name | Notes |
 | --- | --- | --- | --- |
-| 1 | **Shipped.** **Expand a row in place**: open a task's details under its row without leaving the list | `row-expand` | The task page stays for the full view |
+| 1 | **Shipped.** **Expand a row in place**: open a task's details under its row without leaving the list | `row-expand` | The task page stays for the full view. Follow-up [`row-click-modes`](openspec/changes/row-click-modes/): a click can expand the row, a double-click opens the page, and the side panel follows the selection in every list ([#1129](https://github.com/OpenTodoApp/OpenTodo/issues/1129), [#1116](https://github.com/OpenTodoApp/OpenTodo/issues/1116)) |
 | 2 | **Shipped.** **Group mentions and a workspace filter**: mention `@Family` to reach everyone in a group, and narrow any view with `workspace:` | `group-mentions` | The follow-ups named by `workspaces`: mentions resolve against the workspace's groups; the filter term joins the query language and the builder |
 | 3 | **Shipped.** **Rich comments**: write comments with the notes editor | `rich-comments` | Without losing the plain-text API for scripts and assistants |
 | 4 | **Shipped.** **Shell completion for `ot`**: `ot completion bash`, `zsh` or `fish` | `ot-completion` | Commands, flags and fixed values from the description `ot schema` prints, plus project, label and view names |

@@ -59,7 +59,6 @@ export interface ShortcutContext {
   selection: ReturnType<typeof useSelection>
   selectedId: string | null
   setSelectedId: (id: string | null) => void
-  openId: string | null
   manual: boolean
   /** A keyboard move while another order is shown switches the list to manual order first (list-display-options D4). */
   onReorder?: () => void
@@ -103,7 +102,7 @@ function inRowActions(e: KeyboardEvent): boolean {
 }
 
 export function useListShortcuts(c: ShortcutContext) {
-  const { rows, selectedId, setSelectedId, selection, ticked, ui, openId, isReadOnly } = c
+  const { rows, selectedId, setSelectedId, selection, ticked, ui, isReadOnly } = c
   const idx = rows.findIndex((r) => r.task.id === selectedId)
   const row = idx >= 0 ? rows[idx] : undefined
   // A viewer may navigate and open tasks of a shared project, never change them.
@@ -149,7 +148,7 @@ export function useListShortcuts(c: ShortcutContext) {
   }
   /** The selected (or open) task, for occurrence keys; false when it is missing or read-only. */
   const occurrence = () => {
-    const id = row?.task.id ?? openId
+    const id = row?.task.id ?? panelTaskId()
     return !id || isReadOnly(row?.task ?? c.taskMap.get(id)) ? null : id
   }
   useShortcutScope('view', {
@@ -168,13 +167,13 @@ export function useListShortcuts(c: ShortcutContext) {
       else if (ui.prompt) ui.setPrompt(null)
       else if (ui.addingUnder) ui.setAddingUnder(null)
       else if (ui.addingBelow) ui.setAddingBelow(null)
-      else if (openId && !taskSplitDocks()) setOpenId(null)
+      else if (panelTaskId() && !taskSplitDocks()) setOpenId(null)
       // The details of an expanded row close before the selection clears (row-expand D1).
       else if (c.expandedId) c.setExpandedId(null)
       else if (selection.ticked.size) selection.clear()
       // On the Inbox's split the pane follows the cursor: Escape clears both (inbox-split D1);
       // the side panel keeps its task (task-side-panel D4).
-      else if (openId && !sidePanelDocks()) { setOpenId(null); setSelectedId(null) }
+      else if (panelTaskId() && !sidePanelDocks()) { setOpenId(null); setSelectedId(null) }
       else setSelectedId(null)
     },
     'list.move-up': moveBy(-1), 'list.move-down': moveBy(1), 'list.move-top': moveBy('top'), 'list.move-bottom': moveBy('bottom'),

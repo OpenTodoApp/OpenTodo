@@ -258,7 +258,7 @@ describe('moving from the right-click menu', () => {
 describe('the list bindings', () => {
   const ctxOver = (over: Partial<BindingContext> = {}): BindingContext => ({
     route: { view: 'today' }, rows: [], columns: [], board: false, manual: false,
-    selectedId: null, setSelectedId: vi.fn(), openId: null, isReadOnly: () => false,
+    selectedId: null, setSelectedId: vi.fn(), isReadOnly: () => false,
     taskMap: new Map(), ticked: ['a', 'b'],
     selection: { ticked: new Set(['a', 'b']), toggle: vi.fn(), extendTo: vi.fn(), selectAll: vi.fn(), set: vi.fn(), clear: vi.fn() },
     ui: { pickerFor: null, setPickerFor: vi.fn(), assignFor: null, setAssignFor: vi.fn(), prompt: null, setPrompt: vi.fn(), addingUnder: null, setAddingUnder: vi.fn(), addingBelow: null, setAddingBelow: vi.fn(), addingTo: null, setAddingTo: vi.fn(), openActions: vi.fn() },
