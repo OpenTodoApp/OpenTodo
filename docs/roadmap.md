@@ -105,7 +105,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `stability-contract` | A frozen v1 API and op schema, upgrade paths from any 0.x, an export guarantee | Shipped in 0.22 |
 | `external-security-review` | A threat model and disclosure policy; an independent security review is optional, depending on funding | In progress (38 of 44) |
 | `accessibility-aa` | WCAG 2.2 AA on every screen, with a conformance statement | Shipped in 0.22 |
-| `performance-10k` | Budgets and tests for 10,000 tasks, on phones too | In progress (16 of 16) |
+| `performance-10k` | Budgets and tests for 10,000 tasks, on phones too | Shipped in 1.3 |
 | `notes-compaction-at-scale` | A year of note history compacted in a minute without holding writes back; a new device downloads only the latest notes | Shipped in 0.22 |
 | `migration-everywhere` | A switch guide and checked importer for every competitor | Shipped in 0.22 |
 | `caldav-verified` | CalDAV verified on real clients | Planned |
@@ -123,7 +123,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `routines-describe-it` | "Describe it": the AI drafts a routine from one sentence into the editor, never saving or running it | Shipped in 0.20 |
 | `routines-ai-step` | Ask AI and Summarise steps, proposals by default, a bounded "apply without asking", device runs for encrypted accounts | Shipped in 0.21 |
 | `routines-shared` | Routines that belong to a shared project and run as whoever turned them on | Shipped in 0.21 |
-| `routines-shared-email` | Email project members in shared routines, with a stop link per member | In progress (9 of 9) |
+| `routines-shared-email` | Email project members in shared routines, with a stop link per member | Shipped in 1.3 |
 | `routines-shared-notify` | A "members" recipient for Notify me in shared routines, mutable per routine | Planned |
 
 ## Notes area
