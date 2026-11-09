@@ -12,6 +12,7 @@ import { FOCUS_DEFAULTS } from '../../lib/focus/prefs'
 import { startSession } from '../../lib/focus/session'
 import { readFocus } from '../../lib/focus/state'
 import { resetTone } from '../../lib/focus/tone'
+import { alertPlaying } from '../../lib/focus/alert'
 import { flush, render, waitFor } from '../../ui/test-utils'
 import { resetFocusNotices, useFocusTimer } from './useFocusTimer'
 
@@ -150,6 +151,20 @@ describe('the end of a session', () => {
     await flush()
     expect(tonesPlayed()).toBe(0)
     expect(shown).toEqual([])
+    await r.unmount()
+  })
+
+  it('Long (focus-end-alert): a visible end starts the repeating alert, and a key press stops it', async () => {
+    await mutate('user_prefs', 'me', { focus_sound: 'on', focus_alert: 'long' })
+    const r = await render(<Engine />)
+    await startSession(task, FOCUS_DEFAULTS, Date.now())
+    await waitFor(() => phases().includes('work'), 'the engine sees the session')
+    await advance(25 * MIN)
+    await waitFor(async () => (await readFocus())?.phase === 'done', 'done')
+    await waitFor(() => alertPlaying(), 'alert')
+    expect(tonesPlayed()).toBeGreaterThanOrEqual(1)
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    expect(alertPlaying()).toBe(false)
     await r.unmount()
   })
 

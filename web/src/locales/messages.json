@@ -332,6 +332,9 @@
     "web/src/app/routines/RunHistory.tsx",
     "web/src/lib/rules/inbox.ts"
   ],
+  "A dot shows when this version has notes you have not read yet.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "A field": [
     "web/src/lib/assistant.ts"
   ],
@@ -530,9 +533,6 @@
   ],
   "A short summary written by AI": [
     "web/src/lib/rules/sentence.ts"
-  ],
-  "A short tone when a session or a break ends, while the app is shown.": [
-    "web/src/lib/settingsCopy.ts"
   ],
   "A short vibration when you complete a task or pick one up with a long press.": [
     "web/src/lib/settingsCopy.ts"
@@ -4871,12 +4871,12 @@
     "web/public/push-sw.js",
     "web/src/app/ArchivePrompt.tsx",
     "web/src/app/DemoBanner.tsx",
+    "web/src/app/RefusedBanner.tsx",
     "web/src/app/ReminderToasts.tsx",
     "web/src/app/RemindersField.tsx",
     "web/src/app/Shell.tsx",
     "web/src/app/ThemeRow.tsx",
     "web/src/app/ToastActionHost.tsx",
-    "web/src/app/UpdateBanner.tsx",
     "web/src/app/assistant/AssistantRoot.tsx",
     "web/src/app/assistant/ComposerCapture.tsx",
     "web/src/app/bulk/UndoToast.tsx",
@@ -5210,6 +5210,9 @@
   ],
   "Earlier conversations on this device": [
     "web/src/app/assistant/AssistantPanelBody.tsx"
+  ],
+  "Earlier versions": [
+    "web/src/app/WhatsNew.tsx"
   ],
   "Edit": [
     "web/src/app/CalendarFeedsPanel.tsx",
@@ -8896,6 +8899,9 @@
   "Logo": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Long": [
+    "web/src/app/focus/FocusSettings.tsx"
+  ],
   "Long break": [
     "web/src/app/focus/FocusParts.tsx",
     "web/src/lib/settingsCopy.ts"
@@ -9797,6 +9803,12 @@
   "New note": [
     "web/src/app/notes/NotesPage.tsx",
     "web/src/app/palette/registry.ts"
+  ],
+  "New notes": [
+    "web/src/app/NewsDot.tsx"
+  ],
+  "New notes for this version": [
+    "web/src/app/WhatsNew.tsx"
   ],
   "New objective for {period}": [
     "web/src/app/objectives/ObjectiveCards.tsx"
@@ -10856,6 +10868,9 @@
   "Nothing more is sent to <span>{url}</span>, and its delivery log is deleted too.": [
     "web/src/app/WebhooksPanel.tsx"
   ],
+  "Nothing new in this version yet.": [
+    "web/src/app/WhatsNew.tsx"
+  ],
   "Nothing old in Someday.": [
     "web/src/app/review/MonthlyLook.tsx"
   ],
@@ -11513,9 +11528,7 @@
     "web/src/app/TwoFactorPanel.tsx"
   ],
   "Open an issue on GitHub. Every report is read.": [
-    "web/src/app/WelcomeDialog.tsx",
-    "web/src/app/settingsIndex.ts",
-    "web/src/lib/settingsCopy.ts"
+    "web/src/app/WelcomeDialog.tsx"
   ],
   "Open as a new view: {query}": [
     "web/src/app/palette/filterEntries.ts"
@@ -11555,6 +11568,9 @@
   ],
   "Open menu": [
     "web/src/app/Shell.tsx"
+  ],
+  "Open on GitHub": [
+    "web/src/app/FeedbackDialog.tsx"
   ],
   "Open on launch": [
     "web/src/lib/settingsCopy.ts"
@@ -13212,6 +13228,9 @@
   ],
   "Relative reminders fire once the task has a due date.": [
     "web/src/app/RemindersField.tsx"
+  ],
+  "Release notes on GitHub": [
+    "web/src/app/WhatsNew.tsx"
   ],
   "Releases and what is being built, on X.": [
     "web/src/app/settingsIndex.ts",
@@ -14883,8 +14902,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Share feedback or report a problem": [
-    "web/src/app/WelcomeDialog.tsx",
-    "web/src/app/settingsIndex.ts"
+    "web/src/app/WelcomeDialog.tsx"
   ],
   "Share project": [
     "web/src/app/ProjectHeader.tsx"
@@ -14918,6 +14936,9 @@
   ],
   "Shift+Enter: add to {slot}": [
     "web/src/app/calendar/CalendarStatus.tsx"
+  ],
+  "Short": [
+    "web/src/app/focus/FocusSettings.tsx"
   ],
   "Short break": [
     "web/src/app/focus/FocusParts.tsx",
@@ -15536,6 +15557,11 @@
   "Someone without an account, whose provider confirms their email, gets a member account on first sign-in. Off: only existing accounts (matched by verified email) and open sign-up.": [
     "web/src/app/SsoPanel.tsx"
   ],
+  "Something isn't working": [
+    "web/src/app/AboutSection.tsx",
+    "web/src/app/FeedbackDialog.tsx",
+    "web/src/app/SidebarFooter.tsx"
+  ],
   "Something went wrong": [
     "web/src/app/EmailScreens.tsx",
     "web/src/app/InviteScreen.tsx",
@@ -15579,9 +15605,6 @@
   ],
   "Sound": [
     "web/src/lib/settingsCopy.ts"
-  ],
-  "Sound at the end of a session": [
-    "web/src/app/focus/FocusSettings.tsx"
   ],
   "Source": [
     "web/src/app/notes/NoteFilters.tsx",
@@ -16308,6 +16331,9 @@
   ],
   "Tell the assistant your time zone: due dates are evaluated in the time zone it passes (UTC otherwise). Changes made offline on a device appear once it syncs.": [
     "web/src/app/AssistantsPanel.tsx"
+  ],
+  "Tell us what went wrong. A hello is welcome too.": [
+    "web/src/app/FeedbackDialog.tsx"
   ],
   "Template": [
     "web/src/lib/rules/sentence.ts"
@@ -17351,6 +17377,12 @@
   "The test passes: Then runs": [
     "web/src/lib/rules/preview.ts"
   ],
+  "The text is too long for a link. It is copied: paste it into the message.": [
+    "web/src/app/FeedbackDialog.tsx"
+  ],
+  "The text is too long for a link. It is selected: copy it and paste it into the message.": [
+    "web/src/app/FeedbackDialog.tsx"
+  ],
   "The thank-you shown the first time you opened this server.": [
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
@@ -17492,6 +17524,9 @@
   ],
   "These fields go back to this version’s values:": [
     "web/src/app/task-detail/HistoryTab.tsx"
+  ],
+  "These notes are in English.": [
+    "web/src/app/WhatsNew.tsx"
   ],
   "These tasks already have {label}": [
     "web/src/lib/undoActions.ts"
@@ -19489,6 +19524,10 @@
   "Verify your email address to use this": [
     "web/src/lib/rules/catalogue.ts"
   ],
+  "Version notices": [
+    "web/src/app/WhatsNew.tsx",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Version {version}": [
     "web/src/app/AppCodeRow.tsx"
   ],
@@ -19741,6 +19780,10 @@
   "Welcome! Create the owner account for this server. Only you can do this; sign-up closes afterwards unless you open it.": [
     "web/src/app/AuthScreen.tsx"
   ],
+  "What changed in each version, in English.": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "What changed in your shared projects": [
     "web/src/app/FeedView.tsx"
   ],
@@ -19795,6 +19838,10 @@
   ],
   "What you type here is sent to the map provider through this server.": [
     "web/src/app/locations/LocationEditor.tsx"
+  ],
+  "What's new": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Whatever is on your mind…": [
     "web/src/app/method/LoopHome.tsx",
@@ -20067,6 +20114,10 @@
   ],
   "Write a reply…": [
     "web/src/page/TaskPageScreen.tsx"
+  ],
+  "Write it here. It opens as a GitHub issue or an email.": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Write tasks into": [
     "web/src/app/CalendarSyncDialogs.tsx"
@@ -20389,6 +20440,9 @@
   ],
   "Your loops, your server|method": [
     "web/src/lib/method/vocabulary.json"
+  ],
+  "Your message": [
+    "web/src/app/FeedbackDialog.tsx"
   ],
   "Your name": [
     "web/src/page/TaskPageScreen.tsx"
@@ -24154,62 +24208,5 @@
   ],
   "⤼ Skip": [
     "web/src/app/RecurrenceField.tsx"
-  ],
-  "A dot shows when this version has notes you have not read yet.": [
-    "web/src/lib/settingsCopy.ts"
-  ],
-  "Earlier versions": [
-    "web/src/app/WhatsNew.tsx"
-  ],
-  "New notes": [
-    "web/src/app/NewsDot.tsx"
-  ],
-  "New notes for this version": [
-    "web/src/app/WhatsNew.tsx"
-  ],
-  "Nothing new in this version yet.": [
-    "web/src/app/WhatsNew.tsx"
-  ],
-  "Release notes on GitHub": [
-    "web/src/app/WhatsNew.tsx"
-  ],
-  "These notes are in English.": [
-    "web/src/app/WhatsNew.tsx"
-  ],
-  "Version notices": [
-    "web/src/app/WhatsNew.tsx",
-    "web/src/lib/settingsCopy.ts"
-  ],
-  "What changed in each version, in English.": [
-    "web/src/app/settingsIndex.ts",
-    "web/src/lib/settingsCopy.ts"
-  ],
-  "What's new": [
-    "web/src/app/settingsIndex.ts",
-    "web/src/lib/settingsCopy.ts"
-  ],
-  "Open on GitHub": [
-    "web/src/app/FeedbackDialog.tsx"
-  ],
-  "Something isn't working": [
-    "web/src/app/AboutSection.tsx",
-    "web/src/app/FeedbackDialog.tsx",
-    "web/src/app/SidebarFooter.tsx"
-  ],
-  "Tell us what went wrong. A hello is welcome too.": [
-    "web/src/app/FeedbackDialog.tsx"
-  ],
-  "The text is too long for a link. It is copied: paste it into the message.": [
-    "web/src/app/FeedbackDialog.tsx"
-  ],
-  "The text is too long for a link. It is selected: copy it and paste it into the message.": [
-    "web/src/app/FeedbackDialog.tsx"
-  ],
-  "Write it here. It opens as a GitHub issue or an email.": [
-    "web/src/app/settingsIndex.ts",
-    "web/src/lib/settingsCopy.ts"
-  ],
-  "Your message": [
-    "web/src/app/FeedbackDialog.tsx"
   ]
 }

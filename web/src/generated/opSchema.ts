@@ -917,6 +917,14 @@ export interface UserPrefsFields {
    */
   focus_noise?: string
   /**
+   * The length of the end-of-session sound (OpenSpec change
+   * focus-end-alert, design D1): "short" or "long", read only while
+   * focus_sound is "on"; clients read an empty or unknown value as
+   * short and keep it. A client without this field plays the short
+   * tone.
+   */
+  focus_alert?: string
+  /**
    * Today grouped by part of the day (OpenSpec change day-parts, design
    * D3): "on" groups Today into Morning, Afternoon and This Evening and
    * turns on the part phrases of quick add; clients read an empty or
@@ -1135,7 +1143,7 @@ export const OP_DEFAULTS = {
     feed_seen_at: 0, reviewed_at: 0, group_by: '', sort_by: '', sort_dir: '', row_layout: '', review_every: '', card_notes: false,
   } satisfies Omit<ProjectPrefs, 'id' | '_clock'>,
   user_prefs: {
-    date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', theme_accent_custom: '', theme_light: '', theme_dark: '', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', time_sectors: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '', today_events: '', today_assignees: '', upcoming_events: '', add_position: '', reminder_default_timed: '', reminder_default_dated: '', sidebar_counts: '', sidebar_order: '', focus_presets: '', focus_noise: '', day_parts: '', today_limit: 0, today_done: '', focus_style: '', energy: '', bento_order: '', formatting_toggle: '', routines_seen_at: 0, routines_hide_successes: '', upcoming_today: '', objectives: '', full_titles: '',
+    date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', theme_accent_custom: '', theme_light: '', theme_dark: '', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', time_sectors: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '', today_events: '', today_assignees: '', upcoming_events: '', add_position: '', reminder_default_timed: '', reminder_default_dated: '', sidebar_counts: '', sidebar_order: '', focus_presets: '', focus_noise: '', focus_alert: '', day_parts: '', today_limit: 0, today_done: '', focus_style: '', energy: '', bento_order: '', formatting_toggle: '', routines_seen_at: 0, routines_hide_successes: '', upcoming_today: '', objectives: '', full_titles: '',
   } satisfies Omit<UserPrefs, 'id' | '_clock'>,
   objective: {
     title: '', period: '', position: 0, done_at: 0, created_at: 0, deleted_at: null,

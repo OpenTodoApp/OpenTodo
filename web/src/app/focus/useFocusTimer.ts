@@ -2,8 +2,8 @@
 // mounted once by the shell (through BreakReminder), so a session ends on time on
 // every screen. It reads the clock each second while a run is on and again when
 // the tab is shown or focused, writes the end through one guarded transition, and
-// derives every effect of that end from the row change: the tone (only while the
-// tab is visible; a tab that saw the end hidden plays it when shown), the system
+// derives every effect of that end from the row change: the tone, Short or Long
+// (only while the tab is visible; a tab that saw the end hidden plays it when shown), the system
 // notification (hidden tab, permission granted, tagged per run so two tabs show
 // one), and the end of the session when its task is completed or trashed elsewhere.
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -11,7 +11,7 @@ import { getTask, useReviewRow, useUserPrefsRow } from '../../lib/localData'
 import { orderedFocusIds } from '../../lib/bento'
 import { useLiveTasks } from '../../lib/liveTasks'
 import { swRegistration } from '../../lib/push'
-import { useFocusPrefs, useNoiseVolume, type FocusPrefs } from '../../lib/focus/prefs'
+import { useFocusPrefs, useNoiseVolume, type FocusAlert, type FocusPrefs } from '../../lib/focus/prefs'
 import { nextFocusTask } from '../../lib/focus/select'
 import { completeSession, finishIfDue, noteEntryStopped } from '../../lib/focus/session'
 import { useEntryRunning } from '../../lib/focus/live'
@@ -75,9 +75,15 @@ const endKey = (s: FocusState | null | undefined) => (s?.ended ? `${s.ended.runS
 /** A visible end younger than this plays the tone; an older one (a reload, a tab back after an hour) is shown silently. */
 const FRESH_MS = 5000
 
+/** Plays the end sound: Short once, Long from its own chunk (focus-end-alert D2). */
+function ring(alert: FocusAlert): void {
+  if (alert === 'long') void import('../../lib/focus/alert').then((m) => m.startAlert()).catch(() => undefined)
+  else void playTone()
+}
+
 function useEndEffects(state: FocusState | null | undefined, prefs: FocusPrefs): void {
   const seen = useRef<string | null>(null)
-  const pendingTone = useRef(false)
+  const pendingTone = useRef<FocusAlert | null>(null)
   const key = endKey(state)
   useEffect(() => {
     if (state === undefined) return
@@ -87,15 +93,16 @@ function useEndEffects(state: FocusState | null | undefined, prefs: FocusPrefs):
     seen.current = key
     if (!state?.ended) return
     if (document.visibilityState === 'hidden') {
-      pendingTone.current = prefs.sound
+      pendingTone.current = prefs.sound ? prefs.alert : null
       void notifyFocusEnd(state)
-    } else if (prefs.sound && Date.now() - state.ended.at < FRESH_MS) void playTone()
-  }, [key, state, prefs.sound])
+    } else if (prefs.sound && Date.now() - state.ended.at < FRESH_MS) ring(prefs.alert)
+  }, [key, state, prefs.sound, prefs.alert])
   useEffect(() => {
     const onVisible = () => {
-      if (document.visibilityState !== 'visible' || !pendingTone.current) return
-      pendingTone.current = false
-      void playTone()
+      const alert = pendingTone.current
+      if (document.visibilityState !== 'visible' || !alert) return
+      pendingTone.current = null
+      ring(alert)
     }
     document.addEventListener('visibilitychange', onVisible)
     return () => document.removeEventListener('visibilitychange', onVisible)

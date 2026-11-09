@@ -825,6 +825,12 @@ var Schema = map[string]map[string]Field{
 		// an empty or unknown value as off and keep it. The volume is device
 		// storage and never synced.
 		"focus_noise": {Kind: kString, Default: `""`},
+		// The length of the end-of-session sound (OpenSpec change
+		// focus-end-alert, design D1): "short" or "long", read only while
+		// focus_sound is "on"; clients read an empty or unknown value as
+		// short and keep it. A client without this field plays the short
+		// tone.
+		"focus_alert": {Kind: kString, Default: `""`},
 		// Today grouped by part of the day (OpenSpec change day-parts, design
 		// D3): "on" groups Today into Morning, Afternoon and This Evening and
 		// turns on the part phrases of quick add; clients read an empty or

@@ -47,6 +47,8 @@ export interface FocusPrefs {
   /** Minutes of continuous work before the break reminder; 0 = off. */
   breakAfterMinutes: number
   sound: boolean
+  /** The sound's length while it is on (focus-end-alert D1). */
+  alert: FocusAlert
   /** Countdown presets in minutes, in the user's order (focus-everywhere D5). */
   presets: number[]
   /** Background noise during work (focus-everywhere D6). */
@@ -55,7 +57,7 @@ export interface FocusPrefs {
 
 export const FOCUS_DEFAULTS: FocusPrefs = {
   mode: 'pomodoro', workMinutes: 25, shortBreakMinutes: 5, longBreakMinutes: 15, longBreakEvery: 4,
-  autoStartBreaks: false, autoStartWork: false, breakAfterMinutes: 0, sound: false,
+  autoStartBreaks: false, autoStartWork: false, breakAfterMinutes: 0, sound: false, alert: 'short',
   presets: [10, 20, 40], noise: 'off',
 }
 
@@ -80,9 +82,27 @@ export function focusPrefs(row: Partial<UserPrefs> | null | undefined): FocusPre
     autoStartWork: auto === 'work' || auto === 'both',
     breakAfterMinutes: num('focus_break_after_minutes', row?.focus_break_after_minutes, 0),
     sound: row?.focus_sound === 'on',
+    alert: row?.focus_alert === 'long' ? 'long' : 'short',
     presets: parsePresets(row?.focus_presets),
     noise: FOCUS_NOISES.includes(row?.focus_noise as FocusNoise) ? (row!.focus_noise as FocusNoise) : 'off',
   }
+}
+
+/** The end-of-session sound's length (focus-end-alert D1); '' and unknown values read as short. */
+export type FocusAlert = 'short' | 'long'
+
+/** The sound choice of Settings: off, or on with its length. */
+export const FOCUS_SOUNDS = ['off', 'short', 'long'] as const
+export type FocusSound = (typeof FOCUS_SOUNDS)[number]
+
+/** The sound choice the preferences mean. */
+export function soundChoice(p: Pick<FocusPrefs, 'sound' | 'alert'>): FocusSound {
+  return p.sound ? p.alert : 'off'
+}
+
+/** Writes the sound choice: Off turns the sound off and keeps the length; Short or Long turns it on with that length, in one write. */
+export async function setFocusSound(choice: FocusSound): Promise<void> {
+  await mutate('user_prefs', USER_PREFS_ID, choice === 'off' ? { focus_sound: 'off' } : { focus_sound: 'on', focus_alert: choice })
 }
 
 /** Background noise choices (focus-everywhere D6); the stored '' reads as off. */
