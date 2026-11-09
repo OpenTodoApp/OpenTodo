@@ -1001,6 +1001,8 @@ export interface UserPrefs extends UserPrefsFields {
   focus_presets?: string
   /** Background noise (focus-everywhere D6): off | white | pink | brown; '' and anything else read as off. */
   focus_noise?: string
+  /** End-of-session sound length (focus-end-alert D1): short | long, read while focus_sound is 'on'; '' and anything else read as short. */
+  focus_alert?: string
   _clock: Clock
 }
 

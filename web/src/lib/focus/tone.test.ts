@@ -33,6 +33,16 @@ describe('tone', () => {
     expect(osc.every((o) => o.started)).toBe(true)
   })
 
+  it('plays at the given peak (the Long alert is louder)', async () => {
+    const peaks: number[] = []
+    stubAudio()
+    const C = globalThis.AudioContext as unknown as { prototype: { createGain: () => unknown } }
+    C.prototype.createGain = () => ({ connect: () => undefined, gain: { setValueAtTime: () => undefined, linearRampToValueAtTime: (v: number) => { if (v > 0) peaks.push(v) } } })
+    primeTone()
+    expect(await playTone(0.5)).toBe(true)
+    expect(peaks).toEqual([0.5, 0.5])
+  })
+
   it('a refused resume does not throw', async () => {
     const osc = stubAudio(() => Promise.reject(new Error('autoplay')), 'suspended')
     primeTone()

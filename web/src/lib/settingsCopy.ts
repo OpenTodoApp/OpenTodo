@@ -327,7 +327,7 @@ export const SETTINGS_COPY = {
       autoWork: { label: msg('Start work automatically') },
       reminder: { label: msg('Break reminder'), description: msg('A notice on any screen after a long stretch of work without a break.') },
       remindAfter: { label: msg('Remind me after') },
-      sound: { label: msg('Sound'), description: msg('A short tone when a session or a break ends, while the app is shown.') },
+      sound: { label: msg('Sound') },
       presets: { label: msg('Countdown presets'), description: msg('Up to four lengths in minutes, offered when a countdown starts.') },
       noise: { label: msg('Background noise'), description: msg('Generated on this device; plays only while you work.') },
       volume: { label: msg('Noise volume'), description: msg('This device only.') },
