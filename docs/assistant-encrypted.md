@@ -19,11 +19,11 @@ With [end-to-end encryption](e2ee.md) on, the server holds no key to your tasks,
 2. Choose a provider the owner allows (Anthropic, OpenAI, Google Gemini, or a model server such as Ollama or LM Studio at an address the owner listed), a model, and paste your API key (optional for a model server). **Test connection** sends one request from this device and names what is wrong (the key, the model, or no tool use); an address pasted with `/chat/completions` at the end is used without it.
 3. Select **Save on this device**, read what is sent and select **Accept and continue**.
 
-Proposals, review, undo, skills, pasted notes and [photos](assistant-capture.md) work as on the server; photos go from this device straight to your provider. On the device the assistant cannot set custom field values, repeat rules, locations or origins. A locked device asks you to unlock it first.
+Proposals, review, undo, skills, pasted notes and [photos](assistant-capture.md) work as on the server; it searches your [notes](notes.md) here. It cannot set custom field values, repeat rules, locations or origins. A locked device asks you to unlock it first.
 
 ## What the device sends
 
-Tasks, comments, projects, [Describe it](routines.md#describe-it) names, your messages and photos; never notes, tracked time, routines, frames, custom fields, locations or attachments.
+Tasks, comments, projects, notes, tracked time, frames and slots, [Describe it](routines.md#describe-it) names, your messages and photos; never routines, custom fields, locations or attachments.
 
 ## Your key and your usage
 
