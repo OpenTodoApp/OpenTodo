@@ -80,9 +80,44 @@ type Round struct {
 	// RawStop is the provider's own value (for unknown reasons).
 	RawStop   string
 	ToolCalls []ToolCall
-	Input     int64
-	Output    int64
+	Tokens
 }
+
+// Tokens is what model calls used (assistant-usage-cache D1): fresh input,
+// input read from and written to the provider's prompt cache, and output.
+type Tokens struct {
+	Input       int64
+	CachedRead  int64
+	CachedWrite int64
+	Output      int64
+}
+
+// CacheReadWeight is the share of a cache-read token counted toward the
+// monthly cap: one tenth, Anthropic's price and close to OpenAI's and Gemini's.
+const CacheReadWeight = 10
+
+// Add adds o to t.
+func (t *Tokens) Add(o Tokens) {
+	t.Input += o.Input
+	t.CachedRead += o.CachedRead
+	t.CachedWrite += o.CachedWrite
+	t.Output += o.Output
+}
+
+// AllInput is every input token, cached or not.
+func (t Tokens) AllInput() int64 { return t.Input + t.CachedRead + t.CachedWrite }
+
+// Total is every token used.
+func (t Tokens) Total() int64 { return t.AllInput() + t.Output }
+
+// CountedInput is the input weighed for the cap: cache reads at one tenth
+// (rounded up), cache writes in full.
+func (t Tokens) CountedInput() int64 {
+	return t.Input + t.CachedWrite + (t.CachedRead+CacheReadWeight-1)/CacheReadWeight
+}
+
+// Counted is what the tokens count toward the monthly cap.
+func (t Tokens) Counted() int64 { return t.CountedInput() + t.Output }
 
 // Provider error codes (design D5). Messages never contain the key.
 const (

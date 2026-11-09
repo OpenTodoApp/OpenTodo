@@ -33,9 +33,10 @@ func (a routineAI) Complete(ctx context.Context, uid string, c rules.AICall) (ru
 		return rules.AIAnswer{}, &rules.AIError{Code: ruleval.ReasonAINotConfigured, Msg: "the assistant is not set up on this server"}
 	}
 	ans, err := a.s.assistant.Routine(ctx, a.s.assistantSettings(ctx), a.call(c, uid))
-	out := rules.AIAnswer{Text: ans.Text, Lines: ans.Lines, Input: ans.Input, Output: ans.Output}
+	// A routine's daily budget weighs cache reads like the monthly cap.
+	out := rules.AIAnswer{Text: ans.Text, Lines: ans.Lines, Input: ans.CountedInput(), Output: ans.Output}
 	// The log holds the provider, the outcome and the counts, never text.
-	a.s.log.Info("routine AI call", "provider", ans.Provider, "own_key", ans.Own, "input_tokens", ans.Input, "output_tokens", ans.Output, "failed", err != nil)
+	a.s.log.Info("routine AI call", "provider", ans.Provider, "own_key", ans.Own, "input_tokens", ans.Input, "cached_read_tokens", ans.CachedRead, "cached_write_tokens", ans.CachedWrite, "output_tokens", ans.Output, "failed", err != nil)
 	if err == nil {
 		return out, nil
 	}

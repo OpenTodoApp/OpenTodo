@@ -220,6 +220,9 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 	if err := migrateAssistantNotice(ctx, db); err != nil {
 		return err
 	}
+	if err := migrateAssistantUsageCached(ctx, db); err != nil {
+		return err
+	}
 	if err := migrateAuditChain(ctx, db); err != nil {
 		return err
 	}

@@ -31,7 +31,7 @@ Offline you can read earlier conversations and apply or undo a proposal that alr
 
 ## Costs and limits
 
-Each answer shows how many tokens it used and how much of your monthly allowance that is ("1,240 tokens · this month 18% of your limit"); **Settings → Integrations → Assistant** shows the month so far. The owner sets the allowance (500,000 tokens per person per month by default). It resets on the first day of each month (UTC). One answer at a time per person. A [Describe it](routines.md#describe-it) draft is one answer too.
+Each answer shows its tokens and its share of your monthly allowance ("1,240 tokens · this month 18% of your limit"); **Settings → Integrations → Assistant** shows the month so far. Input read from the provider's cache is named ("20,300 tokens, 18,000 from cache") and counts at one tenth. The owner sets the allowance (500,000 tokens per person a month by default); it resets on the first of each month (UTC). One answer at a time per person; a [Describe it](routines.md#describe-it) draft is one too.
 
 Answers on your own key are paid by you and do not count toward the allowance unless the owner chooses to count them ("1,240 tokens · your key").
 

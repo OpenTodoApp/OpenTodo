@@ -23684,6 +23684,15 @@
   "{n, plural, one {# token · your key} other {# tokens · your key}}": [
     "web/src/lib/assistant.ts"
   ],
+  "{n, plural, one {# token, {cached, number} from cache · this month {pct}% of your limit} other {# tokens, {cached, number} from cache · this month {pct}% of your limit}}": [
+    "web/src/lib/assistant.ts"
+  ],
+  "{n, plural, one {# token, {cached, number} from cache · your key} other {# tokens, {cached, number} from cache · your key}}": [
+    "web/src/lib/assistant.ts"
+  ],
+  "{n, plural, one {# token, {cached, number} from cache} other {# tokens, {cached, number} from cache}}": [
+    "web/src/lib/assistant.ts"
+  ],
   "{n, plural, one {# token} other {# tokens}}": [
     "web/src/app/assistant/AssistantSettings.tsx",
     "web/src/lib/assistant.ts"

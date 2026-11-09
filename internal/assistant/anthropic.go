@@ -186,8 +186,8 @@ func (c *anthropicConv) Next(ctx context.Context, onText func(string)) (Round, e
 	}
 	r := Round{
 		RawStop: string(msg.StopReason),
-		Input:   msg.Usage.InputTokens + msg.Usage.CacheCreationInputTokens + msg.Usage.CacheReadInputTokens,
-		Output:  msg.Usage.OutputTokens,
+		Tokens: Tokens{Input: msg.Usage.InputTokens, CachedRead: msg.Usage.CacheReadInputTokens,
+			CachedWrite: msg.Usage.CacheCreationInputTokens, Output: msg.Usage.OutputTokens},
 	}
 	switch msg.StopReason {
 	case anthropic.StopReasonEndTurn, anthropic.StopReasonStopSequence:

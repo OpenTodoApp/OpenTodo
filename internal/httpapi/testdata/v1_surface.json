@@ -7670,6 +7670,8 @@
         "errors[].step": "string",
         "note": "string",
         "usage": "object",
+        "usage.cache_write": "number",
+        "usage.cached": "number",
         "usage.cap": "number",
         "usage.input": "number",
         "usage.month_total": "number",
