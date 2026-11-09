@@ -1,0 +1,1 @@
+- **The iPhone app shows the address it connects to.** On the first-run screen an address typed without a scheme shows as `https://…` before the check, plain `http` to a local address says it isn't encrypted, and Connect looks active as soon as the address is well-formed. Settings → About shows the exact server address under OpenTodo for iOS (#1136, #1137).
