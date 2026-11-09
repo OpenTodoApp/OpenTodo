@@ -1,1 +1,0 @@
-- **iOS builds can be submitted for review.** The release workflow revoked its signing certificate once Apple had processed a build, so the build failed with "Invalid Signature" (ITMS-90035) when it was submitted for TestFlight or App Store review. The certificate of an uploaded build now stays valid, and the oldest one is retired only when Apple's certificate limit is reached.

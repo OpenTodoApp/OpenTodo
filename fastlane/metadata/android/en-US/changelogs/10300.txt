@@ -1,0 +1,1 @@
+Drag a task to another day in Upcoming (press and hold first). Deferred tasks stay in their own section, and a section's colour tints its header. Focus can end with a longer sound that repeats until you tap, and vibrates. Choose which projects sync to your calendar. A task's path on a phone shows only the step up, in full.

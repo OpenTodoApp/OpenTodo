@@ -1,6 +1,6 @@
 services:
   opentodo:
-    image: ghcr.io/opentodoapp/opentodo:1.2.0
+    image: ghcr.io/opentodoapp/opentodo:1.3.0
     restart: unless-stopped
     expose:
       - 8080
