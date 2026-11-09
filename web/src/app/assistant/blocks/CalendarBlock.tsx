@@ -41,20 +41,34 @@ export function AgendaDays({ days, items, dayLength }: { days: readonly string[]
         return (
           <li key={day} className="px-3 py-2" data-agenda-day={day}>
             <div className="flex items-center gap-2">
-              <button type="button" className="text-body font-semibold hover:underline" onClick={() => navigate({ view: 'day', date: day })}>{formatDate(day, 'long')}</button>
+              <button type="button" className="min-h-9 text-body font-semibold hover:underline" onClick={() => navigate({ view: 'day', date: day })}>{formatDate(day, 'long')}</button>
               <CapacityLine load={load} dayLength={dayLength} unestimated className="ml-auto" />
             </div>
             {own.length === 0 ? <p className="text-meta text-faint">{t('Nothing planned')}</p> : (
-              <ul className="mt-1 space-y-0.5">
+              <ul className="mt-1">
                 {own.map(({ task, proposed, check }) => {
                   const due = placed(task)
+                  const time = <span className="w-14 shrink-0 text-meta tabular-nums text-muted">{due?.time ? formatTime(due.time) : t('Any time')}</span>
+                  const estimate = task.estimate_minutes ? <span className="text-meta text-muted">{formatMinutes(task.estimate_minutes)}</span> : null
+                  const done = task.completed_at ? 'text-muted line-through' : ''
                   return (
-                    <li key={task.id} className={`flex items-baseline gap-2 text-body ${proposed ? 'rounded-control border border-dashed border-accent px-1.5' : ''}`} data-agenda-item={task.id} data-proposed={proposed || undefined}>
-                      {check && <input type="checkbox" className="h-4 w-4 shrink-0 self-center accent-(--ot-accent)" checked={check.checked} aria-label={check.label} onChange={(e) => check.onChange(e.target.checked)} />}
-                      <span className="w-14 shrink-0 text-meta tabular-nums text-muted">{due?.time ? formatTime(due.time) : t('Any time')}</span>
-                      <button type="button" className={`min-w-0 flex-1 truncate text-left user-text hover:underline ${task.completed_at ? 'text-muted line-through' : ''}`} onClick={() => openTaskPanel(task.id)}>{task.title}</button>
-                      {task.estimate_minutes ? <span className="text-meta text-muted">{formatMinutes(task.estimate_minutes)}</span> : null}
-                      {proposed && <span className="inline-flex items-center gap-0.5 text-hint font-medium text-accent"><Icon name="pencil" size="xs" />{t('proposed')}</span>}
+                    <li key={task.id} className={proposed ? 'rounded-control border border-dashed border-accent' : ''} data-agenda-item={task.id} data-proposed={proposed || undefined}>
+                      {check ? (
+                        // A proposed item is one label across the row: the whole row ticks its checkbox (touch targets).
+                        <label className="flex min-h-9 cursor-pointer items-center gap-2 px-1.5 text-body hover:bg-hover">
+                          <input type="checkbox" className="h-4 w-4 shrink-0 accent-(--ot-accent)" checked={check.checked} aria-label={check.label} onChange={(e) => check.onChange(e.target.checked)} />
+                          {time}
+                          <span className={`min-w-0 flex-1 truncate user-text ${done}`}>{task.title}</span>
+                          {estimate}
+                          <span className="inline-flex items-center gap-0.5 text-hint font-medium text-accent"><Icon name="pencil" size="xs" />{t('proposed')}</span>
+                        </label>
+                      ) : (
+                        <div className="flex min-h-9 items-center gap-2 text-body">
+                          {time}
+                          <button type="button" className={`min-h-9 min-w-0 flex-1 truncate text-left user-text hover:underline ${done}`} onClick={() => openTaskPanel(task.id)}>{task.title}</button>
+                          {estimate}
+                        </div>
+                      )}
                     </li>
                   )
                 })}
