@@ -970,6 +970,13 @@ html:root[data-contrast="high"] .ui-block--projected:not(:focus-visible) { backg
   background: color-mix(in oklab, var(--hue-soft) 40%, transparent);
   border-top-color: color-mix(in oklab, var(--hue-solid) 35%, transparent);
 }
+/* A coloured section's header (section-tint): the frame band's recipe, the soft step
+   mixed towards the surface, at 50 % so every text tone keeps AA on it in every theme.
+   Opaque, so it reads the same on the list and on a board column. Measured as
+   hue-<name>-tint in ui/tokens/pairs.ts (DERIVED_TOKENS). */
+.ui-group-tint {
+  background: color-mix(in oklab, var(--hue-soft) 50%, var(--ot-surface));
+}
 /* An event of Today's agenda that already ended (OpenSpec change today-agenda, D6): dimmed by mixing, never by opacity. */
 .ui-event-past {
   color: var(--ot-faint);

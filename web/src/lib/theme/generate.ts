@@ -47,10 +47,11 @@ export function reference(css: string): Reference {
   const pct = (v: string) => Number(v.replace('%', '')) / 100
   const mix: Record<string, number> = {}
   for (const [k, v] of Object.entries(constants)) if (k.startsWith('mix-')) mix[k.slice(4)] = pct(v)
-  // The chart ramp's ratios (stats-dashboard D2) and the past calendar block (surfaces-v2 D3).
+  // The chart ramp's ratios (stats-dashboard D2), the past calendar block (surfaces-v2 D3) and the section header tint (section-tint).
   const ramp = declarations(block(css, ':root, [data-theme], [data-accent] {').body)
   for (const n of [1, 2, 3, 4]) mix[`chart-seq-${n}`] = pct(/ (\d+)%/.exec(ramp[`chart-seq-${n}`])![1])
   mix.past = pct(/ (\d+)%/.exec(DERIVED_TOKENS['hue-red-past'])![1])
+  mix.tint = pct(/ (\d+)%/.exec(DERIVED_TOKENS['hue-red-tint'])![1])
   const side = (tokens: Record<string, string>) => Object.fromEntries(CSS_TOKENS.map((n) => [n, lchOf(tokens[n], (x) => tokens[x])]))
   return { mix, light: side(modeTokens(css, 'light')), dark: side(modeTokens(css, 'dark')) }
 }

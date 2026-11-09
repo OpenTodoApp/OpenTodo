@@ -102,6 +102,13 @@ describe('token contrast', () => {
     expect(found[0]).toMatch(/^custom #1f6feb dark: [a-z-]+ on accent-soft \(text\) \d\.\d\d:1, needs 4\.5:1$/)
   })
 
+  it('measures the stylesheet\'s own mixes for the derived hue steps', () => {
+    // A ratio changed in index.css but not in DERIVED_TOKENS would measure a colour nobody sees.
+    const rule = (sel: string) => new RegExp(`\\${sel} \\{\\s*background: ([^;]+);`).exec(css)?.[1]
+    expect(rule('.ui-block--past')).toBe(DERIVED_TOKENS['hue-red-past'].replace('--ot-hue-red-soft', '--hue-soft'))
+    expect(rule('.ui-group-tint')).toBe(DERIVED_TOKENS['hue-red-tint'].replace('--ot-hue-red-soft', '--hue-soft'))
+  })
+
   it('checks all 12 chip pairs', () => {
     expect(PAIRS.filter((p) => p.kind === 'chip')).toHaveLength(12)
   })

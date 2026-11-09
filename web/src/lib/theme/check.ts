@@ -1,9 +1,9 @@
 // The contrast check of a resolved theme (OpenSpec change theme-engine, design
 // D10): the pairs of ui/tokens/pairs.ts measured on the values the theme writes,
-// translucent ones composited over the surface, the past calendar block's fill
-// mixed as the stylesheet mixes it. The same measurement as the CI gate in
-// contrast.test.ts, without its stylesheet parser, for the editor's live warnings;
-// the test asserts both agree on every shipped theme. Lazy chunk only.
+// translucent ones composited over the surface, the past calendar block's fill and
+// the section header tint mixed as the stylesheet mixes them. The same measurement
+// as the CI gate in contrast.test.ts, without its stylesheet parser, for the editor's
+// live warnings; the test asserts both agree on every shipped theme. Lazy chunk only.
 import { composite, hexToRgb, labToRgb, lchToLab, ratioOf, rgbToLab, type Lab, type Rgba } from '../colourMath'
 import { GLYPH_PAIRS, PAIRS, type Pair } from '../../ui/tokens/pairs'
 import referenceJson from './reference.json'
@@ -18,7 +18,12 @@ export interface ContrastFailure {
   min: number
 }
 
-const PAST = (referenceJson as { mix: Record<string, number> }).mix.past
+const MIX = (referenceJson as { mix: Record<string, number> }).mix
+/** The derived hue steps of pairs.ts DERIVED_TOKENS: the soft fill mixed towards a surface. */
+const DERIVED: Record<string, { ratio: number; base: string }> = {
+  past: { ratio: MIX.past, base: 'surface' },
+  tint: { ratio: MIX.tint, base: 'surface' },
+}
 const OKLCH = /^oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*(?:\/\s*([\d.]+)\s*)?\)$/
 
 function lab(v: string): Lab {
@@ -34,11 +39,12 @@ export function checkTheme(t: ResolvedTheme, pairs: readonly Pair[] = [...PAIRS,
   const get = (n: string): Lab => {
     let c = cache.get(n)
     if (c) return c
-    const past = /^(hue-[a-z]+)-past$/.exec(n)
-    if (past) {
-      const s = get(`${past[1]}-soft`)
-      const u = get('surface')
-      c = { L: s.L * PAST + u.L * (1 - PAST), A: s.A * PAST + u.A * (1 - PAST), B: s.B * PAST + u.B * (1 - PAST), alpha: 1 }
+    const derived = /^(hue-[a-z]+)-(past|tint)$/.exec(n)
+    if (derived) {
+      const { ratio: r, base } = DERIVED[derived[2]]
+      const s = get(`${derived[1]}-soft`)
+      const u = get(base)
+      c = { L: s.L * r + u.L * (1 - r), A: s.A * r + u.A * (1 - r), B: s.B * r + u.B * (1 - r), alpha: 1 }
     } else {
       const v = t.tokens[n]
       if (!v) throw new Error(`checkTheme: theme ${t.id} has no token ${n}`)
