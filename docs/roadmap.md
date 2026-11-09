@@ -123,6 +123,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `routines-describe-it` | "Describe it": the AI drafts a routine from one sentence into the editor, never saving or running it | Shipped in 0.20 |
 | `routines-ai-step` | Ask AI and Summarise steps, proposals by default, a bounded "apply without asking", device runs for encrypted accounts | Shipped in 0.21 |
 | `routines-shared` | Routines that belong to a shared project and run as whoever turned them on | Shipped in 0.21 |
-| `routines-shared-email` | Email project members and a "members" recipient for Notify me in shared routines | Planned |
+| `routines-shared-email` | Email project members in shared routines, with a stop link per member | In progress (9 of 9) |
+| `routines-shared-notify` | A "members" recipient for Notify me in shared routines, mutable per routine | Planned |
 
 <!-- roadmap:end -->

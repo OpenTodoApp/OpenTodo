@@ -564,3 +564,29 @@ func TestRoutineMessage(t *testing.T) {
 		t.Fatalf("%q / %q", subj, body)
 	}
 }
+
+// routines-shared-email: an Email project members message carries the stop
+// link on its own line in every language, and never the turn-off line of
+// Email me.
+func TestRoutineMembersMessage(t *testing.T) {
+	stop := "https://todo.example.com/routine-emails/ots_SECRET"
+	for _, lang := range Languages {
+		m := Message{Kind: KindRoutine, To: "bob@example.com", Lang: lang, Origin: "https://todo.example.com",
+			Vars: Vars{Link: "https://todo.example.com/routines/r?run=r1", Routine: &RoutineVars{Name: "Weekly chores", Subject: "This week", Text: "3 tasks", Stop: stop}}}
+		subj, body, err := Render(m, m.Origin)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if subj != "This week" || strings.Contains(body, "{{") || !strings.Contains(body, "\n"+stop+"\n") || !strings.Contains(body, "run=r1") ||
+			!strings.Contains(body, "Weekly chores") || !strings.Contains(body, "bob@example.com") {
+			t.Fatalf("%s: %q / %q", lang, subj, body)
+		}
+		own, _, _ := Render(Message{Kind: KindRoutine, To: "bob@example.com", Lang: lang, Origin: m.Origin, Vars: Vars{Link: m.Vars.Link,
+			Routine: &RoutineVars{Name: "Weekly chores", Subject: "This week", Text: "3 tasks"}}}, m.Origin)
+		_, ownBody, _ := Render(Message{Kind: KindRoutine, To: "bob@example.com", Lang: lang, Origin: m.Origin, Vars: Vars{Link: m.Vars.Link,
+			Routine: &RoutineVars{Name: "Weekly chores", Subject: "This week", Text: "3 tasks"}}}, m.Origin)
+		if own != "This week" || ownBody == body || strings.Contains(ownBody, stop) {
+			t.Fatalf("%s: Email me rendered as the members' variant", lang)
+		}
+	}
+}

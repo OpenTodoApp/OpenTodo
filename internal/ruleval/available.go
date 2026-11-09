@@ -20,8 +20,10 @@ const (
 	ReasonTimeTrackingOff    = "time_tracking_off"
 	ReasonNotShared          = "not_shared"
 	ReasonDemo               = "demo"
-	// Shared routines (routines-shared D3, D8): a step that acts on personal
-	// things, and Email project members until routines-shared-email.
+	// Shared routines (routines-shared D3): a step that acts on personal
+	// things. ReasonNotYet was Email project members' before
+	// routines-shared-email; no step reports it now, older clients still
+	// know it.
 	ReasonNotInShared = "not_in_shared"
 	ReasonNotYet      = "not_yet"
 	// AI steps (routines-ai-step D1, D10).
@@ -130,9 +132,6 @@ func Available(kind string, env Env) Availability {
 	}
 	if env.Shared && NotInShared[kind] {
 		return unavailable(ReasonNotInShared)
-	}
-	if k.Needs == NeedsShared && env.Shared {
-		return unavailable(ReasonNotYet)
 	}
 	switch k.Needs {
 	case NeedsEmail, NeedsShared:

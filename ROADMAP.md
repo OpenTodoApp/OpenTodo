@@ -143,7 +143,8 @@ Multi-step routines with AI steps, built on Automations: every existing rule bec
 | [`routines-describe-it`](openspec/changes/archive/2026-11-01-routines-describe-it/) | **Shipped.** "Describe it": the AI drafts a routine from one sentence into the editor, never saving or running it | [#735](https://github.com/OpenTodoApp/OpenTodo/issues/735) |
 | [`routines-ai-step`](openspec/changes/archive/2026-11-01-routines-ai-step/) | **Shipped.** Ask AI and Summarise steps, proposals by default, a bounded "apply without asking", device runs for encrypted accounts | [#661](https://github.com/OpenTodoApp/OpenTodo/issues/661) |
 | [`routines-shared`](openspec/changes/archive/2026-11-01-routines-shared/) | **Shipped.** Routines that belong to a shared project and run as whoever turned them on | [#662](https://github.com/OpenTodoApp/OpenTodo/issues/662) |
-| `routines-shared-email` | Email project members and a "members" recipient for Notify me in shared routines | [#741](https://github.com/OpenTodoApp/OpenTodo/issues/741) |
+| `routines-shared-email` | Email project members in shared routines, with a stop link per member | [#741](https://github.com/OpenTodoApp/OpenTodo/issues/741) |
+| `routines-shared-notify` | A "members" recipient for Notify me in shared routines, mutable per routine | [#741](https://github.com/OpenTodoApp/OpenTodo/issues/741) |
 
 The five changes land in this order. Routines never fetch URLs or feeds: outbound requests stay with configured webhooks, delivery channels and the owner's SMTP server.
 

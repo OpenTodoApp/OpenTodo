@@ -664,7 +664,7 @@ export interface RoutineProposalItem {
   before?: Record<string, unknown>
   /** Text the AI wrote ("Written by AI"). */
   ai: boolean
-  side?: { kind: string; notice?: { text: string; taskId?: string }; fired?: { taskId?: string }; hook?: string; delivery?: { Text?: string | null }; mail?: { Subject: string; Text: string } }
+  side?: { kind: string; notice?: { text: string; taskId?: string }; fired?: { taskId?: string }; hook?: string; delivery?: { Text?: string | null }; mail?: { Subject: string; Text: string }; members?: string[] }
 }
 
 /** What applying a proposal did. */

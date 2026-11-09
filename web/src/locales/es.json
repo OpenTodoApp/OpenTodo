@@ -7238,5 +7238,9 @@
   "All except these": "Todo excepto estos",
   "Find a workspace or project…": "Buscar un espacio de trabajo o proyecto…",
   "All except {names}": "Todo excepto {names}",
-  "Lists of {name}": "Listas de {name}"
+  "Lists of {name}": "Listas de {name}",
+  "Stop emails": "Detener los correos",
+  "Stop emails from “{routine}”?": "¿Detener los correos de «{routine}»?",
+  "You will get no more emails from “{routine}”.": "No recibirás más correos de «{routine}».",
+  "Email project members: {subject}": "Enviar correo a los miembros del proyecto: {subject}"
 }
