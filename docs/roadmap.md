@@ -126,4 +126,12 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `routines-shared-email` | Email project members in shared routines, with a stop link per member | In progress (9 of 9) |
 | `routines-shared-notify` | A "members" recipient for Notify me in shared routines, mutable per routine | Planned |
 
+## Notes area
+
+| Change | What | Status |
+| --- | --- | --- |
+| `note-links` | Link notes, tasks and projects with `[[`; Linked references on each | Planned |
+| `notes-home` | The Notes page as a home: write from the search field, pinned notes, unlinked notes | Planned |
+| `notes-graph` | Connections: a local graph of what links to and from an item | Planned |
+
 <!-- roadmap:end -->

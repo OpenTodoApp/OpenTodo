@@ -148,6 +148,18 @@ Multi-step routines with AI steps, built on Automations: every existing rule bec
 
 The five changes land in this order. Routines never fetch URLs or feeds: outbound requests stay with configured webhooks, delivery channels and the owner's SMTP server.
 
+### Notes area
+
+Notes that link to each other, a calm home for them, and a picture of what is connected.
+
+| Change | What | Issues |
+| --- | --- | --- |
+| [`note-links`](openspec/changes/note-links/) | Link notes, tasks and projects with `[[`; Linked references on each | |
+| [`notes-home`](openspec/changes/notes-home/) | The Notes page as a home: write from the search field, pinned notes, unlinked notes | |
+| [`notes-graph`](openspec/changes/notes-graph/) | Connections: a local graph of what links to and from an item | |
+
+The three changes land in this order; each ships on its own. Links are computed on the device, so they work offline and with end-to-end encryption, and the server keeps no link table.
+
 ## Shipped
 
 ### 1. Core engine and architecture
