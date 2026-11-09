@@ -3,7 +3,7 @@ title: Answers that show your tasks
 summary: The assistant's answers show your tasks, a day or week, places, notes and choices as part of the app, and proposals as a calendar, an outline or a map you can edit before applying.
 audience: user
 section: Guides
-specs: [in-app-assistant]
+specs: [assistant-blocks]
 screens: []
 order: 78
 ---
