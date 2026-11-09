@@ -33,7 +33,7 @@ var (
 func init() {
 	register(tool{def: func(Caller) Definition {
 		return writeDef("update_project", "Update a project",
-			"Rename, recolour or give an icon to a project, set its flow or status (maintenance), make it a reusable list (reusable, aisles), move it under another project (parent_id, null for the top level) or change its position. Replace the project's note with description, or add a block at its end with append_description (prefer appending: nothing written before is replaced). Archive with archive_projects; deleting is not available.",
+			"Rename, recolour or give an icon to a project, set its flow or status (maintenance), make it a reusable list (reusable, aisles), move it under another project (parent_id, null for the top level) or change its position. Replace the project's note with description, or add a block at its end with append_description (prefer appending: nothing written before is replaced). Archive with archive_projects; deleting is not available."+linkHowTo,
 			object([]string{"id"}, map[string]any{
 				"id":                 map[string]any{"type": "string", "description": "Project id."},
 				"name":               map[string]any{"type": "string", "minLength": 1, "maxLength": 200, "description": "New name."},

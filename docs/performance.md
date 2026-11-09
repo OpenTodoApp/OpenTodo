@@ -153,6 +153,7 @@ which the database holds twice (the operation and the stored value). That is
 | `notes-indexeddb` Storage on the device after that sync | MB | — | 120 | — | — | — | — |
 | `notes-page` Open the Notes page | ms | — | 400 | 1,200 | 1,200 | 1,200 | — |
 | `notes-search` A keystroke in the note search (95th percentile) | ms | — | 50 | 150 | 150 | 150 | — |
+| `note-references` Open a note other notes link to, before anything built the link index, to its Linked references painted | ms | — | 200 | 600 | — | — | — |
 | `notes-js-heap` JavaScript heap after the notes session | MB | — | 170 | 170 | — | — | — |
 
 The report also gives, without a limit, the database size before compaction,

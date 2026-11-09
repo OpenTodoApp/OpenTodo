@@ -69,12 +69,12 @@ func init() {
 	})
 	register(tool{
 		def: readDef("get_note", "Get a note",
-			"Get one note: its title, its Markdown text, the text appended to it that no device has merged yet (oldest first), project, labels, body_version (pass it to update_note as base_version) and when it last changed.",
+			"Get one note: its title, its Markdown text, the text appended to it that no device has merged yet (oldest first), project, labels, body_version (pass it to update_note as base_version) and when it last changed."+linkDescription,
 			object([]string{"id"}, map[string]any{
 				"id":   map[string]any{"type": "string", "description": "Note id (or the task or project id with kind)."},
 				"kind": noteKindProp,
 			})),
-		read: (*Registry).getNote,
+		readC: (*Registry).getNote,
 	})
 }
 
@@ -241,6 +241,11 @@ func (r *Registry) collectNotes(ctx context.Context, userID string, q noteQuery)
 	if err != nil {
 		return nil, err
 	}
+	return r.collectNotesIn(ctx, userID, q, snap)
+}
+
+// collectNotesIn is collectNotes over a snapshot already read.
+func (r *Registry) collectNotesIn(ctx context.Context, userID string, q noteQuery, snap *snapshot) ([]noteRow, error) {
 	var labels map[string]bool
 	if q.label != "" {
 		labels = snap.labelIDs(q.label)
@@ -442,7 +447,7 @@ type noteDetail struct {
 	Archived    bool           `json:"archived,omitempty"`
 }
 
-func (r *Registry) getNote(ctx context.Context, userID string, a args) (map[string]any, error) {
+func (r *Registry) getNote(ctx context.Context, c Caller, a args) (map[string]any, error) {
 	if err := a.only("", "id", "kind"); err != nil {
 		return nil, err
 	}
@@ -457,7 +462,11 @@ func (r *Registry) getNote(ctx context.Context, userID string, a args) (map[stri
 	if err != nil {
 		return nil, err
 	}
-	return r.noteDetail(ctx, userID, kind, id)
+	out, err := r.noteDetail(ctx, c.UserID, kind, id)
+	if err != nil {
+		return nil, err
+	}
+	return r.withLinks(ctx, c, out["note"].(noteDetail).Kind, id, out)
 }
 
 // noteDetail is get_note's payload, or ErrNoteNotFound.

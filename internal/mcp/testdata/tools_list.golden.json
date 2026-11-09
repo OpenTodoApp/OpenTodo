@@ -132,7 +132,7 @@
         "readOnlyHint": true,
         "title": "Get a task"
       },
-      "description": "Get one task with its description, project, section, labels, subtasks and comments.",
+      "description": "Get one task with its description, project, section, labels, subtasks and comments. On an account without end-to-end encryption it also returns links (the notes, tasks and projects its text links to, each with available: false when the caller cannot open it) and linked_from (the notes that link to it); an encrypted account gets neither (the user can run `ot notes links` on their machine).",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -396,7 +396,7 @@
         "readOnlyHint": true,
         "title": "Get a note"
       },
-      "description": "Get one note: its title, its Markdown text, the text appended to it that no device has merged yet (oldest first), project, labels, body_version (pass it to update_note as base_version) and when it last changed.",
+      "description": "Get one note: its title, its Markdown text, the text appended to it that no device has merged yet (oldest first), project, labels, body_version (pass it to update_note as base_version) and when it last changed. On an account without end-to-end encryption it also returns links (the notes, tasks and projects its text links to, each with available: false when the caller cannot open it) and linked_from (the notes that link to it); an encrypted account gets neither (the user can run `ot notes links` on their machine).",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
