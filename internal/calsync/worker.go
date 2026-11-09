@@ -16,6 +16,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 	"github.com/OpenTodoApp/opentodo/internal/settings"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/syncscope"
 )
 
 // Worker runs cycles in the background under the jobs leader, and the
@@ -38,8 +39,9 @@ type Worker struct {
 	Microsoft      *MicrosoftConfig
 	MicrosoftToken *MicrosoftToken
 	GraphBase      string
-	// Tasks lists the user's task feed selection (installed by the server).
-	Tasks func(ctx context.Context, userID string) ([]calfeed.FeedTask, error)
+	// Tasks lists the user's task feed selection within a scope (installed by
+	// the server).
+	Tasks func(ctx context.Context, userID string, scope syncscope.Scope) ([]calfeed.FeedTask, error)
 	// Enabled reports the owner switch; nothing runs while it is off.
 	Enabled func(ctx context.Context) bool
 	// Notify wakes the user's devices when shown calendars' events changed.
@@ -154,9 +156,14 @@ func (w *Worker) NextDue(ctx context.Context) (time.Time, bool, error) {
 	return w.Store.NextDue(ctx)
 }
 
-// relevant are the task fields whose change can change an event (design D9).
-var relevant = map[string]bool{"due": true, "estimate_minutes": true, "title": true, "description": true, "completed_at": true,
-	"deleted_at": true, "project_id": true, "recurrence": true}
+// relevant are the task fields whose change can change an event (design D9),
+// with the workspace a scope reads (sync-scope); projectRelevant the project
+// fields that move a project's tasks into or out of a scope or the feed.
+var (
+	relevant = map[string]bool{"due": true, "estimate_minutes": true, "title": true, "description": true, "completed_at": true,
+		"deleted_at": true, "project_id": true, "recurrence": true, "workspace_id": true, "parent_id": true}
+	projectRelevant = map[string]bool{"workspace_id": true, "parent_id": true, "archived": true, "deleted_at": true}
+)
 
 // Observe makes the connections of everyone who can see a changed task due
 // soon (the tenant's post-commit observer, design D9). It does nothing while
@@ -181,11 +188,15 @@ func (w *Worker) Observe(ctx context.Context, changes []opsync.Change) {
 	}
 	scopes := map[string]bool{}
 	for _, ch := range changes {
-		if ch.Entity != "task" || strings.HasPrefix(ch.Origin, DevicePrefix) {
+		fields := relevant
+		if ch.Entity == "project" {
+			fields = projectRelevant
+		}
+		if (ch.Entity != "task" && ch.Entity != "project") || strings.HasPrefix(ch.Origin, DevicePrefix) {
 			continue
 		}
 		for f := range ch.Fields {
-			if relevant[f] {
+			if fields[f] {
 				scopes[ch.ScopeID] = true
 				break
 			}

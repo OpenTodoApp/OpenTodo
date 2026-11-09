@@ -3884,7 +3884,12 @@
         "appPasswords[].id": "string",
         "appPasswords[].lastUsedAt": "number|null",
         "appPasswords[].name": "string",
-        "appPasswords[].revokedAt": "number|null"
+        "appPasswords[].revokedAt": "number|null",
+        "appPasswords[].scope": "object",
+        "appPasswords[].scope.inboxes": "array",
+        "appPasswords[].scope.mode": "string",
+        "appPasswords[].scope.projects": "array",
+        "appPasswords[].scope.workspaces": "array"
       },
       "statuses": [
         "200"
@@ -4273,6 +4278,11 @@
         "connections[].password_set": "boolean",
         "connections[].provider": "string",
         "connections[].read": "array",
+        "connections[].scope": "object",
+        "connections[].scope.inboxes": "array",
+        "connections[].scope.mode": "string",
+        "connections[].scope.projects": "array",
+        "connections[].scope.workspaces": "array",
         "connections[].server_url": "string",
         "connections[].state": "string",
         "connections[].stopped_reason": "string",
@@ -6716,6 +6726,32 @@
         "200"
       ]
     },
+    "PATCH /api/v1/app-passwords/{id}": {
+      "policy": "signed-in.credential.recent",
+      "request": {
+        "scope": "object|null?",
+        "scope.inboxes": "array",
+        "scope.mode": "string",
+        "scope.projects": "array",
+        "scope.workspaces": "array"
+      },
+      "response": {
+        "appPassword": "object|null",
+        "appPassword.createdAt": "number",
+        "appPassword.id": "string",
+        "appPassword.lastUsedAt": "number|null",
+        "appPassword.name": "string",
+        "appPassword.revokedAt": "number|null",
+        "appPassword.scope": "object",
+        "appPassword.scope.inboxes": "array",
+        "appPassword.scope.mode": "string",
+        "appPassword.scope.projects": "array",
+        "appPassword.scope.workspaces": "array"
+      },
+      "statuses": [
+        "200"
+      ]
+    },
     "PATCH /api/v1/attachments/{id}": {
       "policy": "signed-in",
       "request": {
@@ -6764,6 +6800,11 @@
         "name": "string|null?",
         "password": "string|null?",
         "read": "array?",
+        "scope": "object|null?",
+        "scope.inboxes": "array",
+        "scope.mode": "string",
+        "scope.projects": "array",
+        "scope.workspaces": "array",
         "target": "string|null?"
       },
       "response": {
@@ -6797,6 +6838,11 @@
         "connection.password_set": "boolean",
         "connection.provider": "string",
         "connection.read": "array",
+        "connection.scope": "object",
+        "connection.scope.inboxes": "array",
+        "connection.scope.mode": "string",
+        "connection.scope.projects": "array",
+        "connection.scope.workspaces": "array",
         "connection.server_url": "string",
         "connection.state": "string",
         "connection.stopped_reason": "string",
@@ -7512,7 +7558,12 @@
     "POST /api/v1/app-passwords": {
       "policy": "signed-in.credential.recent",
       "request": {
-        "name": "string"
+        "name": "string",
+        "scope": "object|null?",
+        "scope.inboxes": "array",
+        "scope.mode": "string",
+        "scope.projects": "array",
+        "scope.workspaces": "array"
       },
       "response": {
         "appPassword": "object|null",
@@ -7521,6 +7572,11 @@
         "appPassword.lastUsedAt": "number|null",
         "appPassword.name": "string",
         "appPassword.revokedAt": "number|null",
+        "appPassword.scope": "object",
+        "appPassword.scope.inboxes": "array",
+        "appPassword.scope.mode": "string",
+        "appPassword.scope.projects": "array",
+        "appPassword.scope.workspaces": "array",
         "secret": "string"
       },
       "statuses": [
@@ -7939,6 +7995,11 @@
         "connection.password_set": "boolean",
         "connection.provider": "string",
         "connection.read": "array",
+        "connection.scope": "object",
+        "connection.scope.inboxes": "array",
+        "connection.scope.mode": "string",
+        "connection.scope.projects": "array",
+        "connection.scope.workspaces": "array",
         "connection.server_url": "string",
         "connection.state": "string",
         "connection.stopped_reason": "string",
@@ -7980,6 +8041,11 @@
         "connection.password_set": "boolean",
         "connection.provider": "string",
         "connection.read": "array",
+        "connection.scope": "object",
+        "connection.scope.inboxes": "array",
+        "connection.scope.mode": "string",
+        "connection.scope.projects": "array",
+        "connection.scope.workspaces": "array",
         "connection.server_url": "string",
         "connection.state": "string",
         "connection.stopped_reason": "string",

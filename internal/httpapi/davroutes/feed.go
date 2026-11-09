@@ -10,12 +10,19 @@ import (
 
 	"github.com/OpenTodoApp/opentodo/internal/recurrence"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/syncscope"
 )
 
 // FeedTasks lists the user's visible open tasks with a due date, as the
-// endpoint shows them (the calendar feed and calendar sync use it).
+// endpoint shows them (the calendar feed uses it).
 func (s *Server) FeedTasks(r *http.Request, uid string) ([]calfeed.FeedTask, error) {
-	d := &davRequest{s: s, r: r, user: &auth.User{ID: uid}}
+	return s.FeedTasksIn(r, uid, syncscope.Everything())
+}
+
+// FeedTasksIn is FeedTasks within a scope (calendar sync, sync-scope): the
+// tasks of the calendars a CalDAV app password with that scope would list.
+func (s *Server) FeedTasksIn(r *http.Request, uid string, scope syncscope.Scope) ([]calfeed.FeedTask, error) {
+	d := &davRequest{s: s, r: r, user: &auth.User{ID: uid}, scope: scope}
 	v, err := d.load()
 	if err != nil {
 		return nil, err
@@ -25,8 +32,7 @@ func (s *Server) FeedTasks(r *http.Request, uid string) ([]calfeed.FeedTask, err
 		if !isNullish(t["completed_at"]) {
 			continue
 		}
-		pid := idOf(t["project_id"])
-		if pid != "" && !v.calendarVisible(pid) {
+		if v.calendarOf(t) == "" {
 			continue
 		}
 		var due struct {

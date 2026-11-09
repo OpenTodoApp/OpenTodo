@@ -21,7 +21,7 @@ import type {
   AccountRole, ActivityPage, AttachmentLimits, AttachmentSettings, StorageStatus, CalendarEvent, CalendarFeed, CalendarSubscription, AdminUser, AppNotification, AuditEvent, AuditFilters, AuditSettings, AuthStatus, LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcTestResult, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus, RestoreArchive, RestoreSource, RestoreState, StagedRestore, ImportJob, ImportOptions, ImportPreview, Invitation, InvitationPreview, LoginResult, HistoryPage, PendingSignup, SmtpSettings, SmtpSettingsInput, SmtpTestResult, Membership, MfaPolicy, ProjectInvite, ProjectInvitePreview, MfaStatus, Op, Passkey, ProjectRole, PurgeCounts, PushSubscriptionStatus, PushTestResponse, ResetPreview, SyncResponse, TrustedDevice, User, PublicLink, PublicList,
   MemberInvitation, PendingAnswer,
   Webhook, WebhookDelivery, WebhookEvent, WebhookInput, IssueActionResult, IssueConnection, IssueConnectionInput,
-  CalendarConnection, CalendarConnectionPatch, CalendarSyncRun, GoogleClientSetting, MicrosoftClientSetting,
+  CalendarConnection, CalendarConnectionPatch, CalendarSyncRun, SyncScope, GoogleClientSetting, MicrosoftClientSetting,
   OwnTaskPage, PublishTaskPageInput, TaskPageCreated, TaskPageStatus,
   AutomationsSetting, RuleRun, RulesStatus, RoutineCatalogueEntry, RoutineInboxRun, RoutineRun, RoutineTestResult, RoutineStep, RuleCondition, RuleTrigger,
   RoutineAIUsage, RoutineProposal, RoutineProposalApplied,
@@ -405,7 +405,10 @@ export const api = {
   purgeEncryptionHistory: () => request<{ purged: number; notice: string }>('POST', '/api/v1/encryption/purge-history'),
   caldavSwitch: ownerSwitch<CaldavSetting>('caldav'),
   listAppPasswords: () => request<{ appPasswords: AppPassword[] }>('GET', '/api/v1/app-passwords'),
-  createAppPassword: (name: string) => request<{ appPassword: AppPassword; secret: string }>('POST', '/api/v1/app-passwords', { name }),
+  createAppPassword: (name: string, scope?: SyncScope) =>
+    request<{ appPassword: AppPassword; secret: string }>('POST', '/api/v1/app-passwords', scope ? { name, scope } : { name }),
+  setAppPasswordScope: (id: string, scope: SyncScope) =>
+    request<{ appPassword: AppPassword }>('PATCH', `/api/v1/app-passwords/${encodeURIComponent(id)}`, { scope }),
   revokeAppPassword: (id: string) => request<void>('DELETE', `/api/v1/app-passwords/${encodeURIComponent(id)}`),
   // Email to task (OpenSpec change `email-to-task`): the caller's secret inbox address.
   emailInbox: () => request<EmailInbox>('GET', '/api/v1/email-inbox'),
