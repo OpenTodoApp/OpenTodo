@@ -9,7 +9,7 @@ import { useUserPrefsRow } from '../lib/localData'
 import { readTaskOpen } from '../lib/userPrefs'
 import { Icon, IconButton, useMediaQuery } from '../ui'
 import { InboxEmptyPane } from './InboxEmptyPane'
-import { closeTaskPanel, followTask, panelTaskId, setPanelTaskId, setPanelWidth, setTaskSplit, sidePanelDocks, SPLIT_QUERY, useSidePanelOpen } from './panel'
+import { closeTaskPanel, followTask, panelTaskId, type PanelWidthStore, setPanelTaskId, setPanelWidth, setTaskSplit, sidePanelDocks, SPLIT_QUERY, TASK_PANEL_WIDTH, useSidePanelOpen } from './panel'
 import { openTaskPage } from './taskTrail'
 
 /** Whether this account opens tasks in the side panel (the synced preference, D1); the screen width is not considered. */
@@ -115,15 +115,16 @@ const clampWidth = (px: number) => {
  * The handle on the docked panel's left edge (D3): drag to resize, or focus it and use
  * ← and → (Shift for larger steps); Home restores the default width. A click without
  * dragging switches between the widest and the default width (accessibility-aa D3,
- * WCAG 2.2 2.5.7: one pointer, no drag).
+ * WCAG 2.2 2.5.7: one pointer, no drag). `store` is where the width is kept: the docked
+ * task's by default, the Notes page's note its own (note-pane-width D1).
  */
-export function PanelResizeHandle() {
+export function PanelResizeHandle({ store = TASK_PANEL_WIDTH, label = t('Resize the task panel') }: { store?: PanelWidthStore; label?: string } = {}) {
   const [width, setWidth] = useState<number | null>(null)
   const self = useRef<HTMLDivElement>(null)
   // A focusable separator must say its value (WAI-ARIA window splitter): the panel's width from the first paint.
   useLayoutEffect(() => { if (self.current) setWidth(measure(self.current)) }, [])
   const apply = (px: number | null, el: HTMLElement, persist = true) => {
-    setPanelWidth(px === null ? null : clampWidth(px), persist)
+    setPanelWidth(px === null ? null : clampWidth(px), persist, store)
     setWidth(measure(el))
   }
 
@@ -165,7 +166,7 @@ export function PanelResizeHandle() {
   const { min, max } = panelWidthBounds()
   return (
     // A focusable separator (WAI-ARIA window splitter): its value is the panel's width.
-    <div role="separator" aria-orientation="vertical" tabIndex={0} aria-label={t('Resize the task panel')}
+    <div role="separator" aria-orientation="vertical" tabIndex={0} aria-label={label}
       ref={self} aria-valuenow={width ?? Math.round(min)} aria-valuemin={Math.round(min)} aria-valuemax={Math.round(max)}
       aria-valuetext={t('{n} pixels wide', { n: width ?? Math.round(min) })}
       onPointerDown={onPointerDown} onKeyDown={onKeyDown} data-drag-id="panel-resizer"
