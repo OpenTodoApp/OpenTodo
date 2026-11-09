@@ -11,7 +11,8 @@ import { createProject, resetDeviceId } from '../lib/ops'
 import type { User } from '../lib/types'
 import { click, key, render, type, waitFor } from '../ui/test-utils'
 import { ProjectHeader } from './ProjectHeader'
-import { ProjectMark, Sidebar } from './Sidebar'
+import { ProjectMark } from './ProjectMark'
+import { Sidebar } from './Sidebar'
 
 const iconItem = () => [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((b) => b.textContent?.includes('Icon…'))
 

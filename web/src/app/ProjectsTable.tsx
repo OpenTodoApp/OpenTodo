@@ -16,7 +16,7 @@ import { t } from '../lib/i18n'
 import { Avatar, Icon, ProgressRing, ReadAs, ToneText, Tooltip, type IconName, type Tone } from '../ui'
 import { ProjectRowMenu } from './ProjectRowMenu'
 import { navigate } from './router'
-import { ProjectMark } from './Sidebar'
+import { ProjectMark } from './ProjectMark'
 import { MAX_INDENT } from './TaskRow'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 
