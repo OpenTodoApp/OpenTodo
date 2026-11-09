@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { manifest } from './manifest'
-import { anthropicProvider, chatProvider, deviceCode, ProviderError, sseEvents, testConnection, type Fetch } from './providers'
+import { anthropicProvider, chatProvider, fitsAnthropicStrict, deviceCode, ProviderError, sseEvents, testConnection, type Fetch } from './providers'
 import vectors from './errors.vectors.json'
 import { checkSetup, originOf, baseUrlOf, ENDPOINTS } from './settings'
 
@@ -27,6 +27,26 @@ function fakeFetch(bodies: string[], status = 200) {
 }
 
 const tool = manifest.tools.find((t) => t.name === 'complete_tasks')!
+
+describe('Anthropic strict limits (#1102)', () => {
+  const opt = (n: number) => ({ type: 'object', properties: Object.fromEntries(Array.from({ length: n }, (_, i) => [`p${i}`, { type: 'string' }])), required: [] })
+  it('keeps a set within 20 tools and 24 optional parameters strict', () => {
+    expect(fitsAnthropicStrict(Array.from({ length: 20 }, () => opt(0)))).toBe(true)
+    expect(fitsAnthropicStrict([opt(24)])).toBe(true)
+  })
+  it('drops strict past either limit, nested parameters included', () => {
+    expect(fitsAnthropicStrict(Array.from({ length: 21 }, () => opt(0)))).toBe(false)
+    expect(fitsAnthropicStrict([opt(25)])).toBe(false)
+    expect(fitsAnthropicStrict([{ type: 'object', properties: { a: { type: 'array', items: opt(24) } }, required: [] }])).toBe(false)
+  })
+  it('sends the whole device manifest without strict mode', async () => {
+    expect(fitsAnthropicStrict(manifest.tools.map((t) => t.strict_schema))).toBe(false)
+    const { f, calls } = fakeFetch([sse([{ type: 'message_stop' }])])
+    await anthropicProvider({ provider: 'anthropic', key: 'k', model: 'm' } as never, f).start({ system: 'S', messages: [{ role: 'user', text: 'Q' }], tools: manifest.tools, maxTokens: 64 }).next(() => {}).catch(() => {})
+    const body = JSON.parse(String(calls[0].init.body))
+    expect(body.tools.every((t: { strict: boolean }) => t.strict === false)).toBe(true)
+  })
+})
 
 describe('sseEvents', () => {
   it('reads events split across chunks and CRLF lines', async () => {

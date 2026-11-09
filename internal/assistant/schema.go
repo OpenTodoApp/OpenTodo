@@ -67,3 +67,58 @@ func strictSchema(s map[string]any, nullableTypes bool) map[string]any {
 	}
 	return out
 }
+
+// Anthropic refuses a request whose strict tools exceed its limits: at most
+// 20 strict tools and 24 optional parameters across all their schemas. A
+// tool set within both limits is sent strict; a larger one (the in-app chat
+// offers more) goes without strict mode, which is safe because the registry
+// validates every call's arguments itself (issue #1102).
+const (
+	anthropicMaxStrictTools    = 20
+	anthropicMaxStrictOptional = 24
+)
+
+// fitsAnthropicStrict reports whether these tool schemas fit both limits.
+func fitsAnthropicStrict(schemas []map[string]any) bool {
+	if len(schemas) > anthropicMaxStrictTools {
+		return false
+	}
+	n := 0
+	for _, s := range schemas {
+		n += optionalParams(s)
+	}
+	return n <= anthropicMaxStrictOptional
+}
+
+// optionalParams counts the properties not listed as required, at every
+// level of the schema.
+func optionalParams(s map[string]any) int {
+	n := 0
+	if props, ok := s["properties"].(map[string]any); ok {
+		req := map[string]bool{}
+		switch r := s["required"].(type) {
+		case []string:
+			for _, k := range r {
+				req[k] = true
+			}
+		case []any:
+			for _, k := range r {
+				if ks, ok := k.(string); ok {
+					req[ks] = true
+				}
+			}
+		}
+		for k, v := range props {
+			if !req[k] {
+				n++
+			}
+			if m, ok := v.(map[string]any); ok {
+				n += optionalParams(m)
+			}
+		}
+	}
+	if items, ok := s["items"].(map[string]any); ok {
+		n += optionalParams(items)
+	}
+	return n
+}
