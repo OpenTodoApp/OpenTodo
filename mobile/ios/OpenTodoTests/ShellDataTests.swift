@@ -26,6 +26,32 @@ final class OriginTests: XCTestCase {
         XCTAssertEqual(Origin.pageOrigin(URL(string: "https://todo.example.com:443/share?files=1")!), "https://todo.example.com")
         XCTAssertEqual(Origin.pageOrigin(URL(string: "http://localhost:8080/today")!), "http://localhost:8080")
     }
+
+    /// What `location.origin` prints (ios-bridge-portable): only the scheme's own default
+    /// port is left out, so `https://…:80` and `http://…:443` keep theirs.
+    func testPageOriginKeepsAPortThatIsNotTheSchemesDefault() {
+        XCTAssertEqual(Origin.pageOrigin(URL(string: "https://todo.example.com:80")!), "https://todo.example.com:80")
+        XCTAssertEqual(Origin.pageOrigin(URL(string: "http://192.168.1.4:443")!), "http://192.168.1.4:443")
+        XCTAssertEqual(Origin.pageOrigin(URL(string: "http://192.168.1.4:80")!), "http://192.168.1.4")
+        XCTAssertEqual(Origin.pageOrigin(URL(string: "HTTPS://Todo.Example.com")!), "https://todo.example.com")
+    }
+
+    /// Every address the first-run screen accepts gives the origin the page will report.
+    func testTheAcceptedAddressIsThePagesOrigin() throws {
+        let cases = [
+            "todo.example.com": "https://todo.example.com",
+            "HTTPS://TODO.Example.COM/": "https://todo.example.com",
+            "todo.example.com.": "https://todo.example.com",
+            "https://todo.example.com:80": "https://todo.example.com:80",
+            "http://192.168.1.4:443": "http://192.168.1.4:443",
+            "http://[fd00::1]:8080": "http://[fd00::1]:8080",
+            "bücher.example": "https://xn--bcher-kva.example",
+        ]
+        for (input, page) in cases {
+            guard case let .ok(origin, _) = ServerAddress.parse(input) else { XCTFail("refused: \(input)"); continue }
+            XCTAssertEqual(Origin.pageOrigin(try XCTUnwrap(URL(string: origin))), page, input)
+        }
+    }
 }
 
 final class VersionTests: XCTestCase {
