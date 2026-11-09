@@ -22,7 +22,7 @@
     "raised": "#073642",
     "selected": "#073642",
     "accent-text": "oklch(0.7124 0.1394 244.93)",
-    "hue-red": "oklch(0.6713 0.2064 27.12)",
+    "hue-red": "oklch(0.6738 0.2064 27.12)",
     "hue-orange": "oklch(0.6608 0.1732 39.5)",
     "hue-yellow": "#b58900",
     "hue-lime": "#859900",
@@ -31,9 +31,9 @@
     "hue-cyan": "oklch(0.6299 0.1065 211.53)",
     "hue-blue": "oklch(0.6374 0.1394 244.93)",
     "hue-indigo": "oklch(0.6473 0.1261 279.1)",
-    "hue-violet": "oklch(0.6599 0.2014 293.54)",
+    "hue-violet": "oklch(0.6649 0.198 293.54)",
     "hue-pink": "oklch(0.6674 0.2025 355.89)",
-    "hue-slate": "oklch(0.638 0.0283 219.14)"
+    "hue-slate": "oklch(0.6405 0.0283 219.14)"
   },
   "bar": "#002b36",
   "notes": {

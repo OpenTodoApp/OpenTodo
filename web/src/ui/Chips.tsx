@@ -1,7 +1,7 @@
 // The metadata language of rows and cards (OpenSpec change ux-overhaul,
 // task-list-presentation "Metadata language", design D7): three styles only.
 // `ToneText` for a date or a deadline (a tone, an optional icon, the text),
-// `LabelChip` for a label (its colour dot and name; `LabelChips` for a row's labels,
+// `LabelChip` for a label (its name on a soft tint; `LabelChips` for a row's labels,
 // rows-v2 D5: the only pills of a row) and `NeutralChip` for a count or a name in
 // the task panel and settings (rows use muted text instead, rows-v2 D4), in the
 // metadata size with tabular figures, never a monospace face. Icons in chips are
@@ -14,6 +14,7 @@ import { type ReactNode, type RefObject, useLayoutEffect, useRef, useState } fro
 import { Icon, type IconName } from './Icon'
 import { Tooltip } from './Tooltip'
 import { t } from '../lib/i18n'
+import { hueFor } from './tokens/palette'
 
 export type Tone = 'danger' | 'success' | 'warning' | 'accent' | 'violet' | 'indigo' | 'default' | 'muted' | 'faint'
 
@@ -97,17 +98,16 @@ export interface LabelChipProps {
   className?: string
 }
 
-/** A label: its colour dot and name in an outlined chip; not a button unless it can be removed. */
+/** A label's name on a soft fill, with an optional remove button. */
 export function LabelChip({ name, color, onRemove, className }: LabelChipProps) {
   return (
-    <span className={`inline-flex max-w-full min-w-0 items-center gap-1 rounded-chip border border-default px-1.5 py-px text-meta text-muted${className ? ` ${className}` : ''}`} data-label-chip>
-      <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+    <span className={`inline-flex max-w-full min-w-0 items-center gap-1 rounded-chip border border-transparent bg-hue-soft px-1.5 py-px text-meta text-hue${className ? ` ${className}` : ''}`} data-label-chip data-hue={hueFor(color)}>
       <span className="truncate">{name}</span>
       {onRemove && (
         // The touch rule's 44 px minimum would blow the chip up to a box: the button stays
         // icon-sized and a transparent 44 px area around it (::after) takes the tap.
         <button type="button" data-touch-exempt="hit-area" aria-label={t('Remove label {name}', { name })} onClick={onRemove} style={{ minWidth: 0, minHeight: 0 }}
-          className="relative ml-0.5 leading-none text-faint after:absolute after:-inset-[17px] hover:text-danger"><Icon name="x" size={10} /></button>
+          className="relative ml-0.5 rounded-chip leading-none text-hue after:absolute after:-inset-[17px] hover:outline focus-visible:outline-2 focus-visible:outline-focus"><Icon name="x" size={10} /></button>
       )}
     </span>
   )
