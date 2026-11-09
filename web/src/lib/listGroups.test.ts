@@ -2,7 +2,7 @@
 // web-component-structure): what TaskListView renders, tested without a DOM.
 import { describe, expect, it } from 'vitest'
 import { currentDateTime } from './dates'
-import { BLOCKED_OPEN_KEY, DONE_OPEN_KEY, WAITING_OPEN_KEY, EARLIER_KEY, EARLIER_OPEN_KEY, earlierCollapsed, boardColumns, completedBySection, flatRow, keepGroups, listGroups, sectionBuckets, sectionOfRows, siblingPositions, splitLater, tasksForView, type GroupInput } from './listGroups'
+import { BLOCKED_OPEN_KEY, DONE_OPEN_KEY, WAITING_OPEN_KEY, EARLIER_KEY, EARLIER_OPEN_KEY, earlierCollapsed, boardColumns, completedBySection, flatRow, keepGroups, laterOpenKey, listGroups, sectionBuckets, sectionOfRows, siblingPositions, splitLater, tasksForView, type GroupInput } from './listGroups'
 import { buildTaskTree } from './subtasks'
 import type { Project, Section, Task } from './types'
 
@@ -251,6 +251,57 @@ describe('listGroups', () => {
     expect(sectionOfRows(false, [], g)).toEqual(new Map([[loose.id, ''], [one.id, 's1']]))
   })
 
+  it('deferred and parked tasks stay in their section under a folded Later, with their subtasks (later-in-section)', () => {
+    const s1 = section('s1', 'p', 1)
+    const s2 = section('s2', 'p', 2)
+    const active = task({ title: 'Active', project_id: 'p', section_id: 's1' })
+    const deferred = task({ title: 'Deferred', project_id: 'p', section_id: 's1', start: '2026-11-20' })
+    const sub = task({ title: 'Sub', project_id: 'p', section_id: 's1', parent_id: deferred.id })
+    const parked = task({ title: 'Parked', project_id: 'p', section_id: 's2', start: 'someday' })
+    const loose = task({ title: 'Loose', project_id: 'p', start: 'someday' })
+    const gone = task({ title: 'Deleted section', project_id: 'p', section_id: 'gone', start: 'someday' })
+    const all = [active, deferred, sub, parked, loose, gone]
+    const split = splitLater(all, TODAY)
+    const tree = buildTaskTree(split.active)
+    const buckets = sectionBuckets('p', tree, [s1, s2])
+    const base = input({ view: 'project', projectId: 'p', tasks: split.active, laterTasks: split.later, tree, buckets, sectionCount: 2 })
+    // Folded by default: each Later shows its count and no rows; "No section" is listed for its Later alone.
+    const folded = listGroups(base)
+    expect(folded.map((g) => [g.key, g.count, g.folded ?? null, titles(g)])).toEqual([
+      ['section:', 0, null, []], ['later:', 2, true, []],
+      ['section:s1', 1, null, ['Active']], ['later:s1', 2, true, []],
+      ['section:s2', 0, null, []], ['later:s2', 1, true, []],
+    ])
+    expect(folded[3]).toMatchObject({ heading: 'Later', laterOf: 's1', openKey: laterOpenKey('p', 's1') })
+    // Opened on this device: its rows, the subtask nested under its deferred parent.
+    const open = listGroups({ ...base, collapsed: new Set([laterOpenKey('p', 's1'), laterOpenKey('p', '')]) })
+    expect(open.find((g) => g.key === 'later:s1')!.rows.map((r) => [r.task.title, r.depth, r.parent])).toEqual([['Deferred', 0, null], ['Sub', 1, deferred.id]])
+    expect(titles(open.find((g) => g.key === 'later:')!)).toEqual(['Loose', 'Deleted section'])
+    expect(open.find((g) => g.key === 'later:s2')!.rows).toEqual([])
+    // A drop beside a Later row takes that section; the Later rows count among their own siblings.
+    expect(sectionOfRows(false, [], open).get(deferred.id)).toBe('s1')
+    expect(sectionOfRows(false, [], open).get(loose.id)).toBe('')
+    expect(sectionOfRows(false, [], open).has(sub.id)).toBe(false)
+    expect(siblingPositions(open).get(deferred.id)).toEqual({ pos: 1, size: 1 })
+    // A collapsed section hides its Later as well.
+    expect(listGroups({ ...base, collapsedSections: ['s1'] }).some((g) => g.key === 'later:s1')).toBe(false)
+  })
+
+  it('without sections, grouped otherwise or on the timeline, Later stays one group at the end', () => {
+    const s1 = section('s1', 'p', 1)
+    const active = task({ title: 'Active', project_id: 'p', section_id: 's1', priority: 1 })
+    const deferred = task({ title: 'Deferred', project_id: 'p', section_id: 's1', start: '2026-11-20' })
+    const tree = buildTaskTree([active])
+    const buckets = sectionBuckets('p', tree, [s1])
+    const base = input({ view: 'project', projectId: 'p', tasks: [active], laterTasks: [deferred], tree, buckets, sectionCount: 1 })
+    const keys = (over: Partial<GroupInput>) => listGroups({ ...base, ...over }).map((g) => g.key)
+    expect(keys({ timeline: true })).toEqual(['section:s1', 'later'])
+    expect(keys({ sectionCount: 0, buckets: sectionBuckets('p', tree, []) })).toEqual(['all', 'later'])
+    expect(keys({ display: { groupBy: 'none', sortBy: 'position', sortDir: 'asc', rowLayout: 'line' } as GroupInput['display'] })).toEqual(['all', 'later'])
+    expect(keys({ display: { groupBy: 'priority', sortBy: 'position', sortDir: 'asc', rowLayout: 'line' } as GroupInput['display'] }).at(-1)).toBe('later')
+    expect(listGroups({ ...base, timeline: true }).at(-1)).toMatchObject({ heading: 'Later', rows: [expect.objectContaining({ task: deferred })] })
+  })
+
   it('the board has a column per section and "No section" only while it has cards', () => {
     const s1 = section('s1', 'p', 1)
     const one = task({ title: 'One', project_id: 'p', section_id: 's1' })
@@ -318,10 +369,10 @@ describe('implied metadata', () => {
   it('projects, sections, Later, trees, boards, the logbook and flat views imply nothing', () => {
     const s1 = section('s1', 'p', 1)
     const one = task({ project_id: 'p', section_id: 's1', due: { date: TODAY } })
-    const later = task({ start: 'someday' })
+    const later = task({ project_id: 'p', section_id: 's1', start: 'someday' })
     const tree = buildTaskTree([one])
     const buckets = sectionBuckets('p', tree, [s1])
-    const sectioned = listGroups(input({ view: 'project', tree, buckets, sectionCount: 1, laterTasks: [later] }))
+    const sectioned = listGroups(input({ view: 'project', projectId: 'p', tree, buckets, sectionCount: 1, laterTasks: [later], collapsed: new Set([laterOpenKey('p', 's1')]) }))
     expect(sectioned.map(implied)).toEqual([[null], [null]])
     expect(listGroups(input({ view: 'inbox', tree: buildTaskTree([later]) })).map(implied)).toEqual([[null]])
     const board = listGroups(input({ view: 'project', board: true, columns: boardColumns(buckets) }))

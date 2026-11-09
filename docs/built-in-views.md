@@ -45,7 +45,7 @@ Anytime lists every open task that has no due date, no deadline and no start dat
 
 ## Park ideas in Someday
 
-Someday holds the tasks you parked: ideas and maybes you don't want to see every day; [quick add](quick-add.md) here parks what you add. They stay out of Today, Upcoming, Anytime and the counts, and are listed here by project and in their project's **Later** group. Press <kbd>n</kbd> on a task to park it or bring it back.
+Someday holds the tasks you parked: ideas and maybes you don't want to see every day; [quick add](quick-add.md) here parks what you add. They stay out of Today, Upcoming, Anytime and the counts, and are listed here by project and under **Later** in their project. Press <kbd>n</kbd> on a task to park it or bring it back.
 
 ## Narrow a list by duration
 
