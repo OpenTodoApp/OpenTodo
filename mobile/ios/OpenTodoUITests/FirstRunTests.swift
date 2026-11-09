@@ -44,9 +44,56 @@ final class FirstRunTests: XCTestCase {
         XCTAssertTrue(field.waitForExistence(timeout: 10))
         field.tap()
         field.typeText("not an address")
-        app.buttons["Connect"].tap()
+        XCTAssertFalse(app.buttons["Connect"].isEnabled, "Connect is inactive while the address is not well-formed")
+        field.typeText("\n")
         XCTAssertTrue(app.staticTexts["That is not a usable address."].waitForExistence(timeout: 5))
         attach("first-run-unusable-address")
+    }
+
+    /// ios-setup-address (#1137): Connect is inactive on the empty screen and active, for VoiceOver
+    /// too, as soon as the address is well-formed.
+    func testConnectIsActiveOnceTheAddressIsWellFormed() {
+        let app = launch()
+        let field = app.textFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        let connect = app.buttons["Connect"]
+        XCTAssertFalse(connect.isEnabled, "nothing typed yet")
+        field.tap()
+        field.typeText("todo")
+        XCTAssertTrue(connect.isEnabled, "a host name is enough")
+        field.typeText(" x")
+        XCTAssertFalse(connect.isEnabled, "a space makes the address unusable")
+        attach("first-run-connect-inactive")
+        field.typeText(XCUIKeyboardKey.delete.rawValue + XCUIKeyboardKey.delete.rawValue + ".example.com")
+        XCTAssertTrue(connect.isEnabled)
+        attach("first-run-connect-active")
+    }
+
+    /// ios-setup-address (#1136): an address typed without a scheme shows the https:// it is reached
+    /// over before the check starts. `todo.example.invalid` never resolves, so no server is needed.
+    func testAnAddressWithoutASchemeShowsHttps() {
+        let app = launch()
+        let field = app.textFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        field.tap()
+        field.typeText("Todo.Example.invalid\n")
+        XCTAssertTrue(app.staticTexts["No answer from that address. Check the address and your connection."].waitForExistence(timeout: 30))
+        XCTAssertEqual(field.value as? String, "https://todo.example.invalid")
+        attach("first-run-https-shown")
+    }
+
+    /// ios-setup-address (#1136): plain http, typed on purpose to a local address, says it is not encrypted.
+    func testPlainHttpToALocalAddressWarns() {
+        let app = launch()
+        let field = app.textFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        field.tap()
+        field.typeText("192.168.1.20:8080")
+        XCTAssertFalse(app.staticTexts["This connection is not encrypted."].exists, "without a scheme the address is https")
+        field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 17) + "http://192.168.1.20:8080")
+        XCTAssertTrue(app.staticTexts["This connection is not encrypted."].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Connect"].isEnabled, "a local http address is accepted after the warning")
+        attach("first-run-http-warning")
     }
 
     /// The system's accessibility audit on the first-run screen (OpenSpec accessibility "Native
@@ -59,13 +106,14 @@ final class FirstRunTests: XCTestCase {
         let app = launch()
         let field = app.textFields.firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 10))
-        // With an address typed and submitted with Return, as the screen is used: Connect is enabled
-        // (on the empty screen it is disabled, and an inactive control's text is exempt from the
-        // contrast minimum, WCAG 1.4.3), the error line shows, and the keyboard is down (with it up
-        // the audit ran out of time in CI).
+        // With a well-formed address typed and submitted with Return, as the screen is used: Connect
+        // is active (on the empty screen it is inactive, and an inactive control's text is exempt
+        // from the contrast minimum, WCAG 1.4.3), the error line shows, and the keyboard is down (with
+        // it up the audit ran out of time in CI). `.invalid` never resolves, so no server is needed.
         field.tap()
-        field.typeText("not an address\n")
-        XCTAssertTrue(app.staticTexts["That is not a usable address."].waitForExistence(timeout: 5))
+        field.typeText("todo.example.invalid\n")
+        XCTAssertTrue(app.staticTexts["No answer from that address. Check the address and your connection."].waitForExistence(timeout: 30))
+        XCTAssertTrue(app.buttons["Connect"].isEnabled)
         attach("first-run-accessibility-audit")
         // Every issue is collected and printed with its element, so one CI run lists them all
         // (the class stops at the first failure). One kind is set aside, with its reason: the audit

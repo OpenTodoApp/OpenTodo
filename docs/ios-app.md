@@ -19,7 +19,7 @@ As the copyright holder, the author of OpenTodo allows distributing its iOS app 
 
 ## Connect to your server
 
-On first start the app asks for your server's address, the one you open in the browser (for example `todo.example.com`). Plain `http` is only accepted for addresses on your own network; everything else must be `https`. The screen says what is wrong when it can't connect:
+On first start the app asks for your server's address, the one you open in the browser (for example `todo.example.com`). An address without a scheme is reached over `https`, and the field shows it as `https://todo.example.com` before anything is sent; the app never tries `http` by itself and never follows a redirect to another address. Plain `http` is only used when you type it, only for addresses on your own network, and the screen then says the connection is not encrypted; everything else must be `https`. **Connect** becomes active once the address is well-formed. After connecting, **Settings → About** shows the exact address under **OpenTodo for iOS**. The screen says what is wrong when it can't connect:
 
 - **No answer**: the first start needs the network. Check the address and the connection.
 - **Not an OpenTodo server**: the address answers, but not like OpenTodo. Check for typos.

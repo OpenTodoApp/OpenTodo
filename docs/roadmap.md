@@ -130,17 +130,17 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 
 | Change | What | Status |
 | --- | --- | --- |
-| `note-links` | Link notes, tasks and projects with `[[`; Linked references on each | In progress (14 of 14) |
-| `notes-home` | The Notes page as a home: write from the search field, pinned notes, unlinked notes | In progress (11 of 11) |
-| `notes-graph` | Connections: a local graph of what links to and from an item | In progress (10 of 10) |
-| `note-pane-width` | A note beside the Notes list resizes by its left edge and keeps a readable column | In progress (7 of 7) |
+| `note-links` | Link notes, tasks and projects with `[[`; Linked references on each | Shipped in 1.3 |
+| `notes-home` | The Notes page as a home: write from the search field, pinned notes, unlinked notes | Shipped in 1.3 |
+| `notes-graph` | Connections: a local graph of what links to and from an item | Shipped in 1.3 |
+| `note-pane-width` | A note beside the Notes list resizes by its left edge and keeps a readable column | Shipped in 1.3 |
 
 ## Assistant area
 
 | Change | What | Status |
 | --- | --- | --- |
 | `assistant-eval` | Recorded scenarios against a real provider, which check the tool calls a model makes (blocks used, nothing written, no map claims), run by hand with `make assistant-eval` | In progress (4 of 5) |
-| `assistant-usage-cache` | Input read from the provider's cache counts at a tenth toward the monthly cap, and each answer names it | Planned |
+| `assistant-usage-cache` | Input read from the provider's cache counts at a tenth toward the monthly cap, and each answer names it | In progress (4 of 4) |
 | `assistant-device-reads` | The on-device assistant (encrypted accounts) reads time entries, frames, slots and notes like the server's | Planned |
 | `assistant-time-blocks` | Time, free time and deadlines blocks; `find_free_time` as a read tool for the assistant and MCP | Planned |
 | `assistant-project-blocks` | Board, timeline, activity, stats, task and habit blocks, offered by relevance | Planned |
@@ -151,5 +151,15 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `assistant-routine-blocks` | Routines' AI steps show the day's agenda, deadlines and tasks as blocks in the routine inbox | Planned |
 | `assistant-lean-tools` | Write tools only once the model asks for them, so questions send far fewer tokens | Planned |
 | `mcp-blocks` | Blocks for external agents that support MCP Apps, rendered by the host from self-contained HTML; a spike first | Planned |
+
+## UX polish (2026-11 feedback)
+
+| Change | What | Status |
+| --- | --- | --- |
+| `sidebar-brand-and-row-grid` | The workspace gets its own picture and OpenTodo a quiet brand line with the version in the sidebar's footer. Task rows get one grid of fixed slots, with marks on the title's baseline. The task panel fits its width, with quieter subtasks and a compact estimate editor. Upcoming summarises later days | Planned |
+| `when-picker` | The Do on editor gets a date field that shows an example, one "time of day" row (Any time, Morning, Afternoon, Evening, Time) and the zone beside the time | Planned |
+| `focus-redesign` | Focus becomes one stage: the task, the time left and one control. Settings, the mode and today's sessions move behind a quiet menu, and breaks are a calm state | Planned |
+| `close-the-day-redesign` | Close the day becomes three steps (done, what moves, tomorrow's first thing), keyboard-first, with one write and one Undo | Planned |
+| `loop-guided-dashboard` | The Loop home names the next step and why. A stepper shows only the moves with work, and each move opens in place | Planned |
 
 <!-- roadmap:end -->

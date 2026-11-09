@@ -3,8 +3,8 @@
 // phrase is visually hidden text inside the chip, never an aria-label on a span,
 // which has no role and whose name assistive technology ignores.
 import { act } from 'react'
-import { describe, expect, it } from 'vitest'
-import { LabelChips, NeutralChip, ReadAs, ToneText } from './Chips'
+import { describe, expect, it, vi } from 'vitest'
+import { LabelChip, LabelChips, NeutralChip, ReadAs, ToneText } from './Chips'
 import { ListGroupHeader } from './patterns/ListGroupHeader'
 import { render, spokenText, visibleText } from './test-utils'
 
@@ -50,18 +50,40 @@ describe('chips for assistive technology', () => {
   })
 })
 
+describe('LabelChip', () => {
+  it('renders a label with its palette tint and readable text, without a separate dot', async () => {
+    const r = await render(<LabelChip name="errand" color="#22c55e" />)
+    const chip = r.container.querySelector('[data-label-chip]')!
+    expect(chip.getAttribute('data-hue')).toBe('green')
+    expect(chip.classList.contains('bg-hue-soft')).toBe(true)
+    expect(chip.classList.contains('text-hue')).toBe(true)
+    expect(chip.querySelector('[aria-hidden="true"]')).toBeNull()
+    expect(spokenText(chip)).toBe('errand')
+  })
+
+  it('uses the slate tint for an unrecognised colour and keeps the remove action', async () => {
+    const onRemove = vi.fn()
+    const r = await render(<LabelChip name="errand" color="var(--color-faint)" onRemove={onRemove} />)
+    const chip = r.container.querySelector('[data-label-chip]')!
+    expect(chip.getAttribute('data-hue')).toBe('slate')
+    const button = chip.querySelector<HTMLButtonElement>('button[aria-label="Remove label errand"]')!
+    await act(async () => { button.click() })
+    expect(onRemove).toHaveBeenCalledOnce()
+  })
+})
+
 // A row's labels (OpenSpec change rows-v2, design D5).
 describe('LabelChips', () => {
-  const errand = { id: 'l1', name: 'errand', color: 'var(--ot-hue-green-solid)' }
-  const call = { id: 'l2', name: 'call', color: 'var(--ot-hue-violet-solid)' }
-  const home = { id: 'l3', name: 'home', color: 'var(--ot-hue-blue-solid)' }
+  const errand = { id: 'l1', name: 'errand', color: '#22c55e' }
+  const call = { id: 'l2', name: 'call', color: '#8b5cf6' }
+  const home = { id: 'l3', name: 'home', color: '#3b82f6' }
 
-  it('three labels: two chips with their dots and "+1", every name spoken, a tab stop and a tooltip on focus', async () => {
+  it('three labels: two tinted chips and "+1", every name spoken, a tab stop and a tooltip on focus', async () => {
     const r = await render(<LabelChips labels={[errand, call, home]} />)
     const g = r.container.querySelector('[data-label-chips]')!
     expect(g.getAttribute('role')).toBe('group')
     expect(g.hasAttribute('aria-label')).toBe(false)
-    expect(g.querySelectorAll('[data-label-chip]')).toHaveLength(2)
+    expect([...g.querySelectorAll('[data-label-chip]')].map((chip) => chip.getAttribute('data-hue'))).toEqual(['green', 'violet'])
     expect(visibleText(g)).toBe('errandcall+1')
     expect(spokenText(g)).toBe('Labels: errand, call, home')
     expect(g.getAttribute('tabindex')).toBe('0')

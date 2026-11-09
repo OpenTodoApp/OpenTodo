@@ -444,7 +444,7 @@ The notification bell in the sidebar footer SHALL show a dot in the accent colou
 - **THEN** the bell shows "3" in a small accent count, never in red, and reading the first one from the list changes it to "2"
 
 ### Requirement: Favourites group
-The Favourites group SHALL list the user's pinned projects, labels and saved filters in the user's order, each with the icon or colour and the live open-task count its own group shows, opening the same destination. Items SHALL be reorderable from their menus and by keyboard, and unpinnable from their menus. The group SHALL reflect pins, order and renames from the user's other devices after sync, and SHALL render from local data so it is correct offline.
+The Favourites group SHALL list the user's pinned projects, labels, saved filters and standalone notes in the user's order, each project, label and filter with the icon or colour and the live open-task count its own group shows, and each note with the note icon, its title ("Untitled note" when empty) and no count, opening the same destination (a note docked or as a page). Items SHALL be reorderable from their menus and by keyboard, and unpinnable from their menus. The group SHALL reflect pins, order and renames from the user's other devices after sync, and SHALL render from local data so it is correct offline.
 
 #### Scenario: Mixed kinds in order
 - **WHEN** the user pins "Website launch" (project, 5 open), "Deep work" (filter, 4 matches) and "errand" (label, 3 open) and moves "Deep work" to the top
@@ -457,6 +457,10 @@ The Favourites group SHALL list the user's pinned projects, labels and saved fil
 #### Scenario: Pinned offline
 - **WHEN** the device is offline and the user pins a label
 - **THEN** it appears in Favourites at once, survives a reload, and reaches the user's other devices when the network returns
+
+#### Scenario: Pinned note
+- **WHEN** the user pins the note "Wi-Fi" and renames it "Home Wi-Fi" on another device
+- **THEN** the group shows "Home Wi-Fi" with the note icon and no count after sync, and activating it opens the note
 
 ### Requirement: Sidebar header row
 The top of the sidebar SHALL be one header row holding the instance's mark and name on the left (the brand mark and the wordmark "OpenTodo", or the owner's logo and name on a branded instance, see `instance-branding`) and the search and commands button on the right. The header row SHALL be a slot whose left part can be replaced by another control (the workspace control of `workspaces`) while the search button and everything below the row stay unchanged. On the icon rail the row SHALL show the mark alone, centred, with the instance's name as its tooltip and accessible name. The brand mark SHALL be the mono variant, so it follows the sidebar's text tone in both themes, and the wordmark SHALL be set in the interface typeface at the body size with the strong text tone. The header row SHALL be rendered from local data only and SHALL look the same offline.

@@ -301,8 +301,7 @@ type DraftAnswer struct {
 	Note     string
 	Errors   []DraftProblem
 	Warnings []ruleval.StepWarning
-	Input    int64
-	Output   int64
+	Tokens
 }
 
 // jsonValue reads JSON text; "" and "null" read as null.
@@ -426,8 +425,8 @@ func (s *Service) DraftRoutine(ctx context.Context, prov Provider, c DraftCall) 
 	conv := prov.Start(Request{System: DraftSystemFor(c.Kinds), Messages: []Message{{Role: "user", Text: DraftMessage(c.Text, c.Names)}},
 		Tools: []ToolDef{DraftToolDef()}, MaxTokens: DraftTokens})
 	defer func() {
-		if ans.Input+ans.Output > 0 {
-			if err := s.Store.AddDraftUsage(context.WithoutCancel(ctx), c.UserID, ans.Input, ans.Output, c.Own); err != nil && s.Loop != nil && s.Loop.Log != nil {
+		if ans.Total() > 0 {
+			if err := s.Store.AddDraftUsage(context.WithoutCancel(ctx), c.UserID, ans.Tokens, c.Own); err != nil && s.Loop != nil && s.Loop.Log != nil {
 				s.Loop.Log.Error("routine draft usage not recorded", "err", err)
 			}
 		}
@@ -439,8 +438,7 @@ func (s *Service) DraftRoutine(ctx context.Context, prov Provider, c DraftCall) 
 				text.WriteString(t)
 			}
 		})
-		ans.Input += r.Input
-		ans.Output += r.Output
+		ans.Add(r.Tokens)
 		if err != nil {
 			return ans, err
 		}
@@ -493,15 +491,16 @@ func (s *Service) DraftRoutine(ctx context.Context, prov Provider, c DraftCall) 
 }
 
 // AddDraftUsage adds a draft turn's tokens to the month's usage (so they
-// count toward the allowance like a turn) and to its routine_draft part.
-func (st *Store) AddDraftUsage(ctx context.Context, userID string, in, out int64, own bool) error {
-	if err := st.AddUsage(ctx, userID, in, out, own); err != nil {
+// count toward the allowance like a turn) and to its routine_draft part
+// (which keeps cached input in input_tokens).
+func (st *Store) AddDraftUsage(ctx context.Context, userID string, t Tokens, own bool) error {
+	if err := st.AddUsage(ctx, userID, t, own); err != nil {
 		return err
 	}
 	m, _ := month(st.now())
 	_, err := st.db.ExecContext(ctx, `INSERT INTO assistant_usage_drafts(user_id, month, input_tokens, output_tokens, calls) VALUES(?,?,?,?,1)
 		ON CONFLICT(user_id, month) DO UPDATE SET input_tokens = input_tokens + excluded.input_tokens,
-		output_tokens = output_tokens + excluded.output_tokens, calls = calls + 1`, userID, m, in, out)
+		output_tokens = output_tokens + excluded.output_tokens, calls = calls + 1`, userID, m, t.AllInput(), t.Output)
 	if err != nil {
 		return fmt.Errorf("record routine draft usage: %w", err)
 	}

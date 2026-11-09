@@ -609,13 +609,26 @@ func (s *Server) handleMyAssistantUsage(w http.ResponseWriter, r *http.Request) 
 	writeJSON(w, http.StatusOK, v)
 }
 
-// usageView is the month's usage: total_tokens counts every turn,
-// counted_tokens what is measured against cap, own_key the turns on the
-// user's own key (left out of counted_tokens unless cap_member_keys).
+// usageView is the month's usage: total_tokens counts every token of every
+// turn, input_tokens the fresh input, cached_tokens the input read from the
+// provider's cache and cache_write_tokens the input written to it,
+// counted_tokens what is measured against cap (cache reads at one tenth),
+// own_key the turns on the user's own key (left out of counted_tokens unless
+// cap_member_keys).
 func usageView(u assistant.Usage, capMemberKeys bool) map[string]any {
-	return map[string]any{"month": u.Month, "input_tokens": u.InputTokens, "output_tokens": u.OutputTokens, "total_tokens": u.Total(),
+	return map[string]any{"month": u.Month, "input_tokens": u.InputTokens, "cached_tokens": u.CachedTokens, "cache_write_tokens": u.CacheWriteTokens,
+		"output_tokens": u.OutputTokens, "total_tokens": u.Total(),
 		"turns": u.Turns, "cap": u.Cap, "resets_at": u.ResetsAt, "counted_tokens": u.Counted(capMemberKeys), "cap_member_keys": capMemberKeys,
-		"own_key": map[string]any{"input_tokens": u.Own.InputTokens, "output_tokens": u.Own.OutputTokens, "total_tokens": u.Own.Total(), "turns": u.Own.Turns}}
+		"own_key": map[string]any{"input_tokens": u.Own.InputTokens, "cached_tokens": u.Own.CachedTokens, "cache_write_tokens": u.Own.CacheWriteTokens,
+			"output_tokens": u.Own.OutputTokens, "total_tokens": u.Own.Total(), "turns": u.Own.Turns}}
+}
+
+// turnUsage is the usage event of a turn or a draft: input is the fresh
+// input, cached and cache_write the input read from and written to the
+// provider's cache, month_total what counts against cap.
+func turnUsage(t assistant.Tokens, monthTotal, turnCap int64, own bool) map[string]any {
+	return map[string]any{"input": t.Input, "cached": t.CachedRead, "cache_write": t.CachedWrite, "output": t.Output,
+		"month_total": monthTotal, "cap": turnCap, "own_key": own}
 }
 
 // ---- the turn ----
@@ -736,8 +749,8 @@ func (s *Server) handleAssistantTurn(w http.ResponseWriter, r *http.Request) {
 	})
 	// Usage is counted from the provider's usage fields, whatever the outcome
 	// (a refusal still costs tokens), in a context that outlives a disconnect.
-	if res.Input+res.Output > 0 {
-		if err := s.assistant.Store.AddUsage(context.WithoutCancel(ctx), u.ID, res.Input, res.Output, route.Own); err != nil {
+	if res.Total() > 0 {
+		if err := s.assistant.Store.AddUsage(context.WithoutCancel(ctx), u.ID, res.Tokens, route.Own); err != nil {
 			s.log.Error("assistant usage not recorded", "err", err)
 		}
 		if skill != nil {
@@ -748,7 +761,7 @@ func (s *Server) handleAssistantTurn(w http.ResponseWriter, r *http.Request) {
 	}
 	// Logs hold the provider, outcome, duration and token counts only (design D8).
 	s.log.Info("assistant turn", "provider", route.Provider, "own_key", route.Own, "skill", in.Skill, "stop", string(res.Stop), "duration_ms", time.Since(start).Milliseconds(),
-		"input_tokens", res.Input, "output_tokens", res.Output, "proposed", len(res.Changes), "failed", res.Err != nil)
+		"input_tokens", res.Input, "cached_read_tokens", res.CachedRead, "cached_write_tokens", res.CachedWrite, "output_tokens", res.Output, "proposed", len(res.Changes), "failed", res.Err != nil)
 	if ctx.Err() != nil {
 		return // the browser went away (stopped or closed)
 	}
@@ -756,13 +769,13 @@ func (s *Server) handleAssistantTurn(w http.ResponseWriter, r *http.Request) {
 	// cap does not apply to (the member's own key).
 	total := usage.Counted(set.CapMemberKeys)
 	if !route.Own || set.CapMemberKeys {
-		total += res.Input + res.Output
+		total += res.Counted()
 	}
 	turnCap := set.MonthlyTokenCap
 	if !capped {
 		turnCap = 0
 	}
-	send("usage", map[string]any{"input": res.Input, "output": res.Output, "month_total": total, "cap": turnCap, "own_key": route.Own})
+	send("usage", turnUsage(res.Tokens, total, turnCap, route.Own))
 	if res.Err != nil {
 		code, msg := s.turnError(res.Err, route.Own)
 		send("error", map[string]string{"code": code, "message": msg})

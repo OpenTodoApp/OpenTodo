@@ -122,8 +122,8 @@ func TestRouteNeverPrintsKey(t *testing.T) {
 func TestUsageOwnKeyCounted(t *testing.T) {
 	st := newTestStore(t)
 	ctx := context.Background()
-	_ = st.AddUsage(ctx, "u1", 100, 20, false)
-	_ = st.AddUsage(ctx, "u1", 300, 80, true)
+	_ = st.AddUsage(ctx, "u1", Tokens{Input: 100, Output: 20}, false)
+	_ = st.AddUsage(ctx, "u1", Tokens{Input: 300, Output: 80}, true)
 	u, err := st.Usage(ctx, "u1", 1000)
 	if err != nil || u.Total() != 500 || u.Turns != 2 || u.Own.Total() != 380 || u.Own.Turns != 1 {
 		t.Fatalf("%+v %v", u, err)

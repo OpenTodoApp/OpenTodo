@@ -30,6 +30,43 @@ final class ServerAddressTests: XCTestCase {
                        .needsHttps(suggestion: "https://todo.example.com:8080"))
     }
 
+    /// ios-setup-address: what the first-run field turns an address into, which is what it then shows.
+    func testWithoutASchemeTheAddressIsHttps() {
+        XCTAssertEqual(ServerAddress.parse("todo.example.com"), .ok(origin: "https://todo.example.com", insecure: false))
+        XCTAssertEqual(ServerAddress.parse("todo.example.com:8443"), .ok(origin: "https://todo.example.com:8443", insecure: false))
+        // A local address without a scheme is https too: plain http only when typed.
+        XCTAssertEqual(ServerAddress.parse("192.168.1.4:8080"), .ok(origin: "https://192.168.1.4:8080", insecure: false))
+        XCTAssertEqual(ServerAddress.parse("localhost:8080"), .ok(origin: "https://localhost:8080", insecure: false))
+    }
+
+    func testExplicitHttpIsKeptAndMarkedInsecure() {
+        XCTAssertEqual(ServerAddress.parse("http://192.168.1.4:8080/"), .ok(origin: "http://192.168.1.4:8080", insecure: true))
+        XCTAssertEqual(ServerAddress.parse("http://localhost"), .ok(origin: "http://localhost", insecure: true))
+    }
+
+    func testUppercaseSchemeAndHost() {
+        XCTAssertEqual(ServerAddress.parse("HTTPS://Todo.Example.COM"), .ok(origin: "https://todo.example.com", insecure: false))
+        XCTAssertEqual(ServerAddress.parse("Https://todo.example.com:443/"), .ok(origin: "https://todo.example.com", insecure: false))
+        XCTAssertEqual(ServerAddress.parse("HTTP://192.168.1.4:8080"), .ok(origin: "http://192.168.1.4:8080", insecure: true))
+        XCTAssertEqual(ServerAddress.parse("HTTP://todo.example.com"), .needsHttps(suggestion: "https://todo.example.com"))
+    }
+
+    func testTrailingSlashAndPath() {
+        XCTAssertEqual(ServerAddress.parse("todo.example.com/"), .ok(origin: "https://todo.example.com", insecure: false))
+        XCTAssertEqual(ServerAddress.parse("todo.example.com."), .ok(origin: "https://todo.example.com", insecure: false))
+        XCTAssertEqual(ServerAddress.parse("todo.example.com/todo"), .invalid)
+        XCTAssertEqual(ServerAddress.parse("https://todo.example.com/todo/"), .invalid)
+    }
+
+    func testUnicodeHostIsSentInItsAsciiForm() {
+        XCTAssertEqual(ServerAddress.parse("bücher.example"), .ok(origin: "https://xn--bcher-kva.example", insecure: false))
+        XCTAssertEqual(ServerAddress.parse("https://Todo.MÜNCHEN.de:8443/"), .ok(origin: "https://todo.xn--mnchen-3ya.de:8443", insecure: false))
+        XCTAssertEqual(ServerAddress.parse("https://xn--bcher-kva.example"), .ok(origin: "https://xn--bcher-kva.example", insecure: false))
+        XCTAssertEqual(ServerAddress.punycode("bücher"), "bcher-kva")
+        XCTAssertEqual(ServerAddress.punycode("привет"), "b1agh1afp")
+        XCTAssertEqual(ServerAddress.punycode("例え"), "r8jz45g")
+    }
+
     func testRefused() {
         for input in ["", "   ", "todo example.com", "ftp://todo.example.com", "https://", "https://todo.example.com/?a=1",
                       "https://todo.example.com/#frag", "https://user:pw@todo.example.com", "javascript:alert(1)"] {

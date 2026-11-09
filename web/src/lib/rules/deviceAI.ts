@@ -114,7 +114,9 @@ export async function completeOnDevice(c: DeviceAICall, signal?: AbortSignal): P
       default: throw new DeviceAIError('provider_error', 'the provider ended the answer for an unknown reason')
     }
     const out = cutBytes(text.trim(), MAX_ROUTINE_BYTES)
-    return { text: out, ...(c.answer === 'lines' ? { lines: answerLines(out) } : {}), input: r.input, output: r.output }
+    // The daily budget weighs cache reads at one tenth, like the server (assistant-usage-cache D1).
+    const input = r.input + (r.cacheWrite ?? 0) + Math.ceil((r.cached ?? 0) / 10)
+    return { text: out, ...(c.answer === 'lines' ? { lines: answerLines(out) } : {}), input, output: r.output }
   } catch (err) {
     if (err instanceof DeviceAIError) throw err
     if (ctl.signal.aborted) throw new DeviceAIError('provider_error', 'the provider did not answer within 60 seconds')
